@@ -3,21 +3,64 @@ import { timestampMicros } from "../projections/evidenceTime";
 export const CONTRIBUTION_RESOLVER_POLICY_VERSION = "contribution-resolver-v1";
 export const CURRENT_SEASON_SOG_CONTRIBUTION_VERSION = "current-season-sog-appearance-mean-v1";
 
-/** Calendar coverage/overlap policy; independent of next-N-team-games ordinals. */
-export type ForecastCalendarPolicy = { version: "forecast-calendar-v1"; calendarDays: number;
-  overlapDays: 7; timeZone: "UTC" };
-export function forecastCalendarPolicy(calendarDays = 14): ForecastCalendarPolicy {
+/** Calendar coverage/overlap policy; independent of next-N-team-games ordinals.
+ * v1 (issued history, replay only): UTC calendar days of the scheduled start and of `now`.
+ * v2 (decision 127, Q35): NHL schedule dates — a game's date is the schedule's own date (`games.date`, passed as
+ * `scheduleDate`), else the America/New_York date of its start; the as-of date is the America/New_York date of `now`.
+ * Each issued artifact keeps the version it recorded (rule 21); the default flips to v2 in the release that switches every
+ * consumer (issuance, replay, bridge, coverage, planning, evaluation) at once. Contract: side note L10-calendar-v2-contract. */
+export const FORECAST_CALENDAR_VERSIONS = ["forecast-calendar-v1", "forecast-calendar-v2"] as const;
+export type ForecastCalendarVersion = typeof FORECAST_CALENDAR_VERSIONS[number];
+export const DEFAULT_FORECAST_CALENDAR_VERSION: ForecastCalendarVersion = "forecast-calendar-v1";
+export const NHL_SCHEDULE_TIME_ZONE = "America/New_York";
+export type ForecastCalendarPolicyV1 = { version: "forecast-calendar-v1"; calendarDays: number; overlapDays: 7; timeZone: "UTC" };
+export type ForecastCalendarPolicyV2 = { version: "forecast-calendar-v2"; calendarDays: number; overlapDays: 7;
+  timeZone: typeof NHL_SCHEDULE_TIME_ZONE; dateBasis: "nhl_schedule_date" };
+/** Every policy version this module can measure. */
+export type AnyForecastCalendarPolicy = ForecastCalendarPolicyV1 | ForecastCalendarPolicyV2;
+/** The policy consumers store and serve today. It widens to AnyForecastCalendarPolicy in the flip release, together with
+ * the persisted shapes that pin v1 (`in-season/workspaceSchema.ts`, the later-impact scenario). */
+export type ForecastCalendarPolicy = ForecastCalendarPolicyV1;
+export function forecastCalendarPolicy(calendarDays?: number): ForecastCalendarPolicyV1;
+export function forecastCalendarPolicy(calendarDays: number, version: "forecast-calendar-v2"): ForecastCalendarPolicyV2;
+export function forecastCalendarPolicy(calendarDays: number, version: ForecastCalendarVersion): AnyForecastCalendarPolicy;
+export function forecastCalendarPolicy(calendarDays = 14, version: ForecastCalendarVersion = DEFAULT_FORECAST_CALENDAR_VERSION): AnyForecastCalendarPolicy {
   if (!Number.isInteger(calendarDays) || calendarDays < 1 || calendarDays > 21) {
     throw new RangeError("Calendar horizon must be 1–21 days.");
   }
-  return { version: "forecast-calendar-v1", calendarDays, overlapDays: 7, timeZone: "UTC" };
+  if (version === "forecast-calendar-v2") {
+    return { version, calendarDays, overlapDays: 7, timeZone: NHL_SCHEDULE_TIME_ZONE, dateBasis: "nhl_schedule_date" };
+  }
+  if (version !== "forecast-calendar-v1") throw new RangeError("Unknown calendar policy version.");
+  return { version, calendarDays, overlapDays: 7, timeZone: "UTC" };
 }
-export function validForecastCalendarPolicy(policy: ForecastCalendarPolicy): boolean {
-  return policy?.version === "forecast-calendar-v1" && policy.timeZone === "UTC" && policy.overlapDays === 7
-    && Number.isInteger(policy.calendarDays) && policy.calendarDays >= 1 && policy.calendarDays <= 21;
+export function validForecastCalendarPolicy(policy: AnyForecastCalendarPolicy): boolean {
+  const days = Number.isInteger(policy?.calendarDays) && policy.calendarDays >= 1 && policy.calendarDays <= 21 && policy.overlapDays === 7;
+  if (policy?.version === "forecast-calendar-v1") return days && policy.timeZone === "UTC";
+  return days && policy?.version === "forecast-calendar-v2" && policy.timeZone === NHL_SCHEDULE_TIME_ZONE && policy.dateBasis === "nhl_schedule_date";
 }
-export function calendarLeadDay(scheduledAt: string, now: string): number {
-  return (utcDay(scheduledAt) - utcDay(now)) / DAY_MS;
+const ET_DATE = new Intl.DateTimeFormat("en-CA", { timeZone: NHL_SCHEDULE_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
+const isDate = (value: unknown): value is string => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+  && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
+/** The policy's calendar date of an instant (v1 UTC, v2 America/New_York); null for an invalid instant. */
+export function forecastCalendarDate(instant: string | Date, policy: AnyForecastCalendarPolicy = forecastCalendarPolicy()): string | null {
+  const date = instant instanceof Date ? instant : new Date(instant);
+  if (!Number.isFinite(date.getTime())) return null;
+  return policy.version === "forecast-calendar-v2" ? ET_DATE.format(date) : date.toISOString().slice(0, 10);
+}
+/** Whole calendar days from the as-of date to the game's date under the policy. v2 uses the schedule's own date when
+ * given. NaN when either date is unknown (callers treat NaN as outside the horizon). */
+export function calendarLeadDay(scheduledAt: string, now: string, policy: AnyForecastCalendarPolicy = forecastCalendarPolicy(),
+  scheduleDate?: string | null): number {
+  const gameDate = policy.version === "forecast-calendar-v2" && isDate(scheduleDate) ? scheduleDate : forecastCalendarDate(scheduledAt, policy);
+  const asOf = forecastCalendarDate(now, policy);
+  if (!gameDate || !asOf) return NaN;
+  return Math.round((Date.parse(`${gameDate}T12:00:00Z`) - Date.parse(`${asOf}T12:00:00Z`)) / DAY_MS);
+}
+/** First and last calendar dates of a policy window starting at `now`. */
+export function forecastCalendarWindow(now: Date, policy: AnyForecastCalendarPolicy): { startDate: string; endDate: string } {
+  const startDate = forecastCalendarDate(now, policy)!;
+  return { startDate, endDate: new Date(Date.parse(`${startDate}T12:00:00Z`) + (policy.calendarDays - 1) * DAY_MS).toISOString().slice(0, 10) };
 }
 
 export type ContributionSourceKind = "detailed" | "baseline";
@@ -39,6 +82,8 @@ export type ContributionGame = {
   gameId: number;
   teamId: number;
   scheduledAt: string;
+  /** The schedule's own NHL date (`games.date`); used by calendar policy v2. */
+  scheduleDate?: string | null;
   scheduleRevision: string;
   rosterRevision: string;
   playerId: number;
@@ -118,7 +163,7 @@ export function catalogParticipation(sources: ContributionParticipation[] | unde
 export type ResolvedContribution = {
   /** Sanitized inputs permit revalidation without treating a stored mean as new evidence. */
   inputs?: { detailed?: ContributionSource; baseline?: ContributionSource;
-    participation?: ContributionParticipation; horizonDays: number; calendarPolicy?: ForecastCalendarPolicy; servingEnabled: boolean };
+    participation?: ContributionParticipation; horizonDays: number; calendarPolicy?: AnyForecastCalendarPolicy; servingEnabled: boolean };
   resolverVersion: typeof CONTRIBUTION_RESOLVER_POLICY_VERSION;
   game: ContributionGame;
   targetKey: string;
@@ -138,10 +183,6 @@ export type ResolvedContribution = {
 const validTime = (value: string) => Number.isFinite(Date.parse(value));
 const milliseconds = (value: string) => Date.parse(value);
 const DAY_MS = 24 * 60 * 60 * 1000;
-const utcDay = (value: string) => {
-  const date = new Date(value);
-  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-};
 
 function assessSource(source: ContributionSource | undefined, game: ContributionGame, targetKey: string,
   now: string): ContributionExclusion[] {
@@ -272,7 +313,7 @@ export function resolveContribution(input: {
   baseline?: ContributionSource;
   participation?: ContributionParticipation;
   horizonDays?: number;
-  calendarPolicy?: ForecastCalendarPolicy;
+  calendarPolicy?: AnyForecastCalendarPolicy;
   servingEnabled?: boolean;
 }): ResolvedContribution {
   const { game, targetKey, now } = input;
@@ -288,7 +329,7 @@ export function resolveContribution(input: {
     detailedReasons.push("identity_conflict");
     baselineReasons.push("identity_conflict");
   }
-  const lead = calendarLeadDay(game.scheduledAt, now);
+  const lead = calendarLeadDay(game.scheduledAt, now, calendarPolicy ?? forecastCalendarPolicy(), game.scheduleDate);
   if (!Number.isInteger(horizonDays) || horizonDays < 1 || !Number.isFinite(lead) || lead >= horizonDays) {
     detailedReasons.push("outside_horizon");
   }

@@ -823,6 +823,24 @@ describe("calendar consumer target coverage", () => {
     expect(summarizeCalendarConsumerCoverage(data, scopes, goalieProfile, data.context)).toMatchObject({
       eligiblePlayerGameTargets: 0, totalsEligiblePlayerGameTargets: 0, exclusions: { unsupported_conditioning: 6 } });
   });
+  it("never counts a zeroed line with an unknown start chance as covered, keeps a confirmed-out zero, and reports residual start mass", () => {
+    // W2-8 D3: goalies 7 and 8 share .6 + .3 of the starts; goalie 9 has no start share but a zeroed line with every use.
+    const goalieProfile = { skaterTargets: [], goalieTargets: ["SAVES_GOALIE"] };
+    const line = (playerId: string, startProbability: number | null, saves: number) => detailed({ playerId, stats: { SAVES_GOALIE: saves },
+      conditionalStats: { SAVES_GOALIE: 25 }, startProbability, appearanceProbability: null,
+      issuedContext: { ...issuedContext, playerId, nhlPlayerId: Number(playerId) * 11 } });
+    const data = input([], [line("7", 0.6, 15), line("8", 0.3, 7.5), line("9", null, 0)]);
+    data.players.forEach(player => { player.playerClass = "goalie"; });
+    data.players[0].nhlId = 77;
+    const coverage = summarizeCalendarConsumerCoverage(data, scopes, goalieProfile, data.context);
+    expect(coverage).toMatchObject({ requiredPlayerGameTargets: 3, eligiblePlayerGameTargets: 2,
+      goalieStartMass: { teamGames: 2, unresolvedTeamGames: 2, unresolvedStartMass: 1.1 } });
+    expect(coverage.exclusions.missing_participation).toBe(1);
+    // A confirmed-out goalie (start chance 0) keeps his real zero.
+    data.forecasts = [line("7", 0.6, 15), line("8", 0.4, 10), line("9", 0, 0)];
+    expect(summarizeCalendarConsumerCoverage(data, scopes, goalieProfile, data.context)).toMatchObject({
+      eligiblePlayerGameTargets: 3, goalieStartMass: { unresolvedTeamGames: 1, unresolvedStartMass: 1 } });
+  });
   it("keeps unmapped players and incomplete inputs visible and rejects lost or changed schedule sides", () => {
     const data = input();
     data.players[0] = { ...data.players[0], nhlTeamId: undefined, rosterRevision: undefined, teamAbbreviation: null };

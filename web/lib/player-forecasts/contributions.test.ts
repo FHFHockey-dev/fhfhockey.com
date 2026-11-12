@@ -12,8 +12,8 @@ import { buildSkaterBaselineRates, buildPriorAppearanceSkaterRates, PRIOR_APPEAR
 import { buildBaselineBundleFromCapturedInputs, buildBaselineContributionBundle,
   dryRunBaselineContributionBundle, dryRunCapturedBaselineBundle, dryRunNativeSkaterBaselineBundle,
   type NativeSkaterBaselineObservation } from "./baselineGeneration";
-import { forecastCalendarPolicy, resolveContribution, summarizeContributionCoverage,
-  type ContributionGame, type ContributionSource } from "./contributions";
+import { calendarLeadDay, forecastCalendarDate, forecastCalendarPolicy, forecastCalendarWindow, resolveContribution, summarizeContributionCoverage,
+  validForecastCalendarPolicy, type ContributionGame, type ContributionSource } from "./contributions";
 import { captureCurrentSkaterBaselineInputs, persistCapturedBaselineInputs, readBounded,
   readBaselineHistoricalManifests } from "./baselineInputCapture";
 import { buildCalendarGameScopes } from "./schedule";
@@ -75,6 +75,43 @@ describe("shared contribution resolver", () => {
       now: "2026-09-30T20:00:00-04:00" })).toEqual(inside);
     expect(resolveContribution({ ...inside.inputs, calendarPolicy: { ...policy, overlapDays: 8 } as never,
       game: inside.game, targetKey: "GOALS", now: "2026-10-01T00:00:00Z" }).sourceKind).toBeNull();
+  });
+  it("v2 measures lead days on NHL schedule dates; v1 keeps UTC days for issued replay (decision 127)", () => {
+    const v1 = forecastCalendarPolicy(14), v2 = forecastCalendarPolicy(14, "forecast-calendar-v2");
+    expect(v2).toEqual({ version: "forecast-calendar-v2", calendarDays: 14, overlapDays: 7, timeZone: "America/New_York", dateBasis: "nhl_schedule_date" });
+    expect([v1, v2].map(validForecastCalendarPolicy)).toEqual([true, true]);
+    expect(validForecastCalendarPolicy({ ...v2, timeZone: "UTC" } as never)).toBe(false);
+    expect(validForecastCalendarPolicy({ ...v1, timeZone: "America/New_York" } as never)).toBe(false);
+    // 9 pm ET on Nov 12 is already Nov 13 in UTC.
+    const lateEvening = "2026-11-13T02:00:00Z";
+    expect([forecastCalendarDate(lateEvening, v1), forecastCalendarDate(lateEvening, v2)]).toEqual(["2026-11-13", "2026-11-12"]);
+    // A 1 pm ET game on Nov 26: v1 lead 13 (inside 14 days), v2 lead 14 (outside).
+    expect(calendarLeadDay("2026-11-26T18:00:00Z", lateEvening, v1)).toBe(13);
+    expect(calendarLeadDay("2026-11-26T18:00:00Z", lateEvening, v2)).toBe(14);
+    // A 7 pm PT game listed for Nov 12 starts Nov 13 UTC: v1 lead 1 at 10 am ET, v2 lead 0; the schedule date wins in v2.
+    expect(calendarLeadDay("2026-11-13T03:00:00Z", "2026-11-12T15:00:00Z", v1)).toBe(1);
+    expect(calendarLeadDay("2026-11-13T03:00:00Z", "2026-11-12T15:00:00Z", v2)).toBe(0);
+    expect(calendarLeadDay("2026-11-13T05:30:00Z", "2026-11-12T15:00:00Z", v2, "2026-11-12")).toBe(0);
+    expect(calendarLeadDay("2026-11-13T05:30:00Z", "2026-11-12T15:00:00Z", v2)).toBe(1);
+    expect(calendarLeadDay("2026-11-13T05:30:00Z", "2026-11-12T15:00:00Z", v1, "2026-11-12")).toBe(1);
+    expect(calendarLeadDay("not-a-time", "2026-11-12T15:00:00Z", v2)).toBeNaN();
+    expect(forecastCalendarWindow(new Date(lateEvening), v2)).toEqual({ startDate: "2026-11-12", endDate: "2026-11-25" });
+    expect(forecastCalendarWindow(new Date(lateEvening), v1)).toEqual({ startDate: "2026-11-13", endDate: "2026-11-26" });
+    // The resolver applies the policy it is given (and keeps it with the inputs for replay).
+    const edge = (calendarPolicy: typeof v1 | typeof v2) => resolveContribution({ game: { ...game, scheduledAt: "2026-11-26T18:00:00Z", scheduleDate: "2026-11-26" },
+      targetKey: "GOALS", now: lateEvening, calendarPolicy, detailed: { ...source, expiresAt: "2026-12-01T00:00:00Z" } });
+    expect(edge(v1).exclusionReasons).not.toContain("outside_horizon");
+    expect(edge(v2).exclusionReasons).toContain("outside_horizon");
+    expect(edge(v2).inputs?.calendarPolicy).toEqual(v2);
+    // Calendar scopes follow the same basis: the late Pacific game is lead 0 on its schedule date under v2.
+    const games = [{ id: 40, seasonId: 20262027, date: "2026-11-12", startTime: "2026-11-13T03:00:00Z", homeTeamId: 1, awayTeamId: 2, type: 2 },
+      { id: 41, seasonId: 20262027, date: "2026-11-26", startTime: "2026-11-26T18:00:00Z", homeTeamId: 1, awayTeamId: 2, type: 2 }];
+    const scopes = (calendarPolicy: typeof v1 | typeof v2) => buildCalendarGameScopes({ games, now: new Date(lateEvening), calendarPolicy })
+      .filter(scope => scope.teamId === 1).map(scope => [scope.gameId, scope.calendarLeadDay]);
+    expect(scopes(v1)).toEqual([[40, 0], [41, 13]]);
+    expect(scopes(v2)).toEqual([[40, 0]]);
+    expect(buildCalendarGameScopes({ games, now: new Date("2026-11-12T15:00:00Z"), calendarPolicy: v2 })
+      .filter(scope => scope.teamId === 1).map(scope => [scope.gameId, scope.calendarLeadDay])).toEqual([[40, 0]]);
   });
   it("fails closed without explicit use permission and keeps the four uses independent", () => {
     const now = "2026-10-01T00:00:00Z";

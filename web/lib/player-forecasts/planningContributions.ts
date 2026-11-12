@@ -19,7 +19,7 @@ function issuedGame(forecast: GameForecast | undefined, snapshot: ContributionPl
     || Date.parse(context.observedAt) > Date.parse(forecast.issuedAt)) return null;
   return { playerId: Number(context.playerId), nhlPlayerId: context.nhlPlayerId,
     seasonId: context.seasonId, teamId: context.teamId, gameId: Number(context.gameId),
-    scheduledAt: context.scheduledAt, scheduleRevision: context.scheduleRevision,
+    scheduledAt: context.scheduledAt, scheduleDate: game.date, scheduleRevision: context.scheduleRevision,
     rosterRevision: context.rosterRevision };
 }
 
@@ -132,7 +132,7 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
       if (forecast.contributions) return forecast;
       const identity = issuedGame(forecast, snapshot);
       if (identity && (!validForecastCalendarPolicy(calendarPolicy)
-        || calendarLeadDay(identity.scheduledAt, snapshot.context.asOf) >= calendarPolicy.calendarDays)) {
+        || !(calendarLeadDay(identity.scheduledAt, snapshot.context.asOf, calendarPolicy, identity.scheduleDate) < calendarPolicy.calendarDays))) {
         return reject(forecast, "outside_horizon",
           "Detailed forecast is outside the declared calendar policy or that policy is unsupported.");
       }
@@ -162,7 +162,7 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
         || game.date < snapshot.context.startDate || game.date > snapshot.context.endDate
         || Date.parse(game.startsAt) <= Date.parse(snapshot.context.asOf) || !game.scheduleRevision) continue;
       const identity: ContributionGame = { playerId: Number(player.id), nhlPlayerId: player.nhlId,
-        seasonId: snapshot.context.seasonId, teamId: player.nhlTeamId, gameId: Number(game.id), scheduledAt: game.startsAt,
+        seasonId: snapshot.context.seasonId, teamId: player.nhlTeamId, gameId: Number(game.id), scheduledAt: game.startsAt, scheduleDate: game.date,
         scheduleRevision: game.scheduleRevision, rosterRevision: player.rosterRevision };
       const key = `${player.id}:${game.id}`, original = forecasts.get(key);
       if (original?.contributions) continue;

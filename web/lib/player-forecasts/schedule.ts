@@ -1,7 +1,7 @@
 import crypto from "crypto";
 
 import { PLAYER_FORECAST_MAX_HORIZON } from "./contracts";
-import { forecastCalendarPolicy } from "./contributions";
+import { calendarLeadDay, forecastCalendarPolicy, type AnyForecastCalendarPolicy } from "./contributions";
 
 export type PlayerForecastScheduleGame = {
   id: number;
@@ -51,24 +51,27 @@ export function regularSeasonForDate(date: string): number | null {
   return month >= 7 ? year * 10000 + year + 1 : (year - 1) * 10000 + year;
 }
 
-/** A UTC calendar scope is separate from the existing next-ten-team-games scope. */
+/** A calendar scope (policy v1: UTC days; v2: NHL schedule dates, decision 127) is separate from the next-ten-team-games scope. */
 export function buildCalendarGameScopes(args: {
   games: PlayerForecastScheduleGame[];
   now?: Date;
   days?: number;
   teamId?: number;
+  /** Its version decides the date basis; `days` (when given) overrides its length. */
+  calendarPolicy?: AnyForecastCalendarPolicy;
 }): PlayerForecastCalendarScope[] {
   const now = args.now ?? new Date();
-  const days = args.days ?? PLAYER_FORECAST_CALENDAR_HORIZON_DAYS;
+  const days = args.days ?? args.calendarPolicy?.calendarDays ?? PLAYER_FORECAST_CALENDAR_HORIZON_DAYS;
   if (!Number.isInteger(days) || days < 1 || days > 21) throw new RangeError("Calendar horizon must be 1–21 days.");
-  const firstDay = Date.parse(`${now.toISOString().slice(0, 10)}T00:00:00Z`);
-  const lastDay = firstDay + days * 86_400_000;
+  const policy = forecastCalendarPolicy(days, args.calendarPolicy?.version ?? forecastCalendarPolicy().version);
+  const leadOf = (game: PlayerForecastScheduleGame) =>
+    calendarLeadDay(parsePlayerForecastGameStart(game.startTime, game.date) ?? "", now.toISOString(), policy, game.date);
   const eligible = args.games.filter((game) => {
     const start = parsePlayerForecastGameStart(game.startTime, game.date);
-    const startMs = start ? Date.parse(start) : NaN;
+    const startMs = start ? Date.parse(start) : NaN, lead = leadOf(game);
     return (!game.scheduleEvidence || game.scheduleEvidence.status === "scheduled")
       && game.type === 2 && game.seasonId === regularSeasonForDate(game.date) &&
-      startMs >= firstDay && startMs < lastDay && startMs > now.getTime() &&
+      lead >= 0 && lead < days && startMs > now.getTime() &&
       game.homeTeamId !== game.awayTeamId;
   });
   // The ordinal is measured over the eligible team schedule, never over calendar days.
@@ -89,7 +92,7 @@ export function buildCalendarGameScopes(args: {
         teamId,
         opponentTeamId: teamId === game.homeTeamId ? game.awayTeamId : game.homeTeamId,
         teamGameHorizon,
-        calendarLeadDay: Math.floor((Date.parse(parsePlayerForecastGameStart(game.startTime, game.date)!) - firstDay) / 86_400_000),
+        calendarLeadDay: leadOf(game),
         queueCompatible: teamGameHorizon <= PLAYER_FORECAST_MAX_HORIZON,
         scheduledStartAt: parsePlayerForecastGameStart(game.startTime, game.date)!,
         gameDate: game.date,

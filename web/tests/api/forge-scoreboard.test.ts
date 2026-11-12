@@ -67,9 +67,13 @@ describe("/api/v1/forge/scoreboard", () => {
     expect(day1.find((s: any) => s.source === "bridge_exact")).toMatchObject({ n: 1, heads: { goals: { n: 1, mae: 0.5, bias: -0.5 } }, fantasyPoints: { mae: 0.5 } });
     expect(day1.find((s: any) => s.source === "naive_season").heads.goals).toMatchObject({ mae: 0.8, bias: -0.8 });
     expect(out.body.pooled.find((s: any) => s.source === "bridge_exact")).toMatchObject({ n: 2, heads: { goals: { n: 2, mae: 0.5, bias: 0 } } });
-    expect(out.body.pooled.find((s: any) => s.source === "bridge_exact")).toMatchObject({ dressed: null, coverage: null, coverageStatus: "unavailable" });
+    expect(out.body.pooled.find((s: any) => s.source === "bridge_exact")).toMatchObject({ dressed: null, coverage: null, coverageStatus: "unavailable",
+      basis: "unconditional", scoringPopulation: "settled_eligible" });
+    expect(out.body.pooled.find((s: any) => s.source === "naive_season")).toMatchObject({ basis: "conditional_dressed", scoringPopulation: "dressed_only" });
+    expect(out.body.scoringVersion).toBe("served-ledger-scoring-v2");
+    // Decision 41: the bridge's unconditional line is not compared with an if-dressed naive mean.
     const paired = out.body.pooledPaired.comparisons.find((s: any) => s.source === "bridge_exact" && s.reference === "naive_season");
-    expect(paired).toMatchObject({ pairing: { matched: 1, sourceOnly: 1 }, fantasyPoints: { source: { n: 1, rmse: 0.5 }, reference: { n: 1, rmse: 0.8 }, rmseSkill: 0.375 } });
+    expect(paired).toMatchObject({ status: "basis_mismatch", pairing: { matched: 1, sourceOnly: 1 }, fantasyPoints: { status: "no_valid_pairs", source: { n: 0 } } });
     expect(out.body.data[0].paired.comparisons.find((s: any) => s.source === "bridge_exact" && s.reference === "naive_season").pairing.matched).toBe(1);
     expect(out.body.pooledPaired.invalidIdentityRows).toBe(0);
     expect(out.body.limitations).toMatchObject({ position: "unavailable_skater_position_not_captured", opportunityRate: "unavailable_expected_and_actual_toi_pp_toi_not_captured" });
@@ -87,16 +91,18 @@ describe("/api/v1/forge/scoreboard", () => {
   it("scores model versus market probabilities once enabled", async () => {
     flags.market = true;
     const shots = { market_type: "player_shots_on_goal", line: 1.5, market_p_over: 0.6, implied_mean: 2.1, books: 2, two_way_books: 2, yes_only_books: 0,
-      devig_method: "shin", observed_at: null, model_p_over: { bridge_exact: 0.7 } };
+      devig_method: "shin", observed_at: null, model_p_over: { naive_season: 0.7, bridge_exact: 0.7 } };
     tables.forge_served_forecast_ledger.push({ ...row("2026-10-20", 1, "market", 0, 1), exp_goals: null, exp_shots: "2.1", exp_fantasy_points: null,
       market_lines: { props: { shots }, team_win: null } });
     const out = res();
     await handler({ method: "GET", query: {} } as any, out);
     expect(selectMock.mock.calls[0][0]).toContain(",market_lines");
     expect(out.body.marketStatus).toBe("enabled");
-    expect(out.body.pooledMarket.comparisons).toEqual([{ player_class: "skater", event: "shots", model: "bridge_exact", n: 1,
+    // The issued bridge probability is on an unconditional basis and is skipped, not relabelled (decision 41, rule 21).
+    expect(out.body.pooledMarket).toMatchObject({ basisMismatch: 1 });
+    expect(out.body.pooledMarket.comparisons).toEqual([{ player_class: "skater", event: "shots", model: "naive_season", n: 1,
       market: { brier: 0.16, logLoss: 0.5108 }, source: { brier: 0.09, logLoss: 0.3567 }, brierSkill: 0.4375 }]);
-    const paired = out.body.pooledPaired.comparisons.find((s: any) => s.source === "bridge_exact" && s.reference === "market");
+    const paired = out.body.pooledPaired.comparisons.find((s: any) => s.source === "naive_season" && s.reference === "market");
     expect(paired.heads.shots).toMatchObject({ source: { n: 1, bias: 0 }, reference: { n: 1, bias: 0.1 } });
   });
 
@@ -112,11 +118,11 @@ describe("/api/v1/forge/scoreboard", () => {
   it("preserves missing and malformed numeric evidence instead of converting it to zero", async () => {
     tables.forge_served_forecast_ledger = [
       { ...row("2026-10-20", 1, "bridge_exact", 0.5, 1), exp_fantasy_points: "", exp_goals: true },
-      { ...row("2026-10-20", 1, "naive_last5", 0.2, 1), act_hits: "invalid" },
+      { ...row("2026-10-20", 1, "bridge_reaimed", 0.2, 1), act_hits: "invalid" },
     ];
     const out = res();
     await handler({ method: "GET", query: {} } as any, out);
-    const paired = out.body.pooledPaired.comparisons.find((s: any) => s.source === "bridge_exact" && s.reference === "naive_last5");
+    const paired = out.body.pooledPaired.comparisons.find((s: any) => s.source === "bridge_exact" && s.reference === "bridge_reaimed");
     expect(paired.fantasyPoints).toMatchObject({ source: { n: 0 }, exclusions: { missingPrediction: 1 } });
     expect(paired.heads.goals.source.n).toBe(0);
     expect(paired.heads.hits).toMatchObject({ source: { n: 0 }, exclusions: { missingOutcome: 1 } });

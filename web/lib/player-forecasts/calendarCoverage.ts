@@ -4,6 +4,7 @@ import { assignmentStats, forecastAllows, sanitizeForecastInputs } from "../rost
 import type { ContributionPlanningSnapshot, ForecastExclusionReason, PlanningData } from "../rosterScheduleOptimizer/planningTypes";
 import { resolvePlanningContributions } from "./planningContributions";
 import type { PlayerForecastCalendarScope } from "./schedule";
+import { forecastCalendarPolicy, forecastCalendarWindow } from "./contributions";
 import type { CalendarForgeScopeReceipts } from "./orchestration";
 
 export type CalendarCoverageProfile = { skaterTargets: string[]; goalieTargets: string[] };
@@ -78,6 +79,8 @@ export function summarizeCalendarConsumerCoverage(data: PlanningData, scopes: Pl
   const consumerRevisionMismatches = receipts ? new Set(data.forecasts.filter(row => inspectedGames.has(Number(row.gameId))
     && row.sourceKind === "detailed" && !receipts.revisions.some(revision => revision.revisionId === row.revisionId))
     .map(row => row.revisionId)).size : 0;
+  // W2-8 D3: start mass below 1 is a residual unknown bucket, never redistributed or counted as covered.
+  const goalieStartMass = { teamGames: 0, unresolvedTeamGames: 0, unresolvedStartMass: 0 };
   let requiredPlayerGameTargets = 0, assignmentEligiblePlayerGameTargets = 0, conditionalOnlyTieBreakCandidatePlayerGameTargets = 0,
     totalsEligiblePlayerGameTargets = 0, comparisonEligiblePlayerGameTargets = 0, eligiblePlayerGameTargets = 0;
   for (const scope of scopes) {
@@ -97,6 +100,11 @@ export function summarizeCalendarConsumerCoverage(data: PlanningData, scopes: Pl
       });
     const invalidCompetition = starterProbabilities.some(value => !Number.isFinite(value) || value < 0 || value > 1)
       || starterProbabilities.reduce((sum, value) => sum + value, 0) > 1.000001;
+    if (profile.goalieTargets.length && !invalidCompetition) {
+      const residual = Math.max(0, 1 - starterProbabilities.reduce((sum, value) => sum + value, 0));
+      goalieStartMass.teamGames++;
+      if (residual > 1e-6) { goalieStartMass.unresolvedTeamGames++; goalieStartMass.unresolvedStartMass += residual; }
+    }
     for (const player of data.players.filter(player => player.nhlTeamId === scope.teamId)) {
       if (player.teamAbbreviation !== scope.teamAbbreviation) throw new Error("Consumer team identity conflicts with schedule");
       const forecast = forecastByKey.get(`${player.id}:${scope.gameId}`) ?? null;
@@ -120,7 +128,11 @@ export function summarizeCalendarConsumerCoverage(data: PlanningData, scopes: Pl
           }
         }
         const finite = (value: number | null | undefined) => typeof value === "number" && Number.isFinite(value);
-        const competitionValid = player.playerClass !== "goalie" || !invalidCompetition;
+        // A goalie line counts only with a known start chance: an unknown chance with a zeroed line is not coverage,
+        // while a confirmed-out zero (probability 0) is real.
+        const startKnown = player.playerClass !== "goalie" || !!forecast?.confirmedStart
+          || (typeof forecast?.startProbability === "number" && Number.isFinite(forecast.startProbability));
+        const competitionValid = (player.playerClass !== "goalie" || !invalidCompetition) && startKnown;
         const assignment = competitionValid && !!forecast && forecast.conditioning === "unconditional"
           && forecastAllows(forecast, target, "assignment") && finite(assignmentStats(forecast)[target]);
         const totals = competitionValid && !!forecast && forecast.conditioning === "unconditional"
@@ -135,7 +147,7 @@ export function summarizeCalendarConsumerCoverage(data: PlanningData, scopes: Pl
         if (comparison) comparisonEligiblePlayerGameTargets++;
         if (assignment && totals && comparison) { eligiblePlayerGameTargets++; continue; }
         const reasons = new Set<ForecastExclusionReason>(forecast?.contributions?.[target]?.exclusionReasons ?? []);
-        if (!competitionValid) reasons.add("unsupported_conditioning");
+        if (!competitionValid) reasons.add(startKnown ? "unsupported_conditioning" : "missing_participation");
         for (const row of discoveryByGame.get(String(scope.gameId)) ?? []) {
           if (row.gameId === String(scope.gameId) && (!row.playerId || row.playerId === player.id)
             && (!row.targetKey || row.targetKey === target)) row.reasons.forEach(reason => reasons.add(reason));
@@ -156,6 +168,7 @@ export function summarizeCalendarConsumerCoverage(data: PlanningData, scopes: Pl
   const incompleteInputs = ["schedule", "identities"].filter(key => data.evidence[key]?.completeness !== "complete");
   return { status: "evaluated" as const, basis: "sanitized_consumer_targets" as const, profile,
     population: "Verified canonical identities selected by NHL lifecycle tag and stored current-season membership; all scoped catalog competitors",
+    goalieStartMass: { ...goalieStartMass, unresolvedStartMass: Math.round(goalieStartMass.unresolvedStartMass * 1e6) / 1e6 },
     requiredPlayerGameTargets, assignmentEligiblePlayerGameTargets, totalsEligiblePlayerGameTargets,
     comparisonEligiblePlayerGameTargets, conditionalOnlyTieBreakCandidatePlayerGameTargets, eligiblePlayerGameTargets, exclusions, unmappedPlayers,
     storageCoverage: receipts ? { status: "evaluated" as const, basis: "immutable_issued_target_receipts" as const,
@@ -189,8 +202,9 @@ export async function inspectCalendarConsumerCoverage(db: SupabaseClient<any>, s
   }
   const seasons = [...new Set(scopes.map(scope => scope.seasonId))];
   if (seasons.length !== 1) throw new Error("Consumer calendar spans incompatible seasons");
-  const startDate = now.toISOString().slice(0, 10);
-  const endDate = new Date(Date.parse(`${startDate}T00:00:00Z`) + (calendarDays - 1) * 86400000).toISOString().slice(0, 10);
-  const data = await loadPlanningData(db, { seasonId: seasons[0], startDate, endDate, timeZone: "UTC" }, { now });
+  // Window dates follow the calendar policy (v1 UTC, v2 NHL schedule dates; decision 127).
+  const policy = forecastCalendarPolicy(calendarDays);
+  const { startDate, endDate } = forecastCalendarWindow(now, policy);
+  const data = await loadPlanningData(db, { seasonId: seasons[0], startDate, endDate, timeZone: policy.timeZone }, { now });
   return summarizeCalendarConsumerCoverage(data, scopes, profile, { seasonId: seasons[0], asOf: now.toISOString(), startDate, endDate }, receipts);
 }

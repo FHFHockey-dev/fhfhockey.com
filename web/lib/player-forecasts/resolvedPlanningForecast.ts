@@ -139,7 +139,7 @@ export function revalidateResolvedForecast(forecast: GameForecast, snapshot: Con
     && game?.startsAt && game.scheduleRevision && game.status === "scheduled"
     && Date.parse(game.startsAt) > Date.parse(snapshot.context.asOf)
     ? { playerId: Number(player.id), nhlPlayerId: player.nhlId, seasonId: snapshot.context.seasonId,
-      teamId: player.nhlTeamId, gameId: Number(game.id), scheduledAt: game.startsAt,
+      teamId: player.nhlTeamId, gameId: Number(game.id), scheduledAt: game.startsAt, scheduleDate: game.date,
       scheduleRevision: game.scheduleRevision, rosterRevision: player.rosterRevision } : null;
   const contributions: Contributions = {};
   const calendarPolicy = snapshot.forecastManifest?.calendarPolicy;
