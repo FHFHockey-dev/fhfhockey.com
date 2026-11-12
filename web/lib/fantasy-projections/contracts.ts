@@ -796,6 +796,10 @@ export function reconcileProjectionQuantiles(
   return { p10, p50, p90 };
 }
 
+/**
+ * @deprecated W3-5 F6/PR3: a missing or null value silently scores as 0.
+ * Use `fantasyProjectionTotalNullable`; L10 migrates the readers.
+ */
 export function fantasyProjectionTotal(
   values: ProjectionValues,
   scoring: Record<string, number>,
@@ -804,4 +808,235 @@ export function fantasyProjectionTotal(
     const value = Number(values[key] ?? 0);
     return total + (Number.isFinite(value) && Number.isFinite(weight) ? value * weight : 0);
   }, 0);
+}
+
+// ---------------------------------------------------------------------------
+// Nullable projection contract (W3-5 F6/PR3, rule 5). A value that is absent,
+// null or non-finite is unknown, never 0. Readers (L10) move to these exports;
+// the legacy number-only shapes above stay for issued v1 payloads.
+// ---------------------------------------------------------------------------
+
+export type NullableProjectionValues = Record<string, number | null>;
+
+/** A finite number, or null for null, undefined, "", NaN and ±Infinity. */
+export function nullableProjectionNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export type FantasyProjectionTotal = {
+  /** Weighted total, or null when any non-zero-weighted value is unknown. */
+  value: number | null;
+  complete: boolean;
+  /** Non-zero-weighted keys whose value is absent, null or non-finite. */
+  missingKeys: string[];
+  /** Keys whose scoring weight is not a finite number. */
+  invalidWeightKeys: string[];
+};
+
+/**
+ * Fantasy total over nullable values. A key with weight 0 never matters;
+ * any other weighted key with an unknown value makes the total unknown
+ * (value null, complete false) instead of contributing 0.
+ */
+export function fantasyProjectionTotalNullable(
+  values: Readonly<Record<string, number | null | undefined>>,
+  scoring: Readonly<Record<string, number>>,
+): FantasyProjectionTotal {
+  let total = 0;
+  const missingKeys: string[] = [];
+  const invalidWeightKeys: string[] = [];
+  for (const key of Object.keys(scoring).sort()) {
+    const weight = scoring[key];
+    if (!Number.isFinite(weight)) {
+      invalidWeightKeys.push(key);
+      continue;
+    }
+    if (weight === 0) continue;
+    const value = nullableProjectionNumber(values[key]);
+    if (value === null) {
+      missingKeys.push(key);
+      continue;
+    }
+    total += value * weight;
+  }
+  const complete = missingKeys.length === 0 && invalidWeightKeys.length === 0;
+  return {
+    value: complete ? projectionNumber(total) : null,
+    complete,
+    missingKeys,
+    invalidWeightKeys,
+  };
+}
+
+/** Compact summary whose values keep null (unknown) instead of 0. */
+export const FANTASY_PROJECTION_SUMMARY_ENCODING_V2 = "player-summary-v2" as const;
+
+export type FantasyProjectionPlayerSummaryTupleV2 = [
+  fhfhPlayerId: number,
+  teamId: number | null,
+  teamAbbreviation: string | null,
+  playerName: string,
+  position: FantasyProjectionPosition,
+  population: FantasyProjectionPopulation,
+  poolStatus: FantasyProjectionPlayer["poolStatus"],
+  rosterStatus: FantasyProjectionRosterStatus,
+  rosterConfidence: number,
+  sourceFreshAt: string | null,
+  rookie: 0 | 1,
+  primaryRating: number,
+  deploymentConfidence: number,
+  roles: Array<string | number | null>,
+  adjusted: 0 | 1,
+  fallbackFlags: string[],
+  values: Array<number | null>,
+];
+
+export type FantasyProjectionCompactPlayersResponseV2 = {
+  success: true;
+  betaLabel: string;
+  release: FantasyProjectionRelease;
+  encoding: typeof FANTASY_PROJECTION_SUMMARY_ENCODING_V2;
+  metricKeys: string[];
+  players: FantasyProjectionPlayerSummaryTupleV2[];
+};
+
+export type FantasyProjectionNullablePlayer = Omit<
+  FantasyProjectionPlayer,
+  | "expectedGames"
+  | "expectedStarts"
+  | "expectedToi"
+  | "modelValues"
+  | "publishedValues"
+  | "p10"
+  | "p50"
+  | "p90"
+  | "adjustmentDelta"
+> & {
+  expectedGames: number | null;
+  expectedStarts: number | null;
+  expectedToi: NullableProjectionValues;
+  modelValues: NullableProjectionValues;
+  publishedValues: NullableProjectionValues;
+  p10: NullableProjectionValues;
+  p50: NullableProjectionValues;
+  p90: NullableProjectionValues;
+  adjustmentDelta: NullableProjectionValues;
+};
+
+export type FantasyProjectionNullablePlayersResponse = {
+  success: true;
+  betaLabel: string;
+  release: FantasyProjectionRelease;
+  players: FantasyProjectionNullablePlayer[];
+};
+
+/**
+ * Expands a v1 or v2 compact summary without turning null or absent values
+ * into 0. A v1 payload may already carry writer-side zeros (`summaryNumber`);
+ * those stay as issued (rule 21) and only JSON null / absent become null.
+ */
+export function expandFantasyProjectionSummaryNullable(
+  payload:
+    | FantasyProjectionCompactPlayersResponse
+    | FantasyProjectionCompactPlayersResponseV2,
+): FantasyProjectionNullablePlayersResponse {
+  if (
+    payload.encoding !== FANTASY_PROJECTION_SUMMARY_ENCODING &&
+    payload.encoding !== FANTASY_PROJECTION_SUMMARY_ENCODING_V2
+  ) {
+    throw new Error("Unsupported fantasy-projection summary encoding.");
+  }
+  return {
+    success: true,
+    betaLabel: payload.betaLabel,
+    release: payload.release,
+    players: (payload.players as FantasyProjectionPlayerSummaryTupleV2[]).map((row) => {
+      const [
+        fhfhPlayerId,
+        teamId,
+        teamAbbreviation,
+        playerName,
+        position,
+        population,
+        poolStatus,
+        rosterStatus,
+        rosterConfidence,
+        sourceFreshAt,
+        rookie,
+        primaryRating,
+        deploymentConfidence,
+        roles,
+        adjusted,
+        fallbackFlags,
+        values,
+      ] = row;
+      const publishedValues: NullableProjectionValues = Object.fromEntries(
+        payload.metricKeys.map((key, index) => [
+          key,
+          nullableProjectionNumber(values?.[index]),
+        ]),
+      );
+      const known = (key: string): number | null => publishedValues[key] ?? null;
+      const ratingKey =
+        population === "goalie"
+          ? "goaltending"
+          : population === "defense"
+            ? "defense"
+            : "offense";
+      const [forwardLine, defensePair, powerPlayUnit, penaltyKillUnit, goalieOrder] = roles;
+      return {
+        id: String(fhfhPlayerId),
+        releaseId: payload.release.id,
+        fhfhPlayerId,
+        teamId,
+        teamAbbreviation,
+        playerName,
+        position,
+        population,
+        poolStatus,
+        rosterStatus,
+        rosterConfidence,
+        sourceFreshAt,
+        rookieProfile: {
+          rookie: rookie === 1,
+          rosterProbability: null,
+          sourceCoverage: [],
+          nhleMethod: null,
+          sourceLeague: null,
+        },
+        expectedGames: known("GAMES_PLAYED"),
+        expectedStarts: population === "goalie" ? known("GAMES_STARTED") : null,
+        expectedToi: {
+          total: known("TOTAL_TOI"),
+          evenStrength: known("EV_TOI"),
+          powerPlay: known("PP_TOI"),
+          penaltyKill: known("PK_TOI"),
+        },
+        ratings: { [ratingKey]: primaryRating },
+        deployment: {
+          confidence: deploymentConfidence,
+          mostLikelyRole: Object.fromEntries(
+            [
+              ["forwardLine", forwardLine],
+              ["defensePair", defensePair],
+              ["powerPlayUnit", powerPlayUnit],
+              ["penaltyKillUnit", penaltyKillUnit],
+              ["goalieOrder", goalieOrder],
+            ].filter((entry) => entry[1] != null),
+          ),
+        },
+        modelValues: {},
+        publishedValues,
+        p10: {},
+        p50: {},
+        p90: {},
+        adjustmentDelta: {},
+        adjusted: adjusted === 1,
+        fallbackFlags,
+        provenance: {},
+      };
+    }),
+  };
 }
