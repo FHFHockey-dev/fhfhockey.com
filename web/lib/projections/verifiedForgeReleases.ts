@@ -135,12 +135,12 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     note: "Release #425 producer: 199-module exact commit closure, 0 findings; producer modules unchanged in #426. Exclusion proof only, not forecast-quality or native-use approval.",
   },
   {
-    closureSha256: "10aefb04aaf9f02bbe4041669063fecba7e7bba2e38853d1025fea22100fc147",
-    commit: "975e67b47cafb7d54e3613ab43344fbad731f886",
+    closureSha256: "dfab4f52f55d0f67bd16d613df000a794e4280611719c5d0e8daedf712479da6",
+    commit: "6c7f78154b49fca56a807a61dd0628b1b861d8ca",
     receipt: "tasks/artifacts/goalie-grid-producer-admission-2026-11-12/receipt.json",
-    receiptSha256: "6af75de826208e15ea86f7f2bc851d988a91da8d213bac0f462d190118209390",
+    receiptSha256: "2c3ab77f6863dcd49a97fd444ace6fcfc3a8ad6da1ac4a8b2d718f270f5d32b6",
     verifierVersion: "forge-release-sha-verifier-v1",
-    note: "Goalie Grid and Start Chart coverage-label source candidate: 228-module exact commit closure, 0 findings. Released historical dependencies retained. Exclusion proof only, not deployment, probability qualification or native-use approval.",
+    note: "Goalie Grid and Start Chart coverage-label source candidate: 229-module exact commit closure, 0 findings. Includes the released DRM fixes; released historical dependencies retained. Exclusion proof only, not deployment, probability qualification or native-use approval.",
   },
 ];
 

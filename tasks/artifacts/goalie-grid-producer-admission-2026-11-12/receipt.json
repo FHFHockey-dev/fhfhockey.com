@@ -1,15 +1,15 @@
 {
   "version": "forge-release-sha-verifier-v1",
-  "sha": "975e67b47cafb7d54e3613ab43344fbad731f886",
+  "sha": "6c7f78154b49fca56a807a61dd0628b1b861d8ca",
   "verified": true,
   "producerIdentity": {
     "version": "forge-producer-closure-v1",
-    "closureSha256": "10aefb04aaf9f02bbe4041669063fecba7e7bba2e38853d1025fea22100fc147"
+    "closureSha256": "dfab4f52f55d0f67bd16d613df000a794e4280611719c5d0e8daedf712479da6"
   },
   "commit": {
-    "subject": "Add Goalie Game Grid identity and workload views with Start Chart coverage labels",
-    "committedAt": "2026-11-12T13:59:57-05:00",
-    "tree": "f109371cb117b3cfc6777c600d2ea1473be9f8da"
+    "subject": "Integrate Goalie Grid candidate with released DRM fixes",
+    "committedAt": "2026-11-12T14:15:06-05:00",
+    "tree": "67154c34894389c07635b896786b327eb3b965c5"
   },
   "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
   "closureWalkerSha256": "b7ec38db70612782bf45edf0086aa54cdb62dfea6de6cbac901dc13a2e3af2a2",
@@ -68,8 +68,8 @@
     }
   ],
   "closure": {
-    "moduleCount": 228,
-    "modulesSha256": "10aefb04aaf9f02bbe4041669063fecba7e7bba2e38853d1025fea22100fc147",
+    "moduleCount": 229,
+    "modulesSha256": "dfab4f52f55d0f67bd16d613df000a794e4280611719c5d0e8daedf712479da6",
     "modules": [
       "components/LinemateMatrix/index.tsx",
       "components/LinemateMatrix/utilities.ts",
@@ -162,6 +162,7 @@
       "lib/projections/nativeGoalAccounting.ts",
       "lib/projections/opponentGoalieQuality.ts",
       "lib/projections/pbpCompletenessServer.ts",
+      "lib/projections/penaltyClock.ts",
       "lib/projections/projectionPipelineState.ts",
       "lib/projections/promotionGates.ts",
       "lib/projections/queries/goalie-queries.ts",
@@ -478,7 +479,7 @@
     },
     {
       "file": "lib/supabase/Upserts/nhlRawGamecenter.mjs",
-      "line": 662,
+      "line": 670,
       "kind": "dynamic_from",
       "text": "table"
     },
