@@ -2,6 +2,11 @@ import React, { useState, useEffect, useCallback } from "react";
 import { RosterMatrix } from "./RosterMatrix";
 import supabase from "../../lib/supabase";
 import useCurrentSeason from "../../hooks/useCurrentSeason";
+import {
+  aggregateNstGoalieGamelog,
+  buildRosterPlayer,
+  type PlayerData
+} from "./rosterMatrixData";
 
 // Team mapping from the database
 const TEAM_MAPPING: Record<number, { abbrev: string; name: string }> = {
@@ -59,57 +64,6 @@ interface RosterMatrixWrapperProps {
   teamId?: string;
   teamAbbrev?: string;
   seasonId?: string;
-}
-
-interface PlayerData {
-  id: number;
-  nhl_player_name: string;
-  mapped_position: string;
-  eligible_positions?: string[] | string;
-  age?: number;
-  sweater_number?: number;
-  height?: string;
-  weight?: number;
-  shoots_catches?: string;
-  injury_status?: string;
-  injury_note?: string;
-
-  // Basic stats
-  games_played?: number;
-  goals?: number;
-  assists?: number;
-  points?: number;
-  plus_minus?: number;
-  pim?: number;
-  shots?: number;
-  shooting_percentage?: number;
-  toi_per_game?: number;
-  pp_toi_per_game?: number;
-
-  // Advanced stats
-  cf_pct?: number;
-  xgf_pct?: number;
-  hdcf_pct?: number;
-  pdo?: number;
-  total_points_per_60?: number;
-  ixg_per_60?: number;
-  goals_per_60?: number;
-  total_assists_per_60?: number;
-  shots_per_60?: number;
-
-  // Goalie stats
-  wins?: number;
-  losses?: number;
-  save_pct?: number;
-  goals_against_avg?: number;
-  shutouts?: number;
-
-  // Advanced goalie stats
-  gsaa?: number;
-  hd_save_pct?: number;
-  md_save_pct?: number;
-  ld_save_pct?: number;
-  xg_against?: number;
 }
 
 export default function RosterMatrixWrapper({
@@ -360,18 +314,11 @@ export default function RosterMatrixWrapper({
             shots_against,
             saves,
             goals_against,
-            sv_percentage,
-            gaa,
-            gsaa,
             xg_against,
             hd_shots_against,
             hd_saves,
-            hd_sv_percentage,
             md_shots_against,
-            md_saves,
-            md_sv_percentage,
-            ld_shots_against,
-            ld_sv_percentage
+            md_saves
           `
             )
             .in("player_id", goalieIds)
@@ -384,91 +331,10 @@ export default function RosterMatrixWrapper({
           );
         }
 
-        // Aggregate gamelog data by player
-        const aggregation = new Map();
-        goalieGamelogData?.forEach((game) => {
-          const playerId = game.player_id;
-          if (!aggregation.has(playerId)) {
-            aggregation.set(playerId, {
-              games_played: 0,
-              total_toi: 0,
-              total_shots_against: 0,
-              total_saves: 0,
-              total_goals_against: 0,
-              total_gsaa: 0,
-              total_xg_against: 0,
-              total_hd_shots_against: 0,
-              total_hd_saves: 0,
-              total_md_shots_against: 0,
-              total_md_saves: 0,
-              total_ld_shots_against: 0,
-              total_ld_saves: 0
-            });
-          }
-
-          const agg = aggregation.get(playerId);
-          agg.games_played += game.gp || 0;
-          agg.total_toi += game.toi || 0;
-          agg.total_shots_against += game.shots_against || 0;
-          agg.total_saves += game.saves || 0;
-          agg.total_goals_against += game.goals_against || 0;
-          agg.total_gsaa += game.gsaa || 0;
-          agg.total_xg_against += game.xg_against || 0;
-          agg.total_hd_shots_against += game.hd_shots_against || 0;
-          agg.total_hd_saves += game.hd_saves || 0;
-          agg.total_md_shots_against += game.md_shots_against || 0;
-          agg.total_md_saves += game.md_saves || 0;
-          agg.total_ld_shots_against += game.ld_shots_against || 0;
-          // Calculate LD saves from shots - goals (since ld_saves might not be available)
-          if (game.ld_shots_against) {
-            const ldGoalsAgainst = game.ld_shots_against - (game.hd_saves || 0);
-            agg.total_ld_saves +=
-              game.hd_saves || game.ld_shots_against - ldGoalsAgainst;
-          }
-        });
-
-        // Convert aggregated data to usable format
-        aggregation.forEach((agg, playerId) => {
-          if (agg.games_played > 0) {
-            const save_pct =
-              agg.total_shots_against > 0
-                ? agg.total_saves / agg.total_shots_against
-                : 0;
-            const goals_against_avg =
-              agg.total_toi > 0
-                ? (agg.total_goals_against * 3600) / agg.total_toi
-                : 0;
-            const hd_save_pct =
-              agg.total_hd_shots_against > 0
-                ? agg.total_hd_saves / agg.total_hd_shots_against
-                : 0;
-            const md_save_pct =
-              agg.total_md_shots_against > 0
-                ? agg.total_md_saves / agg.total_md_shots_against
-                : 0;
-            const ld_save_pct =
-              agg.total_ld_shots_against > 0
-                ? agg.total_ld_saves / agg.total_ld_shots_against
-                : 0;
-
-            aggregatedGoalieStats.set(playerId, {
-              games_played: agg.games_played,
-              saves: agg.total_saves,
-              goals_against: agg.total_goals_against,
-              shots_against: agg.total_shots_against,
-              save_pct: save_pct,
-              goals_against_avg: goals_against_avg,
-              time_on_ice: agg.total_toi,
-              gsaa: agg.total_gsaa,
-              xg_against: agg.total_xg_against,
-              hd_shots_against: agg.total_hd_shots_against,
-              hd_saves: agg.total_hd_saves,
-              hd_save_pct: hd_save_pct * 100, // Convert to percentage
-              md_save_pct: md_save_pct * 100, // Convert to percentage
-              ld_save_pct: ld_save_pct * 100 // Convert to percentage
-            });
-          }
-        });
+        // Pooled fallback season line (minutes adapter, no per-game GSAA sum)
+        aggregatedGoalieStats = aggregateNstGoalieGamelog(
+          goalieGamelogData ?? []
+        );
       }
 
       console.log(
@@ -487,104 +353,17 @@ export default function RosterMatrixWrapper({
       );
 
       // Transform and combine all data using proper player data
-      const transformedPlayers: PlayerData[] = rosterData.map((player) => {
-        const playerId = player.id;
-        const skaterStat = skaterStatsMap.get(playerId);
-        const advancedStat = advancedCountsMap.get(playerId);
-        const onIceStat = onIceStatsMap.get(playerId);
-        const ratesStat = ratesStatsMap.get(playerId);
-        const goalieStat =
-          goalieStatsMap.get(playerId) || aggregatedGoalieStats.get(playerId);
-
-        const isGoalie = player.position === "G";
-
-        // Calculate age from birthDate
-        const age = player.birthDate
-          ? Math.floor(
-              (new Date().getTime() - new Date(player.birthDate).getTime()) /
-                (365.25 * 24 * 60 * 60 * 1000)
-            )
-          : undefined;
-
-        // Convert height from cm to feet-inches format
-        const heightStr = player.heightInCentimeters
-          ? `${Math.floor(player.heightInCentimeters / 30.48)}'${Math.round(
-              (player.heightInCentimeters % 30.48) / 2.54
-            )}"`
-          : undefined;
-
-        // Convert weight from kg to lbs
-        const weightLbs = player.weightInKilograms
-          ? Math.round(player.weightInKilograms * 2.20462)
-          : undefined;
-
-        const playerData: PlayerData = {
-          id: playerId,
-          nhl_player_name: player.fullName || "Unknown Player",
-          mapped_position: player.position || "C",
-          age: age,
-          sweater_number: player.sweater_number || undefined,
-          height: heightStr,
-          weight: weightLbs,
-          shoots_catches:
-            skaterStat?.shoots_catches || goalieStat?.shoots_catches,
-
-          // For goalies, use goalie-specific stats; for skaters, use skater stats
-          games_played: isGoalie
-            ? goalieStat?.games_played || 0
-            : skaterStat?.games_played || advancedStat?.gp || 0,
-          goals: isGoalie
-            ? goalieStat?.goals || 0
-            : skaterStat?.goals || advancedStat?.goals || 0,
-          assists: isGoalie
-            ? goalieStat?.assists || 0
-            : skaterStat?.assists || advancedStat?.total_assists || 0,
-          points: isGoalie
-            ? (goalieStat?.goals || 0) + (goalieStat?.assists || 0)
-            : skaterStat?.points || advancedStat?.total_points || 0,
-          plus_minus: skaterStat?.plus_minus || 0,
-          pim: skaterStat?.penalty_minutes || advancedStat?.pim || 0,
-          shots: skaterStat?.shots || advancedStat?.shots || 0,
-          shooting_percentage: skaterStat?.shooting_percentage
-            ? skaterStat.shooting_percentage * 100
-            : 0,
-          toi_per_game: skaterStat?.toi_per_game || 0,
-          pp_toi_per_game: skaterStat?.pp_toi_per_game || 0,
-
-          // Advanced stats (these are already in percentage form) - only for skaters
-          cf_pct: !isGoalie && onIceStat?.cf_pct ? onIceStat.cf_pct : undefined,
-          xgf_pct:
-            !isGoalie && onIceStat?.xgf_pct ? onIceStat.xgf_pct : undefined,
-          hdcf_pct:
-            !isGoalie && onIceStat?.hdcf_pct ? onIceStat.hdcf_pct : undefined,
-          pdo: !isGoalie ? onIceStat?.pdo : undefined,
-          total_points_per_60: !isGoalie
-            ? ratesStat?.total_points_per_60
-            : undefined,
-          ixg_per_60: !isGoalie ? ratesStat?.ixg_per_60 : undefined,
-
-          // Goalie stats (prefer season totals, fallback to aggregated gamelog data)
-          wins: isGoalie ? goalieStat?.wins || 0 : 0,
-          losses: isGoalie ? goalieStat?.losses || 0 : 0,
-          save_pct:
-            isGoalie && goalieStat?.save_pct
-              ? goalieStat.save_pct * 100
-              : undefined,
-          goals_against_avg: isGoalie
-            ? goalieStat?.goals_against_avg
-            : undefined,
-          shutouts: isGoalie ? goalieStat?.shutouts || 0 : 0,
-
-          // Advanced goalie stats
-          gsaa: isGoalie ? goalieStat?.gsaa : undefined,
-          hd_save_pct: isGoalie ? goalieStat?.hd_save_pct : undefined,
-          md_save_pct: isGoalie ? goalieStat?.md_save_pct : undefined,
-          ld_save_pct: isGoalie ? goalieStat?.ld_save_pct : undefined,
-          xg_against: isGoalie ? goalieStat?.xg_against : undefined
-        };
-
-        return playerData;
-      });
+      const transformedPlayers: PlayerData[] = rosterData.map((player) =>
+        buildRosterPlayer(player, {
+          skaterStat: skaterStatsMap.get(player.id),
+          advancedStat: advancedCountsMap.get(player.id),
+          onIceStat: onIceStatsMap.get(player.id),
+          ratesStat: ratesStatsMap.get(player.id),
+          goalieStat:
+            goalieStatsMap.get(player.id) ||
+            aggregatedGoalieStats.get(player.id)
+        })
+      );
 
       console.log("Transformed players with stats:", transformedPlayers.length);
 

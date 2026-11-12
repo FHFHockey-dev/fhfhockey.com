@@ -2130,3 +2130,6 @@ Math-audit fix lane L5 (rankings, splits, impact ratings, team unit TOI), local 
 
 ## CLAUDE-FIX-L2-LANDING-CLAIM-20261111 (2026-11-11)
 File-split half of L2 (same claim scope), local edits only (no push/deploy/prod/rebuild): `web/lib/underlying-stats/{playerStatsLandingServer,goalieStats*,playerStats*,playerUnderlyingCoverage,playerSummaryRollback*}.ts` and tests; `web/pages/api/v1/underlying-stats/{players,goalies}{.ts,/**}`; `web/pages/underlying-stats/{playerStats,goalieStats}/**`; `web/components/underlying-stats/Player*`, `playerStatsColumns*`.
+
+## CLAUDE-FIX-L3-CLAIM-20261111 (2026-11-11)
+Math-audit fix lane L3 (variance pages, roster matrix, TOI parser), local edits only (no push/deploy/prod): `web/components/GoaliePage/**`, `web/pages/goalies.js`, `web/pages/variance/goalies.js`, `web/lib/supabase/GoaliePage/**`, `web/components/SkaterPage/**`, `web/pages/variance/skaters.tsx`, `web/components/RosterMatrix/**`, `web/lib/NHL/TOI.ts` and tests beside them. Please flag any overlap.

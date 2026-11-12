@@ -123,7 +123,7 @@ describe("buildSkaterMetricsRows", () => {
 });
 
 describe("buildSkaterAdvancedMetricsRows", () => {
-  it("calculates per-60 values and leaves unavailable NST values null", () => {
+  it("calculates per-60 values from pooled counts and TOI", () => {
     const rows = buildSkaterAdvancedMetricsRows(
       gameRows,
       weeklyAggregates,
@@ -131,9 +131,81 @@ describe("buildSkaterAdvancedMetricsRows", () => {
     );
 
     expect(rows[0].pointsPer60).toBeCloseTo(6.32, 2);
-    expect(rows[0].corsiForPer60).toBe(9);
-    expect(rows[0].individualPointPercentage).toBeNull();
-    expect(rows[0].individualExpectedGoalsPer60).toBeNull();
+  });
+
+  // W2-P0-8 / decision 73: two games with unequal 5v5 TOI. Attempts are
+  // 8 x 600/3600 = 1.333 and 20 x 1200/3600 = 6.667, so pooled iCF/60 is
+  // 8 / 1800 s x 3600 = 16; the mean of game rates would be 14.
+  const icfRows: SkaterGameRow[] = [
+    {
+      ...gameRows[0],
+      individual_sat_for_per_60: 8,
+      toi_per_game_5v5: 600
+    },
+    {
+      ...gameRows[1],
+      individual_sat_for_per_60: 20,
+      toi_per_game_5v5: 1200
+    }
+  ];
+
+  it("pools individual attempts over matched 5v5 TOI and renders iCF/60 (5v5)", () => {
+    const rows = buildSkaterAdvancedMetricsRows(
+      icfRows,
+      weeklyAggregates,
+      "ownership"
+    );
+    expect(rows[0].individualCorsiForPer60At5v5).toBeCloseTo(16, 10);
+
+    const markup = renderToStaticMarkup(
+      React.createElement(SkaterAdvancedMetricsTable, { rows })
+    );
+    expect(markup).toContain("iCF/60 (5v5)");
+    expect(markup).toContain("<td>16.00</td>");
+    expect(markup).not.toContain(">CF/60");
+    expect(markup).not.toContain("IPP");
+    expect(markup).not.toContain("iXG/60");
+  });
+
+  it("shows iCF/60 as unknown when one game lacks 5v5 TOI", () => {
+    const rows = buildSkaterAdvancedMetricsRows(
+      [icfRows[0], { ...icfRows[1], toi_per_game_5v5: null }],
+      weeklyAggregates,
+      "ownership"
+    );
+    expect(rows[0].individualCorsiForPer60At5v5).toBeNull();
+  });
+
+  // W2-3 A3: two one-goal games, TOI 1,200 s and unknown. The rate over the
+  // full window is unknown; keeping both goals over 1,200 s gives 6 G/60.
+  it("leaves per-60 rates unknown when a game's TOI is unknown", () => {
+    const rows = buildSkaterAdvancedMetricsRows(
+      [
+        { ...gameRows[0], goals: 1, toi_per_game: 1200 },
+        { ...gameRows[1], goals: 1, toi_per_game: null }
+      ],
+      weeklyAggregates,
+      "ownership"
+    );
+    expect(rows[0].goalsPer60).toBeNull();
+    expect(rows[0].pointsPer60).toBeNull();
+
+    const markup = renderToStaticMarkup(
+      React.createElement(SkaterAdvancedMetricsTable, { rows })
+    );
+    expect(markup).not.toContain("<td>6.00</td>");
+  });
+
+  it("leaves a per-60 rate unknown when a game's count is unknown", () => {
+    const rows = buildSkaterAdvancedMetricsRows(
+      [
+        { ...gameRows[0], hits: 3 },
+        { ...gameRows[1], hits: null }
+      ],
+      weeklyAggregates,
+      "ownership"
+    );
+    expect(rows[0].hitsPer60).toBeNull();
   });
 });
 

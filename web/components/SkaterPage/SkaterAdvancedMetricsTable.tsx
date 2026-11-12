@@ -53,9 +53,13 @@ const columns: Column[] = [
   { key: "hitsPer60", label: "HIT/60", format: formatDefaultNumber },
   { key: "blocksPer60", label: "BLK/60", format: formatDefaultNumber },
   { key: "penaltyMinutesPer60", label: "PIM/60", format: formatDefaultNumber },
-  { key: "corsiForPer60", label: "CF/60", format: formatDefaultNumber },
-  { key: "individualPointPercentage", label: "IPP", format: formatPercent },
-  { key: "individualExpectedGoalsPer60", label: "iXG/60", format: formatDefaultNumber }
+  // Decision 73: individual attempts only, pooled over matched 5v5 TOI. IPP
+  // and ixG/60 stay hidden until a verified source is wired.
+  {
+    key: "individualCorsiForPer60At5v5",
+    label: "iCF/60 (5v5)",
+    format: formatDefaultNumber
+  }
 ];
 
 const compareValues = (

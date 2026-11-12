@@ -7,13 +7,17 @@ import GoalieList from "components/GoaliePage/GoalieList";
 import GoalieTable from "components/GoaliePage/GoalieTable";
 import GoalieLeaderboard from "components/GoaliePage/GoalieLeaderboard";
 import GoalieAdvancedMetricsTable from "components/GoaliePage/GoalieAdvancedMetricsTable";
-import { calculateGoalieRankings as calculateRichGoalieRankings } from "components/GoaliePage/goalieCalculations";
+import {
+  buildLeagueWeeklyAverage,
+  calculateGoalieRankings as calculateRichGoalieRankings,
+} from "components/GoaliePage/goalieCalculations";
 import { parseMinimumGamesPlayedInput } from "components/Variance/varianceFilters";
 import {
-  GOALIE_ADVANCED_METRICS_SELECT,
   GOALIE_ADVANCED_STRENGTH_OPTIONS,
+  GOALIE_VALUE_TIER_DEFAULT_MIN_STARTS,
   applyGoalieValueTiers,
   buildGoalieAdvancedMetricsRows,
+  fetchGoalieAdvancedMetricsRows,
 } from "components/GoaliePage/goalieMetrics";
 
 import styles from "styles/Goalies.module.scss";
@@ -207,75 +211,6 @@ const mapWeeklyApiRow = (row, weekRange, weekNumber, matchupSeason) => ({
   weekly_sa_per_60: null,
 });
 
-const buildLeagueWeeklyAverage = (rows, weekNumber, matchupSeason) => {
-  if (!rows.length) {
-    return null;
-  }
-
-  const totals = rows.reduce(
-    (acc, row) => {
-      acc.gamesPlayed += row.gamesPlayed ?? 0;
-      acc.gamesStarted += row.gamesStarted ?? 0;
-      acc.wins += row.wins ?? 0;
-      acc.losses += row.losses ?? 0;
-      acc.otLosses += row.otLosses ?? 0;
-      acc.saves += row.saves ?? 0;
-      acc.shotsAgainst += row.shotsAgainst ?? 0;
-      acc.goalsAgainst += row.goalsAgainst ?? 0;
-      acc.shutouts += row.shutouts ?? 0;
-      acc.timeOnIce += row.timeOnIce ?? 0;
-      return acc;
-    },
-    {
-      gamesPlayed: 0,
-      gamesStarted: 0,
-      wins: 0,
-      losses: 0,
-      otLosses: 0,
-      saves: 0,
-      shotsAgainst: 0,
-      goalsAgainst: 0,
-      shutouts: 0,
-      timeOnIce: 0,
-    },
-  );
-
-  const goalieCount = rows.length;
-
-  return {
-    matchup_season: matchupSeason,
-    week: weekNumber,
-    total_league_saves: totals.saves,
-    total_league_sa: totals.shotsAgainst,
-    total_league_ga: totals.goalsAgainst,
-    total_league_toi_seconds: totals.timeOnIce,
-    avg_league_weekly_gp:
-      goalieCount > 0 ? totals.gamesPlayed / goalieCount : 0,
-    avg_league_weekly_gs:
-      goalieCount > 0 ? totals.gamesStarted / goalieCount : 0,
-    avg_league_weekly_wins: goalieCount > 0 ? totals.wins / goalieCount : 0,
-    avg_league_weekly_losses: goalieCount > 0 ? totals.losses / goalieCount : 0,
-    avg_league_weekly_ot_losses:
-      goalieCount > 0 ? totals.otLosses / goalieCount : 0,
-    avg_league_weekly_saves: goalieCount > 0 ? totals.saves / goalieCount : 0,
-    avg_league_weekly_sa:
-      goalieCount > 0 ? totals.shotsAgainst / goalieCount : 0,
-    avg_league_weekly_ga:
-      goalieCount > 0 ? totals.goalsAgainst / goalieCount : 0,
-    avg_league_weekly_so: goalieCount > 0 ? totals.shutouts / goalieCount : 0,
-    avg_league_weekly_toi_seconds:
-      goalieCount > 0 ? totals.timeOnIce / goalieCount : 0,
-    avg_league_weekly_sv_pct:
-      totals.shotsAgainst > 0 ? totals.saves / totals.shotsAgainst : 0,
-    avg_league_weekly_gaa:
-      totals.timeOnIce > 0
-        ? (totals.goalsAgainst * 3600) / totals.timeOnIce
-        : 0,
-    avg_league_weekly_saves_per_60: 0,
-    avg_league_weekly_sa_per_60: 0,
-  };
-};
-
 const mapGameApiRow = (row) => ({
   goalie_id: row.playerId,
   goalie_name: row.goalieFullName,
@@ -351,6 +286,12 @@ const buildLeaderboardRankings = async (weekRanges, selectedStats) => {
   );
 };
 
+// The advanced-metrics window follows the leaderboard's applied weeks (PR-U1).
+const toAdvancedMetricsWindow = (start, end) => ({
+  startDate: format(new Date(start), "yyyy-MM-dd"),
+  endDate: format(new Date(end), "yyyy-MM-dd"),
+});
+
 const decorateGoalieRanking = (goalie) => ({
   ...goalie,
   eliteWeeks: goalie.weekCounts?.Elite ?? 0,
@@ -382,6 +323,7 @@ const leaderboardSortAccessors = {
   wowVariance: (goalie) => goalie.wowVariance ?? Number.POSITIVE_INFINITY,
   gogVariance: (goalie) => goalie.gogVariance ?? Number.POSITIVE_INFINITY,
   valueTierScore: (goalie) => goalie.valueTierScore ?? Number.NEGATIVE_INFINITY,
+  eligibleWeeks: (goalie) => goalie.eligibleWeeks ?? 0,
   averageFantasyPointsPerGame: (goalie) =>
     goalie.averageFantasyPointsPerGame ?? 0,
   fantasyPointsAboveAverage: (goalie) =>
@@ -521,6 +463,14 @@ const GoalieTrends = () => {
   const [minimumGamesPlayed, setMinimumGamesPlayed] = useState(0);
   const [minimumGamesPlayedInput, setMinimumGamesPlayedInput] = useState("0");
   const [minimumGamesPlayedError, setMinimumGamesPlayedError] = useState(null);
+  // Decision 98: visible, user-lowerable value-tier floor (starts).
+  const [valueTierMinimumStarts, setValueTierMinimumStarts] = useState(
+    GOALIE_VALUE_TIER_DEFAULT_MIN_STARTS,
+  );
+  const [valueTierMinimumStartsInput, setValueTierMinimumStartsInput] =
+    useState(String(GOALIE_VALUE_TIER_DEFAULT_MIN_STARTS));
+  const [valueTierMinimumStartsError, setValueTierMinimumStartsError] =
+    useState(null);
   const [metricsView, setMetricsView] = useState("standard");
   const [advancedGoalieMetrics, setAdvancedGoalieMetrics] = useState([]);
   const [advancedGoalieMetricsLoading, setAdvancedGoalieMetricsLoading] =
@@ -529,6 +479,7 @@ const GoalieTrends = () => {
     useState(null);
   const [varianceDisplayMode, setVarianceDisplayMode] = useState("raw");
   const [advancedMetricsStrength, setAdvancedMetricsStrength] = useState("all");
+  const [advancedMetricsWindow, setAdvancedMetricsWindow] = useState(null);
   const [leaderboardSortConfig, setLeaderboardSortConfig] = useState({
     key: "totalPoints",
     direction: "descending",
@@ -586,6 +537,12 @@ const GoalieTrends = () => {
         );
         setSelectedWeek(allWeeks[0]);
         setSelectedRange({ start: 0, end: allWeeks.length - 1 });
+        setAdvancedMetricsWindow(
+          toAdvancedMetricsWindow(
+            allWeeks[0].start,
+            allWeeks[allWeeks.length - 1].end,
+          ),
+        );
 
         const goalieRankings = await buildLeaderboardRankings(
           allWeeks.map((week, index) => ({ ...week, week: index + 1 })),
@@ -601,7 +558,7 @@ const GoalieTrends = () => {
   }, [selectedStats]); // Include selectedStats so rankings recompute if user changes stat set
 
   useEffect(() => {
-    if (!seasonId) {
+    if (!seasonId || !advancedMetricsWindow) {
       return;
     }
 
@@ -610,18 +567,15 @@ const GoalieTrends = () => {
       setAdvancedGoalieMetricsError(null);
 
       try {
-        // Advanced metrics use Supabase season rows only; leaderboard rankings
-        // still come from the NHL API game-log flow below.
-        const { data, error } = await supabase
-          .from("goalie_stats_unified")
-          .select(GOALIE_ADVANCED_METRICS_SELECT)
-          .eq("season_id", seasonId);
+        // Advanced metrics use Supabase rows for the same applied window as
+        // the leaderboard, paged; rankings come from the NHL API flow below.
+        const rows = await fetchGoalieAdvancedMetricsRows(
+          supabase,
+          seasonId,
+          advancedMetricsWindow,
+        );
 
-        if (error) {
-          throw error;
-        }
-
-        setAdvancedGoalieMetrics(buildGoalieAdvancedMetricsRows(data ?? []));
+        setAdvancedGoalieMetrics(buildGoalieAdvancedMetricsRows(rows));
       } catch (error) {
         console.error("Error fetching advanced goalie metrics:", error);
         setAdvancedGoalieMetrics([]);
@@ -632,7 +586,7 @@ const GoalieTrends = () => {
     };
 
     fetchAdvancedGoalieMetrics();
-  }, [seasonId]);
+  }, [advancedMetricsWindow, seasonId]);
 
   useEffect(() => {
     if (!fetchData || !selectedWeek) return;
@@ -728,6 +682,17 @@ const GoalieTrends = () => {
     setMinimumGamesPlayedError(parsed.error);
   };
 
+  const handleValueTierMinimumStartsChange = (event) => {
+    const nextValue = event.target.value;
+    setValueTierMinimumStartsInput(nextValue);
+    const parsed = parseMinimumGamesPlayedInput(
+      nextValue,
+      valueTierMinimumStarts,
+    );
+    setValueTierMinimumStarts(parsed.minimumGamesPlayed);
+    setValueTierMinimumStartsError(parsed.error);
+  };
+
   const handleStatChange = (event) => {
     const { value, checked } = event.target;
     setSelectedStats((prevSelectedStats) =>
@@ -771,6 +736,9 @@ const GoalieTrends = () => {
       );
 
       setGoalieRankings(goalieRankings.map(decorateGoalieRanking));
+      setAdvancedMetricsWindow(
+        toAdvancedMetricsWindow(activeWeek.start, activeWeek.end),
+      );
 
       if (targetView === "week") {
         setPendingWeeklyView("week");
@@ -804,6 +772,14 @@ const GoalieTrends = () => {
         selectedStats,
       );
       setGoalieRankings(goalieRankings.map(decorateGoalieRanking));
+      if (selectedWeeks.length) {
+        setAdvancedMetricsWindow(
+          toAdvancedMetricsWindow(
+            selectedWeeks[0].value.start,
+            selectedWeeks[selectedWeeks.length - 1].value.end,
+          ),
+        );
+      }
       setPendingWeeklyView(null);
       setView(targetView);
     } catch (error) {
@@ -849,8 +825,13 @@ const GoalieTrends = () => {
       applyGoalieValueTiers(
         thresholdFilteredGoalieRankings,
         advancedGoalieMetrics,
+        valueTierMinimumStarts,
       ),
-    [advancedGoalieMetrics, thresholdFilteredGoalieRankings],
+    [
+      advancedGoalieMetrics,
+      thresholdFilteredGoalieRankings,
+      valueTierMinimumStarts,
+    ],
   );
 
   const filteredGoalieRankings = useMemo(() => {
@@ -1112,6 +1093,38 @@ const GoalieTrends = () => {
               </div>
             </div>
 
+            <div className={styles.dropdownGroup}>
+              <label
+                className={styles.selectLabel}
+                htmlFor="goalies-value-tier-floor"
+              >
+                Value Tier Floor (GS)
+              </label>
+              <div className={styles.inputStack}>
+                <input
+                  id="goalies-value-tier-floor"
+                  className={styles.textInput}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={valueTierMinimumStartsInput}
+                  onChange={handleValueTierMinimumStartsChange}
+                  placeholder={String(GOALIE_VALUE_TIER_DEFAULT_MIN_STARTS)}
+                  aria-invalid={Boolean(valueTierMinimumStartsError)}
+                />
+                {valueTierMinimumStartsError ? (
+                  <p className={styles.fieldError}>
+                    {valueTierMinimumStartsError}
+                  </p>
+                ) : (
+                  <p className={styles.fieldHint}>
+                    Default {GOALIE_VALUE_TIER_DEFAULT_MIN_STARTS} starts.
+                    Goalies below it show insufficient sample.
+                  </p>
+                )}
+              </div>
+            </div>
+
             <div className={styles.checkboxContainer}>
               {statColumns.map((stat) => (
                 <div key={stat.value} className={styles.checkboxItem}>
@@ -1268,7 +1281,8 @@ const GoalieTrends = () => {
                   </p>
                 ) : advancedGoalieMetrics.length === 0 ? (
                   <p className={styles.standoutNote}>
-                    No advanced goalie metrics available for the current season.
+                    No advanced goalie metrics available for the selected
+                    window.
                   </p>
                 ) : filteredAdvancedGoalieMetrics.length > 0 ? (
                   <>

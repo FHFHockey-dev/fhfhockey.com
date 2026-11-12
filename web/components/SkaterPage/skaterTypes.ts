@@ -78,9 +78,7 @@ export interface SkaterGameRow {
   penalty_minutes?: number | null;
   toi_per_game?: number | null;
   individual_sat_for_per_60?: number | null;
-  nst_ipp?: number | null;
-  nst_ixg_per_60?: number | null;
-  nst_oi_cf_per_60?: number | null;
+  toi_per_game_5v5?: number | null;
 }
 
 export interface YahooOwnershipTimelineEntry {
@@ -224,7 +222,6 @@ export interface SkaterAdvancedMetricsRow {
   hitsPer60: number | null;
   blocksPer60: number | null;
   penaltyMinutesPer60: number | null;
-  corsiForPer60: number | null;
-  individualPointPercentage: number | null;
-  individualExpectedGoalsPer60: number | null;
+  /** Pooled 5v5 individual attempts / pooled 5v5 seconds (decision 73). IPP and ixG/60 stay hidden until a verified source is wired. */
+  individualCorsiForPer60At5v5: number | null;
 }
