@@ -1,6 +1,6 @@
 {
   "owner": "Claude orchestrator",
-  "as_of_utc": "2026-10-31T18:21:44Z",
+  "as_of_utc": "2026-11-12T14:44:58Z",
   "base_head": "2f2b432306b048f16bf48c2e274f21e55a7514d4",
   "status": "Claude lanes reclaimed per TJ 2026-10-25T16:24Z",
   "shared_resources": {
@@ -3389,6 +3389,199 @@
         "dev server on :3000/:3105"
       ],
       "status": "active"
+    },
+    {
+      "lane": "FIX-SPRINT-2026-11-11",
+      "owner": "Claude fix-sprint Chef (math-audit fix sprint; lanes L1-L22, L4a/L4b, L9a/L9b/L9c)",
+      "scope": "All paths owned or granted in tasks/artifacts/calculation-inventory-2026-11-10/master/FIX-LANES.md and fix-lanes/*.md",
+      "authority": "TJ /orchestrator fix-sprint prompt 2026-11-11; lease release requested by TJ 2026-11-12",
+      "opened": "2026-11-11",
+      "status": "RELEASED 2026-11-12T14:44:58Z: all lanes closed and verified, gate clean at 496b5c9de, migrations 125-136 and 138-140 applied and recorded; exact released paths in tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/fix-sprint/CLAUDE-FIX-SPRINT-LEASE-RELEASE-20261112.md; retained paths in FIX-SPRINT-2026-11-11-RETAINED",
+      "receipt": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/fix-sprint/CLAUDE-FIX-SPRINT-LEASE-RELEASE-20261112.md"
+    },
+    {
+      "lane": "FIX-SPRINT-2026-11-11-RETAINED",
+      "owner": "Claude fix-sprint Chef",
+      "scope": "Unfinished sprint work: debrief and Astra prompt; migration 141 apply decision and authority bookkeeping; LEDGER_BASIS_SCHEMA_ENABLED flip; release of PR #430 (branch chef/fix-sprint-release-20261112 at 27edf8381), smoke and octoberBranch sync",
+      "authority": "TJ 2026-11-12 (keep leases needed for unfinished work, pending decisions or active operations)",
+      "opened": "2026-11-12T14:44:58Z",
+      "status": "active 2026-11-12T14:44:58Z",
+      "write_paths": [
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/FIX-LANES.md",
+          "baseline_sha256": "5e5f6d6a918a14958548ae7f4b10e80ec45ec625a1e74389902a8455905180c5"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/OWNER-DECISIONS.md",
+          "baseline_sha256": "45ab385af9acf883be9807a1d9e78db441b3e31ecc2fcd668e620ad962601e6e"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/FIX-SPRINT-DEBRIEF.md",
+          "baseline_sha256": null
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/ASTRA-SPRINT-AUDIT-PROMPT.md",
+          "baseline_sha256": null
+        },
+        {
+          "path": "supabase/migrations/20261112130000_goalie_totals_unified_regular_season.sql",
+          "baseline_sha256": "733f9077d2f67991862f6e8c5a4bb83374f877c5be5dd745d5914a4c88c458c8"
+        },
+        {
+          "path": "supabase/tests/l4a_goalie_totals.py",
+          "baseline_sha256": "20a1c52e4fea25b38f308d4094f01982a01e8318ab53c09e5951b9dd02e17f01"
+        },
+        {
+          "path": "supabase/tests/l4a_goalie_totals_regular_season_rollback.sql",
+          "baseline_sha256": "72a5cca58a4dba151d2626fda7ce75d504940b67c2ef008e6a1cf35796d80c54"
+        },
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/migration-authority.json",
+          "baseline_sha256": "13a3db0fa25a961a4beb291b29def458c4a1e31519d48ea287489a6d0e5a2d77"
+        },
+        {
+          "path": "web/lib/supabase/supportedBaselineMigration.test.ts",
+          "baseline_sha256": "1c956c2c358254ada28525cb99c3c43945ef0d997045f094954ca8dc0921fc7d"
+        },
+        {
+          "path": "tasks/TASKS/super-goal/super-goal-final-summary.md",
+          "baseline_sha256": "715a61db555b82aa6120fcbcd790892a7df37e2dc3854b80efdba0e698026758"
+        },
+        {
+          "path": "web/lib/player-forecasts/servedForecastLedger.ts",
+          "baseline_sha256": "9afe339fe32947807ac8ebf8ce90d48afc3399b1b0b876fc813702e1c542cbb1"
+        },
+        {
+          "path": "web/lib/player-forecasts/servedForecastLedger.test.ts",
+          "baseline_sha256": "c651d72eb9fc27e5e8c356bf12729b1caf47121ae4c0d5ec19c0d741ba08f0a6"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L1.md",
+          "baseline_sha256": "309891cc7bbdd128b0c9d994022aa39a3058256eb7eb0d480ff389b4013f1fa8"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L10.md",
+          "baseline_sha256": "8cedbfef43a8145881cdd8dd0c3f90592bb990d5c44350a7085abab5fb31dbf1"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L11.md",
+          "baseline_sha256": "35fa45d3cbd6d22e59ba07a77f605d55e18b25b145d836ec6f60ddebc343e1d4"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L12.md",
+          "baseline_sha256": "a28cc327bc107ffa943f504051802566cf7557142d401e5332620c5159462556"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L13.md",
+          "baseline_sha256": "620a96f5304b01ae3b0b459555ae876ae9119c5641e2100bd7e3611a52c7c9d3"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L14.md",
+          "baseline_sha256": "774324abb0b97b39a40e9874efb055c8b4a92889436b25d44c9ba8baf237c3c1"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L15.md",
+          "baseline_sha256": "2d483e216ddd2e25b69c88af316ae8b13242d7d18cb062c93706be9c7c221390"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L16.md",
+          "baseline_sha256": "667d255507315f43441122635c4d555ac1fa097e98fb68d292068e9cdb63f023"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L17.md",
+          "baseline_sha256": "2337ddeec66efd64b2675231b29a4193ff5c3b5e28f51c02b120383cd86629d0"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L18.md",
+          "baseline_sha256": "be34bd53a128545ec456dde51cb4c6febb6d956e8b26430ef55499dcc16d3f23"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L19.md",
+          "baseline_sha256": "633a8c7d9bfa70e3f1e9598bbe25b88546312d84dd787e2f5851fef782454a50"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L2.md",
+          "baseline_sha256": "a496472b72fab7557e6afa8a69ec06996bd5a5d7f25b28158a97666b9850c94b"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L20.md",
+          "baseline_sha256": "0aaf92c8d24a089f57ffe4c99ed0888efbc7c3bb6321b50c20f4273f23627856"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L21.md",
+          "baseline_sha256": "9eb69581c15e6c4298513084ccad22234e37931fbe60fb3cfdbf117d8777d72b"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L22.md",
+          "baseline_sha256": "2e651e9dc86eec036ace1421efd93ba06e8606364c932186441e9630e36c54e5"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L3.md",
+          "baseline_sha256": "70364a3d111892a22972fb2346f03589f8a34fb3aaea153289e220106c39afb3"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L4a.md",
+          "baseline_sha256": "720117f3ec882be1fc018fa7382216b45fa4feabbd46f9c7b1f50ebae4d5ca4d"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L4b.md",
+          "baseline_sha256": "8f314fa492c92be8b2366f14ee3dbbb0db957ca549a33012fd52605507b231d1"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L5.md",
+          "baseline_sha256": "7f9c902a0ca8575bad333f392ff0aa29a0ea8c13f09d2feb4ad629c55f571010"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L6.md",
+          "baseline_sha256": "f6b394f5c9aa4dd0c604087edd09618d2edada5d7018d0267d408b1b771380d1"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L7.md",
+          "baseline_sha256": "e52eac693cbc2bfa38a70025ea2e39215f920708194ad4093a1ff9da82613c73"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L8.md",
+          "baseline_sha256": "246d835552c6f522b20336be32dfde04249d1bf0c9d284854c20aefdcc7cfd8a"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L9a.md",
+          "baseline_sha256": "b02ef8fb07ce21b100cd91b7d339b862ce343a8f3f6b3b7392d1b9f9195a0930"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L9b.md",
+          "baseline_sha256": "9f4a8f4e6f5bf0d89154495be6036ded4aad6eb493f76d5d7ea37c1d34564be7"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/L9c.md",
+          "baseline_sha256": "635ceca08cbe875ae0dd9aca2e5c00549ee6213ddb03de417d58cf9da7d2de6a"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/_COMMON.md",
+          "baseline_sha256": "1880011fcd8c642c6728f3715a595ab1a92a4db2cae66bb68c5b887c8daad558"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/handoff/L18-crease-shift-contract.md",
+          "baseline_sha256": "91cb2b15d47709c84428792af96596e090600f645d450d5adfbe028733bc811e"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/handoff/L9b-goalie-candidates-contract.md",
+          "baseline_sha256": "e8090c4f8f1a0b9a560fafc071e46144f634b4d99af84110be8a4d7d15b15fc6"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/handoff/L9b-starter-refit-plan.md",
+          "baseline_sha256": "5ed40019793871d6bdf9a128b6316fbaa558ee3b940e9a7931d9b8b61d9b34bd"
+        },
+        {
+          "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/fix-lanes/handoff/L9c-coverage-row-contract.md",
+          "baseline_sha256": "6ffc7aae01d1dff17d9cca6e51a224681ae859ffaf45fef6569fc7808a8b08b1"
+        }
+      ],
+      "resources": [
+        "git ref refs/heads/chef/fix-sprint-release-20261112 (27edf83810bb78798125e5fce8d34dd145b3d4dc)",
+        "PR #430 merge to master",
+        "octoberBranch post-release sync"
+      ],
+      "receipt": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/fix-sprint/CLAUDE-FIX-SPRINT-LEASE-RELEASE-20261112.md"
     }
   ],
   "held_or_blocked": [],

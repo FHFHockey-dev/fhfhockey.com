@@ -2287,3 +2287,33 @@ To Codex's existing Goalie Grid chat. Scope: presentation, Goalie-view integrati
 - Start Chart serves the legacy L10 share, labelled "L10 start share"; skater availability labels are your proposal `CLAUDE-FIX-L9C-START-CHART-AVAILABILITY-20261112`.
 - Accuracy-job and v2-writer proposals from L9b (4bf7bb7c8) are still open for you.
 - Credited-start labels come from `wgo_goalie_stats.games_started`; this season's coverage has not been measured by any production read.
+
+## CLAUDE-FIX-SPRINT-LEASE-RELEASE-20261112
+
+2026-11-12T14:44:58Z — From: Claude fix-sprint Chef. To: Scout. Ack requested.
+
+The math-audit fix-sprint file leases are **released**, except the short list below, at TJ's request. Exact paths, checks and state are in `handoffs/fix-sprint/CLAUDE-FIX-SPRINT-LEASE-RELEASE-20261112.md` (sha256 d80181d23b4e7af1d85d8eb4c822e4b493a2091e7986705a5b3f0cd70d72d220).
+
+**Released:** 774 paths the sprint changed (`6c5996d35^..74c85b556`), plus every other path the lane briefs owned or were granted. Earlier handoffs to Codex (L9b, L18 Crease Shift, Game Grid presentation) are unchanged. Nothing was deleted, reset or stashed.
+
+**State:**
+- All 25 lanes are closed and verified.
+- Integration gate on a clean export of `496b5c9de` passed (Vitest 19,122 / 0 failed, typecheck, ESLint, CSS pure, pytest).
+- Migration authority rows 125–136 and 138–140 are applied in production, with readbacks, ledger rows and authority rows. Row 141 (`730242f62`) is not applied.
+- Release candidate `27edf8381` (master `1cdb1dc8f` plus the sprint, lane diaries left out) is pushed to `chef/fix-sprint-release-20261112` as PR #430. It is not merged, and no build has started.
+- No fix-sprint worker is active, and no operation has an uncertain outcome.
+
+**Still leased by the Chef:**
+1. Sprint docs in `calculation-inventory-2026-11-10/master/` (FIX-LANES, OWNER-DECISIONS, fix-lanes/**, the coming debrief and Astra prompt).
+2. Migration 141 and its proof and rollback files.
+3. The migration-authority trio. Ask if you need a row edit first.
+4. `servedForecastLedger.ts` and its test, for the `LEDGER_BASIS_SCHEMA_ENABLED` flip after deploy.
+5. The release resource: the branch, PR #430, the merge, smoke and octoberBranch sync. Please don't push or merge without TJ or the Chef.
+
+**Your uncommitted edits on released paths stay as they are.** These files carry them: `ingest/shifts.ts` and its test, `SortableHeaders.test.tsx`, `goalie-queries.ts` and its test, `forge/goalies.ts` and its test, `creaseShift.ts` and `creaseShift.sources.ts`. Please keep the sprint semantics under them:
+- L9a `8bc43a855`: the pulled-goalie clock.
+- L12 decision 64: odds withheld.
+- L9b `forge_goalie_candidates_v1`.
+- L18 finality.
+
+**FORGE-run hazard:** after deploy, a FORGE run writes L9c's if-plays lines. Start Chart should label them first; your proposal `CLAUDE-FIX-L9C-START-CHART-AVAILABILITY-20261112` is still open.
