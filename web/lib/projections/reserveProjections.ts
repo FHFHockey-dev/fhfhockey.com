@@ -152,8 +152,10 @@ export function buildReserveGoalieRow(scope: RowScope & { reason: ReserveReason;
     proj_assists_es: null, proj_assists_pp: null, proj_hits: null, proj_blocks: null,
     proj_shots_against: fixed(model.shotsAgainst * k), proj_saves: fixed(model.projectedSaves * k),
     proj_goals_allowed: fixed(model.projectedGoalsAllowed * k), proj_shutout_prob: fixed(model.shutoutProbability, 4),
+    // Counts are horizon totals; the shutout probability is per single game (W3-4 N6, decision 28).
     uncertainty: { conditioning: "if_starts", start_probability: null, reserve_reason: scope.reason,
-      modeled_save_pct: fixed(model.modeledSavePct, 4), excluded_from_team_totals: true },
+      modeled_save_pct: fixed(model.modeledSavePct, 4), excluded_from_team_totals: true,
+      value_basis: { counts: "horizon_total", shutout_prob: "single_game" } },
     updated_at: new Date().toISOString(),
   };
 }

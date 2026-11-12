@@ -129,6 +129,8 @@ export type StartChartPlayer = {
   proj_toi_minutes: number | null;
   matchup_grade: number | null;
   start_probability: number | null;
+  /** What start_probability measures (W1 P0 #17); "l10_start_share" is not a calibrated probability. */
+  start_probability_basis?: StartChartGoalieStartBasis;
   projected_gsaa: number | null;
   confirmed_status: boolean | null;
   games_remaining_week: number | null;
@@ -136,10 +138,23 @@ export type StartChartPlayer = {
   context: StartChartPlayerContext;
 };
 
+/**
+ * The legacy goalie source serves each goalie's share of his team's last 10 credited starts. It is not a
+ * calibrated start probability: it ignores back-to-backs and confirmations (W1 P0 #17).
+ */
+export type StartChartGoalieStartBasis = "l10_start_share" | "forge_starter_board";
+
+export function goalieStartLabel(basis: StartChartGoalieStartBasis | undefined): { short: string; title: string } {
+  return basis === "l10_start_share"
+    ? { short: "L10 start share", title: "Share of the team's last 10 starts. Not a start probability: it ignores back-to-backs and confirmations." }
+    : { short: "Projected", title: "Goalie start probability" };
+}
+
 export type StartChartGoalie = {
   player_id: number;
   name: string;
   start_probability: number | null;
+  start_probability_basis?: StartChartGoalieStartBasis;
   projected_gsaa_per_60: number | null;
   confirmed_status: boolean | null;
   source_updated_at: string | null;
@@ -178,6 +193,7 @@ export type StartChartResponse = {
   newsStatus?: { available: boolean; pendingGames: number; freshnessBreachedGames: number; unresolvedConflicts: number; oldestAcceptedAt: string | null };
   scoringProfile?: BoardScoringRequest & { id: string };
   contractVersion?: 1 | 2;
+  goalieStartBasis?: StartChartGoalieStartBasis;
   publishedForecastsEnabled?: boolean;
   forecastAdmission?: {
     exclusionCounts: Record<string, number>;
@@ -523,6 +539,8 @@ export function startChartFromGameExpectations(response: GameExpectationsRespons
 
 export function normalizeStartChartResponse(payload: unknown): StartChartResponse {
   const root = asRecord(payload);
+  const goalieStartBasis: StartChartGoalieStartBasis | undefined =
+    root.goalieStartBasis === "l10_start_share" || root.goalieStartBasis === "forge_starter_board" ? root.goalieStartBasis : undefined;
   const resolvedDate =
     stringOrNull(root.resolvedDate) ??
     stringOrNull(root.dateUsed) ??
@@ -582,6 +600,7 @@ export function normalizeStartChartResponse(payload: unknown): StartChartRespons
           proj_toi_minutes: finiteOrNull(row.proj_toi_minutes),
           matchup_grade: finiteOrNull(row.matchup_grade),
           start_probability: finiteOrNull(row.start_probability),
+          ...(goalieStartBasis ? { start_probability_basis: goalieStartBasis } : {}),
           projected_gsaa: finiteOrNull(row.projected_gsaa),
           confirmed_status:
             typeof row.confirmed_status === "boolean" ? row.confirmed_status : null,
@@ -604,6 +623,7 @@ export function normalizeStartChartResponse(payload: unknown): StartChartRespons
           player_id: playerId,
           name: stringOrNull(row.name) ?? `Goalie ${playerId}`,
           start_probability: finiteOrNull(row.start_probability),
+          ...(goalieStartBasis ? { start_probability_basis: goalieStartBasis } : {}),
           projected_gsaa_per_60: finiteOrNull(row.projected_gsaa_per_60),
           confirmed_status:
             typeof row.confirmed_status === "boolean" ? row.confirmed_status : null,
@@ -672,6 +692,7 @@ export function normalizeStartChartResponse(payload: unknown): StartChartRespons
     validation: normalizeBoardValidationDisclosure(root.validation),
     dateUsed: resolvedDate,
     contractVersion: root.contractVersion === 2 ? 2 : 1,
+    ...(goalieStartBasis ? { goalieStartBasis } : {}),
     publishedForecastsEnabled: typeof root.publishedForecastsEnabled === "boolean" ? root.publishedForecastsEnabled : undefined,
     forecastAdmission: normalizeForecastAdmission(root.forecastAdmission),
     newsStatus: root.newsStatus ? { available: root.newsStatus.available === true,

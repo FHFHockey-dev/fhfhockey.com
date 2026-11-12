@@ -12,6 +12,7 @@ import {
   dateSchema,
   getQueryStringParam,
 } from "lib/projections/apiHelpers";
+import { readGoalieCandidatesContract } from "lib/projections/goalie/goalieCandidates";
 import { loadExternalInputProof, requireExternalInputProvenRun, requireLatestExternalInputProvenRun, runProofDiagnostics,
   type ExternalInputProof } from "lib/projections/externalInputProof";
 
@@ -146,72 +147,6 @@ function mostCommonValue<T extends string | number>(values: T[]): T | null {
 function parseFiniteNumber(value: unknown): number | null {
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
-}
-
-function normalizeLikelyStarterWinProbabilities<
-  T extends {
-    team_id: number;
-    opponent_team_id: number;
-    starter_probability: number | null;
-    proj_win_prob: number | null;
-  },
->(rows: T[]): { rows: T[]; adjustedMatchups: number } {
-  const normalizedRows = rows.map((row) => ({ ...row }));
-  const matchupIndexMap = new Map<string, number[]>();
-
-  normalizedRows.forEach((row, idx) => {
-    const teams = [row.team_id, row.opponent_team_id].sort((a, b) => a - b);
-    const key = `${teams[0]}__${teams[1]}`;
-    const existing = matchupIndexMap.get(key) ?? [];
-    existing.push(idx);
-    matchupIndexMap.set(key, existing);
-  });
-
-  let adjustedMatchups = 0;
-  for (const indices of matchupIndexMap.values()) {
-    if (indices.length < 2) continue;
-    // A null win probability is unknown (missing team goals); never invent one
-    // from starter weights or rescale a known opponent against it.
-    if (indices.some((idx) => normalizedRows[idx].proj_win_prob == null)) continue;
-    const positiveMass = indices.reduce(
-      (sum, idx) =>
-        sum + Math.max(0, Number(normalizedRows[idx].proj_win_prob ?? 0)),
-      0,
-    );
-    const starterMass = indices.reduce(
-      (sum, idx) =>
-        sum + Math.max(0, Number(normalizedRows[idx].starter_probability ?? 0)),
-      0,
-    );
-    const denominator =
-      positiveMass > 0 ? positiveMass : starterMass > 0 ? starterMass : 0;
-    if (denominator <= 0) {
-      const equalProb = 1 / indices.length;
-      indices.forEach((idx) => {
-        normalizedRows[idx].proj_win_prob = Number(equalProb.toFixed(4));
-      });
-      adjustedMatchups += 1;
-      continue;
-    }
-
-    let running = 0;
-    indices.forEach((idx, listIdx) => {
-      const sourceValue =
-        positiveMass > 0
-          ? Math.max(0, Number(normalizedRows[idx].proj_win_prob ?? 0))
-          : Math.max(0, Number(normalizedRows[idx].starter_probability ?? 0));
-      const normalized =
-        listIdx === indices.length - 1
-          ? Math.max(0, 1 - running)
-          : Math.max(0, sourceValue / denominator);
-      const rounded = Number(normalized.toFixed(4));
-      running += rounded;
-      normalizedRows[idx].proj_win_prob = rounded;
-    });
-    adjustedMatchups += 1;
-  }
-
-  return { rows: normalizedRows, adjustedMatchups };
 }
 
 async function fetchGoalieCalibrationHints(
@@ -441,36 +376,93 @@ export default async function handler(
       throw err;
     }
 
-    const rawRows = data.map((row: any) => {
+    // One row per candidate goalie (decision 25): his own line if he starts, his start probability and
+    // the unconditional product. The team win % is its own field, never a goalie's Win, and no row is
+    // rescaled against another. Runs that predate the per-candidate contract serve the stored team slot,
+    // labelled, with its slot "win" withheld (it was never the named goalie's own Win).
+    const contracts = data.map((row: any) => readGoalieCandidatesContract(row.uncertainty));
+    const candidateIds = [...new Set(contracts.flatMap((contract) => contract?.rows.map((r) => r.goalie_id) ?? []))];
+    const nameById = new Map<number, string | null>(data.map((row: any) => [row.goalie_id, row.players?.fullName ?? null]));
+    const missingNames = candidateIds.filter((id) => !nameById.get(id));
+    if (missingNames.length > 0) {
+      const { data: players, error } = await supabase.from("players").select("id,fullName").in("id", missingNames);
+      if (error) throw error;
+      for (const player of (players ?? []) as Array<{ id: number; fullName: string | null }>) nameById.set(player.id, player.fullName ?? null);
+    }
+    let legacySlotRows = 0;
+    const rows = data.flatMap((row: any, index: number): Array<Record<string, any>> => {
       const model = extractModel(row.uncertainty);
-      return {
-        goalie_id: row.goalie_id,
-        goalie_name: row.players?.fullName ?? `Goalie ${row.goalie_id}`,
+      const shared = {
         team_id: row.team_id,
         team_name: row.teams?.name ?? "",
         team_abbreviation: row.teams?.abbreviation ?? "",
         opponent_team_id: row.opponent_team_id,
         opponent_team_name: row.opponent?.name ?? "",
         opponent_team_abbreviation: row.opponent?.abbreviation ?? "",
-        // Unknown stays unknown (Astra F4): a missing starter chance or line is null, never a projected zero.
-        starter_probability: row.starter_probability ?? null,
-        proj_shots_against: row.proj_shots_against ?? null,
-        proj_saves: row.proj_saves ?? null,
-        proj_goals_allowed: row.proj_goals_allowed ?? null,
-        proj_win_prob: row.proj_win_prob ?? null,
-        proj_shutout_prob: row.proj_shutout_prob ?? null,
-        modeled_save_pct: model.save_pct ?? null,
-        volatility_index: model.volatility_index ?? null,
-        blowup_risk: model.blowup_risk ?? null,
-        confidence_tier: model.confidence_tier ?? null,
-        quality_tier: model.quality_tier ?? null,
-        reliability_tier: model.reliability_tier ?? null,
-        recommendation: model.recommendation ?? null,
         uncertainty: row.uncertainty,
       };
+      const contract = contracts[index];
+      if (!contract) {
+        legacySlotRows += 1;
+        const teamWin = parseFiniteNumber(row.uncertainty?.win_populations?.team?.win_probability);
+        return [{
+          ...shared,
+          goalie_id: row.goalie_id,
+          goalie_name: row.players?.fullName ?? `Goalie ${row.goalie_id}`,
+          row_basis: "team_goalie_slot_legacy" as const,
+          conditioning: "team_slot_mixture" as const,
+          is_projected_starter: true,
+          // Unknown stays unknown (Astra F4): a missing starter chance or line is null, never a projected zero.
+          starter_probability: row.starter_probability ?? null,
+          start_probability_status: null,
+          proj_shots_against: row.proj_shots_against ?? null,
+          proj_saves: row.proj_saves ?? null,
+          proj_goals_allowed: row.proj_goals_allowed ?? null,
+          proj_win_prob: null,
+          team_win_prob: teamWin,
+          // Older multi-game rows multiplied the shutout probability by the horizon (decision 28).
+          proj_shutout_prob: q.horizon === 1 ? row.proj_shutout_prob ?? null : null,
+          unconditional: null,
+          relief_basis: null,
+          modeled_save_pct: model.save_pct ?? null,
+          volatility_index: model.volatility_index ?? null,
+          blowup_risk: model.blowup_risk ?? null,
+          confidence_tier: model.confidence_tier ?? null,
+          quality_tier: model.quality_tier ?? null,
+          reliability_tier: model.reliability_tier ?? null,
+          recommendation: model.recommendation ?? null,
+        }];
+      }
+      return contract.rows.map((candidate) => {
+        // The stored model tiers describe the projected starter's own evidence only.
+        const isSelected = candidate.goalie_id === row.goalie_id;
+        return {
+          ...shared,
+          goalie_id: candidate.goalie_id,
+          goalie_name: nameById.get(candidate.goalie_id) ?? `Goalie ${candidate.goalie_id}`,
+          row_basis: "candidate_goalie_game" as const,
+          conditioning: "if_starts" as const,
+          is_projected_starter: candidate.rank === 1,
+          starter_probability: candidate.start_probability,
+          start_probability_status: candidate.start_probability_status,
+          proj_shots_against: candidate.if_starts.shots_against,
+          proj_saves: candidate.if_starts.saves,
+          proj_goals_allowed: candidate.if_starts.goals_allowed,
+          proj_win_prob: candidate.if_starts.credited_win_prob,
+          team_win_prob: contract.team_win_probability,
+          proj_shutout_prob: candidate.if_starts.shutout_prob,
+          unconditional: candidate.unconditional,
+          relief_basis: contract.relief_basis,
+          modeled_save_pct: candidate.if_starts.modeled_save_pct,
+          volatility_index: isSelected ? model.volatility_index ?? null : null,
+          blowup_risk: null,
+          confidence_tier: isSelected ? model.confidence_tier ?? null : null,
+          quality_tier: isSelected ? model.quality_tier ?? null : null,
+          reliability_tier: isSelected ? model.reliability_tier ?? null : null,
+          recommendation: null,
+        };
+      });
     });
-    const normalizationResult = normalizeLikelyStarterWinProbabilities(rawRows);
-    const rows = normalizationResult.rows;
     const scenarioMeta = rows.map((row) =>
       extractScenarioMetadata(row.uncertainty),
     );
@@ -542,9 +534,9 @@ export default async function handler(
         "No goalie calibration hints available for the resolved projection date.",
       );
     }
-    if (normalizationResult.adjustedMatchups > 0) {
+    if (legacySlotRows > 0) {
       notes.push(
-        `Normalized likely-starter win probabilities across ${normalizationResult.adjustedMatchups} matchup(s) to total 100%.`,
+        `${legacySlotRows} row(s) predate per-candidate goalie rows: each is the team's goalie slot under the projected starter, with its win withheld.`,
       );
     }
     const serving = buildResolvedDataServingContract({

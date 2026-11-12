@@ -274,8 +274,8 @@ export default function GoalieRiskCard({
 
                     <div className={styles.goalieSpotlightMetrics}>
                       <span>Starter <strong>{formatPercent(row.starter_probability)}</strong></span>
-                      <span>Win <strong>{formatPercent(row.proj_win_prob)}</strong></span>
-                      <span>Shutout <strong>{formatPercent(row.proj_shutout_prob, 1)}</strong></span>
+                      <span title="His own credited win if he starts (not the team's win chance)">Win if starts <strong>{formatPercent(row.proj_win_prob)}</strong></span>
+                      <span>Shutout if starts <strong>{formatPercent(row.proj_shutout_prob, 1)}</strong></span>
                       <span>Save% <strong>{formatPercent(row.modeled_save_pct, 1)}</strong></span>
                     </div>
 
@@ -301,8 +301,8 @@ export default function GoalieRiskCard({
                   <th scope="col">Goalie</th>
                   <th scope="col">Matchup</th>
                   <th scope="col">Start</th>
-                  <th scope="col">Win</th>
-                  <th scope="col">Shutout</th>
+                  <th scope="col" title="His own credited win if he starts (not the team's win chance)">Win if starts</th>
+                  <th scope="col">Shutout if starts</th>
                   <th scope="col">Stability</th>
                   <th scope="col">Blow-up</th>
                   <th scope="col">Call</th>

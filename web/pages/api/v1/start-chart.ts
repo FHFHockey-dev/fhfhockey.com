@@ -2181,6 +2181,8 @@ export default async function handler(
           : null,
         skaterSource: "forge_player_projections",
         goalieSource: starterBoardFlags().serving ? "forge_goalie_projections" : "goalie_start_projections",
+        // The legacy source's "start probability" is each goalie's L10 start share (W1 P0 #17).
+        goalieStartBasis: revisionMode ? "forge_starter_board" : "l10_start_share",
         legacyPlayerProjectionsUsed: false,
         fantasyScoringContract: START_CHART_FANTASY_SCORING_CONTRACT,
         rankingContract: defaultBoard?.rankingContract ?? START_CHART_RANKING_CONTRACT,

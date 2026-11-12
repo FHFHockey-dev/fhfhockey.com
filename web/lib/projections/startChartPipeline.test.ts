@@ -11,7 +11,7 @@ import { capturedGoalieStarts, projectionWritesHash } from "./gameRevisions";
 import { applyDailyBoardEvidence, loadDailyBoardEvidence, resolveDailyBoardEvidence, type BoardAssertion, type DailyBoardEvidence, type BoardConflict, type BoardLineupEvidence } from "./dailyBoardEvidence";
 import { roleTagFromRosterEvent, allocatePpToiByTeamOpportunity } from "./stages/skater-stage";
 import { attachPreviousBoardForecast, boardGoalieForecast, boardSkaterForecast, integrateBoardParticipation, parseBoardScoringRequest, scoreBoardStats, scoreStarterBoardPayload, skaterParticipationFromEvidence } from "./starterBoardScoring";
-import { normalizeStartChartResponse } from "./startChartContract";
+import { goalieStartLabel, normalizeStartChartResponse } from "./startChartContract";
 import { claimStarterBoardJobs, computeStarterBoardJob, dispatchStarterBoardJobs, drainStarterBoardQueue, STARTER_BOARD_LATENCY } from "./starterBoardQueue";
 import { starterBoardCanaryGameIds, starterBoardFlags, starterBoardScopeAllowed } from "./starterBoardFlags";
 import { exportFrozenBoardForecasts, readFrozenBoardSource, type FrozenBoardSource } from "./starterBoardDataset";
@@ -1007,5 +1007,18 @@ describe("Starter Board dispatch budget", () => {
       expect(rpc).toHaveBeenCalledWith("finish_starter_board_job", expect.objectContaining({ p_game_id: 1, p_error: "Game lookup timed out" }));
       expect(vi.getTimerCount()).toBe(0);
     } finally { run.mockRestore(); vi.useRealTimers(); vi.unstubAllEnvs(); }
+  });
+});
+
+describe("Start Chart goalie start basis (W1 P0 #17)", () => {
+  it("carries the legacy L10 start-share basis onto every goalie row and labels it", () => {
+    const board = normalizeStartChartResponse({ date: "2026-10-15", goalieStartBasis: "l10_start_share",
+      players: [{ player_id: 9, name: "G", positions: ["G"], start_probability: 0.7 }],
+      games: [{ id: 1, date: "2026-10-15", homeTeamId: 1, awayTeamId: 2, homeGoalies: [{ player_id: 9, name: "G", start_probability: 0.7 }], awayGoalies: [] }] });
+    expect(board.goalieStartBasis).toBe("l10_start_share");
+    expect(board.players[0].start_probability_basis).toBe("l10_start_share");
+    expect(board.games[0].homeGoalies[0].start_probability_basis).toBe("l10_start_share");
+    expect(goalieStartLabel(board.players[0].start_probability_basis).short).toBe("L10 start share");
+    expect(normalizeStartChartResponse({ date: "2026-10-15" }).goalieStartBasis).toBeUndefined();
   });
 });

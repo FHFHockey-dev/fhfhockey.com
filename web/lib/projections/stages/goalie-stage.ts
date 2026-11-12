@@ -18,6 +18,7 @@ import {
   teamWinProbability,
 } from "../goalie/goalieOutcomes";
 import { getSeasonLeagueSavePct, type SeasonLeagueSavePctCache } from "../goalie/leagueSavePct";
+import { buildGoalieCandidatesContract } from "../goalie/goalieCandidates";
 import {
   augmentStarterModelMetaWithScenarioProjections,
   buildGoalieUncertaintyWithModel,
@@ -64,6 +65,7 @@ import {
   fetchGoalieRestSplitProfile,
   fetchGoalieWorkloadContext,
   fetchTeamGoalieStarterContext,
+  type CreditedStarterContext,
 } from "../queries/goalie-queries";
 import {
   fetchTeamDefensiveEnvironment,
@@ -559,6 +561,10 @@ export async function runPerGameGoalieStage(args: {
     for (const scenario of computationScenarios) {
       scenarioInputs.set(scenario.goalieId, await loadGoalieInputs(scenario.goalieId));
     }
+    // Every candidate gets his own if-he-starts line (decision 25), not only the top two.
+    for (const goalieId of boardStarterProbabilities.keys()) {
+      if (!scenarioInputs.has(goalieId)) scenarioInputs.set(goalieId, await loadGoalieInputs(goalieId));
+    }
     // The team's start-weighted goals per shot is the reference for each goalie's win adjustment.
     let startWeight = 0;
     let weightedGoalsPerShot = 0;
@@ -801,6 +807,60 @@ export async function runPerGameGoalieStage(args: {
       proj_win_prob_population: "team_goalie_slot_credited_starter_win",
     };
 
+    // One row per candidate (decisions 25, 63): his own line if he starts, P(start) and the
+    // unconditional product, with the team win % apart from his credited Win. Single-game values.
+    const winByGoalie = new Map((winPopulations?.goalies ?? []).map((g) => [g.goalieId, g]));
+    const starterLabels = c.override ? undefined
+      : teamGoalieStarterContextCache.get(teamDateKey(c.teamId)) as Partial<CreditedStarterContext> | undefined;
+    const goalieCandidates = buildGoalieCandidatesContract({
+      gameId: game.id,
+      teamId: c.teamId,
+      teamWinProbability: teamWinProb,
+      teamWinSource,
+      issuance: {
+        run_id: runId,
+        as_of_date: asOfDate,
+        issued_at: new Date().toISOString(),
+        information_cutoff_at: args.evidenceCutoffAt ?? null,
+        starter_labels: starterLabels?.startLabelSource ? {
+          source: starterLabels.startLabelSource,
+          window_games: starterLabels.windowGames ?? null,
+          known_games: starterLabels.totalGames ?? null,
+          unknown_games: starterLabels.unknownStartGames ?? null,
+        } : null,
+      },
+      candidates: [...boardStarterProbabilities.entries()].map(([goalieId, startProbability]) => {
+        const inputs = scenarioInputs.get(goalieId)!;
+        const model = computeGoalieProjectionModel({
+          projectedShotsAgainst: shotsAgainst,
+          starterProbability: 1,
+          projectedGoalsFor: adjustedTeamGoalsFor,
+          evidence: inputs.evidence,
+          leagueSavePct,
+          savePctAdjustment: inputs.savePctAdjustment,
+          teamWinProbabilityIfStarts: winIfStarts(inputs.modeledSavePct),
+        });
+        const confirmation = confirmationFor(goalieId);
+        const win = winByGoalie.get(goalieId);
+        return {
+          goalieId,
+          startProbability,
+          startProbabilityStatus: c.override ? "override" as const
+            : confirmation.length ? "confirmed_evidence" as const : "uncalibrated_model" as const,
+          confirmationEvidenceIds: confirmation.map((item) => item.evidenceId),
+          ifStarts: {
+            shotsAgainst,
+            saves: model.projectedSaves,
+            goalsAllowed: model.projectedGoalsAllowed,
+            shutoutProbability: model.shutoutProbability,
+            modeledSavePct: model.modeledSavePct,
+          },
+          creditedWinIfStarts: win?.creditedWinIfStarts ?? null,
+          unconditionalCreditedWin: win?.unconditionalWin ?? null,
+        };
+      }),
+    });
+
     const goalieUpsert = {
       run_id: runId,
       as_of_date: asOfDate,
@@ -817,11 +877,15 @@ export async function runPerGameGoalieStage(args: {
         (goalsAllowed * goalieHorizonTotalScalar).toFixed(3),
       ),
       proj_saves: Number((saves * goalieHorizonTotalScalar).toFixed(3)),
-      proj_win_prob: winProb === null ? null : Number((winProb * goalieHorizonTotalScalar).toFixed(4)),
-      proj_shutout_prob: Number(
-        (shutoutProb * goalieHorizonTotalScalar).toFixed(4),
-      ),
-      uncertainty: { ...goalieUncertainty, daily_board_candidates: dailyBoardCandidates, win_populations: winPopulationsMeta } as any,
+      // Probabilities are per game, never multiplied by a horizon scalar (decision 28); counts are horizon totals.
+      proj_win_prob: winProb === null ? null : Number(winProb.toFixed(4)),
+      proj_shutout_prob: Number(shutoutProb.toFixed(4)),
+      uncertainty: { ...goalieUncertainty, daily_board_candidates: dailyBoardCandidates, win_populations: winPopulationsMeta,
+        // This stored row is the team's goalie slot (a start-weighted mixture) under the projected starter's id,
+        // not that goalie's own line; per-goalie rows are goalie_candidates (W2-8 PR5).
+        row_basis: "team_goalie_slot_mixture",
+        value_basis: { counts: "horizon_total", probabilities: "single_game" },
+        goalie_candidates: goalieCandidates } as any,
       updated_at: new Date().toISOString(),
     };
 

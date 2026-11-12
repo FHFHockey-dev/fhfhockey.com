@@ -1701,6 +1701,7 @@ describe("/api/v1/start-chart", () => {
     if (problem === "valid partial mass") {
       expect(expected.map(row => row.startProbability)).toEqual([0.3, 0.6]);
       expect(body.goalieSource).toBe("forge_goalie_projections");
+      expect(body.goalieStartBasis).toBe("forge_starter_board");
       expect(body.players.map((row: any) => row.start_probability)).toEqual([0.3, 0.6]);
       expect(body.players.map((row: any) => row.forecast.expected.SAVES_GOALIE)).toEqual([9, 18]);
       expect(body.players.every((row: any) => row.team_id === 8 && row.projected_gsaa === null)).toBe(true);
@@ -2072,6 +2073,8 @@ describe("/api/v1/start-chart", () => {
       projectionRunId: "run-123",
       skaterSource: "forge_player_projections",
       goalieSource: "goalie_start_projections",
+      // W1 P0 #17: the legacy source serves an L10 start share, labelled as such, not a start probability.
+      goalieStartBasis: "l10_start_share",
       fantasyScoringContract: {
         version: "fhfh-default-skater-v1",
         label: "FHFH default skater",

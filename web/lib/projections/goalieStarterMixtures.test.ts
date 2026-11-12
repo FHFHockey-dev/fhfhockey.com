@@ -124,6 +124,18 @@ describe("goalieStarterMixtures", () => {
     }
   });
 
+  it("keeps a proven 4-decimal rounded vector at 1.0001 instead of zeroing the team (M-FRG-092)", () => {
+    const build = (values: number[]) => buildGoalieStarterMixtureRows({ asOfTimestamp: "2026-05-27T13:00:00.000Z",
+      projections: values.map((start_probability, i) => projection({ player_id: i + 1, start_probability })) });
+    const rounded = build([0.3334, 0.3334, 0.3333]);
+    expect(rounded.reduce((sum, row) => sum + row.normalized_start_probability, 0)).toBeCloseTo(1, 5);
+    expect(rounded.every((row) => row.normalized_start_probability > 0.333)).toBe(true);
+    // Beyond the n × 0.00005 rounding envelope it is still contradictory evidence.
+    expect(build([0.3336, 0.3335, 0.3335]).every((row) => row.normalized_start_probability === 0)).toBe(true);
+    // An unrounded vector gets only floating-point slack.
+    expect(build([0.50001234, 0.50001234]).every((row) => row.normalized_start_probability === 0)).toBe(true);
+  });
+
   it("honors manual overrides over source probabilities", () => {
     const rows = buildGoalieStarterMixtureRows({
       asOfTimestamp: "2026-05-27T13:00:00.000Z",

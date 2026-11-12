@@ -76,6 +76,7 @@ vi.mock("lib/supabase/server", () => ({
 }));
 
 import handler from "../../../../../pages/api/v1/forge/goalies";
+import { buildGoalieCandidatesContract } from "lib/projections/goalie/goalieCandidates";
 
 function snapshotBuilder() {
   const builder = createQueryBuilder(() => ({ error: null,
@@ -393,115 +394,71 @@ describe("/api/v1/forge/goalies", () => {
     expect(res.body).toMatchSnapshot();
   });
 
-  it("normalizes opposing likely-starter win probabilities to sum to 100% per matchup", async () => {
+  function installGoalieRows(rows: any[], players: Array<{ id: number; fullName: string }> = []) {
     fromMock.mockImplementation((table: string) => {
-      if (table === "forge_goalie_projections") {
-        return createQueryBuilder(() => ({
-          data: [
-            {
-              goalie_id: 1001,
-              team_id: 1,
-              opponent_team_id: 2,
-              players: { fullName: "Goalie A" },
-              teams: { name: "Team A", abbreviation: "TMA" },
-              opponent: { name: "Team B", abbreviation: "TMB" },
-              starter_probability: 0.62,
-              proj_shots_against: 28.1,
-              proj_saves: 25.2,
-              proj_goals_allowed: 2.9,
-              proj_win_prob: 0.384,
-              proj_shutout_prob: 0.04,
-              uncertainty: {}
-            },
-            {
-              goalie_id: 1002,
-              team_id: 2,
-              opponent_team_id: 1,
-              players: { fullName: "Goalie B" },
-              teams: { name: "Team B", abbreviation: "TMB" },
-              opponent: { name: "Team A", abbreviation: "TMA" },
-              starter_probability: 0.58,
-              proj_shots_against: 29.4,
-              proj_saves: 26.1,
-              proj_goals_allowed: 3.3,
-              proj_win_prob: 0.419,
-              proj_shutout_prob: 0.03,
-              uncertainty: {}
-            }
-          ],
-          error: null
-        }));
-      }
-      if (table === "forge_runs") {
-        return createQueryBuilder(() => ({
-          data: {
-            run_id: "run-123",
-            as_of_date: "2026-02-07",
-            status: "succeeded",
-            created_at: "2026-02-07T10:05:00.000Z",
-            metrics: { goalie_rows: 2, input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } }
-          },
-          error: null
-        }));
-      }
-      if (table === "games") {
-        return createQueryBuilder(() => ({ count: 1, error: null }));
-      }
-      if (table === "forge_projection_calibration_daily") {
-        return createQueryBuilder(() => ({ data: null, error: null }));
-      }
-      return createQueryBuilder(() => ({ data: [], error: null }));
-    });
-
-    const req: any = {
-      method: "GET",
-      query: {
-        date: "2026-02-07",
-        horizon: "1"
-      }
-    };
-    const res = createMockRes();
-    await handler(req, res);
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body.data).toHaveLength(2);
-    const sum = res.body.data.reduce(
-      (acc: number, row: any) => acc + Number(row.proj_win_prob ?? 0),
-      0
-    );
-    expect(sum).toBeCloseTo(1, 4);
-    expect(res.body.diagnostics.notes.join(" ")).toContain(
-      "Normalized likely-starter win probabilities"
-    );
-  });
-
-  it.each([
-    { name: "one goalie", wins: [null, 0.419] },
-    { name: "both goalies", wins: [null, null] },
-  ])("keeps a null win probability unknown for $name without normalizing the matchup", async ({ wins }) => {
-    const goalie = (id: number, team: number, opponent: number, win: number | null) => ({
-      goalie_id: id, team_id: team, opponent_team_id: opponent, players: { fullName: `Goalie ${id}` },
-      teams: { name: `Team ${team}`, abbreviation: `T${team}` }, opponent: { name: `Team ${opponent}`, abbreviation: `T${opponent}` },
-      starter_probability: 0.6, proj_shots_against: 28, proj_saves: 25, proj_goals_allowed: 3,
-      proj_win_prob: win, proj_shutout_prob: 0.04, uncertainty: {} });
-    fromMock.mockImplementation((table: string) => {
-      if (table === "forge_goalie_projections") {
-        return createQueryBuilder(() => ({ data: [goalie(1001, 1, 2, wins[0]), goalie(1002, 2, 1, wins[1])], error: null }));
-      }
+      if (table === "forge_goalie_projections") return createQueryBuilder(() => ({ data: rows, error: null }));
+      if (table === "players") return createQueryBuilder(() => ({ data: players, error: null }));
       if (table === "forge_runs") {
         return createQueryBuilder(() => ({ data: { run_id: "run-123", as_of_date: "2026-02-07", status: "succeeded",
-          created_at: "2026-02-07T10:05:00.000Z", metrics: { goalie_rows: 2,
+          created_at: "2026-02-07T10:05:00.000Z", metrics: { goalie_rows: rows.length,
             input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } } }, error: null }));
       }
       if (table === "games") return createQueryBuilder(() => ({ count: 1, error: null }));
       if (table === "forge_projection_calibration_daily") return createQueryBuilder(() => ({ data: null, error: null }));
       return createQueryBuilder(() => ({ data: [], error: null }));
     });
+  }
+  const slotRow = (id: number, team: number, opponent: number, uncertainty: Record<string, unknown> = {}) => ({
+    goalie_id: id, team_id: team, opponent_team_id: opponent, players: { fullName: `Goalie ${id}` },
+    teams: { name: `Team ${team}`, abbreviation: `T${team}` }, opponent: { name: `Team ${opponent}`, abbreviation: `T${opponent}` },
+    // The stored team slot: a start-weighted mixture with the slot's credited win (0.384), not goalie 1001's own Win.
+    starter_probability: 0.62, proj_shots_against: 28, proj_saves: 25.2, proj_goals_allowed: 2.8,
+    proj_win_prob: 0.384, proj_shutout_prob: 0.04, uncertainty });
+  const contract = (team: number, teamWin: number) => buildGoalieCandidatesContract({
+    gameId: 2025020500, teamId: team, teamWinProbability: teamWin, teamWinSource: "poisson_race",
+    issuance: { run_id: "run-123", as_of_date: "2026-02-07", issued_at: "2026-02-07T10:00:00.000Z", information_cutoff_at: null, starter_labels: null },
+    candidates: [
+      { goalieId: team * 1000 + 1, startProbability: 0.62, startProbabilityStatus: "uncalibrated_model", confirmationEvidenceIds: [],
+        ifStarts: { shotsAgainst: 28, saves: 25.6, goalsAllowed: 2.4, shutoutProbability: 0.06, modeledSavePct: 0.914 },
+        creditedWinIfStarts: 0.42, unconditionalCreditedWin: 0.27 },
+      { goalieId: team * 1000 + 2, startProbability: 0.38, startProbabilityStatus: "uncalibrated_model", confirmationEvidenceIds: [],
+        ifStarts: { shotsAgainst: 28, saves: 24.6, goalsAllowed: 3.4, shutoutProbability: 0.03, modeledSavePct: 0.879 },
+        creditedWinIfStarts: 0.33, unconditionalCreditedWin: 0.13 },
+    ] });
+
+  it("serves one row per candidate with his own line, start chance, unconditional product and a separate team win (P0 #20)", async () => {
+    installGoalieRows([
+      slotRow(1001, 1, 2, { goalie_candidates: contract(1, 0.45) }),
+      slotRow(2001, 2, 1, { goalie_candidates: contract(2, 0.55) }),
+    ], [{ id: 1002, fullName: "Backup A" }, { id: 2002, fullName: "Backup B" }]);
     const res = createMockRes();
     await handler({ method: "GET", query: { date: "2026-02-07", horizon: "1" } } as any, res);
     expect(res.statusCode).toBe(200);
-    expect(res.body.data.map((row: any) => row.proj_win_prob)).toEqual(wins);
-    expect(res.body.diagnostics.notes.join(" ")).not.toContain("Normalized likely-starter win probabilities");
+    expect(res.body.data.map((row: any) => row.goalie_id)).toEqual([1001, 1002, 2001, 2002]);
+    const backup = res.body.data.find((row: any) => row.goalie_id === 1002);
+    expect(backup).toMatchObject({ goalie_name: "Backup A", row_basis: "candidate_goalie_game", conditioning: "if_starts",
+      starter_probability: 0.38, proj_saves: 24.6, proj_goals_allowed: 3.4, proj_win_prob: 0.33, team_win_prob: 0.45,
+      is_projected_starter: false, unconditional: { saves: 9.348, credited_win_prob: 0.13 },
+      relief_basis: { counts: "zero_relief_assumption" } });
+    // No slot rescale: each goalie's own Win is served as computed, and the opposing team wins stay paired.
+    expect(res.body.data.find((row: any) => row.goalie_id === 1001).proj_win_prob).toBe(0.42);
+    expect(res.body.data.find((row: any) => row.goalie_id === 2001).proj_win_prob).toBe(0.42);
+    expect(res.body.data.find((row: any) => row.goalie_id === 1001).team_win_prob
+      + res.body.data.find((row: any) => row.goalie_id === 2001).team_win_prob).toBeCloseTo(1, 6);
+  });
+
+  it("serves a pre-contract row as the labelled team slot and withholds its slot win", async () => {
+    installGoalieRows([
+      slotRow(1001, 1, 2, { win_populations: { team: { win_probability: 0.47 } } }),
+      { ...slotRow(1002, 2, 1), proj_win_prob: null },
+    ]);
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07", horizon: "1" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.map((row: any) => row.proj_win_prob)).toEqual([null, null]);
+    expect(res.body.data.map((row: any) => row.team_win_prob)).toEqual([0.47, null]);
+    expect(res.body.data.every((row: any) => row.row_basis === "team_goalie_slot_legacy")).toBe(true);
+    expect(res.body.diagnostics.notes.join(" ")).toContain("predate per-candidate goalie rows");
   });
 
   it("falls back to the latest prior date with goalie rows when requested date has no data", async () => {
