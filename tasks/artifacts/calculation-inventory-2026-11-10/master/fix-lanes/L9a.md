@@ -67,3 +67,6 @@ L9b changed one line in `runProjectionV2.test.ts:2105` (null rest → null, W3-4
 ## Tickets from L9b (2026-11-11)
 - `utils/projection-metadata-builders.ts:444-460` still multiplies goalie metadata (shots against, saves, win, shutout) by `goalieHorizonTotalScalar`: decision 28 (no probability × horizon scalar; per-game values or 1 − ∏(1 − p)).
 - Goalie candidate contract `forge_goalie_candidates_v1` (reader `readGoalieCandidatesContract`, null on old rows, fails closed): Chef side note `L9b-goalie-candidates-contract.md`. Skater opponent-goalie weights read it.
+
+## Split and grants (2026-11-11)
+L9a (local_bb23babf) split: sub-session fix-l9a-markets owns `utils/devig.ts`, `utils/market-output-builders.ts`, `queries/market-queries.ts` and their tests (W1-6 D4b/D17/D18, W1-7 D6, W3-4 N2); L9a keeps the rest. Granted to L9a: `web/lib/projectionsConfig/proration.ts` (D16 null ranks; keep signature compatible for L13 readers).
