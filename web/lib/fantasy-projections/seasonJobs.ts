@@ -399,6 +399,37 @@ function targetsFor(
       ];
 }
 
+/**
+ * Aggregate-row expectations from season means. An unknown mean (for example
+ * after an unknown completed-game actual) is null, never 0 (rule 5). Note:
+ * `expected_games` is NOT NULL in player_forecast_season_player_aggregates
+ * today, so such a row fails the insert (fail closed) until the column is
+ * relaxed by a reviewed migration.
+ */
+export function aggregateExpectations(
+  means: Readonly<Record<string, number | undefined>>,
+  population: FantasyProjectionPopulation,
+): {
+  expected_games: number | null;
+  expected_starts: number | null;
+  expected_toi: Record<"total" | "evenStrength" | "powerPlay" | "penaltyKill", number | null>;
+} {
+  const known = (key: string): number | null => {
+    const value = means[key];
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+  };
+  return {
+    expected_games: known("GAMES_PLAYED"),
+    expected_starts: population === "goalie" ? known("GAMES_STARTED") : null,
+    expected_toi: {
+      total: known("TOTAL_TOI"),
+      evenStrength: known("EV_TOI"),
+      powerPlay: known("PP_TOI"),
+      penaltyKill: known("PK_TOI"),
+    },
+  };
+}
+
 export function teamDeployment(players: PortablePlayerPrior[]): Record<string, unknown> {
   // Decision 123 / W3-5 F9: this is a projected ice-time order (expected TOI =
   // conditional TOI rate × play probability), not inferred line combinations.
@@ -984,14 +1015,7 @@ async function processView(
         ),
         source_fresh_at: member?.source_fresh_at ?? source.source_fresh_at,
         rookie_profile: prior.rookieProfile ?? source.rookie_profile ?? {},
-        expected_games: means.GAMES_PLAYED ?? 0,
-        expected_starts: prior.population === "goalie" ? means.GAMES_STARTED ?? 0 : null,
-        expected_toi: {
-          total: means.TOTAL_TOI ?? null,
-          evenStrength: means.EV_TOI ?? null,
-          powerPlay: means.PP_TOI ?? null,
-          penaltyKill: means.PK_TOI ?? null,
-        },
+        ...aggregateExpectations(means, prior.population),
         ratings: source.ratings,
         deployment: prior.deployment,
         model_means: means,

@@ -21,7 +21,12 @@ import {
   type PortableSeasonArtifact,
   type SeasonGameContext,
 } from "./evaluator";
-import { buildRuntimeNewcomerPrior, nhlScheduleDay, teamDeployment } from "./seasonJobs";
+import {
+  aggregateExpectations,
+  buildRuntimeNewcomerPrior,
+  nhlScheduleDay,
+  teamDeployment,
+} from "./seasonJobs";
 
 const FIXTURE_PATH = path.join(__dirname, "__fixtures__", "season-evaluator-parity-v2.json");
 
@@ -384,5 +389,23 @@ describe("rest days use the NHL schedule date (W2-7 D4b, rule 19)", () => {
     expect(nhlScheduleDay({ scheduled_start_at: "2026-10-10T23:00:00Z" })).toBe(day("2026-10-10"));
     // Schedule's own date wins when present.
     expect(nhlScheduleDay({ game_date: "2026-10-09", scheduled_start_at: "2026-10-10T04:00:00Z" })).toBe(day("2026-10-09"));
+  });
+});
+
+describe("aggregate expectations keep unknown means null (rule 5)", () => {
+  it("writes null expected games/starts when the season GP/GS total is unknown", () => {
+    const goalieGames = [evaluate(20, 2026020001), evaluate(20, 2026020002)];
+    const unknown = aggregateSeasonGames(goalieGames, {
+      actuals: { GAMES_PLAYED: null, GAMES_STARTED: null },
+    });
+    expect("GAMES_PLAYED" in unknown.means).toBe(false);
+    const row = aggregateExpectations(unknown.means, "goalie");
+    // Before: means.GAMES_PLAYED ?? 0 and means.GAMES_STARTED ?? 0.
+    expect(row.expected_games).toBeNull();
+    expect(row.expected_starts).toBeNull();
+    const known = aggregateExpectations(aggregateSeasonGames(goalieGames).means, "goalie");
+    expect(known.expected_games).toBeCloseTo(1, 9);
+    expect(known.expected_starts).toBeCloseTo(0.9, 9);
+    expect(aggregateExpectations({ GAMES_PLAYED: 3 }, "forward").expected_starts).toBeNull();
   });
 });

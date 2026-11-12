@@ -5385,7 +5385,9 @@ def project_season_release(
             "roster_confidence": player["rosterConfidence"],
             "source_fresh_at": manifest["createdAt"],
             "rookie_profile": player.get("rookieProfile") or {},
-            "expected_games": means.get("GAMES_PLAYED", 0),
+            # Unknown GP/GS means stay null (rule 5), never 0; see seasonJobs.ts
+            # `aggregateExpectations` (the column is NOT NULL today: fails closed).
+            "expected_games": means.get("GAMES_PLAYED"),
             "expected_starts": means.get("GAMES_STARTED") if player["population"] == "goalie" else None,
             "expected_toi": {
                 "total": means.get("TOTAL_TOI"),
@@ -5638,7 +5640,10 @@ def verify_season_release_bundle(bundle_path: Path) -> dict[str, Any]:
             ):
                 issues.append(f"player {player['fhfh_player_id']} quantile order failed for {target}")
                 break
-        if not 0 <= float(player["expected_games"]) <= 84:
+        expected_games = _finite_or_none(player.get("expected_games"))
+        if expected_games is None:
+            issues.append(f"player {player['fhfh_player_id']} expected games is unknown")
+        elif not 0 <= expected_games <= 84:
             issues.append(f"player {player['fhfh_player_id']} expected games is outside [0,84]")
     return {
         "valid": not issues,
