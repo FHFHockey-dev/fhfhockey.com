@@ -346,3 +346,7 @@ Source: `WAVE3-CONSOLIDATED.md`, "Owner decisions still open" Q42 and Q49. The 1
 125. **Team power score** (L12, decision 19 follow-up; TJ by pop-up in the L12 session, 2026-11-12): one power score = (offense + defense) / 2; the shrinkage prior weight is a linear ramp reaching full data weight at GP 10, applied after normalisation against the fixed all-team baseline.
 126. **`LEDGER_MARKET_ENABLED`** (Q32, L10): off until decision 30's market fixes ship and are validated; turning it off is its own env-change approval.
 127. **Forecast lead-day and calendar date basis** (Q35, L10/L11): NHL schedule dates, as one versioned change shared by issuance, replay, bridge, coverage, planning and evaluation (rule 19).
+128. **Unassigned start share** (Q34, L11): show it on the team-game and mark goalie totals incomplete with the count (decision 47).
+129. **Legacy sKO crons** (Q51, L20): keep `update-sko-stats` (history for decision 80's evaluation); pause `update-predictions-sko` until it is renamed and defined; delete nothing; each cron change is its own approval. TJ adds: **define `predictions_sko`, vet it, fix it and optimize it** (L20's scope).
+130. **Sko Element interim label** (Q55, L21): the signed gap with its units only; no Rebound/Cooling words until an alert contract exists.
+131. **sKO summary** (Q57, L21): keep gap, support and opportunity as separate components; choose any composite, scale or headline only after held-out evidence (decisions 32, 65).
