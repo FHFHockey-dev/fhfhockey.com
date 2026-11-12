@@ -2,6 +2,10 @@
 
 import { NORMAL_PERIOD_IN_SECONDS } from "hooks/useGoals";
 import Fetch from "lib/cors-fetch";
+import {
+  classifyTeamManpower,
+  parseSituationCode
+} from "lib/supabase/Upserts/nhlStrengthState";
 import { useEffect, useState } from "react";
 
 export type Time = {
@@ -478,6 +482,150 @@ export default function getPowerPlayBlocks(plays: any[]): Block[] {
   closeBlock(gameEnd);
 
   return result;
+}
+
+function getBlockGameSecond(time: Time) {
+  return (time.period - 1) * NORMAL_PERIOD_IN_SECONDS + parseTime(time.timeInPeriod);
+}
+
+/** Seconds a team spends with a penalty advantage, summed over its blocks. */
+export function teamPpClockSeconds(blocks: readonly Block[], teamId: number) {
+  return blocks
+    .filter((block) => block.teamId === teamId)
+    .reduce(
+      (sum, block) =>
+        sum + Math.max(getBlockGameSecond(block.end) - getBlockGameSecond(block.start), 0),
+      0
+    );
+}
+
+export type PpSituationDisagreement = {
+  eventId: number | null;
+  gameSecond: number;
+  situationCode: string;
+  /** Team with the advantage per the penalty-box simulation (null = even). */
+  simulatedAdvantageTeamId: number | null;
+  /** Team with the advantage per L1's manpower predicate (null = even). */
+  situationAdvantageTeamId: number | null;
+};
+
+/**
+ * Checks the penalty-box simulation against the official per-event situation
+ * codes, classified by L1's manpower predicate (decision 70): 6v5 without a
+ * penalty is even, a pulled goalie during a real PP or PK keeps the PP/PK.
+ * Events on a block's first or last second are skipped, because the stoppage
+ * that starts or ends a power play carries the state from before the change.
+ * Penalty-shot and shootout codes are skipped. A disagreement is evidence
+ * against qualifying the clock for that game (decision 71); it is never
+ * corrected silently.
+ */
+export function auditPpBlocksAgainstSituationCodes(
+  plays: readonly any[],
+  blocks: readonly Block[],
+  teams: { homeTeamId: number; awayTeamId: number }
+) {
+  const spans = blocks.map((block) => ({
+    teamId: block.teamId,
+    start: getBlockGameSecond(block.start),
+    end: getBlockGameSecond(block.end)
+  }));
+  const boundaries = new Set(spans.flatMap((span) => [span.start, span.end]));
+  const disagreements: PpSituationDisagreement[] = [];
+  let checkedEvents = 0;
+
+  for (const play of plays) {
+    if (play.periodDescriptor?.periodType === "SO") continue;
+    const parsed = parseSituationCode(play.situationCode);
+    const home = classifyTeamManpower(parsed, "home");
+    if (!home || home.manpowerState === null) continue;
+    const gameSecond = getGameSecond(play);
+    if (boundaries.has(gameSecond)) continue;
+
+    checkedEvents++;
+    const simulatedAdvantageTeamId =
+      spans.find((span) => span.start < gameSecond && gameSecond < span.end)?.teamId ?? null;
+    const situationAdvantageTeamId =
+      home.manpowerState === "PP"
+        ? teams.homeTeamId
+        : home.manpowerState === "PK"
+          ? teams.awayTeamId
+          : null;
+    if (simulatedAdvantageTeamId !== situationAdvantageTeamId) {
+      disagreements.push({
+        eventId: play.eventId ?? null,
+        gameSecond,
+        situationCode: String(play.situationCode),
+        simulatedAdvantageTeamId,
+        situationAdvantageTeamId
+      });
+    }
+  }
+
+  return { checkedEvents, disagreements };
+}
+
+/**
+ * Decision-71 team PP clock contract (consumed by L6 `teamPpClock` and L4b).
+ * `seconds` is the penalty-box simulation for one team in one game. It may be
+ * served as observed PP time only when `qualified` is true; until the
+ * simulation passes validation against official records (team PP TOI and
+ * situation codes across regulation, OT, expiry, overlapping penalties and
+ * extra-attacker states) with complete coverage, `qualified` stays false and
+ * readers withhold or flag PP time and share.
+ */
+export type TeamPpClockContract = {
+  gameId: number;
+  teamId: number;
+  /** Penalty-advantage seconds; null when the play-by-play is missing. */
+  seconds: number | null;
+  source: typeof PP_CLOCK_SOURCE;
+  qualified: boolean;
+  /** Why the clock is not qualified (null when qualified). */
+  unqualifiedReason: string | null;
+  audit: { checkedEvents: number; disagreements: number } | null;
+};
+
+export const PP_CLOCK_SOURCE = "fhfh-penalty-box-simulation-v1";
+export const PP_CLOCK_QUALIFIED = false;
+export const PP_CLOCK_UNQUALIFIED_REASON =
+  "Penalty-box simulation not yet validated against official records (decision 71).";
+
+export function buildTeamPpClock(args: {
+  gameId: number;
+  teamId: number;
+  homeTeamId: number;
+  awayTeamId: number;
+  plays: readonly any[] | null | undefined;
+}): TeamPpClockContract {
+  if (!args.plays || args.plays.length === 0) {
+    return {
+      gameId: args.gameId,
+      teamId: args.teamId,
+      seconds: null,
+      source: PP_CLOCK_SOURCE,
+      qualified: false,
+      unqualifiedReason: "No play-by-play for this game.",
+      audit: null
+    };
+  }
+  const blocks = getPowerPlayBlocks(args.plays as any[]);
+  const audit = auditPpBlocksAgainstSituationCodes(args.plays, blocks, args);
+  return {
+    gameId: args.gameId,
+    teamId: args.teamId,
+    seconds: teamPpClockSeconds(blocks, args.teamId),
+    source: PP_CLOCK_SOURCE,
+    qualified: PP_CLOCK_QUALIFIED && audit.disagreements.length === 0,
+    unqualifiedReason: PP_CLOCK_QUALIFIED
+      ? audit.disagreements.length === 0
+        ? null
+        : `${audit.disagreements.length} event(s) disagree with the official situation codes.`
+      : PP_CLOCK_UNQUALIFIED_REASON,
+    audit: {
+      checkedEvents: audit.checkedEvents,
+      disagreements: audit.disagreements.length
+    }
+  };
 }
 
 export function usePowerPlayBlocks(id: string | number) {
