@@ -252,6 +252,8 @@ describe("PBP-only fallback (no shifts) strength and score state (W2-P0-2, W2-P0
     });
     expect(rowFor(body.rows, 102)).toMatchObject({ goals: 1 });
     expect(rowFor(body.rows, 101)).toMatchObject({ totalAssists: 1 });
+    // The fallback serves no heuristic xG: unavailable stays null (decisions 6, 12, 99).
+    expect(rowFor(body.rows, 102)?.ixg).toBeNull();
   });
 
   it("classifies fallback events with the running score, including non-goal events and shots", async () => {

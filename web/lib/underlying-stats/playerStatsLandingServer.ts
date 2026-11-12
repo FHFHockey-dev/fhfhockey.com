@@ -2097,23 +2097,6 @@ function getPbpOnlyShotDangerBucket(shot: ReturnType<typeof buildShotFeatureRows
   return "low" as const;
 }
 
-function getPbpOnlyApproximateXgValue(
-  shot: ReturnType<typeof buildShotFeatureRows>[number]
-): number | null {
-  const dangerBucket = getPbpOnlyShotDangerBucket(shot);
-  if (dangerBucket == null) {
-    return null;
-  }
-
-  let value =
-    dangerBucket === "high" ? 0.18 : dangerBucket === "medium" ? 0.08 : 0.02;
-  if (shot.isReboundShot) value += 0.03;
-  if (shot.isRushShot) value += 0.02;
-  if (shot.crossedRoyalRoad) value += 0.02;
-  if (shot.isGoal) value = Math.max(value, 0.25);
-  return Math.min(value, 0.95);
-}
-
 /**
  * PBP-only fallback strength: the shared underlying-stats predicate over L1's
  * team-oriented manpower context (decision 70). The stored `strength_exact` is
@@ -2501,7 +2484,8 @@ function buildPbpOnlyIndividualContextsForGame(args: {
     if (!shot.isOwnGoal) {
       metrics.iCf += 1;
       metrics.iFf += shot.isUnblockedShotAttempt ? 1 : 0;
-      metrics.ixg = addNullable(metrics.ixg, getPbpOnlyApproximateXgValue(shot));
+      // No in-house xG here: the bucket heuristic is retired (decisions 6, 12)
+      // and unavailable xG stays null, never an estimate (decision 99).
     }
 
     const dangerBucket = getPbpOnlyShotDangerBucket(shot);
