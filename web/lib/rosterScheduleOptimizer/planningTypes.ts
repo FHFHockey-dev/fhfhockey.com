@@ -273,6 +273,15 @@ export type PlanEvaluation = {
   /** Internal lineup score; not approved projected totals or an acquisition comparison. */
   assignmentValue?: number | null;
   comparisonEligible?: boolean;
+  /** Points leagues (W1 P0 #27, TJ 2026-11-12): the lineup's known part and the active player-games whose value is
+   * unknown (`playerId:gameId`, sorted). Two plans compare on the known part only when their unknown active plays are
+   * identical and the unknown-valued roster players (`unknownPlayerIds`, active or not) are the same, so the same
+   * unknown contribution cancels; read it through `comparablePointsDelta`. Null when even the
+   * known part can't be priced. */
+  knownComparison?: { knownValue: number; unknownActive: string[]; unknownPlayerIds: string[] } | null;
+  /** The per-player evidence gate (decisions 3, 47): roster players with a remaining game in range whose value is
+   * unknown (any play lacking a priced, comparison-approved forecast), sorted. Never automatic drops. */
+  valueUnknownPlayerIds?: string[];
   /** Exact sanitized resolved inputs used for these assignments. */
   forecastInputs?: GameForecast[];
   forecastManifestId?: string;

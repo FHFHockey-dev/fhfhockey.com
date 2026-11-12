@@ -185,7 +185,9 @@ describe("shared forecast reload for the owned roster", () => {
     expect(evaluatePlan(refreshed, intent, "outcome").projectedValue).toBeNull();
     const metrics = candidatePlanMetrics(refreshed, intent);
     expect(metrics.candidates.flatMap(row => row.plans).every(plan => plan.netPoints === null)).toBe(true);
-    expect(metrics.candidates[0].plans[0].netAGP).toBe(1);
+    // Every input is unusable, so the rostered players' values are unknown and neither is a proposed drop (decisions 3,
+    // 47): with the roster full there is no swap at all, rather than a schedule-only one that drops an unknown player.
+    expect(metrics.candidates[0].plans).toEqual([]);
   });
 
   it("removes revoked source inputs rather than retaining an old positive projection", () => {

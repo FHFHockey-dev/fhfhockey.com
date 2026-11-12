@@ -55,11 +55,13 @@ describe("FORGE daily bridge", () => {
       stats: { GOALS: 0.35, ASSISTS: 0.45, POINTS: 0.8, PP_POINTS: 0.25, SHOTS_ON_GOAL: 3.1, HITS: 1.2, BLOCKED_SHOTS: 0.5,
         TIME_ON_ICE_PER_GAME: 18, PENALTY_MINUTES: null, PLUS_MINUS: null, FACEOFFS_WON: null } });
     expect(s1[0].issuedContext).toMatchObject({ playerId: "s1", gameId: "1", nhlPlayerId: 101, teamId: 10, scheduleRevision: "schedule-1-TOR", rosterRevision: "roster-s1" });
-    // Scratched from the latest run: a labelled 0 under his team's latest run, his last line kept as "if he plays".
+    // Scratched from the latest run: a labelled unknown under his team's latest run (decisions 3, 47), no planning use,
+    // his last line kept as "if he plays".
     const s2 = forecasts.filter(row => row.playerId === "s2");
     expect(s2.map(row => [row.gameId, reserveCodeOf(row), row.revisionId])).toEqual([["1", "skater:no_forge_line", `${FORGE_DAILY_BRIDGE_VERSION}:r2`],
       ["2", "skater:no_forge_line", `${FORGE_DAILY_BRIDGE_VERSION}:r2`]]);
-    expect(s2.every(row => Object.values(row.stats).every(value => value === 0) && row.conditionalStats?.GOALS === 0.35)).toBe(true);
+    expect(s2.every(row => Object.values(row.stats).every(value => value === null) && row.conditionalStats?.GOALS === 0.35
+      && Object.values(row.allowedUses!).every(use => use === false))).toBe(true);
     // Moved to a team with no proven FORGE run: still no forecast (nothing proves a 0 for his team).
     expect(forecasts.some(row => row.playerId === "s3")).toBe(false);
   });
@@ -804,8 +806,8 @@ describe("FORGE daily bridge", () => {
         new AbortController().signal, (input, _data, readError) => { expect(readError).toBeNull(); return candidateHorizonPoints(input); });
       expect(points.get("s1")).toBeCloseTo(2 * (0.35 * 3 + 0.45 * 2 + 0.25 + 3.1 * 0.5 + 7 * 0.1));
       expect(points.get("g1")).toBeCloseTo(0.8 * (25 * 0.2 + 0.55 * 4) + 0.7 * (25 * 0.2 + gameTwoWin * 4), 3);
-      // No current FORGE line: a known 0, never "—" (TJ, option B).
-      expect(points.get("s2")).toBe(0);
+      // No current FORGE line: unknown, never a fabricated 0 (decisions 3, 47 supersede TJ's option B).
+      expect(points.get("s2")).toBeNull();
     } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
   });
 
@@ -957,7 +959,7 @@ describe("FORGE daily bridge", () => {
   });
 });
 
-describe("No FORGE line: the labelled conservative 0 (TJ, option B)", () => {
+describe("No FORGE line: labelled unknown (decisions 3, 47; supersedes TJ's option B 0)", () => {
   const withheldRun = { run_id: "r3", as_of_date: "2026-10-20", created_at: "2026-10-20T12:00:00Z", git_sha: "ghi", external_input_proven: false };
   const s2Rows = (extra: Partial<ForgeDailyBridgeInputs> = {}) => buildForgeDailyBridgeForecasts({ ...inputs(), ...extra }, players, games, now, 20262027, policy);
 
@@ -967,8 +969,9 @@ describe("No FORGE line: the labelled conservative 0 (TJ, option B)", () => {
     expect(rows.map(row => reserveCodeOf(row))).toEqual(["skater:no_forge_line", "skater:no_forge_line"]);
     for (const row of rows) {
       expect(row.conditionalStats).toMatchObject({ GOALS: 0.35, ASSISTS: 0.45 });
-      // Every key a complete 0, season-rated ones included, so the plan counts 0 rather than unknown.
-      expect(Object.values(row.stats).every(value => value === 0)).toBe(true);
+      // Every key unknown, season-rated ones included, and no planning use: the plan reads him as unknown, never 0.
+      expect(Object.values(row.stats).every(value => value === null)).toBe(true);
+      expect(row.allowedUses).toEqual({ assignment: false, totals: false, comparison: false, conditionalTieBreak: false });
       expect(row.appearanceProbability).toBeNull();
       expect(row.startProbability).toBeNull();
       expect(row.limitations.at(-1)).toBe(RESERVE_FORECAST_NOTES["skater:no_forge_line"]);
@@ -998,7 +1001,12 @@ describe("No FORGE line: the labelled conservative 0 (TJ, option B)", () => {
     const out = { gameId: 1, teamId: 10, playerId: 102, dimension: "availability" as const, value: "out", evidenceId: "e", sourceKey: "fixture",
       sourceUrl: null, publishedAt: "2026-10-19T15:00:00Z", receivedAt: "2026-10-19T15:00:00Z", confirmed: true };
     const after = s2Rows({ goalieNews: { assertions: [out], conflicts: [] } });
-    expect(after.forecasts.find(row => row.playerId === "s2" && row.gameId === "1")!.stats.GOALS).toBe(0);
+    const out1 = after.forecasts.find(row => row.playerId === "s2" && row.gameId === "1")!;
+    // A confirmed out is a real 0 (W2-8 D3) that keeps his "if he plays" line; his other game stays unknown.
+    expect(out1).toMatchObject({ stats: { GOALS: 0 }, conditionalStats: { GOALS: 0.35 }, appearanceProbability: 0 });
+    expect(reserveCodeOf(out1)).toBe("skater:confirmed_out");
+    expect(out1.allowedUses?.totals).toBe(true);
+    expect(after.forecasts.find(row => row.playerId === "s2" && row.gameId === "2")!.stats.GOALS).toBeNull();
     const real = (rows: typeof before.forecasts) => JSON.stringify(rows.filter(row => !reserveCodeOf(row)));
     expect(real(after.forecasts)).toBe(real(before.forecasts));
   });
@@ -1094,11 +1102,11 @@ describe("FORGE reserve lines in the bridge", () => {
       return { code: reserveCodeOf(row), appearance: row.appearanceProbability, points: points(row.stats) };
     };
     expect(state([lineupNews(1, 102, "ev", "L4", true)])).toEqual({ code: "skater:confirmed_lineup", appearance: 1, points: 0.47 });
-    expect(state([lineupNews(1, 102, "ev", "L4", false)])).toEqual({ code: "skater:projected_lineup", appearance: null, points: 0 });
+    expect(state([lineupNews(1, 102, "ev", "L4", false)])).toEqual({ code: "skater:projected_lineup", appearance: null, points: null });
     expect(state([lineupNews(1, 102, "availability", "out", true)])).toEqual({ code: "skater:confirmed_out", appearance: 0, points: 0 });
-    expect(state([lineupNews(1, 102, "availability", "out", false)])).toEqual({ code: "skater:projected_scratch", appearance: null, points: 0 });
-    expect(state([lineupNews(1, 102, "availability", "return", true)])).toEqual({ code: "skater:return_reported", appearance: null, points: 0 });
-    expect(state([lineupNews(1, 102, "availability", "uncertain", false)])).toEqual({ code: "skater:uncertain", appearance: null, points: 0 });
+    expect(state([lineupNews(1, 102, "availability", "out", false)])).toEqual({ code: "skater:projected_scratch", appearance: null, points: null });
+    expect(state([lineupNews(1, 102, "availability", "return", true)])).toEqual({ code: "skater:return_reported", appearance: null, points: null });
+    expect(state([lineupNews(1, 102, "availability", "uncertain", false)])).toEqual({ code: "skater:uncertain", appearance: null, points: null });
     // News for another game does not carry over.
     expect(state([lineupNews(2, 102, "ev", "L4", true)]).code).toBe("skater:no_lineup_evidence");
     expect(state([], { goalieNews: undefined }).code).toBe("skater:evidence_unavailable");
@@ -1139,7 +1147,7 @@ describe("FORGE reserve lines in the bridge", () => {
     expect(g2.stats.SAVES_GOALIE).toBeCloseTo(25 * g2.startProbability!, 3);
     expect(reserveCodeOf(g3Row)).toBe("goalie:start_unknown_team_line");
     expect(note(g3Row)).toMatch(/team starter's/);
-    expect(g3Row).toMatchObject({ startProbability: null, conditionalStats: { SAVES_GOALIE: 25 }, stats: { SAVES_GOALIE: 0 } });
+    expect(g3Row).toMatchObject({ startProbability: null, conditionalStats: { SAVES_GOALIE: 25 }, stats: { SAVES_GOALIE: null } });
     // g1's own line carries no label.
     expect(reserveCodeOf(forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!)).toBeNull();
     // A label is not a reserve line: a budget that withholds reserves keeps g2's labelled forecast.
@@ -1158,18 +1166,18 @@ describe("FORGE reserve lines in the bridge", () => {
     expect(legacy.forecasts.filter(row => row.playerId === "g2").every(row => reserveCodeOf(row) === null)).toBe(true);
   });
 
-  it("uses each goalie's own reserve line; an unknown start chance stays unknown and counts 0 starts", () => {
+  it("uses each goalie's own reserve line; an unknown start chance stays unknown, never 0 starts", () => {
     const { forecasts } = buildForgeDailyBridgeForecasts(reserveInputs(), [...players, g3], games, now, 20262027, policy);
     const g2 = forecasts.find(row => row.playerId === "g2" && row.gameId === "1")!, g3Row = forecasts.find(row => row.playerId === "g3" && row.gameId === "1")!;
     expect(g2.conditionalStats).toMatchObject({ SAVES_GOALIE: 22, GOALS_AGAINST_GOALIE: 3.1 });
     expect(g2.startProbability).toBeGreaterThan(0);
     expect(reserveCodeOf(g2)).toBeNull();
     expect(g3Row).toMatchObject({ startProbability: null, confirmedStart: false, conditionalStats: { SAVES_GOALIE: 22, GAMES_STARTED: 1 },
-      stats: { SAVES_GOALIE: 0, GAMES_STARTED: 0 } });
+      stats: { SAVES_GOALIE: null, GAMES_STARTED: null } });
     expect(g3Row.appearanceProbability).toBeUndefined();
     expect(note(g3Row)).toBe(RESERVE_FORECAST_NOTES["goalie:start_unknown"]);
-    // The pass off: no reserve rows are read, so g3 counts 0 starts on his team starter's line and s2 counts the "no
-    // FORGE line" 0 with his last line kept (TJ, option B).
+    // The pass off: no reserve rows are read, so g3 is unknown on his team starter's line and s2 gets the "no FORGE
+    // line" unknown with his last line kept.
     const legacy = buildForgeDailyBridgeForecasts({ ...reserveInputs(), reserves: undefined }, [...players, g3], games, now, 20262027, policy);
     expect(new Set(legacy.forecasts.filter(row => row.playerId === "g3").map(reserveCodeOf))).toEqual(new Set(["goalie:start_unknown_team_line"]));
     expect(new Set(legacy.forecasts.filter(row => row.playerId === "s2").map(reserveCodeOf))).toEqual(new Set(["skater:no_forge_line"]));
@@ -1218,9 +1226,9 @@ describe("FORGE reserve lines in the bridge", () => {
       } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
     };
     const unknown = await plan([]);
-    // A candidate with a known value (never "—"), and that value is the labelled 0, not his 2-goal line.
-    expect(unknown.horizon.get("s2")).toBe(0);
-    expect(unknown.active.get("s2")).toBe(0);
+    // Dressing unknown: his value is unknown (decisions 3, 47), never a fabricated 0 and never his 2-goal line.
+    expect(unknown.horizon.get("s2")).toBeNull();
+    expect(unknown.active.get("s2")).toBeNull();
     expect(unknown.horizon.get("s1")).toBeCloseTo(2 * (0.35 * 3 + 0.45 * 2));
     // The conditional line and its label reach the planner intact for the candidate card.
     const rows = unknown.rows.filter(row => row.playerId === "s2");

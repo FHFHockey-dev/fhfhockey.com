@@ -3,6 +3,7 @@ import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
 import { acquisitionEffectiveAt } from "./planningTimeline";
 import { dropEligible, providerListsOut, reservedPlayerIds } from "./retention";
+import { comparablePointsDelta } from "./pointsComparison";
 import { recentPointsPerGame } from "./recentForm";
 import type { PlanEvaluation, PlanIntent, PlanStep, PlanningGame, PlanningPlayer, PlanningSnapshot, StreamingChain, StreamingLeg, StreamingOption, StreamingPlan } from "./planningTypes";
 
@@ -348,14 +349,14 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlanWith
       const own = leg.options.find(option => option.playerId === leg.playerId);
       if (own) Object.assign(own, { games: leg.games, gameDates: leg.gameDates, points: leg.points });
     }
-    const netPoints = evaluation.comparisonEligible && baseline.comparisonEligible && evaluation.projectedValue !== null && baseline.projectedValue !== null
-      ? evaluation.projectedValue - baseline.projectedValue : null;
+    // Difference-based (TJ, 2026-11-12): an unknown player's unchanged games cancel; differing unknowns stay unknown.
+    const netPoints = comparablePointsDelta(evaluation, baseline);
     const score = scoreOf(evaluation);
     return { spots: spots.length as 1 | 2, legs, steps, evaluation, netGames: evaluation.activeGames - baseline.activeGames, netPoints,
       netScore: score !== null && baselineScore !== null ? score - baselineScore : null, addsUsed: steps.length, addsAvailable: budget };
   };
-  /** The ranking net (projection over remaining assignments) when known, else the evaluator's projected net. */
-  const pointsOf = (chain: StreamingChain) => chain.netScore ?? chain.netPoints;
+  /** The evaluator's certified net when known, else the projection over remaining assignments. */
+  const pointsOf = (chain: StreamingChain) => chain.netPoints ?? chain.netScore ?? null;
   // "Most starts": games, then points. "Best projected points": the week's points, then games.
   const objectiveOrder = (byPoints: boolean) => (a: StreamingChain, b: StreamingChain) => {
     const left = pointsOf(a), right = pointsOf(b);

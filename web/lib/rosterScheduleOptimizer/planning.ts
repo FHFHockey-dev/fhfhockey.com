@@ -6,6 +6,7 @@ import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
 import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
 import { deferBenchDecisions, explainBenchDecisions, reserveBenchEvaluation, type BenchEvaluationBudget } from "./benchDecisions";
+import { comparablePointsDelta } from "./pointsComparison";
 import { dropEligible, droppedOwnership, knownDropOrder, orderDropCandidates, providerListsOut, reservedPlayerIds } from "./retention";
 import { buildStreamingChains } from "./streamingChain";
 import type { ContributionPlanningSnapshot, ForecastExclusionReason, ForecastOpportunityExclusion, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningAssignment, PlanningGame, PlanningObjective, PlanningPlayer, PlanningResult, PlanningSnapshot, ScoringCategory, StatLine } from "./planningTypes";
@@ -160,11 +161,21 @@ export function forecastPointsReader(snapshot: PlanningSnapshot): (playerId: str
     return weights.reduce((sum, [key, weight]) => sum + forecast.stats[key]! * weight, 0);
   };
 }
-/** Supported remaining points on a player's selected assignments, excluding banked results. */
+/** Per-player evidence gate (decisions 3, 47, 49; W1 P0 #27), shared by the planner, Best Fit, streaming and the DROP
+ * chip: read from an evaluation of the roster (`valueUnknownPlayerIds`). A player is known only when every remaining
+ * game of his in the range has a resolved, unconditional forecast whose scored stats are finite and approved for totals
+ * and comparison. An unconfirmed reserve or no-line row allows no use, so its player is unknown: never an automatic
+ * drop, never ranked by games instead. A player with no game left in the range is known (0 in range). */
+export function playerValueKnown(evaluation: Pick<PlanEvaluation, "valueUnknownPlayerIds">, playerId: string): boolean {
+  return !!evaluation.valueUnknownPlayerIds && !evaluation.valueUnknownPlayerIds.includes(playerId);
+}
+/** Supported remaining points on a player's selected assignments, excluding banked results. Per player (the evidence
+ * gate above), not a global null: another player's unknown game leaves this player's own known points known. */
 export function playerAssignedPoints(snapshot: PlanningSnapshot, evaluation: PlanEvaluation, playerId: string): number | null {
   const player = snapshot.players.find(row => row.id === playerId);
-  if (!player?.eligibilityVerified || !evaluation.legal || !evaluation.comparisonEligible
-    || !finite(evaluation.projectedValue) || snapshot.rules.scoring.mode !== "points") return null;
+  if (!player?.eligibilityVerified || !evaluation.legal || snapshot.rules.scoring.mode !== "points"
+    || !(evaluation.comparisonEligible && finite(evaluation.projectedValue) || evaluation.knownComparison)
+    || !playerValueKnown(evaluation, playerId)) return null;
   const forecasts = evaluation.forecastInputs ?? [];
   const applicability = statApplicability({ ...snapshot, forecasts });
   const weights = Object.entries(snapshot.rules.scoring.weights)
@@ -284,7 +295,7 @@ export function candidateActivePoints(input: PlanningSnapshot, intent: PlanInten
   if (input.rules.scoring.mode !== "points") return points;
   const prepared = prepareEvaluation(input);
   const baseline = evaluatePreparedPlan(prepared, intent, "outcome", [], false);
-  if (!baseline.comparisonEligible || baseline.projectedValue === null) return points;
+  if (!baseline.legal || !(baseline.comparisonEligible && baseline.projectedValue !== null || baseline.knownComparison)) return points;
   const owned = new Set(input.roster.map(row => row.playerId));
   for (const player of input.players) {
     if (owned.has(player.id) || player.availability === "rostered" || intent.excludedPlayerIds.includes(player.id)
@@ -292,9 +303,8 @@ export function candidateActivePoints(input: PlanningSnapshot, intent: PlanInten
     const hypothetical = { ...prepared.snapshot, roster: [...input.roster, { playerId: player.id, position: "bench" as const }],
       rules: { ...input.rules, rosterSlots: { ...input.rules.rosterSlots, BN: (input.rules.rosterSlots.BN ?? 0) + 1 } } };
     const evaluation = evaluatePreparedPlan({ ...prepared, snapshot: hypothetical }, intent, "outcome", [], false);
-    if (evaluation.comparisonEligible && evaluation.projectedValue !== null) {
-      points.set(player.id, evaluation.projectedValue - baseline.projectedValue);
-    }
+    // Difference-based (TJ, 2026-11-12): an unknown rostered player's unchanged games cancel.
+    if (evaluation.legal) points.set(player.id, comparablePointsDelta(evaluation, baseline));
   }
   return points;
 }
@@ -1022,9 +1032,43 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   const comparisonEligible = comparisonInputs && outcomeKnown && [...playsByDate.values()].flat()
     .filter(play => !snapshot.lockedAssignments.some(lock => lock.date === play.game.date && lock.playerId === play.player.id && lock.slotId === null))
     .every(play => scoringTargets(snapshot, play, applicability).every(key => forecastAllows(play.forecast, key, "comparison")));
+  // The per-player evidence gate (see `playerValueKnown`): every play of his, active or benched, must be priced.
+  const valueUnknownPlayerIds = [...new Set([...playsByDate.values()].flat().filter(play => play.player.eligibilityVerified !== true
+    || !play.forecast || scoringTargets(snapshot, play, applicability).some(key => !forecastAllows(play.forecast, key, "totals")
+      || !forecastAllows(play.forecast, key, "comparison") || !finite(play.forecast!.stats[key])))
+    .map(play => play.player.id)), ...snapshot.roster.flatMap(entry => snapshot.players.find(player => player.id === entry.playerId)?.teamAbbreviation ? [] : [entry.playerId])]
+    .sort().filter((id, index, ids) => ids.indexOf(id) === index);
+  // Difference-based comparison (W1 P0 #27, TJ 2026-11-12): price the known part and list the active plays whose
+  // value is unknown. Admitted only when every other comparison input holds and each unresolved issue is a plain
+  // unknown value (an eligibility-verified player, no conflicting evidence); a benched unknown play scores 0.
+  let knownComparison: PlanEvaluation["knownComparison"] = null;
+  if (snapshot.rules.scoring.mode === "points" && legal && opportunitiesComplete && coverageKnown && !conflictingTargets.size
+    && !invalidLocks && !weeklyEvidenceMissing && !snapshot.rules.unsupported.length
+    && unresolved.every(issue => playFor.get(`${issue.playerId}:${issue.gameId}`)?.player.eligibilityVerified === true
+      && !issue.reasons?.includes("conflicting_forecast"))) {
+    const weights = Object.entries(snapshot.rules.scoring.weights).filter(([, weight]) => weight !== 0);
+    const known: StatLine = { ...snapshot.realized };
+    const unknownActive: string[] = [], unknownPlayers = new Set<string>();
+    let priced = weights.every(([, weight]) => finite(weight));
+    for (const play of chosen.values()) {
+      const required = scoringTargets(snapshot, play, applicability);
+      const usable = !!play.forecast && play.player.eligibilityVerified === true && required.every(key =>
+        forecastAllows(play.forecast, key, "totals") && forecastAllows(play.forecast, key, "comparison") && finite(play.forecast!.stats[key]));
+      if (!usable) { unknownActive.push(`${play.player.id}:${play.game.id}`); unknownPlayers.add(play.player.id); continue; }
+      for (const key of required) known[key] = (known[key] ?? 0)! + play.forecast!.stats[key]!;
+    }
+    // A benched play with a value must still be approved for comparison, as the full comparison requires.
+    priced &&= [...playsByDate.values()].flat().every(play => unknownPlayers.has(play.player.id) || !play.forecast
+      || scoringTargets(snapshot, play, applicability).every(key => forecastAllows(play.forecast, key, "comparison")));
+    const knownValue = weights.reduce((sum, [key, weight]) => sum + (known[key] ?? 0)! * weight, 0);
+    // Every unknown-valued roster player is listed, active or not: an added or dropped unknown player changes the set,
+    // so that plan never compares (an unknown candidate is unknown for rankings, decision 47).
+    if (priced && finite(knownValue)) knownComparison = { knownValue, unknownActive: unknownActive.sort(),
+      unknownPlayerIds: [...new Set([...unknownPlayers, ...valueUnknownPlayerIds])].sort() };
+  }
   const plannedRows = assignments.filter(row => !heldKeys.has(`${row.playerId}:${row.gameId}`)
     && !startedRows.some(started => started.playerId === row.playerId && started.gameId === row.gameId)).length;
-  const evaluation: PlanEvaluation = { assignmentValue, comparisonEligible,
+  const evaluation: PlanEvaluation = { assignmentValue, comparisonEligible, knownComparison, valueUnknownPlayerIds,
     forecastManifestId: conflictingTargets.size
       ? `${snapshot.forecastManifest?.id ?? snapshot.id}:conflict:${conflictFingerprint(coverage.exclusions
         .filter(row => row.reasons.includes("conflicting_forecast")))}` : snapshot.forecastManifest?.id ?? snapshot.id,
@@ -1313,7 +1357,9 @@ function* extensions(snapshot: PlanningSnapshot, intent: PlanIntent, prior: Plan
 /** The no-move drop ranking (`knownDropOrder`): projected points first in points leagues, then active games. */
 export function noMoveDropOrder(snapshot: PlanningSnapshot, intent: PlanIntent): Map<string, number> {
   const outcome = evaluatePlan(snapshot, intent, "outcome", [], false), agp = evaluatePlan(snapshot, intent, "agp", [], false);
-  return knownDropOrder(snapshot.roster.flatMap(entry => snapshot.players.find(player => player.id === entry.playerId) ?? []),
+  // The evidence gate: an unknown player is in no tier (never ranked by games instead), so never an automatic drop.
+  return knownDropOrder(snapshot.roster.flatMap(entry => snapshot.players.find(player => player.id === entry.playerId) ?? [])
+    .filter(player => playerValueKnown(outcome, player.id)),
     player => snapshot.rules.scoring.mode === "points" ? playerAssignedPoints(snapshot, outcome, player.id) : null,
     player => agp.assignments.filter(row => row.playerId === player.id).length);
 }
@@ -1368,7 +1414,9 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   // The same drop order as Best Fit: lowest known no-move points first (points leagues), then lowest active games
   // for players whose points are unknown (the schedule-only plans), ownership only on exact ties. A player with
   // neither is never proposed; the DROP chip itself stays points-only.
-  const dropOrder = knownDropOrder(snapshot.roster.flatMap(entry => snapshot.players.find(player => player.id === entry.playerId) ?? []),
+  // The evidence gate (decisions 3, 47): a player whose value is unknown is in no tier, so never an automatic drop.
+  const dropOrder = knownDropOrder(snapshot.roster.flatMap(entry => snapshot.players.find(player => player.id === entry.playerId) ?? [])
+    .filter(player => playerValueKnown(noMoveOutcome, player.id)),
     player => snapshot.rules.scoring.mode === "points" ? playerAssignedPoints(snapshot, noMoveOutcome, player.id) : null,
     // No-move starts counted so far, a known lower bound even while the lineup is not yet legal.
     player => noMoveAgp.assignments.filter(row => row.playerId === player.id).length);

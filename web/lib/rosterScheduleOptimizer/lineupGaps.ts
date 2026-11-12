@@ -1,5 +1,6 @@
 import { candidatePlanForSort, type CandidateComparison, type CandidatePlan } from "./candidatePlanMetrics";
 import { contributionLedger } from "./contributionLedger";
+import { playerValueKnown } from "./planning";
 import { dropContribution, dropEligible, reservedPlayerIds, retentionCaution, suggestedDrop, type RetentionCaution } from "./retention";
 import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
@@ -57,7 +58,9 @@ export function lineupGapReport(snapshot: PlanningSnapshot, intent: PlanIntent, 
   const reserved = reservedPlayerIds(snapshot.roster);
   const eligible = snapshot.roster.map(row => players.get(row.playerId))
     .filter((player): player is PlanningPlayer => !!player && dropEligible(player, intent, reserved));
-  const { player: drop, unprojected: unknown } = suggestedDrop(eligible, player => dropContribution(snapshot.rules.scoring.mode, ledger.get(player.id)));
+  // The shared evidence gate: an unknown player reads unprojected, never a games-ranked suggestion (decisions 3, 47).
+  const { player: drop, unprojected: unknown } = suggestedDrop(eligible, player => playerValueKnown(baseline, player.id)
+    ? dropContribution(snapshot.rules.scoring.mode, ledger.get(player.id)) : null);
   // In points leagues one unresolved game (any roster member's, droppable or not) makes the whole lineup's value
   // unknown, so every contribution reads unknown. Name the players and games actually responsible, with the reason;
   // a droppable player with complete forecasts is not "unprojected" just because someone else's game is unknown.

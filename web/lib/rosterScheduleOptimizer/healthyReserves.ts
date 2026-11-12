@@ -1,4 +1,5 @@
 import { evaluatePlan } from "./planning";
+import { comparablePointsDelta } from "./pointsComparison";
 import { lineupPeriodAtDate, localDate } from "./planningDates";
 import { expandActiveSlots } from "./slots";
 import type { LockedAssignment, PlanEvaluation, PlanIntent, PlanningPlayer, PlanningSnapshot, RosterEntry } from "./planningTypes";
@@ -75,8 +76,7 @@ export function healthyReserves(snapshot: PlanningSnapshot, intent: PlanIntent):
   const gain = (activated: PlanEvaluation) => {
     without ??= run(base);
     const priced = activated.legal && without.legal;
-    return { projectedPoints: priced && points && activated.projectedValue !== null && without.projectedValue !== null
-      ? activated.projectedValue - without.projectedValue : null, activeGames: priced ? activated.activeGames - without.activeGames : null };
+    return { projectedPoints: priced && points ? comparablePointsDelta(activated, without) : null, activeGames: priced ? activated.activeGames - without.activeGames : null };
   };
   const byGain = (a: Activation, b: Activation) => descending(a.projectedPoints, b.projectedPoints) || descending(a.activeGames, b.activeGames);
   const activate = (entry: Reserved, swapPlayerId: string | null): Activation => {

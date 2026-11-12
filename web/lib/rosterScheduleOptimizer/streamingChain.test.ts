@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
 import { defaultIntent, defaultWorkspace } from "./workspace";
-import { evaluatePlan, forecastPointsReader, planRoster, playerAssignedPoints } from "./planning";
+import { evaluatePlan, forecastPointsReader, noMoveDropOrder, planRoster, playerAssignedPoints } from "./planning";
+import { candidatePlanMetrics } from "./candidatePlanMetrics";
+import { lineupGapReport } from "./lineupGaps";
 import { knownDropOrder } from "./retention";
 import { reconcileIntent } from "./reconciliation";
 import { buildStreamingChains, streamingChainSteps, type StreamingPlanWithAlternatives } from "./streamingChain";
@@ -316,6 +318,43 @@ describe("streaming rank uses qualified projections only (decisions 2, 48)", () 
     const options = orders.map(order => planRoster(week(cycleWeek(order), { asOf: "2026-10-28T14:00:00Z", remaining: 1 }),
       { ...intent(), objective: "outcome" }).streaming!.chains[0].legs[0].options.map(option => option.playerId));
     expect(options).toEqual(orders.map(() => ["c", "b", "a"]));
+  });
+});
+
+/** Decisions 3, 47, 49 (W1 P0 #27, Astra E4c): one roster player has games but no forecast. The old games-tier fallback
+ * ranked him first to drop, so streaming, the planner and Best Fit proposed dropping an unknown. The per-player evidence
+ * gate keeps him out of every drop surface, while the known players stay droppable. */
+const unknownWeek: Spec[] = [
+  { id: "core", team: "CORE", days: [0, 1, 2, 3, 4, 5, 6], perGame: 3, rostered: true },
+  { id: "low", team: "LOW", days: [1, 3], perGame: 0.2, rostered: true },
+  { id: "zero", team: "ZRO", days: [2, 4], perGame: 0, rostered: true },
+  { id: "unknown", team: "UNK", days: [0], perGame: 1, rostered: true },
+  { id: "fa", team: "FAS", days: [3, 4, 5, 6], perGame: 2 },
+];
+const withoutForecast = (snapshot: PlanningSnapshot, id: string) => ({ ...snapshot, forecasts: snapshot.forecasts.filter(row => row.playerId !== id) });
+
+describe("unknown roster players are never automatic drops (decisions 3, 47, 49)", () => {
+  const slots = { slots: { C: 2, UTIL: 1, BN: 1 }, asOf: "2026-10-26T14:00:00Z", remaining: 1 };
+  it.each(["outcome", "agp"] as const)("streams and plans without dropping the unknown player (%s)", objective => {
+    const snapshot = withoutForecast(week(unknownWeek, slots), "unknown");
+    const plan = planRoster(snapshot, { ...intent(), objective });
+    const drops = (steps: PlanStep[]) => steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []);
+    const streaming = plan.streaming as StreamingPlanWithAlternatives;
+    expect(streaming.chains.length).toBeGreaterThan(0);
+    expect([...streaming.chains, ...streaming.alternatives ?? []].flatMap(chain => drops(chain.steps))).not.toContain("unknown");
+    expect([plan.selected, ...plan.alternatives].flatMap(evaluation => drops(evaluation.steps))).not.toContain("unknown");
+    // The known players stay ranked; the unknown one is in no tier.
+    const order = noMoveDropOrder(snapshot, intent());
+    expect(order.has("unknown")).toBe(false);
+    expect([...order.keys()]).toEqual(expect.arrayContaining(["low", "zero", "core"]));
+  });
+  it("Best Fit and the DROP chip never suggest the unknown player", () => {
+    const snapshot = withoutForecast(week(unknownWeek, slots), "unknown");
+    const metrics = candidatePlanMetrics(snapshot, intent());
+    expect(metrics.candidates.flatMap(row => row.plans).flatMap(plan => plan.steps).some(step => step.dropPlayerId === "unknown")).toBe(false);
+    const report = lineupGapReport(snapshot, intent(), evaluatePlan(snapshot, intent(), "outcome", [], false));
+    expect(report.bestDrop?.playerId).not.toBe("unknown");
+    expect(report.unprojectedDrops).toEqual(["unknown"]);
   });
 });
 
