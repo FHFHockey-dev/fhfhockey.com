@@ -101,3 +101,19 @@ Preconditions: phase C has finished and the DB preflight passes.
 
 ### After success
 This game joins the summary sweep and goalie refresh with the others.
+
+## Result (2026-11-12 18:22Z, TJ-approved, run after phase C ended)
+- **Existing state matched the plan:** v1 complete; heads 88010 and 88472.
+- **Re-qualified on the exact capture bytes:**
+  - envelope hash `749be103fb3e…`, the same as the dry run;
+  - 788 rows; 36/36 skaters match the ES; OT 163/163.
+- **Captured:** raw row **97127**. The shiftcharts head advanced to version 2 → 97127.
+- **Normalized:** one RPC.
+  - Status complete, `strength_version` 2, normalization version 4.
+  - Events 332/332, roster 40/40, shifts 788/788. 789 old shift rows pruned.
+  - `idempotent: false` (a real write).
+- **Snapshots kept:** 88010 (JSON) and 97127 (HTML).
+- **Readback:**
+  - Kuemper 3,746 s = 62:26 and Varlamov 3,737 s = 62:17, both matching the GS;
+  - all 332 PBP events at v2.
+- No retry was needed.
