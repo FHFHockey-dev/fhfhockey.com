@@ -3,14 +3,16 @@ import supabase from "lib/supabase/server";
 import { sha256CanonicalJson } from "./materializationFingerprint";
 import { isCompleteRelationshipPlayerPosition } from "./relationshipPlayerPosition";
 import type { ShiftChartRelationshipUpsert } from "./shiftChartRelationshipPayload";
+import { PROJECTION_INPUT_MATERIALIZER_VERSION } from "./ingest/projectionInputPersistence";
 
 export const SHIFT_RELATIONSHIP_ALGORITHM_VERSION =
-  "shift_relationship_materializer_v3_position_bound";
+  "shift_relationship_materializer_v6_strength_segments";
 
 type MaterializationStatus = {
   input_fingerprint: string;
   input_status: string;
   input_version: number;
+  input_materializer_version: string;
   pbp_raw_payload_hash: string;
   pbp_source_hash: string;
   shift_source_hash: string;
@@ -233,7 +235,7 @@ export async function persistShiftChartRelationships(args: {
   const { data: statusData, error: statusError } = await db
     .from("projection_game_materialization_status")
     .select(
-      "input_fingerprint,input_status,input_version,pbp_raw_payload_hash,pbp_source_hash,shift_source_hash",
+      "input_fingerprint,input_status,input_version,input_materializer_version,pbp_raw_payload_hash,pbp_source_hash,shift_source_hash",
     )
     .eq("game_id", gameId)
     .maybeSingle();
@@ -247,6 +249,9 @@ export async function persistShiftChartRelationships(args: {
     status.input_version <= 0
   ) {
     throw new Error(`Projection inputs are not complete for game ${gameId}`);
+  }
+  if (status.input_materializer_version !== PROJECTION_INPUT_MATERIALIZER_VERSION) {
+    throw new Error(`Projection strength totals require re-ingestion for game ${gameId}`);
   }
   const inputFingerprint = requireHash(
     status.input_fingerprint,

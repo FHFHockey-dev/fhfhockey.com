@@ -136,7 +136,7 @@ describe("Game Grid replay model", () => {
         typeDescKey: "penalty",
         timeInPeriod: "00:10",
         periodDescriptor: { number: 4, periodType: "OT" },
-        details: { eventOwnerTeamId: 21, duration: 2, typeCode: "MIN" },
+        details: { eventOwnerTeamId: 21, committedByPlayerId: 201, duration: 2, typeCode: "MIN" },
       },
       {
         eventId: 5,

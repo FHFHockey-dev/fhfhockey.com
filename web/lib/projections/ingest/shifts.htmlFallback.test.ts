@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("lib/supabase/server", () => ({ default: { from: vi.fn() } }));
 
-import { fetchNhlApiRawGamePayloads } from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
+import { buildHtmlShiftReportPayload, fetchNhlApiRawGamePayloads } from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
 
 import {
   buildProjectionInputRpcPayload,
@@ -173,6 +173,44 @@ describe("projection shift snapshot HTML fallback", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
+  });
+
+  it.each([
+    { label: "OT", period: 4, gameType: 2, nominal: "05:00", played: "03:23", remaining: "01:37" },
+    { label: "2OT", period: 5, gameType: 3, nominal: "20:00", played: "02:43", remaining: "17:17" },
+  ])("retains $label physical intervals from the official HTML period labels", ({ label, period, gameType, nominal, played, remaining }) => {
+    const gameId = gameType === 3 ? 2026030010 : GAME_ID;
+    const shifts = [
+      ["1", "1", "0:00 / 20:00", "0:30 / 19:30", "00:30", ""],
+      ["2", label, `0:00 / ${nominal}`, `${played} / ${remaining}`, played, ""],
+    ];
+    const payload = buildHtmlShiftReportPayload({
+      gameId,
+      seasonId: 20262027,
+      game: finalPbp({ id: gameId, gameType }),
+      jsonPayload: { total: 0, data: [] },
+      visitorHtml: report("DETROIT RED WINGS", "8 CHIAROT, BEN", shifts),
+      homeHtml: report("NASHVILLE PREDATORS", "9 FORSBERG, FILIP", shifts),
+      strict: true,
+    });
+    expect(payload?.total).toBe(4);
+    expect(payload?.data.filter((row) => row.playerId === 101).map((row) => row.period)).toEqual([1, period]);
+    expect(payload?.data.filter((row) => row.period === period).map((row) => [row.startTime, row.endTime, row.duration])).toEqual([["00:00", played, played], ["00:00", played, played]]);
+  });
+
+  it("refuses an unknown period on a numbered physical shift instead of silently dropping it", () => {
+    expect(() => buildHtmlShiftReportPayload({
+      gameId: GAME_ID,
+      seasonId: 20262027,
+      game: finalPbp(),
+      jsonPayload: { total: 0, data: [] },
+      visitorHtml: report("DETROIT RED WINGS", "8 CHIAROT, BEN", [
+        ["1", "1", "0:00 / 20:00", "0:30 / 19:30", "00:30", ""],
+        ["2", "UNKNOWN", "0:00 / 5:00", "0:30 / 4:30", "00:30", ""],
+      ]),
+      homeHtml: HOME_HTML,
+      strict: true,
+    })).toThrow("unrecognized period");
   });
 
   it("maps HTML report rows to projection shift rows for an empty final JSON feed", async () => {

@@ -1,7 +1,6 @@
 import supabase from "lib/supabase/server";
-// W2-6 §1: ice time uses the same pulled-goalie-adjusted classifier as FORGE's event counts
-// (decision 70: 6v5 without a penalty is ES, 6v4 is PP for the team with the extra attacker).
-import { parseSituationDigits, strengthForTeam, type SituationDigits } from "../derived/situation";
+import { parseSituationDigits } from "../derived/situation";
+import { buildPenaltyClock } from "../penaltyClock";
 import type { TablesInsert } from "lib/supabase/database-generated.types";
 
 import {
@@ -95,13 +94,12 @@ function assertSupabase() {
 type Segment = {
   start: number;
   end: number;
-  digits: SituationDigits;
+  advantageTeamId: number | null;
 };
 
 type PeriodTimeline = {
   nominalLength: number;
   playedEnd: number;
-  segments: Segment[];
 };
 
 function requirePbpClock(
@@ -122,11 +120,24 @@ function requirePbpClock(
   return seconds;
 }
 
-function buildSituationTimelineForPeriod(
+function buildPeriodTimeline(
   plays: readonly any[],
   period: number,
   gameId: number,
+  gameType: number,
 ): PeriodTimeline {
+  const regulation = period >= 1 && period <= 3;
+  const expectedPeriodType = regulation ? "REG" : "OT";
+  const expectedNominalLength = regulation
+    ? 1200
+    : gameType === 3 && period >= 4
+      ? 1200
+      : (gameType === 1 || gameType === 2) && period === 4
+        ? 300
+        : null;
+  if (expectedNominalLength == null) {
+    throw new Error(`Invalid PBP period definition for game ${gameId}, period ${period}`);
+  }
   const periodPlays = plays.filter(
     (play) => play?.periodDescriptor?.number === period,
   );
@@ -139,7 +150,10 @@ function buildSituationTimelineForPeriod(
   let nominalLength: number | null = null;
   let periodStartCount = 0;
   const terminalTimes: number[] = [];
-  const points = periodPlays.map((play, sourceIndex) => {
+  const points = periodPlays.map((play) => {
+    if (play?.periodDescriptor?.periodType !== expectedPeriodType) {
+      throw new Error(`Invalid PBP period definition for game ${gameId}, period ${period}`);
+    }
     const timeInPeriod = requirePbpClock(
       play?.timeInPeriod,
       "timeInPeriod",
@@ -191,13 +205,14 @@ function buildSituationTimelineForPeriod(
       terminalTimes.push(timeInPeriod);
     }
 
-    const eventId = Number(play?.eventId);
-    const sortOrder = Number.isSafeInteger(play?.sortOrder)
-      ? Number(play.sortOrder)
-      : eventId;
-    return { timeInPeriod, digits, sortOrder, eventId, sourceIndex };
+    return { timeInPeriod };
   });
 
+  if (nominalLength !== expectedNominalLength) {
+    throw new Error(
+      `Invalid PBP nominal period length for game ${gameId}, period ${period}: expected ${expectedNominalLength}s`,
+    );
+  }
   if (periodStartCount !== 1) {
     throw new Error(
       `Expected exactly one PBP period-start for game ${gameId}, period ${period}`,
@@ -225,59 +240,32 @@ function buildSituationTimelineForPeriod(
     );
   }
 
-  points.sort(
-    (a, b) =>
-      a.timeInPeriod - b.timeInPeriod ||
-      a.sortOrder - b.sortOrder ||
-      a.eventId - b.eventId ||
-      a.sourceIndex - b.sourceIndex,
-  );
-  const pointsByTime = new Map<number, SituationDigits>();
-  for (const point of points) {
-    // Multiple events commonly share a timestamp. Canonical NHL sort order,
-    // then event identity, decides which final state owns the next interval.
-    pointsByTime.set(point.timeInPeriod, point.digits);
-  }
-  const uniquePoints = Array.from(pointsByTime, ([timeInPeriod, digits]) => ({
-    timeInPeriod,
-    digits,
-  }));
-  if (uniquePoints[0]?.timeInPeriod !== 0) {
-    throw new Error(
-      `PBP situation coverage does not start at 0:00 for game ${gameId}, period ${period}`,
-    );
-  }
+  return { nominalLength: nominalLength!, playedEnd };
+}
 
-  const segments: Segment[] = [];
-  for (let index = 0; index < uniquePoints.length; index += 1) {
-    const start = uniquePoints[index].timeInPeriod;
-    if (start >= playedEnd) break;
-    const nextStart = uniquePoints[index + 1]?.timeInPeriod ?? playedEnd;
-    const end = Math.min(nextStart, playedEnd);
-    if (end <= start) continue;
-    segments.push({ start, end, digits: uniquePoints[index].digits });
-  }
-
-  const coveredSeconds = segments.reduce(
-    (sum, segment) => sum + segment.end - segment.start,
+function buildPenaltySegmentsForPeriod(
+  period: number,
+  playedEnd: number,
+  spans: ReturnType<typeof buildPenaltyClock>["spans"],
+): Segment[] {
+  const offset = (period - 1) * 1200;
+  const periodSpans = spans.filter((span) => span.start < offset + playedEnd && span.end > offset);
+  const boundaries = [...new Set([
     0,
-  );
-  if (
-    segments.length === 0 ||
-    segments[0].start !== 0 ||
-    segments[segments.length - 1].end !== playedEnd ||
-    coveredSeconds !== playedEnd ||
-    segments.some(
-      (segment, index) =>
-        index > 0 && segments[index - 1].end !== segment.start,
-    )
-  ) {
-    throw new Error(
-      `Incomplete PBP situation coverage for game ${gameId}, period ${period}`,
-    );
-  }
+    playedEnd,
+    ...periodSpans.flatMap((span) => [Math.max(0, span.start - offset), Math.min(playedEnd, span.end - offset)]),
+  ])].sort((left, right) => left - right);
+  return boundaries.slice(0, -1).map((start, index) => ({
+    start,
+    end: boundaries[index + 1],
+    advantageTeamId: periodSpans.find((span) => span.start <= offset + start && span.end > offset + start)?.teamId ?? null,
+  }));
+}
 
-  return { nominalLength: nominalLength!, playedEnd, segments };
+function strengthForPenaltySegment(segment: Segment, teamId: number): Strength {
+  return segment.advantageTeamId == null
+    ? "es"
+    : segment.advantageTeamId === teamId ? "pp" : "pk";
 }
 
 function overlapSeconds(
@@ -562,12 +550,12 @@ function requireShiftClock(value: unknown, field: string): number {
   return seconds;
 }
 
-export function buildShiftStrengthUpserts(
+/** Returns physical interval unions for calculations; raw source rows stay unchanged. */
+export function buildCanonicalShiftIntervals(
   gameId: number,
   pbp: Awaited<ReturnType<typeof fetchPbpGame>>,
   shiftRows: readonly NhleShiftRow[],
-  updatedAt = new Date().toISOString(),
-): ShiftStrengthUpsert[] {
+): NhleShiftRow[] {
   if (!Number.isSafeInteger(gameId) || gameId <= 0 || pbp.id !== gameId) {
     throw new Error("Shift/PBP game identity mismatch");
   }
@@ -623,35 +611,27 @@ export function buildShiftStrengthUpserts(
     if (!timelinesByPeriod.has(shift.period)) {
       timelinesByPeriod.set(
         shift.period,
-        buildSituationTimelineForPeriod(pbp.plays, shift.period, gameId),
+        buildPeriodTimeline(pbp.plays, shift.period, gameId, pbp.gameType),
       );
     }
   }
 
-  const totalsByPlayer = new Map<
-    number,
-    {
-      es: number;
-      pp: number;
-      pk: number;
-      meta: Omit<
-        ShiftStrengthUpsert,
-        "total_es_toi" | "total_pp_toi" | "total_pk_toi"
-      >;
-    }
-  >();
-
-  for (const shift of intervalRows) {
+  const metadataByPlayer = new Map<number, NhleShiftRow>();
+  const intervals = intervalRows.map((shift) => {
     const playerId = shift.playerId;
-    const teamId = shift.teamId;
-
-    const timeline = timelinesByPeriod.get(shift.period);
-    if (!timeline) {
+    const existing = metadataByPlayer.get(playerId);
+    if (existing && (
+      existing.teamId !== shift.teamId ||
+      existing.teamAbbrev !== shift.teamAbbrev ||
+      existing.firstName !== shift.firstName ||
+      existing.lastName !== shift.lastName
+    )) {
       throw new Error(
-        `Missing validated shift timeline for game ${gameId}, period ${shift.period}`,
+        `Contradictory NHL shift metadata for player ${playerId} in game ${gameId}`,
       );
     }
-
+    metadataByPlayer.set(playerId, shift);
+    const timeline = timelinesByPeriod.get(shift.period)!;
     const shiftStart = requireShiftClock(shift.startTime, "start");
     const shiftEnd = requireShiftClock(shift.endTime, "end");
     const duration = requireShiftClock(shift.duration, "duration");
@@ -687,6 +667,99 @@ export function buildShiftStrengthUpserts(
       );
     }
 
+    return { shift, start: shiftStart, end: normalizedEnd };
+  }).sort((left, right) =>
+    left.shift.playerId - right.shift.playerId ||
+    left.shift.period - right.shift.period ||
+    left.start - right.start || left.end - right.end ||
+    left.shift.shiftNumber - right.shift.shiftNumber,
+  );
+
+  const teamIds = new Set(intervalRows.map((row) => row.teamId));
+  if (teamIds.size !== 2 || !teamIds.has(homeTeamId) || !teamIds.has(awayTeamId)) {
+    throw new Error(`NHL shift rows do not cover both teams for game ${gameId}`);
+  }
+
+  const output: NhleShiftRow[] = [];
+  for (const { shift, start, end } of intervals) {
+    const previous = output.at(-1);
+    if (previous && previous.playerId === shift.playerId &&
+      previous.teamId === shift.teamId && previous.period === shift.period &&
+      start <= requireShiftClock(previous.endTime, "end")) {
+      const mergedEnd = Math.max(end, requireShiftClock(previous.endTime, "end"));
+      previous.endTime = formatSecondsToClock(mergedEnd);
+      previous.duration = formatSecondsToClock(
+        mergedEnd - requireShiftClock(previous.startTime, "start"),
+      );
+      previous.shiftNumber = Math.min(previous.shiftNumber, shift.shiftNumber);
+    } else {
+      output.push({
+        ...shift,
+        startTime: formatSecondsToClock(start),
+        endTime: formatSecondsToClock(end),
+        duration: formatSecondsToClock(end - start),
+      });
+    }
+  }
+  return output;
+}
+
+export function buildShiftStrengthUpserts(
+  gameId: number,
+  pbp: Awaited<ReturnType<typeof fetchPbpGame>>,
+  shiftRows: readonly NhleShiftRow[],
+  updatedAt = new Date().toISOString(),
+): ShiftStrengthUpsert[] {
+  const intervalRows = buildCanonicalShiftIntervals(gameId, pbp, shiftRows);
+  const { spans } = buildPenaltyClock(pbp.plays, {
+    homeTeamId: pbp.homeTeam.id,
+    awayTeamId: pbp.awayTeam.id,
+    gameType: pbp.gameType,
+  });
+  const homeTeamId = pbp.homeTeam.id;
+  const awayTeamId = pbp.awayTeam.id;
+  const gameDate = pbp.gameDate;
+  const seasonId = Number(pbp.season);
+  const gameType = String(pbp.gameType);
+  const timelinesByPeriod = new Map<number, PeriodTimeline & { segments: Segment[] }>();
+  for (const shift of intervalRows) {
+    if (!timelinesByPeriod.has(shift.period)) {
+      const timeline = buildPeriodTimeline(pbp.plays, shift.period, gameId, pbp.gameType);
+      timelinesByPeriod.set(shift.period, {
+        ...timeline,
+        segments: buildPenaltySegmentsForPeriod(shift.period, timeline.playedEnd, spans),
+      });
+    }
+  }
+
+  const totalsByPlayer = new Map<
+    number,
+    {
+      es: number;
+      pp: number;
+      pk: number;
+      meta: Omit<
+        ShiftStrengthUpsert,
+        "total_es_toi" | "total_pp_toi" | "total_pk_toi"
+      >;
+    }
+  >();
+
+  for (const shift of intervalRows) {
+    const playerId = shift.playerId;
+    const teamId = shift.teamId;
+
+    const timeline = timelinesByPeriod.get(shift.period);
+    if (!timeline) {
+      throw new Error(
+        `Missing validated shift timeline for game ${gameId}, period ${shift.period}`,
+      );
+    }
+
+    const shiftStart = requireShiftClock(shift.startTime, "start");
+    const normalizedEnd = requireShiftClock(shift.endTime, "end");
+    const duration = requireShiftClock(shift.duration, "duration");
+
     let es = 0;
     let pp = 0;
     let pk = 0;
@@ -700,12 +773,7 @@ export function buildShiftStrengthUpserts(
       );
       if (olap === 0) continue;
       coveredSeconds += olap;
-      const strength = strengthForTeam(
-        seg.digits,
-        teamId,
-        homeTeamId,
-        awayTeamId,
-      );
+      const strength = strengthForPenaltySegment(seg, teamId);
       if (strength === "pp") pp += olap;
       else if (strength === "pk") pk += olap;
       else es += olap;
@@ -784,7 +852,7 @@ export function buildShiftStrengthUpserts(
 }
 
 /**
- * Split every validated shift interval against the same complete PBP situation
+ * Split every validated shift interval against the same penalty-clock
  * timeline used for strength totals. This keeps relationship PP/ES arrays on
  * the input manifest's PBP generation instead of a separately scheduled table.
  */
@@ -793,50 +861,34 @@ export function buildShiftRelationshipStrengthSegments(
   pbp: Awaited<ReturnType<typeof fetchPbpGame>>,
   shiftRows: readonly NhleShiftRow[],
 ): ShiftRelationshipStrengthSegment[] {
-  // Reuse the strict identity, final-PBP, both-team, clock, and full-coverage
-  // checks before exposing any relationship segments.
-  buildShiftStrengthUpserts(gameId, pbp, shiftRows, "1970-01-01T00:00:00.000Z");
+  const intervalRows = buildCanonicalShiftIntervals(gameId, pbp, shiftRows);
+  const { spans } = buildPenaltyClock(pbp.plays, {
+    homeTeamId: pbp.homeTeam.id,
+    awayTeamId: pbp.awayTeam.id,
+    gameType: pbp.gameType,
+  });
 
-  const homeTeamId = pbp.homeTeam.id;
-  const awayTeamId = pbp.awayTeam.id;
-  const timelinesByPeriod = new Map<number, PeriodTimeline>();
+  const timelinesByPeriod = new Map<number, PeriodTimeline & { segments: Segment[] }>();
   const output: ShiftRelationshipStrengthSegment[] = [];
 
-  const intervalRows = shiftRows
-    .filter((row) => row.typeCode === 517)
-    .slice()
-    .sort(
-      (left, right) =>
-        left.playerId - right.playerId ||
-        left.period - right.period ||
-        left.shiftNumber - right.shiftNumber ||
-        left.startTime.localeCompare(right.startTime),
-    );
   for (const shift of intervalRows) {
     let timeline = timelinesByPeriod.get(shift.period);
     if (!timeline) {
-      timeline = buildSituationTimelineForPeriod(
-        pbp.plays,
-        shift.period,
-        gameId,
-      );
+      const periodTimeline = buildPeriodTimeline(pbp.plays, shift.period, gameId, pbp.gameType);
+      timeline = {
+        ...periodTimeline,
+        segments: buildPenaltySegmentsForPeriod(shift.period, periodTimeline.playedEnd, spans),
+      };
       timelinesByPeriod.set(shift.period, timeline);
     }
     const start = requireShiftClock(shift.startTime, "start");
-    const rawEnd = requireShiftClock(shift.endTime, "end");
-    const duration = requireShiftClock(shift.duration, "duration");
-    const end = rawEnd === 0 ? start + duration : rawEnd;
+    const end = requireShiftClock(shift.endTime, "end");
 
     for (const segment of timeline.segments) {
       const segmentStart = Math.max(start, segment.start);
       const segmentEnd = Math.min(end, segment.end);
       if (segmentEnd <= segmentStart) continue;
-      const strength = strengthForTeam(
-        segment.digits,
-        shift.teamId,
-        homeTeamId,
-        awayTeamId,
-      );
+      const strength = strengthForPenaltySegment(segment, shift.teamId);
       const previous = output.at(-1);
       if (
         previous &&

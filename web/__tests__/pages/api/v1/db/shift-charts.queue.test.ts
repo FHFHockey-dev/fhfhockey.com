@@ -42,10 +42,14 @@ vi.mock("lib/projections/ingest/shifts", () => ({
   },
 }));
 
-vi.mock("lib/projections/ingest/projectionInputPersistence", () => ({
-  buildProjectionPbpSourceHash: vi.fn(),
-  buildProjectionShiftSourceHash: vi.fn(),
-}));
+vi.mock("lib/projections/ingest/projectionInputPersistence", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("lib/projections/ingest/projectionInputPersistence")>();
+  return {
+    PROJECTION_INPUT_MATERIALIZER_VERSION: actual.PROJECTION_INPUT_MATERIALIZER_VERSION,
+    buildProjectionPbpSourceHash: vi.fn(),
+    buildProjectionShiftSourceHash: vi.fn(),
+  };
+});
 
 vi.mock("lib/projections/ingest/pbp", () => ({
   fetchPbpGame: mocks.fetchPbpGame,
@@ -76,6 +80,7 @@ vi.mock("lib/projections/gameLength", () => ({
 }));
 
 import handler from "../../../../../pages/api/v1/db/shift-charts";
+import { PROJECTION_INPUT_MATERIALIZER_VERSION } from "lib/projections/ingest/projectionInputPersistence";
 
 const LATEST_STARTED_SEASON_ID = 20252026;
 const GAME_ID = 2025020001;
@@ -174,6 +179,9 @@ describe("shift-chart scheduled relationship queue", () => {
       LATEST_STARTED_SEASON_ID,
     );
     expect(statusesQuery.eq).toHaveBeenCalledWith("input_status", "complete");
+    expect(statusesQuery.eq).toHaveBeenCalledWith(
+      "input_materializer_version", PROJECTION_INPUT_MATERIALIZER_VERSION,
+    );
     expect(mocks.selectPendingRelationshipGameIds).toHaveBeenCalledWith({
       games: [],
       statuses: [],

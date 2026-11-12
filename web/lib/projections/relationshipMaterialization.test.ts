@@ -16,11 +16,13 @@ vi.mock("lib/supabase/server", () => ({
 }));
 
 import {
+  SHIFT_RELATIONSHIP_ALGORITHM_VERSION,
   buildShiftRelationshipFingerprint,
   persistShiftChartRelationships,
   selectPendingRelationshipGameIds,
 } from "./relationshipMaterialization";
 import { buildShiftChartRelationshipUpsert } from "./shiftChartRelationshipPayload";
+import { PROJECTION_INPUT_MATERIALIZER_VERSION } from "./ingest/projectionInputPersistence";
 
 const GAME_ID = 2025020001;
 const INPUT_FINGERPRINT = "1".repeat(64);
@@ -79,6 +81,7 @@ describe("relationship materialization", () => {
         input_fingerprint: INPUT_FINGERPRINT,
         input_status: "complete",
         input_version: 3,
+        input_materializer_version: PROJECTION_INPUT_MATERIALIZER_VERSION,
         pbp_raw_payload_hash: PBP_RAW_PAYLOAD_HASH,
         pbp_source_hash: PBP_SOURCE_HASH,
         shift_source_hash: SHIFT_SOURCE_HASH,
@@ -120,7 +123,7 @@ describe("relationship materialization", () => {
             relationship_status: "complete",
             relationship_input_fingerprint: INPUT_FINGERPRINT,
             relationship_algorithm_version:
-              "shift_relationship_materializer_v3_position_bound",
+              SHIFT_RELATIONSHIP_ALGORITHM_VERSION,
           },
           {
             game_id: 2025020020,
@@ -193,7 +196,10 @@ describe("relationship materialization", () => {
     ).toThrow("Invalid relationship queue status");
   });
 
-  it("requeues a complete relationship produced by an older algorithm", () => {
+  it.each([
+    "shift_relationship_materializer_v1",
+    "shift_relationship_materializer_v5_penalty_clock",
+  ])("requeues a complete relationship produced by older algorithm %s", (algorithm) => {
     expect(
       selectPendingRelationshipGameIds({
         games: [{ id: GAME_ID, date: "2025-10-07" }],
@@ -204,8 +210,7 @@ describe("relationship materialization", () => {
             input_fingerprint: INPUT_FINGERPRINT,
             relationship_status: "complete",
             relationship_input_fingerprint: INPUT_FINGERPRINT,
-            relationship_algorithm_version:
-              "shift_relationship_materializer_v1",
+            relationship_algorithm_version: algorithm,
           },
         ],
         maxGames: 1,
@@ -243,6 +248,29 @@ describe("relationship materialization", () => {
       expect(mocks.rpc).not.toHaveBeenCalled();
     },
   );
+
+  it("rejects relationships built against pre-union strength totals", async () => {
+    mocks.maybeSingle.mockResolvedValue({
+      data: {
+        input_fingerprint: INPUT_FINGERPRINT,
+        input_status: "complete",
+        input_version: 3,
+        input_materializer_version: "projection-input-materializer-v1",
+        pbp_raw_payload_hash: PBP_RAW_PAYLOAD_HASH,
+        pbp_source_hash: PBP_SOURCE_HASH,
+        shift_source_hash: SHIFT_SOURCE_HASH,
+      },
+      error: null,
+    });
+    await expect(persistShiftChartRelationships({
+      expectedPbpRawPayloadHash: PBP_RAW_PAYLOAD_HASH,
+      gameId: GAME_ID,
+      sourcePbpHash: PBP_SOURCE_HASH,
+      sourceShiftHash: SHIFT_SOURCE_HASH,
+      rows: [relationshipRow(10)],
+    })).rejects.toThrow("Projection strength totals require re-ingestion");
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
 
   it("binds exact relationship replacement to the current input fingerprint", async () => {
     const rows = [relationshipRow(20), relationshipRow(10)];

@@ -17,7 +17,7 @@ import type { ProjectionRawSourceSnapshotReceipt } from "./rawSnapshotPersistenc
 
 export const PROJECTION_INPUT_PARSER_VERSION = "nhl-pbp-shifts-v1";
 export const PROJECTION_INPUT_MATERIALIZER_VERSION =
-  "projection-input-materializer-v1";
+  "projection-input-materializer-v3-penalty-clock";
 
 const MAX_PLAY_ROWS_PER_GAME = 1_000;
 const MAX_SHIFT_SOURCE_ROWS_PER_GAME = 20_000;

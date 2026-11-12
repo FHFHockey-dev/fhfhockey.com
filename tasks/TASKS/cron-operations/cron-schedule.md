@@ -172,8 +172,8 @@
   {
     "jobid": 16,
     "jobname": "update-shift-charts",
-    "schedule": "45 7 * * *",
-    "run_time_utc": "07:45 UTC",
+    "schedule": "55 9 * * *",
+    "run_time_utc": "09:55 UTC",
     "active": true,
     "method": "GET",
     "route": "/api/v1/db/update-shifts?action=all"
@@ -407,8 +407,8 @@
   {
     "jobid": 305,
     "jobname": "build-forge-derived-v2",
-    "schedule": "50 09 * * *",
-    "run_time_utc": "09:50 UTC",
+    "schedule": "05 10 * * *",
+    "run_time_utc": "10:05 UTC",
     "active": true,
     "method": "POST",
     "route": "/api/v1/db/build-projection-derived-v2"
@@ -803,7 +803,7 @@ protected routes.
 -- - 07:30 UTC / 02:30 EST: update-all-wgo-skaters
 -- - 07:35 UTC / 02:35 EST: update-all-wgo-goalies
 -- - 07:40 UTC / 02:40 EST: update-all-wgo-skater-totals
--- - 07:45 UTC / 02:45 EST: update-shift-charts
+-- - 09:55 UTC / 04:55 EST: update-shift-charts (moved 2026-11-12 after explicit approval)
 -- - 07:50 UTC / 02:50 EST: daily-refresh-player-unified-matview
 -- - 07:55 UTC / 02:55 EST: update-power-play-timeframes
 -- - 08:00 UTC / 03:00 EST: update-line-combinations-all
@@ -827,7 +827,7 @@ protected routes.
 -- - 09:35 UTC / 04:35 EST: update-player-underlying-stats-yesterday
 -- - 09:35 UTC / 04:35 EST: update-wgo-teams
 -- - 09:45 UTC / 04:45 EST: ingest-projection-inputs
--- - 09:50 UTC / 04:50 EST: build-forge-derived-v2
+-- - 10:05 UTC / 05:05 EST: build-forge-derived-v2 (moved 2026-11-12 after explicit approval)
 -- - 09:55 UTC / 04:55 EST: update-nst-team-daily-incremental
 -- - 10:00 UTC / 05:00 EST: daily-refresh-matview
 -- - 10:05 UTC / 05:05 EST: run-forge-projection-v2
@@ -1147,7 +1147,7 @@ curl -i -sS -m 180 \
 -- and cross-provider scheduler ownership remain open under B-DRM NEW 38/49–51.
 -- SELECT cron.schedule(
 --     'update-shift-charts',
---     '45 7 * * *', -- 07:45 UTC
+--     '55 9 * * *', -- 09:55 UTC, after projection-input ingestion
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-shifts?action=all',
@@ -1621,10 +1621,10 @@ curl -i -sS -m 180 \
 -- |||||||||||||||||||||||||||||||||  04:50 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
--- 09:50 UTC (after rolling averages + goalie starts)
+-- 10:05 UTC (after 09:45 ingestion and 09:55 relationship materialization)
 -- SELECT cron.schedule(
 --     'build-forge-derived-v2',
---     '50 9 * * *', -- 09:50 UTC
+--     '05 10 * * *', -- 10:05 UTC
 --     $$
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/build-projection-derived-v2',

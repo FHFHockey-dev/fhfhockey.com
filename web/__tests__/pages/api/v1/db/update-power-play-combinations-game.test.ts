@@ -538,6 +538,12 @@ describe("updatePowerPlayCombinations", () => {
 describe("getPowerPlayBlocks", () => {
   const HOME = 1;
   const AWAY = 2;
+  let nextEventId = 1;
+
+  beforeEach(() => {
+    // The two shared opening faceoffs have stable IDs 1 and 2.
+    nextEventId = 3;
+  });
 
   type Blocks = Array<{
     teamId: number;
@@ -547,6 +553,7 @@ describe("getPowerPlayBlocks", () => {
 
   function play(typeDescKey: string, period: number, timeInPeriod: string, details: object = {}) {
     return {
+      eventId: nextEventId++,
       typeDescKey,
       timeInPeriod,
       periodDescriptor: { number: period, periodType: period > 3 ? "OT" : "REG" },
