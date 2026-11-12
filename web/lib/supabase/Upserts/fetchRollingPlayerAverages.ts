@@ -3863,10 +3863,15 @@ async function processPlayer(
       try {
         for (const game of games) {
         const playedThisGame = didPlayerCountAsAppearance(config.state, game);
-        if (playedThisGame) {
-          appearanceRefs.push({ gameId: game.gameId ?? null, gameDate: game.gameDate });
-        }
         const gameRatio: Record<string, RatioComponentTuple | null> = {};
+        if (playedThisGame) {
+          appearanceRefs.push({
+            gameId: game.gameId ?? null,
+            gameDate: game.gameDate,
+            season: game.season,
+            ratio: gameRatio
+          });
+        }
         const gameAdditive: Record<string, number | null> = {};
 
         METRICS.forEach((metric) => {
@@ -4011,6 +4016,12 @@ async function processPlayer(
                 getRatioRollingComponentSnapshot(acc, [
                   ...WINDOW_COUNT_SUPPORT_WINDOWS
                 ]).windows as Record<WindowCountSupportWindow, RatioComponentTotals>
+              ])
+            ),
+            seasonComponents: Object.fromEntries(
+              Object.entries(historicalRatioMetricsState).map(([key, acc]) => [
+                key,
+                acc.bySeason.get(game.season) ?? null
               ])
             )
           }),
