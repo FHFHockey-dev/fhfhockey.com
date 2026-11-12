@@ -194,4 +194,15 @@ describe("RankingsFilters", () => {
     expect(screen.queryByLabelText("Team")).toBeNull();
     expect(screen.getByRole("button", { name: "More Filters" })).toBeTruthy();
   });
+
+  it("offers the labelled cross-season scope only for skater last-N windows (decision 103)", () => {
+    const onChange = renderFilters(vi.fn(), { ...DEFAULT_RANKINGS_FILTERS, window: "last20" });
+    const scope = screen.getByLabelText("Games from") as HTMLSelectElement;
+    expect(scope.value).toBe("current_season");
+    fireEvent.change(scope, { target: { value: "cross_season" } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ windowScope: "cross_season" }));
+    cleanup();
+    renderFilters(vi.fn(), { ...DEFAULT_RANKINGS_FILTERS, window: "season" });
+    expect(screen.queryByLabelText("Games from")).toBeNull();
+  });
 });

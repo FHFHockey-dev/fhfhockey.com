@@ -9,6 +9,7 @@ import {
 } from "./skaterWindowAggregation";
 import { ROLLING_RANKING_SELECT_FIELDS } from "./rollingRankingSelectFields";
 import {
+  ROLLING_WINDOW_COUNT_CURRENT_SEASON_VERSION,
   ROLLING_WINDOW_COUNT_SUPPORT_VERSION,
   type RollingWindowCountSupport,
 } from "lib/rollingPlayerWindowCountSupport";
@@ -486,13 +487,15 @@ describe("skaterWindowAggregation", () => {
           },
         }),
       }),
-      { windows: ["last20"], metricKeys: ["goals_per_60"] },
+      { windows: ["last20"], metricKeys: ["goals_per_60"], windowScope: "cross_season" },
     );
 
     // The old heuristic reported a full 20-game window here.
     expect(goalsLast20.gamesPlayed).toBe(3);
     expect(goalsLast20.toiSeconds).toBe(2700);
     expect(goalsLast20.windowMembership).toMatchObject({
+      scope: "cross_season",
+      requested: 20,
       appearances: 3,
       currentSeasonAppearances: 2,
       crossesSeasons: true,
@@ -521,6 +524,117 @@ describe("skaterWindowAggregation", () => {
       { windows: ["last20"], metricKeys: ["goals_per_60"] },
     );
     expect(unknown.gamesPlayed).toBeNull();
+  });
+
+  // Decision 103 fixture: season 2026-27, the last-20 window holds 5 games from
+  // 2025-26 and 15 from 2026-27. Cross-season: G 8, A 6, ixG 5 over 18,000 s;
+  // current season: G 6, A 3, ixG 4 over 13,500 s (the actual n is 15).
+  function crossingRow(currentSeason = true) {
+    const ids = [...gameIds(5, 2025, 1200), ...gameIds(15, 2026, 1)];
+    const support = windowSupport({
+      last20: {
+        gameIds: ids,
+        ratio: {
+          goals_per_60: [8, 18000, 20],
+          assists_per_60: [6, 18000, 20],
+          ixg_per_60: [5, 18000, 20],
+        },
+      },
+    });
+    if (currentSeason) {
+      support.currentSeason = {
+        version: ROLLING_WINDOW_COUNT_CURRENT_SEASON_VERSION,
+        season: 20262027,
+        selection: "chronological_appearances_in_strength_state_current_season",
+        windows: Object.fromEntries((["last5", "last10", "last20"] as const).map((key) => [key, {
+          requested: Number(key.slice(4)) as 5 | 10 | 20,
+          appearances: 15,
+          gameIds: ids.slice(5),
+          gameDates: Array(15).fill("2026-11-10"),
+          ratio: {
+            goals_per_60: [6, 13500, 15],
+            assists_per_60: [3, 13500, 15],
+            ixg_per_60: [4, 13500, 15],
+          } as Record<string, [number, number, number]>,
+          secondary: {},
+        }])) as NonNullable<RollingWindowCountSupport["currentSeason"]>["windows"],
+        seasonTotals: { ratio: {}, secondary: {} },
+      };
+    }
+    return rollingRow({
+      season: 20262027,
+      season_games_played: 15,
+      // Cross-season wide columns (the default view must not read them).
+      goals_per_60_last20: 1.6,
+      points_total_last20: 14,
+      toi_seconds_total_last20: 18000,
+      windowCountSupport: support,
+    });
+  }
+
+  it("defaults last-N to the current season with the actual n (decision 103)", () => {
+    const aggregates = buildSkaterWindowAggregatesFromRollingRow(crossingRow(), {
+      windows: ["last20"],
+      metricKeys: ["goals_per_60", "points_per_60", "goals_above_expected"],
+    });
+    const byKey = new Map(aggregates.map((aggregate) => [aggregate.metricKey, aggregate]));
+    // 6 goals over 13,500 s = 1.6/60 happens to match; GP and counts differ.
+    expect(byKey.get("goals_per_60")).toMatchObject({
+      numerator: 6, denominator: 13500, gamesPlayed: 15, toiSeconds: 13500,
+    });
+    // Points = goals + assists on the current-season games (9), not the
+    // cross-season total (14).
+    expect(byKey.get("points_per_60")).toMatchObject({ numerator: 9, denominator: 13500, rawValue: 2.4 });
+    expect(byKey.get("goals_above_expected")?.rawValue).toBe(2);
+    expect(byKey.get("goals_per_60")?.windowMembership).toMatchObject({
+      scope: "current_season", requested: 20, appearances: 15, crossesSeasons: false,
+    });
+
+    const [crossGoals] = buildSkaterWindowAggregatesFromRollingRow(crossingRow(), {
+      windows: ["last20"], metricKeys: ["goals_per_60"], windowScope: "cross_season",
+    });
+    expect(crossGoals).toMatchObject({ numerator: 8, gamesPlayed: 20 });
+    expect(crossGoals.windowMembership).toMatchObject({
+      scope: "cross_season", appearances: 20, currentSeasonAppearances: 15, crossesSeasons: true,
+    });
+
+    // Rows written before the current-season block: unknown, never the
+    // cross-season value.
+    const [unknown] = buildSkaterWindowAggregatesFromRollingRow(crossingRow(false), {
+      windows: ["last20"], metricKeys: ["goals_per_60"],
+    });
+    expect(unknown).toMatchObject({ rawValue: null, numerator: null, gamesPlayed: null });
+  });
+
+  it("serves season xS% and SAX% from the L6 season iFF pair on the same games (D5)", () => {
+    const row = rollingRow({ season_games_played: 30 });
+    row.windowCountSupport!.currentSeason = {
+      version: ROLLING_WINDOW_COUNT_CURRENT_SEASON_VERSION,
+      season: 20252026,
+      selection: "chronological_appearances_in_strength_state_current_season",
+      windows: row.windowCountSupport!.windows as never,
+      seasonTotals: {
+        ratio: { expected_sh_pct: [7.5, 60, 30], goals_per_60: [9, 27000, 30] },
+        secondary: {},
+      },
+    };
+    const aggregates = buildSkaterWindowAggregatesFromRollingRow(row, {
+      windows: ["season"],
+      metricKeys: ["expected_shooting_percentage", "sax_percentage"],
+    });
+    const byKey = new Map(aggregates.map((aggregate) => [aggregate.metricKey, aggregate]));
+    expect(byKey.get("expected_shooting_percentage")).toMatchObject({
+      rawValue: 12.5, numerator: 7.5, denominator: 60,
+    });
+    // (9 − 7.5) ÷ 60 × 100.
+    expect(byKey.get("sax_percentage")).toMatchObject({ rawValue: 2.5, numerator: 1.5, denominator: 60 });
+
+    // A covered subset (29 of 30 games for the iFF pair) is unknown.
+    row.windowCountSupport!.currentSeason!.seasonTotals.ratio.expected_sh_pct = [7.5, 60, 29];
+    const [sax] = buildSkaterWindowAggregatesFromRollingRow(row, {
+      windows: ["season"], metricKeys: ["sax_percentage"],
+    });
+    expect(sax.rawValue).toBeNull();
   });
 
   it("documents the existing refresh surfaces instead of adding a redundant rebuild path", () => {

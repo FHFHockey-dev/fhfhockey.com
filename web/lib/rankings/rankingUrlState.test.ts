@@ -29,7 +29,7 @@ describe("rankingUrlState", () => {
   it("keeps season and both selected minimums in matrix and explorer summaries", () => {
     const filters = normalizeRankingsFilters({ season: "20252026", strength: "all", min_gp: "1", min_toi: "600", sort_metric: "mcm_score" });
     expect(buildRankingsContextSummary(filters, 0)).toBe("2025–2026 performance · No eligible values for MCM Score across all skaters · All strengths · Season · Min 1 GP · Min 10:00 TOI");
-    expect(buildRankingsContextSummary({ ...filters, tab: "metric_explorer", metric: "sog_per_60", window: "last5" })).toContain("2025–2026 performance · SOG/60 explorer across all skaters · All strengths · Last 5 games · Min 1 GP · Min 10:00 TOI");
+    expect(buildRankingsContextSummary({ ...filters, tab: "metric_explorer", metric: "sog_per_60", window: "last5" })).toContain("2025–2026 performance · SOG/60 explorer across all skaters · All strengths · Last 5 games this season (actual n shown) · Min 1 GP · Min 10:00 TOI");
     expect(buildRankingsContextSummary({ ...filters, minGp: "0", minToi: "0" })).toContain("Min 0 GP · Min 0:00 TOI");
   });
 
@@ -384,5 +384,22 @@ describe("rankingUrlState", () => {
     // The old path sent the skater TOI floor (300 seconds) as min_shots.
     expect(defaultMatrix.get("min_shots")).toBe("100");
     expect(defaultMatrix.get("min_starts")).toBe("5");
+  });
+
+  it("defaults last-N to this season and sends the cross-season scope only when chosen (decision 103)", () => {
+    const current = normalizeRankingsFilters({ window: "last20" }, { currentSeasonId: 20262027 });
+    expect(current.windowScope).toBe("current_season");
+    expect(buildMatrixRequestPath(current)).not.toContain("window_scope");
+    expect(buildRankingsContextSummary(current)).toContain("Last 20 games this season (actual n shown)");
+    const cross = normalizeRankingsFilters(
+      { window: "last20", window_scope: "cross_season" },
+      { currentSeasonId: 20262027 },
+    );
+    expect(buildMatrixRequestPath(cross)).toContain("window_scope=cross_season");
+    expect(buildRankingsRequestPath(cross)).toContain("window_scope=cross_season");
+    expect(buildRankingsContextSummary(cross)).toContain("Last 20 games across seasons");
+    // The season window has no scope.
+    const season = normalizeRankingsFilters({ window: "season", window_scope: "cross_season" }, { currentSeasonId: 20262027 });
+    expect(buildMatrixRequestPath(season)).not.toContain("window_scope");
   });
 });

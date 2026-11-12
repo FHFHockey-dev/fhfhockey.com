@@ -35,9 +35,11 @@ import {
   getSampleConfidence,
   rankNormalizedMetricValues,
 } from "./rankingCalculator";
-import type {
-  SkaterProductionWindow,
-  SkaterWindowStrengthState,
+import {
+  isCrossSeasonWindowRequest,
+  type SkaterProductionWindow,
+  type SkaterWindowScope,
+  type SkaterWindowStrengthState,
 } from "./skaterWindowAggregation";
 import { CONTEXTUAL_RANKINGS_METHODOLOGY_UPDATED_AT } from "./rankingMetadata";
 import { WINDOW_COUNT_SUPPORT_TABLE } from "./rollingWindowCountSupportReader";
@@ -51,6 +53,8 @@ export type PlayerMatrixRequest = {
   season: number;
   asOfDate: string | null;
   window: SkaterProductionWindow;
+  /** Decision 103: last-N scope; omitted = current season. */
+  windowScope?: SkaterWindowScope;
   position: ContextualRankingsPositionFilter;
   deployment: ContextualRankingsDeploymentFilter;
   strength: SkaterWindowStrengthState;
@@ -488,6 +492,12 @@ export function parsePlayerMatrixRequest(
       ["season", "last5", "last10", "last20"] as const,
       "season",
     ),
+    windowScope: parseEnum(
+      query.window_scope,
+      "window_scope",
+      ["current_season", "cross_season"] as const,
+      "current_season",
+    ),
     position,
     deployment,
     strength: parseEnum(
@@ -564,6 +574,7 @@ function contextualRequestForMetric(args: {
     season: args.request.season,
     asOfDate: args.request.asOfDate,
     window: args.request.window,
+    windowScope: args.request.windowScope,
     position: args.request.position,
     deployment: args.request.deployment,
     strength: args.request.strength,
@@ -1032,8 +1043,12 @@ export async function buildPlayerMatrixSurface(
     | "fallback_rolling_player_game_metrics"
     | "entity_metric_rankings" = "fallback_rolling_player_game_metrics";
   let rankingSourceFallbackReason: string | null = null;
+  // Durable snapshots hold only the default current-season last-N windows.
+  const prefersDurable =
+    request.rankingSourcePreference === "entity_metric_rankings" &&
+    !isCrossSeasonWindowRequest(request);
   let rankingSurfacesByMetric =
-    request.rankingSourcePreference === "entity_metric_rankings"
+    prefersDurable
       ? await buildEntityMetricRankingSurfaces(
           baseContextualRequest,
           [baseSortMetric],
@@ -1044,7 +1059,7 @@ export async function buildPlayerMatrixSurface(
           [baseSortMetric],
         );
   const preferredSortSurface = rankingSurfacesByMetric.get(baseSortMetric);
-  if (request.rankingSourcePreference === "entity_metric_rankings") {
+  if (prefersDurable) {
     if (
       preferredSortSurface &&
       !preferredSortSurface.meta.unavailable &&

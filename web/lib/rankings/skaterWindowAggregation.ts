@@ -1,5 +1,6 @@
 import type { Database } from "lib/supabase/database-generated.types";
 import {
+  ROLLING_WINDOW_COUNT_CURRENT_SEASON_VERSION,
   ROLLING_WINDOW_COUNT_SUPPORT_VERSION,
   type RollingWindowCountSupport,
 } from "lib/rollingPlayerWindowCountSupport";
@@ -30,6 +31,23 @@ export type SkaterProductionWindowType =
 
 export type SkaterWindowStrengthState = "all" | "5v5" | "ev" | "pp" | "pk";
 
+/**
+ * Decision 103: last-N windows default to the current season (the player's
+ * last N appearances inside the anchor season, with the actual n); the
+ * cross-season view (last N appearances across seasons) is opt-in and labelled.
+ */
+export type SkaterWindowScope = "current_season" | "cross_season";
+
+export const DEFAULT_SKATER_WINDOW_SCOPE: SkaterWindowScope = "current_season";
+
+/** The labelled cross-season last-N view (never the season window). */
+export function isCrossSeasonWindowRequest(request: {
+  window: SkaterProductionWindow;
+  windowScope?: SkaterWindowScope;
+}) {
+  return request.window !== "season" && request.windowScope === "cross_season";
+}
+
 export type SkaterWindowSemantics =
   | "season_to_date"
   | "player_last_n_games_played";
@@ -57,9 +75,13 @@ export type SkaterWindowAggregate = {
    * into an earlier season (decision 103 labels it).
    */
   windowMembership: {
+    scope: SkaterWindowScope;
+    /** N requested; `appearances` is the actual n in this scope. */
+    requested: number;
     appearances: number;
     gameDates: string[];
     currentSeasonAppearances: number | null;
+    /** True when the window counted here includes earlier-season games. */
     crossesSeasons: boolean | null;
   } | null;
 };
@@ -321,6 +343,8 @@ function seasonStartYearFromGameId(gameId: number | null) {
 function resolveWindowMembership(
   supportWindow: WindowCountSupportWindow | null,
   seasonId: number,
+  scope: SkaterWindowScope,
+  requested: number,
 ): SkaterWindowAggregate["windowMembership"] {
   if (!supportWindow) return null;
   const currentStartYear = Math.floor(seasonId / 10_000);
@@ -330,6 +354,8 @@ function resolveWindowMembership(
     ? years.filter((year) => year === currentStartYear).length
     : null;
   return {
+    scope,
+    requested,
     appearances: supportWindow.appearances,
     gameDates: [...supportWindow.gameDates],
     currentSeasonAppearances,
@@ -338,6 +364,77 @@ function resolveWindowMembership(
         ? null
         : currentSeasonAppearances < supportWindow.appearances,
   };
+}
+
+const LAST_N_WINDOWS = ["last5", "last10", "last20"] as const;
+
+/**
+ * A view of the rolling row for one window scope. Cross-season keeps the row
+ * as stored. Current season: a window wholly inside the anchor season is the
+ * same window, so nothing changes; a window that reaches into an earlier
+ * season loses its cross-season wide `*_lastN` columns (they pool the other
+ * season's games) and its count support becomes L6's current-season window.
+ * Without that block (rows written before it) the window is unknown.
+ */
+function scopeRollingRow(
+  row: RowRecord,
+  seasonId: number,
+  scope: SkaterWindowScope,
+): RowRecord {
+  if (scope === "cross_season") return row;
+  const support = row.windowCountSupport as RollingWindowCountSupport | null | undefined;
+  if (!support || support.version !== ROLLING_WINDOW_COUNT_SUPPORT_VERSION) {
+    return row;
+  }
+  const currentStartYear = Math.floor(seasonId / 10_000);
+  const currentSeason =
+    support.currentSeason?.version === ROLLING_WINDOW_COUNT_CURRENT_SEASON_VERSION
+      ? support.currentSeason
+      : null;
+  const crossing = LAST_N_WINDOWS.filter((window) => {
+    const crossWindow = support.windows?.[window];
+    return (
+      crossWindow != null &&
+      !crossWindow.gameIds.every(
+        (gameId) => seasonStartYearFromGameId(gameId) === currentStartYear,
+      )
+    );
+  });
+  // Windows inside the season are already current-season windows.
+  if (crossing.length === 0) return row;
+  const scoped: RowRecord = { ...row };
+  const windows = { ...support.windows };
+  for (const window of crossing) {
+    for (const key of Object.keys(scoped)) {
+      if (key.endsWith(`_${window}`)) scoped[key] = null;
+    }
+    const truncated = currentSeason?.windows?.[window];
+    windows[window] = truncated
+      ? {
+          appearances: truncated.appearances,
+          gameIds: truncated.gameIds,
+          gameDates: truncated.gameDates,
+          ratio: truncated.ratio,
+          secondary: truncated.secondary,
+        }
+      : (null as unknown as WindowCountSupportWindow);
+  }
+  scoped.windowCountSupport = { ...support, windows };
+  return scoped;
+}
+
+/** Season-to-date `[numerator, denominator, games]` from L6 season totals. */
+function seasonTotalRatio(row: RowRecord, key: string) {
+  const support = row.windowCountSupport as RollingWindowCountSupport | null | undefined;
+  if (support?.currentSeason?.version !== ROLLING_WINDOW_COUNT_CURRENT_SEASON_VERSION) {
+    return null;
+  }
+  const tuple = support.currentSeason.seasonTotals?.ratio?.[key];
+  if (!Array.isArray(tuple)) return null;
+  const [numerator, denominator, games] = tuple;
+  return finiteNumber(numerator) == null || finiteNumber(denominator) == null
+    ? null
+    : ([numerator, denominator, games] as [number, number, number]);
 }
 
 function resolveGamesPlayed(
@@ -541,6 +638,15 @@ function extractDerivedWindowMetric(args: {
     // Only L6-writer rows carry that definition (older rows divide by shots
     // or all attempts), so the support version is the provenance (W2-4 D5).
     if (window === "season") {
+      const seasonPair = seasonTotalRatio(row, "expected_sh_pct");
+      if (seasonPair) {
+        return {
+          rawValue: percent(seasonPair[0], seasonPair[1]),
+          numerator: seasonPair[0],
+          denominator: seasonPair[1],
+          sourceFields: [`${SUPPORT_FIELD}.currentSeason.seasonTotals.expected_sh_pct`],
+        };
+      }
       if (!hasWindowCountSupport(row)) return UNAVAILABLE_METRIC;
       return {
         rawValue: readNumber(row, "expected_sh_pct_season"),
@@ -559,9 +665,33 @@ function extractDerivedWindowMetric(args: {
   }
 
   if (args.formula === "sax_percentage") {
-    // SAX% = (goals − ixG) ÷ Fenwick × 100 on the same games. The season
-    // Fenwick count is not stored yet, so the season view is unavailable.
-    if (window === "season") return UNAVAILABLE_METRIC;
+    // SAX% = (goals − ixG) ÷ Fenwick × 100 on the same games. Season: L6
+    // season totals, only when goals and the ixG/iFF pair cover every one of
+    // the season's games (rule 13).
+    if (window === "season") {
+      const xsPair = seasonTotalRatio(row, "expected_sh_pct");
+      const goalsPair = seasonTotalRatio(row, "goals_per_60");
+      const seasonGames = seasonGamesForRow(row);
+      if (
+        !xsPair ||
+        !goalsPair ||
+        seasonGames == null ||
+        xsPair[2] !== seasonGames ||
+        goalsPair[2] !== seasonGames
+      ) {
+        return UNAVAILABLE_METRIC;
+      }
+      const goalsMinusIxg = Number((goalsPair[0] - xsPair[0]).toFixed(6));
+      return {
+        rawValue: percent(goalsMinusIxg, xsPair[1]),
+        numerator: goalsMinusIxg,
+        denominator: xsPair[1],
+        sourceFields: [
+          `${SUPPORT_FIELD}.currentSeason.seasonTotals.expected_sh_pct`,
+          `${SUPPORT_FIELD}.currentSeason.seasonTotals.goals_per_60`,
+        ],
+      };
+    }
     const supportWindow = readSupportWindow(row, window);
     const xsPair = fullWindowRatio(supportWindow, "expected_sh_pct");
     const goalsPair = fullWindowRatio(supportWindow, "goals_per_60");
@@ -683,6 +813,25 @@ function extractWindowMetric(args: {
   const denominatorField = `${spec.denominatorBase ?? "toi_seconds"}_total_${window}`;
   const numerator = readNumber(row, numeratorField);
   const denominator = readNumber(row, denominatorField);
+  if (numerator == null && denominator == null && spec.metricKey === "points_per_60") {
+    // Current-season scope of a cross-season window: points = goals + assists
+    // on the same games from the count support.
+    const supportWindow = readSupportWindow(row, window);
+    const goalsPair = fullWindowRatio(supportWindow, "goals_per_60");
+    const assistsPair = fullWindowRatio(supportWindow, "assists_per_60");
+    if (goalsPair && assistsPair && goalsPair[1] === assistsPair[1]) {
+      const points = Number((goalsPair[0] + assistsPair[0]).toFixed(6));
+      return {
+        rawValue: ratePer60(points, goalsPair[1]),
+        numerator: points,
+        denominator: goalsPair[1],
+        sourceFields: [
+          `${SUPPORT_FIELD}.${window}.goals_per_60`,
+          `${SUPPORT_FIELD}.${window}.assists_per_60`,
+        ],
+      };
+    }
+  }
 
   return {
     rawValue: directValue ?? ratePer60(numerator, denominator),
@@ -701,9 +850,10 @@ export function buildSkaterWindowAggregatesFromRollingRow(
   options?: {
     windows?: SkaterProductionWindow[];
     metricKeys?: ContextualRankingMetricKey[];
+    windowScope?: SkaterWindowScope;
   },
 ): SkaterWindowAggregate[] {
-  const row = rollingRow as RowRecord;
+  const windowScope = options?.windowScope ?? DEFAULT_SKATER_WINDOW_SCOPE;
   const playerId = finiteNumber(rollingRow.player_id);
   const seasonId = finiteNumber(rollingRow.season);
   const snapshotDate = rollingRow.game_date;
@@ -717,6 +867,7 @@ export function buildSkaterWindowAggregatesFromRollingRow(
     return [];
   }
 
+  const row = scopeRollingRow(rollingRow as RowRecord, seasonId, windowScope);
   const windows = options?.windows ?? SKATER_PRODUCTION_WINDOWS;
   const metricKeys = new Set(
     options?.metricKeys ?? AVAILABLE_CONTEXTUAL_RANKING_METRIC_KEYS,
@@ -762,6 +913,8 @@ export function buildSkaterWindowAggregatesFromRollingRow(
         windowMembership: resolveWindowMembership(
           readSupportWindow(row, window),
           seasonId,
+          windowScope,
+          getSkaterProductionWindowSize(window),
         ),
       });
     }

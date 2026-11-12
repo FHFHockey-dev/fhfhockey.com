@@ -8,6 +8,7 @@ import type {
   GoalieMatrixStrength,
 } from "./goalieMatrix";
 import type { TeamMatrixMetricKey } from "./teamMatrix";
+import type { SkaterWindowScope } from "./skaterWindowAggregation";
 import {
   MATRIX_METRIC_GROUPS,
   getMatrixMetricColumn,
@@ -32,6 +33,8 @@ export type RankingsFilterState = {
     | "war";
   season: string;
   window: "season" | "last5" | "last10" | "last20";
+  /** Decision 103: current season by default; cross-season is opt-in and labelled. */
+  windowScope: SkaterWindowScope;
   position: ContextualRankingsPositionFilter;
   deployment: ContextualRankingsDeploymentFilter;
   strength: "all" | "5v5" | "ev" | "pp" | "pk";
@@ -113,6 +116,7 @@ export const DEFAULT_RANKINGS_FILTERS: RankingsFilterState = {
   // (or, in the off-season, the latest started one) from /api/v1/season.
   season: "",
   window: "season",
+  windowScope: "current_season",
   position: "all",
   deployment: "all",
   strength: "5v5",
@@ -388,6 +392,8 @@ export function normalizeRankingsFilters(
     tab: parseTab(queryValue(query.tab)),
     season: resolveRankingsSeason(queryValue(query.season), options.currentSeasonId),
     window,
+    windowScope:
+      queryValue(query.window_scope) === "cross_season" ? "cross_season" : "current_season",
     position:
       queryValue(query.position) === "F" || queryValue(query.position) === "D"
         ? (queryValue(query.position) as RankingsFilterState["position"])
@@ -481,7 +487,9 @@ export function buildRankingsContextSummary(
   const window =
     filters.window === "season"
       ? "Season"
-      : `${filters.window.replace("last", "Last ")} games`;
+      : filters.windowScope === "cross_season"
+        ? `${filters.window.replace("last", "Last ")} games across seasons`
+        : `${filters.window.replace("last", "Last ")} games this season (actual n shown)`;
   const strength = STRENGTH_LABELS[filters.strength] ?? filters.strength;
   const context = [
     strength,
@@ -547,6 +555,7 @@ export function buildClientRankingsRequest(
     season: Number(filters.season) || 0,
     asOfDate: null,
     window: filters.window,
+    windowScope: filters.windowScope,
     position: filters.position,
     deployment: filters.deployment,
     strength: filters.strength,
@@ -560,6 +569,15 @@ export function buildClientRankingsRequest(
     limit: 100,
     entityIds: null,
   };
+}
+
+/** Sends the labelled cross-season scope only when it applies (decision 103). */
+export function windowScopeParam(filters: RankingsFilterState) {
+  return filters.entity === "skaters" &&
+    filters.window !== "season" &&
+    filters.windowScope === "cross_season"
+    ? "cross_season"
+    : null;
 }
 
 export function buildRankingsRequestPath(filters: RankingsFilterState) {
@@ -585,6 +603,8 @@ export function buildRankingsRequestPath(filters: RankingsFilterState) {
   if (filters.search.trim() !== "") {
     params.set("search", filters.search.trim());
   }
+  const windowScope = windowScopeParam(filters);
+  if (windowScope) params.set("window_scope", windowScope);
   return `/api/v1/contextual-rankings?${params.toString()}`;
 }
 
@@ -618,6 +638,8 @@ export function buildMatrixRequestPath(filters: RankingsFilterState) {
   if (filters.selectedPlayerId.trim() !== "") {
     params.set("selected_player", filters.selectedPlayerId.trim());
   }
+  const windowScope = windowScopeParam(filters);
+  if (windowScope) params.set("window_scope", windowScope);
   return `/api/v1/contextual-rankings/matrix?${params.toString()}`;
 }
 
@@ -777,5 +799,7 @@ export function buildSnapshotRequestPath(filters: RankingsFilterState) {
     params.set("selected_player", filters.selectedPlayerId.trim());
   }
 
+  const windowScope = windowScopeParam(filters);
+  if (windowScope) params.set("window_scope", windowScope);
   return `/api/v1/contextual-rankings/snapshot?${params.toString()}`;
 }

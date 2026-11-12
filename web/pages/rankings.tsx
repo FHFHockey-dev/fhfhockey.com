@@ -52,6 +52,7 @@ import {
   defaultDirectionForSort,
   defaultMinGpForWindow,
   normalizeRankingsFilters,
+  windowScopeParam,
 } from "lib/rankings/rankingUrlState";
 import type { ContextualRankingsMetadataResponse } from "lib/rankings/rankingMetadata";
 import type { ContextualRankingSnapshotResponse } from "lib/rankings/snapshot";
@@ -138,6 +139,7 @@ function filtersToQuery(filters: RankingsFilterState) {
     page_size: filters.pageSize,
   };
   if (filters.season !== "") query.season = filters.season;
+  if (filters.windowScope === "cross_season") query.window_scope = "cross_season";
   if (filters.density === "detailed") query.density = "detailed";
   if (filters.sampleConfidence !== "all") {
     query.sample_confidence = filters.sampleConfidence;
@@ -1232,6 +1234,8 @@ function buildComparisonRequestPath(args: {
     sort_direction: args.filters.matrixSortDirection,
     player_ids: ids.join(","),
   });
+  const windowScope = windowScopeParam(args.filters);
+  if (windowScope) params.set("window_scope", windowScope);
   if (args.filters.team.trim() !== "")
     params.set("team", args.filters.team.trim());
   if (args.filters.search.trim() !== "") {

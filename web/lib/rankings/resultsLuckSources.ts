@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "lib/supabase/database-generated.types";
 
 import {
+  ROLLING_WINDOW_COUNT_CURRENT_SEASON_VERSION,
   ROLLING_WINDOW_COUNT_SUPPORT_VERSION,
   type RollingWindowCountSupport,
 } from "lib/rollingPlayerWindowCountSupport";
@@ -115,6 +116,19 @@ function fullPair(window: SupportWindow | null, key: string): [number, number] |
   return observations === window.appearances ? [numerator, denominator] : null;
 }
 
+/** Season-to-date L6 totals, only when they cover every season game. */
+function fullSeasonPair(row: RollingRow, key: string, games: number | null) {
+  const support = row.windowCountSupport as RollingWindowCountSupport | null | undefined;
+  if (support?.currentSeason?.version !== ROLLING_WINDOW_COUNT_CURRENT_SEASON_VERSION) {
+    return null;
+  }
+  const tuple = support.currentSeason.seasonTotals?.ratio?.[key];
+  if (!Array.isArray(tuple) || games == null) return null;
+  const [numerator, denominator, observed] = tuple;
+  if (finite(numerator) == null || finite(denominator) == null) return null;
+  return observed === games ? ([numerator, denominator] as [number, number]) : null;
+}
+
 function windowInsideSeason(window: SupportWindow | null, season: number | null) {
   if (!window || season == null) return false;
   const startYear = Math.floor(season / 10_000);
@@ -210,6 +224,25 @@ export function buildResultsLuckRollingSourceFromRow(args: {
       )
     : null;
 
+  // SAX%: goals and the ixG/iFF pair on the same games.
+  const windowXsPair = fullPair(support, "expected_sh_pct");
+  const currentSax =
+    windowXsPair && goalsPair
+      ? percent(minus(goalsPair[0], windowXsPair[0]), windowXsPair[1])
+      : null;
+  const seasonXsPair = fullSeasonPair(args.row, "expected_sh_pct", games);
+  const seasonGoalsPair = fullSeasonPair(args.row, "goals_per_60", games);
+  const baselineSax =
+    baselineAllowed && windowXsPair && goalsPair && seasonXsPair && seasonGoalsPair
+      ? percent(
+          minus(
+            minus(seasonGoalsPair[0], goalsPair[0]),
+            minus(seasonXsPair[0], windowXsPair[0]),
+          ),
+          minus(seasonXsPair[1], windowXsPair[1]),
+        )
+      : null;
+
   const baselineWindowExcluded =
     baselineAllowed &&
     [baselineGax, baselineIppPoints, baselineIppOnIceGoals, baselineOnIce].every(
@@ -237,15 +270,10 @@ export function buildResultsLuckRollingSourceFromRow(args: {
       {
         key: "sax_percentage",
         semantics: "signed_difference",
-        // Needs a season unblocked-attempt count for the baseline, which is
-        // not stored yet; unknown keeps the index unpublished.
-        currentValue: (() => {
-          const xsPair = fullPair(support, "expected_sh_pct");
-          return xsPair && goalsPair
-            ? percent(minus(goalsPair[0], xsPair[0]), xsPair[1])
-            : null;
-        })(),
-        baselineValue: null,
+        // (G − ixG) per 100 unblocked attempts, window vs season minus window,
+        // from L6's season iFF pair covering every season game.
+        currentValue: currentSax,
+        baselineValue: baselineSax,
         scale: 10,
         weight: 0.25,
       },

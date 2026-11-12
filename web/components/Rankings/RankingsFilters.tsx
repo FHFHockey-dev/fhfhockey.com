@@ -457,6 +457,29 @@ export default function RankingsFilters({
         </div>
       </label>
 
+      {value.entity === "skaters" && value.window !== "season" ? (
+        // Decision 103: last-N defaults to this season with the actual number
+        // of games; the cross-season window is an explicit, labelled choice.
+        <label className={`${styles.filterControl} ${styles.filterWindow}`}>
+          <span>Games from</span>
+          <div className={styles.controlField}>
+            <ToolbarIcon name="calendar" />
+            <select
+              value={value.windowScope}
+              onChange={(event) =>
+                onChange({
+                  windowScope: event.target.value as RankingsFilterState["windowScope"],
+                })
+              }
+            >
+              <option value="current_season">This season (actual n)</option>
+              <option value="cross_season">Across seasons</option>
+            </select>
+            <ToolbarIcon name="chevron" />
+          </div>
+        </label>
+      ) : null}
+
       {value.tab === "rankings" ? (
         <label className={`${styles.filterControl} ${styles.filterDisplay}`}>
           <span>Display</span>

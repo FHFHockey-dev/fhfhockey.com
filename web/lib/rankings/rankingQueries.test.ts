@@ -46,7 +46,7 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
     const rolling = resolveQuery({
       ...state,
       table: "rolling_player_game_metrics",
-      selectFields: "player_id,game_date,game_id,games_played,season_games_played,fixture_window_ratio",
+      selectFields: "player_id,game_date,game_id,games_played,season_games_played,fixture_window_ratio,fixture_support",
     });
     scenario.rollingFailures = failures;
     return (rolling.data ?? []).map((row: Record<string, unknown>) => {
@@ -61,6 +61,12 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
           secondary: {},
         };
       };
+      if (row.fixture_support) {
+        return {
+          player_id: row.player_id, game_date: row.game_date, game_id: row.game_id ?? null,
+          windowCountSupport: row.fixture_support,
+        };
+      }
       return {
         player_id: row.player_id, game_date: row.game_date, game_id: row.game_id ?? null,
         windowCountSupport: {
@@ -712,6 +718,59 @@ describe("rankingQueries", () => {
     expect(gax.rankings[0]?.sample).toMatchObject({ gamesPlayed: 20, minimumSampleMet: true });
     const perSixty = await buildContextualRankingsSurface({ ...base, metric: "goals_above_expected_per_60" });
     expect(perSixty.rankings[0]?.metric.value).toBe(0.4);
+  });
+
+  it("serves last-20 for the current season by default and the cross-season view only when asked (decision 103)", async () => {
+    // Five 2024-25 games and fifteen 2025-26 games in the cross-season window.
+    const ids = [
+      ...Array.from({ length: 5 }, (_, i) => 2024021200 + i),
+      ...Array.from({ length: 15 }, (_, i) => 2025020001 + i),
+    ];
+    const ratioWindow = (gameIds: number[], goals: number, toi: number) => ({
+      appearances: gameIds.length, gameIds, gameDates: gameIds.map(() => "2026-04-16"),
+      ratio: { goals_per_60: [goals, toi, gameIds.length] }, secondary: {},
+    });
+    scenario.paginatedRows = [{
+      player_id: 1, season: 20252026, strength_state: "all", team_id: 10,
+      game_date: "2026-04-16", updated_at: "2026-04-16T06:00:00.000Z",
+      games_played: 15, season_games_played: 15,
+      goals_per_60_last20: 1.6, toi_seconds_total_last20: 18000,
+      fixture_support: {
+        version: "rolling-player-window-counts-v1", strengthState: "all",
+        anchor: { gameId: 2025020015, gameDate: "2026-04-16", season: 20252026 },
+        selection: "chronological_appearances_in_strength_state",
+        game: { appeared: true, ratio: {}, additive: {} },
+        windows: {
+          last5: ratioWindow(ids.slice(15), 2, 4500),
+          last10: ratioWindow(ids.slice(10), 4, 9000),
+          last20: ratioWindow(ids, 8, 18000),
+        },
+        currentSeason: {
+          version: "rolling-player-window-counts-current-season-v1", season: 20252026,
+          selection: "chronological_appearances_in_strength_state_current_season",
+          windows: {
+            last5: { requested: 5, ...ratioWindow(ids.slice(15), 2, 4500) },
+            last10: { requested: 10, ...ratioWindow(ids.slice(10), 4, 9000) },
+            last20: { requested: 20, ...ratioWindow(ids.slice(5), 3, 13500) },
+          },
+          seasonTotals: { ratio: {}, secondary: {} },
+        },
+      },
+    }];
+    const base = {
+      entity: "skaters", season: 20252026, asOfDate: "2026-04-16", window: "last20",
+      position: "all", deployment: "all", strength: "all", metric: "goals_per_60",
+      minGp: 1, minToiSeconds: 600, peerGroupType: "all_skaters", sort: "percentile",
+      direction: "desc", limit: 100, teamId: null, entityIds: null,
+    } as const;
+    const current = await buildContextualRankingsSurface(base);
+    // 3 goals over 13,500 s in the 15 current-season games (actual n = 15).
+    expect(current.rankings[0]?.metric.value).toBe(0.8);
+    expect(current.rankings[0]?.sample).toMatchObject({ gamesPlayed: 15, toiSeconds: 13500 });
+    clearContextualRankingsQueryCachesForTests();
+    const cross = await buildContextualRankingsSurface({ ...base, windowScope: "cross_season" });
+    expect(cross.rankings[0]?.metric.value).toBe(1.6);
+    expect(cross.rankings[0]?.sample).toMatchObject({ gamesPlayed: 20, toiSeconds: 18000 });
   });
 
   it("paginates rolling snapshot rows beyond Supabase's single-page limit", async () => {

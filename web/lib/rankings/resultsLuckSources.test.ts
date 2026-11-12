@@ -9,7 +9,13 @@ import {
 describe("resultsLuckSources", () => {
   // Astra W2-4 fixture 4: 40 games as two identical 20-game halves
   // (G 6, ixG 4, TOI 18,000 s each); the last-20 window is the second half.
-  function neutralRow(gameIds = Array.from({ length: 20 }, (_, i) => 2025020301 + i)) {
+  function neutralRow(
+    gameIds = Array.from({ length: 20 }, (_, i) => 2025020301 + i),
+    seasonTotals: Record<string, [number, number, number]> | null = {
+      goals_per_60: [12, 36000, 40],
+      expected_sh_pct: [8, 160, 40],
+    },
+  ) {
     return {
       player_id: 8478402,
       game_date: "2026-04-16",
@@ -47,6 +53,17 @@ describe("resultsLuckSources", () => {
             expected_sh_pct: [4, 80, 20],
           },
         }])),
+        ...(seasonTotals
+          ? {
+              currentSeason: {
+                version: "rolling-player-window-counts-current-season-v1",
+                season: 20252026,
+                selection: "chronological_appearances_in_strength_state_current_season",
+                windows: {},
+                seasonTotals: { ratio: seasonTotals, secondary: {} },
+              },
+            }
+          : {}),
       },
     };
   }
@@ -69,10 +86,25 @@ describe("resultsLuckSources", () => {
     });
     expect(byKey.get("ipp")?.componentIndex).toBe(100);
     expect(byKey.get("on_ice_shooting_context")?.componentIndex).toBe(100);
-    // SAX% has no stored season Fenwick count: unknown, so nothing publishes
-    // (the defect published 65 for this fixture).
-    expect(byKey.get("sax_percentage")?.componentIndex).toBeNull();
-    expect(result.canPublish).toBe(false);
+    // SAX%: 2 per 80 attempts in the window and in the baseline.
+    expect(byKey.get("sax_percentage")).toMatchObject({
+      currentValue: 2.5, baselineValue: 2.5, componentIndex: 100,
+    });
+    // The defect published 65 for this fixture; now exactly 100.
+    expect(result.canPublish).toBe(true);
+    expect(result.indexValue).toBe(100);
+
+    // Without L6's season iFF totals the SAX% baseline is unknown, so the
+    // index stays unpublished rather than reweighting.
+    const withoutTotals = buildResultsLuckRollingSourceFromRow({
+      window: "last20", row: neutralRow(undefined, null),
+    });
+    const unpublished = calculateComponentAwareResultsLuckIndex({
+      components: withoutTotals!.components,
+      baselineProvenance: withoutTotals!.baselineProvenance,
+      currentWindow: "last20",
+    });
+    expect(unpublished.canPublish).toBe(false);
   });
 
   it("has no season-minus-window baseline when the window crosses seasons", () => {

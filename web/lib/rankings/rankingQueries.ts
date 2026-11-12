@@ -23,6 +23,7 @@ import {
 } from "./skaterDeploymentAggregation";
 import {
   buildSkaterWindowAggregatesFromRollingRow,
+  isCrossSeasonWindowRequest,
   type RollingPlayerGameMetricRow,
 } from "./skaterWindowAggregation";
 import type {
@@ -543,6 +544,7 @@ function buildCandidates(args: {
     const aggregates = buildSkaterWindowAggregatesFromRollingRow(row, {
       windows: [args.request.window],
       metricKeys,
+      windowScope: args.request.windowScope,
     });
     if (aggregates.length === 0) continue;
 
@@ -1064,6 +1066,15 @@ export async function buildContextualRankingsSurface(
 export async function buildSnapshotFirstContextualRankingsSurface(
   request: ContextualRankingsRequest,
 ): Promise<ContextualRankingsResponse> {
+  // Durable snapshots hold the default (current-season) last-N windows; the
+  // labelled cross-season view is computed from rolling rows (decision 103).
+  if (isCrossSeasonWindowRequest(request)) {
+    return withMetricExplorerSourceMetadata({
+      response: await buildContextualRankingsSurface(request),
+      rankingSource: "fallback_rolling_player_game_metrics",
+      fallbackReason: "Cross-season last-N view is computed from rolling rows.",
+    });
+  }
   const snapshotSurfaces = await buildEntityMetricRankingSurfaces(request, [
     request.metric,
   ]);
