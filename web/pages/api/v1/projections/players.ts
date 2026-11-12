@@ -1,3 +1,11 @@
+/**
+ * DEPRECATED (unowned; L12 note per Chef grant, 2026-11-12). Values served here
+ * are FORGE skater lines IF HE PLAYS (decision 132, L9c): availability
+ * (projected_lineup | confirmed_out | uncertain | unknown) and time away travel in
+ * `uncertainty.availability` / `uncertainty.time_away`, not in these numbers.
+ * Prefer `/api/v1/forge/players`, which passes availability through and labels
+ * if-plays rows.
+ */
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
