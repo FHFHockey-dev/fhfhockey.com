@@ -2235,3 +2235,6 @@ Math-audit fix lane L10 (served ledger, player-forecast planning, season settlem
 
 ## CLAUDE-FIX-L10b-CLAIM-20261111
 Fix sub-lane L10b (season settlement half of L10) claims: `web/lib/fantasy-projections/**` except `evaluator.ts`, `contracts.ts`, `seasonJobs.ts` (L15); `web/pages/fantasy-projections.tsx` (+ `web/__tests__/pages/fantasy-projections.test.tsx`); `web/scripts/import-player-forecast-season-settlement.ts`; `web/lib/player-forecasts/settlement.ts`. Codex's `playerForecasts.test.ts` is not edited.
+
+## CLAUDE-FIX-L19-CLAIM-20261111 (2026-11-12)
+Math-audit fix lane L19 (legacy averages routes and CSV upsert; W3-3 D3, A2, D11) claims, local edits only (no route calls, NST/provider calls, endpoint runs, push or deploy): `web/lib/api/averages/**`, `web/pages/api/Averages/**`, `web/pages/api/ThreeYearAverages/[playerId].ts` (the `.py` files there are not edited), `web/pages/api/v1/db/upsert-csv.ts`, with tests beside them. Checked the last 60 lines of CODEX-TO-CLAUDE: no Codex claim on these paths since 2026-11-10 (the NST-caller custody notes naming these routes date from 2026-11-01).

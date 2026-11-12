@@ -22,8 +22,11 @@ async function handler(
 
   try {
     // Fetch three-year counting stats
-    const { yearlyData: yearlyCounts, averages: threeYearCountsAverages } =
-      await getAggregatedCountsData(playerId as string, true);
+    const {
+      yearlyData: yearlyCounts,
+      averages: threeYearCountsAverages,
+      scaleContract
+    } = await getAggregatedCountsData(playerId as string, true);
 
     // Fetch three-year rate stats
     const { yearlyData: yearlyRates, averages: threeYearRatesAverages } =
@@ -44,6 +47,7 @@ async function handler(
     res.json({
       success: true,
       message: `Successfully fetched the career and three-year averages stats for player: ${playerId}`,
+      scaleContract,
       yearlyCounts,
       threeYearCountsAverages,
       yearlyRates,
