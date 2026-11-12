@@ -803,6 +803,9 @@ function AccountabilityPanel({
           <p>
             {accountability.summary.correctGames} correct /{" "}
             {accountability.summary.wrongGames} wrong
+            {(accountability.summary.tieGames ?? 0) > 0
+              ? ` / ${accountability.summary.tieGames} even (no pick)`
+              : null}
           </p>
         </div>
         <div className={styles.accountabilityMeta}>
@@ -889,7 +892,11 @@ function AccountabilityPanel({
                     {candle.homeTeamAbbreviation}
                   </span>
                   <strong>
-                    {candle.predictedWinnerCorrect ? "Correct" : "Wrong"}
+                    {candle.predictedWinnerCorrect == null
+                      ? "Even (no pick)"
+                      : candle.predictedWinnerCorrect
+                        ? "Correct"
+                        : "Wrong"}
                   </strong>
                 </div>
                 <div className={styles.candleMeta}>

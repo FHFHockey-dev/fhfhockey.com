@@ -41,6 +41,8 @@ export type NhlScheduleOddsPartner = { partnerId?: unknown; name?: unknown };
 
 export type ParsedOddsPrice = {
   format: "american" | "decimal";
+  /** The price in its declared format (e.g. -150 American, 1.75 decimal). */
+  price: number;
   impliedProbability: number;
 };
 
@@ -48,13 +50,16 @@ export function parseNhlScheduleOddsPrice(value: unknown): ParsedOddsPrice | nul
   if (typeof value !== "string" && typeof value !== "number") return null;
   const text = String(value).trim();
   if (/^[+-]\d+$/.test(text)) {
-    const implied = americanToImpliedProbability(Number(text));
-    return implied == null ? null : { format: "american", impliedProbability: implied };
+    const price = Number(text);
+    const implied = americanToImpliedProbability(price);
+    return implied == null
+      ? null
+      : { format: "american", price, impliedProbability: implied };
   }
   if (/^\d+\.\d+$/.test(text)) {
     const decimal = Number(text);
     return Number.isFinite(decimal) && decimal > 1
-      ? { format: "decimal", impliedProbability: 1 / decimal }
+      ? { format: "decimal", price: decimal, impliedProbability: 1 / decimal }
       : null;
   }
   return null;
