@@ -60,7 +60,27 @@ const completeSchedule = {
       ],
     },
   ],
+  oddsPartners: [{ partnerId: 9, name: "DraftKings" }],
+  fhfhFetchedAt: "2026-10-12T22:15:00.000Z",
 };
+
+const crossBookSchedule = {
+  ...completeSchedule,
+  gameWeek: [
+    {
+      games: [
+        {
+          id: 2026020001,
+          awayTeam: { odds: [{ providerId: 9, value: "+120" }] },
+          homeTeam: { odds: [{ providerId: 8, value: "-135" }] },
+        },
+      ],
+    },
+  ],
+};
+
+const PREDICTIONS_NOTICE =
+  "FHFH predictions unavailable while the model is developed and validated.";
 
 function mockResponses(
   rightRail: { data?: unknown; error?: Error },
@@ -104,6 +124,50 @@ describe("GamePreview data states", () => {
     expect(screen.queryByText("Fetching player trends from FHFH Database...")).toBeNull();
     expect(screen.queryByText("BOS 42%")).toBeNull();
     expect(screen.queryByText("NYR 58%")).toBeNull();
+  });
+
+  it("states that FHFH predictions are unavailable and labels the market as sportsbook odds", () => {
+    mockResponses(
+      { data: completeRightRail },
+      { data: completeSchedule },
+    );
+
+    render(<GamePreview gameId="2026020001" gameContext={gameContext} />);
+
+    expect(screen.getByText(PREDICTIONS_NOTICE)).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Market win probability" }),
+    ).toBeTruthy();
+    expect(screen.queryByText("Implied Win Probability")).toBeNull();
+    expect(
+      screen.getByText(/^De-vigged sportsbook odds · DraftKings · as of .+/),
+    ).toBeTruthy();
+  });
+
+  it("shows the unavailable state when the two sides come from different sportsbooks", () => {
+    mockResponses(
+      { data: completeRightRail },
+      { data: crossBookSchedule },
+    );
+
+    render(<GamePreview gameId="2026020001" gameContext={gameContext} />);
+
+    expect(
+      screen.getByText("Market odds are unavailable for this game."),
+    ).toBeTruthy();
+    expect(screen.queryByText(/^BOS \d+%$/)).toBeNull();
+    expect(screen.getByText(PREDICTIONS_NOTICE)).toBeTruthy();
+  });
+
+  it("shows the unavailable state when the schedule response has no fetch time", () => {
+    const { fhfhFetchedAt: _omitted, ...untimed } = completeSchedule;
+    mockResponses({ data: completeRightRail }, { data: untimed });
+
+    render(<GamePreview gameId="2026020001" gameContext={gameContext} />);
+
+    expect(
+      screen.getByText("Market odds are unavailable for this game."),
+    ).toBeTruthy();
   });
 
   it("preserves partial real metrics and marks each missing field unavailable", () => {

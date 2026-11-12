@@ -1,3 +1,25 @@
+@use "styles/vars" as v;
 @use "styles/game-detail-shared" as shared;
 
 @include shared.game-detail-shared;
+
+.predictionsNotice {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  color: v.$text-secondary;
+  font-family: v.$font-family-primary;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  text-align: center;
+  border: 1px solid rgba(v.$color-white, 0.12);
+  border-radius: v.$radius-md;
+  background: rgba(v.$background-dark, 0.35);
+}
+
+.marketSource {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  text-align: center;
+}

@@ -4,6 +4,14 @@ import { useRouter } from "next/router";
 import useSWR from "swr";
 import styles from "./[gameId].module.scss";
 import PlayerSearchBar from "components/StatsPage/PlayerSearchBar";
+import {
+  FHFH_PREDICTIONS_UNAVAILABLE_NOTICE,
+  SCHEDULE_FETCHED_AT_KEY,
+  findScheduleGame,
+  marketSourceLabel,
+  marketWinProbabilityForGame,
+  scheduleFetchedAt,
+} from "lib/game-predictions/marketOdds";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -13,6 +21,13 @@ const fetcher = async (url: string) => {
   }
   return data;
 };
+
+// Stamps the client fetch time on the schedule response: the market label's
+// "as of" time (decision 42).
+const scheduleFetcher = async (url: string) => ({
+  ...(await fetcher(url)),
+  [SCHEDULE_FETCHED_AT_KEY]: new Date().toISOString()
+});
 
 const isGameId = (value: unknown): value is string =>
   typeof value === "string" && /^[1-9]\d{9}$/.test(value);
@@ -114,27 +129,6 @@ function getBarWidths(awayVal: unknown, homeVal: unknown) {
   };
 }
 
-// Helper to convert American/Decimal odds to implied probability
-function getImpliedProb(oddsStr?: string): number | null {
-  if (typeof oddsStr !== "string" || !/^[+-]?\d+(\.\d+)?$/.test(oddsStr)) return null;
-  
-  // Handle decimal odds
-  if (!oddsStr.startsWith("+") && !oddsStr.startsWith("-")) {
-    const decimal = parseFloat(oddsStr);
-    return Number.isFinite(decimal) && decimal > 1 ? (1 / decimal) * 100 : null;
-  }
-  
-  // Handle American odds
-  if (!/^[+-]\d+$/.test(oddsStr)) return null;
-  const odds = Number(oddsStr);
-  if (!Number.isFinite(odds) || odds === 0) return null;
-  if (odds > 0) {
-    return (100 / (odds + 100)) * 100;
-  } else {
-    return (-odds / (-odds + 100)) * 100;
-  }
-}
-
 export default function GameStatsPage() {
   const router = useRouter();
   const gameId = isGameId(router.query.gameId) ? router.query.gameId : null;
@@ -161,39 +155,18 @@ export default function GameStatsPage() {
 
   const { data: scheduleData } = useSWR(
     gameDate ? `/api/v1/schedule/date/${gameDate}` : null,
-    fetcher
+    scheduleFetcher
   );
 
   const hasGameData = Boolean(currentGame?.awayTeam && currentGame?.homeTeam);
   const isLoading = !router.isReady || Boolean(gameId && !hasGameData && (railLoading || boxscoreLoading));
 
-  // Find game in daily schedule to get odds
-  const gameOdds = scheduleData?.gameWeek?.[0]?.games?.find(
-    (g: any) => g.id === Number(gameId)
-  );
-
-  // DraftKings is usually providerId 9, fallback to 8 (Sportradar) or first available
-  const findOdds = (teamOdds: any[]) => {
-    if (!Array.isArray(teamOdds) || !teamOdds.length) return undefined;
-    return teamOdds.find(o => o.providerId === 9)?.value || 
-           teamOdds.find(o => o.providerId === 8)?.value || 
-           teamOdds[0]?.value;
-  };
-
-  const awayMoneylineStr = findOdds(gameOdds?.awayTeam?.odds);
-  const homeMoneylineStr = findOdds(gameOdds?.homeTeam?.odds);
-
-  const rawAwayProb = getImpliedProb(awayMoneylineStr);
-  const rawHomeProb = getImpliedProb(homeMoneylineStr);
-  const totalProb = (rawAwayProb ?? 0) + (rawHomeProb ?? 0);
-  
-  // Normalize probabilities (removing the vig)
-  const hasMarketOdds = rawAwayProb != null && rawHomeProb != null;
-  const awayProb =
-    rawAwayProb != null && hasMarketOdds && totalProb > 0
-      ? Math.round((rawAwayProb / totalProb) * 100)
-      : null;
-  const homeProb = awayProb == null ? null : 100 - awayProb;
+  // Find game in daily schedule for its start time and market odds
+  const gameOdds: any = gameId ? findScheduleGame(scheduleData, Number(gameId)) : undefined;
+  const fetchedAt = scheduleFetchedAt(scheduleData);
+  const market =
+    gameId && fetchedAt ? marketWinProbabilityForGame(scheduleData, Number(gameId)) : null;
+  const availableMarket = market?.status === "available" ? market : null;
 
   // Team Context
   const awayTeam = currentGame?.awayTeam || boxscore?.awayTeam || { abbrev: "Away", score: null };
@@ -296,19 +269,27 @@ export default function GameStatsPage() {
             {/* Win Probability & Projected Score */}
             <section className={`${styles.dataPanel} ${styles.panelProbability}`}>
               <div className={styles.panelHeader}>
-                <h3>Implied Win Probability</h3>
+                <h3>Market win probability</h3>
               </div>
               <div className={styles.panelBody}>
+                <p className={styles.predictionsNotice} role="note">
+                  {FHFH_PREDICTIONS_UNAVAILABLE_NOTICE}
+                </p>
                 <div className={styles.probabilityHero}>
                   <div className={styles.probScale}>
                     <div className={styles.probLabels}>
-                      <span className={styles.probAway}>{awayTeam.abbrev} {awayProb == null ? "-" : `${awayProb}%`}</span>
-                      <span className={styles.probHome}>{homeTeam.abbrev} {homeProb == null ? "-" : `${homeProb}%`}</span>
+                      <span className={styles.probAway}>{awayTeam.abbrev} {availableMarket ? `${availableMarket.awayPercent}%` : "-"}</span>
+                      <span className={styles.probHome}>{homeTeam.abbrev} {availableMarket ? `${availableMarket.homePercent}%` : "-"}</span>
                     </div>
-                    {hasMarketOdds ? <div className={styles.probBar}>
-                      <div className={styles.probFillAway} style={{ width: `${awayProb}%` }}></div>
-                      <div className={styles.probFillHome} style={{ width: `${homeProb}%` }}></div>
-                    </div> : <p>Market odds unavailable.</p>}
+                    {availableMarket && fetchedAt ? <>
+                      <div className={styles.probBar}>
+                        <div className={styles.probFillAway} style={{ width: `${availableMarket.awayPercent}%` }}></div>
+                        <div className={styles.probFillHome} style={{ width: `${availableMarket.homePercent}%` }}></div>
+                      </div>
+                      <p className={styles.marketSource}>
+                        {marketSourceLabel(availableMarket.partnerName, fetchedAt)}
+                      </p>
+                    </> : <p className={styles.marketSource}>Market odds unavailable.</p>}
                     <div className={styles.probLabels} style={{ color: "rgba(255,255,255,0.5)", marginTop: "0.25rem" }}>
                       <span>Score: {awayTeam.score ?? "-"}</span>
                       <span>Score: {homeTeam.score ?? "-"}</span>
