@@ -2875,6 +2875,15 @@ export async function runPerGameSkaterStage(args: {
     const assistScalePk = assistTeamPk.raw > 0 ? (SKATER_TEAM_ASSISTS_PER_GOAL.es * assistTeamPk.goals) / assistTeamPk.raw : 0;
     const teamPkTotals = { toiSeconds: 0, shots: 0, goals: 0, assists: 0 };
 
+    // Pass 1: every player's final line (scenario/rollout selection, then the season bootstrap).
+    const finalLines = new Map<number, {
+      shotsEs: number; shotsPp: number; shotsPk: number; goalsEs: number; goalsPp: number; goalsPk: number;
+      assistsEs: number; assistsPp: number; assistsPk: number; projHits: number; projBlocks: number;
+      baseGoalsEs: number; baseGoalsPp: number; baseAssistsEs: number; baseAssistsPp: number;
+      preBootstrap: { goalsEs: number; goalsPp: number; assistsEs: number; assistsPp: number };
+      scenarioBlend: ReturnType<typeof blendSkaterScenarioStatLinesAcrossHorizon>;
+      seasonLine: ReturnType<typeof bootstrapSkaterLine> | null;
+    }>();
     for (const [playerId, p] of projected.entries()) {
       let shotsEs = p.shotsEs;
       let shotsPp = p.shotsPp;
@@ -2910,6 +2919,7 @@ export async function runPerGameSkaterStage(args: {
           assistsPp: baseAssistsPp,
         },
       });
+      const preBootstrap = { ...selectedSkaterStatLine };
       let goalsEs = selectedSkaterStatLine.goalsEs;
       let goalsPp = selectedSkaterStatLine.goalsPp;
       let assistsEs = selectedSkaterStatLine.assistsEs;
@@ -2937,6 +2947,44 @@ export async function runPerGameSkaterStage(args: {
         shotsPk = seasonLine.shotsPk ?? shotsPk;
         projHits = seasonLine.hits; projBlocks = seasonLine.blocks;
       }
+      finalLines.set(playerId, { shotsEs, shotsPp, shotsPk, goalsEs, goalsPp, goalsPk, assistsEs, assistsPp, assistsPk,
+        projHits, projBlocks, baseGoalsEs, baseGoalsPp, baseAssistsEs, baseAssistsPp, preBootstrap, scenarioBlend, seasonLine });
+    }
+
+    // BC W1-6 A1 (rule 7): the bootstrap re-splits lines after reconciliation, so re-pin the final
+    // serialized team shots per strength to their targets; goals and assists keep their per-shot
+    // and per-goal rates. Without a bootstrap the reconciled sums already equal the targets.
+    if ([...finalLines.values()].some((line) => line.seasonLine != null)) {
+      const lines = [...finalLines.values()];
+      const scaleTo = (target: number | null, pick: (line: (typeof lines)[number]) => number) => {
+        const total = lines.reduce((sum, line) => sum + pick(line), 0);
+        return target != null && Number.isFinite(target) && total > 0 ? target / total : 1;
+      };
+      const scaleEs = scaleTo(shotsEsTarget, (line) => line.shotsEs);
+      const scalePp = scaleTo(shotsPpTarget, (line) => line.shotsPp);
+      const scalePk = scaleTo(pkModeled ? teamBudget.shotsPkTarget : null, (line) => line.shotsPk);
+      for (const line of lines) {
+        line.shotsEs *= scaleEs; line.goalsEs *= scaleEs; line.assistsEs *= scaleEs;
+        line.shotsPp *= scalePp; line.goalsPp *= scalePp; line.assistsPp *= scalePp;
+        line.shotsPk *= scalePk; line.goalsPk *= scalePk; line.assistsPk *= scalePk;
+      }
+      metrics.data_quality.bootstrap_final_reconciliations = (metrics.data_quality.bootstrap_final_reconciliations ?? 0) + 1;
+    }
+
+    // Pass 2: serialize each final line once.
+    for (const [playerId, p] of projected.entries()) {
+      const finalLine = finalLines.get(playerId)!;
+      const { shotsEs, shotsPp, shotsPk, goalsEs, goalsPp, goalsPk, assistsEs, assistsPp, assistsPk, projHits, projBlocks,
+        baseGoalsEs, baseGoalsPp, baseAssistsEs, baseAssistsPp, scenarioBlend, seasonLine } = finalLine;
+      // W1-7 N1: scenario lines move with the final line, so bands describe the served mean.
+      const ratio = (final: number, pre: number) => (pre > 0 ? final / pre : 1);
+      const finalScenarioLines = scenarioBlend.scenarioLines.map((scenario) => ({
+        ...scenario,
+        goalsEs: finalLine.preBootstrap.goalsEs > 0 ? scenario.goalsEs * ratio(goalsEs, finalLine.preBootstrap.goalsEs) : goalsEs,
+        goalsPp: finalLine.preBootstrap.goalsPp > 0 ? scenario.goalsPp * ratio(goalsPp, finalLine.preBootstrap.goalsPp) : goalsPp,
+        assistsEs: finalLine.preBootstrap.assistsEs > 0 ? scenario.assistsEs * ratio(assistsEs, finalLine.preBootstrap.assistsEs) : assistsEs,
+        assistsPp: finalLine.preBootstrap.assistsPp > 0 ? scenario.assistsPp * ratio(assistsPp, finalLine.preBootstrap.assistsPp) : assistsPp,
+      }));
       if (pkModeled) {
         teamPkTotals.toiSeconds += p.toiPk;
         teamPkTotals.shots += shotsPk;
@@ -2975,7 +3023,7 @@ export async function runPerGameSkaterStage(args: {
         teamHorizonScalars,
         selectSkaterRolloutScenarioMixture(
           skaterRollout,
-          scenarioBlend.scenarioLines.map((s) => ({
+          finalScenarioLines.map((s) => ({
             weight: s.probability,
             goalsEs: s.goalsEs,
             goalsPp: s.goalsPp,
@@ -3209,7 +3257,7 @@ export async function runPerGameSkaterStage(args: {
                 probability: Number(s.probability.toFixed(4)),
                 source: s.source,
               })),
-              scenario_stat_lines: scenarioBlend.scenarioLines.map((s) => ({
+              scenario_stat_lines: finalScenarioLines.map((s) => ({
                 role: s.role,
                 probability: Number(s.probability.toFixed(4)),
                 goals_es: Number(s.goalsEs.toFixed(4)),

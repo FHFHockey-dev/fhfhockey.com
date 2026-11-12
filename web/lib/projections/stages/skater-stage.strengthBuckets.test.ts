@@ -75,6 +75,12 @@ vi.mock("../queries/skater-queries", () => ({
     selectedSoftStaleRows: 0, selectedHardStaleRows: 0, fetchFailed: false,
   } }),
 }));
+// Season bootstrap fixture: a history prior with far more shots than the organic line.
+vi.mock("../seasonBootstrap", async importOriginal => ({
+  ...await importOriginal<typeof import("../seasonBootstrap")>(),
+  loadSeasonBootstrap: async (ids: number[]) => new Map(ids.map(id => [id, { currentSeasonGames: 0, historyGames: 20, limitations: [],
+    previous: { SHOTS_ON_GOAL: 6, GOALS: 1, ASSISTS: 1, HITS: 1, BLOCKED_SHOTS: 1, PP_POINTS: 0.3, PP_GOALS: 0.1, PP_TOI: 2 } }])),
+}));
 vi.mock("../queries/goalie-queries", async importOriginal => ({
   ...await importOriginal<typeof import("../queries/goalie-queries")>(), fetchOpponentGoalieContextForGame: async () => null,
 }));
@@ -86,7 +92,7 @@ vi.mock("./persistence-stage", () => ({
 type Strength = { toiEsSecondsAvg: number; toiPpSecondsAvg: number; toiPkSecondsAvg: number | null;
   shotsEsAvg: number; shotsPpAvg: number; shotsPkAvg?: number | null };
 
-async function runStage(strength: Strength) {
+async function runStage(strength: Strength, opts: { seasonBootstrap?: boolean; rollout?: string } = {}) {
   fx.playerWrites.mockClear();
   fx.teamWrites.mockClear();
   const asOfDate = "2026-10-07";
@@ -94,10 +100,10 @@ async function runStage(strength: Strength) {
   const teamGoalsByTeamId = new Map<number, number>();
   const teamShotsByTeamId = new Map<number, { shotsEs: number; shotsPp: number; shotsPk?: number | null }>();
   await runPerGameSkaterStage({
-    seasonBootstrap: false, asOfDate, runId: "synthetic-l9a-buckets", horizonGames: 1,
+    seasonBootstrap: opts.seasonBootstrap ?? false, asOfDate, runId: "synthetic-l9a-buckets", horizonGames: 1,
     game: { id: 2026020002, date: asOfDate, homeTeamId: 10, awayTeamId: 11 },
     deadlineMs: Date.now() + 30_000, currentSeasonId: 20262027,
-    skaterRollout: resolveSkaterRolloutConfig("baseline"),
+    skaterRollout: resolveSkaterRolloutConfig((opts.rollout ?? "baseline") as any),
     teamAbbreviationById: new Map(), playerAvailabilityMultiplier: new Map(), availabilityEventByPlayer: new Map(), roleEventByPlayer: new Map(),
     goalieOverrideByTeamId: new Map(), activeRosterSkaterIdsByTeamId: new Map([10, 11].map(id => [id, fx.roster(id)])),
     teamHorizonScalarsCache: cached([1]), teamSkaterRoleHistoryCache: cached(new Map()),
@@ -252,5 +258,31 @@ describe("known zero-shot history keeps its exposure (BC W1-6 A2)", () => {
     // Same ES TOI and role inputs; only the shot history differs.
     expect(Math.abs(zero.proj_toi_es_seconds - teammate.proj_toi_es_seconds)).toBeLessThanOrEqual(1);
     expect(zero.proj_shots_es).toBeLessThan(0.5 * teammate.proj_shots_es);
+  });
+});
+
+describe("season bootstrap on the final serialized line (BC W1-6 A1, W1-7 N1)", () => {
+  const strength = { toiEsSecondsAvg: 15000, toiPpSecondsAvg: 1200, toiPkSecondsAvg: 1800, shotsEsAvg: 25, shotsPpAvg: 6, shotsPkAvg: 3 };
+
+  it("keeps the team's served shots pinned to the targets when the bootstrap re-splits lines", async () => {
+    const { players, team } = await runStage(strength, { seasonBootstrap: true });
+    expect(players.some(row => row.uncertainty.model.skater_selection.season_bootstrap != null)).toBe(true);
+    expect(sum(players, "proj_shots_es")).toBeCloseTo(25, 1);
+    expect(sum(players, "proj_shots_pp")).toBeCloseTo(6, 1);
+    expect(sum(players, "proj_shots_pk")).toBeCloseTo(3, 1);
+    expect(team.proj_shots_es).toBeCloseTo(25, 2);
+  });
+
+  it("centres the stored scenario lines on the served goals and assists", async () => {
+    const { players } = await runStage(strength, { seasonBootstrap: true, rollout: "candidate" });
+    expect(players.filter(row => row.uncertainty.model.skater_selection.role_scenarios.scenario_stat_lines.length > 0).length).toBeGreaterThan(0);
+    for (const row of players) {
+      const lines = row.uncertainty.model.skater_selection.role_scenarios.scenario_stat_lines as Array<Record<string, number>>;
+      if (lines.length === 0) continue;
+      const weight = lines.reduce((total, line) => total + line.probability, 0);
+      const mean = (key: string) => lines.reduce((total, line) => total + line.probability * line[key], 0) / weight;
+      expect(mean("goals_es")).toBeCloseTo(row.proj_goals_es, 2);
+      expect(mean("assists_pp")).toBeCloseTo(row.proj_assists_pp, 2);
+    }
   });
 });
