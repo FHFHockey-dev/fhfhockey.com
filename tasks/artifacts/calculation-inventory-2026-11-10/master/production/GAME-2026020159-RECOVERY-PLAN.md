@@ -117,3 +117,43 @@ This game joins the summary sweep and goalie refresh with the others.
   - Kuemper 3,746 s = 62:26 and Varlamov 3,737 s = 62:17, both matching the GS;
   - all 332 PBP events at v2.
 - No retry was needed.
+
+---
+
+## Ten more overtime games, same defect (NHL JSON drops one team's OT shifts): official-HTML qualification, dry run 2026-11-12 (no writes)
+The script `ot-qualify.mjs <gameId>` runs the approved 2026020159 steps for any game and refuses unless every condition holds:
+- **Existing state:** v1 complete, with heads equal to the status ids.
+- **Strict HTML build** passes.
+- **Coverage guard:** every period for both teams reaches the last PBP event.
+- **Identities:** every row resolves to a PBP roster player on the same team.
+- **No overlapping intervals** within a player and period.
+- **Event Summary (ES):** every skater's TOI within 1 s.
+- **Game Summary (GS) goalies:** every goalie with ice time matches to within 1 s. Names are accent-folded; team totals and empty-net lines are ignored. Every goalie with HTML shifts must appear in the GS.
+- **Full normalization dry run** passes.
+
+The first dry run reported 7 false failures from a GS parser bug ("TEAM TOTALS" and "EMPTY NET" lines read as a backup goalie's name; Meriläinen not accent-folded). That is fixed. 2026020187's apparent 1:44 relief goalie was Detroit's empty-net time.
+
+| Game | Qualified | HTML rows | Old v1 rows | Goalie TOI (= GS) |
+|---|---|---|---|---|
+| 2026020161 | yes | 798 | 798 | 8479973:63:47, 8479979:63:03 |
+| 2026020163 | yes | 859 | 859 | 8483548:65:00, 8482221:64:12 |
+| 2026020172 | yes | 761 | 761 | 8477424:63:44, 8481668:61:29 |
+| 2026020173 | yes | 802 | 802 | 8480045:63:42, 8479292:63:42 |
+| 2026020174 | yes | 798 | 798 | 8479394:60:59, 8475660:60:59 |
+| 2026020177 | yes | 878 | 879 | 8483710:61:44, 8478872:61:44 |
+| 2026020187 | yes | 811 | 811 | 8485545:63:16, 8477465:65:00 |
+| 2026020188 | yes | 753 | 753 | 8475660:62:22, 8478435:61:11 |
+| 2026020192 | yes | 767 | 767 | 8473575:63:10, 8477424:65:00 |
+| 2026020197 | yes | 765 | 765 | 8482447:62:47, 8480843:64:49 |
+
+2026020177's HTML has one row fewer than its JSON (878 vs 879), likely an overlap like 2026020159's. Its HTML still passes every check.
+
+**Write plan:** identical to 2026020159, one game at a time, run as `ot-qualify.mjs <gameId> --write`.
+1. Verify the existing state.
+2. Re-fetch the official reports and re-qualify on the exact capture bytes.
+3. Insert one raw `shiftcharts` row (the old JSON row is kept; the head advances by trigger and the status goes stale).
+4. Check the head advanced.
+5. One `persistCapturedGameNormalization` RPC.
+6. Readback: status complete v2 with expected = observed, and both raw shift rows kept.
+
+**Pacing:** after phase E, 60 s between games, with the same DB preflight. Stop on any failure; a partial write gets one DB-only rerun after reconciling.
