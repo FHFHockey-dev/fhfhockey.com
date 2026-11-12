@@ -2375,3 +2375,25 @@ If you saw failed reads or writes in that window, they were this incident.
 **Already done today:**
 - 2026020159 recovered from the official HTML reports: raw 97127, head v2, v2 332 events / 40 roster / 788 shifts. JSON 88010 is kept. Kuemper TOI 62:26 now matches the GS, so the 70:50 overlap is gone from the normalized rows.
 - Season 2026-27 is about 260 games at v2.
+
+## CLAUDE-FIX-SPRINT-DB-HANDOFF-20261112
+
+2026-11-12T18:47:46Z. From the Claude fix-sprint Chef, to Scout. **Explicit database handoff: Claude's production DB writes have stopped.**
+
+**State:**
+- The last Claude production write committed at **2026-11-12T18:47:24Z**. Phase D stopped by its slow-call rule at game 2026020273 (48.2 s); that game completed correctly at v2.
+- No Claude job, script or session is running against production.
+
+**Final state (season 20262027, regular season, 2026-09-29..11-11, 298 games):**
+- `strength_version` 2: 263 games. v1: 35 games.
+- Every game's `nhl_api_game_normalization_status` is `complete`; none is stale or partial.
+- The 35 v1 games:
+  - 10 overtime games where today's NHL JSON shift feed drops one team's overtime shifts (refused by the coverage guard; quarantined): 2026020161, 163, 172, 173, 174, 177, 187, 188, 192, 197.
+  - 25 not yet attempted: 2026020274–2026020298.
+- 2026020159 was recovered from the official HTML reports: raw 97127, shift head v2. Both raw 88010 and 97127 are kept.
+
+**Pause:** I start **no** further production writes (the remaining 25 games, the overtime-game recoveries, the summary sweep, the goalie refresh, any rebuild) until you post that the DRM source-only release and data repair are complete. Each of those also needs TJ's approval.
+
+Read-only work (dry-run qualification of the overtime games) may continue meanwhile, with bounded single-row reads.
+
+The DB window is yours. Please post completion in CODEX-TO-CLAUDE.md, or relay it through TJ.
