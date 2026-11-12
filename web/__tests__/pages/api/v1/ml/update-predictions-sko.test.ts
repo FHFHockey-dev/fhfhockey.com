@@ -57,8 +57,7 @@ vi.mock("../../../../../lib/NHL/server", () => ({
 
 import handler, {
   buildPredictionRecord,
-  fetchPlayerIdsPaginated,
-  fetchPlayerSeries,
+  fetchSeriesPaginated,
   predictionScopeDigest,
   resolveSkoSeasonExecution,
 } from "../../../../../pages/api/v1/ml/update-predictions-sko";
@@ -219,66 +218,42 @@ describe("/api/v1/ml/update-predictions-sko", () => {
     expect(serviceRoleClientMock.from).not.toHaveBeenCalled();
   });
 
-  it("paginates every player-discovery row and returns sorted unique ids", async () => {
-    const loadPage = vi
-      .fn()
-      .mockResolvedValueOnce({
-        data: [{ player_id: 2 }, { player_id: 1 }, { player_id: 2 }],
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: [{ player_id: "3" }],
-        error: null,
-      });
+  it("pages the source scan and keeps each player's latest 60 games in date order", async () => {
+    const rows = Array.from({ length: 65 }, (_, index) => ({
+      player_id: 7,
+      date: `2026-01-01T00:00:00Z`,
+      points: index,
+      games_played: 1,
+    })).map((row, index) => ({
+      ...row,
+      date: new Date(Date.parse(row.date) + index * 86_400_000)
+        .toISOString()
+        .slice(0, 10),
+    }));
+    rows.push({ player_id: 3, date: "2026-02-01", points: 1, games_played: 1 });
+    const loadPage = vi.fn(async (from: number, to: number) => ({
+      data: rows.slice(from, to + 1),
+      error: null,
+    }));
 
-    await expect(fetchPlayerIdsPaginated(loadPage, 3)).resolves.toEqual({
-      playerIds: [1, 2, 3],
-      pages: 2,
-      rowsScanned: 4,
-    });
-    expect(loadPage).toHaveBeenNthCalledWith(1, 0, 2);
-    expect(loadPage).toHaveBeenNthCalledWith(2, 3, 5);
-  });
+    const result = await fetchSeriesPaginated(loadPage, 40);
 
-  it("limits the source query to the latest 60 rows and restores chronological input", async () => {
-    const rows = [
-      { player_id: 7, date: "2026-03-20", points: 2, games_played: 1 },
-      { player_id: 7, date: "2026-03-19", points: 1, games_played: 1 },
-    ];
-    const builder: any = {};
-    for (const method of ["select", "eq", "lte", "gte"]) {
-      builder[method] = vi.fn(() => builder);
-    }
-    builder.order = vi.fn(() => builder);
-    builder.limit = vi.fn().mockResolvedValue({ data: rows, error: null });
-    const client = { from: vi.fn(() => builder) } as any;
-
-    const result = await fetchPlayerSeries(
-      client,
-      7,
-      "2026-03-21",
-      "2025-11-21",
-    );
-
-    expect(builder.order).toHaveBeenCalledWith("date", { ascending: false });
-    expect(builder.limit).toHaveBeenCalledWith(60);
-    expect(result.map((row) => row.date)).toEqual(["2026-03-19", "2026-03-20"]);
-    expect(rows.map((row) => row.date)).toEqual(["2026-03-20", "2026-03-19"]);
+    expect(loadPage).toHaveBeenNthCalledWith(1, 0, 39);
+    expect(loadPage).toHaveBeenNthCalledWith(2, 40, 79);
+    expect(result.pages).toBe(2);
+    expect(result.rowsScanned).toBe(66);
+    const series7 = result.seriesByPlayer.get(7)!;
+    expect(series7).toHaveLength(60);
+    expect(series7[0].points).toBe(5);
+    expect(series7.at(-1)!.points).toBe(64);
+    expect(result.seriesByPlayer.get(3)).toHaveLength(1);
   });
 
   it("returns deterministic coverage, source-lag, model, and write diagnostics", async () => {
-    const seriesBuilder: any = {};
-    for (const method of ["select", "eq", "lte", "gte"]) {
-      seriesBuilder[method] = vi.fn(() => seriesBuilder);
-    }
-    seriesBuilder.order = vi.fn(() => seriesBuilder);
-    seriesBuilder.limit = vi.fn().mockResolvedValue({
-      data: [
+    const seriesBuilder = sourceBuilder([
         { player_id: 2, date: "2026-03-20", points: 2, games_played: 1 },
         { player_id: 2, date: "2026-03-19", points: 0, games_played: 1 },
-      ],
-      error: null,
-    });
+      ]);
     const upsert = vi.fn().mockResolvedValue({ error: null });
     serviceRoleClientMock.from.mockImplementation((table: string) => {
       if (table === "player_stats_unified") return seriesBuilder;
@@ -307,7 +282,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
       upserts: 1,
       rowsUpserted: 1,
       partial: true,
-      model: { name: "baseline-moving-average", version: "v0.3" },
+      model: { name: "baseline-moving-average", version: "v0.4" },
       coverage: {
         discoveredPlayers: 2,
         selectedPlayers: 1,
@@ -332,7 +307,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
       health: { status: "ok", alerts: [] },
       warnings: [],
       runManifest: {
-        runKey: "sko-predictions:baseline-moving-average:v0.3:2026-03-21:5",
+        runKey: "sko-predictions:baseline-moving-average:v0.4:2026-03-21:5",
         attempt: 3,
         state: "succeeded",
       },
@@ -366,15 +341,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
   });
 
   it("returns an exact dry-run manifest without changing prediction rows", async () => {
-    const seriesBuilder: any = {};
-    for (const method of ["select", "eq", "lte", "gte"]) {
-      seriesBuilder[method] = vi.fn(() => seriesBuilder);
-    }
-    seriesBuilder.order = vi.fn(() => seriesBuilder);
-    seriesBuilder.limit = vi.fn().mockResolvedValue({
-      data: [{ player_id: 2, date: "2026-03-22", points: 2, games_played: 1 }],
-      error: null,
-    });
+    const seriesBuilder = sourceBuilder([{ player_id: 2, date: "2026-03-22", points: 2, games_played: 1 }]);
     const upsert = vi.fn().mockResolvedValue({ error: null });
     serviceRoleClientMock.from.mockImplementation((table: string) => {
       if (table === "player_stats_unified") return seriesBuilder;
@@ -419,7 +386,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
           as_of_date: "2026-03-22",
           horizon_games: 5,
           model_name: "baseline-moving-average",
-          model_version: "v0.3",
+          model_version: "v0.4",
         },
       ]),
     );
@@ -427,15 +394,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
   });
 
   it("skips publication and warns when in-season source lag exceeds 72 hours", async () => {
-    const seriesBuilder: any = {};
-    for (const method of ["select", "eq", "lte", "gte"]) {
-      seriesBuilder[method] = vi.fn(() => seriesBuilder);
-    }
-    seriesBuilder.order = vi.fn(() => seriesBuilder);
-    seriesBuilder.limit = vi.fn().mockResolvedValue({
-      data: [{ player_id: 2, date: "2026-03-16", points: 2, games_played: 1 }],
-      error: null,
-    });
+    const seriesBuilder = sourceBuilder([{ player_id: 2, date: "2026-03-16", points: 2, games_played: 1 }]);
     const upsert = vi.fn().mockResolvedValue({ error: null });
     serviceRoleClientMock.from.mockImplementation((table: string) => {
       if (table === "player_stats_unified") return seriesBuilder;
@@ -494,7 +453,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
     expect(res.body).toMatchObject({
       success: false,
       retryable: true,
-      runKey: "sko-predictions:baseline-moving-average:v0.3:2026-03-21:5",
+      runKey: "sko-predictions:baseline-moving-average:v0.4:2026-03-21:5",
       leaseExpiresAt: "2026-03-21T12:15:00Z",
     });
     expect(assertPredictionsSkoPrerequisitesMock).not.toHaveBeenCalled();
@@ -530,7 +489,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
     // avg5 = 0, avg10 = 0.5 -> 0.6 * 0.5 + 0.4 * 0 = 0.3 per game.
     expect(cold.pred_points_per_game).toBeCloseTo(0.3, 10);
     expect(cold.pred_points).toBeCloseTo(1.5, 10);
-    expect(cold.model_version).toBe("v0.3");
+    expect(cold.model_version).toBe("v0.4");
 
     const scoreless = buildPredictionRecord(
       2,
@@ -542,5 +501,185 @@ describe("/api/v1/ml/update-predictions-sko", () => {
     // Ten scoreless games predict 0, not the 20-game average.
     expect(scoreless.pred_points).toBe(0);
     expect(scoreless.sko).toBe(0);
+  });
+  // ---- L20: Volatility-Discounted Points Pace (decision 80), W3-7 D1 / R1 ----
+
+  function multiplierOf(series: Array<number | null>) {
+    return buildPredictionRecord(2, "2026-03-21", 5, series as number[], 10)
+      .stability_multiplier;
+  }
+
+  const SERIES_22 = [0, 1, 0, 2, 1, 0, 3, 0, 1, 1, 0, 2, 0, 0, 1, 4, 0, 1, 2, 0, 1, 1];
+
+  it("vets R1: the multiplier is invariant to adding or multiplying every game by a constant", () => {
+    const base = buildPredictionRecord(2, "2026-03-21", 5, SERIES_22, 10);
+    const scaled = buildPredictionRecord(
+      2,
+      "2026-03-21",
+      5,
+      SERIES_22.map((points) => 3 * points + 5),
+      10,
+    );
+    expect(base.stability_multiplier).not.toBeNull();
+    expect(scaled.stability_multiplier).toBeCloseTo(base.stability_multiplier!, 12);
+    // The pace is affine-equivariant, not invariant: pace(3x + 5) = 3·pace(x) + 5.
+    expect(scaled.pred_points_per_game).toBeCloseTo(
+      3 * base.pred_points_per_game! + 5,
+      12,
+    );
+    // sd ratios: the stored SD scales by |a| and ignores b.
+    expect(scaled.stability_cv).toBeCloseTo(3 * base.stability_cv!, 12);
+  });
+
+  it("vets R1: bounds, a constant series gives 1.0 and every series of 10 or fewer games gives 0.9", () => {
+    let seed = 7;
+    const next = () => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return seed % 4;
+    };
+    for (let trial = 0; trial < 200; trial++) {
+      const length = 1 + (trial % 30);
+      const series = Array.from({ length }, next);
+      const record = buildPredictionRecord(2, "2026-03-21", 5, series, 10);
+      expect(record.stability_multiplier!).toBeGreaterThanOrEqual(0.8);
+      expect(record.stability_multiplier!).toBeLessThanOrEqual(1);
+      expect(record.sko!).toBeLessThanOrEqual(record.pred_points! + 1e-12);
+      expect(record.sko!).toBeGreaterThanOrEqual(0.8 * record.pred_points! - 1e-12);
+    }
+    expect(multiplierOf(Array(20).fill(2))).toBe(1);
+    expect(multiplierOf([0, 1, 0, 1, 0, 1, 0, 1])).toBeCloseTo(0.9, 12);
+    expect(multiplierOf([0, 3, 1, 0, 2, 0, 1, 0, 0, 4])).toBeCloseTo(0.9, 12);
+  });
+
+  it("returns unknown, not zero, for a player with no history (unknown stays unknown)", () => {
+    const record = buildPredictionRecord(2, "2026-03-21", 5, [], 10);
+    expect(record).toMatchObject({
+      pred_points: null,
+      pred_points_per_game: null,
+      stability_cv: null,
+      stability_multiplier: null,
+      sko: null,
+    });
+  });
+
+  it("keeps an unknown game unknown instead of dropping it or scoring it 0", () => {
+    const paceWindowGap = [...Array(10).fill(1), 1, 1, null, 1, 1, 1, 1, 1, 1, 1];
+    const gapInPace = buildPredictionRecord(2, "2026-03-21", 5, paceWindowGap as number[], 10);
+    expect(gapInPace.pred_points).toBeNull();
+    expect(gapInPace.sko).toBeNull();
+
+    const sdWindowGap = [1, 1, null, ...Array(17).fill(1)];
+    const gapInSd = buildPredictionRecord(2, "2026-03-21", 5, sdWindowGap as number[], 10);
+    expect(gapInSd.pred_points).toBe(5);
+    expect(gapInSd.stability_multiplier).toBeNull();
+    expect(gapInSd.sko).toBeNull();
+  });
+
+  function sourceBuilder(rows: Array<Record<string, any>>) {
+    const state: { ids?: number[]; playerId?: number } = {};
+    const builder: any = {};
+    for (const method of ["select", "lte", "gte", "not", "order"]) {
+      builder[method] = vi.fn(() => builder);
+    }
+    builder.eq = vi.fn((column: string, value: unknown) => {
+      if (column === "player_id") state.playerId = Number(value);
+      return builder;
+    });
+    builder.in = vi.fn((column: string, values: number[]) => {
+      if (column === "player_id") state.ids = values;
+      return builder;
+    });
+    const sorted = () =>
+      rows
+        .filter((row) => !state.ids || state.ids.includes(row.player_id))
+        .filter((row) => state.playerId === undefined || row.player_id === state.playerId)
+        .slice()
+        .sort((a, b) => a.player_id - b.player_id || a.date.localeCompare(b.date));
+    builder.limit = vi.fn(async () => ({ data: sorted().reverse(), error: null }));
+    builder.range = vi.fn(async (from: number, to: number) => ({
+      data: sorted().slice(from, to + 1),
+      error: null,
+    }));
+    return builder;
+  }
+
+  async function runWriter(
+    rows: Array<Record<string, any>>,
+    query: Record<string, string>,
+  ) {
+    const builders: any[] = [];
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    serviceRoleClientMock.from.mockImplementation((table: string) => {
+      if (table === "player_stats_unified") {
+        const builder = sourceBuilder(rows);
+        builders.push(builder);
+        return builder;
+      }
+      if (table === "predictions_sko") return { upsert };
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    const res = createMockRes();
+    await handler(
+      {
+        method: "POST",
+        headers: { authorization: "Bearer current-secret" },
+        query,
+        body: {},
+      } as any,
+      res,
+    );
+    return { res, upsert, builders };
+  }
+
+  function games(playerId: number, points: Array<number | null>, lastDate = "2026-03-20") {
+    const end = Date.parse(`${lastDate}T00:00:00Z`);
+    return points.map((value, index) => ({
+      player_id: playerId,
+      date: new Date(end - (points.length - 1 - index) * 2 * 86_400_000)
+        .toISOString()
+        .slice(0, 10),
+      points: value,
+      games_played: 1,
+    }));
+  }
+
+  it("writes an unknown pace when a served source game has unknown points", async () => {
+    const { res, upsert } = await runWriter(
+      games(2, [1, 1, 1, 0, null, 1, 0, 1, 1, 2]),
+      { asOfDate: "2026-03-21", playerIds: "2" },
+    );
+    expect(res.statusCode).toBe(200);
+    const [written] = upsert.mock.calls[0][0];
+    expect(written).toMatchObject({
+      player_id: 2,
+      pred_points: null,
+      sko: null,
+      model_version: "v0.4",
+    });
+  });
+
+  it("reads only current regular-season games (no prior playoffs or preseason in the window)", async () => {
+    const { builders } = await runWriter(games(2, [1, 0, 2], "2025-10-19"), {
+      asOfDate: "2025-10-20",
+      playerIds: "2",
+    });
+    const gteCalls = builders.flatMap((builder) => builder.gte.mock.calls);
+    expect(gteCalls.length).toBeGreaterThan(0);
+    for (const call of gteCalls) expect(call).toEqual(["date", "2025-10-07"]);
+  });
+
+  it("reads every selected player's series in one paged source query, not one query per player", async () => {
+    const { res, upsert, builders } = await runWriter(
+      [...games(1, [1, 0, 2]), ...games(2, [0, 0, 1, 1]), ...games(3, [2])],
+      { asOfDate: "2026-03-21", playerIds: "3,1,2" },
+    );
+    expect(res.statusCode).toBe(200);
+    expect(builders).toHaveLength(1);
+    const written = upsert.mock.calls[0][0];
+    expect(written.map((row: any) => row.player_id)).toEqual([3, 1, 2]);
+    expect(written[2].pred_points_per_game).toBeCloseTo(
+      0.6 * 0.5 + 0.4 * 0.5,
+      12,
+    );
   });
 });

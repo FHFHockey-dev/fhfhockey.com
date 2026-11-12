@@ -1,6 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import serverReadonlyClient from "lib/supabase/serverReadonly";
+import {
+  PREDICTIONS_SKO_SD_VERSIONS,
+  VOLATILITY_DISCOUNTED_PACE,
+} from "lib/predictions/legacyQuarantine";
 
 const DEFAULT_PAGE_SIZE = 500;
 const MAX_PAGE_SIZE = 2000;
@@ -89,17 +93,49 @@ function ageDaysFromToday(date: string | null): number | null {
   );
 }
 
+/**
+ * `stability_cv` stores the population SD of points per appearance (not a CV) in every known
+ * version; expose it as `stability_sd`. An unknown model/version stays unknown.
+ */
+export function stabilitySdOf(row: {
+  stability_cv?: number | null;
+  model_name?: string | null;
+  model_version?: string | null;
+}): number | null {
+  const versions = PREDICTIONS_SKO_SD_VERSIONS[row.model_name ?? ""] ?? [];
+  if (!versions.includes(row.model_version ?? "")) return null;
+  return typeof row.stability_cv === "number" &&
+    Number.isFinite(row.stability_cv)
+    ? row.stability_cv
+    : null;
+}
+
 export function buildSkoSourceWarnings({
   rows,
   ageDays,
 }: {
-  rows: Array<{ top_features?: unknown }>;
+  rows: Array<{
+    top_features?: unknown;
+    horizon_games?: number | null;
+    model_name?: string | null;
+    model_version?: string | null;
+  }>;
   ageDays: number | null;
 }): string[] {
   const warnings = ["compatibility_model_not_promoted"];
   if (!rows.length) warnings.push("prediction_data_empty");
   if (rows.some((row) => row.top_features == null)) {
     warnings.push("feature_attribution_unavailable");
+  }
+  // One page should be one series: horizons and model versions are different quantities.
+  if (new Set(rows.map((row) => row.horizon_games)).size > 1) {
+    warnings.push("mixed_horizons");
+  }
+  if (
+    new Set(rows.map((row) => `${row.model_name}|${row.model_version}`)).size >
+    1
+  ) {
+    warnings.push("mixed_model_versions");
   }
   if (ageDays !== null && ageDays > 3) {
     warnings.push("prediction_snapshot_older_than_72_hours");
@@ -201,7 +237,10 @@ export default async function handler(
       `[get-predictions-sko] success rows=${data?.length ?? 0} totalMs=${totalMs} queryMs=${phase.query_ms}`,
     );
 
-    const rows = data ?? [];
+    const rows = (data ?? []).map((row) => ({
+      ...row,
+      stability_sd: stabilitySdOf(row),
+    }));
     const total = count ?? rows.length;
     const asOfDates = rows.map((row) => row.as_of_date).sort();
     const latestUpdatedAt =
@@ -235,6 +274,9 @@ export default async function handler(
         ageDaysFromToday: ageDays,
       },
       sourceWarnings: buildSkoSourceWarnings({ rows, ageDays }),
+      // `sko` holds the Volatility-Discounted Points Pace (decision 80), not sKO;
+      // `stability_cv` is a population SD, served as `stability_sd`.
+      definition: VOLATILITY_DISCOUNTED_PACE,
       durationMs: totalMs,
       queryMs: phase.query_ms,
     };

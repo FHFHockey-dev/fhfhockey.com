@@ -269,4 +269,55 @@ describe("/api/v1/ml/get-predictions-sko", () => {
     expect(logged).not.toContain("fake-token");
     expect(logged).not.toContain("example.supabase.co");
   });
+  // W3-7 D2: `stability_cv` holds a population SD in every known version; serve it under an
+  // SD name. [0,2,0,2] and [1,3,1,3] both have SD 1 but CV 1 and 0.5, so a CV reading is wrong.
+  it("serves the stored population SD as stability_sd for known versions only", async () => {
+    const base = {
+      as_of_date: "2026-03-19",
+      horizon_games: 5,
+      pred_points: 4,
+      pred_points_per_game: 0.8,
+      stability_multiplier: 0.9,
+      sko: 3.6,
+      top_features: null,
+      created_at: "2026-03-19T10:00:00Z",
+      updated_at: "2026-03-19T10:00:00Z",
+    };
+    const rows = [
+      { ...base, player_id: 1, stability_cv: 1, model_name: "baseline-moving-average", model_version: "v0.3" },
+      { ...base, player_id: 2, stability_cv: 1, model_name: "baseline-moving-average", model_version: "v0.4" },
+      { ...base, player_id: 3, stability_cv: 0.7, model_name: "other-model", model_version: "v9" },
+    ];
+    serverReadonlyClientMock.from.mockReturnValue(
+      createQuery({ data: rows, error: null, count: 3 }),
+    );
+    const res = createMockRes();
+
+    await handler({ method: "GET", query: {} } as any, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.rows.map((row: any) => row.stability_sd)).toEqual([1, 1, null]);
+    expect(res.body.rows.map((row: any) => row.stability_cv)).toEqual([1, 1, 0.7]);
+    expect(res.body.definition).toMatchObject({
+      construct: "volatility_discounted_points_pace",
+      storedColumn: "sko",
+    });
+  });
+
+  // W3-7 D10: a page mixing horizons or model versions is not one series; say so.
+  it("warns when one page mixes horizons or model versions", () => {
+    expect(
+      buildSkoSourceWarnings({
+        rows: [
+          { top_features: [], horizon_games: 5, model_name: "baseline-moving-average", model_version: "v0.3" },
+          { top_features: [], horizon_games: 10, model_name: "baseline-moving-average", model_version: "v0.4" },
+        ],
+        ageDays: 1,
+      } as any),
+    ).toEqual([
+      "compatibility_model_not_promoted",
+      "mixed_horizons",
+      "mixed_model_versions",
+    ]);
+  });
 });

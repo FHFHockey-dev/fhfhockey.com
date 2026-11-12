@@ -23,6 +23,22 @@ function label(key: string) {
   }
 }
 
+/**
+ * Sample-weighted hit rate over the metrics whose hit rate is known. A null hit rate is
+ * unknown, not 0%, and its samples do not join the denominator; no known rate → null.
+ */
+export function weightedHitRate(list: MetricSummary[]): number | null {
+  const known = list.filter(
+    (m) =>
+      typeof m.hitRate === "number" &&
+      Number.isFinite(m.hitRate) &&
+      m.sampleSize > 0
+  );
+  const samples = known.reduce((s, m) => s + m.sampleSize, 0);
+  if (!samples) return null;
+  return known.reduce((acc, m) => acc + (m.hitRate as number) * m.sampleSize, 0) / samples;
+}
+
 export default function MetricCards({ metrics }: { metrics: MetricSummary[] }) {
   if (!metrics?.length) return null;
 
@@ -31,11 +47,7 @@ export default function MetricCards({ metrics }: { metrics: MetricSummary[] }) {
   );
   const list: MetricSummary[] = ORDER.filter((k) => map[k]).map((k) => map[k]);
 
-  const totalSamples = list.reduce((s, m) => s + (m.sampleSize || 0), 0);
-  const overallHit = totalSamples
-    ? list.reduce((acc, m) => acc + (m.hitRate || 0) * (m.sampleSize || 0), 0) /
-      totalSamples
-    : 0;
+  const overallHit = weightedHitRate(list);
 
   return (
     <div className={styles.metricsWrapper}>
@@ -53,7 +65,15 @@ export default function MetricCards({ metrics }: { metrics: MetricSummary[] }) {
           aria-label="Accuracy by stat"
         >
           {list.map((m) => {
-            const pct = (m.hitRate || 0) * 100;
+            if (m.hitRate == null || !Number.isFinite(m.hitRate)) {
+              return (
+                <div className={styles.metricBar} key={m.statKey}>
+                  <div className={styles.metricBarLabel}>{label(m.statKey)}</div>
+                  <div className={styles.metricBarValue}>—</div>
+                </div>
+              );
+            }
+            const pct = m.hitRate * 100;
             return (
               <div className={styles.metricBar} key={m.statKey}>
                 <div className={styles.metricBarLabel}>{label(m.statKey)}</div>

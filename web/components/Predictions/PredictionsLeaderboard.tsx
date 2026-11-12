@@ -25,8 +25,10 @@ export default function PredictionsLeaderboard({
   sparklineDays = 45,
 }: Props) {
   // Headline rows for a single date
+  // The hook pins one model, version and horizon, so each player/date has one row.
   const {
     data: rows,
+    warnings,
     loading,
     error,
   } = useQuarantinedPredictionsSko({
@@ -97,51 +99,13 @@ export default function PredictionsLeaderboard({
     if (!enableSpark) return previousSparkMap.current;
     if (!sparkRows.length) return previousSparkMap.current; // preserve last non-empty
     const acc: Record<number, SparklinePoint[]> = {};
-    // Group rows by player->date, then pick the 'best' (sko present else highest pred_points)
-    const byPlayerDate: Record<string, PredictionRow[]> = {};
-    for (const r of sparkRows) {
-      const key = `${r.player_id}|${r.as_of_date}`;
-      if (!byPlayerDate[key]) byPlayerDate[key] = [];
-      byPlayerDate[key].push(r as PredictionRow);
-    }
-    for (const key of Object.keys(byPlayerDate)) {
-      const [pidStr, date] = key.split("|");
-      const pid = Number(pidStr);
-      const rowsForDay = byPlayerDate[key];
-      // Prefer a row with non-null sko. If multiple, take the one with latest created_at.
-      let chosen = rowsForDay
-        .filter((r) => r.sko != null)
-        .sort((a, b) => a.created_at.localeCompare(b.created_at))
-        .pop();
-      if (!chosen) {
-        // fallback: highest pred_points
-        chosen = rowsForDay
-          .filter((r) => r.pred_points != null)
-          .sort((a, b) => (a.pred_points ?? 0) - (b.pred_points ?? 0))
-          .pop();
-      }
-      if (!chosen) chosen = rowsForDay[0];
+    // One quantity per sparkline: the stored VDP (`sko`) or unknown, never a pred_points fallback.
+    for (const r of sparkRows as PredictionRow[]) {
+      const pid = r.player_id;
       if (!acc[pid]) acc[pid] = [];
-
-      // Derive value (same fallback logic)
-      let value: number | null = null;
-      if (chosen.sko != null && !Number.isNaN(chosen.sko)) {
-        value = Number(chosen.sko);
-      } else if (
-        chosen.pred_points != null &&
-        chosen.stability_multiplier != null &&
-        !Number.isNaN(chosen.pred_points) &&
-        !Number.isNaN(chosen.stability_multiplier)
-      ) {
-        value =
-          Number(chosen.pred_points) * Number(chosen.stability_multiplier);
-      } else if (
-        chosen.pred_points != null &&
-        !Number.isNaN(chosen.pred_points)
-      ) {
-        value = Number(chosen.pred_points);
-      }
-      acc[pid].push({ date, value });
+      const value =
+        r.sko != null && Number.isFinite(Number(r.sko)) ? Number(r.sko) : null;
+      acc[pid].push({ date: r.as_of_date, value });
       if (acc[pid].length > 45) acc[pid] = acc[pid].slice(acc[pid].length - 45);
     }
     previousSparkMap.current = acc;
@@ -176,7 +140,7 @@ export default function PredictionsLeaderboard({
     return (
       <div className={styles.errorWrapper}>
         <div className={styles.errorMessage}>
-          <strong>Unable to load projections</strong>
+          <strong>Unable to load Volatility-Discounted Points Pace</strong>
           <div className={styles.errorDetail}>{error}</div>
         </div>
         <div className={styles.errorActions}>
@@ -197,15 +161,23 @@ export default function PredictionsLeaderboard({
     );
   if (loading && !rows.length)
     return (
-      <div className={styles.loading}>Loading latest sKO projections…</div>
+      <div className={styles.loading}>
+        Loading Volatility-Discounted Points Pace…
+      </div>
     );
   if (!rows.length)
     return (
-      <div className={styles.placeholder}>No predictions available yet.</div>
+      <div className={styles.placeholder}>No VDP rows available yet.</div>
     );
 
   return (
     <div className={styles.tableWrapper}>
+      {warnings.includes("compatibility_model_not_promoted") ? (
+        <p className={styles.placeholder} role="note">
+          Compatibility model, not promoted: an unvalidated points pace with a
+          volatility discount, not a sustainability or forecast rating.
+        </p>
+      ) : null}
       <PlayerTable players={tableData} />
     </div>
   );

@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "lib/supabase/database-generated.types";
 import supabase from "lib/supabase/server";
+import { VOLATILITY_DISCOUNTED_PACE } from "lib/predictions/legacyQuarantine";
 
 type RunClient = SupabaseClient<Database>;
 type HealthStatus = "ok" | "warning" | "error";
@@ -58,10 +59,13 @@ function asOfDate(value: unknown): string {
 export function predictionsSkoRunKey(req: NextApiRequest): string {
   return [
     "sko-predictions",
-    "baseline-moving-average",
-    "v0.3",
+    VOLATILITY_DISCOUNTED_PACE.modelName,
+    VOLATILITY_DISCOUNTED_PACE.modelVersion,
     asOfDate(requestValue(req, "asOfDate")),
-    positiveInt(requestValue(req, "horizon"), 5),
+    positiveInt(
+      requestValue(req, "horizon"),
+      VOLATILITY_DISCOUNTED_PACE.defaultHorizonAppearances,
+    ),
   ].join(":");
 }
 
