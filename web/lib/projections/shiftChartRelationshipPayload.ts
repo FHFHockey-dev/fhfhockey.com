@@ -1,6 +1,7 @@
 import type { Json, TablesInsert } from "lib/supabase/database-generated.types";
 
 import { stableJsonStringify } from "./materializationFingerprint";
+import { parseStrictShiftClock } from "./shiftChartCompleteness";
 
 export type ShiftChartRelationshipUpsert = Pick<
   TablesInsert<"shift_charts">,
@@ -60,6 +61,18 @@ export type ShiftChartRelationshipPayloadInput = Omit<
   es_shifts: Json;
 };
 
+function compareClockValues(left: unknown, right: unknown): number {
+  const leftSeconds = parseStrictShiftClock(left);
+  const rightSeconds = parseStrictShiftClock(right);
+  if (leftSeconds != null && rightSeconds != null) {
+    return leftSeconds - rightSeconds;
+  }
+  return (
+    Number(leftSeconds == null) - Number(rightSeconds == null) ||
+    String(left ?? "").localeCompare(String(right ?? ""))
+  );
+}
+
 function sortShiftSegments(value: Json): Json {
   if (!Array.isArray(value)) return value;
   return [...value].sort((left, right) => {
@@ -67,23 +80,14 @@ function sortShiftSegments(value: Json): Json {
       left && typeof left === "object" && !Array.isArray(left) ? left : {};
     const rightRow =
       right && typeof right === "object" && !Array.isArray(right) ? right : {};
-    const leftKey = [
-      Number(leftRow.period ?? 0),
-      String(leftRow.start_time ?? ""),
-      String(leftRow.end_time ?? ""),
-      Number(leftRow.shift_number ?? 0),
-      String(leftRow.duration ?? ""),
-      stableJsonStringify(left),
-    ];
-    const rightKey = [
-      Number(rightRow.period ?? 0),
-      String(rightRow.start_time ?? ""),
-      String(rightRow.end_time ?? ""),
-      Number(rightRow.shift_number ?? 0),
-      String(rightRow.duration ?? ""),
-      stableJsonStringify(right),
-    ];
-    return leftKey.join("\u0000").localeCompare(rightKey.join("\u0000"));
+    return (
+      Number(leftRow.period ?? 0) - Number(rightRow.period ?? 0) ||
+      compareClockValues(leftRow.start_time, rightRow.start_time) ||
+      compareClockValues(leftRow.end_time, rightRow.end_time) ||
+      Number(leftRow.shift_number ?? 0) - Number(rightRow.shift_number ?? 0) ||
+      compareClockValues(leftRow.duration, rightRow.duration) ||
+      stableJsonStringify(left).localeCompare(stableJsonStringify(right))
+    );
   }) as Json;
 }
 
@@ -93,10 +97,11 @@ export function buildShiftChartRelationshipUpsert(
   const shifts = [...input.shifts].sort(
     (left, right) =>
       left.period - right.period ||
-      left.start_time.localeCompare(right.start_time) ||
-      left.end_time.localeCompare(right.end_time) ||
+      compareClockValues(left.start_time, right.start_time) ||
+      compareClockValues(left.end_time, right.end_time) ||
       left.shift_number - right.shift_number ||
-      left.duration.localeCompare(right.duration),
+      compareClockValues(left.duration, right.duration) ||
+      stableJsonStringify(left).localeCompare(stableJsonStringify(right)),
   );
   return {
     game_id: input.game_id,

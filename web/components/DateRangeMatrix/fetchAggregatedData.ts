@@ -16,7 +16,7 @@ export const PLAYER_FALLBACK_CHUNK_SIZE = DEFAULT_SUPABASE_FILTER_CHUNK_SIZE;
 export const CARD_STATS_FILTER_CHUNK_SIZE = DEFAULT_SUPABASE_FILTER_CHUNK_SIZE;
 
 type ShiftChartTableRow = Database["public"]["Tables"]["shift_charts"]["Row"];
-type ShiftChartRow = Pick<
+export type ShiftChartRow = Pick<
   ShiftChartTableRow,
   | "id"
   | "game_id"
@@ -141,7 +141,7 @@ export type AggregatedMatrixPlayer = {
 
 export type AggregatedMatrixPlayers = Record<number, AggregatedMatrixPlayer>;
 
-type AggregateReductionScope = {
+export type AggregateReductionScope = {
   teamId: number;
   teamAbbreviation: string;
   franchiseId: number;
@@ -485,7 +485,7 @@ function chunkPositiveIntegers(values: Iterable<number>) {
   return chunks;
 }
 
-async function fetchScopedSkaterRows(gameIds: number[], playerIds: number[]) {
+async function fetchScopedSkaterRows(gameIds: number[], playerIds: number[], database = supabase) {
   if (gameIds.length === 0 || playerIds.length === 0) {
     return [] as SkaterGameStatsRow[];
   }
@@ -498,7 +498,7 @@ async function fetchScopedSkaterRows(gameIds: number[], playerIds: number[]) {
     >(
       playerIds,
       (playerIdChunk, { from, to }) =>
-        supabase
+        database
           .from("skatersGameStats")
           .select(
             "created_at,gameId,playerId,goals,assists,points,powerPlayPoints,shots,hits,blockedShots,plusMinus",
@@ -516,7 +516,7 @@ async function fetchScopedSkaterRows(gameIds: number[], playerIds: number[]) {
   return rows;
 }
 
-async function fetchScopedGoalieRows(gameIds: number[], playerIds: number[]) {
+async function fetchScopedGoalieRows(gameIds: number[], playerIds: number[], database = supabase) {
   if (gameIds.length === 0 || playerIds.length === 0) {
     return [] as GoalieGameStatsRow[];
   }
@@ -529,7 +529,7 @@ async function fetchScopedGoalieRows(gameIds: number[], playerIds: number[]) {
     >(
       playerIds,
       (playerIdChunk, { from, to }) =>
-        supabase
+        database
           .from("goaliesGameStats")
           .select(
             "created_at,gameId,playerId,goalsAgainst,saveShotsAgainst,toi",
@@ -599,10 +599,11 @@ function parseSaveShotsAgainst(value: string) {
   return { saves, shotsAgainst };
 }
 
-async function fetchScopedCardStats(
+export async function fetchScopedCardStats(
   matchedGameIds: number[],
   selectedPlayersData: AggregatedMatrixPlayers,
   seasonType: MatrixSeasonType,
+  database = supabase,
 ): Promise<ScopedCardStats> {
   const scopeGameIds = Array.from(new Set(matchedGameIds)).sort(
     (left, right) => left - right,
@@ -618,8 +619,8 @@ async function fetchScopedCardStats(
     .map((player) => player.playerId);
 
   const [skaterRows, goalieRows] = await Promise.all([
-    fetchScopedSkaterRows(scopeGameIds, skaterIds),
-    fetchScopedGoalieRows(scopeGameIds, goalieIds),
+    fetchScopedSkaterRows(scopeGameIds, skaterIds, database),
+    fetchScopedGoalieRows(scopeGameIds, goalieIds, database),
   ]);
 
   const skatersByPlayerId: Record<number, ScopedSkaterCardStats> = {};
@@ -729,7 +730,7 @@ async function fetchScopedCardStats(
   return { scopeGameIds, skatersByPlayerId, goaliesByPlayerId };
 }
 
-function normalizeAggregateRows(
+export function normalizeAggregateRows(
   rows: ShiftChartRow[],
   scope: AggregateReductionScope,
 ): {
@@ -740,6 +741,8 @@ function normalizeAggregateRows(
   const seenRowIds = new Set<number>();
   const seenPlayerGames = new Set<string>();
   const rowsByGame = new Map<number, NormalizedAggregateShiftRow[]>();
+  const invalidToiGameIds = new Set<number>();
+  let skippedRows = 0;
 
   for (const row of rows) {
     const rowId = readPositiveSafeInteger(row.id, "row ID");
@@ -825,7 +828,13 @@ function normalizeAggregateRows(
       row.opponent_team_id,
       "opponent team ID",
     );
-    const gameToiSeconds = readRequiredDuration(row.game_toi, "game TOI");
+    const gameToiSeconds = parseDurationSeconds(row.game_toi);
+    if (gameToiSeconds == null) {
+      // Exclude the entire game so teammate and pair totals keep the same scope.
+      invalidToiGameIds.add(gameId);
+      skippedRows += 1;
+      continue;
+    }
     const gameLengthSeconds = readRequiredDuration(
       row.game_length,
       "game length",
@@ -886,7 +895,6 @@ function normalizeAggregateRows(
 
   const normalizedRows: NormalizedAggregateShiftRow[] = [];
   const pairGameFacts: AggregatePairGameFact[] = [];
-  let skippedRows = 0;
   const orderedGames = [...rowsByGame.entries()].sort(
     ([leftGameId, leftRows], [rightGameId, rightRows]) =>
       leftRows[0].gameDate.localeCompare(rightRows[0].gameDate) ||
@@ -894,7 +902,10 @@ function normalizeAggregateRows(
   );
 
   for (const [gameId, gameRows] of orderedGames) {
-    if (gameRows.some((row) => row.appearanceExceedsGameLength)) {
+    if (
+      invalidToiGameIds.has(gameId) ||
+      gameRows.some((row) => row.appearanceExceedsGameLength)
+    ) {
       skippedRows += gameRows.length;
       continue;
     }
@@ -1103,7 +1114,7 @@ function emptyAggregatedSeasonData(): AggregatedMatrixSeasonData {
   };
 }
 
-function buildAggregatedPlayers(
+export function buildAggregatedPlayers(
   normalizedRows: NormalizedAggregateShiftRow[],
   pairGameFacts: AggregatePairGameFact[],
   fallbackByPlayerId: Map<number, PlayerPositionFallback>,

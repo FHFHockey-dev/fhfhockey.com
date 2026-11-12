@@ -394,8 +394,16 @@ function parseHtmlShiftReportRows(
       if (cells.length !== 6) continue;
 
       const shiftNumberRaw = normalizeWhitespace(cells[0].text);
-      const periodRaw = normalizeWhitespace(cells[1].text);
-      if (!/^\d+$/.test(shiftNumberRaw) || !/^\d+$/.test(periodRaw)) continue;
+      if (!/^\d+$/.test(shiftNumberRaw)) continue;
+      const periodRaw = normalizeWhitespace(cells[1].text).toUpperCase();
+      const overtime = /^([1-9]\d*)?OT$/.exec(periodRaw);
+      const period = /^\d+$/.test(periodRaw)
+        ? Number(periodRaw)
+        : overtime ? 3 + Number(overtime[1] ?? 1) : null;
+      if (!Number.isSafeInteger(period) || period <= 0) {
+        if (strict) throw new Error(`HTML shift report has an unrecognized period: ${periodRaw}`);
+        continue;
+      }
 
       const startTime = parseElapsedClock(cells[2].text);
       const endTime = parseElapsedClock(cells[3].text);
@@ -411,7 +419,7 @@ function parseHtmlShiftReportRows(
         teamName: htmlTeamName || null,
         firstName: rosterSpot.firstName?.default ?? parsedHeading.firstName,
         lastName: rosterSpot.lastName?.default ?? parsedHeading.lastName,
-        period: Number(periodRaw),
+        period,
         shiftNumber: Number(shiftNumberRaw),
         startTime,
         endTime,

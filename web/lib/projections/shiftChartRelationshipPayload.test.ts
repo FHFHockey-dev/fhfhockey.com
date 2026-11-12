@@ -113,4 +113,43 @@ describe("shift chart relationship payload ownership", () => {
       buildShiftChartRelationshipUpsert(reversed),
     );
   });
+
+  it("sorts unpadded clocks and multi-digit periods numerically with aligned arrays", () => {
+    const shift = (period: number, start: string, end: string, number: number) => ({
+      shift_number: number,
+      period,
+      start_time: start,
+      end_time: end,
+      duration: number === 2 ? "8:00" : "0:30",
+      playerId: 10,
+    });
+    const shifts = [
+      shift(1, "10:00", "10:30", 3),
+      shift(1, "2:00", "10:00", 2),
+      shift(1, "2:00", "2:30", 1),
+      shift(10, "0:00", "0:30", 5),
+      shift(2, "0:00", "0:30", 4),
+    ];
+    const build = (ordered: typeof shifts) => buildShiftChartRelationshipUpsert({
+      game_id: 2025020001,
+      shifts: ordered,
+      pp_shifts: ordered,
+      es_shifts: ordered,
+    });
+    const row = build(shifts);
+
+    expect(row.periods).toEqual([1, 1, 1, 2, 10]);
+    expect(row.start_times).toEqual(["2:00", "2:00", "10:00", "0:00", "0:00"]);
+    expect(row.end_times).toEqual(["2:30", "10:00", "10:30", "0:30", "0:30"]);
+    expect(row.shift_numbers).toEqual([1, 2, 3, 4, 5]);
+    expect(row.durations).toEqual(["0:30", "8:00", "0:30", "0:30", "0:30"]);
+    expect(row.pp_shifts).toEqual(row.shifts);
+    expect(row.es_shifts).toEqual(row.shifts);
+    expect(build([...shifts].reverse())).toEqual(row);
+    const equalClockValues = [
+      shifts[2],
+      { ...shifts[2], start_time: "02:00", end_time: "02:30", duration: "00:30" },
+    ];
+    expect(build(equalClockValues)).toEqual(build([...equalClockValues].reverse()));
+  });
 });

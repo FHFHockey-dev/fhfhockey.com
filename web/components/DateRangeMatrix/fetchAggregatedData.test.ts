@@ -619,36 +619,6 @@ describe("fetchAggregatedData", () => {
 
   it.each([
     {
-      name: "null appearance clock",
-      rows: [shiftRow(1, { game_toi: null })],
-      message: "invalid game TOI",
-    },
-    {
-      name: "malformed appearance clock",
-      rows: [shiftRow(1, { game_toi: "abc:30" })],
-      message: "invalid game TOI",
-    },
-    {
-      name: "empty clock segments",
-      rows: [shiftRow(1, { game_toi: ":" })],
-      message: "invalid game TOI",
-    },
-    {
-      name: "missing trailing clock segment",
-      rows: [shiftRow(1, { game_toi: "1:" })],
-      message: "invalid game TOI",
-    },
-    {
-      name: "unpadded clock segment",
-      rows: [shiftRow(1, { game_toi: "1:2" })],
-      message: "invalid game TOI",
-    },
-    {
-      name: "overflowing appearance clock",
-      rows: [shiftRow(1, { game_toi: "9007199254740991:00" })],
-      message: "invalid game TOI",
-    },
-    {
       name: "zero game length",
       rows: [shiftRow(1, { game_toi: "00:00", game_length: "00:00" })],
       message: "invalid game length",
@@ -773,12 +743,23 @@ describe("fetchAggregatedData", () => {
     expect(mocks.from).not.toHaveBeenCalledWith("goaliesGameStats");
   });
 
-  it("excludes a complete game with an impossible appearance and reports partial coverage", async () => {
+  it.each([
+    null,
+    "",
+    "NaN:NaN",
+    "abc:30",
+    ":",
+    "1:",
+    "1:2",
+    "9007199254740991:00",
+    "61:00",
+  ])("reports partial coverage for a game with invalid TOI %s", async (gameToi) => {
     const affectedGameId = 2025020101;
     const validGameId = 2025020102;
     mocks.shiftResponses.push({
       data: [
         ...completeGameRelationships([
+          teammateRow(2, affectedGameId),
           shiftRow(1, {
             game_id: affectedGameId,
             player_id: 30,
@@ -788,9 +769,8 @@ describe("fetchAggregatedData", () => {
             display_position: "G",
             player_type: "G",
             line_combination: null,
-            game_toi: "61:00",
+            game_toi: gameToi,
           }),
-          teammateRow(2, affectedGameId),
         ]),
         ...completeGameRelationships(
           [
@@ -817,11 +797,23 @@ describe("fetchAggregatedData", () => {
     expect(result.regularSeasonPlayersData[97].regularSeasonData).toMatchObject(
       {
         GP: 1,
+        totalTOI: 600,
+        gameLength: 3600,
         gameIds: [validGameId],
         timeSpentWith: { 29: 240 },
+        timesPlayedWith: { 29: 1 },
       },
     );
     expect(result.regularSeasonPlayersData[30]).toBeUndefined();
+    expect(result.cardStats.scopeGameIds).toEqual([validGameId]);
+    const cardQueries = mocks.queryLog.filter(
+      (entry) =>
+        entry.table === "skatersGameStats" || entry.table === "goaliesGameStats",
+    );
+    expect(cardQueries.length).toBeGreaterThan(0);
+    for (const query of cardQueries) {
+      expect(query.in).toContainEqual(["gameId", [validGameId]]);
+    }
   });
 
   it("excludes a complete game whose relationship exceeds an appearance", async () => {
@@ -870,12 +862,12 @@ describe("fetchAggregatedData", () => {
     );
   });
 
-  it("returns explicit empty partial coverage when every selected game is affected", async () => {
+  it.each(["61:00", null, "NaN:NaN"])("skips all invalid TOI %s", async (gameToi) => {
     const affectedGameId = 2025020101;
     mocks.shiftResponses.push({
       data: completeGameRelationships([
-        shiftRow(1, { game_id: affectedGameId, game_toi: "61:00" }),
-        teammateRow(2, affectedGameId),
+        shiftRow(1, { game_id: affectedGameId, game_toi: gameToi }),
+        teammateRow(2, affectedGameId, { game_toi: gameToi }),
       ]),
       error: null,
     });
@@ -894,6 +886,9 @@ describe("fetchAggregatedData", () => {
       skatersByPlayerId: {},
       goaliesByPlayerId: {},
     });
+    expect(mocks.from).not.toHaveBeenCalledWith("players");
+    expect(mocks.from).not.toHaveBeenCalledWith("skatersGameStats");
+    expect(mocks.from).not.toHaveBeenCalledWith("goaliesGameStats");
   });
 
   it("rejects an unexpected player fallback identity", async () => {

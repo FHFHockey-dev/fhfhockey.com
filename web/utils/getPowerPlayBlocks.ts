@@ -1,6 +1,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\utils\getPowerPlayBlocks.ts
 
 import { NORMAL_PERIOD_IN_SECONDS } from "hooks/useGoals";
+import { buildPenaltyClock, hasCompletePenaltyClockSource, penaltyGameSecond as getGameSecond } from "lib/projections/penaltyClock";
 import Fetch from "lib/cors-fetch";
 import {
   classifyTeamManpower,
@@ -293,21 +294,6 @@ export function getPenaltyPowerPlayBlocks(plays: any[]): Block[] {
   return result;
 }
 
-type PenaltySegment = { seconds: number; endsOnGoal: boolean };
-type ServedPenalty = { segments: PenaltySegment[]; remaining: number };
-type TeamPenaltyBox = { serving: ServedPenalty[]; waiting: PenaltySegment[][] };
-
-const MINOR_SECONDS = 2 * 60;
-const MAJOR_SECONDS = 5 * 60;
-const MAX_PENALTIES_SERVING = 2;
-
-function getGameSecond(play: any) {
-  return (
-    (play.periodDescriptor.number - 1) * NORMAL_PERIOD_IN_SECONDS +
-    parseTime(play.timeInPeriod)
-  );
-}
-
 function getTimeAtGameSecond(gameSecond: number): Time {
   const period = Math.floor(gameSecond / NORMAL_PERIOD_IN_SECONDS) + 1;
   return {
@@ -317,171 +303,34 @@ function getTimeAtGameSecond(gameSecond: number): Time {
   };
 }
 
-/** Misconducts and game misconducts carry a duration but leave the team at full strength. */
-function getManpowerSegments(penalty: any): PenaltySegment[] {
-  const { typeCode, duration } = penalty.details;
-  if (typeCode === "MIS" || typeCode === "GAM" || typeCode === "GMIS") return [];
-  if (duration === 2) return [{ seconds: MINOR_SECONDS, endsOnGoal: true }];
-  if (duration === 4) {
-    return [
-      { seconds: MINOR_SECONDS, endsOnGoal: true },
-      { seconds: MINOR_SECONDS, endsOnGoal: true }
-    ];
+/** The same penalty-context exposure clock used by shift ingestion. */
+export default function getPowerPlayBlocks(
+  plays: any[],
+  teams?: { homeTeamId: number; awayTeamId: number; gameType?: number }
+): Block[] {
+  if (!plays.length) return [];
+  const [first, second] = getTeamIds(plays);
+  // Legacy callers only have plays. Try both team orientations and require
+  // the same team-identified exposure; never guess home from event order.
+  const orientations = teams ? [teams] : [
+    { homeTeamId: first, awayTeamId: second },
+    { homeTeamId: second, awayTeamId: first }
+  ];
+  const results = new Map<string, ReturnType<typeof buildPenaltyClock>["spans"]>();
+  let failure: unknown;
+  for (const orientation of orientations) {
+    try {
+      const { spans } = buildPenaltyClock(plays, orientation);
+      results.set(JSON.stringify(spans), spans);
+    } catch (error) { failure = error; }
   }
-  if (duration === 5) return [{ seconds: MAJOR_SECONDS, endsOnGoal: false }];
-  return [];
-}
-
-/**
- * Coinciding penalties cancel minor for minor and major for major across the two teams. What survives is grouped by
- * player, because one player's penalties run one after another while two players' run together.
- */
-function getPenaltiesAfterCancelling(
-  stoppagePenalties: any[],
-  teamIds: number[]
-): Record<number, PenaltySegment[][]> {
-  const units = teamIds.map((teamId) =>
-    stoppagePenalties
-      .filter((penalty) => penalty.details.eventOwnerTeamId === teamId)
-      .flatMap((penalty) =>
-        getManpowerSegments(penalty).map((segment) => ({
-          ...segment,
-          server: penalty.details.committedByPlayerId ?? `event-${penalty.eventId}`
-        }))
-      )
-  );
-  const countOf = (teamIndex: number, endsOnGoal: boolean) =>
-    units[teamIndex].filter((unit) => unit.endsOnGoal === endsOnGoal).length;
-  const result: Record<number, PenaltySegment[][]> = {};
-  teamIds.forEach((teamId, teamIndex) => {
-    const remove = {
-      minor: Math.min(countOf(0, true), countOf(1, true)),
-      major: Math.min(countOf(0, false), countOf(1, false))
-    };
-    const byServer = new Map<unknown, PenaltySegment[]>();
-    for (const { server, ...segment } of units[teamIndex]) {
-      const kind = segment.endsOnGoal ? "minor" : "major";
-      if (remove[kind] > 0) {
-        remove[kind]--;
-        continue;
-      }
-      // A major is served ahead of a minor assessed with it.
-      const segments = byServer.get(server) ?? [];
-      if (segment.endsOnGoal) segments.push(segment);
-      else segments.unshift(segment);
-      byServer.set(server, segments);
-    }
-    result[teamId] = [...byServer.values()];
-  });
-  return result;
-}
-
-function startWaitingPenalties(box: TeamPenaltyBox) {
-  while (box.serving.length < MAX_PENALTIES_SERVING && box.waiting.length > 0) {
-    const segments = box.waiting.shift() as PenaltySegment[];
-    box.serving.push({ segments, remaining: segments[0].seconds });
-  }
-}
-
-function endCurrentSegment(box: TeamPenaltyBox, penalty: ServedPenalty) {
-  penalty.segments = penalty.segments.slice(1);
-  if (penalty.segments.length > 0) {
-    penalty.remaining = penalty.segments[0].seconds;
-    return;
-  }
-  box.serving.splice(box.serving.indexOf(penalty), 1);
-  startWaitingPenalties(box);
-}
-
-/**
- * The stretches of game clock in which a team has more skaters because of penalties, one block per stretch. Blocks
- * for a game never overlap, so a 5-on-3 is counted once and 4-on-4 not at all.
- *  - A minor ends early when the team with the advantage scores. A double minor loses its current two minutes.
- *  - A major always runs its full length.
- *  - Coinciding penalties cancel, and a team serves at most two at once while the rest wait.
- * @param plays
- * @returns
- */
-export default function getPowerPlayBlocks(plays: any[]): Block[] {
-  const clockPlays = plays.filter(
-    (play) => play.periodDescriptor?.periodType !== "SO"
-  );
-  if (clockPlays.length === 0) return [];
-  const [teamA, teamB] = getTeamIds(clockPlays);
-  const teamIds = [teamA, teamB];
-  const boxes: Record<number, TeamPenaltyBox> = {
-    [teamA]: { serving: [], waiting: [] },
-    [teamB]: { serving: [], waiting: [] }
-  };
-
-  const eventsBySecond = new Map<number, any[]>();
-  for (const play of clockPlays) {
-    if (play.typeDescKey !== "goal" && play.typeDescKey !== "penalty") continue;
-    const second = getGameSecond(play);
-    eventsBySecond.set(second, [...(eventsBySecond.get(second) ?? []), play]);
-  }
-  const gameEnd = Math.max(...clockPlays.map(getGameSecond));
-
-  const result: Block[] = [];
-  let openTeamId: number | null = null;
-  let openStart = 0;
-  const closeBlock = (end: number) => {
-    if (openTeamId === null) return;
-    result.push({
-      teamId: openTeamId,
-      start: getTimeAtGameSecond(openStart),
-      end: getTimeAtGameSecond(end)
-    });
-  };
-
-  for (let second = 0; second < gameEnd; second++) {
-    for (const teamId of teamIds) {
-      const box = boxes[teamId];
-      for (const penalty of [...box.serving]) {
-        if (penalty.remaining === 0) endCurrentSegment(box, penalty);
-      }
-    }
-
-    const events = eventsBySecond.get(second) ?? [];
-    for (const event of events) {
-      if (event.typeDescKey !== "goal") continue;
-      const scorer = event.details.eventOwnerTeamId;
-      const opponent = scorer === teamA ? teamB : teamA;
-      if (boxes[scorer].serving.length >= boxes[opponent].serving.length) continue;
-      const box = boxes[opponent];
-      const firstToExpire = box.serving
-        .filter((penalty) => penalty.segments[0].endsOnGoal)
-        .sort((a, b) => a.remaining - b.remaining)[0];
-      if (firstToExpire) endCurrentSegment(box, firstToExpire);
-    }
-    const stoppagePenalties = events.filter(
-      (event) => event.typeDescKey === "penalty"
-    );
-    if (stoppagePenalties.length > 0) {
-      const penalties = getPenaltiesAfterCancelling(stoppagePenalties, teamIds);
-      for (const teamId of teamIds) {
-        boxes[teamId].waiting.push(...penalties[teamId]);
-        startWaitingPenalties(boxes[teamId]);
-      }
-    }
-
-    const servingA = boxes[teamA].serving.length;
-    const servingB = boxes[teamB].serving.length;
-    const teamWithAdvantage =
-      servingA === servingB ? null : servingA < servingB ? teamA : teamB;
-    if (teamWithAdvantage !== openTeamId) {
-      closeBlock(second);
-      openTeamId = teamWithAdvantage;
-      openStart = second;
-    }
-
-    for (const teamId of teamIds) {
-      for (const penalty of boxes[teamId].serving) penalty.remaining--;
-    }
-  }
-  closeBlock(gameEnd);
-
-  return result;
+  if (!results.size) throw failure;
+  if (results.size !== 1) throw new Error("Ambiguous penalty-clock team orientation");
+  return results.values().next().value!.map(span => ({
+    teamId: span.teamId,
+    start: getTimeAtGameSecond(span.start),
+    end: getTimeAtGameSecond(span.end)
+  }));
 }
 
 function getBlockGameSecond(time: Time) {
@@ -585,16 +434,18 @@ export type TeamPpClockContract = {
   audit: { checkedEvents: number; disagreements: number } | null;
 };
 
-export const PP_CLOCK_SOURCE = "fhfh-penalty-box-simulation-v1";
-export const PP_CLOCK_QUALIFIED = false;
+export const PP_CLOCK_SOURCE = "fhfh-nhl-penalty-context-clock-v2";
+// Algorithm qualification is separate from each game's completeness and audit.
+export const PP_CLOCK_QUALIFIED = true;
 export const PP_CLOCK_UNQUALIFIED_REASON =
-  "Penalty-box simulation not yet validated against official records (decision 71).";
+  "Complete final NHL play-by-play is required to qualify PP time.";
 
 export function buildTeamPpClock(args: {
   gameId: number;
   teamId: number;
   homeTeamId: number;
   awayTeamId: number;
+  gameType?: number;
   plays: readonly any[] | null | undefined;
 }): TeamPpClockContract {
   if (!args.plays || args.plays.length === 0) {
@@ -608,15 +459,33 @@ export function buildTeamPpClock(args: {
       audit: null
     };
   }
-  const blocks = getPowerPlayBlocks(args.plays as any[]);
-  const audit = auditPpBlocksAgainstSituationCodes(args.plays, blocks, args);
+  const gameType = args.gameType ?? Math.floor(args.gameId / 10_000) % 100;
+  let blocks: Block[];
+  let audit: ReturnType<typeof auditPpBlocksAgainstSituationCodes>;
+  let complete: boolean;
+  try {
+    if (![args.homeTeamId, args.awayTeamId].includes(args.teamId)) {
+      throw new Error("PP clock team is not part of this game.");
+    }
+    blocks = getPowerPlayBlocks(args.plays as any[], { ...args, gameType });
+    audit = auditPpBlocksAgainstSituationCodes(args.plays, blocks, args);
+    complete = hasCompletePenaltyClockSource(args.plays, gameType);
+  } catch (error) {
+    return {
+      gameId: args.gameId, teamId: args.teamId, seconds: null,
+      source: PP_CLOCK_SOURCE, qualified: false,
+      unqualifiedReason: error instanceof Error ? error.message : "Penalty clock could not be established.",
+      audit: null
+    };
+  }
+  const qualified = PP_CLOCK_QUALIFIED && complete && audit.disagreements.length === 0;
   return {
     gameId: args.gameId,
     teamId: args.teamId,
     seconds: teamPpClockSeconds(blocks, args.teamId),
     source: PP_CLOCK_SOURCE,
-    qualified: PP_CLOCK_QUALIFIED && audit.disagreements.length === 0,
-    unqualifiedReason: PP_CLOCK_QUALIFIED
+    qualified,
+    unqualifiedReason: PP_CLOCK_QUALIFIED && complete
       ? audit.disagreements.length === 0
         ? null
         : `${audit.disagreements.length} event(s) disagree with the official situation codes.`

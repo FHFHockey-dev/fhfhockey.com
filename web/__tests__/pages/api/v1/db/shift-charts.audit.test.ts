@@ -39,6 +39,7 @@ vi.mock("lib/projections/ingest/shifts", async () => {
   const fetchAllNhleShiftChartsForGame = vi.fn();
   const { fetchPbpGame } = await import("lib/projections/ingest/pbp");
   return {
+    buildCanonicalShiftIntervals: vi.fn(),
     buildShiftRelationshipStrengthSegments: vi.fn(),
     fetchAllNhleShiftChartsForGame,
     // The route reads the stored snapshots; these stand in for them.
@@ -77,6 +78,7 @@ import {
   isCompleteFinalPbpPayload,
 } from "lib/projections/ingest/pbp";
 import {
+  buildCanonicalShiftIntervals,
   buildShiftRelationshipStrengthSegments,
   fetchAllNhleShiftChartsForGame,
   readStoredProjectionShiftSnapshot,
@@ -106,6 +108,9 @@ function createMockRes() {
 describe("shift-chart cron audit truth", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(buildCanonicalShiftIntervals).mockImplementation(
+      (_gameId, _pbp, rows) => [...rows],
+    );
     auditInsertMock.mockResolvedValue({ error: null });
     fetchAllSupabasePagesMock.mockResolvedValue([]);
     getCurrentSeasonMock.mockResolvedValue({ seasonId: 20252026 });
@@ -124,6 +129,91 @@ describe("shift-chart cron audit truth", () => {
       }
       throw new Error(`Unexpected service-role table: ${table}`);
     });
+  });
+
+  it.each([
+    {
+      name: "duplicate intervals",
+      source: [["00:00", "00:30", "00:30"], ["00:00", "00:30", "00:30"]],
+      canonical: ["0:00", "0:30", "0:30"],
+      expected: "0:30",
+    },
+    {
+      name: "partly overlapping intervals",
+      source: [["00:00", "00:30", "00:30"], ["00:15", "00:45", "00:30"]],
+      canonical: ["0:00", "0:45", "0:45"],
+      expected: "0:45",
+    },
+    {
+      name: "period-end zero sentinel",
+      source: [["19:30", "00:00", "00:30"]],
+      canonical: ["19:30", "20:00", "0:30"],
+      expected: "0:30",
+    },
+    {
+      name: "impossible canonical total",
+      source: [["00:00", "20:00", "20:00"]],
+      canonical: ["0:00", "61:00", "61:00"],
+      expected: null,
+    },
+  ])("uses canonical intervals for $name before publishing relationships", async ({ source, canonical, expected }) => {
+    const gameId = 2026020101;
+    const hash = "a".repeat(64);
+    const row = (playerId: number, clocks: string[], shiftNumber = 1) => ({
+      gameId, playerId, teamId: 23, teamAbbrev: "VAN", firstName: "Test", lastName: String(playerId),
+      shiftNumber, period: 1, startTime: clocks[0], endTime: clocks[1], duration: clocks[2], typeCode: 517,
+    });
+    const sourceRows = [
+      ...source.map((clocks, index) => row(8480012, clocks, index + 1)),
+      row(8483678, canonical),
+    ];
+    const canonicalRows = [row(8480012, canonical), row(8483678, canonical)];
+    const defaultFrom = serviceFromMock.getMockImplementation()!;
+    serviceFromMock.mockImplementation((table: string) =>
+      table === "projection_game_materialization_status"
+        ? { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: {
+            game_id: gameId, input_status: "complete", pbp_raw_payload_hash: hash,
+          }, error: null }) }) }) }
+        : defaultFrom(table),
+    );
+    fetchAllSupabasePagesMock.mockResolvedValue([8480012, 8483678].map((playerId) => ({
+      game_id: gameId, player_id: playerId, team_id: 23, position_code: "C", source_play_by_play_hash: hash,
+    })));
+    vi.mocked(fetchPbpGame).mockResolvedValue({
+      id: gameId, season: 20262027, gameType: 2, gameDate: "2026-10-15",
+      homeTeam: { id: 23, abbrev: "VAN" }, awayTeam: { id: 22, abbrev: "EDM" },
+    } as any);
+    vi.mocked(isCompleteFinalPbpPayload).mockReturnValue(true);
+    vi.mocked(fetchAllNhleShiftChartsForGame).mockResolvedValue(sourceRows);
+    vi.mocked(buildCanonicalShiftIntervals).mockReturnValue(canonicalRows);
+    vi.mocked(buildShiftRelationshipStrengthSegments).mockImplementation((_gameId, _pbp, rows) =>
+      rows.map((shift) => ({ ...shift, duration: shift.duration!, strength: "es" as const })),
+    );
+    vi.mocked(formatCompletedPbpGameLength).mockReturnValue("60:00");
+    vi.mocked(buildShiftChartRelationshipUpsert).mockImplementation((payload: any) => payload);
+    vi.mocked(persistShiftChartRelationships).mockResolvedValue({
+      relationshipRows: 2, idempotent: false, prunedRows: 0,
+    } as any);
+    const res = createMockRes();
+
+    await directShiftChartsHandler({ method: "POST", query: { gameId: String(gameId) } } as any, res);
+
+    if (expected == null) {
+      expect(res.statusCode).toBe(500);
+      expect(res.body.message).toContain("Invalid total shift TOI");
+      expect(persistShiftChartRelationships).not.toHaveBeenCalled();
+      return;
+    }
+    expect(res.statusCode).toBe(200);
+    expect(buildCanonicalShiftIntervals).toHaveBeenCalledWith(gameId, expect.anything(), sourceRows);
+    expect(buildShiftRelationshipStrengthSegments).toHaveBeenCalledWith(gameId, expect.anything(), canonicalRows);
+    const payload = vi.mocked(persistShiftChartRelationships).mock.calls[0][0];
+    expect(payload.rows).toEqual(expect.arrayContaining([expect.objectContaining({
+      player_id: 8480012,
+      game_toi: expected,
+      time_spent_with: { "8483678": expected },
+      shifts: [expect.objectContaining({ start_time: canonical[0], end_time: canonical[1], duration: canonical[2] })],
+    })]));
   });
 
   it.each([
@@ -178,7 +268,7 @@ describe("shift-chart cron audit truth", () => {
     },
   );
 
-  it("records success when two same-name players share a team", async () => {
+  it("records same-name players and preserves shared-clock ES/PP/PK segment labels", async () => {
     const gameId = 2026020101;
     const hash = "a".repeat(64);
     const shift = (playerId: number) => ({
@@ -253,15 +343,17 @@ describe("shift-chart cron audit truth", () => {
     ]);
     vi.mocked(buildShiftRelationshipStrengthSegments).mockImplementation(
       (_gameId, _pbp, rows) =>
-        rows.map((row) => ({
+        rows.flatMap((row) => ([
+          { strength: "es" as const, startTime: "0:00", endTime: "0:15" },
+          { strength: "pp" as const, startTime: "0:15", endTime: "0:30" },
+          { strength: "pk" as const, startTime: "0:30", endTime: "0:45" },
+        ]).map((segment) => ({
           playerId: row.playerId,
           shiftNumber: row.shiftNumber,
           period: row.period,
-          startTime: row.startTime,
-          endTime: row.endTime,
-          duration: row.duration ?? "00:00",
-          strength: "es" as const,
-        })),
+          duration: "0:15",
+          ...segment,
+        }))),
     );
     vi.mocked(formatCompletedPbpGameLength).mockReturnValue("60:00");
     vi.mocked(buildShiftChartRelationshipUpsert).mockImplementation(
@@ -303,6 +395,18 @@ describe("shift-chart cron audit truth", () => {
         [8483678, "D", "D"],
       ]),
     );
+    const persisted = vi.mocked(persistShiftChartRelationships).mock.calls[0][0];
+    for (const row of persisted.rows) {
+      expect(row.pp_shifts).toEqual([
+        { strength: "pp", period: 1, shift_number: 1, start_time: "0:15", end_time: "0:30", duration: "0:15" },
+      ]);
+      // Legacy es_shifts deliberately retains both ES and PK intervals.
+      expect(row.es_shifts).toEqual([
+        { strength: "es", period: 1, shift_number: 1, start_time: "0:00", end_time: "0:15", duration: "0:15" },
+        { strength: "pk", period: 1, shift_number: 1, start_time: "0:30", end_time: "0:45", duration: "0:15" },
+      ]);
+      expect(row.game_toi).toBe("0:45");
+    }
     expect(auditInsertMock).toHaveBeenCalledWith([
       expect.objectContaining({
         job_name: "update-shift-charts",

@@ -51,15 +51,18 @@ import { getCurrentSeason } from "lib/NHL/server";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { buildShiftChartRelationshipUpsert } from "lib/projections/shiftChartRelationshipPayload";
 import {
+  buildCanonicalShiftIntervals,
   buildShiftRelationshipStrengthSegments,
   readStoredProjectionPbp,
   readStoredProjectionShiftSnapshot,
   type NhleShiftRow,
   type NhleShiftSource,
+  type Strength,
 } from "lib/projections/ingest/shifts";
 import {
   buildProjectionPbpSourceHash,
   buildProjectionShiftSourceHash,
+  PROJECTION_INPUT_MATERIALIZER_VERSION,
 } from "lib/projections/ingest/projectionInputPersistence";
 import {
   isCompleteFinalPbpPayload,
@@ -174,6 +177,7 @@ interface ShiftDetail {
 }
 
 interface PPShift {
+  strength: Strength;
   period: number;
   duration: string;
   start_time: string;
@@ -182,6 +186,7 @@ interface PPShift {
 }
 
 interface ESShift {
+  strength: Strength;
   period: number;
   duration: string;
   start_time: string;
@@ -193,6 +198,7 @@ function projectShiftSegmentsToJson(
   segments: ReadonlyArray<PPShift | ESShift>,
 ): Json {
   return segments.map((segment) => ({
+    strength: segment.strength,
     period: segment.period,
     duration: segment.duration,
     start_time: segment.start_time,
@@ -578,6 +584,7 @@ async function listPendingRelationshipGameIds(
           "game_id,input_status,input_fingerprint,relationship_status,relationship_input_fingerprint,relationship_algorithm_version",
         )
         .eq("input_status", "complete")
+        .eq("input_materializer_version", PROJECTION_INPUT_MATERIALIZER_VERSION)
         .order("game_id", { ascending: true })
         .range(from, to),
   );
@@ -736,10 +743,15 @@ async function upsertShiftChartData(
   const unmatchedNamesSet = new Set<string>();
   const positionFallbackNamesSet = new Set<string>();
   const consolidatedData: Record<string, ConsolidatedPlayerData> = {};
+  const canonicalShifts = buildCanonicalShiftIntervals(
+    gameInfo.game_id,
+    pbp,
+    shiftChartData.data,
+  );
 
   // Use groupBy to group shifts by playerId
   const shiftsByPlayer = groupBy(
-    shiftChartData.data,
+    canonicalShifts,
     (shift) => shift.playerId,
   );
 
@@ -782,11 +794,12 @@ async function upsertShiftChartData(
   }
 
   const gameLength = formatCompletedPbpGameLength(pbp);
+  const gameLengthSeconds = parseTime(gameLength);
   const strengthSegmentsByPlayer = groupBy(
     buildShiftRelationshipStrengthSegments(
       gameInfo.game_id,
       pbp,
-      shiftChartData.data,
+      canonicalShifts,
     ),
     (segment) => segment.playerId,
   );
@@ -878,6 +891,7 @@ async function upsertShiftChartData(
       // The legacy relationship contract calls every non-power-play interval
       // `es_shifts`; penalty-kill time therefore remains in this collection.
       target.push({
+        strength: segment.strength,
         period: segment.period,
         duration: segment.duration,
         start_time: segment.startTime,
@@ -893,6 +907,16 @@ async function upsertShiftChartData(
     consolidatedData[playerKey].total_es_toi = sumDurations(
       consolidatedData[playerKey].es_shifts.map((shift) => shift.duration),
     );
+    const gameToiSeconds = parseTime(consolidatedData[playerKey].game_toi);
+    if (
+      !Number.isSafeInteger(gameToiSeconds) ||
+      gameToiSeconds <= 0 ||
+      gameToiSeconds > gameLengthSeconds
+    ) {
+      throw new Error(
+        `Invalid total shift TOI for player ${playerId} in game ${gameInfo.game_id}`,
+      );
+    }
   }
 
   // Calculate Time Spent With Other Players
@@ -949,9 +973,14 @@ async function upsertShiftChartData(
       });
 
       const formattedTimeSpent = formatDuration(totalTimeSpent);
-      const gameLengthSeconds =
-        parseInt(playerData.game_length.split(":")[0]) * 60 +
-        parseInt(playerData.game_length.split(":")[1]);
+      if (
+        totalTimeSpent > parseTime(playerData.game_toi) ||
+        totalTimeSpent > parseTime(otherPlayer.game_toi)
+      ) {
+        throw new Error(
+          `Invalid shared shift TOI for players ${playerKey}/${otherPlayerKey} in game ${gameInfo.game_id}`,
+        );
+      }
       const percentTOI = (totalTimeSpent / gameLengthSeconds) * 100;
 
       if (isSamePositionType) {
