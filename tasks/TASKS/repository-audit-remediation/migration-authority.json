@@ -1297,40 +1297,40 @@
       "path": "supabase/migrations/20261111180400_fix_nhl_team_data_season_identity.sql",
       "sha256": "3634494808fee15cd3af0f1ab5fb3ba94f6e92b51c4d90577316d9f315a2a1f1",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "feature",
       "rolloutGate": "nhl_team_data: NST joined on exact season identity; appends nst_season and nst_updated_at; per-game NULL at 0 GP (D4, PR-SQL-2, F3). Record the pre-apply grants first. Math-audit fix lane L4a; source only. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval for this file, run its READBACK, then record schema_migrations and flip this row. Rollback: supabase/tests/l4a_sql_readers_rollback.sql (180400 block, drop/recreate + grants).",
-      "stateEvidence": "Not applied. Written 2026-11-11 by fix lane L4a (diary tasks/diaries/2026-11-11-claude-fix-l4a.md). Verified on local PostgreSQL 15 with supabase/tests/l4a_sql_readers.py: checks fail on the baseline definitions and pass after the migration; rollback restores the baseline answers."
+      "stateEvidence": "Production schema_migrations version 20261111180400 (fix_nhl_team_data_season_identity); applied 2026-11-12 by the fix-sprint Chef with TJ's pop-up approval ('Apply now'), psql via the IPv4 session pooler, exact file (sha256 matches this row), one transaction; ledger row inserted (statements null). Pre-apply: 0 active queries. Pre-apply grants recorded: anon, authenticated, postgres and service_role each DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE; unchanged after apply. Readback: 96 rows for 32 teams -> 32 rows, 32 distinct teams, nst_season 20262027 on all 32. viewdef md5 4755b2be47b8ba972d9fc0c4a55ece49 -> 4232da30c400bccb50ffa5b1034284a4. Rollback: supabase/tests/l4a_sql_readers_rollback.sql (180400 block, drop/recreate + grants)."
     },
     {
       "order": 130,
       "path": "supabase/migrations/20261111180500_fix_game_outcomes_level_score_unknown.sql",
       "sha256": "cb599ca7629ecc4198186fb6e7074137cd656b8aec4f575781f3116491380adc",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "feature",
       "rolloutGate": "gameOutcomes: level stored score is NULL, not TIE; team result documented as not a goalie decision (D11). Math-audit fix lane L4a; source only. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval for this file, run its READBACK, then record schema_migrations and flip this row. Rollback: supabase/tests/l4a_sql_readers_rollback.sql (180500 block).",
-      "stateEvidence": "Not applied. Written 2026-11-11 by fix lane L4a (diary tasks/diaries/2026-11-11-claude-fix-l4a.md). Verified on local PostgreSQL 15 with supabase/tests/l4a_sql_readers.py: checks fail on the baseline definitions and pass after the migration; rollback restores the baseline answers."
+      "stateEvidence": "Production schema_migrations version 20261111180500 (fix_game_outcomes_level_score_unknown); applied 2026-11-12 by the fix-sprint Chef with TJ's pop-up approval ('Apply now'), psql via the IPv4 session pooler, exact file (sha256 matches this row), one transaction; ledger row inserted (statements null). Pre-apply: 0 active queries. Readback: gameId 2025020001-2025020100 WIN 100 / LOSS 100 before and after, no TIE; 0 NULL outcomes across 2025020001-2025021312. viewdef md5 77323072ca1503f441b41ac5766e944d -> f2181b190c47fbd33e3332dd8d910d3a. Rollback: supabase/tests/l4a_sql_readers_rollback.sql (180500 block)."
     },
     {
       "order": 131,
       "path": "supabase/migrations/20261111180600_fix_goalie_weekly_zero_denominators.sql",
       "sha256": "d28332d6df502cbbaf527caafe800e377d205fc755adcd899cbe3a8d70762bb5",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "feature",
       "rolloutGate": "goalie_weekly_aggregates and league_weekly_goalie_averages: NULL instead of 0 on zero denominators (D14). Math-audit fix lane L4a; source only. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval for this file, run its READBACK, then record schema_migrations and flip this row. Rollback: supabase/tests/l4a_sql_readers_rollback.sql (180600 block).",
-      "stateEvidence": "Not applied. Written 2026-11-11 by fix lane L4a (diary tasks/diaries/2026-11-11-claude-fix-l4a.md). Verified on local PostgreSQL 15 with supabase/tests/l4a_sql_readers.py: checks fail on the baseline definitions and pass after the migration; rollback restores the baseline answers."
+      "stateEvidence": "Production schema_migrations version 20261111180600 (fix_goalie_weekly_zero_denominators); applied 2026-11-12 by the fix-sprint Chef with TJ's pop-up approval ('Apply now'), psql via the IPv4 session pooler, exact file (sha256 matches this row), one transaction; ledger row inserted (statements null). Pre-apply: 0 active queries. Readback: goalie_weekly_aggregates matchup_season 2025: 1457 weeks, 0 zero-SA weeks, 0 still valued (no zero-denominator week exists yet, so values unchanged). viewdef md5 goalie_weekly_aggregates 6039e035281ae387025e5d861d570644 -> ffa0323c654d284e98edec30f4996fc7, league_weekly_goalie_averages 0ef901551d5b5f006b6d3f793b2556f8 -> 5d953ecc136864db643eeb718ba1e301. Rollback: supabase/tests/l4a_sql_readers_rollback.sql (180600 block)."
     },
     {
       "order": 132,
       "path": "supabase/migrations/20261111180700_fix_lineup_deployment_slot_and_pp_share.sql",
       "sha256": "867db3a96f05fe1e5b41ec18cac98cb7e5a9d53a8e100d825694d87585b2d78b",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "feature",
       "rolloutGate": "Lineup deployment tallies: forward slot from line-card order; decision 86 second PP measure (share_of_dressed, pp_record_coverage, dressed counts) as added columns; nightly cron 391 then rewrites the table (D7; decision 86). Math-audit fix lane L4a; source only. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval for this file, run its READBACK, then record schema_migrations and flip this row. Rollback: supabase/tests/l4a_lineup_deployment_rollback.sql.",
-      "stateEvidence": "Not applied. Written 2026-11-11 by fix lane L4a (diary tasks/diaries/2026-11-11-claude-fix-l4a.md). Verified on local PostgreSQL 15 with supabase/tests/l4a_lineup_deployment.py: checks fail on the baseline definitions and pass after the migration; rollback restores the baseline answers."
+      "stateEvidence": "Production schema_migrations version 20261111180700 (fix_lineup_deployment_slot_and_pp_share); applied 2026-11-12 by the fix-sprint Chef with TJ's pop-up approval ('Apply now'), psql via the IPv4 session pooler, exact file (sha256 matches this row), one transaction; ledger row inserted (statements null). Pre-apply: 0 active queries. Readback: four columns added (dressed_games, dressed_games_pp_recorded, share_of_dressed, pp_record_coverage), NULL on existing rows until cron 391 rewrites the tallies; player 8478402 20252026 rows unchanged (F1_C 69/82, F2_C 13/82, PP1 77/80, PP2 3/80). refresh_player_lineup_deployment_tallies prosrc md5 506aa30023bdc478d19ad30cf419662f -> bca1323024c91c9a84f50e16f599c208, search_path=public, not security definer. Rollback: supabase/tests/l4a_lineup_deployment_rollback.sql."
     },
     {
       "order": 133,
