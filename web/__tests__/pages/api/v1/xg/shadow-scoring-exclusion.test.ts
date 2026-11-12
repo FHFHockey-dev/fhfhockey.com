@@ -250,22 +250,46 @@ describe("shadow scoring (decision 101)", () => {
     expect(game!.analytics).toMatchObject({ homeXg: 0.2, awayXg: 0.1 });
   });
 
-  it("gives the xG Lab API nothing for the shadow model, even when asked for it by name", async () => {
-    const asked = response();
-    await xgLabHandler(
-      { method: "GET", query: { scope: "teams", seasonId: String(SEASON), featureVersion: "2", windowGames: "10", modelVersion: SHADOW } } as any,
-      asked
-    );
-    expect(asked.statusCode).toBe(200);
-    expect(asked.body.rows).toEqual([]);
+  it("never serves the shadow model from the xG Lab API, even when asked for it by name", async () => {
+    // Per-team xG for/against as each model scored the stored shots.
+    const teamTotals = (model: string) => {
+      const totals = new Map<number, { xgFor: number; xgAgainst: number }>();
+      for (const row of db.tables.nhl_xg_shot_predictions!.filter((prediction) => prediction.model_version === model)) {
+        const owner = row.event_owner_team_id as number;
+        const opponent = owner === 10 ? 20 : 10;
+        const forTeam = totals.get(owner) ?? { xgFor: 0, xgAgainst: 0 };
+        const againstTeam = totals.get(opponent) ?? { xgFor: 0, xgAgainst: 0 };
+        forTeam.xgFor += row.xg;
+        againstTeam.xgAgainst += row.xg;
+        totals.set(owner, forTeam);
+        totals.set(opponent, againstTeam);
+      }
+      return totals;
+    };
+    const approvedTotals = teamTotals(APPROVED);
+    const shadowTotals = teamTotals(SHADOW);
 
-    const latest = response();
-    await xgLabHandler(
-      { method: "GET", query: { scope: "teams", seasonId: String(SEASON), featureVersion: "2", windowGames: "10" } } as any,
-      latest
-    );
-    expect(latest.statusCode).toBe(200);
-    expect(latest.body.modelVersion).toBe(APPROVED);
+    for (const query of [{ modelVersion: SHADOW }, {}]) {
+      const res = response();
+      await xgLabHandler(
+        { method: "GET", query: { scope: "teams", seasonId: String(SEASON), featureVersion: "2", windowGames: "10", ...query } } as any,
+        res
+      );
+      expect(res.statusCode).toBe(200);
+      // L2 serves the registry pin whatever model the request names.
+      expect(res.body.modelVersion).toBe(APPROVED);
+      expect(JSON.stringify(res.body)).not.toContain(SHADOW);
+      expect(res.body.rows.length).toBe(2);
+      for (const row of res.body.rows) {
+        const shadow = shadowTotals.get(row.id)!;
+        const approved = approvedTotals.get(row.id)!;
+        // A shadow-scored value in any xG column fails the case.
+        expect(row.xgFor).not.toBeCloseTo(shadow.xgFor, 9);
+        expect(row.xgAgainst).not.toBeCloseTo(shadow.xgAgainst, 9);
+        expect(row.xgFor).toBeCloseTo(approved.xgFor, 9);
+        expect(row.xgAgainst).toBeCloseTo(approved.xgAgainst, 9);
+      }
+    }
   });
 
   it("never promotes a shadow model: its registry row is a candidate and cannot be activated", () => {
