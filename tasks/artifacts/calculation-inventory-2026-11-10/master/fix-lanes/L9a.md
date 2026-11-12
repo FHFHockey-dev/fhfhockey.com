@@ -56,3 +56,7 @@ Rolling availability is by team of record by date; `*_team_games_available` and 
 ## Reader tickets from L1 (2026-11-11; decision 83, writer 3e6562f9a + L4a migration 134)
 Skater `faceoffs`, `powerPlayToi`, `shorthandedToi` are now NULL when absent (unknown, not 0). Full ticket: Chef side-session note `L1-tickets-placeholders-null.md`.
 - `seasonBootstrap.ts:63` `minutes(row.powerPlayToi)` already returns null; confirm averaging skips null.
+
+## xG selector (L14, done)
+Adopt `fetchActiveXgModel` (`web/lib/xg/modelRegistry.ts`, server only): filter on model_version AND feature_version; null = in-house xG unavailable (decision 99: expected for new games after release). Example reader `web/pages/api/v1/xg/team-timeline.ts`.
+FORGE prior `team-context-queries.ts:204` (env-gated) must use the selector.

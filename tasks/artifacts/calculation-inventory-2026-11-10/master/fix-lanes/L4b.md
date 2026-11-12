@@ -43,3 +43,6 @@ NST season views (migrations 125/126) return NULL, not 0/50/100, for unknown or 
 Migration 133 (`percent_games`): NULL for multi-team seasons; the radar (`radarSeasonStats.ts`, `PlayerRadarChart.tsx`) must treat NULL as unknown.
 
 Q41 answered 2026-11-11 (revised by TJ): decision 90, **mid-rank everywhere**, including Rankings, WiGO, social cards and the player radar; tied players share the mid-rank percentile.
+
+## House labels from L1 (W1 P0 #7, 72e78b3d1)
+Import `PARITY_CHANCE_DEFINITIONS` labels from `nhlNstParityMetrics.ts`. Rename displayed columns: "FHFH high-danger" (≤ 20 ft, ≤ 35°): hdcf, hdcf_per_60, on-ice hdcf/hdca/hdcf_pct/hdgf/hdga/hdgf_pct and per-60s, goalie hd_shots_against/hd_saves/hd_sv_percentage/hd_gaa/hd_gsaa and per-60s; "FHFH medium-danger" md* and "FHFH low-danger" ld* (same pattern); "FHFH scoring chance" (≤ 40 ft, ≤ 50°): iscfs, iscfs_per_60, scf, sca, scf_pct, scf_per_60, sca_per_60. Rush attempts keep their name (decision 8).
