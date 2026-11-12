@@ -118,7 +118,7 @@ function fitForPosition(candidate: RecommendationCandidate, needs: Record<string
 
 function categoryFit(
   candidate: RecommendationCandidate,
-  categoryScoresByKey: Record<string, Map<string, number>>,
+  categoryScoresByKey: Record<string, ReadonlyMap<string, number>>,
   categoryNeeds: Record<string, number>,
   weights: Record<string, number>,
 ) {
@@ -143,6 +143,29 @@ function categoryFit(
     return sum + (categoryScoresByKey[key]?.get(candidate.id) ?? 0) * need;
   }, 0) / totalNeed;
   return { fit: directionalNeed, missing };
+}
+
+export const NEED_SCALE_VERSION = "need-scale-v2-decision-cohort-sd";
+
+/**
+ * Scale of the roster-need adjustment (audit W2-5 D5). The largest possible
+ * need boost is alpha × this scale. It is the sample standard deviation of the
+ * base score over the decision cohort: candidates at or above replacement
+ * (base ≥ 0), best 2 × teams of them (at least 12). A below-replacement tail
+ * candidate (e.g. −1,000) is outside the cohort and cannot inflate it. Falls
+ * back to 1 when the cohort has no spread.
+ */
+export function needAdjustmentScale(candidates: readonly RecommendationCandidate[], teamCount?: number) {
+  const size = Math.max(12, 2 * Math.max(0, Math.floor(teamCount ?? 0)));
+  const scores = candidates
+    .map((candidate) => (finite(candidate.baselineScore) ? candidate.baselineScore : candidate.rankValue))
+    .filter((value): value is number => finite(value) && value >= 0)
+    .sort((a, b) => b - a)
+    .slice(0, size);
+  if (scores.length < 2) return 1;
+  const mean = scores.reduce((sum, value) => sum + value, 0) / scores.length;
+  const sd = Math.sqrt(scores.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (scores.length - 1));
+  return sd > 0 ? sd : 1;
 }
 
 /**
@@ -170,7 +193,7 @@ export function buildPersonalizedRecommendations(
     ? (() => { const category = categoryFit(candidate, categoryScoresByKey, options.categoryNeeds ?? {}, categoryWeights); return { ...category, fit: category.fit + fitForPosition(candidate, options.positionNeeds ?? {}) }; })()
     : { fit: fitForPosition(candidate, options.positionNeeds ?? {}), missing: [] as string[] });
   const maxFit = Math.max(1, ...rawFits.map(({ fit }) => Math.abs(fit)));
-  const adjustmentScale = Math.max(1, ...candidates.map((candidate) => Math.abs(candidate.baselineScore ?? candidate.rankValue)));
+  const adjustmentScale = needAdjustmentScale(candidates, options.teamCount);
 
   return candidates.map((candidate, index) => {
     const { fit, missing } = rawFits[index];

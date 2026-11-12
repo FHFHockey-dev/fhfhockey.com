@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
+import { forecastCalendarPolicy, type AnyForecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { laterImpactScenarioSchema, saveWorkspaceSchema, snapshotSchema, WORKSPACE_SAVE_BYTE_BUDGET, type CapturedLaterImpactScenario,
   type LaterImpactScenarioPayload } from "lib/in-season/workspaceSchema";
 import { LATER_IMPACT_CONTRACT, type LeaguePeriod } from "lib/rosterScheduleOptimizer/futureImpact";
@@ -461,6 +461,17 @@ describe("the server-side build", () => {
     expect(payload.basis.runs[0]).toMatchObject({ inputCutoff: "2026-10-31T09:00:00.000Z", reconstruction: false });
     expect(payload.schedule!.verifiedDates).toEqual(expect.arrayContaining(F));
     expect(evaluate(payload).state).toBe("complete_with_assumptions");
+  });
+  it("ends F's schedule read at the policy's as-of date: v2 uses the NHL schedule's Eastern date (decision 127)", async () => {
+    // 03:00Z on 2 November is still 1 November in New York, so v2's span ends one day before v1's.
+    const lastRead = async (calendarPolicy: AnyForecastCalendarPolicy) => {
+      const { db: client, calls } = db({ player_forecast_source_observations: observations, roster_optimizer_team_games: scheduleRows() });
+      await loadLaterImpactScenario(client, { ...args(), calendarPolicy, deadline: Date.now() + 5000 }, () => new Date("2026-11-02T03:00:00Z"));
+      return calls.find(call => call.table === "roster_optimizer_team_games")!.filters.find(([method]) => method === "lte")?.[2];
+    };
+    const days = args().calendarPolicy.calendarDays;
+    const v1 = String(await lastRead(forecastCalendarPolicy(days))), v2 = String(await lastRead(forecastCalendarPolicy(days, "forecast-calendar-v2")));
+    expect(Date.parse(`${v1}T00:00:00Z`) - Date.parse(`${v2}T00:00:00Z`)).toBe(86400000);
   });
   it("keeps going with honest gaps when timing or schedule reads fail", async () => {
     const { db: client } = db({}, ["player_forecast_source_observations", "roster_optimizer_team_games"]);

@@ -1,20 +1,26 @@
 // components/GameGrid/utils/calcWinOdds.ts
 
 import { DAYS, EXTENDED_DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
-import { isRegularScheduleGame } from "./helper";
 
+/**
+ * Game Grid win odds are withheld (owner decision 64, W1 P0 #14): the stored
+ * `expected_goals` odds come from an unqualified model, and the placeholder
+ * game model (decision 1) is not a substitute. They return only when a model
+ * and its consumers qualify on genuinely pregame, held-out games.
+ */
+export const GAME_GRID_WIN_ODDS = {
+  status: "unavailable",
+  message: "Model odds unavailable",
+  detail:
+    "FHFH game odds are withheld while the model is developed and validated. Week Score uses schedule volume, off-nights and slate crowding only."
+} as const;
+
+/** Withheld: always null, whatever odds a stale row or payload carries. */
 export function calculateBlendedWinOdds(
-  winOdds: number | null | undefined,
-  apiWinOdds: number | null | undefined
+  _winOdds: number | null | undefined,
+  _apiWinOdds: number | null | undefined
 ): number | null {
-  if (winOdds === null || winOdds === undefined) {
-    return null;
-  }
-  if (apiWinOdds !== null && apiWinOdds !== undefined) {
-    return winOdds;
-  } else {
-    return winOdds;
-  }
+  return null;
 }
 
 export function formatWinOdds(winOdds: number): string {
@@ -27,37 +33,17 @@ export function formatWinOdds(winOdds: number): string {
 }
 
 /**
- * Convert a TeamRowData to a list of blended WinOdds.
- * @param row A team's stats for a week
- * @returns A list of WinOdds. e.g., [null, 0.3, null, 0.3, 6.4, null, 2.7]
+ * The per-day win-odds list behind Week Score's matchup term. Withheld with the
+ * odds (decision 64): every day is null, so the matchup term is 0 and the
+ * back-to-back 0.75 cut no longer applies.
+ * @returns A list of nulls, one per day.
  */
-
 export function convertTeamRowToWinOddsList(
-  row: WeekData & { teamId: number; weekNumber: number },
-  excludedDays: readonly EXTENDED_DAY_ABBREVIATION[] = [],
+  _row: WeekData & { teamId: number; weekNumber: number },
+  _excludedDays: readonly EXTENDED_DAY_ABBREVIATION[] = [],
   days: readonly EXTENDED_DAY_ABBREVIATION[] = DAYS
-) {
-  const winOddsList = days.map((day) => {
-    const game = row[day];
-    if (isRegularScheduleGame(game)) {
-      const ourTeam =
-        row.teamId === game.homeTeam.id ? game.homeTeam : game.awayTeam;
-      return calculateBlendedWinOdds(
-        ourTeam.winOdds,
-        ourTeam.apiWinOdds
-      );
-
-    }
-    return null;
-  });
-  return winOddsList.map((winOdds, i) => {
-    if (excludedDays.includes(days[i])) return null;
-    // A bench/excluded day still happened on the NHL schedule. Preserve its
-    // existing back-to-back effect, while excluding its odds from the average.
-    return winOdds !== null && isBackToBack(winOddsList, i)
-      ? winOdds * 0.75
-      : winOdds;
-  });
+): (number | null)[] {
+  return days.map(() => null);
 }
 
 /**

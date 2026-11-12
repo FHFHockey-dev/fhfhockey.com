@@ -79,7 +79,7 @@ function scenarioPlayer(
 ): ScenarioPlayer | string {
   const id = String(player.playerId);
   const metric = metrics.get(id);
-  if (!metric || !Number.isFinite(metric.vorp) || !Number.isFinite(metric.value)) return `Scenario data is unavailable because ${player.fullName} has no current league VORP.`;
+  if (!metric || typeof metric.vorp !== "number" || typeof metric.value !== "number" || !Number.isFinite(metric.vorp) || !Number.isFinite(metric.value)) return `Scenario data is unavailable because ${player.fullName} has no current league VORP.`;
   const eligiblePositions = normalizePlayerEligibility(player.displayPosition, player.eligiblePositions);
   if (!eligiblePositions.length) return `Scenario data is unavailable because ${player.fullName} has no eligible position.`;
   const projectedPoints = player.fantasyPoints.projected;

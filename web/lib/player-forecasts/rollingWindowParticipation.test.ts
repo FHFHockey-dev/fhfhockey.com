@@ -113,7 +113,10 @@ describe("equivalence with the frozen-window roster-observation methods", () => 
     const rolling = buildRollingWindowGoalieStartReceipt(value, clocks(value.cutoffAt));
     expect(frozen.methodVersion).toBe("goalie-roster-observation-start-frequency-v1");
     expect(rolling.methodVersion).toBe("goalie-rolling-14d-start-frequency-v1");
-    expect(frozen.limitations.join(" ")).toContain("frozen Sep29–Oct12");
+    // W3-5 F10: new roster-observation receipts no longer carry the frozen-window label; issued v1 receipts keep it.
+    expect(frozen.limitations.join(" ")).not.toContain("Sep29");
+    expect(buildRosterObservationGoalieStartReceipt({ ...value, version: "goalie-roster-observation-start-input-v1" }, clocks(value.cutoffAt), "v1")
+      .limitations.join(" ")).toContain("frozen Sep29–Oct12");
     expect(rolling.limitations.join(" ")).not.toContain("Sep29");
     expect(rolling.limitations.join(" ")).toContain("14 America/New_York calendar days before the cutoff's local date");
   });

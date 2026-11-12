@@ -45,7 +45,7 @@ function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinne
     snapshot.players = buildPlayerLayer(sources, { season, teams: snapshot.teams.map(team => team.abbreviation), fetchedAt: generatedAt, generatedAt });
     // Fictional last-five-games evidence for every joined player, as the live server attaches for shown ones.
     const recent = fictionalPlayerRecent(snapshot.players.players, season, localDate(generatedAt, "America/New_York"));
-    snapshot.players = attachRecent(snapshot.players, recentRead === "failed" ? null : recentRead === "empty" ? { rolling: [], goalieGames: [] } : { rolling: recent.rolling as ShareRecentRollingRow[], goalieGames: recentRead === "goalies-failed" ? null : recent.goalieGames as ShareGoalieGameRow[],
+    snapshot.players = attachRecent(snapshot.players, recentRead === "failed" ? null : recentRead === "empty" ? { rolling: [], goalieGames: [] } : { rolling: recent.rolling as ShareRecentRollingRow[], goalieGames: recentRead === "goalies-failed" ? null : recent.goalieGames as ShareGoalieGameRow[], leagueSavePct: recent.leagueSavePct,
       // chunk-failed (SS1-24): every other skater's id chunk timed out; only those players lose recent form.
       ...(recentRead === "chunk-failed" ? { failedIds: snapshot.players.players.filter((player, index) => player.group !== "G" && index % 2 === 0).map(player => player.nhlId) } : {}) }, generatedAt);
     // Fictional Tuesday source rows (lane TT): rolling rows 4 h old (80 h when stale), PP rows, Yahoo ownership history

@@ -124,7 +124,7 @@ vi.mock("lib/NHL/server", () => ({
 }));
 
 import { getCurrentSeason } from "lib/NHL/server";
-import { fetchStatsData } from "./statsPageFetch";
+import { describeGoalieQualifier, fetchStatsData } from "./statsPageFetch";
 
 beforeEach(() => {
   database.queries = [];
@@ -330,5 +330,81 @@ describe("fetchStatsData", () => {
           ),
       ),
     ).toBe(true);
+  });
+});
+
+describe("W3-2 D5 goalie qualifier and ties (decision 89)", () => {
+  const goalie = (id: number, extra: Record<string, any>) => ({
+    goalie_id: id, goalie_name: `Goalie ${id}`, season_id: 20252026, wins: 1,
+    save_pct: 0.9, goals_against_avg: 3, quality_starts_pct: 0.5, games_played: 10, ...extra
+  });
+  const standings = (seasonId: number, gamesPlayed: number[]) =>
+    gamesPlayed.map((games_played, index) => ({
+      season_id: seasonId, date: "2026-01-01", team_abbrev: `T${index}`, games_played
+    }));
+
+  it("keeps every goalie tied at fifth, whatever the read order", async () => {
+    database.tables.nhl_standings_details = standings(20252026, [20, 20]);
+    const rows = [0.95, 0.94, 0.93, 0.92, 0.75, 0.75, 0.6].map((qs, index) =>
+      goalie(100 + index, { quality_starts_pct: qs })
+    );
+    for (const order of [rows, [...rows].reverse()]) {
+      database.tables.wgo_goalie_stats_totals = order;
+      const result = await fetchStatsData();
+      expect(result.goalieLeadersQS.map((g) => g.goalie_id)).toEqual([100, 101, 102, 103, 104, 105]);
+    }
+  });
+
+  it("keeps skaters tied at fifth on every board", async () => {
+    database.tables.wgo_skater_stats_totals = [9, 8, 7, 6, 5, 5, 4].map((points, index) => ({
+      player_id: 200 + index, player_name: `Skater ${200 + index}`, season: "20252026",
+      points, goals: points, pp_points: points, blocked_shots: 0, shots: 0, hits: 0
+    }));
+    const result = await fetchStatsData();
+    expect(result.pointsLeaders.map((p) => p.player_id)).toEqual([200, 201, 202, 203, 204, 205]);
+  });
+
+  it("uses a quarter of mean team GP even early (mean 8 → min 2 GP) and prints it", async () => {
+    database.tables.nhl_standings_details = standings(20252026, [8, 8]);
+    database.tables.wgo_goalie_stats_totals = [
+      goalie(1, { games_played: 1, save_pct: 0.99 }),
+      goalie(2, { games_played: 2, save_pct: 0.91 })
+    ];
+    const result = await fetchStatsData();
+    expect(result.goalieQualifier).toEqual({ status: "known", seasonId: 20252026, minGames: 2, meanTeamGames: 8 });
+    expect(result.goalieLeadersSavePct.map((g) => g.goalie_id)).toEqual([2]);
+    expect(describeGoalieQualifier(result.goalieQualifier)).toBe(
+      "Rate leaders: min. 2 GP (a quarter of the 8.0-game average team GP)"
+    );
+  });
+
+  it("failed or missing standings make the qualifier unknown and withhold rate leaders", async () => {
+    database.tables.nhl_standings_details = [];
+    database.tables.wgo_goalie_stats_totals = [goalie(1, { games_played: 1, wins: 1 })];
+    const result = await fetchStatsData();
+    expect(result.goalieQualifier).toEqual({ status: "unknown", seasonId: 20252026 });
+    expect(result.goalieLeadersSavePct).toEqual([]);
+    expect(result.goalieLeadersGAA).toEqual([]);
+    expect(result.goalieLeadersQS).toEqual([]);
+    expect(result.goalieLeadersWins.map((g) => g.goalie_id)).toEqual([1]);
+    expect(describeGoalieQualifier(result.goalieQualifier)).toMatch(/^Qualifier unknown/);
+
+    database.tables.nhl_standings_details = [{ ...standings(20252026, [20])[0], games_played: null }];
+    expect((await fetchStatsData()).goalieQualifier.status).toBe("unknown");
+  });
+
+  it("a fallback season uses its own standings, not the current season's", async () => {
+    database.tables.nhl_standings_details = [
+      ...standings(20252026, [40, 40]),
+      ...standings(20242025, [82, 82])
+    ];
+    database.tables.wgo_goalie_stats_totals = [
+      goalie(1, { season_id: 20242025, games_played: 15, save_pct: 0.95 }),
+      goalie(2, { season_id: 20242025, games_played: 30, save_pct: 0.92 })
+    ];
+    const result = await fetchStatsData();
+    // Current season would give min 10 GP; 2024-25 gives min 20 GP.
+    expect(result.goalieQualifier).toMatchObject({ status: "known", seasonId: 20242025, minGames: 20 });
+    expect(result.goalieLeadersSavePct.map((g) => g.goalie_id)).toEqual([2]);
   });
 });

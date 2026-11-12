@@ -57,6 +57,9 @@ interface MyRosterProps {
   needWeightEnabled?: boolean;
   needAlpha?: number;
   posNeeds?: Record<string, number>;
+  /** Category leagues: unitless category needs and the league's category weights. */
+  catNeeds?: Record<string, number>;
+  categoryWeights?: Record<string, number>;
   // Forward grouping preference
   forwardGrouping?: "split" | "fwd";
   /** Optional slot for the schedule overview trigger and overlay. */
@@ -86,6 +89,8 @@ const MyRoster: React.FC<MyRosterProps> = ({
   needWeightEnabled = false,
   needAlpha = 0.5,
   posNeeds = {},
+  catNeeds,
+  categoryWeights,
   forwardGrouping = "split",
   scheduleOverview
 }) => {
@@ -139,10 +144,15 @@ const MyRoster: React.FC<MyRosterProps> = ({
   }, [teamOptions, selectedViewTeamId, selectedTeamStats]);
 
   // NEW: compute top recommendations
+  // Same category context as Suggested Picks, so category leagues get
+  // category-aware fit rather than the points-style positional default.
   const { recommendations } = usePlayerRecommendations({
     players: availablePlayers,
     vorpMetrics,
     posNeeds,
+    catNeeds,
+    categoryWeights,
+    leagueType: draftSettings?.leagueType ?? "points",
     needWeightEnabled,
     needAlpha,
     limit: 10,
@@ -196,18 +206,15 @@ const MyRoster: React.FC<MyRosterProps> = ({
       const bName = b.player.fullName || String(b.player.playerId);
       const aPos = (a.player.displayPosition || "").split(",")[0];
       const bPos = (b.player.displayPosition || "").split(",")[0];
-      const aFp =
-        (a.player as any).fantasyPoints ??
-        (a.player as any).projFantasyPoints ??
-        0;
-      const bFp =
-        (b.player as any).fantasyPoints ??
-        (b.player as any).projFantasyPoints ??
-        0;
-      const aVorp = a.vorp ?? 0;
-      const bVorp = b.vorp ?? 0;
-      const aVbd = a.vbd ?? 0;
-      const bVbd = b.vbd ?? 0;
+      const aFp = a.player.fantasyPoints?.projected;
+      const bFp = b.player.fantasyPoints?.projected;
+      // Unknown values sort last in both directions.
+      const known = (x: number | null | undefined, y: number | null | undefined) => {
+        const xKnown = typeof x === "number" && Number.isFinite(x);
+        const yKnown = typeof y === "number" && Number.isFinite(y);
+        if (!xKnown || !yKnown) return xKnown === yKnown ? 0 : xKnown ? -1 : 1;
+        return dirMul * ((x as number) - (y as number));
+      };
       const aAdp = (a.player as any).yahooAvgPick ?? Infinity;
       const bAdp = (b.player as any).yahooAvgPick ?? Infinity;
       const aAvail = typeof a.availability === "number" ? a.availability : -1;
@@ -224,11 +231,11 @@ const MyRoster: React.FC<MyRosterProps> = ({
         case "pos":
           return dirMul * aPos.localeCompare(bPos);
         case "projFp":
-          return dirMul * (aFp - bFp);
+          return known(aFp, bFp);
         case "vorp":
-          return dirMul * (aVorp - bVorp);
+          return known(a.vorp, b.vorp);
         case "vbd":
-          return dirMul * (aVbd - bVbd);
+          return known(a.vbd, b.vbd);
         case "adp":
           return dirMul * ((aAdp as number) - (bAdp as number));
         case "avail":
@@ -433,6 +440,9 @@ const MyRoster: React.FC<MyRosterProps> = ({
             <div className={styles.summaryLabel}>Projected Points</div>
             <div className={styles.summaryValue}>
               {selectedTeamStats.projectedPoints.toFixed(1)}
+              {selectedTeamStats.unknownProjectionCount ? (
+                <span className={styles.summaryLabel}> · incomplete ({selectedTeamStats.unknownProjectionCount} unknown)</span>
+              ) : null}
             </div>
           </div>
           <div className={styles.summaryCard}>

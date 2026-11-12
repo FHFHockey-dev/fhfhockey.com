@@ -5,7 +5,7 @@ import { forecastAllows } from "../rosterScheduleOptimizer/planning";
 import { inspectCalendarConsumerCoverage, parseCalendarCoverageProfile, summarizeCalendarConsumerCoverage } from "./calendarCoverage";
 import * as publicPlanning from "../rosterScheduleData/planning";
 import type { PlayerForecastCalendarScope } from "./schedule";
-import { forecastCalendarPolicy, type ContributionParticipation, type ContributionSource } from "./contributions";
+import { forecastCalendarPolicy, startMassExceedsOne, type ContributionParticipation, type ContributionSource } from "./contributions";
 import type { GameForecast, PlanningSnapshot } from "../rosterScheduleOptimizer/planningTypes";
 import { buildForgeCalendarManifest, parseForgeCalendarArgs } from "../../scripts/run-forge-calendar-local";
 
@@ -822,6 +822,42 @@ describe("calendar consumer target coverage", () => {
     data.forecasts = [first, second];
     expect(summarizeCalendarConsumerCoverage(data, scopes, goalieProfile, data.context)).toMatchObject({
       eligiblePlayerGameTargets: 0, totalsEligiblePlayerGameTargets: 0, exclusions: { unsupported_conditioning: 6 } });
+  });
+  it("never counts a zeroed line with an unknown start chance as covered, keeps a confirmed-out zero, and reports residual start mass", () => {
+    // W2-8 D3: goalies 7 and 8 share .6 + .3 of the starts; goalie 9 has no start share but a zeroed line with every use.
+    const goalieProfile = { skaterTargets: [], goalieTargets: ["SAVES_GOALIE"] };
+    const line = (playerId: string, startProbability: number | null, saves: number) => detailed({ playerId, stats: { SAVES_GOALIE: saves },
+      conditionalStats: { SAVES_GOALIE: 25 }, startProbability, appearanceProbability: null,
+      issuedContext: { ...issuedContext, playerId, nhlPlayerId: Number(playerId) * 11 } });
+    const data = input([], [line("7", 0.6, 15), line("8", 0.3, 7.5), line("9", null, 0)]);
+    data.players.forEach(player => { player.playerClass = "goalie"; });
+    data.players[0].nhlId = 77;
+    const coverage = summarizeCalendarConsumerCoverage(data, scopes, goalieProfile, data.context);
+    expect(coverage).toMatchObject({ requiredPlayerGameTargets: 3, eligiblePlayerGameTargets: 2,
+      goalieStartMass: { teamGames: 2, unresolvedTeamGames: 2, unresolvedStartMass: 1.1 } });
+    expect(coverage.exclusions.missing_participation).toBe(1);
+    // A confirmed-out goalie (start chance 0) keeps his real zero.
+    data.forecasts = [line("7", 0.6, 15), line("8", 0.4, 10), line("9", 0, 0)];
+    expect(summarizeCalendarConsumerCoverage(data, scopes, goalieProfile, data.context)).toMatchObject({
+      eligiblePlayerGameTargets: 3, goalieStartMass: { unresolvedTeamGames: 1, unresolvedStartMass: 1 } });
+  });
+  it("accepts a proven 4-dp rounded start vector up to n × 0.00005 over 1 and nothing more (W2-8 D2)", () => {
+    const goalieProfile = { skaterTargets: [], goalieTargets: ["SAVES_GOALIE"] };
+    const line = (playerId: string, startProbability: number) => detailed({ playerId, stats: { SAVES_GOALIE: 25 * startProbability },
+      conditionalStats: { SAVES_GOALIE: 25 }, startProbability, appearanceProbability: null,
+      issuedContext: { ...issuedContext, playerId, nhlPlayerId: Number(playerId) * 11 } });
+    const coverage = (probabilities: number[]) => {
+      const data = input([], probabilities.map((p, index) => line(String(7 + index), p)));
+      data.players.forEach(player => { player.playerClass = "goalie"; });
+      return summarizeCalendarConsumerCoverage(data, scopes, goalieProfile, data.context);
+    };
+    // .33335/.33335/.3333 rounded half-up to 4 dp: the bridge's wire shape. v1 rejected all three lines.
+    expect(coverage([0.3334, 0.3334, 0.3333])).toMatchObject({ eligiblePlayerGameTargets: 3 });
+    // The same excess without proof of rounding, and a rounded vector beyond what rounding can add, stay rejected.
+    expect(coverage([0.33337, 0.33337, 0.33336])).toMatchObject({ eligiblePlayerGameTargets: 0, exclusions: { unsupported_conditioning: 3 } });
+    expect(coverage([0.3334, 0.3334, 0.3334])).toMatchObject({ eligiblePlayerGameTargets: 0, exclusions: { unsupported_conditioning: 3 } });
+    expect(startMassExceedsOne([0.5, 0.5000005])).toBe(false);
+    expect(startMassExceedsOne([0.5, 0.500002])).toBe(true);
   });
   it("keeps unmapped players and incomplete inputs visible and rejects lost or changed schedule sides", () => {
     const data = input();

@@ -12,6 +12,10 @@ describe("rankingMetadata", () => {
     expect(payload.glossary.map((entry) => entry.key)).toContain(
       "contextual_defensive_impact",
     );
+    // Rule 20: the tie rule is stated (dense, independent of display sort).
+    expect(payload.glossary.find((entry) => entry.key === "dense_rank")?.label).toBe(
+      "Rank (dense)",
+    );
     expect(payload.teamStyle.currentLabel).toBe("raw_contextual_5v5");
     expect(payload.teamStyle.adjustedTargetLabel).toContain(
       "Score- and venue-adjusted",

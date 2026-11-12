@@ -1,3 +1,10 @@
+import {
+  buildDressedRollingWindows,
+  emptyXgRollingCoverageReport,
+  type XgParticipationRow,
+  type XgRollingCoverageReport,
+} from "./aggregates";
+
 export type CreatedXgShotAssistRow = {
   model_version: string;
   feature_version: number;
@@ -23,6 +30,17 @@ export type CreatedXgTransitionEventRow = {
   player_id: number | null;
   shot_event_id: number;
   transition_created_xg: number;
+};
+
+/** The served xG of the shot a credit points at (same model and feature version). */
+export type CreatedXgShotXgRow = {
+  model_version: string;
+  feature_version: number;
+  game_id: number;
+  event_id: number;
+  xg: number;
+  /** Only approved shot xG may anchor a credit (decision 101: shadow rows are never served). */
+  model_approved: boolean;
 };
 
 export type CreatedXgShotIdentityRow = {
@@ -107,18 +125,37 @@ export type CreatedXgReconciliationReport = {
     transitionEvents: number;
   };
   skippedTransitionRows: CreatedXgSkippedTransitionRow[];
+  /** Decision 22: credits on one shot are exclusive and sum to at most its xG. */
+  creditCap: {
+    creditedShots: number;
+    cappedShots: number;
+    /** Credit removed by the cap (raw credit minus credited xG). */
+    creditAboveShotXg: number;
+    /** Credits skipped because the shot's xG under this model is unknown. */
+    creditsWithoutShotXg: number;
+    /** Shots whose credited total exceeds their xG after the cap (must be 0). */
+    shotsOverCap: number;
+  };
 };
 
 export type BuildCreatedXgAggregatesResult = {
   playerGameRows: PlayerCreatedXgGameAggregateRow[];
   playerRollingRows: PlayerCreatedXgRollingAggregateRow[];
   reconciliation: CreatedXgReconciliationReport;
+  rollingCoverage: XgRollingCoverageReport["player"];
 };
 
 export type BuildCreatedXgAggregatesOptions = {
   generatedAt?: string;
   rollingWindows?: number[];
   tolerance?: number;
+  /** Skater dressed-game ledger; without it no rolling rows are written. */
+  participation?: XgParticipationRow[];
+  /**
+   * `xgCoverageGameKey` of games whose credit sources are known to have been
+   * built for this model; only there is a dressed game with no credit a zero.
+   */
+  coveredGameKeys?: Set<string>;
 };
 
 const DEFAULT_ROLLING_WINDOWS = [5, 10, 20];
@@ -164,6 +201,8 @@ function sourceProvenance(args: {
     formula:
       "created_xg = shot_assist_created_xg + selected_non_shooter_transition_created_xg + rebound_created_xg",
     reboundCreatedXgIncluded: false,
+    creditContract:
+      "exclusive: credits on one shot sum to at most the shot's xG (decision 22); over-credited shots are scaled proportionally",
     transitionSelection:
       "max one non-shooter creator credit per player-shot across controlled entry, controlled exit, and entry assist proxy events",
     generatedAt: args.generatedAt,
@@ -224,74 +263,74 @@ function addGameRowComponent(
   rowsByKey.set(key, row);
 }
 
+/**
+ * Rolling created xG over the player's last N dressed games (not the last N
+ * games that happened to carry a credit), per (model, feature, season).
+ */
 function buildRollingRows(args: {
   rows: PlayerCreatedXgGameAggregateRow[];
   windows: number[];
   generatedAt: string;
+  participation: XgParticipationRow[] | undefined;
+  coveredGameKeys: Set<string> | undefined;
+  report: XgRollingCoverageReport;
 }): PlayerCreatedXgRollingAggregateRow[] {
-  const byPlayer = new Map<number, PlayerCreatedXgGameAggregateRow[]>();
-  for (const row of args.rows) {
-    const current = byPlayer.get(row.player_id) ?? [];
-    current.push(row);
-    byPlayer.set(row.player_id, current);
-  }
+  const modelFeaturePairs = Array.from(
+    new Map(
+      args.rows.map((row) => [
+        `${row.model_version}:${row.feature_version}`,
+        { modelVersion: row.model_version, featureVersion: row.feature_version },
+      ])
+    ).values()
+  );
+  const windows = buildDressedRollingWindows({
+    scope: "player",
+    rows: args.rows,
+    entityIdOf: (row) => row.player_id,
+    participation: args.participation,
+    modelFeaturePairs,
+    windows: args.windows,
+    coveredGameKeys: args.coveredGameKeys,
+    report: args.report,
+  });
+  const sum = (rows: Array<PlayerCreatedXgGameAggregateRow | null>, value: (row: PlayerCreatedXgGameAggregateRow) => number) =>
+    rows.reduce((total, row) => total + (row ? value(row) : 0), 0);
 
-  const out: PlayerCreatedXgRollingAggregateRow[] = [];
-  for (const [playerId, rows] of byPlayer) {
-    const sorted = [...rows].sort((left, right) =>
-      gameSortValue(left).localeCompare(gameSortValue(right))
-    );
-    for (let index = 0; index < sorted.length; index += 1) {
-      const current = sorted[index]!;
-      for (const windowGames of args.windows) {
-        const windowRows = sorted.slice(Math.max(0, index - windowGames + 1), index + 1);
-        const shotAssistCreatedXg = roundMetric(
-          windowRows.reduce((sum, row) => sum + row.shot_assist_created_xg, 0)
-        );
-        const transitionCreatedXg = roundMetric(
-          windowRows.reduce((sum, row) => sum + row.transition_created_xg, 0)
-        );
-        const reboundCreatedXg = roundMetric(
-          windowRows.reduce((sum, row) => sum + row.rebound_created_xg, 0)
-        );
-
-        out.push({
-          model_version: current.model_version,
-          feature_version: current.feature_version,
-          season_id: current.season_id,
-          player_id: playerId,
-          team_id: current.team_id,
-          as_of_game_id: current.game_id,
-          as_of_game_date: current.game_date,
-          window_games: windowGames,
-          games_count: windowRows.length,
-          shot_assist_created_xg: shotAssistCreatedXg,
-          transition_created_xg: transitionCreatedXg,
-          rebound_created_xg: reboundCreatedXg,
-          created_xg: roundMetric(
-            shotAssistCreatedXg + transitionCreatedXg + reboundCreatedXg
-          ),
-          shot_assist_events: windowRows.reduce(
-            (sum, row) => sum + row.shot_assist_events,
-            0
-          ),
-          transition_events: windowRows.reduce(
-            (sum, row) => sum + row.transition_events,
-            0
-          ),
-          rebound_events: windowRows.reduce((sum, row) => sum + row.rebound_events, 0),
-          provenance: sourceProvenance({
-            modelVersion: current.model_version,
-            featureVersion: current.feature_version,
-            generatedAt: args.generatedAt,
-            rollingWindowGames: windowGames,
-          }),
-          updated_at: args.generatedAt,
-        });
-      }
-    }
-  }
-  return out;
+  return windows.map((window) => {
+    const rows = window.rows;
+    const shotAssistCreatedXg = roundMetric(sum(rows, (row) => row.shot_assist_created_xg));
+    const transitionCreatedXg = roundMetric(sum(rows, (row) => row.transition_created_xg));
+    const reboundCreatedXg = roundMetric(sum(rows, (row) => row.rebound_created_xg));
+    const lastRow = rows[rows.length - 1] ?? null;
+    return {
+      model_version: window.modelVersion,
+      feature_version: window.featureVersion,
+      season_id: window.asOf.season_id,
+      player_id: window.asOf.entity_id,
+      team_id: window.asOf.team_id ?? lastRow?.team_id ?? null,
+      as_of_game_id: window.asOf.game_id,
+      as_of_game_date: window.asOf.game_date,
+      window_games: window.windowGames,
+      games_count: rows.length,
+      shot_assist_created_xg: shotAssistCreatedXg,
+      transition_created_xg: transitionCreatedXg,
+      rebound_created_xg: reboundCreatedXg,
+      created_xg: roundMetric(shotAssistCreatedXg + transitionCreatedXg + reboundCreatedXg),
+      shot_assist_events: sum(rows, (row) => row.shot_assist_events),
+      transition_events: sum(rows, (row) => row.transition_events),
+      rebound_events: sum(rows, (row) => row.rebound_events),
+      provenance: {
+        ...sourceProvenance({
+          modelVersion: window.modelVersion,
+          featureVersion: window.featureVersion,
+          generatedAt: args.generatedAt,
+          rollingWindowGames: window.windowGames,
+        }),
+        windowBasis: "dressed_games",
+      },
+      updated_at: args.generatedAt,
+    };
+  });
 }
 
 function summarize(rows: PlayerCreatedXgGameAggregateRow[]) {
@@ -315,10 +354,28 @@ function summarize(rows: PlayerCreatedXgGameAggregateRow[]) {
   );
 }
 
+type PendingCredit = {
+  modelVersion: string;
+  featureVersion: number;
+  seasonId: number | null;
+  gameId: number;
+  gameDate: string | null;
+  playerId: number;
+  teamId: number | null;
+  component: "shotAssist" | "transition";
+  value: number;
+};
+
+function creditShotKey(modelVersion: string, featureVersion: number, gameId: number, shotEventId: number): string {
+  return `${modelVersion}:${featureVersion}:${gameId}:${shotEventId}`;
+}
+
 export function buildCreatedXgAggregates(args: {
   shotAssistRows: CreatedXgShotAssistRow[];
   transitionRows: CreatedXgTransitionEventRow[];
   shotIdentityRows: CreatedXgShotIdentityRow[];
+  /** Served shot xG; a credit on a shot without one is unknown and skipped. */
+  shotXgRows: CreatedXgShotXgRow[];
   options?: BuildCreatedXgAggregatesOptions;
 }): BuildCreatedXgAggregatesResult {
   const generatedAt = args.options?.generatedAt ?? new Date().toISOString();
@@ -337,15 +394,23 @@ export function buildCreatedXgAggregates(args: {
   let expectedTransitionCreatedXg = 0;
   let expectedShotAssistEvents = 0;
   let expectedTransitionEvents = 0;
+  const shotXgByKey = new Map(
+    args.shotXgRows
+      .filter((row) => row.model_approved === true && Number.isFinite(row.xg) && row.xg >= 0)
+      .map((row) => [creditShotKey(row.model_version, row.feature_version, row.game_id, row.event_id), row.xg])
+  );
+  const pendingByShot = new Map<string, PendingCredit[]>();
+  const addPendingCredit = (shotKey: string, credit: PendingCredit) => {
+    const credits = pendingByShot.get(shotKey);
+    if (credits) credits.push(credit);
+    else pendingByShot.set(shotKey, [credit]);
+  };
 
   for (const row of args.shotAssistRows) {
     if (!Number.isFinite(row.expected_primary_assists)) continue;
     if (row.shot_assist_player_id === row.shooter_player_id) continue;
 
-    const value = roundMetric(row.expected_primary_assists);
-    expectedShotAssistCreatedXg = roundMetric(expectedShotAssistCreatedXg + value);
-    expectedShotAssistEvents += 1;
-    addGameRowComponent(rowsByKey, {
+    addPendingCredit(creditShotKey(row.model_version, row.feature_version, row.game_id, row.event_id), {
       modelVersion: row.model_version,
       featureVersion: row.feature_version,
       seasonId: row.season_id,
@@ -353,9 +418,8 @@ export function buildCreatedXgAggregates(args: {
       gameDate: row.game_date,
       playerId: row.shot_assist_player_id,
       teamId: row.event_owner_team_id,
-      generatedAt,
       component: "shotAssist",
-      value,
+      value: roundMetric(row.expected_primary_assists),
     });
   }
 
@@ -413,10 +477,7 @@ export function buildCreatedXgAggregates(args: {
   }
 
   for (const row of bestTransitionByPlayerShot.values()) {
-    const value = roundMetric(row.transition_created_xg);
-    expectedTransitionCreatedXg = roundMetric(expectedTransitionCreatedXg + value);
-    expectedTransitionEvents += 1;
-    addGameRowComponent(rowsByKey, {
+    addPendingCredit(creditShotKey(row.model_version, row.feature_version, row.game_id, row.shot_event_id), {
       modelVersion: row.model_version,
       featureVersion: row.feature_version,
       seasonId: row.season_id,
@@ -424,11 +485,50 @@ export function buildCreatedXgAggregates(args: {
       gameDate: row.game_date,
       playerId: row.player_id!,
       teamId: row.team_id,
-      generatedAt,
       component: "transition",
-      value,
+      value: roundMetric(row.transition_created_xg),
     });
   }
+
+  // Decision 22: the contributors on one shot share at most that shot's xG.
+  // Over-credited shots are scaled proportionally (order-independent).
+  const creditCap = {
+    creditedShots: 0,
+    cappedShots: 0,
+    creditAboveShotXg: 0,
+    creditsWithoutShotXg: 0,
+    shotsOverCap: 0,
+  };
+  for (const [shotKey, credits] of pendingByShot) {
+    const shotXg = shotXgByKey.get(shotKey);
+    if (shotXg == null) {
+      creditCap.creditsWithoutShotXg += credits.length;
+      continue;
+    }
+    const raw = credits.reduce((sum, credit) => sum + Math.max(0, credit.value), 0);
+    const scale = raw > shotXg && raw > 0 ? shotXg / raw : 1;
+    creditCap.creditedShots += 1;
+    if (scale < 1) {
+      creditCap.cappedShots += 1;
+      creditCap.creditAboveShotXg = roundMetric(creditCap.creditAboveShotXg + raw - shotXg);
+    }
+    let credited = 0;
+    for (const credit of credits) {
+      const value = Math.max(0, credit.value) * scale;
+      credited += value;
+      if (credit.component === "shotAssist") {
+        expectedShotAssistCreatedXg += value;
+        expectedShotAssistEvents += 1;
+      } else {
+        expectedTransitionCreatedXg += value;
+        expectedTransitionEvents += 1;
+      }
+      addGameRowComponent(rowsByKey, { ...credit, generatedAt, value });
+    }
+    if (credited > shotXg + 1e-9) creditCap.shotsOverCap += 1;
+  }
+  expectedShotAssistCreatedXg = roundMetric(expectedShotAssistCreatedXg);
+  expectedTransitionCreatedXg = roundMetric(expectedTransitionCreatedXg);
 
   const playerGameRows = Array.from(rowsByKey.values()).sort((left, right) =>
     `${gameSortValue(left)}:${left.player_id}`.localeCompare(
@@ -451,11 +551,23 @@ export function buildCreatedXgAggregates(args: {
     transitionEvents: actual.transitionEvents - expected.transitionEvents,
   };
 
+  const rollingReport = emptyXgRollingCoverageReport();
+  const playerRollingRows = buildRollingRows({
+    rows: playerGameRows,
+    windows,
+    generatedAt,
+    participation: args.options?.participation,
+    coveredGameKeys: args.options?.coveredGameKeys,
+    report: rollingReport,
+  });
+
   return {
     playerGameRows,
-    playerRollingRows: buildRollingRows({ rows: playerGameRows, windows, generatedAt }),
+    playerRollingRows,
+    rollingCoverage: rollingReport.player,
     reconciliation: {
       passed:
+        creditCap.shotsOverCap === 0 &&
         Math.abs(deltas.shotAssistCreatedXg) <= tolerance &&
         Math.abs(deltas.transitionCreatedXg) <= tolerance &&
         Math.abs(deltas.createdXg) <= tolerance &&
@@ -466,6 +578,7 @@ export function buildCreatedXgAggregates(args: {
       actual,
       deltas,
       skippedTransitionRows,
+      creditCap,
     },
   };
 }

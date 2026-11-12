@@ -18,8 +18,8 @@ type DisplayGoalie = GoalieBaseStats & {
   playerId: number;
   goalieFullName: string;
   team?: string;
-  percentage?: number; // Optional: Comparison percentage (calculated in GoalieList/Leaderboard prep)
-  ranking?: Ranking; // Optional: Ranking string ('Elite', etc.)
+  percentage?: number | null; // Optional: Comparison percentage; null = unclassified week
+  ranking?: Ranking | null; // Optional: Ranking string ('Elite', etc.); null = unclassified week
   // Add gameDate if displaying games
   gameDate?: Date | string;
   // Add derived stats if calculated upstream
@@ -63,7 +63,7 @@ const GoalieTable: FC<Props> = ({
   sortConfig
 }) => {
   // Helper to determine CSS class based on comparison percentage (if available)
-  const getPercentageClass = (percentage: number | undefined): string => {
+  const getPercentageClass = (percentage: number | null | undefined): string => {
     // ... (keep existing logic)
     const p = percentage ?? 0;
     if (p >= 75) return styles.percentHigh;
@@ -254,7 +254,7 @@ const GoalieTable: FC<Props> = ({
                   type="button"
                   onClick={() => requestSort("percentage")}
                 >
-                  % &gt; AVG
+                  % vs Starter AVG
                   {getSortIndicator("percentage")}
                 </button>
               </th>
@@ -313,13 +313,13 @@ const GoalieTable: FC<Props> = ({
                 {/* Optional Percentage/Ranking cells */}
                 {goalie.percentage !== undefined && (
                   <td className={getPercentageClass(goalie.percentage)}>
-                    {goalie.percentage !== undefined
+                    {goalie.percentage != null
                       ? `${goalie.percentage.toFixed(1)}%`
-                      : "N/A"}
+                      : "Unclassified"}
                   </td>
                 )}
                 {goalie.ranking !== undefined && (
-                  <td>{goalie.ranking ?? "N/A"}</td>
+                  <td>{goalie.ranking ?? "Unclassified"}</td>
                 )}
               </tr>
             )

@@ -54,10 +54,31 @@ export function compareTrendBandRowsForSelection(
   return dateB.localeCompare(dateA);
 }
 
+/**
+ * Decision 26: the band reader regresses toward the band (above-band form is expected to come back
+ * down; never momentum), with a size fitted and validated first (L7 owns the band redesign). Until a
+ * fitted size is supplied the reader is inert: it reports the distance but moves no rate.
+ * `fittedRegressionSize` is the share of the band-relative excess expected NOT to persist, per unit
+ * of weighted band distance; it comes from L7's validated fit, never a default here.
+ */
+export type TrendBandReaderMode =
+  | { mode: "inert" }
+  | { mode: "regress_toward_band"; fittedRegressionSize: number; fitVersion: string };
+
+export function resolveTrendBandReaderMode(env: Record<string, string | undefined> = process.env): TrendBandReaderMode {
+  const size = Number(env.FORGE_TREND_BAND_REGRESSION_SIZE);
+  const version = env.FORGE_TREND_BAND_REGRESSION_FIT_VERSION?.trim();
+  return env.FORGE_TREND_BAND_READER === "regress_toward_band" && Number.isFinite(size) && size > 0 && size <= 1 && version
+    ? { mode: "regress_toward_band", fittedRegressionSize: size, fitVersion: version }
+    : { mode: "inert" };
+}
+
 export function computeSkaterTrendAdjustment(args: {
   row: SustainabilityTrendBandRow;
   asOfDate: string;
+  reader?: TrendBandReaderMode;
 }): SkaterTrendAdjustment | null {
+  const reader = args.reader ?? resolveTrendBandReaderMode();
   const value = finiteOrNull(args.row.value);
   const ciLower = finiteOrNull(args.row.ci_lower);
   const ciUpper = finiteOrNull(args.row.ci_upper);
@@ -111,6 +132,29 @@ export function computeSkaterTrendAdjustment(args: {
   }
 
   const weightedSignal = boundedDistance * confidence;
+  if (reader.mode === "inert") {
+    return {
+      metricKey: args.row.metric_key,
+      windowCode: args.row.window_code,
+      snapshotDate,
+      ageDays,
+      recencyClass,
+      effectState: "inert_pending_fitted_regression",
+      value,
+      ciLower: lower,
+      ciUpper: upper,
+      nEff,
+      confidence: Number(confidence.toFixed(4)),
+      signedDistance: Number(weightedSignal.toFixed(4)),
+      shotRateMultiplier: 1,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1,
+      uncertaintyVolatilityMultiplier: 1
+    };
+  }
+  // Toward the band: above-band (positive distance) lowers the rates, below-band raises them.
+  const toward = (scale: number) =>
+    Number(Math.max(0, 1 - reader.fittedRegressionSize * weightedSignal * scale).toFixed(4));
 
   return {
     metricKey: args.row.metric_key,
@@ -125,11 +169,11 @@ export function computeSkaterTrendAdjustment(args: {
     nEff,
     confidence: Number(confidence.toFixed(4)),
     signedDistance: Number(weightedSignal.toFixed(4)),
-    shotRateMultiplier: Number(clamp(1 + weightedSignal * 0.08, 0.88, 1.12).toFixed(4)),
-    goalRateMultiplier: Number(clamp(1 + weightedSignal * 0.1, 0.86, 1.14).toFixed(4)),
-    assistRateMultiplier: Number(clamp(1 + weightedSignal * 0.08, 0.88, 1.12).toFixed(4)),
-    uncertaintyVolatilityMultiplier: Number(
-      (1 + clamp(Math.abs(weightedSignal) * 0.45, 0, 0.55)).toFixed(4)
-    )
+    shotRateMultiplier: toward(1),
+    goalRateMultiplier: toward(1),
+    assistRateMultiplier: toward(1),
+    // The band is not evidence of extra volatility until that is fitted too.
+    uncertaintyVolatilityMultiplier: 1,
+    regressionFitVersion: reader.fitVersion
   };
 }

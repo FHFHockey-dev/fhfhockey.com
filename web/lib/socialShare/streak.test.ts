@@ -6,7 +6,7 @@ type Skater = Extract<SharePlayerRecent, { kind: "skater" }>;
 // A neutral skater: 2 points in 5 GP over 2 games, TOI and PP TOI flat, no specialist rates: no streak.
 const skater = (patch: Partial<Skater> = {}, group: "F" | "D" = "F") => ({ group, recent: { kind: "skater" as const, games: 5, through: "2026-10-24", goals: 1, assists: 1, points: 2, shots: 10,
   hitsPerGame: 1, blocksPerGame: 1, toiSeconds: 1000, ppPoints: 1, line: null, ppUnit: null, toiSeasonSeconds: 1000, pointGames: 2, toiPreSeconds: 1000, ppToiSeconds: 100, ppToiPreSeconds: 100, ...patch } });
-const goalie = (qualityStarts: number, saves: number, shotsAgainst: number, games = 5) => ({ group: "G" as const, recent: { kind: "goalie" as const, games, through: "2026-10-24", wins: 3, saves, shotsAgainst, goalsAgainst: shotsAgainst - saves, qualityStarts, shutouts: 0 } });
+const goalie = (qualityStarts: number, saves: number, shotsAgainst: number, games = 5) => ({ group: "G" as const, recent: { kind: "goalie" as const, games, through: "2026-10-24", record: { wins: 3, losses: 1, otLosses: 1 }, starts: games, saves, shotsAgainst, goalsAgainst: shotsAgainst - saves, qualityStarts, shutouts: 0 } });
 const kind = (player: Parameters<typeof streakOf>[0], context: Parameters<typeof streakOf>[1] = "pickup") => streakOf(player, context)?.kind ?? null;
 
 describe("streak thresholds (TJ, ticket 18)", () => {

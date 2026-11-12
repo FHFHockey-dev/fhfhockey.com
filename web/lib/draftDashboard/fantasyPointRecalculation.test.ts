@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { recalculateFantasyPoints } from "./fantasyPointRecalculation";
+import { likeForLikeStatDiff, recalculateFantasyPoints } from "./fantasyPointRecalculation";
 import { computeProratedFantasyPoints } from "lib/projectionsConfig/proration";
 
 const player = {
@@ -30,7 +30,8 @@ describe("cached fantasy-point recalculation", () => {
     expect(result.fantasyPoints).toEqual({
       projected: 14,
       actual: 2,
-      diffPercentage: ((2 - 14) / 14) * 100,
+      // Like with like (M-DRF-010): 0.4 actual FP/G vs 1.4 projected FP/G.
+      diffPercentage: ((0.4 - 1.4) / 1.4) * 100,
       projectedPerGame: 1.4,
       actualPerGame: 0.4
     });
@@ -76,5 +77,48 @@ describe("cached fantasy-point recalculation", () => {
     expect(defense.fantasyPoints.projected).toBeCloseTo(10 * 0.32 + 5 * 0.32 + 3);
     expect(forward.fantasyPoints.projected).toBeCloseTo(10 * 0.3 + 5 * 0.3 + 3);
     expect(computeProratedFantasyPoints(defense, true, scoring)).toBeCloseTo((10 * 0.32 + 5 * 0.32 + 3) * 84 / 10);
+  });
+
+  it("compares season-to-date fantasy points with the projection pro-rated to games played (M-DRF-010)", () => {
+    // Exactly on pace: 41 goals over 82 projected GP; 7.5 goals in 15 games.
+    const onPace = {
+      ...player,
+      combinedStats: {
+        GAMES_PLAYED: { projected: 82, actual: 15 },
+        GOALS: { projected: 41, actual: 7.5 },
+      },
+    };
+    const [result] = recalculateFantasyPoints([onPace], { GOALS: 2 });
+    expect(result.fantasyPoints.projected).toBe(82);
+    expect(result.fantasyPoints.actual).toBe(15);
+    expect(result.fantasyPoints.diffPercentage).toBe(0);
+  });
+
+  it("leaves the fantasy-point difference unknown when games played is unknown", () => {
+    const [result] = recalculateFantasyPoints(
+      [{ ...player, combinedStats: { GAMES_PLAYED: { projected: 82, actual: null }, GOALS: { projected: 41, actual: 7 } } }],
+      { GOALS: 2 }
+    );
+    expect(result.fantasyPoints.actual).toBe(14);
+    expect(result.fantasyPoints.diffPercentage).toBeNull();
+  });
+});
+
+describe("like-for-like per-stat differences (M-DRF-010)", () => {
+  it("pro-rates counting stats to actual games played", () => {
+    expect(likeForLikeStatDiff("GOALS", 7.5, 41, 15, 82)).toBe(0);
+    expect(likeForLikeStatDiff("GOALS", 15, 41, 15, 82)).toBeCloseTo(100);
+  });
+
+  it("compares rate stats directly", () => {
+    expect(likeForLikeStatDiff("SAVE_PERCENTAGE", 0.9, 0.9, 3, 60)).toBe(0);
+    expect(likeForLikeStatDiff("TIME_ON_ICE_PER_GAME", 1200, 1000, 10, 82)).toBeCloseTo(20);
+  });
+
+  it("returns unknown, never zero, without games played and gives GP itself no diff", () => {
+    expect(likeForLikeStatDiff("GOALS", 5, 41, null, 82)).toBeNull();
+    expect(likeForLikeStatDiff("GOALS", 0, 41, 0, 82)).toBeNull();
+    expect(likeForLikeStatDiff("GOALS", 5, 41, 10, null)).toBeNull();
+    expect(likeForLikeStatDiff("GAMES_PLAYED", 15, 82, 15, 82)).toBeNull();
   });
 });

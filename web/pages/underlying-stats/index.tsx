@@ -116,6 +116,9 @@ const tierLabels: Record<SpecialTeamTier, string> = {
   3: "Tier 3 · Subpar"
 };
 
+/** Pooled special-teams tier unknown (decision 20, W1 P0 #13): never tier 3. */
+const UNKNOWN_TIER_TITLE = "Tier unknown (pooled special teams unavailable)";
+
 const tierTableLabels: Record<SpecialTeamTier, string> = {
   1: "Tier 1",
   2: "Tier 2",
@@ -668,7 +671,8 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
     }
   };
 
-  const resolveTierClass = (tier: SpecialTeamTier): string => {
+  const resolveTierClass = (tier: SpecialTeamTier | null): string => {
+    if (tier == null) return "";
     switch (tier) {
       case 1:
         return styles.tier1;
@@ -1179,9 +1183,9 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         label: (
                           <abbr
                             className={styles.metricHeader}
-                            title="SoS Future = the same BCS-style schedule formula, but for upcoming opponents."
+                            title="Record SoS Future = upcoming opponents' point % (BCS-style: two-thirds opponents, one-third opponents' opponents). Record only; not adjusted for team ratings."
                           >
-                            SoS Future
+                            Record SoS Future
                           </abbr>
                         )
                       })}
@@ -1241,9 +1245,9 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         label: (
                           <abbr
                             className={styles.metricHeader}
-                            title="SoS Past = BCS-style schedule strength from games already played."
+                            title="Record SoS Past = point % of opponents already played (BCS-style: two-thirds opponents, one-third opponents' opponents). Record only; not adjusted for team ratings."
                           >
-                            SoS Past
+                            Record SoS Past
                           </abbr>
                         )
                       })}
@@ -1252,9 +1256,9 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         label: (
                           <abbr
                             className={styles.metricHeader}
-                            title="SoS Future = the same BCS-style schedule formula, but for upcoming opponents."
+                            title="Record SoS Future = upcoming opponents' point % (BCS-style: two-thirds opponents, one-third opponents' opponents). Record only; not adjusted for team ratings."
                           >
-                            SoS Future
+                            Record SoS Future
                           </abbr>
                         )
                       })}
@@ -1417,7 +1421,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           <td className={styles.sosCell}>
                             <span
                               className={`${styles.sosPill} ${getSosClass(team.sosFuture)}`}
-                              title={`SoS Future: ${formatSos(team.sosFuture)} (${formatRank(
+                              title={`Record SoS Future: ${formatSos(team.sosFuture)} (${formatRank(
                                 team.sosFutureRank
                               )}). Higher means a tougher remaining slate.`}
                             >
@@ -1465,7 +1469,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           <td className={styles.sosCell}>
                             <span
                               className={`${styles.sosPill} ${getSosClass(team.sosPast)}`}
-                              title={`SoS Past: ${formatSos(team.sosPast)} (${formatRank(
+                              title={`Record SoS Past: ${formatSos(team.sosPast)} (${formatRank(
                                 team.sosPastRank
                               )}). Higher means tougher opponents already faced.`}
                             >
@@ -1475,7 +1479,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           <td className={styles.sosCell}>
                             <span
                               className={`${styles.sosPill} ${getSosClass(team.sosFuture)}`}
-                              title={`SoS Future: ${formatSos(team.sosFuture)} (${formatRank(
+                              title={`Record SoS Future: ${formatSos(team.sosFuture)} (${formatRank(
                                 team.sosFutureRank
                               )}). Higher means a tougher remaining slate.`}
                             >
@@ -1489,11 +1493,15 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           <td className={styles.specialTeamCell}>
                             <span
                               className={`${styles.tierBadge} ${resolveTierClass(team.ppTier)}`}
-                              title={`${tierLabels[team.ppTier]} · ${formatRank(
-                                team.ppRank
-                              )} · ${formatPct(team.ppPct)}`}
+                              title={
+                                team.ppTier == null
+                                  ? UNKNOWN_TIER_TITLE
+                                  : `${tierLabels[team.ppTier]} · ${formatRank(
+                                      team.ppRank
+                                    )} · ${formatPct(team.ppPct)}`
+                              }
                             >
-                              {tierTableLabels[team.ppTier]}
+                              {team.ppTier == null ? "—" : tierTableLabels[team.ppTier]}
                             </span>
                             <span className={styles.specialTeamMeta}>
                               {formatRank(team.ppRank)} ·{" "}
@@ -1503,11 +1511,15 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           <td className={styles.specialTeamCell}>
                             <span
                               className={`${styles.tierBadge} ${resolveTierClass(team.pkTier)}`}
-                              title={`${tierLabels[team.pkTier]} · ${formatRank(
-                                team.pkRank
-                              )} · ${formatPct(team.pkPct)}`}
+                              title={
+                                team.pkTier == null
+                                  ? UNKNOWN_TIER_TITLE
+                                  : `${tierLabels[team.pkTier]} · ${formatRank(
+                                      team.pkRank
+                                    )} · ${formatPct(team.pkPct)}`
+                              }
                             >
-                              {tierTableLabels[team.pkTier]}
+                              {team.pkTier == null ? "—" : tierTableLabels[team.pkTier]}
                             </span>
                             <span className={styles.specialTeamMeta}>
                               {formatRank(team.pkRank)} ·{" "}

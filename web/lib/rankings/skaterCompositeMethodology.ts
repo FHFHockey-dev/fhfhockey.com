@@ -10,7 +10,11 @@ export const OFFENSE_RATING_CONTRACT = {
   label: "Offense Rating",
   outputField: "offense_rating",
   peerGroup: "deployment",
-  scale: "percentile_0_to_100",
+  // Decision 74: a weighted mean of component percentiles is a 0–100 score,
+  // not a percentile; any percentile is computed separately in a cohort.
+  scale: "weighted_score_0_to_100",
+  componentPolicy:
+    "Every listed component percentile is required; a missing input refuses the rating as insufficient data (decision 102). Weights are never renormalised.",
   formula:
     "0.35 * scoring_rate_score + 0.30 * chance_creation_score + 0.20 * playmaking_score + 0.15 * finishing_context_score",
   components: {
@@ -24,7 +28,7 @@ export const OFFENSE_RATING_CONTRACT = {
     ],
   },
   caveats: [
-    "Use percentiles in the active peer group, not raw values.",
+    "Built from component percentiles in the active peer group; the rating itself is a 0–100 score, not a percentile.",
     "Treat finishing components as context, not as the entire offensive rating.",
   ],
 } as const;
@@ -33,7 +37,9 @@ export const DEFENSE_RATING_CONTRACT = {
   label: DEFENSIVE_COMPOSITE_LABELS.overall,
   outputField: "defense_rating",
   peerGroup: "deployment",
-  scale: "percentile_0_to_100",
+  scale: "weighted_score_0_to_100",
+  componentPolicy:
+    "Every listed component percentile is required; a missing input refuses the rating as insufficient data (decision 102). Weights are never renormalised.",
   formula:
     "0.45 * suppression_score + 0.35 * on_ice_process_score + 0.20 * physical_support_score",
   components: {
@@ -67,7 +73,11 @@ export function getMcmComponentGroups(strength: "all" | "5v5" | "ev" | "pp" | "p
 }
 
 export const MCM_MINIMUM_PEER_COUNT = 3;
-export const SKATER_COMPOSITE_METHODOLOGY_VERSION = "contextual_composites_v2";
+// v3 (2026-11-11): mid-rank component percentiles (decision 90), Offense and
+// Defense refuse missing inputs (decision 102) and are labelled scores
+// (decision 74). BEAST thresholds are carried from v2 unchanged and still need
+// re-evaluation on the v3 scale before any cut-off change (decision 74).
+export const SKATER_COMPOSITE_METHODOLOGY_VERSION = "contextual_composites_v3";
 export const MCM_SOURCE_PENDING_COMPONENTS = [] as const;
 
 export const MCM_SCORE_CONTRACT = {
@@ -79,7 +89,7 @@ export const MCM_SCORE_CONTRACT = {
     "0.45 * average(top_2(riff_percentiles)) + 0.35 * max(scoring_percentiles) + 0.20 * average(component_percentiles)",
   componentGroups: MCM_COMPONENTS,
   componentPolicy: "All six non-PP inputs are required. PP points are also required for all/pp strength; PP is excluded for 5v5/ev/pk. Missing required inputs never reweight the formula.",
-  percentileConvention: "100 * strictly worse qualified peers / (qualified peers - 1); tied values receive the same percentile.",
+  percentileConvention: "Mid-rank (decision 90): 100 * (strictly worse peers + half the other tied peers) / (qualified peers - 1); tied values share one percentile.",
   minimumPeerCount: MCM_MINIMUM_PEER_COUNT,
   tierComparison: "Compare the unrounded weighted score; round only for display.",
   sourcePendingComponents: MCM_SOURCE_PENDING_COMPONENTS,

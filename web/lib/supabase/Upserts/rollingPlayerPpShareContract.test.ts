@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  createRatioRollingAccumulator,
+  getRatioRollingSnapshot,
+  updateRatioRollingAccumulator
+} from "./rollingMetricAggregation";
+import {
   ROLLING_PLAYER_PP_SHARE_CONTRACT,
   resolvePlayerPpToiSeconds,
   resolvePpShareComponents,
@@ -106,5 +111,60 @@ describe("rollingPlayerPpShareContract", () => {
       pp_unit_relative_toi: 30,
       pp_vs_unit_avg: 0.2
     });
+  });
+
+  it("uses the team PP clock for every dressed game, including games with no player PP time (D6)", () => {
+    // Five dressed games, PP time in two; the team had 120 s of PP in each.
+    const games = [
+      { builderPlayerPpToi: 90, builderTeamShare: 0.75 },
+      { builderPlayerPpToi: 0, builderTeamShare: 0 },
+      { builderPlayerPpToi: 60, builderTeamShare: 0.5 },
+      { builderPlayerPpToi: 0, builderTeamShare: 0 },
+      { builderPlayerPpToi: 0, builderTeamShare: 0 }
+    ];
+    const pool = (withClock: boolean) => {
+      const acc = createRatioRollingAccumulator();
+      for (const game of games) {
+        updateRatioRollingAccumulator(
+          acc,
+          resolvePpShareComponents({
+            ...game,
+            teamPpClock: withClock ? { seconds: 120, source: "fixture" } : null
+          }),
+          { windowFamily: "ratio_performance" }
+        );
+      }
+      return getRatioRollingSnapshot(acc, { scale: 1 }).windows[5];
+    };
+
+    // 150 s of 600 s team PP time, not 150 of the 240 s in the two PP games.
+    expect(pool(true)).toBeCloseTo(0.25, 6);
+    expect(pool(false)).toBeCloseTo(0.625, 6);
+  });
+
+  it("keeps a known zero clock and an unknown player PP time distinct", () => {
+    expect(
+      resolvePpShareComponents({
+        builderPlayerPpToi: 0,
+        builderTeamShare: null,
+        teamPpClock: { seconds: 0, source: "fixture" }
+      })
+    ).toEqual({ numerator: 0, denominator: 0 });
+    expect(
+      resolvePpShareComponents({
+        builderPlayerPpToi: null,
+        builderTeamShare: null,
+        wgoPlayerPpToi: null,
+        teamPpClock: { seconds: 120, source: "fixture" }
+      })
+    ).toBeNull();
+    // An impossible share is passed through for investigation, never capped.
+    expect(
+      resolvePpShareComponents({
+        builderPlayerPpToi: 150,
+        builderTeamShare: null,
+        teamPpClock: { seconds: 120, source: "fixture" }
+      })
+    ).toEqual({ numerator: 150, denominator: 120 });
   });
 });

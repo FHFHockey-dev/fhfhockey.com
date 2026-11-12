@@ -44,6 +44,19 @@ describe("Yahoo goalie starting status", () => {
     expect(total).toBeLessThanOrEqual(1);
   });
 
+  it("keeps an absent goalie's unknown mass unresolved: Not Starting never turns a partial group into certainty (Astra PR2)", () => {
+    // g3 is on the team but has no bridge row: rows for g1 (0.6) and g2 (0.2) leave 0.2 of the start unassigned.
+    const partial = [row("g1", "1", 0.6, { conditionalStats: { ...line, SAVES_GOALIE: 30 }, stats: { SAVES_GOALIE: 18, WINS_GOALIE: 0.3, SHUTOUTS_GOALIE: null } }),
+      row("g2", "1", 0.2)];
+    const result = apply(partial, [goalie("g2", mark(false))]);
+    // P(g1 | g2 out) = 0.6 / (1 − 0.2) = 0.75, never 1: the 0.2 unassigned mass may be g3's.
+    expect(find(result, "g1").startProbability).toBeCloseTo(0.75, 12);
+    expect(find(result, "g1").stats.SAVES_GOALIE).toBeCloseTo(22.5, 4);
+    expect(find(result, "g2").startProbability).toBe(0);
+    // 0.25 stays unresolved.
+    expect(["g1", "g2"].reduce((sum, id) => sum + find(result, id).startProbability!, 0)).toBeCloseTo(0.75, 12);
+  });
+
   it("agrees with a news-confirmed starter but never overrides one it contradicts", () => {
     const confirmed = [row("g1", "1", 1, { confirmedStart: true }), row("g2", "1", 0), row("g3", "1", 0)];
     expect(find(apply(confirmed, [goalie("g2", mark(false))]), "g1")).toMatchObject({ startProbability: 1, confirmedStart: true });

@@ -45,6 +45,8 @@ export type TeamMatrixRequest = {
   search: string | null;
   page: number;
   pageSize: number;
+  /** Visible, user-lowerable sample floor (decision 98); below it a team shows "insufficient sample". */
+  minGp?: number;
 };
 
 type TeamPowerRow = {
@@ -69,20 +71,6 @@ type TeamPowerRow = {
   special_rating: number | null;
   discipline_rating: number | null;
   variance_flag: number | null;
-};
-
-type TeamUnderlyingRow = {
-  game_id?: number | null;
-  game_date: string;
-  team_id: number;
-  xgf: number;
-  xga: number;
-  gf: number;
-  ga: number;
-  ff: number;
-  fa: number;
-  cf: number;
-  ca: number;
 };
 
 type TeamGameContextRow = {
@@ -127,7 +115,13 @@ type TeamMeta = {
 type TeamStyleAggregate = {
   teamId: number | null;
   teamAbbreviation: string;
+  /** Games behind the totals: every eligible game when coverage is complete, else 0. */
   gamesCount: number;
+  /** Played regular-season team-games in the window (the ledger). */
+  eligibleGames: number;
+  /** Ledger games with one complete NST 5v5 row. */
+  coveredGames: number;
+  coverageComplete: boolean;
   latestDate: string | null;
   xgf: number | null;
   xga: number | null;
@@ -135,9 +129,14 @@ type TeamStyleAggregate = {
   ga: number | null;
   ff: number | null;
   fa: number | null;
-  cf: number | null;
-  ca: number | null;
-  source: "team_underlying_stats_summary" | "nst_team_5v5" | "none";
+  source: "nst_team_5v5";
+};
+
+/** One played regular-season team-game in the window: the eligible ledger for team style. */
+export type TeamStyleLedgerGame = {
+  teamId: number | null;
+  teamAbbreviation: string;
+  date: string;
 };
 
 type TeamGameContextAggregate = {
@@ -216,6 +215,11 @@ export type TeamMatrixRow = {
     latestPowerDate: string;
     styleSnapshotDate: string | null;
     styleGames: number;
+    styleCoverage?: {
+      eligibleGames: number;
+      coveredGames: number;
+      complete: boolean;
+    };
     ppTier: number | null;
     pkTier: number | null;
     trend10: number | null;
@@ -285,6 +289,10 @@ export type TeamMatrixResponse = {
     snapshotDate: string | null;
     latestAvailableSnapshotDate: string | null;
     styleSnapshotDate: string | null;
+    sampleFloor?: {
+      minGames: number;
+      label: string;
+    };
     sourceTables: string[];
     methodologyVersion?: string;
     methodologyUpdatedAt?: string;
@@ -308,6 +316,8 @@ export type TeamMatrixResponse = {
 const TEAM_QUERY_PAGE_SIZE = 1000;
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
+/** Default team sample floor in games (decision 98); the user can lower it with min_gp. */
+export const DEFAULT_TEAM_MIN_GP = 5;
 const TEAM_MATRIX_RESPONSE_CACHE_TTL_MS = 30_000;
 const TEAM_UNIT_TOI_SELECT =
   "team_id,game_id,game_date,snapshot_date,unit_type,unit_number,unit_share,unit_toi_seconds,team_unit_pool_toi_seconds,coverage_status,coverage_warnings" as const;
@@ -358,58 +368,60 @@ const METRIC_COLUMNS: TeamMatrixResponse["meta"]["metricColumns"] = [
   {
     metricKey: "xgf60",
     label: "xGF/60",
-    description: "Expected goals for per 60 from current team power ratings.",
+    description:
+      "Expected goals for per 60 from current team power ratings (built from NST xG).",
     lowerIsBetter: false,
     source: "team_power_ratings_daily.xgf60",
   },
   {
     metricKey: "xga60",
     label: "xGA/60",
-    description: "Expected goals against per 60. Lower raw values are better.",
+    description:
+      "Expected goals against per 60 from current team power ratings (built from NST xG). Lower raw values are better.",
     lowerIsBetter: true,
     source: "team_power_ratings_daily.xga60",
   },
   {
     metricKey: "xgf_percentage",
-    label: "xGF%",
-    description: "Raw five-on-five expected-goals control share.",
+    label: "xGF% (NST)",
+    description: "Raw 5v5 expected-goals share, NST xG only.",
     lowerIsBetter: false,
-    source: "team_underlying_stats_summary fiveOnFive allScores",
+    source: "nst_team_5v5 xgf, xga (Natural Stat Trick 5v5)",
   },
   {
     metricKey: "shot_quality",
     label: "Shot Quality",
-    description: "Raw xGF per Fenwick-for attempt.",
+    description: "Raw 5v5 NST xGF per unblocked shot attempt for.",
     lowerIsBetter: false,
-    source: "teamStyleMethodology.calculateTeamShotQuality",
+    source: "nst_team_5v5 xgf / ff",
   },
   {
     metricKey: "event_rate",
     label: "Event Rate",
-    description: "Raw five-on-five xG event rate per team game.",
+    description: "Raw 5v5 NST xGF + xGA per team game.",
     lowerIsBetter: false,
-    source: "teamStyleMethodology.calculateRunAndGunProfile",
+    source: "nst_team_5v5 (xgf + xga) / games",
   },
   {
     metricKey: "finishing_luck",
     label: "Fin Luck",
-    description: "Goals for above expected goals for.",
+    description: "5v5 goals for minus NST expected goals for.",
     lowerIsBetter: false,
-    source: "teamStyleMethodology.calculateTeamLuckComponents",
+    source: "nst_team_5v5 gf - xgf",
   },
   {
     metricKey: "save_luck",
     label: "Save Luck",
-    description: "Expected goals against minus goals against.",
+    description: "5v5 NST expected goals against minus goals against.",
     lowerIsBetter: false,
-    source: "teamStyleMethodology.calculateTeamLuckComponents",
+    source: "nst_team_5v5 xga - ga",
   },
   {
     metricKey: "net_luck",
     label: "Net Luck",
-    description: "Finishing luck plus save luck.",
+    description: "Finishing luck plus save luck (5v5, NST xG).",
     lowerIsBetter: false,
-    source: "teamStyleMethodology.calculateTeamLuckComponents",
+    source: "nst_team_5v5 (gf - xgf) + (xga - ga)",
   },
   {
     metricKey: "pace_rating",
@@ -584,6 +596,12 @@ export function parseTeamMatrixRequest(
         min: 1,
         max: MAX_PAGE_SIZE,
       }) ?? DEFAULT_PAGE_SIZE,
+    minGp:
+      parseInteger(query.min_gp, "min_gp", {
+        defaultValue: DEFAULT_TEAM_MIN_GP,
+        min: 0,
+        max: 82,
+      }) ?? DEFAULT_TEAM_MIN_GP,
   };
 }
 
@@ -684,10 +702,17 @@ export function buildTeamUnitMetricInterpretation(args: {
   };
 }
 
+export const TEAM_STYLE_INSUFFICIENT_LABEL = "Insufficient data";
+
 function deriveStyleBadge(args: {
   paceAxis: string | null;
   controlAxis: string | null;
 }) {
+  // Decision 102: the style label is a composite of pace and control; refuse it
+  // when either input is missing instead of naming a one-axis or default style.
+  if (args.paceAxis == null || args.controlAxis == null) {
+    return TEAM_STYLE_INSUFFICIENT_LABEL;
+  }
   if (args.paceAxis === "high_event" && args.controlAxis === "controls_play") {
     return "High-event controller";
   }
@@ -762,43 +787,86 @@ export function rankTeamMetricValues<T extends { id: string; value: number | nul
   );
 }
 
-export function aggregateTeamStyleRows(args: {
-  rows: readonly TeamUnderlyingRow[];
-  teamsById: Map<number, TeamMeta>;
+const NST_STYLE_FIELDS = ["xgf", "xga", "gf", "ga", "ff", "fa"] as const;
+
+function isCompleteNstStyleGame(row: NstTeamRow) {
+  return (
+    row.gp === 1 &&
+    NST_STYLE_FIELDS.every((key) => {
+      const value = finite(row[key]);
+      return value != null && value >= 0;
+    })
+  );
+}
+
+/**
+ * Team style from one qualified xG source only: Natural Stat Trick 5v5
+ * (decision 6). The in-house bucket-heuristic xG is never read (decision 12),
+ * so one ranked column never mixes models. NST 5v5 has no empty-net states
+ * (a pulled goalie makes it 6v5), which keeps empty-net shots out (decision 7).
+ *
+ * Coverage (rule 13): every eligible game in the ledger needs exactly one
+ * complete NST row for the same team and date. Counts and their exposure then
+ * come from the same games; otherwise the totals stay unknown and the coverage
+ * is reported instead of a partial sum.
+ */
+export function aggregateNstTeamStyleLedger(args: {
+  eligibleGames: readonly TeamStyleLedgerGame[];
+  nstRows: readonly NstTeamRow[];
 }): Map<string, TeamStyleAggregate> {
-  const rowsByTeam = new Map<number, TeamUnderlyingRow[]>();
-  for (const row of args.rows) {
-    const current = rowsByTeam.get(row.team_id) ?? [];
+  const nstRowsByTeamDate = new Map<string, NstTeamRow[]>();
+  for (const row of args.nstRows) {
+    const key = `${row.team_abbreviation}:${row.date}`;
+    const current = nstRowsByTeamDate.get(key) ?? [];
     current.push(row);
-    rowsByTeam.set(row.team_id, current);
+    nstRowsByTeamDate.set(key, current);
+  }
+
+  const ledgerByTeam = new Map<string, { teamId: number | null; dates: Set<string> }>();
+  for (const game of args.eligibleGames) {
+    const entry = ledgerByTeam.get(game.teamAbbreviation) ?? {
+      teamId: game.teamId,
+      dates: new Set<string>(),
+    };
+    entry.dates.add(game.date);
+    ledgerByTeam.set(game.teamAbbreviation, entry);
   }
 
   const aggregates = new Map<string, TeamStyleAggregate>();
-  for (const [teamId, rows] of rowsByTeam.entries()) {
-    const team = args.teamsById.get(teamId);
-    if (!team?.abbreviation) continue;
-    const uniqueGameIds = new Set(rows.map((row) => `${row.game_date}-${row.team_id}`));
-    aggregates.set(team.abbreviation, {
-      teamId,
-      teamAbbreviation: team.abbreviation,
-      gamesCount: uniqueGameIds.size,
-      latestDate: rows.reduce<string | null>(
-        (latest, row) =>
-          latest == null || row.game_date > latest ? row.game_date : latest,
-        null,
-      ),
-      xgf: sum(rows.map((row) => row.xgf)),
-      xga: sum(rows.map((row) => row.xga)),
-      gf: sum(rows.map((row) => row.gf)),
-      ga: sum(rows.map((row) => row.ga)),
-      ff: sum(rows.map((row) => row.ff)),
-      fa: sum(rows.map((row) => row.fa)),
-      cf: sum(rows.map((row) => row.cf)),
-      ca: sum(rows.map((row) => row.ca)),
-      source: "team_underlying_stats_summary",
+  for (const [abbreviation, ledger] of ledgerByTeam) {
+    const coveredRows: NstTeamRow[] = [];
+    for (const date of ledger.dates) {
+      const rows = nstRowsByTeamDate.get(`${abbreviation}:${date}`) ?? [];
+      if (rows.length === 1 && isCompleteNstStyleGame(rows[0])) {
+        coveredRows.push(rows[0]);
+      }
+    }
+    const eligibleGames = ledger.dates.size;
+    const coverageComplete = eligibleGames > 0 && coveredRows.length === eligibleGames;
+    const total = (key: (typeof NST_STYLE_FIELDS)[number]) =>
+      coverageComplete ? sum(coveredRows.map((row) => row[key])) : null;
+    aggregates.set(abbreviation, {
+      teamId: ledger.teamId,
+      teamAbbreviation: abbreviation,
+      gamesCount: coverageComplete ? eligibleGames : 0,
+      eligibleGames,
+      coveredGames: coveredRows.length,
+      coverageComplete,
+      latestDate: coverageComplete
+        ? coveredRows.reduce<string | null>(
+            (latest, row) => (latest == null || row.date > latest ? row.date : latest),
+            null,
+          )
+        : null,
+      xgf: total("xgf"),
+      xga: total("xga"),
+      gf: total("gf"),
+      ga: total("ga"),
+      ff: total("ff"),
+      fa: total("fa"),
+      source: "nst_team_5v5",
     });
   }
-
   return aggregates;
 }
 
@@ -1017,50 +1085,9 @@ export function aggregateTeamUnitToiRows(
   return aggregates;
 }
 
-function aggregateNstTeamStyleRows(rows: readonly NstTeamRow[]) {
-  const rowsByTeam = new Map<string, NstTeamRow[]>();
-  for (const row of rows) {
-    const current = rowsByTeam.get(row.team_abbreviation) ?? [];
-    current.push(row);
-    rowsByTeam.set(row.team_abbreviation, current);
-  }
-  const aggregates = new Map<string, TeamStyleAggregate>();
-  for (const [abbreviation, teamRows] of rowsByTeam) {
-    const validGames = teamRows.every(
-      (row) => row.gp != null && Number.isInteger(row.gp) && row.gp > 0,
-    );
-    const completeTotal = (
-      key: "xgf" | "xga" | "gf" | "ga" | "ff" | "fa" | "cf" | "ca",
-    ) => {
-      const values = teamRows.map((row) => finite(row[key]));
-      return validGames && values.every((value) => value != null && value >= 0)
-        ? sum(values)
-        : null;
-    };
-    aggregates.set(abbreviation, {
-      teamId: null,
-      teamAbbreviation: abbreviation,
-      gamesCount: validGames ? sum(teamRows.map((row) => row.gp)) ?? 0 : 0,
-      latestDate: teamRows.reduce(
-        (latest, row) => row.date > latest ? row.date : latest,
-        teamRows[0].date,
-      ),
-      xgf: completeTotal("xgf"),
-      xga: completeTotal("xga"),
-      gf: completeTotal("gf"),
-      ga: completeTotal("ga"),
-      ff: completeTotal("ff"),
-      fa: completeTotal("fa"),
-      cf: completeTotal("cf"),
-      ca: completeTotal("ca"),
-      source: "nst_team_5v5",
-    });
-  }
-  return aggregates;
-}
-
 function buildStylePayload(args: {
   aggregate: TeamStyleAggregate | null;
+  source: TeamStyleAggregate["source"] | "none";
   leagueAverageEventRate: number | null;
 }) {
   const aggregate = args.aggregate;
@@ -1094,7 +1121,7 @@ function buildStylePayload(args: {
     xgForPercentage,
     eventRate: profile.eventRate,
     shotQuality,
-    source: aggregate?.source ?? "none",
+    source: args.source,
     adjusted: false as const,
     luck,
   };
@@ -1199,33 +1226,6 @@ async function fetchTeamMeta() {
         .map((row) => [row.abbreviation as string, row]),
     ),
   };
-}
-
-async function fetchUnderlyingStyleRows(
-  request: TeamMatrixRequest,
-  window: TeamEventWindow,
-) {
-  const rows: TeamUnderlyingRow[] = [];
-  for (let from = 0;; from += TEAM_QUERY_PAGE_SIZE) {
-    let query = supabase
-      .from("team_underlying_stats_summary")
-      .select("game_id,game_date,team_id,xgf,xga,gf,ga,ff,fa,cf,ca")
-      .eq("season_id", request.season)
-      .eq("strength", "fiveOnFive")
-      .eq("score_state", "allScores")
-      .order("game_date", { ascending: false })
-      .order("game_id", { ascending: true })
-      .order("team_id", { ascending: true })
-      .range(from, from + TEAM_QUERY_PAGE_SIZE - 1);
-    query = query.gte("game_date", window.startDate).lte("game_date", window.endDate);
-    const { data, error } = await query;
-    if (error) {
-      throw new Error(`Unable to load team style source rows: ${error.message}`);
-    }
-    rows.push(...((data ?? []) as unknown as TeamUnderlyingRow[]));
-    if ((data ?? []).length < TEAM_QUERY_PAGE_SIZE) break;
-  }
-  return rows;
 }
 
 async function fetchNstTeamRows(window: TeamEventWindow, abbreviations: string[]) {
@@ -1378,11 +1378,11 @@ export async function buildTeamMatrixSurface(
   // All event-backed components stop at the selected power snapshot, even
   // when a more recent source row exists.
   const eventWindow = { ...seasonWindow, endDate: latestPowerDate };
-  const [powerRows, teamMeta, underlyingRows, gameContextRows, unitToi, gamesById] =
+  const minGp = request.minGp ?? DEFAULT_TEAM_MIN_GP;
+  const [powerRows, teamMeta, gameContextRows, unitToi, gamesById] =
     await Promise.all([
       fetchTeamPowerRows(latestPowerDate),
       fetchTeamMeta(),
-      fetchUnderlyingStyleRows(request, eventWindow),
       fetchTeamGameContextRows(request, eventWindow),
       fetchTeamUnitToiRows(request, eventWindow),
       fetchRegularSeasonGames(request, eventWindow),
@@ -1395,53 +1395,60 @@ export async function buildTeamMatrixSurface(
     return game != null && teamId != null &&
       (game.homeTeamId === teamId || game.awayTeamId === teamId);
   };
-  const styleByAbbreviation = aggregateTeamStyleRows({
-    rows: underlyingRows.filter((row) =>
-      belongsToTeamGame(row.game_id, row.team_id),
-    ),
-    teamsById: teamMeta.byId,
-  });
+  const qualifiedContextRows = gameContextRows.filter((row) =>
+    belongsToTeamGame(row.game_id, row.team_id),
+  );
   const contextByTeamId = aggregateTeamGameContextRows(
-    gameContextRows
-      .filter((row) => belongsToTeamGame(row.game_id, row.team_id))
-      .map((row) => ({
-        ...row,
-        home_road:
-          gamesById.get(row.game_id!)?.homeTeamId === row.team_id ? "home" : "road",
-      })),
+    qualifiedContextRows.map((row) => ({
+      ...row,
+      home_road:
+        gamesById.get(row.game_id!)?.homeTeamId === row.team_id ? "home" : "road",
+    })),
   );
   const qualifiedUnitRows = unitToi.rows.filter((row) =>
     belongsToTeamGame(row.game_id, row.team_id),
   );
   const unitUsageByTeamId = aggregateTeamUnitToiRows(qualifiedUnitRows);
-  const regularTeamDates = new Set<string>();
+
+  // Every ranked team reads the same NST 5v5 source: no per-team fallback.
+  const styleTeams = Array.from(new Set(powerRows.map((row) => row.team_abbreviation)));
+  const nstRows = styleTeams.length > 0
+    ? await fetchNstTeamRows(eventWindow, styleTeams)
+    : [];
+  // Eligible ledger: regular-season team-games in the window with evidence that
+  // they were played (a final WGO result row, or an NST row with a game played).
+  const resultTeamGames = new Set(
+    qualifiedContextRows
+      .filter((row) => finite(row.goals_for) != null && finite(row.goals_against) != null)
+      .map((row) => `${row.game_id}:${row.team_id}`),
+  );
+  const nstPlayedTeamDates = new Set(
+    nstRows
+      .filter((row) => row.gp != null && row.gp >= 1)
+      .map((row) => `${row.team_abbreviation}:${row.date}`),
+  );
+  const eligibleGames: TeamStyleLedgerGame[] = [];
   for (const game of gamesById.values()) {
     for (const teamId of [game.homeTeamId, game.awayTeamId]) {
       const abbreviation =
         teamId == null ? null : teamMeta.byId.get(teamId)?.abbreviation;
-      if (abbreviation) regularTeamDates.add(`${abbreviation}:${game.date}`);
+      if (!abbreviation) continue;
+      if (
+        resultTeamGames.has(`${game.id}:${teamId}`) ||
+        nstPlayedTeamDates.has(`${abbreviation}:${game.date}`)
+      ) {
+        eligibleGames.push({ teamId, teamAbbreviation: abbreviation, date: game.date });
+      }
     }
   }
-  const fallbackTeams = Array.from(
-    new Set(
-      powerRows
-        .map((row) => row.team_abbreviation)
-        .filter((abbreviation) => !styleByAbbreviation.has(abbreviation)),
-    ),
-  );
-  const nstRows = fallbackTeams.length > 0
-    ? await fetchNstTeamRows(eventWindow, fallbackTeams)
-    : [];
-  const qualifiedNstRows = nstRows.filter((row) =>
-    regularTeamDates.has(`${row.team_abbreviation}:${row.date}`),
-  );
-  for (const [abbreviation, aggregate] of aggregateNstTeamStyleRows(qualifiedNstRows)) {
-    if (!styleByAbbreviation.has(abbreviation)) {
-      styleByAbbreviation.set(abbreviation, aggregate);
-    }
-  }
+  const styleByAbbreviation = aggregateNstTeamStyleLedger({ eligibleGames, nstRows });
+  const styleQualified = (aggregate: TeamStyleAggregate | null) =>
+    aggregate != null &&
+    aggregate.coverageComplete &&
+    aggregate.gamesCount >= minGp;
 
   const eventRates = Array.from(styleByAbbreviation.values())
+    .filter(styleQualified)
     .map((aggregate) => {
       if (
         aggregate.xgf == null ||
@@ -1466,11 +1473,14 @@ export async function buildTeamMatrixSurface(
         ]
       : []),
     "team style is raw/contextual, not score- or venue-adjusted",
+    "team xG, shot quality, event rate and luck use Natural Stat Trick (NST) 5v5 xG only; the in-house bucket-heuristic xG is hidden",
+    "team style needs NST 5v5 rows for every played game in the window; otherwise it is shown as unavailable with its coverage",
+    `teams below ${minGp} games show insufficient sample for style and game-context columns`,
     `team event sources use regular-season dates ${eventWindow.startDate} through ${eventWindow.endDate}`,
     "team power ratings retain their source strength context; only team style inputs are verified as 5v5",
     ...(qualifiedUnitRows.length > 0
       ? [
-          "team unit-usage metrics use pooled player-seconds; forward/defense overlap coverage is partial when raw shifts cannot resolve complete 5v5 position groups",
+          "team unit-usage metrics use pooled player-seconds of observed units; units can share players and are not disjoint lineup slots; forward/defense coverage is partial when raw shifts cannot resolve complete 5v5 position groups",
         ]
       : ["team_unit_toi source rows are unavailable for team usage metrics"]),
   ];
@@ -1478,10 +1488,17 @@ export async function buildTeamMatrixSurface(
   const baseRows = powerRows.map((power) => {
     const aggregate = styleByAbbreviation.get(power.team_abbreviation) ?? null;
     const team = teamMeta.byAbbreviation.get(power.team_abbreviation);
-    const context = team?.id == null ? null : contextByTeamId.get(team.id) ?? null;
+    const rawContext = team?.id == null ? null : contextByTeamId.get(team.id) ?? null;
+    const contextQualified =
+      rawContext != null && rawContext.gamesCount >= minGp;
+    const context = contextQualified ? rawContext : null;
     const unitUsage = team?.id == null ? null : unitUsageByTeamId.get(team.id) ?? null;
-    const style = buildStylePayload({ aggregate, leagueAverageEventRate });
-    return { power, aggregate, style, context, unitUsage };
+    const style = buildStylePayload({
+      aggregate: styleQualified(aggregate) ? aggregate : null,
+      source: aggregate?.source ?? "none",
+      leagueAverageEventRate,
+    });
+    return { power, aggregate, style, context, rawContext, unitUsage };
   });
 
   const rankMaps = new Map<
@@ -1507,7 +1524,7 @@ export async function buildTeamMatrixSurface(
     );
   }
 
-  const rows = baseRows.map(({ power, aggregate, style, context, unitUsage }): TeamMatrixRow => {
+  const rows = baseRows.map(({ power, aggregate, style, context, rawContext, unitUsage }): TeamMatrixRow => {
     const team = teamMeta.byAbbreviation.get(power.team_abbreviation);
     const metrics = Object.fromEntries(
       METRIC_COLUMNS.map((column) => {
@@ -1543,6 +1560,11 @@ export async function buildTeamMatrixSurface(
         latestPowerDate,
         styleSnapshotDate: aggregate?.latestDate ?? null,
         styleGames: aggregate?.gamesCount ?? 0,
+        styleCoverage: {
+          eligibleGames: aggregate?.eligibleGames ?? 0,
+          coveredGames: aggregate?.coveredGames ?? 0,
+          complete: aggregate?.coverageComplete ?? false,
+        },
         ppTier: finite(power.pp_tier),
         pkTier: finite(power.pk_tier),
         trend10: finite(power.trend10),
@@ -1565,8 +1587,8 @@ export async function buildTeamMatrixSurface(
       },
       luck: style.luck,
       context: {
-        games: context?.gamesCount ?? 0,
-        latestDate: context?.latestDate ?? null,
+        games: rawContext?.gamesCount ?? 0,
+        latestDate: rawContext?.latestDate ?? null,
         oneGoalGameRate: context?.oneGoalGameRate ?? null,
         homeRoadPointPctGap: context?.homeRoadPointPctGap ?? null,
         powerPlayOpportunityRate: context?.powerPlayOpportunityRate ?? null,
@@ -1607,17 +1629,16 @@ export async function buildTeamMatrixSurface(
       metrics,
       warnings: [
         ...(aggregate == null ? ["team_style_source_missing"] : []),
-        ...(aggregate?.source === "nst_team_5v5"
-          ? ["team_style_using_dated_nst_5v5_fallback"]
+        ...(aggregate != null && !aggregate.coverageComplete
+          ? [`nst_5v5_coverage_incomplete:${aggregate.coveredGames}/${aggregate.eligibleGames}`]
           : []),
-        ...(aggregate?.source === "nst_team_5v5" &&
-          [
-            aggregate.xgf, aggregate.xga, aggregate.gf, aggregate.ga,
-            aggregate.ff, aggregate.fa, aggregate.cf, aggregate.ca,
-          ].some((value) => value == null)
-          ? ["partial_nst_5v5_style_source"]
+        ...(aggregate?.coverageComplete && aggregate.gamesCount < minGp
+          ? [`insufficient_sample:${aggregate.gamesCount}<${minGp}`]
           : []),
-        ...(context == null ? ["team_game_context_source_missing"] : []),
+        ...(rawContext == null ? ["team_game_context_source_missing"] : []),
+        ...(rawContext != null && rawContext.gamesCount < minGp
+          ? [`insufficient_context_sample:${rawContext.gamesCount}<${minGp}`]
+          : []),
         ...(unitUsage == null ? ["team_unit_toi_source_missing"] : []),
         "raw_contextual_team_style",
       ],
@@ -1659,17 +1680,20 @@ export async function buildTeamMatrixSurface(
       snapshotDate: latestPowerDate,
       latestAvailableSnapshotDate: latestPowerDate,
       styleSnapshotDate,
+      sampleFloor: {
+        minGames: minGp,
+        label: `Min ${minGp} GP; teams below show insufficient sample`,
+      },
       sourceTables: [
         "seasons",
         "team_power_ratings_daily",
-        "team_underlying_stats_summary",
         "nst_team_5v5",
         "wgo_team_stats",
         "games",
         "team_unit_toi",
       ],
-      methodologyVersion: "team_rankings_v2_season_5v5_asof",
-      methodologyUpdatedAt: "2026-11-08",
+      methodologyVersion: "team_rankings_v3_nst_5v5_ledger",
+      methodologyUpdatedAt: "2026-11-11",
       sourceQualityFlags: [
         "raw_contextual_team_style",
         "team_unit_toi_partial_forward_defense_coverage",

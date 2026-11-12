@@ -22,7 +22,9 @@ import type {
   ContextualRankingsResponse,
 } from "lib/rankings/rankingTypes";
 
-const { replaceMock, routerState, swrMock, swrMode } = vi.hoisted(() => ({
+const { replaceMock, routerState, swrMock, swrMode, seasonState } = vi.hoisted(() => ({
+  // Stands in for the /api/v1/season resolver (W2-4 D12).
+  seasonState: { data: { seasonId: 20252026 } as { seasonId: number } | null, isError: false },
   replaceMock: vi.fn(),
   routerState: {
     pathname: "/rankings",
@@ -31,6 +33,10 @@ const { replaceMock, routerState, swrMock, swrMode } = vi.hoisted(() => ({
   },
   swrMock: vi.fn(),
   swrMode: { actual: false },
+}));
+
+vi.mock("hooks/useCurrentSeason", () => ({
+  useCurrentSeasonQuery: () => seasonState,
 }));
 
 vi.mock("next/head", () => ({
@@ -786,6 +792,7 @@ const goaliePayload: GoalieMatrixResponse = {
     season: 20252026,
     asOfDate: null,
     window: "season",
+    strength: "all",
     metric: "save_percentage",
     sortDirection: "desc",
     role: "all",
@@ -924,6 +931,15 @@ const goaliePayload: GoalieMatrixResponse = {
           rank: 5,
           percentile: 94,
           qualifiedPeerCount: 60,
+          lowerIsBetter: true,
+        },
+        fhfh_5v5_bad_start_rate: {
+          metricKey: "fhfh_5v5_bad_start_rate",
+          rawValue: null,
+          formattedValue: null,
+          rank: null,
+          percentile: null,
+          qualifiedPeerCount: 0,
           lowerIsBetter: true,
         },
         steal_rate: {
@@ -1615,6 +1631,26 @@ describe("RankingsPage interactions", () => {
     vi.unstubAllGlobals();
   });
 
+  it("defaults to the resolved current season and waits instead of guessing when the lookup fails (W2-4 D12)", async () => {
+    routerState.query = {};
+    seasonState.data = { seasonId: 20262027 };
+    const { unmount } = render(<RankingsPage />);
+    const requested = swrMock.mock.calls.map(([url]) => url).filter((url): url is string => typeof url === "string");
+    expect(requested.some((url) => url.includes("/matrix") && url.includes("season=20262027"))).toBe(true);
+    expect(requested.some((url) => url.includes("season=20252026"))).toBe(false);
+    unmount();
+
+    swrMock.mockClear();
+    seasonState.data = null;
+    seasonState.isError = true;
+    render(<RankingsPage />);
+    const blocked = swrMock.mock.calls.map(([url]) => url).filter((url): url is string => typeof url === "string");
+    expect(blocked.some((url) => url.includes("/matrix"))).toBe(false);
+    expect(screen.getAllByText(/Unable to load season info right now/).length).toBeGreaterThan(0);
+    seasonState.data = { seasonId: 20252026 };
+    seasonState.isError = false;
+  });
+
   it("waits for URL readiness before fetching the selected ranking context", async () => {
     swrMode.actual = true;
     routerState.isReady = false;
@@ -1753,7 +1789,7 @@ describe("RankingsPage interactions", () => {
     expect(screen.getByRole("heading", { name: "Ranking Legend" })).toBeTruthy();
     expect(
       screen.getByText(
-        "Percentile shows the share of other qualified peers this row is better than after metric directionality is applied.",
+        "Percentile is the mid-rank percentile among qualified peers after metric directionality is applied; tied rows share one value.",
       ),
     ).toBeTruthy();
     expect(screen.getByText(/Raw rank uses dense-rank semantics/)).toBeTruthy();

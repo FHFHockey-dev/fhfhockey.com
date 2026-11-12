@@ -1,0 +1,440 @@
+{
+  "asOf": "2026-11-11",
+  "method": "Actual local pure TypeScript functions; synthetic inputs only; no network or database clients",
+  "sourceHashes": {
+    "lib/sustainability/bandCalculator.ts": "c34751dbfa9a4a09c257c75f0f3168d410713cf3cc59ba9790c7ad9f111fd77a",
+    "lib/projectionsConfig/fantasyPointsConfig.ts": "dfe1ae8426a7b9ae3469216ad8e48944cbd7dda6cea6952cdd6bdf6f41deb50b",
+    "lib/sustainability/bands.ts": "63f6a5e9ecce21710378e246c3537c1755067dc7844a309bc645f35024668e6a",
+    "lib/sustainability/runtimeContract.ts": "7a0ddebc456c42af24ac9735971382a64fc3b5b7add47527fae4a74189263229",
+    "lib/sustainability/features.ts": "5823d7537a276a5a7bb312de71b10684c0d04d88b00a4edd40b7eea9cede4c69",
+    "lib/rankings/skaterWindowAggregation.ts": "d8fbc60cb077f7fecfc00d12c92e55d2363b2a86c9214b07a6b84d69261d363b",
+    "lib/rankings/metricDefinitions.ts": "88395d09f1fe56f0f8a51f000d8a1c8bd63943b9f0875a5104348daba4900d77",
+    "lib/rankings/rankingCalculator.ts": "5ca746fff2c2e5283f421f6200864eca3a138ffc2b422bebd9710979ac4d955f",
+    "pages/trendsSandbox.tsx": "640c3e1b994befeed26bd4d805a54bf99c9f5709787ca1cc7d2b81bd8c003381",
+    "lib/projections/utils/trend-adjustments.ts": "8531709c946ee6998613043a23d445f375f2b4a2ae58864683c2558604f64ed2",
+    "lib/projections/constants/projection-weights.ts": "e98611fbd96d10c248951f14be15d6dcf56272a72beb90b6112f3ac0d023d035",
+    "lib/predictions/rollingWindows.ts": "f241f957b11f6fdeab46911d0c8cd1b6b087551de9cb3abdb6c30ffa0c3d2c90",
+    "lib/projections/utils/date-utils.ts": "2cffcc04886d2aad6f7d40ebf48ef91cece1ba8317fb0623b3baaf2ca9793c93",
+    "lib/projections/utils/number-utils.ts": "46a78073bdc6336c44dfe0ffb5e33370c5c1730ab74c4fc23a7fe6937e858222"
+  },
+  "results": {
+    "ppDouble": {
+      "band": {
+        "player_id": 1,
+        "season_id": 20262027,
+        "snapshot_date": "2026-11-11",
+        "metric_key": "pp_points_per_60",
+        "window_code": "l5",
+        "baseline": 7.5,
+        "ewma": 15,
+        "value": 8.11528914150674,
+        "ci_lower": 6.172842340856732,
+        "ci_upper": 10.189198281113931,
+        "n_eff": 16.08666620103369,
+        "prior_weight": 180,
+        "z_score": 0.392657,
+        "percentile": 48.691,
+        "exposure": 16.08666620103369,
+        "distribution": {
+          "shape": 26.522666550258425,
+          "rate": 196.0876662010337,
+          "modelVersion": "sustainability_trend_bands_v2",
+          "configHash": "fnv1a_412903c1",
+          "warnings": [],
+          "fallbackFlags": {}
+        }
+      },
+      "dataWeight": 0.08203855220089865,
+      "uiStatus": "neutral"
+    },
+    "ppWindowWeights": [
+      {
+        "n": 3,
+        "nEff": 10.738396976497755,
+        "dataWeight": 0.05629908370164666,
+        "specListsWindow": true
+      },
+      {
+        "n": 5,
+        "nEff": 16.08666620103369,
+        "dataWeight": 0.08203855220089865,
+        "specListsWindow": true
+      },
+      {
+        "n": 10,
+        "nEff": 25.115002348274412,
+        "dataWeight": 0.12244351734755349,
+        "specListsWindow": true
+      },
+      {
+        "n": 20,
+        "nEff": 33.02573237996194,
+        "dataWeight": 0.15503165749504763,
+        "specListsWindow": false
+      }
+    ],
+    "ppDoublePredictiveCounterexample": {
+      "observedCount": 5,
+      "rawMinutes": 20,
+      "baselineRate": 7.5,
+      "poissonMean": 2.5,
+      "exactCentral80": [
+        1,
+        5
+      ],
+      "upperTailAt5": 0.10882198108584873
+    },
+    "ppWindowBackfill": {
+      "withoutOlder": null,
+      "withOlder": {
+        "player_id": 1,
+        "season_id": 20262027,
+        "snapshot_date": "2026-11-11",
+        "metric_key": "pp_points_per_60",
+        "window_code": "l5",
+        "baseline": 7.5,
+        "ewma": 15,
+        "value": 7.8582136016452155,
+        "ci_lower": 5.914532865244837,
+        "ci_upper": 9.938260184026149,
+        "n_eff": 9.028336147240719,
+        "prior_weight": 180,
+        "z_score": 0.228181,
+        "percentile": 48.644,
+        "exposure": 9.028336147240719,
+        "distribution": {
+          "shape": 24.75808403681018,
+          "rate": 189.0293361472407,
+          "modelVersion": "sustainability_trend_bands_v2",
+          "configHash": "fnv1a_412903c1",
+          "warnings": [],
+          "fallbackFlags": {}
+        }
+      }
+    },
+    "fiveOnFive": {
+      "band": {
+        "player_id": 1,
+        "season_id": 20262027,
+        "snapshot_date": "2026-11-11",
+        "metric_key": "points_per_60_5v5",
+        "window_code": "l5",
+        "baseline": 3.5999999999999996,
+        "ewma": 2.999999999999999,
+        "value": 3.4794805655114702,
+        "ci_lower": 2.592242531136435,
+        "ci_upper": 4.431109666438715,
+        "n_eff": 80.43333100516847,
+        "prior_weight": 320,
+        "z_score": -0.167986,
+        "percentile": 48.599,
+        "exposure": 80.43333100516847,
+        "distribution": {
+          "shape": 23.22266655025842,
+          "rate": 400.4343310051685,
+          "modelVersion": "sustainability_trend_bands_v2",
+          "configHash": "fnv1a_50d6a78d",
+          "warnings": [],
+          "fallbackFlags": {}
+        }
+      },
+      "matchedRate": 3.6,
+      "ewmaRelativeBias": -0.16666666666666685
+    },
+    "ippInvalid": {
+      "band": {
+        "player_id": 1,
+        "season_id": 20262027,
+        "snapshot_date": "2026-11-11",
+        "metric_key": "ipp",
+        "window_code": "l5",
+        "baseline": 1.3714285714285714,
+        "ewma": 0.5,
+        "value": 1.2432432900115244,
+        "ci_lower": 0.9999999999990905,
+        "ci_upper": 0.9999999999990905,
+        "n_eff": 8.623372934524525,
+        "prior_weight": 50,
+        "z_score": null,
+        "percentile": null,
+        "exposure": 8.623372934524525,
+        "distribution": {
+          "alpha": 73.38311503869083,
+          "beta": 0.000001,
+          "modelVersion": "sustainability_trend_bands_v2",
+          "configHash": "fnv1a_c09e1e21",
+          "warnings": [],
+          "fallbackFlags": {}
+        }
+      },
+      "priorBeta": -18.071428571428573,
+      "uiStatus": "hot"
+    },
+    "ippFallbackWithinDomain": {
+      "baseline": 0.5,
+      "value": 0.5
+    },
+    "ippUnpairedNullSeason": {
+      "baseline": 2.5,
+      "matchedRemainingSeasonBaseline": 0.5
+    },
+    "lastNFallback": {
+      "absent": {
+        "playerId": 1,
+        "teamId": null,
+        "seasonId": 20262027,
+        "snapshotDate": "2026-11-11",
+        "strengthState": "all",
+        "window": "last5",
+        "windowType": "last_5",
+        "windowSize": 5,
+        "windowSemantics": "player_last_n_games_played",
+        "metricKey": "sog_per_60",
+        "rawValue": 4.41331,
+        "numerator": 8.4,
+        "denominator": 6852,
+        "gamesPlayed": 5,
+        "toiSeconds": 6852,
+        "sourceFields": [
+          "sog_per_60_last5",
+          "sog_per_60_total_last5",
+          "toi_seconds_total_last5"
+        ]
+      },
+      "present": {
+        "playerId": 1,
+        "teamId": null,
+        "seasonId": 20262027,
+        "snapshotDate": "2026-11-11",
+        "strengthState": "all",
+        "window": "last5",
+        "windowType": "last_5",
+        "windowSize": 5,
+        "windowSemantics": "player_last_n_games_played",
+        "metricKey": "sog_per_60",
+        "rawValue": 8.4,
+        "numerator": 8.4,
+        "denominator": 6852,
+        "gamesPlayed": 5,
+        "toiSeconds": 6852,
+        "sourceFields": [
+          "sog_per_60_last5",
+          "sog_per_60_total_last5",
+          "toi_seconds_total_last5"
+        ]
+      },
+      "recomputedWithoutRaw": 4.41331
+    },
+    "validCountFallbacks": [
+      {
+        "playerId": 1,
+        "teamId": null,
+        "seasonId": 20262027,
+        "snapshotDate": "2026-11-11",
+        "strengthState": "all",
+        "window": "last5",
+        "windowType": "last_5",
+        "windowSize": 5,
+        "windowSemantics": "player_last_n_games_played",
+        "metricKey": "points_per_60",
+        "rawValue": 1.576182,
+        "numerator": 3,
+        "denominator": 6852,
+        "gamesPlayed": 5,
+        "toiSeconds": 6852,
+        "sourceFields": [
+          "points_total_last5",
+          "toi_seconds_total_last5"
+        ]
+      },
+      {
+        "playerId": 1,
+        "teamId": null,
+        "seasonId": 20262027,
+        "snapshotDate": "2026-11-11",
+        "strengthState": "all",
+        "window": "last5",
+        "windowType": "last_5",
+        "windowSize": 5,
+        "windowSemantics": "player_last_n_games_played",
+        "metricKey": "pp_points_per_60",
+        "rawValue": 30,
+        "numerator": 1,
+        "denominator": 120,
+        "gamesPlayed": 5,
+        "toiSeconds": 120,
+        "sourceFields": [
+          "pp_points_total_last5",
+          "pp_toi_seconds_total_last5"
+        ]
+      }
+    ],
+    "poissonCoverage": [
+      {
+        "mu": 0.1,
+        "bands": {
+          "band50": {
+            "lower": 0,
+            "median": 0.1,
+            "upper": 0.313292
+          },
+          "band80": {
+            "lower": 0,
+            "median": 0.1,
+            "upper": 0.505262
+          }
+        },
+        "coverage50": 0.9048374180359595,
+        "coverage80": 0.9048374180359595,
+        "exactMedian": 0
+      },
+      {
+        "mu": 0.3,
+        "bands": {
+          "band50": {
+            "lower": 0,
+            "median": 0.3,
+            "upper": 0.669433
+          },
+          "band80": {
+            "lower": 0,
+            "median": 0.3,
+            "upper": 1.001935
+          }
+        },
+        "coverage50": 0.7408182206817179,
+        "coverage80": 0.9630636868862332,
+        "exactMedian": 0
+      },
+      {
+        "mu": 0.7,
+        "bands": {
+          "band50": {
+            "lower": 0.135681,
+            "median": 0.7,
+            "upper": 1.264319
+          },
+          "band80": {
+            "lower": 0,
+            "median": 0.7,
+            "upper": 1.772223
+          }
+        },
+        "coverage50": 0.34760971265398666,
+        "coverage80": 0.8441950164453962,
+        "exactMedian": 1
+      },
+      {
+        "mu": 1.5,
+        "bands": {
+          "band50": {
+            "lower": 0.673922,
+            "median": 1.5,
+            "upper": 2.326078
+          },
+          "band80": {
+            "lower": 0,
+            "median": 1.5,
+            "upper": 3.069574
+          }
+        },
+        "coverage50": 0.5857166703896283,
+        "coverage80": 0.9343575456215498,
+        "exactMedian": 1
+      },
+      {
+        "mu": 3,
+        "bands": {
+          "band50": {
+            "lower": 1.831749,
+            "median": 3,
+            "upper": 4.168251
+          },
+          "band80": {
+            "lower": 0.780288,
+            "median": 3,
+            "upper": 5.219712
+          }
+        },
+        "coverage50": 0.6161149710523163,
+        "coverage80": 0.8662949896008326,
+        "exactMedian": 3
+      },
+      {
+        "mu": 6,
+        "bands": {
+          "band50": {
+            "lower": 4.347844,
+            "median": 6,
+            "upper": 7.652156
+          },
+          "band80": {
+            "lower": 2.860853,
+            "median": 6,
+            "upper": 9.139147
+          }
+        },
+        "coverage50": 0.45892326013708584,
+        "coverage80": 0.8541071785884654,
+        "exactMedian": 6
+      }
+    ],
+    "emptyCalibration": {
+      "samples": 0,
+      "hitRate50": 0,
+      "hitRate80": 0
+    },
+    "collectorless": [
+      {
+        "metric": "hdcf_pct",
+        "rows": 0
+      },
+      {
+        "metric": "sh_pct_5v5",
+        "rows": 0
+      },
+      {
+        "metric": "pp_sh_pct",
+        "rows": 0
+      }
+    ],
+    "forgeReader": {
+      "allowedMetrics": [
+        "fantasy_score",
+        "ixg_per_60",
+        "shots_per_60",
+        "points_per_60_5v5"
+      ],
+      "points5v5Adjustment": {
+        "metricKey": "points_per_60_5v5",
+        "windowCode": "l5",
+        "snapshotDate": "2026-11-11",
+        "ageDays": 0,
+        "recencyClass": "fresh",
+        "effectState": "within_band_neutral",
+        "value": 3.4794805655114702,
+        "ciLower": 2.592242531136435,
+        "ciUpper": 4.431109666438715,
+        "nEff": 80.43333100516847,
+        "confidence": 1,
+        "signedDistance": 0,
+        "shotRateMultiplier": 1,
+        "goalRateMultiplier": 1,
+        "assistRateMultiplier": 1,
+        "uncertaintyVolatilityMultiplier": 1
+      }
+    },
+    "discreteConvention": {
+      "mu": 0.7,
+      "central80": [
+        0,
+        2
+      ],
+      "shorter80": [
+        0,
+        1
+      ],
+      "shorterCoverage": 0.8441950164453962
+    }
+  }
+}

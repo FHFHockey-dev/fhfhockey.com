@@ -4,6 +4,7 @@ import {
   buildGoalieUncertainty,
   buildPlayerUncertainty,
   countCdf,
+  residualToiCv,
   countPmf,
   countProbabilityAtLeast,
   countQuantile,
@@ -350,5 +351,32 @@ describe("opt-in negative binomial simulation", () => {
     expect(goalieNb.saves.p90 - goalieNb.saves.p10).toBeGreaterThan(
       goaliePoisson.saves.p90 - goaliePoisson.saves.p10
     );
+  });
+});
+
+describe("assist bands follow on-ice goals (W1-7 N2)", () => {
+  it("keeps a positive assist band when the player's own goal mean is zero", () => {
+    const line = { toiEsSeconds: 1000, toiPpSeconds: 0, shotsEs: 0, shotsPp: 0, goalsEs: 0, goalsPp: 0,
+      assistsEs: 1, assistsPp: 0, hits: 0, blocks: 0 };
+    const zeroGoals = buildPlayerUncertainty(line);
+    const tinyGoals = buildPlayerUncertainty({ ...line, shotsEs: 1, goalsEs: 0.001 });
+    // Own goals 0 and 0.001 describe the same assist expectation (1 on-ice assist).
+    expect(zeroGoals.assists_es.p90).toBeGreaterThan(0);
+    expect(zeroGoals.assists_es.p50).toBe(tinyGoals.assists_es.p50);
+    expect(zeroGoals.a.p90).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("residual TOI CV (W1-7 N4)", () => {
+  it("compounds with the simulated TOI noise back to the fitted quadratic coefficient", async () => {
+    const { compoundToiDispersion } = await import("./dispersion");
+    const conditional = { a: 0.01, b: 0.04 };
+    const fit2 = 0.02, sim = 0.1;
+    const nested = compoundToiDispersion(compoundToiDispersion(conditional, residualToiCv(fit2, sim)), sim);
+    expect(nested.a).toBeCloseTo(compoundToiDispersion(conditional, Math.sqrt(fit2)).a, 12);
+    // The former residual sqrt(fit^2 - s^2) overshoots the fitted coefficient.
+    const former = compoundToiDispersion(compoundToiDispersion(conditional, Math.sqrt(fit2 - sim * sim)), sim);
+    expect(former.a).toBeGreaterThan(compoundToiDispersion(conditional, Math.sqrt(fit2)).a + 1e-5);
+    expect(residualToiCv(0.005, 0.1)).toBe(0);
   });
 });

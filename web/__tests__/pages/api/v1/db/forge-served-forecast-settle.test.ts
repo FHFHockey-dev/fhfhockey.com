@@ -14,6 +14,8 @@ vi.mock("lib/supabase/server", () => ({
       const filters: Array<(row: any) => boolean> = [];
       const builder: any = {
         select: () => builder, order: () => builder, range: () => builder,
+        eq: (column: string, value: unknown) => { filters.push(row => row[column] === value); return builder; },
+        in: (column: string, values: unknown[]) => { filters.push(row => values.includes(row[column])); return builder; },
         lte: (column: string, value: string) => { filters.push(row => row[column] <= value); return builder; },
         gte: (column: string, value: string) => { filters.push(row => row[column] >= value); return builder; },
         abortSignal: async () => {
@@ -49,7 +51,42 @@ describe("forge-served-forecast-settle", () => {
         ledger("2026-10-20", 31, 100, "naive_season", "goalie"), ledger("2026-10-21", 12, 200, "bridge_exact"), ledger("2026-10-18", 11, 50, "bridge_exact")],
       wgo_skater_stats: [{ player_id: 11, game_id: 100, date: "2026-10-20", goals: 1, assists: 1, pp_points: 0, shots: 4, hits: 2, blocked_shots: 0 }],
       wgo_goalie_stats: [{ goalie_id: 31, game_id: 100, date: "2026-10-20", games_started: 1, saves: 30, goals_against: 2, shots_against: 32, wins: 1, shutouts: 0 }],
+      games: [{ id: 100, homeTeamId: 1, awayTeamId: 2, startTime: "2026-10-20T23:00:00Z" }, { id: 200, homeTeamId: 1, awayTeamId: 3, startTime: "2026-10-21T23:00:00Z" }],
+      nhl_api_game_payloads_raw: [],
     });
+  });
+
+  // Stored boxscore rows as the route's projected select returns them (lineup paths only).
+  const lineup = (ids: number[]) => ({ forwards: ids.map(playerId => ({ playerId, toi: "12:00" })), defense: [] });
+  const storedBoxscore = (id: number, gameState: string, fetched_at: string) => ({ id, game_id: 100, endpoint: "boxscore", fetched_at, payload_hash: "b".repeat(64),
+    game_state: gameState, payload_game_id: "100", home_team_id: "1", away_team_id: "2",
+    player_by_game_stats: { homeTeam: { ...lineup([11]), goalies: [{ playerId: 31, starter: true, toi: "60:00" }] },
+      awayTeam: { ...lineup([201]), goalies: [{ playerId: 32, starter: true, toi: "60:00" }] } } });
+
+  it("settles a receipt-proven non-appearance from the newest stored final boxscore: 0 unconditional, void conditional", async () => {
+    tables.forge_served_forecast_ledger = [ledger("2026-10-20", 13, 100, "bridge_exact"), ledger("2026-10-20", 13, 100, "naive_last5")];
+    tables.nhl_api_game_payloads_raw = [storedBoxscore(1, "LIVE", "2026-10-21T01:00:00Z"), storedBoxscore(2, "OFF", "2026-10-21T03:00:00Z")];
+    const out = res();
+    await handler({ method: "POST", query: {} } as any, out);
+    expect(out.body).toMatchObject({ rowsSettled: 2, rowsNonAppearance: 2, receipts: { games: 1, rejections: [] },
+      scoringVersion: "served-ledger-scoring-v2" });
+    const rows = upsertMock.mock.calls[0][1];
+    expect(rows.find((row: any) => row.source === "bridge_exact")).toMatchObject({ dressed: false, act_goals: 0, act_fantasy_points: 0,
+      outcome_source: `nhl_api_game_payloads_raw:boxscore:${"b".repeat(64)}` });
+    expect(rows.find((row: any) => row.source === "naive_last5")).toMatchObject({ dressed: false, act_goals: null, act_fantasy_points: null });
+  });
+
+  it("leaves the player unresolved when the newest boxscore is not final or the ingested ids conflict", async () => {
+    tables.forge_served_forecast_ledger = [ledger("2026-10-20", 13, 100, "bridge_exact")];
+    tables.nhl_api_game_payloads_raw = [storedBoxscore(1, "OFF", "2026-10-21T01:00:00Z"), storedBoxscore(2, "LIVE", "2026-10-21T03:00:00Z")];
+    const live = res();
+    await handler({ method: "POST", query: {} } as any, live);
+    expect(live.body).toMatchObject({ rowsSettled: 0, receipts: { games: 0, rejections: expect.arrayContaining([{ gameId: 100, reason: "not_final" }]) } });
+    tables.nhl_api_game_payloads_raw = [storedBoxscore(2, "OFF", "2026-10-21T03:00:00Z")];
+    tables.wgo_skater_stats.push({ ...tables.wgo_skater_stats[0], player_id: 999 });
+    const conflict = res();
+    await handler({ method: "POST", query: {} } as any, conflict);
+    expect(conflict.body).toMatchObject({ rowsSettled: 0, receipts: { games: 0, rejections: expect.arrayContaining([{ gameId: 100, reason: "ingested_identity_conflict" }]) } });
   });
 
   it("settles games with actuals (goalies via wgo_goalie_stats game_id), leaves the rest, and writes only settlement columns", async () => {

@@ -10,8 +10,9 @@ import {
   GOALIE_EXPANDED_DERIVED_TARGETS,
   GOALIE_FANTASY_V4_PRIMITIVE_TARGETS,
   GOALIE_PRIMITIVE_TARGETS,
-  reconcileProjectionQuantiles,
+  nullableProjectionNumber,
   reconcileProjectionValues,
+  reconcileProjectionValuesWithClamps,
   SKATER_ADVANCED_V5_PRIMITIVE_TARGETS,
   SKATER_DERIVED_TARGETS,
   SKATER_EXPANDED_DERIVED_TARGETS,
@@ -69,12 +70,114 @@ function record(value: unknown): JsonRecord {
     : {};
 }
 
+/**
+ * Known values only: null, absent, empty and non-finite values are unknown and
+ * dropped (absent = unknown), never coerced to 0 (W3-5 F6/PR3; `Number(null)`
+ * used to turn `{TAKEAWAYS: null}` into 0).
+ */
 function numericRecord(value: unknown): ProjectionValues {
   return Object.fromEntries(
-    Object.entries(record(value))
-      .map(([key, raw]) => [key, Number(raw)])
-      .filter(([, parsed]) => Number.isFinite(parsed)),
+    Object.entries(record(value)).flatMap(([key, raw]) => {
+      const parsed = nullableProjectionNumber(raw);
+      return parsed === null ? [] : [[key, parsed]];
+    }),
   );
+}
+
+type Quantiles = { p10: ProjectionValues; p50: ProjectionValues; p90: ProjectionValues };
+
+const SIGNED_TARGETS = new Set(["PLUS_MINUS", "GOALS_SAVED_ABOVE_EXPECTED"]);
+const CHANGE_TOLERANCE = 1e-9;
+
+/**
+ * How each other head responds to a unit change in `input` (means algebra,
+ * coherence clamps off): +1 or −1 for a head that is a plain sum or
+ * difference including `input`, null for any other (non-linear) dependence.
+ * Heads that do not depend on `input` are absent.
+ */
+function unitDependents(
+  values: ProjectionValues,
+  population: FantasyProjectionPopulation,
+  input: string,
+): Map<string, 1 | -1 | null> {
+  const reconcile = (raw: ProjectionValues) =>
+    reconcileProjectionValuesWithClamps(raw, population, { enforceCoherence: false }).values;
+  const start = values[input] ?? 0;
+  const base = reconcile({ ...values, [input]: start });
+  const one = reconcile({ ...values, [input]: start + 1 });
+  const two = reconcile({ ...values, [input]: start + 2 });
+  const dependents = new Map<string, 1 | -1 | null>();
+  for (const target of new Set([...Object.keys(base), ...Object.keys(one), ...Object.keys(two)])) {
+    if (target === input) continue;
+    const first = one[target] - base[target];
+    const second = two[target] - base[target];
+    if (Math.abs(first) <= CHANGE_TOLERANCE && Math.abs(second) <= CHANGE_TOLERANCE) continue;
+    const unit = Math.round(first);
+    dependents.set(
+      target,
+      Number.isFinite(first) && Number.isFinite(second) && (unit === 1 || unit === -1) &&
+        Math.abs(first - unit) <= 1e-6 && Math.abs(second - 2 * unit) <= 1e-6
+        ? unit
+        : null,
+    );
+  }
+  return dependents;
+}
+
+/**
+ * W3-5 PR1 / rule 26: publication carries the stored joint quantiles. With
+ * no editorial change they are published exactly as stored (never rebuilt
+ * from marginal endpoints). An edited input moves only what a location shift
+ * moves exactly: its own band and the bands of heads that are ±1 sums or
+ * differences of edited inputs shift by the head's published mean change;
+ * every other head that depends on an edited input, or whose mean changed for
+ * another reason, has its band withheld (interval unavailable).
+ */
+function publishedJointQuantiles(args: {
+  stored: Quantiles;
+  baseValues: ProjectionValues;
+  publishedValues: ProjectionValues;
+  editedInputs: string[];
+  population: FantasyProjectionPopulation;
+}): Quantiles {
+  const p10 = { ...args.stored.p10 };
+  const p50 = { ...args.stored.p50 };
+  const p90 = { ...args.stored.p90 };
+  const drop = (target: string) => {
+    delete p10[target];
+    delete p50[target];
+    delete p90[target];
+  };
+  const linear = new Map<string, boolean>();
+  for (const input of args.editedInputs) {
+    linear.set(input, input in args.baseValues && (linear.get(input) ?? true));
+    for (const [target, unit] of unitDependents(args.baseValues, args.population, input)) {
+      linear.set(target, unit !== null && (linear.get(target) ?? true));
+    }
+  }
+  const targets = new Set([
+    ...linear.keys(),
+    ...Object.keys(args.baseValues),
+    ...Object.keys(args.publishedValues),
+  ]);
+  for (const target of targets) {
+    const base = args.baseValues[target];
+    const published = args.publishedValues[target];
+    const change =
+      base === undefined || published === undefined ? Number.NaN : published - base;
+    const affected = linear.has(target) || !(Math.abs(change) <= CHANGE_TOLERANCE);
+    if (!affected) continue;
+    const hasBand = target in p10 && target in p50 && target in p90;
+    if (!linear.get(target) || !Number.isFinite(change) || !hasBand) {
+      drop(target);
+      continue;
+    }
+    const floor = SIGNED_TARGETS.has(target) ? Number.NEGATIVE_INFINITY : 0;
+    p10[target] = Math.max(floor, p10[target] + change);
+    p50[target] = Math.max(floor, p50[target] + change);
+    p90[target] = Math.max(floor, p90[target] + change);
+  }
+  return { p10, p50, p90 };
 }
 
 function populationForPosition(position: string): FantasyProjectionPopulation {
@@ -314,9 +417,8 @@ function effectivePlayer(row: any, overrides: any[]): any {
   let teamId = row.team_id == null ? null : Number(row.team_id);
   let position = String(row.position);
   let poolStatus = String(row.pool_status);
-  let expectedGames = Number(row.expected_games);
-  let expectedStarts =
-    row.expected_starts == null ? null : Number(row.expected_starts);
+  let expectedGames = nullableProjectionNumber(row.expected_games);
+  let expectedStarts = nullableProjectionNumber(row.expected_starts);
   let expectedToi = numericRecord(row.expected_toi);
   let ratings = record(row.ratings);
   let deployment = record(row.deployment);
@@ -325,15 +427,17 @@ function effectivePlayer(row: any, overrides: any[]): any {
     row.population,
   );
   let publishedValues = { ...baseValues };
-  const primitiveDeltas: ProjectionValues = {};
+  const editedInputs = new Set<string>();
 
   for (const override of overrides) {
     const value = override.override_value;
     const fieldPath = String(override.field_path);
     if (fieldPath.startsWith("stats.")) {
       const target = fieldPath.slice("stats.".length);
-      primitiveDeltas[target] = Number(value) - Number(baseValues[target] ?? 0);
-      publishedValues[target] = Number(value);
+      editedInputs.add(target);
+      const edited = nullableProjectionNumber(value);
+      if (edited === null) delete publishedValues[target];
+      else publishedValues[target] = edited;
     } else if (fieldPath === "player.teamId") {
       teamId = Number(value);
     } else if (fieldPath === "player.position") {
@@ -341,9 +445,11 @@ function effectivePlayer(row: any, overrides: any[]): any {
     } else if (fieldPath === "player.poolStatus") {
       poolStatus = String(value);
     } else if (fieldPath === "expected.games") {
-      expectedGames = Number(value);
+      expectedGames = nullableProjectionNumber(value);
+      editedInputs.add("GAMES_PLAYED");
     } else if (fieldPath === "expected.starts") {
-      expectedStarts = Number(value);
+      expectedStarts = nullableProjectionNumber(value);
+      editedInputs.add("GAMES_STARTED");
     } else if (fieldPath.startsWith("ratings.")) {
       ratings = setNested(ratings, fieldPath.split(".").slice(1), Number(value));
     } else if (fieldPath.startsWith("toi.")) {
@@ -362,30 +468,31 @@ function effectivePlayer(row: any, overrides: any[]): any {
   }
 
   const population = populationForPosition(position);
-  publishedValues.GAMES_PLAYED = expectedGames;
+  if (expectedGames !== null) publishedValues.GAMES_PLAYED = expectedGames;
   if (population === "goalie" && expectedStarts != null) {
     publishedValues.GAMES_STARTED = expectedStarts;
   }
   publishedValues = reconcileProjectionValues(publishedValues, population);
-  const p10 = numericRecord(row.p10);
-  const p50 = numericRecord(row.p50);
-  const p90 = numericRecord(row.p90);
-  for (const [target, delta] of Object.entries(primitiveDeltas)) {
-    p10[target] = Math.max(target === "PLUS_MINUS" ? -Infinity : 0, (p10[target] ?? 0) + delta);
-    p50[target] = Math.max(target === "PLUS_MINUS" ? -Infinity : 0, (p50[target] ?? 0) + delta);
-    p90[target] = Math.max(p50[target], (p90[target] ?? 0) + delta);
-  }
   const {
     p10: effectiveP10,
     p50: effectiveP50,
     p90: effectiveP90,
-  } = reconcileProjectionQuantiles({ p10, p50, p90 }, population);
+  } = publishedJointQuantiles({
+    stored: {
+      p10: numericRecord(row.p10),
+      p50: numericRecord(row.p50),
+      p90: numericRecord(row.p90),
+    },
+    baseValues,
+    publishedValues,
+    editedInputs: [...editedInputs].sort(),
+    population,
+  });
+  // A delta needs both a known model value and a known published value.
   const adjustmentDelta = Object.fromEntries(
     Object.keys(publishedValues)
-      .map((target) => [
-        target,
-        Number(publishedValues[target] ?? 0) - Number(baseValues[target] ?? 0),
-      ])
+      .filter((target) => target in baseValues)
+      .map((target) => [target, publishedValues[target] - baseValues[target]])
       .filter(([, delta]) => Math.abs(Number(delta)) > 1e-9),
   );
 
@@ -445,13 +552,21 @@ function effectiveTeam(row: any, overrides: any[]): any {
       );
     } else if (fieldPath.startsWith("values.")) {
       const target = fieldPath.split(".")[1];
-      const overrideValue = Number(override.override_value);
-      if (target && Number.isFinite(overrideValue)) {
-        const delta = overrideValue - Number(baseValues[target] ?? 0);
+      const overrideValue = nullableProjectionNumber(override.override_value);
+      if (target && overrideValue !== null) {
         publishedValues[target] = Math.max(0, overrideValue);
-        p10[target] = Math.max(0, Number(p10[target] ?? 0) + delta);
-        p50[target] = Math.max(0, Number(p50[target] ?? 0) + delta);
-        p90[target] = Math.max(0, Number(p90[target] ?? 0) + delta);
+        const base = baseValues[target];
+        if (base === undefined || !(target in p10 && target in p50 && target in p90)) {
+          // Unknown model value or no stored band: the band is unavailable.
+          delete p10[target];
+          delete p50[target];
+          delete p90[target];
+        } else {
+          const delta = overrideValue - base;
+          p10[target] = Math.max(0, p10[target] + delta);
+          p50[target] = Math.max(0, p50[target] + delta);
+          p90[target] = Math.max(0, p90[target] + delta);
+        }
       }
     }
   }

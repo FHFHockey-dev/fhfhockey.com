@@ -21,8 +21,8 @@ describe("PlayerStatsTable", () => {
   it.each<[PlayerStatsTableFamily, string, string, string]>([
     ["individualCounts", "Goals", "Sort by Total Points", "Sort by SH%"],
     ["individualRates", "Goals/60", "Sort by Total Points/60", "Sort by SH%"],
-    ["onIceCounts", "CF", "Sort by xGF%", "Sort by HDGF%"],
-    ["onIceRates", "CF/60", "Sort by xGF%", "Sort by HDGF%"],
+    ["onIceCounts", "CF", "Sort by CF%", "Sort by FHFH HDGF%"],
+    ["onIceRates", "CF/60", "Sort by CF%", "Sort by FHFH HDGF%"],
     [
       "goalieCounts",
       "Shots Against",
@@ -209,7 +209,7 @@ describe("PlayerStatsTable", () => {
             ? { sortKey: "totalPointsPer60", direction: "desc" as const }
             : family === "goalieCounts" || family === "goalieRates"
               ? { sortKey: "savePct", direction: "desc" as const }
-              : { sortKey: "xgfPct", direction: "desc" as const };
+              : { sortKey: "cfPct", direction: "desc" as const };
 
       render(
         <PlayerStatsTable family={family} rows={[row]} sortState={sortState} />,
@@ -409,7 +409,8 @@ describe("PlayerStatsTable", () => {
     );
 
     expect(screen.getByText("1,211")).toBeTruthy();
-    expect(screen.getByText("19.44")).toBeTruthy();
+    // ixG (bucket heuristic) is hidden on the page (decision 12).
+    expect(screen.queryByText("19.44")).toBeNull();
     expect(screen.getAllByText("52.3%").length).toBeGreaterThan(0);
 
     rerender(
@@ -460,7 +461,8 @@ describe("PlayerStatsTable", () => {
     );
 
     expect(screen.getByText("3.16")).toBeTruthy();
-    expect(screen.getByText("0.94")).toBeTruthy();
+    // ixG/60 (bucket heuristic) is hidden on the page (decision 12).
+    expect(screen.queryByText("0.94")).toBeNull();
 
     rerender(
       <PlayerStatsTable
@@ -817,5 +819,57 @@ describe("PlayerStatsTableState", () => {
     expect(
       screen.getByText("Try clearing the score-state or position filter."),
     ).toBeTruthy();
+  });
+
+  it("labels the leading column as a sort position that continues across server pages (W2-3 D16)", () => {
+    render(
+      <PlayerStatsTable
+        family="goalieCounts"
+        rows={[
+          { rowKey: "g-1", playerId: 1, playerName: "Goalie One", teamLabel: "AAA", gamesPlayed: 1, toiSeconds: 3600, savePct: 0.9 },
+          { rowKey: "g-2", playerId: 2, playerName: "Goalie Two", teamLabel: "BBB", gamesPlayed: 1, toiSeconds: 3600, savePct: 0.9 },
+        ]}
+        sortState={{ sortKey: "savePct", direction: "desc" }}
+        pagination={{ page: 2, pageSize: 50, totalRows: 52, totalPages: 2 }}
+        showRankColumn
+      />,
+    );
+
+    expect(screen.queryByText("Rank")).toBeNull();
+    expect(screen.getByTitle("Position in the current sort (not a quality rank)").textContent).toBe("#");
+    const rows = screen.getAllByRole("row");
+    expect(within(rows[1] as HTMLElement).getAllByRole("cell")[0]?.textContent).toBe("51");
+    expect(within(rows[2] as HTMLElement).getAllByRole("cell")[0]?.textContent).toBe("52");
+  });
+
+  it("labels GP as split GP when a strength or score split is active (decision 94)", () => {
+    render(
+      <PlayerStatsTable
+        family="goalieCounts"
+        rows={[{ rowKey: "g-1", playerId: 1, playerName: "Goalie One", teamLabel: "AAA", gamesPlayed: 1, toiSeconds: 50 }]}
+        sortState={{ sortKey: "savePct", direction: "desc" }}
+        isSplitActive
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Sort by Split GP" })).toBeTruthy();
+  });
+
+  it("renders the server's competition rank when the row carries one, so ties share a number (W2-3 D17)", () => {
+    render(
+      <PlayerStatsTable
+        family="goalieCounts"
+        rows={[
+          { rowKey: "t-1", playerId: 1, playerName: "Team One", teamLabel: "AAA", gamesPlayed: 1, toiSeconds: 3600, savePct: 0.9, rank: 1 },
+          { rowKey: "t-2", playerId: 2, playerName: "Team Two", teamLabel: "BBB", gamesPlayed: 1, toiSeconds: 3600, savePct: 0.9, rank: 1 },
+          { rowKey: "t-3", playerId: 3, playerName: "Team Three", teamLabel: "CCC", gamesPlayed: 1, toiSeconds: 3600, savePct: 0.8, rank: 3 },
+        ]}
+        sortState={{ sortKey: "savePct", direction: "desc" }}
+        showRankColumn
+      />,
+    );
+
+    const rows = screen.getAllByRole("row");
+    expect([1, 2, 3].map((index) => within(rows[index] as HTMLElement).getAllByRole("cell")[0]?.textContent)).toEqual(["1", "1", "3"]);
   });
 });

@@ -6,6 +6,11 @@ import useSustainabilityStats from "hooks/useSustainabilityStats";
 import useCareerAveragesStats from "hooks/useCareerAveragesStats";
 import { TimeOption } from "components/TimeOptions/TimeOptions";
 import { Data } from "pages/api/CareerAverages/[playerId]";
+import {
+  compareWindowToCareer,
+  type CareerComparisonStat,
+  type CareerComparisonStatus,
+} from "lib/sustainability/careerComparison";
 import Spinner from "components/Spinner";
 
 import styles from "./SustainabilityVSCareerChart.module.scss";
@@ -24,106 +29,80 @@ const asPercent = (num: number | null) =>
 const BLUE = "#07AAE3";
 const RED = "#F65B61";
 
-// How to decide which bg color to use?
-// https://github.com/FHFHockey-dev/fhfhockey.com/issues/14#issuecomment-1208254068
-const COLUMNS = [
+const GREY = "#a7b4c0"; // $color-neutral-400: insufficient sample
+
+// The current window is judged against a usual range for a window of its own
+// size, built from the pooled career (BC W1-9 D12). Red means outside that
+// range in the direction the column calls unsustainable; grey means the
+// window or career sample is insufficient. Descriptive, not a forecast.
+const COLUMNS: ReadonlyArray<{
+  id: CareerComparisonStat;
+  name: string;
+  description: string;
+  format: (num: number | null) => React.ReactNode;
+  redWhen: "hot" | "cold";
+}> = [
   {
     id: "S%",
     name: "S%",
-    description: "Shoting Percentage",
+    description: "Shooting percentage: goals ÷ shots on goal",
     format: asPercent,
-    getBgColor: (value: number, cAvg: Data) => {
-      if (cAvg["S%"] === null) {
-        return BLUE;
-      }
-      // Red: If S% is higher than cAvg by 2 or more %
-      const TWO_PERCENT = 0.02;
-      return value - cAvg["S%"] >= TWO_PERCENT ? RED : BLUE;
-    },
+    redWhen: "hot",
   },
   {
     id: "xS%",
     name: "xS%",
-    description: "XG Per Sixty",
+    description:
+      "Expected shooting percentage: ixG ÷ unblocked attempts (iFF) × 100",
     format: asPercent,
-    getBgColor: (value: number, cAvg: Data) => {
-      if (cAvg["xS%"] === null) {
-        return BLUE;
-      }
-      // is xS% is lower than cAvg by 2 or more %
-      const TWO_PERCENT = 0.02;
-      return cAvg["xS%"] - value >= TWO_PERCENT ? RED : BLUE;
-    },
+    redWhen: "cold",
   },
   {
     id: "IPP",
     name: "IPP",
-    description: "IPP",
+    description: "Individual points percentage: points ÷ on-ice goals for",
     format: asPercent,
-    getBgColor: (value: number, cAvg: Data) => {
-      if (cAvg["IPP"] === null) {
-        return BLUE;
-      }
-      // if IPP is higher than cAvg by 5 or more %
-      const FIVE_PERCENT = 0.05;
-      return value - cAvg["IPP"] >= FIVE_PERCENT ? RED : BLUE;
-    },
+    redWhen: "hot",
   },
   {
     id: "oiSH%",
     name: "oiSH%",
-    description: "On-Ice Shotting Percentage",
+    description: "On-ice shooting percentage: on-ice goals ÷ on-ice shots",
     format: asPercent,
-    getBgColor: (value: number, cAvg: Data) => {
-      if (cAvg["oiSH%"] === null) {
-        return BLUE;
-      }
-      // oiSH% is more than 1% above cAvg
-      const ONE_PERCENT = 0.01;
-      return value - cAvg["oiSH%"] >= ONE_PERCENT ? RED : BLUE;
-    },
+    redWhen: "hot",
   },
   {
     id: "secA%",
     name: "SecA%",
-    description: "Secondary assist %",
+    description: "Secondary assists ÷ total assists",
     format: asPercent,
-    getBgColor: (value: number, cAvg: Data) => {
-      if (cAvg["secA%"] === null) {
-        return BLUE;
-      }
-      // secA% is higher than cAvg in any fashion
-      return value >= cAvg["secA%"] ? RED : BLUE;
-    },
+    redWhen: "hot",
   },
   {
     id: "SOG/60",
     name: "SOG/60",
-    description: "SOG/60",
-    format: (num: number) => num.toFixed(1),
-    getBgColor: (value: number, cAvg: Data) => {
-      if (cAvg["SOG/60"] === null) {
-        return BLUE;
-      }
-      // SOG/60 is lower than cAVG
-      return value <= cAvg["SOG/60"] ? RED : BLUE;
-    },
+    description: "Shots on goal per 60 minutes",
+    format: (num: number | null) =>
+      num === null ? <span>&nbsp;</span> : num.toFixed(1),
+    redWhen: "cold",
   },
   {
     id: "oZS%",
     name: "oZS%",
-    description: "Offensive zone start %",
+    description:
+      "Offensive zone start %: offensive ÷ (offensive + defensive) zone starts",
     format: asPercent,
-    getBgColor: (value: number, cAvg: Data) => {
-      if (cAvg["oZS%"] === null) {
-        return BLUE;
-      }
-      // oZS% is lower than cAvg by 5 or more %
-      const FIVE_PERCENT = 0.05;
-      return cAvg["oZS%"] - value >= FIVE_PERCENT ? RED : BLUE;
-    },
+    redWhen: "cold",
   },
-] as const;
+];
+
+function statusColor(
+  status: CareerComparisonStatus,
+  redWhen: "hot" | "cold"
+): string {
+  if (status === "insufficient") return GREY;
+  return status === redWhen ? RED : BLUE;
+}
 
 type SustainabilityVSCareerChartProps = {
   playerId: number | undefined;
@@ -166,14 +145,23 @@ function SustainabilityVSCareerChart({
             <HightText>CAREER</HightText>
           </span>
         </div>
-        {COLUMNS.map(({ id, name, description, format, getBgColor }) => {
-          const color =
-            !loading && stats && careerAveragesStats && stats[id] !== null
-              ? // @ts-ignore
-                getBgColor(stats[id], careerAveragesStats)
-              : BLUE;
+        {COLUMNS.map(({ id, name, description, format, redWhen }) => {
+          const current = stats as Data | undefined;
+          const status: CareerComparisonStatus =
+            !loading && current && careerAveragesStats
+              ? compareWindowToCareer(
+                  id,
+                  current.components?.[id],
+                  careerAveragesStats.components?.[id]
+                ).status
+              : "insufficient";
+          const color = loading ? BLUE : statusColor(status, redWhen);
+          const title =
+            status === "insufficient" && !loading
+              ? `${description} (insufficient sample to compare)`
+              : description;
           return (
-            (<div key={id} title={description} className={styles.row}>
+            (<div key={id} title={title} className={styles.row}>
               <span
                 className={styles.sustainabilityStat}
                 style={{
@@ -185,16 +173,15 @@ function SustainabilityVSCareerChart({
                     size={size.screen === BreakPoint.l ? "medium" : "small"}
                     center
                   />
-                ) : stats ? (
-                  // @ts-ignore
-                  (format(stats[id]))
+                ) : current ? (
+                  format(current[id] ?? null)
                 ) : (
                   <span>&nbsp;</span>
                 )}
               </span>
               <span
                 className={styles.label}
-                style={{ color: color === BLUE ? "" : color }}
+                style={{ color: color === RED ? color : "" }}
               >
                 {name}
               </span>
@@ -205,8 +192,7 @@ function SustainabilityVSCareerChart({
                     center
                   />
                 ) : careerAveragesStats ? (
-                  // @ts-ignore
-                  (format(careerAveragesStats[id]))
+                  format(careerAveragesStats[id] ?? null)
                 ) : (
                   <span>&nbsp;</span>
                 )}
@@ -222,16 +208,16 @@ function SustainabilityVSCareerChart({
 
 const LEGEND_INFO = [
   {
-    color: "rgba(76, 167, 222, 1)",
-    label: "Blue is sustainable",
+    color: BLUE,
+    label: "Blue: within the career usual range for this sample",
   },
   {
-    color: "rgba(212, 97, 97, 1)",
-    label: "Red is unsustainable",
+    color: RED,
+    label: "Red: outside it in the unsustainable direction",
   },
   {
-    color: "rgba(255, 255, 255, 0.5)",
-    label: "Grey is career average",
+    color: GREY,
+    label: "Grey: sample too small to compare",
   },
 ] as const;
 

@@ -62,6 +62,10 @@ function goalieMetricState(
   row: GoalieMatrixResponse["rows"][number],
   staleSource: boolean,
 ) {
+  // Decision 98: below the visible floor the row is unranked by design.
+  if (!row.sample.minimumSampleMet) {
+    return { label: "Insufficient sample", marker: "L", className: styles.metricStateLowSample };
+  }
   if (cell.qualifiedPeerCount === 0) {
     return { label: "No sample", marker: "?", className: styles.metricStateUnavailable };
   }
@@ -71,7 +75,7 @@ function goalieMetricState(
   if (staleSource) {
     return { label: "Stale source", marker: "~", className: styles.metricStateStale };
   }
-  if (!row.sample.minimumSampleMet || row.sample.confidence === "low") {
+  if (row.sample.confidence === "low") {
     return { label: "Low sample", marker: "L", className: styles.metricStateLowSample };
   }
   if (row.warnings.length > 0) {
@@ -96,6 +100,7 @@ function GoalieMetricCell({
   displayMode: RankingsFilterState["displayMode"];
   staleSource: boolean;
 }) {
+  const insufficientSample = !row.sample.minimumSampleMet;
   const unavailable =
     cell.qualifiedPeerCount === 0 || cell.rawValue == null || cell.percentile == null;
   const effectiveStaleSource = staleSource && !unavailable;
@@ -109,9 +114,11 @@ function GoalieMetricCell({
     effectiveStaleSource
       ? "Snapshot is older than latest available goalie matrix snapshot"
       : null,
-    !row.sample.minimumSampleMet || row.sample.confidence === "low"
-      ? "Low sample"
-      : null,
+    insufficientSample
+      ? "Insufficient sample: below the minimum starts or shots, so not ranked"
+      : row.sample.confidence === "low"
+        ? "Low sample"
+        : null,
     row.warnings.length ? `Caveats: ${formatCaveats(row.warnings)}` : null,
     column.source,
   ].filter(Boolean).join(" | ");
@@ -148,7 +155,11 @@ function GoalieMetricCell({
             </span>
           ) : null}
           <span className={styles.metricValueLine}>
-            {unavailable ? "N/A" : cell.formattedValue ?? "-"}
+            {insufficientSample && cell.formattedValue
+              ? cell.formattedValue
+              : unavailable
+                ? "N/A"
+                : cell.formattedValue ?? "-"}
           </span>
         </div>
         {state ? (
@@ -277,7 +288,9 @@ export default function GoalieMatrixTable({
                       <span className={styles.playerIdentity}>
                         <strong>{row.entity.name ?? `Goalie ${row.entity.id}`}</strong>
                         <span>
-                          Sample {row.sample.confidence}
+                          {row.sample.minimumSampleMet
+                            ? `Sample ${row.sample.confidence}`
+                            : "Insufficient sample"}
                           {" · "}
                           Role {row.role.roleConfidence}
                           {row.role.confirmedStatus ? " · confirmed starter" : ""}
@@ -319,6 +332,7 @@ export default function GoalieMatrixTable({
         </table>
       </ScrollRegion>
       <div className={styles.inlineNotice}>
+        {payload?.meta.sampleFloor ? `${payload.meta.sampleFloor.label} ` : ""}
         Roles come from projected season start share when available, otherwise
         from this window&apos;s starts among each team&apos;s top two goalies.
         Workload notes are estimates, not injury news.
@@ -340,7 +354,7 @@ export default function GoalieMatrixTable({
             <span className={styles.legendPill}>? Source pending/no sample</span>
             <span className={styles.legendPill}>~ Stale source</span>
             <span className={styles.legendPill}>! Source caveat</span>
-            <span className={styles.legendPill}>L Low sample</span>
+            <span className={styles.legendPill}>L Low or insufficient sample</span>
             <span className={styles.legendPill}>0 True zero</span>
           </div>
           <div className={styles.paginationControls}>

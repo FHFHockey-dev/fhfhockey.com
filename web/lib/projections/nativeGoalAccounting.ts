@@ -1,7 +1,8 @@
 import { boardSkaterForecast, skaterParticipationFromEvidence } from "./starterBoardScoring";
 import type { DailyBoardEvidence } from "./dailyBoardEvidence";
 
-/** The current native producer has two reported buckets, not a full-play estimator. */
+/** The native producer reports exclusive ES/PP/PK buckets (PK null when the team's PK bucket is
+ * unknown); empty-net, overtime and shootout accounting stay unproved, so it is not a full-play estimator. */
 export type NativeSkaterGoalRow = {
   player_id: number;
   game_id: number;
@@ -10,7 +11,7 @@ export type NativeSkaterGoalRow = {
   horizon_games: number;
   proj_goals_es: number | null;
   proj_goals_pp: number | null;
-  proj_goals_pk: null;
+  proj_goals_pk: number | null;
   uncertainty?: {
     model?: {
       skater_selection?: {
@@ -107,7 +108,6 @@ export function buildNativeRosterContributorCoverage(args: {
 }
 
 const endpointGaps = [
-  "missing_native_pk_goal_estimator",
   "unproved_regulation_strength_partition",
   "unproved_overtime_accounting",
   "unproved_empty_net_accounting",
@@ -171,10 +171,12 @@ function endpointDisclosure(asOfDate: string, horizonGames: number) {
  */
 export function buildNativePlayerGoalAccounting(row: NativeSkaterGoalRow) {
   assertScope(row);
-  if (!Number.isSafeInteger(row.player_id) || row.player_id <= 0 || row.proj_goals_pk !== null) {
-    throw new Error("Invalid native player goal identity or unsupported PK output");
+  if (!Number.isSafeInteger(row.player_id) || row.player_id <= 0) {
+    throw new Error("Invalid native player goal identity");
   }
   const reportedEsPpMean = sumAvailableReportedMeans([row.proj_goals_es, row.proj_goals_pp]);
+  // A null PK head is unknown, so the all-situation sum is unknown too (never ES + PP + 0).
+  const reportedAllStrengthMean = sumAvailableReportedMeans([row.proj_goals_es, row.proj_goals_pp, row.proj_goals_pk]);
   const selection = row.uncertainty?.model?.skater_selection;
   // Only EV/availability conflicts affect skater appearance, matching the evidence helper.
   // Keep the complete conflicts in the stored selection; scope only this participation calculation.
@@ -191,6 +193,7 @@ export function buildNativePlayerGoalAccounting(row: NativeSkaterGoalRow) {
   const bootstrap = selection?.season_bootstrap;
   const bootstrapBlend = Boolean(bootstrap && (bootstrap.fantasyWeight > 0 || bootstrap.historyWeight > 0));
   const reasons: string[] = [...endpointGaps];
+  if (row.proj_goals_pk === null) reasons.push("missing_native_pk_goal_estimator");
   if (row.proj_goals_es === null) reasons.push("missing_reported_es_goal_head");
   if (row.proj_goals_pp === null) reasons.push("missing_reported_pp_goal_head");
   if (!oneGame) reasons.push("scaled_horizon_is_not_a_player_game");
@@ -204,10 +207,11 @@ export function buildNativePlayerGoalAccounting(row: NativeSkaterGoalRow) {
     gameId: row.game_id,
     teamId: row.team_id,
     horizonGames: row.horizon_games,
-    reportedComponents: { esMean: row.proj_goals_es, ppMean: row.proj_goals_pp, pkMean: null },
+    reportedComponents: { esMean: row.proj_goals_es, ppMean: row.proj_goals_pp, pkMean: row.proj_goals_pk },
     reportedBasis: conditional ? "conditional_playing" as const : "legacy_unclassified" as const,
     esBucketDefinition: bootstrapBlend ? "bootstrap_all_strength_minus_pp_blend" as const : "native_ev_rate_on_reconciled_shots" as const,
     reportedEsPpMean,
+    reportedAllStrengthMean,
     conditionalEsPpMean: oneGame && conditional ? reportedEsPpMean : null,
     participationProbabilityGivenGamePlayed: oneGame ? forecast.participationProbability : null,
     participationReason: !oneGame ? "scaled_horizon_is_not_a_player_game"
@@ -239,6 +243,7 @@ export function buildNativeTeamGoalAccounting(args: {
   const contributors = args.playerRows.map(buildNativePlayerGoalAccounting);
   const esMean = sumAvailableReportedMeans(args.playerRows.map(row => row.proj_goals_es));
   const ppMean = sumAvailableReportedMeans(args.playerRows.map(row => row.proj_goals_pp));
+  const pkMean = sumAvailableReportedMeans(args.playerRows.map(row => row.proj_goals_pk));
   const unmodeledRosterPlayerIds = args.currentRosterPlayerIds.filter(id => !ids.includes(id));
   const unexpectedProjectedPlayerIds = ids.filter(id => !args.currentRosterPlayerIds.includes(id));
   const reasons = new Set<string>([...endpointGaps, "unknown_residual_scorers", "unproved_game_time_roster", "unproved_goalie_scoring"]);
@@ -254,8 +259,9 @@ export function buildNativeTeamGoalAccounting(args: {
     teamId: args.teamId,
     horizonGames: args.horizonGames,
     reportedBasis: "sum_of_serialized_player_components" as const,
-    reportedComponents: { esMean, ppMean, pkMean: null },
+    reportedComponents: { esMean, ppMean, pkMean },
     reportedEsPpMean: sumAvailableReportedMeans([esMean, ppMean]),
+    reportedAllStrengthMean: sumAvailableReportedMeans([esMean, ppMean, pkMean]),
     sumOfPlayerConditionalEsPpMeans: allConditional ? sumReportedMeans(contributors.map(row => row.conditionalEsPpMean!)) : null,
     expectedListedEsPpMeanGivenGamePlayed: allIntegrated ? sumReportedMeans(contributors.map(row => row.expectedEsPpMeanGivenGamePlayed!)) : null,
     residualMean: null,

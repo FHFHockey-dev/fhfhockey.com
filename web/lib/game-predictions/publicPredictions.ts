@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Json } from "lib/supabase/database-generated.types";
 import { forgeProjectionAdmissible, gamePredictionsRequireForgeProof, type GamePredictionFeatureSnapshotPayload } from "./featureBuilder";
+import { displayedWinnerTeamId } from "./winnerPick";
 import { classifyExternalInputProof, type ClassifiedRunProof, type ExternalInputProofStatus } from "lib/projections/externalInputProof";
 
 type Tables<T extends keyof Database["public"]["Tables"]> =
@@ -468,14 +469,14 @@ export function buildPublicGamePredictionsPayload(args: {
       ),
       homeWinProbability: output.home_win_probability,
       awayWinProbability: output.away_win_probability,
-      predictedWinnerTeamId:
-        history?.predicted_winner_team_id ??
-        (output.home_win_probability != null &&
-        output.away_win_probability != null
-          ? output.home_win_probability >= output.away_win_probability
-            ? output.home_team_id
-            : output.away_team_id
-          : null),
+      // Decision 43: the pick follows the displayed pair (50/50 is a tie, no
+      // pick), never the stored id written under the retired 0.52 rule.
+      predictedWinnerTeamId: displayedWinnerTeamId({
+        homeWinProbability: output.home_win_probability,
+        awayWinProbability: output.away_win_probability,
+        homeTeamId: output.home_team_id,
+        awayTeamId: output.away_team_id,
+      }),
       confidenceLabel:
         history?.confidence_label ??
         (isRecord(output.metadata) &&

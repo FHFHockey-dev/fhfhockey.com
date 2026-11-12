@@ -192,7 +192,7 @@ describe("warmPlayerStatsLandingSeasonAggregateCache", () => {
       },
       view: {
         sort: {
-          sortKey: "xgfPct",
+          sortKey: "cfPct",
           direction: "desc",
         },
       },

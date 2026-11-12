@@ -45,7 +45,6 @@ type GoalieStatsUnifiedRow = Record<string, number | string | null | boolean>;
 const ADVANCED_STRENGTH_SELECT_FIELDS =
   GOALIE_ADVANCED_STRENGTH_OPTIONS.flatMap(({ prefix }) => [
     `${prefix}_toi`,
-    `${prefix}_gsaa`,
     `${prefix}_xg_against`,
     `${prefix}_goals_against`,
     `${prefix}_hd_shots_against`,
@@ -59,42 +58,139 @@ const ADVANCED_STRENGTH_SELECT_FIELDS =
 export const GOALIE_ADVANCED_METRICS_SELECT = [
   "player_id",
   "player_name",
+  "date",
   "games_played",
   "games_started",
   "quality_start",
   ...ADVANCED_STRENGTH_SELECT_FIELDS,
 ].join(",");
 
+/** Rows per request; PostgREST caps a response, so the reader pages. */
+export const GOALIE_ADVANCED_METRICS_PAGE_SIZE = 1000;
+
+type GoalieAdvancedMetricsClient = { from: (table: string) => any };
+
+/**
+ * Advanced goalie rows for exactly the selected window (PR-U1): season and
+ * date bounds, keyed order, paged until a short page, so the value tier and
+ * the table never mix season-wide rows with a date-filtered leaderboard.
+ */
+export async function fetchGoalieAdvancedMetricsRows(
+  client: GoalieAdvancedMetricsClient,
+  seasonId: number,
+  window: { startDate: string; endDate: string },
+  pageSize: number = GOALIE_ADVANCED_METRICS_PAGE_SIZE,
+): Promise<GoalieStatsUnifiedRow[]> {
+  const rows: GoalieStatsUnifiedRow[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await client
+      .from("goalie_stats_unified")
+      .select(GOALIE_ADVANCED_METRICS_SELECT)
+      .eq("season_id", seasonId)
+      .gte("date", window.startDate)
+      .lte("date", window.endDate)
+      .order("date", { ascending: true })
+      .order("player_id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) {
+      throw error;
+    }
+    const page = (data ?? []) as GoalieStatsUnifiedRow[];
+    rows.push(...page);
+    if (page.length < pageSize) {
+      return rows;
+    }
+  }
+}
+
 const finiteOrZero = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value) ? value : 0;
 
 const finiteOrNull = (value: number) => (Number.isFinite(value) ? value : null);
 
-const sumField = (rows: GoalieStatsUnifiedRow[], field: string) => {
-  let total = 0;
-  let hasValue = false;
+const knownNumber = (value: unknown) =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
 
+/**
+ * Window total of a count, unknown when any game's value is unknown
+ * (rule 13: never keep exposure for a game whose count is missing).
+ */
+const completeSum = (rows: GoalieStatsUnifiedRow[], field: string) => {
+  let total = 0;
+  for (const row of rows) {
+    const value = knownNumber(row[field]);
+    if (value === null) {
+      return null;
+    }
+    total += value;
+  }
+  return rows.length ? total : null;
+};
+
+/**
+ * Per-60 from per-game (count, TOI) pairs. Unit adapter (rule 17): the NST
+ * `nst_*_counts_toi` fields are minutes. Unknown when any game lacks either.
+ */
+const pairedPer60 = (
+  rows: GoalieStatsUnifiedRow[],
+  countField: string,
+  toiMinutesField: string,
+) => {
+  const count = completeSum(rows, countField);
+  const minutes = completeSum(rows, toiMinutesField);
+  return count === null || minutes === null || minutes <= 0
+    ? null
+    : finiteOrNull((count / minutes) * 60);
+};
+
+/**
+ * League SV% at one strength over the fetched window: pooled saves over pooled
+ * shots from every row with both shots and goals against known.
+ */
+const leagueSavePct = (rows: GoalieStatsUnifiedRow[], prefix: string) => {
+  let shots = 0;
+  let goals = 0;
   rows.forEach((row) => {
-    const value = row[field];
-    if (typeof value === "number" && Number.isFinite(value)) {
-      total += value;
-      hasValue = true;
+    const sa = knownNumber(row[`${prefix}_shots_against`]);
+    const ga = knownNumber(row[`${prefix}_goals_against`]);
+    if (sa !== null && ga !== null) {
+      shots += sa;
+      goals += ga;
     }
   });
-
-  return { total, hasValue };
+  return shots > 0 ? 1 - goals / shots : null;
 };
 
-const sumFieldOrNull = (rows: GoalieStatsUnifiedRow[], field: string) => {
-  const { total, hasValue } = sumField(rows, field);
-  return hasValue ? total : null;
+/**
+ * GSAA = SA × (1 − league SV%) − GA at the window aggregate (decision 10),
+ * never a sum of per-game GSAA. Unknown when any game lacks SA or GA.
+ */
+const windowGsaa = (
+  goalieRows: GoalieStatsUnifiedRow[],
+  prefix: string,
+  leagueSv: number | null,
+) => {
+  const shotsAgainst = completeSum(goalieRows, `${prefix}_shots_against`);
+  const goalsAgainst = completeSum(goalieRows, `${prefix}_goals_against`);
+  return leagueSv === null || shotsAgainst === null || goalsAgainst === null
+    ? null
+    : finiteOrNull(shotsAgainst * (1 - leagueSv) - goalsAgainst);
 };
 
-const per60 = (value: number, toiMinutes: number) =>
-  toiMinutes > 0 ? finiteOrNull((value / toiMinutes) * 60) : null;
-
-const per60OrNull = (value: number | null, toi: number) =>
-  value === null ? null : per60(value, toi);
+/**
+ * Quality starts over starts (decision 40 credits the starter only). A start
+ * whose quality-start result is unknown makes the window rate unknown, never a
+ * failed start (PR-U2).
+ */
+const qualityStartsPct = (goalieRows: GoalieStatsUnifiedRow[]) => {
+  const starts = goalieRows.filter(
+    (row) => (knownNumber(row.games_started) ?? 0) >= 1,
+  );
+  const qualityStarts = completeSum(starts, "quality_start");
+  return qualityStarts === null
+    ? null
+    : finiteOrNull(qualityStarts / starts.length);
+};
 
 const weightedAverageField = (
   rows: GoalieStatsUnifiedRow[],
@@ -127,6 +223,12 @@ export const buildGoalieAdvancedMetricsRows = (
   rows: GoalieStatsUnifiedRow[],
 ): GoalieAdvancedMetricsRow[] => {
   const byGoalie = new Map<number, GoalieStatsUnifiedRow[]>();
+  const leagueSvByPrefix = new Map(
+    GOALIE_ADVANCED_STRENGTH_OPTIONS.map(({ prefix }) => [
+      prefix,
+      leagueSavePct(rows, prefix),
+    ]),
+  );
 
   rows.forEach((row) => {
     const playerId = finiteOrZero(row.player_id);
@@ -146,44 +248,36 @@ export const buildGoalieAdvancedMetricsRows = (
         (sum, row) => sum + finiteOrZero(row.games_started),
         0,
       );
-      const qualityStarts = goalieRows.reduce(
-        (sum, row) => sum + finiteOrZero(row.quality_start),
-        0,
-      );
 
       const strengths = GOALIE_ADVANCED_STRENGTH_OPTIONS.reduce(
         (acc, strength) => {
           const { prefix, value } = strength;
-          const toi = sumField(goalieRows, `${prefix}_toi`).total;
-          const xgAgainst = sumFieldOrNull(goalieRows, `${prefix}_xg_against`);
-          const hdShotsAgainst = sumFieldOrNull(
-            goalieRows,
-            `${prefix}_hd_shots_against`,
-          );
-          const shotsAgainst = sumFieldOrNull(
-            goalieRows,
-            `${prefix}_shots_against`,
-          );
-          const reboundAttemptsAgainst = sumFieldOrNull(
-            goalieRows,
-            `${prefix}_rebound_attempts_against`,
-          );
-          const rushAttemptsAgainst = sumFieldOrNull(
-            goalieRows,
-            `${prefix}_rush_attempts_against`,
-          );
+          const toiField = `${prefix}_toi`;
 
           acc[value] = {
-            gsaa: sumFieldOrNull(goalieRows, `${prefix}_gsaa`),
-            xgAgainst,
-            xgAgainstPer60: per60OrNull(xgAgainst, toi),
-            hdShotsAgainstPer60: per60OrNull(hdShotsAgainst, toi),
-            shotsAgainstPer60: per60OrNull(shotsAgainst, toi),
-            reboundAttemptsAgainstPer60: per60OrNull(
-              reboundAttemptsAgainst,
-              toi,
+            gsaa: windowGsaa(goalieRows, prefix, leagueSvByPrefix.get(prefix) ?? null),
+            xgAgainst: completeSum(goalieRows, `${prefix}_xg_against`),
+            xgAgainstPer60: pairedPer60(goalieRows, `${prefix}_xg_against`, toiField),
+            hdShotsAgainstPer60: pairedPer60(
+              goalieRows,
+              `${prefix}_hd_shots_against`,
+              toiField,
             ),
-            rushAttemptsAgainstPer60: per60OrNull(rushAttemptsAgainst, toi),
+            shotsAgainstPer60: pairedPer60(
+              goalieRows,
+              `${prefix}_shots_against`,
+              toiField,
+            ),
+            reboundAttemptsAgainstPer60: pairedPer60(
+              goalieRows,
+              `${prefix}_rebound_attempts_against`,
+              toiField,
+            ),
+            rushAttemptsAgainstPer60: pairedPer60(
+              goalieRows,
+              `${prefix}_rush_attempts_against`,
+              toiField,
+            ),
             avgShotDistance: weightedAverageField(
               goalieRows,
               `${prefix}_avg_shot_distance`,
@@ -212,8 +306,7 @@ export const buildGoalieAdvancedMetricsRows = (
           0,
         ),
         gamesStarted,
-        qualityStartsPct:
-          gamesStarted > 0 ? finiteOrNull(qualityStarts / gamesStarted) : null,
+        qualityStartsPct: qualityStartsPct(goalieRows),
         strengths,
       };
     })
@@ -413,7 +506,7 @@ export interface GoalieVarianceAverages {
 export const buildGoalieVarianceAverages = (
   goalieRankings: GoalieRanking[],
 ): GoalieVarianceAverages => {
-  const averageOrNull = (values: Array<number | undefined>) => {
+  const averageOrNull = (values: Array<number | null | undefined>) => {
     const validValues = values.filter((value): value is number =>
       Number.isFinite(value),
     );
@@ -432,7 +525,7 @@ export const buildGoalieVarianceAverages = (
 };
 
 export const formatGoalieVarianceValue = (
-  value: number | undefined,
+  value: number | null | undefined,
   averageValue: number | null,
   varianceDisplayMode: GoalieVarianceDisplayMode,
 ) => {
@@ -463,7 +556,14 @@ export const getGoalieLeaderboardColumns = (
     width: "7%",
     sortKey: "valueTierScore",
     infoTitle:
-      "Relative value tier for the current filtered population. Uses fantasy production, consistency, workload, and start confidence.",
+      "Relative value tier among goalies at or above the value-tier start floor. Uses fantasy production, consistency, workload, and start confidence. Below the floor, or without two games and two graded weeks, it shows insufficient sample.",
+  },
+  {
+    label: "Wks",
+    width: "4%",
+    sortKey: "eligibleWeeks",
+    infoTitle:
+      "Weeks played as a starter (at least one start and 20 minutes) that were graded against the starter average.",
   },
   { label: "WoW Pts", width: "5%", sortKey: "totalPoints" },
   { label: "Elite Wk", width: "5%", sortKey: "eliteWeeks" },
@@ -532,126 +632,104 @@ export const getGoalieLeaderboardColumns = (
   { label: "GAA", width: "5%", sortKey: "overallGaa" },
 ];
 
+/** Decision 98: a visible, user-lowerable default floor for the value tier. */
+export const GOALIE_VALUE_TIER_DEFAULT_MIN_STARTS = 5;
+
+const finiteValueOrNull = (value: number | null | undefined) =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
+
+/** Mean of component parts; unknown when any part is unknown (no rescaling). */
+const averageOfKnown = (values: Array<number | null>) =>
+  values.some((value) => value === null)
+    ? null
+    : average(values as number[]);
+
+/**
+ * Value tier over the qualified cohort (W2-2 D9, decision 98): goalies with at
+ * least `minimumStarts` starts. Percentiles use only known values, a missing
+ * input is unknown rather than 0, and a goalie below the floor or with an
+ * unknown component (for example a spread from fewer than two games or weeks)
+ * gets no tier and is marked "insufficient sample".
+ */
 export const buildGoalieValueTierMap = (
   goalieRankings: GoalieRanking[],
   advancedMetricsRows: GoalieAdvancedMetricsRow[] = [],
+  minimumStarts: number = GOALIE_VALUE_TIER_DEFAULT_MIN_STARTS,
 ) => {
-  const goaliesWithFiniteValues = goalieRankings.filter(
-    (goalie) =>
-      Number.isFinite(goalie.averageFantasyPointsPerGame) ||
-      Number.isFinite(goalie.wowVariance) ||
-      Number.isFinite(goalie.gogVariance) ||
-      Number.isFinite(goalie.totalGamesPlayed),
+  const cohort = goalieRankings.filter(
+    (goalie) => (goalie.totalGamesStarted ?? 0) >= minimumStarts,
   );
+  const knownValues = (pick: (goalie: GoalieRanking) => number | null | undefined) =>
+    cohort
+      .map((goalie) => finiteValueOrNull(pick(goalie)))
+      .filter((value): value is number => value !== null);
+  const percentileOrNull = (
+    value: number | null | undefined,
+    values: number[],
+    direction: "larger" | "smaller",
+  ) => {
+    const known = finiteValueOrNull(value);
+    return known === null || values.length === 0
+      ? null
+      : percentile(known, values, direction);
+  };
 
-  const fantasyValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.averageFantasyPointsPerGame),
-  );
-  const fantasyDeltaValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.fantasyPointsAboveAverage),
-  );
-  const wowVarianceValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.wowVariance),
-  );
-  const gogVarianceValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.gogVariance),
-  );
-  const gamesPlayedValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.totalGamesPlayed),
-  );
-  const gamesStartedValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.totalGamesStarted),
-  );
-  const timeOnIceValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.totalTimeOnIce),
-  );
-  const acceptableWeekValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.percentAcceptableWeeks),
+  const fantasyValues = knownValues((goalie) => goalie.averageFantasyPointsPerGame);
+  const fantasyDeltaValues = knownValues((goalie) => goalie.fantasyPointsAboveAverage);
+  const wowVarianceValues = knownValues((goalie) => goalie.wowVariance);
+  const gogVarianceValues = knownValues((goalie) => goalie.gogVariance);
+  const gamesPlayedValues = knownValues((goalie) => goalie.totalGamesPlayed);
+  const gamesStartedValues = knownValues((goalie) => goalie.totalGamesStarted);
+  const timeOnIceValues = knownValues((goalie) => goalie.totalTimeOnIce);
+  const acceptableWeekValues = knownValues(
+    (goalie) => goalie.percentAcceptableWeeks,
   );
   const advancedMetricsByGoalieId = new Map(
     advancedMetricsRows.map((row) => [row.playerId, row]),
   );
-  const qualityStartPctValues = goaliesWithFiniteValues
-    .map(
-      (goalie) =>
-        advancedMetricsByGoalieId.get(goalie.playerId)?.qualityStartsPct,
-    )
-    .filter((value): value is number => Number.isFinite(value));
+  const qualityStartPctValues = knownValues(
+    (goalie) => advancedMetricsByGoalieId.get(goalie.playerId)?.qualityStartsPct,
+  );
 
-  const scoreParts = (goalie: GoalieRanking) => {
+  const scoreForGoalie = (goalie: GoalieRanking) => {
     const qualityStartsPct = advancedMetricsByGoalieId.get(
       goalie.playerId,
     )?.qualityStartsPct;
     const startConfidenceParts = [
-      percentile(
-        toFiniteNumber(goalie.totalGamesStarted),
-        gamesStartedValues,
-        "larger",
-      ),
-      percentile(
-        toFiniteNumber(goalie.percentAcceptableWeeks),
+      percentileOrNull(goalie.totalGamesStarted, gamesStartedValues, "larger"),
+      percentileOrNull(
+        goalie.percentAcceptableWeeks,
         acceptableWeekValues,
         "larger",
       ),
     ];
 
-    if (
-      typeof qualityStartsPct === "number" &&
-      Number.isFinite(qualityStartsPct)
-    ) {
+    if (finiteValueOrNull(qualityStartsPct) !== null) {
       startConfidenceParts.push(
-        percentile(qualityStartsPct, qualityStartPctValues, "larger"),
+        percentileOrNull(qualityStartsPct, qualityStartPctValues, "larger"),
       );
     }
 
-    return {
-      fantasyScore: average([
-        percentile(
-          toFiniteNumber(goalie.averageFantasyPointsPerGame),
-          fantasyValues,
-          "larger",
-        ),
-        percentile(
-          toFiniteNumber(goalie.fantasyPointsAboveAverage),
-          fantasyDeltaValues,
-          "larger",
-        ),
+    const components = [
+      averageOfKnown([
+        percentileOrNull(goalie.averageFantasyPointsPerGame, fantasyValues, "larger"),
+        percentileOrNull(goalie.fantasyPointsAboveAverage, fantasyDeltaValues, "larger"),
       ]),
-      consistencyScore: average([
-        percentile(
-          toFiniteNumber(goalie.wowVariance),
-          wowVarianceValues,
-          "smaller",
-        ),
-        percentile(
-          toFiniteNumber(goalie.gogVariance),
-          gogVarianceValues,
-          "smaller",
-        ),
+      averageOfKnown([
+        percentileOrNull(goalie.wowVariance, wowVarianceValues, "smaller"),
+        percentileOrNull(goalie.gogVariance, gogVarianceValues, "smaller"),
       ]),
-      workloadScore: average([
-        percentile(
-          toFiniteNumber(goalie.totalGamesPlayed),
-          gamesPlayedValues,
-          "larger",
-        ),
-        percentile(
-          toFiniteNumber(goalie.totalTimeOnIce),
-          timeOnIceValues,
-          "larger",
-        ),
+      averageOfKnown([
+        percentileOrNull(goalie.totalGamesPlayed, gamesPlayedValues, "larger"),
+        percentileOrNull(goalie.totalTimeOnIce, timeOnIceValues, "larger"),
       ]),
-      startConfidenceScore: average(startConfidenceParts),
-    };
-  };
-
-  const scoreForGoalie = (goalie: GoalieRanking) => {
-    const {
-      fantasyScore,
-      consistencyScore,
-      workloadScore,
-      startConfidenceScore,
-    } = scoreParts(goalie);
+      averageOfKnown(startConfidenceParts),
+    ];
+    if (components.some((component) => component === null)) {
+      return null;
+    }
+    const [fantasyScore, consistencyScore, workloadScore, startConfidenceScore] =
+      components as number[];
 
     return (
       fantasyScore * 0.35 +
@@ -670,15 +748,11 @@ export const buildGoalieValueTierMap = (
   };
 
   return new Map(
-    goaliesWithFiniteValues.map((goalie) => {
+    cohort.flatMap((goalie) => {
       const score = scoreForGoalie(goalie);
-      return [
-        goalie.playerId,
-        {
-          score,
-          tier: tierForScore(score),
-        },
-      ] as const;
+      return score === null
+        ? []
+        : [[goalie.playerId, { score, tier: tierForScore(score) }] as const];
     }),
   );
 };
@@ -686,10 +760,12 @@ export const buildGoalieValueTierMap = (
 export const applyGoalieValueTiers = (
   goalieRankings: GoalieRanking[],
   advancedMetricsRows: GoalieAdvancedMetricsRow[] = [],
+  minimumStarts: number = GOALIE_VALUE_TIER_DEFAULT_MIN_STARTS,
 ): GoalieRanking[] => {
   const valueTierByGoalieId = buildGoalieValueTierMap(
     goalieRankings,
     advancedMetricsRows,
+    minimumStarts,
   );
 
   return goalieRankings.map((goalie) => {
@@ -699,6 +775,7 @@ export const applyGoalieValueTiers = (
       ...goalie,
       valueTier: valueTier?.tier,
       valueTierScore: valueTier?.score,
+      valueTierInsufficientSample: !valueTier,
     };
   });
 };

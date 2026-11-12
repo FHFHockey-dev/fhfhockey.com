@@ -18,23 +18,23 @@ export default function PlayerTable({
         <tr>
           <th>Player</th>
           <th>
-            <abbr title="Sustainability K‑Value Outlook — expected production adjusted by how steady recent play has been (prediction × stability). Higher is better.">
-              sKO
+            <abbr title="Volatility-Discounted Points Pace: recent points per appearance × appearances × a 0.8–1.0 volatility discount. Unvalidated; not a sustainability rating.">
+              VDP
             </abbr>
           </th>
           <th>
-            <abbr title="Projected total points over the forecast window (e.g., next 5 games).">
-              Projected Pts
+            <abbr title="Unshrunk recent points pace (0.6 × last-10 + 0.4 × last-5 mean) × appearances (default 5 player appearances, not team games).">
+              Pace × Apps
             </abbr>
           </th>
           <th>
-            <abbr title="Stability multiplier (about 0.8–1.0) based on recent consistency. Steadier players get closer to 1.0.">
-              Stability ×
+            <abbr title="Volatility discount 0.8–1.0 from last-10 vs last-20 points SD. Every series of 10 or fewer games gets 0.9. A presentation choice, not evidence that steadier is better.">
+              Volatility ×
             </abbr>
           </th>
           <th>
-            <abbr title="Recent sKO trend (sparkline) so you can see whether a player is rising or cooling off.">
-              Trend
+            <abbr title="Stored VDP by as-of date (one model, version and horizon).">
+              VDP history
             </abbr>
           </th>
         </tr>

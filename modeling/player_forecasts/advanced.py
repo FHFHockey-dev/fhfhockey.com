@@ -16,10 +16,15 @@ from .contract import (
 from .database import readonly_connection, stream_query
 from .io import canonical_json, read_json, read_jsonl, write_json, write_jsonl
 from .season import (
+    EXPECTED_ASSIST_ALIASES,
     GOALIE_FANTASY_V4_TARGETS,
     GOALIE_TARGETS,
+    P10_Z,
+    SEASON_AGGREGATE_FACTOR_LOADING,
     SKATER_FANTASY_V4_TARGETS,
     SKATER_TARGETS,
+    _finite_or_none,
+    _participation_mixture_quantile,
     _portable_canonical_json,
     _reconcile,
     verify_season_settlement_bundle,
@@ -87,7 +92,8 @@ with champion as (
          feature.event_id, feature.period_number,
          feature.period_seconds_elapsed, feature.event_owner_team_id,
          feature.is_unblocked_shot_attempt,
-         coalesce(prediction.xg, 0)::double precision as xg,
+         coalesce(feature.is_empty_net_event, false) as is_empty_net_event,
+         prediction.xg::double precision as xg,
          greatest(
            feature.updated_at,
            coalesce(prediction.updated_at, feature.updated_at)
@@ -108,14 +114,16 @@ with champion as (
   select distinct shift.game_id, shift.season_id, shift.game_date,
          shift.player_id, shift.team_id, event.event_id,
          event.event_owner_team_id, event.is_unblocked_shot_attempt,
-         event.xg,
+         event.is_empty_net_event, event.xg,
          greatest(event.source_available_at, shift.updated_at) as source_available_at
   from public.nhl_api_shift_rows shift
   join events event
     on event.game_id = shift.game_id
    and event.period_number = shift.period
    and event.period_seconds_elapsed >= shift.start_seconds
-   and event.period_seconds_elapsed <= shift.end_seconds
+   -- Half-open shift window: an event at a change belongs to the incoming
+   -- shift only, not to both (W2-7 D10 / M-PFC-086).
+   and event.period_seconds_elapsed < shift.end_seconds
   where shift.season_id = any(%s)
     and shift.duration_seconds > 0
 )
@@ -130,10 +138,27 @@ select season_id, game_id, game_date, player_id, team_id,
        count(*) filter (
          where event_owner_team_id <> team_id and is_unblocked_shot_attempt
        )::integer as on_ice_unblocked_attempts_against,
-       coalesce(sum(xg) filter (where event_owner_team_id = team_id), 0)::double precision
-         as on_ice_expected_goals_for,
-       coalesce(sum(xg) filter (where event_owner_team_id <> team_id), 0)::double precision
-         as on_ice_expected_goals_against,
+       -- Decision 7: empty-net shots are excluded from xG and reported apart.
+       -- An unblocked attempt with no approved prediction makes that side's
+       -- on-ice xG unknown rather than 0 (M-PFC-086).
+       case when bool_or(
+         event_owner_team_id = team_id and not is_empty_net_event
+         and is_unblocked_shot_attempt and xg is null
+       ) then null else coalesce(sum(xg) filter (
+         where event_owner_team_id = team_id and not is_empty_net_event
+       ), 0) end::double precision as on_ice_expected_goals_for,
+       case when bool_or(
+         event_owner_team_id <> team_id and not is_empty_net_event
+         and is_unblocked_shot_attempt and xg is null
+       ) then null else coalesce(sum(xg) filter (
+         where event_owner_team_id <> team_id and not is_empty_net_event
+       ), 0) end::double precision as on_ice_expected_goals_against,
+       coalesce(sum(xg) filter (
+         where event_owner_team_id = team_id and is_empty_net_event
+       ), 0)::double precision as on_ice_empty_net_expected_goals_for,
+       coalesce(sum(xg) filter (
+         where event_owner_team_id <> team_id and is_empty_net_event
+       ), 0)::double precision as on_ice_empty_net_expected_goals_against,
        max(source_available_at)::text as source_available_at
 from player_events
 group by season_id, game_id, game_date, player_id, team_id
@@ -881,6 +906,7 @@ def _fit_rate_policy(
     rows = [
         (int(row["entityId"]), _day(row["gameDate"]), _number(row["values"].get(target)))
         for row in observations
+        if _finite_or_none(row["values"].get(target)) is not None
     ]
     development = [row for row in rows if row[1] <= DEVELOPMENT_END]
     validation = [row for row in rows if VALIDATION_START <= row[1] <= VALIDATION_END]
@@ -971,6 +997,12 @@ def _fit_rate_policy(
         "calibrationInclusiveCoverage": _rounded(inclusive_coverage),
         "calibrationTieProbability": _rounded(tie_probability),
         "calibrationMethod": "chronological_randomized_conformal_absolute_residual_v1",
+        # BC W1-8 A: the bundle emits a deterministic inclusive interval, so its
+        # coverage on the validation rows is the inclusive one, not the
+        # randomized tie-broken figure above. Decision 39: uncalibrated.
+        "calibrationEmittedIntervalCoverage": _rounded(inclusive_coverage),
+        "calibrationReportedCoverageBasis": "randomized_ties_not_the_emitted_deterministic_interval",
+        "intervalCalibrationStatus": "uncalibrated",
         "sourceGameCoverage": _rounded(source_game_coverage),
         "eligibleForServing": sufficient and source_game_coverage >= 0.95,
     }
@@ -1110,8 +1142,10 @@ def _build_advanced_observations(
         values["ON_ICE_SHOT_ATTEMPTS_AGAINST"] = _number(row.get("on_ice_shot_attempts_against"))
         values["ON_ICE_UNBLOCKED_ATTEMPTS_FOR"] = _number(row.get("on_ice_unblocked_attempts_for"))
         values["ON_ICE_UNBLOCKED_ATTEMPTS_AGAINST"] = _number(row.get("on_ice_unblocked_attempts_against"))
-        values["ON_ICE_EXPECTED_GOALS_FOR"] = _number(row.get("on_ice_expected_goals_for"))
-        values["ON_ICE_EXPECTED_GOALS_AGAINST"] = _number(row.get("on_ice_expected_goals_against"))
+        # None = unknown (an unblocked attempt lacked an approved xG): kept
+        # unknown and skipped by the rate fit, never counted as 0.
+        values["ON_ICE_EXPECTED_GOALS_FOR"] = _finite_or_none(row.get("on_ice_expected_goals_for"))
+        values["ON_ICE_EXPECTED_GOALS_AGAINST"] = _finite_or_none(row.get("on_ice_expected_goals_against"))
 
     game_teams: dict[int, tuple[int, int]] = {}
     for row in read_jsonl(freeze / "team_xg.jsonl"):
@@ -1132,9 +1166,14 @@ def _build_advanced_observations(
 
     distance_present = 0
     distance_missing = 0
+    # Decision 7: empty-net shots stay out of individual xG (counted apart).
+    empty_net_events: set[tuple[int, int]] = set()
+    excluded_empty_net_xg_rows = 0
     for row in read_jsonl(freeze / "shot_features.jsonl"):
         if row.get("is_penalty_shot_event") is True or row.get("is_shootout_event") is True:
             continue
+        if row.get("is_empty_net_event") is True and row.get("event_id") is not None:
+            empty_net_events.add((int(row["game_id"]), int(row["event_id"])))
         game_id = int(row["game_id"])
         game_date = row.get("game_date")
         team_id = row.get("event_owner_team_id")
@@ -1237,6 +1276,12 @@ def _build_advanced_observations(
             shot_goal_model and row.get("model_version") != shot_goal_model
         ):
             continue
+        if (
+            row.get("event_id") is not None
+            and (int(row["game_id"]), int(row["event_id"])) in empty_net_events
+        ):
+            excluded_empty_net_xg_rows += 1
+            continue
         skater = _touch_observation(
             skater_observation(
                 row.get("shooter_player_id"),
@@ -1295,6 +1340,7 @@ def _build_advanced_observations(
         "teamGames": team_games,
         "distancePresent": distance_present,
         "distanceMissing": distance_missing,
+        "excludedEmptyNetXgRows": excluded_empty_net_xg_rows,
     }
 
 
@@ -1791,41 +1837,9 @@ def build_advanced_settlement_bundle(
 
 
 def _advanced_reconcile(values: dict[str, float], population: str) -> dict[str, float]:
-    reconciled = {
-        key: _rounded(_number(value))
-        for key, value in _reconcile(values, population).items()
-    }
-    if population == "goalie":
-        reconciled["GOALS_SAVED_ABOVE_EXPECTED"] = _rounded(
-            reconciled.get("EXPECTED_GOALS_AGAINST_GOALIE", 0)
-            - reconciled.get("GOALS_AGAINST_GOALIE", 0)
-        )
-        for danger in ("HIGH_DANGER", "MID_RANGE", "LONG_RANGE"):
-            shots = reconciled.get(f"{danger}_SHOTS_AGAINST_GOALIE", 0)
-            goals = min(shots, reconciled.get(f"{danger}_GOALS_AGAINST_GOALIE", 0))
-            reconciled[f"{danger}_GOALS_AGAINST_GOALIE"] = _rounded(goals)
-            saves = max(0.0, shots - goals)
-            reconciled[f"{danger}_SAVES_GOALIE"] = _rounded(saves)
-            reconciled[f"{danger}_SAVE_PERCENTAGE_GOALIE"] = _rounded(
-                saves / shots if shots > 0 else 0
-            )
-        return reconciled
-    reconciled["EXPECTED_ASSISTS"] = _rounded(
-        reconciled.get("EXPECTED_PRIMARY_ASSISTS", 0)
-        + reconciled.get("EXPECTED_SECONDARY_ASSISTS", 0)
-    )
-    for label, for_target, against_target in (
-        ("ON_ICE_CF_PERCENTAGE", "ON_ICE_SHOT_ATTEMPTS_FOR", "ON_ICE_SHOT_ATTEMPTS_AGAINST"),
-        ("ON_ICE_FF_PERCENTAGE", "ON_ICE_UNBLOCKED_ATTEMPTS_FOR", "ON_ICE_UNBLOCKED_ATTEMPTS_AGAINST"),
-        ("ON_ICE_XGF_PERCENTAGE", "ON_ICE_EXPECTED_GOALS_FOR", "ON_ICE_EXPECTED_GOALS_AGAINST"),
-    ):
-        for_value = reconciled.get(for_target, 0)
-        against_value = reconciled.get(against_target, 0)
-        reconciled[label] = _rounded(
-            for_value / (for_value + against_value)
-            if for_value + against_value > 0 else 0
-        )
-    return reconciled
+    # season._reconcile is the full twin of contracts.ts (advanced heads
+    # included); undefined ratios stay absent rather than 0 (rule 5).
+    return {key: _rounded(_number(value)) for key, value in _reconcile(values, population).items()}
 
 
 def _reconciled_quantiles(
@@ -1856,12 +1870,19 @@ def _policy_for(artifact: dict[str, Any], population: str, target: str) -> dict[
     return ((artifact.get("targetPolicies") or {}).get(population) or {}).get(target) or {}
 
 
-def _advanced_rate(artifact: dict[str, Any], player_id: int, population: str, target: str) -> float:
+def _advanced_rate(
+    artifact: dict[str, Any], player_id: int, population: str, target: str,
+) -> float | None:
+    """Player rate, else the policy baseline; None (unknown) when neither."""
     player = (artifact.get("players") or {}).get(str(player_id)) or {}
-    rate = (player.get("rates") or {}).get(target)
-    if rate is not None:
-        return max(0.0, _number(rate))
-    return max(0.0, _number(_policy_for(artifact, population, target).get("baselineRate")))
+    for raw in (
+        (player.get("rates") or {}).get(target),
+        _policy_for(artifact, population, target).get("baselineRate"),
+    ):
+        number = _finite_or_none(raw)
+        if number is not None:
+            return max(0.0, number)
+    return None
 
 
 def _simulation_quantiles(
@@ -1883,15 +1904,22 @@ def _simulation_quantiles(
         return math.sqrt(-2.0 * math.log(first)) * math.cos(2.0 * math.pi * second)
 
     samples: dict[str, list[float]] = defaultdict(list)
-    correlation = 0.65
-    independent_weight = math.sqrt(1 - correlation * correlation)
+    # One-factor loading 0.65 => primitive correlation 0.65**2 = 0.4225.
+    loading = SEASON_AGGREGATE_FACTOR_LOADING
+    independent_weight = math.sqrt(1 - loading * loading)
     for _ in range(draws):
         common = normal()
         draw: dict[str, float] = {}
         for target, mean in means.items():
-            deviation = correlation * common + independent_weight * normal()
+            if EXPECTED_ASSIST_ALIASES.get(target) in means:
+                continue
+            deviation = loading * common + independent_weight * normal()
             value = mean + math.sqrt(max(0.0, variances.get(target, 0))) * deviation
             draw[target] = value if target == "PLUS_MINUS" else max(0.0, value)
+        for target in means:
+            source = EXPECTED_ASSIST_ALIASES.get(target)
+            if source in means:
+                draw[target] = draw[source]
         if maximum_games is not None:
             if "GAMES_PLAYED" in draw:
                 draw["GAMES_PLAYED"] = min(maximum_games, draw["GAMES_PLAYED"])
@@ -1917,6 +1945,57 @@ def _simulation_quantiles(
 
 def _write_jsonl_stream(path: Path, rows: Any) -> tuple[int, str]:
     return write_jsonl(path, rows)
+
+
+def _advanced_game_target_moments(
+    artifact: dict[str, Any],
+    player_id: int,
+    population: str,
+    target: str,
+    probability: float,
+    conditional: dict[str, Any],
+    unconditional: dict[str, Any],
+    baseline: dict[str, Any],
+    variances: dict[str, Any],
+    quantiles: dict[str, dict[str, Any]],
+) -> tuple[float, float, float, float, float, float, float] | None:
+    """Per-game moments of one v5 head: (conditional, mean, variance, p10,
+    p50, p90, baseline), or None when the head is unknown.
+
+    Expected-assist aliases carry their observed head's explicit moments
+    (W3-5 PR2): the variance is never rebuilt from clipped endpoints.
+    """
+    source = EXPECTED_ASSIST_ALIASES.get(target)
+    if source:
+        if source not in unconditional or source not in variances:
+            return None
+        mean = _number(unconditional.get(source))
+        return (
+            _number(conditional.get(source)),
+            mean,
+            _number(variances.get(source)),
+            _number(quantiles["p10"].get(source), mean),
+            _number(quantiles["p50"].get(source), mean),
+            _number(quantiles["p90"].get(source), mean),
+            _number(baseline.get(source), mean),
+        )
+    rate = _advanced_rate(artifact, player_id, population, target)
+    if rate is None:
+        return None  # unknown, not 0 (W3-5 F2)
+    policy = _policy_for(artifact, population, target)
+    residual = max(0.0, _number(policy.get("residual80PerGame")))
+    # C17: residual80PerGame is the 80% absolute-error quantile, so
+    # sigma = residual / z(0.9); the rate stays a declared Poisson floor.
+    conditional_variance = max(rate, (residual / P10_Z) ** 2)
+    variance = probability * conditional_variance + probability * (1 - probability) * rate ** 2
+    sd = math.sqrt(conditional_variance)
+    low, middle, high = (
+        _participation_mixture_quantile(level, probability, rate, sd, False)
+        for level in (0.1, 0.5, 0.9)
+    )
+    baseline_rate = _finite_or_none(policy.get("baselineRate"))
+    baseline_value = probability * max(0.0, baseline_rate if baseline_rate is not None else rate)
+    return rate, rate * probability, variance, low, middle, high, baseline_value
 
 
 def project_advanced_release(
@@ -1960,6 +2039,7 @@ def project_advanced_release(
     aggregate_means: dict[int, dict[str, float]] = defaultdict(lambda: defaultdict(float))
     aggregate_variances: dict[int, dict[str, float]] = defaultdict(lambda: defaultdict(float))
     component_counts: dict[int, int] = defaultdict(int)
+    target_counts: dict[int, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     fallback_flags: dict[int, set[str]] = defaultdict(set)
 
     def game_rows():
@@ -1979,44 +2059,27 @@ def project_advanced_release(
             row_fallbacks = set(str(flag) for flag in row.get("fallbackFlags") or [])
             for target in targets:
                 policy = _policy_for(artifact, population, target)
-                if target == "EXPECTED_PRIMARY_ASSISTS":
-                    conditional_value = _number(conditional.get("PRIMARY_ASSISTS"))
-                    mean = _number(unconditional.get("PRIMARY_ASSISTS"))
-                    low = _number(quantiles["p10"].get("PRIMARY_ASSISTS"))
-                    high = _number(quantiles["p90"].get("PRIMARY_ASSISTS"))
-                    baseline_value = _number(baseline.get("PRIMARY_ASSISTS"), mean)
-                elif target == "EXPECTED_SECONDARY_ASSISTS":
-                    conditional_value = _number(conditional.get("SECONDARY_ASSISTS"))
-                    mean = _number(unconditional.get("SECONDARY_ASSISTS"))
-                    low = _number(quantiles["p10"].get("SECONDARY_ASSISTS"))
-                    high = _number(quantiles["p90"].get("SECONDARY_ASSISTS"))
-                    baseline_value = _number(baseline.get("SECONDARY_ASSISTS"), mean)
-                else:
-                    conditional_value = _advanced_rate(artifact, player_id, population, target)
-                    mean = conditional_value * probability
-                    residual = max(0.0, _number(policy.get("residual80PerGame")))
-                    conditional_variance = max(conditional_value, residual * residual)
-                    variance = probability * conditional_variance + probability * (1 - probability) * conditional_value ** 2
-                    low = max(0.0, mean - 1.2815515655 * math.sqrt(max(0.0, variance)))
-                    high = mean + 1.2815515655 * math.sqrt(max(0.0, variance))
-                    baseline_value = probability * max(
-                        0.0, _number(policy.get("baselineRate"), conditional_value)
-                    )
-                if target in {"EXPECTED_PRIMARY_ASSISTS", "EXPECTED_SECONDARY_ASSISTS"}:
-                    variance = max(0.0, ((high - low) / (2 * 1.2815515655)) ** 2)
-                conditional[target] = _rounded(conditional_value)
-                unconditional[target] = _rounded(mean)
-                baseline[target] = _rounded(baseline_value)
-                variances[target] = _rounded(variance)
-                quantiles["p10"][target] = _rounded(min(low, mean))
-                quantiles["p50"][target] = _rounded(mean)
-                quantiles["p90"][target] = _rounded(max(high, mean))
-                aggregate_means[player_id][target] += mean
-                aggregate_variances[player_id][target] += variance
                 if policy.get("fallback") is True:
                     flag = f"advanced_v5_{target.lower()}_fallback"
                     row_fallbacks.add(flag)
                     fallback_flags[player_id].add(flag)
+                moments = _advanced_game_target_moments(
+                    artifact, player_id, population, target, probability,
+                    conditional, unconditional, baseline, variances, quantiles,
+                )
+                if moments is None:
+                    continue
+                conditional_value, mean, variance, low, middle, high, baseline_value = moments
+                conditional[target] = _rounded(conditional_value)
+                unconditional[target] = _rounded(mean)
+                baseline[target] = _rounded(baseline_value)
+                variances[target] = _rounded(variance)
+                quantiles["p10"][target] = _rounded(min(low, middle))
+                quantiles["p50"][target] = _rounded(middle)
+                quantiles["p90"][target] = _rounded(max(high, middle))
+                aggregate_means[player_id][target] += mean
+                aggregate_variances[player_id][target] += variance
+                target_counts[player_id][target] += 1
             for danger in ("HIGH_DANGER", "MID_RANGE", "LONG_RANGE"):
                 if population != "goalie":
                     break
@@ -2047,6 +2110,15 @@ def project_advanced_release(
             p90 = dict(source.get("p90") or {})
             advanced_means = dict(aggregate_means.get(player_id) or {})
             advanced_variances = dict(aggregate_variances.get(player_id) or {})
+            # A target unknown in any remaining game is unknown in the total.
+            unknown_advanced = sorted(
+                target for target in advanced_means
+                if target_counts[player_id][target] < component_counts.get(player_id, 0)
+            )
+            for target in unknown_advanced:
+                advanced_means.pop(target, None)
+                advanced_variances.pop(target, None)
+            source_variances = dict((source.get("provenance") or {}).get("modelVariances") or {})
             primitive_targets = (
                 GOALIE_TARGETS + GOALIE_FANTASY_V4_TARGETS + GOALIE_ADVANCED_TARGETS
                 if population == "goalie"
@@ -2061,10 +2133,18 @@ def project_advanced_release(
                 target: _number(value)
                 for target, value in advanced_means.items()
             })
+            # Explicit moments first (v2 bundles carry provenance.modelVariances); the
+            # endpoint inversion is a labelled legacy fallback only.
+            legacy_endpoint_variances = sorted(
+                target for target in simulation_means
+                if target not in advanced_variances and target not in source_variances
+            )
             simulation_variances = {
                 target: (
                     _number(advanced_variances[target])
                     if target in advanced_variances
+                    else _number(source_variances[target])
+                    if target in source_variances
                     else max(
                         0.0,
                         (
@@ -2128,8 +2208,12 @@ def project_advanced_release(
                     "simulation": "deterministic_reconciled_gaussian_copula_v2",
                     "simulationDraws": 256,
                     "simulationScope": "all_v4_and_v5_primitive_targets; identities_reconciled_per_draw",
+                    "unknownTargets": unknown_advanced,
+                    "legacyEndpointVarianceTargets": legacy_endpoint_variances,
                     "sourceFreezeManifestHash": artifact["sourceFreezeManifestHash"],
-                    "withinPlayerTargetCorrelation": 0.65,
+                    "withinPlayerTargetFactorLoading": SEASON_AGGREGATE_FACTOR_LOADING,
+                    "withinPlayerTargetCorrelation": _rounded(SEASON_AGGREGATE_FACTOR_LOADING ** 2),
+                    "crossGameDependence": "independent_games_assumption",
                     "edgeContext": artifact_player.get("edgeContext"),
                     "edgeContextPolicy": (
                         "descriptive_cutoff_safe_feature_context_not_projected_total"

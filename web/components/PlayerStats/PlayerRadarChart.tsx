@@ -17,11 +17,14 @@ import {
 } from "./types";
 import supabase from "../../lib/supabase";
 import {
+  RADAR_STRENGTH_LABEL,
   fetchNstRadarSeason,
   isNstRadarStat,
   nstRadarComparison,
+  nstRadarMinimumLabel,
   type SupabaseLike,
 } from "../../lib/nst/radarSeasonStats";
+import { calculateRankingResult } from "../../utils/calculatePercentiles";
 
 ChartJS.register(
   RadialLinearScale,
@@ -235,68 +238,29 @@ const finiteStatValue = (value: unknown): number | null => {
   return Number.isFinite(numericValue) ? numericValue : null;
 };
 
-// Stats the per-game view stores only as parts, derived here in percent units
-// (49.7 → "49.7%"). League rows need a real per-game sample (leagueMin) so a
-// skater with a handful of attempts can't top the ranking; the player's own
-// value only needs any attempt.
-const ratioPercent = (
-  row: any,
-  part: string,
-  rest: string,
-  minAttempts: number,
-  totalIsPart = false,
-): number | null => {
-  const a = finiteStatValue(row?.[part]);
-  const b = finiteStatValue(row?.[rest]);
-  if (a === null || b === null) return null;
-  const attempts = totalIsPart ? b : a + b;
-  return attempts > 0 && attempts >= minAttempts ? (a / attempts) * 100 : null;
-};
-
-const DERIVED_SKATER_STATS: Record<
-  string,
-  {
-    columns: string[];
-    leagueMin: number;
-    derive: (row: any, minAttempts: number) => number | null;
-  }
-> = {
-  // Faceoff wins and losses per game; a regular faceoff role is 5+ per game.
-  fow_percentage: {
-    columns: ["total_fow", "total_fol"],
-    leagueMin: 5,
-    derive: (row, min) => ratioPercent(row, "total_fow", "total_fol", min),
-  },
-  // Goals per game over shots per game.
-  shooting_percentage: {
-    columns: ["goals", "shots"],
-    leagueMin: 1,
-    derive: (row, min) => ratioPercent(row, "goals", "shots", min, true),
-  },
-  // On-ice shot attempts for/against per game.
-  sat_pct: {
-    columns: ["sat_for", "sat_against"],
-    leagueMin: 10,
-    derive: (row, min) => ratioPercent(row, "sat_for", "sat_against", min),
-  },
-  usat_pct: {
-    columns: ["usat_for", "usat_against"],
-    leagueMin: 10,
-    derive: (row, min) => ratioPercent(row, "usat_for", "usat_against", min),
-  },
-};
-
-const skaterStatValue = (row: any, stat: string, forLeague: boolean) => {
-  const derived = DERIVED_SKATER_STATS[stat];
-  if (!derived) return finiteStatValue(row?.[stat]);
-  return derived.derive(row, forLeague ? derived.leagueMin : 0);
-};
-
 interface RadarComparison {
   key: string;
   values: Record<string, number>;
   percentiles: Record<string, number>;
   rankings: Record<string, { rank: number; total: number }>;
+  /** Stats whose player row exists but falls below the cohort's sample minimum. */
+  belowMinimum: Record<string, string>;
+  /** Stats whose 5v5 season view is not published yet (L4a migration 136). */
+  viewMissing: Record<string, true>;
+}
+
+/**
+ * Mid-rank percentile (decision 90) and competition rank of the player in a cohort
+ * made of the peers plus the player once, so the rank never exceeds the cohort size.
+ */
+export function rankInCohort(playerValue: number, peerValues: number[], higherIsBetter: boolean) {
+  const cohort = [
+    ...peerValues.map((value, index) => ({ player_id: -(index + 1), value })),
+    { player_id: 0, value: playerValue },
+  ];
+  const result = calculateRankingResult(cohort, 0, higherIsBetter);
+  if (!result) return null;
+  return { percentile: result.percentile * 100, rank: result.rank, total: cohort.length };
 }
 
 export function PlayerRadarChart({
@@ -319,7 +283,9 @@ export function PlayerRadarChart({
     Number(seasonString.slice(4)) === Number(seasonString.slice(0, 4)) + 1
       ? Number(seasonString)
       : null;
-  const scopeLabel = `${seasonString.slice(0, 4)}-${seasonString.slice(6)} regular season · Full season`;
+  // Skater rankings are 5v5 (decision 15); goalie rankings use WGO all-situation rows.
+  const strengthLabel = isGoalie ? "All situations" : RADAR_STRENGTH_LABEL;
+  const scopeLabel = `${strengthLabel} · ${seasonString.slice(0, 4)}-${seasonString.slice(6)} regular season · Full season`;
   const unavailableScope = showPlayoffData
     ? "Rankings unavailable for playoffs. Comparisons use full-season regular-season aggregates."
     : timeFrame !== "season"
@@ -355,7 +321,7 @@ export function PlayerRadarChart({
 
     const fetchPercentiles = async () => {
       const next: RadarComparison = {
-        key: comparisonKey, values: {}, percentiles: {}, rankings: {},
+        key: comparisonKey, values: {}, percentiles: {}, rankings: {}, belowMinimum: {}, viewMissing: {},
       };
       try {
         const normalizedPos = normalizePosition(player.position);
@@ -368,76 +334,56 @@ export function PlayerRadarChart({
           (stat) => STAT_CALCULATION_METHODS[stat],
         );
 
-        // Read the player's row first, then every needed stat's league column
-        // together. A failed stat leaves only that stat unranked.
-        const { data: playerData, error: playerError } = isGoalie
-          ? await supabase
-              .from("wgo_goalie_stats_per_game")
-              .select("*")
-              .eq("goalie_id", player.id)
-              .eq("season_id", seasonNumber)
-              .single()
-          : await supabase
-              .from("wgo_skater_stats_per_game")
-              .select("*")
-              .eq("player_id", player.id)
-              .eq("season", String(seasonNumber))
-              .single();
-
-        if (cancelled) return;
-        if (playerError || !playerData) {
-          console.error("Unable to load the selected-season radar values", playerError);
-          return;
+        // Goalies: read the player's WGO row first, then every needed stat's league
+        // column together. Skaters: the player's 5v5 value comes from the same NST
+        // view rows as the cohort. A failed stat leaves only that stat unranked.
+        let playerData: Record<string, unknown> | null = null;
+        if (isGoalie) {
+          const { data, error: playerError } = await supabase
+            .from("wgo_goalie_stats_per_game")
+            .select("*")
+            .eq("goalie_id", player.id)
+            .eq("season_id", seasonNumber)
+            .single();
+          if (cancelled) return;
+          if (playerError || !data) {
+            console.error("Unable to load the selected-season radar values", playerError);
+            return;
+          }
+          playerData = data as Record<string, unknown>;
         }
 
         const readLeagueColumn = async (stat: string) => {
           try {
-            if (isGoalie) {
-              return await supabase
-                .from("wgo_goalie_stats_per_game")
-                .select(stat)
-                .not(stat, "is", null)
-                .eq("season_id", seasonNumber);
-            }
-            const columns = DERIVED_SKATER_STATS[stat]?.columns ?? [stat];
-            let query = supabase
-              .from("wgo_skater_stats_per_game")
-              .select(columns.join(","))
-              .not(columns[0], "is", null)
-              .eq("season", String(seasonNumber));
-            if (positionFilter.length > 0) {
-              query = query.in("position_code", positionFilter);
-            }
-            return await query;
+            // goalie_id lets the player's own row be left out, then added once.
+            return await supabase
+              .from("wgo_goalie_stats_per_game")
+              .select(`goalie_id,${stat}`)
+              .not(stat, "is", null)
+              .eq("season_id", seasonNumber);
           } catch (error) {
             return { data: null, error };
           }
         };
 
-        const rankAgainst = (stat: string, playerValue: number, values: number[]) => {
-          if (values.length === 0) return;
+        const rankAgainst = (stat: string, playerValue: number, peerValues: number[]) => {
           const isInverted =
             STAT_CALCULATION_METHODS[stat].isInverted || stat === "goals_against_avg";
-          const worseCount = values.filter((value) =>
-            isInverted ? value > playerValue : value < playerValue,
-          ).length;
-          const betterCount = values.filter((value) =>
-            isInverted ? value < playerValue : value > playerValue,
-          ).length;
-          next.percentiles[stat] = Math.round((worseCount / values.length) * 100);
-          next.rankings[stat] = { rank: betterCount + 1, total: values.length };
+          const ranked = rankInCohort(playerValue, peerValues, !isInverted);
+          if (!ranked) return;
+          next.percentiles[stat] = Math.round(ranked.percentile);
+          next.rankings[stat] = { rank: ranked.rank, total: ranked.total };
         };
 
-        // Skater possession shares and per-60 rates are not in the WGO view; both the
-        // player's value and the league's come from the NST season views instead.
+        // Skater rankings are 5v5 only (decision 15): the player's value and the
+        // cohort's both come from the NST 5v5 season views. Skater stats with no 5v5
+        // season source stay unranked rather than mixing in all-situation rows.
         const nstStats = isGoalie ? [] : rankedStats.filter(isNstRadarStat);
-        const wgoStats = rankedStats.filter((stat) => !nstStats.includes(stat));
+        const wgoStats = isGoalie ? rankedStats : [];
 
         const playerValues = new Map<string, number>();
         wgoStats.forEach((stat) => {
-          const value = isGoalie
-            ? finiteStatValue((playerData as any)[stat])
-            : skaterStatValue(playerData, stat, false);
+          const value = finiteStatValue(playerData?.[stat]);
           if (value !== null) playerValues.set(stat, value);
         });
         const comparedStats = wgoStats.filter((stat) => playerValues.has(stat));
@@ -464,29 +410,33 @@ export function PlayerRadarChart({
             return;
           }
 
-          const values = (data ?? [])
-            .map((row) =>
-              isGoalie
-                ? finiteStatValue((row as any)[stat])
-                : skaterStatValue(row, stat, true),
-            )
+          const peerValues = (data ?? [])
+            .filter((row) => Number((row as any).goalie_id) !== Number(player.id))
+            .map((row) => finiteStatValue((row as any)[stat]))
             .filter((value): value is number => value !== null);
-          rankAgainst(stat, playerValue, values);
+          rankAgainst(stat, playerValue, peerValues);
         });
 
         if (nstSeason) {
           nstStats.forEach((stat) => {
-            const { playerValue, leagueValues, error } = nstRadarComparison(
+            const { playerValue, peerValues, belowMinimum, viewMissing, error } = nstRadarComparison(
               stat,
               nstSeason,
               Number(player.id),
             );
+            if (viewMissing) {
+              next.viewMissing[stat] = true;
+              return;
+            }
             if (error) {
               console.error(`Unable to load the ${stat} radar comparison`, error);
             }
+            if (belowMinimum) {
+              next.belowMinimum[stat] = nstRadarMinimumLabel(stat) ?? "the sample minimum";
+            }
             if (playerValue === null) return;
             next.values[stat] = playerValue;
-            rankAgainst(stat, playerValue, leagueValues);
+            rankAgainst(stat, playerValue, peerValues);
           });
         }
       } catch (error) {
@@ -684,9 +634,18 @@ export function PlayerRadarChart({
     );
   }
 
+  const belowMinimum = currentComparison?.belowMinimum ?? {};
+  const viewMissing = currentComparison?.viewMissing ?? {};
+  const statName = (stat: string) => SHARED_STAT_DISPLAY_NAMES[stat] || stat;
+  const unavailableStatNames = selectedStats
+    .filter((stat) => radarData.percentiles[stat] === undefined && viewMissing[stat])
+    .map(statName);
   const unrankedStatNames = selectedStats
-    .filter((stat) => radarData.percentiles[stat] === undefined)
-    .map((stat) => SHARED_STAT_DISPLAY_NAMES[stat] || stat);
+    .filter((stat) => radarData.percentiles[stat] === undefined && !belowMinimum[stat] && !viewMissing[stat])
+    .map(statName);
+  const belowMinimumNotes = selectedStats
+    .filter((stat) => radarData.percentiles[stat] === undefined && belowMinimum[stat])
+    .map((stat) => `${statName(stat)} (needs ${belowMinimum[stat]})`);
 
   return (
     <div className={styles.radarContainer}>
@@ -761,11 +720,22 @@ export function PlayerRadarChart({
           </div>
         </div>
 
+        {!percentileLoading && unavailableStatNames.length > 0 && (
+          <p className={styles.comparisonGap}>
+            5v5 comparison unavailable for {unavailableStatNames.join(", ")}: the 5v5
+            season data is not published yet.
+          </p>
+        )}
         {!percentileLoading && unrankedStatNames.length > 0 && (
           // Neutral note that names the gap, not an orange warning.
           <p className={styles.comparisonGap}>
-            No comparison data for {unrankedStatNames.join(", ")} yet, so{" "}
+            No {strengthLabel} comparison data for {unrankedStatNames.join(", ")} yet, so{" "}
             {unrankedStatNames.length === 1 ? "it has" : "they have"} no ranking.
+          </p>
+        )}
+        {!percentileLoading && belowMinimumNotes.length > 0 && (
+          <p className={styles.comparisonGap}>
+            Below the cohort sample minimum, so unranked: {belowMinimumNotes.join(", ")}.
           </p>
         )}
       </div>
@@ -873,7 +843,10 @@ export function PlayerRadarChart({
           {Object.keys(nhlRankings).length > 0 && (
             <div className={styles.rankingNote}>
               <em>
-                Rankings use {scopeLabel} values and peers from the same source.
+                Rankings use {scopeLabel} values and peers from the same source,
+                sample minimum and season, with the player counted in the cohort.
+                Percentile is the mid-rank: peers below plus half of those tied, over
+                the cohort.
               </em>
             </div>
           )}

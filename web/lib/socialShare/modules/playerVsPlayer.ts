@@ -157,19 +157,24 @@ export function playerWindow(playerId: number, games: readonly PvpGame[], view: 
   const window = selectWindow(games, view.windowId), latest = games[games.length - 1];
   return { playerId, name: latest?.name ?? `Player ${playerId}`, group: latest?.group ?? null, ...view, window };
 }
+/**
+ * One side of a metric row. `observed` counts exactly the games the value uses (rule 22): for per 60, games with both the
+ * count and that strength's time, so the numerator and the time cover the same games. A total is a window total only when
+ * every game is observed; a partly observed total is unknown, never compared (W3-2 D4). Rates admit a covered subset at
+ * `minCoverage` (NST; a configurable default of 90%) or any observed game (NHL.com), with the coverage disclosed.
+ */
 function metricSide(metric: PvpMetric, side: PvpPlayerWindow, minCoverage: number): PvpMetricSide {
-  const known = side.window.rows.flatMap(game => { const value = metric.value(game); return value === null ? [] : [{ game, value }]; });
+  const seconds = (game: PvpGame) => side.strength === "pp" ? game.ppToiSeconds : game.toiSeconds;
+  const known = side.window.rows.flatMap(game => { const value = metric.value(game); return value === null || (side.basis === "per-60" && seconds(game) === null) ? [] : [{ game, value }]; });
   const expected = side.window.rows.length, observed = known.length, missing = expected - observed;
-  const admitted = expected > 0 && (metric.source === "nst" ? observed * 100 >= minCoverage * expected : observed > 0);
+  const admitted = expected > 0 && (side.basis === "total" ? missing === 0 : metric.source === "nst" ? observed * 100 >= minCoverage * expected : observed > 0);
   const unknown = { value: null, shown: "—", observed, expected, missing, admitted };
   if (!admitted) return unknown;
   const sum = known.reduce((total, row) => total + row.value, 0);
-  const seconds = (game: PvpGame) => side.strength === "pp" ? game.ppToiSeconds : game.toiSeconds;
-  const timed = known.filter(row => seconds(row.game) !== null);
   const value = side.basis === "total" ? sum : side.basis === "per-game" ? sum / observed
-    /* Per 60 is summed over games with both the count and the time, and each strength uses its own time. */
-    : per60(timed.reduce((total, row) => total + row.value, 0), timed.reduce((total, row) => total + (seconds(row.game) ?? 0), 0));
-  if (value === null) return unknown;
+    /* Per 60 pools the same games' counts over their time, each strength on its own time. */
+    : per60(sum, known.reduce((total, row) => total + seconds(row.game)!, 0));
+  if (value === null) return { ...unknown, admitted: false };
   const decimals = side.basis === "total" ? metric.decimals : 2;
   return { value, shown: metric.time ? mmss(value) : value.toFixed(decimals), observed, expected, missing, admitted };
 }

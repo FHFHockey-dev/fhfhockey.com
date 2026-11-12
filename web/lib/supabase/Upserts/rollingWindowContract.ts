@@ -5,7 +5,7 @@ export type RollingMetricWindowFamily =
   | "weighted_rate_performance";
 
 export type RollingWindowSelectionUnit =
-  | "current_team_chronological_team_games"
+  | "team_of_record_chronological_team_games"
   | "chronological_appearances_in_strength_state";
 
 export type RollingWindowAggregationMethod =
@@ -38,14 +38,14 @@ export const CANONICAL_ROLLING_WINDOW_CONTRACTS: Record<
 > = {
   availability: {
     family: "availability",
-    selectionUnit: "current_team_chronological_team_games",
+    selectionUnit: "team_of_record_chronological_team_games",
     aggregationMethod: "availability_ratio_from_selected_team_games",
     missingComponentPolicy: {
       selectedWindowSlotBehavior: "selected_slot_always_counts",
       missingNumeratorBehavior: "not_applicable",
       missingDenominatorBehavior: "not_applicable"
     },
-    contractSummary: "Last N means the current team's last N chronological team games."
+    contractSummary: "Last N means the last N regular-season games of the player's team of record on each date (decision 16)."
   },
   additive_performance: {
     family: "additive_performance",

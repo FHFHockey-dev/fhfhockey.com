@@ -63,7 +63,7 @@ export function buildRankingExplanationItems(args: {
 
   if (row.metric.rawRank != null) {
     items.push(
-      `Raw rank ${row.metric.rawRank} of ${row.metric.qualifiedPeerCount}; better than ${formatPercentile(row.metric.percentile)} of other qualified peers.`,
+      `Raw rank ${row.metric.rawRank} of ${row.metric.qualifiedPeerCount}; mid-rank percentile ${formatPercentile(row.metric.percentile)} (ties share the mid-rank).`,
     );
   }
 

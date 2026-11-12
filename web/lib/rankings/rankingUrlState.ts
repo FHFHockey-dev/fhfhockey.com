@@ -5,8 +5,10 @@ import {
 import type {
   GoalieMatrixMetricKey,
   GoalieMatrixRoleFilter,
+  GoalieMatrixStrength,
 } from "./goalieMatrix";
 import type { TeamMatrixMetricKey } from "./teamMatrix";
+import type { SkaterWindowScope } from "./skaterWindowAggregation";
 import {
   MATRIX_METRIC_GROUPS,
   getMatrixMetricColumn,
@@ -31,6 +33,8 @@ export type RankingsFilterState = {
     | "war";
   season: string;
   window: "season" | "last5" | "last10" | "last20";
+  /** Decision 103: current season by default; cross-season is opt-in and labelled. */
+  windowScope: SkaterWindowScope;
   position: ContextualRankingsPositionFilter;
   deployment: ContextualRankingsDeploymentFilter;
   strength: "all" | "5v5" | "ev" | "pp" | "pk";
@@ -44,7 +48,14 @@ export type RankingsFilterState = {
   matrixSortMetric: ContextualRankingMetricKey;
   goalieMetric: GoalieMatrixMetricKey;
   goalieRole: GoalieMatrixRoleFilter;
+  /** Decision 104: one strength per goalie view. */
+  goalieStrength: GoalieMatrixStrength;
+  /** Decision 98 goalie floors (starts and shots), separate from skater Min GP/TOI. */
+  goalieMinStarts: string;
+  goalieMinShots: string;
   teamMetric: TeamMatrixMetricKey;
+  /** Team sample floor in games (decision 98), separate from skater Min GP. */
+  teamMinGp: string;
   matrixSortDirection: ContextualRankingsSortDirection;
   sampleConfidence: "all" | "medium_plus" | "high";
   sourceQuality: "all" | "clean_only" | "caveats_only";
@@ -68,6 +79,9 @@ export const DEFAULT_MIN_GP_BY_WINDOW: Record<RankingsFilterState["window"], str
   last10: "3",
   last5: "2",
 };
+
+// Decision 98: a visible, user-lowerable team floor; matches the team API default.
+export const DEFAULT_TEAM_MIN_GP = "5";
 
 export function defaultMinGpForWindow(window: RankingsFilterState["window"]) {
   return DEFAULT_MIN_GP_BY_WINDOW[window];
@@ -98,8 +112,11 @@ export function minGpForComparisonWindow(
 export const DEFAULT_RANKINGS_FILTERS: RankingsFilterState = {
   entity: "skaters",
   tab: "rankings",
-  season: "20252026",
+  // No hard-coded season (W2-4 D12): the page resolves the active season
+  // (or, in the off-season, the latest started one) from /api/v1/season.
+  season: "",
   window: "season",
+  windowScope: "current_season",
   position: "all",
   deployment: "all",
   strength: "5v5",
@@ -113,7 +130,11 @@ export const DEFAULT_RANKINGS_FILTERS: RankingsFilterState = {
   matrixSortMetric: "points_per_60",
   goalieMetric: "save_percentage",
   goalieRole: "all",
+  goalieStrength: "5v5",
+  goalieMinStarts: "5",
+  goalieMinShots: "100",
   teamMetric: "off_rating",
+  teamMinGp: DEFAULT_TEAM_MIN_GP,
   matrixSortDirection: "desc",
   sampleConfidence: "all",
   sourceQuality: "all",
@@ -226,10 +247,10 @@ function parseGoalieMetric(value: string): GoalieMatrixMetricKey {
     value === "relative_save_percentage" ||
     value === "gsaa_per_60" ||
     value === "xga_per_shot_against" ||
-    value === "goalie_value_signal" ||
     value === "high_danger_save_percentage" ||
     value === "quality_start_pct" ||
     value === "really_bad_start_rate" ||
+    value === "fhfh_5v5_bad_start_rate" ||
     value === "steal_rate" ||
     value === "start_share"
     ? value
@@ -327,7 +348,27 @@ function parseDeployment(value: string): ContextualRankingsDeploymentFilter {
     : "all";
 }
 
-export function normalizeRankingsFilters(query: RankingsQuery) {
+/**
+ * The season the page shows: an explicit, valid URL season wins; otherwise the
+ * resolved current season (`/api/v1/season`: the latest season whose regular
+ * season has started, so future rows and the off-season are handled); with no
+ * resolved season it stays "" (unknown) and the page waits or reports the
+ * lookup failure instead of guessing.
+ */
+export function resolveRankingsSeason(
+  explicitSeason: string,
+  currentSeasonId: number | null | undefined,
+) {
+  if (/^\d{8}$/.test(explicitSeason)) return explicitSeason;
+  return currentSeasonId != null && Number.isSafeInteger(currentSeasonId) && currentSeasonId > 0
+    ? String(currentSeasonId)
+    : "";
+}
+
+export function normalizeRankingsFilters(
+  query: RankingsQuery,
+  options: { currentSeasonId?: number | null } = {},
+) {
   const sort = parseSort(queryValue(query.sort));
   const deployment = parseDeployment(queryValue(query.deployment));
   const matrixSortMetric = getContextualRankingMetricDefinition(
@@ -349,8 +390,10 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
         ? (queryValue(query.entity) as RankingsFilterState["entity"])
         : "skaters",
     tab: parseTab(queryValue(query.tab)),
-    season: queryValue(query.season) || DEFAULT_RANKINGS_FILTERS.season,
+    season: resolveRankingsSeason(queryValue(query.season), options.currentSeasonId),
     window,
+    windowScope:
+      queryValue(query.window_scope) === "cross_season" ? "cross_season" : "current_season",
     position:
       queryValue(query.position) === "F" || queryValue(query.position) === "D"
         ? (queryValue(query.position) as RankingsFilterState["position"])
@@ -376,7 +419,17 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
     matrixSortMetric,
     goalieMetric: parseGoalieMetric(queryValue(query.goalie_metric)),
     goalieRole: parseGoalieRole(queryValue(query.goalie_role)),
+    goalieStrength: queryValue(query.goalie_strength) === "all" ? "all" : "5v5",
+    goalieMinStarts: /^\d+$/.test(queryValue(query.goalie_min_starts))
+      ? queryValue(query.goalie_min_starts)
+      : DEFAULT_RANKINGS_FILTERS.goalieMinStarts,
+    goalieMinShots: /^\d+$/.test(queryValue(query.goalie_min_shots))
+      ? queryValue(query.goalie_min_shots)
+      : DEFAULT_RANKINGS_FILTERS.goalieMinShots,
     teamMetric: parseTeamMetric(queryValue(query.team_metric)),
+    teamMinGp: /^\d+$/.test(queryValue(query.team_min_gp))
+      ? queryValue(query.team_min_gp)
+      : DEFAULT_TEAM_MIN_GP,
     matrixSortDirection: parseMatrixDirection(queryValue(query.sort_direction)),
     sampleConfidence: parseSampleConfidence(
       queryValue(query.sample_confidence),
@@ -434,7 +487,9 @@ export function buildRankingsContextSummary(
   const window =
     filters.window === "season"
       ? "Season"
-      : `${filters.window.replace("last", "Last ")} games`;
+      : filters.windowScope === "cross_season"
+        ? `${filters.window.replace("last", "Last ")} games across seasons`
+        : `${filters.window.replace("last", "Last ")} games this season (actual n shown)`;
   const strength = STRENGTH_LABELS[filters.strength] ?? filters.strength;
   const context = [
     strength,
@@ -500,6 +555,7 @@ export function buildClientRankingsRequest(
     season: Number(filters.season) || 0,
     asOfDate: null,
     window: filters.window,
+    windowScope: filters.windowScope,
     position: filters.position,
     deployment: filters.deployment,
     strength: filters.strength,
@@ -513,6 +569,15 @@ export function buildClientRankingsRequest(
     limit: 100,
     entityIds: null,
   };
+}
+
+/** Sends the labelled cross-season scope only when it applies (decision 103). */
+export function windowScopeParam(filters: RankingsFilterState) {
+  return filters.entity === "skaters" &&
+    filters.window !== "season" &&
+    filters.windowScope === "cross_season"
+    ? "cross_season"
+    : null;
 }
 
 export function buildRankingsRequestPath(filters: RankingsFilterState) {
@@ -538,6 +603,8 @@ export function buildRankingsRequestPath(filters: RankingsFilterState) {
   if (filters.search.trim() !== "") {
     params.set("search", filters.search.trim());
   }
+  const windowScope = windowScopeParam(filters);
+  if (windowScope) params.set("window_scope", windowScope);
   return `/api/v1/contextual-rankings?${params.toString()}`;
 }
 
@@ -571,6 +638,8 @@ export function buildMatrixRequestPath(filters: RankingsFilterState) {
   if (filters.selectedPlayerId.trim() !== "") {
     params.set("selected_player", filters.selectedPlayerId.trim());
   }
+  const windowScope = windowScopeParam(filters);
+  if (windowScope) params.set("window_scope", windowScope);
   return `/api/v1/contextual-rankings/matrix?${params.toString()}`;
 }
 
@@ -578,11 +647,12 @@ export function buildGoalieMatrixRequestPath(filters: RankingsFilterState) {
   const params = new URLSearchParams({
     season: filters.season,
     window: filters.window,
+    strength: filters.goalieStrength,
     metric: filters.goalieMetric,
     role: filters.goalieRole,
     sort_direction: filters.matrixSortDirection,
-    min_starts: filters.minGp,
-    min_shots: filters.minToi,
+    min_starts: filters.goalieMinStarts,
+    min_shots: filters.goalieMinShots,
     page: filters.page,
     page_size: filters.pageSize,
   });
@@ -600,6 +670,7 @@ export function buildTeamMatrixRequestPath(filters: RankingsFilterState) {
     season: filters.season,
     metric: filters.teamMetric,
     sort_direction: filters.matrixSortDirection,
+    min_gp: filters.teamMinGp,
     page: filters.page,
     page_size: filters.pageSize,
   });
@@ -701,6 +772,15 @@ export function buildSnapshotRequestPath(filters: RankingsFilterState) {
     team_metric: filters.teamMetric,
     sort_direction: filters.matrixSortDirection,
   });
+  // The snapshot route hands this query to the entity's own parser, so goalies
+  // and teams carry their own strength and sample floors (decisions 98, 104).
+  if (filters.entity === "goalies") {
+    params.set("strength", filters.goalieStrength);
+    params.set("min_starts", filters.goalieMinStarts);
+    params.set("min_shots", filters.goalieMinShots);
+  } else if (filters.entity === "teams") {
+    params.set("min_gp", filters.teamMinGp);
+  }
   if (filters.team.trim() !== "") {
     params.set("team", filters.team.trim());
   }
@@ -719,5 +799,7 @@ export function buildSnapshotRequestPath(filters: RankingsFilterState) {
     params.set("selected_player", filters.selectedPlayerId.trim());
   }
 
+  const windowScope = windowScopeParam(filters);
+  if (windowScope) params.set("window_scope", windowScope);
   return `/api/v1/contextual-rankings/snapshot?${params.toString()}`;
 }

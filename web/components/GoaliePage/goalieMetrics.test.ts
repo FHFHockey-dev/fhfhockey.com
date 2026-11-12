@@ -10,6 +10,7 @@ import {
   buildGoalieMetricsGroups,
   buildGoalieValueTierMap,
   buildGoalieVarianceAverages,
+  fetchGoalieAdvancedMetricsRows,
   formatGoalieVarianceValue,
   getGoalieLeaderboardColumns,
 } from "./goalieMetrics";
@@ -130,9 +131,11 @@ describe("buildGoalieValueTierMap", () => {
       }),
     ];
 
-    const first = buildGoalieValueTierMap(goalies);
-    const second = buildGoalieValueTierMap(goalies);
+    // Floor lowered to 1 start (decision 98) so goalie 2 (4 GS) is tiered.
+    const first = buildGoalieValueTierMap(goalies, [], 1);
+    const second = buildGoalieValueTierMap(goalies, [], 1);
 
+    expect(first.get(2)).toBeDefined();
     expect(first.get(2)).toEqual(second.get(2));
   });
 
@@ -168,8 +171,9 @@ describe("buildGoalieValueTierMap", () => {
     ];
 
     const subsetPopulation = fullPopulation.slice(0, 2);
-    const fullScore = buildGoalieValueTierMap(fullPopulation).get(2)?.score;
-    const subsetScore = buildGoalieValueTierMap(subsetPopulation).get(2)?.score;
+    // Floor lowered to 1 start (decision 98) so goalies 2 and 3 are tiered.
+    const fullScore = buildGoalieValueTierMap(fullPopulation, [], 1).get(2)?.score;
+    const subsetScore = buildGoalieValueTierMap(subsetPopulation, [], 1).get(2)?.score;
 
     expect(fullScore).not.toBe(subsetScore);
   });
@@ -332,7 +336,9 @@ describe("buildGoalieAdvancedMetricsRows", () => {
 
     expect(rows).toHaveLength(1);
     expect(rows[0].qualityStartsPct).toBe(0.5);
-    expect(rows[0].strengths.all.gsaa).toBe(2);
+    // Decision 10: a lone goalie is the whole league here, so GSAA at the
+    // window aggregate is 0 (the old sum of per-game NST GSAA gave 2).
+    expect(rows[0].strengths.all.gsaa).toBeCloseTo(0, 10);
     expect(rows[0].strengths.all.xgAgainst).toBe(4);
     expect(rows[0].strengths.all.xgAgainstPer60).toBeCloseTo(2.67, 2);
     expect(rows[0].strengths.all.shotsAgainstPer60).toBeCloseTo(26.67, 2);
@@ -410,5 +416,188 @@ describe("goalie sortable table semantics", () => {
     expect(leaderboardMarkup).toContain('aria-sort="descending"');
     expect(advancedMarkup).toContain("<button");
     expect(advancedMarkup).toContain('aria-sort="descending"');
+  });
+});
+
+// W2-2 D6 / decision 10: GSAA = SA x (1 - league SV%) - GA over the window.
+// League SA 100, GA 8 -> SV .920. Goalie 1: 50 x .08 - 5 = -1; goalie 2:
+// 50 x .08 - 3 = +1. The per-game NST values sum to -0.5 and +0.9.
+describe("advanced goalie GSAA at the window aggregate", () => {
+  const game = (
+    playerId: number,
+    shots: number,
+    goals: number,
+    nstGsaa: number,
+  ) => ({
+    player_id: playerId,
+    player_name: `Goalie ${playerId}`,
+    games_played: 1,
+    games_started: 1,
+    quality_start: 1,
+    nst_all_counts_toi: 60,
+    nst_all_counts_shots_against: shots,
+    nst_all_counts_goals_against: goals,
+    nst_all_counts_gsaa: nstGsaa,
+    nst_all_counts_xg_against: 2,
+  });
+
+  it("computes GSAA from pooled SA and GA against the window's league SV%", () => {
+    const rows = buildGoalieAdvancedMetricsRows([
+      game(1, 30, 2, 0.7),
+      game(1, 20, 3, -1.2),
+      game(2, 25, 1, 0.8),
+      game(2, 25, 2, 0.1),
+    ]);
+    const byId = new Map(rows.map((row) => [row.playerId, row]));
+    expect(byId.get(1)?.strengths.all.gsaa).toBeCloseTo(-1, 10);
+    expect(byId.get(2)?.strengths.all.gsaa).toBeCloseTo(1, 10);
+
+    const markup = renderToStaticMarkup(
+      React.createElement(GoalieAdvancedMetricsTable, {
+        rows,
+        strength: "all",
+      }),
+    );
+    expect(markup).toContain("-1.00");
+    expect(markup).not.toContain("-0.50");
+  });
+
+  it("leaves GSAA unknown when a game lacks shots or goals against", () => {
+    const rows = buildGoalieAdvancedMetricsRows([
+      game(1, 30, 2, 0.7),
+      { ...game(1, 20, 3, -1.2), nst_all_counts_goals_against: null },
+      game(2, 25, 1, 0.8),
+    ]);
+    expect(rows.find((row) => row.playerId === 1)?.strengths.all.gsaa).toBeNull();
+  });
+});
+
+// PR-U2: two 60-minute starts, xGA [3, null], QS [1, null]. Full-window values
+// are unknown; the old reader showed xGA/60 1.5 and QS% 0.5.
+describe("advanced goalie coverage", () => {
+  it("keeps xGA/60 and QS% unknown when one start is missing them", () => {
+    const [row] = buildGoalieAdvancedMetricsRows([
+      {
+        player_id: 7,
+        player_name: "Goalie 7",
+        games_played: 1,
+        games_started: 1,
+        quality_start: 1,
+        nst_all_counts_toi: 60,
+        nst_all_counts_xg_against: 3,
+      },
+      {
+        player_id: 7,
+        player_name: "Goalie 7",
+        games_played: 1,
+        games_started: 1,
+        quality_start: null,
+        nst_all_counts_toi: 60,
+        nst_all_counts_xg_against: null,
+      },
+    ]);
+    expect(row.strengths.all.xgAgainstPer60).toBeNull();
+    expect(row.qualityStartsPct).toBeNull();
+  });
+});
+
+// PR-U1: the advanced rows follow the applied window and are paged.
+describe("fetchGoalieAdvancedMetricsRows", () => {
+  it("filters by season and window and pages until a short page", async () => {
+    const calls: Array<Array<[string, unknown[]]>> = [];
+    const pages = [
+      [{ player_id: 1 }, { player_id: 2 }],
+      [{ player_id: 3 }],
+    ];
+    const client = {
+      from: (table: string) => {
+        const log: Array<[string, unknown[]]> = [["from", [table]]];
+        calls.push(log);
+        const builder: Record<string, unknown> = {};
+        for (const method of ["select", "eq", "gte", "lte", "order"]) {
+          builder[method] = (...args: unknown[]) => {
+            log.push([method, args]);
+            return builder;
+          };
+        }
+        builder.range = (...args: unknown[]) => {
+          log.push(["range", args]);
+          return Promise.resolve({ data: pages[calls.length - 1], error: null });
+        };
+        return builder;
+      },
+    };
+
+    const rows = await fetchGoalieAdvancedMetricsRows(
+      client,
+      20252026,
+      { startDate: "2025-11-03", endDate: "2025-11-09" },
+      2,
+    );
+
+    expect(rows.map((row) => row.player_id)).toEqual([1, 2, 3]);
+    expect(calls).toHaveLength(2);
+    expect(calls[0]).toEqual(
+      expect.arrayContaining([
+        ["eq", ["season_id", 20252026]],
+        ["gte", ["date", "2025-11-03"]],
+        ["lte", ["date", "2025-11-09"]],
+        ["range", [0, 1]],
+      ]),
+    );
+    expect(calls[1]).toEqual(expect.arrayContaining([["range", [2, 3]]]));
+  });
+});
+
+// W2-2 D9 / decision 98: a single game or week has unknown spread, and the
+// value tier needs the (user-lowerable) start floor.
+describe("value tier sample floor", () => {
+  const regulars = [7, 6, 5].map((starts, index) =>
+    makeGoalie(index + 1, {
+      averageFantasyPointsPerGame: 10 + index,
+      fantasyPointsAboveAverage: index - 1,
+      wowVariance: 2 + index,
+      gogVariance: 3 + index,
+      totalGamesPlayed: starts,
+      totalGamesStarted: starts,
+    }),
+  );
+  const singleton = makeGoalie(9, {
+    averageFantasyPointsPerGame: 25,
+    fantasyPointsAboveAverage: 12,
+    wowVariance: null,
+    gogVariance: null,
+    totalGamesPlayed: 1,
+    totalGamesStarted: 1,
+    totalTimeOnIce: 60,
+  });
+
+  it("never tiers a one-game goalie, even with the floor lowered to 1", () => {
+    for (const floor of [undefined, 1]) {
+      const tiered = applyGoalieValueTiers([...regulars, singleton], [], floor);
+      const goalie = tiered.find((entry) => entry.playerId === 9)!;
+      expect(goalie.valueTier).toBeUndefined();
+      expect(goalie.valueTierInsufficientSample).toBe(true);
+    }
+  });
+
+  it("tiers a 4-start goalie only after the floor is lowered to 4", () => {
+    const fourStarts = makeGoalie(4, { totalGamesPlayed: 4, totalGamesStarted: 4 });
+    const atDefault = applyGoalieValueTiers([...regulars, fourStarts]);
+    expect(atDefault.find((g) => g.playerId === 4)?.valueTier).toBeUndefined();
+    const lowered = applyGoalieValueTiers([...regulars, fourStarts], [], 4);
+    expect(lowered.find((g) => g.playerId === 4)?.valueTier).toMatch(/^Tier [1-5]$/);
+  });
+
+  it("renders insufficient sample and graded weeks on the leaderboard", () => {
+    const tiered = applyGoalieValueTiers([
+      ...regulars.map((goalie) => ({ ...goalie, eligibleWeeks: 3 })),
+      { ...singleton, eligibleWeeks: 1 },
+    ]);
+    const markup = renderToStaticMarkup(
+      React.createElement(GoalieLeaderboard, { goalieRankings: tiered }),
+    );
+    expect(markup).toContain("Insufficient sample");
+    expect(markup).toContain(">Wks");
   });
 });

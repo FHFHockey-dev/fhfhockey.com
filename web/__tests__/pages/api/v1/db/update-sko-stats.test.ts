@@ -8,6 +8,7 @@ import {
   isTruthyQueryFlag,
   projectSkoSkaterStatsRow,
   resolveSkaterIncrementalWindow,
+  resolveSkoIpp,
   upsertSkoSkaterStats,
 } from "../../../../../pages/api/v1/db/update-sko-stats";
 
@@ -309,5 +310,72 @@ describe("/api/v1/db/update-sko-stats helpers", () => {
       season_id: 20252026,
       points: 10,
     });
+  });
+  // W3-7 D5: IPP = points / on-ice GF (ES + PP + SH). A missing component is unknown, not 0,
+  // and points above on-ice GF is impossible: both store null with a reason.
+  function ippRow(
+    points: number | null,
+    goalsFor: Partial<Record<"evenStrengthGoalsFor" | "powerPlayGoalFor" | "shortHandedGoalsFor", number | null>> | undefined,
+  ) {
+    return buildSkoSkaterStatsRow({
+      stat: {
+        playerId: 8478402,
+        skaterFullName: "Test Skater",
+        positionCode: "C",
+        gamesPlayed: 1,
+        points,
+      } as any,
+      goalsForAgainstStat: goalsFor as any,
+      formattedDate: "2026-03-14",
+      seasonId: 20252026,
+    }).ipp;
+  }
+
+  it("stores a null IPP when an on-ice goals-for component is missing", () => {
+    expect(
+      ippRow(1, { evenStrengthGoalsFor: null, powerPlayGoalFor: 1, shortHandedGoalsFor: 0 }),
+    ).toBeNull();
+    expect(
+      ippRow(1, { evenStrengthGoalsFor: 2, powerPlayGoalFor: 0 }),
+    ).toBeNull();
+    expect((resolveSkoIpp as any)({
+      points: 1,
+      evenStrengthGoalsFor: null,
+      powerPlayGoalFor: 1,
+      shortHandedGoalsFor: 0,
+    })).toEqual({ ipp: null, reason: "on_ice_goals_for_component_missing" });
+  });
+
+  it("stores a null IPP when points exceed on-ice goals for", () => {
+    expect(
+      ippRow(3, { evenStrengthGoalsFor: 1, powerPlayGoalFor: 1, shortHandedGoalsFor: 0 }),
+    ).toBeNull();
+    expect((resolveSkoIpp as any)({
+      points: 3,
+      evenStrengthGoalsFor: 1,
+      powerPlayGoalFor: 1,
+      shortHandedGoalsFor: 0,
+    })).toEqual({ ipp: null, reason: "points_exceed_on_ice_goals_for" });
+  });
+
+  it("keeps the IPP identity when every part is known and points fit on-ice goals for", () => {
+    expect(
+      ippRow(2, { evenStrengthGoalsFor: 2, powerPlayGoalFor: 1, shortHandedGoalsFor: 1 }),
+    ).toBe(50);
+    expect(
+      ippRow(4, { evenStrengthGoalsFor: 2, powerPlayGoalFor: 1, shortHandedGoalsFor: 1 }),
+    ).toBe(100);
+    expect((resolveSkoIpp as any)({
+      points: 0,
+      evenStrengthGoalsFor: 0,
+      powerPlayGoalFor: 0,
+      shortHandedGoalsFor: 0,
+    })).toEqual({ ipp: null, reason: "no_on_ice_goals_for" });
+    expect((resolveSkoIpp as any)({
+      points: null,
+      evenStrengthGoalsFor: 1,
+      powerPlayGoalFor: 0,
+      shortHandedGoalsFor: 0,
+    })).toEqual({ ipp: null, reason: "points_missing" });
   });
 });

@@ -117,6 +117,7 @@ export async function fetchPlayerGameRows(
     "pp_toi_pct_per_game",
     "nst_toi",
     "toi_per_game",
+    "toi_per_game_5v5",
     "ev_time_on_ice",
     "nst_icf",
     "nst_ixg",

@@ -457,6 +457,29 @@ export default function RankingsFilters({
         </div>
       </label>
 
+      {value.entity === "skaters" && value.window !== "season" ? (
+        // Decision 103: last-N defaults to this season with the actual number
+        // of games; the cross-season window is an explicit, labelled choice.
+        <label className={`${styles.filterControl} ${styles.filterWindow}`}>
+          <span>Games from</span>
+          <div className={styles.controlField}>
+            <ToolbarIcon name="calendar" />
+            <select
+              value={value.windowScope}
+              onChange={(event) =>
+                onChange({
+                  windowScope: event.target.value as RankingsFilterState["windowScope"],
+                })
+              }
+            >
+              <option value="current_season">This season (actual n)</option>
+              <option value="cross_season">Across seasons</option>
+            </select>
+            <ToolbarIcon name="chevron" />
+          </div>
+        </label>
+      ) : null}
+
       {value.tab === "rankings" ? (
         <label className={`${styles.filterControl} ${styles.filterDisplay}`}>
           <span>Display</span>
@@ -524,13 +547,35 @@ export default function RankingsFilters({
             <input
               inputMode="numeric"
               pattern="[0-9]*"
-              value={value.minGp}
-              onChange={(event) => onChange({ minGp: event.target.value })}
+              value={value.entity === "goalies" ? value.goalieMinStarts : value.minGp}
+              onChange={(event) =>
+                onChange(
+                  value.entity === "goalies"
+                    ? { goalieMinStarts: event.target.value }
+                    : { minGp: event.target.value },
+                )
+              }
             />
             <ToolbarIcon name="chevron" />
           </div>
         </label>
-      ) : null}
+      ) : (
+        // Decision 98: the team sample floor is visible and user-lowerable;
+        // teams below it show "insufficient sample".
+        <label className={`${styles.filterControl} ${styles.filterMinGp}`}>
+          <span>Min GP</span>
+          <div className={styles.controlField}>
+            <ToolbarIcon name="barChart" />
+            <input
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={value.teamMinGp}
+              onChange={(event) => onChange({ teamMinGp: event.target.value })}
+            />
+            <ToolbarIcon name="chevron" />
+          </div>
+        </label>
+      )}
 
       {value.entity === "skaters" ? (
         <label className={`${styles.filterControl} ${styles.filterStrength}`}>
@@ -558,6 +603,29 @@ export default function RankingsFilters({
       ) : null}
 
       {value.entity === "goalies" ? (
+        <label className={`${styles.filterControl} ${styles.filterStrength}`}>
+          <span>Strength</span>
+          <div className={styles.controlField}>
+            <ToolbarIcon name="strength" />
+            <select
+              value={value.goalieStrength}
+              onChange={(event) =>
+                onChange({
+                  goalieStrength: event.target
+                    .value as RankingsFilterState["goalieStrength"],
+                  page: "1",
+                })
+              }
+            >
+              <option value="5v5">5v5</option>
+              <option value="all">All situations</option>
+            </select>
+            <ToolbarIcon name="chevron" />
+          </div>
+        </label>
+      ) : null}
+
+      {value.entity === "goalies" ? (
         <label className={`${styles.filterControl} ${styles.filterMinShots}`}>
           <span>Min Shots</span>
           <div className={styles.controlField}>
@@ -565,8 +633,8 @@ export default function RankingsFilters({
             <input
               inputMode="numeric"
               pattern="[0-9]*"
-              value={value.minToi}
-              onChange={(event) => onChange({ minToi: event.target.value })}
+              value={value.goalieMinShots}
+              onChange={(event) => onChange({ goalieMinShots: event.target.value })}
             />
           </div>
         </label>

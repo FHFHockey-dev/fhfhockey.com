@@ -83,22 +83,65 @@ export async function fetchLatestGoalieForTeam(
   return Number.isFinite(goalieId) ? Number(goalieId) : null;
 }
 
+/** Starter context with each history kept apart (W1-5): credited starts, appearances and unknown labels. */
+export type CreditedStarterContext = TeamGoalieStarterContext & {
+  /** Last credited start (official games_started = 1) per goalie. */
+  lastCreditedStartDateByGoalie: Map<number, string>;
+  /** Team-games in the L10 window whose credited starter is unknown (label missing or contradictory). */
+  unknownStartGames: number;
+  /** Completed team-games in the L10 window, known or not; totalGames counts only the known ones. */
+  windowGames: number;
+  startLabelSource: "wgo_goalie_stats.games_started";
+};
+
+type CreditedStartLabel = { gameId: number; gameDate: string; starterGoalieId: number | null };
+
+/**
+ * One official credited-start label per completed team-game, keyed by game id (W1-5, decision 40).
+ * The starter is the single appearing goalie with games_started = 1. No such goalie, or more than
+ * one, is unknown: never the first row or the most minutes (a starter pulled at 600 s is still the
+ * credited starter over a reliever at 3,000 s).
+ */
+export function creditedStartLabels(
+  appearances: Array<{ game_id: number | null; game_date: string | null; goalie_id: number | null }>,
+  labels: Array<{ game_id: number | null; goalie_id: number | null; games_started: number | null }>
+): CreditedStartLabel[] {
+  const started = new Map<string, number | null>();
+  for (const row of labels) {
+    if (!Number.isFinite(row.game_id) || !Number.isFinite(row.goalie_id)) continue;
+    started.set(`${row.game_id}:${row.goalie_id}`, row.games_started === 1 ? 1 : row.games_started === 0 ? 0 : null);
+  }
+  const byGame = new Map<number, { gameDate: string; goalieIds: Set<number> }>();
+  for (const row of appearances) {
+    if (!Number.isFinite(row.game_id) || !Number.isFinite(row.goalie_id) || !row.game_date) continue;
+    const game = byGame.get(Number(row.game_id)) ?? { gameDate: row.game_date, goalieIds: new Set<number>() };
+    game.goalieIds.add(Number(row.goalie_id));
+    byGame.set(Number(row.game_id), game);
+  }
+  return [...byGame.entries()]
+    .map(([gameId, game]) => {
+      const starters = [...game.goalieIds].filter((goalieId) => started.get(`${gameId}:${goalieId}`) === 1);
+      return { gameId, gameDate: game.gameDate, starterGoalieId: starters.length === 1 ? starters[0] : null };
+    })
+    .sort((a, b) => b.gameDate.localeCompare(a.gameDate) || b.gameId - a.gameId);
+}
+
 export async function fetchTeamGoalieStarterContext(
   teamId: number,
   asOfDate: string
-): Promise<TeamGoalieStarterContext> {
+): Promise<CreditedStarterContext> {
   assertSupabase();
   const [goalieGamesRes, previousTeamGameRes] = await Promise.all([
     supabase
       .from("forge_goalie_game")
-      .select("game_date,goalie_id,toi_seconds")
+      .select("game_id,game_date,goalie_id")
       .eq("team_id", teamId)
       .lt("game_date", asOfDate)
       .order("game_date", { ascending: false })
       .limit(80),
     supabase
       .from("games")
-      .select("date")
+      .select("id,date")
       .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
       .lt("date", asOfDate)
       .order("date", { ascending: false })
@@ -109,52 +152,62 @@ export async function fetchTeamGoalieStarterContext(
   if (goalieGamesRes.error) throw goalieGamesRes.error;
   if (previousTeamGameRes.error) throw previousTeamGameRes.error;
 
-  const rows = (goalieGamesRes.data ?? []) as GoalieGameHistoryRow[];
-  const byDate = new Map<string, { goalieId: number; toi: number }>();
-  for (const row of rows) {
-    const gameDate = row.game_date;
-    const goalieId = row.goalie_id;
-    if (!gameDate || !Number.isFinite(goalieId)) continue;
-    const toi = safeNumber(row.toi_seconds, 0);
-    const existing = byDate.get(gameDate);
-    if (!existing || toi > existing.toi) {
-      byDate.set(gameDate, { goalieId: Number(goalieId), toi });
-    }
+  const appearances = (goalieGamesRes.data ?? []) as Array<{ game_id: number | null; game_date: string | null; goalie_id: number | null }>;
+  const gameIds = [...new Set(appearances.map((row) => Number(row.game_id)).filter(Number.isFinite))];
+  const goalieIds = [...new Set(appearances.map((row) => Number(row.goalie_id)).filter(Number.isFinite))];
+  let labelRows: Array<{ game_id: number | null; goalie_id: number | null; games_started: number | null }> = [];
+  if (gameIds.length > 0) {
+    const labelsRes = await supabase
+      .from("wgo_goalie_stats")
+      .select("game_id,goalie_id,games_started")
+      .in("game_id", gameIds)
+      .in("goalie_id", goalieIds);
+    if (labelsRes.error) throw labelsRes.error;
+    labelRows = (labelsRes.data ?? []) as typeof labelRows;
   }
+  const games = creditedStartLabels(appearances, labelRows);
 
-  const lastDates = Array.from(byDate.keys()).sort().reverse().slice(0, 10);
+  const window = games.slice(0, 10);
   const startsByGoalie = new Map<number, number>();
+  let knownGames = 0;
+  for (const game of window) {
+    if (game.starterGoalieId == null) continue;
+    knownGames += 1;
+    startsByGoalie.set(game.starterGoalieId, (startsByGoalie.get(game.starterGoalieId) ?? 0) + 1);
+  }
+  const lastCreditedStartDateByGoalie = new Map<number, string>();
+  for (const game of games) {
+    if (game.starterGoalieId != null && !lastCreditedStartDateByGoalie.has(game.starterGoalieId)) {
+      lastCreditedStartDateByGoalie.set(game.starterGoalieId, game.gameDate);
+    }
+  }
+  // Staleness reads the last appearance (start or relief), which is what "played" means.
   const lastPlayedDateByGoalie = new Map<number, string>();
-  for (const d of lastDates) {
-    const starter = byDate.get(d);
-    if (!starter) continue;
-    startsByGoalie.set(
-      starter.goalieId,
-      (startsByGoalie.get(starter.goalieId) ?? 0) + 1
-    );
-    if (!lastPlayedDateByGoalie.has(starter.goalieId)) {
-      lastPlayedDateByGoalie.set(starter.goalieId, d);
+  for (const row of [...appearances].sort((a, b) => String(b.game_date).localeCompare(String(a.game_date)))) {
+    const goalieId = Number(row.goalie_id);
+    if (Number.isFinite(goalieId) && row.game_date && !lastPlayedDateByGoalie.has(goalieId)) {
+      lastPlayedDateByGoalie.set(goalieId, row.game_date);
     }
   }
 
-  for (const [date, info] of byDate.entries()) {
-    if (!lastPlayedDateByGoalie.has(info.goalieId)) {
-      lastPlayedDateByGoalie.set(info.goalieId, date);
-    }
-  }
-
-  const previousGameDate = (previousTeamGameRes.data as any)?.date ?? null;
+  const previousGame = previousTeamGameRes.data as { id?: number | null; date?: string | null } | null;
+  const previousGameDate = previousGame?.date ?? null;
+  // The previous team game by game id; an unknown label stays unknown (no B2B starter assumed).
   const previousGameStarterGoalieId =
-    previousGameDate != null
-      ? (byDate.get(previousGameDate)?.goalieId ?? null)
+    previousGame?.id != null
+      ? (games.find((game) => game.gameId === Number(previousGame.id))?.starterGoalieId ?? null)
       : null;
 
   return {
     startsByGoalie,
     lastPlayedDateByGoalie,
-    totalGames: lastDates.length,
+    lastCreditedStartDateByGoalie,
+    totalGames: knownGames,
+    windowGames: window.length,
+    unknownStartGames: window.length - knownGames,
     previousGameDate,
-    previousGameStarterGoalieId
+    previousGameStarterGoalieId,
+    startLabelSource: "wgo_goalie_stats.games_started"
   };
 }
 
@@ -222,7 +275,8 @@ export async function fetchGoalieRestSplitProfile(
       "date,save_pct_days_rest_0,save_pct_days_rest_1,save_pct_days_rest_2,save_pct_days_rest_3,save_pct_days_rest_4_plus,games_played_days_rest_0,games_played_days_rest_1,games_played_days_rest_2,games_played_days_rest_3,games_played_days_rest_4_plus"
     )
     .eq("goalie_id", goalieId)
-    .lte("date", asOfDate)
+    // Pregame: a row dated on the slate already contains that night's game (rule 25).
+    .lt("date", asOfDate)
     .order("date", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -250,7 +304,9 @@ export async function fetchGoalieRestSplitProfile(
 
 export async function fetchGoalieEvidence(
   goalieId: number,
-  asOfDate: string
+  asOfDate: string,
+  /** The season's league save % (decision 10); null leaves the residual spread unknown. */
+  leagueSavePct: number | null
 ): Promise<GoalieEvidence> {
   assertSupabase();
   const asOf = new Date(`${asOfDate}T00:00:00.000Z`);
@@ -285,7 +341,7 @@ export async function fetchGoalieEvidence(
       .from("wgo_goalie_stats")
       .select("date,quality_start,quality_starts_pct")
       .eq("goalie_id", goalieId)
-      .lte("date", asOfDate)
+      .lt("date", asOfDate)
       .order("date", { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -326,11 +382,11 @@ export async function fetchGoalieEvidence(
     { shots: 0, goals: 0 }
   );
 
-  const leagueSvPct = 0.9;
-  const residuals = recentRows.map((row) => {
+  // Per-game residual against the season's league save % (decision 10), not a fixed .900.
+  const residuals = leagueSavePct == null ? [] : recentRows.map((row) => {
     const shots = safeNumber(row.shots_against, 0);
     const goals = safeNumber(row.goals_allowed, 0);
-    const expectedGoals = shots * (1 - leagueSvPct);
+    const expectedGoals = shots * (1 - leagueSavePct);
     return goals - expectedGoals;
   });
   const qualityStartRow = (qualityStartRes.data as any) ?? null;

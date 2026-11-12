@@ -147,3 +147,105 @@ export function predictBinaryLogisticProbability(
     Math.max(EPSILON, sigmoid(dotProduct(model.weights, features) + model.bias))
   );
 }
+
+export type BinaryLogisticFitDiagnostics = {
+  /** Mean log loss + l1|w| + (l2/2)||w||^2: the objective the fit minimizes. */
+  objective: number;
+  /** Euclidean norm of the objective's (sub)gradient, intercept included. */
+  gradientNorm: number;
+  /** With an unpenalized intercept these are equal at the optimum. */
+  meanPrediction: number;
+  meanLabel: number;
+  tolerance: number;
+  converged: boolean;
+};
+
+/**
+ * Convergence check for a fitted model: a fixed iteration count is not proof
+ * of an optimum. The intercept's stationarity condition means the weighted
+ * mean prediction must equal the weighted mean label at convergence.
+ */
+export function diagnoseBinaryLogisticFit(
+  model: BinaryLogisticModel,
+  examples: BinaryTrainingExample[],
+  options: BinaryLogisticFitOptions & { tolerance?: number } = {}
+): BinaryLogisticFitDiagnostics {
+  const l1 = options.l1 ?? 0;
+  const l2 = options.l2 ?? 0;
+  const tolerance = options.tolerance ?? 1e-4;
+  const gradient = Array.from({ length: model.featureCount }, () => 0);
+  let biasGradient = 0;
+  let totalWeight = 0;
+  let logLoss = 0;
+  let predictionSum = 0;
+  let labelSum = 0;
+  for (const example of examples) {
+    const weight = example.weight ?? 1;
+    const prediction = sigmoid(dotProduct(model.weights, example.features) + model.bias);
+    const clipped = Math.min(1 - EPSILON, Math.max(EPSILON, prediction));
+    totalWeight += weight;
+    predictionSum += prediction * weight;
+    labelSum += example.label * weight;
+    logLoss -= weight * (example.label === 1 ? Math.log(clipped) : Math.log(1 - clipped));
+    const error = prediction - example.label;
+    for (let index = 0; index < model.featureCount; index += 1) {
+      gradient[index] += error * example.features[index] * weight;
+    }
+    biasGradient += error * weight;
+  }
+  let squaredNorm = (biasGradient / totalWeight) ** 2;
+  let penalty = 0;
+  for (let index = 0; index < model.featureCount; index += 1) {
+    const w = model.weights[index]!;
+    penalty += l1 * Math.abs(w) + (l2 / 2) * w * w;
+    const smooth = gradient[index]! / totalWeight + l2 * w;
+    // Subgradient of l1|w| at w = 0 can cancel up to l1 of the smooth part.
+    const component = w !== 0 ? smooth + l1 * sign(w) : Math.sign(smooth) * Math.max(0, Math.abs(smooth) - l1);
+    squaredNorm += component * component;
+  }
+  const gradientNorm = Math.sqrt(squaredNorm);
+  return {
+    objective: logLoss / totalWeight + penalty,
+    gradientNorm,
+    meanPrediction: predictionSum / totalWeight,
+    meanLabel: labelSum / totalWeight,
+    tolerance,
+    converged: gradientNorm <= tolerance,
+  };
+}
+
+export type L2SweepResult = {
+  candidates: Array<{ l2: number; validationLogLoss: number; diagnostics: BinaryLogisticFitDiagnostics }>;
+  selectedL2: number;
+};
+
+/**
+ * Chooses the L2 strength by validation log loss over a fixed grid (fit on
+ * train only). Ties go to the larger penalty, so the choice does not depend
+ * on grid order.
+ */
+export function selectL2ByValidation(
+  train: BinaryTrainingExample[],
+  validation: BinaryTrainingExample[],
+  grid: number[],
+  options: Omit<BinaryLogisticFitOptions, "l2"> & { tolerance?: number } = {}
+): L2SweepResult {
+  const values = Array.from(new Set(grid.filter((value) => Number.isFinite(value) && value >= 0))).sort((a, b) => a - b);
+  if (!values.length || !validation.length) throw new Error("An L2 sweep needs a non-empty grid and validation split.");
+  const candidates = values.map((l2) => {
+    const model = trainBinaryLogisticModel(train, { ...options, l2 });
+    const validationLogLoss =
+      validation.reduce((sum, example) => {
+        const probability = predictBinaryLogisticProbability(model, example.features);
+        return sum - (example.label === 1 ? Math.log(probability) : Math.log(1 - probability));
+      }, 0) / validation.length;
+    return { l2, validationLogLoss, diagnostics: diagnoseBinaryLogisticFit(model, train, { ...options, l2 }) };
+  });
+  const best = candidates.reduce((winner, candidate) =>
+    candidate.validationLogLoss < winner.validationLogLoss - 1e-12 ||
+    (Math.abs(candidate.validationLogLoss - winner.validationLogLoss) <= 1e-12 && candidate.l2 > winner.l2)
+      ? candidate
+      : winner
+  );
+  return { candidates, selectedL2: best.l2 };
+}

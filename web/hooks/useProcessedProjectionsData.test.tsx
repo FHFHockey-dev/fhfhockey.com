@@ -60,3 +60,41 @@ it("maps provider SHA for every official skater source, so the direct branch app
   expect(skaterSources.length).toBeGreaterThan(0);
   for (const config of skaterSources) expect(config.statMappings.map((mapping) => mapping.key)).toContain("SH_ASSISTS");
 });
+
+function mockSupabaseWithActuals(actualRows: Record<string, unknown>[]) {
+  return { from: vi.fn((table: string) => {
+    const query: any = {};
+    for (const name of ["select", "eq", "in", "like", "order"]) query[name] = vi.fn(() => query);
+    query.range = vi.fn().mockResolvedValue({ data: table === "wgo_skater_stats_totals" ? actualRows : [], error: null });
+    return query;
+  }) } as any;
+}
+function gpSource(): CustomAdditionalProjectionSource {
+  return { ...source(41), rows: [{ player_id: 8478427, Player_Name: "Test Player", Position: "C", Goals: 41, GP: 82 }], statMappings: [{ key: "GOALS", dbColumnName: "Goals" }, { key: "GAMES_PLAYED", dbColumnName: "GP" }] };
+}
+function renderWithActuals(actualRows: Record<string, unknown>[]) {
+  vi.spyOn(console, "log").mockImplementation(noop);
+  vi.spyOn(console, "table").mockImplementation(noop);
+  const supabaseClient = mockSupabaseWithActuals(actualRows);
+  const customAdditionalSources = [gpSource()];
+  return renderHook(() => useProcessedProjectionsData({ activePlayerType: "skater", sourceControls, yahooDraftMode: "ALL", fantasyPointSettings, supabaseClient, currentSeasonId: "20262027", styles, showPerGameFantasyPoints: false, togglePerGameFantasyPoints: noop, customAdditionalSources }));
+}
+
+it("serves like-for-like diffs: season-to-date actuals against the projection pro-rated to games played (M-DRF-010)", async () => {
+  const { result } = renderWithActuals([{ player_id: 8478427, games_played: 20, goals: 10 }]);
+  await waitFor(() => expect(result.current.processedPlayers).toHaveLength(1));
+  const player = result.current.processedPlayers[0] as any;
+  expect(player.combinedStats.GOALS.actual).toBe(10);
+  expect(player.combinedStats.GOALS.diffPercentage).toBe(0);
+  expect(player.combinedStats.GAMES_PLAYED.diffPercentage).toBeNull();
+  expect(player.fantasyPoints.diffPercentage).toBe(0);
+});
+
+it("keeps actual fantasy points unknown, not zero, when the player has no actual stats row", async () => {
+  const { result } = renderWithActuals([]);
+  await waitFor(() => expect(result.current.processedPlayers).toHaveLength(1));
+  const player = result.current.processedPlayers[0] as any;
+  expect(player.fantasyPoints.projected).toBe(41);
+  expect(player.fantasyPoints.actual).toBeNull();
+  expect(player.fantasyPoints.diffPercentage).toBeNull();
+});

@@ -10,14 +10,14 @@ describe("rollingWindowContract", () => {
   it("defines the canonical lastN contract for each metric family class", () => {
     expect(CANONICAL_ROLLING_WINDOW_CONTRACTS.availability).toEqual({
       family: "availability",
-      selectionUnit: "current_team_chronological_team_games",
+      selectionUnit: "team_of_record_chronological_team_games",
       aggregationMethod: "availability_ratio_from_selected_team_games",
       missingComponentPolicy: {
         selectedWindowSlotBehavior: "selected_slot_always_counts",
         missingNumeratorBehavior: "not_applicable",
         missingDenominatorBehavior: "not_applicable"
       },
-      contractSummary: "Last N means the current team's last N chronological team games."
+      contractSummary: "Last N means the last N regular-season games of the player's team of record on each date (decision 16)."
     });
     expect(CANONICAL_ROLLING_WINDOW_CONTRACTS.additive_performance).toEqual({
       family: "additive_performance",

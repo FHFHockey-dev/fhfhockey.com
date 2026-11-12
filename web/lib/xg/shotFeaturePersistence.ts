@@ -14,6 +14,7 @@ import {
   predictWithSerializedCalibrator,
   type SerializedCalibrationModel
 } from "./calibration";
+import { isAffirmativelyApprovedXgEligibility } from "./approvalGate";
 import { findForbiddenBaselineFeatureKeys } from "./baselineDataset";
 
 const EPSILON = 1e-9;
@@ -48,8 +49,11 @@ export type PersistedXgModelArtifact = {
     test?: { startDate: string | null; endDate: string | null };
   };
   approvalGradeEligibility?: {
+    /** Approval counts only for a decision-88 gate record (see approvalGate.ts). */
+    gateVersion?: string;
     isEligible?: boolean;
     blockingReasons?: string[];
+    evidence?: unknown;
   };
   evaluation?: unknown;
   calibrationAssessment?: unknown;
@@ -119,7 +123,7 @@ type XgBoostNode = {
   isLeaf: boolean;
 };
 
-type XgBoostModel = {
+export type XgBoostModel = {
   trees: Array<{ root: XgBoostNode }>;
   params?: {
     learningRate?: number;
@@ -590,7 +594,14 @@ function predictXgBoostNode(features: number[], node: XgBoostNode): number {
   return child ? predictXgBoostNode(features, child) : 0;
 }
 
-function predictXgBoost(model: XgBoostModel, features: number[]): number {
+/**
+ * xgboost-js fits additively in probability space: it starts every row at
+ * 0.5 and fits each tree to the residual y - p. The ensemble sum is therefore
+ * the probability estimate itself. Its own `predictSingle` applies a sigmoid
+ * on top, which squeezes every shot toward 0.5; training evaluation and
+ * serving both use this function so the evaluated and served values agree.
+ */
+export function scoreXgBoostEnsemble(model: XgBoostModel, features: number[]): number {
   const learningRate = model.params?.learningRate ?? 0.3;
   let prediction = 0.5;
 
@@ -598,7 +609,7 @@ function predictXgBoost(model: XgBoostModel, features: number[]): number {
     prediction += learningRate * predictXgBoostNode(features, tree.root);
   }
 
-  return clipProbability(sigmoid(prediction));
+  return clipProbability(prediction);
 }
 
 export function predictShotGoalProbability(
@@ -625,7 +636,7 @@ export function predictShotGoalProbabilities(
   ) {
     rawProbability = predictLogistic(artifact.model as LogisticModel, features);
   } else if (artifact.family === "xgboost_js") {
-    rawProbability = predictXgBoost(artifact.model as XgBoostModel, features);
+    rawProbability = scoreXgBoostEnsemble(artifact.model as XgBoostModel, features);
   } else {
     throw new Error(`Unsupported xG model family: ${artifact.family}`);
   }
@@ -650,13 +661,15 @@ export function buildPredictionDbRow(args: {
   feature: PersistedFeatureRow;
   artifact: PersistedXgModelArtifact;
   modelArtifactPath: string | null;
+  /** sha256 of the artifact file the scores came from (provenance). */
+  artifactChecksum?: string | null;
   predictionType: XgShotPredictionType;
   rawProbability: number;
   calibratedProbability: number | null;
   xg: number;
 }) {
   const featurePayload = args.feature.feature_payload;
-  const approved = args.artifact.approvalGradeEligibility?.isEligible === true;
+  const approved = isAffirmativelyApprovedXgEligibility(args.artifact.approvalGradeEligibility);
 
   return {
     model_version: args.artifact.artifactTag,
@@ -689,6 +702,10 @@ export function buildPredictionDbRow(args: {
       calibration: args.artifact.calibration ?? null,
       predictionType: resolveXgArtifactPredictionType(args.artifact),
       approved,
+      // Decision 101: unapproved output is labelled shadow and never served.
+      scoringMode: approved ? "approved" : "shadow_unapproved",
+      modelVersion: args.artifact.artifactTag,
+      artifactChecksum: args.artifactChecksum ?? null,
       approvalBlockingReasons:
         args.artifact.approvalGradeEligibility?.blockingReasons ?? []
     },

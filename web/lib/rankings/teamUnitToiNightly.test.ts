@@ -118,26 +118,74 @@ describe("loadTeamUnitToiNightlyPlan", () => {
     return { client: client as any, calls };
   }
 
-  it("reads the latest snapshot, pages completed games, and counts games with both top lines as done", async () => {
-    const topLines = [
-      { game_id: 2026020001, team_id: 10 }, { game_id: 2026020001, team_id: 20 },
-      { game_id: 2026020002, team_id: 10 }, // one team only: not done
+  const gameEnd = (call: Call) => {
+    const ids = (call.ops.find(([op]) => op === "in") as [string, string, number[]])[2];
+    return ids.map((gameid, index) => ({ gameid, id: 1000 + index }));
+  };
+
+  it("reads the latest snapshot, pages completed games, and counts games done by the shared predicate", async () => {
+    const topUnits = [
+      ...[10, 20].flatMap((team_id) => [
+        { game_id: 2026020001, team_id, unit_type: "forward_line", unit_number: 1 },
+        { game_id: 2026020001, team_id, unit_type: "defense_pair", unit_number: 1 },
+      ]),
+      { game_id: 2026020002, team_id: 10, unit_type: "forward_line", unit_number: 1 }, // one team only: not done
     ];
     const { client, calls } = fakeSupabase({
       team_unit_toi: (call) =>
-        call.ops.some(([op]) => op === "limit") ? [{ snapshot_date: "2026-11-08" }] : topLines,
+        call.ops.some(([op]) => op === "limit") ? [{ snapshot_date: "2026-11-08" }] : topUnits,
       games: () => games,
+      pbp_plays: gameEnd,
     });
 
     const plan = await loadTeamUnitToiNightlyPlan(client, { season: 20262027, today: "2026-11-08" });
 
-    expect(plan).toMatchObject({ status: "ready", snapshotDate: "2026-11-08", gameIds: [2026020002, 2026020003] });
+    expect(plan).toMatchObject({
+      status: "ready", snapshotDate: "2026-11-08", gameIds: [2026020002, 2026020003], awaitingFinalState: 0,
+    });
     const gameCall = calls.find((call) => call.table === "games")!;
     expect(gameCall.ops).toContainEqual(["lt", "date", "2026-11-08"]);
     expect(gameCall.ops).toContainEqual(["in", "type", [2, 3]]);
     const topLineCall = calls.filter((call) => call.table === "team_unit_toi")[1];
     expect(topLineCall.ops).toContainEqual(["eq", "snapshot_date", "2026-11-08"]);
     expect(topLineCall.ops).toContainEqual(["eq", "unit_number", 1]);
+    expect(topLineCall.ops).toContainEqual(["in", "unit_type", ["forward_line", "defense_pair"]]);
+  });
+
+  it("uses the build step's completion definition: forward lines alone do not make a game done (W2-6 §3)", async () => {
+    // Backfill wrote both teams' top forward lines but only one top defense pair.
+    // completeGameIds says the game is incomplete, so the loader must retry it.
+    const topUnits = [
+      { game_id: 2026020001, team_id: 10, unit_type: "forward_line", unit_number: 1 },
+      { game_id: 2026020001, team_id: 20, unit_type: "forward_line", unit_number: 1 },
+      { game_id: 2026020001, team_id: 10, unit_type: "defense_pair", unit_number: 1 },
+    ];
+    expect(completeGameIds(topUnits as TeamUnitToiInsert[]).has(2026020001)).toBe(false);
+    const { client } = fakeSupabase({
+      team_unit_toi: (call) =>
+        call.ops.some(([op]) => op === "limit") ? [{ snapshot_date: "2026-11-08" }] : topUnits,
+      games: () => games,
+      pbp_plays: gameEnd,
+    });
+    const plan = await loadTeamUnitToiNightlyPlan(client, { season: 20262027, today: "2026-11-08" });
+    expect(plan.gameIds).toContain(2026020001);
+  });
+
+  it("plans only games with final-state evidence, not every game dated before today (rule 19)", async () => {
+    const { client, calls } = fakeSupabase({
+      team_unit_toi: (call) => (call.ops.some(([op]) => op === "limit") ? [{ snapshot_date: "2026-11-08" }] : []),
+      games: () => games,
+      // 2026020003 has no stored game-end event yet (in progress or not ingested);
+      // 2026020002 has two, which is not a valid terminal state.
+      pbp_plays: () => [
+        { gameid: 2026020001, id: 1 },
+        { gameid: 2026020002, id: 2 }, { gameid: 2026020002, id: 3 },
+      ],
+    });
+    const plan = await loadTeamUnitToiNightlyPlan(client, { season: 20262027, today: "2026-11-08" });
+    expect(plan).toMatchObject({ status: "ready", gameIds: [2026020001], pendingGames: 1, awaitingFinalState: 2 });
+    const pbpCall = calls.find((call) => call.table === "pbp_plays")!;
+    expect(pbpCall.ops).toContainEqual(["eq", "typedesckey", "game-end"]);
   });
 
   it("pages past Supabase's 1,000-row cap", async () => {
@@ -148,11 +196,14 @@ describe("loadTeamUnitToiNightlyPlan", () => {
         const [, from, to] = call.ops.find(([op]) => op === "range") as [string, number, number];
         return many.slice(from, to + 1);
       },
+      pbp_plays: gameEnd,
     });
 
     const plan = await loadTeamUnitToiNightlyPlan(client, { season: 20262027, today: "2026-11-08", maxGames: 100 });
 
     expect(plan.pendingGames).toBe(1500);
     expect(calls.filter((call) => call.table === "games")).toHaveLength(2);
+    // Final-state evidence is read in bounded chunks of 200 game ids.
+    expect(calls.filter((call) => call.table === "pbp_plays")).toHaveLength(8);
   });
 });

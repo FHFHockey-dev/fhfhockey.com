@@ -61,13 +61,15 @@ function fixture(provider: "manual" | "yahoo") {
   workspace.manualPlayers = players; workspace.intent.protectedPlayerIds = ["a"];
   workspace.rules = { ...workspace.rules, rosterSlots: { C: 1, BN: 1 }, acquisitionCost: provider === "yahoo" ? 2 : null,
     scoring: { mode: "points", weights: { GOALS: 3 }, categories: [] } };
-  const data: PlanningData = { players, games: players.map(player => { const date = player.id === "c" ? "2026-10-05" : "2026-10-06";
+  // b has no game left (a known 0 on a complete schedule), so he can be the drop; without forecasts a player with games is
+  // unknown and never a proposed drop (decisions 3, 47).
+  const data: PlanningData = { players, games: players.filter(player => player.id !== "b").map(player => { const date = player.id === "c" ? "2026-10-05" : "2026-10-06";
     return { id: `game-${player.id}`, date, startsAt: `${date}T20:00:00Z`, teamAbbreviation: player.teamAbbreviation, opponent: "X", home: true, status: "scheduled" }; }),
     forecasts: [], evidence: { schedule: { source: "Complete synthetic schedule", asOf: workspace.context.asOf,
       seasonId: workspace.context.seasonId, completeness: "complete", limitations: [] } },
     forecastManifest: { version: "planning-forecasts-v1", id: "current-read", seasonId: workspace.context.seasonId, asOf: workspace.context.asOf,
       scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: [], baselineChecksum: null,
-      requiredOpportunities: 3, forecastedOpportunities: 0, exclusionCounts: {},
+      requiredOpportunities: 2, forecastedOpportunities: 0, exclusionCounts: {},
       rsoUsePolicy: { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision, bridgeRevisionIds: [] } } };
   const snapshot: PlanningSnapshot = { ...data, id: "yahoo:synthetic-rules", context: workspace.context, roster: workspace.roster,
     rules: workspace.rules, lockedAssignments: [], realized: {}, opponent: null };

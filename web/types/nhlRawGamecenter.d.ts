@@ -7,7 +7,7 @@ declare module "lib/supabase/Upserts/nhlRawGamecenter.mjs" {
     import("@supabase/supabase-js").SupabaseClient<Database>;
 
   export const PARSER_VERSION: 1;
-  export const STRENGTH_VERSION: 1;
+  export const STRENGTH_VERSION: 2;
   export const NORMALIZATION_MATERIALIZER_VERSION: "nhl-gamecenter-normalizer-v1";
   export const NORMALIZATION_PARSER_FINGERPRINT: string;
   export const DEFAULT_FETCH_RETRIES: 3;
@@ -239,7 +239,7 @@ declare module "lib/supabase/Upserts/nhlRawGamecenter.mjs" {
     shiftPayloadHash: string;
     parserFingerprint: string;
     parserVersion: 1;
-    strengthVersion: 1;
+    strengthVersion: 2;
     materializerVersion: "nhl-gamecenter-normalizer-v1";
     rosterRows: NormalizedRosterRow[];
     eventRows: NormalizedEventRow[];

@@ -229,6 +229,46 @@ function parseHorizonGames(value: string | string[] | undefined): number {
   return Math.max(1, Math.min(10, intValue));
 }
 
+/**
+ * L9c (decision 132): every skater line is the line IF HE PLAYS. Availability
+ * (projected_lineup | confirmed_out | uncertain | unknown, participation
+ * probability not qualified) and time away travel beside it; rows that are not
+ * a projected lineup are labelled. Old runs without availability serve null.
+ */
+function extractAvailabilityContext(uncertainty: unknown) {
+  const record =
+    uncertainty && typeof uncertainty === "object"
+      ? (uncertainty as Record<string, any>)
+      : null;
+  const availability =
+    record?.availability && typeof record.availability === "object"
+      ? record.availability
+      : null;
+  const state = typeof availability?.state === "string" ? availability.state : null;
+  return {
+    availability: availability
+      ? {
+          state,
+          game_id: availability.game_id ?? null,
+          expected_for_game:
+            availability.expected_for_game === 0 ? 0 : null,
+          participation_probability: null,
+          label: typeof availability.label === "string" ? availability.label : null,
+          event_type: availability.event_type ?? null,
+        }
+      : null,
+    time_away:
+      record?.time_away && typeof record.time_away === "object"
+        ? record.time_away
+        : null,
+    line_conditioning: availability ? "if_plays" : null,
+    line_label:
+      state && state !== "projected_lineup"
+        ? `If he plays · ${availability?.label ?? state}`
+        : null,
+  };
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
@@ -387,8 +427,15 @@ export default async function handler(
         pts: totals.points,
         ppp: totals.ppPoints,
         sog: totals.shots,
-        hit: row.proj_hits ?? 0,
-        blk: row.proj_blocks ?? 0,
+        // Unknown stays unknown (rule 5, W3-2 D3): never zero-filled here.
+        hit: row.proj_hits ?? null,
+        blk: row.proj_blocks ?? null,
+        // L9a: PK heads are summed when known; when the team's PK exposure is
+        // unknown, the row says so (ES then holds all non-PP time).
+        pk_status:
+          row.uncertainty?.model?.skater_selection?.strength_accounting
+            ?.pk_status ?? null,
+        ...extractAvailabilityContext(row.uncertainty),
         fw: 0,
         fl: 0,
         uncertainty: row.uncertainty,

@@ -53,9 +53,14 @@ const columns: Column[] = [
   { key: "hitsPer60", label: "HIT/60", format: formatDefaultNumber },
   { key: "blocksPer60", label: "BLK/60", format: formatDefaultNumber },
   { key: "penaltyMinutesPer60", label: "PIM/60", format: formatDefaultNumber },
-  { key: "corsiForPer60", label: "CF/60", format: formatDefaultNumber },
-  { key: "individualPointPercentage", label: "IPP", format: formatPercent },
-  { key: "individualExpectedGoalsPer60", label: "iXG/60", format: formatDefaultNumber }
+  // Decision 73: individual attempts only, pooled over the report's own TOI.
+  // Labelled by source: its strength basis is not verified. IPP and ixG/60
+  // stay hidden until a verified source is wired.
+  {
+    key: "individualCorsiForPer60",
+    label: "iCF/60 (NHL puck-possession report)",
+    format: formatDefaultNumber
+  }
 ];
 
 const compareValues = (

@@ -1761,6 +1761,12 @@ def baseline_issuance_fixture(tmp_path):
         "outcomes": {"toi": "20:00", "GOALS": 1, "ASSISTS": 1, "PP_POINTS": 1, "SHOTS_ON_GOAL": 3, "HITS": 2, "BLOCKED_SHOTS": 1}}
         for day in (1, 3, 5) for player in (1, 2, 11, 12)]
     freeze_history(rows, freeze, "2025-10-01", "2025-10-05")
+    # Pin the freeze time before the tests' fixed issuance clock; the real
+    # wall clock made these tests fail once it passed 2026-10-10 (date rot).
+    from modeling.player_forecasts.io import read_json
+    manifest = read_json(freeze / "manifest.json")
+    manifest["createdAt"] = "2026-10-01T00:00:00+00:00"
+    write_json(freeze / "manifest.json", manifest)
     return freeze, candidate
 
 
@@ -2374,6 +2380,7 @@ from modeling.player_forecasts.season import (
     _roster_adjusted_team_contexts,
     _official_game_status,
     _portable_canonical_json,
+    _joint_aggregate_quantiles,
     _quantiles,
     _reconcile,
     _schedule_contexts_by_team,
@@ -3330,9 +3337,12 @@ def test_season_freeze_can_refresh_current_state_from_verified_historical_core(
             "rows": rows,
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         }
+    from modeling.player_forecasts.season import SEASON_LABEL_POLICY_VERSION
     write_json(base / "manifest.json", {
         "createdAt": "2026-08-01T00:00:00+00:00",
         "contractChecksum": SEASON_CONTRACT_SHA256,
+        # L15: a base freeze is inherited only under the same label policy.
+        "labelPolicyVersion": SEASON_LABEL_POLICY_VERSION,
         "seasonId": 20262027,
         "trainingCutoffSeason": 20252026,
         "historySeasons": [20232024, 20242025, 20252026, 20262027],
@@ -3608,7 +3618,9 @@ def test_season_toi_does_not_scale_with_event_pace():
 
 
 def test_season_derived_quantiles_are_ordered_and_propagate_primitive_uncertainty():
-    goalie = _quantiles(
+    # v2 (L15): season aggregates take every quantile from one joint draw set,
+    # so derived heads are joint quantiles rather than marginal endpoint sums.
+    goalie = _joint_aggregate_quantiles(
         {
             "SHOTS_AGAINST_GOALIE": 1000,
             "GOALS_AGAINST_GOALIE": 90,
@@ -3619,18 +3631,24 @@ def test_season_derived_quantiles_are_ordered_and_propagate_primitive_uncertaint
             "GOALS_AGAINST_GOALIE": 400,
             "TOTAL_TOI": 1000000,
         },
+        {},
         "goalie",
+        82,
+        "test-goalie",
     )
     for target in ("SAVES_GOALIE", "SAVE_PERCENTAGE", "GOALS_AGAINST_AVERAGE"):
         assert goalie["p10"][target] <= goalie["p50"][target] <= goalie["p90"][target]
 
-    skater = _quantiles(
+    skater = _joint_aggregate_quantiles(
         {"GOALS": 20, "PRIMARY_ASSISTS": 25, "SECONDARY_ASSISTS": 15},
         {"GOALS": 9, "PRIMARY_ASSISTS": 16, "SECONDARY_ASSISTS": 9},
+        {},
         "forward",
+        82,
+        "test-skater",
     )
     assert skater["p10"]["ASSISTS"] < skater["p50"]["ASSISTS"] < skater["p90"]["ASSISTS"]
-    assert skater["p50"]["POINTS"] == pytest.approx(60)
+    assert skater["p50"]["POINTS"] == pytest.approx(60, abs=2)
 
 
 def test_season_defense_rating_rewards_team_and_opponent_adjusted_suppression():

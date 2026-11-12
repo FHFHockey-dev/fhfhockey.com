@@ -53,7 +53,11 @@ import {
   type ProjectionInclusionDiagnostics,
 } from "lib/draftDashboard/projectionInclusionDiagnostics";
 import { selectProjectionRowForPlayer } from "lib/draftDashboard/projectionRowSelection";
-import { pointValueForPlayerStat, recalculateFantasyPoints } from "lib/draftDashboard/fantasyPointRecalculation";
+import {
+  applyLikeForLikeStatDiffs,
+  computeFantasyPoints,
+  recalculateFantasyPoints,
+} from "lib/draftDashboard/fantasyPointRecalculation";
 import { deriveShortHandedAssists } from "lib/draftDashboard/derivedProjectionStats";
 import {
   fetchProjectionSourcesSettled,
@@ -116,9 +120,15 @@ export interface ProcessedPlayer {
   yahooPctDrafted?: number | null;
   fantraxMetadataMatched?: boolean;
 
-  // Overall Ranks (across skaters & goalies)
+  // Overall ranks across skaters and goalies: only when both are valued on
+  // one points-scoring basis and the player's scored inputs are complete
+  // (decision 115). Competition ranks; unknown values stay unranked.
   projectedRank?: number | null;
   actualRank?: number | null;
+  // Rank within the player's primary (first listed) position.
+  projectedPositionRank?: number | null;
+  actualPositionRank?: number | null;
+  rankPosition?: string | null;
 }
 
 // Interface for the new round summary rows
@@ -347,6 +357,80 @@ const ACTUAL_STATS_COLUMN_MAP: Record<
   },
 };
 
+export const STAT_DIFF_DEFINITION =
+  "Season-to-date actual against the projection pro-rated to games played (rate stats compare directly). GP has no difference until the season ends.";
+export const FP_DIFF_DEFINITION =
+  "Season-to-date fantasy points per game against projected fantasy points per game (equal to the total against the projection pro-rated to games played).";
+export const RANK_BASIS_DEFINITION =
+  "P-Rank and A-Rank: overall rank of skaters and goalies by projected and season-to-date fantasy points under this page's one points scoring; Pos: rank within the first listed position (C, LW, RW, D, G). Ties share a rank. A rank is withheld (–) when any scored stat for the player is unknown.";
+
+function rankCell(rank: number | null | undefined, position?: string | null) {
+  if (rank == null) return "-";
+  return position ? `${position}${rank}` : rank;
+}
+
+/** P-Rank, A-Rank and within-position rank columns (decision 115). */
+export function buildRankColumns(): ColumnDef<TableDataRow, any>[] {
+  const rankColumn = (
+    id: string,
+    label: string,
+    title: string,
+    rankOf: (player: ProcessedPlayer) => number | null | undefined,
+    showPosition: boolean,
+  ): ColumnDef<TableDataRow, any> => ({
+    id,
+    header: () => <span title={title}>{label}</span>,
+    accessorFn: (row) =>
+      "type" in row && row.type === "summary"
+        ? undefined
+        : (rankOf(row as ProcessedPlayer) ?? undefined),
+    cell: (info) => {
+      const rowData = info.row.original;
+      if ("type" in rowData && rowData.type === "summary") return "-";
+      const player = rowData as ProcessedPlayer;
+      return rankCell(
+        info.getValue() as number | undefined,
+        showPosition ? player.rankPosition : null,
+      );
+    },
+    meta: { columnType: "numeric", higherIsBetter: false },
+    enableSorting: true,
+    sortUndefined: "last",
+  });
+  return [
+    rankColumn(
+      "projectedRank",
+      "P-Rank",
+      "Overall rank by projected fantasy points (skaters and goalies, one points scoring). " +
+        RANK_BASIS_DEFINITION,
+      (p) => p.projectedRank,
+      false,
+    ),
+    rankColumn(
+      "projectedPositionRank",
+      "P-Pos",
+      "Rank within the first listed position by projected fantasy points.",
+      (p) => p.projectedPositionRank,
+      true,
+    ),
+    rankColumn(
+      "actualRank",
+      "A-Rank",
+      "Overall rank by season-to-date fantasy points (skaters and goalies, one points scoring). " +
+        RANK_BASIS_DEFINITION,
+      (p) => p.actualRank,
+      false,
+    ),
+    rankColumn(
+      "actualPositionRank",
+      "A-Pos",
+      "Rank within the first listed position by season-to-date fantasy points.",
+      (p) => p.actualPositionRank,
+      true,
+    ),
+  ];
+}
+
 export function calculateDiffPercentage(
   actual: number | null | undefined,
   projected: number | null | undefined,
@@ -450,36 +534,42 @@ export function addRoundSummariesToPlayers(
 
   const processRoundBuffer = () => {
     if (currentRoundPlayersBuffer.length > 0 && currentRoundNum > 0) {
+      // Like with like (M-DRF-010): only players whose projected and actual
+      // fantasy points and games are all known enter the round comparison.
       let roundTotalProjectedFP = 0;
       let roundTotalActualFP = 0;
       let roundTotalProjectedGP = 0;
       let roundTotalActualGP = 0;
+      let roundProratedProjectedFP = 0;
 
       currentRoundPlayersBuffer.forEach((p) => {
-        if (p.fantasyPoints.projected !== null) {
-          roundTotalProjectedFP += p.fantasyPoints.projected;
-        }
-        if (p.fantasyPoints.actual !== null) {
-          roundTotalActualFP += p.fantasyPoints.actual;
-        }
+        const projectedFP = p.fantasyPoints.projected;
+        const actualFP = p.fantasyPoints.actual;
+        const projectedGP = p.combinedStats.GAMES_PLAYED?.projected;
+        const actualGP = p.combinedStats.GAMES_PLAYED?.actual;
         if (
-          p.combinedStats.GAMES_PLAYED?.projected !== null &&
-          p.combinedStats.GAMES_PLAYED?.projected !== undefined
+          !Number.isFinite(projectedFP) ||
+          !Number.isFinite(actualFP) ||
+          typeof projectedGP !== "number" ||
+          !(projectedGP > 0) ||
+          typeof actualGP !== "number" ||
+          !(actualGP > 0)
         ) {
-          roundTotalProjectedGP += p.combinedStats.GAMES_PLAYED.projected;
+          return;
         }
-        if (
-          p.combinedStats.GAMES_PLAYED?.actual !== null &&
-          p.combinedStats.GAMES_PLAYED?.actual !== undefined
-        ) {
-          roundTotalActualGP += p.combinedStats.GAMES_PLAYED.actual;
-        }
+        roundTotalProjectedFP += projectedFP as number;
+        roundTotalActualFP += actualFP as number;
+        roundTotalProjectedGP += projectedGP;
+        roundTotalActualGP += actualGP;
+        roundProratedProjectedFP +=
+          ((projectedFP as number) * actualGP) / projectedGP;
       });
 
-      const totalDiffPercentage = calculateDiffFn(
-        roundTotalActualFP,
-        roundTotalProjectedFP,
-      );
+      const hasSupport = roundTotalActualGP > 0;
+      // Season-to-date total against the projection pro-rated to games played.
+      const totalDiffPercentage = hasSupport
+        ? calculateDiffFn(roundTotalActualFP, roundProratedProjectedFP)
+        : null;
       const projectedPerGame =
         roundTotalProjectedGP > 0
           ? roundTotalProjectedFP / roundTotalProjectedGP
@@ -1395,52 +1485,13 @@ function processRawDataIntoPlayers(
       }
     }
 
-    let calculatedProjectedFP = 0;
-    let calculatedActualFP = 0;
-    let hasValidStatForFP = false;
-
-    for (const statKey in processedPlayer.combinedStats) {
-      const combinedStat = processedPlayer.combinedStats[statKey];
-      const pointValueForStat = pointValueForPlayerStat(processedPlayer, statKey, fantasyPointSettings);
-
-      if (pointValueForStat !== undefined && pointValueForStat !== 0) {
-        if (combinedStat?.projected !== null) {
-          calculatedProjectedFP += combinedStat.projected * pointValueForStat;
-          hasValidStatForFP = true;
-        }
-        if (combinedStat?.actual !== null) {
-          calculatedActualFP += combinedStat.actual * pointValueForStat;
-          hasValidStatForFP = true;
-        }
-      }
-    }
-    processedPlayer.fantasyPoints.projected = hasValidStatForFP
-      ? calculatedProjectedFP
-      : null;
-    processedPlayer.fantasyPoints.actual = hasValidStatForFP
-      ? calculatedActualFP
-      : null;
-    processedPlayer.fantasyPoints.diffPercentage = calculateDiffPercentage(
-      processedPlayer.fantasyPoints.actual,
-      processedPlayer.fantasyPoints.projected,
+    // Like-for-like differences (M-DRF-010): season-to-date actuals against
+    // the projection pro-rated to games played; unknown games stay unknown.
+    applyLikeForLikeStatDiffs(processedPlayer.combinedStats);
+    processedPlayer.fantasyPoints = computeFantasyPoints(
+      processedPlayer,
+      fantasyPointSettings,
     );
-
-    const projectedGP = processedPlayer.combinedStats.GAMES_PLAYED?.projected;
-    const actualGP = processedPlayer.combinedStats.GAMES_PLAYED?.actual;
-
-    processedPlayer.fantasyPoints.projectedPerGame =
-      processedPlayer.fantasyPoints.projected !== null &&
-      projectedGP !== null &&
-      projectedGP > 0
-        ? processedPlayer.fantasyPoints.projected / projectedGP
-        : null;
-
-    processedPlayer.fantasyPoints.actualPerGame =
-      processedPlayer.fantasyPoints.actual !== null &&
-      actualGP !== null &&
-      actualGP > 0
-        ? processedPlayer.fantasyPoints.actual / actualGP
-        : null;
 
     tempProcessedPlayers.push(processedPlayer);
   } // End loop over uniqueNhlPlayerIds
@@ -2506,7 +2557,9 @@ const generateTableColumns = (
         },
         {
           id: `${statDef.key}_diff`,
-          header: "DIFF",
+          header: () => (
+            <span title={STAT_DIFF_DEFINITION}>DIFF</span>
+          ),
           size: 90,
           minSize: 90,
           accessorFn: (player) =>
@@ -2604,41 +2657,7 @@ const generateTableColumns = (
     });
   });
 
-  newTableColumns.push({
-    id: "projectedRank",
-    header: "P-Rank",
-    accessorFn: (player) =>
-      "type" in player && player.type === "summary"
-        ? undefined
-        : ((player as ProcessedPlayer).projectedRank ?? undefined),
-    cell: (info) => {
-      const rowData = info.row.original;
-      if ("type" in rowData && rowData.type === "summary") return "-";
-      const val = info.getValue() as number | null;
-      return val !== null && val !== undefined ? val : "-";
-    },
-    meta: { columnType: "numeric", higherIsBetter: false },
-    enableSorting: true,
-    sortUndefined: "last",
-  });
-
-  newTableColumns.push({
-    id: "actualRank",
-    header: "A-Rank",
-    accessorFn: (player) =>
-      "type" in player && player.type === "summary"
-        ? undefined
-        : ((player as ProcessedPlayer).actualRank ?? undefined),
-    cell: (info) => {
-      const rowData = info.row.original;
-      if ("type" in rowData && rowData.type === "summary") return "-";
-      const val = info.getValue() as number | null;
-      return val !== null && val !== undefined ? val : "-";
-    },
-    meta: { columnType: "numeric", higherIsBetter: false },
-    enableSorting: true,
-    sortUndefined: "last",
-  });
+  newTableColumns.push(...buildRankColumns());
 
   newTableColumns.push({
     id: "fantasyPoints_group",
@@ -2720,7 +2739,7 @@ const generateTableColumns = (
       },
       {
         id: "fp_diff",
-        header: "DIFF",
+        header: () => <span title={FP_DIFF_DEFINITION}>DIFF</span>,
         size: 90,
         minSize: 90,
         accessorFn: (player) => {

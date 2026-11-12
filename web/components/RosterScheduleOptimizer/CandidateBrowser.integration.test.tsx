@@ -42,7 +42,9 @@ function fixture() {
       teamAbbreviation: id.toUpperCase(), eligiblePositions: ["C"], eligibilityVerified: true, playerClass: "skater",
       availability: index < 2 ? "rostered" : "free_agent", ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] })),
     roster: [{ playerId: "a", position: "active" }, { playerId: "b", position: "bench" }],
-    games: ["a", "b", "c", "d"].map(id => { const date = id === "c" ? "2026-10-05" : "2026-10-06";
+    // b has no game left: a known 0 in range on a complete schedule, so he can be the drop. Without forecasts a player
+    // with games is unknown and never a proposed drop (decisions 3, 47).
+    games: ["a", "c", "d"].map(id => { const date = id === "c" ? "2026-10-05" : "2026-10-06";
       return { id, date, startsAt: `${date}T20:00:00Z`, teamAbbreviation: id.toUpperCase(), opponent: "X", home: true, status: "scheduled" }; }),
     forecasts: [], rules: { ...workspace.rules, rosterSlots: { C: 1, BN: 1 }, acquisitionTiming: "same_day", acquisitionCost: 1,
       periods: [{ id: "week", start: "2026-10-04T00:00:00Z", end: "2026-10-08T00:00:00Z", remaining: 1, source: "manager" }],

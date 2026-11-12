@@ -304,6 +304,23 @@ export function DateRangeMatrixInternal({
     return sum / sortedRoster.length;
   }, [sortedRoster]);
 
+  // Shade scales to the largest pair share shown, so shares above 66.7% no
+  // longer all saturate (W2-6 D8, M-LINE-014). Presentation only.
+  const shadeMax = useMemo(() => {
+    let max = 0;
+    sortedRoster.forEach((columnPlayer: PlayerData) => {
+      sortedRoster.forEach((rowPlayer: PlayerData) => {
+        if (columnPlayer.id === rowPlayer.id) return;
+        const share =
+          columnPlayer.percentToiWith?.[rowPlayer.id] ||
+          columnPlayer.percentToiWithMixed?.[rowPlayer.id] ||
+          0;
+        if (share > max) max = share;
+      });
+    });
+    return max;
+  }, [sortedRoster]);
+
   const rosterPlayerIds = useMemo(
     () => new Set(sortedRoster.map(({ id }) => id)),
     [sortedRoster],
@@ -476,6 +493,7 @@ export function DateRangeMatrixInternal({
                           : -1
                       }
                       teamAvgToi={avgSharedToi}
+                      shadeMax={shadeMax}
                       sharedToi={sharedToi}
                       p1={columnPlayer}
                       p2={rowPlayer}
@@ -505,6 +523,8 @@ export function DateRangeMatrixInternal({
 
 type CellProps = {
   teamAvgToi: number;
+  /** Largest non-self share in the matrix; the shade scale's maximum. */
+  shadeMax: number;
   sharedToi: number;
   p1: PlayerData;
   p2: PlayerData;
@@ -524,6 +544,7 @@ type CellProps = {
 
 function Cell({
   teamAvgToi,
+  shadeMax,
   sharedToi,
   p1,
   p2,
@@ -542,11 +563,12 @@ function Cell({
 }: CellProps) {
   const mixedToi = p1.percentToiWithMixed?.[p2.id] || 0;
   const effectiveToi = sharedToi || mixedToi;
-  const opacity = (isSelf ? 1 : effectiveToi / 100) * 1.5;
+  const opacity = isSelf ? 1 : shadeMax > 0 ? effectiveToi / shadeMax : 0;
   const color = getColor(p1.position, p2.position);
   const meaning = isSelf
     ? `${formatATOI(ATOI ?? "")} ATOI`
-    : `${effectiveToi.toFixed(2)}% Shared Ice Time`;
+    : // Denominator is p1's own all-strength TOI, so the two cells of a pair differ (W2-6 D5).
+      `${effectiveToi.toFixed(2)}% of ${p1.name}'s all-strength TOI shared with ${p2.name}`;
   const accessibleName = isSelf
     ? `${p1.name} average time on ice`
     : `${p2.name} with ${p1.name}`;

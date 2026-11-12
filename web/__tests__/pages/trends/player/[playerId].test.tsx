@@ -257,7 +257,50 @@ describe("Trends player detail page", () => {
     expect(await screen.findByText("Top Add")).toBeTruthy();
     expect(await screen.findByText(/Baseline 10\.0%/)).toBeTruthy();
     expect(testMocks.supportPayloadSelect).toHaveBeenCalledWith(
-      "game_date, historicalCompatibility:support_payload->historicalCompatibility"
+      "game_date, historicalCompatibility:support_payload->historicalCompatibility, windowCountSupport:support_payload->windowCountSupport"
     );
+  });
+
+  it("pools L30 from stored game components and shows PDO as an index (P0 #11)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-03-14T16:00:00.000Z"));
+    const windowCountSupport = (
+      shooting: [number, number],
+      pdo: [number, number, number, number]
+    ) => ({
+      version: "rolling-player-window-counts-v1",
+      game: {
+        appeared: true,
+        ratio: {
+          shooting_pct: [shooting[0], shooting[1], 0, 0],
+          pdo
+        },
+        additive: {}
+      }
+    });
+    testMocks.rows.rolling_player_metric_support_payloads = [
+      {
+        game_date: "2026-03-01",
+        historicalCompatibility: null,
+        windowCountSupport: windowCountSupport([1, 4], [1, 10, 19, 20])
+      },
+      {
+        game_date: "2026-03-14",
+        historicalCompatibility: null,
+        windowCountSupport: windowCountSupport([2, 5], [2, 10, 18, 20])
+      }
+    ];
+
+    try {
+      render(<PlayerTrendPage />);
+      expect(await screen.findByText("Top Add")).toBeTruthy();
+      // Shooting %: (1 + 2) goals ÷ (4 + 5) shots, pooled, not a mean of games.
+      expect(await screen.findByText("33.3%")).toBeTruthy();
+      // PDO: (3/20 + 37/40) as an index, three decimals, no "%".
+      expect(screen.getByText("1.075")).toBeTruthy();
+      expect(screen.getAllByText(/L30 · 2 GP/).length).toBeGreaterThan(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

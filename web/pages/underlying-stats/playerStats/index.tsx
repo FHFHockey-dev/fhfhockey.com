@@ -1,3 +1,4 @@
+import type { EntityRatingsOverlayStatus } from "lib/underlying-stats/entityRatingsOverlay";
 import Link from "next/link";
 import {
   useEffect,
@@ -659,43 +660,57 @@ export default function PlayerUnderlyingStatsLandingPage({
           ],
     [filterState.expandable.scope.kind],
   );
-  const ratingColumns = useMemo<PlayerStatsColumnDefinition[]>(
-    () =>
-      variant === "goalie"
-        ? [
-            {
-              key: "goalieRating",
-              label: "Goalie Rating",
-              sortKey: "goalieRating",
-              format: "decimal",
-              align: "right",
-            },
-            {
-              key: "goalieRatingRank",
-              label: "Goalie Rank",
-              sortKey: "goalieRatingRank",
-              format: "integer",
-              align: "right",
-            },
-          ]
-        : [
-            {
-              key: "offensiveRating",
-              label: "Off Rating",
-              sortKey: "offensiveRating",
-              format: "decimal",
-              align: "right",
-            },
-            {
-              key: "defensiveRating",
-              label: "Def Rating",
-              sortKey: "defensiveRating",
-              format: "decimal",
-              align: "right",
-            },
-          ],
-    [variant],
-  );
+  // Ratings are today's snapshot: shown only for the current season and an
+  // open-ended window, labelled with their snapshot dates (decision 91).
+  const ratingsOverlay = (
+    landingData as
+      | (PlayerStatsLandingApiResponse & {
+          ratingsOverlay?: EntityRatingsOverlayStatus;
+        })
+      | null
+  )?.ratingsOverlay;
+  const ratingColumns = useMemo<PlayerStatsColumnDefinition[]>(() => {
+    if (ratingsOverlay?.status !== "current") {
+      return [];
+    }
+
+    const withDate = (label: string, date: string | null) =>
+      date ? `${label} (as of ${formatRatingSnapshotDate(date)})` : label;
+
+    return variant === "goalie"
+      ? [
+          {
+            key: "goalieRating",
+            label: withDate("Goalie Rating", ratingsOverlay.goalieSnapshotDate),
+            sortKey: "goalieRating",
+            format: "decimal",
+            align: "right",
+          },
+          {
+            key: "goalieRatingRank",
+            label: withDate("Goalie Rank", ratingsOverlay.goalieSnapshotDate),
+            sortKey: "goalieRatingRank",
+            format: "integer",
+            align: "right",
+          },
+        ]
+      : [
+          {
+            key: "offensiveRating",
+            label: withDate("Off Rating", ratingsOverlay.offensiveSnapshotDate),
+            sortKey: "offensiveRating",
+            format: "decimal",
+            align: "right",
+          },
+          {
+            key: "defensiveRating",
+            label: withDate("Def Rating", ratingsOverlay.defensiveSnapshotDate),
+            sortKey: "defensiveRating",
+            format: "decimal",
+            align: "right",
+          },
+        ];
+  }, [ratingsOverlay, variant]);
   const activeTableFamily = landingData?.family ?? tableFamily;
   const chartMetricColumns = useMemo(
     () =>
@@ -765,6 +780,14 @@ export default function PlayerUnderlyingStatsLandingPage({
     },
   ];
 
+  // Decision 111: stale (pre-fix) goalie summaries are never served; while
+  // they are rebuilt the page says so instead of showing an unexplained table.
+  const recalculatingStatus = landingData?.summaryStatus;
+  const recalculatingMessage = recalculatingStatus
+    ? `${variant === "goalie" ? "Goalie" : "Player"} stats are being recalculated with corrected formulas: ${recalculatingStatus.pendingGameCount} of ${recalculatingStatus.totalGameCount} games are pending. The table fills in once the rebuild finishes.`
+    : null;
+  const recalculatingTitle =
+    variant === "goalie" ? "Recalculating goalie stats" : "Recalculating player stats";
   const tableState =
     !router.isReady || !hasHydratedFromQueryRef.current
       ? {
@@ -791,9 +814,11 @@ export default function PlayerUnderlyingStatsLandingPage({
               ? null
               : {
                   kind: "empty" as const,
-                  message: landingData?.placeholder
-                    ? pageShell.placeholderMessage
-                    : pageShell.emptyRowsMessage,
+                  message:
+                    recalculatingMessage ??
+                    (landingData?.placeholder
+                      ? pageShell.placeholderMessage
+                      : pageShell.emptyRowsMessage),
                 };
 
   const pageStatusBanner = tableState
@@ -806,9 +831,11 @@ export default function PlayerUnderlyingStatsLandingPage({
               : tableState.kind === "error"
                 ? "Query error"
                 : tableState.kind === "empty"
-                  ? variant === "goalie"
-                    ? "No goalie rows"
-                    : "No landing rows"
+                  ? recalculatingMessage
+                    ? recalculatingTitle
+                    : variant === "goalie"
+                      ? "No goalie rows"
+                      : "No landing rows"
                   : variant === "goalie"
                     ? "Loading goalie rows"
                     : "Loading landing rows",
@@ -824,6 +851,12 @@ export default function PlayerUnderlyingStatsLandingPage({
           message: `${tableError} Showing the last successful result while the refresh failed.`,
           tone: "warning" as const,
         }
+      : recalculatingMessage
+        ? {
+            title: recalculatingTitle,
+            message: recalculatingMessage,
+            tone: "warning" as const,
+          }
       : canRenderStaleLandingData
         ? {
             title:
@@ -1229,6 +1262,10 @@ export default function PlayerUnderlyingStatsLandingPage({
           rows={landingData?.rows ?? []}
           sortState={landingData?.sort ?? filterState.view.sort}
           state={tableState}
+          isSplitActive={
+            filterState.primary.strength !== "allStrengths" ||
+            filterState.primary.scoreState !== "allScores"
+          }
           pagination={landingData?.pagination ?? null}
           renderingStrategy="load-more"
           showRankColumn
@@ -1422,6 +1459,17 @@ function formatSeasonRange(
   }
 
   return `${formatSeason(fromSeasonId)} to ${formatSeason(throughSeasonId)}`;
+}
+
+function formatRatingSnapshotDate(value: string): string {
+  const parsed = new Date(`${value.slice(0, 10)}T00:00:00Z`);
+  return Number.isNaN(parsed.getTime())
+    ? value
+    : new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC",
+      }).format(parsed);
 }
 
 function formatSeason(seasonId: number): string {

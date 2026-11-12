@@ -2,6 +2,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "lib/supabase/database-generated.types";
 import type { RollingPlayerGameMetricRow, SkaterWindowStrengthState } from "./skaterWindowAggregation";
 import { ROLLING_RANKING_SELECT_FIELDS } from "./rollingRankingSelectFields";
+import {
+  attachWindowCountSupport,
+  WINDOW_COUNT_SUPPORT_SELECT,
+  WINDOW_COUNT_SUPPORT_TABLE,
+  type WindowCountSupportRow,
+} from "./rollingWindowCountSupportReader";
 
 const PAGE_SIZE = 1000;
 const MAX_SOURCE_ROWS = 60_000;
@@ -118,7 +124,20 @@ async function loadAndCheckSourceCoverage(
       if (covered.size !== rows.length) throw new Error("Duplicate rolling player/date/strength identity");
       const requestedKeys = new Set(chunk.map(({ playerId, date }) => `${playerId}:${date}`));
       if ([...covered.keys()].some((key) => !requestedKeys.has(key))) throw new Error("Rolling read returned an unrequested player/date identity");
-      if (includeSourceValues) sourceRows.push(...rows);
+      if (includeSourceValues && rows.length > 0) {
+        // L6 window counts for the same identities (W2-P0-11); absent = unknown.
+        const support = await client.from(WINDOW_COUNT_SUPPORT_TABLE as "rolling_player_metric_support_payloads")
+          .select(WINDOW_COUNT_SUPPORT_SELECT)
+          .eq("season", args.season)
+          .eq("strength_state", args.strength)
+          .or(identityFilter)
+          .order("player_id", { ascending: true })
+          .order("game_date", { ascending: true })
+          .limit(chunk.length + 1)
+          .abortSignal(controller.signal);
+        if (support.error) throw new Error(`Rolling count-support read failed: ${support.error.message}`);
+        sourceRows.push(...attachWindowCountSupport(rows, (support.data ?? []) as unknown as WindowCountSupportRow[]));
+      }
       report.staleOrMissingPlayerIds.push(...chunk.filter(({ playerId, date }) => {
         const stored = covered.get(`${playerId}:${date}`);
         if (!stored) return true;

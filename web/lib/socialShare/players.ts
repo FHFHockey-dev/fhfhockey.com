@@ -1,6 +1,7 @@
 import type { Database } from "lib/supabase/database-generated.types";
 import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
 import { normalizeEvDeploymentBucket, normalizePpDeploymentBucket } from "lib/rankings/skaterDeploymentAggregation";
+import { classifyVollmanQualityStart } from "lib/rankings/goalieMethodology";
 import { byScore, opportunityMultiplier, playerScore } from "./score";
 import { STREAK } from "./streak";
 import { PICKUP_YAHOO_TEAM_ALIASES, type PickupOwnershipRow } from "./pickupsFixture";
@@ -228,15 +229,39 @@ export type ShareRecentRollingRow = Pick<Tables["rolling_player_game_metrics"]["
   "goals_total_last5" | "assists_total_last5" | "points_total_last5" | "shots_total_last5" | "hits_avg_last5" | "blocks_avg_last5" | "toi_seconds_avg_last5" | "pp_points_total_last5"
   | "toi_seconds_avg_season" | "line_combo_slot" | "line_combo_group" | "pp_unit"
   | "goals_total_all" | "assists_total_all" | "toi_seconds_total_last5" | "pp_toi_seconds_total_last5" | "pp_toi_seconds_avg_season">;
-export type ShareGoalieGameRow = Pick<Tables["wgo_goalie_stats"]["Row"], "goalie_id" | "date" | "season_id" | "games_played" | "wins" | "saves" | "shots_against" | "goals_against" | "quality_start" | "shutouts">;
+export type ShareGoalieGameRow = Pick<Tables["wgo_goalie_stats"]["Row"], "goalie_id" | "date" | "season_id" | "games_played" | "games_started" | "wins" | "losses" | "ot_losses" | "saves" | "shots_against" | "goals_against" | "quality_start" | "shutouts">;
 /** A last-5 window older than this (no game in two weeks) is not shown as recent form. */
 export const RECENT_MAX_AGE_DAYS = 14;
 
+/** A total only when every game reports the value; one unknown game makes the total unknown (rule 5). */
+const knownSum = (values: readonly (number | null | undefined)[]) => values.every(count) ? (values as number[]).reduce((total, value) => total + value, 0) : null;
+/** WGO goalie decisions: `wins`, `losses` (regulation, the L in W-L-OTL) and `ot_losses` (OT and shootout), each 0 or 1 per game. */
+function creditedRecord(games: readonly ShareGoalieGameRow[]) {
+  const decisions = games.map(row => [row.wins, row.losses, row.ot_losses]);
+  if (!decisions.every(parts => parts.every(value => value === 0 || value === 1) && parts[0]! + parts[1]! + parts[2]! <= 1)) return null;
+  return { wins: knownSum(decisions.map(parts => parts[0]))!, losses: knownSum(decisions.map(parts => parts[1]))!, otLosses: knownSum(decisions.map(parts => parts[2]))! };
+}
+/** Last-five goalie evidence (W3-3 D2, A1): every part is known over all five games or unknown, never a partial sum. */
+function goalieRecent(games: readonly ShareGoalieGameRow[], leagueSavePct: number | null | undefined): Extract<NonNullable<SharePlayer["recent"]>, { kind: "goalie" }> {
+  const started = games.map(row => row.games_started === 1 ? true : row.games_started === 0 ? false : null);
+  const matched = games.every(row => count(row.saves) && count(row.shots_against) && row.saves! <= row.shots_against!);
+  const quality = started.includes(null) ? null : games.map((row, index) => classifyVollmanQualityStart({ started: started[index], saves: row.saves, shotsAgainst: row.shots_against, goalsAgainst: row.goals_against }, leagueSavePct));
+  return {
+    kind: "goalie", games: games.length, through: games[0].date, record: creditedRecord(games),
+    starts: started.includes(null) ? null : started.filter(Boolean).length,
+    saves: matched ? knownSum(games.map(row => row.saves)) : null, shotsAgainst: matched ? knownSum(games.map(row => row.shots_against)) : null,
+    goalsAgainst: knownSum(games.map(row => row.goals_against)), shutouts: knownSum(games.map(row => row.shutouts)),
+    // A relief appearance is not applicable; an unknown start's QS leaves the count unknown.
+    qualityStarts: quality && quality.every((value, index) => value !== null || !started[index]) ? quality.filter(value => value === true).length : null,
+  };
+}
+
 /**
  * Attach last-five-games evidence to the (already trimmed) players: the latest strength-all rolling row
- * for skaters, and the five most recent games played for goalies (sums only; SV% = saves ÷ shots).
+ * for skaters, and the five most recent games played for goalies (see `goalieRecent`; SV% = matched saves ÷ shots).
+ * `leagueSavePct` is the season's pooled league SV% for Vollman Quality Starts; null leaves QS unknown.
  */
-export function attachRecent(layer: SharePlayerLayer, sources: { rolling: ShareRecentRollingRow[] | null; goalieGames: ShareGoalieGameRow[] | null; failedIds?: number[] } | null, generatedAt: string): SharePlayerLayer {
+export function attachRecent(layer: SharePlayerLayer, sources: { rolling: ShareRecentRollingRow[] | null; goalieGames: ShareGoalieGameRow[] | null; failedIds?: number[]; leagueSavePct?: number | null } | null, generatedAt: string): SharePlayerLayer {
   const today = localDate(generatedAt, SHARE_TIME_ZONE), oldest = new Date(Date.parse(`${today}T00:00:00Z`) - RECENT_MAX_AGE_DAYS * 86400000).toISOString().slice(0, 10);
   // A failed read is "unavailable", never "no recent game".
   if (!sources || (!sources.rolling && !sources.goalieGames)) return { ...layer, recentState: "unavailable", players: layer.players.map(player => ({ ...player, recent: null })) };
@@ -259,8 +284,7 @@ export function attachRecent(layer: SharePlayerLayer, sources: { rolling: ShareR
     const games = sources.goalieGames.filter(row => row.goalie_id === player.nhlId && row.season_id === layer.season && isDate(row.date) && row.date <= today && (row.games_played ?? 0) > 0)
       .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
     if (!games.length || games[0].date < oldest) return { ...player, recent: null };
-    const sum = (key: "wins" | "saves" | "shots_against" | "goals_against" | "quality_start" | "shutouts") => games.reduce((total, row) => total + (count(row[key]) ? row[key]! : 0), 0);
-    return { ...player, recent: { kind: "goalie" as const, games: games.length, through: games[0].date, wins: sum("wins"), saves: sum("saves"), shotsAgainst: sum("shots_against"), goalsAgainst: sum("goals_against"), qualityStarts: sum("quality_start"), shutouts: sum("shutouts") } };
+    return { ...player, recent: goalieRecent(games, sources.leagueSavePct) };
   });
   return unavailable.length || failedIds.length ? { ...layer, recentState: "partial", recentUnavailable: unavailable, ...(failedIds.length ? { recentUnavailableIds: failedIds } : {}), players } : { ...layer, recentState: "ready", players };
 }

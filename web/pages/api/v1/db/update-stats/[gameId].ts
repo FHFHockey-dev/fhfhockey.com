@@ -65,11 +65,12 @@ type Forward = {
   shorthandedGoals: number; // Calculated: SHG
   shPoints: number; // Calculated: SHG + SHA
   shots: number; // Database field name, mapped from API 'sog'
-  faceoffs: string; // Requires PBP data (e.g., "W/L") - Defaulted
+  // Not in the boxscore: null means unknown, never a measured 0 (decision 83).
+  faceoffs: string | null;
   faceoffWinningPctg: number;
   toi: string;
-  powerPlayToi: string; // Requires PBP/HTML data - Defaulted
-  shorthandedToi: string; // Requires PBP/HTML data - Defaulted
+  powerPlayToi: string | null;
+  shorthandedToi: string | null;
 };
 
 type Defense = {
@@ -88,11 +89,12 @@ type Defense = {
   shorthandedGoals: number; // Calculated: SHG
   shPoints: number; // Calculated: SHG + SHA
   shots: number; // Database field name, mapped from API 'sog'
-  faceoffs: string; // Requires PBP data (usually "0/0") - Defaulted
+  // Not in the boxscore: null means unknown, never a measured 0 (decision 83).
+  faceoffs: string | null;
   faceoffWinningPctg: number;
   toi: string;
-  powerPlayToi: string; // Requires PBP/HTML data - Defaulted
-  shorthandedToi: string; // Requires PBP/HTML data - Defaulted
+  powerPlayToi: string | null;
+  shorthandedToi: string | null;
 };
 
 type Goalie = {
@@ -610,7 +612,7 @@ const getReportContent = (
   }
 };
 
-function getPlayersGameStats(
+export function getPlayersGameStats(
   boxscore: any, // Contains playerByGameStats
   gameId: number,
   powerPlayAssistsCount: PlayerCounts,
@@ -666,10 +668,12 @@ function getPlayersGameStats(
       shorthandedGoals: shg,
       shPoints: shg + sha,
 
-      // Defaults for stats needing other data sources
-      faceoffs: "0/0",
-      powerPlayToi: "00:00",
-      shorthandedToi: "00:00",
+      // The boxscore carries no faceoff counts or PP/SH TOI. Store null
+      // (unknown), not "0/0" / "00:00" placeholders (decision 83; W2-7 D1).
+      // Readers take labels from WGO or shift seconds.
+      faceoffs: null,
+      powerPlayToi: null,
+      shorthandedToi: null,
     };
     return skaterData;
   });

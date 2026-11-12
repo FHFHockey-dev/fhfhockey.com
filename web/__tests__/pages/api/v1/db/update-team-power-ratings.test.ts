@@ -40,7 +40,41 @@ vi.mock("../../../../../utils/fetchCurrentSeason", () => ({
   fetchCurrentSeason: fetchCurrentSeasonMock,
 }));
 
-vi.mock("../../../../../lib/power-ratings", () => ({
+vi.mock("../../../../../lib/underlying-stats/teamSpecialTeamsContext", () => ({
+  fetchUnderlyingStatsTeamSpecialTeamsContext: vi.fn(async () => new Map()),
+}));
+
+vi.mock("../../../../../lib/power-ratings", async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  // The daily driver composes the mocked primitives so the route's control
+  // flow (windows, carry-forward, trend) stays under test here; the real
+  // maths is proven in update-team-power-ratings.served.test.ts.
+  const computeDailyPowerRatings = (
+    teamGames: Map<string, any[]>,
+    targetDate: string,
+  ) => {
+    const out = new Map<string, any>();
+    teamGames.forEach((games, team) => {
+      const latest = games
+        .map((g) => g.date)
+        .filter((d) => d <= targetDate)
+        .sort()
+        .pop();
+      if (!latest) return;
+      const ewma = calculateEwmaMock(games, latest);
+      if (!ewma) return;
+      const rating = calculateFinalRatingMock(ewma);
+      out.set(team, {
+        rating: { ...rating, date: targetDate },
+        sourceThroughDate: latest,
+      });
+    });
+    return out;
+  };
+  return {
+  buildGenuineTeamGames: actual.buildGenuineTeamGames,
+  computeSpecialTeamsTiers: actual.computeSpecialTeamsTiers,
+  computeDailyPowerRatings,
   fetchGameLogs: fetchGameLogsMock,
   calculateEwma: calculateEwmaMock,
   calculateLeagueMetrics: calculateLeagueMetricsMock,
@@ -52,7 +86,8 @@ vi.mock("../../../../../lib/power-ratings", () => ({
   fetchAllRatings: fetchAllRatingsMock,
   LOOKBACK_GAMES: 25,
   POSTGREST_PAGE_SIZE: 1000,
-}));
+  };
+});
 
 vi.mock("../../../../../lib/supabase/server", () => ({
   default: {
@@ -294,7 +329,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       startDate: yesterday,
       endDate: today,
       processedDays: 2,
-      calculationVersion: "team-power-v2-final-source-observed-pdo",
+      calculationVersion: "team-power-v3-all-team-baseline-prior-after-norm-pooled-st",
       executionScope: {
         requestedDate: today,
         startDate: yesterday,
@@ -314,16 +349,18 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       expect.objectContaining({
         team_abbreviation: "ANA",
         date: yesterday,
-        calculation_version: "team-power-v2-final-source-observed-pdo",
+        calculation_version: "team-power-v3-all-team-baseline-prior-after-norm-pooled-st",
         source_through_date: yesterday,
         off_rating: 111,
       }),
     ]);
+    // W1 P0 #12: a team that did not play today is rated as of its latest
+    // game against today's all-team baseline, not carried forward.
     expect(upsertMock.mock.calls[1]?.[0]).toEqual([
       expect.objectContaining({
         team_abbreviation: "ANA",
         date: today,
-        calculation_version: "legacy_unversioned",
+        calculation_version: "team-power-v3-all-team-baseline-prior-after-norm-pooled-st",
         source_through_date: yesterday,
         off_rating: 111,
       }),
@@ -410,7 +447,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
     expect(upserts).toEqual([
       expect.objectContaining({
         team_abbreviation: "COL",
-        calculation_version: "team-power-v2-final-source-observed-pdo",
+        calculation_version: "team-power-v3-all-team-baseline-prior-after-norm-pooled-st",
         source_through_date: "2026-04-05",
         trend10: 13,
       }),
@@ -436,11 +473,8 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       "2026-02-11",
       "2026-07-11",
     );
-    expect(fetchWgoStatsMock).toHaveBeenCalledWith(
-      expect.anything(),
-      "2026-02-11",
-      "2026-07-11",
-    );
+    // PP/PK tiers now come from the pooled season-to-date context (decision 20).
+    expect(fetchWgoStatsMock).not.toHaveBeenCalled();
   });
 
   it("returns 400 for invalid explicit date ranges", async () => {

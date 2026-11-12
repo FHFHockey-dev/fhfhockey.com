@@ -32,7 +32,8 @@ export const ROLLING_METRIC_SCALE_CONTRACTS: Record<
   availability_pct: { scale: "fraction_0_to_1", min: 0, max: 1 },
   shooting_pct: { scale: "percent_0_to_100", min: 0, max: 100 },
   primary_points_pct: { scale: "fraction_0_to_1", min: 0, max: 1 },
-  expected_sh_pct: { scale: "fraction_0_to_1", min: 0, max: 1 },
+  // Decision 17: ixG ÷ unblocked attempts (Fenwick) on a 0–100 scale.
+  expected_sh_pct: { scale: "percent_0_to_100", min: 0, max: 100 },
   ipp: { scale: "percent_0_to_100", min: 0, max: 100 },
   oz_start_pct: { scale: "percent_0_to_100", min: 0, max: 100 },
   pp_share_pct: { scale: "fraction_0_to_1", min: 0, max: 1 },

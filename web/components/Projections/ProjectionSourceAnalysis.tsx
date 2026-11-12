@@ -14,7 +14,15 @@ interface ProjectionSourceAnalysisProps {
 // --- Internal Types ---
 interface SourcePerPlayerProjection {
   sourceId: string;
+  /**
+   * The source's projection pro-rated to the player's games played so far,
+   * so it compares like for like with the season-to-date actual total
+   * (audit M-DRF-010). Null when games played (actual or projected) is
+   * unknown or zero.
+   */
   projectedTotal: number | null;
+  /** The source's full-season projection (not compared with actuals). */
+  projectedFullSeason: number | null;
   projectedPerGame: number | null;
   actualTotal: number | null;
   actualPerGame: number | null;
@@ -95,7 +103,7 @@ function median(values: number[]): number {
 }
 
 // Build per-source fantasy point projections for each player from contributing stat details
-function buildPerSourcePlayerProjections(
+export function buildPerSourcePlayerProjections(
   player: ProcessedPlayer,
   fantasyPointSettings: Record<string, number>,
   selectedSourceIds: string[]
@@ -135,14 +143,20 @@ function buildPerSourcePlayerProjections(
       : null;
 
   return Object.keys(perSourceTotals).map((sourceName) => {
-    const projectedTotal = perSourceTotals[sourceName] ?? null;
+    const projectedFullSeason = perSourceTotals[sourceName] ?? null;
     const projectedPerGame =
-      projectedTotal !== null && projectedGP && projectedGP > 0
-        ? projectedTotal / projectedGP
+      projectedFullSeason !== null && projectedGP && projectedGP > 0
+        ? projectedFullSeason / projectedGP
+        : null;
+    // Season to date: projected per game × games actually played.
+    const projectedTotal =
+      projectedPerGame !== null && actualGP && actualGP > 0
+        ? projectedPerGame * actualGP
         : null;
     return {
       sourceId: sourceName, // using name until a stable id is available
       projectedTotal,
+      projectedFullSeason,
       projectedPerGame,
       actualTotal,
       actualPerGame
@@ -150,7 +164,7 @@ function buildPerSourcePlayerProjections(
   });
 }
 
-function computeSourceMetrics(
+export function computeSourceMetrics(
   players: ProcessedPlayer[],
   fantasyPointSettings: Record<string, number>,
   sourceControls: Record<string, { isSelected: boolean; weight: number }>
@@ -481,8 +495,9 @@ export const ProjectionSourceAnalysis: React.FC<
             <button
               className={`${styles.toggleButton} ${!usePerGameMetrics ? styles.active : ""}`}
               onClick={() => setUsePerGameMetrics(false)}
+              title="Season-to-date points vs each projection pro-rated to games played"
             >
-              Total Points
+              Season to Date
             </button>
             <button
               className={`${styles.toggleButton} ${usePerGameMetrics ? styles.active : ""}`}

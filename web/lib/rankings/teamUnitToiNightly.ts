@@ -2,8 +2,11 @@
 //
 // The team matrix reads only the newest snapshot_date of a season, so a nightly run must never
 // start a new snapshot: it reuses the latest one, and a season with no snapshot yet needs a
-// backfill first. A game is done once its snapshot has a top forward line for both teams; a game
+// backfill first. One completion definition serves the build step and the next-run loader: a game
+// is done once its snapshot has a top forward line AND a top defense pair for both teams. A game
 // whose shifts are missing or incomplete is skipped and stays undone, so the next run retries it.
+// "Completed games" need final-state evidence (stored play-by-play with exactly one game-end
+// event); a date before today alone is not proof a game is final (rule 19).
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "lib/supabase/database-generated.types";
@@ -43,8 +46,17 @@ export function planTeamUnitToiNightly(args: {
   };
 }
 
-/** Games whose built rows include a top forward line and a top defense pair for two teams. */
-export function completeGameIds(rows: TeamUnitToiInsert[]) {
+export type TeamUnitToiCompletionRow = Pick<
+  TeamUnitToiInsert,
+  "game_id" | "team_id" | "unit_type" | "unit_number"
+>;
+
+/**
+ * The one completion definition: games whose rows include a top forward line
+ * and a top defense pair for two teams. Row coverage status (complete/partial)
+ * is reported on the rows; it does not make a built game undone.
+ */
+export function completeGameIds(rows: readonly TeamUnitToiCompletionRow[]) {
   const teamsByGame = new Map<number, { forward: Set<number>; defense: Set<number> }>();
   for (const row of rows) {
     if (row.unit_number !== 1) continue;
@@ -69,6 +81,7 @@ async function readOrThrow<T>(query: Page<T>, label: string) {
 }
 
 const PAGE_SIZE = 1000; // Supabase answers at most 1,000 rows per request.
+const FINAL_STATE_CHUNK = 200;
 
 async function readAllPages<T>(page: (from: number, to: number) => Page<T>, label: string) {
   const rows: T[] = [];
@@ -79,11 +92,42 @@ async function readAllPages<T>(page: (from: number, to: number) => Page<T>, labe
   }
 }
 
+/**
+ * Final-state predicate: a game is final when its stored play-by-play has
+ * exactly one game-end event (the same terminal evidence the PBP completeness
+ * check uses). Games without it stay pending and are retried later.
+ */
+async function readFinalGameIds(supabase: SupabaseClient<Database>, gameIds: number[]) {
+  const terminalCounts = new Map<number, number>();
+  for (let index = 0; index < gameIds.length; index += FINAL_STATE_CHUNK) {
+    const chunk = gameIds.slice(index, index + FINAL_STATE_CHUNK);
+    const plays = await readAllPages(
+      (from, to) =>
+        supabase
+          .from("pbp_plays")
+          .select("gameid,id")
+          .in("gameid", chunk)
+          .eq("typedesckey", "game-end")
+          .order("gameid", { ascending: true })
+          .order("id", { ascending: true })
+          .range(from, to) as unknown as Page<{ gameid: number; id: number }>,
+      "Failed to read final-state evidence",
+    );
+    plays.forEach((play) => {
+      const gameId = Number(play.gameid);
+      terminalCounts.set(gameId, (terminalCounts.get(gameId) ?? 0) + 1);
+    });
+  }
+  return new Set(
+    [...terminalCounts.entries()].filter(([, count]) => count === 1).map(([gameId]) => gameId),
+  );
+}
+
 /** Reads what the planner needs: the latest snapshot, completed games and which are done. */
 export async function loadTeamUnitToiNightlyPlan(
   supabase: SupabaseClient<Database>,
   args: { season: number; today: string; maxGames?: number },
-) {
+): Promise<TeamUnitToiNightlyPlan & { awaitingFinalState: number }> {
   const latest = await readOrThrow(
     supabase
       .from("team_unit_toi")
@@ -108,37 +152,41 @@ export async function loadTeamUnitToiNightlyPlan(
     "Failed to read completed games",
   );
 
-  const doneGameIds = new Set<number>();
+  let doneGameIds = new Set<number>();
   if (latestSnapshotDate != null) {
-    // One row per team-game: the top forward line. Two teams means the game is done.
-    const topLines = await readAllPages(
+    // Top forward lines and top defense pairs, judged by the same predicate the build step uses.
+    const topUnits = await readAllPages(
       (from, to) =>
         supabase
           .from("team_unit_toi")
-          .select("game_id,team_id")
+          .select("game_id,team_id,unit_type,unit_number")
           .eq("season_id", args.season)
           .eq("snapshot_date", latestSnapshotDate)
-          .eq("unit_type", "forward_line")
+          .in("unit_type", ["forward_line", "defense_pair"])
           .eq("unit_number", 1)
           .order("id", { ascending: true })
-          .range(from, to) as unknown as Page<{ game_id: number; team_id: number }>,
+          .range(from, to) as unknown as Page<TeamUnitToiCompletionRow>,
       "Failed to read games already in the snapshot",
     );
-    const teamsByGame = new Map<number, Set<number>>();
-    topLines.forEach((row) => {
-      const teams = teamsByGame.get(row.game_id) ?? new Set<number>();
-      teams.add(row.team_id);
-      teamsByGame.set(row.game_id, teams);
-    });
-    teamsByGame.forEach((teams, gameId) => {
-      if (teams.size === 2) doneGameIds.add(gameId);
-    });
+    doneGameIds = completeGameIds(
+      topUnits.map((row) => ({ ...row, game_id: Number(row.game_id), team_id: Number(row.team_id) })),
+    );
   }
 
-  return planTeamUnitToiNightly({
-    latestSnapshotDate,
-    completedGames: games.map((game) => ({ id: Number(game.id), date: String(game.date) })),
-    doneGameIds,
-    maxGames: args.maxGames,
-  });
+  const scheduled = games.map((game) => ({ id: Number(game.id), date: String(game.date) }));
+  const undoneIds = scheduled.filter((game) => !doneGameIds.has(game.id)).map((game) => game.id);
+  const finalIds = await readFinalGameIds(supabase, undoneIds);
+  const completedGames = scheduled.filter(
+    (game) => doneGameIds.has(game.id) || finalIds.has(game.id),
+  );
+
+  return {
+    ...planTeamUnitToiNightly({
+      latestSnapshotDate,
+      completedGames,
+      doneGameIds,
+      maxGames: args.maxGames,
+    }),
+    awaitingFinalState: undoneIds.length - finalIds.size,
+  };
 }

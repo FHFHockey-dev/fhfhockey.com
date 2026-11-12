@@ -2,6 +2,7 @@ import { evaluateNormalizedEventInclusion } from "./nhlEventInclusion";
 import type { ParsedNhlPbpEvent } from "./nhlPlayByPlayParser";
 import { buildReboundContexts } from "./nhlRebounds";
 
+/** Shot-feature rush window (an xG model input; owned by the xG lane). */
 export const DEFAULT_RUSH_WINDOW_SECONDS = 10;
 
 const UNIVERSAL_RUSH_BREAK_TYPES = new Set([
@@ -16,7 +17,18 @@ const UNIVERSAL_RUSH_BREAK_TYPES = new Set([
 
 type RushBuildOptions = {
   rushWindowSeconds?: number;
+  /** When true, a faceoff win never starts a rush. */
+  excludeFaceoffSources?: boolean;
 };
+
+/**
+ * Decision 8 rush for the NST-named rush columns: a 4-second window and no
+ * faceoff sources (the MoneyPuck-style convention).
+ */
+export const NST_RUSH_OPTIONS = {
+  rushWindowSeconds: 4,
+  excludeFaceoffSources: true,
+} as const satisfies RushBuildOptions;
 
 export type NhlRushContext = {
   gameId: number;
@@ -90,7 +102,8 @@ function getTeamRelativeZoneCode(
 
 function isQualifyingRushSource(
   event: ParsedNhlPbpEvent,
-  currentTeamId: number
+  currentTeamId: number,
+  excludeFaceoffSources: boolean
 ): boolean {
   if (event.type_desc_key == null) return false;
 
@@ -99,7 +112,7 @@ function isQualifyingRushSource(
   }
 
   if (event.type_desc_key === "faceoff") {
-    return event.event_owner_team_id === currentTeamId;
+    return !excludeFaceoffSources && event.event_owner_team_id === currentTeamId;
   }
 
   if (event.type_desc_key === "giveaway") {
@@ -152,6 +165,7 @@ export function buildRushContexts(
 ): NhlRushContext[] {
   const rushWindowSeconds =
     options.rushWindowSeconds ?? DEFAULT_RUSH_WINDOW_SECONDS;
+  const excludeFaceoffSources = options.excludeFaceoffSources ?? false;
   const sorted = sortEvents(events);
   const reboundContexts = buildReboundContexts(sorted);
   const reboundByEventId = new Map(
@@ -214,7 +228,7 @@ export function buildRushContexts(
       if (deltaSeconds <= 0) continue;
       if (deltaSeconds > rushWindowSeconds) break;
 
-      if (isQualifyingRushSource(candidate, currentTeamId)) {
+      if (isQualifyingRushSource(candidate, currentTeamId, excludeFaceoffSources)) {
         const teamRelativeZoneCode = getTeamRelativeZoneCode(candidate, currentTeamId);
 
         if (teamRelativeZoneCode === "D" || teamRelativeZoneCode === "N") {
@@ -242,7 +256,10 @@ export function buildRushContexts(
         break;
       }
 
-      if (isHardRushBreak(candidate, currentTeamId)) {
+      if (
+        isHardRushBreak(candidate, currentTeamId) ||
+        (excludeFaceoffSources && candidate.type_desc_key === "faceoff")
+      ) {
         break;
       }
     }

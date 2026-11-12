@@ -16,10 +16,12 @@
  * overround cannot be observed and no fair probability can be identified.
  * `devigYesOnly` returns an assumption-based estimate instead: it assumes a total
  * two-way overround (DEFAULT_YES_ONLY_OVERROUND, overridable per call or with
- * FORGE_YES_ONLY_OVERROUND) and applies the equal-margin rule
- * (estimate = implied - overround / 2). Each percentage point of overround error
- * moves the estimate by half a point; the raw implied probability (overround 0)
- * is the only assumption-free bound, and it bounds the estimate from above only.
+ * FORGE_YES_ONLY_OVERROUND) and applies the proportional rule
+ * (estimate = implied / (1 + overround)), which is strictly monotone in price
+ * (decision 30). The earlier equal-margin rule (implied - overround / 2) with a
+ * proportional fallback for longshots jumped at the crossover (+2300 gave .0017,
+ * +2400 gave .0370) and is retired. The raw implied probability (overround 0) is
+ * the only assumption-free bound, and it bounds the estimate from above only.
  */
 
 export type DevigMethod = "shin" | "proportional" | "equal-margin";
@@ -206,22 +208,19 @@ export type YesOnlyEstimate = {
   implied: number;
   overround: number;
   overroundSource: YesOnlyOverroundSource;
-  method: "equal-margin" | "proportional";
+  method: "proportional";
   basis: "assumed-overround";
 };
 
 /**
- * Assumption-based P(yes) for a "Yes"-only price under an assumed total overround.
- * "equal-margin" (default): implied - overround / 2, i.e. the price an additive
- * (= two-way Shin) de-vig would give if the hidden "No" side carried the other
- * half of the margin. "proportional": implied / (1 + overround). Equal-margin
- * results at or below zero (extreme longshots) fall back to proportional.
+ * Assumption-based P(yes) for a "Yes"-only price under an assumed total overround:
+ * implied / (1 + overround). Strictly decreasing in the American price, so a
+ * longer price never yields a higher estimate (decision 30).
  */
 export function devigYesOnly(
   price: number | null | undefined,
   options: {
     overround?: number | null;
-    method?: "equal-margin" | "proportional";
     env?: Record<string, string | undefined>;
   } = {},
 ): YesOnlyEstimate | null {
@@ -230,16 +229,14 @@ export function devigYesOnly(
   const assumption = resolveYesOnlyOverround(options.overround, options.env);
   if (!assumption) return null;
   const { overround, source: overroundSource } = assumption;
-  const base = { implied, overround, overroundSource, basis: "assumed-overround" as const };
-  const proportional = implied / (1 + overround);
-  if (options.method === "proportional") {
-    return { ...base, probability: proportional, method: "proportional" };
-  }
-  const equalMargin = implied - overround / 2;
-  if (equalMargin <= 0) {
-    return { ...base, probability: proportional, method: "proportional" };
-  }
-  return { ...base, probability: equalMargin, method: "equal-margin" };
+  return {
+    implied,
+    overround,
+    overroundSource,
+    basis: "assumed-overround",
+    probability: implied / (1 + overround),
+    method: "proportional",
+  };
 }
 
 /** Expected profit per 1 unit staked at an American price, given a win probability. */

@@ -2,12 +2,12 @@ import { evaluateNormalizedEventInclusion } from "./nhlEventInclusion";
 import type { ParsedNhlPbpEvent } from "./nhlPlayByPlayParser";
 
 export type NhlMissReasonBucket =
-  | "short-side"
+  | "short-of-net"
   | "wide"
+  | "high-and-wide"
   | "post"
   | "crossbar"
   | "over-net"
-  | "blocked-like"
   | "other"
   | "unknown";
 
@@ -25,7 +25,23 @@ export type NhlMissReasonContext = {
   missReasonVersion: number;
 };
 
-const DEFAULT_MISS_REASON_VERSION = 1;
+// v2: exact NHL reason strings (W1-1 M-XG-054). v1 matched substrings, so
+// "short" became "short-side" and "above-crossbar" became "crossbar".
+const DEFAULT_MISS_REASON_VERSION = 2;
+
+/** Exact NHL missed-shot reasons. Anything else is "other". */
+const NHL_MISS_REASON_BUCKETS: Record<string, NhlMissReasonBucket> = {
+  short: "short-of-net",
+  "wide-left": "wide",
+  "wide-right": "wide",
+  "wide-of-net": "wide",
+  "high-and-wide-left": "high-and-wide",
+  "high-and-wide-right": "high-and-wide",
+  "hit-left-post": "post",
+  "hit-right-post": "post",
+  "hit-crossbar": "crossbar",
+  "above-crossbar": "over-net",
+};
 
 function normalizeReason(reason: string | null): string | null {
   if (reason == null) return null;
@@ -39,13 +55,7 @@ export function classifyMissReasonBucket(
   const normalized = normalizeReason(reason);
 
   if (normalized == null) return "unknown";
-  if (normalized.includes("short")) return "short-side";
-  if (normalized.includes("wide")) return "wide";
-  if (normalized.includes("crossbar")) return "crossbar";
-  if (normalized.includes("post")) return "post";
-  if (normalized.includes("over")) return "over-net";
-  if (normalized.includes("blocked")) return "blocked-like";
-  return "other";
+  return NHL_MISS_REASON_BUCKETS[normalized] ?? "other";
 }
 
 export function buildMissReasonContext(
@@ -65,7 +75,9 @@ export function buildMissReasonContext(
   const missReasonBucket = isMissedShotEvent
     ? classifyMissReasonBucket(missReasonRaw)
     : null;
-  const isShortSideMiss = missReasonBucket === "short-side";
+  // No NHL miss reason says "short side" ("short" means the puck fell short
+  // of the net), so this flag cannot be derived from the reason.
+  const isShortSideMiss = false;
 
   return {
     gameId: event.game_id,

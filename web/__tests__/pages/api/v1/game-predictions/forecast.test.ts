@@ -100,6 +100,22 @@ describe("/api/v1/game-predictions/forecast", () => {
     );
   });
 
+  it("admits the current lineup only for a live (default-cutoff) run", async () => {
+    const live = createMockApiContext({ query: { fromDate: "2026-06-15", toDate: "2026-06-15" } });
+    await handler(live.req as never, live.res as never);
+    expect(generatePregamePredictionsForWindowMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ liveIssuance: true }),
+    );
+
+    const reconstruction = createMockApiContext({
+      query: { fromDate: "2026-06-15", toDate: "2026-06-15", predictionCutoffAt: "2026-06-15T16:00:00.000Z" },
+    });
+    await handler(reconstruction.req as never, reconstruction.res as never);
+    expect(generatePregamePredictionsForWindowMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ liveIssuance: false }),
+    );
+  });
+
   it("passes explicit baseline bootstrap opt-in to the workflow", async () => {
     const { req, res } = createMockApiContext({
       query: {
@@ -173,7 +189,7 @@ describe("/api/v1/game-predictions/forecast", () => {
     return { body: res.body as any, audit: auditInsertMock.mock.calls.at(-1)?.[0] };
   }
 
-  it("reports a no-production-model run as a healthy no-op that wrote nothing", async () => {
+  it("reports a no-production-model run as an explicit skipped state (decision 42)", async () => {
     const { body, audit } = await runThroughCronAudit(
       windowResult([
         { gameId: 1, skippedReason: "no_production_model_version" },
@@ -182,14 +198,30 @@ describe("/api/v1/game-predictions/forecast", () => {
     );
 
     expect(body).toMatchObject({
-      success: true,
+      skipped: true,
+      outcome: "skipped",
+      reason: "no_production_model",
       status: "no_production_model",
       persistedPredictions: 0,
       skippedGames: 2,
       noProductionModelGames: 2,
       failedGames: 0,
     });
-    expect(audit).toMatchObject({ job_name: "game-predictions-forecast", status: "success" });
+    // The audit row keeps the skip queryable. Its top-level status column is
+    // the Codex-owned wrapper's (success | failure | continued); a "skipped"
+    // value there is proposed in CLAUDE-FIX-L22-CRON-SKIP-20261111.
+    expect(audit.details.response).toContain('"outcome":"skipped"');
+    expect(audit.details.responseOutcome).toMatchObject({
+      status: "no_production_model",
+    });
+  });
+
+  it("does not mark a window skipped when it persisted predictions", async () => {
+    const { body } = await runThroughCronAudit(
+      windowResult([{ gameId: 1, predictionId: "prediction-1" }]),
+    );
+    expect(body.skipped).toBeUndefined();
+    expect(body.outcome).toBeUndefined();
   });
 
   it("fails the cron audit when a game errors instead of hiding it behind success", async () => {

@@ -218,6 +218,14 @@ describe("forge counterfactual backtest", () => {
     expect([mixed.get(1), mixed.get(2), mixed.get(3)]).toEqual([800, 200, 100]);
   });
 
+  it("PP usage: the allocation never exceeds the team target (M-FRG-017)", () => {
+    // Fallback seconds of 1,400 against a 1,200 s target used to be kept whole.
+    const alloc = allocatePpToi([{ playerId: 1, weight: null, fallbackSeconds: 900 }, { playerId: 2, weight: null, fallbackSeconds: 500 },
+      { playerId: 3, weight: 60, fallbackSeconds: 0 }], 1200);
+    expect([...alloc.values()].reduce((sum, value) => sum + value, 0)).toBeCloseTo(1200, 9);
+    expect(alloc.get(3)).toBe(0);
+  });
+
   it("PP usage: PP shots, goals and assists scale with the PP TOI ratio", () => {
     const old = { PP_TOI: 120, PP_SHOTS: 0.6, PP_GOALS: 0.09, PP_ASSISTS: 0.12 };
     const next = scalePpLine(old, 180, { shotsPerSecond: 0, goalsPerShot: 0, assistsPerShot: 0 });

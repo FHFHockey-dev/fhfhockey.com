@@ -17,6 +17,7 @@ import CategoryTitle from "components/LineCombinations/CategoryTitle";
 import Line from "components/LineCombinations/Line";
 import { mapTeamAbbreviation } from "lib/NHL/utils/utils";
 import PowerPlayCombos from "components/PowerPlayCombos";
+import type { GoalieWindowStats } from "components/LineCombinations/utilities";
 
 import { LineChange } from "components/LineCombinations/PlayerCard/SkaterCard";
 import Custom404 from "pages/404";
@@ -56,19 +57,10 @@ export type SkaterStats = PlayerBasic & {
 };
 
 export type GoalieStats = PlayerBasic & {
-  last10Games: {
-    Record: string;
-    SV: number;
-    SVPercentage: number;
-    GAA: number;
-  };
-
-  season: {
-    Record: string;
-    GP: number;
-    SVPercentage: number;
-    GAA: number;
-  };
+  /** The goalie's last 10 appearances, pooled. */
+  last10Games: GoalieWindowStats;
+  /** The goalie's season appearances, pooled. */
+  season: GoalieWindowStats;
 };
 
 const ObservedLinemateMatrix = dynamic(() => import("components/LinemateMatrix"), { ssr: false });
@@ -491,7 +483,9 @@ export function Header({
           </span>
         </h2>
         <p className={styles.subtitle}>
-          Last game&apos;s lines · stats from the last 10 games
+          Last game&apos;s lines, grouped by all-strength shared ice time
+          (legacy view) · skater stats from the team&apos;s last 10 games with
+          lines
         </p>
         {lastUpdated ? (
           <p className={styles.time}>

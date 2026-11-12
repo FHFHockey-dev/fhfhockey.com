@@ -244,7 +244,7 @@ export const METRIC_SPECS: Record<SustainabilityMetricKey, MetricSpec> = {
   },
   fantasy_score: {
     key: "fantasy_score",
-    label: "Fantasy Score",
+    label: "Fantasy Score (FHFH default)",
     exposure: "games",
     distribution: "normal",
     halfLifeGames: 5,
@@ -386,7 +386,7 @@ export function gammaQuantile(p: number, shape: number, rate: number): number {
   return mid;
 }
 
-function incompleteBeta(x: number, a: number, b: number): number {
+export function incompleteBeta(x: number, a: number, b: number): number {
   const bt =
     x === 0 || x === 1
       ? 0
@@ -469,7 +469,7 @@ function incompleteGamma(x: number, a: number): number {
   return 1 - h * Math.exp(-x + a * Math.log(x) - gln);
 }
 
-function logGamma(z: number): number {
+export function logGamma(z: number): number {
   const coefficients = [
     76.18009172947146, -86.50532032941677, 24.01409824083091,
     -1.231739572450155, 0.001208650973866179, -0.000005395239384953

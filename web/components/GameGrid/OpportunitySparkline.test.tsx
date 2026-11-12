@@ -27,7 +27,7 @@ describe("OpportunitySparkline", () => {
       week(3, "2026-11-02", 3, 2, "harder"), week(4, "2026-11-09", 4, 0, "average"),
     ]);
     const { container } = render(<OpportunitySparkline value={value} scale={5} team="BOS" />);
-    const trigger = screen.getByRole("button", { name: /^BOS 4-week opportunity 11\.8, rising; weekly games 1, 3, 3, 4$/ });
+    const trigger = screen.getByRole("button", { name: /^BOS 4-week opportunity 11\.8, rising \(first vs last week\); weekly games 1, 3, 3, 4$/ });
     expect([...container.querySelectorAll("linearGradient[id$='-stroke'] stop")].map((stop) => stop.getAttribute("data-matchup"))).toEqual(["easier", "average", "harder", "average"]);
     // Phone fill: each week is one solid band, edges halfway between weeks.
     const bands = [...container.querySelectorAll("linearGradient[id$='-bands'] stop")];

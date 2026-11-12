@@ -11,9 +11,16 @@ import {
 } from "lib/ml/predictionsSkoDependencyChecks";
 import { withPredictionsSkoRunControl } from "lib/ml/predictionsSkoRunControl";
 import { getCurrentSeason } from "lib/NHL/server";
+import { VOLATILITY_DISCOUNTED_PACE } from "lib/predictions/legacyQuarantine";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 /**
+ * Writes the Volatility-Discounted Points Pace (VDP, decision 80) into `predictions_sko.sko`.
+ * VDP is not sKO and claims no sustainability or predictive skill; definition in
+ * `VOLATILITY_DISCOUNTED_PACE` and tasks/artifacts/legacy-sko-definition-2026-11-12/DEFINITION.md.
+ * Source: current regular-season appearances only; an unknown game keeps every value whose
+ * window contains it unknown.
+ *
  * Query params:
  * - asOfDate: optional YYYY-MM-DD; defaults to today.
  * - horizon: optional positive integer; defaults to 5.
@@ -42,12 +49,12 @@ type PredictionsInsert =
 
 const DEFAULT_LOOKBACK_DAYS = 120;
 const DEFAULT_STABILITY_WINDOW = 10;
-const DEFAULT_HORIZON = 5;
+const DEFAULT_HORIZON = VOLATILITY_DISCOUNTED_PACE.defaultHorizonAppearances;
 const MAX_GAMES_PER_PLAYER = 60;
-const PLAYER_DISCOVERY_PAGE_SIZE = 1000;
 const UPSERT_BATCH_SIZE = 200;
-const MODEL_NAME = "baseline-moving-average";
-const MODEL_VERSION = "v0.3";
+const MODEL_NAME = VOLATILITY_DISCOUNTED_PACE.modelName;
+const MODEL_VERSION = VOLATILITY_DISCOUNTED_PACE.modelVersion;
+const SOURCE_PAGE_SIZE = 1000;
 const MAX_SOURCE_LAG_DAYS = 3;
 
 function parseString(value: unknown): string | undefined {
@@ -103,18 +110,22 @@ function parseFlag(value: unknown): boolean {
   return parsed === true || parsed === 1 || parsed === "1" || parsed === "true";
 }
 
-function mean(values: number[]): number {
-  const filtered = values.filter((value) => Number.isFinite(value));
-  if (!filtered.length) return 0;
-  return filtered.reduce((sum, value) => sum + value, 0) / filtered.length;
+/** Every game in the window must be known; an unknown game makes the window unknown. */
+function knownWindow(values: Array<number | null>): number[] | null {
+  if (!values.length) return null;
+  return values.every((value) => value !== null && Number.isFinite(value))
+    ? (values as number[])
+    : null;
 }
 
-function stddev(values: number[]): number {
-  const filtered = values.filter((value) => Number.isFinite(value));
-  if (filtered.length < 2) return 0;
-  const avg = mean(filtered);
-  const variance = mean(filtered.map((value) => (value - avg) ** 2));
-  return Math.sqrt(variance);
+function mean(values: number[]): number {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+/** Population SD (divides by n); one game has SD 0. */
+function populationSd(values: number[]): number {
+  const avg = mean(values);
+  return Math.sqrt(mean(values.map((value) => (value - avg) ** 2)));
 }
 
 function smoothstepMultiplier(
@@ -147,58 +158,54 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-type PlayerDiscoveryPage = {
-  data: Array<{ player_id?: number | string | null }> | null;
+type SourcePage = {
+  data: PlayerStatsRow[] | null;
   error: unknown;
 };
 
-export async function fetchPlayerIdsPaginated(
-  loadPage: (from: number, to: number) => PromiseLike<PlayerDiscoveryPage>,
-  pageSize = PLAYER_DISCOVERY_PAGE_SIZE,
-): Promise<{ playerIds: number[]; pages: number; rowsScanned: number }> {
-  const playerIds = new Set<number>();
+/**
+ * Reads every selected player's appearances in one ordered, paged scan (one query per 1,000
+ * rows instead of one per player) and keeps each player's latest MAX_GAMES_PER_PLAYER games
+ * in date order.
+ */
+export async function fetchSeriesPaginated(
+  loadPage: (from: number, to: number) => PromiseLike<SourcePage>,
+  pageSize = SOURCE_PAGE_SIZE,
+): Promise<{
+  seriesByPlayer: Map<number, PlayerStatsRow[]>;
+  pages: number;
+  rowsScanned: number;
+}> {
+  const seriesByPlayer = new Map<number, PlayerStatsRow[]>();
   let pages = 0;
   let rowsScanned = 0;
-
   for (let from = 0; ; from += pageSize) {
     const res = await loadPage(from, from + pageSize - 1);
-    const data = (res?.data ?? []) as Array<{
-      player_id?: number | string | null;
-    }>;
     if (res?.error) throw res.error;
+    const data = res?.data ?? [];
     pages += 1;
     rowsScanned += data.length;
     for (const row of data) {
       const playerId = Number(row.player_id);
-      if (Number.isInteger(playerId) && playerId > 0) playerIds.add(playerId);
+      if (!Number.isInteger(playerId) || playerId <= 0) continue;
+      const series = seriesByPlayer.get(playerId) ?? [];
+      series.push(row);
+      seriesByPlayer.set(playerId, series);
     }
     if (data.length < pageSize) break;
   }
-
-  return {
-    playerIds: Array.from(playerIds).sort((a, b) => a - b),
-    pages,
-    rowsScanned,
-  };
+  for (const [playerId, series] of seriesByPlayer) {
+    series.sort((a, b) => a.date.localeCompare(b.date));
+    seriesByPlayer.set(playerId, series.slice(-MAX_GAMES_PER_PLAYER));
+  }
+  return { seriesByPlayer, pages, rowsScanned };
 }
 
-export async function fetchPlayerSeries(
-  client: SupabaseClient<Database>,
-  playerId: number,
-  asOfDate: string,
-  startDate: string,
-): Promise<PlayerStatsRow[]> {
-  const { data, error } = await client
-    .from("player_stats_unified")
-    .select("player_id,date,points,games_played")
-    .eq("player_id", playerId)
-    .lte("date", asOfDate)
-    .gte("date", startDate)
-    .eq("games_played", 1)
-    .order("date", { ascending: false })
-    .limit(MAX_GAMES_PER_PLAYER);
-  if (error) throw error;
-  return ((data as PlayerStatsRow[] | null) ?? []).slice().reverse();
+/** Unknown points stay unknown (never 0). */
+export function pointsOrNull(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function sourceLagDays(asOfDate: string, latestSourceDate: string | null) {
@@ -245,6 +252,8 @@ type PredictionRunDiagnostics = {
     selectedPlayers: number;
     processedPlayers: number;
     skippedNoSeries: number;
+    /** Players with at least one unknown-points game in their series (affected values are null). */
+    unknownPointsPlayers: number;
     discoveryPages: number;
     discoveryRows: number;
     sourceRows: number;
@@ -279,6 +288,7 @@ function emptyDiagnostics(
       selectedPlayers: 0,
       processedPlayers: 0,
       skippedNoSeries: 0,
+      unknownPointsPlayers: 0,
       discoveryPages: 0,
       discoveryRows: 0,
       sourceRows: 0,
@@ -302,48 +312,50 @@ function emptyDiagnostics(
   };
 }
 
+/**
+ * One VDP row. `stability_cv` is the stored column name for the population SD of points per
+ * appearance over the stability window (read it as `stability_sd`; the column rename is a
+ * production step). `horizon` counts player appearances, not team games.
+ */
 export function buildPredictionRecord(
   playerId: number,
   asOfDate: string,
   horizon: number,
-  pointsSeries: number[],
+  pointsSeries: Array<number | null>,
   stabilityWindow: number,
 ): PredictionsInsert {
-  const last5 = pointsSeries.slice(-5);
-  const last10 = pointsSeries.slice(-10);
-  const last20 = pointsSeries.slice(-20);
-
   // Each window already holds every game a short series has, so a 0 average is
   // a real scoreless stretch and must not fall back to a longer window (v0.2 did).
-  const avg5 = mean(last5);
-  const avg10 = mean(last10);
-  const recentBlend = 0.6 * avg10 + 0.4 * avg5;
-  const predPoints = recentBlend * horizon;
+  const last5 = knownWindow(pointsSeries.slice(-5));
+  const last10 = knownWindow(pointsSeries.slice(-10));
+  const pace =
+    last5 && last10 ? 0.6 * mean(last10) + 0.4 * mean(last5) : null;
+  const predPoints = pace === null ? null : pace * horizon;
 
-  const stdevWindow =
-    stabilityWindow > 0 ? pointsSeries.slice(-stabilityWindow) : pointsSeries;
-  const stdevShort = stddev(stdevWindow);
-  const stdevLong = stddev(last20);
-  const t1 = Math.max(0, 0.8 * stdevLong);
-  const t2 = Math.max(t1 + 1e-6, 1.2 * stdevLong);
-  const stabilityMultiplier = smoothstepMultiplier(stdevShort, t1, t2);
-  const sko = Number.isFinite(predPoints)
-    ? predPoints * stabilityMultiplier
-    : null;
-
-  const predPerGame = Number.isFinite(predPoints) ? predPoints / horizon : null;
+  const shortWindow = knownWindow(
+    stabilityWindow > 0 ? pointsSeries.slice(-stabilityWindow) : pointsSeries,
+  );
+  const longWindow = knownWindow(pointsSeries.slice(-20));
+  const sdShort = shortWindow ? populationSd(shortWindow) : null;
+  const sdLong = longWindow ? populationSd(longWindow) : null;
+  let multiplier: number | null = null;
+  if (sdShort !== null && sdLong !== null) {
+    const t1 = Math.max(0, 0.8 * sdLong);
+    const t2 = Math.max(t1 + 1e-6, 1.2 * sdLong);
+    multiplier = smoothstepMultiplier(sdShort, t1, t2);
+  }
+  const vdp =
+    predPoints !== null && multiplier !== null ? predPoints * multiplier : null;
 
   return {
     player_id: playerId,
     as_of_date: asOfDate,
     horizon_games: horizon,
-    pred_points: Number.isFinite(predPoints) ? predPoints : null,
-    pred_points_per_game: predPerGame,
-    stability_cv: Number.isFinite(stdevShort) ? stdevShort : null,
-    stability_multiplier: Number.isFinite(stabilityMultiplier)
-      ? stabilityMultiplier
-      : null,
-    sko: Number.isFinite(sko) ? sko : null,
+    pred_points: predPoints,
+    pred_points_per_game: pace,
+    stability_cv: sdShort,
+    stability_multiplier: multiplier,
+    sko: vdp,
     top_features: null,
     model_name: MODEL_NAME,
     model_version: MODEL_VERSION,
@@ -427,18 +439,21 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
     const startDate = new Date(asOfDate);
     startDate.setDate(startDate.getDate() - lookbackDays);
     const lookbackStartIso = startDate.toISOString().slice(0, 10);
-    const effectiveStartIso =
-      seasonCutoff && seasonCutoff > lookbackStartIso
-        ? seasonCutoff
-        : lookbackStartIso;
-    runDiagnostics = emptyDiagnostics(asOfDate, effectiveStartIso);
-
     const currentSeason = await getCurrentSeason();
     const seasonExecution = resolveSkoSeasonExecution({
       asOfDate,
       regularSeasonStartDate: currentSeason.regularSeasonStartDate,
       regularSeasonEndDate: currentSeason.regularSeasonEndDate,
     });
+    // Game-type filter: the source has no game type, so the window is clamped to the current
+    // regular season (asOfDate is inside it whenever the run proceeds). Prior-season playoffs
+    // and preseason never enter the series.
+    const effectiveStartIso = [
+      lookbackStartIso,
+      seasonCutoff ?? "",
+      seasonExecution.regularSeasonStartDate,
+    ].reduce((latest, date) => (date > latest ? date : latest));
+    runDiagnostics = emptyDiagnostics(asOfDate, effectiveStartIso);
     if (!seasonExecution.shouldRun) {
       return res.status(200).json({
         success: true,
@@ -451,7 +466,7 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
         rowsUpserted: 0,
         ...runDiagnostics,
         seasonExecution,
-        message: `No sKO predictions published for ${asOfDate}: outside the official NHL regular season.`,
+        message: `No VDP rows (predictions_sko) published for ${asOfDate}: outside the official NHL regular season.`,
       });
     }
 
@@ -460,26 +475,25 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
       startDate: effectiveStartIso,
     });
 
-    let discoveredPlayerIds: number[];
-    if (playerIdsFilter?.length) {
-      discoveredPlayerIds = playerIdsFilter;
-    } else {
-      const discovery = await fetchPlayerIdsPaginated((from, to) =>
-        admin
-          .from("player_stats_unified")
-          .select("player_id,date")
-          .lte("date", asOfDate)
-          .gte("date", effectiveStartIso)
-          .eq("games_played", 1)
-          .not("player_id", "is", null)
-          .order("player_id", { ascending: true })
-          .order("date", { ascending: true })
-          .range(from, to),
-      );
-      discoveredPlayerIds = discovery.playerIds;
-      runDiagnostics.coverage.discoveryPages = discovery.pages;
-      runDiagnostics.coverage.discoveryRows = discovery.rowsScanned;
-    }
+    const source = await fetchSeriesPaginated((from, to) => {
+      let query = admin
+        .from("player_stats_unified")
+        .select("player_id,date,points,games_played")
+        .lte("date", asOfDate)
+        .gte("date", effectiveStartIso)
+        .eq("games_played", 1)
+        .not("player_id", "is", null);
+      if (playerIdsFilter?.length) query = query.in("player_id", playerIdsFilter);
+      return query
+        .order("player_id", { ascending: true })
+        .order("date", { ascending: true })
+        .range(from, to) as unknown as PromiseLike<SourcePage>;
+    });
+    const discoveredPlayerIds = playerIdsFilter?.length
+      ? playerIdsFilter
+      : Array.from(source.seriesByPlayer.keys()).sort((a, b) => a - b);
+    runDiagnostics.coverage.discoveryPages = source.pages;
+    runDiagnostics.coverage.discoveryRows = source.rowsScanned;
     runDiagnostics.coverage.discoveredPlayers = discoveredPlayerIds.length;
     const playerIds = batchSize
       ? discoveredPlayerIds.slice(0, batchSize)
@@ -507,9 +521,8 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
     }
 
     const predictionRecords: PredictionsInsert[] = [];
-    let playerSeriesQueries = 0;
-    let totalSeriesFetchMs = 0;
     let totalProcessMs = 0;
+    let unknownPointsPlayers = 0;
     let maxSeriesLength = 0;
     let minSeriesLength = Number.POSITIVE_INFINITY;
     let skippedNoSeries = 0;
@@ -520,22 +533,16 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
 
     for (let i = 0; i < playerIds.length; i++) {
       const playerId = playerIds[i];
-      const fetchStart = Date.now();
-      const series = await fetchPlayerSeries(
-        admin,
-        playerId,
-        asOfDate,
-        effectiveStartIso,
-      );
-      const fetchEnd = Date.now();
-      playerSeriesQueries += 1;
-      totalSeriesFetchMs += fetchEnd - fetchStart;
+      const series = source.seriesByPlayer.get(playerId) ?? [];
       if (!series.length) {
         skippedNoSeries += 1;
         continue;
       }
       const processStart = Date.now();
-      const pointsSeries = series.map((row) => Number(row.points ?? 0));
+      const pointsSeries = series.map((row) => pointsOrNull(row.points));
+      if (pointsSeries.some((points) => points === null)) {
+        unknownPointsPlayers += 1;
+      }
       sourceRows += series.length;
       const seriesEarliestDate = series[0]?.date ?? null;
       const seriesLatestDate = series[series.length - 1]?.date ?? null;
@@ -565,16 +572,16 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
 
       if (debug && (i + 1) % PROGRESS_INTERVAL === 0) {
         console.log(
-          `[update-predictions-sko] progress ${i + 1}/${playerIds.length} avgFetchMs=${(
-            totalSeriesFetchMs / playerSeriesQueries
-          ).toFixed(2)} avgProcessMs=${(
-            totalProcessMs / playerSeriesQueries
+          `[update-predictions-sko] progress ${i + 1}/${playerIds.length} avgProcessMs=${(
+            totalProcessMs /
+            (i + 1)
           ).toFixed(2)}`,
         );
       }
     }
     runDiagnostics.coverage.processedPlayers = predictionRecords.length;
     runDiagnostics.coverage.skippedNoSeries = skippedNoSeries;
+    runDiagnostics.coverage.unknownPointsPlayers = unknownPointsPlayers;
     runDiagnostics.coverage.sourceRows = sourceRows;
     runDiagnostics.coverage.maxSeriesLength = maxSeriesLength;
     runDiagnostics.coverage.minSeriesLength =
@@ -599,7 +606,7 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
         rowsUpserted: 0,
         ...runDiagnostics,
         seasonExecution,
-        message: `No sKO predictions published for ${asOfDate}: latest source data is ${runDiagnostics.source.lagDays} days old.`,
+        message: `No VDP rows (predictions_sko) published for ${asOfDate}: latest source data is ${runDiagnostics.source.lagDays} days old.`,
       });
     }
 
@@ -628,11 +635,9 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
       (process.hrtime.bigint() - startHr) / BigInt(1_000_000),
     );
     phases.total = totalMs;
-    phases.avg_player_fetch_ms = playerSeriesQueries
-      ? Number((totalSeriesFetchMs / playerSeriesQueries).toFixed(2))
-      : 0;
-    phases.avg_player_process_ms = playerSeriesQueries
-      ? Number((totalProcessMs / playerSeriesQueries).toFixed(2))
+    phases.source_pages = source.pages;
+    phases.avg_player_process_ms = playerIds.length
+      ? Number((totalProcessMs / playerIds.length).toFixed(2))
       : 0;
     phases.max_series_len = maxSeriesLength;
     phases.min_series_len =
@@ -648,7 +653,7 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
 
     // Server log summary
     console.log(
-      `[update-predictions-sko] completed players=${playerIds.length} upserts=${upserts} totalMs=${totalMs} avgFetchMs=${phases.avg_player_fetch_ms} avgProcessMs=${phases.avg_player_process_ms} batches=${batchDurations.length}`,
+      `[update-predictions-sko] completed players=${playerIds.length} upserts=${upserts} totalMs=${totalMs} sourcePages=${phases.source_pages} avgProcessMs=${phases.avg_player_process_ms} batches=${batchDurations.length}`,
     );
 
     res.setHeader("X-Execution-Time-ms", String(totalMs));
@@ -665,8 +670,8 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
       ...runDiagnostics,
       duration: `${durationSec}s`,
       message: dryRun
-        ? `Dry run prepared ${predictionRecords.length} sKO prediction rows for ${playerIds.length} skaters as of ${asOfDate} in ${durationSec}s`
-        : `Refreshed sKO predictions for ${playerIds.length} skaters (${upserts} rows) as of ${asOfDate} in ${durationSec}s`,
+        ? `Dry run prepared ${predictionRecords.length} VDP rows (predictions_sko) for ${playerIds.length} skaters as of ${asOfDate} in ${durationSec}s`
+        : `Refreshed VDP rows (predictions_sko) for ${playerIds.length} skaters (${upserts} rows) as of ${asOfDate} in ${durationSec}s`,
       ...(debug ? { timings: phases } : {}),
     });
   } catch (error: any) {

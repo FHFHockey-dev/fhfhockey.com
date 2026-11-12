@@ -16,7 +16,7 @@ const base: GoalieGsaxInput = { appearances: [], nstGames: [], strength: "all", 
 const three = (goalieId: number) => [0, 1, 2].map(index => appearance(goalieId, index));
 /** An unreported game on `gap` and a fully reported one on `complete`. Which is older decides the rule: a newest gap ends the card, an older one is partial. */
 const older = (gap: string, complete: string) => ({
-  scheduled: [{ id: 5, date: gap, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id }, { id: 6, date: complete, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id }],
+  scheduled: [{ id: 5, date: gap, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id, final: true }, { id: 6, date: complete, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id, final: true }],
   reported: [{ gameId: 6, date: complete, team: "NJD" }, { gameId: 6, date: complete, team: "NYR" }],
 });
 
@@ -93,6 +93,12 @@ describe("NST-model GSAx", () => {
     const gap = buildGoalieGsax({ ...base, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), ...older("2026-10-01", "2026-10-03") });
     expect(gap.state).toBe("partial");
   });
+  it("does not count a reported game with no final game state as completed (rule 19)", () => {
+    const window = older("2026-10-01", "2026-10-03"), notFinal = { scheduled: window.scheduled.map(game => game.id === 5 ? { ...game, final: false } : game), reported: [...window.reported, ...["NJD", "NYR"].map(team => ({ gameId: 5, date: "2026-10-01", team }))] };
+    const result = buildGoalieGsax({ ...base, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), ...notFinal });
+    expect(result.state).toBe("partial");
+    expect(result.reasons).toEqual(["1 of 2 scheduled games through NST's date has no final game state yet, so it is not counted as completed."]);
+  });
   it("reports the FHFH model as unavailable this season, and does not mix it in", () => {
     expect(fhfhModelStatus(0)).toEqual({ state: "unavailable", rows: 0, reason: "FHFH xG model: unavailable this season, 0 goalie games." });
     expect(fhfhModelStatus(null).state).toBe("unavailable");
@@ -125,7 +131,7 @@ describe("the last completed matchup week", () => {
     expect(data).toMatchObject({ week: weeks[0], windowLabel: "Week 1, 2026-10-01 to 2026-10-03, through 2026-10-01" });
   });
   it("is unaffected by a schedule gap outside the week", () => {
-    const gap = buildGoalieGsax({ ...input, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), scheduled: [{ id: 5, date: "2026-09-30", homeTeamId: 1, awayTeamId: 2 }] });
+    const gap = buildGoalieGsax({ ...input, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), scheduled: [{ id: 5, date: "2026-09-30", homeTeamId: 1, awayTeamId: 2, final: true }] });
     expect(gap.state).toBe("ready");
     expect(buildGoalieGsax({ ...input, appearances: three(1), nstGames: [0, 1, 2].map(index => nst(1, index)), ...older("2026-10-02", "2026-10-03") }).state).toBe("partial");
   });
@@ -191,7 +197,7 @@ describe("the period control", () => {
   });
   it("ends a chosen week at its last complete night when its last day is late, and keeps NST's lag apart", () => {
     const window = dates("2026-10-01", "2026-10-07", "Week 1 · Oct 1 to Oct 7", 1);
-    const late = { scheduled: [0, 1, 2, 6].map(index => ({ id: 50 + index, date: date(index), homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id })), reported: [0, 1, 2].flatMap(index => ["NJD", "NYR"].map(team => ({ gameId: 50 + index, date: date(index), team }))) };
+    const late = { scheduled: [0, 1, 2, 6].map(index => ({ id: 50 + index, date: date(index), homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id, final: true })), reported: [0, 1, 2].flatMap(index => ["NJD", "NYR"].map(team => ({ gameId: 50 + index, date: date(index), team }))) };
     const result = buildGoalieGsax({ ...input, appearances: [...three(1), appearance(1, 6)], nstGames: [0, 1, 2, 6].map(index => nst(1, index)), window, ...late });
     expect(result.state).toBe("ready");
     expect(result.pageNotes).toEqual(["Oct 7 is not fully reported yet, so this card ends Oct 3."]);
@@ -202,7 +208,7 @@ describe("the period control", () => {
   });
   it("trims a preset week's late last night without moving to an older week", () => {
     const weekly = { ...input, window: "week" as const };
-    const late = { scheduled: [0, 6].map(index => ({ id: 50 + index, date: date(index), homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id })), reported: ["NJD", "NYR"].map(team => ({ gameId: 50, date: date(0), team })) };
+    const late = { scheduled: [0, 6].map(index => ({ id: 50 + index, date: date(index), homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id, final: true })), reported: ["NJD", "NYR"].map(team => ({ gameId: 50, date: date(0), team })) };
     const result = buildGoalieGsax({ ...weekly, appearances: [appearance(1, 0), appearance(1, 6)], nstGames: [nst(1, 0), nst(1, 6)], ...late });
     expect(result).toMatchObject({ state: "ready", pageNotes: ["Oct 7 is not fully reported yet, so this card ends Oct 1."] });
     expect(result.data).toMatchObject({ week: weeks[0], nstThrough: "2026-10-01", windowLabel: "Week 1, 2026-10-01 to 2026-10-07, through 2026-10-01" });

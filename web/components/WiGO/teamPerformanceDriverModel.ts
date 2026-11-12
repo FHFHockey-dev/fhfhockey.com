@@ -276,10 +276,17 @@ export const buildTeamPerformanceDrivers = ({
     finishingPopulation,
     "higher",
   );
-  const specialTeamsPercentile =
-    (percentile(pp, ppPopulation, "higher") +
-      percentile(pk, pkPopulation, "higher")) /
-    2;
+  // A mean of two percentiles is not a percentile (decision 74, D4). Each team gets a
+  // PP+PK standing (the mean of its PP% and PK% percentiles), and the driver is the
+  // selected team's mid-rank percentile of that standing among the league's teams.
+  const specialTeamsStanding = (row: { power_play_pct: number | null; penalty_kill_pct: number | null }) =>
+    (percentile(row.power_play_pct!, ppPopulation, "higher") +
+      percentile(row.penalty_kill_pct!, pkPopulation, "higher")) / 2;
+  const specialTeamsPercentile = percentile(
+    specialTeamsStanding(teamSpecialTeams),
+    Array.from(uniqueSpecialTeams.values()).map(specialTeamsStanding),
+    "higher",
+  );
   const formatPercentage = (value: number) =>
     `${value.toFixed(1)}%`;
 
@@ -344,7 +351,7 @@ export const buildTeamPerformanceDrivers = ({
         "Special Teams",
         `PP ${formatPercentage(pp)} · PK ${formatPercentage(pk)}`,
         specialTeamsPercentile,
-        "Combined league-relative power-play and penalty-kill percentile.",
+        "Percentile of the team's combined PP and PK standing (the average of its PP% and PK% percentiles) among the league's teams.",
       ),
     ],
   };

@@ -1,4 +1,4 @@
-import { validForecastCalendarPolicy, type ForecastCalendarPolicy } from "../player-forecasts/contributions";
+import { forecastCalendarDate, validForecastCalendarPolicy, type AnyForecastCalendarPolicy } from "../player-forecasts/contributions";
 import { evaluateScenarioPlan, LATER_IMPACT_USE, scheduleAdmissionProblem } from "./planning";
 import { localDate } from "./planningDates";
 import { buildTimeline } from "./planningTimeline";
@@ -37,13 +37,13 @@ export type LaterPeriodInput = {
   leagueKey: string;
   season: { id: number; startDate: string; endDate: string };
   /** Captured at decision time and saved with the scenario. */
-  calendarPolicy: ForecastCalendarPolicy;
+  calendarPolicy: AnyForecastCalendarPolicy;
   /** Actual league/provider matchup periods; null or empty when none is available. */
   periods: LeaguePeriod[] | null;
 };
 export type LaterPeriod = { state: "ok" | "unknown" | "outside_scenario_horizon"; reason: string | null;
   kind: "actual" | "assumed" | null; periodId: string | null; label: string | null; dates: string[];
-  bound: { first: string; last: string } | null; calendarPolicy: ForecastCalendarPolicy };
+  bound: { first: string; last: string } | null; calendarPolicy: AnyForecastCalendarPolicy };
 
 export function resolveLaterPeriod(input: LaterPeriodInput): LaterPeriod {
   const result = (state: LaterPeriod["state"], reason: string | null, rest: Partial<LaterPeriod> = {}): LaterPeriod =>
@@ -65,8 +65,9 @@ export function resolveLaterPeriod(input: LaterPeriodInput): LaterPeriod {
     if (first.seasonId !== input.season.id) return result("outside_scenario_horizon", "season_boundary", chosen);
   } else chosen = { kind: "assumed", periodId: null, label: ASSUMED_PERIOD_LABEL, dates: datesBetween(addDays(endDate, 1), addDays(endDate, 7)) };
   if (chosen.dates[0] <= endDate && chosen.dates[chosen.dates.length - 1] >= startDate) return result("unknown", "overlaps_window", chosen);
-  // Where the league-local and UTC decision dates differ, the stricter reading applies to each end of the bound.
-  const utc = new Date(decision).toISOString().slice(0, 10), local = localDate(input.decisionAsOf, input.timeZone);
+  // Where the league-local and the policy's decision dates differ (v1 UTC, v2 the NHL schedule's Eastern date, decision
+  // 127), the stricter reading applies to each end of the bound.
+  const utc = forecastCalendarDate(new Date(decision), input.calendarPolicy)!, local = localDate(input.decisionAsOf, input.timeZone);
   const bound = { first: utc > local ? utc : local, last: addDays(utc < local ? utc : local, input.calendarPolicy.calendarDays - 1) };
   // Actual dates are kept as they are: no clipping, no relabelled slice and no fallback in their place.
   if (chosen.dates.some(date => date < bound.first || date > bound.last)) return result("outside_scenario_horizon", "beyond_calendar_policy", { ...chosen, bound });
@@ -216,7 +217,7 @@ export type LaterImpactResult = {
     modelVersion: string; bridgeVersion: string; conditioning: string | null; units: Record<string, string> }>;
   /** §2.6: (a) within the bound and (b) scenario inputs complete are claimed separately; (c) native F forecasts never are. */
   claims: { withinBound: boolean; scenarioInputsComplete: boolean; nativeForecasts: false; basis: "rate_scenario"; label: string };
-  context: { schedule: { revision: string; asOf: string | null } | null; calendarPolicy: ForecastCalendarPolicy | null; limitations: string[] };
+  context: { schedule: { revision: string; asOf: string | null } | null; calendarPolicy: AnyForecastCalendarPolicy | null; limitations: string[] };
 };
 /** In-memory scenario row: keeps its real conditioning and is permitted only inside the scenario entry point. */
 type ScenarioForecast = Omit<GameForecast, "conditioning"> & { conditioning: "unconditional" | "conditional"; scenarioUse: typeof LATER_IMPACT_USE };

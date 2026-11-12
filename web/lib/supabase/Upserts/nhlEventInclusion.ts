@@ -1,4 +1,9 @@
 import type { ParsedNhlPbpEvent } from "./nhlPlayByPlayParser";
+import {
+  classifyTeamManpower,
+  isPenaltyShotSituation,
+  parseSituationCode,
+} from "./nhlStrengthState";
 
 type ExclusionReason = "shootout" | "penalty-shot";
 
@@ -31,6 +36,8 @@ const COMMON_MANPOWER_STATES = new Set([
 ]);
 
 const PENALTY_SHOT_PATTERN = /penalty[- ]shot/i;
+// The feed files penalty-shot infractions as e.g. "ps-hooking-on-breakaway".
+const PENALTY_SHOT_DESC_KEY_PATTERN = /^ps-/i;
 const SHOOTOUT_PATTERN = /shootout/i;
 
 type InclusionInput = {
@@ -39,6 +46,8 @@ type InclusionInput = {
   period_number?: number | null | undefined;
   strength_state?: string | null | undefined;
   strength_exact?: string | null | undefined;
+  situation_code?: string | null | undefined;
+  event_owner_side?: "home" | "away" | null | undefined;
   reason?: string | null | undefined;
   secondary_reason?: string | null | undefined;
   penalty_desc_key?: string | null | undefined;
@@ -92,10 +101,32 @@ export function isShootoutEvent(event: InclusionInput): boolean {
   );
 }
 
+/**
+ * A penalty-shot attempt or infraction outside the shootout (W1-2 D7): the
+ * situation code has a side with no skaters (`1010`, `0101`), the infraction's
+ * desc key starts with "ps-", or a text field names a penalty shot.
+ */
 export function isPenaltyShotEvent(event: InclusionInput): boolean {
-  return extractPenaltyShotTexts(event).some((value) =>
-    PENALTY_SHOT_PATTERN.test(value)
+  if (!isShootoutEvent(event) && isPenaltyShotSituation(parseSituationCode(event.situation_code))) {
+    return true;
+  }
+  return extractPenaltyShotTexts(event).some(
+    (value) =>
+      PENALTY_SHOT_PATTERN.test(value) || PENALTY_SHOT_DESC_KEY_PATTERN.test(value)
   );
+}
+
+/**
+ * The event's owner is attacking an empty net (decisions 7, 84). A shot by a
+ * team whose own goalie is pulled is not an empty-net event. Uses the
+ * situation code when the owner is known; otherwise the stored label.
+ */
+export function isAttackingEmptyNetEvent(event: InclusionInput): boolean {
+  const situation = parseSituationCode(event.situation_code);
+  if (situation && event.event_owner_side) {
+    return classifyTeamManpower(situation, event.event_owner_side)?.opponentNetEmpty === true;
+  }
+  return event.strength_state === "EN" && !isPenaltyShotSituation(situation);
 }
 
 export function hasRareManpower(event: InclusionInput): boolean {
@@ -109,7 +140,7 @@ export function evaluateNormalizedEventInclusion(
   const shootout = isShootoutEvent(event);
   const penaltyShot = isPenaltyShotEvent(event);
   const delayedPenalty = event.type_desc_key === "delayed-penalty";
-  const emptyNet = event.strength_state === "EN";
+  const emptyNet = !penaltyShot && isAttackingEmptyNetEvent(event);
   const overtime =
     !shootout &&
     ((event.period_number ?? 0) > 3 ||

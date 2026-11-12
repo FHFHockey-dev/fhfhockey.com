@@ -34,15 +34,25 @@ type WgoTimelineRow = {
 type XgTimelineRow = {
   game_date: string | null;
   game_id: number | null;
+  model_version?: string | null;
+  feature_version?: number | null;
   source_model_approved: boolean | null;
   source_prediction_type: string | null;
   xg_for: number | null;
   xg_against: number | null;
 };
 
+/** Registry pin: the single active approved model the xG rows must come from. */
+export type MetricsTimelineXgModel = {
+  modelVersion: string;
+  featureVersion: number;
+};
+
 export function buildMetricsTimelineRows(args: {
   wgoRows: readonly WgoTimelineRow[];
   xgRows: readonly XgTimelineRow[];
+  /** Without a pinned model, in-house xG is unknown and no xG row is admitted. */
+  xgModel: MetricsTimelineXgModel | null;
 }): MetricsTimelinePoint[] {
   const wgoByDate = new Map(
     args.wgoRows.map((row) => [row.date.slice(0, 10), row])
@@ -55,9 +65,15 @@ export function buildMetricsTimelineRows(args: {
       row.source_model_approved !== true || row.source_prediction_type !== "shot_goal" ||
       !row.game_date || !Number.isSafeInteger(row.game_id) || (row.game_id ?? 0) <= 0
     ) continue;
+    // Only the registry-pinned model and feature version may serve; a demoted
+    // or shadow model's rows for the same game are never selected by order.
+    if (
+      !args.xgModel ||
+      row.model_version !== args.xgModel.modelVersion ||
+      Number(row.feature_version) !== args.xgModel.featureVersion
+    ) continue;
     const date = row.game_date.slice(0, 10);
     if (!xgByDate.has(date)) {
-      // Query order prefers the newest feature version/update of the same game.
       xgByDate.set(date, row);
     } else if (xgByDate.get(date)?.game_id !== row.game_id) {
       // A daily slot cannot represent two different per-game totals.

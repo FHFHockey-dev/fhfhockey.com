@@ -137,8 +137,9 @@ describe("RankingsFilters", () => {
       ...DEFAULT_RANKINGS_FILTERS,
       entity: "goalies",
       deployment: "all",
-      minGp: "3",
-      minToi: "100",
+      // Goalie floors are their own fields (decision 98), not skater Min GP/TOI.
+      goalieMinStarts: "3",
+      goalieMinShots: "150",
       team: "DAL",
     });
 
@@ -156,8 +157,15 @@ describe("RankingsFilters", () => {
       (screen.getByLabelText("Min Starts") as HTMLInputElement).value,
     ).toBe("3");
     expect((screen.getByLabelText("Min Shots") as HTMLInputElement).value).toBe(
-      "100",
+      "150",
     );
+    fireEvent.change(screen.getByLabelText("Min Shots"), { target: { value: "50" } });
+    expect(onChange).toHaveBeenCalledWith({ goalieMinShots: "50" });
+    // Decision 104: one strength per goalie view.
+    const strength = screen.getByLabelText("Strength") as HTMLSelectElement;
+    expect(strength.value).toBe("5v5");
+    fireEvent.change(strength, { target: { value: "all" } });
+    expect(onChange).toHaveBeenCalledWith({ goalieStrength: "all", page: "1" });
     fireEvent.click(screen.getByRole("button", { name: "More Filters" }));
     const dialog = screen.getByRole("dialog", { name: "More ranking filters" });
     const teamInput = within(dialog).getByLabelText("Team") as HTMLInputElement;
@@ -170,15 +178,31 @@ describe("RankingsFilters", () => {
   });
 
   it("keeps team rankings filters compact by hiding player-only controls", () => {
-    renderFilters(vi.fn(), {
+    const onChange = vi.fn();
+    renderFilters(onChange, {
       ...DEFAULT_RANKINGS_FILTERS,
       entity: "teams",
     });
 
     expect(screen.queryByLabelText("Deployment")).toBeNull();
     expect(screen.queryByLabelText("Strength")).toBeNull();
-    expect(screen.queryByLabelText("Min GP")).toBeNull();
+    // Decision 98: teams get their own visible, user-lowerable sample floor.
+    const minGp = screen.getByLabelText("Min GP") as HTMLInputElement;
+    expect(minGp.value).toBe("5");
+    fireEvent.change(minGp, { target: { value: "2" } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ teamMinGp: "2" }));
     expect(screen.queryByLabelText("Team")).toBeNull();
     expect(screen.getByRole("button", { name: "More Filters" })).toBeTruthy();
+  });
+
+  it("offers the labelled cross-season scope only for skater last-N windows (decision 103)", () => {
+    const onChange = renderFilters(vi.fn(), { ...DEFAULT_RANKINGS_FILTERS, window: "last20" });
+    const scope = screen.getByLabelText("Games from") as HTMLSelectElement;
+    expect(scope.value).toBe("current_season");
+    fireEvent.change(scope, { target: { value: "cross_season" } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ windowScope: "cross_season" }));
+    cleanup();
+    renderFilters(vi.fn(), { ...DEFAULT_RANKINGS_FILTERS, window: "season" });
+    expect(screen.queryByLabelText("Games from")).toBeNull();
   });
 });

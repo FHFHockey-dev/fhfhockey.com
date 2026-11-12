@@ -95,6 +95,21 @@ function teamMetricState(
   staleSource: boolean,
 ) {
   const unitCoverage = teamUnitMetricCoverage(row, metricKey);
+  if (cell.rawValue == null && isStyleDerivedMetric(metricKey)) {
+    if (row.warnings.some((warning) => warning.startsWith("insufficient_sample:"))) {
+      return { label: "Insufficient sample", marker: "?", className: styles.metricStateUnavailable };
+    }
+    if (row.warnings.some((warning) => warning.startsWith("nst_5v5_coverage_incomplete:"))) {
+      return { label: "Incomplete NST coverage", marker: "?", className: styles.metricStateUnavailable };
+    }
+  }
+  if (
+    cell.rawValue == null &&
+    isGameContextMetric(metricKey) &&
+    row.warnings.some((warning) => warning.startsWith("insufficient_context_sample:"))
+  ) {
+    return { label: "Insufficient sample", marker: "?", className: styles.metricStateUnavailable };
+  }
   if (unitCoverage?.status === "source_gap") {
     return { label: "No unit coverage", marker: "?", className: styles.metricStateUnavailable };
   }
@@ -146,6 +161,15 @@ function isStyleDerivedMetric(metricKey: TeamMatrixMetricKey) {
   );
 }
 
+function isGameContextMetric(metricKey: TeamMatrixMetricKey) {
+  return (
+    metricKey === "one_goal_game_rate" ||
+    metricKey === "home_road_point_pct_gap" ||
+    metricKey === "pp_opportunity_rate" ||
+    metricKey === "penalties_taken_per_60"
+  );
+}
+
 function TeamMetricCell({
   cell,
   column,
@@ -189,6 +213,9 @@ function TeamMetricCell({
     staleMatrixSnapshot ? "Snapshot is older than latest available team matrix snapshot" : null,
     staleStyleSource
       ? `Team style source ${row.record.styleSnapshotDate} differs from team power snapshot ${row.record.latestPowerDate}`
+      : null,
+    isStyleDerivedMetric(column.metricKey) && row.record.styleCoverage
+      ? `NST 5v5 coverage ${row.record.styleCoverage.coveredGames} of ${row.record.styleCoverage.eligibleGames} played games`
       : null,
     row.warnings.length ? `Caveats: ${formatCaveats(row.warnings)}` : null,
     column.source,
@@ -371,6 +398,9 @@ export default function TeamMatrixTable({
       <div className={styles.inlineNotice}>
         Team style describes raw 5v5 results; it is not adjusted for score,
         venue or opponent, and it is not a read on the coach&apos;s system.
+        xG, shot quality, event rate and luck use Natural Stat Trick (NST) 5v5 xG
+        and need NST data for every game played.
+        {payload?.meta.sampleFloor ? ` ${payload.meta.sampleFloor.label}.` : ""}
         {payload?.meta.sourceWarnings.length
           ? ` Data notes: ${formatCaveats(payload.meta.sourceWarnings)}.`
           : ""}

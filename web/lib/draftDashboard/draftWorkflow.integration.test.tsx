@@ -100,7 +100,9 @@ describe("representative draft workflow", () => {
       { teamId: "empty", categoryTotals: {} },
       { teamId: "zero", categoryTotals: { GOALS: 0 } },
     ], { GOALS: 1 }, "categories");
-    expect(missing.empty.GOALS).toBe(missing.zero.GOALS);
+    // An unknown total is unranked, never ranked as a 0 (audit W2-5 §4.2).
+    expect(missing.empty.GOALS).toBeUndefined();
+    expect(missing.zero.GOALS).toBe(1);
     expect(categoryRankBand(1, 1)).toBe("green");
     expect(categoryRankBand(2, 5)).toBe("green");
   });

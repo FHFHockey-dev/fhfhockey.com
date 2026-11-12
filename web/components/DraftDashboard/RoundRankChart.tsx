@@ -24,7 +24,7 @@ export default function RoundRankChart({ history, teams, myTeamId, players }: Pr
   const y = (rank: number) => 24 + (rank - 1) / Math.max(1, teams.length - 1) * 236;
   return <section className={styles.chart} aria-label="Round-by-round rank history">
     <h3>Round-by-round rank</h3>
-    <p>Completed rounds only · lower rank is better · ties share a rank. Hover a team for one second to highlight; select its name to keep it highlighted.</p>
+    <p>Completed rounds only · ranked by summed roster value (projected points, or summed category value; not projected category standings) · lower rank is better · ties share a rank. Hover a team for one second to highlight; select its name to keep it highlighted.</p>
     {history.length < 2 ? <p>Rank history appears after the first complete round.</p> : <>
       <svg viewBox="0 0 780 300" role="img" aria-label="Team ranks at the end of each completed round">
         <line className={styles.midline} x1="50" x2="740" y1={y((teams.length + 1) / 2)} y2={y((teams.length + 1) / 2)} />

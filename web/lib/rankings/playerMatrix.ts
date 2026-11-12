@@ -27,6 +27,7 @@ import type {
 import { ContextualRankingsQueryError } from "./rankingTypes";
 import type {
   ContextualRankingPeerGroupType,
+  NormalizedRankingResult,
   RankingPeerGroupWarning,
   RankingSampleConfidence,
 } from "./rankingCalculator";
@@ -34,11 +35,14 @@ import {
   getSampleConfidence,
   rankNormalizedMetricValues,
 } from "./rankingCalculator";
-import type {
-  SkaterProductionWindow,
-  SkaterWindowStrengthState,
+import {
+  isCrossSeasonWindowRequest,
+  type SkaterProductionWindow,
+  type SkaterWindowScope,
+  type SkaterWindowStrengthState,
 } from "./skaterWindowAggregation";
 import { CONTEXTUAL_RANKINGS_METHODOLOGY_UPDATED_AT } from "./rankingMetadata";
+import { WINDOW_COUNT_SUPPORT_TABLE } from "./rollingWindowCountSupportReader";
 import {
   resolveTeamToken,
   type ResolvedTeamToken,
@@ -49,6 +53,8 @@ export type PlayerMatrixRequest = {
   season: number;
   asOfDate: string | null;
   window: SkaterProductionWindow;
+  /** Decision 103: last-N scope; omitted = current season. */
+  windowScope?: SkaterWindowScope;
   position: ContextualRankingsPositionFilter;
   deployment: ContextualRankingsDeploymentFilter;
   strength: SkaterWindowStrengthState;
@@ -127,7 +133,10 @@ export type PlayerMatrixRow = {
   sort: {
     metricKey: ContextualRankingMetricKey;
     rank: number | null;
+    /** Mid-rank percentile in the matrix cohort (decision 74/90), never a score. */
     percentile: number | null;
+    /** The composite's 0–100 score when sorting by a composite; null otherwise. */
+    score?: number | null;
     rankScopes?: PlayerMatrixRankScopes;
   };
   composite: PlayerMatrixComposite | null;
@@ -272,7 +281,10 @@ type AllStrengthToiRow = Pick<
   | "toi_seconds_total_last5"
   | "toi_seconds_total_last10"
   | "toi_seconds_total_last20"
->;
+> & {
+  /** Last-N appearances from L6 window-count support; null = unknown. */
+  window_appearances?: number | null;
+};
 
 export const MATRIX_COLOR_SCALE_BANDS = [
   { label: "0-19", min: 0, max: 19.999, tone: "poor" },
@@ -480,6 +492,12 @@ export function parsePlayerMatrixRequest(
       ["season", "last5", "last10", "last20"] as const,
       "season",
     ),
+    windowScope: parseEnum(
+      query.window_scope,
+      "window_scope",
+      ["current_season", "cross_season"] as const,
+      "current_season",
+    ),
     position,
     deployment,
     strength: parseEnum(
@@ -556,6 +574,7 @@ function contextualRequestForMetric(args: {
     season: args.request.season,
     asOfDate: args.request.asOfDate,
     window: args.request.window,
+    windowScope: args.request.windowScope,
     position: args.request.position,
     deployment: args.request.deployment,
     strength: args.request.strength,
@@ -639,26 +658,17 @@ function finiteNumber(value: unknown): number | null {
   return value;
 }
 
-function windowSize(window: SkaterProductionWindow) {
-  if (window === "last5") return 5;
-  if (window === "last10") return 10;
-  if (window === "last20") return 20;
-  return null;
-}
-
 function allStrengthsToiPerGame(
   row: AllStrengthToiRow,
   window: SkaterProductionWindow,
 ) {
-  const seasonGames =
-    finiteNumber(row.season_games_played) ?? finiteNumber(row.games_played);
   if (window === "season") {
     return finiteNumber(row.toi_seconds_avg_season);
   }
 
-  const size = windowSize(window);
-  const gamesPlayed =
-    seasonGames == null || size == null ? null : Math.min(seasonGames, size);
+  // Divide the window's TOI by the window's own appearances (W2-4 D8/A2):
+  // season GP and TOI/N are both wrong once a window crosses seasons.
+  const gamesPlayed = finiteNumber(row.window_appearances);
   const field = `toi_seconds_total_${window}` as
     | "toi_seconds_total_last5"
     | "toi_seconds_total_last10"
@@ -712,7 +722,22 @@ async function fetchAllStrengthsToiByPlayerId(args: {
         .order("updated_at", { ascending: false, nullsFirst: false })
         .limit(1);
       if (error) throw error;
-      return (data?.[0] ?? null) as unknown as AllStrengthToiRow | null;
+      const row = (data?.[0] ?? null) as unknown as AllStrengthToiRow | null;
+      if (!row || args.request.window === "season") return row;
+      const support = await supabase
+        .from(WINDOW_COUNT_SUPPORT_TABLE)
+        .select(`appearances:support_payload->windowCountSupport->windows->${args.request.window}->appearances`)
+        .eq("season", args.request.season)
+        .eq("strength_state", "all")
+        .eq("player_id", playerId)
+        .eq("game_date", row.game_date)
+        .limit(1);
+      if (support.error) throw support.error;
+      const appearances = (support.data?.[0] as { appearances?: unknown } | undefined)?.appearances;
+      return {
+        ...row,
+        window_appearances: typeof appearances === "number" ? appearances : null,
+      };
     }));
     rows.push(...latestRows.filter((row): row is AllStrengthToiRow => row != null));
   }
@@ -874,21 +899,17 @@ function cellFromCompositeRow(args: {
   composite: CompositeRatingRow | null;
   sample: ContextualRankingApiRow["sample"];
   request: PlayerMatrixRequest;
-  totalRows: number;
+  cohortRank: NormalizedRankingResult | null;
   unavailableReason: string | null;
   rankScopes: PlayerMatrixRankScopes;
 }): PlayerMatrixMetricCell {
   const metricKey = args.column.metricKey as CompositeMetricKey;
   const sample = compositeSample(args.sample, metricKey, args.request);
   const rawValue = compositeMetricValue(args.composite ?? undefined, metricKey);
+  // Decision 74: the composite is a 0–100 score; its percentile is the
+  // player's mid-rank in the matrix cohort, a separate field (W2-4 D7/A3).
   const percentile =
-    args.column.metricKey === "results_luck_index"
-      ? rawValue == null
-        ? null
-        : Math.max(0, Math.min(100, rawValue))
-      : args.column.metricKey === "beast_tier"
-        ? rawValue
-        : rawValue;
+    metricKey === "beast_tier" ? null : (args.cohortRank?.percentile ?? null);
   const formattedValue =
     args.column.metricKey === "beast_tier"
       ? (args.composite?.beast_tier ?? null)
@@ -912,9 +933,9 @@ function cellFromCompositeRow(args: {
     groupKey: args.column.groupKey,
     rawValue,
     formattedValue,
-    rank: null,
+    rank: sample.minimumSampleMet ? (args.cohortRank?.rank ?? null) : null,
     percentile: sample.minimumSampleMet ? percentile : null,
-    qualifiedPeerCount: args.totalRows,
+    qualifiedPeerCount: args.cohortRank?.qualifiedPeerCount ?? 0,
     lowerIsBetter: args.column.lowerIsBetter,
     availabilityState: missingReason ? "unavailable" : "available",
     availabilityReason: missingReason,
@@ -1022,8 +1043,12 @@ export async function buildPlayerMatrixSurface(
     | "fallback_rolling_player_game_metrics"
     | "entity_metric_rankings" = "fallback_rolling_player_game_metrics";
   let rankingSourceFallbackReason: string | null = null;
+  // Durable snapshots hold only the default current-season last-N windows.
+  const prefersDurable =
+    request.rankingSourcePreference === "entity_metric_rankings" &&
+    !isCrossSeasonWindowRequest(request);
   let rankingSurfacesByMetric =
-    request.rankingSourcePreference === "entity_metric_rankings"
+    prefersDurable
       ? await buildEntityMetricRankingSurfaces(
           baseContextualRequest,
           [baseSortMetric],
@@ -1034,7 +1059,7 @@ export async function buildPlayerMatrixSurface(
           [baseSortMetric],
         );
   const preferredSortSurface = rankingSurfacesByMetric.get(baseSortMetric);
-  if (request.rankingSourcePreference === "entity_metric_rankings") {
+  if (prefersDurable) {
     if (
       preferredSortSurface &&
       !preferredSortSurface.meta.unavailable &&
@@ -1064,7 +1089,12 @@ export async function buildPlayerMatrixSurface(
     .filter((row) =>
       sampleConfidenceMatches(row.sample.confidence, request.sampleConfidence),
     );
-  const compositeSortRowsByPlayerId = sortUsesComposite
+  const anyCompositeColumn = metricColumns.some(
+    (column) =>
+      isCompositeMetricKey(column.metricKey) &&
+      !metricUnavailableReason({ column, request }),
+  );
+  const compositeSortRowsByPlayerId = sortUsesComposite || anyCompositeColumn
     ? await fetchCompositeRatingsByPlayerId({
         request,
         snapshotDate: sortSurface.meta.snapshotDate,
@@ -1088,24 +1118,28 @@ export async function buildPlayerMatrixSurface(
       return left.entity.id - right.entity.id;
     });
   }
-  const compositeSortRanksByPlayerId = sortUsesComposite
-    ? rankNormalizedMetricValues(
-        sortedRows.map((row) => {
-          const value = row.sample.minimumSampleMet
-            ? compositeMetricValue(compositeSortRowsByPlayerId.get(row.entity.id), sortMetric)
-            : null;
-          return {
-            id: row.entity.id,
-            normalizedValue:
-              value == null
-                ? null
-                : request.sortDirection === "asc"
-                  ? -value
-                  : value,
-          };
-        }),
-      )
-    : new Map();
+  // Composite ranks are computed once over the cohort, higher score first, so
+  // reversing the display sort never changes a player's rank (rule 20, A3).
+  const compositeCohortRanks = new Map<
+    CompositeMetricKey,
+    Map<number, NormalizedRankingResult>
+  >(
+    COMPOSITE_METRIC_KEYS.filter((key) => key !== "beast_tier").map((key) => [
+      key,
+      rankNormalizedMetricValues(
+        sortedRows.map((row) => ({
+          id: row.entity.id,
+          normalizedValue: row.sample.minimumSampleMet
+            ? compositeMetricValue(compositeSortRowsByPlayerId.get(row.entity.id), key)
+            : null,
+        })),
+      ),
+    ]),
+  );
+  const compositeSortRanksByPlayerId: Map<number, NormalizedRankingResult> =
+    sortUsesComposite
+      ? compositeCohortRanks.get(sortMetric as CompositeMetricKey) ?? new Map()
+      : new Map();
   sortedRows = sortedRows.filter((row) =>
     rowMatchesSearch(row, request.search),
   );
@@ -1181,7 +1215,7 @@ export async function buildPlayerMatrixSurface(
     overallSurfacesPromise,
     deploymentSurfacesPromise,
   ]);
-  const compositeRowsByPlayerId = sortUsesComposite
+  const compositeRowsByPlayerId = sortUsesComposite || anyCompositeColumn
     ? new Map(
         pageRows.flatMap((row) => {
           const composite = compositeSortRowsByPlayerId.get(row.entity.id);
@@ -1297,7 +1331,10 @@ export async function buildPlayerMatrixSurface(
           composite,
           sample: baseRow.sample,
           request,
-          totalRows: sortedRows.length,
+          cohortRank:
+            compositeCohortRanks
+              .get(entry.column.metricKey as CompositeMetricKey)
+              ?.get(baseRow.entity.id) ?? null,
           unavailableReason: entry.reason,
           rankScopes: emptyRankScopes(),
         });
@@ -1338,8 +1375,8 @@ export async function buildPlayerMatrixSurface(
       ? {
           rank:
             compositeSortRanksByPlayerId.get(baseRow.entity.id)?.rank ?? null,
-          percentile: baseRow.sample.minimumSampleMet
-            ? compositeMetricValue(composite ?? undefined, sortMetric) : null,
+          percentile:
+            compositeSortRanksByPlayerId.get(baseRow.entity.id)?.percentile ?? null,
           qualifiedPeerCount:
             compositeSortRanksByPlayerId.get(baseRow.entity.id)
               ?.qualifiedPeerCount ?? 0,
@@ -1368,9 +1405,11 @@ export async function buildPlayerMatrixSurface(
           ? (compositeSortRanksByPlayerId.get(baseRow.entity.id)?.rank ?? null)
           : baseRow.metric.rawRank,
         percentile: sortUsesComposite
-          ? baseRow.sample.minimumSampleMet
-            ? compositeMetricValue(composite ?? undefined, sortMetric) : null
+          ? (compositeSortRanksByPlayerId.get(baseRow.entity.id)?.percentile ?? null)
           : baseRow.metric.percentile,
+        score: sortUsesComposite && baseRow.sample.minimumSampleMet
+          ? compositeMetricValue(composite ?? undefined, sortMetric)
+          : null,
         rankScopes: {
           overall: sortOverallScope,
           deployment: sortUsesComposite

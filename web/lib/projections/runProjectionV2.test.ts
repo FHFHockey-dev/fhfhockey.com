@@ -48,7 +48,8 @@ import {
 } from "./run-forge-projections";
 import { allocateTeamAssists, computeSkaterAssistShare, computeSkaterPhysicalEventRates, computeSkaterShotRatePer60, resolveSkaterConversionRates, resolveAssistDenominators, SKATER_ASSIST_DENOMINATOR_DEFAULT } from "./calculators/skater-adjustments";
 import { SKATER_PHYSICAL_RATE_PRIORS } from "./constants/projection-weights";
-import { computeTeamPpShare } from "./stages/skater-stage";
+import { computeTeamPpShare, roleTagFromRosterEvent } from "./stages/skater-stage";
+import { selectRosterEventsForSlate } from "./stages/preflight-stage";
 import type { RollingRow } from "./types/run-forge-projections.types";
 
 function buildContext(
@@ -445,9 +446,11 @@ describe("starter candidate filtering", () => {
 });
 
 describe("deployment TOI prior helpers", () => {
-  it("normalizes minute-based WGO TOI values to seconds", () => {
-    expect(normalizeWgoToiToSeconds(15)).toBe(900);
-    expect(normalizeWgoToiToSeconds(22.5)).toBe(1350);
+  // WGO TOI is declared seconds (rule 17); the former "<= 60 means minutes" guess turned a
+  // 45-second PP game into 45 minutes (BC W1-7 D8).
+  it("keeps sub-minute WGO TOI values in seconds", () => {
+    expect(normalizeWgoToiToSeconds(45)).toBe(45);
+    expect(normalizeWgoToiToSeconds(22.5)).toBe(22.5);
   });
 
   it("keeps second-like WGO TOI values in seconds", () => {
@@ -1430,6 +1433,16 @@ describe("skater pool recovery safeguards", () => {
     expect(constrained).toEqual([20, 21, 22]);
   });
 
+  it("keeps an undersized pool's own exposure without a 15 -> 14 cliff and reports the rest (D7)", () => {
+    const at = (count: number) => computeSkaterTeamToiTargetWithPoolGuard({
+      canonicalTargetSeconds: 18000, projectedSkaterCount: count, ppShare: 0.085, preAllocationTotalSeconds: count * 1150,
+    });
+    expect(at(15)).toMatchObject({ targetSeconds: 18000, wasCapped: false });
+    // Was 7,809 s at 14 skaters; now their own 16,100 s, with 1,900 s unmodeled.
+    expect(at(14)).toMatchObject({ targetSeconds: 16100, wasCapped: true, unmodeledResidualSeconds: 1900 });
+    expect(at(0)).toMatchObject({ targetSeconds: 0, unmodeledResidualSeconds: 18000 });
+  });
+
   it("caps team skater TOI target when projected pool is undersized", () => {
     const guarded = computeSkaterTeamToiTargetWithPoolGuard({
       canonicalTargetSeconds: 18000,
@@ -1998,8 +2011,42 @@ describe("roster-event availability weighting", () => {
 
     expect(dtdHigh).toBeLessThan(dtdLow);
     expect(scratch).toBeLessThan(benching);
-    expect(scratch).toBeLessThan(1);
+    // Decision 31: a scratch is 0 expected for its game, never a confidence-scaled fraction.
+    expect(scratch).toBe(0);
+    expect(availabilityMultiplierForEvent("SCRATCH", 0.2)).toBe(0);
     expect(benching).toBeLessThan(1);
+  });
+});
+
+describe("roster events on the slate (decision 31, BC W1-7 D2)", () => {
+  const event = (overrides: Record<string, unknown>) => ({ event_id: 1, team_id: 10, player_id: 7, event_type: "INJURY_OUT",
+    confidence: 0.95, payload: {}, effective_from: "2026-11-09T23:00:00.000Z", effective_to: null, ...overrides }) as any;
+  const select = (events: any[]) => selectRosterEventsForSlate({ events, startTs: "2026-11-11T00:00:00.000Z",
+    gameIds: [2026020200], goalieLikelyOverrides: false });
+
+  it("applies a scratch only to its own game id", () => {
+    const today = select([event({ event_type: "SCRATCH", payload: { game_id: 2026020200 } })]);
+    expect(today.playerAvailabilityMultiplier.get(7)).toBe(0);
+    for (const payload of [{ game_id: 2026020150 }, { game_scope: "unresolved", game_id: null }]) {
+      expect(select([event({ event_type: "SCRATCH", payload })]).playerAvailabilityMultiplier.has(7)).toBe(false);
+    }
+  });
+
+  it("keeps an injury until a RETURN, not a 30-hour timer, and a stale scratch never masks it", () => {
+    // Monday 23:00 UTC injury, read on Wednesday: still out (the old 30-hour row expired Wednesday 05:00).
+    expect(select([event({})]).playerAvailabilityMultiplier.get(7)).toBe(0);
+    const returned = select([event({}), event({ event_id: 2, event_type: "RETURN", effective_from: "2026-11-10T18:00:00.000Z" })]);
+    expect(returned.playerAvailabilityMultiplier.get(7)).toBe(1);
+    const masked = select([event({}), event({ event_id: 3, event_type: "SCRATCH", effective_from: "2026-11-10T18:00:00.000Z",
+      payload: { game_id: 2026020150 } })]);
+    expect(masked.playerAvailabilityMultiplier.get(7)).toBe(0);
+    expect(masked.availabilityEventByPlayer.get(7)?.event_type).toBe("INJURY_OUT");
+  });
+
+  it("does not default a line or PP tweet without a line number to L3 or PP2", () => {
+    expect(roleTagFromRosterEvent(event({ event_type: "LINE_CHANGE", payload: {} }))).toBeNull();
+    expect(roleTagFromRosterEvent(event({ event_type: "PP_UNIT_CHANGE", payload: {} }))).toBeNull();
+    expect(roleTagFromRosterEvent(event({ event_type: "LINE_CHANGE", payload: { lineNumber: 2 } }))?.esRole).toBe("L2");
   });
 });
 
@@ -2102,7 +2149,7 @@ describe("goalie rest-split adjustments", () => {
     expect(toGoalieRestSplitBucket(2)).toBe("2");
     expect(toGoalieRestSplitBucket(3)).toBe("3");
     expect(toGoalieRestSplitBucket(4)).toBe("4_plus");
-    expect(toGoalieRestSplitBucket(null)).toBe("4_plus");
+    expect(toGoalieRestSplitBucket(null)).toBeNull();
   });
 
   it("applies sample-weighted positive adjustments and ignores low-sample buckets", () => {

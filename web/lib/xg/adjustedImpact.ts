@@ -5,6 +5,43 @@ export const ADJUSTED_IMPACT_TARGET_FAMILY = "on_ice_xg_differential_v1" as cons
 
 export type AdjustedImpactTargetFamily = typeof ADJUSTED_IMPACT_TARGET_FAMILY;
 
+/**
+ * How shots at an empty net enter the regression (decision 100).
+ * - included_with_strength_covariate: the historical treatment; EN shots
+ *   are ordinary responses and only the strength covariates see them.
+ * - excluded: shots at an empty net are not responses.
+ * - explicit_indicator: they stay, with an explicit empty-net-target context
+ *   feature (the shooter's own empty net shows in strength_exact).
+ * No treatment is validated yet: compare them with
+ * compareAdjustedImpactEmptyNetTreatments on held-out data first.
+ */
+export type AdjustedImpactEmptyNetTreatment =
+  | "included_with_strength_covariate"
+  | "excluded"
+  | "explicit_indicator";
+
+export const ADJUSTED_IMPACT_DEFAULT_EMPTY_NET_TREATMENT: AdjustedImpactEmptyNetTreatment =
+  "included_with_strength_covariate";
+
+export type AdjustedImpactEmptyNetTreatmentStatus = {
+  treatment: AdjustedImpactEmptyNetTreatment;
+  validation: "unvalidated";
+  decision: 100;
+  note: string;
+};
+
+export function adjustedImpactEmptyNetTreatmentStatus(
+  treatment: AdjustedImpactEmptyNetTreatment = ADJUSTED_IMPACT_DEFAULT_EMPTY_NET_TREATMENT
+): AdjustedImpactEmptyNetTreatmentStatus {
+  return {
+    treatment,
+    validation: "unvalidated",
+    decision: 100,
+    note:
+      "Empty-net handling in the adjusted-impact regression is unvalidated: a strength covariate alone does not establish it. Pending a held-out comparison of excluded vs explicitly identified empty-net shots.",
+  };
+}
+
 export type AdjustedImpactShotRow = {
   model_version: string;
   feature_version: number;
@@ -25,6 +62,9 @@ export type AdjustedImpactShotRow = {
   shot_zone_code?: string | null;
   owner_rest_days?: number | null;
   opponent_rest_days?: number | null;
+  /** v2 definition: the shooter attacks the opponent's empty net. */
+  is_empty_net_event?: boolean | null;
+  goalie_in_net_id?: number | null;
   xg: number;
 };
 
@@ -58,6 +98,10 @@ export type AdjustedImpactDesignRow = {
   shot_zone_code: string | null;
   owner_rest_days: number | null;
   opponent_rest_days: number | null;
+  /** True for a shot at an empty net; null when the flags were not supplied. */
+  empty_net_target?: boolean | null;
+  /** 1/0 context feature, set only under the explicit_indicator treatment. */
+  empty_net_indicator?: 0 | 1 | null;
   player_coefficients: AdjustedImpactPlayerCoefficient[];
 };
 
@@ -71,6 +115,7 @@ export type BuildAdjustedImpactDesignRowsResult = {
   targetFamily: AdjustedImpactTargetFamily;
   rows: AdjustedImpactDesignRow[];
   skippedRows: AdjustedImpactSkippedRow[];
+  emptyNetTreatment: AdjustedImpactEmptyNetTreatmentStatus;
 };
 
 export type AdjustedImpactFitOptions = {
@@ -233,6 +278,7 @@ function buildContextFeatures(row: AdjustedImpactDesignRow): Map<string, number>
       ? row.owner_rest_days - row.opponent_rest_days
       : null
   );
+  addContextFeature(features, "empty_net_target", row.empty_net_indicator ?? null);
   addCategoricalContextFeature(features, "strength_state", row.strength_state);
   addCategoricalContextFeature(features, "strength_exact", row.strength_exact);
   addCategoricalContextFeature(features, "owner_score_diff_bucket", row.owner_score_diff_bucket);
@@ -311,8 +357,10 @@ export function buildAdjustedImpactDesignRows(args: {
   shots: AdjustedImpactShotRow[];
   stintsByGameId: ReadonlyMap<number, NhlShiftStint[]>;
   goaliePlayerIds?: ReadonlySet<number>;
+  emptyNetTreatment?: AdjustedImpactEmptyNetTreatment;
 }): BuildAdjustedImpactDesignRowsResult {
   const goaliePlayerIds = args.goaliePlayerIds ?? new Set<number>();
+  const treatment = args.emptyNetTreatment ?? ADJUSTED_IMPACT_DEFAULT_EMPTY_NET_TREATMENT;
   const rows: AdjustedImpactDesignRow[] = [];
   const skippedRows: AdjustedImpactSkippedRow[] = [];
 
@@ -331,6 +379,17 @@ export function buildAdjustedImpactDesignRows(args: {
         eventId: shot.event_id,
         reason: "missing_required_event_context",
       });
+      continue;
+    }
+
+    const emptyNetKnown = shot.is_empty_net_event != null;
+    const emptyNetTarget = emptyNetKnown ? shot.is_empty_net_event === true && shot.goalie_in_net_id == null : null;
+    if (treatment !== "included_with_strength_covariate" && emptyNetTarget == null) {
+      skippedRows.push({ gameId: shot.game_id, eventId: shot.event_id, reason: "empty_net_status_unknown" });
+      continue;
+    }
+    if (treatment === "excluded" && emptyNetTarget === true) {
+      skippedRows.push({ gameId: shot.game_id, eventId: shot.event_id, reason: "empty_net_target_excluded" });
       continue;
     }
 
@@ -403,6 +462,8 @@ export function buildAdjustedImpactDesignRows(args: {
       shot_zone_code: shot.shot_zone_code ?? null,
       owner_rest_days: shot.owner_rest_days ?? null,
       opponent_rest_days: shot.opponent_rest_days ?? null,
+      empty_net_target: emptyNetTarget,
+      empty_net_indicator: treatment === "explicit_indicator" ? (emptyNetTarget ? 1 : 0) : null,
       player_coefficients: [
         ...forPlayers.map((playerId) => ({
           player_id: playerId,
@@ -424,6 +485,7 @@ export function buildAdjustedImpactDesignRows(args: {
     targetFamily: ADJUSTED_IMPACT_TARGET_FAMILY,
     rows,
     skippedRows,
+    emptyNetTreatment: adjustedImpactEmptyNetTreatmentStatus(treatment),
   };
 }
 
@@ -685,5 +747,143 @@ export function validateAdjustedImpactLeakage(args: {
       min_game_date: dates[0] ?? null,
       max_game_date: dates[dates.length - 1] ?? null,
     },
+  };
+}
+
+export type AdjustedImpactEmptyNetComparisonReport = {
+  decision: 100;
+  target_family: AdjustedImpactTargetFamily;
+  split: {
+    strategy: "chronological_game_date";
+    validation_start_game_date: string | null;
+    training_rows: Record<"excluded" | "explicit_indicator", number>;
+  };
+  /** Both treatments scored on the same held-out shots that are not at an empty net. */
+  common_non_empty_net_validation: {
+    rows: number;
+    mse: Record<"excluded" | "explicit_indicator", number | null>;
+    training_mean_baseline_mse: number | null;
+  };
+  /** Held-out shots at an empty net: only the explicit model scores them. */
+  empty_net_validation: { rows: number; explicit_indicator_mse: number | null };
+  player_coefficients: {
+    shared_players: number;
+    pearson_correlation: number | null;
+    mean_absolute_difference: number | null;
+  };
+  skipped: Record<"excluded" | "explicit_indicator", number>;
+  /** The comparison reports evidence; choosing a definition is the owner's step. */
+  chosen_treatment: null;
+};
+
+function pearson(left: number[], right: number[]): number | null {
+  if (left.length < 2) return null;
+  const meanLeft = left.reduce((sum, value) => sum + value, 0) / left.length;
+  const meanRight = right.reduce((sum, value) => sum + value, 0) / right.length;
+  let covariance = 0;
+  let varianceLeft = 0;
+  let varianceRight = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    covariance += (left[index]! - meanLeft) * (right[index]! - meanRight);
+    varianceLeft += (left[index]! - meanLeft) ** 2;
+    varianceRight += (right[index]! - meanRight) ** 2;
+  }
+  return varianceLeft > 0 && varianceRight > 0 ? covariance / Math.sqrt(varianceLeft * varianceRight) : null;
+}
+
+/**
+ * Decision 100 held-out comparison: a model that excludes shots at an empty
+ * net vs one that keeps them with an explicit indicator, trained on the same
+ * chronological training dates and scored on the same held-out non-empty-net
+ * shots (the common target), with the explicit model's empty-net error and
+ * the agreement of player coefficients reported beside it. Pure: the caller
+ * supplies the frozen inputs.
+ */
+export function compareAdjustedImpactEmptyNetTreatments(args: {
+  shots: AdjustedImpactShotRow[];
+  stintsByGameId: ReadonlyMap<number, NhlShiftStint[]>;
+  goaliePlayerIds?: ReadonlySet<number>;
+  options?: AdjustedImpactHeldOutValidationOptions;
+}): AdjustedImpactEmptyNetComparisonReport {
+  const options = args.options ?? {};
+  const build = (emptyNetTreatment: "excluded" | "explicit_indicator") =>
+    buildAdjustedImpactDesignRows({
+      shots: args.shots,
+      stintsByGameId: args.stintsByGameId,
+      goaliePlayerIds: args.goaliePlayerIds,
+      emptyNetTreatment,
+    });
+  const excluded = build("excluded");
+  const explicit = build("explicit_indicator");
+
+  const validationFraction = Math.min(Math.max(options.validationFraction ?? DEFAULT_VALIDATION_FRACTION, 0.05), 0.5);
+  const uniqueDates = Array.from(
+    new Set(datedRows(explicit.rows).map((row) => row.game_date!))
+  ).sort();
+  const validationDateCount = Math.max(1, Math.ceil(uniqueDates.length * validationFraction));
+  const validationStartDate =
+    uniqueDates.length >= 2 ? uniqueDates[Math.max(1, uniqueDates.length - validationDateCount)]! : null;
+  const before = (rows: AdjustedImpactDesignRow[]) =>
+    validationStartDate ? datedRows(rows).filter((row) => row.game_date! < validationStartDate) : [];
+  const from = (rows: AdjustedImpactDesignRow[]) =>
+    validationStartDate ? datedRows(rows).filter((row) => row.game_date! >= validationStartDate) : [];
+
+  const excludedTraining = before(excluded.rows);
+  const explicitTraining = before(explicit.rows);
+  const commonValidation = from(explicit.rows).filter((row) => row.empty_net_target === false);
+  const emptyNetValidation = from(explicit.rows).filter((row) => row.empty_net_target === true);
+  // Score the excluded model on identical rows, without the indicator.
+  const commonValidationForExcluded = commonValidation.map((row) => ({ ...row, empty_net_indicator: null }));
+
+  let excludedMse: number | null = null;
+  let explicitMse: number | null = null;
+  let baselineMse: number | null = null;
+  let explicitEnMse: number | null = null;
+  let correlation: number | null = null;
+  let meanAbsDiff: number | null = null;
+  let sharedPlayers = 0;
+  if (excludedTraining.length > 0 && explicitTraining.length > 0 && commonValidation.length > 0) {
+    const excludedModel = fitAdjustedImpactBaseline(excludedTraining, options);
+    const explicitModel = fitAdjustedImpactBaseline(explicitTraining, options);
+    excludedMse = roundMetric(meanSquaredError(commonValidationForExcluded, (row) => baselineModelPrediction(row, excludedModel)));
+    explicitMse = roundMetric(meanSquaredError(commonValidation, (row) => baselineModelPrediction(row, explicitModel)));
+    const trainingMean = responseMean(excludedTraining);
+    baselineMse = roundMetric(meanSquaredError(commonValidation, () => trainingMean));
+    if (emptyNetValidation.length > 0) {
+      explicitEnMse = roundMetric(meanSquaredError(emptyNetValidation, (row) => baselineModelPrediction(row, explicitModel)));
+    }
+    const explicitByPlayer = new Map(explicitModel.player_estimates.map((row) => [row.player_id, row.coefficient]));
+    const pairs = excludedModel.player_estimates
+      .filter((row) => explicitByPlayer.has(row.player_id))
+      .sort((left, right) => left.player_id - right.player_id)
+      .map((row) => [row.coefficient, explicitByPlayer.get(row.player_id)!] as const);
+    sharedPlayers = pairs.length;
+    correlation = pearson(pairs.map((pair) => pair[0]), pairs.map((pair) => pair[1]));
+    meanAbsDiff = pairs.length
+      ? roundMetric(pairs.reduce((sum, pair) => sum + Math.abs(pair[0] - pair[1]), 0) / pairs.length)
+      : null;
+  }
+
+  return {
+    decision: 100,
+    target_family: ADJUSTED_IMPACT_TARGET_FAMILY,
+    split: {
+      strategy: "chronological_game_date",
+      validation_start_game_date: validationStartDate,
+      training_rows: { excluded: excludedTraining.length, explicit_indicator: explicitTraining.length },
+    },
+    common_non_empty_net_validation: {
+      rows: commonValidation.length,
+      mse: { excluded: excludedMse, explicit_indicator: explicitMse },
+      training_mean_baseline_mse: baselineMse,
+    },
+    empty_net_validation: { rows: emptyNetValidation.length, explicit_indicator_mse: explicitEnMse },
+    player_coefficients: {
+      shared_players: sharedPlayers,
+      pearson_correlation: correlation == null ? null : roundMetric(correlation),
+      mean_absolute_difference: meanAbsDiff,
+    },
+    skipped: { excluded: excluded.skippedRows.length, explicit_indicator: explicit.skippedRows.length },
+    chosen_treatment: null,
   };
 }

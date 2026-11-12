@@ -1,0 +1,283 @@
+{
+  "pace": {
+    "neutral": {
+      "GAMES_PLAYED": 1,
+      "GAMES_STARTED": 1,
+      "TOTAL_TOI": 3600,
+      "SHOTS_AGAINST_GOALIE": 30,
+      "GOALS_AGAINST_GOALIE": 3,
+      "WINS_GOALIE": 0.5,
+      "LOSSES_GOALIE": 0.3,
+      "OTL_GOALIE": 0.2,
+      "SHUTOUTS_GOALIE": 0.05,
+      "QUALITY_STARTS_GOALIE": 0.6,
+      "SAVES_GOALIE": 27,
+      "SAVE_PERCENTAGE": 0.9,
+      "GOALS_AGAINST_AVERAGE": 3,
+      "RELIEF_APPEARANCES_GOALIE": 0,
+      "START_PERCENTAGE_GOALIE": 1,
+      "WIN_PERCENTAGE_GOALIE": 0.5
+    },
+    "paced": {
+      "GAMES_PLAYED": 1,
+      "GAMES_STARTED": 1,
+      "TOTAL_TOI": 3600,
+      "SHOTS_AGAINST_GOALIE": 36,
+      "GOALS_AGAINST_GOALIE": 3.6,
+      "WINS_GOALIE": 0.6,
+      "LOSSES_GOALIE": 0.36,
+      "OTL_GOALIE": 0.24,
+      "SHUTOUTS_GOALIE": 0.06,
+      "QUALITY_STARTS_GOALIE": 0.72,
+      "SAVES_GOALIE": 32.4,
+      "SAVE_PERCENTAGE": 0.9,
+      "GOALS_AGAINST_AVERAGE": 3.6,
+      "RELIEF_APPEARANCES_GOALIE": 0,
+      "START_PERCENTAGE_GOALIE": 1,
+      "WIN_PERCENTAGE_GOALIE": 0.6
+    },
+    "gameWinMass": 1.2
+  },
+  "pythonParity": {
+    "cases": 2,
+    "fields": [
+      "conditionalMeans",
+      "unconditionalMeans",
+      "baselineUnconditionalMeans",
+      "variances",
+      "quantiles"
+    ],
+    "equal": true
+  },
+  "missing": {
+    "declaredButAbsent": 0,
+    "fantasyTotal": 3,
+    "advancedRate": 0,
+    "fallbackFlags": []
+  },
+  "varianceFallback": {
+    "mean": 1.2,
+    "missingVariance": 1.44,
+    "explicitPoissonVariance": 1.2,
+    "pythonMissingVariance": 1.44
+  },
+  "sumBands": {
+    "perGame": [
+      296.1553453035,
+      300,
+      303.8446546965
+    ],
+    "v5Aggregate": [
+      297.6554757466,
+      300.1277165224,
+      303.306453404
+    ],
+    "incremental": [
+      296.5809152949,
+      300.1092361858,
+      304.158471324
+    ],
+    "publishedNoOverrides": [
+      296.5809152949,
+      300.1092361858,
+      304.158471324
+    ],
+    "adjusted": false,
+    "unclampedAnalyticWidthRatioIndependent": 1.7320508075688772,
+    "unclampedAnalyticWidthRatioLoading065": 1.2751534261266766
+  },
+  "saveBands": {
+    "saves": [
+      87.436896869,
+      92.563103131
+    ],
+    "width": 5.126206262000011
+  },
+  "settlement": {
+    "poisson": {
+      "zero": {
+        "score": 88.92628286514794,
+        "mae": 0.19999999999999998,
+        "mse": 0.24000000000000002
+      },
+      "mean": {
+        "score": 47.95124827025538,
+        "mae": 0.3274923012311928,
+        "mse": 0.20000000000000007
+      }
+    },
+    "nullInterval": {
+      "actual": 0,
+      "forecast": 0,
+      "absoluteError": 0,
+      "squaredError": 0,
+      "baselineForecast": 0,
+      "baselineAbsoluteError": 0,
+      "baselineSquaredError": 0,
+      "skillIndex": 50,
+      "interval80Covered": true,
+      "intervalWidth": 0
+    },
+    "omittedInterval": {
+      "actual": 0,
+      "forecast": 0,
+      "absoluteError": 0,
+      "squaredError": 0,
+      "baselineForecast": 0,
+      "baselineAbsoluteError": 0,
+      "baselineSquaredError": 0,
+      "skillIndex": 50
+    },
+    "invalidProbability": {
+      "actual": 1,
+      "forecast": 1.2,
+      "absoluteError": 0.19999999999999996,
+      "squaredError": 0.03999999999999998,
+      "baselineForecast": 0.9,
+      "baselineAbsoluteError": 0.09999999999999998,
+      "baselineSquaredError": 0.009999999999999995,
+      "skillIndex": 0,
+      "brier": 0.03999999999999998,
+      "logLoss": 9.992007221626415e-16,
+      "baselineBrier": 0.009999999999999995,
+      "baselineLogLoss": 0.10536051565782628
+    },
+    "zeroBase82GamesDelta1": 1.3666666666666667,
+    "currentView": {
+      "actualToDate": 10,
+      "remainingModel": 10,
+      "publishedDelta": 4,
+      "allocatedDelta": 1.9999999999999996
+    }
+  },
+  "ev": {
+    "completeEV": 9,
+    "reducedSchemaEV": 10,
+    "storedEVVariance": 25,
+    "servedEVBand": [
+      8.4245855422,
+      9.0123113268
+    ]
+  },
+  "newcomer": {
+    "sh": 0,
+    "cohortMean": 0.012,
+    "missing": 0,
+    "role": {
+      "confidence": 0,
+      "expectedEvToi": 0,
+      "expectedPpToi": 0,
+      "expectedPkToi": 0,
+      "expectedTotalToi": 900,
+      "sourceManifest": [
+        "runtime_population_prior_pending_artifact_freeze"
+      ],
+      "mostLikelyRole": {
+        "forwardLine": 4,
+        "powerPlayUnit": null,
+        "penaltyKillUnit": null
+      },
+      "roleProbabilities": {
+        "forwardLine": {
+          "F4": 0.65,
+          "other": 0.35
+        },
+        "powerPlayUnit": {
+          "none": 1
+        },
+        "penaltyKillUnit": {
+          "none": 1
+        }
+      }
+    },
+    "flags": [
+      "prior_based_projection",
+      "runtime_new_identity_population_prior",
+      "rookie_nhle_pending_next_artifact_freeze"
+    ]
+  },
+  "deployment": {
+    "forwardLines": [
+      [
+        1,
+        2
+      ],
+      [],
+      [],
+      []
+    ],
+    "defensePairs": [
+      [
+        3
+      ],
+      [],
+      []
+    ],
+    "powerPlayUnits": [
+      [
+        1,
+        2,
+        3
+      ],
+      []
+    ],
+    "penaltyKillUnits": [
+      [
+        1,
+        2,
+        3
+      ],
+      []
+    ],
+    "goalieOrder": []
+  },
+  "advancedAssistParity": {
+    "baseMean": 0.32,
+    "baseVariance": 0.3456,
+    "baseBand": [
+      0,
+      1.0733953795
+    ],
+    "typescriptVariance": 0.3456,
+    "pythonVariance": 0.1753829136,
+    "typescriptBand": [
+      0,
+      1.0733953795
+    ],
+    "pythonBand": [
+      0,
+      1.0733953795
+    ]
+  },
+  "missingTransport": {
+    "explicitNull": {
+      "GOALS": 1,
+      "TAKEAWAYS": 0
+    },
+    "summaryRoundTrip": {
+      "GOALS": 1,
+      "TAKEAWAYS": 0,
+      "FACEOFFS_WON": 0
+    },
+    "v3IncludesFaceoffs": true,
+    "v3IncludesTakeaways": false
+  },
+  "sourceHashes": {
+    "web/lib/fantasy-projections/evaluator.ts": "d846a7f15eb23db12f78c3bd2e873514e819e34b8d6025be918ce97b9631b7e2",
+    "web/lib/fantasy-projections/contracts.ts": "a3a7535eacfad59aa8ac2b2a802aaa270a0734f2a40c66c02e2fd76dc772b58b",
+    "web/lib/fantasy-projections/settlement.ts": "9ef0032247f05ad548773539a949a9335c2eef7562b511348f08d062161677be",
+    "web/lib/fantasy-projections/seasonJobs.ts": "0df207df4d2de1d5645cfcc765d57d0972192371ccaf31b1d6c31afb6954825d",
+    "web/lib/fantasy-projections/admin.ts": "3b76bdc2768f011a1b61932f50d625c14d5b5cb837a64418c95d8d17abefbbca",
+    "web/lib/fantasy-projections/queries.ts": "421066b2df883a7d87cfbf81ccb5a26cda58ff52693ec9f89298e5630d445cfe",
+    "web/scripts/import-player-forecast-season-settlement.ts": "8884a4dfb9a979d80686ea5b20b6a7e893f9e52c43cf1120b3a99519770eff8c",
+    "modeling/player_forecasts/season.py": "0557c582ee69d27ef88685e72b84877b660a33f4fa3b84a7161eec78c96169e2",
+    "modeling/player_forecasts/advanced.py": "da2f2d161afa96c8ea251ed6d9abf5b564b0391edb6d2589d61d2bd1c6f4e6cb"
+  },
+  "verification": {
+    "date": "2026-11-11",
+    "syntheticOnly": true,
+    "productionRequests": 0,
+    "serviceImports": 0,
+    "assertions": "passed"
+  }
+}

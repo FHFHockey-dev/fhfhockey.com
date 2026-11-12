@@ -25,12 +25,19 @@ import {
 } from "lib/dashboard/forgeLinks";
 import {
   describeLockedBaselines,
+  formatRollingMetricValue,
   PLAYER_QUICK_VIEWS,
   isLockedPlayerBaselineMode,
   isPlayerQuickViewId,
+  summarizeTrendStreak,
   type LockedPlayerBaselineMode,
   type PlayerQuickViewId
 } from "lib/trends/trendsSurface";
+import {
+  poolCalendarWindow,
+  readWindowCountSupportGame,
+  type RollingWindowCountSupport
+} from "lib/rollingPlayerWindowCountSupport";
 import supabase from "lib/supabase";
 import {
   mergeRollingSupportPayloadFields,
@@ -497,12 +504,20 @@ const SELECT_CLAUSE = buildSelectClause();
 
 // The rolling writer moves historical windows (`*_avg_*`, `*_last3`, `*_all`,
 // `*_3ya`, `*_career`) out of the wide row into this sidecar payload.
+// `windowCountGame` holds each game's own components (window-counts-v1), which
+// the calendar quick views pool by date.
 const SUPPORT_SELECT_CLAUSE =
-  "game_date, historicalCompatibility:support_payload->historicalCompatibility";
+  "game_date, historicalCompatibility:support_payload->historicalCompatibility, windowCountSupport:support_payload->windowCountSupport";
 
 type RollingSupportRow = {
   game_date: string;
   historicalCompatibility: Record<string, RollingPlayerSupportScalar> | null;
+  windowCountSupport: unknown;
+};
+
+type CalendarGameRow = {
+  gameDate: string;
+  game: RollingWindowCountSupport["game"] | null;
 };
 
 function getTodayEt(): string {
@@ -520,76 +535,8 @@ function getTodayEt(): string {
   return `${y}-${m}-${d}`;
 }
 
-function resolveRawMetricValue(
-  row: RollingMetricRow,
-  metric: MetricConfig
-): number | null {
-  const rawValue = row[metric.key];
-  if (rawValue === null || rawValue === undefined) return null;
-  const numericValue = Number(rawValue);
-  return Number.isFinite(numericValue) ? numericValue : null;
-}
-
-function averageMetricByRecentDays(
-  rows: RollingMetricRow[],
-  metric: MetricConfig,
-  days: number
-): { value: number | null; games: number } {
-  if (!rows.length) {
-    return { value: null, games: 0 };
-  }
-
-  const latestGameDate = rows[rows.length - 1]?.game_date;
-  if (!latestGameDate) {
-    return { value: null, games: 0 };
-  }
-
-  const latestTs = Date.parse(`${latestGameDate}T12:00:00.000Z`);
-  if (!Number.isFinite(latestTs)) {
-    return { value: null, games: 0 };
-  }
-
-  const cutoffTs = latestTs - (days - 1) * 86_400_000;
-  const values = rows
-    .filter((row) => {
-      const gameTs = Date.parse(`${row.game_date}T12:00:00.000Z`);
-      return Number.isFinite(gameTs) && gameTs >= cutoffTs && gameTs <= latestTs;
-    })
-    .map((row) => resolveRawMetricValue(row, metric))
-    .filter((value): value is number => typeof value === "number");
-
-  if (!values.length) {
-    return { value: null, games: 0 };
-  }
-
-  return {
-    value: values.reduce((sum, value) => sum + value, 0) / values.length,
-    games: values.length
-  };
-}
-
 function formatMetricDisplay(metric: MetricConfig, value: number | null): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return "—";
-  }
-
-  if (metric.key === "toi_seconds") {
-    const totalSeconds = Math.max(0, Math.round(value));
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${String(seconds).padStart(2, "0")}`;
-  }
-
-  if (
-    metric.key.endsWith("_pct") ||
-    metric.key === "ipp" ||
-    metric.key === "pdo" ||
-    metric.key === "pp_share_pct"
-  ) {
-    return `${value.toFixed(1)}%`;
-  }
-
-  return value.toFixed(2);
+  return formatRollingMetricValue(metric.key, value);
 }
 
 export default function PlayerTrendPage() {
@@ -604,6 +551,7 @@ export default function PlayerTrendPage() {
 
   const [playerName, setPlayerName] = useState<string>("");
   const [data, setData] = useState<RollingMetricRow[]>([]);
+  const [calendarRows, setCalendarRows] = useState<CalendarGameRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [selectedMetrics, setSelectedMetrics] = useState<MetricKey[]>(
@@ -805,6 +753,18 @@ export default function PlayerTrendPage() {
           supportRows.map((row) => [row.game_date, row.historicalCompatibility])
         );
         setPlayerName(playerRow?.fullName ?? `Player #${idNumber}`);
+        const windowCountsByDate = new Map(
+          supportRows.map((row) => [
+            row.game_date,
+            readWindowCountSupportGame(row.windowCountSupport)
+          ])
+        );
+        setCalendarRows(
+          metricRows.map((row) => ({
+            gameDate: row.game_date,
+            game: windowCountsByDate.get(row.game_date) ?? null
+          }))
+        );
         setData(
           metricRows.map((row) =>
             mergeRollingSupportPayloadFields(row, {
@@ -890,21 +850,7 @@ export default function PlayerTrendPage() {
         }
 
         const latestDelta = deltas[deltas.length - 1] ?? 0;
-        const direction =
-          latestDelta >= 8 ? "hot" : latestDelta <= -8 ? "cold" : "steady";
-        let games = 0;
-
-        if (direction === "hot") {
-          for (let index = deltas.length - 1; index >= 0; index -= 1) {
-            if ((deltas[index] ?? 0) < 0) break;
-            games += 1;
-          }
-        } else if (direction === "cold") {
-          for (let index = deltas.length - 1; index >= 0; index -= 1) {
-            if ((deltas[index] ?? 0) > 0) break;
-            games += 1;
-          }
-        }
+        const { direction, games } = summarizeTrendStreak(deltas);
 
         const averageDelta =
           deltas.reduce((sum, value) => sum + value, 0) / deltas.length;
@@ -936,9 +882,21 @@ export default function PlayerTrendPage() {
         sampleLabel = "Rolling 10 GP";
       } else {
         const days = quickViewMode === "l7" ? 7 : quickViewMode === "l14" ? 14 : 30;
-        const summary = averageMetricByRecentDays(data, metric, days);
-        recentValue = summary.value;
-        sampleLabel = `${quickViewMode.toUpperCase()} · ${summary.games} GP`;
+        // Decision 18: calendar days ending today (ET), not the last game.
+        const summary = poolCalendarWindow(calendarRows, metric.key, {
+          todayIso: todayEt,
+          days
+        });
+        const viewLabel = quickViewMode.toUpperCase();
+        // Rows written before window counts existed can't be pooled, so the
+        // window is unknown rather than a silent subset.
+        recentValue = summary.unsupportedRows > 0 ? null : summary.value;
+        sampleLabel =
+          summary.unsupportedRows > 0
+            ? `${viewLabel} · counts not stored for ${summary.unsupportedRows} GP`
+            : summary.observations < summary.games
+              ? `${viewLabel} · ${summary.observations} of ${summary.games} GP with data`
+              : `${viewLabel} · ${summary.games} GP`;
       }
 
       const baselineValue = latestRow
@@ -961,7 +919,7 @@ export default function PlayerTrendPage() {
         sampleLabel
       } satisfies QuickComparisonCard;
     });
-  }, [baselineMode, chartDatasets, data, quickViewMode]);
+  }, [baselineMode, calendarRows, chartDatasets, data, quickViewMode, todayEt]);
 
   const handleMetricToggle = (metricKey: MetricKey) => {
     setSelectedMetrics((prev) =>

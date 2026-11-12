@@ -352,3 +352,155 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
 // Helper function to get a stat definition by its key
 export const getStatDefinition = (key: string): StatDefinition | undefined =>
   STATS_MASTER_LIST.find((stat) => stat.key === key);
+
+// ---------------------------------------------------------------------------
+// Category stat registry (owner decision 55; audit BC W1-12 D6).
+// One place for a category's role, default direction and counting/ratio type.
+// Every category reader (category value, standings, Draft Pro reports and
+// scenarios, RSO, social) takes role and direction from here. A league's own
+// direction (Yahoo `sort_order`, ESPN reverse flag) is passed as an override;
+// it is never inferred from a key list elsewhere.
+// ---------------------------------------------------------------------------
+
+export type StatRole = "skater" | "goalie" | "shared";
+export type StatDirection = "higher" | "lower";
+
+/**
+ * A ratio category's components. `numerator` and `denominator` are counting
+ * keys; the rate is `scale × Σnumerator ÷ Σdenominator`. A denominator listed
+ * as several keys is their sum (faceoff attempts = won + lost). Units:
+ * SV%, SH% and FO% are fractions (0–1); GAA is per 60 minutes with TOTAL_TOI
+ * in seconds; TIME_ON_ICE_PER_GAME uses TOTAL_TOI seconds per game played.
+ */
+export interface RatioComponents {
+  numerator: string;
+  denominator: readonly string[];
+  scale: number;
+  /** True when a supplied rate value may be used with one known component. */
+  rateUnitsDeclared: boolean;
+}
+
+export interface CategoryRegistryEntry {
+  key: string;
+  role: StatRole;
+  direction: StatDirection;
+  aggregation: "count" | "ratio";
+  ratio?: RatioComponents;
+}
+
+const RATIO_COMPONENTS: Record<string, RatioComponents> = {
+  SAVE_PERCENTAGE: {
+    numerator: "SAVES_GOALIE",
+    denominator: ["SHOTS_AGAINST_GOALIE"],
+    scale: 1,
+    rateUnitsDeclared: true,
+  },
+  GOALS_AGAINST_AVERAGE: {
+    numerator: "GOALS_AGAINST_GOALIE",
+    denominator: ["TOTAL_TOI"],
+    scale: 3600,
+    rateUnitsDeclared: true,
+  },
+  SHOOTING_PERCENTAGE: {
+    numerator: "GOALS",
+    denominator: ["SHOTS_ON_GOAL"],
+    scale: 1,
+    rateUnitsDeclared: false,
+  },
+  FACEOFF_PERCENTAGE: {
+    numerator: "FACEOFFS_WON",
+    denominator: ["FACEOFFS_WON", "FACEOFFS_LOST"],
+    scale: 1,
+    rateUnitsDeclared: false,
+  },
+  TIME_ON_ICE_PER_GAME: {
+    numerator: "TOTAL_TOI",
+    denominator: ["GAMES_PLAYED"],
+    scale: 1,
+    rateUnitsDeclared: false,
+  },
+};
+
+/** Keys used by readers that are not display columns in STATS_MASTER_LIST. */
+const EXTRA_REGISTRY_ENTRIES: CategoryRegistryEntry[] = [
+  { key: "TOTAL_TOI", role: "shared", direction: "higher", aggregation: "count" },
+];
+
+/** Alternative spellings readers and provider maps use for the same stat. */
+const REGISTRY_ALIASES: Record<string, string> = {
+  GAMES_STARTED: "GAMES_STARTED_GOALIE",
+  TOI_PER_GAME: "TIME_ON_ICE_PER_GAME",
+};
+
+const CATEGORY_REGISTRY: ReadonlyMap<string, CategoryRegistryEntry> = new Map(
+  [
+    ...STATS_MASTER_LIST.map((stat): CategoryRegistryEntry => {
+      const ratio = RATIO_COMPONENTS[stat.key];
+      return {
+        key: stat.key,
+        role:
+          stat.isGoalieStat && stat.isSkaterStat
+            ? "shared"
+            : stat.isGoalieStat
+              ? "goalie"
+              : "skater",
+        direction: stat.higherIsBetter ? "higher" : "lower",
+        aggregation: ratio ? "ratio" : "count",
+        ...(ratio ? { ratio } : {}),
+      };
+    }),
+    ...EXTRA_REGISTRY_ENTRIES,
+  ].map((entry) => [entry.key, entry]),
+);
+
+export function canonicalStatKey(key: string): string {
+  return REGISTRY_ALIASES[key] ?? key;
+}
+
+/** Registry entry for a category key (aliases resolved), or null if unknown. */
+export function getCategoryRegistryEntry(
+  key: string,
+): CategoryRegistryEntry | null {
+  const canonical = canonicalStatKey(key);
+  const entry = CATEGORY_REGISTRY.get(canonical);
+  if (entry) return entry;
+  // Provider keys with the goalie suffix are goalie counting stats.
+  if (canonical.endsWith("_GOALIE")) {
+    return { key: canonical, role: "goalie", direction: "higher", aggregation: "count" };
+  }
+  return null;
+}
+
+export function statAppliesToRole(key: string, role: "skater" | "goalie") {
+  const entry = getCategoryRegistryEntry(key);
+  // Unknown keys are treated as skater categories (the provider maps only
+  // emit goalie keys with the _GOALIE suffix or a registry entry).
+  const statRole = entry?.role ?? "skater";
+  return statRole === "shared" || statRole === role;
+}
+
+/**
+ * Effective direction of a category in one league. `overrides` carries the
+ * league's own provider direction (decision 55); a legacy negative category
+ * weight (written by older provider adapters) reverses the default. The
+ * weight's magnitude is importance only.
+ */
+export function resolveStatDirection(
+  key: string,
+  options: { overrides?: Readonly<Record<string, StatDirection>>; weight?: number } = {},
+): StatDirection {
+  const override = options.overrides?.[key] ?? options.overrides?.[canonicalStatKey(key)];
+  if (override === "higher" || override === "lower") return override;
+  const base = getCategoryRegistryEntry(key)?.direction ?? "higher";
+  if (typeof options.weight === "number" && options.weight < 0) {
+    return base === "higher" ? "lower" : "higher";
+  }
+  return base;
+}
+
+export function isLowerBetterStat(
+  key: string,
+  options?: { overrides?: Readonly<Record<string, StatDirection>>; weight?: number },
+) {
+  return resolveStatDirection(key, options) === "lower";
+}

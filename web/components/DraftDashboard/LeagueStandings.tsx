@@ -34,7 +34,6 @@ export default function LeagueStandings({
   categories,
   leagueType,
   myTeamId,
-  vorpMetrics,
   onUpdateTeamName,
   canEdit,
   isLoading,
@@ -55,33 +54,25 @@ export default function LeagueStandings({
       new Set(teams.map((team) => team.categoryTotals[key] ?? null)).size <= 1)),
     [teams, categories],
   );
+  // Standing value: projected points (points leagues) or projected category
+  // standings points from starting slots (category leagues, decision 114).
+  // Unknown stays null and sorts last; it is never a mean of player scores.
   const values = useMemo(
     () =>
       Object.fromEntries(
-        teams.map((team) => {
-          if (leagueType === "points")
-            return [team.teamId, team.projectedPoints];
-          const scores = [
-            ...Object.values(team.rosterSlots).flat(),
-            ...team.bench,
-          ]
-            .map((player) => vorpMetrics.get(player.playerId)?.value)
-            .filter(
-              (value): value is number =>
-                typeof value === "number" && Number.isFinite(value),
-            );
-          return [
-            team.teamId,
-            scores.length
-              ? scores.reduce((sum, score) => sum + score, 0) / scores.length
-              : 0,
-          ];
-        }),
-      ),
-    [teams, leagueType, vorpMetrics],
+        teams.map((team) => [
+          team.teamId,
+          leagueType === "points"
+            ? (team.unknownProjectionCount ?? 0) > 0
+              ? null
+              : team.projectedPoints
+            : (team.categoryStandingsPoints ?? null),
+        ]),
+      ) as Record<string, number | null>,
+    [teams, leagueType],
   );
   const standingOrder = [...teams].sort(
-    (a, b) => values[b.teamId] - values[a.teamId],
+    (a, b) => (values[b.teamId] ?? Number.NEGATIVE_INFINITY) - (values[a.teamId] ?? Number.NEGATIVE_INFINITY),
   );
   const sorted = [...teams].sort((a, b) => {
     const value = (team: TeamDraftStats) =>
@@ -114,7 +105,7 @@ export default function LeagueStandings({
             onChange={(event) => { setView(event.target.value); setSort({ key: event.target.value, ascending: false }); }}
           >
             <option value="value">
-              {leagueType === "categories" ? "Score" : "Projected points"}
+              {leagueType === "categories" ? "Projected category standings (starting slots)" : "Projected points"}
             </option>
             <option value="vorp">Team VORP</option>
           </select>
@@ -175,7 +166,7 @@ export default function LeagueStandings({
                 }
               >
                 <button type="button" onClick={() => changeSort("value")}>
-                  {leagueType === "categories" ? "Score" : "Proj FP"}
+                  {leagueType === "categories" ? "Cat pts" : "Proj FP"}
                 </button>
               </th>
             </tr>
@@ -240,7 +231,7 @@ export default function LeagueStandings({
                   );
                 })}
                 <td>{(team.teamVorp ?? 0).toFixed(1)}</td>
-                <td>{values[team.teamId].toFixed(1)}</td>
+                <td>{values[team.teamId] == null ? "—" : (values[team.teamId] as number).toFixed(1)}</td>
               </tr>
             ))}
           </tbody>

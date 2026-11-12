@@ -11,6 +11,7 @@ import {
 import type { CommandCenterData } from "lib/dashboard/commandCenterData";
 import {
   rankTopAddsCandidates,
+  toTopAddsProjection,
   type TopAddsCandidateInput,
   type TopAddsMode
 } from "lib/dashboard/topAddsRanking";
@@ -29,11 +30,13 @@ type ProjectionRow = {
   player_name: string | null;
   team_name: string | null;
   position: string | null;
-  pts: number;
-  ppp: number;
-  sog: number;
-  hit: number;
-  blk: number;
+  g?: number | null;
+  a?: number | null;
+  pts: number | null;
+  ppp: number | null;
+  sog: number | null;
+  hit: number | null;
+  blk: number | null;
   uncertainty?: unknown;
 };
 
@@ -106,19 +109,6 @@ function matchesPosition(position: string | null | undefined, filter: TopAddsWat
   return true;
 }
 
-function extractUncertaintyPenalty(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (!value || typeof value !== "object") return null;
-  const model = (value as Record<string, unknown>).model;
-  if (!model || typeof model !== "object") return null;
-  const skaterSelection = (model as Record<string, unknown>).skater_selection;
-  if (!skaterSelection || typeof skaterSelection !== "object") return null;
-  const roleContinuity = (skaterSelection as Record<string, unknown>).role_continuity;
-  if (!roleContinuity || typeof roleContinuity !== "object") return null;
-  const volatility = (roleContinuity as Record<string, unknown>).volatility_index;
-  return typeof volatility === "number" && Number.isFinite(volatility) ? volatility : null;
-}
-
 export default function TopAddsWatchlist({
   module,
   position,
@@ -162,12 +152,9 @@ export default function TopAddsWatchlist({
           ownership,
           ownershipTimeline: ownershipRow?.sparkline ?? [],
           delta: ownershipRow?.delta ?? 0,
-          projectionPts: row.pts ?? 0,
-          ppp: row.ppp ?? 0,
-          sog: row.sog ?? 0,
-          hit: row.hit ?? 0,
-          blk: row.blk ?? 0,
-          uncertainty: extractUncertaintyPenalty(row.uncertainty),
+          // Missing heads stay null to the score (W3-2 D3). No schedule here,
+          // so week mode is incomplete rather than a guessed game count.
+          ...toTopAddsProjection(row),
           scheduleGamesRemaining: null,
           scheduleOffNightsRemaining: null,
           scheduleLabel: null
@@ -209,9 +196,19 @@ export default function TopAddsWatchlist({
               tone={candidate.delta >= 0 ? "up" : "down"}
               label={`${candidate.name} ownership trend`}
             />
-            <strong>{formatMetric(candidate.projectionPts, 1)}</strong>
+            <strong
+              title={[
+                candidate.score.total == null
+                  ? `Expected FHFH points incomplete: missing ${candidate.score.missing.join(", ")}`
+                  : "Expected FHFH default points over the games counted",
+                candidate.score.lineLabel
+              ].filter(Boolean).join(" · ")}
+            >
+              {candidate.score.total == null ? "inc." : formatMetric(candidate.score.total, 1)}
+              {candidate.score.lineLabel ? <small> if he plays</small> : null}
+            </strong>
             <StatusChip tone={candidate.delta >= 0 ? "good" : "danger"}>
-              {formatSigned(candidate.score.total)}
+              {formatSigned(candidate.delta)}
             </StatusChip>
           </DenseListRow>
         ))}

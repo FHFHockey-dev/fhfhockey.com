@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
 import { defaultIntent, defaultWorkspace } from "./workspace";
-import { evaluatePlan, forecastPointsReader, planRoster, playerAssignedPoints } from "./planning";
+import { evaluatePlan, forecastPointsReader, noMoveDropOrder, planRoster, playerAssignedPoints } from "./planning";
+import { candidatePlanMetrics } from "./candidatePlanMetrics";
+import { comparablePointsDelta } from "./pointsComparison";
+import { lineupGapReport } from "./lineupGaps";
 import { knownDropOrder } from "./retention";
 import { reconcileIntent } from "./reconciliation";
 import { buildStreamingChains, streamingChainSteps, type StreamingPlanWithAlternatives } from "./streamingChain";
@@ -93,7 +96,7 @@ describe("streaming chain", () => {
       // NJD and PHI both cover Tue/Wed; PHI projects more.
       [WEEK[1], WEEK[2], "phi", "lak", 2],
       [WEEK[3], WEEK[4], "wpg", "phi", 2],
-      // OTT and EDM project within the near-tie band, so last-10 FPts/G orders them.
+      // EDM projects 1.52 to OTT's 1.5; last-10 FPts/G is shown but never orders them.
       [WEEK[5], WEEK[6], "edm", "wpg", 2],
     ]);
     expect(chain.legs[1].options.map(option => option.playerId).slice(0, 2)).toEqual(["phi", "njd"]);
@@ -265,14 +268,132 @@ describe("streaming chain star vs streamer", () => {
     expect(pick(starWeek(2), "agp")).toEqual(["two"]);
   });
 
-  it("ranks by the average of projected FPts and last-10 FPts/G", () => {
-    // The star's blend is (5 + 1) / 2 = 3 for one game, under the streamer's 2 + 2.
-    expect(pick(starWeek(2, 1), "outcome")).toEqual(["two"]);
-    // A hot last 10 (7 FPts/G) lifts him to 6 for one game.
-    expect(pick(starWeek(2.9, 7), "outcome")).toEqual(["star"]);
-    const plan = planRoster(week(starWeek(2, 1), { asOf: "2026-10-28T14:00:00Z", remaining: 1 }), { ...intent(), objective: "outcome" }).streaming!;
-    // Shown totals stay projected FPts; the blend is the ranking net.
-    expect(plan.chains[0]).toMatchObject({ netGames: 2, netPoints: 4, netScore: 4 });
+  it("ranks on projected FPts alone; last-10 FPts/G never moves the order (decisions 2, 48)", () => {
+    // A cold last 10 (1 FPts/G) no longer sinks the star's 5 under the streamer's 2 + 2 (the old blend gave 3).
+    expect(pick(starWeek(2, 1), "outcome")).toEqual(["star"]);
+    // A hot last 10 (7 FPts/G) no longer lifts his one game (5) over 2.9 + 2.9 (the old blend gave 6).
+    expect(pick(starWeek(2.9, 7), "outcome")).toEqual(["two"]);
+    const plan = planRoster(week(starWeek(2.9, 7), { asOf: "2026-10-28T14:00:00Z", remaining: 1 }), { ...intent(), objective: "outcome" }).streaming!;
+    // The ranking net is the projection net.
+    expect(plan.chains[0].netGames).toBe(2);
+    expect(plan.chains[0].netPoints).toBeCloseTo(5.8);
+    expect(plan.chains[0].netScore).toBeCloseTo(5.8);
+  });
+});
+
+/** Decisions 2 and 48 (W1 P0 #26): streaming ranks on qualified projections only until a shrunk, same-basis form blend is
+ * validated. Astra E1: steady projects 2/G with a 10-game form of 2; hot projects 1/G with a one-game form of 4, both on the
+ * same two dates. The raw 50/50 blend picked hot (+2 projected) over steady (+4). */
+const formWeek: Spec[] = [
+  { id: "core", team: "CORE", days: [0, 1, 2, 3, 4, 5, 6], perGame: 3, rostered: true },
+  { id: "drop", team: "IDLE", days: [], perGame: 0, rostered: true },
+  { id: "steady", team: "STD", days: [3, 4], perGame: 2, recentTotals: { games: 10, stats: { GOALS: 20 } } },
+  { id: "hot", team: "HOT", days: [3, 4], perGame: 1, recentTotals: { games: 1, stats: { GOALS: 4 } } },
+];
+/** Astra PR3: equal games, all free agents, projections 17 / 18.15 / 19.3 and forms 3 / 2 / 1. The old near-tie
+ * comparator cycled on blended 10 / 10.075 / 10.15 (A < B < C < A), so permuting identical candidate records changed the pick. */
+const cycleWeek = (order: string[]): Spec[] => {
+  const all: Record<string, Spec> = {
+    a: { id: "a", team: "TA", days: [3], perGame: 17, recentTotals: { games: 10, stats: { GOALS: 30 } } },
+    b: { id: "b", team: "TB", days: [3], perGame: 18.15, recentTotals: { games: 10, stats: { GOALS: 20 } } },
+    c: { id: "c", team: "TC", days: [3], perGame: 19.3, recentTotals: { games: 10, stats: { GOALS: 10 } } },
+  };
+  return [{ id: "core", team: "CORE", days: [0, 1, 2, 3, 4, 5, 6], perGame: 3, rostered: true },
+    { id: "drop", team: "IDLE", days: [], perGame: 0, rostered: true }, ...order.map(id => all[id])];
+};
+
+describe("streaming rank uses qualified projections only (decisions 2, 48)", () => {
+  it.each(["outcome", "agp"] as const)("picks the stronger projection over a one-game hot streak (%s)", objective => {
+    const plan = planRoster(week(formWeek, { asOf: "2026-10-28T14:00:00Z", remaining: 1 }), { ...intent(), objective }).streaming!;
+    expect(plan.chains[0].legs.map(leg => leg.playerId)).toEqual(["steady"]);
+    expect(plan.chains[0]).toMatchObject({ netGames: 2, netPoints: 4 });
+    // Recent form stays visible as context; it does not move the order.
+    expect(plan.chains[0].legs[0].options.map(option => [option.playerId, option.recentPointsPerGame])).toEqual([["steady", 2], ["hot", 4]]);
+  });
+
+  it("picks the same streamer whatever order identical candidate records arrive in", () => {
+    const orders = [["a", "b", "c"], ["b", "c", "a"], ["c", "a", "b"], ["c", "b", "a"]];
+    const picks = orders.map(order => planRoster(week(cycleWeek(order), { asOf: "2026-10-28T14:00:00Z", remaining: 1 }),
+      { ...intent(), objective: "outcome" }).streaming!.chains[0].legs.map(leg => leg.playerId));
+    expect(picks).toEqual(orders.map(() => ["c"]));
+    const options = orders.map(order => planRoster(week(cycleWeek(order), { asOf: "2026-10-28T14:00:00Z", remaining: 1 }),
+      { ...intent(), objective: "outcome" }).streaming!.chains[0].legs[0].options.map(option => option.playerId));
+    expect(options).toEqual(orders.map(() => ["c", "b", "a"]));
+  });
+});
+
+/** Decisions 3, 47, 49 (W1 P0 #27, Astra E4c): one roster player has games but no forecast. The old games-tier fallback
+ * ranked him first to drop, so streaming, the planner and Best Fit proposed dropping an unknown. The per-player evidence
+ * gate keeps him out of every drop surface, while the known players stay droppable. */
+const unknownWeek: Spec[] = [
+  { id: "core", team: "CORE", days: [0, 1, 2, 3, 4, 5, 6], perGame: 3, rostered: true },
+  { id: "low", team: "LOW", days: [1, 3], perGame: 0.2, rostered: true },
+  { id: "zero", team: "ZRO", days: [2, 4], perGame: 0, rostered: true },
+  { id: "unknown", team: "UNK", days: [0], perGame: 1, rostered: true },
+  { id: "fa", team: "FAS", days: [3, 4, 5, 6], perGame: 2 },
+];
+const withoutForecast = (snapshot: PlanningSnapshot, id: string) => ({ ...snapshot, forecasts: snapshot.forecasts.filter(row => row.playerId !== id) });
+
+describe("unknown roster players are never automatic drops (decisions 3, 47, 49)", () => {
+  const slots = { slots: { C: 2, UTIL: 1, BN: 1 }, asOf: "2026-10-26T14:00:00Z", remaining: 1 };
+  it.each(["outcome", "agp"] as const)("streams and plans without dropping the unknown player (%s)", objective => {
+    const snapshot = withoutForecast(week(unknownWeek, slots), "unknown");
+    const plan = planRoster(snapshot, { ...intent(), objective });
+    const drops = (steps: PlanStep[]) => steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []);
+    const streaming = plan.streaming as StreamingPlanWithAlternatives;
+    expect(streaming.chains.length).toBeGreaterThan(0);
+    expect([...streaming.chains, ...streaming.alternatives ?? []].flatMap(chain => drops(chain.steps))).not.toContain("unknown");
+    expect([plan.selected, ...plan.alternatives].flatMap(evaluation => drops(evaluation.steps))).not.toContain("unknown");
+    // The known players stay ranked; the unknown one is in no tier.
+    const order = noMoveDropOrder(snapshot, intent());
+    expect(order.has("unknown")).toBe(false);
+    expect([...order.keys()]).toEqual(expect.arrayContaining(["low", "zero", "core"]));
+  });
+  it("Best Fit and the DROP chip never suggest the unknown player", () => {
+    const snapshot = withoutForecast(week(unknownWeek, slots), "unknown");
+    const metrics = candidatePlanMetrics(snapshot, intent());
+    expect(metrics.candidates.flatMap(row => row.plans).flatMap(plan => plan.steps).some(step => step.dropPlayerId === "unknown")).toBe(false);
+    const report = lineupGapReport(snapshot, intent(), evaluatePlan(snapshot, intent(), "outcome", [], false));
+    expect(report.bestDrop?.playerId).not.toBe("unknown");
+    expect(report.unprojectedDrops).toEqual(["unknown"]);
+  });
+});
+
+describe("Best projected points with an unknown player in the lineup (decision 132.1)", () => {
+  it("keeps the points objective on the known part instead of silently planning for most starts", () => {
+    // unknown (no forecast) starts Monday in C; drop is idle; fa adds 2 a game Thu–Sun. Adding fa for drop leaves the
+    // unknown player's game unchanged, so the net (+8) is known and the plan can be recommended on points.
+    const snapshot = withoutForecast(week([
+      { id: "core", team: "CORE", days: [0, 1, 2, 3, 4, 5, 6], perGame: 3, rostered: true },
+      { id: "unknown", team: "UNK", days: [0], perGame: 1, rostered: true },
+      { id: "drop", team: "IDLE", days: [], perGame: 0, rostered: true },
+      { id: "fa", team: "FAS", days: [3, 4, 5, 6], perGame: 2 },
+    ], { slots: { C: 1, UTIL: 1, BN: 1 }, asOf: "2026-10-26T14:00:00Z", remaining: 1 }), "unknown");
+    const result = planRoster(snapshot, { ...intent(), objective: "outcome" });
+    expect(result.selected.objective).toBe("outcome");
+    expect(result.search.limitations).not.toContain("Best projected points needs projections for your whole lineup; planning for most starts until then.");
+    expect(result.search.limitations.some(text => text.startsWith("Best projected points compares plans on their known part: 1 player has unknown"))).toBe(true);
+    const swap = result.alternatives.find(plan => plan.steps.some(step => step.playerId === "fa" && step.dropPlayerId === "drop"))!;
+    expect(swap.objective).toBe("outcome");
+    expect(comparablePointsDelta(swap, result.noMoveOutcome)).toBeCloseTo(8, 9);
+    // Never a drop of the unknown player, and no outcome plan with an unknown net is offered.
+    expect(result.alternatives.flatMap(plan => plan.steps).some(step => step.dropPlayerId === "unknown")).toBe(false);
+    expect(result.alternatives.filter(plan => plan.steps.length && plan.objective === "outcome")
+      .every(plan => comparablePointsDelta(plan, result.noMoveOutcome) !== null)).toBe(true);
+  });
+});
+
+describe("team-game start mass above 1 (W2-8 D2)", () => {
+  it("reads the team-game's expected starts as unknown instead of capping them at 1", () => {
+    const goalies = (second: number): Spec[] => [
+      { id: "g1", team: "GT", days: [3], perGame: 1, rostered: true, positions: ["G"], startProbability: 0.7 },
+      { id: "g2", team: "GT", days: [3], perGame: 1, rostered: true, positions: ["G"], startProbability: second }];
+    const evaluate = (second: number) => evaluatePlan(week(goalies(second), { slots: { G: 2, BN: 0 } }), intent(), "agp", [], false);
+    // 0.7 + 0.3 is a consistent team-game: one expected start.
+    expect(evaluate(0.3).goalie.expectedStarts).toBeCloseTo(1, 12);
+    // 0.7 + 0.6 is inconsistent evidence; the old cap reported exactly 1 start.
+    expect(evaluate(0.6).goalie.expectedStarts).toBeNull();
+    expect(evaluate(0.6).limitations).toContain("Goalie start chances for one team-game sum above 1; its expected starts are unknown.");
   });
 });
 

@@ -149,6 +149,7 @@ async function fetchFeatureRows(predictions: Array<{ feature_version: number; ga
             "strength_state",
             "strength_exact",
             "zone_code",
+            "is_empty_net_event",
             "feature_payload",
           ].join(",")
         )
@@ -245,6 +246,8 @@ function buildShotRows(args: {
       period_seconds_elapsed: numberOrNull(feature.period_seconds_elapsed),
       strength_state: typeof feature.strength_state === "string" ? feature.strength_state : null,
       strength_exact: typeof feature.strength_exact === "string" ? feature.strength_exact : null,
+      is_empty_net_event: typeof feature.is_empty_net_event === "boolean" ? feature.is_empty_net_event : null,
+      goalie_in_net_id: prediction.goalie_in_net_id ?? null,
       owner_score_diff_before_event: numberOrNull(payload.ownerScoreDiffBeforeEvent),
       owner_score_diff_bucket:
         typeof payload.ownerScoreDiffBucket === "string" ? payload.ownerScoreDiffBucket : null,
@@ -386,6 +389,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     provenance: {
       sourceTables: ["nhl_xg_shot_predictions", "nhl_xg_shot_features", "nhl_api_shift_rows"],
       skippedRows: design.skippedRows.length,
+      emptyNetTreatment: design.emptyNetTreatment,
       leakage,
       heldOutValidation,
       generatedAt,
@@ -412,6 +416,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       targetFamily: model.target_family,
       generatedAt,
       featureAvailability: leakage.feature_availability,
+      emptyNetTreatment: design.emptyNetTreatment,
       heldOutValidation: {
         passed: heldOutValidation.passed,
         split: heldOutValidation.split,
@@ -441,6 +446,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       counts,
       leakage,
       heldOutValidation,
+      emptyNetTreatment: design.emptyNetTreatment,
       model,
       skippedDesignRowSamples: design.skippedRows.slice(0, 10),
     });
@@ -471,6 +477,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     counts,
     leakage,
     heldOutValidation,
+    emptyNetTreatment: design.emptyNetTreatment,
     model: {
       ...model,
       player_estimates: model.player_estimates.slice(0, 25),

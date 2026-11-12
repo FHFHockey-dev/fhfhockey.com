@@ -24,7 +24,7 @@ export type SeasonDraftPlayer = {
   fhfhPlayerId: number;
   teamId: number | null;
   population: FantasyProjectionPopulation;
-  expectedGames: number;
+  expectedGames: number | null;
   expectedStarts: number | null;
   modelValues: ProjectionValues;
   publishedValues: ProjectionValues;
@@ -93,6 +93,7 @@ export function validateSeasonDraft(args: {
 
   for (const player of args.players) {
     if (
+      player.expectedGames == null ||
       !Number.isFinite(player.expectedGames) ||
       player.expectedGames < 0 ||
       player.expectedGames > 84
@@ -107,6 +108,7 @@ export function validateSeasonDraft(args: {
       player.population === "goalie" &&
       (player.expectedStarts == null ||
         player.expectedStarts < 0 ||
+        player.expectedGames == null ||
         player.expectedStarts > player.expectedGames)
     ) {
       issues.push({
@@ -132,6 +134,7 @@ export function validateSeasonDraft(args: {
           ...(fantasyBatch ? SKATER_FANTASY_V4_PRIMITIVE_TARGETS : []),
           ...(advancedBatch ? SKATER_ADVANCED_V5_PRIMITIVE_TARGETS : []),
         ];
+    const requiredTargets = new Set<string>(required);
     for (const target of required) {
       if (!Number.isFinite(player.publishedValues[target])) {
         issues.push({
@@ -156,6 +159,16 @@ export function validateSeasonDraft(args: {
       const low = player.p10[target];
       const median = player.p50[target];
       const high = player.p90[target];
+      // A derived head without a joint band is published as "interval
+      // unavailable" (W3-5 PR1, rule 26); a partial band is still invalid.
+      if (
+        !requiredTargets.has(target) &&
+        low === undefined &&
+        median === undefined &&
+        high === undefined
+      ) {
+        continue;
+      }
       if (
         !Number.isFinite(low) ||
         !Number.isFinite(median) ||

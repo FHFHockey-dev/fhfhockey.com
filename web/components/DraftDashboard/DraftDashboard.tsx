@@ -36,6 +36,8 @@ import { useAuth } from "contexts/AuthProviderContext";
 import DraftSettings, { type DraftSettingsHandle } from "./DraftSettings";
 import { validateDraftSettings, bookmarkImportError } from "lib/draftDashboard/settingsValidation";
 import { aggregateTeamCategoryTotals, type AggregateQuality } from "lib/draftDashboard/categoryStandings";
+import { projectCategoryStandings } from "lib/draftDashboard/projectedCategoryStandings";
+import { categoryNeedPressures } from "lib/draftDashboard/categoryNeeds";
 import { applyCategoryBoosts } from "lib/draftDashboard/categoryBoosts";
 import { buildPositionWeightMultipliers, normalizePositionWeights, type PositionWeights } from "lib/draftDashboard/positionWeights";
 import DraftBoard from "./DraftBoard";
@@ -290,15 +292,24 @@ export interface TeamDraftStats {
   teamId: string;
   teamName: string;
   owner: string;
+  /** Sum of known projected fantasy points; see `unknownProjectionCount`. */
   projectedPoints: number;
+  /** Drafted players whose projected points are unknown (total is incomplete). */
+  unknownProjectionCount?: number;
   categoryTotals: Record<string, number | null>;
   categoryAggregateQuality?: Record<string, AggregateQuality>;
+  /** Starting-slot category totals (projected category standings, decision 114). */
+  starterCategoryTotals?: Record<string, number | null>;
+  /** Projected category-standings points; null when incomplete or a points league. */
+  categoryStandingsPoints?: number | null;
   rosterSlots: {
     [position: string]: RosterAssignment[];
   };
   bench: RosterAssignment[];
-  // NEW: total team VORP (sum of player VORP)
+  // Total team VORP (sum of known player VORP against the frozen reference)
   teamVorp?: number;
+  /** Drafted players whose VORP is unknown (team VORP is incomplete). */
+  unknownVorpCount?: number;
 }
 
 export interface VORPCalculation {
@@ -2332,6 +2343,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   const {
     playerMetrics: vorpMetrics,
     replacementByPos,
+    referenceLabel,
     expectedTakenByPos,
     expectedN,
   } = useVORPCalculations({
@@ -2462,15 +2474,21 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
   }), [draftSettings.draftOrder, draftSettings.rosterConfig, draftSettings.leagueType, draftedPlayers, activeKeepers, effectivePickTrades, draftOrderPattern, currentPick, allPlayers, vorpMetrics]);
 
   const teamStats = useMemo((): TeamDraftStats[] => {
-    return draftSettings.draftOrder.map((teamId) => {
+    const stats = draftSettings.draftOrder.map((teamId): TeamDraftStats => {
       const teamPlayers = rosterAssignments.filter((p) => p.teamId === teamId);
 
-      // Calculate projected points for this team (use merged pool)
+      // Projected points of known projections; unknowns are counted, never 0.
+      let unknownProjectionCount = 0;
       const projectedPoints = teamPlayers.reduce((total, draftedPlayer) => {
         const player = allPlayers.find(
           (p) => String(p.playerId) === draftedPlayer.playerId,
         );
-        return total + (player ? player.fantasyPoints.projected || 0 : 0);
+        const projected = player?.fantasyPoints.projected;
+        if (typeof projected !== "number" || !Number.isFinite(projected)) {
+          unknownProjectionCount += 1;
+          return total;
+        }
+        return total + projected;
       }, 0);
 
       // Group players by position for roster slots with UTIL separate and BENCH rules
@@ -2490,31 +2508,56 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
       const bench = rosterSlots["BENCH"] || [];
       delete rosterSlots["BENCH"]; // keep bench separate from rosterSlots
 
-      // NEW: Sum of player VORP for team
+      // Sum of known player VORP (frozen reference); unknowns are counted.
+      let unknownVorpCount = 0;
       const teamVorp = teamPlayers.reduce((sum, p) => {
-        const m = vorpMetrics.get(p.playerId);
-        return sum + (m?.vorp || 0);
+        const vorp = vorpMetrics.get(p.playerId)?.vorp;
+        if (typeof vorp !== "number" || !Number.isFinite(vorp)) {
+          unknownVorpCount += 1;
+          return sum;
+        }
+        return sum + vorp;
       }, 0);
 
+      const toProjected = (drafted: RosterAssignment) =>
+        allPlayers.find((player) => String(player.playerId) === drafted.playerId) ?? {};
       const categoryAggregates = aggregateTeamCategoryTotals(
-        teamPlayers.map((drafted) => allPlayers.find((player) => String(player.playerId) === drafted.playerId) ?? {}),
+        teamPlayers.map(toProjected),
         Object.keys(activeScoringCategories),
       );
       const categoryTotals = Object.fromEntries(Object.entries(categoryAggregates).map(([key, aggregate]) => [key, aggregate.value]));
       const categoryAggregateQuality = Object.fromEntries(Object.entries(categoryAggregates).map(([key, aggregate]) => [key, aggregate.quality]));
+      const starterAssignments = teamPlayers.filter(
+        (drafted) => (allocation.assignments[drafted.playerId] ?? "BENCH") !== "BENCH",
+      );
+      const starterCategoryTotals = Object.fromEntries(
+        Object.entries(
+          aggregateTeamCategoryTotals(starterAssignments.map(toProjected), Object.keys(activeScoringCategories)),
+        ).map(([key, aggregate]) => [key, aggregate.value]),
+      );
 
       return {
         teamId,
         teamName: customTeamNames[teamId] || teamId,
         owner: teamId,
         projectedPoints,
+        unknownProjectionCount,
         categoryTotals,
         categoryAggregateQuality,
+        starterCategoryTotals,
         rosterSlots,
         bench,
         teamVorp,
+        unknownVorpCount,
       };
     });
+    if ((draftSettings.leagueType || "points") !== "categories") return stats;
+    const standings = projectCategoryStandings(
+      stats.map((team) => ({ teamId: team.teamId, starterTotals: team.starterCategoryTotals ?? {} })),
+      activeScoringCategories,
+    );
+    const pointsById = new Map(standings.standings.map((team) => [team.teamId, team.points]));
+    return stats.map((team) => ({ ...team, categoryStandingsPoints: pointsById.get(team.teamId) ?? null }));
   }, [
     draftSettings,
     rosterAssignments,
@@ -2612,38 +2655,17 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     reference: reportReference,
   }), [allPlayers, currentReportComplete, currentReportSnapshot, currentSeasonId, customCsvList, draftSettings.categoryWeights, draftSettings.leagueType, draftSettings.scoringCategories, goaliePointValues, goalieSourceControls, myTeamId, openedReportDraft, reportReference, rosterAssignments, scenarioSavedImportContext, scenarioSchedule, sourceControls, vorpMetrics]);
 
-  // NEW: category deficits vector for my team (categories mode): league mean - my totals
+  // Category needs for my team (categories mode): unitless, direction-aware
+  // shortfalls against the league's teams (audit W2-5 D5).
   const catNeeds = React.useMemo(() => {
     if ((draftSettings.leagueType || "points") !== "categories")
       return undefined;
-    const teams = teamStats;
-    const CAT_KEYS = [
-      "GOALS",
-      "ASSISTS",
-      "PP_POINTS",
-      "SHOTS_ON_GOAL",
-      "HITS",
-      "BLOCKED_SHOTS",
-    ] as const;
-    const means: Record<string, number> = {};
-    CAT_KEYS.forEach((k) => (means[k] = 0));
-    if (teams.length > 0) {
-      CAT_KEYS.forEach((k) => {
-        const sum = teams.reduce(
-          (acc, t) => acc + (t.categoryTotals[k] || 0),
-          0,
-        );
-        means[k] = sum / teams.length;
-      });
-    }
-    const mine = teams.find((t) => t.teamId === myTeamId);
-    const deficits: Record<string, number> = {};
-    CAT_KEYS.forEach((k) => {
-      const myVal = mine?.categoryTotals[k] || 0;
-      deficits[k] = Math.max(0, means[k] - myVal); // focus on below-average needs
-    });
-    return deficits;
-  }, [teamStats, myTeamId, draftSettings.leagueType]);
+    return categoryNeedPressures(
+      teamStats.map((team) => ({ teamId: team.teamId, totals: team.categoryTotals })),
+      myTeamId,
+      activeScoringCategories,
+    );
+  }, [teamStats, myTeamId, draftSettings.leagueType, activeScoringCategories]);
 
   // NEW: roster progress for progress bar (C/LW/RW/D/UTIL/G)
   const rosterProgress = React.useMemo(() => {
@@ -3705,6 +3727,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             personalRankByPlayerId={personalRankByPlayerId}
             vorpMetrics={vorpMetrics}
             replacementByPos={replacementByPos}
+            referenceLabel={referenceLabel}
             baselineMode={baselineMode}
             onBaselineModeChange={setBaselineMode}
             expectedRuns={
@@ -3752,7 +3775,7 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
     myPickWindows, currentSeasonId, tableAvailablePlayers, tableAllPlayers, draftedPlayers,
     unavailablePlayerIds, isLoading, errorMessage, draftPlayer,
     manualDraftingEnabled, settingsConfigured, settingsValidation.valid, draftProEligible, adpSource, positionSource, fantraxLeagueEligibilityAvailable, fantraxPlayerDataLoaded,
-    personalRankByPlayerId, vorpMetrics, replacementByPos, baselineMode,
+    personalRankByPlayerId, vorpMetrics, replacementByPos, referenceLabel, referenceLabel, baselineMode,
     expectedTakenByPos, expectedN, needWeightEnabled, posNeeds, needAlpha,
     selectionHorizon, availabilitySpread, updateAvailabilitySpread, nextPickNumber, draftSettings.leagueType, draftSettings.categoryWeights,
     draftSettings.scoringCategories, forwardGrouping, availableGoalieStatKeys,
@@ -4344,6 +4367,8 @@ const DraftDashboard: React.FC<{ mockFlags?: MockFlags }> = ({ mockFlags = { ena
             needWeightEnabled={needWeightEnabled}
             needAlpha={needAlpha}
             posNeeds={posNeeds}
+            catNeeds={catNeeds}
+            categoryWeights={effectiveCategoryWeights}
             forwardGrouping={forwardGrouping}
             scheduleOverview={<DustMatrix
               state={rosterScheduleOptimizer}

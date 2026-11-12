@@ -8,6 +8,7 @@ import {
   buildArtifactDriftReport,
   buildTeamSurfaceDriftReport,
   buildXgAggregates,
+  buildXgPredictionCoverage,
   mergeXgFlurryMetadata,
   validateXgAggregateReconciliation,
   xgFeatureEventKey,
@@ -15,9 +16,12 @@ import {
   type XgAggregateGameRow,
   type XgAggregatePredictionRow,
   type XgExternalTeamComparisonRow,
+  type XgCoverageFeatureRow,
   type XgFlurryMetadataRow,
 } from "lib/xg/aggregates";
+import { summarizeXgCalibration } from "lib/xg/approvalGate";
 import { withXgExecutionLeaseApi } from "lib/xg/executionLease";
+import { fetchXgParticipation, fetchXgSeasonGames } from "lib/xg/participation";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 const PAGE_SIZE = 1000;
@@ -113,11 +117,16 @@ async function fetchApprovedShotGoalPredictions(args: {
   return rows;
 }
 
+/**
+ * Reads every shot-feature row of the predicted games once: flurry metadata
+ * for the predictions, and the scoring-eligibility flags that prove which
+ * games are completely predicted (zero-fill in rolling windows needs it).
+ */
 async function attachFlurryMetadata(
   predictions: XgAggregatePredictionRow[]
-): Promise<XgAggregatePredictionRow[]> {
-  if (predictions.length === 0) return predictions;
-  const metadataRows: XgFlurryMetadataRow[] = [];
+): Promise<{ predictions: XgAggregatePredictionRow[]; coveredGameKeys: Set<string> }> {
+  if (predictions.length === 0) return { predictions, coveredGameKeys: new Set() };
+  const metadataRows: Array<XgFlurryMetadataRow & XgCoverageFeatureRow> = [];
   const gameIds = Array.from(new Set(predictions.map((row) => row.game_id)));
   const featureVersions = Array.from(
     new Set(predictions.map((row) => row.feature_version))
@@ -128,10 +137,11 @@ async function attachFlurryMetadata(
       const { data, error } = await supabase
         .from("nhl_xg_shot_features" as any)
         .select(
-          "feature_version,game_id,event_id,flurry_sequence_id,flurry_shot_index"
+          "feature_version,game_id,event_id,flurry_sequence_id,flurry_shot_index,is_unblocked_shot_attempt,is_penalty_shot_event,is_shootout_event"
         )
         .in("feature_version", featureVersions)
         .in("game_id", gameIdChunk)
+        .order("feature_version", { ascending: true })
         .order("game_id", { ascending: true })
         .order("event_id", { ascending: true })
         .range(from, from + PAGE_SIZE - 1);
@@ -139,46 +149,15 @@ async function attachFlurryMetadata(
         throw new Error(`Failed to fetch flurry metadata: ${error.message}`);
       }
       if (!data?.length) break;
-      metadataRows.push(...(data as unknown as XgFlurryMetadataRow[]));
+      metadataRows.push(...(data as unknown as Array<XgFlurryMetadataRow & XgCoverageFeatureRow>));
       if (data.length < PAGE_SIZE) break;
     }
   }
 
-  return mergeXgFlurryMetadata(predictions, metadataRows);
-}
-
-async function fetchGames(gameIds: number[]): Promise<XgAggregateGameRow[]> {
-  if (gameIds.length === 0) return [];
-  const rows: XgAggregateGameRow[] = [];
-
-  for (const chunk of chunkRows(Array.from(new Set(gameIds)), 200)) {
-    const { data, error } = await supabase
-      .from("games")
-      .select("id,seasonId,date,homeTeamId,awayTeamId")
-      .in("id", chunk);
-
-    if (error) {
-      throw new Error(`Failed to fetch games for xG aggregates: ${error.message}`);
-    }
-
-    rows.push(
-      ...((data ?? []) as Array<{
-        id: number;
-        seasonId: number | null;
-        date: string | null;
-        homeTeamId: number | null;
-        awayTeamId: number | null;
-      }>).map((row) => ({
-        id: Number(row.id),
-        seasonId: typeof row.seasonId === "number" ? row.seasonId : null,
-        date: row.date ?? null,
-        homeTeamId: typeof row.homeTeamId === "number" ? row.homeTeamId : null,
-        awayTeamId: typeof row.awayTeamId === "number" ? row.awayTeamId : null,
-      }))
-    );
-  }
-
-  return rows;
+  return {
+    predictions: mergeXgFlurryMetadata(predictions, metadataRows),
+    coveredGameKeys: buildXgPredictionCoverage({ predictions, features: metadataRows }),
+  };
 }
 
 async function fetchEmptyNetEventKeys(args: {
@@ -401,20 +380,29 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     parseInteger(firstQueryValue(req.query.upsertBatchSize), DEFAULT_UPSERT_BATCH_SIZE)
   );
 
-  const predictions = await attachFlurryMetadata(await fetchApprovedShotGoalPredictions({
-    modelVersion,
-    featureVersion,
-    seasonId,
-    limit,
-  }));
-  const games = await fetchGames(predictions.map((row) => row.game_id));
-  const aggregates = buildXgAggregates(predictions, games, { rollingWindows });
+  const { predictions, coveredGameKeys } = await attachFlurryMetadata(
+    await fetchApprovedShotGoalPredictions({
+      modelVersion,
+      featureVersion,
+      seasonId,
+      limit,
+    })
+  );
+  const games = await fetchXgSeasonGames(supabase, predictions.map((row) => row.game_id));
+  const participation = await fetchXgParticipation(supabase, games);
   const emptyNetEventKeys = await fetchEmptyNetEventKeys({
     seasonId,
     predictions,
   });
+  const aggregates = buildXgAggregates(predictions, games, {
+    rollingWindows,
+    emptyNetEventKeys,
+    coveredGameKeys,
+    participation,
+  });
   const qa = validateXgAggregateReconciliation(predictions, games, aggregates, {
     emptyNetEventKeys,
+    coveredGameKeys,
   });
   const artifactPath = resolveModelArtifactPath(
     firstQueryValue(req.query.modelArtifactPath)
@@ -460,6 +448,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const drift = {
     artifactBaseline: artifactBaselineDrift,
+    // Mean-xG drift is not calibration: proper scores, reliability bins and
+    // calibration z statistics on the served predictions with known outcomes.
+    calibration: summarizeXgCalibration(
+      predictions
+        .filter((row) => row.label != null)
+        .map((row) => ({ label: row.label ? 1 : 0, probability: row.xg }) as const)
+    ),
     externalSurfaces: {
       nstTeamGamelogsAsCounts: nstTeamSurfaceDrift,
       wgoTeamStats: buildTeamSurfaceDriftReport({
@@ -481,6 +476,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     teamRollingRows: aggregates.teamRollingRows.length,
     playerRollingRows: aggregates.playerRollingRows.length,
     goalieRollingRows: aggregates.goalieRollingRows.length,
+    coveredGames: coveredGameKeys.size,
+    emptyNetShotRows: emptyNetEventKeys.size,
+    skaterParticipationRows: participation.players.length,
+    goalieParticipationRows: participation.goalies.length,
   };
 
   if (dryRun) {
@@ -492,6 +491,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       seasonId,
       rollingWindows,
       counts,
+      rollingCoverage: aggregates.rollingCoverage,
       qa,
       drift,
       skippedPredictionRowSamples: aggregates.skippedPredictionRows.slice(0, 10),
@@ -548,6 +548,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     qa,
     drift,
     upserted,
+    rollingCoverage: aggregates.rollingCoverage,
     skippedPredictionRowSamples: aggregates.skippedPredictionRows.slice(0, 10),
   });
 }

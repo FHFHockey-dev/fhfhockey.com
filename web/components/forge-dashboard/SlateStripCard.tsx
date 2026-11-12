@@ -6,6 +6,7 @@ import {
   type NormalizedStartChartGameRow
 } from "lib/dashboard/normalizers";
 import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
+import { goalieStartLabel } from "lib/projections/startChartContract";
 import { getGamePowerEdge } from "lib/dashboard/teamContext";
 import { getTeamMetaById } from "lib/dashboard/teamMetadata";
 import styles from "styles/ForgeDashboard.module.scss";
@@ -75,9 +76,12 @@ function GoalieBar({
           : styles.slateGoalieBlock
       }
     >
-      <div className={styles.slateGoalieText}>
+      <div className={styles.slateGoalieText} title={goalieStartLabel(top.start_probability_basis ?? undefined).title}>
         <span>{top.name}</span>
-        <span>{formatPct(top.start_probability)}</span>
+        <span>
+          {top.start_probability_basis === "l10_start_share" ? "L10 share " : ""}
+          {formatPct(top.start_probability)}
+        </span>
       </div>
       <div className={styles.slateGoalieTrack}>
         <div className={styles.slateGoalieFill} style={{ width: `${prob * 100}%` }} />

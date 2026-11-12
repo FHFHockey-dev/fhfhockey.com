@@ -277,6 +277,24 @@ describe("projection shift strength ownership", () => {
     }
   });
 
+  it.each([
+    // Home goalie pulled at 5v5 (1560): ES for both, not a home PP (W2-6 §1, decision 70).
+    { code: "1560", home: { es: "1:30", pp: "0:00", pk: "0:00" }, away: { es: "1:30", pp: "0:00", pk: "0:00" } },
+    // Home goalie pulled during a home 5v4 (1460): still a home PP / away PK.
+    { code: "1460", home: { es: "1:00", pp: "0:30", pk: "0:00" }, away: { es: "1:00", pp: "0:00", pk: "0:30" } },
+  ])("classifies ice time with the events' pulled-goalie rule ($code)", ({ code, home, away }) => {
+    const pbp = finalPbp({}, [
+      play({ eventId: 1, typeDescKey: "period-start", timeInPeriod: "00:00", timeRemaining: "20:00" }),
+      play({ eventId: 2, typeDescKey: "stoppage", timeInPeriod: "00:30", timeRemaining: "19:30", situationCode: code }),
+      play({ eventId: 3, typeDescKey: "faceoff", timeInPeriod: "01:00", timeRemaining: "19:00" }),
+      play({ eventId: 4, typeDescKey: "game-end", timeInPeriod: "20:00", timeRemaining: "00:00" }),
+    ]);
+    const rows = buildShiftStrengthUpserts(GAME_ID, pbp,
+      [shift({ endTime: "1:30", duration: "1:30" }), awayShift({ endTime: "1:30", duration: "1:30" })], "2026-07-19T00:00:00.000Z");
+    expect(rows.find((row) => row.player_id === 10)).toMatchObject({ total_es_toi: home.es, total_pp_toi: home.pp, total_pk_toi: home.pk });
+    expect(rows.find((row) => row.player_id === 20)).toMatchObject({ total_es_toi: away.es, total_pp_toi: away.pp, total_pk_toi: away.pk });
+  });
+
   it("derives relationship PP/ES segments from the manifest-bound PBP timeline", () => {
     const pbp = finalPbp({}, [
       play({

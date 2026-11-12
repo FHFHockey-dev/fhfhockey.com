@@ -29,7 +29,8 @@ export const SKATER_SELECT_FIELDS = [
   "blocked_shots",
   "penalty_minutes",
   "toi_per_game",
-  "individual_sat_for_per_60"
+  "individual_sat_for_per_60",
+  "toi_per_game_5v5"
 ].join(",");
 
 /** Last row of the previous page; (date, player_id) is unique. */

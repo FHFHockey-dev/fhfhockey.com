@@ -145,6 +145,18 @@ import {
   rankGoalieMetricValues,
 } from "./goalieMatrix";
 
+// All-situations NST counts mirror the 5v5 fixture values unless a case sets
+// them, so existing cases read the same counts in the all-situations view.
+const NST_COUNT_SUFFIXES = ["toi", "xg_against", "goals_against", "saves", "shots_against", "hd_saves", "hd_shots_against"] as const;
+function withAllSituationsMirror<T extends Record<string, any>>(row: T, overrides: Record<string, unknown>): T {
+  const mirrored: Record<string, any> = { ...row };
+  for (const suffix of NST_COUNT_SUFFIXES) {
+    const key = `nst_all_counts_${suffix}`;
+    if (!(key in overrides)) mirrored[key] = row[`nst_5v5_counts_${suffix}`] ?? null;
+  }
+  return mirrored as T;
+}
+
 describe("goalieMatrix", () => {
   it("aggregates latest-window goalie rows and preserves partial NST warnings", () => {
     const rows = aggregateGoalieGameRows(
@@ -206,16 +218,23 @@ describe("goalieMatrix", () => {
       gamesStarted: 2,
       saves: 52,
       shotsAgainst: 57,
+      // Vollman: league SV% 52/57 = .912; 28/30 is above it, 24/27 (27
+      // shots) is below it and outside the 20-shot clause.
       qualityStarts: 1,
       reallyBadStarts: 0,
+      fhfhBadStarts: 0,
       stealGames: 0,
-      nst5v5Gsaa: 0.3,
-      nst5v5Gsax: -0.5,
-      nst5v5XgAgainst: 4.5,
-      nst5v5Saves: 40,
-      nst5v5ShotsAgainst: 45,
-      nst5v5HighDangerSaves: 12,
-      nst5v5HighDangerShotsAgainst: 15,
+      nstStrength: "5v5",
+      nstToiMinutes: 6000,
+      // One-goalie league: league SV% equals his own, so aggregate GSAA is 0
+      // (decision 10), not the summed per-game 0.7 - 0.4 = 0.3.
+      nstGsaa: 0,
+      nstGsax: -0.5,
+      nstXgAgainst: 4.5,
+      nstSaves: 40,
+      nstShotsAgainst: 45,
+      nstHighDangerSaves: 12,
+      nstHighDangerShotsAgainst: 15,
     });
     expect(rows[0].sourceWarnings).toEqual([]);
   });
@@ -359,6 +378,7 @@ describe("goalieMatrix", () => {
     const request = parseGoalieMatrixRequest({
       season: "20252026",
       metric: "really_bad_start_rate",
+      strength: "all",
       window: "last10",
       goalie_role: "g1a_tandem_lead",
       team: "DAL",
@@ -369,15 +389,23 @@ describe("goalieMatrix", () => {
     expect(request).toMatchObject({
       season: 20252026,
       metric: "really_bad_start_rate",
+      strength: "all",
       window: "last10",
       role: "g1a_tandem_lead",
       team: "DAL",
-      minStarts: 3,
+      minStarts: 5,
       minShots: 100,
       search: "Shesterkin",
       page: 1,
       pageSize: 25,
     });
+    // Decision 104: the default view is 5v5; an all-situations metric or the
+    // hidden Value Signal falls back to the view default instead of a 400.
+    expect(parseGoalieMatrixRequest({ season: "20252026", metric: "really_bad_start_rate" }))
+      .toMatchObject({ strength: "5v5", metric: "save_percentage" });
+    expect(parseGoalieMatrixRequest({ season: "20252026", metric: "goalie_value_signal", strength: "all" }))
+      .toMatchObject({ strength: "all", metric: "save_percentage" });
+    expect(() => parseGoalieMatrixRequest({ season: "20252026", strength: "pp" })).toThrow();
   });
 
   it("counts modern really bad starts from existing goalie game rows", () => {
@@ -408,10 +436,13 @@ describe("goalieMatrix", () => {
       "season",
     );
 
+    // FHFH 5v5 bad start (GSAx -2.5 <= -2) and Vollman RBS (18/22 < .850)
+    // are counted separately (decision 106).
     expect(rows[0]).toMatchObject({
       gamesStarted: 1,
+      fhfhBadStarts: 1,
       reallyBadStarts: 1,
-      nst5v5Gsax: -2.5,
+      nstGsax: -2.5,
     });
   });
 
@@ -428,12 +459,12 @@ describe("goalieMatrix", () => {
 
     expect(ranks.get(1)).toMatchObject({
       rank: 1,
-      percentile: 50,
+      percentile: 75,
       qualifiedPeerCount: 3,
     });
     expect(ranks.get(2)).toMatchObject({
       rank: 1,
-      percentile: 50,
+      percentile: 75,
       qualifiedPeerCount: 3,
     });
     expect(ranks.get(3)).toMatchObject({
@@ -587,7 +618,7 @@ describe("goalieMatrix", () => {
 
   describe("matrix arithmetic and source completeness", () => {
     type SourceRow = Parameters<typeof aggregateGoalieGameRows>[0][number];
-    const game = (overrides: Partial<SourceRow> = {}): SourceRow => ({
+    const game = (overrides: Partial<SourceRow> = {}): SourceRow => withAllSituationsMirror({
       player_id: 1, player_name: "Synthetic 1", team_id: 10, team_id_source: "wgo_team_abbreviation",
       date: "2026-04-16", season_id: 20252026,
       games_played: 1, games_started: 1, wins: 1,
@@ -598,18 +629,18 @@ describe("goalieMatrix", () => {
       nst_5v5_counts_saves: 27, nst_5v5_counts_shots_against: 30,
       nst_5v5_counts_hd_saves: 7, nst_5v5_counts_hd_shots_against: 10,
       ...overrides,
+    }, overrides);
+    const request = (strength = "all") => parseGoalieMatrixRequest({
+      season: "20252026", min_starts: "0", min_shots: "0", page_size: "50", strength,
     });
-    const request = () => parseGoalieMatrixRequest({
-      season: "20252026", min_starts: "0", min_shots: "0", page_size: "50",
-    });
-    const loadPlayer = async (rows: SourceRow[]) => {
+    const loadPlayer = async (rows: SourceRow[], strength = "all") => {
       pagingFixture.rows.goalie_stats_unified = rows;
       pagingFixture.rows.games = [...new Set(rows.map((row) => `${row.team_id}:${row.date}`))]
         .map((key, index) => {
           const [teamId, date] = key.split(":");
           return { id: index + 1, date, seasonId: 20252026, type: 2, homeTeamId: Number(teamId), awayTeamId: 999 };
         });
-      const result = await buildGoalieMatrixSurface(request());
+      const result = await buildGoalieMatrixSurface(request(strength));
       return result.rows.find((row) => row.entity.id === 1)!;
     };
 
@@ -621,10 +652,10 @@ describe("goalieMatrix", () => {
     });
 
     it("matches independently calculated pooled arithmetic on unequal games", async () => {
-      const row = await loadPlayer([
+      const rows = [
         game({
           date: "2026-04-15", saves: 9, shots_against: 10, goals_against: 1,
-          quality_start: 1, wins: 1, nst_5v5_counts_toi: 600,
+          quality_start: 1, wins: 1, nst_5v5_counts_toi: 10,
           nst_5v5_counts_gsaa: 0.5, nst_5v5_counts_xg_against: 3,
           nst_5v5_counts_goals_against: 1, nst_5v5_counts_saves: 9,
           nst_5v5_counts_shots_against: 10, nst_5v5_counts_hd_saves: 2,
@@ -632,37 +663,117 @@ describe("goalieMatrix", () => {
         }),
         game({
           saves: 35, shots_against: 40, goals_against: 5,
-          quality_start: 0, wins: 0, nst_5v5_counts_toi: 1800,
+          quality_start: 0, wins: 0, nst_5v5_counts_toi: 30,
           nst_5v5_counts_gsaa: 1.5, nst_5v5_counts_xg_against: 6,
           nst_5v5_counts_goals_against: 5, nst_5v5_counts_saves: 35,
           nst_5v5_counts_shots_against: 40, nst_5v5_counts_hd_saves: 3,
           nst_5v5_counts_hd_shots_against: 7,
         }),
-      ]);
+      ];
+      const fiveOnFive = await loadPlayer(rows, "5v5");
+      // Direct arithmetic oracle: 44/50 5v5 saves, 9/50 xGA/shot, 9 - 6 GSAx.
+      // A one-goalie league has league SV% = own SV%, so aggregate GSAA is 0
+      // (decision 10), not the 0.5 + 1.5 sum of per-game NST values.
+      expect(fiveOnFive.metrics.save_percentage.rawValue).toBe(0.88);
+      expect(fiveOnFive.metrics.xga_per_shot_against.rawValue).toBe(0.18);
+      expect(fiveOnFive.metrics.gsaa_per_60.rawValue).toBe(0);
+      expect(fiveOnFive.metrics.gsax.rawValue).toBe(3);
+      expect(fiveOnFive.metrics.high_danger_save_percentage.rawValue).toBe(0.5);
+      expect(fiveOnFive.metrics.fhfh_5v5_bad_start_rate.rawValue).toBe(0);
+      expect(fiveOnFive.metrics.steal_rate.rawValue).toBe(0.5);
+      // Decision 104: no Vollman or hidden columns in the 5v5 view.
+      expect(fiveOnFive.metrics.quality_start_pct.rawValue).toBeNull();
+      expect(fiveOnFive.metrics.goalie_value_signal.rawValue).toBeNull();
 
-      // Direct arithmetic oracle: 44/50 saves, 9/50 xGA/shot,
-      // 2 goals / 2400 seconds * 3600, and 9 - 6 GSAx.
-      expect(row.metrics.save_percentage.rawValue).toBe(0.88);
-      expect(row.metrics.xga_per_shot_against.rawValue).toBe(0.18);
-      expect(row.metrics.gsaa_per_60.rawValue).toBe(3);
-      expect(row.metrics.gsax.rawValue).toBe(3);
-      expect(row.metrics.goalie_value_signal.rawValue).toBe(2.5);
-      expect(row.metrics.high_danger_save_percentage.rawValue).toBe(0.5);
+      const allSituations = await loadPlayer(rows, "all");
+      // League SV% = 44/50 = .88. 9/10 = .90 is above it (QS); 35/40 = .875
+      // is below it with 5 GA (not QS). Neither is below .850 (RBS).
+      expect(allSituations.metrics.save_percentage.rawValue).toBe(0.88);
+      expect(allSituations.metrics.quality_start_pct.rawValue).toBe(0.5);
+      expect(allSituations.metrics.really_bad_start_rate.rawValue).toBe(0);
+      expect(allSituations.metrics.steal_rate.rawValue).toBeNull();
+    });
+
+    it("reads NST TOI as minutes and computes GSAA once over the window (W2-P0-9)", async () => {
+      // Goalie 1: 5v5 SA 25, GA 2 in 48.05 minutes. League (incl. goalie 1)
+      // 5v5 SA 2500, GA 161: GSAA = 25 x 161/2500 - 2 = -0.39.
+      // Correct per 60: -0.39 x 60 / 48.05 = -0.486993. The defect read the
+      // minutes as seconds and summed NST's per-game value: -29.219563.
+      const row = await loadPlayer([
+        game({
+          date: "2026-11-05", season_id: 20252026,
+          nst_5v5_counts_toi: 48.05, nst_5v5_counts_gsaa: -0.39,
+          nst_5v5_counts_shots_against: 25, nst_5v5_counts_goals_against: 2,
+          nst_5v5_counts_saves: 23, nst_5v5_counts_xg_against: 2.1,
+        }),
+        game({
+          player_id: 2, date: "2026-11-05",
+          nst_5v5_counts_toi: 3000, nst_5v5_counts_gsaa: 0,
+          nst_5v5_counts_shots_against: 2475, nst_5v5_counts_goals_against: 159,
+          nst_5v5_counts_saves: 2316,
+        }),
+      ], "5v5");
+      expect(row.metrics.gsaa_per_60.rawValue).toBeCloseTo(-0.486993, 6);
+      expect(row.metrics.gsaa_per_60.formattedValue).toBe("-0.49");
+    });
+
+    it("uses the window league baseline, not the sum of per-game GSAA", async () => {
+      const rows = [
+        game({ date: "2026-04-15", nst_5v5_counts_toi: 60, nst_5v5_counts_gsaa: 0,
+          nst_5v5_counts_shots_against: 10, nst_5v5_counts_goals_against: 1, nst_5v5_counts_saves: 9 }),
+        game({ date: "2026-04-16", nst_5v5_counts_toi: 60, nst_5v5_counts_gsaa: -0.4,
+          nst_5v5_counts_shots_against: 30, nst_5v5_counts_goals_against: 1, nst_5v5_counts_saves: 29 }),
+        game({ player_id: 2, date: "2026-04-15", nst_5v5_counts_toi: 60,
+          nst_5v5_counts_shots_against: 90, nst_5v5_counts_goals_against: 9, nst_5v5_counts_saves: 81 }),
+        game({ player_id: 2, date: "2026-04-16", nst_5v5_counts_toi: 60,
+          nst_5v5_counts_shots_against: 70, nst_5v5_counts_goals_against: 1, nst_5v5_counts_saves: 69 }),
+      ];
+      // Daily rates: day 1 10/100 = .10, day 2 2/100 = .02. Summed per-game
+      // GSAA = (10 x .10 - 1) + (30 x .02 - 1) = -0.4. Window rate 12/200 =
+      // .06: GSAA = 40 x .06 - 2 = 0.4, per 60 over 120 minutes = 0.2.
+      const row = await loadPlayer(rows, "5v5");
+      expect(row.metrics.gsaa_per_60.rawValue).toBe(0.2);
+    });
+
+    it("keeps a short relief stint in minutes without a magnitude rule", async () => {
+      // 3.25 NST minutes, 4 shots, 1 goal; league 5v5 goals/shot 20/200 = .10.
+      // GSAA = 4 x .10 - 1 = -0.6; per 60 = -0.6 x 60 / 3.25 = -11.076923.
+      const row = await loadPlayer([
+        game({ games_started: 0, quality_start: null, wins: 0,
+          nst_5v5_counts_toi: 3.25, nst_5v5_counts_shots_against: 4,
+          nst_5v5_counts_goals_against: 1, nst_5v5_counts_saves: 3 }),
+        game({ player_id: 2, nst_5v5_counts_toi: 56.75, nst_5v5_counts_shots_against: 196,
+          nst_5v5_counts_goals_against: 19, nst_5v5_counts_saves: 177 }),
+      ], "5v5");
+      expect(row.metrics.gsaa_per_60.rawValue).toBeCloseTo(-11.076923, 6);
+    });
+
+    it("classifies Vollman Quality Starts from the league average, not the NHL flag or .910", async () => {
+      // League official SV% = (27 + 25 + 900) / (30 + 28 + 1000) = .899811.
+      // Start A: 27/30 = .900 >= league -> QS although the NHL flag says 0
+      // and a .910 rule says no. Start B: 25/28 = .892857 on 28 shots -> not
+      // QS. NHL flag gives 0/2, .910 gives 0/2, Vollman gives 1/2.
+      const row = await loadPlayer([
+        game({ date: "2026-04-15", saves: 27, shots_against: 30, goals_against: 3, quality_start: 0 }),
+        game({ date: "2026-04-16", saves: 25, shots_against: 28, goals_against: 3, quality_start: 0 }),
+        game({ player_id: 2, date: "2026-04-16", saves: 900, shots_against: 1000, goals_against: 100 }),
+      ], "all");
       expect(row.metrics.quality_start_pct.rawValue).toBe(0.5);
-      expect(row.metrics.really_bad_start_rate.rawValue).toBe(0);
-      expect(row.metrics.steal_rate.rawValue).toBe(0.5);
     });
 
     it.each<{
       name: string;
+      strength?: string;
       overrides: Partial<SourceRow>[];
       metrics: Array<keyof Awaited<ReturnType<typeof loadPlayer>>["metrics"]>;
       warning: string;
     }>([
       {
         name: "disjoint official saves and shots",
+        strength: "all",
         overrides: [{ saves: null }, { shots_against: null }],
-        metrics: ["save_percentage"], warning: "partial_wgo_save_source",
+        metrics: ["save_percentage", "quality_start_pct", "really_bad_start_rate"],
+        warning: "partial_wgo_save_source",
       },
       {
         name: "disjoint NST xGA and shots",
@@ -672,23 +783,30 @@ describe("goalieMatrix", () => {
       {
         name: "disjoint NST saves and shots",
         overrides: [{ nst_5v5_counts_saves: null }, { nst_5v5_counts_shots_against: null }],
-        metrics: ["relative_save_percentage"], warning: "partial_nst_5v5_relative_save_source",
+        metrics: ["relative_save_percentage", "save_percentage"],
+        warning: "partial_nst_5v5_relative_save_source",
       },
       {
-        name: "missing GSAA in a game whose TOI is present",
-        overrides: [{}, { nst_5v5_counts_gsaa: null }],
-        metrics: ["gsaa_per_60", "goalie_value_signal"], warning: "partial_nst_5v5_gsaa_source",
+        name: "missing 5v5 goals against in a game whose TOI is present",
+        overrides: [{}, { nst_5v5_counts_goals_against: null }],
+        metrics: ["gsaa_per_60"], warning: "partial_nst_5v5_gsaa_source",
       },
       {
-        name: "missing TOI in a game whose GSAA is present",
+        name: "missing TOI in a game whose shots are present",
         overrides: [{}, { nst_5v5_counts_toi: null }],
-        metrics: ["gsaa_per_60", "goalie_value_signal"], warning: "partial_nst_5v5_gsaa_source",
+        metrics: ["gsaa_per_60"], warning: "partial_nst_5v5_gsaa_source",
       },
       {
         name: "partial GSAx coverage",
         overrides: [{}, { nst_5v5_counts_xg_against: null }],
-        metrics: ["gsax", "goalie_value_signal", "really_bad_start_rate", "steal_rate"],
+        metrics: ["gsax", "fhfh_5v5_bad_start_rate", "steal_rate"],
         warning: "partial_nst_5v5_gsax_source",
+      },
+      {
+        name: "missing all-situations NST TOI",
+        strength: "all",
+        overrides: [{}, { nst_all_counts_toi: null }],
+        metrics: ["gsaa_per_60"], warning: "partial_nst_all_gsaa_source",
       },
       {
         name: "missing high-danger denominator",
@@ -698,13 +816,22 @@ describe("goalieMatrix", () => {
       {
         name: "unknown start status",
         overrides: [{}, { games_started: null }],
-        metrics: ["quality_start_pct", "really_bad_start_rate", "steal_rate"],
+        metrics: ["fhfh_5v5_bad_start_rate", "steal_rate"],
         warning: "partial_goalie_start_source",
       },
       {
-        name: "unknown quality-start classification",
-        overrides: [{}, { quality_start: null }],
-        metrics: ["quality_start_pct"], warning: "partial_quality_start_source",
+        name: "unknown start status in the all-situations view",
+        strength: "all",
+        overrides: [{}, { games_started: null }],
+        metrics: ["quality_start_pct", "really_bad_start_rate"],
+        warning: "partial_goalie_start_source",
+      },
+      {
+        name: "zero-shot start for Vollman classification",
+        strength: "all",
+        overrides: [{}, { saves: 0, shots_against: 0, goals_against: 0 }],
+        metrics: ["quality_start_pct", "really_bad_start_rate"],
+        warning: "partial_quality_start_source",
       },
       {
         name: "unknown win outcome",
@@ -713,6 +840,7 @@ describe("goalieMatrix", () => {
       },
       {
         name: "impossible official save count",
+        strength: "all",
         overrides: [{}, { saves: 31, shots_against: 30 }],
         metrics: ["save_percentage"], warning: "partial_wgo_save_source",
       },
@@ -721,14 +849,14 @@ describe("goalieMatrix", () => {
         overrides: [{}, { nst_5v5_counts_saves: 31, nst_5v5_counts_shots_against: 30 }],
         metrics: ["relative_save_percentage"], warning: "partial_nst_5v5_relative_save_source",
       },
-    ])("leaves $name unavailable and unranked", async ({ overrides, metrics, warning }) => {
+    ])("leaves $name unavailable and unranked", async ({ strength, overrides, metrics, warning }) => {
       const row = await loadPlayer([
         ...overrides.map((override, index) => game({ date: `2026-04-${15 + index}`, ...override })),
         game({
           player_id: 2, games_started: 0, nst_5v5_counts_saves: 90,
           nst_5v5_counts_shots_against: 100,
         }),
-      ]);
+      ], strength ?? "5v5");
       for (const metric of metrics) {
         expect(row.metrics[metric]).toMatchObject({
           rawValue: null, formattedValue: null, rank: null, percentile: null,
@@ -742,41 +870,57 @@ describe("goalieMatrix", () => {
         game({ nst_5v5_counts_saves: 92, nst_5v5_counts_shots_against: 100 }),
         game({ player_id: 2, date: "2026-04-15", nst_5v5_counts_saves: 83, nst_5v5_counts_shots_against: 100 }),
         game({ player_id: 2, games_started: 0, nst_5v5_counts_saves: null, nst_5v5_counts_shots_against: 100 }),
-      ]);
+      ], "5v5");
       expect(row.metrics.relative_save_percentage.rawValue).toBeNull();
       expect(row.metrics.relative_save_percentage.rank).toBeNull();
       expect(row.warnings).toContain("partial_team_without_goalie_5v5_save_source");
     });
 
     it("preserves genuine zero results and signed saved-goals values", async () => {
-      const row = await loadPlayer([game({
+      const zeroGame = {
         saves: 0, shots_against: 4, goals_against: 4, quality_start: 0, wins: 0,
-        nst_5v5_counts_toi: 3600, nst_5v5_counts_gsaa: -2,
+        nst_5v5_counts_toi: 60, nst_5v5_counts_gsaa: -2,
         nst_5v5_counts_xg_against: 1, nst_5v5_counts_goals_against: 4,
         nst_5v5_counts_saves: 0, nst_5v5_counts_shots_against: 4,
         nst_5v5_counts_hd_saves: 0, nst_5v5_counts_hd_shots_against: 4,
-      })]);
-      expect(row.metrics.save_percentage.rawValue).toBe(0);
-      expect(row.metrics.high_danger_save_percentage.rawValue).toBe(0);
-      expect(row.metrics.quality_start_pct.rawValue).toBe(0);
-      expect(row.metrics.gsaa_per_60.rawValue).toBe(-2);
-      expect(row.metrics.gsax.rawValue).toBe(-3);
-      expect(row.metrics.goalie_value_signal.rawValue).toBe(-2.5);
-      expect(row.metrics.really_bad_start_rate.rawValue).toBe(1);
+      };
+      // League 5v5: goalie 1 4 GA on 4 shots plus goalie 2 4 GA on 96 shots
+      // (8/100): GSAA = 4 x .08 - 4 = -3.68 over 60 minutes.
+      const rows = [
+        game(zeroGame),
+        game({ player_id: 2, games_started: 0, nst_5v5_counts_toi: 60,
+          nst_5v5_counts_shots_against: 96, nst_5v5_counts_goals_against: 4, nst_5v5_counts_saves: 92 }),
+      ];
+      const fiveOnFive = await loadPlayer(rows, "5v5");
+      expect(fiveOnFive.metrics.save_percentage.rawValue).toBe(0);
+      expect(fiveOnFive.metrics.high_danger_save_percentage.rawValue).toBe(0);
+      expect(fiveOnFive.metrics.gsaa_per_60.rawValue).toBe(-3.68);
+      expect(fiveOnFive.metrics.gsax.rawValue).toBe(-3);
+      expect(fiveOnFive.metrics.fhfh_5v5_bad_start_rate.rawValue).toBe(1);
+      const allSituations = await loadPlayer(rows, "all");
+      expect(allSituations.metrics.save_percentage.rawValue).toBe(0);
+      expect(allSituations.metrics.quality_start_pct.rawValue).toBe(0);
+      expect(allSituations.metrics.really_bad_start_rate.rawValue).toBe(1);
     });
 
     it("does not treat a relief appearance as an unclassified start", async () => {
-      const row = await loadPlayer([
+      const rows = [
         game({ date: "2026-04-15" }),
         game({
           games_started: 0, quality_start: null, wins: null,
           nst_5v5_counts_xg_against: null, nst_5v5_counts_goals_against: null,
+          nst_all_counts_xg_against: 1, nst_all_counts_goals_against: 0,
         }),
-      ]);
-      expect(row.metrics.quality_start_pct.rawValue).toBe(1);
-      expect(row.metrics.really_bad_start_rate.rawValue).toBe(0);
-      expect(row.metrics.steal_rate.rawValue).toBe(1);
-      expect(row.metrics.gsax.rawValue).toBeNull();
+      ];
+      const fiveOnFive = await loadPlayer(rows, "5v5");
+      expect(fiveOnFive.metrics.fhfh_5v5_bad_start_rate.rawValue).toBe(0);
+      expect(fiveOnFive.metrics.steal_rate.rawValue).toBe(1);
+      expect(fiveOnFive.metrics.gsax.rawValue).toBeNull();
+      // 27/30 equals the league average (both games identical): at least the
+      // average is a Vollman QS, so 1 QS of 1 credited start.
+      const allSituations = await loadPlayer(rows, "all");
+      expect(allSituations.metrics.quality_start_pct.rawValue).toBe(1);
+      expect(allSituations.metrics.really_bad_start_rate.rawValue).toBe(0);
     });
 
     it("preserves the goalie peer pool and ranks across search and pagination", async () => {
@@ -806,7 +950,7 @@ describe("goalieMatrix", () => {
     const game = (
       playerId: number, teamId: number, day: number,
       overrides: Partial<SourceRow> = {},
-    ): SourceRow => ({
+    ): SourceRow => withAllSituationsMirror({
       player_id: playerId, player_name: `Goalie ${playerId}`, team_id: teamId,
       team_id_source: "wgo_team_abbreviation",
       date: `2026-04-${String(day).padStart(2, "0")}`, season_id: 20252026,
@@ -817,13 +961,13 @@ describe("goalieMatrix", () => {
       nst_5v5_counts_saves: 90, nst_5v5_counts_shots_against: 100,
       nst_5v5_counts_hd_saves: 7, nst_5v5_counts_hd_shots_against: 10,
       ...overrides,
-    });
+    }, overrides);
     const schedule = (teamId: number, day: number, id = teamId * 100 + day) => ({
       id, date: `2026-04-${String(day).padStart(2, "0")}`,
       seasonId: 20252026, type: 2, homeTeamId: teamId, awayTeamId: 999,
     });
-    const request = () => parseGoalieMatrixRequest({
-      season: "20252026", min_starts: "0", min_shots: "0", page_size: "50",
+    const request = (strength = "all") => parseGoalieMatrixRequest({
+      season: "20252026", min_starts: "0", min_shots: "0", page_size: "50", strength,
     });
     const byId = (result: Awaited<ReturnType<typeof buildGoalieMatrixSurface>>, id: number) =>
       result.rows.find((row) => row.entity.id === id)!;

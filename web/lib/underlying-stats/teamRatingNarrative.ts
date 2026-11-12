@@ -239,20 +239,20 @@ const buildContextBullet = ({
     const sosDelta = row.sosFuture - leagueAverageFutureSos;
 
     if (sosDelta <= -MIN_SOS_CONTEXT_DELTA) {
-      return "Upcoming schedule looks softer than league average.";
+      return "Upcoming opponents have a weaker combined record than league average.";
     }
 
     if (sosDelta >= MIN_SOS_CONTEXT_DELTA) {
-      return "Upcoming schedule looks tougher than league average.";
+      return "Upcoming opponents have a stronger combined record than league average.";
     }
   }
 
   if (typeof row.luckPdoZ === "number" && row.luckPdoZ >= 1) {
-    return "Puck luck is running hot, so recent results may cool toward normal.";
+    return "PDO (shooting % plus save %) is running above league norms.";
   }
 
   if (typeof row.luckPdoZ === "number" && row.luckPdoZ <= -1) {
-    return "Puck luck is running cold, so results could rebound if play holds.";
+    return "PDO (shooting % plus save %) is running below league norms.";
   }
 
   if (typeof row.finishingRating === "number" && row.finishingRating >= 105) {
@@ -361,8 +361,8 @@ export const buildTeamRatingNarrative = ({
       "Recent baseline is still too short for a reliable rise-or-fall read.",
       typeof row.sosFuture === "number" && typeof leagueAverageFutureSos === "number"
         ? row.sosFuture >= leagueAverageFutureSos
-          ? "Upcoming schedule looks tougher than league average."
-          : "Upcoming schedule looks softer than league average."
+          ? "Upcoming opponents have a stronger combined record than league average."
+          : "Upcoming opponents have a weaker combined record than league average."
         : "Use the context columns as support rather than direct rank drivers."
     ];
 

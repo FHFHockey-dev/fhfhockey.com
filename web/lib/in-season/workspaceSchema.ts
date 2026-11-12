@@ -52,8 +52,11 @@ const allowedUses = z.object({ assignment: z.boolean(), totals: z.boolean(), com
 const rsoTargetBinding = z.object({ component: id, modelMode: id, codeVersion: id,
   configurationHash: z.string().regex(/^[a-f0-9]{64}$/).nullable(), artifactHash: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
   targetKey: id, horizonGames: positiveInteger, conditioning: id, participationLineage: id.nullable(), cutoffAt: instant }).strict();
-const calendarPolicy = z.object({ version: z.literal("forecast-calendar-v1"),
-  calendarDays: z.number().int().min(1).max(21), overlapDays: z.literal(7), timeZone: z.literal("UTC") }).strict();
+// Decision 127: v1 (UTC days) stays valid for issued history; v2 dates games by the NHL schedule (America/New_York).
+const calendarPolicy = z.union([z.object({ version: z.literal("forecast-calendar-v1"),
+  calendarDays: z.number().int().min(1).max(21), overlapDays: z.literal(7), timeZone: z.literal("UTC") }).strict(),
+  z.object({ version: z.literal("forecast-calendar-v2"), calendarDays: z.number().int().min(1).max(21), overlapDays: z.literal(7),
+    timeZone: z.literal("America/New_York"), dateBasis: z.literal("nhl_schedule_date") }).strict()]);
 const contributionSource = z.object({ kind: z.enum(["detailed", "baseline"]), sourceId: id,
   policyVersion: id, released: z.boolean(), allowedUses: allowedUses.optional(), playerId: positiveInteger, nhlPlayerId: positiveInteger,
   seasonId, teamId: positiveInteger, gameId: positiveInteger.optional(), scheduledAt: instant.optional(), targetKey: id,

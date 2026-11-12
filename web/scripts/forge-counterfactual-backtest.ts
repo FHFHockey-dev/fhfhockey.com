@@ -425,8 +425,12 @@ const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.l
 export function allocatePpToi(players: { playerId: number; weight: number | null; fallbackSeconds: number }[], target: number) {
   const totalW = players.reduce((sum, p) => sum + (p.weight ?? 0), 0);
   const fixed = players.filter((p) => p.weight == null || totalW <= 0);
-  const out = new Map(fixed.map((p) => [p.playerId, p.fallbackSeconds]));
-  const rest = Math.max(0, target - fixed.reduce((sum, p) => sum + p.fallbackSeconds, 0));
+  const fixedSum = fixed.reduce((sum, p) => sum + p.fallbackSeconds, 0);
+  // The allocation conserves the target (M-FRG-017): when the fallback seconds alone exceed it they
+  // shrink proportionally and the weighted players get nothing, never a total above the target.
+  const fixedScale = fixedSum > target && fixedSum > 0 ? Math.max(0, target) / fixedSum : 1;
+  const out = new Map(fixed.map((p) => [p.playerId, p.fallbackSeconds * fixedScale]));
+  const rest = Math.max(0, target - fixedSum * fixedScale);
   if (totalW > 0) for (const p of players) if (p.weight != null) out.set(p.playerId, (rest * p.weight) / totalW);
   return out;
 }

@@ -22,6 +22,11 @@ export type PropMarketPriceContextRow = MarketPriceContextRow & {
 
 export type MarketOutcomeSummary = {
   outcomeKey: string;
+  /**
+   * The line when every book quotes this outcome at the same line; null when
+   * books differ. Lines are never averaged across books (decision 30): use
+   * MarketTypeSummary.quotes for per-book comparison.
+   */
   averageLineValue: number | null;
   averagePriceAmerican: number | null;
   averageImpliedProbability: number | null;
@@ -36,6 +41,19 @@ export type MarketTypeSummary = {
   observedAt: string | null;
   freshnessExpiresAt: string | null;
   outcomes: MarketOutcomeSummary[];
+  /**
+   * One quote per book, outcome and line (the latest observation), from the same
+   * fresh best-rank rows as the outcomes. Comparisons use these, never the
+   * cross-book outcome averages. Optional only for hand-built summaries.
+   */
+  quotes?: MarketSummaryQuote[];
+};
+
+export type MarketSummaryQuote = {
+  sportsbook_key: string;
+  outcome_key: string;
+  line_value: number | null;
+  price_american: number | null;
 };
 
 function toIsoTimestamp(value: string | null | undefined): string | null {
@@ -61,6 +79,46 @@ function averageNullable(values: Array<number | null | undefined>): number | nul
   if (finiteValues.length === 0) return null;
   const avg = finiteValues.reduce((sum, value) => sum + value, 0) / finiteValues.length;
   return Number(avg.toFixed(4));
+}
+
+/** The shared line when all finite lines agree; null when none or when books differ. */
+function commonLineValue(values: Array<number | null | undefined>): number | null {
+  const finiteValues = values.filter(
+    (value): value is number => typeof value === "number" && Number.isFinite(value)
+  );
+  if (finiteValues.length === 0) return null;
+  return finiteValues.every((value) => value === finiteValues[0]) ? finiteValues[0] : null;
+}
+
+/** Latest observation per book, outcome and line; ties keep the higher price so input order never matters. */
+function perBookQuotes<T extends MarketPriceContextRow>(rows: T[]): MarketSummaryQuote[] {
+  const latest = new Map<string, T>();
+  for (const row of rows) {
+    const key = `${row.sportsbook_key}|${row.outcome_key}|${row.line_value ?? ""}`;
+    const current = latest.get(key);
+    const rowAt = toIsoTimestamp(row.source_observed_at) ?? "";
+    const currentAt = current ? toIsoTimestamp(current.source_observed_at) ?? "" : null;
+    if (
+      currentAt == null ||
+      rowAt > currentAt ||
+      (rowAt === currentAt && (row.price_american ?? -Infinity) > (current?.price_american ?? -Infinity))
+    ) {
+      latest.set(key, row);
+    }
+  }
+  return Array.from(latest.values())
+    .map((row) => ({
+      sportsbook_key: row.sportsbook_key,
+      outcome_key: row.outcome_key,
+      line_value: row.line_value,
+      price_american: row.price_american
+    }))
+    .sort(
+      (a, b) =>
+        a.sportsbook_key.localeCompare(b.sportsbook_key) ||
+        a.outcome_key.localeCompare(b.outcome_key) ||
+        (a.line_value ?? -Infinity) - (b.line_value ?? -Infinity)
+    );
 }
 
 function summarizeRowsByMarketType<T extends MarketPriceContextRow>(
@@ -128,7 +186,7 @@ function summarizeRowsByMarketType<T extends MarketPriceContextRow>(
       outcomes: Array.from(outcomeGroups.entries())
         .map(([outcomeKey, outcomeRows]) => ({
           outcomeKey,
-          averageLineValue: averageNullable(outcomeRows.map((row) => row.line_value)),
+          averageLineValue: commonLineValue(outcomeRows.map((row) => row.line_value)),
           averagePriceAmerican: averageNullable(
             outcomeRows.map((row) => row.price_american)
           ),
@@ -137,7 +195,8 @@ function summarizeRowsByMarketType<T extends MarketPriceContextRow>(
           ),
           sportsbookCount: outcomeRows.length
         }))
-        .sort((a, b) => a.outcomeKey.localeCompare(b.outcomeKey))
+        .sort((a, b) => a.outcomeKey.localeCompare(b.outcomeKey)),
+      quotes: perBookQuotes(marketRows)
     };
   }
 

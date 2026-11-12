@@ -1,3 +1,7 @@
+import {
+  calculateLeagueSavePct,
+  classifyVollmanQualityStart,
+} from "lib/rankings/goalieMethodology";
 import serviceRoleClient from "lib/supabase/server";
 import {
   fetchAllSupabaseFilterChunks,
@@ -74,6 +78,16 @@ type GameRow = {
   id: number;
   homeTeamId: number;
   awayTeamId: number;
+  type?: number | null;
+};
+
+type CreditedGoalieStartRow = {
+  goalie_id: number;
+  game_id: number | null;
+  games_played: number | null;
+  games_started: number | null;
+  saves: number | null;
+  shots_against: number | null;
 };
 
 type GameOutcomeRow = {
@@ -268,7 +282,7 @@ async function fetchCurrentSeasonGames(currentSeasonId: number) {
   const data = await fetchAllSupabasePages<GameRow>(({ from, to }) =>
     serviceRoleClient
       .from("games")
-      .select("id, homeTeamId, awayTeamId")
+      .select("id, homeTeamId, awayTeamId, type")
       .eq("seasonId", currentSeasonId)
       .order("id", { ascending: true })
       .range(from, to)
@@ -822,13 +836,130 @@ async function buildSkaterRows(args: {
     });
 }
 
-function isQualityStart(shotsAgainst: number, saves: number) {
-  if (shotsAgainst <= 0) {
-    return false;
-  }
+/** Official goalie game logs for the season: credited starts and the
+ * league-average SV% for Vollman Quality Starts (decision 40). */
+async function fetchOfficialGoalieGameLogs(seasonId: number) {
+  return fetchAllSupabasePages<CreditedGoalieStartRow>(({ from, to }) =>
+    serviceRoleClient
+      .from("wgo_goalie_stats")
+      .select("goalie_id, game_id, games_played, games_started, saves, shots_against")
+      .eq("season_id", seasonId)
+      .order("game_id", { ascending: true })
+      .order("goalie_id", { ascending: true })
+      .range(from, to)
+  );
+}
 
-  const savePct = saves / shotsAgainst;
-  return savePct > 0.91 || (shotsAgainst <= 20 && savePct >= 0.885);
+/** League-average all-situations SV% over the season's regular-season
+ * official appearances, pooled by shots. */
+export function leagueSavePctFromOfficialLogs(args: {
+  logs: readonly CreditedGoalieStartRow[];
+  regularSeasonGameIds: ReadonlySet<number>;
+}) {
+  return calculateLeagueSavePct(
+    args.logs
+      .filter(
+        (row) =>
+          row.game_id != null &&
+          args.regularSeasonGameIds.has(row.game_id) &&
+          row.games_played !== 0
+      )
+      .map((row) => ({ saves: row.saves, shotsAgainst: row.shots_against }))
+  ).savePct;
+}
+
+/** Credited starters per game from official logs (one per team). A game
+ * with no credited starter is absent, so its starter stays unknown. */
+export function creditedStartersByGame(logs: readonly CreditedGoalieStartRow[]) {
+  const starters = new Map<number, number[]>();
+  for (const row of logs) {
+    if (row.game_id == null || row.games_started !== 1) continue;
+    starters.set(row.game_id, [...(starters.get(row.game_id) ?? []), row.goalie_id]);
+  }
+  return starters;
+}
+
+type SplitGoalieAggregate = {
+  gamesPlayed: number;
+  gamesStarted: number;
+  wins: number;
+  losses: number;
+  otl: number;
+  shutouts: number;
+  qualityStarts: number;
+  qualityStartsUnavailable: boolean;
+};
+
+/**
+ * Per-goalie matchup aggregation. Starts, results and Vollman Quality Starts
+ * go to the credited starter only (decision 40); a game with no verified
+ * credited starter for this team counts no start and leaves QS% unavailable
+ * for the goalies who appeared in it.
+ */
+export function aggregateSplitGoalieGames(args: {
+  rowsByGame: ReadonlyMap<number, readonly GoalieGameRow[]>;
+  creditedStartersByGame: ReadonlyMap<number, readonly number[]>;
+  outcomeByGameId: ReadonlyMap<number, string>;
+  leagueSavePct: number | null;
+}) {
+  const aggregateByPlayerId = new Map<number, SplitGoalieAggregate>();
+  args.rowsByGame.forEach((rows, gameId) => {
+    const appearedIds = new Set(rows.map((row) => row.playerId));
+    const credited = (args.creditedStartersByGame.get(gameId) ?? []).filter((id) =>
+      appearedIds.has(id)
+    );
+    const starterId = credited.length === 1 ? credited[0] : null;
+
+    for (const row of rows) {
+      const current =
+        aggregateByPlayerId.get(row.playerId) ?? {
+          gamesPlayed: 0,
+          gamesStarted: 0,
+          wins: 0,
+          losses: 0,
+          otl: 0,
+          shutouts: 0,
+          qualityStarts: 0,
+          qualityStartsUnavailable: false,
+        };
+      current.gamesPlayed += 1;
+
+      if (starterId == null) {
+        current.qualityStartsUnavailable = true;
+      } else if (starterId === row.playerId) {
+        current.gamesStarted += 1;
+        const { saves, shotsAgainst } = parseSaveShotsAgainst(row.saveShotsAgainst);
+
+        if (safeNumber(row.goalsAgainst) === 0 && rows.length === 1) {
+          current.shutouts += 1;
+        }
+
+        const qualityStart = classifyVollmanQualityStart(
+          {
+            started: true,
+            saves: row.saveShotsAgainst ? saves : null,
+            shotsAgainst: row.saveShotsAgainst ? shotsAgainst : null,
+            goalsAgainst: row.goalsAgainst ?? null,
+          },
+          args.leagueSavePct
+        );
+        if (qualityStart == null) current.qualityStartsUnavailable = true;
+        else if (qualityStart) current.qualityStarts += 1;
+
+        const outcome = args.outcomeByGameId.get(gameId);
+        if (outcome === "WIN") {
+          current.wins += 1;
+        } else if (outcome === "LOSS") {
+          current.losses += 1;
+        } else if (outcome === "TIE") {
+          current.otl += 1;
+        }
+      }
+
+      aggregateByPlayerId.set(row.playerId, current);
+    }
+  });
+  return aggregateByPlayerId;
 }
 
 async function buildGoalieRows(args: {
@@ -836,6 +967,7 @@ async function buildGoalieRows(args: {
   rosterPlayers: readonly PlayerDirectoryEntry[];
   opponentTeamId: number;
   games: readonly GameRow[];
+  officialLogs: readonly CreditedGoalieStartRow[];
 }): Promise<SplitGoalieRow[]> {
   const goalies = args.rosterPlayers.filter((player) => player.positionCode === "G");
   const teamGameIds = args.games
@@ -868,63 +1000,17 @@ async function buildGoalieRows(args: {
     rowsByGame.set(row.gameId, existing);
   }
 
-  const aggregateByPlayerId = new Map<
-    number,
-    {
-      gamesPlayed: number;
-      gamesStarted: number;
-      wins: number;
-      losses: number;
-      otl: number;
-      shutouts: number;
-      qualityStarts: number;
-    }
-  >();
-
-  rowsByGame.forEach((rows, gameId) => {
-    const sortedRows = [...rows].sort(
-      (left, right) => parseToiToSeconds(right.toi) - parseToiToSeconds(left.toi)
-    );
-    const starter = sortedRows[0] ?? null;
-
-    for (const row of sortedRows) {
-      const current =
-        aggregateByPlayerId.get(row.playerId) ?? {
-          gamesPlayed: 0,
-          gamesStarted: 0,
-          wins: 0,
-          losses: 0,
-          otl: 0,
-          shutouts: 0,
-          qualityStarts: 0,
-        };
-
-      current.gamesPlayed += 1;
-
-      if (starter?.playerId === row.playerId) {
-        current.gamesStarted += 1;
-        const { saves, shotsAgainst } = parseSaveShotsAgainst(row.saveShotsAgainst);
-
-        if (safeNumber(row.goalsAgainst) === 0 && sortedRows.length === 1) {
-          current.shutouts += 1;
-        }
-
-        if (isQualityStart(shotsAgainst, saves)) {
-          current.qualityStarts += 1;
-        }
-
-        const outcome = outcomeByGameId.get(gameId);
-        if (outcome === "WIN") {
-          current.wins += 1;
-        } else if (outcome === "LOSS") {
-          current.losses += 1;
-        } else if (outcome === "TIE") {
-          current.otl += 1;
-        }
-      }
-
-      aggregateByPlayerId.set(row.playerId, current);
-    }
+  const regularSeasonGameIds = new Set(
+    args.games.filter((game) => game.type === 2).map((game) => game.id)
+  );
+  const aggregateByPlayerId = aggregateSplitGoalieGames({
+    rowsByGame,
+    creditedStartersByGame: creditedStartersByGame(args.officialLogs),
+    outcomeByGameId,
+    leagueSavePct: leagueSavePctFromOfficialLogs({
+      logs: args.officialLogs,
+      regularSeasonGameIds,
+    }),
   });
 
   return goalies
@@ -971,8 +1057,10 @@ async function buildGoalieRows(args: {
             : null,
         shutouts: aggregate?.shutouts ?? 0,
         qualityStarts: aggregate?.qualityStarts ?? 0,
+        // Vollman Quality Start % over credited starts; unavailable when any
+        // appearance lacks a credited starter or a classifiable start.
         qualityStartsPct:
-          gamesStarted > 0
+          gamesStarted > 0 && !aggregate?.qualityStartsUnavailable
             ? toRounded((aggregate?.qualityStarts ?? 0) / gamesStarted)
             : null,
       } satisfies SplitGoalieRow;
@@ -1072,6 +1160,7 @@ export async function buildSplitsSurface(args: {
             rosterPlayers,
             opponentTeamId: effectiveOpponent.id,
             games,
+            officialLogs: await fetchOfficialGoalieGameLogs(currentSeason.id),
           }),
         }
       : null;

@@ -90,8 +90,9 @@ export default function useSchedule(
       // Register both odds-bearing windows before fixture-only subscribers start.
       // Two is the maximum concurrency; team metadata shares its own season-keyed read.
       const [schedule, nextWeekSchedule, seasonTeams] = await Promise.all([
-        getSchedule(start, { signal: controller.signal }),
-        extended ? getSchedule(nextMon, { signal: controller.signal }) : Promise.resolve(null),
+        // Win odds are withheld (decision 64): never request them.
+        getSchedule(start, { includeOdds: false, signal: controller.signal }),
+        extended ? getSchedule(nextMon, { includeOdds: false, signal: controller.signal }) : Promise.resolve(null),
         getTeams(undefined, { signal: controller.signal }),
       ]);
       if (ignore) return;

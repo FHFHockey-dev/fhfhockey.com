@@ -842,6 +842,27 @@ async function ensureServingModelVersion(args: {
     .maybeSingle();
   if (error) throw error;
 
+  if (data?.status !== "production") {
+    // This server serves only the compiled baseline identity. If a different
+    // version is promoted, its artifact cannot be loaded here: that is a
+    // serving fault, not "no production model" (BC W1-10 A misc).
+    const { data: promoted, error: promotedError } = await args.client
+      .from("game_prediction_model_versions")
+      .select("model_name,model_version,feature_set_version")
+      .eq("status", "production")
+      .maybeSingle();
+    if (promotedError) throw promotedError;
+    if (promoted) {
+      throw new Error(
+        [
+          `Production game model ${promoted.model_name}/${promoted.model_version}/${promoted.feature_set_version}`,
+          `is promoted, but this server serves only the compiled ${args.modelName}/${args.modelVersion}`,
+          "and cannot load that artifact; nothing was persisted.",
+        ].join(" "),
+      );
+    }
+  }
+
   servingModelVersionPersistenceAction({
     ...args,
     existingStatus: data?.status ?? null,
@@ -890,7 +911,8 @@ export function isPregamePredictionCutoff(args: {
     args.game.startTime,
     args.game.date,
   );
-  return startMs == null || cutoffMs < startMs;
+  // Unknown start time is not verified pregame timing (rule 10): refuse.
+  return startMs != null && cutoffMs < startMs;
 }
 
 export function sourceAsOfDateForPredictionCutoff(
@@ -910,6 +932,8 @@ export async function generatePregamePredictionForGame(args: {
   runId?: string | null;
   allowBaselineBootstrap?: boolean;
   dryRun?: boolean;
+  /** The inputs are read now, at the cutoff (see admitTargetGameLineup). */
+  liveIssuance?: boolean;
 }): Promise<GeneratePregamePredictionResult> {
   const model = args.model ?? INITIAL_BASELINE_MODEL;
   const modelName = args.modelName ?? BASELINE_MODEL_NAME;
@@ -918,6 +942,7 @@ export async function generatePregamePredictionForGame(args: {
   const inputs = await fetchGamePredictionFeatureInputs(args.client, args.gameId, {
     sourceAsOfDate: args.sourceAsOfDate,
     predictionCutoffAt,
+    admitTargetGameLineup: args.liveIssuance === true,
   });
   if (!isPregamePredictionCutoff({ game: inputs.game, predictionCutoffAt })) {
     throw new Error(
@@ -1195,6 +1220,7 @@ export async function generatePregamePredictionsForWindow(args: {
   limit?: number;
   maxRuntimeMs?: number;
   dryRun?: boolean;
+  liveIssuance?: boolean;
 }): Promise<GeneratePredictionWindowResult> {
   const limit = Math.min(Math.max(args.limit ?? 16, 1), 64);
   const maxRuntimeMs = Math.min(Math.max(args.maxRuntimeMs ?? 240_000, 1_000), 260_000);
@@ -1250,6 +1276,7 @@ export async function generatePregamePredictionsForWindow(args: {
           modelVersion: args.modelVersion,
           allowBaselineBootstrap: args.allowBaselineBootstrap,
           dryRun: args.dryRun,
+          liveIssuance: args.liveIssuance,
         }),
       );
     } catch (error) {

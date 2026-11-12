@@ -9,8 +9,11 @@ import {
   buildCreatedXgAggregates,
   type CreatedXgShotAssistRow,
   type CreatedXgShotIdentityRow,
+  type CreatedXgShotXgRow,
   type CreatedXgTransitionEventRow,
 } from "lib/xg/createdXg";
+import { xgCoverageGameKey } from "lib/xg/aggregates";
+import { fetchXgParticipation, fetchXgSeasonGames } from "lib/xg/participation";
 
 const PAGE_SIZE = 1000;
 const DEFAULT_UPSERT_BATCH_SIZE = 500;
@@ -222,6 +225,50 @@ async function fetchShotIdentityRows(
   return rows;
 }
 
+/** Served shot-goal xG of every credited shot, from the same model and feature version. */
+async function fetchShotXgRows(args: {
+  modelVersion: string;
+  featureVersion: number;
+  shotAssistRows: CreatedXgShotAssistRow[];
+  transitionRows: CreatedXgTransitionEventRow[];
+}): Promise<CreatedXgShotXgRow[]> {
+  const byGame = new Map<number, Set<number>>();
+  const add = (gameId: number, eventId: number) => {
+    const current = byGame.get(gameId) ?? new Set<number>();
+    current.add(eventId);
+    byGame.set(gameId, current);
+  };
+  for (const row of args.shotAssistRows) add(row.game_id, row.event_id);
+  for (const row of args.transitionRows) add(row.game_id, row.shot_event_id);
+
+  const rows: CreatedXgShotXgRow[] = [];
+  for (const [gameId, eventIds] of byGame) {
+    for (const eventIdChunk of chunkRows(Array.from(eventIds), 500)) {
+      const { data, error } = await supabase
+        .from("nhl_xg_shot_predictions" as any)
+        .select("model_version,feature_version,game_id,event_id,xg,model_approved")
+        .eq("model_version", args.modelVersion)
+        .eq("model_approved", true)
+        .eq("feature_version", args.featureVersion)
+        .eq("prediction_type", "shot_goal")
+        .eq("game_id", gameId)
+        .in("event_id", eventIdChunk);
+      if (error) throw new Error(`Failed to fetch credited shot xG: ${error.message}`);
+      rows.push(
+        ...((data ?? []) as unknown as Array<Record<string, unknown>>).map((row) => ({
+          model_version: String(row.model_version),
+          feature_version: Number(row.feature_version),
+          game_id: Number(row.game_id),
+          event_id: Number(row.event_id),
+          xg: Number(row.xg),
+          model_approved: row.model_approved === true,
+        }))
+      );
+    }
+  }
+  return rows;
+}
+
 async function upsertRows(table: string, rows: unknown[], onConflict: string, batchSize: number) {
   let upserted = 0;
   for (const batch of chunkRows(rows, batchSize)) {
@@ -261,16 +308,30 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     fetchTransitionRows({ modelVersion, featureVersion, seasonId, limit }),
   ]);
   const shotIdentityRows = await fetchShotIdentityRows(transitionRows);
+  const shotXgRows = await fetchShotXgRows({ modelVersion, featureVersion, shotAssistRows, transitionRows });
+  const sourceGameIds = Array.from(
+    new Set([...shotAssistRows.map((row) => row.game_id), ...transitionRows.map((row) => row.game_id)])
+  );
+  const games = await fetchXgSeasonGames(supabase, sourceGameIds);
+  const { players } = await fetchXgParticipation(supabase, games);
+  // Conservative coverage: only games where a credit source row exists for
+  // this model are proven built; other dressed games leave windows unknown.
+  const coveredGameKeys = new Set(
+    sourceGameIds.map((gameId) => xgCoverageGameKey({ modelVersion, featureVersion, gameId }))
+  );
   const aggregates = buildCreatedXgAggregates({
     shotAssistRows,
     transitionRows,
     shotIdentityRows,
-    options: { rollingWindows },
+    shotXgRows,
+    options: { rollingWindows, participation: players, coveredGameKeys },
   });
   const counts = {
     shotAssistRows: shotAssistRows.length,
     transitionRows: transitionRows.length,
     shotIdentityRows: shotIdentityRows.length,
+    shotXgRows: shotXgRows.length,
+    skaterParticipationRows: players.length,
     playerGameRows: aggregates.playerGameRows.length,
     playerRollingRows: aggregates.playerRollingRows.length,
   };
@@ -284,6 +345,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       seasonId,
       rollingWindows,
       counts,
+      rollingCoverage: aggregates.rollingCoverage,
       reconciliation: aggregates.reconciliation,
       samples: aggregates.playerGameRows.slice(0, 10),
     });

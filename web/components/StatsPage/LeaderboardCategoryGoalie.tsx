@@ -10,19 +10,21 @@ interface LeaderboardCategoryGoalieProps {
   title: string;
   leaders?: GoalieStat[];
   statKey: keyof GoalieStat;
+  emptyMessage?: string;
 }
 
 const LeaderboardCategoryGoalie: React.FC<LeaderboardCategoryGoalieProps> = ({
   title,
   leaders = [],
-  statKey
+  statKey,
+  emptyMessage = "No goalie data available."
 }) => {
   return (
     <div className={styles.card}>
       <h2 className={styles.cardTitle}>{title}</h2>
       {leaders.length === 0 && (
         <div className={styles.leaderRow}>
-          <div className={styles.playerDetails}>No goalie data available.</div>
+          <div className={styles.playerDetails}>{emptyMessage}</div>
         </div>
       )}
       {leaders.map((goalie, index) => {

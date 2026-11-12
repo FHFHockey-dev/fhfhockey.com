@@ -22,3 +22,15 @@ it("P02: empty qualified ranking has an unavailable state", () => {
   render(<LeaderboardCategoryGoalie title="GAA" leaders={[]} statKey="goals_against_avg" />);
   expect(screen.getByText("No goalie data available.")).toBeTruthy();
 });
+
+it("W3-2 D5: a board withheld for an unknown qualifier says so", () => {
+  render(
+    <LeaderboardCategoryGoalie
+      title="GAA"
+      leaders={[]}
+      statKey="goals_against_avg"
+      emptyMessage="Withheld: qualifier unknown."
+    />
+  );
+  expect(screen.getByText("Withheld: qualifier unknown.")).toBeTruthy();
+});

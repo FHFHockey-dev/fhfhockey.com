@@ -87,8 +87,8 @@ describe("ProjectionsTable visibility diagnostics", () => {
     defender.fantasyPoints.projected = 100;
     forward.fantasyPoints.projected = 80;
     render(<ProjectionsTable players={[defender, forward]} draftedPlayers={[]} isLoading={false} error={null} onDraftPlayer={vi.fn()} canDraft vorpMetrics={new Map([
-      ["1", { value: 0, unweightedValue: 100, vorp: 0, vona: 0, vols: 0, vbd: 0, bestPos: "D", eligible: ["D"] }],
-      ["2", { value: 80, vorp: 20, vona: 0, vols: 0, vbd: 12, bestPos: "C", eligible: ["C"] }],
+      ["1", { value: 0, unweightedValue: 100, vorp: 0, vona: 0, vols: 0, vbd: 0, scarcity: null, bestPos: "D", eligible: ["D"] }],
+      ["2", { value: 80, vorp: 20, vona: 0, vols: 0, vbd: 12, scarcity: null, bestPos: "C", eligible: ["C"] }],
     ])} />);
     const order = () => Array.from(document.querySelectorAll("tbody tr[data-player-id]")).map(row => row.getAttribute("data-player-id"));
     fireEvent.click(screen.getByTitle("Projected Fantasy Points"));

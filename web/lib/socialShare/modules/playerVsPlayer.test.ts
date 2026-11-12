@@ -136,6 +136,29 @@ describe("comparable windows (5.2)", () => {
   });
 });
 
+describe("coverage the label states is the sample the number used (W3-2 D4, A2; rule 22)", () => {
+  it("does not total or compare a partly observed window (A 10 of 10 at 0.30 ixG = 3.00, B 9 of 10 at 0.32 = 2.88)", () => {
+    const appearances = [...games(A, 10), ...games(B, 10)];
+    const nst = [...games(A, 10).map(row => ({ player_id: A, date_scraped: row.date, gp: 1, ixg: 0.3, iscfs: 2 })), ...games(B, 9).map(row => ({ player_id: B, date_scraped: row.date, gp: 1, ixg: 0.32, iscfs: 2 }))];
+    const result = build({ appearances, nst, settings: settings({ basis: "total" }) }), ixg = result.data!.metrics.find(row => row.id === "ixg")!;
+    expect(ixg).toMatchObject({ higher: null, a: { shown: "3.00", admitted: true }, b: { value: null, shown: "—", observed: 9, expected: 10, missing: 1, admitted: false } });
+    expect(pvpBarShares(ixg)).toEqual({ a: null, b: null });
+    expect(pvpAltText(result.data!, "sample")).toContain("ixG (NST): Alpha Fake 3.00, Beta Fake —");
+    expect(result.data!.notes.join(" ")).toContain("Beta Fake 9 of 10, 1 missing");
+    // The same window still gives a per-game rate over its covered games, disclosed at 9 of 10.
+    expect(build({ appearances, nst }).data!.metrics.find(row => row.id === "ixg")!.b).toMatchObject({ shown: "0.32", observed: 9, admitted: true });
+  });
+  it("counts per-60 coverage on games with both the count and the time: ten ixG and one TOI is 1 of 10, not a ready 0.90", () => {
+    const appearances = [...games(A, 10).map((row, index) => index ? { ...row, toiSeconds: null } : row), ...games(B, 10)];
+    const nst = [...games(A, 10).map(row => ({ player_id: A, date_scraped: row.date, gp: 1, ixg: 0.3, iscfs: 2 })), ...nstFor(games(B, 10))];
+    const result = build({ appearances, nst, settings: settings({ basis: "per-60" }) }), ixg = result.data!.metrics.find(row => row.id === "ixg")!;
+    expect(ixg.a).toMatchObject({ value: null, shown: "—", observed: 1, expected: 10, missing: 9, admitted: false });
+    expect(ixg.higher).toBeNull();
+    expect(result.data!.notes.join(" ")).toContain("Alpha Fake 1 of 10, 9 missing");
+    expect(result.state).toBe("partial");
+  });
+});
+
 describe("late newest night (TJ, 2026-11-03)", () => {
   /* Both players play Oct 1 to 11; Beta's team's Oct 11 result is not reported yet. */
   const appearances = [...games(A, 11), ...games(B, 11, { team: "NYI" })];

@@ -1,0 +1,256 @@
+{
+  "AUDIT_REST_STAGE": {
+    "raw": -0.012,
+    "off": {
+      "proj_shots_against": 29.7,
+      "proj_goals_allowed": 3.001,
+      "proj_saves": 26.699,
+      "proj_win_prob": 0.492,
+      "proj_shutout_prob": 0.0492
+    },
+    "on": {
+      "proj_shots_against": 29.7,
+      "proj_goals_allowed": 3.09,
+      "proj_saves": 26.61,
+      "proj_win_prob": 0.492,
+      "proj_shutout_prob": 0.0451
+    },
+    "reserveOff": {
+      "conditioning": "if_starts",
+      "start_probability": null,
+      "reserve_reason": "backup_goalie",
+      "modeled_save_pct": 0.8989,
+      "excluded_from_team_totals": true
+    },
+    "reserveOn": {
+      "conditioning": "if_starts",
+      "start_probability": null,
+      "reserve_reason": "backup_goalie",
+      "modeled_save_pct": 0.8959,
+      "excluded_from_team_totals": true
+    }
+  },
+  "AUDIT_CANDIDATE_WIN": {
+    "off": {
+      "team": {
+        "population": "team_game",
+        "denominator": "games",
+        "win_probability": 0.5,
+        "source": "poisson_race",
+        "paired_with_opponent": "sums_to_1"
+      },
+      "goalies": [
+        {
+          "goalie_id": 100,
+          "start_probability": 0.8744,
+          "team_win_if_starts": 0.5,
+          "credited_win_if_starts": 0.492,
+          "starter_win": 0.4302,
+          "relief_win": 0.001,
+          "unconditional_win": 0.4312
+        },
+        {
+          "goalie_id": 101,
+          "start_probability": 0.1256,
+          "team_win_if_starts": 0.5,
+          "credited_win_if_starts": 0.492,
+          "starter_win": 0.0618,
+          "relief_win": 0.007,
+          "unconditional_win": 0.0688
+        }
+      ],
+      "goalie_population": "candidate_goalie_game",
+      "goalie_denominators": {
+        "credited_win_if_starts": "starts",
+        "unconditional_win": "candidate_games"
+      },
+      "decision_share": 0.984,
+      "start_probability_mass": 1,
+      "values_per": "single_game",
+      "proj_win_prob_population": "team_goalie_slot_credited_starter_win"
+    },
+    "on": {
+      "team": {
+        "population": "team_game",
+        "denominator": "games",
+        "win_probability": 0.5,
+        "source": "poisson_race",
+        "paired_with_opponent": "sums_to_1"
+      },
+      "goalies": [
+        {
+          "goalie_id": 100,
+          "start_probability": 0.8744,
+          "team_win_if_starts": 0.4986,
+          "credited_win_if_starts": 0.4907,
+          "starter_win": 0.429,
+          "relief_win": 0.001,
+          "unconditional_win": 0.4301
+        },
+        {
+          "goalie_id": 101,
+          "start_probability": 0.1256,
+          "team_win_if_starts": 0.5096,
+          "credited_win_if_starts": 0.5014,
+          "starter_win": 0.063,
+          "relief_win": 0.007,
+          "unconditional_win": 0.0699
+        }
+      ],
+      "goalie_population": "candidate_goalie_game",
+      "goalie_denominators": {
+        "credited_win_if_starts": "starts",
+        "unconditional_win": "candidate_games"
+      },
+      "decision_share": 0.984,
+      "start_probability_mass": 1,
+      "values_per": "single_game",
+      "proj_win_prob_population": "team_goalie_slot_credited_starter_win"
+    }
+  },
+  "AUDIT_UNKNOWN_REST": {
+    "off": 0.8989,
+    "on": 0.9019
+  },
+  "AUDIT_SPREAD": {
+    "buggy": {
+      "snapshot_date": "2026-10-10",
+      "entity_type": "game",
+      "entity_id": 1,
+      "game_id": 1,
+      "model_name": "forge",
+      "model_version": "market-context-v1",
+      "market_type": "spreads",
+      "sportsbook_key": null,
+      "flag_type": "model_home_cover",
+      "edge_value": 2.3,
+      "confidence_0_to_100": 100,
+      "reasons": [],
+      "provenance": {
+        "provider": null,
+        "input_family": "forge-market-comparison"
+      },
+      "metadata": {},
+      "computed_at": "2026-11-11T20:42:31.278Z",
+      "updated_at": "2026-11-11T20:42:31.278Z"
+    },
+    "corrected": {
+      "snapshot_date": "2026-10-10",
+      "entity_type": "game",
+      "entity_id": 1,
+      "game_id": 1,
+      "model_name": "forge",
+      "model_version": "market-context-v1",
+      "market_type": "spreads",
+      "sportsbook_key": null,
+      "flag_type": "model_away_cover",
+      "edge_value": -0.7,
+      "confidence_0_to_100": 70,
+      "reasons": [],
+      "provenance": {
+        "provider": null,
+        "input_family": "forge-market-comparison"
+      },
+      "metadata": {},
+      "computed_at": "2026-11-11T20:42:31.278Z",
+      "updated_at": "2026-11-11T20:42:31.278Z"
+    }
+  },
+  "AUDIT_RESERVE": {
+    "one": {
+      "proj_toi_es_seconds": null,
+      "proj_toi_pp_seconds": null,
+      "proj_shots_es": null,
+      "proj_shots_pp": null,
+      "proj_goals_es": null,
+      "proj_goals_pp": null,
+      "proj_assists_es": null,
+      "proj_assists_pp": null,
+      "proj_hits": null,
+      "proj_blocks": null,
+      "proj_shots_against": 30,
+      "proj_saves": 27,
+      "proj_goals_allowed": 3,
+      "proj_shutout_prob": 0.05
+    },
+    "five": {
+      "proj_toi_es_seconds": null,
+      "proj_toi_pp_seconds": null,
+      "proj_shots_es": null,
+      "proj_shots_pp": null,
+      "proj_goals_es": null,
+      "proj_goals_pp": null,
+      "proj_assists_es": null,
+      "proj_assists_pp": null,
+      "proj_hits": null,
+      "proj_blocks": null,
+      "proj_shots_against": 150,
+      "proj_saves": 135,
+      "proj_goals_allowed": 15,
+      "proj_shutout_prob": 0.05
+    },
+    "iidAtLeastOne": 0.22621906250000023,
+    "expectedShutoutCount": 0.25
+  },
+  "AUDIT_CONTEXT": {
+    "neutral": {
+      "seconds": 1200,
+      "shots": 2,
+      "goals": 0.2,
+      "onIceGoals": 1,
+      "assists": 0.5,
+      "factors": {
+        "opportunity": 1,
+        "shotVolume": 1,
+        "goalEnvironment": 1,
+        "finishing": 1
+      }
+    },
+    "teamShotVolume": {
+      "seconds": 1200,
+      "shots": 2.06,
+      "goals": 0.20600000000000002,
+      "onIceGoals": 1,
+      "assists": 0.5,
+      "factors": {
+        "opportunity": 1,
+        "shotVolume": 1.03,
+        "goalEnvironment": 1,
+        "finishing": 1
+      }
+    }
+  },
+  "AUDIT_SPARSE_SCORE": {
+    "mu": 0.2,
+    "mae0": 0.19999999999999998,
+    "maeMean": 0.3274923012311928,
+    "mse0": 0.24000000000000002,
+    "mseMean": 0.20000000000000007
+  },
+  "source": {
+    "reportCommit": "46f4d482d7",
+    "reportSourceCommit": "859cfb512",
+    "inspectionHead": "7174249cb7eae7e711039e495c63a990112e22ea",
+    "workingBlobs": {
+      "web/lib/projections/calculators/goalie-save-pct-context.ts": "d78121b655f903c242ee229e7c43993b4fc4f157",
+      "web/lib/projections/queries/goalie-queries.ts": "2d929a5a2847c477f2e148638d6743a60e152090",
+      "web/lib/projections/stages/goalie-stage.ts": "82ce1bb4fa8ec2b3c7fc5f584a236e13e64b208e",
+      "web/lib/projections/goalie/goalieOutcomes.ts": "0487ad9380e4591001a18e3ee601c7108628398a",
+      "web/lib/projections/goalieModel.ts": "ecad2047aab310a75b1b5cc609c36a61e450d30e",
+      "web/lib/projections/reserveProjections.ts": "e4eadc42c9adf049baaddfaf9d9d507628aa6582",
+      "web/lib/projections/utils/market-output-builders.ts": "b6d93771f7a000a7671b1d2390495ffea123d5bb",
+      "web/lib/projections/run-forge-projections.ts": "cfbd1c7dacee455e91ba0911c9e5087c2c5dc0d7",
+      "web/lib/projections/research/skater-candidates/context.ts": "1b76e83328acaa4abc948141c3f9da2b062ab7d3",
+      "web/lib/projections/researchGameGoals.ts": "3addb49a72babe6991279a5b4f7574175399576d",
+      "web/pages/api/v1/db/update-wgo-goalies.ts": "9fd0d8e1fdf280404538d035f6afbfe0e9f62b7c"
+    },
+    "committedSourceParity": true,
+    "sourceWorkingDiffEmpty": true
+  },
+  "limits": [
+    "All inputs synthetic; no population magnitudes estimated.",
+    "Persistence intercepted before any database write; no API/frontend exercised.",
+    "Reserve pass and starter-board compute enabled only in fixture mocks.",
+    "No production DB or provider requests, migrations, pushes or deployment."
+  ]
+}

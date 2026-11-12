@@ -31,6 +31,7 @@ import StarterBoardValidation from "components/StarterBoardValidation";
 import StarterBoardPlayerDetails from "components/StarterBoardPlayerDetails";
 import { START_CHART_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import {
+  goalieStartLabel,
   normalizeStartChartResponse,
   selectStartChartExpectationBasis,
   scoreStartChartPayload,
@@ -304,8 +305,9 @@ const RenderGoalie = ({ goalies }: { goalies?: StartChartGoalie[] }) => {
     Number(right.confirmed_status) - Number(left.confirmed_status) ||
     (right.start_probability ?? -1) - (left.start_probability ?? -1))[0];
   if (!likely) return <span className={styles.goalieUnavailable}>Goalie TBD</span>;
-  return <span className={styles.goalieSummary} title={likely.name}>
-    {likely.name} · {likely.confirmed_status ? "Confirmed" : likely.start_probability == null ? "Probability unavailable" : `Projected ${formatPercent(likely.start_probability)}`}
+  const label = goalieStartLabel(likely.start_probability_basis);
+  return <span className={styles.goalieSummary} title={`${likely.name}. ${label.title}`}>
+    {likely.name} · {likely.confirmed_status ? "Confirmed" : likely.start_probability == null ? "Probability unavailable" : `${label.short} ${formatPercent(likely.start_probability)}`}
   </span>;
 };
 
@@ -322,7 +324,7 @@ const ContextChips = ({
     ? opponentGoalie.confirmed_status
       ? "confirmed"
       : opponentGoalie.start_probability != null
-        ? `projected ${formatPercent(opponentGoalie.start_probability)}`
+        ? `${goalieStartLabel(opponentGoalie.start_probability_basis).short.toLowerCase().replace("l10", "L10")} ${formatPercent(opponentGoalie.start_probability)}`
         : "status unavailable"
     : null;
   const chips = [
@@ -914,7 +916,7 @@ export default function StartChartPage() {
             <option value="">All teams</option>{teamsPlaying.map((team) => <option key={team} value={team}>{team}</option>)}
           </select></label>
           <label>Ownership cap <input aria-label="Ownership cap" type="range" min={0} max={100} value={ownershipMax} onChange={(event) => setOwnershipMax(Number(event.target.value))} /><span>{ownershipMax === 100 ? "All" : `${ownershipMax}%`}</span></label>
-          <label>Goalie ranking <select className={styles.selectInput} value={!scoringTouched && data?.contractVersion !== 2 ? "start_probability" : scoring.goalieSort} disabled={scoring.mode === "categories"} onChange={(event) => { setScoringTouched(true); setScoring({ ...scoring, goalieSort: event.target.value as "fantasy" | "start_probability" }); }}><option value="fantasy">Expected points</option><option value="start_probability">Start probability</option></select></label>
+          <label>Goalie ranking <select className={styles.selectInput} value={!scoringTouched && data?.contractVersion !== 2 ? "start_probability" : scoring.goalieSort} disabled={scoring.mode === "categories"} onChange={(event) => { setScoringTouched(true); setScoring({ ...scoring, goalieSort: event.target.value as "fantasy" | "start_probability" }); }}><option value="fantasy">Expected points</option><option value="start_probability">{data?.goalieStartBasis === "l10_start_share" ? "L10 start share" : "Start probability"}</option></select></label>
         </div>
         <details className={styles.moreFilters}>
           <summary>More Filters</summary>
@@ -959,7 +961,7 @@ export default function StartChartPage() {
                 disabled={scoring.mode === "categories"}
                 onChange={(event) => { setScoringTouched(true); setScoring({ ...scoring, goalieSort: event.target.value as "fantasy" | "start_probability" }); }}>
                 <option value="fantasy">Expected fantasy points</option>
-                <option value="start_probability">Starting probability</option>
+                <option value="start_probability">{data?.goalieStartBasis === "l10_start_share" ? "L10 start share" : "Starting probability"}</option>
               </select>
             </div>
             <details id="board-settings" className={styles.scoringEditor}>
@@ -1214,7 +1216,7 @@ export default function StartChartPage() {
                           <span className={styles.positionBadge}>{position}</span>
                           {position !== "G" || player.percent_ownership != null ? <span>Own {formatPercent(player.percent_ownership, false)}</span> : null}
                           {position !== "G" ? <span>{player.games_remaining_week == null ? "Games —" : `${player.games_remaining_week} GM`}</span> : null}
-                          {position === "G" ? <span title="Goalie start probability">{formatPercent(player.start_probability)} {player.confirmed_status ? "confirmed" : player.start_probability == null ? "start unknown" : "projected"}</span>
+                          {position === "G" ? <span title={goalieStartLabel(player.start_probability_basis).title}>{formatPercent(player.start_probability)} {player.confirmed_status ? "confirmed" : player.start_probability == null ? "start unknown" : goalieStartLabel(player.start_probability_basis).short.replace("Projected", "projected")}</span>
                             : player.context?.unit_tier ? <span className={styles.positionBadge} title={player.context.pp_share != null ? `PP share ${formatPercent(player.context.pp_share)}` : undefined}>{player.context.unit_tier}</span> : null}
                           {confirmedOut ? <span>Confirmed out</span> : null}
                           {player.boardScore?.comparisonAllowed === false ? <span>Primary rank unavailable{player.forecast?.conditioning === "conditional_playing" ? " · conditional values are secondary context only" : ""}</span> : null}
@@ -1228,7 +1230,7 @@ export default function StartChartPage() {
                         <div className={styles.statsContainer}>
                           {position === "G" ? (
                             <>
-                              <Metric label="Start" value={formatPercent(player.start_probability)} />
+                              <Metric label={player.start_probability_basis === "l10_start_share" ? "L10 start share" : "Start"} value={formatPercent(player.start_probability)} />
                               <Metric label="GSAA/60" value={formatNumber(player.projected_gsaa, 2)} />
                               <Metric
                                 label="Status"

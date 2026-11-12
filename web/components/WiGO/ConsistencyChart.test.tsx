@@ -5,8 +5,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ConsistencyChart from "./ConsistencyChart";
 import useWigoGameLog from "hooks/useWigoGameLog";
 
-const { fetchLogs } = vi.hoisted(() => ({ fetchLogs: vi.fn() }));
+const { fetchLogs, supabaseRows } = vi.hoisted(() => ({ fetchLogs: vi.fn(), supabaseRows: { rows: [] as any[] } }));
 vi.mock("utils/fetchWigoPlayerStats", () => ({ fetchPlayerGameLogConsistencyData: fetchLogs }));
+// Only the end-to-end D5 test reaches Supabase, through the real reader.
+vi.mock("lib/supabase", () => {
+  const query: any = {
+    select: () => query, eq: () => query, order: () => query,
+    then: (resolve: any) => Promise.resolve({ data: supabaseRows.rows, error: null }).then(resolve)
+  };
+  return { default: { from: () => query } };
+});
 vi.mock("react-chartjs-2", () => ({ Doughnut: ({ data }: any) => <output data-testid="distribution">{JSON.stringify(data)}</output> }));
 afterEach(cleanup);
 const game = (points: number | null, shots: number | null = 0) => ({ date: "2026-01-01", points, shots, hits: 0, blocked_shots: 0 });
@@ -61,5 +69,19 @@ describe("Point Consistency", () => {
     mount();
     await screen.findByText("No games found for this season.");
     expect(screen.queryByTestId("distribution")).toBeNull();
+  });
+  it("counts only the season's regular-season games, end to end through the shared calendar (D5)", async () => {
+    const actual = await vi.importActual<typeof import("utils/fetchWigoPlayerStats")>("utils/fetchWigoPlayerStats");
+    fetchLogs.mockImplementation(actual.fetchPlayerGameLogConsistencyData);
+    const row = { points: 0, shots: 1, hits: 0, blocked_shots: 0, toi_per_game: 900, pp_toi_per_game: 0, pp_toi_pct_per_game: 0, team_abbrev: "EDM" };
+    supabaseRows.rows = [
+      { ...row, game_id: 2025020001, date: "2025-10-08" },
+      { ...row, game_id: 2025030111, date: "2026-04-20", points: 3 }, // playoff game labelled 2025-26
+      { ...row, game_id: 2024020999, date: "2025-04-10", points: 2 } // 2024-25 game labelled 2025-26
+    ];
+    mount();
+    await screen.findByTestId("distribution");
+    // Before the fix the doughnut ran to "3 Pts" over three games.
+    expect(distribution().labels).toEqual(["0 Pts"]);
   });
 });

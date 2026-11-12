@@ -20,6 +20,8 @@ describe("selected schedule metadata", () => {
     expect(result.current[0].map(row => row.THU)).toEqual([game, game]);
     expect(result.current[3]).toMatchObject({ coverage: { known: 7, expected: 7 }, retrievedAtByDate: { [dates[3]]: "2026-10-07T16:00:00Z" } });
     expect(result.current[1]).toEqual([0, 0, 0, 1, 0, 0, 0]);
+    // Decision 64: the grid never requests withheld win odds.
+    expect(mocks.getSchedule).toHaveBeenCalledWith(dates[0], expect.objectContaining({ includeOdds: false }));
   });
 
   it("keeps ten-day windows' individual receipt times and excludes dates beyond the selection", async () => {

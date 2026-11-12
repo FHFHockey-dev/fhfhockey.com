@@ -30,7 +30,7 @@ describe("sustainability runtime contract", () => {
       "sustainability_score_provenance_v2",
     );
     expect(SUSTAINABILITY_TREND_BAND_MODEL_VERSION).toBe(
-      "sustainability_trend_bands_v2",
+      "sustainability_trend_bands_v3",
     );
     expect(buildSustainabilityConfigHash({ b: 2, a: 1 })).toBe(
       buildSustainabilityConfigHash({ a: 1, b: 2 }),

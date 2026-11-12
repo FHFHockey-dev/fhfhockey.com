@@ -218,7 +218,8 @@ describe("fantasy projection contracts", () => {
       playProbability: 0.175,
       conditionalRates: { GOALS: 0.25 },
       conditionalVariances: { GOALS: 0.5625 },
-      deployment: { mostLikelyRole: { forwardLine: 4 } },
+      // Decision 122: no most-likely role or role odds for a newcomer.
+      deployment: { confidence: 0, roleBasis: "unknown_no_role_evidence" },
       rookieProfile: {
         rookie: true,
         nhleMethod: "generic_population_prior_pending_next_artifact_freeze",
@@ -557,9 +558,9 @@ describe("fantasy projection contracts", () => {
     expect(firstAggregate.quantiles.p50.SHOT_ATTEMPTS).toBeLessThanOrEqual(
       firstAggregate.quantiles.p90.SHOT_ATTEMPTS,
     );
-    expect(firstAggregate.quantiles.p50.GAMES_PLAYED).toBe(1.595495311);
-    expect(firstAggregate.quantiles.p50.SHOT_ATTEMPTS).toBe(6.3010162613);
-    expect(firstAggregate.quantiles.p50.EXPECTED_PRIMARY_ASSISTS).toBe(0.8010794892);
+    expect(firstAggregate.quantiles.p50.GAMES_PLAYED).toBe(1.6974147882);
+    expect(firstAggregate.quantiles.p50.SHOT_ATTEMPTS).toBe(6.297277017);
+    expect(firstAggregate.quantiles.p50.EXPECTED_PRIMARY_ASSISTS).toBe(0.7961342739);
   });
 
   it("uses cross-bound interval arithmetic for rate metrics", () => {
@@ -656,21 +657,20 @@ describe("fantasy projection contracts", () => {
       p10: 0,
       p90: 1,
       probability: true,
-    });
-    expect(score).toMatchObject({
-      baselineAbsoluteError: 0.5,
-      interval80Covered: true,
-      skillIndex: 80,
-    });
-    expect(score.absoluteError).toBeCloseTo(0.2);
-    expect(score.brier).toBeCloseTo(0.04);
+    })!;
+    expect(score.baselineMetrics.absoluteError).toBe(0.5);
+    expect(score.metrics).toMatchObject({ interval80Available: true, interval80Covered: true });
+    // v2 has no per-row skill index (decision 65): skill is aggregated.
+    expect(score.metrics).not.toHaveProperty("skillIndex");
+    expect(score.metrics.absoluteError).toBeCloseTo(0.2);
+    expect(score.metrics.brier).toBeCloseTo(0.04);
     const adjusted = [1, 2, 3].map((modelGameForecast) =>
       allocateSeasonTotalAdjustment({
         modelGameForecast,
-        modelRemainingTotal: 6,
+        remainingModelTotal: 6,
         adjustmentDelta: 3,
         remainingGames: 3,
-      }),
+      })!,
     );
     expect(adjusted.reduce((total, value) => total + value, 0)).toBe(9);
   });

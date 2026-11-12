@@ -14,6 +14,7 @@ import {
   resolveInsightTone
 } from "lib/dashboard/playerInsightContext";
 import { fetchOwnershipContextMap } from "lib/dashboard/playerOwnership";
+import { splitAroundNeutral } from "lib/trends/trendsSurface";
 
 type HotColdCardProps = {
   date: string;
@@ -370,20 +371,14 @@ export default function HotColdCard({
     [ownershipFilterActive, ownershipMap, ownershipMax, ownershipMin, rankedRows]
   );
 
-  const hotRows = useMemo(
-    () => [...filteredRankedRows].sort((a, b) => b.currentScore - a.currentScore).slice(0, 4),
+  // Exclusive sides: hot is above the neutral 50th-percentile score and cold
+  // below it; moving up is a positive rank change and moving down negative.
+  const { above: hotRows, below: coldRows } = useMemo(
+    () => splitAroundNeutral(filteredRankedRows, (row) => row.currentScore, 50, 4),
     [filteredRankedRows]
   );
-  const coldRows = useMemo(
-    () => [...filteredRankedRows].sort((a, b) => a.currentScore - b.currentScore).slice(0, 4),
-    [filteredRankedRows]
-  );
-  const upRows = useMemo(
-    () => [...filteredRankedRows].sort((a, b) => b.movementScore - a.movementScore).slice(0, 4),
-    [filteredRankedRows]
-  );
-  const downRows = useMemo(
-    () => [...filteredRankedRows].sort((a, b) => a.movementScore - b.movementScore).slice(0, 4),
+  const { above: upRows, below: downRows } = useMemo(
+    () => splitAroundNeutral(filteredRankedRows, (row) => row.movementScore, 0, 4),
     [filteredRankedRows]
   );
 

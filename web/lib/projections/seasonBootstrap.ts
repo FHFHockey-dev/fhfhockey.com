@@ -89,8 +89,8 @@ export function blendSeasonBootstrap(organic: BoardStats, prior: SeasonBootstrap
 }
 
 export function bootstrapSkaterLine(organic: { goalsEs: number; goalsPp: number; assistsEs: number; assistsPp: number;
-  shotsEs: number; shotsPp: number; hits: number; blocks: number }, prior: SeasonBootstrap,
-  context: { goals: number; assists: number; shots: number; ppUsage: number }) {
+  shotsEs: number; shotsPp: number; hits: number; blocks: number; goalsPk?: number; assistsPk?: number; shotsPk?: number },
+  prior: SeasonBootstrap, context: { goals: number; assists: number; shots: number; ppUsage: number }) {
   const contextualize = (stats: BoardStats): BoardStats => {
     const next = { ...stats };
     for (const [key, factor] of Object.entries({ GOALS: context.goals, PP_GOALS: context.goals,
@@ -108,20 +108,30 @@ export function bootstrapSkaterLine(organic: { goalsEs: number; goalsPp: number;
     }
     return next;
   };
-  const blended = blendSeasonBootstrap({ GOALS: organic.goalsEs + organic.goalsPp,
-    ASSISTS: organic.assistsEs + organic.assistsPp, PP_GOALS: organic.goalsPp, PP_POINTS: organic.goalsPp + organic.assistsPp,
-    SHOTS_ON_GOAL: organic.shotsEs + organic.shotsPp, HITS: organic.hits, BLOCKED_SHOTS: organic.blocks },
+  // History rows are all-situation, so the organic side is the full ES + PP + PK line.
+  const goalsPkIn = organic.goalsPk ?? 0, assistsPkIn = organic.assistsPk ?? 0, shotsPkIn = organic.shotsPk ?? 0;
+  const organicGoals = organic.goalsEs + organic.goalsPp + goalsPkIn;
+  const organicAssists = organic.assistsEs + organic.assistsPp + assistsPkIn;
+  const organicShots = organic.shotsEs + organic.shotsPp + shotsPkIn;
+  const blended = blendSeasonBootstrap({ GOALS: organicGoals,
+    ASSISTS: organicAssists, PP_GOALS: organic.goalsPp, PP_POINTS: organic.goalsPp + organic.assistsPp,
+    SHOTS_ON_GOAL: organicShots, HITS: organic.hits, BLOCKED_SHOTS: organic.blocks },
     { ...prior, previous: contextualize(prior.previous) });
   const s = blended.stats;
-  const goals = s.GOALS ?? organic.goalsEs + organic.goalsPp;
-  const assists = s.ASSISTS ?? organic.assistsEs + organic.assistsPp;
+  const goals = s.GOALS ?? organicGoals;
+  const assists = s.ASSISTS ?? organicAssists;
   const ppPoints = Math.min(goals + assists, s.PP_POINTS ?? organic.goalsPp + organic.assistsPp);
   const goalsPp = Math.max(0, Math.min(goals, ppPoints, s.PP_GOALS ?? organic.goalsPp));
   const assistsPp = Math.min(assists, ppPoints - goalsPp);
-  const shots = s.SHOTS_ON_GOAL ?? organic.shotsEs + organic.shotsPp;
-  const ppShotShare = organic.shotsEs + organic.shotsPp > 0 ? organic.shotsPp / (organic.shotsEs + organic.shotsPp) : 0;
-  return { goalsEs: goals - goalsPp, goalsPp, assistsEs: assists - assistsPp, assistsPp,
-    shotsEs: shots * (1 - ppShotShare), shotsPp: shots * ppShotShare,
+  const shots = s.SHOTS_ON_GOAL ?? organicShots;
+  const ppShotShare = organicShots > 0 ? organic.shotsPp / organicShots : 0;
+  const pkShotShare = organicShots > 0 ? shotsPkIn / organicShots : 0;
+  // The non-PP remainder splits between ES and PK by the organic line's own shares.
+  const nonPpShare = (pk: number, es: number) => (pk + es > 0 ? pk / (pk + es) : 0);
+  const goalsPk = (goals - goalsPp) * nonPpShare(goalsPkIn, organic.goalsEs);
+  const assistsPk = (assists - assistsPp) * nonPpShare(assistsPkIn, organic.assistsEs);
+  return { goalsEs: goals - goalsPp - goalsPk, goalsPp, goalsPk, assistsEs: assists - assistsPp - assistsPk, assistsPp, assistsPk,
+    shotsEs: shots * (1 - ppShotShare - pkShotShare), shotsPp: shots * ppShotShare, shotsPk: shots * pkShotShare,
     hits: s.HITS ?? organic.hits, blocks: s.BLOCKED_SHOTS ?? organic.blocks, disclosure: blended.disclosure };
 }
 

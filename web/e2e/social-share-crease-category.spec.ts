@@ -18,7 +18,7 @@ const supabaseOrigin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "http://s
 const generatedAt = () => new Date().toISOString();
 const stat = (goalieId: number, team: string, gameId: number, date: string, values: Partial<GoalieAppearance> = {}): GoalieAppearance => ({ goalieId, name: `Fictional Goalie ${goalieId}`, gameId, date, team, opponent: null, home: null, started: true, wins: 0, losses: 0, otLosses: 0, saves: 25, shotsAgainst: 28, goalsAgainst: 3, toiSeconds: 3600, shutouts: 0, qualityStart: 0, ...values });
 const days = ["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22"];
-const scheduled = days.map((date, index) => ({ id: index + 1, date, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id }));
+const scheduled = days.map((date, index) => ({ id: index + 1, date, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id, final: true }));
 const reported = scheduled.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]);
 const appearances = scheduled.flatMap((game, index) => [
   stat(index < 2 ? 1 : 2, "NJD", game.id, game.date, { wins: 1, saves: 34, shotsAgainst: 35, goalsAgainst: 1 }),
@@ -120,7 +120,7 @@ test("goalie of the period: eight rows a side fill the body at five categories",
   // Twenty goalies, so the sides do not overlap; long real name shapes; four weeks of TGV with a gap in week 2.
   const shapes = ["Ukko-Pekka Luukkonen", "Sergei Bobrovsky", "Andrei Vasilevskiy", "Connor Hellebuyck"];
   const names = Array.from({ length: 20 }, (_, index) => shapes[index % 4]);
-  const fit = names.map((_, index) => ({ id: index + 1, date: `2026-10-${19 + index % 7}`, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id }));
+  const fit = names.map((_, index) => ({ id: index + 1, date: `2026-10-${19 + index % 7}`, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id, final: true }));
   const rows = fit.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]);
   const stats = rows.map((game, index) => stat(index % 20 + 1, game.team, game.gameId, game.date, { name: names[index % 20], wins: index % 3 === 0 ? 1 : 0, saves: 20 + index, shotsAgainst: 24 + index, goalsAgainst: index % 4 }));
   const weeks = [1, 2, 3].map(number => ({ week: number, start: `2026-10-0${number}`, end: `2026-10-0${number}` }));
@@ -142,7 +142,7 @@ test("goalie of the season: a full season fits the body with readable bars", asy
   await install(page);
   const seasonWeeks = Array.from({ length: 26 }, (_, index) => ({ week: index + 1, start: new Date(Date.UTC(2026, 9, 5 + index * 7)).toISOString().slice(0, 10), end: new Date(Date.UTC(2026, 9, 11 + index * 7)).toISOString().slice(0, 10) }));
   const shapes = ["Ukko-Pekka Luukkonen", "Sergei Bobrovsky", "Andrei Vasilevskiy", "Connor Hellebuyck"];
-  const fit = seasonWeeks.flatMap(entry => Array.from({ length: 30 }, (_, game) => ({ id: entry.week * 100 + game, date: entry.start, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id })));
+  const fit = seasonWeeks.flatMap(entry => Array.from({ length: 30 }, (_, game) => ({ id: entry.week * 100 + game, date: entry.start, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id, final: true })));
   const rows = fit.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]);
   const stats = rows.map((game, index) => stat(index % 60 + 1, game.team, game.gameId, game.date, { name: shapes[index % 4], wins: index % 3 === 0 ? 1 : 0, saves: 15 + index % 30, shotsAgainst: 20 + index % 30, goalsAgainst: index % 5 }));
   const season = { weeks: seasonWeeks, league: seasonWeeks.map(entry => ({ week: entry.week, avg_league_weekly_wins: 1, avg_league_weekly_saves: 40, avg_league_weekly_sv_pct: 0.9 })),
@@ -270,7 +270,7 @@ test("period control: fits a 375 phone with no page overflow", async ({ page }) 
 test("GSAx: ten rows a side fill the body", async ({ page }) => {
   await install(page);
   const goalies = Array.from({ length: 24 }, (_, index) => index + 1);
-  const games = goalies.map((_, index) => ({ id: index + 1, date: `2026-10-${19 + index % 7}`, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id }));
+  const games = goalies.map((_, index) => ({ id: index + 1, date: `2026-10-${19 + index % 7}`, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id, final: true }));
   const rows = games.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]);
   const stats = rows.map((game, index) => stat(index % 24 + 1, game.team, game.gameId, game.date, { name: "Ukko-Pekka Luukkonen" }));
   const nstGames = stats.map((row, index) => ({ goalieId: row.goalieId, date: row.date, toiSeconds: 3600, xgAgainst: 1 + index % 7, goalsAgainst: 3, shotsAgainst: 30 })).filter((row, index, all) => all.findIndex(other => other.goalieId === row.goalieId && other.date === row.date) === index);
@@ -286,7 +286,7 @@ test("GSAx: ten rows a side fill the body", async ({ page }) => {
 const CREASE_TEAMS = ["NJD", "NYR", "PHI", "PIT", "BOS", "BUF", "MTL", "OTT", "TOR", "DET", "FLA", "TBL", "EDM", "VAN"] as (keyof typeof teamsInfo)[];
 function creaseLeague(teams = CREASE_TEAMS) {
   const twenty = Array.from({ length: 20 }, (_, game) => game), day = (game: number) => `2026-10-${String(game + 1).padStart(2, "0")}`;
-  const games = teams.flatMap((team, index) => index % 2 ? [] : twenty.map(game => ({ id: 100 * (index + 1) + game, date: day(game), homeTeamId: teamsInfo[team].id, awayTeamId: teamsInfo[teams[index + 1]].id })));
+  const games = teams.flatMap((team, index) => index % 2 ? [] : twenty.map(game => ({ id: 100 * (index + 1) + game, date: day(game), homeTeamId: teamsInfo[team].id, awayTeamId: teamsInfo[teams[index + 1]].id, final: true })));
   const reportedGames = teams.flatMap((team, index) => twenty.map(game => ({ gameId: 100 * ((index - index % 2) + 1) + game, date: day(game), team: String(team) })));
   const stats = reportedGames.map((game, index) => stat((teams.indexOf(game.team as keyof typeof teamsInfo) + 1) * 10 + (index % 4 < 2 ? 1 : 2), game.team, game.gameId, game.date, { name: "Ukko-Pekka Luukkonen" }));
   return { reported: reportedGames, appearances: stats, scheduled: games, teams: teams.map(String), through: "2026-10-30" };
@@ -430,7 +430,7 @@ test("GSAx: a chosen matchup prints its dates and fills the body, and its pager 
   const calendar = [{ week: 3, start_date: "2026-10-12", end_date: "2026-10-18" }, { week: 4, start_date: week.start, end_date: week.end }];
   await page.route("**/api/v1/social-share/matchup-weeks", route => route.fulfill({ json: { rows: calendar, cutoff: "2026-10-28" } }));
   const goalies = Array.from({ length: 24 }, (_, index) => index + 1);
-  const games = goalies.map((_, index) => ({ id: index + 1, date: `2026-10-${19 + index % 7}`, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id }));
+  const games = goalies.map((_, index) => ({ id: index + 1, date: `2026-10-${19 + index % 7}`, homeTeamId: teamsInfo.NJD.id, awayTeamId: teamsInfo.NYR.id, final: true }));
   const rows = games.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]);
   const stats = rows.map((game, index) => stat(index % 24 + 1, game.team, game.gameId, game.date, { name: "Ukko-Pekka Luukkonen" }));
   const nstGames = stats.map((row, index) => ({ goalieId: row.goalieId, date: row.date, toiSeconds: 3600, xgAgainst: 1 + index % 7, goalsAgainst: 3, shotsAgainst: 30 })).filter((row, index, all) => all.findIndex(other => other.goalieId === row.goalieId && other.date === row.date) === index);

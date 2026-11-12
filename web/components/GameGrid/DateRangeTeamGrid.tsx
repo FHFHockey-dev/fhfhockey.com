@@ -10,6 +10,7 @@ import { GameData } from "lib/NHL/types";
 
 import useDateRangeTeamGrid, {
   DateMeta,
+  summarizeTeamDateRange,
   TeamDateGames,
 } from "./utils/useDateRangeTeamGrid";
 
@@ -45,19 +46,6 @@ function classForDay(game: GameData | undefined, meta: DateMeta | undefined) {
   if (games <= 8) return styles.mediumNight;
   if (games >= 9) return styles.heavyNight;
   return styles.normalNight;
-}
-
-function computeBackToBacks(
-  dates: string[],
-  gamesByDate: Record<string, GameData>,
-) {
-  let count = 0;
-  for (let i = 0; i < dates.length - 1; i++) {
-    const a = gamesByDate[dates[i]];
-    const b = gamesByDate[dates[i + 1]];
-    if (a?.id && b?.id) count++;
-  }
-  return count;
 }
 
 export default function DateRangeTeamGrid({
@@ -120,25 +108,11 @@ export default function DateRangeTeamGrid({
         });
       });
 
-      const off = dates.reduce((acc, d) => {
-        const g = gamesByDate[d];
-        const meta = dateMetaByDate[d];
-        if (g?.gameType === 2 && (meta?.regularSeasonGames ?? 0) <= 8)
-          return acc + 1;
-        return acc;
-      }, 0);
-
-      const b2b = computeBackToBacks(dates, gamesByDate);
-
-      const { home, away } = dates.reduce(
-        (acc, d) => {
-          const g = gamesByDate[d];
-          if (!g?.id) return acc;
-          if (sourceIdSet.has(g.homeTeam.id)) acc.home++;
-          if (sourceIdSet.has(g.awayTeam.id)) acc.away++;
-          return acc;
-        },
-        { home: 0, away: 0 },
+      const { off, b2b, home, away } = summarizeTeamDateRange(
+        dates,
+        gamesByDate,
+        dateMetaByDate,
+        sourceIdSet,
       );
 
       return {

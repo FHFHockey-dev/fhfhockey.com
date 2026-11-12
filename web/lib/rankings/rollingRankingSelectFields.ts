@@ -112,6 +112,9 @@ export const ROLLING_RANKING_SELECT_FIELDS = [
   "ixg_per_60_total_last5",
   "ixg_per_60_total_last10",
   "ixg_per_60_total_last20",
+  // Decision 17 xS% (ixG ÷ iFF × 100) for the season window; read only on
+  // rows that carry L6 window-count support.
+  "expected_sh_pct_season",
   "oi_gf_avg_season",
   "oi_gf_total_last5",
   "oi_gf_total_last10",

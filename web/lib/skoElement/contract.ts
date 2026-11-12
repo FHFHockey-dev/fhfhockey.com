@@ -9,7 +9,12 @@
  */
 import type { GameExpectationsResponse } from "lib/player-forecasts/gameExpectations";
 
-export const SKO_CONTRACT_VERSION = "sko-interpretation-v0.2" as const;
+/**
+ * v0.3 (W3-7 A1–A3, D3, D4, D7, D10): forecast admission with target-level clocks, permissions and coverage;
+ * identity-complete windows with exact game ids; opportunity unknown states, participation share and role `knownAt`;
+ * the signed gap with three separate named comparisons (no Rebound/Cooling labels); IPP exposure and a versioned reference.
+ */
+export const SKO_CONTRACT_VERSION = "sko-interpretation-v0.3" as const;
 
 /** Settled product decision: next 10 scheduled team games by default, 5 or 20 selectable. */
 export const HORIZON_OPTIONS = [5, 10, 20] as const;
@@ -54,7 +59,8 @@ export type ObservedTeamGame = {
   date: string;
   team: string;
   status: TeamGameStatus;
-  /** When this row became available to the reader. Rows available after `asOf` are excluded. */
+  /** When this row became available to the reader. A completed game whose row was not available at `asOf` stays in the
+   * window as unknown (its data is excluded, its identity is not), so an older game never backfills it. */
   availableAt: string;
   /** All-situation minutes and power-play minutes; null means unknown, never zero. */
   toiMinutes: number | null;
@@ -84,9 +90,12 @@ export type ObservedEvidence = {
   retrospective: boolean;
   /** Completed team games before the cutoff, in any order. */
   teamGames: ObservedTeamGame[];
-  /** Dated role evidence; absent means unknown. Never inferred from production. */
-  roleEvidence?: Array<{ kind: "pp_unit" | "line" | "injury_replacement"; label: string; effectiveAt: string; source: string }>;
+  /** Dated role evidence; absent means unknown. Never inferred from production. `knownAt` is when the report became
+   * available: evidence effective before as-of but known after it is excluded. */
+  roleEvidence?: RoleEvidence[];
 };
+
+export type RoleEvidence = { kind: "pp_unit" | "line" | "injury_replacement"; label: string; effectiveAt: string; knownAt: string; source: string };
 
 export type ForgePlayerExpectation = GameExpectationsResponse["players"][number];
 export type ForgeForecastInput = Pick<GameExpectationsResponse,
@@ -104,7 +113,11 @@ export type OpportunityRule = {
   minAppearancesEachBlock: number;
 };
 
-export type ClassReference = { value: number; source: string; status: "fixture_illustrative" | "accepted" };
+/** A versioned, point-in-time class reference (decision 68): admitted only when its cutoff precedes the window. */
+export type ClassReference = {
+  value: number; source: string; status: "fixture_illustrative" | "accepted";
+  version: string; cutoffAt: string | null; population: string | null; sampleSize: number | null;
+};
 
 export type InterpretationConfig = {
   configId: string;
@@ -127,7 +140,20 @@ export type InterpretationConfig = {
 /** A value or an explicit reason it is unavailable. A null value is never a zero. */
 export type Measured = { value: number | null; reason: string | null };
 
+/** Sign of a signed difference; carries no alert or advice meaning (decision 130). */
+export type GapSign = "positive" | "negative" | "zero" | "unavailable";
+/**
+ * @deprecated v0.3. Sign alias kept only so the Buy Low/Sell High consumers keep compiling until they read `gapSign`
+ * (CLAUDE-FIX-L21-A1-D3-20261112). No Rebound/Cooling words may be displayed from it before an alert contract exists.
+ */
 export type GapDirection = "rebound" | "cooling" | "level" | "unavailable";
+
+/** One named signed difference in native units per team game. Comparisons are never combined (decision 131). */
+export type SignedComparison = Measured & {
+  unit: "count_per_team_game";
+  minuend: "forge_expected_per_scheduled_team_game" | "recent_observed_per_team_game";
+  subtrahend: "recent_observed_per_team_game" | "preceding_disjoint_block_per_team_game" | "same_window_support_expectation";
+};
 
 export type MetricInterpretation = {
   target: SkaterTarget;
@@ -141,9 +167,19 @@ export type MetricInterpretation = {
   expectedPerTeamGame: Measured;
   /** Mean FORGE conditional (per appearance) value; labeled conditional, never a horizon total. */
   expectedPerAppearanceConditional: Measured;
-  /** D = expected − recent observed, both per team game. Positive = more expected than recently produced. */
+  /** D = expected − recent observed, both per team game. Positive = more expected than recently produced.
+   * Its uncertainty is Var(F) + Var(R) − 2Cov(F, R), which is not supplied; no alert threshold is applied. */
   gapPerTeamGame: Measured;
+  gapSign: GapSign;
+  /** @deprecated v0.3: use `gapSign`. */
   direction: GapDirection;
+  /** Three separate questions (R2): forward forecast vs recent, recent vs the player's own earlier block, and
+   * observed vs a same-window support expectation. None is folded into another. */
+  comparisons: {
+    forecastVsRecent: SignedComparison;
+    recentVsPersonalReference: SignedComparison;
+    observedVsSameWindowSupport: SignedComparison;
+  };
   /** Change versus a prior FORGE issuance of the same target, horizon and unit. Separate from the gap. */
   outlookChangePerTeamGame: Measured;
   /** Sample SD of per-team-game values over the recent window (observed history, not forecast spread). */
@@ -154,23 +190,34 @@ export type MetricInterpretation = {
 export type OpportunityDirection = "rising" | "falling" | "steady" | "unclassified" | "unknown";
 
 export type OpportunityBlock = {
-  startDate: string | null; endDate: string | null; teamGames: number; appearances: number;
+  startDate: string | null; endDate: string | null; teamGames: number; appearances: number; gameIds: string[];
+  /** Conditional on appearing. */
   toiPerAppearance: Measured; ppToiPerAppearance: Measured;
+  /** Unconditional: confirmed absences count as zero minutes; unknown games withhold. */
+  toiPerTeamGame: Measured; appearanceShare: Measured;
 };
 
 export type OpportunityInterpretation = {
   recent: OpportunityBlock;
   prior: OpportunityBlock;
+  /** Per-appearance minute changes; `direction` classifies these only, and is never "steady" when appearance share
+   * moved, PP minutes are unknown or a known role change falls in the window. */
   toiChangeMinutes: Measured;
   ppToiChangeMinutes: Measured;
+  toiPerTeamGameChange: Measured;
+  appearanceShareChange: Measured;
   direction: OpportunityDirection;
   /** Accessible text label; never a buy/sell instruction. */
   label: string;
   ruleId: string | null;
   ruleStatus: OpportunityRule["status"] | "none";
-  /** Observed history only; not a forecast of how long the change lasts. */
-  observedDuration: { appearances: number; startDate: string | null; endDate: string | null };
-  powerPlayRole: { value: string | null; status: "sourced" | "unavailable"; source: string | null; effectiveAt: string | null };
+  /** Coverage of the recent comparison block. Not the duration of a change: no episode onset or length is measured. */
+  blockCoverage: { kind: "comparison_block_not_episode"; teamGames: number; appearances: number; startDate: string | null; endDate: string | null };
+  powerPlayRole: { value: string | null; status: "sourced" | "unavailable"; source: string | null; effectiveAt: string | null; knownAt: string | null };
+  /** Role evidence known by as-of and effective inside the recent block: context, neither discounted nor assumed permanent. */
+  roleChanges: RoleEvidence[];
+  /** Role reports dropped because they were not known by as-of or carry no valid clocks. */
+  roleEvidenceExcluded: number;
   scenarios: { status: "not_supplied"; reason: string };
 };
 
@@ -192,6 +239,28 @@ export type GoalieInterpretation = {
 
 export type Explanation = { id: string; text: string; facts: string[] };
 
+/** Admission of one forecast target for the record's comparisons (A1). */
+export type TargetAdmission = {
+  status: "admitted" | "withheld";
+  reasons: string[];
+  unit: "count" | "minutes" | null;
+  /** True only when every horizon game permits the use. */
+  allowedUses: { totals: boolean; comparison: boolean };
+  coveredGames: number; requiredGames: number; gameIds: string[];
+  /** Composite clocks: latest cutoff, latest issuance, earliest expiry over the horizon games. */
+  cutoffAt: string | null; issuedAt: string | null; expiresAt: string | null;
+  sourceIds: string[];
+};
+
+export type ForecastAdmission = {
+  status: "admitted" | "not_admitted" | "no_forecast";
+  reasons: string[];
+  readAsOf: string | null;
+  /** A cached earlier issuance may be used; one read or issued after as-of never is. */
+  policy: "read_and_issued_at_or_before_as_of";
+  targets: Record<string, TargetAdmission>;
+};
+
 export type InterpretationRecord = {
   contractVersion: typeof SKO_CONTRACT_VERSION;
   config: { configId: string; version: string; status: InterpretationConfig["status"] };
@@ -211,25 +280,43 @@ export type InterpretationRecord = {
   recentWindow: {
     requestedTeamGames: number; teamGames: number; appearances: number; confirmedAbsences: number;
     unknownGames: number; startDate: string | null; endDate: string | null; rule: string;
+    /** Exact team-game identities in the window, oldest first. */
+    gameIds: string[];
+    /** "incomplete" when a source row could not be placed (no game id or an impossible date): rates are withheld. */
+    membership: "complete" | "incomplete"; unplacedRows: number;
   };
   personalReferenceWindow: {
-    teamGames: number; appearances: number; unknownGames: number;
+    teamGames: number; appearances: number; unknownGames: number; gameIds: string[];
     startDate: string | null; endDate: string | null;
     method: "preceding_disjoint_team_game_block";
   };
-  /** Unmodified FORGE horizon totals, passed through for both pages (trade arithmetic reads these). */
+  /** FORGE horizon totals for comparison arithmetic (trade reads these). A value is passed through unchanged only when its
+   * target is admitted for totals and comparison; otherwise `expected` is null with the admission reason, so a denied
+   * value cannot be recovered by summing. Full provenance is in `forecastAdmission.targets`. */
   forecastTotals: Record<string, { expected: number | null; unit: "count" | "minutes" | null; reason: string | null }>;
+  forecastAdmission: ForecastAdmission;
+  /** The prior issuance used for outlook change, validated at its own read time. */
+  priorForecastAdmission: { status: "admitted" | "not_admitted"; reasons: string[]; readAsOf: string | null; sameGameIds: boolean | null } | null;
   metrics: MetricInterpretation[];
-  ipp: { observed: Measured; reference: Measured; deviation: Measured; referenceSource: string | null; strength: "all_situations" };
+  ipp: {
+    observed: Measured; reference: Measured; deviation: Measured; referenceSource: string | null; strength: "all_situations";
+    /** Pooled exposure behind `observed`; one on-ice goal is not ten appearances of information. No universal minimum is set. */
+    exposure: { appearances: number; points: number | null; onIceGoalsFor: number | null };
+    referenceMeta: Pick<ClassReference, "version" | "status" | "cutoffAt" | "population" | "sampleSize"> | null;
+    /** Same player's preceding disjoint block, for an own-history comparison beside the class reference. */
+    personalReference: Measured;
+  };
   opportunity: OpportunityInterpretation | null;
   goalie: GoalieInterpretation | null;
   uncertainty: { predictiveSpread: Measured; meanUncertainty: Measured };
   freshness: {
     evidenceCutoffAt: string; evidenceAgeHours: number | null; evidenceStatus: "fresh" | "stale" | "invalid";
-    forecastExpiresAt: string | null; forecastStatus: "current" | "expired" | "unknown";
+    /** "unknown" when any supplied target lacks a valid expiry; "not_admitted" when the forecast fails admission. */
+    forecastExpiresAt: string | null; forecastStatus: "current" | "expired" | "unknown" | "not_admitted";
   };
   diagnostics: {
     excludedFutureRows: number; invalidRows: number; duplicateRows: number; conflictingGameIds: string[]; retrospective: boolean;
+    unplacedRows: number;
   };
   explanations: Explanation[];
   limitations: string[];

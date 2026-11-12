@@ -11,7 +11,7 @@ vi.mock("lib/supabase/server", () => ({ default: {
       then: (resolve: (value: unknown) => void) => resolve(result()),
       maybeSingle: () => Promise.resolve(result())
     };
-    for (const name of ["select", "eq", "or", "lt", "in", "order", "limit"]) {
+    for (const name of ["select", "eq", "or", "lt", "lte", "in", "order", "limit"]) {
       query[name] = (...args: unknown[]) => { db.calls.push([table, name, args]); return query; };
     }
     return query;
@@ -21,9 +21,42 @@ vi.mock("lib/supabase/server", () => ({ default: {
 import {
   buildTeamStrengthPriorFromInHouseXgAggregateRow,
   buildTeamStrengthPriorFromNhlTeamDataRows,
+  fetchTeamNstExpectedGoalsProfile,
   fetchTeamOfficialPpUsage,
+  fetchTeamStrengthPrior,
   fetchTeamStrengthAverages
 } from "./team-context-queries";
+
+describe("FORGE in-house team xG prior selector (L14, decision 99)", () => {
+  const aggregate = { model_version: "xg-v2", feature_version: 2, as_of_game_date: "2026-10-20", window_games: 10, games_count: 10, xg_for: 30, xg_against: 25 };
+  const registry = (rows: Record<string, unknown>[]) => rows.map(row => ({ prediction_type: "shot_goal", model_approved: true,
+    approval_status: "approved", is_active: true, is_champion: true, ...row }));
+  it("reads aggregates pinned to the active model's version and feature version", async () => {
+    process.env.NHL_XG_MODEL_VERSION = "xg-v2";
+    db.calls.length = 0;
+    db.tables = { nhl_xg_model_registry: registry([{ model_version: "xg-v2", feature_version: 2 }]), nhl_xg_team_rolling_aggregates: aggregate };
+    expect(await fetchTeamStrengthPrior("EDM", "2026-10-21", 22)).toMatchObject({ source: "nhl_xg_team_rolling_aggregates", featureVersion: 2 });
+    expect(db.calls).toContainEqual(["nhl_xg_team_rolling_aggregates", "eq", ["feature_version", 2]]);
+    delete process.env.NHL_XG_MODEL_VERSION;
+  });
+  it("treats in-house xG as unavailable without an active approved model, or when the env pin disagrees", async () => {
+    process.env.NHL_XG_MODEL_VERSION = "xg-v2";
+    for (const active of [[], [{ model_version: "xg-v3", feature_version: 3 }]]) {
+      db.calls.length = 0;
+      db.tables = { nhl_xg_model_registry: registry(active), nhl_xg_team_rolling_aggregates: aggregate, nhl_team_data: [] };
+      expect(await fetchTeamStrengthPrior("EDM", "2026-10-21", 22)).toBeNull();
+      expect(db.calls.some(([table]) => table === "nhl_xg_team_rolling_aggregates")).toBe(false);
+    }
+    delete process.env.NHL_XG_MODEL_VERSION;
+  });
+});
+
+describe("fetchTeamNstExpectedGoalsProfile (BC W1-6 D6)", () => {
+  it("converts NST team TOI seconds to xGA per 60: 3 xGA in 3,600 s is 3.0", async () => {
+    db.tables = { nst_team_all: { date: "2026-10-20", gp: 1, toi: 3600, xga: 3 } };
+    expect(await fetchTeamNstExpectedGoalsProfile("EDM", "2026-10-21")).toMatchObject({ source: "nst_team_all", xgaPer60: 3 });
+  });
+});
 
 describe("fetchTeamOfficialPpUsage", () => {
   const games = (count: number) => Array.from({ length: count }, (_, i) => ({ id: 2026020100 - i, date: `2026-10-${String(20 - i).padStart(2, "0")}` }));
@@ -82,16 +115,16 @@ describe("fetchTeamOfficialPpUsage", () => {
 });
 
 describe("fetchTeamStrengthAverages", () => {
-  it("averages PK time alongside ES and PP", async () => {
+  it("averages PK time and PK shots alongside ES and PP", async () => {
     db.calls.length = 0;
     db.tables = { forge_team_game_strength: [
-      { game_date: "2026-10-20", toi_es_seconds: 15000, toi_pp_seconds: 600, toi_pk_seconds: 500, shots_es: 25, shots_pp: 5 },
-      { game_date: "2026-10-18", toi_es_seconds: 15400, toi_pp_seconds: 400, toi_pk_seconds: 700, shots_es: 27, shots_pp: 3 }
+      { game_date: "2026-10-20", toi_es_seconds: 15000, toi_pp_seconds: 600, toi_pk_seconds: 500, shots_es: 25, shots_pp: 5, shots_pk: 1 },
+      { game_date: "2026-10-18", toi_es_seconds: 15400, toi_pp_seconds: 400, toi_pk_seconds: 700, shots_es: 27, shots_pp: 3, shots_pk: 2 }
     ] };
     expect(await fetchTeamStrengthAverages(22, "2026-10-21")).toEqual({
-      toiEsSecondsAvg: 15200, toiPpSecondsAvg: 500, toiPkSecondsAvg: 600, shotsEsAvg: 26, shotsPpAvg: 4 });
+      toiEsSecondsAvg: 15200, toiPpSecondsAvg: 500, toiPkSecondsAvg: 600, shotsEsAvg: 26, shotsPpAvg: 4, shotsPkAvg: 1.5 });
     expect(db.calls).toContainEqual(["forge_team_game_strength", "select",
-      ["game_date,toi_es_seconds,toi_pp_seconds,toi_pk_seconds,shots_es,shots_pp"]]);
+      ["game_date,toi_es_seconds,toi_pp_seconds,toi_pk_seconds,shots_es,shots_pp,shots_pk"]]);
   });
 });
 
@@ -193,5 +226,39 @@ describe("buildTeamStrengthPriorFromNhlTeamDataRows", () => {
       impliedGamesPlayed: null
     });
     expect(buildTeamStrengthPriorFromNhlTeamDataRows([])).toBeNull();
+  });
+
+  // W2-1 PR-SQL-2 / F3: after L4a migration 129 the view carries nst_season and nst_updated_at.
+  const keyed = (nst_season: number | null, extra: Record<string, unknown> = {}) => ({ date: "2026-10-19", games_played: 8,
+    xga: nst_season === 20262027 ? 24.8 : 246, xga_per_game: nst_season == null ? null : 3.1, xgf_per_game: nst_season == null ? null : 3.4,
+    nst_season, nst_updated_at: "2026-10-19T09:00:00Z", ...extra });
+
+  it("selects the row by exact NST season, in either order, even when an old season's GP matches better", () => {
+    // The current-season NST row lags one game (implied 7 vs 8); an old season's row implies exactly 8.
+    const current = keyed(20262027, { xga: 21.7 });
+    const old = keyed(20252026, { xga: 24.8 });
+    for (const order of [[current, old], [old, current]]) {
+      expect(buildTeamStrengthPriorFromNhlTeamDataRows(order, { asOfDate: "2026-10-20" })).toMatchObject({
+        xga: 21.7, rowSelection: { method: "exact_nst_season", nstSeason: 20262027, impliedGamesPlayed: 7 } });
+    }
+  });
+
+  it("keeps a missing current NST season unknown instead of using last season", () => {
+    expect(buildTeamStrengthPriorFromNhlTeamDataRows([keyed(null)], { asOfDate: "2026-10-20" })).toBeNull();
+    expect(buildTeamStrengthPriorFromNhlTeamDataRows([keyed(20252026)], { asOfDate: "2026-10-20" })).toBeNull();
+  });
+
+  it("never reads standings dated after the as-of date or NST data updated after it", () => {
+    expect(buildTeamStrengthPriorFromNhlTeamDataRows([keyed(20262027)], { asOfDate: "2026-10-18" })).toBeNull();
+    expect(buildTeamStrengthPriorFromNhlTeamDataRows([keyed(20262027, { date: "2026-10-17", nst_updated_at: "2026-10-19T09:00:00Z" })],
+      { asOfDate: "2026-10-18" })).toBeNull();
+  });
+
+  it("refuses a legacy tie instead of letting input order choose the season", () => {
+    const tie = [
+      { date: "2026-10-19", games_played: 8, xga: 16, xga_per_game: 2, xgf_per_game: 2 },
+      { date: "2026-10-19", games_played: 8, xga: 32, xga_per_game: 4, xgf_per_game: 4 },
+    ];
+    for (const order of [tie, [...tie].reverse()]) expect(buildTeamStrengthPriorFromNhlTeamDataRows(order)).toBeNull();
   });
 });

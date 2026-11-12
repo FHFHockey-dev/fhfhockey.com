@@ -8,6 +8,7 @@ import math
 from pathlib import Path
 import shutil
 from statistics import median
+from zoneinfo import ZoneInfo
 from typing import Any, Iterable
 from urllib.request import Request, urlopen
 
@@ -183,6 +184,21 @@ left join team_against team on team.game_id = shift.game_id and team.team_id = s
 order by shift.game_date, shift.game_id, shift.nhl_player_id
 """
 
+# Label policy (L15, 2026-11-12). v2: credited goalie starts/decisions/SO from
+# the official record (one start label per team-game, else unknown), Vollman
+# QS (decisions 40, 112), placeholder PP/SH TOI and faceoffs unknown (decision
+# 83), shootout goals excluded, no fabricated 0 for unsourced PP/SH goals.
+SEASON_LABEL_POLICY_VERSION = "season-labels-v2-credited-goalie-null-placeholders"
+SEASON_LABEL_POLICY = {
+    "goalieStarts": "wgo_goalie_stats.games_started; exactly one credited starter per team-game, else unknown",
+    "goalieDecisions": "wgo_goalie_stats wins/losses/ot_losses/shutouts (credited, relief included)",
+    "qualityStart": "vollman: credited start, SV% >= season league SV% (shot-pooled) or >= .885 on <= 20 shots",
+    "strengthToi": "boxscore PP/SH TOI only when the game carries non-placeholder values; else unknown",
+    "faceoffs": "boxscore won/taken only when the game carries non-placeholder values; else unknown",
+    "shootoutGoals": "excluded from goal and assist counts",
+    "restDays": "nhl_schedule_date_else_america_new_york_start_date",
+}
+
 SKATER_QUERY = """
 with training_games as (
   select id, date, "seasonId", type, "homeTeamId", "awayTeamId"
@@ -206,7 +222,9 @@ with training_games as (
   group by stats."gameId"
 ), pbp_games as (
   select event.game_id,
-         count(distinct event.event_id) filter (where event.is_goal)::integer as goal_count,
+         count(distinct event.event_id) filter (
+           where event.is_goal and event.period_type is distinct from 'SO'
+         )::integer as goal_count,
          max(event.created_at) as source_available_at
   from public.nhl_api_pbp_events event
   join training_games game on game.id = event.game_id
@@ -223,6 +241,8 @@ with training_games as (
   from public.nhl_api_pbp_events event
   join training_games game on game.id = event.game_id
   where event.scoring_player_id is not null
+    -- W2-7 D1: a shootout "goal" is not a goal (boxscore goals exclude it).
+    and event.period_type is distinct from 'SO'
   group by event.game_id, event.scoring_player_id
 ), primary_assists as (
   select event.game_id, event.assist1_player_id as player_id,
@@ -235,6 +255,7 @@ with training_games as (
   from public.nhl_api_pbp_events event
   join training_games game on game.id = event.game_id
   where event.is_goal and event.assist1_player_id is not null
+    and event.period_type is distinct from 'SO'
   group by event.game_id, event.assist1_player_id
 ), secondary_assists as (
   select event.game_id, event.assist2_player_id as player_id,
@@ -247,6 +268,7 @@ with training_games as (
   from public.nhl_api_pbp_events event
   join training_games game on game.id = event.game_id
   where event.is_goal and event.assist2_player_id is not null
+    and event.period_type is distinct from 'SO'
   group by event.game_id, event.assist2_player_id
 ), source_rows as (
   select g.date::text as game_date, g."seasonId" as season_id, g.id as game_id,
@@ -395,19 +417,32 @@ select game_date, season_id, game_id, nhl_player_id, position, team_id,
          split_part(toi, ':', 1)::integer * 60
          + split_part(toi, ':', 2)::integer
        )::double precision as "TOTAL_TOI",
-       greatest(0,
-         split_part(toi, ':', 1)::integer * 60 + split_part(toi, ':', 2)::integer
-         - split_part("powerPlayToi", ':', 1)::integer * 60 - split_part("powerPlayToi", ':', 2)::integer
-         - split_part("shorthandedToi", ':', 1)::integer * 60 - split_part("shorthandedToi", ':', 2)::integer
-       )::double precision as "EV_TOI",
-       (
-         split_part("powerPlayToi", ':', 1)::integer * 60
-         + split_part("powerPlayToi", ':', 2)::integer
-       )::double precision as "PP_TOI",
-       (
-         split_part("shorthandedToi", ':', 1)::integer * 60
-         + split_part("shorthandedToi", ':', 2)::integer
-       )::double precision as "PK_TOI",
+       -- Decision 83 / W2-7 D1: since 2024-25 the boxscore writer stores the
+       -- placeholders '00:00' / '0/0' (now NULL) for every skater. A value is
+       -- measured only when the row is well-formed and some skater in the same
+       -- game has a non-zero value (then a '00:00' is a real zero); otherwise
+       -- it is unknown, never 0. EV TOI needs both PP and SH measured
+       -- (greatest() would turn a NULL difference into 0).
+       case
+         when "powerPlayToi" ~ '^[0-9]+:[0-9]{2}$' and "shorthandedToi" ~ '^[0-9]+:[0-9]{2}$'
+          and bool_or("powerPlayToi" ~ '^[0-9]+:[0-9]{2}$' and "powerPlayToi" <> '00:00') over (partition by game_id)
+          and bool_or("shorthandedToi" ~ '^[0-9]+:[0-9]{2}$' and "shorthandedToi" <> '00:00') over (partition by game_id)
+         then greatest(0,
+           split_part(toi, ':', 1)::integer * 60 + split_part(toi, ':', 2)::integer
+           - split_part("powerPlayToi", ':', 1)::integer * 60 - split_part("powerPlayToi", ':', 2)::integer
+           - split_part("shorthandedToi", ':', 1)::integer * 60 - split_part("shorthandedToi", ':', 2)::integer
+         )
+       end::double precision as "EV_TOI",
+       case when "powerPlayToi" ~ '^[0-9]+:[0-9]{2}$'
+          and bool_or("powerPlayToi" ~ '^[0-9]+:[0-9]{2}$' and "powerPlayToi" <> '00:00') over (partition by game_id)
+         then split_part("powerPlayToi", ':', 1)::integer * 60
+           + split_part("powerPlayToi", ':', 2)::integer
+       end::double precision as "PP_TOI",
+       case when "shorthandedToi" ~ '^[0-9]+:[0-9]{2}$'
+          and bool_or("shorthandedToi" ~ '^[0-9]+:[0-9]{2}$' and "shorthandedToi" <> '00:00') over (partition by game_id)
+         then split_part("shorthandedToi", ':', 1)::integer * 60
+           + split_part("shorthandedToi", ':', 2)::integer
+       end::double precision as "PK_TOI",
        goals::double precision as "GOALS",
        resolved_primary_assists as "PRIMARY_ASSISTS",
        resolved_secondary_assists as "SECONDARY_ASSISTS",
@@ -427,21 +462,28 @@ select game_date, season_id, game_id, nhl_player_id, position, team_id,
          when source_conflict then null
          when pbp_complete then pbp_pp_goals
          when wgo_row_id is not null then wgo_pp_goals
-         else 0
+         when goals = 0 then 0
+         else null
        end::double precision as "PP_GOALS",
        resolved_pp_assists as "PP_ASSISTS",
        case
          when source_conflict then null
          when pbp_complete then pbp_sh_goals
          when wgo_row_id is not null then wgo_sh_goals
-         else 0
+         when goals = 0 then 0
+         else null
        end::double precision as "SH_GOALS",
        resolved_sh_assists as "SH_ASSISTS",
+       -- 'won/taken' (2023-24 strings such as 9/22): lost = taken - won. A
+       -- game where every row is '0/0' (the 2024-25+ placeholder) or NULL has
+       -- no measured faceoffs: unknown, not 0 (W2-7 D1).
        case when faceoffs ~ '^[0-9]+/[0-9]+$'
-         then split_part(faceoffs, '/', 1)::double precision else 0 end as "FACEOFFS_WON",
+          and bool_or(faceoffs ~ '^[0-9]+/[0-9]+$' and faceoffs <> '0/0') over (partition by game_id)
+         then split_part(faceoffs, '/', 1)::double precision end as "FACEOFFS_WON",
        case when faceoffs ~ '^[0-9]+/[0-9]+$'
+          and bool_or(faceoffs ~ '^[0-9]+/[0-9]+$' and faceoffs <> '0/0') over (partition by game_id)
          then greatest(0, split_part(faceoffs, '/', 2)::integer - split_part(faceoffs, '/', 1)::integer)::double precision
-         else 0 end as "FACEOFFS_LOST",
+       end as "FACEOFFS_LOST",
        wgo_takeaways::double precision as "TAKEAWAYS",
        wgo_giveaways::double precision as "GIVEAWAYS",
        wgo_missed_shots::double precision as "MISSED_SHOTS",
@@ -526,42 +568,89 @@ with shift_teams as (
          )::text
            as source_available_at,
          (split_part(s.toi, ':', 1)::integer * 60 + split_part(s.toi, ':', 2)::integer)::double precision as toi_seconds,
-         coalesce(nullif(split_part(s."saveShotsAgainst", '/', 2), '')::integer, 0)::double precision as shots_against,
+         -- Missing shots are unknown, not 0 (rule 5).
+         case when s."saveShotsAgainst" ~ '^[0-9]+/[0-9]+$'
+           then split_part(s."saveShotsAgainst", '/', 2)::double precision end as shots_against,
+         case when s."saveShotsAgainst" ~ '^[0-9]+/[0-9]+$'
+           then split_part(s."saveShotsAgainst", '/', 1)::double precision end as saves,
          s."goalsAgainst"::double precision as goals_against,
-         outcome.outcome, coalesce(ge.ended_after_regulation, false) as ended_after_regulation,
-         row_number() over (
-           partition by g.id, st.team_id
-           order by (split_part(s.toi, ':', 1)::integer * 60 + split_part(s.toi, ':', 2)::integer) desc,
-                    s."playerId"
-         ) as goalie_order
+         -- Credited outcome labels (decision 63, L9b credited-start contract):
+         -- WGO games_started/wins/losses/ot_losses/shutouts for that goalie and
+         -- date; several disagreeing rows are contradictory (unknown).
+         wgo.wgo_rows, wgo.games_started, wgo.wins, wgo.losses, wgo.ot_losses,
+         wgo.shutouts
   from public."goaliesGameStats" s
   join public.games g on g.id = s."gameId"
   left join shift_teams st on st.game_id = g.id and st.player_id = s."playerId"
-  left join public."gameOutcomes" outcome on outcome."gameId" = g.id and outcome."teamId" = st.team_id
   left join game_end ge on ge.game_id = g.id
   left join raw_availability raw on raw.game_id = g.id
+  left join lateral (
+    select count(*)::integer as wgo_rows,
+           case when min(candidate.games_started) = max(candidate.games_started)
+             then max(candidate.games_started) end as games_started,
+           case when min(candidate.wins) = max(candidate.wins) then max(candidate.wins) end as wins,
+           case when min(candidate.losses) = max(candidate.losses) then max(candidate.losses) end as losses,
+           case when min(candidate.ot_losses) = max(candidate.ot_losses) then max(candidate.ot_losses) end as ot_losses,
+           case when min(candidate.shutouts) = max(candidate.shutouts) then max(candidate.shutouts) end as shutouts
+    from public.wgo_goalie_stats candidate
+    where candidate.goalie_id = s."playerId" and candidate.date = g.date
+  ) wgo on true
   where g."seasonId" = any(%s) and g.type = 2
+), team_starts as (
+  -- One credited-start label per team-game; any missing or contradictory
+  -- label among the team's goalies makes the whole team-game unknown.
+  select game_id, team_id,
+         count(*) filter (where games_started = 1) as credited_starters,
+         count(*) filter (where games_started is null) as unknown_labels
+  from goalie_rows
+  where toi_seconds > 0
+  group by game_id, team_id
+), league_save_pct as (
+  -- Vollman league average (decision 112): that season's all-situations save pct,
+  -- pooled by shots over goalie games with known, consistent shots and saves.
+  select season_id, sum(saves) / nullif(sum(shots_against), 0) as save_pct
+  from goalie_rows
+  where toi_seconds > 0 and shots_against > 0 and saves between 0 and shots_against
+  group by season_id
+), labelled as (
+  select goalie_rows.*,
+         (team_starts.credited_starters = 1 and team_starts.unknown_labels = 0) as start_known,
+         league_save_pct.save_pct as league_save_pct,
+         case when shots_against > 0 and saves between 0 and shots_against
+           then saves / shots_against end as start_save_pct
+  from goalie_rows
+  left join team_starts
+    on team_starts.game_id = goalie_rows.game_id
+   and team_starts.team_id is not distinct from goalie_rows.team_id
+  left join league_save_pct on league_save_pct.season_id = goalie_rows.season_id
 )
 select game_date, season_id, game_id, nhl_player_id, 'G'::text as position, team_id,
        source_available_at,
        case when toi_seconds > 0 then 1 else 0 end::double precision as "GAMES_PLAYED",
-       case when toi_seconds > 0 and goalie_order = 1 then 1 else 0 end::double precision as "GAMES_STARTED",
+       -- BC W1-8 A: the credited starter, not the longest-playing goalie.
+       case when start_known then (games_started = 1)::integer end::double precision as "GAMES_STARTED",
        toi_seconds as "TOTAL_TOI",
-       case when outcome = 'WIN' and toi_seconds > 0 and goalie_order = 1 then 1 else 0 end::double precision as "WINS_GOALIE",
-       case when outcome = 'LOSS' and not ended_after_regulation and toi_seconds > 0 and goalie_order = 1 then 1 else 0 end::double precision as "LOSSES_GOALIE",
-       case when outcome = 'LOSS' and ended_after_regulation and toi_seconds > 0 and goalie_order = 1 then 1 else 0 end::double precision as "OTL_GOALIE",
+       -- Credited decisions follow the official record, relief included;
+       -- WGO losses are regulation losses and ot_losses are OT/SO losses.
+       wins::double precision as "WINS_GOALIE",
+       losses::double precision as "LOSSES_GOALIE",
+       ot_losses::double precision as "OTL_GOALIE",
        shots_against as "SHOTS_AGAINST_GOALIE",
        goals_against as "GOALS_AGAINST_GOALIE",
-       case when goals_against = 0 and goalie_order = 1 and toi_seconds >= 3540 then 1 else 0 end::double precision as "SHUTOUTS_GOALIE",
+       shutouts::double precision as "SHUTOUTS_GOALIE",
+       -- Vollman Quality Start (decisions 40, 112): credited starts only; save pct
+       -- at or above the season league average, or >= .885 on 20 or fewer
+       -- shots. A relief appearance counts 0 quality starts; an unknown start,
+       -- missing shots/saves or a missing league average is unknown.
        case
-         when goalie_order = 1 and toi_seconds >= 3540
-           and (
-             goals_against <= 2
-             or (shots_against > 0 and (shots_against - goals_against) / shots_against >= 0.917)
-           )
-         then 1 else 0
+         when not coalesce(start_known, false) then null
+         when games_started <> 1 then 0
+         when start_save_pct is null or league_save_pct is null then null
+         when start_save_pct >= league_save_pct then 1
+         when shots_against <= 20 and start_save_pct >= 0.885 then 1
+         else 0
        end::double precision as "QUALITY_STARTS_GOALIE"
-from goalie_rows
+from labelled
 where toi_seconds > 0
 order by game_date, game_id, nhl_player_id
 """
@@ -684,6 +773,9 @@ def _official_state(teams: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], 
                 "game_id": game_id,
                 "game_type": 2,
                 "scheduled_start_at": game["startTimeUTC"],
+                # NHL schedule date (rule 19): rest days and back-to-backs use
+                # it, not the UTC calendar day of puck drop.
+                "game_date": game.get("gameDate"),
                 "home_team_id": int(game["homeTeam"]["id"]),
                 "away_team_id": int(game["awayTeam"]["id"]),
                 "game_status": _official_game_status(game),
@@ -1246,6 +1338,10 @@ def freeze_season_dataset(
                 or int(base_manifest.get("trainingCutoffSeason") or 0) != TRAINING_CUTOFF_SEASON
             ):
                 raise RuntimeError("base season freeze contract, season, or training cutoff mismatch")
+            if base_manifest.get("labelPolicyVersion") != SEASON_LABEL_POLICY_VERSION:
+                # Rule 21: issued freezes stay as issued; their labels are not
+                # inherited into a successor with a different label policy.
+                raise RuntimeError("base season freeze labels predate the current label policy; refreeze")
             base_files = base_manifest.get("files", {})
             missing_history = {
                 "games", "skaters", "goalies", "team_history"
@@ -1525,6 +1621,8 @@ def freeze_season_dataset(
         "trainingCutoffSeason": TRAINING_CUTOFF_SEASON,
         "historySeasons": seasons,
         "featureTrack": "historical_core",
+        "labelPolicyVersion": SEASON_LABEL_POLICY_VERSION,
+        "labelPolicy": SEASON_LABEL_POLICY,
         "scheduleRevisionHash": schedule_hash,
         "rosterRevisionHash": roster_hash,
         "transactionCoverage": transaction_coverage,
@@ -2688,20 +2786,26 @@ def _roster_adjusted_team_contexts(
             )
             for player in skaters
         )
-        defense_suppression = sum(
-            float(player["playProbability"])
-            * float(player.get("ratingSignals", {}).get("defenseSuppressionPer60", 0.0))
-            * float(player["conditionalRates"].get("TOTAL_TOI", 0.0))
-            / 3600.0
-            for player in skaters
-        )
-        pk_suppression = sum(
-            float(player["playProbability"])
-            * float(player.get("ratingSignals", {}).get("defenseSuppressionPer60", 0.0))
-            * float(player["conditionalRates"].get("PK_TOI", 0.0))
-            / 3600.0
-            for player in skaters
-        )
+        # W2-7 D5: an on-ice suppression rate credits the same team event to
+        # every skater on the ice, so a roster sum counts it ~5x. Use the
+        # (play probability x TOI)-weighted average rate per 60, which is the
+        # team's per-game suppression with no assumed skaters-on-ice count.
+        def weighted_suppression(toi_target: str) -> float:
+            weights = [
+                float(player["playProbability"])
+                * float(player["conditionalRates"].get(toi_target) or 0.0)
+                for player in skaters
+            ]
+            total_weight = sum(weights)
+            if total_weight <= 0:
+                return 0.0
+            return sum(
+                weight * float(player.get("ratingSignals", {}).get("defenseSuppressionPer60", 0.0))
+                for weight, player in zip(weights, skaters)
+            ) / total_weight
+
+        defense_suppression = weighted_suppression("TOTAL_TOI")
+        pk_suppression = weighted_suppression("PK_TOI")
         start_weight = sum(float(player.get("startProbability") or 0.0) for player in goalies)
         goalie_ga = (
             sum(
@@ -2962,6 +3066,52 @@ def _deployment_evidence(
     return evidence
 
 
+def _participation_summary(
+    rows_by_population: dict[str, list[dict[str, Any]]],
+) -> dict[tuple[str, int], dict[int, dict[str, float]]]:
+    """Appearances and credited starts per player-season with their own
+    opportunity counts (W2-8 D9, rule 13).
+
+    Opportunities = completed games of the player's team in that season, seen
+    in the freeze (max over his teams, so a traded player is not counted
+    twice). Start opportunities subtract his appearances whose credited-start
+    label is unknown, so an unknown start is neither a start nor a non-start.
+    """
+    team_games: dict[tuple[int, int], set[int]] = defaultdict(set)
+    for rows in rows_by_population.values():
+        for row in rows:
+            if row.get("team_id") is not None:
+                team_games[(int(row["season_id"]), int(row["team_id"]))].add(int(row["game_id"]))
+    summary: dict[tuple[str, int], dict[int, dict[str, float]]] = defaultdict(
+        lambda: defaultdict(lambda: {
+            "appearances": 0.0, "starts": 0.0, "unknownStarts": 0.0,
+            "opportunities": 0.0, "startOpportunities": 0.0,
+        })
+    )
+    player_teams: dict[tuple[str, int, int], set[int]] = defaultdict(set)
+    for population, rows in rows_by_population.items():
+        for row in rows:
+            season = int(row["season_id"])
+            player_id = int(row["nhl_player_id"])
+            values = summary[(population, player_id)][season]
+            values["appearances"] += float(row.get("GAMES_PLAYED") or 0)
+            started = _finite_or_none(row.get("GAMES_STARTED"))
+            if population == "goalie" and started is None and float(row.get("GAMES_PLAYED") or 0) > 0:
+                values["unknownStarts"] += 1
+            values["starts"] += started or 0.0
+            if row.get("team_id") is not None:
+                player_teams[(population, player_id, season)].add(int(row["team_id"]))
+    for (population, player_id, season), teams in player_teams.items():
+        values = summary[(population, player_id)][season]
+        values["opportunities"] = float(max(len(team_games[(season, team)]) for team in teams))
+    for seasons in summary.values():
+        for values in seasons.values():
+            # No known team => no known opportunities: the season is left out
+            # (opportunities 0), never scored as 100% participation.
+            values["startOpportunities"] = max(0.0, values["opportunities"] - values["unknownStarts"])
+    return summary
+
+
 def train_season_artifact(
     freeze: Path,
     output: Path,
@@ -3173,32 +3323,22 @@ def train_season_artifact(
                     "seasonTotalOutcomeRows": observed_rows,
                 }
 
-    participation: dict[tuple[str, int], dict[int, dict[str, float]]] = defaultdict(
-        lambda: defaultdict(lambda: {"appearances": 0.0, "starts": 0.0})
-    )
-    for population, rows in rows_by_population.items():
-        for row in rows:
-            season = int(row["season_id"])
-            player_id = int(row["nhl_player_id"])
-            participation[(population, player_id)][season]["appearances"] += float(
-                row.get("GAMES_PLAYED") or 0
-            )
-            participation[(population, player_id)][season]["starts"] += float(
-                row.get("GAMES_STARTED") or 0
-            )
+    participation = _participation_summary(rows_by_population)
     population_participation_priors: dict[str, tuple[float, float]] = {}
     for population in rows_by_population:
         appearance_rates = [
-            min(1.0, values["appearances"] / 82)
+            min(1.0, values["appearances"] / values["opportunities"])
             for (row_population, _), seasons in participation.items()
             if row_population == population
             for values in seasons.values()
+            if values["opportunities"] > 0
         ]
         start_rates = [
-            min(1.0, values["starts"] / 82)
+            min(1.0, values["starts"] / values["startOpportunities"])
             for (row_population, _), seasons in participation.items()
             if row_population == population
             for values in seasons.values()
+            if values["startOpportunities"] > 0
         ]
         population_participation_priors[population] = (
             median(appearance_rates) if appearance_rates else (0.8 if population != "goalie" else 0.4),
@@ -3459,16 +3599,21 @@ def train_season_artifact(
         sample_games = max(supports or [0.0])
         appearance_prior, start_prior = population_participation_priors[population]
         seasons = participation.get((population, int(nhl_id)), {}) if nhl_id is not None else {}
-        appearance_total = sum(values["appearances"] for values in seasons.values())
-        start_total = sum(values["starts"] for values in seasons.values())
-        schedule_opportunities = 82.0 * len(seasons)
+        known_seasons = [values for values in seasons.values() if values["opportunities"] > 0]
+        appearance_total = sum(values["appearances"] for values in known_seasons)
+        start_total = sum(values["starts"] for values in known_seasons if values["startOpportunities"] > 0)
+        # W2-8 D9: opportunities are the games the player's team completed in
+        # each season of the freeze (partial current season, 84-game seasons),
+        # not a fixed 82; starts use only games with a known credited label.
+        schedule_opportunities = sum(values["opportunities"] for values in known_seasons)
+        start_opportunities = sum(values["startOpportunities"] for values in known_seasons)
         availability_shrinkage = policies[population]["GAMES_PLAYED"]["shrinkage"]
         play_probability = (
             appearance_total + availability_shrinkage * appearance_prior
         ) / (schedule_opportunities + availability_shrinkage) if schedule_opportunities else appearance_prior
         start_probability = (
             start_total + availability_shrinkage * start_prior
-        ) / (schedule_opportunities + availability_shrinkage) if schedule_opportunities else start_prior
+        ) / (start_opportunities + availability_shrinkage) if start_opportunities else start_prior
         play_probability = min(0.995, max(0.05, play_probability))
         start_probability = min(play_probability, max(0.0, start_probability))
         if (
@@ -3932,159 +4077,255 @@ def _portable_canonical_json(value: Any) -> str:
     raise RuntimeError("unsupported portable canonical JSON value")
 
 
-def _reconcile(values: dict[str, float], population: str) -> dict[str, float]:
-    reconciled = {key: float(value) for key, value in values.items()}
-    if population == "goalie":
-        reconciled["SAVES_GOALIE"] = max(
-            0.0,
-            reconciled.get("SHOTS_AGAINST_GOALIE", 0.0)
-            - reconciled.get("GOALS_AGAINST_GOALIE", 0.0),
-        )
-        shots = reconciled.get("SHOTS_AGAINST_GOALIE", 0.0)
-        toi = reconciled.get("TOTAL_TOI", 0.0)
-        reconciled["SAVE_PERCENTAGE"] = reconciled["SAVES_GOALIE"] / shots if shots > 0 else 0.0
-        reconciled["GOALS_AGAINST_AVERAGE"] = (
-            3600 * reconciled.get("GOALS_AGAINST_GOALIE", 0.0) / toi if toi > 0 else 0.0
-        )
-        reconciled["RELIEF_APPEARANCES_GOALIE"] = max(
-            0.0,
-            reconciled.get("GAMES_PLAYED", 0.0)
-            - reconciled.get("GAMES_STARTED", 0.0),
-        )
-        appearances = reconciled.get("GAMES_PLAYED", 0.0)
-        starts = reconciled.get("GAMES_STARTED", 0.0)
-        reconciled["START_PERCENTAGE_GOALIE"] = starts / appearances if appearances > 0 else 0.0
-        reconciled["WIN_PERCENTAGE_GOALIE"] = (
-            reconciled.get("WINS_GOALIE", 0.0) / starts if starts > 0 else 0.0
-        )
-        if "EXPECTED_GOALS_AGAINST_GOALIE" in reconciled:
-            reconciled["GOALS_SAVED_ABOVE_EXPECTED"] = (
-                reconciled.get("EXPECTED_GOALS_AGAINST_GOALIE", 0.0)
-                - reconciled.get("GOALS_AGAINST_GOALIE", 0.0)
-            )
-            for danger in ("HIGH_DANGER", "MID_RANGE", "LONG_RANGE"):
-                shots_target = f"{danger}_SHOTS_AGAINST_GOALIE"
-                goals_target = f"{danger}_GOALS_AGAINST_GOALIE"
-                if shots_target not in reconciled:
-                    continue
-                danger_shots = reconciled.get(shots_target, 0.0)
-                danger_goals = min(danger_shots, reconciled.get(goals_target, 0.0))
-                reconciled[goals_target] = danger_goals
-                danger_saves = max(0.0, danger_shots - danger_goals)
-                reconciled[f"{danger}_SAVES_GOALIE"] = danger_saves
-                reconciled[f"{danger}_SAVE_PERCENTAGE_GOALIE"] = (
-                    danger_saves / danger_shots if danger_shots > 0 else 0.0
-                )
-    else:
-        strength_components = {
-            "EV_GOALS", "PP_GOALS", "SH_GOALS", "EMPTY_NET_GOALS",
-            "EV_PRIMARY_ASSISTS", "PP_PRIMARY_ASSISTS", "SH_PRIMARY_ASSISTS",
-            "EN_PRIMARY_ASSISTS", "EV_SECONDARY_ASSISTS", "PP_SECONDARY_ASSISTS",
-            "SH_SECONDARY_ASSISTS", "EN_SECONDARY_ASSISTS",
-        }
-        if strength_components.issubset(reconciled):
-            def reconcile_strength_family(
-                total_target: str,
-                ev_target: str,
-                non_ev_targets: tuple[str, str, str],
-            ) -> None:
-                component_total = sum(
-                    max(0.0, reconciled.get(target, 0.0))
-                    for target in (ev_target, *non_ev_targets)
-                )
-                authoritative_total = max(
-                    0.0,
-                    reconciled.get(total_target, component_total),
-                )
-                non_ev_total = sum(
-                    max(0.0, reconciled.get(target, 0.0))
-                    for target in non_ev_targets
-                )
-                if non_ev_total > authoritative_total and non_ev_total > 0:
-                    scale = authoritative_total / non_ev_total
-                    for target in non_ev_targets:
-                        reconciled[target] = max(
-                            0.0,
-                            reconciled.get(target, 0.0),
-                        ) * scale
-                    reconciled[ev_target] = 0.0
-                else:
-                    reconciled[ev_target] = authoritative_total - non_ev_total
-                reconciled[total_target] = authoritative_total
+GOALIE_OUTCOME_TARGETS = (
+    "WINS_GOALIE",
+    "LOSSES_GOALIE",
+    "OTL_GOALIE",
+    "SHUTOUTS_GOALIE",
+    "QUALITY_STARTS_GOALIE",
+)
+# v2 twin of web/lib/fantasy-projections/evaluator.ts (L15, 2026-11-12).
+SEASON_GAME_EVALUATOR_VERSION = "season-game-evaluator-v2"
+GOALIE_OUTCOME_TREATMENT_VERSION = "goalie-outcomes-prior-rate-no-game-context-v1"
+SEASON_AGGREGATE_VERSION = "season-aggregate-joint-draws-v2"
+# One-factor Gaussian dependence between a player's targets in a season
+# aggregate: loading 0.65, so primitive targets correlate at 0.65**2 = 0.4225.
+SEASON_AGGREGATE_FACTOR_LOADING = 0.65
+SEASON_AGGREGATE_DRAWS = 256
+P10_Z = 1.2815515655446004
+EXPECTED_ASSIST_ALIASES = {
+    "EXPECTED_PRIMARY_ASSISTS": "PRIMARY_ASSISTS",
+    "EXPECTED_SECONDARY_ASSISTS": "SECONDARY_ASSISTS",
+}
+_CLAMP_TOLERANCE = 1e-9
 
-            reconcile_strength_family(
-                "GOALS",
-                "EV_GOALS",
-                ("PP_GOALS", "SH_GOALS", "EMPTY_NET_GOALS"),
+
+def _finite_or_none(value: Any) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _reconcile_with_clamps(
+    raw_values: dict[str, Any],
+    population: str,
+    enforce_coherence: bool = True,
+) -> tuple[dict[str, float], list[dict[str, Any]]]:
+    """Twin of contracts.ts `reconcileProjectionValuesWithClamps`.
+
+    Unknowns stay unknown: non-finite inputs are dropped, derived sums need
+    every component, ratios with an unknown or zero denominator are omitted.
+    Coherence clamps (means only) and EV replacements are reported.
+    """
+    values: dict[str, float] = {}
+    for key, value in raw_values.items():
+        number = _finite_or_none(value)
+        if number is not None:
+            values[key] = number
+    clamps: list[dict[str, Any]] = []
+
+    def has(*keys: str) -> bool:
+        return all(key in values for key in keys)
+
+    def set_sum(target: str, keys: tuple[str, ...]) -> None:
+        if has(*keys):
+            values[target] = _round_number(sum(values[key] for key in keys))
+        else:
+            values.pop(target, None)
+
+    def set_ratio(target: str, numerator: float | None, denominator: float | None) -> None:
+        if numerator is not None and denominator is not None and denominator > 0:
+            values[target] = _round_number(numerator / denominator)
+        else:
+            values.pop(target, None)
+
+    def cap(target: str, limit: float, rule: str) -> None:
+        if values[target] > limit + _CLAMP_TOLERANCE:
+            clamps.append({
+                "target": target,
+                "rule": rule,
+                "before": _round_number(values[target]),
+                "after": _round_number(limit),
+            })
+            values[target] = _round_number(limit)
+
+    if population == "goalie":
+        if enforce_coherence:
+            if has("SHOTS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE"):
+                cap(
+                    "GOALS_AGAINST_GOALIE",
+                    max(0.0, values["SHOTS_AGAINST_GOALIE"]),
+                    "goals_against_capped_at_shots_against",
+                )
+            decisions = [key for key in ("WINS_GOALIE", "LOSSES_GOALIE", "OTL_GOALIE") if key in values]
+            if has("GAMES_PLAYED") and decisions:
+                total = sum(max(0.0, values[key]) for key in decisions)
+                appearances = max(0.0, values["GAMES_PLAYED"])
+                if total > appearances + _CLAMP_TOLERANCE:
+                    scale = appearances / total if total > 0 else 0.0
+                    for key in decisions:
+                        after = _round_number(max(0.0, values[key]) * scale)
+                        clamps.append({
+                            "target": key,
+                            "rule": "decisions_scaled_to_appearances",
+                            "before": _round_number(values[key]),
+                            "after": after,
+                        })
+                        values[key] = after
+            start_limit = (
+                values["GAMES_STARTED"] if has("GAMES_STARTED")
+                else values["GAMES_PLAYED"] if has("GAMES_PLAYED")
+                else None
             )
-            reconcile_strength_family(
-                "PRIMARY_ASSISTS",
-                "EV_PRIMARY_ASSISTS",
-                ("PP_PRIMARY_ASSISTS", "SH_PRIMARY_ASSISTS", "EN_PRIMARY_ASSISTS"),
+            if start_limit is not None and has("SHUTOUTS_GOALIE"):
+                cap("SHUTOUTS_GOALIE", max(0.0, start_limit), "shutouts_capped_at_starts")
+            if has("GAMES_STARTED", "QUALITY_STARTS_GOALIE"):
+                cap(
+                    "QUALITY_STARTS_GOALIE",
+                    max(0.0, values["GAMES_STARTED"]),
+                    "quality_starts_capped_at_starts",
+                )
+        if has("SHOTS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE"):
+            values["SAVES_GOALIE"] = _round_number(
+                max(0.0, values["SHOTS_AGAINST_GOALIE"] - values["GOALS_AGAINST_GOALIE"])
             )
-            reconcile_strength_family(
-                "SECONDARY_ASSISTS",
-                "EV_SECONDARY_ASSISTS",
-                (
-                    "PP_SECONDARY_ASSISTS",
-                    "SH_SECONDARY_ASSISTS",
-                    "EN_SECONDARY_ASSISTS",
-                ),
-            )
-            reconciled["PP_ASSISTS"] = (
-                reconciled["PP_PRIMARY_ASSISTS"] + reconciled["PP_SECONDARY_ASSISTS"]
-            )
-            reconciled["SH_ASSISTS"] = (
-                reconciled["SH_PRIMARY_ASSISTS"] + reconciled["SH_SECONDARY_ASSISTS"]
-            )
-            reconciled["EV_ASSISTS"] = (
-                reconciled["EV_PRIMARY_ASSISTS"] + reconciled["EV_SECONDARY_ASSISTS"]
-            )
-            reconciled["EV_POINTS"] = reconciled["EV_GOALS"] + reconciled["EV_ASSISTS"]
-            reconciled["EMPTY_NET_POINTS"] = (
-                reconciled["EMPTY_NET_GOALS"]
-                + reconciled["EN_PRIMARY_ASSISTS"]
-                + reconciled["EN_SECONDARY_ASSISTS"]
-            )
-        reconciled["ASSISTS"] = (
-            reconciled.get("PRIMARY_ASSISTS", 0.0)
-            + reconciled.get("SECONDARY_ASSISTS", 0.0)
+        else:
+            values.pop("SAVES_GOALIE", None)
+        set_ratio("SAVE_PERCENTAGE", values.get("SAVES_GOALIE"), values.get("SHOTS_AGAINST_GOALIE"))
+        set_ratio(
+            "GOALS_AGAINST_AVERAGE",
+            3600 * values["GOALS_AGAINST_GOALIE"] if has("GOALS_AGAINST_GOALIE") else None,
+            values.get("TOTAL_TOI"),
         )
-        reconciled["POINTS"] = reconciled.get("GOALS", 0.0) + reconciled["ASSISTS"]
-        reconciled["PP_POINTS"] = (
-            reconciled.get("PP_GOALS", 0.0) + reconciled.get("PP_ASSISTS", 0.0)
-        )
-        reconciled["SH_POINTS"] = (
-            reconciled.get("SH_GOALS", 0.0) + reconciled.get("SH_ASSISTS", 0.0)
-        )
-        shots = reconciled.get("SHOTS_ON_GOAL", 0.0)
-        games = reconciled.get("GAMES_PLAYED", 0.0)
-        faceoffs = reconciled.get("FACEOFFS_WON", 0.0) + reconciled.get("FACEOFFS_LOST", 0.0)
-        reconciled["SHOOTING_PERCENTAGE"] = reconciled["GOALS"] / shots if shots > 0 else 0.0
-        reconciled["FACEOFF_PERCENTAGE"] = (
-            reconciled.get("FACEOFFS_WON", 0.0) / faceoffs if faceoffs > 0 else 0.0
-        )
-        reconciled["POINTS_PER_GAME"] = reconciled["POINTS"] / games if games > 0 else 0.0
-        reconciled["TOI_PER_GAME"] = reconciled.get("TOTAL_TOI", 0.0) / games if games > 0 else 0.0
-        if "EXPECTED_PRIMARY_ASSISTS" in reconciled:
-            reconciled["EXPECTED_ASSISTS"] = (
-                reconciled.get("EXPECTED_PRIMARY_ASSISTS", 0.0)
-                + reconciled.get("EXPECTED_SECONDARY_ASSISTS", 0.0)
+        if has("GAMES_PLAYED", "GAMES_STARTED"):
+            values["RELIEF_APPEARANCES_GOALIE"] = _round_number(
+                max(0.0, values["GAMES_PLAYED"] - values["GAMES_STARTED"])
             )
-        for label, for_target, against_target in (
-            ("ON_ICE_CF_PERCENTAGE", "ON_ICE_SHOT_ATTEMPTS_FOR", "ON_ICE_SHOT_ATTEMPTS_AGAINST"),
-            ("ON_ICE_FF_PERCENTAGE", "ON_ICE_UNBLOCKED_ATTEMPTS_FOR", "ON_ICE_UNBLOCKED_ATTEMPTS_AGAINST"),
-            ("ON_ICE_XGF_PERCENTAGE", "ON_ICE_EXPECTED_GOALS_FOR", "ON_ICE_EXPECTED_GOALS_AGAINST"),
-        ):
-            if for_target not in reconciled:
+        else:
+            values.pop("RELIEF_APPEARANCES_GOALIE", None)
+        set_ratio("START_PERCENTAGE_GOALIE", values.get("GAMES_STARTED"), values.get("GAMES_PLAYED"))
+        set_ratio("WIN_PERCENTAGE_GOALIE", values.get("WINS_GOALIE"), values.get("GAMES_STARTED"))
+        if "EXPECTED_GOALS_AGAINST_GOALIE" in values:
+            if has("GOALS_AGAINST_GOALIE"):
+                values["GOALS_SAVED_ABOVE_EXPECTED"] = _round_number(
+                    values["EXPECTED_GOALS_AGAINST_GOALIE"] - values["GOALS_AGAINST_GOALIE"]
+                )
+            else:
+                values.pop("GOALS_SAVED_ABOVE_EXPECTED", None)
+        for danger in ("HIGH_DANGER", "MID_RANGE", "LONG_RANGE"):
+            shots_target = f"{danger}_SHOTS_AGAINST_GOALIE"
+            goals_target = f"{danger}_GOALS_AGAINST_GOALIE"
+            if not has(shots_target, goals_target):
+                values.pop(f"{danger}_SAVES_GOALIE", None)
+                values.pop(f"{danger}_SAVE_PERCENTAGE_GOALIE", None)
                 continue
-            for_value = reconciled.get(for_target, 0.0)
-            against_value = reconciled.get(against_target, 0.0)
-            reconciled[label] = (
-                for_value / (for_value + against_value)
-                if for_value + against_value > 0 else 0.0
+            shots = values[shots_target]
+            goals = min(shots, values[goals_target])
+            saves = max(0.0, shots - goals)
+            values[goals_target] = _round_number(goals)
+            values[f"{danger}_SAVES_GOALIE"] = _round_number(saves)
+            set_ratio(f"{danger}_SAVE_PERCENTAGE_GOALIE", saves, shots)
+        return {key: _round_number(value) for key, value in values.items()}, clamps
+
+    strength_components = (
+        "EV_GOALS", "PP_GOALS", "SH_GOALS", "EMPTY_NET_GOALS",
+        "EV_PRIMARY_ASSISTS", "PP_PRIMARY_ASSISTS", "SH_PRIMARY_ASSISTS",
+        "EN_PRIMARY_ASSISTS", "EV_SECONDARY_ASSISTS", "PP_SECONDARY_ASSISTS",
+        "SH_SECONDARY_ASSISTS", "EN_SECONDARY_ASSISTS",
+    )
+    if has(*strength_components):
+        # Contract: the fitted total is authoritative; EV is derived as total
+        # minus non-EV components, and a replaced fitted EV is reported.
+        def reconcile_strength_family(
+            total_target: str,
+            ev_target: str,
+            non_ev_targets: tuple[str, str, str],
+        ) -> None:
+            component_total = sum(
+                max(0.0, values[target]) for target in (ev_target, *non_ev_targets)
             )
-    return {key: _round_number(value) for key, value in reconciled.items()}
+            authoritative_total = max(0.0, values.get(total_target, component_total))
+            non_ev_total = sum(max(0.0, values[target]) for target in non_ev_targets)
+            fitted_ev = values[ev_target]
+            if non_ev_total > authoritative_total and non_ev_total > 0:
+                scale = authoritative_total / non_ev_total
+                for target in non_ev_targets:
+                    after = _round_number(max(0.0, values[target]) * scale)
+                    if abs(after - values[target]) > _CLAMP_TOLERANCE:
+                        clamps.append({
+                            "target": target,
+                            "rule": "non_ev_scaled_to_total",
+                            "before": _round_number(values[target]),
+                            "after": after,
+                        })
+                    values[target] = after
+                values[ev_target] = 0.0
+            else:
+                values[ev_target] = _round_number(authoritative_total - non_ev_total)
+            if abs(values[ev_target] - fitted_ev) > _CLAMP_TOLERANCE:
+                clamps.append({
+                    "target": ev_target,
+                    "rule": "ev_derived_from_total",
+                    "before": _round_number(fitted_ev),
+                    "after": values[ev_target],
+                })
+            values[total_target] = _round_number(authoritative_total)
+
+        reconcile_strength_family("GOALS", "EV_GOALS", ("PP_GOALS", "SH_GOALS", "EMPTY_NET_GOALS"))
+        reconcile_strength_family(
+            "PRIMARY_ASSISTS",
+            "EV_PRIMARY_ASSISTS",
+            ("PP_PRIMARY_ASSISTS", "SH_PRIMARY_ASSISTS", "EN_PRIMARY_ASSISTS"),
+        )
+        reconcile_strength_family(
+            "SECONDARY_ASSISTS",
+            "EV_SECONDARY_ASSISTS",
+            ("PP_SECONDARY_ASSISTS", "SH_SECONDARY_ASSISTS", "EN_SECONDARY_ASSISTS"),
+        )
+        set_sum("PP_ASSISTS", ("PP_PRIMARY_ASSISTS", "PP_SECONDARY_ASSISTS"))
+        set_sum("SH_ASSISTS", ("SH_PRIMARY_ASSISTS", "SH_SECONDARY_ASSISTS"))
+        set_sum("EMPTY_NET_POINTS", ("EMPTY_NET_GOALS", "EN_PRIMARY_ASSISTS", "EN_SECONDARY_ASSISTS"))
+    set_sum("ASSISTS", ("PRIMARY_ASSISTS", "SECONDARY_ASSISTS"))
+    set_sum("POINTS", ("GOALS", "ASSISTS"))
+    set_sum("PP_POINTS", ("PP_GOALS", "PP_ASSISTS"))
+    set_sum("SH_POINTS", ("SH_GOALS", "SH_ASSISTS"))
+    set_sum("EV_ASSISTS", ("EV_PRIMARY_ASSISTS", "EV_SECONDARY_ASSISTS"))
+    set_sum("EV_POINTS", ("EV_GOALS", "EV_ASSISTS"))
+    set_ratio("SHOOTING_PERCENTAGE", values.get("GOALS"), values.get("SHOTS_ON_GOAL"))
+    set_ratio(
+        "FACEOFF_PERCENTAGE",
+        values.get("FACEOFFS_WON"),
+        values["FACEOFFS_WON"] + values["FACEOFFS_LOST"] if has("FACEOFFS_WON", "FACEOFFS_LOST") else None,
+    )
+    set_ratio("POINTS_PER_GAME", values.get("POINTS"), values.get("GAMES_PLAYED"))
+    set_ratio("TOI_PER_GAME", values.get("TOTAL_TOI"), values.get("GAMES_PLAYED"))
+    if "EXPECTED_PRIMARY_ASSISTS" in values or "EXPECTED_SECONDARY_ASSISTS" in values:
+        set_sum("EXPECTED_ASSISTS", ("EXPECTED_PRIMARY_ASSISTS", "EXPECTED_SECONDARY_ASSISTS"))
+    for label, for_target, against_target in (
+        ("ON_ICE_CF_PERCENTAGE", "ON_ICE_SHOT_ATTEMPTS_FOR", "ON_ICE_SHOT_ATTEMPTS_AGAINST"),
+        ("ON_ICE_FF_PERCENTAGE", "ON_ICE_UNBLOCKED_ATTEMPTS_FOR", "ON_ICE_UNBLOCKED_ATTEMPTS_AGAINST"),
+        ("ON_ICE_XGF_PERCENTAGE", "ON_ICE_EXPECTED_GOALS_FOR", "ON_ICE_EXPECTED_GOALS_AGAINST"),
+    ):
+        if for_target not in values and against_target not in values:
+            continue
+        set_ratio(
+            label,
+            values.get(for_target),
+            values[for_target] + values[against_target] if has(for_target, against_target) else None,
+        )
+    return {key: _round_number(value) for key, value in values.items()}, clamps
+
+
+def _reconcile(
+    values: dict[str, Any],
+    population: str,
+    enforce_coherence: bool = True,
+) -> dict[str, float]:
+    return _reconcile_with_clamps(values, population, enforce_coherence)[0]
 
 
 def _target_multiplier(
@@ -4096,6 +4337,10 @@ def _target_multiplier(
     game: dict[str, Any] | None = None,
     context_effect: dict[str, Any] | None = None,
 ) -> float:
+    if population == "goalie" and target in GOALIE_OUTCOME_TARGETS:
+        # Decision 121: no game-context multiplier on goalie W/L/OTL/SO/QS
+        # until a fitted goalie model (decision 38) supplies one.
+        return 1.0
     pace = math.sqrt(
         max(0.5, float((team or {}).get("paceMultiplier", 1)))
         * max(0.5, float((opponent or {}).get("paceMultiplier", 1)))
@@ -4137,6 +4382,20 @@ def _target_multiplier(
     return contextual_multiplier * pace * venue_multiplier
 
 
+REST_DATE_BASIS = "nhl_schedule_date_else_america_new_york_start_date"
+
+
+def _nhl_schedule_day(game: dict[str, Any]) -> date:
+    """NHL schedule date of a game (twin of seasonJobs.ts `nhlScheduleDay`):
+    the schedule's own game date when present, else the America/New_York
+    calendar date of puck drop. Never the UTC day (W2-7 D4b)."""
+    raw = game.get("game_date")
+    if raw:
+        return date.fromisoformat(str(raw)[:10])
+    start = datetime.fromisoformat(str(game["scheduled_start_at"]).replace("Z", "+00:00"))
+    return start.astimezone(ZoneInfo("America/New_York")).date()
+
+
 def _schedule_contexts_by_team(
     schedule: list[dict[str, Any]],
 ) -> dict[int, list[dict[str, Any]]]:
@@ -4165,9 +4424,7 @@ def _schedule_contexts_by_team(
     for games in by_team.values():
         previous_game_date: date | None = None
         for game in games:
-            game_date = datetime.fromisoformat(
-                str(game["scheduled_start_at"]).replace("Z", "+00:00")
-            ).date()
+            game_date = _nhl_schedule_day(game)
             rest_days = (
                 None
                 if previous_game_date is None
@@ -4184,6 +4441,8 @@ def _reconcile_quantiles(
     population: str,
     maximum_games: int | None = None,
 ) -> dict[str, dict[str, float]]:
+    """Twin of contracts.ts `reconcileProjectionQuantiles`: marginal endpoint
+    bounds, never joint quantiles; unknown inputs drop the derived interval."""
     reconciled = {
         level: {target: float(value) for target, value in values.items()}
         for level, values in quantiles.items()
@@ -4191,21 +4450,25 @@ def _reconcile_quantiles(
     if maximum_games is not None:
         for values in reconciled.values():
             if "GAMES_PLAYED" in values:
-                values["GAMES_PLAYED"] = min(
-                    float(maximum_games),
-                    max(0.0, values["GAMES_PLAYED"]),
-                )
+                values["GAMES_PLAYED"] = min(float(maximum_games), max(0.0, values["GAMES_PLAYED"]))
             if "GAMES_STARTED" in values:
                 values["GAMES_STARTED"] = min(
                     float(maximum_games),
                     values.get("GAMES_PLAYED", float(maximum_games)),
                     max(0.0, values["GAMES_STARTED"]),
                 )
-    reconciled = {
-        level: _reconcile(values, population)
-        for level, values in reconciled.items()
-    }
-    p10, p50, p90 = (reconciled[level] for level in ("p10", "p50", "p90"))
+    p10, p50, p90 = (
+        _reconcile(reconciled.get(level, {}), population, enforce_coherence=False)
+        for level in ("p10", "p50", "p90")
+    )
+    raw_p50 = quantiles.get("p50", {})
+
+    def known(*targets: str) -> bool:
+        return all(target in p10 and target in p50 and target in p90 for target in targets)
+
+    def drop(target: str) -> None:
+        for values in (p10, p50, p90):
+            values.pop(target, None)
 
     def ratio(numerator: float, denominator: float, fallback: float) -> float:
         return numerator / denominator if denominator > 0 else fallback
@@ -4219,130 +4482,233 @@ def _reconcile_quantiles(
         maximum: float = math.inf,
     ) -> None:
         center = min(maximum, max(minimum, median))
-        p10[target] = min(center, min(maximum, max(minimum, lower)))
-        p50[target] = center
-        p90[target] = max(center, min(maximum, max(minimum, upper)))
+        p10[target] = _round_number(min(center, min(maximum, max(minimum, lower))))
+        p50[target] = _round_number(center)
+        p90[target] = _round_number(max(center, min(maximum, max(minimum, upper))))
 
-    def ratio_interval(
-        target: str,
-        numerator: str,
-        denominator: str,
-        maximum: float = math.inf,
-    ) -> None:
-        median = ratio(p50.get(numerator, 0.0), p50.get(denominator, 0.0), 0.0)
+    def ratio_interval(target: str, numerator: str, denominator: str, maximum: float = math.inf) -> None:
+        if not known(numerator, denominator) or not p50[denominator] > 0:
+            drop(target)
+            return
+        median = p50[numerator] / p50[denominator]
         set_interval(
             target,
-            ratio(p10.get(numerator, 0.0), p90.get(denominator, 0.0), median),
+            ratio(p10[numerator], p90[denominator], median),
             median,
-            ratio(p90.get(numerator, 0.0), p10.get(denominator, 0.0), median),
+            ratio(p90[numerator], p10[denominator], median),
             0.0,
             maximum,
         )
 
-    if population == "goalie":
-        lower_saves = max(
-            0.0,
-            p10.get("SHOTS_AGAINST_GOALIE", 0.0)
-            - p90.get("GOALS_AGAINST_GOALIE", 0.0),
-        )
-        median_saves = max(
-            0.0,
-            p50.get("SHOTS_AGAINST_GOALIE", 0.0)
-            - p50.get("GOALS_AGAINST_GOALIE", 0.0),
-        )
-        upper_saves = max(
-            median_saves,
-            p90.get("SHOTS_AGAINST_GOALIE", 0.0)
-            - p10.get("GOALS_AGAINST_GOALIE", 0.0),
-        )
-        set_interval("SAVES_GOALIE", lower_saves, median_saves, upper_saves, 0.0)
+    def share_interval(target: str, for_target: str, against_target: str) -> None:
+        if not known(for_target, against_target) or not p50[for_target] + p50[against_target] > 0:
+            drop(target)
+            return
+        median = p50[for_target] / (p50[for_target] + p50[against_target])
         set_interval(
-            "SAVE_PERCENTAGE",
-            ratio(lower_saves, p90.get("SHOTS_AGAINST_GOALIE", 0.0), 0.0),
-            ratio(median_saves, p50.get("SHOTS_AGAINST_GOALIE", 0.0), 0.0),
-            ratio(upper_saves, p10.get("SHOTS_AGAINST_GOALIE", 0.0), 1.0),
+            target,
+            ratio(p10[for_target], p10[for_target] + p90[against_target], median),
+            median,
+            ratio(p90[for_target], p90[for_target] + p10[against_target], median),
             0.0,
             1.0,
         )
-        median_gaa = ratio(
-            3600 * p50.get("GOALS_AGAINST_GOALIE", 0.0),
-            p50.get("TOTAL_TOI", 0.0),
-            0.0,
-        )
-        set_interval(
-            "GOALS_AGAINST_AVERAGE",
-            ratio(
-                3600 * p10.get("GOALS_AGAINST_GOALIE", 0.0),
-                p90.get("TOTAL_TOI", 0.0),
+
+    def saves_interval(target: str, shots_target: str, goals_target: str) -> tuple[float, float, float] | None:
+        if not known(shots_target, goals_target):
+            drop(target)
+            return None
+        lower = max(0.0, p10[shots_target] - p90[goals_target])
+        median = max(0.0, p50[shots_target] - p50[goals_target])
+        upper = max(median, p90[shots_target] - p10[goals_target])
+        set_interval(target, lower, median, upper, 0.0)
+        return lower, median, upper
+
+    if population == "goalie":
+        saves = saves_interval("SAVES_GOALIE", "SHOTS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE")
+        if saves is not None and p50["SHOTS_AGAINST_GOALIE"] > 0:
+            set_interval(
+                "SAVE_PERCENTAGE",
+                ratio(saves[0], p90["SHOTS_AGAINST_GOALIE"], 0.0),
+                saves[1] / p50["SHOTS_AGAINST_GOALIE"],
+                ratio(saves[2], p10["SHOTS_AGAINST_GOALIE"], 1.0),
                 0.0,
-            ),
-            median_gaa,
-            ratio(
-                3600 * p90.get("GOALS_AGAINST_GOALIE", 0.0),
-                p10.get("TOTAL_TOI", 0.0),
-                median_gaa,
-            ),
-            0.0,
-        )
-        set_interval(
-            "RELIEF_APPEARANCES_GOALIE",
-            max(0.0, p10.get("GAMES_PLAYED", 0.0) - p90.get("GAMES_STARTED", 0.0)),
-            max(0.0, p50.get("GAMES_PLAYED", 0.0) - p50.get("GAMES_STARTED", 0.0)),
-            max(0.0, p90.get("GAMES_PLAYED", 0.0) - p10.get("GAMES_STARTED", 0.0)),
-            0.0,
-        )
+                1.0,
+            )
+        else:
+            drop("SAVE_PERCENTAGE")
+        if known("GOALS_AGAINST_GOALIE", "TOTAL_TOI") and p50["TOTAL_TOI"] > 0:
+            median = 3600 * p50["GOALS_AGAINST_GOALIE"] / p50["TOTAL_TOI"]
+            set_interval(
+                "GOALS_AGAINST_AVERAGE",
+                ratio(3600 * p10["GOALS_AGAINST_GOALIE"], p90["TOTAL_TOI"], 0.0),
+                median,
+                ratio(3600 * p90["GOALS_AGAINST_GOALIE"], p10["TOTAL_TOI"], median),
+                0.0,
+            )
+        else:
+            drop("GOALS_AGAINST_AVERAGE")
+        if known("GAMES_PLAYED", "GAMES_STARTED"):
+            set_interval(
+                "RELIEF_APPEARANCES_GOALIE",
+                max(0.0, p10["GAMES_PLAYED"] - p90["GAMES_STARTED"]),
+                max(0.0, p50["GAMES_PLAYED"] - p50["GAMES_STARTED"]),
+                max(0.0, p90["GAMES_PLAYED"] - p10["GAMES_STARTED"]),
+                0.0,
+            )
+        else:
+            drop("RELIEF_APPEARANCES_GOALIE")
         ratio_interval("START_PERCENTAGE_GOALIE", "GAMES_STARTED", "GAMES_PLAYED", 1.0)
         ratio_interval("WIN_PERCENTAGE_GOALIE", "WINS_GOALIE", "GAMES_STARTED", 1.0)
+        if "EXPECTED_GOALS_AGAINST_GOALIE" in raw_p50:
+            if known("EXPECTED_GOALS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE"):
+                set_interval(
+                    "GOALS_SAVED_ABOVE_EXPECTED",
+                    p10["EXPECTED_GOALS_AGAINST_GOALIE"] - p90["GOALS_AGAINST_GOALIE"],
+                    p50["EXPECTED_GOALS_AGAINST_GOALIE"] - p50["GOALS_AGAINST_GOALIE"],
+                    p90["EXPECTED_GOALS_AGAINST_GOALIE"] - p10["GOALS_AGAINST_GOALIE"],
+                )
+            else:
+                drop("GOALS_SAVED_ABOVE_EXPECTED")
+        for danger in ("HIGH_DANGER", "MID_RANGE", "LONG_RANGE"):
+            shots_target = f"{danger}_SHOTS_AGAINST_GOALIE"
+            if shots_target not in raw_p50:
+                continue
+            percentage_target = f"{danger}_SAVE_PERCENTAGE_GOALIE"
+            danger_saves = saves_interval(
+                f"{danger}_SAVES_GOALIE", shots_target, f"{danger}_GOALS_AGAINST_GOALIE"
+            )
+            if danger_saves is not None and p50[shots_target] > 0:
+                set_interval(
+                    percentage_target,
+                    ratio(danger_saves[0], p90[shots_target], 0.0),
+                    danger_saves[1] / p50[shots_target],
+                    ratio(danger_saves[2], p10[shots_target], 1.0),
+                    0.0,
+                    1.0,
+                )
+            else:
+                drop(percentage_target)
     else:
-        set_interval(
-            "SHOOTING_PERCENTAGE",
-            ratio(p10.get("GOALS", 0.0), p90.get("SHOTS_ON_GOAL", 0.0), 0.0),
-            ratio(p50.get("GOALS", 0.0), p50.get("SHOTS_ON_GOAL", 0.0), 0.0),
-            ratio(p90.get("GOALS", 0.0), p10.get("SHOTS_ON_GOAL", 0.0), 1.0),
-            0.0,
-            1.0,
-        )
-        lower_faceoffs = p10.get("FACEOFFS_WON", 0.0) + p90.get("FACEOFFS_LOST", 0.0)
-        median_faceoffs = p50.get("FACEOFFS_WON", 0.0) + p50.get("FACEOFFS_LOST", 0.0)
-        upper_faceoffs = p90.get("FACEOFFS_WON", 0.0) + p10.get("FACEOFFS_LOST", 0.0)
-        set_interval(
-            "FACEOFF_PERCENTAGE",
-            ratio(p10.get("FACEOFFS_WON", 0.0), lower_faceoffs, 0.0),
-            ratio(p50.get("FACEOFFS_WON", 0.0), median_faceoffs, 0.0),
-            ratio(p90.get("FACEOFFS_WON", 0.0), upper_faceoffs, 1.0),
-            0.0,
-            1.0,
-        )
+        if known("GOALS", "SHOTS_ON_GOAL") and p50["SHOTS_ON_GOAL"] > 0:
+            set_interval(
+                "SHOOTING_PERCENTAGE",
+                ratio(p10["GOALS"], p90["SHOTS_ON_GOAL"], 0.0),
+                p50["GOALS"] / p50["SHOTS_ON_GOAL"],
+                ratio(p90["GOALS"], p10["SHOTS_ON_GOAL"], 1.0),
+                0.0,
+                1.0,
+            )
+        else:
+            drop("SHOOTING_PERCENTAGE")
+        if known("FACEOFFS_WON", "FACEOFFS_LOST") and p50["FACEOFFS_WON"] + p50["FACEOFFS_LOST"] > 0:
+            set_interval(
+                "FACEOFF_PERCENTAGE",
+                ratio(p10["FACEOFFS_WON"], p10["FACEOFFS_WON"] + p90["FACEOFFS_LOST"], 0.0),
+                p50["FACEOFFS_WON"] / (p50["FACEOFFS_WON"] + p50["FACEOFFS_LOST"]),
+                ratio(p90["FACEOFFS_WON"], p90["FACEOFFS_WON"] + p10["FACEOFFS_LOST"], 1.0),
+                0.0,
+                1.0,
+            )
+        else:
+            drop("FACEOFF_PERCENTAGE")
         ratio_interval("POINTS_PER_GAME", "POINTS", "GAMES_PLAYED")
-        ratio_interval("TOI_PER_GAME", "TOTAL_TOI", "GAMES_PLAYED")
+        ratio_interval("TOI_PER_GAME", "TOTAL_TOI", "GAMES_PLAYED", 65.0 * 60.0)
+        for label, for_target, against_target in (
+            ("ON_ICE_CF_PERCENTAGE", "ON_ICE_SHOT_ATTEMPTS_FOR", "ON_ICE_SHOT_ATTEMPTS_AGAINST"),
+            ("ON_ICE_FF_PERCENTAGE", "ON_ICE_UNBLOCKED_ATTEMPTS_FOR", "ON_ICE_UNBLOCKED_ATTEMPTS_AGAINST"),
+            ("ON_ICE_XGF_PERCENTAGE", "ON_ICE_EXPECTED_GOALS_FOR", "ON_ICE_EXPECTED_GOALS_AGAINST"),
+        ):
+            if for_target in raw_p50:
+                share_interval(label, for_target, against_target)
+    for target in sorted(set(p10) | set(p50) | set(p90)):
+        if target not in p50:
+            drop(target)
+            continue
+        median = p50[target]
+        p10[target] = _round_number(min(p10.get(target, median), median))
+        p90[target] = _round_number(max(p90.get(target, median), median))
+    return {"p10": p10, "p50": p50, "p90": p90}
 
-    all_targets = set(p10) | set(p50) | set(p90)
-    for target in all_targets:
-        median = float(p50.get(target, 0.0))
-        p10[target] = min(float(p10.get(target, median)), median)
-        p90[target] = max(float(p90.get(target, median)), median)
-    return {
-        level: {target: _round_number(value) for target, value in values.items()}
-        for level, values in reconciled.items()
-    }
+
+def _normal_quantile(level: float) -> float:
+    """Twin of evaluator.ts `normalQuantile` (Acklam, same branches)."""
+    if not 0.0 < level < 1.0:
+        raise ValueError("normal quantile level must be in (0, 1)")
+    if level == 0.5:
+        return 0.0
+    if level == 0.1:
+        return -P10_Z
+    if level == 0.9:
+        return P10_Z
+    a = (-3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2, 1.38357751867269e2, -3.066479806614716e1, 2.506628277459239)
+    b = (-5.447609879822406e1, 1.615858368580409e2, -1.556989798598866e2, 6.680131188771972e1, -1.328068155288572e1)
+    c = (-7.784894002430293e-3, -3.223964580411365e-1, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783)
+    d = (7.784695709041462e-3, 3.224671290700398e-1, 2.445134137142996, 3.754408661907416)
+    low = 0.02425
+    if level < low or level > 1 - low:
+        q = math.sqrt(-2 * math.log(level if level < low else 1 - level))
+        value = (
+            (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5])
+            / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
+        )
+        return value if level < low else -value
+    q = level - 0.5
+    r = q * q
+    return (
+        (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q
+        / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1)
+    )
+
+
+def _participation_mixture_quantile(
+    level: float,
+    probability: float,
+    conditional_mean: float,
+    conditional_sd: float,
+    allow_negative: bool,
+) -> float:
+    """Twin of evaluator.ts `participationMixtureQuantile` (C17 DNP atom)."""
+    p = min(1.0, max(0.0, probability))
+    if p <= 0:
+        return 0.0
+    if not conditional_sd > 0:
+        if conditional_mean >= 0:
+            return 0.0 if level <= 1 - p else max(-math.inf if allow_negative else 0.0, conditional_mean)
+        if not allow_negative:
+            return 0.0
+        return conditional_mean if level <= p else 0.0
+    if allow_negative and level < p:
+        below = conditional_mean + conditional_sd * _normal_quantile(level / p)
+        if below < 0:
+            return below
+    if level > 1 - p:
+        above = conditional_mean + conditional_sd * _normal_quantile((level - (1 - p)) / p)
+        if above > 0:
+            return above
+    return 0.0
 
 
 def _quantiles(
-    means: dict[str, float],
-    variances: dict[str, float],
+    moments: dict[str, dict[str, float]],
     population: str,
-    maximum_games: int | None = None,
 ) -> dict[str, dict[str, float]]:
+    """Per-game quantiles with the non-participation atom (twin of gameQuantiles)."""
     result: dict[str, dict[str, float]] = {"p10": {}, "p50": {}, "p90": {}}
-    for target, mean in means.items():
-        deviation = math.sqrt(max(0.0, float(variances.get(target, 0.0))))
-        lower = mean - 1.2815515655446004 * deviation
-        if target != "PLUS_MINUS":
-            lower = max(0.0, lower)
-        result["p10"][target] = _round_number(lower)
-        result["p50"][target] = _round_number(mean)
-        result["p90"][target] = _round_number(max(lower, mean + 1.2815515655446004 * deviation))
-    return _reconcile_quantiles(result, population, maximum_games)
+    for target, moment in moments.items():
+        sd = math.sqrt(max(0.0, moment["variance"]))
+        allow_negative = target == "PLUS_MINUS"
+        for level, key in ((0.1, "p10"), (0.5, "p50"), (0.9, "p90")):
+            value = _round_number(_participation_mixture_quantile(
+                level, moment["probability"], moment["mean"], sd, allow_negative,
+            ))
+            if target in ("GAMES_PLAYED", "GAMES_STARTED"):
+                value = _round_number(min(1.0, max(0.0, value)))
+            result[key][target] = value
+    if "GAMES_STARTED" in result["p10"] and "GAMES_PLAYED" in result["p10"]:
+        for key in ("p10", "p50", "p90"):
+            result[key]["GAMES_STARTED"] = min(result[key]["GAMES_STARTED"], result[key]["GAMES_PLAYED"])
+    return _reconcile_quantiles(result, population)
 
 
 def evaluate_season_game(
@@ -4350,22 +4716,53 @@ def evaluate_season_game(
     player: dict[str, Any],
     game: dict[str, Any],
 ) -> dict[str, Any]:
+    """Twin of evaluator.ts `evaluatePortableSeasonGame` (v2)."""
     population = str(player["population"])
     default_targets = GOALIE_TARGETS if population == "goalie" else SKATER_TARGETS
     targets = tuple(player.get("primitiveTargets") or default_targets)
-    playing_probability = min(1.0, max(0.0, float(player["playProbability"])))
+
+    def bounded(value: Any) -> float:
+        number = _finite_or_none(value)
+        return min(1.0, max(0.0, number if number is not None else 0.0))
+
+    playing_probability = bounded(player["playProbability"])
     start_probability = (
-        min(playing_probability, max(0.0, float(player.get("startProbability") or 0)))
+        min(playing_probability, bounded(player.get("startProbability")))
         if population == "goalie" else None
     )
     team = artifact["teams"].get(str(game["team_id"]))
     opponent = artifact["teams"].get(str(game["opponent_team_id"]))
-    venue = team if game.get("is_home") else opponent if "is_home" in game else None
+    venue = team if game.get("is_home") else opponent
+    rates = player.get("conditionalRates") or {}
+    baseline_rates = player.get("baselineConditionalRates") or {}
+    supplied_variances = player.get("conditionalVariances") or {}
     conditional: dict[str, float] = {}
     unconditional: dict[str, float] = {}
     baseline_unconditional: dict[str, float] = {}
     variances: dict[str, float] = {}
-    for target in targets:
+    moments: dict[str, dict[str, float]] = {}
+    missing_targets: list[str] = []
+    moment_flags: list[str] = []
+    ordered = [t for t in targets if t not in EXPECTED_ASSIST_ALIASES] + [
+        t for t in targets if t in EXPECTED_ASSIST_ALIASES
+    ]
+    for target in ordered:
+        alias_source = EXPECTED_ASSIST_ALIASES.get(target)
+        if alias_source:
+            if alias_source not in conditional:
+                missing_targets.append(target)
+                continue
+            conditional[target] = conditional[alias_source]
+            unconditional[target] = unconditional[alias_source]
+            baseline_unconditional[target] = baseline_unconditional[alias_source]
+            variances[target] = variances[alias_source]
+            moments[target] = moments[alias_source]
+            continue
+        participation = target in ("GAMES_PLAYED", "GAMES_STARTED")
+        rate = 1.0 if participation else _finite_or_none(rates.get(target))
+        if rate is None:
+            missing_targets.append(target)
+            continue
         candidate_multiplier = _target_multiplier(
             target,
             population,
@@ -4375,46 +4772,51 @@ def evaluate_season_game(
             game,
             (player.get("contextEffects") or {}).get(target),
         )
-        if target in ("GAMES_PLAYED", "GAMES_STARTED"):
+        if participation:
             mean = 1.0
         else:
-            mean = float(player["conditionalRates"].get(target, 0.0)) * candidate_multiplier
+            mean = rate * candidate_multiplier
             if target != "PLUS_MINUS":
                 mean = max(0.0, mean)
-        probability = start_probability if target == "GAMES_STARTED" else playing_probability
-        probability = float(probability or 0.0)
-        conditional_variance = max(
-            0.0,
-            float(player["conditionalVariances"].get(target, abs(mean)))
-            * candidate_multiplier,
-        )
+        probability = float((start_probability or 0.0) if target == "GAMES_STARTED" else playing_probability)
+        if participation:
+            conditional_variance = 0.0
+        else:
+            supplied = _finite_or_none(supplied_variances.get(target))
+            if supplied is None:
+                conditional_variance = abs(mean)
+                moment_flags.append(f"variance_poisson_fallback:{target}")
+            else:
+                conditional_variance = max(0.0, supplied * candidate_multiplier)
         conditional[target] = _round_number(mean)
         unconditional[target] = _round_number(mean * probability)
-        if target in ("GAMES_PLAYED", "GAMES_STARTED"):
+        if participation:
             baseline_mean = 1.0
         else:
-            baseline_mean = float(
-                player.get("baselineConditionalRates", player["conditionalRates"]).get(
-                    target,
-                    0.0,
-                )
-            ) * _target_multiplier(target, population, team, opponent, venue)
+            baseline_rate = _finite_or_none(baseline_rates.get(target))
+            baseline_mean = (baseline_rate if baseline_rate is not None else rate) * _target_multiplier(
+                target, population, team, opponent, venue,
+            )
             if target != "PLUS_MINUS":
                 baseline_mean = max(0.0, baseline_mean)
-        baseline_probability = (
-            float(player.get("baselineStartProbability") or 0.0)
-            if target == "GAMES_STARTED"
-            else float(player.get("baselinePlayProbability", playing_probability))
-        )
+        if target == "GAMES_STARTED":
+            baseline_start = player.get("baselineStartProbability")
+            baseline_probability = bounded(
+                baseline_start if baseline_start is not None else player.get("startProbability")
+            )
+        else:
+            baseline_play = player.get("baselinePlayProbability")
+            baseline_probability = bounded(
+                baseline_play if baseline_play is not None else player["playProbability"]
+            )
         baseline_unconditional[target] = _round_number(baseline_mean * baseline_probability)
         variances[target] = _round_number(
             probability * conditional_variance
             + probability * (1 - probability) * mean * mean
         )
-    conditional = _reconcile(conditional, population)
-    unconditional = _reconcile(unconditional, population)
-    baseline_unconditional = _reconcile(baseline_unconditional, population)
-    payload = {
+        moments[target] = {"mean": mean, "variance": conditional_variance, "probability": probability}
+    reconciled_unconditional, clamps = _reconcile_with_clamps(unconditional, population)
+    payload: dict[str, Any] = {
         "gameId": int(game["game_id"]),
         "fhfhPlayerId": int(player["fhfhPlayerId"]),
         "teamId": int(game["team_id"]),
@@ -4422,28 +4824,158 @@ def evaluate_season_game(
         "population": population,
         "playingProbability": _round_number(playing_probability),
         "startProbability": _round_number(start_probability) if start_probability is not None else None,
-        "conditionalMeans": conditional,
-        "unconditionalMeans": unconditional,
-        "baselineUnconditionalMeans": baseline_unconditional,
+        "conditionalMeans": _reconcile(conditional, population),
+        "unconditionalMeans": reconciled_unconditional,
+        "baselineUnconditionalMeans": _reconcile(baseline_unconditional, population),
         "variances": variances,
-        "quantiles": _quantiles(unconditional, variances, population, 1),
+        "quantiles": _quantiles(moments, population),
         "deployment": player["deployment"],
         "fallbackFlags": sorted(player.get("fallbackFlags") or []),
+        "evaluatorVersion": SEASON_GAME_EVALUATOR_VERSION,
+        "missingTargets": sorted(missing_targets),
+        "momentFlags": sorted(moment_flags),
+        "reconciliationClamps": clamps,
     }
+    if population == "goalie":
+        payload["outcomeTreatment"] = GOALIE_OUTCOME_TREATMENT_VERSION
     payload["componentHash"] = hashlib.sha256(_portable_canonical_json(payload).encode()).hexdigest()
     return payload
 
 
-def _aggregate_components(components: list[dict[str, Any]], population: str) -> dict[str, Any]:
-    means: dict[str, float] = defaultdict(float)
-    variances: dict[str, float] = defaultdict(float)
-    for component in components:
-        for target, value in component["unconditionalMeans"].items():
-            means[target] += float(value)
-        for target, value in component["variances"].items():
-            variances[target] += float(value)
-    reconciled = _reconcile(dict(means), population)
-    rounded_variances = {key: _round_number(value) for key, value in variances.items()}
+def _sampled_quantile(values: list[float], probability: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    index = max(0, min(len(ordered) - 1, math.ceil(probability * (len(ordered) + 1)) - 1))
+    return _round_number(ordered[index])
+
+
+def _joint_aggregate_quantiles(
+    means: dict[str, float],
+    variances: dict[str, float],
+    actuals: dict[str, float],
+    population: str,
+    maximum_games: int,
+    seed: str,
+    draws: int = SEASON_AGGREGATE_DRAWS,
+) -> dict[str, dict[str, float]]:
+    """Twin of evaluator.ts `jointAggregateQuantiles`."""
+    state = int(hashlib.sha256(seed.encode()).hexdigest()[:8], 16)
+
+    def normal() -> float:
+        nonlocal state
+        state = (1664525 * state + 1013904223) & 0xFFFFFFFF
+        first = (state + 0.5) / 4294967296.0
+        state = (1664525 * state + 1013904223) & 0xFFFFFFFF
+        second = (state + 0.5) / 4294967296.0
+        return math.sqrt(-2.0 * math.log(first)) * math.cos(2.0 * math.pi * second)
+
+    targets = sorted(variances)
+    loading = SEASON_AGGREGATE_FACTOR_LOADING
+    independent_weight = math.sqrt(1 - loading * loading)
+
+    def alias_source(target: str) -> str | None:
+        source = EXPECTED_ASSIST_ALIASES.get(target)
+        return source if source and source in means else None
+
+    samples: dict[str, list[float]] = defaultdict(list)
+    for _ in range(draws):
+        common = normal()
+        draw: dict[str, float] = {}
+        for target in targets:
+            if alias_source(target):
+                continue
+            deviation = loading * common + independent_weight * normal()
+            value = means[target] + math.sqrt(max(0.0, variances[target])) * deviation
+            draw[target] = value if target == "PLUS_MINUS" else max(0.0, value)
+        for target in targets:
+            source = alias_source(target)
+            if source:
+                draw[target] = draw[source]
+        if "GAMES_PLAYED" in draw:
+            draw["GAMES_PLAYED"] = min(float(maximum_games), draw["GAMES_PLAYED"])
+        if "GAMES_STARTED" in draw:
+            draw["GAMES_STARTED"] = min(
+                float(maximum_games),
+                draw.get("GAMES_PLAYED", float(maximum_games)),
+                draw["GAMES_STARTED"],
+            )
+        for target in targets:
+            draw[target] += actuals.get(target, 0.0)
+        for target, value in _reconcile(draw, population).items():
+            samples[target].append(float(value))
+    return {
+        key: {
+            target: _sampled_quantile(values, probability)
+            for target, values in samples.items()
+            if len(values) == draws
+        }
+        for key, probability in (("p10", 0.1), ("p50", 0.5), ("p90", 0.9))
+    }
+
+
+_AGGREGATE_DEPENDENCE = {
+    "crossGame": "independent_games_assumption",
+    "withinGameTargets": "one_factor_gaussian",
+    "factorLoading": SEASON_AGGREGATE_FACTOR_LOADING,
+    "primitiveCorrelation": _round_number(SEASON_AGGREGATE_FACTOR_LOADING ** 2),
+}
+
+
+def _finish_aggregate(unsigned: dict[str, Any]) -> dict[str, Any]:
+    return {
+        **unsigned,
+        "aggregateHash": hashlib.sha256(_portable_canonical_json(unsigned).encode()).hexdigest(),
+    }
+
+
+def _aggregate_components(
+    components: list[dict[str, Any]],
+    population: str,
+    actuals: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Twin of evaluator.ts `aggregateSeasonGames` (joint draws, actuals per draw)."""
+    if not components:
+        raise RuntimeError("season aggregate requires at least one component")
+    supplied_actuals = actuals or {}
+    all_targets = {target for component in components for target in component["variances"]}
+    missing: set[str] = {
+        target for component in components for target in component.get("missingTargets") or []
+    }
+    targets: list[str] = []
+    for target in sorted(all_targets):
+        known = all(
+            target in component["variances"] and target in component["unconditionalMeans"]
+            for component in components
+        )
+        if known and target not in missing:
+            targets.append(target)
+        else:
+            missing.add(target)
+    means: dict[str, float] = {}
+    variances: dict[str, float] = {}
+    for target in targets:
+        mean = 0.0
+        variance = 0.0
+        for component in components:
+            mean += float(component["unconditionalMeans"][target])
+            variance += float(component["variances"][target])
+        means[target] = _round_number(mean)
+        variances[target] = _round_number(variance)
+    effective_actuals: dict[str, float] = {}
+    for target in list(means):
+        source = EXPECTED_ASSIST_ALIASES.get(target)
+        key = source if source and source in means else target
+        raw = supplied_actuals.get(key)
+        number = _finite_or_none(raw)
+        if key in supplied_actuals and number is None:
+            # An unknown completed-game value makes the season total unknown.
+            missing.add(target)
+            means.pop(target, None)
+            variances.pop(target, None)
+            continue
+        effective_actuals[target] = number if number is not None else 0.0
+    totals = {target: _round_number(value + effective_actuals[target]) for target, value in means.items()}
     manifest = sorted(
         (
             {"gameId": int(component["gameId"]), "componentHash": component["componentHash"]}
@@ -4451,21 +4983,49 @@ def _aggregate_components(components: list[dict[str, Any]], population: str) -> 
         ),
         key=lambda row: row["gameId"],
     )
-    unsigned = {
-        "means": reconciled,
-        "variances": rounded_variances,
-        "quantiles": _quantiles(
-            reconciled,
-            rounded_variances,
-            population,
-            len(components),
+    seed = (
+        f"{SEASON_AGGREGATE_VERSION}:{int(components[0]['fhfhPlayerId'])}:"
+        + ",".join(str(row["gameId"]) for row in manifest)
+    )
+    return _finish_aggregate({
+        "means": _reconcile(totals, population),
+        "variances": variances,
+        "quantiles": _joint_aggregate_quantiles(
+            means, variances, effective_actuals, population, len(components), seed,
         ),
         "componentManifest": manifest,
-    }
-    return {
-        **unsigned,
-        "aggregateHash": hashlib.sha256(_portable_canonical_json(unsigned).encode()).hexdigest(),
-    }
+        "aggregationVersion": SEASON_AGGREGATE_VERSION,
+        "dependence": dict(_AGGREGATE_DEPENDENCE),
+        "missingTargets": sorted(missing),
+    })
+
+
+def _empty_aggregate(
+    population: str,
+    primitive_targets: Iterable[str],
+    actuals: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Twin of evaluator.ts `emptySeasonAggregate`."""
+    supplied = actuals or {}
+    targets = list(primitive_targets)
+    missing = [
+        target for target in targets
+        if target in supplied and _finite_or_none(supplied.get(target)) is None
+    ]
+    known = [target for target in targets if target not in missing]
+    totals = _reconcile(
+        {target: _round_number(_finite_or_none(supplied.get(target)) or 0.0) for target in known},
+        population,
+    )
+    return _finish_aggregate({
+        "means": totals,
+        "variances": {target: 0 for target in known},
+        "quantiles": {"p10": dict(totals), "p50": dict(totals), "p90": dict(totals)},
+        "componentManifest": [],
+        "aggregationVersion": SEASON_AGGREGATE_VERSION,
+        "dependence": dict(_AGGREGATE_DEPENDENCE),
+        "missingTargets": sorted(missing),
+    })
 
 
 def _primitive_targets_for_contract(
@@ -4488,8 +5048,10 @@ def _actuals_by_player(
     freeze: Path,
     cutoff_at: str,
     contract_version: str = SEASON_CONTRACT_VERSION,
-) -> dict[int, dict[str, float]]:
-    actuals: dict[int, dict[str, float]] = defaultdict(lambda: defaultdict(float))
+) -> dict[int, dict[str, float | None]]:
+    """Completed pre-cutoff actuals; a target any game leaves unknown is None
+    (unknown season total), never summed as 0 (W2-7 D9)."""
+    actuals: dict[int, dict[str, float | None]] = defaultdict(lambda: defaultdict(float))
     cutoff = datetime.fromisoformat(cutoff_at.replace("Z", "+00:00"))
     starts = {
         int(row["game_id"]): datetime.fromisoformat(str(row["start_time"]).replace("Z", "+00:00"))
@@ -4510,7 +5072,11 @@ def _actuals_by_player(
             player_id = int(row["nhl_player_id"])
             targets = _primitive_targets_for_contract(population, contract_version)
             for target in targets:
-                actuals[player_id][target] += float(row.get(target) or 0)
+                value = _finite_or_none(row.get(target))
+                if value is None or actuals[player_id][target] is None:
+                    actuals[player_id][target] = None
+                else:
+                    actuals[player_id][target] += value
     return {player_id: dict(values) for player_id, values in actuals.items()}
 
 
@@ -4570,8 +5136,11 @@ def build_season_settlement_bundle(
                 "goalie" if is_goalie else "skater",
                 contract_version,
             )
+            # Unknown stays unknown in settlement too (W2-7 D9).
             primitive_values = {
-                target: _round_number(float(row.get(target) or 0))
+                target: (
+                    _round_number(value) if (value := _finite_or_none(row.get(target))) is not None else None
+                )
                 for target in targets
             }
             finality = "final" if cutoff.timestamp() >= start.timestamp() + 48 * 3600 else "provisional"
@@ -4698,61 +5267,45 @@ def verify_season_settlement_bundle(bundle_path: Path) -> dict[str, Any]:
     }
 
 
-def _add_actuals(
-    values: dict[str, float],
-    actuals: dict[str, float],
-    population: str,
-) -> dict[str, float]:
-    return _reconcile(
-        {
-            target: float(value) + float(actuals.get(target, 0.0))
-            for target, value in values.items()
-        },
-        population,
-    )
-
-
 def _team_deployment(players: list[dict[str, Any]]) -> dict[str, Any]:
-    forwards = sorted(
-        (player for player in players if player["population"] == "forward"),
-        key=lambda player: float(player["conditionalRates"].get("TOTAL_TOI", 0)),
-        reverse=True,
-    )
-    defense = sorted(
-        (player for player in players if player["population"] == "defense"),
-        key=lambda player: float(player["conditionalRates"].get("TOTAL_TOI", 0)),
-        reverse=True,
-    )
-    goalies = sorted(
-        (player for player in players if player["population"] == "goalie"),
-        key=lambda player: float(player.get("startProbability") or 0),
-        reverse=True,
-    )
+    """Twin of seasonJobs.ts `teamDeployment` (decision 123): a projected
+    ice-time order by expected TOI (rate x play probability), ties by player
+    id; PP/PK units withheld until strength TOI is real."""
+
+    def expected_toi(player: dict[str, Any]) -> float:
+        rate = _finite_or_none((player.get("conditionalRates") or {}).get("TOTAL_TOI"))
+        probability = _finite_or_none(player.get("playProbability"))
+        if rate is None or probability is None:
+            return -math.inf
+        return rate * min(1.0, max(0.0, probability))
+
+    def start_probability(player: dict[str, Any]) -> float:
+        value = _finite_or_none(player.get("startProbability"))
+        return value if value is not None else -math.inf
+
+    def ordered(population: str, key: Any) -> list[dict[str, Any]]:
+        return sorted(
+            (player for player in players if player["population"] == population),
+            key=lambda player: (-key(player), int(player["fhfhPlayerId"])),
+        )
+
+    forwards = ordered("forward", expected_toi)
+    defense = ordered("defense", expected_toi)
+    goalies = ordered("goalie", start_probability)
     return {
+        "basis": "projected_ice_time_order",
+        "label": "Projected ice-time order",
         "forwardLines": [
             [player["fhfhPlayerId"] for player in forwards[index:index + 3]]
-            for index in range(0, min(len(forwards), 12), 3)
+            for index in (0, 3, 6, 9)
         ],
         "defensePairs": [
             [player["fhfhPlayerId"] for player in defense[index:index + 2]]
-            for index in range(0, min(len(defense), 6), 2)
+            for index in (0, 2, 4)
         ],
-        "powerPlayUnits": [
-            [player["fhfhPlayerId"] for player in sorted(
-                forwards + defense,
-                key=lambda player: float(player["conditionalRates"].get("PP_TOI", 0)),
-                reverse=True,
-            )[index:index + 5]]
-            for index in (0, 5)
-        ],
-        "penaltyKillUnits": [
-            [player["fhfhPlayerId"] for player in sorted(
-                forwards + defense,
-                key=lambda player: float(player["conditionalRates"].get("PK_TOI", 0)),
-                reverse=True,
-            )[index:index + 4]]
-            for index in (0, 4)
-        ],
+        "powerPlayUnits": None,
+        "penaltyKillUnits": None,
+        "specialTeamsUnits": "withheld_until_strength_toi_is_real",
         "goalieOrder": [player["fhfhPlayerId"] for player in goalies[:3]],
     }
 
@@ -4805,20 +5358,22 @@ def project_season_release(
         games = by_team.get(int(team_id), []) if team_id is not None else []
         components = [evaluate_season_game(artifact, player, game) for game in games]
         game_outputs.extend(components)
-        aggregate = _aggregate_components(components, str(player["population"]))
         player_actuals = actuals.get(int(player.get("nhlPlayerId") or -1), {})
-        means = (
-            _add_actuals(aggregate["means"], player_actuals, str(player["population"]))
-            if view == "current" else aggregate["means"]
-        )
-        quantiles = {
-            key: (
-                _add_actuals(values, player_actuals, str(player["population"]))
-                if view == "current" else values
+        # Joint recompute (W3-5 F4/PR1): actuals are added per draw and every
+        # quantile comes from the same joint draws; no marginal rebuild.
+        aggregate_actuals = player_actuals if view == "current" else None
+        aggregate = (
+            _aggregate_components(components, str(player["population"]), aggregate_actuals)
+            if components
+            else _empty_aggregate(
+                str(player["population"]),
+                player.get("primitiveTargets")
+                or _primitive_targets_for_contract(str(player["population"]), artifact_contract_version),
+                aggregate_actuals,
             )
-            for key, values in aggregate["quantiles"].items()
-        }
-        quantiles = _reconcile_quantiles(quantiles, str(player["population"]))
+        )
+        means = aggregate["means"]
+        quantiles = aggregate["quantiles"]
         player_aggregates.append({
             "fhfh_player_id": int(player["fhfhPlayerId"]),
             "team_id": team_id,
@@ -4830,13 +5385,15 @@ def project_season_release(
             "roster_confidence": player["rosterConfidence"],
             "source_fresh_at": manifest["createdAt"],
             "rookie_profile": player.get("rookieProfile") or {},
-            "expected_games": means.get("GAMES_PLAYED", 0),
+            # Unknown GP/GS means stay null (rule 5), never 0; see seasonJobs.ts
+            # `aggregateExpectations` (the column is NOT NULL today: fails closed).
+            "expected_games": means.get("GAMES_PLAYED"),
             "expected_starts": means.get("GAMES_STARTED") if player["population"] == "goalie" else None,
             "expected_toi": {
-                "total": means.get("TOTAL_TOI", 0),
-                "evenStrength": means.get("EV_TOI", 0),
-                "powerPlay": means.get("PP_TOI", 0),
-                "penaltyKill": means.get("PK_TOI", 0),
+                "total": means.get("TOTAL_TOI"),
+                "evenStrength": means.get("EV_TOI"),
+                "powerPlay": means.get("PP_TOI"),
+                "penaltyKill": means.get("PK_TOI"),
             },
             "ratings": {
                 key: {
@@ -4853,11 +5410,20 @@ def project_season_release(
             "p50": quantiles["p50"],
             "p90": quantiles["p90"],
             "component_manifest": aggregate["componentManifest"],
-            "fallback_flags": player.get("fallbackFlags") or [],
+            "fallback_flags": sorted(
+                set(player.get("fallbackFlags") or [])
+                | ({"unknown_targets_not_zeroed"} if aggregate["missingTargets"] else set())
+            ),
             "provenance": {
                 "artifactVersion": artifact["artifactVersion"],
                 "featureSchemaVersion": artifact["featureSchemaVersion"],
                 "source": "historical_core",
+                "evaluatorVersion": SEASON_GAME_EVALUATOR_VERSION,
+                "aggregationVersion": aggregate["aggregationVersion"],
+                "dependence": aggregate["dependence"],
+                "unknownTargets": aggregate["missingTargets"],
+                # Explicit moments for downstream joint simulation (advanced v5).
+                "modelVariances": aggregate["variances"],
             },
             "aggregate_hash": aggregate["aggregateHash"],
         })
@@ -5074,7 +5640,10 @@ def verify_season_release_bundle(bundle_path: Path) -> dict[str, Any]:
             ):
                 issues.append(f"player {player['fhfh_player_id']} quantile order failed for {target}")
                 break
-        if not 0 <= float(player["expected_games"]) <= 84:
+        expected_games = _finite_or_none(player.get("expected_games"))
+        if expected_games is None:
+            issues.append(f"player {player['fhfh_player_id']} expected games is unknown")
+        elif not 0 <= expected_games <= 84:
             issues.append(f"player {player['fhfh_player_id']} expected games is outside [0,84]")
     return {
         "valid": not issues,

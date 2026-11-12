@@ -44,6 +44,16 @@ export const TEAM_STYLE_SOURCE_CONTRACT = {
     "score-state-adjusted 5v5 FF and FA",
     "team-game sample counts and league event-rate baselines",
   ],
+  xgSource: {
+    table: "nst_team_5v5",
+    label: "NST",
+    policy:
+      "Natural Stat Trick 5v5 xG is the only team xG source (decision 6). Bucket-heuristic xG is hidden (decision 12), and teams are never ranked from different xG models in one column.",
+    emptyNet:
+      "NST 5v5 has no empty-net states (a pulled goalie makes the game 6v5), so empty-net shots are excluded (decision 7).",
+    coverage:
+      "Totals need one complete NST 5v5 row for every played regular-season team-game in the window; otherwise the style columns are unavailable and their coverage is reported.",
+  },
   formulaDecisions: {
     shotQuality: "xGF / FF",
     eventRate: "xGF + xGA per team game",

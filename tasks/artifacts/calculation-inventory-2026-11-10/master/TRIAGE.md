@@ -84,7 +84,7 @@ Scores: **Risk** 1–5 (how likely the math is wrong, unsound or mis-specified a
 
 **W1-2 · nst-derived-stats (M-NST-001–034)**
 - *Questions.* Where is the heuristic bucket xG (0.18 / 0.08 / 0.02, goals floored at 0.25) shown to users, and should any of it survive once a trained model exists? Which labels promise NST parity (HDCF, SCF, GSAA, Leading/Trailing, OZS%) but use a different definition? Do score-state filters work when per-event scores are null? Is the penalty classification right?
-- *Reference standard.* Natural Stat Trick's glossary (scoring chance and high-danger definitions inherited from War-On-Ice, zone start %, score states), Hockey-Reference for GSAA (shots against × league SV% − goals against) versus MoneyPuck and Evolving-Hockey for GSAx (xGA − GA), NHL rule 16–23 penalty classes.
+- *Reference standard.* Natural Stat Trick's glossary (scoring chance and high-danger definitions inherited from War-On-Ice, zone start %, score states), Hockey-Reference for GSAA (shots against × (1 − league SV%) − goals against; corrected 2026-11-10) versus MoneyPuck and Evolving-Hockey for GSAx (xGA − GA), NHL rule 16–23 penalty classes.
 - *Fixtures.* `web/__tests__/fixtures/nst/oct1-identity-source.json`, inline games in `web/lib/supabase/Upserts/nhlNstParityMetrics.test.ts`, `tasks/TASKS/xg-model/nhl-api-foundation/metric-parity-map.md`, `web/scripts/run-nhl-xg-release-validation.ts` outputs.
 - *Done when.* Each parity metric has a stated definition and a measured difference from NST on the fixture games; every label that is not the community metric is renamed or footnoted in the report; the heuristic xG's consumers are listed.
 

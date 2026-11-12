@@ -82,7 +82,17 @@ export type SharePlayerRecent =
       /** Streak inputs (SS1-18): L5 games with a point (null unless the 6 latest rows are consecutive games), and
        *  pre-L5 averages that exclude the L5 games ((season total − L5 total) ÷ (GP − 5)); seconds per game. */
       pointGames?: number | null; toiPreSeconds?: number | null; ppToiSeconds?: number | null; ppToiPreSeconds?: number | null }
-  | { kind: "goalie"; games: number; through: string; wins: number; saves: number; shotsAgainst: number; goalsAgainst: number; qualityStarts: number; shutouts?: number };
+  | { kind: "goalie"; games: number; through: string;
+      /** The goalie's own credited decisions over these games (decisions 72, 82); null when any decision is unknown or contradictory. */
+      record: { wins: number; losses: number; otLosses: number } | null;
+      /** Credited starts (WGO games_started); null when any appearance's start label is unknown. */
+      starts: number | null;
+      /** Saves and shots over the same games: both null unless every game has both (matched, rule 13). */
+      saves: number | null; shotsAgainst: number | null;
+      /** Each null unless every game reports it. */
+      goalsAgainst: number | null; shutouts: number | null;
+      /** Vollman Quality Starts (decisions 40, 112) on credited starts, from the shared classifier; null when any is unknown. */
+      qualityStarts: number | null };
 
 /** One public player row joined from Yahoo ownership and NHL.com (WGO) season totals. */
 export type SharePlayer = {

@@ -34,13 +34,14 @@ vi.mock("./queries/line-combo-queries", () => ({ fetchRecentTeamLineCombinations
 }] }));
 vi.mock("./queries/skater-queries", () => ({
   fetchCurrentRosterPlayerIds: async (teamId: number) => producer.roster(teamId),
-  fetchRollingRows: async (ids: number[], strength: "ev" | "pp" | "all") => (producer.rollingStrengths.push(strength), producer.countsAvailable) ? ids.map(id => {
+  // These fixtures have no PK rows (and no team PK exposure), so the PK bucket is unknown here.
+  fetchRollingRows: async (ids: number[], strength: "ev" | "pp" | "pk" | "all") => (producer.rollingStrengths.push(strength), producer.countsAvailable && strength !== "pk") ? ids.map(id => {
     const game = { id: 2026020001, date: "2026-10-06", seasonId: 20262027 };
     // All-strength rows carry NHL-backed hit/block rates and no aligned NST count support.
     if (strength === "all") return { player_id: id, game_id: game.id, game_date: game.date, season: game.seasonId, strength_state: strength,
       toi_seconds_avg_last5: 1100, toi_seconds_total_last5: 5500, hits_per_60_last5: 0, blocks_per_60_last5: 0,
       hits_per_60_hits_3ya: 120, hits_per_60_toi_seconds_3ya: 200000, blocks_per_60_blocks_3ya: 60, blocks_per_60_toi_seconds_3ya: 200000 };
-    const support = createAlignedCountSupportBuilder({ playerId: id, strengthState: strength,
+    const support = createAlignedCountSupportBuilder({ playerId: id, strengthState: strength as "ev" | "pp",
       sourceTable: strength === "ev" ? "nst_gamelog_es_counts" : "nst_gamelog_pp_counts", startDate: game.date,
       canonicalGames: [game], countsRows: [{ id, player_id: id, date_scraped: game.date, season: game.seasonId, goals: 1, shots: 8, total_assists: 1 }],
     }).push({ player_id: id, game_id: game.id, date: game.date, season_id: game.seasonId });
@@ -239,8 +240,15 @@ describe("native player goal accounting", () => {
   it.each([-0.1, NaN, Infinity, 0.3334])("rejects invalid or unserialized means instead of zero-filling: %s", value => {
     expect(() => buildNativePlayerGoalAccounting(player(100, { proj_goals_es: value }))).toThrow();
   });
-  it("rejects a fabricated native PK output and arithmetic overflow", () => {
-    expect(() => buildNativePlayerGoalAccounting({ ...player(), proj_goals_pk: 0 } as unknown as NativeSkaterGoalRow)).toThrow();
+  it("adds a reported PK head to the all-situation mean, keeps a null PK unknown, and rejects overflow", () => {
+    // PK is a modeled bucket since L9a (decision 24): a serialized PK head is accounted, not rejected.
+    const withPk = buildNativePlayerGoalAccounting(player(100, { proj_goals_pk: 0.02 }));
+    expect(withPk).toMatchObject({ reportedEsPpMean: 0.5, reportedAllStrengthMean: 0.52, reportedComponents: { pkMean: 0.02 } });
+    expect(withPk.reasons).not.toContain("missing_native_pk_goal_estimator");
+    const unknownPk = buildNativePlayerGoalAccounting(player());
+    expect(unknownPk).toMatchObject({ reportedEsPpMean: 0.5, reportedAllStrengthMean: null });
+    expect(unknownPk.reasons).toContain("missing_native_pk_goal_estimator");
+    expect(() => buildNativePlayerGoalAccounting(player(100, { proj_goals_pk: -0.1 }))).toThrow();
     expect(() => buildNativePlayerGoalAccounting(player(100, { proj_goals_es: Number.MAX_VALUE, proj_goals_pp: Number.MAX_VALUE }))).toThrow(/overflow/);
   });
 });

@@ -29,7 +29,7 @@ vi.mock("lib/supabase/server", () => ({ default: {
 } }));
 
 import { ROLLING_ROW_SELECT_CLAUSE, fetchRollingRows, fetchCurrentRosterPlayerIds, fetchSkaterRecencyEvents, fetchLatestSkaterContextProfiles,
-  fetchLeaguePhysicalTotals } from "./skater-queries";
+  fetchLeaguePhysicalTotals, fetchLatestWgoSkaterDeploymentProfiles } from "./skater-queries";
 import { captureProjectionInputs, interceptProjectionQuery, replayProjectionInputs } from "../inputCapture";
 import { pickLatestByPlayer } from "../utils/collection-utils";
 import { computeSkaterPhysicalEventRates } from "../calculators/skater-adjustments";
@@ -391,7 +391,8 @@ describe("counted rolling skater history (legacy window scan)", () => {
   });
   it("rejects an unsupported strength scope before reading", async () => {
     const db = fixture();
-    await expect(fetchRollingRows([7], "pk" as any, "2026-10-07")).rejects.toMatchObject({ status: "incomplete", reason: "invalid_scope" });
+    // PK is a supported FORGE bucket since L9a (decision 24); 5v5 is not a FORGE strength.
+    await expect(fetchRollingRows([7], "5v5" as any, "2026-10-07")).rejects.toMatchObject({ status: "incomplete", reason: "invalid_scope" });
     expect(db.from).not.toHaveBeenCalled();
   });
   it.each(["2026-02-30", "not-a-date", "2026-10-07T00:00:00Z"])("rejects invalid date scope %s before reading", async date => {
@@ -591,6 +592,15 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
   });
 });
 
+describe("WGO deployment TOI adapter (BC W1-7 D8)", () => {
+  it("reads WGO per-game TOI as seconds, so a 45-second PP game stays 45 s", async () => {
+    dbState.calls = [];
+    dbState.rows = [{ player_id: 7, date: "2026-10-20", toi_per_game: 1000, es_toi_per_game: 955, pp_toi_per_game: 45 }];
+    const profile = (await fetchLatestWgoSkaterDeploymentProfiles([7], "2026-10-21")).get(7);
+    expect(profile).toEqual({ toiPerGameSec: 1000, esToiPerGameSec: 955, ppToiPerGameSec: 45 });
+  });
+});
+
 describe("combined skater context read", () => {
   it("uses one cutoff-bounded query and preserves both latest-player maps with missing fields", async () => {
     dbState.calls = [];
@@ -671,6 +681,12 @@ describe("league physical totals", () => {
       [{ ...rows[0], scope: "career" }, ...rows.slice(1)], null]) {
       await expect(fetchLeaguePhysicalTotals(20262027, "2026-10-20", client(data) as any)).rejects.toMatchObject({ reason: "invalid_rows" });
     }
+  });
+
+  it("refuses a cutoff before the season window, where prior seasons would leak past it (W2-1 C8)", async () => {
+    const db = client([]);
+    await expect(fetchLeaguePhysicalTotals(20262027, "2026-05-01", db as any)).rejects.toMatchObject({ reason: "invalid_scope" });
+    expect(db.rpc).not.toHaveBeenCalled();
   });
 
   it("distinguishes the unapplied RPC from provider and transport failures without a table-scan fallback", async () => {

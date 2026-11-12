@@ -174,11 +174,16 @@ const GoalieLeaderboard: FC<Props> = ({
                       >
                         {goalie.valueTier}
                       </span>
+                    ) : goalie.valueTierInsufficientSample ? (
+                      <span title="Below the value-tier start floor, or fewer than two games or graded weeks.">
+                        Insufficient sample
+                      </span>
                     ) : (
                       "N/A"
                     );
                   })()}
                 </td>
+                <td>{goalie.eligibleWeeks ?? "N/A"}</td> {/* Wks */}
                 <td>{goalie.totalPoints ?? 0}</td> {/* WoW Pts */}
                 <td>{getWeekCount(goalie, "Elite")}</td> {/* Elite Wk */}
                 <td>{getWeekCount(goalie, "Good")}</td> {/* Good */}
@@ -246,9 +251,12 @@ const GoalieLeaderboard: FC<Props> = ({
       </table>
 
       <p className={styles.varianceNote}>
-        Lower standard deviation indicates more consistent performance. Weekly
-        bands require at least one start and 20 minutes played; shorter
-        relief-only weeks are unclassified. The 0-100 consistency score measures
+        Lower standard deviation indicates more consistent performance; it
+        needs at least two games or two graded weeks. Weekly bands compare a
+        week with at least one start and 20 minutes played against the average
+        starter week; relief-only weeks, missed weeks and weeks with no
+        comparable stat are unclassified, and a tie with the average earns half
+        credit. Wks counts graded weeks. The 0-100 consistency score measures
         stability, while the named bands and good-week percentage show quality.
         Avg %ile shows overall statistical rank vs peers (higher is better).
         Relative mode shows the delta versus the filtered average. Fantasy

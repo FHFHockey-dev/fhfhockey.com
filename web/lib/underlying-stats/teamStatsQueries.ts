@@ -35,7 +35,8 @@ type TeamSummaryTableRow = {
   is_home: boolean;
   strength: string;
   score_state: string;
-  toi_seconds: number;
+  /** Nullable at the reader so an unknown never turns into a number (W2-3 DR3). */
+  toi_seconds: number | null;
   wins: number;
   losses: number;
   otl: number;
@@ -84,7 +85,9 @@ type TeamAggregationAccumulator = {
   teamId: number;
   teamLabel: string;
   gameIds: Set<number>;
-  toiSeconds: number;
+  toiSeconds: number | null;
+  /** Games whose stored record has a resolved winner (W + L + OTL = 1). */
+  decidedGameIds: Set<number>;
   wins: number;
   losses: number;
   otl: number;
@@ -260,6 +263,7 @@ function createAccumulator(teamId: number, teamLabel: string): TeamAggregationAc
     teamLabel,
     gameIds: new Set<number>(),
     toiSeconds: 0,
+    decidedGameIds: new Set<number>(),
     wins: 0,
     losses: 0,
     otl: 0,
@@ -304,7 +308,14 @@ function createAccumulator(teamId: number, teamLabel: string): TeamAggregationAc
 
 function addSummaryRow(accumulator: TeamAggregationAccumulator, row: TeamSummaryTableRow) {
   accumulator.gameIds.add(row.game_id);
-  accumulator.toiSeconds += row.toi_seconds;
+  // Unknown ice time stays unknown; never coerced to a number (W2-3 DR3).
+  accumulator.toiSeconds =
+    accumulator.toiSeconds == null || row.toi_seconds == null
+      ? null
+      : accumulator.toiSeconds + row.toi_seconds;
+  if ((row.wins ?? 0) + (row.losses ?? 0) + (row.otl ?? 0) === 1) {
+    accumulator.decidedGameIds.add(row.game_id);
+  }
   accumulator.wins += row.wins;
   accumulator.losses += row.losses;
   accumulator.otl += row.otl;
@@ -347,7 +358,7 @@ function addSummaryRow(accumulator: TeamAggregationAccumulator, row: TeamSummary
 }
 
 function hasSampledTeamSummaryRow(row: TeamSummaryTableRow) {
-  if (row.toi_seconds > 0) {
+  if (row.toi_seconds == null || row.toi_seconds > 0) {
     return true;
   }
 
@@ -390,10 +401,6 @@ function hasSampledTeamSummaryRow(row: TeamSummaryTableRow) {
 }
 
 function compareValues(left: unknown, right: unknown): number {
-  if (left == null && right == null) return 0;
-  if (left == null) return 1;
-  if (right == null) return -1;
-
   if (typeof left === "string" && typeof right === "string") {
     return left.localeCompare(right);
   }
@@ -509,7 +516,10 @@ export function applyOfficialRowOverrides(args: {
   ) {
     const shotType = official.shotTypeByTeamId.get(row.teamId);
     const gamesPlayed = seasonSummary.gamesPlayed ?? nextRow.gamesPlayed;
-    const toiPerGameSeconds = gamesPlayed > 0 ? nextRow.toiSeconds / gamesPlayed : nextRow.toiPerGameSeconds;
+    const toiPerGameSeconds =
+      gamesPlayed > 0 && nextRow.toiSeconds != null
+        ? nextRow.toiSeconds / gamesPlayed
+        : nextRow.toiPerGameSeconds;
     const wins = seasonSummary.wins ?? nextRow.wins;
     const losses = seasonSummary.losses ?? nextRow.losses;
     const otl = seasonSummary.otLosses ?? nextRow.otl;
@@ -544,6 +554,7 @@ export function applyOfficialRowOverrides(args: {
       shPct,
       svPct,
       pdo: toPdo(shPct, svPct),
+      officialOverlay: "allStrengths",
       sfPer60: nextRow.sfPer60 == null ? nextRow.sfPer60 : toPer60(sf, nextRow.toiSeconds),
       saPer60: nextRow.saPer60 == null ? nextRow.saPer60 : toPer60(sa, nextRow.toiSeconds),
       gfPer60: nextRow.gfPer60 == null ? nextRow.gfPer60 : toPer60(gf, nextRow.toiSeconds),
@@ -557,17 +568,19 @@ export function applyOfficialRowOverrides(args: {
     fiveOnFive.gamesPlayed === row.gamesPlayed
   ) {
     const gamesPlayed = fiveOnFive.gamesPlayed ?? nextRow.gamesPlayed;
-    const toiPerGameSeconds = gamesPlayed > 0 ? nextRow.toiSeconds / gamesPlayed : nextRow.toiPerGameSeconds;
+    const toiPerGameSeconds =
+      gamesPlayed > 0 && nextRow.toiSeconds != null
+        ? nextRow.toiSeconds / gamesPlayed
+        : nextRow.toiPerGameSeconds;
     const cf = fiveOnFive.satFor ?? nextRow.cf;
     const ca = fiveOnFive.satAgainst ?? nextRow.ca;
     const ff = fiveOnFive.usatFor ?? nextRow.ff;
     const fa = fiveOnFive.usatAgainst ?? nextRow.fa;
-    const sf = fiveOnFive.shots5v5 ?? nextRow.sf;
+    // Official 5v5 has attempts for and against but only shots for: SF, SA,
+    // GF and their shares stay native so one ratio never mixes two sources
+    // (W2-2 D12).
     const cfPct = toPctDecimal(cf, cf + ca);
     const ffPct = toPctDecimal(ff, ff + fa);
-    const sfPct = toPctDecimal(sf, sf + nextRow.sa);
-    const shPct = toPctDecimal(nextRow.gf, sf);
-    const pdo = toPdo(shPct, nextRow.svPct as number | null);
 
     nextRow = {
       ...nextRow,
@@ -579,15 +592,11 @@ export function applyOfficialRowOverrides(args: {
       ff,
       fa,
       ffPct,
-      sf,
-      sfPct,
-      shPct,
-      pdo,
+      officialOverlay: "fiveOnFive",
       cfPer60: nextRow.cfPer60 == null ? nextRow.cfPer60 : toPer60(cf, nextRow.toiSeconds),
       caPer60: nextRow.caPer60 == null ? nextRow.caPer60 : toPer60(ca, nextRow.toiSeconds),
       ffPer60: nextRow.ffPer60 == null ? nextRow.ffPer60 : toPer60(ff, nextRow.toiSeconds),
       faPer60: nextRow.faPer60 == null ? nextRow.faPer60 : toPer60(fa, nextRow.toiSeconds),
-      sfPer60: nextRow.sfPer60 == null ? nextRow.sfPer60 : toPer60(sf, nextRow.toiSeconds),
     };
   }
 
@@ -627,18 +636,33 @@ async function maybeApplyOfficialMetricOverlay(args: {
   }
 }
 
+// Records are game outcomes, not split quantities: shown only for all
+// strengths and all score states (decision 92).
+function showsRecordColumns(state: TeamStatsLandingFilterState) {
+  return (
+    state.primary.strength === "allStrengths" &&
+    state.primary.scoreState === "allScores"
+  );
+}
+
 function mapAccumulatorToApiRow(
   accumulator: TeamAggregationAccumulator,
-  displayMode: PlayerStatsDisplayMode
+  state: TeamStatsLandingFilterState
 ): TeamStatsLandingApiRow {
+  const displayMode: PlayerStatsDisplayMode = state.primary.displayMode;
   const gamesPlayed = accumulator.gameIds.size;
-  const toiPerGameSeconds = gamesPlayed > 0 ? accumulator.toiSeconds / gamesPlayed : null;
-  const pointPct = toPctDecimal(accumulator.points, gamesPlayed * 2);
+  const toiPerGameSeconds =
+    gamesPlayed > 0 && accumulator.toiSeconds != null
+      ? accumulator.toiSeconds / gamesPlayed
+      : null;
+  const decidedGames = accumulator.decidedGameIds.size;
+  const showRecord = showsRecordColumns(state);
+  // Unresolved games are dropped from the point-% denominator (W2-3 D12).
+  const pointPct = showRecord ? toPctDecimal(accumulator.points, decidedGames * 2) : null;
   const cfPct = toPctDecimal(accumulator.cf, accumulator.cf + accumulator.ca);
   const ffPct = toPctDecimal(accumulator.ff, accumulator.ff + accumulator.fa);
   const sfPct = toPctDecimal(accumulator.sf, accumulator.sf + accumulator.sa);
   const gfPct = toPctDecimal(accumulator.gf, accumulator.gf + accumulator.ga);
-  const xgfPct = toPctDecimal(accumulator.xgf, accumulator.xgf + accumulator.xga);
   const scfPct = toPctDecimal(accumulator.scf, accumulator.scf + accumulator.sca);
   const scsfPct = toPctDecimal(accumulator.scsf, accumulator.scsf + accumulator.scsa);
   const scgfPct = toPctDecimal(accumulator.scgf, accumulator.scgf + accumulator.scga);
@@ -668,12 +692,13 @@ function mapAccumulatorToApiRow(
     gamesPlayed,
     toiSeconds: accumulator.toiSeconds,
     toiPerGameSeconds,
-    wins: accumulator.wins,
-    losses: accumulator.losses,
-    otl: accumulator.otl,
-    rowWins: accumulator.rowWins,
-    points: accumulator.points,
+    wins: showRecord ? accumulator.wins : null,
+    losses: showRecord ? accumulator.losses : null,
+    otl: showRecord ? accumulator.otl : null,
+    rowWins: showRecord ? accumulator.rowWins : null,
+    points: showRecord ? accumulator.points : null,
     pointPct,
+    unresolvedGames: gamesPlayed - decidedGames,
     cf: accumulator.cf,
     ca: accumulator.ca,
     cfPct,
@@ -686,9 +711,10 @@ function mapAccumulatorToApiRow(
     gf: accumulator.gf,
     ga: accumulator.ga,
     gfPct,
-    xgf: accumulator.xgf,
-    xga: accumulator.xga,
-    xgfPct,
+    // Bucket-heuristic xG is hidden until a clean model is approved (decisions 6, 12).
+    xgf: null,
+    xga: null,
+    xgfPct: null,
     scf: accumulator.scf,
     sca: accumulator.sca,
     scfPct,
@@ -752,8 +778,8 @@ function mapAccumulatorToApiRow(
     saPer60: toPer60(accumulator.sa, accumulator.toiSeconds),
     gfPer60: toPer60(accumulator.gf, accumulator.toiSeconds),
     gaPer60: toPer60(accumulator.ga, accumulator.toiSeconds),
-    xgfPer60: toPer60(accumulator.xgf, accumulator.toiSeconds),
-    xgaPer60: toPer60(accumulator.xga, accumulator.toiSeconds),
+    xgfPer60: null,
+    xgaPer60: null,
     scfPer60: toPer60(accumulator.scf, accumulator.toiSeconds),
     scaPer60: toPer60(accumulator.sca, accumulator.toiSeconds),
     scsfPer60: toPer60(accumulator.scsf, accumulator.toiSeconds),
@@ -781,15 +807,50 @@ function mapAccumulatorToApiRow(
   };
 }
 
-function sortRows(rows: TeamStatsLandingApiRow[], sort: TeamStatsSortState) {
+// Nulls sort last in both directions; ties break by team label then id, so
+// the order (and therefore pagination) never depends on input order (W2-P0-7).
+export function sortTeamStatsRows(
+  rows: readonly TeamStatsLandingApiRow[],
+  sort: TeamStatsSortState
+) {
+  const sortKey = (sort.sortKey ?? "teamLabel") as keyof TeamStatsLandingApiRow;
+  const direction = sort.direction === "asc" ? 1 : -1;
+  const valueOf = (row: TeamStatsLandingApiRow) => {
+    const value = row[sortKey];
+    return typeof value === "number" && !Number.isFinite(value) ? null : value;
+  };
+
   return [...rows].sort((left, right) => {
-    const direction = sort.direction === "asc" ? 1 : -1;
-    const comparison = compareValues(left[sort.sortKey ?? "teamLabel"], right[sort.sortKey ?? "teamLabel"]);
-    if (comparison !== 0) {
-      return comparison * direction;
+    const leftValue = valueOf(left);
+    const rightValue = valueOf(right);
+    if (leftValue == null || rightValue == null) {
+      if (leftValue == null && rightValue != null) return 1;
+      if (rightValue == null && leftValue != null) return -1;
+    } else {
+      const comparison = compareValues(leftValue, rightValue);
+      if (comparison !== 0) {
+        return comparison * direction;
+      }
     }
 
-    return left.teamLabel.localeCompare(right.teamLabel);
+    return left.teamLabel.localeCompare(right.teamLabel) || left.teamId - right.teamId;
+  });
+}
+
+/** Competition rank on the sort value: tied rows share a rank (W2-3 D17, rule 20). */
+function assignSortRanks(
+  rows: readonly TeamStatsLandingApiRow[],
+  sort: TeamStatsSortState
+): TeamStatsLandingApiRow[] {
+  const sortKey = (sort.sortKey ?? "teamLabel") as keyof TeamStatsLandingApiRow;
+  let previousValue: unknown = Symbol("none");
+  let previousRank = 0;
+  return rows.map((row, index) => {
+    const value = row[sortKey] ?? null;
+    const rank = index > 0 && value === previousValue ? previousRank : index + 1;
+    previousValue = value;
+    previousRank = rank;
+    return { ...row, rank };
   });
 }
 
@@ -877,14 +938,8 @@ function applyScopedRowWindow(
     return rows;
   }
 
-  if (state.expandable.scope.kind === "gameRange") {
-    const selectedGameIds = [...new Set(rows.map((row) => row.game_id))]
-      .sort((left, right) => right - left)
-      .slice(0, limit);
-    const allowed = new Set(selectedGameIds);
-    return rows.filter((row) => allowed.has(row.game_id));
-  }
-
+  // "Last N games" is each team's own last N games by date (decision 95);
+  // the league-wide and per-team controls are the same window.
   const rowsByTeam = new Map<number, TeamSummaryTableRow[]>();
   for (const row of rows) {
     const bucket = rowsByTeam.get(row.team_id) ?? [];
@@ -894,8 +949,13 @@ function applyScopedRowWindow(
 
   const filtered: TeamSummaryTableRow[] = [];
   for (const teamRows of rowsByTeam.values()) {
-    const allowedGameIds = [...new Set(teamRows.map((row) => row.game_id))]
-      .sort((left, right) => right - left)
+    const dateByGameId = new Map(teamRows.map((row) => [row.game_id, row.game_date]));
+    const allowedGameIds = [...dateByGameId.keys()]
+      .sort(
+        (left, right) =>
+          (dateByGameId.get(right) ?? "").localeCompare(dateByGameId.get(left) ?? "") ||
+          right - left
+      )
       .slice(0, limit);
     const allowed = new Set(allowedGameIds);
     filtered.push(...teamRows.filter((row) => allowed.has(row.game_id)));
@@ -912,7 +972,8 @@ function applyMinimumToiFilter(
     return rows;
   }
 
-  return rows.filter((row) => row.toiSeconds >= minimumToiSeconds);
+  // Unknown ice time cannot meet a minimum (rule 5).
+  return rows.filter((row) => row.toiSeconds != null && row.toiSeconds >= minimumToiSeconds);
 }
 
 export function parseTeamLandingApiRequest(
@@ -1011,7 +1072,7 @@ export async function queryTeamStatsLanding(args: {
 
   const mappedRows = await maybeApplyOfficialMetricOverlay({
     rows: [...aggregates.values()].map((accumulator) =>
-      mapAccumulatorToApiRow(accumulator, args.state.primary.displayMode)
+      mapAccumulatorToApiRow(accumulator, args.state)
     ),
     state: args.state,
     supabase,
@@ -1020,10 +1081,10 @@ export async function queryTeamStatsLanding(args: {
     mappedRows,
     args.state.expandable.minimumToiSeconds
   );
-  const sortedRows = sortRows(filteredRows, args.state.view.sort).map((row, index) => ({
-    ...row,
-    rank: index + 1,
-  }));
+  const sortedRows = assignSortRanks(
+    sortTeamStatsRows(filteredRows, args.state.view.sort),
+    args.state.view.sort
+  );
 
   const page = args.state.view.pagination.page;
   const pageSize = args.state.view.pagination.pageSize;

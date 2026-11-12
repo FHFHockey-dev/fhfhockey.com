@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { calendarLeadDay, forecastCalendarPolicy, validForecastCalendarPolicy, type ForecastCalendarPolicy } from "lib/player-forecasts/contributions";
+import { calendarLeadDay, forecastCalendarPolicy, validForecastCalendarPolicy, type AnyForecastCalendarPolicy, type ForecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { boardGoalieForecast, boardSkaterForecast, completeBoardSkaterStatsFromProjection } from "./starterBoardScoring";
 import { forgeRosterRevision, forgeScheduleRevision, type ForgeIssuedContextV1 } from "./issuedContext";
 import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "./acceptedNews";
@@ -21,7 +21,7 @@ const validCapturedTime = (value: unknown, observedAt: string) => value === null
 /** Whitelist issued, selected FORGE outputs. Research/admin payloads never leave this boundary. */
 export function publicPlanningForecasts(revisions: ForgeGameRevision[], players: PlanningPlayer[], games: PlanningGame[], now: Date,
   exclusions: Record<string, number> = {}, exclusionRows: ForecastDiscoveryExclusion[] = [], expectedSeasonId?: number,
-  calendarPolicy: ForecastCalendarPolicy = forecastCalendarPolicy(),
+  calendarPolicy: AnyForecastCalendarPolicy = forecastCalendarPolicy(),
   admittedSources: Map<string, AdmittedConsumerSource> = new Map()): GameForecast[] {
   const excluded = (reason: ForecastExclusionReason, gameId: string, playerId?: string, targetKey?: string) => {
     exclusions[reason] = (exclusions[reason] ?? 0) + 1;
@@ -46,7 +46,8 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
     const cutoffAt = revision.payload.inputCutoff ?? revision.decision_as_of;
     const currentGames = gamesById.get(gameId)!;
     if (new Set(currentGames.map(game => game.startsAt)).size !== 1) { excluded("game_mismatch", gameId); continue; }
-    const lead = calendarLeadDay(currentGames[0].startsAt ?? "", now.toISOString());
+    // Decision 127: the policy decides the date basis; v2 counts the schedule's own NHL date.
+    const lead = calendarLeadDay(currentGames[0].startsAt ?? "", now.toISOString(), calendarPolicy, currentGames[0].date);
     if (!validForecastCalendarPolicy(calendarPolicy) || !Number.isFinite(lead) || lead >= calendarPolicy.calendarDays) {
       excluded("outside_horizon", gameId); continue;
     }

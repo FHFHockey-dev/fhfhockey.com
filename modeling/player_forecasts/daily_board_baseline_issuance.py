@@ -29,6 +29,31 @@ def _hash(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _selection_record(selection: Path | None, cutoff: datetime) -> dict:
+    """Decision 66: record what this issuance's policy was selected by.
+
+    Without a selection artifact the 300-minute policy is issued as the
+    separately named fixed baseline it is, never as a selected winner. A
+    supplied artifact must name this exact policy and version and predate the
+    cutoff; anything else is refused before any forecast is written.
+    """
+    if selection is None:
+        return {"status": "no_selected_artifact", "policyRole": "separately_named_fixed_baseline",
+            "claim": "not selected by a documented held-out process; not shown to beat alternatives",
+            "decision": 66}
+    if not selection.is_file():
+        raise ValueError("selection artifact missing; refusing to issue")
+    artifact = read_json(selection)
+    if artifact.get("selectedPolicyVersion") != POLICY["version"] or artifact.get("selectedPolicy") != POLICY:
+        raise ValueError("selection artifact does not name this issuer's exact policy version")
+    trained_through = artifact.get("trainingCutoffAt")
+    if not trained_through or _timestamp(trained_through) > cutoff:
+        raise ValueError("selection artifact is stale or postdates the issuance cutoff")
+    return {"status": "selected_artifact", "artifactSha256": _hash(selection),
+        "selectedPolicyVersion": artifact["selectedPolicyVersion"], "trainingCutoffAt": trained_through,
+        "selectionEvidence": artifact.get("selectionEvidence"), "decision": 66}
+
+
 def _inputs(freeze: Path, candidate: Path, cutoff: datetime) -> tuple[dict, list[dict], dict, dict]:
     manifest = read_json(freeze / "manifest.json")
     validate_range(manifest["start"], manifest["end"])
@@ -114,7 +139,7 @@ def baseline_rows(freeze: Path, candidate: Path, *, cutoff_at: str, issued_at: s
         "historyAgeDays": (date.fromisoformat(pool["gameDate"]) - date.fromisoformat(provenance["historyEnd"])).days}
 
 
-def issue_baselines(freeze: Path, candidate: Path, output: Path) -> dict:
+def issue_baselines(freeze: Path, candidate: Path, output: Path, selection: Path | None = None) -> dict:
     assert_output_outside_repository(output, repository_root())
     if output.exists():
         manifest = read_json(output / "manifest.json")
@@ -123,6 +148,7 @@ def issue_baselines(freeze: Path, candidate: Path, output: Path) -> dict:
         verify_issued_baselines(output)
         return manifest
     cutoff = datetime.now(timezone.utc).isoformat()
+    selection_record = _selection_record(selection, _timestamp(cutoff))
     # Compute once, then stamp the completed forecasts with the real issue time.
     rows, details = baseline_rows(freeze, candidate, cutoff_at=cutoff, issued_at=cutoff)
     if not rows:
@@ -139,6 +165,7 @@ def issue_baselines(freeze: Path, candidate: Path, output: Path) -> dict:
     manifest = {"version": POLICY["version"], "policy": POLICY, **details, "cutoffAt": cutoff, "issuedAt": issued.isoformat(),
         "sourcePaths": {"freeze": str(freeze.resolve()), "candidate": str(candidate.resolve())}, "targetRows": count,
         "forecastChecksum": digest, "promotionEligible": False, "servingChanged": False,
+        "trainingCutoff": details["inputs"]["historyEnd"], "selection": selection_record,
         "codeHashes": {name: _hash(Path(__file__).with_name(name)) for name in ("daily_board_baseline_issuance.py", "daily_board_models.py",
             "daily_board_candidates.py", "daily_board_training.py", "daily_board_data.py", "daily_board_settlement.py", "io.py")},
         "limitations": ["Conditional skater means only; no participation, goalie, uncertainty or optimal-lineup claim.",
@@ -176,6 +203,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("freeze", "candidate", "output"):
         parser.add_argument(f"--{name}", type=Path, required=True)
+    parser.add_argument("--selection", type=Path, default=None,
+        help="versioned selection artifact naming this exact policy (decision 66)")
     report = issue_baselines(**vars(parser.parse_args()))
     print(canonical_json({k: report[k] for k in ("gameId", "gameType", "forecastSkaters", "historyAgeDays", "issuedAt", "promotionEligible")}))
 

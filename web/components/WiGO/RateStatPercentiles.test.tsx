@@ -1,12 +1,17 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import RateStatPercentiles from "./RateStatPercentiles";
 
 const mockFetchPercentileCohortForPlayer = vi.hoisted(() => vi.fn());
 const mockUseCurrentSeason = vi.hoisted(() => vi.fn());
+const mockFetchSkaterPositionGroups = vi.hoisted(() => vi.fn());
+
+vi.mock("utils/fetchWigoRatingStats", () => ({
+  fetchSkaterPositionGroups: mockFetchSkaterPositionGroups
+}));
 
 vi.mock("hooks/useCurrentSeason", () => ({
   default: mockUseCurrentSeason,
@@ -327,8 +332,9 @@ describe("RateStatPercentiles", () => {
       <RateStatPercentiles playerId={1} seasonId={20252026} minGp={10} onMinGpChange={vi.fn()} desktop />
     );
     await waitFor(() => expect(screen.getAllByText("50%")).toHaveLength(2));
-    // The tile shows "1st" with a visually hidden " rank" suffix for screen readers.
-    expect(screen.getAllByText((_, element) => element?.tagName === "SMALL" && element.textContent === "1st rank")).toHaveLength(2);
+    // The tile shows "1st/2" (rank and the stat's finite cohort size) with a
+    // visually hidden suffix for screen readers.
+    expect(screen.getAllByText((_, element) => element?.tagName === "SMALL" && element.textContent === "1st/2 rank of 2 with this stat")).toHaveLength(2);
   });
 
   it("recalculates the minimum-GP population without refetching", async () => {
@@ -409,5 +415,95 @@ describe("RateStatPercentiles", () => {
       ).toBeTruthy();
     });
     expect(screen.queryByText(/private_percentiles/)).toBeNull();
+  });
+
+  it("leaves a stat unranked when no peer has a finite value for it, instead of a lone 1st at 50% (A3)", async () => {
+    mockFetchPercentileCohortForPlayer.mockResolvedValue({
+      stats: [
+        { player_id: 1, gp: 20, toi: 12000, goals_per_60: 1, ixg_per_60: 0.9 },
+        { player_id: 2, gp: 20, toi: 12000, goals_per_60: 2, ixg_per_60: null },
+        { player_id: 3, gp: 20, toi: 12000, goals_per_60: 0.5, ixg_per_60: null }
+      ],
+      requestedSeasonId: 20252026,
+      appliedSeasonId: 20252026,
+      canonicalPlayerGp: 20,
+      fallbackReason: null
+    });
+    renderWithClient(
+      <RateStatPercentiles playerId={1} seasonId={20252026} minGp={10} onMinGpChange={vi.fn()} desktop />
+    );
+    const tile = (label: string) =>
+      screen.getAllByText(label).map((el) => el.closest("div")!).find((div) => div.querySelector("meter"))!;
+    await waitFor(() => expect(tile("G/60").querySelector("strong")?.textContent).toBe("50%"));
+    expect(tile("G/60").querySelector("small")?.textContent).toContain("2nd/3");
+    // ixG/60: the player alone among finite values. Before the fix: "50%" and 1st.
+    expect(tile("ixG/60").querySelector("strong")?.textContent).toBe("—");
+  });
+
+  describe("PP/PK cohorts (decision 81)", () => {
+    const ppCohort = {
+      stats: [
+        // toi in seconds at PP
+        { player_id: 1, gp: 40, toi: 50 * 60, goals_per_60: 5 },
+        { player_id: 2, gp: 40, toi: 50 * 60, goals_per_60: 4 },
+        { player_id: 3, gp: 40, toi: 20 * 60, goals_per_60: 9 }, // D below the 30-min floor
+        { player_id: 4, gp: 40, toi: 200 * 60, goals_per_60: 9 }, // forwards rank apart
+        { player_id: 5, gp: 40, toi: 200 * 60, goals_per_60: 8 }
+      ],
+      requestedSeasonId: 20252026,
+      appliedSeasonId: 20252026,
+      canonicalPlayerGp: 40,
+      fallbackReason: null
+    };
+    const groups = new Map([[1, "D"], [2, "D"], [3, "D"], [4, "F"], [5, "F"]]);
+
+    beforeEach(() => {
+      mockFetchPercentileCohortForPlayer.mockResolvedValue(ppCohort);
+      mockFetchSkaterPositionGroups.mockReset();
+      mockFetchSkaterPositionGroups.mockResolvedValue(groups);
+    });
+
+    const goalsTile = () =>
+      screen.getAllByText("G/60").map((el) => el.closest("div")!).find((div) => div.querySelector("meter"))!;
+
+    it("ranks defensemen against defensemen above the PP minutes floor, not games", async () => {
+      const onSt = vi.fn();
+      const { container } = renderWithClient(
+        <RateStatPercentiles playerId={1} seasonId={20252026} minGp={10} onMinGpChange={vi.fn()}
+          stMinMinutes={{ pp: 30, pk: 30 }} onStMinMinutesChange={onSt} desktop />
+      );
+      await waitFor(() => expect(screen.getByText("Rate stat percentiles")).toBeTruthy());
+      fireEvent.click(screen.getByRole("button", { name: "PP" }));
+      // D over 30 PP min: players 1 and 2 → (1 + 0.5) / 2 = 75%. Pooled by GP it was 30%.
+      await waitFor(() => expect(goalsTile().querySelector("strong")?.textContent).toBe("75%"));
+      expect(goalsTile().querySelector("small")?.textContent).toContain("1st/2");
+      expect(screen.getByText(/defensemen · 30 PP min\+/)).toBeTruthy();
+      expect(screen.getByText(/not yet validated by split-half stability/)).toBeTruthy();
+      expect(container.querySelector("label[for=gpSlider]")?.textContent).toContain("Min PP min:30");
+      fireEvent.change(container.querySelector("#gpSlider")!, { target: { value: "15" } });
+      expect(onSt).toHaveBeenCalledWith("pp", 15);
+    });
+
+    it("shows insufficient sample for a player below the floor instead of ranking him", async () => {
+      renderWithClient(
+        <RateStatPercentiles playerId={3} seasonId={20252026} minGp={10} onMinGpChange={vi.fn()}
+          stMinMinutes={{ pp: 30, pk: 30 }} desktop />
+      );
+      await waitFor(() => expect(screen.getByText("Rate stat percentiles")).toBeTruthy());
+      fireEvent.click(screen.getByRole("button", { name: "PP" }));
+      await waitFor(() => expect(screen.getByText("Insufficient sample")).toBeTruthy());
+      expect(goalsTile().querySelector("strong")?.textContent).toBe("—");
+    });
+
+    it("brings a player back into the cohort when the floor is lowered", async () => {
+      renderWithClient(
+        <RateStatPercentiles playerId={3} seasonId={20252026} minGp={10} onMinGpChange={vi.fn()}
+          stMinMinutes={{ pp: 15, pk: 30 }} desktop />
+      );
+      await waitFor(() => expect(screen.getByText("Rate stat percentiles")).toBeTruthy());
+      fireEvent.click(screen.getByRole("button", { name: "PP" }));
+      // D over 15 min: 1, 2, 3 → player 3 tops: (2 + 0.5) / 3 = 83%.
+      await waitFor(() => expect(goalsTile().querySelector("strong")?.textContent).toBe("83%"));
+    });
   });
 });

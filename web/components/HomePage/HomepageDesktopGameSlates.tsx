@@ -7,10 +7,13 @@ import OptimizedImage from "components/common/OptimizedImage";
 import { fallbackNHLLogo, getTeamLogoSvg } from "lib/images";
 import styles from "styles/Home.module.scss";
 import { formatLocalStartTime } from "./homepageGameFormatting";
+import HomepagePredictionNotice from "./HomepagePredictionNotice";
 import {
   compactHomepageMetric,
   formatHomepageEdge,
   getHomepageGamePresentation,
+  getHomepagePredictionNotice,
+  HOMEPAGE_EDGE_LABEL,
   type HomepageGameGroup,
   type HomepageGamePresentation,
   type HomepageSlateMode,
@@ -54,27 +57,23 @@ const getEdgeMetric = (
 
   if (presentation.edgeAvailable) {
     return {
-      label: "Edge",
+      label: HOMEPAGE_EDGE_LABEL,
       value: `${analytics!.edgeTeamAbbreviation} ${formatHomepageEdge(
         analytics!.edgePercentagePoints!,
       )}`,
     };
   }
 
-  if (!presentation.probabilitiesAvailable) return null;
+  const pair = presentation.winPair;
+  if (!pair) return null;
+  if (pair.pick === "tie") return { label: "Win", value: "50 / 50" };
 
-  const awayProbability = analytics!.awayWinProbability!;
-  const homeProbability = analytics!.homeWinProbability!;
-  if (awayProbability === homeProbability) {
-    return { label: "Win", value: "50 / 50" };
-  }
-
-  const awayFavored = awayProbability > homeProbability;
+  const awayPicked = pair.pick === "away";
   return {
     label: "Win",
-    value: `${awayFavored ? awayTeam.abbrev : homeTeam.abbrev} ${Math.round(
-      (awayFavored ? awayProbability : homeProbability) * 100,
-    )}%`,
+    value: `${awayPicked ? awayTeam.abbrev : homeTeam.abbrev} ${
+      awayPicked ? pair.awayPercent : pair.homePercent
+    }%`,
   };
 };
 
@@ -428,7 +427,7 @@ function TableHeader({
     >
       <span>{group === "final" ? "Final" : "Time"}</span>
       <span>Matchup</span>
-      <span>{group === "final" ? "xGF" : "Edge"}</span>
+      <span>{group === "final" ? "xGF" : "Model"}</span>
       <span>{group === "final" ? "SOG" : "Proj"}</span>
       <span>Network</span>
       <span aria-hidden="true" />
@@ -483,7 +482,11 @@ function CompactGameRow({
       </span>
       {mode === "medium" ? (
         <>
-          <span className={styles.desktopTableMetric} data-table-metric="primary">
+          <span
+            className={styles.desktopTableMetric}
+            data-table-metric="primary"
+            title={isFinal ? undefined : edge?.label}
+          >
             {isFinal ? xg?.value : edge?.value}
           </span>
           <span className={styles.desktopTableMetric} data-table-metric="secondary">
@@ -579,6 +582,9 @@ export default function HomepageDesktopGameSlates({
   const scheduledGames =
     groups.find((group) => group.key === "scheduled")?.games ?? [];
   const finalGames = groups.find((group) => group.key === "final")?.games ?? [];
+  const predictionNotice = getHomepagePredictionNotice(
+    orderedGames.map(getHomepageGamePresentation),
+  );
 
   return (
     <div
@@ -652,6 +658,8 @@ export default function HomepageDesktopGameSlates({
       {mode !== "light" && finalGames.length > 0 ? (
         <CompactGameTable mode={mode} group="final" games={finalGames} />
       ) : null}
+
+      <HomepagePredictionNotice notice={predictionNotice} />
 
       <Link
         href="/game-grid/7-Day-Forecast"

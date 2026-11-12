@@ -13,6 +13,38 @@ export type LegacyPredictionArtifact = {
   historicalOnly?: { decidedAt: string; record: string };
 };
 
+/**
+ * Decision 80 definition of the number stored in `predictions_sko.sko` (TJ named it 2026-11-12).
+ * It is not sKO (the sustainability barometer, OWNER-INTENT-SKO-VUDU.md) and makes no
+ * sustainability or predictive claim. Full text:
+ * tasks/artifacts/legacy-sko-definition-2026-11-12/DEFINITION.md
+ */
+export const VOLATILITY_DISCOUNTED_PACE = {
+  construct: "volatility_discounted_points_pace",
+  label: "Volatility-Discounted Points Pace (VDP)",
+  storedColumn: "sko",
+  modelName: "baseline-moving-average",
+  /** v0.4: unknown points stay unknown, regular-season games only, empty history is null. */
+  modelVersion: "v0.4",
+  defaultHorizonAppearances: 5,
+  formula:
+    "VDP = pace × horizon × multiplier; pace = 0.6·mean(last 10 appearances) + 0.4·mean(last 5); multiplier = 0.8 + 0.2·(1 − smoothstep((sd10 − 0.8·sd20) / (0.4·sd20))), sd = population SD of points per appearance",
+  pace: "Unshrunk mean of points per appearance over the player's last 10 and last 5 current regular-season appearances; no prior, no opponent, no ice-time term.",
+  horizon: "Player appearances, not scheduled team games (decision 28 / intent §5.6 horizons are team games).",
+  multiplier:
+    "0.8–1.0 discount from sd10/sd20. Invariant to adding or multiplying every game by a constant. Every series of 10 or fewer games gets 0.9; a constant 20-game series gets 1.0. Discounting volatility is a presentation choice, not evidence that steadier is better (decision 32).",
+  status: "Unvalidated; compatibility model, not promoted. No out-of-sample evaluation exists (decisions 32, 65)."
+} as const;
+
+/**
+ * Versions whose `stability_cv` column holds the population SD of points per appearance over the
+ * stability window (v0.2 from d0c1db117, v0.3, v0.4). Read it as `stability_sd`; an unknown
+ * version's `stability_cv` is left unknown.
+ */
+export const PREDICTIONS_SKO_SD_VERSIONS: Record<string, readonly string[]> = {
+  "baseline-moving-average": ["v0.2", "v0.3", "v0.4"]
+};
+
 const SKO_HISTORICAL_ONLY = {
   decidedAt: "2026-07-28",
   record: "tasks/TASKS/sko-charts/sko-ownership-contract.md"

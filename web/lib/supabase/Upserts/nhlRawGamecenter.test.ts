@@ -10,13 +10,20 @@ import {
   ingestNhlApiRawGamesBestEffort,
   insertPayloadSnapshot,
   NORMALIZATION_PARSER_FINGERPRINT,
+  normalizePbpEvents,
   normalizeShiftRows,
   persistCapturedGameNormalization,
   persistNormalizedGameScope,
   readNormalizedGameManifest,
   selectShiftRowsForGame,
+  STRENGTH_VERSION,
   upsertInBatches,
 } from "./nhlRawGamecenter.mjs";
+import {
+  classifyTeamStrengthState,
+  parseSituationCode,
+  STRENGTH_CLASSIFIER_VERSION,
+} from "./nhlStrengthState";
 
 function createJsonResponse(payload: unknown) {
   return {
@@ -45,7 +52,7 @@ function createEmptyNormalizedScope(gameId = 1) {
     shiftPayloadHash: "b".repeat(64),
     parserFingerprint: NORMALIZATION_PARSER_FINGERPRINT,
     parserVersion: 1,
-    strengthVersion: 1,
+    strengthVersion: STRENGTH_VERSION,
     materializerVersion: "nhl-gamecenter-normalizer-v1",
     rosterRows: [],
     eventRows: [],
@@ -415,7 +422,7 @@ describe("nhlRawGamecenter", () => {
           event_id: 11,
           source_play_by_play_hash: pbpPayloadHash,
           parser_version: 1,
-          strength_version: 1,
+          strength_version: STRENGTH_VERSION,
         },
         {
           game_id: 2025021103,
@@ -424,7 +431,7 @@ describe("nhlRawGamecenter", () => {
           event_id: 9,
           source_play_by_play_hash: pbpPayloadHash,
           parser_version: 1,
-          strength_version: 1,
+          strength_version: STRENGTH_VERSION,
         },
       ],
       shiftRows: [
@@ -567,7 +574,7 @@ describe("nhlRawGamecenter", () => {
       shiftPayloadHash: "b".repeat(64),
       parserFingerprint: NORMALIZATION_PARSER_FINGERPRINT,
       parserVersion: 1,
-      strengthVersion: 1,
+      strengthVersion: STRENGTH_VERSION,
       materializerVersion: "nhl-gamecenter-normalizer-v1",
       rosterRows: [{ player_id: 1 }],
       eventRows: [{ event_id: 2 }],
@@ -679,7 +686,7 @@ describe("nhlRawGamecenter", () => {
           shiftPayloadHash: "b".repeat(64),
           parserFingerprint: NORMALIZATION_PARSER_FINGERPRINT,
           parserVersion: 1,
-          strengthVersion: 1,
+          strengthVersion: STRENGTH_VERSION,
           materializerVersion: "nhl-gamecenter-normalizer-v1",
           rosterRows: [],
           eventRows: [],
@@ -751,7 +758,7 @@ describe("nhlRawGamecenter", () => {
           shiftPayloadHash: "b".repeat(64),
           parserFingerprint: NORMALIZATION_PARSER_FINGERPRINT,
           parserVersion: 1,
-          strengthVersion: 1,
+          strengthVersion: STRENGTH_VERSION,
           materializerVersion: "nhl-gamecenter-normalizer-v1",
           rosterRows: [],
           eventRows: [],
@@ -1245,5 +1252,91 @@ describe("shift payload validation", () => {
     await expect(
       fetchShiftCharts(gameId, { retries: 1, retryDelayMs: 0, timeoutMs: 50 }),
     ).rejects.toThrow("Inconsistent NHL shift pagination");
+  });
+
+  describe("event strength labels (decisions 70, 84) and shootout goals", () => {
+    const HOME = 10;
+    const AWAY = 20;
+    const game = (plays: unknown[]) =>
+      ({
+        id: 2025020001,
+        season: 20252026,
+        gameDate: "2026-01-01",
+        homeTeam: { id: HOME },
+        awayTeam: { id: AWAY },
+        plays,
+      }) as unknown as PlayByPlayPayload;
+    const play = (
+      eventId: number,
+      situationCode: string,
+      ownerTeamId: number | null,
+      typeDescKey = "goal",
+      periodType = "REG"
+    ) => ({
+      eventId,
+      sortOrder: eventId,
+      periodDescriptor: { number: periodType === "SO" ? 5 : 3, periodType },
+      timeInPeriod: "19:00",
+      timeRemaining: "01:00",
+      situationCode,
+      typeDescKey,
+      details: ownerTeamId == null ? {} : { eventOwnerTeamId: ownerTeamId },
+    });
+
+    it("uses the shared classifier version", () => {
+      expect(STRENGTH_VERSION).toBe(STRENGTH_CLASSIFIER_VERSION);
+    });
+
+    it("1560: a home goal with the home net empty keeps its official strength, not EN", () => {
+      const [homeGoal, awayGoal] = normalizePbpEvents(
+        game([play(1, "1560", HOME), play(2, "1560", AWAY)]),
+        "a".repeat(64)
+      );
+      expect(homeGoal.strength_state).toBe("EV");
+      expect(awayGoal.strength_state).toBe("EN");
+    });
+
+    it("1010: a penalty-shot attempt is never labelled EN", () => {
+      const [attempt] = normalizePbpEvents(
+        game([play(1, "1010", HOME, "shot-on-goal")]),
+        "a".repeat(64)
+      );
+      expect(attempt.strength_state).toBeNull();
+    });
+
+    it("a shootout goal is not a regulation/OT goal", () => {
+      const [regulationGoal, shootoutGoal] = normalizePbpEvents(
+        game([play(1, "1551", HOME), play(2, "1010", HOME, "goal", "SO")]),
+        "a".repeat(64)
+      );
+      expect(regulationGoal.is_goal).toBe(true);
+      expect(shootoutGoal.is_goal).toBe(false);
+      expect(shootoutGoal.type_desc_key).toBe("goal");
+    });
+
+    it("agrees with the TypeScript predicate on every situation code and owner", () => {
+      const plays: unknown[] = [];
+      for (let n = 0; n < 10000; n += 1) {
+        const code = String(n).padStart(4, "0");
+        plays.push(play(n * 3 + 1, code, HOME, "shot-on-goal"));
+        plays.push(play(n * 3 + 2, code, AWAY, "shot-on-goal"));
+        plays.push(play(n * 3 + 3, code, null, "shot-on-goal"));
+      }
+      const rows: Array<{
+        situation_code: string | null;
+        event_owner_team_id: number | null;
+        strength_state: string | null;
+      }> = normalizePbpEvents(game(plays), "a".repeat(64));
+      const mismatches = rows.filter((row) => {
+        const expected = classifyTeamStrengthState(
+          parseSituationCode(row.situation_code),
+          row.event_owner_team_id,
+          HOME,
+          AWAY
+        );
+        return row.strength_state !== expected;
+      });
+      expect(mismatches.slice(0, 3)).toEqual([]);
+    });
   });
 });

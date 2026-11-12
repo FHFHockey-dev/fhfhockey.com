@@ -1,5 +1,7 @@
 import publicSupabase from "lib/supabase/public-client";
 import { DEFAULT_SUPABASE_PAGE_SIZE, fetchAllSupabasePages } from "lib/supabase/pagination";
+import { calculateLeagueSavePct } from "lib/rankings/goalieMethodology";
+import { ROLLING_PLAYER_SUPPORT_PAYLOAD_SCHEMA_VERSION } from "lib/supabase/Upserts/rollingPlayerSupportPayload";
 import { PICKUP_YAHOO_TEAM_ALIASES, type PickupOwnershipRow } from "./pickupsFixture";
 import type { ShareGoalieGameRow, ShareGoalieRow, ShareMapRow, SharePlayerSources, ShareRecentRollingRow, ShareSkaterRow } from "./players";
 
@@ -83,17 +85,71 @@ async function chunkedRead<T>(what: string, ids: number[], read: (chunk: number[
  * rows (goalies) within the lookback window, each chunk with an explicit, fail-closed limit. Skaters and goalies
  * stay isolated (SS1-17), and so do chunks (SS1-24): `failedIds` lists only the players whose chunk failed.
  */
-export async function loadSharePlayerRecent(season: number, skaterIds: number[], goalieIds: number[], since: string): Promise<{ rolling: ShareRecentRollingRow[] | null; goalieGames: ShareGoalieGameRow[] | null; failedIds: number[] }> {
-  const [rolling, goalieGames] = await Promise.all([
-    chunkedRead<ShareRecentRollingRow>("Skater recent games", skaterIds, chunk => bounded<ShareRecentRollingRow>("Skater recent games", chunk.length * RECENT_LIMITS.skaterRowsPerPlayer, (from, to) => publicSupabase.from("rolling_player_game_metrics")
-      .select(RECENT_SKATER_COLUMNS, { count: "exact" }).eq("season", season).eq("strength_state", "all").in("player_id", chunk).gte("game_date", since)
-      // Unique order (C7 SS1-15-F2) in index order: player id, then newest game first.
-      .order("player_id", { ascending: true }).order("game_date", { ascending: false }).range(from, to) as unknown as CountedPage<ShareRecentRollingRow>)),
+/**
+ * The rolling writer stores these selected columns only in its sidecar (`rolling_player_metric_support_payloads`
+ * `support_payload.historicalCompatibility`), leaving them null on the wide row (BA W1-3 A, rolling D12): without them
+ * point-game streaks and L5 hits and blocks never show.
+ */
+export const RECENT_SIDECAR_FIELDS = ["goals_total_all", "assists_total_all", "hits_avg_last5", "blocks_avg_last5"] as const;
+export type ShareRecentSupportRow = { player_id: number; season: number; game_date: string; strength_state: string; payload_schema_version: number } & Partial<Record<(typeof RECENT_SIDECAR_FIELDS)[number], unknown>>;
+const RECENT_SIDECAR_COLUMNS = ["player_id", "season", "game_date", "strength_state", "payload_schema_version", ...RECENT_SIDECAR_FIELDS.map(field => `${field}:support_payload->historicalCompatibility->${field}`)].join(",");
+
+/**
+ * Fill a wide row's null sidecar fields from the sidecar row for the same player, season, date and strength. A value that
+ * is not a finite non-negative number, a different payload schema, or one that disagrees with a non-null wide value stays unknown.
+ */
+export function hydrateRecentSidecar(rows: readonly ShareRecentRollingRow[], support: readonly ShareRecentSupportRow[]): ShareRecentRollingRow[] {
+  const byKey = new Map(support.filter(row => row.payload_schema_version === ROLLING_PLAYER_SUPPORT_PAYLOAD_SCHEMA_VERSION).map(row => [`${row.player_id}:${row.season}:${row.game_date}:${row.strength_state}`, row]));
+  return rows.map(row => {
+    const side = byKey.get(`${row.player_id}:${row.season}:${row.game_date}:${row.strength_state}`);
+    if (!side) return row;
+    const filled = { ...row };
+    for (const field of RECENT_SIDECAR_FIELDS) {
+      const value = side[field], wide = row[field];
+      if (typeof value !== "number" || !Number.isFinite(value) || value < 0) continue;
+      if (wide == null) filled[field] = value;
+      else if (wide !== value) filled[field] = null;
+    }
+    return filled;
+  });
+}
+
+/** Season league SV% pooled by shots over every goalie's regular-season totals; null unless every row has saves and shots (decision 40: missing league average means QS unavailable). */
+export function leagueSavePctFromTotals(rows: readonly { saves: number | null; shots_against: number | null }[]) {
+  const league = calculateLeagueSavePct(rows.map(row => ({ saves: row.saves, shotsAgainst: row.shots_against })));
+  return league.totalRows > 0 && league.coveredRows === league.totalRows ? league.savePct : null;
+}
+/** The league SV% for Vollman Quality Starts, or null when the read fails (QS then stays unknown). */
+async function readLeagueSavePct(season: number): Promise<number | null> {
+  try {
+    return leagueSavePctFromTotals(await bounded<{ goalie_id: number; saves: number | null; shots_against: number | null }>("League goalie totals", PLAYER_SOURCE_LIMITS.goalies, (from, to) => publicSupabase.from("wgo_goalie_stats_totals")
+      .select("goalie_id,saves,shots_against", { count: "exact" }).eq("season_id", season).order("goalie_id", { ascending: true }).range(from, to) as unknown as CountedPage<{ goalie_id: number; saves: number | null; shots_against: number | null }>));
+  } catch (reason) {
+    console.warn(`[social-share] League SV% unavailable: ${failureReason(reason)}`);
+    return null;
+  }
+}
+
+export async function loadSharePlayerRecent(season: number, skaterIds: number[], goalieIds: number[], since: string): Promise<{ rolling: ShareRecentRollingRow[] | null; goalieGames: ShareGoalieGameRow[] | null; failedIds: number[]; leagueSavePct: number | null }> {
+  const [rolling, goalieGames, leagueSavePct] = await Promise.all([
+    chunkedRead<ShareRecentRollingRow>("Skater recent games", skaterIds, async chunk => {
+      const rows = await bounded<ShareRecentRollingRow>("Skater recent games", chunk.length * RECENT_LIMITS.skaterRowsPerPlayer, (from, to) => publicSupabase.from("rolling_player_game_metrics")
+        .select(RECENT_SKATER_COLUMNS, { count: "exact" }).eq("season", season).eq("strength_state", "all").in("player_id", chunk).gte("game_date", since)
+        // Unique order (C7 SS1-15-F2) in index order: player id, then newest game first.
+        .order("player_id", { ascending: true }).order("game_date", { ascending: false }).range(from, to) as unknown as CountedPage<ShareRecentRollingRow>);
+      // The sidecar read is the same bounded window by primary key; if it fails, its fields stay unknown and the wide row still serves.
+      const support = await bounded<ShareRecentSupportRow>("Skater recent sidecar", chunk.length * RECENT_LIMITS.skaterRowsPerPlayer, (from, to) => publicSupabase.from("rolling_player_metric_support_payloads")
+        .select(RECENT_SIDECAR_COLUMNS, { count: "exact" }).eq("season", season).eq("strength_state", "all").in("player_id", chunk).gte("game_date", since)
+        .order("player_id", { ascending: true }).order("game_date", { ascending: false }).range(from, to) as unknown as CountedPage<ShareRecentSupportRow>)
+        .catch(reason => { console.warn(`[social-share] Skater recent sidecar unavailable for ${chunk.length} players: ${failureReason(reason)}`); return []; });
+      return hydrateRecentSidecar(rows, support);
+    }),
     chunkedRead<ShareGoalieGameRow>("Goalie recent games", goalieIds, chunk => bounded<ShareGoalieGameRow>("Goalie recent games", chunk.length * RECENT_LIMITS.goalieRowsPerPlayer, (from, to) => publicSupabase.from("wgo_goalie_stats")
       .select(RECENT_GOALIE_COLUMNS, { count: "exact" }).eq("season_id", season).in("goalie_id", chunk).gte("date", since)
       .order("goalie_id", { ascending: true }).order("date", { ascending: false }).range(from, to) as unknown as CountedPage<ShareGoalieGameRow>)),
+    goalieIds.length ? readLeagueSavePct(season) : Promise.resolve(null),
   ]);
-  return { rolling: rolling.rows, goalieGames: goalieGames.rows, failedIds: [...rolling.failedIds, ...goalieGames.failedIds] };
+  return { rolling: rolling.rows, goalieGames: goalieGames.rows, failedIds: [...rolling.failedIds, ...goalieGames.failedIds], leagueSavePct };
 }
 /** A loggable reason for a failed read: the message and PostgREST code only, never rows or ids. */
 function failureReason(reason: unknown) {
@@ -104,7 +160,7 @@ function failureReason(reason: unknown) {
   return String(reason).slice(0, 200);
 }
 const RECENT_SKATER_COLUMNS = "player_id,season,game_date,strength_state,season_games_played,goals_total_last5,assists_total_last5,points_total_last5,shots_total_last5,hits_avg_last5,blocks_avg_last5,toi_seconds_avg_last5,pp_points_total_last5,toi_seconds_avg_season,line_combo_slot,line_combo_group,pp_unit,goals_total_all,assists_total_all,toi_seconds_total_last5,pp_toi_seconds_total_last5,pp_toi_seconds_avg_season";
-const RECENT_GOALIE_COLUMNS = "goalie_id,date,season_id,games_played,wins,saves,shots_against,goals_against,quality_start,shutouts";
+const RECENT_GOALIE_COLUMNS = "goalie_id,date,season_id,games_played,games_started,wins,losses,ot_losses,saves,shots_against,goals_against,quality_start,shutouts";
 
 export async function loadSharePlayerSources(season: number, teams: string[]): Promise<SharePlayerSources> {
   if (!teams.length) return { yahoo: [], map: [], skaters: [], goalies: [] };

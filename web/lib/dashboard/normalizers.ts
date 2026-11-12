@@ -1,6 +1,7 @@
 import type { TeamPowerSnapshot, TeamPowerSnapshotLike } from "./teamContext";
 import {
   normalizeStartChartResponse as normalizeStartChartContractResponse,
+  type StartChartGoalieStartBasis,
   type StartChartResponse as ContractStartChartResponse,
 } from "lib/projections/startChartContract";
 
@@ -88,8 +89,9 @@ const normalizeServingContract = (
 export type NormalizedTeamRatingRow = TeamPowerSnapshot & {
   teamAbbr: string;
   date: string;
-  ppTier: 1 | 2 | 3;
-  pkTier: 1 | 2 | 3;
+  /** Pooled special-teams tier; null when unknown (never tier 2, W1 P0 #13). */
+  ppTier: 1 | 2 | 3 | null;
+  pkTier: 1 | 2 | 3 | null;
   finishingRating: number | null;
   goalieRating: number | null;
   dangerRating: number | null;
@@ -98,10 +100,10 @@ export type NormalizedTeamRatingRow = TeamPowerSnapshot & {
   varianceFlag: number | null;
 };
 
-const toTier = (value: unknown): 1 | 2 | 3 => {
+const toTier = (value: unknown): 1 | 2 | 3 | null => {
   const n = toFiniteNumber(value);
   if (n === 1 || n === 2 || n === 3) return n;
-  return 2;
+  return null;
 };
 
 export const normalizeTeamRatings = (payload: unknown): NormalizedTeamRatingRow[] => {
@@ -309,10 +311,19 @@ export type NormalizedGoalieProjectionRow = {
   opponent_team_abbreviation: string | null;
   opponent_team_name: string;
   starter_probability: number | null;
+  /** "candidate_goalie_game": this goalie's own line if he starts (decision 25); "team_goalie_slot_legacy": the
+   * pre-contract team slot, whose win is withheld. */
+  row_basis: "candidate_goalie_game" | "team_goalie_slot_legacy" | null;
+  is_projected_starter: boolean | null;
   proj_shots_against: number | null;
   proj_saves: number | null;
   proj_goals_allowed: number | null;
+  /** His own credited Win if he starts; never the team's win chance. */
   proj_win_prob: number | null;
+  /** The team's win chance for the game, reported apart from any goalie's Win. */
+  team_win_prob: number | null;
+  /** P(start)·credited win if he starts plus his relief share. */
+  unconditional_win_prob: number | null;
   proj_shutout_prob: number | null;
   modeled_save_pct: number | null;
   volatility_index: number | null;
@@ -383,10 +394,14 @@ export const normalizeGoalieResponse = (payload: unknown): NormalizedGoalieRespo
         opponent_team_abbreviation: toStringOrNull(row.opponent_team_abbreviation),
         opponent_team_name: toStringOrNull(row.opponent_team_name) ?? "",
         starter_probability: toFiniteNumber(row.starter_probability),
+        row_basis: row.row_basis === "candidate_goalie_game" || row.row_basis === "team_goalie_slot_legacy" ? row.row_basis : null,
+        is_projected_starter: typeof row.is_projected_starter === "boolean" ? row.is_projected_starter : null,
         proj_shots_against: toFiniteNumber(row.proj_shots_against),
         proj_saves: toFiniteNumber(row.proj_saves),
         proj_goals_allowed: toFiniteNumber(row.proj_goals_allowed),
         proj_win_prob: toFiniteNumber(row.proj_win_prob),
+        team_win_prob: toFiniteNumber(row.team_win_prob),
+        unconditional_win_prob: toFiniteNumber((row.unconditional as Record<string, unknown> | null | undefined)?.credited_win_prob),
         proj_shutout_prob: toFiniteNumber(row.proj_shutout_prob),
         modeled_save_pct: toFiniteNumber(row.modeled_save_pct),
         volatility_index: toFiniteNumber(row.volatility_index),
@@ -434,6 +449,8 @@ export type NormalizedStartChartGameRow = {
     player_id: number;
     name: string;
     start_probability: number | null;
+    /** "l10_start_share" is the legacy L10 share, not a start probability (W1 P0 #17). */
+    start_probability_basis: StartChartGoalieStartBasis | null;
     projected_gsaa_per_60: number | null;
     confirmed_status: boolean | null;
     percent_ownership: number | null;
@@ -442,6 +459,8 @@ export type NormalizedStartChartGameRow = {
     player_id: number;
     name: string;
     start_probability: number | null;
+    /** "l10_start_share" is the legacy L10 share, not a start probability (W1 P0 #17). */
+    start_probability_basis: StartChartGoalieStartBasis | null;
     projected_gsaa_per_60: number | null;
     confirmed_status: boolean | null;
     percent_ownership: number | null;
@@ -455,6 +474,7 @@ export type NormalizedStartChartResponse = {
   requestedDate: string | null;
   fallbackApplied: boolean;
   serving: NormalizedServingContract | null;
+  goalieStartBasis: StartChartGoalieStartBasis | null;
   games: NormalizedStartChartGameRow[];
 };
 
@@ -468,6 +488,7 @@ export const normalizeStartChartResponse = (
   } catch {
     // Dashboard modules accept an empty result when the endpoint is unavailable.
   }
+  const goalieStartBasis = contract?.goalieStartBasis ?? null;
   const games = toArray<Record<string, unknown>>(root.games)
     .map((row) => {
       const id = toFiniteNumber(row.id);
@@ -483,6 +504,7 @@ export const normalizeStartChartResponse = (
           player_id: playerId,
           name,
           start_probability: toFiniteNumber(goalie.start_probability),
+          start_probability_basis: goalieStartBasis,
           projected_gsaa_per_60: toFiniteNumber(goalie.projected_gsaa_per_60),
           confirmed_status:
             typeof goalie.confirmed_status === "boolean"
@@ -535,6 +557,7 @@ export const normalizeStartChartResponse = (
       contract?.requestedDate ?? toStringOrNull(root.requestedDate),
     fallbackApplied: contract?.fallbackApplied ?? Boolean(root.fallbackApplied),
     serving: normalizeServingContract(contract?.serving ?? root.serving),
+    goalieStartBasis,
     games
   };
 };

@@ -204,6 +204,45 @@ function normalizeShifts(args: {
     .filter((row): row is NormalizedShift => row != null);
 }
 
+/**
+ * Unions each player's shift intervals per game, team and period. Overlapping
+ * or touching rows (a feed fault that is not an exact duplicate) would
+ * otherwise put one player on the ice twice and build a "trio" like
+ * [101, 101, 102]. After the union every active player appears once.
+ */
+function unionPlayerIntervals(shifts: NormalizedShift[]) {
+  const byPlayer = new Map<string, NormalizedShift[]>();
+  for (const shift of shifts) {
+    const key = [shift.seasonId, shift.gameId, shift.teamId, shift.playerId, shift.period].join(":");
+    const current = byPlayer.get(key) ?? [];
+    current.push(shift);
+    byPlayer.set(key, current);
+  }
+  const merged: NormalizedShift[] = [];
+  for (const playerShifts of byPlayer.values()) {
+    const sorted = [...playerShifts].sort(
+      (left, right) => left.startSeconds - right.startSeconds || left.endSeconds - right.endSeconds,
+    );
+    let current = { ...sorted[0] };
+    for (const next of sorted.slice(1)) {
+      if (next.startSeconds <= current.endSeconds) {
+        current.endSeconds = Math.max(current.endSeconds, next.endSeconds);
+      } else {
+        merged.push(current);
+        current = { ...next };
+      }
+    }
+    merged.push(current);
+  }
+  return merged;
+}
+
+function distinctPlayerIds(shifts: NormalizedShift[], group: NormalizedShift["positionGroup"]) {
+  return Array.from(
+    new Set(shifts.filter((shift) => shift.positionGroup === group).map((shift) => shift.playerId)),
+  ).sort((a, b) => a - b);
+}
+
 function activeShiftsForSegment(
   shifts: NormalizedShift[],
   startSeconds: number,
@@ -224,12 +263,16 @@ function emitRankedRows(args: {
   sourceTable: TeamUnitToiInsert["source_table"];
   metadata: Record<string, unknown>;
   unclassifiedPlayerIds?: Set<number>;
+  extraWarnings?: string[];
 }) {
   if (args.poolSeconds <= 0) return [];
   const unclassified = [...(args.unclassifiedPlayerIds ?? [])].sort((a, b) => a - b);
-  const coverageStatus: TeamUnitToiCoverageStatus = unclassified.length > 0 ? "partial" : "complete";
-  const coverageWarnings =
-    unclassified.length > 0 ? [`unclassified_skater_positions:${unclassified.join(",")}`] : [];
+  const coverageWarnings = [
+    ...(unclassified.length > 0 ? [`unclassified_skater_positions:${unclassified.join(",")}`] : []),
+    ...(args.extraWarnings ?? []),
+  ];
+  const coverageStatus: TeamUnitToiCoverageStatus =
+    coverageWarnings.length > 0 ? "partial" : "complete";
 
   return Array.from(args.units.values())
     .filter((unit) => unit.pooledSeconds > 0)
@@ -268,13 +311,19 @@ export function buildEvenStrengthTeamUnitToiRows(args: {
   snapshotDate: string;
 }) {
   const playersById = new Map(args.players.map((player) => [player.id, player]));
-  const shifts = normalizeShifts({
-    shifts: args.shifts,
-    playersById,
-    season: args.season,
-  });
+  const shifts = unionPlayerIntervals(
+    normalizeShifts({
+      shifts: args.shifts,
+      playersById,
+      season: args.season,
+    }),
+  );
   const accumulators = new Map<string, TeamGameAccumulator>();
   const unclassified = unclassifiedSkatersByTeamGame(shifts);
+  // Seconds with five skaters a side where a team did not have exactly one
+  // goalie on the ice. Strength cannot be verified there, so the segment is not
+  // counted as 5v5 and both team-games are marked partial, never complete.
+  const goalieGapSeconds = new Map<string, number>();
 
   const gamePeriodKeys = Array.from(
     new Set(shifts.map((shift) => [shift.gameId, shift.period].join(":"))),
@@ -311,27 +360,28 @@ export function buildEvenStrengthTeamUnitToiRows(args: {
       }
 
       const teams = Array.from(activeByTeam.entries());
-      const isFiveOnFive =
+      const fiveSkatersEach =
         teams.length === 2 &&
-        teams.every(([, teamShifts]) => {
-          const skaterCount = teamShifts.filter(
-            (shift) =>
-              shift.positionGroup === "forward" ||
-              shift.positionGroup === "defense",
-          ).length;
-          return skaterCount === 5;
-        });
-      if (!isFiveOnFive) continue;
+        teams.every(([, teamShifts]) =>
+          distinctPlayerIds(teamShifts, "forward").length +
+            distinctPlayerIds(teamShifts, "defense").length ===
+          5,
+        );
+      if (!fiveSkatersEach) continue;
+      const oneGoalieEach = teams.every(
+        ([, teamShifts]) => distinctPlayerIds(teamShifts, "goalie").length === 1,
+      );
+      if (!oneGoalieEach) {
+        for (const [teamId] of teams) {
+          const key = [teams[0][1][0].seasonId, gameId, teamId].join(":");
+          goalieGapSeconds.set(key, (goalieGapSeconds.get(key) ?? 0) + duration);
+        }
+        continue;
+      }
 
       for (const [, teamShifts] of teams) {
-        const forwards = teamShifts
-          .filter((shift) => shift.positionGroup === "forward")
-          .map((shift) => shift.playerId)
-          .sort((a, b) => a - b);
-        const defense = teamShifts
-          .filter((shift) => shift.positionGroup === "defense")
-          .map((shift) => shift.playerId)
-          .sort((a, b) => a - b);
+        const forwards = distinctPlayerIds(teamShifts, "forward");
+        const defense = distinctPlayerIds(teamShifts, "defense");
         if (forwards.length !== 3 || defense.length !== 2) continue;
 
         const teamAnchor = teamShifts[0];
@@ -346,34 +396,41 @@ export function buildEvenStrengthTeamUnitToiRows(args: {
     }
   }
 
-  return Array.from(accumulators.entries()).flatMap(([key, accumulator]) => [
-    ...emitRankedRows({
-      accumulator,
-      unclassifiedPlayerIds: unclassified.get(key),
-      unitType: "forward_line",
-      units: accumulator.forwardUnits,
-      poolSeconds: accumulator.forwardPoolSeconds,
-      snapshotDate: args.snapshotDate,
-      sourceTable: "nhl_api_shift_rows",
-      metadata: {
-        strengthFilter: "5v5_by_active_skater_count",
-        secondsBasis: "overlap_segments_multiplied_by_unit_player_count",
-      },
-    }),
-    ...emitRankedRows({
-      accumulator,
-      unclassifiedPlayerIds: unclassified.get(key),
-      unitType: "defense_pair",
-      units: accumulator.defenseUnits,
-      poolSeconds: accumulator.defensePoolSeconds,
-      snapshotDate: args.snapshotDate,
-      sourceTable: "nhl_api_shift_rows",
-      metadata: {
-        strengthFilter: "5v5_by_active_skater_count",
-        secondsBasis: "overlap_segments_multiplied_by_unit_player_count",
-      },
-    }),
-  ]);
+  const metadata = {
+    strengthFilter: "5v5_by_active_skater_count_and_one_goalie_each",
+    secondsBasis: "overlap_segments_multiplied_by_unit_player_count",
+    playerIntervals: "unioned_per_player_period",
+    unitSemantics: "observed_cooccurrence_units_not_disjoint_lineup_slots",
+  };
+  return Array.from(accumulators.entries()).flatMap(([key, accumulator]) => {
+    const gapSeconds = goalieGapSeconds.get(key) ?? 0;
+    const extraWarnings =
+      gapSeconds > 0 ? [`goalie_shift_missing_seconds:${roundSeconds(gapSeconds)}`] : [];
+    return [
+      ...emitRankedRows({
+        accumulator,
+        unclassifiedPlayerIds: unclassified.get(key),
+        extraWarnings,
+        unitType: "forward_line",
+        units: accumulator.forwardUnits,
+        poolSeconds: accumulator.forwardPoolSeconds,
+        snapshotDate: args.snapshotDate,
+        sourceTable: "nhl_api_shift_rows",
+        metadata,
+      }),
+      ...emitRankedRows({
+        accumulator,
+        unclassifiedPlayerIds: unclassified.get(key),
+        extraWarnings,
+        unitType: "defense_pair",
+        units: accumulator.defenseUnits,
+        poolSeconds: accumulator.defensePoolSeconds,
+        snapshotDate: args.snapshotDate,
+        sourceTable: "nhl_api_shift_rows",
+        metadata,
+      }),
+    ];
+  });
 }
 
 export function buildPowerPlayTeamUnitToiRows(args: {

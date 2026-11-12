@@ -133,7 +133,7 @@ function getSeasonWindowKey(season: number): number {
   return season >= 10000000 ? Math.floor(season / 10000) : season;
 }
 
-function computeRatioValue(
+export function computeRatioValue(
   totals: RatioTotals,
   spec: RatioAggregationSpec
 ): number | null {

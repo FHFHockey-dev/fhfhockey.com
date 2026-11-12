@@ -40,7 +40,8 @@ interface Args {
   needWeightEnabled?: boolean;
   needAlpha?: number; // 0..1 weight toward needs
   limit?: number;
-  baselineMode?: "remaining" | "full"; // for future context/labeling
+  /** Legacy toggle kept for callers; VORP uses the frozen reference (decision 77). */
+  baselineMode?: "remaining" | "full";
   currentPick?: number; // absolute pick number
   teamCount?: number; // league size for availability heuristic
   leagueType?: "points" | "categories";
@@ -54,29 +55,34 @@ export function buildRecommendationCandidates({
   usePersonalizedReplacement,
   forwardGrouping,
 }: Pick<Args, "players" | "vorpMetrics" | "personalizedVorpMetrics" | "usePersonalizedReplacement" | "forwardGrouping">): RecommendationCandidate[] {
-  return players.map((player) => {
+  // The base score is VORP against the frozen league reference (decision 76):
+  // VONA, availability and need stay separate. Players whose value is unknown
+  // are not recommended (they stay visible, labelled, in the projections table).
+  return players.flatMap((player): RecommendationCandidate[] => {
     const id = String(player.playerId);
     const globalVm = vorpMetrics?.get(id);
     const suggestionVm = (usePersonalizedReplacement ? personalizedVorpMetrics : undefined)?.get(id) ?? globalVm;
-    const vbd = suggestionVm?.vbd ?? suggestionVm?.vorp ?? 0;
+    const base = suggestionVm?.vorp;
+    const globalVorp = globalVm?.vorp;
+    if (typeof base !== "number" || !Number.isFinite(base) || typeof globalVorp !== "number" || !Number.isFinite(globalVorp)) return [];
     const eligiblePositions = groupPlayerEligibility(
       normalizePlayerEligibility(player.displayPosition, player.eligiblePositions),
       forwardGrouping ?? "split",
     );
-    return {
+    return [{
       id,
       name: player.fullName || id,
       role: eligiblePositions.includes("G") ? "goalie" : "skater",
       eligiblePositions,
-      globalVorp: globalVm?.vorp ?? 0,
-      rankValue: vbd,
-      baselineScore: 0.7 * vbd + 0.3 * (suggestionVm?.vona ?? 0),
+      globalVorp,
+      rankValue: base,
+      baselineScore: base,
       tieBreaker: player.fantasyPoints?.projected ?? 0,
       categoryValues: Object.fromEntries(Object.entries(player.combinedStats ?? {}).flatMap(([key, value]) =>
         typeof value?.projected === "number" && Number.isFinite(value.projected) ? [[key, value.projected]] : [],
       )),
       adp: player.yahooAvgPick,
-    };
+    }];
   });
 }
 
@@ -91,7 +97,6 @@ export function usePlayerRecommendations({
   needWeightEnabled = false,
   needAlpha = 0.5,
   limit = 10,
-  baselineMode,
   currentPick,
   teamCount,
   selectionHorizon,
@@ -120,9 +125,9 @@ export function usePlayerRecommendations({
       if (!player) return [];
       const globalVm = vorpMetrics?.get(result.candidate.id);
       const suggestionVm = (usePersonalizedReplacement ? personalizedVorpMetrics : undefined)?.get(result.candidate.id) ?? globalVm;
-      const tags = [`VBD ${(suggestionVm?.vbd ?? 0).toFixed(1)}`, `VONA ${(suggestionVm?.vona ?? 0).toFixed(1)}`];
-      if (baselineMode) tags.push(baselineMode === "remaining" ? "Remaining pool" : "Full pool");
-      return [{ player, score: result.recommendationScore, value: suggestionVm?.value ?? player.fantasyPoints?.projected ?? 0, vorp: result.globalVorp, vona: suggestionVm?.vona ?? 0, vbd: suggestionVm?.vbd ?? 0, availability: result.availabilityEstimate ?? undefined, reasonTags: [...tags, ...result.reasons] }];
+      const fixed = (value: number | null | undefined) => typeof value === "number" && Number.isFinite(value) ? value.toFixed(1) : "unknown";
+      const tags = [`VORP ${fixed(suggestionVm?.vorp)}`, `VONA ${fixed(suggestionVm?.vona)} (separate)`, "Frozen league reference"];
+      return [{ player, score: result.recommendationScore, value: suggestionVm?.value ?? undefined, vorp: result.globalVorp, vona: suggestionVm?.vona ?? undefined, vbd: suggestionVm?.vbd ?? undefined, availability: result.availabilityEstimate ?? undefined, reasonTags: [...tags, ...result.reasons] }];
     });
   }, [
     players,
@@ -135,7 +140,6 @@ export function usePlayerRecommendations({
     needWeightEnabled,
     needAlpha,
     limit,
-    baselineMode,
     currentPick,
     teamCount,
     selectionHorizon,

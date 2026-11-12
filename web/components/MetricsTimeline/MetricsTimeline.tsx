@@ -155,31 +155,37 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
           .eq("team_id", teamIdNumber)
           .eq("season_id", seasonIdNumber)
           .order("date", { ascending: true }),
-        supabase
-          .from("nhl_xg_team_game_aggregates")
-          .select("game_date, game_id, xg_for, xg_against, source_model_approved, source_prediction_type")
-          .eq("team_id", teamIdNumber)
-          .eq("season_id", seasonIdNumber)
-          .eq("source_model_approved", true)
-          .eq("source_prediction_type", "shot_goal")
-          .order("game_date", { ascending: true })
-          .order("feature_version", { ascending: false })
-          .order("updated_at", { ascending: false }),
+        // In-house xG comes pinned to the registry's single active approved
+        // model; the registry is not readable from the browser.
+        fetch(
+          `/api/v1/xg/team-timeline?teamId=${teamIdNumber}&seasonId=${seasonIdNumber}`
+        ).then(async (response) => {
+          if (!response.ok) throw new Error(`xG timeline request failed (${response.status})`);
+          return (await response.json()) as {
+            model: { modelVersion: string; featureVersion: number } | null;
+            reason: string;
+            rows: Parameters<typeof buildMetricsTimelineRows>[0]["xgRows"];
+          };
+        }),
       ]);
 
       if (!isMounted) return;
 
       const wgoUnavailable = wgoResult.status === "rejected" || !!wgoResult.value.error;
-      const xgUnavailable = xgResult.status === "rejected" || !!xgResult.value.error;
+      const xgUnavailable = xgResult.status === "rejected";
+      const xgPayload = xgResult.status === "fulfilled" ? xgResult.value : null;
+      const xgUnpinned = !!xgPayload && xgPayload.model == null;
       if (wgoUnavailable && xgUnavailable) throw new Error("Performance data could not be loaded.");
       setSourceWarnings([
         ...(wgoUnavailable ? ["WGO metrics could not be loaded."] : []),
         ...(xgUnavailable ? ["Expected goals could not be loaded."] : []),
+        ...(xgUnpinned ? ["In-house expected goals are unavailable: no single approved active xG model."] : []),
       ]);
       setRows(
         buildMetricsTimelineRows({
           wgoRows: wgoResult.status === "fulfilled" && !wgoUnavailable ? wgoResult.value.data ?? [] : [],
-          xgRows: xgResult.status === "fulfilled" && !xgUnavailable ? xgResult.value.data ?? [] : [],
+          xgRows: xgPayload?.rows ?? [],
+          xgModel: xgPayload?.model ?? null,
         })
       );
     };

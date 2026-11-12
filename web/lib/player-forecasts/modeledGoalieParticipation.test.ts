@@ -263,10 +263,34 @@ describe("goalie roster-observation continuation methods", () => {
     expect(buildRosterObservationGoalieParticipationReceipt({ ...input, version: appearance.version }, clocks).probability).toBeNull();
     expect(buildRosterObservationGoalieStartReceipt(input, clocks).probability).toBeNull();
   });
+  it("labels a new roster-observation start receipt with its own method, never the frozen window (W3-5 F10)", () => {
+    const clocks = { issuedAt: "2026-10-15T11:00:00Z", expiresAt: "2026-10-15T18:00:00Z" };
+    const receipt = buildRosterObservationGoalieStartReceipt(goalieObservationFixture(), clocks);
+    expect(receipt.version).toBe("modeled-goalie-roster-observation-start-v2");
+    expect(receipt.limitations.filter(text => /frozen|Sep29|Oct12/.test(text))).toEqual([]);
+    expect(receipt.limitations[0]).toContain("roster-observation");
+    // An issued v1 receipt is re-verified exactly as issued (rule 21): same probability, original label.
+    const issued = buildRosterObservationGoalieStartReceipt(goalieObservationFixture(), clocks, "v1");
+    expect(issued.version).toBe("modeled-goalie-roster-observation-start-v1");
+    expect(issued.limitations[0]).toContain("frozen Sep29–Oct12");
+    expect(issued.probability).toBe(receipt.probability);
+  });
   it("does not fill missing historical eligibility from a fresh current roster", () => {
     const input = goalieObservationFixture(); input.history.games[0].eligibility = null;
     expect(buildRosterObservationGoalieStartReceipt(input, fixture().payload).probability).toBeNull();
     expect(buildRosterObservationGoalieParticipationReceipt({ ...input, version: "goalie-roster-observation-participation-input-v1" }, fixture().payload).probability).toBeNull();
+  });
+  it("still loads an issued v1 start release and rejects a v2 receipt edited back to the v1 label", async () => {
+    const old = fixture(), input = goalieObservationFixture(), clocks = { issuedAt: old.payload.issuedAt, expiresAt: old.payload.expiresAt };
+    const release = (receipt: ReturnType<typeof buildRosterObservationGoalieStartReceipt>) => {
+      const payload: RosterObservationGoalieStartBundle = { ...old.payload, version: ROSTER_OBSERVATION_GOALIE_START_DATASET, entries: [{ input, receipt }] };
+      return { ...old, dataset_key: payload.version, payload, payload_hash: playerForecastSourcePayloadHash(payload) };
+    };
+    const load = async (row: ReturnType<typeof release>) => (await loadRosterObservationGoalieStarts(db([row]) as never, 20262027, now,
+      { environment: { PLAYER_FORECAST_ROSTER_OBSERVATION_GOALIE_START_RELEASES: `${row.id}:${row.payload_hash}` } }));
+    expect((await load(release(buildRosterObservationGoalieStartReceipt(input, clocks, "v1")))).sources[0]).toMatchObject({ probability: 0.5 });
+    const relabelled = { ...buildRosterObservationGoalieStartReceipt(input, clocks), version: "modeled-goalie-roster-observation-start-v1" as const };
+    expect((await load(release(relabelled))).sources).toEqual([]);
   });
   it.each(["appearance", "start"] as const)("uses a separate exact-hash %s release and does not inherit frozen approval", async mode => {
     const old = fixture(), input = goalieObservationFixture(), clocks = { issuedAt: old.payload.issuedAt, expiresAt: old.payload.expiresAt };

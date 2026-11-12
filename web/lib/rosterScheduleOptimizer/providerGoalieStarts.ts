@@ -10,7 +10,9 @@ export const providerStartNote = (name: string, status: ProviderStartingStatus) 
 /**
  * Yahoo's daily goalie mark is fresher than FORGE's start prior, so for that date's game only it replaces the chances in
  * the FORGE bridge rows, as the bridge does with confirmed and ruled-out news: "Starting" is a confirmed start (1) and
- * his teammates 0; "Not starting" is 0 and the rest of the team's chance is rescaled to 1. Expected stats follow as the
+ * his teammates 0; "Not starting" is 0 and each teammate's chance is conditioned on it, p / (1 − p_out): a mark alone never
+ * proves which unobserved teammate starts, so mass the bridge left unassigned stays unassigned (Astra PR2) and a partial
+ * group is never rescaled to certainty. Expected stats follow as the
  * per-start line × the new chance; "if starts" stays the per-start line. A team-game is left as issued when Yahoo names
  * two starters, contradicts a confirmed starter, the game has started, or a row lacks its per-start line. Native rows
  * keep their own start contract and are untouched.
@@ -46,12 +48,15 @@ export function applyProviderGoalieStarts(forecasts: GameForecast[], args: {
     const contradicted = starters.length > 1
       || rows.some(row => row.confirmedStart && (starters.length ? row.playerId !== starters[0] : out.has(row.playerId)));
     if (!rows.length || !usable || contradicted) continue;
-    const rest = rows.filter(row => !out.has(row.playerId)), restMass = rest.reduce((sum, row) => sum + row.startProbability!, 0);
+    const mass = (keep: (row: GameForecast) => boolean) => rows.filter(keep).reduce((sum, row) => sum + row.startProbability!, 0);
+    const outMass = mass(row => out.has(row.playerId)), restMass = mass(row => !out.has(row.playerId));
+    // 1 − p_out; for a group whose chances already sum to 1 that is the rest's mass, used as is for an exact rescale.
+    const remaining = outMass + restMass >= 1 - 1e-9 ? restMass : 1 - outMass;
     const notes = group.map(mark => providerStartNote(mark.player.name, mark.status));
     for (const row of rows) {
       // Unrounded, so the team-game's chances still sum to at most 1.
       const probability = starters.length ? row.playerId === starters[0] ? 1 : 0
-        : out.has(row.playerId) ? 0 : restMass > 0 ? row.startProbability! / restMass : row.startProbability!;
+        : out.has(row.playerId) ? 0 : remaining > 0 ? row.startProbability! / remaining : row.startProbability!;
       changed.set(row, { ...row, startProbability: probability,
         confirmedStart: starters.length ? row.playerId === starters[0] : row.confirmedStart,
         stats: Object.fromEntries(Object.keys(row.stats).map(target => {

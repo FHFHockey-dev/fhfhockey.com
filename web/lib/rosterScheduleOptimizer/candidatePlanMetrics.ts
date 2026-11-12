@@ -1,6 +1,7 @@
 import { contributionLedger } from "./contributionLedger";
 import { normalizeEligibility } from "./eligibility";
-import { candidateAcquisitionSteps, candidateHorizonPoints, evaluatePlan, scheduleAdmissionProblem, swapCategoryBreakdown, type CategorySwapRow } from "./planning";
+import { candidateAcquisitionSteps, candidateHorizonPoints, evaluatePlan, playerValueKnown, scheduleAdmissionProblem, swapCategoryBreakdown, type CategorySwapRow } from "./planning";
+import { comparablePointsDelta } from "./pointsComparison";
 import { dropContribution, droppedOwnership, knownDropOrder } from "./retention";
 import { expandActiveSlots } from "./slots";
 import type { PlanEvaluation, PlanIntent, PlanningSnapshot, PlanStep } from "./planningTypes";
@@ -159,7 +160,8 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
   const variants = selected.map(() => new Map<string, Record<"points" | "schedule", Variant>>());
   // The shared retention order (lineupGaps and the planner use the same one).
   const playersById = new Map(snapshot.players.map(player => [player.id, player]));
-  const dropOrder = knownDropOrder([...baselineLedger.keys()].flatMap(id => playersById.get(id) ?? []),
+  // The shared evidence gate: a player whose value is unknown is never an automatic drop (decisions 3, 47).
+  const dropOrder = knownDropOrder([...baselineLedger.keys()].flatMap(id => playersById.get(id) ?? []).filter(player => playerValueKnown(baseline, player.id)),
     player => dropContribution(snapshot.rules.scoring.mode, baselineLedger.get(player.id)),
     // Legal no-move starts counted so far: known even when the schedule window is still partial.
     player => baselineLedger.get(player.id)?.knownActiveGames ?? null);
@@ -179,10 +181,8 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
     if (!evaluation.budgetVerified) state.unverifiedBudget++;
     if (!evaluation.legal || !evaluation.budgetVerified) addReasons(state, evaluation.limitations);
     if (!evaluation.legal || !evaluation.budgetVerified) return;
-    const pointsKnown = scheduleKnown && snapshot.rules.scoring.mode === "points" && baseline.comparisonEligible && evaluation.comparisonEligible
-      && baseline.projectedValue != null && evaluation.projectedValue != null
-      && Number.isFinite(baseline.projectedValue) && Number.isFinite(evaluation.projectedValue)
-      && Number.isFinite(evaluation.projectedValue - baseline.projectedValue);
+    // Difference-based (TJ, 2026-11-12): known when both are priced, or when their unknown active plays are identical.
+    const pointsDelta = scheduleKnown && snapshot.rules.scoring.mode === "points" ? comparablePointsDelta(evaluation, baseline) : null;
     const categoryComparisonVerified = snapshot.rules.scoring.mode === "categories" && scheduleKnown
       && baseline.budgetVerified && baseline.comparisonEligible === true && evaluation.comparisonEligible === true
       && !!baseline.forecastManifestId && baseline.forecastManifestId === evaluation.forecastManifestId
@@ -196,7 +196,7 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
     const plan: CandidatePlan = { objective: evaluation.objective, steps: evaluation.steps,
       ...(snapshot.rules.scoring.mode === "categories" ? { categoryComparisonVerified } : {}),
       netAGP: scheduleKnown ? evaluation.activeGames - baseline.activeGames : null,
-      netPoints: pointsKnown ? evaluation.projectedValue! - baseline.projectedValue! : null,
+      netPoints: pointsDelta,
       netGoalieStarts: evaluation.goalie.expectedStarts != null && baseline.goalie.expectedStarts != null
         ? evaluation.goalie.expectedStarts - baseline.goalie.expectedStarts : null,
       dropped: [], droppedOwnership: droppedOwnership(evaluation.steps, playersById), displacedPlayerIds: [...new Set(baseline.assignments.filter(row => !evaluation.assignments.some(next =>

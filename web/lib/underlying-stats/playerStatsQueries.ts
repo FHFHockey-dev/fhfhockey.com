@@ -32,6 +32,12 @@ export type PlayerStatsLandingApiResponse = {
   pagination: PlayerStatsTablePaginationMeta;
   placeholder: boolean;
   generatedAt: string;
+  /** Games in the window still waiting for a current-revision summary (decision 111). */
+  summaryStatus?: {
+    status: "recalculating";
+    pendingGameCount: number;
+    totalGameCount: number;
+  };
 };
 
 export type PlayerStatsLandingApiError = {
@@ -272,7 +278,15 @@ export function matchesPlayerStatsPositionGroup(args: {
   }
 
   if (args.positionGroup === null || args.positionGroup === "skaters") {
-    return canonicalPosition === "C" || canonicalPosition === "LW" || canonicalPosition === "RW" || canonicalPosition === "D";
+    // A skater with no recorded position is shown, labelled "position unknown"
+    // (decision 96); only position-specific groups exclude him.
+    return (
+      canonicalPosition === null ||
+      canonicalPosition === "C" ||
+      canonicalPosition === "LW" ||
+      canonicalPosition === "RW" ||
+      canonicalPosition === "D"
+    );
   }
 
   if (args.positionGroup === "defensemen") {

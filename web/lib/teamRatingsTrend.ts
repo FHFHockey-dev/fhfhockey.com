@@ -1,15 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
+  buildGenuineTeamGames,
   calculateEwma,
-  calculateFinalRating,
   calculateLeagueMetrics,
-  calculateRawDistribution,
-  calculateRawScores,
   calculateZScores,
+  computeDailyPowerRatings,
   fetchGameLogs,
   type TeamGame
 } from "./power-ratings";
+import { computeTeamPowerScore } from "./dashboard/teamContext";
 import supabaseServer from "./supabase/server";
 
 export type TeamOffRatingSnapshot = {
@@ -45,48 +45,24 @@ export type TeamFormContext = {
 
 export const TEAM_RATINGS_TREND_LOOKBACK_DAYS = 150;
 
-const computeBasePowerScore = ({
-  defRating,
-  offRating,
-  paceRating
-}: Pick<TeamFormSnapshot, "defRating" | "offRating" | "paceRating">): number =>
-  Number((((offRating + defRating + paceRating) / 3)).toFixed(2));
-
+/** Genuine all-situation games, one row per team and date (shared with the writer). */
 export const buildTeamGamesFromLogs = (
   logs: Awaited<ReturnType<typeof fetchGameLogs>>
-): Map<string, TeamGame[]> => {
-  const filtered = logs.filter((log) => log.data_mode === "all");
-  const grouped = new Map<string, TeamGame[]>();
+): Map<string, TeamGame[]> => buildGenuineTeamGames(logs);
 
-  filtered.forEach((log) => {
-    const existing = grouped.get(log.team_abbreviation) ?? [];
-    existing.push({
-      ...log,
-      rn_desc: 0,
-      gp_to_date: 0
-    });
-    grouped.set(log.team_abbreviation, existing);
-  });
-
-  grouped.forEach((games, teamAbbr) => {
-    const sorted = [...games].sort((a, b) => b.date.localeCompare(a.date));
-    grouped.set(
-      teamAbbr,
-      sorted.map((game, index) => ({
-        ...game,
-        rn_desc: index,
-        gp_to_date: sorted.length - index
-      }))
-    );
-  });
-
-  return grouped;
-};
-
-export const buildSnapshotHistoryByTeam = (
+/**
+ * Ratings on each date a team played, standardised against that day's
+ * all-team baseline (every team as of its latest game, W1 P0 #12), never
+ * against only the teams on that night's slate.
+ */
+const forEachPlayedSnapshot = (
   teamGames: Map<string, TeamGame[]>,
-  targetDate: string
-): Map<string, TeamOffRatingSnapshot[]> => {
+  targetDate: string,
+  visit: (
+    snapshotDate: string,
+    played: ReturnType<typeof computeDailyPowerRatings>
+  ) => void
+) => {
   const allDates = Array.from(
     new Set(
       Array.from(teamGames.values()).flatMap((games) =>
@@ -97,27 +73,25 @@ export const buildSnapshotHistoryByTeam = (
     )
   ).sort((a, b) => a.localeCompare(b));
 
+  allDates.forEach((snapshotDate) => {
+    const daily = computeDailyPowerRatings(teamGames, snapshotDate);
+    const played = new Map(
+      Array.from(daily.entries()).filter(
+        ([, entry]) => entry.sourceThroughDate === snapshotDate
+      )
+    );
+    if (played.size > 0) visit(snapshotDate, played);
+  });
+};
+
+export const buildSnapshotHistoryByTeam = (
+  teamGames: Map<string, TeamGame[]>,
+  targetDate: string
+): Map<string, TeamOffRatingSnapshot[]> => {
   const historyByTeam = new Map<string, TeamOffRatingSnapshot[]>();
 
-  allDates.forEach((snapshotDate) => {
-    const ewmaMetrics = Array.from(teamGames.values())
-      .map((games) => calculateEwma(games, snapshotDate))
-      .filter((metric): metric is NonNullable<typeof metric> => Boolean(metric));
-
-    if (!ewmaMetrics.length) {
-      return;
-    }
-
-    const leagueMetrics = calculateLeagueMetrics(ewmaMetrics);
-    const rawScores = ewmaMetrics
-      .map((metric) => calculateZScores(metric, leagueMetrics))
-      .map((metric) => calculateRawScores(metric));
-    const rawDistribution = calculateRawDistribution(rawScores);
-    const finalRatings = rawScores.map((score) =>
-      calculateFinalRating(score, rawDistribution)
-    );
-
-    finalRatings.forEach((rating) => {
+  forEachPlayedSnapshot(teamGames, targetDate, (snapshotDate, played) => {
+    played.forEach(({ rating }) => {
       const existing = historyByTeam.get(rating.team_abbreviation) ?? [];
       existing.push({
         date: snapshotDate,
@@ -142,49 +116,36 @@ export const buildFormHistoryByTeam = (
   teamGames: Map<string, TeamGame[]>,
   targetDate: string
 ): Map<string, TeamFormSnapshot[]> => {
-  const allDates = Array.from(
-    new Set(
-      Array.from(teamGames.values()).flatMap((games) =>
-        games
-          .map((game) => game.date)
-          .filter((date) => typeof date === "string" && date <= targetDate)
-      )
-    )
-  ).sort((a, b) => a.localeCompare(b));
-
   const historyByTeam = new Map<string, TeamFormSnapshot[]>();
 
-  allDates.forEach((snapshotDate) => {
+  forEachPlayedSnapshot(teamGames, targetDate, (snapshotDate, played) => {
+    // PDO z against the same all-team baseline the ratings use.
     const ewmaMetrics = Array.from(teamGames.values())
-      .map((games) => calculateEwma(games, snapshotDate))
+      .map((games) => {
+        const latest = games
+          .filter((game) => game.date <= snapshotDate)
+          .reduce<string | null>(
+            (best, game) => (best == null || game.date > best ? game.date : best),
+            null
+          );
+        return latest ? calculateEwma(games, latest) : null;
+      })
       .filter((metric): metric is NonNullable<typeof metric> => Boolean(metric));
-
-    if (!ewmaMetrics.length) {
-      return;
-    }
-
-    const leagueMetrics = calculateLeagueMetrics(ewmaMetrics);
-    const zScores = ewmaMetrics.map((metric) => ({
-      metric,
-      z: calculateZScores(metric, leagueMetrics)
-    }));
-    const rawScores = zScores.map(({ z }) => calculateRawScores(z));
-    const rawDistribution = calculateRawDistribution(rawScores);
-    const finalRatings = rawScores.map((score) =>
-      calculateFinalRating(score, rawDistribution)
-    );
-    const zScoreByTeam = new Map(
-      zScores.map(({ metric, z }) => [
+    const leagueMetrics = ewmaMetrics.length
+      ? calculateLeagueMetrics(ewmaMetrics)
+      : null;
+    const pdoByTeam = new Map(
+      ewmaMetrics.map((metric) => [
         metric.team_abbreviation,
         {
           pdo: metric.pdo_ewma,
-          pdoZ: z.pdo_z
+          pdoZ: leagueMetrics ? calculateZScores(metric, leagueMetrics).pdo_z : 0
         }
       ])
     );
 
-    finalRatings.forEach((rating) => {
-      const zScore = zScoreByTeam.get(rating.team_abbreviation);
+    played.forEach(({ rating }) => {
+      const pdo = pdoByTeam.get(rating.team_abbreviation);
       const existing = historyByTeam.get(rating.team_abbreviation) ?? [];
 
       existing.push({
@@ -192,13 +153,14 @@ export const buildFormHistoryByTeam = (
         offRating: rating.off_rating,
         defRating: rating.def_rating,
         paceRating: rating.pace_rating,
-        powerScore: computeBasePowerScore({
-          offRating: rating.off_rating,
-          defRating: rating.def_rating,
-          paceRating: rating.pace_rating
-        }),
-        pdo: zScore?.pdo ?? null,
-        pdoZ: zScore?.pdoZ ?? 0,
+        powerScore: Number(
+          computeTeamPowerScore({
+            offRating: rating.off_rating,
+            defRating: rating.def_rating
+          }).toFixed(2)
+        ),
+        pdo: pdo?.pdo ?? null,
+        pdoZ: pdo?.pdoZ ?? 0,
         teamAbbr: rating.team_abbreviation
       });
       historyByTeam.set(rating.team_abbreviation, existing);

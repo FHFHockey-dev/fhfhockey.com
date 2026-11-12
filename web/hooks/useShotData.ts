@@ -8,6 +8,8 @@ export interface ShotData {
   typedesckey: string;
   hometeamdefendingside?: string | null;
   eventownerteamid?: number | null;
+  /** The game's home team, so the map can tell which net the shooter attacked. */
+  hometeamid?: number | null;
 }
 
 // Maximum number of rows per page for Supabase queries
@@ -46,7 +48,7 @@ export interface ShotDataFilters {
 }
 
 // Unparseable coordinates are dropped rather than plotted at center ice.
-function toPlottedShot(shot: any): ShotData | null {
+function toPlottedShot(shot: any, homeTeamId: number | null = null): ShotData | null {
   const x = parseFloat(shot.xcoord as unknown as string);
   const y = parseFloat(shot.ycoord as unknown as string);
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
@@ -55,7 +57,8 @@ function toPlottedShot(shot: any): ShotData | null {
     ycoord: y,
     typedesckey: shot.typedesckey as string,
     hometeamdefendingside: shot.hometeamdefendingside,
-    eventownerteamid: shot.eventownerteamid
+    eventownerteamid: shot.eventownerteamid,
+    hometeamid: homeTeamId
   };
 }
 
@@ -170,7 +173,9 @@ export function useShotData(
 
         // Build a map of gameId to opponentId for quick lookup
         const gameIdToOpponentId: Record<number, number> = {};
+        const gameIdToHomeTeamId: Record<number, number> = {};
         allGames.forEach((game) => {
+          gameIdToHomeTeamId[game.id] = game.hometeamid;
           if (game.hometeamid === teamId) {
             gameIdToOpponentId[game.id] = game.awayteamid;
           } else {
@@ -212,7 +217,7 @@ export function useShotData(
                     shot.xcoord !== null &&
                     shot.ycoord !== null
                 )
-                .map(toPlottedShot)
+                .map((shot) => toPlottedShot(shot, gameIdToHomeTeamId[Number(shot.gameid)] ?? null))
                 .filter((shot): shot is ShotData => shot !== null);
 
               const validOpponentShots: ShotData[] = events
@@ -224,7 +229,7 @@ export function useShotData(
                     shot.xcoord !== null &&
                     shot.ycoord !== null
                 )
-                .map(toPlottedShot)
+                .map((shot) => toPlottedShot(shot, gameIdToHomeTeamId[Number(shot.gameid)] ?? null))
                 .filter((shot): shot is ShotData => shot !== null);
 
               allShots = allShots.concat(validTeamShots);

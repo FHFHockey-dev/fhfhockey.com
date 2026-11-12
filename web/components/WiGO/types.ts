@@ -612,6 +612,11 @@ export interface CalculatedPlayerRatings {
     st: number | null; // Special Teams (weighted PP Offense + PK Defense)
     final: number | null; // Overall combined rating
   };
+  /** Weight units with a percentile vs all weight units, per side and strength (A3). */
+  coverage: {
+    offense: Partial<Record<Strength, { available: number; total: number }>>;
+    defense: Partial<Record<Strength, { available: number; total: number }>>;
+  };
   // Include raw data or intermediate steps for debugging if needed
   _debug?: {
     percentiles?: any; // Store calculated percentiles before weighting/regression

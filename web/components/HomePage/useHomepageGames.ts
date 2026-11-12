@@ -107,17 +107,17 @@ export function useHomepageGames({
                 (game.period || game.periodType
                   ? { number: game.period, periodType: game.periodType }
                   : null),
+              // Official SOG replaces the stored pair only as a pair: one
+              // official side never sits beside one stored side (rule 23).
               analytics: {
                 ...(game.analytics || {}),
-                ...(overlay.homeShotsOnGoal != null
-                  ? { homeShotsOnGoal: overlay.homeShotsOnGoal }
-                  : {}),
-                ...(overlay.awayShotsOnGoal != null
-                  ? { awayShotsOnGoal: overlay.awayShotsOnGoal }
-                  : {}),
-                ...(overlay.homeShotsOnGoal != null ||
+                ...(overlay.homeShotsOnGoal != null &&
                 overlay.awayShotsOnGoal != null
-                  ? { shotsUpdatedAt: overlay.shotsUpdatedAt }
+                  ? {
+                      homeShotsOnGoal: overlay.homeShotsOnGoal,
+                      awayShotsOnGoal: overlay.awayShotsOnGoal,
+                      shotsUpdatedAt: overlay.shotsUpdatedAt
+                    }
                   : {})
               }
             };

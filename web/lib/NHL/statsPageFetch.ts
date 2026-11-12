@@ -55,16 +55,106 @@ function goalieRatio(value: unknown, maximum = Infinity): number | null {
     : null;
 }
 
+export const LEADERBOARD_SIZE = 5;
+
+/**
+ * Tie policy (decision 89, rule 20): the top five by value, plus every row
+ * tied with the fifth value, so no tied player is dropped by input order.
+ * Within a tie rows are listed by name, then id; tied rows share a rank.
+ */
+export function topWithTies<T>(
+  rows: T[],
+  value: (row: T) => number,
+  direction: "desc" | "asc",
+  identity: (row: T) => { name: string; id: number },
+  size = LEADERBOARD_SIZE
+): T[] {
+  const sign = direction === "desc" ? -1 : 1;
+  const sorted = [...rows].sort((a, b) => {
+    const byValue = sign * (value(a) - value(b));
+    if (byValue !== 0) return byValue;
+    const left = identity(a);
+    const right = identity(b);
+    return left.name.localeCompare(right.name) || left.id - right.id;
+  });
+  if (sorted.length <= size) return sorted;
+  const cut = value(sorted[size - 1]);
+  return sorted.filter((row, index) => index < size || value(row) === cut);
+}
+
+const skaterIdentity = (row: SkaterStat) => ({ name: row.fullName, id: row.player_id });
+const goalieIdentity = (row: GoalieStat) => ({ name: row.fullName, id: row.goalie_id });
+
 function buildSkaterLeaderboards(skaters: SkaterStat[]): SkaterLeaderboards {
+  const top = (value: (row: SkaterStat) => number) =>
+    topWithTies(skaters, value, "desc", skaterIdentity);
   return {
-    pointsLeaders: [...skaters].sort((a, b) => b.points - a.points).slice(0, 5),
-    goalsLeaders: [...skaters].sort((a, b) => b.goals - a.goals).slice(0, 5),
-    pppLeaders: [...skaters].sort((a, b) => b.pp_points - a.pp_points).slice(0, 5),
-    bshLeaders: [...skaters].sort((a, b) => b.bsh - a.bsh).slice(0, 5)
+    pointsLeaders: top((row) => row.points),
+    goalsLeaders: top((row) => row.goals),
+    pppLeaders: top((row) => row.pp_points),
+    bshLeaders: top((row) => row.bsh)
   };
 }
 
-export async function fetchStatsData(season?: Season): Promise<StatsProps> {
+/**
+ * Goalie qualifier (decision 89): appearances of at least a quarter of the
+ * mean team games played, from the standings of the season the boards show.
+ * Unknown when standings cannot be read; then rate leaders are withheld.
+ */
+export type GoalieQualifier =
+  | { status: "known"; seasonId: number; minGames: number; meanTeamGames: number }
+  | { status: "unknown"; seasonId: number };
+
+export function describeGoalieQualifier(qualifier: GoalieQualifier): string {
+  return qualifier.status === "known"
+    ? `Rate leaders: min. ${qualifier.minGames} GP (a quarter of the ${qualifier.meanTeamGames.toFixed(1)}-game average team GP)`
+    : "Qualifier unknown (standings unavailable): rate leaders withheld";
+}
+
+export type StatsPageData = StatsProps & { goalieQualifier: GoalieQualifier };
+
+async function loadGoalieQualifier(seasonId: number): Promise<GoalieQualifier> {
+  const unknown: GoalieQualifier = { status: "unknown", seasonId };
+  const latestStandingsDate = await supabase
+    .from("nhl_standings_details")
+    .select("date")
+    .eq("season_id", seasonId)
+    .order("date", { ascending: false })
+    .limit(1);
+  const latestDate = latestStandingsDate.data?.[0]?.date;
+  if (latestStandingsDate.error || !latestDate) return unknown;
+
+  let standingsData: any[];
+  try {
+    standingsData = await fetchAllSupabasePages<any>(({ from, to }) =>
+      supabase
+        .from("nhl_standings_details")
+        .select("date, team_abbrev, games_played")
+        .eq("season_id", seasonId)
+        .eq("date", latestDate)
+        .order("team_abbrev", { ascending: true })
+        .range(from, to)
+    );
+  } catch {
+    return unknown;
+  }
+  if (standingsData.length === 0) return unknown;
+  let totalGames = 0;
+  for (const row of standingsData) {
+    const games = row.games_played;
+    if (typeof games !== "number" || !Number.isFinite(games) || games < 0) return unknown;
+    totalGames += games;
+  }
+  const meanTeamGames = totalGames / standingsData.length;
+  return {
+    status: "known",
+    seasonId,
+    minGames: Math.floor(meanTeamGames * 0.25),
+    meanTeamGames
+  };
+}
+
+export async function fetchStatsData(season?: Season): Promise<StatsPageData> {
   const currentSeason = season ?? (await getCurrentSeason());
   const skaterSeasonLabel = formatSeasonLabel(currentSeason.seasonId);
   let goalieSeasonLabel = skaterSeasonLabel;
@@ -209,59 +299,21 @@ export async function fetchStatsData(season?: Season): Promise<StatsProps> {
     return { goalieData, goalieError, goaliePlayersMap };
   };
 
-  const loadMinGamesThreshold = async (): Promise<number> => {
-    const latestStandingsDate = await supabase
-      .from("nhl_standings_details")
-      .select("date")
-      .eq("season_id", currentSeason.seasonId)
-      .order("date", { ascending: false })
-      .limit(1);
-
-    let standingsData: any[] = [];
-    let standingsError: unknown = latestStandingsDate.error;
-    const latestDate = latestStandingsDate.data?.[0]?.date;
-    if (!standingsError && latestDate) {
-      try {
-        standingsData = await fetchAllSupabasePages<any>(({ from, to }) =>
-          supabase
-            .from("nhl_standings_details")
-            .select("date, team_abbrev, games_played")
-            .eq("season_id", currentSeason.seasonId)
-            .eq("date", latestDate)
-            .order("team_abbrev", { ascending: true })
-            .range(from, to)
-        );
-      } catch (error) {
-        standingsError = error;
-      }
-    }
-
-    let minGamesThreshold = 0;
-    if (!standingsError && standingsData.length > 0) {
-      const totalGames = standingsData.reduce(
-        (sum: number, row: any) => sum + (row.games_played || 0),
-        0
-      );
-      const avgGames = totalGames / standingsData.length;
-      if (avgGames > 10) {
-        minGamesThreshold = Math.floor(avgGames * 0.25);
-      }
-    }
-    return minGamesThreshold;
-  };
-
-  const [skaterResult, goalieResult, minGamesThreshold] = await Promise.all([
+  const currentQualifier = loadGoalieQualifier(Number(currentSeason.seasonId)).catch(
+    (): GoalieQualifier => ({ status: "unknown", seasonId: Number(currentSeason.seasonId) })
+  );
+  const [skaterResult, goalieResult] = await Promise.all([
     loadSkaters().then(
       (skaters) => ({ skaters, error: null as unknown }),
       (error: unknown) => ({ skaters: [] as SkaterStat[], error })
     ),
-    loadGoalies(),
-    loadMinGamesThreshold()
+    loadGoalies()
   ]);
 
   if (skaterResult.error) {
     console.error("Error fetching skater stats:", skaterResult.error);
     return {
+      goalieQualifier: await currentQualifier,
       skaterSeasonLabel,
       goalieSeasonLabel,
       pointsLeaders: [],
@@ -295,6 +347,7 @@ export async function fetchStatsData(season?: Season): Promise<StatsProps> {
   if (goalieError) {
     console.error("Error fetching goalie stats:", goalieError);
     return {
+      goalieQualifier: await currentQualifier,
       skaterSeasonLabel,
       goalieSeasonLabel,
       pointsLeaders,
@@ -309,8 +362,16 @@ export async function fetchStatsData(season?: Season): Promise<StatsProps> {
     };
   }
 
-  const goalieSeasonId = goalieData[0]?.season_id ?? currentSeason.seasonId;
+  const goalieSeasonId = Number(goalieData[0]?.season_id ?? currentSeason.seasonId);
   goalieSeasonLabel = formatSeasonLabel(goalieSeasonId);
+  // The qualifier comes from the season the boards show (a fallback season
+  // uses its own standings, not the current season's).
+  const goalieQualifier =
+    goalieSeasonId === Number(currentSeason.seasonId)
+      ? await currentQualifier
+      : await loadGoalieQualifier(goalieSeasonId).catch(
+          (): GoalieQualifier => ({ status: "unknown", seasonId: goalieSeasonId })
+        );
 
   const goalieStats: GoalieStat[] = goalieData
     .map((row: any) => ({
@@ -327,28 +388,34 @@ export async function fetchStatsData(season?: Season): Promise<StatsProps> {
       sweater_number:
         goaliePlayersMap.get(row.goalie_id)?.sweater_number || null,
       season_id: row.season_id.toString()
-    }))
-    .filter((goalie: GoalieStat) =>
-      minGamesThreshold > 0 ? goalie.games_played >= minGamesThreshold : true
-    );
+    }));
 
-  const goalieLeadersWins = [...goalieStats]
-    .sort((a, b) => b.wins - a.wins)
-    .slice(0, 5);
-  const goalieLeadersSavePct = [...goalieStats]
-    .filter((goalie) => goalie.games_played > 0 && goalie.save_pct !== null)
-    .sort((a, b) => b.save_pct! - a.save_pct!)
-    .slice(0, 5);
-  const goalieLeadersGAA = [...goalieStats]
-    .filter((goalie) => goalie.games_played > 0 && goalie.goals_against_avg !== null)
-    .sort((a, b) => a.goals_against_avg! - b.goals_against_avg!)
-    .slice(0, 5);
-  const goalieLeadersQS = [...goalieStats]
-    .filter((goalie) => goalie.games_played > 0 && goalie.quality_starts_pct !== null)
-    .sort((a, b) => b.quality_starts_pct! - a.quality_starts_pct!)
-    .slice(0, 5);
+  // Known qualifier: every board uses it. Unknown: wins (a count) is shown
+  // unqualified and the rate boards are withheld.
+  const qualified =
+    goalieQualifier.status === "known"
+      ? goalieStats.filter((goalie) => goalie.games_played >= goalieQualifier.minGames)
+      : goalieStats;
+  const rateBoard = (
+    value: (goalie: GoalieStat) => number | null,
+    direction: "desc" | "asc"
+  ) =>
+    goalieQualifier.status === "known"
+      ? topWithTies(
+          qualified.filter((goalie) => goalie.games_played > 0 && value(goalie) !== null),
+          (goalie) => value(goalie)!,
+          direction,
+          goalieIdentity
+        )
+      : [];
+
+  const goalieLeadersWins = topWithTies(qualified, (goalie) => goalie.wins, "desc", goalieIdentity);
+  const goalieLeadersSavePct = rateBoard((goalie) => goalie.save_pct, "desc");
+  const goalieLeadersGAA = rateBoard((goalie) => goalie.goals_against_avg, "asc");
+  const goalieLeadersQS = rateBoard((goalie) => goalie.quality_starts_pct, "desc");
 
   return {
+    goalieQualifier,
     skaterSeasonLabel,
     goalieSeasonLabel,
     pointsLeaders,

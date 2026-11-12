@@ -25,9 +25,9 @@ describe("rollingMetricScaleContract", () => {
       max: 1
     });
     expect(ROLLING_METRIC_SCALE_CONTRACTS.expected_sh_pct).toEqual({
-      scale: "fraction_0_to_1",
+      scale: "percent_0_to_100",
       min: 0,
-      max: 1
+      max: 100
     });
     expect(ROLLING_METRIC_SCALE_CONTRACTS.ipp).toEqual({
       scale: "percent_0_to_100",

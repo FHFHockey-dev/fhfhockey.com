@@ -17,8 +17,11 @@ import {
   type PersistedFeatureRow,
   type XgShotPredictionType
 } from "lib/xg/shotFeaturePersistence";
+import { isAffirmativelyApprovedXgEligibility } from "lib/xg/approvalGate";
+import { hashXgModelArtifactFile } from "lib/xg/modelRegistry";
+import { resolveXgScoringMode } from "lib/xg/shadowScoring";
 import { withXgExecutionLeaseApi } from "lib/xg/executionLease";
-import adminOnly from "utils/adminOnlyMiddleware";
+import adminOnly, { invokedByCron } from "utils/adminOnlyMiddleware";
 
 const PAGE_SIZE = 1000;
 const DEFAULT_GAME_BATCH_SIZE = 1;
@@ -98,7 +101,7 @@ function buildArtifactHealthResponse(resolution: ArtifactPathResolution) {
 
   try {
     const artifact = loadXgModelArtifact(resolution.path);
-    const modelApproved = artifact.approvalGradeEligibility?.isEligible === true;
+    const modelApproved = isAffirmativelyApprovedXgEligibility(artifact.approvalGradeEligibility);
     const artifactPredictionType = resolveXgArtifactPredictionType(artifact);
     const featureContract = auditXgArtifactFeatureContract({ artifact });
 
@@ -273,6 +276,7 @@ function buildPredictionRows(args: {
   featureRows: PersistedFeatureRow[];
   artifact: ReturnType<typeof loadXgModelArtifact>;
   modelArtifactPath: string | null;
+  artifactChecksum: string | null;
   predictionType: XgShotPredictionType;
 }) {
   assertXgArtifactFeatureContract({
@@ -287,6 +291,7 @@ function buildPredictionRows(args: {
       feature,
       artifact: args.artifact,
       modelArtifactPath: args.modelArtifactPath,
+      artifactChecksum: args.artifactChecksum,
       predictionType: args.predictionType,
       rawProbability: probabilities.rawProbability,
       calibratedProbability: probabilities.calibratedProbability,
@@ -377,7 +382,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const artifactPredictionType = resolveXgArtifactPredictionType(artifact);
     const artifactFeatureContract = auditXgArtifactFeatureContract({ artifact });
     const allowUnapproved = parseBoolean(firstQueryValue(req.query.allowUnapproved));
-    const modelApproved = artifact.approvalGradeEligibility?.isEligible === true;
+    const modelApproved = isAffirmativelyApprovedXgEligibility(artifact.approvalGradeEligibility);
 
     if (artifactPredictionType !== predictionType) {
       return res.status(409).json({
@@ -391,17 +396,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       });
     }
 
-    if (!modelApproved && !allowUnapproved) {
-      return res.status(409).json({
+    const scoring = resolveXgScoringMode({
+      modelApproved,
+      allowUnapproved,
+      invokedByCron: invokedByCron(req.headers.authorization ?? "")
+    });
+    if (!scoring.allowed) {
+      return res.status(scoring.status).json({
         success: false,
         artifactTag: artifact.artifactTag,
         modelFamily: artifact.family,
         modelApproved,
-        error:
-          "The selected xG artifact is not approval-grade. Re-run with allowUnapproved=true only for local diagnostics.",
+        error: scoring.error,
         blockingReasons: artifact.approvalGradeEligibility?.blockingReasons ?? []
       });
     }
+    const artifactChecksum = hashXgModelArtifactFile(modelArtifactPath);
 
     if (!artifactFeatureContract.passed) {
       return res.status(409).json({
@@ -476,6 +486,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           featureRows: unscoredFeatureRows,
           artifact,
           modelArtifactPath,
+          artifactChecksum,
           predictionType
         });
 
@@ -508,7 +519,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         notes: modelApproved
           ? []
           : [
-              "This run used an unapproved model artifact because allowUnapproved=true was supplied."
+              "Shadow scoring: this unapproved artifact's rows are stored with model_approved=false and scoringMode=shadow_unapproved and are never served (decision 101)."
             ]
       });
     }
@@ -551,6 +562,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         featureRows,
         artifact,
         modelArtifactPath,
+        artifactChecksum,
         predictionType
       });
 
@@ -580,7 +592,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       notes: modelApproved
         ? []
         : [
-            "This run used an unapproved model artifact because allowUnapproved=true was supplied."
+            "Shadow scoring: this unapproved artifact's rows are stored with model_approved=false and scoringMode=shadow_unapproved and are never served (decision 101)."
           ]
     });
   } finally {

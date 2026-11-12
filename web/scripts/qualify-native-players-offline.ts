@@ -212,7 +212,7 @@ export function installOfflineFence(queryClient?: { from: (table: string) => any
 function inputProvenance(inputs: OfflinePlayerInputs) {
   const fixturePath = resolve(__dirname, "fixtures/native-player-offline-synthetic.json");
   const fixtureBytes = readFileSync(fixturePath);
-  if (digest(new Uint8Array(fixtureBytes)) !== "7b8a39a433639ae71fc32b93912e358fcf81bce03b2b356a861cbecba37c97c5") {
+  if (digest(new Uint8Array(fixtureBytes)) !== "ab1527d703def8f99591b53bb420602a4c2aa1fafa25d4490e173f95a6a329d6") {
     throw new Error("Known immutable synthetic fixture checksum changed");
   }
   const fixture = JSON.parse(fixtureBytes.toString("utf8")) as OfflinePlayerInputs;

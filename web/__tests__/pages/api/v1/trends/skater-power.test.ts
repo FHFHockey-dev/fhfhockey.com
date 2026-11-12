@@ -666,6 +666,51 @@ describe("/api/v1/trends/skater-power", () => {
     });
   });
 
+  it("gives tied values the same raw mid-rank percentile (D10)", async () => {
+    // Three players on the same date; two share the value 5.
+    supabaseState.current = buildSupabaseMock(
+      [
+        [8471214, 5],
+        [8471215, 5],
+        [8471216, 9],
+      ].map(([playerId, value]) => ({
+        player_id: playerId,
+        game_date: "2026-04-01",
+        raw_value: value,
+        rolling_avg_3: value,
+        rolling_avg_5: value,
+        rolling_avg_10: value,
+        season_id: 20252026,
+        position_code: "C",
+      })),
+    );
+    const res = createMockRes();
+
+    await handler(
+      {
+        method: "GET",
+        query: { date: "2026-04-01", position: "forward", window: "1", limit: "10" },
+      } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    const raw = Object.fromEntries(
+      res.body.categories.shotsPer60.rankings.map((entry: any) => [
+        entry.playerId,
+        entry.rawPercentile,
+      ]),
+    );
+    // Positions 0 and 1 of 0..2 share mid-rank 0.5 → 25; the leader is 100.
+    expect(raw[8471214]).toBe(25);
+    expect(raw[8471215]).toBe(25);
+    expect(raw[8471216]).toBe(100);
+    // Tied players rank by id, whatever the row order.
+    expect(
+      res.body.categories.shotsPer60.rankings.map((entry: any) => entry.playerId),
+    ).toEqual([8471216, 8471214, 8471215]);
+  });
+
   it("redacts dependency details from internal-error responses", async () => {
     supabaseState.current = {
       from() {

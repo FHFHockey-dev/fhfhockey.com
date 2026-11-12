@@ -38,6 +38,11 @@ export type PlayerStatsTableProps<
   rows: Row[];
   sortState: PlayerStatsSortState;
   state?: PlayerStatsTableViewState | null;
+  /**
+   * A strength or score-state split is active: GP counts only games with time
+   * in the split and is labelled "Split GP" (decision 94).
+   */
+  isSplitActive?: boolean;
   pagination?: PlayerStatsTablePaginationMeta | null;
   onSortChange?: (nextSort: PlayerStatsSortState) => void;
   onPageChange?: (page: number) => void;
@@ -123,6 +128,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
   rows,
   sortState,
   state,
+  isSplitActive = false,
   pagination,
   onSortChange,
   onPageChange,
@@ -214,7 +220,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
         {
           column: {
             key: "rank",
-            label: "Rank",
+            label: "#",
             sortKey: "rank",
             format: "integer",
             align: "center",
@@ -228,6 +234,13 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
       ]
     : mergedHeaders;
   const stickyOffsets = getStickyOffsets(visibleHeaders);
+  // The "#" column is a position in the served sort (W2-3 D16/D17, rule 20):
+  // the server's competition rank when it sends one (ties share), otherwise an
+  // ordinal that continues across server pages.
+  const rowOrdinalOffset =
+    renderingStrategy === "pagination" && pagination != null
+      ? Math.max(pagination.page - 1, 0) * pagination.pageSize
+      : 0;
   const shouldRenderPagination =
     renderingStrategy === "pagination" &&
     typeof onPageChange === "function" &&
@@ -281,7 +294,12 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                     data-active={header.isActive === true ? "true" : "false"}
                   >
                     {isRankColumn ? (
-                      <span className={styles.rankHeaderLabel}>Rank</span>
+                      <span
+                        className={styles.rankHeaderLabel}
+                        title="Position in the current sort (not a quality rank)"
+                      >
+                        #
+                      </span>
                     ) : (
                       <button
                         type="button"
@@ -292,12 +310,22 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                           )
                         }
                         aria-pressed={header.isActive}
-                        aria-label={`Sort by ${header.column.label}`}
+                        aria-label={`Sort by ${
+                          isSplitActive && header.column.key === "gamesPlayed"
+                            ? "Split GP"
+                            : header.column.label
+                        }`}
+                        title={
+                          isSplitActive && header.column.key === "gamesPlayed"
+                            ? "Games with time in the selected strength or score state"
+                            : undefined
+                        }
                       >
                         <span>
                           {getVisibleHeaderLabel(
                             header.column.key,
                             header.column.label,
+                            isSplitActive,
                           )}
                         </span>
                         <span
@@ -330,8 +358,12 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                     {visibleHeaders.map((header) => {
                       const isRankColumn = header.column.key === "rank";
                       const rawValue = row[header.column.key];
+                      const sortPosition =
+                        typeof row.rank === "number"
+                          ? row.rank
+                          : rowOrdinalOffset + rowIndex + 1;
                       const formattedValue = isRankColumn
-                        ? String(rowIndex + 1)
+                        ? String(sortPosition)
                         : formatPlayerStatsValue(
                             rawValue as string | number | null | undefined,
                             header.column.format,
@@ -364,7 +396,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                         >
                           {isRankColumn ? (
                             <span className={styles.rankValue}>
-                              {rowIndex + 1}
+                              {sortPosition}
                             </span>
                           ) : renderCell ? (
                             renderCell({
@@ -478,9 +510,17 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function getVisibleHeaderLabel(columnKey: string, label: string): string {
+function getVisibleHeaderLabel(
+  columnKey: string,
+  label: string,
+  isSplitActive = false,
+): string {
   if (columnKey === "positionCode") {
     return "POS";
+  }
+
+  if (columnKey === "gamesPlayed" && isSplitActive) {
+    return "Split GP";
   }
 
   return label;

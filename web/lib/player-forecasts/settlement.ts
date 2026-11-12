@@ -1,6 +1,15 @@
 import crypto from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { PLAYER_FORECAST_SCORING_VERSION } from "./researchContract";
+import { scoreProperForecast, type ProperForecastScore } from "../fantasy-projections/properScore";
+
+/**
+ * v2 (decision 65; W3-5 F7/PR4): per-row proper losses only. The v1 per-row
+ * MAE skill index rewarded forecasting 0 (Poisson(0.2): 0 scored 88.9 vs 48.0
+ * for the true mean); skill is now aggregated over a cohort with
+ * `aggregateProperSkill`. v1 rows (`PLAYER_FORECAST_SCORING_VERSION`,
+ * "player-forecast-skill-v1") stay as issued (rule 21).
+ */
+export const PLAYER_FORECAST_SETTLEMENT_SCORING_VERSION = "player-forecast-skill-v2";
 
 const PROVISIONAL_DELAY_MS = 8 * 60 * 60 * 1000;
 const CORRECTION_WINDOW_MS = 48 * 60 * 60 * 1000;
@@ -141,6 +150,11 @@ export function goalieActualFromBoxscore(output: OutputRow, source: BoxscoreEvid
   return null;
 }
 
+/**
+ * @deprecated v1 scorer ("player-forecast-skill-v1"), kept only to reproduce
+ * issued v1 evaluation rows (rule 21). Its per-row MAE skill index is not a
+ * proper score; new settlement uses `scoreForecastProper`.
+ */
 export function scoreForecast(args: {
   actual: number;
   pointEstimate: number | null;
@@ -180,6 +194,32 @@ export function scoreForecast(args: {
     compositeSkillScore = Math.max(0, Math.min(100, 50 + 50 * ((baselineAbsoluteError - Math.abs(error)) / denominator)));
   }
   return { metrics, baselineMetrics, compositeSkillScore };
+}
+
+/**
+ * v2 per-row scorer: squared error / Brier (primary), absolute error
+ * (secondary), log loss for probabilities. Probabilities outside [0, 1] and
+ * unknown forecasts are rejected (null); null, absent, non-finite or reversed
+ * p10/p90 make the interval unavailable. No per-row skill score exists.
+ */
+export function scoreForecastProper(args: {
+  actual: number;
+  pointEstimate: number | null;
+  probability: number | null;
+  conditioning: string;
+  quantiles?: Record<string, unknown> | null;
+  baselinePointEstimate?: number | null;
+}): (ProperForecastScore & { compositeSkillScore: null }) | null {
+  const isProbability = args.conditioning === "playing_probability" || args.conditioning === "start_probability";
+  const score = scoreProperForecast({
+    actual: args.actual,
+    forecast: isProbability ? args.probability : args.pointEstimate,
+    baselineForecast: args.baselinePointEstimate,
+    probability: isProbability,
+    p10: args.quantiles?.p10,
+    p90: args.quantiles?.p90,
+  });
+  return score ? { ...score, compositeSkillScore: null } : null;
 }
 
 export function actualForOutput(output: OutputRow, skater: Record<string, unknown> | undefined, goalie?: Record<string, unknown>,
@@ -475,7 +515,7 @@ export async function settlePlayerForecasts(args: {
     }
     const outcome = outcomeByKey.get(key);
     const baselinePointEstimate = numeric(output.distribution?.baselinePointEstimate);
-    const score = scoreForecast({
+    const score = scoreForecastProper({
       actual: actual.value,
       pointEstimate: numeric(output.point_estimate),
       probability: numeric(output.probability),
@@ -489,7 +529,7 @@ export async function settlePlayerForecasts(args: {
       .upsert({
         forecast_output_id: output.id,
         outcome_revision_id: outcome.id,
-        scoring_version: PLAYER_FORECAST_SCORING_VERSION,
+        scoring_version: PLAYER_FORECAST_SETTLEMENT_SCORING_VERSION,
         settlement_status: outcome.finality ?? "provisional",
         evaluated_at: now.toISOString(),
         metrics: score.metrics,

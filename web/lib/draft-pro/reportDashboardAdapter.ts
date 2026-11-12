@@ -65,7 +65,7 @@ function enabledKeys(weights: Readonly<Record<string, number>>) {
 
 function reportPlayer(player: ProcessedPlayer, metrics: ReadonlyMap<string, PlayerVorpMetrics>, season: string, categories: readonly string[]): ScenarioPlayer | string {
   const metric = metrics.get(String(player.playerId));
-  if (!metric || !Number.isFinite(metric.vorp) || !Number.isFinite(metric.value)) return `Report capture is unavailable because ${player.fullName} has no current league VORP.`;
+  if (!metric || typeof metric.vorp !== "number" || typeof metric.value !== "number" || !Number.isFinite(metric.vorp) || !Number.isFinite(metric.value)) return `Report capture is unavailable because ${player.fullName} has no current league VORP.`;
   const eligiblePositions = normalizePlayerEligibility(player.displayPosition, player.eligiblePositions);
   if (!eligiblePositions.length) return `Report capture is unavailable because ${player.fullName} has no eligible position.`;
   const projectedPoints = player.fantasyPoints.projected;

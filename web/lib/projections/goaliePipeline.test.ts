@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { STARTER_DECISION_SHARE } from "./goalie/goalieOutcomes";
 import { getGoalieForgePipelineSpec } from "./goaliePipeline";
 import { runPerGameGoalieStage } from "./stages/goalie-stage";
+import { readGoalieCandidatesContract } from "./goalie/goalieCandidates";
 import { boardGoalieForecast } from "./starterBoardScoring";
 import { resolveDailyBoardEvidence, type BoardAssertion, type DailyBoardEvidence } from "./dailyBoardEvidence";
 
@@ -51,6 +52,7 @@ describe("goalie producer confirmation evidence", () => {
   const evidence = (assertions = [assertion()]): DailyBoardEvidence => ({ informationCutoffAt: cutoff, assertions, conflicts: [] });
   async function run(source?: DailyBoardEvidence, options: {
     probability?: number; override?: boolean; cutoffAt?: string | null; horizon?: number; goalsFor?: number | null; opponentGoalsFor?: number | null;
+    weakerBackup?: boolean;
   } = {}) {
     const probability = options.probability ?? 0.8;
     const cache = <T,>(value: T) => new Map([[`10:${date}`, value], [`11:${date}`, value]]);
@@ -77,7 +79,8 @@ describe("goalie producer confirmation evidence", () => {
       teamOffenseEnvironmentCache: cache({ avgShotsForLast10: null, avgShotsForLast5: null, avgGoalsForLast10: null, avgGoalsForLast5: null }),
       teamRestDaysCache: cache(null), teamGoalieStarterContextCache: cache({ startsByGoalie: new Map([[100, 1], [101, 1]]),
         lastPlayedDateByGoalie: new Map(), totalGames: 2, previousGameDate: null, previousGameStarterGoalieId: null }),
-      goalieEvidenceCache: new Map([100, 101].map(id => [`${id}:${date}`, goalieHistory])),
+      goalieEvidenceCache: new Map([100, 101].map(id => [`${id}:${date}`, id === 101 && options.weakerBackup
+        ? { ...goalieHistory, recentGoalsAllowed: 36, seasonGoalsAllowed: 70, baselineGoalsAllowed: 200 } : goalieHistory])),
       goalieWorkloadContextCache: new Map([100, 101].map(id => [`${id}:${date}`, {
         startsLast7Days: 0, startsLast14Days: 0, daysSinceLastStart: 3, isGoalieBackToBack: false }])),
       goalieRestSplitProfileCache: new Map([100, 101].map(id => [`${id}:${date}`, null])),
@@ -141,6 +144,40 @@ describe("goalie producer confirmation evidence", () => {
     const missing = await run(undefined, { override: false, goalsFor: null, opponentGoalsFor: null });
     expect(missing.row.uncertainty.win_populations.team).toMatchObject({ win_probability: null, source: null });
     expect(missing.row.uncertainty.win_populations.goalies).toEqual([]);
+  });
+
+  it("serves one row per candidate: own if-starts line, P(start), unconditional product, team win apart (P0 #20)", async () => {
+    const { row } = await run(undefined, { override: false, goalsFor: 3.3, opponentGoalsFor: 2.9, weakerBackup: true });
+    const contract = readGoalieCandidatesContract(row.uncertainty)!;
+    expect(contract).not.toBeNull();
+    expect(row.uncertainty.row_basis).toBe("team_goalie_slot_mixture");
+    expect(contract.values_per).toBe("single_game");
+    expect(contract.relief_basis).toEqual({ counts: "zero_relief_assumption", shutout: "zero_relief_assumption", credited_win: "modelled_decision_share" });
+    expect(contract.rows.map(r => r.goalie_id).sort()).toEqual([100, 101]);
+    const [top, backup] = [contract.rows.find(r => r.goalie_id === 100)!, contract.rows.find(r => r.goalie_id === 101)!];
+    // Each goalie's own line: the weaker backup allows more goals if he starts than the starter does.
+    expect(backup.if_starts.goals_allowed).toBeGreaterThan(top.if_starts.goals_allowed);
+    // A closed two-goalie set; the partner's probability is stored, not rebuilt as 1 − p(top).
+    expect(top.start_probability + backup.start_probability).toBeCloseTo(1, 6);
+    for (const r of contract.rows) {
+      expect(r.unconditional.saves).toBeCloseTo(r.start_probability * r.if_starts.saves, 2);
+      expect(r.unconditional.goals_allowed).toBeCloseTo(r.start_probability * r.if_starts.goals_allowed, 2);
+    }
+    // The team win % is reported once; each goalie's own credited Win is his row's value.
+    expect(contract.team_win_probability).toBe(row.uncertainty.win_populations.team.win_probability);
+    for (const g of row.uncertainty.win_populations.goalies) {
+      expect(contract.rows.find(r => r.goalie_id === g.goalie_id)!.unconditional.credited_win_prob).toBe(g.unconditional_win);
+    }
+    expect(contract.issuance).toMatchObject({ run_id: "synthetic-goalie-run", as_of_date: date, information_cutoff_at: cutoff });
+  });
+
+  it("never multiplies a probability by the horizon scalar (decision 28)", async () => {
+    const one = await run(undefined, { override: false, goalsFor: 3.3, opponentGoalsFor: 2.9, horizon: 1 });
+    const two = await run(undefined, { override: false, goalsFor: 3.3, opponentGoalsFor: 2.9, horizon: 2 });
+    expect(two.row.proj_saves).toBeCloseTo(2 * one.row.proj_saves, 2);
+    expect(two.row.proj_win_prob).toBe(one.row.proj_win_prob);
+    expect(two.row.proj_shutout_prob).toBe(one.row.proj_shutout_prob);
+    expect(two.row.uncertainty.value_basis).toEqual({ counts: "horizon_total", probabilities: "single_game" });
   });
 
   it.each([0.4, 0.8, 1])("does not manufacture confirmation from override %s or legacy booleans", async probability => {

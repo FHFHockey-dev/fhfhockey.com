@@ -5,7 +5,7 @@ export type AvailabilitySeasonScope =
   | "player_season_current_team_only";
 
 export type AvailabilityRollingScope =
-  | "current_team_last_n_team_games"
+  | "team_of_record_last_n_team_games_by_date"
   | "appearance_anchored_span";
 
 export type AvailabilityHistoricalScope =
@@ -72,6 +72,10 @@ export type RollingPlayerAvailabilityContract = {
   };
 };
 
+// Owner decision 16 (2026-11-11): availability follows the player's team of
+// record by date, labelled "games available". Each regular-season game belongs
+// to the team he was with on that date; trade dates are not stored, so stints
+// use an appearance-bounded proxy (see updateHistoricalGpPctAccumulator).
 // This shared contract is the code-level translation of the audit's intended
 // availability model. Runtime behavior is still being remediated in follow-up
 // tasks, but any GP% or participation change should target this contract rather
@@ -81,18 +85,20 @@ export const ROLLING_PLAYER_AVAILABILITY_CONTRACT: RollingPlayerAvailabilityCont
     currentImplementation: {
       allStrength: {
         semanticType: "availability",
-        numeratorMeaning: "appearance rows processed in the current source slice",
-        denominatorMeaning: "current-row team games through date",
+        numeratorMeaning: "regular-season team-of-record games in which the player appeared",
+        denominatorMeaning:
+          "regular-season games of the team of record on each date (games available)",
         seasonScope: "player_season_all_stints",
-        rollingScope: "current_team_last_n_team_games",
+        rollingScope: "team_of_record_last_n_team_games_by_date",
         historicalScope: "all_stints_within_window"
       },
       splitStrength: {
         semanticType: "participation",
-        numeratorMeaning: "games with positive TOI in the strength state",
-        denominatorMeaning: "current-row team games through date",
+        numeratorMeaning: "team-of-record games with positive TOI in the strength state",
+        denominatorMeaning:
+          "regular-season games of the team of record on each date (games available)",
         seasonScope: "player_season_all_stints",
-        rollingScope: "current_team_last_n_team_games",
+        rollingScope: "team_of_record_last_n_team_games_by_date",
         historicalScope: "all_stints_within_window"
       }
     },
@@ -102,7 +108,7 @@ export const ROLLING_PLAYER_AVAILABILITY_CONTRACT: RollingPlayerAvailabilityCont
         numeratorMeaning: "team games in which the player appeared",
         denominatorMeaning: "team games available in scope",
         seasonScope: "player_season_all_stints",
-        rollingScope: "current_team_last_n_team_games",
+        rollingScope: "team_of_record_last_n_team_games_by_date",
         historicalScope: "all_stints_within_window"
       },
       splitStrength: {
@@ -110,7 +116,7 @@ export const ROLLING_PLAYER_AVAILABILITY_CONTRACT: RollingPlayerAvailabilityCont
         numeratorMeaning: "team games with positive TOI in the strength state",
         denominatorMeaning: "team games available in scope",
         seasonScope: "player_season_all_stints",
-        rollingScope: "current_team_last_n_team_games",
+        rollingScope: "team_of_record_last_n_team_games_by_date",
         historicalScope: "all_stints_within_window"
       }
     },

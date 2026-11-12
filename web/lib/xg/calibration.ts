@@ -323,19 +323,25 @@ function fitIsotonicCalibrator(
     return null;
   }
 
-  const sorted = [...examples].sort((left, right) => {
-    if (left.prediction !== right.prediction) {
-      return left.prediction - right.prediction;
-    }
+  // Equal inputs must share one output, so they start as one pooled block
+  // (weight = count, mean label). Leaving them as separate unit blocks made
+  // the fitted value depend on row-id order.
+  const pooledByPrediction = new Map<number, { weight: number; labelSum: number }>();
+  for (const example of examples) {
+    const prediction = clipProbability(example.prediction);
+    const pooled = pooledByPrediction.get(prediction) ?? { weight: 0, labelSum: 0 };
+    pooled.weight += 1;
+    pooled.labelSum += example.label;
+    pooledByPrediction.set(prediction, pooled);
+  }
 
-    return left.rowId.localeCompare(right.rowId);
-  });
-
-  const blocks: IsotonicBlock[] = sorted.map((example) => ({
-    maxPrediction: clipProbability(example.prediction),
-    weight: 1,
-    averageLabel: example.label,
-  }));
+  const blocks: IsotonicBlock[] = [...pooledByPrediction.entries()]
+    .sort(([left], [right]) => left - right)
+    .map(([prediction, pooled]) => ({
+      maxPrediction: prediction,
+      weight: pooled.weight,
+      averageLabel: pooled.labelSum / pooled.weight,
+    }));
 
   let index = 0;
   while (index < blocks.length - 1) {

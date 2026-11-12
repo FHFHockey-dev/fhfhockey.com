@@ -1,0 +1,277 @@
+{
+  "targetCommit": "7174249cb7eae7e711039e495c63a990112e22ea",
+  "checkedHead": "ef9fc5f547fb99d6aef920e1fdb586c91c73ac4c",
+  "files": [
+    {
+      "file": "web/__tests__/pages/api/v1/db/update-sko-stats.route.test.ts",
+      "sha256": "6a5ac107c54ead47ecf9e0791b51801f199b8da7c60cd232893499ebe646701a",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/__tests__/pages/api/v1/db/update-sko-stats.test.ts",
+      "sha256": "9c346c56a5b4683e0e324d20d1691602a517eb3f13b55d420578519f14df2254",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/__tests__/pages/api/v1/ml/get-predictions-sko.test.ts",
+      "sha256": "88383f5902b2e0ae6eec831a6f21478ca07d0f4ca5faec4cb1b5ca653e2c4088",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/__tests__/pages/api/v1/ml/update-predictions-sko.test.ts",
+      "sha256": "eb5f3bd0884473c05b7ec11c8dcd0b6da0304ae695548672166f0b229c1ecf2f",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/components/Predictions/MetricCards.tsx",
+      "sha256": "9a863c28804602226fff2cc11440ae97ad86e1c6d34bce63f7db0a120d20a5c6",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/components/Predictions/PlayerTable.tsx",
+      "sha256": "2cbeea6f18cf6fcd1d499d419e681cd0e1d38f5bdb0531562b15982e8f894881",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/components/Predictions/PredictionsLeaderboard.tsx",
+      "sha256": "717d0296f702cff6fa882d0c238a5eacbadc2eca0d26af873bcdf9f8e4e6eb5f",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/components/Predictions/SkoExplainer.tsx",
+      "sha256": "090ffbd2c4f35276a7e78fdab48241295575d4f0ddee953d144463e3809c86ed",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+      "sha256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/components/blshTrade/BlshTradeComparison.tsx",
+      "sha256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/components/skoElement/SkoElementPreview.test.tsx",
+      "sha256": "229b78417459fd35da1311a69e5a6f68a7c1f29104d15da6793a13769305de58",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/components/skoElement/SkoElementPreview.tsx",
+      "sha256": "d663bd5cabd7048c54fb4950d26fc7b96128ab2ef196213dc2ff64fb2374d5c2",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/components/skoElement/format.ts",
+      "sha256": "7519954a3a30b150eca338dbb3b4c8064ec5eaab1475fa1a5c135573cd72246b",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/NHL/server/index.ts",
+      "sha256": "0499ac3f3fdedb228efdd2091d2c93b6e79ef35b8fa56328ed60b7201fc3d435",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/buyLowSellHigh/market.test.ts",
+      "sha256": "75c50d315356e83498fb497c6b5b1b9b5d60701bb7375d5bedcbc60f5d3eec73",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/buyLowSellHigh/market.ts",
+      "sha256": "44df9313b86bbc078dc6f314a5884deb490e266509bec4a44f6f9ff08e537f60",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/buyLowSellHigh/productionReference.ts",
+      "sha256": "ec3afb69ff6001068586d50faf718585f17392524196cb343020f3b98eda192e",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/buyLowSellHigh/trade.test.ts",
+      "sha256": "78326ccf45e3954f2c91625c389611ab7080bf86e5593297f9e0b40286a978a9",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/buyLowSellHigh/trade.ts",
+      "sha256": "18b9fe9302c5933f3182e2af2fd0ca2e20fa541d361e40606d4fc195a431dce3",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/hooks/useQuarantinedPredictionsSko.ts",
+      "sha256": "4738b8da264fbec4ae96da59eea423028858d2d89a306d0cf2a9e0a39ef715fc",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/ml/predictionsSkoRunControl.ts",
+      "sha256": "df590f7b2f05f70f169dc3763ff5b8b07a846c70991d57bdf7c0736fa719c582",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/player-forecasts/contributions.ts",
+      "sha256": "b3c20c166d97440341ff35d0c236c0772067a178df1df3cf699e6a00941f43a1",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/player-forecasts/gameExpectations.ts",
+      "sha256": "6e3995d94f1898322ad14ef74d4cae805dffcae2780c90ffe448543354b59c2c",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/sko/gap.test.ts",
+      "sha256": "cc60669248e6ec44caae7d87abf9c0d2833a47dd46fe3c6648b4602d06fd69f0",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/sko/gap.ts",
+      "sha256": "fda168904af69c64c492dd0b64a8ec1a63ad1d0b85278fb161138dc57ca2911b",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/skoElement/contract.ts",
+      "sha256": "3d2b202003b8c0379bbf7b5e0d04ebc722c52815327ce7e8b96d67538966f37a",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/skoElement/fixtures.ts",
+      "sha256": "b4e7e6b31c9fd9d1e541aba1e0f19993caa413bab8112b1cd05bc10e1b7f2fa2",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/skoElement/interpret.test.ts",
+      "sha256": "bca0fabd80e3d4a620883bcb4fc1b7b9155f620f6b6e976ac8802f1fc4f46ce2",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/skoElement/interpret.ts",
+      "sha256": "789b8fe3480e564a9f24e47658b5d03d4e514b0dc6e94d5aae4fbd08a297200c",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/supabase/Upserts/fetchSKOskaterStats.js",
+      "sha256": "54a54595ff6c4e0df3b0f07cbf701d3e069396ded1be2783273f3cd4a7aea3d9",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/supabase/Upserts/fetchSKOyears.js",
+      "sha256": "1fe7d5defd745daeec4d98ce0ec2c1ec5e176ab3c8ea5f561116b49e523b1496",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/supabase/utils/calculations.ts",
+      "sha256": "85f4ff0ce6f889d9cfd6804e80015d0e45dd1d55fcc84f89fa5b95c37b0d059e",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/supabase/utils/constants.ts",
+      "sha256": "6d433f9c567b9c9bdfcba42eb90efa6868127cb2ebea4e5b848537a0c4115f69",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/supabase/utils/dataFetching.ts",
+      "sha256": "a83ba0e1e780205a829bdf88ae486ab608841054bd3cc2b925b97b5f7789a246",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/supabase/utils/legacySko.test.ts",
+      "sha256": "34ad521ec18be051489994de3f384960b856fddfbd2586fb64816cd07e4bf126",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/supabase/utils/statistics.ts",
+      "sha256": "13f793bbf3773d5e61304341278e5b1497b6c76f4aff299f3e38088a44fff894",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/sustainability/entitySurfaceServer.ts",
+      "sha256": "602138fb367b9f1b26236bb0855fee826bc7ca66ff17b2129448a7202ef25c6f",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/sustainability/read.ts",
+      "sha256": "21a5c8a311e8da297c2fa9e1ee347ccbe30fd041c913755b3b0c76aae0b89592",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/sustainability/score.ts",
+      "sha256": "e9b2f976e1d245bfbea4193a390508aec5fbe36d3e67a79f75047b346db9457d",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/tradeValue/valuationComponents.ts",
+      "sha256": "a11683b789dc3b2f010b81164de26733039c4d48d248d836828a57f086ebd940",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/lib/trends/utils.ts",
+      "sha256": "fa827cc992d20b438f8d8b0fc5622472ed01e9fdf0f3a2e3f38daf5b21e8d4c6",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/pages/api/v1/db/update-sko-stats.ts",
+      "sha256": "a24656c35b3ad5c646c24ee2139cc4aceb66e3c30dd3e7fe35dfd28942eca718",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/pages/api/v1/ml/get-predictions-sko.ts",
+      "sha256": "e3e6590ea3c05596bd969975a1f71cf1160d4ae65d490d8a10aa161f40f03cc8",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/pages/api/v1/ml/update-predictions-sko.ts",
+      "sha256": "95ddfd1ff88f4d419e1087a83be712db368ea3f3bf346ddadbbce469aef6b392",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/pages/buy-low-sell-high/preview.tsx",
+      "sha256": "92c01d412e1d28eef7fa3e782a7a23847dd1607df512f588a4023d8a2acc2614",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/pages/buy-low-sell-high/trade.tsx",
+      "sha256": "7bc9d950124cc5e60b467ac5ff2dd7efe7769ec73a695c5c1c594ad4213f5a66",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/pages/sko-element/preview.tsx",
+      "sha256": "d3c4566cc5df2359fb259efde56369904687f1aa157eb94e69812e2bd83160eb",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/pages/skoCharts.tsx",
+      "sha256": "843f67f7af5788ad80eb3dfc264e317a3b555104ade138bba8834cd72df11f39",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/pages/trendsSandbox.tsx",
+      "sha256": "640c3e1b994befeed26bd4d805a54bf99c9f5709787ca1cc7d2b81bd8c003381",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/scripts/sko-output-authority.test.ts",
+      "sha256": "7c780193c0330c65ba3d66ba341d3dacb41c03c049d10422c5b7cf5ed8f4a995",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/sql/functions/analytics.rpc_sko_player_series.sql",
+      "sha256": "b52cd1854a82932c3e8f0267074a42621a8ff4e977e39ab07c269bfe922fbf9e",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/sql/views/analytics.vw_sko_skater_base.sql",
+      "sha256": "8fdd5aa551ab4f06713c77b8aae0beda062402074ec2f2724e0d287a7bc646ba",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/sql/views/analytics.vw_sko_skater_scores.sql",
+      "sha256": "ffed128e3fc109b282cc7b2decfbf1a6a839873c380070b5df24fcba8656510c",
+      "equalsTargetCommit": true
+    },
+    {
+      "file": "web/sql/views/analytics.vw_sko_skater_zscores.sql",
+      "sha256": "0b178b6218afd567ccf779012e5408ec3e131efb198313536789ce7606d6f29a",
+      "equalsTargetCommit": true
+    }
+  ],
+  "allMatch": true
+}

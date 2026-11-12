@@ -41,7 +41,7 @@ export function aggregatePlayerForecastRestOfSeason(args: {
     }
     const probability = component.playsProbability;
     if (args.conditioning === "unconditional") {
-      if (probability == null || probability < 0 || probability > 1) {
+      if (probability == null || !Number.isFinite(probability) || probability < 0 || probability > 1) {
         throw new Error("Unconditional rest-of-season aggregation requires a valid plays probability for every game.");
       }
       remainingMean += probability * component.mean;
@@ -61,7 +61,11 @@ export function aggregatePlayerForecastRestOfSeason(args: {
       Math.max(0, remainingMean + zScore * standardDeviation),
     ]),
   );
-  const seasonToDateActual = args.seasonToDateActual ?? 0;
+  // BC W1-8 A: an unknown season-to-date actual is not 0; the full-season total needs a known one.
+  const seasonToDateActual = args.seasonToDateActual;
+  if (typeof seasonToDateActual !== "number" || !Number.isFinite(seasonToDateActual) || seasonToDateActual < 0) {
+    throw new Error("Rest-of-season aggregation requires a known, non-negative season-to-date actual; unknown is not 0.");
+  }
   return {
     conditioning: args.conditioning,
     remainingGames: args.components.length,
@@ -105,7 +109,10 @@ export async function loadPlayerForecastRestOfSeason(args: {
   if (playerError) throw playerError;
   const playerNames = new Map((players ?? []).map((row: any) => [Number(row.id), String(row.fullName)]));
   const latest = new Map<string, PlayerForecastRestOfSeasonForecast>();
+  const known = (value: unknown) => value === null || value === undefined || value === "" ? NaN : Number(value);
   for (const row of data ?? []) {
+    // A stored row without a known actual or mean is unknown, never a 0 full-season total.
+    if (!Number.isFinite(known(row.season_to_date_actual)) || !Number.isFinite(known(row.point_estimate))) continue;
     const key = [row.player_id, row.target_key, row.conditioning, row.model_artifact_id].join(":");
     if (!latest.has(key)) latest.set(key, {
       id: String(row.id),

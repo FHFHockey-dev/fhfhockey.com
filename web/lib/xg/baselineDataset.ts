@@ -157,11 +157,12 @@ export type BaselineDatasetBuildOptions = {
   seed?: number;
 };
 
+// isFlurryShot is not a default: it flags a shot using later shots in the
+// same sequence (forward-looking), and the approval gate rejects it.
 export const DEFAULT_BOOLEAN_FEATURE_KEYS = [
   "previousEventSameTeam",
   "isReboundShot",
   "isRushShot",
-  "isFlurryShot",
   "isEmptyNetEvent",
   "isOvertimeEvent",
   "crossedRoyalRoad",

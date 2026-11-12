@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DraftProRequestError } from "./requestError";
-import { isInvertedCategory } from "lib/scoring/categoryScores";
+import { resolveStatDirection } from "lib/projectionsConfig/statsMasterList";
 import { draftProSnapshotSchema, type DraftProSnapshot } from "./contracts";
 import { player, projection } from "./scenariosContract";
 import { scenarioFingerprint, summarizeScenarioRoster, type ScenarioDustResult, type ScenarioInput, type ScenarioPlayer, type ScenarioRosterSummary } from "./scenarios";
@@ -55,7 +55,9 @@ export function buildDraftProReport(type: DraftProReportType, input: ReportInput
   const totals = summarizeScenarioRoster(input.roster, input.categoryWeights ?? {});
   const reference = input.referenceRoster ? summarizeScenarioRoster(input.referenceRoster, input.categoryWeights ?? {}) : null;
   const categories = Object.entries(totals.categories).filter(([, value]) => value !== null && finite(value));
-  const comparison = (key: string, value: number, baseline: number) => isInvertedCategory(key) ? baseline - value : value - baseline;
+  // Direction from the shared registry with the league's reading of a legacy
+  // negative weight (decision 55), not a fixed lower-is-better list.
+  const comparison = (key: string, value: number, baseline: number) => resolveStatDirection(key, { weight: input.categoryWeights?.[key] }) === "lower" ? baseline - value : value - baseline;
   const strengths = reference ? categories.filter(([key, value]) => reference.categories[key] !== null && comparison(key, value as number, reference.categories[key] as number) > 0).map(([key]) => `${label(key)} is stronger than ${input.referenceBasis}`) : [];
   const weaknesses = reference ? categories.filter(([key, value]) => reference.categories[key] !== null && comparison(key, value as number, reference.categories[key] as number) < 0).map(([key]) => `${label(key)} is weaker than ${input.referenceBasis}`) : [];
   const unavailableComparisons = reference ? Object.keys(totals.categories).filter((key) => totals.categories[key] === null || reference.categories[key] === null).map((key) => `${label(key)} comparison is unavailable because required projections are missing`) : [];

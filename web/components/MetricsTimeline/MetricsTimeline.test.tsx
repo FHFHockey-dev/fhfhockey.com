@@ -6,7 +6,26 @@ const fixture = vi.hoisted(() => ({
   rows: {} as Record<string, Record<string, unknown>[]>,
   errors: {} as Record<string, string>,
   queries: [] as Array<{ table: string; filters: Array<[string, unknown]> }>,
+  xgModel: { modelVersion: "cfg-champion", featureVersion: 1 } as { modelVersion: string; featureVersion: number } | null,
+  xgRequests: [] as string[],
 }));
+
+// In-house xG is served by the registry-pinned route; the mock returns the
+// fixture rows unfiltered so the component's own admission is exercised.
+const fetchMock = vi.fn(async (url: string) => {
+  fixture.xgRequests.push(url);
+  if (fixture.errors.nhl_xg_team_game_aggregates) return { ok: false, status: 500, json: async () => ({}) };
+  return {
+    ok: true,
+    status: 200,
+    json: async () => ({
+      model: fixture.xgModel,
+      reason: fixture.xgModel ? "unique_active_champion" : "no_active_approved_model",
+      rows: fixture.rows.nhl_xg_team_game_aggregates ?? [],
+    }),
+  };
+});
+vi.stubGlobal("fetch", fetchMock);
 
 vi.mock("lib/supabase", () => ({
   default: {
@@ -60,6 +79,7 @@ const wgo = {
 };
 const xg = {
   team_id: 10, season_id: 20252026, game_id: 2025020001, game_date: "2026-01-10",
+  model_version: "cfg-champion", feature_version: 1,
   xg_for: 2.9, xg_against: 2.3, source_model_approved: true, source_prediction_type: "shot_goal",
 };
 
@@ -67,6 +87,8 @@ beforeEach(() => {
   fixture.rows = { wgo_team_stats: [wgo], nhl_xg_team_game_aggregates: [] };
   fixture.errors = {};
   fixture.queries = [];
+  fixture.xgModel = { modelVersion: "cfg-champion", featureVersion: 1 };
+  fixture.xgRequests = [];
 });
 afterEach(cleanup);
 
@@ -82,7 +104,27 @@ describe("MetricsTimeline source admission", () => {
     expect(screen.getAllByText("100.0%").length).toBeGreaterThan(0);
     fireEvent.change(screen.getByLabelText("Select Metric:"), { target: { value: "xgf" } });
     expect(screen.queryAllByText("9.00")).toHaveLength(0);
-    expect(fixture.queries.filter((query) => query.table === "nhl_xg_team_game_aggregates")).toHaveLength(1);
+    expect(fixture.xgRequests).toEqual(["/api/v1/xg/team-timeline?teamId=10&seasonId=20252026"]);
+  });
+
+  it("shows only the registry-pinned model's xG when a shadow model's rows exist", async () => {
+    fixture.rows.nhl_xg_team_game_aggregates = [
+      { ...xg, model_version: "cfg-shadow", feature_version: 2, xg_for: 1.1 },
+      xg,
+    ];
+    await load();
+    fireEvent.change(screen.getByLabelText("Select Metric:"), { target: { value: "xgf" } });
+    expect(screen.getAllByText("2.90").length).toBeGreaterThan(0);
+    expect(screen.queryAllByText("1.10")).toHaveLength(0);
+  });
+
+  it("labels in-house xG unavailable when the registry has no single active model", async () => {
+    fixture.xgModel = null;
+    fixture.rows.nhl_xg_team_game_aggregates = [xg];
+    await load();
+    fireEvent.change(screen.getByLabelText("Select Metric:"), { target: { value: "xgf" } });
+    expect(screen.queryAllByText("2.90")).toHaveLength(0);
+    expect(screen.getByText("In-house expected goals are unavailable: no single approved active xG model.")).toBeTruthy();
   });
 
   it("retains WGO categories when the xG query fails", async () => {

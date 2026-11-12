@@ -125,6 +125,44 @@ function finiteNumberOrNull(value: unknown): number | null {
   return Number.isFinite(numericValue) ? numericValue : null;
 }
 
+export type SkoIppUnavailableReason =
+  | "points_missing"
+  | "on_ice_goals_for_component_missing"
+  | "no_on_ice_goals_for"
+  | "points_exceed_on_ice_goals_for";
+
+/**
+ * IPP = points ÷ on-ice goals for (ES + PP + SH) × 100. Every part must be known: a missing
+ * component is unknown, never 0 (W3-7 D5). Points above on-ice GF is impossible and also
+ * stores null; its cause (a goal state missing from WGO's ES/PP/SH split) is not established.
+ */
+export function resolveSkoIpp({
+  points,
+  evenStrengthGoalsFor,
+  powerPlayGoalFor,
+  shortHandedGoalsFor,
+}: {
+  points: unknown;
+  evenStrengthGoalsFor: unknown;
+  powerPlayGoalFor: unknown;
+  shortHandedGoalsFor: unknown;
+}): { ipp: number | null; reason: SkoIppUnavailableReason | null } {
+  const knownPoints = finiteNumberOrNull(points);
+  if (knownPoints === null) return { ipp: null, reason: "points_missing" };
+  const parts = [evenStrengthGoalsFor, powerPlayGoalFor, shortHandedGoalsFor].map(
+    finiteNumberOrNull,
+  );
+  if (parts.some((part) => part === null)) {
+    return { ipp: null, reason: "on_ice_goals_for_component_missing" };
+  }
+  const onIceGoalsFor = (parts as number[]).reduce((sum, part) => sum + part, 0);
+  if (onIceGoalsFor <= 0) return { ipp: null, reason: "no_on_ice_goals_for" };
+  if (knownPoints > onIceGoalsFor) {
+    return { ipp: null, reason: "points_exceed_on_ice_goals_for" };
+  }
+  return { ipp: (knownPoints / onIceGoalsFor) * 100, reason: null };
+}
+
 export function buildSkoSkaterStatsRow({
   stat,
   goalsForAgainstStat,
@@ -153,10 +191,12 @@ export function buildSkoSkaterStatsRow({
   const timeOnIceSeconds = finiteNumberOrNull(timeOnIceStat?.timeOnIce);
   const shots = finiteNumberOrNull(stat.shots);
   const points = finiteNumberOrNull(stat.points);
-  const totalOnIceGoalsFor =
-    (finiteNumberOrNull(goalsForAgainstStat?.evenStrengthGoalsFor) ?? 0) +
-    (finiteNumberOrNull(goalsForAgainstStat?.powerPlayGoalFor) ?? 0) +
-    (finiteNumberOrNull(goalsForAgainstStat?.shortHandedGoalsFor) ?? 0);
+  const { ipp } = resolveSkoIpp({
+    points,
+    evenStrengthGoalsFor: goalsForAgainstStat?.evenStrengthGoalsFor,
+    powerPlayGoalFor: goalsForAgainstStat?.powerPlayGoalFor,
+    shortHandedGoalsFor: goalsForAgainstStat?.shortHandedGoalsFor,
+  });
   const timeOnIceMinutes =
     timeOnIceSeconds !== null && timeOnIceSeconds > 0
       ? timeOnIceSeconds / 60
@@ -191,10 +231,7 @@ export function buildSkoSkaterStatsRow({
     total_secondary_assists: finiteNumberOrNull(
       scoringPerGameStat?.totalSecondaryAssists,
     ),
-    ipp:
-      points !== null && totalOnIceGoalsFor > 0
-        ? (points / totalOnIceGoalsFor) * 100
-        : null,
+    ipp,
     sog_per_60:
       shots !== null && timeOnIceMinutes
         ? (shots / timeOnIceMinutes) * 60
@@ -698,14 +735,23 @@ async function updateSkaterStats(
   }
 
   const mergedRows: SkoSkaterStatsInsert[] = [];
+  const ippUnavailable: Partial<Record<SkoIppUnavailableReason, number>> = {};
 
   for (const stat of skaterStats) {
+    const goalsFor = goalsForAgainstStats.find(
+      (candidate) => candidate.playerId === stat.playerId,
+    );
+    const { reason } = resolveSkoIpp({
+      points: stat.points,
+      evenStrengthGoalsFor: goalsFor?.evenStrengthGoalsFor,
+      powerPlayGoalFor: goalsFor?.powerPlayGoalFor,
+      shortHandedGoalsFor: goalsFor?.shortHandedGoalsFor,
+    });
+    if (reason) ippUnavailable[reason] = (ippUnavailable[reason] ?? 0) + 1;
     mergedRows.push(
       buildSkoSkaterStatsRow({
         stat,
-        goalsForAgainstStat: goalsForAgainstStats.find(
-          (candidate) => candidate.playerId === stat.playerId,
-        ),
+        goalsForAgainstStat: goalsFor,
         powerPlayStat: powerPlayStats.find(
           (candidate) => candidate.playerId === stat.playerId,
         ),
@@ -758,6 +804,8 @@ async function updateSkaterStats(
     updated: true,
     upsertedRows: mergedRows.length,
     diagnostics,
+    /** Rows whose IPP is stored null, by reason (no reason column exists in sko_skater_stats). */
+    ippUnavailable,
     skaterStats,
     skatersBio,
     miscSkaterStats,
@@ -1485,6 +1533,7 @@ async function updateSkaterStatsForDateWindow(
   let totalDaysProcessed = 0;
   const dateDiagnostics: ReturnType<typeof buildSkoSourceIngestDiagnostics>[] =
     [];
+  const ippUnavailable: Partial<Record<SkoIppUnavailableReason, number>> = {};
 
   while (true) {
     const formattedDate = format(currentDate, "yyyy-MM-dd");
@@ -1497,6 +1546,11 @@ async function updateSkaterStatsForDateWindow(
     totalUpdates += result.upsertedRows;
     totalDaysProcessed += 1;
     dateDiagnostics.push(result.diagnostics);
+    for (const [reason, count] of Object.entries(result.ippUnavailable) as Array<
+      [SkoIppUnavailableReason, number]
+    >) {
+      ippUnavailable[reason] = (ippUnavailable[reason] ?? 0) + count;
+    }
     currentDate = addDays(currentDate, 1);
   }
 
@@ -1508,6 +1562,7 @@ async function updateSkaterStatsForDateWindow(
     totalDaysProcessed,
     totalUpdates,
     diagnostics: aggregateSkoSourceIngestDiagnostics(dateDiagnostics),
+    ippUnavailable,
   };
 }
 

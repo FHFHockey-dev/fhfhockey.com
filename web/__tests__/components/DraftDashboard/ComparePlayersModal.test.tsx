@@ -93,3 +93,20 @@ describe("ComparePlayersModal accessibility", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("ComparePlayersModal unknown values (audit W2-5 D10)", () => {
+  it("shows a missing projection as unknown, not the 50th percentile", () => {
+    const stat = (projected: number) => ({ projected });
+    const pool = [
+      { ...players[0], displayPosition: "C", combinedStats: { GOALS: stat(30) } },
+      { ...players[1], displayPosition: "C", combinedStats: {} },
+      { playerId: 3, fullName: "Third", displayTeam: "TOR", displayPosition: "C", combinedStats: { GOALS: stat(10) }, fantasyPoints: { projected: 5 } },
+    ] as any;
+    render(<ComparePlayersModal open onClose={vi.fn()} selectedIds={["1", "2"]} allPlayers={pool} />);
+    const row = screen.getAllByText("G").map((label) => label.closest("[class]")?.parentElement?.textContent ?? "").join(" | ");
+    expect(row).toContain("—");
+    expect(row).not.toMatch(/G50/);
+    // First player: GOALS 30 is the top of [10, 30] → mid-rank 75.
+    expect(row).toMatch(/G75/);
+  });
+});

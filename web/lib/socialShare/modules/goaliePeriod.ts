@@ -1,8 +1,8 @@
-import { calculateWeeklyRanking, isGoalieWeekEligible } from "components/GoaliePage/goalieCalculations";
+import { gradeGoalieWeek, isGoalieWeekEligible } from "components/GoaliePage/goalieCalculations";
 import type { GoalieWeeklyAggregate, LeagueWeeklyAverage, NumericGoalieStatKey, Ranking, StatColumn } from "components/GoaliePage/goalieTypes";
 import { teamsInfo } from "lib/teamsInfo";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
-import { datedThrough, reconcileSchedule, scheduleNights, type ScheduledGame } from "./creaseShift";
+import { datedThrough, notFinalReason, reconcileSchedule, scheduleNights, type ScheduledGame } from "./creaseShift";
 import { completeThrough, completeThroughNote } from "./shared/completeThrough";
 import { buildWeekLedgers, CATEGORIES, categoryById, CATEGORY_COUNTS_LABEL, DEFAULT_CATEGORY_IDS, defaultMonth, monthPeriod, periodGoalies, rangePeriod, rankPeriodGoalies, seasonPeriod, spanDays, weekPeriod, type CategoryId, type CellCounts, type MatchupWeek, type PeriodGoalie, type SharePeriod } from "./shared/categoryCounts";
 import { BOARD_FIELD_OPTIONS, boardChoice, boardSides, countOf, type BoardChoice, type BoardSide } from "./shared/goalieBoards";
@@ -14,7 +14,7 @@ import type { YahooMapRow } from "./goalieRescue";
 export type GoaliePeriodSettings = { period: string; week: number | null; month: string; start: string | null; end: string | null; minStartsWeek: number; minStartsMonth: number; minStartsRange: number; minStartsSeason: number; board: string; categories: string };
 export const TGV_LABEL = "TGV grade (existing method)";
 
-/** The TGV page's default stats and its column mapping, passed to its own unedited `calculateWeeklyRanking`. */
+/** The TGV page's default stats and its column mapping, passed to its own `gradeGoalieWeek` (decision 97). */
 export const TGV_STAT_KEYS: NumericGoalieStatKey[] = ["wins", "saves", "savePct"];
 export const TGV_STAT_COLUMNS: StatColumn[] = [
   { label: "W", value: "wins", dbFieldGoalie: "weekly_wins", dbFieldAverage: "avg_league_weekly_wins" },
@@ -94,7 +94,10 @@ export function tgvSeasonWeeks(weeks: readonly MatchupWeek[], period: Pick<Share
   return weeks.filter(week => week.week <= last);
 }
 export type TgvRows = { weeks: readonly MatchupWeek[]; goalies: readonly GoalieWeeklyAggregate[]; league: readonly LeagueWeeklyAverage[] };
-/** Existing TGV, read through its own functions, week by week. A week with no row, or one its own rule leaves unclassified, has no grade. */
+/**
+ * Existing TGV, read through the `/goalies` page's own functions, week by week (decision 97): starter weeks only, ties with the
+ * week bar earn half credit, and a week with no row, below the starter sample, or with no comparable stat has no grade.
+ */
 export function tgvSeason(goalieId: number, tgv: TgvRows | null, selected: ReadonlySet<number>): TgvResult {
   if (!tgv) return { label: TGV_LABEL, state: "unavailable", counts: null, points: null, unclassified: 0, series: [] };
   const own = tgv.goalies.filter(entry => entry.goalie_id === goalieId), counts: Record<Ranking, number> = { Elite: 0, Good: 0, Average: 0, Bad: 0, Abysmal: 0 };
@@ -103,7 +106,8 @@ export function tgvSeason(goalieId: number, tgv: TgvRows | null, selected: Reado
     const row = own.find(entry => entry.week === week.week), league = tgv.league.find(entry => entry.week === week.week), base = { week: week.week, selected: selected.has(week.week) };
     if (!row) return { ...base, ranking: null, points: null };
     if (!league || !isGoalieWeekEligible(row)) { unclassified++; return { ...base, ranking: null, points: null }; }
-    const grade = calculateWeeklyRanking(row, league, TGV_STAT_KEYS, TGV_STAT_COLUMNS);
+    const grade = gradeGoalieWeek(row, league, TGV_STAT_KEYS, TGV_STAT_COLUMNS);
+    if (!grade) { unclassified++; return { ...base, ranking: null, points: null }; }
     counts[grade.ranking]++; points += grade.points;
     return { ...base, ranking: grade.ranking, points: grade.points };
   });
@@ -191,7 +195,8 @@ function buildPeriodResult(input: GoaliePeriodInput): SharePostLoadResult<Goalie
   const { sides } = boardSides(rows, goaliePeriodRanks, board), shownTeams = sides.flatMap(side => side.entries.map(({ row }) => row.teams[row.teams.length - 1]));
   const adp = periodAdp(input.adp, sides);
   const reasons = [
-    ...schedule.missing ? [`${schedule.missing} of ${schedule.expected} scheduled team games in this period's weeks have no reported result.`] : [],
+    ...schedule.unreported ? [`${schedule.unreported} of ${schedule.expected} scheduled team games in this period's weeks have no reported result.`] : [],
+    ...notFinalReason(schedule, " in this period's weeks"),
     ...unresolved.length ? [`Team games in this period's weeks lacking exactly one labeled starter: ${unresolved.length}.`] : [],
     ...unassigned ? [`Goalie appearances outside every matchup week: ${unassigned}.`] : [],
     ...input.tgv ? [] : [`${TGV_LABEL} could not be read.`],
@@ -213,14 +218,14 @@ function buildPeriodResult(input: GoaliePeriodInput): SharePostLoadResult<Goalie
     evidence: {
       sources: [
         { name: "NHL.com goalie game stats", tables: ["wgo_goalie_stats"], state: unresolved.length ? "partial" : "ready", asOf, updatedAt: null },
-        { name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: schedule.missing ? "partial" : "ready", asOf: schedule.games.reduce<string | null>((latest, game) => !latest || game.date > latest ? game.date : latest, null), updatedAt: null },
+        { name: "NHL.com team game stats", tables: ["wgo_team_stats", "games", "pbp_plays"], state: schedule.missing ? "partial" : "ready", asOf: schedule.games.reduce<string | null>((latest, game) => !latest || game.date > latest ? game.date : latest, null), updatedAt: null },
         { name: "Yahoo matchup weeks", tables: ["yahoo_matchup_weeks"], state: "ready", asOf: null, updatedAt: null },
         { name: `${TGV_LABEL} views`, tables: ["goalie_weekly_aggregates", "league_weekly_goalie_averages"], state: input.tgv ? "ready" : "missing", asOf: null, updatedAt: null },
         { name: "Yahoo average pick", tables: ["yahoo_players", "yahoo_nhl_player_map_read"], state: adp ? "ready" : "missing", asOf: null, updatedAt: null },
       ],
       sample: `${period.label}: ${countOf(ledgers.reduce((total, ledger) => total + ledger.officialStarts, 0), "official start")} in the ${countOf(ledgers.length, "matchup week")} used. ${weeks.map(week => `Week ${week.week}: ${countOf(week.poolGoalies, "goalie")}, ${countOf(week.officialStarts, "start")}`).join("; ")}. Comparisons not available: ${goalies.reduce((total, row) => total + row.game.unavailable + row.week.unavailable, 0)}. Relief-only goalies, not compared: ${relieved.length}. Avg ADP is the mean of Yahoo's average pick for the goalies shown, from this season's Yahoo row only. An undrafted goalie, or one with no numeric pick, 0, "-", null or no Yahoo match, counts as the highest average pick of any player in yahoo_players, in any season, rounded up to the next 10${adp ? `: ${adp.highestPick} gives ${adp.undraftedValue}` : ""}`,
       strength: "All situations",
-      cohort: `${countOf(ranked.length, "goalie")} with at least ${countOf(minStarts, "official start")}; baselines use every goalie with a start, week by week. Ranked by ${CATEGORY_COUNTS_LABEL}: games net (better minus worse results), then week net, then share better; equal goalies share a rank; lower GAA counts as better. ${TGV_LABEL} is a separate method, not applied to ${CATEGORY_COUNTS_LABEL}; Average cannot occur with its three default stats${PERIOD_METHOD[period.kind] ? `. ${PERIOD_METHOD[period.kind]}` : ""}`,
+      cohort: `${countOf(ranked.length, "goalie")} with at least ${countOf(minStarts, "official start")}; baselines use every goalie with a start, week by week. Ranked by ${CATEGORY_COUNTS_LABEL}: games net (better minus worse results), then week net, then share better; equal goalies share a rank; lower GAA counts as better. ${TGV_LABEL} is a separate method, not applied to ${CATEGORY_COUNTS_LABEL}; a tie with the week bar earns half credit, so an all-tied week is Average${PERIOD_METHOD[period.kind] ? `. ${PERIOD_METHOD[period.kind]}` : ""}`,
       coverage: { observed: schedule.observed, expected: schedule.expected, missing: schedule.missing, unit: "team games" },
     },
   };

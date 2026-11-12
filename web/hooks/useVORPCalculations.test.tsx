@@ -122,25 +122,39 @@ describe("useVORPCalculations grouped forwards", () => {
     expect(result.current.playerMetrics.get("1")?.eligible).toEqual(["C", "LW"]);
   });
 
-  it("uses grouped personalized fills to move the FWD replacement baseline", () => {
-    const { result } = renderHook(() =>
+  it("measures the personalized (suggestion-only) baseline against the league's actual fills", () => {
+    // A reach (RW 60) is drafted: the live board fills the two remaining FWD
+    // slots with 100 and 90, so the next free FWD is 80. The frozen global
+    // reference stays at 70 (decision 77).
+    const available = players.filter((player) => player.playerId !== 5);
+    const personalized = renderHook(() =>
       useVORPCalculations({
         players,
-        availablePlayers: players,
+        availablePlayers: available,
         draftSettings: { teamCount: 1, rosterConfig },
         picksUntilNext: 0,
         forwardGrouping: "fwd",
         personalizeReplacement: true,
         myFilledSlots: { FWD: 1 }
       })
-    );
+    ).result.current;
+    const global = renderHook(() =>
+      useVORPCalculations({
+        players,
+        availablePlayers: available,
+        draftSettings: { teamCount: 1, rosterConfig },
+        picksUntilNext: 0,
+        forwardGrouping: "fwd"
+      })
+    ).result.current;
 
-    expect(result.current.replacementByPos.FWD.vorp).toBe(80);
-    expect(result.current.replacementByPos.D.vorp).toBe(40);
-    expect(result.current.replacementByPos.G.vorp).toBe(20);
+    expect(personalized.replacementByPos.FWD.vorp).toBe(80);
+    expect(global.replacementByPos.FWD.vorp).toBe(70);
+    expect(personalized.replacementByPos.D.vorp).toBe(40);
+    expect(personalized.replacementByPos.G.vorp).toBe(20);
   });
 
-  it("changes only the remaining baseline when a keeper leaves availability", () => {
+  it("keeps the frozen baseline when a keeper leaves availability", () => {
     const draftedPlayers = materializeKeeperPicks([], [
       {
         version: KEEPER_CONTRACT_VERSION,
@@ -175,9 +189,11 @@ describe("useVORPCalculations grouped forwards", () => {
       }
     );
 
-    expect(result.current.replacementByPos.FWD.vorp).toBe(60);
+    // Decision 77: the frozen reference does not move when a keeper leaves
+    // availability, in either legacy mode; VONA stays separate from VBD.
+    expect(result.current.replacementByPos.FWD.vorp).toBe(70);
     expect(result.current.playerMetrics.get("1")).toMatchObject({
-      vorp: 40,
+      vorp: 30,
       vona: 10,
       vbd: 30
     });
@@ -185,7 +201,7 @@ describe("useVORPCalculations grouped forwards", () => {
     expect(result.current.replacementByPos.FWD.vorp).toBe(70);
   });
 
-  it("returns finite neutral metrics when a player has no usable position", () => {
+  it("returns unknown (null) metrics when a player has no usable position", () => {
     const positionlessPlayer = player(10, "", 25);
     const { result } = renderHook(() =>
       useVORPCalculations({
@@ -198,10 +214,10 @@ describe("useVORPCalculations grouped forwards", () => {
 
     expect(result.current.playerMetrics.get("10")).toMatchObject({
       value: 25,
-      vorp: 0,
-      vols: 0,
-      vona: 0,
-      vbd: 0,
+      vorp: null,
+      vols: null,
+      vona: null,
+      vbd: null,
       bestPos: "",
       eligible: []
     });
@@ -316,13 +332,13 @@ describe("useVORPCalculations position weights", () => {
 
     expect(explicitNeutral).toEqual(neutral);
     for (const id of ["30", "31", "32"]) {
-      expect(weighted.playerMetrics.get(id)?.value).toBeCloseTo(neutral.playerMetrics.get(id)!.value * 0.5);
+      expect(weighted.playerMetrics.get(id)?.value).toBeCloseTo(neutral.playerMetrics.get(id)!.value! * 0.5);
     }
     expect(neutral.playerMetrics.get("30")!.value).toBeLessThan(0);
-    expect(weighted.playerMetrics.get("30")!.value).toBeGreaterThan(neutral.playerMetrics.get("30")!.value);
+    expect(weighted.playerMetrics.get("30")!.value).toBeGreaterThan(neutral.playerMetrics.get("30")!.value!);
     expect(weighted.playerMetrics.get("31")!.value).toBe(0);
-    expect(weighted.replacementByPos.D.vorp).toBeCloseTo(neutral.replacementByPos.D.vorp * 0.5);
-    expect(weighted.replacementByPos.D.vols).toBeCloseTo(neutral.replacementByPos.D.vols * 0.5);
+    expect(weighted.replacementByPos.D.vorp).toBeCloseTo(neutral.replacementByPos.D.vorp! * 0.5);
+    expect(weighted.replacementByPos.D.vols).toBeCloseTo(neutral.replacementByPos.D.vols! * 0.5);
     expect(categoryPlayers.map(p => p.fantasyPoints.projected)).toEqual([500, 500, 500]);
   });
 
