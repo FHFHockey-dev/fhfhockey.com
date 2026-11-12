@@ -887,10 +887,10 @@
       "path": "supabase/migrations/20261020211500_forge_league_skater_physical_totals.sql",
       "sha256": "b5f86c6bd990d28d5fe31c60782ca8888b0f9248735b2c370fc6e4935ff107a2",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "feature",
       "rolloutGate": "Drafted 2026-10-20 at TJ's request (FORGE hits/blocks league-to-date rescale): read-only STABLE SECURITY INVOKER function public.forge_league_skater_physical_totals(p_season_id, p_cutoff) returning league all-situation hits, blocks and TOI by F/D for this season to date and the two prior seasons from wgo_skater_stats, every scope bounded by game date as well as season_id; EXECUTE for service_role only. FORGE falls back to constant priors if the function is absent, so code may ship first. Hosted apply needs TJ's separate explicit approval; no migration command was run.",
-      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL 17.11 harness (synthetic wgo_skater_stats with 16,041 planted 2012-dated rows labelled 20242025): applied twice cleanly; output matched a direct aggregate; planted rows excluded; an invalid season id returned four zero rows; anon was refused EXECUTE. Takes order 88, so the IFTTT SQL6-SQL8 drafts noted on order 87 move to 89-91."
+      "stateEvidence": "Production schema_migrations version 20261020211500 (forge_league_skater_physical_totals); applied 2026-11-12 ~02:30 UTC by the fix-sprint Chef with TJ's pop-up approval (L9a Tier B Q3, 'Apply now', as-is with the known prior-season cutoff gap), psql via the IPv4 session pooler, exact file (sha256 matches), one transaction; ledger row inserted (statements null). Pre-apply: 0 active queries; function and ledger row absent. Readback: prosrc md5 4d70925bd2a309b78daf0d3e0bf6b01c equals the file body; STABLE, SECURITY INVOKER, search_path ''; EXECUTE for service_role (and owner postgres) only. Function not called (no heavy read). Known gap: the RPC ignores p_cutoff for the prior-season scope (W2-1 C8); L9a adds the guard as a successor migration."
     },
     {
       "order": 89,
