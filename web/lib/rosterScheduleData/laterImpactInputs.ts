@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ForecastCalendarPolicy } from "lib/player-forecasts/contributions";
+import { forecastCalendarDate, type ForecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
 import type { CapturedLaterImpactScenario, LaterImpactScenarioPayload } from "lib/in-season/workspaceSchema";
 import { blocked, evaluateLaterImpact, LATER_IMPACT_CONTRACT, LATER_IMPACT_RATE_POLICY, laterImpactForApp, resolveLaterPeriod,
@@ -190,7 +190,8 @@ export async function loadLaterImpactScenario(db: SupabaseClient<any>, args: Lat
   const limitations: string[] = [];
   const timings = await loadRunTimings(db, runIds, args.deadline).catch(() => { limitations.push("Run timing evidence could not be read."); return new Map<string, RunTiming>(); });
   // Every F inside the bound starts after the window and ends by today + calendarDays − 1 (one spare day for the clock).
-  const span = { startDate: addDays(query.endDate, 1), endDate: addDays(clock().toISOString().slice(0, 10), calendarPolicy.calendarDays) };
+  // Decision 127: the as-of date follows the calendar policy (v1 UTC, v2 the NHL schedule's Eastern date).
+  const span = { startDate: addDays(query.endDate, 1), endDate: addDays(forecastCalendarDate(clock(), calendarPolicy)!, calendarPolicy.calendarDays) };
   const schedule = span.startDate > span.endDate ? null
     : await loadLaterSchedule(db, query.seasonId, span, query.timeZone, args.deadline, clock).catch(() => { limitations.push("The later-period schedule could not be read."); return null; });
   return assembleLaterImpactScenario(args, timings, schedule, clock().toISOString(), limitations);

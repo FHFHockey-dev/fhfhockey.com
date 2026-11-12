@@ -401,7 +401,8 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const nowIso = now.toISOString();
   const upcoming = (team: string) => games.filter(game => game.teamAbbreviation === team && game.status === "scheduled" && game.startsAt
     && game.scheduleRevision && Date.parse(game.startsAt) > now.getTime() && validForecastCalendarPolicy(calendarPolicy)
-    && calendarLeadDay(game.startsAt, nowIso) < calendarPolicy.calendarDays);
+    // Decision 127: the policy decides the date basis (v2: the game's NHL schedule date), so pass both.
+    && calendarLeadDay(game.startsAt, nowIso, calendarPolicy, game.date) < calendarPolicy.calendarDays);
   const forecasts: GameForecast[] = [];
   const emit = (player: PlanningPlayer, game: PlanningGame, run: Run, stats: StatLine, startProbability: number | null, conditionalStats?: StatLine, confirmedStart = false, reserve?: ReserveCode) => {
     const appearance = reserve ? reserveAppearanceProbability(reserve) : undefined;
