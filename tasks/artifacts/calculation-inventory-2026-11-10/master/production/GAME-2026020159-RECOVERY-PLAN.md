@@ -50,3 +50,54 @@ Proposed safe handling, for whoever owns `nhlRawGamecenter.mjs` (released to Sco
 - Never trim or pad rows.
 
 Optionally, also refuse a fresh shift payload that **regresses** from a stored complete snapshot (different hash with fewer covered seconds).
+
+---
+
+## TJ's choice (2026-11-12): official HTML, if it qualifies. Qualification and exact plan.
+### Qualification (official reports fetched 2026-11-12; deployed code at `631a00c19`)
+| Check | Result |
+|---|---|
+| Strict HTML build (`buildHtmlShiftReportPayload`, `strict: true`) | Passes: 788 rows, `source: htmlreports` |
+| Current coverage guard (`selectShiftRowsForGame`) and `normalizeShiftRows` | Pass |
+| Team and player identity | 788 rows, 38 players. Every row resolves to a PBP 88472 roster player on the same team (0 mismatches). |
+| Overlapping intervals within a player and period | 0. The JSON snapshot has 1 (Kuemper P2 11:36–20:00). |
+| Overtime | LAK and NYI both covered to 2:43 = 163 s, the last PBP event |
+| Skater TOI vs the official Event Summary (ES020159) | 36 of 36 skaters within 1 s. All 40 ES rows resolve; every player with ES TOI has shifts. |
+| Goalie TOI vs the official Game Summary (GS020159) | Kuemper 62:26 = GS 62:26 (JSON gives 70:50). Varlamov 62:17 = GS 62:17. Forsberg and Sorokin 0. |
+| Full dry-run normalization | Events 332 (all `strength_version` 2), roster 40, shifts 788, fingerprint `a2031c79…`. Envelope hash `749be103fb3e…` (it varies with `upstream.json` and the HTML bytes at capture time). |
+
+### Existing state the write must find, re-read first (stop on any difference)
+- Normalization status: complete, v1, `shift_raw_payload_id` 88010, `pbp_raw_payload_id` 88472, shifts 789/789.
+- Heads: shiftcharts version 1 → 88010 (`c4bdecd652b1…`); play-by-play version 3 → 88472 (`069ce1898710…`).
+- Raw shiftcharts rows: exactly one (88010).
+
+### The write (script `g159-recover.mjs`; without `--write` it only checks)
+Preconditions: phase C has finished and the DB preflight passes.
+1. Re-read and verify the existing state above.
+2. Re-fetch the JSON feed and the official TV/TH/ES/GS reports. Build the strict HTML envelope. Re-run **every** qualification check on those exact bytes; any failure stops before a write.
+3. **Insert** one raw row into `nhl_api_game_payloads_raw` with:
+   - endpoint `shiftcharts` and source_url the JSON shiftcharts URL, as the route stores it;
+   - the envelope with `source: htmlreports`, `upstream.json` set to the feed's current response, and the report URLs;
+   - its sha256 hash and `fetched_at` set to now.
+
+   The table refuses UPDATE and DELETE by trigger, so **88010 is never overwritten or removed.** The AFTER INSERT trigger moves the shiftcharts head to the new row (version 2), and the heads trigger marks the normalization status `stale`.
+4. Check that the head now points at the captured hash.
+5. Call the deployed `persistCapturedGameNormalization` once, with the play-by-play head 88472 and the new shift snapshot. It does an optimistic manifest check, then one `persist_nhl_api_gamecenter_normalized_v2` RPC.
+6. **Readback:**
+   - status complete, v2;
+   - `shift_raw_payload_id` is the new row; `pbp_raw_payload_id` 88472;
+   - events 332/332, roster 40/40, shifts 788/788;
+   - both raw shiftcharts rows still exist (88010 and the new one).
+
+### Partial-write handling (no retry until the state is reconciled)
+- **Step 3 fails:** the statement is atomic, so nothing changed. Stop.
+- **Step 3 succeeds but step 4 or 5 fails:** the head is on the HTML snapshot and status is `stale`. The normalized rows are still the v1 rows, unchanged, because the RPC is atomic.
+  1. Re-read the status, heads and manifest.
+  2. If they're consistent (head at the HTML hash, status stale, manifest unchanged), rerun step 5 once. It is DB-only and idempotent.
+  3. If it fails again, stop and report.
+
+  The game then stays stale, which means quarantined. A head revert to 88010 is **not** used, because it would carry the overlapping interval into v2 (TJ). Any revert would need its own plan.
+- **Any provider fetch fails or a check differs:** stop before step 3, and the game stays quarantined at v1.
+
+### After success
+This game joins the summary sweep and goalie refresh with the others.
