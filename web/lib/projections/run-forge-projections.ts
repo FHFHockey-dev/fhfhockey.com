@@ -309,9 +309,7 @@ import { runPerGameSkaterStage } from "./stages/skater-stage";
 import {
   ANALYTICS_MODEL_NAME,
   ANALYTICS_MODEL_VERSION,
-  buildModelMarketFlagRow,
-  GAME_MARKET_EDGE_THRESHOLDS,
-  getConsensusLineValue,
+  buildGameMarketFlagRows,
   getProjectionValueForPropMarket,
   PLAYER_MARKET_EDGE_THRESHOLDS,
 } from "./utils/market-output-builders";
@@ -418,6 +416,9 @@ export const FORGE_AUDITED_INPUT_SOURCES: ReadonlySet<string> = new Set([
   "market_prices_daily", "prop_market_prices_daily",
   "forge_runs", "forge_player_projections", "forge_team_projections", "forge_goalie_projections", "forge_reserve_projections",
   "player_forecast_source_observations", "read_forge_game_revisions",
+  // In-house xG registry (L14 selector pins the team prior); the shot-feature table is reachable only
+  // through the registry module's imports and is not read by the run. Neither is a fantasy source.
+  "nhl_xg_model_registry", "nhl_xg_shot_features",
 ]);
 /** A third-party fantasy projection table: every configured source is a `PROJECTIONS_<season>_<source>` table, and so is
  * a new season's or source's. Matched by name so the runner never imports the provider configuration. */
@@ -988,6 +989,8 @@ async function runProjectionCalculations(
         teamStrengthPriorCache,
         teamStrengthCache,
         leaguePhysicalTotalsCache,
+        // One league save % read per run and date, shared with the goalie stage below.
+        leagueSavePctCache,
         teamFiveOnFiveProfileCache,
         teamNstExpectedGoalsCache,
         teamLineComboGoaliePriorCache,
@@ -1059,80 +1062,27 @@ async function runProjectionCalculations(
       const gameMarketSummary = gameMarketContextByGameId.get(game.id) ?? {};
       const homeGoalie = selectedGoalieByTeamId.get(game.homeTeamId) ?? null;
       const awayGoalie = selectedGoalieByTeamId.get(game.awayTeamId) ?? null;
-      const totalMarketSummary = gameMarketSummary["totals"];
-      const spreadMarketSummary = gameMarketSummary["spreads"];
-      const totalLineValue =
-        totalMarketSummary?.outcomes.find(
-          (outcome) => outcome.outcomeKey === "over",
-        )?.averageLineValue ?? getConsensusLineValue(totalMarketSummary);
-      if (totalExpectedGoals != null && totalLineValue != null) {
-        const edgeValue = totalExpectedGoals - totalLineValue;
-        if (Math.abs(edgeValue) >= GAME_MARKET_EDGE_THRESHOLDS.totals) {
-          modelMarketFlagRows.push(
-            buildModelMarketFlagRow({
-              asOfDate,
-              entityType: "game",
-              entityId: game.id,
-              gameId: game.id,
-              marketType: "totals",
-              flagType: edgeValue > 0 ? "model_over" : "model_under",
-              edgeValue,
-              reasons: [
-                {
-                  expected_value: totalExpectedGoals,
-                  line_value: totalLineValue,
-                  sportsbook_count:
-                    totalMarketSummary?.sportsbookKeys.length ?? 0,
-                },
-              ],
-              provider: totalMarketSummary?.sourceNames[0] ?? null,
-              metadata: {
-                horizon_games: horizonGames,
-                run_id: runId,
-              },
-            }),
-          );
-        }
-      }
-
-      const homeTeamAbbreviation =
-        teamAbbreviationById.get(game.homeTeamId) ?? null;
-      const homeSpreadLineValue =
-        homeTeamAbbreviation != null
-          ? (spreadMarketSummary?.outcomes.find(
-              (outcome) =>
-                outcome.outcomeKey === `team:${homeTeamAbbreviation}`,
-            )?.averageLineValue ?? null)
-          : null;
-      if (spreadProjection != null && homeSpreadLineValue != null) {
-        const edgeValue = spreadProjection - homeSpreadLineValue;
-        if (Math.abs(edgeValue) >= GAME_MARKET_EDGE_THRESHOLDS.spreads) {
-          modelMarketFlagRows.push(
-            buildModelMarketFlagRow({
-              asOfDate,
-              entityType: "game",
-              entityId: game.id,
-              gameId: game.id,
-              marketType: "spreads",
-              flagType: edgeValue > 0 ? "model_home_cover" : "model_away_cover",
-              edgeValue,
-              reasons: [
-                {
-                  expected_value: spreadProjection,
-                  line_value: homeSpreadLineValue,
-                  sportsbook_count:
-                    spreadMarketSummary?.sportsbookKeys.length ?? 0,
-                },
-              ],
-              provider: spreadMarketSummary?.sourceNames[0] ?? null,
-              metadata: {
-                horizon_games: horizonGames,
-                run_id: runId,
-              },
-            }),
-          );
-        }
-      }
+      // Totals and spreads are compared per book in probability space
+      // (decision 30): spread = P(home covers) with the overtime rule stated,
+      // against each book's de-vigged pair; lines are never averaged.
+      modelMarketFlagRows.push(
+        ...buildGameMarketFlagRows({
+          asOfDate,
+          gameId: game.id,
+          homeExpectedGoals,
+          awayExpectedGoals,
+          homeTeamAbbreviation:
+            teamAbbreviationById.get(game.homeTeamId) ?? null,
+          awayTeamAbbreviation:
+            teamAbbreviationById.get(game.awayTeamId) ?? null,
+          totalsSummary: gameMarketSummary["totals"],
+          spreadsSummary: gameMarketSummary["spreads"],
+          metadata: {
+            horizon_games: horizonGames,
+            run_id: runId,
+          },
+        }),
+      );
 
       const gamePredictionOutput = {
         snapshot_date: asOfDate,

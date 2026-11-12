@@ -178,4 +178,16 @@ describe("calculateLinesAndPairs", () => {
       expect.objectContaining({ id: 301 }),
     );
   });
+
+  it("ranks linemates by one unit, never shared seconds for some and % for others (W2-6 D8)", () => {
+    const pivot = player(1, "Pivot Center", "C", "F", 50);
+    const a = player(2, "Alpha Wing", "LW", "F", 10);
+    const b = player(3, "Beta Wing", "RW", "F", 9);
+    const c = player(4, "Gamma Wing", "RW", "F", 8);
+    // 30 shared seconds with Alpha; Beta and Gamma have only a percentage (no shared seconds).
+    pivot.mutualSharedToi = { 2: 30 };
+    pivot.percentToiWith = { 3: 45, 4: 40 };
+    const result = calculateLinesAndPairs([pivot, a, b, c], "line-combination");
+    expect(result.lines[0].map((entry) => entry.id)).toEqual([1, 2, 3]);
+  });
 });

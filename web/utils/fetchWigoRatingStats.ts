@@ -10,6 +10,7 @@ import {
   getDefenseStatsUsedInWeights
 } from "components/WiGO/ratingWeights";
 import { fetchPaginatedData } from "./fetchWigoPlayerStats";
+import { wigoPositionGroup, type WigoPositionGroup } from "./calculateWigoRatings";
 
 const TABLE_MAP: { [key in Strength]: { offense: string; defense: string } } = {
   as: {
@@ -93,4 +94,35 @@ export async function fetchRawStatsForAllStrengths(
     );
     throw error;
   }
+}
+
+/**
+ * Forward/defense group per skater for the season, from WGO season totals (the NST
+ * percentile tables carry no position). Special-teams cohorts rank F and D apart
+ * (decision 81); a skater missing here has an unknown position and stays unranked.
+ */
+export async function fetchSkaterPositionGroups(
+  seasonId: number
+): Promise<Map<number, WigoPositionGroup>> {
+  const rows = await fetchPaginatedData<{ player_id: number | null; position_code: string | null }>(
+    "wgo_skater_stats_totals",
+    "player_id, position_code",
+    { column: "season", value: String(seasonId) }
+  );
+  const groups = new Map<number, WigoPositionGroup>();
+  const conflicted = new Set<number>();
+  for (const row of rows) {
+    const id = Number(row.player_id);
+    const group = wigoPositionGroup(row.position_code);
+    if (!Number.isFinite(id) || group === null || conflicted.has(id)) continue;
+    const known = groups.get(id);
+    // Two rows that disagree on F/D leave the position unknown rather than picking one.
+    if (known && known !== group) {
+      groups.delete(id);
+      conflicted.add(id);
+    } else {
+      groups.set(id, group);
+    }
+  }
+  return groups;
 }

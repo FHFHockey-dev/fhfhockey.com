@@ -89,6 +89,8 @@ export const ROLLING_ROW_SELECT_CLAUSE =
     "game_date",
     "toi_seconds_avg_last5",
     "toi_seconds_avg_all",
+    // Matched exposure for the "all" window counts: a known zero count keeps its seconds.
+    "toi_seconds_total_all",
     ...getCompatibilityFieldOrder({
       family: "weighted_rate",
       canonicalField: "sog_per_60_last5",
@@ -139,12 +141,12 @@ export const ROLLING_ROW_SELECT_CLAUSE =
     "blocks_per_60_toi_seconds_season"
   ].join(",");
 
+// Declared adapter (rule 17): WGO per-game TOI fields come from the NHL stats API in seconds, so a
+// 45-second PP game stays 45 s. Magnitude is never used to guess minutes (BC W1-7 D8).
 function normalizeWgoToiToSeconds(value: number | null | undefined): number | null {
   const n = finiteOrNull(value);
   if (n == null || n <= 0) return null;
-  if (n <= 60) return Number((n * 60).toFixed(3));
-  if (n <= 3600) return Number(n.toFixed(3));
-  return 3600;
+  return Number(n.toFixed(3));
 }
 
 export type SkaterTrendAdjustmentFetchDiagnostics = {
@@ -185,7 +187,7 @@ const ROLLING_IDENTITY_FIELDS = ["player_id", "game_id", "game_date", "season", 
 const ROLLING_METRIC_FIELDS = ROLLING_ROW_COLUMNS.filter(field => !ROLLING_IDENTITY_FIELDS.includes(field));
 let legacyWindowScanWarned = false;
 
-type RollingStrength = "ev" | "pp" | "all";
+type RollingStrength = "ev" | "pp" | "pk" | "all";
 type RollingIdentity = { player_id: number; game_id: number; game_date: string; strength_state: string };
 
 const isIsoDate = (value: unknown): value is string => typeof value === "string"
@@ -215,8 +217,8 @@ function hydrateRollingSupport(matched: RollingRow | undefined, support: any, st
   }
   if (seen.has(rollingRowKey(support))) throw new SkaterRollingReadIncompleteError("duplicate_row");
   seen.add(rollingRowKey(support));
-  // Aligned NST count support exists only for split-strength rows.
-  if (strengthState !== "all" && hasOwn(support.support_payload, "alignedCountSupport")) {
+  // Aligned NST count support exists for the ES and PP rows FORGE converts; PK rows carry none.
+  if ((strengthState === "ev" || strengthState === "pp") && hasOwn(support.support_payload, "alignedCountSupport")) {
     matched.aligned_count_support = readAlignedCountSupport(support.support_payload.alignedCountSupport, {
       playerId: matched.player_id, strengthState,
       anchor: { gameId: matched.game_id, gameDate: matched.game_date, seasonId: matched.season },
@@ -245,18 +247,23 @@ export async function fetchRollingRows(
   playerIds: number[],
   strengthState: RollingStrength,
   cutoffDate: string,
-  db = supabase
+  db = supabase,
+  /** Lower bound on the latest row's age, in days before the cutoff. The default 365 is the lineup's scope; the coverage
+   * path (decision 132.2) reads long absences with a wider, still bounded, window. */
+  options: { lookbackDays?: number } = {}
 ): Promise<RollingRow[]> {
   assertSupabase();
   if (playerIds.length === 0) return [];
+  const lookbackDays = options.lookbackDays ?? 365;
 
   const ids = [...new Set(playerIds)].sort((a, b) => a - b);
   if (ids.length > 500 || ids.some(id => !Number.isSafeInteger(id) || id <= 0)
-    || !["ev", "pp", "all"].includes(strengthState) || !isIsoDate(cutoffDate)) {
+    || !["ev", "pp", "pk", "all"].includes(strengthState) || !isIsoDate(cutoffDate)
+    || !Number.isSafeInteger(lookbackDays) || lookbackDays < 1 || lookbackDays > 1100) {
     throw new SkaterRollingReadIncompleteError("invalid_scope");
   }
   const oneYearAgo = new Date(
-    new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
+    new Date(cutoffDate).getTime() - lookbackDays * 24 * 60 * 60 * 1000
   ).toISOString().split("T")[0];
 
   // Read-only reconstruction refuses every RPC; read the same scope by table.
@@ -322,7 +329,7 @@ export async function fetchRollingRows(
     if (row.player_id !== entry.player_id || !isRollingRowInScope(row, requestedIds, strengthState, cutoffDate)) {
       throw new SkaterRollingReadIncompleteError("invalid_row");
     }
-    // The RPC has no lower bound; keep the legacy 365-day scope.
+    // The RPC has no lower bound; keep the requested scope (365 days by default).
     if (row.game_date <= oneYearAgo) continue;
     const support = entry.support_row;
     if (support !== null) {
@@ -455,6 +462,10 @@ export async function fetchLeaguePhysicalTotals(
     || !isIsoDate(cutoffDate)) {
     throw new LeaguePhysicalTotalsReadError("invalid_scope");
   }
+  // W2-1 C8: the RPC's prior-season branch ends at the season window start (Sep 1), not at the
+  // cutoff, so a cutoff before that window would read prior-season games dated after it.
+  const seasonWindowStart = `${Math.floor(seasonId / 10000)}-09-01`;
+  if (cutoffDate < seasonWindowStart) throw new LeaguePhysicalTotalsReadError("invalid_scope");
   // Offline reconstruction has no league-totals table contract and forbids RPCs.
   // Select the unscaled fallback before dispatch, rather than swallowing a fence violation.
   if (isReadOnlyProjectionReconstruction()) {

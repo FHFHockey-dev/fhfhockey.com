@@ -2,6 +2,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { exportFrozenBoardForecasts, type FrozenBoardSource } from "lib/projections/starterBoardDataset";
 import { actualForOutput, parseTimeOnIceSeconds } from "./settlement";
+import { calendarLeadDay, forecastCalendarPolicy, type AnyForecastCalendarPolicy } from "./contributions";
 
 export type IssuedObservation = {
   id: string;
@@ -209,6 +210,7 @@ async function readByIds(ids: Array<number | string>, build: (batch: Array<numbe
 /** Read retained issued forecasts and final outcomes for local evidence reporting. Never publishes or promotes. */
 export async function runProspectiveEvaluation(db: SupabaseClient<any>, args: {
   startDate: string; endDate: string; asOf: string;
+  /** Lead-day calendar (decision 127); defaults to the current policy version. */ calendarPolicy?: AnyForecastCalendarPolicy;
 }) {
   const ranges = prospectiveRanges(args);
   const games = (await Promise.all(ranges.map(range => readPages(() => db.from("games").select("id,date,startTime,type", { count: "exact" })
@@ -269,8 +271,7 @@ export async function runProspectiveEvaluation(db: SupabaseClient<any>, args: {
       ? output.probability === null : output.point_estimate === null)
       || !Number.isFinite(actual) || !Number.isFinite(forecast)) { exclude("value_missing"); continue; }
     const baseline = output.distribution?.baselinePointEstimate;
-    const calendarLeadDays = Math.floor((Date.parse(`${String(game.startTime).slice(0, 10)}T00:00:00Z`)
-      - Date.parse(`${String(output.issued_at).slice(0, 10)}T00:00:00Z`)) / 86400000);
+    const calendarLeadDays = calendarLeadDay(String(game.startTime), String(output.issued_at), args.calendarPolicy ?? forecastCalendarPolicy(), game.date);
     if (!Number.isInteger(calendarLeadDays) || calendarLeadDays < 0 || !Number.isInteger(output.team_game_horizon)
       || output.team_game_horizon < 1 || !["unconditional", "conditional_playing", "conditional_start", "playing_probability", "start_probability"].includes(output.conditioning)
       || !validTime(outcome.available_at) || Date.parse(outcome.available_at) < Date.parse(game.startTime)
@@ -305,6 +306,7 @@ export async function runProspectiveEvaluation(db: SupabaseClient<any>, args: {
 /** Evaluate hash-checked, frozen FORGE single-game revisions against retained final NHL boxscores. */
 export async function runForgeProspectiveEvaluation(db: SupabaseClient<any>, args: {
   startDate: string; endDate: string; asOf: string;
+  /** Lead-day calendar (decision 127); defaults to the current policy version. */ calendarPolicy?: AnyForecastCalendarPolicy;
 }) {
   const ranges = prospectiveRanges(args);
   const games = (await Promise.all(ranges.map(range => readPages(() => db.from("games")
@@ -411,8 +413,8 @@ export async function runForgeProspectiveEvaluation(db: SupabaseClient<any>, arg
       issued.push({ id: `${row.revision_id}:${row.player_id}:${row.target_key}:${row.conditioning}`,
         target: row.target_key, population: row.population === "goalie" ? "goalie"
           : row.segments?.position === "D" ? "defense" : "forward",
-        calendarLeadDays: Math.floor((Date.parse(`${String(row.scheduled_start_at).slice(0, 10)}T00:00:00Z`)
-          - Date.parse(`${String(row.issued_at).slice(0, 10)}T00:00:00Z`)) / 86400000), teamGameOrdinal: null,
+        calendarLeadDays: calendarLeadDay(String(row.scheduled_start_at), String(row.issued_at), args.calendarPolicy ?? forecastCalendarPolicy(), game.date),
+        teamGameOrdinal: null,
         gameDate: game.date, gameType: "regular_season", evidenceClass: "captured_live",
         issuedAt: row.issued_at, gameStartAt: row.scheduled_start_at, outcomeAvailableAt: boxscore.fetched_at,
         conditioning, actual, forecast: estimate, baseline: null });

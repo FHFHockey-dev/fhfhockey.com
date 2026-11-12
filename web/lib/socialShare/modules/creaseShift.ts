@@ -46,10 +46,23 @@ export type CreaseShiftPoint = { gameId: number; date: string; state: "resolved"
 /** `teams` is every team, ranked first, so a picked team keeps its league rank; `picked` is empty unless the editor chose teams. */
 export type CreaseShiftData = { window: number; comparison: "previous" | "std"; minComparisonGames: number; through: string; teams: CreaseShiftTeam[]; picked: string[] };
 
-/** A `games` row: proves a game was scheduled, not that it finished. */
-export type ScheduledGame = { id: number; date: string; homeTeamId: number | null; awayTeamId: number | null };
-export type ScheduleGap = { team: string; gameId: number; date: string };
-export type ScheduleReconciliation = { scheduledGames: number; expected: number; observed: number; missing: number; gaps: ScheduleGap[]; games: CompletedTeamGame[] };
+/**
+ * A regular-season `games` row with its final-state evidence (rule 19). The row proves a game was scheduled; `final` is true only
+ * when stored play-by-play holds exactly one game-end event. False means not proven final (not played, postponed, in progress or a
+ * late feed), never that the game did not happen: such a game is neither a completed game nor a zero.
+ */
+export type ScheduledGame = { id: number; date: string; homeTeamId: number | null; awayTeamId: number | null; final: boolean };
+/** `unreported`: the game is final but this team's NHL.com result is missing. `not_final`: the game has no final state yet. */
+export type ScheduleGap = { team: string; gameId: number; date: string; reason: "unreported" | "not_final" };
+/**
+ * Completeness of the schedule a window claims. Counts are team games (two per scheduled game) except `scheduledGames` and `finalGames`.
+ * `observed` = team games that are final and reported; `missing` = `unreported` + `notFinal` = `expected` − `observed`; `complete` when none is missing.
+ * `games` keeps only reported team games of scheduled, final games: the completed-game denominator.
+ */
+export type ScheduleReconciliation = {
+  scheduledGames: number; finalGames: number; expected: number; observed: number; unreported: number; notFinal: number; missing: number; complete: boolean;
+  gaps: ScheduleGap[]; games: CompletedTeamGame[];
+};
 
 const teamById = new Map(Object.entries(teamsInfo).map(([abbreviation, team]) => [team.id, abbreviation]));
 
@@ -60,21 +73,30 @@ export function seasonScope(generatedAt: string) {
   return { through, season, from: `${String(season).slice(0, 4)}-07-01` };
 }
 
-/** Completed team games against the regular-season schedule for the same dates: expected is games × 2, and `games` keeps only scheduled ones. */
+/** Completed team games against the regular-season schedule for the same dates: expected is games × 2, and `games` keeps only scheduled, final ones. */
 export function reconcileSchedule(scheduled: readonly ScheduledGame[], reported: readonly CompletedTeamGame[]): ScheduleReconciliation {
-  const seen = new Set(reported.map(game => `${game.team}:${game.gameId}`)), ids = new Set(scheduled.map(game => game.id));
-  const gaps = scheduled.flatMap(game => [game.homeTeamId, game.awayTeamId].flatMap(id => {
+  const seen = new Set(reported.map(game => `${game.team}:${game.gameId}`)), finalIds = new Set(scheduled.filter(game => game.final).map(game => game.id));
+  const gaps = scheduled.flatMap(game => [game.homeTeamId, game.awayTeamId].flatMap((id): ScheduleGap[] => {
     const team = teamById.get(id ?? -1) ?? "Unknown team";
-    return seen.has(`${team}:${game.id}`) ? [] : [{ team, gameId: game.id, date: game.date }];
+    if (!game.final) return [{ team, gameId: game.id, date: game.date, reason: "not_final" }];
+    return seen.has(`${team}:${game.id}`) ? [] : [{ team, gameId: game.id, date: game.date, reason: "unreported" }];
   }));
-  const expected = scheduled.length * 2;
-  return { scheduledGames: scheduled.length, expected, observed: expected - gaps.length, missing: gaps.length, gaps, games: reported.filter(game => ids.has(game.gameId)) };
+  const expected = scheduled.length * 2, notFinal = gaps.filter(gap => gap.reason === "not_final").length;
+  return {
+    scheduledGames: scheduled.length, finalGames: finalIds.size, expected, observed: expected - gaps.length, unreported: gaps.length - notFinal, notFinal, missing: gaps.length, complete: !gaps.length,
+    gaps, games: reported.filter(game => finalIds.has(game.gameId)),
+  };
+}
+/** The reader's reason for scheduled games with no final state, or none. Counted in games, since both team games share one state. */
+export function notFinalReason(schedule: ScheduleReconciliation, scope = "") {
+  const games = schedule.notFinal / 2;
+  return games ? [`${games} of ${schedule.scheduledGames} scheduled games${scope} ${games === 1 ? "has" : "have"} no final game state yet, so ${games === 1 ? "it is" : "they are"} not counted as completed.`] : [];
 }
 
-/** Each scheduled night's team games against those reported, for `completeThrough`: the same matching as `reconcileSchedule`. */
+/** Each scheduled night's team games against those final and reported, for `completeThrough`: the same matching as `reconcileSchedule`. */
 export function scheduleNights(scheduled: readonly ScheduledGame[], reported: readonly CompletedTeamGame[]): NightCoverage[] {
   const seen = new Set(reported.map(game => `${game.team}:${game.gameId}`));
-  return countNights(teamGameDates(scheduled), scheduled.flatMap(game => [game.homeTeamId, game.awayTeamId].flatMap(id => seen.has(`${teamById.get(id ?? -1) ?? "Unknown team"}:${game.id}`) ? [game.date] : [])));
+  return countNights(teamGameDates(scheduled), scheduled.flatMap(game => game.final ? [game.homeTeamId, game.awayTeamId].flatMap(id => seen.has(`${teamById.get(id ?? -1) ?? "Unknown team"}:${game.id}`) ? [game.date] : []) : []));
 }
 /** Rows dated on or before `through`. */
 export const datedThrough = <Row extends { date: string }>(rows: readonly Row[], through: string) => rows.filter(row => row.date <= through);
@@ -159,7 +181,8 @@ function buildCreaseWindow(input: CreaseShiftInput): SharePostLoadResult<CreaseS
   const picked = (input.picked ?? []).filter(team => input.teams.includes(team)), shown = creaseShiftShown({ teams, picked });
   const unresolved = rows.filter(row => row.unresolvedGames || row.comparisonUnresolvedGames).length;
   const reasons = [
-    ...schedule.missing ? [`${schedule.missing} of ${schedule.expected} scheduled team games have no reported result, so windows may be off.`] : [],
+    ...schedule.unreported ? [`${schedule.unreported} of ${schedule.expected} scheduled team games have no reported result, so windows may be off.`] : [],
+    ...notFinalReason(schedule),
     ...unresolved ? [`Share withheld for teams with a game lacking exactly one labeled starter: ${unresolved}.`] : [],
   ];
   const state = reasons.length ? "partial" : "ready";
@@ -174,7 +197,7 @@ function buildCreaseWindow(input: CreaseShiftInput): SharePostLoadResult<CreaseS
     data: { window: input.window, comparison: input.comparison, minComparisonGames: input.minComparisonGames, through: input.through, teams, picked },
     evidence: {
       sources: [
-        { name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: schedule.missing ? "partial" : "ready", asOf, updatedAt: null },
+        { name: "NHL.com team game stats", tables: ["wgo_team_stats", "games", "pbp_plays"], state: schedule.missing ? "partial" : "ready", asOf, updatedAt: null },
         { name: "NHL.com goalie game stats", tables: ["wgo_goalie_stats"], state: unresolved ? "partial" : "ready", asOf: input.appearances.reduce<string | null>((latest, row) => !latest || row.date > latest ? row.date : latest, null), updatedAt: null },
       ],
       sample: `Official starts ÷ completed team games. ${words.last} is each team's last ${input.window} through ${input.through}; ${compared}; ${input.comparison === "std" ? "the subtitle" : "the header"} gives its games, or each row as GP when teams differ. CHANGE is ${words.last} minus ${words.prior} in percentage points. Blocks show who started each game, oldest to newest, and an empty block has no resolved starter. The line is the running start share, starts so far ÷ team games so far, ending at ${words.last}, with guides at 0, 50 and 100%; a game with no resolved starter counts as a team game and credits no one; relief is not a start; describes past starts only${picked.length ? `. Teams picked: ${picked.join(", ")}; RK is each team's rank among all ${input.teams.length}` : ""}${others.length ? `. Unranked: ${others.join(", ")}` : ""}`,

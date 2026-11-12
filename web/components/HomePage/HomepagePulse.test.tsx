@@ -61,4 +61,31 @@ describe("HomepagePulse", () => {
     expect(container.querySelector("text, title, foreignObject")).toBeNull();
     expect(container.textContent).toBe("");
   });
+
+  // W3-2 D1 / decision 109 ("hide the model series", not a labelled
+  // visitors-only line): with no qualified model series the default view
+  // shows a short unavailable state and no line at all.
+  it("shows a model-odds-unavailable state, not the visitor line, when there is no model series", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise(() => {})),
+    );
+    const { container } = render(
+      <HomepagePulse
+        initialPoints={[]}
+        initialVisitorPoints={[
+          { timestamp: "2026-11-09T00:00:00.000Z", value: 30 },
+          { timestamp: "2026-11-10T00:00:00.000Z", value: 18 },
+          { timestamp: "2026-11-11T00:00:00.000Z", value: 42 },
+        ]}
+      />,
+    );
+
+    expect(container.querySelector("svg, path")).toBeNull();
+    expect(
+      container.querySelector("[data-pulse-state='model-unavailable']")
+        ?.textContent,
+    ).toBe("Model odds unavailable");
+    vi.unstubAllGlobals();
+  });
 });

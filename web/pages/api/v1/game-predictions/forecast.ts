@@ -56,11 +56,11 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
   }
 
   const now = new Date();
-  const predictionCutoffAt =
-    readSingleQueryValue(req.query.predictionCutoffAt) ?? now.toISOString();
+  const requestedCutoffAt = readSingleQueryValue(req.query.predictionCutoffAt);
+  const requestedSourceAsOfDate = readSingleQueryValue(req.query.sourceAsOfDate);
+  const predictionCutoffAt = requestedCutoffAt ?? now.toISOString();
   const sourceAsOfDate =
-    readSingleQueryValue(req.query.sourceAsOfDate) ??
-    predictionCutoffAt.slice(0, 10);
+    requestedSourceAsOfDate ?? predictionCutoffAt.slice(0, 10);
   const fromOffsetDays = readInteger(req.query.fromOffsetDays);
   const toOffsetDays = readInteger(req.query.toOffsetDays);
   const fromDate =
@@ -81,14 +81,23 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     allowBaselineBootstrap:
       readSingleQueryValue(req.query.allowBaselineBootstrap) === "true",
     dryRun: readSingleQueryValue(req.query.dryRun) === "true",
+    // The default run reads its inputs now, at the cutoff, so the target
+    // game's current lineup is admissible; an explicit cutoff or date is a
+    // reconstruction and stays fail-closed.
+    liveIssuance: requestedCutoffAt == null && requestedSourceAsOfDate == null,
   });
 
-  // Expected skips (past cutoff, no production model to serve) keep the cron
-  // audit healthy; only per-game errors fail it. `status` and the counts say
+  // Only per-game errors fail the run. With no production model the run is an
+  // explicit skip (decision 42), recorded with the same receipt fields as the
+  // off-season skip, never as a plain success. `status` and the counts say
   // what was actually written.
   const outcome = summarizePredictionWindowOutcome(result);
+  const skippedForNoModel = outcome.status === "no_production_model";
   return res.status(200).json({
     success: outcome.failedGames === 0,
+    ...(skippedForNoModel
+      ? { skipped: true, outcome: "skipped", reason: "no_production_model" }
+      : {}),
     ...outcome,
     result,
   });

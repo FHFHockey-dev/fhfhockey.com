@@ -439,7 +439,10 @@ export function buildGoalieUncertaintyWithModel(args: {
             .toFixed(4)
         ),
         residual_probability_mass: args.blendedProjection.residual_probability_mass,
+        // Counts are horizon totals (as on the stored row); probabilities stay per game and are
+        // never multiplied by a horizon scalar (decision 28).
         blended_projection: {
+          value_basis: { counts: "horizon_total", probabilities: "per_game" },
           proj_shots_against: Number(
             (args.shotsAgainst * args.goalieHorizonTotalScalar).toFixed(3)
           ),
@@ -451,14 +454,9 @@ export function buildGoalieUncertaintyWithModel(args: {
               args.blendedProjection.proj_goals_allowed * args.goalieHorizonTotalScalar
             ).toFixed(3)
           ),
-          proj_win_prob: args.blendedProjection.proj_win_prob === null ? null : Number(
-            (args.blendedProjection.proj_win_prob * args.goalieHorizonTotalScalar).toFixed(4)
-          ),
-          proj_shutout_prob: Number(
-            (
-              args.blendedProjection.proj_shutout_prob * args.goalieHorizonTotalScalar
-            ).toFixed(4)
-          ),
+          proj_win_prob: args.blendedProjection.proj_win_prob === null ? null
+            : Number(args.blendedProjection.proj_win_prob.toFixed(4)),
+          proj_shutout_prob: Number(args.blendedProjection.proj_shutout_prob.toFixed(4)),
           modeled_save_pct: Number(args.blendedProjection.modeled_save_pct.toFixed(4))
         }
       },

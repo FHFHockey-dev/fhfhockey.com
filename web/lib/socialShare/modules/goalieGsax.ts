@@ -1,6 +1,6 @@
 import type { Database } from "lib/supabase/database-generated.types";
 import { defineShareModule, type SharePostLoadResult } from "./contract";
-import { reconcileSchedule, scheduleNights, type ScheduledGame } from "./creaseShift";
+import { notFinalReason, reconcileSchedule, scheduleNights, type ScheduledGame } from "./creaseShift";
 import { completeThrough, completeThroughNote } from "./shared/completeThrough";
 import { defaultWeek, type MatchupWeek } from "./shared/categoryCounts";
 import { competitionRanks, lastN, per60 } from "./shared/definitions";
@@ -131,7 +131,8 @@ export function buildGoalieGsax(input: GoalieGsaxInput): SharePostLoadResult<Goa
   const covered = rows.reduce((total, row) => total + row.covered, 0), expected = rows.reduce((total, row) => total + row.appearances, 0);
   const reasons = [
     ...nstThrough ? [] : [`NST ${strengthLabel} goalie rows are missing this season.`],
-    ...schedule.missing ? [`${schedule.missing} of ${schedule.expected} scheduled team games ${dates ? "in these dates" : "through NST's date"} have no reported result.`] : [],
+    ...schedule.unreported ? [`${schedule.unreported} of ${schedule.expected} scheduled team games ${dates ? "in these dates" : "through NST's date"} have no reported result.`] : [],
+    ...notFinalReason(schedule, dates ? " in these dates" : " through NST's date"),
     ...nstThrough && (appearancesPastNst || gamesPastNst) ? [`${dates!.label} runs past NST's newest date, ${nstThrough}: ${countOf(appearancesPastNst, "appearance")} after it ${appearancesPastNst === 1 ? "is" : "are"} not counted.`] : [],
   ];
   const lagNote = lagDays ? [`${gsaxLagLabel(lagDays)} behind NHL.com`] : [];
@@ -146,7 +147,7 @@ export function buildGoalieGsax(input: GoalieGsaxInput): SharePostLoadResult<Goa
     evidence: {
       sources: [
         { name: `NST ${strengthLabel} goalie logs (NST model)`, tables: [table], state: nstThrough ? "ready" : "missing", asOf: nstThrough, updatedAt: null, reasons: lagNote },
-        { name: "NHL.com goalie game stats", tables: ["wgo_goalie_stats", "wgo_team_stats", "games"], state: schedule.missing ? "partial" : "ready", asOf: wgoThrough, updatedAt: null },
+        { name: "NHL.com goalie game stats", tables: ["wgo_goalie_stats", "wgo_team_stats", "games", "pbp_plays"], state: schedule.missing ? "partial" : "ready", asOf: wgoThrough, updatedAt: null },
         { name: "FHFH xG model", tables: ["nhl_xg_goalie_game_aggregates"], state: fhfhModel.state === "unavailable" ? "missing" : "ready", asOf: null, updatedAt: null, reasons: [fhfhModel.reason] },
       ],
       sample: `${windowLabel}, NST through ${nstThrough ?? "no date"}${lagDays ? `, ${gsaxLagLabel(lagDays)} behind NHL.com (${wgoThrough})` : ""}: ${covered} of ${countOf(expected, "appearance")} with NST rows. Later appearances not counted: ${appearancesBehindNst}. NST rows dropped for no NHL.com appearance that date: ${input.nstGames.filter(game => !appearanceKeys.has(`${game.goalieId}:${game.date}`)).length}`,

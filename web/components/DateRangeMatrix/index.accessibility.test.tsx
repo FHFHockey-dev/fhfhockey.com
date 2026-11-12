@@ -129,7 +129,9 @@ describe("DateRangeMatrixInternal accessibility", () => {
     expect(
       document.getElementById(sharedCell.getAttribute("aria-describedby") || "")
         ?.textContent,
-    ).toBe("42.50% Shared Ice Time");
+    ).toBe(
+      "42.50% of Leon Draisaitl's all-strength TOI shared with Connor McDavid",
+    );
 
     fireEvent.pointerEnter(sharedCell);
     expect(
@@ -260,5 +262,18 @@ describe("DateRangeMatrixInternal accessibility", () => {
           ?.textContent,
       ).toBe("N/A ATOI");
     }
+  });
+
+  it("scales cell shade to the largest shown share instead of saturating at 66.7% (W2-6 D8)", () => {
+    const a = player({ id: 1, name: "Alpha One", totalTOI: 2_000, ATOI: "20:00", percentToiWith: { 2: 90, 3: 70 } });
+    const b = player({ id: 2, name: "Beta Two", totalTOI: 2_000, ATOI: "20:00", percentToiWith: { 1: 90 } });
+    const c = player({ id: 3, name: "Gamma Three", totalTOI: 2_000, ATOI: "20:00", percentToiWith: { 1: 70 } });
+    renderMatrix([a, b, c]);
+    const shade = (name: string) =>
+      (screen.getByRole("gridcell", { name }).querySelector("[aria-hidden='true']") as HTMLElement)
+        .style.opacity;
+    // Column player Alpha: 90% with Beta, 70% with Gamma.
+    expect(Number(shade("Beta Two with Alpha One"))).toBeCloseTo(1, 6);
+    expect(Number(shade("Gamma Three with Alpha One"))).toBeCloseTo(70 / 90, 6);
   });
 });

@@ -38,6 +38,13 @@ export type ProjectionPreflightStageResult = {
   >;
 };
 
+export function scratchGameIdOf(event: Pick<RosterEventRow, "payload">): number | null {
+  const payload = event.payload && typeof event.payload === "object" && !Array.isArray(event.payload)
+    ? (event.payload as Record<string, unknown>) : {};
+  const gameId = Number(payload.game_id);
+  return Number.isSafeInteger(gameId) && gameId > 0 ? gameId : null;
+}
+
 export function availabilityMultiplierForEvent(
   eventType: string,
   confidence: number,
@@ -59,14 +66,99 @@ export function availabilityMultiplierForEvent(
       return clamp(1 - 0.6 * c, 0.2, 1);
     case "BENCHING":
       return clamp(1 - 0.45 * c, 0.35, 1);
+    // Decision 31: scratched / not expected to dress means 0 expected for that game (the
+    // "if he plays" line is the reserve row); never a confidence-scaled fraction.
     case "SCRATCH":
-      return clamp(1 - 0.8 * c, 0.05, 1);
+      return 0;
     case "RETURN":
     case "CALLUP":
       return 1;
     default:
       return null;
   }
+}
+
+/** Latest applicable roster events for one slate (decision 31: a scratch counts only for its own game). */
+export function selectRosterEventsForSlate(args: {
+  events: readonly RosterEventRow[];
+  startTs: string;
+  gameIds: readonly number[];
+  goalieLikelyOverrides: boolean;
+}) {
+  const playerAvailabilityMultiplier = new Map<number, number>();
+  const availabilityEventByPlayer = new Map<number, RosterEventRow>();
+  const roleEventByPlayer = new Map<number, RosterEventRow>();
+  const ppEventByPlayer = new Map<number, RosterEventRow>();
+  const goalieOverrideByTeamId = new Map<number, { goalieId: number; starterProb: number }>();
+  const bestAvailabilityEventByPlayer = new Map<number, RosterEventRow>();
+  const bestRoleEventByPlayer = new Map<number, RosterEventRow>();
+
+  const slateGameIds = new Set(args.gameIds);
+  for (const event of args.events) {
+    if (event.effective_to != null && event.effective_to < args.startTs) {
+      continue;
+    }
+    // A scratch applies only to its own game (decision 31); an unresolved or other-game scratch
+    // is ignored, so it neither benches the player today nor masks an earlier injury.
+    if (event.event_type === "SCRATCH" && !slateGameIds.has(scratchGameIdOf(event) ?? -1)) {
+      continue;
+    }
+    if (event.player_id != null) {
+      const multiplier = availabilityMultiplierForEvent(
+        event.event_type,
+        event.confidence,
+      );
+      if (multiplier != null) {
+        const existing = bestAvailabilityEventByPlayer.get(event.player_id);
+        if (!existing || event.effective_from > existing.effective_from) {
+          bestAvailabilityEventByPlayer.set(event.player_id, event);
+        }
+      }
+      if (event.event_type === "LINE_CHANGE") {
+        const existing = bestRoleEventByPlayer.get(event.player_id);
+        if (!existing || event.effective_from > existing.effective_from) {
+          bestRoleEventByPlayer.set(event.player_id, event);
+        }
+      }
+      if (event.event_type === "PP_UNIT_CHANGE" && !ppEventByPlayer.has(event.player_id)) {
+        ppEventByPlayer.set(event.player_id, event);
+      }
+    }
+
+    if (
+      event.team_id != null &&
+      event.player_id != null &&
+      (event.event_type === "GOALIE_START_CONFIRMED" ||
+        (event.event_type === "GOALIE_START_LIKELY" && args.goalieLikelyOverrides))
+    ) {
+      const starterProb =
+        event.event_type === "GOALIE_START_CONFIRMED"
+          ? 1
+          : clamp(event.confidence ?? 0.75, 0.5, 1);
+      const existing = goalieOverrideByTeamId.get(event.team_id);
+      if (!existing || starterProb > existing.starterProb) {
+        goalieOverrideByTeamId.set(event.team_id, {
+          goalieId: event.player_id,
+          starterProb,
+        });
+      }
+    }
+  }
+
+  for (const [playerId, event] of bestAvailabilityEventByPlayer.entries()) {
+    const multiplier = availabilityMultiplierForEvent(
+      event.event_type,
+      event.confidence,
+    );
+    if (multiplier != null) {
+      playerAvailabilityMultiplier.set(playerId, multiplier);
+      availabilityEventByPlayer.set(playerId, event);
+    }
+  }
+  for (const [playerId, event] of bestRoleEventByPlayer.entries()) {
+    roleEventByPlayer.set(playerId, event);
+  }
+  return { playerAvailabilityMultiplier, availabilityEventByPlayer, roleEventByPlayer, ppEventByPlayer, goalieOverrideByTeamId };
 }
 
 export async function runProjectionPreflightStage(args: {
@@ -135,68 +227,17 @@ export async function runProjectionPreflightStage(args: {
       .limit(5000);
     if (eventsErr) throw eventsErr;
 
-    const bestAvailabilityEventByPlayer = new Map<number, RosterEventRow>();
-    const bestRoleEventByPlayer = new Map<number, RosterEventRow>();
-
-    for (const event of (events ?? []) as RosterEventRow[]) {
-      if (event.effective_to != null && event.effective_to < startTs) {
-        continue;
-      }
-      if (event.player_id != null) {
-        const multiplier = availabilityMultiplierForEvent(
-          event.event_type,
-          event.confidence,
-        );
-        if (multiplier != null) {
-          const existing = bestAvailabilityEventByPlayer.get(event.player_id);
-          if (!existing || event.effective_from > existing.effective_from) {
-            bestAvailabilityEventByPlayer.set(event.player_id, event);
-          }
-        }
-        if (event.event_type === "LINE_CHANGE") {
-          const existing = bestRoleEventByPlayer.get(event.player_id);
-          if (!existing || event.effective_from > existing.effective_from) {
-            bestRoleEventByPlayer.set(event.player_id, event);
-          }
-        }
-        if (event.event_type === "PP_UNIT_CHANGE" && !ppEventByPlayer.has(event.player_id)) {
-          ppEventByPlayer.set(event.player_id, event);
-        }
-      }
-
-      if (
-        event.team_id != null &&
-        event.player_id != null &&
-        (event.event_type === "GOALIE_START_CONFIRMED" ||
-          (event.event_type === "GOALIE_START_LIKELY" && !starterBoardFlags().compute))
-      ) {
-        const starterProb =
-          event.event_type === "GOALIE_START_CONFIRMED"
-            ? 1
-            : clamp(event.confidence ?? 0.75, 0.5, 1);
-        const existing = goalieOverrideByTeamId.get(event.team_id);
-        if (!existing || starterProb > existing.starterProb) {
-          goalieOverrideByTeamId.set(event.team_id, {
-            goalieId: event.player_id,
-            starterProb,
-          });
-        }
-      }
-    }
-
-    for (const [playerId, event] of bestAvailabilityEventByPlayer.entries()) {
-      const multiplier = availabilityMultiplierForEvent(
-        event.event_type,
-        event.confidence,
-      );
-      if (multiplier != null) {
-        playerAvailabilityMultiplier.set(playerId, multiplier);
-        availabilityEventByPlayer.set(playerId, event);
-      }
-    }
-    for (const [playerId, event] of bestRoleEventByPlayer.entries()) {
-      roleEventByPlayer.set(playerId, event);
-    }
+    const selected = selectRosterEventsForSlate({
+      events: (events ?? []) as RosterEventRow[],
+      startTs,
+      gameIds,
+      goalieLikelyOverrides: !starterBoardFlags().compute,
+    });
+    for (const [playerId, value] of selected.playerAvailabilityMultiplier) playerAvailabilityMultiplier.set(playerId, value);
+    for (const [playerId, event] of selected.availabilityEventByPlayer) availabilityEventByPlayer.set(playerId, event);
+    for (const [playerId, event] of selected.roleEventByPlayer) roleEventByPlayer.set(playerId, event);
+    for (const [playerId, event] of selected.ppEventByPlayer) ppEventByPlayer.set(playerId, event);
+    for (const [teamId, override] of selected.goalieOverrideByTeamId) goalieOverrideByTeamId.set(teamId, override);
   }
 
   return {

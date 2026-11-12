@@ -15,21 +15,21 @@ import {
   GoalieAverages,
   SortConfig,
 } from "components/GoaliePage/goalieTypes";
-import { calculateWeeklyRanking } from "./goalieCalculations"; // Removed unused rankingPoints import
+import { gradeGoalieWeek, isGoalieWeekEligible } from "./goalieCalculations";
 
 // Define the type GoalieTable expects
 type DisplayGoalie = GoalieBaseStats & {
   playerId: number;
   goalieFullName: string;
   team?: string;
-  percentage?: number;
-  ranking?: Ranking;
+  percentage?: number | null; // null = unclassified week
+  ranking?: Ranking | null; // null = unclassified week
 };
 
 interface GoalieWeeklyRank extends GoalieWeeklyAggregate {
-  weeklyRank: Ranking;
-  weeklyRankPercentage: number;
-  weeklyRankPoints: number;
+  weeklyRank: Ranking | null;
+  weeklyRankPercentage: number | null;
+  weeklyRankPoints: number | null;
 }
 
 interface Props {
@@ -92,21 +92,24 @@ const GoalieList: FC<Props> = ({
       return [];
     }
     const rankedData: GoalieWeeklyRank[] = goalieAggregates.map((aggregate) => {
-      const { ranking, percentage, points } = calculateWeeklyRanking(
-        aggregate,
-        leagueAverage,
-        selectedStats,
-        statColumns,
-      );
+      // Relief-only or short weeks, and weeks with no comparable stat, are
+      // unclassified (decision 97, PR-U4).
+      const grade = isGoalieWeekEligible(aggregate)
+        ? gradeGoalieWeek(aggregate, leagueAverage, selectedStats, statColumns)
+        : null;
       return {
         ...aggregate,
-        weeklyRank: ranking,
-        weeklyRankPercentage: percentage,
-        weeklyRankPoints: points,
+        weeklyRank: grade?.ranking ?? null,
+        weeklyRankPercentage: grade?.percentage ?? null,
+        weeklyRankPoints: grade?.points ?? null,
       };
     });
-    // Sort by points descending
-    rankedData.sort((a, b) => b.weeklyRankPoints - a.weeklyRankPoints);
+    // Sort by points descending; unclassified weeks last
+    rankedData.sort(
+      (a, b) =>
+        (b.weeklyRankPoints ?? Number.NEGATIVE_INFINITY) -
+        (a.weeklyRankPoints ?? Number.NEGATIVE_INFINITY),
+    );
     return rankedData;
   }, [goalieAggregates, leagueAverage, selectedStats, statColumns]);
 

@@ -3,6 +3,7 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
+import { computeMidRankPercentiles } from "lib/trends/utils";
 import {
   DEFAULT_GOALIE_LIMIT,
   DEFAULT_GOALIE_WINDOW,
@@ -217,22 +218,11 @@ function computePercentiles(
   entries: Array<{ playerId: number; value: number }>,
   higherIsBetter: boolean
 ): Map<number, number> {
-  const result = new Map<number, number>();
-  if (entries.length === 0) return result;
-  const sorted = [...entries].sort((a, b) => a.value - b.value);
-  if (sorted.length === 1) {
-    result.set(sorted[0].playerId, 50);
-    return result;
-  }
-  const denom = sorted.length - 1;
-  sorted.forEach((entry, idx) => {
-    let percentile = (idx / denom) * 100;
-    if (!higherIsBetter) {
-      percentile = 100 - percentile;
-    }
-    result.set(entry.playerId, percentile);
-  });
-  return result;
+  // Equal values share a mid-rank percentile (BA W1-3 D10).
+  return computeMidRankPercentiles(
+    entries.map((entry) => ({ key: entry.playerId, value: entry.value })),
+    higherIsBetter
+  );
 }
 
 function buildCategoryResult(
@@ -378,7 +368,11 @@ function buildCategoryResult(
     }
   );
 
-  rankings.sort((a, b) => b.percentile - a.percentile);
+  // Tied percentiles rank by player id so the order never depends on input
+  // order (rule 20).
+  rankings.sort(
+    (a, b) => b.percentile - a.percentile || a.playerId - b.playerId
+  );
   rankings.forEach((entry, index) => {
     entry.rank = index + 1;
   });
@@ -392,7 +386,7 @@ function buildCategoryResult(
       const prevB =
         series[String(b.playerId)][series[String(b.playerId)].length - 2]
           ?.percentile ?? 0;
-      return prevB - prevA;
+      return prevB - prevA || a.playerId - b.playerId;
     });
   const previousRankMap = new Map<number, number>();
   previousOrder.forEach((entry, idx) => {

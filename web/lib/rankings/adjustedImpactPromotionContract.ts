@@ -1,6 +1,7 @@
 export type AdjustedImpactPromotionStatus =
   | "diagnostic_live"
   | "blocked_missing_controls"
+  | "blocked_unvalidated_empty_net_treatment"
   | "rankings_promotable";
 
 export type AdjustedImpactPromotionControlKey =
@@ -75,29 +76,53 @@ export const ADJUSTED_IMPACT_PROMOTION_CONTRACT = {
   controls: ADJUSTED_IMPACT_PROMOTION_CONTROLS,
 } as const;
 
+/**
+ * Model-run provenance the promotion gate reads. Decision 100: the empty-net
+ * treatment must be validated on held-out data before promotion. Runs stored
+ * before 2026-11-11 carry no label; unknown stays unpromoted.
+ */
+export type AdjustedImpactPromotionRunProvenance = {
+  emptyNetTreatment?: { validation?: string | null } | null;
+} | null;
+
 export function evaluateAdjustedImpactPromotionReadiness(
-  controls: readonly Pick<AdjustedImpactPromotionControl, "status">[]
+  controls: readonly Pick<AdjustedImpactPromotionControl, "status">[],
+  runProvenance: AdjustedImpactPromotionRunProvenance = null
 ): {
   status: AdjustedImpactPromotionStatus;
   missingControlCount: number;
   unjoinedControlCount: number;
+  emptyNetTreatmentValidated: boolean;
 } {
   const missingControlCount = controls.filter((control) => control.status === "missing").length;
   const unjoinedControlCount = controls.filter(
     (control) => control.status === "available_not_joined"
   ).length;
+  const emptyNetTreatmentValidated =
+    runProvenance?.emptyNetTreatment?.validation === "validated";
 
-  if (missingControlCount === 0 && unjoinedControlCount === 0) {
+  if (missingControlCount > 0 || unjoinedControlCount > 0) {
     return {
-      status: "rankings_promotable",
+      status: "blocked_missing_controls",
       missingControlCount,
       unjoinedControlCount,
+      emptyNetTreatmentValidated,
+    };
+  }
+
+  if (!emptyNetTreatmentValidated) {
+    return {
+      status: "blocked_unvalidated_empty_net_treatment",
+      missingControlCount,
+      unjoinedControlCount,
+      emptyNetTreatmentValidated,
     };
   }
 
   return {
-    status: "blocked_missing_controls",
+    status: "rankings_promotable",
     missingControlCount,
     unjoinedControlCount,
+    emptyNetTreatmentValidated,
   };
 }

@@ -2,6 +2,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Json } from "lib/supabase/database-generated.types";
 import { evaluateProbabilityMetrics } from "lib/xg/calibration";
+import {
+  displayedWinnerTeamId,
+  tallyWinnerPicks,
+  winnerPickCorrect,
+} from "./winnerPick";
 
 type Tables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Row"];
@@ -39,7 +44,8 @@ export type EvaluatedGamePrediction = {
   outcome: CompletedGameOutcome;
   label: 0 | 1;
   predictionProbability: number;
-  predictedWinnerCorrect: boolean;
+  /** Null when the displayed pair is 50/50 (a tie, no pick). */
+  predictedWinnerCorrect: boolean | null;
 };
 
 export type CalibrationBin = {
@@ -152,9 +158,16 @@ export function attachOutcomesToPredictions(
         outcome,
         label: outcome.homeWon ? 1 : 0,
         predictionProbability: homeProbability,
-        predictedWinnerCorrect: prediction.predicted_winner_team_id
-          ? prediction.predicted_winner_team_id === (outcome.homeWon ? outcome.homeTeamId : outcome.awayTeamId)
-          : homeProbability >= 0.5 === outcome.homeWon,
+        // Decision 43: the pick follows the displayed pair; 50/50 is a tie.
+        predictedWinnerCorrect: winnerPickCorrect(
+          displayedWinnerTeamId({
+            homeWinProbability: homeProbability,
+            awayWinProbability: toNumber(prediction.away_win_probability),
+            homeTeamId: prediction.home_team_id,
+            awayTeamId: prediction.away_team_id,
+          }),
+          outcome.homeWon ? outcome.homeTeamId : outcome.awayTeamId,
+        ),
       },
     ];
   });
@@ -217,10 +230,8 @@ export function calculateSegmentMetric(
       prediction: row.predictionProbability,
     }))
   );
-  const accuracy =
-    evaluated.length === 0
-      ? null
-      : evaluated.filter((row) => row.predictedWinnerCorrect).length / evaluated.length;
+  // Ties (no pick) are excluded from winner accuracy (TJ 2026-11-11).
+  const accuracy = tallyWinnerPicks(evaluated).accuracy;
 
   return {
     segmentKey,
@@ -257,7 +268,7 @@ export function buildSegmentMetrics(evaluated: EvaluatedGamePrediction[]): Segme
     }
   }
 
-  for (const predictedSide of ["home", "away"]) {
+  for (const predictedSide of ["home", "away", "tie"]) {
     const rows = evaluated.filter((row) => getPredictedSide(row) === predictedSide);
     if (rows.length > 0) {
       segments.push(calculateSegmentMetric(rows, "predicted_side", predictedSide));
@@ -370,10 +381,16 @@ function getGoalieUncertaintyBucket(row: EvaluatedGamePrediction): string | null
   return null;
 }
 
-function getPredictedSide(row: EvaluatedGamePrediction): "home" | "away" {
-  if (row.prediction.predicted_winner_team_id === row.prediction.away_team_id) return "away";
-  if (row.prediction.predicted_winner_team_id === row.prediction.home_team_id) return "home";
-  return row.predictionProbability >= 0.5 ? "home" : "away";
+function getPredictedSide(row: EvaluatedGamePrediction): "home" | "away" | "tie" {
+  const pick = displayedWinnerTeamId({
+    homeWinProbability: row.predictionProbability,
+    awayWinProbability: toNumber(row.prediction.away_win_probability),
+    homeTeamId: row.prediction.home_team_id,
+    awayTeamId: row.prediction.away_team_id,
+  });
+  if (pick === row.prediction.home_team_id) return "home";
+  if (pick === row.prediction.away_team_id) return "away";
+  return "tie";
 }
 
 export function buildMetricInserts(args: {

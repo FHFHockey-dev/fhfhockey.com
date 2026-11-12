@@ -29,6 +29,8 @@ export type RollingRow = {
   game_date: string;
   toi_seconds_avg_last5: number | null;
   toi_seconds_avg_all: number | null;
+  /** Seconds behind the "all" window counts (shots_total_all, goals_total_all). */
+  toi_seconds_total_all?: number | null;
   sog_per_60_last5: number | null;
   sog_per_60_all: number | null;
   sog_per_60_avg_last5: number | null;
@@ -242,7 +244,9 @@ export type SkaterTrendAdjustment = {
   snapshotDate: string;
   ageDays: number;
   recencyClass: "fresh" | "soft_stale" | "hard_stale";
-  effectState: "applied" | "neutralized_by_recency" | "within_band_neutral";
+  effectState: "applied" | "neutralized_by_recency" | "within_band_neutral" | "inert_pending_fitted_regression";
+  /** Version of the validated regression-toward-band fit (decision 26); absent while inert. */
+  regressionFitVersion?: string;
   value: number;
   ciLower: number;
   ciUpper: number;
@@ -295,10 +299,12 @@ export type TeamStrengthPrior = {
   windowGames?: number | null;
   /** How the `nhl_team_data` row was chosen among same-date rows (one per NST season). */
   rowSelection?: {
-    method: "implied_gp_match" | "single_row";
+    method: "exact_nst_season" | "implied_gp_match" | "single_row";
     candidateRows: number;
     gamesPlayed: number | null;
     impliedGamesPlayed: number | null;
+    nstSeason?: number;
+    nstUpdatedAt?: string | null;
   };
 };
 

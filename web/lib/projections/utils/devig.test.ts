@@ -62,13 +62,25 @@ describe("devig", () => {
     expect(devigTwoWayAmerican(-1000, -1000)).toBeNull();
   });
 
-  it("Yes-only markets use equal margin with the assumed overround", () => {
+  it("Yes-only markets use the proportional rule with the assumed overround", () => {
     const result = devigYesOnly(300, { overround: 0.08 })!;
-    expect(result.method).toBe("equal-margin");
-    expect(result.probability).toBeCloseTo(0.21, 10);
-    expect(devigYesOnly(300, { overround: 0.08, method: "proportional" })!.probability).toBeCloseTo(0.25 / 1.08, 10);
-    // Extreme longshot falls back to proportional instead of going negative.
-    expect(devigYesOnly(5000, { overround: 0.1 })!.method).toBe("proportional");
+    expect(result.method).toBe("proportional");
+    expect(result.probability).toBeCloseTo(0.25 / 1.08, 10);
+    expect(devigYesOnly(5000, { overround: 0.1 })!.probability).toBeCloseTo(100 / 5100 / 1.1, 10);
+  });
+
+  // Decision 30 / BC W1-6 D17: equal-margin with a proportional fallback gave
+  // +2300 -> .0017 and +2400 -> .0370; a longer price must never estimate higher.
+  it("Yes-only estimate is strictly monotone in price from +1000 to +3000", () => {
+    let previous = Infinity;
+    for (let price = 1000; price <= 3000; price += 50) {
+      const estimate = devigYesOnly(price, { overround: 0.08 })!.probability;
+      expect(estimate).toBeLessThan(previous);
+      previous = estimate;
+    }
+    expect(devigYesOnly(2400, { overround: 0.08 })!.probability).toBeLessThan(
+      devigYesOnly(2300, { overround: 0.08 })!.probability,
+    );
   });
 
   it("Yes-only estimates are labelled assumption-based and record where the overround came from", () => {
@@ -76,7 +88,7 @@ describe("devig", () => {
       basis: "assumed-overround", overround: DEFAULT_YES_ONLY_OVERROUND, overroundSource: "default", implied: 0.25,
     });
     expect(devigYesOnly(300, { env: { [YES_ONLY_OVERROUND_ENV]: "0.06" } })).toMatchObject({
-      overround: 0.06, overroundSource: "env", probability: 0.22,
+      overround: 0.06, overroundSource: "env", probability: 0.25 / 1.06,
     });
     expect(devigYesOnly(300, { overround: 0.1, env: { [YES_ONLY_OVERROUND_ENV]: "0.06" } })!.overroundSource).toBe("argument");
     // A bad configuration is refused rather than silently replaced by the default.

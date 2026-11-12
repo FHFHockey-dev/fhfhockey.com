@@ -5,7 +5,9 @@ import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import serviceRoleClient from "lib/supabase/server";
 
 import {
+  GOALIE_STATS_SUMMARY_TABLE,
   buildPlayerStatsLandingSummarySnapshotsForGameIds,
+  isCurrentPlayerStatsSummaryPayload,
   type PlayerStatsLandingSummarySnapshotRow,
 } from "./playerStatsLandingServer";
 import {
@@ -14,8 +16,7 @@ import {
   warmPlayerStatsLandingSeasonAggregateCache,
 } from "./playerStatsSummaryRefresh";
 
-export const GOALIE_STATS_SUMMARY_TABLE =
-  "goalie_underlying_summary_partitions";
+export { GOALIE_STATS_SUMMARY_TABLE };
 export const GOALIE_STATS_SUMMARY_SOURCE_URL_PREFIX =
   "derived://underlying-goalie-summary-v1/";
 
@@ -288,7 +289,29 @@ export async function refreshGoalieUnderlyingSummarySnapshotsForGameIds(args: {
         supabase,
         gameIds: args.gameIds,
       });
-  const seededGameIds = new Set(sharedGoalieSnapshots.map((row) => row.game_id));
+  // Seed a game from the shared partitions only when every one of them was
+  // written by the current writer and the all-situation partition is present;
+  // otherwise rebuild it from the raw payloads (DR1: never copy a stale
+  // partition).
+  const sharedSnapshotsByGameId = new Map<number, SharedGoalieSummarySnapshotRow[]>();
+  for (const row of sharedGoalieSnapshots) {
+    const gameRows = sharedSnapshotsByGameId.get(row.game_id) ?? [];
+    gameRows.push(row);
+    sharedSnapshotsByGameId.set(row.game_id, gameRows);
+  }
+  const seededGameIds = new Set(
+    [...sharedSnapshotsByGameId.entries()]
+      .filter(
+        ([, gameRows]) =>
+          gameRows.every((row) => isCurrentPlayerStatsSummaryPayload(row.payload)) &&
+          gameRows.some(
+            (row) => parseSharedGoalieSummarySourceUrl(row.source_url)?.strength === "allStrengths" &&
+              parseSharedGoalieSummarySourceUrl(row.source_url)?.scoreState === "allScores"
+          )
+      )
+      .map(([gameId]) => gameId)
+  );
+  const seededSnapshots = sharedGoalieSnapshots.filter((row) => seededGameIds.has(row.game_id));
   const rawBuildGameIds =
     args.preferSharedSnapshotSeed === false
       ? [...args.gameIds]
@@ -303,7 +326,7 @@ export async function refreshGoalieUnderlyingSummarySnapshotsForGameIds(args: {
           row.source_url.startsWith(SHARED_GOALIE_STATS_SUMMARY_SOURCE_URL_PREFIX)
         );
   const upsertRows = dedupeGoalieSummaryPartitions(
-    [...sharedGoalieSnapshots, ...rawBuiltGoalieSnapshots]
+    [...seededSnapshots, ...rawBuiltGoalieSnapshots]
       .map((row) => mapSharedSnapshotToGoaliePartition(row))
       .filter((row): row is GoalieSummaryPartitionRow => row != null)
   );

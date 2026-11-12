@@ -39,9 +39,11 @@ type PerformanceLevel =
   | "very-poor"
   | "no-data";
 
-// Enhanced performance calculation using percentile-based approach
-const calculatePercentile = (value: number, stat: string): number => {
-  // Enhanced thresholds based on NHL data
+// Step score (5, 15, 35, 60, 85 or 95) from fixed FHFH cut-offs shared by
+// all skater positions. The cut-off names (p90 ...) are heuristics, not
+// percentiles of any measured cohort (decision 74).
+const calculateStepScore = (value: number, stat: string): number => {
+  // Fixed FHFH cut-offs
   const thresholds: {
     [key: string]: {
       p90: number;
@@ -93,7 +95,7 @@ const calculatePercentile = (value: number, stat: string): number => {
   };
 
   const threshold = thresholds[stat];
-  if (!threshold) return 50; // Default to 50th percentile if no threshold
+  if (!threshold) return 50; // Neutral score when a stat has no cut-offs
 
   const { p90, p75, p50, p25, p10, isInverted = false } = threshold;
 
@@ -157,22 +159,23 @@ const calculatePerformanceLevel = (
       stat === "toi_per_game"
         ? Number(value) / 60
         : (toDisplayUnits(value, stat) ?? 0);
-    const percentile = calculatePercentile(thresholdValue, stat);
+    const stepScore = calculateStepScore(thresholdValue, stat);
 
-    totalScore += percentile * weight;
+    totalScore += stepScore * weight;
     totalWeight += weight;
   });
 
   if (totalWeight === 0) return "no-data";
 
-  const averagePercentile = totalScore / totalWeight;
+  // Weighted 0-100 game score, not a percentile.
+  const gameScore = totalScore / totalWeight;
 
-  if (averagePercentile >= 90) return "elite";
-  if (averagePercentile >= 75) return "excellent";
-  if (averagePercentile >= 60) return "good";
-  if (averagePercentile >= 40) return "average";
-  if (averagePercentile >= 25) return "below-average";
-  if (averagePercentile >= 10) return "poor";
+  if (gameScore >= 90) return "elite";
+  if (gameScore >= 75) return "excellent";
+  if (gameScore >= 60) return "good";
+  if (gameScore >= 40) return "average";
+  if (gameScore >= 25) return "below-average";
+  if (gameScore >= 10) return "poor";
   return "very-poor";
 };
 
@@ -197,15 +200,15 @@ const getPerformanceColor = (level: PerformanceLevel): string => {
   return colorMap[level];
 };
 
-const getPerformanceLevelLabel = (level: PerformanceLevel): string => {
+export const getPerformanceLevelLabel = (level: PerformanceLevel): string => {
   const labelMap = {
-    elite: "Elite (90th+ percentile)",
-    excellent: "Excellent (75-89th percentile)",
-    good: "Good (60-74th percentile)",
-    average: "Average (40-59th percentile)",
-    "below-average": "Below Average (25-39th percentile)",
-    poor: "Poor (10-24th percentile)",
-    "very-poor": "Very Poor (0-9th percentile)",
+    elite: "Elite (score 90-100)",
+    excellent: "Excellent (score 75-89)",
+    good: "Good (score 60-74)",
+    average: "Average (score 40-59)",
+    "below-average": "Below Average (score 25-39)",
+    poor: "Poor (score 10-24)",
+    "very-poor": "Very Poor (score 0-9)",
     "no-data": "No Game Data"
   };
   return labelMap[level];
@@ -986,39 +989,35 @@ export function PlayerPerformanceHeatmap({
       <h5>Performance Levels:</h5>
       <ul>
         <li>
-          <strong>Elite:</strong> 90th+ percentile performance
+          <strong>Elite:</strong> score 90-100
         </li>
         <li>
-          <strong>Excellent:</strong> 75-89th percentile
+          <strong>Excellent:</strong> score 75-89
         </li>
         <li>
-          <strong>Good:</strong> 60-74th percentile
+          <strong>Good:</strong> score 60-74
         </li>
         <li>
-          <strong>Average:</strong> 40-59th percentile
+          <strong>Average:</strong> score 40-59
         </li>
         <li>
-          <strong>Below Average:</strong> 25-39th percentile
+          <strong>Below Average:</strong> score 25-39
         </li>
         <li>
-          <strong>Poor:</strong> 10-24th percentile
+          <strong>Poor:</strong> score 10-24
         </li>
         <li>
-          <strong>Very Poor:</strong> 0-9th percentile
+          <strong>Very Poor:</strong> score 0-9
         </li>
       </ul>
 
       <h5>Scoring System:</h5>
       <p>
-        Each game is scored using weighted percentile analysis across selected
-        statistics, with higher weights for more impactful metrics like points,
-        goals, and advanced possession stats.
+        Each game gets a 0-100 score, not a percentile. Each selected stat
+        earns a step score (5, 15, 35, 60, 85 or 95) from fixed FHFH cut-offs
+        shared by forwards and defencemen, and the step scores are averaged
+        with higher weights for points, goals and possession stats.
       </p>
-
-      <em>
-        Performance is calculated relative to NHL averages and position-specific
-        expectations.
-      </em>
     </div>
   );
 
@@ -1067,7 +1066,7 @@ export function PlayerPerformanceHeatmap({
         </div>
 
         <div className={styles.tooltipFooter}>
-          <em>Performance based on weighted multi-stat analysis</em>
+          <em>Weighted 0-100 game score from fixed FHFH cut-offs</em>
         </div>
       </div>
     );
@@ -1611,9 +1610,8 @@ export function PlayerPerformanceHeatmap({
 
           <div className={styles.calendarNote}>
             <p>
-              Performance levels are calculated based on weighted analysis of
-              selected statistics. Colors represent relative performance
-              compared to NHL averages using shared formatting standards. Yellow
+              Performance levels are bands of a weighted 0-100 game score
+              built from fixed FHFH cut-offs, not percentiles. Yellow
               borders indicate playoff games.
             </p>
           </div>

@@ -12,9 +12,15 @@ import {
 } from "lib/dashboard/playerOwnership";
 import {
   rankTopAddsCandidates,
+  toTopAddsProjection,
+  TOP_ADDS_SCORING_LABEL,
+  type RankedTopAddsCandidate,
   type TopAddsCandidateInput,
   type TopAddsMode,
 } from "lib/dashboard/topAddsRanking";
+
+/** Decision 118: Top Adds scores qualified per-game (one-game) lines. */
+const TOP_ADDS_PROJECTION_HORIZON = 1;
 import {
   buildTopAddsScheduleContextMap,
   type TopAddsScheduleContextMap,
@@ -43,11 +49,13 @@ type ProjectionRow = {
   player_name: string | null;
   team_name: string | null;
   position: string | null;
-  pts: number;
-  ppp: number;
-  sog: number;
-  hit: number;
-  blk: number;
+  g?: number | null;
+  a?: number | null;
+  pts: number | null;
+  ppp: number | null;
+  sog: number | null;
+  hit: number | null;
+  blk: number | null;
   uncertainty: unknown;
   teamIdentity?: ProjectionTeamIdentity | null;
   degradedProjectionContext?: TopAddsCandidateInput["degradedProjectionContext"];
@@ -217,7 +225,8 @@ function resolveSelectedScheduleSeasonId(
   const seasonId = response?.requestedSeasonId;
   if (
     response?.requestedDate !== selectedDate ||
-    response?.horizonGames !== (mode === "week" ? 5 : 1) ||
+    // Decision 118: per-game (one-game) lines in both modes.
+    response?.horizonGames !== TOP_ADDS_PROJECTION_HORIZON ||
     !Number.isSafeInteger(seasonId)
   ) {
     return null;
@@ -242,48 +251,27 @@ function formatProjection(value: number | null | undefined): string {
   return value.toFixed(1);
 }
 
-function formatSignedContribution(value: number | null | undefined): string {
-  if (value == null || Number.isNaN(value)) return "--";
-  const sign = value > 0 ? "+" : "";
-  return `${sign}${value.toFixed(1)}`;
+function formatOwnership(value: number | null): string {
+  return value == null ? "unknown" : `${value.toFixed(0)}%`;
 }
+
+/** Decision 118 expected points, or the typed incomplete state. */
+function formatExpected(candidate: RankedTopAddsCandidate): string {
+  const expected =
+    candidate.score.total == null
+      ? `incomplete (${candidate.score.missing.join(", ")})`
+      : formatProjection(candidate.score.total);
+  // Decision 132: an unconfirmed appearance shows the line as "if he plays".
+  return candidate.score.lineLabel
+    ? `${expected} · ${candidate.score.lineLabel}`
+    : expected;
+}
+
 
 function formatOwnershipChange(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "--";
   const sign = value > 0 ? "+" : "";
   return `${sign}${value.toFixed(1)} pts`;
-}
-
-function extractUncertaintyPenalty(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const model = (value as Record<string, unknown>).model;
-  if (!model || typeof model !== "object") {
-    return null;
-  }
-
-  const skaterSelection = (model as Record<string, unknown>).skater_selection;
-  if (!skaterSelection || typeof skaterSelection !== "object") {
-    return null;
-  }
-
-  const roleContinuity = (skaterSelection as Record<string, unknown>)
-    .role_continuity;
-  if (!roleContinuity || typeof roleContinuity !== "object") {
-    return null;
-  }
-
-  const volatilityIndex = (roleContinuity as Record<string, unknown>)
-    .volatility_index;
-  return typeof volatilityIndex === "number" && Number.isFinite(volatilityIndex)
-    ? volatilityIndex
-    : null;
 }
 
 function matchesPosition(
@@ -337,7 +325,7 @@ export default function TopAddsRail({
     useState<TopAddsScheduleState>("idle");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const expectedHorizon = mode === "week" ? 5 : 1;
+  const expectedHorizon = TOP_ADDS_PROJECTION_HORIZON;
   const projectionSelectionKey = `${date}:${expectedHorizon}:${position}`;
   const activeProjectionResponse =
     projectionResponseSelectionKey === projectionSelectionKey
@@ -556,12 +544,8 @@ export default function TopAddsRail({
         ownership,
         ownershipTimeline: ownershipRow?.sparkline ?? [],
         delta: ownershipRow?.delta ?? 0,
-        projectionPts: row.pts ?? 0,
-        ppp: row.ppp ?? 0,
-        sog: row.sog ?? 0,
-        hit: row.hit ?? 0,
-        blk: row.blk ?? 0,
-        uncertainty: extractUncertaintyPenalty(row.uncertainty),
+        // Missing heads stay null to the score (W3-2 D3).
+        ...toTopAddsProjection(row),
         degradedProjectionContext: row.degradedProjectionContext ?? null,
         scheduleGamesRemaining: scheduleContext?.gamesRemaining ?? null,
         scheduleOffNightsRemaining: scheduleContext?.offNightsRemaining ?? null,
@@ -823,7 +807,7 @@ export default function TopAddsRail({
 
               <div className={styles.topAddsCandidateMetrics}>
                 <span>
-                  Own <strong>{candidate.ownership.toFixed(0)}%</strong>
+                  Own <strong>{formatOwnership(candidate.ownership)}</strong>
                 </span>
                 <span>
                   Demand{" "}
@@ -834,8 +818,8 @@ export default function TopAddsRail({
                   <strong>{formatProjection(candidate.projectionPts)}</strong>
                 </span>
                 <span>
-                  Add score{" "}
-                  <strong>{formatProjection(candidate.score.total)}</strong>
+                  Exp. pts{" "}
+                  <strong>{formatExpected(candidate)}</strong>
                 </span>
                 {mode === "week" && (
                   <span>
@@ -877,24 +861,13 @@ export default function TopAddsRail({
 
               <div className={styles.topAddsCandidateReasons}>
                 <span>
-                  Demand {formatProjection(candidate.score.trendStrengthScore)}
+                  Per game {formatProjection(candidate.score.perGamePoints)}
                 </span>
                 <span>
-                  Availability{" "}
-                  {formatProjection(candidate.score.ownershipBiasScore)}
+                  Games {candidate.score.games ?? "--"}
                 </span>
                 <span>
-                  Projection{" "}
-                  {formatProjection(candidate.score.projectionSupportScore)}
-                </span>
-                {mode === "week" && (
-                  <span>
-                    Schedule{" "}
-                    {formatProjection(candidate.score.scheduleContextScore)}
-                  </span>
-                )}
-                <span>
-                  Risk {formatProjection(candidate.score.riskPenaltyScore)}
+                  Risk {formatProjection(candidate.uncertainty)}
                 </span>
               </div>
 
@@ -919,8 +892,12 @@ export default function TopAddsRail({
                       </p>
                       <p className={styles.topAddsInspectorText}>
                         Hits + Blocks{" "}
-                        {formatProjection(candidate.hit + candidate.blk)} • Own{" "}
-                        {candidate.ownership.toFixed(0)}% • 5D{" "}
+                        {formatProjection(
+                          candidate.hit == null || candidate.blk == null
+                            ? null
+                            : candidate.hit + candidate.blk,
+                        )}{" "}
+                        • Own {formatOwnership(candidate.ownership)} • 5D{" "}
                         {formatOwnershipChange(candidate.delta)}
                       </p>
                       {mode === "week" && (
@@ -933,40 +910,19 @@ export default function TopAddsRail({
 
                     <div className={styles.topAddsInspectorBlock}>
                       <span className={styles.topAddsInspectorEyebrow}>
-                        Add Score
+                        Expected Points
                       </span>
                       <div className={styles.topAddsInspectorBreakdown}>
+                        <span>{TOP_ADDS_SCORING_LABEL}</span>
                         <span>
-                          Demand{" "}
-                          {formatSignedContribution(
-                            candidate.score.trendStrengthScore,
-                          )}
+                          Per game{" "}
+                          {formatProjection(candidate.score.perGamePoints)}
                         </span>
                         <span>
-                          Available{" "}
-                          {formatSignedContribution(
-                            candidate.score.ownershipBiasScore,
-                          )}
+                          {mode === "week" ? "Games left" : "Games"}{" "}
+                          {candidate.score.games ?? "--"}
                         </span>
-                        <span>
-                          Projection{" "}
-                          {formatSignedContribution(
-                            candidate.score.projectionSupportScore,
-                          )}
-                        </span>
-                        <span>
-                          Schedule{" "}
-                          {formatSignedContribution(
-                            candidate.score.scheduleContextScore,
-                          )}
-                        </span>
-                        <span>
-                          Risk -
-                          {formatProjection(candidate.score.riskPenaltyScore)}
-                        </span>
-                        <span>
-                          Total {formatProjection(candidate.score.total)}
-                        </span>
+                        <span>Total {formatExpected(candidate)}</span>
                       </div>
                     </div>
                   </div>

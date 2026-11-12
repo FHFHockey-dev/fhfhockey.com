@@ -8,7 +8,8 @@ type WireRun = [revisionId: string, sourceWatermark: string, modelVersion: strin
 type WireRow = [playerId: string, gameId: string, run: number, expiresAt: string, stats: StatLine,
   startProbability: number | null, confirmedStart: boolean, conditionalStats: StatLine | null, reserve?: ReserveCode];
 
-const COUNTS_ZERO = "plans count 0 (a conservative assumption, not a zero chance); the conditional line is kept separately";
+/** Decisions 3 and 47 (W1 P0 #27): an unconfirmed reserve or no-line row is unknown, never a known 0. */
+const COUNTS_ZERO = "plans treat him as unknown (no totals, never an automatic drop), not as 0; the conditional line is kept separately";
 /** FORGE reserve-pass rows: a skater outside the projected lineup ("if he dresses") or a goalie with no start chance
  * ("if he starts"). Each state says what the evidence for that game shows; only confirmed news settles participation. */
 export const RESERVE_FORECAST_NOTES = {
@@ -22,6 +23,10 @@ export const RESERVE_FORECAST_NOTES = {
   "skater:ruled_out_at_run": `FORGE reserve line: ruled out when FORGE ran, with no news for this game; dressing is unknown, so ${COUNTS_ZERO}.`,
   "skater:no_lineup_evidence": `FORGE reserve line: not in FORGE's projected lineup and no lineup news for this game; dressing is unknown, so ${COUNTS_ZERO}.`,
   "skater:evidence_unavailable": `FORGE reserve line: lineup news could not be read; dressing is unknown, so ${COUNTS_ZERO}.`,
+  // FORGE's own run-time roster evidence on a row (L9c, decision 132): the row's line is his "if he plays" line.
+  "skater:roster_out": "FORGE roster evidence lists him out of this game, so it counts 0; his 'if he plays' line is kept separately.",
+  "skater:availability_uncertain": `FORGE line: his availability for this game is uncertain (e.g. day-to-day) with no qualified participation chance, so ${COUNTS_ZERO}.`,
+  "skater:availability_unknown": `FORGE line: his availability for this game is unknown, so ${COUNTS_ZERO}.`,
   "skater:no_forge_line": `No FORGE line: FORGE has no current line for him, so ${COUNTS_ZERO}; his last FORGE line, where one exists, is his "if he plays" line.`,
   "goalie:no_forge_line": `No FORGE line: FORGE has no line for him or his team's starter, so ${COUNTS_ZERO}.`,
   "goalie:start_unknown": `FORGE goalie line: no start share or news for this game, so his start chance is unknown and ${COUNTS_ZERO}.`,
@@ -40,7 +45,19 @@ export function isReserveLine(code: ReserveCode | null | undefined): boolean {
 /** A reserve skater's chance to dress as the evidence states it: 1 or 0 only when accepted news confirms it. Goalies
  * carry no appearance field (their start chance is the forecast's own startProbability). */
 export function reserveAppearanceProbability(code: ReserveCode): number | null | undefined {
-  return code.startsWith("goalie:") ? undefined : code === "skater:confirmed_lineup" ? 1 : code === "skater:confirmed_out" ? 0 : null;
+  return code.startsWith("goalie:") ? undefined : code === "skater:confirmed_lineup" ? 1
+    : code === "skater:confirmed_out" || code === "skater:roster_out" ? 0 : null;
+}
+/** True for a reserve code whose participation the evidence does not settle (every reserve line except a confirmed
+ * lineup or a confirmed out, plus no-line rows): its stats are unknown and it allows no planning use. */
+export function reserveParticipationUnknown(code: ReserveCode | null | undefined): boolean {
+  return isReserveLine(code) && code !== "skater:confirmed_lineup" && code !== "skater:confirmed_out" && code !== "skater:roster_out";
+}
+const NO_USES = { assignment: false, totals: false, comparison: false, conditionalTieBreak: false };
+/** Planning uses a bridge row allows: none for an unknown-participation reserve row (decisions 3, 47), else all but the
+ * conditional tie-break. */
+export function bridgeAllowedUses(code: ReserveCode | null | undefined) {
+  return reserveParticipationUnknown(code) ? { ...NO_USES } : { assignment: true, totals: true, comparison: true, conditionalTieBreak: false };
 }
 /** The reserve code a forecast carries in its last limitation, if any. */
 export function reserveCodeOf(forecast: Pick<GameForecast, "limitations">): ReserveCode | null {
@@ -60,7 +77,6 @@ export type BridgeRunProof = { runId: string; basis: "captured_snapshot" | "veri
   releaseSha: string | null; closureSha256: string | null };
 type Inputs = { players: PlanningPlayer[]; games: PlanningGame[] };
 
-const ALLOWED_USES = { assignment: true, totals: true, comparison: true, conditionalTieBreak: false };
 const canonical = (value: unknown): string => Array.isArray(value) ? `[${value.map(canonical).join(",")}]`
   : value && typeof value === "object" ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical((value as Record<string, unknown>)[key])}`).join(",")}}`
     : JSON.stringify(value) ?? "null";
@@ -83,7 +99,7 @@ function expandRow(row: WireRow, run: WireRun, limitations: string[], seasonId: 
     issuedContext: { version: "forge-issued-context-v1", playerId, gameId, nhlPlayerId: player.nhlId!, seasonId,
       teamId: player.nhlTeamId!, scheduledAt: game.startsAt!, scheduleRevision: game.scheduleRevision!, rosterRevision: player.rosterRevision!,
       observedAt: issuedAt, scheduleSourceUpdatedAt: null, scheduleFetchedAt: null, identityUpdatedAt: null, membershipCreatedAt: [] },
-    allowedUses: { ...ALLOWED_USES }, ...(conditionalStats ? { conditionalStats } : {}),
+    allowedUses: bridgeAllowedUses(reserve), ...(conditionalStats ? { conditionalStats } : {}),
     ...(appearance !== undefined ? { appearanceProbability: appearance } : {}),
     playerId, gameId, stats, conditioning: "unconditional", startProbability, confirmedStart,
     revisionId, issuedAt, modelVersion, limitations: reserve ? [...limitations, RESERVE_FORECAST_NOTES[reserve]] : [...limitations] };

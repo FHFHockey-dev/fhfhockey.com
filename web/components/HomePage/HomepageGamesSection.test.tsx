@@ -10,6 +10,10 @@ import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import HomepageGamesSection from "./HomepageGamesSection";
+import {
+  attachHomepageGameAnalytics,
+  mergePersistedGameMetrics,
+} from "lib/homepageGameAnalytics";
 
 vi.mock("next/link", () => ({
   default: ({ href, className, children, ...props }: any) => (
@@ -628,7 +632,7 @@ describe("HomepageGamesSection", () => {
       desktopSlate.querySelector(
         "[data-table-columns='medium-scheduled']",
       )?.textContent,
-    ).toContain("TimeMatchupEdgeProjNetwork");
+    ).toContain("TimeMatchupModelProjNetwork");
     expect(
       desktopSlate.querySelector("[data-table-columns='medium-final']")
         ?.textContent,
@@ -1015,5 +1019,171 @@ describe("HomepageGamesSection", () => {
     expect(desktopQueries.getByText("1.82–2.35")).toBeTruthy();
     expect(desktopQueries.getByText("20–24")).toBeTruthy();
     expect(screen.queryByText(/Away Starter/i)).toBeNull();
+  });
+
+  // W3-2 D2 / decisions 42 and 43, on rendered output.
+  const scheduledWith = (analytics: Record<string, unknown> | undefined) => ({
+    ...makeGames(1)[0],
+    ...(analytics ? { analytics: { gameId: 1, ...analytics } } : {}),
+  });
+
+  it("shows a 0.504/0.496 pair as an even 50/50 on desktop, mobile and in the accessibility label", () => {
+    const { container } = renderGames([
+      scheduledWith({ awayWinProbability: 0.496, homeWinProbability: 0.504 }),
+    ]);
+    const away = screen.getByTitle("NYR pregame win probability");
+    const home = screen.getByTitle("BOS pregame win probability");
+    expect(away.textContent).toBe("50%");
+    expect(home.textContent).toBe("50%");
+    expect(away.getAttribute("data-probability-tone")).toBe("even");
+    expect(home.getAttribute("data-probability-tone")).toBe("even");
+
+    const desktopCard = container.querySelector(
+      "[data-desktop-slate='true'] [data-card-variant='light']",
+    ) as HTMLElement;
+    expect(desktopCard.textContent).toContain("50 / 50");
+    expect(desktopCard.textContent).not.toContain("BOS 50%");
+    expect(desktopCard.getAttribute("aria-label")).toContain(
+      "NYR 50 percent, BOS 50 percent, even",
+    );
+  });
+
+  it("never prints a displayed pair that sums to 101", () => {
+    renderGames([
+      scheduledWith({ awayWinProbability: 0.495, homeWinProbability: 0.505 }),
+    ]);
+    expect(screen.getByTitle("NYR pregame win probability").textContent).toBe(
+      "49%",
+    );
+    expect(screen.getByTitle("BOS pregame win probability").textContent).toBe(
+      "51%",
+    );
+  });
+
+  it("does not render an incoherent probability pair", () => {
+    renderGames([
+      scheduledWith({ awayWinProbability: 0.5, homeWinProbability: 0.7 }),
+    ]);
+    expect(screen.queryByTitle("NYR pregame win probability")).toBeNull();
+    expect(screen.queryByTitle("BOS pregame win probability")).toBeNull();
+  });
+
+  it.each([
+    [1, "light"],
+    [6, "medium"],
+  ])(
+    "shows the decision-42 notice on the %s-game %s desktop and mobile slates when no prediction is qualified",
+    (count) => {
+      const { container } = renderGames(makeGames(count));
+      for (const slate of ["[data-desktop-slate='true']", "[data-mobile-slate='true']"]) {
+        const notice = container.querySelector(
+          `${slate} [data-prediction-notice='true']`,
+        );
+        expect(notice?.textContent).toBe(
+          "FHFH predictions unavailable while the model is developed and validated.",
+        );
+      }
+      const labels = Array.from(
+        container.querySelectorAll("a[data-game-state='scheduled']"),
+      ).map((link) => link.getAttribute("aria-label"));
+      expect(labels.length).toBeGreaterThan(0);
+      for (const label of labels) {
+        expect(label).toContain("FHFH prediction unavailable");
+      }
+    },
+  );
+
+  it("counts the scheduled games without a prediction and drops the notice when all have one", () => {
+    const { container, rerender } = renderGames([
+      scheduledWith({ awayWinProbability: 0.42, homeWinProbability: 0.58 }),
+      { ...makeGames(2)[1] },
+    ]);
+    expect(
+      container.querySelector(
+        "[data-mobile-slate='true'] [data-prediction-notice='true']",
+      )?.textContent,
+    ).toBe("FHFH predictions unavailable for 1 of 2 scheduled games.");
+
+    rerender(
+      <HomepageGamesSection
+        currentDate="2026-10-10"
+        games={[
+          scheduledWith({ awayWinProbability: 0.42, homeWinProbability: 0.58 }),
+        ]}
+        gamesHeaderText="Today's"
+        onChangeDate={() => {}}
+        loading={false}
+        error={null}
+        lastUpdatedAt="2026-10-10T12:00:00.000Z"
+      />,
+    );
+    expect(container.querySelector("[data-prediction-notice='true']")).toBeNull();
+  });
+
+  it("labels the edge Model vs market on cards and in the accessibility label", () => {
+    const { container } = renderGames([
+      scheduledWith({
+        awayWinProbability: 0.39,
+        homeWinProbability: 0.61,
+        edgeTeamAbbreviation: "BOS",
+        edgePercentagePoints: 6,
+      }),
+    ]);
+    const desktopCard = container.querySelector(
+      "[data-desktop-slate='true'] [data-card-variant='light']",
+    ) as HTMLElement;
+    const mobileCard = container.querySelector(
+      "[data-mobile-slate='true'] a[data-game-state='scheduled']",
+    ) as HTMLElement;
+    for (const card of [desktopCard, mobileCard]) {
+      expect(card.textContent).toContain("Model vs market");
+      expect(card.textContent).toContain("BOS +6.0pp");
+      expect(card.textContent).not.toMatch(/\bEdge\b/);
+      expect(card.getAttribute("aria-label")).toContain(
+        "model vs market edge BOS +6.0 percentage points",
+      );
+    }
+  });
+
+  // W3-2 A1 / W3-3 D5 on rendered output: stored rows -> merge -> slate.
+  it.each([
+    [
+      "one missing strength bucket",
+      [
+        { team_id: 3, shots_es: 20, shots_pp: null, shots_pk: 1, updated_at: "2026-10-10T23:30:00.000Z" },
+        { team_id: 6, shots_es: 20, shots_pp: 4, shots_pk: 0, updated_at: "2026-10-10T23:30:00.000Z" },
+      ],
+    ],
+    [
+      "one side written before the game",
+      [
+        { team_id: 3, shots_es: 18, shots_pp: 2, shots_pk: 1, updated_at: "2026-06-17T03:00:00.000Z" },
+        { team_id: 6, shots_es: 20, shots_pp: 4, shots_pk: 0, updated_at: "2026-10-10T23:30:00.000Z" },
+      ],
+    ],
+  ])("shows no SOG on a final game with %s", (_label, strengthRows) => {
+    const [base] = makeGames(1, ["FINAL"]);
+    const game = {
+      ...base,
+      startTimeUTC: "2026-10-10T20:00:00.000Z",
+      awayTeam: { ...base.awayTeam, id: 3 },
+      homeTeam: { ...base.homeTeam, id: 6 },
+    };
+    const analyticsByGameId = new Map();
+    mergePersistedGameMetrics({
+      games: [game],
+      analyticsByGameId,
+      xgModel: null,
+      xgRows: [],
+      strengthRows: strengthRows.map((row) => ({ game_id: 1, ...row })) as any,
+    });
+    const { container } = renderGames(
+      attachHomepageGameAnalytics([game], analyticsByGameId),
+    );
+    for (const slate of ["[data-desktop-slate='true']", "[data-mobile-slate='true']"]) {
+      const card = container.querySelector(`${slate} [data-game-state='final']`);
+      expect(card?.textContent).not.toMatch(/\bSOG\b/);
+      expect(card?.textContent).not.toContain("21–24");
+    }
   });
 });

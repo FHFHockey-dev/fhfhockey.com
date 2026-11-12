@@ -128,4 +128,35 @@ describe("MobileTabInterface", () => {
 
     expect(screen.getByText("No leaders available.")).toBeDefined();
   });
+
+  it("W3-2 D5: tied leaders share a rank and the goalie qualifier is printed", () => {
+    const tied = [9, 8, 7, 6, 5, 5].map((points, index) =>
+      skater({ player_id: 100 + index, fullName: `Skater ${100 + index}`, points })
+    );
+    render(
+      <MobileTabInterface
+        pointsLeaders={tied}
+        goalsLeaders={[]}
+        pppLeaders={[]}
+        bshLeaders={[]}
+        goalieLeadersWins={[]}
+        goalieLeadersSavePct={[]}
+        goalieLeadersGAA={[]}
+        goalieLeadersQS={[]}
+        goalieQualifierNote="Qualifier unknown (standings unavailable): rate leaders withheld"
+        goalieEmptyMessage="Withheld: qualifier unknown."
+      />
+    );
+    const ranks = screen
+      .getAllByRole("link")
+      .map((link) => link.querySelector("span")?.textContent);
+    // Both players tied at fifth are shown, each ranked fifth.
+    expect(ranks).toEqual(["1", "2", "3", "4", "5", "5"]);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Goalies" }));
+    expect(
+      screen.getByText("Qualifier unknown (standings unavailable): rate leaders withheld")
+    ).toBeDefined();
+    expect(screen.getByText("Withheld: qualifier unknown.")).toBeDefined();
+  });
 });

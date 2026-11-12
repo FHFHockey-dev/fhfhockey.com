@@ -83,8 +83,18 @@ const fixture = (id: string, teamA: string, teamB: string, day: number): SosFixt
   ({ id, teamA, teamB, startsAt: at(day), scheduleKnownAt: at(1) });
 const result = (id: string, winner: string, loser: string, day: number, overtime = false): SosResult =>
   ({ ...fixture(id, winner, loser, day), winner, overtime, completedAt: at(day, 2), resultKnownAt: at(day, 3) });
+/**
+ * Past fixtures need their own final result (decision 21); these fixtures get
+ * one (focal results never enter opposition quality) unless one is supplied.
+ */
+const withFinals = (fixtures: SosFixture[], results: SosResult[]) => {
+  const ids = new Set(results.map((game) => game.id));
+  return [...results, ...fixtures.filter((game) => !ids.has(game.id) && game.startsAt < at(10))
+    .map((game) => ({ ...game, winner: game.teamA, overtime: false,
+      completedAt: game.startsAt.replace("T00:", "T02:"), resultKnownAt: game.startsAt.replace("T00:", "T03:") }))];
+};
 const descriptive = (fixtures: SosFixture[], results: SosResult[], overrides: Partial<Parameters<typeof computeDescriptiveSos>[0]> = {}) =>
-  computeDescriptiveSos({ team: "A", fixtures, results, cutoff: at(10), view: "past-retrospective", metric: "win-pct", ...overrides });
+  computeDescriptiveSos({ team: "A", fixtures, results: withFinals(fixtures, results), cutoff: at(10), view: "past-retrospective", metric: "win-pct", ...overrides });
 
 describe("descriptive-sos-v1", () => {
   it("distinguishes win%, points%, true zero, and unknown record fields", () => {
@@ -104,7 +114,7 @@ describe("descriptive-sos-v1", () => {
     expect(score.direct).toBeCloseTo((0.5 + 0.5 + 1) / 3, 12);
     expect(score.observations.map((item) => item.opponentRecordGames)).toEqual([2, 2, 3]);
     expect(score.fixtures).toBe(3);
-    expect(score.version).toBe("descriptive-sos-v1");
+    expect(score.version).toBe("descriptive-sos-v2");
     expect(score.kind).toBe("descriptive-schedule");
   });
 
@@ -162,6 +172,21 @@ describe("descriptive-sos-v1", () => {
     expect(score.indirect).toBeNull();
     expect(descriptive([], []).direct).toBeNull();
     expect(descriptive([], []).fixtures).toBe(0);
+  });
+
+  it("counts only final fixtures as past; started or postponed ones are pending (decision 21)", () => {
+    const final = fixture("final", "A", "B", 5);
+    const started = { ...fixture("live", "A", "C", 9), startsAt: at(9, 23) };
+    const postponed = fixture("ppd", "A", "D", 7);
+    const score = computeDescriptiveSos({
+      team: "A", fixtures: [final, started, postponed],
+      results: [result("final", "A", "B", 5), result("bc", "B", "C", 2), result("cd", "C", "D", 3), result("db", "D", "B", 4)],
+      cutoff: at(10), view: "past-retrospective", metric: "win-pct",
+    });
+    expect(score.fixtures).toBe(1);
+    expect(score.observations.map((item) => item.fixtureId)).toEqual(["final"]);
+    expect(score.pendingFixtureIds).toEqual(["live", "ppd"]);
+    expect(score.pendingFixtures).toBe(2);
   });
 
   it("rejects invalid calendars, conflicting identities, duplicates and impossible chronology", () => {

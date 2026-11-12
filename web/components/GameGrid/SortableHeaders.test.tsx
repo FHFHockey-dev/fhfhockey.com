@@ -46,7 +46,8 @@ vi.mock("next/image", () => ({
   default: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} />,
 }));
 
-vi.mock("./utils/useDateRangeTeamGrid", () => ({
+vi.mock("./utils/useDateRangeTeamGrid", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./utils/useDateRangeTeamGrid")>()),
   default: () => dateRangeState,
 }));
 

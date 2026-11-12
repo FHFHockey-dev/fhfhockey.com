@@ -62,7 +62,8 @@ describe("roster contribution ledger", () => {
     expect(ledger.get("c")!.days).toContainEqual(expect.objectContaining({ date: "2026-10-06", state: "bench", reason: "locked_bench" }));
     expect(ledger.get("reserve")).toMatchObject({ scheduledGames: 2, activeGames: 0, benchGames: 0 });
     expect(ledger.get("reserve")!.days.map(day => day.state)).toEqual(["elapsed", "reserve", "cancelled", "reserve"]);
-    expect(ledger.get("off")).toMatchObject({ scheduledGames: 0, activeGames: 0, benchGames: 0, projectedPoints: null });
+    // No game left on a verified complete schedule: a known 0 in range (decision 56), per player, whatever the others' unknowns.
+    expect(ledger.get("off")).toMatchObject({ scheduledGames: 0, activeGames: 0, benchGames: 0, projectedPoints: 0 });
     expect(ledger.get("off")!.days.every(day => day.state === "no_game")).toBe(true);
   });
 
@@ -122,7 +123,7 @@ describe("roster contribution ledger", () => {
   it.each(["supported", "conditional", "forbidden", "missing", "categories"])("uses only approved assigned points, excluding banked results: %s", mode => {
     const snapshot = fixture(), evaluation = evaluate(snapshot);
     snapshot.realized = { GOALS: 100 };
-    evaluation.comparisonEligible = true; evaluation.projectedValue = 212;
+    evaluation.comparisonEligible = true; evaluation.projectedValue = 212; evaluation.valueUnknownPlayerIds = [];
     evaluation.forecastInputs = evaluation.assignments.map(row => ({ playerId: row.playerId, gameId: row.gameId,
       conditioning: "unconditional", stats: { GOALS: 2 }, startProbability: null, confirmedStart: false,
       revisionId: "mechanics-only", modelVersion: "fixture", issuedAt: snapshot.context.asOf,

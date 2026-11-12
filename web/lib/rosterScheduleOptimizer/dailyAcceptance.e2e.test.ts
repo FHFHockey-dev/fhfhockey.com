@@ -165,7 +165,8 @@ describe("RSO daily beta: end-to-end acceptance on the interim bridge", () => {
     expect(plans.length).toBeGreaterThan(0);
     // Its schedule value is known (a Tuesday start); its points are not.
     expect(plans.some(plan => plan.netAGP === 1)).toBe(true);
-    for (const plan of plans) { expect(plan.netPoints).toBeNull(); expect(plan.dropped.every(row => row.lostPoints === null)).toBe(true); }
+    // Per-player evidence (W1 P0 #27): the dropped player's own known points stay known; the plan's net stays unknown.
+    for (const plan of plans) { expect(plan.netPoints).toBeNull(); expect(plan.dropped.every(row => Number.isFinite(row.lostPoints))).toBe(true); }
   });
 
   describe("(7) refresh, Undo, save/reopen and account isolation", () => {

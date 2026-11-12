@@ -14,205 +14,135 @@ const teams = [
 
 const players = [
   { id: 10, fullName: "Shot Creator", team_id: 1, position: "C" },
-  { id: 20, fullName: "Older Row", team_id: 2, position: "L" },
+  { id: 20, fullName: "No Created Row", team_id: 2, position: "L" },
   { id: 30, fullName: "Net Minder", team_id: 1, position: "G" },
 ];
 
-describe("xgExplorer", () => {
-  it("merges latest player xG, created xG, transition, and rebound rows", () => {
+const core = (overrides: Record<string, unknown>) => ({
+  player_id: 10,
+  team_id: 1,
+  as_of_game_date: "2026-02-10",
+  as_of_game_id: 50,
+  games_count: 10,
+  ixg: 4.1234567,
+  goals: 5,
+  shot_attempts: 41,
+  ...overrides,
+});
+
+const created = (overrides: Record<string, unknown>) => ({
+  player_id: 10,
+  team_id: 1,
+  as_of_game_date: "2026-02-10",
+  as_of_game_id: 50,
+  games_count: 10,
+  created_xg: 3.5,
+  shot_assist_created_xg: 2.25,
+  transition_created_xg: 1.25,
+  shot_assist_events: 6,
+  transition_events: 3,
+  ...overrides,
+});
+
+describe("buildPlayerXgExplorerRows (W3-1 D7: one window and cutoff per row)", () => {
+  it("pairs created xG only with the core row's cutoff game and window", () => {
     const rows = buildPlayerXgExplorerRows({
       players,
       teams,
       limit: 5,
-      xgRows: [
-        {
-          player_id: 10,
-          team_id: 1,
-          as_of_game_date: "2026-01-02",
-          as_of_game_id: 2,
-          games_count: 10,
-          ixg: 4.1234567,
-          goals: 5,
-          shot_attempts: 41,
-        },
-        {
-          player_id: 10,
-          team_id: 1,
-          as_of_game_date: "2026-01-01",
-          as_of_game_id: 1,
-          games_count: 9,
-          ixg: 2,
-          goals: 2,
-          shot_attempts: 20,
-        },
-      ],
-      createdRows: [
-        {
-          player_id: 10,
-          team_id: 1,
-          as_of_game_date: "2026-01-01",
-          as_of_game_id: 1,
-          games_count: 9,
-          created_xg: 9,
-          shot_assist_created_xg: 9,
-          transition_created_xg: 0,
-          shot_assist_events: 9,
-          transition_events: 0,
-        },
-        {
-          player_id: 10,
-          team_id: 1,
-          as_of_game_date: "2026-01-02",
-          as_of_game_id: 2,
-          games_count: 10,
-          created_xg: 3.5,
-          shot_assist_created_xg: 2.25,
-          transition_created_xg: 1.25,
-          shot_assist_events: 6,
-          transition_events: 3,
-        },
-      ],
-      transitionRows: [
-        {
-          entity_type: "player",
-          entity_id: 10,
-          controlled_entries: 8,
-          controlled_exits: 7,
-          failed_exits_against: 0,
-          entry_assists: 4,
-          transition_created_shots: 3,
-          transition_created_xg: 1.25,
-        },
-      ],
-      reboundRows: [
-        {
-          player_id: 10,
-          expected_rebounds_created: 1.75,
-          actual_rebounds_created: 2,
-        },
-      ],
+      xgRows: [core({}), core({ as_of_game_date: "2026-01-10", as_of_game_id: 20, ixg: 2 })],
+      // An older created row (Jan 10) must not sit beside the Feb 10 core row.
+      createdRows: [created({ as_of_game_date: "2026-01-10", as_of_game_id: 20, created_xg: 9 }), created({})],
     });
 
-    expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       id: 10,
-      name: "Shot Creator",
-      teamAbbreviation: "BOS",
-      gamesCount: 10,
+      asOfGameDate: "2026-02-10",
       ixg: 4.123457,
       createdXg: 3.5,
-      shotAssistEvents: 6,
-      expectedPrimaryAssists: 2.25,
-      transitionEvents: 3,
-      transitionCreatedShots: 3,
-      controlledEntries: 8,
-      expectedReboundsCreated: 1.75,
-      actualReboundsCreated: 2,
+      shotAssistCreatedXg: 2.25,
+      transitionCreatedXg: 1.25,
     });
   });
 
-  it("computes team xG percentage and rebound context", () => {
+  it("shows missing or misaligned created xG as null, never 0", () => {
+    const rows = buildPlayerXgExplorerRows({
+      players,
+      teams,
+      limit: 5,
+      xgRows: [core({}), core({ player_id: 20, team_id: 2, ixg: 9 })],
+      // Player 10's only created row is a different window (5 games).
+      createdRows: [created({ games_count: 5 })],
+    });
+
+    expect(rows.map((row) => [row.id, row.createdXg, row.shotAssistEvents])).toEqual([
+      [20, null, null],
+      [10, null, null],
+    ]);
+  });
+
+  it("sorts created xG descending with nulls last and a stable id tie-break", () => {
+    const rows = buildPlayerXgExplorerRows({
+      players,
+      teams,
+      limit: 5,
+      xgRows: [core({ player_id: 20, team_id: 2, ixg: 9 }), core({})],
+      createdRows: [created({ created_xg: 0.5 })],
+    });
+    expect(rows.map((row) => row.id)).toEqual([10, 20]);
+  });
+});
+
+describe("team and goalie explorer rows", () => {
+  it("serves the latest team window only", () => {
     const rows = buildTeamXgExplorerRows({
       teams,
       limit: 5,
       xgRows: [
-        {
-          team_id: 1,
-          as_of_game_date: "2026-01-02",
-          as_of_game_id: 2,
-          games_count: 10,
-          xg_for: 30,
-          xg_against: 20,
-          goals_for: 28,
-          goals_against: 18,
-        },
-      ],
-      transitionRows: [
-        {
-          entity_type: "team",
-          entity_id: 1,
-          controlled_entries: 40,
-          controlled_exits: 35,
-          failed_exits_against: 12,
-          entry_assists: 0,
-          transition_created_xg: 5,
-        },
-      ],
-      reboundRows: [
-        {
-          team_id: 1,
-          expected_rebounds_for: 7,
-          expected_rebounds_against: 4,
-        },
+        { team_id: 1, as_of_game_date: "2026-02-10", as_of_game_id: 50, games_count: 10, xg_for: 30, xg_against: 20, goals_for: 28, goals_against: 18 },
+        { team_id: 1, as_of_game_date: "2026-01-10", as_of_game_id: 20, games_count: 10, xg_for: 1, xg_against: 9, goals_for: 1, goals_against: 9 },
       ],
     });
-
-    expect(rows[0]).toMatchObject({
-      id: 1,
-      abbreviation: "BOS",
-      xgFor: 30,
-      xgAgainst: 20,
-      xgPct: 0.6,
-      failedExitsAgainst: 12,
-      expectedReboundsFor: 7,
-      expectedReboundsAgainst: 4,
-    });
+    expect(rows).toEqual([
+      { id: 1, name: "Boston Bruins", abbreviation: "BOS", asOfGameDate: "2026-02-10", gamesCount: 10, xgFor: 30, xgAgainst: 20, xgPct: 0.6, goalsFor: 28, goalsAgainst: 18 },
+    ]);
   });
 
-  it("sorts goalies by goals saved above expected with rebound saved as tiebreaker", () => {
+  it("sorts goalies by GSAx with an id tie-break", () => {
+    const goalie = (id: number, gsax: number) => ({
+      goalie_player_id: id,
+      team_id: 1,
+      as_of_game_date: "2026-02-10",
+      as_of_game_id: 50,
+      games_count: 10,
+      xg_against: 20,
+      goals_against: 18,
+      shots_against: 300,
+      goals_saved_above_expected: gsax,
+    });
     const rows = buildGoalieXgExplorerRows({
       players,
       teams,
       limit: 5,
-      xgRows: [
-        {
-          goalie_player_id: 30,
-          team_id: 1,
-          as_of_game_date: "2026-01-02",
-          as_of_game_id: 2,
-          games_count: 8,
-          xg_against: 21,
-          goals_against: 18,
-          shots_against: 240,
-          goals_saved_above_expected: 3,
-        },
-      ],
-      reboundRows: [
-        {
-          goalie_player_id: 30,
-          expected_rebounds_allowed: 6.5,
-          actual_rebounds_allowed: 5,
-          rebound_control_saved_above_expected: 1.5,
-          actual_goalie_freezes: 9,
-          actual_covered_pucks: 4,
-        },
-      ],
+      xgRows: [goalie(30, 2), goalie(20, 2), goalie(10, 3)],
     });
-
-    expect(rows[0]).toMatchObject({
-      id: 30,
-      name: "Net Minder",
-      xgAgainst: 21,
-      goalsAgainst: 18,
-      goalsSavedAboveExpected: 3,
-      expectedReboundsAllowed: 6.5,
-      reboundControlSavedAboveExpected: 1.5,
-      goalieFreezes: 9,
-    });
+    expect(rows.map((row) => row.id)).toEqual([10, 20, 30]);
   });
+});
 
-  it("flags sparse player created-xG coverage", () => {
-    const report = buildXgExplorerCoverageReport({
-      scope: "players",
-      sourceRows: 42236,
-      supplementalRows: 570,
-      createdRows: 570,
-      transitionRows: 191,
-      reboundRows: 0,
+describe("buildXgExplorerCoverageReport (W2-3 A4: coverage from served rows)", () => {
+  it("is ok only when every served player row has aligned created xG", () => {
+    const aligned = { createdXg: 1 } as never;
+    const missing = { createdXg: null } as never;
+    expect(buildXgExplorerCoverageReport({ scope: "players", rows: [aligned, aligned] })).toMatchObject({
+      status: "ok",
+      servedRows: 2,
+      alignedRows: 2,
     });
-
-    expect(report.status).toBe("warning");
-    expect(report.ratios.createdToSource).toBe(0.013496);
-    expect(report.warnings.join(" ")).toContain("Sparse created-xG coverage");
+    expect(buildXgExplorerCoverageReport({ scope: "players", rows: [aligned, missing] })).toMatchObject({
+      status: "warning",
+      alignedRows: 1,
+    });
+    expect(buildXgExplorerCoverageReport({ scope: "teams", rows: [] }).status).toBe("warning");
   });
 });

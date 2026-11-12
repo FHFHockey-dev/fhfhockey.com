@@ -108,6 +108,17 @@ function weighted(value: number | null, probability: number): number | null {
   return value == null || !Number.isFinite(value) ? null : roundMetric(value * probability);
 }
 
+/**
+ * Largest sum a closed probability vector may show from rounding alone (W2-8 D2, M-FRG-092): n × 0.00005
+ * when every value is a proven 4-decimal rounding, otherwise floating-point noise only. Anything above
+ * is contradictory evidence.
+ */
+function roundingTolerance(rows: GoalieStarterProjectionInput[]): number {
+  const values = rows.map((row) => row.start_probability).filter((v): v is number => v != null && Number.isFinite(v));
+  const roundedTo4 = values.length > 0 && values.every((v) => Math.abs(v * 1e4 - Math.round(v * 1e4)) < 1e-6);
+  return 1 + (roundedTo4 ? values.length * 0.00005 : 0.000001);
+}
+
 export function buildGoalieStarterMixtureRows(args: {
   projections: GoalieStarterProjectionInput[];
   mixtureVersion?: string;
@@ -143,7 +154,7 @@ export function buildGoalieStarterMixtureRows(args: {
     const conflictingEvidence = confirmedRows.length > 1 || new Set(rows.map(row => row.player_id)).size !== rows.length
       || rows.some(row => row.start_probability != null && (!Number.isFinite(row.start_probability)
         || row.start_probability < 0 || row.start_probability > 1))
-      || rows.reduce((sum, row) => sum + (row.start_probability ?? 0), 0) > 1.000001;
+      || rows.reduce((sum, row) => sum + (row.start_probability ?? 0), 0) > roundingTolerance(rows);
     const previousStarter = args.previousGameStarterByGameTeam?.get(key) ?? null;
     const isBackToBack = args.backToBackGameTeams?.has(key) ?? false;
 

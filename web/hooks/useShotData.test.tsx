@@ -204,6 +204,22 @@ describe("useShotData request ownership", () => {
     expect(result.current.opponentShotData).toEqual([]);
   });
 
+  it("tags each shot with its game's home team so the map can use the defending side", async () => {
+    // Team 1 is home in its game against 99; the opponent's shots carry the same home id.
+    mocks.pages.mockResolvedValueOnce(games(1)).mockResolvedValueOnce([
+      { gameid: gameId(1), eventownerteamid: 1, xcoord: -30, ycoord: 4, typedesckey: "goal", hometeamdefendingside: "left" },
+      { gameid: gameId(1), eventownerteamid: 99, xcoord: 60, ycoord: -4, typedesckey: "goal", hometeamdefendingside: "left" }
+    ]);
+    const { result } = renderHook(() => useShotData(1, "20262027", filters));
+    await flush();
+    expect(result.current.shotData).toEqual([
+      expect.objectContaining({ xcoord: -30, eventownerteamid: 1, hometeamid: 1, hometeamdefendingside: "left" })
+    ]);
+    expect(result.current.opponentShotData).toEqual([
+      expect.objectContaining({ xcoord: 60, eventownerteamid: 99, hometeamid: 1 })
+    ]);
+  });
+
   it("clears the previous error when loading a different key", async () => {
     mocks.pages.mockRejectedValueOnce(new Error("current failure"));
     const { result, rerender } = renderHook(({ team }) => useShotData(team, "20262027", filters), {

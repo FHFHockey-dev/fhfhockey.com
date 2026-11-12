@@ -5,7 +5,11 @@ import type { UseVORPParams } from "hooks/useVORPCalculations";
 import { groupPlayerEligibility, normalizePlayerEligibility } from "./forwardGrouping";
 import { calculateCategoryScores } from "lib/scoring/categoryScores";
 
-/** Shared league-wide values; no availability or personalized replacement inputs. */
+/**
+ * Shared league-wide values; no availability or personalized replacement inputs.
+ * `values` holds known values only: a player missing from it has an unknown
+ * value (no finite projection, or a missing category input) and is never 0.
+ */
 export function buildPlayerValues({ players, draftSettings, leagueType = "points", categoryWeights = {}, forwardGrouping = "split", prorate84 = false, fantasyPointSettings = DEFAULT_SKATER_FANTASY_POINTS, positionWeightMultipliers }: Pick<UseVORPParams, "players" | "draftSettings" | "leagueType" | "categoryWeights" | "forwardGrouping" | "prorate84" | "fantasyPointSettings" | "positionWeightMultipliers">) {
   // Value per player (points or categories composite)
   const values = new Map<string, number>();
@@ -33,12 +37,13 @@ export function buildPlayerValues({ players, draftSettings, leagueType = "points
     // Points leagues: optionally recompute fantasy points using an 84G pace for skaters.
     players.forEach((p) => {
       const id = String(p.playerId);
-      let val = p.fantasyPoints?.projected ?? 0;
+      // Unknown projections stay unknown (audit W2-5 §4.2): no value is set.
+      let val = p.fantasyPoints?.projected;
       if (prorate84 && !eligibility.get(id)?.includes("G")) {
         const fp = computeProratedFantasyPoints(p, true, fantasyPointSettings, { mergeWithDefaults: false });
         if (fp != null && Number.isFinite(fp)) val = fp;
       }
-      values.set(id, Number.isFinite(val) ? val : 0);
+      if (typeof val === "number" && Number.isFinite(val)) values.set(id, val);
     });
   } else {
     const categoryPlayers = players.map((player) => {
@@ -82,9 +87,21 @@ export function buildPlayerValues({ players, draftSettings, leagueType = "points
         values: projectedValues,
       };
     });
-    calculateCategoryScores(categoryPlayers, categoryWeights).forEach(
-      (score, playerId) => values.set(playerId, score),
+    // League-aware reference pool (decision 62): the league's starting slots
+    // per role. Unknown category values leave the player without a value.
+    const roster = draftSettings.rosterConfig;
+    const teams = Math.max(0, Math.floor(draftSettings.teamCount || 0));
+    const skaterSlots = Object.entries(roster).reduce(
+      (sum, [slot, count]) =>
+        slot === "G" || slot === "bench" ? sum : sum + Math.max(0, Number(count) || 0),
+      0,
     );
+    const goalieSlots = Math.max(0, Number(roster.G) || 0);
+    calculateCategoryScores(categoryPlayers, categoryWeights, {
+      referencePool: teams > 0
+        ? { skater: teams * skaterSlots, goalie: teams * goalieSlots }
+        : undefined,
+    }).forEach((score, playerId) => values.set(playerId, score));
   }
 
   // Weight only the comparable valuation, after scoring/proration and before

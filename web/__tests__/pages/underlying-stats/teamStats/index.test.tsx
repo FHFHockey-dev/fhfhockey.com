@@ -150,8 +150,8 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
             ],
             sort:
               family === "rates"
-                ? { sortKey: "xgfPct", direction: "desc" }
-                : { sortKey: "points", direction: "desc" },
+                ? { sortKey: "cfPct", direction: "desc" }
+                : { sortKey: "cfPct", direction: "desc" },
             pagination: { page: 1, pageSize: 50, totalRows: 1, totalPages: 1 },
             placeholder: false,
             generatedAt: "2026-04-07T12:00:00.000Z",
@@ -183,7 +183,7 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
             displayMode: "counts",
             venue: "all",
             scope: "none",
-            sortKey: "points",
+            sortKey: "cfPct",
             sortDirection: "desc",
             page: "1",
             pageSize: "50",
@@ -233,7 +233,9 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
     ).toBeTruthy();
     expect(screen.getByText("FLA")).toBeTruthy();
     expect(screen.getByText("Showing 1 of 1 teams.").style.color).toBe("");
-    expect(screen.getByText("Points")).toBeTruthy();
+    // Decision 92: record columns are hidden under the default 5v5 split.
+    expect(screen.queryByText("Points")).toBeNull();
+    expect(screen.getByText(/Records \(W, L, OTL, points\) show only/)).toBeTruthy();
     expect(routerMock.replace).not.toHaveBeenCalled();
   });
 
@@ -267,7 +269,7 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
           pathname: "/underlying-stats/teamStats",
           query: expect.objectContaining({
             displayMode: "rates",
-            sortKey: "xgfPct",
+            sortKey: "cfPct",
             sortDirection: "desc",
             page: "1",
           }),
@@ -279,16 +281,16 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
 
     const ratesState = createDefaultTeamLandingFilterState({ currentSeasonId: 20252026 });
     ratesState.primary.displayMode = "rates";
-    ratesState.view.sort = { sortKey: "xgfPct", direction: "desc" };
+    ratesState.view.sort = { sortKey: "cfPct", direction: "desc" };
 
     await waitFor(() => {
       expectLastTeamLandingFetch(buildTeamStatsLandingApiPath(ratesState));
     });
 
-    expect(screen.getByText("xGF/60")).toBeTruthy();
-    expect(screen.getByText("2.45")).toBeTruthy();
+    // Bucket xG is hidden (decision 12); records hide under the 5v5 split (decision 92).
+    expect(screen.queryByText("xGF/60")).toBeNull();
     expect(screen.getByRole("button", { name: "Sort by TOI/GP" })).toBeTruthy();
-    expect(screen.getAllByRole("button", { name: "Sort by Points" }).length).toBeGreaterThan(0);
+    expect(screen.queryAllByRole("button", { name: "Sort by Points" })).toHaveLength(0);
     expect(screen.getAllByRole("button", { name: "Sort by PDO" }).length).toBeGreaterThan(0);
   });
 
@@ -324,7 +326,8 @@ describe("TeamUnderlyingStatsLandingRoute", () => {
     expect(getLastElement(screen.getAllByRole("button", { name: "Sort by Team" }))).toBeTruthy();
     expect(getLastElement(screen.getAllByRole("button", { name: "Sort by GP" }))).toBeTruthy();
     expect(getLastElement(screen.getAllByRole("button", { name: "Sort by TOI" }))).toBeTruthy();
-    expect(getLastElement(screen.getAllByRole("button", { name: "Sort by Points" }))).toBeTruthy();
+    // Decision 92: no record columns under the default 5v5 split.
+    expect(screen.queryAllByRole("button", { name: "Sort by Points" })).toHaveLength(0);
     expect(getLastElement(screen.getAllByRole("button", { name: "Sort by PDO" }))).toBeTruthy();
 
     fireEvent.click(

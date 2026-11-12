@@ -227,4 +227,55 @@ describe("sustainability read contracts", () => {
     });
     expect(payload.rows[0]).not.toHaveProperty("components");
   });
+  it("serves an all-missing score as unavailable, never 50 (BC W1-9 A2)", () => {
+    const missing = {
+      player_id: 7,
+      season_id: 20262027,
+      snapshot_date: "2026-11-10",
+      position_group: "F",
+      window_code: "l10",
+      s_raw: 0,
+      s_100: 50,
+      components: {
+        warnings: [
+          "missing_window_z_shp", "missing_window_z_oishp", "missing_window_z_ipp",
+          "missing_window_z_ppshp", "missing_skill_window_ixg60",
+          "missing_skill_window_icf60", "missing_skill_window_hdcf60"
+        ],
+        fallbackFlags: { missing_luck_stats: true, missing_skill_stats: true }
+      },
+      model_version: "sustainability_score_v3",
+      config_hash: "fnv1a_test",
+      sustainability_quintile: null,
+      computed_at: "2026-11-10T00:00:00.000Z"
+    } as any;
+    const complete = { ...missing, player_id: 8, s_100: 64, components: { warnings: [], fallbackFlags: {} } };
+
+    const player = shapePlayerSustainabilityPayload({
+      playerId: 7, window: 10, horizon: 5, score: missing, bands: [], projections: []
+    });
+    expect(player).toMatchObject({
+      sustainability_score: null,
+      score_raw: null,
+      score_state: "insufficient_inputs"
+    });
+
+    const summary = shapePlayerSustainabilitySummaryPayload({ playerId: 7, rows: [missing] });
+    expect(summary?.windows[0]).toMatchObject({ s_100: null, s_raw: null, score_state: "insufficient_inputs" });
+
+    const totals = [7, 8].map((player_id) => ({
+      player_id, player_name: `P${player_id}`, position_code: "C", season_id: 20262027, games_played: 10
+    }));
+    const board = shapeSustainabilityLeaderboardPayload({
+      snapshotDate: "2026-11-10",
+      seasonId: 20262027,
+      scoreRows: [missing, complete],
+      playerTotalRows: totals,
+      options: {
+        windowCode: "l10", minGames: 0, minScore: 0, rookieOnly: false,
+        page: 1, pageSize: 25, includeComponents: false
+      } as any
+    });
+    expect(board.rows.map((row: any) => row.player_id)).toEqual([8]);
+  });
 });

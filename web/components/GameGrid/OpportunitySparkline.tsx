@@ -11,6 +11,12 @@ const CARD_WIDTH = 236;
 type Trend = "Rising" | "Falling" | "Flat";
 const TREND_GLYPH: Record<Trend, string> = { Rising: "▲", Falling: "▼", Flat: "▬" };
 
+/**
+ * Direction from the first to the last week only, with no tolerance, so it is
+ * labelled "first vs last week" wherever it is shown (W3-3 D10).
+ */
+const TREND_BASIS = "first vs last week";
+
 function getTrend(weeks: OpportunityWeek[]): Trend | null {
   const first = weeks[0]?.opportunity;
   const last = weeks[weeks.length - 1]?.opportunity;
@@ -89,7 +95,7 @@ export default function OpportunitySparkline({ value, scale, team }: { value?: T
   const complete = weeks.length > 0 && weeks.every((w) => w.opportunity != null);
   const area = complete ? `${line} L ${x(weeks.length - 1).toFixed(2)} ${HEIGHT} L ${x(0).toFixed(2)} ${HEIGHT} Z` : null;
   const lastKnown = weeks.reduce((last, w, i) => w.opportunity == null ? last : i, -1);
-  const label = `${team} 4-week opportunity ${formatOpportunity(value?.opportunity)}${trend ? `, ${trend.toLowerCase()}` : ""}; weekly games ${weeks.map((w) => w.gamesPlayed ?? "unknown").join(", ") || "unavailable"}`;
+  const label = `${team} 4-week opportunity ${formatOpportunity(value?.opportunity)}${trend ? `, ${trend.toLowerCase()} (${TREND_BASIS})` : ""}; weekly games ${weeks.map((w) => w.gamesPlayed ?? "unknown").join(", ") || "unavailable"}`;
 
   const show = () => setOpen(true);
 
@@ -151,7 +157,7 @@ export default function OpportunitySparkline({ value, scale, team }: { value?: T
           <div className={styles.cardHeader}>
             <span className={styles.cardTeam}>{team}</span>
             <span className={styles.cardTotal}>4WK opportunity {formatOpportunity(value?.opportunity)}</span>
-            {trend && <span className={styles.cardTrend} data-trend={trend}><span aria-hidden="true">{TREND_GLYPH[trend]}</span> {trend}</span>}
+            {trend && <span className={styles.cardTrend} data-trend={trend}><span aria-hidden="true">{TREND_GLYPH[trend]}</span> {trend}, {TREND_BASIS}</span>}
           </div>
           <ul className={styles.cardWeeks}>
             {weeks.map((w) => (

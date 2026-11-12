@@ -8,8 +8,6 @@ import {
   FANTASY_PROJECTION_V5_CONTRACT_VERSION,
   GOALIE_FANTASY_V4_PRIMITIVE_TARGETS,
   GOALIE_PRIMITIVE_TARGETS,
-  reconcileProjectionQuantiles,
-  reconcileProjectionValues,
   SKATER_FANTASY_V4_PRIMITIVE_TARGETS,
   SKATER_PRIMITIVE_TARGETS,
   type FantasyProjectionPopulation,
@@ -21,7 +19,9 @@ import {
   emptySeasonAggregate,
   evaluatePortableSeasonGame,
   mergeAdvancedSeasonArtifact,
+  SEASON_GAME_EVALUATOR_VERSION,
   verifyPortableSeasonArtifact,
+  type SeasonActuals,
   type AdvancedSeasonArtifact,
   type PortablePlayerPrior,
   type PortableSeasonArtifact,
@@ -107,51 +107,18 @@ function quantile(values: number[], probability: number): number {
 }
 
 function runtimeNewcomerDeployment(
-  population: FantasyProjectionPopulation,
   rates: ProjectionValues,
 ): Record<string, unknown> {
-  const base = {
-    confidence: 0,
-    expectedEvToi: rates.EV_TOI ?? 0,
-    expectedPpToi: rates.PP_TOI ?? 0,
-    expectedPkToi: rates.PK_TOI ?? 0,
-    expectedTotalToi: rates.TOTAL_TOI ?? 0,
-    sourceManifest: ["runtime_population_prior_pending_artifact_freeze"],
-  };
-  if (population === "goalie") {
-    return {
-      ...base,
-      mostLikelyRole: { goalieOrder: 3 },
-      roleProbabilities: { goalieOrder: { G3: 0.65, other: 0.35 } },
-    };
-  }
-  if (population === "defense") {
-    return {
-      ...base,
-      mostLikelyRole: {
-        defensePair: 3,
-        powerPlayUnit: null,
-        penaltyKillUnit: null,
-      },
-      roleProbabilities: {
-        defensePair: { D3: 0.65, other: 0.35 },
-        powerPlayUnit: { none: 1 },
-        penaltyKillUnit: { none: 1 },
-      },
-    };
-  }
+  // Decision 122: a post-freeze newcomer has no role evidence, so no
+  // most-likely role and no role odds are emitted (confidence 0).
   return {
-    ...base,
-    mostLikelyRole: {
-      forwardLine: 4,
-      powerPlayUnit: null,
-      penaltyKillUnit: null,
-    },
-    roleProbabilities: {
-      forwardLine: { F4: 0.65, other: 0.35 },
-      powerPlayUnit: { none: 1 },
-      penaltyKillUnit: { none: 1 },
-    },
+    confidence: 0,
+    roleBasis: "unknown_no_role_evidence",
+    expectedEvToi: rates.EV_TOI ?? null,
+    expectedPpToi: rates.PP_TOI ?? null,
+    expectedPkToi: rates.PK_TOI ?? null,
+    expectedTotalToi: rates.TOTAL_TOI ?? null,
+    sourceManifest: ["runtime_population_prior_pending_artifact_freeze"],
   };
 }
 
@@ -195,31 +162,30 @@ export function buildRuntimeNewcomerPrior(args: {
   const conditionalRates: ProjectionValues = {};
   const baselineConditionalRates: ProjectionValues = {};
   const conditionalVariances: ProjectionValues = {};
+  const finiteValues = (values: unknown[]) =>
+    values.map((value) => (value == null ? Number.NaN : Number(value))).filter(Number.isFinite);
   for (const target of primitiveTargets) {
-    conditionalRates[target] = round(
-      quantile(
-        cohort.map((player) => Number(player.conditionalRates[target])),
-        0.5,
+    // A target no cohort member has a finite rate for stays unknown (rule 5);
+    // it is not served as a cohort "median" of 0.
+    const rates = finiteValues(cohort.map((player) => player.conditionalRates[target]));
+    if (!rates.length) continue;
+    conditionalRates[target] = round(quantile(rates, 0.5));
+    const baselines = finiteValues(
+      cohort.map(
+        (player) =>
+          player.baselineConditionalRates?.[target] ?? player.conditionalRates[target],
       ),
     );
     baselineConditionalRates[target] = round(
-      quantile(
-        cohort.map((player) =>
-          Number(
-            player.baselineConditionalRates?.[target] ??
-              player.conditionalRates[target],
-          ),
-        ),
-        0.5,
-      ),
+      baselines.length ? quantile(baselines, 0.5) : conditionalRates[target],
+    );
+    const cohortVariances = finiteValues(
+      cohort.map((player) => player.conditionalVariances[target]),
     );
     conditionalVariances[target] = round(
       Math.max(
         Math.abs(conditionalRates[target]),
-        quantile(
-          cohort.map((player) => Number(player.conditionalVariances[target])),
-          0.5,
-        ),
+        cohortVariances.length ? quantile(cohortVariances, 0.5) : 0,
       ) * 2.25,
     );
   }
@@ -245,6 +211,7 @@ export function buildRuntimeNewcomerPrior(args: {
         )
       : undefined;
   const fallbackFlags = [
+    "population_prior",
     "prior_based_projection",
     "runtime_new_identity_population_prior",
     "rookie_nhle_pending_next_artifact_freeze",
@@ -278,10 +245,14 @@ export function buildRuntimeNewcomerPrior(args: {
       sourceCoverage: ["official_player_landing_identity"],
       rosterProbability: playProbability,
       nhleMethod: "generic_population_prior_pending_next_artifact_freeze",
+      // Decision 122 / W3-5 F8: a labelled heuristic, not a validated
+      // newcomer prediction (cohort medians, p25 participation, ×2.25).
+      priorLabel: "population prior",
+      priorMethod: "heuristic_cohort_median_rate_p25_participation_variance_x2_25",
       uncertaintyMultiplier: 2.25,
       fallback: "post_artifact_identity",
     },
-    deployment: runtimeNewcomerDeployment(population, conditionalRates),
+    deployment: runtimeNewcomerDeployment(conditionalRates),
     fallbackFlags,
     primitiveTargets,
   };
@@ -351,8 +322,30 @@ export function applyPersistentPlayerAssumptions(
   return result;
 }
 
+const EASTERN_DATE = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/New_York",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/**
+ * NHL schedule day (days since epoch) of a game: the schedule's own game
+ * date when present, else the America/New_York date of puck drop — never the
+ * UTC calendar day (W2-7 D4b, rule 19). Twin of season.py `_nhl_schedule_day`.
+ */
+export function nhlScheduleDay(game: { game_date?: unknown; scheduled_start_at: unknown }): number {
+  const raw = typeof game.game_date === "string" ? game.game_date.slice(0, 10) : "";
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(raw)
+    ? raw
+    : EASTERN_DATE.format(new Date(String(game.scheduled_start_at)));
+  const [year, month, day] = iso.split("-").map(Number);
+  return Date.UTC(year, month - 1, day) / 86_400_000;
+}
+
 function scheduleContextsByTeam(scheduleGames: any[]): Map<number, SeasonGameContext[]> {
   const byTeam = new Map<number, SeasonGameContext[]>();
+  const lastDayByTeam = new Map<number, number>();
   const ordered = [...scheduleGames]
     .filter((game) => String(game.game_status ?? "") !== "cancelled")
     .sort((left, right) => {
@@ -367,12 +360,9 @@ function scheduleContextsByTeam(scheduleGames: any[]): Map<number, SeasonGameCon
       [Number(game.away_team_id), Number(game.home_team_id), false],
     ] as const) {
       const games = byTeam.get(teamId) ?? [];
-      const currentDay = Math.floor(
-        new Date(game.scheduled_start_at).getTime() / 86_400_000,
-      );
-      const previousDay = games.length
-        ? Math.floor(new Date(games[games.length - 1].scheduledStartAt).getTime() / 86_400_000)
-        : null;
+      const currentDay = nhlScheduleDay(game);
+      const previousDay = lastDayByTeam.get(teamId) ?? null;
+      lastDayByTeam.set(teamId, currentDay);
       const restDays = previousDay == null ? null : Math.max(0, currentDay - previousDay);
       games.push({
         gameId: Number(game.game_id),
@@ -387,22 +377,6 @@ function scheduleContextsByTeam(scheduleGames: any[]): Map<number, SeasonGameCon
     }
   }
   return byTeam;
-}
-
-function addActuals(
-  values: ProjectionValues,
-  actuals: ProjectionValues,
-  population: FantasyProjectionPopulation,
-): ProjectionValues {
-  return reconcileProjectionValues(
-    Object.fromEntries(
-      Object.entries(values).map(([target, value]) => [
-        target,
-        round(value + (actuals[target] ?? 0)),
-      ]),
-    ),
-    population,
-  );
 }
 
 function targetsFor(
@@ -425,48 +399,77 @@ function targetsFor(
       ];
 }
 
-function teamDeployment(players: PortablePlayerPrior[]): Record<string, unknown> {
-  const byToi = (population: FantasyProjectionPopulation) =>
+/**
+ * Aggregate-row expectations from season means. An unknown mean (for example
+ * after an unknown completed-game actual) is null, never 0 (rule 5). Note:
+ * `expected_games` is NOT NULL in player_forecast_season_player_aggregates
+ * today, so such a row fails the insert (fail closed) until the column is
+ * relaxed by a reviewed migration.
+ */
+export function aggregateExpectations(
+  means: Readonly<Record<string, number | undefined>>,
+  population: FantasyProjectionPopulation,
+): {
+  expected_games: number | null;
+  expected_starts: number | null;
+  expected_toi: Record<"total" | "evenStrength" | "powerPlay" | "penaltyKill", number | null>;
+} {
+  const known = (key: string): number | null => {
+    const value = means[key];
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+  };
+  return {
+    expected_games: known("GAMES_PLAYED"),
+    expected_starts: population === "goalie" ? known("GAMES_STARTED") : null,
+    expected_toi: {
+      total: known("TOTAL_TOI"),
+      evenStrength: known("EV_TOI"),
+      powerPlay: known("PP_TOI"),
+      penaltyKill: known("PK_TOI"),
+    },
+  };
+}
+
+export function teamDeployment(players: PortablePlayerPrior[]): Record<string, unknown> {
+  // Decision 123 / W3-5 F9: this is a projected ice-time order (expected TOI =
+  // conditional TOI rate × play probability), not inferred line combinations.
+  // Ties break by player id so order never depends on input order (rule 20).
+  // PP/PK units are withheld until strength TOI is real.
+  const expectedToi = (player: PortablePlayerPrior) => {
+    const rate = Number(player.conditionalRates.TOTAL_TOI);
+    const probability = Number(player.playProbability);
+    return Number.isFinite(rate) && Number.isFinite(probability)
+      ? rate * Math.min(1, Math.max(0, probability))
+      : Number.NEGATIVE_INFINITY;
+  };
+  const ordered = (
+    population: FantasyProjectionPopulation,
+    key: (player: PortablePlayerPrior) => number,
+  ) =>
     players
       .filter((player) => player.population === population)
       .sort(
         (left, right) =>
-          Number(right.conditionalRates.TOTAL_TOI ?? 0) -
-          Number(left.conditionalRates.TOTAL_TOI ?? 0),
+          key(right) - key(left) || left.fhfhPlayerId - right.fhfhPlayerId,
       );
-  const forwards = byToi("forward");
-  const defense = byToi("defense");
-  const skaters = [...forwards, ...defense];
-  const goalies = byToi("goalie").sort(
-    (left, right) => Number(right.startProbability ?? 0) - Number(left.startProbability ?? 0),
-  );
+  const forwards = ordered("forward", expectedToi);
+  const defense = ordered("defense", expectedToi);
+  const goalies = ordered("goalie", (player) => {
+    const probability = Number(player.startProbability);
+    return Number.isFinite(probability) ? probability : Number.NEGATIVE_INFINITY;
+  });
   return {
+    basis: "projected_ice_time_order",
+    label: "Projected ice-time order",
     forwardLines: [0, 3, 6, 9].map((start) =>
       forwards.slice(start, start + 3).map((player) => player.fhfhPlayerId),
     ),
     defensePairs: [0, 2, 4].map((start) =>
       defense.slice(start, start + 2).map((player) => player.fhfhPlayerId),
     ),
-    powerPlayUnits: [0, 5].map((start) =>
-      [...skaters]
-        .sort(
-          (left, right) =>
-            Number(right.conditionalRates.PP_TOI ?? 0) -
-            Number(left.conditionalRates.PP_TOI ?? 0),
-        )
-        .slice(start, start + 5)
-        .map((player) => player.fhfhPlayerId),
-    ),
-    penaltyKillUnits: [0, 4].map((start) =>
-      [...skaters]
-        .sort(
-          (left, right) =>
-            Number(right.conditionalRates.PK_TOI ?? 0) -
-            Number(left.conditionalRates.PK_TOI ?? 0),
-        )
-        .slice(start, start + 4)
-        .map((player) => player.fhfhPlayerId),
-    ),
+    powerPlayUnits: null,
+    penaltyKillUnits: null,
+    specialTeamsUnits: "withheld_until_strength_toi_is_real",
     goalieOrder: goalies.slice(0, 3).map((player) => player.fhfhPlayerId),
   };
 }
@@ -538,7 +541,7 @@ async function activeActuals(
   client: any,
   playerIds: number[],
   cutoffAt: string,
-): Promise<Map<number, ProjectionValues>> {
+): Promise<Map<number, SeasonActuals>> {
   if (playerIds.length === 0) return new Map();
   const rows: any[] = [];
   for (let start = 0; start < playerIds.length; start += 200) {
@@ -557,13 +560,16 @@ async function activeActuals(
     );
   }
   const superseded = new Set(rows.map((row) => row.supersedes_id).filter(Boolean));
-  const result = new Map<number, ProjectionValues>();
+  const result = new Map<number, Record<string, number | null>>();
   for (const row of rows.filter((candidate) => !superseded.has(candidate.id))) {
     const playerId = Number(row.fhfh_player_id);
     const values = result.get(playerId) ?? {};
     for (const [target, raw] of Object.entries(row.primitive_values ?? {})) {
-      const value = Number(raw);
-      if (Number.isFinite(value)) values[target] = round((values[target] ?? 0) + value);
+      const value = raw == null ? Number.NaN : Number(raw);
+      // One unknown completed-game value makes the running actual unknown
+      // (W2-7 D9): it is not skipped as if it were 0.
+      if (!Number.isFinite(value) || values[target] === null) values[target] = null;
+      else values[target] = round((values[target] ?? 0) + value);
     }
     result.set(playerId, values);
   }
@@ -922,7 +928,7 @@ async function processView(
     const actuals =
       view === "current"
         ? await activeActuals(client, affectedPlayers, cutoffAt)
-        : new Map<number, ProjectionValues>();
+        : new Map<number, SeasonActuals>();
     const scheduleIdByGame = new Map(
       scheduleGames.map((game) => [Number(game.game_id), String(game.id)]),
     );
@@ -974,32 +980,27 @@ async function processView(
           component_hash: output.componentHash,
         });
       }
+      // Joint event recompute (W3-5 F4/PR1): actuals are added per draw inside
+      // the aggregate, and every quantile (derived heads included) comes from
+      // that one joint draw set. Endpoints are never rebuilt from marginals.
+      const aggregateOptions =
+        view === "current" ? { actuals: actuals.get(playerId) ?? {} } : {};
       const aggregate = evaluations.length
-        ? aggregateSeasonGames(evaluations)
+        ? aggregateSeasonGames(evaluations, aggregateOptions)
         : emptySeasonAggregate(
             prior.population,
             targetsFor(prior, runtimeArtifact.contractVersion),
+            aggregateOptions,
           );
-      const playerActuals = actuals.get(playerId) ?? {};
-      const means =
-        view === "current"
-          ? addActuals(aggregate.means, playerActuals, prior.population)
-          : aggregate.means;
-      const rawQuantiles = Object.fromEntries(
-        Object.entries(aggregate.quantiles).map(([key, values]) => [
-          key,
-          view === "current"
-            ? addActuals(values, playerActuals, prior.population)
-            : values,
-        ]),
-      ) as typeof aggregate.quantiles;
-      const quantiles = reconcileProjectionQuantiles(rawQuantiles, prior.population);
+      const means = aggregate.means;
+      const quantiles = aggregate.quantiles;
       const fallbackFlags = new Set<string>([
         ...(source.fallback_flags ?? []),
         ...(prior.fallbackFlags ?? []),
         "incremental_event_recompute",
       ]);
       if (Number(source.team_id) !== teamId) fallbackFlags.add("roster_changed");
+      if (aggregate.missingTargets.length) fallbackFlags.add("unknown_targets_not_zeroed");
       aggregateRows.push({
         run_id: eventRunId,
         fhfh_player_id: playerId,
@@ -1014,14 +1015,7 @@ async function processView(
         ),
         source_fresh_at: member?.source_fresh_at ?? source.source_fresh_at,
         rookie_profile: prior.rookieProfile ?? source.rookie_profile ?? {},
-        expected_games: means.GAMES_PLAYED ?? 0,
-        expected_starts: prior.population === "goalie" ? means.GAMES_STARTED ?? 0 : null,
-        expected_toi: {
-          total: means.TOTAL_TOI ?? 0,
-          evenStrength: means.EV_TOI ?? 0,
-          powerPlay: means.PP_TOI ?? 0,
-          penaltyKill: means.PK_TOI ?? 0,
-        },
+        ...aggregateExpectations(means, prior.population),
         ratings: source.ratings,
         deployment: prior.deployment,
         model_means: means,
@@ -1033,6 +1027,10 @@ async function processView(
         provenance: {
           ...(source.provenance ?? {}),
           source: "checksum_verified_typescript_event_evaluation",
+          evaluatorVersion: SEASON_GAME_EVALUATOR_VERSION,
+          aggregationVersion: aggregate.aggregationVersion,
+          dependence: aggregate.dependence,
+          unknownTargets: aggregate.missingTargets,
           sourceRunId: sourceRun.id,
           rosterSnapshotId: rosterSnapshot.id,
           scheduleSnapshotId: scheduleSnapshot.id,

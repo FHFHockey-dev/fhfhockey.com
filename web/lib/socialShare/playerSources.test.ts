@@ -20,7 +20,7 @@ vi.mock("lib/supabase/public-client", () => ({
           source.inflight--;
           const error = typeof source.errors[table] === "function" ? (source.errors[table] as (ids: unknown) => unknown)(call.filters.find(item => item[0] === "in")?.[2]) : source.errors[table];
           if (error) return { data: null, error, count: null };
-          const recentKey = table === "rolling_player_game_metrics" ? "player_id" : table === "wgo_goalie_stats" ? "goalie_id" : null;
+          const recentKey = table === "rolling_player_game_metrics" || table === "rolling_player_metric_support_payloads" ? "player_id" : table === "wgo_goalie_stats" ? "goalie_id" : null;
           if (recentKey) {
             // Recent reads: honour the chunk's IN list and its (id asc, date desc) order, like PostgREST would.
             const ids = call.filters.find(item => item[0] === "in")![2] as number[], dateKey = recentKey === "player_id" ? "game_date" : "date";
@@ -39,7 +39,7 @@ vi.mock("lib/supabase/public-client", () => ({
     },
   },
 }));
-import { loadSharePlayerRecent, loadSharePlayerSources, PLAYER_SOURCE_LIMITS, RECENT_CHUNK_CONCURRENCY, RECENT_ID_CHUNK, RECENT_LIMITS } from "./playerSources";
+import { leagueSavePctFromTotals, loadSharePlayerRecent, loadSharePlayerSources, PLAYER_SOURCE_LIMITS, RECENT_CHUNK_CONCURRENCY, RECENT_ID_CHUNK, RECENT_LIMITS } from "./playerSources";
 
 const yahoo = (id: number, team: string) => ({ player_key: `465.p.${id}`, player_id: String(id), editorial_team_abbreviation: team, percent_ownership: 20 });
 beforeEach(() => {
@@ -77,7 +77,7 @@ describe("live player source loader (mocked client)", () => {
   });
 
   it("reads last-five-games rows per id chunk, within the lookback, with explicit limits and index order (SS1-24)", async () => {
-    source.rows = { rolling_player_game_metrics: [{ player_id: 1 }, { player_id: 3 }], wgo_goalie_stats: [{ goalie_id: 2 }] };
+    source.rows = { rolling_player_game_metrics: [{ player_id: 1 }, { player_id: 3 }], wgo_goalie_stats: [{ goalie_id: 2 }], wgo_goalie_stats_totals: [{ goalie_id: 2, saves: 900, shots_against: 1000 }, { goalie_id: 5, saves: 1830, shots_against: 2000 }] };
     const recent = await loadSharePlayerRecent(20262027, [3, 1], [2], "2026-10-05");
     const call = (table: string) => source.calls.find(item => item.table === table)!;
     expect(call("rolling_player_game_metrics")).toMatchObject({ range: [0, 2 * RECENT_LIMITS.skaterRowsPerPlayer - 1], filters: [["eq", "season", 20262027], ["eq", "strength_state", "all"], ["in", "player_id", [1, 3]], ["gte", "game_date", "2026-10-05"]] });
@@ -86,9 +86,12 @@ describe("live player source loader (mocked client)", () => {
     // Unique order in index order (idx_rpgm_player_date / goalie PK): id ascending, newest first (C7 SS1-15-F2).
     expect(call("rolling_player_game_metrics").orders).toEqual([["player_id", true], ["game_date", false]]);
     expect(call("wgo_goalie_stats").orders).toEqual([["goalie_id", true], ["date", false]]);
-    expect(recent).toEqual({ rolling: [{ player_id: 1 }, { player_id: 3 }], goalieGames: [{ goalie_id: 2 }], failedIds: [] });
+    // Decision 82 and Vollman QS need the start label and each decision; the league SV% pools every goalie's season by shots (2,730 of 3,000).
+    expect(call("wgo_goalie_stats").columns.split(",")).toEqual(expect.arrayContaining(["games_started", "wins", "losses", "ot_losses", "saves", "shots_against"]));
+    expect(call("wgo_goalie_stats_totals")).toMatchObject({ columns: "goalie_id,saves,shots_against", filters: [["eq", "season_id", 20262027]] });
+    expect(recent).toEqual({ rolling: [{ player_id: 1 }, { player_id: 3 }], goalieGames: [{ goalie_id: 2 }], failedIds: [], leagueSavePct: 0.91 });
     source.calls = [];
-    expect(await loadSharePlayerRecent(20262027, [], [], "2026-10-05")).toEqual({ rolling: [], goalieGames: [], failedIds: [] });
+    expect(await loadSharePlayerRecent(20262027, [], [], "2026-10-05")).toEqual({ rolling: [], goalieGames: [], failedIds: [], leagueSavePct: null });
     expect(source.calls).toHaveLength(0);
   });
 
@@ -135,7 +138,7 @@ describe("live player source loader (mocked client)", () => {
   it("fails closed per chunk when its rows exceed the per-player limit", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     source.rows = { rolling_player_game_metrics: Array.from({ length: 2 * RECENT_LIMITS.skaterRowsPerPlayer + 1 }, (_, i) => ({ player_id: 1, game_date: `d${i}` })), wgo_goalie_stats: [{ goalie_id: 2 }] };
-    expect(await loadSharePlayerRecent(20262027, [1, 3], [2], "2026-10-05")).toEqual({ rolling: null, goalieGames: [{ goalie_id: 2 }], failedIds: [1, 3] });
+    expect(await loadSharePlayerRecent(20262027, [1, 3], [2], "2026-10-05")).toEqual({ rolling: null, goalieGames: [{ goalie_id: 2 }], failedIds: [1, 3], leagueSavePct: null });
     expect(warn).toHaveBeenCalledWith(`[social-share] Skater recent games unavailable for 2 players (chunk 1 of 1): Skater recent games response was incomplete or over its ${2 * RECENT_LIMITS.skaterRowsPerPlayer}-row limit.`);
     warn.mockRestore();
   });
@@ -160,5 +163,42 @@ describe("live player source loader (mocked client)", () => {
   it("makes no read without teams", async () => {
     expect(await loadSharePlayerSources(20262027, [])).toEqual({ yahoo: [], map: [], skaters: [], goalies: [] });
     expect(source.calls).toHaveLength(0);
+  });
+});
+
+describe("league SV% for Vollman Quality Starts", () => {
+  it("pools saves over shots across every goalie, and is unknown when any row lacks either", () => {
+    expect(leagueSavePctFromTotals([{ saves: 900, shots_against: 1000 }, { saves: 1830, shots_against: 2000 }])).toBe(0.91);
+    expect(leagueSavePctFromTotals([{ saves: 900, shots_against: 1000 }, { saves: null, shots_against: 2000 }])).toBeNull();
+    expect(leagueSavePctFromTotals([])).toBeNull();
+  });
+});
+
+describe("point-game streaks read the rolling sidecar (BA W1-3 A)", () => {
+  it("fills goals_total_all and assists_total_all from the sidecar, so a 4-of-5 point streak shows", async () => {
+    const { attachRecent } = await import("./players");
+    const { streakOf } = await import("./streak");
+    // Six consecutive games, newest first; career goals + assists step up in 4 of the 5 latest games.
+    const cumulative = [24, 23, 22, 21, 21, 20], dates = ["2026-10-24", "2026-10-22", "2026-10-20", "2026-10-18", "2026-10-16", "2026-10-14"];
+    const wide = dates.map((game_date, index) => ({ player_id: 7, season: 20262027, game_date, strength_state: "all", season_games_played: 12 - index, goals_total_last5: 2, assists_total_last5: 2, points_total_last5: 4, goals_total_all: null, assists_total_all: null, hits_avg_last5: null, blocks_avg_last5: null }));
+    source.rows = {
+      rolling_player_game_metrics: wide,
+      rolling_player_metric_support_payloads: dates.map((game_date, index) => ({ player_id: 7, season: 20262027, game_date, strength_state: "all", payload_schema_version: 1, goals_total_all: Math.floor(cumulative[index] / 2), assists_total_all: cumulative[index] - Math.floor(cumulative[index] / 2), hits_avg_last5: 2.4, blocks_avg_last5: 0.8 })),
+    };
+    const recent = await loadSharePlayerRecent(20262027, [7], [], "2026-10-05");
+    const sidecar = source.calls.find(call => call.table === "rolling_player_metric_support_payloads")!;
+    expect(sidecar.filters).toEqual([["eq", "season", 20262027], ["eq", "strength_state", "all"], ["in", "player_id", [7]], ["gte", "game_date", "2026-10-05"]]);
+    expect(sidecar.columns).toContain("goals_total_all:support_payload->historicalCompatibility->goals_total_all");
+    const layer = { season: 20262027, players: [{ nhlId: 7, group: "F" }] } as never;
+    const player = attachRecent(layer, { rolling: recent.rolling, goalieGames: [] }, "2026-10-26T12:00:00Z").players[0];
+    expect(player.recent).toMatchObject({ kind: "skater", pointGames: 4, hitsPerGame: 2.4, blocksPerGame: 0.8 });
+    expect(streakOf(player, "pickup")).toMatchObject({ kind: "hot", reasons: expect.arrayContaining(["4/5 P"]) });
+  });
+  it("keeps a sidecar value that disagrees with the wide row, or a newer payload schema, unknown", async () => {
+    const { hydrateRecentSidecar } = await import("./playerSources");
+    const row = { player_id: 7, season: 20262027, game_date: "2026-10-24", strength_state: "all", goals_total_all: 10, assists_total_all: null, hits_avg_last5: null, blocks_avg_last5: null } as never;
+    const side = { player_id: 7, season: 20262027, game_date: "2026-10-24", strength_state: "all", payload_schema_version: 1, goals_total_all: 11, assists_total_all: 5, hits_avg_last5: -1 };
+    expect(hydrateRecentSidecar([row], [side])[0]).toMatchObject({ goals_total_all: null, assists_total_all: 5, hits_avg_last5: null });
+    expect(hydrateRecentSidecar([row], [{ ...side, payload_schema_version: 2 }])[0]).toMatchObject({ goals_total_all: 10, assists_total_all: null });
   });
 });

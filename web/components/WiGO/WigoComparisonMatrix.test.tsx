@@ -64,3 +64,47 @@ describe("WigoComparisonMatrix status", () => {
     expect(screen.getByText(/L5\/L10\/L20: up to the latest played games/)).toBeTruthy();
   });
 });
+
+describe("WigoComparisonMatrix unknown values (A2, rule 23)", () => {
+  it("renders a published null ixG/60 as unknown end to end, not a rate rebuilt from WGO minutes", async () => {
+    const { buildPlayerAggregatedStats } = await vi.importActual<typeof import("utils/fetchWigoPlayerStats")>(
+      "utils/fetchWigoPlayerStats"
+    );
+    // Counts and ATOI would rebuild 7.5 ixG over 300 min as 1.50 per 60.
+    const data = buildPlayerAggregatedStats({
+      careerData: { player_id: 1, std_gp: 20, std_ixg: 7.5, std_atoi: 15, std_ixg_per_60: null } as any,
+      recentData: null,
+      ratesData: null,
+      totalsData: null
+    });
+    mount({ data });
+    const headerRow = screen.getByText("Period").closest("tr")!;
+    const columnIndex = Array.from(headerRow.children).findIndex((th) => th.querySelector('[data-metric="ixG/60"]'));
+    expect(columnIndex).toBeGreaterThan(0);
+    const stdRow = screen.getAllByRole("rowheader").find((th) => th.textContent?.startsWith("STD"))!.closest("tr")!;
+    const cell = stdRow.children[columnIndex];
+    expect(cell.textContent).not.toBe("1.50");
+    expect(cell.textContent).toMatch(/^[-–—]$/);
+  });
+});
+
+describe("WigoComparisonMatrix labels", () => {
+  const diffCell = (label: string) => {
+    const headerRow = screen.getByText("Period").closest("tr")!;
+    const index = Array.from(headerRow.children).findIndex((th) => th.querySelector(`[data-metric="${label}"]`));
+    const diffRow = screen.getByText("DIFF").closest("tr")!;
+    return diffRow.children[index] as HTMLElement;
+  };
+
+  it("says a percentage stat's DIFF is a relative change, not percentage points (D12)", () => {
+    mount({ data: [{ label: "GP", STD: 10, CA: 70 }, { label: "S%", STD: 12, CA: 10, DIFF: 20 }] as any });
+    expect(diffCell("S%").title).toContain("relative change of the percentage, not percentage points");
+  });
+
+  it("labels PP% as NHL-reported and unqualified (decision 71, L8 PP clock)", () => {
+    mount({ data: [{ label: "GP", STD: 10, CA: 70 }, { label: "PP%", STD: 40, CA: 50 }] as any });
+    const button = document.querySelector('[data-metric="PP%"]') as HTMLElement;
+    expect(button.getAttribute("aria-label")).toContain("unqualified");
+    expect(button.getAttribute("title")).toContain("not yet checked against FHFH's power-play clock");
+  });
+});

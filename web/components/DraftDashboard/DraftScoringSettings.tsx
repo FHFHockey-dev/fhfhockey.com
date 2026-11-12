@@ -1,3 +1,4 @@
+import { getCategoryRegistryEntry } from "lib/projectionsConfig/statsMasterList";
 import { useState } from "react";
 import type { DraftSettings } from "./DraftDashboard";
 import { SKATER_LABELS } from "lib/projectionsConfig/skaterScoringLabels";
@@ -18,8 +19,9 @@ const GOALIE_LABELS: Record<string, string> = {
 };
 const labelFor = (key: string) =>
   SKATER_LABELS[key] || GOALIE_LABELS[key] || key;
+// Goalie routing comes from the shared stat registry (decision 55).
 const isGoalie = (key: string) =>
-  key in GOALIE_LABELS || key.endsWith("_GOALIE");
+  key in GOALIE_LABELS || getCategoryRegistryEntry(key)?.role === "goalie";
 
 function ScoringGroup({
   title,
@@ -201,6 +203,15 @@ function ScoringGroup({
   );
 }
 
+/** True when two weight maps assign the same nonzero weight to every stat. */
+function sameWeights(left: Record<string, number>, right: Record<string, number>) {
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+  for (const key of keys) {
+    if ((left[key] ?? 0) !== (right[key] ?? 0)) return false;
+  }
+  return true;
+}
+
 export default function DraftScoringSettings({
   settings,
   onSettingsChange,
@@ -255,7 +266,7 @@ export default function DraftScoringSettings({
     if (
       hasPicks &&
       !window.confirm(
-        "Reset scoring to defaults? Values and standings will recalculate; all draft picks remain.",
+        "Reset scoring to the FHFH default weights? Values and standings will recalculate; all draft picks remain.",
       )
     )
       return;
@@ -306,6 +317,15 @@ export default function DraftScoringSettings({
       )}
       <div className={styles.profile}>
         <strong>{categories ? "Category scoring" : "Points scoring"}</strong>
+        {!categories && (
+          <span data-testid="scoring-source">
+            {"Scoring source: "}
+            {sameWeights(skaters, getDefaultFantasyPointsConfig("skater")) &&
+            (!onGoalieScoringChange || sameWeights(goalies, getDefaultFantasyPointsConfig("goalie")))
+              ? "FHFH default (not a provider default)"
+              : "Custom or imported league weights"}
+          </span>
+        )}
         <span>
           {Object.keys(skaters).length} skater · {Object.keys(goalies).length}{" "}
           goalie categories
@@ -314,11 +334,11 @@ export default function DraftScoringSettings({
       {!categories && (
         <div className={styles.actions}>
           <button type="button" disabled={rawSettingsLocked} onClick={() => reset(false)}>
-            Reset Skater Scoring
+            Reset Skater Scoring to FHFH default
           </button>
           {onGoalieScoringChange && (
             <button type="button" disabled={rawSettingsLocked} onClick={() => reset(true)}>
-              Reset Goalie Scoring
+              Reset Goalie Scoring to FHFH default
             </button>
           )}
         </div>

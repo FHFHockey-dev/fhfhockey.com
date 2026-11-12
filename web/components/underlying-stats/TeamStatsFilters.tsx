@@ -82,10 +82,12 @@ export default function TeamStatsFilters({
     expandable.scope.kind === "dateRange"
       ? expandable.scope
       : { kind: "dateRange" as const, startDate: null, endDate: null };
-  const gameRangeValue =
-    expandable.scope.kind === "gameRange" ? expandable.scope.value : null;
+  // "# of GP" and "# of Team GP" are one window: each team's own last N
+  // games by date (decision 95). Old gameRange links show in the one field.
   const teamGameRangeValue =
-    expandable.scope.kind === "teamGameRange" ? expandable.scope.value : null;
+    expandable.scope.kind === "teamGameRange" || expandable.scope.kind === "gameRange"
+      ? expandable.scope.value
+      : null;
 
   return (
     <section className={styles.root} aria-label="Team stats primary controls">
@@ -275,28 +277,6 @@ export default function TeamStatsFilters({
         </label>
 
         <label className={styles.control}>
-          <span className={styles.label}># of GP</span>
-          <input
-            className={styles.input}
-            type="number"
-            min="1"
-            step="1"
-            inputMode="numeric"
-            value={gameRangeValue ?? ""}
-            onChange={(event) => {
-              const value = parseNullableInteger(event.target.value);
-              onScopeChange(
-                applyTeamStatsScopeChange(
-                  state,
-                  value == null ? { kind: "none" } : { kind: "gameRange", value }
-                ).expandable.scope
-              );
-            }}
-            placeholder="Last X games"
-          />
-        </label>
-
-        <label className={styles.control}>
           <span className={styles.label}># of Team GP</span>
           <input
             className={styles.input}
@@ -314,7 +294,7 @@ export default function TeamStatsFilters({
                 ).expandable.scope
               );
             }}
-            placeholder="Last X team games"
+            placeholder="Each team's last X games"
           />
         </label>
       </div>

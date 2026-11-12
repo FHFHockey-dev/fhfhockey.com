@@ -204,7 +204,7 @@ describe("RSO daily beta: category league acceptance (FR9, FR10)", () => {
       expect(row(plan, "SHOOTING_PERCENTAGE").own!).toBeLessThan(row(base, "SHOOTING_PERCENTAGE").own!);
       for (const evaluation of [base, plan]) {
         expect(evaluation.recommendation?.eligible).toBe(false);
-        expect(evaluation.limitations).toContain("Category assignments use schedule capacity and supported componentwise changes. Incomparable tradeoffs have no approved overall utility; start/sit and acquisition recommendations need manager choice.");
+        expect(evaluation.limitations).toContain("Schedule-capacity estimate (not category-optimized): category assignments use schedule capacity and supported componentwise changes. Incomparable tradeoffs have no approved overall utility; start/sit and acquisition recommendations need manager choice.");
       }
       const metrics = candidatePlanMetrics(data, intent());
       const candidate = metrics.candidates.find(item => item.playerId === "faG")!.plans.find(item => item.steps.length === 1)!;
@@ -216,7 +216,12 @@ describe("RSO daily beta: category league acceptance (FR9, FR10)", () => {
       expect(breakdown.get("GOALS")).toMatchObject({ ratio: false, delta: 0.25 });
       // The tradeoff is kept as a choice, not resolved by a blended score.
       const result = planRoster(data, intent(), { maxSteps: 1, maxCandidates: 2, maxEvaluations: 60 });
-      expect(result.alternatives.some(item => item.steps.some(step => step.playerId === "faG"))).toBe(true);
+      const faG = result.alternatives.find(item => item.steps.some(step => step.playerId === "faG"))!;
+      // Decision 51: two more starts with a lower SH% is labelled a tradeoff, never ranked above a plan keeping every ratio.
+      expect(faG.limitations).toContain("Tradeoff: more starts with a worse or unknown SHOOTING_PERCENTAGE than holding; shown as a choice, not ranked above plans that keep every ratio.");
+      const order = result.alternatives.filter(item => item.steps.length);
+      const firstTradeoff = order.findIndex(item => item.limitations.some(text => text.startsWith("Tradeoff:")));
+      expect(order.slice(firstTradeoff).every(item => item.limitations.some(text => text.startsWith("Tradeoff:")))).toBe(true);
       expect(result.search.limitations).toContain("Category alternatives use projected means without calibrated joint scenarios and are not globally ranked. Presentation order is deterministic; incomparable supported tradeoffs remain available within search bounds.");
     });
   });

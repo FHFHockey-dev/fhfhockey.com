@@ -37,6 +37,7 @@ export default async function handler(
         placeholder: false,
         generatedAt: new Date().toISOString(),
       },
+      state: parsed.state,
       variant: "goalie",
     });
 

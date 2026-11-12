@@ -128,6 +128,16 @@ describe("skaterCompositeWriter", () => {
     });
   });
 
+  it("refuses Offense and Defense when a required input is missing instead of reweighting (decision 102)", () => {
+    // The defect: goals-only percentiles of 80 produced an Offense Rating of 80.
+    expect(calculateOffenseRating({ goals_per_60: 80 })).toBeNull();
+    expect(calculateDefenseRating({ blocks_per_60: 80 })).toBeNull();
+    const { sax_percentage: _missing, ...withoutSax } = strongPercentiles;
+    expect(calculateOffenseRating(withoutSax)).toBeNull();
+    const { xga_per_60: _missingXga, ...withoutXga } = strongPercentiles;
+    expect(calculateDefenseRating(withoutXga)).toBeNull();
+  });
+
   it("resolves BEAST tiers from transparent multi-category gates", () => {
     expect(resolveBeastTier(strongPercentiles, calculateMcmScore(strongPercentiles))).toBe(
       "BEAST",
@@ -181,7 +191,7 @@ describe("skaterCompositeWriter", () => {
       mcm_score: 86.23,
       beast_tier: "BEAST",
       results_luck_index: null,
-      methodology_version: "contextual_composites_v2",
+      methodology_version: "contextual_composites_v3",
     });
     expect(row.tags).toEqual(["play_driver", "BEAST"]);
     expect(JSON.stringify(row.components_json)).toContain("not_computed");
@@ -218,7 +228,7 @@ describe("skaterCompositeWriter", () => {
         },
       },
     });
-    expect(JSON.stringify(row.provenance)).toContain("contextual_composites_v2");
+    expect(JSON.stringify(row.provenance)).toContain("contextual_composites_v3");
     expect(row.provenance).toMatchObject({
       sourceFreshness,
     });

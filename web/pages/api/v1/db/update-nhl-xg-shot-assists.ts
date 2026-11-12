@@ -7,10 +7,10 @@ import {
 import supabase from "lib/supabase/server";
 import {
   buildShotAssistCandidateRows,
+  fetchShotAssistPriorEvents,
   type ShotAssistCandidateRow,
   type ShotAssistFeatureRow,
   type ShotAssistPredictionRow,
-  type ShotAssistPriorEventRow,
 } from "lib/xg/shotAssists";
 
 const PAGE_SIZE = 1000;
@@ -73,6 +73,8 @@ async function fetchFeatureRows(args: {
           "is_rebound_shot",
           "is_penalty_shot_event",
           "is_shootout_event",
+          "is_empty_net_event",
+          "goalie_in_net_id",
           "previous_event_id",
           "previous_event_type_desc_key",
           "previous_event_team_id",
@@ -115,6 +117,8 @@ async function fetchFeatureRows(args: {
         is_rebound_shot: row.is_rebound_shot === true,
         is_penalty_shot_event: row.is_penalty_shot_event === true,
         is_shootout_event: row.is_shootout_event === true,
+        is_empty_net_event: row.is_empty_net_event === true,
+        goalie_in_net_id: row.goalie_in_net_id == null ? null : Number(row.goalie_in_net_id),
         previous_event_id:
           row.previous_event_id == null ? null : Number(row.previous_event_id),
         previous_event_type_desc_key: row.previous_event_type_desc_key ?? null,
@@ -178,46 +182,6 @@ async function fetchPredictionRows(args: {
   return rows;
 }
 
-async function fetchPriorEventRows(
-  features: ShotAssistFeatureRow[]
-): Promise<ShotAssistPriorEventRow[]> {
-  const priorPairs = features
-    .filter((row) => row.previous_event_id != null)
-    .map((row) => ({ gameId: row.game_id, eventId: row.previous_event_id as number }));
-  const gameIds = Array.from(new Set(priorPairs.map((row) => row.gameId)));
-  const eventIds = Array.from(new Set(priorPairs.map((row) => row.eventId)));
-  if (gameIds.length === 0 || eventIds.length === 0) return [];
-
-  const rows: ShotAssistPriorEventRow[] = [];
-  for (const gameIdChunk of chunkRows(gameIds, 200)) {
-    for (const eventIdChunk of chunkRows(eventIds, 500)) {
-      const { data, error } = await supabase
-        .from("nhl_api_pbp_events" as any)
-        .select(
-          [
-            "game_id",
-            "event_id",
-            "type_desc_key",
-            "event_owner_team_id",
-            "player_id",
-            "shooting_player_id",
-            "scoring_player_id",
-            "winning_player_id",
-            "hitting_player_id",
-            "blocking_player_id",
-            "zone_code",
-          ].join(",")
-        )
-        .in("game_id", gameIdChunk)
-        .in("event_id", eventIdChunk);
-
-      if (error) throw new Error(`Failed to fetch prior PBP events: ${error.message}`);
-      rows.push(...((data ?? []) as unknown as ShotAssistPriorEventRow[]));
-    }
-  }
-  return rows;
-}
-
 async function upsertCandidates(rows: ShotAssistCandidateRow[], batchSize: number) {
   let upserted = 0;
   for (const batch of chunkRows(rows, batchSize)) {
@@ -258,15 +222,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   );
 
   const features = await fetchFeatureRows({ featureVersion, seasonId, limit });
-  const [predictions, priorEvents] = await Promise.all([
+  const [predictions, priorEventFetch] = await Promise.all([
     fetchPredictionRows({
       modelVersion,
       featureVersion,
       seasonId,
       gameIds: features.map((row) => row.game_id),
     }),
-    fetchPriorEventRows(features),
+    fetchShotAssistPriorEvents(supabase, features),
   ]);
+  const priorEvents = priorEventFetch.rows;
   const candidates = buildShotAssistCandidateRows({
     features,
     predictions,
@@ -276,6 +241,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     featureRows: features.length,
     predictionRows: predictions.length,
     priorEventRows: priorEvents.length,
+    priorEventPairsEligible: priorEventFetch.eligiblePairs,
+    priorEventPairsResolved: priorEventFetch.resolvedPairs,
     candidateRows: candidates.length,
     highConfidenceCandidates: candidates.filter((row) => row.confidence_tier === "high").length,
     mediumConfidenceCandidates: candidates.filter((row) => row.confidence_tier === "medium").length,

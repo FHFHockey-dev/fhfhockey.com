@@ -64,13 +64,14 @@ const columns: Column[] = [
   {
     label: "QS%",
     sortKey: "qualityStartsPct",
-    title: "Quality starts divided by games started.",
+    title: "Quality starts divided by games started in the selected window. N/A when any start's quality-start result is unknown.",
     format: formatAdvancedMetricPercent
   },
   {
     label: "GSAA",
     sortKey: "gsaa",
-    title: "Goals saved above average from Natural Stat Trick fields."
+    title:
+      "Goals saved above average over the selected window: shots against × (1 − league SV%) − goals against, with league SV% pooled from every goalie's Natural Stat Trick rows at this strength in the same window. N/A when any game lacks shots or goals against."
   },
   {
     label: "xGA",

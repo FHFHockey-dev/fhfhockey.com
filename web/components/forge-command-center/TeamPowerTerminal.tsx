@@ -28,6 +28,48 @@ type TeamPowerTerminalProps = {
 const formatMetric = (value: number | null | undefined, digits = 0) =>
   value == null || Number.isNaN(value) ? "--" : value.toFixed(digits);
 
+/** Ratings are 100-centred (SD 15); bars reach the edge at 100 ± 30 (2 SD). */
+export const RATING_BAR_CENTER = 100;
+export const RATING_BAR_HALF_RANGE = 30;
+
+/**
+ * Diverging bar geometry, in % of the track, centred at 100 (decision 58).
+ * A rating is never drawn as a percentile from 0. Null for an unknown rating.
+ */
+export const divergingRatingBar = (
+  value: number | null | undefined
+): { offsetPct: number; widthPct: number; above: boolean } | null => {
+  if (value == null || !Number.isFinite(value)) return null;
+  const share = Math.max(
+    -1,
+    Math.min(1, (value - RATING_BAR_CENTER) / RATING_BAR_HALF_RANGE)
+  );
+  const widthPct = Math.abs(share) * 50;
+  return {
+    offsetPct: share >= 0 ? 50 : 50 - widthPct,
+    widthPct,
+    above: share >= 0
+  };
+};
+
+/** Risers and fallers by their actual change (trend10), never by power order. */
+export const selectPowerMovers = <T extends { teamAbbr: string; trend10: number }>(
+  rows: readonly T[],
+  limit = 5
+) => {
+  const byChange = (a: T, b: T) => b.trend10 - a.trend10 || a.teamAbbr.localeCompare(b.teamAbbr);
+  return {
+    risers: rows.filter((row) => row.trend10 > 0).sort(byChange).slice(0, limit),
+    fallers: rows
+      .filter((row) => row.trend10 < 0)
+      .sort((a, b) => a.trend10 - b.trend10 || a.teamAbbr.localeCompare(b.teamAbbr))
+      .slice(0, limit)
+  };
+};
+
+const CENTER_LINE =
+  "linear-gradient(90deg, transparent calc(50% - 1px), rgba(232, 244, 248, 0.55) calc(50% - 1px), rgba(232, 244, 248, 0.55) calc(50% + 1px), transparent calc(50% + 1px))";
+
 const formatSigned = (value: number | null | undefined) => {
   if (value == null || Number.isNaN(value)) return "--";
   return `${value > 0 ? "+" : ""}${value.toFixed(1)}`;
@@ -75,22 +117,14 @@ export default function TeamPowerTerminal({
     rows.length > 0
       ? rows.reduce((sum, row) => sum + row.powerScore, 0) / rows.length
       : null;
-  const risers = rows.filter((row) => row.trend10 >= 0).slice(0, 5);
-  const fallers = [...rows]
-    .filter((row) => row.trend10 < 0)
-    .sort((a, b) => a.trend10 - b.trend10)
-    .slice(0, 5);
+  const { risers, fallers } = selectPowerMovers(rows);
   const selectedMeta = selectedRow ? getTeamMetaByAbbr(selectedRow.teamAbbr) : null;
+  // Real dated history only (decision 58): the CTPI series is shown as CTPI
+  // form; without it the trend is unavailable, never a synthetic line.
   const selectedSpark =
     selectedRow?.ctpi?.spark && selectedRow.ctpi.spark.length > 1
       ? selectedRow.ctpi.spark
-      : selectedRow
-        ? [
-            selectedRow.powerScore - Math.abs(selectedRow.trend10),
-            selectedRow.powerScore - selectedRow.trend10 / 2,
-            selectedRow.powerScore
-          ]
-        : [];
+      : null;
   const deltaVsLeague =
     selectedRow && leagueAverage != null ? selectedRow.powerScore - leagueAverage : null;
 
@@ -104,15 +138,19 @@ export default function TeamPowerTerminal({
                 <img src={selectedMeta.logo} alt="" className={styles.teamLogoLg} />
               ) : null}
               <div>
-                <span>Selected Team Power Trend</span>
+                <span>{selectedSpark ? "Selected team CTPI form" : "Selected team"}</span>
                 <strong>{selectedMeta?.name ?? selectedRow.teamAbbr}</strong>
               </div>
             </div>
-            <TrendSparkline
-              values={selectedSpark}
-              tone={selectedRow.trend10 >= 0 ? "up" : "down"}
-              label={`${selectedRow.teamAbbr} team power trend`}
-            />
+            {selectedSpark ? (
+              <TrendSparkline
+                values={selectedSpark}
+                tone={(selectedRow.ctpi?.delta ?? 0) >= 0 ? "up" : "down"}
+                label={`${selectedRow.teamAbbr} CTPI form trend`}
+              />
+            ) : (
+              <span>Power history unavailable</span>
+            )}
           </div>
 
           <div className={styles.metricStrip}>
@@ -122,34 +160,50 @@ export default function TeamPowerTerminal({
             <MetricPill label="Edge" value={formatSigned(selectedRow.matchup?.edge)} tone={selectedRow.matchup?.edge != null && selectedRow.matchup.edge >= 0 ? "good" : "warn"} />
           </div>
 
-          <div className={styles.scoreBarGrid}>
-            {[
-              ["Offense", selectedRow.offRating],
-              ["Defense", selectedRow.defRating],
-              ["Pace", selectedRow.paceRating],
-              ["Trend", Math.max(0, 50 + selectedRow.trend10 * 5)],
-              ["Finish", selectedRow.finishingRating],
-              ["Goalie", selectedRow.goalieRating],
-              ["Variance", selectedRow.varianceFlag]
-            ].map(([label, value]) => {
-              const numeric = typeof value === "number" ? Math.max(0, Math.min(100, value)) : null;
+          <div
+            className={styles.scoreBarGrid}
+            aria-label={`Ratings centred on 100 (league average); bars span ${RATING_BAR_CENTER - RATING_BAR_HALF_RANGE} to ${RATING_BAR_CENTER + RATING_BAR_HALF_RANGE}`}
+          >
+            {(
+              [
+                ["Offense", selectedRow.offRating],
+                ["Defense", selectedRow.defRating],
+                ["Pace", selectedRow.paceRating],
+                ["Finish", selectedRow.finishingRating],
+                ["Goalie", selectedRow.goalieRating]
+              ] as const
+            ).map(([label, value]) => {
+              const bar = divergingRatingBar(value);
               return (
                 <div key={label} className={styles.scoreBarRow}>
                   <span>{label}</span>
-                  <div className={styles.scoreBarTrack}>
-                    <div
-                      className={Number(value) >= 50 ? styles.scoreBarFillGood : styles.scoreBarFillRisk}
-                      style={{ width: `${numeric ?? 0}%` }}
-                    />
+                  <div className={styles.scoreBarTrack} style={{ backgroundImage: CENTER_LINE }}>
+                    {bar ? (
+                      <div
+                        data-testid={`rating-bar-${label}`}
+                        className={bar.above ? styles.scoreBarFillGood : styles.scoreBarFillRisk}
+                        style={{ marginLeft: `${bar.offsetPct}%`, width: `${bar.widthPct}%` }}
+                      />
+                    ) : null}
                   </div>
-                  <strong>{formatMetric(typeof value === "number" ? value : null, 0)}</strong>
+                  <strong>{formatMetric(value, 0)}</strong>
                 </div>
               );
             })}
+            <div className={styles.scoreBarRow}>
+              <span>Off. chg</span>
+              <span title="Offense rating minus its average over the prior 10 games">vs prior 10 games</span>
+              <strong>{formatSigned(selectedRow.trend10)}</strong>
+            </div>
+            <div className={styles.scoreBarRow}>
+              <span>PDO</span>
+              <span>{selectedRow.varianceFlag == null ? "unknown" : selectedRow.varianceFlag ? "variance flag" : "normal"}</span>
+              <strong />
+            </div>
           </div>
 
           <div className={styles.terminalLists}>
-            <DenseList columns="32px minmax(0, 1fr) 54px 60px" aria-label="Top team power risers">
+            <DenseList columns="32px minmax(0, 1fr) 54px 60px" aria-label="Biggest offense-rating risers vs prior 10 games">
               {risers.map((row) => (
                 <DenseListRow key={row.teamAbbr}>
                   <span>{row.rank}</span>
@@ -162,7 +216,7 @@ export default function TeamPowerTerminal({
                 </DenseListRow>
               ))}
             </DenseList>
-            <DenseList columns="32px minmax(0, 1fr) 54px 60px" aria-label="Team power fallers">
+            <DenseList columns="32px minmax(0, 1fr) 54px 60px" aria-label="Biggest offense-rating fallers vs prior 10 games">
               {fallers.map((row) => (
                 <DenseListRow key={row.teamAbbr}>
                   <span>{row.rank}</span>

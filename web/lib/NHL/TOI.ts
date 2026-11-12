@@ -75,19 +75,25 @@ const fetchTotalPowerPlayTime = async (
 };
 
 /**
- * Convert a time string to minutes.
- * @param timeString mm:ss
- * @returns The number of minutes.
+ * Convert a time-on-ice value to minutes (W2-3 A5).
+ * Accepts whole or decimal minutes ("20", "20.5") and "mm:ss" ("20:30").
+ * Anything else is unknown: NaN (kept as a number for the existing API
+ * callers, which must not turn it into 0).
+ * @param timeString minutes, decimal minutes or mm:ss
+ * @returns The number of minutes, or NaN when unknown.
  */
-export function parseTime(timeString: string) {
-  if (timeString.includes(".")) {
-    return Number(timeString);
+export function parseTime(
+  timeString: string | number | null | undefined
+): number {
+  const text = String(timeString ?? "").trim();
+  if (/^\d+(\.\d+)?$/.test(text)) {
+    return Number(text);
   }
-  const arr = timeString.split(":");
-
-  const minutes = Number.parseInt(arr[0]) + Number.parseInt(arr[1]) / 60; // converting
-
-  return minutes;
+  const match = /^(\d+):([0-5]\d)$/.exec(text);
+  if (match) {
+    return Number(match[1]) + Number(match[2]) / 60;
+  }
+  return Number.NaN;
 }
 
 const fetchTOIData = async (playerId: number) => {

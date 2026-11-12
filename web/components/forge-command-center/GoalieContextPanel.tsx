@@ -73,8 +73,8 @@ export default function GoalieContextPanel({
           <MetricPill label="Sit" value={sitCount} tone="danger" />
         </div>
         <p className={styles.uncertaintyNote}>
-          Starter probabilities are model confidence bands, not confirmations. Use the
-          recommendation with volatility and blow-up risk before treating a goalie as locked in.
+          Start chances are uncalibrated model estimates, not confirmations. Each goalie&apos;s line
+          is what he projects if he starts; the team&apos;s win chance is shown apart from his own Win.
         </p>
 
         <DenseList
@@ -108,8 +108,9 @@ export default function GoalieContextPanel({
           {rows.slice(0, 3).map((row) => (
             <div key={`goalie-risk-${row.goalie_id}`}>
               <strong>{row.goalie_name}</strong>
-              <span>Win {formatPercent(row.proj_win_prob)}</span>
-              <span>SO {formatPercent(row.proj_shutout_prob, 1)}</span>
+              <span title="His own credited win if he starts">Win if starts {formatPercent(row.proj_win_prob)}</span>
+              <span>Team win {formatPercent(row.team_win_prob)}</span>
+              <span>SO if starts {formatPercent(row.proj_shutout_prob, 1)}</span>
               <span>Blow-up {formatPercent(row.blowup_risk)}</span>
               <span>Save% {formatPercent(row.modeled_save_pct, 1)}</span>
             </div>

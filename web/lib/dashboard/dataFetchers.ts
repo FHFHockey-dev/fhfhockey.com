@@ -379,8 +379,10 @@ export const buildDashboardRecencyState = (
     status: "mixed",
     gapDays,
     sourceDates,
+    // Readers only label the gap; nothing is down-weighted, so the copy must
+    // not claim a downgrade (W3-3 D9).
     warning:
-      "Source dates are not safely aligned; projection and start context is downgraded until the feeds converge."
+      "Source dates differ by more than three days; projection and start context may be out of date until the feeds converge."
   };
 };
 

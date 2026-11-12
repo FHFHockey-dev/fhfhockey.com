@@ -27,4 +27,13 @@ describe("Draft Pro reports", () => {
     expect(report.weaknesses).toContain("goals against average is weaker than Other Team roster");
     expect(report.weaknesses.some((value) => value.includes("save percentage comparison is unavailable"))).toBe(true);
   });
+  it("takes direction from the shared registry, including a league-reversed category (BC W1-12 D6)", () => {
+    const skater = (id: string, lost: number) => ({ ...player(id), categoryValues: { FACEOFFS_LOST: lost } });
+    // Registry: faceoffs lost is lower-is-better, so fewer is stronger.
+    const byRegistry = buildDraftProReport("draft_summary", { ...input, roster: [skater("a", 100)], referenceRoster: [skater("r", 200)], referenceBasis: "Other Team roster", categoryWeights: { FACEOFFS_LOST: 1 } });
+    expect(byRegistry.strengths).toContain("faceoffs lost is stronger than Other Team roster");
+    // A league that reverses it (legacy negative weight) reads more as stronger.
+    const reversed = buildDraftProReport("draft_summary", { ...input, roster: [skater("a", 100)], referenceRoster: [skater("r", 200)], referenceBasis: "Other Team roster", categoryWeights: { FACEOFFS_LOST: -1 } });
+    expect(reversed.weaknesses).toContain("faceoffs lost is weaker than Other Team roster");
+  });
 });

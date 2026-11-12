@@ -236,10 +236,35 @@ export function computeStarterProbabilities(opts: {
   const maxScore = Math.max(...scores.map((s) => s.score));
   const exps = scores.map((s) => Math.exp(s.score - maxScore));
   const denom = exps.reduce((acc, v) => acc + v, 0) || 1;
+  // The candidate set is closed, so its vector sums to 1 (W1-5). Bounds are kept on a common scale;
+  // clamping each value alone took 0.4999/0.4999/0.0002 to 1.0098.
+  const bounded = boundedSimplex(exps.map((v) => v / denom), 0.01, 0.98);
   scores.forEach((s, i) => {
-    probs.set(s.goalieId, clamp(exps[i] / denom, 0.01, 0.98));
+    probs.set(s.goalieId, bounded[i]);
   });
   return probs;
+}
+
+/**
+ * Probabilities summing to 1 with each in [lo, hi], keeping the input order: p_i = clamp(t·v_i, lo, hi)
+ * with the common scale t found by bisection. Requires positive inputs and n·lo <= 1 <= n·hi.
+ */
+export function boundedSimplex(values: number[], lo: number, hi: number): number[] {
+  const n = values.length;
+  if (n === 0 || n * lo > 1 || n * hi < 1 || values.some((v) => !(v > 0))) return values.slice();
+  const total = (t: number) => values.reduce((sum, v) => sum + clamp(t * v, lo, hi), 0);
+  let low = 0;
+  let high = hi / Math.min(...values);
+  for (let i = 0; i < 200; i += 1) {
+    const mid = (low + high) / 2;
+    if (total(mid) < 1) low = mid; else high = mid;
+  }
+  const result = values.map((v) => clamp(high * v, lo, hi));
+  // Bisection leaves at most a rounding residue; give it to the largest interior value.
+  const residue = 1 - result.reduce((sum, v) => sum + v, 0);
+  const interior = result.map((v, i) => ({ v, i })).filter(({ v }) => v > lo && v < hi).sort((x, y) => y.v - x.v)[0];
+  if (interior) result[interior.i] += residue;
+  return result;
 }
 
 export function buildTopStarterScenarios(opts: {

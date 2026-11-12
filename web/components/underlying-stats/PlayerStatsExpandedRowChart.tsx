@@ -135,27 +135,12 @@ export default function PlayerStatsExpandedRowChart({
     return () => controller.abort();
   }, [playerId, splitTeamId, state, variant]);
 
-  const chartData = useMemo<ChartPoint[]>(() => {
-    if (!selectedMetric) {
-      return [];
-    }
-
-    const numericValues = data.map((row) =>
-      toFiniteNumber(row[selectedMetric.key])
-    );
-    const seasonAverage = calculateAverage(numericValues);
-    const rolling5 = calculateRollingAverage(numericValues, 5);
-    const rolling10 = calculateRollingAverage(numericValues, 10);
-
-    return data.map((row, index) => ({
-      ...row,
-      label: formatShortDate(row.gameDate),
-      value: numericValues[index] ?? null,
-      rolling5: rolling5[index] ?? null,
-      rolling10: rolling10[index] ?? null,
-      seasonAverage
-    }));
-  }, [data, selectedMetric]);
+  const chartData = useMemo<ChartPoint[]>(
+    () =>
+      selectedMetric ? buildExpandedRowChartData(data, selectedMetric.key) : [],
+    [data, selectedMetric]
+  );
+  const summaryLabels = getExpandedRowChartSummaryLabels(selectedMetric?.key ?? null);
 
   const chartWidth = useMemo(() => {
     if (viewportWidth == null || !Number.isFinite(viewportWidth)) {
@@ -263,21 +248,21 @@ export default function PlayerStatsExpandedRowChart({
                     {formatPlayerStatsValue(point.value, selectedMetric.format)}
                   </p>
                   <p className={styles.tooltipMeta}>
-                    5G Avg:{" "}
+                    {summaryLabels.rolling5}:{" "}
                     {formatPlayerStatsValue(
                       point.rolling5,
                       selectedMetric.format
                     )}
                   </p>
                   <p className={styles.tooltipMeta}>
-                    10G Avg:{" "}
+                    {summaryLabels.rolling10}:{" "}
                     {formatPlayerStatsValue(
                       point.rolling10,
                       selectedMetric.format
                     )}
                   </p>
                   <p className={styles.tooltipMeta}>
-                    Season Avg:{" "}
+                    {summaryLabels.season}:{" "}
                     {formatPlayerStatsValue(
                       point.seasonAverage,
                       selectedMetric.format
@@ -407,6 +392,130 @@ function formatAxisValue(
   }
 
   return numericValue.toFixed(format === "per60" ? 1 : 2);
+}
+
+type PooledRatioSpec = {
+  numerator: (row: PlayerStatsLandingChartPoint) => number | null;
+  denominator: (row: PlayerStatsLandingChartPoint) => number | null;
+  scale: number;
+};
+
+function readNumber(row: PlayerStatsLandingChartPoint, key: string): number | null {
+  return toFiniteNumber(row[key]);
+}
+
+function share(forKey: string, againstKey: string): PooledRatioSpec {
+  return {
+    numerator: (row) => readNumber(row, forKey),
+    denominator: (row) => {
+      const forValue = readNumber(row, forKey);
+      const againstValue = readNumber(row, againstKey);
+      return forValue == null || againstValue == null ? null : forValue + againstValue;
+    },
+    scale: 1,
+  };
+}
+
+function ratio(numeratorKey: string, denominatorKey: string, scale = 1): PooledRatioSpec {
+  return {
+    numerator: (row) => readNumber(row, numeratorKey),
+    denominator: (row) => readNumber(row, denominatorKey),
+    scale,
+  };
+}
+
+const POOLED_RATIO_SPECS: Record<string, PooledRatioSpec> = {
+  savePct: ratio("saves", "shotsAgainst"),
+  hdSavePct: ratio("hdSaves", "hdShotsAgainst"),
+  mdSavePct: ratio("mdSaves", "mdShotsAgainst"),
+  ldSavePct: ratio("ldSaves", "ldShotsAgainst"),
+  gaa: ratio("goalsAgainst", "toiSeconds", 3600),
+  hdGaa: ratio("hdGoalsAgainst", "toiSeconds", 3600),
+  mdGaa: ratio("mdGoalsAgainst", "toiSeconds", 3600),
+  ldGaa: ratio("ldGoalsAgainst", "toiSeconds", 3600),
+  shootingPct: ratio("goals", "shots"),
+  faceoffPct: share("faceoffsWon", "faceoffsLost"),
+  cfPct: share("cf", "ca"),
+  ffPct: share("ff", "fa"),
+  sfPct: share("sf", "sa"),
+  gfPct: share("gf", "ga"),
+  scfPct: share("scf", "sca"),
+  hdcfPct: share("hdcf", "hdca"),
+  hdgfPct: share("hdgf", "hdga"),
+  mdcfPct: share("mdcf", "mdca"),
+  mdgfPct: share("mdgf", "mdga"),
+};
+
+/**
+ * Ratio metrics are pooled over the window (Σ numerator ÷ Σ denominator,
+ * W2-2 D19): SV% over two games of 1/1 and 5/10 is 6/11, not the mean of
+ * 100% and 50%. Per-60 metrics pool their count over TOI. Other metrics are a
+ * mean per game and are labelled that way.
+ */
+function resolvePooledRatioSpec(metricKey: string): PooledRatioSpec | null {
+  const explicit = POOLED_RATIO_SPECS[metricKey];
+  if (explicit) {
+    return explicit;
+  }
+
+  if (metricKey.endsWith("Per60")) {
+    return ratio(metricKey.slice(0, -"Per60".length), "toiSeconds", 3600);
+  }
+
+  return null;
+}
+
+function poolRatio(
+  rows: readonly PlayerStatsLandingChartPoint[],
+  spec: PooledRatioSpec
+): number | null {
+  let numerator = 0;
+  let denominator = 0;
+
+  for (const row of rows) {
+    const rowNumerator = spec.numerator(row);
+    const rowDenominator = spec.denominator(row);
+    // A game with an unknown count or exposure leaves the pooled value unknown.
+    if (rowNumerator == null || rowDenominator == null) {
+      return null;
+    }
+    numerator += rowNumerator;
+    denominator += rowDenominator;
+  }
+
+  return denominator > 0 ? (numerator / denominator) * spec.scale : null;
+}
+
+export function getExpandedRowChartSummaryLabels(metricKey: string | null) {
+  const pooled = metricKey != null && resolvePooledRatioSpec(metricKey) != null;
+  return pooled
+    ? { rolling5: "Last 5 GP (pooled)", rolling10: "Last 10 GP (pooled)", season: "Window (pooled)" }
+    : { rolling5: "5G mean per game", rolling10: "10G mean per game", season: "Mean per game" };
+}
+
+export function buildExpandedRowChartData(
+  data: readonly PlayerStatsLandingChartPoint[],
+  metricKey: string
+): ChartPoint[] {
+  const numericValues = data.map((row) => toFiniteNumber(row[metricKey]));
+  const spec = resolvePooledRatioSpec(metricKey);
+  const window = (end: number, size: number) => data.slice(Math.max(0, end - size + 1), end + 1);
+  const seasonAverage = spec ? poolRatio(data, spec) : calculateAverage(numericValues);
+  const rolling5 = spec
+    ? data.map((_, index) => poolRatio(window(index, 5), spec))
+    : calculateRollingAverage(numericValues, 5);
+  const rolling10 = spec
+    ? data.map((_, index) => poolRatio(window(index, 10), spec))
+    : calculateRollingAverage(numericValues, 10);
+
+  return data.map((row, index) => ({
+    ...row,
+    label: formatShortDate(row.gameDate),
+    value: numericValues[index] ?? null,
+    rolling5: rolling5[index] ?? null,
+    rolling10: rolling10[index] ?? null,
+    seasonAverage,
+  }));
 }
 
 function calculateRollingAverage(

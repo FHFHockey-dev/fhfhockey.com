@@ -174,7 +174,7 @@ const METRIC_FORMULAS: Record<string, string> = {
     "((sum(gf) / sum(sf)) * 100 + (sum(sa - ga) / sum(sa)) * 100) * 0.01",
   ipp: "sum(player_points) / sum(on_ice_goals_for) * 100",
   primary_points_pct: "sum(goals + first_assists) / sum(points)",
-  expected_sh_pct: "sum(ixg) / sum(shots)",
+  expected_sh_pct: "sum(ixg) / sum(iff) * 100",
   shooting_pct: "sum(goals) / sum(shots) * 100",
   primary_assists: "sum(first_assists)",
   secondary_assists: "sum(second_assists)",

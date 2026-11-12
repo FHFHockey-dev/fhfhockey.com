@@ -81,9 +81,10 @@ export interface EwmaMetrics {
   hdca60_ewma: number;
   pdo_ewma: number | null;
   pdo_observation_count: number;
-  pp_xgf60_ewma: number;
-  pk_xga60_ewma: number;
-  discipline_diff_ewma: number;
+  /** Null when no game in the window has the input (never read as 0). */
+  pp_xgf60_ewma: number | null;
+  pk_xga60_ewma: number | null;
+  discipline_diff_ewma: number | null;
 }
 
 export interface LeagueMetrics {
@@ -248,29 +249,37 @@ export async function fetchGameLogs(
     const pk = pkMap.get(key);
     const wgo = wgoMap.get(key);
 
+    const cf = toNullableNumber(row.cf_per_60);
+    const ca = toNullableNumber(row.ca_per_60);
+
+    // Unknowns stay unknown (rule 5): a null source value is never read as 0.
     logs.push({
       team_abbreviation: row.team_abbreviation,
       date: row.date,
       season_id: row.season_id,
-      cf_per_60: Number(row.cf_per_60),
-      ca_per_60: Number(row.ca_per_60),
-      sf_per_60: Number(row.sf_per_60),
-      sa_per_60: Number(row.sa_per_60),
-      gf_per_60: Number(row.gf_per_60),
-      ga_per_60: Number(row.ga_per_60),
-      xgf_per_60: Number(row.xgf_per_60),
-      xga_per_60: Number(row.xga_per_60),
+      cf_per_60: cf,
+      ca_per_60: ca,
+      sf_per_60: toNullableNumber(row.sf_per_60),
+      sa_per_60: toNullableNumber(row.sa_per_60),
+      gf_per_60: toNullableNumber(row.gf_per_60),
+      ga_per_60: toNullableNumber(row.ga_per_60),
+      xgf_per_60: toNullableNumber(row.xgf_per_60),
+      xga_per_60: toNullableNumber(row.xga_per_60),
       gp: row.gp,
-      toi_seconds: Number(row.toi_seconds),
-      pace_per_60: (Number(row.cf_per_60) + Number(row.ca_per_60)) / 2.0,
-      hdcf_per_60: Number(row.hdcf_per_60),
-      hdca_per_60: Number(row.hdca_per_60),
+      toi_seconds: toNullableNumber(row.toi_seconds),
+      pace_per_60: cf != null && ca != null ? (cf + ca) / 2.0 : null,
+      hdcf_per_60: toNullableNumber(row.hdcf_per_60),
+      hdca_per_60: toNullableNumber(row.hdca_per_60),
       pdo: toNullableNumber(row.pdo),
       data_mode: "all",
-      pp_xgf_per_60: pp ? Number(pp.xgf_per_60) : null,
-      pk_xga_per_60: pk ? Number(pk.xga_per_60) : null,
-      penalties_drawn_per_60: wgo ? Number(wgo.penalties_drawn_per_60) : null,
-      penalties_taken_per_60: wgo ? Number(wgo.penalties_taken_per_60) : null,
+      pp_xgf_per_60: pp ? toNullableNumber(pp.xgf_per_60) : null,
+      pk_xga_per_60: pk ? toNullableNumber(pk.xga_per_60) : null,
+      penalties_drawn_per_60: wgo
+        ? toNullableNumber(wgo.penalties_drawn_per_60)
+        : null,
+      penalties_taken_per_60: wgo
+        ? toNullableNumber(wgo.penalties_taken_per_60)
+        : null,
     });
   });
 
@@ -330,54 +339,45 @@ export function calculateEwma(
   }
 
   const window = validGames.slice(0, LOOKBACK_GAMES);
+  const weights = window.map((_, i) => Math.pow(0.5, i / HALF_LIFE_GAMES));
 
-  let sumWeights = 0;
-  let sumXgf = 0;
-  let sumGf = 0;
-  let sumSf = 0;
-  let sumXga = 0;
-  let sumGa = 0;
-  let sumSa = 0;
-  let sumPace = 0;
-  let sumHdcf = 0;
-  let sumHdca = 0;
-  let sumPdo = 0;
-  let sumPdoWeights = 0;
-  let pdoObservationCount = 0;
-  let sumPpXgf = 0;
-  let sumPkXga = 0;
-  let sumDisciplineDiff = 0;
+  /** Weighted mean over the games that observed the input (per-metric weights). */
+  const weightedMean = (read: (game: TeamGame) => number | null) => {
+    let sum = 0;
+    let weightSum = 0;
+    let count = 0;
+    window.forEach((game, i) => {
+      const value = read(game);
+      if (value == null || !Number.isFinite(value)) return;
+      sum += value * weights[i];
+      weightSum += weights[i];
+      count += 1;
+    });
+    return { value: weightSum > 0 ? sum / weightSum : null, count };
+  };
 
-  for (let i = 0; i < window.length; i++) {
-    const game = window[i];
-    const diff = i;
-    const weight = Math.pow(0.5, diff / HALF_LIFE_GAMES);
+  const xgf = weightedMean((g) => g.xgf_per_60).value;
+  const gf = weightedMean((g) => g.gf_per_60).value;
+  const sf = weightedMean((g) => g.sf_per_60).value;
+  const xga = weightedMean((g) => g.xga_per_60).value;
+  const ga = weightedMean((g) => g.ga_per_60).value;
+  const sa = weightedMean((g) => g.sa_per_60).value;
+  const pace = weightedMean((g) =>
+    g.pace_per_60 ??
+    (g.cf_per_60 != null && g.ca_per_60 != null
+      ? (g.cf_per_60 + g.ca_per_60) / 2.0
+      : null),
+  ).value;
+  const hdcf = weightedMean((g) => g.hdcf_per_60).value;
+  const hdca = weightedMean((g) => g.hdca_per_60).value;
+  const pdo = weightedMean((g) => g.pdo);
 
-    sumWeights += weight;
-    sumXgf += (game.xgf_per_60 ?? 0) * weight;
-    sumGf += (game.gf_per_60 ?? 0) * weight;
-    sumSf += (game.sf_per_60 ?? 0) * weight;
-    sumXga += (game.xga_per_60 ?? 0) * weight;
-    sumGa += (game.ga_per_60 ?? 0) * weight;
-    sumSa += (game.sa_per_60 ?? 0) * weight;
-    sumHdcf += (game.hdcf_per_60 ?? 0) * weight;
-    sumHdca += (game.hdca_per_60 ?? 0) * weight;
-    if (game.pdo !== null) {
-      sumPdo += game.pdo * weight;
-      sumPdoWeights += weight;
-      pdoObservationCount += 1;
-    }
-
-    sumPpXgf += (game.pp_xgf_per_60 ?? 0) * weight;
-    sumPkXga += (game.pk_xga_per_60 ?? 0) * weight;
-
-    const discDiff =
-      (game.penalties_drawn_per_60 ?? 0) - (game.penalties_taken_per_60 ?? 0);
-    sumDisciplineDiff += discDiff * weight;
-
-    const pace =
-      game.pace_per_60 ?? ((game.cf_per_60 ?? 0) + (game.ca_per_60 ?? 0)) / 2.0;
-    sumPace += pace * weight;
+  // A team without the core rates in its window cannot be rated (unknown, not 0).
+  if (
+    xgf == null || gf == null || sf == null || xga == null || ga == null ||
+    sa == null || pace == null || hdcf == null || hdca == null
+  ) {
+    return null;
   }
 
   return {
@@ -385,33 +385,46 @@ export function calculateEwma(
     date: cur.date,
     season_id: cur.season_id,
     gp_to_date: cur.gp_to_date,
-    xgf60_ewma: sumXgf / sumWeights,
-    gf60_ewma: sumGf / sumWeights,
-    sf60_ewma: sumSf / sumWeights,
-    xga60_ewma: sumXga / sumWeights,
-    ga60_ewma: sumGa / sumWeights,
-    sa60_ewma: sumSa / sumWeights,
-    pace60_ewma: sumPace / sumWeights,
-    hdcf60_ewma: sumHdcf / sumWeights,
-    hdca60_ewma: sumHdca / sumWeights,
-    pdo_ewma: sumPdoWeights > 0 ? sumPdo / sumPdoWeights : null,
-    pdo_observation_count: pdoObservationCount,
-    pp_xgf60_ewma: sumPpXgf / sumWeights,
-    pk_xga60_ewma: sumPkXga / sumWeights,
-    discipline_diff_ewma: sumDisciplineDiff / sumWeights,
+    xgf60_ewma: xgf,
+    gf60_ewma: gf,
+    sf60_ewma: sf,
+    xga60_ewma: xga,
+    ga60_ewma: ga,
+    sa60_ewma: sa,
+    pace60_ewma: pace,
+    hdcf60_ewma: hdcf,
+    hdca60_ewma: hdca,
+    pdo_ewma: pdo.value,
+    pdo_observation_count: pdo.count,
+    pp_xgf60_ewma: weightedMean((g) => g.pp_xgf_per_60).value,
+    pk_xga60_ewma: weightedMean((g) => g.pk_xga_per_60).value,
+    discipline_diff_ewma: weightedMean((g) =>
+      g.penalties_drawn_per_60 != null && g.penalties_taken_per_60 != null
+        ? g.penalties_drawn_per_60 - g.penalties_taken_per_60
+        : null,
+    ).value,
   };
 }
 
+/**
+ * Mean and sample SD. Floating-point noise around a constant population is zero
+ * variance, so identical teams all rate 100 (BA W1-4 B).
+ */
+function sampleStats(values: number[]) {
+  if (values.length === 0) return { avg: 0, stddev: 0 };
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  if (values.length === 1) return { avg, stddev: 0 };
+  const variance =
+    values.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / (values.length - 1);
+  const noiseFloor = 1e-20 * Math.max(1, avg * avg);
+  return { avg, stddev: variance <= noiseFloor ? 0 : Math.sqrt(variance) };
+}
+
+const knownValues = (values: (number | null)[]): number[] =>
+  values.filter((value): value is number => value != null);
+
 export function calculateLeagueMetrics(metrics: EwmaMetrics[]): LeagueMetrics {
-  const calcStats = (values: number[]) => {
-    if (values.length === 0) return { avg: 0, stddev: 0 };
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    if (values.length === 1) return { avg, stddev: 0 };
-    const variance =
-      values.reduce((a, b) => a + Math.pow(b - avg, 2), 0) /
-      (values.length - 1);
-    return { avg, stddev: Math.sqrt(variance) };
-  };
+  const calcStats = sampleStats;
 
   const xgf = calcStats(metrics.map((m) => m.xgf60_ewma));
   const gf = calcStats(metrics.map((m) => m.gf60_ewma));
@@ -430,9 +443,11 @@ export function calculateLeagueMetrics(metrics: EwmaMetrics[]): LeagueMetrics {
       return total > 0 ? m.hdcf60_ewma / total : 0.5;
     }),
   );
-  const ppOff = calcStats(metrics.map((m) => m.pp_xgf60_ewma));
-  const pkDef = calcStats(metrics.map((m) => m.pk_xga60_ewma));
-  const discipline = calcStats(metrics.map((m) => m.discipline_diff_ewma));
+  const ppOff = calcStats(knownValues(metrics.map((m) => m.pp_xgf60_ewma)));
+  const pkDef = calcStats(knownValues(metrics.map((m) => m.pk_xga60_ewma)));
+  const discipline = calcStats(
+    knownValues(metrics.map((m) => m.discipline_diff_ewma)),
+  );
   const pdo = calcStats(
     metrics.flatMap((metric) =>
       metric.pdo_ewma === null ? [] : [metric.pdo_ewma],
@@ -493,11 +508,43 @@ export interface ZScored {
   finishing_z: number;
   goalie_z: number;
   danger_z: number;
-  pp_off_z: number;
-  pk_def_z: number;
-  discipline_z: number;
+  pp_off_z: number | null;
+  pk_def_z: number | null;
+  discipline_z: number | null;
   pdo_z: number;
   pdo_missing: boolean;
+}
+
+/** GP at which the early-season prior stops pulling toward 100 (decision 19). */
+export const POWER_RATING_PRIOR_FULL_WEIGHT_GP = 10;
+
+/**
+ * Approved interim prior (TJ, 2026-11-12): a linear ramp to GP 10. Unfitted;
+ * a hypothesis to fit on held-out games (rule 12).
+ */
+export function powerRatingPriorWeight(gamesPlayed: number): number {
+  return Math.min(
+    1.0,
+    Math.max(0.0, gamesPlayed / POWER_RATING_PRIOR_FULL_WEIGHT_GP),
+  );
+}
+
+/**
+ * The prior is applied after normalisation against the day's all-team
+ * reference (decision 19): rating = 100 + w(GP) × (normalised − 100).
+ */
+export function applyPowerRatingPrior(
+  rating: FinalRating,
+  gamesPlayed: number,
+): FinalRating {
+  const w = powerRatingPriorWeight(gamesPlayed);
+  const shrink = (value: number) => 100 + w * (value - 100);
+  return {
+    ...rating,
+    off_rating: shrink(rating.off_rating),
+    def_rating: shrink(rating.def_rating),
+    pace_rating: shrink(rating.pace_rating),
+  };
 }
 
 export function calculateZScores(
@@ -506,8 +553,14 @@ export function calculateZScores(
 ): ZScored {
   const z = (val: number, avg: number, stddev: number) =>
     stddev === 0 ? 0 : (val - avg) / stddev;
+  const zKnown = (val: number | null, avg: number, stddev: number) =>
+    val == null ? null : z(val, avg, stddev);
 
-  const gpWeight = Math.min(1.0, Math.max(0.0, metric.gp_to_date / 10.0));
+  // The stored per-60 components keep their GP blend toward the league mean
+  // (Start Chart reads them). The z-scores use the unblended EWMA: the prior
+  // is applied once, after normalisation (decision 19), in
+  // applyPowerRatingPrior, so the final standardisation cannot cancel it.
+  const gpWeight = powerRatingPriorWeight(metric.gp_to_date);
 
   const blend = (val: number, avg: number) =>
     gpWeight * val + (1.0 - gpWeight) * avg;
@@ -540,13 +593,13 @@ export function calculateZScores(
     ga60,
     sa60,
     pace60,
-    xgf60_z: z(xgf60, league.league_xgf60_avg, league.league_xgf60_stddev),
-    gf60_z: z(gf60, league.league_gf60_avg, league.league_gf60_stddev),
-    sf60_z: z(sf60, league.league_sf60_avg, league.league_sf60_stddev),
-    xga60_z: z(xga60, league.league_xga60_avg, league.league_xga60_stddev),
-    ga60_z: z(ga60, league.league_ga60_avg, league.league_ga60_stddev),
-    sa60_z: z(sa60, league.league_sa60_avg, league.league_sa60_stddev),
-    pace60_z: z(pace60, league.league_pace60_avg, league.league_pace60_stddev),
+    xgf60_z: z(metric.xgf60_ewma, league.league_xgf60_avg, league.league_xgf60_stddev),
+    gf60_z: z(metric.gf60_ewma, league.league_gf60_avg, league.league_gf60_stddev),
+    sf60_z: z(metric.sf60_ewma, league.league_sf60_avg, league.league_sf60_stddev),
+    xga60_z: z(metric.xga60_ewma, league.league_xga60_avg, league.league_xga60_stddev),
+    ga60_z: z(metric.ga60_ewma, league.league_ga60_avg, league.league_ga60_stddev),
+    sa60_z: z(metric.sa60_ewma, league.league_sa60_avg, league.league_sa60_stddev),
+    pace60_z: z(metric.pace60_ewma, league.league_pace60_avg, league.league_pace60_stddev),
     finishing_z: z(
       finishing,
       league.league_finishing_avg,
@@ -554,9 +607,9 @@ export function calculateZScores(
     ),
     goalie_z: z(goalie, league.league_goalie_avg, league.league_goalie_stddev),
     danger_z: z(danger, league.league_danger_avg, league.league_danger_stddev),
-    pp_off_z: z(ppOff, league.league_pp_off_avg, league.league_pp_off_stddev),
-    pk_def_z: z(pkDef, league.league_pk_def_avg, league.league_pk_def_stddev),
-    discipline_z: z(
+    pp_off_z: zKnown(ppOff, league.league_pp_off_avg, league.league_pp_off_stddev),
+    pk_def_z: zKnown(pkDef, league.league_pk_def_avg, league.league_pk_def_stddev),
+    discipline_z: zKnown(
       discipline,
       league.league_discipline_avg,
       league.league_discipline_stddev,
@@ -602,15 +655,7 @@ export interface RawDistribution {
 }
 
 export function calculateRawDistribution(scores: RawScore[]): RawDistribution {
-  const calcStats = (values: number[]) => {
-    if (values.length === 0) return { avg: 0, stddev: 0 };
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    if (values.length === 1) return { avg, stddev: 0 };
-    const variance =
-      values.reduce((a, b) => a + Math.pow(b - avg, 2), 0) /
-      (values.length - 1);
-    return { avg, stddev: Math.sqrt(variance) };
-  };
+  const calcStats = sampleStats;
 
   const off = calcStats(scores.map((s) => s.off_raw));
   const def = calcStats(scores.map((s) => s.def_raw));
@@ -644,8 +689,9 @@ export interface FinalRating {
   finishing_rating: number;
   goalie_rating: number;
   danger_rating: number;
-  special_rating: number;
-  discipline_rating: number;
+  /** Null when the team's PP or PK input is unknown. */
+  special_rating: number | null;
+  discipline_rating: number | null;
   variance_flag: number;
 }
 
@@ -679,8 +725,11 @@ export function calculateFinalRating(
     goalie_rating: 100 + 15 * (z.goalie_z || 0),
     danger_rating: 100 + 15 * (z.danger_z || 0),
     special_rating:
-      100 + 15 * (0.2 * (z.pp_off_z || 0) + 0.2 * -(z.pk_def_z || 0)),
-    discipline_rating: 100 + 15 * (z.discipline_z || 0),
+      z.pp_off_z == null || z.pk_def_z == null
+        ? null
+        : 100 + 15 * (0.2 * z.pp_off_z + 0.2 * -z.pk_def_z),
+    discipline_rating:
+      z.discipline_z == null ? null : 100 + 15 * z.discipline_z,
     variance_flag: Math.abs(z.pdo_z || 0) >= 1.0 ? 1 : 0,
   };
 }
@@ -779,4 +828,137 @@ export async function fetchAllRatings(
     }
   }
   return allData;
+}
+
+export type DailyPowerRating = {
+  rating: FinalRating;
+  /** Date of the latest genuine game behind the rating. */
+  sourceThroughDate: string;
+};
+
+/**
+ * Genuine games only: one all-situations row per team and date (no all/5v5
+ * mixing, BA W1-4 C). `gp_to_date` counts the team's games in that season.
+ */
+export function buildGenuineTeamGames(
+  logs: readonly GameLog[],
+): Map<string, TeamGame[]> {
+  const byTeam = new Map<string, Map<string, GameLog>>();
+  logs.forEach((log) => {
+    if (log.data_mode !== "all") return;
+    const games = byTeam.get(log.team_abbreviation) ?? new Map<string, GameLog>();
+    if (!games.has(log.date)) games.set(log.date, log);
+    byTeam.set(log.team_abbreviation, games);
+  });
+
+  const grouped = new Map<string, TeamGame[]>();
+  byTeam.forEach((games, team) => {
+    const ascending = [...games.values()].sort((a, b) =>
+      a.date.localeCompare(b.date),
+    );
+    const seasonCounts = new Map<number, number>();
+    const withGp = ascending.map((game) => {
+      const gp = (seasonCounts.get(game.season_id) ?? 0) + 1;
+      seasonCounts.set(game.season_id, gp);
+      return { ...game, gp_to_date: gp };
+    });
+    grouped.set(
+      team,
+      withGp.reverse().map((game, index) => ({ ...game, rn_desc: index })),
+    );
+  });
+  return grouped;
+}
+
+/**
+ * One day's ratings (W1 P0 #12, decision 19). Every team with a genuine game
+ * on or before `targetDate` is rated as of its latest game, and all of them are
+ * standardised against one baseline (sample SD; zero variance gives 100), so
+ * which teams played tonight cannot move anyone's rating. The prior is applied
+ * after that normalisation. `previousByTeam` only fills teams with no game in
+ * the window (offseason carry-forward).
+ */
+export function computeDailyPowerRatings(
+  teamGames: Map<string, TeamGame[]>,
+  targetDate: string,
+  previousByTeam: Map<string, DailyPowerRating> = new Map(),
+): Map<string, DailyPowerRating> {
+  const ewmaMetrics: EwmaMetrics[] = [];
+  for (const games of teamGames.values()) {
+    const latest = games
+      .filter((game) => game.date <= targetDate)
+      .reduce<TeamGame | null>(
+        (best, game) => (best == null || game.date > best.date ? game : best),
+        null,
+      );
+    if (!latest) continue;
+    const ewma = calculateEwma(games, latest.date);
+    if (ewma) ewmaMetrics.push(ewma);
+  }
+
+  const result = new Map<string, DailyPowerRating>();
+  if (ewmaMetrics.length > 0) {
+    const league = calculateLeagueMetrics(ewmaMetrics);
+    const scored = ewmaMetrics.map((metric) => ({
+      metric,
+      raw: calculateRawScores(calculateZScores(metric, league)),
+    }));
+    const dist = calculateRawDistribution(scored.map(({ raw }) => raw));
+    scored.forEach(({ metric, raw }) => {
+      const rating = applyPowerRatingPrior(
+        { ...calculateFinalRating(raw, dist), date: targetDate },
+        metric.gp_to_date,
+      );
+      result.set(metric.team_abbreviation, {
+        rating,
+        sourceThroughDate: metric.date,
+      });
+    });
+  }
+  previousByTeam.forEach((previous, team) => {
+    if (!result.has(team)) result.set(team, previous);
+  });
+  return result;
+}
+
+export type SpecialTeamsTier = 1 | 2 | 3;
+
+/**
+ * PP/PK tier from a competition rank among the teams with a known pooled
+ * season-to-date value (decision 20, W1 P0 #13). Tier 1 = rank ≤ ⌈n/3⌉,
+ * tier 2 = rank ≤ ⌈2n/3⌉, otherwise 3. Tie rule: tied teams share the better
+ * competition rank (1, 2, 2, 4) and therefore the same tier, so tiers can hold
+ * unequal counts. An unknown value has no tier (null), never tier 3.
+ */
+export function specialTeamsTierFromRank(
+  rank: number | null | undefined,
+  knownCount: number,
+): SpecialTeamsTier | null {
+  if (rank == null || !Number.isFinite(rank) || knownCount <= 0) return null;
+  if (rank <= Math.ceil(knownCount / 3)) return 1;
+  if (rank <= Math.ceil((2 * knownCount) / 3)) return 2;
+  return 3;
+}
+
+export type PooledSpecialTeamsInput = {
+  ppPct: number | null;
+  ppRank: number | null;
+  pkPct: number | null;
+  pkRank: number | null;
+};
+
+export function computeSpecialTeamsTiers(
+  pooledByTeam: Map<string, PooledSpecialTeamsInput>,
+): Map<string, { ppTier: SpecialTeamsTier | null; pkTier: SpecialTeamsTier | null }> {
+  const values = [...pooledByTeam.values()];
+  const ppKnown = values.filter((v) => v.ppPct != null && v.ppRank != null).length;
+  const pkKnown = values.filter((v) => v.pkPct != null && v.pkRank != null).length;
+  const tiers = new Map<string, { ppTier: SpecialTeamsTier | null; pkTier: SpecialTeamsTier | null }>();
+  pooledByTeam.forEach((v, team) => {
+    tiers.set(team, {
+      ppTier: v.ppPct == null ? null : specialTeamsTierFromRank(v.ppRank, ppKnown),
+      pkTier: v.pkPct == null ? null : specialTeamsTierFromRank(v.pkRank, pkKnown),
+    });
+  });
+  return tiers;
 }

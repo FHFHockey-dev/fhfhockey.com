@@ -1,6 +1,6 @@
 import { DAYS, EXTENDED_DAY_ABBREVIATION, TeamDataWithTotals, WeekData } from "lib/NHL/types";
 import { calcTotalOffNights, getTotalGamePlayed, isRegularScheduleGame } from "./helper";
-import { convertTeamRowToWinOddsList } from "./calcWinOdds";
+import { convertTeamRowToWinOddsList, GAME_GRID_WIN_ODDS } from "./calcWinOdds";
 import calcWeekScore, { calculateSlateCrowding, calculateMatchupBonus, WEEK_SCORE_VERSION } from "./calcWeekScore";
 
 /** Keep missing standings separate from genuine zero points percentages. */
@@ -83,6 +83,8 @@ export function getTeamScheduleSummary(
       games: 6 * (totalGamesPlayed - totalLeagueGames / 16),
       offNights: 4 * totalOffNights,
       matchup: calculateMatchupBonus(winOdds, totalGamesPlayed),
+      /** Decision 64: odds and their matchup nudge are withheld. */
+      matchupStatus: GAME_GRID_WIN_ODDS.status,
       crowding: crowding.adjustment
     }
   };

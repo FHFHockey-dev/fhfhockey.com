@@ -3,7 +3,7 @@ import { requireNstJob } from "lib/nst/jobLifecycle.server";
 
 import { HTMLElement, parse } from "node-html-parser";
 import { buildNstUrlString, fetchNstTextWithCacheByUrl } from "lib/nst/client";
-import { YearlyCount, YearlyRate } from "./types";
+import { parseTime } from "lib/NHL/TOI";
 
 /**
  * Parses an HTML table and returns headers and data.
@@ -28,7 +28,7 @@ export function parseTable(table: HTMLElement) {
 
   const headers = [...rows[0].childNodes]
     .filter((n) => n.nodeType !== 3)
-    .map((th) => th.textContent?.trim() || "");
+    .map((th) => (th.textContent || "").replace(/\u00a0/g, " ").trim());
   return { headers, data };
 }
 
@@ -51,77 +51,85 @@ export function processRows(
   });
 }
 
-/**
- * Aggregates multiple team entries per season into a "TOT" row.
- * @param items - Array of items (counts or rates).
- * @param aggregateKeys - Keys to sum up.
- * @param calculateDerived - Function to calculate derived fields for "TOT".
- * @returns Aggregated array with "TOT" rows added.
- */
-export function addTotalRows<T extends { season: number; team: string }>(
-  items: T[],
-  groupByKeys: (keyof T)[],
-  aggregateKeys: (keyof T)[],
-  calculateDerived: (tot: T) => void
-): T[] {
-  const seasonMap: { [season: number]: T[] } = {};
-
-  // Group items by season
-  items.forEach((item) => {
-    const season = item.season;
-    if (!seasonMap[season]) {
-      seasonMap[season] = [];
-    }
-    seasonMap[season].push(item);
-  });
-
-  const aggregatedItems: T[] = [];
-
-  Object.keys(seasonMap).forEach((seasonStr) => {
-    const season = parseInt(seasonStr, 10);
-    const teamItems = seasonMap[season];
-
-    if (teamItems.length === 1) {
-      // Only one team, no need to aggregate
-      aggregatedItems.push(teamItems[0]);
-    } else {
-      // Multiple teams, aggregate stats for "TOT"
-      const totItem = { ...teamItems[0] } as T;
-
-      groupByKeys.forEach((key) => {
-        // team becomes "TOT"
-        if (key === "team") {
-          (totItem as any)[key] = "TOT";
-        }
-      });
-
-      aggregateKeys.forEach((key) => {
-        (totItem as any)[key] = teamItems.reduce(
-          (sum: number, it: any) =>
-            sum + (typeof it[key] === "number" ? it[key] : 0),
-          0
-        );
-      });
-
-      // Calculate derived fields
-      calculateDerived(totItem);
-
-      aggregatedItems.push(totItem);
-    }
-  });
-
-  return aggregatedItems;
+/** A numeric NST cell; "-", blanks and other non-numbers are unknown (null). */
+export function nstNumber(value: string | null | undefined): number | null {
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+  const parsed = Number(text);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 /**
- * Parses Time on Ice (TOI) float and converts it to total seconds.
- * @param timeFloat - The TOI as a float (e.g., 1096.1666666667).
- * @returns The total time in seconds.
+ * Declared TOI adapter (nst-playerreport-toi-v1): NST's player report prints
+ * TOI as decimal minutes ("1400.5"); this returns seconds, or null when the
+ * cell is unknown. Every per-60 in this service divides by these seconds.
  */
-export function parseTime(timeFloat: number): number {
-  const minutes = Math.floor(timeFloat);
-  const seconds = Math.round((timeFloat - minutes) * 60);
-  return minutes * 60 + seconds;
+export function nstToiSeconds(value: string | null | undefined): number | null {
+  const minutes = parseTime(value);
+  return Number.isFinite(minutes) ? minutes * 60 : null;
+}
+
+/** count × 3600 ÷ seconds; null when either is unknown or seconds ≤ 0. */
+export function perSixty(
+  count: number | null,
+  seconds: number | null
+): number | null {
+  return count == null || seconds == null || seconds <= 0
+    ? null
+    : (count * 3600) / seconds;
+}
+
+/** numerator ÷ denominator on 0-100 points; null when unknown or denominator ≤ 0. */
+export function sharePoints(
+  numerator: number | null,
+  denominator: number | null
+): number | null {
+  return numerator == null || denominator == null || denominator <= 0
+    ? null
+    : (numerator / denominator) * 100;
+}
+
+/** Sum of parts; null when any part is unknown. */
+export function sumKnown(...parts: Array<number | null>): number | null {
+  let total = 0;
+  for (const part of parts) {
+    if (part == null) return null;
+    total += part;
+  }
+  return total;
+}
+
+/** Start year of the season in progress (or about to start) on `asOf`. */
+export function currentSeasonStartYear(asOf: Date): number {
+  const year = asOf.getUTCFullYear();
+  return asOf.getUTCMonth() >= 6 ? year : year - 1;
+}
+
+/**
+ * Seasons the averages use: completed regular seasons (NST "20232024"
+ * labels) before the season in progress on `asOf`, newest first; the newest
+ * three for three-year averages. The newest season in the data is kept when
+ * it is complete (a player with no current-season row).
+ */
+export function seasonsForAverages(
+  seasons: number[],
+  isThreeYear: boolean,
+  asOf: Date
+): number[] {
+  const current = currentSeasonStartYear(asOf);
+  const completed = Array.from(new Set(seasons))
+    .filter((season) => Math.floor(season / 10000) < current)
+    .sort((a, b) => b - a);
+  const chosen = isThreeYear ? completed.slice(0, 3) : completed;
+  if (isThreeYear && chosen.length < 3) {
+    throw new Error(
+      "Not enough completed seasons to calculate three-year averages."
+    );
+  }
+  if (!isThreeYear && chosen.length < 1) {
+    throw new Error("Not enough seasons to calculate career averages.");
+  }
+  return chosen;
 }
 
 /**

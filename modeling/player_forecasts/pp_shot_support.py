@@ -15,6 +15,12 @@ VERSION = "forge-pp-shot-support-engineering-v1"
 BASE_SHA = "76d507ea84634a91a69f61648d0a58e85e76571b"
 PRIOR_MINUTES = (5, 15, 30, 60, 120)
 # Pin the unchanged implementation whose pre-bound PP rate is reproduced below.
+# The sha256 pins are of the blobs at DEPENDENCY_PIN_SHA, the commit that
+# introduced this harness (BASE_SHA is not its ancestor and differs for
+# skater-stage.ts and skater-adjustments.ts). They are verified against that
+# commit, not the working tree, so later legitimate edits to these files do
+# not break the reproduction, and the issued pins stay as issued (rule 21).
+DEPENDENCY_PIN_SHA = "6551974b22bba40baecdb810b50f12a70854264b"
 BASELINE_DEPENDENCIES = {
     "web/lib/projections/stages/skater-stage.ts": "fc28ab78fd9c57bf6e1d76bae7acaea9b0ebc3cb228a7b219881c9f5342ab4ab",
     "web/lib/projections/calculators/skater-adjustments.ts": "56f377a7cba8263872d4668b2d8d97340bf8daca61895ef2b81ce9c768b47fdf",
@@ -123,15 +129,33 @@ def engineering_fixtures() -> list[dict[str, Any]]:
     ]
 
 
+def _pinned_blob(root: Path, relative: str) -> bytes:
+    """The dependency's bytes at DEPENDENCY_PIN_SHA; fails closed when git or
+    the commit is unavailable."""
+    try:
+        return subprocess.run(
+            ["git", "show", f"{DEPENDENCY_PIN_SHA}:{relative}"],
+            cwd=root, check=True, capture_output=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise ValueError(
+            f"baseline dependency unavailable at {DEPENDENCY_PIN_SHA}: {relative}"
+        ) from error
+
+
+def verify_baseline_dependencies(root: Path) -> None:
+    for relative, expected in BASELINE_DEPENDENCIES.items():
+        if hashlib.sha256(_pinned_blob(root, relative)).hexdigest() != expected:
+            raise ValueError(f"baseline dependency changed: {relative}")
+
+
 def export_engineering(output: Path, inventory_path: Path | None = None) -> dict[str, Any]:
     root = repository_root()
     assert_output_outside_repository(output, root)
     # Also protect the primary checkout when running from an isolated worktree.
     common = subprocess.check_output(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=root, text=True).strip()
     assert_output_outside_repository(output, Path(common).parent)
-    for relative, expected in BASELINE_DEPENDENCIES.items():
-        if hashlib.sha256((root / relative).read_bytes()).hexdigest() != expected:
-            raise ValueError(f"baseline dependency changed: {relative}")
+    verify_baseline_dependencies(root)
     inventory = read_json(inventory_path) if inventory_path else None
     if inventory is not None and not isinstance(inventory, dict):
         raise ValueError("evidence inventory must be an object; it cannot authorize evaluation")
@@ -145,6 +169,7 @@ def export_engineering(output: Path, inventory_path: Path | None = None) -> dict
         "checkoutSha": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
         "harnessHash": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "baselineDependencies": BASELINE_DEPENDENCIES,
+        "dependencyPinSha": DEPENDENCY_PIN_SHA,
         "inventory": inventory, "inventoryHash": hashlib.sha256(inventory_path.read_bytes()).hexdigest() if inventory_path else None,
         "engineeringCaseCount": len(fixtures), "priorSettings": len(PRIOR_MINUTES),
         "predictiveEvidenceQualified": False, "predictiveTrials": [], "selectedPriorMinutes": None,

@@ -170,9 +170,7 @@ export const ADVANCED_SKATER_METRIC_FIELDS = [
   "toi_per_game",
   "pp_toi",
   "individual_sat_for_per_60",
-  "nst_ipp",
-  "nst_ixg_per_60",
-  "nst_oi_cf_per_60"
+  "toi_per_game_5v5"
 ] as const;
 
 const EMPTY_BUCKET: SkaterBucket = {
@@ -206,8 +204,59 @@ const average = (values: Array<number | null | undefined>) => {
 const sum = (values: Array<number | null | undefined>) =>
   values.reduce<number>((total, value) => total + finiteOrZero(value), 0);
 
-const per60 = (value: number, toiSeconds: number) =>
-  toiSeconds > 0 ? (value / toiSeconds) * 3600 : null;
+/**
+ * Unit adapter (rule 17): `wgo_skater_stats` stores the NHL API's
+ * `timeOnIcePerGame`, `ppTimeOnIce` and `timeOnIcePerGame5v5` in seconds, and
+ * every row the variance page reads is a single game.
+ */
+const SECONDS_PER_HOUR = 3600;
+
+/**
+ * Window rate per 60 from per-game (count, TOI seconds) pairs (rule 13).
+ * A game whose count or TOI is unknown makes the full-window rate unknown,
+ * rather than keeping a count without its exposure or a TOI without its count.
+ */
+const pairedPer60 = (
+  rows: SkaterGameRow[],
+  count: (row: SkaterGameRow) => unknown,
+  toiSeconds: (row: SkaterGameRow) => unknown
+) => {
+  let countTotal = 0;
+  let secondsTotal = 0;
+  for (const row of rows) {
+    const value = finiteOrNull(count(row));
+    const seconds = finiteOrNull(toiSeconds(row));
+    if (value === null || seconds === null || seconds < 0) {
+      return null;
+    }
+    countTotal += value;
+    secondsTotal += seconds;
+  }
+  return secondsTotal > 0 ? (countTotal / secondsTotal) * SECONDS_PER_HOUR : null;
+};
+
+/**
+ * Individual shot attempts (iCF) per 60 from the NHL puck-possession report
+ * (decision 73). Each game's attempts are `individualSatForPer60` x the same
+ * row's `timeOnIcePerGame5v5` / 3600, and the window rate pools attempts over
+ * pooled TOI (the TOI weights cancel, so the result does not depend on the
+ * TOI unit). The report's strength basis for this rate is not verified in the
+ * repo, so the label names the source and makes no strength claim. Never
+ * averaged across games, never on-ice CF, and unknown when any game lacks
+ * either input.
+ */
+const individualCorsiForPer60 = (rows: SkaterGameRow[]) =>
+  pairedPer60(
+    rows,
+    (row) => {
+      const rate = finiteOrNull(row.individual_sat_for_per_60);
+      const seconds = finiteOrNull(row.toi_per_game_5v5);
+      return rate === null || seconds === null
+        ? null
+        : (rate * seconds) / SECONDS_PER_HOUR;
+    },
+    (row) => row.toi_per_game_5v5
+  );
 
 const getTeam = (row: SkaterGameRow) =>
   row.team_abbrev ?? row.current_team_abbreviation ?? "N/A";
@@ -335,8 +384,18 @@ export const buildSkaterAdvancedMetricsRows = (
       const latestRow = sortedRows.at(-1) ?? sortedRows[0];
       const context = contextByPlayer.get(playerId);
       const gamesPlayed = sum(playerRows.map((row) => row.games_played ?? 1));
-      const toiSeconds = sum(playerRows.map((row) => row.toi_per_game));
-      const ppToiSeconds = sum(playerRows.map((row) => row.pp_toi));
+      const allSituations = (field: keyof SkaterGameRow) =>
+        pairedPer60(
+          playerRows,
+          (row) => row[field],
+          (row) => row.toi_per_game
+        );
+      const powerPlay = (field: keyof SkaterGameRow) =>
+        pairedPer60(
+          playerRows,
+          (row) => row[field],
+          (row) => row.pp_toi
+        );
 
       return {
         rowType: "player",
@@ -347,46 +406,17 @@ export const buildSkaterAdvancedMetricsRows = (
         valuationLabel: getValuationLabel(valuationMode),
         bucket: context?.bucket ?? EMPTY_BUCKET,
         gamesPlayed,
-        goalsPer60: per60(sum(playerRows.map((row) => row.goals)), toiSeconds),
-        assistsPer60: per60(
-          sum(playerRows.map((row) => row.assists)),
-          toiSeconds
-        ),
-        pointsPer60: per60(
-          sum(playerRows.map((row) => row.points)),
-          toiSeconds
-        ),
-        shotsPer60: per60(sum(playerRows.map((row) => row.shots)), toiSeconds),
-        powerPlayGoalsPer60: per60(
-          sum(playerRows.map((row) => row.pp_goals)),
-          ppToiSeconds
-        ),
-        powerPlayAssistsPer60: per60(
-          sum(playerRows.map((row) => row.pp_assists)),
-          ppToiSeconds
-        ),
-        powerPlayPointsPer60: per60(
-          sum(playerRows.map((row) => row.pp_points)),
-          ppToiSeconds
-        ),
-        hitsPer60: per60(sum(playerRows.map((row) => row.hits)), toiSeconds),
-        blocksPer60: per60(
-          sum(playerRows.map((row) => row.blocked_shots)),
-          toiSeconds
-        ),
-        penaltyMinutesPer60: per60(
-          sum(playerRows.map((row) => row.penalty_minutes)),
-          toiSeconds
-        ),
-        corsiForPer60:
-          average(playerRows.map((row) => row.nst_oi_cf_per_60)) ??
-          average(playerRows.map((row) => row.individual_sat_for_per_60)),
-        individualPointPercentage: average(
-          playerRows.map((row) => row.nst_ipp)
-        ),
-        individualExpectedGoalsPer60: average(
-          playerRows.map((row) => row.nst_ixg_per_60)
-        )
+        goalsPer60: allSituations("goals"),
+        assistsPer60: allSituations("assists"),
+        pointsPer60: allSituations("points"),
+        shotsPer60: allSituations("shots"),
+        powerPlayGoalsPer60: powerPlay("pp_goals"),
+        powerPlayAssistsPer60: powerPlay("pp_assists"),
+        powerPlayPointsPer60: powerPlay("pp_points"),
+        hitsPer60: allSituations("hits"),
+        blocksPer60: allSituations("blocked_shots"),
+        penaltyMinutesPer60: allSituations("penalty_minutes"),
+        individualCorsiForPer60: individualCorsiForPer60(playerRows)
       } satisfies SkaterAdvancedMetricsRow;
     })
     .sort(sortByBucketThenName);

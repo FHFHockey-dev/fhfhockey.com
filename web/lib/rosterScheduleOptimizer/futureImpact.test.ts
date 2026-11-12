@@ -139,6 +139,13 @@ describe("later period F and horizon (§2)", () => {
     expect(resolve({ decisionAsOf, window, calendarPolicy: policy, timeZone: "America/New_York" }))
       .toMatchObject({ state: "outside_scenario_horizon", bound: { first: "2026-11-02", last: "2026-11-14" }, dates: F });
   });
+  it("dates the decision by the calendar policy: v1 UTC, v2 the NHL schedule's Eastern date (decision 127)", () => {
+    const decisionAsOf = "2026-11-02T03:00:00Z", window = { startDate: "2026-11-02", endDate: "2026-11-08" }; // 1 November in New York
+    // v1: the UTC date (Nov 2) starts the 14-day bound; v2: the Eastern date (Nov 1) is the stricter end, so it closes a day earlier.
+    expect(resolve({ decisionAsOf, window, calendarPolicy: forecastCalendarPolicy(14) })).toMatchObject({ bound: { first: "2026-11-02", last: "2026-11-15" } });
+    expect(resolve({ decisionAsOf, window, calendarPolicy: forecastCalendarPolicy(14, "forecast-calendar-v2") }))
+      .toMatchObject({ state: "outside_scenario_horizon", bound: { first: "2026-11-02", last: "2026-11-14" }, dates: F });
+  });
   it("rejects invalid, ambiguous or mismatched periods and policies as unknown", () => {
     expect(resolve({ periods: [...PERIODS, period("dup", F[0], "2026-11-16")] })).toMatchObject({ state: "unknown", reason: "ambiguous_period" });
     expect(resolve({ periods: [...PERIODS, period("other", "2026-11-23", "2026-11-29", { leagueKey: "game-key-465" })] })).toMatchObject({ state: "unknown", reason: "league_identity_mismatch" });

@@ -389,7 +389,19 @@ def metrics(pairs: list[tuple[float, float]]) -> dict:
             "rmse": math.sqrt(sum(e * e for e in errors) / len(errors)), "bias": sum(errors) / len(errors)}
 
 
-def select_method(rows: list[dict], labels: list[dict], cutoff_at: str) -> dict:
+# W2-7 D2 / decision 65: a successor experiment selects the mean by a proper
+# score. The issued pilot above stays as issued (rule 21): its policy says
+# MAE and `select_method` keeps MAE as its default so the pilot replays.
+PROPER_SCORE_SELECTION = {
+    "version": "forge-walk-forward-selection-squared-error-v2",
+    "score": "squared_error",
+    "secondary": ["mae"],
+    "ties": "A,B,C",
+    "disclosure": "new disclosed experiment; the issued MAE pilot is not relabelled",
+}
+
+
+def select_method(rows: list[dict], labels: list[dict], cutoff_at: str, score: str = "mae") -> dict:
     cutoff = stamp(cutoff_at)
     indexed, seen = {}, set()
     for label in labels:
@@ -412,6 +424,8 @@ def select_method(rows: list[dict], labels: list[dict], cutoff_at: str) -> dict:
                 and row["teamId"] == label["teamId"] and row["estimates"].get("A", {}).get("mean") is not None
                 and stamp(row["issuedAt"]) < cutoff):
             eligible.append((row, label))
+    if score not in ("mae", "squared_error"):
+        raise ValueError("unsupported selection score")
     reports = {}
     for method in METHODS:
         missing = sum(row["estimates"].get(method, {}).get("mean") is None for row, _ in eligible)
@@ -419,11 +433,18 @@ def select_method(rows: list[dict], labels: list[dict], cutoff_at: str) -> dict:
                  if row["estimates"].get(method, {}).get("mean") is not None]
         reports[method] = {**metrics(pairs if missing == 0 else []), "eligible": missing == 0,
                            "missingForecasts": missing, "comparisonRows": len(eligible)}
+        if score == "squared_error":
+            rmse = reports[method]["rmse"]
+            reports[method]["mse"] = None if rmse is None else rmse * rmse
+    key = "mse" if score == "squared_error" else "mae"
     selected = min((m for m in METHODS if reports[m]["eligible"]),
-                   key=lambda m: (reports[m]["mae"] if reports[m]["mae"] is not None else math.inf, METHODS.index(m)))
-    return {"selected": selected, "comparisonRows": len(eligible), "methods": reports,
-            "comparisonKeys": sorted([row["playerId"], row["gameId"]] for row, _ in eligible),
-            "selectionCutoffAt": cutoff_at}
+                   key=lambda m: (reports[m][key] if reports[m][key] is not None else math.inf, METHODS.index(m)))
+    result = {"selected": selected, "comparisonRows": len(eligible), "methods": reports,
+              "comparisonKeys": sorted([row["playerId"], row["gameId"]] for row, _ in eligible),
+              "selectionCutoffAt": cutoff_at}
+    if score == "squared_error":
+        result["selectionPolicy"] = PROPER_SCORE_SELECTION
+    return result
 
 
 def develop(root: Path, clock: datetime | None = None) -> dict:

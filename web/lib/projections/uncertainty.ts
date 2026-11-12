@@ -148,6 +148,11 @@ export type PlayerUncertaintyInput = {
   assistsPp: number;
   hits: number;
   blocks: number;
+  /** Exclusive PK bucket (decision 24). Omitted = no PK bucket; totals are then ES + PP. */
+  toiPkSeconds?: number;
+  shotsPk?: number;
+  goalsPk?: number;
+  assistsPk?: number;
 };
 
 export function buildPlayerUncertainty(
@@ -175,6 +180,14 @@ export function buildPlayerUncertainty(
   const totalScalar = scalars.reduce((acc, v) => acc + v, 0);
   const useNb = countModel?.negativeBinomial === true;
   const simToiCv = playerToiCv(u.toiEsSeconds, u.toiPpSeconds);
+  const hasPk =
+    u.toiPkSeconds !== undefined || u.shotsPk !== undefined || u.goalsPk !== undefined || u.assistsPk !== undefined;
+  const pk = {
+    toi: Math.max(0, u.toiPkSeconds ?? 0),
+    shots: Math.max(0, u.shotsPk ?? 0),
+    goals: Math.max(0, u.goalsPk ?? 0),
+    assists: Math.max(0, u.assistsPk ?? 0),
+  };
   const volatilityMultiplier = Math.max(
     0.75,
     Math.min(1.8, trendVolatilityMultiplier)
@@ -212,22 +225,35 @@ export function buildPlayerUncertainty(
       hit: applyVolatility(poissonQuantilesApprox(u.hits * totalScalar)),
       blk: applyVolatility(poissonQuantilesApprox(u.blocks * totalScalar)),
       g: applyVolatility(
-        poissonQuantilesApprox((u.goalsEs + u.goalsPp) * totalScalar)
+        poissonQuantilesApprox((u.goalsEs + u.goalsPp + pk.goals) * totalScalar)
       ),
       a: applyVolatility(
-        poissonQuantilesApprox((u.assistsEs + u.assistsPp) * totalScalar)
+        poissonQuantilesApprox((u.assistsEs + u.assistsPp + pk.assists) * totalScalar)
       ),
       pts: applyVolatility(
         poissonQuantilesApprox(
-          (u.goalsEs + u.goalsPp + u.assistsEs + u.assistsPp) * totalScalar
+          (u.goalsEs + u.goalsPp + u.assistsEs + u.assistsPp + pk.goals + pk.assists) * totalScalar
         )
       ),
       sog: applyVolatility(
-        poissonQuantilesApprox((u.shotsEs + u.shotsPp) * totalScalar)
+        poissonQuantilesApprox((u.shotsEs + u.shotsPp + pk.shots) * totalScalar)
       ),
       ppp: applyVolatility(
         poissonQuantilesApprox((u.goalsPp + u.assistsPp) * totalScalar)
-      )
+      ),
+      ...(hasPk
+        ? {
+            toi_pk_seconds: applyVolatility(
+              normalBandQuantiles(
+                pk.toi * totalScalar,
+                UNCERTAINTY_CONFIG.playerEsToiSdPct * pk.toi * Math.sqrt(totalScalar)
+              )
+            ),
+            shots_pk: applyVolatility(poissonQuantilesApprox(pk.shots * totalScalar)),
+            goals_pk: applyVolatility(poissonQuantilesApprox(pk.goals * totalScalar)),
+            assists_pk: applyVolatility(poissonQuantilesApprox(pk.assists * totalScalar))
+          }
+        : {})
     };
   }
 
@@ -251,11 +277,12 @@ export function buildPlayerUncertainty(
         s.assistsPp ?? 0,
         s.shotsEs ?? 0,
         s.shotsPp ?? 0
-      ])
+      ]),
+      ...(hasPk ? [pk.toi, pk.shots, pk.goals, pk.assists] : [])
     ])
   );
 
-  const baseToiTotal = Math.max(1e-6, u.toiEsSeconds + u.toiPpSeconds);
+  const baseToiTotal = Math.max(1e-6, u.toiEsSeconds + u.toiPpSeconds + pk.toi);
   const baseShotsEs = Math.max(0, u.shotsEs);
   const baseShotsPp = Math.max(0, u.shotsPp);
   const baseGoalsEs = Math.max(0, u.goalsEs);
@@ -298,6 +325,10 @@ export function buildPlayerUncertainty(
   const samplesPoints: number[] = [];
   const samplesShots: number[] = [];
   const samplesPpp: number[] = [];
+  const samplesToiPk: number[] = [];
+  const samplesShotsPk: number[] = [];
+  const samplesGoalsPk: number[] = [];
+  const samplesAssistsPk: number[] = [];
 
   for (let i = 0; i < samples; i += 1) {
     let totalToiEs = 0;
@@ -310,6 +341,10 @@ export function buildPlayerUncertainty(
     let totalAssistsPp = 0;
     let totalHits = 0;
     let totalBlocks = 0;
+    let totalToiPk = 0;
+    let totalShotsPk = 0;
+    let totalGoalsPk = 0;
+    let totalAssistsPk = 0;
     const sampledScenario = (() => {
       if (normalizedMixture.length === 0) return null;
       const r = rand();
@@ -345,9 +380,20 @@ export function buildPlayerUncertainty(
           rand
         )
       );
+      // PK TOI uses the ES TOI spread (no fitted PK value; hypothesis). Drawn only with a PK bucket.
+      const toiPk = hasPk
+        ? Math.max(
+            0,
+            sampleNormal(
+              pk.toi * scalar,
+              UNCERTAINTY_CONFIG.playerEsToiSdPct * pk.toi * scalar,
+              rand
+            )
+          )
+        : 0;
       const baseToiScaled = baseToiTotal * scalar;
       const toiScale =
-        baseToiScaled > 0 ? (toiEs + toiPp) / baseToiScaled : 1;
+        baseToiScaled > 0 ? (toiEs + toiPp + toiPk) / baseToiScaled : 1;
 
       const shotsEsMean = scenarioShotsEs * scalar * toiScale;
       const shotsPpMean = scenarioShotsPp * scalar * toiScale;
@@ -359,19 +405,18 @@ export function buildPlayerUncertainty(
         scenarioShotsPp > 0
           ? scenarioGoalsPp * scalar * (shotsPpMean / (scenarioShotsPp * scalar))
           : 0;
-      const assistsEsMean =
-        scenarioGoalsEs > 0
-          ? scenarioAssistsEs * scalar * (goalsEsMean / (scenarioGoalsEs * scalar))
-          : 0;
-      const assistsPpMean =
-        scenarioGoalsPp > 0
-          ? scenarioAssistsPp * scalar * (goalsPpMean / (scenarioGoalsPp * scalar))
-          : 0;
+      // Assists come from on-ice team goals, not the player's own goals (W1-7 N2): they follow the
+      // sampled ice time, so a zero own-goal mean no longer zeroes a positive assist mean.
+      const assistsEsMean = scenarioAssistsEs * scalar * toiScale;
+      const assistsPpMean = scenarioAssistsPp * scalar * toiScale;
 
       // NB: one gamma multiplier shared by ES and PP shots keeps total SOG NB(mu, alpha).
+      const shotsPkMean = pk.shots * scalar * toiScale;
+      const goalsPkMean = pk.shots > 0 ? pk.goals * scalar * (shotsPkMean / (pk.shots * scalar)) : 0;
+      const assistsPkMean = pk.assists * scalar * toiScale;
       const shotsAlpha = useNb
         ? normalizeAlpha(
-            simulationAlpha("sog", countModel?.position, shotsEsMean + shotsPpMean, simToiCv)
+            simulationAlpha("sog", countModel?.position, shotsEsMean + shotsPpMean + shotsPkMean, simToiCv)
           )
         : 0;
       const shotsMultiplier = shotsAlpha > 0 ? sampleGammaMeanOne(1 / shotsAlpha, rand) : 1;
@@ -409,12 +454,18 @@ export function buildPlayerUncertainty(
       totalAssistsPp += assistsPp;
       totalHits += hits;
       totalBlocks += blocks;
+      if (hasPk) {
+        totalToiPk += toiPk;
+        totalShotsPk += samplePoisson(shotsPkMean * shotsMultiplier, rand);
+        totalGoalsPk += samplePoisson(goalsPkMean, rand);
+        totalAssistsPk += samplePoisson(assistsPkMean, rand);
+      }
     }
 
-    const totalGoals = totalGoalsEs + totalGoalsPp;
-    const totalAssists = totalAssistsEs + totalAssistsPp;
+    const totalGoals = totalGoalsEs + totalGoalsPp + totalGoalsPk;
+    const totalAssists = totalAssistsEs + totalAssistsPp + totalAssistsPk;
     const totalPoints = totalGoals + totalAssists;
-    const totalShots = totalShotsEs + totalShotsPp;
+    const totalShots = totalShotsEs + totalShotsPp + totalShotsPk;
     const totalPpp = totalGoalsPp + totalAssistsPp;
 
     samplesToiEs.push(totalToiEs);
@@ -432,6 +483,12 @@ export function buildPlayerUncertainty(
     samplesPoints.push(totalPoints);
     samplesShots.push(totalShots);
     samplesPpp.push(totalPpp);
+    if (hasPk) {
+      samplesToiPk.push(totalToiPk);
+      samplesShotsPk.push(totalShotsPk);
+      samplesGoalsPk.push(totalGoalsPk);
+      samplesAssistsPk.push(totalAssistsPk);
+    }
   }
 
   return {
@@ -449,7 +506,15 @@ export function buildPlayerUncertainty(
     a: applyVolatility(quantilesFromSamples(samplesAssists)),
     pts: applyVolatility(quantilesFromSamples(samplesPoints)),
     sog: applyVolatility(quantilesFromSamples(samplesShots)),
-    ppp: applyVolatility(quantilesFromSamples(samplesPpp))
+    ppp: applyVolatility(quantilesFromSamples(samplesPpp)),
+    ...(hasPk
+      ? {
+          toi_pk_seconds: applyVolatility(quantilesFromSamples(samplesToiPk)),
+          shots_pk: applyVolatility(quantilesFromSamples(samplesShotsPk)),
+          goals_pk: applyVolatility(quantilesFromSamples(samplesGoalsPk)),
+          assists_pk: applyVolatility(quantilesFromSamples(samplesAssistsPk))
+        }
+      : {})
   };
 }
 
@@ -461,6 +526,10 @@ export function buildTeamUncertainty(
   shotsPp: number;
   goalsEs: number;
   goalsPp: number;
+  /** Exclusive PK bucket; omitted when the team's PK bucket is unknown. */
+  toiPkSeconds?: number;
+  shotsPk?: number;
+  goalsPk?: number;
   },
   horizonGames = 1,
   perGameScalars?: number[]
@@ -472,8 +541,22 @@ export function buildTeamUncertainty(
       : Array.from({ length: effectiveHorizon }, () => 1);
   const samples = UNCERTAINTY_CONFIG.simulationSamples;
   const totalScalar = scalars.reduce((acc, v) => acc + v, 0);
+  // Team rows report per-bucket marginals only, so PK bands are closed-form and leave the
+  // seeded ES/PP draws unchanged.
+  const pkBands =
+    u.toiPkSeconds === undefined && u.shotsPk === undefined && u.goalsPk === undefined
+      ? {}
+      : {
+          toi_pk_seconds: normalBandQuantiles(
+            Math.max(0, u.toiPkSeconds ?? 0) * totalScalar,
+            UNCERTAINTY_CONFIG.teamToiSdPct * Math.max(0, u.toiPkSeconds ?? 0) * Math.sqrt(totalScalar)
+          ),
+          shots_pk: poissonQuantilesApprox(Math.max(0, u.shotsPk ?? 0) * totalScalar),
+          goals_pk: poissonQuantilesApprox(Math.max(0, u.goalsPk ?? 0) * totalScalar)
+        };
   if (samples <= 1) {
     return {
+      ...pkBands,
       toi_es_seconds: normalBandQuantiles(
         u.toiEsSeconds * totalScalar,
         UNCERTAINTY_CONFIG.teamToiSdPct *
@@ -581,7 +664,8 @@ export function buildTeamUncertainty(
     shots_es: quantilesFromSamples(samplesShotsEs),
     shots_pp: quantilesFromSamples(samplesShotsPp),
     goals_es: quantilesFromSamples(samplesGoalsEs),
-    goals_pp: quantilesFromSamples(samplesGoalsPp)
+    goals_pp: quantilesFromSamples(samplesGoalsPp),
+    ...pkBands
   };
 }
 
@@ -767,8 +851,18 @@ function simulationAlpha(
 ): number | null {
   const fit = getDispersionFit(stat, position);
   if (!fit) return null;
-  const residualCv = Math.sqrt(Math.max(0, fit.toiCv2 - simToiCv * simToiCv));
-  return resolveDispersionAlpha(stat, position, perGameMean, { toiCv: residualCv });
+  return resolveDispersionAlpha(stat, position, perGameMean, { toiCv: residualToiCv(fit.toiCv2, simToiCv) });
+}
+
+/**
+ * TOI CV left for the gamma multiplier once the simulator samples TOI with CV `simToiCv`. Independent
+ * multiplicative noises compound as (1 + r^2)(1 + s^2) - 1, so r^2 = (1 + fit^2)/(1 + s^2) - 1, not
+ * fit^2 - s^2 (W1-7 N4: F SOG, ES 1,000 s + PP 200 s gave .02483 against the fitted .0247).
+ */
+export function residualToiCv(fitToiCv2: number, simToiCv: number): number {
+  const fit2 = Math.max(0, Number.isFinite(fitToiCv2) ? fitToiCv2 : 0);
+  const sim2 = Math.max(0, Number.isFinite(simToiCv) ? simToiCv : 0) ** 2;
+  return Math.sqrt(Math.max(0, (1 + fit2) / (1 + sim2) - 1));
 }
 const COUNT_TAIL_EPS = 1e-12;
 const COUNT_MAX_SUPPORT = 20000;

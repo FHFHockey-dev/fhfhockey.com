@@ -23,18 +23,15 @@ export type XgExplorerPlayerRow = {
   ixg: number;
   goals: number;
   shotAttempts: number;
-  createdXg: number;
-  shotAssistCreatedXg: number;
-  shotAssistEvents: number;
-  transitionCreatedXg: number;
-  transitionEvents: number;
-  transitionCreatedShots: number;
-  expectedPrimaryAssists: number;
-  controlledEntries: number;
-  controlledExits: number;
-  entryAssists: number;
-  expectedReboundsCreated: number;
-  actualReboundsCreated: number;
+  /**
+   * Created-xG fields come only from a created-xG rolling row with the same
+   * cutoff game and window as the core row; otherwise null, never 0 (W3-1 D7).
+   */
+  createdXg: number | null;
+  shotAssistCreatedXg: number | null;
+  shotAssistEvents: number | null;
+  transitionCreatedXg: number | null;
+  transitionEvents: number | null;
 };
 
 export type XgExplorerTeamRow = {
@@ -48,12 +45,6 @@ export type XgExplorerTeamRow = {
   xgPct: number | null;
   goalsFor: number;
   goalsAgainst: number;
-  controlledEntries: number;
-  controlledExits: number;
-  failedExitsAgainst: number;
-  transitionCreatedXg: number;
-  expectedReboundsFor: number;
-  expectedReboundsAgainst: number;
 };
 
 export type XgExplorerGoalieRow = {
@@ -67,27 +58,23 @@ export type XgExplorerGoalieRow = {
   goalsAgainst: number;
   shotsAgainst: number;
   goalsSavedAboveExpected: number;
-  expectedReboundsAllowed: number;
-  actualReboundsAllowed: number;
-  reboundControlSavedAboveExpected: number;
-  goalieFreezes: number;
-  coveredPucks: number;
 };
 
 export type XgExplorerResponse = {
   success: true;
   generatedAt: string;
   scope: XgExplorerScope;
+  /**
+   * Registry-pinned model (L14 `fetchActiveXgModel`). Null = in-house xG
+   * unavailable (decision 99), shown as unavailable, never as zero.
+   */
   modelVersion: string | null;
-  reboundModelVersion: string | null;
-  featureVersion: number;
+  featureVersion: number | null;
   windowGames: number;
   seasonId: number | null;
   rows: Array<XgExplorerPlayerRow | XgExplorerTeamRow | XgExplorerGoalieRow>;
   counts: {
     rows: number;
-    sourceRows: number;
-    supplementalRows: number;
   };
   coverage: XgExplorerCoverageReport;
   notes: string[];
@@ -95,14 +82,10 @@ export type XgExplorerResponse = {
 
 export type XgExplorerCoverageReport = {
   status: "ok" | "warning";
-  sourceRows: number;
-  supplementalRows: number;
-  ratios: {
-    supplementalToSource: number | null;
-    createdToSource: number | null;
-    transitionToSource: number | null;
-    reboundToSource: number | null;
-  };
+  /** Rows served. */
+  servedRows: number;
+  /** Served rows whose supplemental fields cover the same window and cutoff. */
+  alignedRows: number;
   warnings: string[];
 };
 
@@ -128,28 +111,11 @@ export type CreatedXgRollingInput = {
   as_of_game_date: string | null;
   as_of_game_id: number;
   games_count: number;
-  created_xg: number;
-  shot_assist_created_xg: number;
-  transition_created_xg: number;
-  shot_assist_events?: number;
-  transition_events?: number;
-};
-
-export type TransitionAggregateInput = {
-  entity_type: "player" | "team";
-  entity_id: number;
-  controlled_entries: number;
-  controlled_exits: number;
-  failed_exits_against: number;
-  entry_assists: number;
-  transition_created_shots?: number;
-  transition_created_xg: number;
-};
-
-export type ReboundPlayerInput = {
-  player_id: number;
-  expected_rebounds_created: number;
-  actual_rebounds_created: number;
+  created_xg: number | null;
+  shot_assist_created_xg: number | null;
+  transition_created_xg: number | null;
+  shot_assist_events?: number | null;
+  transition_events?: number | null;
 };
 
 export type TeamXgRollingInput = {
@@ -163,12 +129,6 @@ export type TeamXgRollingInput = {
   goals_against: number;
 };
 
-export type ReboundTeamInput = {
-  team_id: number;
-  expected_rebounds_for: number;
-  expected_rebounds_against: number;
-};
-
 export type GoalieXgRollingInput = {
   goalie_player_id: number;
   team_id: number | null;
@@ -179,15 +139,6 @@ export type GoalieXgRollingInput = {
   goals_against: number;
   shots_against: number;
   goals_saved_above_expected: number;
-};
-
-export type ReboundGoalieInput = {
-  goalie_player_id: number;
-  expected_rebounds_allowed: number;
-  actual_rebounds_allowed: number;
-  rebound_control_saved_above_expected: number;
-  actual_goalie_freezes: number;
-  actual_covered_pucks: number;
 };
 
 export type PlayerIdentityInput = {
@@ -205,25 +156,6 @@ export type TeamIdentityInput = {
 
 function roundMetric(value: number): number {
   return Number(value.toFixed(6));
-}
-
-function sumByEntity<T extends Record<string, unknown>>(
-  rows: T[],
-  key: keyof T,
-  fields: Array<keyof T>
-): Map<number, Record<string, number>> {
-  const out = new Map<number, Record<string, number>>();
-  for (const row of rows) {
-    const entityId = Number(row[key]);
-    if (!Number.isFinite(entityId)) continue;
-    const current = out.get(entityId) ?? {};
-    for (const field of fields) {
-      current[String(field)] =
-        (current[String(field)] ?? 0) + Number(row[field] ?? 0);
-    }
-    out.set(entityId, current);
-  }
-  return out;
 }
 
 function latestByEntity<T extends { [key: string]: unknown }>(
@@ -251,112 +183,70 @@ function xgPct(forValue: number, againstValue: number): number | null {
   return total > 0 ? roundMetric(forValue / total) : null;
 }
 
-function ratio(numerator: number, denominator: number): number | null {
-  return denominator > 0 ? roundMetric(numerator / denominator) : null;
-}
 
-function formatRatioPercent(value: number | null): string {
-  return value == null ? "n/a" : `${(value * 100).toFixed(1)}%`;
-}
-
+/**
+ * Coverage from the rows actually served (W2-3 A4): "ok" only when every served
+ * player row has created xG for the same window and cutoff. Raw row-count ratios
+ * across tables prove nothing about entity, window or model overlap.
+ */
 export function buildXgExplorerCoverageReport(args: {
   scope: XgExplorerScope;
-  sourceRows: number;
-  supplementalRows: number;
-  createdRows?: number;
-  transitionRows?: number;
-  reboundRows?: number;
+  rows: ReadonlyArray<XgExplorerPlayerRow | XgExplorerTeamRow | XgExplorerGoalieRow>;
 }): XgExplorerCoverageReport {
-  const ratios = {
-    supplementalToSource: ratio(args.supplementalRows, args.sourceRows),
-    createdToSource:
-      args.createdRows == null ? null : ratio(args.createdRows, args.sourceRows),
-    transitionToSource:
-      args.transitionRows == null ? null : ratio(args.transitionRows, args.sourceRows),
-    reboundToSource:
-      args.reboundRows == null ? null : ratio(args.reboundRows, args.sourceRows),
-  };
+  const servedRows = args.rows.length;
+  const alignedRows =
+    args.scope === "players"
+      ? (args.rows as XgExplorerPlayerRow[]).filter((row) => row.createdXg != null).length
+      : servedRows;
   const warnings: string[] = [];
 
-  if (args.sourceRows > 0 && args.supplementalRows === 0) {
+  if (servedRows === 0) {
+    warnings.push("No rows were served for this model, feature version, season and window.");
+  } else if (alignedRows < servedRows) {
     warnings.push(
-      "No supplemental xG rows were found for this scope; zero-filled creator, transition, or rebound fields should be treated as missing coverage."
-    );
-  }
-
-  if (
-    args.scope === "players" &&
-    args.sourceRows > 0 &&
-    args.createdRows != null &&
-    args.createdRows / args.sourceRows < 0.02
-  ) {
-    warnings.push(
-      `Sparse created-xG coverage: ${args.createdRows} created rows vs ${args.sourceRows} core rolling xG rows (${formatRatioPercent(
-        ratios.createdToSource
-      )}). Zero created-xG fields are not production-authoritative yet.`
-    );
-  }
-
-  if (
-    args.sourceRows > 0 &&
-    args.transitionRows != null &&
-    args.transitionRows > 0 &&
-    args.transitionRows / args.sourceRows < 0.02
-  ) {
-    warnings.push(
-      `Sparse transition supplemental coverage: ${args.transitionRows} transition rows vs ${args.sourceRows} core rows (${formatRatioPercent(
-        ratios.transitionToSource
-      )}).`
-    );
-  }
-
-  if (
-    args.sourceRows > 0 &&
-    args.reboundRows != null &&
-    args.reboundRows > 0 &&
-    args.reboundRows / args.sourceRows < 0.02
-  ) {
-    warnings.push(
-      `Sparse rebound-control supplemental coverage: ${args.reboundRows} rebound rows vs ${args.sourceRows} core rows (${formatRatioPercent(
-        ratios.reboundToSource
-      )}).`
+      `${servedRows - alignedRows} of ${servedRows} players have no created-xG row for the same window and cutoff; those fields show "—".`
     );
   }
 
   return {
     status: warnings.length ? "warning" : "ok",
-    sourceRows: args.sourceRows,
-    supplementalRows: args.supplementalRows,
-    ratios,
+    servedRows,
+    alignedRows,
     warnings,
   };
 }
 
+const finiteOrNull = (value: unknown): number | null => {
+  if (value == null) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const roundOrNull = (value: unknown): number | null => {
+  const parsed = finiteOrNull(value);
+  return parsed == null ? null : roundMetric(parsed);
+};
+
+/** Descending with nulls last (rule 20); callers add an id tie-break. */
+const compareDescNullsLast = (left: number | null, right: number | null) => {
+  if (left == null && right == null) return 0;
+  if (left == null) return 1;
+  if (right == null) return -1;
+  return right - left;
+};
+
 export function buildPlayerXgExplorerRows(args: {
   xgRows: PlayerXgRollingInput[];
   createdRows: CreatedXgRollingInput[];
-  transitionRows: TransitionAggregateInput[];
-  reboundRows: ReboundPlayerInput[];
   players: PlayerIdentityInput[];
   teams: TeamIdentityInput[];
   limit: number;
 }): XgExplorerPlayerRow[] {
-  const createdByPlayer = new Map(
-    latestByEntity(args.createdRows, "player_id", "as_of_game_date", "as_of_game_id").map(
-      (row) => [row.player_id, row]
-    )
-  );
-  const transitionByPlayer = sumByEntity(args.transitionRows, "entity_id", [
-    "controlled_entries",
-    "controlled_exits",
-    "entry_assists",
-    "transition_created_shots",
-    "transition_created_xg",
-  ]);
-  const reboundByPlayer = sumByEntity(args.reboundRows, "player_id", [
-    "expected_rebounds_created",
-    "actual_rebounds_created",
-  ]);
+  // Keyed by (player, cutoff game, window) so a created row only pairs with the
+  // core row for the same games (W3-1 D7); a different window or cutoff is null.
+  const windowKey = (row: { player_id: number; as_of_game_id: number; games_count: number }) =>
+    `${row.player_id}:${row.as_of_game_id}:${row.games_count}`;
+  const createdByWindow = new Map(args.createdRows.map((row) => [windowKey(row), row]));
   const playerById = new Map(args.players.map((row) => [row.id, row]));
   const teamById = new Map(args.teams.map((row) => [row.id, row]));
 
@@ -365,10 +255,7 @@ export function buildPlayerXgExplorerRows(args: {
       const player = playerById.get(row.player_id);
       const teamId = row.team_id ?? player?.team_id ?? null;
       const team = teamId == null ? null : teamById.get(teamId) ?? null;
-      const created = createdByPlayer.get(row.player_id);
-      const transition = transitionByPlayer.get(row.player_id) ?? {};
-      const rebound = reboundByPlayer.get(row.player_id) ?? {};
-      const shotAssistCreatedXg = Number(created?.shot_assist_created_xg ?? 0);
+      const created = createdByWindow.get(windowKey(row));
 
       return {
         id: row.player_id,
@@ -381,49 +268,32 @@ export function buildPlayerXgExplorerRows(args: {
         ixg: roundMetric(Number(row.ixg ?? 0)),
         goals: Number(row.goals ?? 0),
         shotAttempts: Number(row.shot_attempts ?? 0),
-        createdXg: roundMetric(Number(created?.created_xg ?? 0)),
-        shotAssistCreatedXg: roundMetric(shotAssistCreatedXg),
-        shotAssistEvents: Number(created?.shot_assist_events ?? 0),
-        transitionCreatedXg: roundMetric(Number(created?.transition_created_xg ?? transition.transition_created_xg ?? 0)),
-        transitionEvents: Number(created?.transition_events ?? 0),
-        transitionCreatedShots: Number(transition.transition_created_shots ?? created?.transition_events ?? 0),
-        expectedPrimaryAssists: roundMetric(shotAssistCreatedXg),
-        controlledEntries: Number(transition.controlled_entries ?? 0),
-        controlledExits: Number(transition.controlled_exits ?? 0),
-        entryAssists: Number(transition.entry_assists ?? 0),
-        expectedReboundsCreated: roundMetric(Number(rebound.expected_rebounds_created ?? 0)),
-        actualReboundsCreated: Number(rebound.actual_rebounds_created ?? 0),
+        createdXg: roundOrNull(created?.created_xg),
+        shotAssistCreatedXg: roundOrNull(created?.shot_assist_created_xg),
+        shotAssistEvents: finiteOrNull(created?.shot_assist_events),
+        transitionCreatedXg: roundOrNull(created?.transition_created_xg),
+        transitionEvents: finiteOrNull(created?.transition_events),
       };
     })
-    .sort((left, right) => right.createdXg - left.createdXg || right.ixg - left.ixg)
+    .sort(
+      (left, right) =>
+        compareDescNullsLast(left.createdXg, right.createdXg) ||
+        right.ixg - left.ixg ||
+        left.id - right.id
+    )
     .slice(0, args.limit);
 }
 
 export function buildTeamXgExplorerRows(args: {
   xgRows: TeamXgRollingInput[];
-  transitionRows: TransitionAggregateInput[];
-  reboundRows: ReboundTeamInput[];
   teams: TeamIdentityInput[];
   limit: number;
 }): XgExplorerTeamRow[] {
-  const transitionByTeam = sumByEntity(args.transitionRows, "entity_id", [
-    "controlled_entries",
-    "controlled_exits",
-    "failed_exits_against",
-    "transition_created_xg",
-  ]);
-  const reboundByTeam = sumByEntity(args.reboundRows, "team_id", [
-    "expected_rebounds_for",
-    "expected_rebounds_against",
-  ]);
   const teamById = new Map(args.teams.map((row) => [row.id, row]));
 
   return latestByEntity(args.xgRows, "team_id", "as_of_game_date", "as_of_game_id")
     .map((row) => {
       const team = teamById.get(row.team_id);
-      const transition = transitionByTeam.get(row.team_id) ?? {};
-      const rebound = reboundByTeam.get(row.team_id) ?? {};
-
       return {
         id: row.team_id,
         name: team?.name ?? `Team ${row.team_id}`,
@@ -435,32 +305,23 @@ export function buildTeamXgExplorerRows(args: {
         xgPct: xgPct(Number(row.xg_for ?? 0), Number(row.xg_against ?? 0)),
         goalsFor: Number(row.goals_for ?? 0),
         goalsAgainst: Number(row.goals_against ?? 0),
-        controlledEntries: Number(transition.controlled_entries ?? 0),
-        controlledExits: Number(transition.controlled_exits ?? 0),
-        failedExitsAgainst: Number(transition.failed_exits_against ?? 0),
-        transitionCreatedXg: roundMetric(Number(transition.transition_created_xg ?? 0)),
-        expectedReboundsFor: roundMetric(Number(rebound.expected_rebounds_for ?? 0)),
-        expectedReboundsAgainst: roundMetric(Number(rebound.expected_rebounds_against ?? 0)),
       };
     })
-    .sort((left, right) => (right.xgPct ?? -1) - (left.xgPct ?? -1) || right.xgFor - left.xgFor)
+    .sort(
+      (left, right) =>
+        compareDescNullsLast(left.xgPct, right.xgPct) ||
+        right.xgFor - left.xgFor ||
+        left.id - right.id
+    )
     .slice(0, args.limit);
 }
 
 export function buildGoalieXgExplorerRows(args: {
   xgRows: GoalieXgRollingInput[];
-  reboundRows: ReboundGoalieInput[];
   players: PlayerIdentityInput[];
   teams: TeamIdentityInput[];
   limit: number;
 }): XgExplorerGoalieRow[] {
-  const reboundByGoalie = sumByEntity(args.reboundRows, "goalie_player_id", [
-    "expected_rebounds_allowed",
-    "actual_rebounds_allowed",
-    "rebound_control_saved_above_expected",
-    "actual_goalie_freezes",
-    "actual_covered_pucks",
-  ]);
   const playerById = new Map(args.players.map((row) => [row.id, row]));
   const teamById = new Map(args.teams.map((row) => [row.id, row]));
 
@@ -469,8 +330,6 @@ export function buildGoalieXgExplorerRows(args: {
       const player = playerById.get(row.goalie_player_id);
       const teamId = row.team_id ?? player?.team_id ?? null;
       const team = teamId == null ? null : teamById.get(teamId) ?? null;
-      const rebound = reboundByGoalie.get(row.goalie_player_id) ?? {};
-
       return {
         id: row.goalie_player_id,
         name: player?.fullName ?? `Goalie ${row.goalie_player_id}`,
@@ -482,17 +341,11 @@ export function buildGoalieXgExplorerRows(args: {
         goalsAgainst: Number(row.goals_against ?? 0),
         shotsAgainst: Number(row.shots_against ?? 0),
         goalsSavedAboveExpected: roundMetric(Number(row.goals_saved_above_expected ?? 0)),
-        expectedReboundsAllowed: roundMetric(Number(rebound.expected_rebounds_allowed ?? 0)),
-        actualReboundsAllowed: Number(rebound.actual_rebounds_allowed ?? 0),
-        reboundControlSavedAboveExpected: roundMetric(Number(rebound.rebound_control_saved_above_expected ?? 0)),
-        goalieFreezes: Number(rebound.actual_goalie_freezes ?? 0),
-        coveredPucks: Number(rebound.actual_covered_pucks ?? 0),
       };
     })
     .sort(
       (left, right) =>
-        right.goalsSavedAboveExpected - left.goalsSavedAboveExpected ||
-        right.reboundControlSavedAboveExpected - left.reboundControlSavedAboveExpected
+        right.goalsSavedAboveExpected - left.goalsSavedAboveExpected || left.id - right.id
     )
     .slice(0, args.limit);
 }

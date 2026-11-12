@@ -73,9 +73,9 @@ describe("/api/SustainabilityStats/[playerId]", () => {
       .mockResolvedValueOnce({
         text: `
           <table id="indreg">
-            <tr><th>Season</th><th>Player</th><th>SH%</th><th>ixG</th><th>Shots</th><th>IPP</th><th>Second Assists</th><th>Total Assists</th><th>TOI</th><th>iHDCF</th><th>iSCF</th><th>Goals</th></tr>
-            <tr><td>20242025</td><td>John Doe</td><td>10.0</td><td>12</td><td>100</td><td>70.0</td><td>5</td><td>20</td><td>100.0</td><td>14</td><td>25</td><td>10</td></tr>
-            <tr><td>20242025</td><td>Other Skater</td><td>8.0</td><td>10</td><td>80</td><td>60.0</td><td>4</td><td>10</td><td>90.0</td><td>10</td><td>20</td><td>8</td></tr>
+            <tr><th>Season</th><th>Player</th><th>SH%</th><th>ixG</th><th>iFF</th><th>Shots</th><th>IPP</th><th>Second Assists</th><th>Total Assists</th><th>TOI</th><th>iHDCF</th><th>iSCF</th><th>Goals</th></tr>
+            <tr><td>20242025</td><td>John Doe</td><td>10.0</td><td>12</td><td>150</td><td>100</td><td>70.0</td><td>5</td><td>20</td><td>100.0</td><td>14</td><td>25</td><td>10</td></tr>
+            <tr><td>20242025</td><td>Other Skater</td><td>8.0</td><td>10</td><td>120</td><td>80</td><td>60.0</td><td>4</td><td>10</td><td>90.0</td><td>10</td><td>20</td><td>8</td></tr>
           </table>
         `
       })
@@ -109,7 +109,7 @@ describe("/api/SustainabilityStats/[playerId]", () => {
       success: true,
       data: {
         "S%": 0.1,
-        "xS%": 0.12,
+        "xS%": 0.08,
         IPP: 0.7,
         "oiSH%": 0.09,
         "secA%": 0.25,
@@ -121,5 +121,59 @@ describe("/api/SustainabilityStats/[playerId]", () => {
         goals: 10
       }
     });
+  });
+  it("keeps unknown TOI and zero assists unknown instead of 0 (L3 parseTime ticket)", async () => {
+    getPlayerMock.mockResolvedValue({
+      fullName: "John Doe",
+      teamName: "Toronto Maple Leafs",
+      teamId: 10
+    });
+    const individual = (toi: string) => ({
+      text: `
+        <table id="indreg">
+          <tr><th>Season</th><th>Player</th><th>SH%</th><th>ixG</th><th>iFF</th><th>Shots</th><th>IPP</th><th>Second Assists</th><th>Total Assists</th><th>TOI</th><th>iHDCF</th><th>iSCF</th><th>Goals</th></tr>
+          <tr><td>20262027</td><td>John Doe</td><td>-</td><td>1.5</td><td>-</td><td>10</td><td>-</td><td>0</td><td>0</td><td>${toi}</td><td>3</td><td>5</td><td>0</td></tr>
+          <tr><td>20262027</td><td>Other Skater</td><td>8.0</td><td>10</td><td>120</td><td>80</td><td>60.0</td><td>4</td><td>10</td><td>90.0</td><td>10</td><td>20</td><td>8</td></tr>
+        </table>`
+    });
+    const onIce = {
+      text: `
+        <table id="players">
+          <tr><th>Season</th><th>Player</th><th>On-Ice SH%</th><th>Off. Zone Start %</th></tr>
+          <tr><td>20262027</td><td>John Doe</td><td>-</td><td>55.0</td></tr>
+          <tr><td>20262027</td><td>Other Skater</td><td>8.0</td><td>50.0</td></tr>
+        </table>`
+    };
+    const run = async (toi: string) => {
+      fetchNstTextWithCacheByUrlMock
+        .mockResolvedValueOnce(individual(toi))
+        .mockResolvedValueOnce(onIce);
+      const res = createMockRes();
+      await handler(
+        { query: { playerId: "8478402" }, body: { Season: "20262027", StartTime: null, EndTime: null } } as any,
+        res
+      );
+      return res.body.data;
+    };
+
+    // "20" is 20 minutes: 10 shots in 20 minutes = 30 SOG/60.
+    const twenty = await run("20");
+    expect(twenty["SOG/60"]).toBeCloseTo(30, 10);
+    expect(twenty.components).toMatchObject({
+      "SOG/60": { numerator: 10, denominator: 20 },
+      "secA%": { numerator: 0, denominator: 0 },
+      "xS%": { numerator: 1.5, denominator: null }
+    });
+    for (const toi of ["-", ""]) {
+      expect(await run(toi)).toMatchObject({
+        "SOG/60": null,
+        "secA%": null,
+        "S%": null,
+        "xS%": null,
+        IPP: null,
+        "oiSH%": null,
+        iHDCF: 3
+      });
+    }
   });
 });

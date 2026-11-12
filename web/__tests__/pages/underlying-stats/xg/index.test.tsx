@@ -17,25 +17,16 @@ function createXgPayload(scope: "players" | "teams" | "goalies") {
     generatedAt: "2026-05-30T12:00:00.000Z",
     scope,
     modelVersion: "shot-model-v1",
-    reboundModelVersion: null,
     featureVersion: 1,
     windowGames: 10,
     seasonId: 20252026,
     counts: {
       rows: 1,
-      sourceRows: 42,
-      supplementalRows: 3,
     },
     coverage: {
       status: "ok",
-      sourceRows: 42,
-      supplementalRows: 3,
-      ratios: {
-        supplementalToSource: 0.071429,
-        createdToSource: null,
-        transitionToSource: null,
-        reboundToSource: null,
-      },
+      servedRows: 1,
+      alignedRows: 1,
       warnings: [],
     },
     notes: ["test note"],
@@ -53,12 +44,6 @@ function createXgPayload(scope: "players" | "teams" | "goalies") {
               xgPct: 0.6,
               goalsFor: 28,
               goalsAgainst: 18,
-              controlledEntries: 40,
-              controlledExits: 35,
-              failedExitsAgainst: 12,
-              transitionCreatedXg: 5,
-              expectedReboundsFor: 7,
-              expectedReboundsAgainst: 4,
             },
           ]
         : [
@@ -78,13 +63,6 @@ function createXgPayload(scope: "players" | "teams" | "goalies") {
               shotAssistEvents: 6,
               transitionCreatedXg: 1.25,
               transitionEvents: 3,
-              transitionCreatedShots: 3,
-              expectedPrimaryAssists: 2.25,
-              controlledEntries: 8,
-              controlledExits: 7,
-              entryAssists: 4,
-              expectedReboundsCreated: 1.75,
-              actualReboundsCreated: 2,
             },
           ],
   };
@@ -138,8 +116,9 @@ describe("XgUnderlyingStatsLabRoute", () => {
       "/api/v1/underlying-stats/xg?scope=players&windowGames=10&limit=50&seasonId=20252026"
     );
     expect(screen.getByText("xG Model Lab")).toBeTruthy();
-    expect(screen.getByText("Source Rows")).toBeTruthy();
-    expect(screen.getByText("42")).toBeTruthy();
+    // Registry-pinned model shown; no manual model override inputs (W3-1 D7).
+    expect(screen.getByText("shot-model-v1")).toBeTruthy();
+    expect(screen.queryByText("Shot xG model version")).toBeNull();
   });
 
   it("switches scopes without leaving the read-only xG API family", async () => {
@@ -161,5 +140,15 @@ describe("XgUnderlyingStatsLabRoute", () => {
     );
     expect(urls.every((url) => url.startsWith("/api/v1/underlying-stats/xg?"))).toBe(true);
     expect(urls.some((url) => url.includes("/api/v1/db/"))).toBe(false);
+  });
+
+  it("shows in-house xG as unavailable when the registry has no approved model (decision 99)", async () => {
+    vi.mocked(fetch).mockImplementation(async () => ({
+      ok: true,
+      json: async () => ({ ...createXgPayload("players"), modelVersion: null, featureVersion: null, rows: [] }),
+    }) as never);
+    render(<XgUnderlyingStatsLabRoute />);
+    expect(await screen.findByText(/In-house xG is unavailable/)).toBeTruthy();
+    expect(screen.getByText("Unavailable")).toBeTruthy();
   });
 });

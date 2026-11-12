@@ -169,4 +169,17 @@ describe("buildTransitionRows", () => {
       })
     );
   });
+
+  it("credits no transition xG for a shot at an empty net, but keeps the shooter's own empty net (decision 7)", () => {
+    const build = (overrides: Partial<TransitionFeatureRow>) =>
+      buildTransitionRows({
+        modelVersion: "model-v1",
+        features: [feature(overrides)],
+        predictions: [prediction],
+        sourceEvents: [sourceEvent],
+        generatedAt: "2026-05-27T20:00:00.000Z",
+      });
+    expect(build({ is_empty_net_event: true, goalie_in_net_id: null }).events).toEqual([]);
+    expect(build({ is_empty_net_event: true, goalie_in_net_id: 31 }).events).toHaveLength(4);
+  });
 });

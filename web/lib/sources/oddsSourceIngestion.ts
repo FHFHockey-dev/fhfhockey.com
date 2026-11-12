@@ -1,5 +1,9 @@
 import type { Team } from "lib/NHL/types";
 import { teamsInfo } from "lib/teamsInfo";
+import {
+  parseNhlScheduleOddsPrice,
+  type ParsedOddsPrice,
+} from "lib/game-predictions/marketOdds";
 
 const MINUTES_TO_MS = 60 * 1000;
 const ODDS_PROVIDER_SPORT_KEY = "icehockey_nhl";
@@ -344,6 +348,8 @@ function buildMarketPriceRow(args: {
   outcomeKey: string;
   lineValue: number | null;
   priceAmerican: number | null;
+  /** Set when the source price was not American (e.g. a decimal price). */
+  impliedProbability?: number | null;
   sourcePayload: Record<string, unknown>;
   sourceRank: number;
   isOfficial: boolean;
@@ -361,7 +367,10 @@ function buildMarketPriceRow(args: {
     outcome_key: args.outcomeKey,
     line_value: args.lineValue,
     price_american: args.priceAmerican,
-    implied_probability: americanPriceToImpliedProbability(args.priceAmerican),
+    implied_probability:
+      args.impliedProbability !== undefined
+        ? args.impliedProbability
+        : americanPriceToImpliedProbability(args.priceAmerican),
     source_payload: args.sourcePayload,
     source_rank: args.sourceRank,
     is_official: args.isOfficial,
@@ -680,8 +689,24 @@ export function normalizeNhlScheduleOdds(args: {
         if (!awayValue) continue;
         const partnerName = partnerNameById.get(homeOdd.providerId) ?? `partner_${homeOdd.providerId}`;
         const sportsbookKey = toSportsbookKey(partnerName);
-        const homePrice = Number.parseInt(String(homeOdd.value), 10);
-        const awayPrice = Number.parseInt(String(awayValue), 10);
+        // Declared NHL schedule format (marketOdds.ts): signed integer =
+        // American, unsigned with a decimal point = decimal, unsigned integer
+        // = ambiguous (unknown). A decimal price stays a decimal: the integer
+        // price_american column is left null rather than truncated.
+        const homePrice = parseNhlScheduleOddsPrice(homeOdd.value);
+        const awayPrice = parseNhlScheduleOddsPrice(awayValue);
+        const priceColumns = (parsed: ParsedOddsPrice | null) => ({
+          priceAmerican: parsed?.format === "american" ? parsed.price : null,
+          impliedProbability: parsed?.impliedProbability ?? null,
+          metadata: parsed
+            ? {
+                price_format: parsed.format,
+                ...(parsed.format === "decimal"
+                  ? { price_decimal: parsed.price }
+                  : {}),
+              }
+            : { price_format: "unrecognized" },
+        });
 
         rows.push(
           buildMarketPriceRow({
@@ -691,7 +716,7 @@ export function normalizeNhlScheduleOdds(args: {
             sportsbookKey,
             outcomeKey: `team:${game.homeTeam.abbrev}`,
             lineValue: null,
-            priceAmerican: Number.isFinite(homePrice) ? homePrice : null,
+            ...priceColumns(homePrice),
             sourcePayload: {
               providerId: homeOdd.providerId,
               homeOdd,
@@ -704,7 +729,6 @@ export function normalizeNhlScheduleOdds(args: {
             provenance: {
               provider: "nhl-schedule"
             },
-            metadata: {}
           })
         );
         rows.push(
@@ -715,7 +739,7 @@ export function normalizeNhlScheduleOdds(args: {
             sportsbookKey,
             outcomeKey: `team:${game.awayTeam.abbrev}`,
             lineValue: null,
-            priceAmerican: Number.isFinite(awayPrice) ? awayPrice : null,
+            ...priceColumns(awayPrice),
             sourcePayload: {
               providerId: homeOdd.providerId,
               homeOdd: homeOdd.value,
@@ -728,7 +752,6 @@ export function normalizeNhlScheduleOdds(args: {
             provenance: {
               provider: "nhl-schedule"
             },
-            metadata: {}
           })
         );
 

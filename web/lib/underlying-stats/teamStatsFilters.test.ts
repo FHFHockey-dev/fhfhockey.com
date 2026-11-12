@@ -70,7 +70,7 @@ describe("teamStatsFilters", () => {
       startDate: "2025-11-01",
       endDate: "2026-02-01",
     };
-    state.view.sort = { sortKey: "xgfPct", direction: "desc" };
+    state.view.sort = { sortKey: "cfPct", direction: "desc" };
     state.view.pagination = { page: 2, pageSize: 25 };
 
     const params = buildTeamStatsSearchParams(state);
@@ -111,16 +111,17 @@ describe("teamStatsFilters", () => {
       startDate: "2025-11-15",
       endDate: "2025-12-15",
     });
-    expect(parsed.view.sort).toEqual({ sortKey: "xgfPct", direction: "desc" });
+    expect(parsed.view.sort).toEqual({ sortKey: "cfPct", direction: "desc" });
   });
 
   it("exposes the locked v1 default sort contract by display mode", () => {
     expect(getDefaultTeamLandingSortState("counts")).toEqual({
-      sortKey: "points",
+      sortKey: "cfPct",
       direction: "desc",
     });
+    // Decision 12: off xGF% while bucket xG is hidden.
     expect(getDefaultTeamLandingSortState("rates")).toEqual({
-      sortKey: "xgfPct",
+      sortKey: "cfPct",
       direction: "desc",
     });
   });

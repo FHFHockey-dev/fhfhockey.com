@@ -264,3 +264,47 @@ describe("NhlPredictionsPage", () => {
     ).toBeTruthy();
   });
 });
+
+describe("NhlPredictionsPage accountability ties (decision 43)", () => {
+  const candle = (gameId: number, homeProbability: number, predictedWinnerTeamId: number | null, predictedWinnerCorrect: boolean | null) => ({
+    gameId, snapshotDate: "2026-04-20", startTime: "2026-04-20T23:00:00Z",
+    homeTeamId: 10, awayTeamId: 20, homeTeamAbbreviation: "BOS", awayTeamAbbreviation: "MTL",
+    openHomeWinProbability: homeProbability, lowHomeWinProbability: homeProbability,
+    highHomeWinProbability: homeProbability, finalHomeWinProbability: homeProbability,
+    actualHomeWinProbability: 1, probabilitySpread: 0, predictionCount: 1,
+    finalPredictionId: `p-${gameId}`, finalPredictionCutoffAt: `2026-04-20T22:0${gameId}:00Z`,
+    predictedWinnerTeamId, actualWinnerTeamId: 10, predictedWinnerCorrect, homeScore: 3, awayScore: 1,
+  });
+
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      const body = url.includes("/api/v1/game-predictions/accountability")
+        ? {
+            success: true, generatedAt: "2026-04-27T12:00:00.000Z",
+            modelName: "m", modelVersion: "v1", featureSetVersion: "f",
+            summary: {
+              evaluatedGames: 2, correctGames: 1, wrongGames: 0, tieGames: 1, accuracy: 1,
+              rolling10Accuracy: 1, rolling25Accuracy: 1, rolling50Accuracy: 1,
+              brierScore: 0.2, logLoss: 0.6,
+            },
+            daily: [],
+            candles: [candle(1, 0.6, 10, true), candle(2, 0.5, null, null)],
+          }
+        : { success: true, generatedAt: "2026-04-27T12:00:00.000Z", count: 0, odds: [] };
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
+    }));
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it("shows a tie candle as even, not wrong, and counts ties apart", async () => {
+    render(<NhlPredictionsPage initialPayload={populatedPayload} />);
+    expect(await screen.findByText("Even (no pick)")).toBeTruthy();
+    expect(screen.queryByText("Wrong")).toBeNull();
+    expect(screen.getByText(/1 correct \/ 0 wrong \/ 1 even \(no pick\)/)).toBeTruthy();
+  });
+});

@@ -193,8 +193,10 @@ export type RosterObservationGoalieStartInput = Omit<RosterObservationGoaliePart
   version: "goalie-roster-observation-start-input-v1";
   history: FrozenWindowGoalieStartInput["history"];
 };
+/** v2 (W3-5 F10): the receipt states its own roster-observation limitations; v1 receipts kept the kernel's frozen
+ * Sep29–Oct12 window label and stay as issued (rule 21). The start arithmetic (methodVersion) is unchanged. */
 export type RosterObservationGoalieStartReceipt = Omit<FrozenWindowGoalieStartReceipt, "version" | "methodVersion"> & {
-  version: "modeled-goalie-roster-observation-start-v1";
+  version: "modeled-goalie-roster-observation-start-v1" | "modeled-goalie-roster-observation-start-v2";
   methodVersion: typeof ROSTER_OBSERVATION_GOALIE_START_METHOD;
   continuationAssumptionVersion: typeof ROSTER_CONTINUATION_ASSUMPTION;
 };
@@ -209,17 +211,26 @@ export function buildRosterObservationGoalieParticipationReceipt(input: RosterOb
     inputHash: playerForecastSourcePayloadHash(input), limitations: [...receipt.limitations,
       "Goalie appearance includes relief; no starter probability or confirmation is inferred from appearance."] };
 }
+/** `receiptVersion` "v1" only re-verifies receipts issued before F10 (their frozen-window label is kept as issued). */
 export function buildRosterObservationGoalieStartReceipt(input: RosterObservationGoalieStartInput,
-  issuance: { issuedAt: string; expiresAt: string }): RosterObservationGoalieStartReceipt {
+  issuance: { issuedAt: string; expiresAt: string }, receiptVersion: "v1" | "v2" = "v2"): RosterObservationGoalieStartReceipt {
   if (input?.version !== "goalie-roster-observation-start-input-v1" || input.playerClass !== "goalie") {
     throw new Error("Invalid roster-observation goalie start input.");
   }
   const appearance = buildRosterObservationGoalieParticipationReceipt({ ...input, version: "goalie-roster-observation-participation-input-v1" }, issuance);
   const receipt = buildGoalieStartKernel({ ...input, version: "goalie-frozen-window-start-input-v1", targetEligibility: null }, appearance,
     input.targetRosterObservation?.evidence);
-  return { ...receipt, version: "modeled-goalie-roster-observation-start-v1", methodVersion: ROSTER_OBSERVATION_GOALIE_START_METHOD,
+  const proxy = ["Target official season-roster observation is only an explicit continuation proxy, not legal eligibility or a confirmed future start.",
+    "No known conflict does not prove health; known conflicts withhold the model, and no effective interval is invented."];
+  if (receiptVersion === "v1") return { ...receipt, version: "modeled-goalie-roster-observation-start-v1", methodVersion: ROSTER_OBSERVATION_GOALIE_START_METHOD,
     inputHash: playerForecastSourcePayloadHash(input), continuationAssumptionVersion: ROSTER_CONTINUATION_ASSUMPTION,
-    limitations: [...receipt.limitations.filter(text => !text.startsWith("Assumes fresh cutoff eligibility")),
-      "Target official season-roster observation is only an explicit continuation proxy, not legal eligibility or a confirmed future start.",
-      "No known conflict does not prove health; known conflicts withhold the model, and no effective interval is invented."] };
+    limitations: [...receipt.limitations.filter(text => !text.startsWith("Assumes fresh cutoff eligibility")), ...proxy] };
+  return { ...receipt, version: "modeled-goalie-roster-observation-start-v2", methodVersion: ROSTER_OBSERVATION_GOALIE_START_METHOD,
+    inputHash: playerForecastSourcePayloadHash(input), continuationAssumptionVersion: ROSTER_CONTINUATION_ASSUMPTION,
+    limitations: ["Experimental current-club roster-observation eligible-opportunity official starter frequency; calibration unavailable.",
+      "Uses original explicit boolean starter labels over the appearance receipt's selected eligible opportunities, including nonstarts.",
+      "Unknown appearance or starter labels withhold this estimate.",
+      "A nonstart can be a positive-minute relief appearance; this start model never changes appearance-conditioned W, SV, GA, SA, minutes or SO means.",
+      "Original source clocks remain unchanged; no omitted later game, missing row or bench status becomes a negative.",
+      "Finite endpoint frequencies zero and one are uncalibrated model estimates, not confirmed starts or credited minimum progress.", ...proxy] };
 }

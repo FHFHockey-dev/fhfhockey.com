@@ -305,6 +305,8 @@ export function computeSkaterTeamLevelContextAdjustments(args: {
   };
 }
 
+/** Legacy GSAA-per-60 lever (fixed .900 comparator, 0.18 coefficient, clamped). The skater stage
+ * no longer calls it (W1 P0 #21: opponentGoalieQuality.ts); kept for stored-row recomputation (rule 6). */
 export function computeSkaterOpponentGoalieContextAdjustments(args: {
   context: OpponentGoalieContext | null;
 }): {
@@ -638,10 +640,15 @@ export function computeSkaterShotRatePer60(args: {
   ratePer60All: number | null | undefined;
   shotsRecent: number | null | undefined;
   toiRecentSeconds: number | null | undefined;
+  /** Seconds matched to shotsAll. With it a known zero keeps its exposure (BC W1-6 A2); without
+   * it (older rows) exposure is shots over rate, which is undefined at zero shots. */
+  toiSecondsAll?: number | null;
 }): number {
   const prior = SKATER_SHOT_RATE_PRIORS[args.position === "D" ? "D" : "F"][args.strength];
   const shotsAll = finiteOrNull(args.shotsAll), rateAll = finiteOrNull(args.ratePer60All);
-  const hoursAll = shotsAll != null && shotsAll > 0 && rateAll != null && rateAll > 0 ? shotsAll / rateAll : 0;
+  const secondsAll = finiteOrNull(args.toiSecondsAll);
+  const hoursAll = shotsAll != null && shotsAll >= 0 && secondsAll != null && secondsAll > 0 ? secondsAll / 3600
+    : shotsAll != null && shotsAll > 0 && rateAll != null && rateAll > 0 ? shotsAll / rateAll : 0;
   const base = ((hoursAll > 0 ? shotsAll! : 0) + prior.kHours * prior.per60) / (hoursAll + prior.kHours);
   const shotsRecent = finiteOrNull(args.shotsRecent), toiRecent = finiteOrNull(args.toiRecentSeconds);
   if (shotsRecent == null || shotsRecent < 0 || toiRecent == null || toiRecent <= 0) return base;

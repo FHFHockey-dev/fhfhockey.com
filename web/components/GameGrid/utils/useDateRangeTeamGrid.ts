@@ -3,8 +3,43 @@ import { addDays, eachDayOfInterval, format, parseISO, startOfWeek } from "date-
 
 import { getSchedule } from "lib/NHL/client";
 import { DAYS, GameData, WeekData } from "lib/NHL/types";
+import { isRegularScheduleGame } from "./helper";
 
 export type TeamDateGames = Record<number, Record<string, GameData>>;
+
+/**
+ * Per-team counts over the selected dates. Only regular-season games that are
+ * not postponed or cancelled count toward off-nights, back-to-backs and
+ * home/away (BC W1-12 A), the same definition as the weekly grid.
+ */
+export function summarizeTeamDateRange(
+  dates: readonly string[],
+  gamesByDate: Record<string, GameData>,
+  dateMetaByDate: Record<string, { regularSeasonGames: number }>,
+  sourceIdSet: ReadonlySet<number>
+) {
+  const off = dates.reduce((acc, d) => {
+    const g = gamesByDate[d];
+    const meta = dateMetaByDate[d];
+    if (isRegularScheduleGame(g) && (meta?.regularSeasonGames ?? 0) <= 8) return acc + 1;
+    return acc;
+  }, 0);
+  let b2b = 0;
+  for (let i = 0; i < dates.length - 1; i++) {
+    const a = gamesByDate[dates[i]];
+    const b = gamesByDate[dates[i + 1]];
+    if (isRegularScheduleGame(a) && isRegularScheduleGame(b)) b2b++;
+  }
+  let home = 0;
+  let away = 0;
+  dates.forEach((d) => {
+    const g = gamesByDate[d];
+    if (!isRegularScheduleGame(g)) return;
+    if (sourceIdSet.has(g.homeTeam.id)) home++;
+    if (sourceIdSet.has(g.awayTeam.id)) away++;
+  });
+  return { off, b2b, home, away };
+}
 
 export type DateMeta = {
   regularSeasonGames: number;
@@ -106,7 +141,7 @@ export default function useDateRangeTeamGrid(
 
             Object.values(schedule.data as Record<number, WeekData>).forEach((weekData) => {
               const game = weekData[dayAbbrev];
-              if (game?.id && game.gameType === 2) {
+              if (isRegularScheduleGame(game)) {
                 regularGameIds.add(game.id);
               }
             });

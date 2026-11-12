@@ -401,8 +401,9 @@ function RelativeChart({
       <div className={styles.unitPanelHead}>
         <h4>Relative to season average</h4>
         <span>
-          {SEASON_INDEX_WINDOW}-game average · 100 = season average · shown
-          after {SEASON_INDEX_WINDOW} games
+          {SEASON_INDEX_WINDOW}-game value · 100 = season level · rates pooled by
+          TOI, shares by attempts, counts per game · shown after{" "}
+          {SEASON_INDEX_WINDOW} games
         </span>
       </div>
       <div className={`${styles.chartWrapper} ${styles.unitChart}`}>

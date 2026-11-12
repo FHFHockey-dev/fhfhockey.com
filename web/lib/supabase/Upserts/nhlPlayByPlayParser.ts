@@ -2,6 +2,7 @@ import type { Database } from "../database-generated.types";
 import {
   buildStrengthContext,
   parseSituationCode,
+  STRENGTH_CLASSIFIER_VERSION,
 } from "./nhlStrengthState";
 
 const SHOT_LIKE_TYPES = new Set([
@@ -171,6 +172,11 @@ export function isOwnGoalPlayByPlayEvent(
   );
 }
 
+function isShootoutPeriodType(periodType: string | null): boolean {
+  const normalized = periodType?.trim().toUpperCase() ?? "";
+  return normalized === "SO" || normalized.includes("SHOOTOUT");
+}
+
 function defaultPeriodDurationSeconds(periodType: string | null): number | null {
   const normalized = periodType?.trim().toUpperCase() ?? null;
   if (!normalized) return DEFAULT_REGULATION_PERIOD_SECONDS;
@@ -275,7 +281,7 @@ export function parseNhlPlayByPlayEvents(
   }
 ): ParsedNhlPbpEvent[] {
   const parserVersion = options.parserVersion ?? 1;
-  const strengthVersion = options.strengthVersion ?? 1;
+  const strengthVersion = options.strengthVersion ?? STRENGTH_CLASSIFIER_VERSION;
   const now = options.now ?? new Date().toISOString();
   const seasonId = toNullableInteger(game.season);
   const gameId = toNullableInteger(game.id);
@@ -362,7 +368,8 @@ export function parseNhlPlayByPlayEvents(
       event_owner_team_id: ownerTeamId,
       event_owner_side: strength.eventOwnerSide,
       is_shot_like: typeDescKey != null && SHOT_LIKE_TYPES.has(typeDescKey),
-      is_goal: typeDescKey === "goal",
+      // A shootout attempt is not a regulation/OT goal (W2-7 D1).
+      is_goal: typeDescKey === "goal" && !isShootoutPeriodType(periodType),
       is_penalty: typeDescKey === "penalty",
       raw_event: play as RawEventJson,
       details: details as DetailsJson,

@@ -21,6 +21,20 @@ describe("completed-round rank history", () => {
     const history = buildRoundRankHistory({ ...defaults, leagueType: "categories", picks: [pick(1, "a", "p1"), pick(2, "a", "p2"), pick(3, "b", "p3"), pick(4, "b", "p4")], currentPick: 5 });
     expect(history[2].ranks).toEqual({ a: 2, b: 1 });
   });
+  it("sums category values: adding a player never lowers a roster's value (audit W2-5 §5)", () => {
+    // Team a keeps a 2-value player and drafts 10; b drafts 9. A mean ranks b
+    // (9) above a (6); the summed roster value ranks a (12) above b (9).
+    const history = buildRoundRankHistory({
+      ...defaults,
+      leagueType: "categories",
+      rosterCapacity: 3,
+      values: new Map([["k", 2], ["p1", 10], ["p2", 9]]),
+      keepers: [{ version: 2, status: "valid", cost: "none", playerId: "k", teamId: "a" }],
+      picks: [pick(1, "a", "p1"), pick(2, "b", "p2")],
+      currentPick: 3,
+    });
+    expect(history[1].ranks).toEqual({ a: 1, b: 2 });
+  });
   it("counts keepers once from baseline and handles a passed full-roster slot", () => {
     const history = buildRoundRankHistory({ ...defaults, rosterCapacity: 1, currentPick: 3,
       keepers: [{ version: 2, status: "valid", cost: "none", playerId: "p1", teamId: "a" }], picks: [pick(2, "b", "p2")], pattern: { mode: "custom", reversedRounds: [] } });

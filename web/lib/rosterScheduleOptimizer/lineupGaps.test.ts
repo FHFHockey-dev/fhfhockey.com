@@ -59,10 +59,11 @@ describe("lineup gap report", () => {
 
   it("names only the player missing a forecast when that makes the whole lineup's points unknown", () => {
     const data = snapshot();
-    // b has no forecast: lineup points are unknown for everyone, so nobody is suggested, and only b is unprojected.
+    // b has no forecast: the lineup total is unknown, but a's own value is known (per-player gate, W1 P0 #27), so a is
+    // suggested and only b is unprojected.
     data.forecasts = data.forecasts.filter(forecast => forecast.playerId !== "b");
     const report = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
-    expect(report.bestDrop).toBeNull();
+    expect(report.bestDrop?.playerId).toBe("a");
     expect(report.unprojectedDrops).toEqual(["b"]);
   });
 
@@ -82,7 +83,8 @@ describe("lineup gap report", () => {
     data.roster = [...data.roster, { playerId: "d", position: "active" }];
     const kept = { ...intent, protectedPlayerIds: ["d"] };
     const report = lineupGapReport(data, kept, evaluatePlan(data, kept, "outcome", [], false));
-    expect(report.bestDrop).toBeNull();
+    // d's unknown games no longer blank the droppable players' known values (per-player gate, W1 P0 #27).
+    expect(report.bestDrop?.playerId).toBe("a");
     expect(report.unprojectedDrops).toEqual([]);
     expect(report.projectionBlockers).toEqual([{ playerId: "d", reason: "has unknown projected points: no FORGE projection issued for 2026-10-05, 2026-10-06" }]);
   });

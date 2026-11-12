@@ -131,6 +131,75 @@ describe("FORGE player detail page", () => {
     vi.restoreAllMocks();
   });
 
+  it("scores the Top Add on FHFH points with object uncertainty and unknown ownership (W3-2 D3, decision 118)", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-03-14T12:00:00Z"));
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse({
+          asOfDate: "2026-03-14", requestedDate: "2026-03-14", requestedSeasonId: 20252026,
+          resolvedSeasonId: 20252026, horizonGames: 1,
+          data: [{
+            player_id: 88, player_name: "Top Add", team_name: "New Jersey Devils", teamIdentity: njdTeamIdentity,
+            position: "C", g: 0.3, a: 0.4, pts: 0.7, ppp: 0.2, sog: 2.5, hit: 1, blk: 0.5,
+            uncertainty: { model: { skater_selection: { role_continuity: { volatility_index: 0.4 } } } },
+          }],
+        });
+      }
+      if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+        return jsonResponse({ success: true, players: [] });
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse({
+          success: true,
+          selectedPlayers: [{ playerId: 88, latest: null, delta: 2, sparkline: [] }],
+          risers: [], fallers: [],
+        });
+      }
+      return jsonResponse({}, false);
+    }));
+
+    render(<ForgePlayerDetailPage scheduleSeasonId="20252026" />);
+
+    expect(await screen.findByText("Projection and Ownership")).toBeTruthy();
+    // 3(.3) + 2(.4) + .2 + .2(2.5) + .2(1) + .25(.5) = 2.725, independent of ownership.
+    const card = screen.getByText("Add: Exp. FHFH pts").closest("article")!;
+    expect(card.querySelector("strong")?.textContent).toBe("2.7");
+    expect(card.textContent).toContain("per game × 1");
+  });
+
+  it("scores a confirmed-out Top Add 0 tonight with his line shown as 'if he plays' (decision 132)", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-03-14T12:00:00Z"));
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse({
+          asOfDate: "2026-03-14", requestedDate: "2026-03-14", requestedSeasonId: 20252026,
+          resolvedSeasonId: 20252026, horizonGames: 1,
+          data: [{
+            player_id: 88, player_name: "Top Add", team_name: "New Jersey Devils", teamIdentity: njdTeamIdentity,
+            position: "C", g: 0.3, a: 0.4, pts: 0.7, ppp: 0.2, sog: 2.5, hit: 1, blk: 0.5, uncertainty: 0.2,
+            availability: { state: "confirmed_out", label: "scratched / not expected to dress" },
+          }],
+        });
+      }
+      if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+        return jsonResponse({ success: true, players: [{ playerId: 88, ownership: 42, observedOn: "2026-03-14" }] });
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse({ success: true, selectedPlayers: [{ playerId: 88, latest: 42, delta: 2, sparkline: [] }], risers: [], fallers: [] });
+      }
+      return jsonResponse({}, false);
+    }));
+
+    render(<ForgePlayerDetailPage scheduleSeasonId="20252026" />);
+
+    expect(await screen.findByText("Projection and Ownership")).toBeTruthy();
+    const card = screen.getByText("Add: Exp. FHFH pts").closest("article")!;
+    expect(card.querySelector("strong")?.textContent).toBe("0.0");
+    expect(card.textContent).toContain("If he plays · scratched / not expected to dress");
+  });
+
   it("renders projection, ownership, and drill-in context for top-add cards", async () => {
     // Ownership freshness uses wall-clock time; keep this dated scenario current.
     vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-03-14T12:00:00Z"));

@@ -127,9 +127,12 @@ export default function DraftSummaryModal({
   const sortedTeams = useMemo(() => {
     return [...teamStats]
       .slice(0, draftSettings.teamCount)
-      .sort((a, b) => b.projectedPoints - a.projectedPoints)
+      .sort((a, b) =>
+        draftSettings.leagueType === "categories"
+          ? (b.categoryStandingsPoints ?? Number.NEGATIVE_INFINITY) - (a.categoryStandingsPoints ?? Number.NEGATIVE_INFINITY)
+          : b.projectedPoints - a.projectedPoints)
       .map((t, i) => ({ ...t, rank: i + 1 }));
-  }, [teamStats, draftSettings.teamCount]);
+  }, [teamStats, draftSettings.teamCount, draftSettings.leagueType]);
 
   const teamsInDraftOrder = useMemo(() => {
     const byId = new Map(sortedTeams.map((t) => [t.teamId, t]));
@@ -257,8 +260,19 @@ export default function DraftSummaryModal({
     return { biggestSteal, biggestReach, topVorp };
   }, [draftedPlayers, playerMap, vorpMetrics]);
 
+  // Category leagues: the leader of projected category standings from each
+  // team's starting slots (decision 114). Withheld when incomplete.
   const draftWinner = useMemo(() => {
     if (!teamStats?.length) return null;
+    if (draftSettings.leagueType === "categories") {
+      if (teamStats.some((t) => typeof t.categoryStandingsPoints !== "number")) return null;
+      const ranked = [...teamStats].sort(
+        (a, b) => (b.categoryStandingsPoints as number) - (a.categoryStandingsPoints as number) || a.teamId.localeCompare(b.teamId),
+      );
+      return { team: ranked[0], score: ranked[0].categoryStandingsPoints as number };
+    }
+    // Points leagues: an incomplete projection total cannot name a winner.
+    if (teamStats.some((t) => (t.unknownProjectionCount ?? 0) > 0 || (t.unknownVorpCount ?? 0) > 0)) return null;
     const pts = teamStats.map((t) => t.projectedPoints);
     const vorps = teamStats.map((t) => t.teamVorp || 0);
     const minMax = (arr: number[]) => ({
@@ -276,7 +290,7 @@ export default function DraftSummaryModal({
     }));
     scored.sort((a, b) => b.score - a.score);
     return scored[0];
-  }, [teamStats]);
+  }, [teamStats, draftSettings.leagueType]);
 
   const downloadImage = async () => {
     if (!containerRef.current) return;
@@ -624,11 +638,20 @@ export default function DraftSummaryModal({
                   {draftWinner.team.teamName}
                 </div>
                 <div className={styles.winnerMeta}>
-                  Proj Pts: {draftWinner.team.projectedPoints.toFixed(1)} • Team
-                  VORP: {(draftWinner.team.teamVorp || 0).toFixed(1)}
+                  {draftSettings.leagueType === "categories" ? (
+                    <>Projected category standings: {draftWinner.score.toFixed(1)} pts (starting slots) • Team VORP: {(draftWinner.team.teamVorp ?? 0).toFixed(1)}</>
+                  ) : (
+                    <>Proj Pts: {draftWinner.team.projectedPoints.toFixed(1)} • Team VORP: {(draftWinner.team.teamVorp ?? 0).toFixed(1)}</>
+                  )}
                 </div>
               </div>
             </div>
+          )}
+
+          {!draftWinner && teamStats.length > 0 && (
+            <p className={styles.privacyNote} role="note">
+              Winner of the Draft is withheld: some teams have unknown projections or category totals.
+            </p>
           )}
 
           <RoundRankChart history={rankHistory} teams={teamStats} myTeamId={myTeamId} players={playerMap} />
@@ -760,18 +783,18 @@ export default function DraftSummaryModal({
                     >
                       <td>{t.rank}</td>
                       <td>{t.teamName}</td>
-                      <td>{(t.categoryTotals.GOALS || 0).toFixed(0)}</td>
-                      <td>{(t.categoryTotals.ASSISTS || 0).toFixed(0)}</td>
-                      <td>{(t.categoryTotals.PP_POINTS || 0).toFixed(0)}</td>
+                      <td>{t.categoryTotals.GOALS == null ? "—" : t.categoryTotals.GOALS.toFixed(0)}</td>
+                      <td>{t.categoryTotals.ASSISTS == null ? "—" : t.categoryTotals.ASSISTS.toFixed(0)}</td>
+                      <td>{t.categoryTotals.PP_POINTS == null ? "—" : t.categoryTotals.PP_POINTS.toFixed(0)}</td>
                       <td>
-                        {(t.categoryTotals.SHOTS_ON_GOAL || 0).toFixed(0)}
+                        {t.categoryTotals.SHOTS_ON_GOAL == null ? "—" : t.categoryTotals.SHOTS_ON_GOAL.toFixed(0)}
                       </td>
-                      <td>{(t.categoryTotals.HITS || 0).toFixed(0)}</td>
+                      <td>{t.categoryTotals.HITS == null ? "—" : t.categoryTotals.HITS.toFixed(0)}</td>
                       <td>
-                        {(t.categoryTotals.BLOCKED_SHOTS || 0).toFixed(0)}
+                        {t.categoryTotals.BLOCKED_SHOTS == null ? "—" : t.categoryTotals.BLOCKED_SHOTS.toFixed(0)}
                       </td>
-                      <td>{(t.teamVorp || 0).toFixed(1)}</td>
-                      <td>{t.projectedPoints.toFixed(1)}</td>
+                      <td>{(t.teamVorp ?? 0).toFixed(1)}{t.unknownVorpCount ? ` (${t.unknownVorpCount} unknown)` : ""}</td>
+                      <td>{t.projectedPoints.toFixed(1)}{t.unknownProjectionCount ? ` (${t.unknownProjectionCount} unknown)` : ""}</td>
                     </tr>
                   ))}
                 </tbody>

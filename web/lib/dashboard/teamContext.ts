@@ -24,20 +24,20 @@ export type TeamMatchupEdge = {
   edge: number;
 };
 
-const SPECIAL_TEAM_STEP = 1.5;
-
 export const normalizeSpecialTeamTier = (value: number | null | undefined): 1 | 2 | 3 => {
   if (value === 1 || value === 2 || value === 3) return value;
   return 2;
 };
 
-export const computeTeamPowerScore = (team: TeamPowerSnapshotLike): number => {
-  const base =
-    ((team.offRating ?? 0) + (team.defRating ?? 0) + (team.paceRating ?? 0)) / 3;
-  const ppAdj = (3 - normalizeSpecialTeamTier(team.ppTier)) * SPECIAL_TEAM_STEP;
-  const pkAdj = (3 - normalizeSpecialTeamTier(team.pkTier)) * SPECIAL_TEAM_STEP;
-  return base + ppAdj + pkAdj;
-};
+/**
+ * The one team power score (TJ, 2026-11-12; BA W1-4 B): the mean of the
+ * 100-centred offense and defense ratings. Pace and PP/PK tiers are shown
+ * beside it, never mixed in, so an unknown tier cannot move the score.
+ */
+export const computeTeamPowerScore = (
+  team: Pick<TeamPowerSnapshotLike, "offRating" | "defRating"> &
+    Partial<TeamPowerSnapshotLike>
+): number => ((team.offRating ?? 0) + (team.defRating ?? 0)) / 2;
 
 export const computeCtpiDelta = (
   row: Pick<NormalizedCtpiTeamRow, "ctpi_0_to_100" | "sparkSeries">

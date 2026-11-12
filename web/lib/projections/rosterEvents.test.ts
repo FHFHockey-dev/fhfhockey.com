@@ -57,6 +57,26 @@ describe("forge roster events", () => {
     });
   });
 
+  it("publishes a scratch as a game-scoped SCRATCH and an injury with no timer (decision 31)", () => {
+    const row = {
+      id: "review-2", team_id: 10, team_abbreviation: "BOS", review_status: "reviewed",
+      reviewed_at: "2026-11-09T23:00:00.000Z", review_text: "Scratches: Winger C. Center D is out.",
+      review_assignments: [
+        { id: "s", category: "SCRATCHES", subcategory: null, playerIds: [300], playerNames: ["Winger C"], highlightPhrases: [], notes: null },
+        { id: "i", category: "INJURY", subcategory: "OUT", playerIds: [400], playerNames: ["Center D"], highlightPhrases: [], notes: null },
+        { id: "d", category: "INJURY", subcategory: "DAY TO DAY", playerIds: [500], playerNames: ["Defender E"], highlightPhrases: [], notes: null },
+      ],
+    } as any;
+    const scoped = buildRosterEventsFromReviewedTweet(row, { scratchGameId: 2026020200 });
+    expect(scoped[0]).toMatchObject({ player_id: 300, event_type: "SCRATCH", effective_to: null,
+      payload: { game_id: 2026020200, game_scope: "game_id" } });
+    expect(scoped[1]).toMatchObject({ player_id: 400, event_type: "INJURY_OUT", effective_to: null });
+    // Day-to-day stays a short-lived status.
+    expect(scoped[2].effective_to).toBe("2026-11-11T05:00:00.000Z");
+    const unresolved = buildRosterEventsFromReviewedTweet(row);
+    expect(unresolved[0]).toMatchObject({ event_type: "SCRATCH", payload: { game_id: null, game_scope: "unresolved" } });
+  });
+
   it("returns preflight gates for stale or missing current-state inputs", () => {
     const gates = evaluateRosterEventPreflight({
       asOfDate: "2026-03-01",

@@ -5,6 +5,7 @@ import {
   applyOfficialRowOverrides,
   parseTeamLandingApiRequest,
   queryTeamStatsLanding,
+  sortTeamStatsRows,
 } from "./teamStatsQueries";
 import {
   buildTeamStatsLandingApiPath,
@@ -22,7 +23,7 @@ type MockSummaryRow = {
   is_home: boolean;
   strength: string;
   score_state: string;
-  toi_seconds: number;
+  toi_seconds: number | null;
   wins: number;
   losses: number;
   otl: number;
@@ -186,8 +187,8 @@ function createMockSupabase(args: {
               summaryPageRequests % 2 === 0 ? [...filtered].reverse() : filtered;
             const sorted = [...tieOrdered].sort((left, right) => {
               for (const { column, ascending } of orders) {
-                const leftValue = left[column];
-                const rightValue = right[column];
+                const leftValue = left[column] as number | string;
+                const rightValue = right[column] as number | string;
                 if (leftValue === rightValue) continue;
                 const direction = leftValue < rightValue ? -1 : 1;
                 return ascending ? direction : -direction;
@@ -601,14 +602,15 @@ describe("teamStatsQueries", () => {
 
     expect(response.pagination.totalRows).toBe(1);
     expect(response.rows).toHaveLength(1);
+    // Decision 92: under the default 5v5 split the record columns are hidden.
     expect(response.rows[0]).toMatchObject({
       teamId: 1,
       teamLabel: "FLA",
       gamesPlayed: 1,
       toiSeconds: 1800,
-      points: 2,
-      wins: 1,
-      rowWins: 1,
+      points: null,
+      wins: null,
+      rowWins: null,
     });
   });
 });
@@ -654,5 +656,176 @@ describe("applyOfficialRowOverrides", () => {
       official: official(3),
     });
     expect(result).toMatchObject({ gamesPlayed: 3, wins: 3, gf: 20, ga: 25 });
+  });
+});
+
+describe("sortTeamStatsRows (W2-P0-7, rule 20)", () => {
+  const rows = [
+    { teamId: 1, teamLabel: "AAA", shPct: null },
+    { teamId: 2, teamLabel: "BBB", shPct: 0.3 },
+    { teamId: 3, teamLabel: "CCC", shPct: 0 },
+    { teamId: 4, teamLabel: "DDD", shPct: 0.3 },
+  ] as never[];
+
+  it("puts nulls last in both directions with a stable tie-break", () => {
+    expect(
+      sortTeamStatsRows(rows, { sortKey: "shPct", direction: "desc" }).map((row: any) => row.teamLabel)
+    ).toEqual(["BBB", "DDD", "CCC", "AAA"]);
+    expect(
+      sortTeamStatsRows(rows, { sortKey: "shPct", direction: "asc" }).map((row: any) => row.teamLabel)
+    ).toEqual(["CCC", "BBB", "DDD", "AAA"]);
+    expect(
+      sortTeamStatsRows([...rows].reverse(), { sortKey: "shPct", direction: "desc" }).map(
+        (row: any) => row.teamLabel
+      )
+    ).toEqual(["BBB", "DDD", "CCC", "AAA"]);
+  });
+
+  it("orders an all-null column by team label", () => {
+    const allNull = rows.map((row: any) => ({ ...row, shPct: null })) as never[];
+    expect(
+      sortTeamStatsRows(allNull, { sortKey: "shPct", direction: "desc" }).map((row: any) => row.teamLabel)
+    ).toEqual(["AAA", "BBB", "CCC", "DDD"]);
+  });
+});
+
+describe("queryTeamStatsLanding reader contracts", () => {
+  const allSituations = () => {
+    const state = createDefaultTeamLandingFilterState({ currentSeasonId: 20252026, pageSize: 2 });
+    state.primary.strength = "allStrengths";
+    state.primary.displayMode = "counts";
+    return state;
+  };
+  const allRow = (overrides: Partial<MockSummaryRow>) =>
+    createSummaryRow({ strength: "allStrengths", ...overrides });
+
+  it("sorts nulls last before paginating, so page 1 is never all nulls (W2-P0-7)", async () => {
+    const state = allSituations();
+    state.view.sort = { sortKey: "shPct", direction: "desc" };
+    const supabase = createMockSupabase({
+      summaryRows: [
+        allRow({ game_id: 1, team_id: 1, sf: 0, gf: 0 }),
+        allRow({ game_id: 2, team_id: 2, sf: 10, gf: 1 }),
+        allRow({ game_id: 3, team_id: 3, sf: 10, gf: 3 }),
+      ],
+      teams: [
+        { id: 1, abbreviation: "AAA" },
+        { id: 2, abbreviation: "BBB" },
+        { id: 3, abbreviation: "CCC" },
+      ],
+    });
+    const response = await queryTeamStatsLanding({ state, supabase: supabase as never });
+    expect(response.rows.map((row) => row.teamLabel)).toEqual(["CCC", "BBB"]);
+    expect(response.pagination.totalRows).toBe(3);
+  });
+
+  it("selects each team's own last N games by date, not league game id (decision 95)", async () => {
+    const state = allSituations();
+    state.expandable.scope = { kind: "gameRange", value: 1 };
+    const supabase = createMockSupabase({
+      summaryRows: [
+        // Team 1: id 200 is dated Nov 9, id 100 is dated Nov 10 (the later game).
+        allRow({ game_id: 200, game_date: "2025-11-09", team_id: 1, cf: 5 }),
+        allRow({ game_id: 100, game_date: "2025-11-10", team_id: 1, cf: 50 }),
+        // Team 2 played only earlier; it keeps its own last game.
+        allRow({ game_id: 50, game_date: "2025-11-01", team_id: 2, cf: 7 }),
+      ],
+      teams: [
+        { id: 1, abbreviation: "AAA" },
+        { id: 2, abbreviation: "BBB" },
+      ],
+    });
+    state.view.pagination = { page: 1, pageSize: 50 };
+    const response = await queryTeamStatsLanding({ state, supabase: supabase as never });
+    const byTeam = new Map(response.rows.map((row) => [row.teamId, row]));
+    expect(byTeam.get(1)).toMatchObject({ gamesPlayed: 1, cf: 50 });
+    expect(byTeam.get(2)).toMatchObject({ gamesPlayed: 1, cf: 7 });
+  });
+
+  it("drops an unresolved game from the record and the point-% denominator (W2-3 D12)", async () => {
+    const state = allSituations();
+    const supabase = createMockSupabase({
+      summaryRows: [
+        allRow({ game_id: 1, team_id: 1, wins: 1, losses: 0, otl: 0, row_wins: 1, points: 2 }),
+        allRow({ game_id: 2, team_id: 1, wins: 0, losses: 0, otl: 0, row_wins: 0, points: 0 }),
+      ],
+      teams: [{ id: 1, abbreviation: "AAA" }],
+    });
+    const response = await queryTeamStatsLanding({ state, supabase: supabase as never });
+    expect(response.rows[0]).toMatchObject({ gamesPlayed: 2, points: 2, pointPct: 1, unresolvedGames: 1 });
+  });
+
+  it("keeps a window rate unknown when one game's ice time is unknown (W2-3 DR3, rule 13)", async () => {
+    const state = allSituations();
+    state.primary.displayMode = "rates";
+    const supabase = createMockSupabase({
+      summaryRows: [
+        allRow({ game_id: 1, team_id: 1, toi_seconds: 1200, cf: 1 }),
+        allRow({ game_id: 2, team_id: 1, toi_seconds: null as never, cf: 1 }),
+      ],
+      teams: [{ id: 1, abbreviation: "AAA" }],
+    });
+    const response = await queryTeamStatsLanding({ state, supabase: supabase as never });
+    expect(response.rows[0]).toMatchObject({ toiSeconds: null, cfPer60: null, toiPerGameSeconds: null });
+  });
+
+  it("gives tied sort values one competition rank (W2-3 D17)", async () => {
+    const state = allSituations();
+    state.view.sort = { sortKey: "cf", direction: "desc" };
+    state.view.pagination = { page: 1, pageSize: 50 };
+    const supabase = createMockSupabase({
+      summaryRows: [
+        allRow({ game_id: 1, team_id: 1, cf: 10 }),
+        allRow({ game_id: 2, team_id: 2, cf: 10 }),
+        allRow({ game_id: 3, team_id: 3, cf: 5 }),
+      ],
+      teams: [
+        { id: 1, abbreviation: "AAA" },
+        { id: 2, abbreviation: "BBB" },
+        { id: 3, abbreviation: "CCC" },
+      ],
+    });
+    const response = await queryTeamStatsLanding({ state, supabase: supabase as never });
+    expect(response.rows.map((row) => [row.teamLabel, row.rank])).toEqual([
+      ["AAA", 1],
+      ["BBB", 1],
+      ["CCC", 3],
+    ]);
+  });
+});
+
+describe("applyOfficialRowOverrides source mixing (W2-2 D12)", () => {
+  it("never pairs official 5v5 shots for with native shots against", () => {
+    const state = createDefaultTeamLandingFilterState();
+    // Native 5v5: SF 5, SA 4, GF 1. Official 5v5 reports 6 shots for over the same games.
+    const nativeRow = {
+      teamId: 8,
+      gamesPlayed: 3,
+      toiSeconds: 9000,
+      cf: 50,
+      ca: 40,
+      ff: 40,
+      fa: 30,
+      sf: 5,
+      sa: 4,
+      gf: 1,
+      ga: 1,
+      sfPct: 5 / 9,
+      shPct: 0.2,
+      svPct: 0.75,
+    } as never;
+    const result = applyOfficialRowOverrides({
+      row: nativeRow,
+      state: { ...state, primary: { ...state.primary, strength: "fiveOnFive" } } as never,
+      official: {
+        seasonSummaryByTeamId: new Map(),
+        fiveOnFiveByTeamId: new Map([
+          [8, { teamId: 8, gamesPlayed: 3, satFor: 52, satAgainst: 41, usatFor: 41, usatAgainst: 31, shots5v5: 6 }],
+        ]),
+        shotTypeByTeamId: new Map(),
+      } as never,
+    });
+    // Mixed: 6 / (6 + 4) = 0.6. Same-source native: 5 / 9.
+    expect(result).toMatchObject({ cf: 52, ca: 41, sf: 5, sfPct: 5 / 9, shPct: 0.2, officialOverlay: "fiveOnFive" });
   });
 });

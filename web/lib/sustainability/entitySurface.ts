@@ -38,8 +38,9 @@ export type SandboxScoreRow = {
   recentValue: number | null;
   expectedValue: number | null;
   zScore: number | null;
-  rawScore: number;
-  score: number;
+  /** Null when the score's inputs were insufficient (BC W1-9 A2). */
+  rawScore: number | null;
+  score: number | null;
   expectationState: SandboxExpectationState;
   components: Record<string, unknown>;
   provenance: Record<string, unknown>;

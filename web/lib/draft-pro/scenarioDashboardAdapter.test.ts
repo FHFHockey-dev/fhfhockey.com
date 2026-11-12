@@ -16,7 +16,7 @@ const player = (id: number, position: string, projectedPoints: number | null, st
 });
 
 const players = [player(1, "C", 80, { GOALS: 20 }), player(2, "LW", 70, { GOALS: 15 }), player(3, "G", 100, { SAVES_GOALIE: 900, SHOTS_AGAINST_GOALIE: 1000, GOALS_AGAINST_GOALIE: 100, TOTAL_TOI: 180000 })];
-const metrics = new Map<string, PlayerVorpMetrics>(players.map((value, index) => [String(value.playerId), { value: 100 - index, vorp: 30 - index, vols: 0, vona: 0, vbd: 0, bestPos: value.displayPosition!, eligible: [value.displayPosition!] }]));
+const metrics = new Map<string, PlayerVorpMetrics>(players.map((value, index) => [String(value.playerId), { value: 100 - index, vorp: 30 - index, vols: 0, vona: 0, vbd: 0, scarcity: null, bestPos: value.displayPosition!, eligible: [value.displayPosition!] }]));
 const base = (): ScenarioDashboardAdapterArgs => ({
   players,
   availablePlayers: [players[1], players[2]],

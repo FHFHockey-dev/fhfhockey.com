@@ -263,3 +263,37 @@ describe("StatsPage mobile team grid", () => {
     ).toHaveLength(0);
   });
 });
+
+describe("StatsPage goalie qualifier (W3-2 D5, decision 89)", () => {
+  it("prints the qualifier from the fetch beside the goalie boards", () => {
+    render(
+      <StatsPage
+        {...populatedStatsProps}
+        goalieQualifier={{ status: "known", seasonId: 20252026, minGames: 4, meanTeamGames: 18.25 }}
+        teams={[]}
+      />,
+    );
+    const goalies = within(screen.getByRole("complementary", { name: "Goaltender Statistics" }));
+    expect(
+      goalies.getByText("Rate leaders: min. 4 GP (a quarter of the 18.3-game average team GP)"),
+    ).toBeDefined();
+  });
+
+  it("says the qualifier is unknown and withholds the rate boards when standings fail", () => {
+    render(
+      <StatsPage
+        {...populatedStatsProps}
+        goalieLeadersSavePct={[]}
+        goalieLeadersGAA={[]}
+        goalieLeadersQS={[]}
+        goalieQualifier={{ status: "unknown", seasonId: 20252026 }}
+        teams={[]}
+      />,
+    );
+    const goalies = within(screen.getByRole("complementary", { name: "Goaltender Statistics" }));
+    expect(
+      goalies.getByText("Qualifier unknown (standings unavailable): rate leaders withheld"),
+    ).toBeDefined();
+    expect(goalies.getAllByText("Withheld: qualifier unknown.")).toHaveLength(3);
+  });
+});

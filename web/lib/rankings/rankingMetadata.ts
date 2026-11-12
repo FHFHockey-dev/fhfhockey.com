@@ -63,10 +63,16 @@ export const CONTEXTUAL_RANKING_GLOSSARY = [
       "A peer context derived from verified even-strength line or special-teams usage.",
   },
   {
+    key: "dense_rank",
+    label: "Rank (dense)",
+    description:
+      "Dense rank among qualified peers after metric directionality is applied: tied values share a rank and the next distinct value takes the next rank (1, 1, 2). Ranks are computed once per cohort and do not change with the display sort.",
+  },
+  {
     key: "better_than_percentile",
     label: "Peer percentile",
     description:
-      "The share of other qualified peers a row is better than after metric directionality is applied; an untied leader displays as 100 and the worst qualified row displays as 0.",
+      "Mid-rank percentile among qualified peers after metric directionality is applied: (peers strictly worse + half of the other tied peers) ÷ (peers − 1) × 100. Tied rows share one value, an untied leader is 100, the untied worst row is 0 and a sole qualified row is 50.",
   },
   {
     key: "source_quality_flags",

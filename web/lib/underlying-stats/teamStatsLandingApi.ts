@@ -8,18 +8,28 @@ import {
 
 export type TeamStatsLandingApiRow = {
   rowKey: string;
+  /** Competition rank in the current sort (ties share a rank); not a quality rank. */
   rank?: number;
   teamId: number;
   teamLabel: string;
   gamesPlayed: number;
-  toiSeconds: number;
+  /** Null when any game in the window has unknown ice time (rule 13). */
+  toiSeconds: number | null;
   toiPerGameSeconds: number | null;
-  wins: number;
-  losses: number;
-  otl: number;
-  rowWins: number;
-  points: number;
+  /**
+   * Record columns are null under a strength or score-state split (decision 92)
+   * and count only games with a resolved winner (W2-3 D12).
+   */
+  wins: number | null;
+  losses: number | null;
+  otl: number | null;
+  rowWins: number | null;
+  points: number | null;
   pointPct: number | null;
+  /** Games in the window whose winner is unresolved; excluded from the record. */
+  unresolvedGames?: number;
+  /** Which official NHL totals replaced native values, if any (W2-2 D12 provenance). */
+  officialOverlay?: "allStrengths" | "fiveOnFive" | null;
   cf: number;
   ca: number;
   cfPct: number | null;
@@ -32,8 +42,9 @@ export type TeamStatsLandingApiRow = {
   gf: number;
   ga: number;
   gfPct: number | null;
-  xgf: number;
-  xga: number;
+  /** Bucket-heuristic xG is hidden (decisions 6, 12): always null. */
+  xgf: number | null;
+  xga: number | null;
   xgfPct: number | null;
   scf: number;
   sca: number;

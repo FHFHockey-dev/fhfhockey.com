@@ -43,11 +43,14 @@ import {
   formatHomepageEdge,
   getHomepageGameGroup,
   getHomepageGamePresentation,
+  getHomepagePredictionNotice,
   getHomepageSlateMode,
+  HOMEPAGE_EDGE_LABEL,
   type HomepageGameGroup,
   type HomepageSlateMode,
 } from "./homepageGamePresentation";
 import HomepageDesktopGameSlates from "./HomepageDesktopGameSlates";
+import HomepagePredictionNotice from "./HomepagePredictionNotice";
 
 type HomepageGamesSectionProps = {
   currentDate: string;
@@ -260,15 +263,16 @@ const getGameColorStyle = (
   } as CSSProperties;
 };
 
-const probabilityTone = (probability: number) =>
-  probability > 0.5
-    ? "favored"
-    : probability < 0.5
-      ? "underdog"
-      : "even";
+type ProbabilityTone = "favored" | "underdog" | "even";
 
-const probabilityClassName = (probability: number) => {
-  const tone = probabilityTone(probability);
+// The tone follows the displayed pick (decision 43), never the raw value.
+const probabilityTone = (
+  pick: "home" | "away" | "tie",
+  side: "home" | "away",
+): ProbabilityTone =>
+  pick === "tie" ? "even" : pick === side ? "favored" : "underdog";
+
+const probabilityClassName = (tone: ProbabilityTone) => {
   if (tone === "favored") return styles.probabilityFavored;
   if (tone === "underdog") return styles.probabilityUnderdog;
   return styles.probabilityEven;
@@ -293,21 +297,23 @@ function MobileGameItem({
     clock,
     stateLabel,
     analytics,
+    winPair,
     edgeAvailable,
-    probabilitiesAvailable,
     projectedGoalsAvailable,
     xgAvailable,
     shotsAvailable,
     starterAvailable,
     matchupLabel,
   } = presentation;
+  const awayTone = winPair ? probabilityTone(winPair.pick, "away") : null;
+  const homeTone = winPair ? probabilityTone(winPair.pick, "home") : null;
 
   return (
     <Link
       href={`/game/${game.id}`}
       className={styles.mobileGameLink}
       data-game-state={group}
-      data-has-probabilities={probabilitiesAvailable ? "true" : "false"}
+      data-has-probabilities={winPair ? "true" : "false"}
       data-has-starters={starterAvailable ? "true" : "false"}
       aria-label={matchupLabel}
       style={getGameColorStyle(homeTeam.abbrev, awayTeam.abbrev)}
@@ -363,17 +369,15 @@ function MobileGameItem({
           </span>
         </ClientOnly>
       </span>
-      {probabilitiesAvailable ? (
+      {winPair && awayTone ? (
         <span
           className={`${styles.mobileWinProbability} ${styles.mobileAwayProbability} ${probabilityClassName(
-            analytics!.awayWinProbability!,
+            awayTone,
           )}`}
-          data-probability-tone={probabilityTone(
-            analytics!.awayWinProbability!,
-          )}
+          data-probability-tone={awayTone}
           title={`${awayTeam.abbrev} pregame win probability`}
         >
-          {Math.round(analytics!.awayWinProbability! * 100)}%
+          {winPair.awayPercent}%
         </span>
       ) : null}
       <span
@@ -413,17 +417,15 @@ function MobileGameItem({
           />
         ) : null}
       </span>
-      {probabilitiesAvailable ? (
+      {winPair && homeTone ? (
         <span
           className={`${styles.mobileWinProbability} ${styles.mobileHomeProbability} ${probabilityClassName(
-            analytics!.homeWinProbability!,
+            homeTone,
           )}`}
-          data-probability-tone={probabilityTone(
-            analytics!.homeWinProbability!,
-          )}
+          data-probability-tone={homeTone}
           title={`${homeTeam.abbrev} pregame win probability`}
         >
-          {Math.round(analytics!.homeWinProbability! * 100)}%
+          {winPair.homePercent}%
         </span>
       ) : null}
       <span className={styles.mobileBroadcast}>{broadcast ?? ""}</span>
@@ -441,7 +443,7 @@ function MobileGameItem({
           ) : null}
           {edgeAvailable ? (
             <span data-analytics-metric="edge">
-              <small>Edge</small>
+              <small>{HOMEPAGE_EDGE_LABEL}</small>
               {analytics!.edgeTeamAbbreviation}{" "}
               {formatHomepageEdge(analytics!.edgePercentagePoints!)}
             </span>
@@ -739,6 +741,9 @@ export default function HomepageGamesSection({
     },
   ].filter((group) => group.games.length > 0);
   const orderedGames = gameGroups.flatMap((group) => group.games);
+  const predictionNotice = getHomepagePredictionNotice(
+    orderedGames.map(getHomepageGamePresentation),
+  );
 
   const closeCalendar = (restoreFocus = true) => {
     setCalendarOpen(false);
@@ -1383,6 +1388,7 @@ export default function HomepageGamesSection({
                   </section>
                 ))
               )}
+              <HomepagePredictionNotice notice={predictionNotice} />
               <Link
                 href="/game-grid/7-Day-Forecast"
                 className={styles.mobileGamesViewAll}

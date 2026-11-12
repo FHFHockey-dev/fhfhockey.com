@@ -15,6 +15,7 @@ import type {
 } from "./skaterDeploymentAggregation";
 import type {
   SkaterProductionWindow,
+  SkaterWindowScope,
   SkaterWindowStrengthState,
 } from "./skaterWindowAggregation";
 import {
@@ -44,6 +45,8 @@ export type ContextualRankingsRequest = {
   season: number;
   asOfDate: string | null;
   window: SkaterProductionWindow;
+  /** Decision 103: last-N scope; omitted = current season. */
+  windowScope?: SkaterWindowScope;
   position: ContextualRankingsPositionFilter;
   deployment: ContextualRankingsDeploymentFilter;
   strength: SkaterWindowStrengthState;
@@ -379,6 +382,12 @@ export function parseContextualRankingsRequest(
       "window",
       ["season", "last5", "last10", "last20"] as const,
       "season",
+    ),
+    windowScope: parseEnumParam(
+      query.window_scope,
+      "window_scope",
+      ["current_season", "cross_season"] as const,
+      "current_season",
     ),
     position,
     deployment,

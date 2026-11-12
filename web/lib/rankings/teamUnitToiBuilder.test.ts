@@ -227,6 +227,9 @@ describe("teamUnitToiBuilder", () => {
       shift({ playerId: 203, teamId: 2, teamAbbrev: "BBB", start: 0, end: 60 }),
       shift({ playerId: 204, teamId: 2, teamAbbrev: "BBB", start: 0, end: 60 }),
       shift({ playerId: 205, teamId: 2, teamAbbrev: "BBB", start: 0, end: 60 }),
+      // 5v5 needs one goalie per side (W2-6 §3); without them no unit is built.
+      shift({ playerId: 106, teamId: 1, teamAbbrev: "AAA", start: 0, end: 60 }),
+      shift({ playerId: 206, teamId: 2, teamAbbrev: "BBB", start: 0, end: 60 }),
     ];
     const rows = buildTeamUnitToiRows({
       shifts,
@@ -243,6 +246,68 @@ describe("teamUnitToiBuilder", () => {
       "forward_line",
       "power_play",
     ]);
+  });
+
+  describe("overlap, goalie and slot semantics (W2-6 §3)", () => {
+    const team = (teamId: number, abbrev: string, ids: number[], start = 0, end = 60) =>
+      ids.map((playerId) => shift({ playerId, teamId, teamAbbrev: abbrev, start, end }));
+
+    it("unions a player's overlapping shift rows instead of counting him twice", () => {
+      const shifts = [
+        shift({ playerId: 101, teamId: 1, teamAbbrev: "AAA", start: 0, end: 60 }),
+        // Overlapping second row for 101 (not an exact duplicate).
+        shift({ playerId: 101, teamId: 1, teamAbbrev: "AAA", start: 30, end: 60 }),
+        shift({ playerId: 102, teamId: 1, teamAbbrev: "AAA", start: 0, end: 60 }),
+        shift({ playerId: 103, teamId: 1, teamAbbrev: "AAA", start: 0, end: 30 }),
+        ...team(1, "AAA", [104, 105, 106]),
+        ...team(2, "BBB", [201, 202, 203, 204, 205, 206]),
+      ];
+      const rows = buildEvenStrengthTeamUnitToiRows({
+        shifts, players, season: 20252026, snapshotDate: "2026-06-22",
+      });
+      const forwardRows = rows.filter((row) => row.team_id === 1 && row.unit_type === "forward_line");
+      // Before the union, 30-60 s read as five skaters with trio [101, 101, 102].
+      expect(forwardRows.map((row) => row.player_ids)).toEqual([[101, 102, 103]]);
+      expect(rows.every((row) => new Set(row.player_ids).size === row.player_ids.length)).toBe(true);
+      expect(forwardRows[0]).toMatchObject({ player_count: 3, unit_toi_seconds: 90, team_unit_pool_toi_seconds: 90 });
+    });
+
+    it("does not build complete 5v5 units when a goalie shift is missing", () => {
+      const noGoalies = [
+        ...team(1, "AAA", [101, 102, 103, 104, 105]),
+        ...team(2, "BBB", [201, 202, 203, 204, 205]),
+      ];
+      expect(buildEvenStrengthTeamUnitToiRows({
+        shifts: noGoalies, players, season: 20252026, snapshotDate: "2026-06-22",
+      })).toEqual([]);
+
+      // Home goalie shift missing for 20 of 60 seconds: those seconds are not
+      // verified 5v5 and both team-games are partial, never complete.
+      const gap = [
+        ...team(1, "AAA", [101, 102, 103, 104, 105]),
+        shift({ playerId: 106, teamId: 1, teamAbbrev: "AAA", start: 0, end: 40 }),
+        ...team(2, "BBB", [201, 202, 203, 204, 205, 206]),
+      ];
+      const rows = buildEvenStrengthTeamUnitToiRows({
+        shifts: gap, players, season: 20252026, snapshotDate: "2026-06-22",
+      });
+      expect(rows).toHaveLength(4);
+      for (const row of rows) {
+        expect(row.coverage_status).toBe("partial");
+        expect(row.coverage_warnings).toContain("goalie_shift_missing_seconds:20");
+      }
+      expect(rows.find((row) => row.team_id === 1 && row.unit_type === "forward_line")?.unit_toi_seconds).toBe(120);
+    });
+
+    it("labels observed units as co-occurrence, not disjoint lineup slots", () => {
+      const rows = buildEvenStrengthTeamUnitToiRows({
+        shifts: [...team(1, "AAA", [101, 102, 103, 104, 105, 106]), ...team(2, "BBB", [201, 202, 203, 204, 205, 206])],
+        players, season: 20252026, snapshotDate: "2026-06-22",
+      });
+      expect(rows[0].metadata).toMatchObject({
+        unitSemantics: "observed_cooccurrence_units_not_disjoint_lineup_slots",
+      });
+    });
   });
 
   describe("shift-feed repairs", () => {

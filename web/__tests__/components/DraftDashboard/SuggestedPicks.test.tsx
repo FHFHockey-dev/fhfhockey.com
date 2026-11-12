@@ -1,3 +1,4 @@
+import type React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -5,7 +6,7 @@ const getSession = vi.hoisted(() => vi.fn());
 vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession } } }));
 
 import { buildPositionTiers } from "../../../lib/draftDashboard/positionalTiers";
-import SuggestedPicks from "../../../components/DraftDashboard/SuggestedPicks";
+import RealSuggestedPicks from "../../../components/DraftDashboard/SuggestedPicks";
 import { draftProRecommendationsInputSchema } from "../../../lib/draft-pro/recommendationsContract";
 
 function player(playerId: number, name: string, position: string, points: number) {
@@ -25,6 +26,19 @@ function player(playerId: number, name: string, position: string, points: number
     },
     yahooAvgPick: playerId
   } as any;
+}
+
+// The dashboard always supplies VORP metrics; a player without one has an
+// unknown value and is not suggested (audit W2-5 §4.2). Tests that do not care
+// about values get metrics equal to projected points.
+function metricsFor(players: any[]) {
+  return new Map(players.map((candidate) => {
+    const value = candidate.fantasyPoints?.projected ?? null;
+    return [String(candidate.playerId), { value, vorp: value, vbd: value, vona: 0, vols: 0, scarcity: null, bestPos: "", eligible: [] }];
+  }));
+}
+function SuggestedPicks(props: React.ComponentProps<typeof RealSuggestedPicks>) {
+  return <RealSuggestedPicks {...props} vorpMetrics={props.vorpMetrics ?? (metricsFor(props.players) as any)} />;
 }
 
 beforeEach(() => {
@@ -91,7 +105,7 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     expect(screen.queryByText("Defense Player")).toBeNull();
   });
 
-  it("defaults to canonical risk-aware rank and exposes working draft/compare actions", () => {
+  it("defaults to the base-score rank (VORP, availability shown separately) and exposes working draft/compare actions", () => {
     const players = [
       { ...player(1, "Urgent Player", "C", 100), yahooAvgPick: 2 },
       { ...player(2, "Later Player", "D", 90), yahooAvgPick: 100 }
@@ -119,11 +133,14 @@ describe("SuggestedPicks grouped-forward presentation", () => {
       (screen.getByRole("combobox", { name: "Sort suggested picks" }) as HTMLSelectElement)
         .value
     ).toBe("rank");
+    // Decision 76: availability no longer boosts the free score, so the
+    // higher-VORP Later Player ranks first; Urgent Player's availability is
+    // still shown on its own.
     expect(screen.getAllByRole("listitem")[0].getAttribute("title")).toContain(
-      "Urgent Player"
+      "Later Player"
     );
     // The card shows first initial + last name; the title keeps the full name.
-    expect(screen.getAllByRole("listitem")[0].textContent).toContain("U. Player");
+    expect(screen.getAllByRole("listitem")[1].textContent).toContain("U. Player");
     expect(screen.getAllByTitle("Probability of remaining available at your next pick")[0].textContent).toContain("%");
     expect(screen.queryByText(/Gone by next pick/)).toBeNull();
 
@@ -250,7 +267,7 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     expect(screen.getAllByRole("listitem")[0].getAttribute("title")).toContain("More Active Games");
   });
 
-  it("keeps ordinary ranking while schedule-fit DUST insights are unavailable", () => {
+  it("keeps ordinary base-score ranking while schedule-fit DUST insights are unavailable", () => {
     const players = [
       { ...player(1, "Urgent Player", "C", 90), yahooAvgPick: 2 },
       { ...player(2, "Higher Value", "C", 100), yahooAvgPick: 100 },
@@ -258,7 +275,8 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     const metrics = new Map([["1", { value: 90, vbd: 9, vorp: 9, vona: 0 } as any], ["2", { value: 100, vbd: 10, vorp: 10, vona: 0 } as any]]);
     render(<SuggestedPicks players={players} vorpMetrics={metrics} currentPick={1} nextPickNumber={10}
         selectionHorizon={{ currentPick: 1, targetPick: 10, opposingPicks: 9 }} teamCount={1} dustInsights={new Map()} dustSort="schedule_fit" canUseProDust />);
-    expect(screen.getAllByRole("listitem")[0].getAttribute("title")).toContain("Urgent Player");
+    // Ordinary ranking is the base score (VORP): no availability boost.
+    expect(screen.getAllByRole("listitem")[0].getAttribute("title")).toContain("Higher Value");
   });
 
   it("labels weekly DUST lineup analysis as unavailable", () => {

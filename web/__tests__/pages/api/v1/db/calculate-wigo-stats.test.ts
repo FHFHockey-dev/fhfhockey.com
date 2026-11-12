@@ -494,6 +494,117 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     expect(career.ca_pts_per_60).toBeCloseTo(4 / (200 / 60));
   });
 
+  it("stores an unknown seasonal count as null, never 0, in STD, LY, 3YA and CA (A1)", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const game = recentGame("2026-10-23");
+    installRecentFrameMock([game], [game]);
+    const base = fromMock.getMockImplementation()!;
+    const wgoSeason = (season: string, goals: number | null, points: number | null) => ({
+      player_id: 8476453, season, games_played: 20, toi_per_game: 900,
+      goals, assists: 5, points, total_primary_assists: 3, shots: 40,
+      pp_goals: 0, pp_assists: 0, pp_points: 0, pp_toi: 1200, pp_toi_pct_per_game: 0.2,
+      hits: 10, blocked_shots: 5, penalty_minutes: 4
+    });
+    const sources: Record<string, any[]> = {
+      // This season: WGO goals and points unknown; NST ixG unknown over 250 NST minutes.
+      wgo_skater_stats_totals: [wgoSeason("20262027", null, null), wgoSeason("20252026", 6, 11)],
+      nst_seasonal_individual_counts: [
+        { season: 20262027, strength: "all", gp: 20, toi: 250, ixg: null, icf: 60, ihdcf: 8, iscfs: 20 },
+        { season: 20252026, strength: "all", gp: 20, toi: 300, ixg: 3, icf: 70, ihdcf: 9, iscfs: 22 }
+      ],
+      nst_seasonal_on_ice_counts: []
+    };
+    const written: Record<string, any[]> = {};
+    fromMock.mockImplementation((table: string) => {
+      const query = base(table);
+      let perPlayer = false;
+      const eq = query.eq;
+      query.eq = (key: string, value: any) => { if (key === "player_id") perPlayer = true; return eq(key, value); };
+      const listThen = query.then;
+      if (sources[table]) query.then = (resolve: (value: unknown) => unknown) => perPlayer
+        ? Promise.resolve({ data: sources[table], error: null }).then(resolve)
+        : listThen(resolve);
+      query.upsert = (rows: any[]) => { written[table] = rows; return Promise.resolve({ error: null }); };
+      return query;
+    });
+    expect((await runRecentFixture()).statusCode).toBe(200);
+    const career = written.wigo_career[0];
+    // Unknown inputs stay unknown in every period that includes the season.
+    for (const metric of ["g", "pts", "g_per_60", "pts_per_60", "pts1_per_60", "pts1_pct", "s_pct", "ixg", "ixg_per_60"]) {
+      expect(career[`std_${metric}`]).toBeNull();
+    }
+    expect(career.ca_ixg).toBe(3); // CA excludes the current season
+    // Known metrics in the same season are unaffected (metric-level support).
+    expect(career.std_icf).toBe(60);
+    expect(career.std_icf_per_60).toBeCloseTo(60 / (250 / 60));
+    expect(career.std_a).toBe(5);
+    expect(career.std_sog).toBe(40);
+    // Last season is fully known.
+    expect(career.ly_g).toBe(6);
+    expect(career.ly_ixg).toBe(3);
+    expect(career.ly_ixg_per_60).toBeCloseTo(3 / (300 / 60));
+  });
+
+  it("pools recent PP% by PP time, and leaves it unknown when a game's team PP time is unknown (D11)", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    // Team PP seconds: 120 / 0.5 = 240 and 30 / 0.1 = 300. Pooled 150 / 540; the old mean was 0.30.
+    const a = { ...recentGame("2026-10-23", 20262027, 1), pp_toi: 120, pp_toi_pct_per_game: 0.5 };
+    const b = { ...recentGame("2026-10-25", 20262027, 2), pp_toi: 30, pp_toi_pct_per_game: 0.1 };
+    const { writes } = installRecentFrameMock([a, b], [a, b]);
+    expect((await runRecentFixture()).statusCode).toBe(200);
+    expect(writes.wigo_recent[0].l5_pp_pct).toBeCloseTo(150 / 540, 10);
+
+    // No PP time and a 0 share: the team's PP time that night is unknown.
+    const c = { ...recentGame("2026-10-27", 20262027, 3), pp_toi: 0, pp_toi_pct_per_game: 0 };
+    const second = installRecentFrameMock([a, b, c], [a, b, c]);
+    expect((await runRecentFixture()).statusCode).toBe(200);
+    expect(second.writes.wigo_recent[0].l5_pp_pct).toBeNull();
+  });
+
+  it("takes season GP from WGO, not the larger source count, and withholds IPP over mismatched games (D11)", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const game = recentGame("2026-10-23");
+    installRecentFrameMock([game], [game]);
+    const base = fromMock.getMockImplementation()!;
+    const wgoSeason = (season: string, gp: number) => ({
+      player_id: 8476453, season, games_played: gp, toi_per_game: 900,
+      goals: 20, assists: 30, points: 50, total_primary_assists: 20, shots: 200,
+      pp_goals: 5, pp_assists: 5, pp_points: 10, pp_toi: 6000, pp_toi_pct_per_game: 0.4,
+      hits: 40, blocked_shots: 20, penalty_minutes: 10
+    });
+    const sources: Record<string, any[]> = {
+      wgo_skater_stats_totals: [wgoSeason("20262027", 67), wgoSeason("20252026", 80)],
+      nst_seasonal_individual_counts: [
+        // This season NST counted 99 games (playoffs included); WGO says 67.
+        { season: 20262027, strength: "all", gp: 99, toi: 1200, ixg: 15, icf: 300, ihdcf: 40, iscfs: 90 },
+        { season: 20252026, strength: "all", gp: 80, toi: 1400, ixg: 16, icf: 320, ihdcf: 42, iscfs: 95 }
+      ],
+      nst_seasonal_on_ice_counts: [
+        { season: 20262027, strength: "all", gp: 66, toi: 1200, gf: 70, sf: 700, off_zone_starts: 300, def_zone_starts: 200 },
+        { season: 20252026, strength: "all", gp: 80, toi: 1400, gf: 80, sf: 800, off_zone_starts: 320, def_zone_starts: 220 }
+      ]
+    };
+    const written: Record<string, any[]> = {};
+    fromMock.mockImplementation((table: string) => {
+      const query = base(table);
+      let perPlayer = false;
+      const eq = query.eq;
+      query.eq = (key: string, value: any) => { if (key === "player_id") perPlayer = true; return eq(key, value); };
+      const listThen = query.then;
+      if (sources[table]) query.then = (resolve: (value: unknown) => unknown) => perPlayer
+        ? Promise.resolve({ data: sources[table], error: null }).then(resolve)
+        : listThen(resolve);
+      query.upsert = (rows: any[]) => { written[table] = rows; return Promise.resolve({ error: null }); };
+      return query;
+    });
+    expect((await runRecentFixture()).statusCode).toBe(200);
+    const career = written.wigo_career[0];
+    expect(career.std_gp).toBe(67); // before the fix: 99
+    expect(career.std_ipp).toBeNull(); // 67 WGO games of points over 66 NST on-ice games
+    expect(career.ly_gp).toBe(80);
+    expect(career.ly_ipp).toBeCloseTo(50 / 80, 10); // matched games
+  });
+
   it("GP-weights PP% across seasons in 3YA and CA", async () => {
     getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
     const game = recentGame("2026-10-23");

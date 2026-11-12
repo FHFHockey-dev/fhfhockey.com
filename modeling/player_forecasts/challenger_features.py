@@ -131,7 +131,12 @@ def build_validation_features(
         position = str(row["position"])
         player_id = int(row["player_id"])
         outcomes = _row_outcomes(row)
+        split_complete = row.get("official_assist_decomposition_complete") is True
         for target in calculation_targets:
+            if target in {"primary_assists", "secondary_assists"} and not split_complete:
+                # M-PFC-110: an unavailable A1/A2 split is unknown, not an
+                # observed 0 in the split histories; total assists keep the row.
+                continue
             outcome = outcomes[target]
             entry = (instant, outcome, exposure)
             player_entries[(player_id, target)].append(entry)
@@ -255,6 +260,7 @@ def build_validation_features(
         "maximumTeamGameHorizon": 10,
         "targets": list(requested_targets),
         "assistDecompositionExcludedRows": assist_decomposition_excluded,
+        "assistSplitHistoryPolicy": "complete_official_decomposition_only_v2",
         "scheduleSemantics": "final_schedule_reconstructed_validation",
         "availabilityTargetsIncluded": False,
         "promotionEligible": False,

@@ -44,6 +44,8 @@ function mount() {
 async function settled() {
   await waitFor(() => expect(screen.queryByText("Loading...")).toBeNull());
 }
+// Decision 42 page: the panel shows only same-book de-vigged market odds, and only before the game starts.
+const MARKET_PANEL = "Market win probability";
 function panel(name: string) {
   return within(screen.getByRole("heading", { name }).closest("section")!);
 }
@@ -156,9 +158,9 @@ describe("stats game route state and missing values", () => {
     rail = { seasonSeries: [game()] };
     mount();
     await settled();
-    expect(panel("Implied Win Probability").getAllByText("Score: 0")).toHaveLength(2);
-    expect(panel("Implied Win Probability").queryByText("BOS 50%")).toBeNull();
-    expect(panel("Implied Win Probability").getByText("Market odds unavailable.")).toBeTruthy();
+    expect(panel(MARKET_PANEL).getAllByText("Score: 0")).toHaveLength(2);
+    expect(panel(MARKET_PANEL).queryByText("BOS 50%")).toBeNull();
+    expect(panel(MARKET_PANEL).getByText("Market odds unavailable.")).toBeTruthy();
     expect(panel("Recent Head-to-Head").queryByText("TOR Win")).toBeNull();
     expect(panel("Recent Head-to-Head").getByText("Result unavailable")).toBeTruthy();
   });
@@ -183,22 +185,45 @@ describe("stats game route state and missing values", () => {
 
   it.each([
     ["-150", "+130", "BOS 58%", "TOR 42%"],
-    ["2.0", "3.0", "BOS 60%", "TOR 40%"],
+    ["1.65", "2.40", "BOS 59%", "TOR 41%"],
   ])("retains valid market probabilities from %s / %s", async (away, home, awayLabel, homeLabel) => {
-    schedule = { gameWeek: [{ games: [{ ...game(), startTimeUTC: "2026-10-15T23:00:00Z", awayTeam: { odds: [{ providerId: 9, value: away }] }, homeTeam: { odds: [{ providerId: 9, value: home }] } }] }] };
+    boxscore = { success: true, data: game("FUT") };
+    schedule = { gameWeek: [{ games: [{ ...game("FUT"), startTimeUTC: "2026-10-15T23:00:00Z", awayTeam: { odds: [{ providerId: 9, value: away }] }, homeTeam: { odds: [{ providerId: 9, value: home }] } }] }] };
     mount();
     expect(await screen.findByText(awayLabel)).toBeTruthy();
-    expect(panel("Implied Win Probability").getByText(homeLabel)).toBeTruthy();
-    expect(panel("Implied Win Probability").getAllByText("Score: 0")).toHaveLength(2);
+    expect(panel(MARKET_PANEL).getByText(homeLabel)).toBeTruthy();
+    expect(panel(MARKET_PANEL).getAllByText("Score: 0")).toHaveLength(2);
   });
 
-  it.each([undefined, "invalid", "+120junk", "1", "-0"])("does not substitute a probability for absent/invalid odds: %s", async (value) => {
-    schedule = { gameWeek: [{ games: [{ ...game(), startTimeUTC: "2026-10-15T23:00:00Z", awayTeam: { odds: [{ providerId: 9, value }] }, homeTeam: { odds: [{ providerId: 9, value: "+130" }] } }] }] };
+  it("does not show a market probability once the game has started, even with a valid same-book pair", async () => {
+    schedule = { gameWeek: [{ games: [{ ...game("OFF"), startTimeUTC: "2026-10-15T23:00:00Z", awayTeam: { odds: [{ providerId: 9, value: "-150" }] }, homeTeam: { odds: [{ providerId: 9, value: "+130" }] } }] }] };
     mount();
     await settled();
     await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => url.includes("/schedule/"))).toBe(true));
     await act(async () => {});
-    expect(panel("Implied Win Probability").getByText("Market odds unavailable.")).toBeTruthy();
+    expect(panel(MARKET_PANEL).queryByText("BOS 58%")).toBeNull();
+    expect(panel(MARKET_PANEL).getByText("Market odds unavailable.")).toBeTruthy();
+  });
+
+  it("does not show a probability for an implausible book (2.0 / 3.0 implies 83% in total)", async () => {
+    boxscore = { success: true, data: game("FUT") };
+    schedule = { gameWeek: [{ games: [{ ...game("FUT"), startTimeUTC: "2026-10-15T23:00:00Z", awayTeam: { odds: [{ providerId: 9, value: "2.0" }] }, homeTeam: { odds: [{ providerId: 9, value: "3.0" }] } }] }] };
+    mount();
+    await settled();
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => url.includes("/schedule/"))).toBe(true));
+    await act(async () => {});
+    expect(panel(MARKET_PANEL).queryByText("BOS 60%")).toBeNull();
+    expect(panel(MARKET_PANEL).getByText("Market odds unavailable.")).toBeTruthy();
+  });
+
+  it.each([undefined, "invalid", "+120junk", "1", "-0"])("does not substitute a probability for absent/invalid odds: %s", async (value) => {
+    boxscore = { success: true, data: game("FUT") };
+    schedule = { gameWeek: [{ games: [{ ...game("FUT"), startTimeUTC: "2026-10-15T23:00:00Z", awayTeam: { odds: [{ providerId: 9, value }] }, homeTeam: { odds: [{ providerId: 9, value: "+130" }] } }] }] };
+    mount();
+    await settled();
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => url.includes("/schedule/"))).toBe(true));
+    await act(async () => {});
+    expect(panel(MARKET_PANEL).getByText("Market odds unavailable.")).toBeTruthy();
   });
 
   it("preserves separate same-name players by ID and distinguishes zero from unknown counts", async () => {

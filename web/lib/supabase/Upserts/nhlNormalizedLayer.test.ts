@@ -273,21 +273,23 @@ describe("nhlNormalizedLayer", () => {
     ]);
     const attribution = buildOnIceAttributionForEvent(event, stints, 28, 4);
 
+    // The away scorer's own net is empty: the goal keeps its official
+    // strength (decision 84) and is not an empty-net event.
     expect(event).toMatchObject({
       strength_exact: "6v5",
-      strength_state: "EN",
+      strength_state: "EV",
       event_owner_side: "away",
       scoring_player_id: 11,
     });
     expect(evaluateNormalizedEventInclusion(event)).toMatchObject({
       includeInParity: true,
       includeInOnIceParity: true,
-      isEmptyNetEvent: true,
+      isEmptyNetEvent: false,
     });
     expect(attribution).toMatchObject({
       stintFound: true,
       awayTeam: {
-        strengthState: "EN",
+        strengthState: "EV",
         playerIds: [11, 12, 13],
       },
       homeTeam: {

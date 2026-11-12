@@ -9,7 +9,8 @@ import type { SharePlayer } from "./types";
  * - Goalies (TJ: goalies too; rules proposed by SS1 and confirmed by TJ 2026-10-25): hot = quality starts in ≥ 4 of 5
  *   or L5 SV% ≥ .930; cold = quality starts in ≤ 1 of 5 or L5 SV% ≤ .870.
  * Pre-L5 baselines exclude the L5 games: (season total − L5 total) ÷ (season GP − 5). Fewer than 5 recent games
- * shows no icon; a criterion with missing data simply doesn't fire, so missing data never yields an icon. Hot wins
+ * shows no icon; a criterion with missing data simply doesn't fire, so missing data never yields an icon (an unknown
+ * QS count or unmatched saves/shots is no criterion, W3-3 A1). Hot wins
  * when a player meets both.
  */
 export const STREAK = {
@@ -38,10 +39,11 @@ export function streakOf(player: Pick<SharePlayer, "group" | "recent">, context:
   const recent = player.recent;
   if (!recent || recent.games < STREAK.games) return null;
   if (recent.kind === "goalie") {
-    const savePct = recent.shotsAgainst > 0 ? recent.saves / recent.shotsAgainst : null, sv = (value: number) => `${value.toFixed(3).replace(/^0/, "")} SV%`;
-    const hot = [...(recent.qualityStarts >= STREAK.goalie.hot.qualityStarts ? [`${recent.qualityStarts}/5 QS`] : []), ...(savePct !== null && savePct >= STREAK.goalie.hot.savePct - EPSILON ? [sv(savePct)] : [])];
+    const savePct = recent.saves !== null && recent.shotsAgainst !== null && recent.shotsAgainst > 0 ? recent.saves / recent.shotsAgainst : null, sv = (value: number) => `${value.toFixed(3).replace(/^0/, "")} SV%`;
+    const qs = recent.qualityStarts;
+    const hot = [...(qs !== null && qs >= STREAK.goalie.hot.qualityStarts ? [`${qs}/5 QS`] : []), ...(savePct !== null && savePct >= STREAK.goalie.hot.savePct - EPSILON ? [sv(savePct)] : [])];
     if (hot.length) return { kind: "hot", reasons: hot };
-    const cold = [...(recent.qualityStarts <= STREAK.goalie.cold.qualityStarts ? [`${recent.qualityStarts}/5 QS`] : []), ...(savePct !== null && savePct <= STREAK.goalie.cold.savePct + EPSILON ? [sv(savePct)] : [])];
+    const cold = [...(qs !== null && qs <= STREAK.goalie.cold.qualityStarts ? [`${qs}/5 QS`] : []), ...(savePct !== null && savePct <= STREAK.goalie.cold.savePct + EPSILON ? [sv(savePct)] : [])];
     return cold.length ? { kind: "cold", reasons: cold } : null;
   }
   const games = recent.games, perGame = (total: number | null) => (total === null ? null : total / games);

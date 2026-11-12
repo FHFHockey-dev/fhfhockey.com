@@ -200,3 +200,45 @@ describe("oddsSourceIngestion", () => {
     expect(normalized.provenanceRows).toHaveLength(1);
   });
 });
+
+describe("NHL schedule odds price format (declared at the source boundary)", () => {
+  const normalize = (homeValue: string, awayValue: string) =>
+    normalizeNhlScheduleOdds({
+      snapshotDate: "2026-04-21",
+      scheduledGames,
+      scheduleDaily: {
+        oddsPartners: [{ partnerId: 3, name: "Bet365" }],
+        gameWeek: [{
+          date: "2026-04-21",
+          games: [{
+            id: 2026020001,
+            homeTeam: { id: 14, abbreviation: "TBL", abbrev: "TBL", odds: [{ providerId: 3, value: homeValue }] },
+            awayTeam: { id: 8, abbreviation: "MTL", abbrev: "MTL", odds: [{ providerId: 3, value: awayValue }] },
+          }],
+        }],
+      } as any,
+    }).rows;
+
+  it("keeps decimal prices as decimals instead of truncating 1.75 to 1", () => {
+    const [home, away] = normalize("1.75", "2.10");
+    expect(home?.price_american).toBeNull();
+    expect(home?.implied_probability).toBeCloseTo(1 / 1.75, 12);
+    expect(home?.metadata).toMatchObject({ price_format: "decimal", price_decimal: 1.75 });
+    expect(away?.implied_probability).toBeCloseTo(1 / 2.1, 12);
+    expect(away?.metadata).toMatchObject({ price_format: "decimal", price_decimal: 2.1 });
+  });
+
+  it("reads signed integers as American prices", () => {
+    const [home, away] = normalize("-150", "+130");
+    expect(home?.price_american).toBe(-150);
+    expect(home?.implied_probability).toBeCloseTo(150 / 250, 12);
+    expect(home?.metadata).toMatchObject({ price_format: "american" });
+    expect(away?.price_american).toBe(130);
+  });
+
+  it("leaves an unsigned integer (ambiguous format) unknown", () => {
+    const [home] = normalize("150", "-170");
+    expect(home?.price_american).toBeNull();
+    expect(home?.implied_probability).toBeNull();
+  });
+});

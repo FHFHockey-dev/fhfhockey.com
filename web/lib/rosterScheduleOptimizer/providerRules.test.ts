@@ -112,6 +112,9 @@ function weeklySnapshot() {
 describe("manager-supplied weekly windows", () => {
   it("retires the resolved missing-window blocker and makes legal weekly net AGP available without forecasts", () => {
     const snapshot = weeklySnapshot();
+    // A bench place for the add: without forecasts the rostered player's value is unknown, so he is never a proposed
+    // drop (decisions 3, 47); the weekly-window check is about the add itself.
+    snapshot.rules.rosterSlots = { C: 1, BN: 1 };
     const before = JSON.stringify(snapshot);
     const result = supplementProviderRules(snapshot, { lineupPeriods: weeklyWindows });
     expect(result.snapshot.rules.unsupported).not.toContain(weeklyWindowLimitation);

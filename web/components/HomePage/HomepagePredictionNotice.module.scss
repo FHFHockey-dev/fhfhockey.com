@@ -1,0 +1,12 @@
+@use "styles/vars" as v;
+
+// Decision 42 caption: muted fine print under the slate, never styled as a
+// prediction or an error.
+.notice {
+  margin: 0;
+  padding: 0 2px;
+  color: v.$text-secondary;
+  font-family: v.$font-family-primary;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}

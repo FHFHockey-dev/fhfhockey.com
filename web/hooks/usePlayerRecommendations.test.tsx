@@ -15,7 +15,8 @@ const player = (playerId: number, position: string) =>
   }) as any;
 
 describe("usePlayerRecommendations", () => {
-  it("combines VBD and VONA and applies grouped FWD need", () => {
+  it("ranks on VORP with VONA kept separate, and applies grouped FWD need", () => {
+    // Decision 76: a larger VONA no longer lifts player 2 above player 1.
     const players = [player(1, "C,LW"), player(2, "D")];
     const metrics = new Map([
       ["1", { vbd: 10, vorp: 10, vona: 0 } as any],
@@ -35,16 +36,17 @@ describe("usePlayerRecommendations", () => {
       { initialProps: { needWeightEnabled: false } }
     );
 
-    expect(result.current.recommendations[0].player.playerId).toBe(2);
+    expect(result.current.recommendations.map((item) => item.score)).toEqual([10, 9]);
     rerender({ needWeightEnabled: true });
     expect(result.current.recommendations[0].player.playerId).toBe(1);
+    expect(result.current.recommendations[0].score).toBeGreaterThan(10);
     expect(result.current.recommendations[0].vorp).toBe(10);
     expect(result.current.recommendations[0].reasonTags).toEqual(
       expect.arrayContaining([
-        "VBD 10.0",
-        "VONA 0.0",
+        "VORP 10.0",
+        "VONA 0.0 (separate)",
         "Roster need 100%",
-        "Remaining pool"
+        "Frozen league reference"
       ])
     );
   });
@@ -58,7 +60,7 @@ describe("usePlayerRecommendations", () => {
 
   it("uses a separate personalized replacement map without changing the global map", () => {
     const global = new Map([["1", { vbd: 1, vorp: 10, vona: 0 } as any], ["2", { vbd: 2, vorp: 20, vona: 0 } as any]]);
-    const personalized = new Map([["1", { vbd: 4, vorp: 10, vona: 0 } as any], ["2", { vbd: 2, vorp: 20, vona: 0 } as any]]);
+    const personalized = new Map([["1", { vbd: 30, vorp: 30, vona: 0 } as any], ["2", { vbd: 20, vorp: 20, vona: 0 } as any]]);
     const { result } = renderHook(() => usePlayerRecommendations({
       players: [player(1, "C"), player(2, "D")], vorpMetrics: global,
       personalizedVorpMetrics: personalized, usePersonalizedReplacement: true,

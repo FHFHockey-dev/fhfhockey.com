@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
-import { candidateActivePoints, candidateHorizonPoints, gameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
+import { forecastCalendarPolicy, type AnyForecastCalendarPolicy } from "lib/player-forecasts/contributions";
+import { candidateActivePoints, candidateHorizonPoints, forecastPointsReader, gameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
 import { withCurrentPlanningRead } from "lib/rosterScheduleOptimizer/currentPlanningRead";
 import { currentRsoUsePolicy } from "lib/player-forecasts/rsoUsePolicy";
 import type { PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
@@ -55,11 +55,13 @@ describe("FORGE daily bridge", () => {
       stats: { GOALS: 0.35, ASSISTS: 0.45, POINTS: 0.8, PP_POINTS: 0.25, SHOTS_ON_GOAL: 3.1, HITS: 1.2, BLOCKED_SHOTS: 0.5,
         TIME_ON_ICE_PER_GAME: 18, PENALTY_MINUTES: null, PLUS_MINUS: null, FACEOFFS_WON: null } });
     expect(s1[0].issuedContext).toMatchObject({ playerId: "s1", gameId: "1", nhlPlayerId: 101, teamId: 10, scheduleRevision: "schedule-1-TOR", rosterRevision: "roster-s1" });
-    // Scratched from the latest run: a labelled 0 under his team's latest run, his last line kept as "if he plays".
+    // Scratched from the latest run: a labelled unknown under his team's latest run (decisions 3, 47), no planning use,
+    // his last line kept as "if he plays".
     const s2 = forecasts.filter(row => row.playerId === "s2");
     expect(s2.map(row => [row.gameId, reserveCodeOf(row), row.revisionId])).toEqual([["1", "skater:no_forge_line", `${FORGE_DAILY_BRIDGE_VERSION}:r2`],
       ["2", "skater:no_forge_line", `${FORGE_DAILY_BRIDGE_VERSION}:r2`]]);
-    expect(s2.every(row => Object.values(row.stats).every(value => value === 0) && row.conditionalStats?.GOALS === 0.35)).toBe(true);
+    expect(s2.every(row => Object.values(row.stats).every(value => value === null) && row.conditionalStats?.GOALS === 0.35
+      && Object.values(row.allowedUses!).every(use => use === false))).toBe(true);
     // Moved to a team with no proven FORGE run: still no forecast (nothing proves a 0 for his team).
     expect(forecasts.some(row => row.playerId === "s3")).toBe(false);
   });
@@ -143,8 +145,53 @@ describe("FORGE daily bridge", () => {
     expect(goalie("g2", "1").startProbability).toBeCloseTo(0.2);
     // g2 has no FORGE line of his own, so the team's latest per-start line applies.
     expect(goalie("g2", "1").stats.SAVES_GOALIE).toBeCloseTo(5);
-    expect(goalie("g1", "1").conditionalStats).toMatchObject({ SAVES_GOALIE: 25, WINS_GOALIE: 0.55, LOSSES_GOALIE: 0.45 });
+    expect(goalie("g1", "1").conditionalStats).toMatchObject({ SAVES_GOALIE: 25, WINS_GOALIE: 0.55 });
     expect([goalie("g1", "2").startProbability, goalie("g2", "2").startProbability]).toEqual([0.7, 0.3]);
+  });
+
+  it("reads FORGE's per-row availability state: out is 0 for that game, uncertain or unknown is unknown (L9c, decision 132)", () => {
+    const withState = (state?: string, gameId = 1) => {
+      const base = inputs();
+      base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2"
+        ? { ...row, ...(state ? { availability_state: state, availability_game_id: String(gameId) } : {}) } : row);
+      const { forecasts } = buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy);
+      return ["1", "2"].map(gameId => forecasts.find(row => row.playerId === "s1" && row.gameId === gameId)!)
+        .map(row => ({ goals: row.stats.GOALS, code: reserveCodeOf(row), ifPlays: row.conditionalStats?.GOALS ?? null, totals: row.allowedUses?.totals }));
+    };
+    const line = { goals: 0.35, code: null, ifPlays: null, totals: true };
+    // Older runs (no field) and a projected lineup read the line as today.
+    expect(withState()).toEqual([line, line]);
+    expect(withState("projected_lineup")).toEqual([line, line]);
+    // Out for game 1: a real 0 there with his "if he plays" line kept; game 2 is unknown, never his full line.
+    expect(withState("confirmed_out")).toEqual([{ goals: 0, code: "skater:roster_out", ifPlays: 0.35, totals: true },
+      { goals: null, code: "skater:availability_unknown", ifPlays: 0.35, totals: false }]);
+    // Day-to-day (no qualified participation chance) and unknown: unknown unconditional, line kept as "if he plays".
+    expect(withState("uncertain").map(row => [row.goals, row.code, row.ifPlays, row.totals]))
+      .toEqual([[null, "skater:availability_uncertain", 0.35, false], [null, "skater:availability_uncertain", 0.35, false]]);
+    expect(withState("unknown").map(row => [row.goals, row.code])).toEqual([[null, "skater:availability_unknown"], [null, "skater:availability_unknown"]]);
+  });
+
+  it("keeps goalie regulation losses and OT losses unknown, never L = 1 − W (W1 P0 #28, decision 46)", () => {
+    const { forecasts, limitations } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+    const g1 = forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!;
+    // If he starts: credited W 0.55 (team win × decision share). The other 0.45 is regulation L + OT/SO L + no decision;
+    // with no fitted overtime split and Yahoo's L/OTL mapping unverified, neither L nor OTL is known.
+    expect(g1.conditionalStats!.WINS_GOALIE).toBe(0.55);
+    expect(g1.conditionalStats!.LOSSES_GOALIE).toBeNull();
+    expect(g1.conditionalStats!.OTL_GOALIE).toBeNull();
+    // Unconditional: W scales by his start chance; L and OTL stay unknown rather than 0.8 × 0.45 = 0.36 of losses.
+    expect(g1.stats.WINS_GOALIE).toBeCloseTo(0.8 * 0.55, 6);
+    expect(g1.stats.LOSSES_GOALIE).toBeNull();
+    expect(g1.stats.OTL_GOALIE).toBeNull();
+    // Conservation: the known decision mass never exceeds the start probability (no mass invented for L).
+    expect(g1.stats.WINS_GOALIE! + (g1.stats.LOSSES_GOALIE ?? 0) + (g1.stats.OTL_GOALIE ?? 0)).toBeLessThanOrEqual(g1.startProbability! + 1e-9);
+    expect(limitations.some(text => text.startsWith("Goalie losses: regulation L and OT/SO L are unknown"))).toBe(true);
+    // At the planner reader: a league scoring W reads the goalie's points; one scoring L reads them as unknown, not 1 − W.
+    const snapshot = { players, forecasts, context: { asOf: now.toISOString() },
+      rules: { scoring: { mode: "points", weights: { WINS_GOALIE: 5 }, categories: [] } } } as unknown as PlanningSnapshot;
+    expect(forecastPointsReader(snapshot)("g1", "1")).toBeCloseTo(5 * 0.8 * 0.55, 6);
+    snapshot.rules.scoring.weights = { WINS_GOALIE: 5, LOSSES_GOALIE: -2 };
+    expect(forecastPointsReader(snapshot)("g1", "1")).toBeNull();
   });
 
   describe("external-input exclusion proof", () => {
@@ -556,7 +603,7 @@ describe("FORGE daily bridge", () => {
       it("thin the starter on a back-to-back without handing his chance to known teammates past an unknown one", () => {
         const teamGames = [{ id: 2026020101, date: "2026-10-19", homeTeamId: 10, awayTeamId: 8 }, { id: 2026020102, date: "2026-10-20", homeTeamId: 10, awayTeamId: 8 }];
         const all = run(known([201, 0.6], [202, 0.4]), players, { teamGames });
-        expect([all.chance("g1"), all.chance("g2")]).toEqual([0.33, 0.67]);
+        expect([all.chance("g1"), all.chance("g2")]).toEqual([expect.closeTo(0.33, 12), expect.closeTo(0.67, 12)]);
         const { chance } = run(known([201, 0.6], [202, 0.3]), [...players, g3], { teamGames });
         expect([chance("g1"), chance("g2"), chance("g3")]).toEqual([0.33, 0.3, null]);
       });
@@ -627,6 +674,53 @@ describe("FORGE daily bridge", () => {
     expect(row.stats.SAVES_GOALIE).toBeCloseTo(25 * expected);
     expect(row.stats.GOALS_AGAINST_GOALIE).toBeCloseTo(2.5 * expected);
     expect(forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!.startProbability).toBeCloseTo(1 - expected);
+  });
+
+  it("keeps SA = SV + GA when a goalie line is moved to a new opponent (BC W1-11 A re-aim, Astra PR1)", () => {
+    const base = inputs();
+    // FORGE projected g1's 10-19 game against MTL; game 2 (10-21) is against SJS, a stronger attack.
+    base.goalies = base.goalies.map(row => ({ ...row, opponent_team_id: 8 }));
+    const opponentGames = games.map(game => game.id === "2" ? { ...game, opponent: "SJS" } : game.id === "1" ? { ...game, opponent: "MTL" } : game);
+    const prior = (team_abbrev: string, xga_per_game: number, xgf_per_game: number) =>
+      ({ team_abbrev, date: "2026-10-19", games_played: 50, xga: 50 * xga_per_game, xga_per_game, xgf_per_game });
+    const teamPriors = [prior("TOR", 2.9, 3), prior("MTL", 2.6, 2.4), prior("SJS", 3.5, 3.7)];
+    const { forecasts } = buildForgeDailyBridgeForecasts({ ...base, teamPriors }, players, opponentGames, now, 20262027, policy);
+    const g1 = forecasts.find(row => row.playerId === "g1" && row.gameId === "2")!;
+    const line = g1.conditionalStats!;
+    // Re-aimed: shots and goals against move by different factors.
+    expect(line.SHOTS_AGAINST_GOALIE).not.toBe(27.5);
+    expect(line.GOALS_AGAINST_GOALIE! / 2.5).not.toBeCloseTo(line.SHOTS_AGAINST_GOALIE! / 27.5, 3);
+    for (const stats of [line, g1.stats]) {
+      expect(stats.GOALS_AGAINST_GOALIE!).toBeLessThanOrEqual(stats.SHOTS_AGAINST_GOALIE!);
+      expect(stats.SAVES_GOALIE! + stats.GOALS_AGAINST_GOALIE! - stats.SHOTS_AGAINST_GOALIE!).toBeCloseTo(0, 9);
+    }
+  });
+
+  it("follows the calendar policy's date basis: v2 counts a late game by its NHL schedule date (decision 127)", () => {
+    // TOR's 10-19 game starts 03:00Z on 10-20 (a late start). At 18:00Z on 10-19 with a one-day window, v1 (UTC days) puts
+    // it at lead 1, outside; v2 uses its schedule date 10-19, lead 0, inside.
+    const late = [game("1", "TOR", "2026-10-20T03:00:00Z")].map(row => ({ ...row, date: "2026-10-19" }));
+    const s1 = (calendar: AnyForecastCalendarPolicy) => buildForgeDailyBridgeForecasts(inputs(), players, late, now, 20262027, calendar)
+      .forecasts.filter(row => row.playerId === "s1").map(row => row.gameId);
+    expect(s1(forecastCalendarPolicy(1))).toEqual([]);
+    expect(s1(forecastCalendarPolicy(1, "forecast-calendar-v2"))).toEqual(["1"]);
+  });
+
+  it("emits unrounded start probabilities, so a rounded-up group never exceeds 1 (W2-8 D2)", () => {
+    const base = inputs();
+    const g3 = member("g3", 203, "TOR", 10, "goalie");
+    // Astra's .33337 / .33337 / .33326 group: rounding each to 4 decimals gives 1.0001, which the resolver rejects.
+    base.goalieShares = [shareRow(201, 10, 2026020001, "2026-10-19", 0.33337), shareRow(202, 10, 2026020001, "2026-10-19", 0.33337),
+      shareRow(203, 10, 2026020001, "2026-10-19", 0.33326)];
+    const { forecasts } = buildForgeDailyBridgeForecasts(base, [...players, g3], games, now, 20262027, policy);
+    const group = forecasts.filter(row => row.gameId === "2" && ["g1", "g2", "g3"].includes(row.playerId));
+    expect(group.map(row => row.startProbability)).toEqual([0.33337, 0.33337, 0.33326].map(value => expect.closeTo(value, 12)));
+    const mass = group.reduce((sum, row) => sum + row.startProbability!, 0);
+    expect(mass).toBeLessThanOrEqual(1 + 1e-12);
+    // Through the wire too: the client rebuilds the same unrounded values.
+    const { wire } = compactBridgeForecasts(forecasts, { players: [...players, g3], games }, 20262027);
+    const rebuilt = expandBridgeForecasts(JSON.parse(JSON.stringify(wire)), { players: [...players, g3], games });
+    expect(rebuilt.filter(row => row.gameId === "2" && row.playerId.startsWith("g")).reduce((sum, row) => sum + row.startProbability!, 0)).toBeLessThanOrEqual(1 + 1e-12);
   });
 
   it("moves future games to their opponent with FORGE's team-strength adjustment", () => {
@@ -754,6 +848,18 @@ describe("FORGE daily bridge", () => {
       .toBeCloseTo(STARTER_DECISION_SHARE * win("5", "MTL")!.probability, 4);
   });
 
+  it("joins nhl_team_data on its NST season once migration 129 adds it, and reads the old shape as before (W2-1 C2)", () => {
+    // Current season lags a game (xga / per-game = 49 vs 50 GP); an old season row matches GP exactly.
+    const current = { team_abbrev: "TOR", date: "2026-10-19", games_played: 50, xga: 147, xga_per_game: 3, xgf_per_game: 3.1, nst_season: 20262027 };
+    const old = { team_abbrev: "TOR", date: "2026-10-19", games_played: 50, xga: 125, xga_per_game: 2.5, xgf_per_game: 2.8, nst_season: 20252026 };
+    for (const rows of [[current, old], [old, current]]) expect(teamStrengthPriors(rows, [], 20262027).get("TOR")).toMatchObject({ xgaPerGame: 3, xgfPerGame: 3.1 });
+    // No row for this season (or a null NST season): no prior, never last season's row.
+    expect(teamStrengthPriors([old, { ...current, team_abbrev: "MTL", nst_season: null }], [], 20262027).size).toBe(0);
+    // Pre-129 rows have no nst_season: the games-played inference stays.
+    const legacy = [current, old].map(({ nst_season: _season, ...row }) => row);
+    expect(teamStrengthPriors(legacy, [], 20262027).get("TOR")).toMatchObject({ xgaPerGame: 2.5 });
+  });
+
   it("keeps the ledger's legacy xG win chance, which bridge forecasts no longer use", () => {
     const even = { source: "nhl_team_data" as const, sourceDate: null, xga: 90, xgaPerGame: 3, xgfPerGame: 3 };
     expect(ledgerTeamWin(even, even, true)).toBeGreaterThan(0.52);
@@ -804,8 +910,8 @@ describe("FORGE daily bridge", () => {
         new AbortController().signal, (input, _data, readError) => { expect(readError).toBeNull(); return candidateHorizonPoints(input); });
       expect(points.get("s1")).toBeCloseTo(2 * (0.35 * 3 + 0.45 * 2 + 0.25 + 3.1 * 0.5 + 7 * 0.1));
       expect(points.get("g1")).toBeCloseTo(0.8 * (25 * 0.2 + 0.55 * 4) + 0.7 * (25 * 0.2 + gameTwoWin * 4), 3);
-      // No current FORGE line: a known 0, never "—" (TJ, option B).
-      expect(points.get("s2")).toBe(0);
+      // No current FORGE line: unknown, never a fabricated 0 (decisions 3, 47 supersede TJ's option B).
+      expect(points.get("s2")).toBeNull();
     } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
   });
 
@@ -840,7 +946,7 @@ describe("FORGE daily bridge", () => {
       const [yahoo, plain] = [await read(snapshot), await read({ ...snapshot, players })];
       const row = (rows: typeof forecasts, id: string, gameId: string) => rows.find(item => item.playerId === id && item.gameId === gameId)!;
       expect(row(yahoo.rows, "g1", "1")).toMatchObject({ startProbability: 0.8, confirmedStart: false, stats: { SAVES_GOALIE: 20 } });
-      expect(row(yahoo.rows, "g2", "1").startProbability).toBe(0.2);
+      expect(row(yahoo.rows, "g2", "1").startProbability).toBeCloseTo(0.2, 12);
       expect(row(yahoo.rows, "g1", "2").startProbability).toBe(0.7);
       // Only the unchanged current server rows receive authority; serialized labels cannot change either goalie.
       expect(plain.points.get("g1")).toBeCloseTo(0.8 * 25 * 0.2 + 0.7 * 25 * 0.2);
@@ -957,7 +1063,7 @@ describe("FORGE daily bridge", () => {
   });
 });
 
-describe("No FORGE line: the labelled conservative 0 (TJ, option B)", () => {
+describe("No FORGE line: labelled unknown (decisions 3, 47; supersedes TJ's option B 0)", () => {
   const withheldRun = { run_id: "r3", as_of_date: "2026-10-20", created_at: "2026-10-20T12:00:00Z", git_sha: "ghi", external_input_proven: false };
   const s2Rows = (extra: Partial<ForgeDailyBridgeInputs> = {}) => buildForgeDailyBridgeForecasts({ ...inputs(), ...extra }, players, games, now, 20262027, policy);
 
@@ -967,8 +1073,9 @@ describe("No FORGE line: the labelled conservative 0 (TJ, option B)", () => {
     expect(rows.map(row => reserveCodeOf(row))).toEqual(["skater:no_forge_line", "skater:no_forge_line"]);
     for (const row of rows) {
       expect(row.conditionalStats).toMatchObject({ GOALS: 0.35, ASSISTS: 0.45 });
-      // Every key a complete 0, season-rated ones included, so the plan counts 0 rather than unknown.
-      expect(Object.values(row.stats).every(value => value === 0)).toBe(true);
+      // Every key unknown, season-rated ones included, and no planning use: the plan reads him as unknown, never 0.
+      expect(Object.values(row.stats).every(value => value === null)).toBe(true);
+      expect(row.allowedUses).toEqual({ assignment: false, totals: false, comparison: false, conditionalTieBreak: false });
       expect(row.appearanceProbability).toBeNull();
       expect(row.startProbability).toBeNull();
       expect(row.limitations.at(-1)).toBe(RESERVE_FORECAST_NOTES["skater:no_forge_line"]);
@@ -998,7 +1105,12 @@ describe("No FORGE line: the labelled conservative 0 (TJ, option B)", () => {
     const out = { gameId: 1, teamId: 10, playerId: 102, dimension: "availability" as const, value: "out", evidenceId: "e", sourceKey: "fixture",
       sourceUrl: null, publishedAt: "2026-10-19T15:00:00Z", receivedAt: "2026-10-19T15:00:00Z", confirmed: true };
     const after = s2Rows({ goalieNews: { assertions: [out], conflicts: [] } });
-    expect(after.forecasts.find(row => row.playerId === "s2" && row.gameId === "1")!.stats.GOALS).toBe(0);
+    const out1 = after.forecasts.find(row => row.playerId === "s2" && row.gameId === "1")!;
+    // A confirmed out is a real 0 (W2-8 D3) that keeps his "if he plays" line; his other game stays unknown.
+    expect(out1).toMatchObject({ stats: { GOALS: 0 }, conditionalStats: { GOALS: 0.35 }, appearanceProbability: 0 });
+    expect(reserveCodeOf(out1)).toBe("skater:confirmed_out");
+    expect(out1.allowedUses?.totals).toBe(true);
+    expect(after.forecasts.find(row => row.playerId === "s2" && row.gameId === "2")!.stats.GOALS).toBeNull();
     const real = (rows: typeof before.forecasts) => JSON.stringify(rows.filter(row => !reserveCodeOf(row)));
     expect(real(after.forecasts)).toBe(real(before.forecasts));
   });
@@ -1094,11 +1206,11 @@ describe("FORGE reserve lines in the bridge", () => {
       return { code: reserveCodeOf(row), appearance: row.appearanceProbability, points: points(row.stats) };
     };
     expect(state([lineupNews(1, 102, "ev", "L4", true)])).toEqual({ code: "skater:confirmed_lineup", appearance: 1, points: 0.47 });
-    expect(state([lineupNews(1, 102, "ev", "L4", false)])).toEqual({ code: "skater:projected_lineup", appearance: null, points: 0 });
+    expect(state([lineupNews(1, 102, "ev", "L4", false)])).toEqual({ code: "skater:projected_lineup", appearance: null, points: null });
     expect(state([lineupNews(1, 102, "availability", "out", true)])).toEqual({ code: "skater:confirmed_out", appearance: 0, points: 0 });
-    expect(state([lineupNews(1, 102, "availability", "out", false)])).toEqual({ code: "skater:projected_scratch", appearance: null, points: 0 });
-    expect(state([lineupNews(1, 102, "availability", "return", true)])).toEqual({ code: "skater:return_reported", appearance: null, points: 0 });
-    expect(state([lineupNews(1, 102, "availability", "uncertain", false)])).toEqual({ code: "skater:uncertain", appearance: null, points: 0 });
+    expect(state([lineupNews(1, 102, "availability", "out", false)])).toEqual({ code: "skater:projected_scratch", appearance: null, points: null });
+    expect(state([lineupNews(1, 102, "availability", "return", true)])).toEqual({ code: "skater:return_reported", appearance: null, points: null });
+    expect(state([lineupNews(1, 102, "availability", "uncertain", false)])).toEqual({ code: "skater:uncertain", appearance: null, points: null });
     // News for another game does not carry over.
     expect(state([lineupNews(2, 102, "ev", "L4", true)]).code).toBe("skater:no_lineup_evidence");
     expect(state([], { goalieNews: undefined }).code).toBe("skater:evidence_unavailable");
@@ -1139,7 +1251,7 @@ describe("FORGE reserve lines in the bridge", () => {
     expect(g2.stats.SAVES_GOALIE).toBeCloseTo(25 * g2.startProbability!, 3);
     expect(reserveCodeOf(g3Row)).toBe("goalie:start_unknown_team_line");
     expect(note(g3Row)).toMatch(/team starter's/);
-    expect(g3Row).toMatchObject({ startProbability: null, conditionalStats: { SAVES_GOALIE: 25 }, stats: { SAVES_GOALIE: 0 } });
+    expect(g3Row).toMatchObject({ startProbability: null, conditionalStats: { SAVES_GOALIE: 25 }, stats: { SAVES_GOALIE: null } });
     // g1's own line carries no label.
     expect(reserveCodeOf(forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!)).toBeNull();
     // A label is not a reserve line: a budget that withholds reserves keeps g2's labelled forecast.
@@ -1158,18 +1270,18 @@ describe("FORGE reserve lines in the bridge", () => {
     expect(legacy.forecasts.filter(row => row.playerId === "g2").every(row => reserveCodeOf(row) === null)).toBe(true);
   });
 
-  it("uses each goalie's own reserve line; an unknown start chance stays unknown and counts 0 starts", () => {
+  it("uses each goalie's own reserve line; an unknown start chance stays unknown, never 0 starts", () => {
     const { forecasts } = buildForgeDailyBridgeForecasts(reserveInputs(), [...players, g3], games, now, 20262027, policy);
     const g2 = forecasts.find(row => row.playerId === "g2" && row.gameId === "1")!, g3Row = forecasts.find(row => row.playerId === "g3" && row.gameId === "1")!;
     expect(g2.conditionalStats).toMatchObject({ SAVES_GOALIE: 22, GOALS_AGAINST_GOALIE: 3.1 });
     expect(g2.startProbability).toBeGreaterThan(0);
     expect(reserveCodeOf(g2)).toBeNull();
     expect(g3Row).toMatchObject({ startProbability: null, confirmedStart: false, conditionalStats: { SAVES_GOALIE: 22, GAMES_STARTED: 1 },
-      stats: { SAVES_GOALIE: 0, GAMES_STARTED: 0 } });
+      stats: { SAVES_GOALIE: null, GAMES_STARTED: null } });
     expect(g3Row.appearanceProbability).toBeUndefined();
     expect(note(g3Row)).toBe(RESERVE_FORECAST_NOTES["goalie:start_unknown"]);
-    // The pass off: no reserve rows are read, so g3 counts 0 starts on his team starter's line and s2 counts the "no
-    // FORGE line" 0 with his last line kept (TJ, option B).
+    // The pass off: no reserve rows are read, so g3 is unknown on his team starter's line and s2 gets the "no FORGE
+    // line" unknown with his last line kept.
     const legacy = buildForgeDailyBridgeForecasts({ ...reserveInputs(), reserves: undefined }, [...players, g3], games, now, 20262027, policy);
     expect(new Set(legacy.forecasts.filter(row => row.playerId === "g3").map(reserveCodeOf))).toEqual(new Set(["goalie:start_unknown_team_line"]));
     expect(new Set(legacy.forecasts.filter(row => row.playerId === "s2").map(reserveCodeOf))).toEqual(new Set(["skater:no_forge_line"]));
@@ -1218,9 +1330,9 @@ describe("FORGE reserve lines in the bridge", () => {
       } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
     };
     const unknown = await plan([]);
-    // A candidate with a known value (never "—"), and that value is the labelled 0, not his 2-goal line.
-    expect(unknown.horizon.get("s2")).toBe(0);
-    expect(unknown.active.get("s2")).toBe(0);
+    // Dressing unknown: his value is unknown (decisions 3, 47), never a fabricated 0 and never his 2-goal line.
+    expect(unknown.horizon.get("s2")).toBeNull();
+    expect(unknown.active.get("s2")).toBeNull();
     expect(unknown.horizon.get("s1")).toBeCloseTo(2 * (0.35 * 3 + 0.45 * 2));
     // The conditional line and its label reach the planner intact for the candidate card.
     const rows = unknown.rows.filter(row => row.playerId === "s2");

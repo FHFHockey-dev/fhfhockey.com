@@ -130,3 +130,8 @@ So the withheld label is correct today.
 - The upstream writers of the derived tables marked *(writer not traced)*, and the goalie start pipeline's own inputs.
 - Whether production currently runs with the bootstrap enabled.
 - Data content: whether the configured tables actually hold rows for current players.
+
+## Addendum (L9a, 2026-11-12)
+- `nhl_xg_model_registry`: read by `fetchActiveXgModel` (`lib/xg/modelRegistry.ts`) from `lib/projections/queries/team-context-queries.ts` to pin the in-house team xG prior to the single active approved model (L14 selector, decision 99). In-house model registry, not a fantasy source.
+- `nhl_xg_shot_features`: reachable only through `lib/xg/modelRegistry.ts` → `lib/xg/shotFeaturePersistence.ts` imports; the FORGE run does not call it. In-house xG features, not a fantasy source.
+- Also new since this audit, already in the audited set: `forge_goalie_game` and `goalie_start_projections` reads in `lib/projections/opponentGoalieQuality.ts` (opponent-goalie save quality, W1 P0 #21).

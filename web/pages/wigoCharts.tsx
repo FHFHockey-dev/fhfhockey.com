@@ -13,6 +13,10 @@ import {
 } from "components/WiGO/WigoDashboardSections";
 import useWigoPlayerDashboard from "hooks/useWigoPlayerDashboard";
 import { computeDiffColumn } from "components/WiGO/tableUtils";
+import {
+  WIGO_ST_MIN_MINUTES_DEFAULT,
+  type WigoSpecialTeamsStrength
+} from "utils/calculateWigoRatings";
 
 type TabKey = "overview" | "trends" | "percentiles" | "comparison";
 const VALID_TABS: TabKey[] = [
@@ -35,6 +39,13 @@ const WigoCharts: React.FC = () => {
   const [rightTimeframe, setRightTimeframe] =
     useState<keyof TableAggregateData>("CA");
   const [minGp, setMinGp] = useState<number>(10);
+  // PP/PK minutes floors shared by the rate panel and the ratings (decision 81).
+  const [stMinMinutes, setStMinMinutes] = useState(WIGO_ST_MIN_MINUTES_DEFAULT);
+  const handleStMinMinutesChange = useCallback(
+    (strength: WigoSpecialTeamsStrength, minutes: number) =>
+      setStMinMinutes((current) => ({ ...current, [strength]: minutes })),
+    []
+  );
   const [viewportWidth, setViewportWidth] = useState<number | null>(null);
   const [availableHeight, setAvailableHeight] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -160,6 +171,7 @@ const WigoCharts: React.FC = () => {
               teamIdForLog={teamIdForLog}
               currentSeasonId={currentSeasonId}
               minGp={minGp}
+              stMinMinutes={stMinMinutes}
               desktop
             />
             <WigoTrendsSection selectedPlayer={selectedPlayer} currentSeasonId={currentSeasonId} summaryOnly />
@@ -193,6 +205,8 @@ const WigoCharts: React.FC = () => {
               seasonId={currentSeasonId}
               minGp={minGp}
               onMinGpChange={setMinGp}
+              stMinMinutes={stMinMinutes}
+              onStMinMinutesChange={handleStMinMinutesChange}
               desktop
             />
           </div>
@@ -249,6 +263,8 @@ const WigoCharts: React.FC = () => {
                 seasonId={currentSeasonId}
                 minGp={minGp}
                 onMinGpChange={setMinGp}
+                stMinMinutes={stMinMinutes}
+                onStMinMinutesChange={handleStMinMinutesChange}
                 selectedPlayer={selectedPlayer}
                 teamIdForLog={teamIdForLog}
                 teamAbbreviation={teamAbbreviation}

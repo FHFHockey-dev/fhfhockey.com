@@ -123,4 +123,51 @@ describe("nhlEventInclusion", () => {
       isShootoutEvent: true,
     });
   });
+
+  it("detects a 1010 / 0101 penalty-shot attempt outside the shootout and never calls it empty net", () => {
+    for (const situation_code of ["1010", "0101"]) {
+      expect(
+        evaluateNormalizedEventInclusion(
+          createEvent({
+            situation_code,
+            strength_exact: situation_code === "1010" ? "0v1" : "1v0",
+            // v1 rows stored any pulled goalie digit as EN.
+            strength_state: "EN",
+            event_owner_side: situation_code === "1010" ? "home" : "away",
+          })
+        )
+      ).toMatchObject({
+        includeInParity: false,
+        exclusionReason: "penalty-shot",
+        isPenaltyShotEvent: true,
+        isEmptyNetEvent: false,
+      });
+    }
+  });
+
+  it("detects a penalty-shot infraction by its ps- desc key", () => {
+    expect(
+      evaluateNormalizedEventInclusion(
+        createEvent({
+          type_desc_key: "penalty",
+          penalty_desc_key: "ps-hooking-on-breakaway",
+          situation_code: "1551",
+        })
+      )
+    ).toMatchObject({ isPenaltyShotEvent: true, includeInParity: false });
+  });
+
+  it("flags EN only when the event owner attacks an empty net (decisions 7, 84)", () => {
+    // 1560: home pulled its goalie. A home shot is not EN even if a v1 row says so.
+    expect(
+      evaluateNormalizedEventInclusion(
+        createEvent({ situation_code: "1560", strength_state: "EN", event_owner_side: "home" })
+      ).isEmptyNetEvent
+    ).toBe(false);
+    expect(
+      evaluateNormalizedEventInclusion(
+        createEvent({ situation_code: "1560", strength_state: "EN", event_owner_side: "away" })
+      ).isEmptyNetEvent
+    ).toBe(true);
+  });
 });

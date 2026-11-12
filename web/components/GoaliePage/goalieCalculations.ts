@@ -63,6 +63,89 @@ export const isGoalieWeekEligible = (
   (goalieWeekStat.weekly_toi_seconds ?? 0) >=
     GOALIE_WEEK_MINIMUM_SAMPLE.toiSeconds;
 
+/**
+ * One goalie-week row from the NHL stats API goalie summary
+ * (`isAggregate=true&isGame=true`). Unit adapter (rule 17): the API's
+ * `timeOnIce` is in seconds.
+ */
+export interface NhlGoalieWeekSummaryRow {
+  gamesPlayed?: number | null;
+  gamesStarted?: number | null;
+  wins?: number | null;
+  losses?: number | null;
+  otLosses?: number | null;
+  saves?: number | null;
+  shotsAgainst?: number | null;
+  goalsAgainst?: number | null;
+  shutouts?: number | null;
+  timeOnIce?: number | null;
+}
+
+/**
+ * The week bar for the `/goalies` tiers (decision 97, W2-2 D8): the mean
+ * goalie-week among starters only (the same >= 1 start and >= 20 minutes rule
+ * that makes a goalie's own week eligible), so relief-only weeks do not lower
+ * it. SV% and GAA pool saves, shots, goals and seconds; an empty population or
+ * a zero denominator is unknown (null), never 0.
+ */
+export const buildLeagueWeeklyAverage = (
+  rows: NhlGoalieWeekSummaryRow[],
+  weekNumber: number,
+  matchupSeason: string,
+): LeagueWeeklyAverage | null => {
+  const starters = rows.filter(
+    (row) =>
+      (row.gamesStarted ?? 0) >= GOALIE_WEEK_MINIMUM_SAMPLE.starts &&
+      (row.timeOnIce ?? 0) >= GOALIE_WEEK_MINIMUM_SAMPLE.toiSeconds,
+  );
+  if (!starters.length) {
+    return null;
+  }
+
+  const total = (field: keyof NhlGoalieWeekSummaryRow) =>
+    starters.reduce((sum, row) => sum + (row[field] ?? 0), 0);
+  const totals = {
+    gamesPlayed: total("gamesPlayed"),
+    gamesStarted: total("gamesStarted"),
+    wins: total("wins"),
+    losses: total("losses"),
+    otLosses: total("otLosses"),
+    saves: total("saves"),
+    shotsAgainst: total("shotsAgainst"),
+    goalsAgainst: total("goalsAgainst"),
+    shutouts: total("shutouts"),
+    timeOnIce: total("timeOnIce"),
+  };
+  const goalieCount = starters.length;
+
+  return {
+    matchup_season: matchupSeason,
+    week: weekNumber,
+    total_league_saves: totals.saves,
+    total_league_sa: totals.shotsAgainst,
+    total_league_ga: totals.goalsAgainst,
+    total_league_toi_seconds: totals.timeOnIce,
+    avg_league_weekly_gp: totals.gamesPlayed / goalieCount,
+    avg_league_weekly_gs: totals.gamesStarted / goalieCount,
+    avg_league_weekly_wins: totals.wins / goalieCount,
+    avg_league_weekly_losses: totals.losses / goalieCount,
+    avg_league_weekly_ot_losses: totals.otLosses / goalieCount,
+    avg_league_weekly_saves: totals.saves / goalieCount,
+    avg_league_weekly_sa: totals.shotsAgainst / goalieCount,
+    avg_league_weekly_ga: totals.goalsAgainst / goalieCount,
+    avg_league_weekly_so: totals.shutouts / goalieCount,
+    avg_league_weekly_toi_seconds: totals.timeOnIce / goalieCount,
+    avg_league_weekly_sv_pct:
+      totals.shotsAgainst > 0 ? totals.saves / totals.shotsAgainst : null,
+    avg_league_weekly_gaa:
+      totals.timeOnIce > 0
+        ? (totals.goalsAgainst * 3600) / totals.timeOnIce
+        : null,
+    avg_league_weekly_saves_per_60: null,
+    avg_league_weekly_sa_per_60: null,
+  };
+};
+
 export const buildGoalieConsistencySummary = (
   outcomes: Array<{
     ranking: Ranking;
@@ -140,13 +223,16 @@ export const buildGoalieConsistencySummary = (
 // --- Helper Functions ---
 
 /**
- * Calculates the standard deviation of a list of numbers.
- * Returns 0 if the list has fewer than 2 elements.
+ * Sample standard deviation. Unknown (null) below two samples: one game or
+ * one week has no observed spread, which is not the same as zero spread
+ * (W2-2 D9).
  */
-export const calculateStandardDeviation = (numbers: number[]): number => {
+export const calculateStandardDeviation = (
+  numbers: number[],
+): number | null => {
   const n = numbers.length;
   if (n < 2) {
-    return 0; // Cannot calculate variance/stddev for less than 2 samples
+    return null;
   }
   const mean = numbers.reduce((a, b) => a + b, 0) / n;
   const variance = numbers.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1); // Use n-1 for sample variance
@@ -195,7 +281,71 @@ export const classifyGoalieWeekPercentage = (percentage: number): Ranking => {
   return "Abysmal";
 };
 
-// Calculate Weekly Ranking (vs League Average) - Keep for WoW
+/** A tie with the week bar earns half credit (decision 97): an all-tied week is Average. */
+export const GOALIE_WEEK_TIE_CREDIT = 0.5;
+
+/**
+ * Grade one goalie-week against the starter week bar (decision 97, W2-2 D8,
+ * PR-U4). Each compared stat scores 1 when better, 0.5 when tied, 0 when
+ * worse. A week with no comparable stat is unclassified (null), not Abysmal.
+ */
+export const gradeGoalieWeek = (
+  goalieWeekStat: GoalieWeeklyAggregate,
+  leagueAverage: LeagueWeeklyAverage,
+  selectedStatKeys: NumericGoalieStatKey[],
+  statColumns: StatColumn[],
+): { ranking: Ranking; percentage: number; points: number } | null => {
+  let credit = 0;
+  let comparableStats = 0;
+
+  selectedStatKeys.forEach((key) => {
+    const mapping = statColumns.find((column) => column.value === key);
+    const comparisonType = statMap[key];
+    if (!mapping?.dbFieldGoalie || !mapping?.dbFieldAverage || !comparisonType) {
+      return;
+    }
+
+    const goalieValue = goalieWeekStat[
+      mapping.dbFieldGoalie as keyof GoalieWeeklyAggregate
+    ] as number | null;
+    const averageValue = leagueAverage[
+      mapping.dbFieldAverage as keyof LeagueWeeklyAverage
+    ] as number | null;
+
+    if (
+      typeof goalieValue !== "number" ||
+      typeof averageValue !== "number" ||
+      !Number.isFinite(goalieValue) ||
+      !Number.isFinite(averageValue) ||
+      averageValue === 0
+    ) {
+      return;
+    }
+
+    comparableStats++;
+    if (goalieValue === averageValue) {
+      credit += GOALIE_WEEK_TIE_CREDIT;
+    } else if (
+      comparisonType === "larger"
+        ? goalieValue > averageValue
+        : goalieValue < averageValue
+    ) {
+      credit += 1;
+    }
+  });
+
+  if (comparableStats === 0) {
+    return null;
+  }
+
+  const percentage = (credit / comparableStats) * 100;
+  const ranking = classifyGoalieWeekPercentage(percentage);
+  return { ranking, percentage, points: rankingPoints[ranking] };
+};
+
+// Legacy grading kept unchanged for its remaining external reader
+// (`lib/socialShare/modules/goaliePeriod.ts`, ticketed to move to
+// `gradeGoalieWeek`). The `/goalies` page uses `gradeGoalieWeek`.
 export const calculateWeeklyRanking = (
   goalieWeekStat: GoalieWeeklyAggregate,
   leagueAverage: LeagueWeeklyAverage,
@@ -426,13 +576,17 @@ export const calculateGoalieRankings = (
         const currentResult = goalieResults.get(goalieId)!;
 
         // Calculate weekly rank/points for WoW
-        if (leagueAverage && isGoalieWeekEligible(goalieStat)) {
-          const { ranking, points } = calculateWeeklyRanking(
-            goalieStat,
-            leagueAverage,
-            selectedStatKeys, // Use UI selected stats for WoW ranking
-            statColumns,
-          );
+        const grade =
+          leagueAverage && isGoalieWeekEligible(goalieStat)
+            ? gradeGoalieWeek(
+                goalieStat,
+                leagueAverage,
+                selectedStatKeys, // Use UI selected stats for WoW ranking
+                statColumns,
+              )
+            : null;
+        if (grade) {
+          const { ranking, points } = grade;
           currentResult.weekCounts[ranking]++;
           currentResult.weeklyPoints.push(points);
           currentResult.weeklyOutcomes.push({
@@ -469,10 +623,7 @@ export const calculateGoalieRankings = (
 
     // Calculate GoG Variance (based on game fantasy points)
     // Requires at least 2 games to calculate StdDev
-    const gogVariance =
-      totalGames >= 2
-        ? calculateStandardDeviation(result.gameFantasyPoints)
-        : 0;
+    const gogVariance = calculateStandardDeviation(result.gameFantasyPoints);
 
     // Calculate percentage metrics (based on weekly points/ranks)
     const acceptableWeeks =

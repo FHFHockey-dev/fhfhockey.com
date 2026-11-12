@@ -16,6 +16,9 @@ export const calculateLinesAndPairs = (
   aggregatedData: PlayerData[],
   mode: "line-combination" | "full-roster",
 ): LinePairResult => {
+  // comboPoints weights (line 1-4 = 4/3/2/1, pair 1-3 = 3/2/1) are an FHFH
+  // presentation choice for ordering pivots, not a fitted usage measure
+  // (W2-6 D8, M-LINE-003).
   const withComboPoints = (player: PlayerData): PlayerData => {
     const timesOnLine = player.timesOnLine || {};
     const timesOnPair = player.timesOnPair || {};
@@ -55,15 +58,15 @@ export const calculateLinesAndPairs = (
       (player) => !assignedPlayers.has(player.id),
     );
 
+    // One unit per sort (M-LINE-003): shared seconds when the pivot carries
+    // them (a missing partner shared no time), otherwise the pivot's own-TOI
+    // percentage for every candidate. Never seconds for some and % for others.
+    const sharedMeasure = pivotPlayer.mutualSharedToi
+      ? pivotPlayer.mutualSharedToi
+      : pivotPlayer.percentToiWith ?? {};
     remainingPlayers.sort((a, b) => {
-      const mutualToiA =
-        (pivotPlayer.mutualSharedToi && pivotPlayer.mutualSharedToi[a.id]) ??
-        (pivotPlayer.percentToiWith && pivotPlayer.percentToiWith[a.id]) ??
-        0;
-      const mutualToiB =
-        (pivotPlayer.mutualSharedToi && pivotPlayer.mutualSharedToi[b.id]) ??
-        (pivotPlayer.percentToiWith && pivotPlayer.percentToiWith[b.id]) ??
-        0;
+      const mutualToiA = sharedMeasure[a.id] ?? 0;
+      const mutualToiB = sharedMeasure[b.id] ?? 0;
       return mutualToiB - mutualToiA || compareCanonicalPlayerOrder(a, b);
     });
 

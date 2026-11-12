@@ -43,13 +43,28 @@ describe("shared points and consistency game log", () => {
     await expect(fetchPlayerGameLogConsistencyData(1, "20252026")).rejects.toThrow("conflicting rows");
   });
 
+  it("keeps playoff and mislabelled-season rows out of the shared calendar (D5)", async () => {
+    installGameLogQueryMock([
+      game,
+      { ...game, game_id: 2025030111, date: "2026-04-20", points: 3 }, // playoff, labelled 2025-26
+      { ...game, game_id: 2024020999, date: "2025-04-10", points: 2 } // 2024-25 game, labelled 2025-26
+    ]);
+    // Before the fix all three counted as 2025-26 games.
+    expect(await fetchPlayerGameLogConsistencyData(1, "20252026")).toEqual([game]);
+  });
+
   it("rejects unknown game identities rather than silently merging them", async () => {
     installGameLogQueryMock([{ ...game, game_id: null }]);
     await expect(fetchPlayerGameLogConsistencyData(1, "20252026")).rejects.toThrow("invalid game identity");
   });
 });
 
-function installGameLogQueryMock(rows: Record<string, unknown>[], error: unknown = null) {
+// The ledger read (games_played = 1) answers with `ledger` when given, else with `rows`.
+function installGameLogQueryMock(
+  rows: Record<string, unknown>[],
+  error: unknown = null,
+  ledger?: Record<string, unknown>[]
+) {
   fromMock.mockImplementation((table: string) => {
     const trace: QueryTrace = { table, calls: [] };
     queryTraces.push(trace);
@@ -73,7 +88,8 @@ function installGameLogQueryMock(rows: Record<string, unknown>[], error: unknown
         onFulfilled: (value: unknown) => unknown,
         onRejected?: () => unknown
       ) {
-        return Promise.resolve({ data: rows, error }).then(
+        const isLedger = trace.calls.some(([op, key]) => op === "eq" && key === "games_played");
+        return Promise.resolve({ data: isLedger && ledger ? ledger : rows, error }).then(
           onFulfilled,
           onRejected
         );
@@ -83,6 +99,10 @@ function installGameLogQueryMock(rows: Record<string, unknown>[], error: unknown
     return builder;
   });
 }
+
+// A regular-season 2025-26 game id for game n (YYYY TT NNNN).
+const g = (n: number) => 2025020000 + n;
+const statTrace = (select: string) => queryTraces.find((trace) => trace.calls[0]?.[1] === select);
 
 function installPaginatedQueryMock(rows: Record<string, unknown>[]) {
   fromMock.mockImplementation((table: string) => {
@@ -189,13 +209,17 @@ describe("buildPlayerAggregatedStats", () => {
     expect(goalsStd("20252026", 20252026)).toBe(31);
   });
 
-  it("derives per-60 values from counts and ATOI when the rates table is missing", () => {
+  it("serves a published null per-60 rate as null, never rebuilt from counts and minutes (A2)", () => {
+    // The writer published std_ixg_per_60 as unknown; counts and WGO ATOI would make it 1.5.
     const careerData = {
       player_id: 1,
       std_gp: 20,
+      std_ixg: 7.5,
       std_pts: 10,
-      std_atoi: 15
-    } as WigoCareerRow;
+      std_atoi: 15,
+      std_ixg_per_60: null,
+      std_pts_per_60: null
+    } as unknown as WigoCareerRow;
 
     const rows = buildPlayerAggregatedStats({
       careerData,
@@ -204,7 +228,8 @@ describe("buildPlayerAggregatedStats", () => {
       totalsData: null
     });
 
-    expect(rows.find((row) => row.label === "PTS/60")?.STD).toBeCloseTo(2);
+    expect(rows.find((row) => row.label === "ixG/60")?.STD).toBeNull();
+    expect(rows.find((row) => row.label === "PTS/60")?.STD).toBeNull();
   });
 
   it("does not let a rates override revive recent values with missing denominators", () => {
@@ -285,42 +310,70 @@ describe("fetchPlayerGameLogForStat query contract", () => {
     await expect(fetchPlayerGameLogForStat(1, 20252026, "Goals")).rejects.toThrow("source unavailable");
   });
   it("uses numeric season_id and date for WGO game logs", async () => {
-    installGameLogQueryMock([{ date: "2026-01-01", goals: 2 }]);
+    installGameLogQueryMock([{ game_id: g(1), date: "2026-01-01", goals: 2 }]);
 
     await expect(
       fetchPlayerGameLogForStat(8478402, 20252026, "Goals")
     ).resolves.toEqual([{ date: "2026-01-01", value: 2 }]);
 
-    expect(queryTraces).toEqual([
-      {
-        table: "wgo_skater_stats",
-        calls: [
-          ["select", "date, goals"],
-          ["eq", "player_id", 8478402],
-          ["eq", "season_id", 20252026],
-          ["order", "date", { ascending: true }]
-        ]
-      }
-    ]);
+    expect(statTrace("game_id, date, goals")).toEqual({
+      table: "wgo_skater_stats",
+      calls: [
+        ["select", "game_id, date, goals"],
+        ["eq", "player_id", 8478402],
+        ["eq", "season_id", 20252026],
+        ["order", "date", { ascending: true }]
+      ]
+    });
   });
 
   it("uses the numeric season column and date_scraped for NST game logs", async () => {
-    installGameLogQueryMock([{ date_scraped: "2026-01-02", ixg: 0.42 }]);
+    installGameLogQueryMock([{ date_scraped: "2026-01-02", ixg: 0.42 }], null,
+      [{ game_id: g(2), date: "2026-01-02" }]);
 
     await expect(
       fetchPlayerGameLogForStat(8478402, 20252026, "ixG")
     ).resolves.toEqual([{ date: "2026-01-02", value: 0.42 }]);
 
-    expect(queryTraces).toEqual([
-      {
-        table: "nst_gamelog_as_counts",
-        calls: [
-          ["select", "date_scraped, ixg"],
-          ["eq", "player_id", 8478402],
-          ["eq", "season", 20252026],
-          ["order", "date_scraped", { ascending: true }]
-        ]
-      }
+    expect(statTrace("date_scraped, ixg")).toEqual({
+      table: "nst_gamelog_as_counts",
+      calls: [
+        ["select", "date_scraped, ixg"],
+        ["eq", "player_id", 8478402],
+        ["eq", "season", 20252026],
+        ["order", "date_scraped", { ascending: true }]
+      ]
+    });
+  });
+
+  it("keeps only the season's regular-season games in a WGO stat log (D5)", async () => {
+    const rows = [
+      { game_id: g(1), date: "2025-10-08", goals: 1 },
+      { game_id: 2025030111, date: "2026-04-20", goals: 3 }, // playoff game labelled 2025-26
+      { game_id: 2024020999, date: "2025-04-10", goals: 2 } // last season's game, mislabelled 2025-26
+    ];
+    installGameLogQueryMock(rows);
+    // Before the fix all three were plotted.
+    await expect(fetchPlayerGameLogForStat(1, 20252026, "Goals")).resolves.toEqual([
+      { date: "2025-10-08", value: 1 }
+    ]);
+  });
+
+  it("gives an NST stat one slot per ledger game, a gap where NST has no row, and drops off-ledger dates (D5)", async () => {
+    const ledger = [
+      { game_id: g(1), date: "2025-10-08" },
+      { game_id: g(2), date: "2025-10-10" },
+      { game_id: 2025030111, date: "2026-04-20" } // playoff: not in the ledger
+    ];
+    const nst = [
+      { date_scraped: "2025-10-08", ixg: 0.4 },
+      { date_scraped: "2026-04-20", ixg: 0.9 } // playoff-date row labelled 2025-26
+    ];
+    installGameLogQueryMock(nst, null, ledger);
+    // Before the fix: [0.4 (Oct 8), 0.9 (Apr 20)], the absent Oct 10 game had no slot.
+    await expect(fetchPlayerGameLogForStat(1, 20252026, "ixG")).resolves.toEqual([
+      { date: "2025-10-08", value: 0.4 },
+      { date: "2025-10-10", value: null }
     ]);
   });
 });
@@ -328,15 +381,15 @@ describe("fetchPlayerGameLogForStat query contract", () => {
 describe("fetchPlayerGameLogForStat units (selected-stat chart)", () => {
   it("puts WGO fraction percentages on the 0–100 scale the matrix and reference lines use", async () => {
     installGameLogQueryMock([
-      { date: "2026-01-01", shooting_percentage: 0.25 },
-      { date: "2026-01-02", shooting_percentage: null }
+      { game_id: g(1), date: "2026-01-01", shooting_percentage: 0.25 },
+      { game_id: g(2), date: "2026-01-02", shooting_percentage: null }
     ]);
     await expect(fetchPlayerGameLogForStat(1, 20252026, "S%")).resolves.toEqual([
       { date: "2026-01-01", value: 25 },
       { date: "2026-01-02", value: null }
     ]);
 
-    installGameLogQueryMock([{ date: "2026-01-01", pp_toi_pct_per_game: 0.6 }]);
+    installGameLogQueryMock([{ game_id: g(1), date: "2026-01-01", pp_toi_pct_per_game: 0.6 }]);
     await expect(fetchPlayerGameLogForStat(1, 20252026, "PP%")).resolves.toEqual([
       { date: "2026-01-01", value: 60 }
     ]);
@@ -344,8 +397,8 @@ describe("fetchPlayerGameLogForStat units (selected-stat chart)", () => {
 
   it("reports PTS1% per game as a percentage, with a gap for a pointless game as in the aggregates", async () => {
     installGameLogQueryMock([
-      { date: "2026-01-01", goals: 1, total_primary_assists: 0, points: 2 },
-      { date: "2026-01-02", goals: 0, total_primary_assists: 0, points: 0 }
+      { game_id: g(1), date: "2026-01-01", goals: 1, total_primary_assists: 0, points: 2 },
+      { game_id: g(2), date: "2026-01-02", goals: 0, total_primary_assists: 0, points: 0 }
     ]);
     await expect(fetchPlayerGameLogForStat(1, 20252026, "PTS1%")).resolves.toEqual([
       { date: "2026-01-01", value: 50 },
@@ -355,19 +408,19 @@ describe("fetchPlayerGameLogForStat units (selected-stat chart)", () => {
 
   it("derives PP per-60 rates from WGO PP counts and PP seconds, with no rate when there was no PP time", async () => {
     installGameLogQueryMock([
-      { date: "2026-01-01", pp_points: 1, pp_toi_per_game: 240 },
-      { date: "2026-01-02", pp_points: 0, pp_toi_per_game: 0 },
-      { date: "2026-01-03", pp_points: 0, pp_toi_per_game: 180 }
+      { game_id: g(1), date: "2026-01-01", pp_points: 1, pp_toi_per_game: 240 },
+      { game_id: g(2), date: "2026-01-02", pp_points: 0, pp_toi_per_game: 0 },
+      { game_id: g(3), date: "2026-01-03", pp_points: 0, pp_toi_per_game: 180 }
     ]);
     await expect(fetchPlayerGameLogForStat(8478402, 20252026, "PPP/60")).resolves.toEqual([
       { date: "2026-01-01", value: 15 },
       { date: "2026-01-02", value: null },
       { date: "2026-01-03", value: 0 }
     ]);
-    expect(queryTraces.at(-1)).toEqual({
+    expect(statTrace("game_id, date, pp_points, pp_toi_per_game")).toEqual({
       table: "wgo_skater_stats",
       calls: [
-        ["select", "date, pp_points, pp_toi_per_game"],
+        ["select", "game_id, date, pp_points, pp_toi_per_game"],
         ["eq", "player_id", 8478402],
         ["eq", "season_id", 20252026],
         ["order", "date", { ascending: true }]

@@ -92,7 +92,7 @@ describe("FORGE reserve payload (full selected-horizon coverage)", () => {
     const teamed = catalog.filter(player => player.teamAbbreviation);
     const indexOf = (player: PlanningPlayer) => (player.nhlId! - 8470000) % 100;
     const lineupSkater = (player: PlanningPlayer) => player.playerClass === "skater" && indexOf(player) < LINEUP;
-    // Full coverage with the pass off: a real line or a labelled 0 for every rostered player's every game, within budget.
+    // Full coverage with the pass off: a real line or a labelled unknown for every rostered player's every game, within budget.
     const opportunities = teamed.reduce((sum, player) => sum + games.filter(game => game.teamAbbreviation === player.teamAbbreviation).length, 0);
     expect(built.forecasts).toHaveLength(opportunities);
     expect(built.forecasts.reduce((sum, row) => sum + jsonUtf8Bytes(row) + 1, 0)).toBeLessThanOrEqual(FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET);
@@ -136,9 +136,13 @@ describe("FORGE reserve payload (full selected-horizon coverage)", () => {
         expect(readError).toBeNull();
         return { baseline: evaluatePlan(input, intent, "outcome", [], false), metrics: candidatePlanMetrics(input, intent, { maxCandidates: 8, maxEvaluations: 24 }) };
       });
-      expect(result.baseline.comparisonEligible).toBe(true);
-      expect(result.baseline.projectedValue).toBeGreaterThan(0);
-      // Every evaluated candidate gets net points again (bounded here to keep the test fast; production evaluates 40).
+      // The scratched player is unknown (decisions 3, 47), so the lineup total is incomplete, not a fabricated 0 ...
+      expect(result.baseline.comparisonEligible).toBe(false);
+      expect(result.baseline.projectedValue).toBeNull();
+      expect(result.baseline.knownComparison?.unknownPlayerIds).toEqual([scratched.id]);
+      expect(result.baseline.knownComparison!.knownValue).toBeGreaterThan(0);
+      // ... yet his unchanged games cancel (TJ, 2026-11-12, difference-based), so every evaluated candidate still gets
+      // net points (bounded here to keep the test fast; production evaluates 40).
       expect(result.metrics.search.candidates).toBe(8);
       expect(result.metrics.activePoints.filter(([, value]) => value != null)).toHaveLength(8);
     } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }

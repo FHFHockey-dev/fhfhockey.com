@@ -15,8 +15,11 @@
  * fit inside player-seasons (>= 20 games), so between-player rate differences
  * never count as overdispersion. Two variants:
  *   unconditional  nu = sum n (s^2 - m), du = sum n (m^2 - s^2/n)
- *   TOI-cond.      nc = sum (RSS n/(n-1) - sum mu_g), dc = sum mu_g^2,
- *                  mu_g = (player-season count per second) * game TOI
+ *   TOI-cond.      nc = sum (RSS - A), dc = sum B, with mu_g = r * t_g (r = sum x / sum t):
+ *                  E[RSS] = A + alpha B, A = sum mu - sum mu^2 / sum mu,
+ *                  B = r^2 (sum t^2 - 2 sum t^3 / T + (sum t^2)^2 / T^2), T = sum t.
+ *                  This is unbiased for unequal exposures; the former RSS n/(n-1) - sum mu
+ *                  is only right at equal exposure (W1-7 N3: exposures 1 and 3 gave -0.526).
  * and Var - mu = a mu^2 + b mu is fitted by non-negative least squares
  * through the origin over bins (sx = sum n m carries the linear term).
  *
@@ -28,6 +31,17 @@ import { resolve } from "node:path";
 
 import { countPmf } from "../lib/projections/uncertainty";
 import { FORGE_DISPERSION, type DispersionKey } from "../lib/projections/dispersion";
+
+/** TS mirror of FIT_SQL's TOI-conditional moments for one player-season (W1-7 N3). */
+export function toiConditionalDispersionMoments(games: ReadonlyArray<{ x: number; toi: number }>) {
+  const T = games.reduce((sum, g) => sum + g.toi, 0);
+  const r = games.reduce((sum, g) => sum + g.x, 0) / T;
+  const mu = games.map((g) => r * g.toi);
+  const smu = mu.reduce((a, b) => a + b, 0), smu2 = mu.reduce((a, b) => a + b * b, 0);
+  const st2 = games.reduce((sum, g) => sum + g.toi ** 2, 0), st3 = games.reduce((sum, g) => sum + g.toi ** 3, 0);
+  const rss = games.reduce((sum, g, i) => sum + (g.x - mu[i]) ** 2, 0);
+  return { nc: rss - (smu - smu2 / smu), dc: r * r * (st2 - 2 * st3 / T + (st2 * st2) / (T * T)), rss, expectedPoissonRss: smu - smu2 / smu };
+}
 
 const SEASON_FILTER = `season_id in (20232024, 20242025)
     and date between make_date(season_id / 10000, 10, 1) and make_date(season_id % 10000, 4, 30)`;
@@ -60,17 +74,19 @@ export const FIT_SQL = `with sk as (
   from long group by 1, 2, 3, 4 having count(*) >= 20
 ), pg as (
   select l.stat, l.pos, l.season_id, l.player_id,
-    sum((l.x - p.r * l.toi) ^ 2) as rss, sum(p.r * l.toi) as smu, sum((p.r * l.toi) ^ 2) as smu2
+    sum((l.x - p.r * l.toi) ^ 2) as rss, sum(p.r * l.toi) as smu, sum((p.r * l.toi) ^ 2) as smu2,
+    sum(l.toi) as st, sum(l.toi ^ 2) as st2, sum(l.toi ^ 3) as st3
   from long l join ps p using (stat, pos, season_id, player_id) group by 1, 2, 3, 4
 ), b as (
-  select ps.*, pg.rss, pg.smu, pg.smu2, ntile(6) over (partition by ps.stat, ps.pos order by ps.m) as bin
+  select ps.*, pg.rss, pg.smu, pg.smu2, pg.st, pg.st2, pg.st3, ntile(6) over (partition by ps.stat, ps.pos order by ps.m) as bin
   from ps join pg using (stat, pos, season_id, player_id)
 )
 select stat, pos, season_id as season, bin, count(*) as nps, sum(n)::int as ng,
   round(min(m)::numeric, 3) as mlo, round(max(m)::numeric, 3) as mhi,
   round(sum(n * m)::numeric, 2) as sx,
   round(sum(n * (s2 - m))::numeric, 3) as nu, round(sum(n * (m * m - s2 / n))::numeric, 3) as du,
-  round(sum(rss * n / (n - 1) - smu)::numeric, 3) as nc, round(sum(smu2)::numeric, 3) as dc,
+  round(sum(rss - (smu - smu2 / nullif(smu, 0)))::numeric, 3) as nc,
+  round(sum(r * r * (st2 - 2 * st3 / st + st2 * st2 / (st * st)))::numeric, 3) as dc,
   round((sum(n * vt) / sum(n * mt * mt))::numeric, 5) as tcv2
 from b group by 1, 2, 3, 4 order by 1, 2, 3, 4`;
 // Goalie shots against ("sa"): FIT_SQL with gk selecting shots_against and only the gk branch in "long".

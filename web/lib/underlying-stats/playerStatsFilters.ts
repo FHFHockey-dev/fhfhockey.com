@@ -478,7 +478,8 @@ export function getDefaultLandingSortState(
     return { sortKey: "savePct", direction: "desc" };
   }
 
-  return { sortKey: "xgfPct", direction: "desc" };
+  // Off the hidden heuristic xGF% (decision 12).
+  return { sortKey: "cfPct", direction: "desc" };
 }
 
 export function createDefaultLandingPrimaryFilters(

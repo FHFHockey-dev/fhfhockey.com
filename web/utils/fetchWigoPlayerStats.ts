@@ -298,57 +298,8 @@ export function buildPlayerAggregatedStats({
       // Recent rates and their coverage come from the same wigo_recent snapshot.
     }
 
-    if (metadata.isPerSixty) {
-      const per60ToCountMap: Record<string, string> = {
-        g_per_60: "g",
-        a_per_60: "a",
-        pts_per_60: "pts",
-        sog_per_60: "sog",
-        ixg_per_60: "ixg",
-        icf_per_60: "icf",
-        hit_per_60: "hit",
-        blk_per_60: "blk",
-        pim_per_60: "pim"
-      };
-      const countBase = per60ToCountMap[baseColName];
-      const derivePer60 = (
-        prefix: "std" | "ly" | "ya3" | "ca"
-      ): number | undefined => {
-        if (!careerData || !countBase) return undefined;
-        const count = getAggregateValue(careerData, `${prefix}_${countBase}`);
-        const gp = getAggregateValue(careerData, `${prefix}_gp`);
-        const atoiMin = getAggregateValue(careerData, `${prefix}_atoi`);
-        if (
-          typeof count === "number" &&
-          typeof gp === "number" &&
-          gp > 0 &&
-          typeof atoiMin === "number" &&
-          atoiMin > 0
-        ) {
-          const totalMinutes = atoiMin * gp;
-          if (totalMinutes > 0) {
-            return (count * 60) / totalMinutes;
-          }
-        }
-        return undefined;
-      };
-      if (stdValue == null || Number.isNaN(stdValue)) {
-        const derived = derivePer60("std");
-        if (derived !== undefined) stdValue = derived;
-      }
-      if (lyValue == null || Number.isNaN(lyValue)) {
-        const derived = derivePer60("ly");
-        if (derived !== undefined) lyValue = derived;
-      }
-      if (ya3Value == null || Number.isNaN(ya3Value)) {
-        const derived = derivePer60("ya3");
-        if (derived !== undefined) ya3Value = derived;
-      }
-      if (caValue == null || Number.isNaN(caValue)) {
-        const derived = derivePer60("ca");
-        if (derived !== undefined) caValue = derived;
-      }
-    }
+    // A published per-60 rate is authoritative: a null stays null. The reader never
+    // rebuilds it from counts and another source's minutes (A2, rule 23).
 
     if (
       (label === "Goals" ||
@@ -465,6 +416,43 @@ export function getWigoAggregateFreshness({
   };
 }
 
+/**
+ * True when an NHL game id (YYYYTTNNNN) is a regular-season game (type 02) of the
+ * season (YYYYYYYY). The one game predicate every WiGO game-log reader uses (D5).
+ */
+export const isRegularSeasonGameOf = (gameId: unknown, seasonId: number): boolean =>
+  typeof gameId === "number" &&
+  Number.isSafeInteger(gameId) &&
+  Math.floor(gameId / 10000) === Math.floor(seasonId / 10000) * 100 + 2;
+
+/**
+ * Reconciles a stat's rows to the player's regular-season game ledger: one point per
+ * ledger game, in date order. WGO rows match by game id, NST rows (no game id) by
+ * date. A ledger game with no row, or with conflicting rows, is a gap (null), so an
+ * absent NST row still holds its game's slot; rows outside the ledger are dropped.
+ */
+function reconcileToLedger(
+  ledger: SkaterGameLogConsistencyData[],
+  rows: GameLogDataPoint[],
+  keyOf: (row: GameLogDataPoint & { game_id?: number | null }) => string | number | null | undefined,
+  ledgerKey: (game: SkaterGameLogConsistencyData) => string | number
+): GameLogDataPoint[] {
+  const byKey = new Map<string | number, number | null>();
+  const conflicted = new Set<string | number>();
+  for (const row of rows) {
+    const key = keyOf(row);
+    if (key == null) continue;
+    if (byKey.has(key) && byKey.get(key) !== row.value) conflicted.add(key);
+    byKey.set(key, row.value);
+  }
+  return [...ledger]
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.game_id - b.game_id))
+    .map((game) => {
+      const key = ledgerKey(game);
+      return { date: game.date, value: conflicted.has(key) ? null : byKey.get(key) ?? null };
+    });
+}
+
 export async function fetchPlayerGameLogForStat(
   playerId: number,
   seasonId: number,
@@ -477,6 +465,15 @@ export async function fetchPlayerGameLogForStat(
     return [];
   }
 
+  // The regular-season ledger, read alongside the stat rows (D5).
+  const ledgerPromise = fetchPlayerGameLogConsistencyData(playerId, String(seasonId));
+  const toLedger = async (rows: Array<GameLogDataPoint & { game_id?: number | null }>, byGameId: boolean) =>
+    byGameId
+      ? reconcileToLedger(await ledgerPromise, rows, (row) => row.game_id, (game) => game.game_id)
+      : reconcileToLedger(await ledgerPromise, rows, (row) => row.date, (game) => game.date);
+  // Without a handler a ledger failure surfacing before the stat read would be unhandled.
+  ledgerPromise.catch(() => undefined);
+
   try {
     // **** Handle Special Calculation for PTS1% ****
     if ("calculation" in mapping && mapping.calculation === "PTS1%") {
@@ -485,7 +482,7 @@ export async function fetchPlayerGameLogForStat(
       const dateColumn = table === "wgo_skater_stats" ? "date" : "date_scraped"; // Use date_scraped for nst_*
 
 
-      const selectString = `${dateColumn}, ${requiredColumns.join(", ")}`;
+      const selectString = `game_id, ${dateColumn}, ${requiredColumns.join(", ")}`;
       const seasonColumn = "season_id"; // PTS1% uses wgo_skater_stats which has season_id
 
       const { data, error } = await supabase
@@ -517,11 +514,12 @@ export async function fetchPlayerGameLogForStat(
           }
 
           return {
+            game_id: item.game_id,
             date: item[dateColumn], // Use the fetched date column
             value: value
           };
         }) || [];
-      return calculatedData;
+      return toLedger(calculatedData, true);
     } else if ("calculation" in mapping && mapping.calculation === "PTS1/60") {
       const { table, requiredColumns } = mapping; // table is nst_gamelog_as_rates
       const dateColumn = "date_scraped"; // nst tables use date_scraped
@@ -553,21 +551,22 @@ export async function fetchPlayerGameLogForStat(
 
           return { date: item[dateColumn], value: value };
         }) || [];
-      return calculatedData;
+      return toLedger(calculatedData, false);
     } else if ("calculation" in mapping && mapping.calculation === "PP_PER_60") {
       const { countColumn } = mapping;
       const { data, error } = await supabase
         .from("wgo_skater_stats")
-        .select(`date, ${countColumn}, pp_toi_per_game`)
+        .select(`game_id, date, ${countColumn}, pp_toi_per_game`)
         .eq("player_id", playerId)
         .eq("season_id", seasonId)
         .order("date", { ascending: true });
       if (error) throw error;
 
-      return (data ?? []).map((item: any) => {
+      return toLedger((data ?? []).map((item: any) => {
         const count = item[countColumn];
         const ppSeconds = item.pp_toi_per_game;
         return {
+          game_id: item.game_id,
           date: item.date,
           // No PP time means no PP rate for that game, not a zero rate.
           value:
@@ -575,7 +574,7 @@ export async function fetchPlayerGameLogForStat(
               ? (count * 3600) / ppSeconds
               : null
         };
-      });
+      }), true);
     } else if ("column" in mapping) {
       // **** Handle Standard Column Fetching ****
       const { table, column: statColumn, unit } = mapping;
@@ -589,7 +588,7 @@ export async function fetchPlayerGameLogForStat(
         table === "wgo_skater_stats"
           ? await supabase
               .from("wgo_skater_stats")
-              .select(`date, ${statColumn}`)
+              .select(`game_id, date, ${statColumn}`)
               .eq("player_id", playerId)
               .eq("season_id", seasonId)
               .order("date", { ascending: true })
@@ -613,11 +612,12 @@ export async function fetchPlayerGameLogForStat(
           }
 
           return {
+            game_id: item.game_id,
             date: item[dateColumn], // Use the fetched date column
             value: typeof value === "number" ? value : null
           };
         }) || [];
-      return gameLogData;
+      return toLedger(gameLogData, table === "wgo_skater_stats");
     } else {
       console.warn(
         `Invalid mapping configuration for stat label: "${statLabel}"`
@@ -962,7 +962,12 @@ export const fetchPlayerGameLogConsistencyData = async (
       }
       games.set(game.game_id, game);
     }
-    return [...games.values()];
+    // One game predicate (D5): the game id's season and type, not the row's season
+    // label, decide membership, so a playoff or mislabelled-season row never joins
+    // the regular-season calendar.
+    return [...games.values()].filter((game) =>
+      isRegularSeasonGameOf(game.game_id, seasonIdNumber)
+    );
   } catch (err) {
     console.error(
       `Unexpected error in fetchPlayerGameLogConsistencyData for player ${playerId}, season ${season}:`,

@@ -38,7 +38,52 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
     return Array.isArray(value) ? value : value == null ? [] : [value];
   }
 
-  function resolveQuery(state: QueryState) {
+  // L6 window-count support mirroring each fixture row's own window: the
+  // fixture's games_played are the window's appearances.
+  function supportRowsFor(state: QueryState) {
+    const failures = scenario.rollingFailures;
+    scenario.rollingFailures = 0;
+    const rolling = resolveQuery({
+      ...state,
+      table: "rolling_player_game_metrics",
+      selectFields: "player_id,game_date,game_id,games_played,season_games_played,fixture_window_ratio,fixture_support",
+    });
+    scenario.rollingFailures = failures;
+    return (rolling.data ?? []).map((row: Record<string, unknown>) => {
+      const games = Number(row.games_played ?? row.season_games_played ?? 0);
+      const window = (size: number) => {
+        const count = Math.min(size, Number.isFinite(games) ? games : 0);
+        return {
+          appearances: count,
+          gameIds: Array.from({ length: count }, (_, index) => 2025020001 + index),
+          gameDates: Array.from({ length: count }, () => String(row.game_date)),
+          ratio: (row.fixture_window_ratio as Record<string, unknown> | undefined) ?? {},
+          secondary: {},
+        };
+      };
+      if (row.fixture_support) {
+        return {
+          player_id: row.player_id, game_date: row.game_date, game_id: row.game_id ?? null,
+          windowCountSupport: row.fixture_support,
+        };
+      }
+      return {
+        player_id: row.player_id, game_date: row.game_date, game_id: row.game_id ?? null,
+        windowCountSupport: {
+          version: "rolling-player-window-counts-v1", strengthState: state.filters.strength_state,
+          anchor: { gameId: null, gameDate: row.game_date, season: 20252026 },
+          selection: "chronological_appearances_in_strength_state",
+          game: { appeared: true, ratio: {}, additive: {} },
+          windows: { last5: window(5), last10: window(10), last20: window(20) },
+        },
+      };
+    });
+  }
+
+  function resolveQuery(state: QueryState): { data: any; error: any } {
+    if (state.table === "rolling_player_metric_support_payloads") {
+      return { data: supportRowsFor(state), error: null };
+    }
     if (state.table === "skater_composite_ratings") {
       return { data: scenario.compositeRows, error: null };
     }
@@ -284,7 +329,7 @@ describe("rankingQueries", () => {
         message: null,
       });
       expect(points.rankedRows).toHaveLength(1);
-      expect(points.rankedRows[0]).toMatchObject({ calculatedRawValue: 4, rawRank: 1, percentile: 100, qualifiedPeerCount: 1 });
+      expect(points.rankedRows[0]).toMatchObject({ calculatedRawValue: 4, rawRank: 1, percentile: 50, qualifiedPeerCount: 1 });
     } else {
       expect(queryCalls).toHaveLength(0);
     }
@@ -310,7 +355,7 @@ describe("rankingQueries", () => {
         snapshotSelectionReason: "latest_available", message: null,
       });
       expect(snapshot.rankedRows).toHaveLength(1);
-      expect(snapshot.rankedRows[0]).toMatchObject({ calculatedRawValue: value, rawRank: 1, percentile: 100, qualifiedPeerCount: 1 });
+      expect(snapshot.rankedRows[0]).toMatchObject({ calculatedRawValue: value, rawRank: 1, percentile: 50, qualifiedPeerCount: 1 });
     }
     expect(snapshots.get("rel_5v5_gf_percentage")).toMatchObject({
       unavailable: true, snapshotDate: null, snapshotUpdatedAt: null,
@@ -339,11 +384,11 @@ describe("rankingQueries", () => {
     const row = res.body.rankings[0];
     expect(row.sample).toMatchObject({ gamesPlayed, toiSeconds, minimumSampleMet: meets, confidence: meets ? "medium" : "low" });
     expect(row.metric.rawRank).toBe(meets ? 1 : null);
-    expect(row.metric.percentile).toBe(meets ? 100 : null);
+    expect(row.metric.percentile).toBe(meets ? 50 : null);
     expect(row.warnings.includes("sample_below_minimum")).toBe(!meets);
     expect(row.explanationItems).toEqual(meets ? [
       "Rank 1 of 1 in all_skaters:all.",
-      "Better than 100.0% of other qualified peers after metric directionality is applied.",
+      "Mid-rank percentile 50.0 among qualified peers after metric directionality is applied (ties share the mid-rank).",
     ] : ["Sample unavailable or below selected minimums; rank and percentile unavailable."]);
     const matrixQuery = { season: "20252026", strength: "5v5", sort_metric: "sog_per_60", min_gp: "3", min_toi: "300" };
     await matrixHandler({ method: "GET", query: matrixQuery } as any, res);
@@ -378,8 +423,10 @@ describe("rankingQueries", () => {
     await matrixHandler({ method: "GET", query } as any, res);
     expect(res.statusCode).toBe(200);
     expect(res.body.rows[0].sample).toMatchObject({ gamesPlayed, toiSeconds, minimumSampleMet: meets, confidence: meets ? "medium" : "low" });
-    expect(res.body.rows[0].metrics.mcm_score).toMatchObject({ rawValue: 88.6, percentile: meets ? 88.6 : null, sampleConfidence: meets ? "medium" : "low" });
-    expect(res.body.rows[0].sort).toMatchObject({ rank: meets ? 1 : null, percentile: meets ? 88.6 : null });
+    // Decision 74: the score (88.6) is not a percentile; a sole qualified
+    // player has the cohort mid-rank percentile 50.
+    expect(res.body.rows[0].metrics.mcm_score).toMatchObject({ rawValue: 88.6, percentile: meets ? 50 : null, sampleConfidence: meets ? "medium" : "low" });
+    expect(res.body.rows[0].sort).toMatchObject({ rank: meets ? 1 : null, percentile: meets ? 50 : null, score: meets ? 88.6 : null });
     await matrixHandler({ method: "GET", query: { ...query, sample_confidence: "medium_plus" } } as any, res);
     expect(res.statusCode).toBe(200);
     expect(res.body.rows).toHaveLength(meets ? 1 : 0);
@@ -454,7 +501,7 @@ describe("rankingQueries", () => {
         key: "sog_per_60",
         value: 9.2,
         rawRank: 1,
-        percentile: 100,
+        percentile: 50,
       },
     });
     expect(
@@ -530,7 +577,7 @@ describe("rankingQueries", () => {
       key: "points_per_60",
       value: 3.1,
       rawRank: 1,
-      percentile: 100,
+      percentile: 50,
       qualifiedPeerCount: 1,
     });
   });
@@ -649,6 +696,81 @@ describe("rankingQueries", () => {
     expect(rows.get(6)?.metric.value).toBeCloseTo(12.020033, 5);
     expect(rows.get(6)?.sample).toMatchObject({ toiSeconds: 599, minimumSampleMet: false });
     expect(rows.get(6)?.metric.percentile).toBeNull();
+  });
+
+  it("serves last-20 GAx in goals from L6 window counts, not per-60 alias differences (W2-P0-11)", async () => {
+    scenario.paginatedRows = [{
+      player_id: 1, season: 20252026, strength_state: "all", team_id: 10,
+      game_date: "2026-04-16", updated_at: "2026-04-16T06:00:00.000Z",
+      games_played: 20, season_games_played: 20, toi_seconds_total_last20: 18000,
+      // Rate aliases: 1.2 − 0.8 = 0.4 is the defect's answer.
+      goals_per_60_total_last20: 1.2, ixg_per_60_total_last20: 0.8,
+      fixture_window_ratio: { goals_per_60: [6, 18000, 20], ixg_per_60: [4, 18000, 20] },
+    }];
+    const base = {
+      entity: "skaters", season: 20252026, asOfDate: "2026-04-16", window: "last20",
+      position: "all", deployment: "all", strength: "all",
+      minGp: 1, minToiSeconds: 600, peerGroupType: "all_skaters", sort: "percentile",
+      direction: "desc", limit: 100, teamId: null, entityIds: null,
+    } as const;
+    const gax = await buildContextualRankingsSurface({ ...base, metric: "goals_above_expected" });
+    expect(gax.rankings[0]?.metric.value).toBe(2);
+    expect(gax.rankings[0]?.sample).toMatchObject({ gamesPlayed: 20, minimumSampleMet: true });
+    const perSixty = await buildContextualRankingsSurface({ ...base, metric: "goals_above_expected_per_60" });
+    expect(perSixty.rankings[0]?.metric.value).toBe(0.4);
+  });
+
+  it("serves last-20 for the current season by default and the cross-season view only when asked (decision 103)", async () => {
+    // Five 2024-25 games and fifteen 2025-26 games in the cross-season window.
+    const ids = [
+      ...Array.from({ length: 5 }, (_, i) => 2024021200 + i),
+      ...Array.from({ length: 15 }, (_, i) => 2025020001 + i),
+    ];
+    const ratioWindow = (gameIds: number[], goals: number, toi: number) => ({
+      appearances: gameIds.length, gameIds, gameDates: gameIds.map(() => "2026-04-16"),
+      ratio: { goals_per_60: [goals, toi, gameIds.length] }, secondary: {},
+    });
+    scenario.paginatedRows = [{
+      player_id: 1, season: 20252026, strength_state: "all", team_id: 10,
+      game_date: "2026-04-16", updated_at: "2026-04-16T06:00:00.000Z",
+      games_played: 15, season_games_played: 15,
+      goals_per_60_last20: 1.6, toi_seconds_total_last20: 18000,
+      fixture_support: {
+        version: "rolling-player-window-counts-v1", strengthState: "all",
+        anchor: { gameId: 2025020015, gameDate: "2026-04-16", season: 20252026 },
+        selection: "chronological_appearances_in_strength_state",
+        game: { appeared: true, ratio: {}, additive: {} },
+        windows: {
+          last5: ratioWindow(ids.slice(15), 2, 4500),
+          last10: ratioWindow(ids.slice(10), 4, 9000),
+          last20: ratioWindow(ids, 8, 18000),
+        },
+        currentSeason: {
+          version: "rolling-player-window-counts-current-season-v1", season: 20252026,
+          selection: "chronological_appearances_in_strength_state_current_season",
+          windows: {
+            last5: { requested: 5, ...ratioWindow(ids.slice(15), 2, 4500) },
+            last10: { requested: 10, ...ratioWindow(ids.slice(10), 4, 9000) },
+            last20: { requested: 20, ...ratioWindow(ids.slice(5), 3, 13500) },
+          },
+          seasonTotals: { ratio: {}, secondary: {} },
+        },
+      },
+    }];
+    const base = {
+      entity: "skaters", season: 20252026, asOfDate: "2026-04-16", window: "last20",
+      position: "all", deployment: "all", strength: "all", metric: "goals_per_60",
+      minGp: 1, minToiSeconds: 600, peerGroupType: "all_skaters", sort: "percentile",
+      direction: "desc", limit: 100, teamId: null, entityIds: null,
+    } as const;
+    const current = await buildContextualRankingsSurface(base);
+    // 3 goals over 13,500 s in the 15 current-season games (actual n = 15).
+    expect(current.rankings[0]?.metric.value).toBe(0.8);
+    expect(current.rankings[0]?.sample).toMatchObject({ gamesPlayed: 15, toiSeconds: 13500 });
+    clearContextualRankingsQueryCachesForTests();
+    const cross = await buildContextualRankingsSurface({ ...base, windowScope: "cross_season" });
+    expect(cross.rankings[0]?.metric.value).toBe(1.6);
+    expect(cross.rankings[0]?.sample).toMatchObject({ gamesPlayed: 20, toiSeconds: 18000 });
   });
 
   it("paginates rolling snapshot rows beyond Supabase's single-page limit", async () => {
@@ -789,6 +911,17 @@ describe("rankingQueries", () => {
       game_date, updated_at: `${game_date}T06:00:00.000Z`, games_played: 5,
       season_games_played: 5, toi_seconds_total_last5: 1800,
       goals_per_60_last5, goals_per_60_total_last5: goals_per_60_last5 / 2,
+      // Complete-cohort rows come from the source loader with L6 support joined.
+      windowCountSupport: {
+        version: "rolling-player-window-counts-v1", strengthState: "all",
+        anchor: { gameId: null, gameDate: game_date, season: 20252026 },
+        selection: "chronological_appearances_in_strength_state",
+        game: { appeared: true, ratio: {}, additive: {} },
+        windows: Object.fromEntries([5, 10, 20].map((size) => [`last${size}`, {
+          appearances: 5, gameIds: [1, 2, 3, 4, 5].map((n) => 2025020000 + n),
+          gameDates: Array(5).fill(game_date), ratio: {}, secondary: {},
+        }])),
+      },
     });
     const request = {
       entity: "skaters", season: 20252026, asOfDate: "2026-04-16", window: "last5",

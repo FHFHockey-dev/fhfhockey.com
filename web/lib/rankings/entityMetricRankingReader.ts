@@ -378,7 +378,7 @@ function toApiRow(args: {
         : "Sample unavailable or below selected minimums; rank and percentile unavailable."]
       : [
         `Rank ${ranking.rawRank} of ${ranking.qualifiedPeerCount} in ${ranking.peerGroupType}:${ranking.peerGroupKey}.`,
-        `Better than ${ranking.percentile?.toFixed(1)}% of other qualified peers after metric directionality is applied.`,
+        `Mid-rank percentile ${ranking.percentile?.toFixed(1)} among qualified peers after metric directionality is applied (ties share the mid-rank).`,
       ],
   };
 }

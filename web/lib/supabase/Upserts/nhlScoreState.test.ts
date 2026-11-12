@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { parseNhlPlayByPlayEvents } from "./nhlPlayByPlayParser";
-import { buildScoreStateContexts } from "./nhlScoreState";
+import {
+  buildRunningScoreTimeline,
+  buildScoreStateContexts,
+  getSideScoreDiff,
+  matchesScoreState,
+} from "./nhlScoreState";
 
 function parseEvents(plays: Record<string, unknown>[]) {
   return parseNhlPlayByPlayEvents(
@@ -208,6 +213,89 @@ describe("nhlScoreState", () => {
       ownerScoreDiffByGameTimeBucket: "lead-1@overtime",
       isFinalFiveMinutes: null,
       isFinalTwoMinutes: null,
+    });
+  });
+
+  describe("running-score timeline (shared score-segment helper)", () => {
+    const play = (
+      eventId: number,
+      timeInPeriod: string,
+      typeDescKey: string,
+      details: Record<string, unknown> = {},
+      periodType = "REG"
+    ) => ({
+      eventId,
+      sortOrder: eventId,
+      periodDescriptor: { number: periodType === "SO" ? 5 : 1, periodType },
+      timeInPeriod,
+      timeRemaining: "00:00",
+      situationCode: "1551",
+      homeTeamDefendingSide: "left",
+      typeDescKey,
+      details,
+    });
+
+    it("gives events their pre-event score and intervals their post-event score at a goal + stoppage on one clock", () => {
+      const events = parseEvents([
+        play(1, "05:00", "faceoff", { eventOwnerTeamId: 10 }),
+        play(2, "06:00", "goal", { eventOwnerTeamId: 10, homeScore: 1, awayScore: 0 }),
+        play(3, "06:00", "stoppage"),
+        play(4, "06:00", "faceoff", { eventOwnerTeamId: 20 }),
+      ]);
+      const timeline = buildRunningScoreTimeline(events);
+      const byId = new Map(timeline.map((entry) => [entry.eventId, entry]));
+
+      // Non-goal events carry no scoreboard fields, yet still get a score.
+      expect(byId.get(1)!.before).toEqual({ homeScore: 0, awayScore: 0 });
+      // The goal is classified tied (pre-event), the interval after it as home +1.
+      expect(byId.get(2)!.before).toEqual({ homeScore: 0, awayScore: 0 });
+      expect(byId.get(2)!.after).toEqual({ homeScore: 1, awayScore: 0 });
+      expect(byId.get(3)!.after).toEqual({ homeScore: 1, awayScore: 0 });
+      expect(byId.get(4)!.before).toEqual({ homeScore: 1, awayScore: 0 });
+    });
+
+    it("leaves the score unknown after a goal with no scoreboard and no owner", () => {
+      const events = parseEvents([
+        play(1, "01:00", "goal", {}),
+        play(2, "02:00", "shot-on-goal", { eventOwnerTeamId: 20 }),
+        play(3, "03:00", "goal", { eventOwnerTeamId: 20, homeScore: 1, awayScore: 1 }),
+      ]);
+      const byId = new Map(
+        buildRunningScoreTimeline(events).map((entry) => [entry.eventId, entry])
+      );
+
+      expect(byId.get(2)!.before).toEqual({ homeScore: null, awayScore: null });
+      expect(getSideScoreDiff(byId.get(2)!.before, "home")).toBeNull();
+      // Unknown is not tied.
+      expect(matchesScoreState("tied", getSideScoreDiff(byId.get(2)!.before, "home"))).toBe(false);
+      // A later scoreboard re-anchors.
+      expect(byId.get(3)!.after).toEqual({ homeScore: 1, awayScore: 1 });
+    });
+
+    it("never changes the score on shootout attempts", () => {
+      const events = parseEvents([
+        play(1, "00:00", "goal", { eventOwnerTeamId: 10, homeScore: 3, awayScore: 2 }, "SO"),
+      ]);
+      expect(buildRunningScoreTimeline(events)[0].after).toEqual({ homeScore: 0, awayScore: 0 });
+    });
+
+    it("decision 11: Leading and Trailing include one-goal margins; Up/Down 1 are subsets", () => {
+      expect(matchesScoreState("leading", 1)).toBe(true);
+      expect(matchesScoreState("leading", 3)).toBe(true);
+      expect(matchesScoreState("upOne", 1)).toBe(true);
+      expect(matchesScoreState("upOne", 2)).toBe(false);
+      expect(matchesScoreState("trailing", -1)).toBe(true);
+      expect(matchesScoreState("downOne", -1)).toBe(true);
+      expect(matchesScoreState("withinOne", -1)).toBe(true);
+      expect(matchesScoreState("withinOne", 2)).toBe(false);
+      expect(matchesScoreState("tied", 0)).toBe(true);
+      for (const diff of [-3, -1, 0, 1, 3]) {
+        const hits = (["tied", "leading", "trailing"] as const).filter((state) =>
+          matchesScoreState(state, diff)
+        );
+        expect(hits).toHaveLength(1);
+      }
+      expect(matchesScoreState("allScores", null)).toBe(true);
     });
   });
 });

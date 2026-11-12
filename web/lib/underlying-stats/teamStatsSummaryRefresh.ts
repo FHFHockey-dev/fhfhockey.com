@@ -5,10 +5,15 @@ import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import serviceRoleClient from "lib/supabase/server";
 import { evaluateNormalizedEventInclusion } from "lib/supabase/Upserts/nhlEventInclusion";
 import {
-  classifyTeamStrengthState,
-  formatStrengthExact,
+  buildRunningScoreByEventKey,
+  getSideScoreDiff,
+  runningScoreEventKey,
+  type RunningScore,
+} from "lib/supabase/Upserts/nhlScoreState";
+import {
+  classifyTeamManpower,
   parseSituationCode,
-  type StrengthState,
+  type TeamManpowerContext,
 } from "lib/supabase/Upserts/nhlStrengthState";
 
 import {
@@ -23,6 +28,10 @@ import type {
   PlayerStatsScoreState,
   PlayerStatsStrength,
 } from "./playerStatsTypes";
+import {
+  matchesUnderlyingScoreState,
+  matchesUnderlyingStrength,
+} from "./underlyingStrengthPredicate";
 
 const NHL_REGULATION_PERIOD_SECONDS = 20 * 60;
 const NHL_REGULAR_SEASON_OVERTIME_SECONDS = 5 * 60;
@@ -114,15 +123,11 @@ type TeamStrengthSegment = {
   periodNumber: number;
   startSecond: number;
   endSecond: number;
-  strengthExact: string | null;
-  homeState: StrengthState | null;
-  awayState: StrengthState | null;
-  awayGoalie: number;
-  awaySkaters: number;
-  homeSkaters: number;
-  homeGoalie: number;
-  homeScore: number | null;
-  awayScore: number | null;
+  /** Manpower context per side (decision 70), from the event's situation code. */
+  home: TeamManpowerContext | null;
+  away: TeamManpowerContext | null;
+  /** Score once the starting event is applied: intervals use the score after (decision 11). */
+  scoreAfter: RunningScore | null;
 };
 
 type TeamShotMetrics = Omit<
@@ -240,7 +245,55 @@ function sortEvents(events: readonly PlayerStatsSourceEventRow[]) {
   });
 }
 
-function resolvePeriodDurationSeconds(event: PlayerStatsSourceEventRow): number | null {
+const PLAYOFF_GAME_TYPE = 3;
+const TERMINAL_EVENT_TYPES = new Set(["period-end", "game-end"]);
+
+function isOvertimePeriodType(periodType: string | null | undefined) {
+  const normalized = periodType?.trim().toUpperCase() ?? null;
+  return (
+    normalized === "OT" ||
+    normalized === "OVERTIME" ||
+    normalized === "REGULAR_SEASON_OT"
+  );
+}
+
+function resolveEventSide(
+  teamId: number | null | undefined,
+  homeTeamId: number,
+  awayTeamId: number
+): "home" | "away" | null {
+  if (teamId === homeTeamId) return "home";
+  if (teamId === awayTeamId) return "away";
+  return null;
+}
+
+/** Running score per event (L1 helper); the owner side comes from the team id. */
+function buildTeamRunningScores(
+  events: readonly PlayerStatsSourceEventRow[],
+  homeTeamId: number,
+  awayTeamId: number
+) {
+  return buildRunningScoreByEventKey(
+    events.map((event) => ({
+      ...event,
+      event_owner_side: resolveEventSide(
+        event.event_owner_team_id,
+        homeTeamId,
+        awayTeamId
+      ),
+    }))
+  );
+}
+
+/**
+ * The clock-time an interval starting at this event can last. Overtime is
+ * sudden death (W2-3 A2): no time follows an overtime goal or a terminal marker.
+ * Playoff overtime periods are 20 minutes.
+ */
+function resolvePeriodDurationSeconds(
+  event: PlayerStatsSourceEventRow,
+  gameType?: number | null
+): number | null {
   if (
     event.period_seconds_elapsed != null &&
     event.time_remaining_seconds != null
@@ -254,22 +307,30 @@ function resolvePeriodDurationSeconds(event: PlayerStatsSourceEventRow): number 
     return 0;
   }
 
-  if (
-    normalizedPeriodType === "OT" ||
-    normalizedPeriodType === "OVERTIME" ||
-    normalizedPeriodType === "REGULAR_SEASON_OT"
-  ) {
-    return NHL_REGULAR_SEASON_OVERTIME_SECONDS;
+  if (isOvertimePeriodType(normalizedPeriodType)) {
+    return gameType === PLAYOFF_GAME_TYPE
+      ? NHL_REGULATION_PERIOD_SECONDS
+      : NHL_REGULAR_SEASON_OVERTIME_SECONDS;
   }
 
   return NHL_REGULATION_PERIOD_SECONDS;
 }
 
+function endsPlayAfterEvent(event: PlayerStatsSourceEventRow) {
+  if (TERMINAL_EVENT_TYPES.has(event.type_desc_key ?? "")) {
+    return true;
+  }
+
+  return event.type_desc_key === "goal" && isOvertimePeriodType(event.period_type);
+}
+
 function buildStrengthSegments(
   events: readonly PlayerStatsSourceEventRow[],
   homeTeamId: number,
-  awayTeamId: number
+  awayTeamId: number,
+  gameType?: number | null
 ): TeamStrengthSegment[] {
+  const runningScores = buildTeamRunningScores(events, homeTeamId, awayTeamId);
   const sorted = sortEvents(events).filter(
     (event) =>
       evaluateNormalizedEventInclusion(event).includeInOnIceParity &&
@@ -289,8 +350,9 @@ function buildStrengthSegments(
         : null;
     const parsed = parseSituationCode(event.situation_code);
     const startSecond = event.period_seconds_elapsed ?? null;
-    const endSecond =
-      next?.period_seconds_elapsed ?? resolvePeriodDurationSeconds(event);
+    const endSecond = endsPlayAfterEvent(event)
+      ? startSecond
+      : next?.period_seconds_elapsed ?? resolvePeriodDurationSeconds(event, gameType);
 
     if (
       periodNumber == null ||
@@ -306,157 +368,15 @@ function buildStrengthSegments(
       periodNumber,
       startSecond,
       endSecond,
-      strengthExact: formatStrengthExact(parsed),
-      homeState: classifyTeamStrengthState(
-        parsed,
-        homeTeamId,
-        homeTeamId,
-        awayTeamId
-      ),
-      awayState: classifyTeamStrengthState(
-        parsed,
-        awayTeamId,
-        homeTeamId,
-        awayTeamId
-      ),
-      awayGoalie: parsed.awayGoalie,
-      awaySkaters: parsed.awaySkaters,
-      homeSkaters: parsed.homeSkaters,
-      homeGoalie: parsed.homeGoalie,
-      homeScore: event.home_score ?? null,
-      awayScore: event.away_score ?? null
+      home: classifyTeamManpower(parsed, "home"),
+      away: classifyTeamManpower(parsed, "away"),
+      scoreAfter:
+        runningScores.get(runningScoreEventKey(event.game_id, event.event_id))?.after ??
+        null,
     });
   }
 
   return segments;
-}
-
-function parseStrengthExactCounts(
-  strengthExact: string | null
-): { homeSkaters: number | null; awaySkaters: number | null } {
-  const match = strengthExact?.match(/^(\d+)v(\d+)$/);
-
-  if (!match) {
-    return { homeSkaters: null, awaySkaters: null };
-  }
-
-  return {
-    homeSkaters: Number(match[1]),
-    awaySkaters: Number(match[2]),
-  };
-}
-
-function getTeamScoreDiffBucket(diff: number): Exclude<PlayerStatsScoreState, "allScores"> {
-  if (diff === 0) {
-    return "tied";
-  }
-
-  if (diff === 1) {
-    return "upOne";
-  }
-
-  if (diff === -1) {
-    return "downOne";
-  }
-
-  return diff > 0 ? "leading" : "trailing";
-}
-
-function matchesTeamScoreState(
-  scoreState: PlayerStatsScoreState,
-  teamScoreDiff: number | null
-) {
-  if (scoreState === "allScores") {
-    return true;
-  }
-
-  if (teamScoreDiff == null) {
-    return false;
-  }
-
-  if (scoreState === "withinOne") {
-    return Math.abs(teamScoreDiff) <= 1;
-  }
-
-  return getTeamScoreDiffBucket(teamScoreDiff) === scoreState;
-}
-
-function matchesTeamStrength(args: {
-  strength: PlayerStatsStrength;
-  teamSkaters: number | null;
-  opponentSkaters: number | null;
-  teamGoalieOnIce: boolean | null;
-  opponentGoalieOnIce: boolean | null;
-}) {
-  const {
-    strength,
-    teamSkaters,
-    opponentSkaters,
-    teamGoalieOnIce,
-    opponentGoalieOnIce,
-  } = args;
-
-  if (strength === "allStrengths") {
-    return true;
-  }
-
-  if (teamSkaters == null || opponentSkaters == null) {
-    return false;
-  }
-
-  if (strength === "evenStrength") {
-    return teamSkaters === opponentSkaters;
-  }
-
-  if (strength === "fiveOnFive") {
-    return (
-      teamGoalieOnIce === true &&
-      opponentGoalieOnIce === true &&
-      teamSkaters === 5 &&
-      opponentSkaters === 5
-    );
-  }
-
-  if (strength === "powerPlay") {
-    return teamSkaters > opponentSkaters;
-  }
-
-  if (strength === "penaltyKill") {
-    return teamSkaters < opponentSkaters;
-  }
-
-  if (strength === "fiveOnFourPP") {
-    return (
-      teamGoalieOnIce === true &&
-      opponentGoalieOnIce === true &&
-      teamSkaters === 5 &&
-      opponentSkaters === 4
-    );
-  }
-
-  if (strength === "fourOnFivePK") {
-    return (
-      teamGoalieOnIce === true &&
-      opponentGoalieOnIce === true &&
-      teamSkaters === 4 &&
-      opponentSkaters === 5
-    );
-  }
-
-  if (strength === "threeOnThree") {
-    return (
-      teamGoalieOnIce === true &&
-      opponentGoalieOnIce === true &&
-      teamSkaters === 3 &&
-      opponentSkaters === 3
-    );
-  }
-
-  if (strength === "withEmptyNet") {
-    return teamGoalieOnIce === false;
-  }
-
-  return opponentGoalieOnIce === false;
 }
 
 function getDangerBucket(args: {
@@ -522,51 +442,6 @@ function isScoringChance(args: {
   return bucket === "high" || bucket === "medium";
 }
 
-function resolveTeamScoreDiffForShot(args: {
-  teamId: number;
-  eventOwnerTeamId: number | null;
-  ownerScoreDiffBeforeEvent: number | null;
-}) {
-  if (args.ownerScoreDiffBeforeEvent == null || args.eventOwnerTeamId == null) {
-    return null;
-  }
-
-  return args.eventOwnerTeamId === args.teamId
-    ? args.ownerScoreDiffBeforeEvent
-    : args.ownerScoreDiffBeforeEvent * -1;
-}
-
-function resolveTeamSituationForSegment(args: {
-  teamId: number;
-  homeTeamId: number;
-  awayTeamId: number;
-  segment: TeamStrengthSegment;
-}) {
-  if (args.teamId === args.homeTeamId) {
-    return {
-      teamSkaters: args.segment.homeSkaters,
-      opponentSkaters: args.segment.awaySkaters,
-      teamGoalieOnIce: args.segment.homeGoalie > 0,
-      opponentGoalieOnIce: args.segment.awayGoalie > 0,
-      teamScoreDiff:
-        args.segment.homeScore != null && args.segment.awayScore != null
-          ? args.segment.homeScore - args.segment.awayScore
-          : null,
-    };
-  }
-
-  return {
-    teamSkaters: args.segment.awaySkaters,
-    opponentSkaters: args.segment.homeSkaters,
-    teamGoalieOnIce: args.segment.awayGoalie > 0,
-    opponentGoalieOnIce: args.segment.homeGoalie > 0,
-    teamScoreDiff:
-      args.segment.homeScore != null && args.segment.awayScore != null
-        ? args.segment.awayScore - args.segment.homeScore
-        : null,
-  };
-}
-
 function accumulateTeamToiSeconds(args: {
   segments: readonly TeamStrengthSegment[];
   teamId: number;
@@ -576,24 +451,17 @@ function accumulateTeamToiSeconds(args: {
   scoreState: PlayerStatsScoreState;
 }) {
   let total = 0;
+  const side = resolveEventSide(args.teamId, args.homeTeamId, args.awayTeamId);
 
   for (const segment of args.segments) {
-    const relative = resolveTeamSituationForSegment({
-      teamId: args.teamId,
-      homeTeamId: args.homeTeamId,
-      awayTeamId: args.awayTeamId,
-      segment,
-    });
+    const context = side === "home" ? segment.home : side === "away" ? segment.away : null;
 
     if (
-      !matchesTeamStrength({
-        strength: args.strength,
-        teamSkaters: relative.teamSkaters,
-        opponentSkaters: relative.opponentSkaters,
-        teamGoalieOnIce: relative.teamGoalieOnIce,
-        opponentGoalieOnIce: relative.opponentGoalieOnIce,
-      }) ||
-      !matchesTeamScoreState(args.scoreState, relative.teamScoreDiff)
+      !matchesUnderlyingStrength(args.strength, context) ||
+      !matchesUnderlyingScoreState(
+        args.scoreState,
+        getSideScoreDiff(segment.scoreAfter, side)
+      )
     ) {
       continue;
     }
@@ -604,52 +472,63 @@ function accumulateTeamToiSeconds(args: {
   return total;
 }
 
+type TeamShotEventContext = {
+  situationByEventId: Map<number, ReturnType<typeof parseSituationCode>>;
+  runningScores: ReturnType<typeof buildTeamRunningScores>;
+};
+
+function buildTeamShotEventContext(
+  events: readonly PlayerStatsSourceEventRow[],
+  homeTeamId: number,
+  awayTeamId: number
+): TeamShotEventContext {
+  return {
+    situationByEventId: new Map(
+      events.map((event) => [event.event_id, parseSituationCode(event.situation_code)])
+    ),
+    runningScores: buildTeamRunningScores(events, homeTeamId, awayTeamId),
+  };
+}
+
 function accumulateTeamShotMetrics(args: {
   gameParity: PlayerStatsLandingNativeGameParity;
+  eventContext: TeamShotEventContext;
   teamId: number;
   strength: PlayerStatsStrength;
   scoreState: PlayerStatsScoreState;
 }) {
   const metrics = defaultMetrics();
-  const isHome = args.gameParity.game.homeTeamId === args.teamId;
+  const { game } = args.gameParity;
+  const side = resolveEventSide(args.teamId, game.homeTeamId, game.awayTeamId);
 
   for (const shot of args.gameParity.shotFeatures) {
     if (shot.isShootoutEvent) {
       continue;
     }
 
-    const teamScoreDiff = resolveTeamScoreDiffForShot({
-      teamId: args.teamId,
-      eventOwnerTeamId: shot.eventOwnerTeamId,
-      ownerScoreDiffBeforeEvent: shot.ownerScoreDiffBeforeEvent,
-    });
-
-    if (!matchesTeamScoreState(args.scoreState, teamScoreDiff)) {
-      continue;
-    }
-
-    const { homeSkaters, awaySkaters } = parseStrengthExactCounts(shot.strengthExact);
-    const teamSkaters = isHome ? homeSkaters : awaySkaters;
-    const opponentSkaters = isHome ? awaySkaters : homeSkaters;
-    const isTeamOwner = shot.eventOwnerTeamId === args.teamId;
-    const teamGoalieOnIce = isTeamOwner
-      ? shot.ownerGoalieOnIce
-      : shot.opponentGoalieOnIce;
-    const opponentGoalieOnIce = isTeamOwner
-      ? shot.opponentGoalieOnIce
-      : shot.ownerGoalieOnIce;
+    // Events are classified by the score before them (a goal never sees its own goal).
+    const scoreBefore =
+      args.eventContext.runningScores.get(runningScoreEventKey(game.id, shot.eventId))
+        ?.before ?? null;
 
     if (
-      !matchesTeamStrength({
-        strength: args.strength,
-        teamSkaters,
-        opponentSkaters,
-        teamGoalieOnIce,
-        opponentGoalieOnIce,
-      })
+      !matchesUnderlyingScoreState(args.scoreState, getSideScoreDiff(scoreBefore, side))
     ) {
       continue;
     }
+
+    // Team-oriented manpower from the event's situation code (decision 70),
+    // never the away-first strength_exact string.
+    const context = classifyTeamManpower(
+      args.eventContext.situationByEventId.get(shot.eventId) ?? null,
+      side
+    );
+
+    if (!matchesUnderlyingStrength(args.strength, context)) {
+      continue;
+    }
+
+    const isTeamOwner = shot.eventOwnerTeamId === args.teamId;
 
     const shotOnGoal = SHOT_ON_GOAL_TYPES.has(shot.shotEventType ?? "");
     const shotAttempt = SHOT_ATTEMPT_TYPES.has(shot.shotEventType ?? "");
@@ -928,10 +807,13 @@ function resolveGameOutcome(args: {
   return resolveGameOutcomeFromEvents(args);
 }
 
+// An unresolved winner stores zeros (the columns are NOT NULL); readers treat a
+// game with W + L + OTL = 0 as unresolved and drop it from the record (W2-3 D12).
 function buildStandingsOutcome(args: {
   teamId: number;
   opponentTeamId: number;
   gameOutcome: TeamGameOutcome;
+  gameType?: number | null;
 }) {
   if (args.gameOutcome.winnerTeamId == null) {
     return {
@@ -953,9 +835,11 @@ function buildStandingsOutcome(args: {
     };
   }
 
+  // Playoff games have no overtime-loss point: an overtime loss is a loss.
   const overtimeLoss =
-    args.gameOutcome.outcomeType === "overtime" ||
-    args.gameOutcome.outcomeType === "shootout";
+    args.gameType !== PLAYOFF_GAME_TYPE &&
+    (args.gameOutcome.outcomeType === "overtime" ||
+      args.gameOutcome.outcomeType === "shootout");
 
   return {
     wins: 0,
@@ -966,7 +850,7 @@ function buildStandingsOutcome(args: {
   };
 }
 
-function buildTeamUnderlyingSummaryRowsForGame(args: {
+export function buildTeamUnderlyingSummaryRowsForGame(args: {
   gameParity: PlayerStatsLandingNativeGameParity;
   events: readonly PlayerStatsSourceEventRow[];
   officialPayload?: unknown;
@@ -979,6 +863,12 @@ function buildTeamUnderlyingSummaryRowsForGame(args: {
   }
 
   const strengthSegments = buildStrengthSegments(
+    args.events,
+    game.homeTeamId,
+    game.awayTeamId,
+    gameType
+  );
+  const eventContext = buildTeamShotEventContext(
     args.events,
     game.homeTeamId,
     game.awayTeamId
@@ -1010,9 +900,11 @@ function buildTeamUnderlyingSummaryRowsForGame(args: {
           teamId: teamContext.teamId,
           opponentTeamId: teamContext.opponentTeamId,
           gameOutcome,
+          gameType,
         });
         const metrics = accumulateTeamShotMetrics({
           gameParity: args.gameParity,
+          eventContext,
           teamId: teamContext.teamId,
           strength,
           scoreState,

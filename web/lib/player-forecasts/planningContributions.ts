@@ -1,4 +1,4 @@
-import { calendarLeadDay, catalogParticipation, forecastCalendarPolicy, validForecastCalendarPolicy, resolveContribution, type ContributionGame, type ContributionParticipation, type ContributionSource } from "./contributions";
+import { calendarLeadDay, catalogParticipation, startMassExceedsOne, forecastCalendarPolicy, validForecastCalendarPolicy, resolveContribution, type ContributionGame, type ContributionParticipation, type ContributionSource } from "./contributions";
 import { currentRsoUsePolicy, restrictRsoForecast, type RsoUsePolicy } from "./rsoUsePolicy";
 import { currentPlanningTime } from "../rosterScheduleOptimizer/currentPlanningRead";
 import { applyModeledStartMetadata, forecastFromContributions, revalidateResolvedForecast } from "./resolvedPlanningForecast";
@@ -19,7 +19,7 @@ function issuedGame(forecast: GameForecast | undefined, snapshot: ContributionPl
     || Date.parse(context.observedAt) > Date.parse(forecast.issuedAt)) return null;
   return { playerId: Number(context.playerId), nhlPlayerId: context.nhlPlayerId,
     seasonId: context.seasonId, teamId: context.teamId, gameId: Number(context.gameId),
-    scheduledAt: context.scheduledAt, scheduleRevision: context.scheduleRevision,
+    scheduledAt: context.scheduledAt, scheduleDate: game.date, scheduleRevision: context.scheduleRevision,
     rosterRevision: context.rosterRevision };
 }
 
@@ -95,7 +95,7 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
   }
   // Validate fresh competition before limiting the requested player set or
   // assigning slots. A benched teammate is still part of the same start event.
-  const goalieMass = new Map<string, number>(), invalidGoalieGroups = new Set<string>();
+  const goalieMass = new Map<string, number[]>(), invalidGoalieGroups = new Set<string>();
   for (const forecast of snapshot.forecasts) {
     // Independent start metadata has its own whole-team check and does not
     // invalidate appearance-conditioned means when its marginals conflict.
@@ -107,9 +107,9 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
     const probability = forecast.confirmedStart ? 1 : forecast.startProbability;
     if (modelProbability != null && (!Number.isFinite(modelProbability) || modelProbability < 0 || modelProbability > 1)) {
       invalidGoalieGroups.add(key);
-    } else if (probability != null) goalieMass.set(key, (goalieMass.get(key) ?? 0) + probability);
+    } else if (probability != null) goalieMass.set(key, [...(goalieMass.get(key) ?? []), probability]);
   }
-  for (const [key, mass] of goalieMass) if (mass > 1.000001) invalidGoalieGroups.add(key);
+  for (const [key, mass] of goalieMass) if (startMassExceedsOne(mass)) invalidGoalieGroups.add(key);
   if (invalidGoalieGroups.size) {
     for (const game of snapshot.games) for (const player of snapshot.players) {
       if (player.playerClass === "goalie" && player.teamAbbreviation === game.teamAbbreviation
@@ -132,7 +132,7 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
       if (forecast.contributions) return forecast;
       const identity = issuedGame(forecast, snapshot);
       if (identity && (!validForecastCalendarPolicy(calendarPolicy)
-        || calendarLeadDay(identity.scheduledAt, snapshot.context.asOf) >= calendarPolicy.calendarDays)) {
+        || !(calendarLeadDay(identity.scheduledAt, snapshot.context.asOf, calendarPolicy, identity.scheduleDate) < calendarPolicy.calendarDays))) {
         return reject(forecast, "outside_horizon",
           "Detailed forecast is outside the declared calendar policy or that policy is unsupported.");
       }
@@ -162,7 +162,7 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
         || game.date < snapshot.context.startDate || game.date > snapshot.context.endDate
         || Date.parse(game.startsAt) <= Date.parse(snapshot.context.asOf) || !game.scheduleRevision) continue;
       const identity: ContributionGame = { playerId: Number(player.id), nhlPlayerId: player.nhlId,
-        seasonId: snapshot.context.seasonId, teamId: player.nhlTeamId, gameId: Number(game.id), scheduledAt: game.startsAt,
+        seasonId: snapshot.context.seasonId, teamId: player.nhlTeamId, gameId: Number(game.id), scheduledAt: game.startsAt, scheduleDate: game.date,
         scheduleRevision: game.scheduleRevision, rosterRevision: player.rosterRevision };
       const key = `${player.id}:${game.id}`, original = forecasts.get(key);
       if (original?.contributions) continue;

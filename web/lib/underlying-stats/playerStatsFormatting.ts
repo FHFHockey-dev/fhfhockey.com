@@ -1,4 +1,6 @@
 export const PLAYER_STATS_EMPTY_VALUE = "—";
+/** A skater with no recorded position (decision 96). */
+export const PLAYER_STATS_UNKNOWN_POSITION_LABEL = "Position unknown";
 
 export type PlayerStatsFormattingToken =
   | "text"
@@ -114,7 +116,9 @@ export function formatPlayerStatsValue(
   format: PlayerStatsFormattingToken
 ): string {
   if (value === null || value === undefined || value === "") {
-    return PLAYER_STATS_EMPTY_VALUE;
+    return format === "position"
+      ? PLAYER_STATS_UNKNOWN_POSITION_LABEL
+      : PLAYER_STATS_EMPTY_VALUE;
   }
 
   switch (format) {

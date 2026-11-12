@@ -49,6 +49,17 @@ function fixture(): PlanningSnapshot {
   return snapshot;
 }
 
+/** Decisions 3 and 47: a roster player with no usable forecast is unknown and never an automatic drop. Gives the
+ * roster players (not the candidates) a known 1-goal line on each of their games, from the fixture's own template. */
+function withRosterForecasts(snapshot: PlanningSnapshot, template: GameForecast): PlanningSnapshot {
+  const owned = new Set(snapshot.roster.map(row => row.playerId));
+  snapshot.forecasts = snapshot.games.flatMap(game => snapshot.players.filter(player => owned.has(player.id) && player.teamAbbreviation === game.teamAbbreviation)
+    .map(player => ({ ...template, playerId: player.id, gameId: game.id, stats: { GOALS: 1 }, expiresAt: game.startsAt,
+      revisionId: `revision-${player.id}-${game.id}`, issuedContext: { ...template.issuedContext!, playerId: player.id, gameId: game.id,
+        nhlPlayerId: player.nhlId!, teamId: player.nhlTeamId!, scheduledAt: game.startsAt!, scheduleRevision: game.scheduleRevision ?? "fixture",
+        rosterRevision: player.rosterRevision! } } as GameForecast)));
+  return snapshot;
+}
 function auditSearchFixture(candidateCount: number): PlanningSnapshot {
   const data = fixture(), template = data.players[0], forecast = data.forecasts[0];
   data.context.endDate = data.context.startDate;
@@ -311,7 +322,11 @@ describe("complete timed candidate metrics", () => {
     const metrics = candidateMetrics(snapshot, defaultIntent());
     expect(metrics.baseline.projectedPoints).toBeNull();
     if (problem !== "missing member") expect(metrics.candidates.flatMap(row => row.plans).length).toBeGreaterThan(0);
-    expect(metrics.candidates.flatMap(row => row.plans).every(plan => plan.netPoints === null)).toBe(true);
+    // Unknown participation (TJ, 2026-11-12): a stays active and unknown in both plans, so his contribution cancels and
+    // adding c for b nets c's 2; a is never a proposed drop (decisions 3, 47).
+    if (problem === "unknown participation") expect(metrics.candidates.flatMap(row => row.plans)
+      .map(plan => [plan.steps.map(step => step.dropPlayerId).join(), plan.netPoints])).toEqual([["b", 2]]);
+    else expect(metrics.candidates.flatMap(row => row.plans).every(plan => plan.netPoints === null)).toBe(true);
     if (problem !== "unknown participation")
       expect(metrics.candidates.flatMap(row => row.plans).every(plan => plan.netAGP === null)).toBe(true);
   });
@@ -332,7 +347,9 @@ describe("complete timed candidate metrics", () => {
       nhlId: 10000 + index, name: `Known ${index}` }));
     const unknown = Array.from({ length: 197 }, (_, index) => ({ ...template, id: `0-unknown-${String(index).padStart(3, "0")}`,
       nhlId: 20000 + index, name: `Unknown ${index}`, eligibilityVerified: false, availability: "unknown" as const }));
-    snapshot.players = [...snapshot.players.slice(0, 2), ...unknown, ...known]; snapshot.forecasts = [];
+    snapshot.players = [...snapshot.players.slice(0, 2), ...unknown, ...known];
+    // Candidates carry no forecast; the roster keeps its own (an unknown roster player is never a proposed drop).
+    snapshot.forecasts = snapshot.forecasts.filter(row => row.playerId !== "c");
     if (!reviewed) { snapshot.rules.acquisitionTiming = "unknown"; snapshot.rules.acquisitionCost = null; snapshot.rules.periods = []; }
     const before = JSON.stringify({ snapshot, intent });
     const result = candidateMetrics(snapshot, intent);
@@ -342,13 +359,15 @@ describe("complete timed candidate metrics", () => {
     expect(result.diagnostics.filter(row => row.playerId.startsWith("known-") && row.status === "not_selected")).toHaveLength(612);
     const selected = result.diagnostics.filter(row => result.candidates.some(candidate => candidate.playerId === row.playerId));
     expect(selected).toHaveLength(40);
-    expect(selected.every(row => row.status === (reviewed ? "evaluated" : "no_proposals"))).toBe(true);
+    // With the roster's points known both objectives are compared, so the shared allowance leaves reviewed rows partial.
+    expect(selected.every(row => reviewed ? ["evaluated", "partial"].includes(row.status) : row.status === "no_proposals")).toBe(true);
     expect(reviewed ? selected.every(row => row.evaluated > 0 && row.retained > 0) : selected.every(row => row.generated === 0 && row.evaluated === 0)).toBe(true);
     expect(result.search.evaluated).toBeLessThanOrEqual(160);
     expect(JSON.stringify({ snapshot, intent })).toBe(before);
   });
-  it("automatically proposes legal full-roster swaps from empty intent without forecasts", () => {
-    const snapshot = fixture(); snapshot.forecasts = [];
+  it("automatically proposes legal full-roster swaps from empty intent without a candidate forecast", () => {
+    // The roster keeps its forecasts (an unknown roster player is never a proposed drop, decisions 3, 47); c has none.
+    const snapshot = fixture(); snapshot.forecasts = snapshot.forecasts.filter(row => row.playerId !== "c");
     const intent = defaultIntent();
     const before = JSON.stringify({ snapshot, intent });
     const metrics = candidateMetrics(snapshot, intent);
@@ -359,7 +378,7 @@ describe("complete timed candidate metrics", () => {
     expect(["a", "b"]).toContain(plan.steps[0].dropPlayerId);
     expect(evaluatePlan(snapshot, intent, "agp", plan.steps, false)).toMatchObject({ legal: true, budgetVerified: true });
     expect(metrics.diagnostics.find(row => row.playerId === "c")).toMatchObject({ status: "evaluated", stopReason: "exhausted",
-      generated: 3, skipped: 1, evaluated: 2, illegal: 0, unverifiedBudget: 0, retained: 2 });
+      generated: 3, skipped: 1, evaluated: 4, illegal: 0, unverifiedBudget: 0, retained: 4 });
     expect(JSON.stringify({ snapshot, intent })).toBe(before);
   });
 
@@ -382,9 +401,9 @@ describe("complete timed candidate metrics", () => {
     if (denial === "unbound") snapshot.forecasts = snapshot.forecasts.map(({ rsoTargetBindings: _binding, ...row }) => row);
     else vi.mocked(rsoPolicy.currentRsoUsePolicy).mockReturnValue(rsoPolicy.RSO_USE_POLICY);
     const plans = candidateMetrics(snapshot, intent).candidates.flatMap(candidate => candidate.plans);
-    // Schedule capacity stays; the +2 points the reviewed fixture earns is withheld, not zeroed.
-    expect(plans).toHaveLength(1);
-    expect(plans[0]).toMatchObject({ netAGP: 1, netPoints: null });
+    // Every forecast is withheld, so b's value is unknown too and he is never a proposed drop (decisions 3, 47); the
+    // +2 points the reviewed fixture earns is withheld, not zeroed, and no schedule-only swap drops an unknown player.
+    expect(plans).toEqual([]);
   });
 
   it.each(["availability", "eligibility", "excluded", "no game"])("reports filtered input for %s without pretending it was evaluated", problem => {
@@ -440,7 +459,7 @@ describe("complete timed candidate metrics", () => {
   });
 
   it("does not let skipped full-roster adds consume the twelve evaluated-proposal allowance", () => {
-    const snapshot = fixture(); snapshot.forecasts = [];
+    const snapshot = fixture(), template = snapshot.forecasts[0];
     snapshot.context.endDate = "2026-10-09";
     snapshot.rules.rosterSlots.BN = 2;
     snapshot.rules.periods[0].end = "2026-10-12T00:00:00Z";
@@ -449,10 +468,13 @@ describe("complete timed candidate metrics", () => {
     snapshot.games = snapshot.players.flatMap(player => Array.from({ length: 5 }, (_, index) => {
       const date = `2026-10-0${index + 5}`;
       return { id: `${player.id}:${date}`, date, startsAt: `${date}T20:00:00Z`, teamAbbreviation: player.teamAbbreviation!,
-        opponent: "X", home: true, status: "scheduled" as const };
+        opponent: "X", home: true, status: "scheduled" as const, scheduleRevision: `schedule-${player.id}` };
     }));
     snapshot.lockedAssignments = [{ date: "2026-10-09", playerId: "a", slotId: "C#1" },
       { date: "2026-10-09", playerId: "b", slotId: null }];
+    // Known roster lines so d is a drop candidate (an unknown roster player never is); the candidate has none. They price
+    // totals but don't choose slots, so the search stays schedule-only (one objective) as this allowance test intends.
+    withRosterForecasts(snapshot, template).forecasts.forEach(row => { row.allowedUses = { ...row.allowedUses!, assignment: false }; });
     const intent = defaultIntent();
     const before = JSON.stringify({ snapshot, intent });
     expect(evaluatePlan(snapshot, intent, "agp", [], false).legal).toBe(true);

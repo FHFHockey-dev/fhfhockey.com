@@ -3,19 +3,46 @@ import { createHash } from "crypto";
 import {
   FANTASY_PROJECTION_SEASON_ID,
   FANTASY_PROJECTION_SUPPORTED_CONTRACTS,
+  FANTASY_PROJECTION_V3_CONTRACT_VERSION,
   FANTASY_PROJECTION_V5_CONTRACT_CHECKSUM,
   FANTASY_PROJECTION_V5_CONTRACT_VERSION,
   GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS,
+  GOALIE_FANTASY_V4_PRIMITIVE_TARGETS,
+  GOALIE_OUTCOME_TARGETS,
   GOALIE_PRIMITIVE_TARGETS,
   reconcileProjectionQuantiles,
   reconcileProjectionValues,
+  reconcileProjectionValuesWithClamps,
+  type ProjectionReconciliationClamp,
   SKATER_ADVANCED_V5_PRIMITIVE_TARGETS,
+  SKATER_FANTASY_V4_PRIMITIVE_TARGETS,
   SKATER_PRIMITIVE_TARGETS,
   type FantasyProjectionPopulation,
   type ProjectionValues,
 } from "./contracts";
 
 const P10_Z = 1.2815515655446004;
+
+/**
+ * v2 (L15, 2026-11-12): goalie outcome heads take no game-context multiplier
+ * (decision 121); GP/GS are Bernoulli (conditional variance 0); a missing
+ * conditional variance falls back to the Poisson variance of the already
+ * adjusted mean (once, not times m again); a missing rate is unknown, never 0;
+ * expected-assist aliases carry their source's moments; per-game quantiles
+ * carry the non-participation atom at 0; season aggregates take quantiles of
+ * one joint draw set, with actuals added per draw. Python twin: season.py.
+ */
+export const SEASON_GAME_EVALUATOR_VERSION = "season-game-evaluator-v2";
+export const GOALIE_OUTCOME_TREATMENT_VERSION =
+  "goalie-outcomes-prior-rate-no-game-context-v1";
+export const SEASON_AGGREGATE_VERSION = "season-aggregate-joint-draws-v2";
+/**
+ * One-factor Gaussian dependence between a player's targets inside a season
+ * aggregate: each target loads 0.65 on a common factor, so any two primitive
+ * targets correlate at 0.65² = 0.4225. A presentation choice, not fitted.
+ */
+export const SEASON_AGGREGATE_FACTOR_LOADING = 0.65;
+const SEASON_AGGREGATE_DRAWS = 256;
 
 export type PortablePlayerPrior = {
   fhfhPlayerId: number;
@@ -106,6 +133,12 @@ export type PortableSeasonArtifact = {
   }>;
 };
 
+/** Expected-assist aliases and the observed head whose moments they carry. */
+const EXPECTED_ASSIST_ALIASES: Readonly<Record<string, string>> = {
+  EXPECTED_PRIMARY_ASSISTS: "PRIMARY_ASSISTS",
+  EXPECTED_SECONDARY_ASSISTS: "SECONDARY_ASSISTS",
+};
+
 export type SeasonGameContext = {
   gameId: number;
   scheduledStartAt: string;
@@ -135,6 +168,15 @@ export type SeasonGameEvaluation = {
   };
   deployment: Record<string, unknown>;
   fallbackFlags: string[];
+  evaluatorVersion: string;
+  /** Goalies only: the versioned outcome treatment (decision 121). */
+  outcomeTreatment?: string;
+  /** Declared targets with no finite conditional rate: unknown, not 0. */
+  missingTargets: string[];
+  /** e.g. `variance_poisson_fallback:GOALS` when a variance was not supplied. */
+  momentFlags: string[];
+  /** Coherence clamps that bound on the unconditional means. */
+  reconciliationClamps: ProjectionReconciliationClamp[];
   componentHash: string;
 };
 
@@ -189,6 +231,16 @@ export function verifyPortableSeasonArtifact(
   }
 }
 
+function defaultPrimitiveTargets(
+  population: FantasyProjectionPopulation,
+  contractVersion: string,
+): string[] {
+  const fantasyV4 = contractVersion !== FANTASY_PROJECTION_V3_CONTRACT_VERSION;
+  return population === "goalie"
+    ? [...GOALIE_PRIMITIVE_TARGETS, ...(fantasyV4 ? GOALIE_FANTASY_V4_PRIMITIVE_TARGETS : [])]
+    : [...SKATER_PRIMITIVE_TARGETS, ...(fantasyV4 ? SKATER_FANTASY_V4_PRIMITIVE_TARGETS : [])];
+}
+
 function advancedTargetSource(target: string): string | null {
   if (target === "EXPECTED_PRIMARY_ASSISTS") return "PRIMARY_ASSISTS";
   if (target === "EXPECTED_SECONDARY_ASSISTS") return "SECONDARY_ASSISTS";
@@ -224,27 +276,39 @@ export function mergeAdvancedSeasonArtifact(
       for (const target of targets) {
         const sourceTarget = advancedTargetSource(target);
         const policy = advanced.targetPolicies[basePlayer.population]?.[target] ?? {};
+        const finite = (value: unknown): number | null =>
+          value == null || !Number.isFinite(Number(value)) ? null : Number(value);
+        // A missing rate is unknown (W3-5 F2): the target is left out and the
+        // evaluator reports it in missingTargets instead of serving 0.
         const rate = sourceTarget
-          ? Number(basePlayer.conditionalRates[sourceTarget] ?? 0)
-          : Number(advancedPlayer.rates?.[target] ?? policy.baselineRate ?? 0);
+          ? finite(basePlayer.conditionalRates[sourceTarget])
+          : finite(advancedPlayer.rates?.[target]) ?? finite(policy.baselineRate);
+        if (rate == null) {
+          delete conditionalRates[target];
+          delete baselineConditionalRates[target];
+          delete conditionalVariances[target];
+          if (policy.fallback) fallbackFlags.add(`advanced_v5_${target.toLowerCase()}_fallback`);
+          continue;
+        }
         const baselineRate = sourceTarget
-          ? Number(basePlayer.baselineConditionalRates?.[sourceTarget] ?? rate)
-          : Number(policy.baselineRate ?? rate);
-        const residual = Number(policy.residual80PerGame ?? 0);
-        let variance = Math.max(rate, residual * residual);
+          ? finite(basePlayer.baselineConditionalRates?.[sourceTarget]) ?? rate
+          : finite(policy.baselineRate) ?? rate;
+        let variance: number | null;
         if (sourceTarget) {
-          const probability = Math.min(1, Math.max(0, basePlayer.playProbability));
-          const sourceVariance = Number(basePlayer.conditionalVariances[sourceTarget] ?? rate);
-          const mixtureVariance =
-            probability * sourceVariance +
-            probability * (1 - probability) * rate * rate;
-          variance = probability > 0
-            ? Math.max(0, (mixtureVariance - probability * (1 - probability) * rate * rate) / probability)
-            : 0;
+          // Alias identity: the expected-assist head carries its source's
+          // conditional variance unchanged (W3-5 PR2).
+          variance = finite(basePlayer.conditionalVariances[sourceTarget]);
+        } else {
+          // residual80PerGame is the 80% quantile of absolute per-game error,
+          // so under a normal residual sigma = residual / z(0.9) (C17); the
+          // Poisson variance (the rate) is kept as a declared floor.
+          const residual = Math.max(0, Number(policy.residual80PerGame ?? 0));
+          variance = Math.max(rate, (residual / P10_Z) ** 2);
         }
         conditionalRates[target] = round(rate);
         baselineConditionalRates[target] = round(baselineRate);
-        conditionalVariances[target] = round(variance);
+        if (variance == null) delete conditionalVariances[target];
+        else conditionalVariances[target] = round(variance);
         if (policy.fallback) fallbackFlags.add(`advanced_v5_${target.toLowerCase()}_fallback`);
       }
       return [id, {
@@ -252,7 +316,14 @@ export function mergeAdvancedSeasonArtifact(
         conditionalRates,
         baselineConditionalRates,
         conditionalVariances,
-        primitiveTargets: Array.from(new Set([...(basePlayer.primitiveTargets ?? []), ...targets])),
+        // A base prior without an explicit list uses its contract's default
+        // targets; dropping them would orphan the expected-assist aliases.
+        primitiveTargets: Array.from(
+          new Set([
+            ...(basePlayer.primitiveTargets ?? defaultPrimitiveTargets(basePlayer.population, base.contractVersion)),
+            ...targets,
+          ]),
+        ),
         fallbackFlags: [...fallbackFlags].sort(),
       }];
     }),
@@ -293,6 +364,14 @@ function targetMultiplier(
       : SKATER_ADVANCED_V5_PRIMITIVE_TARGETS
     ).includes(target as never)
   ) {
+    return 1;
+  }
+  if (
+    population === "goalie" &&
+    (GOALIE_OUTCOME_TARGETS as readonly string[]).includes(target)
+  ) {
+    // Decision 121: no pace, venue, rest or home/away multiplier on goalie
+    // W/L/OTL/SO/QS until a fitted goalie model (decision 38) supplies one.
     return 1;
   }
   const pace = Math.sqrt(
@@ -352,43 +431,103 @@ function targetMultiplier(
   return contextualMultiplier * pace * venueMultiplier;
 }
 
-function quantiles(
-  means: ProjectionValues,
-  variances: ProjectionValues,
+/**
+ * Inverse standard-normal CDF (Acklam's rational approximation, relative error
+ * below 1.2e-9). The three levels used by the season contract return the exact
+ * shared constant so full-participation quantiles match mean ± z·sd.
+ * Python twin: season.py `_normal_quantile` (same coefficients and branches).
+ */
+export function normalQuantile(level: number): number {
+  if (!(level > 0 && level < 1)) throw new Error("NORMAL_QUANTILE_LEVEL_INVALID");
+  if (level === 0.5) return 0;
+  if (level === 0.1) return -P10_Z;
+  if (level === 0.9) return P10_Z;
+  const a = [-3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2, 1.38357751867269e2, -3.066479806614716e1, 2.506628277459239];
+  const b = [-5.447609879822406e1, 1.615858368580409e2, -1.556989798598866e2, 6.680131188771972e1, -1.328068155288572e1];
+  const c = [-7.784894002430293e-3, -3.223964580411365e-1, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+  const d = [7.784695709041462e-3, 3.224671290700398e-1, 2.445134137142996, 3.754408661907416];
+  const low = 0.02425;
+  if (level < low || level > 1 - low) {
+    const q = Math.sqrt(-2 * Math.log(level < low ? level : 1 - level));
+    const value =
+      (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) /
+      ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+    return level < low ? value : -value;
+  }
+  const q = level - 0.5;
+  const r = q * q;
+  return (
+    ((((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q) /
+    (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1)
+  );
+}
+
+/**
+ * Quantile of "0 with probability 1 − p, else conditional ~ Normal(mean, sd²)",
+ * the conditional part clipped at 0 unless negatives are allowed (C17: carry
+ * the non-participation atom instead of a symmetric mean ± z·sd band).
+ */
+export function participationMixtureQuantile(
+  level: number,
+  probability: number,
+  conditionalMean: number,
+  conditionalSd: number,
+  allowNegative: boolean,
+): number {
+  const p = Math.min(1, Math.max(0, probability));
+  if (p <= 0) return 0;
+  if (!(conditionalSd > 0)) {
+    if (conditionalMean >= 0) {
+      return level <= 1 - p ? 0 : Math.max(allowNegative ? -Infinity : 0, conditionalMean);
+    }
+    if (!allowNegative) return 0;
+    return level <= p ? conditionalMean : 0;
+  }
+  if (allowNegative && level < p) {
+    const below = conditionalMean + conditionalSd * normalQuantile(level / p);
+    if (below < 0) return below;
+  }
+  if (level > 1 - p) {
+    const above =
+      conditionalMean + conditionalSd * normalQuantile((level - (1 - p)) / p);
+    if (above > 0) return above;
+  }
+  return 0;
+}
+
+function gameQuantiles(
+  moments: Record<string, { mean: number; variance: number; probability: number }>,
   population: FantasyProjectionPopulation,
-  maximumGames?: number,
 ): SeasonGameEvaluation["quantiles"] {
   const p10: ProjectionValues = {};
   const p50: ProjectionValues = {};
   const p90: ProjectionValues = {};
-  for (const [target, mean] of Object.entries(means)) {
-    const deviation = Math.sqrt(Math.max(0, variances[target] ?? 0));
+  for (const [target, moment] of Object.entries(moments)) {
+    const sd = Math.sqrt(Math.max(0, moment.variance));
     const allowNegative = target === "PLUS_MINUS";
-    p10[target] = round(
-      allowNegative ? mean - P10_Z * deviation : Math.max(0, mean - P10_Z * deviation),
-    );
-    p50[target] = round(mean);
-    p90[target] = round(Math.max(p10[target], mean + P10_Z * deviation));
-  }
-  if (maximumGames != null) {
-    for (const values of [p10, p50, p90]) {
-      if (values.GAMES_PLAYED != null) {
-        values.GAMES_PLAYED = round(
-          Math.min(maximumGames, Math.max(0, values.GAMES_PLAYED)),
-        );
-      }
-      if (values.GAMES_STARTED != null) {
-        values.GAMES_STARTED = round(
-          Math.min(
-            maximumGames,
-            values.GAMES_PLAYED ?? maximumGames,
-            Math.max(0, values.GAMES_STARTED),
-          ),
-        );
+    const at = (level: number) =>
+      round(participationMixtureQuantile(level, moment.probability, moment.mean, sd, allowNegative));
+    p10[target] = at(0.1);
+    p50[target] = at(0.5);
+    p90[target] = at(0.9);
+    if (target === "GAMES_PLAYED" || target === "GAMES_STARTED") {
+      for (const values of [p10, p50, p90]) {
+        values[target] = round(Math.min(1, Math.max(0, values[target])));
       }
     }
   }
+  if (p10.GAMES_STARTED != null && p10.GAMES_PLAYED != null) {
+    p10.GAMES_STARTED = Math.min(p10.GAMES_STARTED, p10.GAMES_PLAYED);
+    p50.GAMES_STARTED = Math.min(p50.GAMES_STARTED, p50.GAMES_PLAYED);
+    p90.GAMES_STARTED = Math.min(p90.GAMES_STARTED, p90.GAMES_PLAYED);
+  }
+  // Derived heads (POINTS, SV%, …) are marginal endpoint bounds here, not
+  // joint quantiles; season aggregates use joint draws instead.
   return reconcileProjectionQuantiles({ p10, p50, p90 }, population);
+}
+
+function finiteOrNull(value: unknown): number | null {
+  return value == null || !Number.isFinite(Number(value)) ? null : Number(value);
 }
 
 export function evaluatePortableSeasonGame(
@@ -423,11 +562,39 @@ export function evaluatePortableSeasonGame(
   const unconditionalMeans: ProjectionValues = {};
   const baselineUnconditionalMeans: ProjectionValues = {};
   const variances: ProjectionValues = {};
+  const moments: Record<string, { mean: number; variance: number; probability: number }> = {};
+  const missingTargets: string[] = [];
+  const momentFlags: string[] = [];
   const team = artifact.teams[String(game.teamId)];
   const opponent = artifact.teams[String(game.opponentTeamId)];
   const venue = game.isHome ? team : opponent;
 
-  for (const target of targetKeys) {
+  const orderedTargets = [
+    ...targetKeys.filter((target) => !(target in EXPECTED_ASSIST_ALIASES)),
+    ...targetKeys.filter((target) => target in EXPECTED_ASSIST_ALIASES),
+  ];
+  for (const target of orderedTargets) {
+    const aliasSource = EXPECTED_ASSIST_ALIASES[target];
+    if (aliasSource) {
+      // Alias identity (W3-5 PR2): same moments as the observed head; with
+      // no evaluated source head the alias is unknown.
+      if (!(aliasSource in conditionalMeans)) {
+        missingTargets.push(target);
+        continue;
+      }
+      conditionalMeans[target] = conditionalMeans[aliasSource];
+      unconditionalMeans[target] = unconditionalMeans[aliasSource];
+      baselineUnconditionalMeans[target] = baselineUnconditionalMeans[aliasSource];
+      variances[target] = variances[aliasSource];
+      moments[target] = moments[aliasSource];
+      continue;
+    }
+    const participation = target === "GAMES_PLAYED" || target === "GAMES_STARTED";
+    const rate = participation ? 1 : finiteOrNull(prior.conditionalRates[target]);
+    if (rate == null) {
+      missingTargets.push(target);
+      continue;
+    }
     const candidateMultiplier = targetMultiplier(
       target,
       prior.population,
@@ -437,35 +604,40 @@ export function evaluatePortableSeasonGame(
       game,
       prior.contextEffects?.[target],
     );
-    const conditional =
-      target === "GAMES_PLAYED"
-        ? 1
-        : target === "GAMES_STARTED"
-          ? 1
-          : Math.max(
-              target === "PLUS_MINUS" ? -Infinity : 0,
-              (prior.conditionalRates[target] ?? 0) *
-                candidateMultiplier,
-            );
+    const conditional = participation
+      ? 1
+      : Math.max(target === "PLUS_MINUS" ? -Infinity : 0, rate * candidateMultiplier);
     const mixtureProbability =
       target === "GAMES_STARTED"
         ? rawStartProbability ?? 0
         : rawPlayingProbability;
-    const conditionalVariance = Math.max(
-      0,
-      (prior.conditionalVariances[target] ?? Math.abs(conditional)) *
-        candidateMultiplier,
-    );
+    let conditionalVariance: number;
+    if (participation) {
+      // GP/GS are Bernoulli: given participation the count is exactly 1.
+      conditionalVariance = 0;
+    } else {
+      const suppliedVariance = finiteOrNull(prior.conditionalVariances[target]);
+      if (suppliedVariance == null) {
+        // Poisson fallback on the already adjusted mean: m enters once.
+        conditionalVariance = Math.abs(conditional);
+        momentFlags.push(`variance_poisson_fallback:${target}`);
+      } else {
+        // Declared convention: the variance-to-mean ratio is preserved under
+        // the game multiplier (exact for Poisson; m² is exact only for mY).
+        conditionalVariance = Math.max(0, suppliedVariance * candidateMultiplier);
+      }
+    }
     conditionalMeans[target] = round(conditional);
     unconditionalMeans[target] = round(conditional * mixtureProbability);
-    const baselineConditional =
-      target === "GAMES_PLAYED" || target === "GAMES_STARTED"
-        ? 1
-        : Math.max(
-            target === "PLUS_MINUS" ? -Infinity : 0,
-            (prior.baselineConditionalRates?.[target] ?? prior.conditionalRates[target] ?? 0) *
-              targetMultiplier(target, prior.population, team, opponent, venue),
-          );
+    const baselineRate = participation
+      ? 1
+      : finiteOrNull(prior.baselineConditionalRates?.[target]) ?? rate;
+    const baselineConditional = participation
+      ? 1
+      : Math.max(
+          target === "PLUS_MINUS" ? -Infinity : 0,
+          baselineRate * targetMultiplier(target, prior.population, team, opponent, venue),
+        );
     const baselineProbability =
       target === "GAMES_STARTED"
         ? boundedProbability(prior.baselineStartProbability ?? prior.startProbability ?? 0)
@@ -477,25 +649,24 @@ export function evaluatePortableSeasonGame(
       mixtureProbability * conditionalVariance +
         mixtureProbability * (1 - mixtureProbability) * conditional * conditional,
     );
+    moments[target] = {
+      mean: conditional,
+      variance: conditionalVariance,
+      probability: mixtureProbability,
+    };
   }
 
   const reconciledConditional = reconcileProjectionValues(
     conditionalMeans,
     prior.population,
   );
-  const reconciledUnconditional = reconcileProjectionValues(
+  const unconditional = reconcileProjectionValuesWithClamps(
     unconditionalMeans,
     prior.population,
   );
   const reconciledBaselineUnconditional = reconcileProjectionValues(
     baselineUnconditionalMeans,
     prior.population,
-  );
-  const reconciledQuantiles = quantiles(
-    reconciledUnconditional,
-    variances,
-    prior.population,
-    1,
   );
   const outputWithoutHash = {
     gameId: game.gameId,
@@ -506,12 +677,19 @@ export function evaluatePortableSeasonGame(
     playingProbability,
     startProbability,
     conditionalMeans: reconciledConditional,
-    unconditionalMeans: reconciledUnconditional,
+    unconditionalMeans: unconditional.values,
     baselineUnconditionalMeans: reconciledBaselineUnconditional,
     variances,
-    quantiles: reconciledQuantiles,
+    quantiles: gameQuantiles(moments, prior.population),
     deployment: prior.deployment,
     fallbackFlags: [...(prior.fallbackFlags ?? [])].sort(),
+    evaluatorVersion: SEASON_GAME_EVALUATOR_VERSION,
+    ...(prior.population === "goalie"
+      ? { outcomeTreatment: GOALIE_OUTCOME_TREATMENT_VERSION }
+      : {}),
+    missingTargets: [...missingTargets].sort(),
+    momentFlags: [...momentFlags].sort(),
+    reconciliationClamps: unconditional.clamps,
   };
   return {
     ...outputWithoutHash,
@@ -529,13 +707,19 @@ function sampledQuantile(values: number[], probability: number): number {
   return round(ordered[index]);
 }
 
-function correlatedAggregateQuantiles(
+function aliasSourceIn(target: string, values: ProjectionValues): string | null {
+  const source = EXPECTED_ASSIST_ALIASES[target];
+  return source && source in values ? source : null;
+}
+
+function jointAggregateQuantiles(
   means: ProjectionValues,
   variances: ProjectionValues,
+  actuals: ProjectionValues,
   population: FantasyProjectionPopulation,
   maximumGames: number,
   seed: string,
-  draws = 256,
+  draws = SEASON_AGGREGATE_DRAWS,
 ): SeasonGameEvaluation["quantiles"] {
   let state = Number.parseInt(createHash("sha256").update(seed).digest("hex").slice(0, 8), 16);
   const normal = () => {
@@ -545,17 +729,22 @@ function correlatedAggregateQuantiles(
     const second = (state + 0.5) / 4_294_967_296;
     return Math.sqrt(-2 * Math.log(first)) * Math.cos(2 * Math.PI * second);
   };
-  const targets = Object.keys(variances);
+  const targets = Object.keys(variances).sort();
   const samples = new Map<string, number[]>();
-  const correlation = 0.65;
-  const independentWeight = Math.sqrt(1 - correlation * correlation);
+  const loading = SEASON_AGGREGATE_FACTOR_LOADING;
+  const independentWeight = Math.sqrt(1 - loading * loading);
   for (let drawIndex = 0; drawIndex < draws; drawIndex += 1) {
     const common = normal();
     const draw: ProjectionValues = {};
     for (const target of targets) {
-      const deviation = correlation * common + independentWeight * normal();
-      const value = (means[target] ?? 0) + Math.sqrt(Math.max(0, variances[target] ?? 0)) * deviation;
+      if (aliasSourceIn(target, means)) continue;
+      const deviation = loading * common + independentWeight * normal();
+      const value = means[target] + Math.sqrt(Math.max(0, variances[target])) * deviation;
       draw[target] = target === "PLUS_MINUS" ? value : Math.max(0, value);
+    }
+    for (const target of targets) {
+      const source = aliasSourceIn(target, means);
+      if (source) draw[target] = draw[source];
     }
     if (draw.GAMES_PLAYED != null) {
       draw.GAMES_PLAYED = Math.min(maximumGames, draw.GAMES_PLAYED);
@@ -567,18 +756,10 @@ function correlatedAggregateQuantiles(
         draw.GAMES_STARTED,
       );
     }
-    if (population === "goalie" && draw.SHOTS_AGAINST_GOALIE != null) {
-      draw.GOALS_AGAINST_GOALIE = Math.min(
-        draw.SHOTS_AGAINST_GOALIE,
-        draw.GOALS_AGAINST_GOALIE ?? 0,
-      );
-      for (const danger of ["HIGH_DANGER", "MID_RANGE", "LONG_RANGE"] as const) {
-        const shots = `${danger}_SHOTS_AGAINST_GOALIE`;
-        const goals = `${danger}_GOALS_AGAINST_GOALIE`;
-        if (draw[shots] != null) {
-          draw[goals] = Math.min(draw[shots], draw[goals] ?? 0);
-        }
-      }
+    // Actuals are a known offset: add them per draw, before any derived head
+    // is formed, so sums and ratios stay joint (W3-5 F4/PR1, rule 26).
+    for (const target of targets) {
+      draw[target] += actuals[target] ?? 0;
     }
     for (const [target, value] of Object.entries(
       reconcileProjectionValues(draw, population),
@@ -590,10 +771,9 @@ function correlatedAggregateQuantiles(
   }
   const projection = (probability: number) =>
     Object.fromEntries(
-      [...samples.entries()].map(([target, values]) => [
-        target,
-        sampledQuantile(values, probability),
-      ]),
+      [...samples.entries()]
+        .filter(([, values]) => values.length === draws)
+        .map(([target, values]) => [target, sampledQuantile(values, probability)]),
     );
   return {
     p10: projection(0.1),
@@ -602,92 +782,157 @@ function correlatedAggregateQuantiles(
   };
 }
 
-export function aggregateSeasonGames(
-  evaluations: SeasonGameEvaluation[],
-): {
+export type SeasonAggregate = {
   means: ProjectionValues;
   variances: ProjectionValues;
   quantiles: SeasonGameEvaluation["quantiles"];
   componentManifest: Array<{ gameId: number; componentHash: string }>;
+  aggregationVersion: string;
+  dependence: {
+    crossGame: "independent_games_assumption";
+    withinGameTargets: "one_factor_gaussian";
+    factorLoading: number;
+    primitiveCorrelation: number;
+  };
+  /** Targets unknown in at least one remaining game: unknown in the total. */
+  missingTargets: string[];
   aggregateHash: string;
-} {
+};
+
+function finishAggregate(
+  unsigned: Omit<SeasonAggregate, "aggregateHash">,
+): SeasonAggregate {
+  return { ...unsigned, aggregateHash: checksumCanonicalJson(unsigned) };
+}
+
+const AGGREGATE_DEPENDENCE: SeasonAggregate["dependence"] = {
+  crossGame: "independent_games_assumption",
+  withinGameTargets: "one_factor_gaussian",
+  factorLoading: SEASON_AGGREGATE_FACTOR_LOADING,
+  primitiveCorrelation: round(SEASON_AGGREGATE_FACTOR_LOADING ** 2),
+};
+
+/**
+ * Season aggregate of remaining-game evaluations plus (current view) the
+ * player's actuals so far. Means add; variances add under the declared
+ * independent-games assumption; every quantile, primitive or derived, comes
+ * from one joint draw set with the actuals added per draw.
+ */
+/**
+ * Actuals so far, by primitive target. An explicit null (or non-finite) value
+ * means at least one completed game's value is unknown: the season total for
+ * that target is then unknown too (W2-7 D9), never actual-as-0.
+ */
+export type SeasonActuals = Readonly<Record<string, number | null | undefined>>;
+
+export function aggregateSeasonGames(
+  evaluations: SeasonGameEvaluation[],
+  options: { actuals?: SeasonActuals } = {},
+): SeasonAggregate {
   if (evaluations.length === 0) {
     throw new Error("PLAYER_FORECAST_SEASON_COMPONENTS_REQUIRED");
   }
   const population = evaluations[0].population;
-  const means: ProjectionValues = {};
-  const variances: ProjectionValues = {};
   for (const evaluation of evaluations) {
     if (evaluation.population !== population) {
       throw new Error("PLAYER_FORECAST_SEASON_POPULATION_MISMATCH");
     }
-    for (const [target, value] of Object.entries(evaluation.unconditionalMeans)) {
-      means[target] = (means[target] ?? 0) + value;
-    }
-    for (const [target, value] of Object.entries(evaluation.variances)) {
-      variances[target] = (variances[target] ?? 0) + value;
-    }
   }
-  const reconciledMeans = reconcileProjectionValues(
-    Object.fromEntries(Object.entries(means).map(([key, value]) => [key, round(value)])),
-    population,
-  );
-  const roundedVariances = Object.fromEntries(
-    Object.entries(variances).map(([key, value]) => [key, round(value)]),
+  const suppliedActuals = options.actuals ?? {};
+  // Only primitive (variance-carrying) targets are summed; derived heads are
+  // rebuilt from the summed primitives.
+  const allTargets = new Set(evaluations.flatMap((evaluation) => Object.keys(evaluation.variances)));
+  const missingTargets = new Set(evaluations.flatMap((evaluation) => evaluation.missingTargets ?? []));
+  const targets: string[] = [];
+  for (const target of [...allTargets].sort()) {
+    const knownEverywhere = evaluations.every(
+      (evaluation) =>
+        target in evaluation.variances && target in evaluation.unconditionalMeans,
+    );
+    if (knownEverywhere && !missingTargets.has(target)) targets.push(target);
+    else missingTargets.add(target);
+  }
+  const means: ProjectionValues = {};
+  const variances: ProjectionValues = {};
+  for (const target of targets) {
+    let mean = 0;
+    let variance = 0;
+    for (const evaluation of evaluations) {
+      mean += evaluation.unconditionalMeans[target];
+      variance += evaluation.variances[target];
+    }
+    means[target] = round(mean);
+    variances[target] = round(variance);
+  }
+  for (const target of missingTargets) {
+    delete means[target];
+    delete variances[target];
+  }
+  // An expected-assist alias is the observed head: it takes its source's actuals.
+  const actuals: ProjectionValues = {};
+  for (const target of Object.keys(means)) {
+    const source = aliasSourceIn(target, means);
+    const key = source ?? target;
+    const raw = suppliedActuals[key];
+    if (key in suppliedActuals && raw !== undefined && finiteOrNull(raw) == null) {
+      missingTargets.add(target);
+      delete means[target];
+      delete variances[target];
+      continue;
+    }
+    actuals[target] = finiteOrNull(raw) ?? 0;
+  }
+  const totals = Object.fromEntries(
+    Object.entries(means).map(([target, value]) => [target, round(value + actuals[target])]),
   );
   const componentManifest = evaluations
     .map(({ gameId, componentHash }) => ({ gameId, componentHash }))
     .sort((left, right) => left.gameId - right.gameId);
-  const advancedTargets = population === "goalie"
-    ? GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS
-    : SKATER_ADVANCED_V5_PRIMITIVE_TARGETS;
-  const usesAdvancedContract = advancedTargets.some(
-    (target) => roundedVariances[target] != null,
-  );
-  const aggregateQuantiles = usesAdvancedContract
-    ? correlatedAggregateQuantiles(
-        reconciledMeans,
-        roundedVariances,
-        population,
-        evaluations.length,
-        `advanced-v5:${evaluations[0].fhfhPlayerId}:${componentManifest
-          .map(({ gameId }) => gameId)
-          .join(",")}`,
-      )
-    : quantiles(
-        reconciledMeans,
-        roundedVariances,
-        population,
-        evaluations.length,
-      );
-  const aggregate = {
-    means: reconciledMeans,
-    variances: roundedVariances,
-    quantiles: aggregateQuantiles,
+  return finishAggregate({
+    means: reconcileProjectionValues(totals, population),
+    variances,
+    quantiles: jointAggregateQuantiles(
+      means,
+      variances,
+      actuals,
+      population,
+      evaluations.length,
+      `${SEASON_AGGREGATE_VERSION}:${evaluations[0].fhfhPlayerId}:${componentManifest
+        .map(({ gameId }) => gameId)
+        .join(",")}`,
+    ),
     componentManifest,
-  };
-  return {
-    ...aggregate,
-    aggregateHash: checksumCanonicalJson(aggregate),
-  };
+    aggregationVersion: SEASON_AGGREGATE_VERSION,
+    dependence: AGGREGATE_DEPENDENCE,
+    missingTargets: [...missingTargets].sort(),
+  });
 }
 
+/**
+ * No remaining games: the remaining contribution is a real zero for every
+ * primitive target; with actuals, the season line is exactly the actuals.
+ */
 export function emptySeasonAggregate(
   population: FantasyProjectionPopulation,
   primitiveTargets: readonly string[],
-): ReturnType<typeof aggregateSeasonGames> {
-  const zeroes = reconcileProjectionValues(
-    Object.fromEntries(primitiveTargets.map((target) => [target, 0])),
+  options: { actuals?: SeasonActuals } = {},
+): SeasonAggregate {
+  const actuals = options.actuals ?? {};
+  const missingTargets = primitiveTargets.filter(
+    (target) => target in actuals && actuals[target] !== undefined && finiteOrNull(actuals[target]) == null,
+  );
+  const knownTargets = primitiveTargets.filter((target) => !missingTargets.includes(target));
+  const totals = reconcileProjectionValues(
+    Object.fromEntries(knownTargets.map((target) => [target, round(finiteOrNull(actuals[target]) ?? 0)])),
     population,
   );
-  const aggregate = {
-    means: zeroes,
-    variances: Object.fromEntries(primitiveTargets.map((target) => [target, 0])),
-    quantiles: { p10: zeroes, p50: zeroes, p90: zeroes },
-    componentManifest: [] as Array<{ gameId: number; componentHash: string }>,
-  };
-  return {
-    ...aggregate,
-    aggregateHash: checksumCanonicalJson(aggregate),
-  };
+  return finishAggregate({
+    means: totals,
+    variances: Object.fromEntries(knownTargets.map((target) => [target, 0])),
+    quantiles: { p10: { ...totals }, p50: { ...totals }, p90: { ...totals } },
+    componentManifest: [],
+    aggregationVersion: SEASON_AGGREGATE_VERSION,
+    dependence: AGGREGATE_DEPENDENCE,
+    missingTargets: [...missingTargets].sort(),
+  });
 }

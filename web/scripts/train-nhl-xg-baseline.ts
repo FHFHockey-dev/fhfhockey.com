@@ -13,7 +13,6 @@ import {
   buildEncodedBaselineDataset,
   BOOLEAN_FEATURE_KEYS,
   CATEGORICAL_FEATURE_KEYS,
-  findForbiddenBaselineFeatureKeys,
   type BaselinePredictionType,
   type BaselineFeatureFamilyName,
   NUMERIC_FEATURE_KEYS,
@@ -24,8 +23,12 @@ import {
 import {
   predictBinaryLogisticProbability,
   trainBinaryLogisticModel,
+  diagnoseBinaryLogisticFit,
+  selectL2ByValidation,
+  type BinaryLogisticFitDiagnostics,
   type BinaryLogisticModel,
   type BinaryLogisticFitOptions,
+  type L2SweepResult,
 } from "../lib/xg/binaryLogistic";
 import {
   assessCalibration,
@@ -51,6 +54,9 @@ import {
   buildShooterPositionGroup,
   normalizeRosterPosition,
 } from "../lib/xg/rosterPosition";
+import { scoreXgBoostEnsemble, type XgBoostModel } from "../lib/xg/shotFeaturePersistence";
+import { evaluateXgApprovalGate, type XgApprovalEligibility } from "../lib/xg/approvalGate";
+import { CURRENT_XG_FEATURE_STRENGTH_VERSION, CURRENT_XG_FEATURE_VERSION } from "../lib/xg/featureVersion";
 const { XGBoost } = require("@fractal-solutions/xgboost-js") as {
   XGBoost: new (config: Record<string, number>) => {
     fit: (features: number[][], labels: number[]) => void;
@@ -86,6 +92,7 @@ type CliOptions = {
   learningRate: number | null;
   l1: number | null;
   l2: number | null;
+  l2Sweep: number[] | null;
   maxDepth: number | null;
   minChildWeight: number | null;
   numRounds: number | null;
@@ -142,10 +149,7 @@ type SliceEvaluation = {
   sliceValue: string;
   evaluation: SplitEvaluation;
 };
-type ApprovalGradeEligibility = {
-  isEligible: boolean;
-  blockingReasons: string[];
-};
+type ApprovalGradeEligibility = XgApprovalEligibility;
 type FeatureTransforms = {
   numericStandardization?: Record<string, { mean: number; std: number }>;
 };
@@ -236,6 +240,8 @@ type ModelArtifactPayload = {
   };
   approvalGradeEligibility: ApprovalGradeEligibility;
   featureImportance?: Array<{ featureKey: string; importance: number }>;
+  fitDiagnostics?: BinaryLogisticFitDiagnostics | null;
+  l2Sweep?: L2SweepResult | null;
   model: unknown;
 };
 
@@ -302,8 +308,8 @@ Options:
   --predictionType <name>      Prediction target: shot_goal or rebound_creation. Default: shot_goal
   --featureFamily <name>       Feature family preset. Default: first_pass_v1
   --parserVersion <n>          Required parser version. Default: 1
-  --strengthVersion <n>        Required strength version. Default: 1
-  --featureVersion <n>         Feature version recorded in the artifact. Default: 1
+  --strengthVersion <n>        Required strength version. Default: current (2)
+  --featureVersion <n>         Feature version to train on. Default: current (2, see lib/xg/featureVersion.ts)
   --limitGames <n>             Optional cap on games for local smoke runs
   --gameIds <csv>              Optional explicit game id list override
   --seed <n>                   Deterministic seed for split assignment. Default: 42
@@ -317,6 +323,7 @@ Options:
   --learningRate <n>           Optional override for optimizer learning rate
   --l1 <n>                     Optional override for L1 penalty strength
   --l2 <n>                     Optional override for L2 penalty strength
+  --l2Sweep <csv>              Optional L2 grid; the strength with the lowest validation log loss is used
   --maxDepth <n>               Optional boosting tree depth override
   --minChildWeight <n>         Optional boosting min-child-weight override
   --numRounds <n>              Optional boosting round-count override
@@ -330,10 +337,6 @@ Options:
 }
 
 const SUPABASE_PAGE_SIZE = 1000;
-const MIN_APPROVAL_HOLDOUT_POSITIVES = 10;
-const MIN_APPROVAL_TEST_POSITIVES = 10;
-const MIN_NON_COLLAPSED_AVERAGE_PREDICTION = 0.001;
-const MAX_NON_COLLAPSED_AVERAGE_PREDICTION = 0.999;
 const MIN_REBOUND_CREATION_VALIDATION_EXAMPLES = 1000;
 const MIN_REBOUND_CREATION_TEST_EXAMPLES = 1000;
 const MIN_REBOUND_CREATION_VALIDATION_POSITIVES = 100;
@@ -469,13 +472,22 @@ function buildReboundCreationApprovalBlockingReasons(args: {
   return blockingReasons;
 }
 
-function buildApprovalGradeEligibility(args: {
+/**
+ * Decision 88 gate on the untouched test split only: the calibrator is fitted
+ * on validation, so a validation+test holdout would grade the calibrator on
+ * its own fit data. The test scores are the served values (calibration
+ * applied). Rebound-creation keeps its extra diagnostics as further blockers.
+ */
+export function buildApprovalGradeEligibility(args: {
   predictionType: BaselinePredictionType;
-  splitCounts: Record<"train" | "validation" | "test", number>;
   evaluation: Record<"overall" | "train" | "validation" | "test", SplitEvaluation>;
   holdoutEvaluation: SplitEvaluation;
-  testEvaluation: SplitEvaluation;
+  holdoutScores: HoldoutScoreRow[];
+  splitDateRanges: SplitDateRanges;
+  calibration: ModelArtifactPayload["calibration"] | null | undefined;
   calibrationAssessment: CalibrationAssessment;
+  /** Logistic fits only; null when not applicable (e.g. boosting). */
+  fitConverged?: boolean | null;
   featureCoverage?: XgFeatureCoverageProfile | null;
   selectedFeatures: {
     numeric: string[];
@@ -484,92 +496,50 @@ function buildApprovalGradeEligibility(args: {
   };
   featureKeys: string[];
 }): ApprovalGradeEligibility {
-  const forbiddenFeatures = findForbiddenBaselineFeatureKeys([
-    ...args.selectedFeatures.numeric,
-    ...args.selectedFeatures.boolean,
-    ...args.selectedFeatures.categorical,
-    ...args.featureKeys,
-  ]);
-  const forbiddenFeatureReason = forbiddenFeatures.length
-    ? `Artifact uses forbidden post-event features: ${forbiddenFeatures.join(", ")}.`
-    : null;
+  const gate = evaluateXgApprovalGate({
+    testScores: args.holdoutScores
+      .filter((score) => score.split === "test")
+      .map((score) => ({
+        label: score.label,
+        probability: score.prediction,
+        subgroups: {
+          strengthState: score.strengthState ?? "unknown",
+          rebound: score.isReboundShot ? "rebound" : "non-rebound",
+          rush: score.isRushShot ? "rush" : "non-rush",
+        },
+      })),
+    splitDateRanges: args.splitDateRanges,
+    calibration: args.calibration
+      ? { applied: args.calibration.applied, fitSplit: args.calibration.fitSplit, method: args.calibration.selectedMethod }
+      : null,
+    calibrationRequired: args.calibrationAssessment.requiresPostCalibration,
+    featureKeys: [
+      ...args.selectedFeatures.numeric,
+      ...args.selectedFeatures.boolean,
+      ...args.selectedFeatures.categorical,
+      ...args.featureKeys,
+    ],
+    featureCoverageBlockingReasons: args.featureCoverage?.blockingReasons ?? [],
+    relevantSubgroups: ["strengthState", "rebound", "rush"],
+  });
 
-  if (args.predictionType === "rebound_creation") {
-    const blockingReasons = buildReboundCreationApprovalBlockingReasons({
-      evaluation: args.evaluation,
-      holdoutEvaluation: args.holdoutEvaluation,
-      calibrationAssessment: args.calibrationAssessment,
-    });
-    if (forbiddenFeatureReason) {
-      blockingReasons.unshift(forbiddenFeatureReason);
-    }
-    for (const reason of args.featureCoverage?.blockingReasons ?? []) {
-      if (!blockingReasons.includes(reason)) {
-        blockingReasons.push(reason);
-      }
-    }
-
-    return {
-      isEligible: blockingReasons.length === 0,
-      blockingReasons,
-    };
-  }
-
-  const blockingReasons: string[] = forbiddenFeatureReason ? [forbiddenFeatureReason] : [];
-
-  for (const reason of args.featureCoverage?.blockingReasons ?? []) {
-    if (!blockingReasons.includes(reason)) {
-      blockingReasons.push(reason);
-    }
-  }
-
-  if (args.splitCounts.test <= 0) {
-    blockingReasons.push(
-      "Dedicated test split is empty; approval-grade benchmark artifacts require at least one test example."
-    );
-  }
-
-  if (args.testEvaluation.goalCount < MIN_APPROVAL_TEST_POSITIVES) {
-    blockingReasons.push(
-      `Dedicated test split has ${args.testEvaluation.goalCount} goals; approval-grade benchmark artifacts require at least ${MIN_APPROVAL_TEST_POSITIVES}.`
-    );
-  }
-
-  if (args.holdoutEvaluation.goalCount < MIN_APPROVAL_HOLDOUT_POSITIVES) {
-    blockingReasons.push(
-      `Validation+test holdout has ${args.holdoutEvaluation.goalCount} goals; approval-grade benchmark artifacts require at least ${MIN_APPROVAL_HOLDOUT_POSITIVES}.`
-    );
-  }
-
-  const averagePrediction = args.holdoutEvaluation.averagePrediction;
-  if (
-    averagePrediction == null ||
-    averagePrediction <= MIN_NON_COLLAPSED_AVERAGE_PREDICTION ||
-    averagePrediction >= MAX_NON_COLLAPSED_AVERAGE_PREDICTION
-  ) {
-    blockingReasons.push(
-      "Validation+test holdout average prediction is collapsed or unavailable; approval-grade artifacts require non-degenerate probabilities."
-    );
-  }
-
-  for (const reason of args.calibrationAssessment.adoptabilityBlockingReasons) {
-    if (!blockingReasons.includes(reason)) {
-      blockingReasons.push(reason);
-    }
-  }
-
-  if (
-    args.calibrationAssessment.requiresPostCalibration &&
-    args.calibrationAssessment.adoptableMethod == null
-  ) {
-    blockingReasons.push(
-      "Post-calibration is required, but no calibration method is currently adoptable."
-    );
-  }
+  const extraReasons = [
+    ...(args.fitConverged === false
+      ? ["The logistic fit did not converge (objective gradient above tolerance); the served coefficients are not an optimum."]
+      : []),
+    ...(args.predictionType === "rebound_creation"
+      ? buildReboundCreationApprovalBlockingReasons({
+          evaluation: args.evaluation,
+          holdoutEvaluation: args.holdoutEvaluation,
+          calibrationAssessment: args.calibrationAssessment,
+        }).filter((reason) => !gate.blockingReasons.includes(reason))
+      : []),
+  ];
 
   return {
-    isEligible: blockingReasons.length === 0,
-    blockingReasons,
+    ...gate,
+    isEligible: gate.isEligible && extraReasons.length === 0,
+    blockingReasons: [...gate.blockingReasons, ...extraReasons],
   };
 }
 
@@ -666,8 +636,8 @@ function parseCliArgs(argv: string[]): CliOptions {
     predictionType: requestedPredictionType as BaselinePredictionType,
     featureFamily: requestedFeatureFamily as BaselineFeatureFamilyName,
     parserVersion: Number(options.parserVersion ?? 1),
-    strengthVersion: Number(options.strengthVersion ?? 1),
-    featureVersion: Number(options.featureVersion ?? 1),
+    strengthVersion: Number(options.strengthVersion ?? CURRENT_XG_FEATURE_STRENGTH_VERSION),
+    featureVersion: Number(options.featureVersion ?? CURRENT_XG_FEATURE_VERSION),
     limitGames: options.limitGames ? Number(options.limitGames) : null,
     gameIds: parseIntegerList(options.gameIds),
     seed: Number(options.seed ?? 42),
@@ -693,6 +663,12 @@ function parseCliArgs(argv: string[]): CliOptions {
     learningRate: options.learningRate ? Number(options.learningRate) : null,
     l1: options.l1 ? Number(options.l1) : null,
     l2: options.l2 ? Number(options.l2) : null,
+    l2Sweep: options.l2Sweep
+      ? options.l2Sweep
+          .split(",")
+          .map((entry) => Number(entry.trim()))
+          .filter((entry) => Number.isFinite(entry) && entry >= 0)
+      : null,
     maxDepth: options.maxDepth ? Number(options.maxDepth) : null,
     minChildWeight: options.minChildWeight ? Number(options.minChildWeight) : null,
     numRounds: options.numRounds ? Number(options.numRounds) : null,
@@ -1651,6 +1627,8 @@ export function buildBaselineArtifactPayloads(args: {
   calibrationAssessment: CalibrationAssessment;
   calibration?: ModelArtifactPayload["calibration"];
   featureImportance?: Array<{ featureKey: string; importance: number }>;
+  fitDiagnostics?: BinaryLogisticFitDiagnostics | null;
+  l2Sweep?: L2SweepResult | null;
   model: unknown;
 }): {
   datasetArtifact: DatasetArtifactPayload;
@@ -1663,11 +1641,13 @@ export function buildBaselineArtifactPayloads(args: {
   const splitDateRanges = buildSplitDateRanges(args.dataset.examples);
   const approvalGradeEligibility = buildApprovalGradeEligibility({
     predictionType: args.dataset.predictionType,
-    splitCounts: args.dataset.splitCounts,
     evaluation: args.evaluation,
     holdoutEvaluation: args.holdoutEvaluation,
-    testEvaluation: args.evaluation.test,
+    holdoutScores: args.holdoutScores,
+    splitDateRanges,
+    calibration: args.calibration,
     calibrationAssessment: args.calibrationAssessment,
+    fitConverged: args.fitDiagnostics?.converged ?? null,
     featureCoverage: args.featureCoverage ?? null,
     selectedFeatures: args.selectedFeatures,
     featureKeys: args.dataset.featureKeys,
@@ -1741,6 +1721,8 @@ export function buildBaselineArtifactPayloads(args: {
     calibration: args.calibration,
     approvalGradeEligibility,
     featureImportance: args.featureImportance,
+    fitDiagnostics: args.fitDiagnostics ?? null,
+    l2Sweep: args.l2Sweep ?? null,
     model: args.model,
   };
 
@@ -1986,6 +1968,8 @@ async function main(): Promise<void> {
     let featureImportance:
       | Array<{ featureKey: string; importance: number }>
       | undefined;
+    let fitDiagnostics: BinaryLogisticFitDiagnostics | null = null;
+    let l2Sweep: L2SweepResult | null = null;
     let rawScoredExamples: ScoredExample[];
     let scoredExamples: ScoredExample[];
     let calibration:
@@ -2005,7 +1989,19 @@ async function main(): Promise<void> {
       options.family === "logistic_elastic_net"
     ) {
       fitOptions = resolveFitOptions(options);
+      if (options.l2Sweep?.length && options.family !== "logistic_unregularized") {
+        const validationExamples = transformedExamples
+          .filter((example) => example.split === "validation")
+          .map((example) => ({ features: example.features, label: example.label }));
+        l2Sweep = selectL2ByValidation(trainExamples, validationExamples, options.l2Sweep, {
+          iterations: fitOptions.iterations,
+          learningRate: fitOptions.learningRate,
+          l1: fitOptions.l1,
+        });
+        fitOptions = { ...fitOptions, l2: l2Sweep.selectedL2 };
+      }
       const logisticModel = trainBinaryLogisticModel(trainExamples, fitOptions);
+      fitDiagnostics = diagnoseBinaryLogisticFit(logisticModel, trainExamples, fitOptions);
       model = logisticModel;
       rawScoredExamples = scoreExamples(logisticModel, transformedExamples);
     } else if (options.family === "xgboost_js") {
@@ -2016,12 +2012,12 @@ async function main(): Promise<void> {
         trainExamples.map((example) => example.label)
       );
       model = booster.toJSON();
+      // Score with the serving function, not the library's predictSingle
+      // (which applies a sigmoid to a probability-space sum).
+      const servedModel = model as XgBoostModel;
       rawScoredExamples = transformedExamples.map((example) => ({
         ...example,
-        prediction: Math.min(
-          1,
-          Math.max(0, Number(booster.predictSingle(example.features)))
-        ),
+        prediction: scoreXgBoostEnsemble(servedModel, example.features),
       }));
       featureImportance = dataset.featureKeys.map((featureKey, index) => ({
         featureKey,
@@ -2150,6 +2146,8 @@ async function main(): Promise<void> {
       calibrationAssessment,
       calibration,
       featureImportance,
+      fitDiagnostics,
+      l2Sweep,
       model,
     });
 

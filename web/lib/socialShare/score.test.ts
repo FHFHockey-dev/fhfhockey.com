@@ -28,7 +28,7 @@ describe("L5 fantasy score (ticket 15)", () => {
     const s = DEFAULT_SKATER_FANTASY_POINTS;
     expect(fantasyPointsPerGame(line)).toBeCloseTo((2 * s.GOALS + 3 * s.ASSISTS + 1 * s.PP_POINTS + 15 * s.SHOTS_ON_GOAL + 5 * (2 * s.HITS + 1 * s.BLOCKED_SHOTS)) / 5);
     const g = DEFAULT_GOALIE_FANTASY_POINTS;
-    const goalie = { group: "G" as const, recent: { kind: "goalie" as const, games: 4, through: "2026-10-24", wins: 3, saves: 110, shotsAgainst: 118, goalsAgainst: 8, qualityStarts: 3, shutouts: 1 } };
+    const goalie = { group: "G" as const, recent: { kind: "goalie" as const, games: 4, through: "2026-10-24", record: { wins: 3, losses: 1, otLosses: 0 }, starts: 4, saves: 110, shotsAgainst: 118, goalsAgainst: 8, qualityStarts: 3, shutouts: 1 } };
     expect(fantasyPointsPerGame(goalie)).toBeCloseTo((3 * g.WINS_GOALIE + 110 * g.SAVES_GOALIE + 8 * g.GOALS_AGAINST_GOALIE + 1 * g.SHUTOUTS_GOALIE) / 4);
     expect(opportunityMultiplier(goalie)).toBe(1);
     // The printed formula states exactly these values.

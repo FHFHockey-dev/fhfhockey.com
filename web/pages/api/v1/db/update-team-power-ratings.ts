@@ -6,28 +6,24 @@ import supabase from "lib/supabase/server";
 import { fetchCurrentSeason } from "../../../../utils/fetchCurrentSeason";
 import {
   fetchGameLogs,
-  calculateEwma,
-  calculateLeagueMetrics,
-  calculateZScores,
-  calculateRawScores,
-  calculateRawDistribution,
-  calculateFinalRating,
-  fetchWgoStats,
   fetchAllRatings,
-  EwmaMetrics,
-  LeagueMetrics,
-  ZScored,
-  RawScore,
-  RawDistribution,
-  FinalRating,
+  buildGenuineTeamGames,
+  computeDailyPowerRatings,
+  computeSpecialTeamsTiers,
 } from "../../../../lib/power-ratings";
+import { fetchUnderlyingStatsTeamSpecialTeamsContext } from "../../../../lib/underlying-stats/teamSpecialTeamsContext";
 import {
   TEAM_RATINGS_TREND_LOOKBACK_DAYS,
   deriveTrendOverridesFromLogs,
 } from "../../../../lib/teamRatingsTrend";
 
+/**
+ * v3 (L12, 2026-11-12): genuine all-situation games, all teams standardised
+ * against one daily baseline as of their latest game, prior after normalisation
+ * (decision 19), pooled season-to-date PP/PK tiers with unknown = null (decision 20).
+ */
 export const TEAM_POWER_RATING_CALCULATION_VERSION =
-  "team-power-v2-final-source-observed-pdo";
+  "team-power-v3-all-team-baseline-prior-after-norm-pooled-st";
 const LEGACY_TEAM_POWER_RATING_VERSION = "legacy_unversioned";
 
 function parseBooleanFlag(value: unknown): boolean {
@@ -169,62 +165,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const logs = await fetchGameLogs(supabase, logStartDate, logEndDate);
       const trendOverrides = deriveTrendOverridesFromLogs(logs, targetDate);
 
-      // Group by team
-      const teamLogs = new Map<string, any[]>();
-      logs.forEach((log) => {
-        if (!teamLogs.has(log.team_abbreviation)) {
-          teamLogs.set(log.team_abbreviation, []);
-        }
-      });
-
-      // Sort and assign rn_desc
-      for (const [team, teamGames] of teamLogs) {
-        // Add all logs for this team
-        const teamRawLogs = logs.filter((l) => l.team_abbreviation === team);
-        teamRawLogs.sort((a, b) => b.date.localeCompare(a.date)); // DESC
-
-        const processed = teamRawLogs.map((l, index) => ({
-          ...l,
-          rn_desc: index, // 0 is most recent
-          gp_to_date: teamRawLogs.length - index, // 1 is first game
-        }));
-
-        teamLogs.set(team, processed);
-      }
-
-      // Calculate EWMA for targetDate
-      const ewmaMetrics: EwmaMetrics[] = [];
-      for (const [team, games] of teamLogs) {
-        const ewma = calculateEwma(games, targetDate);
-        if (ewma) {
-          ewmaMetrics.push(ewma);
-        }
-      }
-
-      let finalRatings: FinalRating[] = [];
-
-      if (ewmaMetrics.length > 0) {
-        // Calculate League Metrics
-        const leagueMetrics = calculateLeagueMetrics(ewmaMetrics);
-
-        // Calculate Z-Scores
-        const zScores: ZScored[] = ewmaMetrics.map((m) =>
-          calculateZScores(m, leagueMetrics),
-        );
-
-        // Calculate Raw Scores
-        const rawScores: RawScore[] = zScores.map((z) => calculateRawScores(z));
-
-        // Calculate Raw Distribution
-        const rawDist = calculateRawDistribution(rawScores);
-
-        // Calculate Final Ratings
-        finalRatings = rawScores.map((s) => calculateFinalRating(s, rawDist));
-      } else {
+      // Every team with a genuine game in the window is rated as of its latest
+      // game against one all-team baseline (W1 P0 #12); the night's slate
+      // cannot move anyone's rating.
+      const dailyRatings = computeDailyPowerRatings(
+        buildGenuineTeamGames(logs),
+        targetDate,
+      );
+      if (dailyRatings.size === 0) {
         console.log(`No games found for ${targetDate}.`);
       }
 
-      // Fetch latest ratings for ALL teams from DB (before today)
+      // Stored rows only fill teams with no game in the window (offseason).
       const trendStartDate = new Date(targetDate);
       trendStartDate.setDate(trendStartDate.getDate() - 60);
 
@@ -235,7 +187,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         trendStartDate.toISOString().slice(0, 10),
       );
 
-      // Map of team -> latest rating
       const latestMap = new Map<string, any>();
       latestRatings?.forEach((r) => {
         if (r.team_abbreviation) {
@@ -245,79 +196,32 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         }
       });
 
-      // Fetch WGO stats for tiers
-      const wgoStats = await fetchWgoStats(supabase, logStartDate, targetDate);
-      // Group by team, sort by date desc
-      const wgoMap = new Map<string, any>();
-      wgoStats.forEach((s) => {
-        if (
-          !wgoMap.has(s.team_abbreviation) ||
-          s.date > wgoMap.get(s.team_abbreviation).date
-        ) {
-          wgoMap.set(s.team_abbreviation, s);
-        }
-      });
-
-      // Calculate Percentiles for Tiers
-      const ppValues: number[] = [];
-      const pkValues: number[] = [];
+      // PP/PK tiers from pooled season-to-date opportunities and results
+      // (decision 20, W1 P0 #13); an unknown team has no tier.
+      const specialTeamsTiers = computeSpecialTeamsTiers(
+        await fetchUnderlyingStatsTeamSpecialTeamsContext(targetDate, supabase),
+      );
 
       const allTeams = new Set<string>([
-        ...Array.from(teamLogs.keys()),
+        ...Array.from(dailyRatings.keys()),
         ...Array.from(latestMap.keys()),
       ]);
 
-      for (const team of allTeams) {
-        const wgo = wgoMap.get(team);
-        if (wgo && wgo.power_play_pct != null)
-          ppValues.push(wgo.power_play_pct);
-        if (wgo && wgo.penalty_kill_pct != null)
-          pkValues.push(wgo.penalty_kill_pct);
-      }
-
-      ppValues.sort((a, b) => a - b);
-      pkValues.sort((a, b) => a - b);
-
-      const getPercentile = (values: number[], p: number) => {
-        if (values.length === 0) return 0;
-        const index = Math.floor(values.length * p);
-        return values[Math.min(index, values.length - 1)];
-      };
-
-      const pp33 = getPercentile(ppValues, 0.33);
-      const pp67 = getPercentile(ppValues, 0.67);
-      const pk33 = getPercentile(pkValues, 0.33);
-      const pk67 = getPercentile(pkValues, 0.67);
-
-      const getTier = (
-        val: number | null | undefined,
-        p33: number,
-        p67: number,
-      ) => {
-        if (val == null) return 3;
-        if (val >= p67) return 1;
-        if (val >= p33) return 2;
-        return 3;
-      };
-
       const upserts: any[] = [];
       for (const team of allTeams) {
-        const calculated = finalRatings.find(
-          (r) => r.team_abbreviation === team,
-        );
+        const calculated = dailyRatings.get(team);
         const trend10 =
           trendOverrides.get(team) ?? Number(latestMap.get(team)?.trend10 ?? 0);
 
-        // Tiers
-        const wgo = wgoMap.get(team);
-        const ppTier = getTier(wgo?.power_play_pct, pp33, pp67);
-        const pkTier = getTier(wgo?.penalty_kill_pct, pk33, pk67);
+        const tiers = specialTeamsTiers.get(team);
+        const ppTier = tiers?.ppTier ?? null;
+        const pkTier = tiers?.pkTier ?? null;
 
         if (calculated) {
           upserts.push({
-            ...calculated,
+            ...calculated.rating,
             calculation_version: TEAM_POWER_RATING_CALCULATION_VERSION,
-            source_through_date: targetDate,
+            source_through_date: calculated.sourceThroughDate,
             trend10,
             pp_tier: ppTier,
             pk_tier: pkTier,

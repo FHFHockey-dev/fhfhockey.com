@@ -18,11 +18,11 @@ describe("getPlayerStatsInitialSortState", () => {
       direction: "desc",
     });
     expect(getPlayerStatsInitialSortState("onIceCounts")).toEqual({
-      sortKey: "xgfPct",
+      sortKey: "cfPct",
       direction: "desc",
     });
     expect(getPlayerStatsInitialSortState("onIceRates")).toEqual({
-      sortKey: "xgfPct",
+      sortKey: "cfPct",
       direction: "desc",
     });
     expect(getPlayerStatsInitialSortState("goalieCounts")).toEqual({
@@ -60,22 +60,22 @@ describe("getPlayerStatsNextSortState", () => {
     expect(
       getPlayerStatsNextSortState(
         "onIceRates",
-        { sortKey: "xgfPct", direction: "desc" },
-        "xgfPct"
+        { sortKey: "cfPct", direction: "desc" },
+        "cfPct"
       )
     ).toEqual({
-      sortKey: "xgfPct",
+      sortKey: "cfPct",
       direction: "asc",
     });
 
     expect(
       getPlayerStatsNextSortState(
         "onIceRates",
-        { sortKey: "xgfPct", direction: "asc" },
-        "xgfPct"
+        { sortKey: "cfPct", direction: "asc" },
+        "cfPct"
       )
     ).toEqual({
-      sortKey: "xgfPct",
+      sortKey: "cfPct",
       direction: "desc",
     });
   });

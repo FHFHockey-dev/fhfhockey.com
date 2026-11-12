@@ -559,7 +559,7 @@ describe("game prediction baseline model", () => {
       selected_threshold_predicted_winner_team_id: 1,
       model_audit: {
         winnerPolicyVersion:
-          "winner_policy_v1_report_50_and_selected_threshold",
+          "winner_policy_v2_displayed_probability_tie_at_50",
         rosterImpactVersion: "forge_team_projection_proxy_v1",
         strengthOfScheduleVersion: "past_opponent_power_v1",
         seasonDecayVersion: "none",

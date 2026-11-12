@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { calendarLeadDay, validForecastCalendarPolicy, type ForecastCalendarPolicy } from "lib/player-forecasts/contributions";
+import { calendarLeadDay, validForecastCalendarPolicy, type AnyForecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { loadDailyBoardEvidence, type DailyBoardEvidence } from "lib/projections/dailyBoardEvidence";
 import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
 import { excludeOffReleaseRuns, restrictRunsToHorizon } from "lib/projections/releasedRunFence";
@@ -12,7 +12,7 @@ import { DEFENSE_B2B_FATIGUE_BOOST, OPPONENT_AWAY_PENALTY, OPPONENT_B2B_PENALTY,
 import type { TeamStrengthPrior } from "lib/projections/types/run-forge-projections.types";
 import type { GameForecast, PlanningGame, PlanningPlayer, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
 import { pages, withinDeadline } from "./planningInputs";
-import { bridgeWireRowBytes, FORGE_DAILY_BRIDGE_VERSION, jsonUtf8Bytes, isReserveLine, RESERVE_FORECAST_NOTES, reserveAppearanceProbability, reserveCodeOf, type BridgeRunProof, type ReserveCode } from "./bridgeForecastWire";
+import { bridgeAllowedUses, bridgeWireRowBytes, FORGE_DAILY_BRIDGE_VERSION, jsonUtf8Bytes, isReserveLine, RESERVE_FORECAST_NOTES, reserveAppearanceProbability, reserveCodeOf, type BridgeRunProof, type ReserveCode } from "./bridgeForecastWire";
 
 type Row = Record<string, any>;
 type Run = { runId: string; asOfDate: string; issuedAt: string; gitSha: string | null; proof: BridgeRunProof | null };
@@ -47,8 +47,8 @@ const TOTAL_COLUMNS: Record<string, string> = { PENALTY_MINUTES: "penalty_minute
 const DAY_MS = 86400000;
 const VALID_DAYS = 8;
 const FORECAST_LIMITATION = "Interim FORGE projection: the player's latest FORGE game line, reused for this game.";
-const SKATER_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_toi_es_seconds,proj_toi_pp_seconds,proj_toi_pk_seconds,proj_hits,proj_blocks,proj_pim,proj_plus_minus";
-const RESERVE_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,player_class,conditioning,reserve_reason,proj_goals_es,proj_goals_pp,proj_assists_es,proj_assists_pp,proj_shots_es,proj_shots_pp,proj_toi_es_seconds,proj_toi_pp_seconds,proj_hits,proj_blocks,proj_saves,proj_goals_allowed,proj_shots_against,proj_shutout_prob";
+const SKATER_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_toi_es_seconds,proj_toi_pp_seconds,proj_toi_pk_seconds,proj_hits,proj_blocks,proj_pim,proj_plus_minus,availability_state:uncertainty->availability->>state,availability_game_id:uncertainty->availability->>game_id";
+const RESERVE_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,player_class,conditioning,reserve_reason,proj_goals_es,proj_goals_pp,proj_assists_es,proj_assists_pp,proj_shots_es,proj_shots_pp,proj_toi_es_seconds,proj_toi_pp_seconds,proj_hits,proj_blocks,proj_saves,proj_goals_allowed,proj_shots_against,proj_shutout_prob,availability_state:uncertainty->availability->>state,availability_game_id:uncertainty->availability->>game_id";
 const GOALIE_COLUMNS = "run_id,as_of_date,horizon_games,game_id,goalie_id,team_id,opponent_team_id,starter_probability,proj_saves,proj_goals_allowed,proj_shots_against,proj_win_prob,proj_shutout_prob";
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
@@ -88,7 +88,12 @@ type Context = { shotsAgainst: number; goalsAgainst: number; goalsFor: number };
 
 /** One prior per team: the latest date's season-to-date row, i.e. the row whose xGA total matches its games played.
  * The table holds several rows per team and date, so a row is used only when exactly one matches. */
-export function teamStrengthPriors(rows: Row[], lastSeason: Row[] = []): Map<string, TeamStrengthPrior> {
+export function teamStrengthPriors(rows: Row[], lastSeason: Row[] = [], seasonId?: number): Map<string, TeamStrengthPrior> {
+  // W2-1 C2 (migration 129): once rows carry `nst_season`, the season is an exact join key: only rows whose joined NST
+  // season is this season count, and the games-played inference below is not used for them (a null season is unknown).
+  // Before 129 the field is absent and the legacy inference stays, so the reader never errors on either shape.
+  const keyed = seasonId !== undefined && rows.some(row => Object.prototype.hasOwnProperty.call(row, "nst_season"));
+  if (keyed) rows = rows.filter(row => row.nst_season !== null && row.nst_season !== undefined && Number(row.nst_season) === seasonId);
   const latest = new Map<string, string>();
   for (const row of rows) if (typeof row.team_abbrev === "string" && typeof row.date === "string"
     && (latest.get(row.team_abbrev) ?? "") < row.date) latest.set(row.team_abbrev, row.date);
@@ -96,7 +101,7 @@ export function teamStrengthPriors(rows: Row[], lastSeason: Row[] = []): Map<str
   for (const [team, date] of latest) {
     const matches = rows.filter(row => row.team_abbrev === team && row.date === date).filter(row => {
       const xga = Number(row.xga), perGame = Number(row.xga_per_game), games = Number(row.games_played);
-      return Number.isFinite(xga) && perGame > 0 && games > 0 && Math.abs(xga / perGame - games) < 0.5;
+      return Number.isFinite(xga) && perGame > 0 && games > 0 && (keyed || Math.abs(xga / perGame - games) < 0.5);
     });
     if (matches.length !== 1) continue;
     const row = matches[0];
@@ -201,9 +206,18 @@ function retargetGoalieLine(line: StatLine, from: Context, to: Context, venue: {
   const shots = (1 + to.shotsAgainst) / (1 + from.shotsAgainst) * (1 + venue.to) / (1 + venue.from);
   const against = (1 + to.goalsAgainst) / (1 + from.goalsAgainst) * (1 + venue.to) / (1 + venue.from);
   const scale = (value: number | null, factor: number) => value === null ? null : round(value * factor);
-  return { ...line, SAVES_GOALIE: scale(line.SAVES_GOALIE, shots), SHOTS_AGAINST_GOALIE: scale(line.SHOTS_AGAINST_GOALIE, shots),
+  const moved = { ...line, SAVES_GOALIE: scale(line.SAVES_GOALIE, shots), SHOTS_AGAINST_GOALIE: scale(line.SHOTS_AGAINST_GOALIE, shots),
     GOALS_AGAINST_GOALIE: scale(line.GOALS_AGAINST_GOALIE, against),
     SHUTOUTS_GOALIE: line.SHUTOUTS_GOALIE === null ? null : round(Math.min(1, line.SHUTOUTS_GOALIE / against)) };
+  return reconcileSaves(moved);
+}
+/** SA = SV + GA (Astra PR1): shots and goals against move by different factors, so saves are derived as SA − GA. Goals
+ * against above shots against is an impossible line: its three components become unknown, never a negative save count. */
+function reconcileSaves(line: StatLine): StatLine {
+  const shots = line.SHOTS_AGAINST_GOALIE, goals = line.GOALS_AGAINST_GOALIE;
+  if (!finite(shots) || !finite(goals)) return line;
+  if (goals > shots) return { ...line, SAVES_GOALIE: null, SHOTS_AGAINST_GOALIE: null, GOALS_AGAINST_GOALIE: null };
+  return { ...line, SAVES_GOALIE: round(shots - goals) };
 }
 /** A team's chance to win one game (OT/SO included), kept apart from any goalie's wins. Both teams of a game sum to 1.
  * `forge`: FORGE projected the game; `forge_paired`: 1 − the opponent's FORGE value; `forge_model`: FORGE's win model on
@@ -301,7 +315,7 @@ export type ForgeBridgeCapture = { startedAt: string; completedAt: string; runs:
 
 /** Pure: no reads. Rows from runs not in `inputs.runs`, or from runs without external-input exclusion proof, are ignored. */
 export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, players: PlanningPlayer[], games: PlanningGame[],
-  now: Date, seasonId: number, calendarPolicy: ForecastCalendarPolicy, byteBudget = FORGE_DAILY_BRIDGE_BYTE_BUDGET,
+  now: Date, seasonId: number, calendarPolicy: AnyForecastCalendarPolicy, byteBudget = FORGE_DAILY_BRIDGE_BYTE_BUDGET,
   expandedByteBudget = inputs.reserves === undefined ? FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET : FORGE_RESERVE_EXPANDED_BYTE_BUDGET): ForgeDailyBridgeResult {
   const runs = new Map<string, Run>();
   let withheldRuns = 0;
@@ -346,7 +360,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     latestShares.set(row.player_id, value); shareOrder.set(row.player_id, key);
   }
   const rates = inputs.seasonTotals ? seasonRates(inputs.seasonTotals, seasonId) : null;
-  const priors = teamStrengthPriors(inputs.teamPriors ?? [], inputs.lastSeasonTeams ?? []);
+  const priors = teamStrengthPriors(inputs.teamPriors ?? [], inputs.lastSeasonTeams ?? [], seasonId);
   const tilts = opponentTilts(inputs.positionAllowed ?? [], seasonId);
   const tiltBetween = (player: PlanningPlayer, from: string | undefined, to: string | undefined): Tilt | undefined => {
     const group = player.eligiblePositions.some(position => position.toUpperCase() === "D") ? "D" : "F";
@@ -392,7 +406,8 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const nowIso = now.toISOString();
   const upcoming = (team: string) => games.filter(game => game.teamAbbreviation === team && game.status === "scheduled" && game.startsAt
     && game.scheduleRevision && Date.parse(game.startsAt) > now.getTime() && validForecastCalendarPolicy(calendarPolicy)
-    && calendarLeadDay(game.startsAt, nowIso) < calendarPolicy.calendarDays);
+    // Decision 127: the policy decides the date basis (v2: the game's NHL schedule date), so pass both.
+    && calendarLeadDay(game.startsAt, nowIso, calendarPolicy, game.date) < calendarPolicy.calendarDays);
   const forecasts: GameForecast[] = [];
   const emit = (player: PlanningPlayer, game: PlanningGame, run: Run, stats: StatLine, startProbability: number | null, conditionalStats?: StatLine, confirmedStart = false, reserve?: ReserveCode) => {
     const appearance = reserve ? reserveAppearanceProbability(reserve) : undefined;
@@ -402,7 +417,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       issuedContext: { version: "forge-issued-context-v1", playerId: player.id, gameId: game.id, nhlPlayerId: player.nhlId!, seasonId,
         teamId: player.nhlTeamId!, scheduledAt: game.startsAt!, scheduleRevision: game.scheduleRevision!, rosterRevision: player.rosterRevision!,
         observedAt: run.issuedAt, scheduleSourceUpdatedAt: null, scheduleFetchedAt: null, identityUpdatedAt: null, membershipCreatedAt: [] },
-      allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false },
+      allowedUses: bridgeAllowedUses(reserve),
       ...(conditionalStats ? { conditionalStats } : {}), ...(appearance !== undefined ? { appearanceProbability: appearance } : {}),
       playerId: player.id, gameId: game.id, stats, conditioning: "unconditional", startProbability, confirmedStart,
       revisionId: `${FORGE_DAILY_BRIDGE_VERSION}:${run.runId}`, issuedAt: run.issuedAt,
@@ -441,10 +456,37 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     if (availability) return "skater:uncertain";
     return reason === "ruled_out" ? "skater:ruled_out_at_run" : "skater:no_lineup_evidence";
   };
+  /** A reserve row's state: accepted news first, then FORGE's roster evidence out for this very game (L9c) as a real 0. */
+  const reserveState = (game: PlanningGame, player: PlanningPlayer, row: Row): ReserveCode => {
+    const news = skaterState(game, player, row.reserve_reason);
+    if (news === "skater:confirmed_lineup" || news === "skater:confirmed_out") return news;
+    return row.availability_state === "confirmed_out" && String(row.availability_game_id) === game.id ? "skater:roster_out" : news;
+  };
   const zeroed = (line: StatLine): StatLine => Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value === null ? null : 0]));
+  const unknownLine = (line: StatLine): StatLine => Object.fromEntries(Object.keys(line).map(key => [key, null]));
   const emitReserve = (player: PlanningPlayer, game: PlanningGame, run: Run, line: StatLine, code: ReserveCode, startProbability: number | null = null) => {
-    // Confirmed in the lineup: the conditional line is his expectation. Otherwise plans count the labelled zero.
-    emit(player, game, run, code === "skater:confirmed_lineup" ? line : zeroed(line), startProbability, line, false, code);
+    // Confirmed in the lineup: the conditional line is his expectation. Confirmed out: a real 0. Otherwise his
+    // participation is unknown, so the unconditional line is unknown (decisions 3, 47), never a fabricated 0.
+    emit(player, game, run, code === "skater:confirmed_lineup" ? line : code === "skater:confirmed_out" || code === "skater:roster_out" ? zeroed(line)
+      : unknownLine(line), startProbability, line, false, code);
+  };
+  // L9c (decision 132): FORGE rows carry his "if he plays" line plus `uncertainty.availability` for the row's game. Accepted
+  // news for this game decides first; then roster evidence out for this very game is a real 0; otherwise an uncertain or
+  // unknown state (or an out on another game) leaves the unconditional value unknown. Rows without the field (older runs)
+  // keep today's reading.
+  const rowAvailability = (player: PlanningPlayer, row: Row, game: PlanningGame): "line" | ReserveCode => {
+    const state = typeof row.availability_state === "string" ? row.availability_state : null;
+    if (!state || state === "projected_lineup") return "line";
+    const news = skaterState(game, player, null);
+    if (news === "skater:confirmed_lineup") return "line";
+    if (news === "skater:confirmed_out") return news;
+    if (state === "confirmed_out" && String(row.availability_game_id) === game.id) return "skater:roster_out";
+    return state === "uncertain" ? "skater:availability_uncertain" : "skater:availability_unknown";
+  };
+  const emitLineup = (player: PlanningPlayer, game: PlanningGame, run: Run, line: StatLine, row: Row) => {
+    const state = rowAvailability(player, row, game);
+    if (state === "line") emit(player, game, run, line, null);
+    else emitReserve(player, game, run, line, state);
   };
   for (const player of identified.filter(row => row.playerClass === "skater")) {
     const latestRow = skaterLatest.get(player.nhlId);
@@ -461,12 +503,12 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
         const own = exactSkater.get(`${game.id}:${player.nhlId}`);
         if (own && own.team_id === player.nhlTeamId) {
           const special = withPowerPlayZeros(own), ownStats = skaterStats(special.row, playerRates);
-          if (ownStats) { emit(player, game, runs.get(own.run_id)!, ownStats, null); continue; }
+          if (ownStats) { emitLineup(player, game, runs.get(own.run_id)!, ownStats, own); continue; }
         }
         const exact = exactReserve.get(`skater:${game.id}:${player.nhlId}`);
         if (exact) {
           const line = reserveLine(exact);
-          if (line) emitReserve(player, game, runs.get(exact.run_id)!, line, skaterState(game, player, exact.reserve_reason));
+          if (line) emitReserve(player, game, runs.get(exact.run_id)!, line, reserveState(game, player, exact));
           continue;
         }
         if (!baseLine) continue;
@@ -475,7 +517,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
         const rest = restScale(gameContext(reserve.game_id, reserve.team_id), gameContext(game.id, reserve.team_id));
         const tilt = tiltBetween(player, abbreviationById.get(reserve.opponent_team_id), game.opponent);
         emitReserve(player, game, runs.get(reserve.run_id)!, scale === 1 && !rest && !tilt ? baseLine : retargetSkater(baseLine, scale, rest, tilt),
-          skaterState(game, player, reserve.reserve_reason));
+          reserveState(game, player, reserve));
       }
       if (forecasts.length > emitted) { reserveSkaters.add(player.nhlId!); reserveSkaterGames += forecasts.length - emitted; }
       if (!baseLine && rates && !playerRates) unratedSkaters.add(player.nhlId!);
@@ -502,7 +544,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       if (own && (stale || own !== latestRow) && own.team_id === player.nhlTeamId) {
         // Projected for this game itself: use that line as issued, no re-aiming.
         const ownStats = lineFor(own);
-        if (ownStats) { emit(player, game, runs.get(own.run_id)!, ownStats, null); continue; }
+        if (ownStats) { emitLineup(player, game, runs.get(own.run_id)!, ownStats, own); continue; }
       }
       if (!stats) continue;
       const row = latestRow;
@@ -510,7 +552,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       const scale = projectedAgainst && facing ? (1 + facing.goalsFor) / (1 + projectedAgainst.goalsFor) : 1;
       const rest = String(row.game_id) === game.id ? null : restScale(gameContext(row.game_id, row.team_id), gameContext(game.id, row.team_id));
       const tilt = String(row.game_id) === game.id ? undefined : tiltBetween(player, abbreviationById.get(row.opponent_team_id), game.opponent);
-      emit(player, game, runs.get(row.run_id)!, scale === 1 && !rest && !tilt ? stats : retargetSkater(stats, scale, rest, tilt), null);
+      emitLineup(player, game, runs.get(row.run_id)!, scale === 1 && !rest && !tilt ? stats : retargetSkater(stats, scale, rest, tilt), row);
     }
     if (stale && forecasts.length === emitted) staleSkaters++;
   }
@@ -623,7 +665,9 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       // If he starts he is credited with FORGE's decision share of his team's wins; unknown stays unknown.
       const win = teamWin(game, teamId), startWin = win === null ? null : win.probability * STARTER_DECISION_SHARE;
       if (win === null) unknownWins++;
-      const line = { ...forgeLine, WINS_GOALIE: round(startWin), LOSSES_GOALIE: startWin === null ? null : round(1 - startWin) };
+      // Decision 46 (W1 P0 #28): W, regulation L, OT/SO L and no decision reconcile to the start, so L is never 1 − W.
+      // With no fitted overtime split and Yahoo's L/OTL mapping unverified, regulation L and OTL stay unknown.
+      const line = { ...forgeLine, WINS_GOALIE: round(startWin), LOSSES_GOALIE: null, OTL_GOALIE: null };
       // FORGE has no line of his own, so this "if he starts" line is his team starter's (selected-starter rows name their
       // goalie; reserve rows are always his own). With the reserve pass on, the forecast says so.
       const teamLine = finite(source.goalie_id) && source.goalie_id !== goalie.nhlId;
@@ -632,14 +676,17 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
         emitReserve(goalie, game, runs.get(source.run_id)!, line, teamLine ? "goalie:start_unknown_team_line" : "goalie:start_unknown");
         reserveGoalieGames++; continue;
       }
-      emit(goalie, game, runs.get(source.run_id)!, Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value === null ? null : round(value * p)])),
-        round(p), line, confirmedId === String(goalie.nhlId), teamLine && inputs.reserves !== undefined ? "goalie:team_line" : undefined);
+      // Start probabilities stay unrounded through emission and the wire (W2-8 D2): four-decimal rounding can lift a
+      // group above 1 and void every line in it. Counts round, with saves re-derived so SA = SV + GA still holds.
+      emit(goalie, game, runs.get(source.run_id)!, reconcileSaves(Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value === null ? null : round(value * p)]))),
+        p, line, confirmedId === String(goalie.nhlId), teamLine && inputs.reserves !== undefined ? "goalie:team_line" : undefined);
     }
   }
-  // No FORGE line (TJ, option B, 2026-10-26): an identified player still without a row for a game in the horizon gets a
-  // labelled conservative 0 under his team's latest proven run, so one uncovered roster player no longer blanks the
-  // whole plan. His latest proven line, if any, is kept as the "if he plays" line and never counts. Only "no line
-  // exists" qualifies: when a withheld (unproven) run may hold his team's newer line, he still gets no forecast.
+  // No FORGE line: an identified player still without a row for a game in the horizon gets a labelled unknown row
+  // under his team's latest proven run (decisions 3, 47 supersede the 2026-10-26 labelled 0): every scored key null and
+  // no planning use, so he is never an automatic drop and lineup totals read incomplete. His latest proven line, if any,
+  // is kept as the "if he plays" line and never counts. Only "no line exists" qualifies: when a withheld (unproven) run
+  // may hold his team's newer line, he still gets no forecast.
   const served = new Set(forecasts.map(row => `${row.playerId}:${row.gameId}`));
   const withheldDates = inputs.runs.filter(row => row.external_input_proven !== true && typeof row.as_of_date === "string").map(row => row.as_of_date as string);
   const teamPlays = (teamId: number, date: string) => !scheduleById.size
@@ -651,7 +698,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const noLineTemplate: Record<"skater" | "goalie", StatLine> = {
     skater: Object.fromEntries(["GOALS", "ASSISTS", "POINTS", "PP_GOALS", "PP_ASSISTS", "PP_POINTS", "SHOTS_ON_GOAL", "HITS", "BLOCKED_SHOTS",
       "TIME_ON_ICE_PER_GAME", ...FORGE_DAILY_BRIDGE_SEASON_RATED].map(key => [key, 0])),
-    goalie: { SAVES_GOALIE: 0, GOALS_AGAINST_GOALIE: 0, SHOTS_AGAINST_GOALIE: 0, SHUTOUTS_GOALIE: 0, GOALIE_MINUTES: 0, GAMES_STARTED: 0, WINS_GOALIE: 0, LOSSES_GOALIE: 0 },
+    goalie: { SAVES_GOALIE: 0, GOALS_AGAINST_GOALIE: 0, SHOTS_AGAINST_GOALIE: 0, SHUTOUTS_GOALIE: 0, GOALIE_MINUTES: 0, GAMES_STARTED: 0, WINS_GOALIE: 0, LOSSES_GOALIE: 0, OTL_GOALIE: 0 },
   };
   let noLineGames = 0;
   const noLinePlayers = new Set<number>(), withheldLinePlayers = new Set<number>();
@@ -676,9 +723,12 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
           conditional = scale === 1 && !rest && !tilt ? line : retargetSkater(line, scale, rest, tilt);
         }
       }
-      // Every key a complete 0 (even ones his line leaves unknown), so the plan counts him as 0, never unknown.
-      const zero = { ...noLineTemplate[player.playerClass], ...Object.fromEntries(Object.keys(conditional ?? {}).map(key => [key, 0])) };
-      emit(player, game, runs.get(anchor.run_id)!, zero,
+      // Accepted news confirming him out of this game: a real 0 that keeps his "if he plays" line (W2-8 D3). Otherwise
+      // every key is unknown (null), so the plan reads him as unknown, never as a known 0.
+      const template = { ...noLineTemplate[player.playerClass], ...conditional };
+      if (player.playerClass === "skater" && skaterState(game, player, null) === "skater:confirmed_out") {
+        emit(player, game, runs.get(anchor.run_id)!, zeroed(template), null, conditional, false, "skater:confirmed_out");
+      } else emit(player, game, runs.get(anchor.run_id)!, unknownLine(template),
         null, conditional, false, player.playerClass === "skater" ? "skater:no_forge_line" : "goalie:no_forge_line");
       noLinePlayers.add(player.nhlId!); noLineGames++;
     }
@@ -709,6 +759,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     priors.size ? `Future games move each FORGE line to that game's opponent with FORGE's team-strength adjustment (team xG for and against, ${priors.size} teams${inputs.lastSeasonTeams?.length ? `, last season blended in as ${LAST_SEASON_PRIOR_GAMES} games` : ""})${scheduleById.size ? ", plus FORGE's home-ice and rest model (back-to-backs included); a goalie's start chance drops on the second night of a back-to-back" : ""}${tilts.size ? ", and each opponent's tilt toward forwards or defencemen (points and shots allowed by position vs league, shrunk)" : ""}.`
       : "Team strength could not be read, so future games reuse each FORGE line without an opponent adjustment.",
     ...(teamWins.size ? [`Goalie wins: FORGE's per-game team win probability (both teams sum to 1) × ${STARTER_DECISION_SHARE} starter decision share, times his start chance; games FORGE has not projected yet use FORGE's same win model on team xG.`] : []),
+    ...(teamWins.size ? ["Goalie losses: regulation L and OT/SO L are unknown (no fitted overtime split, and the provider's L/OTL mapping is unverified), so totals that score them read unknown; L is never 1 − W, which would count overtime losses and no-decisions as losses."] : []),
     ...(unknownWins ? [`${unknownWins} goalie-games have no team win probability (FORGE left it blank, or a team-strength prior is missing), so their wins are unknown.`] : []),
     "Goalie starts use each goalie's last-10 start share (season share when missing) from start rows for his current team this season: the row for that game when one exists, otherwise his latest. FORGE's own starter probability applies to an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.",
     ...(openTeamGames ? [`${openTeamGames} team-games have a goalie with no start share; the others keep their own shares, never scaled up, so start chances there sum to less than 1.`] : []),
@@ -741,7 +792,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
  * proof shows it excluded third-party fantasy inputs. Newer unproven runs of a date are passed on unread, only to be
  * counted. A later run of a date supersedes an earlier one for that date's games. */
 export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, players: PlanningPlayer[], games: PlanningGame[], now: Date,
-  seasonId: number, deadline: number, calendarPolicy: ForecastCalendarPolicy,
+  seasonId: number, deadline: number, calendarPolicy: AnyForecastCalendarPolicy,
   /** VORP S3 only (flag on): receives the admitted runs and their output rows as read; never changes the result. */
   capture?: (observation: ForgeBridgeCapture) => void): Promise<ForgeDailyBridgeResult> {
   const readDeadline = Math.min(deadline, Date.now() + 6000);
@@ -778,7 +829,8 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
     pages(() => db.from("wgo_skater_stats_totals").select("player_id,season,games_played,goals,gw_goals,penalty_minutes,plus_minus,sh_goals,sh_assists,sh_points,total_fow,total_fol", { count: "exact" })
       .in("season", [String(seasonId), previousSeason]).order("season").order("player_id"), readDeadline, 5000, row => [row.season, row.player_id]).catch(() => undefined),
     withinDeadline(readDeadline, () => loadDailyBoardEvidence(upcomingGameIds, now.toISOString(), db as never)).catch(() => undefined),
-    pages(() => db.from("nhl_team_data").select("team_abbrev,date,xga,xga_per_game,xgf_per_game,games_played", { count: "exact" })
+    // "*" keeps the read valid before and after migration 129 (which adds nst_season); the reader checks the field.
+    pages(() => db.from("nhl_team_data").select("*", { count: "exact" })
       .eq("season_id", seasonId).gte("date", from).lte("date", to).order("date", { ascending: false }).order("team_abbrev"),
     readDeadline, 2000, row => [row.team_abbrev, row.date, row.xga, row.xga_per_game]).catch(() => undefined),
     pages(() => db.from("nst_team_stats").select("team_abbreviation,season,situation,gp,xga,xgf", { count: "exact" })

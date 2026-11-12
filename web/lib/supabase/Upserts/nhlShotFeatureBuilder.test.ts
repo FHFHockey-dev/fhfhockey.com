@@ -282,7 +282,7 @@ describe("nhlShotFeatureBuilder", () => {
           eventOwnerTeamId: 10,
           shootingPlayerId: 34,
           shotType: "Snap",
-          reason: "short-side",
+          reason: "short",
           xCoord: 68,
           yCoord: 10,
           zoneCode: "O",
@@ -333,9 +333,9 @@ describe("nhlShotFeatureBuilder", () => {
       possessionRegainedFromOpponent: true,
       possessionRegainEventTypeDescKey: "giveaway",
       possessionEnteredOffensiveZone: false,
-      missReasonRaw: "short-side",
-      missReasonBucket: "short-side",
-      isShortSideMiss: true,
+      missReasonRaw: "short",
+      missReasonBucket: "short-of-net",
+      isShortSideMiss: false,
     });
     expect(rows[0].rushDistanceFromSourceFeet).toBeCloseTo(88.1419, 3);
     expect(rows[0].rushSpeedFromSourceFeetPerSecond).toBeCloseTo(12.5917, 3);
@@ -486,7 +486,7 @@ describe("nhlShotFeatureBuilder", () => {
     });
   });
 
-  it("keeps empty-net shot events in the feature layer and marks them explicitly", () => {
+  it("keeps pulled-goalie shots in the feature layer without calling the shooter's own empty net EN (decisions 7, 84)", () => {
     const events = parseEvents([
       {
         eventId: 400,
@@ -530,10 +530,11 @@ describe("nhlShotFeatureBuilder", () => {
     const rows = buildShotFeatureRows(events, [] as any, 10, 20);
 
     expect(rows).toHaveLength(2);
+    // 1560: the home shooter's own goalie is pulled (6v5, no penalty) -> ES.
     expect(rows[0]).toMatchObject({
       eventId: 400,
-      isEmptyNetEvent: true,
-      strengthState: "EN",
+      isEmptyNetEvent: false,
+      strengthState: "EV",
       strengthExact: "5v6",
       normalizedX: 72,
       normalizedY: -8,
@@ -541,7 +542,7 @@ describe("nhlShotFeatureBuilder", () => {
     expect(rows[1]).toMatchObject({
       eventId: 401,
       isGoal: true,
-      isEmptyNetEvent: true,
+      isEmptyNetEvent: false,
       shotType: "backhand",
       normalizedX: 80,
       normalizedY: 4,

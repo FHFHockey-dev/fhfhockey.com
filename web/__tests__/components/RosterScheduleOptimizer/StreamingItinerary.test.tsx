@@ -47,10 +47,10 @@ describe("Streaming itinerary", () => {
     ]);
     expect(within(rows[1]).getByText(/^2\/4 adds · \+3 AGP/)).toBeTruthy();
     expect(within(rows[5]).getByText(/^4\/4 adds · \+7 AGP/)).toBeTruthy();
-    // Options are ranked by projection; last-10 FPts/G is shown beside them.
+    // Options are ranked by projection; last-10 FPts/G is shown beside them as context, marked not ranked.
     const weekend = within(rows[5]).getByRole("list", { name: /Options for/ });
     expect(within(weekend).getAllByRole("button").map(button => button.textContent)).toEqual([
-      "Weekend Stream (EDM)2 GP · 3.0 proj FPts · 2 FPts/G (last 5)", "Weekend Backup (OTT)2 GP · 3 proj FPts · 0.4 FPts/G (last 5)"]);
+      "Weekend Stream (EDM)2 GP · 3.0 proj FPts · 2 FPts/G last 5 (not ranked)", "Weekend Backup (OTT)2 GP · 3 proj FPts · 0.4 FPts/G last 5 (not ranked)"]);
   });
 
   it("swaps a step's player, re-links the next drop and selects the edited chain", () => {
@@ -89,9 +89,9 @@ describe("Streaming itinerary", () => {
       .toEqual(["Thu-Fri Stream (WPG)Waivers · 2 GP · 4 proj FPts", "Tue-Wed Backup (NJD)2 GP · 2.4 proj FPts"]);
   });
 
-  it("shows the blended net that ranks the chain beside projected totals", () => {
+  it("shows projected totals only; no recent-form blended net (decisions 2, 48)", () => {
     render(<StreamingItinerary {...props} plan={{ ...plan, chains: [{ ...chain, netScore: 9.8 }] }} onSelect={vi.fn()} />);
-    expect(screen.getByLabelText("Streaming totals").textContent).toBe("Adds 4/4 · +7 AGP · +11.3 proj FPts · +9.8 blended FPts");
+    expect(screen.getByLabelText("Streaming totals").textContent).toBe("Adds 4/4 · +7 AGP · +11.3 proj FPts");
   });
 
   it("marks an accepted goalie risk without a tradeoff note", () => {

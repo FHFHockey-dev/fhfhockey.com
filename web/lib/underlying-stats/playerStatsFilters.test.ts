@@ -224,7 +224,7 @@ describe("createDefaultDetailFilterState", () => {
       },
       view: {
         sort: {
-          sortKey: "xgfPct",
+          sortKey: "cfPct",
           direction: "desc",
         },
         pagination: {
@@ -275,7 +275,7 @@ describe("buildPlayerStatsDetailHref", () => {
     const href = buildPlayerStatsDetailHref(8478402, landingState);
 
     expect(href).toBe(
-      "/underlying-stats/playerStats/8478402?fromSeasonId=20252026&throughSeasonId=20252026&seasonType=regularSeason&strength=fiveOnFive&scoreState=allScores&statMode=goalies&displayMode=counts&venue=all&minimumToiSeconds=1800&tradeMode=combine&scope=dateRange&startDate=2025-11-01&endDate=2026-02-01&sortKey=xgfPct&sortDirection=desc&page=1&pageSize=50"
+      "/underlying-stats/playerStats/8478402?fromSeasonId=20252026&throughSeasonId=20252026&seasonType=regularSeason&strength=fiveOnFive&scoreState=allScores&statMode=goalies&displayMode=counts&venue=all&minimumToiSeconds=1800&tradeMode=combine&scope=dateRange&startDate=2025-11-01&endDate=2026-02-01&sortKey=cfPct&sortDirection=desc&page=1&pageSize=50"
     );
   });
 });

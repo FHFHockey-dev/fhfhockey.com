@@ -2,7 +2,9 @@ import crypto from "node:crypto";
 import { parse as parseHtml } from "node-html-parser";
 
 export const PARSER_VERSION = 1;
-export const STRENGTH_VERSION = 1;
+// v2: decisions 70 and 84. Must equal STRENGTH_CLASSIFIER_VERSION in
+// nhlStrengthState.ts (asserted by nhlRawGamecenter.test.ts).
+export const STRENGTH_VERSION = 2;
 export const NORMALIZATION_MATERIALIZER_VERSION =
   "nhl-gamecenter-normalizer-v1";
 export const NORMALIZATION_PARSER_FINGERPRINT = crypto
@@ -88,6 +90,14 @@ function parseSituationCode(situationCode) {
   };
 }
 
+/**
+ * Owner-relative strength label. Mirrors classifyTeamStrengthState in
+ * nhlStrengthState.ts (a test asserts both agree on every situation code):
+ * - penalty shot / shootout codes (a side with no skaters): null, never EN;
+ * - EN only when the owner attacks the opponent's empty net (decision 84);
+ * - otherwise the penalty advantage with any extra attacker removed
+ *   (decision 70): 6v5 with no penalty is EV, 6v4 is PP.
+ */
 function buildStrengthState(parsed, ownerTeamId, homeTeamId, awayTeamId) {
   if (!parsed) {
     return {
@@ -102,25 +112,34 @@ function buildStrengthState(parsed, ownerTeamId, homeTeamId, awayTeamId) {
   const eventOwnerSide = isHomeOwner ? "home" : isAwayOwner ? "away" : null;
   const strengthExact = `${parsed.awaySkaters}v${parsed.homeSkaters}`;
 
-  if (parsed.awayGoalie === 0 || parsed.homeGoalie === 0) {
-    return { strengthExact, strengthState: "EN", eventOwnerSide };
-  }
-
-  if (parsed.awaySkaters === parsed.homeSkaters) {
-    return { strengthExact, strengthState: "EV", eventOwnerSide };
-  }
-
-  if (!eventOwnerSide) {
+  if (!eventOwnerSide || parsed.awaySkaters === 0 || parsed.homeSkaters === 0) {
     return { strengthExact, strengthState: null, eventOwnerSide };
   }
 
   const ownerSkaters = isHomeOwner ? parsed.homeSkaters : parsed.awaySkaters;
   const oppSkaters = isHomeOwner ? parsed.awaySkaters : parsed.homeSkaters;
+  const ownerGoalie = isHomeOwner ? parsed.homeGoalie : parsed.awayGoalie;
+  const oppGoalie = isHomeOwner ? parsed.awayGoalie : parsed.homeGoalie;
+
+  if (oppGoalie === 0) {
+    return { strengthExact, strengthState: "EN", eventOwnerSide };
+  }
+
+  const ownerPenaltyStrength = ownerSkaters - (ownerGoalie === 0 ? 1 : 0);
+  const oppPenaltyStrength = oppSkaters - (oppGoalie === 0 ? 1 : 0);
+  if (ownerPenaltyStrength === oppPenaltyStrength) {
+    return { strengthExact, strengthState: "EV", eventOwnerSide };
+  }
   return {
     strengthExact,
-    strengthState: ownerSkaters > oppSkaters ? "PP" : "SH",
+    strengthState: ownerPenaltyStrength > oppPenaltyStrength ? "PP" : "SH",
     eventOwnerSide,
   };
+}
+
+function isShootoutPeriodType(periodType) {
+  const normalized = String(periodType ?? "").trim().toUpperCase();
+  return normalized === "SO" || normalized.includes("SHOOTOUT");
 }
 
 function isRetryableFetchError(error) {
@@ -722,7 +741,10 @@ export function normalizePbpEvents(game, pbpHash) {
       event_owner_team_id: details.eventOwnerTeamId ?? null,
       event_owner_side: strength.eventOwnerSide,
       is_shot_like: SHOT_LIKE_TYPES.has(typeDescKey),
-      is_goal: typeDescKey === "goal",
+      // A shootout attempt is not a regulation/OT goal (W2-7 D1).
+      is_goal:
+        typeDescKey === "goal" &&
+        !isShootoutPeriodType(play.periodDescriptor?.periodType),
       is_penalty: typeDescKey === "penalty",
       raw_event: play,
       details,

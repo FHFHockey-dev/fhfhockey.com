@@ -9,7 +9,11 @@ import MobileTeamList from "components/StatsPage/MobileTeamList";
 import MobileTabInterface from "components/StatsPage/MobileTabInterface";
 import GoalieShareChart from "components/GoalieShareChart";
 import { StatsProps, SkaterPosition } from "lib/NHL/statsPageTypes";
-import { fetchStatsData } from "lib/NHL/statsPageFetch";
+import {
+  describeGoalieQualifier,
+  fetchStatsData,
+  GoalieQualifier
+} from "lib/NHL/statsPageFetch";
 import PlayerSearchBar from "components/StatsPage/PlayerSearchBar";
 import OptimizedImage from "components/common/OptimizedImage";
 import Link from "next/link";
@@ -70,8 +74,9 @@ export default function StatsPage({
   goalieLeadersSavePct: allGoalieLeadersSavePct,
   goalieLeadersGAA: allGoalieLeadersGAA,
   goalieLeadersQS: allGoalieLeadersQS,
+  goalieQualifier,
   teams = []
-}: StatsProps & { teams: TeamListItem[] }) {
+}: StatsProps & { teams: TeamListItem[]; goalieQualifier?: GoalieQualifier }) {
   // Dev logging wrapper (suppressed in production)
   const debugLog = (...args: any[]) => {
     if (process.env.NODE_ENV !== "production") {
@@ -99,6 +104,13 @@ export default function StatsPage({
   const goalieLeadersSavePct = showGoalies ? allGoalieLeadersSavePct : [];
   const goalieLeadersGAA = showGoalies ? allGoalieLeadersGAA : [];
   const goalieLeadersQS = showGoalies ? allGoalieLeadersQS : [];
+  const goalieQualifierNote = goalieQualifier
+    ? describeGoalieQualifier(goalieQualifier)
+    : undefined;
+  const goalieRateEmptyMessage =
+    goalieQualifier?.status === "unknown"
+      ? "Withheld: qualifier unknown."
+      : "No goalie data available.";
   const [activeTeamColors, setActiveTeamColors] = useState<TeamColors | null>(
     null
   );
@@ -551,6 +563,9 @@ export default function StatsPage({
               </p>
             ) : (
               <>
+                {goalieQualifierNote ? (
+                  <p className={styles.playerDetails}>{goalieQualifierNote}</p>
+                ) : null}
                 <LeaderboardCategoryGoalie
                   title="Wins"
                   leaders={goalieLeadersWins}
@@ -560,16 +575,19 @@ export default function StatsPage({
                   title="Save Percentage"
                   leaders={goalieLeadersSavePct}
                   statKey="save_pct"
+                  emptyMessage={goalieRateEmptyMessage}
                 />
                 <LeaderboardCategoryGoalie
                   title="Goals Against Average"
                   leaders={goalieLeadersGAA}
                   statKey="goals_against_avg"
+                  emptyMessage={goalieRateEmptyMessage}
                 />
                 <LeaderboardCategoryGoalie
                   title="Quality Start Percentage"
                   leaders={goalieLeadersQS}
                   statKey="quality_starts_pct"
+                  emptyMessage={goalieRateEmptyMessage}
                 />
               </>
             )}
@@ -591,6 +609,12 @@ export default function StatsPage({
         goalieLeadersSavePct={goalieLeadersSavePct}
         goalieLeadersGAA={goalieLeadersGAA}
         goalieLeadersQS={goalieLeadersQS}
+        goalieQualifierNote={goalieQualifierNote}
+        goalieEmptyMessage={
+          goalieQualifier?.status === "unknown"
+            ? "Withheld: qualifier unknown."
+            : undefined
+        }
       />
     </div>
   );

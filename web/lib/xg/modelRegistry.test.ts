@@ -1,7 +1,36 @@
 import { describe, expect, it } from "vitest";
 
-import { buildXgModelRegistryRow } from "./modelRegistry";
+import {
+  buildXgModelRegistryRow,
+  pickActiveXgModel,
+  type XgActiveModelRegistryRow,
+} from "./modelRegistry";
+import { XG_APPROVAL_GATE_VERSION } from "./approvalGate";
 import type { PersistedXgModelArtifact } from "./shotFeaturePersistence";
+
+/** A decision-88 gate record with every check passed. */
+const AFFIRMATIVE_APPROVAL = {
+  gateVersion: XG_APPROVAL_GATE_VERSION,
+  isEligible: true,
+  blockingReasons: [],
+  evidence: {
+    testExampleCount: 20000,
+    relativeStandardError: 0.03,
+    checks: {
+      holdoutPresent: true,
+      chronologicalUntouchedTest: true,
+      sufficientEvidence: true,
+      beatsBaseRateLogLoss: true,
+      beatsBaseRateBrier: true,
+      calibrationInTheLarge: true,
+      spiegelhalter: true,
+      subgroupCalibration: true,
+      noOutcomeLeakage: true,
+      calibrationAppliedFromValidation: true,
+      featureCoverage: true,
+    },
+  },
+};
 
 function artifact(overrides: Partial<PersistedXgModelArtifact> = {}): PersistedXgModelArtifact {
   return {
@@ -24,10 +53,7 @@ function artifact(overrides: Partial<PersistedXgModelArtifact> = {}): PersistedX
       validation: { startDate: "2026-01-02", endDate: "2026-02-01" },
       test: { startDate: "2026-02-02", endDate: "2026-04-15" },
     },
-    approvalGradeEligibility: {
-      isEligible: true,
-      blockingReasons: [],
-    },
+    approvalGradeEligibility: AFFIRMATIVE_APPROVAL,
     selectedFeatures: {
       numeric: ["shotDistanceFeet"],
       boolean: ["isReboundShot"],
@@ -114,6 +140,15 @@ describe("modelRegistry", () => {
     });
   });
 
+  it("does not approve or promote an old-schema record without decision-88 evidence (W3-1 D6)", () => {
+    const oldSchema = artifact({ approvalGradeEligibility: { isEligible: true, blockingReasons: [] } });
+    const row = buildXgModelRegistryRow({ artifact: oldSchema, artifactChecksum: "checksum" });
+    expect(row).toMatchObject({ approval_status: "candidate", model_approved: false });
+    expect(() =>
+      buildXgModelRegistryRow({ artifact: oldSchema, isActive: true, isChampion: true, promotionConfirmed: true })
+    ).toThrow("Only an approved artifact can be activated or promoted.");
+  });
+
   it("rejects approved lifecycle state for an ineligible artifact", () => {
     expect(() =>
       buildXgModelRegistryRow({
@@ -143,5 +178,56 @@ describe("modelRegistry", () => {
         promotionConfirmed: true,
       })
     ).toThrow("must also be active");
+  });
+});
+
+describe("pickActiveXgModel (registry pin)", () => {
+  const row = (overrides: Partial<XgActiveModelRegistryRow>): XgActiveModelRegistryRow => ({
+    model_version: "cfg-champion",
+    feature_version: 1,
+    prediction_type: "shot_goal",
+    approval_status: "approved",
+    model_approved: true,
+    is_active: true,
+    is_champion: true,
+    ...overrides,
+  });
+  const champion = row({});
+  const shadow = row({
+    model_version: "cfg-shadow",
+    feature_version: 2,
+    approval_status: "candidate",
+    model_approved: false,
+    is_active: false,
+    is_champion: false,
+  });
+  const otherActive = row({ model_version: "cfg-other", feature_version: 2, is_champion: false });
+
+  it("pins the unique active approved champion whatever the row order", () => {
+    for (const rows of [[champion, shadow, otherActive], [otherActive, shadow, champion]]) {
+      expect(pickActiveXgModel(rows)).toEqual({
+        model: { modelVersion: "cfg-champion", featureVersion: 1, predictionType: "shot_goal" },
+        reason: "unique_active_champion",
+      });
+    }
+  });
+
+  it("never selects an unapproved, inactive or other-type row", () => {
+    expect(pickActiveXgModel([shadow]).model).toBeNull();
+    expect(pickActiveXgModel([row({ approval_status: "retired" })]).model).toBeNull();
+    expect(pickActiveXgModel([row({ is_active: false })]).model).toBeNull();
+    expect(pickActiveXgModel([row({ prediction_type: "rebound_creation" })]).model).toBeNull();
+  });
+
+  it("returns unknown, not the first row, when two active rows tie", () => {
+    const a = row({ is_champion: false });
+    expect(pickActiveXgModel([a, otherActive])).toEqual({
+      model: null,
+      reason: "ambiguous_active_models",
+    });
+    expect(pickActiveXgModel([champion, row({ model_version: "cfg-two" })])).toEqual({
+      model: null,
+      reason: "ambiguous_active_models",
+    });
   });
 });

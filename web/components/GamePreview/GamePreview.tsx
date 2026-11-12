@@ -1,6 +1,14 @@
 import React from "react";
 import useSWR from "swr";
 import styles from "./GamePreview.module.scss";
+import {
+  FHFH_PREDICTIONS_UNAVAILABLE_NOTICE,
+  SCHEDULE_FETCHED_AT_KEY,
+  marketSourceLabel,
+  marketWinProbabilityForGame,
+  scheduleFetchedAt,
+  type NhlScheduleOddsResponse,
+} from "lib/game-predictions/marketOdds";
 
 type Team = {
   id?: number;
@@ -31,19 +39,8 @@ type RightRailData = {
   };
 };
 
-type OddsOffer = {
-  providerId?: number;
-  value?: string | number;
-};
-
-type ScheduleGame = {
-  id?: number;
-  awayTeam?: { odds?: OddsOffer[] };
-  homeTeam?: { odds?: OddsOffer[] };
-};
-
-type ScheduleData = {
-  gameWeek?: Array<{ games?: ScheduleGame[] }>;
+type ScheduleData = NhlScheduleOddsResponse & {
+  [SCHEDULE_FETCHED_AT_KEY]?: string;
 };
 
 export type GamePreviewContext = {
@@ -65,38 +62,15 @@ async function fetcher<T>(url: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+// Stamps the client fetch time on the schedule response: the market label's
+// "as of" time (decision 42).
+async function scheduleFetcher(url: string): Promise<ScheduleData> {
+  const data = await fetcher<ScheduleData>(url);
+  return { ...data, [SCHEDULE_FETCHED_AT_KEY]: new Date().toISOString() };
+}
+
 function finiteNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-// Convert supported American or decimal odds to implied probability. Missing or
-// malformed odds stay unavailable; they must never become a plausible estimate.
-function getImpliedProbability(value: string | number | undefined): number | null {
-  if (value == null) return null;
-  const normalized = String(value).trim();
-  if (!normalized) return null;
-
-  if (!normalized.startsWith("+") && !normalized.startsWith("-")) {
-    const decimal = Number(normalized);
-    return Number.isFinite(decimal) && decimal > 1 ? (1 / decimal) * 100 : null;
-  }
-
-  if (!/^[+-]\d+$/.test(normalized)) return null;
-  const american = Number(normalized);
-  if (!Number.isFinite(american) || american === 0) return null;
-
-  return american > 0
-    ? (100 / (american + 100)) * 100
-    : (-american / (-american + 100)) * 100;
-}
-
-function findPreferredOdds(offers: OddsOffer[] | undefined) {
-  if (!Array.isArray(offers) || offers.length === 0) return undefined;
-  return (
-    offers.find((offer) => offer.providerId === 9)?.value ??
-    offers.find((offer) => offer.providerId === 8)?.value ??
-    offers[0]?.value
-  );
 }
 
 function getBarWidths(
@@ -200,30 +174,17 @@ export default function GamePreview({
 
   const { data: scheduleData, error: scheduleError } = useSWR<ScheduleData>(
     gameDate ? `/api/v1/schedule/date/${gameDate}` : null,
-    fetcher,
+    scheduleFetcher,
   );
 
   const rightRailLoading = !rightRail && !rightRailError;
   const scheduleLoading = Boolean(gameDate && !scheduleData && !scheduleError);
-  const gameOdds = scheduleData?.gameWeek?.[0]?.games?.find(
-    (game) => game.id === Number(gameId),
-  );
-  const rawAwayProbability = getImpliedProbability(
-    findPreferredOdds(gameOdds?.awayTeam?.odds),
-  );
-  const rawHomeProbability = getImpliedProbability(
-    findPreferredOdds(gameOdds?.homeTeam?.odds),
-  );
-  const probabilityTotal =
-    rawAwayProbability != null && rawHomeProbability != null
-      ? rawAwayProbability + rawHomeProbability
+  const fetchedAt = scheduleFetchedAt(scheduleData);
+  const market =
+    scheduleData && fetchedAt
+      ? marketWinProbabilityForGame(scheduleData, Number(gameId))
       : null;
-  const awayProbability =
-    probabilityTotal != null && probabilityTotal > 0
-      ? Math.round((rawAwayProbability! / probabilityTotal) * 100)
-      : null;
-  const homeProbability =
-    awayProbability == null ? null : 100 - awayProbability;
+  const availableMarket = market?.status === "available" ? market : null;
 
   const awayTeam = resolvedGame?.awayTeam;
   const homeTeam = resolvedGame?.homeTeam;
@@ -263,30 +224,36 @@ export default function GamePreview({
     <div className={styles.bentoGrid}>
       <section className={`${styles.dataPanel} ${styles.panelProbability}`}>
         <div className={styles.panelHeader}>
-          <h3>Implied Win Probability</h3>
+          <h3>Market win probability</h3>
         </div>
         <div className={styles.panelBody}>
-          {awayProbability != null && homeProbability != null ? (
+          <p className={styles.predictionsNotice} role="note">
+            {FHFH_PREDICTIONS_UNAVAILABLE_NOTICE}
+          </p>
+          {availableMarket && fetchedAt ? (
             <div className={styles.probabilityHero}>
               <div className={styles.probScale}>
                 <div className={styles.probLabels}>
                   <span className={styles.probAway}>
-                    {awayAbbrev} {awayProbability}%
+                    {awayAbbrev} {availableMarket.awayPercent}%
                   </span>
                   <span className={styles.probHome}>
-                    {homeAbbrev} {homeProbability}%
+                    {homeAbbrev} {availableMarket.homePercent}%
                   </span>
                 </div>
                 <div className={styles.probBar} aria-hidden="true">
                   <div
                     className={styles.probFillAway}
-                    style={{ width: `${awayProbability}%` }}
+                    style={{ width: `${availableMarket.awayPercent}%` }}
                   />
                   <div
                     className={styles.probFillHome}
-                    style={{ width: `${homeProbability}%` }}
+                    style={{ width: `${availableMarket.homePercent}%` }}
                   />
                 </div>
+                <p className={styles.marketSource}>
+                  {marketSourceLabel(availableMarket.partnerName, fetchedAt)}
+                </p>
                 {(awayGoals != null || homeGoals != null) && (
                   <div className={`${styles.probLabels} ${styles.secondaryLabels}`}>
                     <span>

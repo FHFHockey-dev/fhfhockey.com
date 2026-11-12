@@ -320,15 +320,17 @@ function StreakBadge({ streak, max = 2 }: { streak: Streak | null; max?: number 
 }
 const streakText = (streak: Streak | null) => streak ? `, ${streak.kind} streak (${streak.reasons.join(", ")})` : "";
 
-function recentLine(player: RankedPlayer, focus: RecentFocus, layer: SharePlayerLayer | null | undefined) {
+export function recentLine(player: RankedPlayer, focus: RecentFocus, layer: SharePlayerLayer | null | undefined) {
   const recent = player.recent;
   // Only claim "no recent game" when the recent-form source actually answered (C7 SS1-10-F1).
   // A source that failed (all, or just skaters or goalies, SS1-17) never reads as "no recent game".
   const failed = layer?.recentUnavailable?.includes(player.group === "G" ? "goalies" : "skaters") || layer?.recentUnavailableIds?.includes(player.nhlId);
   if (!recent) return (layer?.recentState === "ready" || layer?.recentState === "partial") && !failed ? "No game in the last two weeks" : "Recent form unavailable";
   if (recent.kind === "goalie") {
-    const pct = recent.shotsAgainst > 0 ? (recent.saves / recent.shotsAgainst).toFixed(3).replace(/^0/, "") : "—";
-    return `${recent.wins}-${recent.games - recent.wins} · ${pct} SV% · ${recent.goalsAgainst} GA · ${recent.qualityStarts} QS`;
+    // Credited W-L-OTL (decision 82); each part prints "—" when unknown, never as 0.
+    const pct = recent.saves !== null && recent.shotsAgainst !== null && recent.shotsAgainst > 0 ? (recent.saves / recent.shotsAgainst).toFixed(3).replace(/^0/, "") : "—";
+    const record = recent.record ? `${recent.record.wins}-${recent.record.losses}-${recent.record.otLosses}` : "— W-L-OTL";
+    return `${record} · ${pct} SV% · ${recent.goalsAgainst ?? "—"} GA · ${recent.qualityStarts ?? "—"} QS`;
   }
   const n = (value: number | null, digits = 0) => value === null ? "—" : value.toFixed(digits);
   // Relative TOI (ticket 15): L5 ice time against the player's season average.

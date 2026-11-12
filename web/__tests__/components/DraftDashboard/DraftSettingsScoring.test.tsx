@@ -401,7 +401,7 @@ describe("DraftSettings goalie scoring manager", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remove WINS_GOALIE" }));
     expect(onGoalieScoringChange).toHaveBeenCalledWith({ SAVES_GOALIE: 0.2 });
     fireEvent.click(
-      screen.getByRole("button", { name: "Reset Goalie Scoring" }),
+      screen.getByRole("button", { name: "Reset Goalie Scoring to FHFH default" }),
     );
     expect(onGoalieScoringChange).toHaveBeenCalledTimes(3);
   });
@@ -571,4 +571,23 @@ describe("Settings team names and stable draft order", () => {
     expect((screen.getByRole("button", { name: "Move Ice Owls down" }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByLabelText("Team name at draft position 1") as HTMLInputElement).disabled).toBe(true);
   });
+});
+
+it("labels the active points weights as the FHFH default, never a provider default (decision 54)", async () => {
+  const { getDefaultFantasyPointsConfig } = await import("../../../lib/projectionsConfig/fantasyPointsConfig");
+  const view = render(<DraftScoringSettings
+    settings={{ ...settings, leagueType: "points", scoringCategories: getDefaultFantasyPointsConfig("skater") }}
+    goalieScoring={getDefaultFantasyPointsConfig("goalie")}
+    onSettingsChange={vi.fn()} onGoalieScoringChange={vi.fn()}
+    availableSkaterStats={[]} availableGoalieStats={[]} hasPicks={false}
+  />);
+  expect(screen.getByTestId("scoring-source").textContent).toContain("FHFH default");
+  expect(screen.getByRole("button", { name: "Reset Skater Scoring to FHFH default" })).toBeTruthy();
+  view.rerender(<DraftScoringSettings
+    settings={{ ...settings, leagueType: "points", scoringCategories: { GOALS: 6 } }}
+    goalieScoring={getDefaultFantasyPointsConfig("goalie")}
+    onSettingsChange={vi.fn()} onGoalieScoringChange={vi.fn()}
+    availableSkaterStats={[]} availableGoalieStats={[]} hasPicks={false}
+  />);
+  expect(screen.getByTestId("scoring-source").textContent).toContain("Custom or imported");
 });

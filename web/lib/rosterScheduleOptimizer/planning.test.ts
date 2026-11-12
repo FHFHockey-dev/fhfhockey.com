@@ -80,7 +80,8 @@ describe("planning engine", () => {
       data.roster = [{ playerId: "a", position: "active" }];
       data.rules.rosterSlots = { C: 1 };
       data.games = data.games.filter(game => game.teamAbbreviation === "C" || game.id === "A0");
-      data.forecasts = [];
+      // The candidate has no forecast; a keeps his, since an unknown roster player is never a proposed drop (decisions 3, 47).
+      data.forecasts = data.forecasts.filter(row => row.playerId === "a" && row.gameId === "A0");
       data.players.find(row => row.id === "c")!.availability = "manager_available";
       return data;
     }
@@ -400,7 +401,11 @@ describe("planning engine", () => {
     expect(gains.get("d")).toBe(26);
     expect(candidateHorizonPoints(data).get("d")).toBe(30);
     data.forecasts = data.forecasts.filter(row => row.playerId !== "a");
-    expect(candidateActivePoints(data, intent).get("d")).toBeNull();
+    // a unknown (TJ, 2026-11-12, difference-based): the schedule-capacity lineup starts a on Oct 5–6 in both plans, so
+    // his unknown games cancel and d is credited only with Oct 7 (10), not the 26 a known lineup gives.
+    expect(candidateActivePoints(data, intent).get("d")).toBe(10);
+    // The cancelled term: a's two unknown starts, the same in both plans.
+    expect(evaluatePlan(data, intent, "outcome", [], false).knownComparison?.unknownActive).toEqual(["a:A0", "a:A1"]);
   });
   it.each(["fewer-starts", "lower-hold-value"])("retains an improving full-roster drop/add alternative despite %s", kind => {
     const data = snapshot();
@@ -496,7 +501,8 @@ describe("planning engine", () => {
     for (const supplied of [[], forecasts.filter(f => f.playerId !== "kaprizov")]) {
       data.forecasts = supplied;
       const result = planRoster(data, intent, { maxSteps: 0 });
-      expect(result.baseline.objective).toBe("agp");
+      // Decision 132.1: with some priced games the points objective stays, compared on the known part; none priced = most starts.
+      expect(result.baseline.objective).toBe(supplied.length ? "outcome" : "agp");
       expect(result.baseline.projectedValue).toBeNull();
       expect(result.baseline.recommendation).toMatchObject({ eligible: false, mode: "schedule_capacity" });
       expect(result.baseline.recommendation!.unresolved.some(issue => issue.playerId === "kaprizov")).toBe(true);
@@ -2109,19 +2115,18 @@ describe("one retention ordering across drop surfaces (R7)", () => {
     data.players = data.players.map(row => row.id in owned ? { ...row, ownership: owned[row.id] } : row);
     return data;
   };
-  it("suggests nobody on the chip without forecasts, while schedule-only plans rank drops by active games, not ownership or id", () => {
-    // No forecasts: points are unknown for everyone. The chip suggests nobody and flags both; the planner's
-    // schedule-only plans still exist and drop the player with fewer no-move starts (b: one game, a: two),
-    // whatever ownership or id order says (TJ, 2026-10-21).
+  it("suggests nobody on the chip and proposes no drop without forecasts (decisions 3, 47)", () => {
+    // No forecasts: every value is unknown. The chip suggests nobody and flags both, and no surface proposes dropping an
+    // unknown player, not even ranked by active games (this supersedes the 2026-10-21 schedule-only drop order).
     const data = withOwnership(snapshot(), { a: 5, b: 95 });
     data.forecasts = [];
     const report = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
     expect(report.bestDrop).toBeNull();
     expect(report.unprojectedDrops).toEqual(["a", "b"]);
     const firstDrop = [...candidateAcquisitionSteps(data, intent, data.players.find(row => row.id === "c")!)].flat().find(step => step.dropPlayerId);
-    expect(firstDrop?.dropPlayerId).toBe("b");
+    expect(firstDrop).toBeUndefined();
     const plans = candidatePlanMetrics(data, intent).candidates.find(row => row.playerId === "c")!.plans;
-    expect(plans[0].steps.find(step => step.dropPlayerId)?.dropPlayerId).toBe("b");
+    expect(plans.every(plan => plan.steps.every(step => !step.dropPlayerId))).toBe(true);
   });
 
   it("never proposes a player with neither points nor a legal active-game count as a drop", () => {

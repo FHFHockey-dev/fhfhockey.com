@@ -5,7 +5,7 @@ import {
   type HorizonGames, type InterpretationRecord, type ModelClass, type RecentWindowGames, type SkaterTarget,
 } from "lib/skoElement/contract";
 import { FIXTURE_DISCLAIMER, FIXTURE_CONFIG, fixtureRecords } from "lib/skoElement/fixtures";
-import { DIRECTION_TEXT, formatMeasured, percent, reasonText } from "./format";
+import { formatMeasured, perTeamGameUnit, percent, reasonText } from "./format";
 import styles from "./SkoElement.module.scss";
 
 export type SkoViewState = {
@@ -58,6 +58,9 @@ const VIEW_LABEL: Record<ModelClass, string> = { F: "Forwards", D: "Defense", G:
 function SkaterDetail({ record, target }: { record: InterpretationRecord; target: SkaterTarget }) {
   const opportunity = record.opportunity!;
   const reference = record.personalReferenceWindow;
+  const selected = record.metrics.find(metric => metric.target === target)!;
+  const unit = perTeamGameUnit(selected.label).toLowerCase();
+  const ipp = record.ipp;
   return (
     <>
       <div className={styles.panel}>
@@ -71,13 +74,19 @@ function SkaterDetail({ record, target }: { record: InterpretationRecord; target
       </div>
       <div className={styles.panel}>
         <h3>Forecast comparison and current support</h3>
+        <ul className={styles.list} aria-label={`Separate comparisons for ${selected.label}`}>
+          <li>Forecast minus recent: {formatMeasured(selected.comparisons.forecastVsRecent, 2, true)}{selected.comparisons.forecastVsRecent.value !== null ? ` ${unit}` : ""}</li>
+          <li>Recent minus earlier block: {formatMeasured(selected.comparisons.recentVsPersonalReference, 2, true)}{selected.comparisons.recentVsPersonalReference.value !== null ? ` ${unit}` : ""}</li>
+          <li>Recent versus same-window support: {formatMeasured(selected.comparisons.observedVsSameWindowSupport)}</li>
+        </ul>
+        <p className={styles.muted}>These answer different questions and are not combined into one score.</p>
         <ul className={styles.list}>{record.explanations.map(item => <li key={item.id}>{item.text}</li>)}</ul>
       </div>
       <div className={styles.tableWrap}>
         <table className={styles.table} aria-label="Observed and expected production by category">
           <thead><tr>
             <th>Category</th><th>Recent per team game</th><th>Recent per appearance</th><th>Expected per scheduled team game</th>
-            <th>Expected per appearance (conditional)</th><th>Gap</th><th>Outlook change</th><th>Observed game-to-game SD</th>
+            <th>Expected per appearance (conditional)</th><th>Forecast − recent</th><th>Outlook change</th><th>Observed game-to-game SD</th>
           </tr></thead>
           <tbody>{record.metrics.map(metric => (
             <tr key={metric.target} aria-current={metric.target === target ? "true" : undefined}>
@@ -98,20 +107,22 @@ function SkaterDetail({ record, target }: { record: InterpretationRecord; target
           <h3>Opportunity</h3>
           <p>{opportunity.label}</p>
           <ul className={styles.list}>
-            <li>Recent block {opportunity.recent.startDate} to {opportunity.recent.endDate}: {opportunity.recent.appearances} appearances in {opportunity.recent.teamGames} team games, TOI {formatMeasured(opportunity.recent.toiPerAppearance)} min, PP TOI {formatMeasured(opportunity.recent.ppToiPerAppearance)} min per appearance.</li>
-            <li>Prior block {opportunity.prior.startDate ?? "none"} to {opportunity.prior.endDate ?? "none"}: {opportunity.prior.appearances} appearances, TOI {formatMeasured(opportunity.prior.toiPerAppearance)} min, PP TOI {formatMeasured(opportunity.prior.ppToiPerAppearance)} min.</li>
-            <li>Change: TOI {formatMeasured(opportunity.toiChangeMinutes, 2, true)} min, PP TOI {formatMeasured(opportunity.ppToiChangeMinutes, 2, true)} min per appearance.</li>
-            <li>PP unit role: {opportunity.powerPlayRole.status === "sourced" ? `${opportunity.powerPlayRole.value} (${opportunity.powerPlayRole.source}, effective ${opportunity.powerPlayRole.effectiveAt?.slice(0, 10)})` : "Unavailable: no dated role source"}.</li>
+            <li>Recent block {opportunity.recent.startDate} to {opportunity.recent.endDate}: {opportunity.recent.appearances} appearances in {opportunity.recent.teamGames} team games, TOI {formatMeasured(opportunity.recent.toiPerAppearance)} min, PP TOI {formatMeasured(opportunity.recent.ppToiPerAppearance)} min per appearance; {formatMeasured(opportunity.recent.toiPerTeamGame, 1)} min per team game.</li>
+            <li>Prior block {opportunity.prior.startDate ?? "none"} to {opportunity.prior.endDate ?? "none"}: {opportunity.prior.appearances} appearances in {opportunity.prior.teamGames} team games, TOI {formatMeasured(opportunity.prior.toiPerAppearance)} min, PP TOI {formatMeasured(opportunity.prior.ppToiPerAppearance)} min per appearance; {formatMeasured(opportunity.prior.toiPerTeamGame, 1)} min per team game.</li>
+            <li>Change: TOI {formatMeasured(opportunity.toiChangeMinutes, 2, true)} min, PP TOI {formatMeasured(opportunity.ppToiChangeMinutes, 2, true)} min per appearance; appearance share {percent(opportunity.prior.appearanceShare.value, 0)} to {percent(opportunity.recent.appearanceShare.value, 0)}.</li>
+            <li>PP unit role: {opportunity.powerPlayRole.status === "sourced" ? `${opportunity.powerPlayRole.value} (${opportunity.powerPlayRole.source}, effective ${opportunity.powerPlayRole.effectiveAt?.slice(0, 10)}, known ${opportunity.powerPlayRole.knownAt?.slice(0, 10)})` : "Unavailable: no dated role source known by as-of"}.</li>
+            <li>Role changes in the recent block: {opportunity.roleChanges.length ? opportunity.roleChanges.map(item => `${item.label} (effective ${item.effectiveAt.slice(0, 10)})`).join("; ") : "none reported"}{opportunity.roleEvidenceExcluded ? `; ${opportunity.roleEvidenceExcluded} report(s) excluded as not known by as-of` : ""}.</li>
             <li>Scenarios: {opportunity.scenarios.reason}</li>
-            <li>Rule: {opportunity.ruleId ?? "none accepted"} ({opportunity.ruleStatus.replace(/_/g, " ")}). Observed duration describes history only.</li>
+            <li>Rule: {opportunity.ruleId ?? "none accepted"} ({opportunity.ruleStatus.replace(/_/g, " ")}). Blocks show comparison coverage, not how long a change has lasted.</li>
           </ul>
         </div>
         <div className={styles.panel}>
           <h3>IPP ({record.identity.modelClass === "F" ? "forward" : "defense"} reference, all situations)</h3>
           <ul className={styles.list}>
-            <li>Observed: {formatMeasured(record.ipp.observed, 3)}</li>
-            <li>Class reference: {formatMeasured(record.ipp.reference, 3)} {record.ipp.referenceSource ? `(${record.ipp.referenceSource})` : ""}</li>
-            <li>Deviation: {formatMeasured(record.ipp.deviation, 3, true)}</li>
+            <li>Observed: {formatMeasured(ipp.observed, 3)}{ipp.exposure.onIceGoalsFor !== null ? ` (${ipp.exposure.points} points on ${ipp.exposure.onIceGoalsFor} on-ice goals over ${ipp.exposure.appearances} appearances)` : ""}</li>
+            <li>Own earlier block: {formatMeasured(ipp.personalReference, 3)}</li>
+            <li>Class reference: {formatMeasured(ipp.reference, 3)} {ipp.referenceSource ? `(${ipp.referenceSource}${ipp.referenceMeta ? `, version ${ipp.referenceMeta.version}, cutoff ${ipp.referenceMeta.cutoffAt?.slice(0, 10) ?? "unknown"}` : ""})` : ""}</li>
+            <li>Deviation: {formatMeasured(ipp.deviation, 3, true)}</li>
           </ul>
         </div>
       </div>
@@ -199,14 +210,14 @@ export default function SkoElementPreview({ state, onStateChange, invalid = [] }
       </div>
       <p className={styles.muted}>
         {horizonSpan ? `Horizon: next ${state.horizon} scheduled team games from ${horizonSpan.horizon.startDate} (spans differ by team). ` : ""}
-        Scheduled team games are not guaranteed appearances. Order: signed gap, largest first; unavailable gaps last; ties by name.
+        Scheduled team games are not guaranteed appearances. Order: forecast minus recent, largest first; unavailable gaps last; ties by name. The signed difference is not an alert or advice.
       </p>
 
       {state.view === "G" ? <GoalieTable records={visible} /> : (
         <div className={styles.tableWrap}>
           <table className={styles.table} aria-label={`${VIEW_LABEL[state.view]} sustainability scan`}>
             <thead><tr>
-              <th>Player</th><th>Recent per team game</th><th>Personal prior per team game</th><th>Expected per team game</th><th>Gap (expected − recent)</th>
+              <th>Player</th><th>Recent per team game</th><th>Personal prior per team game</th><th>Expected per team game</th><th>Forecast − recent</th>
               <th>Opportunity</th><th className={styles.hideNarrow}>Observed SD</th><th>Evidence</th><th><span className={styles.visuallyHidden}>Details</span></th>
             </tr></thead>
             <tbody>{visible.map(record => {
@@ -218,8 +229,9 @@ export default function SkoElementPreview({ state, onStateChange, invalid = [] }
                   <td className={styles.num}>{formatMeasured(metric.observedPerTeamGame)}</td>
                   <td className={styles.num}>{formatMeasured(metric.personalReference.perTeamGame)}</td>
                   <td className={styles.num}>{formatMeasured(metric.expectedPerTeamGame)}</td>
-                  <td className={`${styles.num} ${styles[metric.direction]}`}>
-                    {formatMeasured(metric.gapPerTeamGame, 2, true)}<br /><span>{DIRECTION_TEXT[metric.direction]}</span>
+                  <td className={styles.num}>
+                    <span>{formatMeasured(metric.gapPerTeamGame, 2, true)}</span>
+                    {metric.gapPerTeamGame.value !== null ? <><br /><span className={styles.muted}>{perTeamGameUnit(metric.label)}</span></> : null}
                   </td>
                   <td>{record.opportunity?.label}<br /><span className={styles.muted}>TOI {formatMeasured(record.opportunity!.toiChangeMinutes, 1, true)} min</span></td>
                   <td className={`${styles.num} ${styles.hideNarrow}`}>{formatMeasured(metric.observedVariability)}</td>
@@ -245,7 +257,12 @@ export default function SkoElementPreview({ state, onStateChange, invalid = [] }
             <h3>Sources and clocks</h3>
             <ul className={styles.list}>
               <li>Evidence {selected.identity.evidenceSnapshotId}: cutoff {selected.freshness.evidenceCutoffAt}, age {selected.freshness.evidenceAgeHours?.toFixed(0) ?? "unknown"} h ({selected.freshness.evidenceStatus}).</li>
-              <li>Forecast {selected.identity.forecastVersion}, manifest {selected.identity.forecastManifestId ?? "unknown"}, read {selected.identity.forecastReadAsOf}, expires {selected.freshness.forecastExpiresAt ?? "unknown"} ({selected.freshness.forecastStatus}).</li>
+              <li>Forecast {selected.identity.forecastVersion}, manifest {selected.identity.forecastManifestId ?? "unknown"}, read {selected.identity.forecastReadAsOf}, expires {selected.freshness.forecastExpiresAt ?? "unknown"} ({selected.freshness.forecastStatus.replace(/_/g, " ")}).</li>
+              <li>Forecast admission: {selected.forecastAdmission.status.replace(/_/g, " ")}{selected.forecastAdmission.reasons.length ? ` (${reasonText(selected.forecastAdmission.reasons.join(", "))})` : ""}. {TARGET_LABELS[state.target]}: {(() => {
+                const item = selected.forecastAdmission.targets[state.target];
+                return !item ? "not supplied" : item.status === "admitted" ? `admitted; issued ${item.issuedAt ?? "unknown"}, cutoff ${item.cutoffAt ?? "unknown"}, ${item.coveredGames} of ${item.requiredGames} games` : `withheld (${reasonText(item.reasons.join(", "))})`;
+              })()}.</li>
+              <li>Recent window games: {selected.recentWindow.gameIds.join(", ") || "none"}{selected.recentWindow.membership === "incomplete" ? ` (membership incomplete: ${selected.recentWindow.unplacedRows} unplaced row(s))` : ""}.</li>
               <li>Horizon {selected.horizon.requestedGames} requested, {selected.horizon.scheduledGames} scheduled ({selected.horizon.startDate} to {selected.horizon.endDate}){selected.horizon.reason ? `: ${reasonText(selected.horizon.reason)}` : ""}. Expected appearances {selected.horizon.expectedAppearances?.toFixed(1) ?? "unavailable"}.</li>
               <li>Recent window: {selected.recentWindow.rule}.</li>
               <li>Predictive spread: {formatMeasured(selected.uncertainty.predictiveSpread)}. Mean uncertainty: {formatMeasured(selected.uncertainty.meanUncertainty)}.</li>

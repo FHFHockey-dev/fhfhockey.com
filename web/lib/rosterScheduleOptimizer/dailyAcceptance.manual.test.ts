@@ -437,8 +437,9 @@ describe("RSO daily beta: manual/free acceptance packet", () => {
       expect(outcome.recommendation?.unresolved).toEqual(expect.arrayContaining([expect.objectContaining({ playerId: "rw2", gameId: `WPG-${MON}` })]));
       expect(evaluatePlan(data, intent(), "agp", []).activeGames).toBe(13);
       const result = planRoster(data, intent({ objective: "outcome" }), { maxSteps: 0 });
-      expect(result.baseline).toEqual(result.noMoveAgp);
-      expect(result.search.limitations).toContain("Best projected points needs projections for your whole lineup; planning for most starts until then.");
+      // Decision 132.1: points stay the objective on the known part; totals are incomplete with the unknown count.
+      expect(result.baseline).toEqual(result.noMoveOutcome);
+      expect(result.search.limitations.some(text => text.startsWith("Best projected points compares plans on their known part: 1 player has unknown"))).toBe(true);
       expect(result.selected.projectedValue).toBeNull();
     });
 

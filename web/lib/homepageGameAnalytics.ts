@@ -3,6 +3,19 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PublicGamePrediction } from "lib/game-predictions/publicPredictions";
 import { fetchPublicGamePredictions } from "lib/game-predictions/publicPredictions";
 import type { Database } from "lib/supabase/database-generated.types";
+import {
+  fetchActiveXgModel,
+  type XgActiveModelPin,
+} from "lib/xg/modelRegistry";
+import {
+  coherentProbabilityPair,
+  displayedWinPair,
+} from "components/HomePage/homepageWinPair";
+
+export {
+  displayedWinPair,
+  type HomepageDisplayedWinPair,
+} from "components/HomePage/homepageWinPair";
 
 export type HomepageGameStarter = {
   name: string;
@@ -14,6 +27,11 @@ export type HomepageGameAnalytics = {
   gameId: number;
   awayWinProbability?: number;
   homeWinProbability?: number;
+  /** Displayed whole percentages: one side rounded, the other its complement. */
+  awayWinPercent?: number;
+  homeWinPercent?: number;
+  /** Follows the displayed pair (decision 43); a displayed 50/50 is a tie. */
+  predictionPick?: "home" | "away" | "tie";
   predictedWinnerTeamId?: number;
   favoredTeamAbbreviation?: string;
   edgeTeamAbbreviation?: string;
@@ -106,46 +124,59 @@ export function analyticsFromPrediction(
     };
   }
 
-  const homeProbability = finiteNumber(prediction.homeWinProbability);
-  const awayProbability = finiteNumber(prediction.awayWinProbability);
-  const homeFavored =
-    homeProbability != null &&
-    (awayProbability == null || homeProbability >= awayProbability);
-  const homeMarketProbability = finiteNumber(
+  const displayed = displayedWinPair(
+    prediction.awayWinProbability,
+    prediction.homeWinProbability,
+  );
+  const market = coherentProbabilityPair(
+    prediction.market?.awayNoVigProbability,
     prediction.market?.homeNoVigProbability,
   );
-  const awayMarketProbability = finiteNumber(
-    prediction.market?.awayNoVigProbability,
-  );
+  // Model vs market, in percentage points, for the side the model rates
+  // above the market. Only a coherent model pair and a coherent de-vigged
+  // market pair produce an edge.
   const homeEdge =
-    homeProbability != null && homeMarketProbability != null
-      ? Number(((homeProbability - homeMarketProbability) * 100).toFixed(3))
-      : undefined;
-  const awayEdge =
-    awayProbability != null && awayMarketProbability != null
-      ? Number(((awayProbability - awayMarketProbability) * 100).toFixed(3))
+    displayed && market
+      ? Number(
+          (
+            (Number(prediction.homeWinProbability) - market.home) *
+            100
+          ).toFixed(3),
+        )
       : undefined;
   const selectedEdge =
     homeEdge == null
-      ? awayEdge == null
-        ? null
-        : { abbreviation: prediction.awayTeam.abbreviation, value: awayEdge }
-      : awayEdge == null || homeEdge >= awayEdge
+      ? null
+      : homeEdge >= 0
         ? { abbreviation: prediction.homeTeam.abbreviation, value: homeEdge }
-        : { abbreviation: prediction.awayTeam.abbreviation, value: awayEdge };
+        : {
+            abbreviation: prediction.awayTeam.abbreviation,
+            value: Number((-homeEdge).toFixed(3)),
+          };
+  const pickedTeam =
+    displayed?.pick === "home"
+      ? prediction.homeTeam
+      : displayed?.pick === "away"
+        ? prediction.awayTeam
+        : null;
 
   return {
     ...modelContext,
     predictionFreshness: "fresh",
-    awayWinProbability: awayProbability,
-    homeWinProbability: homeProbability,
-    predictedWinnerTeamId: prediction.predictedWinnerTeamId ?? undefined,
-    favoredTeamAbbreviation:
-      homeProbability == null && awayProbability == null
-        ? undefined
-        : homeFavored
-          ? prediction.homeTeam.abbreviation
-          : prediction.awayTeam.abbreviation,
+    ...(displayed
+      ? {
+          awayWinProbability: Number(prediction.awayWinProbability),
+          homeWinProbability: Number(prediction.homeWinProbability),
+          awayWinPercent: displayed.awayPercent,
+          homeWinPercent: displayed.homePercent,
+          predictionPick: displayed.pick,
+        }
+      : {}),
+    // The stored winner id came from the retired 0.52 rule; the pick now
+    // follows the displayed pair only.
+    predictedWinnerTeamId:
+      typeof pickedTeam?.id === "number" ? pickedTeam.id : undefined,
+    favoredTeamAbbreviation: pickedTeam?.abbreviation,
     edgeTeamAbbreviation: selectedEdge?.abbreviation,
     edgePercentagePoints: selectedEdge?.value,
     awayProjectedGoals:
@@ -240,66 +271,152 @@ export function mergeForgeProjectedScores(args: {
   }
 }
 
+type GameSide = "home" | "away";
+
+const sideOfTeam = (game: ScheduleGame, teamId: number): GameSide | null =>
+  teamId === game.homeTeam?.id
+    ? "home"
+    : teamId === game.awayTeam?.id
+      ? "away"
+      : null;
+
+/**
+ * A stored side can describe a game only if it was written after the game
+ * started. With no known start time the check cannot run and is skipped; the
+ * presentation's live-freshness check still applies.
+ */
+const writtenAfterStart = (updatedAt: string, game: ScheduleGame): boolean => {
+  const startMs = Date.parse(game.startTimeUTC ?? "");
+  if (!Number.isFinite(startMs)) return true;
+  const updatedMs = Date.parse(updatedAt);
+  return Number.isFinite(updatedMs) && updatedMs >= startMs;
+};
+
+type SideValue = { value: number; updatedAt: string };
+
+/**
+ * Collects one value per side. A side seen twice with different values is a
+ * conflict and becomes unknown, so the result never depends on row order.
+ */
+function collectSides(
+  entries: Array<{ side: GameSide; value: number | undefined; updatedAt: string }>,
+): Partial<Record<GameSide, SideValue | null>> {
+  const sides: Partial<Record<GameSide, SideValue | null>> = {};
+  for (const entry of entries) {
+    const next =
+      entry.value == null ? null : { value: entry.value, updatedAt: entry.updatedAt };
+    if (!(entry.side in sides)) {
+      sides[entry.side] = next;
+      continue;
+    }
+    const current = sides[entry.side];
+    if (!current || !next || current.value !== next.value) {
+      sides[entry.side] = null;
+    } else if (next.updatedAt < current.updatedAt) {
+      sides[entry.side] = next;
+    }
+  }
+  return sides;
+}
+
+/** Both sides or nothing; the pair is dated by its older side (rule 23). */
+function completePair(
+  sides: Partial<Record<GameSide, SideValue | null>>,
+): { home: number; away: number; updatedAt: string } | null {
+  const home = sides.home;
+  const away = sides.away;
+  if (!home || !away) return null;
+  return {
+    home: home.value,
+    away: away.value,
+    updatedAt: home.updatedAt < away.updatedAt ? home.updatedAt : away.updatedAt,
+  };
+}
+
+/**
+ * Joins stored in-house xG and strength-split SOG to the slate (W3-2 A1,
+ * W3-3 D5). Per side: SOG needs every strength bucket (ES, PP and PK; an
+ * unknown bucket makes the side unknown, never a partial sum), xG needs the
+ * selector's model version AND feature version from an approved model, and
+ * each row must post-date the game start. A pair is served only when both
+ * sides pass, and it carries the older side's timestamp.
+ */
 export function mergePersistedGameMetrics(args: {
   games: ScheduleGame[];
   analyticsByGameId: Map<number, HomepageGameAnalytics>;
+  /** The L14 selector's pin; null means in-house xG is unavailable (decision 99). */
+  xgModel: XgActiveModelPin | null;
   xgRows: XgAggregateRow[];
   strengthRows: StrengthRow[];
 }): void {
-  const gamesById = new Map(
-    args.games.flatMap((game) =>
-      typeof game.id === "number" ? [[game.id, game] as const] : [],
-    ),
-  );
+  for (const game of args.games) {
+    if (typeof game.id !== "number") continue;
+    const gameId = game.id;
 
-  for (const row of args.xgRows) {
-    const game = gamesById.get(row.game_id);
-    if (!game) continue;
-    const analytics = args.analyticsByGameId.get(row.game_id) ?? {
-      gameId: row.game_id,
-    };
-    if (row.team_id === game.homeTeam?.id || row.is_home === true) {
-      analytics.homeXg = finiteNumber(row.xg_for);
-    } else if (row.team_id === game.awayTeam?.id || row.is_home === false) {
-      analytics.awayXg = finiteNumber(row.xg_for);
-    }
-    analytics.xgUpdatedAt =
-      !analytics.xgUpdatedAt ||
-      row.updated_at > analytics.xgUpdatedAt
-        ? row.updated_at
-        : analytics.xgUpdatedAt;
-    args.analyticsByGameId.set(row.game_id, analytics);
-  }
+    const xgPair = args.xgModel
+      ? completePair(
+          collectSides(
+            args.xgRows.flatMap((row) => {
+              const side =
+                row.game_id === gameId ? sideOfTeam(game, row.team_id) : null;
+              if (!side) return [];
+              const admitted =
+                row.model_version === args.xgModel!.modelVersion &&
+                Number(row.feature_version) === args.xgModel!.featureVersion &&
+                row.source_model_approved === true &&
+                (row.source_prediction_type == null ||
+                  row.source_prediction_type === args.xgModel!.predictionType) &&
+                writtenAfterStart(row.updated_at, game);
+              return [
+                {
+                  side,
+                  value: admitted ? finiteNumber(row.xg_for) : undefined,
+                  updatedAt: row.updated_at,
+                },
+              ];
+            }),
+          ),
+        )
+      : null;
 
-  for (const row of args.strengthRows) {
-    const game = gamesById.get(row.game_id);
-    if (!game) continue;
-    const shots = [row.shots_es, row.shots_pp, row.shots_pk]
-      .map(finiteNumber)
-      .filter((value): value is number => value != null)
-      .reduce((total, value) => total + value, 0);
-    if (
-      row.shots_es == null &&
-      row.shots_pp == null &&
-      row.shots_pk == null
-    ) {
-      continue;
-    }
+    const sogPair = completePair(
+      collectSides(
+        args.strengthRows.flatMap((row) => {
+          const side =
+            row.game_id === gameId ? sideOfTeam(game, row.team_id) : null;
+          if (!side) return [];
+          const buckets = [row.shots_es, row.shots_pp, row.shots_pk].map(
+            finiteNumber,
+          );
+          const complete =
+            buckets.every((value) => value != null && value >= 0) &&
+            writtenAfterStart(row.updated_at, game);
+          return [
+            {
+              side,
+              value: complete
+                ? (buckets as number[]).reduce((total, value) => total + value, 0)
+                : undefined,
+              updatedAt: row.updated_at,
+            },
+          ];
+        }),
+      ),
+    );
 
-    const analytics = args.analyticsByGameId.get(row.game_id) ?? {
-      gameId: row.game_id,
-    };
-    if (row.team_id === game.homeTeam?.id) {
-      analytics.homeShotsOnGoal = shots;
-    } else if (row.team_id === game.awayTeam?.id) {
-      analytics.awayShotsOnGoal = shots;
+    if (!xgPair && !sogPair) continue;
+    const analytics = args.analyticsByGameId.get(gameId) ?? { gameId };
+    if (xgPair) {
+      analytics.homeXg = xgPair.home;
+      analytics.awayXg = xgPair.away;
+      analytics.xgUpdatedAt = xgPair.updatedAt;
     }
-    analytics.shotsUpdatedAt =
-      !analytics.shotsUpdatedAt ||
-      row.updated_at > analytics.shotsUpdatedAt
-        ? row.updated_at
-        : analytics.shotsUpdatedAt;
-    args.analyticsByGameId.set(row.game_id, analytics);
+    if (sogPair) {
+      analytics.homeShotsOnGoal = sogPair.home;
+      analytics.awayShotsOnGoal = sogPair.away;
+      analytics.shotsUpdatedAt = sogPair.updatedAt;
+    }
+    args.analyticsByGameId.set(gameId, analytics);
   }
 }
 
@@ -365,32 +482,28 @@ export async function enrichHomepageGames<T extends ScheduleGame>(args: {
     console.warn("Homepage projected-score enrichment unavailable", error);
   }
 
+  let xgModel: XgActiveModelPin | null = null;
   let xgRows: XgAggregateRow[] = [];
   try {
-    const { data: registryRows, error: registryError } = await args.supabase
-      .from("nhl_xg_model_registry")
-      .select("model_version,feature_version,is_active,is_champion,updated_at")
-      .eq("prediction_type", "shot_goal")
-      .eq("model_approved", true)
-      .or("is_active.eq.true,is_champion.eq.true")
-      .order("is_active", { ascending: false })
-      .order("is_champion", { ascending: false })
-      .order("updated_at", { ascending: false })
-      .limit(1);
-    if (registryError) throw registryError;
-
-    const activeModel = registryRows?.[0];
-    if (activeModel) {
+    // L14 selector: the single active approved model, pinned on model_version
+    // AND feature_version. Null = in-house xG unavailable (decision 99).
+    const selection = await fetchActiveXgModel({
+      supabase: args.supabase,
+      predictionType: "shot_goal",
+    });
+    if (selection.model) {
       const { data, error } = await args.supabase
         .from("nhl_xg_team_game_aggregates")
         .select(
-          "game_id,team_id,is_home,xg_for,updated_at,model_version,feature_version",
+          "game_id,team_id,is_home,xg_for,updated_at,model_version,feature_version,source_model_approved,source_prediction_type",
         )
         .in("game_id", gameIds)
-        .eq("model_version", activeModel.model_version)
-        .eq("feature_version", activeModel.feature_version)
-        .eq("source_model_approved", true);
+        .eq("model_version", selection.model.modelVersion)
+        .eq("feature_version", selection.model.featureVersion)
+        .eq("source_model_approved", true)
+        .eq("source_prediction_type", selection.model.predictionType);
       if (error) throw error;
+      xgModel = selection.model;
       xgRows = (data ?? []) as XgAggregateRow[];
     }
   } catch (error) {
@@ -414,6 +527,7 @@ export async function enrichHomepageGames<T extends ScheduleGame>(args: {
   mergePersistedGameMetrics({
     games: args.games,
     analyticsByGameId,
+    xgModel,
     xgRows,
     strengthRows,
   });

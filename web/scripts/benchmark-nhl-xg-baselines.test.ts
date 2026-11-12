@@ -62,6 +62,28 @@ describe("benchmark-nhl-xg-baselines", () => {
     ] as never);
 
     expect(markdown).toContain("## Approval-Grade Eligibility");
-    expect(markdown).toContain("`logistic_unregularized`: eligible");
+    // An old-schema record without decision-88 evidence is not approval.
+    expect(markdown).toContain("`logistic_unregularized`: not eligible");
+  });
+
+  const base = {
+    artifactTag: "artifact",
+    family: "logistic_l2",
+    featureKeys: [],
+    splitConfig: {},
+    trainExampleCount: 10,
+    validationExampleCount: 4,
+    testExampleCount: 140,
+    holdoutEvaluation: { exampleCount: 140, goalCount: 10, goalRate: 10 / 140, averagePrediction: 0.5, logLoss: 0.69, brierScore: 0.25 },
+  };
+
+  it.each([
+    ["a blank failing record", { ...base, approvalGradeEligibility: { isEligible: false, blockingReasons: [] } }],
+    ["no record and no test count", { ...base, testExampleCount: undefined, approvalGradeEligibility: undefined }],
+    ["an old-schema eligible record", { ...base, approvalGradeEligibility: { isEligible: true, blockingReasons: [] } }],
+  ])("fails closed on %s (W3-1 D6)", (_label, artifact) => {
+    expect(() => assertApprovalGradeArtifacts([artifact] as never)).toThrow(
+      "Approval-grade benchmark requires eligible artifacts."
+    );
   });
 });

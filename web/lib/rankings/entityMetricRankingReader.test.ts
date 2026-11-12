@@ -19,6 +19,7 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
   const scenario = {
     rows: null as Array<Record<string, unknown>> | null,
     rollingRows: [] as Array<Record<string, unknown>>,
+    supportRows: [] as Array<Record<string, unknown>>,
     players: null as Array<Record<string, unknown>> | null,
     teams: null as Array<Record<string, unknown>> | null,
   };
@@ -27,6 +28,7 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
     if (scenario.rows != null) {
       let rows: Array<Record<string, unknown>> = state.table === "entity_metric_rankings" ? scenario.rows
         : state.table === "rolling_player_game_metrics" ? scenario.rollingRows
+          : state.table === "rolling_player_metric_support_payloads" ? scenario.supportRows
           : state.table === "games" ? scenario.rollingRows.map(row => ({ date: row.game_date, seasonId: row.season }))
             : state.table === "players" ? scenario.players ?? scenario.rows.map(row => ({ id: row.entity_id, fullName: `Fixture ${row.entity_id}`, position: row.position_group === "defense" ? "D" : "C", team_id: row.team_id }))
               : state.table === "teams" ? scenario.teams ?? [{ id: 10, abbreviation: "TST", name: "Fictional team" }] : [];
@@ -411,7 +413,7 @@ describe("entityMetricRankingReader", () => {
         value: 3.2,
         formattedValue: "3.20",
         rawRank: 1,
-        percentile: 100,
+        percentile: 50,
       },
     });
     expect(
@@ -491,6 +493,28 @@ function loadFixture(input: ContextualRankingsRequest) {
     penalties_taken_per_60_penalties_season: row.penalties,
     penalties_taken_per_60_toi_seconds_season: row.toi,
     [`penalties_taken_per_60_total_${input.window}`]: row.penalties,
+  }));
+  // L6 window counts: the fixture window is the row's gp appearances; a row
+  // with unknown GP has no support (unknown, never zero).
+  const pair = (count: number | null, toi: number | null, gp: number) =>
+    count == null || toi == null ? undefined : [count, toi, gp];
+  scenario.supportRows = fixture.rows.filter(row => row.gp != null).map(row => ({
+    player_id: row.id, game_id: row.id, game_date: input.asOfDate,
+    season: input.season, strength_state: input.strength,
+    windowCountSupport: {
+      version: "rolling-player-window-counts-v1", strengthState: input.strength,
+      anchor: { gameId: row.id, gameDate: input.asOfDate, season: input.season },
+      selection: "chronological_appearances_in_strength_state",
+      game: { appeared: true, ratio: {}, additive: {} },
+      windows: Object.fromEntries([5, 10, 20].map(size => [`last${size}`, {
+        appearances: row.gp, gameIds: Array.from({ length: row.gp! }, (_, n) => 2025020001 + n),
+        gameDates: Array(row.gp).fill(input.asOfDate), secondary: {},
+        ratio: Object.fromEntries(Object.entries({
+          goals_per_60: pair(row.points, row.toi, row.gp!),
+          penalties_taken_per_60: pair(row.penalties, row.toi, row.gp!),
+        }).filter(([, value]) => value != null)),
+      }])),
+    },
   }));
 }
 

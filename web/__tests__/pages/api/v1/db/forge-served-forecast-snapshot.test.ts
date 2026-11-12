@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
 
 const { tables, fromMock, upsertMock, bridgeMock, planningMock, flags } = vi.hoisted(() => ({
-  flags: { market: false },
+  flags: { market: undefined as boolean | undefined, basis: false },
   fromMock: vi.fn(),
   tables: {} as Record<string, Record<string, any>[]>,
   upsertMock: vi.fn(async (..._args: any[]) => ({ error: null as null | { message: string } })),
@@ -17,7 +17,8 @@ vi.mock("lib/rosterScheduleData/planningInputs", async importOriginal => ({ ...(
 vi.mock("lib/rosterScheduleData/forgeDailyBridge", async importOriginal => ({ ...(await importOriginal<any>()), loadForgeDailyBridgeForecasts: bridgeMock }));
 vi.mock("lib/player-forecasts/servedForecastLedger", async importOriginal => {
   const actual = await importOriginal<any>();
-  return { ...actual, get LEDGER_MARKET_ENABLED() { return flags.market; } };
+  // Unset: the real constant (decision 126); set: a scenario override.
+  return { ...actual, get LEDGER_MARKET_ENABLED() { return flags.market ?? actual.LEDGER_MARKET_ENABLED; }, get LEDGER_BASIS_SCHEMA_ENABLED() { return flags.basis; } };
 });
 vi.mock("lib/supabase/server", () => ({
   default: {
@@ -56,7 +57,8 @@ const side = (id: string, team: string, opponent: string, home: boolean, startsA
 describe("forge-served-forecast-snapshot", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    flags.market = false;
+    flags.market = undefined;
+    flags.basis = false;
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-21T12:30:00Z"));
     Object.assign(tables, {
@@ -117,7 +119,7 @@ describe("forge-served-forecast-snapshot", () => {
     expect(upsertMock).not.toHaveBeenCalled();
   });
 
-  it("writes no market rows while the market source is off", async () => {
+  it("writes no market rows: the shipped market source is off (decision 126)", async () => {
     const out = res();
     await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
     expect(out.body.countsBySource.market).toBe(0);
@@ -133,7 +135,9 @@ describe("forge-served-forecast-snapshot", () => {
     expect(upsertMock.mock.calls[0][1].some((row: any) => "market_lines" in row)).toBe(false);
     const [table, [market]] = upsertMock.mock.calls[1];
     expect(table).toBe("forge_served_forecast_ledger");
-    expect(market).toMatchObject({ source: "market", player_id: 11, game_id: 100, market_lines: { props: { shots: { line: 2.5, books: 1, model_p_over: { bridge_exact: expect.any(Number) } } } } });
+    // Props price a dressed player: the if-dressed naive means get a model P(over), the unconditional bridge line does not (decision 41).
+    expect(market).toMatchObject({ source: "market", player_id: 11, game_id: 100, market_lines: { props: { shots: { line: 2.5, books: 1, model_p_over: { naive_last5: expect.any(Number) } } } } });
+    expect(market.market_lines.props.shots.model_p_over.bridge_exact).toBeUndefined();
   });
 
   it("keeps the served rows when the market write fails (migration not applied)", async () => {
@@ -143,6 +147,26 @@ describe("forge-served-forecast-snapshot", () => {
     await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
     expect(out.statusCode).toBe(207);
     expect(out.body).toMatchObject({ success: false, rowsUpserted: 3, marketError: "violates check constraint" });
+  });
+
+  it("sends no basis column or universe until the L4a migration flag is on, then persists both", async () => {
+    const off = res();
+    await handler({ method: "POST", query: { date: "2026-10-21" } } as any, off);
+    expect(upsertMock.mock.calls.flatMap(call => call[1]).some((row: any) => "forecast_basis" in row)).toBe(false);
+    expect(upsertMock.mock.calls.some(call => call[0] === "forge_served_forecast_universe")).toBe(false);
+    expect(off.body).toMatchObject({ coverageStatus: "unavailable_independent_universe_not_persisted", universeUpserted: 0, scoringVersion: "served-ledger-scoring-v2" });
+    upsertMock.mockClear();
+    flags.basis = true;
+    const on = res();
+    await handler({ method: "POST", query: { date: "2026-10-21" } } as any, on);
+    const ledgerRows = upsertMock.mock.calls[0][1];
+    expect(ledgerRows.find((row: any) => row.source === "bridge_exact").forecast_basis).toBe("unconditional");
+    expect(ledgerRows.find((row: any) => row.source === "naive_last5")).toMatchObject({ forecast_basis: "conditional_dressed", participation_probability: null });
+    const [table, universe, options] = upsertMock.mock.calls[1];
+    expect(table).toBe("forge_served_forecast_universe");
+    expect(options).toEqual({ onConflict: "served_date,player_id,game_id" });
+    expect(universe).toEqual([{ served_date: "2026-10-21", season_id: 20262027, player_id: 11, game_id: 100, player_class: "skater", team_id: 1, dressed: null }]);
+    expect(on.body).toMatchObject({ coverageStatus: "universe_persisted", universeUpserted: 1 });
   });
 
   it("rejects a malformed date and an unsupported method without reading", async () => {

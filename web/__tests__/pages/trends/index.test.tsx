@@ -373,7 +373,7 @@ describe("Trends dashboard", () => {
       gapDays: 19,
       sourceDates: { teamPower: "2026-03-20", startChart: "2026-04-08" },
       warning:
-        "Source dates are not safely aligned; projection and start context is downgraded until the feeds converge."
+        "Source dates differ by more than three days; projection and start context may be out of date until the feeds converge."
     };
 
     render(<TrendsDashboardPage initialDate="2026-04-08" />);

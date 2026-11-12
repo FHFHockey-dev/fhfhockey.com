@@ -817,6 +817,10 @@ export default function PlayerUnderlyingStatsDetailPage({
                   rows={detailData?.rows ?? []}
                   sortState={detailData?.sort ?? filterState.view.sort}
                   state={tableState}
+                  isSplitActive={
+                    filterState.primary.strength !== "allStrengths" ||
+                    filterState.primary.scoreState !== "allScores"
+                  }
                   pagination={detailData?.pagination ?? null}
                   onSortChange={(nextSort) =>
                     setFilterState((current) => ({

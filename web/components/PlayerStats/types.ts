@@ -32,6 +32,9 @@ export interface SkaterGameLogEntry extends BaseGameLogEntry {
   pp_points: number | null;
   gw_goals: number | null;
   fow_percentage: number | null;
+  // Faceoff primitives: a window's FO% pools wins over faceoffs taken.
+  total_fow?: number | null;
+  total_fol?: number | null;
   toi_per_game: number | null;
   pp_toi_per_game: number | null; // Add power play TOI field
   blocked_shots: number | null;
@@ -386,7 +389,8 @@ export const STAT_FORMATTERS = {
   // NST Advanced Stats - On-Ice Impact
   on_ice_sh_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
   on_ice_sv_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
-  pdo: (value: number) => (value || 0).toFixed(1),
+  // 1.000 index (on-ice SH + SV fractions).
+  pdo: (value: number) => (value || 0).toFixed(3),
 
   // Decimal stats
   goals_against_avg: (value: number) => (value || 0).toFixed(2),
@@ -487,7 +491,7 @@ export const STAT_DISPLAY_NAMES: { [key: string]: string } = {
   icf_per_60: "iCF/60",
   iff_per_60: "iFF/60",
   iscfs_per_60: "iSCF/60",
-  hdcf_per_60: "HDCF/60",
+  hdcf_per_60: "iHDCF/60",
   shots_per_60: "SOG/60",
   goals_per_60: "G/60",
   total_assists_per_60: "A/60",

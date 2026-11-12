@@ -168,6 +168,7 @@ const fakes = vi.hoisted(() => ({
   // Games whose next pass writes an extra row, as if its player pool changed.
   strayRowGameIds: new Set<number>(),
   skaterCalls: [] as number[],
+  leagueSavePctCaches: [] as unknown[],
   stageMs: 20_000,
   // Games that take longer than `stageMs`.
   slowGameMs: new Map<number, number>(),
@@ -211,9 +212,10 @@ vi.mock("./stages/skater-stage", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./stages/skater-stage")>()),
   runPerGameSkaterStage: async (args: {
     runId: string; asOfDate: string; game: { id: number; homeTeamId: number }; deadlineMs: number;
-    playerPredictionOutputRows: Array<Record<string, unknown>>;
+    playerPredictionOutputRows: Array<Record<string, unknown>>; leagueSavePctCache?: unknown;
   }) => {
     fakes.skaterCalls.push(args.game.id);
+    fakes.leagueSavePctCaches.push(args.leagueSavePctCache);
     if (fakes.skaterError) throw fakes.skaterError;
     const plan = fakes.plans.get(args.deadlineMs);
     if (plan) {
@@ -262,7 +264,8 @@ vi.mock("./gameRevisions", async (importOriginal) => ({
 }));
 vi.mock("./stages/goalie-stage", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./stages/goalie-stage")>()),
-  runPerGameGoalieStage: async (args: { deadlineMs: number }) => {
+  runPerGameGoalieStage: async (args: { deadlineMs: number; leagueSavePctCache?: unknown }) => {
+    fakes.leagueSavePctCaches.push(args.leagueSavePctCache);
     // The goalie stage is the last step before the game's analytics sidecars.
     const plan = fakes.plans.get(args.deadlineMs);
     if (plan?.pause === "sidecar") {
@@ -345,6 +348,7 @@ beforeEach(() => {
   fakes.rpcCalls = [];
   fakes.publishedRuns = [];
   fakes.skaterCalls = [];
+  fakes.leagueSavePctCaches = [];
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(start);
   vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "false");
@@ -390,6 +394,9 @@ describe("resumable FORGE projection run", () => {
       resume: { resumed: true, invocations: 2, completedGames: 4, totalGames: 4, pendingGames: 0 },
     });
     expect(fakes.skaterCalls).toEqual([1, 2, 3, 3, 4]);
+    // Skater and goalie stages of one run share one league save % cache (one read per date).
+    expect(fakes.leagueSavePctCaches[0]).toBeInstanceOf(Map);
+    expect(fakes.leagueSavePctCaches[1]).toBe(fakes.leagueSavePctCaches[0]);
     expect(runs()).toHaveLength(2);
     expect(run.status).toBe("succeeded");
     expect(run.metrics).toMatchObject({

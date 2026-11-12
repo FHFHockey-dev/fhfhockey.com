@@ -842,6 +842,16 @@ function isDashPlaceholder(value: string): boolean {
   );
 }
 
+/**
+ * Ratio and rate columns (SH%, IPP, FO%, on-ice %, PDO, zone-start %, every
+ * per-60 rate) where NST's "-" means undefined (empty denominator, e.g. zero
+ * TOI): stored as unknown, never 0. Count columns keep NST's "-" as 0.
+ */
+export function isNstRatioColumn(column: string): boolean {
+  return column.endsWith("_percentage") || column.endsWith("_pct") || column.endsWith("_per_60") ||
+    column === "ipp" || column === "pdo";
+}
+
 export type PlayerCacheRow = { id: number; position: string };
 let playerIdCache: Map<string, PlayerCacheRow[]> | null = null;
 const playerIdMemo = new Map<string, number | null>();
@@ -933,6 +943,53 @@ export function getNstPlayerIdFromHref(href: string): number | null {
   } catch {
     return null;
   }
+}
+
+export type NstGamelogQuarantineReason = "gp_missing" | "aggregate_gp" | "scope_mismatch";
+
+/**
+ * A single-date NST game-log row is admitted as one game only when NST reports
+ * exactly one game played and its player link names the requested season and
+ * season type. Anything else (GP 2+, missing GP, another season's link) is an
+ * aggregate or out-of-scope row: it is quarantined, never written as a game.
+ */
+export function classifyNstGamelogAppearance(args: {
+  gp: unknown;
+  href?: string | null;
+  seasonId: string;
+  stype: string | null;
+}): NstGamelogQuarantineReason | null {
+  if (typeof args.gp !== "number" || !Number.isFinite(args.gp)) return "gp_missing";
+  if (args.gp !== 1) return "aggregate_gp";
+  if (args.href) {
+    try {
+      const params = new URL(args.href, BASE_URL).searchParams;
+      for (const key of ["fromseason", "thruseason"]) {
+        const value = params.get(key);
+        if (value !== null && value !== args.seasonId) return "scope_mismatch";
+      }
+      const linkStype = params.get("stype");
+      if (linkStype !== null && args.stype !== null && linkStype !== args.stype) return "scope_mismatch";
+    } catch {
+      return "scope_mismatch";
+    }
+  }
+  return null;
+}
+
+/** The request URL must ask for exactly the requested date and season. */
+export function nstGamelogRequestScopeMismatch(url: string, date: string, seasonId: string): string | null {
+  let params: URLSearchParams;
+  try {
+    params = new URL(url).searchParams;
+  } catch {
+    return "unparseable URL";
+  }
+  const fd = params.get("fd"), td = params.get("td");
+  const from = params.get("fromseason"), thru = params.get("thruseason");
+  if (fd !== date || td !== date) return `URL dates fd=${fd} td=${td} differ from requested ${date}`;
+  if (from !== seasonId || thru !== seasonId) return `URL seasons ${from}-${thru} differ from requested ${seasonId}`;
+  return null;
 }
 
 async function getPlayerIdByName(
@@ -1269,11 +1326,16 @@ async function fetchAndParseData(
 ): Promise<{ success: boolean; data: any[]; outcome: NstGamelogOutcome }> {
   const dateFromUrl = getDateFromUrl(url);
   const effectiveDate = dateFromUrl || date;
+  const requestedStype = (() => {
+    try { return new URL(url).searchParams.get("stype"); } catch { return null; }
+  })();
 
-  if (dateFromUrl && dateFromUrl !== date) {
-    console.warn(
-      `Date mismatch detected! URL has ${dateFromUrl}, but function arg is ${date}. Using URL date: ${effectiveDate}`
-    );
+  // Canonical appearance identity: never stamp a requested date or season on
+  // rows fetched for a different scope.
+  const requestScopeMismatch = nstGamelogRequestScopeMismatch(url, date, seasonId);
+  if (requestScopeMismatch) {
+    console.error(`NST request scope rejected for ${datasetType}: ${requestScopeMismatch}. Nothing written.`);
+    return { success: false, data: [], outcome: "parse_or_identity_unresolved" };
   }
 
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -1355,6 +1417,7 @@ async function fetchAndParseData(
         );
       }
       const dataRowsCollected: any[] = [];
+      const quarantinedRows: Array<{ player: string; team: string | null; gp: unknown; reason: NstGamelogQuarantineReason }> = [];
 
       table.find("tbody tr").each((_, tr) => {
         const rowData: any = {};
@@ -1362,6 +1425,7 @@ async function fetchAndParseData(
         let providerPlayerId: number | null | undefined;
         let playerPosition: string | null = null;
         let playerTeam: string | null = null;
+        let playerHref: string | null = null;
         const cells = $(tr).find("td");
         if (cells.length !== headers.length) {
           const rowPreview = cells
@@ -1383,7 +1447,10 @@ async function fetchAndParseData(
             if (originalHeader === "Player") {
               playerFullName = $(td).text().trim();
               const href = $(td).find("a").attr("href");
-              if (href !== undefined) providerPlayerId = getNstPlayerIdFromHref(href);
+              if (href !== undefined) {
+                playerHref = href;
+                providerPlayerId = getNstPlayerIdFromHref(href);
+              }
               return;
             }
             if (originalHeader === "Position") {
@@ -1402,7 +1469,7 @@ async function fetchAndParseData(
             if (cellText === "") {
               cellText = null;
             } else if (isDashPlaceholder(cellText)) {
-              cellText = "0";
+              cellText = isNstRatioColumn(column) ? null : "0";
             }
 
             if (cellText !== null) {
@@ -1451,6 +1518,13 @@ async function fetchAndParseData(
           playerTeam &&
           Object.keys(rowData).length > 0
         ) {
+          const quarantine = classifyNstGamelogAppearance({
+            gp: rowData["gp"], href: playerHref, seasonId, stype: requestedStype
+          });
+          if (quarantine) {
+            quarantinedRows.push({ player: playerFullName, team: playerTeam, gp: rowData["gp"] ?? null, reason: quarantine });
+            return;
+          }
           rowData["_player_full_name_temp"] = playerFullName;
           rowData["_player_position_temp"] = playerPosition;
           rowData["_player_provider_id_temp"] = providerPlayerId;
@@ -1459,6 +1533,14 @@ async function fetchAndParseData(
           dataRowsCollected.push(rowData);
         }
       });
+
+      if (quarantinedRows.length > 0) {
+        // Not a single game for the requested scope: never written as a game.
+        console.warn(
+          `Quarantined ${quarantinedRows.length} NST ${datasetType} row(s) for ${effectiveDate} (not one game in season ${seasonId}):`,
+          quarantinedRows
+        );
+      }
 
       console.log(
         `Processing ${dataRowsCollected.length} raw rows to add Player IDs...`

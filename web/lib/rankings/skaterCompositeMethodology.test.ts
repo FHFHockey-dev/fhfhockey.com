@@ -15,15 +15,16 @@ import {
 } from "./skaterCompositeMethodology";
 
 describe("skaterCompositeMethodology", () => {
-  it("defines offense and defense ratings as percentile contracts", () => {
+  it("defines offense and defense ratings as 0–100 score contracts, not percentiles (decision 74)", () => {
     expect(SKATER_COMPOSITE_SOURCE_TABLE).toBe("skater_composite_ratings");
-    expect(OFFENSE_RATING_CONTRACT.scale).toBe("percentile_0_to_100");
+    expect(OFFENSE_RATING_CONTRACT.scale).toBe("weighted_score_0_to_100");
+    expect(OFFENSE_RATING_CONTRACT.componentPolicy).toMatch(/insufficient data/);
     expect(OFFENSE_RATING_CONTRACT.formula).toContain("scoring_rate_score");
     expect(OFFENSE_RATING_CONTRACT.components.chance_creation_score).toContain(
       "ixg_per_60",
     );
 
-    expect(DEFENSE_RATING_CONTRACT.scale).toBe("percentile_0_to_100");
+    expect(DEFENSE_RATING_CONTRACT.scale).toBe("weighted_score_0_to_100");
     expect(DEFENSE_RATING_CONTRACT.components.suppression_score).toContain(
       "xga_per_60",
     );

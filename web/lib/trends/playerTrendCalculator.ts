@@ -12,23 +12,43 @@ type MetricType = "skater" | "goalie";
 
 type NumberOrNull = number | null;
 
+// v3: `toi_per_game` is seconds for every row (regular season and playoffs),
+// and the shots/ixG per-60 fallbacks convert with × 3600 ÷ seconds. v2 rows
+// mixed playoff minutes with regular-season seconds and wrote a 60× low
+// regular-season fallback; they stay as issued history.
 export const PLAYER_TREND_CALCULATION_VERSION =
-  "player-trend-v2-full-history-source-units";
+  "player-trend-v3-toi-seconds";
 
+/**
+ * Source-unit adapter for `wgo_skater_stats_playoffs`. Playoff `toi_per_game`
+ * is stored in seconds, the same unit as `player_stats_unified`, so the
+ * adapter declares seconds and passes the value through unchanged.
+ */
 export function normalizePlayoffSkaterTrendRow(
   row: PlayoffSkaterStatsRow,
 ): SkaterStatsRow {
   const rawToiSeconds =
     row.toi_per_game == null ? null : Number(row.toi_per_game);
-  const toiMinutes =
+  const toiSeconds =
     rawToiSeconds != null && Number.isFinite(rawToiSeconds)
-      ? rawToiSeconds / 60
+      ? rawToiSeconds
       : null;
 
   return {
     ...row,
-    toi_per_game: toiMinutes,
+    toi_per_game: toiSeconds,
   } as unknown as SkaterStatsRow;
+}
+
+/** count × 3600 ÷ TOI seconds; unknown or non-positive TOI stays unknown. */
+function perSixtyFromSeconds(
+  count: NumberOrNull,
+  toiSeconds: NumberOrNull,
+): NumberOrNull {
+  if (count === null || toiSeconds === null || toiSeconds <= 0) {
+    return null;
+  }
+  return (count * 3600) / toiSeconds;
 }
 
 type BaseTrendMetricDefinition<
@@ -247,12 +267,10 @@ export const SKATER_TREND_METRICS: SkaterTrendMetricDefinition[] = [
         return primary;
       }
 
-      const shots = safeNumber(row.shots);
-      const toi = safeNumber(row.toi_per_game);
-      if (shots === null || toi === null || toi === 0) {
-        return null;
-      }
-      return (shots / toi) * 60;
+      return perSixtyFromSeconds(
+        safeNumber(row.shots),
+        safeNumber(row.toi_per_game),
+      );
     },
   },
   {
@@ -266,12 +284,10 @@ export const SKATER_TREND_METRICS: SkaterTrendMetricDefinition[] = [
         return primary;
       }
 
-      const ixg = safeNumber(row.nst_ixg);
-      const toi = safeNumber(row.toi_per_game);
-      if (ixg === null || toi === null || toi === 0) {
-        return null;
-      }
-      return (ixg / toi) * 60;
+      return perSixtyFromSeconds(
+        safeNumber(row.nst_ixg),
+        safeNumber(row.toi_per_game),
+      );
     },
   },
   {
@@ -344,6 +360,7 @@ export const SKATER_TREND_METRICS: SkaterTrendMetricDefinition[] = [
   },
   {
     key: "toi",
+    // Seconds per game for every row (see normalizePlayoffSkaterTrendRow).
     label: "Time on Ice",
     metricType: "skater",
     sources: ["toi_per_game"],

@@ -103,3 +103,32 @@ describe("calibration helpers", () => {
     expect(calibrator.predict(-0.4)).toBeGreaterThan(0);
   });
 });
+
+describe("isotonic calibration ties (BA W1-1 A)", () => {
+  // Ten predictions of 0.2 (seven misses, three goals) plus anchors around them.
+  const tied = Array.from({ length: 10 }, (_, index) => ({ label: (index >= 7 ? 1 : 0) as 0 | 1, prediction: 0.2 }));
+  const anchors: Array<{ label: 0 | 1; prediction: number }> = [
+    { label: 0, prediction: 0.05 }, { label: 0, prediction: 0.06 },
+    { label: 1, prediction: 0.6 }, { label: 1, prediction: 0.7 },
+  ];
+  const withRowIds = (order: "forward" | "reverse") => {
+    const rows = [...tied, ...anchors];
+    const ids = rows.map((_, index) => `row-${String(index).padStart(2, "0")}`);
+    if (order === "reverse") ids.reverse();
+    return rows.map((row, index) => createExample(ids[index]!, row.label, row.prediction));
+  };
+
+  it("pools equal inputs: the tied block predicts its pooled goal rate", () => {
+    const calibrator = fitProbabilityCalibrator(withRowIds("forward"), "isotonic");
+    expect(calibrator.method).toBe("isotonic");
+    expect(calibrator.predict(0.2)).toBeCloseTo(0.3, 9);
+  });
+
+  it("does not depend on row-id order", () => {
+    const forward = fitProbabilityCalibrator(withRowIds("forward"), "isotonic");
+    const reverse = fitProbabilityCalibrator(withRowIds("reverse"), "isotonic");
+    for (const prediction of [0.01, 0.05, 0.1, 0.2, 0.3, 0.6, 0.9]) {
+      expect(reverse.predict(prediction)).toBeCloseTo(forward.predict(prediction), 12);
+    }
+  });
+});

@@ -21,6 +21,7 @@ describe("adjustedImpactPromotionContract", () => {
       status: "blocked_missing_controls",
       missingControlCount: 1,
       unjoinedControlCount: 2,
+      emptyNetTreatmentValidated: false,
     });
     expect(ADJUSTED_IMPACT_PROMOTION_CONTRACT.controls).toEqual(
       expect.arrayContaining([
@@ -40,16 +41,30 @@ describe("adjustedImpactPromotionContract", () => {
     );
   });
 
-  it("allows promotion only when all required controls are verified", () => {
+  it("allows promotion only when all controls are verified and the empty-net treatment is validated", () => {
     expect(
-      evaluateAdjustedImpactPromotionReadiness([
-        { status: "verified" },
-        { status: "verified" },
-      ])
+      evaluateAdjustedImpactPromotionReadiness(
+        [{ status: "verified" }, { status: "verified" }],
+        { emptyNetTreatment: { validation: "validated" } }
+      )
     ).toEqual({
       status: "rankings_promotable",
       missingControlCount: 0,
       unjoinedControlCount: 0,
+      emptyNetTreatmentValidated: true,
     });
+  });
+
+  it.each([
+    ["an unvalidated empty-net label", { emptyNetTreatment: { validation: "unvalidated" } }],
+    ["a run stored without the label", { emptyNetTreatment: null }],
+    ["no run provenance", null],
+  ])("refuses promotion with %s even when every control is verified (decision 100)", (_name, provenance) => {
+    expect(
+      evaluateAdjustedImpactPromotionReadiness(
+        [{ status: "verified" }, { status: "verified" }],
+        provenance
+      ).status
+    ).toBe("blocked_unvalidated_empty_net_treatment");
   });
 });

@@ -305,10 +305,13 @@ describe("game prediction workflow", () => {
       });
 
     // Production today: the compiled baseline has no production model row.
+    // Per game: the compiled identity's status, then any other production row.
     const noModel = await runWindow(
       createClient([
         { data: null, error: null },
+        { data: null, error: null },
         { data: { status: "candidate" }, error: null },
+        { data: null, error: null },
       ]),
     );
     expect(noModel.results.map((row) => row.skippedReason)).toEqual([
@@ -326,6 +329,7 @@ describe("game prediction workflow", () => {
     const lookupFailure = await runWindow(
       createClient([
         { data: null, error: null },
+        { data: null, error: null },
         { data: null, error: { message: "model version lookup failed" } },
       ]),
     );
@@ -336,6 +340,25 @@ describe("game prediction workflow", () => {
       noProductionModelGames: 1,
       failedGames: 1,
     });
+
+    // BC W1-10 A misc: a different promoted version is not "no model". The
+    // server serves only the compiled baseline, so it cannot load that
+    // artifact: the run fails loudly instead of reporting a quiet skip.
+    const otherProduction = { model_name: "nhl_game_baseline_logistic", model_version: "fitted-v9", feature_set_version: GAME_PREDICTION_FEATURE_SET_VERSION };
+    const unloadable = await runWindow(
+      createClient([
+        { data: { status: "candidate" }, error: null },
+        { data: otherProduction, error: null },
+        { data: { status: "candidate" }, error: null },
+        { data: otherProduction, error: null },
+      ]),
+    );
+    expect(workflow.summarizePredictionWindowOutcome(unloadable)).toMatchObject({
+      status: "failed",
+      noProductionModelGames: 0,
+      failedGames: 2,
+    });
+    expect(unloadable.results[0]?.skippedReason).toContain("fitted-v9");
   });
 
   it("summarizes empty, cutoff-only, dry-run and persisted forecast windows", async () => {

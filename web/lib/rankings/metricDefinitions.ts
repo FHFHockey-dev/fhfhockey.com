@@ -99,7 +99,13 @@ function defaultDenominatorKey(definition: ContextualRankingMetricDefinitionInpu
   ) {
     return "none_count_difference";
   }
-  if (definition.metricKey === "sax_percentage") return "shooting_percentage";
+  if (
+    definition.metricKey === "goals_above_expected_per_60" ||
+    definition.metricKey === "unrealized_xg_per_60"
+  ) {
+    return "toi_seconds";
+  }
+  if (definition.metricKey === "sax_percentage") return "individual_unblocked_attempts";
   if (definition.metricKey.endsWith("_percentage")) return "event_share";
   if (definition.metricKey === "results_luck_index") return "historical_baseline";
   if (
@@ -560,20 +566,18 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     availabilityStatus: "available",
     sourceTable: "rolling_player_game_metrics",
     sourceFields: [
-      "rolling_player_game_metrics.ixg_per_60_total_{window}",
-      "rolling_player_game_metrics.shot_attempts_per_60_total_{window}",
-      "rolling_player_game_metrics.ixg_per_60_ixg_{baseline_window}",
-      "rolling_player_game_metrics.shot_attempts_per_60_shot_attempts_{baseline_window}",
+      "rolling_player_metric_support_payloads.windowCountSupport.last{n}.expected_sh_pct",
+      "rolling_player_game_metrics.expected_sh_pct_season",
     ],
     denominatorKey: "individual_unblocked_attempts",
     denominatorDescription:
-      "Individual unblocked shot attempts from approved shot-goal xG feature rows.",
-    sourceQualityFlags: ["fenwick_xg_denominator_matched"],
+      "Individual unblocked shot attempts (iFF) over the same games as ixG (decision 17).",
+    sourceQualityFlags: ["rolling_window_counts_v1_fenwick"],
     metadata: {
-      denominatorStatus: "verified",
+      denominatorStatus: "rolling_window_counts_v1",
       xgShotUniverse: "fenwick_unblocked",
-      shotAttemptsFieldSemantics:
-        "nhl_xg_player_rolling_aggregates.shot_attempts is populated from is_unblocked_shot_attempt=true features.",
+      provenance:
+        "Served only from rows written with rolling-player-window-counts-v1 (ixG ÷ iFF × 100); older rows divided by shots or all attempts and are unavailable.",
     },
   },
   {
@@ -582,7 +586,8 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     entityType: "skater",
     category: "Regression",
     description: "Shooting percentage above expected.",
-    formulaDescription: "actual shooting percentage - expected shooting percentage",
+    formulaDescription:
+      "(goals - individual xG) / individual unblocked attempts * 100 on the same games",
     higherIsBetter: true,
     defaultStrengthState: "all",
     defaultPeerGroup: "position",
@@ -594,21 +599,19 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     availabilityStatus: "available",
     sourceTable: "rolling_player_game_metrics",
     sourceFields: [
-      "rolling_player_game_metrics.goals_per_60_total_{window}",
-      "rolling_player_game_metrics.ixg_per_60_total_{window}",
-      "rolling_player_game_metrics.shot_attempts_per_60_total_{window}",
-      "rolling_player_game_metrics.goals_per_60_goals_{baseline_window}",
-      "rolling_player_game_metrics.ixg_per_60_ixg_{baseline_window}",
-      "rolling_player_game_metrics.shot_attempts_per_60_shot_attempts_{baseline_window}",
+      "rolling_player_metric_support_payloads.windowCountSupport.last{n}.goals_per_60",
+      "rolling_player_metric_support_payloads.windowCountSupport.last{n}.expected_sh_pct",
     ],
     denominatorKey: "individual_unblocked_attempts",
     denominatorDescription:
-      "Individual unblocked shot attempts from approved shot-goal xG feature rows.",
-    sourceQualityFlags: ["fenwick_xg_denominator_matched"],
+      "Individual unblocked shot attempts (iFF) over the same games as goals and ixG (decision 17).",
+    sourceQualityFlags: ["rolling_window_counts_v1_fenwick"],
     metadata: {
-      denominatorStatus: "verified",
+      denominatorStatus: "rolling_window_counts_v1",
       dependsOn: ["goals", "ixg", "individual_unblocked_attempts"],
       xgShotUniverse: "fenwick_unblocked",
+      seasonWindowStatus:
+        "Unavailable for the season window until a season iFF count is stored.",
     },
   },
   {
@@ -616,8 +619,9 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     displayName: "Goals Above Expected",
     entityType: "skater",
     category: "Regression",
-    description: "Goals scored above individual expected goals.",
-    formulaDescription: "goals - individual xG",
+    description:
+      "Goals scored above individual expected goals in the window, in goals.",
+    formulaDescription: "window goals - window individual xG (a count in goals)",
     higherIsBetter: true,
     defaultStrengthState: "all",
     defaultPeerGroup: "position",
@@ -629,20 +633,21 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     availabilityStatus: "available",
     sourceTable: "rolling_player_game_metrics",
     sourceFields: [
-      "rolling_player_game_metrics.goals_per_60_total_{window}",
-      "rolling_player_game_metrics.ixg_per_60_total_{window}",
-      "rolling_player_game_metrics.goals_per_60_goals_{baseline_window}",
-      "rolling_player_game_metrics.ixg_per_60_ixg_{baseline_window}",
+      "rolling_player_metric_support_payloads.windowCountSupport.last{n}.goals_per_60",
+      "rolling_player_metric_support_payloads.windowCountSupport.last{n}.ixg_per_60",
+      "rolling_player_game_metrics.goals_per_60_goals_season",
+      "rolling_player_game_metrics.ixg_per_60_ixg_season",
     ],
-    metadata: { dependsOn: ["goals", "ixg"] },
+    metadata: { dependsOn: ["goals", "ixg"], unit: "goals" },
   },
   {
     metricKey: "unrealized_xg",
     displayName: "Unrealized xG",
     entityType: "skater",
     category: "Regression",
-    description: "Expected goals generated but not converted into goals.",
-    formulaDescription: "individual xG - goals",
+    description:
+      "Expected goals generated but not converted into goals in the window, in goals.",
+    formulaDescription: "window individual xG - window goals (a count in goals)",
     higherIsBetter: true,
     defaultStrengthState: "all",
     defaultPeerGroup: "position",
@@ -654,12 +659,66 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     availabilityStatus: "available",
     sourceTable: "rolling_player_game_metrics",
     sourceFields: [
-      "rolling_player_game_metrics.ixg_per_60_total_{window}",
-      "rolling_player_game_metrics.goals_per_60_total_{window}",
-      "rolling_player_game_metrics.ixg_per_60_ixg_{baseline_window}",
-      "rolling_player_game_metrics.goals_per_60_goals_{baseline_window}",
+      "rolling_player_metric_support_payloads.windowCountSupport.last{n}.ixg_per_60",
+      "rolling_player_metric_support_payloads.windowCountSupport.last{n}.goals_per_60",
+      "rolling_player_game_metrics.ixg_per_60_ixg_season",
+      "rolling_player_game_metrics.goals_per_60_goals_season",
     ],
-    metadata: { dependsOn: ["ixg", "goals"] },
+    metadata: { dependsOn: ["ixg", "goals"], unit: "goals" },
+  },
+  {
+    metricKey: "goals_above_expected_per_60",
+    displayName: "Goals Above Expected/60",
+    entityType: "skater",
+    category: "Regression",
+    description: "Goals above individual expected goals per 60 minutes.",
+    formulaDescription:
+      "(window goals - window individual xG) / TOI seconds * 3600 on the same games",
+    higherIsBetter: true,
+    defaultStrengthState: "all",
+    defaultPeerGroup: "position",
+    minimumGp: 1,
+    minimumToiSeconds: 600,
+    isRateStat: true,
+    isPercentileEligible: true,
+    phase: "phase_3",
+    availabilityStatus: "available",
+    sourceTable: "rolling_player_game_metrics",
+    sourceFields: [
+      "rolling_player_metric_support_payloads.windowCountSupport.last{n}.goals_per_60",
+      "rolling_player_metric_support_payloads.windowCountSupport.last{n}.ixg_per_60",
+      "rolling_player_game_metrics.goals_per_60_goals_season",
+      "rolling_player_game_metrics.ixg_per_60_ixg_season",
+      "rolling_player_game_metrics.goals_per_60_toi_seconds_season",
+    ],
+    metadata: { dependsOn: ["goals", "ixg", "toi_seconds"], unit: "goals_per_60" },
+  },
+  {
+    metricKey: "unrealized_xg_per_60",
+    displayName: "Unrealized xG/60",
+    entityType: "skater",
+    category: "Regression",
+    description: "Individual expected goals not converted into goals, per 60 minutes.",
+    formulaDescription:
+      "(window individual xG - window goals) / TOI seconds * 3600 on the same games",
+    higherIsBetter: true,
+    defaultStrengthState: "all",
+    defaultPeerGroup: "position",
+    minimumGp: 1,
+    minimumToiSeconds: 600,
+    isRateStat: true,
+    isPercentileEligible: true,
+    phase: "phase_3",
+    availabilityStatus: "available",
+    sourceTable: "rolling_player_game_metrics",
+    sourceFields: [
+      "rolling_player_metric_support_payloads.windowCountSupport.last{n}.ixg_per_60",
+      "rolling_player_metric_support_payloads.windowCountSupport.last{n}.goals_per_60",
+      "rolling_player_game_metrics.ixg_per_60_ixg_season",
+      "rolling_player_game_metrics.goals_per_60_goals_season",
+      "rolling_player_game_metrics.ixg_per_60_toi_seconds_season",
+    ],
+    metadata: { dependsOn: ["ixg", "goals", "toi_seconds"], unit: "goals_per_60" },
   },
   {
     metricKey: "on_ice_gf_percentage",

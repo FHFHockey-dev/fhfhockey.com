@@ -177,6 +177,9 @@ export function decide(
   const pool = available(session).sort(
     (a, b) => b.value - a.value || a.id.localeCompare(b.id),
   );
+  // Baselines and surplus read the same grouped roster the slots use
+  // (audit W2-5 D13): two equivalent FWD representations behave alike.
+  const effectiveRoster = getEffectiveRosterConfig(config.roster, config.grouping);
   const held = roster(session, seat),
     slotList = slots(config),
     assigned = allocate(held, slotList);
@@ -222,7 +225,7 @@ export function decide(
         fullPool[
           Math.min(
             fullPool.length - 1,
-            Math.max(0, (config.roster[pos] ?? 0) * config.teamCount - 1),
+            Math.max(0, (effectiveRoster[pos] ?? 0) * config.teamCount - 1),
           )
         ]?.value ?? 0;
       const bands = tiers?.get(pos);
@@ -258,7 +261,7 @@ export function decide(
       : -0.25;
     if (needed) reasons.push("Fills a roster need");
     const samePosition = held.filter((q) => q.positions.includes(pos)).length;
-    score -= Math.max(0, samePosition - (config.roster[pos] ?? 0)) * 0.25;
+    score -= Math.max(0, samePosition - (effectiveRoster[pos] ?? 0)) * 0.25;
     if (config.tier === "pro") {
       score +=
         scarcity *

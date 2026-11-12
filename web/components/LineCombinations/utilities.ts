@@ -76,11 +76,6 @@ export function resolveLineCombinationSourceContext({
   return { teamId: sourceTeamId, seasonId: sourceSeasonId };
 }
 
-// Type Guard Function
-function isNonEmptyArray(goalie: any[] | null): goalie is any[] {
-  return goalie !== null && goalie.length > 0;
-}
-
 export async function getLineCombinations(
   teamId: number,
   seasonId?: number
@@ -238,45 +233,40 @@ export async function getLineCombinations(
       ...previousLine.goalies,
     ]);
 
-    const goaliesStats = await Promise.all(
-      Array.from(allGoalieIds).map((id: number) =>
-        supabase
-          .from("goaliesGameStats")
-          .select(
-            `playerId, saveShotsAgainst, savePctg, toi, goalsAgainst,
-             game:games!inner(id, seasonId, startTime),
-             ...players(playerName:fullName)`
-          )
-          .in(
-            "gameId",
-            lineCombinations.map((game: any) => game.gameId)
-          )
-          .eq("playerId", id)
-          .eq("game.seasonId", seasonToUse)
-          .order("game(startTime)", { ascending: false })
-          .returns<any[]>()
-          .throwOnError()
-          .then((res) => res.data)
+    // Each goalie's own season appearances (not the team's line-data games):
+    // "SEASON" is his season, "LAST 10" his last ten appearances.
+    const goalieIds = Array.from(allGoalieIds);
+    const { data: goalieGameRows } = await supabase
+      .from("goaliesGameStats")
+      .select(
+        `playerId, saveShotsAgainst, toi, goalsAgainst,
+         game:games!inner(id, seasonId, startTime),
+         ...players(playerName:fullName)`
       )
-    );
+      .in("playerId", goalieIds)
+      .eq("game.seasonId", seasonToUse)
+      .order("game(startTime)", { ascending: false })
+      .returns<GoalieAppearanceRow[]>()
+      .throwOnError();
 
-    debugLineCombinationsLog("Fetched Goalies Stats:", goaliesStats);
+    // Credited decisions (decision 72): the goalie's own W / L / OTL from
+    // the official per-game goalie log, never the team result.
+    const { data: creditedRows } = await supabase
+      .from("wgo_goalie_stats")
+      .select("goalie_id, game_id, wins, losses, ot_losses")
+      .in("goalie_id", goalieIds)
+      .eq("season_id", seasonToUse)
+      .returns<CreditedDecisionRow[]>()
+      .throwOnError();
 
-    // Process goalies stats
-    const gameOutcomes = await getGameResults(
-      new Set(goaliesStats.flat(1).map((item) => item.game.id)),
-      teamId
-    );
-
-    debugLineCombinationsLog(
-      "Game Outcomes:",
-      Array.from(gameOutcomes.entries())
-    );
-
-    const goalies = goaliesStats
-      .filter(isNonEmptyArray) // Type guard applied here
-      .map((goalie) => processGoalie(goalie, gameOutcomes))
-      .filter((goalie) => goalie !== null); // Filter out null results
+    const goalies = goalieIds
+      .map((goalieId) =>
+        summarizeGoalieAppearances(
+          (goalieGameRows ?? []).filter((row) => row.playerId === goalieId),
+          creditedRows ?? []
+        )
+      )
+      .filter((goalie): goalie is NonNullable<typeof goalie> => goalie !== null);
 
     debugLineCombinationsLog("Processed Goalies:", goalies);
 
@@ -494,72 +484,125 @@ function getLineChangeType(
   return "static";
 }
 
-function processGoalie(
-  goalie: any[],
-  gameOutcomes: Map<number, GameOutcome>
-): Partial<GoalieStats> | null {
-  if (!goalie || goalie.length === 0) {
-    console.error("No goalie data found", goalie);
-    return null; // Handle missing goalie data
+type GoalieAppearanceRow = {
+  playerId: number;
+  playerName: string;
+  saveShotsAgainst: string | null;
+  toi: string | null;
+  goalsAgainst: number | null;
+  game: { id: number; seasonId: number; startTime: string };
+};
+
+type CreditedDecisionRow = {
+  goalie_id: number;
+  game_id: number | null;
+  wins: number | null;
+  losses: number | null;
+  ot_losses: number | null;
+};
+
+export type GoalieWindowStats = {
+  GP: number;
+  SV: number | null;
+  SVPercentage: number | null;
+  GAA: number | null;
+  /** Credited W-L-OTL; null when any appearance's decision is unknown. */
+  Record: string | null;
+};
+
+function parseSaveShots(value: string | null) {
+  const match = /^(\d+)\/(\d+)$/.exec(value?.trim() ?? "");
+  return match ? { saves: Number(match[1]), shots: Number(match[2]) } : null;
+}
+
+function parseToiSeconds(value: string | null) {
+  if (value == null || !/^\d+:\d{2}$/.test(value.trim())) return null;
+  return parseTime(value.trim());
+}
+
+/**
+ * Pooled goalie line over a window of appearances: SV% = Σsaves / Σshots,
+ * GAA = ΣGA × 3600 / ΣTOI seconds. A count and its exposure come from the
+ * same appearances, so one unknown input leaves that stat unknown (rule 13).
+ */
+function pooledGoalieWindow(
+  appearances: readonly GoalieAppearanceRow[],
+  creditedByGame: ReadonlyMap<number, CreditedDecisionRow>
+): GoalieWindowStats {
+  let saves = 0;
+  let shots = 0;
+  let goalsAgainst = 0;
+  let toiSeconds = 0;
+  let saveShotsKnown = true;
+  let gaaKnown = true;
+  let recordKnown = true;
+  const record = { W: 0, L: 0, OTL: 0 };
+
+  for (const row of appearances) {
+    const saveShots = parseSaveShots(row.saveShotsAgainst);
+    if (saveShots) {
+      saves += saveShots.saves;
+      shots += saveShots.shots;
+    } else {
+      saveShotsKnown = false;
+    }
+
+    const seconds = parseToiSeconds(row.toi);
+    if (seconds == null || row.goalsAgainst == null) {
+      gaaKnown = false;
+    } else {
+      toiSeconds += seconds;
+      goalsAgainst += row.goalsAgainst;
+    }
+
+    const credited = creditedByGame.get(row.game.id);
+    if (
+      !credited ||
+      credited.wins == null ||
+      credited.losses == null ||
+      credited.ot_losses == null
+    ) {
+      recordKnown = false;
+    } else {
+      record.W += credited.wins;
+      record.L += credited.losses;
+      record.OTL += credited.ot_losses;
+    }
   }
 
-  const seasonStats = goalie.filter((item) => item.toi !== "00:00");
-  const last10GamesStats = seasonStats.slice(0, 10);
-
-  const getStats = (stats: any[]) => {
-    let record: Record<GameOutcome, number> = {
-      WIN: 0,
-      LOSS: 0,
-      TIE: 0,
-    };
-
-    let SV = 0;
-    let SVPercentage = 0;
-    let GAA = 0;
-    for (const item of stats) {
-      if (!item || !item.saveShotsAgainst) continue; // Defensive check for valid item data
-      SV += Number.parseInt(item.saveShotsAgainst.split("/")[0], 10);
-      SVPercentage += item.savePctg;
-      record[gameOutcomes.get(item.game.id) ?? "WIN"]++;
-      const minutesPlayed = parseTime(item.toi) / 60;
-      GAA += (item.goalsAgainst * 60) / minutesPlayed;
-    }
-    SVPercentage = SVPercentage / stats.length;
-    GAA = GAA / stats.length;
-    const aggregate = {
-      SV,
-      GP: stats.length,
-      SVPercentage,
-      GAA,
-      Record: `${record.WIN}-${record.LOSS}-${record.TIE}`,
-    };
-    return aggregate;
-  };
-
   return {
-    playerId: goalie[0].playerId,
-    playerName: goalie[0].playerName,
-    last10Games: getStats(last10GamesStats),
-    season: getStats(seasonStats),
+    GP: appearances.length,
+    SV: saveShotsKnown ? saves : null,
+    SVPercentage: saveShotsKnown && shots > 0 ? saves / shots : null,
+    GAA: gaaKnown && toiSeconds > 0 ? (goalsAgainst * 3600) / toiSeconds : null,
+    Record: recordKnown ? `${record.W}-${record.L}-${record.OTL}` : null
   };
 }
 
-type GameOutcome = "WIN" | "LOSS" | "TIE";
-async function getGameResults(
-  gameIds: Set<number>,
-  teamId: number
-): Promise<Map<number, GameOutcome>> {
-  const { data } = await supabase
-    .from("gameOutcomes")
-    .select("gameId, outcome")
-    .eq("teamId", teamId)
-    .in("gameId", [...gameIds]);
-  const result = new Map();
-  data?.forEach((item) => {
-    result.set(item.gameId, item.outcome);
+function summarizeGoalieAppearances(
+  rows: readonly GoalieAppearanceRow[],
+  creditedRows: readonly CreditedDecisionRow[]
+): Partial<GoalieStats> | null {
+  if (rows.length === 0) return null;
+  const playerId = rows[0].playerId;
+  // A dressed backup who did not play has 00:00; unknown TOI stays an appearance.
+  const appearances = rows
+    .filter((row) => row.toi !== "00:00")
+    .slice()
+    .sort((a, b) => b.game.startTime.localeCompare(a.game.startTime));
+  const creditedByGame = new Map<number, CreditedDecisionRow>();
+  creditedRows.forEach((row) => {
+    if (row.goalie_id === playerId && row.game_id != null) {
+      creditedByGame.set(row.game_id, row);
+    }
   });
 
-  return result;
+  return {
+    playerId,
+    playerName: rows[0].playerName,
+    last10Games: pooledGoalieWindow(appearances.slice(0, 10), creditedByGame),
+    season: pooledGoalieWindow(appearances, creditedByGame)
+  };
 }
 
 export function convertToLines(lineCombo: RawLineCombo | undefined) {

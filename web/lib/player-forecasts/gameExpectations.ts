@@ -63,6 +63,11 @@ export type GameExpectationsResponse = {
   limitations: string[];
 };
 
+/** M-PFC-120: one declared unit per target, whatever the forecast's representation (resolved rows already declare
+ * minutes for penalty minutes; raw rows used to fall back to "count", splitting a horizon into incompatible units). */
+const declaredUnit = (target: string): "count" | "minutes" =>
+  target === "GOALIE_MINUTES" || target === "TIME_ON_ICE_PER_GAME" || target === "PENALTY_MINUTES" ? "minutes" : "count";
+
 function orderedTime(sources: Array<{ cutoffAt: string; issuedAt: string; expiresAt: string }>,
   key: "cutoffAt" | "issuedAt" | "expiresAt"): string | null {
   const times = sources.map(source => source[key]).filter(time => Number.isFinite(Date.parse(time)))
@@ -86,7 +91,7 @@ function targetView(forecast: GameForecast | undefined, target: string): GameExp
     expected: uses.totals && finite(expected) ? expected : null,
     conditional: uses.conditionalTieBreak && finite(conditional) ? conditional : null,
     basis: row?.basis ?? (forecast ? "unconditional_game" : null),
-    unit: row?.unit ?? (target === "GOALIE_MINUTES" || target === "TIME_ON_ICE_PER_GAME" ? "minutes" : "count"),
+    unit: row?.unit ?? declaredUnit(target),
     allowedUses: { ...uses }, sourceKind: row ? row.sourceKind : forecast?.sourceKind ?? null,
     sourceIds: row?.sourceIds ?? (forecast ? [forecast.revisionId] : []),
     methodVersions: row ? [...new Set(selected.map(source => source.policyVersion))].sort() : forecast?.modelVersion ? [forecast.modelVersion] : [],
@@ -199,7 +204,7 @@ export function buildGameExpectations(data: PlanningData, scope: GameExpectation
       const coveredSum = compatible && values.length ? values.reduce((sum, value) => sum + value, 0) : null;
       return [target, { expected: horizonComplete && games.length > 0 && values.length === games.length ? coveredSum : null,
         coveredSum, coveredGames: values.length, requiredGames: games.length,
-        unit: !compatible ? null : [...units][0] ?? (target === "GOALIE_MINUTES" || target === "TIME_ON_ICE_PER_GAME" ? "minutes" as const : "count" as const),
+        unit: !compatible ? null : [...units][0] ?? declaredUnit(target),
         reason: !compatible ? "incompatible_units" : !horizonComplete ? "incomplete_horizon"
           : !games.length ? "no_scheduled_opportunity" : values.length !== games.length ? "incomplete_target" : null }];
     }));

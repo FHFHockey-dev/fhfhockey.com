@@ -4,17 +4,23 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import supabase from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
-import { settleLedgerRows, type LedgerRow } from "lib/player-forecasts/servedForecastLedger";
+import { buildBoxscoreReceipts, LEDGER_BASIS_SCHEMA_ENABLED, LEDGER_SCORING_VERSION, LEDGER_UNIVERSE_TABLE, settleLedgerRows, settleLedgerUniverse,
+  type LedgerRow, type LedgerUniverseRow, type StoredBoxscore } from "lib/player-forecasts/servedForecastLedger";
 import { pages } from "lib/rosterScheduleData/planningInputs";
 
 /** S-B2: settles forge_served_forecast_ledger for one ET served date and the two days before it (late WGO corrections).
- * Idempotent; writes only the settlement columns of rows whose game has actuals. */
+ * Idempotent; writes only the settlement columns. Non-appearance settles only from identity-complete receipts built from
+ * the stored final official boxscores (decision 78); no provider calls. */
 const LEDGER_TABLE = "forge_served_forecast_ledger", UPSERT_BATCH = 500, DAY_MS = 86400000;
 const SETTLED_COLUMNS = ["act_goals", "act_assists", "act_pp_points", "act_shots", "act_hits", "act_blocks", "act_saves", "act_goals_against",
   "act_shots_against", "act_win", "act_shutout", "act_fantasy_points", "dressed", "started", "settled_at", "outcome_source"] as const;
 // The PK plus the NOT NULL columns, re-sent unchanged: Postgres checks NOT NULL on the proposed insert row before
 // ON CONFLICT resolves, so a PK-plus-settlement payload would fail. The conflict update only sets the keys sent.
 const CARRIED_COLUMNS = ["served_date", "player_id", "game_id", "source", "season_id", "player_class", "team_id", "opponent_team_id", "is_home", "scheduled_at"] as const;
+const UNIVERSE_COLUMNS = ["served_date", "season_id", "player_id", "game_id", "player_class", "team_id", "dressed", "receipt", "settled_at"] as const;
+// The boxscore paths a receipt needs, not the whole payload.
+const BOXSCORE_COLUMNS = "id,game_id,payload_hash,fetched_at,game_state:payload->>gameState,payload_game_id:payload->>id,"
+  + "home_team_id:payload->homeTeam->>id,away_team_id:payload->awayTeam->>id,player_by_game_stats:payload->playerByGameStats";
 type Row = Record<string, any>;
 
 function yesterdayEtDateOnly(now: Date) {
@@ -32,7 +38,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const from = shift(date, -2), dates = [from, shift(date, -1), date];
   try {
     const db = supabase as unknown as SupabaseClient<any>, deadline = Date.now() + 45000;
-    const ledger = await pages(() => db.from(LEDGER_TABLE).select([...CARRIED_COLUMNS, "settled_at"].join(","), { count: "exact" })
+    const ledger = await pages(() => db.from(LEDGER_TABLE).select([...CARRIED_COLUMNS, "settled_at", ...(LEDGER_BASIS_SCHEMA_ENABLED ? ["forecast_basis"] : [])].join(","), { count: "exact" })
       .gte("served_date", from).lte("served_date", date).order("served_date").order("game_id").order("player_id").order("source"),
     deadline, 20000, row => [row.served_date, row.player_id, row.game_id, row.source]) as LedgerRow[];
     const empty = Object.fromEntries(dates.map(day => [day, { read: 0, settled: 0, unsettled: 0 }]));
@@ -45,8 +51,24 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         .gte("date", from).lte("date", date).order("date").order("goalie_id"), deadline, 1000, row => [row.goalie_id, row.date]),
     ]);
     const settledAt = now.toISOString();
-    // No verified finality/completeness receipt is available here. Missing players remain unknown.
-    const reconciled = settleLedgerRows(ledger, { skaters, goalies: goalieRows.map(row => ({ ...row, player_id: row.goalie_id })), goalieSource: "wgo_goalie_stats" }, settledAt);
+    // Receipts: the newest stored boxscore per game (metadata first, then only those rows' lineup paths).
+    const gameIds = [...new Set(ledger.map(row => Number(row.game_id)))];
+    const [games, boxscoreMeta] = await Promise.all([
+      pages(() => db.from("games").select("id,homeTeamId,awayTeamId,startTime", { count: "exact" }).in("id", gameIds).order("id"), deadline, 500),
+      pages(() => db.from("nhl_api_game_payloads_raw").select("id,game_id,fetched_at", { count: "exact" }).in("game_id", gameIds).eq("endpoint", "boxscore")
+        .order("game_id").order("fetched_at", { ascending: false }).order("id", { ascending: false }), deadline, 5000),
+    ]);
+    const latestFirst = [...boxscoreMeta].sort((a, b) => String(b.fetched_at).localeCompare(String(a.fetched_at)) || Number(b.id) - Number(a.id));
+    const newestByGame = new Map<number, unknown>();
+    for (const row of latestFirst) if (!newestByGame.has(Number(row.game_id))) newestByGame.set(Number(row.game_id), row.id);
+    const boxscoreRows = newestByGame.size ? await pages(() => db.from("nhl_api_game_payloads_raw").select(BOXSCORE_COLUMNS, { count: "exact" })
+      .in("id", [...newestByGame.values()]).order("id"), deadline, 500) : [];
+    const boxscores: StoredBoxscore[] = boxscoreRows.map(row => ({ game_id: row.game_id, payload_hash: row.payload_hash, fetched_at: row.fetched_at,
+      payload: { id: row.payload_game_id, gameState: row.game_state, homeTeam: { id: row.home_team_id }, awayTeam: { id: row.away_team_id },
+        playerByGameStats: row.player_by_game_stats } }));
+    const goalies = goalieRows.map(row => ({ ...row, player_id: row.goalie_id }));
+    const { receipts, rejections } = buildBoxscoreReceipts({ games: games as Parameters<typeof buildBoxscoreReceipts>[0]["games"], boxscores, skaters, goalies });
+    const reconciled = settleLedgerRows(ledger, { skaters, goalies, goalieSource: "wgo_goalie_stats", receipts }, settledAt);
     const settled = reconciled.filter(row => row.settled_at === settledAt);
     const changed = reconciled.filter((row, index) => row.settled_at === settledAt || ledger[index].settled_at !== null);
     const rowsCleared = changed.length - settled.length;
@@ -57,11 +79,26 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       if (error) return res.status(rowsUpserted ? 207 : 500).json({ success: false, date, dates, rowsRead: ledger.length, rowsUpserted, error: error.message });
       rowsUpserted += batch.length;
     }
+    let universeUpserted = 0;
+    if (LEDGER_BASIS_SCHEMA_ENABLED) {
+      const universe = await pages(() => db.from(LEDGER_UNIVERSE_TABLE).select(UNIVERSE_COLUMNS.join(","), { count: "exact" })
+        .gte("served_date", from).lte("served_date", date).order("served_date").order("game_id").order("player_id"),
+      deadline, 20000, row => [row.served_date, row.player_id, row.game_id]) as LedgerUniverseRow[];
+      const settledUniverse = settleLedgerUniverse(universe, { skaters, goalies, receipts }, settledAt);
+      for (const batch of chunks(settledUniverse, UPSERT_BATCH)) {
+        const payload = batch.map(row => Object.fromEntries(UNIVERSE_COLUMNS.map(column => [column, (row as Row)[column] ?? null])));
+        const { error } = await db.from(LEDGER_UNIVERSE_TABLE).upsert(payload, { onConflict: "served_date,player_id,game_id" });
+        if (error) return res.status(207).json({ success: false, date, dates, rowsRead: ledger.length, rowsUpserted, universeUpserted, error: error.message });
+        universeUpserted += batch.length;
+      }
+    }
     const byDate = Object.fromEntries(dates.map(day => {
       const read = ledger.filter(row => row.served_date === day).length, done = settled.filter(row => row.served_date === day).length;
       return [day, { read, settled: done, unsettled: read - done }];
     }));
-    return res.status(200).json({ success: true, date, dates, rowsRead: ledger.length, rowsSettled: settled.length, rowsUnsettled: ledger.length - settled.length, rowsUpserted, rowsCleared, byDate });
+    return res.status(200).json({ success: true, date, dates, rowsRead: ledger.length, rowsSettled: settled.length, rowsUnsettled: ledger.length - settled.length, rowsUpserted, rowsCleared,
+      rowsNonAppearance: settled.filter(row => row.dressed === false).length, receipts: { games: new Set(receipts.map(receipt => receipt.gameId)).size, rejections },
+      universeUpserted, scoringVersion: LEDGER_SCORING_VERSION, byDate });
   } catch (error: any) {
     console.error("forge-served-forecast-settle failed:", error);
     return res.status(500).json({ success: false, date, error: error?.message ?? String(error) });

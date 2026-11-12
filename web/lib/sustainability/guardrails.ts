@@ -47,6 +47,51 @@ function mergeWarnings(
   };
 }
 
+const LUCK_INPUTS = ["shp", "oishp", "ipp", "ppshp"] as const;
+const SKILL_INPUTS = ["ixg60", "icf60", "hdcf60"] as const;
+
+export type SustainabilityScoreCoverage = {
+  /** False for legacy rows that never recorded which inputs were missing. */
+  assessed: boolean;
+  luckKnown: number;
+  luckTotal: number;
+  skillKnown: number;
+  skillTotal: number;
+  /** Both input families have at least one known component. */
+  sufficient: boolean;
+};
+
+/**
+ * Which score inputs were actually known (BC W1-9 A2). A missing input was
+ * scored as z = 0, so a score with no luck or no skill input is not a
+ * measurement of the blend at all: it is unavailable, never a neutral 50.
+ */
+export function assessSustainabilityScoreCoverage(
+  components: Record<string, unknown> | null | undefined
+): SustainabilityScoreCoverage {
+  const record = components ?? {};
+  const warnings = Array.isArray(record.warnings)
+    ? record.warnings.filter((w): w is string => typeof w === "string")
+    : null;
+  const assessed = warnings !== null || "fallbackFlags" in record;
+  const known = (list: readonly string[], prefix: string, nullKey: boolean) =>
+    list.filter(
+      (stat) =>
+        !(warnings ?? []).includes(`${prefix}${stat}`) &&
+        !(nullKey && record[`z_${stat}`] === null)
+    ).length;
+  const luckKnown = known(LUCK_INPUTS, "missing_window_z_", false);
+  const skillKnown = known(SKILL_INPUTS, "missing_skill_window_", true);
+  return {
+    assessed,
+    luckKnown,
+    luckTotal: LUCK_INPUTS.length,
+    skillKnown,
+    skillTotal: SKILL_INPUTS.length,
+    sufficient: !assessed || (luckKnown > 0 && skillKnown > 0)
+  };
+}
+
 export function clampSustainabilityZScore(
   value: unknown,
   key: string,
@@ -120,6 +165,18 @@ export function applySustainabilityScoreGuardrails(input: {
     }
   }
 
+  const coverage = assessSustainabilityScoreCoverage(components);
+  if (!coverage.sufficient) {
+    warnings.push("guardrail_insufficient_inputs");
+    state = "blocked";
+  } else if (
+    coverage.assessed &&
+    (coverage.luckKnown < coverage.luckTotal ||
+      coverage.skillKnown < coverage.skillTotal)
+  ) {
+    warnings.push("guardrail_partial_inputs");
+  }
+
   if (Math.abs(sRaw) >= SCORE_RAW_LIMIT || warnings.length > 0) {
     state = state === "blocked" ? "blocked" : "degraded";
   }
@@ -129,6 +186,16 @@ export function applySustainabilityScoreGuardrails(input: {
     s100,
     components: {
       ...mergeWarnings(components, warnings),
+      ...(coverage.assessed
+        ? {
+            inputCoverage: {
+              luck: coverage.luckKnown,
+              luckTotal: coverage.luckTotal,
+              skill: coverage.skillKnown,
+              skillTotal: coverage.skillTotal
+            }
+          }
+        : {}),
       guardrailState: state
     },
     state,

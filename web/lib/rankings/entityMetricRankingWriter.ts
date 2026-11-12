@@ -116,7 +116,7 @@ function explanationItems(row: ContextualRankingRow) {
   ];
   if (row.percentile != null) {
     items.push(
-      `Better than ${row.percentile.toFixed(1)}% of other qualified peers after metric directionality is applied.`,
+      `Mid-rank percentile ${row.percentile.toFixed(1)} among qualified peers after metric directionality is applied (ties share the mid-rank).`,
     );
   }
   if (!row.minimumSampleMet) {

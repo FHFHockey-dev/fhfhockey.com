@@ -12,29 +12,34 @@ import classNames from "classnames";
 const UP_ARROW = "/pictures/arrow-up-green.png";
 const DOWN_ARROW = "/pictures/arrow-down-red.png";
 
+const formatSavePct = (value: number) =>
+  value >= 1 ? value.toFixed(3) : value.toFixed(3).slice(1);
+
 const SEASON_STATS_CONFIG = [
-  { key: "Record", label: "RECORD" },
+  { key: "Record", label: "RECORD", title: "Credited W-L-OTL" },
   { key: "GP", label: "GP" },
-  {
-    key: "SVPercentage",
-    label: "SV%",
-    format: (item: number) =>
-      item === 0 ? item.toFixed(3) : item.toFixed(3).slice(1)
-  },
+  { key: "SVPercentage", label: "SV%", format: formatSavePct },
   { key: "GAA", label: "GAA", format: (item: number) => item.toFixed(2) }
 ] as const;
 
 const LAST10_GP_STATS_CONFIG = [
-  { key: "Record", label: "RECORD" },
+  { key: "Record", label: "RECORD", title: "Credited W-L-OTL" },
   { key: "SV", label: "SV" },
-  {
-    key: "SVPercentage",
-    label: "SV%",
-    format: (item: number) =>
-      item === 0 ? item.toFixed(3) : item.toFixed(3).slice(1)
-  },
+  { key: "SVPercentage", label: "SV%", format: formatSavePct },
   { key: "GAA", label: "GAA", format: (item: number) => item.toFixed(2) }
 ] as const;
+
+/** Unknown stays unknown: a missing value shows a dash, never 0. */
+function displayStat(
+  stat: object,
+  value: string | number | null | undefined
+) {
+  if (value == null) return "—";
+  if (typeof value === "number" && "format" in stat) {
+    return (stat.format as (item: number) => string)(value);
+  }
+  return value;
+}
 
 export type LineChange = "promotion" | "demotion" | "static";
 
@@ -47,8 +52,8 @@ function GoalieCard({
   const names = playerName.split(" ");
 
   const color = useTeamColor();
-  // A backup with no starts would otherwise show 0-0-0 / .000 / 0.00 as if they were real stats.
-  const hasNoStarts = !rest.season?.GP && !rest.last10Games?.SV;
+  // A goalie with no appearances would otherwise show 0-0-0 / .000 / 0.00 as if they were real stats.
+  const hasNoAppearances = !rest.season?.GP;
   // Per-team ink that reads on the card fill (WCAG 4.5:1), e.g. EDM orange digits on navy fall back to white.
   const numberInk = readableInk(color.primary, [color.jersey, color.secondary]);
   const accentInk = readableInk(color.primary, [color.secondary, color.jersey]);
@@ -93,20 +98,23 @@ function GoalieCard({
           </div>
         ) : null}
       </div>
-      {hasNoStarts ? (
-        <p className={styles.noStarts}>No starts yet this season</p>
+      {hasNoAppearances ? (
+        <p className={styles.noStarts}>No appearances yet this season</p>
       ) : (
         <>
-          <CategoryTitle type="small">LAST 10</CategoryTitle>
+          <CategoryTitle type="small">LAST 10 GP</CategoryTitle>
           <ClientOnly>
             <section className={styles.stats}>
               {LAST10_GP_STATS_CONFIG.map((stat) => (
                 <div key={stat.key} className={styles.stat}>
-                  <div className={styles.label}>{stat.label}</div>
+                  <div
+                    className={styles.label}
+                    title={"title" in stat ? stat.title : undefined}
+                  >
+                    {stat.label}
+                  </div>
                   <div className={styles.value} style={{ color: accentInk }}>
-                    {"format" in stat
-                      ? stat.format(rest.last10Games[stat.key] || 0)
-                      : rest.last10Games[stat.key] || 0}
+                    {displayStat(stat, rest.last10Games?.[stat.key])}
                   </div>
                 </div>
               ))}
@@ -117,11 +125,14 @@ function GoalieCard({
             <section className={styles.stats}>
               {SEASON_STATS_CONFIG.map((stat) => (
                 <div key={stat.key} className={styles.stat}>
-                  <div className={styles.label}>{stat.label}</div>
+                  <div
+                    className={styles.label}
+                    title={"title" in stat ? stat.title : undefined}
+                  >
+                    {stat.label}
+                  </div>
                   <div className={styles.value} style={{ color: accentInk }}>
-                    {"format" in stat
-                      ? stat.format(rest.season[stat.key] || 0)
-                      : rest.season[stat.key] || 0}
+                    {displayStat(stat, rest.season?.[stat.key])}
                   </div>
                 </div>
               ))}

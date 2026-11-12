@@ -1,11 +1,18 @@
 import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { fetchRawStatsForAllStrengths } from "utils/fetchWigoRatingStats";
+import {
+  fetchRawStatsForAllStrengths,
+  fetchSkaterPositionGroups
+} from "utils/fetchWigoRatingStats";
 import {
   calculatePlayerRatings,
-  WIGO_RATING_MIN_COHORT_PEERS
+  WIGO_RATING_MIN_COHORT_PEERS,
+  WIGO_ST_MIN_MINUTES_DEFAULT,
+  wigoSpecialTeamsCohortOptions,
+  type WigoSpecialTeamsStrength
 } from "utils/calculateWigoRatings";
+import type { Strength } from "components/WiGO/types";
 
 import styles from "./PlayerRatingsDisplay.module.scss";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
@@ -17,6 +24,7 @@ interface PlayerRatingsProps {
   playerId: number | null | undefined;
   seasonId?: number | null;
   minGp: number;
+  stMinMinutes?: Record<WigoSpecialTeamsStrength, number>;
 }
 
 const COLOR_POINTS = {
@@ -59,7 +67,8 @@ const getColorForRating = (
 const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   playerId,
   seasonId,
-  minGp
+  minGp,
+  stMinMinutes = WIGO_ST_MIN_MINUTES_DEFAULT
 }) => {
   const seasonPending = useSeasonPendingMessage();
   const { data: rawStats, isLoading, error } = useQuery({
@@ -71,11 +80,28 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
     // attempt; a query retry would repeat all eight reads (S1, D-01).
     retry: false
   });
+  // PP/PK rank forwards and defensemen apart (decision 81). A failed position
+  // read leaves PP/PK unranked rather than pooled.
+  const positions = useQuery({
+    queryKey: ["wigoPositionGroups", seasonId],
+    queryFn: () => fetchSkaterPositionGroups(seasonId!),
+    enabled: !!playerId && !!seasonId,
+    ...WIGO_QUERY_DEFAULTS
+  });
+  const positionsSettled = !positions.isLoading;
   const ratings = useMemo(
-    () => playerId && rawStats
-      ? calculatePlayerRatings(playerId, rawStats, undefined, undefined, minGp, WIGO_RATING_MIN_COHORT_PEERS)
+    () => playerId && rawStats && positionsSettled
+      ? calculatePlayerRatings(
+          playerId,
+          rawStats,
+          undefined,
+          undefined,
+          minGp,
+          WIGO_RATING_MIN_COHORT_PEERS,
+          wigoSpecialTeamsCohortOptions(positions.data ?? null, stMinMinutes)
+        )
       : null,
-    [playerId, rawStats, minGp]
+    [playerId, rawStats, positionsSettled, positions.data, minGp, stMinMinutes]
   );
 
   const formatRating = (rating: number | null): string => {
@@ -102,7 +128,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   );
 
   const renderContent = () => {
-    if (isLoading)
+    if (isLoading || (rawStats && !positionsSettled))
       return <div className={styles.loading}>Loading ratings…</div>;
     if (error)
       return <div className={styles.error}>{WIGO_ERROR_MESSAGES.ratings}</div>;
@@ -117,8 +143,37 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
         </div>
       );
 
+    // A withheld rating says how much of its weight had data (A3); a partial
+    // weighted mean is never shown.
+    // PP/PK below the minutes floor, or with no position, say so (decision 81).
+    const specialTeamsNote = (strength: WigoSpecialTeamsStrength) => {
+      const side = strength === "pp" ? rawStats?.pp?.offense : rawStats?.pk?.defense;
+      const row = side?.find((p) => p.player_id === playerId);
+      const label = strength.toUpperCase();
+      if (positions.error || !positions.data?.has(playerId))
+        return `Unranked: position unknown, so there is no forward or defense ${label} cohort`;
+      const minutes = typeof row?.toi_seconds === "number" ? row.toi_seconds / 60 : null;
+      if (minutes === null || minutes < stMinMinutes[strength])
+        return `Insufficient sample: ${minutes === null ? "no" : Math.round(minutes)} ${label} min, below the provisional ${stMinMinutes[strength]}-min floor`;
+      return null;
+    };
+    const coverageNote = (type: "offense" | "defense", strength: Strength) => {
+      if (strength === "pp" || strength === "pk") {
+        const floorNote = specialTeamsNote(strength);
+        if (floorNote) return floorNote;
+      }
+      const coverage = ratings.coverage?.[type]?.[strength];
+      if (!coverage || coverage.available === coverage.total) return null;
+      return `Insufficient data: ${coverage.available} of ${coverage.total} weight units have a percentile`;
+    };
     // The visible value and labeled bar share the same 0–100 rating; missing data has no meter.
-    const renderBox = (family: string, label: string, rating: number | null, isAll = false) => {
+    const renderBox = (
+      family: string,
+      label: string,
+      rating: number | null,
+      isAll = false,
+      note: string | null = null
+    ) => {
       const { color } = getColorForRating(rating);
       const fill = rating == null || isNaN(rating) ? 0 : Math.max(0, Math.min(100, rating));
       return (
@@ -140,8 +195,11 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
               />
             )}
           </span>
-          {isAll ? renderAllValue(rating, {}) : (
-            <span className={styles.ratingValue}>{formatRating(rating)}</span>
+          {isAll && (asEmpty || !note) ? renderAllValue(rating, {}) : (
+            <span className={styles.ratingValue} title={rating === null && note ? note : undefined}>
+              {formatRating(rating)}
+              {rating === null && note && <span className={styles.visuallyHidden}>: {note}</span>}
+            </span>
           )}
         </div>
       );
@@ -153,9 +211,9 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Offense</h3>
           <div className={styles.ratingsBoxes}>
-            {renderBox("Offense", "All", ratings.offense.as, true)}
-            {renderBox("Offense", "Even", ratings.offense.es)}
-            {renderBox("Offense", "PP", ratings.offense.pp)}
+            {renderBox("Offense", "All", ratings.offense.as, true, coverageNote("offense", "as"))}
+            {renderBox("Offense", "Even", ratings.offense.es, false, coverageNote("offense", "es"))}
+            {renderBox("Offense", "PP", ratings.offense.pp, false, coverageNote("offense", "pp"))}
           </div>
         </div>
 
@@ -171,9 +229,9 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Defense</h3>
           <div className={styles.ratingsBoxes}>
-            {renderBox("Defense", "All", ratings.defense.as, true)}
-            {renderBox("Defense", "Even", ratings.defense.es)}
-            {renderBox("Defense", "PK", ratings.defense.pk)}
+            {renderBox("Defense", "All", ratings.defense.as, true, coverageNote("defense", "as"))}
+            {renderBox("Defense", "Even", ratings.defense.es, false, coverageNote("defense", "es"))}
+            {renderBox("Defense", "PK", ratings.defense.pk, false, coverageNote("defense", "pk"))}
           </div>
         </div>
       </div>
@@ -182,6 +240,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
           {asEmptyReason}: All shows “-”, and Overall uses Even and Special.
         </p>
       )}
+
       </div>
     );
   };

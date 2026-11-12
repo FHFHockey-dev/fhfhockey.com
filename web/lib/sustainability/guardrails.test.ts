@@ -84,4 +84,29 @@ describe("sustainability guardrails", () => {
     expect(qualifiedLow.s100).toBe(0);
     expect(qualifiedLow.warnings).not.toContain("guardrail_invalid_exact_0");
   });
+  it("blocks a score whose luck or skill inputs are all missing (BC W1-9 A2)", () => {
+    const allMissing = applySustainabilityScoreGuardrails({
+      sRaw: 0,
+      components: {
+        warnings: [
+          "missing_window_z_shp", "missing_window_z_oishp", "missing_window_z_ipp",
+          "missing_window_z_ppshp", "missing_skill_window_ixg60",
+          "missing_skill_window_icf60", "missing_skill_window_hdcf60"
+        ],
+        fallbackFlags: {}
+      }
+    });
+    expect(allMissing.state).toBe("blocked");
+    expect(allMissing.warnings).toContain("guardrail_insufficient_inputs");
+
+    const partial = applySustainabilityScoreGuardrails({
+      sRaw: 0.4,
+      components: { warnings: ["missing_window_z_ppshp"], fallbackFlags: {} }
+    });
+    expect(partial.state).toBe("degraded");
+    expect(partial.components.inputCoverage).toEqual({ luck: 3, luckTotal: 4, skill: 3, skillTotal: 3 });
+
+    // Legacy rows that never recorded coverage are not reinterpreted.
+    expect(applySustainabilityScoreGuardrails({ sRaw: 0.4, components: {} }).state).toBe("ok");
+  });
 });

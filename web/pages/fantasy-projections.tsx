@@ -11,16 +11,18 @@ import { useAuth } from "contexts/AuthProviderContext";
 import {
   FANTASY_PROJECTION_BETA_LABEL,
   FANTASY_PROJECTION_SEASON_ID,
-  expandFantasyProjectionSummary,
-  fantasyProjectionTotal,
+  expandFantasyProjectionSummaryNullable,
+  fantasyProjectionTotalNullable,
+  nullableProjectionNumber,
   GOALIE_SCORING_TARGETS,
   GOALIE_ADVANCED_V5_PRIMITIVE_TARGETS,
   SKATER_SCORING_TARGETS,
   SKATER_ADVANCED_V5_PRIMITIVE_TARGETS,
-  type FantasyProjectionPlayerDetailResponse,
   type FantasyProjectionCompactPlayersResponse,
-  type FantasyProjectionPlayer,
-  type FantasyProjectionPlayersResponse,
+  type FantasyProjectionCompactPlayersResponseV2,
+  type FantasyProjectionNullablePlayer,
+  type FantasyProjectionNullablePlayersResponse,
+  type NullableProjectionValues,
   type FantasyProjectionRelease,
   type FantasyProjectionTeam,
   type FantasyProjectionTeamsResponse,
@@ -178,6 +180,21 @@ const GOALIE_COLUMNS = [
 ];
 
 type PlayerMode = "all" | "skater" | "goalie";
+// Unknown projection values are null (or absent), never 0 (W3-5 F6/PR3).
+type FantasyProjectionPlayer = FantasyProjectionNullablePlayer;
+type FantasyProjectionPlayerDetailResponse = {
+  success: true;
+  betaLabel: string;
+  release: FantasyProjectionRelease;
+  player: FantasyProjectionPlayer;
+  releaseHistory: Array<{
+    view: FantasyProjectionView;
+    releaseNumber: number;
+    issuedAt: string;
+    publishedValues: NullableProjectionValues;
+    teamAbbreviation: string | null;
+  }>;
+};
 type ProductView = "players" | "teams";
 type ColumnPreset = "standard" | "fantasy" | "deployment" | "advanced" | "custom";
 
@@ -239,7 +256,15 @@ function confidenceLabel(confidence: number): string {
   return "Low";
 }
 
+/** Decision 122: a post-freeze newcomer carries a labelled population prior. */
+function isPopulationPrior(player: FantasyProjectionPlayer): boolean {
+  return player.fallbackFlags.includes("population_prior") ||
+    player.fallbackFlags.includes("runtime_new_identity_population_prior");
+}
+
 function roleLabel(player: FantasyProjectionPlayer): string {
+  // A population prior has no role evidence, so no role is shown.
+  if (isPopulationPrior(player)) return "Role unknown";
   const role = player.deployment.mostLikelyRole;
   if (!role) return "Role pending";
   const labels: Record<string, string> = {
@@ -266,11 +291,14 @@ function ProjectionInterval({
   player: FantasyProjectionPlayer;
   target: string;
 }) {
-  const mean = numberValue(player.publishedValues[target]);
-  const hasInterval = Number.isFinite(Number(player.p10[target])) && Number.isFinite(Number(player.p90[target]));
-  const low = numberValue(player.p10[target]);
-  const high = numberValue(player.p90[target]);
-  if (!hasInterval) {
+  const mean = nullableProjectionNumber(player.publishedValues[target]);
+  const low = nullableProjectionNumber(player.p10[target]);
+  const high = nullableProjectionNumber(player.p90[target]);
+  if (mean === null) {
+    return <span className={styles.interval} title="Projection unknown">—</span>;
+  }
+  // Null, absent or reversed bounds: no interval is shown (never a 0-width band).
+  if (low === null || high === null || low > high) {
     return <span className={styles.interval}>{formatValue(target, mean)}</span>;
   }
   const label = `${STAT_LABELS[target] ?? target}: ${formatValue(target, mean)}; 10th to 90th percentile ${formatValue(target, low)} to ${formatValue(target, high)}`;
@@ -569,11 +597,42 @@ function FantraxProjectionLeaguePicker({
   );
 }
 
+/** Fantasy total or category score; null when any weighted input is unknown. */
+function playerTotal(
+  player: FantasyProjectionPlayer,
+  scoringSettings: FantasyProjectionScoringSettingsV2,
+  categoryScores: Map<string, number>,
+): number | null {
+  if (scoringSettings.leagueType === "categories") {
+    // An absent category score is unknown (L13 ticket), not 0.
+    return categoryScores.get(player.id) ?? null;
+  }
+  return fantasyProjectionTotalNullable(
+    player.publishedValues,
+    player.population === "goalie"
+      ? scoringSettings.goaliePoints
+      : scoringSettings.skaterPoints,
+  ).value;
+}
+
+/** Sort comparator that always places unknown values last. */
+function compareKnownFirst(
+  left: number | null,
+  right: number | null,
+  direction: 1 | -1,
+): number {
+  if (left === null || right === null) {
+    return left === right ? 0 : left === null ? 1 : -1;
+  }
+  return (left - right) * direction;
+}
+
 function playerBadges(player: FantasyProjectionPlayer): string[] {
   const badges: string[] = [];
   if (player.rookieProfile.rookie) badges.push("Rookie");
   if (player.poolStatus === "active_prospect") badges.push("Prospect");
-  if (player.fallbackFlags.includes("prior_based_projection")) badges.push("Prior-based");
+  if (isPopulationPrior(player)) badges.push("Population prior");
+  else if (player.fallbackFlags.includes("prior_based_projection")) badges.push("Prior-based");
   if (player.adjusted) badges.push("Adjusted");
   if (player.fallbackFlags.some((flag) => flag.includes("roster_changed"))) badges.push("Roster changed");
   if (
@@ -671,15 +730,7 @@ function PlayerProjectionTable({
         </thead>
         <tbody>
           {players.map((player) => {
-            const total =
-              scoringSettings.leagueType === "categories"
-                ? categoryScores.get(player.id) ?? 0
-                : fantasyProjectionTotal(
-                    player.publishedValues,
-                    player.population === "goalie"
-                      ? scoringSettings.goaliePoints
-                      : scoringSettings.skaterPoints,
-                  );
+            const total = playerTotal(player, scoringSettings, categoryScores);
             const rating = ratingValue(player);
             return (
               <tr key={player.id} className={styles.dataRow}>
@@ -698,12 +749,16 @@ function PlayerProjectionTable({
                 <td
                   className={styles.total}
                   title={
-                    scoringSettings.leagueType === "categories"
-                      ? "FHFH projected category-value composite"
-                      : undefined
+                    total === null
+                      ? "Unknown: a scored projection is missing"
+                      : scoringSettings.leagueType === "categories"
+                        ? "FHFH projected category-value composite"
+                        : undefined
                   }
                 >
-                  {total.toFixed(scoringSettings.leagueType === "categories" ? 2 : 1)}
+                  {total === null
+                    ? "—"
+                    : total.toFixed(scoringSettings.leagueType === "categories" ? 2 : 1)}
                 </td>
                 <td>
                   <strong>{rating.toFixed(0)}</strong>
@@ -808,25 +863,24 @@ function TeamProjectionTable({
             </div>
           ) : null}
           <div className={styles.lines}>
-            <h3>Projected deployment</h3>
+            {/* Decision 123: an expected-TOI sort, not inferred line combinations. */}
+            <h3>Projected ice-time order</h3>
             {Object.keys(team.deployment).length === 0 ? (
-              <p>Line and goalie-order review pending.</p>
+              <p>Ice-time order pending.</p>
             ) : (
-              <dl>
-                {(team.deployment.forwardLines as unknown[] | undefined)?.map((line, index) => (
-                  <div key={`F${index + 1}`}><dt>Line {index + 1}</dt><dd>{names(line)}</dd></div>
-                ))}
-                {(team.deployment.defensePairs as unknown[] | undefined)?.map((pair, index) => (
-                  <div key={`D${index + 1}`}><dt>Pair {index + 1}</dt><dd>{names(pair)}</dd></div>
-                ))}
-                {(team.deployment.powerPlayUnits as unknown[] | undefined)?.map((unit, index) => (
-                  <div key={`PP${index + 1}`}><dt>PP{index + 1}</dt><dd>{names(unit)}</dd></div>
-                ))}
-                {(team.deployment.penaltyKillUnits as unknown[] | undefined)?.map((unit, index) => (
-                  <div key={`PK${index + 1}`}><dt>PK{index + 1}</dt><dd>{names(unit)}</dd></div>
-                ))}
-                <div><dt>Goalies</dt><dd>{names(team.deployment.goalieOrder)}</dd></div>
-              </dl>
+              <>
+                <p>Skaters ranked by projected ice time, not line combinations.</p>
+                <dl>
+                  {(team.deployment.forwardLines as unknown[] | undefined)?.map((group, index) => (
+                    <div key={`F${index + 1}`}><dt>Forwards {index * 3 + 1}–{index * 3 + 3}</dt><dd>{names(group)}</dd></div>
+                  ))}
+                  {(team.deployment.defensePairs as unknown[] | undefined)?.map((group, index) => (
+                    <div key={`D${index + 1}`}><dt>Defense {index * 2 + 1}–{index * 2 + 2}</dt><dd>{names(group)}</dd></div>
+                  ))}
+                  <div><dt>Goalie order</dt><dd>{names(team.deployment.goalieOrder)}</dd></div>
+                </dl>
+                <p>Power-play and penalty-kill units are withheld until strength-specific ice time is modelled.</p>
+              </>
             )}
           </div>
           {team.adjusted ? <span className={styles.adjusted}>Adjusted</span> : null}
@@ -971,10 +1025,12 @@ export default function FantasyProjectionsPage() {
           const payload = await response.json();
           if (!response.ok || !payload.success) throw new Error(payload.message ?? "Unable to load player projections.");
           return payload.encoding
-            ? expandFantasyProjectionSummary(
-                payload as FantasyProjectionCompactPlayersResponse,
+            ? expandFantasyProjectionSummaryNullable(
+                payload as
+                  | FantasyProjectionCompactPlayersResponse
+                  | FantasyProjectionCompactPlayersResponseV2,
               )
-            : payload as FantasyProjectionPlayersResponse;
+            : payload as FantasyProjectionNullablePlayersResponse;
         });
         const teamsRequest =
           view === "ros"
@@ -1084,35 +1140,20 @@ export default function FantasyProjectionsPage() {
     });
     const direction = sortDirection === "asc" ? 1 : -1;
     return filtered.sort((left, right) => {
-      let leftValue: string | number;
-      let rightValue: string | number;
       if (sortKey === "player") {
-        leftValue = left.playerName;
-        rightValue = right.playerName;
-      } else if (sortKey === "team") {
-        leftValue = left.teamAbbreviation ?? "ZZZ";
-        rightValue = right.teamAbbreviation ?? "ZZZ";
-      } else if (sortKey === "position") {
-        leftValue = left.position;
-        rightValue = right.position;
-      } else if (sortKey === "fantasyTotal") {
-        if (scoringSettings.leagueType === "categories") {
-          leftValue = categoryScores.get(left.id) ?? 0;
-          rightValue = categoryScores.get(right.id) ?? 0;
-        } else {
-          leftValue = fantasyProjectionTotal(
-            left.publishedValues,
-            left.population === "goalie"
-              ? scoringSettings.goaliePoints
-              : scoringSettings.skaterPoints,
-          );
-          rightValue = fantasyProjectionTotal(
-            right.publishedValues,
-            right.population === "goalie"
-              ? scoringSettings.goaliePoints
-              : scoringSettings.skaterPoints,
-          );
-        }
+        return left.playerName.localeCompare(right.playerName) * direction;
+      }
+      if (sortKey === "team") {
+        return (left.teamAbbreviation ?? "ZZZ").localeCompare(right.teamAbbreviation ?? "ZZZ") * direction;
+      }
+      if (sortKey === "position") {
+        return left.position.localeCompare(right.position) * direction;
+      }
+      let leftValue: number | null;
+      let rightValue: number | null;
+      if (sortKey === "fantasyTotal") {
+        leftValue = playerTotal(left, scoringSettings, categoryScores);
+        rightValue = playerTotal(right, scoringSettings, categoryScores);
       } else if (sortKey === "rating") {
         leftValue = ratingValue(left);
         rightValue = ratingValue(right);
@@ -1120,13 +1161,11 @@ export default function FantasyProjectionsPage() {
         leftValue = numberValue(left.deployment.confidence);
         rightValue = numberValue(right.deployment.confidence);
       } else {
-        leftValue = numberValue(left.publishedValues[allModeTarget(left, sortKey)]);
-        rightValue = numberValue(right.publishedValues[allModeTarget(right, sortKey)]);
+        leftValue = nullableProjectionNumber(left.publishedValues[allModeTarget(left, sortKey)]);
+        rightValue = nullableProjectionNumber(right.publishedValues[allModeTarget(right, sortKey)]);
       }
-      if (typeof leftValue === "string" && typeof rightValue === "string") {
-        return leftValue.localeCompare(rightValue) * direction;
-      }
-      return (Number(leftValue) - Number(rightValue)) * direction;
+      // Unknown values sort last in either direction (L13 ticket, rule 5).
+      return compareKnownFirst(leftValue, rightValue, direction);
     });
   }, [
     deferredSearch,
@@ -1432,7 +1471,7 @@ export default function FantasyProjectionsPage() {
             disabled={view === "ros"}
             onClick={() => setProductView("teams")}
           >
-            Team Ratings &amp; Lines
+            Team Ratings &amp; Ice Time
           </button>
         </nav>
 
@@ -1646,10 +1685,16 @@ export default function FantasyProjectionsPage() {
               {playerDetail ? (() => {
                 const adjustmentEntries = Object.entries(
                   playerDetail.player.adjustmentDelta,
-                ).filter(([, delta]) => Math.abs(numberValue(delta)) > 1e-9);
-                const deploymentFamilies = Object.entries(
-                  playerDetail.player.deployment.roleProbabilities ?? {},
-                );
+                ).filter(([, delta]) => {
+                  const known = nullableProjectionNumber(delta);
+                  return known !== null && Math.abs(known) > 1e-9;
+                });
+                // Decision 122: no role odds for a population prior.
+                const deploymentFamilies = isPopulationPrior(playerDetail.player)
+                  ? []
+                  : Object.entries(
+                      playerDetail.player.deployment.roleProbabilities ?? {},
+                    );
                 const provenanceEntries = Object.entries(
                   playerDetail.player.provenance,
                 ).filter(([, value]) =>
@@ -1670,7 +1715,17 @@ export default function FantasyProjectionsPage() {
                     {playerBadges(playerDetail.player).map((badge) => <span key={badge} className={styles.badge}>{badge}</span>)}
                   </div>
                   <p>{roleLabel(playerDetail.player)} · {confidenceLabel(playerDetail.player.rosterConfidence)} roster confidence</p>
-                  {playerDetail.player.rookieProfile.rookie ? (
+                  {isPopulationPrior(playerDetail.player) ? (
+                    <section>
+                      <h3>Population prior</h3>
+                      <p>
+                        This player was added after the model froze, so the line is a heuristic
+                        population prior built from rookie-cohort medians, not a player-specific
+                        forecast. Stats the cohort cannot support are left blank, and no role odds
+                        are shown.
+                      </p>
+                    </section>
+                  ) : playerDetail.player.rookieProfile.rookie ? (
                     <section>
                       <h3>Rookie translation</h3>
                       <p>
@@ -1707,14 +1762,15 @@ export default function FantasyProjectionsPage() {
                   <section>
                     <h3>Deployment and opportunity</h3>
                     <dl className={styles.detailStats}>
-                      <div><dt>Expected games</dt><dd>{playerDetail.player.expectedGames.toFixed(1)}</dd></div>
+                      <div><dt>Expected games</dt><dd>{playerDetail.player.expectedGames == null ? "Unknown" : playerDetail.player.expectedGames.toFixed(1)}</dd></div>
                       {playerDetail.player.expectedStarts == null ? null : (
                         <div><dt>Expected starts</dt><dd>{playerDetail.player.expectedStarts.toFixed(1)}</dd></div>
                       )}
                       {Object.entries(playerDetail.player.expectedToi).map(([key, value]) => {
                         const target = EXPECTED_TOI_TARGETS[key] ?? key;
+                        const known = nullableProjectionNumber(value);
                         return (
-                          <div key={key}><dt>{columnLabel(target)}</dt><dd>{formatValue(target, numberValue(value))}</dd></div>
+                          <div key={key}><dt>{columnLabel(target)}</dt><dd>{known === null ? "Unknown" : formatValue(target, known)}</dd></div>
                         );
                       })}
                     </dl>
@@ -1743,17 +1799,22 @@ export default function FantasyProjectionsPage() {
                     <h3>Model and editorial comparison</h3>
                     {adjustmentEntries.length ? (
                       <dl className={styles.detailStats}>
-                        {adjustmentEntries.map(([target, delta]) => (
-                          <div key={target}>
-                            <dt>{columnLabel(target)}</dt>
-                            <dd>
-                              Model {formatValue(target, numberValue(playerDetail.player.modelValues[target]))}
-                              {" → "}
-                              published {formatValue(target, numberValue(playerDetail.player.publishedValues[target]))}
-                              {` (${numberValue(delta) >= 0 ? "+" : ""}${formatValue(target, numberValue(delta))})`}
-                            </dd>
-                          </div>
-                        ))}
+                        {adjustmentEntries.map(([target, delta]) => {
+                          const model = nullableProjectionNumber(playerDetail.player.modelValues[target]);
+                          const published = nullableProjectionNumber(playerDetail.player.publishedValues[target]);
+                          const change = numberValue(delta);
+                          return (
+                            <div key={target}>
+                              <dt>{columnLabel(target)}</dt>
+                              <dd>
+                                Model {model === null ? "unknown" : formatValue(target, model)}
+                                {" → "}
+                                published {published === null ? "unknown" : formatValue(target, published)}
+                                {` (${change >= 0 ? "+" : ""}${formatValue(target, change)})`}
+                              </dd>
+                            </div>
+                          );
+                        })}
                       </dl>
                     ) : <p>No editorial changes in this release.</p>}
                   </section>
@@ -1766,7 +1827,7 @@ export default function FantasyProjectionsPage() {
                           {history.teamAbbreviation ? ` · ${history.teamAbbreviation}` : ""}
                           {history.publishedValues.POINTS == null
                             ? ""
-                            : ` · ${formatValue("POINTS", numberValue(history.publishedValues.POINTS))} P`}
+                            : ` · ${formatValue("POINTS", history.publishedValues.POINTS)} P`}
                         </li>
                       ))}
                     </ul>

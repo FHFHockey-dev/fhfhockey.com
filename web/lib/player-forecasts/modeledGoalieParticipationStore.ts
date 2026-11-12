@@ -118,7 +118,8 @@ async function loadGoalieParticipation(db: SupabaseClient<any>, seasonId: number
         const clocks = { issuedAt: payload.issuedAt, expiresAt: payload.expiresAt };
         const rebuilt = mode === "rolling_start" ? buildRollingWindowGoalieStartReceipt(entry.input as RollingWindowGoalieStartInput, clocks)
           : mode === "rolling_appearance" ? buildRollingWindowGoalieParticipationReceipt(entry.input as RollingWindowGoalieParticipationInput, clocks)
-          : mode === "roster_start" ? buildRosterObservationGoalieStartReceipt(entry.input as RosterObservationGoalieStartInput, clocks)
+          : mode === "roster_start" ? buildRosterObservationGoalieStartReceipt(entry.input as RosterObservationGoalieStartInput, clocks,
+            (entry.receipt as { version?: string }).version === "modeled-goalie-roster-observation-start-v1" ? "v1" : "v2")
           : mode === "roster_appearance" ? buildRosterObservationGoalieParticipationReceipt(entry.input as RosterObservationGoalieParticipationInput, clocks)
           : mode === "frozen_start" ? buildFrozenWindowGoalieStartReceipt(entry.input as FrozenWindowGoalieStartInput, clocks)
           : frozen ? buildFrozenWindowGoalieParticipationReceipt(entry.input as FrozenWindowGoalieParticipationInput, clocks)

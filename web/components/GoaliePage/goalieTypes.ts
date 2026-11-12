@@ -100,8 +100,8 @@ export interface GoalieRanking extends GoalieInfo {
   weeklyRecordPatterns?: GoalieWeeklyRecordPattern[];
   percentAcceptableWeeks?: number;
   percentGoodWeeks?: number;
-  wowVariance?: number; // StdDev of Weekly Points (vs League Avg)
-  gogVariance?: number; // StdDev of Game Fantasy Points (vs Goalie's Avg fPts) **<- NEW MEANING**
+  wowVariance?: number | null; // StdDev of Weekly Points (vs League Avg); null below two weeks
+  gogVariance?: number | null; // null below two games. StdDev of Game Fantasy Points (vs Goalie's Avg fPts) **<- NEW MEANING**
   // Aggregated stats
   totalGamesPlayed: number;
   totalGamesStarted: number;
@@ -124,6 +124,8 @@ export interface GoalieRanking extends GoalieInfo {
   averagePercentileRank?: number; // Average of all calculated percentiles
   valueTier?: GoalieValueTier;
   valueTierScore?: number;
+  /** No tier: below the value-tier start floor or a component is unknown (decision 98). */
+  valueTierInsufficientSample?: boolean;
 }
 
 // Represents a week interval

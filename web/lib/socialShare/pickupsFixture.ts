@@ -107,7 +107,7 @@ export function fictionalPlayerRecent(players: { nhlId: number; group: "F" | "D"
     if (player.group === "G") {
       for (let game = 0; game < 5; game++) {
         const shots = 24 + ((seed + game * 7) % 12), goals = (seed + game) % 4;
-        goalieGames.push({ goalie_id: player.nhlId, date: day(1 + game * 2), season_id: season, games_played: 1, wins: goals <= 2 ? 1 : 0, saves: shots - goals, shots_against: shots, goals_against: goals, quality_start: goals <= 2 ? 1 : 0, shutouts: goals === 0 ? 1 : 0 });
+        goalieGames.push({ goalie_id: player.nhlId, date: day(1 + game * 2), season_id: season, games_played: 1, games_started: 1, wins: goals <= 2 ? 1 : 0, losses: goals <= 2 ? 0 : 1, ot_losses: 0, saves: shots - goals, shots_against: shots, goals_against: goals, quality_start: goals <= 2 ? 1 : 0, shutouts: goals === 0 ? 1 : 0 });
       }
     } else {
       const goals = seed % 4, assists = (seed * 3) % 5, points = goals + assists;
@@ -128,5 +128,6 @@ export function fictionalPlayerRecent(players: { nhlId: number; group: "F" | "D"
         line_combo_slot: 1 + (seed % (player.group === "D" ? 3 : 4)), pp_unit: seed % 5 === 0 ? null : 1 + (seed % 2) });
     }
   }
-  return { rolling, goalieGames };
+  // A fictional league SV% for Vollman Quality Starts.
+  return { rolling, goalieGames, leagueSavePct: 0.9 };
 }

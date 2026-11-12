@@ -15,6 +15,7 @@ import styles from "styles/TeamStatsPage.module.scss";
 import * as d3 from "d3";
 import { hexbin as d3Hexbin, HexbinBin } from "d3-hexbin";
 import { teamsInfo } from "lib/teamsInfo";
+import { shotToHalfRinkSvgForShot } from "./shotMapTransform";
 
 const DEFAULT_EVENT_TYPES = ["goal", "shot-on-goal"];
 const DEFAULT_GAME_TYPES = [GAME_TYPES.REGULAR_SEASON];
@@ -387,39 +388,9 @@ function InnerShotVisualization({
     // Calculate event statistics
     setStats(shotSummary(shotData));
 
-    // For vertical orientation, we swap x and y coordinates and transform accordingly
-    // For half-rink, we want all shots attacking toward the bottom (offensive zone at the bottom)
-    // For both team and opponent, mirror as needed so that offensive zone is always at the bottom
-    const transformCoords = (x: number, y: number): [number, number] => {
-      if (side === "team") {
-        // Team shots: always show as attacking down
-        if (x > 0) {
-          return [-y, -x];
-        } else {
-          return [-y, x];
-        }
-      } else {
-        // Opponent shots: mirror so their offensive zone is at the TOP
-        let tx, ty;
-        if (x < 0) {
-          tx = -y;
-          ty = -x;
-        } else {
-          tx = -y;
-          ty = x;
-        }
-        // Flip horizontally (mirror x axis)
-        tx = -tx;
-        // Flip vertically (mirror y axis for top half)
-        ty = -ty;
-        return [tx, ty];
-      }
-    };
-
-    // Functions to map coordinates to SVG space
-    const mapXToSvg = (x: number): number => x + 42.5;
-    const mapYToSvg = (y: number): number => y + 100;
-
+    // Team and opponent shots share one placement: the net each shot attacked
+    // (from hometeamdefendingside) sits at the top of the half rink and the
+    // shooter's left stays on the viewer's left.
     // Prepare shot data points in [x, y] SVG space
     const points: [number, number][] = shotData
       .filter(
@@ -430,8 +401,7 @@ function InnerShotVisualization({
           typeof shot.ycoord === "number"
       )
       .map((shot) => {
-        const [tx, ty] = transformCoords(shot.xcoord, shot.ycoord);
-        return [mapXToSvg(tx), mapYToSvg(ty)];
+        return shotToHalfRinkSvgForShot(shot);
       });
 
     // Create a hexbin generator with even smaller hexagons

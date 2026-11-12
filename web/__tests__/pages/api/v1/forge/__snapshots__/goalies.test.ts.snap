@@ -39,9 +39,11 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
   "data": [
     {
       "blowup_risk": 0.22,
+      "conditioning": "team_slot_mixture",
       "confidence_tier": "MEDIUM",
       "goalie_id": 8474593,
       "goalie_name": "Jacob Markstrom",
+      "is_projected_starter": true,
       "modeled_save_pct": 0.892,
       "opponent_team_abbreviation": "NYI",
       "opponent_team_id": 2,
@@ -50,14 +52,18 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
       "proj_saves": 24.1,
       "proj_shots_against": 27.2,
       "proj_shutout_prob": 0.05,
-      "proj_win_prob": 0.53,
+      "proj_win_prob": null,
       "quality_tier": "ABOVE_AVERAGE",
       "recommendation": "START",
       "reliability_tier": "MODERATE",
+      "relief_basis": null,
+      "row_basis": "team_goalie_slot_legacy",
+      "start_probability_status": null,
       "starter_probability": 0.61,
       "team_abbreviation": "NJD",
       "team_id": 1,
       "team_name": "Devils",
+      "team_win_prob": null,
       "uncertainty": {
         "model": {
           "blowup_risk": 0.22,
@@ -76,6 +82,7 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
           "volatility_index": 1.18,
         },
       },
+      "unconditional": null,
       "volatility_index": 1.18,
     },
   ],
@@ -91,7 +98,9 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
       "candidateRunId": null,
       "enabled": true,
     },
-    "notes": [],
+    "notes": [
+      "1 row(s) predate per-candidate goalie rows: each is the team's goalie slot under the projected starter, with its win withheld.",
+    ],
     "requested": {
       "date": "2026-02-07",
       "rowCount": 1,
@@ -149,7 +158,9 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
     "activeDataDate": "2026-02-07",
     "blockingIssueCount": 0,
     "fallbackApplied": false,
-    "notes": [],
+    "notes": [
+      "1 row(s) predate per-candidate goalie rows: each is the team's goalie slot under the projected starter, with its win withheld.",
+    ],
     "requestedDate": "2026-02-07",
     "rowCounts": {
       "requested": 1,

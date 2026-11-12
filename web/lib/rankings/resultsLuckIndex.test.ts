@@ -28,6 +28,7 @@ function aggregate(
     gamesPlayed: 5,
     toiSeconds: null,
     sourceFields: [],
+    windowMembership: null,
     ...patch,
   };
 }

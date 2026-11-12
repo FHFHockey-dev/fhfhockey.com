@@ -1,4 +1,4 @@
-import type { ContributionAllowedUses, ContributionExclusion, ContributionParticipation, ContributionSource, ForecastCalendarPolicy, ResolvedContribution } from "../player-forecasts/contributions";
+import type { ContributionAllowedUses, ContributionExclusion, ContributionParticipation, ContributionSource, AnyForecastCalendarPolicy, ResolvedContribution } from "../player-forecasts/contributions";
 import type { RsoTargetUseBinding, RsoUsePolicyManifest } from "../player-forecasts/rsoUsePolicy";
 import type { GameExpectationPowerPlayRole } from "../player-forecasts/gameExpectations";
 export type ForecastExclusionReason = ContributionExclusion | "canary_excluded" | "discovery_timeout"
@@ -273,6 +273,15 @@ export type PlanEvaluation = {
   /** Internal lineup score; not approved projected totals or an acquisition comparison. */
   assignmentValue?: number | null;
   comparisonEligible?: boolean;
+  /** Points leagues (W1 P0 #27, TJ 2026-11-12): the lineup's known part and the active player-games whose value is
+   * unknown (`playerId:gameId`, sorted). Two plans compare on the known part only when their unknown active plays are
+   * identical and the unknown-valued roster players (`unknownPlayerIds`, active or not) are the same, so the same
+   * unknown contribution cancels; read it through `comparablePointsDelta`. Null when even the
+   * known part can't be priced. */
+  knownComparison?: { knownValue: number; unknownActive: string[]; unknownPlayerIds: string[] } | null;
+  /** The per-player evidence gate (decisions 3, 47): roster players with a remaining game in range whose value is
+   * unknown (any play lacking a priced, comparison-approved forecast), sorted. Never automatic drops. */
+  valueUnknownPlayerIds?: string[];
   /** Exact sanitized resolved inputs used for these assignments. */
   forecastInputs?: GameForecast[];
   forecastManifestId?: string;
@@ -306,7 +315,8 @@ export type PlanEvaluation = {
   limitations: string[];
 };
 /** One ranked player for a streaming leg's day window. `points` is projected fantasy points over the games he would
- * start in it; options rank by the per-game average of that projection and league-scored FPts/G over the last 10 played. */
+ * start in it; options rank by that projection alone (decisions 2, 48). `recentPointsPerGame` (league-scored FPts/G over the
+ * last 10 played) is context only and never orders options. */
 export type StreamingOption = { playerId: string; games: number; gameDates: string[]; points: number | null;
   recentPointsPerGame: number | null; recentGames: number | null;
   /** A conditional waiver claim: the league date he clears waivers. Absent for free agents. */
@@ -317,7 +327,8 @@ export type StreamingLeg = { spot: number; step: PlanStep; actionDate: string; s
 /** A day-by-day add chain over one or two roster spots, certified by the plan evaluator. */
 export type StreamingChain = { spots: 1 | 2; legs: StreamingLeg[]; steps: PlanStep[]; evaluation: PlanEvaluation;
   netGames: number; netPoints: number | null;
-  /** Net blended FPts (the average of projected FPts and last-10 FPts/G per game) that ranks chains; null when unknown. */
+  /** Net projected FPts over the certified lineup's remaining assignments that ranks chains (no recent-form blend,
+   * decisions 2, 48); null when any is unknown. */
   netScore?: number | null; addsUsed: number; addsAvailable: number };
 /** The league's goalie-start minimum as the no-move plan stands: projected starts (credited plus expected) and whether it is met.
  * `cover` is the manager's goalie coverage choice: only then do chains that meet it rank first. */
@@ -368,7 +379,7 @@ export type ForecastManifest = {
   version: "planning-forecasts-v1";
   rsoUsePolicy?: RsoUsePolicyManifest;
   /** Omitted only for retained legacy snapshots. */
-  calendarPolicy?: ForecastCalendarPolicy;
+  calendarPolicy?: AnyForecastCalendarPolicy;
   /** Opaque accepted-event receipt hash; null means no verified receipt set. */
   acceptedNewsRevision?: string | null;
   id: string;

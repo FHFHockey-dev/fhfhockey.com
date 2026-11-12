@@ -1,6 +1,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\utils\calcWeekScore.ts
 
-export const WEEK_SCORE_VERSION = "schedule-v2-crowding-0.25";
+/** v3: matchup odds withheld (decision 64); the matchup term is 0. */
+export const WEEK_SCORE_VERSION = "schedule-v3-odds-withheld-crowding-0.25";
 
 /** One centered adjustment for the entire included horizon, not per game. */
 export function calculateSlateCrowding(
@@ -23,7 +24,11 @@ export function calculateSlateCrowding(
   };
 }
 
-/** Interim win-odds heuristic: percentages, with unknown games contributing zero. */
+/**
+ * Interim win-odds heuristic: percentages, with unknown games contributing zero.
+ * Game Grid odds are withheld (decision 64), so served callers pass nulls and
+ * this term is 0; any future odds must stay in [0, 100] and complementary.
+ */
 export function calculateMatchupBonus(
   winOddsList: readonly (number | null | undefined)[],
   totalTeamGames: number

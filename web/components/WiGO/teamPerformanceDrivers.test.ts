@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { midRankPercentile, thirtyTwoTeamDriverFixture } from "./teamPerformanceDrivers.fixture";
 import {
   TEAM_DRIVER_MIN_LEAGUE_SAMPLE,
   buildTeamPerformanceDrivers,
@@ -268,5 +269,25 @@ describe("team-driver coverage threshold", () => {
     expect(partial?.fiveOnFiveCoverage).toEqual({ coveredGames: 9, expectedGames: 10 });
     expect(partial?.specialTeamsCoverage).toBeNull();
     expect(buildTeamPerformanceDrivers({ teamAbbreviation: "T0", teamId: 1, fiveOnFiveRows, specialTeamsRows })?.fiveOnFiveCoverage).toBeNull();
+  });
+});
+
+describe("special-teams driver (D4)", () => {
+  it("is the team's true percentile of its PP+PK standing in the 32-team cohort, not a mean of two percentiles", () => {
+    const { fiveOnFive, specialTeams } = thirtyTwoTeamDriverFixture();
+    const pp = specialTeams.map((row) => row.power_play_pct);
+    const pk = specialTeams.map((row) => row.penalty_kill_pct);
+    const standing = specialTeams.map((row) =>
+      (midRankPercentile(row.power_play_pct, pp) + midRankPercentile(row.penalty_kill_pct, pk)) / 2);
+    const truePercentile = midRankPercentile(standing[0], standing);
+    const meanOfPercentiles = standing[0];
+
+    const result = buildTeamPerformanceDrivers({
+      teamAbbreviation: "T0", teamId: 1, fiveOnFiveRows: fiveOnFive, specialTeamsRows: specialTeams,
+    });
+    const driver = result?.drivers.find((d) => d.key === "specialTeams");
+    expect(Math.round(truePercentile)).not.toBe(Math.round(meanOfPercentiles));
+    expect(driver?.percentile).toBe(Math.round(truePercentile));
+    expect(driver?.explanation).toContain("among the league's teams");
   });
 });

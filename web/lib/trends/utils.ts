@@ -34,6 +34,39 @@ export function percentile(xs: number[], x: number): number {
   return (idx / (sorted.length - 1)) * 100;
 }
 
+/**
+ * Mid-rank percentiles on 0–100 within one cohort (BA W1-3 D10): equal values
+ * share the mean of their positions, so ties never get different raw
+ * percentiles and the result does not depend on input order. A single entry
+ * is 50. `higherIsBetter=false` mirrors the scale.
+ */
+export function computeMidRankPercentiles<TKey>(
+  entries: ReadonlyArray<{ key: TKey; value: number }>,
+  higherIsBetter = true
+): Map<TKey, number> {
+  const result = new Map<TKey, number>();
+  if (entries.length === 0) return result;
+  if (entries.length === 1) {
+    result.set(entries[0].key, 50);
+    return result;
+  }
+  const sorted = [...entries].sort((a, b) => a.value - b.value);
+  const denom = sorted.length - 1;
+  let start = 0;
+  while (start < sorted.length) {
+    let end = start;
+    while (end + 1 < sorted.length && sorted[end + 1].value === sorted[start].value) {
+      end += 1;
+    }
+    const percentile = (((start + end) / 2) / denom) * 100;
+    for (let index = start; index <= end; index += 1) {
+      result.set(sorted[index].key, higherIsBetter ? percentile : 100 - percentile);
+    }
+    start = end + 1;
+  }
+  return result;
+}
+
 export function winsorize(xs: number[], p = 0.01): number[] {
   if (!xs.length) return xs;
   const sorted = [...xs].sort((a, b) => a - b);
@@ -136,8 +169,21 @@ export function clamp01(x: number) {
   return Math.max(0, Math.min(1, x));
 }
 
-// Luck components (signs chosen so higher = more luck / less sustainable)
-export function computeLuck({
+/**
+ * Results-luck deltas (decision 80: defined and named; dormant, no caller).
+ *
+ * Definition: each delta is "observed minus expectation", so every component
+ * is oriented the same way: positive = results running above expectation
+ * (luckier, less likely to persist), negative = below. Components:
+ * - `goals_minus_ixG`: individual goals − individual expected goals (counts
+ *   over the same games; decision 23 compares these as rates per 60).
+ * - `onIceSH_delta`: on-ice SH% (fraction 0–1) − 0.08, an assumed typical ES
+ *   value, not a fitted baseline.
+ * - `PDO_delta`: PDO (index around 1.000) − 1.
+ * - `IPP_delta`: IPP − the supplied baseline (same scale as `ipp`).
+ * Missing inputs leave their delta absent, never zero.
+ */
+export function computeLuckDeltas({
   goals,
   xg,
   onIceSH,
@@ -147,20 +193,31 @@ export function computeLuck({
 }: {
   goals?: number; // individual goals
   xg?: number; // individual expected goals
-  onIceSH?: number; // team SH% while on ice
-  pdo?: number; // on-ice
+  onIceSH?: number; // team SH% while on ice, fraction 0–1
+  pdo?: number; // on-ice index around 1.000
   ipp?: number; // individual points %
-  ippBaseline?: number; // league-pos baseline
+  ippBaseline?: number; // league-pos baseline on the same scale as ipp
 }) {
   const deltas: Record<string, number | undefined> = {};
-  if (goals != null && xg != null) deltas.xG_minus_G = xg - goals; // + underperforming
-  if (onIceSH != null) deltas.onIceSH_delta = onIceSH - 0.08; // 8% typical baseline ES
-  if (pdo != null) deltas.PDO_delta = pdo - 1.0; // normalized 1.0 baseline
+  if (goals != null && xg != null) deltas.goals_minus_ixG = goals - xg;
+  if (onIceSH != null) deltas.onIceSH_delta = onIceSH - 0.08;
+  if (pdo != null) deltas.PDO_delta = pdo - 1.0;
   if (ipp != null && ippBaseline != null) deltas.IPP_delta = ipp - ippBaseline;
   return deltas;
 }
 
-export function combineSKO({
+/** @deprecated Renamed to `computeLuckDeltas` (decision 80); same oriented output. */
+export const computeLuck = computeLuckDeltas;
+
+/**
+ * Skill-minus-luck composite (decision 80: defined and named; dormant, no
+ * caller). NOT sKO: it is a league-relative quality score (offense, defense,
+ * on-ice impact on 0–1 inputs) minus a luck deduction, with assumed weights
+ * that have not earned their place out of sample (decision 32). The
+ * `sustainability` output is this composite on 0–100, clamped; it is not a
+ * percentile and not the owner's sustainability definition.
+ */
+export function combineSkillMinusLuckComposite({
   skillOffense01,
   skillDefense01,
   onIceImpact01,
@@ -188,6 +245,9 @@ export function combineSKO({
     sustainability: to100(s01)
   };
 }
+
+/** @deprecated Renamed to `combineSkillMinusLuckComposite` (decision 80). */
+export const combineSKO = combineSkillMinusLuckComposite;
 
 export function classifyRole({
   driverSignal,

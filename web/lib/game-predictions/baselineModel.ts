@@ -12,12 +12,47 @@ import type { ProbabilityCalibrator } from "lib/xg/calibration";
 import type { Database, Json } from "lib/supabase/database-generated.types";
 import { isTrustedRecentTeamFormPayload } from "lib/trends/ctpi";
 import type { GamePredictionFeatureSnapshotPayload } from "./featureBuilder";
+import { displayedWinnerTeamId } from "./winnerPick";
 
 export const BASELINE_MODEL_NAME = "nhl_game_baseline_logistic";
 export const BASELINE_MODEL_VERSION = "v6_roster_ctpi_sos_threshold_52";
 export const BASELINE_PROBABILITY_FLOOR = 0.05;
 export const BASELINE_MIN_DATA_QUALITY_MULTIPLIER = 0.55;
-export const BASELINE_WINNER_DECISION_THRESHOLD = 0.52;
+/**
+ * Winner picks follow the displayed probabilities (owner decision 43); the
+ * former 0.52 home threshold is retired. A threshold is applied only when a
+ * research ablation passes one explicitly.
+ */
+export const WINNER_PICK_POLICY_VERSION =
+  "winner_policy_v2_displayed_probability_tie_at_50";
+
+function resolveWinnerPick(args: {
+  homeWinProbability: number;
+  awayWinProbability: number;
+  homeTeamId: number;
+  awayTeamId: number;
+  winnerDecisionThreshold?: number;
+}): {
+  winnerDecisionThreshold: number | null;
+  threshold50WinnerTeamId: number | null;
+  selectedThresholdWinnerTeamId: number | null;
+} {
+  const displayedWinner = displayedWinnerTeamId(args);
+  if (args.winnerDecisionThreshold == null) {
+    return {
+      winnerDecisionThreshold: null,
+      threshold50WinnerTeamId: displayedWinner,
+      selectedThresholdWinnerTeamId: displayedWinner,
+    };
+  }
+  const threshold = Math.max(0.01, Math.min(0.99, args.winnerDecisionThreshold));
+  return {
+    winnerDecisionThreshold: threshold,
+    threshold50WinnerTeamId: displayedWinner,
+    selectedThresholdWinnerTeamId:
+      args.homeWinProbability >= threshold ? args.homeTeamId : args.awayTeamId,
+  };
+}
 
 export const BASELINE_FEATURE_KEYS = [
   "homeMinusAwayOffRating",
@@ -227,7 +262,7 @@ export type GamePredictionModelAuditMetadata = {
   winnerPolicyVersion?: string;
   winnerPolicyMode?: string;
   defaultWinnerThreshold?: number;
-  selectedWinnerThreshold?: number;
+  selectedWinnerThreshold?: number | null;
   rosterImpactVersion?: string;
   strengthOfScheduleVersion?: string;
   seasonDecayVersion?: string;
@@ -249,7 +284,7 @@ export type GamePredictionResult = {
   awayTeamId: number;
   homeWinProbability: number;
   awayWinProbability: number;
-  predictedWinnerTeamId: number;
+  predictedWinnerTeamId: number | null;
   confidenceLabel: "low" | "medium" | "high";
   topFactors: GamePredictionTopFactor[];
   components: Record<string, Json>;
@@ -413,12 +448,15 @@ function oddsRatioFromWeight(weight: number): number {
 }
 
 function buildModelAuditMetadata(args: {
-  selectedWinnerThreshold: number;
+  selectedWinnerThreshold: number | null;
   modelAuditMetadata?: GamePredictionModelAuditMetadata;
 }): GamePredictionModelAuditMetadata {
   return {
-    winnerPolicyVersion: "winner_policy_v1_report_50_and_selected_threshold",
-    winnerPolicyMode: "report_default_50_and_selected_threshold",
+    winnerPolicyVersion: WINNER_PICK_POLICY_VERSION,
+    winnerPolicyMode:
+      args.selectedWinnerThreshold == null
+        ? "displayed_probability"
+        : "research_threshold",
     defaultWinnerThreshold: 0.5,
     selectedWinnerThreshold: args.selectedWinnerThreshold,
     rosterImpactVersion: "forge_team_projection_proxy_v1",
@@ -1389,22 +1427,18 @@ export function predictGameWithExtraTreesModel(args: {
       ? null
       : roundSignalMetric(homeWinProbability - marketHomeNoVigProbability);
   const modelMarketEdgeBucket = marketEdgeBucket(modelVsMarketEdge);
-  const winnerDecisionThreshold = Math.max(
-    0.01,
-    Math.min(
-      0.99,
-      args.winnerDecisionThreshold ?? BASELINE_WINNER_DECISION_THRESHOLD,
-    ),
-  );
   const excludedFeatureKeys = getExcludedFeatureKeys(args.featureVectorOptions);
-  const threshold50WinnerTeamId =
-    homeWinProbability >= 0.5
-      ? args.payload.home.teamId
-      : args.payload.away.teamId;
-  const selectedThresholdWinnerTeamId =
-    homeWinProbability >= winnerDecisionThreshold
-      ? args.payload.home.teamId
-      : args.payload.away.teamId;
+  const {
+    winnerDecisionThreshold,
+    threshold50WinnerTeamId,
+    selectedThresholdWinnerTeamId,
+  } = resolveWinnerPick({
+    homeWinProbability,
+    awayWinProbability,
+    homeTeamId: args.payload.home.teamId,
+    awayTeamId: args.payload.away.teamId,
+    winnerDecisionThreshold: args.winnerDecisionThreshold,
+  });
   const modelAuditMetadata = buildModelAuditMetadata({
     selectedWinnerThreshold: winnerDecisionThreshold,
     modelAuditMetadata: {
@@ -1562,22 +1596,18 @@ export function predictGameWithBaselineModel(args: {
       ? null
       : roundSignalMetric(homeWinProbability - marketHomeNoVigProbability);
   const modelMarketEdgeBucket = marketEdgeBucket(modelVsMarketEdge);
-  const winnerDecisionThreshold = Math.max(
-    0.01,
-    Math.min(
-      0.99,
-      args.winnerDecisionThreshold ?? BASELINE_WINNER_DECISION_THRESHOLD,
-    ),
-  );
   const excludedFeatureKeys = getExcludedFeatureKeys(args.featureVectorOptions);
-  const threshold50WinnerTeamId =
-    homeWinProbability >= 0.5
-      ? args.payload.home.teamId
-      : args.payload.away.teamId;
-  const selectedThresholdWinnerTeamId =
-    homeWinProbability >= winnerDecisionThreshold
-      ? args.payload.home.teamId
-      : args.payload.away.teamId;
+  const {
+    winnerDecisionThreshold,
+    threshold50WinnerTeamId,
+    selectedThresholdWinnerTeamId,
+  } = resolveWinnerPick({
+    homeWinProbability,
+    awayWinProbability,
+    homeTeamId: args.payload.home.teamId,
+    awayTeamId: args.payload.away.teamId,
+    winnerDecisionThreshold: args.winnerDecisionThreshold,
+  });
   const modelAuditMetadata = buildModelAuditMetadata({
     selectedWinnerThreshold: winnerDecisionThreshold,
     modelAuditMetadata: args.modelAuditMetadata,

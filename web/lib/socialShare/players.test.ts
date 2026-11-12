@@ -147,11 +147,12 @@ describe("last five games", () => {
       { player_id: skater.nhlId, season, game_date: "2026-10-24", strength_state: "all", season_games_played: 7, goals_total_last5: 3, assists_total_last5: 2, points_total_last5: 5, shots_total_last5: 14, hits_avg_last5: 1.2, blocks_avg_last5: 0.6, toi_seconds_avg_last5: 1100, pp_points_total_last5: 2, toi_seconds_avg_season: null, line_combo_slot: null, line_combo_group: null, pp_unit: null, goals_total_all: null, assists_total_all: null, toi_seconds_total_last5: null, pp_toi_seconds_total_last5: null, pp_toi_seconds_avg_season: null },
       { player_id: skater.nhlId, season, game_date: "2026-10-25", strength_state: "pp", season_games_played: 8, goals_total_last5: 9, assists_total_last5: 9, points_total_last5: 9, shots_total_last5: 9, hits_avg_last5: 9, blocks_avg_last5: 9, toi_seconds_avg_last5: 9, pp_points_total_last5: 9, toi_seconds_avg_season: null, line_combo_slot: null, line_combo_group: null, pp_unit: null, goals_total_all: null, assists_total_all: null, toi_seconds_total_last5: null, pp_toi_seconds_total_last5: null, pp_toi_seconds_avg_season: null },
     ];
-    const goalieGames = Array.from({ length: 7 }, (_, i) => ({ goalie_id: goalie.nhlId, date: `2026-10-${String(12 + i * 2).padStart(2, "0")}`, season_id: season, games_played: i === 6 ? 0 : 1, wins: i % 2, saves: 25 + i, shots_against: 28 + i, goals_against: 3, quality_start: i % 2, shutouts: 0 }));
-    const withRecent = attachRecent(layer, { rolling, goalieGames }, now);
+    const goalieGames = Array.from({ length: 7 }, (_, i) => ({ goalie_id: goalie.nhlId, date: `2026-10-${String(12 + i * 2).padStart(2, "0")}`, season_id: season, games_played: i === 6 ? 0 : 1, games_started: 1, wins: i % 2, losses: 1 - (i % 2), ot_losses: 0, saves: 25 + i, shots_against: 28 + i, goals_against: 3, quality_start: i % 2, shutouts: 0 }));
+    const withRecent = attachRecent(layer, { rolling, goalieGames, leagueSavePct: 0.9 }, now);
     expect(withRecent.players.find(player => player.nhlId === skater.nhlId)!.recent).toEqual({ kind: "skater", games: 5, through: "2026-10-24", goals: 3, assists: 2, points: 5, shots: 14, hitsPerGame: 1.2, blocksPerGame: 0.6, toiSeconds: 1100, ppPoints: 2, line: null, ppUnit: null, toiSeasonSeconds: null, pointGames: null, toiPreSeconds: null, ppToiSeconds: null, ppToiPreSeconds: null });
     // Seven dated rows: the 0-GP row is skipped, then the five latest games (Oct 22, 20, 18, 16, 14).
-    expect(withRecent.players.find(player => player.nhlId === goalie.nhlId)!.recent).toEqual({ kind: "goalie", games: 5, through: "2026-10-22", wins: 3, saves: 26 + 27 + 28 + 29 + 30, shotsAgainst: 29 + 30 + 31 + 32 + 33, goalsAgainst: 15, qualityStarts: 3, shutouts: 0 });
+    // Credited record 3-2-0; Vollman QS against a .900 league: 26/29 misses, 27/30 to 30/33 meet (WGO's own column is not read).
+    expect(withRecent.players.find(player => player.nhlId === goalie.nhlId)!.recent).toEqual({ kind: "goalie", games: 5, through: "2026-10-22", record: { wins: 3, losses: 2, otLosses: 0 }, starts: 5, saves: 26 + 27 + 28 + 29 + 30, shotsAgainst: 29 + 30 + 31 + 32 + 33, goalsAgainst: 15, qualityStarts: 4, shutouts: 0 });
     // A failed read is "unavailable"; an answered read is "ready" even when a player has no rows.
     expect(attachRecent(layer, null, now)).toMatchObject({ recentState: "unavailable" });
     expect(attachRecent(layer, null, now).players.every(player => player.recent === null)).toBe(true);
@@ -223,5 +224,64 @@ describe("specialists", () => {
       for (let i = 1; i < list.length; i++) expect(list[i - 1].perGame).toBeGreaterThanOrEqual(list[i].perGame);
     }
     expect(specialists(edition(undefined, "2026-10-22T00:00:00Z"), true)).toEqual({ hits: [], shots: [], blocks: [] });
+  });
+});
+
+describe("goalie recent form along the chain (W3-3 D2, A1; decisions 40, 82, 112)", () => {
+  const LEAGUE = 0.9;
+  /** One appearance: credited start unless `started` says otherwise; values override. */
+  const game = (goalieId: number, day: number, values: Record<string, unknown> = {}) => ({ goalie_id: goalieId, date: `2026-10-${String(day).padStart(2, "0")}`, season_id: season, games_played: 1, games_started: 1, wins: 0, losses: 0, ot_losses: 0, saves: 27, shots_against: 30, goals_against: 3, quality_start: 0, shutouts: 0, ...values });
+  const recentOf = async (rows: Record<string, unknown>[], leagueSavePct: number | null = LEAGUE) => {
+    const { attachRecent } = await import("./players");
+    const layer = edition().players!, goalie = layer.players.find(player => player.group === "G")!;
+    const attached = attachRecent(layer, { rolling: [], goalieGames: rows.map(row => ({ ...row, goalie_id: goalie.nhlId })) as never, leagueSavePct }, now);
+    return { layer: attached, player: attached.players.find(player => player.nhlId === goalie.nhlId)! };
+  };
+  const line = async (rows: Record<string, unknown>[], leagueSavePct?: number | null) => {
+    const { recentLine } = await import("components/SocialShare/SocialShare");
+    const { layer, player } = await recentOf(rows, leagueSavePct);
+    return { text: recentLine(player as RankedPlayer, "pickup", layer), player };
+  };
+  it("prints the credited W-L-OTL, not wins against games minus wins (3 W, 1 OTL, 1 ND → 3-0-1)", async () => {
+    const rows = [game(1, 14, { wins: 1 }), game(1, 16, { wins: 1 }), game(1, 18, { wins: 1 }), game(1, 20, { ot_losses: 1 }), game(1, 22, { games_started: 0 })];
+    const { text, player } = await line(rows);
+    expect(text.startsWith("3-0-1 · ")).toBe(true);
+    expect(player.recent).toMatchObject({ kind: "goalie", games: 5, record: { wins: 3, losses: 0, otLosses: 1 }, starts: 4 });
+  });
+  it("leaves the record unavailable when any decision is unknown or contradictory", async () => {
+    const base = [14, 16, 18, 20].map(day => game(1, day, { wins: 1 }));
+    expect((await line([...base, game(1, 22, { losses: null })])).text.startsWith("— W-L-OTL · ")).toBe(true);
+    expect((await line([...base, game(1, 22, { losses: 1, ot_losses: 1 })])).player.recent).toMatchObject({ record: null });
+  });
+  it("turns five appearances with unknown W, saves, SA, GA and QS into unavailable, not 0-5, a 0 score or COLD", async () => {
+    const { playerScore } = await import("./score");
+    const { streakOf } = await import("./streak");
+    const rows = [14, 16, 18, 20, 22].map(day => game(1, day, { wins: null, losses: null, ot_losses: null, saves: null, shots_against: null, goals_against: null, quality_start: null, shutouts: null }));
+    const { text, player } = await line(rows);
+    expect(text).toBe("— W-L-OTL · — SV% · — GA · — QS");
+    expect(playerScore(player)).toBeNull();
+    expect(streakOf(player, "pickup")).toBeNull();
+  });
+  it("pools SV% only over games with both saves and shots", async () => {
+    // Four games 27/30 and one with saves missing but 40 shots: summing each alone gives 108/160 = .675.
+    const rows = [14, 16, 18, 20].map(day => game(1, day)).concat(game(1, 22, { saves: null, shots_against: 40 }));
+    const { text, player } = await line(rows);
+    expect(text).toContain("— SV%");
+    expect(player.recent).toMatchObject({ saves: null, shotsAgainst: null });
+    const { streakOf } = await import("./streak");
+    expect(streakOf(player, "pickup")).toBeNull();
+  });
+  it("counts Vollman Quality Starts on credited starts only, from the shared classifier and the league SV%", async () => {
+    // .900 on 30 shots meets a .900 league average; 17 of 20 (.850) misses; relief at 10 of 10 is never a QS; 18 of 20 (.900) meets.
+    const rows = [game(1, 14), game(1, 16, { saves: 17, shots_against: 20, goals_against: 3 }), game(1, 18, { games_started: 0, saves: 10, shots_against: 10, goals_against: 0 }), game(1, 20, { saves: 18, shots_against: 20, goals_against: 2 }), game(1, 22)];
+    expect((await line(rows)).player.recent).toMatchObject({ qualityStarts: 3, starts: 4 });
+    // WGO's own quality_start column is not the decision-40 measure.
+    expect((await line(rows.map(row => ({ ...row, quality_start: 1 })))).player.recent).toMatchObject({ qualityStarts: 3 });
+    // No league average, or an unknown start label, leaves QS unknown; unknown QS never makes a goalie COLD.
+    const { streakOf } = await import("./streak");
+    const unknown = (await line(rows.map(row => ({ ...row, saves: 25, goals_against: 5 })), null)).player;
+    expect(unknown.recent).toMatchObject({ qualityStarts: null });
+    expect(streakOf(unknown, "pickup")).toBeNull();
+    expect((await line([...rows.slice(0, 4), game(1, 22, { games_started: null })])).player.recent).toMatchObject({ qualityStarts: null, starts: null });
   });
 });

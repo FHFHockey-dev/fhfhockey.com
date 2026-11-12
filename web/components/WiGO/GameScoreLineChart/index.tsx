@@ -160,7 +160,8 @@ export default function GameScoreLineChart({
         // Base Game Score Bars
         {
           type: "bar" as const,
-          label: "Game Score",
+          // Decision 85: the house variant, named as such.
+          label: "FHFH Game Score (all-situation goals)",
           data: gameScoreValues,
           borderColor: WIGO_COLORS.TRANSPARENT,
           backgroundColor: useDummyData
@@ -190,7 +191,7 @@ export default function GameScoreLineChart({
           // suggestedMax: 5,
           title: {
             display: false,
-            text: "Game Score",
+            text: "FHFH Game Score (all-situation goals)",
             font: CHART_TICK_FONT,
             color: "#ccc"
           },

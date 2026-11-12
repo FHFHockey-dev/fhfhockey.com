@@ -1,5 +1,8 @@
 export type ShotAssistFeatureRow = {
   feature_version: number;
+  /** With no goalie in net: a shot at an empty net, outside every xG total (decision 7). */
+  is_empty_net_event?: boolean | null;
+  goalie_in_net_id?: number | null;
   game_id: number;
   event_id: number;
   season_id: number | null;
@@ -212,6 +215,8 @@ export function buildShotAssistCandidateRows(args: {
     if (!feature.is_unblocked_shot_attempt) continue;
     if (feature.is_rebound_shot) continue;
     if (feature.is_penalty_shot_event || feature.is_shootout_event) continue;
+    // A shot at an empty net carries no creditable xG (decision 7).
+    if (feature.is_empty_net_event === true && feature.goalie_in_net_id == null) continue;
     if (feature.previous_event_id == null) continue;
     if (feature.previous_event_same_team !== true) continue;
     if (
@@ -277,4 +282,81 @@ export function buildShotAssistCandidateRows(args: {
       `${right.game_id}:${right.event_id}:${right.shot_assist_player_id}`
     )
   );
+}
+
+export const SHOT_ASSIST_PRIOR_EVENT_COLUMNS = [
+  "game_id",
+  "event_id",
+  "type_desc_key",
+  "event_owner_team_id",
+  "player_id",
+  "shooting_player_id",
+  "scoring_player_id",
+  "winning_player_id",
+  "hitting_player_id",
+  "blocking_player_id",
+  "zone_code",
+].join(",");
+
+/** The minimal query surface used here, so a capped fake client can stand in. */
+export type ShotAssistPriorEventClient = {
+  from: (table: string) => any;
+};
+
+export type ShotAssistPriorEventFetch = {
+  rows: ShotAssistPriorEventRow[];
+  /** Distinct (game, previous event) pairs the features ask for. */
+  eligiblePairs: number;
+  /** Pairs found in the play-by-play; the rest stay unresolved, never guessed. */
+  resolvedPairs: number;
+};
+
+function chunkList<T>(rows: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let index = 0; index < rows.length; index += size) chunks.push(rows.slice(index, index + size));
+  return chunks;
+}
+
+/**
+ * Previous events for shot-assist candidates. Requests are per game (only
+ * that game's event ids, never a game x event cross product) and paged with
+ * a stable order, so the server's response cap cannot drop rows silently.
+ */
+export async function fetchShotAssistPriorEvents(
+  client: ShotAssistPriorEventClient,
+  features: Pick<ShotAssistFeatureRow, "game_id" | "previous_event_id">[],
+  options: { pageSize?: number; eventIdsPerRequest?: number } = {}
+): Promise<ShotAssistPriorEventFetch> {
+  const pageSize = options.pageSize ?? 1000;
+  const eventIdsPerRequest = options.eventIdsPerRequest ?? 500;
+  const eventIdsByGame = new Map<number, Set<number>>();
+  for (const row of features) {
+    if (row.previous_event_id == null) continue;
+    const eventIds = eventIdsByGame.get(row.game_id) ?? new Set<number>();
+    eventIds.add(row.previous_event_id);
+    eventIdsByGame.set(row.game_id, eventIds);
+  }
+  const eligiblePairs = Array.from(eventIdsByGame.values()).reduce((sum, ids) => sum + ids.size, 0);
+
+  const byKey = new Map<string, ShotAssistPriorEventRow>();
+  for (const [gameId, eventIds] of eventIdsByGame) {
+    for (const eventIdChunk of chunkList(Array.from(eventIds).sort((a, b) => a - b), eventIdsPerRequest)) {
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await client
+          .from("nhl_api_pbp_events")
+          .select(SHOT_ASSIST_PRIOR_EVENT_COLUMNS)
+          .eq("game_id", gameId)
+          .in("event_id", eventIdChunk)
+          .order("event_id", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw new Error(`Failed to fetch prior PBP events: ${error.message}`);
+        const page = (data ?? []) as ShotAssistPriorEventRow[];
+        for (const row of page) {
+          if (row.game_id === gameId && eventIds.has(row.event_id)) byKey.set(`${row.game_id}:${row.event_id}`, row);
+        }
+        if (page.length < pageSize) break;
+      }
+    }
+  }
+  return { rows: Array.from(byKey.values()), eligiblePairs, resolvedPairs: byKey.size };
 }

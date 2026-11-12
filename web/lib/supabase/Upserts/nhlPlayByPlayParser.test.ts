@@ -203,12 +203,19 @@ describe("nhlPlayByPlayParser", () => {
       eventOwnerSide: "home",
     });
 
+    // 0651 owned by the away team, whose own goalie is pulled: ES (decision 84).
     expect(
       buildStrengthContext(emptyNet, 2, 1, 2)
     ).toEqual({
       strengthExact: "6v5",
-      strengthState: "EN",
+      strengthState: "EV",
       eventOwnerSide: "away",
+    });
+    // The home team attacking that empty net is EN.
+    expect(buildStrengthContext(emptyNet, 1, 1, 2)).toEqual({
+      strengthExact: "6v5",
+      strengthState: "EN",
+      eventOwnerSide: "home",
     });
   });
 });

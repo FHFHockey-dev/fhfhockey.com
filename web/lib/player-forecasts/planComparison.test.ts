@@ -46,6 +46,16 @@ describe("paired complete-plan comparison", () => {
     expect(sensitivity.basis).toBe("sensitivity");
     expect(sensitivity).not.toHaveProperty("probability");
   });
+  it("stresses penalty minutes like any count and leaves only registry ratio keys unscaled (L13 ticket)", () => {
+    const { snapshot, baseline, candidate } = fixture();
+    snapshot.rules.scoring = { mode: "points", weights: { PENALTY_MINUTES: 1 }, categories: [] } as never;
+    for (const plan of [baseline, candidate]) plan.forecastInputs = plan.forecastInputs!.map(row =>
+      ({ ...row, stats: { PENALTY_MINUTES: row.playerId === "shared" ? 10 : row.playerId === "a" ? 1 : 2, SAVE_PERCENTAGE: 0.9 } }));
+    baseline.projectedStats = { PENALTY_MINUTES: 11 }; candidate.projectedStats = { PENALTY_MINUTES: 12 };
+    const sensitivity = comparePlanSensitivity(snapshot, baseline, candidate);
+    // Candidate minus baseline PIM is 1 at the means; a stressed count moves it to 0.8 and 1.2 (the old regex held it at 1).
+    expect(sensitivity.scenarios.map(row => row.difference)).toEqual([expect.closeTo(0.8), 1, expect.closeTo(1.2)]);
+  });
   it("withholds numerical sensitivity when a plan lacks comparable recommendation evidence", () => {
     const { snapshot, baseline, candidate } = fixture();
     candidate.recommendation = { eligible: false, mode: "schedule_capacity", reasons: [], unresolved: [] };

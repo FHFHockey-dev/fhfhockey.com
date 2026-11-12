@@ -99,7 +99,7 @@ const buildRating = (
   luckPdoZ: 0.3,
   narrative: [
     "5v5 offense is rising as expected goals and shot volume improve.",
-    "Upcoming schedule looks softer than league average."
+    "Upcoming opponents have a weaker combined record than league average."
   ],
   scheduleTexture: {
     backToBacksNext14: 1,
@@ -337,6 +337,23 @@ describe("/underlying-stats landing page", () => {
     ).toEqual([
       "Rank", "Team", "Power Score", "Offense", "Defense", "Trend", "Why it's moving"
     ]);
+  });
+
+  it("shows an unknown PP/PK tier as — (never a tier) (W1 P0 #13)", () => {
+    render(
+      <TeamPowerRankingsPage
+        availableDates={["2026-04-05"]}
+        routeStatus={routeStatus}
+        initialSnapshot={buildSnapshot([
+          buildRating("TOR", { ppTier: null, pkTier: 1 }),
+          buildRating("VAN")
+        ])}
+      />
+    );
+
+    const unknown = screen.getAllByTitle("Tier unknown (pooled special teams unavailable)");
+    expect(unknown).toHaveLength(1);
+    expect(unknown[0].textContent).toBe("—");
   });
 
   it("opens and closes real metric explanations independently through their focusable summaries", () => {

@@ -74,6 +74,15 @@ describe("FORGE reserve selection and rows", () => {
       uncertainty: { conditioning: "if_starts", start_probability: null, excluded_from_team_totals: true } });
   });
 
+  it("keeps the reserve shutout per game over a multi-game horizon and labels each basis (W3-4 N6)", () => {
+    const scope = { runId: "r", asOfDate: "2026-10-26", horizonGames: 3, gameId: 1, playerId: 7, teamId: 10, opponentTeamId: 12 };
+    const goalie = buildReserveGoalieRow({ ...scope, reason: "backup_goalie", horizonScalar: 3,
+      model: { shotsAgainst: 28, projectedSaves: 25.4, projectedGoalsAllowed: 2.6, shutoutProbability: 0.05, modeledSavePct: 0.907 } });
+    expect(goalie.proj_saves).toBeCloseTo(76.2, 6);
+    expect(goalie.proj_shutout_prob).toBe(0.05);
+    expect(goalie.uncertainty.value_basis).toEqual({ counts: "horizon_total", shutout_prob: "single_game" });
+  });
+
   it("is off unless explicitly enabled", () => {
     expect(forgeReservePassEnabled({})).toBe(false);
     expect(forgeReservePassEnabled({ FORGE_RESERVE_PASS_ENABLED: "1" })).toBe(false);

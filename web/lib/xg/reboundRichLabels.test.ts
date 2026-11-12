@@ -113,3 +113,41 @@ describe("rich rebound labels", () => {
     });
   });
 });
+
+describe("rich rebound labels across games (BA W1-1 A, rebound keys)", () => {
+  function parseGame(gameId: number, plays: Record<string, unknown>[]) {
+    return parseNhlPlayByPlayEvents(
+      {
+        id: gameId,
+        season: 20252026,
+        gameDate: "2026-04-01",
+        homeTeam: { id: 10, abbrev: "TOR" },
+        awayTeam: { id: 20, abbrev: "NYR" },
+        plays,
+      },
+      { sourcePlayByPlayHash: `rich-rebound-${gameId}`, now: "2026-04-01T12:00:00.000Z" }
+    );
+  }
+
+  it("labels a game the same whether or not another game with the same event ids is batched", () => {
+    // Game A: a rebound within one possession.
+    const gameA = parseGame(2025020001, [
+      play({ eventId: 1, second: 600, typeDescKey: "shot-on-goal", teamId: 10, x: 70, y: 5 }),
+      play({ eventId: 2, second: 601, typeDescKey: "hit", teamId: 10 }),
+      play({ eventId: 3, second: 602, typeDescKey: "goal", teamId: 10, x: 82, y: 2 }),
+    ]);
+    // Game B reuses event ids 1-3 with a possession change in between.
+    const gameB = parseGame(2025020002, [
+      play({ eventId: 1, second: 600, typeDescKey: "shot-on-goal", teamId: 20, x: -70, y: 5 }),
+      play({ eventId: 2, second: 601, typeDescKey: "hit", teamId: 10 }),
+      play({ eventId: 3, second: 602, typeDescKey: "shot-on-goal", teamId: 20, x: -80, y: 2 }),
+    ]);
+    const alone = buildRichReboundLabels(gameA);
+    const labelsFor = (labels: ReturnType<typeof buildRichReboundLabels>) =>
+      labels.filter((label) => label.gameId === 2025020001);
+
+    expect(alone[0]).toMatchObject({ termination: "next_attempt", nextAttemptEventId: 3, reboundCreated: 1 });
+    expect(labelsFor(buildRichReboundLabels([...gameA, ...gameB]))).toEqual(alone);
+    expect(labelsFor(buildRichReboundLabels([...gameB, ...gameA]))).toEqual(alone);
+  });
+});

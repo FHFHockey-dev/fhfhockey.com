@@ -62,12 +62,36 @@ export function toRollingPlayerPpContextRow(
   };
 }
 
+export type TeamPpClock = {
+  /** Team power-play seconds in this game; 0 is a known no-PP game. */
+  seconds: number | null;
+  /** Source attribution of the qualified clock (decision 71). */
+  source: string;
+};
+
 export function resolvePpShareComponents(args: {
   builderPlayerPpToi: number | null | undefined;
   builderTeamShare: number | null | undefined;
   wgoPlayerPpToi?: number | null | undefined;
   wgoTeamShare?: number | null | undefined;
+  /**
+   * The qualified team PP clock for this dressed game (decision 71, built by
+   * L8). When supplied it is the denominator for every dressed game, so games
+   * where the player had no PP time still add their team PP seconds
+   * (BA W1-3 D6). Known zeros stay zeros; an unknown player PP time stays
+   * unknown; an impossible share (> 1) is not capped.
+   */
+  teamPpClock?: TeamPpClock | null;
 }): RatioComponents | null {
+  const clockSeconds = args.teamPpClock?.seconds;
+  if (clockSeconds != null && Number.isFinite(clockSeconds) && clockSeconds >= 0) {
+    const playerPpToi = args.builderPlayerPpToi ?? args.wgoPlayerPpToi ?? null;
+    if (playerPpToi == null || !Number.isFinite(playerPpToi) || playerPpToi < 0) {
+      return null;
+    }
+    return { numerator: playerPpToi, denominator: clockSeconds };
+  }
+
   // `pp_share_pct` stores team-share semantics only. Builder-derived
   // `pp_share_of_team` is authoritative because it directly represents the
   // player's share of total team PP TOI. WGO can reconstruct the same contract

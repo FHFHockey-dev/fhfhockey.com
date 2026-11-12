@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   ADJUSTED_IMPACT_TARGET_FAMILY,
   buildAdjustedImpactDesignRows,
+  compareAdjustedImpactEmptyNetTreatments,
   fitAdjustedImpactBaseline,
   validateAdjustedImpactHeldOut,
   validateAdjustedImpactLeakage,
@@ -281,5 +282,94 @@ describe("buildAdjustedImpactDesignRows", () => {
         "same_game_on_ice_target_leakage",
       ],
     });
+  });
+});
+
+describe("adjusted impact and empty-net shots (decision 100)", () => {
+  const enShot = shot({ event_id: 201, xg: 0.9, is_empty_net_event: true, goalie_in_net_id: null });
+  const ownNetEmptyShot = shot({ event_id: 202, xg: 0.2, is_empty_net_event: false, goalie_in_net_id: 40, strength_exact: "6v5" });
+  const regular = shot({ event_id: 203, xg: 0.1, is_empty_net_event: false, goalie_in_net_id: 40 });
+
+  it("labels the current treatment unvalidated and leaves its rows unchanged", () => {
+    const result = buildAdjustedImpactDesignRows({ shots: [enShot, regular], stintsByGameId, goaliePlayerIds: new Set([30, 40]) });
+    expect(result.emptyNetTreatment).toMatchObject({
+      treatment: "included_with_strength_covariate",
+      validation: "unvalidated",
+      decision: 100,
+    });
+    expect(result.rows).toHaveLength(2);
+    expect(result.rows.every((row) => row.empty_net_indicator == null)).toBe(true);
+  });
+
+  it("excludes shots at an empty net, keeps the shooter's own empty net, and never guesses unknown status", () => {
+    const result = buildAdjustedImpactDesignRows({
+      shots: [enShot, ownNetEmptyShot, regular, shot({ event_id: 204 })],
+      stintsByGameId,
+      goaliePlayerIds: new Set([30, 40]),
+      emptyNetTreatment: "excluded",
+    });
+    expect(result.rows.map((row) => row.event_id)).toEqual([202, 203]);
+    expect(result.skippedRows.map((row) => [row.eventId, row.reason])).toEqual([
+      [201, "empty_net_target_excluded"],
+      [204, "empty_net_status_unknown"],
+    ]);
+  });
+
+  it("identifies shots at an empty net explicitly as a context feature", () => {
+    const result = buildAdjustedImpactDesignRows({
+      shots: [enShot, regular],
+      stintsByGameId,
+      goaliePlayerIds: new Set([30, 40]),
+      emptyNetTreatment: "explicit_indicator",
+    });
+    expect(result.rows.map((row) => [row.event_id, row.empty_net_indicator])).toEqual([[201, 1], [203, 0]]);
+    const model = fitAdjustedImpactBaseline(result.rows, { iterations: 50 });
+    expect(model.context_estimates.map((estimate) => estimate.feature_key)).toContain("empty_net_target");
+  });
+
+  it("compares both treatments on the same chronological split and the same held-out non-empty-net shots", () => {
+    const games = Array.from({ length: 10 }, (_, index) => 2025020100 + index);
+    const stints = new Map(
+      games.map((gameId, index) => [
+        gameId,
+        [
+          {
+            gameId, seasonId: 20252026, gameDate: `2025-10-${String(index + 1).padStart(2, "0")}`,
+            period: 3, startSecond: 1000, endSecond: 1200, durationSeconds: 200,
+            teams: [
+              { teamId: 10, playerIds: index % 2 === 0 ? [1, 2, 3, 4, 5, 30] : [11, 12, 13, 14, 15, 30] },
+              { teamId: 20, playerIds: [6, 7, 8, 9, 10, 40] },
+            ],
+            onIcePlayerIds: [],
+          },
+        ],
+      ])
+    );
+    const shots = games.flatMap((gameId, index) => {
+      const date = `2025-10-${String(index + 1).padStart(2, "0")}`;
+      const base = { game_id: gameId, game_date: date, period_number: 3, period_seconds_elapsed: 1100 };
+      return [
+        shot({ ...base, event_id: 1, xg: index % 2 === 0 ? 0.15 : 0.05, is_empty_net_event: false, goalie_in_net_id: 40 }),
+        shot({ ...base, event_id: 2, event_owner_team_id: 20, xg: 0.08, is_empty_net_event: false, goalie_in_net_id: 30 }),
+        shot({ ...base, event_id: 3, xg: 0.92, is_empty_net_event: true, goalie_in_net_id: null }),
+      ];
+    });
+    const report = compareAdjustedImpactEmptyNetTreatments({
+      shots,
+      stintsByGameId: stints,
+      goaliePlayerIds: new Set([30, 40]),
+      options: { iterations: 200, validationFraction: 0.2 },
+    });
+    expect(report.split.validation_start_game_date).toBe("2025-10-09");
+    // Training: 8 dates; the excluded model loses the 8 empty-net shots.
+    expect(report.split.training_rows).toEqual({ excluded: 16, explicit_indicator: 24 });
+    // Both scored on the same 4 held-out non-empty-net shots; the 2 held-out EN shots are reported apart.
+    expect(report.common_non_empty_net_validation.rows).toBe(4);
+    expect(report.empty_net_validation.rows).toBe(2);
+    expect(Number.isFinite(report.common_non_empty_net_validation.mse.excluded!)).toBe(true);
+    expect(Number.isFinite(report.common_non_empty_net_validation.mse.explicit_indicator!)).toBe(true);
+    expect(report.player_coefficients.shared_players).toBeGreaterThan(0);
+    // Evidence only: the definition is chosen by the owner afterwards.
+    expect(report.chosen_treatment).toBeNull();
   });
 });
