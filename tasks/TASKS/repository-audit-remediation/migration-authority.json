@@ -1361,6 +1361,16 @@
       "migrationClass": "feature",
       "rolloutGate": "Redefines the season goalie view goalie_totals_unified (W2-P0-9, decision 10, rules 13 and 17): NST rates convert NST minutes to seconds explicitly (were 60x too large) and NST GSAA (all, 5v5, HD) is SA x league goals-per-shot over the same season, strength and the goalie's first-to-last date - GA, no longer the sum of per-game GSAA; values NULL unless every game row has its inputs. Same columns, order and types; no data change; the dependent goalie_totals_unified_snapshot keeps its rows until a separately approved refresh. No application reader. Math-audit fix lane L4a (ticket from L5); source only. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval, run its READBACK, then record schema_migrations and flip this row. Rollback: supabase/tests/l4a_goalie_totals_rollback.sql.",
       "stateEvidence": "Not applied. Written 2026-11-11 by fix lane L4a (diary tasks/diaries/2026-11-11-claude-fix-l4a.md). Verified on local PostgreSQL 15 with supabase/tests/l4a_goalie_totals.py through the real vw_goalie_stats_unified_source: 13 defect checks fail on the baseline view and pass after; official SV%/GAA, NST TOI/GA sums and games played unchanged; columns, order and types unchanged; the snapshot materialized view refreshes; rollback restores the baseline answers."
+    },
+    {
+      "order": 136,
+      "path": "supabase/migrations/20261111181100_add_nst_seasonlong_5v5_views.sql",
+      "sha256": "f741beed8fb32c065353700d3022e9c8a6dec6157db234ae6fa786200ba40e1a",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "Creates nst_seasonlong_5v5_counts, nst_seasonlong_5v5_counts_oi and nst_seasonlong_5v5_rates over nst_gamelog_5v5_counts / _counts_oi for the radar (decision 15, W1 P0 #8; L4b reader). Each is the es sibling as fixed by orders 125 and 126 with only the names changed: regular season (games.type = 2) and gp = 1 rows only, complete-support sums, NULL unknown rates. SELECT granted to anon, authenticated and service_role. Creates objects only; no data change; independent of 125/126. Math-audit fix lane L4a; source only. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval, before or with the L4b radar release, run its READBACK, then record schema_migrations and flip this row. Rollback: supabase/tests/l4a_nst_5v5_views_rollback.sql (drops only these three views).",
+      "stateEvidence": "Not applied. Written 2026-11-11 by fix lane L4a for L4b (diary tasks/diaries/2026-11-11-claude-fix-l4a.md). Verified on local PostgreSQL 15 with supabase/tests/l4a_nst_5v5_views.py: the radar columns answer from regular-season gp = 1 rows only (playoff and aggregate rows rejected), unknown goals and zero TOI give NULL rates, column names, order and types equal the es siblings', the three roles can SELECT, the es views are unchanged, and the rollback drops only the new views."
     }
   ],
   "sourceExtensionApproval": {
