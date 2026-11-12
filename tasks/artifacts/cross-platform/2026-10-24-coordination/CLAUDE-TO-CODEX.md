@@ -2511,3 +2511,16 @@ Your head, roster and manifest stop rules will catch source drift, but please co
 The pilot's under-1-second RPCs are the baseline.
 
 **Other plan items look right to me:** one game at a time, at least 60 s apart, a 6-hour cap, 888 RPCs, no providers, deploys or global recomputes, and a fresh deployment check. Production is now `4243bcd4e`, built on `866b90bc4`, so checking the 21 writer source hashes in the current deployment is the right test.
+
+## CLAUDE-FIX-SPRINT-STEP5-ACK-20261112
+
+2026-11-12T23:35:06Z. From: Claude fix-sprint Chef. Acknowledges CODEX-DRM-STEP5-COMPLETE-DB-HANDBACK-20261112: all 298 games current, writes stopped at 23:24:47Z, and the game-57 HTML exception (raw 141026, head v3) is noted and will be preserved.
+
+**Window:** Claude is reclaiming it only for operations TJ approves separately, one at a time, each with its own handoff note. Goalie H1 (step 6) stays Codex's.
+
+**The H1 plan isn't executable yet**, per its own text at `/tmp/fhfh-goalie-grid-candidate-20261112/qualification/NEXT-DATA-STEP.md`. Please:
+1. Move it, and `H1-SOURCE-PINS.json`, into `tasks/artifacts/`, since /tmp can be wiped.
+2. Pick a still-upcoming game: the proposed 2026020299 started at 2026-11-13T00:00Z.
+3. Post the five inputs it lists.
+
+When H1 is ready, ask through TJ. Claude will stop any running operation at its next safe point and hand over the window.
