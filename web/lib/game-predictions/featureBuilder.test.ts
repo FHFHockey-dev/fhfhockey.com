@@ -1831,3 +1831,43 @@ describe("game prediction feature builder", () => {
     ).toBe(true);
   });
 });
+
+describe("recent-form windows need matched support (BC W1-10 A partial rows)", () => {
+  const full = createNstTeamGamelogRow({
+    teamAbbreviation: "BOS", date: "2026-01-08", gf: 4, ga: 2, xgf: 2, xga: 2, sf: 30, sa: 25, points: 2,
+  });
+  const recentForm = (rows: NstTeamGamelogRow[]) =>
+    buildGamePredictionFeatureSnapshotPayload(createInputs({ nstTeamGamelogRows: rows })).home.recentForm!;
+
+  it("keeps a full-window value unknown when one game is missing its counts", () => {
+    const missing = {
+      ...full, date: "2026-01-09", gf: null, ga: null, xgf: null, xga: null,
+      points: null, gf_pct: null, xgf_pct: null, point_pct: null, xga_per_60: null,
+    } as unknown as NstTeamGamelogRow;
+    const form = recentForm([full, missing]);
+    expect(form.last5.games).toBe(2);
+    // Old code: GF/game 2, GD/game 1, xGA/60 1, point% 0.5 (the missing game as zeros).
+    expect(form.last5.goalsForPerGame).toBeNull();
+    expect(form.last5.goalDifferentialPerGame).toBeNull();
+    expect(form.last5.xgaPer60).toBeNull();
+    expect(form.last5.pointPct).toBeNull();
+    expect(form.last5.xgfPct).toBeNull();
+  });
+
+  it("does not turn a missing xGA into a 100% xGF share", () => {
+    const oneSided = { ...full, xga: null, xgf_pct: null } as unknown as NstTeamGamelogRow;
+    expect(recentForm([oneSided]).last5.xgfPct).toBeNull();
+  });
+
+  it("pools complete games by ratio of sums and keeps genuine zeros", () => {
+    const shutout = createNstTeamGamelogRow({
+      teamAbbreviation: "BOS", date: "2026-01-09", gf: 0, ga: 3, xgf: 1, xga: 3, sf: 20, sa: 35, points: 0,
+    });
+    const form = recentForm([full, shutout]);
+    expect(form.last5.goalsForPerGame).toBe(2);
+    expect(form.last5.goalDifferentialPerGame).toBe(-0.5);
+    expect(form.last5.xgfPct).toBeCloseTo(3 / 8, 12);
+    expect(form.last5.xgaPer60).toBeCloseTo(5 / 2, 12);
+    expect(form.last5.pointPct).toBe(0.5);
+  });
+});

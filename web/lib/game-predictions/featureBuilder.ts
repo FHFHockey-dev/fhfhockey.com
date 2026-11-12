@@ -915,59 +915,75 @@ function divideOrNull(numerator: number, denominator: number): number | null {
   return denominator > 0 ? numerator / denominator : null;
 }
 
-function shareFromCounts(
-  forValue: number,
-  againstValue: number,
-  fallbackPct: number | string | null | undefined,
+/**
+ * Sum of a count over the window, or null when any game lacks it: a game with
+ * a missing count is unknown, never zero (rule 5). Genuine zeros are kept.
+ */
+function completeSum(
+  rows: NstTeamGamelogRow[],
+  read: (row: NstTeamGamelogRow) => number | string | null | undefined,
 ): number | null {
+  let total = 0;
+  for (const row of rows) {
+    const value = toNumber(read(row));
+    if (value == null) return null;
+    total += value;
+  }
+  return total;
+}
+
+/** Share from a matched pair of window sums; unknown if either side is. */
+function shareFromCompleteCounts(
+  forValue: number | null,
+  againstValue: number | null,
+): number | null {
+  if (forValue == null || againstValue == null) return null;
   const total = forValue + againstValue;
-  if (total > 0) return forValue / total;
-  return percentishToRate(fallbackPct);
+  return total > 0 ? forValue / total : null;
 }
 
 function summarizeRecentTeamRows(
   rows: NstTeamGamelogRow[],
 ): TeamRecentWindowFeatures {
   // The recent-form builder admits only GP=1 observations before slicing.
+  // Every window quantity uses matched support: each game must carry every
+  // count the quantity needs, otherwise the full-window value is unknown
+  // (BC W1-10 A). Single-game percentage fallbacks are not window values.
   const games = rows.length;
-  const goalsFor = sumNumbers(rows, (row) => row.gf);
-  const goalsAgainst = sumNumbers(rows, (row) => row.ga);
-  const xgf = sumNumbers(rows, (row) => row.xgf);
-  const xga = sumNumbers(rows, (row) => row.xga);
-  const shotsFor = sumNumbers(rows, (row) => row.sf);
-  const shotsAgainst = sumNumbers(rows, (row) => row.sa);
-  const fenwickFor = sumNumbers(rows, (row) => row.ff);
-  const fenwickAgainst = sumNumbers(rows, (row) => row.fa);
-  const corsiFor = sumNumbers(rows, (row) => row.cf);
-  const corsiAgainst = sumNumbers(rows, (row) => row.ca);
-  const toiSeconds = sumNumbers(rows, (row) => row.toi_seconds);
-  const points = sumNumbers(rows, (row) => row.points);
-  const hasPoints = rows.some((row) => toNumber(row.points) != null);
-  const xgaPer60Values = rows
-    .map((row) => toNumber(row.xga_per_60))
-    .filter((value): value is number => value != null);
+  const goalsFor = completeSum(rows, (row) => row.gf);
+  const goalsAgainst = completeSum(rows, (row) => row.ga);
+  const goalsKnown = goalsFor != null && goalsAgainst != null;
+  const xgf = completeSum(rows, (row) => row.xgf);
+  const xga = completeSum(rows, (row) => row.xga);
+  const toiSeconds = completeSum(rows, (row) => row.toi_seconds);
+  const points = completeSum(rows, (row) => row.points);
 
   return {
     games,
-    goalDifferentialPerGame: divideOrNull(goalsFor - goalsAgainst, games),
-    goalsForPerGame: divideOrNull(goalsFor, games),
-    goalsAgainstPerGame: divideOrNull(goalsAgainst, games),
-    xgfPct: shareFromCounts(xgf, xga, rows[0]?.xgf_pct),
-    shotShare: shareFromCounts(shotsFor, shotsAgainst, rows[0]?.sf_pct),
-    fenwickShare: shareFromCounts(fenwickFor, fenwickAgainst, rows[0]?.ff_pct),
-    corsiShare: shareFromCounts(corsiFor, corsiAgainst, rows[0]?.cf_pct),
-    gfPct: shareFromCounts(goalsFor, goalsAgainst, rows[0]?.gf_pct),
+    goalDifferentialPerGame: goalsKnown
+      ? divideOrNull(goalsFor - goalsAgainst, games)
+      : null,
+    goalsForPerGame: goalsKnown ? divideOrNull(goalsFor, games) : null,
+    goalsAgainstPerGame: goalsKnown ? divideOrNull(goalsAgainst, games) : null,
+    xgfPct: shareFromCompleteCounts(xgf, xga),
+    shotShare: shareFromCompleteCounts(
+      completeSum(rows, (row) => row.sf),
+      completeSum(rows, (row) => row.sa),
+    ),
+    fenwickShare: shareFromCompleteCounts(
+      completeSum(rows, (row) => row.ff),
+      completeSum(rows, (row) => row.fa),
+    ),
+    corsiShare: shareFromCompleteCounts(
+      completeSum(rows, (row) => row.cf),
+      completeSum(rows, (row) => row.ca),
+    ),
+    gfPct: shareFromCompleteCounts(goalsFor, goalsAgainst),
     xgaPer60:
-      toiSeconds > 0
+      xga != null && toiSeconds != null && toiSeconds > 0
         ? (xga / toiSeconds) * 3600
-        : xgaPer60Values.length > 0
-          ? xgaPer60Values.reduce((sum, value) => sum + value, 0) /
-            xgaPer60Values.length
-          : null,
-    pointPct:
-      hasPoints && games > 0
-        ? points / (2 * games)
-        : percentishToRate(rows[0]?.point_pct),
+        : null,
+    pointPct: points != null && games > 0 ? points / (2 * games) : null,
   };
 }
 
@@ -2743,12 +2759,28 @@ export async function fetchRequestedTeamPowerHistory(
   return { data: [...rows.values()], error: null };
 }
 
+function knownByCutoff(
+  timestamp: string | null | undefined,
+  cutoffAt: string,
+): boolean {
+  if (!timestamp) return false;
+  const at = Date.parse(timestamp);
+  const cutoff = Date.parse(cutoffAt);
+  return Number.isFinite(at) && Number.isFinite(cutoff) && at <= cutoff;
+}
+
 export async function fetchGamePredictionFeatureInputs(
   client: SupabaseClient<Database>,
   gameId: number,
   options: {
     sourceAsOfDate?: string;
     predictionCutoffAt?: string;
+    /**
+     * Live issuance only: the read happens at the prediction cutoff, so the
+     * target game's current lineCombinations row (which has no timestamp) is
+     * known at the cutoff. Historical reconstructions never set this.
+     */
+    admitTargetGameLineup?: boolean;
   } = {},
 ): Promise<GamePredictionFeatureInputs> {
   const { data: game, error: gameError } = await client
@@ -2833,7 +2865,9 @@ export async function fetchGamePredictionFeatureInputs(
   }
   const lineCombinationGameIds = Array.from(
     new Set([
-      ...(hasExplicitSourceAsOfDate ? [] : [typedGame.id]),
+      ...(hasExplicitSourceAsOfDate && !options.admitTargetGameLineup
+        ? []
+        : [typedGame.id]),
       ...sourceEligiblePriorGames.map((priorGame) => priorGame.id),
     ]),
   );
@@ -2908,7 +2942,7 @@ export async function fetchGamePredictionFeatureInputs(
         "game_id,team_id,player_id,game_date,start_probability,confirmed_status,projected_gsaa_per_60,created_at,updated_at",
       )
       .eq("game_id", gameId)
-      .lte("created_at", sourceAsOfEnd),
+      .lte("created_at", oddsSourceCutoffAt),
     lineCombinationQuery,
     client
       .from("lines_ccc")
@@ -2919,7 +2953,7 @@ export async function fetchGamePredictionFeatureInputs(
       .in("team_id", teamIds)
       .eq("status", "observed")
       .eq("nhl_filter_status", "accepted")
-      .lte("observed_at", sourceAsOfEnd),
+      .lte("observed_at", oddsSourceCutoffAt),
     client
       .from("vw_goalie_stats_unified")
       .select(
@@ -3039,8 +3073,12 @@ export async function fetchGamePredictionFeatureInputs(
     nstTeamGamelogRows: (nstTeamGamelogResult.data ??
       []) as NstTeamGamelogRow[],
     teamCtpiRows: (teamCtpiResult.data ?? []) as TeamCtpiRow[],
-    goalieStartRows: (goalieStartResult.data ??
-      []) as GoalieStartProjectionRow[],
+    // Rows are upserted in place, so a row updated after the cutoff carries
+    // later information than the cutoff allows: drop it (rule 10).
+    goalieStartRows: ((goalieStartResult.data ??
+      []) as GoalieStartProjectionRow[]).filter((row) =>
+      knownByCutoff(row.updated_at ?? row.created_at, oddsSourceCutoffAt),
+    ),
     lineCombinationRows: (lineCombinationResult.data ??
       []) as LineCombinationRow[],
     linesCccRows: (linesCccResult.data ?? []) as LinesCccRow[],

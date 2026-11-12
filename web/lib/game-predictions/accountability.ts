@@ -12,7 +12,7 @@ import {
   BASELINE_MODEL_NAME,
   BASELINE_MODEL_VERSION,
   BASELINE_FEATURE_KEYS,
-  BASELINE_WINNER_DECISION_THRESHOLD,
+  WINNER_PICK_POLICY_VERSION,
   CANDIDATE_ONLY_FEATURE_KEYS,
   PUBLIC_EXPLANATION_FEATURE_KEYS,
   analyzeBaselineFeatureSignals,
@@ -54,6 +54,11 @@ import {
   type PromotionDecision,
   type PromotionMetricSummary,
 } from "./workflow";
+import {
+  displayedWinnerTeamId,
+  tallyWinnerPicks,
+  winnerPickCorrect,
+} from "./winnerPick";
 
 type Tables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Row"];
@@ -143,9 +148,11 @@ export type PredictionCandlestick = {
   predictionCount: number;
   finalPredictionId: string | null;
   finalPredictionCutoffAt: string;
-  predictedWinnerTeamId: number;
+  /** Null when the displayed pair is 50/50 (decision 43: a tie, no pick). */
+  predictedWinnerTeamId: number | null;
   actualWinnerTeamId: number;
-  predictedWinnerCorrect: boolean;
+  /** Null for a tie; ties are excluded from winner accuracy (TJ 2026-11-11). */
+  predictedWinnerCorrect: boolean | null;
   homeScore: number;
   awayScore: number;
 };
@@ -155,6 +162,7 @@ export type AccountabilityDailyPoint = {
   evaluatedGames: number;
   correctGames: number;
   wrongGames: number;
+  tieGames: number;
   cumulativeAccuracy: number | null;
   rolling10Accuracy: number | null;
   rolling25Accuracy: number | null;
@@ -167,6 +175,7 @@ export type AccountabilitySummary = {
   evaluatedGames: number;
   correctGames: number;
   wrongGames: number;
+  tieGames: number;
   accuracy: number | null;
   rolling10Accuracy: number | null;
   rolling25Accuracy: number | null;
@@ -181,6 +190,7 @@ export type BacktestBaselineComparison = {
   evaluatedGames: number;
   correctGames: number;
   wrongGames: number;
+  tieGames: number;
   accuracy: number | null;
   brierScore: number | null;
   logLoss: number | null;
@@ -192,6 +202,8 @@ export type ConfidenceCalibrationBucket = {
   minConfidence: number;
   maxConfidence: number;
   predictions: number;
+  /** Games with a pick; accuracy and average confidence are over these. */
+  decidedPredictions?: number;
   correctGames: number;
   accuracy: number | null;
   averageConfidence: number | null;
@@ -251,7 +263,8 @@ export type BacktestAblationComparison = {
   modelVersion: string;
   excludedFeatureKeys: readonly BaselineFeatureKey[];
   disableDataQualityDampening: boolean;
-  winnerDecisionThreshold: number;
+  /** Null: the pick follows the displayed probabilities (decision 43). */
+  winnerDecisionThreshold: number | null;
   modelFamily: "logistic" | "extra_trees";
   calibrationMethod: CalibrationMethodName;
   probabilityBlend: BacktestProbabilityBlend | null;
@@ -849,10 +862,7 @@ function chunkValues<T>(values: T[], size: number): T[][] {
 }
 
 function accuracyFor(candles: PredictionCandlestick[]): number | null {
-  if (candles.length === 0) return null;
-  return roundMetric(
-    candles.filter((row) => row.predictedWinnerCorrect).length / candles.length,
-  );
+  return tallyWinnerPicks(candles).accuracy;
 }
 
 function addDateDays(date: string, days: number): string {
@@ -961,7 +971,6 @@ export const DEFAULT_BACKTEST_ABLATION_VARIANTS: BacktestAblationVariant[] = [
       includeDefaultExcludedFeatureKeys: true,
       excludedFeatureKeys: CANDIDATE_ONLY_FEATURE_KEYS,
     },
-    winnerDecisionThreshold: 0.52,
   },
   {
     key: "v3_recent_form",
@@ -970,7 +979,6 @@ export const DEFAULT_BACKTEST_ABLATION_VARIANTS: BacktestAblationVariant[] = [
       includeDefaultExcludedFeatureKeys: true,
       excludedFeatureKeys: CANDIDATE_ONLY_FEATURE_KEYS,
     },
-    winnerDecisionThreshold: 0.5,
   },
   {
     key: "no_recent_form",
@@ -1240,7 +1248,8 @@ export const DEFAULT_BACKTEST_ABLATION_VARIANTS: BacktestAblationVariant[] = [
   },
   {
     key: "home_threshold_52",
-    label: "Home decision threshold 52%",
+    // Research only: decision 43 retired the 0.52 pick rule for serving.
+    label: "Research: home decision threshold 52% (retired rule)",
     winnerDecisionThreshold: 0.52,
   },
 ];
@@ -1375,31 +1384,37 @@ function teamAbbreviation(
 function sortPredictions(
   predictions: AccountabilityPredictionRow[],
 ): AccountabilityPredictionRow[] {
-  return [...predictions].sort((a, b) => {
-    const left = a.prediction_cutoff_at ?? a.computed_at;
-    const right = b.prediction_cutoff_at ?? b.computed_at;
-    return left.localeCompare(right);
-  });
+  // Issuance order is publication (computation) order; a cutoff stamp is a
+  // claim about the inputs, not about when the forecast was published.
+  return [...predictions].sort((a, b) => a.computed_at.localeCompare(b.computed_at));
 }
 
+/**
+ * Issued forecasts that are verified pregame evidence (rule 10): the game has
+ * a known start, and each forecast was computed (published) before it, with
+ * any stated input cutoff also before it. A backdated cutoff on a postgame
+ * computation is not pregame, and an unknown start verifies nothing.
+ */
 function finalPregamePredictions(
   predictions: AccountabilityPredictionRow[],
   game?: AccountabilityGameRow,
 ): AccountabilityPredictionRow[] {
-  const sorted = sortPredictions(predictions);
-  if (!game?.startTime) return sorted;
+  if (!game?.startTime) return [];
   const startMs = parseDateTimeWithGameDate(game.startTime, game.date);
-  if (startMs == null) return sorted;
-  const beforeStart = sorted.filter(
-    (prediction) => {
-      const predictionMs = parseDateTimeWithGameDate(
-        prediction.prediction_cutoff_at ?? prediction.computed_at,
-        game.date,
-      );
-      return predictionMs != null && predictionMs < startMs;
-    },
-  );
-  return beforeStart;
+  if (startMs == null) return [];
+  return sortPredictions(predictions).filter((prediction) => {
+    const computedMs = parseDateTimeWithGameDate(
+      prediction.computed_at,
+      game.date,
+    );
+    if (computedMs == null || computedMs >= startMs) return false;
+    if (prediction.prediction_cutoff_at == null) return true;
+    const cutoffMs = parseDateTimeWithGameDate(
+      prediction.prediction_cutoff_at,
+      game.date,
+    );
+    return cutoffMs != null && cutoffMs < startMs;
+  });
 }
 
 export function buildPredictionCandlestick(args: {
@@ -1424,11 +1439,14 @@ export function buildPredictionCandlestick(args: {
   const actualWinnerTeamId = args.outcome.homeWon
     ? args.outcome.homeTeamId
     : args.outcome.awayTeamId;
-  const predictedWinnerTeamId =
-    final.predicted_winner_team_id ??
-    (final.home_win_probability >= final.away_win_probability
-      ? final.home_team_id
-      : final.away_team_id);
+  // Decision 43: the pick follows the displayed final probabilities, not the
+  // stored id (written under the retired 0.52 rule).
+  const predictedWinnerTeamId = displayedWinnerTeamId({
+    homeWinProbability: final.home_win_probability,
+    awayWinProbability: final.away_win_probability,
+    homeTeamId: final.home_team_id,
+    awayTeamId: final.away_team_id,
+  });
   const teamsById = args.teamsById ?? new Map<number, AccountabilityTeamRow>();
 
   return {
@@ -1452,7 +1470,10 @@ export function buildPredictionCandlestick(args: {
     finalPredictionCutoffAt: final.prediction_cutoff_at ?? final.computed_at,
     predictedWinnerTeamId,
     actualWinnerTeamId,
-    predictedWinnerCorrect: predictedWinnerTeamId === actualWinnerTeamId,
+    predictedWinnerCorrect: winnerPickCorrect(
+      predictedWinnerTeamId,
+      actualWinnerTeamId,
+    ),
     homeScore: args.outcome.homeScore,
     awayScore: args.outcome.awayScore,
   };
@@ -1477,9 +1498,7 @@ export function buildAccountabilityDailySeries(
   const cumulative: PredictionCandlestick[] = [];
   return Array.from(byDate.entries()).map(([asOfDate, dayCandles]) => {
     cumulative.push(...dayCandles);
-    const correctGames = cumulative.filter(
-      (row) => row.predictedWinnerCorrect,
-    ).length;
+    const { correctGames, wrongGames, tieGames } = tallyWinnerPicks(cumulative);
     const probabilityMetrics = evaluateProbabilityMetrics(
       cumulative.map((row) => ({
         label: row.actualHomeWinProbability,
@@ -1491,7 +1510,8 @@ export function buildAccountabilityDailySeries(
       asOfDate,
       evaluatedGames: cumulative.length,
       correctGames,
-      wrongGames: cumulative.length - correctGames,
+      wrongGames,
+      tieGames,
       cumulativeAccuracy: accuracyFor(cumulative),
       rolling10Accuracy: accuracyFor(cumulative.slice(-10)),
       rolling25Accuracy: accuracyFor(cumulative.slice(-25)),
@@ -1505,9 +1525,7 @@ export function buildAccountabilityDailySeries(
 export function buildAccountabilitySummary(
   candles: PredictionCandlestick[],
 ): AccountabilitySummary {
-  const correctGames = candles.filter(
-    (row) => row.predictedWinnerCorrect,
-  ).length;
+  const { correctGames, wrongGames, tieGames } = tallyWinnerPicks(candles);
   const probabilityMetrics = evaluateProbabilityMetrics(
     candles.map((row) => ({
       label: row.actualHomeWinProbability,
@@ -1518,7 +1536,8 @@ export function buildAccountabilitySummary(
   return {
     evaluatedGames: candles.length,
     correctGames,
-    wrongGames: candles.length - correctGames,
+    wrongGames,
+    tieGames,
     accuracy: accuracyFor(candles),
     rolling10Accuracy: accuracyFor(candles.slice(-10)),
     rolling25Accuracy: accuracyFor(candles.slice(-25)),
@@ -1541,24 +1560,30 @@ function buildBaselineComparison(args: {
       0.95,
       Math.max(0.05, rawProbability),
     );
-    const predictedHome = homeWinProbability >= 0.5;
-    const actualHome = candle.actualHomeWinProbability === 1;
+    const pick = displayedWinnerTeamId({
+      homeWinProbability,
+      awayWinProbability: 1 - homeWinProbability,
+      homeTeamId: candle.homeTeamId,
+      awayTeamId: candle.awayTeamId,
+    });
     return [{
       label: candle.actualHomeWinProbability,
       prediction: homeWinProbability,
-      correct: predictedHome === actualHome,
+      predictedWinnerCorrect: winnerPickCorrect(pick, candle.actualWinnerTeamId),
     }];
   });
   const metrics = evaluateProbabilityMetrics(predictions);
-  const correctGames = predictions.filter((prediction) => prediction.correct).length;
+  const { correctGames, wrongGames, tieGames, accuracy } =
+    tallyWinnerPicks(predictions);
 
   return {
     key: args.key,
     label: args.label,
     evaluatedGames: predictions.length,
     correctGames,
-    wrongGames: predictions.length - correctGames,
-    accuracy: predictions.length ? roundMetric(correctGames / predictions.length) : null,
+    wrongGames,
+    tieGames,
+    accuracy,
     brierScore: metrics.brierScore,
     logLoss: metrics.logLoss,
     averagePrediction: metrics.averagePrediction,
@@ -1679,18 +1704,14 @@ export function buildBacktestPhaseSummaries(args: {
         prediction: candle.finalHomeWinProbability,
       })),
     );
-    const correctGames = phaseCandles.filter(
-      (candle) => candle.predictedWinnerCorrect,
-    ).length;
+    const { correctGames, accuracy } = tallyWinnerPicks(phaseCandles);
 
     return {
       phase,
       trainingExamples: args.phaseTrainingCounts?.get(phase) ?? 0,
       replayGames: phaseCandles.length,
       correctGames,
-      accuracy: phaseCandles.length
-        ? roundMetric(correctGames / phaseCandles.length)
-        : null,
+      accuracy,
       brierScore: metrics.brierScore,
       logLoss: metrics.logLoss,
       modelSource:
@@ -1749,18 +1770,14 @@ export function buildBacktestMonitoredSegmentSummaries(args: {
           prediction: candle.finalHomeWinProbability,
         })),
       );
-      const correctGames = segmentCandles.filter(
-        (candle) => candle.predictedWinnerCorrect,
-      ).length;
+      const { correctGames, accuracy } = tallyWinnerPicks(segmentCandles);
 
       summaries.push({
         segmentKey,
         segmentValue,
         replayGames: segmentCandles.length,
         correctGames,
-        accuracy: segmentCandles.length
-          ? roundMetric(correctGames / segmentCandles.length)
-          : null,
+        accuracy,
         brierScore: metrics.brierScore,
         logLoss: metrics.logLoss,
       });
@@ -1783,10 +1800,11 @@ export function buildConfidenceCalibrationBuckets(
       );
       return confidence >= minConfidence && confidence < maxConfidence;
     });
-    const correctGames = bucketCandles.filter(
-      (candle) => candle.predictedWinnerCorrect,
-    ).length;
-    const confidenceSum = bucketCandles.reduce(
+    const { correctGames, accuracy } = tallyWinnerPicks(bucketCandles);
+    const decidedCandles = bucketCandles.filter(
+      (candle) => candle.predictedWinnerCorrect != null,
+    );
+    const confidenceSum = decidedCandles.reduce(
       (sum, candle) =>
         sum +
         Math.max(
@@ -1803,25 +1821,45 @@ export function buildConfidenceCalibrationBuckets(
       minConfidence,
       maxConfidence: Math.min(1, maxConfidence),
       predictions: bucketCandles.length,
+      decidedPredictions: decidedCandles.length,
       correctGames,
-      accuracy: bucketCandles.length
-        ? roundMetric(correctGames / bucketCandles.length)
-        : null,
-      averageConfidence: bucketCandles.length
-        ? roundMetric(confidenceSum / bucketCandles.length)
+      accuracy,
+      averageConfidence: decidedCandles.length
+        ? roundMetric(confidenceSum / decidedCandles.length)
         : null,
     };
   });
 }
 
+/** Bins with fewer decided games than this carry no gate evidence. */
+export const CALIBRATION_GATE_MIN_BIN_GAMES = 30;
+const CALIBRATION_GATE_Z = 1.96;
+
+/**
+ * Calibration gate statistic (BC W1-10 B, D8): the largest reliability-bin
+ * gap beyond that bin's 95% sampling band, sqrt(p(1-p)/n) under the bin's
+ * mean forecast p, over bins with at least CALIBRATION_GATE_MIN_BIN_GAMES
+ * decided games. A raw max gap fails a calibrated forecaster by chance (one
+ * miss at 85% is a gap of .85). Zero means every qualified bin is inside its
+ * band; null means no bin has enough games to judge.
+ */
 export function calibrationMaxGapFromBuckets(
   buckets: ConfidenceCalibrationBucket[],
 ): number | null {
-  const gaps = buckets.flatMap((bucket) => {
-    if (bucket.accuracy == null || bucket.averageConfidence == null) return [];
-    return [Math.abs(bucket.accuracy - bucket.averageConfidence)];
+  const excesses = buckets.flatMap((bucket) => {
+    const games = bucket.decidedPredictions ?? bucket.predictions;
+    if (
+      bucket.accuracy == null ||
+      bucket.averageConfidence == null ||
+      games < CALIBRATION_GATE_MIN_BIN_GAMES
+    ) {
+      return [];
+    }
+    const p = bucket.averageConfidence;
+    const band = CALIBRATION_GATE_Z * Math.sqrt((p * (1 - p)) / games);
+    return [Math.max(0, Math.abs(bucket.accuracy - p) - band)];
   });
-  return gaps.length > 0 ? roundMetric(Math.max(...gaps)) : null;
+  return excesses.length > 0 ? roundMetric(Math.max(...excesses)) : null;
 }
 
 function activeFeatureKeys(
@@ -2563,9 +2601,18 @@ async function fetchPersistedBacktestDashboard(args: {
     predictionCount: Number(row.prediction_count),
     finalPredictionId: null,
     finalPredictionCutoffAt: String(row.final_prediction_cutoff_at),
-    predictedWinnerTeamId: Number(row.predicted_winner_team_id),
+    // A null stored pick is a tie (decision 43); predicted_winner_correct is
+    // NOT NULL in the table, so a tie row carries false there and is read back
+    // as no pick.
+    predictedWinnerTeamId:
+      row.predicted_winner_team_id == null
+        ? null
+        : Number(row.predicted_winner_team_id),
     actualWinnerTeamId: Number(row.actual_winner_team_id),
-    predictedWinnerCorrect: Boolean(row.predicted_winner_correct),
+    predictedWinnerCorrect:
+      row.predicted_winner_team_id == null
+        ? null
+        : Boolean(row.predicted_winner_correct),
     homeScore: Number(row.home_score),
     awayScore: Number(row.away_score),
   }));
@@ -2584,7 +2631,9 @@ async function fetchPersistedBacktestDashboard(args: {
   });
 }
 
-async function fetchCompletedSeasonGames(args: {
+const SEASON_GAMES_PAGE_SIZE = 1000;
+
+export async function fetchCompletedSeasonGames(args: {
   client: SupabaseClient<Database>;
   seasonId: number;
   gameType?: number;
@@ -2592,19 +2641,26 @@ async function fetchCompletedSeasonGames(args: {
   games: AccountabilityGameRow[];
   outcomes: CompletedGameOutcome[];
 }> {
-  let gamesQuery = args.client
-    .from("games")
-    .select("id,date,startTime,seasonId,homeTeamId,awayTeamId,type")
-    .eq("seasonId", args.seasonId)
-    .order("date", { ascending: true })
-    .order("startTime", { ascending: true });
+  // A season holds more games than one PostgREST response (1,000 rows), so
+  // read in ranged pages with a total order (id breaks date/start ties).
+  const games: AccountabilityGameRow[] = [];
+  for (let from = 0; ; from += SEASON_GAMES_PAGE_SIZE) {
+    let gamesQuery = args.client
+      .from("games")
+      .select("id,date,startTime,seasonId,homeTeamId,awayTeamId,type")
+      .eq("seasonId", args.seasonId);
+    if (args.gameType != null) gamesQuery = gamesQuery.eq("type", args.gameType);
+    const { data, error } = await gamesQuery
+      .order("date", { ascending: true })
+      .order("startTime", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + SEASON_GAMES_PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = (data ?? []) as AccountabilityGameRow[];
+    games.push(...page);
+    if (page.length < SEASON_GAMES_PAGE_SIZE) break;
+  }
 
-  if (args.gameType != null) gamesQuery = gamesQuery.eq("type", args.gameType);
-
-  const { data, error } = await gamesQuery;
-  if (error) throw error;
-
-  const games = (data ?? []) as AccountabilityGameRow[];
   const outcomes = await fetchCompletedGameOutcomes(
     args.client,
     games.map((game) => game.id),
@@ -3001,15 +3057,17 @@ export function selectWalkForwardBacktestGameWindows(args: {
     };
   }
 
-  const splitIndex = Math.floor(windowGames.length / 2);
+  // Split at a date (slate) boundary: every game on the midpoint game's date
+  // is replayed, so no training game shares a slate with a replayed one.
+  const splitDate = windowGames[Math.floor(windowGames.length / 2)]?.date;
   return {
     trainingGames: applyLimit(
-      windowGames.slice(0, splitIndex),
+      windowGames.filter((game) => splitDate != null && game.date < splitDate),
       args.maxTrainingGames,
       "last",
     ),
     replayGames: applyLimit(
-      windowGames.slice(splitIndex),
+      windowGames.filter((game) => splitDate == null || game.date >= splitDate),
       args.maxReplayGames,
       "first",
     ),
@@ -3108,12 +3166,36 @@ export function persistedFeatureSnapshotRowToPayload(args: {
   row: FeatureSnapshotPayloadRow;
   featureSetVersion: string;
   sourceAsOfDate?: string;
+  /** The game's frozen start; a payload cut off at or after it is ineligible. */
+  gameStartTime?: string | null;
+  /** The cutoff the caller replays at; a later-cut payload is ineligible. */
+  maxPredictionCutoffAt?: string;
 }): GamePredictionFeatureSnapshotPayload | null {
   if (!isRecord(args.row.feature_payload)) return null;
   const payload = args.row
     .feature_payload as unknown as GamePredictionFeatureSnapshotPayload;
   if (payload.featureSetVersion !== args.featureSetVersion) return null;
   if (payload.gameId !== args.row.game_id) return null;
+  if (args.gameStartTime !== undefined || args.maxPredictionCutoffAt) {
+    // A retained payload is a reconstruction at its own cutoff; it is usable
+    // only when that cutoff is before the start and not after the replay's.
+    const payloadCutoffMs = parseDateTimeWithGameDate(
+      payload.predictionCutoffAt ?? args.row.prediction_cutoff_at,
+      payload.gameDate,
+    );
+    if (payloadCutoffMs == null) return null;
+    if (args.gameStartTime !== undefined) {
+      const startMs = parseDateTimeWithGameDate(
+        args.gameStartTime,
+        payload.gameDate,
+      );
+      if (startMs == null || payloadCutoffMs >= startMs) return null;
+    }
+    if (args.maxPredictionCutoffAt) {
+      const maxMs = Date.parse(args.maxPredictionCutoffAt);
+      if (!Number.isFinite(maxMs) || payloadCutoffMs > maxMs) return null;
+    }
+  }
   if (
     args.sourceAsOfDate &&
     payload.sourceAsOfDate !== args.sourceAsOfDate &&
@@ -3130,6 +3212,7 @@ async function fetchPersistedFeatureSnapshotPayload(args: {
   gameId: number;
   featureSetVersion: string;
   sourceAsOfDate?: string;
+  gameStartTime?: string | null;
 }): Promise<GamePredictionFeatureSnapshotPayload | null> {
   const { data, error } = await args.client
     .from("game_prediction_feature_snapshots")
@@ -3148,6 +3231,7 @@ async function fetchPersistedFeatureSnapshotPayload(args: {
       row,
       featureSetVersion: args.featureSetVersion,
       sourceAsOfDate: args.sourceAsOfDate,
+      gameStartTime: args.gameStartTime,
     });
     if (payload) return payload;
   }
@@ -3159,12 +3243,14 @@ async function buildPayloadForGame(
   gameId: number,
   sourceAsOfDate?: string,
   featureSetVersion = GAME_PREDICTION_FEATURE_SET_VERSION,
+  gameStartTime?: string | null,
 ): Promise<GamePredictionFeatureSnapshotPayload> {
   const persistedPayload = await fetchPersistedFeatureSnapshotPayload({
     client,
     gameId,
     featureSetVersion,
     sourceAsOfDate,
+    gameStartTime,
   });
   if (persistedPayload) return persistedPayload;
   if (featureSetVersion !== GAME_PREDICTION_FEATURE_SET_VERSION) {
@@ -3433,22 +3519,24 @@ function predictGameWithBacktestModel(args: {
     blendAnchorProbability +
       modelWeight * (prediction.homeWinProbability - blendAnchorProbability),
   );
-  const winnerDecisionThreshold = Math.max(
-    0.01,
-    Math.min(
-      0.99,
-      args.winnerDecisionThreshold ?? BASELINE_WINNER_DECISION_THRESHOLD,
-    ),
-  );
+  const blendedAwayProbability = roundProbability(1 - blendedHomeProbability);
   const predictedWinnerTeamId =
-    blendedHomeProbability >= winnerDecisionThreshold
-      ? prediction.homeTeamId
-      : prediction.awayTeamId;
+    args.winnerDecisionThreshold == null
+      ? displayedWinnerTeamId({
+          homeWinProbability: blendedHomeProbability,
+          awayWinProbability: blendedAwayProbability,
+          homeTeamId: prediction.homeTeamId,
+          awayTeamId: prediction.awayTeamId,
+        })
+      : blendedHomeProbability >=
+          Math.max(0.01, Math.min(0.99, args.winnerDecisionThreshold))
+        ? prediction.homeTeamId
+        : prediction.awayTeamId;
 
   return {
     ...prediction,
     homeWinProbability: blendedHomeProbability,
-    awayWinProbability: roundProbability(1 - blendedHomeProbability),
+    awayWinProbability: blendedAwayProbability,
     predictedWinnerTeamId,
     confidenceLabel: getConfidenceLabel(blendedHomeProbability),
     components: {
@@ -3518,6 +3606,7 @@ export async function runGamePredictionFeatureSignalAnalysis(args: {
       game.id,
       game.date,
       featureSetVersion,
+      game.startTime,
     );
     segmentedExamples.push({
       phase: payload.seasonPhase.phase,
@@ -3555,11 +3644,7 @@ function predictionToAccountabilityRow(args: {
   teamAbbreviationsById: Map<number, string>;
 }): PredictionCandlestick {
   const prediction = args.prediction;
-  const predictedWinnerTeamId =
-    prediction.predictedWinnerTeamId ??
-    (prediction.homeWinProbability >= prediction.awayWinProbability
-      ? prediction.homeTeamId
-      : prediction.awayTeamId);
+  const predictedWinnerTeamId = prediction.predictedWinnerTeamId;
   const actualWinnerTeamId = args.outcome.homeWon
     ? args.outcome.homeTeamId
     : args.outcome.awayTeamId;
@@ -3587,7 +3672,10 @@ function predictionToAccountabilityRow(args: {
     finalPredictionCutoffAt: prediction.predictionCutoffAt,
     predictedWinnerTeamId,
     actualWinnerTeamId,
-    predictedWinnerCorrect: predictedWinnerTeamId === actualWinnerTeamId,
+    predictedWinnerCorrect: winnerPickCorrect(
+      predictedWinnerTeamId,
+      actualWinnerTeamId,
+    ),
     homeScore: args.outcome.homeScore,
     awayScore: args.outcome.awayScore,
   };
@@ -3599,11 +3687,7 @@ function predictionToSyntheticHistoryRow(args: {
   horizonDays: number;
 }): AccountabilityPredictionRow {
   const prediction = args.prediction;
-  const predictedWinnerTeamId =
-    prediction.predictedWinnerTeamId ??
-    (prediction.homeWinProbability >= prediction.awayWinProbability
-      ? prediction.homeTeamId
-      : prediction.awayTeamId);
+  const predictedWinnerTeamId = prediction.predictedWinnerTeamId;
 
   return {
     prediction_id: `backtest-${prediction.gameId}-${args.sourceAsOfDate}-${args.horizonDays}`,
@@ -3719,7 +3803,9 @@ async function persistBacktestResult(args: {
     prediction_count: candle.predictionCount,
     predicted_winner_team_id: candle.predictedWinnerTeamId,
     actual_winner_team_id: candle.actualWinnerTeamId,
-    predicted_winner_correct: candle.predictedWinnerCorrect,
+    // Column is NOT NULL: a tie is stored as a null pick with false here and
+    // read back as a tie (see fetchAccountabilityDashboard).
+    predicted_winner_correct: candle.predictedWinnerCorrect ?? false,
     home_score: candle.homeScore,
     away_score: candle.awayScore,
     probability_spread: candle.probabilitySpread,
@@ -3850,6 +3936,9 @@ export async function runWalkForwardBacktest(args: {
   const examples: BacktestTrainingExample[] = [];
   const payloadCache =
     args.payloadCache ?? new Map<string, GamePredictionFeatureSnapshotPayload>();
+  const startTimeByGameId = new Map(
+    games.map((game) => [game.id, game.startTime] as const),
+  );
   const getPayload = async (gameId: number, sourceAsOfDate?: string) => {
     const key = `${featureSetVersion}:${gameId}:${sourceAsOfDate ?? "pregame"}`;
     const cached = payloadCache.get(key);
@@ -3859,6 +3948,7 @@ export async function runWalkForwardBacktest(args: {
       gameId,
       sourceAsOfDate,
       featureSetVersion,
+      startTimeByGameId.get(gameId) ?? null,
     );
     payloadCache.set(key, payload);
     return payload;
@@ -4022,50 +4112,62 @@ export async function runWalkForwardBacktest(args: {
       }
     }
   } else {
+    // Replay one slate (game date) at a time: every game in a slate is
+    // predicted with the same trained artifact, and the slate's outcomes join
+    // training only after all of its predictions (BC W1-10 A, Astra R1), so a
+    // simultaneous or later result never reaches an earlier-cutoff forecast.
+    const replaySlates = new Map<string, AccountabilityGameRow[]>();
     for (const game of replayGames) {
-      const outcome = outcomesByGameId.get(game.id);
-      if (!outcome) continue;
-      const payload = await getPayload(game.id, game.date);
-      const predictionCutoffAt = syntheticBacktestPredictionCutoffAt({
-        game,
-        simulationDate: game.date,
-        horizonDays: 0,
-      });
-      const modelSelection = modelSelectionForPayload(modelState, payload);
-      phaseModelSourceByGameId.set(game.id, modelSelection.source);
-      const prediction = predictGameWithBacktestModel({
-        payload,
-        model: modelSelection.model,
-        modelName,
-        modelVersion,
-        predictionCutoffAt,
-        calibrator: modelSelection.calibrator,
-        probabilityBlend: args.probabilityBlend,
-        trainingHomeWinRate: modelState.trainingHomeWinRate,
-        featureVectorOptions: args.featureVectorOptions,
-        disableDataQualityDampening: args.disableDataQualityDampening,
-        winnerDecisionThreshold: args.winnerDecisionThreshold,
-        modelAuditMetadata: args.modelAuditMetadata,
-      });
-      candles.push(
-        predictionToAccountabilityRow({
-          prediction,
-          outcome,
-          teamAbbreviationsById,
-        }),
-      );
-      predictionMetadataByGameId.set(game.id, prediction.metadata);
-      predictionSnapshots += 1;
-
-      examples.push(
-        toTrainingExample({
+      replaySlates.set(game.date, [...(replaySlates.get(game.date) ?? []), game]);
+    }
+    for (const slateGames of replaySlates.values()) {
+      const slateExamples: BacktestTrainingExample[] = [];
+      for (const game of slateGames) {
+        const outcome = outcomesByGameId.get(game.id);
+        if (!outcome) continue;
+        const payload = await getPayload(game.id, game.date);
+        const predictionCutoffAt = syntheticBacktestPredictionCutoffAt({
+          game,
+          simulationDate: game.date,
+          horizonDays: 0,
+        });
+        const modelSelection = modelSelectionForPayload(modelState, payload);
+        phaseModelSourceByGameId.set(game.id, modelSelection.source);
+        const prediction = predictGameWithBacktestModel({
           payload,
-          outcome,
+          model: modelSelection.model,
+          modelName,
+          modelVersion,
+          predictionCutoffAt,
+          calibrator: modelSelection.calibrator,
+          probabilityBlend: args.probabilityBlend,
+          trainingHomeWinRate: modelState.trainingHomeWinRate,
           featureVectorOptions: args.featureVectorOptions,
-          targetSeasonId: args.seasonId,
-        }),
-      );
-      replayedSinceRetrain += 1;
+          disableDataQualityDampening: args.disableDataQualityDampening,
+          winnerDecisionThreshold: args.winnerDecisionThreshold,
+          modelAuditMetadata: args.modelAuditMetadata,
+        });
+        candles.push(
+          predictionToAccountabilityRow({
+            prediction,
+            outcome,
+            teamAbbreviationsById,
+          }),
+        );
+        predictionMetadataByGameId.set(game.id, prediction.metadata);
+        predictionSnapshots += 1;
+        slateExamples.push(
+          toTrainingExample({
+            payload,
+            outcome,
+            featureVectorOptions: args.featureVectorOptions,
+            targetSeasonId: args.seasonId,
+          }),
+        );
+      }
+
+      examples.push(...slateExamples);
+      replayedSinceRetrain += slateExamples.length;
       if (replayedSinceRetrain >= retrainCadenceGames) {
         modelState = buildPhaseModelState({
           examples,
@@ -4127,11 +4229,13 @@ export async function runWalkForwardBacktest(args: {
     retrainCadenceGames,
     horizonDays: hasBlindWindow ? normalizeHorizonDays(args.horizonDays) : [0],
     modelAuditMetadata: {
-      winnerPolicyVersion: "winner_policy_v1_report_50_and_selected_threshold",
-      winnerPolicyMode: "report_default_50_and_selected_threshold",
+      winnerPolicyVersion: WINNER_PICK_POLICY_VERSION,
+      winnerPolicyMode:
+        args.winnerDecisionThreshold == null
+          ? "displayed_probability"
+          : "research_threshold",
       defaultWinnerThreshold: 0.5,
-      selectedWinnerThreshold:
-        args.winnerDecisionThreshold ?? BASELINE_WINNER_DECISION_THRESHOLD,
+      selectedWinnerThreshold: args.winnerDecisionThreshold ?? null,
       rosterImpactVersion: "none",
       strengthOfScheduleVersion: "none",
       seasonDecayVersion: BACKTEST_SEASON_RECENCY_WEIGHT_VERSION,
@@ -4283,6 +4387,7 @@ export async function runWalkForwardBacktestAblations(args: {
     evaluatedGames: 0,
     correctGames: 0,
     wrongGames: 0,
+    tieGames: 0,
     accuracy: null,
     rolling10Accuracy: null,
     rolling25Accuracy: null,
@@ -4309,8 +4414,7 @@ export async function runWalkForwardBacktestAblations(args: {
           variant.featureVectorOptions?.excludedFeatureKeys ?? [],
         disableDataQualityDampening:
           variant.disableDataQualityDampening ?? false,
-        winnerDecisionThreshold:
-          variant.winnerDecisionThreshold ?? BASELINE_WINNER_DECISION_THRESHOLD,
+        winnerDecisionThreshold: variant.winnerDecisionThreshold ?? null,
         modelFamily: variant.modelFamily ?? "logistic",
         calibrationMethod: variant.calibrationMethod ?? "raw",
         probabilityBlend: variant.probabilityBlend ?? null,
