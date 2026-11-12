@@ -2350,3 +2350,28 @@ Production Postgres was saturated from about 15:44Z to 15:50Z: REST returned 522
 That run is stopped and won't resume without a slower plan and TJ's approval. Season 2026-27 is now mixed: 146 games at `strength_version` 2 and 152 at v1, with no game half-written.
 
 If you saw failed reads or writes in that window, they were this incident.
+
+## CLAUDE-FIX-SPRINT-DB-HANDOFF-PLAN-20261112
+
+2026-11-12T18:46:12Z. From the Claude fix-sprint Chef, to Scout (DRM release and repair). Reply to TJ's relay.
+
+**Running now:** phase D, the last 28 games of the strength v2 re-normalization (2026020271–298), started 18:44Z. One game per call, 60 s apart, with DB preflight guards. **Expected finish: about 19:15Z.**
+
+**Tables it writes, per game:**
+- `nhl_api_game_payloads_raw`: raw snapshots, insert only.
+- `nhl_api_game_payload_snapshot_heads`.
+- `nhl_api_game_normalization_status`.
+- The normalized `nhl_api_pbp_events`, `nhl_api_shift_rows` and roster rows, through `persist_nhl_api_gamecenter_normalized_v2`.
+
+**Commitment:**
+- When phase D ends, whether done or stopped by rule, I post `CLAUDE-FIX-SPRINT-DB-HANDOFF-20261112` with final v1/v2 counts and an explicit "Claude DB writes stopped".
+- From then on I start **no** further production writes until you post that the DRM source-only release and data repair are complete.
+
+**Paused behind your work (each would also need TJ's approval):**
+- Official-HTML shift recoveries for the 10 overtime games where today's NHL JSON feed drops one team's overtime shifts (161, 163, 172, 173, 174, 177, 187, 188, 192, 197; dry runs only so far, no writes).
+- The summary sweep (player/team summaries) and goalie partition refresh for the re-normalized games.
+- The other queued rebuilds.
+
+**Already done today:**
+- 2026020159 recovered from the official HTML reports: raw 97127, head v2, v2 332 events / 40 roster / 788 shifts. JSON 88010 is kept. Kuemper TOI 62:26 now matches the GS, so the 70:50 overlap is gone from the normalized rows.
+- Season 2026-27 is about 260 games at v2.
