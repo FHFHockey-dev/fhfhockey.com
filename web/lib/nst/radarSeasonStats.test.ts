@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   NST_RADAR_STATS,
   fetchNstRadarSeason,
+  isMissingViewError,
   isNstRadarStat,
   nstRadarComparison,
   nstRadarMinimumLabel,
@@ -112,12 +113,12 @@ describe("fetchNstRadarSeason and nstRadarComparison", () => {
     expect(calls.filter((c) => c.table.startsWith("nst_"))).toHaveLength(2);
 
     // The player's own row is not a peer; the caller adds the player once.
-    expect(nstRadarComparison("goals_per_60", season, 1)).toEqual({ playerValue: 1.5, peerValues: [], belowMinimum: false, error: null });
-    expect(nstRadarComparison("cf_pct", season, 1)).toEqual({ playerValue: 60, peerValues: [], belowMinimum: false, error: null });
+    expect(nstRadarComparison("goals_per_60", season, 1)).toEqual({ playerValue: 1.5, peerValues: [], belowMinimum: false, viewMissing: false, error: null });
+    expect(nstRadarComparison("cf_pct", season, 1)).toEqual({ playerValue: 60, peerValues: [], belowMinimum: false, viewMissing: false, error: null });
     // A player outside the position list still gets his value; peers stay position-filtered.
-    expect(nstRadarComparison("cf_pct", season, 2)).toEqual({ playerValue: 45, peerValues: [60], belowMinimum: false, error: null });
+    expect(nstRadarComparison("cf_pct", season, 2)).toEqual({ playerValue: 45, peerValues: [60], belowMinimum: false, viewMissing: false, error: null });
     // Below the TOI minimum: unranked and reported, not ranked against qualified peers.
-    expect(nstRadarComparison("goals_per_60", season, 3)).toEqual({ playerValue: null, peerValues: [1.5], belowMinimum: true, error: null });
+    expect(nstRadarComparison("goals_per_60", season, 3)).toEqual({ playerValue: null, peerValues: [1.5], belowMinimum: true, viewMissing: false, error: null });
   });
 
   it("skips the position read when there is no position filter", async () => {
@@ -166,5 +167,30 @@ describe("fetchNstRadarSeason and nstRadarComparison", () => {
       fakeClient({ nst_seasonlong_5v5_rates: { data: [] } }).client, 20262027, ["goals_per_60"], [],
     );
     expect(nstRadarComparison("goals_per_60", empty, 1)).toMatchObject({ playerValue: null, peerValues: [] });
+  });
+});
+
+describe("unpublished 5v5 views (L4a migration 136)", () => {
+  it.each([
+    { code: "42P01", message: 'relation "public.nst_seasonlong_5v5_rates" does not exist' },
+    { code: "PGRST205", message: "Could not find the table 'public.nst_seasonlong_5v5_rates' in the schema cache" },
+    { message: 'relation "nst_seasonlong_5v5_counts_oi" does not exist' },
+  ])("reports a missing view as unavailable, not an error (%j)", async (error) => {
+    const season = await fetchNstRadarSeason(
+      fakeClient({ nst_seasonlong_5v5_rates: { error } }).client, 20262027, ["goals_per_60"], [],
+    );
+    expect(isMissingViewError(error)).toBe(true);
+    expect(nstRadarComparison("goals_per_60", season, 1)).toEqual({
+      playerValue: null, peerValues: [], belowMinimum: false, viewMissing: true, error: null,
+    });
+  });
+
+  it("keeps any other failure an error", async () => {
+    const error = { code: "57014", message: "canceling statement due to statement timeout" };
+    const season = await fetchNstRadarSeason(
+      fakeClient({ nst_seasonlong_5v5_rates: { error } }).client, 20262027, ["goals_per_60"], [],
+    );
+    expect(isMissingViewError(error)).toBe(false);
+    expect(nstRadarComparison("goals_per_60", season, 1)).toMatchObject({ viewMissing: false, error });
   });
 });

@@ -245,6 +245,8 @@ interface RadarComparison {
   rankings: Record<string, { rank: number; total: number }>;
   /** Stats whose player row exists but falls below the cohort's sample minimum. */
   belowMinimum: Record<string, string>;
+  /** Stats whose 5v5 season view is not published yet (L4a migration 136). */
+  viewMissing: Record<string, true>;
 }
 
 /**
@@ -319,7 +321,7 @@ export function PlayerRadarChart({
 
     const fetchPercentiles = async () => {
       const next: RadarComparison = {
-        key: comparisonKey, values: {}, percentiles: {}, rankings: {}, belowMinimum: {},
+        key: comparisonKey, values: {}, percentiles: {}, rankings: {}, belowMinimum: {}, viewMissing: {},
       };
       try {
         const normalizedPos = normalizePosition(player.position);
@@ -417,11 +419,15 @@ export function PlayerRadarChart({
 
         if (nstSeason) {
           nstStats.forEach((stat) => {
-            const { playerValue, peerValues, belowMinimum, error } = nstRadarComparison(
+            const { playerValue, peerValues, belowMinimum, viewMissing, error } = nstRadarComparison(
               stat,
               nstSeason,
               Number(player.id),
             );
+            if (viewMissing) {
+              next.viewMissing[stat] = true;
+              return;
+            }
             if (error) {
               console.error(`Unable to load the ${stat} radar comparison`, error);
             }
@@ -629,9 +635,13 @@ export function PlayerRadarChart({
   }
 
   const belowMinimum = currentComparison?.belowMinimum ?? {};
+  const viewMissing = currentComparison?.viewMissing ?? {};
   const statName = (stat: string) => SHARED_STAT_DISPLAY_NAMES[stat] || stat;
+  const unavailableStatNames = selectedStats
+    .filter((stat) => radarData.percentiles[stat] === undefined && viewMissing[stat])
+    .map(statName);
   const unrankedStatNames = selectedStats
-    .filter((stat) => radarData.percentiles[stat] === undefined && !belowMinimum[stat])
+    .filter((stat) => radarData.percentiles[stat] === undefined && !belowMinimum[stat] && !viewMissing[stat])
     .map(statName);
   const belowMinimumNotes = selectedStats
     .filter((stat) => radarData.percentiles[stat] === undefined && belowMinimum[stat])
@@ -710,6 +720,12 @@ export function PlayerRadarChart({
           </div>
         </div>
 
+        {!percentileLoading && unavailableStatNames.length > 0 && (
+          <p className={styles.comparisonGap}>
+            5v5 comparison unavailable for {unavailableStatNames.join(", ")}: the 5v5
+            season data is not published yet.
+          </p>
+        )}
         {!percentileLoading && unrankedStatNames.length > 0 && (
           // Neutral note that names the gap, not an orange warning.
           <p className={styles.comparisonGap}>

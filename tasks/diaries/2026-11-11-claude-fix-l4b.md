@@ -38,3 +38,9 @@ E2E wigo-one-page (fixture, isolated next, port 3100) for layout fit; commit; re
 ## Insights
 - NST `es` season views = sit=ev (even strength), not 5v5. No 5v5 season view exists; only nst_gamelog_5v5_* tables.
 - Live radar ranks only `advanced` stat lists (types.ts, L17) → all NST for skaters; goalie advanced stats are not in STAT_CALCULATION_METHODS, so goalie radar ranks nothing live.
+
+## Follow-up (Chef, after 71840ba42)
+- 5v5 views exist as L4a migration 136 (01fbee34c, unapplied). Radar: isMissingViewError (42P01 / PGRST205 / 5v5 relation message) → viewMissing, no console error, "5v5 comparison unavailable for …"; never all-strength fallback. 6 tests fail on 71840ba42, pass after.
+- Fixture granted: e2e/fixtures/wigo/wigoFixtures.ts game ids now NHL format YYYY02NNNN per row season. wigo-one-page 13/13 pass.
+- Checks: radar + radarSeasonStats vitest 61/61; ESLint exit 0; npm run typecheck exit 0.
+- Lane closed after this commit; production steps queued by Chef.

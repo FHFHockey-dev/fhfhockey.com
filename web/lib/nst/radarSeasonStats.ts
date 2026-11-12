@@ -2,7 +2,7 @@
 //
 // The radar is 5v5 (decision 15). It ranks a skater's 5v5 season row against every
 // skater's 5v5 season row, from the regular-season NST 5v5 views (one row per
-// player-season; L4a's migration, NULL for unknown values):
+// player-season; L4a migration 136, NULL for unknown values):
 //   nst_seasonlong_5v5_rates      individual per-60 rates and toi_seconds
 //   nst_seasonlong_5v5_counts_oi  on-ice for/against counts and toi_seconds_oi
 // The player's own value and the cohort's come from the same view, season and
@@ -185,6 +185,20 @@ export async function fetchNstRadarSeason(
 }
 
 /**
+ * True when a read failed because the view is not published (Postgres 42P01,
+ * PostgREST PGRST205). The 5v5 season views ship in L4a's migration 136; until it
+ * is applied the radar fails closed as "5v5 comparison unavailable", never falling
+ * back to all-strength rows.
+ */
+export function isMissingViewError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const { code, message } = error as { code?: unknown; message?: unknown };
+  if (code === "42P01" || code === "PGRST205") return true;
+  return typeof message === "string" &&
+    /(relation|view|table) ["'`]?[\w.]*nst_seasonlong_5v5_\w+["'`]? does not exist|could not find the table ["'`]?[\w.]*nst_seasonlong_5v5_/i.test(message);
+}
+
+/**
  * The player's value and the other cohort members' values for one stat, all under
  * the same view, season and sample minimum. The player's own row is left out of
  * `peerValues` (the caller adds the player once). A failed read or a missing player
@@ -194,9 +208,13 @@ export async function fetchNstRadarSeason(
 export function nstRadarComparison(stat: string, season: NstRadarSeason, playerId: number) {
   const def = NST_RADAR_STATS[stat];
   const result = def ? season.rowsByView[def.view] : undefined;
+  if (result && isMissingViewError(result.error)) {
+    // An expected state until the 5v5 views are applied: unavailable, not an error.
+    return { playerValue: null, peerValues: [] as number[], belowMinimum: false, viewMissing: true, error: null };
+  }
   if (!def || !result || result.error || season.positionError) {
     return {
-      playerValue: null, peerValues: [] as number[], belowMinimum: false,
+      playerValue: null, peerValues: [] as number[], belowMinimum: false, viewMissing: false,
       error: result?.error ?? season.positionError ?? null,
     };
   }
@@ -209,5 +227,5 @@ export function nstRadarComparison(stat: string, season: NstRadarSeason, playerI
   const playerValue = nstRadarStatValue(stat, playerRow);
   const belowMinimum =
     playerValue === null && !!playerRow && def.value(playerRow) !== null && !meetsLeagueMin(def, playerRow);
-  return { playerValue, peerValues, belowMinimum, error: null };
+  return { playerValue, peerValues, belowMinimum, viewMissing: false, error: null };
 }

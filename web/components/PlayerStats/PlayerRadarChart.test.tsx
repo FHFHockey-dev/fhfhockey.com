@@ -559,6 +559,29 @@ describe("PlayerRadarChart", () => {
       expect(screen.getByText(/No 5v5 comparison data for/)).toBeTruthy();
     });
 
+    it("says 5v5 comparison unavailable, without logging an error or using all-strength views, while the 5v5 views are unpublished", async () => {
+      installQueryMock({
+        playerRow: null,
+        cohortRows: [],
+        cohortResults: {
+          "player_id,cf,ca": {
+            data: null,
+            error: { code: "42P01", message: 'relation "public.nst_seasonlong_5v5_counts_oi" does not exist' },
+          },
+          player_id: { data: [{ player_id: 1 }], error: null },
+        },
+      });
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      render(<PlayerRadarChart {...nstProps} selectedStats={["cf_pct"]} />);
+
+      await waitFor(() => expect(screen.getByText(/5v5 comparison unavailable for/)).toBeTruthy());
+      expect(screen.queryByText(/No 5v5 comparison data for/)).toBeNull();
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(queryTraces.some((trace) => /_as_|_es_/.test(trace.table))).toBe(false);
+      expect(chartState.current?.data?.averages?.cf_pct).toBeUndefined();
+      errorSpy.mockRestore();
+    });
+
     it("shows no 5v5 comparison data when the NST read fails", async () => {
       installQueryMock({
         playerRow: null,

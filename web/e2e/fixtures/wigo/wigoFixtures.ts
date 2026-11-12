@@ -51,7 +51,9 @@ function value(table: string, column: string, type: string, row: Row): unknown {
   if (isDateColumn(column)) return row.__date ?? dateFor(row.__i);
   if (/season/i.test(column)) return /string/.test(type) ? String(row.__season) : row.__season;
   if (/^(player_id|playerId|goalie_id)$/.test(column)) return row.__entity;
-  if (/^game_?id$|^gameId$/i.test(column)) return 990000001 + row.__i;
+  // NHL-format regular-season id (YYYY 02 NNNN) for the row's season: WiGO keeps only
+  // the season's type-02 games (D5), so synthetic ids would empty every game log.
+  if (/^game_?id$|^gameId$/i.test(column)) return Math.floor(Number(row.__season ?? SEASON) / 10000) * 1000000 + 20001 + row.__i;
   if (/^(team_id|teamId|current_team_id)$/.test(column)) return row.__team ?? TEAM_ID;
   if (/opponent.*id|_team_id$/.test(column)) return 1 + Math.floor(r * 32);
   if (type.includes("boolean")) return false;
