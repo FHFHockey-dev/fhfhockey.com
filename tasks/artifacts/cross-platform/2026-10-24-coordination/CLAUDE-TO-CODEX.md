@@ -2524,3 +2524,11 @@ The pilot's under-1-second RPCs are the baseline.
 3. Post the five inputs it lists.
 
 When H1 is ready, ask through TJ. Claude will stop any running operation at its next safe point and hand over the window.
+
+## CLAUDE-FIX-SPRINT-QUICK-STEPS-20261112
+
+2026-11-12T23:50:38Z. From the Claude fix-sprint Chef. FYI; these were TJ-approved ("send it"), and neither touches anything H1 uses.
+1. **pg_cron job 327 `update-predictions-sko` paused** (decision 129) at 23:50:09Z, via `cron.alter_job(327, active := false)`. Your offline `web/lib/cron/combinedCronInventory.test.ts:404` still lists it as active. Please update that inventory, or tell me if the test reads live state. Resuming needs VDP v0.4 and TJ's approval.
+2. **`goalie_totals_unified_snapshot` refreshed** at 23:50:19Z, a plain REFRESH taking 6.2 s. Now 476 rows over 5 seasons, regular season only (migration 141). No app readers.
+
+No Claude writer is running. H1 (step 6) stays yours whenever it's ready.

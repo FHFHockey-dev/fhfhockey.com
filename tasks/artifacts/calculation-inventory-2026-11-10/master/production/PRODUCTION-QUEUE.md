@@ -24,9 +24,9 @@ Release: PR #430 squash = master `631a00c19`. fhfhockey `dpl_137qFEpUhovkj9Q6NaP
 | 10 | FORGE run with the new L9a/L9b/L9c writers (Codex's H1 run request; Start Chart labels being applied by Codex) | L9a/b/c, Codex | 4, 5, Codex Start Chart labels | Codex coordinates; TJ approval |
 | 11 | Reserve projections migration (authority 101, decision 52), then FORGE_RESERVE_PASS_ENABLED | L9a | 10 | to prepare |
 | 12 | Index migrations 123/124: confirm whether still needed | pre-sprint queue | — | to check |
-| 13 | Pause the update-predictions-sko cron (decision 129); gate get-predictions-sko if TJ chooses | L20 | — | to prepare |
+| 13 | Pause the update-predictions-sko cron (decision 129); gate get-predictions-sko if TJ chooses | L20 | — | **DONE 2026-11-12 23:50Z** (TJ "send it"): `cron.alter_job(327, active := false)`; readback: job 327 `update-predictions-sko`, 45 10 * * *, active false; the only matching job. Undo: the same call with active := true. |
 | 14 | Log checks for legacy routes (decisions 79, 124) | L19, L20 | — | to prepare |
-| 15 | goalie_totals_unified_snapshot refresh | L4a | 0c | to prepare |
+| 15 | goalie_totals_unified_snapshot refresh | L4a | 0c | **DONE 2026-11-12 23:50Z** (TJ "send it"): plain REFRESH in 6.2 s; 402 rows / 3 seasons (materialized 2025-09-29) → 476 rows / 5 seasons; sample 2025-26 goalies match the live view (GP 58/64/56, 5v5 GAA 2.186/2.353/2.700). No app readers. |
 | 16 | LEDGER_BASIS_SCHEMA_ENABLED flip (code constant: a commit plus a production release) | L10 | 0a (138) | batch with the next release |
 | 16b | Decision-127 default flip: `DEFAULT_FORECAST_CALENDAR_VERSION` in `web/lib/player-forecasts/contributions.ts:14` is still `forecast-calendar-v1`. L11's call sites accept v1 and v2 (`49c9b3501`), and L10 left the default at v1 for a joint flip that never landed. The flip is a one-line code change plus its test pins and a release. `contributions.ts` was released to Scout on 2026-11-12, so re-claim it through the mailbox or ask Scout. | L10, L11 | release | batch with 16 |
 | 17 | Comprehensive FIX-SPRINT-DEBRIEF.md and ASTRA-SPRINT-AUDIT-PROMPT.md | Chef | — | after production steps, or in parallel |
