@@ -228,6 +228,29 @@ export const PLAYER_STATS_SUMMARY_SOURCE_URL_PREFIX =
 export const PLAYER_STATS_SUMMARY_PARTITION_SOURCE_URL_PREFIX =
   "derived://underlying-player-summary-v2/";
 const PLAYER_STATS_SUMMARY_VERSION = 1;
+/**
+ * Formula revision of a written summary payload (rule 21: a versioned
+ * successor, readable alongside old payloads; the payload `version` gate is
+ * unchanged so old rows still parse). Revision 2 = L1 classification and
+ * running score + L2-landing goalie danger GA, distance sums, split keys.
+ * Payloads without it are pre-fix.
+ */
+export const PLAYER_STATS_SUMMARY_FORMULA_REVISION = 2;
+/** Goalie readers' own partitions (decision 110), written by the goalie refresh. */
+export const GOALIE_STATS_SUMMARY_TABLE = "goalie_underlying_summary_partitions";
+
+/** A summary payload written by the current writer (version and formula revision). */
+export function isCurrentPlayerStatsSummaryPayload(payload: unknown): boolean {
+  if (!isObjectRecord(payload)) {
+    return false;
+  }
+
+  return (
+    payload.version === PLAYER_STATS_SUMMARY_VERSION &&
+    typeof payload.formulaRevision === "number" &&
+    payload.formulaRevision >= PLAYER_STATS_SUMMARY_FORMULA_REVISION
+  );
+}
 const PLAYER_STATS_SEASON_AGGREGATE_CACHE_TTL_MS = 10 * 60 * 1000;
 const PLAYER_STATS_SOURCE_GAME_SELECT =
   "id,seasonId,type,date,startTime,homeTeamId,awayTeamId";
@@ -517,6 +540,7 @@ type PlayerStatsLandingSummaryRow = {
 
 type PlayerStatsLandingSummaryPayload = {
   version: number;
+  formulaRevision?: number;
   generatedAt: string;
   game: {
     id: number;
@@ -3613,6 +3637,7 @@ function buildPlayerStatsGameSummaryPayload(args: {
 }): PlayerStatsLandingSummaryPayload {
   return {
     version: PLAYER_STATS_SUMMARY_VERSION,
+    formulaRevision: PLAYER_STATS_SUMMARY_FORMULA_REVISION,
     generatedAt: new Date().toISOString(),
     game: {
       id: args.gameParity.game.id,
@@ -4273,6 +4298,153 @@ function buildLandingApiResultFromAggregationRows(args: {
 
 export { buildLandingApiResultFromAggregationRows };
 
+type GoalieSummaryPartitionReadRow = {
+  game_id: number | string | null;
+  payload?: unknown;
+  version?: unknown;
+  formula_revision?: unknown;
+};
+
+/**
+ * Goalie summary rows for a filter state (decision 110, DR1). Order:
+ * 1. fresh partitions in `goalie_underlying_summary_partitions` for the
+ *    requested strength and score state;
+ * 2. a game whose all-situation goalie partition is fresh is complete: a
+ *    missing split partition there means no goalie time in the split;
+ * 3. for the rest (missing or stale), a fresh copy of the shared partition;
+ * 4. otherwise a build from the raw game payloads, when live builds are allowed.
+ * Stale (pre-revision) partitions are never served.
+ */
+async function fetchGoalieSummaryRowsForFilterState(args: {
+  games: readonly PlayerStatsSourceGameRow[];
+  state: PlayerStatsFilterState;
+  strength: PlayerStatsSupportedStrength;
+  client: PlayerStatsSupabaseClient;
+  allowLiveSummaryBuild: boolean;
+}) {
+  const gameIds = args.games.map((game) => game.id);
+  const gameIdChunks = chunkNumberArray(gameIds, GAME_ID_CHUNK_SIZE);
+  const scoreState = args.state.primary.scoreState;
+  const databaseClient = args.client as any;
+  const isAllSituation = args.strength === "allStrengths" && scoreState === "allScores";
+
+  const partitionRows =
+    gameIds.length === 0
+      ? []
+      : await fetchSupabaseRowsForGameChunks<GoalieSummaryPartitionReadRow>({
+          gameIdChunks,
+          concurrency: 6,
+          fetchChunkPage: async (gameIdChunk, from, to) =>
+            databaseClient
+              .from(GOALIE_STATS_SUMMARY_TABLE)
+              .select("game_id,payload")
+              .eq("strength", args.strength)
+              .eq("score_state", scoreState)
+              .in("game_id", [...gameIdChunk])
+              .order("game_id", { ascending: true })
+              .range(from, to),
+        });
+  const partitionSummaryPayloads = new Map<number, PlayerStatsLandingSummaryPayload>();
+  for (const row of partitionRows) {
+    const gameId = Number(row.game_id);
+    if (!isCurrentPlayerStatsSummaryPayload(row.payload)) {
+      continue;
+    }
+    const payload = parsePlayerStatsLandingSummaryPayload(row.payload);
+    if (payload && payload.game.id === gameId) {
+      partitionSummaryPayloads.set(gameId, payload);
+    }
+  }
+  const partitionRowsFetchedAt = Date.now();
+
+  let completeGameIds = new Set<number>(partitionSummaryPayloads.keys());
+  if (!isAllSituation && gameIds.length > 0) {
+    const coverageRows = await fetchSupabaseRowsForGameChunks<GoalieSummaryPartitionReadRow>({
+      gameIdChunks,
+      concurrency: 6,
+      fetchChunkPage: async (gameIdChunk, from, to) =>
+        databaseClient
+          .from(GOALIE_STATS_SUMMARY_TABLE)
+          .select("game_id,version:payload->version,formula_revision:payload->formulaRevision")
+          .eq("strength", "allStrengths")
+          .eq("score_state", "allScores")
+          .in("game_id", [...gameIdChunk])
+          .order("game_id", { ascending: true })
+          .range(from, to),
+    });
+    completeGameIds = new Set(
+      coverageRows
+        .filter((row) => {
+          const payload = isObjectRecord(row.payload) ? row.payload : null;
+          return isCurrentPlayerStatsSummaryPayload({
+            version: row.version ?? payload?.version,
+            formulaRevision: row.formula_revision ?? payload?.formulaRevision,
+          });
+        })
+        .map((row) => Number(row.game_id))
+    );
+  }
+
+  const uncoveredGames = args.games.filter(
+    (game) => !partitionSummaryPayloads.has(game.id) && !completeGameIds.has(game.id)
+  );
+  const sharedPayloadRows =
+    uncoveredGames.length === 0
+      ? []
+      : await fetchPlayerStatsSummaryPayloadRows({
+          gameIds: uncoveredGames.map((game) => game.id),
+          sourceUrlPrefix: getPlayerStatsSummaryPartitionPrefix({
+            mode: "goalies",
+            strength: args.strength,
+            scoreState,
+          }),
+          sourceUrls: uncoveredGames.map((game) =>
+            buildPlayerStatsSummaryPartitionSourceUrl({
+              gameId: game.id,
+              mode: "goalies",
+              strength: args.strength,
+              scoreState,
+            })
+          ),
+          client: args.client,
+        });
+  const legacySummaryPayloads = new Map(
+    [...flattenPersistedSummaryRows(sharedPayloadRows)].filter(([, payload]) =>
+      isCurrentPlayerStatsSummaryPayload(payload)
+    )
+  );
+  const summaryRowsFetchedAt = Date.now();
+  const persistedSummaryPayloads = new Map<number, PlayerStatsLandingSummaryPayload>([
+    ...legacySummaryPayloads,
+    ...partitionSummaryPayloads,
+  ]);
+  const missingSummaryGames = uncoveredGames.filter(
+    (game) => !persistedSummaryPayloads.has(game.id)
+  );
+  const liveSummaryRows = args.allowLiveSummaryBuild
+    ? await buildLiveSummaryRowsForGames({
+        games: missingSummaryGames,
+        state: args.state,
+        client: args.client,
+      })
+    : [];
+
+  return {
+    supportedStrength: args.strength,
+    partitionSummaryPayloads,
+    legacySummaryPayloads,
+    persistedSummaryPayloads,
+    persistedSummaryRows: [...persistedSummaryPayloads.values()].flatMap(
+      (payload) => payload.rows
+    ),
+    missingSummaryGames,
+    liveSummaryRows,
+    partitionRowsFetchedAt,
+    summaryRowsFetchedAt,
+    liveSummaryRowsBuiltAt: Date.now(),
+  };
+}
+
 async function fetchPlayerStatsSummaryRowsForFilterState(args: {
   games: readonly PlayerStatsSourceGameRow[];
   state: PlayerStatsFilterState;
@@ -4285,6 +4457,17 @@ async function fetchPlayerStatsSummaryRowsForFilterState(args: {
   const supportedStrength = isSupportedLandingStrength(args.state.primary.strength)
     ? args.state.primary.strength
     : null;
+
+  if (args.state.primary.statMode === "goalies" && supportedStrength != null) {
+    return fetchGoalieSummaryRowsForFilterState({
+      games: args.games,
+      state: args.state,
+      strength: supportedStrength,
+      client,
+      allowLiveSummaryBuild,
+    });
+  }
+
   const partitionSummaryPayloadRows =
     supportedStrength == null
       ? []

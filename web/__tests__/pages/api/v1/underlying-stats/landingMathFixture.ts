@@ -266,6 +266,16 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
           orders.push({ column, ascending: options?.ascending !== false }), builder
         ),
         range: (from: number, to: number) => ((range = [from, to]), builder),
+        upsert: (rows: Row[] | Row, options?: { onConflict?: string }) => {
+          const keys = (options?.onConflict ?? "id").split(",").map((key) => key.trim());
+          const target = (tables[table] ??= []);
+          for (const row of Array.isArray(rows) ? rows : [rows]) {
+            const index = target.findIndex((existing) => keys.every((key) => existing[key] === row[key]));
+            if (index >= 0) target[index] = { ...target[index], ...row };
+            else target.push({ ...row });
+          }
+          return Promise.resolve({ data: null, error: null });
+        },
         then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
           const rows = (tables[table] ?? [])
             .filter((row) => filters.every((filter) => filter(row)))
@@ -319,6 +329,7 @@ export function buildFixtureTables(
     ] as unknown as Row[],
     nhl_api_game_roster_spots: games.flatMap((game) => buildRosterSpots(game)) as Row[],
     nhl_api_game_payloads_raw: [] as Row[],
+    goalie_underlying_summary_partitions: [] as Row[],
     players: buildPlayers() as Row[],
     teams: TEAMS as Row[],
   };
