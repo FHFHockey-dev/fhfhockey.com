@@ -306,7 +306,8 @@ export type PlanEvaluation = {
   limitations: string[];
 };
 /** One ranked player for a streaming leg's day window. `points` is projected fantasy points over the games he would
- * start in it; options rank by the per-game average of that projection and league-scored FPts/G over the last 10 played. */
+ * start in it; options rank by that projection alone (decisions 2, 48). `recentPointsPerGame` (league-scored FPts/G over the
+ * last 10 played) is context only and never orders options. */
 export type StreamingOption = { playerId: string; games: number; gameDates: string[]; points: number | null;
   recentPointsPerGame: number | null; recentGames: number | null;
   /** A conditional waiver claim: the league date he clears waivers. Absent for free agents. */
@@ -317,7 +318,8 @@ export type StreamingLeg = { spot: number; step: PlanStep; actionDate: string; s
 /** A day-by-day add chain over one or two roster spots, certified by the plan evaluator. */
 export type StreamingChain = { spots: 1 | 2; legs: StreamingLeg[]; steps: PlanStep[]; evaluation: PlanEvaluation;
   netGames: number; netPoints: number | null;
-  /** Net blended FPts (the average of projected FPts and last-10 FPts/G per game) that ranks chains; null when unknown. */
+  /** Net projected FPts over the certified lineup's remaining assignments that ranks chains (no recent-form blend,
+   * decisions 2, 48); null when any is unknown. */
   netScore?: number | null; addsUsed: number; addsAvailable: number };
 /** The league's goalie-start minimum as the no-move plan stands: projected starts (credited plus expected) and whether it is met.
  * `cover` is the manager's goalie coverage choice: only then do chains that meet it rank first. */

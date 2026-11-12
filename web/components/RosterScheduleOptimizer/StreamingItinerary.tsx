@@ -110,7 +110,7 @@ export default function StreamingItinerary({ plan, dates, from, through, today, 
       <button key={index} aria-pressed={state.chain === index} onClick={() => update({ chain: index, overrides: {} })}>
         {index >= plan.chains.length ? `Alternative${goalsOf(option) ? ` · ${goalsOf(option)}` : ""} · drop ${firstDrops(option).map(nameOf).join(" + ")}` : option.spots === 1 ? "One spot" : "Two spots"} · {signed(option.netGames)} AGP{index >= plan.chains.length && winsOf(option).includes("points") ? ` · ${signed(option.netPoints)} FPts` : ""}{plan.goalieMinimum ? ` · ${meets(option) ? "meets" : "misses"} G min` : ""}{index === 0 ? " · suggested" : ""}</button>)}</div>}
     {alternative && <p className={styles.note}>Alternative with a different first drop, not the suggested plan.{bestFor(chain) ? ` Of the other first drops, it is the best for ${bestFor(chain)}.` : ""} Its totals are its own checked plan.</p>}
-    <p className={styles.totals} aria-label="Streaming totals">Adds {chain.addsUsed}/{chain.addsAvailable} · {signed(total.games)} AGP · {signed(total.points)} proj FPts{estimated ? " (estimate after swaps)" : chain.netScore != null ? ` · ${signed(chain.netScore)} blended FPts` : ""}</p>
+    <p className={styles.totals} aria-label="Streaming totals">Adds {chain.addsUsed}/{chain.addsAvailable} · {signed(total.games)} AGP · {signed(total.points)} proj FPts{estimated ? " (estimate after swaps)" : ""}</p>
     {goalie && <p className={styles.totals} aria-label="Goalie minimum">{goalie.status}{estimated ? " (before swaps)" : ""}</p>}
     {goalie?.tradeoff && <p className={styles.note}>{goalie.tradeoff}</p>}
     <ol className={styles.days}>{dates.filter(date => date >= today).map(date => unplanned(date) ? <li key={date} className={`${styles.day} ${styles.greyedDay}`}>
@@ -131,7 +131,7 @@ export default function StreamingItinerary({ plan, dates, from, through, today, 
           {leg.options.length > 1 && <ol className={styles.options} aria-label={`Options for ${dateLabel(leg.startDate)}`}>{leg.options.map(option =>
             <li key={option.playerId}><button aria-pressed={option.playerId === playerId} onClick={() => update({ overrides: { ...state.overrides, [index]: option.playerId } })}>
               <span>{describe(option.playerId)}</span>
-              <small>{option.waiverClearsOn ? "Waivers · " : ""}{option.games} GP · {number(option.points)} proj FPts{option.recentPointsPerGame !== null ? ` · ${number(option.recentPointsPerGame)} FPts/G (last ${option.recentGames ?? 10})` : ""}</small>
+              <small>{option.waiverClearsOn ? "Waivers · " : ""}{option.games} GP · {number(option.points)} proj FPts{option.recentPointsPerGame !== null ? ` · ${number(option.recentPointsPerGame)} FPts/G last ${option.recentGames ?? 10} (not ranked)` : ""}</small>
             </button></li>)}</ol>}
         </div>;
       })}</div>

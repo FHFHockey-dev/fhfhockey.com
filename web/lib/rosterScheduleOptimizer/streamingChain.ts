@@ -9,9 +9,10 @@ import type { PlanEvaluation, PlanIntent, PlanStep, PlanningGame, PlanningPlayer
 /** Streaming chains (TJ, 2026-10-27): turn the period's remaining adds into the most added active games, then projected
  * fantasy points. A stream spot is a sequence of contiguous day windows; each window's streamer is dropped by the next
  * add. Windows come from team schedules and open lineup slots (small per-day matchings); players are ranked within a
- * window by a per-game blend over the games they would start: the average of projected FPts and last-10 FPts/G when both are
- * known (TJ, 10-27: past + future), else the projection. Under "Best projected points" chains are FPts-first: the week's
- * blended total beats added games, so a one-game star wins only when he adds more for the matchup. Proposals are heuristic; every returned chain is
+ * window by admitted projected FPts over the games they would start (decisions 2 and 48: no raw recent-form blend until a
+ * shrunk, same-basis form component is validated; last-10 FPts/G is shown as context only, and a missing projection ranks
+ * after every known one, never as 0). Under "Best projected points" chains are FPts-first: the week's projected total
+ * beats added games, so a one-game star wins only when he adds more for the matchup. Proposals are heuristic; every returned chain is
  * certified by the plan evaluator, which alone supplies its legality and net totals.
  * Goalie minimum (TJ, 2026-10-27): with goalie coverage set to cover, when the no-move plan falls short of the minimum, a second search
  * puts expected goalie starts (up to the shortfall) ahead of games, and certified chains that meet the minimum rank first.
@@ -39,9 +40,9 @@ export type StreamingAlternative = StreamingChain & { wins: StreamingGoal[] };
  * their own certified ones. `alternativesTruncated` counts the different-drop sets not shown. */
 export type StreamingPlanWithAlternatives = StreamingPlan & { alternatives?: StreamingAlternative[]; alternativesTruncated?: number };
 type Elig = ReturnType<typeof normalizeEligibility> & { key: string };
-/** `points`: blended FPts (see above); `starts`: expected goalie starts the streamers add, net of the drop's. */
+/** `points`: projected FPts (see above); `starts`: expected goalie starts the streamers add, net of the drop's. */
 type Value = { games: number; points: number; known: boolean; adds: number; starts: number };
-/** `points` stays the projection (shown); `score` is the blended total that ranks. */
+/** `points` is the projection shown; `score` is the same projection total that ranks (null when any game is unknown). */
 type Candidate = StreamingOption & { player: PlanningPlayer; playDays: number[]; score: number | null; starts: number };
 type Window = { start: number; end: number; ranked: Candidate[] };
 type SpotPlan = { start: number; drop: PlanningPlayer; windows: Window[]; chosen: Candidate[]; value: Value };
@@ -51,8 +52,6 @@ const time = (value: string) => Date.parse(value);
 const STREAMABLE = new Set(["free_agent", "manager_available"]);
 const isWaiver = (player: PlanningPlayer) => player.availability === "waivers";
 const RESERVES = new Set(["IR", "IR+", "NA"]);
-/** Blended points this close are a near tie: last-10 FPts/G orders them. */
-const NEAR_TIE = 0.1;
 /** Every droppable player is tried for one spot: the first GUARANTEED_DROPS (drop order) always, the rest while the
  * search's window × candidate work stays under EXTRA_WORK (a week fits every drop; a season-long range stops at the
  * guaranteed ones) and before the deadline. Two-spot pairs come from the PAIR_DROPS best single-spot drops. */
@@ -70,15 +69,16 @@ const better = (a: Value, b: Value, need: number, pointsFirst: boolean) => {
 const plus = (a: Value, b: Value): Value => ({ games: a.games + b.games, points: a.points + b.points, known: a.known && b.known, adds: a.adds + b.adds, starts: a.starts + b.starts });
 const addDays = (date: string, days: number) => new Date(Date.parse(`${date}T12:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
 
+/** A total order (Astra PR3: the old near-tie band switched rules pairwise and cycled): games first unless points-first,
+ * then known projections before unknown ones, the higher exact projection, more games, free agents before waiver claims,
+ * and the player id. Recent form never orders candidates. */
 const rankOptions = (pointsFirst: boolean) => (a: Candidate, b: Candidate) => {
   if (!pointsFirst && a.games !== b.games) return b.games - a.games;
-  if (a.score !== null && b.score !== null && Math.abs(a.score - b.score) > NEAR_TIE) return b.score - a.score;
   if (a.score === null !== (b.score === null)) return a.score === null ? 1 : -1;
+  if (a.score !== null && b.score !== null && a.score !== b.score) return b.score - a.score;
   if (a.games !== b.games) return b.games - a.games;
   if (isWaiver(a.player) !== isWaiver(b.player)) return isWaiver(a.player) ? 1 : -1;
-  const recent = (b.recentPointsPerGame ?? -Infinity) - (a.recentPointsPerGame ?? -Infinity);
-  if (recent && Number.isFinite(recent)) return recent;
-  return (b.score ?? 0) - (a.score ?? 0) || a.player.id.localeCompare(b.player.id);
+  return a.player.id < b.player.id ? -1 : a.player.id > b.player.id ? 1 : 0;
 };
 function maxMatch(slots: string[], players: Elig[]) {
   const owner = new Array<number>(slots.length).fill(-1);
@@ -183,11 +183,8 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlanWith
     if (!forms.has(player.id)) forms.set(player.id, recentPointsPerGame(player, rules.scoring));
     return forms.get(player.id)!;
   };
-  /** Ranking value of one player-game: the average of projected FPts and last-10 FPts/G, or the projection alone. */
-  const blended = (player: PlanningPlayer, gameId: string) => {
-    const projected = inputs.points(player.id, gameId), form = recent(player);
-    return projected === null ? null : form === null ? projected : (projected + form) / 2;
-  };
+  /** Ranking value of one player-game: the admitted projection alone (decisions 2, 48); null when unknown. */
+  const blended = (player: PlanningPlayer, gameId: string) => inputs.points(player.id, gameId);
   const pointsFirst = baseline.objective === "outcome";
   const rank = rankOptions(pointsFirst);
   if (targeted && baseline.goalie.risk && !need) plan.limitations.push("Goalie start progress is unknown, so streaming chains can't target the goalie minimum.");
@@ -324,7 +321,7 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlanWith
       playerId: pick.playerId, dropPlayerId: prior, games: pick.games, gameDates: pick.gameDates, points: pick.points, options };
   }));
   const openGames = new Set([...gameOn.values()].map(game => game.id));
-  /** Blended FPts over a lineup's remaining assignments; null when any is unknown. */
+  /** Projected FPts over a lineup's remaining assignments (the ranking total); null when any is unknown. */
   const scoreOf = (evaluation: PlanEvaluation) => {
     let total = 0;
     for (const row of evaluation.assignments) if (openGames.has(row.gameId) && row.date >= dates[0]) {
@@ -357,7 +354,7 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlanWith
     return { spots: spots.length as 1 | 2, legs, steps, evaluation, netGames: evaluation.activeGames - baseline.activeGames, netPoints,
       netScore: score !== null && baselineScore !== null ? score - baselineScore : null, addsUsed: steps.length, addsAvailable: budget };
   };
-  /** Blended net when known, else the evaluator's projected net. */
+  /** The ranking net (projection over remaining assignments) when known, else the evaluator's projected net. */
   const pointsOf = (chain: StreamingChain) => chain.netScore ?? chain.netPoints;
   // "Most starts": games, then points. "Best projected points": the week's points, then games.
   const objectiveOrder = (byPoints: boolean) => (a: StreamingChain, b: StreamingChain) => {
