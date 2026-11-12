@@ -60,3 +60,6 @@ Skater `faceoffs`, `powerPlayToi`, `shorthandedToi` are now NULL when absent (un
 ## xG selector (L14, done)
 Adopt `fetchActiveXgModel` (`web/lib/xg/modelRegistry.ts`, server only): filter on model_version AND feature_version; null = in-house xG unavailable (decision 99: expected for new games after release). Example reader `web/pages/api/v1/xg/team-timeline.ts`.
 FORGE prior `team-context-queries.ts:204` (env-gated) must use the selector.
+
+## Note (2026-11-11)
+L9b changed one line in `runProjectionV2.test.ts:2105` (null rest → null, W3-4 N1, rule 5) with Chef's grant while L9a was not running. Keep it.
