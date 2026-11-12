@@ -3,6 +3,7 @@ import useSWR from "swr";
 
 import type { HomepagePulsePoint } from "lib/homepagePulse";
 import styles from "styles/Home.module.scss";
+import pulseStyles from "./HomepagePulse.module.scss";
 
 type HomepagePulseProps = {
   initialPoints?: HomepagePulsePoint[];
@@ -122,12 +123,21 @@ export default function HomepagePulse({
     };
   }, [modelPath, visitorPath]);
 
-  // Either series can be absent (decision 109 hides the model series until a
-  // qualified model exists); show whichever one has a line.
   const path =
-    activeSeries === "visitors"
-      ? visitorPath || modelPath
-      : modelPath || visitorPath;
+    activeSeries === "visitors" && visitorPath ? visitorPath : modelPath;
+
+  // Decision 109: with no qualified model series the default view shows no
+  // line (not a visitors-only line), only this short state.
+  if (!modelPath) {
+    return (
+      <span
+        className={pulseStyles.modelUnavailable}
+        data-pulse-state="model-unavailable"
+      >
+        Model odds unavailable
+      </span>
+    );
+  }
 
   if (!path) return null;
 

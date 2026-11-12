@@ -62,9 +62,10 @@ describe("HomepagePulse", () => {
     expect(container.textContent).toBe("");
   });
 
-  // W3-2 D1 / decision 109: with the model series hidden, the visitor line
-  // still renders (the old render returned null with visitors only).
-  it("renders the daily visitor line alone when there is no model series", () => {
+  // W3-2 D1 / decision 109 ("hide the model series", not a labelled
+  // visitors-only line): with no qualified model series the default view
+  // shows a short unavailable state and no line at all.
+  it("shows a model-odds-unavailable state, not the visitor line, when there is no model series", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => new Promise(() => {})),
@@ -80,11 +81,11 @@ describe("HomepagePulse", () => {
       />,
     );
 
-    const svg = container.querySelector("svg");
-    expect(svg).toBeTruthy();
-    expect(svg?.getAttribute("aria-hidden")).toBe("true");
-    expect(svg?.querySelector("path")?.getAttribute("d")).toMatch(/^M /);
+    expect(container.querySelector("svg, path")).toBeNull();
+    expect(
+      container.querySelector("[data-pulse-state='model-unavailable']")
+        ?.textContent,
+    ).toBe("Model odds unavailable");
     vi.unstubAllGlobals();
   });
 });
-
