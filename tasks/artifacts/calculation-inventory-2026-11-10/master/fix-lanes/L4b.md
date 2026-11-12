@@ -46,3 +46,6 @@ Q41 answered 2026-11-11 (revised by TJ): decision 90, **mid-rank everywhere**, i
 
 ## House labels from L1 (W1 P0 #7, 72e78b3d1)
 Import `PARITY_CHANCE_DEFINITIONS` labels from `nhlNstParityMetrics.ts`. Rename displayed columns: "FHFH high-danger" (≤ 20 ft, ≤ 35°): hdcf, hdcf_per_60, on-ice hdcf/hdca/hdcf_pct/hdgf/hdga/hdgf_pct and per-60s, goalie hd_shots_against/hd_saves/hd_sv_percentage/hd_gaa/hd_gsaa and per-60s; "FHFH medium-danger" md* and "FHFH low-danger" ld* (same pattern); "FHFH scoring chance" (≤ 40 ft, ≤ 50°): iscfs, iscfs_per_60, scf, sca, scf_pct, scf_per_60, sca_per_60. Rush attempts keep their name (decision 8).
+
+## PP share contract from L8 (2026-11-11, 7deb81304; decision 71)
+Player PP share = player shift seconds ∩ L8's penalty-box simulation blocks, divided by the team clock (`teamPpClockSeconds(blocks, teamId)` / `buildTeamPpClock` in `web/utils/getPowerPlayBlocks.ts`, read-only) for the same game. A window pools Σ over Σ across the same dressed games; an unknown game makes the window unknown or a labelled covered subset. Never cap: above 100% is flagged. The clock is **not yet qualified** (`PP_CLOCK_QUALIFIED = false`): until it is, `pp_pct` and PP share stay unavailable (or labelled unqualified), never shown as observed. FORGE `toi_pp_seconds` is a model input only. Full contract: Chef side note `L8-pp-clock-contract.md`.
