@@ -1351,6 +1351,16 @@
       "migrationClass": "feature",
       "rolloutGate": "skatersGameStats.faceoffs, \"powerPlayToi\" and \"shorthandedToi\" become nullable and persist_complete_game_stats_v1 accepts null for exactly those three skater fields (decision 83; lane L1 writer change ships together). No data change; the historical 0/0 / 00:00 repair is a separate approval. Math-audit fix lane L4a; source only. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval, before or with the L1 writer release, run its READBACK, then record schema_migrations and flip this row. Rollback: supabase/tests/l4a_game_stats_nullable_rollback.sql (refuses while null rows exist).",
       "stateEvidence": "Not applied. Written 2026-11-11 by fix lane L4a for L1 (diary tasks/diaries/2026-11-11-claude-fix-l4a.md). Verified on local PostgreSQL 15 with supabase/tests/l4a_game_stats_nullable.py: the null payload is rejected by the baseline function and stored as NULL after; placeholder strings, required skater toi and team powerPlayToi behave as before; only the three columns changed; rollback restores the baseline and refuses while null rows exist."
+    },
+    {
+      "order": 135,
+      "path": "supabase/migrations/20261111181000_fix_goalie_totals_nst_units_aggregate_gsaa.sql",
+      "sha256": "61f922ae3e07246514f3e94053a71cdf806b8bdb33113f6ed313f83c4835b909",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "Redefines the season goalie view goalie_totals_unified (W2-P0-9, decision 10, rules 13 and 17): NST rates convert NST minutes to seconds explicitly (were 60x too large) and NST GSAA (all, 5v5, HD) is SA x league goals-per-shot over the same season, strength and the goalie's first-to-last date - GA, no longer the sum of per-game GSAA; values NULL unless every game row has its inputs. Same columns, order and types; no data change; the dependent goalie_totals_unified_snapshot keeps its rows until a separately approved refresh. No application reader. Math-audit fix lane L4a (ticket from L5); source only. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval, run its READBACK, then record schema_migrations and flip this row. Rollback: supabase/tests/l4a_goalie_totals_rollback.sql.",
+      "stateEvidence": "Not applied. Written 2026-11-11 by fix lane L4a (diary tasks/diaries/2026-11-11-claude-fix-l4a.md). Verified on local PostgreSQL 15 with supabase/tests/l4a_goalie_totals.py through the real vw_goalie_stats_unified_source: 13 defect checks fail on the baseline view and pass after; official SV%/GAA, NST TOI/GA sums and games played unchanged; columns, order and types unchanged; the snapshot materialized view refreshes; rollback restores the baseline answers."
     }
   ],
   "sourceExtensionApproval": {
