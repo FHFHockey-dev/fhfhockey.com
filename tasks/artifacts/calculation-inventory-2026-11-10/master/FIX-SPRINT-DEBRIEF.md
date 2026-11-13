@@ -1,11 +1,14 @@
 # Math-audit fix sprint: debrief
 
-Status: **DRAFT, updated 2026-11-13**. The per-lane sections are final. The production section is updated as each approved step finishes, and the draft becomes final once the remaining production steps in `production/PRODUCTION-QUEUE.md` are done or deferred.
+Status: **Final for the code sprint, 2026-11-13.**
+- All lane code, the decision 135–143 follow-ups and Codex's adopted work are committed.
+- Two releases have shipped: PR #430 and PR #431.
+- The remaining data steps run from `production/PRODUCTION-QUEUE.md`, one TJ pop-up per action: FORGE inputs and run, trend bands, power ratings, rankings, xG demotion, and migrations 142/143. §3 and the queue record each one as it finishes.
 
 Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one per lane, in the sole checkout `octoberBranch`, with exact file ownership. Every production action had TJ's own pop-up approval.
 
 ## 1. Summary
-- **Scope:** findings from the three-wave math audit: 35 packets, 1,358 calculations, Fable audits peer-reviewed by Codex "Astra", and owner decisions 1–134 (83–134 were decided during the sprint).
+- **Scope:** findings from the three-wave math audit: 35 packets, 1,358 calculations, Fable audits peer-reviewed by Codex "Astra", and owner decisions 1–143 (83–143 were decided during the sprint).
 - **Lanes:** 25 lanes plus sub-lanes. L1–L22, L4a/L4b and L9a/L9b/L9c, with sub-lanes L2-landing, L5a, L5b, L9a-markets, L10b, L13b and L22-UI.
 - **P0 coverage (45 total):**
   - 40 fixed in code. Many of these still need a queued rebuild before stored data reflects the fix.
@@ -23,16 +26,17 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
   - Vercel: one fhfhockey build READY (`dpl_137qFEpUhovkj9Q6NaPbD4jAHNzP`), three cancels.
   - Smoke: 5 of 5 GETs returned 200.
   - octoberBranch synced as `c577225e2`, with no build.
+- **Follow-up release:** PR #431 (squash) is master `502a93b4c`, with tree equal to candidate `981953daa`. It carries the flag release, decisions 136–143 and the adopted Codex areas 5–11. Gate: typecheck 0 and ESLint 0 errors. Vitest's only failures were environment-only, or already failing on master `4243bcd4e`.
 - **Production incident:** on 2026-11-12 between 15:43 and 15:50Z, production Postgres hung and then crash-recovered under the strength re-normalization load (§4.3).
 
 ## 2. Release state
 | Item | State |
 |---|---|
-| master | `631a00c19` (PR #430). The prior release was `1cdb1dc8f` (#429). |
-| octoberBranch | `c577225e2` on origin: an ours-merge of master with the tree unchanged. Later local commits hold the Chef's records only. |
-| Deployed | fhfhockey `dpl_137qFEpUhovkj9Q6NaPbD4jAHNzP` READY. cms-fhfhockey, functions-fhfhockey and fhfhockey.com were CANCELED by ignored-build. |
-| Excluded from release | Lane diaries, which octoberBranch keeps. Codex's uncommitted Goalie Grid, shift and Start Chart work. |
-| Code still to ship | `LEDGER_BASIS_SCHEMA_ENABLED` flip (queue 16) and the decision-127 default flip (queue 16b): one follow-up release |
+| master | `502a93b4c` (PR #431, follow-up release). Before it: Codex `4243bcd4e` (Goalie Grid) and `866b90bc4` (DRM pipeline), then the sprint release `631a00c19` (PR #430). |
+| PR #431 contents | Flag release (calendar v2 default, decision 127; ledger basis schema on, migration 138; workspace keeps `scheduleDate`). Decisions 136, 137 (flag off), 140, 141/142 and 143. Composite writer mid-rank fix. Adopted Codex areas 5–11. Migration files 142/143 (not applied). |
+| Deployed | fhfhockey `dpl_2bhMeBzKvwzq8a3Cw36uAPLKymKE`; cms-fhfhockey, functions-fhfhockey and fhfhockey.com CANCELED by ignored-build. |
+| octoberBranch | Synced with master `4243bcd4e` locally as `22a94090a` (merge), then areas 4–11 and the TeamDetails test fix committed. Sync to `502a93b4c` follows. |
+| Excluded from releases | Lane diaries. Codex areas 2+3 (goalie consolidation, under review). Area 4 (DRM reader/UI/history plus superstyle, committed `97685d418`, ships next release). |
 
 ## 3. Production actions taken (each with TJ's pop-up)
 | When (UTC, 2026-11-12) | Action | Receipt |
@@ -52,7 +56,12 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
 | 20:03–20:28 | Summary refresh (serial step 4): team 41,720 rows (0 stale), player 43,764 partition rows, goalie 298/298 at rev 2 | handoff 3 |
 | 21:05–23:25 | (Codex) DRM step 5: 296 games repaired, 2 current. Game-57 HTML source exception, TJ-approved. | Codex `drm-ddatv-2026-11-12/production/step5/` |
 | 23:50 | pg_cron job 327 `update-predictions-sko` paused (decision 129); `goalie_totals_unified_snapshot` refreshed (402 → 476 rows) | `PRODUCTION-QUEUE.md` |
-| 2026-11-13 00:0x– | 2025-26 goalie partition rebuild (summary-only, 1,417 games), TJ-approved | in progress |
+| 2026-11-13 00:0x–00:50 | 2025-26 goalie partition rebuild (summary-only), TJ-approved. 213 calls, 0 failed. 1,394 played games and 65,164 partitions, all at formulaRevision 2. A false stop at 2026-04-27 came from unplayed "if necessary" playoff games (23 in the schedule, no raw payloads); the run resumed on played games only. | `PRODUCTION-QUEUE.md` |
+| 2026-11-13 00:25 | Production alias restored from Codex's temporary H1 CLI deployment to `dpl_HH8SPE1cLyonVBW9uN3rUi1MN3Sa` (promote, no build); healthz 200 | `PRODUCTION-QUEUE.md` |
+| 2026-11-13 00:35–00:37 | Release #431: branch pushed (no build at ~90 s), PR squash-merged as master `502a93b4c` (tree = candidate `981953daa`) | §2 |
+| 2026-11-13 00:41–00:49 | Release #431 build READY and auto-aliased (1 build + 3 cancels). Smoke 5/5 at 200. octoberBranch ours-merge `b69cbd375` pushed; no build. | §2 |
+| 2026-11-13 00:50 | pg_cron 305 `build-forge-derived-v2` moved 10:05 → 10:25 UTC (off the rolling-forge pipeline's minutes) | `8942d193b` |
+| 2026-11-13 00:51 | Migrations 142 (v2_skill) and 143 (team-of-record percent_games) applied singly and read back | `db8693805` |
 
 Coordination: steps 1–6 ran serially with Codex under a TJ-approved order (mailbox entries `CLAUDE-FIX-SPRINT-SERIAL-ORDER-20261112` and onward), each with an explicit DB handoff.
 
@@ -590,16 +599,31 @@ No diary exists. Outcomes come from the commits and the Chef diary.
 - **No in-house xG for new games** until a v2 model is approved (decision 99). The served champion is the leaky cfg9bac2706 until it is demoted.
 - **PP share withheld everywhere** until the PP clock is qualified.
 - **Database load:** the 2026-11-12 incident shows that bulk normalization and summary rebuilds must be paced by I/O and latency.
+- **Duplicate derived-build trigger at 10:05 UTC.** Codex's `24b1cb4d3` moved pg_cron 305 `build-forge-derived-v2` from 09:50 to 10:05 on 11-12, the same minute the Vercel rolling-forge pipeline (cron 6, `includeDownstream=true`) starts; that pipeline also runs `build-projection-derived-v2`. `combinedCronInventory.test` has failed on master since then. Read-only check 2026-11-13: 305 is active at `05 10 * * *`. Any schedule change needs TJ.
+- **Production served a CLI deployment with H1 overrides for about 19 minutes.** Codex's `dpl_GK6quj7ogBxcQE3FZxV3VDzSTvjM` (00:06Z, compute on, canary 307, scheduler off) was aliased to fhfhockey.com until the Chef promoted `dpl_HH8SPE1cLyonVBW9uN3rUi1MN3Sa` at 00:25Z (TJ's pop-up). No H1 request was sent. After a manual promote, Vercel may pause auto-assignment of production domains, so the alias is checked after each release.
 
-## 8. Owner decisions still open
-- The accountability composite column vs v2 skill below 0 (L10).
-- Positional tilt: redistribution vs total contract (L11, W1-6 D19).
-- The disjoint-slot rule for 5v5 lines (L8, decision 107).
-- The decision-16 team-of-record denominator for `percent_games` (L4a D12).
-- BEAST cut-off re-evaluation (decision 74).
-- Resuming the update-predictions-sko cron after VDP v0.4 (decision 129).
+## 8. Owner decisions
+**Decided on 2026-11-13 (decisions 135–143), all implemented in code:**
 
-## 9. Codex proposals outstanding
+| Decision | What was decided | Lane and commit |
+|---|---|---|
+| 135 | Signed nullable `v2_skill` column | L4a `e0dea7205`, migration 142, not applied |
+| 136 | Tilt conserves the team total | L11 `7efd70f9b` |
+| 137 | Disjoint 5v5 units, behind `LINES_FIVE_ON_FIVE_ENABLED=false` | L8 `79dedadf1` |
+| 138 | Team-by-date `percent_games` denominator | L4a `e0dea7205`, migration 143, not applied |
+| 139 and 143 | BEAST gates re-derived and kept as v3 | L5 `d755d8b4c` |
+| 140 | WiGO floors PP 60 / PK 120 with a label | L4b `1b11bb1f2` |
+| 141 and 142 | Legacy sKO IPP pooled; 0/0/0 only when shifts confirm | L20 `21ca6d492` |
+
+All shipped in release #431 (master `502a93b4c`).
+
+**Still open:**
+- Resume the update-predictions-sko cron after VDP v0.4 (decision 129).
+- PP clock disagreement policy, before the PP share is served.
+- pg_cron 305 `build-forge-derived-v2` vs the Vercel rolling-forge pipeline. Both start a derived build at 10:05 UTC since Codex moved 305 on 11-12 (§7).
+
+## 9. Former Codex proposals (now owned by this session)
+On 2026-11-13 TJ moved all remaining project work to the Claude Chef session ("No more back and forth with Codex"). These proposals are now follow-up tickets here, not mailbox items.
 - L9b: accuracy job, v2 goalie writer.
 - L9a: 18-GOALIE-SA, A2-RESERVE, D2-RESERVE-LABEL.
 - L9c: reserve-row coverage.
@@ -636,3 +660,20 @@ No diary exists. Outcomes come from the commits and the Chef diary.
 | L9a → L10 ledger PK heads | **Partly fixed** | `modeledHeadTotals.ts:7-12`: PK is summed when present, but a missing PK head counts as 0 instead of unknown |
 
 These open items become follow-up tickets in this session; TJ moved all remaining project work here on 2026-11-13.
+
+## 12. Codex work adopted (2026-11-13)
+TJ moved all remaining project work to this session ("No more back and forth with Codex"). A read-only inventory found 12 areas of uncommitted Codex work. Each was decided by pop-up; nothing was deleted, and backups are in `production/codex-adoption/pre-sync/`.
+
+| Area | What | Outcome |
+|---|---|---|
+| 1 | Goalie Grid release copies (42 files, byte-identical to master) | Not committed as new work. octoberBranch synced with master `4243bcd4e` (`22a94090a`). |
+| 2 | Frozen starter-board exporter and goalie workload contract | `7b3d328ba`. The stale local `verifiedForgeReleases` pin (975e67b47) was replaced by master's released pin. |
+| 3 | One historical goalie start ledger | `b4a9fcf42`. Reviewed against L9b and L18. Starters resolve only from complete, unambiguous official labels, and Crease Shift is unchanged on complete windows. The membership modules ride along unwired. |
+| 4 | DRM reader, UI and history, plus /drm superstyle passes 1–6 | `97685d418`. 293 tests, DRM e2e 6/6, CSS pure 5/5. Ships in the next release. |
+| 5 | RSO objective switch and dated Lines fallback (candidate f42a15054) | `e0d424d5b`, released in #431 |
+| 6–8 | Yahoo diet test, homepage payload and Yahoo pickup errors, trends test | `49952fdb6`, `4bb0e11b5`, `2185f1c76`, released in #431 |
+| 9 | Browserless quarantine guard: the line-combo webhook skips with 200 (TJ: commit) | `79daa3285`, released in #431 |
+| 10–11 | Rankings usability; BLSH offline capture scripts | `c58a57117`, `ec85232a1`, released in #431 |
+| 12 | Generated `next-env.d.ts` | Restored to HEAD |
+
+Also fixed here: the Game Grid TeamDetails test mock had been failing on master since the Goalie Grid release (`7234e9682`, next release). Codex's production deployment with H1 overrides was replaced by the original deployment (§3, §7).
