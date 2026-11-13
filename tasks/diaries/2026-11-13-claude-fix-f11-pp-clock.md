@@ -63,8 +63,17 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 - Reader map (Explore agent, verified key paths): PowerPlayCombos (unit + PPTOI order), LinemateMatrix/shiftChart (3 live NHL calls per view, master clock), /api/toi (withheld; already reads FORGE), rolling writer (career chunks), team_unit_toi, planning (2 s deadline), social share, SQL tallies.
 - Recommendation (b): one writer from stored PBP/shifts/teamGameStats via buildTeamPpClock; same pPC columns + calculation_version/computed_at; new pp_team_game_clock; replace team-game rows as a set; bounded 2026-27 refresh plan for TJ approval. REPORT section 11.
 
+## Decision 152 writer build (offline, TJ approved via the Chef)
+- Scope: stored-calculation writer ([gameId].ts + test), unapplied migration (calculation_version/computed_at, pp_team_game_clock, replace RPC), authority row 149 pending, tests for groups A/B/C, availability rules and transactional replace. No apply/release/refresh/reader change/production write.
+- Correction: buildTeamPpClock and C1–C3 are already in production (#430 clock 11-12; #434/#436 qualification 11-13); my Part B text read a stale local `master` (11-10). Report §11 fixed; FORGE match explained (production shift charts use buildPenaltyClock).
+- Claim posted in CLAUDE-TO-CODEX.md (the Chef committed it in 817509f2b).
+- Fixtures: 2026020163 (A, both teams), 2026020131 (C, t18), 2026020174 (B, t29), 2026020038 (zero t55); one guarded read for 163's stored rows + roster positions of the 4 games.
+- Checks: PG15 proof RESULT OK (28 checks); vitest 7 files / 379 tests (writer 17); typecheck exit 0; ESLint exit 0; baseline test 21/21 after counts 149 / 7 pending and the super-goal summary count.
+- Dry run on 163: deleted 3 stale rows, 0 updated, 0 inserted, 26 unchanged.
+- Gotcha: the baseline test also checks the record count in tasks/TASKS/super-goal/super-goal-final-summary.md; another lane flipped 147/148 to applied mid-task (114 applied / 6 pending before mine).
+
 ## Next
-Chef routes the decision-152 Part B recommendation. No production step from this lane. Chef routes remaining owner and code items. No production step from this lane.
+Chef reviews the writer build; apply, release and refresh each need TJ's separate approval. No production step from this lane. Chef routes remaining owner and code items. No production step from this lane.
 
 ## Blockers
 None.
