@@ -477,3 +477,12 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     5. **Line-combo PP mode** `/lines/line-combo/2026020131`, Power Play TOI. The Predators matrix has 10 skaters; diagonal O'Reilly 1:52, Stamkos 1:51, Josi 1:50, Marchessault 1:50, Forsberg 1:49 (PP1); Skjei 0:11, Kerfoot 0:10, Perbix 0:10, Wood 0:09, Colton 0:08 (PP2). This equals the accepted dry run (112/111/110/110/109; 11/10/10/9/8).
   - **Not checked live:** the Lines PowerPlayCombos for game 131. It's verified offline in the cross-surface test, and `/lines` returns 200.
   - **PP share is now served (decision 152).** No refresh or cron rerun.
+- **Forced tests** (TJ, ~22:30Z: "force the cron to run now … test it"; both approved by pop-up; the scheduled overnight runs are unchanged):
+  - **Job 388 run once now:** its exact pg_cron command executed through SQL (`\gexec`; the secret stays in the vault), 22:32:49Z.
+    - Response: pg_net request 1098 returned 200; route audit `success` (window 2026-11-11..13, 3.7 s).
+    - **All 379 `powerPlayCombinations` rows for games 2026020293–311 have identical values** (before/after snapshot); `computed_at` moved to 22:32:51–54Z.
+    - **The 34 existing clock rows are identical.**
+    - **Deviation from the stated expectation:** the 2 unplayed games (310, 311) weren't skipped. The writer stored 4 `unavailable` clock rows, "No play-by-play for this game.", which is its designed handling of missing inputs. No player rows; replaced once the games are played and processed.
+  - **#440 write path, game 2026020309:**
+    - `GET /api/v1/db/update-stats/2026020309` once, 22:34:45Z: 200 in 0.9 s; audit `success`. About 3–4 NHL API reads (no NST).
+    - **Team (2), goalie (4) and skater (36) rows are identical to before, apart from timestamps.** 0 nulls written, since the source is complete. This shows the nullable writer and the migration-147 RPC work end to end. A null case awaits a game with unknown source values.

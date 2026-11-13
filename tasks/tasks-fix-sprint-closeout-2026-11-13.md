@@ -60,11 +60,11 @@
     *Done 22:13–22:16Z: the flag was set by the Chef through the CLI with TJ's approval. Serving deploy `dpl_3dTQdAD3`. The clock API, `/api/toi` ×2, the shift chart label and the line-combo PP matrix all agree with the dry run (PRODUCTION-QUEUE).*
   - [x] 3.3 Record it in the queue, debrief and REPORT, and close decision 152.
 - [ ] 4.0 2026-11-14 scheduled readbacks (independent; read-only; each recorded separately; no manual reruns)
-  - [ ] 4.1 08:05Z cron 388: audit `success`; the last 3 dates' rows stamped `pp-shifts-qualified-clock-v1`, with clock rows.
+  - [ ] 4.1 08:05Z cron 388: audit `success`; the last 3 dates' rows stamped `pp-shifts-qualified-clock-v1`, with clock rows. *(Pre-tested 22:32Z by TJ's forced run: 379 rows identical, audit success. Tomorrow's window 11-12..14 should replace 310/311's `unavailable` clock rows with real values.)*
   - [ ] 4.2 10:05Z FORGE run: the first reserve rows.
   - [ ] 4.3 The same FORGE run: which `goalie_start_projections` rows it consumed, against cron 364's 09:30Z write under #439 (`a448842d1`).
   - [ ] 4.4 10:15Z cron 283: the first scheduled v4 power write.
-  - [ ] 4.5 #440: the first natural update-stats-job write after tonight's games, with nulls only where the source is unknown and readers showing them as unavailable.
+  - [ ] 4.5 #440: the first natural update-stats-job write after tonight's games, with nulls only where the source is unknown and readers showing them as unavailable. *(Write path pre-tested 22:34Z on 2026020309: rows identical, audit success.)*
 - [ ] 5.0 Records and housekeeping (Chef)
   - [ ] 5.1 Push the local record commits only with the next release, never alone.
   - [ ] 5.2 Update the debrief with #439–#441, migrations 147 and 149, the decision 152 refresh, and the results of 3.0 and 4.0.
