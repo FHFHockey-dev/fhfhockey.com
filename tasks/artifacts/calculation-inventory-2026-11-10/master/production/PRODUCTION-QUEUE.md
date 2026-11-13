@@ -332,3 +332,7 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     - Eichel even strength: 0 G, 5 S, unchanged; the penalty shot isn't in ES.
     - Bobrovsky (8475683, team 10): GP 1, SA 43, SV 40, GA 3, which equals the official boxscore (43 SOG / 3 goals).
   - Remaining: 2026020094, 101, 119, 131, 150, 159, 203, which wait for TJ.
+- **Landing summary refresh, remaining 7 games** (TJ "Run the other 7"), 18:02:28–18:05:42Z: 14 calls, every game passing the runner's key-by-key readback. Player rows rewritten: 156, 147, 145, 133, 157, 152 and 133, so 1,158 in total across all 8 games. The 18 orphan partitions are unchanged. DONE.
+- **Served landing verification, all 8 games** (Chef; 21 read-only GETs to `/api/v1/underlying-stats/players` and `/goalies`, date-scoped per game; script `production/penalty-shot-rebuild-2026-11-13/verify-landing.py`): **ALL_OK.**
+  - Each shooter's all-strengths row equals the rebuilt values (GP 1, no double count), and the even-strength row excludes the penalty shot.
+  - Each goalie's SA/SV/GA equals the expected values and the official boxscore for the shooting team. The exception is 2026020150: the official 44 SOG / 6 goals include an empty-net goal, so the goalie row is 43 / 5.

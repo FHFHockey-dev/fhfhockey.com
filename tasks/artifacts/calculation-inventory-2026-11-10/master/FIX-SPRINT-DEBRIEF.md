@@ -735,7 +735,11 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 | NST gamelog identity: Josh Mahura 8479372 | Found at the 11:01Z check. NST matched him on 12 of 14 games and failed on 11-07 and 11-12 (16 of 20 datasets flagged each time; other players landed). | Find NST's name or id for him on those dates (read-only), then an alias or identity fix and a bounded re-fetch of the 2 dates within the NST limits |
 | WiGO `missing_identity` rejects | Cron 231 writes 988/990 players; 8478446 (2022-11-12) and 8481827 (2021-11-06) have `wgo_skater_stats` rows with no team, opponent or game id, so the run audits as `failure` daily | A 2-row WGO repair from the NHL game logs (needs TJ) |
 | F3 unowned Lines items | Stale header comment in `[abbreviation].tsx`; `lines/index.tsx` mixes labels; LineShareBars TOI | A small Lines lane |
-| Astra AF-07 penalty shots (decision 149) | **Open (TJ: keep open until both conditions hold).**
+| Astra AF-07 penalty shots (decision 149) | **Done for the player and goalie landing (2026-11-13).**
+- Adapter (#434); split columns, writer, builder, readers and parity (#437); migration 148 applied.
+- 8-game derived rebuild: all post-write checks passed, totals equal official.
+- Bounded landing summary refresh: canary 065, then the other 7, TJ-approved separately; key-by-key readbacks passed.
+- Served player and goalie landing verified against the rebuilt rows for all 8 games (ALL_OK). | Separate open ticket (TJ): **team underlying summaries' "all" GF/SF exclude penalty shots.** F15 is on the builder fix; the release candidate, a read-only 8-game diff and any team refresh each need TJ's approval. |
 - Adapter `8463912d8` (#434).
 - Split columns, v2 writer, builder, readers and parity: `30fa0f00a`, `8a4a7d8d1` (#437).
 - Migration 148 applied 17:28:45Z.
