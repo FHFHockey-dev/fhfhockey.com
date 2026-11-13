@@ -1,0 +1,478 @@
+-- LOCAL EVIDENCE ONLY. Stop/roll back the nullable writer before any approved schema rollback.
+-- Restores the immediately preceding RPC and five NOT NULL constraints; retains skater nullability.
+-- Fails atomically if null rows exist. Never rewrite unknowns to zero to force rollback.
+-- Goalie toi was already nullable, so refuse if its new nulls exist before restoring its RPC guard.
+begin;
+set local lock_timeout = '5s';
+set local statement_timeout = '30s';
+do $$ begin
+  if exists (select 1 from public."goaliesGameStats" where toi is null) then
+    raise exception 'ITEM6_ROLLBACK_NULL_GOALIE_TOI';
+  end if;
+end $$;
+alter table public."teamGameStats" alter column "powerPlayToi" set not null;
+alter table public."goaliesGameStats" alter column "evenStrengthShotsAgainst" set not null;
+alter table public."goaliesGameStats" alter column "powerPlayShotsAgainst" set not null;
+alter table public."goaliesGameStats" alter column "shorthandedShotsAgainst" set not null;
+alter table public."goaliesGameStats" alter column "saveShotsAgainst" set not null;
+
+CREATE OR REPLACE FUNCTION public.persist_complete_game_stats_v1(p_game_id bigint, p_team_rows jsonb, p_skater_rows jsonb, p_goalie_rows jsonb, p_expected_team_rows integer, p_expected_skater_rows integer, p_expected_goalie_rows integer) RETURNS TABLE(game_id bigint, outcome text, contract_version smallint, expected_team_rows integer, observed_team_rows integer, expected_skater_rows integer, observed_skater_rows integer, expected_goalie_rows integer, observed_goalie_rows integer, pruned_team_rows integer, pruned_skater_rows integer, pruned_goalie_rows integer, completed_at timestamp with time zone)
+    LANGUAGE plpgsql
+    SET search_path TO ''
+    AS $$
+declare
+  v_team_payload_count integer;
+  v_skater_payload_count integer;
+  v_goalie_payload_count integer;
+  v_team_distinct_count integer;
+  v_skater_distinct_count integer;
+  v_goalie_distinct_count integer;
+  v_existing_team_count integer;
+  v_existing_skater_count integer;
+  v_existing_goalie_count integer;
+  v_observed_team_count integer;
+  v_observed_skater_count integer;
+  v_observed_goalie_count integer;
+  v_pruned_team_count integer := 0;
+  v_pruned_skater_count integer := 0;
+  v_pruned_goalie_count integer := 0;
+  v_rows_are_valid boolean;
+  v_completed_at timestamp with time zone := pg_catalog.transaction_timestamp();
+begin
+  if p_game_id is null or p_game_id <= 0 then
+    raise exception using message = 'INVALID_GAME_STATS_GAME_ID';
+  end if;
+
+  if pg_catalog.jsonb_typeof(p_team_rows) is distinct from 'array'
+    or pg_catalog.jsonb_typeof(p_skater_rows) is distinct from 'array'
+    or pg_catalog.jsonb_typeof(p_goalie_rows) is distinct from 'array'
+  then
+    raise exception using message = 'INVALID_GAME_STATS_PAYLOAD_SHAPE';
+  end if;
+
+  v_team_payload_count := pg_catalog.jsonb_array_length(p_team_rows);
+  v_skater_payload_count := pg_catalog.jsonb_array_length(p_skater_rows);
+  v_goalie_payload_count := pg_catalog.jsonb_array_length(p_goalie_rows);
+
+  if p_expected_team_rows is distinct from 2
+    or v_team_payload_count is distinct from p_expected_team_rows
+    or p_expected_skater_rows is null
+    or p_expected_skater_rows not between 1 and 100
+    or v_skater_payload_count is distinct from p_expected_skater_rows
+    or p_expected_goalie_rows is null
+    or p_expected_goalie_rows not between 1 and 100
+    or v_goalie_payload_count is distinct from p_expected_goalie_rows
+    or (p_expected_skater_rows + p_expected_goalie_rows) > 100
+  then
+    raise exception using message = 'INVALID_GAME_STATS_EXPECTED_COUNTS';
+  end if;
+
+  -- Cast and validate every input row before acquiring the lock or writing.
+  select
+    pg_catalog.count(*)::integer,
+    pg_catalog.count(distinct incoming."teamId")::integer,
+    coalesce(
+      pg_catalog.bool_and(
+        coalesce(
+          (
+            incoming."gameId" = p_game_id
+            and incoming."teamId" > 0
+            and incoming.score is not null
+            and incoming.sog is not null
+            and incoming."faceoffPctg" is not null
+            and incoming.pim is not null
+            and incoming.hits is not null
+            and incoming."blockedShots" is not null
+            and incoming.giveaways is not null
+            and incoming.takeaways is not null
+            and incoming."powerPlay" is not null
+            and incoming."powerPlayConversion" is not null
+            and incoming."powerPlayToi" is not null
+          ),
+          false
+        )
+      ),
+      false
+    )
+  into v_team_payload_count, v_team_distinct_count, v_rows_are_valid
+  from pg_catalog.jsonb_to_recordset(p_team_rows) as incoming(
+    "gameId" bigint,
+    "teamId" smallint,
+    score smallint,
+    sog smallint,
+    "faceoffPctg" real,
+    pim smallint,
+    hits smallint,
+    "blockedShots" smallint,
+    giveaways smallint,
+    takeaways smallint,
+    "powerPlay" text,
+    "powerPlayConversion" text,
+    "powerPlayToi" text
+  );
+
+  if v_team_payload_count <> 2
+    or v_team_distinct_count <> 2
+    or not v_rows_are_valid
+  then
+    raise exception using message = 'INVALID_TEAM_GAME_STATS_ROWS';
+  end if;
+
+  select
+    pg_catalog.count(*)::integer,
+    pg_catalog.count(distinct incoming."playerId")::integer,
+    coalesce(
+      pg_catalog.bool_and(
+        coalesce(
+          (
+            incoming."gameId" = p_game_id
+            and incoming."playerId" > 0
+            and incoming.position <> 'G'::public."NHL_Position_Code"
+            and incoming.goals is not null
+            and incoming.assists is not null
+            and incoming.points is not null
+            and incoming."plusMinus" is not null
+            and incoming.pim is not null
+            and incoming.hits is not null
+            and incoming."blockedShots" is not null
+            and incoming."powerPlayGoals" is not null
+            and incoming."powerPlayPoints" is not null
+            and incoming."shorthandedGoals" is not null
+            and incoming."shPoints" is not null
+            and incoming.shots is not null
+            and incoming."faceoffWinningPctg" is not null
+            and incoming.toi is not null
+          ),
+          false
+        )
+      ),
+      false
+    )
+  into v_skater_payload_count, v_skater_distinct_count, v_rows_are_valid
+  from pg_catalog.jsonb_to_recordset(p_skater_rows) as incoming(
+    "playerId" bigint,
+    "gameId" bigint,
+    position public."NHL_Position_Code",
+    goals smallint,
+    assists smallint,
+    points smallint,
+    "plusMinus" smallint,
+    pim smallint,
+    hits smallint,
+    "blockedShots" smallint,
+    "powerPlayGoals" smallint,
+    "powerPlayPoints" smallint,
+    "shorthandedGoals" smallint,
+    "shPoints" smallint,
+    shots smallint,
+    faceoffs text,
+    "faceoffWinningPctg" real,
+    toi text,
+    "powerPlayToi" text,
+    "shorthandedToi" text
+  );
+
+  if v_skater_payload_count <> p_expected_skater_rows
+    or v_skater_distinct_count <> p_expected_skater_rows
+    or not v_rows_are_valid
+  then
+    raise exception using message = 'INVALID_SKATER_GAME_STATS_ROWS';
+  end if;
+
+  select
+    pg_catalog.count(*)::integer,
+    pg_catalog.count(distinct incoming."playerId")::integer,
+    coalesce(
+      pg_catalog.bool_and(
+        coalesce(
+          (
+            incoming."gameId" = p_game_id
+            and incoming."playerId" > 0
+            and incoming.position = 'G'::public."NHL_Position_Code"
+            and incoming."evenStrengthShotsAgainst" is not null
+            and incoming."powerPlayShotsAgainst" is not null
+            and incoming."shorthandedShotsAgainst" is not null
+            and incoming."saveShotsAgainst" is not null
+            and incoming."evenStrengthGoalsAgainst" is not null
+            and incoming."powerPlayGoalsAgainst" is not null
+            and incoming."shorthandedGoalsAgainst" is not null
+            and incoming.pim is not null
+            and incoming."goalsAgainst" is not null
+            and incoming.toi is not null
+            and incoming."savePctg" is not null
+          ),
+          false
+        )
+      ),
+      false
+    )
+  into v_goalie_payload_count, v_goalie_distinct_count, v_rows_are_valid
+  from pg_catalog.jsonb_to_recordset(p_goalie_rows) as incoming(
+    "playerId" bigint,
+    "gameId" bigint,
+    position public."NHL_Position_Code",
+    "evenStrengthShotsAgainst" text,
+    "powerPlayShotsAgainst" text,
+    "shorthandedShotsAgainst" text,
+    "saveShotsAgainst" text,
+    "evenStrengthGoalsAgainst" smallint,
+    "powerPlayGoalsAgainst" smallint,
+    "shorthandedGoalsAgainst" smallint,
+    pim smallint,
+    "goalsAgainst" smallint,
+    toi text,
+    "savePctg" real
+  );
+
+  if v_goalie_payload_count <> p_expected_goalie_rows
+    or v_goalie_distinct_count <> p_expected_goalie_rows
+    or not v_rows_are_valid
+  then
+    raise exception using message = 'INVALID_GOALIE_GAME_STATS_ROWS';
+  end if;
+
+  if exists (
+    select 1
+    from pg_catalog.jsonb_to_recordset(p_skater_rows)
+      as skater("playerId" bigint)
+    join pg_catalog.jsonb_to_recordset(p_goalie_rows)
+      as goalie("playerId" bigint)
+      on goalie."playerId" = skater."playerId"
+  ) then
+    raise exception using message = 'OVERLAPPING_SKATER_GOALIE_IDENTITIES';
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended('fhfh:game-stats:' || p_game_id::text, 0)
+  );
+
+  if not exists (
+    select 1 from public.games where id = p_game_id
+  ) then
+    raise exception using message = 'GAME_STATS_GAME_NOT_FOUND';
+  end if;
+
+  select pg_catalog.count(*)::integer
+  into v_existing_team_count
+  from public."teamGameStats"
+  where "gameId" = p_game_id;
+
+  select pg_catalog.count(*)::integer
+  into v_existing_skater_count
+  from public."skatersGameStats"
+  where "gameId" = p_game_id;
+
+  select pg_catalog.count(*)::integer
+  into v_existing_goalie_count
+  from public."goaliesGameStats"
+  where "gameId" = p_game_id;
+
+  if v_existing_team_count > 2
+    or v_existing_skater_count > 100
+    or v_existing_goalie_count > 100
+  then
+    raise exception using message = 'UNBOUNDED_EXISTING_GAME_STATS_ROWS';
+  end if;
+
+  insert into public."teamGameStats" (
+    "gameId", "teamId", score, sog, "faceoffPctg", pim, hits,
+    "blockedShots", giveaways, takeaways, "powerPlay",
+    "powerPlayConversion", "powerPlayToi"
+  )
+  select
+    incoming."gameId", incoming."teamId", incoming.score, incoming.sog,
+    incoming."faceoffPctg", incoming.pim, incoming.hits,
+    incoming."blockedShots", incoming.giveaways, incoming.takeaways,
+    incoming."powerPlay", incoming."powerPlayConversion",
+    incoming."powerPlayToi"
+  from pg_catalog.jsonb_to_recordset(p_team_rows) as incoming(
+    "gameId" bigint, "teamId" smallint, score smallint, sog smallint,
+    "faceoffPctg" real, pim smallint, hits smallint, "blockedShots" smallint,
+    giveaways smallint, takeaways smallint, "powerPlay" text,
+    "powerPlayConversion" text, "powerPlayToi" text
+  )
+  on conflict ("gameId", "teamId") do update set
+    score = excluded.score,
+    sog = excluded.sog,
+    "faceoffPctg" = excluded."faceoffPctg",
+    pim = excluded.pim,
+    hits = excluded.hits,
+    "blockedShots" = excluded."blockedShots",
+    giveaways = excluded.giveaways,
+    takeaways = excluded.takeaways,
+    "powerPlay" = excluded."powerPlay",
+    "powerPlayConversion" = excluded."powerPlayConversion",
+    "powerPlayToi" = excluded."powerPlayToi";
+
+  insert into public."skatersGameStats" (
+    "playerId", "gameId", position, goals, assists, points, "plusMinus",
+    pim, hits, "blockedShots", "powerPlayGoals", "powerPlayPoints",
+    "shorthandedGoals", "shPoints", shots, faceoffs,
+    "faceoffWinningPctg", toi, "powerPlayToi", "shorthandedToi"
+  )
+  select
+    incoming."playerId", incoming."gameId", incoming.position,
+    incoming.goals, incoming.assists, incoming.points, incoming."plusMinus",
+    incoming.pim, incoming.hits, incoming."blockedShots",
+    incoming."powerPlayGoals", incoming."powerPlayPoints",
+    incoming."shorthandedGoals", incoming."shPoints", incoming.shots,
+    incoming.faceoffs, incoming."faceoffWinningPctg", incoming.toi,
+    incoming."powerPlayToi", incoming."shorthandedToi"
+  from pg_catalog.jsonb_to_recordset(p_skater_rows) as incoming(
+    "playerId" bigint, "gameId" bigint, position public."NHL_Position_Code",
+    goals smallint, assists smallint, points smallint, "plusMinus" smallint,
+    pim smallint, hits smallint, "blockedShots" smallint,
+    "powerPlayGoals" smallint, "powerPlayPoints" smallint,
+    "shorthandedGoals" smallint, "shPoints" smallint, shots smallint,
+    faceoffs text, "faceoffWinningPctg" real, toi text,
+    "powerPlayToi" text, "shorthandedToi" text
+  )
+  on conflict ("playerId", "gameId") do update set
+    position = excluded.position,
+    goals = excluded.goals,
+    assists = excluded.assists,
+    points = excluded.points,
+    "plusMinus" = excluded."plusMinus",
+    pim = excluded.pim,
+    hits = excluded.hits,
+    "blockedShots" = excluded."blockedShots",
+    "powerPlayGoals" = excluded."powerPlayGoals",
+    "powerPlayPoints" = excluded."powerPlayPoints",
+    "shorthandedGoals" = excluded."shorthandedGoals",
+    "shPoints" = excluded."shPoints",
+    shots = excluded.shots,
+    faceoffs = excluded.faceoffs,
+    "faceoffWinningPctg" = excluded."faceoffWinningPctg",
+    toi = excluded.toi,
+    "powerPlayToi" = excluded."powerPlayToi",
+    "shorthandedToi" = excluded."shorthandedToi";
+
+  insert into public."goaliesGameStats" (
+    "playerId", "gameId", position, "evenStrengthShotsAgainst",
+    "powerPlayShotsAgainst", "shorthandedShotsAgainst", "saveShotsAgainst",
+    "evenStrengthGoalsAgainst", "powerPlayGoalsAgainst",
+    "shorthandedGoalsAgainst", pim, "goalsAgainst", toi, "savePctg"
+  )
+  select
+    incoming."playerId", incoming."gameId", incoming.position,
+    incoming."evenStrengthShotsAgainst", incoming."powerPlayShotsAgainst",
+    incoming."shorthandedShotsAgainst", incoming."saveShotsAgainst",
+    incoming."evenStrengthGoalsAgainst", incoming."powerPlayGoalsAgainst",
+    incoming."shorthandedGoalsAgainst", incoming.pim,
+    incoming."goalsAgainst", incoming.toi, incoming."savePctg"
+  from pg_catalog.jsonb_to_recordset(p_goalie_rows) as incoming(
+    "playerId" bigint, "gameId" bigint, position public."NHL_Position_Code",
+    "evenStrengthShotsAgainst" text, "powerPlayShotsAgainst" text,
+    "shorthandedShotsAgainst" text, "saveShotsAgainst" text,
+    "evenStrengthGoalsAgainst" smallint, "powerPlayGoalsAgainst" smallint,
+    "shorthandedGoalsAgainst" smallint, pim smallint,
+    "goalsAgainst" smallint, toi text, "savePctg" real
+  )
+  on conflict ("playerId", "gameId") do update set
+    position = excluded.position,
+    "evenStrengthShotsAgainst" = excluded."evenStrengthShotsAgainst",
+    "powerPlayShotsAgainst" = excluded."powerPlayShotsAgainst",
+    "shorthandedShotsAgainst" = excluded."shorthandedShotsAgainst",
+    "saveShotsAgainst" = excluded."saveShotsAgainst",
+    "evenStrengthGoalsAgainst" = excluded."evenStrengthGoalsAgainst",
+    "powerPlayGoalsAgainst" = excluded."powerPlayGoalsAgainst",
+    "shorthandedGoalsAgainst" = excluded."shorthandedGoalsAgainst",
+    pim = excluded.pim,
+    "goalsAgainst" = excluded."goalsAgainst",
+    toi = excluded.toi,
+    "savePctg" = excluded."savePctg";
+
+  delete from public."teamGameStats" as existing
+  where existing."gameId" = p_game_id
+    and not exists (
+      select 1
+      from pg_catalog.jsonb_to_recordset(p_team_rows)
+        as incoming("teamId" smallint)
+      where incoming."teamId" = existing."teamId"
+    );
+  get diagnostics v_pruned_team_count = row_count;
+
+  delete from public."skatersGameStats" as existing
+  where existing."gameId" = p_game_id
+    and not exists (
+      select 1
+      from pg_catalog.jsonb_to_recordset(p_skater_rows)
+        as incoming("playerId" bigint)
+      where incoming."playerId" = existing."playerId"
+    );
+  get diagnostics v_pruned_skater_count = row_count;
+
+  delete from public."goaliesGameStats" as existing
+  where existing."gameId" = p_game_id
+    and not exists (
+      select 1
+      from pg_catalog.jsonb_to_recordset(p_goalie_rows)
+        as incoming("playerId" bigint)
+      where incoming."playerId" = existing."playerId"
+    );
+  get diagnostics v_pruned_goalie_count = row_count;
+
+  select pg_catalog.count(*)::integer
+  into v_observed_team_count
+  from public."teamGameStats"
+  where "gameId" = p_game_id;
+
+  select pg_catalog.count(*)::integer
+  into v_observed_skater_count
+  from public."skatersGameStats"
+  where "gameId" = p_game_id;
+
+  select pg_catalog.count(*)::integer
+  into v_observed_goalie_count
+  from public."goaliesGameStats"
+  where "gameId" = p_game_id;
+
+  if v_observed_team_count <> p_expected_team_rows
+    or v_observed_skater_count <> p_expected_skater_rows
+    or v_observed_goalie_count <> p_expected_goalie_rows
+  then
+    raise exception using message = 'GAME_STATS_CARDINALITY_MISMATCH';
+  end if;
+
+  insert into public."statsUpdateStatus" (
+    "gameId", updated, outcome, reason, contract_version,
+    expected_team_rows, observed_team_rows,
+    expected_skater_rows, observed_skater_rows,
+    expected_goalie_rows, observed_goalie_rows, completed_at
+  ) values (
+    p_game_id, true, 'complete', null, 1,
+    p_expected_team_rows, v_observed_team_count,
+    p_expected_skater_rows, v_observed_skater_count,
+    p_expected_goalie_rows, v_observed_goalie_count, v_completed_at
+  )
+  on conflict ("gameId") do update set
+    updated = excluded.updated,
+    outcome = excluded.outcome,
+    reason = excluded.reason,
+    contract_version = excluded.contract_version,
+    expected_team_rows = excluded.expected_team_rows,
+    observed_team_rows = excluded.observed_team_rows,
+    expected_skater_rows = excluded.expected_skater_rows,
+    observed_skater_rows = excluded.observed_skater_rows,
+    expected_goalie_rows = excluded.expected_goalie_rows,
+    observed_goalie_rows = excluded.observed_goalie_rows,
+    completed_at = excluded.completed_at;
+
+  return query select
+    p_game_id,
+    'complete'::text,
+    1::smallint,
+    p_expected_team_rows,
+    v_observed_team_count,
+    p_expected_skater_rows,
+    v_observed_skater_count,
+    p_expected_goalie_rows,
+    v_observed_goalie_count,
+    v_pruned_team_count,
+    v_pruned_skater_count,
+    v_pruned_goalie_count,
+    v_completed_at;
+end;
+$$;
+
+commit;
