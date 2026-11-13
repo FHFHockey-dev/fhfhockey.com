@@ -30,6 +30,7 @@ let applyGpOutputs: typeof import("./fetchRollingPlayerAverages").__testables.ap
 let getGpOutputCompatibilityMode: typeof import("./fetchRollingPlayerAverages").__testables.getGpOutputCompatibilityMode;
 let deriveOutputs: typeof import("./fetchRollingPlayerAverages").__testables.deriveOutputs;
 let getOptionalPpContextOutputs: typeof import("./fetchRollingPlayerAverages").__testables.getOptionalPpContextOutputs;
+let getPpShareComponents: typeof import("./fetchRollingPlayerAverages").__testables.getPpShareComponents;
 let initAccumulator: typeof import("./fetchRollingPlayerAverages").__testables.initAccumulator;
 let normalizeStrengthStates: typeof import("./fetchRollingPlayerAverages").__testables.normalizeStrengthStates;
 let normalizePlayerIdList: typeof import("./fetchRollingPlayerAverages").__testables.normalizePlayerIdList;
@@ -60,6 +61,7 @@ beforeAll(async () => {
       getGpOutputCompatibilityMode,
       deriveOutputs,
       getOptionalPpContextOutputs,
+      getPpShareComponents,
       initAccumulator,
       normalizeStrengthStates,
       normalizePlayerIdList,
@@ -1053,6 +1055,48 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       expect(didPlayerCountAsAppearance(strength, game)).toBe(true);
       if (strength === "pp") expect(getGoalsPer60ToiSeconds(game)).toBe(207);
     }
+  });
+
+  describe("decision 152: pp_share_pct denominator from the stored team-game clock", () => {
+    const wgo = (gameId: number) => ({
+      player_id: 8473512, game_id: gameId, date: `2026-10-0${gameId - 2026020020}`, season_id: 20262027,
+      team_abbrev: "OTT", toi_per_game: 1097, es_toi_per_game: 823, pp_toi: 200, pp_toi_pct_per_game: 0.9
+    });
+    const OTT = 9;
+    const pp = [{ gameId: 2026020021, playerId: 8473512, PPTOI: 90, pp_share_of_team: 0.75 } as any];
+    const clocks = new Map([
+      ["2026020021:9", { gameId: 2026020021, teamId: OTT, availability: "available", clockSeconds: 120, unavailableReason: null, computedAt: "t" }],
+      ["2026020022:9", { gameId: 2026020022, teamId: OTT, availability: "available", clockSeconds: 120, unavailableReason: null, computedAt: "t" }],
+      ["2026020023:9", { gameId: 2026020023, teamId: OTT, availability: "not_applicable", clockSeconds: 0, unavailableReason: null, computedAt: "t" }],
+      ["2026020024:9", { gameId: 2026020024, teamId: OTT, availability: "unavailable", clockSeconds: 148,
+        unavailableReason: "The clock differs from the official team PP total by +28 s.", computedAt: "t" }]
+    ] as Array<[string, any]>);
+    const ids = new Set([2026020021, 2026020022, 2026020023, 2026020024, 2026020025]);
+    const rows = (withClocks: boolean) => buildGameRecords(
+      [2026020021, 2026020022, 2026020023, 2026020024, 2026020025].map(wgo) as any, {}, {}, {}, [], pp, "all", ids,
+      withClocks ? clocks : null);
+
+    it("serving off keeps today's components (builder share, then WGO)", () => {
+      const games = rows(false);
+      expect(games.every((game) => game.ppServedClock === undefined)).toBe(true);
+      expect(games.map(getPpShareComponents)).toEqual([
+        { numerator: 90, denominator: 120 },
+        { numerator: 200, denominator: 200 / 0.9 },
+        { numerator: 200, denominator: 200 / 0.9 },
+        { numerator: 200, denominator: 200 / 0.9 },
+        { numerator: 200, denominator: 200 / 0.9 }
+      ].map((c) => expect.objectContaining({ numerator: c.numerator, denominator: expect.closeTo(c.denominator, 6) })));
+    });
+
+    it("serving on: the clock row is the denominator; no row is 0 of it; N/A adds 0 of 0; withheld or missing adds nothing", () => {
+      expect(rows(true).map(getPpShareComponents)).toEqual([
+        { numerator: 90, denominator: 120 },
+        { numerator: 0, denominator: 120 },
+        { numerator: 0, denominator: 0 },
+        null,
+        null
+      ]);
+    });
   });
 
   it("preserves the WGO row spine when NST enrichment rows are missing", () => {

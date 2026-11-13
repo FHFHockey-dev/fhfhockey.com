@@ -9,6 +9,8 @@ import { useTeamColor } from "contexts/TeamColorContext";
 import { readableInk } from "components/LineCombinations/PlayerCard/teamInk";
 import cardStyles from "components/LineCombinations/PlayerCard/PlayerCard.module.scss";
 import styles from "./PowerPlayCombos.module.scss";
+import { PP_NOT_APPLICABLE_LABEL, ppClockKey, ppClockVerdict } from "lib/ppShare/serving";
+import { fetchPpClockGate } from "lib/ppShare/usePpTeamGameClocks";
 
 type RosterRow = Pick<
   Database["public"]["Tables"]["rosters"]["Row"],
@@ -104,6 +106,10 @@ type CurrentGameRow = Pick<
 
 const UNIT_ORDER = [1, 2, 3] as const;
 
+/** Decision 152: why the current game's units are not shown while PP share is served. */
+type PpNotice = { status: "not_applicable" | "unavailable"; message: string };
+export const PP_NOT_APPLICABLE_NOTICE = `${PP_NOT_APPLICABLE_LABEL}: no power play in this game.`;
+
 export default function PowerPlayCombos({
   teamId,
   gameId,
@@ -133,6 +139,7 @@ export default function PowerPlayCombos({
   const [ppStatsByPlayerId, setPpStatsByPlayerId] = useState<
     Record<number, PpStats>
   >({});
+  const [ppNotice, setPpNotice] = useState<PpNotice | null>(null);
 
   const dateFormatter = useMemo(
     () =>
@@ -171,6 +178,7 @@ export default function PowerPlayCombos({
     async function load() {
       setLoading(true);
       setError(null);
+      setPpNotice(null);
       try {
         const { data: currentGameInfo, error: currentGameError } =
           await supabase
@@ -227,7 +235,7 @@ export default function PowerPlayCombos({
         if (comboError) throw comboError;
 
         const combos = (comboData ?? []) as PowerPlayRow[];
-        const nextUnits: UnitsMap = {};
+        let nextUnits: UnitsMap = {};
 
         const orderPlayers = (list: UnitPlayer[]) => {
           const forwards = list.filter((player) => !player.isDefense);
@@ -289,6 +297,7 @@ export default function PowerPlayCombos({
         });
 
         let unitsHistory: UnitsHistoryMap = {};
+        let historyGameIds: number[] = [];
 
         if (playerIds.length > 0) {
           const currentStartTime = currentGame.startTime;
@@ -317,6 +326,7 @@ export default function PowerPlayCombos({
             awayTeamId: number;
           }[];
           const previousIds = previousGames.map((game) => game.id);
+          historyGameIds = previousIds;
 
           if (previousIds.length) {
             const { data: historyRows, error: historyError } = await supabase
@@ -372,9 +382,33 @@ export default function PowerPlayCombos({
           }
         }
 
+        // Decision 152: while PP share is served, show units only for team-games with an available stored clock.
+        let notice: PpNotice | null = null;
+        const gate = await fetchPpClockGate([gameId, ...historyGameIds]);
+        if (gate.status === "error") {
+          notice = { status: "unavailable", message: gate.reason };
+          nextUnits = {};
+          unitsHistory = {};
+        } else if (gate.status === "on") {
+          const verdictFor = (id: number) => ppClockVerdict(gate.clocks.get(ppClockKey(id, teamId)));
+          const current = verdictFor(gameId);
+          if (current.status !== "available") {
+            notice = current.status === "not_applicable"
+              ? { status: "not_applicable", message: PP_NOT_APPLICABLE_NOTICE }
+              : { status: "unavailable", message: current.reason };
+            nextUnits = {};
+          }
+          unitsHistory = Object.fromEntries(
+            Object.entries(unitsHistory)
+              .map(([unit, entries]) => [unit, entries.filter((entry) => verdictFor(entry.gameId).status === "available")])
+              .filter(([, entries]) => entries.length > 0)
+          ) as UnitsHistoryMap;
+        }
+
         if (!cancelled) {
           setUnits(nextUnits);
           setHistory(unitsHistory);
+          setPpNotice(notice);
           setExpandedUnit(null);
         }
       } catch (cause) {
@@ -591,6 +625,10 @@ export default function PowerPlayCombos({
         <div className={styles.status}>Loading power play data...</div>
       ) : error ? (
         <div className={styles.statusError}>{error}</div>
+      ) : ppNotice ? (
+        <div className={styles.status} role="status">
+          {ppNotice.message}
+        </div>
       ) : unitNumbers.length === 0 ? (
         <div className={styles.status}>
           No power play units recorded for this game.

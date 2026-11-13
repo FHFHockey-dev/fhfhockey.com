@@ -562,7 +562,140 @@ TJ wants the full dry-run diff before any refresh. Nothing here ran against a da
   - **5 inserts:** 2026020131 t18's missing skaters.
 - **14 further updates** are within the 16 and are expected: teammates in the overtime team-games whose unit average moved. Only `percentageOfPP`, `pp_unit_usage_index`, `pp_unit_relative_toi` and `pp_vs_unit_avg` change: 2026020161 t52 (3), 2026020174 t29 (6), 2026020192 t2 (1) and 2026020197 t23 (4). No player changes unit anywhere.
 - No other row in the season changes. The 2 Part A team-games qualify on the Penalty Summary and are unchanged.
-- **The write phase still needs separate approvals:** migration 149 applied, the release with the flag set, and TJ's approval of this dry-run file by its sha256.
+- **TJ approved this dry-run file** (2026-11-13T20:54Z, in the F11 session): TJ typed "approved", then picked "Dry-run file only" in the pop-up. The approval covers `dry-run.json` sha256 `db94a9de864b9dfa8fa69f24c6be9045dd037ed1937393c3b03dd69d9ec4f15c` and nothing else.
+- **Status, 2026-11-13, per the Chef** (TJ approved each step by pop-up in the Chef session):
+  - Migration 149 was applied atomically at 20:36:48Z with a clean readback; the authority file shows 115 applied and 6 pending.
+  - Release #441 (master `f5c7adc2d`, writer code identical to `8f73d2931`) shipped with writes gated off: build 20:49:42Z, smoke test 5/5.
+  - TJ then set `PP_STORED_CALCULATION_WRITES_ENABLED=true` in Production. A clean-export CLI production deploy of `f5c7adc2d` was running at the time of this note.
+- **The refresh is not approved.** (`20-refresh-runner.py write --dry-run results/after-d152/local-dry-run/dry-run.json --dry-run-sha256 db94a9de…`.) The Chef brings it to TJ after the deploy is verified. This lane doesn't run it unless told who does.
+- **Once the redeploy is live, nightly cron 388 writes with the new writer.** It covers dates from today minus 2 to today, so it may write some frozen games (from 11-12) before the refresh. It uses the same calculation, so the refresh's readback still holds as long as their stored inputs haven't changed since the export.
+
+## 15. Decision 152: PP share reader gates (built offline for TJ's serving review; not released or served)
+
+According to the Chef, the refresh is done: 31 of 31 batches matched `db94a9de`, and production has 7,180 stamped 2026-27 rows and 618 clock rows. Every reader below sits behind one server-side flag, **`PP_SHARE_SERVING_ENABLED`**. Unset, or anything but exactly `"true"`, keeps today's behaviour: PP share withheld.
+
+**Shared rules** (`web/lib/ppShare/serving.ts`), the same for every reader:
+- The team-game's `pp_team_game_clock` row decides:
+  - **available** (clock above 0): PP time and share, where share = stored PPTOI / `clock_seconds`. In an available team-game the stored set is complete, so a skater with no row had 0 s.
+  - **not_applicable** (a qualified 0): **"N/A"**, never 0%.
+  - **unavailable, or no row:** the row's reason, or "No stored PP clock for this team-game yet."
+- A missing player value, or player PP time above the clock, is withheld with its reason. **Nothing is capped.**
+- **Live PP views** (LinemateMatrix, ShiftChart) are shown only when their own team PP seconds equal the stored qualified clock. Otherwise the disagreement is the reason.
+
+**Readers:**
+- **`/api/toi` and the TOI chart:**
+  - Each game point gets stored PP minutes and share (%) from the player's team clock row (the team comes from FORGE's row for that game), plus `powerPlayShareStatus`. `powerPlayStatus.available` becomes true.
+  - The chart plots N/A and withheld games as gaps and adds one note, for example "N/A for 1 game with no power play. Withheld for 1 game: (reason)".
+  - With serving off, the response is unchanged (pinned) and the PP tables are never read.
+- **Rolling writer** (`fetchRollingPlayerAverages` and `rollingPlayerPpShareContract.resolveServedPpShareComponents`):
+  - With serving on, `pp_share_pct`'s denominator is the clock row's seconds for every dressed game, with no builder-share or WGO fallback.
+  - A missing stored row adds 0 of the clock. N/A adds 0 of 0. An unavailable game, a missing clock row or a player above the clock adds nothing.
+  - With serving off, no clock rows are read and the components are unchanged.
+- **PowerPlayCombos (Lines):** one gate request covers the current game plus its 5-game history.
+  - The units show only when the current team-game is available. N/A and unavailable show the label or the reason instead.
+  - The history keeps only available games.
+  - A failed gate request fails closed, with the units withheld and a reason shown.
+- **LinemateMatrix PP mode and ShiftChart's replay matrix:**
+  - These still compute pairs from live shift data, but a team's grid shows only when that team's stored clock is available and equals the view's own PP seconds (`getTOIData`'s new `ppSecondsByTeam`; `model.ts` `ppSecondsByTeam`). N/A and unavailable teams show the label or the reason.
+  - While the clock loads, PP mode says "Checking the stored power-play clock..." rather than showing ungated values.
+  - The PP and PK bands on the replay timeline are unchanged: they show manpower context, not a share.
+- **Client gate:** `GET /api/v1/pp-share/team-game-clock?gameIds=…` (at most 60 games) returns `{ servingEnabled, clocks }`.
+  - With serving off it reads nothing.
+  - Its answer is cached for up to about 5 minutes, so a flag change takes that long to reach the client readers.
+
+**Untouched:** `LineCombinations/utilities.ts`, `pages/lines/[abbreviation].tsx` (the gate sits inside PowerPlayCombos), and shift ingestion and fallback. No stylesheet changed: the new messages reuse each component's existing status styles.
+
+**Serving-off differences** (the rendered output and API JSON are otherwise unchanged):
+- the three client readers make one cached gate request;
+- LinemateMatrix and ShiftChart in PP mode show "Checking…" until it answers.
+
+**Checks:**
+- 12 files, 220 tests:
+  - shared rules 10 and API route 7;
+  - `/api/toi` 15 and TOI chart 4;
+  - rolling contract and writer 90;
+  - PowerPlayCombos 16;
+  - LinemateMatrix, Replay and model 34;
+  - the decision-152 writer suites, unchanged.
+- `npm run typecheck` exit 0; ESLint on all 20 changed files exit 0.
+
+**Not done:** turning serving on in production, a release, and any check of real served pages. That is TJ's serving review.
+
+## 16. Decision 152: serving-review evidence for the reader gates (TJ's acceptance criteria)
+
+**1. Serving off leaves the rolling writer's stored output unchanged, field for field.**
+- `fetchRollingPlayerAverages.ppServingPin.test.ts` runs the writer's real `main` in dry-run mode over a fixture window: one player, six games, every clock outcome, PP rows present. It captures the 60 rows it would upsert (ranking and support).
+- The baseline, `__fixtures__/rolling-pp-share-flag-off-baseline.json`, was recorded by running the same harness against the writer before the gates. Both files at `05c43f981^` are identical to `origin/master`.
+- **Serving off:** the rows equal the baseline exactly, and `pp_team_game_clock` is never read.
+- **Serving on:** the only changed leaves, nested support payloads included, are `pp_share_pct` fields.
+- No other writer was touched in the reader-gate work.
+
+**2a. Qualified team-game 2026020131, team 18 (`decision152CrossSurface.test.tsx`)**
+- This uses real stored rows: full PBP, the 743 type-517 shift rows, roster spots and official totals from the read-only export, plus shooter and scorer ids from one bounded read-only read.
+- The stored rows themselves come from the decision-152 writer run on those same inputs.
+- Every surface, with serving on:
+
+| Surface | Clock | Per-player PP seconds | What it shows |
+|---|---|---|---|
+| Stored calculation (`powerPlayCombinations`) | 120 s, available, `teamGameStats` | PP1: 8475158 112, 8474564 111, 8476539 110, 8474600 110, 8476887 109. PP2: 8476869 11, 8480246 10, 8477021 10, 8484241 9, 8479525 8. | share = PPTOI / 120: 0.933333, 0.925, 0.916667, 0.916667, 0.908333, then 0.091667, 0.083333, 0.083333, 0.075, 0.066667 |
+| `/api/toi` | 120 s | the same seconds (PP minutes × 60) | the same shares as %: 93.33, 92.50, 91.67, 91.67, 90.83, 9.17, 8.33, 8.33, 7.50, 6.67; status available |
+| LinemateMatrix PP mode | live 120 s = stored 120 s, available | the same seconds (matrix diagonal) | the team-18 grid; PP1 average 110.4 s, PP2 9.6 s, a 92.0% / 8.0% split |
+| Shift chart model (served) | qualified 120 s = stored, available | the same seconds | the same grid |
+| Lines PowerPlayCombos | available | not shown (the stored PPTOI only orders players) | PP1 = 8474564, 8474600, 8475158, 8476539, 8476887; PP2 = the other five |
+
+- **Finding: the shift chart's PP bands are wrong today.**
+  - The replay's play parser drops situation codes, so its power-play bands give team 18 **29 s**, the 11-01 clock's wrong value. This is production behaviour today, and serving off keeps it (pinned).
+  - With serving on, the PP-mode matrix uses a new qualified set of intervals: the same clock as the stored calculation, with the game's own teams. That set gives 120 s.
+  - The timeline's PP bands still use today's intervals even with serving on. Switching them is a separate decision.
+
+**2b. Zero-PP team-game 2026020038, team 55** (official "00:00", "0/0")
+
+| Surface | What it shows |
+|---|---|
+| Stored calculation | not applicable, clock 0, no player rows |
+| `/api/toi` | share null and status `not_applicable` for every team-55 skater; PP minutes 0, which is the team's actual PP time, not a share |
+| LinemateMatrix PP mode | "Team 55: N/A: no power play in this game.", with no 0.0% cell |
+| Shift chart | "(team): N/A: no power play in this game." |
+| Lines PowerPlayCombos | "N/A: no power play in this game.", with no units |
+
+No surface shows 0% as a share. Both live views also compute 0 s for team 55.
+
+**3.** No shift ingestion or shift-fallback code is touched. Every surface reads stored shift rows only, put into the live feed's shape inside the test.
+
+**Checks:** 14 files, 224 tests (the 220 earlier plus the pin 2 and cross-surface 2); typecheck exit 0; ESLint exit 0. No `.module.scss` changed.
+
+## 17. Decision 152: the replay's PP bands gated on the stored clock (TJ: blocks the release; built offline)
+
+**Rule** (`model.ts` `ppTimelineVerdicts`, the same one the live PP views use):
+- While PP share is served, a team's timeline PP bands (today's parser bands, `game.powerPlays`) are drawn only when they reconcile with the stored qualified clock. That means:
+  - the stored verdict is **available** and the team's merged band seconds **equal `clock_seconds` exactly**; or
+  - the verdict is **not applicable** and the team has **no** bands.
+- Otherwise:
+  - the team's bands are withheld whole, both as PP on its own tracks and as PK on the opponent's;
+  - its timeline header shows **"PP timeline unavailable: timing mismatch."**, or, when the stored clock itself is unavailable, "PP timeline unavailable: " plus the stored reason.
+- Bands are never stretched, rescaled or redistributed.
+- The rule checks totals only: bands with the right total in the wrong place would pass. Comparing each band with the qualified intervals would be a stricter, separate change.
+
+**Behaviour:**
+- Replay makes one gate read for both the timeline and the PP-mode matrix. The verified PP share and seconds stay in the matrix.
+- While the gate loads, no bands are drawn, so unverified bands never flash.
+- **Serving off:** today's bands, unchanged. The one difference is a moment without bands while the cached gate answers "off".
+
+**What each case renders** (`Replay.test.tsx`, real stored-row fixtures via `testStoredGame.ts`):
+
+| Case | Bands vs stored clock | Renders |
+|---|---|---|
+| 1. 2026020131 t18 | 29 s vs 120 s, mismatch | No team-18 band on any track. The T18 header says "PP timeline unavailable: timing mismatch.". The PP-mode matrix still shows team 18's verified grid: PP1 110.4 s and PP2 9.6 s of 120 s, a 92.0% / 8.0% split. |
+| 2. 2026020131 t19 | 578 s = 578 s, reconciles | Every team-19 power play is drawn, as PP on T19 tracks and PK on T18 tracks, at its own start and width. No label. |
+| 3. 2026020038 t55 | 0 s, not applicable | No team-55 shading, no label. The matrix says "Team 55: N/A: no power play in this game."; no 0.0% anywhere. Team 20's bands (172 s = 172 s) are drawn. |
+| 4. Serving off, 2026020131 | n/a | Today's bands for both teams, including team 18's 29 s parser band. No labels. One gate request. |
+
+**Files:** `web/components/ShiftChart/model.ts`, `Replay.tsx`, `Replay.test.tsx` and a new test helper `testStoredGame.ts`. No scss; `PowerPlayAreaIndicators` is unused and unchanged.
+
+**Checks:**
+- ShiftChart, LinemateMatrix, cross-surface, PowerPlayCombos and serving suites: 7 files, 71 tests.
+- Replay: 6 tests, the 4 new cases among them.
+- `npm run typecheck` exit 0; ESLint exit 0.
 
 ## Open items for the owner (Chef to route)
 

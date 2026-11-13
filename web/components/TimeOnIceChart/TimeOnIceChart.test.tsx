@@ -43,6 +43,47 @@ describe("TimeOnIceChart PP share (W2-P0-13, decision 71)", () => {
     expect(screen.queryByTestId("line-chart")).toBeNull();
   });
 
+  it("decision 152: plots a served share with N/A and withheld games as gaps, and says why", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        json: async () => ({
+          success: true,
+          powerPlayStatus: { available: true, reason: null },
+          data: [
+            { date: "2026-11-01", toi: 22, powerPlayToi: 2, powerPlayToiShare: 40,
+              powerPlayShareStatus: { availability: "available", reason: null } },
+            { date: "2026-11-03", toi: 20, powerPlayToi: 0, powerPlayToiShare: null,
+              powerPlayShareStatus: { availability: "not_applicable", reason: null } },
+            { date: "2026-11-05", toi: 21, powerPlayToi: null, powerPlayToiShare: null,
+              powerPlayShareStatus: { availability: "unavailable", reason: "No stored PP clock for this team-game yet." } },
+          ],
+        }),
+      }))
+    );
+    render(<TimeOnIceChart playerId={8478402} timeOption="SEASON" chartType="POWER_PLAY_TOI" />);
+    await waitFor(() => expect(screen.getByTestId("line-chart").textContent).toBe("[40,null,null]"));
+    expect(screen.getByRole("note").textContent).toBe(
+      "N/A for 1 game with no power play. Withheld for 1 game: No stored PP clock for this team-game yet."
+    );
+  });
+
+  it("serving off shows no per-game note", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        json: async () => ({
+          success: true,
+          powerPlayStatus: { available: false, reason: "PP share unavailable." },
+          data: [{ date: "2026-11-01", toi: 22, powerPlayToi: null, powerPlayToiShare: null }],
+        }),
+      }))
+    );
+    render(<TimeOnIceChart playerId={8478402} timeOption="SEASON" chartType="POWER_PLAY_TOI" />);
+    await waitFor(() => expect(screen.getByRole("status")).toBeTruthy());
+    expect(screen.queryByRole("note")).toBeNull();
+  });
+
   it("still plots TOI", async () => {
     vi.stubGlobal(
       "fetch",
