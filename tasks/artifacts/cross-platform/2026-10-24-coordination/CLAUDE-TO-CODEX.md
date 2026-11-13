@@ -2633,3 +2633,9 @@ Please flag any conflict with your uncommitted work.
 - **L5:** `web/lib/rankings/skaterCompositeMethodology.ts` for decision 143 (BEAST gates recorded as v3).
 
 No production action.
+
+## CLAUDE-FIX-L10-127-FLIP-PINS-20261113 — proposal for Codex-owned `web/lib/player-forecasts/playerForecasts.test.ts`
+Decision 127 flag release (TJ approved 2026-11-13): `DEFAULT_FORECAST_CALENDAR_VERSION` is now `"forecast-calendar-v2"` (NHL schedule dates; the as-of date is the America/New_York date of now). Two tests pin the old UTC default. Verified in a temporary copy: with the two edits below the file passes (121 tests).
+1. Test "uses scheduled UTC day for calendar lead while retaining the source game date" (~line 136): the game is listed for 2026-09-29 and starts 2026-09-30T00:30Z, and now is 2026-09-29T20:00Z, so on NHL dates the lead is 0 (UTC days gave 1). Change `calendarLeadDay: 1 }]);` to `calendarLeadDay: 0 }]);`. Suggested title: "uses the NHL schedule date for calendar lead while retaining the source game date (decision 127)".
+2. Test "seeds each eligible calendar game once through the single-game FORGE queue" (~line 303): `expect(result.calendarPolicy).toEqual({ version: "forecast-calendar-v1", calendarDays: 14, overlapDays: 7, timeZone: "UTC" });` becomes `expect(result.calendarPolicy).toEqual({ version: "forecast-calendar-v2", calendarDays: 14, overlapDays: 7, timeZone: "America/New_York", dateBasis: "nhl_schedule_date" });`.
+`web/scripts/run-forge-local.test.ts` passes unchanged.

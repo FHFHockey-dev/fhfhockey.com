@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
 
 const { tables, fromMock, upsertMock, bridgeMock, planningMock, flags } = vi.hoisted(() => ({
-  flags: { market: undefined as boolean | undefined, basis: false },
+  flags: { market: undefined as boolean | undefined, basis: undefined as boolean | undefined },
   fromMock: vi.fn(),
   tables: {} as Record<string, Record<string, any>[]>,
   upsertMock: vi.fn(async (..._args: any[]) => ({ error: null as null | { message: string } })),
@@ -18,7 +18,7 @@ vi.mock("lib/rosterScheduleData/forgeDailyBridge", async importOriginal => ({ ..
 vi.mock("lib/player-forecasts/servedForecastLedger", async importOriginal => {
   const actual = await importOriginal<any>();
   // Unset: the real constant (decision 126); set: a scenario override.
-  return { ...actual, get LEDGER_MARKET_ENABLED() { return flags.market ?? actual.LEDGER_MARKET_ENABLED; }, get LEDGER_BASIS_SCHEMA_ENABLED() { return flags.basis; } };
+  return { ...actual, get LEDGER_MARKET_ENABLED() { return flags.market ?? actual.LEDGER_MARKET_ENABLED; }, get LEDGER_BASIS_SCHEMA_ENABLED() { return flags.basis ?? actual.LEDGER_BASIS_SCHEMA_ENABLED; } };
 });
 vi.mock("lib/supabase/server", () => ({
   default: {
@@ -58,7 +58,7 @@ describe("forge-served-forecast-snapshot", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     flags.market = undefined;
-    flags.basis = false;
+    flags.basis = undefined;
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-21T12:30:00Z"));
     Object.assign(tables, {
@@ -133,8 +133,9 @@ describe("forge-served-forecast-snapshot", () => {
     expect(out.statusCode).toBe(200);
     expect(out.body).toMatchObject({ rowsUpserted: 4, countsBySource: { bridge_exact: 1, naive_last5: 1, naive_season: 1, market: 1 } });
     expect(upsertMock.mock.calls[0][1].some((row: any) => "market_lines" in row)).toBe(false);
-    const [table, [market]] = upsertMock.mock.calls[1];
-    expect(table).toBe("forge_served_forecast_ledger");
+    // Ledger rows, then the eligible universe (basis schema on), then market rows last.
+    expect(upsertMock.mock.calls.map(call => call[0])).toEqual(["forge_served_forecast_ledger", "forge_served_forecast_universe", "forge_served_forecast_ledger"]);
+    const [, [market]] = upsertMock.mock.calls[2];
     // Props price a dressed player: the if-dressed naive means get a model P(over), the unconditional bridge line does not (decision 41).
     expect(market).toMatchObject({ source: "market", player_id: 11, game_id: 100, market_lines: { props: { shots: { line: 2.5, books: 1, model_p_over: { naive_last5: expect.any(Number) } } } } });
     expect(market.market_lines.props.shots.model_p_over.bridge_exact).toBeUndefined();
@@ -142,21 +143,23 @@ describe("forge-served-forecast-snapshot", () => {
 
   it("keeps the served rows when the market write fails (migration not applied)", async () => {
     flags.market = true;
-    upsertMock.mockResolvedValueOnce({ error: null }).mockResolvedValueOnce({ error: { message: "violates check constraint" } });
+    // Ledger and universe writes succeed; the market write (third) fails.
+    upsertMock.mockResolvedValueOnce({ error: null }).mockResolvedValueOnce({ error: null }).mockResolvedValueOnce({ error: { message: "violates check constraint" } });
     const out = res();
     await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
     expect(out.statusCode).toBe(207);
     expect(out.body).toMatchObject({ success: false, rowsUpserted: 3, marketError: "violates check constraint" });
   });
 
-  it("sends no basis column or universe until the L4a migration flag is on, then persists both", async () => {
+  it("sends no basis column or universe with the flag off, and persists both as shipped (migration 138)", async () => {
+    flags.basis = false;
     const off = res();
     await handler({ method: "POST", query: { date: "2026-10-21" } } as any, off);
     expect(upsertMock.mock.calls.flatMap(call => call[1]).some((row: any) => "forecast_basis" in row)).toBe(false);
     expect(upsertMock.mock.calls.some(call => call[0] === "forge_served_forecast_universe")).toBe(false);
     expect(off.body).toMatchObject({ coverageStatus: "unavailable_independent_universe_not_persisted", universeUpserted: 0, scoringVersion: "served-ledger-scoring-v2" });
     upsertMock.mockClear();
-    flags.basis = true;
+    flags.basis = undefined;
     const on = res();
     await handler({ method: "POST", query: { date: "2026-10-21" } } as any, on);
     const ledgerRows = upsertMock.mock.calls[0][1];

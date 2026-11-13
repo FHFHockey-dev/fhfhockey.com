@@ -252,7 +252,8 @@ describe("planning contribution adapter", () => {
       id: `policy-${days}`, calendarPolicy: forecastCalendarPolicy(days), seasonId: 20262027, asOf: now,
       scheduleRevision: "schedule-a", rosterRevision: "roster-a", issuedRevisionIds: ["detail-1"],
       baselineChecksum: "rate", requiredOpportunities: 1, forecastedOpportunities: 1, exclusionCounts: {} };
-    const expected = days === 7 ? 0.5 : days === 14 ? (1 + 5 / 7) * 0.5 : 1;
+    // Default v2 calendar: asOf Sep 29 00:00Z is Sep 28 Eastern, so the Oct 8 game is lead 10 (v1 UTC: 9, weight 5/7).
+    const expected = days === 7 ? 0.5 : days === 14 ? (1 + 4 / 7) * 0.5 : 1;
     const original = fixture([rate], [detailed()]);
     const fresh = resolvePlanningContributions({ ...original, forecastManifest: manifest });
     const retained = resolvePlanningContributions(original);
@@ -285,7 +286,8 @@ describe("planning contribution adapter", () => {
   it("blends conditional detail before applying participation once", () => {
     const forecast = resolvePlanningContributions(fixture([rate], [detailed()])).forecasts[0];
     expect(forecast.sourceKind).toBe("blended");
-    expect(forecast.stats.GOALS).toBeCloseTo((1 + 5 / 7) * 0.5);
+    // Default v2 calendar: lead 10 on NHL dates, weight 4/7 (v1 UTC: 5/7).
+    expect(forecast.stats.GOALS).toBeCloseTo((1 + 4 / 7) * 0.5);
     expect(forecast.contributions?.GOALS.participationRevisionId).toBe("detail-1:participation");
     expect(forecast.expiresAt).toBe("2026-10-09T00:00:00Z");
     expect(forecast.contributions?.GOALS.inputs?.detailed?.sourceWatermark).toBe("captured-reads");
@@ -298,7 +300,7 @@ describe("planning contribution adapter", () => {
     expect(retained.baselineSources).toBeUndefined();
     expect(resolvePlanningContributions(retained).forecasts).toEqual(resolved.forecasts);
     retained.forecasts[0].stats.GOALS = 999;
-    expect(resolvePlanningContributions(retained).forecasts[0].stats.GOALS).toBeCloseTo((1 + 5 / 7) * 0.5);
+    expect(resolvePlanningContributions(retained).forecasts[0].stats.GOALS).toBeCloseTo((1 + 4 / 7) * 0.5);
     retained.context.asOf = "2026-09-30T00:00:00Z";
     original.context.asOf = retained.context.asOf;
     expect(resolvePlanningContributions(retained).forecasts[0].stats.GOALS)
@@ -879,7 +881,8 @@ describe("calendar consumer target coverage", () => {
     const reader = vi.spyOn(publicPlanning, "loadPlanningData").mockResolvedValue(data);
     const db = {} as any;
     const result = await inspectCalendarConsumerCoverage(db, scopes, profile, new Date(now), 14);
-    expect(reader).toHaveBeenCalledWith(db, { seasonId: 20262027, startDate: "2026-09-29", endDate: "2026-10-12", timeZone: "UTC" }, { now: new Date(now) });
+    // Default v2 calendar: the window starts on the Eastern as-of date (Sep 28) and reads in America/New_York.
+    expect(reader).toHaveBeenCalledWith(db, { seasonId: 20262027, startDate: "2026-09-28", endDate: "2026-10-11", timeZone: "America/New_York" }, { now: new Date(now) });
     expect(result).toMatchObject({ requiredPlayerGameTargets: 6, eligiblePlayerGameTargets: 0,
       exclusions: { canary_excluded: 6 }, manifestId: "manifest" });
   });
