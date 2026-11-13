@@ -13,6 +13,7 @@ import type {
 import { daysBetweenDates } from "../utils/date-utils";
 import { clamp, safeNumber, safeStdDev } from "../utils/number-utils";
 import { toFiniteNumberArray } from "../utils/collection-utils";
+import { resolveOfficialStarter } from "../goalie/historyLedger";
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
@@ -106,10 +107,11 @@ export function creditedStartLabels(
   appearances: Array<{ game_id: number | null; game_date: string | null; goalie_id: number | null }>,
   labels: Array<{ game_id: number | null; goalie_id: number | null; games_started: number | null }>
 ): CreditedStartLabel[] {
-  const started = new Map<string, number | null>();
+  const started = new Map<string, boolean | null>();
   for (const row of labels) {
     if (!Number.isFinite(row.game_id) || !Number.isFinite(row.goalie_id)) continue;
-    started.set(`${row.game_id}:${row.goalie_id}`, row.games_started === 1 ? 1 : row.games_started === 0 ? 0 : null);
+    const key = `${row.game_id}:${row.goalie_id}`;
+    started.set(key, started.has(key) ? null : row.games_started === 1 ? true : row.games_started === 0 ? false : null);
   }
   const byGame = new Map<number, { gameDate: string; goalieIds: Set<number> }>();
   for (const row of appearances) {
@@ -120,8 +122,10 @@ export function creditedStartLabels(
   }
   return [...byGame.entries()]
     .map(([gameId, game]) => {
-      const starters = [...game.goalieIds].filter((goalieId) => started.get(`${gameId}:${goalieId}`) === 1);
-      return { gameId, gameDate: game.gameDate, starterGoalieId: starters.length === 1 ? starters[0] : null };
+      const starterGoalieId = resolveOfficialStarter([...game.goalieIds].map(goalieId => ({
+        goalieId, started: started.get(`${gameId}:${goalieId}`) ?? null
+      })));
+      return { gameId, gameDate: game.gameDate, starterGoalieId };
     })
     .sort((a, b) => b.gameDate.localeCompare(a.gameDate) || b.gameId - a.gameId);
 }

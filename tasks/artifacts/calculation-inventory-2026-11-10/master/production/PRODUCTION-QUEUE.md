@@ -134,3 +134,36 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - **PP:** 60 min. Forwards .55, defence .63; 30 min gives only .37–.47.
 - **PK:** about 120 min (.52/.55), and still weak, so label it low reliability.
 - These replace the provisional 30 min, and need owner approval.
+
+## Production alias restored from Codex's temporary H1 deployment, 2026-11-13 00:25Z (TJ pop-up "Restore now")
+- Found: Codex created production deployment dpl_GK6quj7ogBxcQE3FZxV3VDzSTvjM at 00:06:40Z (CLI, source 4243bcd4e) with per-deployment overrides: H1 compute on, canary game 2026020307, scheduler off. fhfhockey.com pointed at it. Codex's diary (`tasks/diaries/2026-11-13-codex-h1-execution.md`, 00:19Z) records that no H1 request was sent: its one POST and its restore were both blocked pending TJ's direct approval.
+- Action: promoted the original Git deployment dpl_HH8SPE1cLyonVBW9uN3rUi1MN3Sa (same commit 4243bcd4e, project env). Alias swap only, no build.
+- Readback: the dpl_HH8 aliases include fhfhockey.com, www (redirect) and fhfhockey.vercel.app. `GET /api/healthz` returned 200 in 1.25 s; HEAD x-vercel-id iad1 at 00:25:52Z. No H1 write for game 307, as TJ chose earlier ("let 307 pass").
+- Next release: confirm the new master deployment auto-aliases to production. Promoting an older deployment may leave auto-assignment paused; if so, promote the release deployment.
+
+## Release #431, 2026-11-13 (TJ pop-up "Push and merge")
+- Candidate 981953daa is octoberBranch ec85232a1 without diaries, on top of master 4243bcd4e. Gate on a clean export: typecheck 0; ESLint 0 errors; pytest 213 plus the 4 known git-history tests. Vitest's only failures were environment-only or already failing on master.
+- 00:35:06Z: pushed chef/fix-sprint-followups-20261113. No deployment and no checks at ~90 s.
+- 00:36:38Z: PR #431 squash-merged as master 502a93b4c; its tree equals the candidate.
+- Vercel: fhfhockey dpl_2bhMeBzKvwzq8a3Cw36uAPLKymKE building; cms-fhfhockey, functions-fhfhockey and fhfhockey.com CANCELED.
+- Then: confirm the alias (after tonight's promote, auto-assignment may be paused), run the smoke (5 GETs), and do the octoberBranch ours-merge push with a no-build watch.
+
+## Cron overlap found, 2026-11-13 (read-only; decision pending)
+- pg_cron 305 build-forge-derived-v2 is active at `05 10 * * *`. It was 09:50 until Codex's 24b1cb4d3 on 11-12.
+- Vercel cron 6 run-rolling-forge-pipeline (`includeDownstream=true`) starts at 10:05 and also runs build-projection-derived-v2.
+- `combinedCronInventory.test` fails on master because of this.
+
+## 2025-26 goalie partition rebuild (TJ-approved, summary-only), 2026-11-13
+- Run 1 ($TMPDIR/goalie-2526/run.py): 178 calls, 0 failed; 1,343 games and 62,805 partitions reconciled at formulaRevision 2. Slowest call 19.4 s. The landing cache was warmed on the last regular-season date (2026-04-16, 200).
+- 00:43:33Z: STOP on its guard at 2026-04-27. Game 2025030135 had no partition after one retry. Bounded read: games 2025030135–137 (CAR–OTT games 5–7) exist in `games` but have no raw payloads, because the series ended in 4. They are unplayed "if necessary" games, so the stop was a false alarm and nothing was half-written. The 1,417 count included 23 such games.
+- 00:44:17Z: resumed (run2.py) from 2026-04-27 with only games that have raw payloads: 42 dates, 51 played games, 23 unplayed skipped. Same pacing, guards and stop rule; the cache is warmed on the last playoff date.
+- 00:50:16Z: DONE. Run 2 made 35 calls, 0 failed; 51 games and 2,359 partitions; landing cache warmed on 2026-06-14 (200). Season coverage: 1,394 games, 65,164 partitions, 0 below formulaRevision 2.
+
+## Cron 305 moved, 2026-11-13 00:50Z (TJ pop-up "Move 305 to 10:25")
+- `cron.alter_job(305, schedule := '25 10 * * *')`. Readback: 305 build-forge-derived-v2 is `25 10 * * *`, active, same route. Pre-check: 0 active queries.
+- cron-schedule.md updated in 8942d193b; combinedCronInventory 42/42 passes.
+
+## Migrations 142 and 143 applied, 2026-11-13 00:51Z (TJ pop-up "After the rebuild")
+- 142: v2_skill nullable numeric plus CHECK; composite_skill_score unchanged.
+- 143: viewdefs replaced. Traded skaters' percent_games went from NULL to GP / games available, e.g. 0.8675, 0.6667, 0.6250. Two players with no team match stay NULL (rule 13); the single-team control stays 1.0.
+- Ledger rows inserted for both. Authority now has 106 applied and 9 pending.

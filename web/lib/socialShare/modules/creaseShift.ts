@@ -5,7 +5,8 @@ import { defineShareModule, type SharePostLoadResult } from "./contract";
 import { competitionRanks, lastN } from "./shared/definitions";
 import { completeThrough, completeThroughNote, countNights, teamGameDates, type NightCoverage } from "./shared/completeThrough";
 import { editionCutoff } from "./shared/periodWindow";
-import { teamStartShare, type CompletedTeamGame, type GoalieAppearance, type TeamStartShare } from "./shared/goalieLedger";
+import type { GoalieAppearance } from "./shared/goalieLedger";
+import { teamStartShare, type CompletedTeamGame, type TeamStartShare } from "lib/projections/goalie/historyLedger";
 
 /**
  * Crease Shift (SS 8.0): official start share over a team's last N completed games, against a labeled comparison window.
@@ -137,7 +138,7 @@ function teamRow(team: string, input: { games: readonly CompletedTeamGame[]; app
     const starts = now?.starts ?? 0, baseStarts = then?.starts ?? 0;
     return {
       goalieId, name: now?.name ?? then?.name ?? null, starts, relief: now?.reliefAppearances ?? 0,
-      // A complete window proves an absent goalie's 0 starts; teamStartShare's 0 on an incomplete window proves nothing.
+      // A complete window proves an absent goalie's 0 starts; incomplete windows stay unknown.
       share: recent.complete ? starts / recent.teamGames : null,
       comparisonStarts: base.complete ? baseStarts : null, comparisonRelief: base.complete ? then?.reliefAppearances ?? 0 : null, comparisonShare: base.complete ? baseStarts / base.teamGames : null,
       change: recent.complete && base.complete && !shortComparison ? shareChange(starts, recent.teamGames, baseStarts, base.teamGames) : null,

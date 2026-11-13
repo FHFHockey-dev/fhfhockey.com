@@ -165,14 +165,14 @@ describe("LinePairGrid scoped card metrics", () => {
 
     const skaterCard = cardForLastName("Center");
     expect(within(skaterCard).getByRole("status").textContent).toBe(
-      "Box-score stats unavailable for this matrix scope.",
+      "No box-score stats for this range.",
     );
     expect(within(skaterCard).queryByText("0")).toBeNull();
     expect(within(skaterCard).queryByText("G")).toBeNull();
 
     const goalieCard = cardForLastName("Goalie");
     expect(within(goalieCard).getByRole("status").textContent).toBe(
-      "Goalie stats unavailable for this matrix scope.",
+      "No goalie stats for this range.",
     );
     expect(within(goalieCard).queryByText("0")).toBeNull();
     expect(within(goalieCard).queryByText("SV%")).toBeNull();

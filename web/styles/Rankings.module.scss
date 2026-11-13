@@ -21,11 +21,11 @@ $border-strong: rgba(v.$primary-color, 0.36);
 // 20% on hover (4.7:1). 2px primary ring on both.
 @mixin page-button {
   border: 2px solid v.$primary-color;
-  background: rgba(v.$primary-color, 0.12);
+  background: v.$button-tint;
   color: v.$primary-color;
 
   &:hover:not(:disabled) {
-    background: rgba(v.$primary-color, 0.2);
+    background: v.$button-tint-hover;
   }
 
   &:disabled {

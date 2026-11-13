@@ -16,20 +16,21 @@ You are **Astra**, the independent Codex reviewer. You reviewed the three-wave m
 ## What to read (in this order)
 1. `tasks/artifacts/calculation-inventory-2026-11-10/master/FIX-SPRINT-DEBRIEF.md`: the Chef's account (per-lane results, P0 coverage, production record, incident, risks, open decisions).
 2. `master/FIX-LANES.md` and `master/fix-lanes/*.md`: each lane's scope, findings (IDs, corrected wording, priority), decisions, readers, tests and Done criteria. Handoff contracts are in `master/fix-lanes/handoff/`.
-3. `master/OWNER-DECISIONS.md` (decisions 1–139) and `master/RULES-DIGEST.md` (rules 1–26).
+3. `master/OWNER-DECISIONS.md` (decisions 1–143) and `master/RULES-DIGEST.md` (rules 1–26).
 4. Production receipts in `master/production/`:
    - `PRODUCTION-QUEUE.md` (approvals, results, incident, remaining steps);
    - `GOALIE-REBUILD-2026-27-PLAN.md`;
    - `GAME-2026020159-RECOVERY-PLAN.md` (official-HTML recoveries of 11 OT games);
    - `HEADS-CHANGED-2026-11-12.tsv`.
-5. `tasks/TASKS/repository-audit-remediation/migration-authority.json`: rows 88 and 125–141 carry the apply receipts.
+5. `tasks/TASKS/repository-audit-remediation/migration-authority.json`: rows 88 and 125–141 carry the apply receipts; 142 and 143 are written but not applied.
 6. Coordination: `tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md` and `CODEX-TO-CLAUDE.md`, from `CLAUDE-FIX-SPRINT-START-20261111` onward.
 7. The Chef diary `tasks/diaries/2026-11-11-claude-fix-sprint-chef.md` and lane diaries `tasks/diaries/2026-11-1?-claude-fix-*.md`. These are working notes, not acceptance evidence.
 
 ## Commit range
 - **Released:** master `1cdb1dc8f..631a00c19`, PR #430, a squash of candidate `27edf8381`. Per-lane commits on octoberBranch are listed in the debrief §6 and the lane briefs.
-- **After the release (not yet released):** octoberBranch commits after `c577225e2`. These are follow-up lanes (flag release, decisions 135–138) and Chef records.
-- Codex releases in between (`866b90bc4` DRM, `4243bcd4e` Goalie Grid) are out of scope, except where they touch fix-sprint files or data.
+- **Follow-up release:** master `4243bcd4e..502a93b4c`, PR #431, a squash of candidate `981953daa` (octoberBranch `ec85232a1` without diaries). It covers the follow-up lanes (flag release, decisions 135–143) and Codex work the Chef adopted (areas 5–11). Per-lane commits on octoberBranch run after `c577225e2`.
+- **Committed but not yet released:** octoberBranch after `ec85232a1`: Codex areas 4 (`97685d418`), 3 (`b4a9fcf42`) and 2 (`7b3d328ba`), and the TeamDetails test fix (`7234e9682`).
+- Codex releases in between (`866b90bc4` DRM, `4243bcd4e` Goalie Grid) are out of scope, except where they touch fix-sprint files or data. The adopted areas are in scope only where they touch fix-sprint files: area 3 changes L9b's `goalie-queries.ts` and L18's `creaseShift.ts`.
 
 ## What to audit
 1. **Every finding the debrief marks fixed, per lane.** Does the code implement the corrected wording (Astra's corrections, where applicable)? Is there a test that fails on the pre-fix code and passes now (rule 11: valid statistics, algebraic identities on frozen fixtures, held-out checks where a model changes)? Were **all readers** updated (rule 4)? List any fix that is only a label, only tested by a tautology, or misses a reader.
@@ -41,6 +42,7 @@ You are **Astra**, the independent Codex reviewer. You reviewed the three-wave m
    - the 2026-11-12 incident (DB hang and crash recovery under the windowed re-normalization): were the stop and resume decisions right, and is the state after recovery provably clean (no half-written games)?
    - the official-HTML OT recoveries: qualification rigour (identity, overlaps, coverage, ES and GS TOI), raw snapshots preserved, no fabrication;
    - summary rebuilds: built from the intended (v2) events; formulaRevision 2 coverage complete.
+   - the 2026-11-13 restore of the production alias from Codex's temporary H1 CLI deployment, and the pg_cron 305 / Vercel cron 6 derived-build overlap at 10:05 UTC (debrief §7).
 7. **The migrations.** For rows 125–141: does each applied definition match its source file (sha256 in the authority row), and are the readback and rollback claims credible from the proofs in `supabase/tests/l4a_*`? Note 141 superseding 135's playoff blanking.
 8. **Open risks the debrief may understate**, for example:
    - the FORGE trend-band reader turned inert, a live output change;

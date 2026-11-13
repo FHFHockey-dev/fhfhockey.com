@@ -92,6 +92,26 @@ function renderMatrix(roster: PlayerData[]) {
 }
 
 describe("DateRangeMatrixInternal accessibility", () => {
+  it("does not turn a zero-strength denominator into a zero-percent share", () => {
+    const { connor, leon } = matrixPlayers();
+    renderMatrix([{ ...connor, totalTOI: 0, ATOI: "00:00", percentToiWith: {} }, leon]);
+    const cell = screen.getByRole("gridcell", { name: "Leon Draisaitl with Connor McDavid" });
+    expect(document.getElementById(cell.getAttribute("aria-describedby")!)?.textContent)
+      .toBe("Connor McDavid has no ice time in these games (all-strength).");
+    expect(screen.getByRole("gridcell", { name: "Connor McDavid average time on ice" })).toBeTruthy();
+  });
+
+  it("orders Total TOI by cumulative seconds, with stable ties, rather than average time", () => {
+    const regular = { ...player({ id: 1, name: "Regular Skater", totalTOI: 3600, ATOI: "12:00", percentToiWith: {} }), GP: 5 };
+    const substitute = { ...player({ id: 2, name: "Substitute Skater", totalTOI: 1200, ATOI: "20:00", percentToiWith: {} }), GP: 1 };
+    const tied = { ...regular, id: 3, name: "Tied Skater", playerAbbrevName: "Tied Skater" };
+    const { rerender } = renderMatrix([substitute, tied, regular]);
+    const headers = () => screen.getAllByRole("columnheader").map((header) => header.getAttribute("aria-label") ?? header.textContent);
+    expect(headers()).toEqual(["Players", "Regular Skater", "Tied Skater", "Substitute Skater"]);
+    rerender(matrixElement([tied, regular, substitute]));
+    expect(headers()).toEqual(["Players", "Regular Skater", "Tied Skater", "Substitute Skater"]);
+  });
+
   it("exposes a named grid with player headers, named cells, and equivalent value text", () => {
     const { connor, leon } = matrixPlayers();
     renderMatrix([leon, connor]);
@@ -125,12 +145,12 @@ describe("DateRangeMatrixInternal accessibility", () => {
     expect(
       document.getElementById(selfCell.getAttribute("aria-describedby") || "")
         ?.textContent,
-    ).toBe("20:15 ATOI");
+    ).toBe("Connor McDavid: 20:15 average ice time per game (all-strength)");
     expect(
       document.getElementById(sharedCell.getAttribute("aria-describedby") || "")
         ?.textContent,
     ).toBe(
-      "42.50% of Leon Draisaitl's all-strength TOI shared with Connor McDavid",
+      "Connor McDavid shared 42.50% of Leon Draisaitl's ice time (all-strength)",
     );
 
     fireEvent.pointerEnter(sharedCell);
@@ -224,8 +244,8 @@ describe("DateRangeMatrixInternal accessibility", () => {
 
     rerender(
       matrixElement([
-        { ...connor, ATOI: "15:00" },
-        { ...leon, ATOI: "25:00" },
+        { ...connor, totalTOI: 1800, ATOI: "15:00" },
+        { ...leon, totalTOI: 3000, ATOI: "25:00" },
       ]),
     );
 
@@ -260,7 +280,7 @@ describe("DateRangeMatrixInternal accessibility", () => {
       expect(
         document.getElementById(cell.getAttribute("aria-describedby") || "")
           ?.textContent,
-      ).toBe("N/A ATOI");
+      ).toBe(`${name}: average ice time per game not available (all-strength)`);
     }
   });
 

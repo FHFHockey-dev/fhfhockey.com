@@ -45,6 +45,15 @@ const baseProps = {
 };
 
 describe("DateRangeMatrixView result states", () => {
+  it("does not suggest another layout when every game was excluded", () => {
+    render(<DateRangeMatrixView {...baseProps} roster={[]} status="partial" source="aggregated"
+      coverage={{ inputRows: 0, rosterRows: 0, skippedRows: 0 }} />);
+    expect(screen.getByRole("status").textContent).toContain("No games in this range have full shift data yet");
+    expect(screen.getByRole("status").textContent).toContain("check back after tonight's update");
+    expect(screen.queryByTestId("matrix-renderer")).toBeNull();
+    expect(screen.queryByText(/Partial data/)).toBeNull();
+  });
+
   it("renders explicit loading, empty, and error messages", () => {
     const { rerender } = render(
       <DateRangeMatrixView {...baseProps} loading status="loading" />,
@@ -86,5 +95,25 @@ describe("DateRangeMatrixView result states", () => {
       "1 row was skipped",
     );
     expect(screen.getByTestId("matrix-renderer")).not.toBeNull();
+  });
+
+  it("hides the skipped-row diagnostic in production", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.resetModules();
+    try {
+      const { default: ProductionView } = await import("./DateRangeMatrixView");
+      render(
+        <ProductionView
+          {...baseProps}
+          status="partial"
+          source="aggregated"
+          coverage={{ inputRows: 2, rosterRows: 1, skippedRows: 1 }}
+        />,
+      );
+      expect(screen.getByRole("status").textContent).toBe("Partial data: some games in this range aren't included yet.");
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
   });
 });

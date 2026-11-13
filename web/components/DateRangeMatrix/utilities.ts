@@ -2,6 +2,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\utilities.ts
 
 import { teamsInfo } from "lib/teamsInfo";
+import { contrast } from "lib/socialShare/teamNeon";
 import supabase from "lib/supabase";
 import type { Database } from "lib/supabase/database-generated.types";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
@@ -63,17 +64,19 @@ export function isDefense(position: string): boolean {
 
 // Get the color based on the position of two players
 export function getColor(p1Pos: string, p2Pos: string): string {
-  const RED = "#D65108";
+  // Validated as a set on the dark surface (#131518): all six dataviz checks
+  // pass. F+D was yellow #EFA00B, too light for the dark band (TJ, 2026-11-12).
+  const ORANGE = "#D65108";
   const BLUE = "#0267C1";
-  const YELLOW = "#EFA00B";
+  const VIOLET = "#9085E9";
 
-  if (isForward(p1Pos) && isForward(p2Pos)) return RED;
+  if (isForward(p1Pos) && isForward(p2Pos)) return ORANGE;
   if (isDefense(p1Pos) && isDefense(p2Pos)) return BLUE;
   if (
     (isForward(p1Pos) && isDefense(p2Pos)) ||
     (isForward(p2Pos) && isDefense(p1Pos))
   )
-    return YELLOW;
+    return VIOLET;
 
   //console.warn("Unexpected position combination:", p1Pos, p2Pos);
   return "#101010"; // Default color for unexpected cases
@@ -94,14 +97,32 @@ export function formatTime(seconds: number): string {
 }
 
 // Get Team Colors from teamsInfo.js
+// Card surface ($surface-1). Team text on it must reach WCAG AA 4.5:1.
+const CARD_SURFACE = "#1a1c21";
+
+/** First team colour that reads at 4.5:1 on the card surface, else white. */
+function readableInk(candidates: Array<string | undefined>): string {
+  return (
+    candidates.find(
+      (color): color is string =>
+        !!color && /^#[0-9a-f]{6}$/i.test(color) && contrast(color, CARD_SURFACE) >= 4.5,
+    ) ?? "#ffffff"
+  );
+}
+
 export const getTeamColors = (teamId: number) => {
   const team = Object.values(teamsInfo).find((team) => team.id === teamId);
   if (team) {
+    const extra = team as { lightColor?: string; alt?: string };
     return {
       primary: team.primaryColor,
       secondary: team.secondaryColor,
       jersey: team.jersey,
       accentColor: team.accent,
+      // Card text: accent first (secondary for first names), then other team
+      // colours, so e.g. VGK's black accent falls through to its gold.
+      ink: readableInk([team.accent, team.secondaryColor, team.jersey, extra.lightColor, extra.alt]),
+      inkSecondary: readableInk([team.secondaryColor, team.accent, team.jersey, extra.lightColor, extra.alt]),
     };
   }
   return {
@@ -109,6 +130,8 @@ export const getTeamColors = (teamId: number) => {
     secondary: "#FFFFFF", // default to white if not found
     jersey: "#000000", // default to black if not found
     accentColor: "#000000", // default to black if not found
+    ink: "#ffffff",
+    inkSecondary: "#ffffff",
   };
 };
 

@@ -276,6 +276,19 @@ describe("mapAggregatedPlayers", () => {
 });
 
 describe("useDateRangeMatrixData aggregated season selection", () => {
+  it("uses only complete observed groups and never fills an empty observed lineup synthetically", async () => {
+    const players = [1, 2, 3, 4].map(playerId => ({ ...aggregatedPlayer, playerId }));
+    const units = [{ teamId: 22, gameIds: [2025020001], strength: "fiveOnFive" as const, kind: "forward_line" as const, playerIds: [1, 2, 3], seconds: 120, skaterCount: 5 }];
+    const { result, rerender } = renderHook(({ observedUnits }) => useDateRangeMatrixData({
+      teamAbbreviation: "EDM", startDate: "2025-10-01", endDate: "2025-10-07", mode: "line-combination", source: "aggregated", aggregatedData: players, observedUnits,
+    }), { initialProps: { observedUnits: units } });
+    await waitFor(() => expect(result.current.status).toBe("success"));
+    expect(result.current.lines.map(line => line.map(player => player.id))).toEqual([[1, 2, 3]]);
+    rerender({ observedUnits: [] });
+    expect(result.current.lines).toEqual([]);
+    expect(result.current.roster).toHaveLength(4);
+  });
+
   it("updates the roster when the selected season type changes", async () => {
     const { result, rerender } = renderHook(
       ({ seasonType }: { seasonType: DRMSeasonType }) =>

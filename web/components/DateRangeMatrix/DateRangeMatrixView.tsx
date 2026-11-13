@@ -3,6 +3,8 @@ import { DateRangeMatrixInternal } from "./index";
 import type { Mode, TOIData } from "./index";
 import type { PlayerData } from "./utilities";
 import type { DRMDataCoverage, DRMDataStatus } from "./useDateRangeMatrixData";
+import styles from "./index.module.scss";
+import { SHOW_DIAGNOSTICS } from "./diagnostics";
 
 type Props = {
   teamId: number;
@@ -20,6 +22,9 @@ type Props = {
   coverage?: DRMDataCoverage;
   lines: PlayerData[][];
   pairs: PlayerData[][];
+  strengthLabel?: string;
+  /** Team short name for the section title, e.g. "Oilers". */
+  teamShortName?: string;
 };
 
 export default function DateRangeMatrixView({
@@ -38,31 +43,34 @@ export default function DateRangeMatrixView({
   coverage,
   lines,
   pairs,
+  strengthLabel = "all-strength",
+  teamShortName,
 }: Props) {
   const resolvedStatus =
     status ?? (loading ? "loading" : roster.length > 0 ? "success" : "empty");
 
-  if (loading || resolvedStatus === "loading") {
-    return <p role="status">Loading matrix data…</p>;
-  }
-  if (resolvedStatus === "error" || error) {
-    return <p role="alert">Unable to load matrix data.</p>;
-  }
   if (resolvedStatus === "idle") return null;
-  if (resolvedStatus === "empty") {
-    return <p role="status">No matrix data is available for this selection.</p>;
-  }
+  // Every state keeps the section title, so the page always says what it is.
+  const message =
+    loading || resolvedStatus === "loading" ? <p className={styles.matrixMessage} role="status">Loading matrix data…</p>
+    : resolvedStatus === "error" || error ? <p className={styles.matrixMessage} role="alert">Unable to load matrix data.</p>
+    : resolvedStatus === "empty" ? <p className={styles.matrixMessage} role="status">No matrix data is available for this selection.</p>
+    : resolvedStatus === "partial" && roster.length === 0 ? <p className={styles.matrixMessage} role="status">No games in this range have full shift data yet. Shift data for these games is still being processed; check back after tonight&apos;s update.</p>
+    : null;
 
   return (
-    <div data-source={source} data-stale={stale ? "true" : "false"}>
-      {(resolvedStatus === "partial" || stale) && (
-        <p role="status">
+    <div className={message ? `${styles.matrixFrame} ${styles.matrixFrameMessage}` : styles.matrixFrame} data-source={source} data-stale={stale ? "true" : "false"}>
+      <h2 className={styles.sectionTitle}>{teamShortName ? `${teamShortName} line combo matrix` : "Line combo matrix"}</h2>
+      {message}
+      {!message && (resolvedStatus === "partial" || stale) && (
+        <p className={styles.matrixStatus} role="status">
           {stale
             ? "Refreshing matrix data…"
-            : `Matrix data is partial${coverage?.skippedRows ? `; ${coverage.skippedRows} row${coverage.skippedRows === 1 ? " was" : "s were"} skipped` : ""}.`}
+            : `Partial data: some games in this range aren't included yet${SHOW_DIAGNOSTICS && coverage?.skippedRows ? `; ${coverage.skippedRows} row${coverage.skippedRows === 1 ? " was" : "s were"} skipped` : ""}.`}
         </p>
       )}
-      <DateRangeMatrixInternal
+      {!message && <DateRangeMatrixInternal
+        strengthLabel={strengthLabel}
         teamId={teamId}
         teamName={teamName}
         roster={roster}
@@ -73,7 +81,7 @@ export default function DateRangeMatrixView({
         loading={loading}
         lines={lines}
         pairs={pairs}
-      />
+      />}
     </div>
   );
 }

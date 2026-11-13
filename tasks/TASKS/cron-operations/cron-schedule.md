@@ -407,8 +407,8 @@
   {
     "jobid": 305,
     "jobname": "build-forge-derived-v2",
-    "schedule": "05 10 * * *",
-    "run_time_utc": "10:05 UTC",
+    "schedule": "25 10 * * *",
+    "run_time_utc": "10:25 UTC",
     "active": true,
     "method": "POST",
     "route": "/api/v1/db/build-projection-derived-v2"
@@ -827,7 +827,7 @@ protected routes.
 -- - 09:35 UTC / 04:35 EST: update-player-underlying-stats-yesterday
 -- - 09:35 UTC / 04:35 EST: update-wgo-teams
 -- - 09:45 UTC / 04:45 EST: ingest-projection-inputs
--- - 10:05 UTC / 05:05 EST: build-forge-derived-v2 (moved 2026-11-12 after explicit approval)
+-- - 10:25 UTC / 05:25 EST: build-forge-derived-v2 (moved 2026-11-12 to 10:05, then 2026-11-13 to 10:25 after explicit TJ approval: 10:05 collided with the Vercel rolling-forge pipeline, which also runs the derived build as stage 7)
 -- - 09:55 UTC / 04:55 EST: update-nst-team-daily-incremental
 -- - 10:00 UTC / 05:00 EST: daily-refresh-matview
 -- - 10:05 UTC / 05:05 EST: run-forge-projection-v2
@@ -1621,10 +1621,10 @@ curl -i -sS -m 180 \
 -- |||||||||||||||||||||||||||||||||  04:50 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
--- 10:05 UTC (after 09:45 ingestion and 09:55 relationship materialization)
+-- 10:25 UTC (after 09:45 ingestion and 09:55 relationship materialization; off the rolling-forge pipeline's minutes)
 -- SELECT cron.schedule(
 --     'build-forge-derived-v2',
---     '05 10 * * *', -- 10:05 UTC
+--     '25 10 * * *', -- 10:25 UTC
 --     $$
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/build-projection-derived-v2',
