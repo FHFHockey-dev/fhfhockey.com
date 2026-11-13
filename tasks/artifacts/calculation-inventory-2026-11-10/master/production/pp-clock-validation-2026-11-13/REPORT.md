@@ -732,3 +732,14 @@ node $S/compare.mjs $S/classes-2025-2027.csv $S/pbp $S/out          # → team-g
 ```
 
 Raw PBP and shift pages stay outside the repository (about 550k and 230k rows). Only the per-team-game results and the summaries are committed in `results/`.
+
+## 18. Served (Chef, 2026-11-13 ~22:16Z)
+- **Releases:** #441 (`f5c7adc2d`, writer, writes gated) and #442 (`44de2f107`, readers and timing guard).
+- **Migration and refresh:** migration 149 applied 20:36:48Z. Refresh 20:59:38–21:03:46Z, 31/31 batches equal to `db94a9de`.
+- **Flags:** `PP_STORED_CALCULATION_WRITES_ENABLED=true` (TJ) and `PP_SHARE_SERVING_ENABLED=true` (Chef, TJ-approved), each followed by a clean-export production deploy. Serving deploy `dpl_3dTQdAD3RHsEhP3nvtn5yZHSmzpn`.
+- **Live checks, all equal to the dry run:**
+  - the clock API;
+  - `/api/toi` for 8475158 (112 s, 93.33%) and 8474586 (t55, not applicable, share null);
+  - the shift chart label "NSH: PP timeline unavailable: timing mismatch.";
+  - the line-combo PP matrix diagonal (112/111/110/110/109; 11/10/10/9/8).
+- Details in `PRODUCTION-QUEUE.md`.
