@@ -1,4 +1,4 @@
-# Next release handoff: goalie item 1 (updated 2026-11-13 ~19:55Z, Chef)
+# Next release handoff: goalie item 1 (updated 2026-11-13 ~19:30Z, Chef)
 
 **State:** candidate built and gated locally. **Not pushed or merged.** The push and the merge need TJ's pop-up.
 - **Candidate:** `7a3a69ef4daea93e3fb62da00b7973fe263552ea`, tree `4e64689e698fbc514c7e74783fc6611c930bce82`.
@@ -32,7 +32,7 @@ Checked:
 - If the scan hits its 12,000-row bound, it falls back to the labelled prior instead of using a partial sample. At most 30 dates come from one scan.
 - `SeasonLeagueSavePct` gains `excludedRows` and `sampleComplete`.
 - **It's also read by FORGE:** `stages/goalie-stage.ts:188` and `stages/skater-stage.ts:1960`. So releasing it can change FORGE's league save % input whenever `forge_goalie_game` has incomplete or invalid goals/shots pairs. That's independent of the 09:30Z write.
-  - **Measured 2026-11-13 ~20:10Z** (TJ "Run the one count"): one guarded aggregate SELECT after the `pg_stat_activity` check (1 active, not busy). The window was 2025-07-01 to 2026-11-14, **2,764 rows**, far under the 12,000-row bound.
+  - **Measured 2026-11-13 ~19:33Z** (TJ "Run the one count"): one guarded aggregate SELECT after the `pg_stat_activity` check (1 active, not busy). The window was 2025-07-01 to 2026-11-14, **2,764 rows**, far under the 12,000-row bound.
   - **Every row is a valid pair:** 0 null goals-allowed with shots, 0 null shots, 0 goals above shots and 0 negative values. The old and new helpers give identical sums: current season SA 16,983 / GA 1,850, previous season SA 57,742 / GA 6,029.
   - **So the helper doesn't change FORGE's league save % as of 2026-11-14:** the blended value is about .8935 under both. A future incomplete row would now be excluded and counted, instead of becoming a shutout.
 
@@ -40,7 +40,7 @@ Checked:
 - **Focused Vitest: 313 passed, 10 files.** The writer has 33 tests, and the helper and its consumers are covered: `leagueSavePct`, `goalieOutcomes`, `goaliePipeline`, `startChartPipeline`, `module-imports`, `runProjectionV2.alignedConversion`, `run-forge-projections.resume`, `nativeInputEligibility`, `nativeGoalAccounting`.
 - **Typecheck:** `npm run typecheck`, exit 0.
 - **ESLint** on the 4 files: exit 0, no errors.
-- **Full gate** (TJ "Full gate, then ask", ~20:15Z):
+- **Full gate** (TJ "Full gate, then ask", ~19:34Z):
   - **Vitest:** 19,865 passed. The one failing file is `scripts/blsh/nativeProcessCaptureBootstrap.test.ts` (16 tests), a known export-only failure; it passes 32/32 in the checkout.
   - **pytest:** 213 passed. The 4 git-pin tests that fail in the export pass 4/4 in the checkout.
   - The BLSH scripts and `modeling/` are identical to master.
