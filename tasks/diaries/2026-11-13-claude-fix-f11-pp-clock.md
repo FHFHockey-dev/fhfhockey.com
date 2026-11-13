@@ -90,8 +90,10 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 
 - Result: export hash bbcba75c…c145 (309 games; 99,128 PBP, 231,749 shifts, 12,360 roster, 618 tgs, 7,190 pPC rows); dry-run sha256 db94a9de…f15c; 618 = 593 unchanged + 16 changed + 9 N/A, 0 flagged; gate 15 deletes, 23 PP updates, 5 inserts, 14 unit-average updates inside the 16 (B team-games), no unit moves; 609 available, 0 unavailable. REPORT §14.
 
+- TJ approved the dry-run file only (2026-11-13T20:54Z; "approved" + pop-up "Dry-run file only"): sha256 db94a9de…f15c. Recorded in REPORT §14.
+
 ## Next
-TJ decides the write phase (migration 149, release with the flag, approval of dry-run sha256 db94a9de…). No production write from this lane. Chef routes remaining owner and code items. No production step from this lane.
+The Chef routes the write phase (migration 149, release with the flag, refresh), each with its own approval. No production write from this lane. Chef routes remaining owner and code items. No production step from this lane.
 
 ## Blockers
 None.

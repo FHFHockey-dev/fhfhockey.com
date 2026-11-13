@@ -562,7 +562,8 @@ TJ wants the full dry-run diff before any refresh. Nothing here ran against a da
   - **5 inserts:** 2026020131 t18's missing skaters.
 - **14 further updates** are within the 16 and are expected: teammates in the overtime team-games whose unit average moved. Only `percentageOfPP`, `pp_unit_usage_index`, `pp_unit_relative_toi` and `pp_vs_unit_avg` change: 2026020161 t52 (3), 2026020174 t29 (6), 2026020192 t2 (1) and 2026020197 t23 (4). No player changes unit anywhere.
 - No other row in the season changes. The 2 Part A team-games qualify on the Penalty Summary and are unchanged.
-- **The write phase still needs separate approvals:** migration 149 applied, the release with the flag set, and TJ's approval of this dry-run file by its sha256.
+- **TJ approved this dry-run file** (2026-11-13T20:54Z, in the F11 session): TJ typed "approved", then picked "Dry-run file only" in the pop-up. The approval covers `dry-run.json` sha256 `db94a9de864b9dfa8fa69f24c6be9045dd037ed1937393c3b03dd69d9ec4f15c` and nothing else.
+- **The write phase still needs its own approvals, through the Chef's gated release:** migration 149 applied, the release with `PP_STORED_CALCULATION_WRITES_ENABLED=true`, and the refresh run with this file (`20-refresh-runner.py write --dry-run-sha256 db94a9de…`).
 
 ## Open items for the owner (Chef to route)
 
