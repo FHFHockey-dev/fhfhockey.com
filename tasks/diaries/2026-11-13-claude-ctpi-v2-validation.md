@@ -52,3 +52,9 @@ None.
 - Formal set: **every completed game 10–30** (adopted before any 2026-27 batch was graded). Script default switched; `--batches-only` kept for reference. Protocol doc marked frozen.
 - Re-ran: 2026-27 game-10 look (no batch graded), 2025-26 rehearsals (every-game: pass ±0.035 — power check only; batches: inconclusive ±0.075), premature formal look refused.
 - Next: commit docs (explicit pathspecs), start the beta implementation session, report to Chef.
+
+## Checkpoint 5 — beta card session reported (2026-11-13)
+- Commits from ctpi-beta-card: 122dd880b (card, predicate, hook, tests), 17b342f76 (a11y + copy), 3b6d82edc (unslop, dataviz, final sweep). Not pushed; release #434 (496ab3766) left them out.
+- Checked here: `isTrustedCtpiPayload` unchanged; new `isDescriptiveBetaCtpiPayload` matches the plan (v2, candidate_unapproved, exact versions, games > 0, ready/partial). Importers are only TeamDashboard + tests. Hook reads `team_ctpi_daily` (v2, v2 formula, date ≤ today, limit 1, payload paths only) and `nst_team_5v5` (before snapshot, limit recentGameCount). Mounted between timeline and L10 metrics.
+- Tests run here: ctpi.test.ts, RecentTeamFormBeta.test.tsx, TeamDashboard.test.tsx — 66/66 pass. Typecheck/lint/axe not re-run here (child reports them clean).
+- Next: release only with TJ's separate approval, batched. Looks at game 20 (~11-21), 30 (~12-12), formal 40 (~2027-01-04) per CHECKPOINT-PROTOCOL.md; not scheduled.
