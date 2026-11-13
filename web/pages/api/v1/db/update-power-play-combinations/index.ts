@@ -5,6 +5,7 @@ import adminOnly from "utils/adminOnlyMiddleware";
 import { SupabaseType } from "lib/supabase/client";
 
 import {
+  isSuccessfulDryRunBody,
   updatePowerPlayCombinations,
   type PowerPlayCombinationUpdateSummary
 } from "./[gameId]";
@@ -17,7 +18,7 @@ export const MAX_CONCURRENT_GAMES = 4;
  * A dry run (dryRun=true) returns every game's full result: its two clock rows, the computed player rows and the
  * diff against the stored rows (deleted, updated with before/after, inserted, unchanged), plus totals. It never
  * truncates: at the 60-game cap that is roughly 0.5 MB (about 25 rows of ~230 bytes per game), well under the
- * response limit. The only row a dry run writes is this route's cron_job_audit row.
+ * response limit. A complete, successful dry run writes nothing, not even its cron_job_audit row.
  */
 type DryRunGame = Pick<PowerPlayCombinationUpdateSummary, "gameId" | "clock" | "rows" | "diff">;
 
@@ -253,4 +254,4 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
       message: e?.message ?? "Failed to bulk update power-play combinations."
     });
   }
-})));
+}), { skipAuditWhenNoOp: isSuccessfulDryRunBody }));

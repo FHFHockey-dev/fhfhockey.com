@@ -445,6 +445,25 @@ export async function updatePowerPlayCombinations(
   return summary;
 }
 
+/**
+ * A complete, successful dry run writes nothing, so it leaves no cron_job_audit row either (as F9's
+ * update-team-power-ratings and F15's team summary rebuild). The audit wrapper consults this only for clean 2xx
+ * responses, so failures and real writes keep their audit row. Shared with the batch route.
+ */
+export function isSuccessfulDryRunBody(body: unknown): boolean {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return false;
+  const record = body as Record<string, unknown>;
+  if (record.success !== true || record.dryRun !== true) return false;
+  if (Array.isArray(record.games)) {
+    // Batch route: every requested game computed, none failed or skipped.
+    const gameIds = Array.isArray(record.gameIds) ? record.gameIds : [];
+    return record.failed === 0 && record.skipped === 0 && record.processed === gameIds.length &&
+      record.games.length === gameIds.length;
+  }
+  // Single game: a dry run never carries a write receipt.
+  return record.receipt === null;
+}
+
 export default adminOnly(withCronJobAudit(async (req, res) => {
   const { supabase } = req;
   const gameId = Number(req.query.gameId);
@@ -471,4 +490,4 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
       success: false
     });
   }
-}));
+}, { skipAuditWhenNoOp: isSuccessfulDryRunBody }));

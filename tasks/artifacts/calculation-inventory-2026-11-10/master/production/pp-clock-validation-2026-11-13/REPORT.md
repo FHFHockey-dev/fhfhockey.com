@@ -472,7 +472,8 @@ TJ wants the full dry-run diff before any refresh. Nothing here ran against a da
 
 **Batch route** (`update-power-play-combinations/index.ts`):
 - **`dryRun=true`** passes the flag to every game. The response carries every game's full result: its two clock rows, the computed player rows and the diff (deleted rows, updated rows with before and after values, inserted rows, unchanged count), plus totals.
-- **Full diffs, never truncated.** At the 60-game cap that is about 0.5 MB, well under the response limit. The only row a dry run writes is the route's own `cron_job_audit` row.
+- **Full diffs, never truncated.** At the 60-game cap that is about 0.5 MB, well under the response limit.
+- **A dry run writes nothing at all.** A complete, successful dry run skips even its `cron_job_audit` row, through `withCronJobAudit`'s `skipAuditWhenNoOp`, on both the batch route and `[gameId]`, as F9's and F15's routes do. A failed dry run, a non-2xx response and every real write keep their audit row, so the nightly cron is unchanged.
 - **`concurrency`** takes a whole number from 1 to 4; anything else is refused before any read. The default is unchanged.
 - **The 60-game cap** still applies to `gameIds`.
 - **The nightly cron (388) call is unchanged:** the same two-argument writer call at the same concurrency, and the same response shape (a test pins the exact keys).
@@ -496,7 +497,7 @@ TJ wants the full dry-run diff before any refresh. Nothing here ran against a da
   - a wrong dry-run hash is refused before any call.
 
 **What the target must be:**
-- **For the dry run:** a deployment running this writer, batch route and the Part A registry. Production today has none of them. Either release the code first or run a local dev server on loopback against the production database: the dry run only reads, apart from one audit row per call.
+- **For the dry run:** a deployment running this writer, batch route and the Part A registry. Production today has none of them. Either release the code first or run a local dev server on loopback against the production database: a successful dry run only reads.
 - **For the write phase:** migration 20261113220000 must also be applied first.
 - Each of these steps needs its own approval.
 

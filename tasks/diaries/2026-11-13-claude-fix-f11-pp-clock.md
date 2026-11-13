@@ -78,6 +78,8 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 - Checks: batch route 17 tests (9 new) + writer 17; 6 suites / 314 tests; typecheck 0; ESLint 0; offline gate self-check pass + 3 tampers stop.
 - Gotcha: the runner's dry phase needs a target running the new writer + route + Part A (production has none); local dev on loopback against prod reads only (plus one cron_job_audit row per call).
 
+- Follow-up: a complete, successful dry run writes nothing (skipAuditWhenNoOp with isSuccessfulDryRunBody on both routes, as F9/F15); failed dry runs and writes keep their audit row. Tests use the real audit wrapper with an insert spy (batch 21, writer 18).
+
 ## Next
 Chef routes the dry run (target choice: release vs local dev) to TJ. No production step from this lane. Chef routes remaining owner and code items. No production step from this lane.
 

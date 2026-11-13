@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { updatePowerPlayCombinationsMock } = vi.hoisted(() => ({
-  updatePowerPlayCombinationsMock: vi.fn()
+const { updatePowerPlayCombinationsMock, auditState, auditInsertMock } = vi.hoisted(() => ({
+  updatePowerPlayCombinationsMock: vi.fn(),
+  auditState: { opts: undefined as any },
+  auditInsertMock: vi.fn()
 }));
 
 vi.mock("utils/adminOnlyMiddleware", () => ({
@@ -11,15 +13,24 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
   }
 }));
 
+// The route's own audit options are captured so the audit tests can run the real wrapper with them.
 vi.mock("lib/cron/withCronJobAudit", () => ({
-  withCronJobAudit: (handler: any) => handler
+  withCronJobAudit: (handler: any, opts: any) => {
+    auditState.opts = opts;
+    return handler;
+  }
+}));
+
+vi.mock("lib/supabase/server", () => ({
+  default: { from: vi.fn(() => ({ insert: auditInsertMock })) }
 }));
 
 vi.mock("lib/cron/nhlOffSeason", () => ({
   withNhlOffSeasonSkip: (handler: any) => handler
 }));
 
-vi.mock("../../../../../pages/api/v1/db/update-power-play-combinations/[gameId]", () => ({
+vi.mock("../../../../../pages/api/v1/db/update-power-play-combinations/[gameId]", async (importOriginal) => ({
+  isSuccessfulDryRunBody: (await importOriginal<any>()).isSuccessfulDryRunBody,
   updatePowerPlayCombinations: updatePowerPlayCombinationsMock
 }));
 
@@ -418,6 +429,65 @@ describe("/api/v1/db/update-power-play-combinations", () => {
       expect(res.statusCode).toBe(400);
       expect(res.body.message).toContain(`limit of ${MAX_GAMES_PER_CALL} games per call`);
       expect(updatePowerPlayCombinationsMock).not.toHaveBeenCalled();
+    });
+
+    describe("audit rows: a successful dry run writes nothing", () => {
+      const audited = async () => {
+        const actual = await vi.importActual<typeof import("lib/cron/withCronJobAudit")>("lib/cron/withCronJobAudit");
+        return actual.withCronJobAudit(handler, auditState.opts);
+      };
+      beforeEach(() => {
+        auditInsertMock.mockResolvedValue({ error: null });
+      });
+
+      it("a complete, successful dry run inserts no cron_job_audit row and still answers", async () => {
+        updatePowerPlayCombinationsMock
+          .mockResolvedValueOnce(summaryFor(1000, { deleted: 2, updated: 1, inserted: 0, unchanged: 9 }))
+          .mockResolvedValueOnce(summaryFor(1001, { deleted: 0, updated: 0, inserted: 0, unchanged: 11 }));
+        const res = createMockRes();
+
+        await (await audited())(requestFor({ gameIds: "1000,1001", dryRun: "true", concurrency: "1" }, gamesOf(2)), res);
+
+        expect(auditInsertMock).not.toHaveBeenCalled();
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toMatchObject({ success: true, dryRun: true, processed: 2 });
+      });
+
+      it("a failed dry run keeps its audit row", async () => {
+        updatePowerPlayCombinationsMock
+          .mockResolvedValueOnce(summaryFor(1000, { deleted: 0, updated: 0, inserted: 0, unchanged: 3 }))
+          .mockRejectedValueOnce(new Error("Game 1001 is not in games."));
+        const res = createMockRes();
+
+        await (await audited())(requestFor({ gameIds: "1000,1001", dryRun: "true", concurrency: "1" }, gamesOf(2)), res);
+
+        expect(res.statusCode).toBe(500);
+        expect(auditInsertMock).toHaveBeenCalledOnce();
+        expect(auditInsertMock.mock.calls[0][0].status).toBe("failure");
+      });
+
+      it("a write keeps its audit row, as the nightly cron does today", async () => {
+        updatePowerPlayCombinationsMock.mockResolvedValue({ keptUnproven: 0 });
+        const res = createMockRes();
+
+        await (await audited())(requestFor({ startDate: "2026-11-12", endDate: "2026-11-13" }, gamesOf(3)), res);
+
+        expect(res.statusCode).toBe(200);
+        expect(auditInsertMock).toHaveBeenCalledOnce();
+        expect(auditInsertMock.mock.calls[0][0].status).toBe("success");
+      });
+
+      it("only a complete dry run counts: a skipped or missing game keeps the audit row", async () => {
+        // The predicate the route hands to withCronJobAudit.
+        const isSuccessfulDryRunBody = auditState.opts.skipAuditWhenNoOp as (body: unknown) => boolean;
+        const complete = { success: true, dryRun: true, failed: 0, skipped: 0, processed: 2, gameIds: [1, 2],
+          games: [{}, {}] };
+        expect(isSuccessfulDryRunBody(complete)).toBe(true);
+        expect(isSuccessfulDryRunBody({ ...complete, skipped: 1 })).toBe(false);
+        expect(isSuccessfulDryRunBody({ ...complete, games: [{}] })).toBe(false);
+        expect(isSuccessfulDryRunBody({ ...complete, dryRun: undefined })).toBe(false);
+        expect(isSuccessfulDryRunBody({ ...complete, success: false })).toBe(false);
+      });
     });
 
     it("a failed game in a dry run is reported and the call returns 500", async () => {

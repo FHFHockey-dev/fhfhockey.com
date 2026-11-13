@@ -4,8 +4,12 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
   default: (handler: any) => handler
 }));
 
+const { auditState } = vi.hoisted(() => ({ auditState: { opts: undefined as any } }));
 vi.mock("lib/cron/withCronJobAudit", () => ({
-  withCronJobAudit: (handler: any) => handler
+  withCronJobAudit: (handler: any, opts: any) => {
+    auditState.opts = opts;
+    return handler;
+  }
 }));
 
 import handler, {
@@ -538,6 +542,20 @@ describe("decision 152: dry run and transactional replace", () => {
     await expect(updatePowerPlayCombinations(2026020163, db.supabase)).rejects.toThrow(
       "Replacing the power-play rows for game 2026020163 failed; nothing was written: PP_GAME_REPLACE_PLAYER_ROWS");
     expect(db.writes).toEqual([]);
+  });
+
+  it("a successful dry run leaves no audit row; a write and a failure keep theirs", async () => {
+    const skip = auditState.opts.skipAuditWhenNoOp as (body: unknown) => boolean;
+    const bodies: unknown[] = [];
+    const respond = { json: (body: unknown) => bodies.push(body), status: () => ({ json: (body: unknown) => bodies.push(body) }) };
+    await handler({ query: { gameId: "2026020163", dryRun: "true" }, supabase: storedDatabase(game2026020163, stored163).supabase } as any, respond as any);
+    await handler({ query: { gameId: "2026020163" }, supabase: storedDatabase(game2026020163, stored163).supabase } as any, respond as any);
+    const refused = storedDatabase(game2026020163, stored163);
+    refused.rpc.mockResolvedValueOnce({ data: null, error: { message: "PP_GAME_REPLACE_PLAYER_ROWS" } } as any);
+    await handler({ query: { gameId: "2026020163" }, supabase: refused.supabase } as any, respond as any);
+    expect(bodies.map((body: any) => [body.success, body.dryRun ?? null, skip(body)])).toEqual([
+      [true, true, true], [true, false, false], [false, null, false]
+    ]);
   });
 
   it("the route takes dryRun=true and reports the diff", async () => {

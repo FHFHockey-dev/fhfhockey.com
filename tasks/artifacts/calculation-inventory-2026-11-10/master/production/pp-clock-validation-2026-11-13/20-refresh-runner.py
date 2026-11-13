@@ -24,7 +24,8 @@ commit, Part A registry included). For the write phase, migration 20261113220000
 Bounds: concurrency 1; the only HTTP calls are to --base-url (never an NHL or NST host); any non-200, any call over
 60 s, a failed or skipped game, or a busy database (hygiene.sh exit 3) stops the run. Authorization: the bearer
 value is read from FHFH_ROUTE_BEARER (cron secret or an admin access token) and never printed; a local dev server
-on loopback needs none. Each route call also writes its own cron_job_audit row (the route's audit wrapper).
+on loopback needs none. A dry run writes nothing at all: a complete, successful dryRun response skips even the
+route's cron_job_audit row (a failed dry run keeps it). Each write call keeps its audit row.
 """
 import argparse
 import csv
