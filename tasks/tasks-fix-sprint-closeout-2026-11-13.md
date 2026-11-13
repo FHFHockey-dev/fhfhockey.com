@@ -51,7 +51,7 @@
     - a 5-GET smoke;
     - octoberBranch ours-merge with a no-build check.
   - [ ] 2.4 Read back read-only that the next rolling run's stored output matches pre-release behaviour (flag off).
-- [ ] 3.0 Serve PP share (depends on 2.0 and TJ's separate approval to serve)
+- [ ] 3.0 Serve PP share (depends on 2.0; **TJ approved 2026-11-13 ~21:40Z**, conditional on the reader candidate passing its release checks plus 1.2 and 1.3. Keep `PP_STORED_CALCULATION_WRITES_ENABLED=true`; stop on any disagreement; no refresh or cron rerun.)
   - [ ] 3.1 TJ sets `PP_SHARE_SERVING_ENABLED=true` (Production). Run the approved clean-export CLI production deploy of the master SHA, then check the alias and a 3-GET smoke.
   - [ ] 3.2 Verify served values with a bounded read-only budget agreed first: the qualified game agrees across the four surfaces, and the zero-PP game shows "N/A".
   - [ ] 3.3 Record it in the queue, debrief and REPORT, and close decision 152.
@@ -66,3 +66,5 @@
   - [ ] 5.2 Update the debrief with #439–#441, migrations 147 and 149, the decision 152 refresh, and the results of 3.0 and 4.0.
   - [ ] 5.3 Ask TJ whether to have Astra recheck #439–#441, migrations 147/149 and the refresh. If yes, write the prompt pinned to a commit.
   - [ ] 5.4 Retire the Chef diary once 3.0 and 4.0 are recorded; keep it while any check is pending.
+- [ ] 6.0 NEW: flag-off client parity gap (found in F11 `05c43f981`)
+  - [ ] 6.1 With `PP_SHARE_SERVING_ENABLED` off, the client readers (PowerPlayCombos, LinemateMatrix, the shift chart) still make one cached request to `/api/v1/pp-share/team-game-clock` (a function invocation, ≤5 min cache). LinemateMatrix and the shift chart PP mode briefly show "Checking the stored power-play clock...". That isn't strictly today's behaviour. It matters only while serving is off: resolve it, or record it as accepted, before any future flag-off period. Serving is approved to follow the reader release directly.
