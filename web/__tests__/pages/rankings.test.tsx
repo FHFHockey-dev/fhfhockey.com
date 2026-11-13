@@ -24,7 +24,13 @@ import type {
 
 const { replaceMock, routerState, swrMock, swrMode, seasonState } = vi.hoisted(() => ({
   // Stands in for the /api/v1/season resolver (W2-4 D12).
-  seasonState: { data: { seasonId: 20252026 } as { seasonId: number } | null, isError: false },
+  seasonState: {
+    data: { seasonId: 20252026 } as { seasonId: number } | null,
+    isError: false,
+    isSuccess: false,
+    isFetching: false,
+    refetch: vi.fn(),
+  },
   replaceMock: vi.fn(),
   routerState: {
     pathname: "/rankings",
@@ -1622,13 +1628,153 @@ describe("RankingsPage interactions", () => {
     swrMode.actual = false;
     routerState.query = {};
     routerState.isReady = true;
+    seasonState.data = { seasonId: 20252026 };
+    seasonState.isError = false;
+    seasonState.isSuccess = false;
+    seasonState.isFetching = false;
+    seasonState.refetch.mockReset();
     replaceMock.mockReset();
+    swrMock.mockClear();
     setupSWR();
   });
 
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+  });
+
+  it.each([
+    ["metric_explorer", "Loading rankings..."],
+    ["deployment_tiers", "Loading deployment summaries..."],
+    ["trending", "Loading trends..."],
+    ["splits", "Loading ranking splits..."],
+    ["war", "Loading WAR availability contract..."],
+  ])("keeps %s in a loading or recoverable error state until the season resolves", (tab, loadingText) => {
+    routerState.query = { tab };
+    seasonState.data = null;
+    const { rerender } = render(<RankingsPage />);
+
+    expect(screen.getByRole("status").textContent).toBe("Loading season info...");
+    expect(screen.getByText(loadingText)).toBeTruthy();
+    expect(swrMock.mock.calls.every(([url]) => url === null || url.endsWith("/metadata"))).toBe(true);
+
+    seasonState.isError = true;
+    rerender(<RankingsPage />);
+    expect(screen.queryByText(loadingText)).toBeNull();
+    expect(screen.getByRole("status").textContent).toContain("Unable to load season info");
+    expect(screen.getByRole("button", { name: "Retry season lookup" })).toBeTruthy();
+  });
+
+  it("lets the reader retry an empty season response while controls are collapsed", () => {
+    seasonState.data = null;
+    seasonState.isSuccess = true;
+    const { rerender } = render(<RankingsPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Hide controls" }));
+    const retry = screen.getByRole("button", { name: "Retry season lookup" });
+    retry.focus();
+    fireEvent.click(retry);
+    expect(seasonState.refetch).toHaveBeenCalledTimes(1);
+    seasonState.isFetching = true;
+    rerender(<RankingsPage />);
+    expect((retry as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole("status").textContent).toBe("Loading season info...");
+    seasonState.isFetching = false;
+    seasonState.data = { seasonId: 20262027 };
+    rerender(<RankingsPage />);
+    expect(screen.queryByRole("button", { name: "Retry season lookup" })).toBeNull();
+    expect(screen.getByRole("status").textContent).toBe("Rankings ready.");
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Skater Rankings" }));
+    expect(swrMock.mock.calls.some(([url]) => url?.includes("/matrix?") && url.includes("season=20262027"))).toBe(true);
+  });
+
+  it.each(["non-JSON", "network"])("recovers a %s failure with one explicit retry and keeps the selected filters", async (failure) => {
+    swrMode.actual = true;
+    routerState.query = { season: "20252026", window: "last5", team: "BUF", page: "2" };
+    let resolveRetry: (value: unknown) => void = () => {};
+    let matrixCalls = 0;
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes("/matrix?")) {
+        matrixCalls += 1;
+        if (matrixCalls === 1) {
+          if (failure === "network") return Promise.reject(new TypeError("Failed to fetch"));
+          return Promise.resolve({ ok: false, json: async () => { throw new SyntaxError("Unexpected token '<'"); } });
+        }
+        return new Promise((resolve) => { resolveRetry = resolve; });
+      }
+      return Promise.resolve({ ok: true, json: async () => swrMock(url).data });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SWRConfig value={{ provider: () => new Map() }}><RankingsPage /></SWRConfig>);
+
+    const retry = await screen.findByRole("button", { name: "Retry Rankings" });
+    expect(screen.getByRole("status").textContent).toContain("Unable to load rankings right now");
+    expect(screen.queryByText(/Unexpected token/)).toBeNull();
+    retry.focus();
+    fireEvent.click(retry);
+    await waitFor(() => expect(matrixCalls).toBe(2));
+    expect((retry as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole("status").textContent).toBe("Loading Rankings...");
+    fireEvent.click(retry);
+    expect(matrixCalls).toBe(2);
+    const focusAfterRecovery = failure === "network"
+      ? screen.getByRole("button", { name: "Hide controls" })
+      : screen.getByRole("heading", { name: "Skater Rankings" });
+    if (failure === "network") focusAfterRecovery.focus();
+    await act(async () => resolveRetry({ ok: true, json: async () => matrixPayload }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Retry Rankings" })).toBeNull());
+    expect(screen.getByRole("status").textContent).toBe("Rankings ready.");
+    expect(document.activeElement).toBe(focusAfterRecovery);
+    expect(replaceMock).not.toHaveBeenCalled();
+    const requests = fetchMock.mock.calls.map(([url]) => url).filter((url) => url.includes("/matrix?"));
+    expect(requests).toHaveLength(2);
+    expect(requests[1]).toBe(requests[0]);
+    expect(requests[0]).toContain("window=last5");
+    expect(requests[0]).toContain("team=BUF");
+    expect(requests[0]).toContain("page=2");
+  });
+
+  it("does not automatically retry failed rankings requests", async () => {
+    swrMode.actual = true;
+    routerState.query = { season: "20252026" };
+    const onErrorRetry = vi.fn();
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.includes("/matrix?")) return { ok: false, json: async () => ({ message: "Temporarily unavailable" }) };
+      return { ok: true, json: async () => swrMock(url).data };
+    }));
+    render(<SWRConfig value={{ provider: () => new Map(), onErrorRetry }}><RankingsPage /></SWRConfig>);
+    await screen.findByRole("button", { name: "Retry Rankings" });
+    expect(onErrorRetry).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["goalies", "rankings", "/goalies?", "Rankings"],
+    ["teams", "rankings", "/teams?", "Rankings"],
+    ["skaters", "trending", "/trending?", "Trending"],
+  ])("retries only the active %s %s view and permits recovery after another failure", async (entity, tab, path, label) => {
+    swrMode.actual = true;
+    routerState.query = { season: "20252026", entity, tab };
+    let fail = true;
+    const fetchMock = vi.fn(async (url: string) => url.includes(path) && fail
+      ? { ok: false, json: async () => ({ error: "SOURCE_BUSY", message: "Please try again shortly." }) }
+      : { ok: true, json: async () => swrMock(url).data });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SWRConfig value={{ provider: () => new Map() }}><RankingsPage /></SWRConfig>);
+
+    const retry = await screen.findByRole("button", { name: `Retry ${label}` });
+    expect(screen.getByRole("status").textContent).toBe("Please try again shortly.");
+    expect(screen.queryByText("SOURCE_BUSY")).toBeNull();
+    fetchMock.mockClear();
+    retry.focus();
+    fireEvent.click(retry);
+    await waitFor(() => expect((retry as HTMLButtonElement).disabled).toBe(false));
+    expect(document.activeElement).toBe(retry);
+    expect(fetchMock.mock.calls).toHaveLength(1);
+    expect(fetchMock.mock.calls[0][0]).toContain(path);
+    fail = false;
+    fireEvent.click(retry);
+    await waitFor(() => expect(screen.queryByRole("button", { name: `Retry ${label}` })).toBeNull());
+    expect(screen.getByRole("status").textContent).toBe(`${label} ready.`);
+    expect(replaceMock).not.toHaveBeenCalled();
   });
 
   it("defaults to the resolved current season and waits instead of guessing when the lookup fails (W2-4 D12)", async () => {
