@@ -43,7 +43,7 @@ You are **Astra**, the independent Codex reviewer. You reviewed the three-wave m
   - W2-3 D13: `33b919192`.
 
   Migrations 144–146 were applied before the merge. Production steps and readbacks are in `production/PRODUCTION-QUEUE.md` and debrief §3.
-- **Scope of this pass:** everything through master `4d9b6a10d` (#433). Work still in flight on 2026-11-13 is **out of scope for now**: Claude lanes F5–F8 (CTPI v2 validation, Game Grid odds labels and reserve projections, finality consumers and PK heads, Lines leftovers) and the Codex dev items in `master/fix-lanes/CODEX-DEV-2026-11-13.md`. The Chef ships them in one final release that evening and sends you a short addendum covering it.
+- **Scope of this pass:** everything through master `4d9b6a10d` (#433). Work still in flight on 2026-11-13 is **out of scope for now**: Claude lanes F5–F10 (CTPI v2 validation; Game Grid odds labels and reserve projections; finality consumers and PK heads; Lines leftovers; 5-on-5 goaltending in team power ratings, decision 145, code only with its rebuild pending approval; SOS points% headline, decision 146), the PP clock validation (decision 144, a separate lane) and the Codex dev items in `master/fix-lanes/CODEX-DEV-2026-11-13.md`. The Chef ships them in one final release that evening and sends you a short addendum covering it.
 - Codex releases in between (`866b90bc4` DRM, `4243bcd4e` Goalie Grid) are out of scope, except where they touch fix-sprint files or data. The adopted areas are in scope only where they touch fix-sprint files: area 3 changes L9b's `goalie-queries.ts` and L18's `creaseShift.ts`.
 
 ## What to audit
