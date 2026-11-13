@@ -201,3 +201,14 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - Rollback: restore the row from the backup.
 - **Index 123** at 07:02:13–07:02:50Z: `create index concurrently` on `wgo_skater_stats (team_abbrev, date)` with `statement_timeout=15min`, run alone and outside a transaction. Built in 37 s. Readback: valid, ready, 17 MB. Ledger row inserted. Authority rows 123 and 124 are applied; counts are now 109 applied, 9 pending, 28 unknown.
 - **Remaining:** the dry runs (rankings, composites, team_unit_toi, trend bands) in the 08:20–09:25Z gap; the WiGO check after the 08:50Z cron; the pipeline check at 11:01Z.
+- **Dry runs** at 07:03–07:05Z, all 200, no DB load:
+  - rankings: 50,320 rows, 14.7 s;
+  - composites: `publication.ready`, 764 candidates, 13.2 s;
+  - team_unit_toi sample 11-01..04: 24 games, 3,054 rows;
+  - trend bands, 10 players: 8,160 bands, 2.4 s.
+- **Composites v3 published** at 07:05:55Z (TJ "Publish now"): 764 rows, snapshot 11-11, `contextual_composites_v3`. BEAST tiers (5v5 season): BEAST+ 2, BEAST 24, MCM 53, Watch 63, against the simulation's 2/30/49/67.
+- **Rankings written** at 07:06Z (TJ "Write now"): 50,320 upserts in 41 s; snapshot 11-11 has 12,580 rows in each of the season, last_5, last_10 and last_20 windows.
+- **team_unit_toi rebuilt** at 07:07–07:08Z (TJ "Rebuild now"): new snapshot 2026-11-13 in 12 four-day batches, all 200. 39,506 rows over 299 games: 37,863 complete and 1,643 partial.
+  - The partial rows are 13 games with `goalie_shift_missing_seconds` between 2 and 46. The L5b builder labels these honestly; the old 11-08 snapshot called everything complete.
+  - Lane F3's Lines 5v5 switch (ff873398d) can now ship.
+- **Trend bands:** later, paced (TJ), after the 11:01Z check: about 10 players per call with 60 s gaps, avoiding 11:15–11:40Z.
