@@ -64,6 +64,8 @@ function TimeOnIceChart({
   const [ppUnavailableReason, setPpUnavailableReason] = useState<string | null>(
     null
   );
+  // Decision 152: while PP share is served, games without a share are gaps with a stated cause, never 0%.
+  const [ppGameNote, setPpGameNote] = useState<string | null>(null);
   const [labels, setLabels] = useState<string[]>([]);
 
   // fetch data when season, player id, time option change
@@ -124,6 +126,9 @@ function TimeOnIceChart({
           powerPlayStatus && !powerPlayStatus.available
             ? powerPlayStatus.reason ?? "PP share unavailable."
             : null
+        );
+        setPpGameNote(
+          powerPlayStatus?.available ? describePpGameStatuses(data) : null
         );
         setLabels(data.map(({ date }: any) => date));
       }
@@ -331,8 +336,30 @@ function TimeOnIceChart({
         // @ts-ignore
         <Line ref={chartRef} options={CHART_OPTIONS} data={data} />
       )}
+      {chartType === "POWER_PLAY_TOI" && !ppUnavailableReason && ppGameNote ? (
+        <p className={styles.unavailable} role="note">
+          {ppGameNote}
+        </p>
+      ) : null}
     </Chart>
   );
+}
+
+/**
+ * One line naming the games a served PP share leaves out: N/A where the team had no power play, and the reasons
+ * where it is withheld. Null when every game has a share.
+ */
+export function describePpGameStatuses(
+  points: Array<{ powerPlayShareStatus?: { availability: string; reason: string | null } }>
+): string | null {
+  const notApplicable = points.filter((p) => p.powerPlayShareStatus?.availability === "not_applicable").length;
+  const withheld = points.filter((p) => p.powerPlayShareStatus?.availability === "unavailable");
+  const reasons = [...new Set(withheld.map((p) => p.powerPlayShareStatus?.reason).filter(Boolean))];
+  const parts: string[] = [];
+  const games = (n: number) => `${n} game${n === 1 ? "" : "s"}`;
+  if (notApplicable > 0) parts.push(`N/A for ${games(notApplicable)} with no power play.`);
+  if (withheld.length > 0) parts.push(`Withheld for ${games(withheld.length)}: ${reasons.join(" ")}`);
+  return parts.length > 0 ? parts.join(" ") : null;
 }
 
 type ChartTypeOptionsProps = {

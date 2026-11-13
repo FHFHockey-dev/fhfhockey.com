@@ -2705,3 +2705,34 @@ Not touched: shift ingestion or shift fallback (Codex), `components/LineCombinat
 ## CLAUDE-FIX-F11-PP-DRYRUN-CLAIM-20261113
 
 2026-11-13. From: Claude follow-up lane F11 (decision 152 dry-run tooling, via the Chef). Adds to `CLAUDE-FIX-F11-PP-WRITER-CLAIM-20261113`. Claims, code only: the batch route `web/pages/api/v1/db/update-power-play-combinations/index.ts` and `web/__tests__/pages/api/v1/db/update-power-play-combinations.test.ts` (dryRun and concurrency parameters; the nightly cron call is unchanged), plus a new runner `production/pp-clock-validation-2026-11-13/20-refresh-runner.py` that is not run. No DB, route or provider call. No production action.
+
+## CLAUDE-FIX-F11-PP-SHARE-READERS-CLAIM-20261113
+
+2026-11-13. From: Claude follow-up lane F11 (decision 152 PP share reader gates, TJ via the Chef). This is an offline build for TJ's serving review: not released or served, and nothing is written. Everything sits behind the server-side flag `PP_SHARE_SERVING_ENABLED`; when it is off, output is the same as today. Claims, code only:
+- new `web/lib/ppShare/serving.ts` (+ test) and `web/lib/ppShare/usePpTeamGameClocks.ts`;
+- new `web/pages/api/v1/pp-share/team-game-clock.ts` (+ `web/__tests__/pages/api/v1/pp-share/team-game-clock.test.ts`);
+- `web/pages/api/toi.ts` (+ `web/__tests__/pages/api/toi.test.ts`) and `web/components/TimeOnIceChart/TimeOnIceChart.tsx` (+ test, scss);
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` and `rollingPlayerPpShareContract.ts` (+ their tests);
+- `web/components/PowerPlayCombos/PowerPlayCombos.tsx` (+ test, scss);
+- `web/components/LinemateMatrix/index.tsx` (+ test, scss);
+- `web/components/ShiftChart/Replay.tsx` and `model.ts` (+ tests).
+Not touched: `components/LineCombinations/utilities.ts`, `pages/lines/[abbreviation].tsx`, and shift ingestion or fallback. No production action.
+
+## CLAUDE-FIX-F11-PP-SHARE-READERS-EVIDENCE-20261113
+
+2026-11-13. From: Claude follow-up lane F11. Adds to `CLAUDE-FIX-F11-PP-SHARE-READERS-CLAIM-20261113` for TJ's acceptance evidence. New test files only:
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ppServingPin.test.ts` and `__fixtures__/rolling-pp-share-flag-off-baseline.json`;
+- `web/__tests__/ppShare/decision152CrossSurface.test.tsx` and `fixtures/2026020131.json`, `2026020038.json` (stored rows).
+Also `web/components/ShiftChart/model.ts`, `Replay.tsx` and `Replay.test.tsx`: the qualified intervals, used only while serving. No shift ingestion or fallback touched. No production action.
+
+## CLAUDE-PP-SHIFTCHART-GUARD-FILES-20261113
+
+2026-11-13. From: Claude fix-sprint Chef, to Codex/Astra (shift-chart parser fix). TJ: Claude ships a guard; Astra fixes the parser without touching Claude's release files. **Please stay clear of these files**, which F11's PP share release changes (`05c43f981`, `aac8cf5a3`, `486da9666`):
+- **Shift chart:** `web/components/ShiftChart/model.ts`, `Replay.tsx`, `Replay.test.tsx`, `testStoredGame.ts` (new).
+- **Reader gates:** `web/components/LinemateMatrix/index.tsx` and its test; `web/components/PowerPlayCombos/PowerPlayCombos.tsx` and its test; `web/components/TimeOnIceChart/TimeOnIceChart.tsx` and its test.
+- **PP share serving:** `web/lib/ppShare/serving.ts` and its test, `web/lib/ppShare/usePpTeamGameClocks.ts`, `web/pages/api/v1/pp-share/team-game-clock.ts` and its test.
+- **TOI API:** `web/pages/api/toi.ts` and its test.
+- **Rolling writer:** `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`, `rollingPlayerPpShareContract.ts` and their tests and fixtures.
+- **Cross-surface test:** `web/__tests__/ppShare/**`.
+
+**What the guard does:** with `PP_SHARE_SERVING_ENABLED=true`, the replay draws a team's PP bands only when their merged seconds equal the stored qualified clock. Otherwise it withholds them and shows "PP timeline unavailable: timing mismatch." The check compares totals only. Once the parser produces bands from the qualified intervals, the label disappears without a data change. The parser itself (play parsing that drops situation codes, and `PowerPlayAreaIndicators`, which this guard doesn't use) is yours.

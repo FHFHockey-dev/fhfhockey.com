@@ -429,3 +429,29 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     - `powerPlayCombinations` still 47,688 rows, same max(created_at), 0 stamped; the clock table empty.
   - **Authority:** 115 applied / 6 pending.
   - **Next, each its own approval:** the writer and registry release with `PP_STORED_CALCULATION_WRITES_ENABLED` off; then the refresh bound to `db94a9de` with the flag on; then readbacks; then serving PP share.
+- **Release #441: decision 152 writer, batch dry run and Penalty Summary registry, writes gated off** (TJ "Push and merge, writes off"):
+  - **Candidate** `48c4bcb83` on master `70ad65546`: 11 PP app files, identical to the accepted dry run's code `8f73d2931`. Item 2 out.
+  - **Gate:** 463 focused tests; typecheck 0; ESLint 0; PG proof OK. Full Vitest 19,915 passed (the BLSH file is export-only). pytest 213.
+  - **Branch** pushed 20:42:09Z; no build at 20:43:43Z.
+  - **PR #441** squash-merged 20:43:57Z as master `f5c7adc2d`, tree identical.
+  - **Build:** fhfhockey completed 20:49:42Z; cms, functions and fhfhockey.com canceled.
+  - **Smoke** 5/5 at 200 (20:50:16–17Z): `/` 4.17 s (cold), `/lines` 0.25 s, `/lines/EDM` 0.18 s, `/splits` 0.13 s, `/underlying-stats` 0.26 s.
+  - **octoberBranch:** the PP files already equal master. Ours-merge `09e48c508` pushed 20:50:24Z.
+- **Writes on** (TJ, ~20:51Z):
+  1. TJ set `PP_STORED_CALCULATION_WRITES_ENABLED=true` (Production). The CLI's `vercel env ls production` shows it present; the value is hidden.
+  2. TJ: "Initiate the redeploy". A clean-export CLI production deploy of master `f5c7adc2d` (git archive; `tasks/` trimmed to `tasks/TASKS`; `.vercel/project.json`; `vercel deploy --prod`; Root Directory `web`) started ~20:52Z. A dashboard redeploy would be canceled by the Ignored Build Step.
+  - **From this deploy on:** cron 388 (08:05Z) writes through the new calculation.
+  - **Still needs its own approval:** the refresh bound to `db94a9de`.
+- **Writes-on deploy done:**
+  - **Deploy:** clean-export CLI production deploy of master `f5c7adc2d`, 20:51:25–20:58:26Z, 57.2 MB uploaded. Deployment `dpl_DgmG26oS5SJcVNNoEQBrhohqjc1y`, target production, **Ready**, aliased to fhfhockey.com and www.fhfhockey.com. 1 fhfhockey build; master didn't move.
+  - **Smoke** 3/3 at 200 (20:58:41–42Z): `/` 0.83 s, `/lines` 0.24 s, `/underlying-stats` 0.23 s. Plus one HEAD of `/` for headers (x-vercel-id iad1).
+  - **The flag is live from this deployment.** Cron 388 (08:05Z) now writes through the new calculation for the last 3 dates. Per F11, that may rewrite some frozen 11-12 games before the refresh; it's the same calculation, so the refresh readback holds unless their stored inputs change.
+- **Decision 152 refresh DONE** (TJ "Run it now"; the Chef ran `20-refresh-runner.py write`, bound to `db94a9de…`), 20:59:38–21:03:46Z:
+  - **Run:** 31/31 batches written to https://fhfhockey.com (deployment `dpl_DgmG26oS5`) at concurrency 1, 2.3–4.9 s each, ≥5 s apart, with the load gate before each call. The busiest gate saw 4 active, 0 s longest. **Every batch's readback matched the dry run.** No stop, no mismatch.
+  - **Chef's independent readback (read-only):**
+    - 2026-27 regular season (games 001–309): **7,180 rows** (7,190 − 15 + 5), **all stamped** `pp-shifts-qualified-clock-v1` (computed 20:59:39–21:03:45Z), 0 shares above 1, 0 PPTOI above the game's clock;
+    - `pp_team_game_clock`: **618** (609 available, 9 not applicable, 0 unqualified);
+    - group A sample (2026020163 ×3) gone; 2026020131 team 18 available at 120 s (team 19 at 578 s);
+    - **other seasons untouched:** 40,498 rows, 0 stamped; table total 47,678.
+  - **PP share stays hidden.** Readers are unchanged; serving it needs reader gates (named in REPORT §11.3, not built) and TJ's separate approval.
+  - **Next scheduled:** cron 388 at 08:05Z on 2026-11-14 writes the last 3 dates through the new calculation. Read it back separately (audit `success`, rows stamped).

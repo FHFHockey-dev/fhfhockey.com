@@ -47,8 +47,17 @@ import {
   type RollingPlayerPpContextRow,
   resolvePlayerPpToiSeconds,
   toRollingPlayerPpContextRow,
-  resolvePpShareComponents
+  resolvePpShareComponents,
+  resolveServedPpShareComponents
 } from "./rollingPlayerPpShareContract";
+import {
+  ppClockKey,
+  ppClockVerdict,
+  ppShareServingEnabled,
+  readPpTeamGameClocks,
+  type PpShareVerdict,
+  type PpTeamGameClock
+} from "lib/ppShare/serving";
 import {
   hasTrustedPpUnitContext,
   resolvePpUnitLabel
@@ -1057,6 +1066,8 @@ export interface PlayerGameData {
   countsOi?: NstCountsOiRow;
   wgo?: WgoSkaterRow;
   ppCombination?: PowerPlayCombinationRow | null;
+  /** Decision 152: the stored team-game clock verdict, set only while PP share is served. */
+  ppServedClock?: PpShareVerdict;
   lineCombo?: {
     slot: number | null;
     positionGroup: "forward" | "defense" | "goalie" | null;
@@ -1156,6 +1167,12 @@ function getBlocks(game: PlayerGameData): number | null {
 
 function getPpShareComponents(game: PlayerGameData): RatioComponents | null {
   if (game.strength !== "all" && game.strength !== "pp") return null;
+  if (game.ppServedClock) {
+    return resolveServedPpShareComponents({
+      clock: game.ppServedClock,
+      storedPlayerPpToi: game.ppCombination?.PPTOI ?? null
+    });
+  }
   return resolvePpShareComponents({
     builderPlayerPpToi: game.ppCombination?.PPTOI ?? null,
     builderTeamShare: game.ppCombination?.pp_share_of_team ?? null,
@@ -3231,6 +3248,13 @@ async function fetchPowerPlayCombinations(
   return rows;
 }
 
+/** Decision 152: the stored team-game clocks, only while PP share is served; null keeps today's behaviour. */
+async function fetchServedPpClocks(gameIds: number[]): Promise<Map<string, PpTeamGameClock> | null> {
+  if (!ppShareServingEnabled()) return null;
+  const clocks = await readPpTeamGameClocks(supabase, gameIds);
+  return new Map(clocks.map((clock) => [ppClockKey(clock.gameId, clock.teamId), clock]));
+}
+
 async function fetchLineCombinations(
   gameIds: number[]
 ): Promise<LineCombinationRow[]> {
@@ -3492,7 +3516,8 @@ function buildGameRecords(
   lineRows: LineCombinationRow[],
   ppRows: PowerPlayCombinationRow[],
   strength: StrengthState,
-  knownGameIds: Set<number>
+  knownGameIds: Set<number>,
+  ppClocks: Map<string, PpTeamGameClock> | null = null
 ): PlayerGameData[] {
   const ppByGameId = ppRows.reduce<Record<number, PowerPlayCombinationRow>>(
     (acc, row) => {
@@ -3559,6 +3584,15 @@ function buildGameRecords(
       countsOi,
       wgo,
       ppCombination: ppCombination ?? null,
+      ...(ppClocks
+        ? {
+            ppServedClock: ppClockVerdict(
+              hasKnownGameId && typeof originalGameId === "number" && teamId != null
+                ? ppClocks.get(ppClockKey(originalGameId, teamId))
+                : null
+            )
+          }
+        : {}),
       lineCombo,
       fallbackToiSeconds,
       sourceContext: {
@@ -3618,6 +3652,7 @@ async function processPlayer(
     .map((row) => row.game_id)
     .filter((id): id is number => typeof id === "number");
   const ppRows = await fetchPowerPlayCombinations(playerId, gameIds);
+  const ppClocks = await fetchServedPpClocks(gameIds);
   const lineRows = await fetchLineCombinations(gameIds);
 
   const outputs: any[] = [];
@@ -3774,7 +3809,8 @@ async function processPlayer(
           lineRows,
           ppRows,
           config.state,
-          knownGameIds
+          knownGameIds,
+          ppClocks
         );
       } catch (error) {
         logPipelinePhase({
@@ -4171,6 +4207,7 @@ export async function fetchPlayerValidationSourceData(options: {
     .map((row) => row.game_id)
     .filter((gameId): gameId is number => typeof gameId === "number");
   const ppRows = await fetchPowerPlayCombinations(options.playerId, gameIds);
+  const ppClocks = await fetchServedPpClocks(gameIds);
   const lineRows = await fetchLineCombinations(gameIds);
 
   const byStrength = {} as RollingPlayerValidationSourceData["byStrength"];
@@ -4188,7 +4225,8 @@ export async function fetchPlayerValidationSourceData(options: {
       lineRows,
       ppRows,
       config.state,
-      knownGameIds
+      knownGameIds,
+      ppClocks
     );
     byStrength[config.state] = {
       countsRows,
@@ -4804,6 +4842,7 @@ export const __testables = {
   getGpOutputCompatibilityMode,
   deriveOutputs,
   getOptionalPpContextOutputs,
+  getPpShareComponents,
   initAccumulator,
   normalizeStrengthStates,
   normalizePlayerIdList,
