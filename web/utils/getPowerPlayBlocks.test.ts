@@ -10,6 +10,8 @@ import getPowerPlayBlocks, {
   teamPpClockSeconds
 } from "./getPowerPlayBlocks";
 import { hasCompletePenaltyClockSource } from "lib/projections/penaltyClock";
+import { buildNhlGameSummaryReportUrl } from "lib/NHL/htmlReports";
+import { PP_PENALTY_SUMMARY_REFERENCES, penaltySummarySeconds } from "./ppPenaltySummaryRegistry";
 
 const HOME = 10;
 const AWAY = 20;
@@ -141,7 +143,9 @@ describe("decision-71 PP clock and situation-code audit (M-FRG-058)", () => {
       qualified: false,
       unqualifiedReason: PP_CLOCK_UNQUALIFIED_REASON,
       audit: { checkedEvents: 2, disagreements: 0 },
-      official: { class: "nonzero", seconds: 120, diffSeconds: 0 }
+      official: { class: "nonzero", seconds: 120, diffSeconds: 0 },
+      referenceSource: "teamGameStats",
+      penaltySummary: null
     });
     expect(buildTeamPpClock({ gameId: 1, teamId: HOME, ...teams, plays: null, official })).toMatchObject({
       seconds: null,
@@ -744,7 +748,7 @@ describe("stored-game qualification (decision 144, F11 C1 and C2)", () => {
   type Row = [eventId: number, sortOrder: number, period: number, time: string, code: string, type: string,
     side?: Side, typeCode?: string, descKey?: string, duration?: number, committedBy?: number, servedBy?: number];
   type StoredGame = {
-    gameId: number; homeTeamId: number; awayTeamId: number;
+    gameId: number; homeTeamId: number; awayTeamId: number; gameType?: number;
     official: Record<Side, { powerPlayToi: string; powerPlay: string }>;
     rows: Row[];
   };
@@ -775,7 +779,7 @@ describe("stored-game qualification (decision 144, F11 C1 and C2)", () => {
       teamId: side === "H" ? game.homeTeamId : game.awayTeamId,
       homeTeamId: game.homeTeamId,
       awayTeamId: game.awayTeamId,
-      gameType: 2,
+      gameType: game.gameType ?? 2,
       plays: storedPlays(game),
       official
     });
@@ -888,6 +892,249 @@ describe("stored-game qualification (decision 144, F11 C1 and C2)", () => {
     ]
   };
 
+  // Coincident-penalty scrum mismatch (REPORT.md section 2). The clock agrees
+  // with every interior situation code.
+  const game2026020036: StoredGame = {
+    gameId: 2026020036, homeTeamId: 3, awayTeamId: 68,
+    official: { H: { powerPlayToi: "06:12", powerPlay: "0/4" }, A: { powerPlayToi: "02:00", powerPlay: "1/1" } },
+    rows: [
+      [52, 8, 1, "00:00", "1551", "period-start"],
+      [101, 56, 1, "03:31", "1551", "penalty", "H", "MIN", "interference", 2, 8477969],
+      [108, 64, 1, "04:17", "1541", "missed-shot", "A"],
+      [244, 144, 1, "10:39", "1551", "penalty", "A", "MIN", "tripping", 2, 8477346],
+      [248, 149, 1, "11:03", "1451", "blocked-shot", "H"],
+      [398, 246, 1, "17:18", "1551", "goal", "H"],
+      [404, 247, 1, "17:18", "1551", "penalty", "A", "MIN", "roughing", 2, 8480849],
+      [407, 249, 1, "17:18", "1551", "penalty", "H", "MIN", "roughing", 2, 8482157],
+      [417, 258, 1, "18:03", "1441", "penalty", "A", "MIN", "cross-checking", 2, 8477951],
+      [424, 264, 1, "18:29", "1341", "blocked-shot", "H"],
+      [15, 281, 1, "20:00", "1451", "period-end"],
+      [446, 287, 2, "00:00", "1451", "period-start"],
+      [607, 347, 2, "04:28", "1560", "penalty", "A", "MIN", "interference", 2, 8477346],
+      [615, 352, 2, "04:40", "1451", "missed-shot", "H"],
+      [749, 469, 2, "14:01", "1551", "penalty", "H", "MIN", "roughing", 2, 8482157, 8482877],
+      [746, 471, 2, "14:01", "1551", "penalty", "H", "MIN", "boarding", 2, 8482157],
+      [739, 473, 2, "14:01", "1551", "penalty", "A", "MIN", "cross-checking", 2, 8479410],
+      [752, 479, 2, "14:21", "1541", "missed-shot", "A"],
+      [801, 481, 2, "14:29", "1541", "goal", "A"],
+      [38, 552, 2, "20:00", "1551", "period-end"],
+      [877, 559, 3, "00:00", "1551", "period-start"],
+      [155, 571, 3, "01:03", "1551", "penalty", "H", "MAJ", "fighting", 5, 8482157],
+      [45, 573, 3, "01:03", "1551", "penalty", "A", "MAJ", "fighting", 5, 8480855],
+      [977, 604, 3, "03:15", "1551", "goal", "H"],
+      [1111, 736, 3, "12:47", "1551", "goal", "H"],
+      [1143, 766, 3, "14:57", "1551", "goal", "A"],
+      [1205, 821, 3, "18:45", "0651", "goal", "H"],
+      [1219, 831, 3, "19:48", "0651", "penalty", "A", "MIN", "interference", 2, 8479410],
+      [559, 836, 3, "20:00", "1451", "period-end"],
+      [563, 840, 3, "20:00", "1451", "game-end"]
+    ]
+  };
+  // Decision 152 scrum games (REPORT.md section 9); same subset rule.
+  const game2026020153: StoredGame = {
+    gameId: 2026020153, homeTeamId: 9, awayTeamId: 13,
+    official: { H: { powerPlayToi: "12:26", powerPlay: "1/9" }, A: { powerPlayToi: "05:53", powerPlay: "1/5" } },
+    rows: [
+      [54, 8, 1, "00:00", "1551", "period-start"],
+      [119, 78, 1, "04:23", "1551", "penalty", "A", "MIN", "high-sticking", 2, 8477932],
+      [129, 85, 1, "05:00", "1451", "shot-on-goal", "H"],
+      [209, 159, 1, "09:51", "1551", "penalty", "H", "MIN", "tripping", 2, 8482245],
+      [214, 164, 1, "10:00", "1541", "goal", "A"],
+      [15, 169, 1, "10:05", "1551", "penalty", "H", "MAJ", "fighting", 5, 8478173],
+      [227, 171, 1, "10:05", "1551", "penalty", "A", "MAJ", "fighting", 5, 8478147],
+      [323, 209, 1, "12:45", "1551", "penalty", "A", "MIN", "cross-checking", 2, 8475462],
+      [327, 215, 1, "12:53", "1451", "faceoff", "H"],
+      [335, 222, 1, "14:13", "1451", "goal", "H"],
+      [359, 241, 1, "15:32", "1551", "penalty", "A", "MIN", "roughing", 2, 8480801],
+      [363, 243, 1, "15:32", "1551", "penalty", "H", "MIN", "roughing", 2, 8482245],
+      [367, 245, 1, "15:32", "1551", "penalty", "H", "MIN", "roughing", 2, 8476393],
+      [371, 247, 1, "15:32", "1551", "penalty", "A", "MIN", "roughing", 2, 8475462],
+      [378, 256, 1, "16:00", "1551", "penalty", "H", "MIN", "high-sticking", 2, 8484321],
+      [385, 261, 1, "16:12", "1541", "shot-on-goal", "A"],
+      [24, 321, 1, "20:00", "1551", "penalty", "H", "MIN", "roughing-removing-opponents-helmet", 2, 8484759],
+      [495, 323, 1, "20:00", "1541", "period-end"],
+      [507, 329, 2, "00:00", "1541", "period-start"],
+      [508, 334, 2, "00:31", "1541", "faceoff", "H"],
+      [527, 347, 2, "01:37", "1541", "penalty", "A", "MIN", "holding", 2, 8477932],
+      [543, 365, 2, "03:18", "1451", "shot-on-goal", "H"],
+      [645, 415, 2, "06:58", "1551", "penalty", "A", "MIN", "tripping", 2, 8478859],
+      [707, 421, 2, "07:05", "1451", "penalty", "H", "MIN", "slashing", 2, 8480208],
+      [738, 452, 2, "09:34", "1551", "goal", "H"],
+      [771, 483, 2, "11:43", "1551", "penalty", "A", "MIN", "high-sticking", 2, 8479314],
+      [789, 499, 2, "12:59", "1451", "shot-on-goal", "A"],
+      [848, 561, 2, "17:18", "1551", "goal", "H"],
+      [34, 588, 2, "19:43", "1551", "penalty", "A", "MIN", "slashing", 2, 8477935],
+      [884, 593, 2, "19:46", "1451", "shot-on-goal", "H"],
+      [890, 597, 2, "20:00", "1451", "period-end"],
+      [898, 604, 3, "00:00", "1451", "period-start"],
+      [924, 627, 3, "02:17", "1551", "penalty", "H", "MAJ", "fighting", 5, 8482092],
+      [38, 629, 3, "02:17", "1551", "penalty", "A", "MAJ", "fighting", 5, 8477935],
+      [412, 652, 3, "03:35", "1551", "penalty", "A", "MIN", "roughing", 2, 8479314],
+      [415, 654, 3, "03:35", "1551", "penalty", "H", "MIN", "roughing", 2, 8476393],
+      [418, 656, 3, "03:35", "1551", "penalty", "A", "MIN", "roughing", 2, 8480801],
+      [421, 658, 3, "03:35", "1551", "penalty", "H", "MIN", "roughing", 2, 8481528],
+      [424, 660, 3, "03:35", "1551", "penalty", "H", "MIS", "misconduct", 10, 8476393],
+      [1031, 725, 3, "07:58", "1551", "goal", "H"],
+      [1101, 792, 3, "12:04", "1551", "penalty", "H", "MIN", "slashing", 2, 8478173],
+      [1112, 798, 3, "12:07", "1541", "hit", "A"],
+      [1137, 827, 3, "14:57", "1551", "goal", "H"],
+      [50, 841, 3, "15:34", "1551", "penalty", "A", "MIS", "misconduct", 10, 8478147],
+      [1206, 888, 3, "18:46", "1551", "penalty", "A", "MIN", "roughing", 2, 8480801, 8477409],
+      [409, 890, 3, "18:46", "1551", "penalty", "H", "MIN", "roughing", 2, 8482092],
+      [406, 892, 3, "18:46", "1551", "penalty", "A", "MIN", "roughing", 2, 8479314],
+      [1217, 897, 3, "18:57", "1451", "hit", "A"],
+      [1213, 901, 3, "20:00", "1451", "period-end"],
+      [405, 905, 3, "20:00", "1451", "game-end"]
+    ]
+  };
+  const game2025021248: StoredGame = {
+    gameId: 2025021248, homeTeamId: 8, awayTeamId: 14,
+    official: { H: { powerPlayToi: "12:26", powerPlay: "0/7" }, A: { powerPlayToi: "08:00", powerPlay: "0/4" } },
+    rows: [
+      [52, 8, 1, "00:00", "1551", "period-start"],
+      [106, 71, 1, "03:48", "1551", "penalty", "A", "MIN", "high-sticking-double-minor", 4, 8476826],
+      [113, 76, 1, "03:59", "1451", "missed-shot", "H"],
+      [288, 192, 1, "13:11", "0651", "penalty", "H", "MIN", "roughing", 2, 8482964],
+      [292, 197, 1, "13:48", "1541", "shot-on-goal", "A"],
+      [325, 225, 1, "16:03", "0651", "penalty", "H", "MIN", "high-sticking", 2, 8484984],
+      [331, 231, 1, "16:28", "1541", "faceoff", "H"],
+      [345, 239, 1, "17:40", "1541", "penalty", "H", "MIN", "roughing", 2, 8476981],
+      [349, 242, 1, "17:40", "1541", "penalty", "A", "MIN", "slashing", 2, 8476453],
+      [22, 277, 1, "20:00", "1551", "period-end"],
+      [437, 285, 2, "00:00", "1551", "period-start"],
+      [529, 319, 2, "03:33", "1551", "penalty", "H", "MIN", "roughing", 2, 8480813],
+      [526, 321, 2, "03:33", "1551", "penalty", "H", "MIN", "roughing", 2, 8481593],
+      [535, 323, 2, "03:33", "1551", "penalty", "A", "MIN", "roughing", 2, 8480426],
+      [532, 325, 2, "03:33", "1551", "penalty", "A", "MIN", "roughing", 2, 8477426],
+      [522, 327, 2, "03:33", "1551", "penalty", "A", "MIN", "roughing", 2, 8470621],
+      [538, 329, 2, "03:33", "1551", "penalty", "H", "MIN", "roughing", 2, 8476981],
+      [30, 331, 2, "03:33", "1551", "penalty", "H", "MIN", "cross-checking", 2, 8476981],
+      [542, 338, 2, "04:03", "1541", "faceoff", "H"],
+      [572, 367, 2, "06:30", "1551", "goal", "H"],
+      [583, 375, 2, "07:04", "1551", "penalty", "A", "MIN", "roughing", 2, 8478519],
+      [602, 380, 2, "07:07", "1451", "giveaway", "A"],
+      [655, 437, 2, "12:20", "1551", "penalty", "A", "MIN", "slashing", 2, 8477416],
+      [652, 439, 2, "12:20", "1551", "penalty", "H", "MIS", "misconduct", 10, 8481593],
+      [649, 441, 2, "12:20", "1551", "penalty", "A", "MIS", "misconduct", 10, 8477426],
+      [672, 448, 2, "12:58", "1451", "takeaway", "A"],
+      [47, 474, 2, "15:00", "1551", "penalty", "A", "MIN", "instigator", 2, 8483398, 8470621],
+      [44, 476, 2, "15:00", "1551", "penalty", "H", "MAJ", "fighting", 5, 8476981],
+      [50, 478, 2, "15:00", "1551", "penalty", "A", "MAJ", "fighting", 5, 8483398],
+      [452, 480, 2, "15:00", "1551", "penalty", "A", "MIS", "instigator-misconduct", 10, 8483398],
+      [697, 489, 2, "16:09", "1451", "blocked-shot", "H"],
+      [722, 511, 2, "17:34", "1551", "penalty", "A", "MIN", "interference-goalkeeper", 2, 8478010],
+      [456, 513, 2, "17:34", "1551", "penalty", "A", "MIN", "roughing", 2, 8478178],
+      [469, 515, 2, "17:34", "1551", "penalty", "H", "MIN", "roughing", 2, 8480074],
+      [459, 517, 2, "17:34", "1551", "penalty", "A", "MIN", "roughing", 2, 8478178],
+      [461, 519, 2, "17:34", "1551", "penalty", "H", "MIN", "roughing", 2, 8478133],
+      [464, 521, 2, "17:34", "1551", "penalty", "H", "MIS", "misconduct", 10, 8478133],
+      [480, 523, 2, "17:34", "1551", "penalty", "A", "MIS", "misconduct", 10, 8478178],
+      [472, 525, 2, "17:34", "1551", "penalty", "H", "MIS", "misconduct", 10, 8480074],
+      [726, 527, 2, "17:34", "1551", "penalty", "A", "MIS", "misconduct", 10, 8480426],
+      [731, 532, 2, "18:02", "1451", "missed-shot", "H"],
+      [466, 556, 2, "20:00", "1551", "period-end"],
+      [760, 563, 3, "00:00", "1551", "period-start"],
+      [483, 716, 3, "11:02", "1551", "penalty", "A", "MIN", "roughing", 2, 8482655],
+      [1005, 723, 3, "11:24", "1451", "hit", "A"],
+      [1007, 761, 3, "14:22", "1551", "penalty", "H", "MIN", "kneeing", 2, 8484984],
+      [208, 770, 3, "14:37", "1541", "missed-shot", "A"],
+      [1054, 808, 3, "18:09", "0651", "goal", "A"],
+      [1067, 823, 3, "18:56", "1551", "goal", "H"],
+      [497, 838, 3, "20:00", "0651", "period-end"],
+      [801, 842, 3, "20:00", "0651", "game-end"]
+    ]
+  };
+  const game2025021097: StoredGame = {
+    gameId: 2025021097, homeTeamId: 20, awayTeamId: 13,
+    official: { H: { powerPlayToi: "09:24", powerPlay: "2/7" }, A: { powerPlayToi: "03:39", powerPlay: "0/2" } },
+    rows: [
+      [54, 10, 1, "00:00", "1551", "period-start"],
+      [125, 76, 1, "04:45", "1560", "penalty", "A", "MIN", "tripping", 2, 8481518],
+      [128, 81, 1, "04:48", "1451", "shot-on-goal", "H"],
+      [21, 284, 1, "20:00", "1551", "period-end"],
+      [438, 290, 2, "00:00", "1551", "period-start"],
+      [626, 383, 2, "07:44", "1551", "goal", "H"],
+      [722, 418, 2, "10:10", "1551", "goal", "H"],
+      [778, 471, 2, "14:36", "1551", "penalty", "A", "MIN", "slashing", 2, 8475179],
+      [782, 477, 2, "15:02", "1451", "shot-on-goal", "H"],
+      [820, 511, 2, "17:22", "1551", "penalty", "H", "MIN", "roughing", 2, 8481028],
+      [826, 516, 2, "17:50", "1541", "shot-on-goal", "A"],
+      [40, 540, 2, "20:00", "1551", "period-end"],
+      [855, 546, 3, "00:00", "1551", "period-start"],
+      [904, 602, 3, "04:17", "1551", "goal", "A"],
+      [917, 608, 3, "04:41", "1551", "penalty", "A", "MIN", "high-sticking", 2, 8478859],
+      [923, 613, 3, "05:20", "1451", "shot-on-goal", "H"],
+      [937, 622, 3, "06:20", "1451", "penalty", "H", "MIN", "holding", 2, 8482679],
+      [942, 631, 3, "06:42", "1541", "faceoff", "H"],
+      [1004, 685, 3, "11:14", "1551", "penalty", "A", "MIN", "hooking", 2, 8478421, 8476994],
+      [517, 687, 3, "11:14", "1551", "penalty", "A", "MAJ", "interference", 5, 8478421, 8476994],
+      [505, 689, 3, "11:14", "1551", "penalty", "A", "GAM", "game-misconduct", 10, 8478421],
+      [1023, 704, 3, "11:58", "1451", "giveaway", "H"],
+      [1050, 731, 3, "14:04", "1451", "penalty", "H", "MIN", "tripping", 2, 8480797],
+      [1072, 757, 3, "16:05", "1451", "blocked-shot", "A"],
+      [1084, 766, 3, "16:39", "1460", "penalty", "A", "MIN", "tripping", 2, 8477931],
+      [1088, 775, 3, "16:59", "1351", "goal", "H"],
+      [1098, 781, 3, "17:30", "1451", "goal", "H"],
+      [512, 820, 3, "20:00", "1551", "period-end"],
+      [516, 824, 3, "20:00", "1551", "game-end"]
+    ]
+  };
+  const game2025030112: StoredGame = {
+    gameId: 2025030112, homeTeamId: 7, awayTeamId: 6, gameType: 3,
+    official: { H: { powerPlayToi: "10:00", powerPlay: "0/5" }, A: { powerPlayToi: "10:12", powerPlay: "1/6" } },
+    rows: [
+      [52, 8, 1, "00:00", "1551", "period-start"],
+      [73, 31, 1, "01:10", "1551", "penalty", "A", "MIN", "roughing", 2, 8477496],
+      [78, 33, 1, "01:10", "1551", "penalty", "H", "MIN", "holding", 2, 8480839],
+      [10, 72, 1, "04:10", "1551", "penalty", "A", "MIN", "roughing", 2, 8477507, 8478042],
+      [120, 74, 1, "04:10", "1551", "penalty", "A", "MIN", "cross-checking", 2, 8477507],
+      [124, 76, 1, "04:10", "1551", "penalty", "H", "MIN", "roughing", 2, 8479359],
+      [138, 81, 1, "04:34", "1451", "giveaway", "A"],
+      [246, 145, 1, "08:43", "0651", "penalty", "H", "MIN", "hooking", 2, 8482659],
+      [250, 151, 1, "09:19", "1541", "missed-shot", "A"],
+      [270, 166, 1, "10:40", "0641", "penalty", "H", "MIN", "cross-checking", 2, 8479982],
+      [495, 290, 1, "19:29", "1551", "penalty", "A", "MIN", "tripping", 2, 8477956],
+      [27, 295, 1, "20:00", "1451", "period-end"],
+      [561, 301, 2, "00:00", "1451", "period-start"],
+      [560, 303, 2, "00:00", "1451", "faceoff", "H"],
+      [677, 371, 2, "04:54", "1551", "goal", "A"],
+      [715, 404, 2, "07:38", "1551", "penalty", "H", "MIN", "delaying-game-puck-over-glass", 2, 8481524],
+      [718, 410, 2, "08:08", "1541", "missed-shot", "A"],
+      [746, 434, 2, "09:59", "1551", "penalty", "A", "MIN", "interference", 2, 8479661],
+      [773, 439, 2, "10:04", "1451", "giveaway", "A"],
+      [901, 505, 2, "16:29", "1551", "goal", "A"],
+      [853, 535, 2, "17:55", "1551", "penalty", "H", "MIN", "interference", 2, 8479420],
+      [859, 540, 2, "18:10", "1541", "goal", "A"],
+      [501, 570, 2, "20:00", "1551", "period-end"],
+      [895, 577, 3, "00:00", "1551", "period-start"],
+      [896, 579, 3, "00:16", "1551", "goal", "A"],
+      [984, 614, 3, "02:26", "1551", "penalty", "A", "MIN", "tripping", 2, 8479325],
+      [996, 616, 3, "02:26", "1551", "penalty", "A", "MIN", "roughing", 2, 8479325, 8478042],
+      [981, 618, 3, "02:26", "1551", "penalty", "H", "MIN", "roughing", 2, 8479359],
+      [988, 620, 3, "02:26", "1551", "penalty", "H", "MAJ", "fighting", 5, 8479378],
+      [507, 622, 3, "02:26", "1551", "penalty", "A", "MAJ", "fighting", 5, 8480355],
+      [1000, 627, 3, "02:35", "1451", "shot-on-goal", "H"],
+      [1061, 683, 3, "06:14", "1551", "penalty", "A", "MIN", "roughing", 2, 8477507],
+      [528, 685, 3, "06:14", "1551", "penalty", "A", "MIN", "roughing", 2, 8479369],
+      [1065, 687, 3, "06:14", "1551", "penalty", "H", "MIN", "roughing", 2, 8477949],
+      [515, 689, 3, "06:14", "1551", "penalty", "H", "MIN", "roughing", 2, 8479420],
+      [1072, 691, 3, "06:14", "1551", "penalty", "A", "MIN", "roughing", 2, 8479987],
+      [1076, 693, 3, "06:14", "1551", "penalty", "H", "MIN", "roughing", 2, 8484145],
+      [531, 695, 3, "06:14", "1551", "penalty", "A", "MIS", "misconduct", 10, 8479369],
+      [526, 697, 3, "06:14", "1551", "penalty", "H", "MIS", "misconduct", 10, 8484145],
+      [521, 699, 3, "06:14", "1551", "penalty", "A", "MIS", "misconduct", 10, 8477507],
+      [518, 701, 3, "06:14", "1551", "penalty", "H", "MIS", "misconduct", 10, 8479420],
+      [1115, 744, 3, "09:17", "1551", "penalty", "H", "MIN", "cross-checking", 2, 8481522],
+      [1149, 753, 3, "09:26", "1541", "hit", "A"],
+      [1145, 769, 3, "11:20", "1560", "penalty", "A", "MIN", "hooking", 2, 8485395],
+      [1150, 775, 3, "11:29", "1451", "shot-on-goal", "H"],
+      [1219, 800, 3, "13:54", "1551", "goal", "H"],
+      [902, 817, 3, "15:08", "1560", "goal", "H"],
+      [538, 894, 3, "20:00", "1551", "period-end"],
+      [543, 898, 3, "20:00", "1551", "game-end"]
+    ]
+  };
+
   describe("C2: the audit skips the observations the clock refuses", () => {
     it.each([
       { game: game2026020002, checkedEvents: 5 },
@@ -924,57 +1171,22 @@ describe("stored-game qualification (decision 144, F11 C1 and C2)", () => {
   });
 
   describe("C1: qualification needs the official team PP total", () => {
-    it("2026020036: the home clock matches and qualifies; the away clock is +28 s and is withheld", () => {
-      // Coincident-penalty scrum mismatch (REPORT.md section 2). The clock agrees
-      // with every interior situation code.
-      const game: StoredGame = {
-        gameId: 2026020036, homeTeamId: 3, awayTeamId: 68,
-        official: { H: { powerPlayToi: "06:12", powerPlay: "0/4" }, A: { powerPlayToi: "02:00", powerPlay: "1/1" } },
-        rows: [
-          [52, 8, 1, "00:00", "1551", "period-start"],
-          [101, 56, 1, "03:31", "1551", "penalty", "H", "MIN", "interference", 2, 8477969],
-          [108, 64, 1, "04:17", "1541", "missed-shot", "A"],
-          [244, 144, 1, "10:39", "1551", "penalty", "A", "MIN", "tripping", 2, 8477346],
-          [248, 149, 1, "11:03", "1451", "blocked-shot", "H"],
-          [398, 246, 1, "17:18", "1551", "goal", "H"],
-          [404, 247, 1, "17:18", "1551", "penalty", "A", "MIN", "roughing", 2, 8480849],
-          [407, 249, 1, "17:18", "1551", "penalty", "H", "MIN", "roughing", 2, 8482157],
-          [417, 258, 1, "18:03", "1441", "penalty", "A", "MIN", "cross-checking", 2, 8477951],
-          [424, 264, 1, "18:29", "1341", "blocked-shot", "H"],
-          [15, 281, 1, "20:00", "1451", "period-end"],
-          [446, 287, 2, "00:00", "1451", "period-start"],
-          [607, 347, 2, "04:28", "1560", "penalty", "A", "MIN", "interference", 2, 8477346],
-          [615, 352, 2, "04:40", "1451", "missed-shot", "H"],
-          [749, 469, 2, "14:01", "1551", "penalty", "H", "MIN", "roughing", 2, 8482157, 8482877],
-          [746, 471, 2, "14:01", "1551", "penalty", "H", "MIN", "boarding", 2, 8482157],
-          [739, 473, 2, "14:01", "1551", "penalty", "A", "MIN", "cross-checking", 2, 8479410],
-          [752, 479, 2, "14:21", "1541", "missed-shot", "A"],
-          [801, 481, 2, "14:29", "1541", "goal", "A"],
-          [38, 552, 2, "20:00", "1551", "period-end"],
-          [877, 559, 3, "00:00", "1551", "period-start"],
-          [155, 571, 3, "01:03", "1551", "penalty", "H", "MAJ", "fighting", 5, 8482157],
-          [45, 573, 3, "01:03", "1551", "penalty", "A", "MAJ", "fighting", 5, 8480855],
-          [977, 604, 3, "03:15", "1551", "goal", "H"],
-          [1111, 736, 3, "12:47", "1551", "goal", "H"],
-          [1143, 766, 3, "14:57", "1551", "goal", "A"],
-          [1205, 821, 3, "18:45", "0651", "goal", "H"],
-          [1219, 831, 3, "19:48", "0651", "penalty", "A", "MIN", "interference", 2, 8479410],
-          [559, 836, 3, "20:00", "1451", "period-end"],
-          [563, 840, 3, "20:00", "1451", "game-end"]
-        ]
-      };
+    it("2026020036: the home clock matches and qualifies; the away clock is +28 s off teamGameStats", () => {
+      const game = game2026020036;
       expect(clockFor(game, "H")).toMatchObject({
         seconds: 372,
         qualified: true,
         unqualifiedReason: null,
-        official: { class: "nonzero", seconds: 372, diffSeconds: 0 }
+        official: { class: "nonzero", seconds: 372, diffSeconds: 0 },
+        referenceSource: "teamGameStats"
       });
+      // Withheld on teamGameStats alone (the decision-152 tests below show
+      // that verdict); its registry entry now judges it on the Penalty Summary.
       expect(clockFor(game, "A")).toMatchObject({
         seconds: 148,
-        qualified: false,
-        unqualifiedReason: "The clock differs from the official team PP total by +28 s (clock 148 s, official 120 s).",
         audit: { disagreements: 0 },
-        official: { class: "nonzero", seconds: 120, diffSeconds: 28 }
+        official: { class: "nonzero", seconds: 120, diffSeconds: 28 },
+        referenceSource: "nhlPenaltySummary"
       });
     });
 
@@ -1047,6 +1259,128 @@ describe("stored-game qualification (decision 144, F11 C1 and C2)", () => {
         unqualifiedReason: reason,
         official: officialClass
       });
+    });
+  });
+
+  describe("decision 152: the NHL Penalty Summary as the reference for registered team-games", () => {
+    // `official` is the stored teamGameStats row, which stays as stored.
+    it.each([
+      { game: game2026020036, side: "A" as Side, clock: 148, official: { class: "nonzero", seconds: 120, diffSeconds: 28 } },
+      { game: game2026020153, side: "H" as Side, clock: 626, official: { class: "nonzero", seconds: 746, diffSeconds: -120 } },
+      { game: game2025021248, side: "H" as Side, clock: 840, official: { class: "nonzero", seconds: 746, diffSeconds: 94 } },
+      { game: game2025021097, side: "H" as Side, clock: 595, official: { class: "nonzero", seconds: 564, diffSeconds: 31 } },
+      { game: game2025030112, side: "A" as Side, clock: 492, official: { class: "nonzero", seconds: 612, diffSeconds: -120 } }
+    ])("$game.gameId $side: qualifies on the exact Penalty Summary and keeps the stored total", ({ game, side, clock, official }) => {
+      const teamId = side === "H" ? game.homeTeamId : game.awayTeamId;
+      const reference = PP_PENALTY_SUMMARY_REFERENCES.find((entry) => entry.gameId === game.gameId && entry.teamId === teamId);
+      expect(reference?.teamGameStats).toEqual(game.official[side]);
+      expect(clockFor(game, side)).toMatchObject({
+        seconds: clock,
+        qualified: true,
+        unqualifiedReason: null,
+        audit: { disagreements: 0 },
+        official,
+        referenceSource: "nhlPenaltySummary",
+        penaltySummary: { reference, seconds: clock, diffSeconds: 0 }
+      });
+      // The other team is not registered and still qualifies on its stored row.
+      expect(clockFor(game, side === "H" ? "A" : "H")).toMatchObject({
+        qualified: true,
+        official: { class: "nonzero", diffSeconds: 0 },
+        referenceSource: "teamGameStats",
+        penaltySummary: null
+      });
+    });
+
+    it.each([
+      { time: "14:30", clock: 149, diffSeconds: 1 },
+      { time: "14:28", clock: 147, diffSeconds: -1 }
+    ])("2026020036 away: a clock $diffSeconds s off the Penalty Summary keeps the teamGameStats verdict", ({ time, clock, diffSeconds }) => {
+      // Move the goal that ends the 28 s power play (P2 14:29).
+      const game = {
+        ...game2026020036,
+        rows: game2026020036.rows.map((row): Row => row[0] === 801 ? [801, 481, 2, time, "1541", "goal", "A"] : row)
+      };
+      expect(clockFor(game, "A")).toMatchObject({
+        seconds: clock,
+        qualified: false,
+        unqualifiedReason: `The clock differs from the official team PP total by +${clock - 120} s (clock ${clock} s, official 120 s).`,
+        audit: { disagreements: 0 },
+        referenceSource: "teamGameStats",
+        penaltySummary: { seconds: 148, diffSeconds }
+      });
+    });
+
+    it.each([
+      { name: "a missing stored row", official: null, reason: "No official team PP total (teamGameStats) for this game." },
+      { name: "a changed stored row", official: { powerPlayToi: "02:01", powerPlay: "1/1" },
+        reason: "The clock differs from the official team PP total by +27 s (clock 148 s, official 121 s)." }
+    ])("2026020036 away with $name: the entry no longer applies", ({ official, reason }) => {
+      expect(clockFor(game2026020036, "A", official)).toMatchObject({
+        seconds: 148,
+        qualified: false,
+        unqualifiedReason: reason,
+        referenceSource: "teamGameStats",
+        penaltySummary: { diffSeconds: 0 }
+      });
+    });
+
+    it("2026020036 away: incomplete play-by-play stays withheld even though the clock equals the summary", () => {
+      const game = { ...game2026020036, rows: game2026020036.rows.filter((row) => row[1] !== 840) };
+      expect(clockFor(game, "A")).toMatchObject({
+        seconds: 148,
+        qualified: false,
+        unqualifiedReason: PP_CLOCK_UNQUALIFIED_REASON,
+        referenceSource: "teamGameStats",
+        penaltySummary: { diffSeconds: 0 }
+      });
+    });
+
+    it("is never a blanket override: the same team and plays under another game id keep the teamGameStats verdict", () => {
+      expect(clockFor({ ...game2026020036, gameId: 2026020037 }, "A")).toMatchObject({
+        seconds: 148,
+        qualified: false,
+        unqualifiedReason: "The clock differs from the official team PP total by +28 s (clock 148 s, official 120 s).",
+        referenceSource: "teamGameStats",
+        penaltySummary: null
+      });
+    });
+
+    it("a verified zero stays on teamGameStats (shown as not applicable), even under a registered team-game id", () => {
+      const game: StoredGame = {
+        gameId: 2026020036, homeTeamId: 3, awayTeamId: 68,
+        official: { H: { powerPlayToi: "00:00", powerPlay: "0/0" }, A: { powerPlayToi: "00:00", powerPlay: "0/0" } },
+        rows: [
+          [1, 1, 1, "00:00", "1551", "period-start"],
+          [2, 2, 1, "05:00", "1551", "shot-on-goal", "A"],
+          [3, 3, 1, "20:00", "1551", "period-end"],
+          [4, 4, 2, "00:00", "1551", "period-start"],
+          [5, 5, 2, "20:00", "1551", "period-end"],
+          [6, 6, 3, "00:00", "1551", "period-start"],
+          [7, 7, 3, "20:00", "1551", "game-end"]
+        ]
+      };
+      expect(clockFor(game, "A")).toMatchObject({
+        seconds: 0,
+        qualified: true,
+        unqualifiedReason: null,
+        official: { class: "zero", seconds: 0, diffSeconds: 0 },
+        referenceSource: "teamGameStats",
+        penaltySummary: { seconds: 148, diffSeconds: -148 }
+      });
+    });
+
+    it("each registry entry is one team-game with its source page and fetch evidence", () => {
+      const keys = PP_PENALTY_SUMMARY_REFERENCES.map((entry) => `${entry.gameId}/${entry.teamId}`);
+      expect(keys).toEqual(["2026020036/68", "2026020153/9", "2025021248/8", "2025021097/20", "2025030112/6"]);
+      for (const entry of PP_PENALTY_SUMMARY_REFERENCES) {
+        const season = Math.floor(entry.gameId / 1_000_000);
+        expect(entry.sourceUrl).toBe(buildNhlGameSummaryReportUrl(`${season}${season + 1}`, String(entry.gameId).slice(-6)));
+        expect(entry.sha256).toMatch(/^[0-9a-f]{64}$/);
+        expect(entry.fetchedAt).toMatch(/^2026-11-13T\d\d:\d\d:\d\dZ$/);
+        expect(entry.decision).toBe(152);
+        expect(penaltySummarySeconds(entry.penaltySummary)).toBeGreaterThan(0);
+      }
     });
   });
 });
