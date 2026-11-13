@@ -69,7 +69,10 @@ function unitsForPenalty(play: any, teams: Teams): Unit[] {
   if (["MIS", "GAM", "GMIS", "PS"].includes(d.typeCode)) return [];
   const minor = ["MIN", "BEN", "BENCH"].includes(d.typeCode);
   const major = ["MAJ", "MAT", "MATCH"].includes(d.typeCode);
-  if ((!minor || ![2, 4].includes(d.duration)) && (!major || d.duration !== 5)) {
+  // A match penalty can be recorded with its game-misconduct minutes folded in
+  // (MAT/15 = 5 + 10); only the 5-minute major changes manpower.
+  const matchWithMisconduct = ["MAT", "MATCH"].includes(d.typeCode) && d.duration === 15;
+  if ((!minor || ![2, 4].includes(d.duration)) && (!major || (d.duration !== 5 && !matchWithMisconduct))) {
     throw new Error(`Unsupported penalty-clock penalty ${String(d.typeCode)}/${d.duration}`);
   }
   const offender = d.committedByPlayerId ?? d.servedByPlayerId;
