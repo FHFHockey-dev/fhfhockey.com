@@ -291,3 +291,14 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - Build: 1 build plus 3 cancels, settled 17:20:16Z.
   - Smoke 5/5 at 200: `/lines`, `/lines/EDM`, `/api/team-ratings?date=2026-11-12`, `/underlying-stats`, `/`.
   - octoberBranch `1c8149ff0` pushed 17:20:30Z, with no build.
+- **Data repairs, F18** (TJ approved both by pop-up in the F18 session, about 17:15Z; report `production/data-repairs-2026-11-13/REPORT.md`):
+  - **WGO legacy identity:**
+    - About 17:16Z, a guarded `DO` block set game_id, team, opponent and home/road on exactly **14** `wgo_skater_stats` rows: Gawdin 8478446, 12 rows from 2020–23; McCartney 8481827, 2 rows from 2021.
+    - Sources are 4 NHL game-log GETs. All 14 match on date, TOI, goals, assists and shots. The WiGO frame check is now 0 bad rows.
+    - Fixing only the 2 reported rows would have moved the failure to the next row.
+    - Rollback limit: `game_id` can't return to NULL while the NOT VALID check exists.
+  - **Mahura NST re-fetch:**
+    - The cause was a stale alias ("Josh Mahura" → "Joshua Mahura"); the code fix `77a6e7592` ships in the next release.
+    - Re-fetches ran on TJ's localhost:3000 against production, through the shared NST admission. 11-07 completed (20 datasets). 11-12 was partial: a dev-server error, `writePersistence not_confirmed`, and the failed write committed nothing. Narrow re-runs of 11-12 evenStrength and penaltyKill then completed.
+    - About 38 NST requests in total, within every window. Mahura now has 16/16 non-PP rows on 11-07 and 11-12, and NST matches WGO at 14 games.
+  - **Noted:** nearly all 2020-21 to 2022-23 WGO rows lack game identity, so other call-ups may trip WiGO the same way. That's a wider backfill, recorded as a ticket.
