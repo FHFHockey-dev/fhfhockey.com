@@ -7,6 +7,8 @@ import {
   computeStrengthSplitConversionRates,
 } from "./calculators/skater-adjustments";
 import { SKATER_GOAL_CONVERSION_PRIORS } from "./constants/projection-weights";
+import type { SkaterAvailability } from "./skaterCoverage";
+import type { timeAwayDisclosure } from "./timeAwayDecay";
 import type { LeaguePhysicalTotals, RollingRow } from "./types/run-forge-projections.types";
 import { clamp, computeShotsFromRate, finiteOrNull } from "./utils/number-utils";
 
@@ -26,8 +28,10 @@ export function forgeReservePassEnabled(env: Readonly<Record<string, string | un
 /** Even-strength seconds for a skater with no recorded even-strength time: a 4th-line forward or 3rd-pair defenceman. */
 export const RESERVE_ROLE_DEFAULT_TOI_ES_SECONDS = { F: 620, D: 900 } as const;
 
-/** Why the run left him out of its lineup (skaters) or starter slot (goalies). Evidence, not a probability. */
-export type ReserveReason = "not_in_lineup" | "ruled_out" | "hard_stale" | "missing_recent_metrics" | "backup_goalie";
+/** Why the run left him out of its lineup (skaters) or starter slot (goalies). Evidence, not a probability.
+ * `scratched_not_expected_to_dress`: a SCRATCH roster event for this very game (decision 31); his line stays "if he plays". */
+export type ReserveReason = "not_in_lineup" | "ruled_out" | "scratched_not_expected_to_dress" | "hard_stale"
+  | "missing_recent_metrics" | "backup_goalie";
 
 /** The lineup pass's own even-strength and power-play scoring environment for this team and game (per game, before
  * horizon scaling). A reserve's assists come from it as they do for lineup skaters, but it is never changed. */
@@ -66,10 +70,12 @@ export function buildReserveSkaterLine(args: {
   });
   const sogEs = clamp(computeSkaterShotRatePer60({ position, strength: "es", shotsAll: ev?.shots_total_all,
     ratePer60All: resolveNullableCompatibilityValue("weighted_rate", ev?.sog_per_60_all, ev?.sog_per_60_avg_all),
-    shotsRecent: ev?.shots_total_last5, toiRecentSeconds: ev?.toi_seconds_total_last5 }) * context.shotRateMultiplier, 1.5, 20);
+    shotsRecent: ev?.shots_total_last5, toiRecentSeconds: ev?.toi_seconds_total_last5,
+    toiSecondsAll: ev?.toi_seconds_total_all }) * context.shotRateMultiplier, 1.5, 20);
   const sogPp = clamp(computeSkaterShotRatePer60({ position, strength: "pp", shotsAll: pp?.shots_total_all,
     ratePer60All: resolveNullableCompatibilityValue("weighted_rate", pp?.sog_per_60_all, pp?.sog_per_60_avg_all),
-    shotsRecent: pp?.shots_total_last5, toiRecentSeconds: pp?.toi_seconds_total_last5 }) * context.shotRateMultiplier, 2, 28);
+    shotsRecent: pp?.shots_total_last5, toiRecentSeconds: pp?.toi_seconds_total_last5,
+    toiSecondsAll: pp?.toi_seconds_total_all }) * context.shotRateMultiplier, 2, 28);
   const shotsEs = computeShotsFromRate(toiEs, sogEs), shotsPp = computeShotsFromRate(toiPp, sogPp);
   const n = (value: number | null | undefined) => finiteOrNull(value) ?? 0;
   const split = computeStrengthSplitConversionRates({
@@ -119,23 +125,30 @@ export function selectReserveSkaters(args: {
 type RowScope = { runId: string; asOfDate: string; horizonGames: number; gameId: number; playerId: number; teamId: number; opponentTeamId: number };
 const fixed = (value: number, digits = 3) => Number(value.toFixed(digits));
 
-/** forge_reserve_projections row for a skater, scaled to the horizon like lineup rows. Never a lineup-table row. */
+/** forge_reserve_projections row for a skater, scaled to the horizon like lineup rows. Never a lineup-table row.
+ * Availability (skaterAvailabilityForGame) and time away (timeAwayDisclosure) are states beside his "if he plays" line,
+ * never folded into it (decision 132.2/132.3); the row's participation probability stays null (no qualified model). */
 export function buildReserveSkaterRow(scope: RowScope & { reason: ReserveReason; line: ReserveSkaterLine; horizonScalar: number;
-  evidence?: { availabilityEventId: number | string | null; latestMetricDate: string | null } }) {
-  const { line, horizonScalar: k } = scope;
+  evidence?: { availabilityEventId: number | string | null; latestMetricDate: string | null };
+  availability?: SkaterAvailability; timeAway?: ReturnType<typeof timeAwayDisclosure> }) {
+  const { line, horizonScalar: k, availability } = scope;
+  // Decision 31: a scratch for this game is labelled as such; availability carries his 0 expected for this game.
+  const reason: ReserveReason = availability?.state === "confirmed_out" && availability.event_type === "SCRATCH"
+    && availability.game_id === scope.gameId ? "scratched_not_expected_to_dress" : scope.reason;
   return {
     run_id: scope.runId, as_of_date: scope.asOfDate, horizon_games: scope.horizonGames, game_id: scope.gameId,
     player_id: scope.playerId, team_id: scope.teamId, opponent_team_id: scope.opponentTeamId,
-    player_class: "skater" as const, conditioning: "if_dressed" as const, reserve_reason: scope.reason, model_version: FORGE_RESERVE_MODEL_VERSION,
+    player_class: "skater" as const, conditioning: "if_dressed" as const, reserve_reason: reason, model_version: FORGE_RESERVE_MODEL_VERSION,
     proj_toi_es_seconds: Math.round(line.toiEs * k), proj_toi_pp_seconds: Math.round(line.toiPp * k),
     proj_shots_es: fixed(line.shotsEs * k), proj_shots_pp: fixed(line.shotsPp * k),
     proj_goals_es: fixed(line.goalsEs * k), proj_goals_pp: fixed(line.goalsPp * k),
     proj_assists_es: fixed(line.assistsEs * k), proj_assists_pp: fixed(line.assistsPp * k),
     proj_hits: fixed(line.hits * k), proj_blocks: fixed(line.blocks * k),
     proj_shots_against: null, proj_saves: null, proj_goals_allowed: null, proj_shutout_prob: null,
-    uncertainty: { conditioning: "if_dressed", participation_probability: null, reserve_reason: scope.reason,
+    uncertainty: { conditioning: "if_dressed", participation_probability: null, reserve_reason: reason,
       toi_basis: line.toiBasis, sample_weight: line.sampleWeight, excluded_from_team_totals: true,
-      availability_event_id: scope.evidence?.availabilityEventId ?? null, latest_metric_date: scope.evidence?.latestMetricDate ?? null },
+      availability_event_id: scope.evidence?.availabilityEventId ?? null, latest_metric_date: scope.evidence?.latestMetricDate ?? null,
+      availability: availability ?? null, time_away: scope.timeAway ?? null },
     updated_at: new Date().toISOString(),
   };
 }
