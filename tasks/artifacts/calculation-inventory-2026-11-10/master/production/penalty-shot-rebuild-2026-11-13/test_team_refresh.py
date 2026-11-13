@@ -5,6 +5,7 @@ import glob
 import importlib.util
 import json
 import os
+import sys
 import tempfile
 import unittest
 
@@ -157,6 +158,85 @@ class ResumeEvidence(unittest.TestCase):
         later = tr.write_evidence(tr.evidence_path("team-before", G, "json"), "{}")
         self.assertNotEqual(later, path)
         self.assertEqual(tr.authority_file("team-before", G, "json"), path)
+
+
+class ResumeExecutePath(unittest.TestCase):
+    """A3-02 closing bar: main(--execute) on a resume leaves the completed game's evidence byte-identical and
+    adds files only for the pending game. Every DB, HTTP and clock touchpoint is stubbed."""
+
+    STUBBED = ("OUT", "DONE", "APPROVED", "MANIFEST", "PAUSE_S", "guard", "window_gate", "deployment_problems",
+               "manifest_problems", "read_secret", "official_for", "post", "stored_rows")
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="tr-resume-")
+        self.saved = {name: getattr(tr, name) for name in self.STUBBED}
+        self.saved_argv = sys.argv
+
+    def tearDown(self):
+        for name, value in self.saved.items():
+            setattr(tr, name, value)
+        sys.argv = self.saved_argv
+
+    def test_resume_touches_only_the_pending_game(self):
+        completed, pending = (2026020094, 55, "save"), (2026020131, SHOOTER, "goal")
+        tr.MANIFEST = [completed, pending]
+        tr.OUT = self.tmp
+        tr.DONE = os.path.join(self.tmp, "team-refresh.done")
+        tr.APPROVED = os.path.join(self.tmp, "team-diff-approved.json")
+        tr.PAUSE_S = 0
+        with open(tr.DONE, "w") as f:
+            f.write(f"{completed[0]}\n")
+        originals = {
+            os.path.join(self.tmp, f"team-before-{completed[0]}.json"): "legacy rows of the completed game\n",
+            os.path.join(self.tmp, f"team-before-{completed[0]}-20261113T190000Z-111-01.json"): "true pre-write rows\n",
+        }
+        for path, text in originals.items():
+            with open(path, "w") as f:
+                f.write(text)
+
+        diffs = game_diffs(pending[0], SHOOTER, OPP, goal=True)
+        with open(tr.APPROVED, "w") as f:
+            json.dump({"body": {"diffs": diffs}}, f)
+        before = {(d["team_id"], d["strength"], d["score_state"]): {k: v["stored"] for k, v in d["changes"].items()}
+                  for d in diffs}
+        before[(SHOOTER, "evenStrength", "allScores")] = {"sf": 23, "gf": 4}
+        after = {key: dict(row) for key, row in before.items()}
+        for d in diffs:
+            after[(d["team_id"], d["strength"], d["score_state"])].update({k: v["rebuilt"] for k, v in d["changes"].items()})
+
+        calls, reads, written = [], [], {"done": False}
+        tr.guard = lambda: None
+        tr.window_gate = lambda tag: None
+        tr.deployment_problems = lambda: ("sha", [])
+        tr.manifest_problems = lambda: []
+        tr.read_secret = lambda: "secret"
+        tr.official_for = lambda g: {SHOOTER: (24, 5), OPP: (26, 2)}
+
+        def post(query, secret):
+            calls.append(query)
+            if query.get("dryRun") == "false":
+                written["done"] = True
+                return 0.1, {"success": True, "dryRun": False, "rowsUpserted": 140, "rowsGenerated": 140, "staleKeyCount": 0}
+            return 0.1, {"success": True, "dryRun": True, "rowsUpserted": 0, "diffs": copy.deepcopy(diffs), "staleKeys": []}
+        tr.post = post
+
+        def stored_rows(g):
+            reads.append(g)
+            return copy.deepcopy(after if written["done"] else before)
+        tr.stored_rows = stored_rows
+
+        sys.argv = ["team-refresh.py", "--execute"]
+        tr.main()
+
+        for path, text in originals.items():
+            self.assertEqual(open(path).read(), text)
+        self.assertEqual(sorted(glob.glob(os.path.join(self.tmp, f"*{completed[0]}*"))), sorted(originals))
+        self.assertEqual(len(glob.glob(os.path.join(self.tmp, f"team-before-{pending[0]}-*.json"))), 1)
+        self.assertEqual(len(glob.glob(os.path.join(self.tmp, f"team-after-{pending[0]}-*.json"))), 1)
+        self.assertNotIn(completed[0], reads)
+        self.assertTrue(all(q["gameIds"] == str(pending[0]) for q in calls))
+        self.assertEqual([q.get("dryRun") for q in calls], [None, "false"])
+        self.assertEqual(open(tr.DONE).read().split(), [str(completed[0]), str(pending[0])])
 
 
 if __name__ == "__main__":
