@@ -8,6 +8,11 @@ import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import {
+  NHL_GAME_STATES,
+  normalizeNhlGameScheduleState,
+  normalizeNhlGameState,
+} from "lib/games/gameFinality";
 
 const boundedScheduleRequest = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -109,6 +114,35 @@ async function updateBoundedSchedule(req: NextApiRequest & { supabase: typeof su
   } finally { clearTimeout(timer); }
 }
 
+/**
+ * One `games` row from a club-schedule game. The NHL game state and schedule
+ * state are stored as observed at `observedAt` (contract nhl-game-state-v1);
+ * values outside the known vocabulary are stored as NULL (unknown).
+ */
+export function toGamesRow(game: any, seasonId: number, observedAt: string) {
+  const gameState = normalizeNhlGameState(game.gameState);
+  const gameScheduleState = normalizeNhlGameScheduleState(game.gameScheduleState);
+  return {
+    id: game.id,
+    date: game.gameDate,
+    seasonId,
+    startTime: game.startTimeUTC,
+    type: game.gameType,
+    homeTeamId: game.homeTeam.id,
+    awayTeamId: game.awayTeam.id,
+    game_state: gameState,
+    game_schedule_state: gameScheduleState,
+    game_state_observed_at:
+      gameState == null && gameScheduleState == null ? null : observedAt,
+  };
+}
+
+/** Both clubs' schedules list a game; keep the copy furthest along (FINAL over LIVE). */
+function gameStateRank(game: any): number {
+  const state = normalizeNhlGameState(game?.gameState);
+  return state == null ? -1 : NHL_GAME_STATES.indexOf(state);
+}
+
 async function getScheduleSeasonId(): Promise<number> {
   const current = await getCurrentSeason();
   const endDate = current.seasonEndDate?.slice(0, 10);
@@ -161,9 +195,14 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
       );
     }
 
+    // Every schedule has been fetched, so each state was current at or before this time.
+    const observedAt = new Date().toISOString();
     const gamesMap: any = {};
     games.forEach((game) => {
-      gamesMap[game.id] = game;
+      const previous = gamesMap[game.id];
+      if (!previous || gameStateRank(game) >= gameStateRank(previous)) {
+        gamesMap[game.id] = game;
+      }
     });
 
     games = Object.values(gamesMap);
@@ -173,19 +212,16 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
       (game) => teamIds.has(game.homeTeam.id) && teamIds.has(game.awayTeam.id)
     );
 
+    const rows = games.map((game: any) => toGamesRow(game, seasonId, observedAt));
+    const unknownGameStates = [...new Set(games.flatMap((game: any) => [
+      game.gameState != null && normalizeNhlGameState(game.gameState) == null ? `gameState ${game.gameState}` : [],
+      game.gameScheduleState != null && normalizeNhlGameScheduleState(game.gameScheduleState) == null
+        ? `gameScheduleState ${game.gameScheduleState}` : [],
+    ].flat()))];
+
     await supabase
       .from("games")
-      .upsert(
-        games.map((game: any) => ({
-          id: game.id,
-          date: game.gameDate,
-          seasonId,
-          startTime: game.startTimeUTC,
-          type: game.gameType,
-          homeTeamId: game.homeTeam.id,
-          awayTeamId: game.awayTeam.id
-        }))
-      )
+      .upsert(rows)
       .throwOnError();
 
     res.status(200).json({
@@ -194,12 +230,15 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
         `${games.length} games in ${seasonId}.`,
       success: true,
       partialFailures: failedTeams.length,
-      warnings:
-        failedTeams.length > 0
-          ? failedTeams.map(
-              (failure) => `${failure.abbreviation}: ${failure.message}`
-            )
-          : []
+      gameStateObservedAt: observedAt,
+      warnings: [
+        ...failedTeams.map(
+          (failure) => `${failure.abbreviation}: ${failure.message}`
+        ),
+        ...unknownGameStates.map(
+          (value) => `Unknown NHL ${value} stored as NULL (finality unknown)`
+        )
+      ]
     });
   } catch (e: any) {
     console.error(e);

@@ -411,6 +411,13 @@ describe("StartChartPage", () => {
     expect(normalizeStartChartResponse(buildApiData()).forecastAdmission).toBeUndefined();
   });
 
+  it("carries the team-form CTPI version label through the contract and keeps it unknown when absent", () => {
+    const labelled = normalizeStartChartResponse({ ...buildApiData(), sourceStatus: { ...readySourceStatus,
+      ctpi: { ...readySourceStatus.ctpi, ctpiVersion: 2, label: "Recent Team Form v2 (candidate until validated)" } } });
+    expect(labelled.sourceStatus.ctpi).toMatchObject({ ctpiVersion: 2, label: "Recent Team Form v2 (candidate until validated)" });
+    expect(normalizeStartChartResponse(buildApiData()).sourceStatus.ctpi).toMatchObject({ ctpiVersion: null, label: null });
+  });
+
   it("explains withheld forecasts without claiming publication or inventing values", () => {
     swrState.data = normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2,
       games: [{ id: 1001, date: "2026-02-07", homeTeamId: 10, awayTeamId: 8 }],

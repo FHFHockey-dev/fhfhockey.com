@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  normalizeCtpiResponse,
   normalizeGoalieResponse,
   normalizeSkaterTrendResponse,
   normalizeStartChartResponse,
@@ -15,6 +16,35 @@ describe("dashboard normalizers", () => {
     expect(toFiniteNumber(undefined)).toBeNull();
     expect(toFiniteNumber("")).toBeNull();
     expect(toFiniteNumber("0")).toBe(0);
+  });
+
+  it("keeps unknown Recent Team Form components unknown instead of zero", () => {
+    const normalized = normalizeCtpiResponse({
+      generatedAt: "2026-11-12T23:59:59.999Z",
+      dateUsed: "2026-11-12",
+      teams: [
+        {
+          team: "MTL",
+          ctpiVersion: 2,
+          ctpi_0_to_100: 61.2,
+          offense: null,
+          defense: -0.4,
+          luck: null,
+          sparkSeries: [{ date: "2026-11-12", value: 61.2 }],
+        },
+      ],
+    });
+
+    expect(normalized.teams).toEqual([
+      {
+        team: "MTL",
+        ctpi_0_to_100: 61.2,
+        offense: null,
+        defense: -0.4,
+        luck: null,
+        sparkSeries: [{ date: "2026-11-12", value: 61.2 }],
+      },
+    ]);
   });
 
   it("normalizes sustainability payloads while dropping incomplete rows", () => {

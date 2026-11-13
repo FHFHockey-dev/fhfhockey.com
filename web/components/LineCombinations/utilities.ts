@@ -208,9 +208,9 @@ export async function getLineCombinations(
       Array.from(playerId_Info.entries())
     );
 
-    // Decision 107/137 switch: observed 5v5 units, off until the
-    // team_unit_toi rebuild. Both games must have 5v5 rows, so promotions and
-    // demotions never compare a 5v5 board with an all-strength one.
+    // Decision 107/137 switch: observed 5v5 units. Both games must have
+    // complete 5v5 rows, so promotions and demotions never compare a 5v5 board
+    // with an all-strength one; otherwise the labelled legacy grouping stays.
     let lineSource: LineSource = "all_strength_legacy";
     if (options.fiveOnFive ?? LINES_FIVE_ON_FIVE_ENABLED) {
       const { data: unitRows } = await supabase

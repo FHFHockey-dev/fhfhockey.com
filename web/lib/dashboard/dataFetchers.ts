@@ -5,6 +5,7 @@ import type { TrendCategoryId } from "../trends/teamMetricConfig";
 import type { GoalieTrendCategoryId } from "../trends/goalieMetricConfig";
 import type { RequestedDateServingState } from "./freshness";
 import { getTeamMetaByAbbr, getTeamMetaById } from "./teamMetadata";
+import type { SosBucketV2 } from "../trends/strengthOfSchedule";
 
 // Trends dashboard aggregate fetchers.
 // Pass-4 FORGE audit result: this file is still live through the older Trends
@@ -65,14 +66,20 @@ export type SosResponse = {
     partial: boolean;
   };
   warnings: string[];
+  /** descriptive-sos-v2 labels (absent on the empty fallback). */
+  sosVersion?: string;
+  pastView?: string;
+  cutoffAt?: string | null;
   teams: Array<{
     team: string;
     teamId: number;
     date: string;
-    past: { wins: number; losses: number; otl: number; winPct: number };
-    future: { wins: number; losses: number; otl: number; winPct: number };
-    combinedWinPct: number;
-    sosScore: number;
+    cutoffAt: string;
+    version: string;
+    past: SosBucketV2 & { pendingFixtures: number };
+    future: SosBucketV2;
+    combinedWinPct: number | null;
+    sosScore: number | null;
   }>;
 };
 

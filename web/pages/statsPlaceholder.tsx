@@ -11,15 +11,18 @@ import { Team } from "lib/NHL/types";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
 import supabase from "lib/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import GoalieTrends from "components/TeamLandingPage/goalieTrends";
 
 import { fetchAllRows } from "utils/fetchAllRows";
-import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import {
-  buildCanonicalSosRankings,
+  buildCanonicalSosRankingsV2,
+  TEAM_SOS_READER_COLUMNS,
   type CanonicalSosRanking,
-  type SosStandingRow,
+  type TeamSosReaderRow,
 } from "lib/trends/strengthOfSchedule";
+import { DESCRIPTIVE_SOS_VERSION } from "lib/trends/strengthOfScheduleContract";
+import { TEAM_SOS_TABLE } from "lib/trends/teamSosSnapshot";
 
 type StatsProps = {
   teams: Team[];
@@ -310,27 +313,37 @@ export async function getStaticProps() {
     mode: "current-canonical",
   });
 
-  // 2. Fetch only that season, using deterministic pagination.
-  let sosStandingsData: SosStandingRow[] = [];
+  // 2. Latest descriptive-sos-v2 snapshot for that season (v1 sos_standings
+  //    rows are issued history and are not served).
+  let sosRows: TeamSosReaderRow[] = [];
+  // team_sos_daily joins the generated types once its migration is applied.
+  const sosDb = supabase as unknown as SupabaseClient<any>;
   try {
-    sosStandingsData = await fetchAllSupabasePages<SosStandingRow>(
-      ({ from, to }) =>
-        supabase
-          .from("sos_standings")
-          .select(
-            "season_id,team_id,team_name,team_abbrev,game_date,past_opponent_total_wins,past_opponent_total_losses,past_opponent_total_ot_losses,future_opponent_total_wins,future_opponent_total_losses,future_opponent_total_ot_losses",
-          )
-          .eq("season_id", currentSeason.seasonId)
-          .order("game_date", { ascending: true })
-          .order("team_id", { ascending: true })
-          .range(from, to),
-    );
+    const latest = await sosDb
+      .from(TEAM_SOS_TABLE)
+      .select("snapshot_date")
+      .eq("season_id", currentSeason.seasonId)
+      .eq("sos_version", DESCRIPTIVE_SOS_VERSION)
+      .order("snapshot_date", { ascending: false })
+      .limit(1);
+    if (latest.error) throw latest.error;
+    const snapshotDate = latest.data?.[0]?.snapshot_date;
+    if (snapshotDate) {
+      const snapshot = await sosDb
+        .from(TEAM_SOS_TABLE)
+        .select(TEAM_SOS_READER_COLUMNS)
+        .eq("season_id", currentSeason.seasonId)
+        .eq("sos_version", DESCRIPTIVE_SOS_VERSION)
+        .eq("snapshot_date", snapshotDate);
+      if (snapshot.error) throw snapshot.error;
+      sosRows = (snapshot.data as unknown as TeamSosReaderRow[]) ?? [];
+    }
   } catch (error) {
-    console.error("Unable to load current-season sos_standings data.", error);
+    console.error("Unable to load current-season team SOS (v2) data.", error);
   }
 
-  if (!sosStandingsData || sosStandingsData.length === 0) {
-    console.error("No sos_standings data found.");
+  if (sosRows.length === 0) {
+    console.error("No descriptive-sos-v2 snapshot found.");
     return {
       props: {
         teams,
@@ -344,7 +357,7 @@ export async function getStaticProps() {
 
   // 3. Canonical team membership owns identity and excludes retired IDs.
   const { past: pastSoSRankings, future: futureSoSRankings } =
-    buildCanonicalSosRankings(sosStandingsData, teams);
+    buildCanonicalSosRankingsV2(sosRows, teams);
 
   // 4. Fetch Power Rankings from Supabase
   const powerRankingsData = await fetchAllRows<any>(

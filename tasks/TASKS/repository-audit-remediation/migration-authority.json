@@ -1017,10 +1017,10 @@
       "path": "supabase/migrations/20261027090000_forge_reserve_projections.sql",
       "sha256": "1ca5816e835da899833499cc95d345a9253227ea176898c1ca2ba382fdd55da8",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "feature",
       "rolloutGate": "FORGE reserve pass (TJ pop-up 2026-10-26: separate table; commits 074694095, a02159b64): creates forge_reserve_projections, with RLS public read, SELECT only for anon/authenticated after revoke all, and service_role read/write. Written and read only behind forgeReservePassEnabled() (off). Apply before turning the flag on (C7 R43 N1). Hosted apply needs TJ's separate explicit approval; no migration command was run.",
-      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Receipt: tasks/artifacts/forge-week-coverage-2026-10-26/RESERVE-PASS-RECEIPT.md; review C7 R43."
+      "stateEvidence": "Production schema_migrations version 20261027090000 (forge_reserve_projections); applied 2026-11-13 05:39Z by the fix-sprint Chef with TJ's pop-up approval ('Table now, flag next release'), psql -1 via the IPv4 session pooler (the file has set local lock 5s / statement 30s and no begin/commit), exact file (sha256 matches this row); ledger row inserted (statements null). Pre-apply: 0 active queries. Readback: table forge_reserve_projections, 28 columns, RLS on, 1 policy (public_read select), indexes pkey + idx_forge_reserve_projections_run + idx_forge_reserve_projections_player, anon/authenticated SELECT only. Empty table; FORGE_RESERVE_PASS_ENABLED stays unset until it ships with a release."
     },
     {
       "order": 102,
@@ -1237,20 +1237,20 @@
       "path": "supabase/migrations/20261109210000_wgo_skater_stats_team_date_index.sql",
       "sha256": "90fc0a155976709ea5ce19d60b9bb2c0890b1eaf527e440060c37c54bb58c205",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "performance",
       "rolloutGate": "Adds idx_wgo_skater_stats_team_date (team_abbrev, date) so the player page's box-score coverage read (team_abbrev = X and date in a season of dates) stops hitting the 3 s statement timeout. Needs TJ's pop-up approval; apply by hand with the CONCURRENTLY form in the file header (not inside a transaction), check indisvalid, then record the ledger row.",
-      "stateEvidence": "Not applied. Drafted 2026-11-09 after edge/postgres logs showed about 30 statement timeouts 14:12-20:22 UTC on wgo_skater_stats coverage and variance reads. Read-only EXPLAIN 2026-11-09: coverage plan is an index scan on idx_wgo_skater_stats_date filtering team_abbrev; no index leads on team_abbrev (2,257,972 rows, 2.2 GB heap). Diary: tasks/diaries/2026-11-09-claude-wgo-skater-timeouts.md."
+      "stateEvidence": "Production schema_migrations version 20261109210000 (wgo_skater_stats_team_date_index); applied 2026-11-13 07:02Z by the fix-sprint Chef with TJ's pop-up approval ('All steps now'), as the rolloutGate specifies: `set statement_timeout='15min'` then `create index concurrently if not exists idx_wgo_skater_stats_team_date on public.wgo_skater_stats (team_abbrev, date)`, separate statements outside a transaction via the IPv4 session pooler. Built in 37 s; pre-build 0 active queries and 0 lock/IO waits. Readback: indisvalid=t, indisready=t, 17 MB. Ledger row inserted (statements null). Rollback: drop index concurrently."
     },
     {
       "order": 124,
       "path": "supabase/migrations/20261109213000_line_source_observed_at_indexes.sql",
       "sha256": "e33c8a67d8aa2e5dbfd70cfa6877a941e87de2cdbb63789bf34f1879ce26211f",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "performance",
       "rolloutGate": "Adds line_source_snapshots_observed_at_idx and lines_ccc_observed_at_idx (observed_at desc) so the auto-news-feed review sync's newest-500 reads are index scans instead of full scans and sorts. Needs TJ's pop-up approval; the plain form runs through apply_migration, or apply by hand with the CONCURRENTLY form in the file header (not inside a transaction), check indisvalid, then record the ledger row.",
-      "stateEvidence": "Not applied. Drafted 2026-11-09 after /api/v1/db/auto-news-feed-items failed at 16:00 UTC: postgres log 'canceling statement due to statement timeout' on the sync's line_source_snapshots read ordered by observed_at desc limit 500 (7,505 rows, 55 MB; no index serves that order; lines_ccc has none either). Verified on local PostgreSQL 15 with supabase/tests/line_source_observed_at_indexes.py (8/8): seq scan + sort before, index scan after, re-applies, CONCURRENTLY header form builds valid indexes."
+      "stateEvidence": "Production schema_migrations version 20261109213000 (line_source_observed_at_indexes); applied 2026-11-13 06:57Z by the fix-sprint Chef with TJ's pop-up approval ('All steps now'), psql -1 via the IPv4 session pooler (file sets local lock 5s / statement 60s), exact file (sha256 matches this row), 2 s. Pre-apply 1 active query. Readback: line_source_snapshots_observed_at_idx (192 kB) and lines_ccc_observed_at_idx (88 kB) both indisvalid and indisready. Ledger row inserted (statements null)."
     },
     {
       "order": 125,
@@ -1441,6 +1441,36 @@
       "migrationClass": "feature",
       "rolloutGate": "Owner decision 138 (TJ pop-up 2026-11-13), successor to order 133 (applied): wgo_skater_stats_per_game and wgo_goalie_stats_per_game replace 133's interim NULL for multi-team seasons with GP / games available, the team-of-record-by-date denominator: per-game rows between the season's startDate and regularSeasonEndDate split into team stints (a stint starts at the player's first game for the team; the first at the season start); each closed stint counts its team's regular-season games in the stint, the open last stint its team's season GP so far minus games before the stint. NULL when a stint's team is unknown or there are no per-game rows (rule 13). Single-team values, detection, columns, order and types unchanged; the denominator runs only in the multi-team branch through index probes (no seq scan of wgo_skater_stats). Readers: PlayerPickupTable GP%, radar. Math-audit follow-up lane L4a; source only. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval, run its READBACK (bounded, with EXPLAIN), then record schema_migrations and flip this row. Rollback: supabase/tests/l4a_percent_games_tor_rollback.sql (restores the 133 views).",
       "stateEvidence": "Production schema_migrations version 20261113090100 (percent_games_team_of_record_by_date); applied 2026-11-13 00:51Z by the fix-sprint Chef with TJ's pop-up approval ('After the rebuild'), psql via the IPv4 session pooler, exact file (sha256 matches this row), one transaction (file's own begin/commit, lock_timeout 5s); ledger row inserted (statements null). Pre-apply: 1 active query. Readback: viewdef md5 wgo_skater_stats_per_game 8439080aaa8c5b470e860da11634c232 -> c87747fda6e086d6fbeb6e33e5b7e1a1, wgo_goalie_stats_per_game e01bb14b9295005cee25ea93df5a864e -> 9af2ec8ba56dbd4aed3a122afad20e16. 2025-26 multi-team skaters percent_games NULL -> 8470621 0.8675 (72 GP), 8473422 0.6667 (54), 8474568 0.6250 (50); 8473507 and 8474102 stay NULL (no team match, rule 13); single-team control 8478402 1.0000 unchanged."
+    },
+    {
+      "order": 144,
+      "path": "supabase/migrations/20261113160000_team_ctpi_daily_v2_publication.sql",
+      "sha256": "5c6e7cea335e2a0c85895dc9fb2bb4b7c85e56ea60f308120badd42e2d749eb4",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "CTPI v2 publication (math-audit follow-up lane F1; BA W1-4 A, rule 21): team_ctpi_daily gains ctpi_version smallint NOT NULL (existing rows labelled 1 through the add-time default, which is then dropped; CHECK 1 or 2) and the primary key becomes (season_id, team, date, ctpi_version), so the daily writer issues Recent Team Form v2 rows (recent-team-form-v2-candidate-2, pooled PP/PK, decision 20) beside the frozen v1 rows. Also drops NOT NULL on offense, defense, goaltending, special_teams and luck (same statements as order 56, whose state is unknown) and adds trigger team_ctpi_daily_v1_frozen (fhfh_internal.reject_ctpi_v1_write: v1 insert or update refused, 55000). No row value changes; RLS, policy, grants and indexes unchanged. Apply before the release that ships the v2 writer; until then the v1 writer's run fails closed (42P10, no writes). Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval, run its READBACK, then record schema_migrations and flip this row. Rollback: supabase/tests/f1_ctpi_v2_publication_rollback.sql (refuses while any v2 row is stored; leaves the components nullable).",
+      "stateEvidence": "Production schema_migrations version 20261113160000 (team_ctpi_daily_v2_publication); applied 2026-11-13 13:16:37Z by the fix-sprint Chef with TJ's pop-up approval ('Yes, after trend bands'), psql -f via the IPv4 session pooler (file has its own begin/commit, lock 5s / statement 60s), exact file (sha256 matches this row), 2 s. Pre-apply 0 active queries; team_ctpi_daily N=9489. Readback: ctpi_version smallint NOT NULL with no default; offense/defense/goaltending/special_teams/luck nullable; team_ctpi_daily_ctpi_version_check CHECK (ctpi_version = ANY (ARRAY[1, 2])); team_ctpi_daily_pkey PRIMARY KEY (season_id, team, date, ctpi_version); trigger team_ctpi_daily_v1_frozen; ctpi_version 1 = 9489 rows. Ledger row inserted."
+    },
+    {
+      "order": 145,
+      "path": "supabase/migrations/20261113170000_team_sos_daily_v2.sql",
+      "sha256": "f2dcd5ca8bfbb6869c874f3992ec5f073c65e7ad8c69826d5900be9bef79675b",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "SOS v2 storage (math-audit follow-up lane F2; decision 21, rule 21): creates public.team_sos_daily keyed (season_id, snapshot_date, team_id, sos_version) for descriptive-sos-v2 written by /api/v1/db/update-team-sos (past = final results observed before cutoff_at; started or postponed fixtures in pending_games; opponents' records exclude head-to-head; win% and points%, direct and indirect, as means over fixtures). CHECKs: values in [0, 1] (NaN refused), support <= fixtures, snapshot_date = America/New_York date of cutoff_at, jsonb arrays. RLS, public_read policy, anon/authenticated SELECT and service_role CRUD as on sos_standings. Adds trigger sos_standings_v1_frozen (fhfh_internal.reject_sos_v1_write: insert or update refused, 55000) so v1 history stays as issued. No existing row value changes. Apply on the day of the release that ships the v2 writer and readers (with the landing reader switch); until that release the v1 writer's run fails closed (55000, no writes). Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval, run its READBACK, then record schema_migrations and flip this row. Rollback: supabase/tests/f2_team_sos_daily_v2_rollback.sql (refuses while any v2 row is stored).",
+      "stateEvidence": "Production schema_migrations version 20261113170000 (team_sos_daily_v2); applied 2026-11-13 13:16:47Z by the fix-sprint Chef with TJ's pop-up approval ('Yes, after trend bands'), psql -f via the IPv4 session pooler (file has its own begin/commit, lock 5s / statement 30s), exact file (sha256 matches this row), 1 s. Pre-apply sos_standings N=15680, max game_date 2026-11-13. Readback: team_sos_daily_pkey PRIMARY KEY (season_id, snapshot_date, team_id, sos_version); RLS on; grants anon SELECT, authenticated SELECT, service_role DELETE,INSERT,SELECT,UPDATE; trigger sos_standings_v1_frozen; sos_standings 15680 / 2026-11-13 unchanged; team_sos_daily 0 rows. Ledger row inserted."
+    },
+    {
+      "order": 146,
+      "path": "supabase/migrations/20261113180000_games_game_state.sql",
+      "sha256": "beb5e13955111836ce224fb4ecd4817577a89d407c3217c883b5a9be9a904878",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Stored game state for game finality (math-audit follow-up lane F4; rule 19, L2 W2-3 D7): public.games gains nullable game_state (NHL gameState FUT, PRE, LIVE, CRIT, FINAL, OFF), game_schedule_state (OK, TBD, PPD, SUSP, CNCL) and game_state_observed_at (set exactly when either state is set), with CHECKs games_game_state_check, games_game_schedule_state_check and games_game_state_observed_at_check. NULL means unknown. Written by /api/v1/db/update-games from the NHL club schedules (unknown NHL values stored as NULL, so the CHECKs never fail a schedule run); read by the underlying-stats landing and detail readers under contract nhl-game-state-v1 (web/lib/games/gameFinality.ts), which fall back, labelled, to start + 8 h only while the state is unknown or a non-final state is stale. No default, so the column adds are catalog-only; no row value, trigger, RLS, policy, grant or view change. Apply before the release that ships the F4 ingester and readers (they select and write the new columns); then backfill with one update-games run for the current season (32 club-schedule GETs, as the 03:00 UTC cron) and one ?seasonId=<id> run per earlier season the landing serves. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval, run its READBACK, then record schema_migrations and flip this row. Rollback: supabase/tests/f4_games_game_state_rollback.sql (revert the F4 code first).",
+      "stateEvidence": "Production schema_migrations version 20261113180000 (games_game_state); applied 2026-11-13 13:16:56Z by the fix-sprint Chef with TJ's pop-up approval ('Yes, after trend bands'), psql -f via the IPv4 session pooler (file has its own begin/commit, lock 5s / statement 30s), exact file (sha256 matches this row), 2 s. Pre-apply games N=29802. Readback: game_schedule_state text, game_state text, game_state_observed_at timestamptz, all nullable; CHECKs games_game_schedule_state_check, games_game_state_check, games_game_state_observed_at_check; 29802 rows, 0 observed until the first update-games run. Ledger row inserted."
     }
   ],
   "sourceExtensionApproval": {

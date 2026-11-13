@@ -6,10 +6,11 @@
  * disjoint units; each player occupies one slot, and units are chosen
  * greedily by shared 5v5 TOI so the board reads as a line chart.
  *
- * Serving waits on the production `team_unit_toi` rebuild, so the switch is
- * off and Lines keeps the labelled all-strength legacy grouping until then.
+ * The switch is on: Lines reads the observed 5v5 units, and a team keeps the
+ * labelled all-strength legacy grouping only when either of its two latest
+ * games has no complete `team_unit_toi` rows.
  */
-export const LINES_FIVE_ON_FIVE_ENABLED = false;
+export const LINES_FIVE_ON_FIVE_ENABLED = true;
 
 export type FiveOnFiveUnitType = "forward_line" | "defense_pair";
 

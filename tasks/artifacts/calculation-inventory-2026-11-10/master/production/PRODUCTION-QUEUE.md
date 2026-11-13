@@ -167,3 +167,54 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - 142: v2_skill nullable numeric plus CHECK; composite_skill_score unchanged.
 - 143: viewdefs replaced. Traded skaters' percent_games went from NULL to GP / games available, e.g. 0.8675, 0.6667, 0.6250. Two players with no team match stay NULL (rule 13); the single-team control stays 1.0.
 - Ledger rows inserted for both. Authority now has 106 applied and 9 pending.
+
+## Release #432 and DB incident 2, 2026-11-13
+- Release #432 (TJ pop-up "Push and merge", after Codex's H1 handback):
+  - Branch pushed 01:47:04Z; no build or checks at ~100 s. PR #432 squash-merged 01:48:52Z as master e1ab46318 (tree = candidate 10bec8b32).
+  - fhfhockey dpl_7MEwsPkGHYco15B5jwjyLoDoubjU READY 01:55:24Z and auto-aliased; cms, functions and fhfhockey.com CANCELED.
+- Smoke: healthz 200 (0.13 s); `/` timed out at 45 s, so the smoke stopped there.
+- **DB hang:** Postgres logs stop at 01:55:12Z, right after "checkpoint starting: time". The previous checkpoint wrote for 270 s. Connections via the session pooler fail ("authentication did not complete within 15000ms", then "{:error, :timeout}"). The control plane says ACTIVE_HEALTHY.
+  - Starter-board audits fail from 01:56:39 ("Audit acknowledgement timed out").
+  - Rolling recompute call 21 (started 01:55:25) got a 504 at 240 s; the runner stopped itself at 01:59:25 (cursor 8478831; calls 1–20 at 200).
+  - Release #432 wrote nothing to the DB.
+- Probable cause: sustained write load tonight on a burst I/O budget, the same pattern as 11-12. Contributors: 2025-26 goalie rebuild, migrations, rolling recompute (~1,000 rows per 100 s plus jsonb support payloads), Codex H1.
+- TJ: "Wait and watch". One short probe per minute for up to 10 min, nothing else against the DB.
+- **Recovery:** Postgres restarted at 02:00:46Z (`pg_postmaster_start_time`). Logs show "not accepting connections" at 02:00:46, then pg_cron restarted at 02:00:49. No PANIC or OOM line in the Supabase log stream. Probe at 02:03:58: up, not in recovery. Hang lasted 01:55:12–02:00:46 (~5.5 min).
+- Smoke (budget 5) after recovery: `/` 200 0.87 s, `/drm` 200 0.32 s, `/game-grid` 307 (redirect to the default view).
+- octoberBranch ours-merge 7f3e6ae09 (tree unchanged) pushed 02:04:45Z; no-build watch running.
+- Rolling recompute paused at cursor 8478831: 280 of 764 skaters written (calls 1–20 at 200). Call 21 (12 players) is uncertain, but it is idempotent upserts, so a resume from 8478831 redoes it. Resuming needs TJ's re-approval, as after 11-12.
+- 02:08:28Z: TJ restarted the database from the Supabase dashboard (`pg_postmaster_start_time` 02:08:28). At 02:08:44: up, not in recovery, 0 active queries. The rolling recompute is still paused at cursor 8478831; TJ will resume it with the slower steps (8 players per call, 60 s gaps).
+- 03:57Z: 2026-27 rolling recompute complete (L6 fixes): 764 skaters × 5 strengths, 10,727 rows each through 11-11, every sampled payload on the L6 shape. Details in FORGE-INPUTS-PLAN-2026-11-13.md. Queue step 5 is done: holds recorded only (TJ), rolling rebuilt, trend v3 forward-only via job 392 (TJ: keep v2 history).
+
+## Reserve projections table (queue 11), 2026-11-13 05:39Z (TJ pop-up "Table now, flag next release")
+- Migration 20261027090000 (authority 101) applied with `psql -1` (the file sets local timeouts and has no begin/commit); sha256 matches. Pre-check: 0 active queries.
+- Readback: `forge_reserve_projections`, 28 columns, RLS on, 1 select policy, pkey plus 2 indexes, anon/authenticated SELECT only. Ledger row inserted. Authority now has 107 applied and 8 pending.
+- `FORGE_RESERVE_PASS_ENABLED` stays unset until it ships with the next release.
+
+## Early run of approved steps, 2026-11-13 ~06:57–07:05Z (TJ: "All steps now", before the 08:00Z cron window)
+- **Index 124** applied in 2 s (`psql -1`, file sha matches authority). `line_source_snapshots_observed_at_idx` (192 kB) and `lines_ccc_observed_at_idx` (88 kB) are valid and ready. Ledger row inserted.
+- **Power ratings v3:** 45 one-day calls (09-29 → 11-12), all 200, about 1–4 s each, 32 upserts per day, no guard waits. Readback: 1,440 rows, all `team-power-v3-all-team-baseline-prior-after-norm-pooled-st`, 32 teams. The legacy and v2 rows were replaced.
+- **xG champion demotion (decision 5):**
+  - Backup: `xg-demotion-2026-11-13/registry-backup.json` (2 rows) and `aggregate-counts.txt` (team-game 2,772, goalie-game 2,922, player-game 42,236, team-rolling 8,316, all cfg9bac2706).
+  - At 07:01:40Z, one transaction set `logistic_l2-s20252026-p1-st1-f1-cfg9bac2706` to `is_active=false`, `is_champion=false`, `approval_status='retired'`; `model_approved` is kept.
+  - Readers (3 GETs): team-timeline `model:null` (`no_active_approved_model`), xG Lab `modelVersion:null` with 0 rows, homepage 200 with no reference to the model. The FORGE prior (env pin unset) is unaffected.
+  - Rollback: restore the row from the backup.
+- **Index 123** at 07:02:13–07:02:50Z: `create index concurrently` on `wgo_skater_stats (team_abbrev, date)` with `statement_timeout=15min`, run alone and outside a transaction. Built in 37 s. Readback: valid, ready, 17 MB. Ledger row inserted. Authority rows 123 and 124 are applied; counts are now 109 applied, 9 pending, 28 unknown.
+- **Remaining:** the dry runs (rankings, composites, team_unit_toi, trend bands) in the 08:20–09:25Z gap; the WiGO check after the 08:50Z cron; the pipeline check at 11:01Z.
+- **Dry runs** at 07:03–07:05Z, all 200, no DB load:
+  - rankings: 50,320 rows, 14.7 s;
+  - composites: `publication.ready`, 764 candidates, 13.2 s;
+  - team_unit_toi sample 11-01..04: 24 games, 3,054 rows;
+  - trend bands, 10 players: 8,160 bands, 2.4 s.
+- **Composites v3 published** at 07:05:55Z (TJ "Publish now"): 764 rows, snapshot 11-11, `contextual_composites_v3`. BEAST tiers (5v5 season): BEAST+ 2, BEAST 24, MCM 53, Watch 63, against the simulation's 2/30/49/67.
+- **Rankings written** at 07:06Z (TJ "Write now"): 50,320 upserts in 41 s; snapshot 11-11 has 12,580 rows in each of the season, last_5, last_10 and last_20 windows.
+- **team_unit_toi rebuilt** at 07:07–07:08Z (TJ "Rebuild now"): new snapshot 2026-11-13 in 12 four-day batches, all 200. 39,506 rows over 299 games: 37,863 complete and 1,643 partial.
+  - The partial rows are 13 games with `goalie_shift_missing_seconds` between 2 and 46. The L5b builder labels these honestly; the old 11-08 snapshot called everything complete.
+  - Lane F3's Lines 5v5 switch (ff873398d) can now ship.
+- **Trend bands:** later, paced (TJ), after the 11:01Z check: about 10 players per call with 60 s gaps, avoiding 11:15–11:40Z.
+- **WiGO check** (read 11:02Z): pg_cron 231 ran 08:50:01–08:51:52Z (111 s, no budget stop). It processed 988 of the 990 listed players and upserted 1,976 rows (2 per player).
+  - Of `wigo_career`'s 7,845 rows, the other ~5,870 belong to players outside the current list, so they are not rewritten daily; the "all rows fresh" expectation in the plan was wrong.
+  - Audit status is `failure` because the fixed writer rejected 2 players for `missing_identity`: Glenn Gawdin 8478446 (2022-11-12) and Ben McCartney 8481827 (2021-11-06). Their `wgo_skater_stats` rows have no team, opponent or game id. The writer keeps them unwritten by design; their old `wigo_career` rows stay. A 2-row WGO repair would clear it (needs TJ).
+- **Pipeline check at 11:01Z** (`daily_incremental:2026-11-13`): all 11 stages `complete` by 10:46:19Z. Stage 2 `upstream_skater_sources` completed at 10:07:53 (the a25f3f542 fix, released in #432, held). FORGE runs `succeeded` for 11-13, 11-14 and 11-15 (created 10:20–10:31). Rolling has 396 rows per strength for game date 11-12.
+  - `update-nst-gamelog` (10:05:29–10:06:12) logged `failure`: 395 players and 6,688 rows landed, but 1 troublesome player made 16 of 20 datasets `parse_or_identity_unresolved`. The player is Josh Mahura 8479372 (SEA D): WGO has 14 games, NST has 12, missing 11-07 and 11-12. The 11-08 run (game date 11-07) failed the same way. The players table has one Mahura row, so NST is likely listing him under a different name or provider id on those dates. Follow-up: identity alias, no NST calls made.
+- **Trend bands** started as a paced background run (TJ "Later, paced"): `trend-bands-2026-11-13/trend-bands-history.py`, from 11:41Z, 769 players at 10 per call, 60 s gaps, pause 11:58–12:08Z for job 392, stops on any non-200, per-player error, call over 60 s or guard failure. Table: `sustainability_trend_bands`, 5.2 GB, ~11.0M rows before the run.

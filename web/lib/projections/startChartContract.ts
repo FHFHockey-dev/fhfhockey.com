@@ -38,6 +38,9 @@ export type StartChartSourceStatus = {
   };
   ctpi: StartChartSourceStatusEntry & {
     throughDate: string | null;
+    /** CTPI version the rows were selected by, and its label (null when unknown). */
+    ctpiVersion: number | null;
+    label: string | null;
     formulaVersion: string | null;
     inputVersion: string | null;
     trustedRows: number;
@@ -781,6 +784,8 @@ export function normalizeStartChartResponse(payload: unknown): StartChartRespons
           ? normalizeSourceEntry(ctpiSource)
           : defaultSource(false)),
         throughDate: stringOrNull(ctpiSource.throughDate),
+        ctpiVersion: finiteOrNull(ctpiSource.ctpiVersion),
+        label: stringOrNull(ctpiSource.label),
         formulaVersion: stringOrNull(ctpiSource.formulaVersion),
         inputVersion: stringOrNull(ctpiSource.inputVersion),
         trustedRows: finiteOrNull(ctpiSource.trustedRows) ?? 0,

@@ -3,10 +3,13 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import {
-  computeSosRatings,
-  type SosRating,
-  type SosStandingRow
+  computeSosRatingsV2,
+  TEAM_SOS_READER_COLUMNS,
+  type SosRatingV2,
+  type TeamSosReaderRow
 } from "lib/trends/strengthOfSchedule";
+import { DESCRIPTIVE_SOS_VERSION } from "lib/trends/strengthOfScheduleContract";
+import { TEAM_SOS_PAST_VIEW, TEAM_SOS_TABLE } from "lib/trends/teamSosSnapshot";
 import { ACTIVE_TEAM_ABBREVIATIONS } from "lib/trends/teamMetricConfig";
 
 dotenv.config({ path: "./../../../.env.local" });
@@ -19,35 +22,31 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
-const SOS_TABLE = "sos_standings";
 
-async function fetchLatestRows(
-  seasonId: number
-): Promise<SosStandingRow[] | null> {
-  // Get the latest game_date for this season
+const SOS_DEFINITION =
+  "Mean over fixtures of opponents' win% (W / GP), excluding games against the team. Past counts final games only, with opponents' records as of the cutoff; started or postponed games are pending, never played. Future uses opponents' records to date.";
+
+/** Latest descriptive-sos-v2 snapshot; v1 sos_standings rows are not served. */
+async function fetchLatestRows(seasonId: number): Promise<TeamSosReaderRow[]> {
   const { data: latestDateData, error: latestErr } = await supabase
-    .from(SOS_TABLE)
-    .select("game_date")
+    .from(TEAM_SOS_TABLE)
+    .select("snapshot_date")
     .eq("season_id", seasonId)
-    .order("game_date", { ascending: false })
+    .eq("sos_version", DESCRIPTIVE_SOS_VERSION)
+    .order("snapshot_date", { ascending: false })
     .limit(1);
-  if (latestErr) {
-    console.error("sos latest date error", latestErr);
-    return null;
-  }
-  const latestDate = latestDateData?.[0]?.game_date as string | undefined;
-  if (!latestDate) return null;
+  if (latestErr) throw latestErr;
+  const latestDate = latestDateData?.[0]?.snapshot_date as string | undefined;
+  if (!latestDate) return [];
 
   const { data, error } = await supabase
-    .from(SOS_TABLE)
-    .select("*")
+    .from(TEAM_SOS_TABLE)
+    .select(TEAM_SOS_READER_COLUMNS)
     .eq("season_id", seasonId)
-    .eq("game_date", latestDate);
-  if (error) {
-    console.error("sos rows error", error);
-    return null;
-  }
-  return (data as SosStandingRow[]) ?? null;
+    .eq("sos_version", DESCRIPTIVE_SOS_VERSION)
+    .eq("snapshot_date", latestDate);
+  if (error) throw error;
+  return (data as unknown as TeamSosReaderRow[]) ?? [];
 }
 
 export default async function handler(
@@ -65,97 +64,67 @@ export default async function handler(
   try {
     const season = await fetchCurrentSeason();
     const seasonId = season.id;
+    const labels = {
+      sosVersion: DESCRIPTIVE_SOS_VERSION,
+      pastView: TEAM_SOS_PAST_VIEW,
+      definition: SOS_DEFINITION
+    };
 
     const rows = await fetchLatestRows(seasonId);
-    if (!rows || rows.length === 0) {
+    if (rows.length === 0) {
       return res.status(200).json({
         seasonId,
+        ...labels,
         generatedAt: new Date().toISOString(),
         dateUsed: null,
+        cutoffAt: null,
         coverage: {
           expectedTeams: ACTIVE_TEAM_ABBREVIATIONS.length,
           teamCount: 0,
           sourceRowCount: 0,
           partial: true
         },
-        warnings: ["Strength-of-schedule data is unavailable for this season."],
-        message:
-          "No strength-of-schedule data available (sos_standings empty for this season).",
+        warnings: [
+          "Strength of schedule (descriptive-sos-v2) has not been computed for this season yet."
+        ],
+        message: "No descriptive-sos-v2 snapshot for this season.",
         teams: []
       });
     }
 
-    const ratings: SosRating[] = computeSosRatings(rows);
-    const dateUsed = String(rows[0]?.game_date ?? "").slice(0, 10) || null;
+    const ratings: SosRatingV2[] = computeSosRatingsV2(rows);
+    const dateUsed = String(rows[0]?.snapshot_date ?? "").slice(0, 10) || null;
+    const cutoffAt = rows[0]?.cutoff_at ?? null;
     const partial = ratings.length < ACTIVE_TEAM_ABBREVIATIONS.length;
+    const pending = ratings.reduce((sum, r) => sum + r.past.pendingFixtures, 0);
+    const warnings = [
+      ...(partial ? ["Strength-of-schedule team coverage is incomplete."] : []),
+      ...(pending > 0
+        ? [
+            `${pending} team-games started before the cutoff without a final result are pending and not counted as past.`
+          ]
+        : [])
+    ];
 
-    // Optional debugging: expose distribution stats when debug query flag is set.
     const debugStats = (() => {
-      const summarize = (values: number[]) => {
-        const filtered = values.filter((v) => Number.isFinite(v));
+      const summarize = (values: Array<number | null>) => {
+        const filtered = values.filter(
+          (v): v is number => typeof v === "number" && Number.isFinite(v)
+        );
         if (filtered.length === 0) return null;
-        const min = Math.min(...filtered);
-        const max = Math.max(...filtered);
-        const avg =
-          filtered.reduce((sum, v) => sum + v, 0) / filtered.length;
+        const avg = filtered.reduce((sum, v) => sum + v, 0) / filtered.length;
         return {
-          min: Number(min.toFixed(3)),
-          max: Number(max.toFixed(3)),
+          min: Number(Math.min(...filtered).toFixed(3)),
+          max: Number(Math.max(...filtered).toFixed(3)),
           avg: Number(avg.toFixed(3)),
           count: filtered.length
         };
       };
-
-      const totals = ratings.reduce(
-        (acc, r) => {
-          acc.pastWins += r.past.wins;
-          acc.pastLosses += r.past.losses;
-          acc.pastOtl += r.past.otl;
-          acc.futureWins += r.future.wins;
-          acc.futureLosses += r.future.losses;
-          acc.futureOtl += r.future.otl;
-          return acc;
-        },
-        {
-          pastWins: 0,
-          pastLosses: 0,
-          pastOtl: 0,
-          futureWins: 0,
-          futureLosses: 0,
-          futureOtl: 0
-        }
-      );
-      const pastGames = totals.pastWins + totals.pastLosses + totals.pastOtl;
-      const futureGames =
-        totals.futureWins + totals.futureLosses + totals.futureOtl;
-
-      const aggregate = {
-        past: {
-          wins: totals.pastWins,
-          losses: totals.pastLosses,
-          otl: totals.pastOtl,
-          games: pastGames,
-          winPct: pastGames > 0 ? Number((totals.pastWins / pastGames).toFixed(3)) : null
-        },
-        future: {
-          wins: totals.futureWins,
-          losses: totals.futureLosses,
-          otl: totals.futureOtl,
-          games: futureGames,
-          winPct:
-            futureGames > 0
-              ? Number((totals.futureWins / futureGames).toFixed(3))
-              : null
-        }
-      };
-
       const summary = {
         pastWinPct: summarize(ratings.map((r) => r.past.winPct)),
         futureWinPct: summarize(ratings.map((r) => r.future.winPct)),
-        combinedWinPct: summarize(ratings.map((r) => r.combinedWinPct)),
-        aggregate
+        combinedWinPct: summarize(ratings.map((r) => r.combinedWinPct))
       };
-
       if (debug) {
         console.log("[SOS] debug summary", JSON.stringify(summary));
       }
@@ -165,19 +134,17 @@ export default async function handler(
     res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
     return res.status(200).json({
       seasonId,
-      generatedAt: dateUsed
-        ? `${dateUsed}T23:59:59.999Z`
-        : new Date().toISOString(),
+      ...labels,
+      generatedAt: cutoffAt ?? new Date().toISOString(),
       dateUsed,
+      cutoffAt,
       coverage: {
         expectedTeams: ACTIVE_TEAM_ABBREVIATIONS.length,
         teamCount: ratings.length,
         sourceRowCount: rows.length,
         partial
       },
-      warnings: partial
-        ? ["Strength-of-schedule team coverage is incomplete."]
-        : [],
+      warnings,
       teams: ratings,
       ...(debug ? { debug: debugStats } : {})
     });

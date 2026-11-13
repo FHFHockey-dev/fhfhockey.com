@@ -30,6 +30,13 @@ import {
   RECENT_TEAM_FORM_V2_CANDIDATE_PUBLICATION_STATUS,
   RECENT_TEAM_FORM_V2_MATERIALIZATION_CONTRACT_VERSION,
 } from "./recentTeamFormV2Materialization";
+import {
+  CTPI_SERVED_VERSION,
+  CTPI_VERSION_CONTRACTS,
+  CTPI_WRITER_VERSION,
+  isTrustedCtpiPayload,
+  parseCtpiVersion,
+} from "./ctpiVersions";
 
 function teamGame(
   team: string,
@@ -569,5 +576,52 @@ describe("Recent Team Form v2 materialization contract", () => {
         computedAt: "2026-02-05T12:00:00.000Z",
       }),
     ).toThrow("is not finite");
+  });
+});
+
+describe("CTPI version contracts", () => {
+  const payload = (version: 1 | 2, publicationStatus: string) => ({
+    publicationStatus,
+    formulaVersion: CTPI_VERSION_CONTRACTS[version].formulaVersion,
+    inputVersion: CTPI_VERSION_CONTRACTS[version].inputVersion,
+    sourceGameCount: 10,
+  });
+
+  it("names the exact formula and input of each version; the writer and readers use v2", () => {
+    expect(CTPI_VERSION_CONTRACTS[1]).toMatchObject({
+      formulaVersion: RECENT_TEAM_FORM_FORMULA_VERSION,
+      inputVersion: RECENT_TEAM_FORM_INPUT_VERSION,
+      sourceCutoff: "games_through_date",
+    });
+    expect(CTPI_VERSION_CONTRACTS[2]).toMatchObject({
+      formulaVersion: RECENT_TEAM_FORM_V2_CANDIDATE_FORMULA_VERSION,
+      inputVersion: RECENT_TEAM_FORM_V2_CANDIDATE_INPUT_VERSION,
+      sourceCutoff: "games_before_date",
+    });
+    expect([CTPI_WRITER_VERSION, CTPI_SERVED_VERSION]).toEqual([2, 2]);
+  });
+
+  it("trusts only approved rows of the selected version; candidate v2 stays gated", () => {
+    const approved = RECENT_TEAM_FORM_APPROVED_PUBLICATION_STATUS;
+    expect(isTrustedCtpiPayload(payload(2, approved), 2)).toBe(true);
+    expect(isTrustedCtpiPayload(payload(1, approved), 1)).toBe(true);
+    expect(isTrustedCtpiPayload(payload(1, approved), 2)).toBe(false);
+    expect(isTrustedCtpiPayload(payload(2, approved), 1)).toBe(false);
+    expect(
+      isTrustedCtpiPayload(
+        payload(2, RECENT_TEAM_FORM_V2_CANDIDATE_PUBLICATION_STATUS),
+        2,
+      ),
+    ).toBe(false);
+    expect(
+      isTrustedCtpiPayload({ ...payload(2, approved), sourceGameCount: 0 }, 2),
+    ).toBe(false);
+    // The game model's v1-only predicate never admits v2.
+    expect(isTrustedRecentTeamFormPayload(payload(2, approved))).toBe(false);
+  });
+
+  it("parses only the two stored versions", () => {
+    expect([parseCtpiVersion("1"), parseCtpiVersion(["2"]), parseCtpiVersion(2)]).toEqual([1, 2, 2]);
+    expect([parseCtpiVersion("3"), parseCtpiVersion(""), parseCtpiVersion(undefined)]).toEqual([null, null, null]);
   });
 });
