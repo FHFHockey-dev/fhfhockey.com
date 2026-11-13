@@ -35,6 +35,14 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 - Checks: getPowerPlayBlocks + update-power-play-combinations + projections/ingest 205/205 passed; ESLint exit 0; `npm run typecheck` exit 0.
 - Gotcha: two existing counts drop (checkedEvents 3→2 and 6→5) because period-end codes are no longer checked; expected C2 effect.
 
+## Decision 151 follow-up (O1 counts + O4 HTML check)
+- Scope: report 2026-27 reg team-games passing the clock check apart from those that can display PP share (numerator: shifts ∩ qualified intervals, no unit time above the clock; never cap). O4: fetch only the five NHL Game Summary pages (Penalty Summary) for the scrum games, read-only, 10 s apart; explain each; keep raw totals; no tolerance change, repairs or enablement.
+- Numerator source checked: the rolling reader would use `powerPlayCombinations` (PPTOI, unit, pp_share_of_team) built by update-power-play-combinations from getPowerPlayBlocks; count both the recomputed shifts ∩ spans and the stored rows.
+- O4 done: 5 nhl.com requests, 10 s apart, all HTTP 200 (budget used; no further calls). In all five the clock equals the Penalty Summary total to the second; the stored right-rail total is the outlier (−28, +120, −94, −31, +120). Stays withheld; nothing changed.
+- O1 done: 2026-27 reg 616/618 pass the clock check (607 with PP + 9 N/A); 607/607 can display with shifts ∩ qualified intervals; 591/607 from stored powerPlayCombinations (16 stale or above the clock, 14 games; 2026020197 t24 49 s > 43 s).
+- Gotcha: shift rows have no position; goalies = any shift ≥ 300 s (575 one, 32 two). Stored rows exclude goalies.
+- Files: 12–15 scripts, REPORT §9, `results/after-c1-c2/{o4-penalty-summary-check.csv, share-coverage-*}`. Raw HTML stays in scratch.
+
 ## Next
 Chef routes owner items O1–O4 and code items C1, C2, C4–C7 (REPORT.md) to owning lanes. No production step from this lane.
 

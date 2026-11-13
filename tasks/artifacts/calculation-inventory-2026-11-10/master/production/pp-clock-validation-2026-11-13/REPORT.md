@@ -174,7 +174,78 @@ A (game, team) PP clock qualifies for display when all of these hold:
 - C1: 2026020036 home qualifies, and away is withheld at +28 s. 2025020665 is a placeholder on both sides. Tolerance, missing, malformed and official-zero variants run on 2026020093.
 - Each fixture is the game's penalties, goals, period markers, the events the old audit flagged, and one interior event per PP span; each rebuilds the full game's spans exactly. All 16 new or changed tests fail on the previous module.
 
+## 9. Decision 151: O1 counts and the O4 Penalty Summary check
+
+TJ decided O1–O4 on 2026-11-13 (decision 151). PP share stays withheld; nothing here enables it, and no raw total was changed.
+
+### O1: the clock check vs PP share that can display (2026-27 regular season, `14-share-coverage.ts`)
+
+| Stage | Team-games |
+|---|---|
+| Clock check passes (complete PBP, audit 0, within 2 s inclusive of a verified official total) | **616 of 618** |
+| – with PP time | 607 |
+| – verified zero ("not applicable") | 9 |
+| Clock withheld (2026020036 t68, 2026020153 t9; see O4) | 2 |
+| **PP share can display, numerator = player shifts ∩ qualified intervals** | **607 of 607** |
+| PP share can display from today's stored numerator (`powerPlayCombinations`) | 591 of 607 |
+
+- **Recomputed numerator (decision 144's definition):** stored shift rows ∩ the clock's spans for that team.
+  - Shift normalization is complete in all 309 games. Every team-game has at least 3 skater-seconds per clock second (the route's own rule, `MIN_SKATERS_PER_PP_SECOND`); the minimum is 3.97.
+  - No player and no stored unit (all members on the ice together) exceeds the clock. Nothing is capped.
+  - Shift rows carry no position, so a player with any shift of 300 s or more counts as a goalie: 575 team-games have one, 32 have two.
+- **Stored numerator** (`powerPlayCombinations`, which the rolling writer reads; 7,190 rows, read under the gate by `12-fetch-pp-combinations.sh`):
+  - Rows exist for all 607. In 16 team-games (14 games) they don't agree with the qualified clock, so those can't display from the table as it stands:
+    - **Above the clock:** 2026020197 t24 stores 49 s of player PP time against a 43 s clock. Under decision 151 that is withheld, never capped or excused by the tolerance.
+    - **Wrong denominator:** 12 have `pp_share_of_team` denominators other than the clock, mostly mixed within one team-game (e.g. 2026020004 t23: 119 s and 240 s). That fits stale rows from an earlier block version kept beside newer ones, because the route keeps rows it can't prove stale.
+    - **PPTOI differs:** 15 have a player PPTOI more than 2 s from shifts ∩ clock (up to 120 s in 2026020192 t2 and 2026020197 t23).
+    - **Missing skaters:** 2026020131 t18 has 5 skaters with PP time and no row, and a 29 s denominator against a 120 s clock.
+  - A reader can display these only after the 14 games' rows are rebuilt (`update-power-play-combinations`, a production write; not done), or by computing shifts ∩ qualified intervals itself.
+- Results: `results/after-c1-c2/share-coverage-2026-27-regular.csv` and `share-coverage-summary.json`.
+
+### O4: NHL HTML Penalty Summaries for the five scrum games
+
+`13-fetch-penalty-summaries.sh` made exactly 5 requests to nhl.com (the Game Summary page that holds the Penalty Summary, the same URL as `lib/NHL/htmlReports.ts`), one at a time, 10 s apart, all HTTP 200. There were no other provider calls and no database writes. `15-parse-penalty-summary.py` reads the pages; the raw HTML stays in scratch. Per-team values are in `results/after-c1-c2/o4-penalty-summary-check.csv`.
+
+| Game | Team | Clock | Stored `teamGameStats` | NHL Penalty Summary (by strength) | Clock − summary | Stored − summary |
+|---|---|---|---|---|---|---|
+| 2026020036 | 68 (away) | 148 s | 02:00, 1/1 | 1-2/02:28 (5v4 1-2/02:28) | **0** | −28 s |
+| 2026020153 | 9 (home) | 626 s | 12:26, 1/9 | 1-7/10:26 (5v4 1-7/10:26) | **0** | +120 s |
+| 2025021248 | 8 (home) | 840 s | 12:26, 0/7 | 0-7/14:00 (5v4 0-6/14:00) | **0** | −94 s |
+| 2025021097 | 20 (home) | 595 s | 09:24, 2/7 | 2-7/09:55 (5v4 1-5/09:35, 5v3 1-1/00:20) | **0** | −31 s |
+| 2025030112 | 6 (away) | 492 s | 10:12, 1/6 | 1-5/08:12 (5v4 1-5/08:09, 5v3 0-1/00:03) | **0** | +120 s |
+
+The goaltender table's PP team totals equal each summary row. The other team in each game matches on all three sources (5/5).
+
+**What each summary explains:**
+- **2026020036 t68:** two Utah power plays.
+  - P1 3:31 interference: 2:00.
+  - P2 14:01: Cuylle's boarding and roughing minors against Sergachev's cross-checking. One pair cancels and the extra minor gives a 5-on-4, which Utah scores on at 14:29 (0:28).
+  - The stored row (1/1, 02:00) leaves out that 28-second power play.
+- **2026020153 t9:** seven power plays, 10:26.
+  - The list has offsetting fighting majors (P1 10:05, P3 2:17) and equal roughing pairs that create no power play (P1 15:32 two each; P3 3:35 two each plus misconducts).
+  - Other entries: a P1 20:00 helmet minor on team 9 carried into P2, and at P3 18:46 two away minors against one home minor (74 s to the end).
+  - The stored row counts 2 more power plays and 2:00 more. These records can't show which ones; a coincidental pair counted as a power play is the likely cause (inference).
+- **2025021248 t8:** no PP goals (0-7), so every power play ran its full length.
+  - 4:00 for the P1 3:48 double minor plus five 2:00 minors = 14:00, which is the clock's six spans.
+  - The scrums at P2 3:33 and P2 17:34 each leave one extra minor. The stored 12:26 is 94 s short.
+- **2025021097 t20:** 09:35 at 5-on-4 plus 0:20 at 5-on-3, the 5-on-3 ending in a goal.
+  - The P3 11:14 interference major (with a hooking minor and a game misconduct) gives team 20 the advantage until a home minor at 14:04 evens it.
+  - The P3 16:39 tripping minor adds the 5-on-3.
+  - The clock's spans (120 + 120 + 99 + 170 + 86) give 09:55. The stored 09:24 is 31 s short.
+- **2025030112 t6 (playoffs):** 08:09 at 5-on-4 plus 0:03 at 5-on-3 (the P1 8:43 and 10:40 minors overlap by 3 s).
+  - The clock's spans (237 + 120 + 15 + 120) give 08:12.
+  - The P3 2:26 scrum (offsetting majors, two visitor minors against one) is a team-7 power play, and P3 6:14 (three each) is coincidental.
+  - The stored row has one more power play and 2:00 more, which the summary doesn't support.
+
+**Verdict:**
+- All five reconcile with the NHL Penalty Summary. The clock equals the summary total to the second, the PBP is complete and the audit finds 0 disagreements.
+- In every case the stored right-rail total is the outlier.
+- Per decision 151 they **stay withheld**: the raw clock and the stored totals are unchanged, and C1 still compares against `teamGameStats`, which disagrees.
+- Releasing them needs an owner call on whether a verified Penalty Summary total can serve as the official reference, and how to record it without overwriting the raw row. That would be a repair; it isn't done here.
+
 ## Open items for the owner (Chef to route)
+
+Decided in decision 151 (2026-11-13): O1 ±2 s inclusive; O2 and O3 stay withheld; O4 read-only check done (section 9). The original wording is kept below.
 
 - **O1. Tolerance.** Rule 4 uses ±2 s; the two cases at 1 s are boundary rounding. The alternative is exact match only, which withholds 2 more team-games (1 of them in 2026-27).
 - **O2. Placeholder seasons.** 2025-26 has 879 team-games with real PP time but no official total. Decision 144 requires the official comparison, so they stay withheld. Qualifying them on complete PBP plus the aligned audit alone would be a new owner decision; repairing them needs a re-fetch, which is out of scope here.
@@ -195,6 +266,10 @@ web/node_modules/.bin/esbuild $D/05-compare-clock.ts --bundle --platform=node --
 node $S/compare.mjs $S/classes-2025-2027.csv $S/pbp $S/out          # → team-game-results.csv, summary.json (results/after-c1-c2 since de4650c77)
 # 06-inspect-games.ts: same build; node inspect.mjs <classes.csv> <pbp_dir> <gameId>...
 # 10-fetch-shifts.sh + 11-shift-numerator-check.ts: same pattern for the numerator check
+# 12-fetch-pp-combinations.sh <classes.csv> 20262027 2 $S/ppcombos  (guarded, read-only)
+# 14-share-coverage.ts: same build; node share.mjs <after-c1-c2/team-game-results.csv> $S/pbp $S/shifts $S/ppcombos results/normalization-status-2025-2027.csv <out>
+# 13-fetch-penalty-summaries.sh $S/o4-html  (exactly 5 nhl.com requests, 10 s apart; decision 151 only)
+# python3 -I 15-parse-penalty-summary.py $S/o4-html/GS-<gameId>.HTM
 ```
 
 Raw PBP and shift pages stay outside the repository (about 550k and 230k rows). Only the per-team-game results and the summaries are committed in `results/`.
