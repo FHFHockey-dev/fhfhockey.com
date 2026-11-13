@@ -180,7 +180,6 @@ class ResumeExecutePath(unittest.TestCase):
         tr.PAUSE_S = 0
         with open(tr.DONE, "w") as f:
             f.write(f"{self.COMPLETED[0]}\n")
-        self.done_bytes = open(tr.DONE, "rb").read()
         self.originals = {
             os.path.join(self.tmp, f"team-before-{self.COMPLETED[0]}.json"): "legacy rows of the completed game\n",
             os.path.join(self.tmp, f"team-before-{self.COMPLETED[0]}-20261113T190000Z-111-01.json"): "true pre-write rows\n",
