@@ -3,9 +3,10 @@
 Status: **Sprint closed, 2026-11-13.**
 - **Closure:** no P0 or P1 is open. Releases through #438 are live, and Astra's audit and all its addenda are complete. Astra's A3 recheck passed both findings at `5fbb2d3a2`.
 - **Penalty shots and power v4:** penalty shots are verified end to end for the 8 games; power v4 is rebuilt and verified.
-- **Two scheduled production checks pending (2026-11-14).** These are post-release checks, not unfinished fixes:
-  1. the first scheduled FORGE reserve rows, from the 10:05Z run;
-  2. cron 283's first scheduled v4 power write, at 10:15Z (05:15 ET).
+- **Scheduled production checks pending (2026-11-14), each verified separately.** These are post-release checks, not unfinished fixes. No manual reruns.
+  1. The first scheduled FORGE reserve rows, from the 10:05Z run.
+  2. **Separately:** which `goalie_start_projections` rows that same FORGE run consumed. #439 (`a448842d1`) went live at 19:41:57Z, before cron 364's 09:30Z write. Compare the run's recorded inputs with those rows' `updated_at` and the 09:30Z audit. This is a possible input change, not a confirmed one.
+  3. Cron 283's first scheduled v4 power write, at 10:15Z (05:15 ET).
 - **Separate tickets, not sprint blockers:**
   - **PP share** stays withheld pending two owner decisions: whether to accept the NHL Penalty Summary as the official reference for 5 games, and whether to rebuild the 14 affected games' stored `powerPlayCombinations` or compute the share from shifts and qualified intervals.
   - **Codex:**
@@ -39,6 +40,7 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
   - #436 (`4b45d8f1a`; social rankings missing-vs-zero, batched Lines reader, PP clock C1/C2).
   - #437 (`b6d43efdc`; penalty-shot split with parity, NST alias fix, CTPI beta same-games label; migration 148 applied before);
   - #438 (`ed2002161`; team summaries count penalty shots; read-only team diff).
+  - #439 (`a448842d1`; goalie item 1: pregame writer inputs and the shared league save % helper from `0e8d377ae`). Afterwards, migration 147 (item 6 nullable placeholders) was applied atomically at 19:45:17Z, ahead of its readers and writer, which ship together in a separate candidate.
 
   Each release was gated in a clean export, built once with three cancels, and passed a 5-GET smoke.
 - **Production on 2026-11-13** (§3, `production/PRODUCTION-QUEUE.md`):

@@ -375,3 +375,57 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - **Readback:** ledger row present. The 5 columns are now nullable (`teamGameStats.powerPlayToi` and the 4 `goaliesGameStats` ratios). One `persist_complete_game_stats_v1` overload: SECURITY INVOKER, `search_path=""`, owner postgres, md5 `72c23e82…` (was `4418a49a…`), all six null checks present once. EXECUTE still only postgres and service_role. Row estimates unchanged.
   - **Authority:** 114 applied / 6 pending.
   - **Not done** (separate approvals): the reader fixes and the nullable writer `c89ff5d24` (readers with or before the writer), and any refresh.
+- **Release #440: item 6 readers and nullable writer** (TJ "Push and merge" after the full gate):
+  - **Candidate** `2681a05bc` on master `a448842d1`: the 16 app files from the composed `a36a878c5` (readers `6eaddbddd` plus writer; the writer files equal `c89ff5d24`), and the baseline test at 147-applied. No SQL; F11's migration excluded.
+  - **Gate:** 209 focused tests; typecheck 0; ESLint 0. Full Vitest 19,901 passed: requestBudget passes 21/21 alone, and the BLSH bootstrap file is export-only. pytest 213.
+  - **Branch** pushed 20:01:47Z; no build at 20:03:21Z.
+  - **PR #440** squash-merged 20:03:36Z as master `70ad65546`, tree identical.
+  - **Build:** fhfhockey completed 20:07:58Z; cms, functions and fhfhockey.com canceled. **Deployed SHA `70ad65546`.**
+  - **Smoke** 5/5 at 200 (20:08:26–27Z): `/` 4.15 s (cold), `/splits` 0.23 s, `/lines` 0.20 s, `/lines/EDM` 0.30 s, `/drm` 0.17 s.
+  - **octoberBranch** `4acd28814` takes the 16 released files (11 related test files, 249 passed). Ours-merge `1bb298b79` pushed 20:08:45Z; no build at 20:10:19Z.
+  - **First natural update-stats-job run after #440** (read-only check, 20:22:31Z): pg_cron job 2 run 239021 succeeded at 20:20:00Z. The audit row at 20:20:02Z is `success`: `attemptedGameIds: []`, `updatedGameIds: []`, so no eligible game. **#440 is live; a nullable write is not yet observed.** No rerun, and the release isn't held open for it.
+- **Decision 152 dry run** (TJ, ~20:25Z): run **locally**, before migration 149 or any release.
+  - It uses the exact candidate code on loopback. Production reads go only through DB-enforced read-only psql sessions (`default_transaction_read_only=on`); there are no writes, audit rows or cron changes. A disposable local PG15 is used if the new schema is needed.
+  - All 309 games run sequentially under the load gate, and all 618 team-games are reconciled. It stops at the first mismatch or unsafe load. The hashed diff goes to TJ.
+  - Cron 388 stays on the old path, or gated off by `PP_STORED_CALCULATION_WRITES_ENABLED` (off), until TJ approves writes.
+  - Then the migration, release and refresh each get their own approval. PP share stays hidden until the refresh and readbacks pass and TJ separately approves serving it.
+  - Assigned to F11 (`local_efbef655`).
+- **Decision 152 local dry run** (TJ-approved, F11 `79f4552e3`, candidate code `8f73d2931`; REPORT §14):
+  - **Export:** read-only, 309 games, 31 batches, load gate before each, ≥5 s apart.
+    - Manifest sha256 `bbcba75c…c145`.
+    - Contents: 99,128 PBP, 231,749 shift (517), 12,360 roster, 618 teamGameStats, 7,190 powerPlayCombinations rows.
+    - No writes, audit rows or cron changes; no NHL/NST calls.
+  - **Dry run:** `dry-run.json` sha256 **`db94a9de864b9dfa8fa69f24c6be9045dd037ed1937393c3b03dd69d9ec4f15c`**. 31 calls, all 200; 309/309 games; 0 failed or skipped.
+  - **Chef's independent reconciliation of the raw file:**
+    - 618 clock rows, all qualified: 609 available, 9 not applicable, 0 unavailable;
+    - **593 available team-games unchanged**;
+    - **16 changed = exactly F11's groups A ∪ B ∪ C** (Part B list, written before this run). The 15 deletions fall only in group A's 11 games, and updates and inserts only in B ∪ C.
+    - Changes: 15 deleted, 23 PP-time/share updates, 5 inserted;
+    - 0 impossible values (share ≤ 1, PPTOI ≤ clock), no rows on a non-available team-game, no unit changes;
+    - the 9 not-applicable team-games have no rows.
+  - **Flagged for TJ:**
+    1. **14 more updates inside the 16:** unit-relative fields only (`pp_unit_relative_toi`, `pp_vs_unit_avg`, `pp_unit_usage_index`/`percentageOfPP`) of teammates in group B's overtime team-games. Their unit averages move when the OT seconds return. Breakdown: 161 t52 ×3, 174 t29 ×6, 192 t2 ×1, 197 t23 ×4. Total updated rows: 37 (23 + 14). `percentageOfPP` is the legacy name for the usage index (it can exceed 1), not a share.
+    2. **Read-only method:** the pooler dropped `PGOPTIONS`, so read-only was enforced in-session: `SET default_transaction_read_only=on` plus `START TRANSACTION READ ONLY`, 10 s timeout. All 31 logs show it on, and a write inside was refused.
+    3. **One earlier probe** created a session-only temporary table outside a read-only transaction. It was dropped at disconnect and touched no stored data.
+  - **Next, each its own TJ approval:**
+    1. migration 149 (`MIGRATION-149-PACKET.md`);
+    2. the writer and registry release with `PP_STORED_CALCULATION_WRITES_ENABLED` off;
+    3. the refresh, bound to `db94a9de…` and with the flag on;
+    4. readbacks;
+    5. serving PP share.
+- **TJ accepted dry-run diff `db94a9de…f15c` as the refresh target**, including the 14 unit-relative-only updates (37 updates in total).
+- **Migration 149 / `20261113220000_pp_team_game_clock`** (TJ "Apply at next window"):
+  - **Preflight** at 20:36:44Z (minute 36):
+    - 0 active, 0 lock waits, 0 locks on `powerPlayCombinations` or `games`, jobs 1/2/388 not running;
+    - no ledger row, no new columns, table or function;
+    - sha256 and shape checked.
+    - Baseline: 47,688 rows, max(created_at) 2026-11-13 08:05:04Z, 11 MB.
+  - **Applied atomically** at 20:36:48Z, in 2 s: the file's statements plus the ledger insert in one transaction.
+  - **Readback:**
+    - ledger row present;
+    - both new columns nullable; provenance CHECK present;
+    - `pp_team_game_clock`: 7 constraints, RLS on, `public_read` SELECT for anon and authenticated, service_role DELETE/INSERT/SELECT/UPDATE (postgres as owner);
+    - one `replace_power_play_game_v1`, invoker, `search_path=""`, `lock_timeout 5s` and `statement_timeout 30s` (as in the file; the packet's expected row omitted these two), EXECUTE service_role only;
+    - `powerPlayCombinations` still 47,688 rows, same max(created_at), 0 stamped; the clock table empty.
+  - **Authority:** 115 applied / 6 pending.
+  - **Next, each its own approval:** the writer and registry release with `PP_STORED_CALCULATION_WRITES_ENABLED` off; then the refresh bound to `db94a9de` with the flag on; then readbacks; then serving PP share.

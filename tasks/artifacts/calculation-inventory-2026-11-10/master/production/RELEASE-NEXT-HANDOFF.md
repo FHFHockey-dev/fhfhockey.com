@@ -71,3 +71,42 @@ Checked:
 3. Then release `c89ff5d24` plus the reader fixes together, with their own gate and pop-up.
    - Readers: Splits and season bootstrap (no known conflict), the Lines utilities (F8 claims released to Codex in `d9123ac86`) and DRM (a regression test).
    - The migration stays held until those readers pass together.
+
+## 7. Item 6 app candidate (built 2026-11-13 ~19:55Z on #439)
+- **Candidate `2681a05bc2d83506999fd0ff44a9ac4199b80e56`** on master `a448842d1` (#439). It takes the composed candidate `a36a878c5`, not `c89ff5d24` alone (TJ).
+- **Contents:**
+  - all 16 app files from `ed2002161..a36a878c5`, each identical to its `a36a878c5` blob: the readers (`6eaddbddd`: Splits server, surface, page and test; season bootstrap; Lines utilities and test; DateRangeMatrix test; the native-input test) and the nullable writer (`a36a878c5`; its writer files equal `c89ff5d24`'s);
+  - the baseline migration test at `d9ac09ca2`, which counts 147 as applied;
+  - `tasks/` records, with diaries at master's.
+- **Out:** F11's migration `20261113220000` and its writer (no `supabase/` change at all), item 2, and the PP clock registry. The migration needs no rerun: 147 was applied at 19:45:17Z.
+- **Gate** (clean export, `$TMPDIR/gate-item6`):
+  - 209 focused tests across the 11 affected files;
+  - typecheck 0; ESLint 0; no `.scss` changes;
+  - full Vitest 19,901 passed. requestBudget is a load flake and passes 21/21 on its own; the BLSH bootstrap file is export-only and unchanged from master.
+  - pytest 213; the 4 export-only git-pin tests are unchanged from master.
+- **Release** (TJ pop-up): 1 fhfhockey build plus 3 cancels expected. Smoke: `/`, `/splits`, `/lines`, `/lines/EDM`, `/drm`.
+- **After release:** the next scheduled `update-stats-job` (*/20) run writes through the nullable writer. Read back read-only that new rows hold null only where the source is unknown, and that readers show those values as unavailable. No manual cron run or refresh.
+
+## 8. Decision 152 writer + registry candidate (prepared offline 2026-11-13 ~20:10Z; not for release yet)
+- **Candidate `3244bc944b7850691826dbf915d0df56dff37336`** on master `70ad65546` (#440).
+- **Contents:** 9 files at their octoberBranch blobs:
+  - F11 Part A `db0310fa3`: `getPowerPlayBlocks.ts` and its test, `ppPenaltySummaryRegistry.ts`;
+  - F11 `2bd7e37e1`: the writer `update-power-play-combinations/[gameId].ts` and its test, migration `20261113220000` (inert file), its proof and rollback, and the baseline test at 149 rows (114 applied / 7 pending);
+  - records, with diaries at master's.
+- **Out:** item 2.
+- **Gate** (`$TMPDIR/gate-pp`):
+  - 133 focused tests, plus 267 tests for the route, cron and pipeline;
+  - typecheck 0; ESLint 0;
+  - PG proof RESULT OK;
+  - full Vitest 19,887 passed. The failures are all known and outside this candidate's files: ArticleReader and BLSH are export-only and pass in the checkout (34/34); requestBudget is a load flake and passes 21/21 alone.
+  - pytest 213 (the 4 export-only git-pin tests).
+- **To be rebuilt before release approval:**
+  1. F11's batch-route dry-run and concurrency change, plus the refresh runner (in progress);
+  2. after migration 149 is applied: authority row 149 applied, baseline test 115/6.
+- **Order** (each its own approval):
+  1. the migration (`pp-clock-validation-2026-11-13/MIGRATION-149-PACKET.md`);
+  2. this release;
+  3. the dry run, whose diff goes to TJ;
+  4. the refresh (`PP-REFRESH-PLAN.md`);
+  5. readbacks;
+  6. TJ's decision to serve PP share.
