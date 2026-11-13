@@ -2299,13 +2299,14 @@ export default function TrendsIndexPage() {
                             </span>
                           </div>
                         </div>
+                        {/* SOS is context, not a rating: neutral pills, no good/bad tone (TJ, decision 146). */}
                         <div className={styles.powerValueCell}>
                           <span
                             title={
                               row.sosPastDetail ||
                               "Past strength of schedule (opponents' points %)"
                             }
-                            className={`${styles.valuePill} ${ratingToneClass(row.sosPastPct)}`}
+                            className={`${styles.valuePill} ${styles.tierNeutral}`}
                           >
                             {formatPct(row.sosPastPct)}
                           </span>
@@ -2316,7 +2317,7 @@ export default function TrendsIndexPage() {
                               row.sosFutureDetail ||
                               "Future strength of schedule (opponents' points %)"
                             }
-                            className={`${styles.valuePill} ${ratingToneClass(row.sosFuturePct)}`}
+                            className={`${styles.valuePill} ${styles.tierNeutral}`}
                           >
                             {formatPct(row.sosFuturePct)}
                           </span>
