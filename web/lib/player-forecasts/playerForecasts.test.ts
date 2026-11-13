@@ -134,13 +134,13 @@ describe("player forecast schedule", () => {
     ]);
   });
 
-  it("uses scheduled UTC day for calendar lead while retaining the source game date", async () => {
+  it("uses the NHL schedule date for calendar lead while retaining the source game date (decision 127)", async () => {
     const game = { id: 7, seasonId: 20262027, date: "2026-09-29",
       startTime: "2026-09-30T00:30:00Z", homeTeamId: 10, awayTeamId: 20, type: 2 };
     const previousUtcDay = buildCalendarGameScopes({ games: [game], now: new Date("2026-09-29T20:00:00Z"), days: 2,
       teamId: 10 });
     expect(previousUtcDay).toMatchObject([{ gameDate: "2026-09-29", scheduledStartAt: "2026-09-30T00:30:00.000Z",
-      calendarLeadDay: 1 }]);
+      calendarLeadDay: 0 }]);
     const query = scopeQuery([game]);
     const supabase = scheduleDb([game], query);
     const nextUtcDay = await planPlayerForecastCalendarWork({ supabase, now: new Date("2026-09-30T00:00:00Z"), days: 1 });
@@ -300,7 +300,7 @@ describe("player forecast schedule", () => {
     expect(upsert).not.toHaveBeenCalled();
     const result = await seedCalendarForgeJobs({ supabase, now: new Date("2026-11-01T10:00:00Z"), dryRun: false, environment });
     expect(result).toMatchObject({ dryRun: false, gameIds: [1], inserted: 1 });
-    expect(result.calendarPolicy).toEqual({ version: "forecast-calendar-v1", calendarDays: 14, overlapDays: 7, timeZone: "UTC" });
+    expect(result.calendarPolicy).toEqual({ version: "forecast-calendar-v2", calendarDays: 14, overlapDays: 7, timeZone: "America/New_York", dateBasis: "nhl_schedule_date" });
     await expect(seedCalendarForgeJobs({ supabase, now: new Date("2026-11-01T10:00:00Z"), dryRun: false,
       days: 21, environment })).rejects.toThrow("configured serving horizon");
     const preview = await seedCalendarForgeJobs({ supabase, now: new Date("2026-11-01T10:00:00Z"),

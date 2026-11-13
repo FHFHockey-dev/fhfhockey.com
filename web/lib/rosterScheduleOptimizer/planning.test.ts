@@ -359,6 +359,8 @@ describe("planning engine", () => {
   });
   it.each([2, 13])("evaluates the entire 1000-player population across %i days with exact full-plan gains", (days) => {
     const data = snapshot();
+    // Midday as-of: at the old 00:00Z (Oct 3 Eastern) the 13th day was lead 14 on NHL schedule dates (decision 127).
+    data.context.asOf = "2026-10-04T12:00:00Z";
     data.context.endDate = new Date(Date.UTC(2026, 9, 4 + days)).toISOString().slice(0, 10);
     data.games = Array.from({ length: days }, (_, index) => {
       const date = new Date(Date.UTC(2026, 9, 5 + index)).toISOString().slice(0, 10);
