@@ -40,6 +40,21 @@ describe("team lines header", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Florida Panthers" })).toBeTruthy();
   });
 
+  it("labels observed 5v5 units when Lines serves them (decision 137)", () => {
+    render(
+      <Header
+        lineSource="five_on_five_observed"
+        teamName="Florida Panthers"
+        teamAbbreviation="FLA"
+        lastUpdated={null}
+        sourceUrl="https://example.invalid/source"
+        onSaveImage={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/most-used 5v5 units, one slot per player/)).toBeTruthy();
+    expect(screen.queryByText(/legacy view/)).toBeNull();
+  });
+
   it("labels the lines as the all-strength legacy grouping (decision 107)", () => {
     render(
       <Header

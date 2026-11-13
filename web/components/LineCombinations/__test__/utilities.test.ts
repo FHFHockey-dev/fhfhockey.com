@@ -258,6 +258,50 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
     expect(beta.last10Games.Record).toBeNull();
   });
 
+  test("with the 5v5 switch on, the board is disjoint observed 5v5 units (decision 137)", async () => {
+    const rows = baseRows();
+    const skaterIds = [11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26];
+    rows.skatersGameStats = skaterIds.map((playerId) => ({
+      playerId, numGames: 1, Goals: 0, Assists: 0, PTS: 0, PPP: 0, Shots: 0, Hits: 0, Blocks: 0,
+      PlusMinus: 0, playerName: `Skater ${playerId}`, toi: "10:00"
+    }));
+    const unitRow = (game_id: number, unit_type: string, player_ids: number[], clockSeconds: number) => ({
+      game_id, team_id: 22, snapshot_date: "2026-11-11", unit_type, player_ids,
+      player_count: player_ids.length, unit_toi_seconds: clockSeconds * player_ids.length,
+      coverage_status: "complete"
+    });
+    rows.team_unit_toi = [101, 102].flatMap((gameId) => [
+      unitRow(gameId, "forward_line", [11, 12, 13], 300),
+      unitRow(gameId, "forward_line", [13, 14, 15], 250),
+      unitRow(gameId, "forward_line", [14, 15, 16], 200),
+      unitRow(gameId, "forward_line", [17, 18, 19], 100),
+      unitRow(gameId, "defense_pair", [21, 22], 200),
+      unitRow(gameId, "defense_pair", [22, 23], 150),
+      unitRow(gameId, "defense_pair", [23, 24], 100),
+      unitRow(gameId, "defense_pair", [25, 26], 50)
+    ]);
+    routeTables(rows, []);
+    const result = await getLineCombinations(22, 20252026, { fiveOnFive: true });
+    const lineIds = (line: { playerId: number }[]) => line.map((player) => player.playerId);
+    expect(result.lineSource).toBe("five_on_five_observed");
+    expect(lineIds(result.forwards.line1)).toEqual([11, 12, 13]);
+    expect(lineIds(result.forwards.line2)).toEqual([14, 15, 16]);
+    expect(lineIds(result.forwards.line3)).toEqual([17, 18, 19]);
+    expect(lineIds(result.defensemen.line1)).toEqual([21, 22]);
+    expect(lineIds(result.defensemen.line2)).toEqual([23, 24]);
+    expect(lineIds(result.defensemen.line3)).toEqual([25, 26]);
+    expect(result.promotions).toEqual([]);
+    expect(result.demotions).toEqual([]);
+  });
+
+  test("with the switch off (default), lines stay the labelled legacy grouping", async () => {
+    fromMock.mockClear();
+    routeTables(baseRows(), []);
+    const result = await getLineCombinations(22, 20252026);
+    expect(result.lineSource).toBe("all_strength_legacy");
+    expect(fromMock).not.toHaveBeenCalledWith("team_unit_toi");
+  });
+
   test("unknown goalie TOI leaves GAA unknown instead of dropping the game", async () => {
     const rows = baseRows();
     rows.goaliesGameStats[1] = { ...rows.goaliesGameStats[1], toi: null };
