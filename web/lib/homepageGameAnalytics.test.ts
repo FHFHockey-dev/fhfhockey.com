@@ -282,6 +282,56 @@ describe("homepage persisted metric pairs (W3-2 A1 matrix)", () => {
     expect(missingBucket.shotsUpdatedAt).toBeUndefined();
   });
 
+  it("counts penalty shots in SOG on split rows and never twice on legacy rows (decision 149)", () => {
+    // Home (6) scored a penalty shot and the away side (3) had one saved.
+    // Legacy rows hold those shots inside ES; split rows hold them in PS.
+    const legacy = merged({
+      strengthRows: [
+        sogRow({ team_id: 3, shots_es: 21, shots_pp: 2, shots_pk: 1 }),
+        sogRow({ team_id: 6, shots_es: 21 }),
+      ],
+    });
+    const split = merged({
+      strengthRows: [
+        sogRow({
+          team_id: 3,
+          shots_es: 20,
+          shots_pp: 2,
+          shots_pk: 1,
+          shots_ps: 1,
+          penalty_shot_split_version: 1,
+        }),
+        sogRow({
+          team_id: 6,
+          shots_ps: 1,
+          penalty_shot_split_version: 1,
+        }),
+      ],
+    });
+    expect(legacy).toMatchObject({ awayShotsOnGoal: 24, homeShotsOnGoal: 25 });
+    expect(split).toMatchObject({ awayShotsOnGoal: 24, homeShotsOnGoal: 25 });
+
+    // A legacy row's stray PS value is ignored; a split row without its PS
+    // count or with an unknown marker is not served.
+    const strayLegacy = merged({
+      strengthRows: [
+        sogRow({ team_id: 3, shots_es: 21, shots_pp: 2, shots_pk: 1, shots_ps: 9 }),
+        sogRow({ team_id: 6, shots_es: 21 }),
+      ],
+    });
+    expect(strayLegacy).toMatchObject({ awayShotsOnGoal: 24, homeShotsOnGoal: 25 });
+    for (const bad of [
+      { shots_ps: null, penalty_shot_split_version: 1 },
+      { shots_ps: 1, penalty_shot_split_version: 2 },
+    ]) {
+      const unserved = merged({
+        strengthRows: [sogRow({ team_id: 3, ...bad }), sogRow({ team_id: 6 })],
+      });
+      expect(unserved.awayShotsOnGoal).toBeUndefined();
+      expect(unserved.homeShotsOnGoal).toBeUndefined();
+    }
+  });
+
   it("never serves one side alone", () => {
     const oneSide = merged({
       strengthRows: [sogRow({ team_id: 6 })],

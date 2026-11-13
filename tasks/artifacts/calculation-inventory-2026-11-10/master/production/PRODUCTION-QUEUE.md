@@ -281,3 +281,24 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     - `/api/team-ratings?date=2026-09-29` serves 22 legacy (source 2026-08-29) + 10 v4.
   - Log (on disk, gitignored): `production/power-g5v5-2026-11-13/run/rebuild-2026-11-13T1646Z.jsonl`. Backups: `run/issued-rows-…tsv` and `run/pre-run-20261113T164613Z.tsv`.
   - Cron 283 writes v4 from 2026-11-14 10:15Z (05:15 ET).
+- **Release #436** (TJ "Push and merge"):
+  - Candidate `353a73a31` on master `6f1cb0767`: F17 `f2df257b6` (social score withholds missing stats), F8 `3e7e42aa4` (batched /lines reader, about 293 → about 10–12 reads per regeneration), F11 `de4650c77` (PP clock C1/C2; PP share still withheld). No migrations; Codex 1/2/6 still held; the beta-card wording fix not yet committed.
+  - Gate:
+    - typecheck 0, ESLint 0 errors;
+    - Vitest 19,807 passed; its failures were the git-dependent files plus requestBudget, which passes 21/21 solo;
+    - the git-dependent files pass 177/177 in the checkout; pytest 217.
+  - Branch pushed 17:13:51Z, with no build at 90 s. PR #436 squash-merged as master `4b45d8f1a`, tree identical to the candidate.
+  - Build: 1 build plus 3 cancels, settled 17:20:16Z.
+  - Smoke 5/5 at 200: `/lines`, `/lines/EDM`, `/api/team-ratings?date=2026-11-12`, `/underlying-stats`, `/`.
+  - octoberBranch `1c8149ff0` pushed 17:20:30Z, with no build.
+- **Data repairs, F18** (TJ approved both by pop-up in the F18 session, about 17:15Z; report `production/data-repairs-2026-11-13/REPORT.md`):
+  - **WGO legacy identity:**
+    - About 17:16Z, a guarded `DO` block set game_id, team, opponent and home/road on exactly **14** `wgo_skater_stats` rows: Gawdin 8478446, 12 rows from 2020–23; McCartney 8481827, 2 rows from 2021.
+    - Sources are 4 NHL game-log GETs. All 14 match on date, TOI, goals, assists and shots. The WiGO frame check is now 0 bad rows.
+    - Fixing only the 2 reported rows would have moved the failure to the next row.
+    - Rollback limit: `game_id` can't return to NULL while the NOT VALID check exists.
+  - **Mahura NST re-fetch:**
+    - The cause was a stale alias ("Josh Mahura" → "Joshua Mahura"); the code fix `77a6e7592` ships in the next release.
+    - Re-fetches ran on TJ's localhost:3000 against production, through the shared NST admission. 11-07 completed (20 datasets). 11-12 was partial: a dev-server error, `writePersistence not_confirmed`, and the failed write committed nothing. Narrow re-runs of 11-12 evenStrength and penaltyKill then completed.
+    - About 38 NST requests in total, within every window. Mahura now has 16/16 non-PP rows on 11-07 and 11-12, and NST matches WGO at 14 games.
+  - **Noted:** nearly all 2020-21 to 2022-23 WGO rows lack game identity, so other call-ups may trip WiGO the same way. That's a wider backfill, recorded as a ticket.

@@ -4004,14 +4004,17 @@ export type Database = {
           goals_es: number | null
           goals_pk: number | null
           goals_pp: number | null
+          goals_ps: number | null
           hits: number | null
           opponent_team_id: number | null
+          penalty_shot_split_version: number | null
           pim: number | null
           player_id: number
           plus_minus: number | null
           shots_es: number | null
           shots_pk: number | null
           shots_pp: number | null
+          shots_ps: number | null
           team_id: number
           toi_es_seconds: number | null
           toi_pk_seconds: number | null
@@ -4029,14 +4032,17 @@ export type Database = {
           goals_es?: number | null
           goals_pk?: number | null
           goals_pp?: number | null
+          goals_ps?: number | null
           hits?: number | null
           opponent_team_id?: number | null
+          penalty_shot_split_version?: number | null
           pim?: number | null
           player_id: number
           plus_minus?: number | null
           shots_es?: number | null
           shots_pk?: number | null
           shots_pp?: number | null
+          shots_ps?: number | null
           team_id: number
           toi_es_seconds?: number | null
           toi_pk_seconds?: number | null
@@ -4054,14 +4060,17 @@ export type Database = {
           goals_es?: number | null
           goals_pk?: number | null
           goals_pp?: number | null
+          goals_ps?: number | null
           hits?: number | null
           opponent_team_id?: number | null
+          penalty_shot_split_version?: number | null
           pim?: number | null
           player_id?: number
           plus_minus?: number | null
           shots_es?: number | null
           shots_pk?: number | null
           shots_pp?: number | null
+          shots_ps?: number | null
           team_id?: number
           toi_es_seconds?: number | null
           toi_pk_seconds?: number | null
@@ -4597,10 +4606,13 @@ export type Database = {
           goals_es: number | null
           goals_pk: number | null
           goals_pp: number | null
+          goals_ps: number | null
           opponent_team_id: number | null
+          penalty_shot_split_version: number | null
           shots_es: number | null
           shots_pk: number | null
           shots_pp: number | null
+          shots_ps: number | null
           team_id: number
           toi_es_seconds: number | null
           toi_pk_seconds: number | null
@@ -4614,10 +4626,13 @@ export type Database = {
           goals_es?: number | null
           goals_pk?: number | null
           goals_pp?: number | null
+          goals_ps?: number | null
           opponent_team_id?: number | null
+          penalty_shot_split_version?: number | null
           shots_es?: number | null
           shots_pk?: number | null
           shots_pp?: number | null
+          shots_ps?: number | null
           team_id: number
           toi_es_seconds?: number | null
           toi_pk_seconds?: number | null
@@ -4631,10 +4646,13 @@ export type Database = {
           goals_es?: number | null
           goals_pk?: number | null
           goals_pp?: number | null
+          goals_ps?: number | null
           opponent_team_id?: number | null
+          penalty_shot_split_version?: number | null
           shots_es?: number | null
           shots_pk?: number | null
           shots_pp?: number | null
+          shots_ps?: number | null
           team_id?: number
           toi_es_seconds?: number | null
           toi_pk_seconds?: number | null

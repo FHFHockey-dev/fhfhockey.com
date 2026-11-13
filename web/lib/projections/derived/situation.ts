@@ -34,6 +34,12 @@ export function parseSituationDigits(
  * team's empty net (5v5 on the clock, opponent goalie pulled) is a power-play
  * goal. Shootout events are not strength events at all; callers must drop them
  * with `isShootoutPlay` before calling this.
+ *
+ * Exposure only (the penalty clock's observed advantage). It answers "es" for a
+ * penalty-shot code (1010 / 0101), so event counting must not use it: the
+ * derived builder classifies events with the shared canonical adapter
+ * `classifyEventStrengthBucket`, which puts penalty shots in no bucket
+ * (decision 149, Astra AF-07).
  */
 export function strengthForTeam(
   digits: SituationDigits,

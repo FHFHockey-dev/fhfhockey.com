@@ -41,7 +41,7 @@ vi.mock("lib/projections/derived/projectionDerivedPersistence", () => ({
   PROJECTION_DERIVED_ALGORITHM_VERSION:
     "projection-derived-materialization-v1",
   readProjectionGameInputManifest: manifestReadMock,
-  persistProjectionGameDerivedV1: persistMock,
+  persistProjectionGameDerivedV2: persistMock,
 }));
 
 vi.mock("lib/supabase/server", () => ({
@@ -150,6 +150,50 @@ describe("/api/v1/db/build-projection-derived-v2", () => {
       emptyNetEvents: 0,
     });
     persistMock.mockResolvedValue(derivedReceipt());
+  });
+
+  it("builds only the requested game on its date (bounded penalty-shot rebuild)", async () => {
+    const other = { ...game, id: game.id + 1 };
+    gamesFetchMock.mockImplementation(async ({ startDate }: any) => [
+      { ...game, date: startDate },
+      { ...other, date: startDate },
+    ]);
+    const res = createMockRes();
+    await handler(
+      {
+        method: "GET",
+        query: { startDate: "2026-10-08", gameId: String(other.id) },
+        body: {},
+      } as any,
+      res,
+    );
+    expect(res.statusCode).toBe(200);
+    expect(persistMock).toHaveBeenCalledTimes(1);
+    expect(persistMock).toHaveBeenCalledWith(
+      expect.objectContaining({ gameId: other.id }),
+    );
+    expect(derivedQueueRangeMock).not.toHaveBeenCalled();
+  });
+
+  it("fails the date without writing when the requested game is not on it", async () => {
+    const res = createMockRes();
+    await handler(
+      {
+        method: "GET",
+        query: { startDate: "2026-10-08", gameId: "2026029999" },
+        body: {},
+      } as any,
+      res,
+    );
+    expect(res.statusCode).toBe(207);
+    expect(res.body.failures).toEqual([
+      {
+        date: "2026-10-08",
+        stage: "request",
+        error: "game 2026029999 is not scheduled on 2026-10-08",
+      },
+    ]);
+    expect(persistMock).not.toHaveBeenCalled();
   });
 
   it("bounds bare multi-day runs and commits each game through one RPC", async () => {

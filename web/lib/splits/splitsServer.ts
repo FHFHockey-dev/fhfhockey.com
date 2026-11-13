@@ -2,6 +2,7 @@ import {
   calculateLeagueSavePct,
   classifyVollmanQualityStart,
 } from "lib/rankings/goalieMethodology";
+import { penaltyShotsBeyondStrength } from "lib/projections/derived/penaltyShotSplit";
 import serviceRoleClient from "lib/supabase/server";
 import {
   fetchAllSupabaseFilterChunks,
@@ -51,6 +52,9 @@ type StrengthGameRow = {
   shots_es: number | null;
   shots_pk: number | null;
   shots_pp: number | null;
+  shots_ps: number | null;
+  goals_ps: number | null;
+  penalty_shot_split_version: number | null;
   plus_minus: number | null;
   pim: number | null;
   hits: number | null;
@@ -318,6 +322,9 @@ async function fetchStrengthRowsForSeason(args: {
           "shots_es",
           "shots_pk",
           "shots_pp",
+          "shots_ps",
+          "goals_ps",
+          "penalty_shot_split_version",
           "plus_minus",
           "pim",
           "hits",
@@ -492,7 +499,8 @@ function buildLandingSkaterLeaders(args: {
     current.goals +=
       safeNumber(row.goals_es) +
       safeNumber(row.goals_pp) +
-      safeNumber(row.goals_pk);
+      safeNumber(row.goals_pk) +
+      penaltyShotsBeyondStrength(row.goals_ps, row.penalty_shot_split_version);
     current.assists +=
       safeNumber(row.assists_es) +
       safeNumber(row.assists_pp) +
@@ -745,7 +753,8 @@ async function buildSkaterRows(args: {
     current.goals +=
       safeNumber(row.goals_es) +
       safeNumber(row.goals_pp) +
-      safeNumber(row.goals_pk);
+      safeNumber(row.goals_pk) +
+      penaltyShotsBeyondStrength(row.goals_ps, row.penalty_shot_split_version);
     current.assists +=
       safeNumber(row.assists_es) +
       safeNumber(row.assists_pp) +
@@ -753,7 +762,8 @@ async function buildSkaterRows(args: {
     current.shots +=
       safeNumber(row.shots_es) +
       safeNumber(row.shots_pp) +
-      safeNumber(row.shots_pk);
+      safeNumber(row.shots_pk) +
+      penaltyShotsBeyondStrength(row.shots_ps, row.penalty_shot_split_version);
     current.ppToiSeconds += safeNumber(row.toi_pp_seconds);
     current.ppGoals += safeNumber(row.goals_pp);
     current.ppAssists += safeNumber(row.assists_pp);

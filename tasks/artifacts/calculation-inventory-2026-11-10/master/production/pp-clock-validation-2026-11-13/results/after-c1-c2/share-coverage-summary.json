@@ -1,0 +1,24 @@
+{
+  "teamGames": 618,
+  "clockQualified": 616,
+  "clockWithheld": 2,
+  "notApplicableVerifiedZero": 9,
+  "clockQualifiedWithPpTime": 607,
+  "shareDisplayableRecomputed": 607,
+  "numeratorWithheld": 0,
+  "anyPlayerAboveClock": 0,
+  "anyUnitAboveClock": 0,
+  "minSkaterSecondsPerClockSecond": 3.973,
+  "goaliesPerTeamGame": {
+    "1": 575,
+    "2": 32
+  },
+  "stored": {
+    "rowsPresent": 607,
+    "anyAboveClock": 1,
+    "denominatorMatchesClock": 595,
+    "pptoiWithin2sOfRecomputed": 591,
+    "skatersMissing": 1,
+    "consistentWithQualifiedClock": 591
+  }
+}

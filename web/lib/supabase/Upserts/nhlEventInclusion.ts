@@ -12,6 +12,13 @@ export type NormalizedEventInclusion = {
   includeInParity: boolean;
   includeInOnIceParity: boolean;
   includeInShotFeatures: boolean;
+  /**
+   * A penalty-shot attempt outside the shootout (goal, shot on goal or miss):
+   * it counts in all-situation totals and in no strength split, on-ice stat
+   * or shot feature (decision 149, Astra AF-07). `includeInParity` stays false,
+   * so penalty-expiry and penalty counting still ignore it.
+   */
+  includeInAllSituationsOnly: boolean;
   exclusionReason: ExclusionReason | null;
   isShootoutEvent: boolean;
   isPenaltyShotEvent: boolean;
@@ -39,6 +46,7 @@ const PENALTY_SHOT_PATTERN = /penalty[- ]shot/i;
 // The feed files penalty-shot infractions as e.g. "ps-hooking-on-breakaway".
 const PENALTY_SHOT_DESC_KEY_PATTERN = /^ps-/i;
 const SHOOTOUT_PATTERN = /shootout/i;
+const PENALTY_SHOT_ATTEMPT_TYPES = new Set(["goal", "shot-on-goal", "missed-shot"]);
 
 type InclusionInput = {
   type_desc_key?: string | null | undefined;
@@ -158,6 +166,10 @@ export function evaluateNormalizedEventInclusion(
     includeInParity,
     includeInOnIceParity: includeInParity,
     includeInShotFeatures: includeInParity && !delayedPenalty,
+    includeInAllSituationsOnly:
+      !shootout &&
+      penaltyShot &&
+      PENALTY_SHOT_ATTEMPT_TYPES.has(event.type_desc_key ?? ""),
     exclusionReason,
     isShootoutEvent: shootout,
     isPenaltyShotEvent: penaltyShot,

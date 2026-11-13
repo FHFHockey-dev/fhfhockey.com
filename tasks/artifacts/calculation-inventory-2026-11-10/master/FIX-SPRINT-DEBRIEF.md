@@ -27,6 +27,7 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
   - #433 (`4d9b6a10d`; migrations 144–146);
   - #434 (`496ab3766`; Astra fixes, F5–F15, Codex items);
   - #435 (`6f1cb0767`; version-aware power labels, writer dry run, CTPI beta card).
+  - #436 (`4b45d8f1a`; social rankings missing-vs-zero, batched Lines reader, PP clock C1/C2).
 
   Each release was gated in a clean export, built once with three cancels, and passed a 5-GET smoke.
 - **Production on 2026-11-13** (§3, `production/PRODUCTION-QUEUE.md`):
@@ -737,11 +738,22 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 | Astra AF-07 penalty shots (decision 149) | **Partly fixed.** F15 `8463912d8` ships the shared adapter `classifyEventStrengthBucket`, with tests pinning the builder gap on games 2026020065 and 2026020094. TJ kept the derived builder unswitched: the derived tables only have ES, PP and PK columns, and readers sum those for all-situation totals. | Coordinated rollout after the handoff: a `shots_ps`/`goals_ps` column with a version marker, a new transactional RPC, every ES+PP+PK reader, and an 8-game rebuild (`production/penalty-shot-rebuild-2026-11-13/PLAN.md`, draft, not approved) |
 | Astra AF-08 finality consumers | **Fixed in the final release:** F7 `5bb89aef1` and `706937676`. `teamUnitToiNightly` needs a PBP game-end event; settlement needs a FINAL/OFF boxscore. | — |
 | Astra: social skater rankings score a missing stat like a known zero | Confirmed by Astra after checkpoint 1; doesn't block release | Ticket (TJ): a targeted fix once Astra gives the file and line |
-| PP clock (decision 144) | F11 report `48dd8fe8f`: 2,493/2,500 team-games exact. C3 (MAT/15 throw) fixed `a98eda63f`. PP share stays withheld. | C1 (`qualified` ignores the official total), C2 (audit at stoppages), and owner items O1–O4 |
+| PP clock (decisions 144, 151) | F11:
+- report `48dd8fe8f`: 2,493/2,500 exact;
+- C3 `a98eda63f` (#434);
+- C1 and C2 `de4650c77` (#436);
+- decision-151 checks `9e3d73640`.
+
+2026-27 regular season: 616/618 pass the clock check (607 with PP time, 9 verified zero). 607/607 could display with shifts ∩ qualified intervals, but only 591/607 from today's stored `powerPlayCombinations` (16 team-games in 14 games disagree). O4: all 5 scrum games reconcile exactly with the NHL Penalty Summary; the stored `teamGameStats` total is the outlier (−28 to +120 s). **PP share stays withheld** (TJ). | Owner calls before enabling PP share:
+1. May a verified Penalty Summary total serve as the official reference for those 5, recorded without overwriting the raw row?
+2. Rebuild the 14 games' `powerPlayCombinations` (a production write), or have the reader compute shifts ∩ intervals itself.
+
+Then the C4 storage, the C6 readers and a display lane. |
 | Codex dev items 1, 2, 6 | **Held by Codex and excluded from the final release:** `fc34b053a` (goalie writer), `284f99045` (accuracy job), `c89ff5d24` (game-stat placeholders, with an unapplied migration) | Codex: league SV% helper nulls, pregame issuance contract, Splits and Lines readers before migration |
 | CTPI descriptive beta card (F5b) | Committed `122dd880b`, visual polish still in progress; **held from the final release** (TJ) | A later release after TJ approves the finished card |
 | Power ratings v4 (decisions 145, 147, 150) | **Released and rebuilt.** Code in #434; version-aware labels and the writer dry run in #435. Rebuilt 2026-11-13 16:46–16:53Z after a live no-write preflight: 1,425 v4 + 47 labelled legacy carries (09-29..10-02, source 08-29), 0 v3 left, served labels checked. | — |
 | Astra #435 addendum P2: CTPI beta card says "same 10 games" while warning about a date mismatch | Routed to the beta card session (`local_d9adf205`); regression required | Next release |
 | Astra #435 addendum P2: runner cron guard can go stale after the load wait | Routed to F9 (runner artifact, no release) | Before any future runner use |
 | Astra #435 addendum, model handoff: `homeMinusAwayGoalieRating` mixes v4 (5-on-5) and legacy goaltending across history; `featureBuilder.ts` drops the provenance | Not a release blocker; there's no production game model (decision 42) | Codex model work: version the feature, filter or withhold mixed inputs, and keep reconstructed inputs apart from issued ones |
-| Social rankings missing-vs-zero (Astra #433 follow-up) | **Fixed, unreleased:** F17 `f2df257b6`. The social share skater score is withheld when any input stat is missing. | Next release |
+| Social rankings missing-vs-zero (Astra #433 follow-up) | **Fixed and released (#436):** F17 `f2df257b6`. The social share skater score is withheld when any input stat is missing. | — |
+| NST identity gap (Mahura) and WiGO rejects | **Repaired 2026-11-13** (F18, TJ-approved): 14 WGO legacy-identity rows fixed and 2 NST dates re-fetched. The alias code fix `77a6e7592` ships in the next release. | Ticket: the wider 2020-21 to 2022-23 WGO game-identity backfill (most legacy rows lack game ids) |

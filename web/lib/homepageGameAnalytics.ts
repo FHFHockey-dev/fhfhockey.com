@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { PublicGamePrediction } from "lib/game-predictions/publicPredictions";
 import { fetchPublicGamePredictions } from "lib/game-predictions/publicPredictions";
+import { allSituationCount } from "lib/projections/derived/penaltyShotSplit";
 import type { Database } from "lib/supabase/database-generated.types";
 import {
   fetchActiveXgModel,
@@ -385,18 +386,21 @@ export function mergePersistedGameMetrics(args: {
           const side =
             row.game_id === gameId ? sideOfTeam(game, row.team_id) : null;
           if (!side) return [];
-          const buckets = [row.shots_es, row.shots_pp, row.shots_pk].map(
-            finiteNumber,
-          );
+          // All-situation SOG includes penalty shots (decision 149): ES + PP
+          // + PK, plus shots_ps on a split row.
+          const total = allSituationCount({
+            es: finiteNumber(row.shots_es),
+            pp: finiteNumber(row.shots_pp),
+            pk: finiteNumber(row.shots_pk),
+            ps: finiteNumber(row.shots_ps),
+            splitVersion: row.penalty_shot_split_version,
+          });
           const complete =
-            buckets.every((value) => value != null && value >= 0) &&
-            writtenAfterStart(row.updated_at, game);
+            total != null && writtenAfterStart(row.updated_at, game);
           return [
             {
               side,
-              value: complete
-                ? (buckets as number[]).reduce((total, value) => total + value, 0)
-                : undefined,
+              value: complete ? total : undefined,
               updatedAt: row.updated_at,
             },
           ];
@@ -515,7 +519,7 @@ export async function enrichHomepageGames<T extends ScheduleGame>(args: {
     const { data, error } = await args.supabase
       .from("forge_team_game_strength")
       .select(
-        "game_id,team_id,shots_es,shots_pp,shots_pk,updated_at,game_date",
+        "game_id,team_id,shots_es,shots_pp,shots_pk,shots_ps,penalty_shot_split_version,updated_at,game_date",
       )
       .in("game_id", gameIds);
     if (error) throw error;

@@ -393,6 +393,125 @@ describe("derived strength preparation", () => {
       }
     });
 
+    describe("penalty shots: all-situations only (decision 149, Astra AF-07)", () => {
+      // Shapes from the stored 2026-27 play-by-play: a penalty-shot goal has a
+      // scorer and no shooter id; a penalty-shot save has a shooter.
+      const plays = [
+        {
+          // 2026020065-style home penalty-shot goal (EDM is home: 1010).
+          typedesckey: "goal",
+          periodnumber: 2,
+          situationcode: "1010",
+          shootingplayerid: null,
+          scoringplayerid: MCDAVID,
+          goalieinnetid: 300,
+        },
+        {
+          // Away penalty-shot save (0101).
+          typedesckey: "shot-on-goal",
+          periodnumber: 2,
+          situationcode: "0101",
+          eventownerteamid: OPP,
+          shootingplayerid: 201,
+          goalieinnetid: 400,
+        },
+        {
+          // Home penalty-shot miss: not a shot on goal, counts nowhere.
+          typedesckey: "missed-shot",
+          periodnumber: 2,
+          situationcode: "1010",
+          shootingplayerid: DRAISAITL,
+          goalieinnetid: 300,
+        },
+        {
+          // Shootout goal with the same code: excluded before classification.
+          typedesckey: "goal",
+          periodnumber: 5,
+          periodtype: "SO",
+          situationcode: "1010",
+          shootingplayerid: null,
+          scoringplayerid: DRAISAITL,
+          goalieinnetid: 300,
+        },
+        {
+          // Control: an ordinary 5v5 shot stays ES.
+          typedesckey: "shot-on-goal",
+          periodnumber: 1,
+          situationcode: "1551",
+          shootingplayerid: DRAISAITL,
+          goalieinnetid: 300,
+        },
+      ];
+
+      it("counts a penalty-shot goal and save only in PS, and a miss or shootout attempt nowhere", async () => {
+        const edmGame = setEdmGame(2026020065, plays);
+        const { rows } = await preparePlayerGameStrengthV2({ game: edmGame });
+        const byId = new Map(rows.map((row) => [row.player_id, row]));
+        expect(byId.get(MCDAVID)).toMatchObject({
+          shots_es: 0,
+          shots_pp: 0,
+          shots_pk: 0,
+          goals_es: 0,
+          goals_pp: 0,
+          goals_pk: 0,
+          shots_ps: 1,
+          goals_ps: 1,
+          penalty_shot_split_version: 1,
+        });
+        expect(byId.get(201)).toMatchObject({
+          shots_es: 0,
+          shots_ps: 1,
+          goals_ps: 0,
+        });
+        // The 5v5 shot is ES; the miss and the shootout goal count nowhere.
+        expect(byId.get(DRAISAITL)).toMatchObject({
+          shots_es: 1,
+          goals_es: 0,
+          shots_ps: 0,
+          goals_ps: 0,
+        });
+        for (const row of rows) {
+          expect(row.penalty_shot_split_version).toBe(1);
+          expect(row.assists_es + row.assists_pp + row.assists_pk).toBe(0);
+        }
+
+        const teams = prepareTeamGameStrengthV2({ game: edmGame, playerRows: rows });
+        const allSituation = (team: (typeof teams)[number]) => ({
+          shots: team.shots_es + team.shots_pp + team.shots_pk + team.shots_ps,
+          goals: team.goals_es + team.goals_pp + team.goals_pk + team.goals_ps,
+        });
+        const edm = teams.find((team) => team.team_id === EDM)!;
+        const opp = teams.find((team) => team.team_id === OPP)!;
+        expect(edm).toMatchObject({ shots_es: 1, shots_ps: 1, goals_ps: 1 });
+        expect(opp).toMatchObject({ shots_es: 0, shots_ps: 1, goals_ps: 0 });
+        // Official totals: a scored penalty shot is 1 goal and 1 shot, a saved
+        // one is 1 shot, a miss and a shootout attempt are neither.
+        expect(allSituation(edm)).toEqual({ shots: 2, goals: 1 });
+        expect(allSituation(opp)).toEqual({ shots: 1, goals: 0 });
+      });
+
+      it("refuses an assisted penalty-shot goal (the NHL awards none)", async () => {
+        const edmGame = setEdmGame(2026020131, [
+          { ...plays[0], assist1playerid: DRAISAITL },
+        ]);
+        await expect(
+          preparePlayerGameStrengthV2({ game: edmGame }),
+        ).rejects.toThrow("Penalty-shot goal carries an assist");
+      });
+
+      it("refuses team aggregation of a row without the split marker", async () => {
+        const edmGame = setEdmGame(2026020065, plays);
+        const { rows } = await preparePlayerGameStrengthV2({ game: edmGame });
+        const legacy = { ...rows[0], penalty_shot_split_version: null };
+        expect(() =>
+          prepareTeamGameStrengthV2({
+            game: edmGame,
+            playerRows: [legacy as unknown as ProjectionPlayerStrengthRow, ...rows.slice(1)],
+          }),
+        ).toThrow("not penalty-shot split");
+      });
+    });
+
     it("2026020260: Draisaitl's 1560 goal and McDavid's assist are even strength; a real 5v4 stays PP", async () => {
       const edmGame = setEdmGame(2026020260, [
         {

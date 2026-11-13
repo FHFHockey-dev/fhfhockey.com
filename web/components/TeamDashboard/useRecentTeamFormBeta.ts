@@ -120,14 +120,23 @@ export type RecentTeamFormBetaModel =
       sourceThroughDate: string | null;
       recentGameCount: number;
       targetGames: number;
-      /** The window's game dates, oldest to newest. */
+      /**
+       * The score's own game dates, oldest to newest; empty unless they are
+       * confirmed against the issued row (newest date and game counts).
+       */
       windowDates: string[];
-      /** True when the 5-on-5 rows do not line up with the score's games. */
-      windowMismatch: boolean;
+      /**
+       * True only when every 5-on-5 date equals a score game date. Games are
+       * keyed by team + date (there are no game ids), so equal counts alone
+       * are not identity (Astra #435 P2).
+       */
+      sameGames: boolean;
       components: RecentTeamFormBetaComponent[];
       partialNotes: string[];
       puckLuck: {
         games: number;
+        /** The 5-on-5 sample's own dates, oldest to newest. */
+        dates: string[];
         pdo: number | null;
         shootingPct: number | null;
         savePct: number | null;
@@ -242,13 +251,24 @@ export function easternDateKey(now: Date = new Date()): string {
 }
 
 /**
- * Builds the card from one issued row and the team's 5-on-5 game rows dated
- * before its snapshot (newest first). `fallbackGames` is the team's game
- * count when no usable row exists.
+ * The score's game dates re-read from the writer's source table
+ * (`nst_team_gamelogs_as_rates`, gp = 1, before the snapshot, newest first)
+ * with the exact count of the team's season games before the snapshot.
+ */
+export type RecentTeamFormScoreGames = {
+  dates: readonly string[];
+  seasonGameCount: number | null;
+};
+
+/**
+ * Builds the card from one issued row, the team's 5-on-5 game rows dated
+ * before its snapshot (newest first) and the score's own games.
+ * `fallbackGames` is the team's game count when no usable row exists.
  */
 export function buildRecentTeamFormBetaModel(
   row: RecentTeamFormBetaRow | null,
   gameRows: readonly RecentTeamFormGameRow[],
+  scoreGames: RecentTeamFormScoreGames | null = null,
   fallbackGames = 0,
 ): RecentTeamFormBetaModel {
   const notEnough = (gamesPlayed: number): RecentTeamFormBetaModel => ({
@@ -306,13 +326,25 @@ export function buildRecentTeamFormBetaModel(
     };
   });
 
+  // The score's dates count only when they reproduce the issued row: same
+  // last game, same window size and same season game count (rows added
+  // after the score was written would change the count).
+  const scoreDates = (scoreGames?.dates ?? []).slice(0, recentGameCount).reverse();
+  const scoreDatesConfirmed =
+    scoreDates.length === recentGameCount &&
+    row.source_through_date !== null &&
+    scoreDates[scoreDates.length - 1] === row.source_through_date &&
+    scoreGames?.seasonGameCount != null &&
+    scoreGames.seasonGameCount === countOrNull(row.source_game_count);
+  const windowDates = scoreDatesConfirmed ? scoreDates : [];
+
   const windowRows = gameRows.slice(0, recentGameCount);
-  const windowDates = windowRows.map((game) => game.date).reverse();
+  const puckDates = windowRows.map((game) => game.date).reverse();
   const puckLuck = aggregateNstTeamCounts(windowRows);
-  const windowMismatch =
-    windowRows.length !== recentGameCount ||
-    (row.source_through_date !== null &&
-      windowRows[0]?.date !== row.source_through_date);
+  const sameGames =
+    scoreDatesConfirmed &&
+    puckDates.length === scoreDates.length &&
+    puckDates.every((date, index) => date === scoreDates[index]);
 
   const partialNotes: string[] = [];
   if (status === "partial") {
@@ -344,11 +376,12 @@ export function buildRecentTeamFormBetaModel(
     recentGameCount,
     targetGames: RECENT_TEAM_FORM_V2_TARGET_GAMES,
     windowDates,
-    windowMismatch,
+    sameGames,
     components,
     partialNotes,
     puckLuck: {
       games: windowRows.length,
+      dates: puckDates,
       pdo: puckLuck.pdo,
       shootingPct: puckLuck.shootingPct,
       savePct: puckLuck.savePct,
@@ -385,9 +418,40 @@ async function fetchGameRows(
 }
 
 /**
- * Reads the latest issued v2 row for the team and season (date ≤ today) and
- * the team's 5-on-5 rows for the same games. Client-side anon reads only
- * (`public_read` RLS on both tables); no API route.
+ * The score's own games: the writer reads `nst_team_gamelogs_as_rates`
+ * (season, gp = 1) and scores date D from games strictly before D. A read
+ * error leaves the dates unconfirmed instead of failing the card.
+ */
+async function fetchScoreGames(
+  teamAbbrev: string,
+  seasonId: number,
+  beforeDate: string,
+  limit: number,
+): Promise<RecentTeamFormScoreGames | null> {
+  const { data, error, count } = await supabase
+    .from("nst_team_gamelogs_as_rates")
+    .select("date", { count: "exact" })
+    .eq("team_abbreviation", teamAbbrev)
+    .eq("season_id", seasonId)
+    .eq("gp", 1)
+    .lt("date", beforeDate)
+    .order("date", { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error("Error fetching Recent Team Form score games:", error);
+    return null;
+  }
+  return {
+    dates: ((data ?? []) as Array<{ date: string }>).map((game) => game.date),
+    seasonGameCount: typeof count === "number" ? count : null,
+  };
+}
+
+/**
+ * Reads the latest issued v2 row for the team and season (date ≤ today), the
+ * score's own game dates, and the team's 5-on-5 rows before the snapshot.
+ * Client-side anon reads only (`public_read` RLS on all three tables); no API
+ * route.
  */
 export function useRecentTeamFormBeta(
   teamAbbrev: string,
@@ -432,13 +496,11 @@ export function useRecentTeamFormBeta(
 
       let model: RecentTeamFormBetaModel;
       if (row && recentGameCount !== null && recentGameCount > 0) {
-        const games = await fetchGameRows(
-          teamAbbrev,
-          window.start,
-          row.date,
-          recentGameCount,
-        );
-        model = buildRecentTeamFormBetaModel(row, games);
+        const [games, scoreGames] = await Promise.all([
+          fetchGameRows(teamAbbrev, window.start, row.date, recentGameCount),
+          fetchScoreGames(teamAbbrev, Number(seasonId), row.date, recentGameCount),
+        ]);
+        model = buildRecentTeamFormBetaModel(row, games, scoreGames);
       } else if (row) {
         model = buildRecentTeamFormBetaModel(row, []);
       } else {
@@ -450,7 +512,7 @@ export function useRecentTeamFormBeta(
           today,
           RECENT_TEAM_FORM_V2_MIN_GAMES,
         );
-        model = buildRecentTeamFormBetaModel(null, [], games.length);
+        model = buildRecentTeamFormBetaModel(null, [], null, games.length);
       }
       if (!cancelled) setResult({ state: "loaded", model });
     })().catch((error: unknown) => {

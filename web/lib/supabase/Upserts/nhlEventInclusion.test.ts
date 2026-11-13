@@ -65,6 +65,7 @@ describe("nhlEventInclusion", () => {
       includeInShotFeatures: false,
       exclusionReason: "penalty-shot",
       isPenaltyShotEvent: true,
+      includeInAllSituationsOnly: true,
     });
   });
 
@@ -142,6 +143,19 @@ describe("nhlEventInclusion", () => {
         isPenaltyShotEvent: true,
         isEmptyNetEvent: false,
       });
+      // Decision 149: the attempt counts in all-situations only.
+      for (const type_desc_key of ["goal", "shot-on-goal", "missed-shot"]) {
+        expect(
+          evaluateNormalizedEventInclusion(createEvent({ situation_code, type_desc_key }))
+            .includeInAllSituationsOnly
+        ).toBe(true);
+      }
+      // A shootout attempt with the same code is never counted.
+      expect(
+        evaluateNormalizedEventInclusion(
+          createEvent({ situation_code, type_desc_key: "goal", period_type: "SO", period_number: 5 })
+        )
+      ).toMatchObject({ includeInAllSituationsOnly: false, exclusionReason: "shootout" });
     }
   });
 
@@ -154,7 +168,12 @@ describe("nhlEventInclusion", () => {
           situation_code: "1551",
         })
       )
-    ).toMatchObject({ isPenaltyShotEvent: true, includeInParity: false });
+    ).toMatchObject({
+      isPenaltyShotEvent: true,
+      includeInParity: false,
+      // The infraction is not a penalty (decision 13) and not an attempt.
+      includeInAllSituationsOnly: false,
+    });
   });
 
   it("flags EN only when the event owner attacks an empty net (decisions 7, 84)", () => {
