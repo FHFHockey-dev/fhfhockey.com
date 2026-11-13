@@ -1,7 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import supabaseServer from "../supabase/server";
-import { recordPercentage } from "../trends/strengthOfScheduleContract";
+import {
+  DESCRIPTIVE_SOS_VERSION,
+  recordPercentage
+} from "../trends/strengthOfScheduleContract";
+import { TEAM_SOS_TABLE } from "../trends/teamSosSnapshot";
 import { isValidIsoDate } from "../teamRatingsService";
 import { teamsInfo } from "../teamsInfo";
 
@@ -15,16 +19,26 @@ type SosOpponentRow = {
   opponent: string;
 };
 
-type SosStandingSnapshotRow = {
-  future_opponent_total_losses: number | null;
-  future_opponent_total_ot_losses: number | null;
-  future_opponent_total_wins: number | null;
+/**
+ * One descriptive-sos-v2 row of `team_sos_daily` (lane F2). Means are over
+ * fixtures of opponents' records excluding games against the team; past counts
+ * final games only, started or postponed fixtures are pending, and both
+ * indirect terms use opponents' past records (W2 D7). v1 `sos_standings` rows
+ * are frozen history and are not served here (rule 21).
+ */
+export type TeamSosLandingRow = {
+  future_direct_points_pct: number | null;
+  future_fixtures: number | null;
+  future_indirect_points_pct: number | null;
   future_opponents: unknown;
-  game_date: string;
-  past_opponent_total_losses: number | null;
-  past_opponent_total_ot_losses: number | null;
-  past_opponent_total_wins: number | null;
+  past_direct_points_pct: number | null;
+  past_fixtures: number | null;
+  past_indirect_points_pct: number | null;
   past_opponents: unknown;
+  pending_fixtures: number | null;
+  season_id: number;
+  snapshot_date: string;
+  sos_version: string;
   team_abbrev: string | null;
 };
 
@@ -38,6 +52,8 @@ export type UnderlyingStatsScheduleBucket = {
   directOpponentPointPct: number | null;
   indirectOpponentPointPct: number | null;
   opponentGamesPlayed: number;
+  /** Past bucket only: started or postponed fixtures without a final result. */
+  pendingFixtures?: number;
   rank: number | null;
   sos: number | null;
   uniqueOpponents: number;
@@ -58,7 +74,10 @@ export type UnderlyingStatsTeamScheduleStrength = {
   date: string;
   future: UnderlyingStatsScheduleBucket;
   past: UnderlyingStatsScheduleBucket;
+  /** snapshot_date of the v2 row served; null when no v2 snapshot is in range. */
+  snapshotDate: string | null;
   sos: number | null;
+  sosVersion: typeof DESCRIPTIVE_SOS_VERSION | null;
   texture: UnderlyingStatsScheduleTexture | null;
   teamAbbr: string;
 };
@@ -72,6 +91,23 @@ const TEAM_ID_TO_ABBR = new Map(
 const buildCacheKey = (date: string): string => date;
 const SCHEDULE_LOOKBACK_DAYS = 14;
 const SCHEDULE_LOOKAHEAD_DAYS = 14;
+/** A v2 snapshot older than this is not served (season gaps, a stalled writer). */
+const SOS_SNAPSHOT_MAX_AGE_DAYS = 7;
+const TEAM_SOS_LANDING_COLUMNS = [
+  "season_id",
+  "snapshot_date",
+  "team_abbrev",
+  "sos_version",
+  "past_fixtures",
+  "pending_fixtures",
+  "future_fixtures",
+  "past_direct_points_pct",
+  "past_indirect_points_pct",
+  "future_direct_points_pct",
+  "future_indirect_points_pct",
+  "past_opponents",
+  "future_opponents"
+].join(",");
 
 const toFiniteNumber = (value: unknown): number | null => {
   if (value === null || value === undefined) return null;
@@ -121,18 +157,6 @@ const parseOpponents = (value: unknown): SosOpponentRow[] => {
     .filter((entry): entry is SosOpponentRow => Boolean(entry));
 };
 
-const buildOpponentCounts = (
-  opponents: SosOpponentRow[]
-): Map<string, number> => {
-  const counts = new Map<string, number>();
-
-  opponents.forEach((opponent) => {
-    counts.set(opponent.opponent, (counts.get(opponent.opponent) ?? 0) + 1);
-  });
-
-  return counts;
-};
-
 export const computePointPctFromRecord = (
   wins: number | null,
   losses: number | null,
@@ -140,36 +164,6 @@ export const computePointPctFromRecord = (
 ): number | null => {
   return recordPercentage(wins, losses, otLosses, "points-pct");
 };
-
-const resolveBucketRecord = (
-  row: SosStandingSnapshotRow | undefined,
-  bucket: "past" | "future"
-): number | null =>
-  computePointPctFromRecord(
-    toFiniteNumber(
-      bucket === "past"
-        ? row?.past_opponent_total_wins
-        : row?.future_opponent_total_wins
-    ),
-    toFiniteNumber(
-      bucket === "past"
-        ? row?.past_opponent_total_losses
-        : row?.future_opponent_total_losses
-    ),
-    toFiniteNumber(
-      bucket === "past"
-        ? row?.past_opponent_total_ot_losses
-        : row?.future_opponent_total_ot_losses
-    )
-  );
-
-const resolveBucketOpponents = (
-  row: SosStandingSnapshotRow | undefined,
-  bucket: "past" | "future"
-): SosOpponentRow[] =>
-  parseOpponents(
-    bucket === "past" ? row?.past_opponents : row?.future_opponents
-  );
 
 const buildRankMap = (
   valuesByTeam: Map<string, number | null>
@@ -192,37 +186,25 @@ const buildRankMap = (
   return rankMap;
 };
 
-const computeScheduleBucket = ({
-  bucket,
-  rowsByTeam,
-  teamAbbr
-}: {
-  bucket: "future" | "past";
-  rowsByTeam: Map<string, SosStandingSnapshotRow>;
-  teamAbbr: string;
-}): Omit<UnderlyingStatsScheduleBucket, "rank"> => {
-  const row = rowsByTeam.get(teamAbbr);
-  const directOpponentPointPct = resolveBucketRecord(row, bucket);
-  const opponents = resolveBucketOpponents(row, bucket);
-  const opponentCounts = buildOpponentCounts(opponents);
-  let indirectWeightedSum = 0;
-  let indirectWeight = 0;
-
-  opponentCounts.forEach((gamesPlayed, opponentAbbr) => {
-    const opponentDirect = resolveBucketRecord(
-      rowsByTeam.get(opponentAbbr),
-      bucket
-    );
-    if (typeof opponentDirect !== "number") {
-      return;
-    }
-
-    indirectWeightedSum += opponentDirect * gamesPlayed;
-    indirectWeight += gamesPlayed;
-  });
-
-  const indirectOpponentPointPct =
-    indirectWeight > 0 ? indirectWeightedSum / indirectWeight : null;
+const computeScheduleBucket = (
+  row: TeamSosLandingRow,
+  bucket: "future" | "past"
+): Omit<UnderlyingStatsScheduleBucket, "rank"> => {
+  const directOpponentPointPct = toFiniteNumber(
+    bucket === "past" ? row.past_direct_points_pct : row.future_direct_points_pct
+  );
+  const indirectOpponentPointPct = toFiniteNumber(
+    bucket === "past"
+      ? row.past_indirect_points_pct
+      : row.future_indirect_points_pct
+  );
+  const opponents = parseOpponents(
+    bucket === "past" ? row.past_opponents : row.future_opponents
+  );
+  const fixtures = toFiniteNumber(
+    bucket === "past" ? row.past_fixtures : row.future_fixtures
+  );
+  // Decision 93: the landing keeps its 2:1 direct:indirect record-only sos.
   const sos =
     typeof directOpponentPointPct === "number" &&
     typeof indirectOpponentPointPct === "number"
@@ -232,9 +214,12 @@ const computeScheduleBucket = ({
   return {
     directOpponentPointPct,
     indirectOpponentPointPct,
-    opponentGamesPlayed: opponents.length,
+    opponentGamesPlayed: fixtures ?? opponents.length,
+    ...(bucket === "past"
+      ? { pendingFixtures: toFiniteNumber(row.pending_fixtures) ?? 0 }
+      : {}),
     sos,
-    uniqueOpponents: opponentCounts.size
+    uniqueOpponents: new Set(opponents.map((entry) => entry.opponent)).size
   };
 };
 
@@ -243,12 +228,15 @@ export const computeUnderlyingStatsTeamScheduleStrength = ({
   scheduleRows
 }: {
   date: string;
-  scheduleRows: SosStandingSnapshotRow[];
+  scheduleRows: TeamSosLandingRow[];
 }): Map<string, UnderlyingStatsTeamScheduleStrength> => {
-  const rowsByTeam = new Map<string, SosStandingSnapshotRow>();
+  const rowsByTeam = new Map<string, TeamSosLandingRow>();
 
   scheduleRows.forEach((row) => {
-    if (!isNonEmptyString(row.team_abbrev)) {
+    if (
+      row.sos_version !== DESCRIPTIVE_SOS_VERSION ||
+      !isNonEmptyString(row.team_abbrev)
+    ) {
       return;
     }
 
@@ -270,16 +258,9 @@ export const computeUnderlyingStatsTeamScheduleStrength = ({
   const futureStrengthByTeam = new Map<string, number | null>();
 
   allTeams.forEach((teamAbbr) => {
-    const past = computeScheduleBucket({
-      bucket: "past",
-      rowsByTeam,
-      teamAbbr
-    });
-    const future = computeScheduleBucket({
-      bucket: "future",
-      rowsByTeam,
-      teamAbbr
-    });
+    const row = rowsByTeam.get(teamAbbr)!;
+    const past = computeScheduleBucket(row, "past");
+    const future = computeScheduleBucket(row, "future");
 
     pastByTeam.set(teamAbbr, past);
     futureByTeam.set(teamAbbr, future);
@@ -309,10 +290,12 @@ export const computeUnderlyingStatsTeamScheduleStrength = ({
         ...past,
         rank: pastRankMap.get(teamAbbr) ?? null
       },
+      snapshotDate: rowsByTeam.get(teamAbbr)?.snapshot_date ?? null,
       sos:
         typeof past.sos === "number" && typeof future.sos === "number"
           ? (past.sos + future.sos) / 2
           : (past.sos ?? future.sos ?? null),
+      sosVersion: DESCRIPTIVE_SOS_VERSION,
       texture: null,
       teamAbbr
     });
@@ -504,24 +487,36 @@ export const fetchUnderlyingStatsTeamScheduleStrengthForRatings = async (
     return new Map();
   }
 
+  const fetchLatestV2Rows = async () => {
+    const latestResponse = await supabase
+      .from(TEAM_SOS_TABLE)
+      .select("snapshot_date")
+      .eq("sos_version", DESCRIPTIVE_SOS_VERSION)
+      .lte("snapshot_date", date)
+      .gte("snapshot_date", addDays(date, -SOS_SNAPSHOT_MAX_AGE_DAYS))
+      .order("snapshot_date", { ascending: false })
+      .limit(1);
+
+    if (latestResponse.error) {
+      return latestResponse;
+    }
+
+    const snapshotDate = (
+      latestResponse.data as Array<{ snapshot_date?: string }> | null
+    )?.[0]?.snapshot_date;
+    if (!snapshotDate) {
+      return { data: [], error: null };
+    }
+
+    return supabase
+      .from(TEAM_SOS_TABLE)
+      .select(TEAM_SOS_LANDING_COLUMNS)
+      .eq("sos_version", DESCRIPTIVE_SOS_VERSION)
+      .eq("snapshot_date", snapshotDate);
+  };
+
   const [scheduleResponse, gamesResponse] = await Promise.all([
-    supabase
-      .from("sos_standings")
-      .select(
-        [
-          "game_date",
-          "team_abbrev",
-          "past_opponent_total_wins",
-          "past_opponent_total_losses",
-          "past_opponent_total_ot_losses",
-          "past_opponents",
-          "future_opponent_total_wins",
-          "future_opponent_total_losses",
-          "future_opponent_total_ot_losses",
-          "future_opponents"
-        ].join(",")
-      )
-      .eq("game_date", date),
+    fetchLatestV2Rows(),
     supabase
       .from("games")
       .select('date,"homeTeamId","awayTeamId"')
@@ -541,7 +536,7 @@ export const fetchUnderlyingStatsTeamScheduleStrengthForRatings = async (
   const baseMap = computeUnderlyingStatsTeamScheduleStrength({
     date,
     scheduleRows: Array.isArray(scheduleResponse.data)
-      ? (scheduleResponse.data as unknown as SosStandingSnapshotRow[])
+      ? (scheduleResponse.data as unknown as TeamSosLandingRow[])
       : []
   });
   const textureByTeam = computeUnderlyingStatsScheduleTexture({
@@ -589,7 +584,9 @@ export const fetchUnderlyingStatsTeamScheduleStrengthForRatings = async (
         sos: null,
         uniqueOpponents: 0
       },
+      snapshotDate: null,
       sos: null,
+      sosVersion: null,
       teamAbbr,
       texture
     });
