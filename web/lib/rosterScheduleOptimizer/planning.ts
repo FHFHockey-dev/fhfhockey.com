@@ -1388,6 +1388,12 @@ export function noMoveDropOrder(snapshot: PlanningSnapshot, intent: PlanIntent):
     player => agp.assignments.filter(row => row.playerId === player.id).length);
 }
 
+/** A partial lineup can use points only when at least one assigned game has a priced projection. */
+export function hasKnownPointsComparison(evaluation: PlanEvaluation | null | undefined): boolean {
+  return Boolean(evaluation && (evaluation.knownComparison?.unknownPlayerIds.length ?? 0) > 0
+    && evaluation.assignments.length > (evaluation.knownComparison?.unknownActive.length ?? 0));
+}
+
 /** Reuse the same timed acquisition/reserve/drop proposals for bounded candidate comparisons. */
 export function candidateAcquisitionSteps(snapshot: PlanningSnapshot, intent: PlanIntent, player: PlanningPlayer,
   dropOrder: ReadonlyMap<string, number> = noMoveDropOrder(snapshot, intent)) {
@@ -1428,8 +1434,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   // part; it falls back to most starts only when even the known part can't be priced.
   const unknownPlayers = noMoveOutcome.knownComparison?.unknownPlayerIds ?? [];
   // Needs a known part to compare: at least one active game with a priced projection.
-  const differenceOutcome = !categoryMode && !outcomeEligible && unknownPlayers.length > 0
-    && noMoveOutcome.assignments.length > (noMoveOutcome.knownComparison?.unknownActive.length ?? 0);
+  const differenceOutcome = !categoryMode && !outcomeEligible && hasKnownPointsComparison(noMoveOutcome);
   const objective: PlanningObjective = intent.objective !== "agp" && (outcomeEligible || differenceOutcome) ? "outcome" : "agp";
   const baseline = objective === "outcome" ? noMoveOutcome : noMoveAgp;
   const selected = evaluatePlan(snapshot, intent, objective, intent.steps, false);

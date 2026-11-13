@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
 import { defaultIntent, defaultWorkspace } from "./workspace";
-import { evaluatePlan, forecastPointsReader, noMoveDropOrder, planRoster, playerAssignedPoints } from "./planning";
+import { evaluatePlan, forecastPointsReader, hasKnownPointsComparison, noMoveDropOrder, planRoster, playerAssignedPoints } from "./planning";
 import { candidatePlanMetrics } from "./candidatePlanMetrics";
 import { comparablePointsDelta } from "./pointsComparison";
 import { lineupGapReport } from "./lineupGaps";
@@ -370,6 +370,11 @@ describe("Best projected points with an unknown player in the lineup (decision 1
       { id: "fa", team: "FAS", days: [3, 4, 5, 6], perGame: 2 },
     ], { slots: { C: 1, UTIL: 1, BN: 1 }, asOf: "2026-10-26T14:00:00Z", remaining: 1 }), "unknown");
     const result = planRoster(snapshot, { ...intent(), objective: "outcome" });
+    expect(result.noMoveOutcome.recommendation?.eligible).toBe(false);
+    expect(hasKnownPointsComparison(result.noMoveOutcome)).toBe(true);
+    const noForecasts = planRoster({ ...snapshot, forecasts: [] }, { ...intent(), objective: "outcome" });
+    expect(hasKnownPointsComparison(noForecasts.noMoveOutcome)).toBe(false);
+    expect(noForecasts.selected.objective).toBe("agp");
     expect(result.selected.objective).toBe("outcome");
     expect(result.search.limitations).not.toContain("Best projected points needs projections for your whole lineup; planning for most starts until then.");
     expect(result.search.limitations.some(text => text.startsWith("Best projected points compares plans on their known part: 1 player has unknown"))).toBe(true);

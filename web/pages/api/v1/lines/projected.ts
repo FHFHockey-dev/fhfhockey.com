@@ -28,9 +28,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!data) return res.status(404).json({ error: "Game not found" });
       date = data.date;
     }
-    const reports = await fetchTweetProjectionReports(supabase, { teamId, gameId, date });
+    const requestedDate = date;
+    let reports = await fetchTweetProjectionReports(supabase, { teamId, gameId, date });
+    // Team pages should not lose yesterday's source posts on a quiet day. Keep
+    // this separate from exact-game selection and label the retained date.
+    if (teamId && !gameId && reports.length === 0) {
+      const oldest = new Date(`${date}T00:00:00Z`);
+      oldest.setUTCDate(oldest.getUTCDate() - 7);
+      const oldestDate = oldest.toISOString().slice(0, 10);
+      // This private table is not in the generated public-client type inventory,
+      // matching the server-only storage reader's existing boundary.
+      const { data, error } = await (supabase as any).from("tweet_projection_reports")
+        .select("report_date").eq("team_id", teamId)
+        .gte("report_date", oldestDate).lt("report_date", date)
+        .order("report_date", { ascending: false }).limit(1).maybeSingle();
+      if (error) throw error;
+      if (typeof data?.report_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data.report_date) &&
+          data.report_date >= oldestDate && data.report_date < date) {
+        date = data.report_date;
+        reports = await fetchTweetProjectionReports(supabase, { teamId, date });
+      }
+    }
     res.setHeader("Cache-Control", "public, s-maxage=30, stale-while-revalidate=30");
-    return res.json({ enabled: true, reports, sets: selectProjectedUnitSets(reports) });
+    return res.json({ enabled: true, reports, sets: selectProjectedUnitSets(reports),
+      reportScope: { requestedDate, reportDate: date, fallback: date !== requestedDate } });
   } catch {
     return res.status(503).json({ error: "Projected lineups are temporarily unavailable" });
   }

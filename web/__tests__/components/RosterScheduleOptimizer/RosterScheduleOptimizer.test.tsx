@@ -934,10 +934,39 @@ describe("RosterScheduleOptimizer workspace", () => {
     await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.objective).toBe("agp"));
     await waitFor(() => expect(starts.getAttribute("aria-pressed")).toBe("true"));
     expect(points.getAttribute("aria-pressed")).toBe("false");
-    if (!points.hasAttribute("disabled")) {
+    expect(points.hasAttribute("disabled")).toBe(false);
+    fireEvent.click(points);
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.objective).toBe("outcome"));
+    await waitFor(() => expect(points.getAttribute("aria-pressed")).toBe("true"));
+  });
+  it("can repeatedly return to best projected points with partial lineup forecasts", async () => {
+    const workspace = defaultWorkspace();
+    workspace.roster = [{ playerId: player.id, position: "active" }];
+    workspace.manualPlayers = [{ ...player, eligibilityVerified: true }];
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
+    // The engine's known-part comparison is available while full recommendation eligibility is false.
+    // Its actual forecast behavior is covered by streamingChain.test.ts (decision 132.1).
+    planningState.evaluate = (snapshot, intent) => {
+      const result = planRoster(snapshot, intent);
+      result.noMoveOutcome = { ...result.noMoveOutcome, recommendation: undefined,
+        assignments: [{ date: snapshot.context.startDate, playerId: player.id, slotId: "C#1", gameId: "game", locked: false }],
+        knownComparison: { knownValue: 4, unknownActive: [], unknownPlayerIds: ["unknown"] } };
+      result.selected = { ...result.selected, objective: intent.objective === "agp" ? "agp" : "outcome" };
+      return result;
+    };
+    vi.stubGlobal("fetch", fetchMock);
+    render(<RosterScheduleOptimizer />);
+    const goal = await screen.findByRole("group", { name: "Lineup goal" });
+    const starts = within(goal).getByRole("button", { name: "Most starts" });
+    const points = within(goal).getByRole("button", { name: "Best projected points" });
+    await waitFor(() => expect(points.getAttribute("aria-pressed")).toBe("true"));
+    for (let repeat = 0; repeat < 2; repeat++) {
+      fireEvent.click(starts);
+      await waitFor(() => expect(starts.getAttribute("aria-pressed")).toBe("true"));
+      expect(points.hasAttribute("disabled")).toBe(false);
       fireEvent.click(points);
-      await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.objective).toBe("outcome"));
       await waitFor(() => expect(points.getAttribute("aria-pressed")).toBe("true"));
+      expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.objective).toBe("outcome");
     }
   });
   it("keeps Bench days as its own Current Roster tab, with Players shown by default", async () => {
