@@ -57,6 +57,7 @@ interface CronAuditEmailProps {
     jobsFailingLast?: number;
     jobsMissingLast?: number;
     jobsUnknownLast?: number;
+    jobsSkippedLast?: number;
     childObservations?: number;
     metricRowsKnown?: number;
     metricErrorsKnown?: number;
@@ -176,7 +177,7 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
       <div style={muted}>{localOf(formatReportTime(sinceDate))}{untilDate ? ` through ${localOf(formatReportTime(untilDate))}` : ""}</div>
     </div>
     {summary.scheduledJobs != null ? <div style={{ margin: "14px 0", fontSize: 14 }}>
-      <strong>{`${summary.jobsFailingLast ?? 0} failed · ${summary.jobsMissingLast ?? 0} missing · ${summary.jobsUnknownLast ?? 0} unknown`}</strong>
+      <strong>{`${summary.jobsFailingLast ?? 0} failed · ${summary.jobsMissingLast ?? 0} missing · ${summary.jobsUnknownLast ?? 0} unknown${summary.jobsSkippedLast ? ` · ${summary.jobsSkippedLast} skipped` : ""}`}</strong>
       <span style={muted}>{` · ${summary.jobsOkLast ?? 0}/${summary.scheduledJobs} jobs recorded success`}</span>
     </div> : null}
     {globalWarnings.length > 0 || !totalsComplete ? <div style={{ margin: "16px 0", padding: "10px 14px", borderLeft: "3px solid #B45309", backgroundColor: "#FFF5DE", borderRadius: 6, color: "#783F10" }}>

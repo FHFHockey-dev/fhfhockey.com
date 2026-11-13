@@ -2520,6 +2520,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             jobsFailingLast: counts.jobsFailingLast,
             jobsMissingLast: counts.jobsMissingLast,
             jobsUnknownLast: counts.jobsUnknownLast,
+            jobsSkippedLast: counts.jobsSkippedLast,
             childObservations: unscheduledRuns.length,
             metricErrorsKnown: auditBriefings.filter((row) => row.failedRows != null).length,
             metricRowsKnown: auditBriefings.filter((row) => row.rowsUpserted != null).length,

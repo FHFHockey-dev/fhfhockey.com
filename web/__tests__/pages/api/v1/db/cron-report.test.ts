@@ -162,6 +162,9 @@ describe("/api/v1/db/cron-report", () => {
       { method: "POST", url: route } as any, response);
     const persisted = cronJobAuditInsertMock.mock.calls.at(-1)![0];
     expect(persisted.status).toBe("skipped");
+    expect(persisted.details.responseTruncated).toBe(true);
+    expect(persisted.details.response).not.toContain("no_production_model");
+    expect(persisted.details.responseOutcome.reason).toBe("no_production_model");
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual(receipt);
     cronJobAuditSelectMock.mockResolvedValue({ data: [{ ...persisted, run_time: "2026-03-20T12:05:00.000Z" }], error: null });
@@ -172,12 +175,18 @@ describe("/api/v1/db/cron-report", () => {
     expect(res.body.counts).toMatchObject({ auditSkipped: 1, jobsSkippedLast: 1,
       auditSuccesses: 0, auditFailures: 0, auditUnknown: 0, jobsMissingLast: 0 });
     const props = cronAuditEmailMock.mock.calls.at(-1)![0];
+    expect(props.summary).toMatchObject({ scheduledJobs: 1, jobsSkippedLast: 1, jobsOkLast: 0, jobsUnknownLast: 0 });
     expect(props.audits[0]).toMatchObject({ status: "skipped", rowsUpserted: null,
       lastKnownSuccessDisplay: null, reason: expect.stringContaining("no_production_model") });
     const html = renderToStaticMarkup(resendSendMock.mock.calls.at(-1)![0].react);
     expect(html).toContain(">SKIPPED</strong>");
     expect(html).toContain("no_production_model");
     expect(html).toContain("1 skipped");
+    expect(html).toContain("<strong>0 failed · 0 missing · 0 unknown · 1 skipped</strong>");
+    expect(html).toContain("0/1 jobs recorded success");
+    const document = new DOMParser().parseFromString(html, "text/html");
+    const skippedLabel = Array.from(document.querySelectorAll("strong")).find((node) => node.textContent === "SKIPPED");
+    expect(skippedLabel?.parentElement?.textContent).toContain("no_production_model");
     expect(props.audits.filter((row: any) => row.status === "unknown")).toHaveLength(0);
   });
 
