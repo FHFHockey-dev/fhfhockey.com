@@ -43,7 +43,10 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
 - **Astra:**
   - The frozen #433 audit is **complete**. The final report is `astra/ASTRA-FIX-SPRINT-AUDIT-checkpoint-1-2026-11-13.md` (byte-identical to Astra's final file). It found one P0, AF-01, now closed. Its later social-rankings finding is being fixed by lane F17.
   - The #434 addendum is **complete**: no new P0, and two P1s on power v4, fixed in #435 and the gated rebuild.
-  - **Pending:** the #435 addendum and the review of the rebuild receipts (`ASTRA-ADDENDUM-435-PROMPT.md`).
+  - The #435 addendum is **complete**: the F16 label P1 is closed and the rebuild receipts reconcile (1,425 v4 + 47 legacy). Its two P2s (CTPI "same games", runner cron guard) were fixed in #436–#438, and addendum 3 closed both.
+  - Addendum 3 (#436–#438) is **complete** (`astra/ASTRA-FIX-SPRINT-AUDIT-ADDENDUM-436-438-2026-11-13.md`): application changes accepted, no P0/P1, no rollback or rerun. Two operational P2s:
+    - A3-01, the landing verifier could print ALL_OK with wrong ES or missing goalie fields: **closed.** The strict `verify-landing-strict.py` passed its offline self-test (Astra's false-pass case fails for all 8 games), then a TJ-approved 24-GET rerun returned ALL_OK with raw responses kept.
+    - A3-02, the resumed summary runner overwrote the canary's before snapshot: routed to F15 (runner artifact, no release).
 - **Integration gate:** clean `git archive` export of `496b5c9de`.
   - Vitest: 19,122 passed, 0 failed (1,391 files).
   - Typecheck: passed.
@@ -743,7 +746,7 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 - Adapter (#434); split columns, writer, builder, readers and parity (#437); migration 148 applied.
 - 8-game derived rebuild: all post-write checks passed, totals equal official.
 - Bounded landing summary refresh: canary 065, then the other 7, TJ-approved separately; key-by-key readbacks passed.
-- Served player and goalie landing verified against the rebuilt rows for all 8 games (ALL_OK). | **Team follow-up done (2026-11-13):** builder fix released (#438). The read-only 8-game diff (54 rows, only PS deltas, no audit row), the team refresh (54 rows changed, matching the diff exactly) and the served team landing (16/16 team-games equal to the official boxscores) were each TJ-approved separately. **AF-07 closed.** Remaining: 2025-26 has 33 penalty-shot games on old totals (no rebuild proposed). |
+- Served player and goalie landing verified against the rebuilt rows for all 8 games (ALL_OK); re-verified strictly after Astra A3-01 (24 GETs, ES and every goalie field asserted, raw responses in `landing-verify-20261113T184529Z/`). | **Team follow-up done (2026-11-13):** builder fix released (#438). The read-only 8-game diff (54 rows, only PS deltas, no audit row), the team refresh (54 rows changed, matching the diff exactly) and the served team landing (16/16 team-games equal to the official boxscores) were each TJ-approved separately. **AF-07 closed.** Remaining: 2025-26 has 33 penalty-shot games on old totals (no rebuild proposed). |
 - Adapter `8463912d8` (#434).
 - Split columns, v2 writer, builder, readers and parity: `30fa0f00a`, `8a4a7d8d1` (#437).
 - Migration 148 applied 17:28:45Z.
@@ -766,8 +769,10 @@ Then the C4 storage, the C6 readers and a display lane. |
 | Codex dev items 1, 2, 6 | **Held by Codex and excluded from the final release:** `fc34b053a` (goalie writer), `284f99045` (accuracy job), `c89ff5d24` (game-stat placeholders, with an unapplied migration) | Codex: league SV% helper nulls, pregame issuance contract, Splits and Lines readers before migration |
 | CTPI descriptive beta card (F5b) | Committed `122dd880b`, visual polish still in progress; **held from the final release** (TJ) | A later release after TJ approves the finished card |
 | Power ratings v4 (decisions 145, 147, 150) | **Released and rebuilt.** Code in #434; version-aware labels and the writer dry run in #435. Rebuilt 2026-11-13 16:46–16:53Z after a live no-write preflight: 1,425 v4 + 47 labelled legacy carries (09-29..10-02, source 08-29), 0 v3 left, served labels checked. | — |
-| Astra #435 addendum P2: CTPI beta card says "same 10 games" while warning about a date mismatch | Routed to the beta card session (`local_d9adf205`); regression required | Next release |
-| Astra #435 addendum P2: runner cron guard can go stale after the load wait | Routed to F9 (runner artifact, no release) | Before any future runner use |
+| Astra #435 addendum P2: CTPI beta card says "same 10 games" while warning about a date mismatch | **Closed** (addendum 3): date-by-date comparison, regression included | — |
+| Astra #435 addendum P2: runner cron guard can go stale after the load wait | **Closed** (addendum 3): runner `630127066` rechecks after the guard | — |
+| Astra A3-01 P2: landing verifier could falsely pass | **Closed 2026-11-13:** `verify-landing-strict.py` (self-test plus strict 24-GET rerun, ALL_OK, raw responses kept). The record's "21 GETs" was a miscount of 24. | — |
+| Astra A3-02 P2: resumed summary runner overwrites the canary's before snapshot (and re-baselines done games) | Routed to F15 (`local_c389b3c5`): planned games only, immutable run-unique snapshots, tests. The canary's original before rows are lost; its true pre-refresh values (0 G / 5 S) survive in `summary-run.jsonl` | Before any future runner use |
 | Astra #435 addendum, model handoff: `homeMinusAwayGoalieRating` mixes v4 (5-on-5) and legacy goaltending across history; `featureBuilder.ts` drops the provenance | Not a release blocker; there's no production game model (decision 42) | Codex model work: version the feature, filter or withhold mixed inputs, and keep reconstructed inputs apart from issued ones |
 | Social rankings missing-vs-zero (Astra #433 follow-up) | **Fixed and released (#436):** F17 `f2df257b6`. The social share skater score is withheld when any input stat is missing. | — |
 | NST identity gap (Mahura) and WiGO rejects | **Repaired 2026-11-13** (F18, TJ-approved): 14 WGO legacy-identity rows fixed and 2 NST dates re-fetched. The alias code fix `77a6e7592` ships in the next release. | Ticket: the wider 2020-21 to 2022-23 WGO game-identity backfill (most legacy rows lack game ids) |

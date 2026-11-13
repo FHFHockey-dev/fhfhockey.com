@@ -333,7 +333,7 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     - Bobrovsky (8475683, team 10): GP 1, SA 43, SV 40, GA 3, which equals the official boxscore (43 SOG / 3 goals).
   - Remaining: 2026020094, 101, 119, 131, 150, 159, 203, which wait for TJ.
 - **Landing summary refresh, remaining 7 games** (TJ "Run the other 7"), 18:02:28–18:05:42Z: 14 calls, every game passing the runner's key-by-key readback. Player rows rewritten: 156, 147, 145, 133, 157, 152 and 133, so 1,158 in total across all 8 games. The 18 orphan partitions are unchanged. DONE.
-- **Served landing verification, all 8 games** (Chef; 21 read-only GETs to `/api/v1/underlying-stats/players` and `/goalies`, date-scoped per game; script `production/penalty-shot-rebuild-2026-11-13/verify-landing.py`): **ALL_OK.**
+- **Served landing verification, all 8 games** (Chef; 24 read-only GETs, 3 per game (an earlier version of this entry said 21, a miscount), to `/api/v1/underlying-stats/players` and `/goalies`, date-scoped per game; script `production/penalty-shot-rebuild-2026-11-13/verify-landing.py`): **ALL_OK.**
   - Each shooter's all-strengths row equals the rebuilt values (GP 1, no double count), and the even-strength row excludes the penalty shot.
   - Each goalie's SA/SV/GA equals the expected values and the official boxscore for the shooting team. The exception is 2026020150: the official 44 SOG / 6 goals include an empty-net goal, so the goalie row is 43 / 5.
 - **Release #438** (TJ "Push and merge"):
@@ -348,3 +348,9 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - 0 audit rows written.
 - **Team summary refresh** (TJ "Run it, Claude"), 18:26:28–18:29:29Z: 16 calls; each game re-diffed equal to the approved diff, snapshotted, written (140 rows) and read back key by key. Changed rows total 54, equal to the diff. DONE.
 - **Served team landing**, all 8 games and both teams (16 read-only GETs; script `verify-team-landing.py`): **ALL_OK.** SF/GF/SA/GA and GP 1 equal the official boxscores for every team-game, including 2026020150's empty-net goal in team totals.
+- **Strict served landing re-verification, all 8 games** (Astra addendum 3, A3-01; TJ "Run the 24 GETs"), 18:45:30–18:46:00Z: **ALL_OK**, exit 0.
+  - Script `production/penalty-shot-rebuild-2026-11-13/verify-landing-strict.py`. Expectations come only from retained files: the stored partitions in `run/summary-after-<game>.jsonl` must equal the first pre-refresh baseline in `run/summary-run.jsonl` before any request.
+  - ES is asserted against the stored ES row, which equals the pre-refresh row for the 7 non-canary games; the canary's before file was overwritten (A3-02).
+  - Every field must be present and equal; GP is 1 for the shooter all/ES rows and the goalie; each player appears exactly once.
+  - Offline self-test first: exact rows pass; Astra's false-pass case (ES 999, goalie SA/SV/GA missing, GP 999) fails for all 8 games; duplicate row, missing row and non-200 fail.
+  - 24 sequential GETs, 1 s apart, all 200 and `x-vercel-cache: MISS`. Raw responses and `result.json` are in `landing-verify-20261113T184529Z/`.
