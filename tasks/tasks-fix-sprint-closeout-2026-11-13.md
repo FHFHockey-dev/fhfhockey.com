@@ -86,5 +86,5 @@
 
     *Done: F11 `486da9666`, REPORT §17. Chef reran 34 tests. Known limit: the check compares totals only, so right-total bands in the wrong place would still draw; Astra's parser fix (8.0) removes the gap.*
   - [x] 7.3 Chef verifies, then rebuilds and re-gates the reader candidate (supersedes `f848c3c2`).
-- [ ] 8.0 NEW: the actual shift-chart parser fix (owner Astra/Codex, separate; TJ ~21:55Z)
-  - [ ] 8.1 Astra fixes the root cause: the shift chart's play parser drops situation codes, so its PP bands come from the old algorithm. Astra doesn't touch F11's release files (7.0's ShiftChart files; the reader-gate files). The guard in 7.0 ships first. Once the fix lands and bands reconcile, the "timing mismatch" label disappears without a data change.
+- [x] 8.0 NEW: the actual shift-chart parser fix (owner Astra/Codex, separate; TJ ~21:55Z)
+  - [x] 8.1 Astra fixes the root cause: the shift chart's play parser drops situation codes, so its PP bands come from the old algorithm. Astra doesn't touch F11's release files (7.0's ShiftChart files; the reader-gate files). The guard in 7.0 ships first. Once the fix lands and bands reconcile, the "timing mismatch" label disappears without a data change. *(Done: Astra `519c49f4` released as #443 (master `4adef4fc8`, 22:45Z). Live: NSH 8:11–10:11 drawn, STL 578 s = clock, no label.)*
