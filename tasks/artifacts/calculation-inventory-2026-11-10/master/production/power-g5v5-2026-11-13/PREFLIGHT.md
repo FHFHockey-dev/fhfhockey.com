@@ -4,11 +4,11 @@
 
 ## Answers in brief
 1. **Backup:** `run/issued-rows-2026-09-29_2026-11-13.tsv` holds all 1,472 rows the 46 calls can overwrite (46 dates × 32 teams, all v3). Each call writes only the date it is called for, and only teams already in the backup. Every run now also snapshots the range just before its first call.
-2. **Deployed writer is v4:** the source at `496ab3766` writes `team-power-v4-5v5-goaltending`, and GitHub deployment 7769867793 put that commit into production (success, 16:01:06Z). **This is source-to-commit evidence, not a live call.**
+2. **Deployed writer is v4:** the source at `496ab3766` writes `team-power-v4-5v5-goaltending`, and GitHub deployment 7769867793 put that commit into production (success, 16:01:06Z). **This is source-to-commit evidence, not a live call.** From round 4, the runner also confirms the live writer with a no-write probe and dry runs (§6 step 4).
 3. **The 47 carried rows:** none of them can be recomputed from valid inputs. Each has only gp = 82 season-total rows in its 150-day lookback. The team's last real game was on 2026-04-09..04-16, 166–174 days earlier. Each row will hold the team's 09-28 rating, labelled `legacy_unversioned`, source 2026-08-29.
 4. **Writer code:** a carried row keeps its source row's `calculation_version` and `source_through_date`. Only computed rows get the v4 label. No team in this range would carry forward a v4 label.
 5. **Served readers:** none of them reads `calculation_version` or `source_through_date`, so a user cannot tell a carried row from a v4 one. The goalie column is labelled "5v5" even for carried legacy values. §5 lists what is missing (not fixed).
-6. **Readback:** the loop now also requires every non-v4 row to equal its 09-28 snapshot exactly. Expected exceptions: 22 / 17 / 7 / 1 carried rows on 09-29 / 09-30 / 10-01 / 10-02, and none after that.
+6. **Readback:** fail closed, key by key, against the committed 47-key carry manifest (§6). Expected exceptions: 22 / 17 / 7 / 1 carried rows on 09-29 / 09-30 / 10-01 / 10-02, and none after that.
 
 ## 1. Backup and what the loop can overwrite
 **Command** (no route calls):
@@ -181,27 +181,47 @@ At `496ab3766`, `update-team-power-ratings.ts`:
 - Only views of 2026-09-29..10-02 (the date picker or `?date=`). Every later date will have 32 v4 rows.
 - Landing narratives also read each team's last 11 stored rows. On landing dates up to about 10-12, those rows include carried legacy rows, unmarked.
 
-## 6. Readback checks the loop runs, and expected exceptions
-**Before every call:**
-- **Not in a cron window** (08:00–08:20, 09:25–11:00, 11:15–11:40 UTC); else stop 4.
-- **DB guard:** at most 5 active queries, none older than 10 s, no Lock/IO waits, probe under 1.5 s. Up to 3 checks 60 s apart, then stop 3.
+## 6. The runner's checks (fail closed; Astra #434 P1 rebuild gate)
+Nothing is written before step 6. Steps 1–5 are also the whole `--preflight`.
 
-**After every call (date D):**
-- **Response checks:**
-  - HTTP status must be 200, else stop 2.
-  - `calculationVersion` must be `team-power-v4-5v5-goaltending`, else stop 7.
-  - `processedDays` must be 1 and `totalUpserts` 32, else stop 6.
-- **Database readback** (`state_by_date(D, D)`), else stop 6. All of these must hold:
-  - 32 rows;
-  - v4 rows = teams with a gp = 1 row in [D-150, D], and the same as the plan's count;
-  - every v4 row has a known `goalie_rating`;
-  - no v3 row is left;
-  - **new in this commit:** every remaining row is exactly the team's 09-28 snapshot: `legacy_unversioned`, source 2026-08-29, and all 17 copied columns within 1e-9 (both null counts as equal).
-- **Duration:** a call over 60 s stops with code 5.
-- **Resume:** each start recomputes the same per-date rule from the database and resumes at the first date that fails it.
+1. **Cron window and DB guard.**
+   - Outside 08:00–08:20, 09:25–11:00 and 11:15–11:40 UTC, else stop 4.
+   - At most 5 active queries, none older than 10 s, no Lock/IO waits; 3 checks 60 s apart, then stop 3.
+   - The guard runs again before every request to the route.
+2. **Backup, always verified** (never trusted because the file exists).
+   - `run/issued-rows-<start>_<end>.tsv` is created only if missing. Every run then checks it against the live table:
+     - the same columns;
+     - every live (team, date) in range, 32 per date, no duplicates;
+     - byte-equal to the live row wherever the live row is still the issued v3 row.
+   - Else stop 8.
+3. **Carry manifest, key by key.** `carry-manifest.tsv` holds the 47 keys with full-precision values (from `carry-manifest.sql`). Else stop 6, before any request. All three must hold:
+   - the live keys with no genuine game in their lookback equal the manifest's keys exactly;
+   - every manifest row equals the live 2026-09-28 row: `legacy_unversioned`, source 2026-08-29, and all 17 copied columns within 1e-9;
+   - the 09-28 snapshot still has 32 rows.
+4. **The live route is bound to v4 without a write.**
+   - **Probe:** `?date=2000-01-01&dryRun=true`. Nothing is stored or logged by NST anywhere near that date (the table starts 2025-10-07), so even a writer without a dry-run mode writes no rating.
+     - The response must say `dryRun: true`, v4, `totalUpserts: 0` and `wouldUpsert: 0`, else stop 7.
+     - On the current production writer (`496ab3766`, no dry-run mode) the probe stops here. That writer would add one `cron_job_audit` row, since it audits every call.
+   - **Dry runs** of the first date to write (09-29) and of 2026-11-12. Each must be a one-day, no-write run (`processedDays 1`, `totalUpserts 0`, `wouldUpsert 32`) whose rows pass the per-date check below. 2026-11-12 must also match PLAN §3's local sample (goalie and offense, ±0.05). Else stop 6.
+5. **Served API, version-aware.** `GET /api/team-ratings?date=<first date>` is what the card, the terminal and the landing read. It must return 32 rows, each with `calculationVersion` and `sourceThroughDate`. Every served value must equal the database (ratings, trend10, version, source date). Else stop 6.
+   - This requires F16's reader change in production. Until then the runner stops here.
+6. **Writes**, after approval only.
+   - First a fresh `run/pre-run-<UTC>.tsv` snapshot, verified as in step 2 (else stop 8).
+   - Then one `?date=D` call per date, ascending. Each response must be 200 (else stop 2) and must say v4 with `dryRun: false` (else stop 7). It must report `processedDays 1` and `totalUpserts 32` (else stop 6).
+   - **Readback of D, key by key** (else stop 6):
+     - the 32 teams;
+     - each manifest key equals its manifest row (label, source date, 17 columns);
+     - every other team is v4 with a known goalie rating and `source_through_date` ≤ D;
+     - for dry-run dates, every stored row equals its dry-run row exactly.
+   - A call over 60 s stops with code 5. A rerun resumes at the first date that fails the per-date check.
+7. **Final verification.** Any problem exits 6 and DONE is not printed.
+   - Every date passes the per-date check, and the set of non-v4 keys equals the manifest exactly.
+   - 2026-11-12 matches the sample.
+   - **Served readback:** after waiting 65 s for the API's 60 s cache, `/api/team-ratings` for the start date, 10-02, 11-12 and the end date must equal the database, versions and source dates included.
+   - Version counts, later dates and per-column movement against the backup are logged for the record.
 
 **Expected per date:**
-| Date | v4 | carried (09-28 snapshot) |
+| Date | v4 | carried (manifest) |
 |---|---|---|
 | 09-29 | 10 | 22 |
 | 09-30 | 15 | 17 |
@@ -209,39 +229,51 @@ At `496ab3766`, `update-team-power-ratings.ts`:
 | 10-02 | 31 | 1 |
 | 10-03 … 11-13 | 32 | 0 |
 
-**At the end** (read-only, logged as `final`):
-- Version counts in range: **1,425 v4 + 47 `legacy_unversioned`** with `--end 2026-11-13` (1,393 + 47 without it).
-- `expected_carried_rows` = 47, and `dates_not_done` must be empty.
-- The non-v4 rows grouped by date, version and source. Expected exactly: 09-29 22, 09-30 17, 10-01 7 and 10-02 1, all `legacy_unversioned` / 2026-08-29.
-- Rows after the end date: from 11-14, whatever cron 283 has written (v4).
-- Per-column movement against the 16:08Z backup: compare with PLAN §3.
-  - Expected: on the 47 carried keys every rating moves from the season-total v3 values to the 09-28 values, and discipline goes from null to the 09-28 value.
-- 2026-11-12 `goalie_rating` and `off_rating` against PLAN §3's local sample, within 0.05.
-  - Mismatches are logged, not a stop. They can come from NST rows that arrived after the sample.
+**Totals:**
+- 1,425 v4 + 47 `legacy_unversioned` with `--end 2026-11-13`; 1,393 + 47 without it.
+- **Expected exceptions:** the 47 manifest rows and nothing else.
 
-**Expected exceptions:**
-- **The 47 carried rows,** and nothing else.
-- **A possible stop 7** if production isn't serving `496ab3766` when the loop starts.
-- **A possible stop 6** if NST or stored data changes during the run (for example a late NST row giving a team its first game earlier).
+**Expected stops before approval:**
+- 7, while production lacks the dry-run writer.
+- 6 at step 5, while production lacks F16's version-aware reader.
 
-## 7. What changed in this commit
-- **`power-g5v5-loop.py`:**
-  - the carried-row equality check added to the per-date "done" rule and the readback;
-  - `run/pre-run-<UTC>.tsv` snapshot before the first call;
-  - `expected_carried_rows` and `dates_not_done` in the plan and final logs.
-- **Tests run:**
-  - `py_compile`.
-  - Preflight of 2026-09-28 alone, from a scratch copy: 32 exact carried rows, 0 calls. The new rule accepts an exact snapshot.
-  - The real preflight above: 46 calls; 1,425 v4 and 47 carried rows expected.
-  - **Not tested:** the post-call readback on actual v4 rows. None exist until the loop runs.
-- **PLAN.md:** pointers to this file; §5 backup, resume and done-rule text; the §6 note now cites decision 150.
-- **New files:** `preflight-carried-keys.sql/.csv`, `preflight-window-checks.sql/.out`, and `run/issued-rows-2026-09-29_2026-11-13.tsv` (the backup).
-  - The preflight log `run/run.jsonl` stays local because the repository ignores `*.jsonl` under `tasks/artifacts`. Its events are quoted in §1.
+## 7. Round 3 commit (`fc9718365`)
+- **Added:** this file, the backup, the carried-key queries, and the first carried-row equality check in the loop.
+- **Superseded by §6 and §8:** the per-date count rule and the grouped final report.
 
-## Commands for TJ, after approval only
+## 8. Round 4: writer dry run and fail-closed runner (Astra #434 P1, for release #435)
+- **Writer, `2bf3c1d26`:** `web/pages/api/v1/db/update-team-power-ratings.ts` accepts `dryRun=true` with `date=YYYY-MM-DD`.
+  - It computes that one date and returns `rows` (each with `calculation_version` and `source_through_date`) and `wouldUpsert`. It reports `totalUpserts: 0` and performs no upsert.
+  - It never backfills an empty table, and returns 400 for a range or a missing date.
+  - A successful dry run writes no `cron_job_audit` row (`skipAuditWhenNoOp`).
+  - **Tests:** two new tests prove no write and that a carried row keeps its label. Both fail on the previous writer. The writer file passes 10/10; the 4 related suites pass 90/90. ESLint is clean.
+  - **Typecheck:** exit 2, only from F16's uncommitted `lib/dashboard/normalizers.ts`.
+- **Runner (this commit):** rewritten to the §6 order.
+  - **New:** `carry-manifest.tsv` and `carry-manifest.sql`.
+  - **Changed:** stop code 8 (backup); every mismatch now fails, including the sample, which used to be only logged.
+  - **Restricted:** `--base http://localhost:PORT` is allowed for `--preflight` only, because a local server shares the production database.
+- **Runner tests** (16:25–16:27Z), against an isolated local dev server on port 3108 (`.next-playwright`; your :3000 server untouched). Working tree: `2bf3c1d26` plus F16's uncommitted reader edits. Database reads were read-only. No production request was made.
+  - **Full preflight:** `PREFLIGHT_OK`.
+    - Backup verified: 1,472 rows, same sha256.
+    - Manifest: 47/47 keys match.
+    - Probe: `dryRun: true`, v4, 0 upserts.
+    - Dry run 09-29: 10 v4 + 22 carried, every carried row exactly equal to the manifest.
+    - Dry run 11-12: 32 v4, inside the sample's ±0.05.
+    - Served 09-29: labels present and equal to the database.
+  - **Fail-closed cases (scratch copies), each stopped as designed:**
+    - a fake writer without a dry-run mode → stop 7 at the probe;
+    - a backup missing one row → stop 8;
+    - one manifest value changed → stop 6 before any request;
+    - one sample value changed → stop 6 at the 11-12 dry run, nothing written;
+    - a localhost base without `--preflight` → refused.
+  - **Not tested:** the write loop, the post-write readback and the final served readback. They need writes, which wait for TJ's approval. They reuse the per-date check and served comparison tested above.
+
+## Commands for TJ
+Preflight (no writes). It passes only once production serves the dry-run writer and F16's reader:
+```bash
+python3 -I tasks/artifacts/calculation-inventory-2026-11-10/master/production/power-g5v5-2026-11-13/power-g5v5-loop.py --preflight --end 2026-11-13
+```
+The rebuild, after approval only. That is 46 writes plus 7 read requests (probe, 2 dry runs, 4 served), about 7 minutes. Start outside the cron windows.
 ```bash
 python3 -I tasks/artifacts/calculation-inventory-2026-11-10/master/production/power-g5v5-2026-11-13/power-g5v5-loop.py --end 2026-11-13
 ```
-- 46 calls, about 6 minutes.
-- Start outside the cron windows.
-- The script reuses this backup and writes a fresh pre-run snapshot.

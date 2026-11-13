@@ -102,6 +102,8 @@ Full table (every component, v3 and v4, 32 teams × 6 dates): `sample-before-aft
 - **Noted for Astra and the model project, not changed (decision 42: there is no production game model):** `featureBuilder.ts` feeds `goalie_rating` into the feature `homeMinusAwayGoalieRating`. After the rebuild it means 5-on-5 goaltending.
 
 ## 5. The 45-call plan (needs TJ's approval)
+> **Superseded in part (round 4, Astra #434 P1):** the runner's gates, readback, final checks and stop codes are now defined in `PREFLIGHT.md` §6 (fail closed: dry-run probe, verified backup, 47-key manifest, served readback). Where this section differs, `PREFLIGHT.md` wins.
+
 **Preconditions**
 - The release containing F9 (`06c8316a4`, `820e5cb6d`, `d6626b521`) is live on fhfhockey.com.
 - No other writer is running.
