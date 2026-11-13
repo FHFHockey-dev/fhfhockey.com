@@ -1,6 +1,7 @@
 import type { NextApiRequestQuery } from "next/dist/server/api-utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { type GameFinalityInput, resolveGameFinality } from "lib/games/gameFinality";
 import type { Database } from "lib/supabase/database-generated.types";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import serverReadonlyClient from "lib/supabase/serverReadonly";
@@ -1012,15 +1013,22 @@ async function fetchSeasonCoverage(args: {
   }
 
   const gameType = resolveSeasonGameType(args.state.primary.seasonType);
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
   try {
     const [games, summaries] = await Promise.all([
-      args.supabase
-        .from("games")
-        .select("id", { count: "exact", head: true })
-        .eq("seasonId", fromSeasonId)
-        .eq("type", gameType)
-        .lt("date", today),
+      // Rule 19: a game counts as completed when its stored state says final
+      // (contract nhl-game-state-v1), not because its date is before today.
+      fetchAllRows<GameFinalityInput>((from, to) =>
+        args.supabase
+          .from("games")
+          .select("id,startTime,game_state,game_schedule_state,game_state_observed_at")
+          .eq("seasonId", fromSeasonId)
+          .eq("type", gameType)
+          .lte("date", today)
+          .order("id", { ascending: true })
+          .range(from, to)
+      ),
       // One all-situations row per team per game: two rows per summarized game.
       args.supabase
         .from(TEAM_STATS_SUMMARY_TABLE)
@@ -1030,11 +1038,11 @@ async function fetchSeasonCoverage(args: {
         .eq("strength", "allStrengths")
         .eq("score_state", "allScores"),
     ]);
-    if (games.error || summaries.error || games.count == null || summaries.count == null) {
+    if (summaries.error || summaries.count == null) {
       return null;
     }
     return {
-      completedGames: games.count,
+      completedGames: games.filter((game) => resolveGameFinality(game, now).isFinal).length,
       summarizedGames: Math.ceil(summaries.count / 2),
     };
   } catch {

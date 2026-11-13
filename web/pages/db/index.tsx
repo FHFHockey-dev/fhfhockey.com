@@ -17,6 +17,7 @@ import Grid from "@mui/material/Unstable_Grid2"; // Grid version 2
 
 import { TextBanner } from "components/Banner/Banner";
 import Container from "components/Layout/Container";
+import { type GameFinalityInput, resolveGameFinality } from "lib/games/gameFinality";
 import supabase, { doPOST } from "lib/supabase";
 import { useSnackbar } from "notistack";
 import useCurrentSeason from "hooks/useCurrentSeason";
@@ -735,13 +736,23 @@ function DatabasePage() {
         .eq("seasonId", season.seasonId);
       setNumGames(numGames ?? 0);
 
-      const { data: finishedGames } = await supabase
+      // Rule 19: started games are candidates; the stored game state decides
+      // which are finished (contract nhl-game-state-v1, start + 8 h fallback).
+      const now = new Date();
+      const { data: startedGames } = await supabase
         .from("games")
-        .select("id,date")
+        .select("id,date,startTime,game_state,game_schedule_state,game_state_observed_at")
         .eq("seasonId", season.seasonId)
-        .lte("startTime", new Date().toISOString())
-        .order("date", { ascending: false });
-      setGames(finishedGames?.slice(0, 20) ?? []);
+        .lte("startTime", now.toISOString())
+        .order("date", { ascending: false })
+        // The generated types predate the game-state columns (migration 146).
+        .returns<Array<GameFinalityInput & { id: number; date: string }>>();
+      const finishedGames = (startedGames ?? []).filter(
+        (game) => resolveGameFinality(game, now).isFinal
+      );
+      setGames(
+        finishedGames.slice(0, 20).map((game) => ({ id: game.id, date: game.date }))
+      );
     })();
   }, [isAdmin, season?.seasonId]);
 

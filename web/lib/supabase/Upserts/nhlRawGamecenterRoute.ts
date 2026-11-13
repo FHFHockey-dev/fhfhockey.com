@@ -1,6 +1,7 @@
 import type { NextApiResponse } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { type GameFinalityInput, resolveGameFinality } from "lib/games/gameFinality";
 import { getCurrentSeason } from "lib/NHL/server";
 import serviceRoleClient from "lib/supabase/server";
 
@@ -31,10 +32,9 @@ const RAW_GAMECENTER_ENDPOINTS = [
 
 type RawGamecenterEndpoint = (typeof RAW_GAMECENTER_ENDPOINTS)[number];
 
-type GameRow = {
+type GameRow = GameFinalityInput & {
   id: number | string | null;
   date: string | null;
-  startTime?: string | null;
 };
 
 type GameIdRow = {
@@ -184,12 +184,13 @@ async function fetchBackfillCandidateGames(args: {
   today: string;
 }): Promise<Array<{ id: number; date: string }>> {
   const now = new Date();
-  const finishedCutoff = new Date(now.getTime() - 8 * 60 * 60 * 1000);
 
   const rows = await fetchAllRows<GameRow>(async (from, to) =>
     args.supabase
       .from("games")
-      .select("id,date,startTime,seasonId")
+      .select(
+        "id,date,startTime,seasonId,game_state,game_schedule_state,game_state_observed_at",
+      )
       .eq("seasonId", args.seasonId)
       .lte("date", args.today)
       .order("date", { ascending: false })
@@ -204,15 +205,12 @@ async function fetchBackfillCandidateGames(args: {
       const startTime = row.startTime;
 
       if (!Number.isFinite(id)) return [];
-      if (typeof date !== "string" || date >= args.today) {
-        return [];
-      }
-      if (
-        typeof startTime === "string" &&
-        new Date(startTime) > finishedCutoff
-      ) {
-        return [];
-      }
+      if (typeof date !== "string") return [];
+      // Rule 19: the stored game state decides (contract nhl-game-state-v1);
+      // start + 8 h is only the labelled fallback while the state is unknown.
+      // An ingest that runs before the shift report is published stays
+      // incomplete (normalization status) and is selected again.
+      if (!resolveGameFinality(row, now).isFinal) return [];
 
       return [{ id, date, startTime }];
     },
