@@ -34,41 +34,45 @@
 
 ## Tasks
 
-- [ ] 1.0 Build the PP share reader gates offline (owner F11; in progress)
+- [x] 1.0 Build the PP share reader gates offline (owner F11)
   - [x] 1.1 Gate `/api/toi`, the rolling writer, PowerPlayCombos, LinemateMatrix's PP mode and the shift chart model on `pp_team_game_clock`, behind `PP_SHARE_SERVING_ENABLED` (unset = today's behaviour).
     - Show only `available` rows; `not_applicable` shows "N/A", never 0%; `unavailable` shows its reason; nothing is capped.
     - Read stored shift rows only (no shift ingestion or fallback).
   - [x] 1.2 Pin flag-off parity: the rolling writer's stored rows for a fixture window are identical, field for field, to today's writer; the same for any other writer touched.
   - [x] 1.3 Cross-surface test with real stored fixtures: one qualified team-game (e.g. 2026020131 t18, 120 s) agrees across Lines, LinemateMatrix, the shift chart and `/api/toi`, and one zero-PP team-game (e.g. 2026020038 t55) shows "N/A" everywhere. Record each surface's values in REPORT. *(Done: F11 `05c43f981` + `aac8cf5a3`, REPORT §15–16. Chef reran 158 tests and matched 131 t18's seconds and shares and 038 t55's not-applicable to the accepted dry run.)*
-  - [ ] 1.4 Chef verifies: commits, ownership claims, the tests from 1.2 and 1.3, typecheck, ESLint and the CSS check, and no shift-ingestion files touched.
-  - [ ] 1.5 Serving review with TJ (pop-up): the evidence from 1.2 and 1.3, and the flag-off guarantee.
-- [ ] 2.0 Release the reader code with serving off (depends on 1.0 and TJ's approval)
-  - [ ] 2.1 Build the candidate on current master with only the reader files plus records (diaries at master's), and confirm no other app file differs.
-  - [ ] 2.2 Gate the exact candidate in a clean export (focused tests, typecheck, ESLint, CSS, full Vitest, pytest) and bring TJ the SHA.
-  - [ ] 2.3 After TJ's "Push and merge":
+  - [x] 1.4 Chef verifies: commits, ownership claims, the tests from 1.2 and 1.3, typecheck, ESLint and the CSS check, and no shift-ingestion files touched.
+  - [x] 1.5 Serving review with TJ (pop-up): the evidence from 1.2 and 1.3, and the flag-off guarantee.
+- [x] 2.0 Release the reader code with serving off (depends on 1.0 and TJ's approval)
+  - [x] 2.1 Build the candidate on current master with only the reader files plus records (diaries at master's), and confirm no other app file differs.
+  - [x] 2.2 Gate the exact candidate in a clean export (focused tests, typecheck, ESLint, CSS, full Vitest, pytest) and bring TJ the SHA. *(Candidate `28fdbadd6` on master `f5c7adc2d`: 26 app files, no scss. 265 focused tests; typecheck 0; ESLint 0. Full Vitest 19,965 passed: ArticleReader and BLSH are export-only; TweetSwipeTrainer is a load flake that passes 22/22 alone. pytest 213. 1.5 is covered by TJ's conditional approval, ~21:40Z and ~21:50Z.)*
+  - [x] 2.3 After TJ's "Push and merge":
     - branch push with a 90 s no-build check, PR, squash-merge, and a tree-equality check;
     - 1 build plus 3 cancels;
     - a 5-GET smoke;
     - octoberBranch ours-merge with a no-build check.
-  - [ ] 2.4 Read back read-only that the next rolling run's stored output matches pre-release behaviour (flag off).
-- [ ] 3.0 Serve PP share (depends on 2.0; **TJ approved 2026-11-13 ~21:40Z**, conditional on the reader candidate passing its release checks plus 1.2 and 1.3. Keep `PP_STORED_CALCULATION_WRITES_ENABLED=true`; stop on any disagreement; no refresh or cron rerun.)
-  - [ ] 3.1 TJ sets `PP_SHARE_SERVING_ENABLED=true` (Production). Run the approved clean-export CLI production deploy of the master SHA, then check the alias and a 3-GET smoke.
-  - [ ] 3.2 Verify served values with a bounded read-only budget agreed first: the qualified game agrees across the four surfaces, and the zero-PP game shows "N/A".
-  - [ ] 3.3 Record it in the queue, debrief and REPORT, and close decision 152.
-- [ ] 4.0 2026-11-14 scheduled readbacks (independent; read-only; each recorded separately; no manual reruns)
-  - [ ] 4.1 08:05Z cron 388: audit `success`; the last 3 dates' rows stamped `pp-shifts-qualified-clock-v1`, with clock rows.
-  - [ ] 4.2 10:05Z FORGE run: the first reserve rows.
-  - [ ] 4.3 The same FORGE run: which `goalie_start_projections` rows it consumed, against cron 364's 09:30Z write under #439 (`a448842d1`).
-  - [ ] 4.4 10:15Z cron 283: the first scheduled v4 power write.
-  - [ ] 4.5 #440: the first natural update-stats-job write after tonight's games, with nulls only where the source is unknown and readers showing them as unavailable.
-- [ ] 5.0 Records and housekeeping (Chef)
-  - [ ] 5.1 Push the local record commits only with the next release, never alone.
-  - [ ] 5.2 Update the debrief with #439–#441, migrations 147 and 149, the decision 152 refresh, and the results of 3.0 and 4.0.
-  - [ ] 5.3 Ask TJ whether to have Astra recheck #439–#441, migrations 147/149 and the refresh. If yes, write the prompt pinned to a commit.
-  - [ ] 5.4 Retire the Chef diary once 3.0 and 4.0 are recorded; keep it while any check is pending.
-- [ ] 6.0 NEW: flag-off client parity gap (found in F11 `05c43f981`)
-  - [ ] 6.1 With `PP_SHARE_SERVING_ENABLED` off, the client readers (PowerPlayCombos, LinemateMatrix, the shift chart) still make one cached request to `/api/v1/pp-share/team-game-clock` (a function invocation, ≤5 min cache). LinemateMatrix and the shift chart PP mode briefly show "Checking the stored power-play clock...". That isn't strictly today's behaviour. It matters only while serving is off: resolve it, or record it as accepted, before any future flag-off period. Serving is approved to follow the reader release directly.
-- [ ] 7.0 NEW, now blocking 2.0 (TJ, ~21:50Z): the shift chart withholds PP shading that doesn't reconcile with the qualified clock
+
+    *Done: #442 → master `44de2f107`, build 22:07:23Z, smoke 5/5, octoberBranch `732468246`.*
+  - [x] 2.4 Read back read-only that the next rolling run's stored output matches pre-release behaviour (flag off). *(Superseded: serving went on at 22:13Z, so no rolling run happened with the flag off in production. Flag-off parity is pinned offline by the field-for-field test from 1.2. The rolling writer's first run with serving on writes `pp_share_pct` with the clock denominator, as TJ approved.)*
+- [x] 3.0 Serve PP share (depends on 2.0; **TJ approved 2026-11-13 ~21:40Z**, conditional on the reader candidate passing its release checks plus 1.2 and 1.3. Keep `PP_STORED_CALCULATION_WRITES_ENABLED=true`; stop on any disagreement; no refresh or cron rerun.)
+  - [x] 3.1 TJ sets `PP_SHARE_SERVING_ENABLED=true` (Production). Run the approved clean-export CLI production deploy of the master SHA, then check the alias and a 3-GET smoke.
+  - [x] 3.2 Verify served values with a bounded read-only budget agreed first: the qualified game agrees across the four surfaces, and the zero-PP game shows "N/A".
+
+    *Done 22:13–22:16Z: the flag was set by the Chef through the CLI with TJ's approval. Serving deploy `dpl_3dTQdAD3`. The clock API, `/api/toi` ×2, the shift chart label and the line-combo PP matrix all agree with the dry run (PRODUCTION-QUEUE).*
+  - [x] 3.3 Record it in the queue, debrief and REPORT, and close decision 152.
+- [x] 4.0 2026-11-14 scheduled readbacks (independent; read-only; each recorded separately; no manual reruns). **Waived by TJ, 2026-11-13 ~22:40Z** ("assume success … no longer need to wait until tomorrow"). The scheduled runs still happen overnight, but **they are not observed or verified** by this list. 4.1 and 4.5 were pre-tested by forced runs at 22:32–22:34Z (both passed).
+  - [x] 4.1 08:05Z cron 388: audit `success`; the last 3 dates' rows stamped `pp-shifts-qualified-clock-v1`, with clock rows. *(Pre-tested 22:32Z by TJ's forced run: 379 rows identical, audit success. Tomorrow's window 11-12..14 should replace 310/311's `unavailable` clock rows with real values. The scheduled run itself was waived, not observed.)*
+  - [x] 4.2 *(waived, not observed)* 10:05Z FORGE run: the first reserve rows.
+  - [x] 4.3 *(waived, not observed)* The same FORGE run: which `goalie_start_projections` rows it consumed, against cron 364's 09:30Z write under #439 (`a448842d1`).
+  - [x] 4.4 *(waived, not observed)* 10:15Z cron 283: the first scheduled v4 power write.
+  - [x] 4.5 #440: the first natural update-stats-job write after tonight's games, with nulls only where the source is unknown and readers showing them as unavailable. *(Write path pre-tested 22:34Z on 2026020309: rows identical, audit success. The natural write was waived, not observed.)*
+- [x] 5.0 Records and housekeeping (Chef)
+  - [x] 5.1 Push the local record commits only with the next release, never alone. *(TJ, ~22:45Z: push now. Records only; no-build check below.)*
+  - [x] 5.2 Update the debrief with #439–#441, migrations 147 and 149, the decision 152 refresh, and the results of 3.0 and 4.0. *(Done: the debrief status is rewritten for #439–#442, decision 152 served, the forced tests, and the 4.0 waiver.)*
+  - [x] 5.3 Ask TJ whether to have Astra recheck #439–#441, migrations 147/149 and the refresh. If yes, write the prompt pinned to a commit. *(TJ: yes, ~22:20Z. Prompt `master/ASTRA-RECHECK-439-442-PROMPT.md`.)*
+  - [x] 5.4 Retire the Chef diary once 3.0 and 4.0 are recorded; keep it while any check is pending. *(Kept on purpose under AGENTS.md: the Chef still gates and releases Astra's parser fix (8.0), so it stays as the handoff record.)*
+- [x] 6.0 NEW: flag-off client parity gap (found in F11 `05c43f981`)
+  - [x] 6.1 *(Accepted: serving went on directly after #442, so no flag-off period exists. Reopen only if serving is ever turned off.)* With `PP_SHARE_SERVING_ENABLED` off, the client readers (PowerPlayCombos, LinemateMatrix, the shift chart) still make one cached request to `/api/v1/pp-share/team-game-clock` (a function invocation, ≤5 min cache). LinemateMatrix and the shift chart PP mode briefly show "Checking the stored power-play clock...". That isn't strictly today's behaviour. It matters only while serving is off: resolve it, or record it as accepted, before any future flag-off period. Serving is approved to follow the reader release directly.
+- [x] 7.0 NEW, now blocking 2.0 (TJ, ~21:50Z): the shift chart withholds PP shading that doesn't reconcile with the qualified clock
   - [x] 7.1 With serving on, when a team-game's shift-chart PP intervals don't reconcile with the stored qualified clock:
     - withhold that team-game's PP shading and label it "PP timeline unavailable: timing mismatch.";
     - keep the verified share visible;
@@ -81,6 +85,6 @@
     - flag off (today's output, pinned).
 
     *Done: F11 `486da9666`, REPORT §17. Chef reran 34 tests. Known limit: the check compares totals only, so right-total bands in the wrong place would still draw; Astra's parser fix (8.0) removes the gap.*
-  - [ ] 7.3 Chef verifies, then rebuilds and re-gates the reader candidate (supersedes `f848c3c2`).
+  - [x] 7.3 Chef verifies, then rebuilds and re-gates the reader candidate (supersedes `f848c3c2`).
 - [ ] 8.0 NEW: the actual shift-chart parser fix (owner Astra/Codex, separate; TJ ~21:55Z)
   - [ ] 8.1 Astra fixes the root cause: the shift chart's play parser drops situation codes, so its PP bands come from the old algorithm. Astra doesn't touch F11's release files (7.0's ShiftChart files; the reader-gate files). The guard in 7.0 ships first. Once the fix lands and bands reconcile, the "timing mismatch" label disappears without a data change.

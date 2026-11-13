@@ -1,20 +1,20 @@
 # Math-audit fix sprint: debrief
 
-Status: **Sprint closed, 2026-11-13.**
-- **Closure:** no P0 or P1 is open. Releases through #438 are live, and Astra's audit and all its addenda are complete. Astra's A3 recheck passed both findings at `5fbb2d3a2`.
+Status: **Sprint closed, 2026-11-13; evening follow-ups closed the same day.**
+- **Closure:** no P0 or P1 is open. Releases through **#442** are live. Astra's audit and all its addenda are complete, and its A3 recheck passed both findings at `5fbb2d3a2`.
 - **Penalty shots and power v4:** penalty shots are verified end to end for the 8 games; power v4 is rebuilt and verified.
-- **Scheduled production checks pending (2026-11-14), each verified separately.** These are post-release checks, not unfinished fixes. No manual reruns.
-  1. The first scheduled FORGE reserve rows, from the 10:05Z run.
-  2. **Separately:** which `goalie_start_projections` rows that same FORGE run consumed. #439 (`a448842d1`) went live at 19:41:57Z, before cron 364's 09:30Z write. Compare the run's recorded inputs with those rows' `updated_at` and the 09:30Z audit. This is a possible input change, not a confirmed one.
-  3. Cron 283's first scheduled v4 power write, at 10:15Z (05:15 ET).
-  4. **Separately:** cron 388's first scheduled write through the decision-152 stored calculation, at 08:05Z. Audit `success`, and the last 3 dates' rows stamped `pp-shifts-qualified-clock-v1` with clock rows. PP share stays hidden.
-- **Separate tickets, not sprint blockers:**
-  - **PP share** stays withheld pending two owner decisions: whether to accept the NHL Penalty Summary as the official reference for 5 games, and whether to rebuild the 14 affected games' stored `powerPlayCombinations` or compute the share from shifts and qualified intervals.
-  - **Codex:**
-    - items 1, 2 and 6; item 6 needs its reader fixes before its migration;
-    - the model studies: the shared goalie baseline fix and xG v2 scoping can start now, and the goalie/starter refits and the Week Score off-night study follow.
-  - **CTPI prediction:** needs more completed games (checkpoints at games 20, 30 and 40). The descriptive Recent Team Form beta is already live.
-- **Records:** the local record commits ride with the next release.
+- **Evening (TJ-approved, live-verified):**
+  - #439 goalie item 1;
+  - migration 147, then #440 (item 6 readers plus the nullable writer);
+  - decision 152 PP share: migration 149, #441 (writer), the refresh bound to dry run `db94a9de`, and #442 (readers plus the shift-chart timing guard). **PP share is served.**
+  - TJ-requested forced tests at 22:32–22:34Z: job 388 rewrote 379 PP rows with identical values; game 2026020309's stats rewrite left its rows identical.
+- **The 2026-11-14 scheduled readbacks were waived by TJ** (~22:40Z, "assume success"). The 08:05Z cron 388 write, the 10:05Z FORGE reserve rows and goalie inputs, the 10:15Z cron 283 v4 write and #440's first natural nullable write all still run on schedule, but **none were observed here**.
+- **Open, owned elsewhere:**
+  - **Astra:** the shift-chart parser fix (task 8.0, in `ShiftChart/model.ts` after #442; until it lands, 2026020131 team 18 shows "PP timeline unavailable: timing mismatch."). Then the #439–#442 recheck (`ASTRA-RECHECK-439-442-PROMPT.md`). The Chef gates and releases the parser fix.
+  - **Codex:** the xG model (in progress), item 2's issuance contract, the goalie and starter refits, the Week Score study.
+  - **CTPI prediction:** checkpoints at games 20, 30 and 40. The descriptive beta is live.
+  - **Data:** the 2020-21 to 2022-23 WGO identity backfill, and the 2025-26 penalty-shot games.
+- **Records:** checklist `tasks/tasks-fix-sprint-closeout-2026-11-13.md`; production log `production/PRODUCTION-QUEUE.md`.
 
 Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one per lane, in the sole checkout `octoberBranch`, with exact file ownership. Every production action had TJ's own pop-up approval.
 
@@ -43,6 +43,9 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
   - #438 (`ed2002161`; team summaries count penalty shots; read-only team diff).
   - #439 (`a448842d1`; goalie item 1: pregame writer inputs and the shared league save % helper from `0e8d377ae`). Afterwards, migration 147 (item 6 nullable placeholders) was applied atomically at 19:45:17Z, ahead of its readers and writer, which ship together in a separate candidate.
 
+  - #440 (`70ad65546`; item 6 readers and nullable game-stats writer).
+  - #441 (`f5c7adc2d`; decision 152 stored-calculation PP writer and Penalty Summary registry, writes gated). Migration 149 applied first; writes turned on by TJ's flag and a clean-export deploy; the refresh is bound to dry run `db94a9de`.
+  - #442 (`44de2f107`; PP share readers and shift-chart timing guard). Serving turned on by flag and a clean-export deploy (`dpl_3dTQdAD3`); live-verified. **PP share is served.**
   Each release was gated in a clean export, built once with three cancels, and passed a 5-GET smoke.
 - **Production on 2026-11-13** (§3, `production/PRODUCTION-QUEUE.md`):
   - the 2026-27 rolling recompute and the 2025-26 goalie rebuild;
@@ -778,7 +781,7 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 - The Penalty Summary is the official reference only for those exact-reconciling team-games, with both values and the reason kept and the stored total untouched.
 - The numerator is shifts or unit intervals ∩ qualified PP intervals, replacing the stored-combinations calculation.
 
-**Next (F11 `local_efbef655`):** the five-game reference in code, then a read-only comparison against stored combinations and a cost measurement. Then TJ chooses between computing in the reader and storing the output with a bounded refresh. PP share stays withheld until the served values are verified. |
+**Done 2026-11-13:** stored calculation (#441, migration 149, refresh `db94a9de`) and readers (#442). **PP share served** and live-verified. Follow-up: Astra's shift-chart parser fix. |
 | Codex dev items 1, 2, 6 | **Held by Codex and excluded from the final release:** `fc34b053a` (goalie writer), `284f99045` (accuracy job), `c89ff5d24` (game-stat placeholders, with an unapplied migration) | Codex: league SV% helper nulls, pregame issuance contract, Splits and Lines readers before migration |
 | CTPI descriptive beta card (F5b) | **Live:** shipped in #435 (`122dd880b`, `17b342f76`, `3b6d82edc`), with the same-games label fix in #437. Badged "Descriptive beta · not a forecast"; the approved-only predictive path stays gated | — |
 | Power ratings v4 (decisions 145, 147, 150) | **Released and rebuilt.** Code in #434; version-aware labels and the writer dry run in #435. Rebuilt 2026-11-13 16:46–16:53Z after a live no-write preflight: 1,425 v4 + 47 labelled legacy carries (09-29..10-02, source 08-29), 0 v3 left, served labels checked. | — |
