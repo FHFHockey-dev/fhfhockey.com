@@ -368,3 +368,28 @@ Source: `WAVE3-CONSOLIDATED.md`, "Owner decisions still open" Q42 and Q49. The 1
 141. **Legacy sKO IPP** (L20 W3-7 D5): points above on-ice GF are assists earned after the player changed off the ice, a property of shift-based on-ice counts. **IPP is computed only over pooled multi-game windows, never per game.** The guard is renamed "points include goals while off ice".
 142. **Missing on-ice goals report row** (L20 W3-7 D5): store on-ice GF/GA as **0/0/0 only when the player has shift rows and the shift-based count is 0 for and 0 against**; otherwise unknown. Unexplained cases (for example 8480834, game 2026020104) stay unknown.
 143. **BEAST v3 gates** (decision 139 follow-up): **keep the same numeric gates and record them as the v3 gates.** In the 5v5 simulation, mid-rank moves only one player's tier. Re-check the default all-strengths view after the v3 composites regenerate (after L5's writer fix).
+
+## Final-day decisions (TJ, 2026-11-13, by pop-up in the fix-sprint Chef session)
+144. **PP clock validation** (decision 71; L8 W2-P0-13):
+   - **Reference:** the NHL team PP clock already ingested in `teamGameStats.powerPlayToi`. The team-stats route reads the NHL boxscore and falls back to the HTML Penalty Summary row "Power Plays (Goals-Opp./PPTime)". Reuse stored evidence; build no new fetcher.
+   - **Classify every game:** verified no-PP games, kept apart from missing, malformed and legacy placeholder "00:00" rows.
+   - **Displayed share:** actual player shifts, or a defined unit's shared on-ice intervals, intersected with qualified team PP intervals for the same game and team. A team PP total alone can't identify which unit was on the ice. FORGE's modeled PP seconds are never used as observed TOI.
+   - **Before qualifying the clock:** compare the reconstructed clock with the official team total, and resolve differences from overlapping penalties, penalty expiry, overtime and pulled goalies.
+   - **Edge cases:** preserve raw mismatches; withhold impossible shares rather than capping them; a verified zero team PP clock means "not applicable".
+   - PP share stays labelled unavailable for now. The lane brings back coverage and discrepancy results and the smallest verified display scope that could be enabled.
+   - A separate validation lane; it doesn't hold tonight's Astra snapshot.
+145. **Team power ratings goaltending** (BA W1-4 B D9):
+   - **Scope:** use NST 5-on-5 rows for the goaltending component only, labelled "5-on-5 goaltending". Goals against, shots against, xGA and exposure all come from the same 5-on-5 scope.
+   - **Unchanged:** the other components, the weights and the headline formula.
+   - **Missing data:** missing or incomplete inputs stay unknown; never fall back to all-situations or zero-fill.
+   - **Before any recompute:**
+     - verify on retained games with known empty-net goals that those goals are excluded and the remaining inputs reconcile;
+     - add regression tests for an empty-net game and for missing 5-on-5 data;
+     - show TJ a small before/after sample and the exact 45-call plan: rows replaced, resume, stop-on-error and verification.
+   - **No production loop until TJ approves.** If the code is ready but the rebuild isn't, the Astra handoff says so explicitly.
+146. **SOS v2 headline** (F2 Q6):
+   - **Shared definition:** opponents' standings points percentage, i.e. points earned divided by points available in completed games only. With no completed games the value is unavailable, not 0%.
+   - **Surfaces:** Trends, the API, the stats placeholder and the team landing all use it.
+   - **Weighting and labels:** the team landing keeps its 2:1 direct-to-indirect weighting, labelled where users see it. Standardize the base statistic, not the weighting; surfaces may show different SOS values. Data is labelled "as of today", and historical views are never presented as known at the time, because no result-known timestamps exist.
+   - **Regression case:** an overtime loss makes points% differ from win%; all four surfaces use the same base definition while the landing keeps its weighting.
+   - **Ships** in the final release candidate, not deployed separately.
