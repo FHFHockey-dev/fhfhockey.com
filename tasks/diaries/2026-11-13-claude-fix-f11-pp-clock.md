@@ -15,14 +15,19 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 - Checks: scripts ran end to end; report counts re-derived from `results/team-game-results.csv`.
 
 ## Gotchas
-- octoberBranch `24b1cb4d3` (11-12) replaced the clock with `penaltyClock.ts` v2 and set `PP_CLOCK_QUALIFIED = true`; master has neither. Served surfaces still withhold (`/api/toi` available=false; rolling `teamPpClock: null`).
+- octoberBranch `24b1cb4d3` (11-12) replaced the clock with `penaltyClock.ts` v2 and set `PP_CLOCK_QUALIFIED = true`. Local `master` is stale (3c03df7dc); `origin/master` 4d9b6a10d (#433) contains it, so check origin/master, not master. Served surfaces still withhold (`/api/toi` available=false; rolling `teamPpClock: null`).
 - Shipped `buildTeamPpClock.qualified` never compares to the official total (would qualify 5 mismatches + 856 placeholder rows).
 - Shipped audit flags stoppage-type events the clock already ignores (117 agreeing team-games rejected).
 - `MAT` duration 15 throws "Unsupported penalty-clock penalty".
 - `update-stats` writes "00:00" on every failure path; column NOT NULL default "00:00".
 
+## C3 follow-up (Chef request, release freeze 18:30 UTC)
+- `a98eda63f`: `penaltyClock.ts` accepts MAT/MATCH duration 15 as one 5-minute major; regression test from stored game 2025021128 (it threw before the fix; after the fix it gives the exact spans and the official 300/240 s). Other MAT durations still throw.
+- Checks: getPowerPlayBlocks + shifts tests 113/113 passed; 5 downstream suites 99/99 passed; ESLint on both files exit 0; `npm run typecheck` exit 2, all 6 errors in another lane's uncommitted `lib/rosterScheduleData/forgeDailyBridge*` (none in F11 files).
+- C1/C2, `PP_CLOCK_QUALIFIED` and serving are unchanged.
+
 ## Next
-Chef routes owner items O1–O4 and code items C1–C7 (REPORT.md) to owning lanes. No production step from this lane.
+Chef routes owner items O1–O4 and code items C1, C2, C4–C7 (REPORT.md) to owning lanes. No production step from this lane.
 
 ## Blockers
 None.

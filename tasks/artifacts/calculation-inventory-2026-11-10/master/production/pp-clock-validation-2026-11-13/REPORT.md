@@ -8,14 +8,14 @@ Lane F11, 2026-11-13. A separate validation lane: not part of tonight's release 
 - **The decision-144 risk cases all reconcile** (counts are comparable team-games in games with that feature): overtime PP 172/172 exact; shootout games 207/207; 5-on-3 454/456; penalty expiry across a period 921/924; pulled goalie during a PP 343/346, plus 2 within 1 s; double minors 205/206; coincident penalties 1,115/1,120.
 - **Legacy placeholder "00:00":** 3,728 team-game rows hold "00:00" even though the team had at least one PP opportunity. 2025-26 has 881 in the regular season (games 2025020467–476 and 2025020657–021095, dated 2025-12-09 to 2025-12-10 and 2026-01-04 to 2026-03-20), and 2024-25 has 2,392. The clock confirms real PP time in all 879 that it can check. **They can't be repaired from stored evidence:** right-rail is not stored, the stored boxscore and landing payloads carry no PP TOI, and the HTML summary is only memory-cached. 2026-27 regular season has none.
 - **Smallest verified display scope:** per-game player PP time and PP share for **2026-27 regular-season team-games that pass the rules below: 607 of 618 show a share, 9 show "not applicable" (verified zero), and 2 are withheld** (2026020036 team 68 and 2026020153 team 9). 307 of the 309 games qualify for both teams. Season-to-date windows for teams 68 and 9 would be a labelled covered subset, or unknown.
-- **Three code gaps stand between today's contract and that scope** (none fixed here):
+- **Three code gaps stand between today's contract and that scope.** C3 was fixed afterwards in `a98eda63f`, at the Chef's request for the 11-13 release; C1 and C2 stay report-only:
   1. `buildTeamPpClock` never compares against the official total. On `octoberBranch` it would mark 5 mismatched team-games and 856 placeholder-row team-games `qualified`.
   2. The situation-code audit is stricter than the clock at stoppage events. It rejects 117 team-games that agree with the official total, 40 of them in 2026-27 regular season.
   3. Match penalties recorded as `MAT`/15 are unsupported, so 4 games error out. A what-if run treating them as 5-minute majors gives 8/8 exact matches.
 
 ## Premise check: repository state on 2026-11-13
 
-- The brief described the flag as `PP_CLOCK_QUALIFIED = false`. On `octoberBranch`, commit `24b1cb4d3` (2026-11-12, "Qualify DRM strength clocks…") replaced L8's simulation with `web/lib/projections/penaltyClock.ts` (source `fhfh-nhl-penalty-context-clock-v2`) and set `PP_CLOCK_QUALIFIED = true` in `web/utils/getPowerPlayBlocks.ts:439`. The per-game `qualified` is now complete PBP && 0 situation-code disagreements. `master` has neither change.
+- The brief described the flag as `PP_CLOCK_QUALIFIED = false`. On `octoberBranch`, commit `24b1cb4d3` (2026-11-12, "Qualify DRM strength clocks…") replaced L8's simulation with `web/lib/projections/penaltyClock.ts` (source `fhfh-nhl-penalty-context-clock-v2`) and set `PP_CLOCK_QUALIFIED = true` in `web/utils/getPowerPlayBlocks.ts:439`. The per-game `qualified` is now complete PBP && 0 situation-code disagreements. Correction: this note first said `master` had neither change; that came from a stale local `master` ref. `origin/master` `4d9b6a10d` (release #433) contains both, so the v2 clock is live in production through `ingest/shifts.ts` in the projection-input build.
 - What users see is unchanged: `/api/toi` returns `powerPlayStatus.available = false` (`web/pages/api/toi.ts:130`), and the rolling writer passes `teamPpClock: null` (`web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts:1166`). There is still no `team_pp_clock` table.
 - This report validates the v2 clock, because that is the one any enablement would serve. L8's v1 (`7deb81304`) is superseded and wasn't re-run.
 
@@ -131,7 +131,7 @@ A (game, team) PP clock qualifies for display when all of these hold:
   - Set `qualified` only when rules 1–4 hold.
   - Map "00:00"/"0/0" plus a clock of 0 to a verified "not applicable" state.
 - **C2, same file, `auditPpBlocksAgainstSituationCodes`:** skip period-start, period-end, game-end, stoppage, penalty and goal events, and any second with a penalty or goal, to match the clock's own observation rules. Test cases: 2026020002, 2026020058, 2026020093.
-- **C3, `web/lib/projections/penaltyClock.ts` `unitsForPenalty`:** accept `MAT` with duration 15 (the match major and the game-misconduct minutes recorded together) as one 5-minute major. Verified 8/8 exact on the 4 stored games.
+- **C3, `web/lib/projections/penaltyClock.ts` `unitsForPenalty`:** accept `MAT` with duration 15 (the match major and the game-misconduct minutes recorded together) as one 5-minute major. Verified 8/8 exact on the 4 stored games. **Implemented in `a98eda63f`**, with a regression test from stored game 2025021128 in `web/utils/getPowerPlayBlocks.test.ts`.
 - **C4, storage (L8 proposal; owned by L4a; needs a migration and a production step):**
   - A `team_pp_clock` table holding seconds, spans, source, official seconds, official class, difference, qualified flag, reason and audit counts.
   - It would be written by `update-power-play-combinations/[gameId].ts`, which already builds these blocks.
