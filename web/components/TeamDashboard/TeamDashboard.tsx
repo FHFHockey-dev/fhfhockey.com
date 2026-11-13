@@ -12,6 +12,7 @@ import {
 import fetchWithCache from "lib/fetchWithCache";
 import { GameByGameTimeline } from "./GameByGameTimeline";
 import { AdvancedL10Metrics } from "./AdvancedL10Metrics";
+import { RecentTeamFormBeta } from "./RecentTeamFormBeta";
 import { TeamLeaders } from "./TeamLeaders";
 import styles from "./TeamDashboard.module.scss";
 
@@ -1363,6 +1364,16 @@ export function TeamDashboard({
                     teamAbbrev={teamAbbrev}
                     seasonId={effectiveSeasonId}
                     maxGames={10}
+                  />
+                </div>
+
+                {/* Recent Team Form: descriptive beta, display only */}
+                <div className={styles.metricsSection}>
+                  <RecentTeamFormBeta
+                    teamAbbrev={teamAbbrev}
+                    seasonId={effectiveSeasonId}
+                    regularSeasonStartDate={selectedRegularSeasonStartDate}
+                    regularSeasonEndDate={selectedRegularSeasonEndDate}
                   />
                 </div>
 

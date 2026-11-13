@@ -31,9 +31,11 @@ import {
   RECENT_TEAM_FORM_V2_MATERIALIZATION_CONTRACT_VERSION,
 } from "./recentTeamFormV2Materialization";
 import {
+  CTPI_DESCRIPTIVE_BETA_LABEL,
   CTPI_SERVED_VERSION,
   CTPI_VERSION_CONTRACTS,
   CTPI_WRITER_VERSION,
+  isDescriptiveBetaCtpiPayload,
   isTrustedCtpiPayload,
   parseCtpiVersion,
 } from "./ctpiVersions";
@@ -623,5 +625,61 @@ describe("CTPI version contracts", () => {
   it("parses only the two stored versions", () => {
     expect([parseCtpiVersion("1"), parseCtpiVersion(["2"]), parseCtpiVersion(2)]).toEqual([1, 2, 2]);
     expect([parseCtpiVersion("3"), parseCtpiVersion(""), parseCtpiVersion(undefined)]).toEqual([null, null, null]);
+  });
+});
+
+describe("Recent Team Form descriptive beta predicate", () => {
+  // A candidate v2 row as the team-page hook reads it: the ctpi_version
+  // column beside the selected payload paths (text values from ->>).
+  const candidate = {
+    ctpiVersion: 2,
+    publicationStatus: RECENT_TEAM_FORM_V2_CANDIDATE_PUBLICATION_STATUS,
+    formulaVersion: RECENT_TEAM_FORM_V2_CANDIDATE_FORMULA_VERSION,
+    inputVersion: RECENT_TEAM_FORM_V2_CANDIDATE_INPUT_VERSION,
+    sourceGameCount: "12",
+    status: "ready",
+  };
+
+  it("accepts issued candidate v2 rows that are ready or partial", () => {
+    expect(isDescriptiveBetaCtpiPayload(candidate)).toBe(true);
+    expect(isDescriptiveBetaCtpiPayload({ ...candidate, status: "partial" })).toBe(true);
+    expect(isDescriptiveBetaCtpiPayload({ ...candidate, ctpiVersion: "2", sourceGameCount: 5 })).toBe(true);
+    expect(CTPI_DESCRIPTIVE_BETA_LABEL).toBe("Descriptive beta · not a forecast");
+  });
+
+  it("rejects approved, v1, other versions, unavailable and zero-game rows", () => {
+    const rejected = [
+      { ...candidate, publicationStatus: RECENT_TEAM_FORM_APPROVED_PUBLICATION_STATUS },
+      { ...candidate, publicationStatus: RECENT_TEAM_FORM_LEGACY_PUBLICATION_STATUS },
+      { ...candidate, publicationStatus: undefined },
+      { ...candidate, ctpiVersion: 1 },
+      { ...candidate, ctpiVersion: undefined },
+      { ...candidate, ctpiVersion: 3 },
+      {
+        ...candidate,
+        ctpiVersion: 1,
+        formulaVersion: RECENT_TEAM_FORM_FORMULA_VERSION,
+        inputVersion: RECENT_TEAM_FORM_INPUT_VERSION,
+      },
+      { ...candidate, formulaVersion: RECENT_TEAM_FORM_FORMULA_VERSION },
+      { ...candidate, formulaVersion: "recent-team-form-v2-candidate-1" },
+      { ...candidate, inputVersion: RECENT_TEAM_FORM_INPUT_VERSION },
+      { ...candidate, status: "unavailable" },
+      { ...candidate, status: undefined },
+      { ...candidate, sourceGameCount: 0 },
+      { ...candidate, sourceGameCount: "0" },
+      { ...candidate, sourceGameCount: null },
+      { ...candidate, sourceGameCount: "" },
+      { ...candidate, sourceGameCount: "2.5" },
+      null,
+      "candidate",
+    ];
+    rejected.forEach((row) => expect(isDescriptiveBetaCtpiPayload(row)).toBe(false));
+  });
+
+  it("leaves the approved-only gate closed to the same candidate row", () => {
+    expect(isTrustedCtpiPayload(candidate, 2)).toBe(false);
+    expect(isTrustedCtpiPayload({ ...candidate, sourceGameCount: 12 }, 2)).toBe(false);
+    expect(isTrustedRecentTeamFormPayload(candidate)).toBe(false);
   });
 });

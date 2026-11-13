@@ -7,6 +7,7 @@ import {
   RECENT_TEAM_FORM_V2_CANDIDATE_FORMULA_VERSION,
   RECENT_TEAM_FORM_V2_CANDIDATE_INPUT_VERSION,
 } from "./recentTeamFormV2";
+import { RECENT_TEAM_FORM_V2_CANDIDATE_PUBLICATION_STATUS } from "./recentTeamFormV2Materialization";
 
 /**
  * CTPI version: part of the team_ctpi_daily row identity (season_id, team,
@@ -74,5 +75,40 @@ export function isTrustedCtpiPayload(
     payload.inputVersion === contract.inputVersion &&
     Number.isSafeInteger(Number(payload.sourceGameCount)) &&
     Number(payload.sourceGameCount) > 0
+  );
+}
+
+/** Badge text of the team-page descriptive beta (DISPLAY-PLAN, TJ 2026-11-13). */
+export const CTPI_DESCRIPTIVE_BETA_LABEL = "Descriptive beta · not a forecast";
+
+/**
+ * Descriptive beta (TJ, 2026-11-13): the team page may describe a candidate v2
+ * row exactly as issued. Display only. It accepts only `ctpi_version` 2
+ * candidate rows with the exact v2 formula and input versions, at least one
+ * source game, and a ready or partial score. Stored payloads carry no version,
+ * so callers pass the row's `ctpi_version` column as `ctpiVersion`.
+ *
+ * It does not loosen `isTrustedCtpiPayload`, relabels nothing, and no
+ * projection, ranking, recommendation or game-model reader may import it
+ * (import-boundary test in components/TeamDashboard).
+ */
+export function isDescriptiveBetaCtpiPayload(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const payload = value as Record<string, unknown>;
+  const contract = CTPI_VERSION_CONTRACTS[2];
+  const sourceGameCount =
+    typeof payload.sourceGameCount === "number" ||
+    typeof payload.sourceGameCount === "string"
+      ? Number(payload.sourceGameCount)
+      : Number.NaN;
+  return (
+    parseCtpiVersion(payload.ctpiVersion) === 2 &&
+    payload.publicationStatus ===
+      RECENT_TEAM_FORM_V2_CANDIDATE_PUBLICATION_STATUS &&
+    payload.formulaVersion === contract.formulaVersion &&
+    payload.inputVersion === contract.inputVersion &&
+    Number.isSafeInteger(sourceGameCount) &&
+    sourceGameCount > 0 &&
+    (payload.status === "ready" || payload.status === "partial")
   );
 }
