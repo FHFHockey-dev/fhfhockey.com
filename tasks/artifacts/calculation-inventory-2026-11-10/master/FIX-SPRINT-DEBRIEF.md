@@ -8,7 +8,7 @@ Status: **Final for the code sprint, 2026-11-13.**
 Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one per lane, in the sole checkout `octoberBranch`, with exact file ownership. Every production action had TJ's own pop-up approval.
 
 ## 1. Summary
-- **Scope:** findings from the three-wave math audit: 35 packets, 1,358 calculations, Fable audits peer-reviewed by Codex "Astra", and owner decisions 1–150 (83–150 were decided during the sprint).
+- **Scope:** findings from the three-wave math audit: 35 packets, 1,358 calculations, Fable audits peer-reviewed by Codex "Astra", and owner decisions 1–151 (83–151 were decided during the sprint).
 - **Lanes:**
   - 25 lanes plus sub-lanes: L1–L22, L4a/L4b and L9a/L9b/L9c, with sub-lanes L2-landing, L5a, L5b, L9a-markets, L10b, L13b and L22-UI.
   - Follow-up lanes F1–F17 on 2026-11-13, F12–F15 answering Astra's checkpoint 1.
@@ -28,6 +28,8 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
   - #434 (`496ab3766`; Astra fixes, F5–F15, Codex items);
   - #435 (`6f1cb0767`; version-aware power labels, writer dry run, CTPI beta card).
   - #436 (`4b45d8f1a`; social rankings missing-vs-zero, batched Lines reader, PP clock C1/C2).
+  - #437 (`b6d43efdc`; penalty-shot split with parity, NST alias fix, CTPI beta same-games label; migration 148 applied before);
+  - #438 (`ed2002161`; team summaries count penalty shots; read-only team diff).
 
   Each release was gated in a clean export, built once with three cancels, and passed a 5-GET smoke.
 - **Production on 2026-11-13** (§3, `production/PRODUCTION-QUEUE.md`):
@@ -36,6 +38,8 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
   - power ratings v3, then v4 (1,425 v4 rows plus 47 labelled legacy carries);
   - xG champion retired; composites v3, rankings, team_unit_toi and trend bands;
   - game state, CTPI v2 (gated) and SOS v2 backfills.
+  - the penalty-shot split (migration 148, 8-game derived rebuild, player/goalie and team summary refreshes, served landing verified);
+  - the F18 data repairs (14 WGO identity rows, Mahura NST re-fetch).
 - **Astra:**
   - The frozen #433 audit is **complete**. The final report is `astra/ASTRA-FIX-SPRINT-AUDIT-checkpoint-1-2026-11-13.md` (byte-identical to Astra's final file). It found one P0, AF-01, now closed. Its later social-rankings finding is being fixed by lane F17.
   - The #434 addendum is **complete**: no new P0, and two P1s on power v4, fixed in #435 and the gated rebuild.
