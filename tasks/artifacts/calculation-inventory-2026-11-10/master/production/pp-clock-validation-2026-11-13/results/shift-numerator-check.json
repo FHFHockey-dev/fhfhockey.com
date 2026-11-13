@@ -1,0 +1,79 @@
+{
+  "games": 309,
+  "ppSeconds": 190129,
+  "advantagedShare": 0.9994687817218836,
+  "equalShare": 0.0005206991042923489,
+  "reversedShare": 0.000010519173824087857,
+  "meanPpTeamPlayersOnIce": 5.986498640396783,
+  "gamesBelow95": 1,
+  "gamesBelow90": 1,
+  "worstGames": [
+    {
+      "game_id": 2026020287,
+      "pp_seconds": 558,
+      "advantaged_share": 0.8978494623655914
+    },
+    {
+      "game_id": 2026020291,
+      "pp_seconds": 731,
+      "advantaged_share": 0.9781121751025992
+    },
+    {
+      "game_id": 2026020260,
+      "pp_seconds": 1261,
+      "advantaged_share": 0.979381443298969
+    },
+    {
+      "game_id": 2026020275,
+      "pp_seconds": 518,
+      "advantaged_share": 0.9961389961389961
+    },
+    {
+      "game_id": 2026020001,
+      "pp_seconds": 1230,
+      "advantaged_share": 1
+    }
+  ],
+  "topOnIcePairs": [
+    [
+      "6v5",
+      183147
+    ],
+    [
+      "6v4",
+      4173
+    ],
+    [
+      "5v4",
+      2680
+    ],
+    [
+      "6v6",
+      99
+    ],
+    [
+      "11v9",
+      11
+    ],
+    [
+      "11v10",
+      9
+    ],
+    [
+      "7v5",
+      6
+    ],
+    [
+      "6v8",
+      2
+    ],
+    [
+      "8v5",
+      1
+    ],
+    [
+      "11v8",
+      1
+    ]
+  ]
+}
