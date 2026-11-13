@@ -7,21 +7,22 @@ export const CURRENT_SEASON_SOG_CONTRIBUTION_VERSION = "current-season-sog-appea
  * v1 (issued history, replay only): UTC calendar days of the scheduled start and of `now`.
  * v2 (decision 127, Q35): NHL schedule dates — a game's date is the schedule's own date (`games.date`, passed as
  * `scheduleDate`), else the America/New_York date of its start; the as-of date is the America/New_York date of `now`.
- * Each issued artifact keeps the version it recorded (rule 21); the default flips to v2 in the release that switches every
- * consumer (issuance, replay, bridge, coverage, planning, evaluation) at once. Contract: side note L10-calendar-v2-contract. */
+ * Each issued artifact keeps the version it recorded (rule 21). The default is v2 since the 2026-11-13 flag release (TJ
+ * approved), which switched every consumer (issuance, replay, bridge, coverage, planning, evaluation) at once.
+ * Contract: side note L10-calendar-v2-contract. */
 export const FORECAST_CALENDAR_VERSIONS = ["forecast-calendar-v1", "forecast-calendar-v2"] as const;
 export type ForecastCalendarVersion = typeof FORECAST_CALENDAR_VERSIONS[number];
-export const DEFAULT_FORECAST_CALENDAR_VERSION: ForecastCalendarVersion = "forecast-calendar-v1";
+export const DEFAULT_FORECAST_CALENDAR_VERSION: ForecastCalendarVersion = "forecast-calendar-v2";
 export const NHL_SCHEDULE_TIME_ZONE = "America/New_York";
 export type ForecastCalendarPolicyV1 = { version: "forecast-calendar-v1"; calendarDays: number; overlapDays: 7; timeZone: "UTC" };
 export type ForecastCalendarPolicyV2 = { version: "forecast-calendar-v2"; calendarDays: number; overlapDays: 7;
   timeZone: typeof NHL_SCHEDULE_TIME_ZONE; dateBasis: "nhl_schedule_date" };
 /** Every policy version this module can measure. */
 export type AnyForecastCalendarPolicy = ForecastCalendarPolicyV1 | ForecastCalendarPolicyV2;
-/** The policy consumers store and serve today. It widens to AnyForecastCalendarPolicy in the flip release, together with
- * the persisted shapes that pin v1 (`in-season/workspaceSchema.ts`, the later-impact scenario). */
-export type ForecastCalendarPolicy = ForecastCalendarPolicyV1;
-export function forecastCalendarPolicy(calendarDays?: number): ForecastCalendarPolicyV1;
+/** A stored or served policy: either version (issued v1 artifacts replay as issued). */
+export type ForecastCalendarPolicy = AnyForecastCalendarPolicy;
+export function forecastCalendarPolicy(calendarDays?: number): AnyForecastCalendarPolicy;
+export function forecastCalendarPolicy(calendarDays: number, version: "forecast-calendar-v1"): ForecastCalendarPolicyV1;
 export function forecastCalendarPolicy(calendarDays: number, version: "forecast-calendar-v2"): ForecastCalendarPolicyV2;
 export function forecastCalendarPolicy(calendarDays: number, version: ForecastCalendarVersion): AnyForecastCalendarPolicy;
 export function forecastCalendarPolicy(calendarDays = 14, version: ForecastCalendarVersion = DEFAULT_FORECAST_CALENDAR_VERSION): AnyForecastCalendarPolicy {

@@ -4,6 +4,7 @@ import type { RatingWeightsConfig, RawStatsCollection } from "components/WiGO/ty
 import {
   calculatePlayerRatings,
   WIGO_RATING_MIN_COHORT_PEERS,
+  WIGO_ST_MIN_MINUTES_DEFAULT,
   wigoPositionGroup,
   wigoSpecialTeamsCohortOptions,
   type WigoPositionGroup
@@ -259,5 +260,29 @@ describe("calculatePlayerRatings", () => {
     expect(wigoPositionGroup("D")).toBe("D");
     expect(wigoPositionGroup("G")).toBeNull();
     expect(wigoPositionGroup(null)).toBeNull();
+  });
+
+  it("defaults to PP 60 and PK 120 minutes: 59 PP minutes is out until the user lowers the floor (decision 140)", () => {
+    expect(WIGO_ST_MIN_MINUTES_DEFAULT).toEqual({ pp: 60, pk: 120 });
+    const groups = new Map<number, WigoPositionGroup>([[1, "F"], [2, "F"], [3, "F"]]);
+    const rawStats: RawStatsCollection = {
+      pp: {
+        offense: [row(1, { gf_per_60: 9 }, 40, 59 * 60), row(2, { gf_per_60: 5 }, 40, 61 * 60), row(3, { gf_per_60: 4 }, 40, 90 * 60)],
+        defense: []
+      },
+      pk: {
+        offense: [],
+        defense: [row(1, { ga_per_60: 1 }, 40, 119 * 60), row(2, { ga_per_60: 2 }, 40, 121 * 60), row(3, { ga_per_60: 3 }, 40, 150 * 60)]
+      }
+    };
+    const off = { enabled: false, minGPThreshold: 10 };
+    const byDefault = calculatePlayerRatings(1, rawStats, TEST_WEIGHTS, off, 10, 0, wigoSpecialTeamsCohortOptions(groups));
+    expect(byDefault?.offense.pp).toBeNull();
+    expect(byDefault?.defense.pk).toBeNull();
+    const lowered = calculatePlayerRatings(1, rawStats, TEST_WEIGHTS, off, 10, 0,
+      wigoSpecialTeamsCohortOptions(groups, { pp: 59, pk: 119 }));
+    // Top of three on both: (2 + 0.5) / 3.
+    expect(lowered?.offense.pp).toBeCloseTo(83.33, 2);
+    expect(lowered?.defense.pk).toBeCloseTo(83.33, 2);
   });
 });

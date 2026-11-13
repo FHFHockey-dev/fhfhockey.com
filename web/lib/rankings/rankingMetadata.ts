@@ -63,6 +63,12 @@ export const CONTEXTUAL_RANKING_GLOSSARY = [
       "A peer context derived from verified even-strength line or special-teams usage.",
   },
   {
+    key: "beast_tier_gates_v3",
+    label: "BEAST gates (v3)",
+    description:
+      "BEAST+ needs MCM ≥ 88 with 3 riff inputs ≥ 80, 2 scoring inputs ≥ 75 and 4 inputs ≥ 80; BEAST needs MCM ≥ 80 with 2 riff ≥ 75, 1 scoring ≥ 70 and 4 inputs ≥ 70; MCM needs MCM ≥ 70 with 2 riff ≥ 70 and 1 scoring ≥ 60; MCM Watch needs 2 riff ≥ 60 and 1 scoring ≥ 60. Thresholds apply to mid-rank component percentiles (v3 scale, decision 90); the numbers were kept as the v3 gates by owner decision 143.",
+  },
+  {
     key: "dense_rank",
     label: "Rank (dense)",
     description:

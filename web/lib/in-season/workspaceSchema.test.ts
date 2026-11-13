@@ -158,6 +158,13 @@ describe("saved in-season workspace validation", () => {
         exclusions: [{ gameId: "31", reasons: ["discovery_failed", "game_mismatch", "invalid_cutoff", "no_usable_target", "conflicting_forecast"] }] } };
     const parsed = saveWorkspaceSchema.safeParse({ workspace, snapshot: enriched, expectedVersion: null });
     expect(parsed.success).toBe(true);
+    // Decision 127: resolved contributions carry the schedule's own NHL date and a v2 policy; a saved workspace keeps both.
+    const v2Policy = { version: "forecast-calendar-v2", calendarDays: 21, overlapDays: 7, timeZone: "America/New_York", dateBasis: "nhl_schedule_date" };
+    const v2Contribution = { ...contribution, game: { ...identity, scheduleDate: "2026-10-05" }, inputs: { ...contribution.inputs, calendarPolicy: v2Policy } };
+    const v2 = saveWorkspaceSchema.safeParse({ workspace, expectedVersion: null, snapshot: { ...enriched,
+      forecasts: [{ ...enriched.forecasts[0], contributions: { GOALS: v2Contribution } }], forecastManifest: { ...enriched.forecastManifest, calendarPolicy: v2Policy } } });
+    expect(v2.success).toBe(true);
+    if (v2.success) expect(v2.data.snapshot?.forecasts[0].contributions?.GOALS.game).toMatchObject({ scheduleDate: "2026-10-05" });
     if (parsed.success) {
       expect(parsed.data.snapshot?.baselineSources?.[0].sourceId).toBe("rate-a");
       expect(parsed.data.snapshot?.participationSources).toEqual(enriched.participationSources);

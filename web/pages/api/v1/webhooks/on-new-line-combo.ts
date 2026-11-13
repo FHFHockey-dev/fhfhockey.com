@@ -5,6 +5,8 @@ import { linemateMatrixCaptureSelector } from "lib/lines/matrixCapture";
 import { webhookErrorDiagnostic } from "lib/lines/webhookErrorDiagnostic";
 
 const BASE_URL = true ? "https://fhfhockey.com" : "http://localhost:3000";
+// Quarantined until the replacement integration is explicitly approved.
+const LINE_COMBO_WEBHOOK_PARKED = true;
 
 class NonRetryableWebhookError extends Error {
   constructor(message: string) {
@@ -25,6 +27,14 @@ function isNonRetryableWebhookError(error: unknown): boolean {
 }
 
 export default adminOnly(async (req, res) => {
+  if (LINE_COMBO_WEBHOOK_PARKED) {
+    return res.status(200).json({
+      success: true,
+      status: "skipped",
+      reason: "line_combo_webhook_parked"
+    });
+  }
+
   const gameId = Number(req.query.gameId);
   const teamId = Number(req.query.teamId);
   console.log(`start to handle new line combo for ${gameId} team: ${teamId}`);

@@ -9,6 +9,7 @@ import {
   calculatePlayerRatings,
   WIGO_RATING_MIN_COHORT_PEERS,
   WIGO_ST_MIN_MINUTES_DEFAULT,
+  WIGO_PK_LOW_RELIABILITY_NOTE,
   wigoSpecialTeamsCohortOptions,
   type WigoSpecialTeamsStrength
 } from "utils/calculateWigoRatings";
@@ -154,7 +155,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
         return `Unranked: position unknown, so there is no forward or defense ${label} cohort`;
       const minutes = typeof row?.toi_seconds === "number" ? row.toi_seconds / 60 : null;
       if (minutes === null || minutes < stMinMinutes[strength])
-        return `Insufficient sample: ${minutes === null ? "no" : Math.round(minutes)} ${label} min, below the provisional ${stMinMinutes[strength]}-min floor`;
+        return `Insufficient sample: ${minutes === null ? "no" : Math.round(minutes)} ${label} min, below the ${stMinMinutes[strength]}-min floor`;
       return null;
     };
     const coverageNote = (type: "offense" | "defense", strength: Strength) => {
@@ -172,13 +173,22 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
       label: string,
       rating: number | null,
       isAll = false,
-      note: string | null = null
+      note: string | null = null,
+      labelNote: string | null = null
     ) => {
       const { color } = getColorForRating(rating);
       const fill = rating == null || isNaN(rating) ? 0 : Math.max(0, Math.min(100, rating));
       return (
         <div className={styles.ratingBox}>
-          <span className={styles.ratingLabel}>{label}</span>
+          <span className={styles.ratingLabel} title={labelNote ?? undefined}>
+            {label}
+            {labelNote && (
+              <>
+                <span aria-hidden="true">*</span>
+                <span className={styles.visuallyHidden}>: {labelNote}</span>
+              </>
+            )}
+          </span>
           <span className={styles.ratingTrack}>
             {rating !== null && !isNaN(rating) && (
               <meter
@@ -231,7 +241,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
           <div className={styles.ratingsBoxes}>
             {renderBox("Defense", "All", ratings.defense.as, true, coverageNote("defense", "as"))}
             {renderBox("Defense", "Even", ratings.defense.es, false, coverageNote("defense", "es"))}
-            {renderBox("Defense", "PK", ratings.defense.pk, false, coverageNote("defense", "pk"))}
+            {renderBox("Defense", "PK", ratings.defense.pk, false, coverageNote("defense", "pk"), WIGO_PK_LOW_RELIABILITY_NOTE)}
           </div>
         </div>
       </div>

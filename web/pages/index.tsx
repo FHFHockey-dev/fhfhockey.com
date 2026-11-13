@@ -646,7 +646,9 @@ export async function getServerSideProps({ req, res }) {
       playoffsActive: Boolean(playoffsActive && playoffBracket),
       playoffBracket,
       playoffSeasonYear,
-      playoffWeekGames,
+      // This week-sized NHL payload is only read by the playoff bracket.
+      // Sending it during the regular season bloats __NEXT_DATA__ on every load.
+      playoffWeekGames: playoffsActive && playoffBracket ? playoffWeekGames : [],
       homepageSnapshotGeneratedAt: new Date().toISOString(),
       standingsLoadError: standingsResult.error,
       injuriesLoadError: injuriesResult.error,

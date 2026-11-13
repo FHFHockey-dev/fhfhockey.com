@@ -1,0 +1,638 @@
+# Math-audit fix sprint: debrief
+
+Status: **DRAFT, updated 2026-11-13**. The per-lane sections are final. The production section is updated as each approved step finishes, and the draft becomes final once the remaining production steps in `production/PRODUCTION-QUEUE.md` are done or deferred.
+
+Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one per lane, in the sole checkout `octoberBranch`, with exact file ownership. Every production action had TJ's own pop-up approval.
+
+## 1. Summary
+- **Scope:** findings from the three-wave math audit: 35 packets, 1,358 calculations, Fable audits peer-reviewed by Codex "Astra", and owner decisions 1–134 (83–134 were decided during the sprint).
+- **Lanes:** 25 lanes plus sub-lanes. L1–L22, L4a/L4b and L9a/L9b/L9c, with sub-lanes L2-landing, L5a, L5b, L9a-markets, L10b, L13b and L22-UI.
+- **P0 coverage (45 total):**
+  - 40 fixed in code. Many of these still need a queued rebuild before stored data reflects the fix.
+  - 5 are partly fixed: W1 #14, #16, #17, #27 and W3-P0-1 (§5).
+  - None is left unaddressed.
+- **Integration gate:** clean `git archive` export of `496b5c9de`.
+  - Vitest: 19,122 passed, 0 failed (1,391 files).
+  - Typecheck: passed.
+  - ESLint, 715 changed files: 0 errors.
+  - CSS Modules pure check: 6 of 6 passed.
+  - pytest: 213 passed, plus 4 git-history tests that pass in the full checkout (217 of 217).
+  - The first gate run caught three cross-lane test breaks; they were fixed in `b6336a5d8` (L12), `e2a18e4ec` (L22) and `496b5c9de` (L9a).
+- **Release:**
+  - PR #430 (squash) is master `631a00c19`. Its tree matches candidate `27edf8381` exactly: octoberBranch `74c85b556` without the lane diaries.
+  - Vercel: one fhfhockey build READY (`dpl_137qFEpUhovkj9Q6NaPbD4jAHNzP`), three cancels.
+  - Smoke: 5 of 5 GETs returned 200.
+  - octoberBranch synced as `c577225e2`, with no build.
+- **Production incident:** on 2026-11-12 between 15:43 and 15:50Z, production Postgres hung and then crash-recovered under the strength re-normalization load (§4.3).
+
+## 2. Release state
+| Item | State |
+|---|---|
+| master | `631a00c19` (PR #430). The prior release was `1cdb1dc8f` (#429). |
+| octoberBranch | `c577225e2` on origin: an ours-merge of master with the tree unchanged. Later local commits hold the Chef's records only. |
+| Deployed | fhfhockey `dpl_137qFEpUhovkj9Q6NaPbD4jAHNzP` READY. cms-fhfhockey, functions-fhfhockey and fhfhockey.com were CANCELED by ignored-build. |
+| Excluded from release | Lane diaries, which octoberBranch keeps. Codex's uncommitted Goalie Grid, shift and Start Chart work. |
+| Code still to ship | `LEDGER_BASIS_SCHEMA_ENABLED` flip (queue 16) and the decision-127 default flip (queue 16b): one follow-up release |
+
+## 3. Production actions taken (each with TJ's pop-up)
+| When (UTC, 2026-11-12) | Action | Receipt |
+|---|---|---|
+| sprint | Migration 88 (`20261020211500`) and 137 (`20261112090000`) | `476b93257`, `1244512f9` |
+| ~14:20–14:35 | Migrations 125–136 and 138–140, each applied singly via the session pooler and read back | `d08318dce`, `7c3116717`, `82f643878`, `74c85b556`; readbacks in `migration-authority.json` |
+| 14:41 | Release branch pushed: no build, no checks at 98 s | PR #430 |
+| 14:48 | PR #430 merged; build READY plus 3 cancels | §2 |
+| 15:01–15:08 | Goalie summary rebuild 2026-27 (decision 111): 44 date calls, 298/298 games at formulaRevision 2, 14,094 partitions, 0 stale | `production/GOALIE-REBUILD-2026-27-PLAN.md` |
+| 15:0x | Migration 141 (goalie season view, regular season only): 5v5 GAA coverage 73 → 97 of 98 goalie-seasons | `1aa886c92` |
+| 15:09–15:10 | Smoke, 5 sequential GETs: all 200 | §2 |
+| 15:10 | octoberBranch ours-merge pushed: no build at 103 s | `c577225e2` |
+| 15:35–15:46 | Strength v2 re-normalization, windowed: 146 games, then the **incident** (§4.3) | `PRODUCTION-QUEUE.md` incident section |
+| 15:54–19:35 | Strength v2 re-normalization, slow single-game phases A–E (TJ re-approved after the crash was disclosed). All **298/298** 2026-27 games at v2, complete. | `HEADS-CHANGED-2026-11-12.tsv`; handoff 2 |
+| 18:22; 19:18–19:2x | 11 OT games recovered from **official HTML** shift reports. NHL JSON was dropping one team's OT shifts; each game was qualified for identity, overlaps, coverage, ES skater TOI and GS goalie TOI. One new raw snapshot each; JSON snapshots kept. | `production/GAME-2026020159-RECOVERY-PLAN.md` |
+| 19:36–19:43 | (Codex) Trends six-row repair; Goalie Grid names-first release `4243bcd4e` | Codex mailbox |
+| 20:03–20:28 | Summary refresh (serial step 4): team 41,720 rows (0 stale), player 43,764 partition rows, goalie 298/298 at rev 2 | handoff 3 |
+| 21:05–23:25 | (Codex) DRM step 5: 296 games repaired, 2 current. Game-57 HTML source exception, TJ-approved. | Codex `drm-ddatv-2026-11-12/production/step5/` |
+| 23:50 | pg_cron job 327 `update-predictions-sko` paused (decision 129); `goalie_totals_unified_snapshot` refreshed (402 → 476 rows) | `PRODUCTION-QUEUE.md` |
+| 2026-11-13 00:0x– | 2025-26 goalie partition rebuild (summary-only, 1,417 games), TJ-approved | in progress |
+
+Coordination: steps 1–6 ran serially with Codex under a TJ-approved order (mailbox entries `CLAUDE-FIX-SPRINT-SERIAL-ORDER-20261112` and onward), each with an explicit DB handoff.
+
+## 4. Cross-lane checks
+### 4.1 Integration gate (clean export)
+The first run, at `ca06cbf6c`, found three test files that lanes changed outside their own test lists:
+- `statsGame.test.tsx` (L22 heading), now with stronger fixtures: upcoming games exercise the parser, and the 2.0/3.0 book is rejected.
+- `lib/NHL/client/index.test.tsx` (L12 decision 64, odds-free key).
+- `qualify-native-players-offline.test.ts` (L9a's new column reads: 29 tests, one root cause).
+
+The re-run at `496b5c9de` was clean, apart from the expected git-history pins. The `planning.test.ts` 1000-player benchmark is a load flake: it passes when run alone.
+
+### 4.2 Release-together sets, each verified before merge
+- **Migration 134 before L1's game-stats writer (`3e6562f9a`):** applied first. Without it, every game's skater rows are rejected.
+- **Migration 136 before the L4b radar:** applied.
+- **Migration 139 before the L15 writer:** applied.
+- **Migration 129 with the L9a/L11 readers**, which are shape-tolerant: applied.
+- **L9c if-plays lines:**
+  - L11 bridge `630456546` and L12 `81b896fd7`/`baaa0bac2` shipped.
+  - Codex is now adding the Start Chart availability labels (CODEX-GOALIE-GRID-START-CHART-DEPENDENCY-20261112).
+  - The FORGE run that writes the if-plays lines must wait for those labels (queue step 10).
+- **FORGE band reader inert (`2c6b96176`):** this **changed live FORGE output**. The audit thought the reader was inert, but it was applying momentum of about ±14% and widening bands up to 1.55×. It can be re-enabled only with a fitted regression size (decision 26).
+
+### 4.3 Incident: database hang and crash recovery during re-normalization
+**Timeline:**
+- The first plan used date windows of 13–25 games, 10 s apart, with a guard that counted active queries only.
+- Seconds per game rose from about 2.6 to more than 6.6.
+- A checkpoint took 270 s to write at 15:42Z.
+- From 15:44Z, REST returned 522 and 5xx errors, and the pooler couldn't check out connections (`ECHECKOUTTIMEOUT`).
+- Postgres logs are silent from 15:43 to 15:50. The database then crash-recovered and was up at 15:50:06Z ("redo done", end-of-recovery checkpoint).
+
+**State after recovery:** each game's normalization is atomic, so no game was left half-written. 146 games were at v2 and 152 at v1.
+
+**Lesson:** guard on I/O pressure and call latency, not on active-query count. The slow run uses single games 60 s apart, a probe-latency check (under 1 s), no query over 5 s, no I/O or lock waits, and no forced checkpoint. It stops on any call over 15 s. Its first 5 games took 1.7–3.1 s each and wrote about 3 MB of WAL each.
+
+**Open:** the root cause is likely memory or I/O exhaustion from large concurrent payload upserts and normalization RPCs. It isn't proven: we have no host metrics. Check the Supabase dashboard's resource graphs for 15:40–15:50Z.
+
+## 5. P0 coverage
+### Wave 1
+| # | Defect | Lane | Status |
+|---|---|---|---|
+| 1 | Leaky xG champion cfg9bac2706 | L14 | Code fixed (registry pin, selector, gate). **Demotion pending** (queue 3). |
+| 2 | Bucket-heuristic xG on underlying stats | L2, L14 | Display retired. Parity and the team writer still compute it, hidden (accepted). |
+| 3 | Team shot map mirrored | L14 | Fixed |
+| 4 | Score-state filters empty | L1, L2 | Fixed. Player and team summaries are rebuilt in queue 2. |
+| 5 | GSAA = heuristic xGA − GA | L2-landing | Fixed; goalie partitions rebuilt |
+| 6 | Penalty classes | L1 | Fixed |
+| 7 | HD/SC/rush carry NST names | L1 | Fixed: declared FHFH house definitions; parity rush follows NST options |
+| 8 | Radar cohort | L4b | Fixed; migration 136 applied. WiGO rebuild in queue 9. |
+| 9 | Rolling /60 fallback 60× | L6 | Fixed. Stored rows are rebuilt in queue 5. |
+| 10 | Results luck reads a rate as a count | L6, L5 | Fixed; needs the rolling rebuild (queue 5) |
+| 11 | Trend page scales and empty calendar views | L6 | Fixed; player-trend v3 rebuild in queue 5 |
+| 12 | Power ratings standardised against the slate | L12 | Fixed; v3 recompute in queue 7. The prior min(1, GP/10) is unfitted (decision 125). |
+| 13 | PP/PK tiers from one game | L12 | Fixed; recompute in queue 7 |
+| 14 | Game Grid win odds | L12 | **Partly.** Odds withheld on the data path. The held UI labels are a Codex proposal; the Game Grid UI now belongs to Codex. |
+| 15 | Top Adds NaN | L12 | Fixed (expected points, decision 118/132) |
+| 16 | Starter probability over-confident | L9b | **Partly.** Credited start, cutoffs, closed vector and unknown rest are fixed. The refit isn't run (plan `L9b-starter-refit-plan.md`). The accuracy job is a Codex proposal. |
+| 17 | Start Chart raw L10 share (conditional) | L9b | **Partly.** Labelled "L10 start share". The writer fix is a Codex proposal. |
+| 18 | PK bucket omitted | L9a | Fixed; FORGE rerun in queue 10 |
+| 19 | Hits/blocks count PK twice | L9a | Fixed; FORGE rerun |
+| 20 | Goalie row is the team slot | L9b | Fixed: `forge_goalie_candidates_v1`. The FORGE rerun fills it. |
+| 21 | Opponent-goalie .900 | L9a | Fixed. Held-out validation is in the backlog. |
+| 22 | Power Terminal | L12 | Fixed |
+| 23 | Trend-band TOI 60× | L7 | Fixed; band rebuild in queue 6 |
+| 24 | Sandbox band status | L7 | Fixed (usual range `validated:false`) |
+| 25 | /charts career averages | L7 | Fixed |
+| 26 | Streaming rank blend | L11 | Fixed |
+| 27 | No-line players as known zeros | L11, L9c | Consumer fixed (L11). Root cause **partly**: R2, R4, R5 and R6 fixed. R1 needs the reserve migration (authority 101) and FORGE_RESERVE_PASS_ENABLED (queue 11). R3 (no NHL history) stays unknown. |
+| 28 | Goalie losses = 1 − W | L11 | Fixed. L/OTL stay unknown until a fitted split exists (decision 46). |
+| 29 | Pickup boost scales −100 | L12 | Fixed |
+| 30 | Category z-score attenuation | L13 | Fixed |
+
+### Wave 2
+| # | Lane | Status |
+|---|---|---|
+| W2-P0-1 NST season views | L4a | Fixed: migration 125 applied (McDavid GP 99 → 67) |
+| W2-P0-2 home-first strength_exact | L1, L2 | Fixed. Summaries are rebuilt in queue 2. |
+| W2-P0-3 goalie MD/LD GA twice | L2-landing | Fixed; goalie partitions rebuilt |
+| W2-P0-4 skater strength filters show PK | L2-landing | Fixed. Player summaries are rebuilt in queue 2. |
+| W2-P0-5 team score-state TOI | L2 | Fixed. Team summaries are rebuilt in queue 2. |
+| W2-P0-6 landing PP%/PK% | L2 | Fixed |
+| W2-P0-7 nulls first | L2 | Fixed |
+| W2-P0-8 variance CF/60 | L3 | Fixed: pooled iCF/60. The 5v5 basis is unverified, so it is labelled with its source. |
+| W2-P0-9 goalie matrix GSAA/60 | L5a, L4a | Fixed (L5a, plus migrations 135 and 141) |
+| W2-P0-10 team matrix heuristic xG | L5b | Fixed (NST 5v5 only) |
+| W2-P0-11 last-N per-60 labelled as goals | L5, L6 | Fixed; needs the rolling rebuild |
+| W2-P0-12 line-card goalie | L8 | Fixed |
+| W2-P0-13 /api/toi PP share | L8 | Fixed: withheld until the PP clock is qualified |
+| W2-P0-14 draft VONA (conditional) | L13 | Fixed (decision 76) |
+
+### Wave 3
+| # | Lane | Status |
+|---|---|---|
+| W3-P0-1 stats-page rates and shares | L17 | **Partly.** Rates and NST shares are pooled. The four WGO shares show for single games only; pooling them needs a verified SAT basis. |
+
+## 6. Per-lane results
+For each lane: its commits, then its findings and their outcomes (finding IDs as in the brief), its tests, and what's left. Production steps for all lanes are in `production/PRODUCTION-QUEUE.md`.
+
+### L1: event state, parity, PBP
+**Commits:** `cb28ffc58`, `3e6562f9a`, `72e78b3d1`, `765e6f71c`.
+
+**Fixed:**
+- W2-2 D1 / W2-3 D1.
+- W1 P0 #4 (parity), #6 and #7 (house definitions).
+- PR-U3 / W2-3 A1.
+- W2-7 D1: decision 84 (EN is the opponent's empty net), shootout goals aren't goals, and decision 83 nulls.
+- BA W1-2 B: D8 boundary fixtures (two guard cases pass both before and after), PDO scale, miss-reason map v2.
+- W2-2 D11.
+
+**Out of scope:** W3-3 D5 (L16).
+
+**Tests:** 171 files / 2,107 passed; Upserts 388/388.
+
+**Left:**
+- Codex: the team `powerPlayToi` "00:00" default and the goalie '0/0' placeholder need nullable support in Codex files.
+- `season.py` EV_TOI `greatest()` reads nulls as 0.
+- Parity still computes bucket xG (hidden).
+- The xG rush window stays at 10 s.
+- Unverified: house labels on L4b surfaces.
+
+### L4a: NST SQL views and migrations
+**Commits:**
+- `11589483b`: F1 quarantine.
+- `04d2dfd82`: migrations 125–132.
+- `f36c85e88`: 133.
+- `e24ec520d`.
+- `f066be4ce`: 134.
+- `ddf9c1669`: 135.
+- `01fbee34c`: 136.
+- `9fb3c5a91`: 137.
+- `77bc8e6f8`: 138.
+- `16c5c095a`: 139.
+- `049ca206b`: 140.
+- `730242f62`: 141.
+
+**Fixed:**
+- W2-P0-1 and W2-1 F1.
+- D3 / PR-SQL-3; D4 / PR-SQL-2 / F3.
+- D6 (comment; label by L4b), D7, D8, D9, D11, D14.
+- D16 (inventory only).
+- BA W1-2 B (row 120 note).
+
+**Partly fixed:**
+- PR-SQL-1: the materialized-view half is deferred.
+- D12: an interim fail-closed fix; the decision-16 denominator is still open.
+
+**Deferred:** D10 (materialized view, no reader), D13 (to L7), W3-7 D9/A5 (no caller).
+
+**Declined:** D15 / M-SUS-001 (withdrawn).
+
+**Tests:** update-nst-gamelog 108/108. Eleven disposable-PG proofs, each with a rollback; all exit 0.
+
+**Left:**
+- D7: players with no PP-unit game have no 0% row.
+- The `nst_seasonlong_combined_*` views still zero-fill.
+- `percentile-rank.ts` returns zeros for a player with no games.
+- `LineCombinations/utilities.ts` counts a missing outcome as a win.
+- The migration-139 rollback refuses once a NULL exists.
+
+### L6: rolling averages and trends
+**Commits:** `6b2023387`, `f7ab9bca9`, `522feb4db`, `e00e2e9a7`, `51ab213f3`.
+
+**Fixed:**
+- W1 P0 #9, #10 (producer) and #11.
+- W2-4 D5 producer: xSH% = ixG ÷ iFF.
+- BA W1-3 A support pairs and fixture.
+- D5 (team of record), D7/D14/D16, D10 (mid-rank).
+- W3-6 N1 writer.
+- W3-3 D8, D9.
+- W3-7 D6 (no dedicated test).
+
+**Partly fixed:** D6 PP share; the writer passes null until L8's clock is qualified.
+
+**Tests:** 46 files / 400 passed.
+
+**Left:**
+- The `team_pp_clock` table isn't built.
+- Rows without `windowCountSupport` read as unknown until the rebuild.
+- Rebuild scope note: the lane wrote 2025-26; the current season is 2026-27.
+
+### L14: xG model, gate, shot map
+**Commits:** `0b1d5a636`, `645aaef94`, `a41ca6641`, `52c8469d9`, `60f1b3eb9`, `6fadc574a`, `d06dfc7c0`, `2d1db07a6`.
+
+**Fixed:**
+- W1 P0 #1 (code and demotion plan) and #3.
+- BA W1-1 A (isotonic ties, rebound keys, xgboost scoring space) and BA W1-1 B.
+- W3-1 D1/A4, D6/C2 (decision-88 gate; admin-only shadow scoring, decision 101), D8.
+- Decision 7.
+
+**Partly fixed:** W1 P0 #2 (model side).
+
+**Tests:** 35 files / 191 passed; joint run 66 files / 651.
+
+**Left:**
+- Demotion, aggregate rebuilds and the v2 features/model (queue 3).
+- No in-house xG for new games until a v2 model passes (decision 99).
+- The decision-100 EN comparison hasn't run.
+
+### L17: player stats page
+**Commits:** `889a32a32`, `48d80a605`.
+
+**Outcomes:**
+- W3-P0-1: partly fixed (see §5).
+- W3-3 D1 copy: fixed.
+- W3-2 D5 (decision 89): fixed.
+
+**Tests:** 19 files / 282 passed.
+
+### L2 and L2-landing: underlying stats
+**Commits:** `168d9e179`, `829332f70`; L2-landing `9a8f1c8bd`, `5ef993a62`, `1922c6f3c`, `857732315`, `90c6ace50`, `40b7cc4d3`.
+
+**Fixed:**
+- W2-P0-2 to -7.
+- W1 P0 #2 (display) and #5.
+- W2-2 D11, D12, D13, D14, D15, D19; PR-U3.
+- W2-3 D5, D8–D12, D14, D16, D17, A2, A4, DR1, DR3.
+- W3-1 D7 / C1.
+
+**Deferred:** W2-2 D10, PR-U2, PR-U4 (coverage flags with formulaRevision 3).
+
+**Declined:** W2-3 D15 (labelled approximation).
+
+**Unverified:** W2-3 D7 (finished-game rule) and D13 (chart minimum TOI).
+
+**Left:**
+- `teamStatsSummaryRefresh` writes bucket xG into NOT NULL `xgf`/`xga`. It's hidden; retiring it needs a nullable migration.
+- Player readers serve pre-revision rows until the rebuild.
+
+### L3: variance pages, roster matrix, TOI parser
+**Commits:** `ccb414c43`, `8ec8bbe19`, `6f42a7ecc`.
+
+**Fixed:**
+- W2-P0-8.
+- W2-3 A3, A5.
+- W2-2 D6, D7, D8 (decision 97), D9 (decision 98); PR-U1/U2/U4.
+- W3-3 D4.
+- Rule 5: URL/key log lines removed.
+
+**Tests:** goalie 35/35 (13 failed on HEAD); Teams 12/12.
+
+**Left:**
+- The iCF/60 5v5 basis is unverified.
+- NST wiring deferred (decision 73).
+- PR-U3 goalie distance weighting is untouched.
+- Browser check not run.
+
+### L5, L5a, L5b: rankings, splits, matrices, unit TOI
+**Commits:** `e922bb6c0`, `ee075a1b5`, `f5d60829a`, `e6c7b4c01`, `87dfa76ea`, `6c236b079`, `54f5cb7ae`, `daf4357b6`; L5a `e023c5ee5`, `96a935599`; L5b `2870d41cb`.
+
+**Fixed:**
+- W2-P0-9, -10, -11; W1 P0 #10 (consumer).
+- W3-6 N1.
+- W2-4 D3, D5, D6, D7, D8, D9 (decision 112), D12, A1, A2, A3.
+- W2-6 §3.
+- Decision 90 (mid-rank percentiles; dense rank stated in the glossary).
+
+**Out of scope:** W2-4 D10 (fixed by L2-landing).
+
+**Partly fixed:** D11/D13. Floors are done; the composite writer's gate is deferred.
+
+**Tests:** final 57 files / 535 passed.
+
+**Left:**
+- BEAST cut-offs need re-evaluation (decision 74).
+- QS labels on the splits page and TeamDashboard are not updated.
+- `war.ts` season fallback is 20252026.
+
+### L8: lines, PP combos, TOI API, shift charts
+**Commits:** `1e34edbdd`, `7deb81304`, `4126fed60`.
+
+**Fixed:** W2-P0-12, W2-P0-13.
+
+**Partly fixed:**
+- W2-6 D3: legacy label done; the 5v5 switch waits on the unit-TOI rebuild and the disjoint-slot owner question.
+- D5: `es_shifts` sits in Codex's `shift-charts.ts`.
+- D8: M-LINE-028/030 sit in unowned `web/lib/sources`.
+- M-FRG-058: clock contract written; the clock is unqualified.
+
+**Deferred:** D4 (fitted floor needs reads), D6/D7 (dormant).
+
+**Tests:** 9 files / 72 passed.
+
+**Left:**
+- `PP_CLOCK_QUALIFIED = false`.
+- `team_pp_clock` table not built.
+- FORGE `toi_pp_seconds` exceeds the PP clock on 77 team-games (L9a).
+
+### L4b: WiGO readers, ratings, writer, radar
+**Commits:** `71840ba42`, `f9891a23c`.
+
+**Fixed:**
+- W1 P0 #8.
+- W3-1 A1, A2, A3, D4, D5, D9, D11, D12.
+
+**Partly fixed:** D3. The 30-minute floor is provisional and not split-half validated.
+
+**Declined:** W2-1 D9 reader (no change needed).
+
+**Tests:** 62 files / 604 passed; radar 61/61; E2E 13/13.
+
+**Left:** the WiGO rebuild; the floor validation read; PP% is labelled unqualified.
+
+### L16: homepage analytics and pulse
+**Commits:** `d32138d0b`, `5d7ef3daf`.
+
+**Fixed:**
+- W3-2 A1 / W3-3 D5.
+- W3-2 D2 (decision 42 notice, decision 43 pick).
+- W3-2 D1 / W3-3 D6 (decision 109).
+
+**Tests:** 13 files / 110 passed.
+
+**Left:** FORGE projected goals still show as "Proj" on game cards.
+
+### L18: social share
+**Commits:** `e7b032700`, `dee837882`, `644a6691e`, `fdb14783b`, `21607f3f9`.
+
+**Fixed:**
+- W3-3 D2, A1.
+- W3-2 D4/A2.
+- BA W1-3 A.
+- Crease Shift finality, then handed to Codex.
+
+**Declined:** BC W1-12 social readers (no change needed).
+
+**Tests:** 50 files / 1,346 passed.
+
+### L9a, L9a-markets: FORGE skater path
+**Commits:**
+- `9cf384ff4`, `18f1f1804`, `e5b0b11fb`, `fe0b3d110`, `6f94723d4`, `5f62c2f47`, `74b83d87e`, `4e9c4371d`, `22242bcd8`, `52d37ae12`, `2c6b96176`, `8bc43a855`, `2b2c58a76`, `0b7c8b04e`, `a357d348f`, `496b5c9de`.
+- Markets: `c47f77708`.
+
+**Fixed:**
+- W1 P0 #18, #19, #21.
+- A1/N1, D6/D8, PR-SQL-2/F3/C8.
+- W2-6 §1.
+- N2, N3, N4, D7.
+- Markets: D4b, D17, D18, W3-4 N2 (dormant, decision 30).
+- Decision 26: band reader inert.
+
+**Fixed elsewhere:** D16 (by L13b).
+
+**Partly fixed:**
+- A2: the reserve part is a Codex proposal.
+- M-FRG-017: PP over-allocation only.
+- W1-7 D2: scratches game-scoped; tweet-pattern-review scratchGameId deferred.
+
+**Deferred:** D5 joint refit, decision 29, W3-4 N3–N5, decision 27.
+
+**Unverified:** BC W1-6 D8, D13, D14.
+
+**Tests:** lib/projections 1,557 passed; gate 58/58.
+
+### L9b: FORGE goalie path (handed to Codex 2026-11-11)
+**Commits:** `266794115`, `4eab7347d`, `4bf7bb7c8`, `b0a8bd244`, `d2f9b2941`.
+
+**Fixed:**
+- W1-5 credited start.
+- W1 P0 #20.
+- D24/N6; GSAA .900 readers; W3-4 N1; W2-8 PR5.
+
+**Partly fixed:** #16, #17, BA W1-5 B (no frozen puck-drop receipt).
+
+**Blocked on Codex:** the accuracy job.
+
+**Tests:** 465 across 16 files.
+
+### L9c: FORGE coverage path
+**Commit:** `22f67eb9f`.
+
+**Outcomes:**
+- Decisions 132.2–132.4: fixed. The decay harness is unvalidated and not applied.
+- W1 P0 #27 root cause: partly fixed (R1 is production work, R3 is unknown).
+
+**Tests:** lib/projections 1,580 passed.
+
+### L12: team ratings, Game Grid, Top Adds, Power Terminal
+**Commits:** `690693c71`, `24acb3ca6`, `81b896fd7`, `baaa0bac2`, `b6336a5d8`.
+
+**Fixed:**
+- W1 P0 #12, #13, #15, #22, #29.
+- SOS.
+- Poisson (shared OT rule).
+- W3-3 D7/D10; W1-12 039/040.
+
+**Partly fixed:**
+- #14.
+- CTPI: v2 pooled; v1 frozen.
+- BA W1-4 B: one power score; D9 EN exclusion unverified.
+- W1-12 D5: off-night value deferred (decision 53).
+
+**Tests:** 2,619 tests across 176/177 files.
+
+### L13, L13b: draft and category value
+No diary exists. Outcomes come from the commits and the Chef diary.
+
+**Commits:** `456ba9e61`, `902a28ac9`, `bbc0dd961`.
+
+**Fixed:**
+- W1 P0 #30; W1-12 A R1.
+- W2-P0-14.
+- W2-5 D1, D3, D4, D5, D6/§4.2, M-DRF-010.
+- W3-1 D2, D10.
+
+**Partly fixed:**
+- W2-5 D7–D14: community prior in unowned code.
+- W1-12 D6: Yahoo sort_order is a Codex proposal; ESPN/Fantrax normalizers are unowned.
+
+**Out of scope:** W1-12 D3 (fixed by L10).
+
+### L22: game predictions, odds, game pages
+**Commits:** `b16a81fae`, `99c42265b`, `71861c094`, `7c3867003`, `e2a18e4ec`.
+
+**Fixed:**
+- Decision 43 (and 117).
+- Backtest leak, issuance, partial rows, odds pairing (decision 116), lineup, misc.
+- Decisions 44, 45; calibration test.
+
+**Partly fixed:**
+- D1 / decision 42: the cron "skipped" status is a Codex proposal.
+- Decision 1: benchmark spec only.
+
+**Tests:** 37 files / 411 passed; reopen 248; gate 49/49.
+
+**Policy choices to confirm:**
+- A book with two offers on one side is skipped.
+- A response with no fetch time, or a started game, shows as unavailable.
+
+### L15: season evaluator, TS + Python twins
+**Commits:** `412e9870f`, `12e55325d`, `3e4c7826f`, `944f95f42`, `bef023fa8`.
+
+**Fixed:**
+- W3-5 F1–F6, F8, F9, PR1–PR3.
+- W2-8 D9–D12, PR8, PR9.
+- M-PFC-110; decision 66.
+
+**Partly fixed:**
+- W2-7: D1, D2, D4b, D5, D9 fixed. D3, D4, D7, D8 deferred.
+- BC W1-8 A/B: the .65 loading is labelled, not changed.
+
+**Tests:** Vitest 36 files / 1,372 passed; pytest 217.
+
+**Left:**
+- A goalie outcome model (decision 121).
+- Intervals stay labelled uncalibrated (decision 39).
+
+### L10, L10b: served ledger and settlement
+**Commits:** `c9342d6d0`, `e18c111ad`, `788511320`; L10b `37adc9c0a`.
+
+**Fixed:**
+- W2-8 D1 (decision 78), D2, D3/PR4.
+- W2-7 D6; M-PFC-120.
+- BC W1-6 A3.
+- W3-5 F6–F10, PR1, PR3–PR5.
+- BC W1-11 010.
+
+**Partly fixed:**
+- Decision 41: basis persistence waits on the flag (migration 138 is applied).
+- W2-8 D6: the decision-127 calendar default is still v1 (queue 16b).
+- D8: unverified.
+
+**Left:** an owner decision on the accountability composite column (it can't hold v2 skill below 0).
+
+### L11: RSO bridge and optimizer
+**Commits:** 15 L11 commits (`495f54d26` … `ca06cbf6c`), plus a Codex proposal `c231c05be`.
+
+**Fixed:**
+- W1 P0 #26, #27 (consumer), #28.
+- BC W1-11 A: comparator, re-aim, override, reserves, dates.
+- W2-8 D2/D3; W2-1 C2.
+- Decisions 51, 57.
+
+**Deferred:** tilt and W1-6 D19 (owner contract), D4, D5, D6.
+
+**Blocked on Codex:** W1-12 R2.
+
+**Tests:** RSO 1,804 passed.
+
+**Left:** unverified whether L11 reads the L13 stat registry and L9b's goalie contract.
+
+### L7: sustainability, trend bands, /charts
+**Commits:** `b5ee2aca0`, `667e24ef0`.
+
+**Fixed:**
+- W1 P0 #23–#25.
+- BC W1-9 A1–A3.
+- W3-6 N2–N4.
+- W2-1 F2.
+
+**Partly fixed:** N6/D8 (label only).
+
+**Deferred:** A4–A6, N5, D9–D11, D13.
+
+**Tests:** 232 passed.
+
+### L19: legacy averages routes and CSV upsert
+**Commits:** `c2bcbf9d0`, `526c1f6d8`.
+
+**Fixed:** W3-3 D3, A2 (decision 133), D11.
+
+**Left:** the NST traded-season layout is assumed.
+
+### L20: legacy sKO
+**Commit:** `317c1ff4d`.
+
+**Fixed:**
+- W3-7 D1: renamed Volatility-Discounted Points Pace (VDP), decision 134.
+- D2 (migration 140 applied).
+- D10 (legacy part).
+
+**Partly fixed:** D5. The IPP guard is in; the cause of the 42 rows isn't established.
+
+**Deferred:** D8/A4 (dormant).
+
+**Left:** pause the cron (queue 13).
+
+### L21: Sko Element contracts
+**Commit:** `0f3614cb9`.
+
+**Fixed:** W3-7 A1–A3, D3, D4, D7, D10.
+
+**Out of scope:** VuDu.
+
+**Left:** the Codex BLSH-consumer proposal (CLAUDE-FIX-L21-A1-D3-20261112) has no reply.
+
+## 7. Remaining risks
+- **Mixed or stale stored data until the queued rebuilds run:**
+  - player and team summaries;
+  - rolling and trend rows;
+  - power ratings;
+  - WiGO;
+  - FORGE rows (null PK heads before `9cf384ff4`; goalie candidates empty until the FORGE run);
+  - trend bands.
+- **FORGE live-output change from the inert band reader** (§4.2).
+- **No in-house xG for new games** until a v2 model is approved (decision 99). The served champion is the leaky cfg9bac2706 until it is demoted.
+- **PP share withheld everywhere** until the PP clock is qualified.
+- **Database load:** the 2026-11-12 incident shows that bulk normalization and summary rebuilds must be paced by I/O and latency.
+
+## 8. Owner decisions still open
+- The accountability composite column vs v2 skill below 0 (L10).
+- Positional tilt: redistribution vs total contract (L11, W1-6 D19).
+- The disjoint-slot rule for 5v5 lines (L8, decision 107).
+- The decision-16 team-of-record denominator for `percent_games` (L4a D12).
+- BEAST cut-off re-evaluation (decision 74).
+- Resuming the update-predictions-sko cron after VDP v0.4 (decision 129).
+
+## 9. Codex proposals outstanding
+- L9b: accuracy job, v2 goalie writer.
+- L9a: 18-GOALIE-SA, A2-RESERVE, D2-RESERVE-LABEL.
+- L9c: reserve-row coverage.
+- L12: odds labels.
+- L13: Yahoo sort_order.
+- L22: cron "skipped" status.
+- L11: W1-12 R2.
+- L21: BLSH consumers.
+- L1: team and goalie placeholders.
+- L9c: Start Chart labels, which Codex is applying now.
+
+## 10. Records and hygiene
+- **Lane diaries committed in lane commits:** L4b, L7, L9a-markets, L10b, L12 (diary-only commits), L15, L21. All were left out of the release candidate.
+- **No diary:** L13/L13b and L10 half A. Their outcomes come from commits and the Chef diary.
+- **Commits that swept in other lanes' mailbox sections:** L6 `6b2023387` (L14 claim) and L15 `412e9870f` (L9a section).
+- **Chef diary SHA error corrected:** the lease release is `ee2b1c19c`.
+
+## 11. Verification of the draft's "unverified" items (2026-11-13; read-only code check at HEAD 89bf543fb)
+| Item | Status | Evidence |
+|---|---|---|
+| L2 W2-3 D7 (finished-game rule) | **Not fixed** | `playerStatsLandingServer.ts:849-869` still treats NHL date vs UTC today, plus start + 8 h, as final; no game state is read |
+| L2 W2-3 D13 (chart minimum TOI) | **Not fixed** | The minimum applies to each one-game chart point (`playerStatsLandingServer.ts:4835-4841`, `:3983-3989`), so a season minimum wipes the chart |
+| BC W1-6 D8 (goalie rest and trend boosts) | **Not fixed** | `goalie-stage.ts:344-363`, `projection-weights.ts:26-30`. This is the goalie stage (L9b), not L9a. The debrief's L9a "D8 fixed" was W1-7 D8 (WGO TOI unit), a different finding. |
+| BC W1-6 D13 (no home term in goalie outcomes) | **Not fixed** | `goalieOutcomes.ts:92-123`, `goalie-stage.ts:383-385` |
+| BC W1-6 D14 (on-ice goals split by TOI only) | **Not fixed** | `skater-stage.ts:2885-2891, 2915-2916` |
+| BA W1-4 B D9 (EN exclusion in team Goaltending rating) | **Not fixed** | `power-ratings.ts:262-266, 439, 578, 848` use NST all-situation rows with no EN filter (decision 7) |
+| Week Score lexicographic order | **Not fixed** | `calcWeekScore.ts:69-81`: 6 per game + 4 per off-night, so 3 games / 3 off-nights (30) beats 4 / 1 (28) |
+| Week mismatch → blocked (BC W1-12 D5 sub-item) | Already in place (pre-sprint) | `forge/players.ts:377-385, 479-486` |
+| L10 W2-8 D8 | Partly in place (pre-sprint) | `settlement.ts:76-114, 251-259`; no scratch settlement from identity evidence added |
+| L11 reads the L13 registry and L9b goalie contract | **Not wired** | Neither `statsMasterList` nor `readGoalieCandidatesContract` appears in L11 files; the bridge reads stored `proj_*` and `goalie_start_projections.l10_start_pct` |
+| L4b FHFH house labels | No defect | WiGO and the radar show genuine NST measures under NST names (decision 9). FHFH measures appear only on underlying-stats pages, which already carry FHFH labels. The brief's rename was misrouted. |
+| L5 adjustedImpactPromotionContract (decision 100) | **Fixed** | `adjustedImpactPromotionContract.ts:84-119` (`ee075a1b5`); always reports blocked because no run record is passed |
+| L1 → L10 baselineInputCapture faceoffs | Handled (no change needed) | `baselineInputCapture.ts:247` selects faceoffs but never uses them |
+| L9a → L10 ledger PK heads | **Partly fixed** | `modeledHeadTotals.ts:7-12`: PK is summed when present, but a missing PK head counts as 0 instead of unknown |
+
+These open items become follow-up tickets in this session; TJ moved all remaining project work here on 2026-11-13.

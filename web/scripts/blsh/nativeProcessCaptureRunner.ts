@@ -6,7 +6,7 @@
  */
 import { createHash } from "node:crypto";
 import { closeSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { load } from "cheerio";
 import { prepareNativeProcessCapture, type NativeProcessCapturePlan } from "./nativeProcessCapturePreparation";
 
@@ -131,13 +131,18 @@ function completedGames(bytes: CaptureBytes) {
 }
 
 export async function runNativeProcessCapture(input: NativeCaptureRunInput, adapter: NativeCaptureAdapter, outputDirectory: string) {
+  const start = Date.now(), monotonicStart = performance.now(), deadlineAt = start + 120_000;
+  const remainingRunMs = (cleanup = false) => {
+    const extra = cleanup && input.lifecycleMode === "enabled" ? 5000 : 0;
+    return Math.min(deadlineAt + extra - Date.now(), monotonicStart + 120_000 + extra - performance.now());
+  };
   // Rebuild the plan; never accept caller-modified URLs/budgets or a substituted date.
   need(JSON.stringify(input.plan) === JSON.stringify(prepareNativeProcessCapture(input.plan.input)), "plan_modified");
   need(input.plan.input.date === DATE, "pilot_date_not_approved");
   need(input.supabaseOrigin === ORIGIN && adapter.supabaseOrigin === ORIGIN, "wrong_project");
   need(["enabled", "disabled"].includes(input.lifecycleMode) && adapter.lifecycleMode === input.lifecycleMode, "lifecycle_mode_mismatch");
   const sources = sourceSnapshot(input, adapter);
-  const start = Date.now(), deadlineAt = start + 120_000;
+  need(remainingRunMs() > 0, "capture_deadline");
   const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${DATE}`;
   const files: { file: string; bytes: number; sha256: string }[] = [];
   let retainedBytes = 0;
@@ -151,7 +156,9 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
     files.push({ file, bytes: bytes.byteLength, sha256: hash(bytes) });
   };
   const writeJson = (file: string, value: unknown) => write(file, json(value));
-  const syncDirectory = () => { const fd = openSync(outputDirectory, "r"); try { fsyncSync(fd); } finally { closeSync(fd); } };
+  const syncDirectory = (directory = outputDirectory) => { const fd = openSync(directory, "r"); try { fsyncSync(fd); } finally { closeSync(fd); } };
+  // A durable file also needs its directory entry, including the new packet's.
+  syncDirectory(dirname(resolve(outputDirectory)));
   const bindings = sources.map(source => ({ role: source.role, file: source.file, sha256: source.sha256, bytes: source.bytes.length }));
   writeJson("STARTED.json", { version: "fhfh.blsh.native-capture-run.v1", startedAtUTC: new Date(start).toISOString(), supabaseOrigin: ORIGIN, lifecycleMode: input.lifecycleMode, sourceBindings: bindings });
   writeJson("PLAN.json", input.plan);
@@ -172,7 +179,7 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
     guard(!active, "concurrent_operation_blocked");
     guard(!stopped || hold, "operation_after_failure");
     guard(!calls.has(operation) && calls.size < (enabled ? 8 : 5), "operation_budget_exhausted");
-    guard(now >= start && now < (hold ? deadlineAt + 5000 : deadlineAt), "capture_deadline");
+    guard(now >= start && remainingRunMs(hold) > 0, "capture_deadline");
     const lifecycle = ["begin", "finish", "hold"].includes(operation);
     if (lifecycle) {
       guard(reference && Object.keys(reference).join() === "jobToken" && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(reference.jobToken), "lifecycle_reference_missing_or_invalid");
@@ -192,22 +199,26 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
       if (operation.startsWith("nst:")) {
         const permit = permits.get(phase as Group);
         guard(calls.get(`admission:${phase as Group}`)?.state === "settled" && now < (permit?.wall ?? 0) && monotonicNow < (permit?.monotonic ?? 0), "provider_without_current_permit");
-        guard(lastNstStart === undefined || now - lastNstStart >= 22_000, "provider_spacing_invalid");
+        guard(lastNstStart === undefined || monotonicNow - lastNstStart >= 22_000, "provider_spacing_invalid");
       }
     }
     const provider = operation === "schedule" || operation.startsWith("nst:");
     const rpc = operation.startsWith("admission:") ? (enabled ? "nst_admit_job_attempt_v1" : "nst_admit_attempt_v1") : `nst_job_${operation}_v1`;
     const url = operation === "schedule" ? scheduleUrl : operation.startsWith("nst:") ? input.plan.pages.find(page => operation === `nst:${page.group}`)!.url : `${ORIGIN}/rest/v1/rpc/${rpc}`;
-    const timeoutMs = Math.min(provider ? 15_000 : 5000, (hold ? deadlineAt + 5000 : deadlineAt) - now);
+    const timeoutMs = Math.min(provider ? 15_000 : 5000, remainingRunMs(hold));
     const operationDeadline = now + timeoutMs;
     const monotonicDeadline = monotonicNow + timeoutMs;
     const record = { startedAt: now, state: "started" as "started" | "settled" | "uncertain", completedAtUTC: undefined as string | undefined };
     // Persist the attempted call before transmission. Interruption means unknown,
     // never a made-up success or permission to repeat the operation.
-    writeJson(`operation-${calls.size + 1}-STARTED.json`, { operation, url, method: provider ? "GET" : "POST", startedAtUTC: new Date(now).toISOString(),
-      ...(reference ? { jobToken: reference.jobToken } : {}) });
-    if (operation === "begin") jobToken = reference!.jobToken;
-    calls.set(operation, record); active = true;
+    try {
+      writeJson(`operation-${calls.size + 1}-STARTED.json`, { operation, url, method: provider ? "GET" : "POST", startedAtUTC: new Date(now).toISOString(),
+        ...(reference ? { jobToken: reference.jobToken } : {}) });
+      if (operation === "begin") jobToken = reference!.jobToken;
+      calls.set(operation, record);
+      syncDirectory();
+    } catch { stopped = true; record.state = "uncertain"; return fail("operation_journal_failed"); }
+    active = true;
     const controller = new AbortController();
     activeAbort = controller;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -216,12 +227,12 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
       // Durable writes can consume a permit or deadline while timers cannot run.
       // Recheck at the actual action boundary; never extend the original budget.
       const dispatchedAt = Date.now(), dispatchedMonotonic = performance.now();
-      guard(!controller.signal.aborted && (!stopped || hold) && dispatchedAt >= now && dispatchedAt < operationDeadline && dispatchedMonotonic < monotonicDeadline, "dispatch_after_stop_or_deadline");
+      guard(!controller.signal.aborted && (!stopped || hold) && remainingRunMs(hold) > 0 && dispatchedAt >= now && dispatchedAt < operationDeadline && dispatchedMonotonic < monotonicDeadline, "dispatch_after_stop_or_deadline");
       if (operation.startsWith("nst:")) {
         const permit = permits.get(phase as Group);
         guard(dispatchedAt < (permit?.wall ?? 0) && dispatchedMonotonic < (permit?.monotonic ?? 0), "provider_without_current_permit");
-        guard(lastNstStart === undefined || dispatchedAt - lastNstStart >= 22_000, "provider_spacing_invalid");
-        lastNstStart = dispatchedAt;
+        guard(lastNstStart === undefined || dispatchedMonotonic - lastNstStart >= 22_000, "provider_spacing_invalid");
+        lastNstStart = dispatchedMonotonic;
       }
       return action({ url, method: provider ? "GET" : "POST", redirect: "error", signal: controller.signal, timeoutMs: Math.min(operationDeadline - dispatchedAt, monotonicDeadline - dispatchedMonotonic), maxResponseBytes: operation === "schedule" ? MIB : provider ? 2 * MIB : 64 * 1024 });
     });
@@ -230,7 +241,7 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
     void pending.then(() => { active = false; }, () => { active = false; });
     try {
       const value = await Promise.race([pending, timeout]);
-      need(!controller.signal.aborted && Date.now() >= now && Date.now() < operationDeadline && performance.now() < monotonicDeadline, "operation_timeout");
+      need(!controller.signal.aborted && remainingRunMs(hold) > 0 && Date.now() >= now && Date.now() < operationDeadline && performance.now() < monotonicDeadline, "operation_timeout");
       record.state = "settled"; record.completedAtUTC = new Date().toISOString();
       let permit: "allowed" | "denied" | "expired" | "invalid" | null = null;
       if (operation.startsWith("admission:")) {
@@ -259,7 +270,7 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
   };
 
   const retain = (name: "schedule" | Group, captured: Captured<CaptureResponse>) => {
-    need(!stopped && Date.now() < deadlineAt, "retention_after_stop");
+    need(!stopped && remainingRunMs() > 0, "retention_after_stop");
     const operation: CaptureOperation = name === "schedule" ? "schedule" : `nst:${name}`;
     const record = calls.get(operation);
     const observation = observed.get(operation);
@@ -281,7 +292,9 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
       need(parsedRows > 0 && parsedRows <= 5000, "parser_shape_or_row_limit");
     }
     const file = `${name}.${name === "schedule" ? "raw.json" : "parser-input.html"}`;
+    need(remainingRunMs() > 0, "retention_after_stop");
     write(file, bytes);
+    need(remainingRunMs() > 0, "retention_after_stop");
     writeJson(`${name}.TRANSPORT-OBSERVATION.json`, {
       status: "candidate_requires_adapter_and_source_review", operation, file, sha256: hash(bytes), bytes: bytes.length,
       retrievedAtUTC: captured.completedAtUTC, retainedAtUTC: new Date().toISOString(), httpStatus: response.status,
@@ -291,17 +304,20 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
       originalPublicationUTC: null, modelDefinition: "unknown", independentlyAccepted: false, advancedAdmission: false, score: null,
     });
     syncDirectory();
+    need(remainingRunMs() > 0, "retention_after_stop");
   };
 
   const retained: Group[] = [];
   let workStarted = false;
-  const stopTimer = setTimeout(() => { stopped = true; activeAbort?.abort(); }, Math.max(0, deadlineAt - Date.now()));
+  let completionLinked = false;
+  const stopTimer = setTimeout(() => { stopped = true; activeAbort?.abort(); }, Math.max(0, remainingRunMs()));
   let terminalTimer: ReturnType<typeof setTimeout> | undefined;
   const terminal = new Promise<never>((_, reject) => {
-    terminalTimer = setTimeout(() => { stopped = true; activeAbort?.abort(); reject(new Error("capture_deadline")); }, Math.max(0, deadlineAt - Date.now()) + (input.lifecycleMode === "enabled" ? 5000 : 0));
+    terminalTimer = setTimeout(() => { stopped = true; activeAbort?.abort(); reject(new Error("capture_deadline")); }, Math.max(0, remainingRunMs(true)));
   });
   try {
     const work = (async () => {
+      need(remainingRunMs() > 0, "capture_deadline");
       retain("schedule", await adapter.schedule(dispatch));
       phase = "individual";
       const requestControl = { deadlineAt, maxAttempts: 2 as const, attemptsStarted: 0, minIntervalMs: 22000 as const, plannedRequestCount: 2 as const };
@@ -311,8 +327,8 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
           for (const group of GROUPS) {
             phase = group;
             if (lastNstStart !== undefined) {
-              const wait = Math.max(0, lastNstStart + 22_000 - Date.now());
-              need(Date.now() + wait + 20_000 < deadlineAt, "capture_deadline");
+              const wait = Math.max(0, lastNstStart + 22_000 - performance.now());
+              need(wait + 20_000 < remainingRunMs(), "capture_deadline");
               if (wait > 0) await new Promise<void>(resolveWait => setTimeout(resolveWait, wait));
             }
             const url = input.plan.pages.find(page => page.group === group)!.url;
@@ -322,27 +338,35 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
           phase = "settled";
         } catch { stopped = true; fail("capture_work_failed"); }
       });
-      need(workStarted && retained.length === 2 && !active && !stopped && Date.now() < deadlineAt, "capture_not_settled");
+      need(workStarted && retained.length === 2 && !active && !stopped && remainingRunMs() > 0, "capture_not_settled");
       need(input.lifecycleMode === "disabled" || calls.get("finish")?.state === "settled", "lifecycle_not_finished");
     })();
     await Promise.race([work, terminal]);
     const result = { state: "packet_complete_pending_review", retained, operationCount: calls.size, lifecycleMode: input.lifecycleMode,
       independentlyAccepted: false, advancedAdmission: false, score: null };
-    // Completion is the final durable step, after lifecycle settlement. No replace:
-    // failed writes/fsync leave only the temporary name; collision preserves final.
+    // Completion is the final durable step, after lifecycle settlement. Never
+    // replace another marker; withdraw ours if final durability/deadline fails.
     const manifest = json({ ...result, files, completedAtUTC: new Date().toISOString() });
     write(".MANIFEST.json.tmp", manifest);
     syncDirectory();
-    need(!stopped && Date.now() < deadlineAt, "publication_after_deadline");
+    need(!stopped && remainingRunMs() > 0, "publication_after_deadline");
     linkSync(join(outputDirectory, ".MANIFEST.json.tmp"), join(outputDirectory, "MANIFEST.json"));
+    completionLinked = true;
     syncDirectory();
+    need(!stopped && remainingRunMs() > 0, "publication_after_deadline");
     unlinkSync(join(outputDirectory, ".MANIFEST.json.tmp"));
+    need(!stopped && remainingRunMs() > 0, "publication_after_deadline");
     return result;
   } catch {
     stopped = true;
+    let completionMarkerUncertain = false;
+    if (completionLinked) {
+      try { unlinkSync(join(outputDirectory, "MANIFEST.json")); syncDirectory(); }
+      catch { completionMarkerUncertain = true; }
+    }
     // A best-effort failure receipt is never a completion marker. Keep successful
     // pages and STARTED call receipts if storage itself is unavailable.
-    try { writeJson("FAILED.json", { state: "partial_packet", retained, operations: [...calls].map(([operation, record]) => ({ operation, ...record })), activeTransportUnsettled: active, reason: "capture_or_retention_failed", independentlyAccepted: false }); syncDirectory(); } catch { /* Preserve partial files. */ }
+    try { writeJson("FAILED.json", { state: "partial_packet", retained, operations: [...calls].map(([operation, record]) => ({ operation, ...record })), activeTransportUnsettled: active, completionMarkerUncertain, reason: "capture_or_retention_failed", independentlyAccepted: false }); syncDirectory(); } catch { /* Preserve partial files. */ }
     return fail("native_capture_incomplete_see_retained_packet");
   } finally { clearTimeout(stopTimer); if (terminalTimer !== undefined) clearTimeout(terminalTimer); }
 }

@@ -80,6 +80,24 @@ describe("/api/v1/forge/scoreboard", () => {
     expect(out.body.limitations).toMatchObject({ position: "unavailable_skater_position_not_captured", opportunityRate: "unavailable_expected_and_actual_toi_pp_toi_not_captured" });
   });
 
+  it("reports coverage only for served dates with a stored universe, never a known 0 for earlier dates", async () => {
+    // Before the universe existed (both dates here), coverage stays unavailable.
+    const before = res();
+    await handler({ method: "GET", query: { scope: "skater" } } as any, before);
+    expect(before.body.coverageStatus).toBe("unavailable_independent_universe_not_persisted");
+    expect(before.body.data[0].scores.find((s: any) => s.source === "bridge_exact")).toMatchObject({ coverageStatus: "unavailable", coverage: null });
+    // 10-21 has a universe: player 2 dressed and player 5 dressed with no forecast, so bridge coverage there is 1 of 2.
+    tables.forge_served_forecast_universe = [2, 5].map(player_id => ({ served_date: "2026-10-21", season_id: 20262027, player_id, game_id: player_id * 10,
+      player_class: "skater", team_id: 1, dressed: true }));
+    const after = res();
+    await handler({ method: "GET", query: { scope: "skater" } } as any, after);
+    expect(after.body.coverageStatus).toBe("universe_partial");
+    expect(after.body.data[0].scores.find((s: any) => s.source === "bridge_exact").coverageStatus).toBe("unavailable");
+    expect(after.body.data[1].scores.find((s: any) => s.source === "bridge_exact")).toMatchObject({ coverageStatus: "known", dressed: 2, covered: 1, coverage: 0.5 });
+    expect(after.body.pooled.find((s: any) => s.source === "bridge_exact").coverageStatus).toBe("unavailable");
+    delete tables.forge_served_forecast_universe;
+  });
+
   it("keeps the shipped market source off and unread (decision 126)", async () => {
     const out = res();
     await handler({ method: "GET", query: {} } as any, out);
@@ -127,8 +145,8 @@ describe("/api/v1/forge/scoreboard", () => {
     expect(paired.fantasyPoints).toMatchObject({ source: { n: 0 }, exclusions: { missingPrediction: 1 } });
     expect(paired.heads.goals.source.n).toBe(0);
     expect(paired.heads.hits).toMatchObject({ source: { n: 0 }, exclusions: { missingOutcome: 1 } });
-    expect(readMock).toHaveBeenCalledTimes(1);
-    expect(readMock).toHaveBeenCalledWith("forge_served_forecast_ledger");
+    // The ledger and (since the basis schema flag) the eligible universe; nothing else.
+    expect(readMock.mock.calls.map(call => call[0])).toEqual(["forge_served_forecast_ledger", "forge_served_forecast_universe"]);
   });
 
   it("rejects bad params and non-GET without reading", async () => {

@@ -8,6 +8,7 @@ import { loadGameExpectations } from "lib/player-forecasts/gameExpectationReader
 import { loadPlanningData, normalizePlanningGames, parsePlanningDataQuery, publicPlanningForecasts } from "./planning";
 import type { ContributionPlanningSnapshot, ForecastDiscoveryExclusion, PlanningPlayer } from "lib/rosterScheduleOptimizer/planningTypes";
 import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
+import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { forecastAllows } from "lib/rosterScheduleOptimizer/planning";
 import * as rsoPolicyModule from "lib/player-forecasts/rsoUsePolicy";
 import { ISSUED_PARTICIPATION_METHOD, issuedParticipationLineage } from "lib/player-forecasts/rsoUsePolicy";
@@ -1145,7 +1146,8 @@ describe("public RSO data boundary", () => {
     expect(publicPlanningForecasts([row], [{ ...skater, nhlTeamId: 2 }], games, now)).toEqual([]);
     expect(publicPlanningForecasts([{ ...row, payload: { ...row.payload, players: [{ ...row.payload.players[0], game_id: 2026020999 }] } }], [skater], games, now)).toEqual([]);
     const horizonExclusions: Record<string, number> = {};
-    const distantGames = games.map(game => ({ ...game, startsAt: "2026-10-24T00:00:00Z" }));
+    // Its schedule date moves with its start, so it lies outside a 14-day window under either calendar basis (decision 127).
+    const distantGames = games.map(game => ({ ...game, date: "2026-10-24", startsAt: "2026-10-24T16:00:00Z" }));
     expect(publicPlanningForecasts([row], [skater], distantGames, now, horizonExclusions)).toEqual([]);
     expect(horizonExclusions.outside_horizon).toBe(1);
   });
@@ -1170,8 +1172,8 @@ describe("public RSO data boundary", () => {
       issuedRevisionIds: ["issued-1"], requiredOpportunities: 2, forecastedOpportunities: 1 });
     expect(result.forecastManifest?.scheduleRevision).toBeTruthy();
     expect(result.forecastManifest?.rosterRevision).toBeTruthy();
-    expect(result.forecastManifest?.calendarPolicy).toEqual({ version: "forecast-calendar-v1", calendarDays: 14,
-      overlapDays: 7, timeZone: "UTC" });
+    // The manifest records the policy in force (decision 127: L10's default version), whichever version that is.
+    expect(result.forecastManifest?.calendarPolicy).toEqual(forecastCalendarPolicy(14));
     vi.stubEnv("STARTER_BOARD_CALENDAR_HORIZON_DAYS", "21");
     const changedPolicy = await loadPlanningData(db as any, { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-10" },
       { now: new Date("2026-10-10T12:00:00Z"), forecastsEnabled: true });

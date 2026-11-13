@@ -335,6 +335,85 @@ describe("ownership snapshot provenance", () => {
     } finally { vi.useRealTimers(); }
   });
 
+  it("counts source identities across seasons independently of trend eligibility and result filters", async () => {
+    // Synthetic census: the retained 2,065-unmapped smoke is an aggregate,
+    // not evidence that each row is a distinct missing NHL player or mover.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-10T12:00:00Z"));
+    const timeline = [{ date: "2026-11-07", value: 10 }, { date: "2026-11-10", value: 20 }];
+    const reads = database({
+      yahoo_players_with_normalized_history: [
+        { player_key: "477.p.112", player_id: "112", season: 2026, display_position: "C", ownership_timeline: timeline },
+        { player_key: "465.p.112", player_id: "112", season: 2025, ownership_timeline: [] },
+        { player_key: "477.p.113", player_id: "113", season: 2026, display_position: "C", ownership_timeline: timeline },
+        { player_key: "477.p.114", player_id: "114", season: 2026, ownership_timeline: [] },
+        { player_key: "477.p.115", player_id: "115", season: 2026, ownership_timeline: timeline.map(point => ({ ...point, value: 10 })) },
+        { player_key: "465.p.116", player_id: "116", season: 2025, ownership_timeline: [] },
+      ],
+      yahoo_nhl_player_map_read: [
+        { yahoo_player_id: "477.p.112", nhl_player_id: 12 },
+        { yahoo_player_id: "465.p.112", nhl_player_id: 12 },
+      ],
+    });
+    try {
+      const response = createMockRes();
+      await ownershipTrendsHandler({ method: "GET", query: { window: "3", playerIds: "12" } } as any, response);
+      expect(response.body).toMatchObject({
+        requestedSeason: null, seasonFallbackApplied: false,
+        mappedPlayerCount: 2, unmappedPlayerCount: 4, totalRisers: 2, totalFallers: 0,
+      });
+      expect(response.body.risers.map(({ playerKey, playerId }: any) => ({ playerKey, playerId }))).toEqual([
+        { playerKey: "477.p.112", playerId: 12 },
+        { playerKey: "477.p.113", playerId: null },
+      ]);
+      expect(response.body.selectedPlayers.map((player: any) => player.playerKey)).toEqual(["477.p.112"]);
+
+      const filtered = createMockRes();
+      await ownershipTrendsHandler({ method: "GET", query: { window: "3", pos: "D", limit: "1", offset: "20" } } as any, filtered);
+      expect(filtered.body).toMatchObject({ mappedPlayerCount: 2, unmappedPlayerCount: 4, totalRisers: 0, totalFallers: 0, risers: [], fallers: [] });
+      expect(reads).toHaveLength(3);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("keeps a trend unmapped when only another seasonal key or a numeric legacy mapping exists", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-10T12:00:00Z"));
+    const reads = database({
+      yahoo_players_with_normalized_history: [{
+        player_key: "477.p.112", player_id: "112", full_name: "Synthetic Player", season: 2026,
+        ownership_timeline: [{ date: "2026-11-07", value: 10 }, { date: "2026-11-10", value: 20 }],
+      }],
+      yahoo_nhl_player_map_read: [
+        { yahoo_player_id: "465.p.112", nhl_player_id: 12 },
+        { yahoo_player_id: "112", nhl_player_id: 12 },
+      ],
+    });
+    try {
+      const response = createMockRes();
+      await ownershipTrendsHandler({ method: "GET", query: { window: "3", season: "2026", playerIds: "12" } } as any, response);
+      expect(response.body).toMatchObject({ mappedPlayerCount: 0, unmappedPlayerCount: 1, totalRisers: 1, selectedPlayers: [] });
+      expect(response.body.risers[0]).toMatchObject({ playerKey: "477.p.112", playerId: null, delta: 10 });
+      expect(reads).toEqual(["yahoo_players_with_normalized_history", "yahoo_players_with_normalized_history", "yahoo_nhl_player_map_read"]);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("keeps season-specific and fallback mapping counts distinct", async () => {
+    database({
+      yahoo_players_with_normalized_history: [
+        { player_key: "477.p.112", player_id: "112", season: 2026, ownership_timeline: [] },
+        { player_key: "465.p.113", player_id: "113", season: 2025, ownership_timeline: [] },
+      ],
+      yahoo_nhl_player_map_read: [{ yahoo_player_id: "477.p.112", nhl_player_id: 12 }],
+    });
+    const seasonal = createMockRes();
+    await ownershipTrendsHandler({ method: "GET", query: { season: "2026" } } as any, seasonal);
+    expect(seasonal.body).toMatchObject({ requestedSeason: 2026, seasonFallbackApplied: false, mappedPlayerCount: 1, unmappedPlayerCount: 0 });
+
+    const fallback = createMockRes();
+    await ownershipTrendsHandler({ method: "GET", query: { season: "2027" } } as any, fallback);
+    expect(fallback.body).toMatchObject({ requestedSeason: 2027, seasonFallbackApplied: true, mappedPlayerCount: 1, unmappedPlayerCount: 1 });
+  });
+
   it("does not substitute another season with the same numeric Yahoo id", async () => {
     database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: "477.p.112" }],
       yahoo_players_with_normalized_history: [

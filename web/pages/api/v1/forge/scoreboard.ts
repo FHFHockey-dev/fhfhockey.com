@@ -64,19 +64,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return (scope === "all" ? query : query.eq("player_class", scope)).order("served_date").order("game_id").order("player_id");
     }, Date.now() + 45000, MAX_ROWS, row => [row.served_date, row.player_id, row.game_id]) as LedgerUniverseRow[] : undefined;
     const dates = [...new Set(rows.map(row => row.served_date))].sort();
+    // Served dates before the universe existed have no universe rows: their coverage stays unavailable, never a known 0.
+    const universeDates = new Set((universe ?? []).map(row => row.served_date));
+    const dayUniverse = (served_date: string) => universeDates.has(served_date) ? universe!.filter(row => row.served_date === served_date) : undefined;
+    const coveredDates = dates.filter(served_date => universeDates.has(served_date)).length;
     const daily = dates.map(served_date => {
       const dayRows = rows.filter(row => row.served_date === served_date);
-      return { served_date, scores: scoreLedger(dayRows, undefined, universe?.filter(row => row.served_date === served_date)), paired: scorePairedLedger(dayRows),
+      return { served_date, scores: scoreLedger(dayRows, undefined, dayUniverse(served_date)), paired: scorePairedLedger(dayRows),
         ...(LEDGER_MARKET_ENABLED ? { market: scoreMarketLedger(dayRows) } : {}) };
     });
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
     return res.status(200).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       scope, days, startDate, endDate,
-      coverageStatus: universe ? "universe_persisted" : "unavailable_independent_universe_not_persisted", scoringVersion: LEDGER_SCORING_VERSION,
+      coverageStatus: dates.length && coveredDates === dates.length ? "universe_persisted"
+        : coveredDates ? "universe_partial" : "unavailable_independent_universe_not_persisted", scoringVersion: LEDGER_SCORING_VERSION,
       comparison: "paired_player_game", sourceSamples: "unpaired_descriptive_only", limitations: LEDGER_SCORING_LIMITATIONS,
       data: daily,
-      pooled: rows.length ? scoreLedger(rows, undefined, universe) : [],
+      pooled: rows.length ? scoreLedger(rows, undefined, dates.length && coveredDates === dates.length ? universe : undefined) : [],
       pooledPaired: scorePairedLedger(rows),
       // Decision 126: off until decision 30's market fixes ship and are validated (the migration itself was applied 2026-10-22).
       marketStatus: LEDGER_MARKET_ENABLED ? "enabled" : "disabled_pending_market_fixes",

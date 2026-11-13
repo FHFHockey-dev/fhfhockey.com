@@ -53,7 +53,8 @@ describe("shared contribution resolver", () => {
     }
   });
   it.each([7, 14, 21])("retains the %i-day UTC policy and measures its discrete overlap boundary", (days) => {
-    const policy = forecastCalendarPolicy(days);
+    // Issued v1 (UTC) policies still replay as issued; the default is v2 since decision 127's flip.
+    const policy = forecastCalendarPolicy(days, "forecast-calendar-v1");
     const baseline = { ...source, kind: "baseline" as const, sourceId: "rate", mean: 1,
       expiresAt: "2026-11-01T00:00:00Z" };
     const at = (lead: number) => new Date(Date.parse("2026-10-01T00:00:00Z") + lead * 86400000).toISOString();
@@ -61,7 +62,7 @@ describe("shared contribution resolver", () => {
       targetKey: "GOALS", now: "2026-10-01T00:00:00Z", calendarPolicy: policy,
       detailed: { ...source, expiresAt: baseline.expiresAt }, baseline });
     const inside = resolve(days - 1), outside = resolve(days);
-    const scopes = buildCalendarGameScopes({ now: new Date("2026-10-01T00:00:00Z"), days: policy.calendarDays,
+    const scopes = buildCalendarGameScopes({ now: new Date("2026-10-01T00:00:00Z"), days: policy.calendarDays, calendarPolicy: policy,
       games: [days - 1, days].map((lead, index) => ({ id: 30 + index, seasonId: game.seasonId,
         date: at(lead).slice(0, 10), startTime: at(lead), homeTeamId: 1, awayTeamId: 2, type: 2 })) });
     expect(scopes.map(scope => scope.gameId)).toEqual([30, 30]);
@@ -77,7 +78,8 @@ describe("shared contribution resolver", () => {
       game: inside.game, targetKey: "GOALS", now: "2026-10-01T00:00:00Z" }).sourceKind).toBeNull();
   });
   it("v2 measures lead days on NHL schedule dates; v1 keeps UTC days for issued replay (decision 127)", () => {
-    const v1 = forecastCalendarPolicy(14), v2 = forecastCalendarPolicy(14, "forecast-calendar-v2");
+    const v1 = forecastCalendarPolicy(14, "forecast-calendar-v1"), v2 = forecastCalendarPolicy(14, "forecast-calendar-v2");
+    expect(forecastCalendarPolicy(14)).toEqual(v2);
     expect(v2).toEqual({ version: "forecast-calendar-v2", calendarDays: 14, overlapDays: 7, timeZone: "America/New_York", dateBasis: "nhl_schedule_date" });
     expect([v1, v2].map(validForecastCalendarPolicy)).toEqual([true, true]);
     expect(validForecastCalendarPolicy({ ...v2, timeZone: "UTC" } as never)).toBe(false);
@@ -225,8 +227,9 @@ describe("shared contribution resolver", () => {
       participation: { ...participationIdentity, basis: "appearance", probability: 0.5, revisionId: "p",
         cutoffAt: now, expiresAt: "2026-10-09T00:00:00Z" } });
     expect(resolved.sourceKind).toBe("blended");
-    expect(resolved.blendWeight).toBeCloseTo(5 / 7);
-    expect(resolved.unconditionalMean).toBeCloseTo((1 + 5 / 7) / 2);
+    // Default v2 calendar: now is Sep 28 Eastern, so the Oct 8 game is lead 10 (v1 UTC days gave 9, weight 5/7).
+    expect(resolved.blendWeight).toBeCloseTo(4 / 7);
+    expect(resolved.unconditionalMean).toBeCloseTo((1 + 4 / 7) / 2);
   });
 
   it("uses a released unconditional baseline when detailed participation is unknown", () => {

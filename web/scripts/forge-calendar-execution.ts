@@ -5,6 +5,7 @@ import { loadEnvConfig } from "@next/env";
 import { initializeForgeCalendarLedger, openForgeCalendarLedger, type ForgeCalendarRecipe } from "./forge-calendar-ledger";
 import { parseForgeCalendarArgs, superviseForgeProcess, type buildForgeCalendarManifest } from "./run-forge-calendar-local";
 import { playerForecastSourcePayloadHash } from "../lib/player-forecasts/sourceSnapshot";
+import { validForecastCalendarPolicy } from "../lib/player-forecasts/contributions";
 import { forgeLocalOwnershipRoot, recoverForgeLocalOwnership } from "./forge-local-ownership";
 
 type Scope = Awaited<ReturnType<typeof buildForgeCalendarManifest>>;
@@ -68,7 +69,8 @@ export function validateForgeCalendarExecutionScope(scope: Scope) {
   if (scope.version !== "forge-calendar-scope-v1" || scope.mode !== "read_only"
     || checksum !== playerForecastSourcePayloadHash(unsigned) || new URL(scope.origin).origin !== scope.origin
     || scope.requests.writes !== 0 || !Number.isFinite(Date.parse(scope.deadlineAt)) || !scope.games.length
-    || scope.calendarPolicy.version !== "forecast-calendar-v1" || scope.calendarPolicy.timeZone !== "UTC" || scope.calendarPolicy.overlapDays !== 7
+    // Decision 127: either calendar version the shared contract accepts (v2 NHL schedule dates is the default; v1 replays).
+    || !validForecastCalendarPolicy(scope.calendarPolicy)
     || playerForecastSourcePayloadHash(scope.calendarPolicy) !== playerForecastSourcePayloadHash(scope.context.consumerCalendarPolicy)
     || scope.games.some(game => game.exclusions.includes("horizon_policy_mismatch") || game.exclusions.includes("stale_schedule"))
     || scope.games.some(game => !game.required.length || !Number.isFinite(Date.parse(game.scheduledStartAt)))) {

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import * as mod from "../../../../../pages/api/v1/db/update-sko-stats";
+
 import {
   aggregateSkoSourceIngestDiagnostics,
   buildSkoSourceIngestDiagnostics,
@@ -8,7 +10,6 @@ import {
   isTruthyQueryFlag,
   projectSkoSkaterStatsRow,
   resolveSkaterIncrementalWindow,
-  resolveSkoIpp,
   upsertSkoSkaterStats,
 } from "../../../../../pages/api/v1/db/update-sko-stats";
 
@@ -219,7 +220,7 @@ describe("/api/v1/db/update-sko-stats helpers", () => {
       date: "2026-03-14",
       season_id: 20252026,
       time_on_ice: 2400,
-      ipp: 50,
+      ipp: null,
       sog_per_60: 30,
     });
   });
@@ -311,8 +312,8 @@ describe("/api/v1/db/update-sko-stats helpers", () => {
       points: 10,
     });
   });
-  // W3-7 D5: IPP = points / on-ice GF (ES + PP + SH). A missing component is unknown, not 0,
-  // and points above on-ice GF is impossible: both store null with a reason.
+  // Decision 141: IPP is computed only over pooled multi-game windows, never per game. Points can
+  // include assists on goals scored after the player changed off (shift-based on-ice GF).
   function ippRow(
     points: number | null,
     goalsFor: Partial<Record<"evenStrengthGoalsFor" | "powerPlayGoalFor" | "shortHandedGoalsFor", number | null>> | undefined,
@@ -331,51 +332,133 @@ describe("/api/v1/db/update-sko-stats helpers", () => {
     }).ipp;
   }
 
-  it("stores a null IPP when an on-ice goals-for component is missing", () => {
-    expect(
-      ippRow(1, { evenStrengthGoalsFor: null, powerPlayGoalFor: 1, shortHandedGoalsFor: 0 }),
-    ).toBeNull();
-    expect(
-      ippRow(1, { evenStrengthGoalsFor: 2, powerPlayGoalFor: 0 }),
-    ).toBeNull();
-    expect((resolveSkoIpp as any)({
-      points: 1,
-      evenStrengthGoalsFor: null,
-      powerPlayGoalFor: 1,
-      shortHandedGoalsFor: 0,
-    })).toEqual({ ipp: null, reason: "on_ice_goals_for_component_missing" });
-  });
-
-  it("stores a null IPP when points exceed on-ice goals for", () => {
-    expect(
-      ippRow(3, { evenStrengthGoalsFor: 1, powerPlayGoalFor: 1, shortHandedGoalsFor: 0 }),
-    ).toBeNull();
-    expect((resolveSkoIpp as any)({
-      points: 3,
-      evenStrengthGoalsFor: 1,
-      powerPlayGoalFor: 1,
-      shortHandedGoalsFor: 0,
-    })).toEqual({ ipp: null, reason: "points_exceed_on_ice_goals_for" });
-  });
-
-  it("keeps the IPP identity when every part is known and points fit on-ice goals for", () => {
+  it("never stores a per-game IPP", () => {
     expect(
       ippRow(2, { evenStrengthGoalsFor: 2, powerPlayGoalFor: 1, shortHandedGoalsFor: 1 }),
-    ).toBe(50);
+    ).toBeNull();
     expect(
-      ippRow(4, { evenStrengthGoalsFor: 2, powerPlayGoalFor: 1, shortHandedGoalsFor: 1 }),
-    ).toBe(100);
-    expect((resolveSkoIpp as any)({
-      points: 0,
-      evenStrengthGoalsFor: 0,
-      powerPlayGoalFor: 0,
-      shortHandedGoalsFor: 0,
-    })).toEqual({ ipp: null, reason: "no_on_ice_goals_for" });
-    expect((resolveSkoIpp as any)({
-      points: null,
-      evenStrengthGoalsFor: 1,
-      powerPlayGoalFor: 0,
-      shortHandedGoalsFor: 0,
-    })).toEqual({ ipp: null, reason: "points_missing" });
+      ippRow(1, { evenStrengthGoalsFor: 0, powerPlayGoalFor: 0, shortHandedGoalsFor: 0 }),
+    ).toBeNull();
+  });
+
+  const game = (
+    points: number | null,
+    es: number | null,
+    pp: number | null,
+    sh: number | null,
+  ) => ({ points, es_goals_for: es, pp_goals_for: pp, sh_goals_for: sh });
+
+  it("pools IPP over a multi-game window, including a game with an off-ice assist", () => {
+    const pooled = (mod as any).pooledSkoIpp;
+    expect(typeof pooled).toBe("function");
+    // Game 1: an assist on a goal scored after he changed off (on-ice GF 0).
+    const window = [game(1, 0, 0, 0), game(1, 2, 1, 0), game(0, 1, 0, 0)];
+    expect(pooled(window)).toEqual({ ipp: 50, reason: null });
+    expect(pooled([game(1, 0, 0, 0)])).toEqual({
+      ipp: null,
+      reason: "single_game_window",
+    });
+    expect(pooled([game(2, 1, 0, 0), game(1, 1, 0, 0)])).toEqual({
+      ipp: null,
+      reason: "points_include_goals_while_off_ice",
+    });
+    expect(pooled([game(1, null, 1, 0), game(1, 2, 0, 0)])).toEqual({
+      ipp: null,
+      reason: "on_ice_goals_for_component_missing",
+    });
+    expect(pooled([game(null, 1, 0, 0), game(1, 2, 0, 0)])).toEqual({
+      ipp: null,
+      reason: "points_missing",
+    });
+    expect(pooled([game(0, 0, 0, 0), game(0, 0, 0, 0)])).toEqual({
+      ipp: null,
+      reason: "no_on_ice_goals_for",
+    });
+  });
+
+  // Decision 142: a missing goalsForAgainst report row means 0/0/0 only when his shift rows
+  // exist and the shift-based on-ice count is 0 for and 0 against; otherwise unknown.
+  const shift = (period: number, start: number, end: number, playerId = 8478402, teamId = 10) => ({
+    game_id: 2026020104,
+    shift_id: period * 10_000 + start,
+    team_id: teamId,
+    player_id: playerId,
+    period,
+    start_seconds: start,
+    end_seconds: end,
+    duration_seconds: end - start,
+    season_id: 20262027,
+    shift_number: 1,
+    game_date: "2026-11-01",
+    type_code: 517,
+  });
+  const goal = (period: number, second: number, ownerTeamId: number) => ({
+    game_id: 2026020104,
+    period_number: period,
+    period_seconds_elapsed: second,
+    event_owner_team_id: ownerTeamId,
+    period_type: "REG",
+  });
+
+  it("counts shift-based on-ice goals for and against", () => {
+    const counts = (mod as any).shiftOnIceGoalCounts;
+    expect(typeof counts).toBe("function");
+    const shifts = [shift(1, 0, 45), shift(2, 100, 150)];
+    expect(counts({ playerId: 8478402, shiftRows: shifts, goalEvents: [goal(1, 600, 10), goal(3, 20, 20)] })).toEqual({ goalsFor: 0, goalsAgainst: 0 });
+    // A goal at the second his shift ends counts (shift-chart convention); one at his start does not.
+    expect(counts({ playerId: 8478402, shiftRows: shifts, goalEvents: [goal(1, 45, 10), goal(2, 100, 20), goal(2, 120, 20)] })).toEqual({ goalsFor: 1, goalsAgainst: 1 });
+    expect(counts({ playerId: 8478402, shiftRows: [], goalEvents: [] })).toBeNull();
+    expect(counts({ playerId: 8478402, shiftRows: shifts, goalEvents: [{ ...goal(1, 10, 10), period_seconds_elapsed: null }] })).toBeNull();
+    // Shootout goals are not on-ice goals.
+    expect(counts({ playerId: 8478402, shiftRows: shifts, goalEvents: [{ ...goal(5, 0, 10), period_type: "SO" }] })).toEqual({ goalsFor: 0, goalsAgainst: 0 });
+  });
+
+  it("writes 0/0/0 on-ice goals for only when shifts confirm, unknown otherwise", () => {
+    const resolve = (mod as any).resolveGoalsForAgainstStat;
+    expect(typeof resolve).toBe("function");
+    const report = { evenStrengthGoalsFor: 1, powerPlayGoalFor: 0, shortHandedGoalsFor: 0 };
+    expect(resolve({ reportRow: report, timeOnIceSeconds: 900, shiftCounts: null })).toEqual({ stat: report, resolution: "report_row" });
+    expect(resolve({ reportRow: undefined, timeOnIceSeconds: 900, shiftCounts: { goalsFor: 0, goalsAgainst: 0 } })).toEqual({
+      stat: { evenStrengthGoalsFor: 0, powerPlayGoalFor: 0, shortHandedGoalsFor: 0 },
+      resolution: "shift_confirmed_zero",
+    });
+    expect(resolve({ reportRow: undefined, timeOnIceSeconds: 900, shiftCounts: { goalsFor: 0, goalsAgainst: 1 } })).toEqual({ stat: undefined, resolution: "unknown_shift_count_nonzero" });
+    expect(resolve({ reportRow: undefined, timeOnIceSeconds: 900, shiftCounts: null })).toEqual({ stat: undefined, resolution: "unknown_no_shift_count" });
+    expect(resolve({ reportRow: undefined, timeOnIceSeconds: null, shiftCounts: { goalsFor: 0, goalsAgainst: 0 } })).toEqual({ stat: undefined, resolution: "unknown_no_ice_time" });
+
+    const row = buildSkoSkaterStatsRow({
+      stat: { playerId: 8478402, skaterFullName: "Test Skater", gamesPlayed: 1, points: 0 } as any,
+      goalsForAgainstStat: resolve({ reportRow: undefined, timeOnIceSeconds: 900, shiftCounts: { goalsFor: 0, goalsAgainst: 0 } }).stat,
+      formattedDate: "2026-11-01",
+      seasonId: 20262027,
+    });
+    expect(row).toMatchObject({ es_goals_for: 0, pp_goals_for: 0, sh_goals_for: 0 });
+  });
+
+  it("loads shift counts for players missing a report row from stored shifts and goal events", async () => {
+    const load = (mod as any).loadShiftOnIceGoalCounts;
+    expect(typeof load).toBe("function");
+    const tables: Record<string, any[]> = {
+      nhl_api_shift_rows: [shift(1, 0, 45), shift(1, 0, 45, 99, 20)],
+      nhl_api_pbp_events: [goal(1, 600, 10)],
+    };
+    const calls: Array<[string, string, unknown]> = [];
+    const client = {
+      from(table: string) {
+        const builder: any = {
+          select: () => builder,
+          eq: (column: string, value: unknown) => (calls.push([table, column, value]), builder),
+          in: (column: string, value: unknown) => (calls.push([table, column, value]), builder),
+          then: (resolve: any) => resolve({ data: tables[table], error: null }),
+        };
+        return builder;
+      },
+    };
+    const result: Map<number, unknown> = await load(client, "2026-11-01", [8478402, 77]);
+    expect(result.get(8478402)).toEqual({ goalsFor: 0, goalsAgainst: 0 });
+    expect(result.get(77)).toBeNull();
+    expect(calls).toContainEqual(["nhl_api_shift_rows", "game_date", "2026-11-01"]);
+    expect(calls).toContainEqual(["nhl_api_pbp_events", "type_code", 505]);
+    expect(await load(client, "2026-11-01", [])).toEqual(new Map());
   });
 });

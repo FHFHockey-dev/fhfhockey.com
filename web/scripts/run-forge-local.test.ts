@@ -14,7 +14,7 @@ import { acquireForgeLocalOwnership, ForgeLocalOwnershipError, inspectForgeLocal
 import { parseForgeCalendarArgs, superviseForgeProcess } from "./run-forge-calendar-local";
 import { initializeForgeCalendarLedger, openForgeCalendarLedger, type ForgeCalendarRecipe } from "./forge-calendar-ledger";
 import { assertForgeCalendarContext, parseForgeCalendarExecutionArgs, parseForgeCalendarRecoveryArgs,
-  runForgeCalendarExecution, runForgeCalendarRecovery } from "./forge-calendar-execution";
+  runForgeCalendarExecution, runForgeCalendarRecovery, validateForgeCalendarExecutionScope } from "./forge-calendar-execution";
 import { playerForecastSourcePayloadHash } from "../lib/player-forecasts/sourceSnapshot";
 import * as issuedContexts from "../lib/projections/issuedContext";
 import { FORGE_PROCESS_GUARDIAN_PROTOCOL, runForgeProcessGuardian, type ForgeProcessGuardianIdentity } from "./forge-process-guardian";
@@ -1981,5 +1981,25 @@ describe.runIf(Boolean(process.env.FORGE_POSTGRES_BIN))("local FORGE PostgreSQL 
     await pending.done; expect((await retry).message).toContain("prior revision changed");
     expect(await inspect(id)).toMatchObject({ state: "issued", inputSnapshotId: snapshot });
     expect(await sql("select count(*) from public.forge_game_revisions where game_id=9007")).toBe("1");
+  });
+});
+
+describe("calendar execution scope policy (decision 127)", () => {
+  const scope = (calendarPolicy: Record<string, unknown>) => {
+    const unsigned: any = { version: "forge-calendar-scope-v1", mode: "read_only", origin: "https://db.example",
+      deadlineAt: new Date(Date.now() + 60000).toISOString(), calendarPolicy, profile: { skaterTargets: ["GOALS"], goalieTargets: [] }, playerIds: null,
+      limits: { maxGames: 16, maxRequests: 3000, maxWrites: 300, runtimeMs: 60000, requestTimeoutMs: 1000 }, requests: { reads: 2, writes: 0 },
+      context: { consumerCalendarPolicy: calendarPolicy },
+      games: [{ gameId: 1, scheduledStartAt: new Date(Date.now() + 3600000).toISOString(), required: [{ target: "GOALS" }], exclusions: [] }] };
+    return { ...unsigned, checksum: playerForecastSourcePayloadHash(unsigned) };
+  };
+  it("accepts the v2 (NHL schedule date) default and an issued v1 scope, and refuses a malformed policy", () => {
+    const v2 = { version: "forecast-calendar-v2", calendarDays: 14, overlapDays: 7, timeZone: "America/New_York", dateBasis: "nhl_schedule_date" };
+    expect(validateForgeCalendarExecutionScope(scope(v2) as never)).toMatchObject({ days: 14 });
+    expect(validateForgeCalendarExecutionScope(scope({ version: "forecast-calendar-v1", calendarDays: 14, overlapDays: 7, timeZone: "UTC" }) as never))
+      .toMatchObject({ days: 14 });
+    for (const invalid of [{ ...v2, timeZone: "UTC" }, { ...v2, overlapDays: 6 }, { ...v2, dateBasis: undefined }]) {
+      expect(() => validateForgeCalendarExecutionScope(scope(invalid) as never)).toThrow("reviewed inspection scope");
+    }
   });
 });

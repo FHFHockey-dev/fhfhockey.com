@@ -76,6 +76,25 @@ describe("forge-served-forecast-settle", () => {
     expect(rows.find((row: any) => row.source === "naive_last5")).toMatchObject({ dressed: false, act_goals: null, act_fantasy_points: null });
   });
 
+  it("settles the stored eligible universe from the same receipts (basis schema on, migration 138)", async () => {
+    tables.forge_served_forecast_ledger = [ledger("2026-10-20", 13, 100, "bridge_exact")];
+    tables.nhl_api_game_payloads_raw = [storedBoxscore(2, "OFF", "2026-10-21T03:00:00Z")];
+    tables.forge_served_forecast_universe = [13, 11, 99].map(player_id => ({ served_date: "2026-10-20", season_id: 20262027, player_id, game_id: 100,
+      player_class: "skater", team_id: 1, dressed: null, receipt: null, settled_at: null }));
+    const out = res();
+    await handler({ method: "POST", query: {} } as any, out);
+    expect(out.body).toMatchObject({ universeUpserted: 3 });
+    const [table, rows, options] = upsertMock.mock.calls.find(call => call[0] === "forge_served_forecast_universe")!;
+    expect(table).toBe("forge_served_forecast_universe");
+    expect(options).toEqual({ onConflict: "served_date,player_id,game_id" });
+    // Every NOT NULL column is sent; 13 is absent from the final lineup, 11 dressed, and both carry the receipt.
+    expect(rows.every((row: any) => row.season_id === 20262027 && row.player_class === "skater" && row.team_id === 1)).toBe(true);
+    expect(rows.find((row: any) => row.player_id === 13)).toMatchObject({ dressed: false, settled_at: "2026-10-22T11:00:00.000Z", receipt: { teamId: 1, payloadHash: "b".repeat(64) } });
+    expect(rows.find((row: any) => row.player_id === 11)).toMatchObject({ dressed: true, receipt: { teamId: 1 } });
+    // 99 is absent from team 1's final lineup too: a receipt-proven non-appearance.
+    expect(rows.find((row: any) => row.player_id === 99)).toMatchObject({ dressed: false });
+    delete tables.forge_served_forecast_universe;
+  });
   it("leaves the player unresolved when the newest boxscore is not final or the ingested ids conflict", async () => {
     tables.forge_served_forecast_ledger = [ledger("2026-10-20", 13, 100, "bridge_exact")];
     tables.nhl_api_game_payloads_raw = [storedBoxscore(1, "OFF", "2026-10-21T01:00:00Z"), storedBoxscore(2, "LIVE", "2026-10-21T03:00:00Z")];
