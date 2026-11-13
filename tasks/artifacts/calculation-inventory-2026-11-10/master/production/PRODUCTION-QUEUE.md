@@ -98,3 +98,21 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - Last 23 h, production: no logged activity on `/api/Averages/[playerId]`, `/api/ThreeYearAverages/[playerId]`, `/api/v1/ml/get-predictions-sko` or `/api/v1/forge/scoreboard`. Only our own cron routes `update-wgo-averages` and `update-predictions-sko` matched.
 - Request-level counts need **Vercel Observability Plus** (API returned 402 payment_required) or the Vercel CLI request logs (not installed here).
 - **Not proof of zero external use.** Options for TJ: check the Vercel dashboard request logs by path, install and authenticate the Vercel CLI, or enable Observability Plus.
+
+## Read-only results, 2026-11-13 (agent, verified by Chef where noted)
+**BEAST (decision 139):**
+- Cut-offs are `BEAST_TIER_GATES` (`skaterCompositeMethodology.ts:114`), carried over from v2.
+- The stored snapshot is `contextual_composites_v1` (2026-11-07, written 11-09) and predates v3.
+- v3 simulation on 5v5, all skaters: switching to mid-rank moves only one player's tier (2 / 30 / 49 / 67 for BEAST+ / BEAST / MCM / Watch).
+- **Proposal:** keep the same numbers, recorded as the v3 gates. Re-check the default all-strengths view after regeneration.
+
+**Composite regeneration blocker (Chef-verified):** `skaterCompositeWriter.ts:202-224` checks percentiles with the exclusive formula `100·worse/(n−1)`, while the rankings emit mid-rank (decision 90). Ties fail, and the writer refuses non-dry-run writes. No cron runs the writer. Ticket sent to L5.
+
+**Indexes 123/124 are still needed:**
+- Neither exists. `pg_stat_statements` over about 8 h:
+  - the player-page coverage query: 267 calls, mean 313 ms, max 2.5 s against a 3 s timeout;
+  - `line_source_snapshots` newest-500: mean 3.5 s, max 6.8 s against an 8 s timeout;
+  - `lines_ccc`: mean 1.1 s.
+- 124 (12 MB and 5 MB tables) is trivial.
+- 123 (`wgo_skater_stats`, 2.2 GB): must use `CREATE INDEX CONCURRENTLY`, about 3–10 min, outside a transaction. The migration file's plain `create index` would lock WGO writes. Run it after the 2025-26 goalie rebuild, off-peak.
+- Optionally add a partial `where team_abbrev is not null`, and drop one of two identical date indexes (separate approval).
