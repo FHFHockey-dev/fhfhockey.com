@@ -12,7 +12,8 @@ const teams: Record<number, Team> = {
   13: { id: 13, name: "Florida Panthers", abbreviation: "FLA", logo: "/fla.svg" },
 };
 
-vi.mock("./contexts/GameGridContext", () => ({ useTeam: (id: number) => teams[id] }));
+vi.mock("./contexts/GameGridContext", () => ({ useTeam: (id: number) => teams[id],
+  useGoaliePresentation: () => ({ enabled: false, requested: false, snapshot: null, contextKey: "", asOf: "2025-03-17T12:00:00Z", status: "unavailable" }) }));
 vi.mock("hooks/useTeams", () => ({ useTeamsMap: () => teams }));
 vi.mock("next/image", () => ({ default: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} /> }));
 vi.mock("next/legacy/image", () => ({ default: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} /> }));
