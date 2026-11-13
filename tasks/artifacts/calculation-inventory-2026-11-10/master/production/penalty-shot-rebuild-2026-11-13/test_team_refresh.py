@@ -161,50 +161,47 @@ class ResumeEvidence(unittest.TestCase):
 
 
 class ResumeExecutePath(unittest.TestCase):
-    """A3-02 closing bar: main(--execute) on a resume leaves the completed game's evidence byte-identical and
-    adds files only for the pending game. Every DB, HTTP and clock touchpoint is stubbed."""
+    """A3-02 closing bar: main(--execute) on a resume (one game done, one pending). Every DB, HTTP and clock
+    touchpoint is stubbed. Covers (a) only the pending game is diffed, against the ORIGINAL approved diff, then
+    written; (b) a changed diff stops before any write; and the per-game diff call's dry-run check."""
 
     STUBBED = ("OUT", "DONE", "APPROVED", "MANIFEST", "PAUSE_S", "guard", "window_gate", "deployment_problems",
                "manifest_problems", "read_secret", "official_for", "post", "stored_rows")
+    COMPLETED, PENDING = (2026020094, 55, "save"), (2026020131, SHOOTER, "goal")
 
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix="tr-resume-")
         self.saved = {name: getattr(tr, name) for name in self.STUBBED}
         self.saved_argv = sys.argv
-
-    def tearDown(self):
-        for name, value in self.saved.items():
-            setattr(tr, name, value)
-        sys.argv = self.saved_argv
-
-    def test_resume_touches_only_the_pending_game(self):
-        completed, pending = (2026020094, 55, "save"), (2026020131, SHOOTER, "goal")
-        tr.MANIFEST = [completed, pending]
+        tr.MANIFEST = [self.COMPLETED, self.PENDING]
         tr.OUT = self.tmp
         tr.DONE = os.path.join(self.tmp, "team-refresh.done")
         tr.APPROVED = os.path.join(self.tmp, "team-diff-approved.json")
         tr.PAUSE_S = 0
         with open(tr.DONE, "w") as f:
-            f.write(f"{completed[0]}\n")
-        originals = {
-            os.path.join(self.tmp, f"team-before-{completed[0]}.json"): "legacy rows of the completed game\n",
-            os.path.join(self.tmp, f"team-before-{completed[0]}-20261113T190000Z-111-01.json"): "true pre-write rows\n",
+            f.write(f"{self.COMPLETED[0]}\n")
+        self.originals = {
+            os.path.join(self.tmp, f"team-before-{self.COMPLETED[0]}.json"): "legacy rows of the completed game\n",
+            os.path.join(self.tmp, f"team-before-{self.COMPLETED[0]}-20261113T190000Z-111-01.json"): "true pre-write rows\n",
         }
-        for path, text in originals.items():
+        for path, text in self.originals.items():
             with open(path, "w") as f:
                 f.write(text)
-
-        diffs = game_diffs(pending[0], SHOOTER, OPP, goal=True)
+        self.approved_diffs = game_diffs(self.PENDING[0], SHOOTER, OPP, goal=True)
         with open(tr.APPROVED, "w") as f:
-            json.dump({"body": {"diffs": diffs}}, f)
+            json.dump({"body": {"diffs": self.approved_diffs}}, f)
+        self.approved_bytes = open(tr.APPROVED, "rb").read()
         before = {(d["team_id"], d["strength"], d["score_state"]): {k: v["stored"] for k, v in d["changes"].items()}
-                  for d in diffs}
+                  for d in self.approved_diffs}
         before[(SHOOTER, "evenStrength", "allScores")] = {"sf": 23, "gf": 4}
         after = {key: dict(row) for key, row in before.items()}
-        for d in diffs:
+        for d in self.approved_diffs:
             after[(d["team_id"], d["strength"], d["score_state"])].update({k: v["rebuilt"] for k, v in d["changes"].items()})
 
-        calls, reads, written = [], [], {"done": False}
+        self.calls, self.reads, self.written = [], [], {"done": False}
+        # What the stubbed route answers to a per-game diff call; a test may replace it.
+        self.diff_body = {"success": True, "dryRun": True, "rowsUpserted": 0, "diffsTruncated": False,
+                          "diffs": copy.deepcopy(self.approved_diffs), "staleKeys": []}
         tr.guard = lambda: None
         tr.window_gate = lambda tag: None
         tr.deployment_problems = lambda: ("sha", [])
@@ -213,30 +210,75 @@ class ResumeExecutePath(unittest.TestCase):
         tr.official_for = lambda g: {SHOOTER: (24, 5), OPP: (26, 2)}
 
         def post(query, secret):
-            calls.append(query)
+            self.calls.append(query)
             if query.get("dryRun") == "false":
-                written["done"] = True
+                self.written["done"] = True
                 return 0.1, {"success": True, "dryRun": False, "rowsUpserted": 140, "rowsGenerated": 140, "staleKeyCount": 0}
-            return 0.1, {"success": True, "dryRun": True, "rowsUpserted": 0, "diffs": copy.deepcopy(diffs), "staleKeys": []}
+            return 0.1, copy.deepcopy(self.diff_body)
         tr.post = post
 
         def stored_rows(g):
-            reads.append(g)
-            return copy.deepcopy(after if written["done"] else before)
+            self.reads.append(g)
+            return copy.deepcopy(after if self.written["done"] else before)
         tr.stored_rows = stored_rows
-
         sys.argv = ["team-refresh.py", "--execute"]
-        tr.main()
 
-        for path, text in originals.items():
+    def tearDown(self):
+        for name, value in self.saved.items():
+            setattr(tr, name, value)
+        sys.argv = self.saved_argv
+
+    def assert_completed_game_untouched(self):
+        for path, text in self.originals.items():
             self.assertEqual(open(path).read(), text)
-        self.assertEqual(sorted(glob.glob(os.path.join(self.tmp, f"*{completed[0]}*"))), sorted(originals))
-        self.assertEqual(len(glob.glob(os.path.join(self.tmp, f"team-before-{pending[0]}-*.json"))), 1)
-        self.assertEqual(len(glob.glob(os.path.join(self.tmp, f"team-after-{pending[0]}-*.json"))), 1)
-        self.assertNotIn(completed[0], reads)
-        self.assertTrue(all(q["gameIds"] == str(pending[0]) for q in calls))
-        self.assertEqual([q.get("dryRun") for q in calls], [None, "false"])
-        self.assertEqual(open(tr.DONE).read().split(), [str(completed[0]), str(pending[0])])
+        self.assertEqual(sorted(glob.glob(os.path.join(self.tmp, f"*{self.COMPLETED[0]}*"))), sorted(self.originals))
+        self.assertNotIn(self.COMPLETED[0], self.reads)
+        self.assertTrue(all(q["gameIds"] == str(self.PENDING[0]) for q in self.calls))
+        self.assertEqual(open(tr.APPROVED, "rb").read(), self.approved_bytes)
+
+    def assert_pending_game_not_written(self):
+        self.assertEqual([q for q in self.calls if q.get("dryRun") == "false"], [])
+        self.assertEqual(glob.glob(os.path.join(self.tmp, f"team-before-{self.PENDING[0]}*")), [])
+        self.assertEqual(glob.glob(os.path.join(self.tmp, f"team-after-{self.PENDING[0]}*")), [])
+        self.assertNotIn(str(self.PENDING[0]), open(tr.DONE).read().split())
+
+    def test_resume_touches_only_the_pending_game(self):
+        """(a) One diff call for the pending game only, compared with the original approved diff, then one write."""
+        tr.main()
+        self.assert_completed_game_untouched()
+        self.assertEqual(self.calls, [
+            {"seasonId": tr.SEASON, "gameIds": str(self.PENDING[0]), "diff": "true"},
+            {"seasonId": tr.SEASON, "gameIds": str(self.PENDING[0]), "dryRun": "false"},
+        ])
+        self.assertEqual(len(glob.glob(os.path.join(self.tmp, f"team-before-{self.PENDING[0]}-*.json"))), 1)
+        self.assertEqual(len(glob.glob(os.path.join(self.tmp, f"team-after-{self.PENDING[0]}-*.json"))), 1)
+        self.assertEqual(open(tr.DONE).read().split(), [str(self.COMPLETED[0]), str(self.PENDING[0])])
+
+    def test_a_changed_diff_stops_before_any_write(self):
+        """(b) The pending game's fresh diff differs from team-diff-approved.json (one cf value moved): exit 6,
+        no write call, no snapshot, not marked done, approved file byte-identical."""
+        self.diff_body["diffs"][0]["changes"]["cf"] = change(41, 42)
+        with self.assertRaises(SystemExit) as stopped:
+            tr.main()
+        self.assertEqual(stopped.exception.code, 6)
+        self.assertEqual(len(self.calls), 1)
+        self.assert_completed_game_untouched()
+        self.assert_pending_game_not_written()
+
+    def test_a_per_game_diff_call_that_is_not_a_complete_dry_run_stops_before_any_snapshot(self):
+        """Hardening: the execute-path diff call is checked like diff mode's (dryRun, rowsUpserted 0, not
+        truncated) before comparing; otherwise exit 2 before any snapshot or write."""
+        for bad in ({"dryRun": False}, {"rowsUpserted": 3}, {"diffsTruncated": True}):
+            with self.subTest(bad):
+                self.calls.clear()
+                body = dict(self.diff_body, **bad)
+                tr.post = lambda query, secret, body=body: (self.calls.append(query), (0.1, copy.deepcopy(body)))[1]
+                with self.assertRaises(SystemExit) as stopped:
+                    tr.main()
+                self.assertEqual(stopped.exception.code, 2)
+                self.assertEqual(len(self.calls), 1)
+                self.assert_completed_game_untouched()
+                self.assert_pending_game_not_written()
 
 
 if __name__ == "__main__":

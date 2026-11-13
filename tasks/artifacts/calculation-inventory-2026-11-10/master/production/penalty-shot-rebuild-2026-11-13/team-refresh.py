@@ -376,6 +376,12 @@ def main():
             time.sleep(PAUSE_S)
         window_gate(g); guard(); window_gate(g)
         _took, body = post({"seasonId": SEASON, "gameIds": str(g), "diff": "true"}, secret)
+        # The same check as diff mode: only a complete, read-only dry run can be compared (else exit 2,
+        # before any snapshot or write).
+        if body.get("dryRun") is not True or body.get("rowsUpserted") != 0 or body.get("diffsTruncated"):
+            stop(2, "per-game diff call was not a complete dry run", game=g, dryRun=body.get("dryRun"),
+                 rowsUpserted=body.get("rowsUpserted"), truncated=body.get("diffsTruncated"))
+        # Compared with the ORIGINAL approved diff (team-diff-approved.json is never rewritten).
         game_diffs = [d for d in approved if d["game_id"] == g]
         if body.get("diffs") != game_diffs or body.get("staleKeys"):
             stop(6, "this game's diff differs from the approved diff", game=g)
