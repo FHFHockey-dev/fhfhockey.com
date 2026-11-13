@@ -132,6 +132,7 @@ $type-fine: 0.7rem;
   margin: v.$space-sm 0 0;
   color: v.$text-secondary;
   font-size: $type-caption;
+  text-wrap: pretty;
 }
 
 .components {
@@ -190,12 +191,47 @@ $type-fine: 0.7rem;
     background: v.$schedule-green;
   }
 
-  // Same red as the negative digits: 5.3:1 on the track (schedule-red was
-  // 2.8:1), close to the green's 6.4:1 so both arms read with equal weight.
+  // Diverging pair, validated on the rendered track (#26292d): this red is
+  // 3.4:1 (graphics 3:1; schedule-red was 2.8:1) and sits darker than the
+  // green so red-green colour-blind readers still separate the arms
+  // (deutan ΔE 10.5; danger red at the green's lightness was 1.2).
   &.below {
     right: 50%;
     border-radius: v.$radius-xs 0 0 v.$radius-xs;
-    background: v.$danger-color;
+    background: color-mix(in srgb, #{v.$danger-color} 35%, #{v.$schedule-red});
+  }
+}
+
+// Past ±2 SD a bar stops at the track end: its outer end is square and one
+// slanted cut sits just inside it as an axis break (TJ chose a single cut over
+// a notch, a fade or "//"). The printed value stays exact.
+.barFill.clipped {
+  &.above,
+  &.below {
+    background-repeat: no-repeat;
+    background-size: 10px 100%;
+  }
+
+  &.above {
+    border-radius: 0;
+    background-position: right 4px center;
+    background-image: linear-gradient(
+      115deg,
+      transparent 0 38%,
+      v.$background-dark 38% 62%,
+      transparent 62%
+    );
+  }
+
+  &.below {
+    border-radius: 0;
+    background-position: left 4px center;
+    background-image: linear-gradient(
+      65deg,
+      transparent 0 38%,
+      v.$background-dark 38% 62%,
+      transparent 62%
+    );
   }
 }
 

@@ -38,7 +38,7 @@ States not in live data are forced with a local Playwright response rewrite
 (scratchpad `qa/states.cjs`: partial, notenough, mismatch, short, unavailable, info).
 
 | card \ pass | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
-| Recent Team Form beta | ✓ | ✓ | ✓ | ✓ | ✓ | | | |
+| Recent Team Form beta | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 - Pass 0: clean (rendered detector both viewports, static check).
 - Pass 1 (approved): mismatch window line says "games through <score's last game>" (+ regression test);
@@ -49,9 +49,20 @@ States not in live data are forced with a local Playwright response rewrite
   (2.77 → 5.26:1); `aria-busy` while loading (+ test).
 - Pass 4 (approved): plain mismatch note (3 cases); SD caption naming the parts list.
   Plan-fixed strings (badge, tip, scale, window, as-of, puck-luck heading) untouched.
+- Commit `17b342f76` (passes 3–4; typecheck exit 0, 80 tests).
+- Pass 5 (approved): slop audit no hits on the card; direction confirmed (exact, rink-side,
+  candid; moment = score + bars; signature = neutral beta pill); trailing periods dropped.
+- Pass 6: wider bars wrapped the notes → reverted; closed with no change (TJ).
+- Pass 7 (approved): negative bar red re-stepped for red-green CVD (#d04e5a mix, ΔE 10.5,
+  3.42:1 on measured track #26292d) — corrects the pass-3 pick; clipped bars (> ±2 SD) get a
+  squared end + single slanted cut (TJ rejected the notch as phallic, then a fade; chose single "/").
+- Pass 8 (approved): toenails, axe (390 + 1440), focus clean; slop audit 0 card hits;
+  fixed own regression (SD caption orphan at 390). Typecheck exit 0.
+- Gotcha: dataviz validator lives in the bundled dataviz skill dir; its "lightness band"
+  FAIL is a categorical check and does not apply to a two-arm diverging pair.
 
 ## Next
-Pass 5 (unslop), then 6–8, screenshots, commit, report.
+Pass 8 (final sweep), then screenshots, commit, report, screenshots, commit, report.
 
 ## Gotchas
 - Never set GIT_DIR in test runs. Use `npm run typecheck`, not plain `npx tsc`.

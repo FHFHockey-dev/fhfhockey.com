@@ -44,12 +44,12 @@ function formatSd(value: number): string {
 /** Plain-language note for 5-on-5 games that don't line up with the score's. */
 function mismatchNote(found: number, expected: number): string {
   if (found === 0) {
-    return "5-on-5 stats are missing for these games, so puck luck is unavailable.";
+    return "5-on-5 stats are missing for these games, so puck luck is unavailable";
   }
   if (found < expected) {
-    return `5-on-5 stats cover ${found} of these ${expected} games, so puck luck uses those ${found}.`;
+    return `5-on-5 stats cover ${found} of these ${expected} games, so puck luck uses those ${found}`;
   }
-  return "5-on-5 game dates don't match the score's games, so puck luck may cover different games.";
+  return "5-on-5 game dates don't match the score's games, so puck luck may cover different games";
 }
 
 function ComponentRow({ component }: { component: RecentTeamFormBetaComponent }) {
@@ -67,6 +67,7 @@ function ComponentRow({ component }: { component: RecentTeamFormBetaComponent })
       </li>
     );
   }
+  const clipped = Math.abs(component.value) > BAR_DOMAIN_SD;
   const size = Math.min(Math.abs(component.value), BAR_DOMAIN_SD) / BAR_DOMAIN_SD;
   const direction =
     component.value > 0 ? styles.above : component.value < 0 ? styles.below : "";
@@ -75,7 +76,8 @@ function ComponentRow({ component }: { component: RecentTeamFormBetaComponent })
       <span className={styles.componentLabel}>{component.label}</span>
       <span className={styles.barTrack} aria-hidden="true">
         <span
-          className={`${styles.barFill} ${direction}`}
+          className={`${styles.barFill} ${direction}${clipped ? ` ${styles.clipped}` : ""}`}
+          data-clipped={clipped || undefined}
           style={{ "--bar-size": `${(size * 50).toFixed(1)}%` } as React.CSSProperties}
         />
       </span>
@@ -229,7 +231,7 @@ export function RecentTeamFormBeta({
   if (result.state === "loading") {
     body = <p className={styles.stateText}>Loading Recent Team Form…</p>;
   } else if (result.state === "error") {
-    body = <p className={styles.stateText}>Recent Team Form could not be loaded.</p>;
+    body = <p className={styles.stateText}>Recent Team Form could not be loaded</p>;
   } else if (result.model.kind === "notEnoughGames") {
     body = (
       <p className={styles.stateText}>
@@ -241,7 +243,7 @@ export function RecentTeamFormBeta({
     debug = result.model.debug;
     body = (
       <p className={styles.stateText}>
-        Recent Team Form is not available for this team and season.
+        Recent Team Form is not available for this team and season
       </p>
     );
   } else {

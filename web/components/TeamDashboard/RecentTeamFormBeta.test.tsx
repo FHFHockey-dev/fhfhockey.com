@@ -133,6 +133,21 @@ describe("RecentTeamFormBeta", () => {
     expect(gameQuery.limit).toHaveBeenCalledWith(10);
   });
 
+  it("marks bars that run past the ±2 SD scale", async () => {
+    install({
+      team_ctpi_daily: [ctpiRow({ defense: 2.64, goaltending: -2.31 })],
+      nst_team_5v5: gameRows,
+    });
+    renderCard();
+    const defense = (await screen.findByText("Defense")).closest("li") as HTMLElement;
+    const goaltending = screen.getByText("Goaltending").closest("li") as HTMLElement;
+    const offense = screen.getByText("Offense").closest("li") as HTMLElement;
+    expect(defense.querySelector('[data-clipped="true"]')).not.toBeNull();
+    expect(goaltending.querySelector('[data-clipped="true"]')).not.toBeNull();
+    expect(offense.querySelector("[data-clipped]")).toBeNull();
+    expect(within(defense).getByText("+2.6")).toBeTruthy();
+  });
+
   it("labels 5-on-5 puck luck over the same games as not part of the score", async () => {
     install({ team_ctpi_daily: [ctpiRow()], nst_team_5v5: gameRows });
     renderCard();
@@ -179,7 +194,7 @@ describe("RecentTeamFormBeta", () => {
     expect(screen.queryByText(/Nov 3 – Nov 11/)).toBeNull();
     expect(
       screen.getByText(
-        "5-on-5 stats cover 9 of these 10 games, so puck luck uses those 9.",
+        "5-on-5 stats cover 9 of these 10 games, so puck luck uses those 9",
       ),
     ).toBeTruthy();
     expect(screen.getByText(/^Puck luck/).textContent).toContain("9 of the 10 games");
@@ -200,7 +215,7 @@ describe("RecentTeamFormBeta", () => {
     });
     renderCard();
     expect(
-      await screen.findByText("Recent Team Form is not available for this team and season."),
+      await screen.findByText("Recent Team Form is not available for this team and season"),
     ).toBeTruthy();
     expect(screen.queryByText("62")).toBeNull();
   });
