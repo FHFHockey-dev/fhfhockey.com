@@ -77,3 +77,18 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - Smoke: none (budget spent). If wanted, one GET each on the player and team landing APIs, with your OK.
 
 **Handoff:** when C ends, post Claude DB handoff 3 for the DRM repair (step 5).
+
+## TJ approvals, 2026-11-13 ~00:00Z (pop-ups)
+- **H1 game 2026020307:** let it pass. Codex plans properly for a later game: compute on with a canary for that game, a clean-export deploy, and the full HTTP footprint. Codex owns H1.
+- **Next Claude production work:** FORGE inputs first (forge_team_game_strength, rolling, player-trend v3), each as its own verified plan and pop-up.
+- **Flag release:** prepare a small release for `LEDGER_BASIS_SCHEMA_ENABLED` and the decision-127 default. Re-claim the files from Scout through the mailbox; gate; push and merge by pop-up.
+- **Index migrations 123/124:** check need read-only, then a CONCURRENTLY plan if still needed.
+- **Approved read-only work:**
+  - Decisions 79/124 legacy-route log check (Vercel runtime logs, 7 days).
+  - PP clock qualification reads (L8).
+  - The 42 IPP rows (L20 D5).
+  - WiGO PP/PK floor split-half validation (L4b).
+  - BEAST v3 cut-off analysis (decision 139).
+- **Approved write:** 2025-26 goalie partition rebuild, summary-only, paced (about 190 dates, 1,417 games).
+- **Debrief:** finalize now, with remaining steps marked pending; write the Astra prompt.
+- **Decisions 135–138:** implementation needs lanes and re-claimed files; production steps are separate approvals.
