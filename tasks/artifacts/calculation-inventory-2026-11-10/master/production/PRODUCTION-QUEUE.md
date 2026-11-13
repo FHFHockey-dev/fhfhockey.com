@@ -429,3 +429,16 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     - `powerPlayCombinations` still 47,688 rows, same max(created_at), 0 stamped; the clock table empty.
   - **Authority:** 115 applied / 6 pending.
   - **Next, each its own approval:** the writer and registry release with `PP_STORED_CALCULATION_WRITES_ENABLED` off; then the refresh bound to `db94a9de` with the flag on; then readbacks; then serving PP share.
+- **Release #441: decision 152 writer, batch dry run and Penalty Summary registry, writes gated off** (TJ "Push and merge, writes off"):
+  - **Candidate** `48c4bcb83` on master `70ad65546`: 11 PP app files, identical to the accepted dry run's code `8f73d2931`. Item 2 out.
+  - **Gate:** 463 focused tests; typecheck 0; ESLint 0; PG proof OK. Full Vitest 19,915 passed (the BLSH file is export-only). pytest 213.
+  - **Branch** pushed 20:42:09Z; no build at 20:43:43Z.
+  - **PR #441** squash-merged 20:43:57Z as master `f5c7adc2d`, tree identical.
+  - **Build:** fhfhockey completed 20:49:42Z; cms, functions and fhfhockey.com canceled.
+  - **Smoke** 5/5 at 200 (20:50:16–17Z): `/` 4.17 s (cold), `/lines` 0.25 s, `/lines/EDM` 0.18 s, `/splits` 0.13 s, `/underlying-stats` 0.26 s.
+  - **octoberBranch:** the PP files already equal master. Ours-merge `09e48c508` pushed 20:50:24Z.
+- **Writes on** (TJ, ~20:51Z):
+  1. TJ set `PP_STORED_CALCULATION_WRITES_ENABLED=true` (Production). The CLI's `vercel env ls production` shows it present; the value is hidden.
+  2. TJ: "Initiate the redeploy". A clean-export CLI production deploy of master `f5c7adc2d` (git archive; `tasks/` trimmed to `tasks/TASKS`; `.vercel/project.json`; `vercel deploy --prod`; Root Directory `web`) started ~20:52Z. A dashboard redeploy would be canceled by the Ignored Build Step.
+  - **From this deploy on:** cron 388 (08:05Z) writes through the new calculation.
+  - **Still needs its own approval:** the refresh bound to `db94a9de`.
