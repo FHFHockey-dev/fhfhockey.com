@@ -302,3 +302,15 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     - Re-fetches ran on TJ's localhost:3000 against production, through the shared NST admission. 11-07 completed (20 datasets). 11-12 was partial: a dev-server error, `writePersistence not_confirmed`, and the failed write committed nothing. Narrow re-runs of 11-12 evenStrength and penaltyKill then completed.
     - About 38 NST requests in total, within every window. Mahura now has 16/16 non-PP rows on 11-07 and 11-12, and NST matches WGO at 14 games.
   - **Noted:** nearly all 2020-21 to 2022-23 WGO rows lack game identity, so other call-ups may trip WiGO the same way. That's a wider backfill, recorded as a ticket.
+- **Migration 148** (TJ "Apply now"): `20261113200000_forge_strength_penalty_shot_split`, applied 17:28:45Z, with readback (6 nullable columns, 2 CHECKs, v1 wrapper plus v2, grants postgres/service_role, row counts unchanged, 0 split rows). Ledger row inserted; authority 113 applied / 7 pending (`05a2843e6`).
+- **Release #437** (TJ "Push and merge"):
+  - Candidate `4cf33215a` on master `4b45d8f1a`:
+    - F15 penalty-shot split, readers and parity (`30fa0f00a`, `8a4a7d8d1`, authority `2a9227343`);
+    - F18 NST alias (`77a6e7592`);
+    - the beta-card same-games fix (`a32478cb0`);
+    - item 6's SQL, proof and rollback only (inert, pending order 147; its code held).
+  - Gate: typecheck 0, ESLint 0 errors, PG proofs f15 and item6 OK, Vitest 19,824 passed; the 5 git-dependent files pass 177/177 in the checkout; pytest 217.
+  - Branch pushed 17:36:35Z, with no build. PR #437 squash-merged as master `b6d43efdc` (tree identical). Build settled 17:42:57Z with 1 build plus 3 cancels.
+  - Smoke 5/5: `/`, `/splits`, `/stats/team/PHI`, `/lines`, `/underlying-stats`.
+  - octoberBranch `5f782c420` pushed 17:43:11Z, with no build.
+- **Penalty-shot rebuild:** dry run at 17:44–17:45Z, DRY_RUN_OK on `b6d43efdc` (8 games, all baselines equal to the official boxscores). `--execute` started about 17:46Z (TJ "Run it, Claude").
