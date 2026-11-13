@@ -380,11 +380,11 @@ describe("Yahoo snapshot evidence", () => {
       if (resource.date === "2026-09-29") throw new Error("Past roster read unavailable");
       const past = resource.date !== "2026-10-01";
       return { payload: { team_key: "453.l.1.t.1", is_owned_by_current_login: "1", roster: { date: resource.date, coverage_type: "date", is_editable: "1",
-        0: { players: { count: past ? 2 : 1, 0: { player: [{ player_key: "453.p.2001" }, { selected_position: [{ position: "C" }] }] },
+        0: { players: { count: past ? 2 : 1, 0: { player: [{ player_key: "453.p.2001" }, { editorial_team_abbr: "DET" }, { selected_position: [{ position: "C" }] }] },
           ...(past ? { 1: { player: [{ player_key: "453.p.7777" }, { name: { full: "Gone Player" } }, { selected_position: [{ position: "BN" }] }] } } : {}) } } } }, transport };
     });
     const withPast = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-09-28", endDate: "2026-10-04", now });
-    const recorded = [{ playerId: "canonical", name: "Mapped Player", position: "C", slotId: "C#1", points: null }, { playerId: null, name: "Gone Player", position: "BN", slotId: null, points: null }];
+    const recorded = [{ playerId: "canonical", name: "Mapped Player", position: "C", slotId: "C#1", points: null, teamAbbreviation: "DET" }, { playerId: null, name: "Gone Player", position: "BN", slotId: null, points: null, teamAbbreviation: null }];
     expect(withPast.snapshot.pastLineups).toEqual([{ date: "2026-09-28", source: "yahoo", entries: recorded }, { date: "2026-09-30", source: "yahoo", entries: recorded }]);
     expect(withPast.snapshot.evidence.roster.limitations).toContain("Yahoo's recorded lineup for 2026-09-29 could not be read; that day shows no lineup.");
     expect(withPast.snapshot.lockedAssignments).toEqual([{ date: "2026-10-01", playerId: "canonical", slotId: "C#1" }]);
@@ -777,17 +777,26 @@ describe("Yahoo goalie appearances already credited", () => {
   const games = [game("101", "2026-10-19", "DAL"), game("102", "2026-10-20", "DAL"), game("103", "2026-10-20", "VGK"), game("104", "2026-10-19", "TOR")];
   const slots = [{ id: "G#1", type: "G" }, { id: "G#2", type: "G" }, { id: "C#1", type: "C" }];
   const lineup = (date: string) => ({ date, source: "yahoo" as const, entries: [
-    { playerId: "dal", name: "dal", position: "G", slotId: "G#1" }, { playerId: "vgk", name: "vgk", position: "G", slotId: "G#2" },
+    { playerId: "dal", name: "dal", position: "G", slotId: "G#1", teamAbbreviation: "DAL" }, { playerId: "vgk", name: "vgk", position: "G", slotId: "G#2", teamAbbreviation: "VGK" },
     { playerId: "bench", name: "bench", position: "BN", slotId: null }] });
   const db = (rows: Array<{ goalie_id: number; game_id: number; games_played: number }>) => ({ from: () => ({ select: () => ({
     in: async (_column: string, ids: number[]) => ({ data: rows.filter(row => ids.includes(row.game_id)), error: null }) }) }) }) as any;
-  // DAL's goalie played both nights; VGK's goalie sat 10-20 (his backup played); the benched TOR goalie's start doesn't count.
+  // DAL played both nights; VGK has an explicit zero-appearance row; the benched TOR goalie does not count.
   const played = [{ goalie_id: 1, game_id: 101, games_played: 1 }, { goalie_id: 1, game_id: 102, games_played: 1 },
-    { goalie_id: 9, game_id: 103, games_played: 1 }, { goalie_id: 3, game_id: 104, games_played: 1 }];
+    { goalie_id: 9, game_id: 103, games_played: 1 }, { goalie_id: 2, game_id: 103, games_played: 0 }, { goalie_id: 3, game_id: 104, games_played: 1 }];
   const base = { periodStart: "2026-10-19", today: "2026-10-21", pastLineups: [lineup("2026-10-19"), lineup("2026-10-20")], slots, players, games };
 
   it("counts active-slot goalies who played on elapsed days", async () => {
     await expect(yahooCreditedGoalieAppearances(db(played), base)).resolves.toBe(2);
+  });
+  it("uses the dated game for a traded goalie, without his current team", async () => {
+    await expect(yahooCreditedGoalieAppearances(db(played), { ...base,
+      players: players.map(player => player.id === "dal" ? { ...player, teamAbbreviation: "SEA" } : player),
+    })).resolves.toBe(2);
+  });
+  it("does not count an absent or null own row as a settled non-appearance", async () => {
+    await expect(yahooCreditedGoalieAppearances(db(played.filter(row => row.goalie_id !== 2)), base)).resolves.toBeNull();
+    await expect(yahooCreditedGoalieAppearances(db(played.map(row => row.goalie_id === 2 ? { ...row, games_played: null } : row) as any), base)).resolves.toBeNull();
   });
   it("is zero before the matchup's first day ends", async () => {
     await expect(yahooCreditedGoalieAppearances(db(played), { ...base, today: "2026-10-19", pastLineups: [] })).resolves.toBe(0);
@@ -831,8 +840,18 @@ describe("Actual fantasy points on recorded past lineups", () => {
     { pastLineups: lineup, players, games, scoring, ...overrides }))[0].entries.map(entry => [entry.playerId, entry.points]));
 
   it("scores each player's night with the league weights", async () => {
-    // Larkin 3 + 2 + 1 + 0.8 + 0.4; Oettinger 4 - 2 + 6; a scratch in a landed game scores 0; no game and unlanded stats stay unknown.
-    await expect(points()).resolves.toEqual({ larkin: 7.2, scratch: 0, oettinger: 8, idle: null, late: null });
+    // Larkin 3 + 2 + 1 + 0.8 + 0.4; Oettinger 4 - 2 + 6; missing player rows, no game and unlanded stats stay unknown.
+    await expect(points()).resolves.toEqual({ larkin: 7.2, scratch: null, oettinger: 8, idle: null, late: null });
+  });
+  it("scores a traded player's two goals from his dated WGO game, not his new team", async () => {
+    await expect(points({ players: players.map(player => player.id === "larkin" ? { ...player, teamAbbreviation: "DAL" } : player),
+      scoring: { ...scoring, weights: { GOALS: 3 } } }, { ...tables,
+      wgo_skater_stats: [{ player_id: 10, game_id: 201, goals: 2 }, { player_id: 99, game_id: 202, goals: 1 }],
+    })).resolves.toMatchObject({ larkin: 6, scratch: null });
+  });
+  it("keeps conflicting dated game identities unknown", async () => {
+    await expect(points({}, { ...tables, wgo_skater_stats: [...tables.wgo_skater_stats,
+      { ...tables.wgo_skater_stats[0], game_id: 202 }] })).resolves.toMatchObject({ larkin: null });
   });
   it.each([null, undefined, "", " \t ", "invalid", NaN, Infinity])("keeps an unavailable weighted actual unknown (%s) but ignores zero-weight fields", async value => {
     const rows = {
