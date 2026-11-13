@@ -53,6 +53,12 @@ export type ParsedSituationCode = {
   homeGoalie: number;
 };
 
+/** The four situation-code digits: all that the classifiers below read. */
+export type SituationCodeDigits = Omit<ParsedSituationCode, "raw">;
+
+/** Count-table strength bucket (lower case, as stored in `*_es` / `*_pp` / `*_pk`). */
+export type StrengthBucket = "es" | "pp" | "pk";
+
 export type StrengthContext = {
   strengthExact: string | null;
   strengthState: StrengthState | null;
@@ -111,7 +117,7 @@ export function getEventOwnerSide(
  * an empty net.
  */
 export function isPenaltyShotSituation(
-  parsedSituation: ParsedSituationCode | null
+  parsedSituation: SituationCodeDigits | null
 ): boolean {
   return parsedSituation != null &&
     (parsedSituation.awaySkaters === 0 || parsedSituation.homeSkaters === 0);
@@ -132,7 +138,7 @@ export function isEmptyNetSituation(
  * than re-parsing `strength_exact` (which is written away-first).
  */
 export function classifyTeamManpower(
-  parsedSituation: ParsedSituationCode | null,
+  parsedSituation: SituationCodeDigits | null,
   teamSide: EventOwnerSide | null
 ): TeamManpowerContext | null {
   if (!parsedSituation || !teamSide) return null;
@@ -182,6 +188,25 @@ export function classifyTeamManpower(
     isPenaltyShot: false,
     strengthExactTeamFirst,
   };
+}
+
+/**
+ * The shared event-strength adapter (decision 149, Astra AF-07): the ES / PP /
+ * PK count bucket for an event owned by `teamSide`, taken from
+ * {@link classifyTeamManpower} so count tables and the normalized layer agree.
+ *
+ * `null` = a penalty-shot code (a side with no skaters, e.g. `1010` home
+ * shooter, `0101` away shooter): the event counts in all-situation totals and
+ * in no strength bucket. Shootout attempts share these codes but are not NHL
+ * shots or goals at all, so callers drop them by period before classifying.
+ */
+export function classifyEventStrengthBucket(
+  digits: SituationCodeDigits,
+  teamSide: EventOwnerSide
+): StrengthBucket | null {
+  const manpowerState = classifyTeamManpower(digits, teamSide)?.manpowerState ?? null;
+  if (manpowerState == null) return null;
+  return manpowerState === "ES" ? "es" : manpowerState === "PP" ? "pp" : "pk";
 }
 
 /** {@link classifyTeamManpower} for a team id. */

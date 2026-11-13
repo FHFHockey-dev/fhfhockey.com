@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildStrengthContext,
+  classifyEventStrengthBucket,
   classifyTeamManpower,
   classifyTeamManpowerById,
   classifyTeamStrengthState,
@@ -11,6 +12,8 @@ import {
   isPenaltyShotSituation,
   orientStrengthExact,
   parseSituationCode,
+  type EventOwnerSide,
+  type StrengthBucket,
 } from "./nhlStrengthState";
 
 describe("nhlStrengthState", () => {
@@ -151,6 +154,52 @@ describe("nhlStrengthState", () => {
         expect(classifyTeamStrengthState(situation, 1, 1, 2)).toBeNull();
         expect(classifyTeamStrengthState(situation, 2, 1, 2)).toBeNull();
       }
+    });
+
+    describe("classifyEventStrengthBucket (decision 149, AF-07)", () => {
+      it.each<[string, EventOwnerSide]>([
+        ["1010", "home"], // home shooter, away goalie in
+        ["0101", "away"], // away shooter, home goalie in
+      ])(
+        "%s penalty shot (%s shooter) belongs to no strength bucket",
+        (code, shooter) => {
+          const digits = parseSituationCode(code)!;
+          const defender = shooter === "home" ? "away" : "home";
+          expect(classifyEventStrengthBucket(digits, shooter)).toBeNull();
+          expect(classifyEventStrengthBucket(digits, defender)).toBeNull();
+        }
+      );
+
+      it.each<[string, StrengthBucket, StrengthBucket, string]>([
+        // code, home bucket, away bucket, why
+        ["1551", "es", "es", "5v5"],
+        ["1451", "pp", "pk", "home 5v4"],
+        ["1541", "pk", "pp", "away 5v4"],
+        ["1531", "pk", "pp", "away 5v3"],
+        ["1441", "es", "es", "4v4"],
+        ["1331", "es", "es", "3v3 overtime"],
+        ["1341", "pp", "pk", "home 4v3 overtime"],
+        ["1560", "es", "es", "home extra attacker, no penalty"],
+        ["0641", "pk", "pp", "away pulls goalie during its 5v4"],
+        ["1550", "pk", "pp", "shorthanded home pulls goalie"],
+      ])("keeps %s as home %s / away %s (%s)", (code, home, away) => {
+        const digits = parseSituationCode(code)!;
+        expect(classifyEventStrengthBucket(digits, "home")).toBe(home);
+        expect(classifyEventStrengthBucket(digits, "away")).toBe(away);
+      });
+
+      it("is the canonical manpower state, lower-cased, for every code and side", () => {
+        const bucketOf = { ES: "es", PP: "pp", PK: "pk" } as const;
+        for (let n = 0; n < 10000; n += 1) {
+          const digits = parseSituationCode(String(n).padStart(4, "0"))!;
+          for (const side of ["home", "away"] as const) {
+            const manpower = classifyTeamManpower(digits, side)!.manpowerState;
+            expect(classifyEventStrengthBucket(digits, side)).toBe(
+              manpower == null ? null : bucketOf[manpower]
+            );
+          }
+        }
+      });
     });
 
     it("is oriented: the home and away answers are mirror images for every code", () => {
