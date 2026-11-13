@@ -473,10 +473,54 @@ function accumulateTeamToiSeconds(args: {
   return total;
 }
 
+/** A regulation or overtime penalty-shot attempt (decision 149, Astra AF-07). */
+type TeamPenaltyShotAttempt = {
+  eventId: number;
+  ownerTeamId: number;
+  onGoal: boolean;
+  isGoal: boolean;
+};
+
 type TeamShotEventContext = {
   situationByEventId: Map<number, ReturnType<typeof parseSituationCode>>;
   runningScores: ReturnType<typeof buildTeamRunningScores>;
+  penaltyShots: TeamPenaltyShotAttempt[];
 };
+
+/**
+ * Penalty-shot attempts have no shot feature (they are excluded from shot
+ * features and xG), so the team totals take them from the event stream.
+ * `includeInAllSituationsOnly` is the shared penalty-shot adapter (also used
+ * by NST parity): a goal, shot on goal or miss outside the shootout. Its
+ * situation code (1010 / 0101) is one the canonical
+ * `classifyEventStrengthBucket` puts in no strength bucket.
+ */
+function collectPenaltyShotAttempts(
+  events: readonly PlayerStatsSourceEventRow[],
+  homeTeamId: number,
+  awayTeamId: number
+): TeamPenaltyShotAttempt[] {
+  return events.flatMap((event) => {
+    const owner = event.event_owner_team_id;
+    if (
+      owner == null ||
+      !evaluateNormalizedEventInclusion(event).includeInAllSituationsOnly
+    ) {
+      return [];
+    }
+    if (resolveEventSide(owner, homeTeamId, awayTeamId) == null) {
+      return [];
+    }
+    return [
+      {
+        eventId: event.event_id,
+        ownerTeamId: owner,
+        onGoal: SHOT_ON_GOAL_TYPES.has(event.type_desc_key ?? ""),
+        isGoal: event.type_desc_key === "goal",
+      },
+    ];
+  });
+}
 
 function buildTeamShotEventContext(
   events: readonly PlayerStatsSourceEventRow[],
@@ -488,6 +532,7 @@ function buildTeamShotEventContext(
       events.map((event) => [event.event_id, parseSituationCode(event.situation_code)])
     ),
     runningScores: buildTeamRunningScores(events, homeTeamId, awayTeamId),
+    penaltyShots: collectPenaltyShotAttempts(events, homeTeamId, awayTeamId),
   };
 }
 
@@ -651,6 +696,36 @@ function accumulateTeamShotMetrics(args: {
       }
       if (shot.isGoal) {
         metrics.ldga += 1;
+      }
+    }
+  }
+
+  // Decision 149: each regulation or overtime penalty shot counts exactly
+  // once, in all-situation totals only (never ES, PP, PK, 5v5 or the
+  // empty-net splits), for the shooting team and against the other. A goal
+  // only if scored; never in xG, scoring chances or danger buckets.
+  if (args.strength === "allStrengths") {
+    const featureEventIds = new Set(args.gameParity.shotFeatures.map((shot) => shot.eventId));
+    for (const attempt of args.eventContext.penaltyShots) {
+      if (featureEventIds.has(attempt.eventId)) continue;
+      const scoreBefore =
+        args.eventContext.runningScores.get(runningScoreEventKey(game.id, attempt.eventId))
+          ?.before ?? null;
+      if (
+        !matchesUnderlyingScoreState(args.scoreState, getSideScoreDiff(scoreBefore, side))
+      ) {
+        continue;
+      }
+      if (attempt.ownerTeamId === args.teamId) {
+        metrics.cf += 1;
+        metrics.ff += 1;
+        if (attempt.onGoal) metrics.sf += 1;
+        if (attempt.isGoal) metrics.gf += 1;
+      } else {
+        metrics.ca += 1;
+        metrics.fa += 1;
+        if (attempt.onGoal) metrics.sa += 1;
+        if (attempt.isGoal) metrics.ga += 1;
       }
     }
   }
@@ -1113,8 +1188,10 @@ export async function findStaleTeamSummaryKeys(args: {
 // today can still be live, so the date alone never makes a game final.
 export async function fetchTeamSummaryRebuildGameIds(args: {
   seasonId: number;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
+  /** Exactly these games (bounded single-game rebuilds) instead of a date window. */
+  gameIds?: readonly number[];
   gameType?: number | null;
   supabase?: TeamUnderlyingSupabaseClient;
   now?: Date;
@@ -1126,9 +1203,10 @@ export async function fetchTeamSummaryRebuildGameIds(args: {
       let query = databaseClient
         .from("games")
         .select("id,startTime,game_state,game_schedule_state,game_state_observed_at")
-        .eq("seasonId", args.seasonId)
-        .gte("date", args.startDate)
-        .lte("date", args.endDate);
+        .eq("seasonId", args.seasonId);
+      query = args.gameIds
+        ? query.in("id", [...args.gameIds])
+        : query.gte("date", args.startDate).lte("date", args.endDate);
       if (args.gameType != null) query = query.eq("type", args.gameType);
       return query.order("id", { ascending: true }).range(from, to);
     }
@@ -1137,6 +1215,79 @@ export async function fetchTeamSummaryRebuildGameIds(args: {
     .filter((row) => resolveGameFinality(row, now).isFinal)
     .map((row) => Number(row.id))
     .filter((id) => Number.isFinite(id));
+}
+
+const TEAM_SUMMARY_KEY_COLUMNS = new Set(["game_id", "team_id", "strength", "score_state"]);
+
+export type TeamSummaryRowDiff = TeamSummaryKey & {
+  /** Stored row missing for this rebuilt key. */
+  missing?: true;
+  changes: Record<string, { stored: unknown; rebuilt: unknown }>;
+};
+
+function sameTeamSummaryValue(stored: unknown, rebuilt: unknown) {
+  if (typeof rebuilt === "number" && stored != null && Number.isFinite(Number(stored))) {
+    return Math.abs(Number(stored) - rebuilt) < 1e-6;
+  }
+  return stored === rebuilt;
+}
+
+/** Field-level differences between stored rows and rebuilt rows, by key (read-only diff mode). */
+export function compareTeamSummaryRows(
+  stored: readonly Record<string, unknown>[],
+  rebuilt: readonly TeamUnderlyingSummaryRow[]
+): TeamSummaryRowDiff[] {
+  const storedByKey = new Map(
+    stored.map((row) => [
+      teamSummaryKey({
+        game_id: Number(row.game_id),
+        team_id: Number(row.team_id),
+        strength: String(row.strength),
+        score_state: String(row.score_state),
+      }),
+      row,
+    ])
+  );
+  return rebuilt.flatMap((row) => {
+    const key = {
+      game_id: row.game_id,
+      team_id: row.team_id,
+      strength: row.strength,
+      score_state: row.score_state,
+    };
+    const storedRow = storedByKey.get(teamSummaryKey(key));
+    if (!storedRow) return [{ ...key, missing: true as const, changes: {} }];
+    const changes: TeamSummaryRowDiff["changes"] = {};
+    for (const [column, value] of Object.entries(row)) {
+      if (TEAM_SUMMARY_KEY_COLUMNS.has(column)) continue;
+      if (!sameTeamSummaryValue(storedRow[column], value)) {
+        changes[column] = { stored: storedRow[column] ?? null, rebuilt: value };
+      }
+    }
+    return Object.keys(changes).length > 0 ? [{ ...key, changes }] : [];
+  });
+}
+
+async function diffStoredTeamSummaryRows(args: {
+  gameIds: readonly number[];
+  rows: readonly TeamUnderlyingSummaryRow[];
+  supabase: TeamUnderlyingSupabaseClient;
+}) {
+  if (args.gameIds.length === 0) return [];
+  const databaseClient = args.supabase as any;
+  const columns = Object.keys(args.rows[0] ?? { game_id: 0 }).join(",");
+  const stored = await fetchAllRows<Record<string, unknown>>((from, to) =>
+    databaseClient
+      .from(TEAM_STATS_SUMMARY_TABLE)
+      .select(columns)
+      .in("game_id", [...args.gameIds])
+      .order("game_id", { ascending: true })
+      .order("team_id", { ascending: true })
+      .order("strength", { ascending: true })
+      .order("score_state", { ascending: true })
+      .range(from, to)
+  );
+  return compareTeamSummaryRows(stored, args.rows);
 }
 
 export async function refreshTeamUnderlyingSummaryRowsForGameIds(args: {
@@ -1148,6 +1299,8 @@ export async function refreshTeamUnderlyingSummaryRowsForGameIds(args: {
   /** Build the rows and report stale keys without writing. */
   dryRun?: boolean;
   reportStaleKeys?: boolean;
+  /** Field-level stored-vs-rebuilt differences (read-only; dry runs only). */
+  reportDiffs?: boolean;
 }) {
   const supabase = args.supabase ?? serviceRoleClient;
   const games = await fetchPlayerStatsLandingGamesByIds(args.gameIds, supabase);
@@ -1158,6 +1311,7 @@ export async function refreshTeamUnderlyingSummaryRowsForGameIds(args: {
       rowsGenerated: 0,
       gameIdsProcessed: [],
       staleKeys: [] as TeamSummaryKey[],
+      diffs: [] as TeamSummaryRowDiff[],
     };
   }
 
@@ -1181,6 +1335,10 @@ export async function refreshTeamUnderlyingSummaryRowsForGameIds(args: {
   const staleKeys = args.reportStaleKeys
     ? await findStaleTeamSummaryKeys({ gameIds: games.map((game) => game.id), rows, supabase })
     : [];
+  const diffs =
+    args.dryRun && args.reportDiffs
+      ? await diffStoredTeamSummaryRows({ gameIds: games.map((game) => game.id), rows, supabase })
+      : [];
   const rowsUpserted = args.dryRun
     ? 0
     : await upsertTeamSummaryRows({
@@ -1201,5 +1359,6 @@ export async function refreshTeamUnderlyingSummaryRowsForGameIds(args: {
     rowsGenerated: rows.length,
     gameIdsProcessed: games.map((game) => game.id),
     staleKeys,
+    diffs,
   };
 }
