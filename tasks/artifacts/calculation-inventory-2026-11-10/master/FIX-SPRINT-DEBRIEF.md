@@ -739,7 +739,7 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 - Adapter (#434); split columns, writer, builder, readers and parity (#437); migration 148 applied.
 - 8-game derived rebuild: all post-write checks passed, totals equal official.
 - Bounded landing summary refresh: canary 065, then the other 7, TJ-approved separately; key-by-key readbacks passed.
-- Served player and goalie landing verified against the rebuilt rows for all 8 games (ALL_OK). | Separate open ticket (TJ): **team underlying summaries' "all" GF/SF exclude penalty shots.** F15 is on the builder fix; the release candidate, a read-only 8-game diff and any team refresh each need TJ's approval. |
+- Served player and goalie landing verified against the rebuilt rows for all 8 games (ALL_OK). | **Team follow-up done (2026-11-13):** builder fix released (#438). The read-only 8-game diff (54 rows, only PS deltas, no audit row), the team refresh (54 rows changed, matching the diff exactly) and the served team landing (16/16 team-games equal to the official boxscores) were each TJ-approved separately. **AF-07 closed.** Remaining: 2025-26 has 33 penalty-shot games on old totals (no rebuild proposed). |
 - Adapter `8463912d8` (#434).
 - Split columns, v2 writer, builder, readers and parity: `30fa0f00a`, `8a4a7d8d1` (#437).
 - Migration 148 applied 17:28:45Z.

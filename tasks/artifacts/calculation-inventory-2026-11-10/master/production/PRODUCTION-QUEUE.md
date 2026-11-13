@@ -336,3 +336,15 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - **Served landing verification, all 8 games** (Chef; 21 read-only GETs to `/api/v1/underlying-stats/players` and `/goalies`, date-scoped per game; script `production/penalty-shot-rebuild-2026-11-13/verify-landing.py`): **ALL_OK.**
   - Each shooter's all-strengths row equals the rebuilt values (GP 1, no double count), and the even-strength row excludes the penalty shot.
   - Each goalie's SA/SV/GA equals the expected values and the official boxscore for the shooting team. The exception is 2026020150: the official 44 SOG / 6 goals include an empty-net goal, so the goalie row is 43 / 5.
+- **Release #438** (TJ "Push and merge"):
+  - Candidate `a9ab949f1` on master `b6d43efdc`: F15 team summaries count penalty shots in allStrengths (`84b013054`), plus the read-only diff with no audit row (`e152575b5`). No migrations.
+  - Gate: typecheck 0, ESLint 0 errors, Vitest 19,835 passed. requestBudget passes 21/21 solo; the git-dependent files pass 177/177 in the checkout; pytest 217.
+  - Branch 18:17:31Z, with no build. PR #438 squash-merged as master `ed2002161` (tree identical). Build settled 18:23:55Z with 1 build plus 3 cancels.
+  - Smoke 5/5: `/`, `/underlying-stats`, `/underlying-stats/teamStats`, `/lines`, `/splits`.
+  - octoberBranch `6c2141f08` pushed, with no build.
+- **Team summary diff** (read-only, 18:25:44–18:25:58Z): DIFF_OK on `ed2002161`, 1,120 rows generated, 54 changed, all allStrengths.
+  - CF/FF/SF/CA/FA/SA +1 in 27 rows each; GF/GA +1 in 8 rows each.
+  - One score state per team; rebuilt SF/GF equal to the official boxscores.
+  - 0 audit rows written.
+- **Team summary refresh** (TJ "Run it, Claude"), 18:26:28–18:29:29Z: 16 calls; each game re-diffed equal to the approved diff, snapshotted, written (140 rows) and read back key by key. Changed rows total 54, equal to the diff. DONE.
+- **Served team landing**, all 8 games and both teams (16 read-only GETs; script `verify-team-landing.py`): **ALL_OK.** SF/GF/SA/GA and GP 1 equal the official boxscores for every team-game, including 2026020150's empty-net goal in team totals.
