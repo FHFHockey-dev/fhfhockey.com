@@ -52,7 +52,7 @@ describe("goalie producer confirmation evidence", () => {
   const evidence = (assertions = [assertion()]): DailyBoardEvidence => ({ informationCutoffAt: cutoff, assertions, conflicts: [] });
   async function run(source?: DailyBoardEvidence, options: {
     probability?: number; override?: boolean; cutoffAt?: string | null; horizon?: number; goalsFor?: number | null; opponentGoalsFor?: number | null;
-    weakerBackup?: boolean;
+    weakerBackup?: boolean; shotsPk?: number | null;
   } = {}) {
     const probability = options.probability ?? 0.8;
     const cache = <T,>(value: T) => new Map([[`10:${date}`, value], [`11:${date}`, value]]);
@@ -70,7 +70,7 @@ describe("goalie producer confirmation evidence", () => {
         seasonStartPctByGoalieId: new Map(), seasonGamesPlayedByGoalieId: new Map(),
         override: options.override === false ? null : { goalieId: 100, starterProb: probability },
       }],
-      teamShotsByTeamId: new Map([[11, { shotsEs: 25, shotsPp: 5 }]]), teamGoalsByTeamId: new Map([
+      teamShotsByTeamId: new Map([[11, { shotsEs: 25, shotsPp: 5, ...("shotsPk" in options ? { shotsPk: options.shotsPk } : {}) }]]), teamGoalsByTeamId: new Map([
         ...(options.goalsFor === null ? [] : [[10, options.goalsFor ?? 3] as [number, number]]),
         ...(options.opponentGoalsFor === null ? [] : [[11, options.opponentGoalsFor ?? 3] as [number, number]]),
       ]),
@@ -102,6 +102,23 @@ describe("goalie producer confirmation evidence", () => {
     selected: { goalieId: result.selected.goalieId, starterProbability: result.selected.starterProbability, saves: result.selected.saves },
     candidates: result.candidates.map(row => ({ playerId: row.playerId, startingProbability: row.startingProbability, conditional: row.conditional })),
     marketMean: result.market.expected_value,
+  });
+
+  it("includes known opponent PK shots in goalie shots against (decision 24)", async () => {
+    const zero = await run(undefined, { shotsPk: 0 });
+    const known = await run(undefined, { shotsPk: 3 });
+    // The existing game-context adjustment applies to all 33 shots, including the three PK shots.
+    expect(known.row.proj_shots_against).toBeCloseTo(zero.row.proj_shots_against * 33 / 30, 3);
+    expect(known.row.uncertainty.pk_shots).toBe("known");
+    const candidates = readGoalieCandidatesContract(known.row.uncertainty)!;
+    expect(candidates.rows.every(row => row.if_starts.shots_against === known.row.proj_shots_against)).toBe(true);
+  });
+
+  it.each([null, undefined])("keeps unknown opponent PK shots %s labelled without inventing shots", async shotsPk => {
+    const zero = await run(undefined, { shotsPk: 0 });
+    const unknown = await run(undefined, { shotsPk });
+    expect(unknown.row.proj_shots_against).toBe(zero.row.proj_shots_against);
+    expect(unknown.row.uncertainty.pk_shots).toBe("unknown");
   });
 
   it.each([true, false])("preserves nullable offense through goalie output, candidate branches and metadata (override=%s)", async override => {
