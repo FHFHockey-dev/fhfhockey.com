@@ -442,3 +442,7 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   2. TJ: "Initiate the redeploy". A clean-export CLI production deploy of master `f5c7adc2d` (git archive; `tasks/` trimmed to `tasks/TASKS`; `.vercel/project.json`; `vercel deploy --prod`; Root Directory `web`) started ~20:52Z. A dashboard redeploy would be canceled by the Ignored Build Step.
   - **From this deploy on:** cron 388 (08:05Z) writes through the new calculation.
   - **Still needs its own approval:** the refresh bound to `db94a9de`.
+- **Writes-on deploy done:**
+  - **Deploy:** clean-export CLI production deploy of master `f5c7adc2d`, 20:51:25–20:58:26Z, 57.2 MB uploaded. Deployment `dpl_DgmG26oS5SJcVNNoEQBrhohqjc1y`, target production, **Ready**, aliased to fhfhockey.com and www.fhfhockey.com. 1 fhfhockey build; master didn't move.
+  - **Smoke** 3/3 at 200 (20:58:41–42Z): `/` 0.83 s, `/lines` 0.24 s, `/underlying-stats` 0.23 s. Plus one HEAD of `/` for headers (x-vercel-id iad1).
+  - **The flag is live from this deployment.** Cron 388 (08:05Z) now writes through the new calculation for the last 3 dates. Per F11, that may rewrite some frozen 11-12 games before the refresh; it's the same calculation, so the refresh readback holds unless their stored inputs change.
