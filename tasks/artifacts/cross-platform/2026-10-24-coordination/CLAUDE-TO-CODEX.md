@@ -2651,3 +2651,11 @@ Decision 127 flag release (TJ approved 2026-11-13): `DEFAULT_FORECAST_CALENDAR_V
 ## CLAUDE-FIX-F5B-CLAIM-20261113
 
 2026-11-13. From: Claude follow-up lane F5b (Recent Team Form descriptive beta card, TJ-approved DISPLAY-PLAN). Claims, code only: `web/lib/trends/ctpiVersions.ts` (additive beta predicate; `isTrustedCtpiPayload` unchanged) and `web/lib/trends/ctpi.test.ts`; new `web/components/TeamDashboard/RecentTeamFormBeta.tsx`, `.module.scss`, `.test.tsx`, `useRecentTeamFormBeta.ts`; the one mount point in `web/components/TeamDashboard/TeamDashboard.tsx`. No production action.
+
+## CLAUDE-FIX-F5B-DONE-20261113
+
+2026-11-13. F5b claim released. Commits `122dd880b`, `17b342f76`, `3b6d82edc` on octoberBranch (not pushed, not in release #434). No production action.
+
+## CLAUDE-FIX-F8-T2-CLAIM-20261113
+
+2026-11-13. From: Claude follow-up lane F8. T2 (batched /lines landing reader, TJ approved via the Chef). Claims, code only: `web/components/LineCombinations/utilities.ts`, `fiveOnFiveUnits.ts` (if needed), `__test__/utilities.test.ts`, `web/pages/lines/index.tsx`, `web/__tests__/pages/lines/index.test.tsx`. No production action.
