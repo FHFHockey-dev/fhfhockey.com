@@ -35,11 +35,11 @@
 ## Tasks
 
 - [ ] 1.0 Build the PP share reader gates offline (owner F11; in progress)
-  - [ ] 1.1 Gate `/api/toi`, the rolling writer, PowerPlayCombos, LinemateMatrix's PP mode and the shift chart model on `pp_team_game_clock`, behind `PP_SHARE_SERVING_ENABLED` (unset = today's behaviour).
+  - [x] 1.1 Gate `/api/toi`, the rolling writer, PowerPlayCombos, LinemateMatrix's PP mode and the shift chart model on `pp_team_game_clock`, behind `PP_SHARE_SERVING_ENABLED` (unset = today's behaviour).
     - Show only `available` rows; `not_applicable` shows "N/A", never 0%; `unavailable` shows its reason; nothing is capped.
     - Read stored shift rows only (no shift ingestion or fallback).
-  - [ ] 1.2 Pin flag-off parity: the rolling writer's stored rows for a fixture window are identical, field for field, to today's writer; the same for any other writer touched.
-  - [ ] 1.3 Cross-surface test with real stored fixtures: one qualified team-game (e.g. 2026020131 t18, 120 s) agrees across Lines, LinemateMatrix, the shift chart and `/api/toi`, and one zero-PP team-game (e.g. 2026020038 t55) shows "N/A" everywhere. Record each surface's values in REPORT.
+  - [x] 1.2 Pin flag-off parity: the rolling writer's stored rows for a fixture window are identical, field for field, to today's writer; the same for any other writer touched.
+  - [x] 1.3 Cross-surface test with real stored fixtures: one qualified team-game (e.g. 2026020131 t18, 120 s) agrees across Lines, LinemateMatrix, the shift chart and `/api/toi`, and one zero-PP team-game (e.g. 2026020038 t55) shows "N/A" everywhere. Record each surface's values in REPORT. *(Done: F11 `05c43f981` + `aac8cf5a3`, REPORT §15–16. Chef reran 158 tests and matched 131 t18's seconds and shares and 038 t55's not-applicable to the accepted dry run.)*
   - [ ] 1.4 Chef verifies: commits, ownership claims, the tests from 1.2 and 1.3, typecheck, ESLint and the CSS check, and no shift-ingestion files touched.
   - [ ] 1.5 Serving review with TJ (pop-up): the evidence from 1.2 and 1.3, and the flag-off guarantee.
 - [ ] 2.0 Release the reader code with serving off (depends on 1.0 and TJ's approval)
