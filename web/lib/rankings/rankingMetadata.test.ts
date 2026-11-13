@@ -16,6 +16,9 @@ describe("rankingMetadata", () => {
     expect(payload.glossary.find((entry) => entry.key === "dense_rank")?.label).toBe(
       "Rank (dense)",
     );
+    expect(payload.glossary.find((entry) => entry.key === "beast_tier_gates_v3")?.label).toBe(
+      "BEAST gates (v3)",
+    );
     expect(payload.teamStyle.currentLabel).toBe("raw_contextual_5v5");
     expect(payload.teamStyle.adjustedTargetLabel).toContain(
       "Score- and venue-adjusted",
