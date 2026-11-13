@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { STARTER_DECISION_SHARE } from "./goalie/goalieOutcomes";
+import { summarizeGameMarketRows, type MarketPriceContextRow } from "./queries/market-queries";
 import { getGoalieForgePipelineSpec } from "./goaliePipeline";
 import { runPerGameGoalieStage } from "./stages/goalie-stage";
 import { readGoalieCandidatesContract } from "./goalie/goalieCandidates";
@@ -322,14 +323,35 @@ describe("goalie producer paired game win probabilities", () => {
     expect(even[10]).toBeCloseTo(even[11], 4);
   });
 
-  it("uses the de-vigged moneyline when the game has one", async () => {
-    const outcome = (key: string, price: number) => ({ outcomeKey: key, averageLineValue: null, averagePriceAmerican: price,
-      averageImpliedProbability: null, sportsbookCount: 1 });
-    const wins = await runPair({ gameMarketSummary: { h2h: { marketType: "h2h", sourceRank: 1, sourceNames: ["synthetic"],
-      sportsbookKeys: ["synthetic"], observedAt: null, freshnessExpiresAt: null,
-      outcomes: [outcome("team:AAA", 120), outcome("team:BBB", -140)] } } });
+  const marketRow = (book: string, team: string, price: number, age: "fresh" | "expired"): MarketPriceContextRow => ({
+    snapshot_date: date, game_id: game.id, market_type: "h2h", sportsbook_key: book, outcome_key: `team:${team}`,
+    line_value: null, price_american: price, implied_probability: null, source_rank: 1,
+    source_observed_at: age === "fresh" ? "2026-10-10T17:00:00.000Z" : "2026-10-10T09:00:00.000Z",
+    freshness_expires_at: age === "fresh" ? "2026-10-10T17:15:00.000Z" : "2026-10-10T09:15:00.000Z",
+    provenance: { provider: "synthetic" }, metadata: {} });
+  const servedMarket = (rows: MarketPriceContextRow[]) => summarizeGameMarketRows(rows, "2026-10-10T17:05:00.000Z");
+
+  it("uses the de-vigged moneyline when the game has a fresh same-book pair", async () => {
+    const wins = await runPair({ gameMarketSummary: servedMarket([marketRow("dk", "AAA", 120, "fresh"),
+      marketRow("dk", "BBB", -140, "fresh"), marketRow("fd", "AAA", -300, "expired"), marketRow("fd", "BBB", 250, "expired")]) });
     const home = (100 / 220) / (100 / 220 + 140 / 240);
     expect(wins[10]).toBeCloseTo(home * STARTER_DECISION_SHARE, 3);
     expect(wins[11]).toBeCloseTo((1 - home) * STARTER_DECISION_SHARE, 3);
+  });
+
+  // Astra AF-04: disjoint books or mixed ages never form a moneyline; the served value stays on the Poisson race.
+  it("ignores disjoint-book and mixed-age moneyline quotes", async () => {
+    const model = await runPair();
+    const disjoint = await runPair({ gameMarketSummary: servedMarket([marketRow("dk", "AAA", 120, "fresh"),
+      marketRow("fd", "BBB", -140, "fresh")]) });
+    const mixedAge = await runPair({ gameMarketSummary: servedMarket([marketRow("dk", "AAA", 120, "fresh"),
+      marketRow("dk", "BBB", -140, "expired")]) });
+    const expiredDisjoint = await runPair({ gameMarketSummary: servedMarket([marketRow("dk", "AAA", -110, "expired"),
+      marketRow("fd", "BBB", -110, "expired")]) });
+    for (const wins of [disjoint, mixedAge, expiredDisjoint]) {
+      expect(wins[10]).toBeCloseTo(model[10], 10);
+      expect(wins[11]).toBeCloseTo(model[11], 10);
+    }
+    expect(model[10]).not.toBeCloseTo(0.5 * STARTER_DECISION_SHARE, 2);
   });
 });
