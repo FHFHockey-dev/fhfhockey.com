@@ -34,17 +34,17 @@
 
 ## Tasks
 
-- [ ] 1.0 Build the PP share reader gates offline (owner F11; in progress)
+- [x] 1.0 Build the PP share reader gates offline (owner F11)
   - [x] 1.1 Gate `/api/toi`, the rolling writer, PowerPlayCombos, LinemateMatrix's PP mode and the shift chart model on `pp_team_game_clock`, behind `PP_SHARE_SERVING_ENABLED` (unset = today's behaviour).
     - Show only `available` rows; `not_applicable` shows "N/A", never 0%; `unavailable` shows its reason; nothing is capped.
     - Read stored shift rows only (no shift ingestion or fallback).
   - [x] 1.2 Pin flag-off parity: the rolling writer's stored rows for a fixture window are identical, field for field, to today's writer; the same for any other writer touched.
   - [x] 1.3 Cross-surface test with real stored fixtures: one qualified team-game (e.g. 2026020131 t18, 120 s) agrees across Lines, LinemateMatrix, the shift chart and `/api/toi`, and one zero-PP team-game (e.g. 2026020038 t55) shows "N/A" everywhere. Record each surface's values in REPORT. *(Done: F11 `05c43f981` + `aac8cf5a3`, REPORT §15–16. Chef reran 158 tests and matched 131 t18's seconds and shares and 038 t55's not-applicable to the accepted dry run.)*
-  - [ ] 1.4 Chef verifies: commits, ownership claims, the tests from 1.2 and 1.3, typecheck, ESLint and the CSS check, and no shift-ingestion files touched.
-  - [ ] 1.5 Serving review with TJ (pop-up): the evidence from 1.2 and 1.3, and the flag-off guarantee.
+  - [x] 1.4 Chef verifies: commits, ownership claims, the tests from 1.2 and 1.3, typecheck, ESLint and the CSS check, and no shift-ingestion files touched.
+  - [x] 1.5 Serving review with TJ (pop-up): the evidence from 1.2 and 1.3, and the flag-off guarantee.
 - [ ] 2.0 Release the reader code with serving off (depends on 1.0 and TJ's approval)
-  - [ ] 2.1 Build the candidate on current master with only the reader files plus records (diaries at master's), and confirm no other app file differs.
-  - [ ] 2.2 Gate the exact candidate in a clean export (focused tests, typecheck, ESLint, CSS, full Vitest, pytest) and bring TJ the SHA.
+  - [x] 2.1 Build the candidate on current master with only the reader files plus records (diaries at master's), and confirm no other app file differs.
+  - [x] 2.2 Gate the exact candidate in a clean export (focused tests, typecheck, ESLint, CSS, full Vitest, pytest) and bring TJ the SHA. *(Candidate `28fdbadd6` on master `f5c7adc2d`: 26 app files, no scss. 265 focused tests; typecheck 0; ESLint 0. Full Vitest 19,965 passed: ArticleReader and BLSH are export-only; TweetSwipeTrainer is a load flake that passes 22/22 alone. pytest 213. 1.5 is covered by TJ's conditional approval, ~21:40Z and ~21:50Z.)*
   - [ ] 2.3 After TJ's "Push and merge":
     - branch push with a 90 s no-build check, PR, squash-merge, and a tree-equality check;
     - 1 build plus 3 cancels;
@@ -68,7 +68,7 @@
   - [ ] 5.4 Retire the Chef diary once 3.0 and 4.0 are recorded; keep it while any check is pending.
 - [ ] 6.0 NEW: flag-off client parity gap (found in F11 `05c43f981`)
   - [ ] 6.1 With `PP_SHARE_SERVING_ENABLED` off, the client readers (PowerPlayCombos, LinemateMatrix, the shift chart) still make one cached request to `/api/v1/pp-share/team-game-clock` (a function invocation, ≤5 min cache). LinemateMatrix and the shift chart PP mode briefly show "Checking the stored power-play clock...". That isn't strictly today's behaviour. It matters only while serving is off: resolve it, or record it as accepted, before any future flag-off period. Serving is approved to follow the reader release directly.
-- [ ] 7.0 NEW, now blocking 2.0 (TJ, ~21:50Z): the shift chart withholds PP shading that doesn't reconcile with the qualified clock
+- [x] 7.0 NEW, now blocking 2.0 (TJ, ~21:50Z): the shift chart withholds PP shading that doesn't reconcile with the qualified clock
   - [x] 7.1 With serving on, when a team-game's shift-chart PP intervals don't reconcile with the stored qualified clock:
     - withhold that team-game's PP shading and label it "PP timeline unavailable: timing mismatch.";
     - keep the verified share visible;
@@ -81,6 +81,6 @@
     - flag off (today's output, pinned).
 
     *Done: F11 `486da9666`, REPORT §17. Chef reran 34 tests. Known limit: the check compares totals only, so right-total bands in the wrong place would still draw; Astra's parser fix (8.0) removes the gap.*
-  - [ ] 7.3 Chef verifies, then rebuilds and re-gates the reader candidate (supersedes `f848c3c2`).
+  - [x] 7.3 Chef verifies, then rebuilds and re-gates the reader candidate (supersedes `f848c3c2`).
 - [ ] 8.0 NEW: the actual shift-chart parser fix (owner Astra/Codex, separate; TJ ~21:55Z)
   - [ ] 8.1 Astra fixes the root cause: the shift chart's play parser drops situation codes, so its PP bands come from the old algorithm. Astra doesn't touch F11's release files (7.0's ShiftChart files; the reader-gate files). The guard in 7.0 ships first. Once the fix lands and bands reconcile, the "timing mismatch" label disappears without a data change.
