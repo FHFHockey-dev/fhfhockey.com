@@ -12,6 +12,11 @@ import Header from "./Header";
 import TeamRow from "./TeamRow";
 import TeamDetails from "./TeamDetails";
 import useTeamForecasts from "./utils/useTeamForecasts";
+import useGoalieGameView, { type GoalieGridReader } from "./utils/useGoalieGameView";
+import { goalieScheduleKey } from "./utils/goalieGameView";
+import type { GameData } from "lib/NHL/types";
+import type { GoalieWorkloadSnapshot } from "./utils/goalieWorkloadView";
+import type { GoalieWorkloadReader } from "./utils/readGoalieSources";
 import TotalGamesPerDayRow from "./TotalGamesPerDayRow";
 import FourWeekGrid from "./utils/FourWeekGrid";
 import PlayerPickupTable from "components/PlayerPickupTable/PlayerPickupTable";
@@ -55,7 +60,7 @@ import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import useTeamSummary from "hooks/useTeamSummary";
 import useYahooCurrentMatchupWeek from "hooks/useYahooCurrentMatchupWeek";
 
-import GameGridContext from "./contexts/GameGridContext";
+import GameGridContext, { GoaliePresentationProvider } from "./contexts/GameGridContext";
 
 type SortKey = {
   key: "teamName" | "totalOffNights" | "totalGamesPlayed" | "weekScore";
@@ -99,6 +104,10 @@ export function getGameGridLayout(
 type GameGridProps = {
   mode: GameGridMode;
   setMode: (newMode: GameGridMode) => void;
+  /** Only admitted sources may bind this reader; absent sources remain unavailable. */
+  goalieReader?: GoalieGridReader;
+  goalieWorkload?: GoalieWorkloadSnapshot;
+  goalieWorkloadReader?: GoalieWorkloadReader;
 };
 
 type GameGridInternalProps = GameGridProps & {
@@ -195,10 +204,26 @@ function useIsDesktop() {
 function GameGridInternal({
   mode,
   setMode,
+  goalieReader,
+  goalieWorkload,
+  goalieWorkloadReader,
   orientation,
   setOrientation
 }: GameGridInternalProps) {
   const router = useRouter();
+  const goalieView = router.query.view === "goalies";
+  const viewControl = (
+    <div className={styles.modeToggle} role="group" aria-label="Player view">
+      {(["Skater", "Goalie"] as const).map((label) => <button key={label} type="button"
+        aria-pressed={goalieView === (label === "Goalie")}
+        className={goalieView === (label === "Goalie") ? styles.modeButtonActive : styles.modeButton}
+        onClick={() => {
+          const query = { ...router.query };
+          if (label === "Goalie") query.view = "goalies"; else delete query.view;
+          void router.replace({ pathname: router.pathname, query }, undefined, { shallow: true, scroll: false });
+        }}>{label}</button>)}
+    </div>
+  );
 
   // [startDate, endDate]
   const [dates, setDates] = useState<[string, string]>(() =>
@@ -353,7 +378,7 @@ function GameGridInternal({
     />
     {summary && summary.weekScore !== -100 && <p className={styles.sourceStatus}>
       Week Score {summary.weekScore.toFixed(1)} for this selection: games {summary.scoreDecomposition.games.toFixed(2)},
-      {" "}off nights {summary.scoreDecomposition.offNights.toFixed(2)}, matchup {summary.scoreDecomposition.matchup.toFixed(2)},
+      {" "}off nights {summary.scoreDecomposition.offNights.toFixed(2)}, {summary.scoreDecomposition.matchupStatus === "unavailable" ? "matchup withheld (model odds unavailable)" : `matchup ${summary.scoreDecomposition.matchup.toFixed(2)}`},
       {" "}crowding {summary.scoreDecomposition.crowding.toFixed(2)}
       {summary.crowding.status === "available" ? ` (${summary.crowding.knownGames}/${summary.crowding.expectedGames} games)` : " (neutral; slate evidence unavailable)"}.
       {" "}{summary.scoreDecomposition.version}; a schedule heuristic for the selected dates.
@@ -447,6 +472,12 @@ function GameGridInternal({
   };
   const isDesktop = useIsDesktop();
   const gridLayout = getGameGridLayout(isDesktop, orientation);
+  const goalieGames = currentSchedule.flatMap(row => Object.values(row).filter((value): value is GameData =>
+    typeof value === "object" && value !== null && "id" in value));
+  const goalieContextKey = goalieScheduleKey(goalieGames, JSON.stringify([dates, mode, selectedCalendar.retrievedAtByDate ?? {}]));
+  const isMobile = useIsMobile();
+  const goaliePresentation = useGoalieGameView(goalieGames, goalieContextKey,
+    goalieView, selectedScheduleReady ? goalieReader : undefined);
 
   const handleSortToggle = (
     key: "totalOffNights" | "totalGamesPlayed" | "weekScore"
@@ -605,7 +636,6 @@ function GameGridInternal({
 
   const navBusy = currentLoading || fourWeekLoading || statusInBackground;
 
-  const isMobile = useIsMobile();
   const [showMobileTips, setShowMobileTips] = useState(false);
   const [showWeekScoreHelp, setShowWeekScoreHelp] = useState(false);
   const [isBottomDrawerOpen, setIsBottomDrawerOpen] = useState(false);
@@ -792,7 +822,7 @@ function GameGridInternal({
     setIsDateRangeOpen(false);
     router.push({
       pathname: "/game-grid/dateRange",
-      query: { start, end }
+      query: { start, end, ...(goalieView ? { view: "goalies" } : {}) }
     });
   };
 
@@ -884,10 +914,19 @@ function GameGridInternal({
   const rangeEnd = addDays(rangeStart, scheduleDays.length - 1);
   const mobileRangeLabel = `${format(rangeStart, "MMM d")} – ${format(rangeEnd, rangeStart.getMonth() === rangeEnd.getMonth() ? "d" : "MMM d")}`;
 
+  const goalieContext = { ...goaliePresentation, requested: goalieView,
+    workload: { snapshot: goalieWorkload ?? null, reader: goalieWorkloadReader, seasonId: currentSeasonId,
+      selectedFrom: format(new Date(dates[0]), "yyyy-MM-dd"),
+      selectedThrough: format(addDays(new Date(dates[0]), mode === "10-Day-Forecast" ? 9 : 6), "yyyy-MM-dd") } };
+  const goalieTableStyle = goalieView ? {
+    "--goalie-table-width": `${(isMobile ? 72 : 104) + (scheduleDays.length + (isMobile && mode === "10-Day-Forecast" ? 0 : 3)) * 80}px`,
+    "--goalie-team-width": `${isMobile ? 72 : 104}px`,
+  } as React.CSSProperties : undefined;
+
   if (isMobile) {
     // *** MOBILE VIEW ***
     return (
-      <>
+      <GoaliePresentationProvider value={goalieContext}>
         {/* Outer container for the entire mobile game grid section */}
         <div className={styles.mobileGameGridAll}>
           {/* Title remains at the top */}
@@ -911,6 +950,7 @@ function GameGridInternal({
           </div>
           {/* NEW: This div now ONLY wraps the Nav Buttons and the Schedule Grid */}
           <div className={styles.navAndGrid}>
+            {viewControl}
             {/* Mobile Header Actions (Buttons) */}
             <div className={styles.mobileHeaderActions}>
               <div className={styles.navButtonRow}>
@@ -950,9 +990,11 @@ function GameGridInternal({
             {/* Note: Removed the wrapping gameGridSection div as it might be redundant here */}
             <div className={styles.scheduleGridContainer}>
               {loadingStatus}
-              <div className={styles.tableScrollWrapper}>
+              <div className={styles.tableScrollWrapper} tabIndex={goalieView ? 0 : undefined}
+                role={goalieView ? "region" : undefined} aria-label={goalieView ? "Goalie schedule, horizontally scrollable" : undefined}>
                 <table
-                  className={`${styles.scheduleGrid} ${styles.mobileCompactTable}`}
+                  className={`${styles.scheduleGrid} ${styles.mobileCompactTable} ${goalieView ? styles.goalieSchedule : ""}`}
+                  style={goalieTableStyle}
                   data-extended={mode === "10-Day-Forecast" || undefined}
                   aria-busy={currentLoading}
                   data-schedule-state={currentLoading ? "loading" : selectedScheduleReady ? "ready" : "unavailable"}
@@ -1074,7 +1116,7 @@ function GameGridInternal({
                       <span className={`${styles.legendFlag} ${styles.legendFlagHome}`}>H</span> home or{" "}
                       <span className={`${styles.legendFlag} ${styles.legendFlagAway}`}>A</span> away.
                     </li>
-                    <li>Tap a cell for that game&rsquo;s win odds and scoring heatmap.</li>
+                    <li>{goalieView ? "Win is the displayed goalie’s credited-win probability if starting; Start is their chance of starting. Tap for full name, status, alternatives and sources. A dash means unavailable." : "Tap a cell for that game’s win odds and scoring heatmap."}</li>
                     <li>Faded logos are on days you&rsquo;ve switched off.</li>
                   </ul>
                 </section>
@@ -1212,12 +1254,12 @@ function GameGridInternal({
             </div>
           </div>
         )}
-      </>
+      </GoaliePresentationProvider>
     );
   }
 
   return (
-    <>
+    <GoaliePresentationProvider value={goalieContext}>
       <div className={styles.mainGridContainer}>
         <div className={styles.dashboardHeader}>
           <div className={styles.gameGridHeaderContent}>
@@ -1352,6 +1394,7 @@ function GameGridInternal({
 
           <div className={styles.rightControls}>
             <div className={styles.forecastControls}>
+              {viewControl}
               <div
                 className={styles.modeToggle}
                 role="group"
@@ -1463,9 +1506,11 @@ function GameGridInternal({
                       }
                     />
                   ) : (
-                    <div className={styles.gridScrollOuter}>
+                    <div className={styles.gridScrollOuter} tabIndex={goalieView ? 0 : undefined}
+                      role={goalieView ? "region" : undefined} aria-label={goalieView ? "Goalie schedule, horizontally scrollable" : undefined}>
                       <table
-                        className={`${styles.scheduleGrid} ${styles.condensed} ${styles.teamPreviewGrid}`}
+                        className={`${styles.scheduleGrid} ${styles.condensed} ${styles.teamPreviewGrid} ${goalieView ? styles.goalieSchedule : ""}`}
+                        style={goalieTableStyle}
                         aria-busy={currentLoading}
                         aria-describedby="weekScoreDesc"
                       >
@@ -1683,7 +1728,7 @@ function GameGridInternal({
           </div>
         </div>
       )}
-    </>
+    </GoaliePresentationProvider>
   );
 }
 
@@ -1697,7 +1742,7 @@ function getDaysBeforeToday() {
   return DAYS.slice(0, mondayBasedIndex);
 }
 
-export default function GameGrid({ mode, setMode }: GameGridProps) {
+export default function GameGrid({ mode, setMode, goalieReader, goalieWorkload, goalieWorkloadReader }: GameGridProps) {
   const router = useRouter();
   const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
     "horizontal"
@@ -1716,6 +1761,9 @@ export default function GameGrid({ mode, setMode }: GameGridProps) {
       <GameGridInternal
         mode={mode}
         setMode={setMode}
+        goalieReader={goalieReader}
+        goalieWorkload={goalieWorkload}
+        goalieWorkloadReader={goalieWorkloadReader}
         orientation={orientation}
         setOrientation={setOrientation}
       />

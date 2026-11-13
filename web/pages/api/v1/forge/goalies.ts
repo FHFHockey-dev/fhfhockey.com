@@ -13,6 +13,9 @@ import {
   getQueryStringParam,
 } from "lib/projections/apiHelpers";
 import { readGoalieCandidatesContract } from "lib/projections/goalie/goalieCandidates";
+import { readGoalieGridBoards } from "lib/projections/goalie/gameGridReader";
+import { loadGoalieGridHistory } from "lib/socialShare/modules/creaseShift.sources";
+import { goalieNewYorkDate } from "components/GameGrid/utils/goalieWorkloadView";
 import { loadExternalInputProof, requireExternalInputProvenRun, requireLatestExternalInputProvenRun, runProofDiagnostics,
   type ExternalInputProof } from "lib/projections/externalInputProof";
 
@@ -25,6 +28,9 @@ const querySchema = z.object({
     .optional()
     .transform((v) => v !== "false"),
 });
+
+const gridDateSchema = dateSchema.refine(value => Number.isFinite(Date.parse(value))
+  && new Date(value).toISOString().slice(0, 10) === value, "Invalid calendar date");
 
 function parseQuery(req: NextApiRequest) {
   const parsed = querySchema.safeParse({
@@ -277,6 +283,30 @@ export default async function handler(
 
   try {
     if (!supabase) throw new Error("Supabase server client not available");
+    // Explicit read-only consumer modes; the legacy endpoint and its fallback policy stay unchanged.
+    const view = getQueryStringParam(req.query.view);
+    if (view === "game-grid" || view === "game-grid-workload") {
+      const requestedAt = new Date().toISOString(), today = goalieNewYorkDate(requestedAt);
+      if (view === "game-grid") {
+        const range = z.object({ from: gridDateSchema, through: gridDateSchema }).safeParse({ from: req.query.from, through: req.query.through });
+        if (!range.success || range.data.from > range.data.through || Date.parse(range.data.through) - Date.parse(range.data.from) > 9 * 86400000)
+          return res.status(400).json({ error: "A range of one to ten dates is required." });
+        const from = range.data.from < today ? today : range.data.from;
+        const boards = from > range.data.through ? [] : await readGoalieGridBoards(supabase, from, range.data.through, requestedAt);
+        res.setHeader("Cache-Control", "public, max-age=0, s-maxage=60");
+        return res.status(200).json({ version: "goalie-grid-v1", boards });
+      }
+      const history = z.object({ teamId: z.coerce.number().int().positive(), season: z.coerce.number().int().min(20002001).max(21002101), through: gridDateSchema })
+        .safeParse({ teamId: req.query.teamId, season: req.query.season, through: req.query.through });
+      if (!history.success) return res.status(400).json({ error: "Valid team, season and historical cutoff are required." });
+      const { teamId, season, through } = history.data, year = Math.floor(season / 10000);
+      const currentYear = Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) < 7 ? 1 : 0);
+      if (season !== currentYear * 10000 + currentYear + 1 || through < `${year}-07-01` || through > `${year + 1}-06-30` || through > today)
+        return res.status(400).json({ error: "Historical cutoff must be within this season and no later than today." });
+      const snapshot = await loadGoalieGridHistory(supabase, { teamId, season, through, requestedAt });
+      res.setHeader("Cache-Control", "public, max-age=0, s-maxage=300");
+      return res.status(200).json(snapshot);
+    }
     const q = parseQuery(req);
     const requestedDate = q.date ?? new Date().toISOString().slice(0, 10);
     let requestedRunId: string | null = q.runId ?? null;

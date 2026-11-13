@@ -241,6 +241,12 @@ $mobile-fixed-width: 35px;
   -webkit-overflow-scrolling: touch;
 }
 
+.transposedGrid.goalieGrid {
+  table-layout: fixed;
+  th, td { min-width: 80px; max-width: none; height: 49px; padding: 1px; }
+  th.dayHeader { min-width: 80px; max-width: none; }
+}
+
 .teamHeaderIdentity {
   display: flex;
   flex-direction: column;

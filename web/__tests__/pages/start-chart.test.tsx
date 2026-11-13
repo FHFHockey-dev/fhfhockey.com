@@ -522,6 +522,25 @@ describe("StartChartPage", () => {
     expect(JSON.stringify(swrState.data)).toBe(original);
   });
 
+  it.each(["uncertain", "unknown", "confirmed_out"])("labels L9c %s availability and retains the if-plays line", state => {
+    const base = player({});
+    swrState.data = normalizeStartChartResponse({ ...buildApiData(), contractVersion: 2, players: [player({
+      proj_goals: 1.2, proj_assists: .4, proj_shots: 3,
+      forecast: { conditioning: state === "confirmed_out" ? "unconditional" : "conditional_playing",
+        participationProbability: null, probabilityStatus: "missing", availability: { gameId: base.game_id, state },
+        expected: state === "confirmed_out" ? Object.fromEntries(BOARD_CATEGORIES.map(key => [key, 0])) : null,
+        conditional: { GOALS: 1.2, ASSISTS: .4, SHOTS_ON_GOAL: 3 }, distributionStatus: "means_only_unvalidated", evidence: [], conflicts: [] },
+    })] });
+    routerState.router.query = { position: "C" };
+    render(<StartChartPage />);
+    expect(screen.getByText("G / A / S if he plays")).toBeTruthy();
+    if (state === "confirmed_out") {
+      expect(screen.getByText("Expected values are zero for this game. The line if he plays is retained.")).toBeTruthy();
+      const row = document.querySelector("#start-chart-panel-C ol > li")!;
+      expect(row.querySelector('[class*="primaryProjection"] strong')?.textContent).toBe("0.00");
+    } else expect(screen.getByText("If he plays · availability uncertain")).toBeTruthy();
+  });
+
   it("consumer: exact-game conditional SOG shows support and original clocks without participation, totals or primary rank", () => {
     // Synthetic canonical DTO; no retained private packet or release permission is substituted.
     const support = "SOG support: 2 positive-minute appearances; dates 2026-02-01, 2026-02-04.";

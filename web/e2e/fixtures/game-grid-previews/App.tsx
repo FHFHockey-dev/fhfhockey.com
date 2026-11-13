@@ -3,8 +3,10 @@ import { createRoot } from 'react-dom/client';
 import GameGrid, { GameGridMode } from 'components/GameGrid/GameGrid';
 import TeamDetails from 'components/GameGrid/TeamDetails';
 import GameGridContext from 'components/GameGrid/contexts/GameGridContext';
+import DateRangeTeamGrid from 'components/GameGrid/DateRangeTeamGrid';
 import { TEAM_FORECAST_CREDITS, TeamForecastContext, TeamForecastRecord } from 'components/GameGrid/utils/teamForecasts';
-import { setFixtureState } from './data';
+import { goalieWorkloadFixture, readGoalieFixture, setFixtureState } from './data';
+import { readGoalieGrid, readGoalieWorkload } from 'components/GameGrid/utils/readGoalieSources';
 const profile: unknown[] = [];
 (window as any).__gridProfile = profile;
 
@@ -26,6 +28,9 @@ const schedule = { THU: { id: 103, season: 20262027, gameType: 2, gameDate: '202
   SUN: { id: 106, season: 20262027, gameType: 2, gameDate: '2026-10-11', gameState: 'PRE', startTimeUTC: context.games[1].startsAt, homeTeam: { id: 1 }, awayTeam: { id: 2 } } };
 const dates = ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11'];
 function App() {
+  const goalieHttp = new URLSearchParams(location.search).has('goalie-http');
+  const dateRange = new URLSearchParams(location.search).has('date-range');
+  const [dateRangeGoalies, setDateRangeGoalies] = useState(new URLSearchParams(location.search).get('view') === 'goalies');
   const [mode, setMode] = useState<GameGridMode>('7-Day-Forecast');
   const [previewState, setPreviewState] = useState('qualified');
   const [mountKey, setMountKey] = useState(0);
@@ -36,7 +41,8 @@ function App() {
     <main>
     <button onClick={() => setMountKey(k => k + 1)}>Remount grid fixture</button>
     <p>Isolated synthetic fixtures. The real public-reader consumer uses isolated local HTTP fixtures. No production data is connected.</p>
-    {details ? <>
+    {dateRange ? <DateRangeTeamGrid start="2026-10-05" end="2026-10-25" goalieView={dateRangeGoalies}
+      onGoalieViewChange={setDateRangeGoalies} goalieReader={goalieHttp ? readGoalieGrid : readGoalieFixture} /> : details ? <>
       <h1>Game Grid preview fixture</h1><h2>Upcoming team forecasts</h2>
       <label>Preview fixture <select value={previewState} onChange={(event) => setPreviewState(event.target.value)}>
         {['qualified', 'partial', 'missing', 'bye', 'unknown', 'stale', 'started', 'mixed'].map((state) => <option key={state}>{state}</option>)}
@@ -54,7 +60,11 @@ function App() {
       <button onClick={() => setFixtureState('postponed')}>Postponed schedule fixture</button>
       <button onClick={() => setFixtureState('stale')}>Stale schedule fixture</button>
       <button onClick={() => setFixtureState('ready')}>Ready schedule fixture</button>
-      <Profiler id="GameGrid" onRender={(_, phase, duration, baseDuration, start, commit) => profile.push({ phase, duration, baseDuration, start, commit })}><GameGrid key={mountKey} mode={mode} setMode={setMode} /></Profiler>
+      {new URLSearchParams(location.search).get('view') === 'goalies' && <button onClick={() => setFixtureState('goalie-change')}>Change goalie fixture</button>}
+      <Profiler id="GameGrid" onRender={(_, phase, duration, baseDuration, start, commit) => profile.push({ phase, duration, baseDuration, start, commit })}><GameGrid key={mountKey} mode={mode} setMode={setMode}
+        goalieReader={goalieHttp ? readGoalieGrid : readGoalieFixture}
+        goalieWorkloadReader={goalieHttp ? readGoalieWorkload : undefined}
+        goalieWorkload={!goalieHttp ? goalieWorkloadFixture : undefined} /></Profiler>
     </>}
   </main></>;
 }

@@ -24,6 +24,7 @@ export type BoardForecast = {
   conflicts: string[];
   seasonBootstrap?: SeasonBootstrapDisclosure | null;
   previous?: { revisionId: string; stats: BoardStats; changedInputs: string[] } | null;
+  availability?: { gameId: number; state: "projected_lineup" | "confirmed_out" | "uncertain" | "unknown" };
 };
 
 export function parseBoardScoringRequest(input: unknown): BoardScoringRequest {
@@ -121,7 +122,6 @@ export function skaterParticipationFromEvidence(evidence: DailyBoardEvidence | u
 
 export function boardSkaterForecast(row: any, uncertainty: any, context?: BoardEvidenceContext): BoardForecast {
   const selection = uncertainty?.model?.skater_selection;
-  const conditional = selection?.production_conditioning === "conditional_playing";
   const explicitOut = selection?.production_conditioning === "explicit_out";
   const participation = selection?.participation;
   const identity = context ?? { ...row.identity, gameId: row.identity?.gameId ?? row.game_id,
@@ -130,9 +130,21 @@ export function boardSkaterForecast(row: any, uncertainty: any, context?: BoardE
   const rowIdentity = row.identity ?? { gameId: row.game_id, teamId: row.team_id, playerId: row.player_id, horizonGames: row.horizon_games };
   const identityMatches = (["gameId", "teamId", "playerId", "horizonGames"] as const)
     .every(key => rowIdentity[key] === undefined || rowIdentity[key] === identity[key]);
+  const coverage = uncertainty?.availability;
+  const availability = identityMatches && identity.horizonGames === 1 && coverage?.version === "forge-skater-coverage-v1"
+    && coverage.game_id === identity.gameId && coverage.line_conditioning === "if_plays"
+    && coverage.participation_probability === null && coverage.participation_qualified === false
+    && ["projected_lineup", "confirmed_out", "uncertain", "unknown"].includes(coverage.state)
+    ? { gameId: identity.gameId, state: coverage.state as NonNullable<BoardForecast["availability"]>["state"] } : undefined;
+  const conditional = selection?.production_conditioning === "conditional_playing" || !!availability;
+  const rosterOut = availability?.state === "confirmed_out" && coverage.expected_for_game === 0
+    && Number.isInteger(coverage.event_id) && coverage.event_id > 0
+    && ["INJURY_OUT", "IR", "LTIR", "SUSPENSION", "NON_ROSTER", "SENDDOWN", "SCRATCH"].includes(coverage.event_type);
   const stored = identityMatches && identity.horizonGames === 1 ? scopedEvidence({ ...selection?.same_day_evidence,
     informationCutoffAt: selection?.evidence_cutoff_at }, identity) : null;
   const source = context && Object.hasOwn(context, "evidence") ? scopedEvidence(context.evidence, identity) : stored;
+  const rosterOutAdmitted = rosterOut && !source?.assertions.some(item => ["ev", "availability"].includes(item.dimension))
+    && !source?.conflicts.some(item => ["ev", "availability"].includes(item.dimension));
   const matchingAssertions = stored && source && JSON.stringify(assertionKeys(stored)) === JSON.stringify(assertionKeys(source));
   const recomputed = matchingAssertions ? skaterParticipationFromEvidence({ ...source,
     conflicts: [...source.conflicts, ...stored.conflicts] }, identity) : null;
@@ -148,8 +160,10 @@ export function boardSkaterForecast(row: any, uncertainty: any, context?: BoardE
     SHOTS_ON_GOAL: row.proj_shots, HITS: row.proj_hits, BLOCKED_SHOTS: row.proj_blocks,
     PENALTY_MINUTES: row.proj_pim, TIME_ON_ICE_PER_GAME: row.proj_toi_minutes };
   return {
-    conditioning: probability !== null ? "unconditional" : conditional ? "conditional_playing" : "legacy_unclassified",
-    participationProbability: probability, probabilityStatus: probability !== null ? "confirmed_evidence" : "missing", expected: probability !== null ? integrateBoardParticipation(stats, probability) : null,
+    conditioning: probability !== null || rosterOutAdmitted ? "unconditional" : conditional ? "conditional_playing" : "legacy_unclassified",
+    participationProbability: probability, probabilityStatus: probability !== null ? "confirmed_evidence" : "missing", expected: probability !== null ? integrateBoardParticipation(stats, probability)
+      : rosterOutAdmitted ? Object.fromEntries(Object.keys(stats).map(key => [key, 0])) : null,
+    ...(availability && probability === null ? { availability: rosterOutAdmitted || availability.state !== "confirmed_out" ? availability : { ...availability, state: "unknown" as const } } : {}),
     conditional: conditional ? stats : null, legacy: conditional || explicitOut ? null : stats,
     distributionStatus: "means_only_unvalidated", ppRole: selection?.pp_role ?? null,
     evidence: (source?.assertions ?? []).map((item: any) => ({

@@ -7,6 +7,8 @@ import detailStyles from "./TeamDetails.module.scss";
 import { DAYS, EXTENDED_DAY_ABBREVIATION, EXTENDED_DAYS } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import VerticalMatchupCell from "./VerticalMatchupCell";
+import GoalieMatchupCell from "./GoalieMatchupCell";
+import { useGoaliePresentation } from "./contexts/GameGridContext";
 import Toggle from "./Toggle";
 import { LoadingCell, LoadingRows } from "./LoadingCells";
 import { calcTotalGP, calcTotalOffNights } from "./TotalGamesPerDayRow";
@@ -48,6 +50,7 @@ export default function TransposedGrid({
 }: TransposedGridProps) {
   const daysToRender = extended ? EXTENDED_DAYS : DAYS;
   const teamsMap = useTeamsMap();
+  const goalieView = useGoaliePresentation().requested;
   const triggerRefs = useRef(new Map<number, HTMLButtonElement>());
 
   const [teamSortKey, setTeamSortKey] = useState<
@@ -167,8 +170,10 @@ export default function TransposedGrid({
 
   return (
     <div className={styles.gridWrapper}>
-      <div className={styles.tableScroller}>
-      <table className={styles.transposedGrid} aria-busy={scheduleLoading}>
+      <div className={styles.tableScroller} tabIndex={goalieView ? 0 : undefined}
+        role={goalieView ? "region" : undefined} aria-label={goalieView ? "Transposed goalie schedule, horizontally scrollable" : undefined}>
+      <table className={`${styles.transposedGrid} ${goalieView ? styles.goalieGrid : ""}`} aria-busy={scheduleLoading}
+        style={goalieView ? { minWidth: ((scheduleReady ? sortedTeamColumns.length : 32) + 2) * 80 } : undefined}>
         <thead>
           <tr>
             <th className={styles.dayHeader}>
@@ -252,10 +257,10 @@ export default function TransposedGrid({
                   >
                     <div className={styles.cellContent}>
                       {team[day] ? (
-                        <VerticalMatchupCell
+                        <GoalieMatchupCell game={team[day]} teamId={team.teamId} excluded={isDisabled} fallback={<VerticalMatchupCell
                           gameData={team[day]}
                           teamId={team.teamId}
-                        />
+                        />} />
                       ) : (
                         "-"
                       )}

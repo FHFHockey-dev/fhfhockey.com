@@ -4,6 +4,8 @@ import Link from "next/link";
 import type { TeamDataWithTotals } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import MetricInfoDisclosure from "../MetricInfoDisclosure";
+import GoalieWorkloadPanel from "../GoalieWorkloadPanel";
+import { useGoaliePresentation } from "../contexts/GameGridContext";
 import OpportunitySparkline from "../OpportunitySparkline";
 import { LoadingRows } from "../LoadingCells";
 import toggleStyles from "../DetailToggle.module.scss";
@@ -30,6 +32,7 @@ const shortDate = (date: string) => new Intl.DateTimeFormat("en-US", { timeZone:
 
 export default function FourWeekGrid({ loading = false, teamDataArray, calendar, warningTarget, opportunityByTeamId = {}, sharedScale = 1 }: Props) {
   const teams = useTeamsMap();
+  const goalieView = useGoaliePresentation().requested;
   const [expanded, setExpanded] = useState(false);
   const [weekly, setWeekly] = useState(false);
   const [sort, setSort] = useState<{ key: Key; ascending: boolean }>({ key: "teamName", ascending: true });
@@ -65,7 +68,7 @@ export default function FourWeekGrid({ loading = false, teamDataArray, calendar,
   return <div className={styles.container}>
     <div className={styles.titleHeader}><span className={styles.titleText}>4-Week <span className={styles.spanColorBlue}>Opportunity</span> <small>higher = more</small></span></div>
     <div className={styles.tableWrapper}>
-      <MetricInfoDisclosure label="four-week forecast" warningTarget={warningTarget} action={
+      <MetricInfoDisclosure label="four-week forecast" overlay={goalieView} warningTarget={warningTarget} action={
         <button type="button" className={toggleStyles.detailToggle} aria-expanded={expanded} aria-label={expanded ? "Collapse four-week columns" : "Expand four-week columns"} onClick={() => setExpanded((v) => !v)}>
           {expanded ? "Hide details" : "Show details"} <span aria-hidden="true">{expanded ? "▴" : "▾"}</span>
         </button>
@@ -92,14 +95,15 @@ export default function FourWeekGrid({ loading = false, teamDataArray, calendar,
         </p>
         {/* Window and schedule status: metadata, last and set apart like the Opponent source line */}
         {calendar && <p className={rankStyles.infoSource}>{shortDate(calendar.start)} – {shortDate(calendar.end)} · {loading ? "loading schedule…" : calendar.error ?? (calendar.knownDays === calendar.expectedDays ? "schedule complete" : "schedule incomplete; affected totals unavailable")}</p>}
+        {goalieView && <GoalieWorkloadPanel />}
       </MetricInfoDisclosure>
       {expanded && <div className={styles.viewTabs} role="tablist" aria-label="Four-week forecast views">
         <button type="button" role="tab" aria-selected={!weekly} onClick={() => setWeekly(false)}>4W Summary</button>
         <button type="button" role="tab" aria-selected={weekly} onClick={() => setWeekly(true)}>Weekly Detail</button>
       </div>}
       {!loading && !teamDataArray.length && <p>No schedule data available.</p>}
-      <div style={{ overflowX: "auto" }}>
-        <table className={styles.table} aria-busy={loading} data-four-week-state={loading ? "loading" : "ready"}>
+      <div style={{ overflowX: "auto" }} role={expanded ? "region" : undefined} aria-label={expanded ? "Four-week schedule statistics" : undefined} tabIndex={expanded ? 0 : undefined}>
+        <table className={styles.table} style={expanded ? { minWidth: (weekly ? 5 : 6) * 80 } : undefined} aria-busy={loading} data-four-week-state={loading ? "loading" : "ready"}>
           <thead><tr>{header("Team", "teamName")}{expanded && weekly ? [1, 2, 3, 4].map((n) => <th key={n}>W{n}</th>) : <>
             {expanded && <>{header("GP", "gamesPlayed")}{header("OFF", "offNights")}{header("OPP (%)", "avgOpponentPointPct")}</>}
             {header("Total", "score")}<th>Weekly<span className={styles.matchupKey}><i data-tone="easier" />easy<i data-tone="average" />avg<i data-tone="harder" />hard</span></th>

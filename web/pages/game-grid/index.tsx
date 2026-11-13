@@ -1,8 +1,8 @@
 // /Users/tim/Desktop/fhfhockey.com/web/pages/game-grid/index.tsx
-export const getServerSideProps = async () => {
+export const getServerSideProps = async ({ query }: { query: Record<string, string | string[] | undefined> }) => {
   return {
     redirect: {
-      destination: "/game-grid/7-Day-Forecast",
+      destination: `/game-grid/7-Day-Forecast${query.view === "goalies" ? "?view=goalies" : ""}`,
       permanent: false // Set to true if this redirect is permanent
     }
   };

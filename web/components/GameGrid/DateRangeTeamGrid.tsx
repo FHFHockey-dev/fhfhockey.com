@@ -15,10 +15,17 @@ import useDateRangeTeamGrid, {
 } from "./utils/useDateRangeTeamGrid";
 
 import styles from "./DateRangeTeamGrid.module.scss";
+import GameGridContext, { GoaliePresentationProvider } from "./contexts/GameGridContext";
+import GoalieMatchupCell from "./GoalieMatchupCell";
+import useGoalieGameView, { GoalieGridReader } from "./utils/useGoalieGameView";
+import { goalieScheduleKey } from "./utils/goalieGameView";
 
 type DateRangeTeamGridProps = {
   start: string;
   end: string;
+  goalieView?: boolean;
+  onGoalieViewChange?: (enabled: boolean) => void;
+  goalieReader?: GoalieGridReader;
 };
 
 type SortKey = "off" | "b2b" | "home" | "away";
@@ -51,10 +58,18 @@ function classForDay(game: GameData | undefined, meta: DateMeta | undefined) {
 export default function DateRangeTeamGrid({
   start,
   end,
+  goalieView = false,
+  onGoalieViewChange,
+  goalieReader,
 }: DateRangeTeamGridProps) {
   const teams = useTeamsMap();
   const { dates, teamDateGames, dateMetaByDate, loading, error } =
     useDateRangeTeamGrid(start, end);
+  const scheduleCurrent = !loading && !error && dates[0] === start && dates.at(-1) === end;
+  const games = useMemo(() => scheduleCurrent
+    ? [...new Map(Object.values(teamDateGames).flatMap(byDate => Object.values(byDate)).map(game => [game.id, game])).values()]
+    : [], [scheduleCurrent, teamDateGames]);
+  const goaliePresentation = useGoalieGameView(games, goalieScheduleKey(games, `${start}/${end}/${scheduleCurrent}`), goalieView, goalieReader);
   const tableRef = useRef<HTMLTableElement | null>(null);
   const [monthDividerLefts, setMonthDividerLefts] = useState<number[]>([]);
   const [sortConfig, setSortConfig] = useState<{
@@ -211,6 +226,7 @@ export default function DateRangeTeamGrid({
   }, [monthStartDates]);
 
   return (
+    <GameGridContext><GoaliePresentationProvider value={{ ...goaliePresentation, requested: goalieView }}>
     <div className={styles.page}>
       <header className={styles.header}>
         <div className={styles.headerBar}>
@@ -225,13 +241,18 @@ export default function DateRangeTeamGrid({
                 : `${start} – ${end}`}
             </p>
           </div>
-          <Link className={styles.backLink} href="/game-grid/7-Day-Forecast">
+          {onGoalieViewChange && <div role="group" aria-label="Player view" className={styles.viewControls}>
+            <button type="button" aria-pressed={!goalieView} onClick={() => onGoalieViewChange(false)}>Skater</button>
+            <button type="button" aria-pressed={goalieView} onClick={() => onGoalieViewChange(true)}>Goalie</button>
+          </div>}
+          <Link className={styles.backLink} href={`/game-grid/7-Day-Forecast${goalieView ? "?view=goalies" : ""}`}>
             Back to Game Grid
           </Link>
         </div>
       </header>
 
       <main className={styles.content}>
+        {goalieView && <p className={styles.subtitle}>Goalie forecasts cover up to ten calendar dates from the first upcoming game. Later games show unavailable values. Scroll to see all dates; Team stays pinned.</p>}
         {!parsedRange && (
           <div className={styles.error}>Invalid date range in URL.</div>
         )}
@@ -243,7 +264,7 @@ export default function DateRangeTeamGrid({
         )}
 
         {!loading && !error && parsedRange && dates.length > 0 && (
-          <div className={styles.tableScroll}>
+          <div className={styles.tableScroll} role={goalieView ? "region" : undefined} aria-label={goalieView ? "Goalie Date Range grid" : undefined} tabIndex={goalieView ? 0 : undefined}>
             <div className={styles.tableInner}>
               {monthDividerLefts.length > 0 && (
                 <div className={styles.monthDividerOverlay} aria-hidden="true">
@@ -256,7 +277,7 @@ export default function DateRangeTeamGrid({
                   ))}
                 </div>
               )}
-              <table ref={tableRef} className={styles.rangeTable}>
+              <table ref={tableRef} className={`${styles.rangeTable} ${goalieView ? styles.goalieRange : ""}`}>
                 <colgroup>
                   <col style={{ width: "var(--col-team)" }} />
                   <col style={{ width: "var(--col-metric)" }} />
@@ -421,7 +442,7 @@ export default function DateRangeTeamGrid({
                             <td key={`${row.teamId}-${d}`}>
                               <div className={wrapperClass} title={title}>
                                 <div className={`${styles.dayCell} ${cls}`}>
-                                  <Image
+                                  <GoalieMatchupCell game={g} teamId={row.sourceIdSet.has(g.homeTeam.id) ? g.homeTeam.id : g.awayTeam.id} fallback={<Image
                                     src={opponentLogo}
                                     alt={
                                       opponent ? opponent.name : "Opponent logo"
@@ -429,7 +450,7 @@ export default function DateRangeTeamGrid({
                                     width={22}
                                     height={22}
                                     style={{ objectFit: "contain" }}
-                                  />
+                                  />} />
                                 </div>
                               </div>
                             </td>
@@ -445,5 +466,6 @@ export default function DateRangeTeamGrid({
         )}
       </main>
     </div>
+    </GoaliePresentationProvider></GameGridContext>
   );
 }

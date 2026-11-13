@@ -1680,6 +1680,7 @@ export default async function handler(
         if (admitted) {
           const output = players[players.length - 1];
           output.forecast!.expected = admitted.stats;
+          output.forecast!.availability = undefined;
           output.forecast!.conditional = admitted.conditionalStats ?? null;
           output.forecast!.conditioning = "unconditional";
           output.forecast!.participationProbability = admitted.appearanceProbability ?? null;

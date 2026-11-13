@@ -8,6 +8,7 @@ import GameGrid from "components/GameGrid";
 import Container from "components/Layout/Container";
 
 import { GameGridMode } from "components/GameGrid/GameGrid";
+import { readGoalieGrid, readGoalieWorkload } from "components/GameGrid/utils/readGoalieSources";
 
 function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
   const MODE_TO_LABEL = {
@@ -48,7 +49,7 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
         >
           {MODE_TO_LABEL[mode]}
         </button>
-        <GameGrid mode={mode} setMode={setMode} />
+        <GameGrid mode={mode} setMode={setMode} goalieReader={readGoalieGrid} goalieWorkloadReader={readGoalieWorkload} />
       </div>
       <div style={{ marginBottom: "30px" }} />
     </Container>

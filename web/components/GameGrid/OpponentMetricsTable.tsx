@@ -252,7 +252,8 @@ export default function OpponentMetricsTable({
         </MetricInfoDisclosure>
         {statsError && <PanelStatus state="error" message="Opponent stats could not load. Reload to retry." />}
         {!pending && !statsError && !hasData && <PanelStatus state="empty" message="Opponent metrics will appear when schedule data is available." />}
-          <table className={styles.table} aria-busy={pending} data-opponent-state={pending ? "loading" : "ready"}>
+          <div className={styles.horizontalScroll} role={expanded ? "region" : undefined} aria-label={expanded ? "Opponent source statistics" : undefined} tabIndex={expanded ? 0 : undefined}>
+          <table className={styles.table} style={expanded ? { minWidth: (metricColumns.length + 1) * 80 } : undefined} aria-busy={pending} data-opponent-state={pending ? "loading" : "ready"}>
             <thead>
               <tr>
                 <th>
@@ -356,6 +357,7 @@ export default function OpponentMetricsTable({
               </>}
             </tbody>
           </table>
+          </div>
       </div>
     </div>
   );

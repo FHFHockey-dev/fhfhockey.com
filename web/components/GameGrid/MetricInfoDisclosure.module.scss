@@ -16,7 +16,7 @@
 }
 .info {
   margin: 0 8px;
-  summary {
+  summary, .overlayTrigger {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -24,6 +24,7 @@
     width: fit-content;
     min-width: 44px;
     min-height: 44px;
+    height: auto;
     margin-left: auto;
     padding: 0 6px;
     box-sizing: border-box;
@@ -35,6 +36,25 @@
     &::-webkit-details-marker { display: none; }
     &:focus-visible { outline: 2px solid v.$secondary-color; outline-offset: -2px; }
   }
+}
+.overlayInfo { margin: 0; }
+.overlayDialog.overlayDialog {
+  width: min(560px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  font: 14px/1.5 Arial, sans-serif;
+  letter-spacing: normal;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.overlayContent {
+  h2 { font-size: 18px; margin: 8px 36px 16px 0; }
+  p { margin: 0 0 10px; }
+  ul { padding-left: 20px; }
+  li + li { margin-top: 8px; }
+}
+@media (min-width: v.$breakpoint-desktop) {
+  .info .overlayTrigger { min-height: 24px; }
 }
 .content {
   clear: both;
@@ -49,5 +69,5 @@
   p + p { margin-top: 6px; }
 }
 @media (hover: hover) {
-  .info summary:hover { background: rgba(v.$secondary-color, 0.1); }
+  .info summary:hover, .info .overlayTrigger:hover { background: rgba(v.$secondary-color, 0.1); }
 }

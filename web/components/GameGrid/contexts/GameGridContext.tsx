@@ -4,12 +4,16 @@ import { useTeamsMap } from "hooks/useTeams";
 
 import React, { createContext, useContext } from "react";
 import type { Team } from "lib/NHL/types";
+import type { GoaliePresentation } from "../utils/useGoalieGameView";
 
 type ContextValue = {
   teams: ReturnType<typeof useTeamsMap>;
 };
 
 const context = createContext<ContextValue>({ teams: {} });
+const goalieContext = createContext<GoaliePresentation>({ enabled: false, contextKey: "", snapshot: null, asOf: "", status: "unavailable" });
+export const GoaliePresentationProvider = goalieContext.Provider;
+export const useGoaliePresentation = () => useContext(goalieContext);
 
 export default function GameGridContext({
   children

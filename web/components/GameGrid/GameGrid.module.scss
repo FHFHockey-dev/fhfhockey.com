@@ -51,7 +51,7 @@
 
   @media (min-width: v.$breakpoint-desktop) {
     grid-template-columns:
-      156px
+      220px
       minmax(0, 1fr)
       220px;
     align-items: stretch;
@@ -60,11 +60,11 @@
     min-height: 0;
 
     &[data-grid-layout="legacy-vertical"] {
-      grid-template-columns: 320px 1320px 280px;
+      grid-template-columns: 320px minmax(0, 1fr) 320px;
       overflow-x: auto;
       overflow-y: hidden;
       overscroll-behavior-x: contain;
-      scrollbar-gutter: stable;
+      scrollbar-gutter: auto;
       padding-bottom: v.$space-xs;
       @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
     }
@@ -2175,6 +2175,48 @@
   overflow: hidden; // hide oversized logo behind the cell frame
   border-radius: 0;
 }
+.goalieCellHost { display: contents; }
+.goalieCell {
+  width: 100%;
+  height: 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font: 12px/14px Arial, sans-serif;
+  color: #fff;
+}
+.goalieCellTop { display: grid; grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr); align-items: center; height: 28px; }
+.goalieOpponentLogo {
+  display: grid; place-items: center; width: 16px; height: 28px;
+  img { display: block; width: 16px; height: 16px; }
+}
+.goalieConfirmed { color: #8eed9e; }
+.goalieProjected { color: #ffe38a; }
+.goalieCellProbability { display: flex; flex-direction: column; align-items: center; min-width: 0; white-space: nowrap; }
+.goalieSurname { display: block; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.goalieDetails {
+  font: 14px/1.45 Arial, sans-serif; text-align: left; overflow-wrap: anywhere;
+  h2 { font-size: 18px; margin: 8px 40px 16px 0; }
+  h3 { font-size: 16px; margin: 16px 0 8px; }
+  dt { font-weight: 700; }
+  dd { margin: 0 0 12px; }
+  ul { padding-left: 18px; }
+  li { margin-bottom: 14px; }
+  summary { cursor: pointer; text-decoration: underline; }
+  summary:focus-visible { outline: 2px solid #6ed7e0; outline-offset: 2px; }
+}
+.goalieWorkload {
+  margin-top: 16px; border-top: 1px solid #59616d; padding-top: 8px;
+  h2 { font-size: 14px; margin: 4px 0 8px; }
+}
+.goalieWorkloadControls {
+  display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0;
+  > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  select { max-width: 100%; min-height: 32px; color: #fff; background: #17191c; font-size: 12px; }
+  select:focus-visible { outline: 2px solid #6ed7e0; outline-offset: 2px; }
+}
+.goalieWorkloadBar { display: flex; height: 14px; width: 100%; margin: 8px 0; }
+
 .matchupCell {
   display: flex;
   align-items: center;
@@ -5212,4 +5254,18 @@
   .masterSectionLabel,
   .masterGroupDisclosure { font-size: .625rem; letter-spacing: 0.04em; padding-inline: 6px; gap: 4px; }
   .masterMetricHeader .masterMetricEyebrow { font-size: .5625rem; }
+}
+
+// Let long section titles wrap inside the existing banner height at the shared collapsed width.
+.masterGroupDisclosure > span:first-child { min-width: 0; white-space: normal; line-height: 12px; }
+
+// Goalie view's approved minimum geometry; Skater tables keep their existing rules.
+.scheduleGrid.goalieSchedule {
+  width: 100%;
+  min-width: var(--goalie-table-width) !important;
+  table-layout: fixed;
+  col:first-child { width: var(--goalie-team-width) !important; }
+  col:not(:first-child) { width: 80px !important; }
+  tbody td:first-child { min-width: var(--goalie-team-width) !important; width: var(--goalie-team-width) !important; }
+  tbody td.cellInnerBorder { height: 49px !important; padding: 1px !important; }
 }

@@ -79,32 +79,28 @@ describe("Game Grid sortable column headers", () => {
     expect(distributeMasterTableWidths([], 500)).toEqual([]);
   });
 
-  it.each([7, 10])("pins the %s-day Game Grid widths and fits the side groups around them", (dayCount) => {
-    const { rating, metric, percent } = MASTER_COLUMNS;
+  it.each([7, 10])("balances side panels and shares collapsed column widths except Team in %s-day mode", (dayCount) => {
+    const { rating, metric, percent, day, team, summary, score } = MASTER_COLUMNS;
     const sum = (widths: number[]) => widths.reduce((a, b) => a + b, 0);
     for (const containerWidth of [922, 1080, 1354, 1582, 1920]) {
-      const original = distributeMasterTableWidths([50, 50, 50, 50, 50, 50, 80, 72, ...Array(dayCount).fill(80), 72, 72, 104, 72, 72, 72, 72], containerWidth);
-      const originalGrid = original.slice(7, 8 + dayCount);
       for (const expanded of [false, true]) for (const fourWeekCollapsed of [false, true]) {
         const metricColumns = [rating, rating, ...(expanded ? [metric, metric, metric, metric, metric, metric, percent] : [])];
         const widths = sizeMasterTableColumns({ metricColumns, dayCount, fourWeekCollapsed, containerWidth });
-        expect(widths).toHaveLength(metricColumns.length + 1 + dayCount + 3 + (fourWeekCollapsed ? 2 : 5));
-        const grid = widths.slice(metricColumns.length, metricColumns.length + 1 + dayCount);
-        // Never stretched past the pre-redesign footprint; clipped only when the minimums cannot fit.
-        expect(sum(widths)).toBeLessThanOrEqual(Math.max(sum(original), containerWidth));
-        const flexMinimums = sum(metricColumns.map((spec) => spec.min)) + 40 + 40 + 56 + (fourWeekCollapsed ? 56 + 78 : 48 + 48 + 50 + 56 + 78);
-        if (flexMinimums + sum(originalGrid) <= containerWidth) {
-          expect(grid).toEqual(originalGrid);
-          // Spare width goes to the side and summary columns, so the table spans its column.
-          expect(sum(widths)).toBe(containerWidth);
-        } else {
-          // Day columns narrow (never below their minimum) before the table scrolls.
-          expect(grid[0]).toBe(originalGrid[0]);
-          grid.slice(1).forEach((width) => expect(width).toBeGreaterThanOrEqual(MASTER_COLUMNS.day.min));
-          if (flexMinimums + originalGrid[0] + dayCount * MASTER_COLUMNS.day.min <= containerWidth) {
-            expect(sum(widths)).toBeLessThanOrEqual(containerWidth);
-          }
-        }
+        const gridStart = metricColumns.length, summaryStart = gridStart + 1 + dayCount;
+        expect(widths).toHaveLength(summaryStart + 3 + (fourWeekCollapsed ? 2 : 5));
+        const days = widths.slice(gridStart + 1, summaryStart);
+        expect(new Set(days).size).toBe(1);
+        expect(days[0]).toBeGreaterThanOrEqual(day.min);
+        expect(widths[gridStart]).toBe(team.base);
+        if (!expanded && fourWeekCollapsed) {
+          expect(new Set(widths.filter((_, i) => i !== gridStart)).size).toBe(1);
+          expect(sum(widths)).toBeCloseTo(Math.max(containerWidth, team.base + (widths.length - 1) * 78), 9);
+        } else expect(widths.slice(summaryStart, summaryStart + 3)).toEqual([44, 44, 64]);
+        expect(sum(widths.slice(0, gridStart))).toBeCloseTo(sum(widths.slice(summaryStart + 3)), 9);
+        metricColumns.forEach((spec, i) => expect(widths[i]).toBeGreaterThanOrEqual(spec.min));
+        const minimum = team.base + 2 * summary.base + score.base + dayCount * day.min
+          + 2 * Math.max(176, sum(metricColumns.map(spec => spec.min)), fourWeekCollapsed ? 134 : 280);
+        if (expanded || !fourWeekCollapsed) expect(sum(widths)).toBeCloseTo(Math.max(containerWidth, minimum), 9);
       }
     }
   });

@@ -9,6 +9,7 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const web = path.resolve(root, '../../..');
 const data = path.join(root, 'data.ts');
 const mocks = {
+  getSchedule: 'export { getSchedule }',
   'hooks/useTeams': 'export { useTeamsMap }',
   'hooks/useCurrentSeason': 'export { useCurrentSeason as default, useCurrentSeasonQuery }',
   'hooks/useTeamSummary': 'export { useTeamSummary as default }',
@@ -23,8 +24,9 @@ const server = await createServer({
   configFile: false, root, envDir: cache, cacheDir: cache,
   plugins: [{
     name: 'isolated-game-grid-fixtures', enforce: 'pre',
-    resolveId(source) {
+    resolveId(source, importer) {
       source = source.startsWith(web + '/') ? source.slice(web.length + 1).replace(/\.tsx?$/, '') : source;
+      if (source === 'lib/NHL/client' && importer?.endsWith('/useDateRangeTeamGrid.ts')) return '\0fixture:getSchedule';
       if (source.includes('supabase') || source === 'lib/NHL/client') throw new Error('Production reader attempted in isolated fixture: ' + source);
       if (mocks[source]) return '\0fixture:' + source;
       const seam = source.match(/\/(useSchedule|useFourWeekSchedule|useOpponentMetricsData)(?:\.ts)?$/)?.[1];

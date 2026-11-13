@@ -19,6 +19,7 @@ import detailStyles from "./TeamDetails.module.scss";
 import clsx from "clsx";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { teamsInfo } from "lib/teamsInfo";
+import GoalieMatchupCell from "./GoalieMatchupCell";
 
 export type MatchUpCellData = {
   home: boolean;
@@ -222,6 +223,7 @@ function TeamRow(props: TeamRowProps) {
             {hasMatchUp && !(isPreseason && props.hidePreseason) ? (
               <MatchUpCell
                 key={day}
+                game={matchUp}
                 gameId={matchUp.id}
                 home={matchUp.homeTeam.id === props.teamId}
                 homeTeam={matchUp.homeTeam}
@@ -287,6 +289,7 @@ function TeamRow(props: TeamRowProps) {
 }
 
 type MatchUpCellProps = {
+  game?: GameData;
   gameId: number; // Add gameId here
   home: boolean;
   homeTeam: GameData["homeTeam"];
@@ -295,6 +298,7 @@ type MatchUpCellProps = {
 };
 
 export function MatchUpCell({
+  game,
   home,
   homeTeam,
   awayTeam,
@@ -354,7 +358,7 @@ export function MatchUpCell({
   );
 
   return (
-    <Tooltip content={tooltipContent}>
+    <GoalieMatchupCell game={game} teamId={us.id} excluded={excluded} fallback={<Tooltip content={tooltipContent}>
       <div className={styles.matchupCell} style={matchupCellStyle}>
         {isMobile ? (
           <div
@@ -429,7 +433,7 @@ export function MatchUpCell({
           </span>
         )}
       </div>
-    </Tooltip>
+    </Tooltip>} />
   );
 }
 

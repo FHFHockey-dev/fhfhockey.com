@@ -146,6 +146,32 @@
   z-index: 1;
 }
 
+.viewControls {
+  display: flex;
+  gap: 4px;
+  button {
+    padding: 8px 12px;
+    border: 1px solid v.$primary-color;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    &[aria-pressed="true"] { background: rgba(v.$primary-color, 0.3); }
+    &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
+  }
+}
+
+.rangeTable.goalieRange {
+  --col-metric: 80px;
+  --cell: 80px;
+  .dayCellWrapper, .teamCell, .metricCell { height: 49px; }
+  .dayCell { grid-template-columns: minmax(0, 1fr); }
+  // Keep only Team pinned so the four metric columns cannot obscure mobile games.
+  th:nth-child(n + 2):nth-child(-n + 5), td:nth-child(n + 2):nth-child(-n + 5) {
+    position: static;
+  }
+}
+
 .rangeTable th,
 .rangeTable td {
   padding: 0;

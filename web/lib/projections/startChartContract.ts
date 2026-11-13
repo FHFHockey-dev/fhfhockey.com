@@ -341,6 +341,9 @@ function normalizeForecast(value: unknown): BoardForecast | null {
     participationProbability: finiteOrNull(row.participationProbability),
     probabilityStatus: row.probabilityStatus === "confirmed_evidence" || row.probabilityStatus === "uncalibrated_model" ? row.probabilityStatus : "missing",
     conditional: stats(row.conditional), expected: stats(row.expected), legacy: stats(row.legacy),
+    ...(Number.isInteger(row.availability?.gameId) && row.availability.gameId > 0
+      && ["projected_lineup", "confirmed_out", "uncertain", "unknown"].includes(row.availability.state)
+      ? { availability: { gameId: row.availability.gameId, state: row.availability.state } } : {}),
     previous: row.previous && stats(row.previous.stats) ? { revisionId: String(row.previous.revisionId), stats: stats(row.previous.stats)!,
       changedInputs: Array.isArray(row.previous.changedInputs) ? row.previous.changedInputs.filter((item: unknown) => typeof item === "string") : [] } : null,
     distributionStatus: "means_only_unvalidated", ppRole: stringOrNull(row.ppRole),
