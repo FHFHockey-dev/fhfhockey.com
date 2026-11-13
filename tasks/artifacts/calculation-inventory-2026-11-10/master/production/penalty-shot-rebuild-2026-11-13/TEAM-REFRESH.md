@@ -42,13 +42,15 @@ All 3 fail on the previous builder.
 ## Read-only diff mode (route change, same commit)
 `POST /api/v1/db/rebuild-team-underlying-summaries` (admin; a dry run unless `dryRun=false`) now also accepts:
 - `gameIds=<1-10 ids>`, in place of the 14-day date window. The 8 games span 22 days, so a window can't hold them alone. Each id must be a final game of the season, or the request gets a 400.
-- `diff=true`, dry run only. It returns `diffRowCount`, `diffsTruncated` and up to 400 `diffs`: each stored row the rebuild would change, with every changed field's stored and rebuilt value (`compareTeamSummaryRows`). It writes no summary row; like every call to the route, it writes a cron-audit row.
+- `diff=true`, dry run only. It returns `diffRowCount`, `diffsTruncated` and up to 400 `diffs`: each stored row the rebuild would change, with every changed field's stored and rebuilt value (`compareTeamSummaryRows`).
+- **Strictly read-only** (TJ): a successful dry run or diff writes no summary row and no cron-audit row. The route's audit contract skips it through `skipAuditWhenNoOp: isSuccessfulReadOnlyTeamSummaryRebuild`, as F9's writer dry run did. Writes, failures and non-2xx responses (including a rejected request) are still audited.
+  - Proven by `__tests__/pages/api/v1/db/operational-route-auth.test.ts`, which runs the real wrapper and route: a successful 8-game diff makes no audit insert, while a write, a failed dry run and a 400 each make one. The no-audit case fails on the previous wrapper.
 
 ## Runner: `team-refresh.py` (default: the diff, no summary write)
 **Gates:**
 1. DB guard: at most 5 active queries, none older than 10 s.
 2. Windows: no call within 15 minutes of 08:00–08:20 or 09:25–11:40 UTC.
-3. Deployed code contains the builder (`collectPenaltyShotAttempts`, `compareTeamSummaryRows`) and the route (`MAX_REBUILD_GAME_IDS`, `reportDiffs: diff`). Read-only `gh api`.
+3. Deployed code contains the builder (`collectPenaltyShotAttempts`, `compareTeamSummaryRows`), the route (`MAX_REBUILD_GAME_IDS`, `reportDiffs: diff`) and the audit skip (`skipAuditWhenNoOp: isSuccessfulReadOnlyTeamSummaryRebuild`). Read-only `gh api`. The diff never runs on code that would audit it.
 4. Manifest: the stored play-by-play's penalty-shot attempts equal the 8 (game, shooting team, result) rows below.
 
 | game | shooting team | result | official, shooter team first (SOG / goals) |
@@ -62,7 +64,7 @@ All 3 fail on the previous builder.
 | 2026020159 | 26 | save | 26: 27 / 3, 2: 43 / 2 (OT) |
 | 2026020203 | 16 | save | 16: 19 / 1, 17: 31 / 4 |
 
-**Diff (default).** One call with all 8 ids and `diff=true`.
+**Diff (default).** One `POST` with all 8 ids and `diff=true`, and no `dryRun` parameter, so the route's default dry run applies. It writes nothing, not even an audit row.
 - It must be a complete dry run: `rowsUpserted` 0, not truncated, no stale keys.
 - Every difference must be the penalty shot:
   - `allStrengths` only;

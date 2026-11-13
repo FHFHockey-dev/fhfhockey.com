@@ -6,16 +6,19 @@ TJ's spec: count each regulation or overtime penalty shot exactly once in all-si
 scored, for the shooting team and against the other; exclude shootout attempts; ES/PP/PK unchanged.
 team_underlying_stats_summary rows (game, team, strength, score_state) are mutable upserts with no version column.
 
-Route: POST /api/v1/db/rebuild-team-underlying-summaries (admin; dry run unless dryRun=false; each call writes a
-cron-audit row, nothing else in dry run):
-  diff  : ?seasonId=20262027&gameIds=<8 ids>&diff=true            (1 call, read-only)
+Route: POST /api/v1/db/rebuild-team-underlying-summaries (admin; a dry run unless dryRun=false). A successful dry
+run or diff writes nothing at all, not even a cron-audit row (isSuccessfulReadOnlyTeamSummaryRebuild); writes,
+failures and non-2xx responses are audited:
+  diff  : POST ?seasonId=20262027&gameIds=<8 ids>&diff=true       (1 call, strictly read-only; no dryRun param,
+                                                                   so the route's default dry run applies)
   write : ?seasonId=20262027&gameIds=<id>&dryRun=false             (1 per game, only with --execute)
 
 Fails closed, in this order:
   1. Read-only DB guard (<= 5 active queries, none older than 10 s; 60 s waits, at most 3).
   2. Windows: no call within 15 min of 08:00-08:20 or 09:25-11:40 UTC.
   3. Deployed code (read-only gh api): production is in master's history and carries the team penalty-shot
-     builder (collectPenaltyShotAttempts) and the gameIds/diff route (MAX_REBUILD_GAME_IDS).
+     builder (collectPenaltyShotAttempts), the gameIds/diff route (MAX_REBUILD_GAME_IDS) and the audit skip for a
+     successful dry run (isSuccessfulReadOnlyTeamSummaryRebuild), so the diff never runs on code that audits it.
   4. Manifest: the stored play-by-play's penalty-shot attempts equal the 8 expected (game, shooting team, result).
   5. Diff call. Every difference must be the penalty shot and nothing else:
        - only strength allStrengths; no missing row and no stale key;
@@ -49,6 +52,7 @@ PROD_ENV = "Production – fhfhockey"
 DEPLOY_MARKERS = {
     "web/lib/underlying-stats/teamStatsSummaryRefresh.ts": ["collectPenaltyShotAttempts", "compareTeamSummaryRows"],
     "web/pages/api/v1/db/rebuild-team-underlying-summaries.ts": ["MAX_REBUILD_GAME_IDS", "reportDiffs: diff"],
+    "web/lib/cron/withOperationalRouteAuth.ts": ["skipAuditWhenNoOp: isSuccessfulReadOnlyTeamSummaryRebuild"],
 }
 # (game, shooting team, result): pbp_plays read 2026-11-13; all in regulation.
 MANIFEST = [

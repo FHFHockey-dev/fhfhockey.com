@@ -17,9 +17,22 @@ export type OperationalRouteOptions = {
         jobName?: string;
         includeFinalAuditReceipt?: boolean;
         recordRowMetrics?: boolean;
+        skipAuditWhenNoOp?: (body: unknown) => boolean;
       };
   defaultDryRun?: boolean;
 };
+
+/**
+ * A successful dry run (including diff=true) of the team-summary rebuild
+ * writes no summary row, so it writes no audit row either: TJ's 8-game diff
+ * must be strictly read-only. Writes, failures and non-2xx responses still
+ * audit (withCronJobAudit only consults this for clean 2xx runs).
+ */
+export function isSuccessfulReadOnlyTeamSummaryRebuild(body: unknown): boolean {
+  if (typeof body !== "object" || body === null) return false;
+  const record = body as Record<string, unknown>;
+  return record.success === true && record.dryRun === true && record.rowsUpserted === 0;
+}
 
 export const operationalRouteContracts = {
   auditNhlXgBackfill: {
@@ -33,7 +46,10 @@ export const operationalRouteContracts = {
   rebuildTeamUnderlyingSummaries: {
     methods: ["POST"],
     defaultDryRun: true,
-    audit: { jobName: "rebuild-team-underlying-summaries" },
+    audit: {
+      jobName: "rebuild-team-underlying-summaries",
+      skipAuditWhenNoOp: isSuccessfulReadOnlyTeamSummaryRebuild,
+    },
   },
   updateGoalieStarterMixtures: {
     methods: ["POST"],
