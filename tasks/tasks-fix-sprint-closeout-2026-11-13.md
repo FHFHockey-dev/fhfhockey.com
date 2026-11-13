@@ -52,10 +52,12 @@
     - octoberBranch ours-merge with a no-build check.
 
     *Done: #442 → master `44de2f107`, build 22:07:23Z, smoke 5/5, octoberBranch `732468246`.*
-  - [ ] 2.4 Read back read-only that the next rolling run's stored output matches pre-release behaviour (flag off).
+  - [x] 2.4 Read back read-only that the next rolling run's stored output matches pre-release behaviour (flag off). *(Superseded: serving went on at 22:13Z, so no rolling run happened with the flag off in production. Flag-off parity is pinned offline by the field-for-field test from 1.2. The rolling writer's first run with serving on writes `pp_share_pct` with the clock denominator, as TJ approved.)*
 - [ ] 3.0 Serve PP share (depends on 2.0; **TJ approved 2026-11-13 ~21:40Z**, conditional on the reader candidate passing its release checks plus 1.2 and 1.3. Keep `PP_STORED_CALCULATION_WRITES_ENABLED=true`; stop on any disagreement; no refresh or cron rerun.)
-  - [ ] 3.1 TJ sets `PP_SHARE_SERVING_ENABLED=true` (Production). Run the approved clean-export CLI production deploy of the master SHA, then check the alias and a 3-GET smoke.
-  - [ ] 3.2 Verify served values with a bounded read-only budget agreed first: the qualified game agrees across the four surfaces, and the zero-PP game shows "N/A".
+  - [x] 3.1 TJ sets `PP_SHARE_SERVING_ENABLED=true` (Production). Run the approved clean-export CLI production deploy of the master SHA, then check the alias and a 3-GET smoke.
+  - [x] 3.2 Verify served values with a bounded read-only budget agreed first: the qualified game agrees across the four surfaces, and the zero-PP game shows "N/A".
+
+    *Done 22:13–22:16Z: the flag was set by the Chef through the CLI with TJ's approval. Serving deploy `dpl_3dTQdAD3`. The clock API, `/api/toi` ×2, the shift chart label and the line-combo PP matrix all agree with the dry run (PRODUCTION-QUEUE).*
   - [ ] 3.3 Record it in the queue, debrief and REPORT, and close decision 152.
 - [ ] 4.0 2026-11-14 scheduled readbacks (independent; read-only; each recorded separately; no manual reruns)
   - [ ] 4.1 08:05Z cron 388: audit `success`; the last 3 dates' rows stamped `pp-shifts-qualified-clock-v1`, with clock rows.

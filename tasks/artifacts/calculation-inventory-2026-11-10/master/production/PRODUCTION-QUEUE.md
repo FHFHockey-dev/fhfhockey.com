@@ -466,3 +466,14 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - **Serving on** (TJ-approved after checks 1.2, 1.3 and 7.2 passed):
   - `PP_SHARE_SERVING_ENABLED=true` added to Production through the Vercel CLI at ~22:09Z; `PP_STORED_CALCULATION_WRITES_ENABLED=true` left as is.
   - A clean-export CLI production deploy of master `44de2f107` started ~22:10Z.
+  - **Serving deploy:** `dpl_3dTQdAD3RHsEhP3nvtn5yZHSmzpn`, built 22:08:28–22:13:40Z, **Ready**, aliased to fhfhockey.com. Master `44de2f107`; one extra fhfhockey build.
+  - **Live verification** (bounded: 3 sequential API requests plus 2 page views in TJ's Chrome; read-only), **all agree**:
+    1. **Clock API** `GET /api/v1/pp-share/team-game-clock?gameIds=2026020131,2026020038` (22:13:57Z): 200, `servingEnabled: true`.
+       - 131: t18 available 120 s, t19 available 578 s.
+       - 038: t55 not_applicable 0 s, t20 available 172 s.
+    2. **`/api/toi`** for 8475158, 2026-10-17 (22:14:04Z): 200. `powerPlayStatus.available` true; PP 1.8667 min (112 s), **share 93.33%**, status available, team clock 2 min (120 s).
+    3. **`/api/toi`** for 8474586 (t55), 2026-10-04 (22:14:17Z): 200. PP 0, **share null, status `not_applicable`**: N/A, never 0%.
+    4. **Shift chart** `/shiftChart?gameId=2026020131`: the status **"NSH: PP timeline unavailable: timing mismatch."** for team 18 only. STL (t19, reconciled) has no label.
+    5. **Line-combo PP mode** `/lines/line-combo/2026020131`, Power Play TOI. The Predators matrix has 10 skaters; diagonal O'Reilly 1:52, Stamkos 1:51, Josi 1:50, Marchessault 1:50, Forsberg 1:49 (PP1); Skjei 0:11, Kerfoot 0:10, Perbix 0:10, Wood 0:09, Colton 0:08 (PP2). This equals the accepted dry run (112/111/110/110/109; 11/10/10/9/8).
+  - **Not checked live:** the Lines PowerPlayCombos for game 131. It's verified offline in the cross-surface test, and `/lines` returns 200.
+  - **PP share is now served (decision 152).** No refresh or cron rerun.
