@@ -681,3 +681,15 @@ TJ moved all remaining project work to this session ("No more back and forth wit
 | 12 | Generated `next-env.d.ts` | Restored to HEAD |
 
 Also fixed here: the Game Grid TeamDetails test mock had been failing on master since the Goalie Grid release (`7234e9682`, next release). Codex's production deployment with H1 overrides was replaced by the original deployment (§3, §7).
+
+## 13. Follow-up ticket status (2026-11-13, Chef)
+| Item | Status | Next |
+|---|---|---|
+| L2 W2-3 D13 (chart minimum TOI) | **Fixed** `33b919192` (unreleased). Chart points skip the minimum; table rows keep it. The regression test fails on the old code. | Next release |
+| L2 W2-3 D7 (finished-game rule) | Blocked on data. Rule 19 needs finality from a game state, and no table stores one (`games` has no state; normalization tables have no final flag). | Design: add a game-state column filled by the schedule ingester (migration plus ingester), then switch every reader (versioned contract) |
+| Week Score ordering (BC W1-12 D5) | Depends on decision 53 (off-night value measured from roster scenarios, validated on held-out weeks); the 6/4 weights are a modelling choice | Off-night value study |
+| L9a → L10 PK head counted as 0 | Deferred. Every FORGE row now served predates L9a's PK writer (runs created 11-09), so treating null PK as unknown would blank totals sitewide | After the first FORGE run on released code, confirm PK heads are written for every player, then treat null PK as unknown |
+| BA W1-4 B D9 (EN in team goaltending) | Owner decision. The rating reads NST all-situations rows, which include empty-net events | Choose 5v5 rows, or subtract PBP-derived team EN events; then the power-ratings recompute (queue 7) |
+| BC W1-6 D8/D13/D14 (goalie stage) | Model changes needing refits and held-out checks (L9b plan) | Owner decision and refit plan |
+| L11 registry and goalie-contract wiring | Not started (integration) | A lane of its own |
+| L9a ice-time classifier vs Codex penalty clock | Codex's `24b1cb4d3` replaced L9a's `8bc43a855` in `ingest/shifts.ts`; derived event counts still use situation codes | Read-only cross-check of edge cases |
