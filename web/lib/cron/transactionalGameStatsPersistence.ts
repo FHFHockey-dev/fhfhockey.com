@@ -1,3 +1,4 @@
+import { normalizeGameStatsClock, normalizeGoalieShotRatio } from "./gameStatsCompleteness";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { sanitizeCronDiagnostic } from "./statsUpdateSafety";
@@ -457,16 +458,16 @@ function normalizeGoalieRows<TGoalie extends PlayerIdentityRow>(
     return {
       ...source,
       position: "G",
-      evenStrengthShotsAgainst: source.evenStrengthShotsAgainst ?? "0/0",
-      powerPlayShotsAgainst: source.powerPlayShotsAgainst ?? "0/0",
-      shorthandedShotsAgainst: source.shorthandedShotsAgainst ?? "0/0",
-      saveShotsAgainst: source.saveShotsAgainst ?? "0/0",
+      evenStrengthShotsAgainst: normalizeGoalieShotRatio(source.evenStrengthShotsAgainst),
+      powerPlayShotsAgainst: normalizeGoalieShotRatio(source.powerPlayShotsAgainst),
+      shorthandedShotsAgainst: normalizeGoalieShotRatio(source.shorthandedShotsAgainst),
+      saveShotsAgainst: normalizeGoalieShotRatio(source.saveShotsAgainst),
       evenStrengthGoalsAgainst: source.evenStrengthGoalsAgainst ?? 0,
       powerPlayGoalsAgainst: source.powerPlayGoalsAgainst ?? 0,
       shorthandedGoalsAgainst: source.shorthandedGoalsAgainst ?? 0,
       pim: source.pim ?? 0,
       goalsAgainst: source.goalsAgainst ?? 0,
-      toi: source.toi ?? "00:00",
+      toi: normalizeGameStatsClock(source.toi),
       savePctg: source.savePctg ?? 0,
     };
   });

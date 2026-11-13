@@ -9,6 +9,8 @@ import {
   assertCompleteTeamGameStatsSource,
   assertMatchingGameIdentity,
   getGameStatsCompletenessFailureDetails,
+  normalizeGameStatsClock,
+  normalizeGoalieShotRatio,
 } from "lib/cron/gameStatsCompleteness";
 import {
   getTransactionalGameStatsFailureDetails,
@@ -101,17 +103,17 @@ type Goalie = {
   playerId: number;
   gameId: number;
   position: "G";
-  evenStrengthShotsAgainst?: string; // Make optional if not always present
-  powerPlayShotsAgainst?: string;
-  shorthandedShotsAgainst?: string;
-  saveShotsAgainst: string; // Typically "Saves-ShotsAgainst" format
+  evenStrengthShotsAgainst: string | null;
+  powerPlayShotsAgainst: string | null;
+  shorthandedShotsAgainst: string | null;
+  saveShotsAgainst: string | null; // Typically "Saves-ShotsAgainst" format
   savePctg?: number; // Made optional, handle undefined below
   evenStrengthGoalsAgainst?: number;
   powerPlayGoalsAgainst?: number;
   shorthandedGoalsAgainst?: number;
   pim: number;
   goalsAgainst: number;
-  toi: string;
+  toi: string | null;
 };
 
 // Union type for internal skater data structure
@@ -454,7 +456,7 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
 
 // --- Helper Functions ---
 
-async function processTeamGameStats(
+export async function processTeamGameStats(
   gameId: number,
   teamGameStats: TeamGameStat[],
   isHomeTeam: boolean,
@@ -485,11 +487,9 @@ async function processTeamGameStats(
   const powerPlayData = getStat("powerPlay")?.toString() || "0/0";
   const powerPlayConversionData = getStat("powerPlayPctg")?.toString() || "0.0";
 
-  let powerPlayToi = "00:00";
   const teamKey = isHomeTeam ? "homeTeam" : "awayTeam";
-  if (rightRail?.[teamKey]?.powerPlayToi) {
-    powerPlayToi = rightRail[teamKey].powerPlayToi;
-  } else {
+  let powerPlayToi = normalizeGameStatsClock(rightRail?.[teamKey]?.powerPlayToi);
+  if (powerPlayToi === null) {
     console.warn(
       `PP TOI not found directly in rightRail for ${teamKey}, game ${gameId}. Trying HTML fallback.`,
     );
@@ -497,7 +497,7 @@ async function processTeamGameStats(
       powerPlayToi = await getPPTOI(season, gameId.toString(), isHomeTeam);
     } catch (e: any) {
       console.error(
-        `Failed to fetch/parse PP TOI from HTML for ${teamKey}, game ${gameId}. Defaulting to "00:00". Error: ${sanitizeCronDiagnostic(e)}`,
+        `Failed to fetch/parse PP TOI from HTML for ${teamKey}, game ${gameId}. Leaving PP TOI unknown. Error: ${sanitizeCronDiagnostic(e)}`,
       );
     }
   }
@@ -523,11 +523,11 @@ async function getPPTOI(
   season: string,
   gameIdString: string,
   isHome: boolean,
-): Promise<string> {
+): Promise<string | null> {
   const slicedGameId = gameIdString.slice(4);
   if (!slicedGameId || slicedGameId.length !== 6) {
     console.error(`Invalid gameId format for HTML report: ${gameIdString}`);
-    return "00:00";
+    return null;
   }
 
   let content = "";
@@ -535,13 +535,13 @@ async function getPPTOI(
     content = await getReportContent(season, slicedGameId);
     if (!content) {
       console.error(`HTML report content empty for game ${gameIdString}.`);
-      return "00:00";
+      return null;
     }
   } catch (fetchError) {
     console.error(
       `Failed to fetch HTML report for game ${gameIdString}: ${sanitizeCronDiagnostic(fetchError)}`,
     );
-    return "00:00";
+    return null;
   }
 
   let document;
@@ -551,7 +551,7 @@ async function getPPTOI(
     console.error(
       `Failed to parse HTML report for game ${gameIdString}: ${sanitizeCronDiagnostic(parseError)}`,
     );
-    return "00:00";
+    return null;
   }
 
   const rows = document.querySelectorAll(
@@ -565,7 +565,7 @@ async function getPPTOI(
       const cells = getChildren(row);
       if (cells.length > 1) {
         const timeText = cells[1].textContent?.split("/").pop()?.trim();
-        if (timeText && /^\d{1,2}:\d{2}$/.test(timeText)) {
+        if (timeText && normalizeGameStatsClock(timeText) !== null) {
           PPTOIs.push(timeText);
         } else {
           console.warn(
@@ -584,7 +584,7 @@ async function getPPTOI(
     console.error(
       `Expected 2 PPTOIs from HTML report, found ${PPTOIs.length} for game ${gameIdString}.`,
     );
-    return "00:00";
+    return null;
   }
 
   return PPTOIs[isHome ? 1 : 0];
@@ -694,14 +694,14 @@ export function getPlayersGameStats(
       playerId: player.playerId,
       gameId: gameId,
       position: player.position,
-      saveShotsAgainst: player.saveShotsAgainst || "0-0",
+      saveShotsAgainst: normalizeGoalieShotRatio(player.saveShotsAgainst),
       pim: player.pim ?? 0,
       goalsAgainst: player.goalsAgainst ?? 0,
-      toi: player.toi || "00:00",
+      toi: normalizeGameStatsClock(player.toi),
       savePctg: player.savePctg ?? 0,
-      evenStrengthShotsAgainst: player.evenStrengthShotsAgainst,
-      powerPlayShotsAgainst: player.powerPlayShotsAgainst,
-      shorthandedShotsAgainst: player.shorthandedShotsAgainst,
+      evenStrengthShotsAgainst: normalizeGoalieShotRatio(player.evenStrengthShotsAgainst),
+      powerPlayShotsAgainst: normalizeGoalieShotRatio(player.powerPlayShotsAgainst),
+      shorthandedShotsAgainst: normalizeGoalieShotRatio(player.shorthandedShotsAgainst),
       evenStrengthGoalsAgainst: player.evenStrengthGoalsAgainst,
       powerPlayGoalsAgainst: player.powerPlayGoalsAgainst,
       shorthandedGoalsAgainst: player.shorthandedGoalsAgainst,

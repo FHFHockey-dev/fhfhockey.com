@@ -86,7 +86,7 @@ export interface TeamGameStatsRow {
   takeaways: number;
   powerPlay: string;
   powerPlayConversion: string;
-  powerPlayToi: string;
+  powerPlayToi: string | null;
 }
 
 export class TeamGameStatsError extends Error {
@@ -256,6 +256,19 @@ export function assertCompleteTeamGameStatsSource(args: {
   }
 }
 
+// Missing or malformed source values are unknown; explicit measured zeros survive.
+export function normalizeGameStatsClock(value: unknown): string | null {
+  return typeof value === "string" && /^\d{1,3}:[0-5]\d$/.test(value)
+    ? value
+    : null;
+}
+
+export function normalizeGoalieShotRatio(value: unknown): string | null {
+  return typeof value === "string" && /^\d+[/-]\d+$/.test(value)
+    ? value
+    : null;
+}
+
 function isValidTeamGameStatsRow(
   row: TeamGameStatsRow,
   gameId: number,
@@ -281,8 +294,7 @@ function isValidTeamGameStatsRow(
     row.powerPlay.trim().length > 0 &&
     typeof row.powerPlayConversion === "string" &&
     row.powerPlayConversion.trim().length > 0 &&
-    typeof row.powerPlayToi === "string" &&
-    row.powerPlayToi.trim().length > 0
+    (row.powerPlayToi === null || normalizeGameStatsClock(row.powerPlayToi) !== null)
   );
 }
 

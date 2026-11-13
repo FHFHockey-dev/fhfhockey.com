@@ -104,7 +104,7 @@ async function captureRejection(callback: () => Promise<unknown>) {
 }
 
 describe("persistCompleteGameStatsTransaction", () => {
-  it("preflights parents and makes one complete RPC with normalized goalie defaults", async () => {
+  it("preflights parents and makes one complete RPC with unknown goalie fields preserved", async () => {
     const client = createSupabase({});
     const repairMissingPlayer = vi.fn();
 
@@ -136,8 +136,11 @@ describe("persistCompleteGameStatsTransaction", () => {
         p_goalie_rows: [
           expect.objectContaining({
             playerId: 20,
-            evenStrengthShotsAgainst: "0/0",
-            toi: "00:00",
+            evenStrengthShotsAgainst: null,
+            powerPlayShotsAgainst: null,
+            shorthandedShotsAgainst: null,
+            saveShotsAgainst: null,
+            toi: null,
             savePctg: 0,
           }),
         ],
@@ -145,6 +148,30 @@ describe("persistCompleteGameStatsTransaction", () => {
     );
     expect(client.from).toHaveBeenCalledTimes(1);
     expect(repairMissingPlayer).not.toHaveBeenCalled();
+  });
+
+  it.each([null, "bad", ""])("normalizes unavailable goalie fields to null at the RPC boundary: %s", async (value) => {
+    const client = createSupabase({});
+    await persistCompleteGameStatsTransaction({ supabase: client.supabase, gameId, teamRows, skaterRows,
+      goalieRows: [{ ...goalieRows[0], evenStrengthShotsAgainst: value, powerPlayShotsAgainst: value,
+        shorthandedShotsAgainst: value, saveShotsAgainst: value, toi: value }], repairMissingPlayer: vi.fn() });
+    expect(client.rpc).toHaveBeenCalledWith("persist_complete_game_stats_v1", expect.objectContaining({
+      p_goalie_rows: [expect.objectContaining({ evenStrengthShotsAgainst: null, powerPlayShotsAgainst: null,
+        shorthandedShotsAgainst: null, saveShotsAgainst: null, toi: null })],
+    }));
+  });
+
+  it("preserves measured goalie zeros and a null team clock at the RPC boundary", async () => {
+    const client = createSupabase({});
+    await persistCompleteGameStatsTransaction({ supabase: client.supabase, gameId,
+      teamRows: teamRows.map(row => ({ ...row, powerPlayToi: null })), skaterRows,
+      goalieRows: [{ ...goalieRows[0], evenStrengthShotsAgainst: "0/0", powerPlayShotsAgainst: "0/0",
+        shorthandedShotsAgainst: "0/0", saveShotsAgainst: "0-0", toi: "00:00" }], repairMissingPlayer: vi.fn() });
+    expect(client.rpc).toHaveBeenCalledWith("persist_complete_game_stats_v1", expect.objectContaining({
+      p_team_rows: teamRows.map(row => ({ ...row, powerPlayToi: null })),
+      p_goalie_rows: [expect.objectContaining({ evenStrengthShotsAgainst: "0/0", powerPlayShotsAgainst: "0/0",
+        shorthandedShotsAgainst: "0/0", saveShotsAgainst: "0-0", toi: "00:00" })],
+    }));
   });
 
   it("repairs only exact missing parents and proves them on recheck before the RPC", async () => {

@@ -396,6 +396,41 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
     expect(fromMock).not.toHaveBeenCalledWith("team_unit_toi");
   });
 
+  test("missing goalie ratio does not lower save totals, and unproved appearance does not become GP", async () => {
+    const rows = baseRows();
+    rows.goaliesGameStats[1] = { ...rows.goaliesGameStats[1], saveShotsAgainst: null };
+    routeTables(rows, []);
+    const partial = await getLineCombinations(22, 20252026);
+    expect(partial.goalies.line1[0].season).toMatchObject({ GP: 2, SV: null, SVPercentage: null });
+    rows.goaliesGameStats[1] = { ...rows.goaliesGameStats[1], saveShotsAgainst: null, toi: null, goalsAgainst: 0 };
+    rows.wgo_goalie_stats = rows.wgo_goalie_stats.filter(row => row.game_id !== 90);
+    routeTables(rows, []);
+    const unknown = await getLineCombinations(22, 20252026);
+    expect(unknown.goalies.line1[0].season.GP).toBeNull();
+    expect(unknown.goalies.line1[0].last10Games.SV).toBeNull();
+  });
+
+  test("measured zero goalie stats remain known and any zero-duration backup is excluded", async () => {
+    const rows = baseRows();
+    rows.goaliesGameStats[1] = { ...rows.goaliesGameStats[1], saveShotsAgainst: "0/0", goalsAgainst: 0 };
+    routeTables(rows, []);
+    const zero = await getLineCombinations(22, 20252026);
+    expect(zero.goalies.line1[0].season).toMatchObject({ GP: 2, SV: 30, SVPercentage: 1, GAA: 0 });
+    rows.goaliesGameStats[1] = { ...rows.goaliesGameStats[1], toi: "0:00" };
+    rows.wgo_goalie_stats = rows.wgo_goalie_stats.filter(row => row.game_id !== 90);
+    routeTables(rows, []);
+    const backup = await getLineCombinations(22, 20252026);
+    expect(backup.goalies.line1[0].season.GP).toBe(1);
+  });
+
+  test("zero-duration penalty-shot events still establish a goalie appearance", async () => {
+    const rows = baseRows();
+    rows.goaliesGameStats[1] = { ...rows.goaliesGameStats[1], saveShotsAgainst: "0/1", goalsAgainst: 1, toi: "00:00" };
+    routeTables(rows, []);
+    const result = await getLineCombinations(22, 20252026);
+    expect(result.goalies.line1[0].season).toMatchObject({ GP: 2, SV: 30, SVPercentage: 30 / 31, GAA: 1 });
+  });
+
   test("unknown goalie TOI leaves GAA unknown instead of dropping the game", async () => {
     const rows = baseRows();
     rows.goaliesGameStats[1] = { ...rows.goaliesGameStats[1], toi: null };
