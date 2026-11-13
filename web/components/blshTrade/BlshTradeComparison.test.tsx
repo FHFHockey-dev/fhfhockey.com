@@ -42,6 +42,39 @@ describe("BlshTradeComparison", () => {
     expect(within(evidence).queryByText(/League points/)).toBeNull();
   });
 
+  it("shows the signed gap with units, separate support comparisons and opportunity coverage", () => {
+    const local = structuredClone(recordsByHorizon);
+    const record = local[10].find(item => item.identity.playerId === "fx-f5")!;
+    const metric = record.metrics.find(item => item.target === "POINTS")!;
+    metric.gapSign = "negative";
+    metric.gapPerTeamGame = { value: -0.15, reason: null };
+    metric.comparisons.forecastVsRecent.value = -0.15;
+    render(<BlshTradeComparison recordsByHorizon={local} evidence={{}} fixtureBanner="FIXTURE DATA"
+      initialGive={["fx-f5"]} initialReceive={["fx-f1"]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Categories" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Points" }));
+    fireEvent.click(within(card("Fixture Forward Five")).getByText("Forecast and recent context"));
+    const context = within(card("Fixture Forward Five")).getByRole("group", { name: "Points comparisons" });
+    expect(context.textContent).toContain("Forecast − recent: −0.15 points per team game");
+    expect(context.textContent).toContain("Recent − personal reference");
+    expect(context.textContent).toContain("Observed − same-window support");
+    expect(card("Fixture Forward Five").textContent).toContain("Comparison block coverage");
+    expect(card("Fixture Forward Five").textContent).not.toMatch(/rebound|cooling|watch/i);
+  });
+
+  it("names a refused forecast target on the card and trade result", () => {
+    const player = FIXTURE_PLAYERS.find(item => item.key === "f1")!;
+    const forecast = structuredClone(player.forecasts[10]);
+    forecast.player.games.forEach(game => { game.targets.GOALS.allowedUses.comparison = false; });
+    const record = interpretPlayer({ evidence: player.evidence, forecast, config: FIXTURE_CONFIG,
+      asOf: FIXTURE_AS_OF, horizon: 10, fixture: true });
+    render(<BlshTradeComparison recordsByHorizon={{ ...recordsByHorizon,
+      10: recordsByHorizon[10].map(item => item.identity.playerId === "fx-f1" ? record : item) }}
+      evidence={{}} fixtureBanner="FIXTURE DATA" initialGive={["fx-f5"]} initialReceive={["fx-f1"]} />);
+    expect(card("Fixture Forward One").textContent).toContain("comparison not permitted");
+    expect(result().textContent).toContain("comparison not permitted");
+  });
+
   it("withholds an unavailable 20-game forecast, never shows zero, and offers a labelled retrospective comparison", () => {
     renderView(["fx-f5"], ["fx-f3"]);
     fireEvent.click(screen.getByRole("button", { name: "Next 20 team games" }));

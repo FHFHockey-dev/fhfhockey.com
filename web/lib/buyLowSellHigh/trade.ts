@@ -18,7 +18,19 @@ export const FHFH_STANDARD_SCORING: Extract<TradeScoring, { mode: "points" }> = 
 /** Whether a record's forecast may be shown as a forecast: qualified, experimental (labelled) or unavailable (never a number). */
 export type ForecastQualification = { status: "qualified" | "experimental" | "unavailable"; reasons: string[] };
 
+/** Consume the interpretation's admission decision without re-running or changing its policy. */
+export function forecastAdmissionReason(record: InterpretationRecord, target?: string): string | null {
+  const admission = record.forecastAdmission;
+  if (!admission || admission.status !== "admitted") return admission?.reasons.join("; ") || admission?.status || "forecast_admission_missing";
+  if (!target) return null;
+  const decision = admission.targets[target];
+  if (!decision || decision.status !== "admitted") return decision?.reasons.join("; ") || "target_not_admitted";
+  return null;
+}
+
 export function forecastQualification(record: InterpretationRecord): ForecastQualification {
+  const admissionReason = forecastAdmissionReason(record);
+  if (admissionReason) return { status: "unavailable", reasons: [`Forecast not admitted: ${admissionReason.replace(/_/g, " ")}`] };
   const unavailable = [
     ...(record.freshness.forecastStatus === "expired" ? ["Forecast expired"] : []),
     ...(!record.horizon.complete ? [`Only ${record.horizon.scheduledGames} of ${record.horizon.requestedGames} scheduled team games are covered`] : []),
@@ -62,8 +74,14 @@ const applies = (record: InterpretationRecord, key: string) => (record.identity.
 
 function sumTarget(records: InterpretationRecord[], key: string): SideValue {
   const relevant = records.filter(record => applies(record, key));
-  const missing = relevant.filter(record => record.forecastTotals[key]?.expected == null || record.forecastTotals[key]?.unit === null);
-  if (missing.length) return { value: null, missingPlayerIds: missing.map(record => record.identity.playerId), reason: "missing_projection" };
+  const missing = relevant.flatMap(record => {
+    const reason = forecastAdmissionReason(record, key)
+      ?? (record.forecastTotals[key]?.expected == null || !Number.isFinite(record.forecastTotals[key]?.expected)
+        || record.forecastTotals[key]?.unit == null ? "missing_projection" : null);
+    return reason ? [{ record, reason }] : [];
+  });
+  if (missing.length) return { value: null, missingPlayerIds: missing.map(({ record }) => record.identity.playerId),
+    reason: [...new Set(missing.map(item => item.reason))].join("; ") };
   return { value: relevant.reduce((sum, record) => sum + record.forecastTotals[key].expected!, 0), missingPlayerIds: [], reason: null };
 }
 
@@ -72,30 +90,33 @@ const isScored = (record: InterpretationRecord, scoring: Extract<TradeScoring, {
 
 function sideValue(records: InterpretationRecord[], key: string, scoring: TradeScoring): SideValue {
   if (scoring.mode === "points") {
-    const missing: string[] = [];
+    const missing: string[] = [], reasons: string[] = [];
     let total = 0;
     // A player with no scored statistic is withheld, never counted as zero points.
     const unscored = records.filter(record => !isScored(record, scoring)).map(record => record.identity.playerId);
     if (unscored.length) return { value: null, missingPlayerIds: unscored, reason: "unscored_player" };
     for (const record of records) for (const [target, weight] of Object.entries(scoring.weights)) {
       if (!weight || !applies(record, target)) continue;
-      const value = record.forecastTotals[target]?.expected;
-      if (value == null) missing.push(record.identity.playerId); else total += weight * value;
+      const value = sumTarget([record], target);
+      if (value.value === null) { missing.push(record.identity.playerId); reasons.push(value.reason!); }
+      else total += weight * value.value;
     }
-    return missing.length ? { value: null, missingPlayerIds: [...new Set(missing)], reason: "missing_projection" } : { value: total, missingPlayerIds: [], reason: null };
+    return missing.length ? { value: null, missingPlayerIds: [...new Set(missing)], reason: [...new Set(reasons)].join("; ") } : { value: total, missingPlayerIds: [], reason: null };
   }
   const ratio = GOALIE_RATIOS[key];
   if (!ratio) return sumTarget(records, key);
   const goalies = records.filter(record => record.identity.modelClass === "G");
   if (!goalies.length) return { value: null, missingPlayerIds: [], reason: "no_goalies" };
   const numerator = sumTarget(goalies, ratio.numerator), denominator = sumTarget(goalies, ratio.denominator);
-  if (numerator.value === null || denominator.value === null) return { value: null, missingPlayerIds: [...new Set([...numerator.missingPlayerIds, ...denominator.missingPlayerIds])], reason: "incomplete_primitives" };
+  if (numerator.value === null || denominator.value === null) return { value: null, missingPlayerIds: [...new Set([...numerator.missingPlayerIds, ...denominator.missingPlayerIds])], reason: [numerator.reason, denominator.reason].filter(reason => reason && reason !== "missing_projection").join("; ") || "incomplete_primitives" };
   if (denominator.value <= 0) return { value: null, missingPlayerIds: [], reason: "zero_denominator" };
   return { value: ratio.multiplier * numerator.value / denominator.value, missingPlayerIds: [], reason: null };
 }
 
 /** One player's raw expected league points over the horizon, for a market-reference comparison. */
 export function playerPointsTotal(record: InterpretationRecord, scoring: Extract<TradeScoring, { mode: "points" }>) {
+  const reason = forecastAdmissionReason(record);
+  if (reason) return { value: null, missingPlayerIds: [record.identity.playerId], reason };
   if (!record.horizon.complete) return { value: null, missingPlayerIds: [record.identity.playerId], reason: record.horizon.reason ?? "incomplete_horizon" };
   if (record.freshness.forecastStatus === "expired") return { value: null, missingPlayerIds: [record.identity.playerId], reason: "expired_forecast" };
   return sideValue([record], "FANTASY_POINTS", scoring);
@@ -141,6 +162,18 @@ export function compareTrade(input: TradeInput, records: readonly Interpretation
   }
 
   const keys = input.scoring.mode === "points" ? ["FANTASY_POINTS"] : input.scoring.categories;
+  const targets = input.scoring.mode === "points"
+    ? Object.entries(input.scoring.weights).filter(([, weight]) => weight !== 0).map(([key]) => key)
+    : keys.flatMap(key => GOALIE_RATIOS[key] ? [GOALIE_RATIOS[key].numerator, GOALIE_RATIOS[key].denominator] : [key]);
+  const refused = all.flatMap(record => {
+    const overall = forecastAdmissionReason(record);
+    const reasons = overall ? [overall] : [...new Set(targets)].filter(target => applies(record, target)).flatMap(target => {
+      const reason = forecastAdmissionReason(record, target);
+      return reason ? [`${target}: ${reason}`] : [];
+    });
+    return reasons.length ? [`${record.identity.name} (${reasons.join("; ").replace(/_/g, " ")})`] : [];
+  });
+  if (refused.length) issues.push({ code: "forecast_not_admitted", message: `Forecast not admitted for ${refused.join(", ")}; affected totals are withheld.`, blocking: true });
   const rows = keys.map(key => {
     const g = sideValue(give, key, input.scoring), r = sideValue(receive, key, input.scoring);
     const lowerIsBetter = LOWER_IS_BETTER.has(key);

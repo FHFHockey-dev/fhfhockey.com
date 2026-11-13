@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { InterpretationRecord } from "lib/skoElement/contract";
-import { FIXTURE_CONFIG, FIXTURE_PLAYERS, fixtureRecords } from "lib/skoElement/fixtures";
+import { FIXTURE_AS_OF, FIXTURE_CONFIG, FIXTURE_PLAYERS, fixtureRecords } from "lib/skoElement/fixtures";
 import { interpretPlayer } from "lib/skoElement/interpret";
-import { compareTrade, FHFH_STANDARD_SCORING, forecastQualification, playerPointsTotal, type TradeScoring } from "./trade";
+import { compareTrade, FHFH_STANDARD_SCORING, forecastQualification, playerPointsTotal, playerScoredValues, type TradeScoring } from "./trade";
 
 const records = fixtureRecords(10);
 const byId = (list: InterpretationRecord[], id: string) => list.find(record => record.identity.playerId === id)!;
@@ -127,5 +127,52 @@ describe("league scoring and forecast labelling", () => {
     const issued = compareTrade({ give: ["fx-f5"], receive: ["fx-f1"], scoring: FHFH_STANDARD_SCORING }, records.map(record => ({ ...record, fixture: false })));
     expect(issued.experimental).toBe(false);
     expect(issued.summary).toMatch(/^Raw projected production/);
+  });
+});
+
+
+describe("forecast admission at trade consumers", () => {
+  const source = FIXTURE_PLAYERS.find(player => player.key === "f1")!;
+  const interpret = (forecast: typeof source.forecasts[10]) => interpretPlayer({ evidence: source.evidence,
+    forecast, config: FIXTURE_CONFIG, asOf: FIXTURE_AS_OF, horizon: 10, fixture: false });
+  const tradeWith = (record: InterpretationRecord, scoring: TradeScoring = FHFH_STANDARD_SCORING) => compareTrade({
+    give: ["fx-f5"], receive: ["fx-f1"], scoring,
+  }, [byId(records, "fx-f5"), record]);
+
+  it("explains a read after as-of and blocks it explicitly", () => {
+    const forecast = structuredClone(source.forecasts[10]);
+    forecast.readAsOf = "2026-10-19T10:00:00.000Z";
+    const record = interpret(forecast);
+    expect(forecastQualification(record)).toMatchObject({ status: "unavailable",
+      reasons: expect.arrayContaining([expect.stringMatching(/read after as of/i)]) });
+    expect(tradeWith(record).issues).toContainEqual(expect.objectContaining({ code: "forecast_not_admitted", blocking: true,
+      message: expect.stringMatching(/read after as of/i) }));
+    expect(playerPointsTotal(record, FHFH_STANDARD_SCORING).reason).toContain("read_after_as_of");
+  });
+
+  it("names comparison permission on a refused target without recovering its total", () => {
+    const forecast = structuredClone(source.forecasts[10]);
+    forecast.player.games.forEach(game => { game.targets.GOALS.allowedUses.comparison = false; });
+    const record = interpret(forecast);
+    for (const scoring of [FHFH_STANDARD_SCORING, { mode: "categories", categories: ["GOALS"] } as TradeScoring]) {
+      const result = tradeWith(record, scoring);
+      expect(result.issues).toContainEqual(expect.objectContaining({ code: "forecast_not_admitted", blocking: true,
+        message: expect.stringContaining("comparison not permitted") }));
+      expect(result.rows[0].receive).toMatchObject({ value: null, reason: "comparison_not_permitted" });
+      expect(playerScoredValues(record, scoring)[0]).toMatchObject({ value: null, reason: "comparison_not_permitted" });
+    }
+    expect(playerPointsTotal(record, FHFH_STANDARD_SCORING)).toMatchObject({ value: null, reason: "comparison_not_permitted" });
+    // The consumer respects the refusal even if an older cached total is still numeric.
+    record.forecastTotals.GOALS.expected = 100;
+    expect(tradeWith(record).rows[0].receive.value).toBeNull();
+  });
+
+  it("fails closed on a non-admitted record even with otherwise numeric current totals", () => {
+    const record = structuredClone(byId(records, "fx-f1"));
+    record.forecastAdmission = { ...record.forecastAdmission, status: "not_admitted", reasons: ["read_after_as_of"] };
+    expect(forecastQualification(record).status).toBe("unavailable");
+    expect(playerPointsTotal(record, FHFH_STANDARD_SCORING).value).toBeNull();
+    expect(playerScoredValues(record, { mode: "categories", categories: ["GOALS"] })[0].value).toBeNull();
+    expect(tradeWith(record).complete).toBe(false);
   });
 });
