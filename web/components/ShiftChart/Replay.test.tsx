@@ -6,12 +6,11 @@ import {
   screen,
   within,
 } from "@testing-library/react";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Replay from "./Replay";
 import * as model from "./model";
 import { gameFixture } from "./testFixtures";
+import { storedFixtureGame } from "./testStoredGame";
 import styles from "styles/ShiftChart.module.scss";
 
 afterEach(() => {
@@ -82,52 +81,8 @@ it("decision 152: in PP mode, shows a team's matrix only when its stored clock i
   expect(screen.queryByText(new RegExp(`^${ppTeam.name}:`))).toBeNull();
 });
 
-// A replay Game built from the stored-row fixtures in __tests__/ppShare/fixtures (stored PBP, type-517 shift rows,
-// roster spots), put into the live feeds' shapes the replay reads.
-type Fixture = {
-  gameId: number; date: string; homeTeamId: number; awayTeamId: number; gameType: number;
-  events: Array<Array<string | number | null>>; shifts: number[][]; roster: Array<[number, number, string]>;
-};
-
-const clock = (seconds: number) =>
-  `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-
-function storedFixture(gameId: number): Fixture {
-  return JSON.parse(readFileSync(path.join(__dirname, "../../__tests__/ppShare/fixtures", `${gameId}.json`), "utf8"));
-}
-
-function storedFixtureGame(gameId: number): model.Game {
-  const f = storedFixture(gameId);
-  const plays = f.events.map((e) => {
-    const details: Record<string, unknown> = {};
-    const set = (key: string, value: unknown) => { if (value != null) details[key] = value; };
-    set("eventOwnerTeamId", e[8]); set("typeCode", e[9]); set("descKey", e[10]); set("duration", e[11]);
-    set("committedByPlayerId", e[12]); set("servedByPlayerId", e[13]); set("scoringPlayerId", e[14]); set("shootingPlayerId", e[15]);
-    return { eventId: e[0], sortOrder: e[1], periodDescriptor: { number: e[2], periodType: e[3] }, timeInPeriod: e[4],
-      timeRemaining: e[5], situationCode: e[6], typeDescKey: e[7], details };
-  });
-  const shifts = f.shifts.map(([playerId, teamId, period, start, end], i) => ({
-    id: i + 1, gameId: f.gameId, playerId, teamId, period, startTime: clock(start), endTime: clock(end),
-    duration: clock(end - start), firstName: "P", lastName: String(playerId), teamName: `Team ${teamId}`
-  }));
-  const lastPeriod = Math.max(...f.events.map((e) => e[2] as number));
-  const lastType = f.events.find((e) => e[2] === lastPeriod)?.[3] ?? "REG";
-  const team = (id: number) => ({ id, abbrev: `T${id}`, placeName: { default: "Team" }, commonName: { default: String(id) }, score: 0 });
-  const side = (teamId: number) => {
-    const players = f.roster.filter(([, t]) => t === teamId).map(([playerId, , position]) =>
-      ({ playerId, name: { default: `Player ${playerId}` }, position, sweaterNumber: 0 }));
-    return { forwards: players.filter((p) => !["D", "G"].includes(p.position)), defense: players.filter((p) => p.position === "D"),
-      goalies: players.filter((p) => p.position === "G") };
-  };
-  const box = { id: f.gameId, gameType: f.gameType, gameDate: f.date, gameState: "OFF", gameScheduleState: "OK",
-    periodDescriptor: { number: lastPeriod, periodType: lastType }, clock: { secondsRemaining: 0 },
-    homeTeam: team(f.homeTeamId), awayTeam: team(f.awayTeamId),
-    playerByGameStats: { homeTeam: side(f.homeTeamId), awayTeam: side(f.awayTeamId) } };
-  return model.normalizeGame(box, { data: shifts }, { plays });
-}
-
-// Decision 152 (TJ: blocks the release): with PP share served, a team's timeline PP bands are drawn only when they
-// reconcile with the stored qualified clock. Real stored-row fixtures (__tests__/ppShare/fixtures).
+// Decision 152: served timelines use the same full-field intervals as the matrix, guarded against the stored
+// qualified clock. Real stored-row fixtures (__tests__/ppShare/fixtures); never create bands from a stored total.
 describe("decision 152 replay PP bands against the stored clock", () => {
   const clockRow = (gameId: number, teamId: number, availability: string, clockSeconds: number | null) =>
     ({ gameId, teamId, availability, clockSeconds, unavailableReason: null, computedAt: "t" });
@@ -139,21 +94,36 @@ describe("decision 152 replay PP bands against the stored clock", () => {
   const firstTrackBands = (abbrev: string, cls: "ppBand" | "pkBand") =>
     tracks(abbrev).querySelector(`.${styles.track}`)!.querySelectorAll(`.${styles[cls]}`).length;
   const teamPowerPlays = (game: model.Game, teamId: number) => game.powerPlays.filter((pp) => pp.teamId === teamId).length;
+  const expectTeamBands = (game: model.Game, ppTeamId: number, intervals: model.PowerPlay[]) => {
+    const expected = intervals.filter((pp) => pp.teamId === ppTeamId);
+    for (const team of [game.home, game.away]) {
+      const cls = team.id === ppTeamId ? styles.ppBand : styles.pkBand;
+      const teamTracks = tracks(team.abbrev).querySelectorAll(`.${styles.track}`);
+      expect(teamTracks.length).toBeGreaterThan(0);
+      for (const track of teamTracks) {
+        const drawn = track.querySelectorAll<HTMLElement>(`.${cls}`);
+        expect(drawn).toHaveLength(expected.length);
+        expected.forEach((pp, i) => {
+          expect(drawn[i].style.left).toBe(`${(pp.start / game.axisDuration) * 100}%`);
+          expect(drawn[i].style.width).toBe(`${((pp.end - pp.start) / game.axisDuration) * 100}%`);
+        });
+      }
+    }
+  };
   const renderReplay = (game: model.Game) => {
     vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
     render(<Replay game={game} mode="pp-toi" onModeChanged={() => {}} selection={<div />} />);
   };
 
-  it("1. 2026020131 t18 (bands 29 s, stored clock 120 s): bands withheld, label shown, the verified 120 s share visible", async () => {
+  it("2026020131 NSH: exact P1 08:11–10:11 on every PP and complementary PK track, with the verified share visible", async () => {
     const game = storedFixtureGame(2026020131);
     expect(model.ppBandSecondsByTeam(game)[18]).toBe(29);
+    const intervals = [{ teamId: 18, start: 491, end: 611 }];
+    expect(game.qualifiedPowerPlays?.filter((pp) => pp.teamId === 18)).toEqual(intervals);
     serve({ servingEnabled: true, clocks: [clockRow(2026020131, 18, "available", 120), clockRow(2026020131, 19, "available", 578)] });
     renderReplay(game);
-    expect(await screen.findByText("PP timeline unavailable: timing mismatch.")).toBeTruthy();
-    expect(screen.getByLabelText("T18: PP timeline unavailable: timing mismatch.")).toBeTruthy();
-    // No team-18 power play anywhere: not as PP on T18 tracks, not as PK on T19 tracks.
-    expect(bands("T18", "ppBand")).toHaveLength(0);
-    expect(bands("T19", "pkBand")).toHaveLength(0);
+    await vi.waitFor(() => expectTeamBands(game, 18, intervals));
+    expect(screen.queryByText(/PP timeline unavailable/)).toBeNull();
     // The verified PP share stays visible: team 18's PP-mode grid (PP1 92.0% / PP2 8.0% of the 120 s clock).
     const matrices = within(screen.getByLabelText("Linemate matrices"));
     expect(matrices.getByText("Team 18")).toBeTruthy();
@@ -161,21 +131,21 @@ describe("decision 152 replay PP bands against the stored clock", () => {
     expect(matrices.queryByText(/^Team 18:/)).toBeNull();
   });
 
-  it("2. 2026020131 t19 (bands 578 s = stored 578 s): drawn whole, unscaled, no label", async () => {
+  it("2026020131 STL: all five intervals unchanged on every PP and complementary PK track", async () => {
     const game = storedFixtureGame(2026020131);
     expect(model.ppBandSecondsByTeam(game)[19]).toBe(578);
     serve({ servingEnabled: true, clocks: [clockRow(2026020131, 18, "available", 120), clockRow(2026020131, 19, "available", 578)] });
     renderReplay(game);
-    await screen.findByText("PP timeline unavailable: timing mismatch.");
+    await vi.waitFor(() => expect(firstTrackBands("T19", "ppBand")).toBe(5));
     expect(screen.queryByLabelText(/^T19: PP timeline/)).toBeNull();
     // Every team-19 power play is drawn on each track: as PP for T19, as PK for T18.
     expect(firstTrackBands("T19", "ppBand")).toBe(teamPowerPlays(game, 19));
     expect(firstTrackBands("T18", "pkBand")).toBe(teamPowerPlays(game, 19));
-    // Drawn at their own times and lengths: the first T19 band is exactly the first team-19 interval.
-    const first = game.powerPlays.find((pp) => pp.teamId === 19)!;
-    const style = (tracks("T19").querySelector(`.${styles.ppBand}`) as HTMLElement).style;
-    expect(style.left).toBe(`${(first.start / game.axisDuration) * 100}%`);
-    expect(style.width).toBe(`${((first.end - first.start) / game.axisDuration) * 100}%`);
+    const intervals = [[1170, 1290], [1558, 1656], [2261, 2381], [2646, 2766], [3248, 3368]]
+      .map(([start, end]) => ({ teamId: 19, start, end }));
+    expect(game.qualifiedPowerPlays?.filter((pp) => pp.teamId === 19)).toEqual(intervals);
+    expect(game.powerPlays.filter((pp) => pp.teamId === 19)).toEqual(intervals);
+    expectTeamBands(game, 19, intervals);
   });
 
   it("3. 2026020038 t55 (no power play): N/A, no shading, never 0%", async () => {
@@ -186,6 +156,7 @@ describe("decision 152 replay PP bands against the stored clock", () => {
     expect(await screen.findByText("Team 55: N/A: no power play in this game.")).toBeTruthy();
     expect(screen.queryByText(/PP timeline unavailable/)).toBeNull();
     expect(bands("T55", "ppBand")).toHaveLength(0);
+    expect(bands("T20", "pkBand")).toHaveLength(0);
     expect(firstTrackBands("T20", "ppBand")).toBe(teamPowerPlays(game, 20));
     expect(screen.queryByText("0.0%")).toBeNull();
   });
@@ -202,6 +173,70 @@ describe("decision 152 replay PP bands against the stored clock", () => {
     // Today's team-18 band is the 29 s parser band, drawn as today.
     const t18 = game.powerPlays.filter((pp) => pp.teamId === 18);
     expect(t18.reduce((n, pp) => n + pp.end - pp.start, 0)).toBe(29);
+    expectTeamBands(game, 18, game.powerPlays);
+    expectTeamBands(game, 19, game.powerPlays);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["missing", "available", 120, "No stored PP clock for this team-game yet."],
+    ["unavailable", "unavailable", null, "The stored PP clock for this team-game is not usable."],
+    ["mismatch", "available", 119, "timing mismatch."],
+    ["false zero", "not_applicable", 0, "timing mismatch."],
+  ])("%s stored clock: no affected PP or PK bands, other team's intervals remain", async (caseName, availability, seconds, reason) => {
+    const game = storedFixtureGame(2026020131);
+    const clocks = [clockRow(game.id, 19, "available", 578)];
+    if (caseName !== "missing") clocks.push(clockRow(game.id, 18, availability as string, seconds as number | null));
+    serve({ servingEnabled: true, clocks });
+    renderReplay(game);
+    expect(await screen.findByLabelText(`T18: PP timeline unavailable: ${reason}`)).toBeTruthy();
+    expectTeamBands(game, 18, []);
+    expectTeamBands(game, 19, game.qualifiedPowerPlays!);
+  });
+
+  it.each([2026020131, 2026020038])("%s: missing local intervals fail closed, including a stored qualified zero", async (gameId) => {
+    const game = { ...storedFixtureGame(gameId), qualifiedPowerPlays: null };
+    const clocks = gameId === 2026020131
+      ? [clockRow(gameId, 18, "available", 120), clockRow(gameId, 19, "available", 578)]
+      : [clockRow(gameId, 55, "not_applicable", 0), clockRow(gameId, 20, "available", 172)];
+    serve({ servingEnabled: true, clocks });
+    renderReplay(game);
+    expect(await screen.findByLabelText(`${game.home.abbrev}: PP timeline unavailable: no qualified local intervals.`)).toBeTruthy();
+    expectTeamBands(game, game.home.id, []);
+    expectTeamBands(game, game.away.id, []);
+  });
+
+  it("withholds all PP and PK bands while the stored clock is loading or cannot be loaded", async () => {
+    const game = storedFixtureGame(2026020131);
+    let reject: (error: Error) => void = () => {};
+    vi.stubGlobal("fetch", vi.fn(() => new Promise((_resolve, fail) => { reject = fail; })));
+    renderReplay(game);
+    expectTeamBands(game, 18, []);
+    expectTeamBands(game, 19, []);
+    await act(async () => reject(new Error("Clock unavailable")));
+    expect(await screen.findByLabelText("T18: PP timeline unavailable: the stored PP clock couldn't be loaded.")).toBeTruthy();
+    expectTeamBands(game, 18, []);
+    expectTeamBands(game, 19, []);
+  });
+
+  it("renders event-derived OT intervals on the same absolute clock for PP and PK", async () => {
+    // The existing replay-model OT rule fixture: derive intervals from penalty/goal events, not a stored total.
+    const f = gameFixture();
+    f.box.periodDescriptor = { number: 4, periodType: "OT" };
+    f.box.clock.secondsRemaining = 200;
+    f.shifts.data.push({ ...f.shifts.data[0], period: 4, startTime: "00:00", endTime: "01:40" });
+    f.pbp.plays.push(
+      { eventId: 4, typeDescKey: "penalty", timeInPeriod: "00:10", periodDescriptor: { number: 4, periodType: "OT" },
+        details: { eventOwnerTeamId: 21, committedByPlayerId: 201, duration: 2, typeCode: "MIN" } },
+      { eventId: 5, typeDescKey: "goal", timeInPeriod: "01:40", periodDescriptor: { number: 4, periodType: "OT" },
+        details: { eventOwnerTeamId: 68, scoringPlayerId: 101 } },
+    );
+    const game = model.normalizeGame(f.box, f.shifts, f.pbp);
+    expect(game.qualifiedPowerPlays).toEqual([{ teamId: 68, start: 3610, end: 3700 }]);
+    expect(game.axisDuration).toBe(3900);
+    serve({ servingEnabled: true, clocks: [clockRow(game.id, 68, "available", 90), clockRow(game.id, 21, "not_applicable", 0)] });
+    renderReplay(game);
+    await vi.waitFor(() => expectTeamBands(game, 68, game.qualifiedPowerPlays!));
+    expect(screen.queryByText(/PP timeline unavailable/)).toBeNull();
   });
 });

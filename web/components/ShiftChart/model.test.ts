@@ -150,6 +150,8 @@ describe("Game Grid replay model", () => {
     expect(game.players[0].shifts.at(-1)).toEqual({ start: 3600, end: 3700 });
     expect(game.events.at(-1)?.time).toBe(3700);
     expect(game.powerPlays).toEqual([{ teamId: 68, start: 3610, end: 3700 }]);
+    expect(game.qualifiedPowerPlays).toEqual([{ teamId: 68, start: 3610, end: 3700 }]);
+    expect(matrixData(game, "pp-toi", true).toi[68].find((p) => p.p1.id === 101 && p.p2.id === 101)?.toi).toBe(90);
   });
   it("calculates full-game pairwise TOI from merged shift intersections", () => {
     const game = fixtureGame();

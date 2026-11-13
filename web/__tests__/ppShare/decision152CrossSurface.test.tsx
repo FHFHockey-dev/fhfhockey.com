@@ -187,9 +187,10 @@ describe("decision 152 cross-surface serving review (real stored rows)", () => {
     const unit = (n: number) => Object.values(s.stored).filter((r) => r.unit === n).map((r) => r.playerId).sort();
     expect(unit(1)).toEqual([8474564, 8474600, 8475158, 8476539, 8476887]);
     expect(unit(2)).toEqual([8476869, 8477021, 8479525, 8480246, 8484241]);
-    // Today's replay bands (unchanged with serving off) come from plays without situation codes: 29 s for team 18,
-    // the 11-01 clock's value. The served view uses the qualified intervals above.
+    // Flag-off replay bands retain the legacy 29 s interpretation. Served matrix and timeline both use the full
+    // interval: the 08:40 penalty-shot goal does not release the minor assessed at 08:11.
     expect(mergeIntervals(s.game.powerPlays.filter((p) => p.teamId === 18)).reduce((n, i) => n + i.end - i.start, 0)).toBe(29);
+    expect(s.game.qualifiedPowerPlays?.filter((p) => p.teamId === 18)).toEqual([{ teamId: 18, start: 491, end: 611 }]);
 
     // Rendered: the matrix and the shift chart show team 18's grid; Lines shows its stored units.
     render(<LinemateMatrixView gameInfo={[{ id: 18, name: "Team 18" }]} rosters={s.linemate.rosters as any}
