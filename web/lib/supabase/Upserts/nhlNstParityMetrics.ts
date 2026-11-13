@@ -1289,7 +1289,11 @@ export function buildNstParityMetrics(
   for (let index = 0; index < sortedEvents.length; index += 1) {
     const event = sortedEvents[index];
     const inclusion = evaluateNormalizedEventInclusion(event);
-    if (!inclusion.includeInParity) {
+    // Decision 149: a penalty-shot attempt counts in "all" only. It has no
+    // shot feature, so on-ice and xG stay out (a one-on-one: the shift stints
+    // don't put anyone else on the ice), and its goalie line is added below.
+    const allSituationsOnly = inclusion.includeInAllSituationsOnly;
+    if (!inclusion.includeInParity && !allSituationsOnly) {
       continue;
     }
 
@@ -1326,12 +1330,14 @@ export function buildNstParityMetrics(
         return;
       }
 
-      const splits = getSplitKeysForTeamSituation({
-        teamId,
-        homeTeamId: options.homeTeamId,
-        awayTeamId: options.awayTeamId,
-        situation: parsedSituation,
-      });
+      const splits = allSituationsOnly
+        ? []
+        : getSplitKeysForTeamSituation({
+            teamId,
+            homeTeamId: options.homeTeamId,
+            awayTeamId: options.awayTeamId,
+            situation: parsedSituation,
+          });
       increment(getOrCreate(skaterCountsAcc.all, playerId, defaultSkaterAccumulator));
       for (const split of splits) {
         increment(getOrCreate(skaterCountsAcc[split], playerId, defaultSkaterAccumulator));
@@ -1469,6 +1475,33 @@ export function buildNstParityMetrics(
       addSkaterStat(event.losing_player_id, (acc) => {
         acc.faceoffs_lost += 1;
       });
+    }
+
+    if (
+      allSituationsOnly &&
+      event.goalie_in_net_id != null &&
+      SHOT_ON_GOAL_TYPES.has(event.type_desc_key ?? "") &&
+      !isOwnGoal
+    ) {
+      const goalieTeamId =
+        event.event_owner_team_id === options.homeTeamId
+          ? options.awayTeamId
+          : options.homeTeamId;
+      if (
+        matchesEventScoreState({
+          scoreState,
+          teamId: goalieTeamId,
+          homeTeamId: options.homeTeamId,
+          awayTeamId: options.awayTeamId,
+          event,
+          runningScoreByEvent,
+        })
+      ) {
+        const acc = getOrCreate(goalieAcc.all, event.goalie_in_net_id, defaultGoalieAccumulator);
+        acc.shots_against += 1;
+        if (event.type_desc_key === "goal") acc.goals_against += 1;
+        else acc.saves += 1;
+      }
     }
 
     if (shot) {

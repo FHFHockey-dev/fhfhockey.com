@@ -65,8 +65,8 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     ).toEqual(activeMigrationNames);
 
     expect(migrationAuthority.schemaVersion).toBe(1);
-    expect(migrationAuthorityRows).toHaveLength(146);
-    expect(new Set(activeMigrationNames)).toHaveLength(146);
+    expect(migrationAuthorityRows).toHaveLength(148);
+    expect(new Set(activeMigrationNames)).toHaveLength(148);
     expect(
       migrationAuthorityRows.map((row) => row.order),
     ).toEqual(migrationAuthorityRows.map((_row, index) => index + 1));
@@ -75,7 +75,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       migrationAuthorityRows.filter(
         (row) => row.deploymentState === "applied",
       ),
-    ).toHaveLength(112);
+    ).toHaveLength(113);
     expect(
       migrationAuthorityRows.filter(
         (row) => row.deploymentState === "unknown",
@@ -85,7 +85,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       migrationAuthorityRows.filter(
         (row) => row.deploymentState === "pending",
       ),
-    ).toHaveLength(6);
+    ).toHaveLength(7);
 
     for (const row of migrationAuthorityRows) {
       expect(row.path).toBe(

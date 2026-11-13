@@ -16,11 +16,9 @@ import {
   SHIFT_CHART_STRENGTH_SELECT,
   type ShiftChartStrengthRow,
 } from "../shiftChartCompleteness";
-import {
-  isShootoutPlay,
-  parseSituationDigits,
-  strengthForTeam,
-} from "./situation";
+import { classifyEventStrengthBucket } from "lib/supabase/Upserts/nhlStrengthState";
+import { PENALTY_SHOT_SPLIT_VERSION } from "./penaltyShotSplit";
+import { isShootoutPlay, parseSituationDigits } from "./situation";
 
 export type ProjectionDerivedGame = {
   id: number;
@@ -62,6 +60,10 @@ export type ProjectionPlayerStrengthRow = {
   assists_es: number;
   assists_pp: number;
   assists_pk: number;
+  /** Penalty-shot shots and goals: all-situations only (decision 149). */
+  shots_ps: number;
+  goals_ps: number;
+  penalty_shot_split_version: typeof PENALTY_SHOT_SPLIT_VERSION;
   hits: null;
   blocks: null;
   pim: null;
@@ -82,6 +84,9 @@ export type ProjectionTeamStrengthRow = {
   goals_es: number;
   goals_pp: number;
   goals_pk: number;
+  shots_ps: number;
+  goals_ps: number;
+  penalty_shot_split_version: typeof PENALTY_SHOT_SPLIT_VERSION;
 };
 
 type TeamStrengthAccumulator = ProjectionTeamStrengthRow;
@@ -90,6 +95,8 @@ type SplitCounts = {
   es: number;
   pp: number;
   pk: number;
+  /** Penalty shots outside the shootout: in no strength bucket. */
+  ps: number;
 };
 
 function assertSupabase() {
@@ -105,10 +112,10 @@ function isGoal(typeDescKey: string | null): boolean {
 }
 
 function emptySplit(): SplitCounts {
-  return { es: 0, pp: 0, pk: 0 };
+  return { es: 0, pp: 0, pk: 0, ps: 0 };
 }
 
-function addToSplit(split: SplitCounts, strength: "es" | "pp" | "pk", n = 1) {
+function addToSplit(split: SplitCounts, strength: keyof SplitCounts, n = 1) {
   split[strength] += n;
 }
 
@@ -278,12 +285,16 @@ export async function preparePlayerGameStrengthV2(args: {
     if (digits == null) {
       throw new Error(`Countable PBP event is incomplete for game ${game.id}`);
     }
-    const strength = strengthForTeam(
-      digits,
-      teamId,
-      game.homeTeamId,
-      game.awayTeamId,
-    );
+    if (teamId !== game.homeTeamId && teamId !== game.awayTeamId) {
+      throw new Error("Situation team is not part of the scheduled game");
+    }
+    // The shared canonical adapter (decision 149): a penalty-shot code
+    // (1010 / 0101) belongs to no strength bucket, so it goes to PS.
+    const strength =
+      classifyEventStrengthBucket(
+        digits,
+        teamId === game.homeTeamId ? "home" : "away",
+      ) ?? "ps";
     const goalPlay = isGoal(play.typedesckey);
     const shotPlayerId =
       play.shootingplayerid ?? (goalPlay ? play.scoringplayerid : null);
@@ -293,6 +304,16 @@ export async function preparePlayerGameStrengthV2(args: {
       shotSplitsByPlayer.set(shotPlayerId, split);
     }
     if (!goalPlay || play.scoringplayerid == null) continue;
+    if (
+      strength === "ps" &&
+      (play.assist1playerid != null || play.assist2playerid != null)
+    ) {
+      // The NHL awards no assist on a penalty-shot goal; there is no PS
+      // assists column, so an assisted one is contradictory evidence.
+      throw new Error(
+        `Penalty-shot goal carries an assist for game ${game.id}`,
+      );
+    }
 
     const goalSplit =
       goalSplitsByPlayer.get(play.scoringplayerid) ?? emptySplit();
@@ -331,6 +352,9 @@ export async function preparePlayerGameStrengthV2(args: {
         assists_es: assists.es,
         assists_pp: assists.pp,
         assists_pk: assists.pk,
+        shots_ps: shots.ps,
+        goals_ps: goals.ps,
+        penalty_shot_split_version: PENALTY_SHOT_SPLIT_VERSION,
         hits: null,
         blocks: null,
         pim: null,
@@ -386,7 +410,15 @@ export function prepareTeamGameStrengthV2(args: {
       goals_es: 0,
       goals_pp: 0,
       goals_pk: 0,
+      shots_ps: 0,
+      goals_ps: 0,
+      penalty_shot_split_version: PENALTY_SHOT_SPLIT_VERSION,
     };
+    if (row.penalty_shot_split_version !== PENALTY_SHOT_SPLIT_VERSION) {
+      throw new Error(
+        `Player-strength row is not penalty-shot split for game ${game.id}`,
+      );
+    }
     if (current.opponent_team_id !== row.opponent_team_id) {
       throw new Error(
         `Contradictory player-strength opponent for game ${game.id}`,
@@ -410,6 +442,8 @@ export function prepareTeamGameStrengthV2(args: {
     current.goals_es += requireNonNegativeFinite(row.goals_es, "ES goals");
     current.goals_pp += requireNonNegativeFinite(row.goals_pp, "PP goals");
     current.goals_pk += requireNonNegativeFinite(row.goals_pk, "PK goals");
+    current.shots_ps += requireNonNegativeFinite(row.shots_ps, "PS shots");
+    current.goals_ps += requireNonNegativeFinite(row.goals_ps, "PS goals");
     aggByTeam.set(row.team_id, current);
   }
 

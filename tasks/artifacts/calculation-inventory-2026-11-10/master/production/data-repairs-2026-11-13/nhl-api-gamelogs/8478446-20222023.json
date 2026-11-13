@@ -1,0 +1,39 @@
+{
+  "playerId": "8478446",
+  "seasonId": "20222023",
+  "gameLog": [
+    {
+      "gameDate": "2022-11-12",
+      "gameId": 2022020234,
+      "teamAbbrev": "ANA",
+      "opponentAbbrev": "CHI",
+      "homeRoadFlag": "H",
+      "toi": "8:35",
+      "goals": 0,
+      "assists": 0,
+      "shots": 1
+    },
+    {
+      "gameDate": "2022-11-09",
+      "gameId": 2022020210,
+      "teamAbbrev": "ANA",
+      "opponentAbbrev": "MIN",
+      "homeRoadFlag": "H",
+      "toi": "11:34",
+      "goals": 0,
+      "assists": 0,
+      "shots": 1
+    },
+    {
+      "gameDate": "2022-11-06",
+      "gameId": 2022020192,
+      "teamAbbrev": "ANA",
+      "opponentAbbrev": "FLA",
+      "homeRoadFlag": "H",
+      "toi": "8:38",
+      "goals": 0,
+      "assists": 0,
+      "shots": 1
+    }
+  ]
+}

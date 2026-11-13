@@ -887,6 +887,23 @@ export function resolveMappedPlayerName(fullName: string): string {
   return playerNameMapping[fullName]?.fullName ?? fullName;
 }
 
+/**
+ * Canonical candidates for an NST name: the name itself plus its explicit
+ * alias target, deduped by player id. The roster sync can rename a players row
+ * to either spelling (Josh/Joshua Mahura, Joe/Joseph Veleno), so an alias must
+ * never hide the NST name when the players table holds that spelling.
+ */
+export function getNstIdentityCandidates(
+  cache: Map<string, PlayerCacheRow[]>,
+  nstName: string
+): PlayerCacheRow[] | undefined {
+  const byId = new Map<number, PlayerCacheRow>();
+  for (const name of new Set([resolveMappedPlayerName(nstName), nstName])) {
+    for (const row of getPlayerCacheCandidates(cache, name) ?? []) byId.set(row.id, row);
+  }
+  return byId.size > 0 ? [...byId.values()] : undefined;
+}
+
 async function loadPlayerIdCache(): Promise<Map<string, PlayerCacheRow[]>> {
   if (playerIdCache) return playerIdCache;
 
@@ -999,7 +1016,7 @@ async function getPlayerIdByName(
 ): Promise<number | null> {
   const searchName = resolveMappedPlayerName(fullName);
 
-  const memoKey = `${searchName}|${String(position ?? "").toUpperCase()}|${providerPlayerId ?? (providerPlayerId === null ? "invalid" : "absent")}`;
+  const memoKey = `${fullName}|${String(position ?? "").toUpperCase()}|${providerPlayerId ?? (providerPlayerId === null ? "invalid" : "absent")}`;
   if (playerIdMemo.has(memoKey)) return playerIdMemo.get(memoKey) ?? null;
 
   const requiresPositionCheck = ["Elias Pettersson", "Sebastian Aho"].includes(
@@ -1008,7 +1025,7 @@ async function getPlayerIdByName(
 
   try {
     const cache = await loadPlayerIdCache();
-    const candidates = getPlayerCacheCandidates(cache, searchName);
+    const candidates = getNstIdentityCandidates(cache, fullName);
     if (providerPlayerId !== undefined) {
       // NST playerreport IDs are NHL IDs (public.players' analytics key).
       // Require the canonical name/explicit alias too; never fall back from a

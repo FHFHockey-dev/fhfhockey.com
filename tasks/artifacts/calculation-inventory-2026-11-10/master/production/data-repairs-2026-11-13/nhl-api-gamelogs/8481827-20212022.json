@@ -1,0 +1,28 @@
+{
+  "playerId": "8481827",
+  "seasonId": "20212022",
+  "gameLog": [
+    {
+      "gameDate": "2021-11-06",
+      "gameId": 2021020172,
+      "teamAbbrev": "ARI",
+      "opponentAbbrev": "SEA",
+      "homeRoadFlag": "H",
+      "toi": "13:04",
+      "goals": 0,
+      "assists": 0,
+      "shots": 2
+    },
+    {
+      "gameDate": "2021-11-05",
+      "gameId": 2021020160,
+      "teamAbbrev": "ARI",
+      "opponentAbbrev": "ANA",
+      "homeRoadFlag": "R",
+      "toi": "15:01",
+      "goals": 0,
+      "assists": 0,
+      "shots": 0
+    }
+  ]
+}
