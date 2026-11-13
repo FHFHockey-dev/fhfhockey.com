@@ -59,17 +59,17 @@
 
     *Done 22:13–22:16Z: the flag was set by the Chef through the CLI with TJ's approval. Serving deploy `dpl_3dTQdAD3`. The clock API, `/api/toi` ×2, the shift chart label and the line-combo PP matrix all agree with the dry run (PRODUCTION-QUEUE).*
   - [x] 3.3 Record it in the queue, debrief and REPORT, and close decision 152.
-- [ ] 4.0 2026-11-14 scheduled readbacks (independent; read-only; each recorded separately; no manual reruns)
-  - [ ] 4.1 08:05Z cron 388: audit `success`; the last 3 dates' rows stamped `pp-shifts-qualified-clock-v1`, with clock rows. *(Pre-tested 22:32Z by TJ's forced run: 379 rows identical, audit success. Tomorrow's window 11-12..14 should replace 310/311's `unavailable` clock rows with real values.)*
-  - [ ] 4.2 10:05Z FORGE run: the first reserve rows.
-  - [ ] 4.3 The same FORGE run: which `goalie_start_projections` rows it consumed, against cron 364's 09:30Z write under #439 (`a448842d1`).
-  - [ ] 4.4 10:15Z cron 283: the first scheduled v4 power write.
-  - [ ] 4.5 #440: the first natural update-stats-job write after tonight's games, with nulls only where the source is unknown and readers showing them as unavailable. *(Write path pre-tested 22:34Z on 2026020309: rows identical, audit success.)*
+- [x] 4.0 2026-11-14 scheduled readbacks (independent; read-only; each recorded separately; no manual reruns). **Waived by TJ, 2026-11-13 ~22:40Z** ("assume success … no longer need to wait until tomorrow"). The scheduled runs still happen overnight, but **they are not observed or verified** by this list. 4.1 and 4.5 were pre-tested by forced runs at 22:32–22:34Z (both passed).
+  - [x] 4.1 08:05Z cron 388: audit `success`; the last 3 dates' rows stamped `pp-shifts-qualified-clock-v1`, with clock rows. *(Pre-tested 22:32Z by TJ's forced run: 379 rows identical, audit success. Tomorrow's window 11-12..14 should replace 310/311's `unavailable` clock rows with real values. The scheduled run itself was waived, not observed.)*
+  - [x] 4.2 *(waived, not observed)* 10:05Z FORGE run: the first reserve rows.
+  - [x] 4.3 *(waived, not observed)* The same FORGE run: which `goalie_start_projections` rows it consumed, against cron 364's 09:30Z write under #439 (`a448842d1`).
+  - [x] 4.4 *(waived, not observed)* 10:15Z cron 283: the first scheduled v4 power write.
+  - [x] 4.5 #440: the first natural update-stats-job write after tonight's games, with nulls only where the source is unknown and readers showing them as unavailable. *(Write path pre-tested 22:34Z on 2026020309: rows identical, audit success. The natural write was waived, not observed.)*
 - [ ] 5.0 Records and housekeeping (Chef)
   - [ ] 5.1 Push the local record commits only with the next release, never alone.
-  - [ ] 5.2 Update the debrief with #439–#441, migrations 147 and 149, the decision 152 refresh, and the results of 3.0 and 4.0.
+  - [x] 5.2 Update the debrief with #439–#441, migrations 147 and 149, the decision 152 refresh, and the results of 3.0 and 4.0. *(Done: the debrief status is rewritten for #439–#442, decision 152 served, the forced tests, and the 4.0 waiver.)*
   - [x] 5.3 Ask TJ whether to have Astra recheck #439–#441, migrations 147/149 and the refresh. If yes, write the prompt pinned to a commit. *(TJ: yes, ~22:20Z. Prompt `master/ASTRA-RECHECK-439-442-PROMPT.md`.)*
-  - [ ] 5.4 Retire the Chef diary once 3.0 and 4.0 are recorded; keep it while any check is pending.
+  - [x] 5.4 Retire the Chef diary once 3.0 and 4.0 are recorded; keep it while any check is pending. *(Kept on purpose under AGENTS.md: the Chef still gates and releases Astra's parser fix (8.0), so it stays as the handoff record.)*
 - [x] 6.0 NEW: flag-off client parity gap (found in F11 `05c43f981`)
   - [x] 6.1 *(Accepted: serving went on directly after #442, so no flag-off period exists. Reopen only if serving is ever turned off.)* With `PP_SHARE_SERVING_ENABLED` off, the client readers (PowerPlayCombos, LinemateMatrix, the shift chart) still make one cached request to `/api/v1/pp-share/team-game-clock` (a function invocation, ≤5 min cache). LinemateMatrix and the shift chart PP mode briefly show "Checking the stored power-play clock...". That isn't strictly today's behaviour. It matters only while serving is off: resolve it, or record it as accepted, before any future flag-off period. Serving is approved to follow the reader release directly.
 - [x] 7.0 NEW, now blocking 2.0 (TJ, ~21:50Z): the shift chart withholds PP shading that doesn't reconcile with the qualified clock
