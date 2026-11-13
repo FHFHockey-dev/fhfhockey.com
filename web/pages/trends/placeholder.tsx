@@ -17,6 +17,11 @@ import {
 } from "lib/trends/teamMetricConfig";
 import { type CtpiScore } from "lib/trends/ctpi";
 import {
+  formatSosAsOfDate,
+  SOS_HEADLINE,
+  sosHeadline
+} from "lib/trends/strengthOfSchedule";
+import {
   ResponsiveContainer,
   LineChart as ReLineChart,
   Line,
@@ -138,6 +143,7 @@ type SparkPoint = { date: string; value: number };
 /** descriptive-sos-v2 bucket from /api/v1/trends/team-sos. */
 type SosBucket = {
   winPct: number | null;
+  pointsPct: number | null;
   fixtures: number;
   pendingFixtures?: number;
 };
@@ -1506,6 +1512,8 @@ export default function TrendsIndexPage() {
   const [ctpiLoading, setCtpiLoading] = useState(true);
   const [ctpiError, setCtpiError] = useState<string | null>(null);
   const [sosRatings, setSosRatings] = useState<SosRating[] | null>(null);
+  const [sosAsOf, setSosAsOf] = useState<string | null>(null);
+  const sosAsOfLabel = formatSosAsOfDate(sosAsOf);
   const [sosLoading, setSosLoading] = useState(false);
   const [sosError, setSosError] = useState<string | null>(null);
   const [skaterPositionGroup, setSkaterPositionGroup] = useState<
@@ -1566,14 +1574,13 @@ export default function TrendsIndexPage() {
     const sosMap = sosRatings
       ? new Map(sosRatings.map((s) => [s.team, s]))
       : null;
-    // Mean over fixtures of opponents' win% (W / GP), as served; unknown stays null.
-    const sosPct = (bucket?: SosBucket) => bucket?.winPct ?? null;
+    // Decision 146: mean over fixtures of opponents' points %, as served; unknown stays null.
     const describe = (label: string, bucket?: SosBucket) => {
       if (!bucket) return "";
       const pending = bucket.pendingFixtures
         ? `; ${bucket.pendingFixtures} started or postponed, pending`
         : "";
-      return `${label} opponents' mean win% over ${bucket.fixtures} ${label === "Past" ? "final " : ""}games${pending}`;
+      return `${label} opponents' mean points % over ${bucket.fixtures} ${label === "Past" ? "final " : ""}games${pending}. Records as of ${sosAsOfLabel ?? "the latest snapshot"}, not as known before each game.`;
     };
     const mapped = base.map((row) => {
       const ctpi = ctpiMap.get(row.team);
@@ -1590,8 +1597,8 @@ export default function TrendsIndexPage() {
         topDriver: selectTopDriver(ctpi),
         ctpi,
         ctpiDelta,
-        sosPastPct: sosPct(sosMap?.get(row.team)?.past),
-        sosFuturePct: sosPct(sosMap?.get(row.team)?.future),
+        sosPastPct: sosHeadline(sosMap?.get(row.team)?.past),
+        sosFuturePct: sosHeadline(sosMap?.get(row.team)?.future),
         sosPastDetail: describe("Past", sosMap?.get(row.team)?.past),
         sosFutureDetail: describe("Future", sosMap?.get(row.team)?.future)
       };
@@ -1628,7 +1635,7 @@ export default function TrendsIndexPage() {
       if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
-  }, [ctpiScores, sosRatings, sortConfig, teamTrends]);
+  }, [ctpiScores, sosAsOfLabel, sosRatings, sortConfig, teamTrends]);
   const hotTeams = useMemo(
     () =>
       powerBoard
@@ -1863,9 +1870,13 @@ export default function TrendsIndexPage() {
             `SOS API failed with status ${response.status}: ${response.statusText}`
           );
         }
-        const payload = (await response.json()) as { teams: SosRating[] };
+        const payload = (await response.json()) as {
+          teams: SosRating[];
+          dateUsed?: string | null;
+        };
         if (mounted) {
           setSosRatings(payload.teams ?? []);
+          setSosAsOf(payload.dateUsed ?? null);
           setSosError(null);
         }
       } catch (err: any) {
@@ -2057,6 +2068,10 @@ export default function TrendsIndexPage() {
                   : "Nightly update"}
               </span>
               <span>Momentum = last 5GP delta</span>
+              <span title={SOS_HEADLINE.asOfNote}>
+                SOS = {SOS_HEADLINE.shortLabel}
+                {sosAsOfLabel ? `, as of ${sosAsOfLabel}` : ""}
+              </span>
             </div>
           </div>
           {teamTrendsLoading || ctpiLoading ? (
@@ -2146,7 +2161,7 @@ export default function TrendsIndexPage() {
                     type="button"
                     className={styles.sortButton}
                     onClick={() => handleSort("sosPastPct")}
-                    title="Opponents' win% so far"
+                    title={`Opponents' points % so far (completed games). ${SOS_HEADLINE.asOfNote}`}
                   >
                     Past SOS{" "}
                     {sortConfig.key === "sosPastPct" &&
@@ -2156,7 +2171,7 @@ export default function TrendsIndexPage() {
                     type="button"
                     className={styles.sortButton}
                     onClick={() => handleSort("sosFuturePct")}
-                    title="Opponents' win% upcoming"
+                    title={`Upcoming opponents' points % to date (completed games). ${SOS_HEADLINE.asOfNote}`}
                   >
                     Future SOS{" "}
                     {sortConfig.key === "sosFuturePct" &&
@@ -2288,7 +2303,7 @@ export default function TrendsIndexPage() {
                           <span
                             title={
                               row.sosPastDetail ||
-                              "Past strength of schedule (opponents' win %)"
+                              "Past strength of schedule (opponents' points %)"
                             }
                             className={`${styles.valuePill} ${ratingToneClass(row.sosPastPct)}`}
                           >
@@ -2299,7 +2314,7 @@ export default function TrendsIndexPage() {
                           <span
                             title={
                               row.sosFutureDetail ||
-                              "Future strength of schedule (opponents' win %)"
+                              "Future strength of schedule (opponents' points %)"
                             }
                             className={`${styles.valuePill} ${ratingToneClass(row.sosFuturePct)}`}
                           >

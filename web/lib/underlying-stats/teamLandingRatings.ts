@@ -53,6 +53,8 @@ export type UnderlyingStatsLandingRating = TeamRating & {
   sosFutureRank: number | null;
   sosPast: number | null;
   sosPastRank: number | null;
+  /** snapshot_date of the descriptive-sos-v2 row behind sos (decision 146 "as of"). */
+  sosSnapshotDate?: string | null;
   trendSeries: TeamLandingSparkPoint[];
 };
 
@@ -303,6 +305,7 @@ export const mergeUnderlyingStatsLandingRatings = ({
       sosFutureRank: scheduleStrength?.future?.rank ?? null,
       sosPast: scheduleStrength?.past?.sos ?? null,
       sosPastRank: scheduleStrength?.past?.rank ?? null,
+      sosSnapshotDate: scheduleStrength?.snapshotDate ?? null,
       trend10: trendOverrides.get(rating.teamAbbr) ?? rating.trend10,
       trendSeries: formContext?.trendSeries ?? [],
       varianceFlag: formContext?.varianceFlag ?? rating.varianceFlag
