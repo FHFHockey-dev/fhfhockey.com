@@ -4,6 +4,7 @@ import { NUM_PLAYERS_PER_LINE } from "components/LinemateMatrix";
 import { addHours } from "date-fns";
 import { getCurrentSeason } from "lib/NHL/server";
 import supabase from "lib/supabase";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import type { GoalieStats, SkaterStats } from "pages/lines/[abbreviation]";
 import { parseTime } from "utils/getPowerPlayBlocks";
 import {
@@ -99,49 +100,84 @@ const FIVE_ON_FIVE_COLUMNS =
   "game_id, team_id, snapshot_date, unit_type, player_ids, player_count, unit_toi_seconds, coverage_status";
 const FIVE_ON_FIVE_UNIT_TYPES = ["forward_line", "defense_pair"];
 
+const teamGameKey = (teamId: number, gameId: number) => `${teamId}:${gameId}`;
+
 /**
- * The team's 5v5 unit rows for the given games, each game at its latest
+ * Each team's 5v5 unit rows for its given games, each team-game at its latest
  * snapshot only. Both reads filter `season_id`, so the
- * (season_id, game_id, team_id, unit_type) index serves them. The first read
- * takes one row per unit type and snapshot (`unit_number` 1) to find each
- * game's latest snapshot; the second reads only those snapshots. Returns no
- * rows when any game has none: the board switches only when every game has
- * 5v5 rows.
+ * (season_id, game_id, team_id, unit_type) index serves them, and page by `id`
+ * past the 1,000-row cap. The first read takes one row per unit type and
+ * snapshot (`unit_number` 1) to find each team-game's latest snapshot; the
+ * second reads only those snapshots. A team gets no rows when any of its games
+ * has none: its board switches only when every game has 5v5 rows.
  */
 async function fetchLatestFiveOnFiveUnits(
-  teamId: number,
   seasonId: number,
-  gameIds: number[]
-): Promise<TeamUnitToiReaderRow[]> {
-  const { data: heads } = await supabase
-    .from("team_unit_toi")
-    .select("game_id, snapshot_date")
-    .eq("season_id", seasonId)
-    .eq("team_id", teamId)
-    .in("game_id", gameIds)
-    .in("unit_type", FIVE_ON_FIVE_UNIT_TYPES)
-    .eq("unit_number", 1)
-    .returns<Array<{ game_id: number; snapshot_date: string }>>()
-    .throwOnError();
-  const latest = new Map<number, string>();
-  for (const head of heads ?? []) {
-    const known = latest.get(head.game_id);
-    if (!known || head.snapshot_date > known) latest.set(head.game_id, head.snapshot_date);
-  }
-  if (gameIds.some((gameId) => !latest.has(gameId))) return [];
+  gamesByTeam: ReadonlyMap<number, readonly number[]>
+): Promise<Map<number, TeamUnitToiReaderRow[]>> {
+  const unitsByTeam = new Map<number, TeamUnitToiReaderRow[]>();
+  const teamIds = [...gamesByTeam.keys()];
+  if (teamIds.length === 0) return unitsByTeam;
+  const isRequested = (teamId: number, gameId: number) =>
+    gamesByTeam.get(teamId)?.includes(gameId) ?? false;
 
-  const { data: rows } = await supabase
-    .from("team_unit_toi")
-    .select(FIVE_ON_FIVE_COLUMNS)
-    .eq("season_id", seasonId)
-    .eq("team_id", teamId)
-    .in("game_id", gameIds)
-    .in("unit_type", FIVE_ON_FIVE_UNIT_TYPES)
-    .in("snapshot_date", [...new Set(latest.values())])
-    .returns<TeamUnitToiReaderRow[]>()
-    .throwOnError();
-  // One game's older snapshot can share a date with the other game's latest.
-  return (rows ?? []).filter((row) => latest.get(row.game_id) === row.snapshot_date);
+  const heads = await fetchAllSupabasePages<{ team_id: number; game_id: number; snapshot_date: string }>(
+    (range) =>
+      supabase
+        .from("team_unit_toi")
+        .select("team_id, game_id, snapshot_date")
+        .eq("season_id", seasonId)
+        .in("team_id", teamIds)
+        .in("game_id", [...new Set([...gamesByTeam.values()].flat())])
+        .in("unit_type", FIVE_ON_FIVE_UNIT_TYPES)
+        .eq("unit_number", 1)
+        .order("id")
+        .range(range.from, range.to)
+        .returns<Array<{ team_id: number; game_id: number; snapshot_date: string }>>()
+  );
+  const latest = new Map<string, string>();
+  for (const head of heads) {
+    if (!isRequested(head.team_id, head.game_id)) continue;
+    const key = teamGameKey(head.team_id, head.game_id);
+    const known = latest.get(key);
+    if (!known || head.snapshot_date > known) latest.set(key, head.snapshot_date);
+  }
+  const ready = teamIds.filter((teamId) =>
+    gamesByTeam.get(teamId)!.every((gameId) => latest.has(teamGameKey(teamId, gameId)))
+  );
+  if (ready.length === 0) return unitsByTeam;
+
+  const readyGameIds = [...new Set(ready.flatMap((teamId) => gamesByTeam.get(teamId)!))];
+  const latestDates = [
+    ...new Set(
+      ready.flatMap((teamId) =>
+        gamesByTeam.get(teamId)!.map((gameId) => latest.get(teamGameKey(teamId, gameId))!)
+      )
+    )
+  ];
+  const rows = await fetchAllSupabasePages<TeamUnitToiReaderRow>((range) =>
+    supabase
+      .from("team_unit_toi")
+      .select(FIVE_ON_FIVE_COLUMNS)
+      .eq("season_id", seasonId)
+      .in("team_id", ready)
+      .in("game_id", readyGameIds)
+      .in("unit_type", FIVE_ON_FIVE_UNIT_TYPES)
+      .in("snapshot_date", latestDates)
+      .order("id")
+      .range(range.from, range.to)
+      .returns<TeamUnitToiReaderRow[]>()
+  );
+  // A team-game's older snapshot can share a date with another's latest, and
+  // a team can appear in another team's game: keep only requested latest rows.
+  for (const row of rows) {
+    if (!ready.includes(row.team_id)) continue;
+    if (latest.get(teamGameKey(row.team_id, row.game_id)) !== row.snapshot_date) continue;
+    const teamRows = unitsByTeam.get(row.team_id) ?? [];
+    teamRows.push(row);
+    unitsByTeam.set(row.team_id, teamRows);
+  }
+  return unitsByTeam;
 }
 
 /**
@@ -169,6 +205,144 @@ function fiveOnFiveLineCombo<T extends { gameId: number; forwards: number[]; def
   };
 }
 
+/**
+ * Decision 107/137 switch: observed 5v5 units. Both games must have complete
+ * 5v5 rows, so promotions and demotions never compare a 5v5 board with an
+ * all-strength one; otherwise the labelled legacy grouping stays. `unitRows`
+ * is null when the switch is off.
+ */
+function chooseBoard<T extends ParsedLineCombination>(
+  current: T,
+  previous: T,
+  unitRows: readonly TeamUnitToiReaderRow[] | null
+) {
+  const fiveOnFiveCurrent = unitRows && fiveOnFiveLineCombo(current, unitRows);
+  const fiveOnFivePrevious = unitRows && fiveOnFiveLineCombo(previous, unitRows);
+  if (fiveOnFiveCurrent && fiveOnFivePrevious) {
+    return {
+      current: fiveOnFiveCurrent.game,
+      previous: fiveOnFivePrevious.game,
+      lineSource: "five_on_five_observed" as LineSource,
+      fiveOnFiveUnitSeconds: fiveOnFiveCurrent.unitSeconds as FiveOnFiveUnitSeconds | null
+    };
+  }
+  return {
+    current,
+    previous,
+    lineSource: "all_strength_legacy" as LineSource,
+    fiveOnFiveUnitSeconds: null as FiveOnFiveUnitSeconds | null
+  };
+}
+
+const LINE_COMBINATION_COLUMNS =
+  "gameId, teamId, forwards, defensemen, goalies, game:games!inner(startTime, seasonId)";
+
+type ParsedLineCombination = {
+  gameId: number;
+  teamId: number;
+  startTime: string;
+  seasonId: number;
+  forwards: number[];
+  defensemen: number[];
+  goalies: number[];
+};
+
+function parsePlayerIds(ids: unknown, label: string): number[] {
+  if (!Array.isArray(ids)) return [];
+  return ids.flatMap((id: string) => {
+    const parsedId = parseInt(id, 10);
+    if (isNaN(parsedId)) {
+      console.error(`Invalid ${label} ID: ${id}`);
+      return [];
+    }
+    return [parsedId];
+  });
+}
+
+/** A stored `lineCombinations` row with its id strings parsed to numbers. */
+function parseLineCombination(combo: any): ParsedLineCombination {
+  return {
+    gameId: combo.gameId,
+    teamId: combo.teamId,
+    startTime: combo.game?.startTime,
+    seasonId: combo.game?.seasonId,
+    forwards: parsePlayerIds(combo.forwards, "forward"),
+    defensemen: parsePlayerIds(combo.defensemen, "defenseman"),
+    goalies: parsePlayerIds(combo.goalies, "goalie")
+  };
+}
+
+export type LineChangeSummary = Pick<
+  LineCombinations,
+  "lineSource" | "fiveOnFiveUnitSeconds" | "promotions" | "demotions"
+>;
+
+/** Rows per page of the landing read: about two weeks of games league-wide. */
+const LANDING_PAGE_ROWS = 200;
+
+/**
+ * The /lines landing page's movement data for many teams at once: each team's
+ * line source, promotions and demotions, exactly as getLineCombinations
+ * computes them (same two latest games, same latest 5v5 snapshot, same 5v5 or
+ * legacy choice), from a few season-scoped reads instead of nine per team.
+ * Reads: the season (when not given), `lineCombinations` paged newest first
+ * until every team has two games (normally one page), then the two
+ * `team_unit_toi` reads. A team with fewer than two games with lines this
+ * season is left out, as the per-team path throws for it.
+ */
+export async function getLatestLineChanges(
+  teamIds: number[],
+  seasonId?: number,
+  options: { fiveOnFive?: boolean } = {}
+): Promise<Map<number, LineChangeSummary>> {
+  const summaries = new Map<number, LineChangeSummary>();
+  if (teamIds.length === 0) return summaries;
+  const seasonToUse = seasonId ?? (await getCurrentSeason()).seasonId;
+
+  const latestGames = new Map<number, ParsedLineCombination[]>();
+  for (let from = 0; ; from += LANDING_PAGE_ROWS) {
+    const { data } = await supabase
+      .from("lineCombinations")
+      .select(LINE_COMBINATION_COLUMNS)
+      .in("teamId", teamIds)
+      .eq("game.seasonId", seasonToUse)
+      .order("game(startTime)", { ascending: false })
+      .order("gameId", { ascending: false })
+      .order("teamId", { ascending: true })
+      .range(from, from + LANDING_PAGE_ROWS - 1)
+      .returns<any[]>()
+      .throwOnError();
+    for (const combo of data ?? []) {
+      const games = latestGames.get(combo.teamId) ?? [];
+      if (games.length < 2) games.push(parseLineCombination(combo));
+      latestGames.set(combo.teamId, games);
+    }
+    const complete = teamIds.every((teamId) => (latestGames.get(teamId)?.length ?? 0) >= 2);
+    if (complete || (data?.length ?? 0) < LANDING_PAGE_ROWS) break;
+  }
+
+  const gamesByTeam = new Map<number, number[]>();
+  for (const teamId of teamIds) {
+    const games = latestGames.get(teamId);
+    if (games && games.length >= 2) gamesByTeam.set(teamId, games.map((game) => game.gameId));
+  }
+  const unitsByTeam =
+    options.fiveOnFive ?? LINES_FIVE_ON_FIVE_ENABLED
+      ? await fetchLatestFiveOnFiveUnits(seasonToUse, gamesByTeam)
+      : null;
+
+  for (const teamId of gamesByTeam.keys()) {
+    const [current, previous] = latestGames.get(teamId)!;
+    const board = chooseBoard(current, previous, unitsByTeam && (unitsByTeam.get(teamId) ?? []));
+    summaries.set(teamId, {
+      lineSource: board.lineSource,
+      fiveOnFiveUnitSeconds: board.fiveOnFiveUnitSeconds,
+      ...getLineChanges([board.current, board.previous])
+    });
+  }
+  return summaries;
+}
+
 export async function getLineCombinations(
   teamId: number,
   seasonId?: number,
@@ -179,9 +353,7 @@ export async function getLineCombinations(
 
     const { data: rawLineCombinations } = await supabase
       .from("lineCombinations")
-      .select(
-        "gameId, teamId, forwards, defensemen, goalies, game:games!inner(startTime, seasonId)"
-      )
+      .select(LINE_COMBINATION_COLUMNS)
       .eq("teamId", teamId)
       .eq("game.seasonId", seasonToUse)
       .order("game(startTime)", { ascending: false })
@@ -197,48 +369,8 @@ export async function getLineCombinations(
     }
 
     // Parse the forwards, defensemen, and goalies fields from strings to number arrays
-    const lineCombinations = rawLineCombinations.map((combo: any) => ({
-      gameId: combo.gameId,
-      teamId: combo.teamId,
-      startTime: combo.game?.startTime,
-      seasonId: combo.game?.seasonId,
-      forwards: Array.isArray(combo.forwards)
-        ? combo.forwards
-            .map((id: string) => {
-              const parsedId = parseInt(id, 10);
-              if (isNaN(parsedId)) {
-                console.error(`Invalid forward ID: ${id}`);
-                return null;
-              }
-              return parsedId;
-            })
-            .filter((id: number | null) => id !== null)
-        : [],
-      defensemen: Array.isArray(combo.defensemen)
-        ? combo.defensemen
-            .map((id: string) => {
-              const parsedId = parseInt(id, 10);
-              if (isNaN(parsedId)) {
-                console.error(`Invalid defenseman ID: ${id}`);
-                return null;
-              }
-              return parsedId;
-            })
-            .filter((id: number | null) => id !== null)
-        : [],
-      goalies: Array.isArray(combo.goalies)
-        ? combo.goalies
-            .map((id: string) => {
-              const parsedId = parseInt(id, 10);
-              if (isNaN(parsedId)) {
-                console.error(`Invalid goalie ID: ${id}`);
-                return null;
-              }
-              return parsedId;
-            })
-            .filter((id: number | null) => id !== null)
-        : [],
-    }));
+    const lineCombinations: ParsedLineCombination[] =
+      rawLineCombinations.map(parseLineCombination);
 
     debugLineCombinationsLog("Parsed Line Combinations:", lineCombinations);
 
@@ -268,25 +400,21 @@ export async function getLineCombinations(
       Array.from(playerId_Info.entries())
     );
 
-    // Decision 107/137 switch: observed 5v5 units. Both games must have
-    // complete 5v5 rows, so promotions and demotions never compare a 5v5 board
-    // with an all-strength one; otherwise the labelled legacy grouping stays.
-    let lineSource: LineSource = "all_strength_legacy";
-    let fiveOnFiveUnitSeconds: FiveOnFiveUnitSeconds | null = null;
-    if (options.fiveOnFive ?? LINES_FIVE_ON_FIVE_ENABLED) {
-      const unitRows = await fetchLatestFiveOnFiveUnits(teamId, seasonToUse, [
-        lineCombinations[0].gameId,
-        lineCombinations[1].gameId
-      ]);
-      const current = fiveOnFiveLineCombo(lineCombinations[0], unitRows);
-      const previous = fiveOnFiveLineCombo(lineCombinations[1], unitRows);
-      if (current && previous) {
-        lineCombinations[0] = current.game;
-        lineCombinations[1] = previous.game;
-        lineSource = "five_on_five_observed";
-        fiveOnFiveUnitSeconds = current.unitSeconds;
-      }
-    }
+    // Decision 107/137 switch (chooseBoard): 5v5 units only when both games
+    // have complete 5v5 rows; otherwise the labelled legacy grouping stays.
+    const unitRows =
+      options.fiveOnFive ?? LINES_FIVE_ON_FIVE_ENABLED
+        ? (
+            await fetchLatestFiveOnFiveUnits(
+              seasonToUse,
+              new Map([[teamId, [lineCombinations[0].gameId, lineCombinations[1].gameId]]])
+            )
+          ).get(teamId) ?? []
+        : null;
+    const board = chooseBoard(lineCombinations[0], lineCombinations[1], unitRows);
+    lineCombinations[0] = board.current;
+    lineCombinations[1] = board.previous;
+    const { lineSource, fiveOnFiveUnitSeconds } = board;
 
     // Determine promotions and demotions
     const { promotions, demotions } = getLineChanges([

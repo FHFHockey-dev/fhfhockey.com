@@ -13,6 +13,7 @@ import { lineCombos_2023020951_2023020970 } from "./LineCombinationsData";
 import {
   aggregateSkaterToiSeconds,
   convertToLines,
+  getLatestLineChanges,
   getLineCombinations,
   getLineChanges,
   resolveLineCombinationSourceContext
@@ -176,7 +177,7 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
     fromMock.mockImplementation((table: string) => {
       const own: { method: string; args: unknown[] }[] = [];
       const query: Record<string, any> = {};
-      for (const method of ["select", "eq", "in", "order", "limit", "returns", "throwOnError", "not", "gt"]) {
+      for (const method of ["select", "eq", "in", "order", "limit", "range", "returns", "throwOnError", "not", "gt"]) {
         query[method] = vi.fn((...args: unknown[]) => {
           calls.push({ table, method, args });
           own.push({ method, args });
@@ -188,7 +189,7 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
         const filters = own.filter(
           (call) => (call.method === "eq" || call.method === "in") && !String(call.args[0]).includes(".")
         );
-        const data = (rows[table] ?? []).filter((row) =>
+        const matched = (rows[table] ?? []).filter((row) =>
           filters.every(({ method, args: [key, value] }) =>
             !(String(key) in row)
               ? true
@@ -197,6 +198,9 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
                 : (value as unknown[]).includes(row[String(key)])
           )
         );
+        // Rows are given in the query's order; honour .range(from, to) paging.
+        const range = own.find((call) => call.method === "range")?.args as [number, number] | undefined;
+        const data = range ? matched.slice(range[0], range[1] + 1) : matched;
         returned.push({ table, data });
         return resolve({ data, error: null });
       };
@@ -400,5 +404,133 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
     const alpha = result.goalies.line1[0];
     expect(alpha.season.GAA).toBeNull();
     expect(alpha.season.SVPercentage).toBeCloseTo(31 / 33, 6);
+  });
+
+  describe("getLatestLineChanges (batched /lines landing reader)", () => {
+    const teamLineRow = (
+      teamId: number,
+      gameId: number,
+      startTime: string,
+      forwards: number[] = [],
+      defensemen: number[] = []
+    ) => ({
+      gameId,
+      teamId,
+      forwards: forwards.map(String),
+      defensemen: defensemen.map(String),
+      goalies: ["1", "2"],
+      game: { startTime, seasonId: 20252026 }
+    });
+    const forTeam = (teamId: number, rows: ReturnType<typeof unitRow>[]) =>
+      rows.map((row) => ({ ...row, team_id: teamId }));
+    // The lines of overlappingUnits, but the third line on top and the first third.
+    const swappedUnits = (gameId: number, snapshotDate?: string) => ranked([
+      unitRow(gameId, "forward_line", [17, 18, 19], 300, snapshotDate),
+      unitRow(gameId, "forward_line", [14, 15, 16], 200, snapshotDate),
+      unitRow(gameId, "forward_line", [11, 12, 13], 100, snapshotDate),
+      unitRow(gameId, "defense_pair", [21, 22], 200, snapshotDate),
+      unitRow(gameId, "defense_pair", [23, 24], 100, snapshotDate),
+      unitRow(gameId, "defense_pair", [25, 26], 50, snapshotDate)
+    ]);
+    const TEAMS = [22, 10, 30, 40];
+
+    // Newest first, as the queries order them. 22 and 10 meet in game 202.
+    const landingRows = (): Rows => ({
+      ...baseRows(),
+      skatersGameStats: skaterRows(),
+      lineCombinations: [
+        teamLineRow(30, 203, "2026-11-12T02:00:00Z", [31, 32, 33, 34, 35, 36], [37, 38]),
+        teamLineRow(22, 202, "2026-11-12T00:00:00Z", [11, 12, 13, 14, 15, 16], [21, 22]),
+        teamLineRow(10, 202, "2026-11-12T00:00:00Z", [61, 62, 63, 64, 65, 66], [67, 68]),
+        teamLineRow(40, 201, "2026-11-11T00:00:00Z", [41, 42, 43], [44, 45]),
+        teamLineRow(22, 102, "2026-11-10T00:00:00Z", [11, 12, 13, 14, 15, 16], [21, 22]),
+        teamLineRow(10, 101, "2026-11-09T00:00:00Z", [64, 65, 66, 61, 62, 63], [67, 68]),
+        teamLineRow(30, 100, "2026-11-08T00:00:00Z", [34, 35, 36, 31, 32, 33], [37, 38]),
+        // A third game: only each team's two latest count.
+        teamLineRow(22, 99, "2026-11-06T00:00:00Z", [16, 15, 14, 13, 12, 11], [22, 21])
+      ],
+      team_unit_toi: [
+        // Team 22: game 202 latest 11-13; its older 11-12 snapshot shares a
+        // date with game 102's latest and must not be read as current.
+        ...forTeam(22, overlappingUnits(202, "2026-11-13")),
+        ...forTeam(22, swappedUnits(202, "2026-11-12")),
+        ...forTeam(22, swappedUnits(102, "2026-11-12")),
+        ...forTeam(22, overlappingUnits(102, "2026-11-11")),
+        // Team 10 (same game 202): complete latest, but game 101's latest
+        // snapshot is partial over an older complete one.
+        ...forTeam(10, overlappingUnits(202, "2026-11-13")),
+        ...forTeam(10, overlappingUnits(101, "2026-11-10")),
+        ...forTeam(10, [unitRow(101, "forward_line", [11, 12, 13], 40, "2026-11-12", "partial")])
+        // Team 30: no team_unit_toi rows. Team 40: one game this season.
+      ]
+    });
+
+    const summary = (result: Awaited<ReturnType<typeof getLineCombinations>>) => ({
+      lineSource: result.lineSource,
+      fiveOnFiveUnitSeconds: result.fiveOnFiveUnitSeconds,
+      promotions: result.promotions,
+      demotions: result.demotions
+    });
+
+    test("gives every team the same result as the per-team path", async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      routeTables(landingRows(), []);
+      const batched = await getLatestLineChanges(TEAMS, 20252026);
+
+      for (const teamId of [22, 10, 30]) {
+        expect(batched.get(teamId)).toEqual(summary(await getLineCombinations(teamId, 20252026)));
+      }
+      // Fewer than two games: the per-team path throws, the batch leaves it out.
+      await expect(getLineCombinations(40, 20252026)).rejects.toThrow(/at least 2 games/);
+      expect(batched.has(40)).toBe(false);
+
+      // The fixtures exercise both boards and the latest snapshot.
+      expect(batched.get(22)).toMatchObject({
+        lineSource: "five_on_five_observed",
+        fiveOnFiveUnitSeconds: { forwards: [300, 200, 100], defense: [200, 100, 50] }
+      });
+      expect(batched.get(22)!.promotions.map((change) => change.playerId).sort()).toEqual([11, 12, 13]);
+      expect(batched.get(10)!.lineSource).toBe("all_strength_legacy");
+      expect(batched.get(10)!.promotions.map((change) => change.playerId).sort()).toEqual([61, 62, 63]);
+      expect(batched.get(30)!.lineSource).toBe("all_strength_legacy");
+      errorSpy.mockRestore();
+    });
+
+    test("reads a few queries for all teams instead of up to eight per team", async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const batchedReads: { table: string; data: any[] }[] = [];
+      routeTables(landingRows(), [], batchedReads);
+      await getLatestLineChanges(TEAMS, 20252026);
+
+      const perTeamReads: { table: string; data: any[] }[] = [];
+      routeTables(landingRows(), [], perTeamReads);
+      for (const teamId of TEAMS) await getLineCombinations(teamId, 20252026).catch(() => null);
+
+      // Per team: lineCombinations, rosters, team_unit_toi x2 (x1 when a game
+      // has no rows), skatersGameStats x2, goaliesGameStats, wgo_goalie_stats.
+      expect(perTeamReads).toHaveLength(8 + 8 + 7 + 1);
+      expect(batchedReads.map((read) => read.table)).toEqual([
+        "lineCombinations",
+        "team_unit_toi",
+        "team_unit_toi"
+      ]);
+      errorSpy.mockRestore();
+    });
+
+    test("pages newest first until every team has its two latest games", async () => {
+      const rows = landingRows();
+      // 200 rows from another team, between its games, push team 22's second game to page 2.
+      const filler = Array.from({ length: 200 }, (_, index) =>
+        teamLineRow(50, 1000 - index, "2026-11-11T00:00:00Z")
+      );
+      rows.lineCombinations = [rows.lineCombinations[1], ...filler, rows.lineCombinations[4]];
+      const reads: { table: string; data: any[] }[] = [];
+      routeTables(rows, [], reads);
+      const batched = await getLatestLineChanges([22, 50], 20252026);
+
+      expect(reads.filter((read) => read.table === "lineCombinations")).toHaveLength(2);
+      expect(batched.get(22)).toEqual(summary(await getLineCombinations(22, 20252026)));
+      expect(batched.get(22)!.lineSource).toBe("five_on_five_observed");
+    });
   });
 });
