@@ -281,3 +281,13 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     - `/api/team-ratings?date=2026-09-29` serves 22 legacy (source 2026-08-29) + 10 v4.
   - Log (on disk, gitignored): `production/power-g5v5-2026-11-13/run/rebuild-2026-11-13T1646Z.jsonl`. Backups: `run/issued-rows-…tsv` and `run/pre-run-20261113T164613Z.tsv`.
   - Cron 283 writes v4 from 2026-11-14 10:15Z (05:15 ET).
+- **Release #436** (TJ "Push and merge"):
+  - Candidate `353a73a31` on master `6f1cb0767`: F17 `f2df257b6` (social score withholds missing stats), F8 `3e7e42aa4` (batched /lines reader, about 293 → about 10–12 reads per regeneration), F11 `de4650c77` (PP clock C1/C2; PP share still withheld). No migrations; Codex 1/2/6 still held; the beta-card wording fix not yet committed.
+  - Gate:
+    - typecheck 0, ESLint 0 errors;
+    - Vitest 19,807 passed; its failures were the git-dependent files plus requestBudget, which passes 21/21 solo;
+    - the git-dependent files pass 177/177 in the checkout; pytest 217.
+  - Branch pushed 17:13:51Z, with no build at 90 s. PR #436 squash-merged as master `4b45d8f1a`, tree identical to the candidate.
+  - Build: 1 build plus 3 cancels, settled 17:20:16Z.
+  - Smoke 5/5 at 200: `/lines`, `/lines/EDM`, `/api/team-ratings?date=2026-11-12`, `/underlying-stats`, `/`.
+  - octoberBranch `1c8149ff0` pushed 17:20:30Z, with no build.

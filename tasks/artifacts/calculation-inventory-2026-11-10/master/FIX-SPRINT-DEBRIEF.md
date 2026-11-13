@@ -27,6 +27,7 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
   - #433 (`4d9b6a10d`; migrations 144–146);
   - #434 (`496ab3766`; Astra fixes, F5–F15, Codex items);
   - #435 (`6f1cb0767`; version-aware power labels, writer dry run, CTPI beta card).
+  - #436 (`4b45d8f1a`; social rankings missing-vs-zero, batched Lines reader, PP clock C1/C2).
 
   Each release was gated in a clean export, built once with three cancels, and passed a 5-GET smoke.
 - **Production on 2026-11-13** (§3, `production/PRODUCTION-QUEUE.md`):
@@ -744,4 +745,4 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 | Astra #435 addendum P2: CTPI beta card says "same 10 games" while warning about a date mismatch | Routed to the beta card session (`local_d9adf205`); regression required | Next release |
 | Astra #435 addendum P2: runner cron guard can go stale after the load wait | Routed to F9 (runner artifact, no release) | Before any future runner use |
 | Astra #435 addendum, model handoff: `homeMinusAwayGoalieRating` mixes v4 (5-on-5) and legacy goaltending across history; `featureBuilder.ts` drops the provenance | Not a release blocker; there's no production game model (decision 42) | Codex model work: version the feature, filter or withhold mixed inputs, and keep reconstructed inputs apart from issued ones |
-| Social rankings missing-vs-zero (Astra #433 follow-up) | **Fixed, unreleased:** F17 `f2df257b6`. The social share skater score is withheld when any input stat is missing. | Next release |
+| Social rankings missing-vs-zero (Astra #433 follow-up) | **Fixed and released (#436):** F17 `f2df257b6`. The social share skater score is withheld when any input stat is missing. | — |
