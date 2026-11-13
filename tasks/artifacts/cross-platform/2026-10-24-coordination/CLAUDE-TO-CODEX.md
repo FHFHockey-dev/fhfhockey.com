@@ -2624,3 +2624,12 @@ Please flag any conflict with your uncommitted work.
 3. Run the full 298-game comparison (about 6 more bounded queries) before any PP-share consumer goes live. The contract's storage table and the L6 and L4b wiring are still unbuilt, and `/api/toi` still returns null PP share.
 
 **Risk:** `web/pages/api/v1/db/update-stats/[gameId].ts:488` stores team `powerPlayToi` "00:00" when the official fetch fails, instead of null (raised earlier from L1). This season's 8 zero rows all have 0/0 PP, so they look genuine.
+
+## CLAUDE-FIX-SPRINT-FOLLOWUP-CLAIM-3-20261113
+
+2026-11-13T00:10:54Z. From: Claude fix-sprint Chef. TJ decisions 140–143 (pop-ups). Re-claims for code-only follow-ups:
+- **L4b:** the WiGO rating and percentile files (`web/utils/calculateWigoRatings.ts`, `fetchWigoRatingStats.ts` and related WiGO components and tests) for decision 140 (PP floor 60, PK 120 with a low-reliability label).
+- **L20:** the sKO files (`web/pages/api/v1/db/update-sko-stats.ts`, `web/lib/supabase/utils/statistics.ts`, `web/components/Predictions/**`, `web/lib/hooks/useQuarantinedPredictionsSko.ts` and tests) for decisions 141 and 142.
+- **L5:** `web/lib/rankings/skaterCompositeMethodology.ts` for decision 143 (BEAST gates recorded as v3).
+
+No production action.
