@@ -57,4 +57,26 @@ describe("L5 fantasy score (ticket 15)", () => {
     expect(playerScore(unscored)).toBeNull();
     expect(playerScore(skater({ goals: null, assists: null, shots: null, ppPoints: null, hitsPerGame: null, blocksPerGame: null }))).toBeNull();
   });
+
+  it("never scores a missing stat like a known zero (F17, rules 5 and 13)", () => {
+    const s = DEFAULT_SKATER_FANTASY_POINTS;
+    const base = { goals: 1, assists: 1, ppPoints: 0, shots: 10, hitsPerGame: 2, blocksPerGame: 1 };
+    // Blocks: a known 0 still scores as 0; a missing value leaves no score.
+    const zeroBlocks = skater({ ...base, blocksPerGame: 0 }), missingBlocks = skater({ ...base, blocksPerGame: null });
+    expect(fantasyPointsPerGame(zeroBlocks)).toBeCloseTo((s.GOALS + s.ASSISTS + 10 * s.SHOTS_ON_GOAL + 5 * 2 * s.HITS) / 5);
+    expect(fantasyPointsPerGame(missingBlocks)).toBeNull();
+    expect(playerScore(missingBlocks)).toBeNull();
+    // Hits take the same path.
+    const zeroHits = skater({ ...base, hitsPerGame: 0 }), missingHits = skater({ ...base, hitsPerGame: null });
+    expect(fantasyPointsPerGame(zeroHits)).toBeCloseTo((s.GOALS + s.ASSISTS + 10 * s.SHOTS_ON_GOAL + 5 * 1 * s.BLOCKED_SHOTS) / 5);
+    expect(fantasyPointsPerGame(missingHits)).toBeNull();
+    expect(playerScore(missingHits)).toBeNull();
+    // The missing case goes with the unscored, where the season rate decides; the known zero keeps its scored place.
+    type Row = Pick<SharePlayer, "group" | "recent"> & { season: number };
+    const rows: Row[] = [{ ...missingBlocks, season: 9 }, { ...zeroBlocks, season: 1 }];
+    expect(rows.sort(byScore<Row>(playerScore, (a, b) => b.season - a.season)).map(row => row.season)).toEqual([1, 9]);
+    // Every scored part is required.
+    for (const part of ["goals", "assists", "ppPoints", "shots", "hitsPerGame", "blocksPerGame"] as const)
+      expect(fantasyPointsPerGame(skater({ ...base, [part]: null }))).toBeNull();
+  });
 });

@@ -6,6 +6,8 @@
 // web/lib/projections/penaltyClock.ts, situation-code audit, completeness gate).
 // Input is stored evidence only: the classes CSV from 03-run-summary.sql and the
 // scalar play-by-play pages from 04-fetch-pbp.sh. No network calls.
+// Since C1 (11-13) the contract takes the official record itself, so
+// `qualified` and `reason` are the production verdict per team-game.
 //
 // Build + run (from the repo root):
 //   npx --prefix web esbuild <this file> --bundle --platform=node --format=esm \
@@ -172,6 +174,7 @@ function alignedAuditDisagreements(plays: any[], spans: { teamId: number; start:
 
 type Result = TeamRow & {
   pbp: boolean; sim_s: number | null; qualified: boolean; reason: string | null;
+  official_class: string; official_diff_s: number | null;
   audit_checked: number | null; audit_disagreements: number | null; diff_s: number | null;
   aligned_audit_disagreements: number | null; qualified_aligned: boolean;
   complete_pbp: boolean | null; validation: string; features: string;
@@ -183,18 +186,20 @@ for (const row of classes) {
   const homeTeamId = row.is_home ? row.team_id : row.opp_id;
   const awayTeamId = row.is_home ? row.opp_id : row.team_id;
   const base = { ...row, pbp: !!plays?.length };
+  const contract = buildTeamPpClock({
+    gameId: row.game_id, teamId: row.team_id, homeTeamId, awayTeamId,
+    gameType: row.game_type, plays: plays ?? null,
+    official: row.class === "missing_row" ? null : { powerPlayToi: row.toi, powerPlay: row.pp },
+  });
+  const verdict = { qualified: contract.qualified, reason: contract.unqualifiedReason,
+    official_class: contract.official.class, official_diff_s: contract.official.diffSeconds };
   if (row.class === "missing_row" || !plays?.length) {
-    results.push({ ...base, sim_s: null, qualified: false,
-      reason: !plays?.length ? "no stored play-by-play" : null, audit_checked: null,
+    results.push({ ...base, ...verdict, sim_s: contract.seconds, audit_checked: null,
       audit_disagreements: null, diff_s: null, aligned_audit_disagreements: null,
       qualified_aligned: false, complete_pbp: null,
       validation: row.class === "missing_row" ? "missing_official" : "no_pbp", features: "" });
     continue;
   }
-  const contract = buildTeamPpClock({
-    gameId: row.game_id, teamId: row.team_id, homeTeamId, awayTeamId,
-    gameType: row.game_type, plays,
-  });
   let spans: { teamId: number; start: number; end: number }[] | null = null;
   try { spans = buildPenaltyClock(plays, { homeTeamId, awayTeamId, gameType: row.game_type }).spans; } catch { spans = null; }
   const f = spans ? features(plays, spans) : {};
@@ -212,7 +217,7 @@ for (const row of classes) {
   else if (diff === 0) validation = "match";
   else if (Math.abs(diff!) <= 2) validation = "within_2s";
   else validation = "mismatch";
-  results.push({ ...base, sim_s: sim, qualified: contract.qualified, reason: contract.unqualifiedReason,
+  results.push({ ...base, ...verdict, sim_s: sim,
     audit_checked: contract.audit?.checkedEvents ?? null,
     audit_disagreements: contract.audit?.disagreements ?? null, diff_s: diff,
     aligned_audit_disagreements: aligned, qualified_aligned: complete && aligned === 0,
@@ -221,7 +226,7 @@ for (const row of classes) {
 
 mkdirSync(outDir, { recursive: true });
 const cols = ["game_id", "season_id", "game_type", "team_id", "opp_id", "is_home", "toi", "pp", "toi_s",
-  "pp_opps", "opp_pim", "class", "pbp", "sim_s", "diff_s", "qualified", "audit_checked",
+  "pp_opps", "opp_pim", "class", "pbp", "sim_s", "diff_s", "qualified", "official_class", "official_diff_s", "audit_checked",
   "audit_disagreements", "aligned_audit_disagreements", "complete_pbp", "qualified_aligned",
   "validation", "reason", "features"] as const;
 const esc = (v: unknown) => {
@@ -268,9 +273,39 @@ for (const r of comparable) {
     : Math.abs(d) <= 60 ? (d > 0 ? "+11-60" : "-11-60") : d > 0 ? "+61+" : "-61+";
   diffHistogram[b] = (diffHistogram[b] ?? 0) + 1;
 }
+// Production verdict by stored official class (decision 144 C1/C2), with the
+// reason per withheld team-game, and a cross-check that the shipped audit now
+// equals the analysis-only aligned audit.
+const generic = (reason: string) => reason
+  .replace(/^\d+ event\(s\)/, "N event(s)").replace(/at game second \d+/, "at game second N")
+  .replace(/by [+-]?\d+ s \(clock \d+ s, official \d+ s\)/, "by N s (clock X s, official Y s)")
+  .replace(/powerPlayToi "[^"]*", powerPlay "[^"]*"/, 'powerPlayToi "…", powerPlay "…"')
+  .replace(/the clock has \d+ s/, "the clock has N s");
+const verdictByClass: Record<string, Record<string, { teamGames: number; qualified: number; reasons: Record<string, number> }>> = {};
+for (const r of results) {
+  for (const scope of ["all", key(r)]) {
+    verdictByClass[scope] ??= {};
+    const v = (verdictByClass[scope][r.class] ??= { teamGames: 0, qualified: 0, reasons: {} });
+    v.teamGames++;
+    if (r.qualified) v.qualified++;
+    else v.reasons[generic(r.reason ?? "")] = (v.reasons[generic(r.reason ?? "")] ?? 0) + 1;
+  }
+}
+const qualifiedByValidation: Record<string, { teamGames: number; qualified: number }> = {};
+for (const r of results) {
+  const v = (qualifiedByValidation[r.validation] ??= { teamGames: 0, qualified: 0 });
+  v.teamGames++;
+  if (r.qualified) v.qualified++;
+}
+const auditCrossCheck = {
+  builtClocks: results.filter((r) => r.audit_disagreements != null).length,
+  shippedAuditDisagreeingTeamGames: results.filter((r) => (r.audit_disagreements ?? 0) > 0).length,
+  shippedDiffersFromAligned: results.filter((r) => r.audit_disagreements != null && r.audit_disagreements !== r.aligned_audit_disagreements).length,
+};
 const out = {
   source: PP_CLOCK_SOURCE, algorithmQualifiedFlag: PP_CLOCK_QUALIFIED,
   games: new Set(results.map((r) => r.game_id)).size, teamGames: results.length,
+  verdictByClass, qualifiedByValidation, auditCrossCheck,
   bySeasonType: summary, unqualifiedReasons: reasons, diffHistogram, byFeature,
 };
 writeFileSync(join(outDir, "summary.json"), JSON.stringify(out, null, 2) + "\n");

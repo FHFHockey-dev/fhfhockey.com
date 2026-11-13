@@ -410,3 +410,4 @@ Source: `WAVE3-CONSOLIDATED.md`, "Owner decisions still open" Q42 and Q49. The 1
      - the exact 47 keys, values, versions and source dates;
      - the served readers keep carried rows distinct;
      - the readback checks and expected exceptions.
+   - **2026-11-13: rebuild approved** (TJ "Approve, Claude runs it" in the Chef pop-up, answered before 16:46:01Z). Chronology from the receipts: the run process started at 16:46:01Z, this record was committed in `d24bf142a` at 16:46:06Z, and the first write receipt is 16:46:15Z. An earlier draft said "~16:47Z"; Astra's #435 addendum flagged the rounding. This followed the live no-write preflight (PREFLIGHT_OK; deployed `6f1cb0767`; dry-run probe v4 with 0 upserts; 09-29 dry run 10 v4 + 22 carried matching the manifest; 11-12 dry run matching the sample; served version and source date). The Chef independently confirmed zero writes.

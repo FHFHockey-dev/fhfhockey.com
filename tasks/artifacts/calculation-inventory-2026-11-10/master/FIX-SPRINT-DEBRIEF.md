@@ -8,12 +8,37 @@ Status: **Final for the code sprint, 2026-11-13.**
 Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one per lane, in the sole checkout `octoberBranch`, with exact file ownership. Every production action had TJ's own pop-up approval.
 
 ## 1. Summary
-- **Scope:** findings from the three-wave math audit: 35 packets, 1,358 calculations, Fable audits peer-reviewed by Codex "Astra", and owner decisions 1–143 (83–143 were decided during the sprint).
-- **Lanes:** 25 lanes plus sub-lanes. L1–L22, L4a/L4b and L9a/L9b/L9c, with sub-lanes L2-landing, L5a, L5b, L9a-markets, L10b, L13b and L22-UI.
-- **P0 coverage (45 total):**
-  - 40 fixed in code. Many of these still need a queued rebuild before stored data reflects the fix.
-  - 5 are partly fixed: W1 #14, #16, #17, #27 and W3-P0-1 (§5).
+- **Scope:** findings from the three-wave math audit: 35 packets, 1,358 calculations, Fable audits peer-reviewed by Codex "Astra", and owner decisions 1–150 (83–150 were decided during the sprint).
+- **Lanes:**
+  - 25 lanes plus sub-lanes: L1–L22, L4a/L4b and L9a/L9b/L9c, with sub-lanes L2-landing, L5a, L5b, L9a-markets, L10b, L13b and L22-UI.
+  - Follow-up lanes F1–F17 on 2026-11-13, F12–F15 answering Astra's checkpoint 1.
+  - Codex dev items 3, 5, 7, 8 and 9 were integrated; items 1, 2 and 6 are held by Codex.
+- **P0 coverage (45 total), after releases #434 and #435 and Astra's checkpoint 1 and #434 addendum:**
+  - 40 fixed in code. W1 #14, #18 and #20 moved to fixed on 2026-11-13; Astra closed AF-01 (#20) in both RSO readers.
+  - 5 are partly fixed (§5):
+    - W1 #16: starter refit, Codex;
+    - W1 #17: writer is Codex item 1, held;
+    - W1 #21: multiplier neutral until validated, decision 148;
+    - W1 #27: R3 no-history stays unknown;
+    - W3-P0-1.
   - None is left unaddressed.
+- **Releases on 2026-11-13:**
+  - #432 (`e1ab46318`);
+  - #433 (`4d9b6a10d`; migrations 144–146);
+  - #434 (`496ab3766`; Astra fixes, F5–F15, Codex items);
+  - #435 (`6f1cb0767`; version-aware power labels, writer dry run, CTPI beta card).
+
+  Each release was gated in a clean export, built once with three cancels, and passed a 5-GET smoke.
+- **Production on 2026-11-13** (§3, `production/PRODUCTION-QUEUE.md`):
+  - the 2026-27 rolling recompute and the 2025-26 goalie rebuild;
+  - indexes 123/124 and migrations 101 and 142–146;
+  - power ratings v3, then v4 (1,425 v4 rows plus 47 labelled legacy carries);
+  - xG champion retired; composites v3, rankings, team_unit_toi and trend bands;
+  - game state, CTPI v2 (gated) and SOS v2 backfills.
+- **Astra:**
+  - The frozen #433 audit is **complete**. The final report is `astra/ASTRA-FIX-SPRINT-AUDIT-checkpoint-1-2026-11-13.md` (byte-identical to Astra's final file). It found one P0, AF-01, now closed. Its later social-rankings finding is being fixed by lane F17.
+  - The #434 addendum is **complete**: no new P0, and two P1s on power v4, fixed in #435 and the gated rebuild.
+  - **Pending:** the #435 addendum and the review of the rebuild receipts (`ASTRA-ADDENDUM-435-PROMPT.md`).
 - **Integration gate:** clean `git archive` export of `496b5c9de`.
   - Vitest: 19,122 passed, 0 failed (1,391 files).
   - Typecheck: passed.
@@ -131,14 +156,14 @@ The re-run at `496b5c9de` was clean, apart from the expected git-history pins. T
 | 11 | Trend page scales and empty calendar views | L6 | Fixed; player-trend v3 rebuild in queue 5 |
 | 12 | Power ratings standardised against the slate | L12 | Fixed; v3 recompute in queue 7. The prior min(1, GP/10) is unfitted (decision 125). |
 | 13 | PP/PK tiers from one game | L12 | Fixed; recompute in queue 7 |
-| 14 | Game Grid win odds | L12, F6 | **Fixed in the final 2026-11-13 release.** The data path withholds odds (L12). F6 `9b51a17ea` reads odds only through the withheld helper and labels each cell "Odds n/a: Model odds unavailable"; `9b97c4656` fixes the transposed cell's away team. Astra confirmed partial at #433. |
+| 14 | Game Grid win odds | L12, F6 | **Fixed (#434).** The data path withholds odds (L12). F6 `9b51a17ea` labels each cell "Odds n/a: Model odds unavailable"; `9b97c4656` fixes the transposed cell's away team. Astra's #434 addendum: supported. |
 | 15 | Top Adds NaN | L12 | Fixed (expected points, decision 118/132) |
 | 16 | Starter probability over-confident | L9b | **Partly.** Credited start, cutoffs, closed vector and unknown rest are fixed. The refit isn't run (plan `L9b-starter-refit-plan.md`). The accuracy job is a Codex proposal. |
 | 17 | Start Chart raw L10 share (conditional) | L9b, Codex dev | **Partly.** Labelled "L10 start share". The writer fix (`update-goalie-projections-v2.ts`) is Codex dev item 1 on 2026-11-13. Astra confirmed partial and noted the RSO bridge as another L10 consumer (AF-01, F12). |
-| 18 | PK bucket omitted | L9a, F7 | **Partly fixed at #433** (Astra AF-05): the writer adds PK heads (572/572 rows on 11-13), but readers counted a missing PK head as 0. Fixed by F7 `369e00828` (version-aware PK admission; reserve rows labelled "PK unmodelled"), which ships in the final 2026-11-13 release. |
+| 18 | PK bucket omitted | L9a, F7, Codex 3 | **Fixed (#434).** The writer adds PK heads; readers admit them version-aware (F7 `369e00828`, AF-05); the goalie stage adds known opponent PK shots (Codex `cd67fb728`). Astra's #434 addendum: supported. |
 | 19 | Hits/blocks count PK twice | L9a | Fixed; FORGE rerun |
-| 20 | Goalie row is the team slot | L9b, F12 | **Disputed by Astra (AF-01, P0):** the writer emits `forge_goalie_candidates_v1`, but RSO's bridge (`forgeDailyBridge.ts`) still built its own vector and could use another goalie's line. F12 is moving the bridge to the per-candidate contract for the final 2026-11-13 release. |
-| 21 | Opponent-goalie .900 | L9a, F13 | **Partly fixed** (Astra AF-02, AF-06): the independent posterior is in. Null goals-against no longer becomes 0, and the multiplier is neutral until validated (decision 148), both in F13 `0eaa1f5b4` for the final release. The held-out study is Codex goalie-model work. |
+| 20 | Goalie row is the team slot | L9b, F12 | **Fixed (#434).** Astra disputed it at #433 (AF-01, P0). F12 `738191ecf`, `a275d0ec7`, `6873c28ce` move the RSO bridge and the later-impact inputs to `forge_goalie_candidates_v1`. Astra's #434 addendum: "Closed in #434 code and focused tests". |
+| 21 | Opponent-goalie .900 | L9a, F13 | **Partly fixed.** The independent posterior is in. Null goals-against is dropped, never 0, and the multiplier is neutral until validated (decision 148), F13 `0eaa1f5b4` in #434. The held-out study is Codex goalie-model work. |
 | 22 | Power Terminal | L12 | Fixed |
 | 23 | Trend-band TOI 60× | L7 | Fixed; band rebuild in queue 6 |
 | 24 | Sandbox band status | L7 | Fixed (usual range `validated:false`) |
@@ -715,4 +740,8 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 | PP clock (decision 144) | F11 report `48dd8fe8f`: 2,493/2,500 team-games exact. C3 (MAT/15 throw) fixed `a98eda63f`. PP share stays withheld. | C1 (`qualified` ignores the official total), C2 (audit at stoppages), and owner items O1–O4 |
 | Codex dev items 1, 2, 6 | **Held by Codex and excluded from the final release:** `fc34b053a` (goalie writer), `284f99045` (accuracy job), `c89ff5d24` (game-stat placeholders, with an unapplied migration) | Codex: league SV% helper nulls, pregame issuance contract, Splits and Lines readers before migration |
 | CTPI descriptive beta card (F5b) | Committed `122dd880b`, visual polish still in progress; **held from the final release** (TJ) | A later release after TJ approves the finished card |
-| Power ratings v4 (decisions 145, 147) | Code in the final release (F9 `06c8316a4`, `d6626b521`, `820e5cb6d`). **Not rebuilt.** | The 45-call loop (`production/power-g5v5-2026-11-13/`) after TJ approves |
+| Power ratings v4 (decisions 145, 147, 150) | **Released and rebuilt.** Code in #434; version-aware labels and the writer dry run in #435. Rebuilt 2026-11-13 16:46–16:53Z after a live no-write preflight: 1,425 v4 + 47 labelled legacy carries (09-29..10-02, source 08-29), 0 v3 left, served labels checked. | — |
+| Astra #435 addendum P2: CTPI beta card says "same 10 games" while warning about a date mismatch | Routed to the beta card session (`local_d9adf205`); regression required | Next release |
+| Astra #435 addendum P2: runner cron guard can go stale after the load wait | Routed to F9 (runner artifact, no release) | Before any future runner use |
+| Astra #435 addendum, model handoff: `homeMinusAwayGoalieRating` mixes v4 (5-on-5) and legacy goaltending across history; `featureBuilder.ts` drops the provenance | Not a release blocker; there's no production game model (decision 42) | Codex model work: version the feature, filter or withhold mixed inputs, and keep reconstructed inputs apart from issued ones |
+| Social rankings missing-vs-zero (Astra #433 follow-up) | **Fixed, unreleased:** F17 `f2df257b6`. The social share skater score is withheld when any input stat is missing. | Next release |

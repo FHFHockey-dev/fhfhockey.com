@@ -7,14 +7,20 @@ Carry-forward (decision 150): the 47 team-dates in carry-manifest.tsv keep the t
 (legacy_unversioned, source 2026-08-29). They are never labelled v4 and no gap is filled.
 
 Fails closed, in this order (Astra #434 P1 rebuild gate). Nothing is written before step 6.
-  1. Cron window and read-only DB guard.
+  1. Cron windows (live-checked: cron 283 must still be the only active job touching the table, at 15 10 * * *)
+     and read-only DB guard. Refuses to start within START_MARGIN_MIN of a window. Immediately before every
+     mutating call, AFTER the DB guard (which can sleep up to 120 s), stops if a window is within CALL_MARGIN_MIN.
   2. Backup: created if missing, then ALWAYS verified: it must hold every (team, date) in range, 32 per date,
      every column, and equal the live row wherever the live row is still the issued v3 row.
   3. Manifest: the 47 keys must equal the live "no genuine game in the lookback" keys, and their values the
      live 09-28 rows, key by key.
   4. Live route bound to v4 without a write:
-     a. probe date=2000-01-01&dryRun=true (no ratings or NST rows exist near it, so even a writer without a
-        dry-run mode writes no rating); it must answer dryRun=true, v4, 0 upserts;
+     0. before ANY request to the writer: the latest successful GitHub deployment of "Production – fhfhockey"
+        must be a commit in master's history whose writer source has the dry-run mode (2bf3c1d26 or a released
+        successor; releases are squash-merged, so the source is checked, not the ancestry of 2bf3c1d26).
+        The old writer audits every call, so it must never be reached;
+     a. probe date=2000-01-01&dryRun=true (no ratings or NST rows exist near it); it must answer dryRun=true,
+        v4, 0 upserts, and on the dry-run writer a successful dry run leaves no audit row;
      b. dry runs of the first date to write and of 2026-11-12, checked row by row: manifest rows exact, every
         other row v4 with a known goalie rating, and 2026-11-12 equal to PLAN.md's local sample (0.05).
   5. Served API (/api/team-ratings, which the card, the terminal and the landing read) must expose
@@ -55,6 +61,19 @@ SAMPLE_DATE = "2026-11-12"
 PAUSE_S = 5
 SLOW_S = 60
 SERVED_CACHE_S = 65            # /api/team-ratings caches 60 s in process
+REPO = "FHFHockey-dev/fhfhockey.com"
+PROD_ENV = "Production – fhfhockey"
+WRITER_PATH = "web/pages/api/v1/db/update-team-power-ratings.ts"
+# Source markers of the dry-run writer (2bf3c1d26): the flag, the no-write branch and the audit skip.
+DRY_RUN_MARKERS = [f'"{V4}"', 'getRequestFlag(req, "dryRun")', "dryRunRows.push(...upserts)", "skipAuditWhenNoOp"]
+# Guard windows (UTC minutes from midnight). ET is UTC-5 until 2027-03-14 (EST).
+CRON_283 = (283, "15 10 * * *")   # update-team-power-ratings, the only active job that writes the table
+WINDOWS = [(480, 500, "08:00-08:20 UTC (03:00-03:20 ET): morning ingest jobs"),
+           (565, 660, "09:25-11:00 UTC (04:25-06:00 ET): cron 283 at 10:15 (route runs ~10:15:01-10:15:06) "
+                      "and the 10:05-10:55 FORGE pipeline"),
+           (675, 700, "11:15-11:40 UTC (06:15-06:40 ET): sustainability and forecast jobs")]
+CALL_MARGIN_MIN = 15           # no mutating call within 15 min of a window (so none from 09:10 UTC before 283)
+START_MARGIN_MIN = 25          # a run (about 8 minutes) must finish before the call margin begins
 # Columns the writer copies from the previous stored row (trend10 too: a team with no genuine game has no
 # trend override). pp_tier/pk_tier are recomputed per date, so not compared.
 CARRY_COLS = ["off_rating", "def_rating", "pace_rating", "xgf60", "gf60", "sf60", "xga60", "ga60", "sa60",
@@ -123,10 +142,73 @@ def psql(sql, *extra):
     return [x for x in r.stdout.split("\n") if x]
 
 
-def in_cron_window():
+def window_at(margin_min=0):
+    """The guard window we are in, or that starts within margin_min minutes; None when clear."""
     t = time.gmtime(); m = t.tm_hour * 60 + t.tm_min
-    # 08:00-08:20, 09:25-11:00 (includes pg_cron 283 at 10:15), 11:15-11:40 UTC
-    return 480 <= m < 500 or 565 <= m < 660 or 675 <= m < 700
+    for start, end, label in WINDOWS:
+        if any(start <= (m + k) % 1440 < end for k in range(margin_min + 1)):
+            return label
+    return None
+
+
+def write_gate(d):
+    """Immediately before a mutating call: no guard window within CALL_MARGIN_MIN, checked before the DB
+    guard and again after it returns, because guard() can sleep up to 120 s (Astra #435 P2)."""
+    w = window_at(CALL_MARGIN_MIN)
+    if w:
+        stop(4, f"guard window within {CALL_MARGIN_MIN} min: {w}", resume_from=d)
+    guard()
+    w = window_at(CALL_MARGIN_MIN)
+    if w:
+        stop(4, f"guard window within {CALL_MARGIN_MIN} min after the DB guard wait: {w}", resume_from=d)
+
+
+def check_cron_jobs():
+    """Read-only: cron 283 still runs at 15 10 * * *, no other active job touches the table, and no 283
+    run is in progress. Commands are filtered in the database and never selected or printed."""
+    rows = psql(f"select schedule, active from cron.job where jobid = {CRON_283[0]}")
+    others = psql("select count(*) from cron.job where active and jobid <> %d and (command ilike '%%team_power_ratings%%' "
+                  "or command ilike '%%team-power-ratings%%')" % CRON_283[0])[0]
+    running = psql(f"select count(*) from cron.job_run_details where jobid = {CRON_283[0]} and status in ('running', 'starting')")[0]
+    problems = []
+    if rows != [f"{CRON_283[1]}|t"]:
+        problems.append(f"cron {CRON_283[0]} is {rows}, expected {CRON_283[1]} active: update WINDOWS")
+    if others != "0":
+        problems.append(f"{others} other active cron job(s) touch team_power_ratings: add their windows")
+    if running != "0":
+        problems.append(f"cron {CRON_283[0]} has a run in progress")
+    return problems
+
+
+def gh(path, raw=False):
+    r = subprocess.run(["gh", "api", *(["-H", "Accept: application/vnd.github.raw"] if raw else []), path],
+                       capture_output=True, text=True, timeout=60)
+    if r.returncode != 0:
+        raise RuntimeError(f"gh api {path.split('?')[0]}: {r.stderr.strip()[:200]}")
+    return r.stdout
+
+
+def deployed_writer_gate():
+    """Before any request to the writer: the live production deployment must contain the dry-run writer.
+    Read-only GitHub API calls; for a localhost base the working tree is checked instead."""
+    if LOCAL:
+        src = open(os.path.join(ROOT, WRITER_PATH)).read()
+        return "working tree", [m for m in DRY_RUN_MARKERS if m not in src]
+    env = urllib.parse.quote(PROD_ENV)
+    for dep in json.loads(gh(f"repos/{REPO}/deployments?environment={env}&per_page=10")):
+        statuses = json.loads(gh(f"repos/{REPO}/deployments/{dep['id']}/statuses?per_page=1"))
+        if statuses and statuses[0].get("state") == "success":
+            sha = dep["sha"]
+            break
+    else:
+        return None, ["no successful production deployment found"]
+    problems = []
+    status = json.loads(gh(f"repos/{REPO}/compare/{sha}...master")).get("status")
+    if status not in ("identical", "ahead"):  # "ahead": master is ahead of sha, i.e. sha is in master's history
+        problems.append(f"deployed {sha[:9]} is not in master's history (compare: {status})")
+    src = gh(f"repos/{REPO}/contents/{WRITER_PATH}?ref={sha}", raw=True)
+    problems += [f"deployed writer lacks {m}" for m in DRY_RUN_MARKERS if m not in src]
+    return sha, problems
 
 
 def guard():
@@ -283,10 +365,15 @@ def verify_backup(path, live_lines):
     return problems, len(rows), sha
 
 
-# 1. Cron window and DB guard.
-if in_cron_window():
-    stop(4, "inside a cron window; start outside 08:00-08:20, 09:25-11:00, 11:15-11:40 UTC")
+# 1. Cron windows and DB guard.
+w = window_at(START_MARGIN_MIN)
+if w:
+    stop(4, f"inside, or within {START_MARGIN_MIN} min of, the guard window {w}")
 guard()
+cron_problems = check_cron_jobs()
+log(event="cron_checked", job=CRON_283[0], schedule=CRON_283[1], problems=cron_problems)
+if cron_problems:
+    stop(4, "cron schedule check failed; the guard windows may no longer protect the run")
 DATES = dates_between(args.start, args.end)
 ALL_TEAMS = set(db_rows(CARRY_FROM, CARRY_FROM).get(CARRY_FROM, {}))
 if len(ALL_TEAMS) != TEAMS_PER_DATE:
@@ -341,6 +428,14 @@ log(event="plan", first=todo[0] if todo else None, calls=len(todo), dates=todo,
 # 4. Bind the live route to v4 without a write.
 dry = {}
 if todo:
+    try:
+        sha, gate_problems = deployed_writer_gate()
+    except Exception as e:  # gh missing, unauthenticated or unreachable: fail closed
+        sha, gate_problems = None, [repr(e)[:200]]
+    log(event="deployed_writer_gate", sha=sha, problems=gate_problems)
+    if gate_problems:
+        stop(7, "the live production deployment does not contain the dry-run writer; no request was sent "
+                "to the writer. Wait for the release that contains it, then rerun --preflight.")
     guard()
     status, dur, j = call(PROBE_DATE, dry=True)
     log(event="probe", date=PROBE_DATE, status=status, duration_s=round(dur, 1), dryRun=j.get("dryRun"),
@@ -405,6 +500,9 @@ if args.preflight:
 # 6. Fresh verified snapshot, then one write per date, ascending.
 last_write = None
 if todo:
+    w = window_at(START_MARGIN_MIN) or (check_cron_jobs() or [None])[0]
+    if w:
+        stop(4, f"guard window or cron check before the first write: {w}")
     snap = os.path.join(OUT, time.strftime("pre-run-%Y%m%dT%H%M%SZ.tsv", time.gmtime()))
     snap_lines = dump_lines(args.start, args.end)
     open(snap, "w").write("\n".join(snap_lines) + "\n")
@@ -413,9 +511,7 @@ if todo:
     if problems:
         stop(8, "pre-run snapshot does not cover the range")
 for n, d in enumerate(todo, 1):
-    if in_cron_window():
-        stop(4, "entering a cron window", resume_from=d)
-    guard()
+    write_gate(d)  # the window is rechecked after guard() returns, right before the write
     status, dur, j = call(d, dry=False)
     last_write = time.time()
     log(event="call", n=n, date=d, status=status, duration_s=round(dur, 1),

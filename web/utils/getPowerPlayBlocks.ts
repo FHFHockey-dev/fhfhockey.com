@@ -358,12 +358,19 @@ export type PpSituationDisagreement = {
   situationAdvantageTeamId: number | null;
 };
 
+// Their codes can be from before or after the manpower change (decision 144).
+const AUDIT_SKIPPED_EVENT_TYPES = new Set([
+  "period-start", "period-end", "game-end", "stoppage", "penalty", "goal"
+]);
+
 /**
  * Checks the penalty-box simulation against the official per-event situation
  * codes, classified by L1's manpower predicate (decision 70): 6v5 without a
  * penalty is even, a pulled goalie during a real PP or PK keeps the PP/PK.
- * Events on a block's first or last second are skipped, because the stoppage
- * that starts or ends a power play carries the state from before the change.
+ * It skips the observations the clock itself refuses (decision 144):
+ * period-start, period-end, game-end, stoppage, penalty and goal events, any
+ * second with a penalty or goal, and a block's first or last second, because
+ * those codes can carry the state from before or after the change.
  * Penalty-shot and shootout codes are skipped. A disagreement is evidence
  * against qualifying the clock for that game (decision 71); it is never
  * corrected silently.
@@ -379,16 +386,22 @@ export function auditPpBlocksAgainstSituationCodes(
     end: getBlockGameSecond(block.end)
   }));
   const boundaries = new Set(spans.flatMap((span) => [span.start, span.end]));
+  const physical = plays.filter((play) => play.periodDescriptor?.periodType !== "SO");
+  const penaltyOrGoalSeconds = new Set(
+    physical
+      .filter((play) => play.typeDescKey === "penalty" || play.typeDescKey === "goal")
+      .map(getGameSecond)
+  );
   const disagreements: PpSituationDisagreement[] = [];
   let checkedEvents = 0;
 
-  for (const play of plays) {
-    if (play.periodDescriptor?.periodType === "SO") continue;
+  for (const play of physical) {
+    if (AUDIT_SKIPPED_EVENT_TYPES.has(play.typeDescKey)) continue;
     const parsed = parseSituationCode(play.situationCode);
     const home = classifyTeamManpower(parsed, "home");
     if (!home || home.manpowerState === null) continue;
     const gameSecond = getGameSecond(play);
-    if (boundaries.has(gameSecond)) continue;
+    if (boundaries.has(gameSecond) || penaltyOrGoalSeconds.has(gameSecond)) continue;
 
     checkedEvents++;
     const simulatedAdvantageTeamId =
@@ -413,14 +426,29 @@ export function auditPpBlocksAgainstSituationCodes(
   return { checkedEvents, disagreements };
 }
 
+/** The team's stored `teamGameStats` row: `powerPlayToi` "mm:ss", `powerPlay` "goals/opportunities". */
+export type OfficialTeamPp = { powerPlayToi: string | null; powerPlay: string | null };
+
+/**
+ * - missing: no official row.
+ * - malformed: unparseable, goals > opportunities, over 80 minutes, or PP
+ *   time with no opportunity.
+ * - placeholder: legacy "00:00" with at least one opportunity (the failed-fetch
+ *   default), so the official time is unknown.
+ * - zero: "00:00" and no opportunity.
+ * - nonzero: PP time with at least one opportunity.
+ */
+export type PpClockOfficialClass = "missing" | "malformed" | "placeholder" | "zero" | "nonzero";
+
 /**
  * Decision-71 team PP clock contract (consumed by L6 `teamPpClock` and L4b).
  * `seconds` is the penalty-box simulation for one team in one game. It may be
- * served as observed PP time only when `qualified` is true; until the
- * simulation passes validation against official records (team PP TOI and
- * situation codes across regulation, OT, expiry, overlapping penalties and
- * extra-attacker states) with complete coverage, `qualified` stays false and
- * readers withhold or flag PP time and share.
+ * served as observed PP time only when `qualified` is true (decision 144):
+ * complete final play-by-play, no situation-code disagreement, and agreement
+ * with the official team PP total within PP_CLOCK_OFFICIAL_TOLERANCE_SECONDS.
+ * A missing, malformed or placeholder official row never qualifies. A
+ * qualified clock of 0 is a verified no-PP game: show "not applicable", never
+ * 0%. Otherwise readers withhold or flag PP time and share.
  */
 export type TeamPpClockContract = {
   gameId: number;
@@ -432,6 +460,13 @@ export type TeamPpClockContract = {
   /** Why the clock is not qualified (null when qualified). */
   unqualifiedReason: string | null;
   audit: { checkedEvents: number; disagreements: number } | null;
+  official: {
+    class: PpClockOfficialClass;
+    /** Official PP seconds; null unless the class is zero or nonzero. */
+    seconds: number | null;
+    /** Clock seconds minus official seconds; null when either is unknown. */
+    diffSeconds: number | null;
+  };
 };
 
 export const PP_CLOCK_SOURCE = "fhfh-nhl-penalty-context-clock-v2";
@@ -439,6 +474,44 @@ export const PP_CLOCK_SOURCE = "fhfh-nhl-penalty-context-clock-v2";
 export const PP_CLOCK_QUALIFIED = true;
 export const PP_CLOCK_UNQUALIFIED_REASON =
   "Complete final NHL play-by-play is required to qualify PP time.";
+// Decision 144 rule 4; owner item O1 may tighten it to an exact match.
+export const PP_CLOCK_OFFICIAL_TOLERANCE_SECONDS = 2;
+
+function classifyOfficialTeamPp(
+  official: OfficialTeamPp | null
+): { class: PpClockOfficialClass; seconds: number | null } {
+  if (!official) return { class: "missing", seconds: null };
+  const toi = /^(\d{1,3}):([0-5]\d)$/.exec(official.powerPlayToi ?? "");
+  const record = /^(\d+)\/(\d+)$/.exec(official.powerPlay ?? "");
+  if (!toi || !record) return { class: "malformed", seconds: null };
+  const seconds = Number(toi[1]) * 60 + Number(toi[2]);
+  const opportunities = Number(record[2]);
+  if (Number(record[1]) > opportunities || seconds > 4800 || (seconds > 0 && opportunities === 0)) {
+    return { class: "malformed", seconds: null };
+  }
+  if (seconds > 0) return { class: "nonzero", seconds };
+  return opportunities > 0 ? { class: "placeholder", seconds: null } : { class: "zero", seconds: 0 };
+}
+
+function officialReferenceReason(
+  official: TeamPpClockContract["official"],
+  raw: OfficialTeamPp | null,
+  clockSeconds: number
+): string | null {
+  const record = `powerPlayToi "${raw?.powerPlayToi}", powerPlay "${raw?.powerPlay}"`;
+  if (official.class === "missing") return "No official team PP total (teamGameStats) for this game.";
+  if (official.class === "malformed") return `The official team PP record is malformed (${record}).`;
+  if (official.class === "placeholder") {
+    return `The official team PP time is a legacy "00:00" placeholder (${record}).`;
+  }
+  if (official.class === "zero" && clockSeconds > 0) {
+    return `The official record shows no PP (${record}) but the clock has ${clockSeconds} s; it may be a failed-fetch default.`;
+  }
+  if (Math.abs(official.diffSeconds!) > PP_CLOCK_OFFICIAL_TOLERANCE_SECONDS) {
+    return `The clock differs from the official team PP total by ${official.diffSeconds! > 0 ? "+" : ""}${official.diffSeconds} s (clock ${clockSeconds} s, official ${official.seconds} s).`;
+  }
+  return null;
+}
 
 export function buildTeamPpClock(args: {
   gameId: number;
@@ -447,7 +520,10 @@ export function buildTeamPpClock(args: {
   awayTeamId: number;
   gameType?: number;
   plays: readonly any[] | null | undefined;
+  /** The team's official PP record; null when the row is missing. */
+  official: OfficialTeamPp | null;
 }): TeamPpClockContract {
+  const officialClass = classifyOfficialTeamPp(args.official);
   if (!args.plays || args.plays.length === 0) {
     return {
       gameId: args.gameId,
@@ -456,7 +532,8 @@ export function buildTeamPpClock(args: {
       source: PP_CLOCK_SOURCE,
       qualified: false,
       unqualifiedReason: "No play-by-play for this game.",
-      audit: null
+      audit: null,
+      official: { ...officialClass, diffSeconds: null }
     };
   }
   const gameType = args.gameType ?? Math.floor(args.gameId / 10_000) % 100;
@@ -475,25 +552,32 @@ export function buildTeamPpClock(args: {
       gameId: args.gameId, teamId: args.teamId, seconds: null,
       source: PP_CLOCK_SOURCE, qualified: false,
       unqualifiedReason: error instanceof Error ? error.message : "Penalty clock could not be established.",
-      audit: null
+      audit: null,
+      official: { ...officialClass, diffSeconds: null }
     };
   }
-  const qualified = PP_CLOCK_QUALIFIED && complete && audit.disagreements.length === 0;
+  const seconds = teamPpClockSeconds(blocks, args.teamId);
+  const official = {
+    ...officialClass,
+    diffSeconds: officialClass.seconds == null ? null : seconds - officialClass.seconds
+  };
+  const unqualifiedReason = !(PP_CLOCK_QUALIFIED && complete)
+    ? PP_CLOCK_UNQUALIFIED_REASON
+    : audit.disagreements.length > 0
+      ? `${audit.disagreements.length} event(s) disagree with the official situation codes.`
+      : officialReferenceReason(official, args.official, seconds);
   return {
     gameId: args.gameId,
     teamId: args.teamId,
-    seconds: teamPpClockSeconds(blocks, args.teamId),
+    seconds,
     source: PP_CLOCK_SOURCE,
-    qualified,
-    unqualifiedReason: PP_CLOCK_QUALIFIED && complete
-      ? audit.disagreements.length === 0
-        ? null
-        : `${audit.disagreements.length} event(s) disagree with the official situation codes.`
-      : PP_CLOCK_UNQUALIFIED_REASON,
+    qualified: unqualifiedReason === null,
+    unqualifiedReason,
     audit: {
       checkedEvents: audit.checkedEvents,
       disagreements: audit.disagreements.length
-    }
+    },
+    official
   };
 }
 

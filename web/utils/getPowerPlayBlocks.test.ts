@@ -68,7 +68,8 @@ describe("decision-71 PP clock and situation-code audit (M-FRG-058)", () => {
     expect(teamPpClockSeconds(blocks, HOME)).toBe(120);
     expect(teamPpClockSeconds(blocks, AWAY)).toBe(0);
     const audit = auditPpBlocksAgainstSituationCodes(plays, blocks, teams);
-    expect(audit.checkedEvents).toBe(6);
+    // The period-end code is transitional and not checked (decision 144).
+    expect(audit.checkedEvents).toBe(5);
     expect(audit.disagreements).toEqual([]);
   });
 
@@ -131,16 +132,18 @@ describe("decision-71 PP clock and situation-code audit (M-FRG-058)", () => {
 
   it("buildTeamPpClock reports the clock but stays unqualified until validated", () => {
     const plays = [...opening(), minor(3, "10:00", AWAY), periodEnd("1551")];
-    expect(buildTeamPpClock({ gameId: 1, teamId: HOME, ...teams, plays })).toEqual({
+    const official = { powerPlayToi: "02:00", powerPlay: "0/1" };
+    expect(buildTeamPpClock({ gameId: 1, teamId: HOME, ...teams, plays, official })).toEqual({
       gameId: 1,
       teamId: HOME,
       seconds: 120,
       source: PP_CLOCK_SOURCE,
       qualified: false,
       unqualifiedReason: PP_CLOCK_UNQUALIFIED_REASON,
-      audit: { checkedEvents: 3, disagreements: 0 }
+      audit: { checkedEvents: 2, disagreements: 0 },
+      official: { class: "nonzero", seconds: 120, diffSeconds: 0 }
     });
-    expect(buildTeamPpClock({ gameId: 1, teamId: HOME, ...teams, plays: null })).toMatchObject({
+    expect(buildTeamPpClock({ gameId: 1, teamId: HOME, ...teams, plays: null, official })).toMatchObject({
       seconds: null,
       qualified: false
     });
@@ -566,15 +569,17 @@ describe("penalty-service timing regressions", () => {
       ];
     };
 
+    const official = { powerPlayToi: "02:00", powerPlay: "0/1" };
+
     it.each([
-      { name: "observed two-minute advantage", withMinor: true, seconds: 120 },
-      { name: "verified zero opportunity", withMinor: false, seconds: 0 }
-    ])("qualifies a complete final game with $name", ({ withMinor, seconds }) => {
+      { name: "observed two-minute advantage", withMinor: true, seconds: 120, official },
+      { name: "verified zero opportunity", withMinor: false, seconds: 0, official: { powerPlayToi: "00:00", powerPlay: "0/0" } }
+    ])("qualifies a complete final game with $name", ({ withMinor, seconds, official }) => {
       const plays = completeRegulation(withMinor);
       expect(PP_CLOCK_SOURCE).toBe("fhfh-nhl-penalty-context-clock-v2");
       expect(PP_CLOCK_QUALIFIED).toBe(true);
       expect(hasCompletePenaltyClockSource(plays, 2)).toBe(true);
-      expect(buildTeamPpClock({ gameId, teamId: HOME, ...teams, plays })).toMatchObject({
+      expect(buildTeamPpClock({ gameId, teamId: HOME, ...teams, plays, official })).toMatchObject({
         seconds,
         qualified: true,
         unqualifiedReason: null,
@@ -592,7 +597,7 @@ describe("penalty-service timing regressions", () => {
         if (defect === "duplicate event ID") plays[3].eventId = plays[2].eventId;
         if (defect === "incorrect period type") plays[5].periodDescriptor.periodType = "OT";
         expect(hasCompletePenaltyClockSource(plays, 2)).toBe(false);
-        expect(buildTeamPpClock({ gameId, teamId: HOME, ...teams, plays })).toMatchObject({
+        expect(buildTeamPpClock({ gameId, teamId: HOME, ...teams, plays, official })).toMatchObject({
           seconds: 120,
           qualified: false,
           unqualifiedReason: PP_CLOCK_UNQUALIFIED_REASON
@@ -601,7 +606,7 @@ describe("penalty-service timing regressions", () => {
     );
 
     it("returns unknown seconds for unresolved captain-selected cancellation", () => {
-      expect(buildTeamPpClock({ gameId, teamId: AWAY, ...teams, plays: [...captainChoice(), endAt()] })).toMatchObject({
+      expect(buildTeamPpClock({ gameId, teamId: AWAY, ...teams, plays: [...captainChoice(), endAt()], official })).toMatchObject({
         seconds: null,
         qualified: false,
         unqualifiedReason: expect.stringMatching(/ambiguous.*penalty|penalty.*ambiguous/i),
@@ -612,7 +617,7 @@ describe("penalty-service timing regressions", () => {
     it("returns unknown seconds for an unsupported penalty instead of a qualified zero", () => {
       const plays = completeRegulation();
       plays[1] = { ...plays[1], details: { ...plays[1].details, duration: 3 } };
-      expect(buildTeamPpClock({ gameId, teamId: HOME, ...teams, plays })).toMatchObject({
+      expect(buildTeamPpClock({ gameId, teamId: HOME, ...teams, plays, official })).toMatchObject({
         seconds: null,
         qualified: false,
         unqualifiedReason: expect.stringMatching(/penalty/i),
@@ -624,7 +629,7 @@ describe("penalty-service timing regressions", () => {
       const plays = completeRegulation();
       plays[2].timeInPeriod = "01:99";
       expect(hasCompletePenaltyClockSource(plays, 2)).toBe(false);
-      expect(buildTeamPpClock({ gameId, teamId: HOME, ...teams, plays })).toMatchObject({
+      expect(buildTeamPpClock({ gameId, teamId: HOME, ...teams, plays, official })).toMatchObject({
         seconds: null,
         qualified: false,
         audit: null
@@ -635,7 +640,7 @@ describe("penalty-service timing regressions", () => {
       const plays = completeRegulation();
       // Deliberately violate the source contract without weakening the normal fixture type.
       plays[plays.length - 1].situationCode = 1551 as unknown as string;
-      expect(buildTeamPpClock({ gameId, teamId: HOME, ...teams, plays })).toMatchObject({
+      expect(buildTeamPpClock({ gameId, teamId: HOME, ...teams, plays, official })).toMatchObject({
         seconds: null,
         qualified: false,
         unqualifiedReason: expect.stringMatching(/situation/i),
@@ -644,7 +649,7 @@ describe("penalty-service timing regressions", () => {
     });
 
     it("never qualifies a requested team outside the game's two teams", () => {
-      expect(buildTeamPpClock({ gameId, teamId: 999, ...teams, plays: completeRegulation() })).toMatchObject({
+      expect(buildTeamPpClock({ gameId, teamId: 999, ...teams, plays: completeRegulation(), official })).toMatchObject({
         seconds: null,
         qualified: false,
         audit: null
@@ -727,5 +732,321 @@ describe("match penalty recorded as MAT/15 (decision 144, F11 C3)", () => {
       p.eventId === 893 ? { ...p, details: { ...p.details, duration: 10 } } : p
     );
     expect(() => getPowerPlayBlocks(plays, gameTeams)).toThrow("Unsupported penalty-clock penalty MAT/10");
+  });
+});
+
+describe("stored-game qualification (decision 144, F11 C1 and C2)", () => {
+  // Stored 2025-26 and 2026-27 games (nhl_api_pbp_events): every penalty, goal
+  // and period marker, each event the old audit flagged, and the first interior
+  // event of each PP span. Each subset rebuilds the full game's spans exactly.
+  // Official totals are the stored teamGameStats rows.
+  type Side = "H" | "A";
+  type Row = [eventId: number, sortOrder: number, period: number, time: string, code: string, type: string,
+    side?: Side, typeCode?: string, descKey?: string, duration?: number, committedBy?: number, servedBy?: number];
+  type StoredGame = {
+    gameId: number; homeTeamId: number; awayTeamId: number;
+    official: Record<Side, { powerPlayToi: string; powerPlay: string }>;
+    rows: Row[];
+  };
+  const storedPlays = ({ homeTeamId, awayTeamId, rows }: StoredGame) => rows.map(
+    ([eventId, sortOrder, period, timeInPeriod, situationCode, typeDescKey, side, typeCode, descKey, duration, committedBy, servedBy]) => {
+      const [minutes, seconds] = timeInPeriod.split(":").map(Number);
+      const remaining = 1200 - minutes * 60 - seconds;
+      return {
+        eventId,
+        sortOrder,
+        typeDescKey,
+        periodDescriptor: { number: period, periodType: "REG" },
+        timeInPeriod,
+        timeRemaining: `${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`,
+        situationCode,
+        details: {
+          ...(side == null ? {} : { eventOwnerTeamId: side === "H" ? homeTeamId : awayTeamId }),
+          ...(typeCode == null ? {} : { typeCode, descKey, duration }),
+          ...(committedBy == null ? {} : { committedByPlayerId: committedBy }),
+          ...(servedBy == null ? {} : { servedByPlayerId: servedBy })
+        }
+      };
+    }
+  );
+  const clockFor = (game: StoredGame, side: Side, official: StoredGame["official"][Side] | null = game.official[side]) =>
+    buildTeamPpClock({
+      gameId: game.gameId,
+      teamId: side === "H" ? game.homeTeamId : game.awayTeamId,
+      homeTeamId: game.homeTeamId,
+      awayTeamId: game.awayTeamId,
+      gameType: 2,
+      plays: storedPlays(game),
+      official
+    });
+
+  // The old audit flagged period-end 1146 and game-end 516 (1550 at the final
+  // horn, after a penalty at 60:00).
+  const game2026020002: StoredGame = {
+    gameId: 2026020002, homeTeamId: 10, awayTeamId: 8,
+    official: { H: { powerPlayToi: "06:00", powerPlay: "0/3" }, A: { powerPlayToi: "04:00", powerPlay: "0/2" } },
+    rows: [
+      [52, 8, 1, "00:00", "1551", "period-start"],
+      [62, 20, 1, "00:48", "1551", "goal", "H"],
+      [172, 124, 1, "08:33", "1551", "penalty", "H", "MIN", "hooking", 2, 8477426],
+      [181, 130, 1, "08:41", "1541", "giveaway", "A"],
+      [203, 154, 1, "10:53", "1551", "goal", "A"],
+      [217, 163, 1, "11:42", "1551", "penalty", "A", "MIN", "tripping", 2, 8484984],
+      [223, 169, 1, "12:05", "1451", "takeaway", "A"],
+      [20, 284, 1, "20:00", "1551", "period-end"],
+      [390, 290, 2, "00:00", "1551", "period-start"],
+      [602, 358, 2, "04:52", "1551", "goal", "A"],
+      [718, 465, 2, "12:56", "1551", "penalty", "H", "MIN", "roughing", 2, 8476931],
+      [721, 467, 2, "12:56", "1551", "penalty", "A", "MIN", "roughing", 2, 8481618],
+      [792, 536, 2, "17:45", "1551", "penalty", "A", "MIN", "tripping", 2, 8481540],
+      [802, 544, 2, "18:46", "1451", "giveaway", "H"],
+      [40, 556, 2, "20:00", "1551", "period-end"],
+      [816, 563, 3, "00:00", "1551", "period-start"],
+      [912, 660, 3, "07:01", "0651", "penalty", "H", "MIN", "tripping", 2, 8475171],
+      [915, 665, 3, "07:27", "1541", "shot-on-goal", "A"],
+      [941, 687, 3, "09:16", "1551", "penalty", "A", "MIN", "interference", 2, 8480074],
+      [945, 692, 3, "09:29", "1451", "shot-on-goal", "H"],
+      [1047, 744, 3, "13:12", "1551", "goal", "A"],
+      [1088, 781, 3, "15:46", "1551", "goal", "H"],
+      [511, 842, 3, "20:00", "1560", "penalty", "H", "MIN", "roughing", 2, 8475166],
+      [1146, 844, 3, "20:00", "1550", "period-end"],
+      [516, 848, 3, "20:00", "1550", "game-end"]
+    ]
+  };
+  // The old audit flagged stoppage 1231 and penalties 802 and 36, logged at the
+  // same second as a PP goal, with a stale 1551 inside the merged PP.
+  const game2026020058: StoredGame = {
+    gameId: 2026020058, homeTeamId: 8, awayTeamId: 18,
+    official: { H: { powerPlayToi: "04:26", powerPlay: "0/3" }, A: { powerPlayToi: "06:53", powerPlay: "2/5" } },
+    rows: [
+      [61, 8, 1, "00:00", "1551", "period-start"],
+      [159, 62, 1, "03:11", "1551", "penalty", "A", "MIN", "hooking", 2, 8475158],
+      [173, 67, 1, "03:23", "1451", "giveaway", "A"],
+      [374, 171, 1, "10:46", "1551", "penalty", "H", "MIN", "tripping", 2, 8483457],
+      [378, 178, 1, "11:08", "1541", "faceoff", "A"],
+      [15, 291, 1, "20:00", "1551", "period-end"],
+      [497, 298, 2, "00:00", "1551", "period-start"],
+      [528, 326, 2, "02:40", "1551", "penalty", "H", "MIN", "broken-stick", 2, 8476981],
+      [23, 331, 2, "03:04", "1541", "delayed-penalty", "A"],
+      [534, 332, 2, "03:06", "1541", "penalty", "A", "MIN", "tripping", 2, 8484241],
+      [539, 339, 2, "03:12", "1441", "goal", "H"],
+      [650, 402, 2, "08:50", "1551", "goal", "H"],
+      [737, 483, 2, "15:06", "1551", "goal", "A"],
+      [775, 513, 2, "18:00", "1551", "penalty", "H", "MIN", "tripping", 2, 8480865],
+      [781, 518, 2, "18:35", "1541", "shot-on-goal", "A"],
+      [795, 533, 2, "19:28", "1541", "goal", "A"],
+      [1231, 534, 2, "19:28", "1551", "stoppage"],
+      [802, 535, 2, "19:28", "1551", "penalty", "H", "MIN", "cross-checking", 2, 8476981],
+      [36, 537, 2, "19:28", "1551", "penalty", "H", "MIS", "misconduct", 10, 8482964],
+      [43, 546, 2, "20:00", "1541", "period-end"],
+      [812, 553, 3, "00:00", "1541", "period-start"],
+      [878, 612, 3, "04:55", "1551", "penalty", "A", "MIN", "holding", 2, 8479980],
+      [882, 617, 3, "05:34", "1451", "missed-shot", "H"],
+      [1007, 735, 3, "15:45", "1551", "penalty", "H", "MIN", "tripping", 2, 8476875],
+      [1012, 740, 3, "16:44", "1541", "goal", "A"],
+      [1025, 751, 3, "17:23", "1560", "goal", "A"],
+      [1037, 763, 3, "18:34", "1560", "goal", "A"],
+      [562, 779, 3, "20:00", "1551", "period-end"],
+      [566, 783, 3, "20:00", "1551", "game-end"]
+    ]
+  };
+  // The old audit flagged penalty 210, the second of two coincident minors,
+  // which carries the first one's post-change code.
+  const game2026020093: StoredGame = {
+    gameId: 2026020093, homeTeamId: 12, awayTeamId: 15,
+    official: { H: { powerPlayToi: "08:07", powerPlay: "1/5" }, A: { powerPlayToi: "03:46", powerPlay: "0/2" } },
+    rows: [
+      [102, 8, 1, "00:00", "1551", "period-start"],
+      [205, 58, 1, "03:18", "1551", "penalty", "H", "MIN", "interference", 2, 8477478],
+      [210, 61, 1, "03:18", "1541", "penalty", "A", "MIN", "tripping", 2, 8479345],
+      [293, 140, 1, "09:26", "1551", "goal", "A"],
+      [502, 240, 1, "17:27", "1551", "penalty", "H", "MIN", "cross-checking", 2, 8475235],
+      [520, 250, 1, "18:51", "1541", "hit", "H"],
+      [522, 258, 1, "19:13", "0641", "penalty", "H", "MIN", "unsportsmanlike-conduct", 2, 8480830],
+      [71, 273, 1, "20:00", "1541", "period-end"],
+      [538, 280, 2, "00:00", "1541", "period-start"],
+      [303, 329, 2, "03:58", "1551", "goal", "H"],
+      [590, 331, 2, "03:58", "1551", "penalty", "A", "BEN", "delaying-game-unsuccessful-challenge", 2, undefined, 8471214],
+      [593, 337, 2, "04:25", "1451", "faceoff", "A"],
+      [713, 356, 2, "06:39", "1551", "goal", "A"],
+      [771, 406, 2, "10:45", "1551", "penalty", "A", "MIN", "delaying-game-puck-over-glass", 2, 8484873],
+      [775, 411, 2, "10:50", "1451", "shot-on-goal", "H"],
+      [866, 502, 2, "18:49", "1551", "goal", "H"],
+      [98, 503, 2, "18:49", "1551", "penalty", "H", "MIN", "roughing", 2, 8482809],
+      [95, 505, 2, "18:49", "1551", "penalty", "A", "MIN", "roughing", 2, 8484186],
+      [875, 512, 2, "19:25", "1441", "penalty", "A", "MIN", "hooking", 2, 8479345],
+      [880, 518, 2, "19:30", "1341", "faceoff", "A"],
+      [601, 521, 2, "20:00", "1341", "period-end"],
+      [888, 527, 3, "00:00", "1341", "period-start"],
+      [973, 612, 3, "07:12", "1551", "penalty", "A", "MIN", "slashing", 2, 8484186],
+      [978, 617, 3, "07:25", "1451", "blocked-shot", "H"],
+      [1050, 687, 3, "13:49", "1551", "penalty", "A", "MIN", "tripping", 2, 8482088],
+      [1054, 692, 3, "13:56", "1451", "goal", "H"],
+      [1118, 755, 3, "18:33", "0651", "goal", "H"],
+      [623, 774, 3, "20:00", "0651", "period-end"],
+      [627, 778, 3, "20:00", "0651", "game-end"]
+    ]
+  };
+
+  describe("C2: the audit skips the observations the clock refuses", () => {
+    it.each([
+      { game: game2026020002, checkedEvents: 5 },
+      { game: game2026020058, checkedEvents: 5 },
+      { game: game2026020093, checkedEvents: 5 }
+    ])("$game.gameId: no disagreement, and both teams qualify on the official totals", ({ game, checkedEvents }) => {
+      const gameTeams = { homeTeamId: game.homeTeamId, awayTeamId: game.awayTeamId, gameType: 2 };
+      const plays = storedPlays(game);
+      expect(hasCompletePenaltyClockSource(plays, 2)).toBe(true);
+      const audit = auditPpBlocksAgainstSituationCodes(plays, getPowerPlayBlocks(plays, gameTeams), gameTeams);
+      expect(audit).toEqual({ checkedEvents, disagreements: [] });
+      for (const side of ["H", "A"] as const) {
+        expect(clockFor(game, side)).toMatchObject({
+          qualified: true,
+          unqualifiedReason: null,
+          audit: { checkedEvents, disagreements: 0 },
+          official: { class: "nonzero", diffSeconds: 0 }
+        });
+      }
+    });
+
+    it("still flags a wrong code on an interior event", () => {
+      // Faceoff 593 (P2 04:25) is inside the home 03:58-05:58 PP; recode it 5v5.
+      const game = {
+        ...game2026020093,
+        rows: game2026020093.rows.map((row): Row => row[0] === 593 ? [593, 337, 2, "04:25", "1551", "faceoff", "A"] : row)
+      };
+      const gameTeams = { homeTeamId: game.homeTeamId, awayTeamId: game.awayTeamId, gameType: 2 };
+      const blocks = getPowerPlayBlocks(storedPlays(game2026020093), gameTeams);
+      expect(auditPpBlocksAgainstSituationCodes(storedPlays(game), blocks, gameTeams).disagreements).toEqual([
+        { eventId: 593, gameSecond: 1465, situationCode: "1551", simulatedAdvantageTeamId: 12, situationAdvantageTeamId: null }
+      ]);
+    });
+  });
+
+  describe("C1: qualification needs the official team PP total", () => {
+    it("2026020036: the home clock matches and qualifies; the away clock is +28 s and is withheld", () => {
+      // Coincident-penalty scrum mismatch (REPORT.md section 2). The clock agrees
+      // with every interior situation code.
+      const game: StoredGame = {
+        gameId: 2026020036, homeTeamId: 3, awayTeamId: 68,
+        official: { H: { powerPlayToi: "06:12", powerPlay: "0/4" }, A: { powerPlayToi: "02:00", powerPlay: "1/1" } },
+        rows: [
+          [52, 8, 1, "00:00", "1551", "period-start"],
+          [101, 56, 1, "03:31", "1551", "penalty", "H", "MIN", "interference", 2, 8477969],
+          [108, 64, 1, "04:17", "1541", "missed-shot", "A"],
+          [244, 144, 1, "10:39", "1551", "penalty", "A", "MIN", "tripping", 2, 8477346],
+          [248, 149, 1, "11:03", "1451", "blocked-shot", "H"],
+          [398, 246, 1, "17:18", "1551", "goal", "H"],
+          [404, 247, 1, "17:18", "1551", "penalty", "A", "MIN", "roughing", 2, 8480849],
+          [407, 249, 1, "17:18", "1551", "penalty", "H", "MIN", "roughing", 2, 8482157],
+          [417, 258, 1, "18:03", "1441", "penalty", "A", "MIN", "cross-checking", 2, 8477951],
+          [424, 264, 1, "18:29", "1341", "blocked-shot", "H"],
+          [15, 281, 1, "20:00", "1451", "period-end"],
+          [446, 287, 2, "00:00", "1451", "period-start"],
+          [607, 347, 2, "04:28", "1560", "penalty", "A", "MIN", "interference", 2, 8477346],
+          [615, 352, 2, "04:40", "1451", "missed-shot", "H"],
+          [749, 469, 2, "14:01", "1551", "penalty", "H", "MIN", "roughing", 2, 8482157, 8482877],
+          [746, 471, 2, "14:01", "1551", "penalty", "H", "MIN", "boarding", 2, 8482157],
+          [739, 473, 2, "14:01", "1551", "penalty", "A", "MIN", "cross-checking", 2, 8479410],
+          [752, 479, 2, "14:21", "1541", "missed-shot", "A"],
+          [801, 481, 2, "14:29", "1541", "goal", "A"],
+          [38, 552, 2, "20:00", "1551", "period-end"],
+          [877, 559, 3, "00:00", "1551", "period-start"],
+          [155, 571, 3, "01:03", "1551", "penalty", "H", "MAJ", "fighting", 5, 8482157],
+          [45, 573, 3, "01:03", "1551", "penalty", "A", "MAJ", "fighting", 5, 8480855],
+          [977, 604, 3, "03:15", "1551", "goal", "H"],
+          [1111, 736, 3, "12:47", "1551", "goal", "H"],
+          [1143, 766, 3, "14:57", "1551", "goal", "A"],
+          [1205, 821, 3, "18:45", "0651", "goal", "H"],
+          [1219, 831, 3, "19:48", "0651", "penalty", "A", "MIN", "interference", 2, 8479410],
+          [559, 836, 3, "20:00", "1451", "period-end"],
+          [563, 840, 3, "20:00", "1451", "game-end"]
+        ]
+      };
+      expect(clockFor(game, "H")).toMatchObject({
+        seconds: 372,
+        qualified: true,
+        unqualifiedReason: null,
+        official: { class: "nonzero", seconds: 372, diffSeconds: 0 }
+      });
+      expect(clockFor(game, "A")).toMatchObject({
+        seconds: 148,
+        qualified: false,
+        unqualifiedReason: "The clock differs from the official team PP total by +28 s (clock 148 s, official 120 s).",
+        audit: { disagreements: 0 },
+        official: { class: "nonzero", seconds: 120, diffSeconds: 28 }
+      });
+    });
+
+    it("2025020665: a legacy \"00:00\" placeholder never qualifies, even with a clean clock", () => {
+      // 2025-26 failed-fetch default: both rows read "00:00" with one opportunity each.
+      const game: StoredGame = {
+        gameId: 2025020665, homeTeamId: 20, awayTeamId: 55,
+        official: { H: { powerPlayToi: "00:00", powerPlay: "0/1" }, A: { powerPlayToi: "00:00", powerPlay: "0/1" } },
+        rows: [
+          [54, 9, 1, "00:00", "1551", "period-start"],
+          [148, 112, 1, "06:33", "1551", "goal", "H"],
+          [15, 162, 1, "09:48", "1551", "penalty", "A", "PS", "ps-hooking-on-breakaway", 0, 8476457],
+          [438, 295, 1, "19:18", "1551", "penalty", "H", "MIN", "holding", 2, 8480797],
+          [23, 302, 1, "20:00", "1541", "period-end"],
+          [449, 308, 2, "00:00", "1541", "period-start"],
+          [448, 310, 2, "00:00", "1541", "faceoff", "A"],
+          [522, 333, 2, "02:17", "1551", "goal", "A"],
+          [630, 386, 2, "06:44", "1560", "penalty", "A", "MIN", "hooking", 2, 8476905],
+          [636, 392, 2, "07:04", "1451", "shot-on-goal", "H"],
+          [48, 575, 2, "20:00", "1551", "period-end"],
+          [828, 581, 3, "00:00", "1551", "period-start"],
+          [858, 613, 3, "01:57", "1551", "goal", "A"],
+          [906, 653, 3, "05:12", "1551", "goal", "A"],
+          [1084, 824, 3, "17:25", "1560", "goal", "A"],
+          [1091, 830, 3, "17:39", "1551", "goal", "A"],
+          [468, 865, 3, "20:00", "1551", "period-end"],
+          [472, 869, 3, "20:00", "1551", "game-end"]
+        ]
+      };
+      for (const side of ["H", "A"] as const) {
+        expect(clockFor(game, side)).toMatchObject({
+          seconds: 120,
+          qualified: false,
+          unqualifiedReason: 'The official team PP time is a legacy "00:00" placeholder (powerPlayToi "00:00", powerPlay "0/1").',
+          audit: { disagreements: 0 },
+          official: { class: "placeholder", seconds: null, diffSeconds: null }
+        });
+      }
+    });
+
+    // 2026020093 home: clock 487 s, official "08:07" "1/5".
+    it.each([
+      { name: "2 s over (tolerance)", official: { powerPlayToi: "08:05", powerPlay: "1/5" }, qualified: true,
+        reason: null, officialClass: { class: "nonzero", seconds: 485, diffSeconds: 2 } },
+      { name: "2 s under (tolerance)", official: { powerPlayToi: "08:09", powerPlay: "1/5" }, qualified: true,
+        reason: null, officialClass: { class: "nonzero", seconds: 489, diffSeconds: -2 } },
+      { name: "3 s under", official: { powerPlayToi: "08:10", powerPlay: "1/5" }, qualified: false,
+        reason: "The clock differs from the official team PP total by -3 s (clock 487 s, official 490 s).",
+        officialClass: { class: "nonzero", seconds: 490, diffSeconds: -3 } },
+      { name: "a missing row", official: null, qualified: false,
+        reason: "No official team PP total (teamGameStats) for this game.",
+        officialClass: { class: "missing", seconds: null, diffSeconds: null } },
+      { name: "an unparseable time", official: { powerPlayToi: "8:7", powerPlay: "1/5" }, qualified: false,
+        reason: 'The official team PP record is malformed (powerPlayToi "8:7", powerPlay "1/5").',
+        officialClass: { class: "malformed", seconds: null, diffSeconds: null } },
+      { name: "more goals than opportunities", official: { powerPlayToi: "08:07", powerPlay: "6/5" }, qualified: false,
+        reason: 'The official team PP record is malformed (powerPlayToi "08:07", powerPlay "6/5").',
+        officialClass: { class: "malformed", seconds: null, diffSeconds: null } },
+      { name: "PP time with no opportunity", official: { powerPlayToi: "08:07", powerPlay: "0/0" }, qualified: false,
+        reason: 'The official team PP record is malformed (powerPlayToi "08:07", powerPlay "0/0").',
+        officialClass: { class: "malformed", seconds: null, diffSeconds: null } },
+      { name: "an official zero while the clock has PP time", official: { powerPlayToi: "00:00", powerPlay: "0/0" },
+        qualified: false,
+        reason: 'The official record shows no PP (powerPlayToi "00:00", powerPlay "0/0") but the clock has 487 s; it may be a failed-fetch default.',
+        officialClass: { class: "zero", seconds: 0, diffSeconds: 487 } }
+    ])("2026020093 home with $name", ({ official, qualified, reason, officialClass }) => {
+      expect(clockFor(game2026020093, "H", official)).toMatchObject({
+        seconds: 487,
+        qualified,
+        unqualifiedReason: reason,
+        official: officialClass
+      });
+    });
   });
 });

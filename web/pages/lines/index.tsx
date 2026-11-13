@@ -16,7 +16,8 @@ import styles from "styles/Lines.module.scss";
 import { getTeams, getCurrentSeason } from "lib/NHL/server";
 import ClientOnly from "components/ClientOnly";
 import {
-  getLineCombinations,
+  getLatestLineChanges,
+  type LineChangeSummary,
   type LineSource
 } from "components/LineCombinations/utilities";
 import { fetchLatestPlayerNewsFlags, type PlayerNewsFlag } from "lib/newsFeed";
@@ -79,76 +80,45 @@ export const getStaticProps: GetStaticProps = async () => {
   const promotions = [] as RowData[];
   const demotions = [] as RowData[];
 
-  await Promise.all(
-    teams.map(async (team) => {
+  // One batched read for every team (a few queries, not nine per team).
+  const changesByTeam = await getLatestLineChanges(teams.map((team) => team.id));
+  for (const team of teams) {
+    let lineCombos: LineChangeSummary | undefined = changesByTeam.get(team.id);
+    // Fallback for Utah: try last season + prior team ID if current season has no data yet
+    if (!lineCombos && team.abbreviation === "UTA") {
       try {
-        const lineCombos = await getLineCombinations(team.id);
-        // Add team abbreviation
-        promotions.push(
-          ...lineCombos.promotions.map(
-            (p) =>
-              ({
-                ...p,
-                abbreviation: team.abbreviation,
-                lineSource: lineCombos.lineSource,
-              } as any)
-          )
-        );
-
-        demotions.push(
-          ...lineCombos.demotions.map(
-            (p) =>
-              ({
-                ...p,
-                abbreviation: team.abbreviation,
-                lineSource: lineCombos.lineSource,
-              } as any)
-          )
-        );
-      } catch (err) {
-        // Fallback for Utah: try last season + prior team ID if current season has no data yet
-        if (team.abbreviation === "UTA") {
-          try {
-            const { lastSeasonId } = await getCurrentSeason();
-            const utahLastSeasonTeamId = 59; // prior ID
-            const lineCombos = await getLineCombinations(
-              utahLastSeasonTeamId,
-              lastSeasonId
-            );
-            promotions.push(
-              ...lineCombos.promotions.map(
-                (p) =>
-                  ({
-                    ...p,
-                    abbreviation: team.abbreviation,
-                    lineSource: lineCombos.lineSource,
-                  } as any)
-              )
-            );
-            demotions.push(
-              ...lineCombos.demotions.map(
-                (p) =>
-                  ({
-                    ...p,
-                    abbreviation: team.abbreviation,
-                    lineSource: lineCombos.lineSource,
-                  } as any)
-              )
-            );
-          } catch (fallbackErr) {
-            console.warn(
-              `Skipping team ${team.abbreviation} due to missing line combos (current and fallback).`
-            );
-          }
-        } else {
-          console.warn(
-            `Skipping team ${team.abbreviation} due to missing line combos.`,
-            err
-          );
-        }
+        const { lastSeasonId } = await getCurrentSeason();
+        const utahLastSeasonTeamId = 59; // prior ID
+        lineCombos = (
+          await getLatestLineChanges([utahLastSeasonTeamId], lastSeasonId)
+        ).get(utahLastSeasonTeamId);
+      } catch (fallbackErr) {
+        console.warn(`Utah fallback line combos failed.`, fallbackErr);
       }
-    })
-  );
+    }
+    if (!lineCombos) {
+      console.warn(`Skipping team ${team.abbreviation} due to missing line combos.`);
+      continue;
+    }
+    const { lineSource } = lineCombos;
+    // Add team abbreviation
+    promotions.push(
+      ...lineCombos.promotions.map((p) => ({
+        ...p,
+        playerName: "",
+        abbreviation: team.abbreviation,
+        lineSource,
+      }))
+    );
+    demotions.push(
+      ...lineCombos.demotions.map((p) => ({
+        ...p,
+        playerName: "",
+        abbreviation: team.abbreviation,
+        lineSource,
+      }))
+    );
+  }
   // Add player name
   const playerIds = new Set<number>();
   promotions.forEach((p) => playerIds.add(p.playerId));
