@@ -108,13 +108,15 @@ export type PowerPlayGameDiff = {
   unchanged: number;
 };
 
-type PowerPlayCombinationUpdateSummary = {
+export type PowerPlayCombinationUpdateSummary = {
   gameId: number;
   dryRun: boolean;
   calculationVersion: string;
   rowCount: number;
   teamCount: number;
   clock: PpTeamGameClockRow[];
+  /** The computed player rows (the full set the replace stores). */
+  rows: PowerPlayPlayerRow[];
   diff: PowerPlayGameDiff;
   /** The replace keeps no stored row it didn't recompute, so this is always 0 (the batch route still sums it). */
   keptUnproven: 0;
@@ -410,6 +412,7 @@ export async function updatePowerPlayCombinations(
     rowCount: playerRows.length,
     teamCount: clockRows.length,
     clock: clockRows,
+    rows: playerRows,
     diff: diffPowerPlayGame(stored, playerRows),
     keptUnproven: 0,
     receipt: null

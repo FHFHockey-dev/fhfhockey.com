@@ -466,6 +466,40 @@ Both clock rows are available: home 22 at 297 s (skater-seconds 1,485) and away 
 
 **Release order, for separate approval:** apply the migration (TJ's pop-up), then release the writer, then run the bounded refresh from section 11.3 (dry run first). Readers stay withheld until the served values are verified. Reader changes are named in section 11.3 and are not part of this build.
 
+## 13. Decision 152: dry-run tooling for the refresh (built offline; not run)
+
+TJ wants the full dry-run diff before any refresh. Nothing here ran against a database, a route or a provider.
+
+**Batch route** (`update-power-play-combinations/index.ts`):
+- **`dryRun=true`** passes the flag to every game. The response carries every game's full result: its two clock rows, the computed player rows and the diff (deleted rows, updated rows with before and after values, inserted rows, unchanged count), plus totals.
+- **Full diffs, never truncated.** At the 60-game cap that is about 0.5 MB, well under the response limit. The only row a dry run writes is the route's own `cron_job_audit` row.
+- **`concurrency`** takes a whole number from 1 to 4; anything else is refused before any read. The default is unchanged.
+- **The 60-game cap** still applies to `gameIds`.
+- **The nightly cron (388) call is unchanged:** the same two-argument writer call at the same concurrency, and the same response shape (a test pins the exact keys).
+
+**Runner** `20-refresh-runner.py` (not run):
+- **Scope:** the frozen list `results/after-d152/refresh-batches-2026-27-regular.json` (309 games, 618 team-games, 31 batches of up to 10), pinned by its sha256.
+- **`dry` phase:**
+  - each batch runs with `dryRun=true&concurrency=1`, one call at a time, at least 5 s apart, with `hygiene.sh` before each;
+  - it saves `dry-run.json` and prints its sha256;
+  - it checks the result against section 11.1. Exactly the 16 team-games may change: the 15 deletes, the 23 PP-time or share updates and the 5 inserts, all as listed. Other fields may change only inside those 16 (unit averages).
+  - It expects 618 qualified clock rows with the after-c1-c2 seconds, 609 available and 9 not applicable. Anything else exits 4.
+- **`write` phase:**
+  - it runs only with that dry-run file and its approved sha256;
+  - it uses the same batches at concurrency 1, at least 5 s apart;
+  - after each call it reads the batch back over bounded `psql`: rows, values, clock availability and `calculation_version`;
+  - it stops on the first mismatch and prints the resume point (`--start-batch`).
+- **Stops:** any non-200, any call over 60 s, a failed or skipped game, or a busy database. The only HTTP target is `--base-url`, and provider hosts are refused.
+- **Offline self-check:**
+  - a synthetic dry run built from the Part B data passes the check;
+  - an extra change outside the 16, an unavailable clock and a missing delete each stop it;
+  - a wrong dry-run hash is refused before any call.
+
+**What the target must be:**
+- **For the dry run:** a deployment running this writer, batch route and the Part A registry. Production today has none of them. Either release the code first or run a local dev server on loopback against the production database: the dry run only reads, apart from one audit row per call.
+- **For the write phase:** migration 20261113220000 must also be applied first.
+- Each of these steps needs its own approval.
+
 ## Open items for the owner (Chef to route)
 
 Decided in decision 151 (2026-11-13): O1 ±2 s inclusive; O2 and O3 stay withheld; O4 read-only check done (section 9). Decision 152 (2026-11-13) accepts the Penalty Summary for the five O4 team-games (section 10). The original wording is kept below.

@@ -4,11 +4,44 @@ import pLimit from "p-limit";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { SupabaseType } from "lib/supabase/client";
 
-import { updatePowerPlayCombinations } from "./[gameId]";
+import {
+  updatePowerPlayCombinations,
+  type PowerPlayCombinationUpdateSummary
+} from "./[gameId]";
 
 // About a week of games, which still finishes well inside the 240 s function limit at this concurrency.
 export const MAX_GAMES_PER_CALL = 60;
 export const MAX_CONCURRENT_GAMES = 4;
+
+/**
+ * A dry run (dryRun=true) returns every game's full result: its two clock rows, the computed player rows and the
+ * diff against the stored rows (deleted, updated with before/after, inserted, unchanged), plus totals. It never
+ * truncates: at the 60-game cap that is roughly 0.5 MB (about 25 rows of ~230 bytes per game), well under the
+ * response limit. The only row a dry run writes is this route's cron_job_audit row.
+ */
+type DryRunGame = Pick<PowerPlayCombinationUpdateSummary, "gameId" | "clock" | "rows" | "diff">;
+
+function dryRunTotals(games: DryRunGame[]) {
+  const clocks = games.flatMap((game) => game.clock);
+  return {
+    games: games.length,
+    clockRows: clocks.length,
+    available: clocks.filter((row) => row.availability === "available").length,
+    notApplicable: clocks.filter((row) => row.availability === "not_applicable").length,
+    unavailable: clocks.filter((row) => row.availability === "unavailable").length,
+    playerRows: games.reduce((sum, game) => sum + game.rows.length, 0),
+    deleted: games.reduce((sum, game) => sum + game.diff.deleted.length, 0),
+    updated: games.reduce((sum, game) => sum + game.diff.updated.length, 0),
+    inserted: games.reduce((sum, game) => sum + game.diff.inserted.length, 0),
+    unchanged: games.reduce((sum, game) => sum + game.diff.unchanged, 0)
+  };
+}
+
+function parseConcurrency(value: string | string[] | undefined): number | null {
+  if (value === undefined) return MAX_CONCURRENT_GAMES;
+  const parsed = Number(Array.isArray(value) ? value[0] : value);
+  return Number.isInteger(parsed) && parsed >= 1 && parsed <= MAX_CONCURRENT_GAMES ? parsed : null;
+}
 
 const tooManyGamesMessage = (scope: string) =>
   `${scope} exceeds the limit of ${MAX_GAMES_PER_CALL} games per call. Split the repair into smaller calls.`;
@@ -91,6 +124,16 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
     });
   }
 
+  // Both default to today's behaviour: writes, at MAX_CONCURRENT_GAMES.
+  const dryRun = req.query.dryRun === "true" || req.query.dryRun === "1";
+  const concurrency = parseConcurrency(req.query.concurrency);
+  if (concurrency === null) {
+    return res.status(400).json({
+      success: false,
+      message: `concurrency must be a whole number from 1 to ${MAX_CONCURRENT_GAMES}.`
+    });
+  }
+
   try {
     const games =
       gameIds.length > 0
@@ -122,16 +165,21 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
       });
     }
 
-    const limit = pLimit(MAX_CONCURRENT_GAMES);
+    const limit = pLimit(concurrency);
     const results = await Promise.allSettled(
       games.map((game) =>
-        limit(() => updatePowerPlayCombinations(game.id, supabase))
+        limit(() =>
+          dryRun
+            ? updatePowerPlayCombinations(game.id, supabase, { dryRun: true })
+            : updatePowerPlayCombinations(game.id, supabase)
+        )
       )
     );
     const succeededGameIds: number[] = [];
     let keptUnproven = 0;
     const failures: PowerPlayFailure[] = [];
     const skippedGames: PowerPlayFailure[] = [];
+    const dryRunGames: DryRunGame[] = [];
 
     results.forEach((result, index) => {
       const game = games[index];
@@ -139,6 +187,10 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
       if (result.status === "fulfilled") {
         succeededGameIds.push(game.id);
         keptUnproven += result.value?.keptUnproven ?? 0;
+        if (dryRun && result.value) {
+          const { gameId, clock, rows, diff } = result.value;
+          dryRunGames.push({ gameId, clock, rows, diff });
+        }
         return;
       }
       const failure = {
@@ -156,10 +208,18 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
       ...succeededGameIds,
       ...skippedGames.map((entry) => entry.gameId)
     ];
+    const dryRunFields = dryRun
+      ? { dryRun: true, totals: dryRunTotals(dryRunGames), games: dryRunGames }
+      : {};
     const payload = {
       success: failures.length === 0,
-      message:
-        failures.length === 0
+      message: dryRun
+        ? `Dry run: computed power-play combinations for games [${succeededGameIds.join(", ")}]; nothing was written.${
+            failures.length > 0
+              ? ` Failed games [${failures.map((failure) => `${failure.gameId}: ${failure.message}`).join("; ")}]`
+              : ""
+          }`
+        : failures.length === 0
           ? skippedGames.length === 0
             ? `Successfully updated power-play combinations for games [${succeededGameIds.join(", ")}].`
             : `Updated power-play combinations for games [${succeededGameIds.join(", ")}]. Skipped pregame games [${skippedGames
@@ -178,7 +238,8 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
           ? { gameIds }
           : { startDate: startDate!, endDate: endDate! },
       skips: skippedGames,
-      failures
+      failures,
+      ...dryRunFields
     };
 
     if (failures.length > 0) {

@@ -72,8 +72,14 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 - Dry run on 163: deleted 3 stale rows, 0 updated, 0 inserted, 26 unchanged.
 - Gotcha: the baseline test also checks the record count in tasks/TASKS/super-goal/super-goal-final-summary.md; another lane flipped 147/148 to applied mid-task (114 applied / 6 pending before mine).
 
+## Decision 152 dry-run tooling (offline)
+- Batch route: dryRun (full per-game diff, clock rows, computed rows, totals; never truncated, ~0.5 MB at the 60 cap), concurrency 1..4 (default 4), 60-game cap kept; nightly call identical (two-argument writer call, same response keys). Writer summary now carries `rows`.
+- Runner 20-refresh-runner.py (not run): frozen 309 games / 31 batches (sha256 pinned); dry gate = exactly 16 team-games, 15 deletes, 23 PP updates, 5 inserts, 618 clocks (609 available, 9 N/A); write phase needs the approved dry-run sha256, reads back each batch via psql, stops on first mismatch with --start-batch.
+- Checks: batch route 17 tests (9 new) + writer 17; 6 suites / 314 tests; typecheck 0; ESLint 0; offline gate self-check pass + 3 tampers stop.
+- Gotcha: the runner's dry phase needs a target running the new writer + route + Part A (production has none); local dev on loopback against prod reads only (plus one cron_job_audit row per call).
+
 ## Next
-Chef reviews the writer build; apply, release and refresh each need TJ's separate approval. No production step from this lane. Chef routes remaining owner and code items. No production step from this lane.
+Chef routes the dry run (target choice: release vs local dev) to TJ. No production step from this lane. Chef routes remaining owner and code items. No production step from this lane.
 
 ## Blockers
 None.

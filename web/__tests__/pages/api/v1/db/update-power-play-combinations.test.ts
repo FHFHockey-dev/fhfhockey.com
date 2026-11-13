@@ -298,6 +298,143 @@ describe("/api/v1/db/update-power-play-combinations", () => {
     expect(res.body.keptUnproven).toBe(3);
   });
 
+  describe("decision 152 dry run and concurrency", () => {
+    const summaryFor = (gameId: number, diff: { deleted: number; updated: number; inserted: number; unchanged: number }) => ({
+      gameId,
+      dryRun: true,
+      keptUnproven: 0,
+      clock: [
+        { game_id: gameId, team_id: 1, availability: "available", clock_seconds: 120, unavailable_reason: null },
+        { game_id: gameId, team_id: 2, availability: "not_applicable", clock_seconds: 0, unavailable_reason: null }
+      ],
+      rows: Array.from({ length: diff.updated + diff.inserted + diff.unchanged }, (_, i) => ({
+        gameId, playerId: gameId * 100 + i, team_id: 1, unit: 1, PPTOI: 60, pp_share_of_team: 0.5
+      })),
+      diff: {
+        deleted: Array.from({ length: diff.deleted }, (_, i) => ({ playerId: gameId * 100 + 90 + i, unit: 3, PPTOI: 34 })),
+        updated: Array.from({ length: diff.updated }, (_, i) => ({
+          playerId: gameId * 100 + i, changes: { PPTOI: { before: 16, after: 60 } }
+        })),
+        inserted: [],
+        unchanged: diff.unchanged
+      }
+    });
+
+    it("the nightly call is unchanged: two-argument writes at the default concurrency, today's response shape", async () => {
+      let running = 0;
+      let peak = 0;
+      updatePowerPlayCombinationsMock.mockImplementation(async () => {
+        running++;
+        peak = Math.max(peak, running);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        running--;
+        return { keptUnproven: 0 };
+      });
+      const req = requestFor({ startDate: "2026-11-11", endDate: "2026-11-13" }, gamesOf(8));
+      const res = createMockRes();
+
+      await handler(req, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(peak).toBe(MAX_CONCURRENT_GAMES);
+      for (const call of updatePowerPlayCombinationsMock.mock.calls) {
+        expect(call).toEqual([expect.any(Number), req.mockSupabase]);
+      }
+      expect(Object.keys(res.body).sort()).toEqual(["failed", "failures", "gameIds", "keptUnproven", "message",
+        "processed", "requestedScope", "skipped", "skips", "success"]);
+      expect(res.body.message).toMatch(/^Successfully updated power-play combinations/);
+    });
+
+    it("dryRun=true passes the flag to every game and returns each game's full diff, clock rows and totals", async () => {
+      updatePowerPlayCombinationsMock
+        .mockResolvedValueOnce(summaryFor(1000, { deleted: 2, updated: 1, inserted: 0, unchanged: 9 }))
+        .mockResolvedValueOnce(summaryFor(1001, { deleted: 0, updated: 0, inserted: 0, unchanged: 11 }));
+      const req = requestFor({ gameIds: "1000,1001", dryRun: "true", concurrency: "1" }, gamesOf(2));
+      const res = createMockRes();
+
+      await handler(req, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(updatePowerPlayCombinationsMock.mock.calls).toEqual([
+        [1000, req.mockSupabase, { dryRun: true }],
+        [1001, req.mockSupabase, { dryRun: true }]
+      ]);
+      expect(res.body).toMatchObject({
+        success: true,
+        dryRun: true,
+        processed: 2,
+        failed: 0,
+        message: "Dry run: computed power-play combinations for games [1000, 1001]; nothing was written.",
+        totals: { games: 2, clockRows: 4, available: 2, notApplicable: 2, unavailable: 0, playerRows: 21,
+          deleted: 2, updated: 1, inserted: 0, unchanged: 20 }
+      });
+      expect(res.body.games).toHaveLength(2);
+      expect(res.body.games[0]).toEqual({
+        gameId: 1000,
+        clock: summaryFor(1000, { deleted: 2, updated: 1, inserted: 0, unchanged: 9 }).clock,
+        rows: summaryFor(1000, { deleted: 2, updated: 1, inserted: 0, unchanged: 9 }).rows,
+        diff: summaryFor(1000, { deleted: 2, updated: 1, inserted: 0, unchanged: 9 }).diff
+      });
+    });
+
+    it("concurrency=1 runs one game at a time", async () => {
+      let running = 0;
+      let peak = 0;
+      updatePowerPlayCombinationsMock.mockImplementation(async (gameId: number) => {
+        running++;
+        peak = Math.max(peak, running);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        running--;
+        return summaryFor(gameId, { deleted: 0, updated: 0, inserted: 0, unchanged: 1 });
+      });
+      const res = createMockRes();
+
+      await handler(requestFor({ gameIds: gamesOf(10).map((g) => g.id).join(","), dryRun: "true", concurrency: "1" },
+        gamesOf(10)), res);
+
+      expect(res.statusCode).toBe(200);
+      expect(peak).toBe(1);
+      expect(res.body.totals.games).toBe(10);
+    });
+
+    it.each(["0", "5", "1.5", "two"])("refuses concurrency=%s before reading games", async (concurrency) => {
+      const req = requestFor({ gameIds: "1000", dryRun: "true", concurrency }, gamesOf(1));
+      const res = createMockRes();
+
+      await handler(req, res);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toBe(`concurrency must be a whole number from 1 to ${MAX_CONCURRENT_GAMES}.`);
+      expect(req.mockSupabase.from).not.toHaveBeenCalled();
+      expect(updatePowerPlayCombinationsMock).not.toHaveBeenCalled();
+    });
+
+    it("keeps the 60-game cap for a dry run with gameIds", async () => {
+      const req = requestFor({ gameIds: gamesOf(MAX_GAMES_PER_CALL + 1).map((g) => g.id).join(","), dryRun: "true" }, []);
+      const res = createMockRes();
+
+      await handler(req, res);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain(`limit of ${MAX_GAMES_PER_CALL} games per call`);
+      expect(updatePowerPlayCombinationsMock).not.toHaveBeenCalled();
+    });
+
+    it("a failed game in a dry run is reported and the call returns 500", async () => {
+      updatePowerPlayCombinationsMock
+        .mockResolvedValueOnce(summaryFor(1000, { deleted: 0, updated: 0, inserted: 0, unchanged: 3 }))
+        .mockRejectedValueOnce(new Error("Game 1001 is not in games."));
+      const res = createMockRes();
+
+      await handler(requestFor({ gameIds: "1000,1001", dryRun: "true", concurrency: "1" }, gamesOf(2)), res);
+
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toMatchObject({ success: false, dryRun: true, processed: 1, failed: 1,
+        failures: [{ gameId: 1001, message: "Game 1001 is not in games." }] });
+      expect(res.body.games.map((game: any) => game.gameId)).toEqual([1000]);
+    });
+  });
+
   it("requires either gameIds or a date range", async () => {
     const req: any = {
       method: "GET",

@@ -2701,3 +2701,7 @@ The candidate excludes item 2, item 6 and F11's inert PP clock registry (`db0310
 - one new unapplied migration `supabase/migrations/20261113220000_pp_team_game_clock.sql`, its proof `supabase/tests/f11_pp_team_game_clock.py` and rollback `supabase/tests/f11_pp_team_game_clock_rollback.sql`;
 - one pending row (order 149) in `tasks/TASKS/repository-audit-remediation/migration-authority.json` and the matching counts in `web/lib/supabase/supportedBaselineMigration.test.ts`.
 Not touched: shift ingestion or shift fallback (Codex), `components/LineCombinations/utilities.ts`, any reader, and the batch route `update-power-play-combinations/index.ts` (its call signature is kept). If another migration lands at order 149 first, I'll renumber mine. No production action.
+
+## CLAUDE-FIX-F11-PP-DRYRUN-CLAIM-20261113
+
+2026-11-13. From: Claude follow-up lane F11 (decision 152 dry-run tooling, via the Chef). Adds to `CLAUDE-FIX-F11-PP-WRITER-CLAIM-20261113`. Claims, code only: the batch route `web/pages/api/v1/db/update-power-play-combinations/index.ts` and `web/__tests__/pages/api/v1/db/update-power-play-combinations.test.ts` (dryRun and concurrency parameters; the nightly cron call is unchanged), plus a new runner `production/pp-clock-validation-2026-11-13/20-refresh-runner.py` that is not run. No DB, route or provider call. No production action.
