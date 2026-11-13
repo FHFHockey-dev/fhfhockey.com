@@ -143,6 +143,17 @@ export function buildSkoSourceWarnings({
   return warnings;
 }
 
+/**
+ * Decision 124 gate: the legacy sKO (VDP) predictions are withheld. Their writer cron is paused
+ * (decision 129, until VDP v0.4), so stored rows are stale, and the request logs showed no outside
+ * caller (2026-11-13, last day). Set PREDICTIONS_SKO_READ_API_ENABLED=true to serve them again.
+ */
+export function isPredictionsSkoReadApiEnabled(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return env.PREDICTIONS_SKO_READ_API_ENABLED === "true";
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
@@ -154,6 +165,16 @@ export default async function handler(
     return res
       .status(405)
       .json({ success: false, error: "Method not allowed" });
+  }
+  if (!isPredictionsSkoReadApiEnabled()) {
+    return res.status(503).json({
+      success: false,
+      withheld: true,
+      reason: "predictions_sko_paused",
+      decisions: [124, 129],
+      error:
+        "Legacy sKO (Volatility-Discounted Points Pace) predictions are withheld: their writer is paused until VDP v0.4, so stored rows are stale.",
+    });
   }
 
   try {
