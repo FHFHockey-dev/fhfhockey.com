@@ -50,3 +50,28 @@ it("updates replay statistics without fetching or recalculating the full-game ma
   expect((slider as HTMLInputElement).value).toBe("3600");
   expect(screen.getByRole("button", { name: "Play replay" })).toBeTruthy();
 });
+
+it("decision 152: in PP mode, shows a team's matrix only when its stored clock is available and matches", async () => {
+  vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  const f = gameFixture();
+  const normalized = model.normalizeGame(f.box, f.shifts, f.pbp);
+  // The fixture has no penalty, so give the home team one 2:00 power play; it gets an available, matching clock and
+  // the away team an unavailable one.
+  const game = { ...normalized, powerPlays: [{ start: 100, end: 220, teamId: normalized.home.id }] };
+  const live = model.ppSecondsByTeam(game);
+  const [ppTeam, other] = [game.home, game.away];
+  expect(live).toEqual({ [game.home.id]: 120, [game.away.id]: 0 });
+  const fetchMock = vi.fn(async () => ({
+    ok: true,
+    json: async () => ({ servingEnabled: true, clocks: [
+      { gameId: game.id, teamId: ppTeam.id, availability: "available", clockSeconds: live[ppTeam.id], unavailableReason: null, computedAt: "t" },
+      { gameId: game.id, teamId: other.id, availability: "unavailable", clockSeconds: null,
+        unavailableReason: "No play-by-play for this game.", computedAt: "t" },
+    ] }),
+  }));
+  vi.stubGlobal("fetch", fetchMock);
+  render(<Replay game={game} mode="pp-toi" onModeChanged={() => {}} selection={<div>Selection</div>} />);
+  expect(await screen.findByText(`${other.name}: No play-by-play for this game.`)).toBeTruthy();
+  expect(fetchMock).toHaveBeenCalledWith(`/api/v1/pp-share/team-game-clock?gameIds=${game.id}`);
+  expect(screen.queryByText(new RegExp(`^${ppTeam.name}:`))).toBeNull();
+});

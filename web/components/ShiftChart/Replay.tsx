@@ -1,13 +1,15 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import Image from "next/image";
 import useResizeObserver from "hooks/useResizeObserver";
-import { LinemateMatrixView, type Mode } from "components/LinemateMatrix";
+import { LinemateMatrixView, ppModeVerdicts, type Mode } from "components/LinemateMatrix";
+import { usePpTeamGameClocks } from "lib/ppShare/usePpTeamGameClocks";
 import {
   clampTime,
   formatClock,
   isActive,
   matrixData,
   positionGroup,
+  ppSecondsByTeam,
   sortedPlayers,
   statsAt,
   toiAt,
@@ -38,6 +40,10 @@ const MatrixPanel = memo(function MatrixPanel({
 }) {
   const data = useMemo(() => matrixData(game, mode), [game, mode]);
   const teams = useMemo(() => [game.home, game.away], [game]);
+  // Decision 152: while PP share is served, PP mode shows only teams whose stored clock is available and matches.
+  const ppGate = usePpTeamGameClocks([game.id], mode === "pp-toi");
+  const livePpSeconds = useMemo(() => ppSecondsByTeam(game), [game]);
+  const ppVerdicts = ppModeVerdicts(ppGate, game.id, teams, livePpSeconds);
   return (
     <aside className={styles.matrixSidebar} aria-label="Linemate matrices">
       <LinemateMatrixView
@@ -48,6 +54,7 @@ const MatrixPanel = memo(function MatrixPanel({
         toiData={data.toi}
         mode={mode}
         onModeChanged={onModeChanged}
+        ppVerdicts={ppVerdicts}
       />
     </aside>
   );

@@ -385,6 +385,21 @@ function overlap(a: Interval[], b: Interval[]): Interval[] {
   }
   return result;
 }
+/**
+ * Decision 152: this replay's power-play seconds per team (merged intervals). While PP share is served, the PP-mode
+ * matrix shows only when this equals the stored qualified clock.
+ */
+export function ppSecondsByTeam(game: Game): Record<number, number> {
+  return Object.fromEntries(
+    [game.home, game.away].map((team) => [
+      team.id,
+      mergeIntervals(game.powerPlays.filter((p) => p.teamId === team.id)).reduce(
+        (sum, interval) => sum + interval.end - interval.start,
+        0,
+      ),
+    ]),
+  );
+}
 // Same shared-seconds measure as the standalone matrix, using pre-normalized intervals.
 export function matrixData(game: Game, mode: Mode) {
   const rosters: Record<number, PlayerData[]> = {};

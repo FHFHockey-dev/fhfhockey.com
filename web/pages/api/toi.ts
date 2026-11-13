@@ -5,6 +5,15 @@ import { compareAsc } from "date-fns";
 import { getCurrentSeason, getPlayer } from "lib/NHL/server";
 import supabase from "lib/supabase/public-client";
 import { Player } from "lib/NHL/types";
+import {
+  ppClockKey,
+  ppClockVerdict,
+  ppPlayerShare,
+  ppShareServingEnabled,
+  readPpTeamGameClocks,
+  type PpClockAvailability,
+  type PpTeamGameClock
+} from "lib/ppShare/serving";
 
 /**
  * A date in the format of yyyy-mm-dd.
@@ -53,6 +62,12 @@ type ToiPoint = {
      */
     exceedsTeamClock: boolean | null;
   };
+  /**
+   * Decision 152, present only while PP share is served (PP_SHARE_SERVING_ENABLED): whether this game's PP time
+   * and share come from an available stored clock, are N/A (the team had no power play) or are unavailable, and
+   * why. Never capped.
+   */
+  powerPlayShareStatus?: { availability: PpClockAvailability; reason: string | null };
 };
 
 type Data = ToiPoint[];
@@ -121,13 +136,23 @@ export default async function handler(
       getForgePowerPlayToi(PlayerId, gameIds),
       getTeamData(gameIds),
     ]);
-    const result = buildToiSeries(playerData, forgeRows, teamData);
+    // Decision 152: with PP share served, the stored calculation supplies observed PP time and share.
+    const serving = ppShareServingEnabled();
+    const stored = serving
+      ? {
+          clocks: await readPpTeamGameClocks(supabase as any, gameIds),
+          ppRows: await getStoredPpToi(PlayerId, gameIds),
+        }
+      : undefined;
+    const result = buildToiSeries(playerData, forgeRows, teamData, stored);
 
     res.status(200).json({
       success: true,
       message: "Success!",
       data: result,
-      powerPlayStatus: { available: false, reason: PP_SHARE_UNAVAILABLE_REASON },
+      powerPlayStatus: serving
+        ? { available: true, reason: null }
+        : { available: false, reason: PP_SHARE_UNAVAILABLE_REASON },
     });
   } catch (e: any) {
     console.error(e);
@@ -146,6 +171,9 @@ export type ToiTeamGame = {
   gameId: number;
   teamId: number;
 };
+/** The player's stored powerPlayCombinations row for a game (decision 152 calculation). */
+export type ToiStoredPpGame = { gameId: number; PPTOI: number | null };
+export type ToiStoredPp = { clocks: PpTeamGameClock[]; ppRows: ToiStoredPpGame[] };
 
 /**
  * One point per player game, in date order. Observed PP time and share stay
@@ -156,9 +184,12 @@ export type ToiTeamGame = {
 export function buildToiSeries(
   playerGames: ToiPlayerGame[],
   forgeGames: ToiForgeGame[],
-  teamGames: ToiTeamGame[]
+  teamGames: ToiTeamGame[],
+  stored?: ToiStoredPp
 ): Data {
   const forgeByGame = new Map(forgeGames.map((row) => [row.game_id, row]));
+  const clockByKey = new Map(stored?.clocks.map((clock) => [ppClockKey(clock.gameId, clock.teamId), clock]));
+  const storedPpByGame = new Map(stored?.ppRows.map((row) => [row.gameId, row.PPTOI]));
   const teamPpByGameTeam = new Map(
     teamGames.map((row) => [`${row.gameId}:${row.teamId}`, row.powerPlayToi])
   );
@@ -172,10 +203,21 @@ export function buildToiSeries(
         ? teamPpByGameTeam.get(`${game.gameId}:${forge.team_id}`)
         : undefined;
       const teamPpClockMinutes = teamPp ? parseTime(teamPp) : null;
+      // Decision 152: the player's team-game clock row decides. In an available team-game the stored set is
+      // complete, so a skater with no row had 0 PP seconds.
+      const served = stored
+        ? ppPlayerShare(
+            ppClockVerdict(forge ? clockByKey.get(ppClockKey(game.gameId, forge.team_id)) : null),
+            storedPpByGame.has(game.gameId) ? storedPpByGame.get(game.gameId) ?? null : 0
+          )
+        : null;
       return {
         toi: game.toi ? parseTime(game.toi) : null,
-        powerPlayToi: null,
-        powerPlayToiShare: null,
+        powerPlayToi: served && served.playerSeconds != null ? served.playerSeconds / 60 : null,
+        powerPlayToiShare: served?.share != null ? served.share * 100 : null,
+        ...(served
+          ? { powerPlayShareStatus: { availability: served.status, reason: served.reason } }
+          : {}),
         date: game.date,
         modelPowerPlay: {
           source: "forge_player_game_strength.toi_pp_seconds",
@@ -246,6 +288,17 @@ async function getForgePowerPlayToi(
     .in("game_id", gameIds)
     .throwOnError();
   return data ?? [];
+}
+
+async function getStoredPpToi(PlayerId: number, gameIds: number[]): Promise<ToiStoredPpGame[]> {
+  if (gameIds.length === 0) return [];
+  const { data } = await supabase
+    .from("powerPlayCombinations")
+    .select("gameId, PPTOI")
+    .eq("playerId", PlayerId)
+    .in("gameId", gameIds)
+    .throwOnError();
+  return (data ?? []).map((row) => ({ gameId: Number(row.gameId), PPTOI: row.PPTOI == null ? null : Number(row.PPTOI) }));
 }
 
 async function getTeamData(gameIds: number[]) {

@@ -2705,3 +2705,15 @@ Not touched: shift ingestion or shift fallback (Codex), `components/LineCombinat
 ## CLAUDE-FIX-F11-PP-DRYRUN-CLAIM-20261113
 
 2026-11-13. From: Claude follow-up lane F11 (decision 152 dry-run tooling, via the Chef). Adds to `CLAUDE-FIX-F11-PP-WRITER-CLAIM-20261113`. Claims, code only: the batch route `web/pages/api/v1/db/update-power-play-combinations/index.ts` and `web/__tests__/pages/api/v1/db/update-power-play-combinations.test.ts` (dryRun and concurrency parameters; the nightly cron call is unchanged), plus a new runner `production/pp-clock-validation-2026-11-13/20-refresh-runner.py` that is not run. No DB, route or provider call. No production action.
+
+## CLAUDE-FIX-F11-PP-SHARE-READERS-CLAIM-20261113
+
+2026-11-13. From: Claude follow-up lane F11 (decision 152 PP share reader gates, TJ via the Chef). This is an offline build for TJ's serving review: not released or served, and nothing is written. Everything sits behind the server-side flag `PP_SHARE_SERVING_ENABLED`; when it is off, output is the same as today. Claims, code only:
+- new `web/lib/ppShare/serving.ts` (+ test) and `web/lib/ppShare/usePpTeamGameClocks.ts`;
+- new `web/pages/api/v1/pp-share/team-game-clock.ts` (+ `web/__tests__/pages/api/v1/pp-share/team-game-clock.test.ts`);
+- `web/pages/api/toi.ts` (+ `web/__tests__/pages/api/toi.test.ts`) and `web/components/TimeOnIceChart/TimeOnIceChart.tsx` (+ test, scss);
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` and `rollingPlayerPpShareContract.ts` (+ their tests);
+- `web/components/PowerPlayCombos/PowerPlayCombos.tsx` (+ test, scss);
+- `web/components/LinemateMatrix/index.tsx` (+ test, scss);
+- `web/components/ShiftChart/Replay.tsx` and `model.ts` (+ tests).
+Not touched: `components/LineCombinations/utilities.ts`, `pages/lines/[abbreviation].tsx`, and shift ingestion or fallback. No production action.

@@ -16,6 +16,18 @@ vi.mock("hooks/useCurrentSeason", () => ({
 
 import PowerPlayCombos from "./PowerPlayCombos";
 
+// Decision 152: the PP clock gate endpoint answers "serving off" unless a test says otherwise.
+let gateResponse: { ok: boolean; body: unknown } | "reject" = { ok: true, body: { servingEnabled: false, clocks: [] } };
+const fetchStub = vi.fn(async (url: string) => {
+  if (String(url).startsWith("/api/v1/pp-share/team-game-clock")) {
+    if (gateResponse === "reject") throw new Error("network down");
+    const { ok, body } = gateResponse;
+    return { ok, json: async () => body };
+  }
+  return undefined;
+});
+const nonGateFetches = () => fetchStub.mock.calls.filter(([url]) => !String(url).startsWith("/api/v1/pp-share/"));
+
 type QueryResult = {
   data: unknown;
   error: Error | null;
@@ -87,7 +99,9 @@ describe("PowerPlayCombos season and source ownership", () => {
   beforeEach(() => {
     fromMock.mockReset();
     useCurrentSeasonQueryMock.mockReset();
-    vi.stubGlobal("fetch", vi.fn());
+    fetchStub.mockClear();
+    gateResponse = { ok: true, body: { servingEnabled: false, clocks: [] } };
+    vi.stubGlobal("fetch", fetchStub);
     vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
@@ -191,7 +205,7 @@ describe("PowerPlayCombos season and source ownership", () => {
     ).toBeTruthy();
     expect(queries.rosters[0].eq).toHaveBeenCalledWith("teamId", 59);
     expect(queries.rosters[0].eq).toHaveBeenCalledWith("seasonId", 20242025);
-    expect(fetch).not.toHaveBeenCalled();
+    expect(nonGateFetches()).toEqual([]);
   });
 
   it("keeps prior-game history inside the source team and season", async () => {
@@ -325,6 +339,75 @@ describe("PowerPlayCombos season and source ownership", () => {
       });
       await waitFor(() => expect(cell("Model TOI/GP")).toBe("2:00"));
       expect(cell("PP SOG")).toBe("3");
+    });
+  });
+
+  describe("decision 152 PP share serving gate (PP_SHARE_SERVING_ENABLED)", () => {
+    const game = {
+      data: { id: 2026020163, startTime: "2026-10-22T23:00:00Z", seasonId: 20262027, homeTeamId: 22, awayTeamId: 12 },
+      error: null,
+    };
+    const combo = {
+      playerId: 1, unit: 1, PPTOI: 92,
+      players: { fullName: "Alpha One", firstName: "Alpha", lastName: "One", position: "C", sweater_number: 9 },
+    };
+    const renderGame = () => {
+      useCurrentSeasonQueryMock.mockReturnValue(failedSeasonQuery());
+      installTableResults({
+        games: [game, { data: [], error: null }],
+        rosters: [{ data: [{ playerId: 1, sweaterNumber: 9 }], error: null }],
+        powerPlayCombinations: [{ data: [combo], error: null }],
+        skatersGameStats: [{ data: [], error: null }],
+        forge_player_game_strength: [{ data: [], error: null }],
+      });
+      render(<PowerPlayCombos teamId={12} gameId={2026020163} seasonId={20262027} statsGameIds={[2026020163]} />);
+    };
+    const servedClock = (availability: string, clockSeconds: number | null, unavailableReason: string | null = null) => {
+      gateResponse = { ok: true, body: { servingEnabled: true, clocks: [
+        { gameId: 2026020163, teamId: 12, availability, clockSeconds, unavailableReason, computedAt: "t" },
+      ] } };
+    };
+
+    it("serving off keeps today's units", async () => {
+      renderGame();
+      expect(await screen.findByText("PP1")).toBeTruthy();
+      expect(screen.queryByRole("status")).toBeNull();
+    });
+
+    it("available: the units show", async () => {
+      servedClock("available", 126);
+      renderGame();
+      expect(await screen.findByText("PP1")).toBeTruthy();
+      expect(fetchStub).toHaveBeenCalledWith("/api/v1/pp-share/team-game-clock?gameIds=2026020163");
+    });
+
+    it("not applicable: N/A, never 0% or empty units", async () => {
+      servedClock("not_applicable", 0);
+      renderGame();
+      expect((await screen.findByRole("status")).textContent).toBe("N/A: no power play in this game.");
+      expect(screen.queryByText("PP1")).toBeNull();
+    });
+
+    it("unavailable: the stored reason, and no units", async () => {
+      servedClock("unavailable", 148, "The clock differs from the official team PP total by +28 s (clock 148 s, official 120 s).");
+      renderGame();
+      expect((await screen.findByRole("status")).textContent).toBe(
+        "The clock differs from the official team PP total by +28 s (clock 148 s, official 120 s).");
+      expect(screen.queryByText("PP1")).toBeNull();
+    });
+
+    it("no stored clock row for the team-game: withheld with the reason", async () => {
+      gateResponse = { ok: true, body: { servingEnabled: true, clocks: [] } };
+      renderGame();
+      expect((await screen.findByRole("status")).textContent).toBe("No stored PP clock for this team-game yet.");
+    });
+
+    it("a failed gate request fails closed", async () => {
+      gateResponse = "reject";
+      renderGame();
+      expect((await screen.findByRole("status")).textContent).toBe(
+        "PP data is withheld: the stored PP clock couldn't be loaded.");
+      expect(screen.queryByText("PP1")).toBeNull();
     });
   });
 });

@@ -9,8 +9,10 @@ import {
   ROLLING_PLAYER_PP_SHARE_CONTRACT,
   resolvePlayerPpToiSeconds,
   resolvePpShareComponents,
+  resolveServedPpShareComponents,
   toRollingPlayerPpContextRow
 } from "./rollingPlayerPpShareContract";
+import { ppClockVerdict } from "lib/ppShare/serving";
 
 describe("rollingPlayerPpShareContract", () => {
   it("prefers builder-derived team share inputs before WGO fallback reconstruction", () => {
@@ -166,5 +168,39 @@ describe("rollingPlayerPpShareContract", () => {
         teamPpClock: { seconds: 120, source: "fixture" }
       })
     ).toEqual({ numerator: 150, denominator: 120 });
+  });
+
+  describe("decision 152: served share uses the stored team-game clock", () => {
+    const clock = (availability: "available" | "not_applicable" | "unavailable", clockSeconds: number | null) =>
+      ppClockVerdict({ gameId: 1, teamId: 1, availability, clockSeconds, unavailableReason: availability === "unavailable"
+        ? "The clock differs from the official team PP total by +28 s." : null, computedAt: "t" });
+
+    it("available: stored PPTOI over the clock; no row is a real 0 of the clock", () => {
+      expect(resolveServedPpShareComponents({ clock: clock("available", 120), storedPlayerPpToi: 90 }))
+        .toEqual({ numerator: 90, denominator: 120 });
+      expect(resolveServedPpShareComponents({ clock: clock("available", 120), storedPlayerPpToi: null }))
+        .toEqual({ numerator: 0, denominator: 120 });
+    });
+
+    it("N/A adds 0 of 0; unavailable, a missing row or a player above the clock adds nothing (never capped)", () => {
+      expect(resolveServedPpShareComponents({ clock: clock("not_applicable", 0), storedPlayerPpToi: null }))
+        .toEqual({ numerator: 0, denominator: 0 });
+      expect(resolveServedPpShareComponents({ clock: clock("unavailable", 148), storedPlayerPpToi: 60 })).toBeNull();
+      expect(resolveServedPpShareComponents({ clock: ppClockVerdict(null), storedPlayerPpToi: 60 })).toBeNull();
+      expect(resolveServedPpShareComponents({ clock: clock("available", 120), storedPlayerPpToi: 121 })).toBeNull();
+    });
+
+    it("pools a window over the clock denominators: N/A games add nothing, withheld games are left out", () => {
+      const acc = createRatioRollingAccumulator();
+      for (const [state, seconds, ppToi] of [
+        ["available", 120, 90], ["available", 120, null], ["not_applicable", 0, null],
+        ["unavailable", 148, 60], ["available", 240, 60]
+      ] as const) {
+        updateRatioRollingAccumulator(acc, resolveServedPpShareComponents({ clock: clock(state, seconds), storedPlayerPpToi: ppToi }),
+          { windowFamily: "ratio_performance" });
+      }
+      // 150 s of the 480 s team PP time in the three available games.
+      expect(getRatioRollingSnapshot(acc, { scale: 1 }).windows[5]).toBeCloseTo(150 / 480, 6);
+    });
   });
 });

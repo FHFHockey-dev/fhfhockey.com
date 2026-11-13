@@ -8,11 +8,20 @@ import Fetch from "lib/cors-fetch";
 import { Shift, getAvg, getPairwiseTOI } from "./utilities";
 import getPowerPlayBlocks, {
   Block,
-  formatTime
+  formatTime,
+  teamPpClockSeconds
 } from "utils/getPowerPlayBlocks";
 import groupBy from "utils/groupBy";
 
 import styles from "./index.module.scss";
+import {
+  PP_NOT_APPLICABLE_LABEL,
+  liveClockVerdict,
+  ppClockKey,
+  ppClockVerdict,
+  type PpShareVerdict
+} from "lib/ppShare/serving";
+import { usePpTeamGameClocks } from "lib/ppShare/usePpTeamGameClocks";
 import Tooltip from "components/Tooltip";
 import Select from "components/Select";
 import Image from "next/image";
@@ -248,7 +257,12 @@ export function getTOIData(
     });
   });
 
-  return { toi: data, rosters, teams };
+  // Decision 152: this view's team PP seconds, checked against the stored qualified clock while PP share is served.
+  const ppSecondsByTeam: Record<number, number> =
+    mode === "pp-toi"
+      ? Object.fromEntries(teams.map((team) => [team.id, teamPpClockSeconds(ppBlocks, team.id)]))
+      : {};
+  return { toi: data, rosters, teams, ppSecondsByTeam };
 }
 function useTOI(id: number, mode: Mode) {
   const [toi, setTOI] = useState<Record<number, TOIData[]>>({});
@@ -256,6 +270,7 @@ function useTOI(id: number, mode: Mode) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [teams, setTeams] = useState<[Team, Team] | null>(null);
+  const [ppSecondsByTeam, setPpSecondsByTeam] = useState<Record<number, number>>({});
   const [rawData, setRawData] = useState<
     | [
         {
@@ -284,11 +299,12 @@ function useTOI(id: number, mode: Mode) {
       setLoading(true);
       setError(null);
       try {
-        const { toi, rosters, teams } = getTOIData(rawData, mode);
+        const { toi, rosters, teams, ppSecondsByTeam } = getTOIData(rawData, mode);
         if (mounted) {
           setTOI(toi);
           setRosters(rosters);
           setTeams(teams as any);
+          setPpSecondsByTeam(ppSecondsByTeam);
         }
       } catch (e: any) {
         console.error(e);
@@ -341,8 +357,35 @@ function useTOI(id: number, mode: Mode) {
       mounted = false;
     };
   }, [id]);
-  return [toi, rosters, teams, loading, error] as const;
+  return [toi, rosters, teams, loading, error, ppSecondsByTeam] as const;
 }
+
+/**
+ * Decision 152: PP-mode verdicts per team while PP share is served. undefined keeps today's behaviour (serving off,
+ * or not in PP mode); "pending" while the stored clock loads.
+ */
+export function ppModeVerdicts(
+  gate: ReturnType<typeof usePpTeamGameClocks>,
+  gameId: number,
+  teams: readonly { id: number }[] | null,
+  liveSecondsByTeam: Record<number, number>
+): Record<number, PpShareVerdict> | "pending" | undefined {
+  if (gate.status === "idle" || gate.status === "off") return undefined;
+  if (gate.status === "loading" || !teams) return "pending";
+  return Object.fromEntries(
+    teams.map((team): [number, PpShareVerdict] => [
+      team.id,
+      gate.status === "error"
+        ? { status: "unavailable", clockSeconds: null, reason: gate.reason }
+        : liveClockVerdict(
+            ppClockVerdict(gate.clocks.get(ppClockKey(gameId, team.id))),
+            liveSecondsByTeam[team.id] ?? null
+          )
+    ])
+  );
+}
+
+export const PP_MODE_NOT_APPLICABLE_TEXT = `${PP_NOT_APPLICABLE_LABEL}: no power play in this game.`;
 
 type Team = { id: number; name: string; logo?: string };
 type Props = {
@@ -393,7 +436,9 @@ export default function LinemateMatrix({
     setActiveMode(mode);
   }, [mode]);
 
-  const [toiData, rosters, gameInfo, loading, error] = useTOI(id, activeMode);
+  const [toiData, rosters, gameInfo, loading, error, ppSecondsByTeam] = useTOI(id, activeMode);
+  const ppGate = usePpTeamGameClocks(id ? [id] : [], activeMode === "pp-toi");
+  const ppVerdicts = ppModeVerdicts(ppGate, id, gameInfo, ppSecondsByTeam);
   const handleModeChange = (newMode: Mode) => {
     setActiveMode(newMode);
     onModeChanged(newMode);
@@ -401,7 +446,8 @@ export default function LinemateMatrix({
 
   return <LinemateMatrixView toiData={toiData} rosters={rosters} gameInfo={gameInfo}
     loading={loading} error={error} mode={activeMode} onModeChanged={handleModeChange} teamId={teamId}
-    headingLevel={headingLevel} labelGrid={labelGrid} wideNames={wideNames} controlsAlign={controlsAlign} sideBySide={sideBySide} />;
+    headingLevel={headingLevel} labelGrid={labelGrid} wideNames={wideNames} controlsAlign={controlsAlign} sideBySide={sideBySide}
+    ppVerdicts={ppVerdicts} />;
 }
 
 type MatrixViewProps = {
@@ -425,14 +471,20 @@ type MatrixViewProps = {
   controlsAlign?: "center" | "start";
   /** Place the two team grids side by side on desktop widths instead of one centred column. */
   sideBySide?: boolean;
+  /**
+   * Decision 152, PP mode only, while PP share is served: per-team verdicts from the stored qualified clock. A team
+   * whose verdict isn't available shows N/A or the reason instead of its grid. Omit to keep today's behaviour.
+   */
+  ppVerdicts?: Record<number, PpShareVerdict> | "pending";
 };
 
 export const LinemateMatrixView = memo(function LinemateMatrixView({
   toiData, rosters, gameInfo, loading = false, error = null,
   mode: activeMode, onModeChanged: handleModeChange, compact = false, teamId,
   headingLevel = "h4", labelGrid = false, wideNames = false, controlsAlign = "center",
-  sideBySide = false
+  sideBySide = false, ppVerdicts
 }: MatrixViewProps) {
+  const ppGated = activeMode === "pp-toi" && ppVerdicts !== undefined;
 
   if (!gameInfo) {
     return (
@@ -489,7 +541,27 @@ export const LinemateMatrixView = memo(function LinemateMatrixView({
             No shared ice time for this team in that game.
           </div>
         ) : null}
-        {shownTeams.map((team) => (
+        {ppGated && ppVerdicts === "pending" ? (
+          <div className={styles.status} role="status">
+            Checking the stored power-play clock...
+          </div>
+        ) : null}
+        {shownTeams.map((team) => {
+          if (ppGated) {
+            if (ppVerdicts === "pending") return null;
+            const verdict = ppVerdicts[team.id];
+            if (!verdict || verdict.status !== "available") {
+              return (
+                <div key={team.id} className={styles.status} role="status">
+                  {team.name}:{" "}
+                  {verdict?.status === "not_applicable"
+                    ? PP_MODE_NOT_APPLICABLE_TEXT
+                    : verdict?.reason ?? "No stored PP clock for this team-game yet."}
+                </div>
+              );
+            }
+          }
+          return (
           <LinemateMatrixInternal
             key={team.id}
             teamId={team.id}
@@ -503,7 +575,8 @@ export const LinemateMatrixView = memo(function LinemateMatrixView({
             labelGrid={labelGrid}
             wideNames={wideNames}
           />
-        ))}
+          );
+        })}
       </div>
     </div>
   );

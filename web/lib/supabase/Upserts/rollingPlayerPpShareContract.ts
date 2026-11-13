@@ -1,3 +1,5 @@
+import { ppPlayerShare, type PpShareVerdict } from "lib/ppShare/serving";
+
 import type { RatioComponents } from "./rollingMetricAggregation";
 import { resolvePreferredShareComponents } from "./rollingPlayerMetricMath";
 
@@ -103,6 +105,23 @@ export function resolvePpShareComponents(args: {
     fallbackNumeratorValue: args.wgoPlayerPpToi,
     fallbackShare: args.wgoTeamShare
   });
+}
+
+/**
+ * Decision 152, with PP share served (PP_SHARE_SERVING_ENABLED): the stored team-game clock (pp_team_game_clock)
+ * is the denominator for every dressed game and the stored PPTOI the numerator, with no builder-share or WGO
+ * fallback. An available team-game's stored set is complete, so a player with no row adds 0 of the clock. A
+ * not-applicable game adds 0 of 0. An unavailable game, a missing clock row or a player above the clock adds
+ * nothing: withheld, never capped.
+ */
+export function resolveServedPpShareComponents(args: {
+  clock: PpShareVerdict;
+  storedPlayerPpToi: number | null | undefined;
+}): RatioComponents | null {
+  const share = ppPlayerShare(args.clock, args.storedPlayerPpToi ?? 0);
+  if (share.status === "not_applicable") return { numerator: 0, denominator: 0 };
+  if (share.status !== "available") return null;
+  return { numerator: share.playerSeconds, denominator: share.clockSeconds };
 }
 
 export function resolvePlayerPpToiSeconds(args: {

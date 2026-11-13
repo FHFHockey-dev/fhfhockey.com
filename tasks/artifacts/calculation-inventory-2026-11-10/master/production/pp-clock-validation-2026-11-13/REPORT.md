@@ -570,6 +570,57 @@ TJ wants the full dry-run diff before any refresh. Nothing here ran against a da
 - **The refresh is not approved.** (`20-refresh-runner.py write --dry-run results/after-d152/local-dry-run/dry-run.json --dry-run-sha256 db94a9de…`.) The Chef brings it to TJ after the deploy is verified. This lane doesn't run it unless told who does.
 - **Once the redeploy is live, nightly cron 388 writes with the new writer.** It covers dates from today minus 2 to today, so it may write some frozen games (from 11-12) before the refresh. It uses the same calculation, so the refresh's readback still holds as long as their stored inputs haven't changed since the export.
 
+## 15. Decision 152: PP share reader gates (built offline for TJ's serving review; not released or served)
+
+According to the Chef, the refresh is done: 31 of 31 batches matched `db94a9de`, and production has 7,180 stamped 2026-27 rows and 618 clock rows. Every reader below sits behind one server-side flag, **`PP_SHARE_SERVING_ENABLED`**. Unset, or anything but exactly `"true"`, keeps today's behaviour: PP share withheld.
+
+**Shared rules** (`web/lib/ppShare/serving.ts`), the same for every reader:
+- The team-game's `pp_team_game_clock` row decides:
+  - **available** (clock above 0): PP time and share, where share = stored PPTOI / `clock_seconds`. In an available team-game the stored set is complete, so a skater with no row had 0 s.
+  - **not_applicable** (a qualified 0): **"N/A"**, never 0%.
+  - **unavailable, or no row:** the row's reason, or "No stored PP clock for this team-game yet."
+- A missing player value, or player PP time above the clock, is withheld with its reason. **Nothing is capped.**
+- **Live PP views** (LinemateMatrix, ShiftChart) are shown only when their own team PP seconds equal the stored qualified clock. Otherwise the disagreement is the reason.
+
+**Readers:**
+- **`/api/toi` and the TOI chart:**
+  - Each game point gets stored PP minutes and share (%) from the player's team clock row (the team comes from FORGE's row for that game), plus `powerPlayShareStatus`. `powerPlayStatus.available` becomes true.
+  - The chart plots N/A and withheld games as gaps and adds one note, for example "N/A for 1 game with no power play. Withheld for 1 game: (reason)".
+  - With serving off, the response is unchanged (pinned) and the PP tables are never read.
+- **Rolling writer** (`fetchRollingPlayerAverages` and `rollingPlayerPpShareContract.resolveServedPpShareComponents`):
+  - With serving on, `pp_share_pct`'s denominator is the clock row's seconds for every dressed game, with no builder-share or WGO fallback.
+  - A missing stored row adds 0 of the clock. N/A adds 0 of 0. An unavailable game, a missing clock row or a player above the clock adds nothing.
+  - With serving off, no clock rows are read and the components are unchanged.
+- **PowerPlayCombos (Lines):** one gate request covers the current game plus its 5-game history.
+  - The units show only when the current team-game is available. N/A and unavailable show the label or the reason instead.
+  - The history keeps only available games.
+  - A failed gate request fails closed, with the units withheld and a reason shown.
+- **LinemateMatrix PP mode and ShiftChart's replay matrix:**
+  - These still compute pairs from live shift data, but a team's grid shows only when that team's stored clock is available and equals the view's own PP seconds (`getTOIData`'s new `ppSecondsByTeam`; `model.ts` `ppSecondsByTeam`). N/A and unavailable teams show the label or the reason.
+  - While the clock loads, PP mode says "Checking the stored power-play clock..." rather than showing ungated values.
+  - The PP and PK bands on the replay timeline are unchanged: they show manpower context, not a share.
+- **Client gate:** `GET /api/v1/pp-share/team-game-clock?gameIds=…` (at most 60 games) returns `{ servingEnabled, clocks }`.
+  - With serving off it reads nothing.
+  - Its answer is cached for up to about 5 minutes, so a flag change takes that long to reach the client readers.
+
+**Untouched:** `LineCombinations/utilities.ts`, `pages/lines/[abbreviation].tsx` (the gate sits inside PowerPlayCombos), and shift ingestion and fallback. No stylesheet changed: the new messages reuse each component's existing status styles.
+
+**Serving-off differences** (the rendered output and API JSON are otherwise unchanged):
+- the three client readers make one cached gate request;
+- LinemateMatrix and ShiftChart in PP mode show "Checking…" until it answers.
+
+**Checks:**
+- 12 files, 220 tests:
+  - shared rules 10 and API route 7;
+  - `/api/toi` 15 and TOI chart 4;
+  - rolling contract and writer 90;
+  - PowerPlayCombos 16;
+  - LinemateMatrix, Replay and model 34;
+  - the decision-152 writer suites, unchanged.
+- `npm run typecheck` exit 0; ESLint on all 20 changed files exit 0.
+
+**Not done:** turning serving on in production, a release, and any check of real served pages. That is TJ's serving review.
+
 ## Open items for the owner (Chef to route)
 
 Decided in decision 151 (2026-11-13): O1 ±2 s inclusive; O2 and O3 stay withheld; O4 read-only check done (section 9). Decision 152 (2026-11-13) accepts the Penalty Summary for the five O4 team-games (section 10). The original wording is kept below.

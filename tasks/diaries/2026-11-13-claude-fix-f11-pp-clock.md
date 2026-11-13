@@ -94,8 +94,16 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 
 - Per the Chef: migration 149 applied 20:36:48Z; #441 (f5c7adc2d) released with writes off (build 20:49:42Z, smoke 5/5); TJ set the flag true in Production, clean-export redeploy running. Refresh not approved; REPORT §14 status updated.
 
+- Per the Chef: refresh done (31/31 matched db94a9de; 7,180 stamped rows, 618 clocks).
+
+## Decision 152 PP share reader gates (offline, for TJ's serving review)
+- Flag PP_SHARE_SERVING_ENABLED (only "true" serves). Shared rules in web/lib/ppShare/serving.ts; client gate API /api/v1/pp-share/team-game-clock + usePpTeamGameClocks (fails closed; reports loading until it has this game's answer).
+- Readers: /api/toi (+ TOI chart note), rolling writer (clock denominator, no fallback), PowerPlayCombos, LinemateMatrix PP mode, ShiftChart replay matrix (live seconds must equal the stored clock). Claim CLAUDE-FIX-F11-PP-SHARE-READERS-CLAIM-20261113.
+- Checks: 12 files / 220 tests; typecheck 0; ESLint 0 (20 files); no scss changes.
+- Gotchas: the ShiftChart fixture has no penalty (test injects a 2:00 home PP); serving off adds one cached gate request to client readers and a brief "Checking…" in PP mode.
+
 ## Next
-Wait for the Chef: the refresh needs TJ's approval and an assigned runner. Don't run 20-refresh-runner.py. No production write from this lane. Chef routes remaining owner and code items. No production step from this lane.
+TJ's serving review (flag on, release, verification) via the Chef. No production write from this lane. Chef routes remaining owner and code items. No production step from this lane.
 
 ## Blockers
 None.
