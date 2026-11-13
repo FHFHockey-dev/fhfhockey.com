@@ -13,6 +13,7 @@ import { assembleLaterImpactScenario, buildBasis, fitLaterImpactScenario, LATER_
   loadLaterImpactScenario, planningBodyBytes, runTimings, scenarioRowChecksum, scenarioSetChecksum, type RunTiming } from "./laterImpactInputs";
 import { decodePlanningDataTransport, encodePlanningDataTransport } from "./planningDataTransport";
 import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
+import { buildGoalieCandidatesContract } from "lib/projections/goalie/goalieCandidates";
 
 // VORP S3: synthetic fixtures only. No production read, Yahoo call, capture or clock other than the fixtures' own.
 const SEASON = 20262027;
@@ -37,9 +38,18 @@ const skaterRow = (nhlId: number, team: string, goals: number, extra: Record<str
   proj_goals_es: goals, proj_goals_pp: 0, proj_goals_pk: null, proj_assists_es: 0.1, proj_assists_pp: 0, proj_assists_pk: null,
   proj_shots_es: 2, proj_shots_pp: 0, proj_shots_pk: null, proj_toi_es_seconds: 900, proj_toi_pp_seconds: 60, proj_toi_pk_seconds: null,
   proj_hits: 1, proj_blocks: 0.5, proj_pim: null, proj_plus_minus: null, conditioning: "unconditional", ...extra });
+/** A released per-candidate contract (forge_goalie_candidates_v1) for AAA's game: each candidate's own line if he starts. */
+type Candidate = { goalieId: number; p: number; saves?: number; goalsAllowed?: number; shutout?: number };
+const candidates = (list: Candidate[], gameId = 2026020104, teamId = 1) => buildGoalieCandidatesContract({ gameId, teamId, teamWinProbability: 0.5,
+  teamWinSource: "poisson_race", issuance: { run_id: "run-1", as_of_date: "2026-10-31", issued_at: "2026-10-31T10:00:00Z", information_cutoff_at: null, starter_labels: null },
+  candidates: list.map(({ goalieId, p, saves = 25, goalsAllowed = 2.5, shutout = 0.05 }) => ({ goalieId, startProbability: p, startProbabilityStatus: "uncalibrated_model" as const,
+    confirmationEvidenceIds: [], ifStarts: { shotsAgainst: saves + goalsAllowed, saves, goalsAllowed, shutoutProbability: shutout, modeledSavePct: saves / (saves + goalsAllowed) },
+    creditedWinIfStarts: 0.3, unconditionalCreditedWin: 0.3 * p })) });
+// The stored row is AAA's goalie slot under the projected starter's id; g's own line and start chance are the contract's
+// (8099, AAA's other candidate, is not in the catalog).
 const goalieRow = (extra: Record<string, unknown> = {}) => ({ run_id: "run-1", as_of_date: "2026-10-31", horizon_games: 1, game_id: 2026020104, goalie_id: 8004,
   team_id: 1, opponent_team_id: 9, starter_probability: 0.6, proj_saves: 25, proj_goals_allowed: 2.5, proj_shots_against: 27.5, proj_win_prob: 0.3,
-  proj_shutout_prob: 0.05, conditioning: "unconditional", ...extra });
+  proj_shutout_prob: 0.05, conditioning: "unconditional", goalie_candidates: candidates([{ goalieId: 8004, p: 0.6 }, { goalieId: 8099, p: 0.4 }]) as unknown, ...extra });
 const observation = (extra: Partial<ForgeBridgeCapture> = {}): ForgeBridgeCapture => ({ startedAt: at(-2 * 60000), completedAt: at(-60000), runs: [runRow()],
   skaters: [skaterRow(8001, "AAA", 0.4), skaterRow(8002, "BBB", 0.25), skaterRow(8003, "SSS", 0.5), skaterRow(8005, "RRR", 0.3)],
   goalies: [goalieRow()], reserves: undefined, ...extra });
@@ -329,6 +339,50 @@ describe("§4–§5 rates, membership and states", () => {
     expect(line).not.toHaveProperty("GAMES_STARTED");
     expect(line).not.toHaveProperty("GOALIE_MINUTES");
   });
+  describe("goalie basis from FORGE's per-candidate contract (Astra AF-01, W1 P0 #20)", () => {
+    const g2 = person("g2", 8006, "AAA", { eligiblePositions: ["G"], playerClass: "goalie" });
+    const basisOf = (contract: unknown, players = [...PLAYERS, g2]) => {
+      const built = buildBasis(observation({ goalies: [goalieRow({ proj_saves: 24.3, proj_goals_allowed: 2.62, goalie_candidates: contract })] }), players, TIMINGS);
+      const row = (id: string) => built.basis.rows.find(item => item[0] === id);
+      const values = (id: string) => { const found = row(id); return found ? Object.fromEntries(built.basis.componentSets[found[4]].map((key, index) => [key, found[5][index]])) : null; };
+      return { built, row, values };
+    };
+
+    it("gives two candidates of one team their own distinct lines, never the stored team slot", () => {
+      const { row, values } = basisOf(candidates([{ goalieId: 8004, p: 0.6, saves: 26, goalsAllowed: 2.2 }, { goalieId: 8006, p: 0.4, saves: 22, goalsAllowed: 3.1, shutout: 0.02 }]));
+      // The slot row stores 24.3 saves (a start-weighted mixture): neither goalie's own line.
+      expect(values("g")).toEqual({ SAVES_GOALIE: 26, GOALS_AGAINST_GOALIE: 2.2, SHOTS_AGAINST_GOALIE: 28.2, SHUTOUTS_GOALIE: 0.05 });
+      expect(values("g2")).toEqual({ SAVES_GOALIE: 22, GOALS_AGAINST_GOALIE: 3.1, SHOTS_AGAINST_GOALIE: 25.1, SHUTOUTS_GOALIE: 0.02 });
+      // "If he starts" lines, established by the contract: conditional, with no assumed start or minutes.
+      expect([row("g")![6], row("g2")![6]]).toEqual(["conditional", "conditional"]);
+      expect(values("g")).not.toHaveProperty("GAMES_STARTED");
+    });
+
+    it("leaves a goalie the contract does not list without a basis, labelled, never on the slot or a teammate's line", () => {
+      const { built, row } = basisOf(candidates([{ goalieId: 8006, p: 0.7 }, { goalieId: 8099, p: 0.3 }]));
+      // The stored row names g (8004) as the projected starter, but the contract does not list him.
+      expect(row("g")).toBeUndefined();
+      expect(row("g2")).toBeDefined();
+      expect(built.limitations).toContain("1 goalies are not among the start candidates in their team's latest FORGE contract: only a line of their own, where one exists, is their basis, never a teammate's; otherwise it is unknown.");
+      // At the final output: with g on the roster, later impact is unknown, never a number from the slot.
+      const absent = scenario({ observation: observation({ goalies: [goalieRow({ goalie_candidates: candidates([{ goalieId: 8099, p: 1 }]) })] }) });
+      expect(evaluate(absent, snapshotFor(["a", "b", "g"]))).toMatchObject({ state: "unknown", delta: null });
+    });
+
+    it("labels partial probability mass and keeps each line his own, never rescaled", () => {
+      const { built, values } = basisOf(candidates([{ goalieId: 8004, p: 0.5 }, { goalieId: 8006, p: 0.2, saves: 23 }]));
+      expect(values("g")!.SAVES_GOALIE).toBe(25);
+      expect(values("g2")!.SAVES_GOALIE).toBe(23);
+      expect(built.limitations).toContain("1 teams' latest FORGE goalie contracts have start chances summing to less than 1: each goalie's basis is his own \"if he starts\" line (conditional), so no start chance is spread over the listed goalies or assumed.");
+    });
+
+    it("gives no goalie a basis from a pre-contract slot row", () => {
+      const { built, row } = basisOf(null);
+      expect(row("g")).toBeUndefined();
+      expect(built.limitations).toContain("1 FORGE goalie rows predate the per-candidate contract: a stored row is the team's goalie slot, never one goalie's own line, so it gives no goalie a basis.");
+    });
+  });
+
   it("carries native units and nulls, with no season-rate substitutes", () => {
     const payload = scenario();
     const keys = payload.basis.componentSets[payload.basis.rows[0][4]];

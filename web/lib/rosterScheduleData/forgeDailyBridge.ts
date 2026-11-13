@@ -324,7 +324,7 @@ function goalieLine(row: Row): StatLine {
 
 /** The released per-candidate contract on a FORGE goalie row (L9b, forge_goalie_candidates_v1), or null when the row
  * predates it, fails validation or names another game or team: unknown, never rebuilt from the slot row. */
-function candidateContract(row: Row | undefined): GoalieCandidatesContract | null {
+export function candidateContract(row: Row | undefined): GoalieCandidatesContract | null {
   if (!row) return null;
   const contract = readGoalieCandidatesContract({ goalie_candidates: row.goalie_candidates });
   return contract && contract.game_id === Number(row.game_id) && contract.team_id === row.team_id ? contract : null;
@@ -356,8 +356,15 @@ function newsAdjustedWins(probability: Map<number, number>, candidates: Map<numb
     teamWinIfStarts: teamWinIfStarts(goalieId) ?? 0 }))).goalies.map(goalie => [goalie.goalieId, goalie.unconditionalWin]));
 }
 
+/** VORP S3: one goalie candidate's own line if he starts (AF-01), in native units, with no assumed start or minutes: the
+ * same keys `forgeNativeLine` gives a goalie's own reserve row. */
+export function forgeCandidateNativeLine(candidate: GoalieCandidateRow): StatLine {
+  const { GOALIE_MINUTES: _minutes, GAMES_STARTED: _started, WINS_GOALIE: _wins, LOSSES_GOALIE: _losses, OTL_GOALIE: _otl, ...line } = candidateLine(candidate);
+  return line;
+}
 /** VORP S3: one FORGE h1 row's own per-game line in league stat keys, in native units, with no season-rate substitute
- * (stats FORGE does not project stay null) and, for a goalie, no assumed start or minutes. Null when its heads are missing. */
+ * (stats FORGE does not project stay null) and, for a goalie, no assumed start or minutes. Null when its heads are missing.
+ * A goalie line is only for his own reserve row: a stored forge_goalie_projections row is the team's slot (AF-01). */
 export function forgeNativeLine(row: Row, playerClass: "skater" | "goalie"): StatLine | null {
   if (playerClass === "skater") return skaterStats(withPowerPlayZeros(row).row, null);
   const { GOALIE_MINUTES: _minutes, GAMES_STARTED: _started, ...line } = goalieLine(row);
