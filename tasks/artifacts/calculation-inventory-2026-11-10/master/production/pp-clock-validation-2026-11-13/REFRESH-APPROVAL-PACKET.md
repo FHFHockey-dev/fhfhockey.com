@@ -1,4 +1,4 @@
-# Decision 152 refresh approval packet (Chef, 2026-11-13 ~20:47Z)
+# Decision 152 refresh approval packet (Chef, 2026-11-13 ~20:44Z)
 
 **State:** not started. PP share stays **hidden**; readers are unchanged. Serving PP share is a separate, later approval.
 
