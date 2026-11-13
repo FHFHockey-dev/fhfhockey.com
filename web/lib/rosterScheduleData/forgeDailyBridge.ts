@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { calendarLeadDay, validForecastCalendarPolicy, type AnyForecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { loadDailyBoardEvidence, type DailyBoardEvidence } from "lib/projections/dailyBoardEvidence";
-import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
+import { buildSkaterModeledHeadTotals, resolveSkaterPkBasis } from "lib/projections/modeledHeadTotals";
 import { excludeOffReleaseRuns, restrictRunsToHorizon } from "lib/projections/releasedRunFence";
 import { loadExternalInputProof, runProofDiagnostics } from "lib/projections/externalInputProof";
 import { forgeReservePassEnabled } from "lib/projections/reserveProjections";
@@ -48,7 +48,7 @@ const TOTAL_COLUMNS: Record<string, string> = { PENALTY_MINUTES: "penalty_minute
 const DAY_MS = 86400000;
 const VALID_DAYS = 8;
 const FORECAST_LIMITATION = "Interim FORGE projection: the player's latest FORGE game line, reused for this game.";
-const SKATER_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_toi_es_seconds,proj_toi_pp_seconds,proj_toi_pk_seconds,proj_hits,proj_blocks,proj_pim,proj_plus_minus,availability_state:uncertainty->availability->>state,availability_game_id:uncertainty->availability->>game_id";
+const SKATER_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_toi_es_seconds,proj_toi_pp_seconds,proj_toi_pk_seconds,proj_hits,proj_blocks,proj_pim,proj_plus_minus,availability_state:uncertainty->availability->>state,availability_game_id:uncertainty->availability->>game_id,es_definition:uncertainty->model->skater_selection->strength_accounting->>es_definition";
 const RESERVE_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,player_class,conditioning,reserve_reason,proj_goals_es,proj_goals_pp,proj_assists_es,proj_assists_pp,proj_shots_es,proj_shots_pp,proj_toi_es_seconds,proj_toi_pp_seconds,proj_hits,proj_blocks,proj_saves,proj_goals_allowed,proj_shots_against,proj_shutout_prob,availability_state:uncertainty->availability->>state,availability_game_id:uncertainty->availability->>game_id";
 // The stored proj_* are the team's goalie slot (a start-weighted mixture), not any goalie's own line (W2-8 PR5); each
 // goalie's own line and start chance are the per-candidate contract in uncertainty.goalie_candidates (AF-01).
@@ -289,8 +289,13 @@ function withPowerPlayZeros(row: Row): { row: Row; filled: boolean; unknown: boo
   return { row: { ...row, ...Object.fromEntries(blanks.map(key => [key, 0])) }, filled: true, unknown: false };
 }
 
+/** AF-05: the row's strength-accounting marker (read as `es_definition`), in the shape the head-total helper reads, so a
+ * row written under the penalty-kill contract needs its PK heads even when all three are blank. */
+const withStrengthAccounting = (row: Row): Row => typeof row.es_definition === "string" && row.uncertainty === undefined
+  ? { ...row, uncertainty: { model: { skater_selection: { strength_accounting: { es_definition: row.es_definition } } } } } : row;
+
 function skaterStats(row: Row, rates: SeasonRates | null): StatLine | null {
-  const heads = buildSkaterModeledHeadTotals(row);
+  const heads = buildSkaterModeledHeadTotals(withStrengthAccounting(row));
   if (heads.goals === null || heads.assists === null || heads.shots === null) return null;
   const toi = finite(row.proj_toi_es_seconds) && finite(row.proj_toi_pp_seconds)
     ? (row.proj_toi_es_seconds + row.proj_toi_pp_seconds + (finite(row.proj_toi_pk_seconds) ? row.proj_toi_pk_seconds : 0)) / 60 : null;
@@ -469,6 +474,8 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   let staleSkaters = 0, teamMismatch = 0, noPowerPlay = 0, unknownPowerPlay = 0, reserveSkaterGames = 0, reserveGoalieGames = 0;
   const unknownPowerPlayIds = new Set<number>();
   const unknownHeads = new Set<number>(), unratedSkaters = new Set<number>();
+  // AF-05: lineup lines with no PK bucket (ES holds all non-PP time); reserve lines never carry one.
+  const pkUnmodelledSkaters = new Set<number>();
   const reserveSkaters = new Set<number>();
   // Reserve rows count only from the team's latest lineup run, so a player is either in that run's lineup or its reserve,
   // never both; a lineup line always wins.
@@ -575,6 +582,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       if (special.unknown) { unknownPowerPlay++; unknownPowerPlayIds.add(player.nhlId!); }
       const line = skaterStats(special.row, playerRates);
       if (line && rates && !playerRates) unratedSkaters.add(player.nhlId!);
+      if (line && resolveSkaterPkBasis(withStrengthAccounting(special.row)) === "pk_unmodelled") pkUnmodelledSkaters.add(player.nhlId!);
       if (!line && !special.unknown) unknownHeads.add(player.nhlId!);
       return line;
     };
@@ -803,7 +811,8 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       : "Goalie news could not be read; start chances use FORGE's goalie contracts only.",
     ...(noPowerPlay ? [`${noPowerPlay} skaters with no FORGE power-play line and at most ${NO_POWER_PLAY_SECONDS} s of projected power-play time count 0 power-play production.`] : []),
     ...(unknownPowerPlay ? [`${unknownPowerPlay} skaters have no FORGE power-play line and real or unrecorded power-play time, so they get no forecast.`] : []),
-    ...(unknownHeads.size ? [`${unknownHeads.size} skaters have a FORGE line with blank even-strength goals, assists or shots; such lines give no forecast.`] : []),
+    ...(unknownHeads.size ? [`${unknownHeads.size} skaters have a FORGE line with blank even-strength goals, assists or shots, or a line that models the penalty kill with a blank penalty-kill head; such lines give no forecast.`] : []),
+    ...(pkUnmodelledSkaters.size || reserveSkaters.size ? [`Penalty kill not modelled for ${pkUnmodelledSkaters.size} skaters' lineup lines (written before FORGE's penalty-kill bucket, or for a team whose penalty-kill time FORGE could not model)${reserveSkaters.size ? " and for every FORGE reserve line" : ""}: their goals, assists, points and shots count even strength over all time outside the power play, at even-strength rates.`] : []),
     ...(staleSkaters ? [`${staleSkaters} skaters missing from their team's latest FORGE run have no current FORGE line (likely scratched, injured or moved).`] : []),
     ...(teamMismatch ? [`${teamMismatch} skaters whose latest FORGE line is for a different team than their current one have no current FORGE line.`] : []),
     ...(noLineGames ? [`No FORGE line: ${noLinePlayers.size} players (${noLineGames} player-games) have no current FORGE line, so plans count 0 for them (a conservative assumption, not a zero chance); a player's last FORGE line, where one exists, is kept as his "if he plays" line and never counts.`] : []),

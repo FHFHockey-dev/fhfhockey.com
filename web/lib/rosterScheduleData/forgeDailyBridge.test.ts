@@ -125,6 +125,27 @@ describe("FORGE daily bridge", () => {
       .toContain("1 skaters missing from their team's latest FORGE run have no current FORGE line (likely scratched, injured or moved).");
   });
 
+  it("AF-05: withholds a lineup line missing one PK head and labels lines with no PK bucket", () => {
+    const base = inputs();
+    // s1's latest line (r2) models the penalty kill, but its PK goals head is blank: ES + PP is not his goals total.
+    base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2"
+      ? { ...row, proj_goals_pk: null, proj_assists_pk: 0.01, proj_shots_pk: 0.2 } as unknown as typeof row : row);
+    const missing = buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy);
+    expect(missing.forecasts.some(row => row.playerId === "s1")).toBe(false);
+    expect(missing.limitations).toContain("1 skaters have a FORGE line with blank even-strength goals, assists or shots, or a line that models the penalty kill with a blank penalty-kill head; such lines give no forecast.");
+    // The same line with no PK bucket at all (ES holds all non-PP time) still serves, labelled.
+    const plain = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+    expect(plain.forecasts.find(row => row.playerId === "s1")!.stats.GOALS).toBe(0.35);
+    expect(plain.limitations).toContain("Penalty kill not modelled for 1 skaters' lineup lines (written before FORGE's penalty-kill bucket, or for a team whose penalty-kill time FORGE could not model): their goals, assists, points and shots count even strength over all time outside the power play, at even-strength rates.");
+    // The version marker decides: a row written under the PK contract ("even_strength") with all three PK heads blank
+    // is withheld, never read as a pre-PK line; one marked "all_non_pp_time" serves as ES + PP, labelled.
+    const marked = (es_definition: string) => { const data = inputs();
+      data.skaters = data.skaters.map(row => row.player_id === 101 && row.run_id === "r2" ? { ...row, es_definition } : row);
+      return buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy); };
+    expect(marked("even_strength").forecasts.some(row => row.playerId === "s1")).toBe(false);
+    expect(marked("all_non_pp_time").forecasts.find(row => row.playerId === "s1")!.stats.GOALS).toBe(0.35);
+  });
+
   it("names the coverage gaps: unknown heads, goalies with no start share, opponents with no team-strength prior", () => {
     const base = inputs();
     // s2's latest line has a blank even-strength head; s1 was projected against MTL and moves to SJS, neither with a prior.
@@ -136,7 +157,7 @@ describe("FORGE daily bridge", () => {
     const teamPriors = [{ team_abbrev: "TOR", date: "2026-10-19", games_played: 50, xga: 145, xga_per_game: 2.9, xgf_per_game: 3 }];
     const { forecasts, limitations } = buildForgeDailyBridgeForecasts({ ...base, teamPriors }, players, opponentGames, now, 20262027, policy);
     expect(forecasts.some(row => row.playerId === "s2")).toBe(false);
-    expect(limitations).toContain("1 skaters have a FORGE line with blank even-strength goals, assists or shots; such lines give no forecast.");
+    expect(limitations).toContain("1 skaters have a FORGE line with blank even-strength goals, assists or shots, or a line that models the penalty kill with a blank penalty-kill head; such lines give no forecast.");
     expect(limitations.some(line => line.includes("power-play"))).toBe(false);
     // Game 2 has no candidate contract: start chance unknown, his own game-1 line moved as "if he starts" (AF-01).
     expect(reserveCodeOf(forecasts.find(row => row.playerId === "g2" && row.gameId === "2")!)).toBe("goalie:start_unknown");
@@ -240,6 +261,8 @@ describe("FORGE daily bridge", () => {
       await loadForgeDailyBridgeForecasts(db as never, players, games, now, 20262027, Date.now() + 5000, policy);
       expect(selects.get("forge_goalie_projections")?.split(",")).toContain("goalie_candidates:uncertainty->goalie_candidates");
       expect(selects.has("goalie_start_projections")).toBe(false);
+      // AF-05: each lineup row's strength-accounting marker travels with it.
+      expect(selects.get("forge_player_projections")?.split(",")).toContain("es_definition:uncertainty->model->skater_selection->strength_accounting->>es_definition");
     });
   });
 
