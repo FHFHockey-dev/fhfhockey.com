@@ -180,6 +180,7 @@ class ResumeExecutePath(unittest.TestCase):
         tr.PAUSE_S = 0
         with open(tr.DONE, "w") as f:
             f.write(f"{self.COMPLETED[0]}\n")
+        self.done_bytes = open(tr.DONE, "rb").read()
         self.originals = {
             os.path.join(self.tmp, f"team-before-{self.COMPLETED[0]}.json"): "legacy rows of the completed game\n",
             os.path.join(self.tmp, f"team-before-{self.COMPLETED[0]}-20261113T190000Z-111-01.json"): "true pre-write rows\n",
@@ -236,11 +237,23 @@ class ResumeExecutePath(unittest.TestCase):
         self.assertTrue(all(q["gameIds"] == str(self.PENDING[0]) for q in self.calls))
         self.assertEqual(open(tr.APPROVED, "rb").read(), self.approved_bytes)
 
-    def assert_pending_game_not_written(self):
+    def snapshot_files(self):
+        return sorted(glob.glob(os.path.join(self.tmp, "team-before-*")) + glob.glob(os.path.join(self.tmp, "team-after-*")))
+
+    def run_expecting_stop_before_any_write(self, code):
+        """TJ's bar: the run stops with `code`, and (1) no dryRun=false call, (2) no team-before or team-after
+        file added (OUT globbed before and after), (3) the done file and (4) team-diff-approved.json are
+        byte-identical. The completed game's files are unchanged too."""
+        files_before = self.snapshot_files()
+        done_bytes = open(tr.DONE, "rb").read()
+        with self.assertRaises(SystemExit) as stopped:
+            tr.main()
+        self.assertEqual(stopped.exception.code, code)
         self.assertEqual([q for q in self.calls if q.get("dryRun") == "false"], [])
-        self.assertEqual(glob.glob(os.path.join(self.tmp, f"team-before-{self.PENDING[0]}*")), [])
-        self.assertEqual(glob.glob(os.path.join(self.tmp, f"team-after-{self.PENDING[0]}*")), [])
-        self.assertNotIn(str(self.PENDING[0]), open(tr.DONE).read().split())
+        self.assertEqual(self.snapshot_files(), files_before)
+        self.assertEqual(open(tr.DONE, "rb").read(), done_bytes)
+        self.assertEqual(open(tr.APPROVED, "rb").read(), self.approved_bytes)
+        self.assert_completed_game_untouched()
 
     def test_resume_touches_only_the_pending_game(self):
         """(a) One diff call for the pending game only, compared with the original approved diff, then one write."""
@@ -258,27 +271,24 @@ class ResumeExecutePath(unittest.TestCase):
         """(b) The pending game's fresh diff differs from team-diff-approved.json (one cf value moved): exit 6,
         no write call, no snapshot, not marked done, approved file byte-identical."""
         self.diff_body["diffs"][0]["changes"]["cf"] = change(41, 42)
-        with self.assertRaises(SystemExit) as stopped:
-            tr.main()
-        self.assertEqual(stopped.exception.code, 6)
-        self.assertEqual(len(self.calls), 1)
-        self.assert_completed_game_untouched()
-        self.assert_pending_game_not_written()
+        self.run_expecting_stop_before_any_write(6)
+        self.assertEqual(self.calls, [{"seasonId": tr.SEASON, "gameIds": str(self.PENDING[0]), "diff": "true"}])
 
     def test_a_per_game_diff_call_that_is_not_a_complete_dry_run_stops_before_any_snapshot(self):
         """Hardening: the execute-path diff call is checked like diff mode's (dryRun, rowsUpserted 0, not
         truncated) before comparing; otherwise exit 2 before any snapshot or write."""
-        for bad in ({"dryRun": False}, {"rowsUpserted": 3}, {"diffsTruncated": True}):
-            with self.subTest(bad):
+        cases = {
+            "dryRun missing": {k: v for k, v in self.diff_body.items() if k != "dryRun"},
+            "dryRun false": dict(self.diff_body, dryRun=False),
+            "rowsUpserted 1": dict(self.diff_body, rowsUpserted=1),
+            "diffsTruncated true": dict(self.diff_body, diffsTruncated=True),
+        }
+        for name, body in cases.items():
+            with self.subTest(name):
                 self.calls.clear()
-                body = dict(self.diff_body, **bad)
                 tr.post = lambda query, secret, body=body: (self.calls.append(query), (0.1, copy.deepcopy(body)))[1]
-                with self.assertRaises(SystemExit) as stopped:
-                    tr.main()
-                self.assertEqual(stopped.exception.code, 2)
+                self.run_expecting_stop_before_any_write(2)
                 self.assertEqual(len(self.calls), 1)
-                self.assert_completed_game_untouched()
-                self.assert_pending_game_not_written()
 
 
 if __name__ == "__main__":
