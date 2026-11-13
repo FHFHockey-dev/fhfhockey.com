@@ -129,6 +129,7 @@ import {
   buildNstStatusUrl,
   filterReverseSeasonsForHistoricalDatedNst,
   getPlayerCacheCandidates,
+  getNstIdentityCandidates,
   getNstPlayerIdFromHref,
   getDatesBetween,
   normalizeTargetDates,
@@ -206,6 +207,20 @@ describe("update-nst-gamelog request scoping", () => {
     expect(resolveMappedPlayerName("Josh Mahura")).toBe("Joshua Mahura");
     expect(resolveMappedPlayerName("Josh Example")).toBe("Josh Example");
     expect(resolveMappedPlayerName("Joshua Mahura")).toBe("Joshua Mahura");
+  });
+
+  it("resolves an aliased NST name whichever spelling the players table holds", () => {
+    const mahura = { id: 8479372, position: "D" };
+    const veleno = { id: 8480813, position: "C" };
+    // 2026-11-07: the players row now reads "Josh Mahura", the alias target "Joshua Mahura".
+    for (const stored of ["Josh Mahura", "Joshua Mahura"]) {
+      expect(getNstIdentityCandidates(new Map([[stored, [mahura]]]), "Josh Mahura")).toEqual([mahura]);
+    }
+    for (const stored of ["Joseph Veleno", "Joe Veleno"]) {
+      expect(getNstIdentityCandidates(new Map([[stored, [veleno]]]), "Joseph Veleno")).toEqual([veleno]);
+    }
+    expect(getNstIdentityCandidates(new Map([["Josh Mahura", [mahura]], ["Joshua Mahura", [mahura]]]), "Josh Mahura")).toEqual([mahura]);
+    expect(getNstIdentityCandidates(new Map([["Joshua Mahura", [mahura]]]), "Josh Example")).toBeUndefined();
   });
 
   it("accepts only an NST playerreport link with one valid NHL player ID", () => {
@@ -1275,12 +1290,17 @@ describe("update-nst-gamelog automatic season cursor", () => {
   });
 
 
-  it.each(["allStrengthsCounts", "allStrengthsRates"])("binds retained Oct1 %s rows to Mahura and NHL Jack Hughes", async (datasetType) => {
+  it.each([
+    ["allStrengthsCounts", "Joshua Mahura"],
+    ["allStrengthsRates", "Joshua Mahura"],
+    // 2026-11-07/12 regression: the players row was renamed to NST's own spelling.
+    ["allStrengthsCounts", "Josh Mahura"]
+  ])("binds retained Oct1 %s rows to Mahura (stored as %s) and NHL Jack Hughes", async (datasetType, mahuraName) => {
     // Provider HTML fragments retain original source hash and receipt time.
     db.tables.players = [
       { id: 8483456, fullName: "Jack Hughes", position: "C" },
       { id: 8481559, fullName: "Jack Hughes", position: "C" },
-      { id: 8479372, fullName: "Joshua Mahura", position: "D" },
+      { id: 8479372, fullName: mahuraName, position: "D" },
       { id: 8476539, fullName: "Jonathan Marchessault", position: "C" }
     ];
     const source = retainedNst.slices.find((slice) => slice.datasetType === datasetType)!;
