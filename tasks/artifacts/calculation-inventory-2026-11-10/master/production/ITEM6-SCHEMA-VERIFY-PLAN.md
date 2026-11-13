@@ -41,5 +41,17 @@
 2. **Readers first:** ship the reader fixes (Splits, season bootstrap, Lines utilities, the DRM regression test) **with or before** the nullable writer `c89ff5d24`. Never the writer alone.
 3. **Readback after release:** the next scheduled game-stats write produces nulls only where the source is unknown, and readers show them as unavailable. No manual reruns.
 
-## Results
-_(not run)_
+## Results (TJ-approved checks, run 2026-11-13 ~19:39Z; one session, catalog only)
+**Gate:** not busy, 0 other active queries, longest 0.0 s.
+
+| # | Result | Verdict |
+|---|---|---|
+| 1 | The ledger has `20261111180900` (skater placeholders) and **no `20261113190000` row** | not applied |
+| 2 | All 5 columns are `text`, **`is_nullable = NO`** | not applied |
+| 3 | Exactly 1 overload, `persist_complete_game_stats_v1(bigint,jsonb,jsonb,jsonb,integer,integer,integer)`, returning the TABLE(…) shape. SECURITY INVOKER, `search_path=""`, owner `postgres`. `md5(pg_get_functiondef)` = `4418a49a6e71c9232511731aa3df6db4`. **All six item-6 null-check markers count 0**; from the files, 0 is expected before item 6 and 1 after. | pre-item-6 body |
+| 4 | EXECUTE is granted only to `postgres` and `service_role`; `anon` and `authenticated` can't execute | recorded. The migration has no GRANT or REVOKE, and CREATE OR REPLACE keeps these grants. |
+| 5 | `goaliesGameStats`: ~55,330 rows, 9.2 MB. `teamGameStats`: ~27,676 rows, 4.2 MB. No locks held by other sessions. | small; the catalog-only ALTER should be brief |
+| 6 | pg_cron job 2 `update-stats-job`, `*/20 * * * *`, active | pick an apply window between runs, e.g. :05–:15 past the hour. `lock_timeout 5s` guards against a collision. |
+
+- **The ledger and the live schema agree:** the migration isn't applied, and nothing is partly applied. No stop condition fired.
+- **Next:** the migration apply, a separate TJ approval. Then the readers with or before the nullable writer `c89ff5d24`.
