@@ -18,6 +18,7 @@ import {
   RECENT_TEAM_FORM_V2_CANDIDATE_PUBLICATION_STATUS,
   RECENT_TEAM_FORM_V2_MATERIALIZATION_CONTRACT_VERSION,
 } from "lib/trends/recentTeamFormV2Materialization";
+import { CTPI_VERSION_CONTRACTS } from "lib/trends/ctpiVersions";
 
 dotenv.config({ path: ".env.local", quiet: true });
 
@@ -425,7 +426,7 @@ async function main() {
     throw new Error("--date must use YYYY-MM-DD.");
   }
 
-  const [persisted, rates, counts, pp, pk] = await Promise.all([
+  const [persistedAllVersions, rates, counts, pp, pk] = await Promise.all([
     fetchAllPages<PersistedRow>(
       "team_ctpi_daily",
       "season_id,team,date,computed_at,ctpi_raw,ctpi_0_to_100,offense,defense,goaltending,special_teams,luck,payload",
@@ -521,9 +522,15 @@ async function main() {
       );
     },
   ).length;
+  // team_ctpi_daily holds v1 (frozen history) and v2 rows for the same dates:
+  // the legacy audit reads v1 only; the replay check reads the issued v2 rows.
+  const isV2Row = (row: PersistedRow) =>
+    row.payload?.formulaVersion === CTPI_VERSION_CONTRACTS[2].formulaVersion;
+  const persisted = persistedAllVersions.filter((row) => !isV2Row(row));
   const persistedAtDate = persisted.filter((row) => row.date === requestedDate);
-  const persistedCandidateProvenance = persistedAtDate.map(
-    (row): PersistedRecentTeamFormSnapshotProvenance => {
+  const persistedCandidateProvenance = persistedAllVersions
+    .filter((row) => isV2Row(row) && row.date === requestedDate)
+    .map((row): PersistedRecentTeamFormSnapshotProvenance => {
       const payload = row.payload ?? {};
       const stringField = (key: string): string | null =>
         typeof payload[key] === "string" ? (payload[key] as string) : null;
@@ -535,8 +542,7 @@ async function main() {
         sourceFingerprint: stringField("sourceFingerprint"),
         sourceUpdatedThrough: stringField("sourceUpdatedThrough"),
       };
-    },
-  );
+    });
   const candidateReplayPlan = planRecentTeamFormCandidateReplay({
     sourceRows: correctedRows,
     consumerDates: [requestedDate],

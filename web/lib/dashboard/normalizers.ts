@@ -254,9 +254,10 @@ export const normalizeSustainabilityResponse = (
 export type NormalizedCtpiTeamRow = {
   team: string;
   ctpi_0_to_100: number;
-  offense: number;
-  defense: number;
-  luck: number;
+  /** Unknown stays unknown (v2 components can be unavailable; v2 has no luck term). */
+  offense: number | null;
+  defense: number | null;
+  luck: number | null;
   sparkSeries: Array<{ date: string; value: number }>;
 };
 
@@ -285,9 +286,9 @@ export const normalizeCtpiResponse = (payload: unknown): NormalizedCtpiResponse 
       return {
         team,
         ctpi_0_to_100: ctpi,
-        offense: toFiniteNumber(row.offense) ?? 0,
-        defense: toFiniteNumber(row.defense) ?? 0,
-        luck: toFiniteNumber(row.luck) ?? 0,
+        offense: toFiniteNumber(row.offense),
+        defense: toFiniteNumber(row.defense),
+        luck: toFiniteNumber(row.luck),
         sparkSeries
       };
     })

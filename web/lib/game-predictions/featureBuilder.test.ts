@@ -628,6 +628,57 @@ describe("game prediction feature builder", () => {
     expect(payload.home.scheduleStrength?.ratingProvenance[0]).toEqual({ gameId: 500, snapshotDate: "2025-12-01", calculationVersion: "team-power-v2-final-source-observed-pdo", sourceThroughDate: "2025-11-30" });
   });
 
+  it("loads only CTPI v1 rows (the model's input contract), so stored v2 rows cannot crowd its 100-row window", async () => {
+    const inputs = createInputs();
+    const v1Row = inputs.teamCtpiRows.find((row) => row.team === "BOS")!;
+    // Newer v2 rows for the same teams, approved or not, outnumber the window.
+    const v2Rows = Array.from({ length: 100 }, (_, index) => ({
+      ...v1Row,
+      team: index % 2 === 0 ? "BOS" : "TOR",
+      date: `2026-01-${String(10 - (index % 9)).padStart(2, "0")}`,
+      publication_status: "approved",
+      formula_version: "recent-team-form-v2-candidate-2",
+      input_version: "ctpi-one-team-game-input-v3-candidate",
+    }));
+    const ctpiFilters: Array<[string, unknown]> = [];
+    const tables: Record<string, unknown[]> = {
+      teams: [inputs.homeTeam, inputs.awayTeam], games: [], team_ctpi_daily: [...v2Rows, v1Row],
+    };
+    const power = powerHistoryClient([]);
+    const client = { from(table: string) {
+      if (table === "team_power_ratings_daily") return power.client.from(table);
+      let data = tables[table] ?? [];
+      const query = {
+        select: () => query,
+        eq: (key: string, value: unknown) => {
+          if (table === "team_ctpi_daily") {
+            ctpiFilters.push([key, value]);
+            if (key === "payload->>formulaVersion") {
+              data = data.filter((row) => (row as Record<string, unknown>).formula_version === value);
+            }
+          }
+          return query;
+        },
+        lt: () => query, lte: () => query, gte: () => query,
+        in: (key: string, values: unknown[]) => {
+          if (table === "teams") data = data.filter((row) => values.includes((row as Record<string, unknown>)[key]));
+          return query;
+        },
+        or: () => query, order: () => query,
+        limit: (count: number) => { data = data.slice(0, count); return query; },
+        single: async () => ({ data: { ...inputs.game, date: "2026-01-11" }, error: null }),
+        maybeSingle: async () => ({ data: null, error: null }),
+        then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data, error: null }).then(resolve),
+      };
+      return query;
+    } } as unknown as Parameters<typeof fetchGamePredictionFeatureInputs>[0];
+
+    const loaded = await fetchGamePredictionFeatureInputs(client, inputs.game.id);
+
+    expect(ctpiFilters).toContainEqual(["payload->>formulaVersion", "ctpi-formula-v1"]);
+    expect(loaded.teamCtpiRows).toEqual([v1Row]);
+  });
+
   it("fails closed on duplicate latest dates and bounds the identity/cutoff query budget", async () => {
     const row = { ...neutralPowerRows()[0], date: "2026-01-01" };
     const { client } = powerHistoryClient([row, { ...row, off_rating: 200 }]);

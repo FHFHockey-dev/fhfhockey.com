@@ -4,12 +4,21 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
-import {
-  type TeamGameRow,
-  computeTrendMetrics,
-  computeCtpi,
-} from "lib/trends/ctpi";
 import { fetchPaginatedRows } from "lib/power-ratings";
+import {
+  CTPI_VERSION_CONTRACTS,
+  CTPI_WRITER_VERSION,
+} from "lib/trends/ctpiVersions";
+import {
+  planRecentTeamFormCandidateReplay,
+  type PersistedRecentTeamFormSnapshotProvenance,
+  type RecentTeamFormSourceRow,
+} from "lib/trends/recentTeamFormV2Provenance";
+import {
+  materializeRecentTeamFormCandidateSnapshot,
+  RECENT_TEAM_FORM_V2_CANDIDATE_PUBLICATION_STATUS,
+  type RecentTeamFormCandidateMaterializedRow,
+} from "lib/trends/recentTeamFormV2Materialization";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 dotenv.config({ path: "./../../../.env.local" });
@@ -28,33 +37,45 @@ const AS_COUNTS_TABLE = "nst_team_gamelogs_as_counts";
 const PP_COUNTS_TABLE = "nst_team_gamelogs_pp_counts";
 const PK_COUNTS_TABLE = "nst_team_gamelogs_pk_counts";
 const DEST_TABLE = "team_ctpi_daily";
+/** Row identity since migration 20261113160000 (one row per CTPI version). */
+const DEST_CONFLICT_TARGET = "season_id,team,date,ctpi_version";
+/** One run computes at most this many snapshot dates; backfill in bounded start/end chunks. */
+export const CTPI_MAX_DATES_PER_RUN = 31;
 
-type CtpiRow = {
-  season_id: number;
-  team: string;
-  date: string;
-  computed_at: string;
-  ctpi_raw: number;
-  ctpi_0_to_100: number;
-  offense: number;
-  defense: number;
-  goaltending: number;
-  special_teams: number;
-  luck: number;
-  payload: any;
+const WRITER_CONTRACT = CTPI_VERSION_CONTRACTS[CTPI_WRITER_VERSION];
+
+/** v1 rows (ctpi_version 1) are frozen issued history; this writer only issues v2. */
+type CtpiRow = RecentTeamFormCandidateMaterializedRow & {
+  ctpi_version: typeof CTPI_WRITER_VERSION;
 };
 
-async function ensureTable(): Promise<void> {
-  // Cheap, schema-independent call to keep the client warm.
-  const { error } = await supabase
-    .from(DEST_TABLE)
-    .select("season_id", { head: true, count: "exact" });
-  if (error) {
-    console.error("Supabase warmup failed", error.message);
-  }
+type PersistedProvenanceRow = {
+  date: string;
+  team: string;
+  formula_version: string | null;
+  input_version: string | null;
+  source_cutoff_exclusive: string | null;
+  source_fingerprint: string | null;
+  source_updated_through: string | null;
+};
+
+class CtpiRequestError extends Error {}
+
+const hasTeamIdentity = (team: unknown): team is string =>
+  typeof team === "string" && team.length > 0 && team === team.trim();
+
+function latestTimestamp(...values: unknown[]): string | null {
+  const parsed = values.flatMap((value) => {
+    if (typeof value !== "string" || value.length === 0) return [];
+    const time = new Date(value).getTime();
+    return Number.isNaN(time) ? [] : [new Date(time).toISOString()];
+  });
+  return parsed.sort().at(-1) ?? null;
 }
 
-async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
+async function fetchGameRows(
+  seasonId: number,
+): Promise<RecentTeamFormSourceRow[]> {
   const baseSelect = [
     "team_abbreviation",
     "date",
@@ -66,9 +87,8 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
     "hdca_per_60",
     "ca_per_60",
     "cf_pct",
-    "ga",
-    "xga",
     "pdo",
+    "updated_at",
   ].join(",");
 
   const [asRows, ppRows, pkRows, asCountRows] = await Promise.all([
@@ -86,7 +106,7 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
         supabase
           .from(PP_COUNTS_TABLE)
           .select(
-            ["team_abbreviation", "date", "gp", "gf", "xgf", "toi_seconds"].join(","),
+            ["team_abbreviation", "date", "gp", "xgf", "toi_seconds", "updated_at"].join(","),
           )
           .eq("season_id", seasonId)
           .eq("gp", 1),
@@ -97,7 +117,7 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
         supabase
           .from(PK_COUNTS_TABLE)
           .select(
-            ["team_abbreviation", "date", "gp", "ga", "xga", "toi_seconds"].join(","),
+            ["team_abbreviation", "date", "gp", "xga", "toi_seconds", "updated_at"].join(","),
           )
           .eq("season_id", seasonId)
           .eq("gp", 1),
@@ -108,7 +128,7 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
         supabase
           .from(AS_COUNTS_TABLE)
           .select(
-            ["team_abbreviation", "date", "gp", "toi_seconds", "ga", "xga"].join(","),
+            ["team_abbreviation", "date", "gp", "toi_seconds", "ga", "xga", "updated_at"].join(","),
           )
           .eq("season_id", seasonId)
           .eq("gp", 1),
@@ -116,102 +136,128 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
     ),
   ]);
 
-  const ppMap = new Map<
-    string,
-    { gf: number | null; xgf: number | null; toi: number | null }
-  >();
-  (ppRows ?? []).forEach((row: any) => {
-    ppMap.set(`${row.team_abbreviation}|${row.date}`, {
-      gf: row.gf ?? null,
-      xgf: row.xgf ?? null,
-      toi: row.toi_seconds ?? null,
-    });
-  });
+  const byKey = (rows: any[]) =>
+    new Map<string, any>(
+      (rows ?? []).map((row) => [`${row.team_abbreviation}|${row.date}`, row]),
+    );
+  const ppMap = byKey(ppRows);
+  const pkMap = byKey(pkRows);
+  const asCountMap = byKey(asCountRows);
 
-  const pkMap = new Map<
-    string,
-    { ga: number | null; xga: number | null; toi: number | null }
-  >();
-  (pkRows ?? []).forEach((row: any) => {
-    pkMap.set(`${row.team_abbreviation}|${row.date}`, {
-      ga: row.ga ?? null,
-      xga: row.xga ?? null,
-      toi: row.toi_seconds ?? null,
+  return (asRows ?? [])
+    .filter((row: any) => hasTeamIdentity(row.team_abbreviation))
+    .map((row: any): RecentTeamFormSourceRow => {
+      const key = `${row.team_abbreviation}|${row.date}`;
+      const pp = ppMap.get(key);
+      const pk = pkMap.get(key);
+      const asCount = asCountMap.get(key);
+      return {
+        team: row.team_abbreviation,
+        date: row.date,
+        gp: row.gp,
+        xgf_per_60: row.xgf_per_60,
+        hdcf_per_60: row.hdcf_per_60,
+        gf_per_60: row.gf_per_60,
+        xga_per_60: row.xga_per_60,
+        hdca_per_60: row.hdca_per_60,
+        ca_per_60: row.ca_per_60,
+        sat_pct: row.cf_pct,
+        // GSAx inputs come from the all-strength count table (goals and xG in goals).
+        goals_against: asCount?.ga ?? null,
+        xga: asCount?.xga ?? null,
+        powerPlayToi: pp?.toi_seconds ?? null,
+        pp_xgf: pp?.xgf ?? null,
+        toi_shorthanded: pk?.toi_seconds ?? null,
+        pk_xga: pk?.xga ?? null,
+        pdo: row.pdo != null ? Number(row.pdo) : null,
+        toi_all_seconds: asCount?.toi_seconds ?? null,
+        sourceUpdatedAt: latestTimestamp(
+          row.updated_at,
+          asCount?.updated_at,
+          pp?.updated_at,
+          pk?.updated_at,
+        ),
+      };
     });
-  });
-
-  const asCountMap = new Map<
-    string,
-    { toi: number | null; ga: number | null; xga: number | null }
-  >();
-  (asCountRows ?? []).forEach((row: any) => {
-    asCountMap.set(`${row.team_abbreviation}|${row.date}`, {
-      toi: row.toi_seconds ?? null,
-      ga: row.ga ?? null,
-      xga: row.xga ?? null,
-    });
-  });
-
-  return (asRows ?? []).map((row: any) => {
-    const key = `${row.team_abbreviation}|${row.date}`;
-    const pp = ppMap.get(key);
-    const pk = pkMap.get(key);
-    const asCount = asCountMap.get(key);
-    return {
-      team: row.team_abbreviation,
-      date: row.date,
-      gp: row.gp,
-      xgf_per_60: row.xgf_per_60,
-      hdcf_per_60: row.hdcf_per_60,
-      gf_per_60: row.gf_per_60,
-      xga_per_60: row.xga_per_60,
-      hdca_per_60: row.hdca_per_60,
-      ca_per_60: row.ca_per_60,
-      sat_pct: row.cf_pct,
-      goals_against: asCount?.ga ?? null,
-      xga: asCount?.xga ?? null,
-      power_play_goals_for: pp?.gf ?? null,
-      powerPlayToi: pp?.toi ?? null,
-      pp_xgf: pp?.xgf ?? null,
-      pp_goals_against: pk?.ga ?? null,
-      toi_shorthanded: pk?.toi ?? null,
-      pk_xga: pk?.xga ?? null,
-      net_penalties_per_60: null,
-      pdo: row.pdo != null ? Number(row.pdo) : null,
-      toi_all_seconds: asCount?.toi ?? null,
-    };
-  });
 }
+
+const addDays = (date: string, days: number) => {
+  const next = new Date(`${date}T00:00:00.000Z`);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next.toISOString().slice(0, 10);
+};
 
 const buildDateRange = (start: string, end: string) => {
   const dates: string[] = [];
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-    dates.push(new Date(d).toISOString().slice(0, 10));
+  for (let date = start; date <= end; date = addDays(date, 1)) {
+    dates.push(date);
   }
   return dates;
 };
 
-async function resolveStartDate(
-  seasonId: number,
-  seasonStart: string,
-): Promise<string> {
+const isCalendarDate = (value: string) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  !Number.isNaN(new Date(`${value}T00:00:00.000Z`).getTime()) &&
+  new Date(`${value}T00:00:00.000Z`).toISOString().slice(0, 10) === value;
+
+function dateParam(value: unknown, name: string): string | undefined {
+  if (value == null) return undefined;
+  const raw = String(Array.isArray(value) ? value[0] : value).slice(0, 10);
+  if (!isCalendarDate(raw)) {
+    throw new CtpiRequestError(`${name} must be a YYYY-MM-DD date.`);
+  }
+  return raw;
+}
+
+/** Latest snapshot date already issued for the writer's version this season. */
+async function latestWriterDate(seasonId: number): Promise<string | null> {
   const { data, error } = await supabase
     .from(DEST_TABLE)
     .select("date")
     .eq("season_id", seasonId)
+    .eq("ctpi_version", CTPI_WRITER_VERSION)
     .order("date", { ascending: false })
     .limit(1);
   if (error) throw error;
   const lastDate = data?.[0]?.date as string | undefined;
-  // If nothing exists, start at season start; otherwise overwrite the most recent date.
-  if (!lastDate) return seasonStart.slice(0, 10);
-  return lastDate.slice(0, 10);
+  return lastDate ? lastDate.slice(0, 10) : null;
 }
 
-const hasTeamIdentity = (team: unknown): team is string =>
-  typeof team === "string" && team.length > 0 && team === team.trim();
+async function fetchPersistedProvenance(
+  seasonId: number,
+  startDate: string,
+  endDate: string,
+): Promise<PersistedRecentTeamFormSnapshotProvenance[]> {
+  const rows = await fetchPaginatedRows<PersistedProvenanceRow>(
+    () =>
+      supabase
+        .from(DEST_TABLE)
+        .select(
+          [
+            "date",
+            "team",
+            "formula_version:payload->>formulaVersion",
+            "input_version:payload->>inputVersion",
+            "source_cutoff_exclusive:payload->>sourceCutoffExclusive",
+            "source_fingerprint:payload->>sourceFingerprint",
+            "source_updated_through:payload->>sourceUpdatedThrough",
+          ].join(","),
+        )
+        .eq("season_id", seasonId)
+        .eq("ctpi_version", CTPI_WRITER_VERSION)
+        .gte("date", startDate)
+        .lte("date", endDate),
+    ["date", "team"],
+  );
+  return rows.map((row) => ({
+    date: String(row.date).slice(0, 10),
+    formulaVersion: row.formula_version,
+    inputVersion: row.input_version,
+    sourceCutoffExclusive: row.source_cutoff_exclusive,
+    sourceFingerprint: row.source_fingerprint,
+    sourceUpdatedThrough: row.source_updated_through,
+  }));
+}
 
 async function upsertRows(rows: CtpiRow[]) {
   const identities = new Set<string>();
@@ -219,7 +265,19 @@ async function upsertRows(rows: CtpiRow[]) {
     if (!hasTeamIdentity(row.team)) {
       throw new Error("Invalid CTPI destination identity");
     }
-    const identity = JSON.stringify([row.season_id, row.team, row.date]);
+    if (
+      row.ctpi_version !== CTPI_WRITER_VERSION ||
+      row.payload.formulaVersion !== WRITER_CONTRACT.formulaVersion ||
+      row.payload.inputVersion !== WRITER_CONTRACT.inputVersion
+    ) {
+      throw new Error("CTPI row is not the writer's version contract");
+    }
+    const identity = JSON.stringify([
+      row.season_id,
+      row.team,
+      row.date,
+      row.ctpi_version,
+    ]);
     if (identities.has(identity)) {
       throw new Error("Duplicate CTPI destination identity");
     }
@@ -230,7 +288,7 @@ async function upsertRows(rows: CtpiRow[]) {
     const slice = rows.slice(i, i + chunkSize);
     const { error } = await supabase
       .from(DEST_TABLE)
-      .upsert(slice, { onConflict: "season_id,team,date" });
+      .upsert(slice, { onConflict: DEST_CONFLICT_TARGET });
     if (error) throw error;
   }
 }
@@ -242,25 +300,40 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   try {
-    await ensureTable();
+    const startParam = dateParam(req.query.start, "start");
+    const endParam = dateParam(req.query.end, "end");
     const season = await fetchCurrentSeason();
     const seasonId = season.id;
+    const seasonStart = season.startDate.slice(0, 10);
     const todayIso = new Date().toISOString().slice(0, 10);
-    const seasonEnd = season.endDate || season.regularSeasonEndDate || todayIso;
-    const endDate = seasonEnd > todayIso ? todayIso : seasonEnd;
-    const startParam =
-      typeof req.query.start === "string"
-        ? req.query.start.slice(0, 10)
-        : undefined;
-    const startCandidate = startParam
-      ? startParam
-      : await resolveStartDate(seasonId, season.startDate.slice(0, 10));
+    const seasonEnd = (
+      season.endDate ||
+      season.regularSeasonEndDate ||
+      todayIso
+    ).slice(0, 10);
+    const lastAllowed = seasonEnd > todayIso ? todayIso : seasonEnd;
+    const endDate =
+      endParam && endParam < lastAllowed ? endParam : lastAllowed;
+    const warnings: string[] = [];
+
+    let startCandidate: string;
+    if (startParam) {
+      startCandidate = startParam;
+    } else {
+      // Re-check the latest issued date (late source rows), then continue to
+      // today. A first run issues today only; history is an explicit backfill.
+      const lastDate = await latestWriterDate(seasonId);
+      startCandidate = lastDate && lastDate < endDate ? lastDate : endDate;
+      const earliestAutomatic = addDays(endDate, -(CTPI_MAX_DATES_PER_RUN - 1));
+      if (startCandidate < earliestAutomatic) {
+        warnings.push(
+          `CTPI v${CTPI_WRITER_VERSION} gap: dates ${addDays(startCandidate, 1)} to ${addDays(earliestAutomatic, -1)} were not computed; backfill them with start/end.`,
+        );
+        startCandidate = earliestAutomatic;
+      }
+    }
     const startDate =
-      startCandidate > endDate
-        ? endDate
-        : startCandidate < season.startDate.slice(0, 10)
-          ? season.startDate.slice(0, 10)
-          : startCandidate;
+      startCandidate < seasonStart ? seasonStart : startCandidate;
 
     if (startDate > endDate) {
       return res.status(200).json({
@@ -269,6 +342,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         skipped: true,
         outcome: "skipped",
         reason: "no_dates",
+        ctpiVersion: CTPI_WRITER_VERSION,
         startDate,
         endDate,
         rowsUpserted: 0,
@@ -277,79 +351,114 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     const dates = buildDateRange(startDate, endDate);
-
-    const allRows = await fetchGameRows(seasonId);
-    const teamMap = new Map<string, TeamGameRow[]>();
-    allRows.forEach((row) => {
-      if (!teamMap.has(row.team)) teamMap.set(row.team, []);
-      teamMap.get(row.team)!.push(row);
-    });
-
-    const insertRows: CtpiRow[] = [];
-    for (const date of dates) {
-      const metrics = Array.from(teamMap.values())
-        .map((games) =>
-          computeTrendMetrics(
-            games.filter((g) => g.date <= date),
-            undefined,
-            10,
-          ),
-        )
-        // Empty histories must not contribute a blank team or skew league normalization.
-        .filter((metric) =>
-          metric.source_game_count > 0 && hasTeamIdentity(metric.team),
-        );
-      const ctpi = computeCtpi(metrics);
-      const computedAt = new Date().toISOString();
-      ctpi.forEach((c) => {
-        insertRows.push({
-          season_id: seasonId,
-          team: c.team,
-          date,
-          computed_at: computedAt,
-          ctpi_raw: c.ctpi_raw,
-          ctpi_0_to_100: c.ctpi_0_to_100,
-          offense: c.offense,
-          defense: c.defense,
-          goaltending: c.goaltending,
-          special_teams: c.specialTeams,
-          luck: c.luck,
-          payload: c,
-        });
+    if (dates.length > CTPI_MAX_DATES_PER_RUN) {
+      return res.status(400).json({
+        message: `Requested ${dates.length} dates; one run computes at most ${CTPI_MAX_DATES_PER_RUN}. Backfill in start/end chunks.`,
+        error: "CTPI_DATE_SPAN_TOO_LARGE",
+        startDate,
+        endDate,
       });
     }
 
-    if (insertRows.length === 0) {
+    const allRows = await fetchGameRows(seasonId);
+    if (allRows.length === 0) {
       // Off-season runs are skipped upstream, so an empty pass here means the
       // NST team source has nothing for this season: not a refresh.
-      const warning = `No CTPI rows for season ${seasonId} (${startDate} to ${endDate}): ${allRows.length} NST team-game rows found.`;
+      const warning = `No CTPI rows for season ${seasonId} (${startDate} to ${endDate}): 0 NST team-game rows found.`;
       return res.status(200).json({
         message: `Skipped: ${warning}`,
         success: true,
         skipped: true,
         outcome: "skipped",
         reason: "no_source_rows",
-        warnings: [warning],
+        warnings: [...warnings, warning],
+        ctpiVersion: CTPI_WRITER_VERSION,
         seasonId,
         datesComputed: dates.length,
         rowsUpserted: 0,
-        sourceRows: allRows.length,
+        sourceRows: 0,
         startDate,
         endDate,
+      });
+    }
+
+    const persisted = await fetchPersistedProvenance(
+      seasonId,
+      startDate,
+      endDate,
+    );
+    const plan = planRecentTeamFormCandidateReplay({
+      sourceRows: allRows,
+      consumerDates: dates,
+      persisted,
+    });
+
+    const computedAt = new Date().toISOString();
+    const insertRows: CtpiRow[] = [];
+    let omittedRows = 0;
+    for (const decision of plan.replay) {
+      const materialized = materializeRecentTeamFormCandidateSnapshot({
+        snapshot: decision.snapshot,
+        seasonId,
+        computedAt,
+      });
+      omittedRows += materialized.omitted.length;
+      materialized.rows.forEach((row) =>
+        insertRows.push({ ...row, ctpi_version: CTPI_WRITER_VERSION }),
+      );
+    }
+
+    const summary = {
+      ctpiVersion: CTPI_WRITER_VERSION,
+      formulaVersion: WRITER_CONTRACT.formulaVersion,
+      inputVersion: WRITER_CONTRACT.inputVersion,
+      publicationStatus: RECENT_TEAM_FORM_V2_CANDIDATE_PUBLICATION_STATUS,
+      label: WRITER_CONTRACT.label,
+      seasonId,
+      datesComputed: dates.length,
+      datesReplayed: plan.replay.map((decision) => ({
+        date: decision.date,
+        reasons: decision.reasons,
+      })),
+      unchangedDates: plan.unchangedDates,
+      omittedRows,
+      sourceRows: allRows.length,
+      startDate,
+      endDate,
+    };
+
+    if (plan.replay.length > 0 && insertRows.length === 0) {
+      const warning = `No team has a scorable CTPI v${CTPI_WRITER_VERSION} snapshot between ${startDate} and ${endDate} (${omittedRows} team-dates unavailable, e.g. fewer than 5 games).`;
+      return res.status(200).json({
+        message: `Skipped: ${warning}`,
+        success: true,
+        skipped: true,
+        outcome: "skipped",
+        reason: "no_scorable_teams",
+        warnings: [...warnings, warning],
+        rowsUpserted: 0,
+        ...summary,
       });
     }
 
     await upsertRows(insertRows);
 
     return res.status(200).json({
-      message: "CTPI daily processed",
-      seasonId,
-      datesComputed: dates.length,
+      message:
+        insertRows.length > 0
+          ? "CTPI daily processed"
+          : "CTPI daily unchanged",
       rowsUpserted: insertRows.length,
-      startDate,
-      endDate,
+      ...(warnings.length > 0 ? { warnings } : {}),
+      ...summary,
     });
   } catch (error: any) {
+    if (error instanceof CtpiRequestError) {
+      return res.status(400).json({
+        message: error.message,
+        error: "CTPI_INVALID_REQUEST",
+      });
+    }
     console.error("update-team-ctpi-daily error", error);
     return res.status(500).json({
       message: "Failed to compute daily CTPI.",

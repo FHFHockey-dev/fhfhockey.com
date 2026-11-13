@@ -8,7 +8,10 @@ import {
   buildPredictionMetadataContract,
   buildSourceFreshnessContract,
 } from "lib/predictions/contracts";
-import { isTrustedRecentTeamFormPayload } from "lib/trends/ctpi";
+import {
+  isTrustedRecentTeamFormPayload,
+  RECENT_TEAM_FORM_FORMULA_VERSION,
+} from "lib/trends/ctpi";
 import {
   GAME_PREDICTION_FEATURE_SET_VERSION,
   getGamePredictionFeatureSources,
@@ -2938,6 +2941,9 @@ export async function fetchGamePredictionFeatureInputs(
       .select(
         "team,date,computed_at,ctpi_0_to_100,ctpi_raw,offense,defense,goaltending,special_teams,luck,publication_status:payload->>publicationStatus,formula_version:payload->>formulaVersion,input_version:payload->>inputVersion,source_game_count:payload->>sourceGameCount",
       )
+      // The model's CTPI input contract is v1; v2 rows (same team and date)
+      // must not crowd the 100-row window. Adopting v2 is a model change.
+      .eq("payload->>formulaVersion", RECENT_TEAM_FORM_FORMULA_VERSION)
       .in("team", teamAbbreviations)
       .lt("date", sourceAsOfDate)
       .order("date", { ascending: false })

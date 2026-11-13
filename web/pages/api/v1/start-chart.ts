@@ -31,7 +31,11 @@ import {
   type StartChartPlayerContext,
   type StartChartSourceStatus,
 } from "lib/projections/startChartContract";
-import { isTrustedRecentTeamFormPayload } from "lib/trends/ctpi";
+import {
+  CTPI_SERVED_VERSION,
+  CTPI_VERSION_CONTRACTS,
+  isTrustedCtpiPayload,
+} from "lib/trends/ctpiVersions";
 import {
   addStartChartPositionRanks,
   computeStartChartFantasyPoints,
@@ -1090,6 +1094,11 @@ async function fetchCtpiRows(
       .select(
         "date,team,ctpi_0_to_100,formula_version:payload->>formulaVersion,input_version:payload->>inputVersion,source_game_count:payload->>sourceGameCount,publication_status:payload->>publicationStatus",
       )
+      // Select by version: rows issued under the served formula version only.
+      .eq(
+        "payload->>formulaVersion",
+        CTPI_VERSION_CONTRACTS[CTPI_SERVED_VERSION].formulaVersion,
+      )
       .gte("date", startDate)
       .lte("date", endDate)
       .in("team", teams)
@@ -1814,12 +1823,15 @@ export default async function handler(
 
       const allCtpiRows = ctpiResult.rows;
       const ctpiRows = allCtpiRows.filter((row) =>
-        isTrustedRecentTeamFormPayload({
-          publicationStatus: row.publication_status,
-          formulaVersion: row.formula_version,
-          inputVersion: row.input_version,
-          sourceGameCount: row.source_game_count,
-        }),
+        isTrustedCtpiPayload(
+          {
+            publicationStatus: row.publication_status,
+            formulaVersion: row.formula_version,
+            inputVersion: row.input_version,
+            sourceGameCount: row.source_game_count,
+          },
+          CTPI_SERVED_VERSION,
+        ),
       );
       const untrustedCtpiRows = allCtpiRows.length - ctpiRows.length;
       const ctpiError = ctpiResult.error;
@@ -2073,6 +2085,8 @@ export default async function handler(
           affectsRanking: false,
           date: ctpiThroughDate,
           throughDate: ctpiThroughDate,
+          ctpiVersion: CTPI_SERVED_VERSION,
+          label: CTPI_VERSION_CONTRACTS[CTPI_SERVED_VERSION].label,
           formulaVersion: ctpiRows[0]?.formula_version ?? null,
           inputVersion: ctpiRows[0]?.input_version ?? null,
           trustedRows: ctpiRows.length,
