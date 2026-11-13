@@ -7,6 +7,7 @@ Status: **Sprint closed, 2026-11-13.**
   1. The first scheduled FORGE reserve rows, from the 10:05Z run.
   2. **Separately:** which `goalie_start_projections` rows that same FORGE run consumed. #439 (`a448842d1`) went live at 19:41:57Z, before cron 364's 09:30Z write. Compare the run's recorded inputs with those rows' `updated_at` and the 09:30Z audit. This is a possible input change, not a confirmed one.
   3. Cron 283's first scheduled v4 power write, at 10:15Z (05:15 ET).
+  4. **Separately:** cron 388's first scheduled write through the decision-152 stored calculation, at 08:05Z. Audit `success`, and the last 3 dates' rows stamped `pp-shifts-qualified-clock-v1` with clock rows. PP share stays hidden.
 - **Separate tickets, not sprint blockers:**
   - **PP share** stays withheld pending two owner decisions: whether to accept the NHL Penalty Summary as the official reference for 5 games, and whether to rebuild the 14 affected games' stored `powerPlayCombinations` or compute the share from shifts and qualified intervals.
   - **Codex:**

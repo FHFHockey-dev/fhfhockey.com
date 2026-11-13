@@ -446,3 +446,12 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - **Deploy:** clean-export CLI production deploy of master `f5c7adc2d`, 20:51:25–20:58:26Z, 57.2 MB uploaded. Deployment `dpl_DgmG26oS5SJcVNNoEQBrhohqjc1y`, target production, **Ready**, aliased to fhfhockey.com and www.fhfhockey.com. 1 fhfhockey build; master didn't move.
   - **Smoke** 3/3 at 200 (20:58:41–42Z): `/` 0.83 s, `/lines` 0.24 s, `/underlying-stats` 0.23 s. Plus one HEAD of `/` for headers (x-vercel-id iad1).
   - **The flag is live from this deployment.** Cron 388 (08:05Z) now writes through the new calculation for the last 3 dates. Per F11, that may rewrite some frozen 11-12 games before the refresh; it's the same calculation, so the refresh readback holds unless their stored inputs change.
+- **Decision 152 refresh DONE** (TJ "Run it now"; the Chef ran `20-refresh-runner.py write`, bound to `db94a9de…`), 20:59:38–21:03:46Z:
+  - **Run:** 31/31 batches written to https://fhfhockey.com (deployment `dpl_DgmG26oS5`) at concurrency 1, 2.3–4.9 s each, ≥5 s apart, with the load gate before each call. The busiest gate saw 4 active, 0 s longest. **Every batch's readback matched the dry run.** No stop, no mismatch.
+  - **Chef's independent readback (read-only):**
+    - 2026-27 regular season (games 001–309): **7,180 rows** (7,190 − 15 + 5), **all stamped** `pp-shifts-qualified-clock-v1` (computed 20:59:39–21:03:45Z), 0 shares above 1, 0 PPTOI above the game's clock;
+    - `pp_team_game_clock`: **618** (609 available, 9 not applicable, 0 unqualified);
+    - group A sample (2026020163 ×3) gone; 2026020131 team 18 available at 120 s (team 19 at 578 s);
+    - **other seasons untouched:** 40,498 rows, 0 stamped; table total 47,678.
+  - **PP share stays hidden.** Readers are unchanged; serving it needs reader gates (named in REPORT §11.3, not built) and TJ's separate approval.
+  - **Next scheduled:** cron 388 at 08:05Z on 2026-11-14 writes the last 3 dates through the new calculation. Read it back separately (audit `success`, rows stamped).
