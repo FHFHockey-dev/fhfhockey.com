@@ -29,7 +29,15 @@ You are **Astra**, the independent Codex reviewer. You reviewed the three-wave m
 ## Commit range
 - **Released:** master `1cdb1dc8f..631a00c19`, PR #430, a squash of candidate `27edf8381`. Per-lane commits on octoberBranch are listed in the debrief §6 and the lane briefs.
 - **Follow-up release:** master `4243bcd4e..502a93b4c`, PR #431, a squash of candidate `981953daa` (octoberBranch `ec85232a1` without diaries). It covers the follow-up lanes (flag release, decisions 135–143) and Codex work the Chef adopted (areas 5–11). Per-lane commits on octoberBranch run after `c577225e2`.
-- **Committed but not yet released:** octoberBranch after `ec85232a1`: Codex areas 4 (`97685d418`), 3 (`b4a9fcf42`) and 2 (`7b3d328ba`), and the TeamDetails test fix (`7234e9682`).
+- **Third release:** master `502a93b4c..e1ab46318`, PR #432, a squash of candidate `10bec8b32`. It covers the rolling-forge pipeline stall fix (`a25f3f542`), Codex areas 4 (`97685d418`), 3 (`b4a9fcf42`) and 2 (`7b3d328ba`), and the TeamDetails test fix (`7234e9682`).
+- **Fourth release:** master `e1ab46318..4d9b6a10d`, PR #433, a squash of candidate `359789456` (octoberBranch `cd5604159` without diaries). It covers the follow-up lanes:
+  - F1 CTPI v2 writer: `197612873`, `d8efc67a5`;
+  - F2 SOS v2: `c894bb616`, `244645342`, and F2b `ebfc82bc7`;
+  - F3 Lines 5v5: `ff873398d`;
+  - F4 game finality: `94e4c7c67`, `073a5905e`;
+  - W2-3 D13: `33b919192`.
+
+  Migrations 144–146 were applied before the merge. Production steps and readbacks are in `production/PRODUCTION-QUEUE.md` and debrief §3.
 - Codex releases in between (`866b90bc4` DRM, `4243bcd4e` Goalie Grid) are out of scope, except where they touch fix-sprint files or data. The adopted areas are in scope only where they touch fix-sprint files: area 3 changes L9b's `goalie-queries.ts` and L18's `creaseShift.ts`.
 
 ## What to audit
