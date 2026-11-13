@@ -440,25 +440,27 @@ describe("RateStatPercentiles", () => {
     expect(tile("ixG/60").querySelector("strong")?.textContent).toBe("—");
   });
 
-  describe("PP/PK cohorts (decision 81)", () => {
-    const ppCohort = {
+  describe("PP/PK cohorts (decisions 81, 140)", () => {
+    // Default floors (decision 140): PP 60 min, PK 120 min. The old tests passed a
+    // provisional 30-min floor explicitly; these use the shipped defaults.
+    const cohort = (minutes: number[]) => ({
       stats: [
-        // toi in seconds at PP
-        { player_id: 1, gp: 40, toi: 50 * 60, goals_per_60: 5 },
-        { player_id: 2, gp: 40, toi: 50 * 60, goals_per_60: 4 },
-        { player_id: 3, gp: 40, toi: 20 * 60, goals_per_60: 9 }, // D below the 30-min floor
-        { player_id: 4, gp: 40, toi: 200 * 60, goals_per_60: 9 }, // forwards rank apart
-        { player_id: 5, gp: 40, toi: 200 * 60, goals_per_60: 8 }
+        // toi in seconds at the selected strength
+        { player_id: 1, gp: 40, toi: minutes[0] * 60, goals_per_60: 5 },
+        { player_id: 2, gp: 40, toi: minutes[1] * 60, goals_per_60: 4 },
+        { player_id: 3, gp: 40, toi: minutes[2] * 60, goals_per_60: 9 }, // D just under the floor
+        { player_id: 4, gp: 40, toi: 300 * 60, goals_per_60: 9 }, // forwards rank apart
+        { player_id: 5, gp: 40, toi: 300 * 60, goals_per_60: 8 }
       ],
       requestedSeasonId: 20252026,
       appliedSeasonId: 20252026,
       canonicalPlayerGp: 40,
       fallbackReason: null
-    };
+    });
     const groups = new Map([[1, "D"], [2, "D"], [3, "D"], [4, "F"], [5, "F"]]);
 
     beforeEach(() => {
-      mockFetchPercentileCohortForPlayer.mockResolvedValue(ppCohort);
+      mockFetchPercentileCohortForPlayer.mockResolvedValue(cohort([70, 70, 59]));
       mockFetchSkaterPositionGroups.mockReset();
       mockFetchSkaterPositionGroups.mockResolvedValue(groups);
     });
@@ -466,28 +468,27 @@ describe("RateStatPercentiles", () => {
     const goalsTile = () =>
       screen.getAllByText("G/60").map((el) => el.closest("div")!).find((div) => div.querySelector("meter"))!;
 
-    it("ranks defensemen against defensemen above the PP minutes floor, not games", async () => {
+    it("ranks defensemen against defensemen above the default 60-min PP floor, not games", async () => {
       const onSt = vi.fn();
       const { container } = renderWithClient(
         <RateStatPercentiles playerId={1} seasonId={20252026} minGp={10} onMinGpChange={vi.fn()}
-          stMinMinutes={{ pp: 30, pk: 30 }} onStMinMinutesChange={onSt} desktop />
+          onStMinMinutesChange={onSt} desktop />
       );
       await waitFor(() => expect(screen.getByText("Rate stat percentiles")).toBeTruthy());
       fireEvent.click(screen.getByRole("button", { name: "PP" }));
-      // D over 30 PP min: players 1 and 2 → (1 + 0.5) / 2 = 75%. Pooled by GP it was 30%.
+      // D over 60 PP min: players 1 and 2 → (1 + 0.5) / 2 = 75%. Pooled by GP it was 30%.
       await waitFor(() => expect(goalsTile().querySelector("strong")?.textContent).toBe("75%"));
       expect(goalsTile().querySelector("small")?.textContent).toContain("1st/2");
-      expect(screen.getByText(/defensemen · 30 PP min\+/)).toBeTruthy();
-      expect(screen.getByText(/not yet validated by split-half stability/)).toBeTruthy();
-      expect(container.querySelector("label[for=gpSlider]")?.textContent).toContain("Min PP min:30");
-      fireEvent.change(container.querySelector("#gpSlider")!, { target: { value: "15" } });
-      expect(onSt).toHaveBeenCalledWith("pp", 15);
+      expect(screen.getByText(/defensemen · 60 PP min\+/)).toBeTruthy();
+      expect(screen.getByText(/60-min default comes from 2025-26 split-half reliability \(decision 140\)/)).toBeTruthy();
+      expect(container.querySelector("label[for=gpSlider]")?.textContent).toContain("Min PP min:60");
+      fireEvent.change(container.querySelector("#gpSlider")!, { target: { value: "59" } });
+      expect(onSt).toHaveBeenCalledWith("pp", 59);
     });
 
-    it("shows insufficient sample for a player below the floor instead of ranking him", async () => {
+    it("excludes a player at 59 PP minutes by default as an insufficient sample", async () => {
       renderWithClient(
-        <RateStatPercentiles playerId={3} seasonId={20252026} minGp={10} onMinGpChange={vi.fn()}
-          stMinMinutes={{ pp: 30, pk: 30 }} desktop />
+        <RateStatPercentiles playerId={3} seasonId={20252026} minGp={10} onMinGpChange={vi.fn()} desktop />
       );
       await waitFor(() => expect(screen.getByText("Rate stat percentiles")).toBeTruthy());
       fireEvent.click(screen.getByRole("button", { name: "PP" }));
@@ -495,15 +496,29 @@ describe("RateStatPercentiles", () => {
       expect(goalsTile().querySelector("strong")?.textContent).toBe("—");
     });
 
-    it("brings a player back into the cohort when the floor is lowered", async () => {
+    it("includes the 59-minute player when the user lowers the PP floor to 59", async () => {
       renderWithClient(
         <RateStatPercentiles playerId={3} seasonId={20252026} minGp={10} onMinGpChange={vi.fn()}
-          stMinMinutes={{ pp: 15, pk: 30 }} desktop />
+          stMinMinutes={{ pp: 59, pk: 120 }} desktop />
       );
       await waitFor(() => expect(screen.getByText("Rate stat percentiles")).toBeTruthy());
       fireEvent.click(screen.getByRole("button", { name: "PP" }));
-      // D over 15 min: 1, 2, 3 → player 3 tops: (2 + 0.5) / 3 = 83%.
+      // D over 59 min: 1, 2, 3 → player 3 tops: (2 + 0.5) / 3 = 83%.
       await waitFor(() => expect(goalsTile().querySelector("strong")?.textContent).toBe("83%"));
+      expect(screen.queryByText("Insufficient sample")).toBeNull();
+    });
+
+    it("uses a 120-min PK floor and labels PK low reliability", async () => {
+      mockFetchPercentileCohortForPlayer.mockResolvedValue(cohort([130, 130, 119]));
+      renderWithClient(
+        <RateStatPercentiles playerId={1} seasonId={20252026} minGp={10} onMinGpChange={vi.fn()} desktop />
+      );
+      await waitFor(() => expect(screen.getByText("Rate stat percentiles")).toBeTruthy());
+      fireEvent.click(screen.getByRole("button", { name: "PK" }));
+      await waitFor(() => expect(screen.getByText(/defensemen · 120 PK min\+ · low reliability/)).toBeTruthy());
+      expect(screen.getByText(/Low reliability: PK percentiles stay only weakly stable/)).toBeTruthy();
+      // Player 3 at 119 PK min is outside the D cohort.
+      expect(goalsTile().querySelector("small")?.textContent).toContain("1st/2");
     });
   });
 });

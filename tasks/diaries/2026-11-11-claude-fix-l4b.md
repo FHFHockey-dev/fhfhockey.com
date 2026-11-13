@@ -44,3 +44,7 @@ E2E wigo-one-page (fixture, isolated next, port 3100) for layout fit; commit; re
 - Fixture granted: e2e/fixtures/wigo/wigoFixtures.ts game ids now NHL format YYYY02NNNN per row season. wigo-one-page 13/13 pass.
 - Checks: radar + radarSeasonStats vitest 61/61; ESLint exit 0; npm run typecheck exit 0.
 - Lane closed after this commit; production steps queued by Chef.
+
+## Decision 140 follow-up (2026-11-13, claim CLAUDE-FIX-SPRINT-FOLLOWUP-CLAIM-3-20261113)
+- Floors PP 60 / PK 120 (2025-26 split-half); "provisional" wording removed; PK* low-reliability label (title + hidden text) in ratings, "low reliability" in the PK chip and help.
+- 6 tests fail on the previous code, pass after. WiGO vitest 26 files / 220 pass; ESLint exit 0; typecheck exit 0; wigo-one-page E2E 13/13.
