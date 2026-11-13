@@ -18,11 +18,16 @@ You are **Astra**, the independent Codex reviewer. You reviewed the three-wave m
 2. `master/FIX-LANES.md` and `master/fix-lanes/*.md`: each lane's scope, findings (IDs, corrected wording, priority), decisions, readers, tests and Done criteria. Handoff contracts are in `master/fix-lanes/handoff/`.
 3. `master/OWNER-DECISIONS.md` (decisions 1–143) and `master/RULES-DIGEST.md` (rules 1–26).
 4. Production receipts in `master/production/`:
-   - `PRODUCTION-QUEUE.md` (approvals, results, incident, remaining steps);
+   - `PRODUCTION-QUEUE.md` (approvals, results, both DB incidents, run logs to the end of the queue);
    - `GOALIE-REBUILD-2026-27-PLAN.md`;
    - `GAME-2026020159-RECOVERY-PLAN.md` (official-HTML recoveries of 11 OT games);
-   - `HEADS-CHANGED-2026-11-12.tsv`.
-5. `tasks/TASKS/repository-audit-remediation/migration-authority.json`: rows 88 and 125–141 carry the apply receipts; 142 and 143 are written but not applied.
+   - `HEADS-CHANGED-2026-11-12.tsv`;
+   - `FORGE-INPUTS-PLAN-2026-11-13.md` (held writes, the 2026-27 rolling recompute, the pipeline-stall root cause);
+   - `REMAINING-PRODUCTION-PLAN-2026-11-13.md`;
+   - `xg-demotion-2026-11-13/` (registry backup and aggregate counts);
+   - `rolling-resume/`, `trend-bands-2026-11-13/` and `release-433-followups/` (runner scripts with their guards and stop rules).
+5. `tasks/TASKS/repository-audit-remediation/migration-authority.json`: 146 rows, 112 applied, 6 pending, 28 unknown. Rows 88, 101, 123–146 carry the sprint's apply receipts.
+5a. The follow-up lanes: `master/fix-lanes/FOLLOWUP-LANES-2026-11-13.md` (F1–F5) and the debrief §8–§13 (decisions 135–143, Codex adoption, follow-up ticket status).
 6. Coordination: `tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md` and `CODEX-TO-CLAUDE.md`, from `CLAUDE-FIX-SPRINT-START-20261111` onward.
 7. The Chef diary `tasks/diaries/2026-11-11-claude-fix-sprint-chef.md` and lane diaries `tasks/diaries/2026-11-1?-claude-fix-*.md`. These are working notes, not acceptance evidence.
 
@@ -38,6 +43,7 @@ You are **Astra**, the independent Codex reviewer. You reviewed the three-wave m
   - W2-3 D13: `33b919192`.
 
   Migrations 144–146 were applied before the merge. Production steps and readbacks are in `production/PRODUCTION-QUEUE.md` and debrief §3.
+- **Scope of this pass:** everything through master `4d9b6a10d` (#433). Work still in flight on 2026-11-13 is **out of scope for now**: Claude lanes F5–F8 (CTPI v2 validation, Game Grid odds labels and reserve projections, finality consumers and PK heads, Lines leftovers) and the Codex dev items in `master/fix-lanes/CODEX-DEV-2026-11-13.md`. The Chef ships them in one final release that evening and sends you a short addendum covering it.
 - Codex releases in between (`866b90bc4` DRM, `4243bcd4e` Goalie Grid) are out of scope, except where they touch fix-sprint files or data. The adopted areas are in scope only where they touch fix-sprint files: area 3 changes L9b's `goalie-queries.ts` and L18's `creaseShift.ts`.
 
 ## What to audit
@@ -50,14 +56,27 @@ You are **Astra**, the independent Codex reviewer. You reviewed the three-wave m
    - the 2026-11-12 incident (DB hang and crash recovery under the windowed re-normalization): were the stop and resume decisions right, and is the state after recovery provably clean (no half-written games)?
    - the official-HTML OT recoveries: qualification rigour (identity, overlaps, coverage, ES and GS TOI), raw snapshots preserved, no fabrication;
    - summary rebuilds: built from the intended (v2) events; formulaRevision 2 coverage complete.
-   - the 2026-11-13 restore of the production alias from Codex's temporary H1 CLI deployment, and the pg_cron 305 / Vercel cron 6 derived-build overlap at 10:05 UTC (debrief §7).
-7. **The migrations.** For rows 125–141: does each applied definition match its source file (sha256 in the authority row), and are the readback and rollback claims credible from the proofs in `supabase/tests/l4a_*`? Note 141 superseding 135's playoff blanking.
+   - the 2026-11-13 restore of the production alias from Codex's temporary H1 CLI deployment;
+   - the pg_cron 305 / Vercel cron 6 derived-build overlap at 10:05 UTC (debrief §7). 305 was moved to 10:25; confirm the fix and that it doesn't collide with anything else;
+   - DB incident 2 (2026-11-13 01:55Z) and the paced runners used afterwards;
+   - the 2026-11-13 actions:
+     - the 2026-27 rolling recompute and the 2025-26 goalie partition rebuild;
+     - indexes 123 and 124, and power ratings v3;
+     - the xG champion retirement (decision 5), composites v3 publish, rankings and the team_unit_toi snapshot;
+     - the trend-band history;
+     - migrations 101 and 142–146;
+     - release #433 and its post-release runs: game state, the CTPI v2 backfill, the first SOS v2 snapshot;
+   - the pipeline stall fix (`a25f3f542`): was the root cause right? The 11-13 10:05 run completed every stage.
+7. **The migrations.** For rows 101, 123–146: does each applied definition match its source file (sha256 in the authority row), and are the readback and rollback claims credible from the proofs in `supabase/tests/` (`l4a_*`, `f1_*`, `f2_*`, `f4_*`)? Note 141 superseding 135's playoff blanking. Also check that 144 and 145 freeze issued v1 history without changing any row (rule 21).
 8. **Open risks the debrief may understate**, for example:
    - the FORGE trend-band reader turned inert, a live output change;
-   - no in-house xG for new games (decision 99);
+   - no in-house xG at all: there is no v2 model, and the champion was retired on 11-13;
    - PP share withheld;
    - 2025-26 data still on strength v1;
-   - legacy-route usage unknown (the log check was inconclusive).
+   - legacy-route usage unknown (the log check is pending);
+   - Recent Team Form (CTPI) serves no rows until v2 is approved (lane F5);
+   - the NST identity gap for one player on 2 dates, and WiGO rejecting 2 historic WGO rows;
+   - SOS v2 counts 84 fixtures per team, because 2026-27 is an 84-game season.
 
 ## Output
 Write `tasks/artifacts/calculation-inventory-2026-11-10/master/ASTRA-FIX-SPRINT-AUDIT.md` with:
