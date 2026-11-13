@@ -106,6 +106,8 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 
 - Replay bands (TJ: blocks the release): served bands drawn only when merged band seconds == stored clock_seconds (or N/A with no bands); else withheld whole with "PP timeline unavailable: timing mismatch." (or the stored reason). Gate lifted into Replay (one read for bands + matrix); bands hidden while loading; serving off = today's bands. Cases: 131 t18 withheld + label + 92/8 grid; 131 t19 drawn (578 = 578); 038 t55 N/A no shading; off pinned. REPORT §17.
 
+- Guard ships (TJ); parser is Astra's. Folded testStoredGame.ts into Replay.test.tsx (ShiftChart footprint now model.ts, Replay.tsx, Replay.test.tsx). Claim CLAUDE-FIX-F11-PP-SHIFTCHART-GUARD-CLAIM-20261113 names F11's model.ts changes; parser fix to land after release. ShiftChart 3 files / 27 tests; typecheck 0; ESLint 0.
+
 ## Next
 TJ's serving review via the Chef. No production write from this lane. Chef routes remaining owner and code items. No production step from this lane.
 

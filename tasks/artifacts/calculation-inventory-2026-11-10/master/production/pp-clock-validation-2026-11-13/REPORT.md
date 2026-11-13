@@ -681,7 +681,7 @@ No surface shows 0% as a share. Both live views also compute 0 s for team 55.
 - While the gate loads, no bands are drawn, so unverified bands never flash.
 - **Serving off:** today's bands, unchanged. The one difference is a moment without bands while the cached gate answers "off".
 
-**What each case renders** (`Replay.test.tsx`, real stored-row fixtures via `testStoredGame.ts`):
+**What each case renders** (`Replay.test.tsx`, real stored-row fixtures built inside the test):
 
 | Case | Bands vs stored clock | Renders |
 |---|---|---|
@@ -690,7 +690,7 @@ No surface shows 0% as a share. Both live views also compute 0 s for team 55.
 | 3. 2026020038 t55 | 0 s, not applicable | No team-55 shading, no label. The matrix says "Team 55: N/A: no power play in this game."; no 0.0% anywhere. Team 20's bands (172 s = 172 s) are drawn. |
 | 4. Serving off, 2026020131 | n/a | Today's bands for both teams, including team 18's 29 s parser band. No labels. One gate request. |
 
-**Files:** `web/components/ShiftChart/model.ts`, `Replay.tsx`, `Replay.test.tsx` and a new test helper `testStoredGame.ts`. No scss; `PowerPlayAreaIndicators` is unused and unchanged.
+**Files:** `web/components/ShiftChart/model.ts`, `Replay.tsx`, `Replay.test.tsx` (the stored-fixture builder lives inside the test; no separate helper). The play parser Astra (Codex) is fixing is in `model.ts` too: claim `CLAUDE-FIX-F11-PP-SHIFTCHART-GUARD-CLAIM-20261113` lists F11's exact changes there and suggests the parser fix land after this release, on the today's-bands call only. No scss; `PowerPlayAreaIndicators` is unused and unchanged.
 
 **Checks:**
 - ShiftChart, LinemateMatrix, cross-surface, PowerPlayCombos and serving suites: 7 files, 71 tests.
