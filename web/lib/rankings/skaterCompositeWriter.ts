@@ -198,7 +198,10 @@ function percentilesFor(
 }
 
 // Independent check of the published percentile metadata against the full raw
-// population. Every MCM component is higher-is-better. Do not clamp bad inputs.
+// population, recomputed here from raw values (not with the producer's helper).
+// Every MCM component is higher-is-better. Do not clamp bad inputs.
+// Decision 90 mid-rank: (strictly worse + half the other tied peers) /
+// (qualified − 1) × 100; a sole qualified row is 50.
 function metricPercentilesMatchPopulation(entry: MetricSurfaceEntry) {
   const groups = new Map<string, ContextualRankingApiRow[]>();
   for (const row of entry.rowsByPlayerId.values()) {
@@ -215,8 +218,13 @@ function metricPercentilesMatchPopulation(entry: MetricSurfaceEntry) {
         if (row.metric.percentile != null) return false;
         continue;
       }
-      const worse = qualified.filter((peer) => peer.metric.value! < row.metric.value!).length;
-      const expected = qualified.length === 1 ? 100 : round(100 * worse / (qualified.length - 1), 3)!;
+      const value = row.metric.value!;
+      const worse = qualified.filter((peer) => peer.metric.value! < value).length;
+      const tiedOthers =
+        qualified.filter((peer) => peer.metric.value === value).length - 1;
+      const expected = qualified.length === 1
+        ? 50
+        : round(100 * (worse + tiedOthers / 2) / (qualified.length - 1), 3)!;
       if (!validPercentile(row.metric.percentile) || Math.abs(row.metric.percentile - expected) > 0.000001) return false;
     }
   }
