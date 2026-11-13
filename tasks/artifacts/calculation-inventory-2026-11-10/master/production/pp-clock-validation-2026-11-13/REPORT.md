@@ -563,7 +563,12 @@ TJ wants the full dry-run diff before any refresh. Nothing here ran against a da
 - **14 further updates** are within the 16 and are expected: teammates in the overtime team-games whose unit average moved. Only `percentageOfPP`, `pp_unit_usage_index`, `pp_unit_relative_toi` and `pp_vs_unit_avg` change: 2026020161 t52 (3), 2026020174 t29 (6), 2026020192 t2 (1) and 2026020197 t23 (4). No player changes unit anywhere.
 - No other row in the season changes. The 2 Part A team-games qualify on the Penalty Summary and are unchanged.
 - **TJ approved this dry-run file** (2026-11-13T20:54Z, in the F11 session): TJ typed "approved", then picked "Dry-run file only" in the pop-up. The approval covers `dry-run.json` sha256 `db94a9de864b9dfa8fa69f24c6be9045dd037ed1937393c3b03dd69d9ec4f15c` and nothing else.
-- **The write phase still needs its own approvals, through the Chef's gated release:** migration 149 applied, the release with `PP_STORED_CALCULATION_WRITES_ENABLED=true`, and the refresh run with this file (`20-refresh-runner.py write --dry-run-sha256 db94a9de…`).
+- **Status, 2026-11-13, per the Chef** (TJ approved each step by pop-up in the Chef session):
+  - Migration 149 was applied atomically at 20:36:48Z with a clean readback; the authority file shows 115 applied and 6 pending.
+  - Release #441 (master `f5c7adc2d`, writer code identical to `8f73d2931`) shipped with writes gated off: build 20:49:42Z, smoke test 5/5.
+  - TJ then set `PP_STORED_CALCULATION_WRITES_ENABLED=true` in Production. A clean-export CLI production deploy of `f5c7adc2d` was running at the time of this note.
+- **The refresh is not approved.** (`20-refresh-runner.py write --dry-run results/after-d152/local-dry-run/dry-run.json --dry-run-sha256 db94a9de…`.) The Chef brings it to TJ after the deploy is verified. This lane doesn't run it unless told who does.
+- **Once the redeploy is live, nightly cron 388 writes with the new writer.** It covers dates from today minus 2 to today, so it may write some frozen games (from 11-12) before the refresh. It uses the same calculation, so the refresh's readback still holds as long as their stored inputs haven't changed since the export.
 
 ## Open items for the owner (Chef to route)
 

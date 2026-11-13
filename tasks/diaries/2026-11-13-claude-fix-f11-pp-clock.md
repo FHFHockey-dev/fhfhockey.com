@@ -92,8 +92,10 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 
 - TJ approved the dry-run file only (2026-11-13T20:54Z; "approved" + pop-up "Dry-run file only"): sha256 db94a9de…f15c. Recorded in REPORT §14.
 
+- Per the Chef: migration 149 applied 20:36:48Z; #441 (f5c7adc2d) released with writes off (build 20:49:42Z, smoke 5/5); TJ set the flag true in Production, clean-export redeploy running. Refresh not approved; REPORT §14 status updated.
+
 ## Next
-The Chef routes the write phase (migration 149, release with the flag, refresh), each with its own approval. No production write from this lane. Chef routes remaining owner and code items. No production step from this lane.
+Wait for the Chef: the refresh needs TJ's approval and an assigned runner. Don't run 20-refresh-runner.py. No production write from this lane. Chef routes remaining owner and code items. No production step from this lane.
 
 ## Blockers
 None.
