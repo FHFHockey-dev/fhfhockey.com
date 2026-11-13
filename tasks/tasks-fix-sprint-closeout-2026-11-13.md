@@ -45,11 +45,13 @@
 - [ ] 2.0 Release the reader code with serving off (depends on 1.0 and TJ's approval)
   - [x] 2.1 Build the candidate on current master with only the reader files plus records (diaries at master's), and confirm no other app file differs.
   - [x] 2.2 Gate the exact candidate in a clean export (focused tests, typecheck, ESLint, CSS, full Vitest, pytest) and bring TJ the SHA. *(Candidate `28fdbadd6` on master `f5c7adc2d`: 26 app files, no scss. 265 focused tests; typecheck 0; ESLint 0. Full Vitest 19,965 passed: ArticleReader and BLSH are export-only; TweetSwipeTrainer is a load flake that passes 22/22 alone. pytest 213. 1.5 is covered by TJ's conditional approval, ~21:40Z and ~21:50Z.)*
-  - [ ] 2.3 After TJ's "Push and merge":
+  - [x] 2.3 After TJ's "Push and merge":
     - branch push with a 90 s no-build check, PR, squash-merge, and a tree-equality check;
     - 1 build plus 3 cancels;
     - a 5-GET smoke;
     - octoberBranch ours-merge with a no-build check.
+
+    *Done: #442 → master `44de2f107`, build 22:07:23Z, smoke 5/5, octoberBranch `732468246`.*
   - [ ] 2.4 Read back read-only that the next rolling run's stored output matches pre-release behaviour (flag off).
 - [ ] 3.0 Serve PP share (depends on 2.0; **TJ approved 2026-11-13 ~21:40Z**, conditional on the reader candidate passing its release checks plus 1.2 and 1.3. Keep `PP_STORED_CALCULATION_WRITES_ENABLED=true`; stop on any disagreement; no refresh or cron rerun.)
   - [ ] 3.1 TJ sets `PP_SHARE_SERVING_ENABLED=true` (Production). Run the approved clean-export CLI production deploy of the master SHA, then check the alias and a 3-GET smoke.

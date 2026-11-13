@@ -455,3 +455,14 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     - **other seasons untouched:** 40,498 rows, 0 stamped; table total 47,678.
   - **PP share stays hidden.** Readers are unchanged; serving it needs reader gates (named in REPORT §11.3, not built) and TJ's separate approval.
   - **Next scheduled:** cron 388 at 08:05Z on 2026-11-14 writes the last 3 dates through the new calculation. Read it back separately (audit `success`, rows stamped).
+- **Release #442: decision 152 PP share readers and shift-chart timing guard** (TJ's conditional approval, ~21:40Z and ~21:50–21:55Z; checks passed):
+  - **Candidate** `28fdbadd6` on master `f5c7adc2d`: 26 app files (F11 `05c43f981`, `aac8cf5a3`, `486da9666`), no scss. F11's later `8b94e18c0` only folds the test helper into `Replay.test.tsx` (app code identical), so it isn't in this release.
+  - **Gate:** 265 focused tests (the cross-surface test and rolling flag-off pin included); typecheck 0; ESLint 0. Full Vitest 19,965 passed: ArticleReader and BLSH are export-only; TweetSwipeTrainer is a load flake, 22/22 alone. pytest 213.
+  - **Branch** pushed 22:00:17Z; no build at 22:01:53Z.
+  - **PR #442** squash-merged 22:02:07Z as master `44de2f107`, tree identical.
+  - **Build:** fhfhockey completed 22:07:23Z; cms, functions and fhfhockey.com canceled.
+  - **Smoke** 5/5 at 200 (22:07:57–58Z), with serving off: `/` 4.23 s (cold), `/lines` 0.30 s, `/lines/EDM` 0.21 s, `/shiftChart` 0.21 s, `/underlying-stats` 0.13 s.
+  - **octoberBranch** ours-merge `732468246` pushed 22:08:08Z.
+- **Serving on** (TJ-approved after checks 1.2, 1.3 and 7.2 passed):
+  - `PP_SHARE_SERVING_ENABLED=true` added to Production through the Vercel CLI at ~22:09Z; `PP_STORED_CALCULATION_WRITES_ENABLED=true` left as is.
+  - A clean-export CLI production deploy of master `44de2f107` started ~22:10Z.
