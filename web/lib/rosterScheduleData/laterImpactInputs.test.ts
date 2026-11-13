@@ -470,7 +470,7 @@ describe("the server-side build", () => {
       return calls.find(call => call.table === "roster_optimizer_team_games")!.filters.find(([method]) => method === "lte")?.[2];
     };
     const days = args().calendarPolicy.calendarDays;
-    const v1 = String(await lastRead(forecastCalendarPolicy(days))), v2 = String(await lastRead(forecastCalendarPolicy(days, "forecast-calendar-v2")));
+    const v1 = String(await lastRead(forecastCalendarPolicy(days, "forecast-calendar-v1"))), v2 = String(await lastRead(forecastCalendarPolicy(days, "forecast-calendar-v2")));
     expect(Date.parse(`${v1}T00:00:00Z`) - Date.parse(`${v2}T00:00:00Z`)).toBe(86400000);
   });
   it("keeps going with honest gaps when timing or schedule reads fail", async () => {
