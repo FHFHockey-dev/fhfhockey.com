@@ -1237,20 +1237,20 @@
       "path": "supabase/migrations/20261109210000_wgo_skater_stats_team_date_index.sql",
       "sha256": "90fc0a155976709ea5ce19d60b9bb2c0890b1eaf527e440060c37c54bb58c205",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "performance",
       "rolloutGate": "Adds idx_wgo_skater_stats_team_date (team_abbrev, date) so the player page's box-score coverage read (team_abbrev = X and date in a season of dates) stops hitting the 3 s statement timeout. Needs TJ's pop-up approval; apply by hand with the CONCURRENTLY form in the file header (not inside a transaction), check indisvalid, then record the ledger row.",
-      "stateEvidence": "Not applied. Drafted 2026-11-09 after edge/postgres logs showed about 30 statement timeouts 14:12-20:22 UTC on wgo_skater_stats coverage and variance reads. Read-only EXPLAIN 2026-11-09: coverage plan is an index scan on idx_wgo_skater_stats_date filtering team_abbrev; no index leads on team_abbrev (2,257,972 rows, 2.2 GB heap). Diary: tasks/diaries/2026-11-09-claude-wgo-skater-timeouts.md."
+      "stateEvidence": "Production schema_migrations version 20261109210000 (wgo_skater_stats_team_date_index); applied 2026-11-13 07:02Z by the fix-sprint Chef with TJ's pop-up approval ('All steps now'), as the rolloutGate specifies: `set statement_timeout='15min'` then `create index concurrently if not exists idx_wgo_skater_stats_team_date on public.wgo_skater_stats (team_abbrev, date)`, separate statements outside a transaction via the IPv4 session pooler. Built in 37 s; pre-build 0 active queries and 0 lock/IO waits. Readback: indisvalid=t, indisready=t, 17 MB. Ledger row inserted (statements null). Rollback: drop index concurrently."
     },
     {
       "order": 124,
       "path": "supabase/migrations/20261109213000_line_source_observed_at_indexes.sql",
       "sha256": "e33c8a67d8aa2e5dbfd70cfa6877a941e87de2cdbb63789bf34f1879ce26211f",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "performance",
       "rolloutGate": "Adds line_source_snapshots_observed_at_idx and lines_ccc_observed_at_idx (observed_at desc) so the auto-news-feed review sync's newest-500 reads are index scans instead of full scans and sorts. Needs TJ's pop-up approval; the plain form runs through apply_migration, or apply by hand with the CONCURRENTLY form in the file header (not inside a transaction), check indisvalid, then record the ledger row.",
-      "stateEvidence": "Not applied. Drafted 2026-11-09 after /api/v1/db/auto-news-feed-items failed at 16:00 UTC: postgres log 'canceling statement due to statement timeout' on the sync's line_source_snapshots read ordered by observed_at desc limit 500 (7,505 rows, 55 MB; no index serves that order; lines_ccc has none either). Verified on local PostgreSQL 15 with supabase/tests/line_source_observed_at_indexes.py (8/8): seq scan + sort before, index scan after, re-applies, CONCURRENTLY header form builds valid indexes."
+      "stateEvidence": "Production schema_migrations version 20261109213000 (line_source_observed_at_indexes); applied 2026-11-13 06:57Z by the fix-sprint Chef with TJ's pop-up approval ('All steps now'), psql -1 via the IPv4 session pooler (file sets local lock 5s / statement 60s), exact file (sha256 matches this row), 2 s. Pre-apply 1 active query. Readback: line_source_snapshots_observed_at_idx (192 kB) and lines_ccc_observed_at_idx (88 kB) both indisvalid and indisready. Ledger row inserted (statements null)."
     },
     {
       "order": 125,

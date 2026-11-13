@@ -190,3 +190,14 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - Migration 20261027090000 (authority 101) applied with `psql -1` (the file sets local timeouts and has no begin/commit); sha256 matches. Pre-check: 0 active queries.
 - Readback: `forge_reserve_projections`, 28 columns, RLS on, 1 select policy, pkey plus 2 indexes, anon/authenticated SELECT only. Ledger row inserted. Authority now has 107 applied and 8 pending.
 - `FORGE_RESERVE_PASS_ENABLED` stays unset until it ships with the next release.
+
+## Early run of approved steps, 2026-11-13 ~06:57–07:05Z (TJ: "All steps now", before the 08:00Z cron window)
+- **Index 124** applied in 2 s (`psql -1`, file sha matches authority). `line_source_snapshots_observed_at_idx` (192 kB) and `lines_ccc_observed_at_idx` (88 kB) are valid and ready. Ledger row inserted.
+- **Power ratings v3:** 45 one-day calls (09-29 → 11-12), all 200, about 1–4 s each, 32 upserts per day, no guard waits. Readback: 1,440 rows, all `team-power-v3-all-team-baseline-prior-after-norm-pooled-st`, 32 teams. The legacy and v2 rows were replaced.
+- **xG champion demotion (decision 5):**
+  - Backup: `xg-demotion-2026-11-13/registry-backup.json` (2 rows) and `aggregate-counts.txt` (team-game 2,772, goalie-game 2,922, player-game 42,236, team-rolling 8,316, all cfg9bac2706).
+  - At 07:01:40Z, one transaction set `logistic_l2-s20252026-p1-st1-f1-cfg9bac2706` to `is_active=false`, `is_champion=false`, `approval_status='retired'`; `model_approved` is kept.
+  - Readers (3 GETs): team-timeline `model:null` (`no_active_approved_model`), xG Lab `modelVersion:null` with 0 rows, homepage 200 with no reference to the model. The FORGE prior (env pin unset) is unaffected.
+  - Rollback: restore the row from the backup.
+- **Index 123** at 07:02:13–07:02:50Z: `create index concurrently` on `wgo_skater_stats (team_abbrev, date)` with `statement_timeout=15min`, run alone and outside a transaction. Built in 37 s. Readback: valid, ready, 17 MB. Ledger row inserted. Authority rows 123 and 124 are applied; counts are now 109 applied, 9 pending, 28 unknown.
+- **Remaining:** the dry runs (rankings, composites, team_unit_toi, trend bands) in the 08:20–09:25Z gap; the WiGO check after the 08:50Z cron; the pipeline check at 11:01Z.
