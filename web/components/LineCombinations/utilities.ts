@@ -746,7 +746,7 @@ type CreditedDecisionRow = {
 };
 
 export type GoalieWindowStats = {
-  GP: number;
+  GP: number | null;
   SV: number | null;
   SVPercentage: number | null;
   GAA: number | null;
@@ -755,13 +755,24 @@ export type GoalieWindowStats = {
 };
 
 function parseSaveShots(value: string | null) {
-  const match = /^(\d+)\/(\d+)$/.exec(value?.trim() ?? "");
-  return match ? { saves: Number(match[1]), shots: Number(match[2]) } : null;
+  const match = /^(\d+)[/-](\d+)$/.exec(value?.trim() ?? "");
+  if (!match) return null;
+  const saves = Number(match[1]), shots = Number(match[2]);
+  return Number.isSafeInteger(saves) && Number.isSafeInteger(shots) && saves <= shots ? { saves, shots } : null;
 }
 
 function parseToiSeconds(value: string | null) {
-  if (value == null || !/^\d+:\d{2}$/.test(value.trim())) return null;
+  if (value == null || !/^\d+:[0-5]\d$/.test(value.trim())) return null;
   return parseTime(value.trim());
+}
+
+function goalieAppeared(row: GoalieAppearanceRow, credited?: CreditedDecisionRow): boolean | null {
+  const seconds = parseToiSeconds(row.toi);
+  const shots = parseSaveShots(row.saveShotsAgainst);
+  if ((seconds != null && seconds > 0) || (shots != null && shots.shots > 0)
+    || (row.goalsAgainst != null && row.goalsAgainst > 0)
+    || [credited?.wins, credited?.losses, credited?.ot_losses].some(value => value != null && value > 0)) return true;
+  return seconds === 0 ? false : null;
 }
 
 /**
@@ -773,6 +784,10 @@ function pooledGoalieWindow(
   appearances: readonly GoalieAppearanceRow[],
   creditedByGame: ReadonlyMap<number, CreditedDecisionRow>
 ): GoalieWindowStats {
+  // An unproved appearance also makes the membership of the last-ten window unknown.
+  if (appearances.some(row => goalieAppeared(row, creditedByGame.get(row.game.id)) === null)) {
+    return { GP: null, SV: null, SVPercentage: null, GAA: null, Record: null };
+  }
   let saves = 0;
   let shots = 0;
   let goalsAgainst = 0;
@@ -829,17 +844,17 @@ function summarizeGoalieAppearances(
 ): Partial<GoalieStats> | null {
   if (rows.length === 0) return null;
   const playerId = rows[0].playerId;
-  // A dressed backup who did not play has 00:00; unknown TOI stays an appearance.
-  const appearances = rows
-    .filter((row) => row.toi !== "00:00")
-    .slice()
-    .sort((a, b) => b.game.startTime.localeCompare(a.game.startTime));
   const creditedByGame = new Map<number, CreditedDecisionRow>();
   creditedRows.forEach((row) => {
     if (row.goalie_id === playerId && row.game_id != null) {
       creditedByGame.set(row.game_id, row);
     }
   });
+
+  const appearances = rows
+    .filter(row => goalieAppeared(row, creditedByGame.get(row.game.id)) !== false)
+    .slice()
+    .sort((a, b) => b.game.startTime.localeCompare(a.game.startTime));
 
   return {
     playerId,

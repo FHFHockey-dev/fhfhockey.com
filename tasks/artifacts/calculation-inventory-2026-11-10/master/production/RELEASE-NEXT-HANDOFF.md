@@ -1,68 +1,72 @@
-# Next release handoff: goalie item 1 (prepared 2026-11-13 ~19:35Z, Chef)
+# Next release handoff: goalie item 1 (updated 2026-11-13 ~19:30Z, Chef)
 
-**State:** checklist only. Nothing is built, pushed or merged. The push and the merge each need TJ's pop-up.
+**State:** candidate built and gated locally. **Not pushed or merged.** The push and the merge need TJ's pop-up.
+- **Candidate:** `7a3a69ef4daea93e3fb62da00b7973fe263552ea`, tree `4e64689e698fbc514c7e74783fc6611c930bce82`.
+- **Parent:** master `ed2002161` (#438).
 
-The current base is master `ed2002161` (#438).
+## 1. Scope (TJ, 2026-11-13)
+`fc34b053a` isn't final on its own. Item 1 is the goalie writer and its test, plus the shared `leagueSavePct` helper and its test, taken from Astra's follow-up `0e8d377ae`.
 
-## 1. Scope
-| | Commit | Files | Why |
-|---|---|---|---|
-| **Include** | Codex item 1 `fc34b053a` | `web/pages/api/v1/db/update-goalie-projections-v2.ts`, `web/__tests__/pages/api/v1/db/update-goalie-projections-v2.test.ts` | TJ: ready for a candidate. Doesn't wait on item 6. |
-| **Include** | records since #438 | `tasks/` only, with diaries reset to master's | The local record commits ride with this release |
-| Exclude (restore master's version) | item 2 `284f99045` | `run-projection-accuracy.ts` + test | Issuance contract is separate (TJ) |
-| Exclude | item 6 `c89ff5d24` | `update-stats/[gameId].ts`, `gameStatsCompleteness.ts`, `transactionalGameStatsPersistence.ts` + 3 tests | DB-first approval; Codex is vetting the patch and migration state |
-| Exclude | F11 Part A `db0310fa3` | `web/utils/getPowerPlayBlocks.ts` + test, `ppPenaltySummaryRegistry.ts` | Inert (no production caller of `buildTeamPpClock`); ships with the PP-share decision |
+That follow-up also touches item 2, so it was **not** cherry-picked whole. It lives in a separate clone, `/private/tmp/fhfh-goalie-items-1-2-20261113`, branch `chef/goalie-items-1-2`: `ed2002161` → `0658e8da4` (item 1, identical to `fc34b053a`) → `8ca9e6762` (item 2) → `0e8d377ae`. Its objects were fetched into this repo, and no ref was created.
 
-- **No migrations.** Item 6's `20261113190000` (authority order 147) stays pending and unapplied; its inert SQL already shipped in #437.
-- **Unreleased app files on octoberBranch** (verified 19:25Z) are exactly the 13 files of those four commits. There are no uncommitted web changes (only `web/next-env.d.ts`, which isn't part of any release).
+| | Files (all at their `0e8d377ae` blob) |
+|---|---|
+| **In** | `web/pages/api/v1/db/update-goalie-projections-v2.ts`, `web/__tests__/pages/api/v1/db/update-goalie-projections-v2.test.ts`, `web/lib/projections/goalie/leagueSavePct.ts`, `web/lib/projections/goalie/leagueSavePct.test.ts` |
+| **In** | `tasks/` records equal to octoberBranch, with diaries kept at master's |
+| **Out** | `run-projection-accuracy` (item 2, both `8ca9e6762` and its `0e8d377ae` part); item 6 `c89ff5d24`; any migration; F11's registry `db0310fa3` |
 
-## 2. What item 1 changes (Chef read of the diff)
-- **Pregame inputs only:** the season and L10 start shares and the rate stats use games strictly before the target date (`<`, was `<=`). The historical team identity also comes from before the date.
-- **GSAA baseline:** the constant `.900` is replaced by `getSeasonLeagueSavePct(gameDate)`. That function was already on master (`lib/projections/goalie/leagueSavePct.ts`): this season's league save % before the date, blended with last season's through a 20,000-shot prior, with a labelled fallback. It's memoized per run and as-of date.
-- **Labelling:** `start_prob` stays the raw L10 start share, now labelled as such, and the response's observability gains `startProbabilityBasis` and the baselines used.
-- **Runtime:** cron 364 runs at 09:30Z with `{}`. It resumes from the last projected date up to today, so it usually covers 1–2 dates. That's 1–2 baseline loads of about 4 × 1,000-row pages of `forge_goalie_game` each. Bounded.
-- **Checked here:** 26/26 focused tests pass (`env -u GIT_DIR npm test`). The import closure is on master.
+Checked:
+- The candidate's app diff against master is exactly those 4 files, each matching its `0e8d377ae` blob.
+- `tasks/` equals octoberBranch apart from diaries, and no diary differs from master.
+- No migration is included. Item 6's `20261113190000` (authority 147) stays pending and unapplied.
 
-## 3. Confirm with Codex (via TJ) before building
-1. **Is `fc34b053a` final for item 1?** The mailbox entry still reads "HOLD pending baseline qualification and runtime bounds", and there's no newer commit.
-2. **Baseline nulls:** master's `leagueSavePct.ts` uses `Number(row.goals_allowed)`, so a null `goals_allowed` with shots counts as 0 goals, which inflates save %. If Codex's shared baseline fix is ready, add that commit to this candidate. Otherwise, ship with the caveat recorded.
-3. **The FORGE interaction is intended:** tomorrow's 09:30Z write feeds the 10:05Z FORGE run (`goalieStarterMixtures` reads `goalie_start_projections`). Releasing today means tomorrow's FORGE reserve-row readback sees item 1's inputs.
+## 2. What it changes
+**Writer** (cron 364, 09:30Z daily, body `{}`):
+- Start shares and rates use only games before the target date, and historical identity also comes from before it.
+- GSAA uses the season league save % instead of `.900`; when the baseline is a fallback, GSAA is null rather than a guess. `projected_gsaa_per_60` is nullable.
+- `start_probability` stays the raw L10 start share, now labelled as such.
+- `limit` must be 1–30 (default 30) and all cutoffs are primed in one bounded scan.
 
-## 4. Build (template: the #433–#438 candidates)
-1. Start from the octoberBranch HEAD tree. With `GIT_INDEX_FILE` on a temp index (never `GIT_DIR`), restore master's version of `tasks/diaries/` and of the 11 excluded files above.
-2. Run `git commit-tree` on master `ed2002161` with a plain message and no AI attribution.
-3. Check the candidate diff against master: it contains the 2 item 1 files plus `tasks/` records, and nothing else under `web/`, `functions/`, `supabase/` or `cms/`.
+**Shared helper** (`leagueSavePct.ts`):
+- Only complete, valid goals/shots pairs count: a null goals-allowed is no longer a shutout, and GA > SA is excluded. Excluded rows are counted and reported.
+- If the scan hits its 12,000-row bound, it falls back to the labelled prior instead of using a partial sample. At most 30 dates come from one scan.
+- `SeasonLeagueSavePct` gains `excludedRows` and `sampleComplete`.
+- **It's also read by FORGE:** `stages/goalie-stage.ts:188` and `stages/skater-stage.ts:1960`. So releasing it can change FORGE's league save % input whenever `forge_goalie_game` has incomplete or invalid goals/shots pairs. That's independent of the 09:30Z write.
+  - **Measured 2026-11-13 ~19:33Z** (TJ "Run the one count"): one guarded aggregate SELECT after the `pg_stat_activity` check (1 active, not busy). The window was 2025-07-01 to 2026-11-14, **2,764 rows**, far under the 12,000-row bound.
+  - **Every row is a valid pair:** 0 null goals-allowed with shots, 0 null shots, 0 goals above shots and 0 negative values. The old and new helpers give identical sums: current season SA 16,983 / GA 1,850, previous season SA 57,742 / GA 6,029.
+  - **So the helper doesn't change FORGE's league save % as of 2026-11-14:** the blended value is about .8935 under both. A future incomplete row would now be excluded and counted, instead of becoming a shutout.
 
-## 5. Gate (clean `git archive` export; `$TMPDIR/gate-final.sh` adapted)
-- Vitest full: re-run any failure alone. The known export-only failures are ArticleReader, the native* offline CLIs, the BLSH bootstrap, the pytest git-pin tests and git-dependent files, and requestBudget is a load flake.
-- `npm run typecheck`: read the exit code.
-- ESLint on the 2 changed web files.
-- CSS pure check: n/a (no `.module.scss` changes).
-- pytest: 217.
-- **Item 1 fail-first:** with the master writer and the new test, the 3 fail-first tests must fail; with the candidate, all 26 pass.
+## 3. Gate on the exact candidate (clean `git archive` export, `$TMPDIR/gate-item1`)
+- **Focused Vitest: 313 passed, 10 files.** The writer has 33 tests, and the helper and its consumers are covered: `leagueSavePct`, `goalieOutcomes`, `goaliePipeline`, `startChartPipeline`, `module-imports`, `runProjectionV2.alignedConversion`, `run-forge-projections.resume`, `nativeInputEligibility`, `nativeGoalAccounting`.
+- **Typecheck:** `npm run typecheck`, exit 0.
+- **ESLint** on the 4 files: exit 0, no errors.
+- **Full gate** (TJ "Full gate, then ask", ~19:34Z):
+  - **Vitest:** 19,865 passed. The one failing file is `scripts/blsh/nativeProcessCaptureBootstrap.test.ts` (16 tests), a known export-only failure; it passes 32/32 in the checkout.
+  - **pytest:** 213 passed. The 4 git-pin tests that fail in the export pass 4/4 in the checkout.
+  - The BLSH scripts and `modeling/` are identical to master.
+- **CSS check:** n/a (no `.module.scss` changes).
 
-## 6. Push, merge, watch (one TJ pop-up: "Push and merge")
+## 4. Push, merge, watch (one TJ pop-up: "Push and merge")
 1. Inventory the 4 linked Vercel projects. Expect 1 fhfhockey build plus 3 cancels: no `functions/` change.
-2. Push `chef/release-2026-11-13-goalie-item1`, then a 90 s no-build check through the GitHub API.
-3. Open the PR, squash-merge, and confirm the merge tree equals the candidate.
-4. Watch the GitHub statuses until settled.
-5. **Smoke:** 5 sequential read-only GETs, stopping on the first non-2xx. Never call the cron writer for QA. `/`, `/start-chart`, `/forge/command-center`, `/underlying-stats`, `/lines`.
+2. Push `7a3a69ef4` as `chef/release-2026-11-13-goalie-item1`, then a 90 s no-build check through the GitHub API.
+3. Open the PR, squash-merge, and confirm the merge tree equals `4e64689e6`.
+4. Watch the GitHub statuses until settled. **Record the deployed SHA and the time it went live.**
+5. **Smoke:** 5 sequential read-only GETs, stopping on the first non-2xx: `/`, `/start-chart`, `/forge/command-center`, `/underlying-stats`, `/lines`. Never call the cron writer or any FORGE route for QA.
 6. Ours-merge octoberBranch (tree unchanged), push, and run the no-build check.
 
-## 7. After release
-- **Cron 364's first write, 2026-11-14 09:30Z.** Read back the newest `goalie_start_projections` rows:
-  - row count;
-  - `start_prob` in [0, 1];
-  - GSAA consistent with a ~.90 league baseline;
-  - the audit row's `startProbabilityBasis` = `l10_start_share`.
-
-  Keep this separate from the 10:05Z and 10:15Z readbacks, but note the FORGE dependency (§3.3).
+## 5. After release (no manual reruns or refreshes)
+- **Tomorrow's 09:30Z goalie write is a possible input change to the 10:05Z FORGE run, not a confirmed one.**
+  - If #439 is live before 09:30Z, record the deployed SHA.
+  - After the 10:05Z run, verify read-only which `goalie_start_projections` rows FORGE actually consumed: the run's recorded inputs against those rows' `updated_at` and cron 364's audit row.
+  - Also check which league save % baseline FORGE used (source, excluded rows).
+- **Keep that separate from verifying the first FORGE reserve rows** (10:05Z) and cron 283's v4 power write (10:15Z).
+- Cron 364's own readback: the newest rows' count, `start_probability` in [0, 1], null GSAA only on a fallback baseline, and the audit's `startProbabilityBasis` = `l10_start_share`.
 - Records: a PRODUCTION-QUEUE entry and the debrief release list.
 
-## 8. Item 6 (separate candidate; doesn't block item 1)
+## 6. Item 6 (separate candidate; doesn't block item 1)
 1. Codex vets the patch and confirms the migration state.
    - The authority row shows 147 pending.
-   - The live catalog has no apply. Recheck read-only at that time.
+   - At that time, recheck read-only that the live catalog has no apply.
 2. **DB-first:** apply `20261113190000` singly through the session pooler (its own TJ pop-up), with a ledger row and the authority update.
 3. Then release `c89ff5d24` plus the reader fixes together, with their own gate and pop-up.
    - Readers: Splits and season bootstrap (no known conflict), the Lines utilities (F8 claims released to Codex in `d9123ac86`) and DRM (a regression test).

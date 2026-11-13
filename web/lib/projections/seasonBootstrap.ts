@@ -44,14 +44,17 @@ export function buildSeasonHistory(rows: any[], seasonId: number, cutoffDate: st
   const eligible = rows.filter((row) => {
     const game = row.games;
     const playedMinutes = minutes(row.toi) ?? (population === "goalie" ? nonnegative(row.toi_seconds) : null);
+    const goalieShots = typeof row.saveShotsAgainst === "string" ? /^(\d+)[/-](\d+)$/.exec(row.saveShotsAgainst) : null;
+    const goalieAppeared = population === "goalie" && ((goalieShots != null && Number(goalieShots[2]) > 0)
+      || (nonnegative(row.goalsAgainst ?? row.goals_allowed) ?? 0) > 0 || (nonnegative(row.shots_against) ?? 0) > 0);
     if (!game || Number(game.type) !== 2 || game.date >= cutoffDate || ![seasonId, previousSeason].includes(Number(game.seasonId))
-      || !playedMinutes || seen.has(Number(game.id))) return false;
+      || (!playedMinutes && !goalieAppeared) || seen.has(Number(game.id))) return false;
     seen.add(Number(game.id)); return true;
   }).sort((a, b) => b.games.date.localeCompare(a.games.date) || Number(b.games.id) - Number(a.games.id));
   const previous = eligible.filter((row) => Number(row.games.seasonId) === previousSeason).slice(0, windowGames);
   const stats = previous.map((row): BoardStats => {
     if (population === "goalie") {
-      const match = typeof row.saveShotsAgainst === "string" ? /^(\d+)\/(\d+)$/.exec(row.saveShotsAgainst) : null;
+      const match = typeof row.saveShotsAgainst === "string" ? /^(\d+)[/-](\d+)$/.exec(row.saveShotsAgainst) : null;
       const saves = match ? Number(match[1]) : nonnegative(row.saves);
       const shots = match ? Number(match[2]) : nonnegative(row.shots_against);
       const ga = nonnegative(row.goalsAgainst ?? row.goals_allowed);
@@ -63,7 +66,9 @@ export function buildSeasonHistory(rows: any[], seasonId: number, cutoffDate: st
     TIME_ON_ICE_PER_GAME: minutes(row.toi), PP_TOI: minutes(row.powerPlayToi),
     };
   });
-  return { previous: averageBootstrapStats(stats), historyGames: previous.length,
+  // Goalie components are admitted together; the support count must match the rate numerators.
+  const historyGames = population === "goalie" ? stats.filter(row => row.SAVES_GOALIE != null).length : previous.length;
+  return { previous: averageBootstrapStats(stats), historyGames,
     currentSeasonGames: eligible.filter((row) => Number(row.games.seasonId) === seasonId).length };
 }
 
@@ -170,7 +175,7 @@ export async function loadSeasonBootstrap(playerIds: number[], seasonId: number,
   return new Map(playerIds.map((id) => {
     const recent = buildSeasonHistory(historyRows.filter((row: any) => Number(row.playerId ?? row.goalie_id) === id), seasonId, cutoffDate, population);
     const limitations = ["Starting weights are uncalibrated; the season-opening prior is previous-season NHL appearances only."];
-    if (recent.historyGames < SEASON_BOOTSTRAP_POLICY.historyGames) limitations.push("Fewer than 20 previous-season appearances available.");
+    if (recent.historyGames < SEASON_BOOTSTRAP_POLICY.historyGames) limitations.push("Fewer than 20 previous-season appearances with usable statistics available.");
     if (population === "skater") limitations.push("Missing PP goal/assist splits use the total goal/assist ratio; recent deployment still adjusts PP opportunity.");
     if (population === "goalie") limitations.push("Per-appearance save/GA rates determine a performance prior applied to today's opponent-driven shots. Relief appearances may affect it. History carries no win/shutout prior.");
     return [id, { ...recent, limitations }];

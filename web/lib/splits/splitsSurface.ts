@@ -21,8 +21,8 @@ export type SplitLandingGoalieLeader = {
   playerName: string;
   teamAbbreviation: string;
   opponentAbbreviation: string;
-  gamesPlayed: number;
-  shotsAgainst: number;
+  gamesPlayed: number | null;
+  shotsAgainst: number | null;
   goalsAgainst: number;
   savePct: number | null;
 };
@@ -61,17 +61,17 @@ export type SplitSkaterRow = {
 export type SplitGoalieRow = {
   playerId: number;
   playerName: string;
-  gamesPlayed: number;
+  gamesPlayed: number | null;
   gamesStarted: number;
   wins: number;
   losses: number;
   otl: number;
   goalsAllowed: number;
-  shotsAgainst: number;
+  shotsAgainst: number | null;
   savePct: number | null;
   goalsAllowedAverage: number | null;
-  shutouts: number;
-  qualityStarts: number;
+  shutouts: number | null;
+  qualityStarts: number | null;
   qualityStartsPct: number | null;
 };
 

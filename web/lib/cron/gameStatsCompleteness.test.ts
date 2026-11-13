@@ -113,6 +113,22 @@ describe("team game-stat completeness", () => {
     });
   });
 
+  it.each([null, "00:00"])("accepts a nullable or measured-zero team clock: %s", async (powerPlayToi) => {
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const rows = teamRows.map(row => ({ ...row, powerPlayToi }));
+    await persistTeamGameStatsBatch({ supabase: { from: () => ({ upsert }) } as any,
+      rows, gameId, sourceStatCount: completeTeamStats.length });
+    expect(upsert).toHaveBeenCalledWith(rows);
+  });
+
+  it.each(["", "bad", "00:60"])("rejects malformed team clocks before persistence: %s", async (powerPlayToi) => {
+    const upsert = vi.fn();
+    await expect(persistTeamGameStatsBatch({ supabase: { from: () => ({ upsert }) } as any,
+      rows: teamRows.map(row => ({ ...row, powerPlayToi })), gameId,
+      sourceStatCount: completeTeamStats.length })).rejects.toBeInstanceOf(TeamGameStatsError);
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
   it("rejects a returned Supabase upsert error instead of resolving", async () => {
     const upsert = vi.fn().mockResolvedValue({
       error: {

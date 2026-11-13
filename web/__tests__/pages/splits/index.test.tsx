@@ -1,13 +1,14 @@
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
 
 vi.mock("next/head", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock("next/image", () => ({
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} />,
+  // eslint-disable-next-line @next/next/no-img-element -- Native test double for next/image.
+  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} alt={props.alt ?? ""} />,
 }));
 
 const replaceMock = vi.fn();
@@ -157,6 +158,7 @@ vi.mock("swr", () => ({
 import SplitsPage from "../../../pages/splits/index";
 
 describe("Splits page", () => {
+  afterEach(cleanup);
   it("renders the team roster view without landing leaderboards", () => {
     render(<SplitsPage />);
 
@@ -175,4 +177,20 @@ describe("Splits page", () => {
       })
     ).toBeTruthy();
   });
+  it("shows missing goalie counts as a dash while preserving measured zero", () => {
+    const goalie = rosterData.roster.goalies[0];
+    const original = { ...goalie };
+    Object.assign(goalie, { gamesPlayed: null, shotsAgainst: null, qualityStarts: null, shutouts: null, goalsAllowed: 0 });
+    try {
+      render(<SplitsPage />);
+      const cells = within(screen.getByText("Stuart Skinner").closest("tr")!).getAllByRole("cell");
+      expect(cells[1].textContent).toBe("—");
+      expect(cells[6].textContent).toBe("0");
+      expect(cells[7].textContent).toBe("—");
+      expect(cells[10].textContent).toBe("—");
+      expect(cells[11].textContent).toBe("—");
+      expect(screen.getByText(/Incomplete goalie data/)).toBeTruthy();
+    } finally { Object.assign(goalie, original); }
+  });
+
 });
