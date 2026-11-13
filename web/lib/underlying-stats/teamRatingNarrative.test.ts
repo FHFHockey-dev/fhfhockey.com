@@ -160,3 +160,70 @@ describe("buildTeamRatingNarrative", () => {
     expect(text).not.toMatch(/rebound|cool toward|could|may /);
   });
 });
+
+describe("goaltending sentence by calculation version (Astra #434 P1)", () => {
+  const components = {
+    ga60: 3,
+    gf60: 3,
+    pace60: 56,
+    sa60: 28,
+    sf60: 28,
+    xga60: 3.1,
+    xgf60: 3
+  };
+  const snapshot = (date: string) => ({
+    components,
+    date,
+    defRating: 100,
+    offRating: 100,
+    paceRating: 100,
+    pkTier: 2,
+    ppTier: 2
+  });
+  const goalieBullet = (
+    calculationVersion: string | null | undefined,
+    sourceThroughDate: string | null,
+    goalieRating = 110
+  ) =>
+    buildTeamRatingNarrative({
+      history: [snapshot("2026-09-30"), snapshot("2026-09-29")],
+      leagueAverageFutureSos: null,
+      row: {
+        calculationVersion,
+        components,
+        defRating: 100,
+        disciplineRating: 100,
+        finishingRating: 100,
+        goalieRating,
+        offRating: 100,
+        paceRating: 100,
+        pkTier: 2,
+        ppTier: 2,
+        scheduleTexture: null,
+        sourceThroughDate,
+        teamAbbr: "TOR"
+      }
+    }).bullets.find((bullet) => /goaltending/i.test(bullet)) ?? null;
+
+  it("says 5-on-5 only for a verified v4 row and all-situations for a v3 row", () => {
+    expect(goalieBullet("team-power-v4-5v5-goaltending", "2026-09-29")).toBe(
+      "5-on-5 goaltending is outperforming expected goals against right now."
+    );
+    expect(goalieBullet("team-power-v4-5v5-goaltending", "2026-09-29", 90)).toBe(
+      "5-on-5 goaltending is lagging behind expected goals against right now."
+    );
+    expect(
+      goalieBullet(
+        "team-power-v3-all-team-baseline-prior-after-norm-pooled-st",
+        "2026-09-29"
+      )
+    ).toBe("All-situations goaltending is outperforming expected goals against right now.");
+  });
+
+  it("withholds the sentence for a legacy carry or an unverified row", () => {
+    expect(goalieBullet("legacy_unversioned", "2026-08-29")).toBeNull();
+    expect(goalieBullet(null, null)).toBeNull();
+    expect(goalieBullet(undefined, null)).toBeNull();
+    expect(goalieBullet("team-power-v9-unknown", "2026-09-29")).toBeNull();
+  });
+});

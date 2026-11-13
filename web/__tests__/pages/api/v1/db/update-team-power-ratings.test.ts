@@ -6,6 +6,7 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
 
 const {
   countState,
+  auditOptsState,
   fetchCurrentSeasonMock,
   fetchGameLogsMock,
   fetchAllRatingsMock,
@@ -19,6 +20,7 @@ const {
   calculateFinalRatingMock,
 } = vi.hoisted(() => ({
   countState: { value: 0 },
+  auditOptsState: { value: undefined as any },
   fetchCurrentSeasonMock: vi.fn(),
   fetchGameLogsMock: vi.fn(),
   fetchAllRatingsMock: vi.fn(),
@@ -33,7 +35,10 @@ const {
 }));
 
 vi.mock("../../../../../lib/cron/withCronJobAudit", () => ({
-  withCronJobAudit: (handler: unknown) => handler,
+  withCronJobAudit: (handler: unknown, opts?: unknown) => {
+    auditOptsState.value = opts;
+    return handler;
+  },
 }));
 
 vi.mock("../../../../../utils/fetchCurrentSeason", () => ({
@@ -493,5 +498,84 @@ describe("/api/v1/db/update-team-power-ratings", () => {
     expect(res.body).toEqual({
       error: "Invalid startDate/endDate range",
     });
+  });
+
+  it("dryRun computes one date and returns its rows with labels, writing nothing", async () => {
+    // Even an empty table must not trigger the season backfill in a dry run.
+    countState.value = 0;
+    fetchGameLogsMock.mockResolvedValue([
+      { team_abbreviation: "ANA", date: "2026-10-01", data_mode: "all", gp: 1 },
+    ]);
+    const carriedSnapshot = {
+      team_abbreviation: "OTT",
+      date: "2026-09-30",
+      calculation_version: "legacy_unversioned",
+      source_through_date: "2026-08-29",
+      off_rating: 108.67,
+      trend10: 0,
+    };
+    fetchAllRatingsMock.mockResolvedValue([carriedSnapshot]);
+    calculateEwmaMock.mockImplementation((_games: any[], date: string) => ({
+      team_abbreviation: "ANA",
+      date,
+    }));
+
+    const req: any = {
+      method: "GET",
+      query: { date: "2026-10-01", dryRun: "true" },
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(upsertMock).not.toHaveBeenCalled();
+    expect(fetchCurrentSeasonMock).not.toHaveBeenCalled();
+    expect(res.body).toMatchObject({
+      dryRun: true,
+      startDate: "2026-10-01",
+      endDate: "2026-10-01",
+      processedDays: 1,
+      totalUpserts: 0,
+      wouldUpsert: 2,
+      calculationVersion: "team-power-v4-5v5-goaltending",
+      executionScope: { autoBackfillApplied: false, windowDays: 1 },
+    });
+    expect(res.body.rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          team_abbreviation: "ANA",
+          date: "2026-10-01",
+          calculation_version: "team-power-v4-5v5-goaltending",
+          source_through_date: "2026-10-01",
+        }),
+        // A carried row keeps its own label and source date, never v4.
+        expect.objectContaining({
+          team_abbreviation: "OTT",
+          date: "2026-10-01",
+          calculation_version: "legacy_unversioned",
+          source_through_date: "2026-08-29",
+          off_rating: 108.67,
+        }),
+      ]),
+    );
+    // A successful dry run leaves no cron audit row either.
+    expect(auditOptsState.value.skipAuditWhenNoOp(res.body)).toBe(true);
+    expect(
+      auditOptsState.value.skipAuditWhenNoOp({ ...res.body, dryRun: false }),
+    ).toBe(false);
+  });
+
+  it("dryRun refuses ranges and missing dates without reading or writing", async () => {
+    for (const query of [
+      { startDate: "2026-09-29", endDate: "2026-10-01", dryRun: "true" },
+      { dryRun: "true" },
+    ]) {
+      const res = createMockRes();
+      await handler({ method: "GET", query } as any, res);
+      expect(res.statusCode).toBe(400);
+    }
+    expect(fetchGameLogsMock).not.toHaveBeenCalled();
+    expect(upsertMock).not.toHaveBeenCalled();
   });
 });

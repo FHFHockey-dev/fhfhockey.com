@@ -18,6 +18,11 @@ import { getLocalTeamLogoPath } from "../../lib/images";
 import { type SpecialTeamTier } from "../../lib/teamRatingsService";
 import { teamsInfo } from "../../lib/teamsInfo";
 import {
+  describeGoaltendingBasis,
+  goaltendingColumnLabel,
+  summarizeGoaltendingBasis
+} from "../../lib/teamRatingVersion";
+import {
   type UnderlyingStatsLandingRating,
   type UnderlyingStatsLandingSnapshot
 } from "../../lib/underlying-stats/teamLandingRatings";
@@ -372,6 +377,12 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
   const ratings = useMemo(
     () => hasSelectedSnapshot ? snapshot.ratings : [],
     [hasSelectedSnapshot, snapshot.ratings]
+  );
+  // "5v5" only when every shown value is verified v4; mixed dates tag each
+  // value (Astra #434 P1).
+  const goaltendingColumn = useMemo(
+    () => goaltendingColumnLabel(summarizeGoaltendingBasis(ratings), "Goaltending"),
+    [ratings]
   );
   const dashboard = useMemo(
     () => hasSelectedSnapshot ? snapshot.dashboard : buildUnderlyingStatsLandingDashboard([]),
@@ -1017,28 +1028,43 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
     </MetricPopover>
   );
 
-  const renderGoaltendingPopover = (team: UnderlyingStatsLandingRating) => (
-    <MetricPopover
-      label="5-on-5 goaltending"
-      summary={
-        <span
-          className={`${styles.componentBadge} ${getComponentBadgeClass(
-            team.goalieRating
-          )}`}
-        >
-          {formatOptionalRating(team.goalieRating)}
-        </span>
-      }
-    >
-      <p>
-        Higher is better. Formula: 5-on-5 expected goals against rate minus
-        5-on-5 actual goals against rate. Empty-net goals are excluded.
-      </p>
-      <ul className={styles.popoverList}>
-        <li>League-average score is 100.</li>
-      </ul>
-    </MetricPopover>
-  );
+  const renderGoaltendingPopover = (team: UnderlyingStatsLandingRating) => {
+    const basis = describeGoaltendingBasis(team);
+    return (
+      <MetricPopover
+        label={basis.is5v5 ? "5-on-5 goaltending" : `Goaltending (${basis.note})`}
+        summary={
+          <span
+            className={`${styles.componentBadge} ${getComponentBadgeClass(
+              team.goalieRating
+            )}`}
+          >
+            {formatOptionalRating(team.goalieRating)}
+          </span>
+        }
+      >
+        <p>
+          {basis.is5v5
+            ? "Higher is better. Formula: 5-on-5 expected goals against rate minus 5-on-5 actual goals against rate. Empty-net goals are excluded."
+            : `Higher is better. ${basis.detail}`}
+        </p>
+        <ul className={styles.popoverList}>
+          <li>League-average score is 100.</li>
+        </ul>
+      </MetricPopover>
+    );
+  };
+
+  /** Per-row scope tag, shown only when the view mixes calculations. */
+  const renderGoaltendingTag = (team: UnderlyingStatsLandingRating) => {
+    if (!goaltendingColumn.perRowTags || team.goalieRating == null) return null;
+    const basis = describeGoaltendingBasis(team);
+    return (
+      <span className={styles.specialTeamMeta} title={basis.detail}>
+        {basis.tag}
+      </span>
+    );
+  };
 
   const renderPuckLuckPopover = (team: UnderlyingStatsLandingRating) => {
     const pdoZ =
@@ -1312,12 +1338,19 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                       {renderSortButton({
                         key: "goaltending",
                         label: (
-                          <abbr
-                            className={styles.metricHeader}
-                            title="5-on-5 goaltending = expected goals against versus actual goals against at 5-on-5; empty-net goals excluded."
-                          >
-                            5v5 Goaltending
-                          </abbr>
+                          <>
+                            <abbr
+                              className={styles.metricHeader}
+                              title={goaltendingColumn.title}
+                            >
+                              {goaltendingColumn.label}
+                            </abbr>
+                            {goaltendingColumn.qualifier ? (
+                              <span className={styles.specialTeamMeta}>
+                                {goaltendingColumn.qualifier.note}
+                              </span>
+                            ) : null}
+                          </>
                         )
                       })}
                       {renderSortButton({
@@ -1534,6 +1567,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           </td>
                           <td className={styles.componentCell}>
                             {renderGoaltendingPopover(team)}
+                            {renderGoaltendingTag(team)}
                           </td>
                           <td className={styles.componentCell}>
                             <MetricPopover

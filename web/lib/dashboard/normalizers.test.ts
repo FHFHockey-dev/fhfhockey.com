@@ -288,6 +288,21 @@ describe("dashboard normalizers", () => {
     expect(row.pkTier).toBe(3);
   });
 
+  it("passes the power-rating version and source date through (Astra #434 P1)", () => {
+    const rows = normalizeTeamRatings([
+      { teamAbbr: "TOR", date: "2026-09-30", offRating: 101, defRating: 99, paceRating: 100,
+        calculationVersion: "team-power-v4-5v5-goaltending", sourceThroughDate: "2026-09-29" },
+      { team_abbreviation: "SEA", date: "2026-09-30", off_rating: 101, def_rating: 99,
+        pace_rating: 100, calculation_version: "legacy_unversioned", source_through_date: "2026-08-29" },
+      { teamAbbr: "UTA", date: "2026-09-30", offRating: 101, defRating: 99, paceRating: 100 }
+    ]);
+    expect(rows.map((row) => [row.teamAbbr, row.calculationVersion, row.sourceThroughDate])).toEqual([
+      ["TOR", "team-power-v4-5v5-goaltending", "2026-09-29"],
+      ["SEA", "legacy_unversioned", "2026-08-29"],
+      ["UTA", null, null]
+    ]);
+  });
+
   it("normalizes goalie projections with starter-selection detail", () => {
     const normalized = normalizeGoalieResponse({
       asOfDate: "2026-03-14",

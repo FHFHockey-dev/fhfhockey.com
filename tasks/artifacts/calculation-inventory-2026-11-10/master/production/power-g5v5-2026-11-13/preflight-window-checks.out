@@ -1,0 +1,158 @@
+== A. computed (v4) teams on 2026-09-29..10-02: genuine games in the 150-day lookback
+    date    | team | genuine_games | first_game | source_through_date 
+------------+------+---------------+------------+---------------------
+ 2026-09-29 | BOS  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-29 | CAR  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-29 | CHI  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-29 | EDM  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-29 | FLA  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-29 | MTL  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-29 | NYR  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-29 | TOR  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-29 | VAN  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-29 | VGK  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-30 | BOS  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-30 | CAR  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-30 | CHI  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-30 | COL  |             1 | 2026-09-30 | 2026-09-30
+ 2026-09-30 | EDM  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-30 | FLA  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-30 | LAK  |             1 | 2026-09-30 | 2026-09-30
+ 2026-09-30 | MTL  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-30 | NYI  |             1 | 2026-09-30 | 2026-09-30
+ 2026-09-30 | NYR  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-30 | PHI  |             1 | 2026-09-30 | 2026-09-30
+ 2026-09-30 | PIT  |             1 | 2026-09-30 | 2026-09-30
+ 2026-09-30 | TOR  |             2 | 2026-09-29 | 2026-09-30
+ 2026-09-30 | VAN  |             1 | 2026-09-29 | 2026-09-29
+ 2026-09-30 | VGK  |             1 | 2026-09-29 | 2026-09-29
+ 2026-10-01 | BOS  |             1 | 2026-09-29 | 2026-09-29
+ 2026-10-01 | BUF  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-01 | CAR  |             1 | 2026-09-29 | 2026-09-29
+ 2026-10-01 | CBJ  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-01 | CGY  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-01 | CHI  |             2 | 2026-09-29 | 2026-10-01
+ 2026-10-01 | COL  |             1 | 2026-09-30 | 2026-09-30
+ 2026-10-01 | EDM  |             2 | 2026-09-29 | 2026-10-01
+ 2026-10-01 | FLA  |             2 | 2026-09-29 | 2026-10-01
+ 2026-10-01 | LAK  |             1 | 2026-09-30 | 2026-09-30
+ 2026-10-01 | MIN  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-01 | MTL  |             1 | 2026-09-29 | 2026-09-29
+ 2026-10-01 | NJD  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-01 | NSH  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-01 | NYI  |             1 | 2026-09-30 | 2026-09-30
+ 2026-10-01 | NYR  |             2 | 2026-09-29 | 2026-10-01
+ 2026-10-01 | PHI  |             2 | 2026-09-30 | 2026-10-01
+ 2026-10-01 | PIT  |             1 | 2026-09-30 | 2026-09-30
+ 2026-10-01 | SEA  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-01 | SJS  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-01 | TBL  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-01 | TOR  |             2 | 2026-09-29 | 2026-09-30
+ 2026-10-01 | UTA  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-01 | VAN  |             2 | 2026-09-29 | 2026-10-01
+ 2026-10-01 | VGK  |             1 | 2026-09-29 | 2026-09-29
+ 2026-10-02 | ANA  |             1 | 2026-10-02 | 2026-10-02
+ 2026-10-02 | BOS  |             2 | 2026-09-29 | 2026-10-02
+ 2026-10-02 | BUF  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-02 | CAR  |             2 | 2026-09-29 | 2026-10-02
+ 2026-10-02 | CBJ  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-02 | CGY  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-02 | CHI  |             2 | 2026-09-29 | 2026-10-01
+ 2026-10-02 | COL  |             1 | 2026-09-30 | 2026-09-30
+ 2026-10-02 | DAL  |             1 | 2026-10-02 | 2026-10-02
+ 2026-10-02 | DET  |             1 | 2026-10-02 | 2026-10-02
+ 2026-10-02 | EDM  |             2 | 2026-09-29 | 2026-10-01
+ 2026-10-02 | FLA  |             2 | 2026-09-29 | 2026-10-01
+ 2026-10-02 | LAK  |             1 | 2026-09-30 | 2026-09-30
+ 2026-10-02 | MIN  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-02 | MTL  |             1 | 2026-09-29 | 2026-09-29
+ 2026-10-02 | NJD  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-02 | NSH  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-02 | NYI  |             1 | 2026-09-30 | 2026-09-30
+ 2026-10-02 | NYR  |             3 | 2026-09-29 | 2026-10-02
+ 2026-10-02 | PHI  |             2 | 2026-09-30 | 2026-10-01
+ 2026-10-02 | PIT  |             1 | 2026-09-30 | 2026-09-30
+ 2026-10-02 | SEA  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-02 | SJS  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-02 | STL  |             1 | 2026-10-02 | 2026-10-02
+ 2026-10-02 | TBL  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-02 | TOR  |             2 | 2026-09-29 | 2026-09-30
+ 2026-10-02 | UTA  |             1 | 2026-10-01 | 2026-10-01
+ 2026-10-02 | VAN  |             2 | 2026-09-29 | 2026-10-01
+ 2026-10-02 | VGK  |             2 | 2026-09-29 | 2026-10-02
+ 2026-10-02 | WPG  |             1 | 2026-10-02 | 2026-10-02
+ 2026-10-02 | WSH  |             1 | 2026-10-02 | 2026-10-02
+
+== B. "slide-out": team with a genuine game in [D-151, D-1] but none in [D-150, D] (would carry a v4 label), D in 09-29..11-13
+ date | team 
+------+------
+
+== C. team codes the writer could see but that are not among the 32 rated teams
+ source | team_abbreviation | count 
+--------+-------------------+-------
+
+== D. rows per date 2026-09-29..11-13 (count, distinct teams, versions)
+    date    | rows | teams |                          versions                          
+------------+------+-------+------------------------------------------------------------
+ 2026-09-29 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-09-30 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-01 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-02 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-03 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-04 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-05 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-06 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-07 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-08 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-09 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-10 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-11 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-12 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-13 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-14 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-15 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-16 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-17 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-18 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-19 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-20 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-21 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-22 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-23 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-24 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-25 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-26 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-27 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-28 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-29 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-30 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-10-31 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-11-01 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-11-02 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-11-03 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-11-04 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-11-05 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-11-06 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-11-07 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-11-08 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-11-09 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-11-10 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-11-11 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-11-12 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+ 2026-11-13 |   32 |    32 | team-power-v3-all-team-baseline-prior-after-norm-pooled-st
+
+== E. 2026-09-28 rows (the carry-forward source)
+ rows |      versions      |  sources   
+------+--------------------+------------
+   32 | legacy_unversioned | 2026-08-29
+
+== F. dates before 2026-09-29 the writer reads as carry-forward (09-28 back to 07-31)
+    min     |    max     | count |       string_agg        
+------------+------------+-------+-------------------------
+ 2026-07-31 | 2026-09-28 |  1600 | legacy_unversioned,null
+
+== G. genuine games 2026-05-02..11-13 without complete 5-on-5 goaltending inputs (es_counts 5v5: ga, sa, xga, toi_seconds > 0)
+ genuine_games | no_5v5_row | incomplete_5v5_row 
+---------------+------------+--------------------
+           618 |          0 |                  0
+

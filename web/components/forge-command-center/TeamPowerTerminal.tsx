@@ -16,6 +16,7 @@ import {
   computeTeamPowerScore
 } from "lib/dashboard/teamContext";
 import { getTeamMetaByAbbr } from "lib/dashboard/teamMetadata";
+import { describeGoaltendingBasis } from "lib/teamRatingVersion";
 import styles from "styles/ForgeCommandCenter.module.scss";
 
 type TeamPowerTerminalProps = {
@@ -127,6 +128,8 @@ export default function TeamPowerTerminal({
       : null;
   const deltaVsLeague =
     selectedRow && leagueAverage != null ? selectedRow.powerScore - leagueAverage : null;
+  // "5v5" only on a verified v4 row (decision 145, Astra #434 P1).
+  const goalieBasis = selectedRow ? describeGoaltendingBasis(selectedRow) : null;
 
   return (
     <ModuleState module={module}>
@@ -166,18 +169,21 @@ export default function TeamPowerTerminal({
           >
             {(
               [
-                ["Offense", selectedRow.offRating],
-                ["Defense", selectedRow.defRating],
-                ["Pace", selectedRow.paceRating],
-                ["Finish", selectedRow.finishingRating],
-                // 5-on-5 goaltending (decision 145): empty-net goals excluded.
-                ["5v5 Goalie", selectedRow.goalieRating]
+                ["Offense", selectedRow.offRating, undefined],
+                ["Defense", selectedRow.defRating, undefined],
+                ["Pace", selectedRow.paceRating, undefined],
+                ["Finish", selectedRow.finishingRating, undefined],
+                [
+                  goalieBasis?.is5v5 ? "5v5 Goalie" : "Goalie",
+                  selectedRow.goalieRating,
+                  goalieBasis?.detail
+                ]
               ] as const
-            ).map(([label, value]) => {
+            ).map(([label, value, title]) => {
               const bar = divergingRatingBar(value);
               return (
                 <div key={label} className={styles.scoreBarRow}>
-                  <span>{label}</span>
+                  <span title={title}>{label}</span>
                   <div className={styles.scoreBarTrack} style={{ backgroundImage: CENTER_LINE }}>
                     {bar ? (
                       <div
@@ -191,6 +197,13 @@ export default function TeamPowerTerminal({
                 </div>
               );
             })}
+            {goalieBasis && !goalieBasis.is5v5 ? (
+              <div className={styles.scoreBarRow}>
+                <span>Goalie calc</span>
+                <span title={goalieBasis.detail}>{goalieBasis.note}</span>
+                <strong />
+              </div>
+            ) : null}
             <div className={styles.scoreBarRow}>
               <span>Off. chg</span>
               <span title="Offense rating minus its average over the prior 10 games">vs prior 10 games</span>

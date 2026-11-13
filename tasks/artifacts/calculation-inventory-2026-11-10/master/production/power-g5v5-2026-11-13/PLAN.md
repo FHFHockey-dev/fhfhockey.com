@@ -102,6 +102,8 @@ Full table (every component, v3 and v4, 32 teams × 6 dates): `sample-before-aft
 - **Noted for Astra and the model project, not changed (decision 42: there is no production game model):** `featureBuilder.ts` feeds `goalie_rating` into the feature `homeMinusAwayGoalieRating`. After the rebuild it means 5-on-5 goaltending.
 
 ## 5. The 45-call plan (needs TJ's approval)
+> **Superseded in part (round 4, Astra #434 P1):** the runner's gates, readback, final checks and stop codes are now defined in `PREFLIGHT.md` §6 (fail closed: dry-run probe, verified backup, 47-key manifest, served readback). Where this section differs, `PREFLIGHT.md` wins.
+
 **Preconditions**
 - The release containing F9 (`06c8316a4`, `820e5cb6d`, `d6626b521`) is live on fhfhockey.com.
 - No other writer is running.
@@ -127,10 +129,11 @@ Full table (every component, v3 and v4, 32 teams × 6 dates): `sample-before-aft
 **Backup**
 - Before the first call, the script exports the issued rows in range to `run/issued-rows-<start>_<end>.tsv`. This is a read-only SELECT of about 1,440 numeric rows with no jsonb.
 - It also logs the version counts.
+- Every run that makes calls also writes `run/pre-run-<UTC>.tsv` just before its first call, so rows changed after the preflight (cron 283 rewrites D-1..D each morning) are on disk too. The first file stays the movement baseline. Preflight results: `PREFLIGHT.md`.
 
 **Resume**
 - Each start recomputes the per-date state from the database.
-- A date is done when it has 32 rows, v4 rows = teams with a genuine game in its 150-day lookback (computed from `nst_team_gamelogs_as_rates`, gp = 1), every v4 row has a known `goalie_rating`, and no v3 row is left.
+- A date is done when it has 32 rows, v4 rows = teams with a genuine game in its 150-day lookback (computed from `nst_team_gamelogs_as_rates`, gp = 1), every v4 row has a known `goalie_rating`, no v3 row is left, and every other row is exactly the team's 09-28 snapshot: `legacy_unversioned`, source 2026-08-29, and the 17 copied columns equal (decision 150).
 - Rerunning the script resumes at the first date that isn't done. The upserts are idempotent.
 
 **Stop rules** (exit code, log in `run/run.jsonl`)
@@ -170,5 +173,4 @@ python3 -I tasks/artifacts/calculation-inventory-2026-11-10/master/production/po
 
 ## 6. Notes
 - **Teams yet to play:** for 09-29 → 10-02 the writer's existing offseason carry-forward serves a team's 09-28 `legacy_unversioned` row, labelled by its own version and source date (2026-08-29).
-  - The alternative is no row at all (unknown) for those 47 team-dates. That would need the loop to delete them after backup, and a separate approval.
-  - Not done here; the writer's carry-forward contract is unchanged.
+  - Decision 150 (TJ, 2026-11-13) keeps this labelled carry-forward: no deletion, no v4 label, no gap-filling. The exact 47 keys, and what the served readers do with them, are in `PREFLIGHT.md`.

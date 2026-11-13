@@ -20,6 +20,11 @@ import {
   computeTeamPowerScore
 } from "lib/dashboard/teamContext";
 import { getTeamMetaByAbbr } from "lib/dashboard/teamMetadata";
+import {
+  describeGoaltendingBasis,
+  goaltendingColumnLabel,
+  summarizeGoaltendingBasis
+} from "lib/teamRatingVersion";
 
 type TeamPowerCardProps = {
   date: string;
@@ -244,6 +249,11 @@ export default function TeamPowerCard({
     return rankedRows.slice(0, TEAM_POWER_ROWS_PER_VIEW);
   }, [rankedRows, team, view]);
   const spotlightRows = useMemo(() => visibleRows.slice(0, Math.min(4, visibleRows.length)), [visibleRows]);
+  // "5v5" only when every shown value is verified v4; mixed views tag each value.
+  const goalieColumn = useMemo(
+    () => goaltendingColumnLabel(summarizeGoaltendingBasis(visibleRows), "Goalie"),
+    [visibleRows]
+  );
   const allTrendsFlat = useMemo(
     () => rankedRows.length > 0 && rankedRows.every((row) => Math.abs(row.trend10) < 0.01),
     [rankedRows]
@@ -469,9 +479,15 @@ export default function TeamPowerCard({
                   <th scope="col">Recent</th>
                   <th scope="col">Finish</th>
                   <th scope="col">
-                    <abbr title="5-on-5 goaltending: expected minus actual goals against at 5-on-5, empty-net goals excluded">
-                      5v5 Goalie
-                    </abbr>
+                    <abbr title={goalieColumn.title}>{goalieColumn.label}</abbr>
+                    {goalieColumn.qualifier ? (
+                      <>
+                        <br />
+                        <span className={styles.teamPowerControlMeta}>
+                          {goalieColumn.qualifier.tag}
+                        </span>
+                      </>
+                    ) : null}
                   </th>
                   <th scope="col">Stability</th>
                 </tr>
@@ -484,6 +500,10 @@ export default function TeamPowerCard({
                       : row.trend10 < -0.5
                         ? styles.trendDown
                         : styles.trendFlat;
+                  const goalieTag =
+                    goalieColumn.perRowTags && row.goalieRating != null
+                      ? describeGoaltendingBasis(row)
+                      : null;
 
                   return (
                     <tr key={`${row.teamAbbr}-${row.overallRank}`}>
@@ -529,7 +549,20 @@ export default function TeamPowerCard({
                         </span>
                       </td>
                       <td>{formatMetric(row.finishingRating)}</td>
-                      <td>{formatMetric(row.goalieRating)}</td>
+                      <td>
+                        {formatMetric(row.goalieRating)}
+                        {goalieTag ? (
+                          <>
+                            <br />
+                            <span
+                              className={styles.teamPowerControlMeta}
+                              title={goalieTag.detail}
+                            >
+                              {goalieTag.tag}
+                            </span>
+                          </>
+                        ) : null}
+                      </td>
                       <td>{row.varianceFlag === 1 ? "Shaky" : "Stable"}</td>
                     </tr>
                   );
