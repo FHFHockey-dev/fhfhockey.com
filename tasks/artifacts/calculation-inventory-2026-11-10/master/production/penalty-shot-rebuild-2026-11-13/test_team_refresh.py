@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Offline tests for team-refresh.py's pure helpers (no DB, no network). Run: python3 -I test_team_refresh.py"""
 import copy
+import glob
 import importlib.util
+import json
 import os
+import tempfile
 import unittest
 
 spec = importlib.util.spec_from_file_location(
@@ -97,6 +100,63 @@ class Helpers(unittest.TestCase):
     def test_windows(self):
         self.assertIsNotNone(tr.window_at(10 * 60))
         self.assertIsNone(tr.window_at(18 * 60, tr.CALL_MARGIN_MIN))
+
+
+class ResumeEvidence(unittest.TestCase):
+    """Astra A3-02: evidence and the approved diff are never overwritten; done games are never re-diffed."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="tr-a302-")
+        self.saved = (tr.OUT, tr.APPROVED)
+        tr.OUT = self.tmp
+        tr.APPROVED = os.path.join(self.tmp, "team-diff-approved.json")
+
+    def tearDown(self):
+        tr.OUT, tr.APPROVED = self.saved
+
+    def test_planned_diff_ignores_done_games_and_keeps_the_approved_file(self):
+        diffs, official = all_games_clean()
+        body = {"diffs": diffs, "staleKeys": []}
+        problems, first = tr.record_diff(body, "sha", official, tr.MANIFEST)
+        self.assertEqual(problems, [])
+        approved_text = open(tr.APPROVED).read()
+
+        # Resume with the first game done: only the planned games are diffed and checked.
+        plan = tr.planned_games({str(tr.MANIFEST[0][0])})
+        planned_ids = {g for g, _t, _r in plan}
+        resumed = {"diffs": [d for d in diffs if d["game_id"] in planned_ids], "staleKeys": []}
+        self.assertEqual(tr.diff_problems(resumed["diffs"], [], official, plan), [])
+        problems, second = tr.record_diff(resumed, "sha", official, plan)
+        self.assertEqual(problems, [])
+        self.assertNotEqual(first, second)
+        self.assertEqual(open(tr.APPROVED).read(), approved_text)
+
+        # A diff that still passes the penalty-shot rules but differs from the approved one (here the stored CF
+        # moved since approval) is refused, and the approved file is kept.
+        changed = copy.deepcopy(resumed)
+        changed["diffs"][0]["changes"]["cf"] = change(39, 40)
+        self.assertEqual(tr.diff_problems(changed["diffs"], [], official, plan), [])
+        problems, _ = tr.record_diff(changed, "sha", official, plan)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("approved diff", problems[0])
+        self.assertEqual(open(tr.APPROVED).read(), approved_text)
+        self.assertEqual(len(glob.glob(os.path.join(self.tmp, "team-diff-planned-*.json"))), 3)
+
+    def test_a_rejected_first_diff_never_becomes_the_approved_diff(self):
+        diffs, official = all_games_clean()
+        problems, _ = tr.record_diff({"diffs": diffs[1:], "staleKeys": []}, "sha", official, tr.MANIFEST)
+        self.assertNotEqual(problems, [])
+        self.assertFalse(os.path.exists(tr.APPROVED))
+
+    def test_evidence_is_never_truncated(self):
+        path = tr.evidence_path("team-before", G, "json")
+        tr.write_evidence(path, json.dumps({"rows": "pre-write"}))
+        with self.assertRaises(FileExistsError):
+            tr.write_evidence(path, "overwrite")
+        self.assertEqual(json.loads(open(path).read()), {"rows": "pre-write"})
+        later = tr.write_evidence(tr.evidence_path("team-before", G, "json"), "{}")
+        self.assertNotEqual(later, path)
+        self.assertEqual(tr.authority_file("team-before", G, "json"), path)
 
 
 if __name__ == "__main__":

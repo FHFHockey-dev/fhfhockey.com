@@ -26,11 +26,15 @@ Fails closed, in this order:
        - allScores carries it for both teams; exactly one of tied/leading/trailing per team; withinOne/upOne/
          downOne either carry it or are unchanged;
        - the rebuilt allScores SF and GF of both teams equal the stored official boxscore (shootout goal removed).
-     The diff is saved to run/team-diff-<UTC>.json and run/team-diff-approved.json (the file TJ approves).
+     Only games not yet in the done file are diffed (done games are reported, never re-diffed). Every diff is kept
+     as run-unique evidence (run/team-diff-planned-<runstamp>-<seq>.json, opened "x"). The first accepted diff
+     becomes run/team-diff-approved.json (the file TJ approves); it is never overwritten, and a later diff must
+     equal it for the planned games (A3-02).
   --execute, per game: window, guard, window; re-diff that game and require it to equal the approved diff;
-     before-snapshot (run/team-before-<game>.json); write call (rowsUpserted = rowsGenerated, staleKeyCount 0);
-     readback: diff rows equal their rebuilt values, every other row unchanged; the game id goes to
-     run/team-refresh.done (reruns skip it). 10 s between calls.
+     before-snapshot and after-snapshot as run-unique files (run/team-before|after-<game>-<runstamp>-<seq>.json,
+     opened "x"; the first before-file per game is the rollback authority); write call (rowsUpserted =
+     rowsGenerated, staleKeyCount 0); readback: diff rows equal their rebuilt values, every other row unchanged;
+     the game id goes to run/team-refresh.done (reruns skip it). 10 s between calls.
 Never prints secrets: CRON_SECRET is read from web/.env.local into memory only.
 
 Usage: python3 -I team-refresh.py               # read-only diff (after the release is live)
@@ -38,7 +42,7 @@ Usage: python3 -I team-refresh.py               # read-only diff (after the rele
 Exit codes: 0 diff OK / done, 2 HTTP or body failure, 3 DB guard, 4 window, 5 slow call,
             6 diff, manifest or readback mismatch, 7 deployment not ready.
 """
-import argparse, json, os, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
+import argparse, glob, itertools, json, os, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
 
 ROOT = "/Users/tim/Code/fhfhockey.com"
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -65,6 +69,9 @@ PAUSE_S = 10
 SLOW_S = 240
 PRIMARY = ("tied", "leading", "trailing")
 IGNORED_COLUMNS = {"created_at", "updated_at"}
+# Evidence files are never overwritten (Astra A3-02): run-unique names, opened "x".
+RUN_STAMP = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()) + f"-{os.getpid()}"
+_EVIDENCE_SEQ = itertools.count(1)
 PS_WHERE = ("p.situationcode ~ '^[01][0-6][0-6][01]$' and (substr(p.situationcode, 2, 1) = '0' "
             "or substr(p.situationcode, 3, 1) = '0') and coalesce(p.periodtype, '') <> 'SO' "
             "and not ((p.gameid / 10000) % 100 in (1, 2) and coalesce(p.periodnumber, 0) >= 5)")
@@ -89,13 +96,14 @@ def expected_changes(team_id, shooter_team, result):
     return {"ca": 1, "fa": 1, "sa": 1, **({"ga": 1} if goal else {})}
 
 
-def diff_problems(diffs, stale_keys, official_by_game):
-    """Check a diff response against the manifest. official_by_game: {game: {team: (sog, goals)}}."""
+def diff_problems(diffs, stale_keys, official_by_game, games=None):
+    """Check a diff response against the manifest (or the planned subset of it).
+    official_by_game: {game: {team: (sog, goals)}}."""
     problems = [f"stale keys: {stale_keys[:3]}"] if stale_keys else []
     by_game = {}
     for d in diffs:
         by_game.setdefault(d["game_id"], []).append(d)
-    for game, shooter_team, result in MANIFEST:
+    for game, shooter_team, result in (MANIFEST if games is None else games):
         rows = by_game.pop(game, [])
         official = official_by_game.get(game, {})
         teams = sorted(official) or sorted({d["team_id"] for d in rows})
@@ -149,6 +157,52 @@ def readback_problems(before_rows, after_rows, game_diffs):
             if not same:
                 problems.append(f"{key} {column}: {before.get(column)} -> {got}, expected {want}")
     return problems
+
+
+def evidence_path(kind, game_id, ext):
+    """A run-unique evidence path, e.g. run/team-before-<game>-<runstamp>-<seq>.json."""
+    return os.path.join(OUT, f"{kind}-{game_id}-{RUN_STAMP}-{next(_EVIDENCE_SEQ):02d}.{ext}")
+
+
+def write_evidence(path, text):
+    """Create the file; an existing file is never truncated (FileExistsError instead)."""
+    with open(path, "x") as f:
+        f.write(text)
+    return path
+
+
+def authority_file(kind, game_id, ext):
+    """The first run-unique evidence file of this kind for the game (the authority, e.g. for rollback)."""
+    files = sorted(glob.glob(os.path.join(OUT, f"{kind}-{game_id}-*.{ext}")))
+    return files[0] if files else None
+
+
+def planned_games(done):
+    return [(g, t, r) for g, t, r in MANIFEST if str(g) not in done]
+
+
+def diffs_for(diffs, game_ids):
+    return [d for d in diffs if d["game_id"] in game_ids]
+
+
+def record_diff(body, sha, official, plan):
+    """Keep the diff as run-unique evidence; accept it only if it is exactly the planned games' penalty shots.
+    The approved diff is created once and never overwritten: a later diff (for example on a resume) must equal
+    it for the planned games, or the run stops. Returns the list of problems (empty when accepted)."""
+    record = {"sha": sha, "body": body, "official": {str(k): v for k, v in official.items()},
+              "planned": [g for g, _t, _r in plan]}
+    path = write_evidence(evidence_path("team-diff", "planned", "json"), json.dumps(record, indent=1, sort_keys=True))
+    problems = diff_problems(body.get("diffs", []), body.get("staleKeys", []), official, plan)
+    if problems:
+        return problems, path
+    planned_ids = {g for g, _t, _r in plan}
+    if os.path.exists(APPROVED):
+        approved = json.load(open(APPROVED))["body"]["diffs"]
+        if diffs_for(approved, planned_ids) != diffs_for(body.get("diffs", []), planned_ids):
+            return ["diff differs from the approved diff for the planned games (approved file kept)"], path
+    else:
+        write_evidence(APPROVED, json.dumps(record, indent=1, sort_keys=True))
+    return [], path
 
 
 def window_at(minute_of_day, margin_min=0):
@@ -292,25 +346,31 @@ def main():
     secret = read_secret()
     official = {g: official_for(g) for g, _t, _r in MANIFEST}
 
-    if not args.execute:
-        window_gate("diff"); guard(); window_gate("diff")
-        took, body = post({"seasonId": SEASON, "gameIds": ",".join(str(g) for g, _t, _r in MANIFEST), "diff": "true"}, secret)
-        if body.get("dryRun") is not True or body.get("rowsUpserted") != 0 or body.get("diffsTruncated"):
-            stop(2, "diff call was not a complete dry run", dryRun=body.get("dryRun"), truncated=body.get("diffsTruncated"))
-        stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
-        for path in (os.path.join(OUT, f"team-diff-{stamp}.json"), APPROVED):
-            with open(path, "w") as f:
-                json.dump({"sha": sha, "body": body, "official": {str(k): v for k, v in official.items()}}, f, indent=1, sort_keys=True)
-        problems = diff_problems(body.get("diffs", []), body.get("staleKeys", []), official)
-        if problems:
-            stop(6, "diff contains changes other than the penalty shots", problems=problems[:20])
-        log(event="DIFF_OK", sha=sha, seconds=took, rowsGenerated=body.get("rowsGenerated"),
-            diffRowCount=body.get("diffRowCount"), file=f"run/team-diff-{stamp}.json")
+    done = set(open(DONE).read().split()) if os.path.exists(DONE) else set()
+    plan = planned_games(done)
+    for g, _t, _r in MANIFEST:
+        if str(g) in done:
+            authority = authority_file("team-before", g, "json")
+            log(event="already_done", game=g, authority_before=authority and os.path.relpath(authority, HERE))
+    if not plan:
+        log(event="DONE", games=len(MANIFEST), calls=0)
         return
 
+    if not args.execute:
+        window_gate("diff"); guard(); window_gate("diff")
+        took, body = post({"seasonId": SEASON, "gameIds": ",".join(str(g) for g, _t, _r in plan), "diff": "true"}, secret)
+        if body.get("dryRun") is not True or body.get("rowsUpserted") != 0 or body.get("diffsTruncated"):
+            stop(2, "diff call was not a complete dry run", dryRun=body.get("dryRun"), truncated=body.get("diffsTruncated"))
+        problems, path = record_diff(body, sha, official, plan)
+        if problems:
+            stop(6, "diff rejected", problems=problems[:20], file=os.path.relpath(path, HERE))
+        log(event="DIFF_OK", sha=sha, seconds=took, games=[g for g, _t, _r in plan], rowsGenerated=body.get("rowsGenerated"),
+            diffRowCount=body.get("diffRowCount"), file=os.path.relpath(path, HERE))
+        return
+
+    if not os.path.exists(APPROVED):
+        stop(6, "no approved diff: run the read-only diff first and have it approved")
     approved = json.load(open(APPROVED))["body"]["diffs"]
-    done = set(open(DONE).read().split()) if os.path.exists(DONE) else set()
-    plan = [(g, t, r) for g, t, r in MANIFEST if str(g) not in done]
     for i, (g, _t, _r) in enumerate(plan):
         if i:
             time.sleep(PAUSE_S)
@@ -320,15 +380,16 @@ def main():
         if body.get("diffs") != game_diffs or body.get("staleKeys"):
             stop(6, "this game's diff differs from the approved diff", game=g)
         before = stored_rows(g)
-        with open(os.path.join(OUT, f"team-before-{g}.json"), "w") as f:
-            json.dump([before[k] for k in sorted(before)], f, sort_keys=True)
+        write_evidence(evidence_path("team-before", g, "json"), json.dumps([before[k] for k in sorted(before)], sort_keys=True))
         time.sleep(PAUSE_S)
         window_gate(g); guard(); window_gate(g)
         took, body = post({"seasonId": SEASON, "gameIds": str(g), "dryRun": "false"}, secret)
         if body.get("dryRun") is not False or body.get("rowsUpserted") != body.get("rowsGenerated") or body.get("staleKeyCount"):
             stop(6, "write response mismatch", game=g, rowsUpserted=body.get("rowsUpserted"),
                  rowsGenerated=body.get("rowsGenerated"), staleKeyCount=body.get("staleKeyCount"))
-        problems = readback_problems(before, stored_rows(g), game_diffs)
+        after = stored_rows(g)
+        write_evidence(evidence_path("team-after", g, "json"), json.dumps([after[k] for k in sorted(after)], sort_keys=True))
+        problems = readback_problems(before, after, game_diffs)
         if problems:
             stop(6, "team summary readback mismatch", game=g, problems=problems[:20])
         with open(DONE, "a") as f:
