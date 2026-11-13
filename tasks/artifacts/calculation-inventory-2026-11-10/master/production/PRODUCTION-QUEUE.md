@@ -413,3 +413,19 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     3. the refresh, bound to `db94a9de…` and with the flag on;
     4. readbacks;
     5. serving PP share.
+- **TJ accepted dry-run diff `db94a9de…f15c` as the refresh target**, including the 14 unit-relative-only updates (37 updates in total).
+- **Migration 149 / `20261113220000_pp_team_game_clock`** (TJ "Apply at next window"):
+  - **Preflight** at 20:36:44Z (minute 36):
+    - 0 active, 0 lock waits, 0 locks on `powerPlayCombinations` or `games`, jobs 1/2/388 not running;
+    - no ledger row, no new columns, table or function;
+    - sha256 and shape checked.
+    - Baseline: 47,688 rows, max(created_at) 2026-11-13 08:05:04Z, 11 MB.
+  - **Applied atomically** at 20:36:48Z, in 2 s: the file's statements plus the ledger insert in one transaction.
+  - **Readback:**
+    - ledger row present;
+    - both new columns nullable; provenance CHECK present;
+    - `pp_team_game_clock`: 7 constraints, RLS on, `public_read` SELECT for anon and authenticated, service_role DELETE/INSERT/SELECT/UPDATE (postgres as owner);
+    - one `replace_power_play_game_v1`, invoker, `search_path=""`, `lock_timeout 5s` and `statement_timeout 30s` (as in the file; the packet's expected row omitted these two), EXECUTE service_role only;
+    - `powerPlayCombinations` still 47,688 rows, same max(created_at), 0 stamped; the clock table empty.
+  - **Authority:** 115 applied / 6 pending.
+  - **Next, each its own approval:** the writer and registry release with `PP_STORED_CALCULATION_WRITES_ENABLED` off; then the refresh bound to `db94a9de` with the flag on; then readbacks; then serving PP share.
