@@ -314,3 +314,9 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - Smoke 5/5: `/`, `/splits`, `/stats/team/PHI`, `/lines`, `/underlying-stats`.
   - octoberBranch `5f782c420` pushed 17:43:11Z, with no build.
 - **Penalty-shot rebuild:** dry run at 17:44–17:45Z, DRY_RUN_OK on `b6d43efdc` (8 games, all baselines equal to the official boxscores). `--execute` started about 17:46Z (TJ "Run it, Claude").
+- **Penalty-shot 8-game rebuild DONE** at 17:46–17:50:12Z (`--execute`, TJ-approved): 8 calls, 42 rows each, every game passing the key-by-key post-write readback.
+  - Chef readback: 16/16 team rows and 304/304 player rows have `penalty_shot_split_version = 1`. Penalty shots total 8, 2 of them goals, each on the shooter's team, matching the manifest.
+  - Every team's all-situation shots and goals (ES + PP + PK + PS) equal the official boxscore baseline.
+  - No other game is split.
+  - Log: `production/penalty-shot-rebuild-2026-11-13/rebuild-2026-11-13T1746Z.log`.
+  - **AF-07 stays open** until the separately approved landing summary refresh runs and the landing is verified (TJ).

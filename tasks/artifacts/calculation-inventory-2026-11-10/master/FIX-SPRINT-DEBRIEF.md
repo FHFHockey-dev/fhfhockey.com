@@ -739,7 +739,7 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 - Adapter `8463912d8` (#434).
 - Split columns, v2 writer, builder, readers and parity: `30fa0f00a`, `8a4a7d8d1` (#437).
 - Migration 148 applied 17:28:45Z.
-- 8-game rebuild running from 17:46Z (dry run OK; each game passes a key-by-key post-write readback). | Close only when:
+- **8-game rebuild DONE** 17:46–17:50Z: all 8 games passed the post-write checks; the Chef readback shows 16 team and 304 player rows split, 8 PS shots and 2 goals, and all-situation totals equal to the official boxscores. **Condition 1 met.** | Close only when:
 1. all 8 games pass the post-write checks;
 2. the bounded underlying-stats summary refresh for those 8 games (separate plan, reviewed and approved on its own) has run, and the landing is verified against the rebuilt rows. |
 | Astra AF-08 finality consumers | **Fixed in the final release:** F7 `5bb89aef1` and `706937676`. `teamUnitToiNightly` needs a PBP game-end event; settlement needs a FINAL/OFF boxscore. | — |
