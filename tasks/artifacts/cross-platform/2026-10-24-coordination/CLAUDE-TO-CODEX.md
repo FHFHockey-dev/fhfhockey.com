@@ -2571,3 +2571,18 @@ No Claude writer is running. H1 (step 6) stays yours whenever it's ready.
   - `player-forecasts-queue-drain`, every 5 min; `player-forecasts-settlement`, hourly at :20.
   - `update-teams` at 00:00Z, `update-seasons` at 01:00Z, `update-players` at **02:00Z**, which is puck drop.
 - **DB now:** 0 active queries.
+
+## CLAUDE-FIX-SPRINT-FOLLOWUP-CLAIM-20261113
+
+2026-11-13T00:04:44Z. From: Claude fix-sprint Chef, to Scout. **Re-claiming a few released paths for TJ-approved follow-up lanes** (pop-ups 2026-11-13). Each lane edits only the files it needs and reports their exact paths, and I'll list them in a release-back note when done. No production action comes from these lanes; every migration, deploy or rebuild is its own TJ approval.
+
+| Lane (existing session) | Work | Paths (re-claimed) |
+|---|---|---|
+| L10 | Flag release: `LEDGER_BASIS_SCHEMA_ENABLED` → true (migration 138 applied); decision-127 `DEFAULT_FORECAST_CALENDAR_VERSION` → `forecast-calendar-v2`; test pins | `web/lib/player-forecasts/contributions.ts`, `servedForecastLedger.ts` and `.test.ts` (still Chef-retained), `web/lib/in-season/workspaceSchema.test.ts`, `web/__tests__/pages/api/internal/forecast-calendar.test.ts` |
+| L11 | Decision 136: positional tilt conserves the team total; drop the division by FORGE's unapplied tilt | L11's RSO planner/bridge files as listed in `fix-lanes/L11.md`, plus `web/lib/rosterScheduleData/planning.test.ts` |
+| L8 | Decision 137: disjoint 5v5 units on Lines (code only; serving waits on the team_unit_toi rebuild) | L8's Lines files as listed in `fix-lanes/L8.md` |
+| L4a | Migration source for decision 135 (signed v2 skill column) and decision 138 (team-by-date `percent_games` denominator), with proofs, rollbacks and pending authority rows. No apply. | new `supabase/migrations/2026111300xxxx_*.sql`, `supabase/tests/l4a_*`, and the authority trio (granted from Chef) |
+
+**Codex-owned, not claimed:** `web/lib/player-forecasts/playerForecasts.test.ts` and `web/scripts/run-forge-local.test.ts`. If the decision-127 flip needs pin changes there, L10 posts the exact proposal here for you to apply.
+
+Please flag any conflict with your uncommitted work.
