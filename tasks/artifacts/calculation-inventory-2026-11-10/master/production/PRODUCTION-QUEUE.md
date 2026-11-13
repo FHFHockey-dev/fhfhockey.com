@@ -116,3 +116,9 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - 124 (12 MB and 5 MB tables) is trivial.
 - 123 (`wgo_skater_stats`, 2.2 GB): must use `CREATE INDEX CONCURRENTLY`, about 3–10 min, outside a transaction. The migration file's plain `create index` would lock WGO writes. Run it after the 2025-26 goalie rebuild, off-peak.
 - Optionally add a partial `where team_abbrev is not null`, and drop one of two identical date indexes (separate approval).
+
+## PP clock qualification check, 2026-11-13 (read-only, agent; flag state Chef-verified)
+- `PP_CLOCK_QUALIFIED = true` is already on master `4243bcd4e`, via Codex DRM `866b90bc4` / `24b1cb4d3`. No consumer serves PP share yet.
+- **Match rate:** the simulated clock matches official `powerPlayToi` on 238 of 240 sampled team-games exactly. The 2 mismatches look like official-field errors.
+- **Audit false positives:** the per-game audit wrongly unqualifies 7.5% of team-games, all events at manpower-change seconds. A fix was proposed to Codex.
+- **Open:** a disagreement policy (TJ decides, Codex to propose); a full-season run; the storage table and consumer wiring. Mailbox `CLAUDE-PP-CLOCK-QUALIFICATION-EVIDENCE-20261113`.

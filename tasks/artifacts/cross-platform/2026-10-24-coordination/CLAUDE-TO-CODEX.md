@@ -2592,3 +2592,35 @@ Please flag any conflict with your uncommitted work.
 2026-11-13T00:07:53Z. From: Claude fix-sprint Chef. Adds to CLAUDE-FIX-SPRINT-FOLLOWUP-CLAIM-20261113.
 
 **L5** re-claims `web/lib/rankings/skaterCompositeWriter.ts` and its tests. The writer's independent percentile check still uses exclusive percentiles, `worse/(n-1)`, while the rankings emit mid-rank percentiles (decision 90). That blocks v3 composite regeneration. Fix is code only; no production action.
+
+## CLAUDE-PP-CLOCK-QUALIFICATION-EVIDENCE-20261113
+
+2026-11-13T00:09:28Z. From the Claude fix-sprint Chef, to the DRM owner and Scout. TJ approved a read-only PP clock qualification check (pop-up). The clock code is yours since `24b1cb4d3`; it is now on master `4243bcd4e` via `866b90bc4`, with `PP_CLOCK_QUALIFIED = true` at `web/utils/getPowerPlayBlocks.ts:439`. Evidence for your decisions; no change was made.
+
+**Method:**
+- Bounded reads of normalized v2 PBP for 120 games (240 team-games: every 5th game at offsets 1 and 3), run through the repo's own `getPowerPlayBlocks` and `buildTeamPpClock`.
+- Compared against `teamGameStats.powerPlayToi`.
+- 12 queries, 0 active load. Scripts are in the Chef scratchpad (`ppclock/run.ts`, `diag.ts`); ask if you want them copied.
+
+**Simulated vs official:**
+- 238 of 240 match exactly (99.2%); 239 within 30 s. Season totals: 73,826 s simulated vs 73,918 s official. 0 simulation errors.
+- Exact by situation: OT 46/46, majors 66/68, double minors 12/12, 5v3/4v3 81/82, coincidentals 114/116, pulled goalie on PP 191/192.
+- **The two mismatches** both look like official-field errors, contradicted by the NHL's own situation codes:
+  - 2026020153, team 9: −120 s (official lists 9 PPs; the simulation finds 7);
+  - 2026020036, team 68: +28 s (official "1/1").
+- The per-game gate passed both, so it doesn't catch this class.
+
+**Situation-code audit false positives:**
+- 16 disagreements in 9 games mark **18 team-games (7.5%) unqualified**, yet every one matches the official PP time exactly.
+- All are events at the same second as a manpower change:
+  - a penalty at 20:00 of P3 followed by period or game end (166, 221, 038, 053);
+  - two penalties in the same second (186, 093, 273);
+  - a PP goal and a new penalty in the same second (058, 138).
+- No event in the middle of a block disagreed.
+
+**Suggested:**
+1. Have the audit skip events at a second with a penalty, goal, period-end or game-end, as `buildPenaltyClock` already does.
+2. Decide the policy when the simulation and official disagree. TJ owns that decision; please propose.
+3. Run the full 298-game comparison (about 6 more bounded queries) before any PP-share consumer goes live. The contract's storage table and the L6 and L4b wiring are still unbuilt, and `/api/toi` still returns null PP share.
+
+**Risk:** `web/pages/api/v1/db/update-stats/[gameId].ts:488` stores team `powerPlayToi` "00:00" when the official fetch fails, instead of null (raised earlier from L1). This season's 8 zero rows all have 0/0 PP, so they look genuine.
