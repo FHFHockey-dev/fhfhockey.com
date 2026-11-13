@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Team power ratings v4 rebuild (decision 145, 5-on-5 goaltending). NOT YET APPROVED.
+"""Team power ratings v4 rebuild. NOT YET APPROVED.
 
+v4 = (1) decision 145: goalie_rating is 5-on-5 goaltending (empty-net goals excluded);
+     (2) season-total NST rows (gp != 1) no longer count as games, for every component.
 Run only after TJ approves PLAN.md and the release containing F9 is live on fhfhockey.com.
 One date per call, ascending, sequential. Resumable. Read-only DB guard before every call.
 Never prints secrets.
 
 Usage (from any directory):
-  python3 -I power-g5v5-loop.py --preflight          # guard + v3 backup + resume point; no route calls
+  python3 -I power-g5v5-loop.py --preflight          # guard + issued-row backup + plan; no route calls
   python3 -I power-g5v5-loop.py                      # 2026-09-29 .. 2026-11-12 (45 calls)
-  python3 -I power-g5v5-loop.py --end 2026-11-13     # also call 46 (the 11-13 row cron 283 wrote as v3)
+  python3 -I power-g5v5-loop.py --end 2026-11-13     # also call 46 (the 11-13 rows cron 283 wrote as v3)
 Exit codes: 0 done, 2 HTTP/body failure or uncertain outcome, 3 DB guard, 4 cron window,
             5 slow call, 6 readback mismatch, 7 deployed code is not v4.
 """
@@ -20,18 +22,24 @@ OUT = os.path.join(HERE, "run")
 PGPOOL = os.path.join(os.environ["TMPDIR"], "pgpool.sh")
 BASE = "https://fhfhockey.com/api/v1/db/update-team-power-ratings"
 V4 = "team-power-v4-5v5-goaltending"
-TEAMS_PER_DATE = 32
+V3 = "team-power-v3-all-team-baseline-prior-after-norm-pooled-st"
+TEAMS_PER_DATE = 32   # the writer upserts every team: computed (v4) or carried from its last stored row
+LOOKBACK_DAYS = 150   # TEAM_RATINGS_TREND_LOOKBACK_DAYS
 PAUSE_S = 5
 SLOW_S = 60
-# Local read-only sample (PLAN.md): expected v4 goalie_rating for 2026-11-12.
-EXPECTED_1112 = {"ANA": 106.00, "BOS": 122.50, "BUF": 91.50, "CAR": 105.62, "CBJ": 110.59, "CGY": 93.84,
-    "CHI": 75.37, "COL": 97.63, "DAL": 77.07, "DET": 91.75, "EDM": 121.24, "FLA": 74.60, "LAK": 108.64,
-    "MIN": 130.17, "MTL": 126.18, "NJD": 99.32, "NSH": 107.83, "NYI": 109.23, "NYR": 103.32, "OTT": 110.87,
-    "PHI": 99.21, "PIT": 77.72, "SEA": 101.12, "SJS": 117.86, "STL": 102.65, "TBL": 97.16, "TOR": 78.02,
-    "UTA": 86.80, "VAN": 84.10, "VGK": 107.79, "WPG": 90.98, "WSH": 93.31}
-UNCHANGED_COLS = ["off_rating", "def_rating", "pace_rating", "xgf60", "gf60", "sf60", "xga60", "ga60", "sa60",
-                  "pace60", "finishing_rating", "danger_rating", "special_rating", "discipline_rating", "variance_flag",
-                  "trend10", "pp_tier", "pk_tier"]
+# Local read-only sample (PLAN.md §3): expected v4 values for 2026-11-12.
+EXPECTED_1112_GOALIE = {"ANA": 106.85, "BOS": 121.17, "BUF": 90.73, "CAR": 105.94, "CBJ": 111.14, "CGY": 93.78,
+    "CHI": 75.38, "COL": 96.64, "DAL": 75.00, "DET": 91.89, "EDM": 122.10, "FLA": 75.56, "LAK": 108.35,
+    "MIN": 129.23, "MTL": 125.91, "NJD": 99.98, "NSH": 108.69, "NYI": 108.06, "NYR": 103.21, "OTT": 111.94,
+    "PHI": 99.40, "PIT": 77.42, "SEA": 99.63, "SJS": 118.23, "STL": 103.59, "TBL": 97.47, "TOR": 79.54,
+    "UTA": 87.21, "VAN": 85.34, "VGK": 109.10, "WPG": 91.13, "WSH": 90.37}
+EXPECTED_1112_OFF = {"ANA": 106.76, "BOS": 101.04, "BUF": 108.75, "CAR": 137.04, "CBJ": 82.85, "CGY": 88.57,
+    "CHI": 70.76, "COL": 105.06, "DAL": 97.46, "DET": 94.93, "EDM": 90.53, "FLA": 117.20, "LAK": 107.79,
+    "MIN": 122.50, "MTL": 107.18, "NJD": 125.55, "NSH": 100.10, "NYI": 86.91, "NYR": 106.16, "OTT": 105.55,
+    "PHI": 85.93, "PIT": 100.93, "SEA": 75.36, "SJS": 85.42, "STL": 101.13, "TBL": 108.55, "TOR": 93.01,
+    "UTA": 111.59, "VAN": 69.84, "VGK": 106.57, "WPG": 102.34, "WSH": 96.64}
+REPORT_COLS = ["off_rating", "def_rating", "pace_rating", "finishing_rating", "goalie_rating", "danger_rating",
+               "special_rating", "discipline_rating", "variance_flag", "trend10", "pp_tier", "pk_tier"]
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--start", default="2026-09-29")
@@ -91,12 +99,28 @@ def guard():
     stop(3, "DB guard did not clear after 3 checks (3 min)")
 
 
-def readback(d):
-    total, v4, goalie = psql(
-        f"select count(*), count(*) filter (where calculation_version='{V4}'), "
-        f"count(*) filter (where calculation_version='{V4}' and goalie_rating is not null) "
-        f"from team_power_ratings_daily where date='{d}'")[0].split("|")
-    return int(total), int(v4), int(goalie)
+def state_by_date():
+    """Per date: rows, v4 rows, v4 rows with goalie known, v3 rows left, and the expected v4 count
+    (teams with a genuine gp = 1 game in the writer's 150-day lookback)."""
+    rows = {}
+    for line in psql(
+            f"with d as (select g::date as d from generate_series('{args.start}'::date, '{args.end}'::date, interval '1 day') g), "
+            f"x as (select d.d, count(distinct a.team_abbreviation) as n from d left join nst_team_gamelogs_as_rates a "
+            f"on a.situation = 'all' and a.gp = 1 and a.date between d.d - {LOOKBACK_DAYS} and d.d group by 1), "
+            f"t as (select d.d, count(t.team_abbreviation) as total, "
+            f"count(*) filter (where t.calculation_version = '{V4}') as v4, "
+            f"count(*) filter (where t.calculation_version = '{V4}' and t.goalie_rating is not null) as goalie, "
+            f"count(*) filter (where t.calculation_version = '{V3}') as v3 "
+            f"from d left join team_power_ratings_daily t on t.date = d.d group by 1) "
+            f"select t.d, t.total, t.v4, t.goalie, t.v3, x.n from t join x using (d) order by 1"):
+        d, total, v4, goalie, v3, expected = line.split("|")
+        rows[d] = dict(total=int(total), v4=int(v4), goalie=int(goalie), v3=int(v3), expected=int(expected))
+    return rows
+
+
+def done(s):
+    return (s["total"] == TEAMS_PER_DATE and s["v4"] == s["expected"] and s["goalie"] == s["expected"]
+            and s["v3"] == 0)
 
 
 def call(d):
@@ -130,22 +154,16 @@ versions = psql(f"select coalesce(calculation_version,'null'), count(*) from tea
                 f"where date between '{args.start}' and '{args.end}' group by 1 order by 1")
 log(event="versions_before", versions=versions)
 
-todo = []
-for line in psql(
-        f"select d::date, count(t.team_abbreviation), "
-        f"count(*) filter (where t.calculation_version='{V4}'), "
-        f"count(*) filter (where t.calculation_version='{V4}' and t.goalie_rating is not null) "
-        f"from generate_series('{args.start}'::date, '{args.end}'::date, interval '1 day') d "
-        f"left join team_power_ratings_daily t on t.date = d::date group by 1 order by 1"):
-    d, total, v4, goalie = line.split("|")
-    if (int(total), int(v4), int(goalie)) != (TEAMS_PER_DATE,) * 3:
-        todo.append(d)
-log(event="plan", first=todo[0] if todo else None, calls=len(todo), dates=todo)
+state = state_by_date()
+todo = [d for d, s in state.items() if not done(s)]
+expected = {d: s["expected"] for d, s in state.items()}
+log(event="plan", first=todo[0] if todo else None, calls=len(todo), dates=todo,
+    expected_v4_rows=sum(expected.values()), partial_dates={d: n for d, n in expected.items() if n < TEAMS_PER_DATE})
 if args.preflight:
     log(event="PREFLIGHT_ONLY", calls=0)
     sys.exit(0)
 if not todo:
-    log(event="nothing_to_call", reason="every date already has 32 v4 rows; running final verification")
+    log(event="nothing_to_call", reason="every date already matches v4; running final verification")
 
 # 2. One date per call, ascending.
 for n, d in enumerate(todo, 1):
@@ -163,10 +181,15 @@ for n, d in enumerate(todo, 1):
                 "Wait for the release, then rerun.", resume_from=d)
     if j.get("processedDays") != 1 or j.get("totalUpserts") != TEAMS_PER_DATE:
         stop(6, "unexpected processedDays/totalUpserts", resume_from=d)
-    total, v4, goalie = readback(d)
-    log(event="readback", date=d, rows=total, v4=v4, goalie_known=goalie)
-    if (total, v4, goalie) != (TEAMS_PER_DATE,) * 3:
-        stop(6, "readback mismatch (expected 32 rows, all v4, all goalie_rating known)", resume_from=d)
+    total, v4, goalie, v3 = (int(x) for x in psql(
+        f"select count(*), count(*) filter (where calculation_version='{V4}'), "
+        f"count(*) filter (where calculation_version='{V4}' and goalie_rating is not null), "
+        f"count(*) filter (where calculation_version='{V3}') "
+        f"from team_power_ratings_daily where date='{d}'")[0].split("|"))
+    log(event="readback", date=d, rows=total, v4=v4, goalie_known=goalie, v3_left=v3, expected_v4=expected[d])
+    if not done(dict(total=total, v4=v4, goalie=goalie, v3=v3, expected=expected[d])):
+        stop(6, "readback mismatch (expected 32 rows, v4 = teams with a genuine game, goalie known for all of "
+                "them, no v3 left)", resume_from=d)
     if dur > SLOW_S:
         stop(5, f"call over {SLOW_S} s", resume_from=(todo[n] if n < len(todo) else None))
     time.sleep(PAUSE_S)
@@ -174,12 +197,15 @@ for n, d in enumerate(todo, 1):
 # 3. Final verification (read-only).
 versions = psql(f"select coalesce(calculation_version,'null'), count(*) from team_power_ratings_daily "
                 f"where date between '{args.start}' and '{args.end}' group by 1 order by 1")
+carried = psql(f"select date, coalesce(calculation_version,'null'), source_through_date, count(*) "
+               f"from team_power_ratings_daily where date between '{args.start}' and '{args.end}' "
+               f"and calculation_version is distinct from '{V4}' group by 1,2,3 order by 1")
 later = psql(f"select date, coalesce(calculation_version,'null'), count(*) from team_power_ratings_daily "
              f"where date > '{args.end}' group by 1,2 order by 1")
-cols = ",".join(["team_abbreviation", "date", "goalie_rating"] + UNCHANGED_COLS)
+cols = ",".join(["team_abbreviation", "date"] + REPORT_COLS)
 after = {}
 for line in psql(f"select {cols} from team_power_ratings_daily where date between '{args.start}' and '{args.end}'"):
-    p = line.split("|"); after[(p[0], p[1])] = p
+    p = line.split("|"); after[(p[0], p[1])] = dict(zip(REPORT_COLS, p[2:]))
 with open(backup) as fh:
     header = fh.readline().rstrip("\n").split("\t")
     before = {}
@@ -187,18 +213,17 @@ with open(backup) as fh:
         p = line.rstrip("\n").split("\t")
         if len(p) == len(header):
             r = dict(zip(header, p)); before[(r["team_abbreviation"], r["date"])] = r
-changed = []
-for key, p in after.items():
-    b = before.get(key)
-    if not b:
-        continue
-    for i, c in enumerate(UNCHANGED_COLS):
-        x, y = p[3 + i], b.get(c, "")
-        if (x == "") != (y == "") or (x and abs(float(x) - float(y)) > 1e-9):
-            changed.append([key[0], key[1], c, y, x])
-off_expected = [[t, round(float(after[(t, "2026-11-12")][2]), 2), e] for t, e in EXPECTED_1112.items()
-                if (t, "2026-11-12") in after and abs(float(after[(t, "2026-11-12")][2]) - e) > 0.05]
-log(event="final", versions_after=versions, later_dates=later,
-    non_goalie_columns_changed=len(changed), changed_sample=changed[:10],
-    goalie_1112_off_expected=off_expected)
+movement = {}
+for c in REPORT_COLS:
+    diffs = [abs(float(a[c]) - float(before[k][c])) for k, a in after.items()
+             if k in before and a[c] != "" and before[k].get(c, "") != ""]
+    movement[c] = {"compared": len(diffs), "changed": sum(1 for x in diffs if x > 1e-9),
+                   "max_abs": round(max(diffs), 2) if diffs else None}
+def off_expected(col, exp):
+    return [[t, round(float(after[(t, "2026-11-12")][col]), 2), e] for t, e in exp.items()
+            if (t, "2026-11-12") in after and abs(float(after[(t, "2026-11-12")][col]) - e) > 0.05]
+log(event="final", versions_after=versions, expected_v4_rows=sum(expected.values()),
+    non_v4_rows=carried, later_dates=later, movement_vs_backup=movement,
+    goalie_1112_off_expected=off_expected("goalie_rating", EXPECTED_1112_GOALIE),
+    off_rating_1112_off_expected=off_expected("off_rating", EXPECTED_1112_OFF))
 log(event="DONE", calls=len(todo))
