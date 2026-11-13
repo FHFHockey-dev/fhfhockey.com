@@ -6,6 +6,9 @@ v4 = (1) decision 145: goalie_rating is 5-on-5 goaltending (empty-net goals excl
 Run only after TJ approves PLAN.md and the release containing F9 is live on fhfhockey.com.
 One date per call, ascending, sequential. Resumable. Read-only DB guard before every call.
 Never prints secrets.
+Carry-forward (decision 150): a team with no genuine game in the lookback keeps its 2026-09-28
+snapshot (legacy_unversioned, source 2026-08-29). Every readback proves those rows are exactly
+that snapshot and never v4. See PREFLIGHT.md.
 
 Usage (from any directory):
   python3 -I power-g5v5-loop.py --preflight          # guard + issued-row backup + plan; no route calls
@@ -25,6 +28,14 @@ V4 = "team-power-v4-5v5-goaltending"
 V3 = "team-power-v3-all-team-baseline-prior-after-norm-pooled-st"
 TEAMS_PER_DATE = 32   # the writer upserts every team: computed (v4) or carried from its last stored row
 LOOKBACK_DAYS = 150   # TEAM_RATINGS_TREND_LOOKBACK_DAYS
+LEGACY = "legacy_unversioned"
+CARRY_FROM = "2026-09-28"     # the snapshot every carried row must equal (decision 150)
+CARRY_SOURCE = "2026-08-29"
+# Columns the writer copies from the previous stored row (trend10 too: a team with no genuine
+# game has no trend override). pp_tier/pk_tier are recomputed per date, so not compared.
+CARRY_COLS = ["off_rating", "def_rating", "pace_rating", "xgf60", "gf60", "sf60", "xga60", "ga60", "sa60",
+              "pace60", "finishing_rating", "goalie_rating", "danger_rating", "special_rating",
+              "discipline_rating", "variance_flag", "trend10"]
 PAUSE_S = 5
 SLOW_S = 60
 # Local read-only sample (PLAN.md §3): expected v4 values for 2026-11-12.
@@ -99,28 +110,44 @@ def guard():
     stop(3, "DB guard did not clear after 3 checks (3 min)")
 
 
-def state_by_date():
-    """Per date: rows, v4 rows, v4 rows with goalie known, v3 rows left, and the expected v4 count
-    (teams with a genuine gp = 1 game in the writer's 150-day lookback)."""
+def state_by_date(start, end):
+    """Per date: rows, v4 rows, v4 rows with goalie known, v3 rows left, carried rows that are exactly
+    the team's 09-28 snapshot (label legacy_unversioned, source 08-29, same values), and the expected
+    v4 count (teams with a genuine gp = 1 game in the writer's 150-day lookback)."""
+    same = " and ".join(f"coalesce(abs(t.{c} - p.{c}) < 1e-9, t.{c} is null and p.{c} is null)"
+                        for c in CARRY_COLS)
     rows = {}
     for line in psql(
-            f"with d as (select g::date as d from generate_series('{args.start}'::date, '{args.end}'::date, interval '1 day') g), "
+            f"with d as (select g::date as d from generate_series('{start}'::date, '{end}'::date, interval '1 day') g), "
             f"x as (select d.d, count(distinct a.team_abbreviation) as n from d left join nst_team_gamelogs_as_rates a "
             f"on a.situation = 'all' and a.gp = 1 and a.date between d.d - {LOOKBACK_DAYS} and d.d group by 1), "
             f"t as (select d.d, count(t.team_abbreviation) as total, "
             f"count(*) filter (where t.calculation_version = '{V4}') as v4, "
             f"count(*) filter (where t.calculation_version = '{V4}' and t.goalie_rating is not null) as goalie, "
-            f"count(*) filter (where t.calculation_version = '{V3}') as v3 "
-            f"from d left join team_power_ratings_daily t on t.date = d.d group by 1) "
-            f"select t.d, t.total, t.v4, t.goalie, t.v3, x.n from t join x using (d) order by 1"):
-        d, total, v4, goalie, v3, expected = line.split("|")
-        rows[d] = dict(total=int(total), v4=int(v4), goalie=int(goalie), v3=int(v3), expected=int(expected))
+            f"count(*) filter (where t.calculation_version = '{V3}') as v3, "
+            f"count(*) filter (where t.calculation_version = '{LEGACY}' and t.source_through_date = '{CARRY_SOURCE}' "
+            f"and {same}) as carried_ok "
+            f"from d left join team_power_ratings_daily t on t.date = d.d "
+            f"left join team_power_ratings_daily p on p.team_abbreviation = t.team_abbreviation and p.date = '{CARRY_FROM}' "
+            f"group by 1) "
+            f"select t.d, t.total, t.v4, t.goalie, t.v3, t.carried_ok, x.n from t join x using (d) order by 1"):
+        d, total, v4, goalie, v3, carried_ok, expected = line.split("|")
+        rows[d] = dict(total=int(total), v4=int(v4), goalie=int(goalie), v3=int(v3), carried_ok=int(carried_ok),
+                       expected=int(expected))
     return rows
 
 
 def done(s):
+    # Every team is either computed (v4, goalie known) or carried exactly from its 09-28 snapshot.
     return (s["total"] == TEAMS_PER_DATE and s["v4"] == s["expected"] and s["goalie"] == s["expected"]
-            and s["v3"] == 0)
+            and s["v3"] == 0 and s["carried_ok"] == TEAMS_PER_DATE - s["expected"])
+
+
+def dump(path):
+    lines = psql(f"select * from team_power_ratings_daily where date between '{args.start}' and '{args.end}' "
+                 f"order by date, team_abbreviation", "-F", "\t", "-P", "tuples_only=off", "-P", "footer=off")
+    open(path, "w").write("\n".join(lines) + "\n")
+    return len(lines) - 1
 
 
 def call(d):
@@ -145,25 +172,29 @@ if in_cron_window():
     stop(4, "inside a cron window; start outside 08:00-08:20, 09:25-11:00, 11:15-11:40 UTC")
 guard()
 backup = os.path.join(OUT, f"issued-rows-{args.start}_{args.end}.tsv")
-if not os.path.exists(backup):
-    lines = psql(f"select * from team_power_ratings_daily where date between '{args.start}' and '{args.end}' "
-                 f"order by date, team_abbreviation", "-F", "\t", "-P", "tuples_only=off", "-P", "footer=off")
-    open(backup, "w").write("\n".join(lines) + "\n")
-    log(event="backup", file=os.path.relpath(backup, HERE), rows=len(lines) - 1)
+if not os.path.exists(backup):  # the first (preflight) snapshot is the movement baseline
+    log(event="backup", file=os.path.relpath(backup, HERE), rows=dump(backup))
 versions = psql(f"select coalesce(calculation_version,'null'), count(*) from team_power_ratings_daily "
                 f"where date between '{args.start}' and '{args.end}' group by 1 order by 1")
 log(event="versions_before", versions=versions)
 
-state = state_by_date()
+state = state_by_date(args.start, args.end)
 todo = [d for d, s in state.items() if not done(s)]
 expected = {d: s["expected"] for d, s in state.items()}
 log(event="plan", first=todo[0] if todo else None, calls=len(todo), dates=todo,
-    expected_v4_rows=sum(expected.values()), partial_dates={d: n for d, n in expected.items() if n < TEAMS_PER_DATE})
+    expected_v4_rows=sum(expected.values()),
+    expected_carried_rows=sum(TEAMS_PER_DATE - n for n in expected.values()),
+    partial_dates={d: n for d, n in expected.items() if n < TEAMS_PER_DATE})
 if args.preflight:
     log(event="PREFLIGHT_ONLY", calls=0)
     sys.exit(0)
 if not todo:
     log(event="nothing_to_call", reason="every date already matches v4; running final verification")
+else:
+    # Rows can change after the preflight (cron 283 rewrites D-1..D each morning), so every run also
+    # snapshots the range just before its first call: every row a call can overwrite is on disk.
+    snap = os.path.join(OUT, time.strftime("pre-run-%Y%m%dT%H%M%SZ.tsv", time.gmtime()))
+    log(event="pre_run_snapshot", file=os.path.relpath(snap, HERE), rows=dump(snap))
 
 # 2. One date per call, ascending.
 for n, d in enumerate(todo, 1):
@@ -181,15 +212,13 @@ for n, d in enumerate(todo, 1):
                 "Wait for the release, then rerun.", resume_from=d)
     if j.get("processedDays") != 1 or j.get("totalUpserts") != TEAMS_PER_DATE:
         stop(6, "unexpected processedDays/totalUpserts", resume_from=d)
-    total, v4, goalie, v3 = (int(x) for x in psql(
-        f"select count(*), count(*) filter (where calculation_version='{V4}'), "
-        f"count(*) filter (where calculation_version='{V4}' and goalie_rating is not null), "
-        f"count(*) filter (where calculation_version='{V3}') "
-        f"from team_power_ratings_daily where date='{d}'")[0].split("|"))
-    log(event="readback", date=d, rows=total, v4=v4, goalie_known=goalie, v3_left=v3, expected_v4=expected[d])
-    if not done(dict(total=total, v4=v4, goalie=goalie, v3=v3, expected=expected[d])):
-        stop(6, "readback mismatch (expected 32 rows, v4 = teams with a genuine game, goalie known for all of "
-                "them, no v3 left)", resume_from=d)
+    s = state_by_date(d, d)[d]
+    log(event="readback", date=d, rows=s["total"], v4=s["v4"], goalie_known=s["goalie"], v3_left=s["v3"],
+        carried_exact=s["carried_ok"], expected_v4=expected[d], expected_carried=TEAMS_PER_DATE - expected[d])
+    if s["expected"] != expected[d] or not done(s):
+        stop(6, "readback mismatch (expected 32 rows: v4 = teams with a genuine game, goalie known for all of "
+                "them; every other row exactly its 09-28 snapshot, legacy_unversioned, source 08-29; no v3 left)",
+             resume_from=d)
     if dur > SLOW_S:
         stop(5, f"call over {SLOW_S} s", resume_from=(todo[n] if n < len(todo) else None))
     time.sleep(PAUSE_S)
@@ -222,7 +251,10 @@ for c in REPORT_COLS:
 def off_expected(col, exp):
     return [[t, round(float(after[(t, "2026-11-12")][col]), 2), e] for t, e in exp.items()
             if (t, "2026-11-12") in after and abs(float(after[(t, "2026-11-12")][col]) - e) > 0.05]
+final_state = state_by_date(args.start, args.end)
 log(event="final", versions_after=versions, expected_v4_rows=sum(expected.values()),
+    expected_carried_rows=sum(TEAMS_PER_DATE - n for n in expected.values()),
+    dates_not_done=[d for d, s in final_state.items() if not done(s)],
     non_v4_rows=carried, later_dates=later, movement_vs_backup=movement,
     goalie_1112_off_expected=off_expected("goalie_rating", EXPECTED_1112_GOALIE),
     off_rating_1112_off_expected=off_expected("off_rating", EXPECTED_1112_OFF))
