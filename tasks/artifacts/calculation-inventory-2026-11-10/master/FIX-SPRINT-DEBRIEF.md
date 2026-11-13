@@ -8,12 +8,34 @@ Status: **Final for the code sprint, 2026-11-13.**
 Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one per lane, in the sole checkout `octoberBranch`, with exact file ownership. Every production action had TJ's own pop-up approval.
 
 ## 1. Summary
-- **Scope:** findings from the three-wave math audit: 35 packets, 1,358 calculations, Fable audits peer-reviewed by Codex "Astra", and owner decisions 1–143 (83–143 were decided during the sprint).
-- **Lanes:** 25 lanes plus sub-lanes. L1–L22, L4a/L4b and L9a/L9b/L9c, with sub-lanes L2-landing, L5a, L5b, L9a-markets, L10b, L13b and L22-UI.
-- **P0 coverage (45 total):**
-  - 40 fixed in code. Many of these still need a queued rebuild before stored data reflects the fix.
-  - 5 are partly fixed: W1 #14, #16, #17, #27 and W3-P0-1 (§5).
+- **Scope:** findings from the three-wave math audit: 35 packets, 1,358 calculations, Fable audits peer-reviewed by Codex "Astra", and owner decisions 1–150 (83–150 were decided during the sprint).
+- **Lanes:**
+  - 25 lanes plus sub-lanes: L1–L22, L4a/L4b and L9a/L9b/L9c, with sub-lanes L2-landing, L5a, L5b, L9a-markets, L10b, L13b and L22-UI.
+  - Follow-up lanes F1–F17 on 2026-11-13, F12–F15 answering Astra's checkpoint 1.
+  - Codex dev items 3, 5, 7, 8 and 9 were integrated; items 1, 2 and 6 are held by Codex.
+- **P0 coverage (45 total), after releases #434 and #435 and Astra's checkpoint 1 and #434 addendum:**
+  - 40 fixed in code. W1 #14, #18 and #20 moved to fixed on 2026-11-13; Astra closed AF-01 (#20) in both RSO readers.
+  - 5 are partly fixed (§5):
+    - W1 #16: starter refit, Codex;
+    - W1 #17: writer is Codex item 1, held;
+    - W1 #21: multiplier neutral until validated, decision 148;
+    - W1 #27: R3 no-history stays unknown;
+    - W3-P0-1.
   - None is left unaddressed.
+- **Releases on 2026-11-13:**
+  - #432 (`e1ab46318`);
+  - #433 (`4d9b6a10d`; migrations 144–146);
+  - #434 (`496ab3766`; Astra fixes, F5–F15, Codex items);
+  - #435 (`6f1cb0767`; version-aware power labels, writer dry run, CTPI beta card).
+
+  Each release was gated in a clean export, built once with three cancels, and passed a 5-GET smoke.
+- **Production on 2026-11-13** (§3, `production/PRODUCTION-QUEUE.md`):
+  - the 2026-27 rolling recompute and the 2025-26 goalie rebuild;
+  - indexes 123/124 and migrations 101 and 142–146;
+  - power ratings v3, then v4 (1,425 v4 rows plus 47 labelled legacy carries);
+  - xG champion retired; composites v3, rankings, team_unit_toi and trend bands;
+  - game state, CTPI v2 (gated) and SOS v2 backfills.
+- **Astra:** checkpoint 1 on frozen #433 (one P0, AF-01, now closed) and the #434 addendum (no new P0; two P1s on power v4, fixed in #435 and its rebuild gate). The #435 addendum is pending (`ASTRA-ADDENDUM-435-PROMPT.md`).
 - **Integration gate:** clean `git archive` export of `496b5c9de`.
   - Vitest: 19,122 passed, 0 failed (1,391 files).
   - Typecheck: passed.
