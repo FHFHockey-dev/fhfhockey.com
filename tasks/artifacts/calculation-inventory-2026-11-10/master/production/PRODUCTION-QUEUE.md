@@ -375,3 +375,11 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - **Readback:** ledger row present. The 5 columns are now nullable (`teamGameStats.powerPlayToi` and the 4 `goaliesGameStats` ratios). One `persist_complete_game_stats_v1` overload: SECURITY INVOKER, `search_path=""`, owner postgres, md5 `72c23e82…` (was `4418a49a…`), all six null checks present once. EXECUTE still only postgres and service_role. Row estimates unchanged.
   - **Authority:** 114 applied / 6 pending.
   - **Not done** (separate approvals): the reader fixes and the nullable writer `c89ff5d24` (readers with or before the writer), and any refresh.
+- **Release #440: item 6 readers and nullable writer** (TJ "Push and merge" after the full gate):
+  - **Candidate** `2681a05bc` on master `a448842d1`: the 16 app files from the composed `a36a878c5` (readers `6eaddbddd` plus writer; the writer files equal `c89ff5d24`), and the baseline test at 147-applied. No SQL; F11's migration excluded.
+  - **Gate:** 209 focused tests; typecheck 0; ESLint 0. Full Vitest 19,901 passed: requestBudget passes 21/21 alone, and the BLSH bootstrap file is export-only. pytest 213.
+  - **Branch** pushed 20:01:47Z; no build at 20:03:21Z.
+  - **PR #440** squash-merged 20:03:36Z as master `70ad65546`, tree identical.
+  - **Build:** fhfhockey completed 20:07:58Z; cms, functions and fhfhockey.com canceled. **Deployed SHA `70ad65546`.**
+  - **Smoke** 5/5 at 200 (20:08:26–27Z): `/` 4.15 s (cold), `/splits` 0.23 s, `/lines` 0.20 s, `/lines/EDM` 0.30 s, `/drm` 0.17 s.
+  - **octoberBranch** `4acd28814` takes the 16 released files (11 related test files, 249 passed). Ours-merge `1bb298b79` pushed 20:08:45Z; no build at 20:10:19Z.
