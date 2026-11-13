@@ -616,3 +616,23 @@ No diary exists. Outcomes come from the commits and the Chef diary.
 - **No diary:** L13/L13b and L10 half A. Their outcomes come from commits and the Chef diary.
 - **Commits that swept in other lanes' mailbox sections:** L6 `6b2023387` (L14 claim) and L15 `412e9870f` (L9a section).
 - **Chef diary SHA error corrected:** the lease release is `ee2b1c19c`.
+
+## 11. Verification of the draft's "unverified" items (2026-11-13; read-only code check at HEAD 89bf543fb)
+| Item | Status | Evidence |
+|---|---|---|
+| L2 W2-3 D7 (finished-game rule) | **Not fixed** | `playerStatsLandingServer.ts:849-869` still treats NHL date vs UTC today, plus start + 8 h, as final; no game state is read |
+| L2 W2-3 D13 (chart minimum TOI) | **Not fixed** | The minimum applies to each one-game chart point (`playerStatsLandingServer.ts:4835-4841`, `:3983-3989`), so a season minimum wipes the chart |
+| BC W1-6 D8 (goalie rest and trend boosts) | **Not fixed** | `goalie-stage.ts:344-363`, `projection-weights.ts:26-30`. This is the goalie stage (L9b), not L9a. The debrief's L9a "D8 fixed" was W1-7 D8 (WGO TOI unit), a different finding. |
+| BC W1-6 D13 (no home term in goalie outcomes) | **Not fixed** | `goalieOutcomes.ts:92-123`, `goalie-stage.ts:383-385` |
+| BC W1-6 D14 (on-ice goals split by TOI only) | **Not fixed** | `skater-stage.ts:2885-2891, 2915-2916` |
+| BA W1-4 B D9 (EN exclusion in team Goaltending rating) | **Not fixed** | `power-ratings.ts:262-266, 439, 578, 848` use NST all-situation rows with no EN filter (decision 7) |
+| Week Score lexicographic order | **Not fixed** | `calcWeekScore.ts:69-81`: 6 per game + 4 per off-night, so 3 games / 3 off-nights (30) beats 4 / 1 (28) |
+| Week mismatch → blocked (BC W1-12 D5 sub-item) | Already in place (pre-sprint) | `forge/players.ts:377-385, 479-486` |
+| L10 W2-8 D8 | Partly in place (pre-sprint) | `settlement.ts:76-114, 251-259`; no scratch settlement from identity evidence added |
+| L11 reads the L13 registry and L9b goalie contract | **Not wired** | Neither `statsMasterList` nor `readGoalieCandidatesContract` appears in L11 files; the bridge reads stored `proj_*` and `goalie_start_projections.l10_start_pct` |
+| L4b FHFH house labels | No defect | WiGO and the radar show genuine NST measures under NST names (decision 9). FHFH measures appear only on underlying-stats pages, which already carry FHFH labels. The brief's rename was misrouted. |
+| L5 adjustedImpactPromotionContract (decision 100) | **Fixed** | `adjustedImpactPromotionContract.ts:84-119` (`ee075a1b5`); always reports blocked because no run record is passed |
+| L1 → L10 baselineInputCapture faceoffs | Handled (no change needed) | `baselineInputCapture.ts:247` selects faceoffs but never uses them |
+| L9a → L10 ledger PK heads | **Partly fixed** | `modeledHeadTotals.ts:7-12`: PK is summed when present, but a missing PK head counts as 0 instead of unknown |
+
+These open items become follow-up tickets in this session; TJ moved all remaining project work here on 2026-11-13.
