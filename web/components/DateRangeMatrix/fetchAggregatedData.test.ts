@@ -1184,6 +1184,23 @@ describe("fetchAggregatedData", () => {
     expect(skaterQuery.in).toContainEqual(["gameId", gameIds]);
   });
 
+  it.each([
+    { saveShotsAgainst: null, toi: "60:00", available: false },
+    { saveShotsAgainst: "0/0", toi: null, available: false },
+    { saveShotsAgainst: "0/0", toi: "60:00", available: true },
+  ])("withholds nullable goalie inputs but preserves observed zeros: %j", async ({ saveShotsAgainst, toi, available }) => {
+    const gameId = 2025020101;
+    mocks.shiftResponses.push({ data: completeGameRelationships([shiftRow(1, {
+      game_id: gameId, player_id: 35, display_position: "G", primary_position: "G", player_type: "G", line_combination: null,
+    })]), error: null });
+    mocks.goalieResponses.push({ data: [{ created_at: "2026-03-01T12:00:00.000Z", gameId,
+      playerId: 35, goalsAgainst: 0, saveShotsAgainst, toi }], error: null });
+    const result = await fetchAggregatedData({ ...request, gameIds: [gameId] });
+    if (available) expect(result.cardStats.goaliesByPlayerId[35]).toEqual({ gamesPlayed: 1, saves: 0,
+      savePercentage: null, goalsAgainstAverage: 0 });
+    else expect(result.cardStats.goaliesByPlayerId).not.toHaveProperty("35");
+  });
+
   it("leaves semantically contradictory skater and goalie rows unavailable", async () => {
     const gameId = 2025020101;
     mocks.shiftResponses.push({

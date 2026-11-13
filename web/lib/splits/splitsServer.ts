@@ -74,8 +74,10 @@ type GoalieGameRow = {
   playerId: number;
   gameId: number;
   goalsAgainst: number;
-  saveShotsAgainst: string;
+  saveShotsAgainst: string | null;
   toi: string | null;
+  /** Qualified from an existing official log, when available. */
+  appearance?: boolean | null;
 };
 
 type GameRow = {
@@ -162,43 +164,28 @@ function findTeamAbbreviationById(teamId: number | null | undefined): string | n
   );
 }
 
-function parseToiToSeconds(value: string | null | undefined): number {
-  if (!value) {
-    return 0;
-  }
-
-  const parts = value.split(":").map((part) => Number.parseInt(part, 10));
-  if (parts.some((part) => !Number.isFinite(part))) {
-    return 0;
-  }
-
-  if (parts.length === 2) {
-    return parts[0] * 60 + parts[1];
-  }
-
-  if (parts.length === 3) {
-    return parts[0] * 3600 + parts[1] * 60 + parts[2];
-  }
-
-  return 0;
+function parseToiToSeconds(value: string | null | undefined): number | null {
+  const match = typeof value === "string" ? /^(\d+):([0-5]\d)$/.exec(value) : null;
+  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
 }
 
 function parseSaveShotsAgainst(value: string | null | undefined) {
-  if (!value) {
-    return {
-      saves: 0,
-      shotsAgainst: 0,
-    };
-  }
+  const match = typeof value === "string" ? /^(\d+)[/-](\d+)$/.exec(value) : null;
+  if (!match) return null;
+  const saves = Number(match[1]), shotsAgainst = Number(match[2]);
+  return Number.isSafeInteger(saves) && Number.isSafeInteger(shotsAgainst) && saves <= shotsAgainst
+    ? { saves, shotsAgainst } : null;
+}
 
-  const [savesRaw, shotsRaw] = value.split(/[/-]/);
-  const saves = Number.parseInt(savesRaw ?? "0", 10);
-  const shotsAgainst = Number.parseInt(shotsRaw ?? "0", 10);
-
-  return {
-    saves: Number.isFinite(saves) ? saves : 0,
-    shotsAgainst: Number.isFinite(shotsAgainst) ? shotsAgainst : 0,
-  };
+function goalieAppearance(row: GoalieGameRow, official?: CreditedGoalieStartRow): boolean | null {
+  if (row.appearance !== undefined) return row.appearance;
+  const seconds = parseToiToSeconds(row.toi);
+  const shots = parseSaveShotsAgainst(row.saveShotsAgainst);
+  // A measured event or an official appearance also proves a zero-duration penalty-shot stint.
+  if ((seconds != null && seconds > 0) || (shots != null && shots.shotsAgainst > 0)
+    || row.goalsAgainst > 0 || official?.games_played === 1 || official?.games_started === 1) return true;
+  if (seconds === 0 || official?.games_played === 0) return false;
+  return null;
 }
 
 async function fetchCurrentSeasonContext(): Promise<CurrentSeasonContext> {
@@ -555,7 +542,7 @@ function buildLandingSkaterLeaders(args: {
     .slice(0, 10);
 }
 
-function buildLandingGoalieLeaders(args: {
+export function buildLandingGoalieLeaders(args: {
   goalieRows: readonly GoalieGameRow[];
   gamesById: Map<number, GameRow>;
   playerDirectory: PlayerDirectory;
@@ -565,10 +552,10 @@ function buildLandingGoalieLeaders(args: {
     {
       playerId: number;
       opponentTeamId: number;
-      gamesPlayed: number;
-      shotsAgainst: number;
+      gamesPlayed: number | null;
+      shotsAgainst: number | null;
       goalsAgainst: number;
-      saves: number;
+      saves: number | null;
     }
   >();
 
@@ -588,7 +575,9 @@ function buildLandingGoalieLeaders(args: {
 
     const opponentTeamId =
       game.homeTeamId === teamId ? game.awayTeamId : game.homeTeamId;
-    const { saves, shotsAgainst } = parseSaveShotsAgainst(row.saveShotsAgainst);
+    const appearance = goalieAppearance(row);
+    if (appearance === false) continue;
+    const saveShots = parseSaveShotsAgainst(row.saveShotsAgainst);
     const key = `${row.playerId}:${opponentTeamId}`;
     const current =
       grouped.get(key) ?? {
@@ -600,10 +589,10 @@ function buildLandingGoalieLeaders(args: {
         saves: 0,
       };
 
-    current.gamesPlayed += parseToiToSeconds(row.toi) > 0 ? 1 : 0;
-    current.shotsAgainst += shotsAgainst;
+    current.gamesPlayed = current.gamesPlayed != null && appearance === true ? current.gamesPlayed + 1 : null;
+    current.shotsAgainst = current.shotsAgainst != null && saveShots ? current.shotsAgainst + saveShots.shotsAgainst : null;
     current.goalsAgainst += safeNumber(row.goalsAgainst);
-    current.saves += saves;
+    current.saves = current.saves != null && saveShots ? current.saves + saveShots.saves : null;
     grouped.set(key, current);
   }
 
@@ -617,7 +606,7 @@ function buildLandingGoalieLeaders(args: {
         (abbreviation) => teamsInfo[abbreviation]?.id === row.opponentTeamId
       );
 
-      if (!player || !teamAbbreviation || !opponentAbbreviation || row.gamesPlayed <= 0) {
+      if (!player || !teamAbbreviation || !opponentAbbreviation || row.gamesPlayed === 0) {
         return null;
       }
 
@@ -630,7 +619,8 @@ function buildLandingGoalieLeaders(args: {
         shotsAgainst: row.shotsAgainst,
         goalsAgainst: row.goalsAgainst,
         savePct:
-          row.shotsAgainst > 0 ? toRounded(row.saves / row.shotsAgainst) : null,
+          row.shotsAgainst != null && row.shotsAgainst > 0 && row.saves != null
+            ? toRounded(row.saves / row.shotsAgainst) : null,
       } satisfies SplitLandingGoalieLeader;
     })
     .filter((row): row is SplitLandingGoalieLeader => row != null)
@@ -640,7 +630,7 @@ function buildLandingGoalieLeaders(args: {
         return bySavePct;
       }
 
-      return right.shotsAgainst - left.shotsAgainst;
+      return (right.shotsAgainst ?? -1) - (left.shotsAgainst ?? -1);
     })
     .slice(0, 10);
 }
@@ -890,12 +880,13 @@ export function creditedStartersByGame(logs: readonly CreditedGoalieStartRow[]) 
 }
 
 type SplitGoalieAggregate = {
-  gamesPlayed: number;
+  gamesPlayed: number | null;
   gamesStarted: number;
   wins: number;
   losses: number;
   otl: number;
   shutouts: number;
+  shutoutsUnavailable: boolean;
   qualityStarts: number;
   qualityStartsUnavailable: boolean;
 };
@@ -914,13 +905,14 @@ export function aggregateSplitGoalieGames(args: {
 }) {
   const aggregateByPlayerId = new Map<number, SplitGoalieAggregate>();
   args.rowsByGame.forEach((rows, gameId) => {
-    const appearedIds = new Set(rows.map((row) => row.playerId));
+    const possibleAppearances = rows.filter(row => goalieAppearance(row) !== false);
+    const appearedIds = new Set(possibleAppearances.map((row) => row.playerId));
     const credited = (args.creditedStartersByGame.get(gameId) ?? []).filter((id) =>
       appearedIds.has(id)
     );
     const starterId = credited.length === 1 ? credited[0] : null;
 
-    for (const row of rows) {
+    for (const row of possibleAppearances) {
       const current =
         aggregateByPlayerId.get(row.playerId) ?? {
           gamesPlayed: 0,
@@ -929,26 +921,30 @@ export function aggregateSplitGoalieGames(args: {
           losses: 0,
           otl: 0,
           shutouts: 0,
+          shutoutsUnavailable: false,
           qualityStarts: 0,
           qualityStartsUnavailable: false,
         };
-      current.gamesPlayed += 1;
+      current.gamesPlayed = current.gamesPlayed != null && (goalieAppearance(row) === true || starterId === row.playerId)
+        ? current.gamesPlayed + 1 : null;
 
       if (starterId == null) {
         current.qualityStartsUnavailable = true;
       } else if (starterId === row.playerId) {
         current.gamesStarted += 1;
-        const { saves, shotsAgainst } = parseSaveShotsAgainst(row.saveShotsAgainst);
+        const saveShots = parseSaveShotsAgainst(row.saveShotsAgainst);
 
-        if (safeNumber(row.goalsAgainst) === 0 && rows.length === 1) {
-          current.shutouts += 1;
+        if (safeNumber(row.goalsAgainst) === 0) {
+          const otherRows = possibleAppearances.filter(other => other.playerId !== row.playerId);
+          if (otherRows.length === 0) current.shutouts += 1;
+          else if (!otherRows.some(other => goalieAppearance(other) === true)) current.shutoutsUnavailable = true;
         }
 
         const qualityStart = classifyVollmanQualityStart(
           {
             started: true,
-            saves: row.saveShotsAgainst ? saves : null,
-            shotsAgainst: row.saveShotsAgainst ? shotsAgainst : null,
+            saves: saveShots?.saves ?? null,
+            shotsAgainst: saveShots?.shotsAgainst ?? null,
             goalsAgainst: row.goalsAgainst ?? null,
           },
           args.leagueSavePct
@@ -972,7 +968,7 @@ export function aggregateSplitGoalieGames(args: {
   return aggregateByPlayerId;
 }
 
-async function buildGoalieRows(args: {
+export async function buildGoalieRows(args: {
   teamId: number;
   rosterPlayers: readonly PlayerDirectoryEntry[];
   opponentTeamId: number;
@@ -999,9 +995,13 @@ async function buildGoalieRows(args: {
   ]);
   const goalieIds = new Set(goalies.map((goalie) => goalie.playerId));
 
+  const officialByPlayerGame = new Map(args.officialLogs.map(log => [`${log.goalie_id}:${log.game_id}`, log]));
+  const qualifiedRows = goalieRows.map(row => ({ ...row,
+    appearance: goalieAppearance(row, officialByPlayerGame.get(`${row.playerId}:${row.gameId}`)),
+  }));
   const rowsByGame = new Map<number, GoalieGameRow[]>();
-  for (const row of goalieRows) {
-    if (!goalieIds.has(row.playerId) || parseToiToSeconds(row.toi) <= 0) {
+  for (const row of qualifiedRows) {
+    if (!goalieIds.has(row.playerId) || row.appearance === false) {
       continue;
     }
 
@@ -1026,26 +1026,27 @@ async function buildGoalieRows(args: {
   return goalies
     .map((goalie) => {
       const aggregate = aggregateByPlayerId.get(goalie.playerId);
-      const gamesPlayed = aggregate?.gamesPlayed ?? 0;
+      const gamesPlayed = aggregate ? aggregate.gamesPlayed : 0;
       const gamesStarted = aggregate?.gamesStarted ?? 0;
 
-      const rawRows = goalieRows.filter(
-        (row) => row.playerId === goalie.playerId && parseToiToSeconds(row.toi) > 0
+      const rawRows = qualifiedRows.filter(
+        (row) => row.playerId === goalie.playerId && row.appearance !== false
       );
       const totals = rawRows.reduce(
         (acc, row) => {
-          const { saves, shotsAgainst } = parseSaveShotsAgainst(row.saveShotsAgainst);
-          acc.shotsAgainst += shotsAgainst;
-          acc.saves += saves;
+          const saveShots = parseSaveShotsAgainst(row.saveShotsAgainst);
+          const seconds = parseToiToSeconds(row.toi);
+          acc.shotsAgainst = acc.shotsAgainst != null && saveShots ? acc.shotsAgainst + saveShots.shotsAgainst : null;
+          acc.saves = acc.saves != null && saveShots ? acc.saves + saveShots.saves : null;
           acc.goalsAgainst += safeNumber(row.goalsAgainst);
-          acc.toiSeconds += parseToiToSeconds(row.toi);
+          acc.toiSeconds = acc.toiSeconds != null && seconds != null ? acc.toiSeconds + seconds : null;
           return acc;
         },
         {
-          shotsAgainst: 0,
-          saves: 0,
+          shotsAgainst: 0 as number | null,
+          saves: 0 as number | null,
           goalsAgainst: 0,
-          toiSeconds: 0,
+          toiSeconds: 0 as number | null,
         }
       );
 
@@ -1060,13 +1061,14 @@ async function buildGoalieRows(args: {
         goalsAllowed: totals.goalsAgainst,
         shotsAgainst: totals.shotsAgainst,
         savePct:
-          totals.shotsAgainst > 0 ? toRounded(totals.saves / totals.shotsAgainst) : null,
+          totals.shotsAgainst != null && totals.shotsAgainst > 0 && totals.saves != null
+            ? toRounded(totals.saves / totals.shotsAgainst) : null,
         goalsAllowedAverage:
-          totals.toiSeconds > 0
+          totals.toiSeconds != null && totals.toiSeconds > 0
             ? toRounded((totals.goalsAgainst * 3600) / totals.toiSeconds)
             : null,
-        shutouts: aggregate?.shutouts ?? 0,
-        qualityStarts: aggregate?.qualityStarts ?? 0,
+        shutouts: aggregate?.shutoutsUnavailable ? null : aggregate?.shutouts ?? 0,
+        qualityStarts: aggregate?.qualityStartsUnavailable ? null : aggregate?.qualityStarts ?? 0,
         // Vollman Quality Start % over credited starts; unavailable when any
         // appearance lacks a credited starter or a classifiable start.
         qualityStartsPct:
@@ -1081,7 +1083,7 @@ async function buildGoalieRows(args: {
         return bySavePct;
       }
 
-      const byShotsAgainst = right.shotsAgainst - left.shotsAgainst;
+      const byShotsAgainst = (right.shotsAgainst ?? -1) - (left.shotsAgainst ?? -1);
       if (byShotsAgainst !== 0) {
         return byShotsAgainst;
       }

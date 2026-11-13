@@ -253,7 +253,7 @@ export default function SplitsPage() {
             <section className={styles.section}>
               <div className={styles.sectionHeader}>
                 <h2>Top Goalies vs Any Team</h2>
-                <p>Best current-season save percentages against a specific opponent.</p>
+                <p>Best current-season save percentages against a specific opponent. Incomplete goalie data is shown as —.</p>
               </div>
 
               <div className={styles.tableWrap}>
@@ -275,8 +275,8 @@ export default function SplitsPage() {
                         <td>{row.playerName}</td>
                         <td>{row.teamAbbreviation}</td>
                         <td>{row.opponentAbbreviation}</td>
-                        <td>{row.gamesPlayed}</td>
-                        <td>{row.shotsAgainst}</td>
+                        <td>{row.gamesPlayed ?? "—"}</td>
+                        <td>{row.shotsAgainst ?? "—"}</td>
                         <td>{row.goalsAgainst}</td>
                         <td>{formatPercent(row.savePct, 2)}</td>
                       </tr>
@@ -397,6 +397,7 @@ export default function SplitsPage() {
             <div className={styles.subsection}>
               <div className={styles.sectionHeader}>
                 <h3>Goalies</h3>
+                <p>Incomplete goalie data is shown as —.</p>
               </div>
 
               <div className={styles.tableWrap}>
@@ -422,17 +423,17 @@ export default function SplitsPage() {
                     {rosterData.roster.goalies.map((row) => (
                       <tr key={row.playerId}>
                         <td>{row.playerName}</td>
-                        <td>{row.gamesPlayed}</td>
+                        <td>{row.gamesPlayed ?? "—"}</td>
                         <td>{row.gamesStarted}</td>
                         <td>{row.wins}</td>
                         <td>{row.losses}</td>
                         <td>{row.otl}</td>
                         <td>{row.goalsAllowed}</td>
-                        <td>{row.shotsAgainst}</td>
+                        <td>{row.shotsAgainst ?? "—"}</td>
                         <td>{formatPercent(row.savePct, 2)}</td>
                         <td>{formatRate(row.goalsAllowedAverage)}</td>
-                        <td>{row.shutouts}</td>
-                        <td>{row.qualityStarts}</td>
+                        <td>{row.shutouts ?? "—"}</td>
+                        <td>{row.qualityStarts ?? "—"}</td>
                         <td>{formatPercent(row.qualityStartsPct, 1)}</td>
                       </tr>
                     ))}

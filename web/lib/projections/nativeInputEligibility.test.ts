@@ -114,4 +114,28 @@ describe("FORGE native input boundary", () => {
     expect(blendSeasonBootstrap({ GOALS: 0.4, HITS: null }, prior).stats).toEqual({ GOALS: 0.4, HITS: null });
     expect(database.tables).toEqual(["skatersGameStats"]);
   });
+  it("counts only complete goalie component support while preserving genuine unknown-clock appearances", async () => {
+    database.history = [
+      { playerId: 7, toi: "60:00", saveShotsAgainst: "20/22", goalsAgainst: 2,
+        games: { id: 1, date: "2026-04-01", seasonId: 20252026, type: 2 } },
+      { playerId: 7, toi: "60:00", saveShotsAgainst: null, goalsAgainst: 2,
+        games: { id: 2, date: "2026-04-02", seasonId: 20252026, type: 2 } },
+      { playerId: 7, toi: null, saveShotsAgainst: "10/11", goalsAgainst: 1,
+        games: { id: 3, date: "2026-04-03", seasonId: 20252026, type: 2 } },
+      { playerId: 7, toi: "60:00", saveShotsAgainst: "0/0", goalsAgainst: 0,
+        games: { id: 4, date: "2026-04-04", seasonId: 20252026, type: 2 } },
+      { playerId: 7, toi: null, saveShotsAgainst: "1/1", goalsAgainst: 0,
+        games: { id: 5, date: "2026-10-01", seasonId: 20262027, type: 2 } },
+      { playerId: 7, toi: "00:00", saveShotsAgainst: "0/0", goalsAgainst: 0,
+        games: { id: 6, date: "2026-10-02", seasonId: 20262027, type: 2 } },
+      { playerId: 7, toi: null, saveShotsAgainst: null, goalsAgainst: 0,
+        games: { id: 7, date: "2026-10-03", seasonId: 20262027, type: 2 } },
+    ];
+    const prior = (await loadSeasonBootstrap([7], 20262027, "2026-10-07", "goalie")).get(7)!;
+    expect(prior).toMatchObject({ historyGames: 3, currentSeasonGames: 1,
+      previous: { SAVES_GOALIE: 10, SHOTS_AGAINST_GOALIE: 11, GOALS_AGAINST_GOALIE: 1 } });
+    // The numerator and support count describe the same three usable appearances.
+    expect(prior.previous.SAVES_GOALIE! * prior.historyGames).toBe(30);
+  });
+
 });
