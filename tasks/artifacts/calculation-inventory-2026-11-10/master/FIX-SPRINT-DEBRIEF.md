@@ -153,14 +153,14 @@ The re-run at `496b5c9de` was clean, apart from the expected git-history pins. T
 | 11 | Trend page scales and empty calendar views | L6 | Fixed; player-trend v3 rebuild in queue 5 |
 | 12 | Power ratings standardised against the slate | L12 | Fixed; v3 recompute in queue 7. The prior min(1, GP/10) is unfitted (decision 125). |
 | 13 | PP/PK tiers from one game | L12 | Fixed; recompute in queue 7 |
-| 14 | Game Grid win odds | L12, F6 | **Fixed in the final 2026-11-13 release.** The data path withholds odds (L12). F6 `9b51a17ea` reads odds only through the withheld helper and labels each cell "Odds n/a: Model odds unavailable"; `9b97c4656` fixes the transposed cell's away team. Astra confirmed partial at #433. |
+| 14 | Game Grid win odds | L12, F6 | **Fixed (#434).** The data path withholds odds (L12). F6 `9b51a17ea` labels each cell "Odds n/a: Model odds unavailable"; `9b97c4656` fixes the transposed cell's away team. Astra's #434 addendum: supported. |
 | 15 | Top Adds NaN | L12 | Fixed (expected points, decision 118/132) |
 | 16 | Starter probability over-confident | L9b | **Partly.** Credited start, cutoffs, closed vector and unknown rest are fixed. The refit isn't run (plan `L9b-starter-refit-plan.md`). The accuracy job is a Codex proposal. |
 | 17 | Start Chart raw L10 share (conditional) | L9b, Codex dev | **Partly.** Labelled "L10 start share". The writer fix (`update-goalie-projections-v2.ts`) is Codex dev item 1 on 2026-11-13. Astra confirmed partial and noted the RSO bridge as another L10 consumer (AF-01, F12). |
-| 18 | PK bucket omitted | L9a, F7 | **Partly fixed at #433** (Astra AF-05): the writer adds PK heads (572/572 rows on 11-13), but readers counted a missing PK head as 0. Fixed by F7 `369e00828` (version-aware PK admission; reserve rows labelled "PK unmodelled"), which ships in the final 2026-11-13 release. |
+| 18 | PK bucket omitted | L9a, F7, Codex 3 | **Fixed (#434).** The writer adds PK heads; readers admit them version-aware (F7 `369e00828`, AF-05); the goalie stage adds known opponent PK shots (Codex `cd67fb728`). Astra's #434 addendum: supported. |
 | 19 | Hits/blocks count PK twice | L9a | Fixed; FORGE rerun |
-| 20 | Goalie row is the team slot | L9b, F12 | **Disputed by Astra (AF-01, P0):** the writer emits `forge_goalie_candidates_v1`, but RSO's bridge (`forgeDailyBridge.ts`) still built its own vector and could use another goalie's line. F12 is moving the bridge to the per-candidate contract for the final 2026-11-13 release. |
-| 21 | Opponent-goalie .900 | L9a, F13 | **Partly fixed** (Astra AF-02, AF-06): the independent posterior is in. Null goals-against no longer becomes 0, and the multiplier is neutral until validated (decision 148), both in F13 `0eaa1f5b4` for the final release. The held-out study is Codex goalie-model work. |
+| 20 | Goalie row is the team slot | L9b, F12 | **Fixed (#434).** Astra disputed it at #433 (AF-01, P0). F12 `738191ecf`, `a275d0ec7`, `6873c28ce` move the RSO bridge and the later-impact inputs to `forge_goalie_candidates_v1`. Astra's #434 addendum: "Closed in #434 code and focused tests". |
+| 21 | Opponent-goalie .900 | L9a, F13 | **Partly fixed.** The independent posterior is in. Null goals-against is dropped, never 0, and the multiplier is neutral until validated (decision 148), F13 `0eaa1f5b4` in #434. The held-out study is Codex goalie-model work. |
 | 22 | Power Terminal | L12 | Fixed |
 | 23 | Trend-band TOI 60× | L7 | Fixed; band rebuild in queue 6 |
 | 24 | Sandbox band status | L7 | Fixed (usual range `validated:false`) |
