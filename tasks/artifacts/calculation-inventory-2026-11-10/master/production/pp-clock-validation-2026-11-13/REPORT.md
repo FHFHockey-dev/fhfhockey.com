@@ -1,13 +1,13 @@
 # PP clock validation (decision 144; decision 71; L8 W2-P0-13)
 
-Lane F11, 2026-11-13. A separate validation lane: not part of tonight's release or the Astra snapshot. **PP share stays labelled unavailable sitewide; nothing here changes that.** Nothing was written to production. The only application code changes are C3 (`a98eda63f`) and C1 + C2 (`de4650c77`), each made later at the Chef's request; no serving path changed.
+Lane F11, 2026-11-13. A separate validation lane: not part of tonight's release or the Astra snapshot. **PP share stays labelled unavailable sitewide; nothing here changes that.** Nothing was written to production. The only application code changes are C3 (`a98eda63f`), C1 + C2 (`de4650c77`) and the decision-152 Penalty Summary registry (section 10), each made later at the Chef's request; no serving path changed.
 
 ## Headline
 
 - **The reconstructed clock matches the official NHL team PP time to the second on 2,493 of 2,500 comparable team-games (99.72%)** across 2025-26 and 2026-27 (preseason, regular season and playoffs). Two more differ by 1 s. Five differ by 28 s to 2:00, all in coincident-penalty scrums with fights, majors or misconducts. In each of those five, every interior situation code agrees with the clock, so the gap is NHL accounting that stored evidence can't settle. They are withheld, and the raw values are kept.
 - **The decision-144 risk cases all reconcile** (counts are comparable team-games in games with that feature): overtime PP 172/172 exact; shootout games 207/207; 5-on-3 454/456; penalty expiry across a period 921/924; pulled goalie during a PP 343/346, plus 2 within 1 s; double minors 205/206; coincident penalties 1,115/1,120.
 - **Legacy placeholder "00:00":** 3,728 team-game rows hold "00:00" even though the team had at least one PP opportunity. 2025-26 has 881 in the regular season (games 2025020467–476 and 2025020657–021095, dated 2025-12-09 to 2025-12-10 and 2026-01-04 to 2026-03-20), and 2024-25 has 2,392. The clock confirms real PP time in all 879 that it can check. **They can't be repaired from stored evidence:** right-rail is not stored, the stored boxscore and landing payloads carry no PP TOI, and the HTML summary is only memory-cached. 2026-27 regular season has none.
-- **Smallest verified display scope:** per-game player PP time and PP share for **2026-27 regular-season team-games that pass the rules below: 607 of 618 show a share, 9 show "not applicable" (verified zero), and 2 are withheld** (2026020036 team 68 and 2026020153 team 9). 307 of the 309 games qualify for both teams. Season-to-date windows for teams 68 and 9 would be a labelled covered subset, or unknown.
+- **Smallest verified display scope:** per-game player PP time and PP share for **2026-27 regular-season team-games that pass the rules below: 607 of 618 show a share, 9 show "not applicable" (verified zero), and 2 are withheld** (2026020036 team 68 and 2026020153 team 9). 307 of the 309 games qualify for both teams. Season-to-date windows for teams 68 and 9 would be a labelled covered subset, or unknown. **After decision 152 (section 10), those two qualify on the NHL Penalty Summary: 618 of 618 pass the clock check, 609 show a share and 9 show "not applicable".**
 - **Three code gaps stood between the contract and that scope.** All three are now fixed: C3 in `a98eda63f` (11-13 release), C1 and C2 in `de4650c77` (TJ approved through the Chef, 11-13). Section 8 has the offline re-run.
   1. `buildTeamPpClock` never compares against the official total. On `octoberBranch` it would mark 5 mismatched team-games and 856 placeholder-row team-games `qualified`.
   2. The situation-code audit is stricter than the clock at stoppage events. It rejects 117 team-games that agree with the official total, 40 of them in 2026-27 regular season.
@@ -243,9 +243,37 @@ The goaltender table's PP team totals equal each summary row. The other team in 
 - Per decision 151 they **stay withheld**: the raw clock and the stored totals are unchanged, and C1 still compares against `teamGameStats`, which disagrees.
 - Releasing them needs an owner call on whether a verified Penalty Summary total can serve as the official reference, and how to record it without overwriting the raw row. That would be a repair; it isn't done here.
 
+## 10. Decision 152: the NHL Penalty Summary as the reference for the five scrum team-games
+
+TJ's decision 152 accepts the NHL HTML Penalty Summary as the official reference for these five team-games only, and only where it reconciles exactly. PP share stays withheld; no serving path changed.
+
+**Code** (`web/utils/ppPenaltySummaryRegistry.ts`, `getPowerPlayBlocks.ts`, `getPowerPlayBlocks.test.ts`):
+- The registry has one entry per team-game: 2026020036 t68, 2026020153 t9, 2025021248 t8, 2025021097 t20 and 2025030112 t6.
+- Each entry keeps the stored `teamGameStats` values, the Penalty Summary cell, decision 152, the reason, the source URL, the page's sha256 and its fetch time (UTC).
+- `buildTeamPpClock` uses an entry only when every one of these holds; otherwise the `teamGameStats` verdict stands:
+  - the stored row still reads exactly as recorded in the entry;
+  - the play-by-play is complete;
+  - the audit finds 0 disagreements;
+  - the clock equals the Penalty Summary total to the second.
+- The output now says which reference was used (`referenceSource`: `teamGameStats` or `nhlPenaltySummary`).
+- `official` still describes the stored row, which is never changed. `penaltySummary` carries the registry entry with the clock − summary difference, or null when the team-game has no entry.
+- Tests from stored fixtures cover:
+  - each of the 5 qualifies through the registry with its stored total kept, and the other team in each game stays on `teamGameStats`;
+  - a clock ±1 s off the summary keeps the old verdict;
+  - a missing or changed stored row makes the entry inapplicable;
+  - incomplete play-by-play stays withheld even when the clock equals the summary;
+  - the same plays under an unregistered game id keep the old verdict;
+  - a verified zero stays "not applicable";
+  - each registry entry's URL matches `buildNhlGameSummaryReportUrl`.
+
+**Offline re-run** (`05-compare-clock.ts` on the same stored inputs; `results/after-d152/`):
+- Exactly 5 of 3,790 team-games change, the five registered ones; nothing else moves. Qualified goes from 2,568 to 2,573.
+- 2026-27 regular season: 618 of 618 team-games pass the clock check (609 with PP time, 9 verified zero), and 309 of 309 games qualify for both teams.
+- `14-share-coverage.ts` on these results: 609 of 609 can display a share from shifts within the qualified PP intervals, with no player or unit time above the clock. 593 of 609 are consistent in the stored `powerPlayCombinations` table; the 16 that aren't are unchanged from section 9.
+
 ## Open items for the owner (Chef to route)
 
-Decided in decision 151 (2026-11-13): O1 ±2 s inclusive; O2 and O3 stay withheld; O4 read-only check done (section 9). The original wording is kept below.
+Decided in decision 151 (2026-11-13): O1 ±2 s inclusive; O2 and O3 stay withheld; O4 read-only check done (section 9). Decision 152 (2026-11-13) accepts the Penalty Summary for the five O4 team-games (section 10). The original wording is kept below.
 
 - **O1. Tolerance.** Rule 4 uses ±2 s; the two cases at 1 s are boundary rounding. The alternative is exact match only, which withholds 2 more team-games (1 of them in 2026-27).
 - **O2. Placeholder seasons.** 2025-26 has 879 team-games with real PP time but no official total. Decision 144 requires the official comparison, so they stay withheld. Qualifying them on complete PBP plus the aligned audit alone would be a new owner decision; repairing them needs a re-fetch, which is out of scope here.
@@ -270,6 +298,7 @@ node $S/compare.mjs $S/classes-2025-2027.csv $S/pbp $S/out          # → team-g
 # 14-share-coverage.ts: same build; node share.mjs <after-c1-c2/team-game-results.csv> $S/pbp $S/shifts $S/ppcombos results/normalization-status-2025-2027.csv <out>
 # 13-fetch-penalty-summaries.sh $S/o4-html  (exactly 5 nhl.com requests, 10 s apart; decision 151 only)
 # python3 -I 15-parse-penalty-summary.py $S/o4-html/GS-<gameId>.HTM
+# decision 152: rebuild compare.mjs at the registry commit, rerun into $S/out-d152, then share.mjs on it (results/after-d152)
 ```
 
 Raw PBP and shift pages stay outside the repository (about 550k and 230k rows). Only the per-team-game results and the summaries are committed in `results/`.

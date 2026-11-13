@@ -43,8 +43,16 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 - Gotcha: shift rows have no position; goalies = any shift ≥ 300 s (575 one, 32 two). Stored rows exclude goalies.
 - Files: 12–15 scripts, REPORT §9, `results/after-c1-c2/{o4-penalty-summary-check.csv, share-coverage-*}`. Raw HTML stays in scratch.
 
+## Decision 152 Part A (Penalty Summary registry)
+- Scope: accept the NHL Penalty Summary as the official reference ONLY for the 5 O4 team-games, ONLY on exact (0 s) reconciliation plus complete PBP and audit 0. Keep both values, reason, URL, sha256 and fetch time in a version-controlled registry; never overwrite the stored row; no blanket override; output says which reference was used. Owned: getPowerPlayBlocks.ts, its test, new registry module. Part B follows from the Chef.
+- Done: `web/utils/ppPenaltySummaryRegistry.ts` (5 entries); `buildTeamPpClock` adds `referenceSource` and `penaltySummary`. An entry applies only if the stored row still reads as recorded (conservative choice: a changed stored row falls back).
+- Evidence: sha256 and fetch time are the saved scratch pages' (17:15:25Z–17:16:06Z UTC); no new fetch.
+- Fixtures: 4 new stored-game subsets (same extractor; each rebuilds the full spans), 2026020036 hoisted to describe scope. The old C1 away assertion now expects `nhlPenaltySummary`; the teamGameStats-only verdict is covered by the unregistered-id and changed-row tests.
+- Checks: getPowerPlayBlocks tests 74/74; `npm run typecheck` exit 0; ESLint on the 3 files exit 0.
+- Offline re-run: exactly the 5 registered team-games change (2,568 → 2,573 qualified); 2026-27 reg 618/618, 309/309 games; share displayable 609/609 recomputed, 593/609 stored. `results/after-d152/` summaries.
+
 ## Next
-Chef routes owner items O1–O4 and code items C1, C2, C4–C7 (REPORT.md) to owning lanes. No production step from this lane.
+Wait for Part B of decision 152 from the Chef. Chef routes remaining owner and code items. No production step from this lane.
 
 ## Blockers
 None.

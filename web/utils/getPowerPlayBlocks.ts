@@ -8,6 +8,11 @@ import {
   parseSituationCode
 } from "lib/supabase/Upserts/nhlStrengthState";
 import { useEffect, useState } from "react";
+import {
+  findPpPenaltySummaryReference,
+  penaltySummarySeconds,
+  type PpPenaltySummaryReference
+} from "./ppPenaltySummaryRegistry";
 
 export type Time = {
   period: 1 | 2 | 3;
@@ -449,6 +454,12 @@ export type PpClockOfficialClass = "missing" | "malformed" | "placeholder" | "ze
  * A missing, malformed or placeholder official row never qualifies. A
  * qualified clock of 0 is a verified no-PP game: show "not applicable", never
  * 0%. Otherwise readers withhold or flag PP time and share.
+ *
+ * Decision 152: a team-game listed in ppPenaltySummaryRegistry is judged
+ * against its NHL Penalty Summary total instead, only when that total equals
+ * the clock exactly and the stored row still reads as recorded there.
+ * `referenceSource` says which total the verdict used; `official` always
+ * describes the stored teamGameStats row.
  */
 export type TeamPpClockContract = {
   gameId: number;
@@ -467,7 +478,17 @@ export type TeamPpClockContract = {
     /** Clock seconds minus official seconds; null when either is unknown. */
     diffSeconds: number | null;
   };
+  referenceSource: PpClockReferenceSource;
+  /** The decision-152 registry entry for this team-game; null when it has none. */
+  penaltySummary: {
+    reference: PpPenaltySummaryReference;
+    seconds: number | null;
+    /** Clock seconds minus Penalty Summary seconds; null when either is unknown. */
+    diffSeconds: number | null;
+  } | null;
 };
+
+export type PpClockReferenceSource = "teamGameStats" | "nhlPenaltySummary";
 
 export const PP_CLOCK_SOURCE = "fhfh-nhl-penalty-context-clock-v2";
 // Algorithm qualification is separate from each game's completeness and audit.
@@ -524,6 +545,14 @@ export function buildTeamPpClock(args: {
   official: OfficialTeamPp | null;
 }): TeamPpClockContract {
   const officialClass = classifyOfficialTeamPp(args.official);
+  const reference = findPpPenaltySummaryReference(args.gameId, args.teamId);
+  const summarySeconds = reference ? penaltySummarySeconds(reference.penaltySummary) : null;
+  const penaltySummaryFor = (clockSeconds: number | null): TeamPpClockContract["penaltySummary"] =>
+    reference && {
+      reference,
+      seconds: summarySeconds,
+      diffSeconds: clockSeconds == null || summarySeconds == null ? null : clockSeconds - summarySeconds
+    };
   if (!args.plays || args.plays.length === 0) {
     return {
       gameId: args.gameId,
@@ -533,7 +562,9 @@ export function buildTeamPpClock(args: {
       qualified: false,
       unqualifiedReason: "No play-by-play for this game.",
       audit: null,
-      official: { ...officialClass, diffSeconds: null }
+      official: { ...officialClass, diffSeconds: null },
+      referenceSource: "teamGameStats",
+      penaltySummary: penaltySummaryFor(null)
     };
   }
   const gameType = args.gameType ?? Math.floor(args.gameId / 10_000) % 100;
@@ -553,7 +584,9 @@ export function buildTeamPpClock(args: {
       source: PP_CLOCK_SOURCE, qualified: false,
       unqualifiedReason: error instanceof Error ? error.message : "Penalty clock could not be established.",
       audit: null,
-      official: { ...officialClass, diffSeconds: null }
+      official: { ...officialClass, diffSeconds: null },
+      referenceSource: "teamGameStats",
+      penaltySummary: penaltySummaryFor(null)
     };
   }
   const seconds = teamPpClockSeconds(blocks, args.teamId);
@@ -561,11 +594,22 @@ export function buildTeamPpClock(args: {
     ...officialClass,
     diffSeconds: officialClass.seconds == null ? null : seconds - officialClass.seconds
   };
-  const unqualifiedReason = !(PP_CLOCK_QUALIFIED && complete)
+  const clockChecksPass = PP_CLOCK_QUALIFIED && complete && audit.disagreements.length === 0;
+  const teamGameStatsReason = !(PP_CLOCK_QUALIFIED && complete)
     ? PP_CLOCK_UNQUALIFIED_REASON
     : audit.disagreements.length > 0
       ? `${audit.disagreements.length} event(s) disagree with the official situation codes.`
       : officialReferenceReason(official, args.official, seconds);
+  const penaltySummary = penaltySummaryFor(seconds);
+  // Decision 152: never a blanket override. Only a registered team-game whose
+  // stored row is unchanged and whose clock equals the Penalty Summary exactly.
+  const usePenaltySummary =
+    teamGameStatsReason !== null &&
+    clockChecksPass &&
+    penaltySummary?.diffSeconds === 0 &&
+    args.official?.powerPlayToi === reference?.teamGameStats.powerPlayToi &&
+    args.official?.powerPlay === reference?.teamGameStats.powerPlay;
+  const unqualifiedReason = usePenaltySummary ? null : teamGameStatsReason;
   return {
     gameId: args.gameId,
     teamId: args.teamId,
@@ -577,7 +621,9 @@ export function buildTeamPpClock(args: {
       checkedEvents: audit.checkedEvents,
       disagreements: audit.disagreements.length
     },
-    official
+    official,
+    referenceSource: usePenaltySummary ? "nhlPenaltySummary" : "teamGameStats",
+    penaltySummary
   };
 }
 
