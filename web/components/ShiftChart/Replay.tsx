@@ -38,10 +38,12 @@ const MatrixPanel = memo(function MatrixPanel({
   mode: Mode;
   onModeChanged: (mode: Mode) => void;
 }) {
-  const data = useMemo(() => matrixData(game, mode), [game, mode]);
-  const teams = useMemo(() => [game.home, game.away], [game]);
-  // Decision 152: while PP share is served, PP mode shows only teams whose stored clock is available and matches.
+  // Decision 152: while PP share is served, PP mode uses the qualified clock and shows only teams whose stored
+  // clock is available and matches it.
   const ppGate = usePpTeamGameClocks([game.id], mode === "pp-toi");
+  const servedPpClock = ppGate.status === "on";
+  const data = useMemo(() => matrixData(game, mode, servedPpClock), [game, mode, servedPpClock]);
+  const teams = useMemo(() => [game.home, game.away], [game]);
   const livePpSeconds = useMemo(() => ppSecondsByTeam(game), [game]);
   const ppVerdicts = ppModeVerdicts(ppGate, game.id, teams, livePpSeconds);
   return (

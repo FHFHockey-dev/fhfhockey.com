@@ -35,6 +35,11 @@ export type Game = {
   axisDuration: number;
   events: ReplayEvent[];
   powerPlays: PowerPlay[];
+  /**
+   * Decision 152: the same penalty clock the stored calculation qualifies (all play fields, this game's own home
+   * and away teams). Used only while PP share is served; null when it can't be built. `powerPlays` is unchanged.
+   */
+  qualifiedPowerPlays: PowerPlay[] | null;
   shootout: boolean;
 };
 export type ScheduleGame = {
@@ -52,6 +57,10 @@ type Play = {
   timeInPeriod: string;
   periodDescriptor: { number: number; periodType: string };
   details: JsonObject;
+  /** Kept for the decision-152 qualified clock only; today's power plays never see them. */
+  situationCode?: string;
+  timeRemaining?: string;
+  sortOrder?: number;
 };
 
 export class UnavailableGameError extends Error {
@@ -125,6 +134,9 @@ function readPlay(value: unknown): Play {
       periodType: text(descriptor.periodType, "period type"),
     },
     details: play.details == null ? {} : object(play.details, "event details"),
+    ...(typeof play.situationCode === "string" ? { situationCode: play.situationCode } : {}),
+    ...(typeof play.timeRemaining === "string" ? { timeRemaining: play.timeRemaining } : {}),
+    ...(typeof play.sortOrder === "number" ? { sortOrder: play.sortOrder } : {}),
   };
 }
 
@@ -273,24 +285,47 @@ export function normalizeGame(
       "Shift data is incomplete for a player with a recorded goal or shot.",
       date,
     );
+  const toPowerPlays = (blocks: ReturnType<typeof getPowerPlayBlocks>) => {
+    const result: PowerPlay[] = [];
+    for (const block of blocks) {
+      const startPeriod = periodMap.get(block.start.period);
+      const endPeriod = periodMap.get(block.end.period);
+      if (!startPeriod) continue;
+      const start = startPeriod.start + seconds(block.start.timeInPeriod);
+      const end = Math.min(
+        duration,
+        endPeriod ? endPeriod.start + seconds(block.end.timeInPeriod) : duration,
+      );
+      if (end > start && (block.teamId === home.id || block.teamId === away.id))
+        result.push({ start, end, teamId: block.teamId });
+    }
+    return result;
+  };
+  const physicalPlays = plays.filter((p) => p.periodDescriptor.periodType !== "SO");
   // Keep the existing penalty interpretation, adapting its legacy period field at the boundary.
-  const blocks = getPowerPlayBlocks(
-    plays
-      .filter((p) => p.periodDescriptor.periodType !== "SO")
-      .map((p) => ({ ...p, period: p.periodDescriptor.number })),
+  const powerPlays = toPowerPlays(
+    getPowerPlayBlocks(
+      physicalPlays.map((p) => ({
+        eventId: p.eventId,
+        typeDescKey: p.typeDescKey,
+        timeInPeriod: p.timeInPeriod,
+        periodDescriptor: p.periodDescriptor,
+        details: p.details,
+        period: p.periodDescriptor.number,
+      })),
+    ),
   );
-  const powerPlays: PowerPlay[] = [];
-  for (const block of blocks) {
-    const startPeriod = periodMap.get(block.start.period);
-    const endPeriod = periodMap.get(block.end.period);
-    if (!startPeriod) continue;
-    const start = startPeriod.start + seconds(block.start.timeInPeriod);
-    const end = Math.min(
-      duration,
-      endPeriod ? endPeriod.start + seconds(block.end.timeInPeriod) : duration,
+  let qualifiedPowerPlays: PowerPlay[] | null = null;
+  try {
+    qualifiedPowerPlays = toPowerPlays(
+      getPowerPlayBlocks(physicalPlays, {
+        homeTeamId: home.id,
+        awayTeamId: away.id,
+        gameType: typeof box.gameType === "number" ? box.gameType : 2,
+      }),
     );
-    if (end > start && (block.teamId === home.id || block.teamId === away.id))
-      powerPlays.push({ start, end, teamId: block.teamId });
+  } catch {
+    qualifiedPowerPlays = null;
   }
   return {
     id: number(box.id, "game ID"),
@@ -303,6 +338,7 @@ export function normalizeGame(
     axisDuration,
     events,
     powerPlays,
+    qualifiedPowerPlays,
     shootout,
   };
 }
@@ -390,18 +426,21 @@ function overlap(a: Interval[], b: Interval[]): Interval[] {
  * matrix shows only when this equals the stored qualified clock.
  */
 export function ppSecondsByTeam(game: Game): Record<number, number> {
+  if (!game.qualifiedPowerPlays) return {};
+  const powerPlays = game.qualifiedPowerPlays;
   return Object.fromEntries(
     [game.home, game.away].map((team) => [
       team.id,
-      mergeIntervals(game.powerPlays.filter((p) => p.teamId === team.id)).reduce(
+      mergeIntervals(powerPlays.filter((p) => p.teamId === team.id)).reduce(
         (sum, interval) => sum + interval.end - interval.start,
         0,
       ),
     ]),
   );
 }
-// Same shared-seconds measure as the standalone matrix, using pre-normalized intervals.
-export function matrixData(game: Game, mode: Mode) {
+// Same shared-seconds measure as the standalone matrix, using pre-normalized intervals. While PP share is served
+// (decision 152), PP mode uses the qualified clock's intervals.
+export function matrixData(game: Game, mode: Mode, servedPpClock = false) {
   const rosters: Record<number, PlayerData[]> = {};
   const toi: Record<number, TOIData[]> = {};
   for (const team of [game.home, game.away]) {
@@ -411,7 +450,9 @@ export function matrixData(game: Game, mode: Mode) {
     rosters[team.id] = players;
     toi[team.id] = [];
     const pp = mergeIntervals(
-      game.powerPlays.filter((p) => p.teamId === team.id),
+      (servedPpClock ? game.qualifiedPowerPlays ?? [] : game.powerPlays).filter(
+        (p) => p.teamId === team.id,
+      ),
     );
     for (let i = 0; i < players.length; i++) {
       for (let j = i; j < players.length; j++) {

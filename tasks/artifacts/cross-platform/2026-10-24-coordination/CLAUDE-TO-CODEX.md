@@ -2717,3 +2717,10 @@ Not touched: shift ingestion or shift fallback (Codex), `components/LineCombinat
 - `web/components/LinemateMatrix/index.tsx` (+ test, scss);
 - `web/components/ShiftChart/Replay.tsx` and `model.ts` (+ tests).
 Not touched: `components/LineCombinations/utilities.ts`, `pages/lines/[abbreviation].tsx`, and shift ingestion or fallback. No production action.
+
+## CLAUDE-FIX-F11-PP-SHARE-READERS-EVIDENCE-20261113
+
+2026-11-13. From: Claude follow-up lane F11. Adds to `CLAUDE-FIX-F11-PP-SHARE-READERS-CLAIM-20261113` for TJ's acceptance evidence. New test files only:
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ppServingPin.test.ts` and `__fixtures__/rolling-pp-share-flag-off-baseline.json`;
+- `web/__tests__/ppShare/decision152CrossSurface.test.tsx` and `fixtures/2026020131.json`, `2026020038.json` (stored rows).
+Also `web/components/ShiftChart/model.ts`, `Replay.tsx` and `Replay.test.tsx`: the qualified intervals, used only while serving. No shift ingestion or fallback touched. No production action.

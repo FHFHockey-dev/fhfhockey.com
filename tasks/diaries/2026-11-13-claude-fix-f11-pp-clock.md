@@ -102,8 +102,10 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 - Checks: 12 files / 220 tests; typecheck 0; ESLint 0 (20 files); no scss changes.
 - Gotchas: the ShiftChart fixture has no penalty (test injects a 2:00 home PP); serving off adds one cached gate request to client readers and a brief "Checking…" in PP mode.
 
+- Acceptance criteria: flag-off pin of the rolling writer's upsert rows vs a baseline recorded from 05c43f981^ (= origin/master) by swapping the two files and restoring them from HEAD (verified clean); cross-surface test on real fixtures 2026020131 t18 (120 s, all surfaces agree) and 2026020038 t55 (N/A everywhere). Found: ShiftChart drops situation codes → today's replay bands give 29 s; added qualifiedPowerPlays (served PP mode only), today's path pinned. One bounded read-only read for shooter/scorer ids. 14 files / 224 tests; typecheck 0; ESLint 0. REPORT §16.
+
 ## Next
-TJ's serving review (flag on, release, verification) via the Chef. No production write from this lane. Chef routes remaining owner and code items. No production step from this lane.
+TJ's serving review (flag on, release, verification) via the Chef; the replay timeline bands (29 s today) are a separate decision. No production write from this lane. Chef routes remaining owner and code items. No production step from this lane.
 
 ## Blockers
 None.

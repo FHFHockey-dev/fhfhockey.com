@@ -621,6 +621,49 @@ According to the Chef, the refresh is done: 31 of 31 batches matched `db94a9de`,
 
 **Not done:** turning serving on in production, a release, and any check of real served pages. That is TJ's serving review.
 
+## 16. Decision 152: serving-review evidence for the reader gates (TJ's acceptance criteria)
+
+**1. Serving off leaves the rolling writer's stored output unchanged, field for field.**
+- `fetchRollingPlayerAverages.ppServingPin.test.ts` runs the writer's real `main` in dry-run mode over a fixture window: one player, six games, every clock outcome, PP rows present. It captures the 60 rows it would upsert (ranking and support).
+- The baseline, `__fixtures__/rolling-pp-share-flag-off-baseline.json`, was recorded by running the same harness against the writer before the gates. Both files at `05c43f981^` are identical to `origin/master`.
+- **Serving off:** the rows equal the baseline exactly, and `pp_team_game_clock` is never read.
+- **Serving on:** the only changed leaves, nested support payloads included, are `pp_share_pct` fields.
+- No other writer was touched in the reader-gate work.
+
+**2a. Qualified team-game 2026020131, team 18 (`decision152CrossSurface.test.tsx`)**
+- This uses real stored rows: full PBP, the 743 type-517 shift rows, roster spots and official totals from the read-only export, plus shooter and scorer ids from one bounded read-only read.
+- The stored rows themselves come from the decision-152 writer run on those same inputs.
+- Every surface, with serving on:
+
+| Surface | Clock | Per-player PP seconds | What it shows |
+|---|---|---|---|
+| Stored calculation (`powerPlayCombinations`) | 120 s, available, `teamGameStats` | PP1: 8475158 112, 8474564 111, 8476539 110, 8474600 110, 8476887 109. PP2: 8476869 11, 8480246 10, 8477021 10, 8484241 9, 8479525 8. | share = PPTOI / 120: 0.933333, 0.925, 0.916667, 0.916667, 0.908333, then 0.091667, 0.083333, 0.083333, 0.075, 0.066667 |
+| `/api/toi` | 120 s | the same seconds (PP minutes × 60) | the same shares as %: 93.33, 92.50, 91.67, 91.67, 90.83, 9.17, 8.33, 8.33, 7.50, 6.67; status available |
+| LinemateMatrix PP mode | live 120 s = stored 120 s, available | the same seconds (matrix diagonal) | the team-18 grid; PP1 average 110.4 s, PP2 9.6 s, a 92.0% / 8.0% split |
+| Shift chart model (served) | qualified 120 s = stored, available | the same seconds | the same grid |
+| Lines PowerPlayCombos | available | not shown (the stored PPTOI only orders players) | PP1 = 8474564, 8474600, 8475158, 8476539, 8476887; PP2 = the other five |
+
+- **Finding: the shift chart's PP bands are wrong today.**
+  - The replay's play parser drops situation codes, so its power-play bands give team 18 **29 s**, the 11-01 clock's wrong value. This is production behaviour today, and serving off keeps it (pinned).
+  - With serving on, the PP-mode matrix uses a new qualified set of intervals: the same clock as the stored calculation, with the game's own teams. That set gives 120 s.
+  - The timeline's PP bands still use today's intervals even with serving on. Switching them is a separate decision.
+
+**2b. Zero-PP team-game 2026020038, team 55** (official "00:00", "0/0")
+
+| Surface | What it shows |
+|---|---|
+| Stored calculation | not applicable, clock 0, no player rows |
+| `/api/toi` | share null and status `not_applicable` for every team-55 skater; PP minutes 0, which is the team's actual PP time, not a share |
+| LinemateMatrix PP mode | "Team 55: N/A: no power play in this game.", with no 0.0% cell |
+| Shift chart | "(team): N/A: no power play in this game." |
+| Lines PowerPlayCombos | "N/A: no power play in this game.", with no units |
+
+No surface shows 0% as a share. Both live views also compute 0 s for team 55.
+
+**3.** No shift ingestion or shift-fallback code is touched. Every surface reads stored shift rows only, put into the live feed's shape inside the test.
+
+**Checks:** 14 files, 224 tests (the 220 earlier plus the pin 2 and cross-surface 2); typecheck exit 0; ESLint exit 0. No `.module.scss` changed.
+
 ## Open items for the owner (Chef to route)
 
 Decided in decision 151 (2026-11-13): O1 ±2 s inclusive; O2 and O3 stay withheld; O4 read-only check done (section 9). Decision 152 (2026-11-13) accepts the Penalty Summary for the five O4 team-games (section 10). The original wording is kept below.

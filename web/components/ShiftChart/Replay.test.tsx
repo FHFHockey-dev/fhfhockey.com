@@ -57,7 +57,8 @@ it("decision 152: in PP mode, shows a team's matrix only when its stored clock i
   const normalized = model.normalizeGame(f.box, f.shifts, f.pbp);
   // The fixture has no penalty, so give the home team one 2:00 power play; it gets an available, matching clock and
   // the away team an unavailable one.
-  const game = { ...normalized, powerPlays: [{ start: 100, end: 220, teamId: normalized.home.id }] };
+  const homePp = [{ start: 100, end: 220, teamId: normalized.home.id }];
+  const game = { ...normalized, powerPlays: homePp, qualifiedPowerPlays: homePp };
   const live = model.ppSecondsByTeam(game);
   const [ppTeam, other] = [game.home, game.away];
   expect(live).toEqual({ [game.home.id]: 120, [game.away.id]: 0 });
