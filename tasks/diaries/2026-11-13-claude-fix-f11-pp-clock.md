@@ -26,6 +26,15 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 - Checks: getPowerPlayBlocks + shifts tests 113/113 passed; 5 downstream suites 99/99 passed; ESLint on both files exit 0; `npm run typecheck` exit 2, all 6 errors in another lane's uncommitted `lib/rosterScheduleData/forgeDailyBridge*` (none in F11 files).
 - C1/C2, `PP_CLOCK_QUALIFIED` and serving are unchanged.
 
+## C1 + C2 follow-up (Chef, TJ approved 11-13)
+- Scope: `buildTeamPpClock` qualified also needs the official team PP total (±2 s, rule 4 / O1 open), false for missing, malformed or "00:00" placeholder rows (C1); `auditPpBlocksAgainstSituationCodes` skips the same observations as the clock (C2). Fixture tests must fail on the old code. Re-run 05 offline from scratch PBP; report qualified counts per class.
+- Owns `web/utils/getPowerPlayBlocks.ts`, `penaltyClock.ts` and their tests. `PP_CLOCK_QUALIFIED` and serving stay unchanged; O1–O4 stay open. No callers outside the test file (checked with rg).
+- Done: `de4650c77` (code + tests). C2 audit skips the clock's refused observations; C1 `official` input, `official: { class, seconds, diffSeconds }` output, ±2 s (`PP_CLOCK_OFFICIAL_TOLERANCE_SECONDS`), reason per case.
+- Fixtures: subsets of stored games (penalties, goals, markers, old-audit flags, one interior event per span); each rebuilds the full game's spans. 16 new or changed tests fail on HEAD~ module (checked with temp copies, deleted).
+- Re-run (offline, scratch PBP): `results/after-c1-c2/`. Mismatches 0/5 and placeholders 0/883 qualified; shipped audit = aligned audit, 0 disagreements on 3,456 clocks; 2026-27 reg 616/618; +117 recovered by C2, +8 by C3.
+- Checks: getPowerPlayBlocks + update-power-play-combinations + projections/ingest 205/205 passed; ESLint exit 0; `npm run typecheck` exit 0.
+- Gotcha: two existing counts drop (checkedEvents 3→2 and 6→5) because period-end codes are no longer checked; expected C2 effect.
+
 ## Next
 Chef routes owner items O1–O4 and code items C1, C2, C4–C7 (REPORT.md) to owning lanes. No production step from this lane.
 

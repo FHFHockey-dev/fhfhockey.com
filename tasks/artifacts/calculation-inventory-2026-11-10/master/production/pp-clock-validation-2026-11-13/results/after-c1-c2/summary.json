@@ -1,0 +1,363 @@
+{
+  "source": "fhfh-nhl-penalty-context-clock-v2",
+  "algorithmQualifiedFlag": true,
+  "games": 1895,
+  "teamGames": 3790,
+  "verdictByClass": {
+    "all": {
+      "placeholder_00": {
+        "teamGames": 907,
+        "qualified": 0,
+        "reasons": {
+          "No play-by-play for this game.": 22,
+          "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"…\", powerPlay \"…\").": 879,
+          "Penalty-clock disagrees with PBP manpower at game second N": 2,
+          "Complete final NHL play-by-play is required to qualify PP time.": 4
+        }
+      },
+      "nonzero": {
+        "teamGames": 2767,
+        "qualified": 2503,
+        "reasons": {
+          "No play-by-play for this game.": 249,
+          "Penalty-clock disagrees with PBP manpower at game second N": 10,
+          "The clock differs from the official team PP total by N s (clock X s, official Y s).": 5
+        }
+      },
+      "zero_unverified": {
+        "teamGames": 70,
+        "qualified": 65,
+        "reasons": {
+          "No play-by-play for this game.": 5
+        }
+      },
+      "missing_row": {
+        "teamGames": 46,
+        "qualified": 0,
+        "reasons": {
+          "No play-by-play for this game.": 46
+        }
+      }
+    },
+    "20252026|1": {
+      "placeholder_00": {
+        "teamGames": 18,
+        "qualified": 0,
+        "reasons": {
+          "No play-by-play for this game.": 18
+        }
+      },
+      "nonzero": {
+        "teamGames": 186,
+        "qualified": 0,
+        "reasons": {
+          "No play-by-play for this game.": 186
+        }
+      },
+      "zero_unverified": {
+        "teamGames": 4,
+        "qualified": 0,
+        "reasons": {
+          "No play-by-play for this game.": 4
+        }
+      }
+    },
+    "20252026|2": {
+      "nonzero": {
+        "teamGames": 1691,
+        "qualified": 1681,
+        "reasons": {
+          "Penalty-clock disagrees with PBP manpower at game second N": 8,
+          "The clock differs from the official team PP total by N s (clock X s, official Y s).": 2
+        }
+      },
+      "zero_unverified": {
+        "teamGames": 52,
+        "qualified": 52,
+        "reasons": {}
+      },
+      "placeholder_00": {
+        "teamGames": 881,
+        "qualified": 0,
+        "reasons": {
+          "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"…\", powerPlay \"…\").": 879,
+          "Penalty-clock disagrees with PBP manpower at game second N": 2
+        }
+      }
+    },
+    "20252026|3": {
+      "nonzero": {
+        "teamGames": 162,
+        "qualified": 161,
+        "reasons": {
+          "The clock differs from the official team PP total by N s (clock X s, official Y s).": 1
+        }
+      },
+      "zero_unverified": {
+        "teamGames": 2,
+        "qualified": 2,
+        "reasons": {}
+      },
+      "missing_row": {
+        "teamGames": 46,
+        "qualified": 0,
+        "reasons": {
+          "No play-by-play for this game.": 46
+        }
+      }
+    },
+    "20262027|1": {
+      "nonzero": {
+        "teamGames": 119,
+        "qualified": 54,
+        "reasons": {
+          "No play-by-play for this game.": 63,
+          "Penalty-clock disagrees with PBP manpower at game second N": 2
+        }
+      },
+      "placeholder_00": {
+        "teamGames": 8,
+        "qualified": 0,
+        "reasons": {
+          "No play-by-play for this game.": 4,
+          "Complete final NHL play-by-play is required to qualify PP time.": 4
+        }
+      },
+      "zero_unverified": {
+        "teamGames": 3,
+        "qualified": 2,
+        "reasons": {
+          "No play-by-play for this game.": 1
+        }
+      }
+    },
+    "20262027|2": {
+      "nonzero": {
+        "teamGames": 609,
+        "qualified": 607,
+        "reasons": {
+          "The clock differs from the official team PP total by N s (clock X s, official Y s).": 2
+        }
+      },
+      "zero_unverified": {
+        "teamGames": 9,
+        "qualified": 9,
+        "reasons": {}
+      }
+    }
+  },
+  "qualifiedByValidation": {
+    "no_pbp": {
+      "teamGames": 276,
+      "qualified": 0
+    },
+    "match": {
+      "teamGames": 2501,
+      "qualified": 2501
+    },
+    "verified_no_pp": {
+      "teamGames": 65,
+      "qualified": 65
+    },
+    "clock_error": {
+      "teamGames": 12,
+      "qualified": 0
+    },
+    "within_2s": {
+      "teamGames": 2,
+      "qualified": 2
+    },
+    "official_placeholder_confirmed": {
+      "teamGames": 883,
+      "qualified": 0
+    },
+    "mismatch": {
+      "teamGames": 5,
+      "qualified": 0
+    },
+    "missing_official": {
+      "teamGames": 46,
+      "qualified": 0
+    }
+  },
+  "auditCrossCheck": {
+    "builtClocks": 3456,
+    "shippedAuditDisagreeingTeamGames": 0,
+    "shippedDiffersFromAligned": 0
+  },
+  "bySeasonType": {
+    "20252026|1": {
+      "no_pbp": 208
+    },
+    "20252026|2": {
+      "match": 1680,
+      "clock_qualified": 1733,
+      "clock_qualified_aligned": 2614,
+      "verified_no_pp": 52,
+      "clock_error": 10,
+      "within_2s": 1,
+      "official_placeholder_confirmed": 879,
+      "clock_unqualified": 881,
+      "mismatch": 2
+    },
+    "20252026|3": {
+      "match": 161,
+      "clock_qualified": 163,
+      "clock_qualified_aligned": 164,
+      "mismatch": 1,
+      "clock_unqualified": 1,
+      "verified_no_pp": 2,
+      "missing_official": 46
+    },
+    "20262027|1": {
+      "match": 54,
+      "clock_qualified": 56,
+      "clock_qualified_aligned": 56,
+      "no_pbp": 68,
+      "official_placeholder_confirmed": 4,
+      "clock_unqualified": 4,
+      "clock_error": 2,
+      "verified_no_pp": 2
+    },
+    "20262027|2": {
+      "match": 606,
+      "clock_qualified": 616,
+      "clock_qualified_aligned": 618,
+      "mismatch": 2,
+      "clock_unqualified": 2,
+      "verified_no_pp": 9,
+      "within_2s": 1
+    }
+  },
+  "unqualifiedReasons": {
+    "No play-by-play for this game.": 322,
+    "Penalty-clock disagrees with PBP manpower at game second N": 12,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"3/3\").": 3,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"0/3\").": 129,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"1/2\").": 89,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"0/4\").": 51,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"0/2\").": 171,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"1/5\").": 28,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"0/1\").": 97,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"1/4\").": 62,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"1/3\").": 91,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"2/4\").": 29,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"2/6\").": 12,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"0/5\").": 19,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"1/6\").": 10,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"1/8\").": 1,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"2/3\").": 30,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"2/5\").": 13,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"3/4\").": 6,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"4/6\").": 1,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"0/6\").": 2,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"1/1\").": 20,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"2/2\").": 5,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"4/5\").": 1,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"1/7\").": 4,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"2/7\").": 1,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"2/8\").": 1,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"3/8\").": 1,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"4/7\").": 1,
+    "The official team PP time is a legacy \"00:00\" placeholder (powerPlayToi \"00:00\", powerPlay \"3/7\").": 1,
+    "The clock differs from the official team PP total by +31 s (clock 595 s, official 564 s).": 1,
+    "The clock differs from the official team PP total by +94 s (clock 840 s, official 746 s).": 1,
+    "The clock differs from the official team PP total by -120 s (clock 492 s, official 612 s).": 1,
+    "Complete final NHL play-by-play is required to qualify PP time.": 4,
+    "The clock differs from the official team PP total by +28 s (clock 148 s, official 120 s).": 1,
+    "The clock differs from the official team PP total by -120 s (clock 626 s, official 746 s).": 1
+  },
+  "diffHistogram": {
+    "0": 2501,
+    "±1-2": 2,
+    "+11-60": 2,
+    "+61+": 1,
+    "-61+": 2
+  },
+  "byFeature": {
+    "coincident": {
+      "n": 1126,
+      "match": 1121,
+      "within2": 1,
+      "mismatch": 4,
+      "absDiff": 363
+    },
+    "major": {
+      "n": 540,
+      "match": 534,
+      "within2": 1,
+      "mismatch": 5,
+      "absDiff": 394
+    },
+    "goalEndsPp": {
+      "n": 1798,
+      "match": 1793,
+      "within2": 1,
+      "mismatch": 4,
+      "absDiff": 300
+    },
+    "all": {
+      "n": 2508,
+      "match": 2501,
+      "within2": 2,
+      "mismatch": 5,
+      "absDiff": 395
+    },
+    "expiryAcrossPeriod": {
+      "n": 932,
+      "match": 929,
+      "within2": 0,
+      "mismatch": 3,
+      "absDiff": 268
+    },
+    "fiveOnThree": {
+      "n": 458,
+      "match": 456,
+      "within2": 0,
+      "mismatch": 2,
+      "absDiff": 151
+    },
+    "pulledGoalieInPp": {
+      "n": 348,
+      "match": 345,
+      "within2": 2,
+      "mismatch": 1,
+      "absDiff": 122
+    },
+    "none": {
+      "n": 174,
+      "match": 174,
+      "within2": 0,
+      "mismatch": 0,
+      "absDiff": 0
+    },
+    "overtimePp": {
+      "n": 172,
+      "match": 172,
+      "within2": 0,
+      "mismatch": 0,
+      "absDiff": 0
+    },
+    "shootout": {
+      "n": 207,
+      "match": 207,
+      "within2": 0,
+      "mismatch": 0,
+      "absDiff": 0
+    },
+    "ppEndsAtGameEnd": {
+      "n": 345,
+      "match": 343,
+      "within2": 0,
+      "mismatch": 2,
+      "absDiff": 148
+    },
+    "doubleMinor": {
+      "n": 208,
+      "match": 207,
+      "within2": 0,
+      "mismatch": 1,
+      "absDiff": 94
+    }
+  }
+}
