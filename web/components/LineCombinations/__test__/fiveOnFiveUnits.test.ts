@@ -111,7 +111,7 @@ describe("aggregateObservedUnits", () => {
     expect(buildFiveOnFiveLines([row({ coverage_status: "source_gap" })])).toBeNull();
   });
 
-  it("stays off until the team_unit_toi rebuild is approved", () => {
-    expect(LINES_FIVE_ON_FIVE_ENABLED).toBe(false);
+  it("is switched on: Lines serves observed 5v5 units (decisions 107 and 137)", () => {
+    expect(LINES_FIVE_ON_FIVE_ENABLED).toBe(true);
   });
 });
