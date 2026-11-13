@@ -1,0 +1,83 @@
+{
+  "playerId": "8478446",
+  "seasonId": "20202021",
+  "gameLog": [
+    {
+      "gameDate": "2021-05-13",
+      "gameId": 2020020647,
+      "teamAbbrev": "CGY",
+      "opponentAbbrev": "VAN",
+      "homeRoadFlag": "H",
+      "toi": "8:47",
+      "goals": 0,
+      "assists": 0,
+      "shots": 0
+    },
+    {
+      "gameDate": "2021-05-09",
+      "gameId": 2020020720,
+      "teamAbbrev": "CGY",
+      "opponentAbbrev": "OTT",
+      "homeRoadFlag": "H",
+      "toi": "11:13",
+      "goals": 0,
+      "assists": 1,
+      "shots": 1
+    },
+    {
+      "gameDate": "2021-02-27",
+      "gameId": 2020020333,
+      "teamAbbrev": "CGY",
+      "opponentAbbrev": "OTT",
+      "homeRoadFlag": "R",
+      "toi": "5:10",
+      "goals": 0,
+      "assists": 0,
+      "shots": 0
+    },
+    {
+      "gameDate": "2021-02-25",
+      "gameId": 2020020318,
+      "teamAbbrev": "CGY",
+      "opponentAbbrev": "OTT",
+      "homeRoadFlag": "R",
+      "toi": "10:47",
+      "goals": 0,
+      "assists": 0,
+      "shots": 0
+    },
+    {
+      "gameDate": "2021-02-24",
+      "gameId": 2020020310,
+      "teamAbbrev": "CGY",
+      "opponentAbbrev": "TOR",
+      "homeRoadFlag": "R",
+      "toi": "4:11",
+      "goals": 0,
+      "assists": 0,
+      "shots": 0
+    },
+    {
+      "gameDate": "2021-02-22",
+      "gameId": 2020020298,
+      "teamAbbrev": "CGY",
+      "opponentAbbrev": "TOR",
+      "homeRoadFlag": "R",
+      "toi": "2:16",
+      "goals": 0,
+      "assists": 0,
+      "shots": 0
+    },
+    {
+      "gameDate": "2021-02-20",
+      "gameId": 2020020285,
+      "teamAbbrev": "CGY",
+      "opponentAbbrev": "EDM",
+      "homeRoadFlag": "R",
+      "toi": "6:04",
+      "goals": 0,
+      "assists": 0,
+      "shots": 0
+    }
+  ]
+}

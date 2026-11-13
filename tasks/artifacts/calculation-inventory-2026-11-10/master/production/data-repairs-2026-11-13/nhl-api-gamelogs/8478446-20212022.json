@@ -1,0 +1,28 @@
+{
+  "playerId": "8478446",
+  "seasonId": "20212022",
+  "gameLog": [
+    {
+      "gameDate": "2021-10-18",
+      "gameId": 2021020037,
+      "teamAbbrev": "CGY",
+      "opponentAbbrev": "ANA",
+      "homeRoadFlag": "H",
+      "toi": "10:21",
+      "goals": 0,
+      "assists": 0,
+      "shots": 1
+    },
+    {
+      "gameDate": "2021-10-16",
+      "gameId": 2021020031,
+      "teamAbbrev": "CGY",
+      "opponentAbbrev": "EDM",
+      "homeRoadFlag": "R",
+      "toi": "8:08",
+      "goals": 0,
+      "assists": 0,
+      "shots": 2
+    }
+  ]
+}
