@@ -184,8 +184,13 @@ At `496ab3766`, `update-team-power-ratings.ts`:
 ## 6. The runner's checks (fail closed; Astra #434 P1 rebuild gate)
 Nothing is written before step 6. Steps 1–5 are also the whole `--preflight`.
 
-1. **Cron window and DB guard.**
-   - Outside 08:00–08:20, 09:25–11:00 and 11:15–11:40 UTC, else stop 4.
+1. **Cron windows and DB guard** (§9 has the evidence).
+   - **Live cron check:** `cron.job` 283 must still be `15 10 * * *` and active, with no run in progress. No other active job may mention the table or route (commands are filtered in the database and never selected). Else stop 4.
+   - **Start margin (25 min):** the runner refuses to start inside a guard window or within 25 minutes of one, and checks again right before the pre-run snapshot.
+   - **Call margin (15 min), via `write_gate()`:** right before every mutating call the runner stops 4 (resumable) if a window is within 15 minutes. It checks before the DB guard and **again after the guard returns**, because the guard can sleep up to 120 s (Astra #435 P2). A run that is allowed to start finishes (about 8 minutes) before the call margin begins.
+     - 08:00–08:20 UTC (03:00–03:20 ET)
+     - 09:25–11:00 UTC (04:25–06:00 ET)
+     - 11:15–11:40 UTC (06:15–06:40 ET)
    - At most 5 active queries, none older than 10 s, no Lock/IO waits; 3 checks 60 s apart, then stop 3.
    - The guard runs again before every request to the route.
 2. **Backup, always verified** (never trusted because the file exists).
@@ -199,9 +204,16 @@ Nothing is written before step 6. Steps 1–5 are also the whole `--preflight`.
    - every manifest row equals the live 2026-09-28 row: `legacy_unversioned`, source 2026-08-29, and all 17 copied columns within 1e-9;
    - the 09-28 snapshot still has 32 rows.
 4. **The live route is bound to v4 without a write.**
+   - **Deployment gate, before any request to the writer:**
+     - The latest successful GitHub deployment of "Production – fhfhockey" must be a commit in master's history (GitHub compare: `identical` or `ahead`).
+     - The writer source at that commit must contain the dry-run code from `2bf3c1d26`: the v4 string, `getRequestFlag(req, "dryRun")`, the no-write branch and `skipAuditWhenNoOp`.
+     - Releases are squash-merged, so the gate checks the source rather than whether `2bf3c1d26` is in master's history.
+     - Otherwise it stops 7. The old writer, which audits every call, is never reached.
+     - These are read-only `gh api` calls; if `gh` fails, the gate fails closed.
+     - With a localhost base, the working-tree source is checked instead.
    - **Probe:** `?date=2000-01-01&dryRun=true`. Nothing is stored or logged by NST anywhere near that date (the table starts 2025-10-07), so even a writer without a dry-run mode writes no rating.
      - The response must say `dryRun: true`, v4, `totalUpserts: 0` and `wouldUpsert: 0`, else stop 7.
-     - On the current production writer (`496ab3766`, no dry-run mode) the probe stops here. That writer would add one `cron_job_audit` row, since it audits every call.
+     - The probe is reached only after the deployment gate passes. On the dry-run writer, a successful dry run leaves no `cron_job_audit` row.
    - **Dry runs** of the first date to write (09-29) and of 2026-11-12. Each must be a one-day, no-write run (`processedDays 1`, `totalUpserts 0`, `wouldUpsert 32`) whose rows pass the per-date check below. 2026-11-12 must also match PLAN §3's local sample (goalie and offense, ±0.05). Else stop 6.
 5. **Served API, version-aware.** `GET /api/team-ratings?date=<first date>` is what the card, the terminal and the landing read. It must return 32 rows, each with `calculationVersion` and `sourceThroughDate`. Every served value must equal the database (ratings, trend10, version, source date). Else stop 6.
    - This requires F16's reader change in production. Until then the runner stops here.
@@ -234,7 +246,7 @@ Nothing is written before step 6. Steps 1–5 are also the whole `--preflight`.
 - **Expected exceptions:** the 47 manifest rows and nothing else.
 
 **Expected stops before approval:**
-- 7, while production lacks the dry-run writer.
+- 7 at the deployment gate, while production lacks the dry-run writer (tested 16:31Z: deployment `496ab3766`, three markers missing, no request sent).
 - 6 at step 5, while production lacks F16's version-aware reader.
 
 ## 7. Round 3 commit (`fc9718365`)
@@ -266,14 +278,76 @@ Nothing is written before step 6. Steps 1–5 are also the whole `--preflight`.
     - one manifest value changed → stop 6 before any request;
     - one sample value changed → stop 6 at the 11-12 dry run, nothing written;
     - a localhost base without `--preflight` → refused.
+  - **Local server isolation:**
+    - The server was started as `PLAYWRIGHT_ISOLATED_NEXT=1 npx next dev -H 127.0.0.1 -p 3108`, so its build output went to `web/.next-playwright` (last written 16:26Z), not your `.next`.
+    - It was stopped by exact PIDs 93078 (`next-server`) and 93077 (`next dev`), and port 3108 is closed.
+    - Your :3000 server (PID 88877) was never touched and is still running.
+  - **Deployment gate (16:31Z, scratch copies with the probe replaced by an exit and HTTP blocked):**
+    - Production base: the gate found deployment `496ab3766` (in master's history) missing three dry-run markers and stopped 7. No request was sent.
+    - Localhost base: the working tree passed and reached the disabled probe.
+    - The passing GitHub-side path can't be tested until a deployment contains the dry-run writer.
   - **Not tested:** the write loop, the post-write readback and the final served readback. They need writes, which wait for TJ's approval. They reuse the per-date check and served comparison tested above.
+
+## 9. Cron 283 timing and guard windows (read-only, 2026-11-13 16:30Z)
+**`cron.job`** (jobid, jobname, schedule and active only; the command column was never selected):
+
+| jobid | jobname | schedule (UTC) | active |
+|---|---|---|---|
+| 283 | update-team-power-ratings | `15 10 * * *` | yes |
+
+**Next run:** 2026-11-14 10:15 UTC = 05:15 ET. ET is UTC−5 (EST) until 2027-03-14.
+
+**Last 3 runs** (`cron.job_run_details`):
+
+| start | end | status |
+|---|---|---|
+| 2026-11-13 10:15:00.172 | 10:15:00.200 | succeeded |
+| 2026-11-12 10:15:00.240 | 10:15:00.272 | succeeded |
+| 2026-11-11 10:15:00.211 | 10:15:00.273 | succeeded |
+
+**What those times measure:**
+- pg_cron only queues the HTTP call, which takes about 30 ms. The route's own run is in `cron_job_audit`.
+- **Route runs:**
+  - 11-13: about 10:15:01.6 → 10:15:04.9 (3.3 s)
+  - 11-12: about 10:15:02.9 → 10:15:06.5 (3.5 s)
+  - 11-11: about 10:15:00.7 → 10:15:04.3 (3.6 s)
+- All three returned HTTP 200.
+- The writes cover D-1..D, so 2026-11-14's run rewrites 11-13 and 11-14.
+
+**Other writers of `team_power_ratings_daily`:**
+- **Inactive pg_cron jobs** whose command mentions the table, matched by `ilike` in the database:
+  - 277 `refresh-team-power-ratings-daily` (`15 10 * * *`);
+  - 281 `daily-refresh-team-power-ratings-daily` (`20 8 * * *`).
+  - Database function `refresh_team_power_ratings` references the table. Only those inactive jobs are known to call it.
+  - The runner stops if any job other than 283 that mentions the table becomes active.
+- **Vercel crons:** none of the 33 in `web/vercel.json` (root and `functions/vercel.json` have none) call the writer. The 10:05–10:55 FORGE pipeline and the 10:42–11:33 sustainability crons are other heavy DB work, which is why the guard window is wide.
+- **GitHub workflows:** none reference the route or the table.
+- **App code:** only the writer route upserts the table (`featureBuilder.ts` writes `game_prediction_feature_snapshots`). `update-team-power-ratings-new` is a no-write stub.
+- **No triggers** on the table.
+
+**Guard window around 283:** 09:25–11:00 UTC = 04:25–06:00 ET.
+- That is 50 minutes before 10:15 and 45 minutes after the route's last observed finish.
+- **No mutating call** within 15 minutes of a window: none between 09:10 and 11:00 UTC (04:10–06:00 ET) around 283. This is checked after the DB guard wait, immediately before each call.
+- **No run starts** within 25 minutes of a window: none between 09:00 and 11:40 UTC (04:00–06:40 ET). The 11:15 window's margin extends the 283 zone to 11:40.
+- A full run takes about 8 minutes (46 calls at about 3.5 s plus a 5 s pause, the pre-write checks and the 65 s served-cache wait). A run started outside the start margin finishes before the call margin, and no call can overlap 283.
+- **Allowed start times:** from 11:40 UTC to 07:34 UTC the next day (06:40 ET to 02:34 ET). The runner refuses to start from 07:35 to 08:20 and from 09:00 to 11:40 UTC.
+
+**Tests (16:31Z):**
+- Window arithmetic: 14/14 cases passed at 16:31Z. They are now in the committed fixture test (below).
+- **Fixture test `test_power_g5v5_loop.py`** (round 6). It loads the runner's window code with a fake clock, guard and stop; no database, secrets or network.
+  - **Clock crossing:** at 09:08:30 the pre-guard check is clear. The guard waits 120 s to 09:10:30, the post-guard check stops 4 (resume from the same date), and no write is sent.
+  - **Controls:** clear before and after the guard (08:40) lets the write through; already at 09:10, it stops before the guard; 10:15 is inside the 283 window.
+  - **Window cases:** 18, covering both margins, every window edge and midnight wrap.
+  - **Result:** 6/6 tests pass. All fail on the previous runner (`9f58e0423`), which had no post-guard check.
+  - Run: `python3 -I tasks/artifacts/calculation-inventory-2026-11-10/master/production/power-g5v5-2026-11-13/test_power_g5v5_loop.py`
+- Live cron check: passed (283 `15 10 * * *` active; no other active job; no run in progress).
 
 ## Commands for TJ
 Preflight (no writes). It passes only once production serves the dry-run writer and F16's reader:
 ```bash
 python3 -I tasks/artifacts/calculation-inventory-2026-11-10/master/production/power-g5v5-2026-11-13/power-g5v5-loop.py --preflight --end 2026-11-13
 ```
-The rebuild, after approval only. That is 46 writes plus 7 read requests (probe, 2 dry runs, 4 served), about 7 minutes. Start outside the cron windows.
+The rebuild, after approval only. That is 46 writes plus 8 read-only requests (probe, 2 dry runs, 5 served reads), about 8 minutes. Start outside the cron windows.
 ```bash
 python3 -I tasks/artifacts/calculation-inventory-2026-11-10/master/production/power-g5v5-2026-11-13/power-g5v5-loop.py --end 2026-11-13
 ```

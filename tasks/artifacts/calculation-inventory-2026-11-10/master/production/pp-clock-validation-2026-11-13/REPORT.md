@@ -1,6 +1,6 @@
 # PP clock validation (decision 144; decision 71; L8 W2-P0-13)
 
-Lane F11, 2026-11-13. A separate validation lane: not part of tonight's release or the Astra snapshot. **PP share stays labelled unavailable sitewide; nothing here changes that.** No application code was changed and nothing was written to production.
+Lane F11, 2026-11-13. A separate validation lane: not part of tonight's release or the Astra snapshot. **PP share stays labelled unavailable sitewide; nothing here changes that.** Nothing was written to production. The only application code changes are C3 (`a98eda63f`) and C1 + C2 (`de4650c77`), each made later at the Chef's request; no serving path changed.
 
 ## Headline
 
@@ -8,7 +8,7 @@ Lane F11, 2026-11-13. A separate validation lane: not part of tonight's release 
 - **The decision-144 risk cases all reconcile** (counts are comparable team-games in games with that feature): overtime PP 172/172 exact; shootout games 207/207; 5-on-3 454/456; penalty expiry across a period 921/924; pulled goalie during a PP 343/346, plus 2 within 1 s; double minors 205/206; coincident penalties 1,115/1,120.
 - **Legacy placeholder "00:00":** 3,728 team-game rows hold "00:00" even though the team had at least one PP opportunity. 2025-26 has 881 in the regular season (games 2025020467–476 and 2025020657–021095, dated 2025-12-09 to 2025-12-10 and 2026-01-04 to 2026-03-20), and 2024-25 has 2,392. The clock confirms real PP time in all 879 that it can check. **They can't be repaired from stored evidence:** right-rail is not stored, the stored boxscore and landing payloads carry no PP TOI, and the HTML summary is only memory-cached. 2026-27 regular season has none.
 - **Smallest verified display scope:** per-game player PP time and PP share for **2026-27 regular-season team-games that pass the rules below: 607 of 618 show a share, 9 show "not applicable" (verified zero), and 2 are withheld** (2026020036 team 68 and 2026020153 team 9). 307 of the 309 games qualify for both teams. Season-to-date windows for teams 68 and 9 would be a labelled covered subset, or unknown.
-- **Three code gaps stand between today's contract and that scope.** C3 was fixed afterwards in `a98eda63f`, at the Chef's request for the 11-13 release; C1 and C2 stay report-only:
+- **Three code gaps stood between the contract and that scope.** All three are now fixed: C3 in `a98eda63f` (11-13 release), C1 and C2 in `de4650c77` (TJ approved through the Chef, 11-13). Section 8 has the offline re-run.
   1. `buildTeamPpClock` never compares against the official total. On `octoberBranch` it would mark 5 mismatched team-games and 856 placeholder-row team-games `qualified`.
   2. The situation-code audit is stricter than the clock at stoppage events. It rejects 117 team-games that agree with the official total, 40 of them in 2026-27 regular season.
   3. Match penalties recorded as `MAT`/15 are unsupported, so 4 games error out. A what-if run treating them as 5-minute majors gives 8/8 exact matches.
@@ -125,12 +125,12 @@ A (game, team) PP clock qualifies for display when all of these hold:
 
 ## 7. Code that would enable it (not done; for the owning lanes)
 
-- **C1, `web/utils/getPowerPlayBlocks.ts` `buildTeamPpClock`:**
+- **C1, `web/utils/getPowerPlayBlocks.ts` `buildTeamPpClock`** (**implemented in `de4650c77`**; see section 8):
   - Take the official reference (`powerPlayToi`, `powerPlay`) as an input.
   - Return `officialSeconds`, `officialClass` and `diffSeconds`.
   - Set `qualified` only when rules 1–4 hold.
   - Map "00:00"/"0/0" plus a clock of 0 to a verified "not applicable" state.
-- **C2, same file, `auditPpBlocksAgainstSituationCodes`:** skip period-start, period-end, game-end, stoppage, penalty and goal events, and any second with a penalty or goal, to match the clock's own observation rules. Test cases: 2026020002, 2026020058, 2026020093.
+- **C2, same file, `auditPpBlocksAgainstSituationCodes`:** skip period-start, period-end, game-end, stoppage, penalty and goal events, and any second with a penalty or goal, to match the clock's own observation rules. Test cases: 2026020002, 2026020058, 2026020093. **Implemented in `de4650c77`.**
 - **C3, `web/lib/projections/penaltyClock.ts` `unitsForPenalty`:** accept `MAT` with duration 15 (the match major and the game-misconduct minutes recorded together) as one 5-minute major. Verified 8/8 exact on the 4 stored games. **Implemented in `a98eda63f`**, with a regression test from stored game 2025021128 in `web/utils/getPowerPlayBlocks.test.ts`.
 - **C4, storage (L8 proposal; owned by L4a; needs a migration and a production step):**
   - A `team_pp_clock` table holding seconds, spans, source, official seconds, official class, difference, qualified flag, reason and audit counts.
@@ -140,6 +140,39 @@ A (game, team) PP clock qualifies for display when all of these hold:
   - `/api/toi` serves `powerPlayStatus.available = true` per qualified game, with "not applicable" for a verified zero.
   - `fetchRollingPlayerAverages` passes `teamPpClock` only for qualified games, with windows per rule 7.
 - **C7, numerator:** `powerPlayCombinations.PPTOI` (shifts ∩ blocks) is already the right definition. It needs a per-game coverage contract, because a missing row is currently unknown, not 0 (L8 note).
+
+## 8. After C1 + C2 (`de4650c77`): offline re-run
+
+`05-compare-clock.ts` now passes each team's stored official record into `buildTeamPpClock`, so `qualified` and `reason` in `results/after-c1-c2/` are the production verdict. Same stored PBP and classes as sections 1–3, no database reads. The code also includes C3, so the 8 MAT/15 team-games now build. Sections 1–7 and `results/*.csv` keep the pre-fix numbers.
+
+**What the contract now does**
+- `buildTeamPpClock` takes `official: { powerPlayToi, powerPlay } | null` (the `teamGameStats` row) and returns `official: { class, seconds, diffSeconds }`.
+- It qualifies only with complete PBP, 0 audit disagreements and |clock − official| ≤ 2 s (`PP_CLOCK_OFFICIAL_TOLERANCE_SECONDS`; O1 still open).
+- Missing, malformed and placeholder rows never qualify, and neither does an official "00:00"/"0/0" while the clock has PP time. A qualified clock of 0 is a verified no-PP game ("not applicable").
+- The first failing check gives the reason: no PBP, clock refusal, incomplete PBP, situation-code disagreement, then the official record.
+- `PP_CLOCK_QUALIFIED`, `/api/toi` and the rolling writer are unchanged.
+
+**Qualified team-games by stored official class** (qualified / total):
+
+| Season | Type | nonzero | zero ("0/0") | placeholder | missing row | Withheld, by reason |
+|---|---|---|---|---|---|---|
+| 2025-26 | pre | 0 / 186 | 0 / 4 | 0 / 18 | – | 208 no PBP |
+| 2025-26 | reg | 1,681 / 1,691 | 52 / 52 | 0 / 881 | – | 879 placeholder; 10 clock refusal; 2 official differs |
+| 2025-26 | playoff | 161 / 162 | 2 / 2 | – | 0 / 46 | 46 no PBP; 1 official differs |
+| 2026-27 | pre | 54 / 119 | 2 / 3 | 0 / 8 | – | 68 no PBP; 4 incomplete PBP; 2 clock refusal |
+| 2026-27 | reg | 607 / 609 | 9 / 9 | – | – | 2 official differs |
+| **All** | | **2,503 / 2,767** | **65 / 70** | **0 / 907** | **0 / 46** | |
+
+- **Never qualified:** the 5 mismatches (2026020036 t68 +28, 2026020153 t9 −120, 2025021248 t8 +94, 2025021097 t20 +31, 2025030112 t6 −120, each with reason "The clock differs from the official team PP total by …") and all 883 confirmed placeholders (879 with the placeholder reason; the 4 in 2026-27 preseason report incomplete PBP first). The old code qualified 856 of those placeholders and all 5 mismatches.
+- **Newly qualified:** 117 team-games that agree with the official total (113 exact, 3 verified zeros, 1 within 2 s) that the old audit rejected, plus the 8 MAT/15 exact matches from C3.
+- **Audit cross-check:** on all 3,456 built clocks the shipped audit now finds 0 disagreements and equals the analysis-only aligned audit.
+- **2026-27 regular season:** 616 of 618 team-games qualify (607 with PP time, 9 verified zero) and 307 of 309 games qualify for both teams, as section 6 predicted.
+- The 46 missing-row team-games (2025-26 playoffs, 23 games) have no stored PBP either, so "no PBP" is their first reason.
+
+**Tests** (`web/utils/getPowerPlayBlocks.test.ts`, stored fixtures):
+- C2: 2026020002, 2026020058 and 2026020093 have no disagreements and both teams qualify on their official totals. A recoded interior faceoff is still flagged.
+- C1: 2026020036 home qualifies, and away is withheld at +28 s. 2025020665 is a placeholder on both sides. Tolerance, missing, malformed and official-zero variants run on 2026020093.
+- Each fixture is the game's penalties, goals, period markers, the events the old audit flagged, and one interior event per PP span; each rebuilds the full game's spans exactly. All 16 new or changed tests fail on the previous module.
 
 ## Open items for the owner (Chef to route)
 
@@ -159,7 +192,7 @@ sed "s#OUT_CLASSES#$S/classes-2025-2027.csv#" $D/03-run-summary.sql > $S/03-run.
 $D/04-fetch-pbp.sh $S/classes-2025-2027.csv 20262027 $S/pbp 10
 $D/04-fetch-pbp.sh $S/classes-2025-2027.csv 20252026 $S/pbp 10
 web/node_modules/.bin/esbuild $D/05-compare-clock.ts --bundle --platform=node --format=esm --tsconfig=web/tsconfig.json --loader:.scss=empty --outfile=$S/compare.mjs
-node $S/compare.mjs $S/classes-2025-2027.csv $S/pbp $S/out          # → team-game-results.csv, summary.json
+node $S/compare.mjs $S/classes-2025-2027.csv $S/pbp $S/out          # → team-game-results.csv, summary.json (results/after-c1-c2 since de4650c77)
 # 06-inspect-games.ts: same build; node inspect.mjs <classes.csv> <pbp_dir> <gameId>...
 # 10-fetch-shifts.sh + 11-shift-numerator-check.ts: same pattern for the numerator check
 ```

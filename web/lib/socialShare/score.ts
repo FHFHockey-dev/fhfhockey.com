@@ -17,7 +17,7 @@ export const OPPORTUNITY = {
 
 const fp = (key: string, group: "skater" | "goalie") => (group === "goalie" ? DEFAULT_GOALIE_FANTASY_POINTS : DEFAULT_SKATER_FANTASY_POINTS)[key] ?? 0;
 
-/** L5 fantasy points per game from the default config; null without recent games. */
+/** L5 fantasy points per game from the default config; null without recent games or when any scored part is unknown. */
 export function fantasyPointsPerGame(player: Pick<SharePlayer, "recent">): number | null {
   const recent = player.recent;
   if (!recent || recent.games <= 0) return null;
@@ -27,10 +27,11 @@ export function fantasyPointsPerGame(player: Pick<SharePlayer, "recent">): numbe
     return (recent.record.wins * fp("WINS_GOALIE", "goalie") + recent.saves * fp("SAVES_GOALIE", "goalie") + recent.goalsAgainst * fp("GOALS_AGAINST_GOALIE", "goalie")
       + recent.shutouts * fp("SHUTOUTS_GOALIE", "goalie")) / recent.games;
   }
-  const parts = [recent.goals, recent.assists, recent.ppPoints, recent.shots, recent.hitsPerGame, recent.blocksPerGame];
-  if (parts.every(value => value === null)) return null;
-  const total = (recent.goals ?? 0) * fp("GOALS", "skater") + (recent.assists ?? 0) * fp("ASSISTS", "skater") + (recent.ppPoints ?? 0) * fp("PP_POINTS", "skater")
-    + (recent.shots ?? 0) * fp("SHOTS_ON_GOAL", "skater") + ((recent.hitsPerGame ?? 0) * fp("HITS", "skater") + (recent.blocksPerGame ?? 0) * fp("BLOCKED_SHOTS", "skater")) * recent.games;
+  // Same rule for skaters (F17): a missing part, such as blocks, leaves the score unavailable; it never scores like a known 0.
+  const { goals, assists, ppPoints, shots, hitsPerGame, blocksPerGame } = recent;
+  if (goals === null || assists === null || ppPoints === null || shots === null || hitsPerGame === null || blocksPerGame === null) return null;
+  const total = goals * fp("GOALS", "skater") + assists * fp("ASSISTS", "skater") + ppPoints * fp("PP_POINTS", "skater")
+    + shots * fp("SHOTS_ON_GOAL", "skater") + (hitsPerGame * fp("HITS", "skater") + blocksPerGame * fp("BLOCKED_SHOTS", "skater")) * recent.games;
   return total / recent.games;
 }
 
@@ -44,7 +45,7 @@ export function opportunityMultiplier(player: Pick<SharePlayer, "recent" | "grou
   return 1 + line + pp + toi;
 }
 
-/** Card score: L5 fantasy points per game × opportunity. Null without recent games (season rate decides). */
+/** Card score: L5 fantasy points per game × opportunity. Null without recent games or with an unknown part (season rate decides). */
 export function playerScore(player: Pick<SharePlayer, "recent" | "group">): number | null {
   const perGame = fantasyPointsPerGame(player);
   return perGame === null ? null : perGame * opportunityMultiplier(player);

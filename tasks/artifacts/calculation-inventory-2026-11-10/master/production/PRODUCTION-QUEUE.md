@@ -258,3 +258,26 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     - `/api/v1/ml/get-predictions-sko` 503 (withheld, decisions 124/129);
     - `/underlying-stats` 200, `/lines/EDM` 200, `/` 200.
   - octoberBranch ours-merge `94d7c2340` pushed at 16:01:45Z, with no build at 90 s.
+- **Release #435** (TJ "Push and merge"):
+  - Candidate `75dce268c`, master `496ab3766` plus F16's version-aware power labels (`486b18a6f`), F9's writer dry run (`2bf3c1d26`) and the CTPI descriptive beta card (`122dd880b`, `17b342f76`, `3b6d82edc`). Codex items 1/2/6 still held. No migrations.
+  - Gate:
+    - typecheck 0, ESLint 0 errors, CSS 1/1;
+    - Vitest 19,787 passed; its 20 failures are in 6 git-dependent files, which pass in the checkout (179/179); pytest 217;
+    - TeamPowerCard fail-first confirmed by the Chef.
+  - Branch pushed 16:34:44Z, with no build at 90 s. PR #435 squash-merged as master `6f1cb0767`, tree identical to the candidate.
+  - Build: 1 fhfhockey build plus 3 cancels, settled by 16:42:48Z.
+  - Smoke, 5/5 at 200:
+    - `/api/team-ratings?date=2026-11-12` serves `calculationVersion` (v3) and `sourceThroughDate`;
+    - `/stats/team/TOR`, `/forge/command-center`, `/underlying-stats` and `/`.
+  - octoberBranch ours-merge `251a4f7bf` pushed 16:43:20Z, with no build at 90 s.
+- **Power ratings v4 rebuild** (decisions 145, 147, 150; TJ "Approve, Claude runs it" after the live no-write preflight):
+  - Preflight at 16:45Z, PREFLIGHT_OK with 0 writes; the Chef confirmed no write, no 2000-01-01 row and no audit row.
+  - Run at 16:46–16:53Z: deployed-writer gate `6f1cb0767`; dry-run probe v4; pre-run snapshot of 1,472 rows (sha256 84d4ac83…); 46 calls (09-29 → 11-13), all 200; one guard wait, which cleared.
+  - Per-date readback: 09-29 10 v4 + 22 carried, 09-30 15 + 17, 10-01 25 + 7, 10-02 31 + 1, then 32 v4. DONE.
+  - Chef readback:
+    - 1,425 `team-power-v4-5v5-goaltending` (09-29..11-13, goalie_rating never null);
+    - 47 `legacy_unversioned`, all source 2026-08-29 and equal to the team's 09-28 row;
+    - 0 v3 left;
+    - `/api/team-ratings?date=2026-09-29` serves 22 legacy (source 2026-08-29) + 10 v4.
+  - Log (on disk, gitignored): `production/power-g5v5-2026-11-13/run/rebuild-2026-11-13T1646Z.jsonl`. Backups: `run/issued-rows-…tsv` and `run/pre-run-20261113T164613Z.tsv`.
+  - Cron 283 writes v4 from 2026-11-14 10:15Z (05:15 ET).
