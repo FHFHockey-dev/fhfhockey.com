@@ -92,3 +92,9 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - **Approved write:** 2025-26 goalie partition rebuild, summary-only, paced (about 190 dates, 1,417 games).
 - **Debrief:** finalize now, with remaining steps marked pending; write the Astra prompt.
 - **Decisions 135–138:** implementation needs lanes and re-claimed files; production steps are separate approvals.
+
+## Log check (decisions 79/124), 2026-11-13 ~00:05Z: inconclusive with available tools
+- Vercel runtime logs on this plan (Pro) go back **1 day**, and they contain only console output, not every request.
+- Last 23 h, production: no logged activity on `/api/Averages/[playerId]`, `/api/ThreeYearAverages/[playerId]`, `/api/v1/ml/get-predictions-sko` or `/api/v1/forge/scoreboard`. Only our own cron routes `update-wgo-averages` and `update-predictions-sko` matched.
+- Request-level counts need **Vercel Observability Plus** (API returned 402 payment_required) or the Vercel CLI request logs (not installed here).
+- **Not proof of zero external use.** Options for TJ: check the Vercel dashboard request logs by path, install and authenticate the Vercel CLI, or enable Observability Plus.
