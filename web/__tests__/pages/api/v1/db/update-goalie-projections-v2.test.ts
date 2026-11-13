@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { leagueSavePctMock, fetchMock, gamesGteMock, gamesLteMock, deleteMock, deleteEqMock, rosterState, storedGameDate, upsertMock } = vi.hoisted(() => ({
+const { primeLeagueSavePctMock, leagueSavePctMock, fetchMock, gamesGteMock, gamesLteMock, deleteMock, deleteEqMock, rosterState, storedGameDate, upsertMock } = vi.hoisted(() => ({
+  primeLeagueSavePctMock: vi.fn(),
   leagueSavePctMock: vi.fn(),
   fetchMock: vi.fn(),
   deleteMock: vi.fn(async () => ({ error: null, count: 0 })),
@@ -21,7 +22,7 @@ vi.mock("lib/cron/nhlOffSeason", () => ({
 vi.mock("utils/adminOnlyMiddleware", () => ({
   default: (handler: any) => handler
 }));
-vi.mock("lib/projections/goalie/leagueSavePct", () => ({ getSeasonLeagueSavePct: leagueSavePctMock }));
+vi.mock("lib/projections/goalie/leagueSavePct", () => ({ getSeasonLeagueSavePct: leagueSavePctMock, primeSeasonLeagueSavePctCache: primeLeagueSavePctMock, MAX_LEAGUE_SAVE_PCT_DATES: 30 }));
 vi.mock("lib/cors-fetch", () => ({ default: fetchMock }));
 vi.mock("lib/supabase/server", () => ({
   default: {
@@ -188,6 +189,21 @@ describe("update-goalie-projections-v2 endDate", () => {
     expect(rows.find((row: any) => row.game_id === 2).projected_gsaa_per_60).toBeCloseTo(25 - 27 * 0.91);
     expect(res.body.observability.startProbabilityBasis).toBe("l10_start_share");
     expect(leagueSavePctMock.mock.calls.map(call => call[0])).toEqual(["2026-10-21", "2026-10-22"]);
+  });
+
+  it.each(["0", "-1", "31", "1.5", "2days", ""])("rejects an invalid catch-up limit %s before dependencies", async limit => {
+    const res = await run({ limit });
+    expect(res.statusCode).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("primes the bounded cutoffs together and withholds GSAA for an unavailable baseline", async () => {
+    leagueSavePctMock.mockResolvedValue({ savePct: 0.8955, source: "fallback", warning: "no usable evidence" });
+    const res = await run({ endDate: "2026-10-22", limit: "30" });
+    expect(res.statusCode).toBe(200);
+    expect(primeLeagueSavePctMock).toHaveBeenCalledTimes(1);
+    expect(primeLeagueSavePctMock).toHaveBeenCalledWith(["2026-10-21", "2026-10-22"], expect.any(Map));
+    expect((upsertMock.mock.calls[0] as any[])[0].every((row: any) => row.projected_gsaa_per_60 === null)).toBe(true);
   });
 
   it("re-processes today's games when tomorrow's rows are already stored", async () => {
