@@ -302,3 +302,37 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     - Re-fetches ran on TJ's localhost:3000 against production, through the shared NST admission. 11-07 completed (20 datasets). 11-12 was partial: a dev-server error, `writePersistence not_confirmed`, and the failed write committed nothing. Narrow re-runs of 11-12 evenStrength and penaltyKill then completed.
     - About 38 NST requests in total, within every window. Mahura now has 16/16 non-PP rows on 11-07 and 11-12, and NST matches WGO at 14 games.
   - **Noted:** nearly all 2020-21 to 2022-23 WGO rows lack game identity, so other call-ups may trip WiGO the same way. That's a wider backfill, recorded as a ticket.
+- **Migration 148** (TJ "Apply now"): `20261113200000_forge_strength_penalty_shot_split`, applied 17:28:45Z, with readback (6 nullable columns, 2 CHECKs, v1 wrapper plus v2, grants postgres/service_role, row counts unchanged, 0 split rows). Ledger row inserted; authority 113 applied / 7 pending (`05a2843e6`).
+- **Release #437** (TJ "Push and merge"):
+  - Candidate `4cf33215a` on master `4b45d8f1a`:
+    - F15 penalty-shot split, readers and parity (`30fa0f00a`, `8a4a7d8d1`, authority `2a9227343`);
+    - F18 NST alias (`77a6e7592`);
+    - the beta-card same-games fix (`a32478cb0`);
+    - item 6's SQL, proof and rollback only (inert, pending order 147; its code held).
+  - Gate: typecheck 0, ESLint 0 errors, PG proofs f15 and item6 OK, Vitest 19,824 passed; the 5 git-dependent files pass 177/177 in the checkout; pytest 217.
+  - Branch pushed 17:36:35Z, with no build. PR #437 squash-merged as master `b6d43efdc` (tree identical). Build settled 17:42:57Z with 1 build plus 3 cancels.
+  - Smoke 5/5: `/`, `/splits`, `/stats/team/PHI`, `/lines`, `/underlying-stats`.
+  - octoberBranch `5f782c420` pushed 17:43:11Z, with no build.
+- **Penalty-shot rebuild:** dry run at 17:44–17:45Z, DRY_RUN_OK on `b6d43efdc` (8 games, all baselines equal to the official boxscores). `--execute` started about 17:46Z (TJ "Run it, Claude").
+- **Penalty-shot 8-game rebuild DONE** at 17:46–17:50:12Z (`--execute`, TJ-approved): 8 calls, 42 rows each, every game passing the key-by-key post-write readback.
+  - Chef readback: 16/16 team rows and 304/304 player rows have `penalty_shot_split_version = 1`. Penalty shots total 8, 2 of them goals, each on the shooter's team, matching the manifest.
+  - Every team's all-situation shots and goals (ES + PP + PK + PS) equal the official boxscore baseline.
+  - No other game is split.
+  - Log (on disk, gitignored): `production/penalty-shot-rebuild-2026-11-13/rebuild-2026-11-13T1746Z.log`.
+  - **AF-07 stays open** until the separately approved landing summary refresh runs and the landing is verified (TJ).
+- **Landing summary refresh, canary game 2026020065 only** (TJ approved this one game; the other seven and any team-summary writes are not approved):
+  - Dry run DRY_RUN_OK (Chef re-run 17:57Z, runner `6f381c802`).
+  - `--execute --max-games 1` at 17:59:39–18:00:13Z: the player route rewrote 135/135 current partitions, plus the goalie route. The runner's key-by-key readback passed for both:
+    - every current partition rewritten;
+    - only the shooter's and goalie's allStrengths/allScores counts moved by the penalty shot;
+    - all strength buckets, onIce and unrelated values unchanged;
+    - game 065 has 0 orphans.
+  - Served readback, Chef, `/api/v1/underlying-stats/players` and `/goalies`, 2026-27 regular season, date 2026-10-08:
+    - Eichel (8478403), all strengths: GP 1, 1 G, 6 S, iCf 8, iFf 6 (was 0 G / 5 S / iCf 7 / iFf 5). No double count.
+    - Eichel even strength: 0 G, 5 S, unchanged; the penalty shot isn't in ES.
+    - Bobrovsky (8475683, team 10): GP 1, SA 43, SV 40, GA 3, which equals the official boxscore (43 SOG / 3 goals).
+  - Remaining: 2026020094, 101, 119, 131, 150, 159, 203, which wait for TJ.
+- **Landing summary refresh, remaining 7 games** (TJ "Run the other 7"), 18:02:28–18:05:42Z: 14 calls, every game passing the runner's key-by-key readback. Player rows rewritten: 156, 147, 145, 133, 157, 152 and 133, so 1,158 in total across all 8 games. The 18 orphan partitions are unchanged. DONE.
+- **Served landing verification, all 8 games** (Chef; 21 read-only GETs to `/api/v1/underlying-stats/players` and `/goalies`, date-scoped per game; script `production/penalty-shot-rebuild-2026-11-13/verify-landing.py`): **ALL_OK.**
+  - Each shooter's all-strengths row equals the rebuilt values (GP 1, no double count), and the even-strength row excludes the penalty shot.
+  - Each goalie's SA/SV/GA equals the expected values and the official boxscore for the shooting team. The exception is 2026020150: the official 44 SOG / 6 goals include an empty-net goal, so the goalie row is 43 / 5.

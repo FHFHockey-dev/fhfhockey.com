@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   serviceRoleClient: {
     from: vi.fn(),
   },
+  teamRebuildGameIds: vi.fn(),
+  teamRefresh: vi.fn(),
 }));
 
 vi.mock("lib/supabase/server", () => ({
@@ -18,6 +20,13 @@ vi.mock("lib/supabase/server", () => ({
 vi.mock("lib/supabase", () => ({
   createClientWithToken: mocks.createClientWithToken,
 }));
+
+vi.mock("lib/underlying-stats/teamStatsSummaryRefresh", () => ({
+  fetchTeamSummaryRebuildGameIds: mocks.teamRebuildGameIds,
+  refreshTeamUnderlyingSummaryRowsForGameIds: mocks.teamRefresh,
+}));
+
+import rebuildTeamUnderlyingSummaries from "../../../../../pages/api/v1/db/rebuild-team-underlying-summaries";
 
 import {
   operationalRouteContracts,
@@ -183,6 +192,65 @@ describe("operational route authorization contracts", () => {
       }
     },
   );
+
+  describe("rebuild-team-underlying-summaries: a successful dry run or diff writes no audit row", () => {
+    const eightGames = "2026020065,2026020094,2026020101,2026020119,2026020131,2026020150,2026020159,2026020203";
+    const teamRequest = (query: Record<string, string>) => ({
+      ...createRequest("POST", "Bearer test-cron-secret"),
+      url: "/api/v1/db/rebuild-team-underlying-summaries",
+      query,
+    });
+
+    beforeEach(() => {
+      mocks.teamRebuildGameIds.mockReset().mockImplementation(async ({ gameIds }) => gameIds);
+      mocks.teamRefresh.mockReset().mockImplementation(async ({ gameIds, dryRun }) => ({
+        rowsUpserted: dryRun ? 0 : 140 * gameIds.length,
+        rowsGenerated: 140 * gameIds.length,
+        gameIdsProcessed: gameIds,
+        staleKeys: [],
+        diffs: [],
+      }));
+    });
+
+    it("writes no audit row for TJ's read-only 8-game diff (POST, default dry run)", async () => {
+      const response = createResponse();
+      await rebuildTeamUnderlyingSummaries(
+        teamRequest({ seasonId: "20262027", gameIds: eightGames, diff: "true" }),
+        response
+      );
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toMatchObject({ success: true, dryRun: true, rowsUpserted: 0, diffRowCount: 0 });
+      expect(mocks.teamRefresh).toHaveBeenCalledWith(expect.objectContaining({ dryRun: true, reportDiffs: true }));
+      expect(mocks.auditInsert).not.toHaveBeenCalled();
+    });
+
+    it("still audits a write and a failed dry run", async () => {
+      await rebuildTeamUnderlyingSummaries(
+        teamRequest({ seasonId: "20262027", gameIds: "2026020065", dryRun: "false" }),
+        createResponse()
+      );
+      expect(mocks.auditInsert).toHaveBeenCalledOnce();
+
+      mocks.auditInsert.mockClear();
+      mocks.teamRefresh.mockRejectedValueOnce(new Error("statement timeout"));
+      const failed = createResponse();
+      await rebuildTeamUnderlyingSummaries(
+        teamRequest({ seasonId: "20262027", gameIds: "2026020065", diff: "true" }),
+        failed
+      );
+      expect(failed.statusCode).toBeGreaterThanOrEqual(500);
+      expect(mocks.auditInsert).toHaveBeenCalledOnce();
+
+      mocks.auditInsert.mockClear();
+      const rejected = createResponse();
+      await rebuildTeamUnderlyingSummaries(
+        teamRequest({ seasonId: "20262027", gameIds: "2026020065", diff: "true", dryRun: "false" }),
+        rejected
+      );
+      expect(rejected.statusCode).toBe(400);
+      expect(mocks.auditInsert).toHaveBeenCalledOnce();
+    });
+  });
 
   it("allows a verified admin token through the same outer boundary", async () => {
     const handler = vi.fn((_req, res) =>

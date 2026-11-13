@@ -735,7 +735,17 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 | NST gamelog identity: Josh Mahura 8479372 | Found at the 11:01Z check. NST matched him on 12 of 14 games and failed on 11-07 and 11-12 (16 of 20 datasets flagged each time; other players landed). | Find NST's name or id for him on those dates (read-only), then an alias or identity fix and a bounded re-fetch of the 2 dates within the NST limits |
 | WiGO `missing_identity` rejects | Cron 231 writes 988/990 players; 8478446 (2022-11-12) and 8481827 (2021-11-06) have `wgo_skater_stats` rows with no team, opponent or game id, so the run audits as `failure` daily | A 2-row WGO repair from the NHL game logs (needs TJ) |
 | F3 unowned Lines items | Stale header comment in `[abbreviation].tsx`; `lines/index.tsx` mixes labels; LineShareBars TOI | A small Lines lane |
-| Astra AF-07 penalty shots (decision 149) | **Partly fixed.** F15 `8463912d8` ships the shared adapter `classifyEventStrengthBucket`, with tests pinning the builder gap on games 2026020065 and 2026020094. TJ kept the derived builder unswitched: the derived tables only have ES, PP and PK columns, and readers sum those for all-situation totals. | Coordinated rollout after the handoff: a `shots_ps`/`goals_ps` column with a version marker, a new transactional RPC, every ES+PP+PK reader, and an 8-game rebuild (`production/penalty-shot-rebuild-2026-11-13/PLAN.md`, draft, not approved) |
+| Astra AF-07 penalty shots (decision 149) | **Done for the player and goalie landing (2026-11-13).**
+- Adapter (#434); split columns, writer, builder, readers and parity (#437); migration 148 applied.
+- 8-game derived rebuild: all post-write checks passed, totals equal official.
+- Bounded landing summary refresh: canary 065, then the other 7, TJ-approved separately; key-by-key readbacks passed.
+- Served player and goalie landing verified against the rebuilt rows for all 8 games (ALL_OK). | Separate open ticket (TJ): **team underlying summaries' "all" GF/SF exclude penalty shots.** F15 is on the builder fix; the release candidate, a read-only 8-game diff and any team refresh each need TJ's approval. |
+- Adapter `8463912d8` (#434).
+- Split columns, v2 writer, builder, readers and parity: `30fa0f00a`, `8a4a7d8d1` (#437).
+- Migration 148 applied 17:28:45Z.
+- **8-game rebuild DONE** 17:46–17:50Z: all 8 games passed the post-write checks; the Chef readback shows 16 team and 304 player rows split, 8 PS shots and 2 goals, and all-situation totals equal to the official boxscores. **Condition 1 met.** | Close only when:
+1. all 8 games pass the post-write checks;
+2. the bounded underlying-stats summary refresh for those 8 games (separate plan, reviewed and approved on its own) has run, and the landing is verified against the rebuilt rows. |
 | Astra AF-08 finality consumers | **Fixed in the final release:** F7 `5bb89aef1` and `706937676`. `teamUnitToiNightly` needs a PBP game-end event; settlement needs a FINAL/OFF boxscore. | — |
 | Astra: social skater rankings score a missing stat like a known zero | Confirmed by Astra after checkpoint 1; doesn't block release | Ticket (TJ): a targeted fix once Astra gives the file and line |
 | PP clock (decisions 144, 151) | F11:
