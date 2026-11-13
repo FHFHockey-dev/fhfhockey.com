@@ -329,7 +329,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       startDate: yesterday,
       endDate: today,
       processedDays: 2,
-      calculationVersion: "team-power-v3-all-team-baseline-prior-after-norm-pooled-st",
+      calculationVersion: "team-power-v4-5v5-goaltending",
       executionScope: {
         requestedDate: today,
         startDate: yesterday,
@@ -349,7 +349,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       expect.objectContaining({
         team_abbreviation: "ANA",
         date: yesterday,
-        calculation_version: "team-power-v3-all-team-baseline-prior-after-norm-pooled-st",
+        calculation_version: "team-power-v4-5v5-goaltending",
         source_through_date: yesterday,
         off_rating: 111,
       }),
@@ -360,7 +360,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       expect.objectContaining({
         team_abbreviation: "ANA",
         date: today,
-        calculation_version: "team-power-v3-all-team-baseline-prior-after-norm-pooled-st",
+        calculation_version: "team-power-v4-5v5-goaltending",
         source_through_date: yesterday,
         off_rating: 111,
       }),
@@ -447,7 +447,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
     expect(upserts).toEqual([
       expect.objectContaining({
         team_abbreviation: "COL",
-        calculation_version: "team-power-v3-all-team-baseline-prior-after-norm-pooled-st",
+        calculation_version: "team-power-v4-5v5-goaltending",
         source_through_date: "2026-04-05",
         trend10: 13,
       }),

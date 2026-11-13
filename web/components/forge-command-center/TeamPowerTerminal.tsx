@@ -170,7 +170,8 @@ export default function TeamPowerTerminal({
                 ["Defense", selectedRow.defRating],
                 ["Pace", selectedRow.paceRating],
                 ["Finish", selectedRow.finishingRating],
-                ["Goalie", selectedRow.goalieRating]
+                // 5-on-5 goaltending (decision 145): empty-net goals excluded.
+                ["5v5 Goalie", selectedRow.goalieRating]
               ] as const
             ).map(([label, value]) => {
               const bar = divergingRatingBar(value);

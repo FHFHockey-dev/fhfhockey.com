@@ -264,11 +264,11 @@ const buildContextBullet = ({
   }
 
   if (typeof row.goalieRating === "number" && row.goalieRating >= 105) {
-    return "Goaltending is outperforming expected goals against right now.";
+    return "5-on-5 goaltending is outperforming expected goals against right now.";
   }
 
   if (typeof row.goalieRating === "number" && row.goalieRating <= 95) {
-    return "Goaltending is lagging behind expected goals against right now.";
+    return "5-on-5 goaltending is lagging behind expected goals against right now.";
   }
 
   const texture = row.scheduleTexture;

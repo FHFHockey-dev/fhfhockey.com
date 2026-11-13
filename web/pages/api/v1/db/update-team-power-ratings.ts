@@ -21,9 +21,12 @@ import {
  * v3 (L12, 2026-11-12): genuine all-situation games, all teams standardised
  * against one daily baseline as of their latest game, prior after normalisation
  * (decision 19), pooled season-to-date PP/PK tiers with unknown = null (decision 20).
+ * v4 (decision 145, 2026-11-13): v3 except goalie_rating is "5-on-5 goaltending":
+ * xGA/60 minus GA/60 from NST 5-on-5 rows (empty-net goals excluded), null when
+ * any game in the window lacks complete 5-on-5 inputs.
  */
 export const TEAM_POWER_RATING_CALCULATION_VERSION =
-  "team-power-v3-all-team-baseline-prior-after-norm-pooled-st";
+  "team-power-v4-5v5-goaltending";
 const LEGACY_TEAM_POWER_RATING_VERSION = "legacy_unversioned";
 
 function parseBooleanFlag(value: unknown): boolean {

@@ -57,6 +57,19 @@ export interface GameLog {
   pk_xga_per_60: number | null;
   penalties_drawn_per_60: number | null;
   penalties_taken_per_60: number | null;
+  /**
+   * 5-on-5 goaltending inputs (decision 145) from the game's NST 5v5 row.
+   * Null or absent when that row is missing or incomplete (unknown).
+   */
+  goalie_5v5?: Goalie5v5Inputs | null;
+}
+
+/** GA, SA and xGA per 60 over the same 5-on-5 TOI (exposure); EN goals excluded. */
+export interface Goalie5v5Inputs {
+  ga_per_60: number;
+  sa_per_60: number;
+  xga_per_60: number;
+  toi_seconds: number;
 }
 
 export interface TeamGame extends GameLog {
@@ -85,6 +98,10 @@ export interface EwmaMetrics {
   pp_xgf60_ewma: number | null;
   pk_xga60_ewma: number | null;
   discipline_diff_ewma: number | null;
+  /** 5-on-5 goaltending; null unless every game in the window has 5-on-5 inputs. */
+  goalie_5v5_xga60_ewma: number | null;
+  goalie_5v5_ga60_ewma: number | null;
+  goalie_5v5_sa60_ewma: number | null;
 }
 
 export interface LeagueMetrics {
@@ -129,6 +146,30 @@ function toNullableNumber(value: unknown): number | null {
   return Number.isFinite(numericValue) ? numericValue : null;
 }
 
+/**
+ * Decision 145: GA, SA, xGA and exposure (TOI) all come from one NST 5-on-5
+ * counts row. A missing row, a missing count or no 5-on-5 TOI is unknown;
+ * there is no all-situations fallback and no zero-fill.
+ */
+export function goalie5v5InputsFromCounts(row: unknown): Goalie5v5Inputs | null {
+  if (row == null || typeof row !== "object") return null;
+  const counts = row as Record<string, unknown>;
+  const ga = toNullableNumber(counts.ga);
+  const sa = toNullableNumber(counts.sa);
+  const xga = toNullableNumber(counts.xga);
+  const toi = toNullableNumber(counts.toi_seconds);
+  if (ga == null || sa == null || xga == null || toi == null || toi <= 0) {
+    return null;
+  }
+  const perSixty = 3600 / toi;
+  return {
+    ga_per_60: ga * perSixty,
+    sa_per_60: sa * perSixty,
+    xga_per_60: xga * perSixty,
+    toi_seconds: toi,
+  };
+}
+
 export async function fetchGameLogs(
   supabase: SupabaseClient,
   startDate: string,
@@ -153,6 +194,19 @@ export async function fetchGameLogs(
         .from("nst_team_5v5")
         .select("*")
         .eq("situation", "all")
+        .gte("date", startDate)
+        .lte("date", endDate),
+    ["date", "team_abbreviation"],
+  );
+
+  // 5-on-5 goaltending inputs (decision 145): per-game NST 5v5 counts, which
+  // exclude empty-net goals against.
+  const goalie5v5DataPromise = fetchPaginatedRows<any>(
+    () =>
+      supabase
+        .from("nst_team_gamelogs_es_counts")
+        .select("team_abbreviation, date, ga, sa, xga, toi_seconds")
+        .eq("situation", "5v5")
         .gte("date", startDate)
         .lte("date", endDate),
     ["date", "team_abbreviation"],
@@ -199,10 +253,19 @@ export async function fetchGameLogs(
   const teamsDataPromise = supabase
     .from("teams")
     .select("id, abbreviation, name");
-  const [allData, f5v5Data, ppData, pkData, wgoData, { data: teamsData }] =
+  const [
+    allData,
+    f5v5Data,
+    goalie5v5Data,
+    ppData,
+    pkData,
+    wgoData,
+    { data: teamsData },
+  ] =
     await Promise.all([
       allDataPromise,
       f5v5DataPromise,
+      goalie5v5DataPromise,
       ppDataPromise,
       pkDataPromise,
       wgoDataPromise,
@@ -219,6 +282,11 @@ export async function fetchGameLogs(
   const allDataMap = new Map<string, any>();
   allData?.forEach((row) => {
     allDataMap.set(`${row.team_abbreviation}|${row.date}`, row);
+  });
+
+  const goalie5v5Map = new Map<string, any>();
+  goalie5v5Data?.forEach((row) => {
+    goalie5v5Map.set(`${row.team_abbreviation}|${row.date}`, row);
   });
 
   const ppMap = new Map<string, any>();
@@ -280,6 +348,7 @@ export async function fetchGameLogs(
       penalties_taken_per_60: wgo
         ? toNullableNumber(wgo.penalties_taken_per_60)
         : null,
+      goalie_5v5: goalie5v5InputsFromCounts(goalie5v5Map.get(key)),
     });
   });
 
@@ -371,6 +440,13 @@ export function calculateEwma(
   const hdcf = weightedMean((g) => g.hdcf_per_60).value;
   const hdca = weightedMean((g) => g.hdca_per_60).value;
   const pdo = weightedMean((g) => g.pdo);
+  // 5-on-5 goaltending (decision 145): a window with any game lacking 5-on-5
+  // inputs is incomplete, so the component stays unknown.
+  const goalie5v5Complete = window.every((g) => g.goalie_5v5 != null);
+  const goalie5v5 = (read: (inputs: Goalie5v5Inputs) => number) =>
+    goalie5v5Complete
+      ? weightedMean((g) => (g.goalie_5v5 ? read(g.goalie_5v5) : null)).value
+      : null;
 
   // A team without the core rates in its window cannot be rated (unknown, not 0).
   if (
@@ -403,7 +479,18 @@ export function calculateEwma(
         ? g.penalties_drawn_per_60 - g.penalties_taken_per_60
         : null,
     ).value,
+    goalie_5v5_xga60_ewma: goalie5v5((inputs) => inputs.xga_per_60),
+    goalie_5v5_ga60_ewma: goalie5v5((inputs) => inputs.ga_per_60),
+    goalie_5v5_sa60_ewma: goalie5v5((inputs) => inputs.sa_per_60),
   };
+}
+
+/** 5-on-5 saved goals above expected per 60 (xGA − GA); null when unknown. */
+function goalie5v5Gap(metric: EwmaMetrics): number | null {
+  return metric.goalie_5v5_xga60_ewma == null ||
+    metric.goalie_5v5_ga60_ewma == null
+    ? null
+    : metric.goalie_5v5_xga60_ewma - metric.goalie_5v5_ga60_ewma;
 }
 
 /**
@@ -436,7 +523,7 @@ export function calculateLeagueMetrics(metrics: EwmaMetrics[]): LeagueMetrics {
 
   // Derived metrics for league stats
   const finishing = calcStats(metrics.map((m) => m.gf60_ewma - m.xgf60_ewma));
-  const goalie = calcStats(metrics.map((m) => m.xga60_ewma - m.ga60_ewma));
+  const goalie = calcStats(knownValues(metrics.map(goalie5v5Gap)));
   const danger = calcStats(
     metrics.map((m) => {
       const total = m.hdcf60_ewma + m.hdca60_ewma;
@@ -506,7 +593,8 @@ export interface ZScored {
   pace60: number;
   // New Z-Scores
   finishing_z: number;
-  goalie_z: number;
+  /** 5-on-5 goaltending (decision 145); null when unknown. */
+  goalie_z: number | null;
   danger_z: number;
   pp_off_z: number | null;
   pk_def_z: number | null;
@@ -575,7 +663,7 @@ export function calculateZScores(
 
   // Derived metrics for Z-scores
   const finishing = metric.gf60_ewma - metric.xgf60_ewma;
-  const goalie = metric.xga60_ewma - metric.ga60_ewma;
+  const goalie = goalie5v5Gap(metric);
   const dangerTotal = metric.hdcf60_ewma + metric.hdca60_ewma;
   const danger = dangerTotal > 0 ? metric.hdcf60_ewma / dangerTotal : 0.5;
   const ppOff = metric.pp_xgf60_ewma;
@@ -605,7 +693,11 @@ export function calculateZScores(
       league.league_finishing_avg,
       league.league_finishing_stddev,
     ),
-    goalie_z: z(goalie, league.league_goalie_avg, league.league_goalie_stddev),
+    goalie_z: zKnown(
+      goalie,
+      league.league_goalie_avg,
+      league.league_goalie_stddev,
+    ),
     danger_z: z(danger, league.league_danger_avg, league.league_danger_stddev),
     pp_off_z: zKnown(ppOff, league.league_pp_off_avg, league.league_pp_off_stddev),
     pk_def_z: zKnown(pkDef, league.league_pk_def_avg, league.league_pk_def_stddev),
@@ -687,7 +779,8 @@ export interface FinalRating {
   pace60: number;
   // New Ratings
   finishing_rating: number;
-  goalie_rating: number;
+  /** "5-on-5 goaltending" (decision 145); null when the 5-on-5 inputs are unknown. */
+  goalie_rating: number | null;
   danger_rating: number;
   /** Null when the team's PP or PK input is unknown. */
   special_rating: number | null;
@@ -722,7 +815,7 @@ export function calculateFinalRating(
     sa60: score.z.sa60,
     pace60: score.z.pace60,
     finishing_rating: 100 + 15 * (z.finishing_z || 0),
-    goalie_rating: 100 + 15 * (z.goalie_z || 0),
+    goalie_rating: z.goalie_z == null ? null : 100 + 15 * (z.goalie_z || 0),
     danger_rating: 100 + 15 * (z.danger_z || 0),
     special_rating:
       z.pp_off_z == null || z.pk_def_z == null
