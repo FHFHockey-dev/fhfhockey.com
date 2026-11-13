@@ -64,7 +64,10 @@ Full table (32 teams × 3 dates): `sample-before-after.tsv`.
   - `web/components/forge-dashboard/TeamPowerCard.tsx`: column header "5v5 Goalie", with an `abbr` title naming 5-on-5 goaltending and the empty-net exclusion.
   - `web/lib/underlying-stats/teamRatingNarrative.ts`: "5-on-5 goaltending is outperforming / lagging behind expected goals against right now."
   - `web/lib/teamRatingsService.ts`: contract comment on `goalieRating`.
-- **Pending (the Chef's call; F10 holds the file today):** `web/pages/underlying-stats/index.tsx`, the landing's Goaltending column and popover. Its popover shows the stored all-situations GA/60 and xGA/60, a different scope. Proposed: label it "5-on-5 goaltending", say empty-net goals are excluded, and drop those two all-situations lines.
+- **Landing (`820e5cb6d`, Chef-approved):** `web/pages/underlying-stats/index.tsx`.
+  - Header "5v5 Goaltending", with a 5-on-5 tooltip.
+  - Popover label "5-on-5 goaltending"; its formula text says empty-net goals are excluded.
+  - The popover's GA/60, xGA/60 and save-gap lines were **removed**. They showed stored all-situations values, which include empty-net and special-teams goals: a different scope from the rating above them.
 - **Reviewed, unchanged:**
   - `teamLandingDashboard.ts`: the "Goalie-carried" tag and the trust type treat null as average. That gives the same result as leaving the team out.
   - `dashboard/normalizers.ts`, `rankings/teamMatrix.ts`: no display.
