@@ -1,0 +1,24 @@
+{
+  "teamGames": 609,
+  "teamGamesAgreeing": 593,
+  "teamGamesDisagreeing": 16,
+  "disagreeingGames": 14,
+  "players": 7195,
+  "playersAgreeingWithin2sAndShare0005": 7152,
+  "storedRows": 7190,
+  "computedPlayersNotStored": 5,
+  "storedRowsWithNoComputedTime": 15,
+  "unitAgreement": 7172,
+  "unitMismatchesByTeamGame": {
+    "agreeingTeamGamesWithTiedBoundary": 0,
+    "agreeingTeamGamesWithoutTie": 0,
+    "disagreeingTeamGames": 18
+  },
+  "storedRowsByWriterVersion": {
+    "v2": 7152,
+    "masterNotV2": 5,
+    "pre1101Only": 15,
+    "none": 18
+  },
+  "allTeamGamesV2EqualsMaster": 608
+}

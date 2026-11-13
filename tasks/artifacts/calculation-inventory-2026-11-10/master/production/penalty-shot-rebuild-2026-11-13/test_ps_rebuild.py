@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Offline tests for ps-rebuild.py's pure helpers (no DB, no network). Run: python3 -I test_ps_rebuild.py"""
 import copy
+import glob
 import importlib.util
 import os
+import sys
+import tempfile
 import unittest
 
 spec = importlib.util.spec_from_file_location("ps_rebuild", os.path.join(os.path.dirname(os.path.abspath(__file__)), "ps-rebuild.py"))
@@ -81,6 +84,122 @@ class Helpers(unittest.TestCase):
         self.assertIsNotNone(ps.window_at(10 * 60 + 25))
         self.assertIsNotNone(ps.window_at(9 * 60 + 40, ps.CALL_MARGIN_MIN))
         self.assertIsNone(ps.window_at(18 * 60, ps.CALL_MARGIN_MIN))
+
+
+class ResumeEvidence(unittest.TestCase):
+    """Astra A3-02: a resume never re-baselines a done game and never overwrites evidence."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="ps-a302-")
+        self.saved = {name: getattr(ps, name) for name in ("OUT", "log", "rows_for", "official_for", "stop")}
+        self.events = []
+        ps.OUT = self.tmp
+        ps.log = lambda **kw: self.events.append(kw)
+
+        def fake_stop(code, reason, **kw):
+            raise AssertionError(f"stop {code}: {reason} {kw}")
+        ps.stop = fake_stop
+        self.read = []
+        ps.rows_for = lambda g: (self.read.append(g), copy.deepcopy(AFTER))[1]
+        ps.official_for = lambda g: ps.official_totals(BOX)
+
+    def tearDown(self):
+        for name, value in self.saved.items():
+            setattr(ps, name, value)
+
+    def test_resume_baselines_only_planned_games(self):
+        done = {str(ps.MANIFEST[0][0])}
+        plan = ps.planned_games(done)
+        baseline = ps.preflight(plan, done)
+        self.assertNotIn(ps.MANIFEST[0][0], baseline)
+        self.assertNotIn(ps.MANIFEST[0][0], self.read)
+        self.assertEqual(sorted(baseline), sorted(g for g, _d in plan))
+        self.assertEqual([e["game"] for e in self.events if e["event"] == "already_done"], [ps.MANIFEST[0][0]])
+
+    def test_evidence_is_never_truncated_and_the_first_file_is_authority(self):
+        first = ps.write_evidence(ps.evidence_path("before", G, "json"), '{"pre": true}')
+        with self.assertRaises(FileExistsError):
+            ps.write_evidence(first, "{}")
+        self.assertEqual(open(first).read(), '{"pre": true}')
+        second = ps.write_evidence(ps.evidence_path("before", G, "json"), "{}")
+        self.assertNotEqual(first, second)
+        self.assertEqual(ps.authority_file("before", G, "json"), first)
+        self.assertEqual(len(glob.glob(os.path.join(self.tmp, f"before-{G}-*.json"))), 2)
+
+
+class ResumeExecutePath(unittest.TestCase):
+    """A3-02 closing bar: main(--execute) on a resume leaves the completed game's evidence byte-identical and
+    adds files only for the pending game. Every DB, HTTP and clock touchpoint is stubbed."""
+
+    STUBBED = ("OUT", "DONE", "ROOT", "MANIFEST", "PAUSE_S", "guard", "window_gate", "migration_problems",
+               "deployment_problems", "manifest_problems", "rows_for", "official_for", "call")
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="ps-resume-")
+        self.saved = {name: getattr(ps, name) for name in self.STUBBED}
+        self.saved_argv = sys.argv
+
+    def tearDown(self):
+        for name, value in self.saved.items():
+            setattr(ps, name, value)
+        sys.argv = self.saved_argv
+
+    def test_resume_touches_only_the_pending_game(self):
+        completed, pending = (2026020094, "2026-10-13", 55, "save"), (G, "2026-10-08", 54, "goal")
+        ps.MANIFEST = [completed, pending]
+        ps.OUT = os.path.join(self.tmp, "run")
+        os.makedirs(ps.OUT)
+        ps.DONE = os.path.join(ps.OUT, "ps-rebuild.done")
+        ps.ROOT = self.tmp
+        os.makedirs(os.path.join(self.tmp, "web"))
+        with open(os.path.join(self.tmp, "web", ".env.local"), "w") as f:
+            f.write("CRON_SECRET=test-secret\n")
+        ps.PAUSE_S = 0
+        with open(ps.DONE, "w") as f:
+            f.write(f"{completed[0]}\n")
+        originals = {
+            os.path.join(ps.OUT, f"before-{completed[0]}.json"): '{"legacy": "pre-write rows"}',
+            os.path.join(ps.OUT, f"before-{completed[0]}-20261113T174600Z-222-01.json"): '{"stamped": "pre-write rows"}',
+            os.path.join(ps.OUT, f"after-{completed[0]}.json"): '{"legacy": "post-write rows"}',
+        }
+        for path, text in originals.items():
+            with open(path, "w") as f:
+                f.write(text)
+
+        calls, reads, written = [], [], {"done": False}
+        ps.guard = lambda: None
+        ps.window_gate = lambda game: None
+        ps.migration_problems = lambda: []
+        ps.deployment_problems = lambda: ("sha", [])
+        ps.manifest_problems = lambda: []
+        ps.official_for = lambda g: ps.official_totals(BOX)
+
+        def rows_for(g):
+            reads.append((g, written["done"]))
+            if g == completed[0]:
+                return copy.deepcopy(AFTER)  # already split; read only by the final verification
+            return copy.deepcopy(AFTER if written["done"] else BEFORE)
+        ps.rows_for = rows_for
+
+        def call(g, d, secret):
+            calls.append((g, d, secret))
+            written["done"] = True
+            return 0.1, {"success": True, "failures": [], "gamesVerified": 1, "rowsAffected": 40}
+        ps.call = call
+
+        sys.argv = ["ps-rebuild.py", "--execute"]
+        ps.main()
+
+        for path, text in originals.items():
+            self.assertEqual(open(path).read(), text)
+        self.assertEqual(sorted(glob.glob(os.path.join(ps.OUT, f"*{completed[0]}*"))), sorted(originals))
+        self.assertEqual(len(glob.glob(os.path.join(ps.OUT, f"before-{pending[0]}-*.json"))), 1)
+        self.assertEqual(len(glob.glob(os.path.join(ps.OUT, f"after-{pending[0]}-*.json"))), 1)
+        self.assertEqual(calls, [(pending[0], pending[1], "test-secret")])
+        # The completed game is never baselined or snapshotted: its only read is the final verification,
+        # after the pending game was written.
+        self.assertEqual([done for g, done in reads if g == completed[0]], [True])
+        self.assertEqual(open(ps.DONE).read().split(), [str(completed[0]), str(pending[0])])
 
 
 if __name__ == "__main__":

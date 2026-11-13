@@ -1,0 +1,118 @@
+                                                         QUERY PLAN                                                         
+----------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort (actual time=12.759..47.599 rows=328 loops=1)
+   Sort Key: sort_order, event_id
+   Presorted Key: sort_order
+   Full-sort Groups: 11  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+   Buffers: shared hit=138 read=62
+   ->  Index Scan using nhl_api_pbp_events_game_sort_idx on nhl_api_pbp_events (actual time=4.385..47.314 rows=328 loops=1)
+         Index Cond: (game_id = 2026020002)
+         Buffers: shared hit=138 read=62
+ Planning Time: 0.141 ms
+ Execution Time: 47.668 ms
+(10 rows)
+
+Time: 76.224 ms
+                                             QUERY PLAN                                             
+----------------------------------------------------------------------------------------------------
+ Index Scan using "teamGameStats_pkey" on "teamGameStats" (actual time=4.361..4.365 rows=2 loops=1)
+   Index Cond: ("gameId" = 2026020002)
+   Buffers: shared hit=1 read=2
+ Planning Time: 0.094 ms
+ Execution Time: 4.402 ms
+(5 rows)
+
+Time: 36.686 ms
+                                                      QUERY PLAN                                                      
+----------------------------------------------------------------------------------------------------------------------
+ Index Scan using nhl_api_shift_rows_game_team_idx on nhl_api_shift_rows (actual time=3.255..45.692 rows=393 loops=1)
+   Index Cond: ((game_id = 2026020002) AND (team_id = 10))
+   Filter: (type_code = 517)
+   Rows Removed by Filter: 2
+   Buffers: shared hit=278 read=75
+ Planning Time: 0.106 ms
+ Execution Time: 45.783 ms
+(7 rows)
+
+Time: 81.822 ms
+                                                                                                                                                    QUERY PLAN                                                                                                                                                    
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using nhl_api_shift_rows_game_player_idx on nhl_api_shift_rows (actual time=1.232..431.583 rows=556 loops=1)
+   Index Cond: ((game_id = ANY ('{2026020002,2026020008,2026020023,2026020044,2026020065,2026020080,2026020102,2026020108,2026020125,2026020139,2026020145,2026020155,2026020176,2026020186,2026020202,2026020224,2026020236,2026020268,2026020279,2026020286,2026020300}'::bigint[])) AND (player_id = 8478178))
+   Filter: (type_code = 517)
+   Rows Removed by Filter: 1
+   Buffers: shared hit=547 read=369 dirtied=12
+ Planning Time: 0.162 ms
+ Execution Time: 431.830 ms
+(7 rows)
+
+Time: 584.112 ms
+                                                                                                                                         QUERY PLAN                                                                                                                                         
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort (actual time=0.071..553.721 rows=6757 loops=1)
+   Sort Key: game_id, sort_order, event_id
+   Presorted Key: game_id, sort_order
+   Full-sort Groups: 212  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+   Buffers: shared hit=3770 read=1009
+   ->  Index Scan using nhl_api_pbp_events_game_sort_idx on nhl_api_pbp_events (actual time=0.020..549.084 rows=6757 loops=1)
+         Index Cond: (game_id = ANY ('{2026020002,2026020008,2026020023,2026020044,2026020065,2026020080,2026020102,2026020108,2026020125,2026020139,2026020145,2026020155,2026020176,2026020186,2026020202,2026020224,2026020236,2026020268,2026020279,2026020286,2026020300}'::bigint[]))
+         Buffers: shared hit=3770 read=1009
+ Planning Time: 0.192 ms
+ Execution Time: 554.241 ms
+(10 rows)
+
+Time: 668.641 ms
+                                                                                                                                                QUERY PLAN                                                                                                                                                 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using nhl_api_shift_rows_game_team_idx on nhl_api_shift_rows (actual time=0.020..1245.473 rows=7920 loops=1)
+   Index Cond: ((game_id = ANY ('{2026020002,2026020008,2026020023,2026020044,2026020065,2026020080,2026020102,2026020108,2026020125,2026020139,2026020145,2026020155,2026020176,2026020186,2026020202,2026020224,2026020236,2026020268,2026020279,2026020286,2026020300}'::bigint[])) AND (team_id = 10))
+   Filter: (type_code = 517)
+   Rows Removed by Filter: 52
+   Buffers: shared hit=8629 read=1813
+ Planning Time: 0.161 ms
+ Execution Time: 1246.647 ms
+(7 rows)
+
+Time: 1281.609 ms (00:01.282)
+                                                              QUERY PLAN                                                              
+--------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_power_play_combinations_contextual_lookup on "powerPlayCombinations" (actual time=1.500..3.240 rows=25 loops=1)
+   Index Cond: ("gameId" = 2026020002)
+   Buffers: shared hit=13 read=2
+ Planning Time: 0.076 ms
+ Execution Time: 3.281 ms
+(5 rows)
+
+Time: 33.794 ms
+                                                                                                                                                     QUERY PLAN                                                                                                                                                     
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_power_play_combinations_contextual_lookup on "powerPlayCombinations" (actual time=0.018..23.477 rows=20 loops=1)
+   Index Cond: (("gameId" = ANY ('{2026020002,2026020008,2026020023,2026020044,2026020065,2026020080,2026020102,2026020108,2026020125,2026020139,2026020145,2026020155,2026020176,2026020186,2026020202,2026020224,2026020236,2026020268,2026020279,2026020286,2026020300}'::bigint[])) AND ("playerId" = 8478178))
+   Buffers: shared hit=47 read=19
+ Planning Time: 0.165 ms
+ Execution Time: 23.535 ms
+(5 rows)
+
+Time: 56.423 ms
+                                                               QUERY PLAN                                                               
+----------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_power_play_combinations_contextual_lookup on "powerPlayCombinations" (actual time=1.054..58.685 rows=101 loops=1)
+   Index Cond: ("playerId" = 8478178)
+   Buffers: shared hit=330 read=63
+ Planning Time: 0.076 ms
+ Execution Time: 58.763 ms
+(5 rows)
+
+Time: 139.765 ms
+          scope           | rows | bytes  
+--------------------------+------+--------
+ pbp one game             |  328 |  17545
+ pbp team season          | 6757 | 362832
+ shifts one team-game     |  393 |   7860
+ shifts one player season |  556 |  11120
+ shifts team season       | 7920 | 221760
+ stored one game          |   25 |    750
+ stored player season     |   20 |    440
+(7 rows)
+
+Time: 51.859 ms

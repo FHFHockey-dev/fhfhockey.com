@@ -1,5 +1,6 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
+import { getSeasonLeagueSavePct, primeSeasonLeagueSavePctCache, MAX_LEAGUE_SAVE_PCT_DATES, type SeasonLeagueSavePctCache } from "lib/projections/goalie/leagueSavePct";
 import { GOALIE_START_TABLE_OWNERSHIP } from "lib/projections/compatibilityInventory";
 import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
@@ -154,12 +155,12 @@ async function fetchCurrentGoalieTeams(playerIds: number[], seasonId: number) {
 }
 
 /** Historical refreshes must not apply today's roster retroactively. The latest
- * observed game at or before that date supplies identity only, not start odds. */
+ * observed game before that date supplies identity only, not start odds. */
 export function historicalGoalieTeams(teamLogs: Record<number, any[]>, date: string) {
   const latest = new Map<number, { date: string; teamId: number | null }>();
   for (const [team, logs] of Object.entries(teamLogs)) {
     for (const log of logs) {
-      if (log.gameDate > date) continue;
+      if (log.gameDate >= date) continue;
       const previous = latest.get(log.playerId);
       if (!previous || log.gameDate > previous.date) {
         latest.set(log.playerId, { date: log.gameDate, teamId: Number(team) });
@@ -203,15 +204,16 @@ const handler = async (
       .json({ error: `endDate must be on or before ${maxEndDate}.` });
   }
 
+  const limitDays = req.query.limit === undefined ? MAX_LEAGUE_SAVE_PCT_DATES : Number(req.query.limit);
+  if (req.query.limit !== undefined && typeof req.query.limit !== "string"
+    || !Number.isSafeInteger(limitDays) || limitDays < 1 || limitDays > MAX_LEAGUE_SAVE_PCT_DATES) {
+    return res.status(400).json({ error: `limit must be an integer from 1 to ${MAX_LEAGUE_SAVE_PCT_DATES}.` });
+  }
+
   try {
     console.log("Starting goalie projection update...");
     const currentSeason = await fetchCurrentSeasonInfo();
     const seasonStartDate = currentSeason.startDate.split("T")[0];
-
-    // Optional limit parameter to control how many days to process
-    const limitDays = req.query.limit
-      ? parseInt(req.query.limit as string)
-      : 30; // Default 30 days
 
     // 1. Determine Start Date for Processing
     const { data: lastProjection } = await supabase
@@ -347,23 +349,25 @@ const handler = async (
     const rejected: Array<{ game_id: number; team_id: number; player_id: number }> = [];
     const missingGameTeams: Array<{ gameId: number; teamId: number }> = [];
 
+    const leagueSavePctCache: SeasonLeagueSavePctCache = new Map();
+    const leagueBaselines = new Map<string, Awaited<ReturnType<typeof getSeasonLeagueSavePct>>>();
+    await primeSeasonLeagueSavePctCache(datesToProcess, leagueSavePctCache);
+
     // 5. Process Games
     for (const game of filteredGames) {
+      if (!leagueBaselines.has(game.date)) {
+        leagueBaselines.set(game.date, await getSeasonLeagueSavePct(game.date, leagueSavePctCache));
+      }
+      const leagueBaseline = leagueBaselines.get(game.date)!;
+      const leagueSvPct = leagueBaseline.source === "observed" ? leagueBaseline.savePct : null;
       const eligibleTeams = game.date >= today ? currentTeams : historicalGoalieTeams(teamLogsMap, game.date);
       for (const type of ["home", "away"] as const) {
         const teamId = type === "home" ? game.homeTeamId : game.awayTeamId;
         const allLogs = teamLogsMap[teamId] || [];
 
-        // Filter logs: Only games played BEFORE or ON the current game date
-        // But wait, for "Season Stats" we want stats UP TO this game?
-        // Usually projections are based on stats *prior* to the game.
-        // But the original script used `gameDate <= game.date`.
-        // If we include the current game in the stats, we are "peeking" at the result if the game is already played.
-        // However, the original script said: "User wants 'rolling tally' including the current game for the stats columns"
-        // So we will stick to that logic: `log.gameDate <= game.date`.
-
+        // Pregame shares and rates must exclude the target game's results.
         const logsForStats = allLogs.filter(
-          (log: any) => log.gameDate <= game.date
+          (log: any) => log.gameDate < game.date
         );
 
         // Calculate Season Stats
@@ -426,11 +430,11 @@ const handler = async (
             totalSeasonGames > 0 ? stats.seasonStarts / totalSeasonGames : 0;
           const l10Pct =
             totalL10Games > 0 ? stats.l10Starts / totalL10Games : 0;
-          const startProb = l10Pct; // Primary metric
-
-          const leagueSvPct = 0.9;
-          const gsaa = stats.saves - stats.shots * leagueSvPct;
-          const gsaaPer60 = stats.minutes > 0 ? (gsaa / stats.minutes) * 60 : 0;
+          // Compatibility column: this is the raw L10 start share, not a
+          // calibrated probability. Start Chart labels it with this same basis.
+          const startProb = l10Pct;
+          const gsaa = leagueSvPct == null ? null : stats.saves - stats.shots * leagueSvPct;
+          const gsaaPer60 = gsaa != null && stats.minutes > 0 ? (gsaa / stats.minutes) * 60 : null;
 
           updates.push({
             game_id: game.id,
@@ -490,6 +494,8 @@ const handler = async (
       failures: databaseWriteFailures.slice(0, 10),
       ownershipDecision: GOALIE_START_TABLE_OWNERSHIP,
       observability: {
+        startProbabilityBasis: "l10_start_share",
+        leagueSavePctBaselines: Object.fromEntries(leagueBaselines),
         goalieRowsProcessed: totalUpserted,
         databaseWriteFailures: databaseWriteFailures.length,
         excludedHistoricalCandidates,
