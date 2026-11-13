@@ -1,124 +1,130 @@
-# Penalty shots: column rollout and derived rebuild (F15, Astra AF-07, decision 149)
+# Penalty shots: column rollout and 8-game derived rebuild (F15, Astra AF-07, decision 149)
 
-**Status: DRAFT. Not approved. Do not run.** Nothing here applies a migration, deploys, or calls a route on the strength of this document alone.
+**Status: code built and verified locally. Nothing applied, deployed or run.** Each production step below needs TJ's own approval. This file doesn't authorize any of them.
 
-## TJ's direction (pop-up, 2026-11-13 ~15:20Z)
-- Tonight: ship the shared adapter and its offline tests. Don't switch the derived builder or rebuild any game. AF-07 stays open in the builder.
-- After the freeze: prepare one coordinated rollout:
-  - separate penalty-shot shots and goals;
-  - transactional persistence;
-  - every reader that treats ES+PP+PK as all-situation.
-- Penalty shots stay out of ES/PP/PK. Shootout attempts stay excluded.
-- All-situation totals must match the official boxscore:
+## Decision
+- Owner decision 149: penalty-shot goals and shots count in all-situation totals and in no strength bucket (ES, 5v5, PP, PK).
+- TJ approved starting the coordinated rollout on 2026-11-13, via the Chef.
+- Official totals:
   - a scored penalty shot is 1 goal and 1 shot;
   - a saved one is 1 shot;
-  - a miss is neither.
-- Old rows carry a version or coverage marker, so no reader adds a penalty-shot count to an ES total that already includes it.
-- Tests: a goal, a save, a miss and a shootout attempt, through the writer and the affected readers.
-- Confirm the exact rebuild list against the official record. The migration, the deployment order and the bounded rebuild plan come back for separate approval.
+  - a miss is neither;
+  - shootout attempts are never counted.
 
-## What shipped tonight
-- `classifyEventStrengthBucket(digits, side)` in `web/lib/supabase/Upserts/nhlStrengthState.ts`. It is the shared adapter: `es`/`pp`/`pk` from `classifyTeamManpower`, and `null` for a penalty-shot code (a side with no skaters).
-- Tests:
-  - oriented home-shooter (1010) and away-shooter (0101) cases;
-  - ordinary 5v5, PP, PK, OT and extra-attacker codes unchanged;
-  - adapter = canonical manpower state for all 10,000 codes.
-- `situation.test.ts` pins the remaining gap (AF-07 open): the adapter equals `strengthForTeam` on every valid code where both sides have skaters. For the two real 2026-27 penalty shots in the test, the adapter gives no bucket while the builder still says `es`. Flip that assertion when the builder switches.
-- `situation.ts` and `buildStrengthTablesV2.ts` are unchanged. Stored rows are unchanged.
-- **No STRENGTH_VERSION bump.** Normalized output is identical: one new export, and two parameter types widened to the four digits. `nhlRawGamecenter.test.ts` (the version-equality assertion) passes.
+## Ship order (each step approved separately)
+1. **Apply migration `supabase/migrations/20261113200000_forge_strength_penalty_shot_split.sql`.**
+   - Apply it alone, via the IPv4 session pooler with `psql -f`. The file has its own `begin/commit`, lock 5 s and statement 60 s.
+   - Readback:
+     - six columns: `shots_ps int`, `goals_ps int`, `penalty_shot_split_version smallint`, all nullable, on both tables;
+     - two CHECKs: `forge_{player,team}_game_strength_penalty_shot_split_check`;
+     - `persist_projection_game_derived_v2` exists, with EXECUTE for `service_role` only;
+     - v1's ACL is unchanged;
+     - every existing row has a null marker.
+   - Then record `schema_migrations` and flip the authority row.
+   - Safe before the code: v1 becomes a wrapper over v2 that stores legacy rows exactly as before. The PG15 proof shows the same receipt and the same rows, idempotently.
+2. **Release the F15 code.** It reads and writes the new columns, so it must follow step 1:
+   - the homepage SOG select;
+   - the splits select;
+   - the builder's v2 call.
 
-## Exposure: unchanged by penalty shots (confirmed from code)
-Strength TOI in `shift_charts` comes from the penalty clock (`ingest/shifts.ts` → `buildPenaltyClock`), not from situation codes. In `penaltyClock.ts`:
-- a `PS` infraction creates no box time (`unitsForPenalty`);
-- a penalty-shot goal releases no minor (`:179`);
-- `observedAdvantage` ignores codes with fewer than 3 skaters a side.
+   Before the migration, the homepage would hide SOG (the reader catches the error), the splits page would fail, and the derived build would fail closed with no writes.
+3. **Rebuild the 8 games** with `ps-rebuild.py --execute` (below), after its dry run passes.
+4. Projections pick up the change on their next nightly run. No extra recompute is proposed for 8 events.
 
-A penalty shot is taken with the clock stopped, so it has no elapsed time.
+New games become split rows as the nightly derived build writes them.
 
-## Affected games
-Source: read-only `pbp_plays` reads on 2026-11-13. `pg_stat_activity` was checked first (0–1 active, none long).
+`PROJECTION_DERIVED_ALGORITHM_VERSION` is deliberately unchanged. A bump would make the scheduled derived queue rebuild every stored game. The row marker carries the change instead.
 
-**2026-27:** 8 non-shootout penalty-shot events in 8 games: 2 goals, 6 saves, 0 misses. All are in regulation; none in OT.
-- Orientation holds: every 1010 owner is the home team and every 0101 owner is the away team.
-- Every game has stored derived rows (2 team rows and 38 player rows each).
+## What the code does
+- **Builder** (`buildStrengthTablesV2.ts`):
+  - classifies each counted event with the shared canonical adapter `classifyEventStrengthBucket` (8463912d8). A null answer (a penalty-shot code outside the shootout) goes to `shots_ps` / `goals_ps`.
+  - Shootouts are still dropped first by `isShootoutPlay`.
+  - An assisted penalty-shot goal is refused: the NHL awards none, and the stored 2026-27 goals have none.
+  - Every row carries marker 1.
+- **`situation.ts`**: `strengthForTeam` now serves only the penalty clock's exposure, which ignores codes with fewer than 3 skaters. Its doc says so.
+- **Persistence**: `persistProjectionGameDerivedV2` calls the new RPC and refuses an unmarked row before calling it.
+- **RPC v2** = v1 plus:
+  - the three columns;
+  - one marker per payload;
+  - the row rule (marker null with PS null, or marker 1 with 0 ≤ `goals_ps` ≤ `shots_ps`);
+  - team PS equal to the sum of player PS;
+  - team PS equal to the stored play-by-play's penalty shots for that team (`PROJECTION_DERIVED_PENALTY_SHOT_EVIDENCE_MISMATCH`).
+- **Readers.** All-situation = ES + PP + PK + (marker 1 ? PS : 0), in `lib/projections/derived/penaltyShotSplit.ts`. Legacy rows already hold penalty shots in ES, so nothing is counted twice. Updated:
+  - `homepageGameAnalytics.ts`: the SOG pair. It fails closed on a missing PS count or an unknown marker.
+  - `splitsServer.ts`: the landing-leader goals, and the matchup goals and shots. These are lenient, adding PS only on split rows.
+- **Readers checked and left unchanged:**
+  - `team-context-queries.ts`: `fetchTeamOffenseEnvironment` sums ES + PP, not an all-situation total, so penalty shots stay out (decision 149). `fetchTeamStrengthAverages` reads per strength.
+  - `pages/api/toi.ts`, `PowerPlayCombos.tsx`: PP only.
+  - `run-projection-v2.ts`, `xg/participation.ts`: freshness and participation only.
+  - `sourceOwnership.ts`, `rollingForgePipeline.ts`, `goaliePipeline.ts`, `run-forge-projections.ts`, `qualify-native-players-offline.ts`: table names only.
+  - No SQL view reads these tables.
+- **Not changed here: canonical NST parity.** `nhlEventInclusion.ts` `includeInParity` drops penalty shots from parity "all". It sits in separate files and needs an on-ice/xG decision, so it is proposed as its own session ("F15b").
+- **Build route:** `gameId=` builds one game on its `startDate`, so the rebuild touches only these 8 games and not every game on their 7 dates. An unknown or misdated id fails the date with no write.
 
-| game | date | period | code | result | shooter team (home/away) |
-|---|---|---|---|---|---|
-| 2026020065 | 2026-10-08 | 2 | 1010 | goal | 54 (home) |
-| 2026020094 | 2026-10-13 | 2 | 0101 | save | 55 (away) |
-| 2026020101 | 2026-10-13 | 1 | 1010 | save | 18 (home) |
-| 2026020119 | 2026-10-16 | 2 | 1010 | save | 21 (home) |
-| 2026020131 | 2026-10-17 | 1 | 1010 | goal | 18 (home) |
-| 2026020150 | 2026-10-20 | 2 | 0101 | save | 12 (away) |
-| 2026020159 | 2026-10-22 | 2 | 0101 | save | 26 (away) |
-| 2026020203 | 2026-10-29 | 2 | 0101 | save | 16 (away) |
+## Affected games (confirmed 2026-11-13, read-only)
+- The stored play-by-play holds exactly these 8 penalty shots outside the shootout in 2026-27: 2 goals, 6 saves, 0 misses, 0 in overtime. The runner re-checks this before any write.
+- Each game has 2 team rows and 38 player rows.
+- **Today's legacy all-situation totals equal the stored official NHL boxscores for all 8 games.** Shots and goals both match; for the two shootout games, goals are the score minus the shootout winner's extra goal. So the readback can require "equal to the official record" for every game.
 
-**2025-26** (scope decision for TJ): 33 events in 33 games, 6 of them goals. 15 of those games have derived rows.
+| game | date | shooter | result | official SOG / goals (home team listed first) |
+|---|---|---|---|---|
+| 2026020065 | 2026-10-08 | 54 (home) | goal | 54: 43 / 3, 10: 24 / 3 (SO) |
+| 2026020094 | 2026-10-13 | 55 (away) | save | 4: 26 / 2, 55: 31 / 2 (SO) |
+| 2026020101 | 2026-10-13 | 18 (home) | save | 18: 28 / 2, 54: 25 / 5 |
+| 2026020119 | 2026-10-16 | 21 (home) | save | 21: 32 / 5, 5: 32 / 2 |
+| 2026020131 | 2026-10-17 | 18 (home) | goal | 18: 24 / 5, 19: 26 / 2 |
+| 2026020150 | 2026-10-20 | 12 (away) | save | 23: 17 / 3, 12: 44 / 6 |
+| 2026020159 | 2026-10-22 | 26 (away) | save | 2: 43 / 2, 26: 27 / 3 (OT) |
+| 2026020203 | 2026-10-29 | 16 (away) | save | 17: 31 / 4, 16: 19 / 1 |
 
-**Still to confirm before approval:**
-- the list against the official record: NHL boxscore and play-by-play, plus the normalized `nhl_api_pbp_events` penalty-shot flag;
-- missed penalty shots, which count nowhere;
-- that no penalty shot is coded otherwise.
+**2025-26** (33 events in 33 games, 6 goals, 15 with derived rows) is out of scope unless TJ asks. Those rows stay legacy, and every reader still sums them correctly.
 
-## Rollout design (post-freeze, for approval)
-1. **Migration** (additive, applied alone):
-   - On `forge_player_game_strength` and `forge_team_game_strength`, add `shots_ps int null`, `goals_ps int null` and `penalty_shot_split_version smallint null`.
-   - `null` marks a legacy row: any penalty shot is still inside ES.
-   - `1` marks a split row: `shots_ps`/`goals_ps` are non-null and ≥ 0, and penalty shots are in no bucket. A CHECK enforces this.
-   - Add a new `persist_projection_game_derived_v2` RPC with the extra recordset fields and the same validation. Version 1 stays for the old code.
-   - No assists column: NHL awards no assists on a penalty-shot goal. The writer test asserts a PS goal adds no assist anywhere.
-2. **Code** (one deploy, after the migration):
-   - The builder classifies with `classifyEventStrengthBucket`. A `null` result goes to `*_ps` and stamps version 1. Shootouts are still dropped first by `isShootoutPlay`.
-   - Persistence calls the new RPC.
-   - Readers compute all-situation as ES+PP+PK + (version = 1 ? PS : 0).
-3. **Readers to audit** (from a grep of the tables' readers). Known ES+PP+PK sums:
-   - `homepageGameAnalytics.ts:388`: the SOG pair;
-   - `splitsServer.ts:493` and `:746`: goals, assists and shots.
+## Runner: `ps-rebuild.py` (dry run by default)
+- **Fail-closed gates, in order:**
+  1. DB guard: at most 5 active queries, none older than 10 s; wait 60 s, at most 3 times, then exit 3.
+  2. No call within 15 min of 09:50–11:00 UTC: the 10:05 rolling FORGE pipeline and pg_cron 305 at 10:25 both run the derived build. Otherwise exit 4.
+  3. Migration applied: the six columns and v2 exist (exit 7).
+  4. The production deployment is in master's history and its route and persistence contain the F15 markers. Read-only `gh api` (exit 7).
+  5. The stored play-by-play's penalty shots equal the manifest exactly, and dates match (exit 6).
+  6. Baseline per game: legacy totals against the boxscore, logged.
+- **Dry run** (no flag) stops after the gates and prints the 8 planned calls. It writes nothing and makes no route request.
+- **`--execute`**, per game in date order:
+  - window check, guard, window check;
+  - before-snapshot of every row to `run/before-<game>.json`;
+  - one `GET …/build-projection-derived-v2?startDate=<date>&gameId=<id>&maxDurationMs=180000`, Bearer `CRON_SECRET` read from `web/.env.local` and never printed;
+  - stop unless the response is HTTP 200, `success: true`, has no failures and `gamesVerified` = 1. A timeout (200 s) or network error stops the run as uncertain.
+- **Key-by-key readback** (exit 6 on any difference), saved to `run/after-<game>.json`:
+  - the same player keys, and both teams;
+  - every row marked 1;
+  - per player: ES + PP + PK + PS after equals ES + PP + PK before, for shots and goals;
+  - ES drops by exactly its PS;
+  - PP, PK, assists, TOI, team, opponent and date unchanged;
+  - team PS equals the manifest (the shooter's team 1, or 1 / 1 for a goal; the other team 0);
+  - team all-situation equals the official boxscore.
+- **Resume:** each finished game id is appended to `run/ps-rebuild.done`, and a rerun skips it. The RPC is transactional, so a failed call commits nothing.
+- **Bounds:** 8 calls, sequential, concurrency 1, 10 s apart, no retries inside the runner. On a stop, read the log, fix the cause and rerun; done games are skipped.
+- **Final:** all 8 games fully split and equal to the official record, then `DONE`.
+- **Offline tests:** `python3 -I test_ps_rebuild.py` (7 tests: shootout goal correction, legacy vs split sums, manifest PS, a clean readback, five failure cases, held-to-unchanged, windows).
 
-   Also check:
-   - `team-context-queries.ts`;
-   - `run-forge-projections.ts`;
-   - `skater-stage.ts` (F13 owns this file today);
-   - `goaliePipeline.ts`, `rollingForgePipeline.ts`, `xg/participation.ts`;
-   - `pages/api/toi.ts`, `PowerPlayCombos.tsx`, `predictions/sourceOwnership.ts`;
-   - `scripts/qualify-native-players-offline.ts`.
+## Verification done (local only)
+- PG15 proof `supabase/tests/f15_penalty_shot_split.py`, 19 checks, RESULT OK:
+  - before: the legacy writer works, and v2 is absent;
+  - after:
+    - rows keep their values and are marked legacy;
+    - grants and v1's ACL are unchanged;
+    - v1 replays idempotently with the same receipt;
+    - a split payload stores, and its all-situation totals equal the official totals (the miss and the shootout goal count nowhere);
+    - a split replay is idempotent;
+    - a v1 rewrite returns the game to legacy without losing a shot;
+    - six refusals: mixed markers, team ≠ player sum, a PS left in ES, a shootout goal as PS, goals_ps > shots_ps, marker 2;
+    - the table CHECK refuses a legacy marker on a row with PS counts (23514);
+  - rollback: it refuses while a split row exists, and after a legacy rebuild restores v1, the columns, constraints and grants exactly.
+- Vitest, typecheck and ESLint: see the commit message.
 
-   Strength-rate readers (ES/PP/PK per TOI) correctly exclude PS.
-4. **Build route:** add `gameId=` to `build-projection-derived-v2`, so the rebuild touches affected games only. It is date-based today: 7 dates hold the 8 games, and 2026-10-13 holds two of them.
-5. **Tests:** the goal, save, miss and shootout fixtures, home and away shooter, through the builder, the RPC payload and each affected reader. Old-row cases (version null) must not double-count.
-6. **Unrelated finding:** canonical parity also drops penalty shots from parity "all" (`nhlEventInclusion.ts`: `includeInParity`). Decide whether decision 149 applies there too.
-
-## Rebuild loop (draft; TJ's terminal, after migration, deploy and approval)
-- **Preconditions:**
-  - migration applied and read back;
-  - deploy READY at the approved SHA;
-  - the game list confirmed;
-  - no derived-build cron is running: check the schedule and wait for any run to finish.
-- **Route:** `GET https://fhfhockey.com/api/v1/db/build-projection-derived-v2?gameId=G`, or `startDate=D&endDate=D` if `gameId` isn't added. That reaches 7 dates, and the other games on those dates are rewritten idempotently.
-  - Auth: Bearer `CRON_SECRET`, read from `web/.env.local` inside the script and never printed. Confirm `adminOnly` accepts it.
-  - DB-only: no NHL, NST or Yahoo requests.
-- **Load bounds:**
-  - Sequential, concurrency 1, 10 s between calls.
-  - At most 8 calls (or 7), plus at most 1 retry each.
-- **DB guard before every call:** `pg_stat_activity` must show 5 or fewer active queries and none older than 10 s. Otherwise wait 60 s, at most 3 times, then stop.
-- **Stop at once on:**
-  - a non-200 status, or a failure or partial status in the body;
-  - a call taking more than 200 s;
-  - a readback failure.
-- **Resume:**
-  - A state file (`$TMPDIR/ps-rebuild.done`) records each finished game id, and the loop skips listed ids.
-  - The RPC is transactional, so a failed call commits nothing for that game. Rerun the same id once; if it fails again, stop and report.
-- **Readback** (read-only, per game):
-  - both team rows and all player rows carry `penalty_shot_split_version = 1`;
-  - the shooter team's `shots_ps`/`goals_ps` equal the table above;
-  - ES+PP+PK+PS for shots and goals equals the official boxscore SOG and goals for both teams;
-  - the ES count drops by exactly the penalty-shot events.
-- **Final receipts:** 8 of 8 games at version 1; total calls, durations and retries.
-- **Downstream:** projections pick up the change on their next nightly run. No extra recompute is proposed for 8 events.
+## Rollback
+1. Revert the F15 code.
+2. Rebuild each split game with the reverted code. It calls v1, which now stores legacy rows.
+3. Run `supabase/tests/f15_penalty_shot_split_rollback.sql`. It refuses while any split row remains, then restores v1 exactly as 20260720105524 defined it, drops v2, the CHECKs and the columns.
 
 ## Post-expiry OT boundaries
-Not audited in this lane, as Astra noted. What I saw in passing:
-- `penaltyClock.ts` moves coincident regulation timers off the manpower clock at second 3600 (Rule 84.3).
-- `ingest/shifts.test.ts:445` covers a carried regulation minor that expires inside overtime.
-
-I did not look for a fixture where a minor expires exactly at 3600, or where a held coincident service later releases a serial penalty in OT. Leave both for a separate audit.
+Not audited in this lane. `penaltyClock.ts` moves coincident regulation timers off the manpower clock at second 3600, and `ingest/shifts.test.ts:445` covers a carried minor expiring in overtime. A minor expiring exactly at 3600, and a held coincident release in OT, are left for a separate audit.

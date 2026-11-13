@@ -20,7 +20,12 @@
  *    - If omitted, it defaults to the `startDate`, effectively processing a single day.
  *    - Example: `?startDate=2025-10-05&endDate=2025-10-12`
  *
- * 3. `maxDurationMs` (optional)
+ * 3. `gameId` (optional)
+ *    - Description: Build only this game, on the date given by `startDate` (one date). Other games on that date are left untouched.
+ *    - Used by bounded single-game rebuilds (e.g. the 8 penalty-shot games, decision 149).
+ *    - Example: `?startDate=2026-10-08&gameId=2026020065`
+ *
+ * 4. `maxDurationMs` (optional)
  *    - Description: The maximum allowed execution time for the job in milliseconds. This acts as a server-side timeout.
  *    - If the process exceeds this duration, it will halt and return a timeout error.
  *    - Defaults to `270000` (4.5 minutes) if not specified.
@@ -65,7 +70,7 @@ import {
 } from "lib/projections/derived/buildStrengthTablesV2";
 import { prepareGoalieGameV2 } from "lib/projections/derived/buildGoalieGameV2";
 import {
-  persistProjectionGameDerivedV1,
+  persistProjectionGameDerivedV2,
   readProjectionGameInputManifest,
 } from "lib/projections/derived/projectionDerivedPersistence";
 import {
@@ -263,7 +268,7 @@ async function processProjectionDerivedGame(game: ProjectionDerivedGame) {
   }
 
   try {
-    return await persistProjectionGameDerivedV1({
+    return await persistProjectionGameDerivedV2({
       gameId: game.id,
       manifest,
       playerRows: playerPrepared.rows,
@@ -325,7 +330,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   const chunkDays = parseChunkDays(getParam(req, "chunkDays") ?? null);
   const explicitMaxDays = parsePositiveInt(getParam(req, "maxDays"));
   const resumeFromDate = getParam(req, "resumeFromDate")?.slice(0, 10) ?? null;
+  const onlyGameId = parsePositiveInt(getParam(req, "gameId"));
   const useScheduledDerivedQueue =
+    onlyGameId == null &&
     requestedStartDate == null &&
     requestedEndDate == null &&
     resumeFromDate == null &&
@@ -424,6 +431,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       failures.push({ date, stage: "request", error });
       nextStartDate = date;
       break;
+    }
+    if (onlyGameId != null) {
+      games = games.filter((candidate) => candidate.id === onlyGameId);
+      if (games.length !== 1) {
+        const error = `game ${onlyGameId} is not scheduled on ${date}`;
+        errors.push(`${date} request: ${error}`);
+        failures.push({ date, stage: "request", error });
+        nextStartDate = date;
+        break;
+      }
     }
     let dateFailed = false;
     for (const game of games) {

@@ -9,7 +9,7 @@ import type {
 import {
   PROJECTION_DERIVED_ALGORITHM_VERSION,
   ProjectionDerivedPersistenceError,
-  persistProjectionGameDerivedV1,
+  persistProjectionGameDerivedV2,
   readProjectionGameInputManifest,
   type ProjectionDerivedPersistenceClient,
   type ProjectionGameInputManifest,
@@ -41,6 +41,9 @@ const playerRows: ProjectionPlayerStrengthRow[] = [
     assists_es: 0,
     assists_pp: 0,
     assists_pk: 0,
+    shots_ps: 0,
+    goals_ps: 0,
+    penalty_shot_split_version: 1,
     hits: null,
     blocks: null,
     pim: null,
@@ -62,6 +65,9 @@ const teamRows: ProjectionTeamStrengthRow[] = [
     goals_es: 0,
     goals_pp: 0,
     goals_pk: 0,
+    shots_ps: 0,
+    goals_ps: 0,
+    penalty_shot_split_version: 1,
   },
   {
     game_id: gameId,
@@ -77,6 +83,9 @@ const teamRows: ProjectionTeamStrengthRow[] = [
     goals_es: 0,
     goals_pp: 0,
     goals_pk: 0,
+    shots_ps: 0,
+    goals_ps: 0,
+    penalty_shot_split_version: 1,
   },
 ];
 
@@ -204,7 +213,7 @@ describe("projection derived transactional persistence", () => {
       emptyNetEvents: 0,
     };
 
-    const result = await persistProjectionGameDerivedV1({
+    const result = await persistProjectionGameDerivedV2({
       gameId,
       manifest,
       playerRows,
@@ -214,8 +223,10 @@ describe("projection derived transactional persistence", () => {
     });
 
     expect(client.rpc).toHaveBeenCalledWith(
-      "persist_projection_game_derived_v1",
+      "persist_projection_game_derived_v2",
       expect.objectContaining({
+        p_player_rows: playerRows,
+        p_team_rows: teamRows,
         p_expected_input_fingerprint: inputFingerprint,
         p_expected_input_version: manifest.inputVersion,
         p_algorithm_version: PROJECTION_DERIVED_ALGORITHM_VERSION,
@@ -241,13 +252,41 @@ describe("projection derived transactional persistence", () => {
     expect(deleteMock).not.toHaveBeenCalled();
   });
 
+  it("refuses a row without the penalty-shot split marker before calling the RPC", async () => {
+    const { client } = clientWithRpc(async (_functionName, args) => ({
+      data: [receipt(args)],
+      error: null,
+    }));
+    const legacyTeam = { ...teamRows[0] } as Record<string, unknown>;
+    delete legacyTeam.penalty_shot_split_version;
+    await expect(
+      persistProjectionGameDerivedV2({
+        gameId,
+        manifest,
+        playerRows,
+        teamRows: [
+          legacyTeam as unknown as ProjectionTeamStrengthRow,
+          teamRows[1],
+        ],
+        goalie: {
+          rows: [],
+          outcome: "not_observed",
+          justification: "completed_pbp_contains_no_countable_shot_events",
+          emptyNetEvents: 0,
+        },
+        client,
+      }),
+    ).rejects.toMatchObject({ phase: "persistence_rpc", gameId });
+    expect(client.rpc).not.toHaveBeenCalled();
+  });
+
   it("fails closed on an RPC error and performs no client-side delete", async () => {
     const { client, deleteMock } = clientWithRpc(async () => ({
       data: null,
       error: { code: "XX000", message: "transaction failed" },
     }));
     await expect(
-      persistProjectionGameDerivedV1({
+      persistProjectionGameDerivedV2({
         gameId,
         manifest,
         playerRows,
@@ -273,7 +312,7 @@ describe("projection derived transactional persistence", () => {
       },
     }));
     try {
-      await persistProjectionGameDerivedV1({
+      await persistProjectionGameDerivedV2({
         gameId,
         manifest,
         playerRows,
@@ -299,7 +338,7 @@ describe("projection derived transactional persistence", () => {
       error: null,
     }));
     await expect(
-      persistProjectionGameDerivedV1({
+      persistProjectionGameDerivedV2({
         gameId,
         manifest,
         playerRows,
@@ -327,7 +366,7 @@ describe("projection derived transactional persistence", () => {
     }));
 
     await expect(
-      persistProjectionGameDerivedV1({
+      persistProjectionGameDerivedV2({
         gameId,
         manifest,
         playerRows,
@@ -356,7 +395,7 @@ describe("projection derived transactional persistence", () => {
     }));
 
     await expect(
-      persistProjectionGameDerivedV1({
+      persistProjectionGameDerivedV2({
         gameId,
         manifest,
         playerRows,

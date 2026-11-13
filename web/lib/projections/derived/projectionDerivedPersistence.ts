@@ -12,9 +12,24 @@ import type {
   ProjectionPlayerStrengthRow,
   ProjectionTeamStrengthRow,
 } from "./buildStrengthTablesV2";
+import { PENALTY_SHOT_SPLIT_VERSION } from "./penaltyShotSplit";
 
+/**
+ * Deliberately unchanged by the penalty-shot split (decision 149): the
+ * scheduled derived queue rebuilds every game whose stored algorithm version
+ * differs, so a bump would rewrite the whole history. Each stored row carries
+ * its own `penalty_shot_split_version` instead, and readers branch on it.
+ */
 export const PROJECTION_DERIVED_ALGORITHM_VERSION =
   "projection-derived-materialization-v1";
+
+/**
+ * The transactional writer for split rows. v1 is now the legacy wrapper over
+ * it (migration 20261113200000), kept for the released code during the
+ * rollout.
+ */
+export const PROJECTION_DERIVED_PERSIST_RPC =
+  "persist_projection_game_derived_v2";
 
 type ManifestRow = {
   game_id: number;
@@ -288,7 +303,7 @@ function parseReceipt(args: {
   };
 }
 
-export async function persistProjectionGameDerivedV1(args: {
+export async function persistProjectionGameDerivedV2(args: {
   gameId: number;
   manifest: ProjectionGameInputManifest;
   playerRows: ProjectionPlayerStrengthRow[];
@@ -308,6 +323,9 @@ export async function persistProjectionGameDerivedV1(args: {
     args.playerRows.length > 100 ||
     args.teamRows.length !== 2 ||
     goalieRows.length > 4 ||
+    [...args.playerRows, ...args.teamRows].some(
+      (row) => row.penalty_shot_split_version !== PENALTY_SHOT_SPLIT_VERSION,
+    ) ||
     (args.goalie.outcome === "complete" &&
       (goalieRows.length === 0 || args.goalie.justification !== null)) ||
     (args.goalie.outcome === "not_observed" &&
@@ -332,7 +350,7 @@ export async function persistProjectionGameDerivedV1(args: {
   const client = args.client ?? defaultClient();
   let result: { data: unknown; error: unknown };
   try {
-    result = await client.rpc("persist_projection_game_derived_v1", {
+    result = await client.rpc(PROJECTION_DERIVED_PERSIST_RPC, {
       p_game_id: args.gameId,
       p_expected_input_fingerprint: args.manifest.inputFingerprint,
       p_expected_input_version: args.manifest.inputVersion,

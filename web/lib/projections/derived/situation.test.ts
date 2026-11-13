@@ -142,7 +142,7 @@ describe("shared event-strength adapter vs strengthForTeam (AF-07, decision 149)
     [2026020065, 2, "1010", 54, 54, 10, "home"],
     [2026020094, 2, "0101", 55, 4, 55, "away"],
   ] as const)(
-    "%s: a period-%s %s penalty shot is not a shootout attempt; the adapter gives no bucket, the builder still says ES (AF-07 open)",
+    "%s: a period-%s %s penalty shot is not a shootout attempt; the adapter (the builder's classifier) gives no bucket, while the exposure-only strengthForTeam says ES",
     (gameid, periodnumber, code, shooter, home, away, side) => {
       expect(isShootoutPlay({ gameid, periodnumber, periodtype: "REG" })).toBe(
         false,
@@ -150,8 +150,9 @@ describe("shared event-strength adapter vs strengthForTeam (AF-07, decision 149)
       const digits = parseSituationDigits(code)!;
       expect(sideOf(shooter, home)).toBe(side);
       expect(classifyEventStrengthBucket(digits, side)).toBeNull();
-      // The derived builder is not switched until the coordinated penalty-shot
-      // column rollout (TJ, 2026-11-13); flip this when it is.
+      // strengthForTeam now serves only the penalty clock's exposure, which
+      // ignores codes with fewer than 3 skaters; the builder counts events
+      // with the adapter (penalty shots to PS, decision 149).
       expect(strengthForTeam(digits, shooter, home, away)).toBe("es");
     },
   );
