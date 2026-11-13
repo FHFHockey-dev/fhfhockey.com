@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCanonicalSosRankings,
+  buildCanonicalSosRankingsV2,
   type SosStandingRow,
+  type TeamSosReaderRow,
 } from "./strengthOfSchedule";
 // The event-level version is deliberately separate from legacy pooled snapshots.
 import {
@@ -74,6 +76,71 @@ describe("buildCanonicalSosRankings", () => {
     );
 
     expect(rankings.past[0]?.sos).toBe(0.667);
+  });
+});
+
+function v2Row(teamId: number, overrides: Partial<TeamSosReaderRow> = {}): TeamSosReaderRow {
+  return {
+    season_id: 20252026,
+    snapshot_date: "2026-01-14",
+    team_id: teamId,
+    team_abbrev: "UTA",
+    sos_version: "descriptive-sos-v2",
+    past_view: "past-retrospective",
+    cutoff_at: "2026-01-15T09:12:03.000Z",
+    past_fixtures: 40,
+    pending_fixtures: 1,
+    future_fixtures: 42,
+    past_direct_supported: 40,
+    future_direct_supported: 42,
+    past_direct_win_pct: 0.4567,
+    past_indirect_win_pct: 0.5,
+    past_direct_points_pct: 0.55,
+    past_indirect_points_pct: 0.5,
+    future_direct_win_pct: null,
+    future_indirect_win_pct: null,
+    future_direct_points_pct: null,
+    future_indirect_points_pct: null,
+    ...overrides,
+  };
+}
+
+describe("buildCanonicalSosRankingsV2", () => {
+  const teams = [
+    { id: 68, name: "Utah Mammoth", abbreviation: "UTA" },
+    { id: 1, name: "New Jersey Devils", abbreviation: "NJD" },
+  ];
+
+  it("serves v2 direct win% with canonical identity and keeps unknown unknown, ranked last", () => {
+    const rankings = buildCanonicalSosRankingsV2(
+      [
+        v2Row(68),
+        v2Row(1, { team_abbrev: "NJD", past_direct_win_pct: 0.5, future_direct_win_pct: 0.51 }),
+        v2Row(53, { team_abbrev: "ARI", past_direct_win_pct: 0.9 }),
+      ],
+      teams,
+    );
+    expect(rankings.past).toEqual([
+      { teamId: 1, team: "New Jersey Devils", abbreviation: "NJD", sos: 0.5 },
+      { teamId: 68, team: "Utah Mammoth", abbreviation: "UTA", sos: 0.457 },
+    ]);
+    // v1 turned missing totals into 0; v2 keeps the unknown future as null.
+    expect(rankings.future.map((row) => [row.abbreviation, row.sos])).toEqual([
+      ["NJD", 0.51],
+      ["UTA", null],
+    ]);
+  });
+
+  it("ignores other versions and uses the latest cutoff per team", () => {
+    const rankings = buildCanonicalSosRankingsV2(
+      [
+        v2Row(68, { cutoff_at: "2026-01-16T09:12:03.000Z", past_direct_win_pct: 0.6 }),
+        v2Row(68),
+        v2Row(68, { cutoff_at: "2026-01-17T09:12:03.000Z", sos_version: "descriptive-sos-v3" as any, past_direct_win_pct: 0.1 }),
+      ],
+      teams,
+    );
+    expect(rankings.past.map((row) => row.sos)).toEqual([0.6]);
   });
 });
 

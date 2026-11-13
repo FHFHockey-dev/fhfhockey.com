@@ -1,3 +1,7 @@
+import { DESCRIPTIVE_SOS_VERSION } from "./strengthOfScheduleContract";
+import type { TeamSosSnapshotRow } from "./teamSosSnapshot";
+
+/** v1 `sos_standings` row: issued history (rule 21), no longer served. */
 export type SosStandingRow = {
   season_id: number;
   game_date: string;
@@ -42,7 +46,8 @@ export type CanonicalSosRanking = {
   teamId: number;
   team: string;
   abbreviation: string;
-  sos: number;
+  /** Opponents' win% (0-1); null when unknown, never 0. */
+  sos: number | null;
 };
 
 export type CanonicalSosRankings = {
@@ -59,6 +64,7 @@ const pct = (wins: number, losses: number, otl: number): number => {
   return wins / total;
 };
 
+/** v1 reader (sos_standings history). Served readers use computeSosRatingsV2. */
 export function computeSosRatings(rows: SosStandingRow[]): SosRating[] {
   // Take the latest row per team_abbrev
   const latestByTeam = new Map<string, SosStandingRow>();
@@ -114,6 +120,7 @@ export function computeSosRatings(rows: SosStandingRow[]): SosRating[] {
   return ratings.sort((a, b) => b.sosScore - a.sosScore);
 }
 
+/** v1 reader (sos_standings history). Served readers use buildCanonicalSosRankingsV2. */
 export function buildCanonicalSosRankings(
   rows: SosStandingRow[],
   teams: CanonicalSosTeam[],
@@ -167,7 +174,194 @@ export function buildCanonicalSosRankings(
     });
   }
 
-  past.sort((a, b) => b.sos - a.sos);
-  future.sort((a, b) => b.sos - a.sos);
+  // v1 always sets a number.
+  past.sort((a, b) => b.sos! - a.sos!);
+  future.sort((a, b) => b.sos! - a.sos!);
+  return { past, future };
+}
+
+// ---------------------------------------------------------------------------
+// descriptive-sos-v2 readers (team_sos_daily). Values are means over fixtures
+// of opponents' records excluding games against the team; past counts final
+// games only and started or postponed fixtures are reported as pending.
+
+export const TEAM_SOS_READER_COLUMNS = [
+  "season_id",
+  "snapshot_date",
+  "team_id",
+  "team_abbrev",
+  "sos_version",
+  "past_view",
+  "cutoff_at",
+  "past_fixtures",
+  "pending_fixtures",
+  "future_fixtures",
+  "past_direct_supported",
+  "future_direct_supported",
+  "past_direct_win_pct",
+  "past_indirect_win_pct",
+  "past_direct_points_pct",
+  "past_indirect_points_pct",
+  "future_direct_win_pct",
+  "future_indirect_win_pct",
+  "future_direct_points_pct",
+  "future_indirect_points_pct",
+].join(",");
+
+export type TeamSosReaderRow = Pick<
+  TeamSosSnapshotRow,
+  | "season_id"
+  | "snapshot_date"
+  | "team_id"
+  | "team_abbrev"
+  | "sos_version"
+  | "past_view"
+  | "cutoff_at"
+  | "past_fixtures"
+  | "pending_fixtures"
+  | "future_fixtures"
+  | "past_direct_supported"
+  | "future_direct_supported"
+  | "past_direct_win_pct"
+  | "past_indirect_win_pct"
+  | "past_direct_points_pct"
+  | "past_indirect_points_pct"
+  | "future_direct_win_pct"
+  | "future_indirect_win_pct"
+  | "future_direct_points_pct"
+  | "future_indirect_points_pct"
+>;
+
+export type SosBucketV2 = {
+  /** Mean over fixtures of the opponent's win% (W / GP). */
+  winPct: number | null;
+  /** Mean over fixtures of the opponent's points% ((2W + OTL) / 2GP). */
+  pointsPct: number | null;
+  indirectWinPct: number | null;
+  indirectPointsPct: number | null;
+  fixtures: number;
+  directSupported: number;
+};
+
+export type SosRatingV2 = {
+  team: string;
+  teamId: number;
+  date: string;
+  cutoffAt: string;
+  version: typeof DESCRIPTIVE_SOS_VERSION;
+  past: SosBucketV2 & { pendingFixtures: number };
+  future: SosBucketV2;
+  /** Fixture-weighted mean of past and future win%; null if either is unknown. */
+  combinedWinPct: number | null;
+  sosScore: number | null;
+};
+
+const finite = (value: unknown): number | null => {
+  const parsed = typeof value === "string" ? Number(value) : value;
+  return typeof parsed === "number" && Number.isFinite(parsed) ? parsed : null;
+};
+
+const servedV2Rows = (rows: TeamSosReaderRow[]) =>
+  rows.filter((row) => row.sos_version === DESCRIPTIVE_SOS_VERSION);
+
+/** Both means are over fixtures, so the combination weights by fixture counts. */
+const combineFixtureMeans = (
+  past: number | null,
+  pastFixtures: number,
+  future: number | null,
+  futureFixtures: number,
+): number | null => {
+  if (pastFixtures + futureFixtures === 0) return null;
+  if ((pastFixtures > 0 && past === null) || (futureFixtures > 0 && future === null)) {
+    return null;
+  }
+  return ((past ?? 0) * pastFixtures + (future ?? 0) * futureFixtures) /
+    (pastFixtures + futureFixtures);
+};
+
+/** Known values first (descending), unknown last; ties by team, never input order. */
+const compareNullableDesc = (
+  a: number | null,
+  b: number | null,
+  aKey: string,
+  bKey: string,
+) => {
+  if (a === null || b === null) {
+    if (a !== b) return a === null ? 1 : -1;
+  } else if (a !== b) {
+    return b - a;
+  }
+  return aKey.localeCompare(bKey);
+};
+
+export function computeSosRatingsV2(rows: TeamSosReaderRow[]): SosRatingV2[] {
+  return servedV2Rows(rows)
+    .map((row) => {
+      const pastFixtures = row.past_fixtures ?? 0;
+      const futureFixtures = row.future_fixtures ?? 0;
+      const past = {
+        winPct: finite(row.past_direct_win_pct),
+        pointsPct: finite(row.past_direct_points_pct),
+        indirectWinPct: finite(row.past_indirect_win_pct),
+        indirectPointsPct: finite(row.past_indirect_points_pct),
+        fixtures: pastFixtures,
+        directSupported: row.past_direct_supported ?? 0,
+        pendingFixtures: row.pending_fixtures ?? 0,
+      };
+      const future = {
+        winPct: finite(row.future_direct_win_pct),
+        pointsPct: finite(row.future_direct_points_pct),
+        indirectWinPct: finite(row.future_indirect_win_pct),
+        indirectPointsPct: finite(row.future_indirect_points_pct),
+        fixtures: futureFixtures,
+        directSupported: row.future_direct_supported ?? 0,
+      };
+      const combinedWinPct = combineFixtureMeans(
+        past.winPct,
+        pastFixtures,
+        future.winPct,
+        futureFixtures,
+      );
+      return {
+        team: row.team_abbrev,
+        teamId: row.team_id,
+        date: row.snapshot_date,
+        cutoffAt: row.cutoff_at,
+        version: DESCRIPTIVE_SOS_VERSION,
+        past,
+        future,
+        combinedWinPct,
+        sosScore: combinedWinPct === null ? null : Number((combinedWinPct * 100).toFixed(2)),
+      };
+    })
+    .sort((a, b) => compareNullableDesc(a.sosScore, b.sosScore, a.team, b.team));
+}
+
+export function buildCanonicalSosRankingsV2(
+  rows: TeamSosReaderRow[],
+  teams: CanonicalSosTeam[],
+): CanonicalSosRankings {
+  const currentTeamsById = new Map(teams.map((team) => [team.id, team]));
+  const latestByTeamId = new Map<number, TeamSosReaderRow>();
+  for (const row of servedV2Rows(rows)) {
+    if (!currentTeamsById.has(row.team_id)) continue;
+    const existing = latestByTeamId.get(row.team_id);
+    if (!existing || row.cutoff_at > existing.cutoff_at) {
+      latestByTeamId.set(row.team_id, row);
+    }
+  }
+  const past: CanonicalSosRanking[] = [];
+  const future: CanonicalSosRanking[] = [];
+  for (const [teamId, row] of latestByTeamId) {
+    const team = currentTeamsById.get(teamId)!;
+    const base = { teamId, team: team.name, abbreviation: team.abbreviation };
+    const round = (value: number | null) => (value === null ? null : Number(value.toFixed(3)));
+    past.push({ ...base, sos: round(finite(row.past_direct_win_pct)) });
+    future.push({ ...base, sos: round(finite(row.future_direct_win_pct)) });
+  }
+  const order = (a: CanonicalSosRanking, b: CanonicalSosRanking) =>
+    compareNullableDesc(a.sos, b.sos, a.abbreviation, b.abbreviation);
+  past.sort(order);
+  future.sort(order);
   return { past, future };
 }
