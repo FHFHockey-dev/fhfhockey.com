@@ -312,12 +312,8 @@ export default function TeamLC({
 
             <div className={styles.lineShare}>
               <LineShareBars
-                lines={[
-                  { label: "L1", players: lineCombinations.forwards.line1 },
-                  { label: "L2", players: lineCombinations.forwards.line2 },
-                  { label: "L3", players: lineCombinations.forwards.line3 },
-                  { label: "L4", players: lineCombinations.forwards.line4 }
-                ]}
+                lineSource={lineCombinations.lineSource}
+                lines={lineShareLines(lineCombinations)}
               />
             </div>
           </div>
@@ -454,6 +450,21 @@ export const getStaticPaths: GetStaticPaths = async () => {
     fallback: "blocking" // Allow pages to be generated on-demand if they fail at build time
   };
 };
+
+/**
+ * The four forward lines for LineShareBars. On the 5v5 board, line N is board
+ * unit N, so it carries that unit's 5v5 seconds together in the last game.
+ */
+export function lineShareLines(lineCombinations: LineCombinations) {
+  const { forwards, fiveOnFiveUnitSeconds } = lineCombinations;
+  return [forwards.line1, forwards.line2, forwards.line3, forwards.line4].map(
+    (players, index) => ({
+      label: `L${index + 1}`,
+      players,
+      fiveOnFiveSeconds: fiveOnFiveUnitSeconds?.forwards[index] ?? null
+    })
+  );
+}
 
 type HeaderProps = {
   /**

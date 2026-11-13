@@ -26,6 +26,11 @@ export type LineCombinations = {
    * (decisions 107, 137) or the labelled all-strength legacy grouping.
    */
   lineSource: LineSource;
+  /**
+   * Clock seconds each board unit was on the ice together at 5v5 in the last
+   * game, in board order (line 1 first); null on the legacy board.
+   */
+  fiveOnFiveUnitSeconds: FiveOnFiveUnitSeconds | null;
   promotions: LineChangeInfo[];
   demotions: LineChangeInfo[];
   forwards: {
@@ -88,6 +93,8 @@ export function resolveLineCombinationSourceContext({
 
 export type LineSource = "five_on_five_observed" | "all_strength_legacy";
 
+export type FiveOnFiveUnitSeconds = { forwards: number[]; defense: number[] };
+
 const FIVE_ON_FIVE_COLUMNS =
   "game_id, team_id, snapshot_date, unit_type, player_ids, player_count, unit_toi_seconds, coverage_status";
 const FIVE_ON_FIVE_UNIT_TYPES = ["forward_line", "defense_pair"];
@@ -139,19 +146,26 @@ async function fetchLatestFiveOnFiveUnits(
 
 /**
  * Replaces a game's stored all-strength forwards and defense with its observed
- * 5v5 units placed disjointly (decision 137). Returns null when the game has
- * no complete 5v5 rows, so the caller keeps the labelled legacy grouping.
+ * 5v5 units placed disjointly (decision 137), with each unit's 5v5 seconds
+ * together. Returns null when the game has no complete 5v5 rows, so the caller
+ * keeps the labelled legacy grouping.
  */
 function fiveOnFiveLineCombo<T extends { gameId: number; forwards: number[]; defensemen: number[] }>(
   game: T,
   rows: readonly TeamUnitToiReaderRow[]
-): T | null {
+): { game: T; unitSeconds: FiveOnFiveUnitSeconds } | null {
   const lines = buildFiveOnFiveLines(rows.filter((row) => row.game_id === game.gameId));
   if (!lines) return null;
   return {
-    ...game,
-    forwards: lines.forwardLines.flatMap((unit) => unit.playerIds),
-    defensemen: lines.defensePairs.flatMap((unit) => unit.playerIds)
+    game: {
+      ...game,
+      forwards: lines.forwardLines.flatMap((unit) => unit.playerIds),
+      defensemen: lines.defensePairs.flatMap((unit) => unit.playerIds)
+    },
+    unitSeconds: {
+      forwards: lines.forwardLines.map((unit) => unit.sharedSeconds),
+      defense: lines.defensePairs.map((unit) => unit.sharedSeconds)
+    }
   };
 }
 
@@ -258,6 +272,7 @@ export async function getLineCombinations(
     // complete 5v5 rows, so promotions and demotions never compare a 5v5 board
     // with an all-strength one; otherwise the labelled legacy grouping stays.
     let lineSource: LineSource = "all_strength_legacy";
+    let fiveOnFiveUnitSeconds: FiveOnFiveUnitSeconds | null = null;
     if (options.fiveOnFive ?? LINES_FIVE_ON_FIVE_ENABLED) {
       const unitRows = await fetchLatestFiveOnFiveUnits(teamId, seasonToUse, [
         lineCombinations[0].gameId,
@@ -266,9 +281,10 @@ export async function getLineCombinations(
       const current = fiveOnFiveLineCombo(lineCombinations[0], unitRows);
       const previous = fiveOnFiveLineCombo(lineCombinations[1], unitRows);
       if (current && previous) {
-        lineCombinations[0] = current;
-        lineCombinations[1] = previous;
+        lineCombinations[0] = current.game;
+        lineCombinations[1] = previous.game;
         lineSource = "five_on_five_observed";
+        fiveOnFiveUnitSeconds = current.unitSeconds;
       }
     }
 
@@ -428,6 +444,7 @@ export async function getLineCombinations(
 
     result.statsGameIds = lineCombinations.map((game: any) => game.gameId);
     result.lineSource = lineSource;
+    result.fiveOnFiveUnitSeconds = fiveOnFiveUnitSeconds;
 
     // Assign game info
     result.game = {

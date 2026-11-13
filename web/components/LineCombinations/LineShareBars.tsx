@@ -1,6 +1,7 @@
 import React from "react";
 
 import type { SkaterStats } from "pages/lines/[abbreviation]";
+import type { LineSource } from "components/LineCombinations/utilities";
 
 import styles from "./LineShareBars.module.scss";
 
@@ -8,7 +9,15 @@ type LineShareBarsProps = {
   lines: Array<{
     label: string;
     players: SkaterStats[];
+    /** The unit's 5v5 clock seconds together in the last game (5v5 board only). */
+    fiveOnFiveSeconds?: number | null;
   }>;
+  /**
+   * On the 5v5 board, ice time share is each unit's 5v5 time together in the
+   * last game; on the legacy board (the default), its players' all-strength
+   * TOI per game played.
+   */
+  lineSource?: LineSource;
 };
 
 function isKnown(value: number | null | undefined): value is number {
@@ -58,9 +67,19 @@ function formatShare(share: number | null) {
   return share === null ? "—" : `${(share * 100).toFixed(1)}%`;
 }
 
-export default function LineShareBars({ lines }: LineShareBarsProps) {
+export default function LineShareBars({
+  lines,
+  lineSource = "all_strength_legacy"
+}: LineShareBarsProps) {
+  const fiveOnFive = lineSource === "five_on_five_observed";
   const players = lines.map((line) => line.players);
-  const toiShares = toShares(players.map(lineToiPerGame), players);
+  const toiShares = toShares(
+    fiveOnFive
+      ? lines.map(({ fiveOnFiveSeconds }) => (isKnown(fiveOnFiveSeconds) ? fiveOnFiveSeconds : null))
+      : players.map(lineToiPerGame),
+    players
+  );
+  const toiLabel = fiveOnFive ? "5v5 time share" : "Ice time share";
   const goalShares = toShares(players.map(lineGoals), players);
   const toiWithheld = lines.some(
     (line, index) => line.players.length > 0 && toiShares[index] === null
@@ -70,14 +89,24 @@ export default function LineShareBars({ lines }: LineShareBarsProps) {
     <section className={styles.wrapper} aria-labelledby="line-share-title">
       <header className={styles.header}>
         <h3 id="line-share-title" className={styles.title}>Recent line share</h3>
-        <p className={styles.description}>
-          Over the team&apos;s last 10 games with lines, at all strengths. Ice time share
-          compares each line&apos;s average ice time per game played; goal share counts its
-          players&apos; goals. Both include time and goals away from this line.
-        </p>
+        {fiveOnFive ? (
+          <p className={styles.description}>
+            5v5 time share is each line&apos;s 5v5 time together in the last game. Goal share
+            counts its players&apos; goals over the team&apos;s last 10 games with lines, at all
+            strengths, including goals away from this line.
+          </p>
+        ) : (
+          <p className={styles.description}>
+            Over the team&apos;s last 10 games with lines, at all strengths. Ice time share
+            compares each line&apos;s average ice time per game played; goal share counts its
+            players&apos; goals. Both include time and goals away from this line.
+          </p>
+        )}
         {toiWithheld ? (
           <p className={styles.description}>
-            Ice time share is unavailable: a player&apos;s ice time is missing.
+            {fiveOnFive
+              ? "5v5 time share is unavailable: a line's 5v5 time is missing."
+              : "Ice time share is unavailable: a player's ice time is missing."}
           </p>
         ) : null}
       </header>
@@ -98,7 +127,7 @@ export default function LineShareBars({ lines }: LineShareBarsProps) {
 
               <div className={styles.metricBlock}>
                 <div className={styles.metricHeader}>
-                  <span>Ice time share</span>
+                  <span>{toiLabel}</span>
                   <strong>{formatShare(toiShare)}</strong>
                 </div>
                 <div className={styles.track}>

@@ -135,4 +135,38 @@ describe("LineShareBars", () => {
     expect(shares()).toEqual(["—", "50.0%", "—", "50.0%"]);
     expect(screen.getByText(/Ice time share is unavailable/)).toBeTruthy();
   });
+
+  it("on the 5v5 board, compares lines by each unit's 5v5 time together in the last game", () => {
+    // Equal all-strength TOI per game: the legacy measure would show 33.3% each.
+    const trio = (first: number) =>
+      [first, first + 1, first + 2].map((id) => skater(id, { TOISeconds: 9_000, numGames: 10 }));
+    render(
+      <LineShareBars
+        lineSource="five_on_five_observed"
+        lines={[
+          { label: "L1", players: trio(1), fiveOnFiveSeconds: 600 },
+          { label: "L2", players: trio(4), fiveOnFiveSeconds: 300 },
+          { label: "L3", players: trio(7), fiveOnFiveSeconds: 100 },
+        ]}
+      />
+    );
+
+    expect(shares()).toEqual(["60.0%", "33.3%", "30.0%", "33.3%", "10.0%", "33.3%"]);
+    expect(screen.getAllByText("5v5 time share")).toHaveLength(3);
+    expect(screen.getByText(/5v5 time together in the last game/)).toBeTruthy();
+    cleanup();
+
+    // A line on the board without its 5v5 time withholds the share, never 0.
+    render(
+      <LineShareBars
+        lineSource="five_on_five_observed"
+        lines={[
+          { label: "L1", players: trio(1), fiveOnFiveSeconds: 600 },
+          { label: "L2", players: trio(4), fiveOnFiveSeconds: null },
+        ]}
+      />
+    );
+    expect(shares()).toEqual(["—", "50.0%", "—", "50.0%"]);
+    expect(screen.getByText(/5v5 time share is unavailable/)).toBeTruthy();
+  });
 });

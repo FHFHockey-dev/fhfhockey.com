@@ -308,6 +308,8 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
     const result = await getLineCombinations(22, 20252026);
     const lineIds = (line: { playerId: number }[]) => line.map((player) => player.playerId);
     expect(result.lineSource).toBe("five_on_five_observed");
+    // Each board unit's 5v5 seconds together in the last game, line 1 first.
+    expect(result.fiveOnFiveUnitSeconds).toEqual({ forwards: [300, 200, 100], defense: [200, 100, 50] });
     expect(result.goalies.line1[0].season.GAA).toBeNull();
     expect(result.goalies.line1[0].season.SVPercentage).toBeCloseTo(31 / 33, 6);
     expect(lineIds(result.forwards.line1)).toEqual([11, 12, 13]);
@@ -386,6 +388,7 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
     routeTables(baseRows(), []);
     const result = await getLineCombinations(22, 20252026, { fiveOnFive: false });
     expect(result.lineSource).toBe("all_strength_legacy");
+    expect(result.fiveOnFiveUnitSeconds).toBeNull();
     expect(fromMock).not.toHaveBeenCalledWith("team_unit_toi");
   });
 
