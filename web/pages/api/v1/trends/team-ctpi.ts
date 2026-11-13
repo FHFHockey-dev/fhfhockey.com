@@ -3,9 +3,12 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import { getLatestStartedSeasonForDate } from "lib/NHL/server";
 import {
-  isTrustedRecentTeamFormPayload,
-  type CtpiScore,
-} from "lib/trends/ctpi";
+  CTPI_SERVED_VERSION,
+  CTPI_VERSION_CONTRACTS,
+  isTrustedCtpiPayload,
+  parseCtpiVersion,
+  type CtpiVersion,
+} from "lib/trends/ctpiVersions";
 import { buildRequestedDateServingState } from "lib/dashboard/freshness";
 import { ACTIVE_TEAM_ABBREVIATIONS } from "lib/trends/teamMetricConfig";
 
@@ -28,17 +31,40 @@ type PersistedTeamFormRow = {
   date: string;
   ctpi_raw: number;
   ctpi_0_to_100: number;
-  offense: number;
-  defense: number;
-  goaltending: number;
-  special_teams: number;
-  luck: number;
+  /** Nullable from v2: an unavailable component (and v2 luck) stays unknown. */
+  offense: number | null;
+  defense: number | null;
+  goaltending: number | null;
+  special_teams: number | null;
+  luck: number | null;
   computed_at: string | null;
   publication_status: string | null;
   formula_version: string | null;
   input_version: string | null;
   source_game_count: string | number | null;
 };
+
+/** One served team row; labelled with the CTPI version it was selected by. */
+type ServedTeamFormScore = {
+  team: string;
+  ctpiVersion: CtpiVersion;
+  publicationStatus: string | null;
+  formulaVersion: string | null;
+  inputVersion: string | null;
+  sourceGameCount: number;
+  offense: number | null;
+  defense: number | null;
+  goaltending: number | null;
+  specialTeams: number | null;
+  luck: number | null;
+  ctpi_raw: number;
+  ctpi_0_to_100: number;
+  z: Record<string, number>;
+  sparkSeries: Array<{ date: string; value: number }>;
+};
+
+const finiteOrNull = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
 
 async function fetchAllPages<T>(buildQuery: () => any): Promise<T[]> {
   const rows: T[] = [];
@@ -62,8 +88,9 @@ function sourceDateTimestamp(sourceDate: string | null): string | null {
 async function fetchCtpiDaily(
   seasonId: number,
   requestedDate: string,
+  ctpiVersion: CtpiVersion,
 ): Promise<{
-  scores: CtpiScore[];
+  scores: ServedTeamFormScore[];
   sourceDate: string | null;
   computedAt: string | null;
   sourceRowCount: number;
@@ -94,6 +121,11 @@ async function fetchCtpiDaily(
         ].join(","),
       )
       .eq("season_id", seasonId)
+      // Select by version: the exact formula version the rows were issued under.
+      .eq(
+        "payload->>formulaVersion",
+        CTPI_VERSION_CONTRACTS[ctpiVersion].formulaVersion,
+      )
       .lte("date", requestedDate)
       .order("date", { ascending: true })
       .order("team", { ascending: true }),
@@ -101,12 +133,15 @@ async function fetchCtpiDaily(
   if (!data || data.length === 0) return null;
 
   const trustedRows = data.filter((row) =>
-    isTrustedRecentTeamFormPayload({
-      publicationStatus: row.publication_status,
-      formulaVersion: row.formula_version,
-      inputVersion: row.input_version,
-      sourceGameCount: row.source_game_count,
-    }),
+    isTrustedCtpiPayload(
+      {
+        publicationStatus: row.publication_status,
+        formulaVersion: row.formula_version,
+        inputVersion: row.input_version,
+        sourceGameCount: row.source_game_count,
+      },
+      ctpiVersion,
+    ),
   );
 
   const teamMap = new Map<string, PersistedTeamFormRow[]>();
@@ -127,21 +162,22 @@ async function fetchCtpiDaily(
       sourceDate = row.date;
   });
 
-  const scores: CtpiScore[] = [];
+  const scores: ServedTeamFormScore[] = [];
   teamMap.forEach((rows, team) => {
     const sorted = rows.sort((a, b) => a.date.localeCompare(b.date));
     const latest = sorted[sorted.length - 1];
     scores.push({
       team,
-      publicationStatus: latest.publication_status as "approved",
-      formulaVersion: latest.formula_version as CtpiScore["formulaVersion"],
-      inputVersion: latest.input_version as CtpiScore["inputVersion"],
+      ctpiVersion,
+      publicationStatus: latest.publication_status,
+      formulaVersion: latest.formula_version,
+      inputVersion: latest.input_version,
       sourceGameCount: Number(latest.source_game_count),
-      offense: latest.offense,
-      defense: latest.defense,
-      goaltending: latest.goaltending,
-      specialTeams: latest.special_teams,
-      luck: latest.luck,
+      offense: finiteOrNull(latest.offense),
+      defense: finiteOrNull(latest.defense),
+      goaltending: finiteOrNull(latest.goaltending),
+      specialTeams: finiteOrNull(latest.special_teams),
+      luck: finiteOrNull(latest.luck),
       ctpi_raw: latest.ctpi_raw,
       ctpi_0_to_100: latest.ctpi_0_to_100,
       z: {},
@@ -180,6 +216,17 @@ export default async function handler(
     const requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateRaw)
       ? requestedDateRaw
       : new Date().toISOString().slice(0, 10);
+    const ctpiVersion =
+      req.query.version == null
+        ? CTPI_SERVED_VERSION
+        : parseCtpiVersion(req.query.version);
+    if (ctpiVersion == null) {
+      return res.status(400).json({
+        message: "version must be 1 or 2.",
+        error: "INVALID_CTPI_VERSION",
+      });
+    }
+    const contract = CTPI_VERSION_CONTRACTS[ctpiVersion];
     const season = await getLatestStartedSeasonForDate(requestedDate, supabase);
     const seasonId = Number(season?.id);
     if (!Number.isSafeInteger(seasonId) || seasonId <= 0) {
@@ -188,7 +235,11 @@ export default async function handler(
       );
     }
 
-    const dailyCtpi = await fetchCtpiDaily(seasonId, requestedDate);
+    const dailyCtpi = await fetchCtpiDaily(
+      seasonId,
+      requestedDate,
+      ctpiVersion,
+    );
     const ctpi = dailyCtpi?.scores ?? [];
     const sourceDate = dailyCtpi?.sourceDate ?? null;
     const computedAt = dailyCtpi?.computedAt ?? null;
@@ -219,6 +270,9 @@ export default async function handler(
       serving,
       source: {
         kind: "team_ctpi_daily",
+        ctpiVersion,
+        label: contract.label,
+        sourceCutoff: contract.sourceCutoff,
         sourceDate,
         computedAt,
         rowCount: sourceRowCount,

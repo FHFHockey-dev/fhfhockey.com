@@ -62,6 +62,10 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
 | 2026-11-13 00:41–00:49 | Release #431 build READY and auto-aliased (1 build + 3 cancels). Smoke 5/5 at 200. octoberBranch ours-merge `b69cbd375` pushed; no build. | §2 |
 | 2026-11-13 00:50 | pg_cron 305 `build-forge-derived-v2` moved 10:05 → 10:25 UTC (off the rolling-forge pipeline's minutes) | `8942d193b` |
 | 2026-11-13 00:51 | Migrations 142 (v2_skill) and 143 (team-of-record percent_games) applied singly and read back | `db8693805` |
+| 2026-11-13 01:12–03:57 | 2026-27 rolling recompute (L6 fixes), TJ-approved. Slow sequential calls, all 200. 764 skaters; 10,727 rows per strength through 11-11; game dates 11-07 and 11-09–11 filled. Paused twice on its own guards. | `production/FORGE-INPUTS-PLAN-2026-11-13.md` |
+| 2026-11-13 01:30–01:42 | (Codex) Goalie H1 for game 2026020308 (TJ-authorized), on temporary deployment `dpl_CarX` built from 502a93b4c; production restored | `tasks/artifacts/goalie-h1-2026-11-13/HANDBACK.md` |
+| 2026-11-13 01:47–01:55 | Release #432: pipeline stall fix and Codex areas 2–4. Master `e1ab46318`; 1 build + 3 cancels. | §2 |
+| 2026-11-13 01:55–02:00 | **DB incident 2:** Postgres froze after a checkpoint started and self-restarted at 02:00:46. TJ restarted it again from the dashboard at 02:08:28. Smoke passed afterwards. | `PRODUCTION-QUEUE.md` |
 
 Coordination: steps 1–6 ran serially with Codex under a TJ-approved order (mailbox entries `CLAUDE-FIX-SPRINT-SERIAL-ORDER-20261112` and onward), each with an explicit DB handoff.
 
@@ -598,7 +602,7 @@ No diary exists. Outcomes come from the commits and the Chef diary.
 - **FORGE live-output change from the inert band reader** (§4.2).
 - **No in-house xG for new games** until a v2 model is approved (decision 99). The served champion is the leaky cfg9bac2706 until it is demoted.
 - **PP share withheld everywhere** until the PP clock is qualified.
-- **Database load:** the 2026-11-12 incident shows that bulk normalization and summary rebuilds must be paced by I/O and latency.
+- **Database load:** two incidents (2026-11-12 15:43Z and 2026-11-13 01:55Z) show that sustained bulk writes (re-normalization, summary and rolling rebuilds) must be paced by I/O and latency, with gaps between runs. Both hangs followed a checkpoint, under hours of continuous writes.
 - **Duplicate derived-build trigger at 10:05 UTC.** Codex's `24b1cb4d3` moved pg_cron 305 `build-forge-derived-v2` from 09:50 to 10:05 on 11-12, the same minute the Vercel rolling-forge pipeline (cron 6, `includeDownstream=true`) starts; that pipeline also runs `build-projection-derived-v2`. `combinedCronInventory.test` has failed on master since then. Read-only check 2026-11-13: 305 is active at `05 10 * * *`. Any schedule change needs TJ.
 - **Production served a CLI deployment with H1 overrides for about 19 minutes.** Codex's `dpl_GK6quj7ogBxcQE3FZxV3VDzSTvjM` (00:06Z, compute on, canary 307, scheduler off) was aliased to fhfhockey.com until the Chef promoted `dpl_HH8SPE1cLyonVBW9uN3rUi1MN3Sa` at 00:25Z (TJ's pop-up). No H1 request was sent. After a manual promote, Vercel may pause auto-assignment of production domains, so the alias is checked after each release.
 
@@ -677,3 +681,15 @@ TJ moved all remaining project work to this session ("No more back and forth wit
 | 12 | Generated `next-env.d.ts` | Restored to HEAD |
 
 Also fixed here: the Game Grid TeamDetails test mock had been failing on master since the Goalie Grid release (`7234e9682`, next release). Codex's production deployment with H1 overrides was replaced by the original deployment (§3, §7).
+
+## 13. Follow-up ticket status (2026-11-13, Chef)
+| Item | Status | Next |
+|---|---|---|
+| L2 W2-3 D13 (chart minimum TOI) | **Fixed** `33b919192` (unreleased). Chart points skip the minimum; table rows keep it. The regression test fails on the old code. | Next release |
+| L2 W2-3 D7 (finished-game rule) | Blocked on data. Rule 19 needs finality from a game state, and no table stores one (`games` has no state; normalization tables have no final flag). | Design: add a game-state column filled by the schedule ingester (migration plus ingester), then switch every reader (versioned contract) |
+| Week Score ordering (BC W1-12 D5) | Depends on decision 53 (off-night value measured from roster scenarios, validated on held-out weeks); the 6/4 weights are a modelling choice | Off-night value study |
+| L9a → L10 PK head counted as 0 | Deferred. Every FORGE row now served predates L9a's PK writer (runs created 11-09), so treating null PK as unknown would blank totals sitewide | After the first FORGE run on released code, confirm PK heads are written for every player, then treat null PK as unknown |
+| BA W1-4 B D9 (EN in team goaltending) | Owner decision. The rating reads NST all-situations rows, which include empty-net events | Choose 5v5 rows, or subtract PBP-derived team EN events; then the power-ratings recompute (queue 7) |
+| BC W1-6 D8/D13/D14 (goalie stage) | Model changes needing refits and held-out checks (L9b plan) | Owner decision and refit plan |
+| L11 registry and goalie-contract wiring | Not started (integration) | A lane of its own |
+| L9a ice-time classifier vs Codex penalty clock | Codex's `24b1cb4d3` replaced L9a's `8bc43a855` in `ingest/shifts.ts`; derived event counts still use situation codes | Read-only cross-check of edge cases |

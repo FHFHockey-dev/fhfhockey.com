@@ -150,10 +150,11 @@ function snapshotBuilder() {
   return builder;
 }
 
+// Trusted = approved rows of the served CTPI version (v2).
 const trustedTeamFormColumns = {
   publication_status: "approved",
-  formula_version: "ctpi-formula-v1",
-  input_version: "ctpi-one-game-input-v2",
+  formula_version: "recent-team-form-v2-candidate-2",
+  input_version: "ctpi-one-team-game-input-v3-candidate",
   source_game_count: "10",
 };
 
@@ -2387,9 +2388,9 @@ describe("/api/v1/start-chart", () => {
               date: "2026-02-01",
               team: "MTL",
               ctpi_0_to_100: 88,
-              publication_status: "legacy_unapproved",
-              formula_version: "ctpi-formula-v1",
-              input_version: "ctpi-one-game-input-v2",
+              publication_status: "candidate_unapproved",
+              formula_version: "recent-team-form-v2-candidate-2",
+              input_version: "ctpi-one-team-game-input-v3-candidate",
               source_game_count: "10",
             },
           ],
@@ -2408,6 +2409,8 @@ describe("/api/v1/start-chart", () => {
     expect(res.body.ctpi).toEqual([]);
     expect(res.body.sourceStatus.ctpi).toMatchObject({
       state: "missing",
+      ctpiVersion: 2,
+      label: expect.stringContaining("candidate until validated"),
       formulaVersion: null,
       inputVersion: null,
       trustedRows: 0,
@@ -2419,6 +2422,55 @@ describe("/api/v1/start-chart", () => {
     expect(res.body.sourceStatus.degradedReasons).toContain(
       "untrusted_team_form_history",
     );
+  });
+
+  it("selects team form by the served CTPI version and labels it", async () => {
+    const defaultImplementation = fromMock.getMockImplementation();
+    fromMock.mockImplementation((table: string) => {
+      if (table === "team_ctpi_daily") {
+        return createQueryBuilder(() => ({
+          data: [
+            // An approved v1 row must not be served as the v2 contract.
+            {
+              date: "2026-02-01",
+              team: "TOR",
+              ctpi_0_to_100: 90,
+              publication_status: "approved",
+              formula_version: "ctpi-formula-v1",
+              input_version: "ctpi-one-game-input-v2",
+              source_game_count: "10",
+            },
+            {
+              date: "2026-02-01",
+              team: "MTL",
+              ctpi_0_to_100: 61,
+              ...trustedTeamFormColumns,
+            },
+          ],
+          error: null,
+        }));
+      }
+      return defaultImplementation!(table);
+    });
+
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart"))
+      .default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+
+    expect(eqMock).toHaveBeenCalledWith(
+      "payload->>formulaVersion",
+      "recent-team-form-v2-candidate-2",
+    );
+    expect(res.body.ctpi).toEqual([{ date: "2026-02-01", MTL: 61 }]);
+    expect(res.body.sourceStatus.ctpi).toMatchObject({
+      ctpiVersion: 2,
+      formulaVersion: "recent-team-form-v2-candidate-2",
+      inputVersion: "ctpi-one-team-game-input-v3-candidate",
+      trustedRows: 1,
+      untrustedRows: 1,
+    });
   });
 
   it("selects the upcoming schedule without requiring an older projection run", async () => {

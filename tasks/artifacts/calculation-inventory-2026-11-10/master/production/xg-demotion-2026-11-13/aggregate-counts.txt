@@ -1,0 +1,4 @@
+nhl_xg_team_game_aggregates -cfg9bac2706 2772
+nhl_xg_goalie_game_aggregates -cfg9bac2706 2922
+nhl_xg_player_game_aggregates -cfg9bac2706 42236
+nhl_xg_team_rolling_aggregates -cfg9bac2706 8316

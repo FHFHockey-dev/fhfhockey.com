@@ -5,6 +5,11 @@ import { Pool } from "pg";
 import supabase from "lib/supabase/server";
 import type { Database } from "lib/supabase/database-generated.types";
 import {
+  resolveGameFinality,
+  type GameFinality,
+  type GameFinalityInput,
+} from "lib/games/gameFinality";
+import {
   fetchAllSupabaseFilterChunks,
   fetchAllSupabasePages,
 } from "lib/supabase/pagination";
@@ -70,6 +75,10 @@ export type PlayerStatsSourceGameRow =
     | "awayTeamId"
   > & {
     created_at?: string;
+    // Stored NHL game state (migration 20261113180000; contract nhl-game-state-v1).
+    game_state?: string | null;
+    game_schedule_state?: string | null;
+    game_state_observed_at?: string | null;
   };
 export type PlayerStatsSourceEventRow = Pick<
   Database["public"]["Tables"]["nhl_api_pbp_events"]["Row"],
@@ -253,7 +262,7 @@ export function isCurrentPlayerStatsSummaryPayload(payload: unknown): boolean {
 }
 const PLAYER_STATS_SEASON_AGGREGATE_CACHE_TTL_MS = 10 * 60 * 1000;
 const PLAYER_STATS_SOURCE_GAME_SELECT =
-  "id,seasonId,type,date,startTime,homeTeamId,awayTeamId";
+  "id,seasonId,type,date,startTime,homeTeamId,awayTeamId,game_state,game_schedule_state,game_state_observed_at";
 const PLAYER_STATS_SOURCE_EVENT_SELECT = [
   "game_id",
   "season_id",
@@ -846,26 +855,23 @@ export function resolvePlayerStatsSeasonGameType(
   return 2;
 }
 
+/**
+ * Rule 19: a source game is final when its stored NHL game state says so
+ * (contract nhl-game-state-v1). Start + 8 h decides only while the state is
+ * unknown, and the result is labelled `schedule_heuristic_fallback`.
+ */
+export function resolvePlayerStatsSourceGameFinality(
+  game: GameFinalityInput,
+  now: Date
+): GameFinality {
+  return resolveGameFinality(game, now);
+}
+
 function isFinishedPlayerStatsSourceGame(
-  game: Pick<PlayerStatsSourceGameRow, "date" | "startTime">,
+  game: GameFinalityInput,
   now: Date
 ): boolean {
-  const today = now.toISOString().slice(0, 10);
-
-  if (game.date < today) {
-    return true;
-  }
-
-  if (game.date > today) {
-    return false;
-  }
-
-  if (typeof game.startTime !== "string") {
-    return false;
-  }
-
-  const finishedCutoff = new Date(now.getTime() - 8 * 60 * 60 * 1000);
-  return new Date(game.startTime) <= finishedCutoff;
+  return resolvePlayerStatsSourceGameFinality(game, now).isFinal;
 }
 
 export function filterPlayerStatsLandingSourceGames(
@@ -1337,7 +1343,8 @@ async function fetchPlayerStatsLandingSourceBundleViaPg(
   const gameType = resolvePlayerStatsSeasonGameType(state.primary.seasonType);
   const shouldFetchRosterSpots = state.primary.statMode === "individual";
   const gameQueryParts = [
-    `select id, "seasonId", "type", "date", "homeTeamId", "awayTeamId"`,
+    `select id, "seasonId", "type", "date", "startTime", "homeTeamId", "awayTeamId",`,
+    `  game_state, game_schedule_state, game_state_observed_at`,
     `from public.games`,
     `where "type" = $1`,
   ];
@@ -4787,7 +4794,7 @@ function buildDetailApiResultFromAggregationRows(args: {
 
 export { buildDetailApiResultFromAggregationRows };
 
-function buildLandingChartApiResultFromSummaryRows(args: {
+export function buildLandingChartApiResultFromSummaryRows(args: {
   playerId: number;
   splitTeamId: number | null;
   state: PlayerStatsLandingFilterState;
@@ -4830,10 +4837,17 @@ function buildLandingChartApiResultFromSummaryRows(args: {
       { date: right.gameDate, id: right.gameId }
     )
   );
+  // The minimum TOI is a player-eligibility filter on the window's total. A
+  // one-game point is not compared with it: a season minimum (say 100 min) is
+  // larger than any single game's TOI and would empty the chart (W2-3 D13).
+  const chartPointState: PlayerStatsLandingFilterState = {
+    ...args.state,
+    expandable: { ...args.state.expandable, minimumToiSeconds: null },
+  };
   const chartRows = chronologicallySortedRows
     .map((row) => {
       const baseRow = createLandingRowFromSummaryRows({
-        state: args.state,
+        state: chartPointState,
         games: args.games,
         rows: [row],
         metrics: row.metrics,

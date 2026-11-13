@@ -75,16 +75,22 @@ export function computeDescriptiveSos({
 }) {
   const cutoffMs = timestamp(cutoff);
   const fixturesById = new Map<string, SosFixture>();
+  // Timestamps are parsed once; every comparison below uses these numbers.
+  const fixtureTimes = new Map<string, { start: number; scheduleKnown: number }>();
   const seenResults = new Set<string>();
   fixtures.forEach((game) => {
     if (fixturesById.has(game.id) || game.teamA === game.teamB) {
       throw new Error("Duplicate or self SOS fixture");
     }
     fixturesById.set(game.id, game);
-    timestamp(game.startsAt);
-    timestamp(game.scheduleKnownAt);
+    fixtureTimes.set(game.id, {
+      start: timestamp(game.startsAt),
+      scheduleKnown: timestamp(game.scheduleKnownAt),
+    });
   });
-  const historical = results.filter((game) => {
+  type TimedResult = { game: SosResult; completed: number; known: number };
+  const historical: TimedResult[] = [];
+  results.forEach((game) => {
     if (seenResults.has(game.id) || game.teamA === game.teamB ||
         (game.winner !== game.teamA && game.winner !== game.teamB)) {
       throw new Error("Invalid or duplicate SOS result");
@@ -92,7 +98,7 @@ export function computeDescriptiveSos({
     seenResults.add(game.id);
     const start = timestamp(game.startsAt);
     const fixture = fixturesById.get(game.id);
-    if (fixture && (timestamp(fixture.startsAt) !== start ||
+    if (fixture && (fixtureTimes.get(game.id)!.start !== start ||
         ![fixture.teamA, fixture.teamB].includes(game.teamA) ||
         ![fixture.teamA, fixture.teamB].includes(game.teamB))) {
       throw new Error("SOS result/fixture identity mismatch");
@@ -101,28 +107,38 @@ export function computeDescriptiveSos({
     const known = timestamp(game.resultKnownAt);
     timestamp(game.scheduleKnownAt);
     if (completed < start || known < completed) throw new Error("Invalid SOS result chronology");
-    return start < cutoffMs && completed < cutoffMs && known < cutoffMs;
+    if (start < cutoffMs && completed < cutoffMs && known < cutoffMs) {
+      historical.push({ game, completed, known });
+    }
   });
-  const record = (opponent: string, at: number, excluded: Set<string>) => {
+  // A record depends only on (team, availability time, excluded teams), so it
+  // is computed once per key; repeated opponents reuse it.
+  const records = new Map<string, { value: number | null; games: number }>();
+  const record = (opponent: string, at: number, excluded: string[]) => {
+    const key = `${opponent}\u0000${at}\u0000${excluded.join("\u0000")}`;
+    const cached = records.get(key);
+    if (cached) return cached;
     let wins = 0;
     let losses = 0;
     let otLosses = 0;
-    historical.forEach((game) => {
-      if (timestamp(game.resultKnownAt) >= at || timestamp(game.completedAt) >= at ||
-          excluded.has(game.teamA) || excluded.has(game.teamB) || !opponentOf(game, opponent)) return;
+    historical.forEach(({ game, completed, known }) => {
+      if (known >= at || completed >= at || excluded.includes(game.teamA) ||
+          excluded.includes(game.teamB) || !opponentOf(game, opponent)) return;
       if (game.winner === opponent) wins += 1;
       else if (game.overtime) otLosses += 1;
       else losses += 1;
     });
-    return { value: recordPercentage(wins, losses, otLosses, metric), games: wins + losses + otLosses };
+    const computed = { value: recordPercentage(wins, losses, otLosses, metric), games: wins + losses + otLosses };
+    records.set(key, computed);
+    return computed;
   };
   // Decision 21: a past fixture counts only with its own final result known
   // before the cutoff. Started, unfinished or postponed fixtures are pending.
-  const finalIds = new Set(historical.map((game) => game.id));
+  const finalIds = new Set(historical.map(({ game }) => game.id));
   const inView = fixtures.filter((game) => {
-    const start = timestamp(game.startsAt);
+    const { start, scheduleKnown } = fixtureTimes.get(game.id)!;
     const knowledgeCutoff = view === "past-as-known-then" ? Math.min(start, cutoffMs) : cutoffMs;
-    return opponentOf(game, team) && timestamp(game.scheduleKnownAt) < knowledgeCutoff &&
+    return opponentOf(game, team) && scheduleKnown < knowledgeCutoff &&
       (view === "future" ? start >= cutoffMs : start < cutoffMs);
   });
   const selected = view === "future"
@@ -133,16 +149,16 @@ export function computeDescriptiveSos({
     : inView.filter((game) => !finalIds.has(game.id)).map((game) => game.id);
   const observations = selected.map((fixture) => {
     const opponent = opponentOf(fixture, team)!;
-    const at = view === "past-as-known-then" ? timestamp(fixture.startsAt) : cutoffMs;
-    const direct = record(opponent, at, new Set([team]));
+    const at = view === "past-as-known-then" ? fixtureTimes.get(fixture.id)!.start : cutoffMs;
+    const direct = record(opponent, at, [team]);
     // Historical opposition quality, including for the future view. Never use
     // opponents' remaining schedules as opponents-of-opponents performance.
-    const opponentHistory = historical.filter((game) =>
-      timestamp(game.resultKnownAt) < at && timestamp(game.completedAt) < at &&
+    const opponentHistory = historical.filter(({ game, completed, known }) =>
+      known < at && completed < at &&
       !opponentOf(game, team) && opponentOf(game, opponent),
     );
-    const indirectRecords = opponentHistory.map((game) =>
-      record(opponentOf(game, opponent)!, at, new Set([team, opponent])),
+    const indirectRecords = opponentHistory.map(({ game }) =>
+      record(opponentOf(game, opponent)!, at, [team, opponent]),
     );
     const indirect = indirectRecords.length && indirectRecords.every((item) => item.value !== null)
       ? indirectRecords.reduce((sum, item) => sum + item.value!, 0) / indirectRecords.length

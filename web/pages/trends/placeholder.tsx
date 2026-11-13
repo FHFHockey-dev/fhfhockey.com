@@ -85,8 +85,8 @@ type PowerBoardRow = {
   ctpiDelta?: number | null;
   sosPastPct?: number | null;
   sosFuturePct?: number | null;
-  sosPastRecord?: string;
-  sosFutureRecord?: string;
+  sosPastDetail?: string;
+  sosFutureDetail?: string;
 };
 
 type PlayerMetadata = {
@@ -135,10 +135,17 @@ const formatPct = (value: number | null | undefined) => {
 
 type SparkPoint = { date: string; value: number };
 
+/** descriptive-sos-v2 bucket from /api/v1/trends/team-sos. */
+type SosBucket = {
+  winPct: number | null;
+  fixtures: number;
+  pendingFixtures?: number;
+};
+
 type SosRating = {
   team: string;
-  past: { wins: number; losses: number; otl: number };
-  future: { wins: number; losses: number; otl: number };
+  past: SosBucket;
+  future: SosBucket;
 };
 
 function SparkMini({
@@ -1559,18 +1566,15 @@ export default function TrendsIndexPage() {
     const sosMap = sosRatings
       ? new Map(sosRatings.map((s) => [s.team, s]))
       : null;
-    const sosPct = (record?: { wins: number; losses: number; otl: number }) => {
-      if (!record) return null;
-      const gp = record.wins + record.losses + record.otl;
-      if (gp <= 0) return null;
-      // Align with backend: straight win percentage (no half-credit for OTL).
-      return record.wins / gp;
+    // Mean over fixtures of opponents' win% (W / GP), as served; unknown stays null.
+    const sosPct = (bucket?: SosBucket) => bucket?.winPct ?? null;
+    const describe = (label: string, bucket?: SosBucket) => {
+      if (!bucket) return "";
+      const pending = bucket.pendingFixtures
+        ? `; ${bucket.pendingFixtures} started or postponed, pending`
+        : "";
+      return `${label} opponents' mean win% over ${bucket.fixtures} ${label === "Past" ? "final " : ""}games${pending}`;
     };
-    const fmtRecord = (record?: {
-      wins: number;
-      losses: number;
-      otl: number;
-    }) => (record ? `${record.wins}-${record.losses}-${record.otl}` : "");
     const mapped = base.map((row) => {
       const ctpi = ctpiMap.get(row.team);
       if (!ctpi) return row;
@@ -1588,8 +1592,8 @@ export default function TrendsIndexPage() {
         ctpiDelta,
         sosPastPct: sosPct(sosMap?.get(row.team)?.past),
         sosFuturePct: sosPct(sosMap?.get(row.team)?.future),
-        sosPastRecord: fmtRecord(sosMap?.get(row.team)?.past),
-        sosFutureRecord: fmtRecord(sosMap?.get(row.team)?.future)
+        sosPastDetail: describe("Past", sosMap?.get(row.team)?.past),
+        sosFutureDetail: describe("Future", sosMap?.get(row.team)?.future)
       };
     });
 
@@ -2283,9 +2287,8 @@ export default function TrendsIndexPage() {
                         <div className={styles.powerValueCell}>
                           <span
                             title={
-                              row.sosPastRecord
-                                ? `Past opponents: ${row.sosPastRecord}`
-                                : "Past strength of schedule (points %)"
+                              row.sosPastDetail ||
+                              "Past strength of schedule (opponents' win %)"
                             }
                             className={`${styles.valuePill} ${ratingToneClass(row.sosPastPct)}`}
                           >
@@ -2295,9 +2298,8 @@ export default function TrendsIndexPage() {
                         <div className={styles.powerValueCell}>
                           <span
                             title={
-                              row.sosFutureRecord
-                                ? `Future opponents: ${row.sosFutureRecord}`
-                                : "Future strength of schedule (points %)"
+                              row.sosFutureDetail ||
+                              "Future strength of schedule (opponents' win %)"
                             }
                             className={`${styles.valuePill} ${ratingToneClass(row.sosFuturePct)}`}
                           >

@@ -72,11 +72,11 @@ describe("/api/v1/trends/team-ctpi", () => {
       defense: 0.1,
       goaltending: 0.05,
       special_teams: 0.05,
-      luck: 0.1,
+      luck: null,
       computed_at: "2026-02-02T12:00:00.000Z",
       publication_status: "approved",
-      formula_version: "ctpi-formula-v1",
-      input_version: "ctpi-one-game-input-v2",
+      formula_version: "recent-team-form-v2-candidate-2",
+      input_version: "ctpi-one-team-game-input-v3-candidate",
       source_game_count: "10",
     }));
     const rangeCalls: Array<[number, number]> = [];
@@ -134,6 +134,7 @@ describe("/api/v1/trends/team-ctpi", () => {
       generatedAt: "2026-02-01T23:59:59.999Z",
       source: {
         kind: "team_ctpi_daily",
+        ctpiVersion: 2,
         sourceDate: "2026-02-01",
         computedAt: "2026-02-02T12:00:00.000Z",
         rowCount: 1001,
@@ -155,7 +156,7 @@ describe("/api/v1/trends/team-ctpi", () => {
     expect(res.body.teams).toHaveLength(32);
   });
 
-  it("hides unapproved history without recomputing the rejected legacy formula", async () => {
+  it("hides candidate v2 rows (gated until validated) without recomputing any formula", async () => {
     const tables: string[] = [];
     supabaseState.current = {
       from(table: string) {
@@ -188,11 +189,11 @@ describe("/api/v1/trends/team-ctpi", () => {
                   defense: 2,
                   goaltending: 0,
                   special_teams: 2,
-                  luck: 2,
+                  luck: null,
                   computed_at: "2026-02-02T12:00:00.000Z",
-                  publication_status: "legacy_unapproved",
-                  formula_version: "ctpi-formula-v1",
-                  input_version: "ctpi-one-game-input-v2",
+                  publication_status: "candidate_unapproved",
+                  formula_version: "recent-team-form-v2-candidate-2",
+                  input_version: "ctpi-one-team-game-input-v3-candidate",
                   source_game_count: "10",
                 },
               ],
@@ -214,6 +215,8 @@ describe("/api/v1/trends/team-ctpi", () => {
     expect(res.body.teams).toEqual([]);
     expect(res.body.source).toMatchObject({
       kind: "team_ctpi_daily",
+      ctpiVersion: 2,
+      label: expect.stringContaining("candidate until validated"),
       sourceDate: null,
       rowCount: 1,
       trustedRowCount: 0,
@@ -232,6 +235,124 @@ describe("/api/v1/trends/team-ctpi", () => {
       "Recent Team Form history is hidden unless its formula and source provenance are explicitly approved.",
       "Recent Team Form team coverage is incomplete.",
     ]);
+  });
+
+  it("selects rows by CTPI version, labels the version and keeps unknown v2 components unknown", async () => {
+    const eqCalls: Array<[string, unknown]> = [];
+    const row = (team: string, version: 1 | 2) => ({
+      team,
+      date: "2026-02-01",
+      ctpi_raw: 0.4,
+      ctpi_0_to_100: 56,
+      offense: version === 2 ? null : 0.3,
+      defense: 0.2,
+      goaltending: 0.1,
+      special_teams: 0.1,
+      luck: version === 2 ? null : 0.4,
+      computed_at: "2026-02-02T10:10:00.000Z",
+      publication_status: "approved",
+      formula_version:
+        version === 2 ? "recent-team-form-v2-candidate-2" : "ctpi-formula-v1",
+      input_version:
+        version === 2
+          ? "ctpi-one-team-game-input-v3-candidate"
+          : "ctpi-one-game-input-v2",
+      source_game_count: "10",
+    });
+    // Both versions are stored for the same team and date.
+    const stored = [row("MTL", 1), row("MTL", 2)];
+    supabaseState.current = {
+      from() {
+        const filters: Array<[string, unknown]> = [];
+        const query = {
+          select: () => query,
+          eq(column: string, value: unknown) {
+            eqCalls.push([column, value]);
+            filters.push([column, value]);
+            return query;
+          },
+          lte: () => query,
+          order: () => query,
+          range: () =>
+            Promise.resolve({
+              data: stored.filter((candidate) =>
+                filters.every(
+                  ([column, value]) =>
+                    column !== "payload->>formulaVersion" ||
+                    candidate.formula_version === value,
+                ),
+              ),
+              error: null,
+            }),
+        };
+        return query;
+      },
+    };
+
+    const served = createMockRes();
+    await handler(
+      { method: "GET", query: { date: "2026-02-02" } } as any,
+      served as any,
+    );
+
+    expect(eqCalls).toContainEqual([
+      "payload->>formulaVersion",
+      "recent-team-form-v2-candidate-2",
+    ]);
+    expect(served.body.source).toMatchObject({
+      ctpiVersion: 2,
+      sourceCutoff: "games_before_date",
+      rowCount: 1,
+      trustedRowCount: 1,
+      formulaVersion: "recent-team-form-v2-candidate-2",
+    });
+    expect(served.body.teams).toEqual([
+      expect.objectContaining({
+        team: "MTL",
+        ctpiVersion: 2,
+        offense: null,
+        luck: null,
+        defense: 0.2,
+      }),
+    ]);
+
+    eqCalls.length = 0;
+    const history = createMockRes();
+    await handler(
+      { method: "GET", query: { date: "2026-02-02", version: "1" } } as any,
+      history as any,
+    );
+
+    expect(eqCalls).toContainEqual([
+      "payload->>formulaVersion",
+      "ctpi-formula-v1",
+    ]);
+    expect(history.body.source).toMatchObject({
+      ctpiVersion: 1,
+      label: expect.stringContaining("CTPI v1"),
+      sourceCutoff: "games_through_date",
+      rowCount: 1,
+    });
+    expect(history.body.teams).toEqual([
+      expect.objectContaining({ team: "MTL", ctpiVersion: 1, offense: 0.3 }),
+    ]);
+  });
+
+  it("rejects an unknown CTPI version", async () => {
+    supabaseState.current = {
+      from() {
+        throw new Error("must not query");
+      },
+    };
+    const res = createMockRes();
+
+    await handler(
+      { method: "GET", query: { date: "2026-02-02", version: "3" } } as any,
+      res as any,
+    );
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe("INVALID_CTPI_VERSION");
   });
 
   it("redacts dependency details from internal-error responses", async () => {

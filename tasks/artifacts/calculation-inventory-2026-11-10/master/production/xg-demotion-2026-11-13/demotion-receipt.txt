@@ -1,0 +1,10 @@
+BEGIN
+right | is_active | is_champion | approval_status | model_approved | updated_at
+-cfg9bac2706 | f | f | retired | t | 2026-11-13 07:01:40.276082+00
+(1 row)
+UPDATE 1
+COMMIT
+right | prediction_type | is_active | is_champion | approval_status | model_approved
+-cfg2afcf561 | shot_goal | f | f | candidate | t
+-cfg9bac2706 | shot_goal | f | f | retired | t
+(2 rows)

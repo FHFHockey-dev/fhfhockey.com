@@ -212,7 +212,9 @@ describe("mergeUnderlyingStatsLandingRatings", () => {
           {
             teamAbbr: "TOR",
             date: "2026-04-05",
+            snapshotDate: "2026-04-05",
             sos: 0.575,
+            sosVersion: "descriptive-sos-v2",
             texture: null,
             future: {
               directOpponentPointPct: 0.56,
@@ -341,7 +343,9 @@ describe("mergeUnderlyingStatsLandingRatings", () => {
               sos: 0.49,
               uniqueOpponents: 0
             },
+            snapshotDate: "2026-04-05",
             sos: 0.495,
+            sosVersion: "descriptive-sos-v2",
             teamAbbr: "TOR",
             texture: null
           }

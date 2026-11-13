@@ -20,7 +20,9 @@ const StrengthOfSchedule: React.FC<StrengthOfScheduleProps> = ({
           <thead>
             <tr>
               <th>Team</th>
-              <th>SoS</th>
+              <th title="Mean over fixtures of opponents' win % (W / GP), excluding games against the team. Past counts final games only. descriptive-sos-v2.">
+                SoS (opp. win %)
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -43,7 +45,7 @@ const StrengthOfSchedule: React.FC<StrengthOfScheduleProps> = ({
                   <span style={{ marginLeft: "8px" }}>{team}</span>
                 </td>
                 <td className="sosDataCell" style={{ textAlign: "center" }}>
-                  {(sos * 100).toFixed(1)}%
+                  {sos === null ? "—" : `${(sos * 100).toFixed(1)}%`}
                 </td>
               </tr>
             ))}
