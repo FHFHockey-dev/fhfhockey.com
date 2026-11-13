@@ -1,0 +1,52 @@
+{
+ "exportManifestSha256": "bbcba75cebc65e45edd51d201e3f9fef05e20ab37d0280e4d4106bd41805c145",
+ "dryRunSha256": "db94a9de864b9dfa8fa69f24c6be9045dd037ed1937393c3b03dd69d9ec4f15c",
+ "counts": {
+  "unchanged": 593,
+  "changed": 16,
+  "notApplicable": 9,
+  "flagged": 0
+ },
+ "gateSummary": {
+  "clockRows": 618,
+  "available": 609,
+  "notApplicable": 9,
+  "unavailable": 0,
+  "teamGamesChanged": 16,
+  "deleted": 15,
+  "ppUpdated": 23,
+  "otherUpdated": 14,
+  "inserted": 5
+ },
+ "flags": [],
+ "changedTeamGames": [
+  "2026020004/23",
+  "2026020068/5",
+  "2026020073/30",
+  "2026020077/5",
+  "2026020081/14",
+  "2026020131/18",
+  "2026020161/52",
+  "2026020163/12",
+  "2026020174/29",
+  "2026020177/14",
+  "2026020187/22",
+  "2026020192/18",
+  "2026020192/2",
+  "2026020197/23",
+  "2026020197/24",
+  "2026020207/19"
+ ],
+ "notApplicableTeamGames": [
+  "2026020038/55",
+  "2026020160/54",
+  "2026020182/8",
+  "2026020193/25",
+  "2026020226/20",
+  "2026020270/2",
+  "2026020271/16",
+  "2026020279/10",
+  "2026020304/14"
+ ],
+ "flaggedTeamGames": []
+}

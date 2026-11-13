@@ -82,8 +82,16 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 
 - Write gate (TJ): PP_STORED_CALCULATION_WRITES_ENABLED (only "true" = on). Off: write calls (cron 388 included) read and write nothing and answer success/skipped/pp_stored_calculation_writes_disabled, audited as skipped; dry runs work either way; the writer function refuses a direct write call before any read. Tradeoff noted in REPORT §12: no new powerPlayCombinations rows until TJ sets the flag. Tests: batch 29, writer 21.
 
+## Decision 152 local dry run (TJ approved; candidate 8f73d2931)
+- Read-only: the pooler drops PGOPTIONS (show transaction_read_only = off, timeout 2min), so each export session runs SET default_transaction_read_only = on + START TRANSACTION READ ONLY + local 10 s timeout, logging show transaction_read_only = on. Verified the DB refuses a write inside it (CREATE TABLE refused, rolled back).
+- Disclosure: my first probe (before that) ran `create temporary table f11_ro_probe` outside a read-only transaction; a session-only temp table, dropped at disconnect, no stored data touched.
+- Export: 21-export-dry-run-inputs.py (31 batches, hygiene before each, ≥5 s apart, scalar columns only) to scratch; manifest hashed.
+- Dry run: 22-local-dry-run.ts runs the candidate batch route with stubbed auth/audit/off-season wrappers and a fake client over the CSVs (bundle has no Supabase client); 23-reconcile-local-dry-run.py applies the runner's gate + 618 reconciliation.
+
+- Result: export hash bbcba75c…c145 (309 games; 99,128 PBP, 231,749 shifts, 12,360 roster, 618 tgs, 7,190 pPC rows); dry-run sha256 db94a9de…f15c; 618 = 593 unchanged + 16 changed + 9 N/A, 0 flagged; gate 15 deletes, 23 PP updates, 5 inserts, 14 unit-average updates inside the 16 (B team-games), no unit moves; 609 available, 0 unavailable. REPORT §14.
+
 ## Next
-Ticket 2 (the local dry run) from the Chef. No production step from this lane. Chef routes remaining owner and code items. No production step from this lane.
+TJ decides the write phase (migration 149, release with the flag, approval of dry-run sha256 db94a9de…). No production write from this lane. Chef routes remaining owner and code items. No production step from this lane.
 
 ## Blockers
 None.

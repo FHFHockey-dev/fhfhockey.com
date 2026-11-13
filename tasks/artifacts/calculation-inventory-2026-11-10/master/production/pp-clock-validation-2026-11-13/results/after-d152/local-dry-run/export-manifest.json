@@ -1,0 +1,1338 @@
+{
+ "batches": [
+  {
+   "batch": 1,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "b166318d6fd14b83270402ea2c573555c3cb9392f686368c486e46d23b3e2fcf"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "27668f01287805aa990cffefc43bdd7e41cd8fcb5c4b9b9f9b503f65780be7cb"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3247,
+     "sha256": "45d7301b478a43924cfe306dd25d44e1cfb4d09d9e15f62dc18aab4bf43ac320"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7752,
+     "sha256": "1cbcd3ad587cba779e7ebdb1213b64e64423ab8ed82e133826cee87ba09ad1d6"
+    },
+    "powerPlayCombinations": {
+     "rows": 246,
+     "sha256": "9e1d999d0565e81f09103cbc56158b4355d5e14d535ca4e84fd8b47c5513aaa5"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "a9948e61756c72e379e81bc97a678b595899779fbdc6a155dd87f172b186b09d"
+    }
+   },
+   "gameIds": [
+    2026020001,
+    2026020002,
+    2026020003,
+    2026020004,
+    2026020005,
+    2026020006,
+    2026020007,
+    2026020008,
+    2026020009,
+    2026020010
+   ],
+   "seconds": 2.02,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 2,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "8c3eec1249d86756e7a58bc08d62c7faec89b5b5d5eec7f5f18f2b469011a2c2"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "4fd06ceb898f46962816790743a7bcb6e24da082fbf9fb4d38f5b06db44f6139"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3308,
+     "sha256": "788d7aa3bf44468a6d0730cb2d31b104f7bfa68c853d83ce80b314d21ec5d083"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7747,
+     "sha256": "8ed18808cbe5a8dcf07b4f8b81f2c577480585857f99306750a53461820190e3"
+    },
+    "powerPlayCombinations": {
+     "rows": 247,
+     "sha256": "974b4285ecc836c72d1872786291aae9911e1eea1add8b06560b80138faa07b3"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "50cc1b4497ff3f552b9a1b86c163ab3c6e2f987af7f38488088084e157226b7c"
+    }
+   },
+   "gameIds": [
+    2026020011,
+    2026020012,
+    2026020013,
+    2026020014,
+    2026020015,
+    2026020016,
+    2026020017,
+    2026020018,
+    2026020019,
+    2026020020
+   ],
+   "seconds": 1.93,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 3,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "60dc8fe45e7740c5a1efc3a92f2a94d2c38664c2900991716d3d8bc7ecd95363"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "68016ab2926e74096a36989078c1ad827fc58de0fb8bd81e8480ae7fa5afc047"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3281,
+     "sha256": "0efd6458badd307ccbfea130482f3b51f13429f5aaad5facf034ecdbe4726354"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7536,
+     "sha256": "f4e3225584ba23e97a3a023442066fdbdde377ee35fd4b4b46828699364808b0"
+    },
+    "powerPlayCombinations": {
+     "rows": 240,
+     "sha256": "d4f9c58045e0ef1a7cc83718b16de0a6aa05c25bc83a816f73709c69c18205b0"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "b63cced54de57d2b8d6a4a365e12bfa2eac222ba7830687bc97cd6aff1b46d99"
+    }
+   },
+   "gameIds": [
+    2026020021,
+    2026020022,
+    2026020023,
+    2026020024,
+    2026020025,
+    2026020026,
+    2026020027,
+    2026020028,
+    2026020029,
+    2026020030
+   ],
+   "seconds": 1.74,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 4,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "638c397104d51ca9e1009f2f046c4d961bdc2251237770bdef0658277348a00c"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "ba187a795c3f554b359e94c1d5f25b78d6c9bf87923cce6c0b8fa5e3e3e4c93f"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3262,
+     "sha256": "f4f89c18471794b39720c4847e17cda44a8cbfb58daf52bec9b7a2b58fd3f0ea"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7516,
+     "sha256": "94e7e79a16ef3f04c65c43ae16b844d79b9f6bbd498de8d136024721a76fe691"
+    },
+    "powerPlayCombinations": {
+     "rows": 228,
+     "sha256": "dbde896f0a631a2d2ad7e4fd9d48cb32f4f7e14c26672de5a74af25f446f7f7a"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "3723529c69e22b29d0406500f006055d5211bf4687ac936741199178ba93006f"
+    }
+   },
+   "gameIds": [
+    2026020031,
+    2026020032,
+    2026020033,
+    2026020034,
+    2026020035,
+    2026020036,
+    2026020037,
+    2026020038,
+    2026020039,
+    2026020040
+   ],
+   "seconds": 1.82,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 5,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "3612f1724649f2e4e31881bd233c2641ab38fd6dc56d606fc3c580482fc96137"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "d60682d09913ef644a1c6b60731de3d7a41bfb5e3e232f6670be23d75c329902"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3241,
+     "sha256": "185bf125b5080ae0963df60608a4bab9034e852733bcbc1b99831620180ca6d2"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7567,
+     "sha256": "0d087c4531e421e39600b9309e48438e8500816a7a5a31227ecadf3784f53b73"
+    },
+    "powerPlayCombinations": {
+     "rows": 239,
+     "sha256": "f771a1710e4c539f9385accd35cf5f1d053a57b09ac00ee7373cd95ef65640e2"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "dd41c4f01a44e502ca80ce65b4720a976cdc2d9cb512802f574a88471181771f"
+    }
+   },
+   "gameIds": [
+    2026020041,
+    2026020042,
+    2026020043,
+    2026020044,
+    2026020045,
+    2026020046,
+    2026020047,
+    2026020048,
+    2026020049,
+    2026020050
+   ],
+   "seconds": 1.53,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 6,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "84086de586ffca4e5f062511049aca64a837e0c7c96a71bbdc724cdec6df3507"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "08e91759f184ad1cba6aa3440addde42a7e0723756ac9d40c90578df9a1baed3"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3221,
+     "sha256": "cf89b5ad9206e4585a3ddc5bfb2dc7c040881b38e4b5e6334975e622f09d9eef"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7241,
+     "sha256": "7d2e95e5a097c51c03fe3db9f7c1e05514090b4accceee92592d027a0bd5f78b"
+    },
+    "powerPlayCombinations": {
+     "rows": 263,
+     "sha256": "d84c1781cfa18c67703ff305f66a785d83f410fcd25b2932b705566c903cfd5d"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "389b557f6e59570aa39bae0f4afb2d2513e77a7e82baca3880b8dad5a182dc8a"
+    }
+   },
+   "gameIds": [
+    2026020051,
+    2026020052,
+    2026020053,
+    2026020054,
+    2026020055,
+    2026020056,
+    2026020057,
+    2026020058,
+    2026020059,
+    2026020060
+   ],
+   "seconds": 1.03,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 7,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "72359c41032ec5908ca4106a7698945651c44c68f605fe1a84fc56f01c65cbee"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "ab050e86e1103f4f5e096f90c10bc402ef76e003b14316edf30fafc48a5c0020"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3144,
+     "sha256": "070750f20995511bccd5c345c20863381d12f81bfaad1e76eaee9b44a9ebc79a"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7434,
+     "sha256": "699ad18e588708995a308f8ed16fd78078fd52979085a9cbfb85f8fbd0d9d7e5"
+    },
+    "powerPlayCombinations": {
+     "rows": 238,
+     "sha256": "843d8073f248a070bfda711b5eb4109d89c2ffb5aac614557232a6448f2f5389"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "c1d5e8c311e5dc922b6497e21933d4c06cd1052dca4db1162e33a6957aa560e5"
+    }
+   },
+   "gameIds": [
+    2026020061,
+    2026020062,
+    2026020063,
+    2026020064,
+    2026020065,
+    2026020066,
+    2026020067,
+    2026020068,
+    2026020069,
+    2026020070
+   ],
+   "seconds": 1.14,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 8,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "cfd6a8a0956451c928a3dd70a49ca9b31f5dc20c156091627c4f43ae79551635"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "1d227dd3cd560492286ec08d863e525baa2d7852f8dd3e571df29629c7a1f552"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3355,
+     "sha256": "faaef1b94404c5a61eef3a4430fb3ed9ce2a2c77191c5f7e6dc13a9f18074fcb"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7518,
+     "sha256": "96f3cb0da6a9c4f79c37f27b17f8db30378a9275050fce64addc53caad7bff63"
+    },
+    "powerPlayCombinations": {
+     "rows": 246,
+     "sha256": "ae0456ebf3849ef62c8becc61f86c49491ae0a4fc32f8d953836247179a067da"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "a65cb657fef9bae56ace81f82238f1785f191792581098d4da2b07fb86fd58b0"
+    }
+   },
+   "gameIds": [
+    2026020071,
+    2026020072,
+    2026020073,
+    2026020074,
+    2026020075,
+    2026020076,
+    2026020077,
+    2026020078,
+    2026020079,
+    2026020080
+   ],
+   "seconds": 1.08,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 9,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "d8172d38271b6928bc103bf7ad53c67c9f9e23d094d83bc465da63497ac9b86a"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "3bf06012e52bb90931b8ce6dea6f4aa339c8cfd77317610076ea75e5f70d96a0"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3201,
+     "sha256": "67b5f96b9ae805915211291e06900875408d16028ef8fc4976391336104420b7"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7536,
+     "sha256": "2801adfcdaaa7be4ea5db1b92aaa7c054bfa8d59039f7e2bc733df76135cafbe"
+    },
+    "powerPlayCombinations": {
+     "rows": 229,
+     "sha256": "c40bfecfca8b0e5c0b5c0590dc5c09f3fa74403754dc656e12186448fa79c717"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "3c39a4ad56b8d9c540364e2f1b805a7e89dc4b67e218906a139c6e4a94699c84"
+    }
+   },
+   "gameIds": [
+    2026020081,
+    2026020082,
+    2026020083,
+    2026020084,
+    2026020085,
+    2026020086,
+    2026020087,
+    2026020088,
+    2026020089,
+    2026020090
+   ],
+   "seconds": 1.69,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 10,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "5ac22c0952acfe0f92094772a601a57a8117b1a18cc058c8139a4c0a150913aa"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "ec7c1ac864a9169af2f270aa849b68b7b375d9edf8751607aa78370222c0a1f5"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3208,
+     "sha256": "bae4a0963d384fd6f67a7eb1d974209fd736ca40d7d29b6c53f13f501ea8e50b"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7353,
+     "sha256": "b821c4d65ff86af8a6d81db48f69bc241cf2e15dab4cea560be03d2e6217e95e"
+    },
+    "powerPlayCombinations": {
+     "rows": 243,
+     "sha256": "b2f0c4ac83fbf3531a1843c71dbcbc4cdc5a3df28e21df46c7627f1711895271"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "81408e8c55d01d9585632c652d8ed0290452bdce65bbde1d93adc87a87778769"
+    }
+   },
+   "gameIds": [
+    2026020091,
+    2026020092,
+    2026020093,
+    2026020094,
+    2026020095,
+    2026020096,
+    2026020097,
+    2026020098,
+    2026020099,
+    2026020100
+   ],
+   "seconds": 3.68,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 11,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "d7b1bce492bdd4388ba1150ab59d95a921817e00a6c4fde695ad950bd9ea2ce6"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "681d515815364292e20ab140d0abfd54560deed16c4cae5d40b0b6385ca39ffd"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3162,
+     "sha256": "465ea71c87bfdf62b42980d2a5907de77059bc6577b55916a4baea208090202c"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7600,
+     "sha256": "5edbd429b8f7ef4f9c1fba026357b92e8af6cecb55dfa43fc5ce25daecc3d891"
+    },
+    "powerPlayCombinations": {
+     "rows": 234,
+     "sha256": "f38b8b2efd70ce438c8935be6ea126441965497f77c0c3418baca01cdaf44b55"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "0d151ad27e3dd9afa2e06be2e044f2629387fd7f21899cdd8462c2baa3918655"
+    }
+   },
+   "gameIds": [
+    2026020101,
+    2026020102,
+    2026020103,
+    2026020104,
+    2026020105,
+    2026020106,
+    2026020107,
+    2026020108,
+    2026020109,
+    2026020110
+   ],
+   "seconds": 2.86,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 12,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "1688d9d4378a66fbd998fa71412faac81b376aea7a64e7b1b23c0893fd0d10b3"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "6bbb7e9964be99f8aca74143b8b83a7a10a48fdf5409188e218437c9f1433913"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3241,
+     "sha256": "3a771ea274667bc66e4547efbca49978cbbd3eb2c8330c1a891d87c39417b0b1"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7547,
+     "sha256": "acfec4325d9026f00eb151e676d146eba5acb72087b0b27d6ea0740ca986033e"
+    },
+    "powerPlayCombinations": {
+     "rows": 263,
+     "sha256": "5906b6ddbf091c7e15c1cf7fd104bccd7decb164017494277765428caf4bf418"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "bbef3510d66dd5fd1bd2cdebaa8cb252833ae7affde27579eb61f22cb23e946e"
+    }
+   },
+   "gameIds": [
+    2026020111,
+    2026020112,
+    2026020113,
+    2026020114,
+    2026020115,
+    2026020116,
+    2026020117,
+    2026020118,
+    2026020119,
+    2026020120
+   ],
+   "seconds": 2.37,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 13,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "290822d6fe9ab3df70f314383fc9077bcc4f3e4f6dbfce3df54a49cfa49c3595"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "b046c78062376e52ced7c148b3713d852ebaf711e1cf73fbae64fd80ba555fd8"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3269,
+     "sha256": "4d4d2dd3a3d01914a7f4ac2cefc85a8523a2b7326de7ab0a56735cbc961d28ce"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7436,
+     "sha256": "2f2d8fe014cae8892e048f74e1be6df8fbdab6ddd56035bdfd45b364318f76e6"
+    },
+    "powerPlayCombinations": {
+     "rows": 221,
+     "sha256": "e329c5181c7fdf7adaed1bf447ab254c7223e44ec43db40c0d58d7a3119b5139"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "f479e6380d25ada25c747148e063aef0319ff362d33af4af1cc09de027b767ba"
+    }
+   },
+   "gameIds": [
+    2026020121,
+    2026020122,
+    2026020123,
+    2026020124,
+    2026020125,
+    2026020126,
+    2026020127,
+    2026020128,
+    2026020129,
+    2026020130
+   ],
+   "seconds": 1.51,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 14,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "a40b907d40c176cdc24e0172ffb7112e7a2a8a8d9136a84019f986530f371499"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "e4d8c73604462736a18de39790eaa7aa2989c5828c2bef1ca11570a95426254a"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3134,
+     "sha256": "2206f1bd352c9ded723bc7ed30392f5ee0a77e2d2ba7544f2da3ea72922811c6"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7406,
+     "sha256": "2fcd2bf4f6237f0e69419d0f9b4c03796a9ecff859fdbe9fc085c1a08b2ff425"
+    },
+    "powerPlayCombinations": {
+     "rows": 206,
+     "sha256": "e643f404f7f3a6fb3e8429a1eaab2e889a551a7d6e15105490ed3cb25044432d"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "24f662f88acbb022f09a23bc91ecc68d2131d3ccfba18781c19ba1a6e298cb3e"
+    }
+   },
+   "gameIds": [
+    2026020131,
+    2026020132,
+    2026020133,
+    2026020134,
+    2026020135,
+    2026020136,
+    2026020137,
+    2026020138,
+    2026020139,
+    2026020140
+   ],
+   "seconds": 2.7,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 15,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "1afadb51c5a49a95ad1ef05992dfae65032b67979e3d01185e1356598cb5c08a"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "79349bc99d1731e92d49c84dc929062ceab3e47ace826bb35d7b62eee63afc97"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3238,
+     "sha256": "aab046df7853369440a164d8a76427934b5bdf5eb1bc2c813784bf4118aca3e6"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7309,
+     "sha256": "51ec0b18234a1700b5f5d424d442916a7883a7ced678be61235ac81ab40d599d"
+    },
+    "powerPlayCombinations": {
+     "rows": 235,
+     "sha256": "e93a5f6ce91ee070d708965b59c9c34246c3a539f6eb5c7c200c6851b18eda1c"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "01a27791b00e84a7aa17c053fb54d383dfb4845e616b80dcd79a0f3b40060f33"
+    }
+   },
+   "gameIds": [
+    2026020141,
+    2026020142,
+    2026020143,
+    2026020144,
+    2026020145,
+    2026020146,
+    2026020147,
+    2026020148,
+    2026020149,
+    2026020150
+   ],
+   "seconds": 1.38,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 16,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "0835b8c87f8070a4b2c4c014aa18b6ad2b926280a8d6ffad368a0b0d542b440f"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "618bbbf49c0fc8bcc8099e5d6dea2b085cb961c69a50d5c641d8150c5de6fb53"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3251,
+     "sha256": "88b412f5c9e6e526451167b731e63bf2ae2185370b5488f5591397f002f7da93"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7544,
+     "sha256": "8eb3e7c2861ffc96db2927c4ff12c706cd7612c4292b1712409b4c7313452dad"
+    },
+    "powerPlayCombinations": {
+     "rows": 225,
+     "sha256": "7ed40c7ef496ef9e42bfc61f263b3680953691a51e25bb9aa84ee85dc1cfcee2"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "4daa67f8b948333d830f07db32ff8b73bdf676b535f8afee44e591f321e91c22"
+    }
+   },
+   "gameIds": [
+    2026020151,
+    2026020152,
+    2026020153,
+    2026020154,
+    2026020155,
+    2026020156,
+    2026020157,
+    2026020158,
+    2026020159,
+    2026020160
+   ],
+   "seconds": 1.27,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 17,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "b60c46bddfbe210506effbf84f0292d469ae501f688812d17d65b8c4c9157079"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "efbb56daec03bbde673aebe4f6651ef11df553ff9000b22390394f99eddc4866"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3173,
+     "sha256": "c71cbb9897a7bc02a47a11fc3d9222c27cebfad00dbe373031b4694633a8d2b0"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7617,
+     "sha256": "938f27a09c74e820f81a775b6f3eaf6a4e98c255af675000fddb78aba585a9ae"
+    },
+    "powerPlayCombinations": {
+     "rows": 247,
+     "sha256": "cde6f7876001799cb0adb786753531a375b2765f118bc251ccf9453e399ab4cb"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "47fee6b66e2c6f02e338a2c09b9667d09be780ad6402604be28d93be3f421434"
+    }
+   },
+   "gameIds": [
+    2026020161,
+    2026020162,
+    2026020163,
+    2026020164,
+    2026020165,
+    2026020166,
+    2026020167,
+    2026020168,
+    2026020169,
+    2026020170
+   ],
+   "seconds": 1.36,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 18,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "002435e1723960eea63fa3a46d09c3b8bb27354164ac71f81da9bac0c2067c81"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "60bf605b07f80a0e648912f569f24d75a5ad0785c7e63f46cd8c736c3170496c"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3243,
+     "sha256": "d313b3d32cc2cb92cbeeec16d165e6dfc361bee3011a74d5411a4bb85ec76067"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7721,
+     "sha256": "79e17b7bf14d6c9a9f61bdead86deab0c76fa0c159d33d5d151b7223d598751c"
+    },
+    "powerPlayCombinations": {
+     "rows": 207,
+     "sha256": "e84e7cd4fc73c2f77f7be730dc5c8337a253ad498d9eb085a2a884ca5fe777ff"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "5aef9cd5b75638563fbb14c0dac41c535e84244ce6ae4b78f4546ec958b46c68"
+    }
+   },
+   "gameIds": [
+    2026020171,
+    2026020172,
+    2026020173,
+    2026020174,
+    2026020175,
+    2026020176,
+    2026020177,
+    2026020178,
+    2026020179,
+    2026020180
+   ],
+   "seconds": 1.29,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 19,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "1e32dd5d227283dee1d0221a410621e2ceecdefc26d396f9acb864e51e58f7da"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "b85cc0659aa71073c736827b5b47e5419df4583a0616c868ffdda0a5688be819"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3112,
+     "sha256": "b5649fa5bc3437edfee2e9d8e42856bc72cc48a10c95b8510446f623ed9a0936"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7332,
+     "sha256": "7d36699b2bf66060f624de662c0cff62611a7b3f6a7152d961b325e9e32eff48"
+    },
+    "powerPlayCombinations": {
+     "rows": 217,
+     "sha256": "aa21878b25d3f71336102d670bbd36b3e299fa76184a0077346be09044fe5ce8"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "347cf1c69611cec42a6a61982d19005a68625b4744063c0d05aa7ceb2a225c3f"
+    }
+   },
+   "gameIds": [
+    2026020181,
+    2026020182,
+    2026020183,
+    2026020184,
+    2026020185,
+    2026020186,
+    2026020187,
+    2026020188,
+    2026020189,
+    2026020190
+   ],
+   "seconds": 1.13,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 20,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "6fabf0d4e34bbd72e82847d4dedf9e95620582d4b9f4832d55c594dde6d61f38"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "a09e3d8e819c9097bccebc4b3edd87a687b15e5cea58f436253620832a764983"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3247,
+     "sha256": "8aa4edf8af9207672ba6a216cf5f8da3a49554f67ffd9f373999f3fe035aa226"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7461,
+     "sha256": "b29a372abecddbd08558db1e44b5c403c87baa1d9b293baee26952cbc80db463"
+    },
+    "powerPlayCombinations": {
+     "rows": 233,
+     "sha256": "eab9cb9f94c57ad1884e3b0e9ec5b9fe69d9cf076a2e1bb68c364f8cdcc1050c"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "2c2bfcb128d0ed06097d32b3b7760fd5382925b2704b29dc8dd92577149dde71"
+    }
+   },
+   "gameIds": [
+    2026020191,
+    2026020192,
+    2026020193,
+    2026020194,
+    2026020195,
+    2026020196,
+    2026020197,
+    2026020198,
+    2026020199,
+    2026020200
+   ],
+   "seconds": 1.4,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 21,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "218938d1e2c97dbfe277a675682b9af695663ee341f548c60bc67444221ade20"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "a116e2c1b0c0b1ef6fbd3a1491712bb77031ade76bfb669cb8fe229e382f1f08"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3141,
+     "sha256": "48b170f56b9b63b1fc530bfba4e73f4d04cb357a9e50bef17d881e88f5d76871"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7475,
+     "sha256": "aaf47e0b556e7eb6d06e48044fe783d5e18ff99fca2654318dce02f3a9cdb6dc"
+    },
+    "powerPlayCombinations": {
+     "rows": 243,
+     "sha256": "58b911b68a6a802ae7472acff9500564305e0b5b3bd5d8dcb92d125a95c43833"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "6db3afc35787e6f8883991552905accd4b9f3147346cd7a347b8e6f6a490c74d"
+    }
+   },
+   "gameIds": [
+    2026020201,
+    2026020202,
+    2026020203,
+    2026020204,
+    2026020205,
+    2026020206,
+    2026020207,
+    2026020208,
+    2026020209,
+    2026020210
+   ],
+   "seconds": 1.3,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 22,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "40c922dd20c8d57bae6842b4d934852523d7eaefef31e432e84e20982b43b828"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "f90f58e2e2ecb75be0dd4a201649422503f0c0b5c4e74cd85fb0fdef136c4f6a"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3117,
+     "sha256": "876e377bcf225915f5c2e68089325e99c13ed7eb7ab298ee0e93a9dd0a284a46"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7652,
+     "sha256": "5b691562f47f1cca36dec134ad59e555b3a5b230909e1b5f650bd36de4cbfb18"
+    },
+    "powerPlayCombinations": {
+     "rows": 234,
+     "sha256": "19ee46d30a8880d36d0af0116f6e87b6d61ae595aea3c388ca2e6f9697c2cb02"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "371629cddbe02b97c9cce2c241fdd0a5f7cada68205541c33f6e8fffcc0dd1b0"
+    }
+   },
+   "gameIds": [
+    2026020211,
+    2026020212,
+    2026020213,
+    2026020214,
+    2026020215,
+    2026020216,
+    2026020217,
+    2026020218,
+    2026020219,
+    2026020220
+   ],
+   "seconds": 1.1,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 23,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "3bcea8324bec863350012be53fec243acdf6612d4f022eaed87f33f6e0a8dfba"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "86d0ca5a814d7c554b4ec8aebca2b82d176652f2161bcdc4e5758252a4de7be2"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3125,
+     "sha256": "9ad81aebc03599cd087af5421a3f0264d68bb275d06510335823ae9549097687"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7341,
+     "sha256": "42c1598c7911e21bf08dc54a54949ea93f2a2c1591e0b8ed9607848dcc47ba0b"
+    },
+    "powerPlayCombinations": {
+     "rows": 216,
+     "sha256": "9e7d3186d9f97dec8f029e80919427e98feebbfd5f54603ca1ea081bd20cbdcf"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "e1d01466048615e54840f4241c3c54e3549ffabaf9ace05f8855ddf3d0ab6b05"
+    }
+   },
+   "gameIds": [
+    2026020221,
+    2026020222,
+    2026020223,
+    2026020224,
+    2026020225,
+    2026020226,
+    2026020227,
+    2026020228,
+    2026020229,
+    2026020230
+   ],
+   "seconds": 1.12,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 24,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "7411ddc28fca0f9b4a79949b19109aa818ee5e99e6ff1fe959c52f84fcdc6e6a"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "600887b1fb3ff145820c55f1afae672ae9a56921cddd1e8fe3bdeb93f6e03dff"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3265,
+     "sha256": "31d4eb37832e34405fca9297c3b89e732749e09f66d3ef8381cfb90608ec7662"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7663,
+     "sha256": "fa197f55e0e38aae33f240da6ed5fb86518003314df5cb2d3617f919bcd844c3"
+    },
+    "powerPlayCombinations": {
+     "rows": 225,
+     "sha256": "0cc231282cb0ae116b295530c71126818ab7ae4b605277a6d52794a651d50ac5"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "874334d73568421eec3c58b131d4066d108ebd6b7b0f2fd0ffd219902107eeba"
+    }
+   },
+   "gameIds": [
+    2026020231,
+    2026020232,
+    2026020233,
+    2026020234,
+    2026020235,
+    2026020236,
+    2026020237,
+    2026020238,
+    2026020239,
+    2026020240
+   ],
+   "seconds": 1.07,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 25,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "48e1b0c580ed3062e44c0dc26d7766e7e9610faeb57cfd05cc10f40edc1967c1"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "8419c30030a82955f9b16ef837af650cec92ad14dcfe4fb83648112b23f5fcab"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3127,
+     "sha256": "2e7b006e2b3568a1c743ce42eb7a1f4b5811f3076aa71236b3c2c11006732238"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7163,
+     "sha256": "7bfed8cafa846abc0e6b0c3b60f3aca674d4680fb887a2b08ba7990f4de2cd69"
+    },
+    "powerPlayCombinations": {
+     "rows": 224,
+     "sha256": "656b950576f77d70fd63a444d732612ca4c88a416f0f13bb017a1d4363585fc6"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "ea8f299c31f874078a23baf53a8ab412750907424b030442f947a1b9da02c678"
+    }
+   },
+   "gameIds": [
+    2026020241,
+    2026020242,
+    2026020243,
+    2026020244,
+    2026020245,
+    2026020246,
+    2026020247,
+    2026020248,
+    2026020249,
+    2026020250
+   ],
+   "seconds": 0.91,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 26,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "9f3505b878a2a77d7199a73f351d4ae2b72a05759b96df5ddcdc69de3f26b733"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "e1863339d41dcbf871129ee561edc48f1e3e2e72c8735c42beba7bdc6bd0ee21"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3165,
+     "sha256": "2ac9037976fdf1fa29a8c21da5cc3486582a36d3854760073327d85c9b791346"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7689,
+     "sha256": "409faad4b39d8e6565c6d874c675a7c997ae64f6294c42441de9fcb40140635a"
+    },
+    "powerPlayCombinations": {
+     "rows": 235,
+     "sha256": "b2187e7720ac60657eb59e8e41d079ab0c0404e5f5818048bd45b2e03bc44eac"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "a58efee3633eeca4631d0e2c2e42e945a569b5c45add24f2de29236310db0d12"
+    }
+   },
+   "gameIds": [
+    2026020251,
+    2026020252,
+    2026020253,
+    2026020254,
+    2026020255,
+    2026020256,
+    2026020257,
+    2026020258,
+    2026020259,
+    2026020260
+   ],
+   "seconds": 1.03,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 27,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "4730abecbc3eda2c5e9764cf778ee16c89dba5b7d0db27abb9ee451206e7f72c"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "e4677148c428b33450d2ea177dfc3ae83938f6fb1fd9d9370b39414483305ad8"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3296,
+     "sha256": "636d09a1866a158e9a0e573c7e0cedf402bfe1e22828300a1272e809bda701ed"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7437,
+     "sha256": "15cefd3034d8a7f17aede2d3d835b1c3dd1731bda780fd62a1616be8fdf8942a"
+    },
+    "powerPlayCombinations": {
+     "rows": 227,
+     "sha256": "081a2da537031d557d9d68f408f880fc8e61c5ae496f7b35c58f911f9163ca11"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "d75b5ce9065646dfd90b570019601612eb0b058aefda6835fb463b943def6232"
+    }
+   },
+   "gameIds": [
+    2026020261,
+    2026020262,
+    2026020263,
+    2026020264,
+    2026020265,
+    2026020266,
+    2026020267,
+    2026020268,
+    2026020269,
+    2026020270
+   ],
+   "seconds": 1.07,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 28,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "7d897d0fe1c11f7dafe6f1331f7ac74390c591545ae5c8f1d2568935dd0a626d"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "cb58519000f683e5b3c343afdf8e1d690bdf3e23da89aa1c1382e322bdfd369b"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3054,
+     "sha256": "046ecd95dc50687dea161ced8c3f38b29667416bbeb476988f7e2fa6109a7f07"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7394,
+     "sha256": "0278a371a675f96e4503e7ec822613c8443bc06afabe8ce4717ca39d85067b03"
+    },
+    "powerPlayCombinations": {
+     "rows": 224,
+     "sha256": "992ee906c36feb5fb2b49efbf4a95f23ae4197e11eb48fe569f9ce754d29cdcb"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "445a0250d1f93c72a182e93932c25ec67e0e359dbab171cafb150e02ec764eea"
+    }
+   },
+   "gameIds": [
+    2026020271,
+    2026020272,
+    2026020273,
+    2026020274,
+    2026020275,
+    2026020276,
+    2026020277,
+    2026020278,
+    2026020279,
+    2026020280
+   ],
+   "seconds": 1.0,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 29,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "eb47f54c2e18b9d1cfb5db194ef7aac93977daa6c81f7e6d919a5620f45d7347"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "dccb5994b592a7c526fcdd4c5afb69290b88e7cdea5fd9172e420a2cbfb0a85d"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3335,
+     "sha256": "0ab9f974612b0850321d1b0d27eb16c3848905a3e836b2dd86b3c4aa7829b666"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7523,
+     "sha256": "9fa2cb2067187a2f46348083eb8782af9c29100c7575527af311369641170093"
+    },
+    "powerPlayCombinations": {
+     "rows": 228,
+     "sha256": "a04098a67df1e4973609233a806f7d57a95da1a7d8dc57508b4624aa230ab117"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "011cdbc8d2db6df30fc0fde215074a49b51eb8af9af3030938c41da730448a6a"
+    }
+   },
+   "gameIds": [
+    2026020281,
+    2026020282,
+    2026020283,
+    2026020284,
+    2026020285,
+    2026020286,
+    2026020287,
+    2026020288,
+    2026020289,
+    2026020290
+   ],
+   "seconds": 1.01,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 30,
+   "files": {
+    "games": {
+     "rows": 10,
+     "sha256": "696e17adbcca118ded68215cd683a9c965ade29aea020cc516b63e50f988d03d"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 400,
+     "sha256": "ce413caaaf6b244c58bc804b727856dd4bb3a82a8dfba3222ed02ae447ca5ae2"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 3118,
+     "sha256": "fa3142944fc13b2aaecd0815341ff81ca8c773a4ad0d8075160d5cccc1ecec58"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 7523,
+     "sha256": "a5ef6e597bfd9d0a2dcd03da361817bd6f7639aa9fc4a1982c1f5512348bb45c"
+    },
+    "powerPlayCombinations": {
+     "rows": 230,
+     "sha256": "b37b30a25aac152805314a11922e225483e207fc279e9ac9444a5befad40e48d"
+    },
+    "teamGameStats": {
+     "rows": 20,
+     "sha256": "da2328c2b506e0570d4ef337a1ae0063b88095e465a5854a31a5b006c78d4e0c"
+    }
+   },
+   "gameIds": [
+    2026020291,
+    2026020292,
+    2026020293,
+    2026020294,
+    2026020295,
+    2026020296,
+    2026020297,
+    2026020298,
+    2026020299,
+    2026020300
+   ],
+   "seconds": 1.04,
+   "transactionReadOnly": "on"
+  },
+  {
+   "batch": 31,
+   "files": {
+    "games": {
+     "rows": 9,
+     "sha256": "ef7ba6673e15a2293a87143990d8d645cec65454324395f162381e8443a5f06d"
+    },
+    "nhl_api_game_roster_spots": {
+     "rows": 360,
+     "sha256": "e13eed425eb52e85e3812f6c5fefa35e385a74ae180c256865e436f7e0e44b5f"
+    },
+    "nhl_api_pbp_events": {
+     "rows": 2847,
+     "sha256": "c94af2ab4938c6b20da7166c7d575993ee30e4c78c357a0a8c0ab445e1aea59f"
+    },
+    "nhl_api_shift_rows": {
+     "rows": 6716,
+     "sha256": "5655f416838b6be416c947010982952a35737b649155379c76c6cb52fb8cdc9b"
+    },
+    "powerPlayCombinations": {
+     "rows": 197,
+     "sha256": "35a7af037b7b250f3f5f9a540768118f4db3aff16874f58ab0d57589d8c32115"
+    },
+    "teamGameStats": {
+     "rows": 18,
+     "sha256": "a8055102df4deaf3e137e453bda6ece75a89219fe59044d9fd898b9f91c6c401"
+    }
+   },
+   "gameIds": [
+    2026020301,
+    2026020302,
+    2026020303,
+    2026020304,
+    2026020305,
+    2026020306,
+    2026020307,
+    2026020308,
+    2026020309
+   ],
+   "seconds": 0.95,
+   "transactionReadOnly": "on"
+  }
+ ],
+ "batchesSha256": "c2c287aa09d5078f5fd472b4e6dc655743c1c658589874699e9678dbc020a5c4",
+ "readOnly": "START TRANSACTION READ ONLY per batch session"
+}

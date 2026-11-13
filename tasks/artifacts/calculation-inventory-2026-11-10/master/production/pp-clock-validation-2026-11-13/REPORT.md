@@ -512,6 +512,58 @@ TJ wants the full dry-run diff before any refresh. Nothing here ran against a da
 - **For the write phase:** migration 20261113220000 must also be applied first.
 - Each of these steps needs its own approval.
 
+## 14. Decision 152: the local dry run (TJ approved; before migration 149 or any release)
+
+**Candidate:** `8f73d2931`. The writer, the batch route and their whole import closure are identical in the working tree.
+
+**Nothing was written:** no production write, no audit row, no cron change and no NHL or NST call.
+
+**Read-only, enforced by the database:**
+- The pooler drops `PGOPTIONS` startup options: a test session showed `transaction_read_only = off` and a 2 min timeout.
+- So each export session instead ran `SET default_transaction_read_only = on`, then `START TRANSACTION READ ONLY` with a local 10 s statement timeout. All 31 session logs show `transaction_read_only = on` and `10s`.
+- A write attempted inside such a transaction is refused (`cannot execute CREATE TABLE in a read-only transaction`, rolled back).
+- **Disclosure:** before that, my first probe ran `create temporary table` outside a read-only transaction. It was a session-only temporary table, dropped at disconnect, and touched no stored data.
+
+**Export** (`21-export-dry-run-inputs.py`):
+- 31 frozen batches, one at a time, at least 5 s apart, with the hygiene gate passing before each; each took 1–4 s.
+- Scalar columns only:
+
+  | Source | Rows |
+  |---|---|
+  | `games` | 309 |
+  | `nhl_api_pbp_events` | 99,128 |
+  | `nhl_api_shift_rows` (type 517) | 231,749 |
+  | `nhl_api_game_roster_spots` | 12,360 |
+  | `teamGameStats` | 618 |
+  | `powerPlayCombinations` | 7,190 |
+
+- The raw CSVs stay outside the repository. `results/after-d152/local-dry-run/export-manifest.json` records every file's sha256 and row count.
+- **Export hash** (sha256 of the manifest): `bbcba75cebc65e45edd51d201e3f9fef05e20ab37d0280e4d4106bd41805c145`.
+
+**Dry run** (`22-local-dry-run.ts`):
+- The candidate batch route ran unchanged, with `dryRun=true&concurrency=1`, against a fake client that answers only from the export.
+- Only the auth, audit and off-season wrappers were stubbed (`22-local-dry-run.stubs.ts`), so no Supabase client or service key exists in the bundle. Migration 149 wasn't needed, because a dry run reads no new table.
+- All 31 batches returned 200 in 0.13–0.21 s each.
+- **Dry-run sha256** (`results/after-d152/local-dry-run/dry-run.json`, in the refresh runner's format with its gate included): `db94a9de864b9dfa8fa69f24c6be9045dd037ed1937393c3b03dd69d9ec4f15c`.
+
+**Reconciliation, all 618 team-games** (`23-reconcile-local-dry-run.py`, which applies the runner's own gate):
+
+| Result | Team-games |
+|---|---|
+| Unchanged | **593** |
+| Changed | **16** |
+| Not applicable (zero clock, no player rows) | **9** |
+| Flagged | **0** |
+
+- **Clocks:** 618 rows, all qualified with the expected seconds: 609 available, 9 not applicable, 0 unavailable.
+- **The 16 changed team-games** match section 11.1 exactly:
+  - **15 deletes:** the stale pre-11-01 rows;
+  - **23 PP-time or share updates:** the overtime rows, and 2026020131 t18's 5 rows going from 29 s to their full time;
+  - **5 inserts:** 2026020131 t18's missing skaters.
+- **14 further updates** are within the 16 and are expected: teammates in the overtime team-games whose unit average moved. Only `percentageOfPP`, `pp_unit_usage_index`, `pp_unit_relative_toi` and `pp_vs_unit_avg` change: 2026020161 t52 (3), 2026020174 t29 (6), 2026020192 t2 (1) and 2026020197 t23 (4). No player changes unit anywhere.
+- No other row in the season changes. The 2 Part A team-games qualify on the Penalty Summary and are unchanged.
+- **The write phase still needs separate approvals:** migration 149 applied, the release with the flag set, and TJ's approval of this dry-run file by its sha256.
+
 ## Open items for the owner (Chef to route)
 
 Decided in decision 151 (2026-11-13): O1 ±2 s inclusive; O2 and O3 stay withheld; O4 read-only check done (section 9). Decision 152 (2026-11-13) accepts the Penalty Summary for the five O4 team-games (section 10). The original wording is kept below.
