@@ -6,7 +6,8 @@ import GameLineSnapshots, { mergeFrozenEntries } from "./GameLineSnapshots";
 import { formatTime } from "./reviewReasonCopy";
 import type { GameLinesResponse } from "lib/lines/types";
 
-type ProjectionResponse = { enabled: boolean; sets: ProjectedUnitSet[]; reports: ProjectionReport[] };
+type ProjectionResponse = { enabled: boolean; sets: ProjectedUnitSet[]; reports: ProjectionReport[];
+  reportScope?: { requestedDate: string; reportDate: string; fallback: boolean } };
 
 export function ProjectedLineupsContent({ data }: { data: ProjectionResponse }) {
   const rail = useRef<HTMLElement>(null);
@@ -19,8 +20,10 @@ export function ProjectedLineupsContent({ data }: { data: ProjectionResponse }) 
   const reports = [...data.reports].sort((a, b) => Date.parse(b.publishedAt ?? b.receivedAt) - Date.parse(a.publishedAt ?? a.receivedAt));
   return <section className={styles.layout} aria-label="Projected line combinations">
     <div>
-      <h2>Projected line combinations</h2>
-      <p className={styles.muted}>Latest validated reports. Times and practice context are shown for each update.</p>
+      <h2>{data.reportScope?.fallback ? "Latest reported line combinations" : "Projected line combinations"}</h2>
+      {data.reportScope?.fallback
+        ? <p className={styles.stateWarn} role="status">No reports for <time dateTime={data.reportScope.requestedDate}>{data.reportScope.requestedDate}</time> yet. Showing the latest retained reports from <time dateTime={data.reportScope.reportDate}>{data.reportScope.reportDate}</time> (Eastern dates). These are older reports, not a confirmed lineup for today.</p>
+        : <p className={styles.muted}>Latest validated reports. Times and practice context are shown for each update.</p>}
       {!data.sets.length && <p>No complete projected units have been reported for this occasion. Partial reports appear in the rail.</p>}
       {data.sets.map((set) => <article className={styles.card} key={set.key}>
         <p className={styles.itemTitle}>{set.reports[0]!.teamAbbreviation} · {set.situation === "es" ? "Even strength" : set.situation.toUpperCase()}{set.group ? ` · Group ${set.group.toUpperCase()}` : ""}</p>

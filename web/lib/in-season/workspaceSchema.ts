@@ -46,7 +46,8 @@ const lockedAssignment = z.object({ date, playerId: id, slotId: id.nullable(), s
 const pastLineup = z.object({ date, source: z.literal("yahoo"), entries: z.array(z.object({ playerId: id.nullable(), name: id, position: id, slotId: id.nullable(), points: z.number().finite().nullable().optional() }).strict()).max(60) }).strict();
 const game = z.object({ id, date, startsAt: instant.nullable(), scheduleRevision: id.optional(), teamAbbreviation: id, opponent: id, home: z.boolean(), status: z.enum(["scheduled", "live", "final", "postponed", "cancelled"]) }).strict();
 const contributionGame = z.object({ seasonId, gameId: positiveInteger, teamId: positiveInteger,
-  scheduledAt: instant, scheduleRevision: id, rosterRevision: id,
+  // Decision 127: the schedule's own NHL date, used by calendar policy v2 for replay.
+  scheduledAt: instant, scheduleDate: date.optional(), scheduleRevision: id, rosterRevision: id,
   playerId: positiveInteger, nhlPlayerId: positiveInteger }).strict();
 const allowedUses = z.object({ assignment: z.boolean(), totals: z.boolean(), comparison: z.boolean(), conditionalTieBreak: z.boolean() }).strict();
 const rsoTargetBinding = z.object({ component: id, modelMode: id, codeVersion: id,

@@ -95,7 +95,8 @@ function qualityFixture(source: "detailed" | "baseline" | "blended", profile: "p
       expiresAt: "2026-10-15T00:00:00Z", modelVersion: "fixture-forge-v1", limitations: [] });
   });
   snapshot.forecastManifest = { version: "planning-forecasts-v1", id: `quality-${source}-${profile}`,
-    calendarPolicy: forecastCalendarPolicy(14), seasonId: snapshot.context.seasonId, asOf: snapshot.context.asOf,
+    // An issued v1 manifest replayed as issued (rule 21); its UTC-midnight as-of fixes the v1 lead days these pins measure.
+    calendarPolicy: forecastCalendarPolicy(14, "forecast-calendar-v1"), seasonId: snapshot.context.seasonId, asOf: snapshot.context.asOf,
     scheduleRevision: "schedule-snapshot", rosterRevision: "roster-snapshot",
     issuedRevisionIds: snapshot.forecasts.map(row => row.revisionId), baselineChecksum: source === "detailed" ? null : "rate-snapshot",
     requiredOpportunities: 4, forecastedOpportunities: 4, exclusionCounts: {} };

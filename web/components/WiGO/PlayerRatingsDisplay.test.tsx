@@ -429,7 +429,27 @@ describe("PlayerRatingsDisplay", () => {
 
     await waitFor(() => expect(screen.getByText("Offense")).toBeTruthy());
     expect(screen.queryAllByRole("meter").map((m) => m.getAttribute("aria-label"))).not.toContain("Offense PP");
-    expect(screen.getByTitle("Insufficient sample: 20 PP min, below the provisional 30-min floor")).toBeTruthy();
+    // Wording changed with decision 140: the floor is no longer provisional.
+    expect(screen.getByTitle("Insufficient sample: 20 PP min, below the 30-min floor")).toBeTruthy();
+  });
+
+  it("excludes 59 PP minutes at the default 60-min floor and marks PK low reliability (decision 140)", async () => {
+    const ppRow = (player_id: number, minutes: number, value: number) => ({
+      player_id, season: 20252026, gp: 40, toi_seconds: minutes * 60,
+      gf_per_60: value, xgf_per_60: value, total_points_per_60: value, scf_per_60: value,
+      shots_per_60: value, hdgf_per_60: value, penalties_drawn_per_60: value
+    });
+    mockFetchRawStatsForAllStrengths.mockResolvedValue({
+      pp: { offense: [ppRow(91, 59, 9), ppRow(2, 120, 5), ppRow(3, 120, 4)], defense: [] }
+    });
+
+    renderWithClient(<PlayerRatingsDisplay playerId={91} seasonId={20252026} minGp={10} />);
+
+    await waitFor(() => expect(screen.getByText("Offense")).toBeTruthy());
+    expect(screen.getByTitle("Insufficient sample: 59 PP min, below the 60-min floor")).toBeTruthy();
+    const pkLabel = screen.getAllByTitle(/^Low reliability: PK percentiles/);
+    expect(pkLabel).toHaveLength(1);
+    expect(pkLabel[0].textContent).toMatch(/^PK\*: Low reliability/);
   });
 
   it("does not expose dependency details when ratings fail", async () => {

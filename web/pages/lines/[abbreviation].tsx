@@ -17,7 +17,10 @@ import CategoryTitle from "components/LineCombinations/CategoryTitle";
 import Line from "components/LineCombinations/Line";
 import { mapTeamAbbreviation } from "lib/NHL/utils/utils";
 import PowerPlayCombos from "components/PowerPlayCombos";
-import type { GoalieWindowStats } from "components/LineCombinations/utilities";
+import type {
+  GoalieWindowStats,
+  LineSource
+} from "components/LineCombinations/utilities";
 
 import { LineChange } from "components/LineCombinations/PlayerCard/SkaterCard";
 import Custom404 from "pages/404";
@@ -195,6 +198,7 @@ export default function TeamLC({
               `/shiftChart?gameId=${lineCombinations.game.id}` +
               "&linemate-matrix-mode=line-combination#linemate-matrix"
             }
+            lineSource={lineCombinations.lineSource}
             teamName={teamName}
             teamAbbreviation={mappedAbbreviation}
             lastUpdated={lastUpdated}
@@ -449,6 +453,8 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 type HeaderProps = {
+  /** Defaults to the legacy grouping, which is what Lines serves today. */
+  lineSource?: LineSource;
   teamName: string;
   teamAbbreviation: string;
   lastUpdated: string | null;
@@ -459,6 +465,7 @@ type HeaderProps = {
 const PANEL_SURFACE = "#1a1c21"; // v.$surface-1
 
 export function Header({
+  lineSource = "all_strength_legacy",
   teamName,
   teamAbbreviation,
   lastUpdated,
@@ -483,9 +490,10 @@ export function Header({
           </span>
         </h2>
         <p className={styles.subtitle}>
-          Last game&apos;s lines, grouped by all-strength shared ice time
-          (legacy view) · skater stats from the team&apos;s last 10 games with
-          lines
+          {lineSource === "five_on_five_observed"
+            ? "Last game's most-used 5v5 units, one slot per player"
+            : "Last game's lines, grouped by all-strength shared ice time (legacy view)"}{" "}
+          · skater stats from the team&apos;s last 10 games with lines
         </p>
         {lastUpdated ? (
           <p className={styles.time}>

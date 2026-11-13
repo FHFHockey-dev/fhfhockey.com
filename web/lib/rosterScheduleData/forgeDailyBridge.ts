@@ -141,21 +141,31 @@ export function opponentTilts(rows: Row[], seasonId: number): Map<string, Tilt> 
     const forwards = f[stat] / f.games, defence = d[stat] / d.games;
     return forwards + defence > 0 ? { d: defence / (forwards + defence), games: Math.min(f.games, d.games) } : null;
   };
-  const teams = [...new Set([...perGame.keys()].map(key => key.split("|")[0]))];
+  // Sorted, so summing the league share never depends on row order.
+  const teams = [...new Set([...perGame.keys()].map(key => key.split("|")[0]))].sort();
   const league = (stat: "points" | "shots") => {
     const shares = teams.map(team => share(team, stat)).filter((value): value is { d: number; games: number } => !!value);
     return shares.length ? shares.reduce((sum, value) => sum + value.d, 0) / shares.length : null;
   };
   const leaguePoints = league("points"), leagueShots = league("shots");
   const tilts = new Map<string, Tilt>();
-  const factor = (own: number, base: number, games: number) =>
-    Math.min(1 + TILT_LIMIT, Math.max(1 - TILT_LIMIT, 1 + (own / base - 1) * games / (games + TILT_SHRINK_GAMES)));
+  // Decision 136: the tilt only redistributes. The shrunk defence factor is limited to the range where both it and the
+  // forwards' factor stay within ±TILT_LIMIT while base × f_D + (1 − base) × f_F = 1 at the league reference mix, and
+  // forwards take exactly the remainder, so a clamp never leaks part of the team total (the old independent clamps gave
+  // 0.93–0.95).
+  const pair = (own: { d: number; games: number }, base: number) => {
+    const raw = 1 + (own.d / base - 1) * own.games / (own.games + TILT_SHRINK_GAMES);
+    const low = Math.max(1 - TILT_LIMIT, (1 - (1 - base) * (1 + TILT_LIMIT)) / base);
+    const high = Math.min(1 + TILT_LIMIT, (1 - (1 - base) * (1 - TILT_LIMIT)) / base);
+    const d = Math.min(high, Math.max(low, raw));
+    return { d, f: (1 - base * d) / (1 - base) };
+  };
   for (const team of teams) {
     const points = share(team, "points"), shots = share(team, "shots");
-    if (!points || !shots || !leaguePoints || !leagueShots) continue;
-    // Defence factor from the D share; forwards take the mirror image so the team total is unchanged.
-    tilts.set(`${team}|D`, { points: factor(points.d, leaguePoints, points.games), shots: factor(shots.d, leagueShots, shots.games) });
-    tilts.set(`${team}|F`, { points: factor(1 - points.d, 1 - leaguePoints, points.games), shots: factor(1 - shots.d, 1 - leagueShots, shots.games) });
+    if (!points || !shots || !leaguePoints || !leagueShots || leaguePoints >= 1 || leagueShots >= 1) continue;
+    const p = pair(points, leaguePoints), q = pair(shots, leagueShots);
+    tilts.set(`${team}|D`, { points: p.d, shots: q.d });
+    tilts.set(`${team}|F`, { points: p.f, shots: q.f });
   }
   return tilts;
 }
@@ -364,8 +374,11 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const tilts = opponentTilts(inputs.positionAllowed ?? [], seasonId);
   const tiltBetween = (player: PlanningPlayer, from: string | undefined, to: string | undefined): Tilt | undefined => {
     const group = player.eligiblePositions.some(position => position.toUpperCase() === "D") ? "D" : "F";
-    const a = from ? tilts.get(`${from.toUpperCase()}|${group}`) : undefined, b = to ? tilts.get(`${to.toUpperCase()}|${group}`) : undefined;
-    return a && b ? { points: b.points / a.points, shots: b.shots / a.shots } : undefined;
+    // W1-6 D19 (decision 136): FORGE never applied a positional tilt for the opponent it projected, so the line is
+    // neutral on this dimension: it takes the destination's tilt alone, never divided by the source's.
+    void from;
+    const b = to ? tilts.get(`${to.toUpperCase()}|${group}`) : undefined;
+    return b ? { points: b.points, shots: b.shots } : undefined;
   };
   // Rest days as FORGE counts them (days since the team's previous game; a back-to-back is 1) and venue, per game id.
   const scheduleById = new Map((inputs.teamGames ?? []).filter(row => finite(row.homeTeamId) && finite(row.awayTeamId) && typeof row.date === "string")

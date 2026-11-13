@@ -14,6 +14,7 @@ vi.mock("lib/player-forecasts/calendarCoverage", async (importOriginal) => ({
 
 import handler from "../../../../pages/api/internal/forecast-calendar";
 import { ForecastScheduleError } from "lib/player-forecasts/scopeReads";
+import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 
 function response() {
   return { statusCode: 200, body: null as unknown,
@@ -27,7 +28,8 @@ describe("forecast calendar scheduler", () => {
     vi.stubEnv("STARTER_BOARD_CALENDAR_SCHEDULER_ENABLED", "false");
     vi.stubEnv("STARTER_BOARD_CALENDAR_DRY_RUN", "true");
     mocks.seed.mockReset().mockResolvedValue({ calendarDays: 14, dryRun: true, gameIds: [1],
-      calendarPolicy: { version: "forecast-calendar-v1", calendarDays: 14, overlapDays: 7, timeZone: "UTC" },
+      // The seeder serves the default policy, NHL schedule dates since decision 127's flip.
+      calendarPolicy: { version: "forecast-calendar-v2", calendarDays: 14, overlapDays: 7, timeZone: "America/New_York", dateBasis: "nhl_schedule_date" },
       excludedByCanary: 0, inserted: 0, workload: [] });
     mocks.consumer.mockReset().mockResolvedValue({ status: "evaluated", requiredPlayerGameTargets: 3,
       eligiblePlayerGameTargets: 1, recommendationReadiness: "not_evaluated" });
@@ -58,7 +60,7 @@ describe("forecast calendar scheduler", () => {
     expect(res.body).toMatchObject({ dryRun: true, coverage: { games: 1, queuedGames: 0,
       issuedGames: 0, projectionRows: 0, unissuedGameIds: [1], readStatus: "complete",
       consumerCoverage: { status: "not_evaluated", eligiblePlayerGameTargets: null } } });
-    expect(res.body.calendarPolicy).toEqual({ version: "forecast-calendar-v1", calendarDays: 14, overlapDays: 7, timeZone: "UTC" });
+    expect(res.body.calendarPolicy).toEqual(forecastCalendarPolicy(14));
     expect(res.body.coverage).not.toHaveProperty("scopeReceipts");
   });
   it("evaluates an explicit profile across pre-canary competitors without certifying a lineup", async () => {

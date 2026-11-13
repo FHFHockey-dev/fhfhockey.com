@@ -33,15 +33,17 @@ const sourceFiles = {
 const schedule = () => ({ gameWeek: [{ date: "2026-11-07", games: [{ id: 2026020201, season: 20262027, gameType: 2, gameState: "OFF", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "NJD" }, awayTeam: { id: 2, abbrev: "NYI" } }] }] });
 const html = Buffer.from('<!doctype html>\r\n<table><thead><tr><th>Player</th></tr></thead><tbody><tr><td>Synthetic é 🏒 &amp;key=[REDACTED]</td></tr></tbody></table>\n');
 let directory: string;
-let sent: { operation: CaptureOperation; at: number; spec: CaptureDispatchSpec }[];
+let sent: { operation: CaptureOperation; at: number; atMonotonic?: number; spec: CaptureDispatchSpec }[];
 let adapter: NativeCaptureAdapter, input: NativeCaptureRunInput;
 let failOperation: CaptureOperation | undefined;
 let mutateResponse: ((operation: CaptureOperation, response: CaptureResponse) => void) | undefined;
+let onDispatch: ((operation: CaptureOperation) => void) | undefined;
 const out = () => join(directory, "packet");
 const read = (file: string) => JSON.parse(fs.readFileSync(join(out(), file), "utf8"));
 const exists = (file: string) => fs.existsSync(join(out(), file));
 const invoke = async (operation: CaptureOperation, spec: CaptureDispatchSpec) => {
-  sent.push({ operation, at: Date.now(), spec });
+  onDispatch?.(operation);
+  sent.push({ operation, at: Date.now(), atMonotonic: performance.now(), spec });
   if (failOperation === operation) throw new Error("synthetic NST_KEY=must-not-be-retained");
   await Promise.resolve();
   return operation.startsWith("admission:") ? { kind: "admission", httpStatus: 200, valid: true, allowed: true, waitMs: 0 } : { ok: true };
@@ -83,15 +85,160 @@ async function run(ok = true) {
   await vi.runAllTimersAsync(); await check;
 }
 beforeEach(() => {
-  vi.useFakeTimers(); vi.setSystemTime(NOW);
+  vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout", "performance"] }); vi.setSystemTime(NOW);
   vi.stubGlobal("fetch", vi.fn(() => { throw new Error("network forbidden"); }));
-  directory = fs.mkdtempSync(join(tmpdir(), "blsh-durable-runner-test-")); sent = []; failOperation = undefined; mutateResponse = undefined;
+  directory = fs.mkdtempSync(join(tmpdir(), "blsh-durable-runner-test-")); sent = []; failOperation = undefined; mutateResponse = undefined; onDispatch = undefined;
   adapter = makeAdapter("disabled");
   input = {
     plan: prepareNativeProcessCapture({ seasonId: 20262027, date: "2026-11-07", plannedAtUTC: NOW, groups: ["individual", "onIce"] }),
     supabaseOrigin: ORIGIN, lifecycleMode: "disabled",
     sourceSHA256: Object.fromEntries(Object.entries(sourceFiles).map(([role, path]) => [role, sha(fs.readFileSync(path))])) as NativeCaptureRunInput["sourceSHA256"],
   };
+});
+
+describe("independent review durability and elapsed-time regressions", () => {
+  function watchSync(onSync?: (path: string) => void) {
+    const open = fs.openSync, sync = fs.fsyncSync;
+    const paths = new Map<number, string>(), synced: string[] = [];
+    vi.spyOn(fs, "openSync").mockImplementation((path, flags, mode) => {
+      const fd = open(path, flags, mode); paths.set(fd, String(path)); return fd;
+    });
+    vi.spyOn(fs, "fsyncSync").mockImplementation(fd => {
+      const path = paths.get(fd)!;
+      onSync?.(path); sync(fd); synced.push(path);
+    });
+    return synced;
+  }
+
+  it.each([false, true])("syncs parent and operation directory entries before every dispatch (finish fails: %s)", async finishFails => {
+    adapter = makeAdapter("enabled"); input.lifecycleMode = "enabled";
+    if (finishFails) failOperation = "finish";
+    const synced = watchSync(), snapshots: { operation: CaptureOperation; parent: boolean; barrier: boolean }[] = [];
+    onDispatch = operation => {
+      const started = synced.findLastIndex(path => /operation-\d+-STARTED\.json$/.test(path));
+      snapshots.push({ operation, parent: synced.includes(directory), barrier: started >= 0 && synced.lastIndexOf(out()) > started });
+    };
+    await run(!finishFails);
+    expect(snapshots.map(item => item.operation)).toEqual(sent.map(item => item.operation));
+    expect(snapshots.every(item => item.parent && item.barrier)).toBe(true);
+    expect(snapshots).toHaveLength(finishFails ? 8 : 7);
+  });
+
+  it.each(["schedule", "begin", "admission:individual", "nst:individual", "admission:onIce", "nst:onIce", "finish", "hold"] as const)(
+    "refuses %s when its journal directory fsync fails", async operation => {
+      adapter = makeAdapter("enabled"); input.lifecycleMode = "enabled";
+      if (operation === "hold") failOperation = "finish";
+      let pending: string | undefined, injected = false;
+      watchSync(path => {
+        if (/operation-\d+-STARTED\.json$/.test(path)) pending = JSON.parse(fs.readFileSync(path, "utf8")).operation;
+        if (path === out() && pending === operation && !injected) { injected = true; throw new Error("directory fsync failure"); }
+      });
+      await run(false);
+      expect(injected).toBe(true); expect(sent.some(call => call.operation === operation)).toBe(false);
+      expect(exists("MANIFEST.json")).toBe(false);
+      if (["begin", "finish", "hold"].includes(operation)) {
+        const started = fs.readdirSync(out()).filter(file => /operation-\d+-STARTED\.json$/.test(file)).map(read);
+        expect(started.find(item => item.operation === operation).jobToken).toBe(jobReference.jobToken);
+      }
+    });
+
+  it("refuses all transport when the new packet directory cannot be made durable in its parent", async () => {
+    let injected = false;
+    watchSync(path => { if (path === directory) { injected = true; throw new Error("parent fsync failure"); } });
+    await run(false); expect(injected).toBe(true); expect(sent).toHaveLength(0);
+  });
+
+  it.each([22000, -1000])("keeps actual provider spacing after a %s ms wall-clock adjustment", async adjustment => {
+    let injected = false;
+    watchSync(path => {
+      if (!injected && path === out() && exists("individual.TRANSPORT-OBSERVATION.json")) {
+        injected = true; vi.setSystemTime(Date.now() + adjustment);
+      }
+    });
+    await run();
+    const providers = sent.filter(call => call.operation.startsWith("nst:"));
+    expect(injected).toBe(true); expect(providers).toHaveLength(2);
+    expect(providers[1].atMonotonic! - providers[0].atMonotonic!).toBe(22000);
+  });
+
+  it.each(["source-ratePolicy.ts", "schedule.raw.json", "individual.parser-input.html", ".MANIFEST.json.tmp"])(
+    "stops after monotonic work expiry during %s even when wall time does not advance", async file => {
+      const monotonicNow = performance.now.bind(performance);
+      let elapsed = 0, injected = false;
+      vi.spyOn(performance, "now").mockImplementation(() => monotonicNow() + elapsed);
+      watchSync(path => { if (!injected && path.endsWith(file)) { injected = true; elapsed += 120001; } });
+      await run(false);
+      expect(injected).toBe(true); expect(exists("MANIFEST.json")).toBe(false);
+      if (file === "source-ratePolicy.ts") expect(sent).toHaveLength(0);
+      if (file === "schedule.raw.json") expect(sent.map(call => call.operation)).toEqual(["schedule"]);
+      if (file === "individual.parser-input.html") expect(sent.some(call => call.operation === "admission:onIce")).toBe(false);
+    });
+
+  it.each([[120001, true], [125001, false]] as const)("bounds lifecycle cleanup after %s ms elapsed", async (elapsed, allowed) => {
+    adapter = makeAdapter("enabled"); input.lifecycleMode = "enabled";
+    const monotonicNow = performance.now.bind(performance);
+    let offset = 0, injected = false;
+    vi.spyOn(performance, "now").mockImplementation(() => monotonicNow() + offset);
+    watchSync(path => {
+      if (!injected && path.endsWith("individual.parser-input.html")) { injected = true; offset += elapsed; }
+    });
+    await run(false);
+    expect(injected).toBe(true); expect(sent.some(call => call.operation === "hold")).toBe(allowed);
+    expect(sent.some(call => call.operation === "admission:onIce")).toBe(false);
+    if (allowed) expect(sent.at(-1)!.spec.timeoutMs).toBe(4999);
+  });
+
+  it("clamps the first operation timeout to the elapsed run budget after slow initialization", async () => {
+    const monotonicNow = performance.now.bind(performance);
+    let offset = 0, injected = false;
+    vi.spyOn(performance, "now").mockImplementation(() => monotonicNow() + offset);
+    watchSync(path => { if (!injected && path.endsWith("source-ratePolicy.ts")) { injected = true; offset += 110000; } });
+    adapter.schedule = dispatch => dispatch("schedule", spec => {
+      sent.push({ operation: "schedule", at: Date.now(), spec }); return new Promise(() => {});
+    });
+    await run(false); expect(sent).toHaveLength(1); expect(sent[0].spec.timeoutMs).toBe(10000);
+  });
+
+  it("includes source snapshot reads in the elapsed run budget", async () => {
+    const originalRead = fs.readFileSync, monotonicNow = performance.now.bind(performance);
+    let offset = 0, injected = false;
+    vi.spyOn(performance, "now").mockImplementation(() => monotonicNow() + offset);
+    vi.spyOn(fs, "readFileSync").mockImplementation(((path: fs.PathOrFileDescriptor, options?: { encoding?: string } | string | null) => {
+      const value = originalRead(path, options as Parameters<typeof fs.readFileSync>[1]);
+      if (!injected && String(path) === sourceFiles.runner) { injected = true; offset += 120001; }
+      return value;
+    }) as typeof fs.readFileSync);
+    await run(false); expect(injected).toBe(true); expect(sent).toHaveLength(0); expect(exists("MANIFEST.json")).toBe(false);
+  });
+
+  it.each(["elapsed", "fsync"])("removes only its newly linked completion marker after final publication %s failure", async kind => {
+    const monotonicNow = performance.now.bind(performance);
+    let offset = 0, injected = false;
+    vi.spyOn(performance, "now").mockImplementation(() => monotonicNow() + offset);
+    watchSync(path => {
+      if (!injected && path === out() && exists("MANIFEST.json")) {
+        injected = true;
+        if (kind === "fsync") throw new Error("publication directory fsync failure");
+        offset += 120001;
+      }
+    });
+    await run(false);
+    expect(injected).toBe(true); expect(exists("MANIFEST.json")).toBe(false);
+    expect(exists("onIce.TRANSPORT-OBSERVATION.json")).toBe(true);
+    expect(read("FAILED.json").completionMarkerUncertain).toBe(false);
+  });
+
+  it("records uncertain completion-marker removal after final publication failure", async () => {
+    const unlink = fs.unlinkSync;
+    watchSync(path => { if (path === out() && exists("MANIFEST.json")) throw new Error("publication directory fsync failure"); });
+    vi.spyOn(fs, "unlinkSync").mockImplementation(path => {
+      if (String(path) === join(out(), "MANIFEST.json")) throw new Error("marker removal unavailable");
+      unlink(path);
+    });
+    await run(false);
+    expect(exists("MANIFEST.json")).toBe(true); expect(read("FAILED.json").completionMarkerUncertain).toBe(true);
+    expect(read("FAILED.json").state).toBe("partial_packet");
+  });
 });
 afterEach(() => { expect(fetch).not.toHaveBeenCalled(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); fs.rmSync(directory, { recursive: true, force: true }); });
 

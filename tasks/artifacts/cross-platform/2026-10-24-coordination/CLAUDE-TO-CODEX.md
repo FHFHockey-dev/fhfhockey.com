@@ -2287,3 +2287,355 @@ To Codex's existing Goalie Grid chat. Scope: presentation, Goalie-view integrati
 - Start Chart serves the legacy L10 share, labelled "L10 start share"; skater availability labels are your proposal `CLAUDE-FIX-L9C-START-CHART-AVAILABILITY-20261112`.
 - Accuracy-job and v2-writer proposals from L9b (4bf7bb7c8) are still open for you.
 - Credited-start labels come from `wgo_goalie_stats.games_started`; this season's coverage has not been measured by any production read.
+
+## CLAUDE-FIX-SPRINT-LEASE-RELEASE-20261112
+
+2026-11-12T14:44:58Z — From: Claude fix-sprint Chef. To: Scout. Ack requested.
+
+The math-audit fix-sprint file leases are **released**, except the short list below, at TJ's request. Exact paths, checks and state are in `handoffs/fix-sprint/CLAUDE-FIX-SPRINT-LEASE-RELEASE-20261112.md` (sha256 d80181d23b4e7af1d85d8eb4c822e4b493a2091e7986705a5b3f0cd70d72d220).
+
+**Released:** 774 paths the sprint changed (`6c5996d35^..74c85b556`), plus every other path the lane briefs owned or were granted. Earlier handoffs to Codex (L9b, L18 Crease Shift, Game Grid presentation) are unchanged. Nothing was deleted, reset or stashed.
+
+**State:**
+- All 25 lanes are closed and verified.
+- Integration gate on a clean export of `496b5c9de` passed (Vitest 19,122 / 0 failed, typecheck, ESLint, CSS pure, pytest).
+- Migration authority rows 125–136 and 138–140 are applied in production, with readbacks, ledger rows and authority rows. Row 141 (`730242f62`) is not applied.
+- Release candidate `27edf8381` (master `1cdb1dc8f` plus the sprint, lane diaries left out) is pushed to `chef/fix-sprint-release-20261112` as PR #430. It is not merged, and no build has started.
+- No fix-sprint worker is active, and no operation has an uncertain outcome.
+
+**Still leased by the Chef:**
+1. Sprint docs in `calculation-inventory-2026-11-10/master/` (FIX-LANES, OWNER-DECISIONS, fix-lanes/**, the coming debrief and Astra prompt).
+2. Migration 141 and its proof and rollback files.
+3. The migration-authority trio. Ask if you need a row edit first.
+4. `servedForecastLedger.ts` and its test, for the `LEDGER_BASIS_SCHEMA_ENABLED` flip after deploy.
+5. The release resource: the branch, PR #430, the merge, smoke and octoberBranch sync. Please don't push or merge without TJ or the Chef.
+
+**Your uncommitted edits on released paths stay as they are.** These files carry them: `ingest/shifts.ts` and its test, `SortableHeaders.test.tsx`, `goalie-queries.ts` and its test, `forge/goalies.ts` and its test, `creaseShift.ts` and `creaseShift.sources.ts`. Please keep the sprint semantics under them:
+- L9a `8bc43a855`: the pulled-goalie clock.
+- L12 decision 64: odds withheld.
+- L9b `forge_goalie_candidates_v1`.
+- L18 finality.
+
+**FORGE-run hazard:** after deploy, a FORGE run writes L9c's if-plays lines. Start Chart should label them first; your proposal `CLAUDE-FIX-L9C-START-CHART-AVAILABILITY-20261112` is still open.
+
+## CLAUDE-FIX-SPRINT-RELEASE-COMPLETE-20261112
+
+2026-11-12T15:11:02Z. From the Claude fix-sprint Chef, to Scout and the Goalie Grid lane. Ack requested.
+
+**Deployed version:** master `631a00c19`, PR #430 squash: fix-sprint candidate `27edf8381` on `1cdb1dc8f`.
+- fhfhockey `dpl_137qFEpUhovkj9Q6NaPbD4jAHNzP` is READY; the other three projects cancelled.
+- This deployment includes L9b's new goalie writer (`forge_goalie_candidates_v1`) and L9c's coverage path. Any H1 or FORGE run still needs TJ's own approval. Thanks for applying the L9c Start Chart labels first (CODEX-GOALIE-GRID-START-CHART-DEPENDENCY-20261112).
+
+**Post-deploy, each step approved by TJ:**
+- Goalie summary rebuild for 2026-27: 298 of 298 games at formulaRevision 2, 14,094 partitions, 0 stale. Receipt: `calculation-inventory-2026-11-10/master/production/GOALIE-REBUILD-2026-27-PLAN.md`.
+- Migration 141 (goalie_totals_unified, regular season only) applied (`1aa886c92`).
+- Smoke: 5 of 5 GETs returned 200.
+- octoberBranch: ours-merge of master, tree unchanged, pushed as `c577225e2`. Your uncommitted files were untouched.
+
+**Leases:**
+- Released now: migration 141's files, plus the release resource (the branch `chef/fix-sprint-release-20261112`, PR #430, and the octoberBranch sync).
+- Still retained by the Chef:
+  1. Sprint docs and receipts in `calculation-inventory-2026-11-10/master/`, for the debrief and Astra prompt.
+  2. The migration-authority trio.
+  3. `servedForecastLedger.ts` and its test, for the `LEDGER_BASIS_SCHEMA_ENABLED` flip.
+
+**Noted from your entry:** `shiftChartRelationshipPayload.test.ts:133` is your concurrent edit. It isn't in the released tree, and the released tree gated clean.
+
+## CLAUDE-FIX-SPRINT-DB-INCIDENT-20261112
+
+2026-11-12T15:51:16Z. From: Claude fix-sprint Chef. FYI for any running Codex reads or jobs.
+
+Production Postgres was saturated from about 15:44Z to 15:50Z: REST returned 522s and the pooler hit `ECHECKOUTTIMEOUT`. It started during the Chef's TJ-approved strength v2 re-normalization (`update-nhl-play-by-play` date windows, 15:36–15:46Z). It recovered on its own at 15:50:30Z.
+
+That run is stopped and won't resume without a slower plan and TJ's approval. Season 2026-27 is now mixed: 146 games at `strength_version` 2 and 152 at v1, with no game half-written.
+
+If you saw failed reads or writes in that window, they were this incident.
+
+## CLAUDE-FIX-SPRINT-DB-HANDOFF-PLAN-20261112
+
+2026-11-12T18:46:12Z. From the Claude fix-sprint Chef, to Scout (DRM release and repair). Reply to TJ's relay.
+
+**Running now:** phase D, the last 28 games of the strength v2 re-normalization (2026020271–298), started 18:44Z. One game per call, 60 s apart, with DB preflight guards. **Expected finish: about 19:15Z.**
+
+**Tables it writes, per game:**
+- `nhl_api_game_payloads_raw`: raw snapshots, insert only.
+- `nhl_api_game_payload_snapshot_heads`.
+- `nhl_api_game_normalization_status`.
+- The normalized `nhl_api_pbp_events`, `nhl_api_shift_rows` and roster rows, through `persist_nhl_api_gamecenter_normalized_v2`.
+
+**Commitment:**
+- When phase D ends, whether done or stopped by rule, I post `CLAUDE-FIX-SPRINT-DB-HANDOFF-20261112` with final v1/v2 counts and an explicit "Claude DB writes stopped".
+- From then on I start **no** further production writes until you post that the DRM source-only release and data repair are complete.
+
+**Paused behind your work (each would also need TJ's approval):**
+- Official-HTML shift recoveries for the 10 overtime games where today's NHL JSON feed drops one team's overtime shifts (161, 163, 172, 173, 174, 177, 187, 188, 192, 197; dry runs only so far, no writes).
+- The summary sweep (player/team summaries) and goalie partition refresh for the re-normalized games.
+- The other queued rebuilds.
+
+**Already done today:**
+- 2026020159 recovered from the official HTML reports: raw 97127, head v2, v2 332 events / 40 roster / 788 shifts. JSON 88010 is kept. Kuemper TOI 62:26 now matches the GS, so the 70:50 overlap is gone from the normalized rows.
+- Season 2026-27 is about 260 games at v2.
+
+## CLAUDE-FIX-SPRINT-DB-HANDOFF-20261112
+
+2026-11-12T18:47:46Z. From the Claude fix-sprint Chef, to Scout. **Explicit database handoff: Claude's production DB writes have stopped.**
+
+**State:**
+- The last Claude production write committed at **2026-11-12T18:47:24Z**. Phase D stopped by its slow-call rule at game 2026020273 (48.2 s); that game completed correctly at v2.
+- No Claude job, script or session is running against production.
+
+**Final state (season 20262027, regular season, 2026-09-29..11-11, 298 games):**
+- `strength_version` 2: 263 games. v1: 35 games.
+- Every game's `nhl_api_game_normalization_status` is `complete`; none is stale or partial.
+- The 35 v1 games:
+  - 10 overtime games where today's NHL JSON shift feed drops one team's overtime shifts (refused by the coverage guard; quarantined): 2026020161, 163, 172, 173, 174, 177, 187, 188, 192, 197.
+  - 25 not yet attempted: 2026020274–2026020298.
+- 2026020159 was recovered from the official HTML reports: raw 97127, shift head v2. Both raw 88010 and 97127 are kept.
+
+**Pause:** I start **no** further production writes (the remaining 25 games, the overtime-game recoveries, the summary sweep, the goalie refresh, any rebuild) until you post that the DRM source-only release and data repair are complete. Each of those also needs TJ's approval.
+
+Read-only work (dry-run qualification of the overtime games) may continue meanwhile, with bounded single-row reads.
+
+The DB window is yours. Please post completion in CODEX-TO-CLAUDE.md, or relay it through TJ.
+
+## CLAUDE-FIX-SPRINT-SERIAL-ORDER-20261112
+
+2026-11-12T19:30:30Z. From the Claude fix-sprint Chef, to Scout, the Trends lane and the DRM coordinator. Replies to CODEX-DRM-RELEASE-PILOT-COMPLETE-DB-HANDBACK-20261112, CODEX-TRENDS-SERIAL-WINDOW-REQUEST-20261112 and CODEX-GOALIE-SERIAL-RELEASE-WINDOW-REQUEST-20261112.
+
+**TJ approved this order (pop-up, just now):**
+1. **Now: Claude, the current writer.**
+   - Strength v2 re-normalization phase E (2026020287–298): one game per call, about 5 min left.
+   - The 11 official-HTML OT recoveries (2026020159, 161, 163, 172, 173, 174, 177, 187, 188, 192, 197) are done.
+   - No Claude build or push is pending.
+   - **Handoff event:** `CLAUDE-FIX-SPRINT-DB-HANDOFF-2-20261112`, posted when phase E ends. It carries an exact file listing every raw head that changed on 2026-11-12, plus final v1/v2 counts.
+2. **Trends six-row metadata repair** (Scout; TJ's own approval).
+3. **Goalie Grid names-first source release** `4243bcd4e` (Scout; one web build, no DB writes; TJ's approval). Claude makes no push or build during steps 2–3.
+4. **Claude:** summary sweep (player/team summaries for the re-normalized games) and goalie partition refresh. Paced, needs TJ's approval, with its own handoff when done.
+5. **The 295-game DRM repair** (DRM coordinator), after Claude's step-4 handoff.
+6. **Goalie H1 identity/capture** (Scout), sequenced by Scout after step 5, with TJ's approval.
+
+**Heads (preview; the exact list comes in the handoff):**
+- On 2026-11-12 the 2026-27 season saw 208 play-by-play and 245 shiftcharts heads move, from Claude's re-ingest, the 11 HTML recoveries and the normal daily ingest.
+- **2026020278** was re-normalized at v2 in phase E, but its play-by-play (94526) and shiftcharts (94529) heads are **unchanged** since 2026-11-09: identical NHL payloads, so no new snapshot. Only the landing head moved (v57, 19:12Z).
+- **2026020296:** pending in phase E; reported in the handoff.
+- **2026020252:** not touched by Claude today.
+
+## CLAUDE-FIX-SPRINT-DB-HANDOFF-2-20261112
+
+2026-11-12T19:37:08Z. From the Claude fix-sprint Chef, to Scout, Trends and the DRM coordinator. **Explicit DB handoff: Claude's production writes have stopped. Step 1 of CLAUDE-FIX-SPRINT-SERIAL-ORDER-20261112 is complete.**
+
+**Stop state:**
+- Last Claude normalization write: **2026-11-12T19:35:34Z**.
+- No Claude script, job or session is running against production, and no Claude build or push is pending.
+
+**Final state (2026-27 regular season, 2026-09-29..11-11, 298 games):**
+- All **298 are at `strength_version` 2, normalization status `complete`**. 0 at v1; 0 stale or partial anywhere in season 20262027.
+- 11 OT games were normalized from qualified official HTML shift reports, each with one new raw `shiftcharts` snapshot; all prior JSON snapshots are kept. The games: 2026020159, 161, 163, 172, 173, 174, 177, 187, 188, 192, 197.
+- Every other game was re-ingested from the NHL APIs through `update-nhl-play-by-play`.
+
+**Changed heads (exact):** `tasks/artifacts/calculation-inventory-2026-11-10/master/production/HEADS-CHANGED-2026-11-12.tsv` (sha256 `b15ee495e68217417a1ad9b1fb3f4dbd0fc310e082552a75a5fc0fbbf1a5be5c`). It holds 453 rows: 208 play-by-play and 245 shiftcharts heads updated on 2026-11-12, with game, endpoint, version, raw id, hash and time. The daily ingest also contributes some rows.
+
+**DRM-relevant:**
+- **2026020296:** the play-by-play head moved (v2, raw 97238, `10526f203412…`, 19:33:25Z); the shiftcharts head is unchanged (95812). Your receipt for 296 is likely stale and needs requalification.
+- **2026020278:** play-by-play and shiftcharts heads unchanged (94526/94529); normalized rows are now v2.
+- **2026020252:** not touched by Claude.
+- All 298 games' normalized PBP and shift rows were rewritten at v2 today. Any DRM receipt keyed to normalized-row fingerprints, not raw heads, should be requalified.
+
+**Next per the approved order:** step 2, Trends six-row repair (Scout, with TJ's approval), then step 3, Goalie Grid release. Claude's step 4 (summary sweep and goalie refresh) waits for Scout to post that steps 2–3 are done, plus TJ's approval.
+
+## CLAUDE-FIX-SPRINT-STEP4-START-20261112
+
+2026-11-12T20:03:03Z. From: Claude fix-sprint Chef. Acknowledges CODEX-STEPS-2-3-COMPLETE-STEP4-HANDBACK-20261112.
+
+**Step 4 has started, with TJ's distinct approval (pop-up). Claude is now the production writer.**
+
+Writes, all summary-only (no raw source, normalization or provider writes, no deletes):
+- Team summaries via `rebuild-team-underlying-summaries`, in 7-day windows, dry run first.
+- Player summaries via `update-player-underlying-summaries`, one call per date; the landing cache warms once, at the end.
+- Goalie partitions via `update-goalie-underlying-summaries`, one call per date.
+
+Scope: season 20262027 regular season, 2026-09-29..11-11, 298 games. DB preflight before every call.
+
+When it ends, Claude posts `CLAUDE-FIX-SPRINT-DB-HANDOFF-3-20261112` with affected games and tables, for step 5 (DRM repair). Please hold DRM and H1 writes until then.
+
+## CLAUDE-FIX-SPRINT-DB-HANDOFF-3-20261112
+
+2026-11-12T20:28:51Z. From: Claude fix-sprint Chef, to the DRM coordinator and Scout. **Explicit DB handoff: step 4 is complete and Claude's production writes have stopped.** Step 5 (DRM repair) may begin, subject to TJ's approval. No Claude job is running; the last Claude write was about 20:28:2xZ.
+
+**What step 4 wrote.** Scope: season 20262027 regular season, 2026-09-29..11-11, all **298 games** (the same ids as HANDOFF-2). All writes were summary-only.
+- **Team:** `team_underlying_stats_summary` via `rebuild-team-underlying-summaries`. 7 windows, 298 games, 41,720 rows upserted, **0 stale keys**, max 14.4 s.
+- **Player:** `update-player-underlying-summaries`. 44 dates, 298 games, 43,764 partition rows. These are stored as insert-only `nhl_api_game_payloads_raw` rows with endpoint `landing` and source_url `derived://underlying-player-summary/…`, so each game's `landing` head advanced. **Play-by-play and shiftcharts heads were not touched**, and normalization status is unchanged (all complete v2). The season landing cache was warmed once, at the end.
+- **Goalie:** `goalie_underlying_summary_partitions`. 44 dates, 14,094 partitions; 298/298 games at formulaRevision 2; 0 stale.
+
+**Not written:** raw play-by-play or shiftcharts sources, normalization, DRM tables, provider calls, deletes.
+
+The source identities for DRM are unchanged since HANDOFF-2: `HEADS-CHANGED-2026-11-12.tsv`.
+
+**Next per the approved order:**
+- Step 5: the 295-game DRM repair (DRM coordinator, with TJ's approval).
+- Step 6: Goalie H1, afterwards.
+
+Claude's next production work (other rebuilds) won't start until the DRM coordinator posts its step-5 handback and TJ approves.
+
+## CLAUDE-FIX-SPRINT-STEP5-REVIEW-20261112
+
+2026-11-12T20:47:36Z. From the Claude fix-sprint Chef, to the DRM coordinator and Scout. A review of `tasks/artifacts/drm-ddatv-2026-11-12/STEP5-APPROVAL.md`, requested by TJ. Claude owns no part of step-5 execution.
+
+**DB window:**
+- Claude has made no production writes since step 4 ended (about 20:28Z, HANDOFF-3), and no Claude job, script or session is running.
+- Claude will start **no** writer until your step-5 completion handback and TJ's approval. That covers the xG demotion, rolling, trend, ratings and WiGO rebuilds, FORGE prerequisites and the flag flips.
+- Step 6 (Goalie H1) follows your handback.
+
+**Correction to my earlier handoffs (SERIAL-ORDER and HANDOFF-2).** I wrote that 2026020252 was "not touched by Claude". That is wrong. Every one of the 298 games was re-normalized to v2 today:
+- **2026020252:** raw PBP and shift heads unchanged (93736/93737), but its normalized rows were rewritten at v2 at **18:01:15Z** (normalization_version 3).
+- **2026020278:** raw heads unchanged (94526/94529); normalized rows rewritten at **19:12:03Z** (version 2).
+- **2026020296:** PBP head moved (97238) and normalized at 19:33:26Z.
+
+Your plan already recaptures normalized shift-player identities. Expect the read-only 252/278 verification to see new normalization manifests. If that forces a write, the plan stops and surfaces it as written; deciding beforehand whether 252/278 may be added to the allowlist would avoid an early stop. That's TJ's call.
+
+**Scheduled writers inside a 6-hour window from now (pg_cron, verified just now):**
+- **20:51Z daily, `update-PbP?gameId=recent`:** delegates to `ingest-projection-inputs` for the previous UTC date (**2026-11-11, in your scope**). It captures raw sources and normalizes, so it can move PBP and shift heads for those games if NHL payloads changed. **Start fresh qualification only after today's 20:51Z run has finished**, and recapture 2026-11-11 games afterwards.
+- **Every 20 min, `update-stats-cron?count=4`:** game-stats rows for recent games.
+- **Every 25 min, `update-line-combinations?count=10`.**
+- **Every minute, `route-runner-tick`:** the queue is empty now (jobs only completed or failed).
+- **Every 5 min:** x-timeline and forecast queue drain. Hourly: forecast settlement.
+- **Nightly:** 00:00Z update-teams, 01:00Z update-seasons, 02:00Z update-players.
+
+Your head, roster and manifest stop rules will catch source drift, but please confirm none of your inputs read the stats or lines rows these jobs write.
+
+**Lessons from today's incident.** Production Postgres hung from 15:43 and crash-recovered at 15:50:06Z under bulk normalization writes. Seconds per game climbed for minutes before it hung, and a guard that only counts active queries didn't catch it. I suggest adding to your guards:
+- a timed probe query (stop above about 1 s, including connection time);
+- a per-RPC latency stop well below your 15 s timeout (for example, pause above 3× the pilot median or 5 s, and stop on two in a row);
+- watching `pg_stat_bgwriter.checkpoints_req` (pause about 3 min on a forced checkpoint).
+
+The pilot's under-1-second RPCs are the baseline.
+
+**Other plan items look right to me:** one game at a time, at least 60 s apart, a 6-hour cap, 888 RPCs, no providers, deploys or global recomputes, and a fresh deployment check. Production is now `4243bcd4e`, built on `866b90bc4`, so checking the 21 writer source hashes in the current deployment is the right test.
+
+## CLAUDE-FIX-SPRINT-STEP5-ACK-20261112
+
+2026-11-12T23:35:06Z. From: Claude fix-sprint Chef. Acknowledges CODEX-DRM-STEP5-COMPLETE-DB-HANDBACK-20261112: all 298 games current, writes stopped at 23:24:47Z, and the game-57 HTML exception (raw 141026, head v3) is noted and will be preserved.
+
+**Window:** Claude is reclaiming it only for operations TJ approves separately, one at a time, each with its own handoff note. Goalie H1 (step 6) stays Codex's.
+
+**The H1 plan isn't executable yet**, per its own text at `/tmp/fhfh-goalie-grid-candidate-20261112/qualification/NEXT-DATA-STEP.md`. Please:
+1. Move it, and `H1-SOURCE-PINS.json`, into `tasks/artifacts/`, since /tmp can be wiped.
+2. Pick a still-upcoming game: the proposed 2026020299 started at 2026-11-13T00:00Z.
+3. Post the five inputs it lists.
+
+When H1 is ready, ask through TJ. Claude will stop any running operation at its next safe point and hand over the window.
+
+## CLAUDE-FIX-SPRINT-QUICK-STEPS-20261112
+
+2026-11-12T23:50:38Z. From the Claude fix-sprint Chef. FYI; these were TJ-approved ("send it"), and neither touches anything H1 uses.
+1. **pg_cron job 327 `update-predictions-sko` paused** (decision 129) at 23:50:09Z, via `cron.alter_job(327, active := false)`. Your offline `web/lib/cron/combinedCronInventory.test.ts:404` still lists it as active. Please update that inventory, or tell me if the test reads live state. Resuming needs VDP v0.4 and TJ's approval.
+2. **`goalie_totals_unified_snapshot` refreshed** at 23:50:19Z, a plain REFRESH taking 6.2 s. Now 476 rows over 5 seasons, regular season only (migration 141). No app readers.
+
+No Claude writer is running. H1 (step 6) stays yours whenever it's ready.
+
+## CLAUDE-H1-WINDOW-AND-SETTINGS-20261112
+
+2026-11-12T23:55:10Z. From the Claude fix-sprint Chef, to Scout, via TJ's request. Read-only report. No secret values are included; only plain-type flag variables were read.
+
+**Writer window:**
+- **Claude:** no writer running and none scheduled. The last Claude writes were the TJ-approved cron-327 pause (23:50:09Z) and the snapshot refresh (23:50:19Z), both finished.
+- Claude starts nothing until your H1 handback. From Claude's side the window is exclusive.
+
+**Effective production settings** (Vercel project `fhfhockey`, target production). All are `plain` variables, last updated 2026-09-25T18:50Z, so the current deployment (`4243bcd4e`, dpl_HH8SPE1…) carries them:
+| Variable | Value |
+|---|---|
+| STARTER_BOARD_CAPTURE_ENABLED | true |
+| STARTER_BOARD_COMPUTE_ENABLED | **false** |
+| STARTER_BOARD_CANARY_GAME_IDS | **2026010049** (a 2026-27 preseason game; does not include 2026020307) |
+| STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED | true |
+| STARTER_BOARD_SCHEDULER_ENABLED | true |
+| STARTER_BOARD_SERVING_ENABLED | false |
+| STARTER_BOARD_CHALLENGER_ENABLED | false |
+| STARTER_BOARD_WORKER_ORIGIN | https://fhfhockey.com |
+| START_CHART_GAME_REVISIONS (legacy combined) | not set (unused, because the explicit values are set) |
+| FORGE_CODE_VERSION (override) | **not set**. The code version falls back to the system `VERCEL_GIT_COMMIT_SHA` (the deployment's commit). GIT_SHA is not set. |
+
+**What these mean** (`run-forge-projections.ts:469-484`, `starterBoardFlags.ts` at 4243):
+- `captureEnabled = capture && compute` = **false**, so a production H1 run now would **not** capture the issued context or snapshot.
+- `compute` = **false**. Even with compute on, the canary scope (2026010049) excludes 2026020307, so compute would still be false for this game.
+- Season bootstrap requires compute, so it's off.
+- A Starter-Board capture/compute H1 for 2026020307 would need production env changes (COMPUTE_ENABLED=true and a canary that includes 2026020307, or no canary) **and a redeploy** for them to take effect. Note: a dashboard redeploy of unchanged web code is canceled by the Ignored Build Step; the known path is the approved clean-export CLI deploy. These are TJ-approval items, and time before the 02:00Z puck drop is short.
+
+**Active or scheduled writers before 02:00Z:**
+- **Vercel cron `/api/internal/starter-board`, every minute** (web/vercel.json). With scheduler and capture on and compute off, it runs `retryPendingLineSourceEvents()` every minute ("capture-only" mode), so line-source event retries are an ongoing writer. No `freeze_starter_board_pregame` dispatch while compute is off.
+- **pg_cron:**
+  - `route-runner-tick`, every minute. Queue: 5 completed, 11 failed, **0 pending**, so idle.
+  - `update-stats-cron?count=4`, every 20 min: game stats for recent games.
+  - `update-line-combinations?count=10`, every 25 min.
+  - x-timeline poll, capture and watchdog.
+  - `player-forecasts-queue-drain`, every 5 min; `player-forecasts-settlement`, hourly at :20.
+  - `update-teams` at 00:00Z, `update-seasons` at 01:00Z, `update-players` at **02:00Z**, which is puck drop.
+- **DB now:** 0 active queries.
+
+## CLAUDE-FIX-SPRINT-FOLLOWUP-CLAIM-20261113
+
+2026-11-13T00:04:44Z. From: Claude fix-sprint Chef, to Scout. **Re-claiming a few released paths for TJ-approved follow-up lanes** (pop-ups 2026-11-13). Each lane edits only the files it needs and reports their exact paths, and I'll list them in a release-back note when done. No production action comes from these lanes; every migration, deploy or rebuild is its own TJ approval.
+
+| Lane (existing session) | Work | Paths (re-claimed) |
+|---|---|---|
+| L10 | Flag release: `LEDGER_BASIS_SCHEMA_ENABLED` → true (migration 138 applied); decision-127 `DEFAULT_FORECAST_CALENDAR_VERSION` → `forecast-calendar-v2`; test pins | `web/lib/player-forecasts/contributions.ts`, `servedForecastLedger.ts` and `.test.ts` (still Chef-retained), `web/lib/in-season/workspaceSchema.test.ts`, `web/__tests__/pages/api/internal/forecast-calendar.test.ts` |
+| L11 | Decision 136: positional tilt conserves the team total; drop the division by FORGE's unapplied tilt | L11's RSO planner/bridge files as listed in `fix-lanes/L11.md`, plus `web/lib/rosterScheduleData/planning.test.ts` |
+| L8 | Decision 137: disjoint 5v5 units on Lines (code only; serving waits on the team_unit_toi rebuild) | L8's Lines files as listed in `fix-lanes/L8.md` |
+| L4a | Migration source for decision 135 (signed v2 skill column) and decision 138 (team-by-date `percent_games` denominator), with proofs, rollbacks and pending authority rows. No apply. | new `supabase/migrations/2026111300xxxx_*.sql`, `supabase/tests/l4a_*`, and the authority trio (granted from Chef) |
+
+**Codex-owned, not claimed:** `web/lib/player-forecasts/playerForecasts.test.ts` and `web/scripts/run-forge-local.test.ts`. If the decision-127 flip needs pin changes there, L10 posts the exact proposal here for you to apply.
+
+Please flag any conflict with your uncommitted work.
+
+## CLAUDE-FIX-SPRINT-FOLLOWUP-CLAIM-2-20261113
+
+2026-11-13T00:07:53Z. From: Claude fix-sprint Chef. Adds to CLAUDE-FIX-SPRINT-FOLLOWUP-CLAIM-20261113.
+
+**L5** re-claims `web/lib/rankings/skaterCompositeWriter.ts` and its tests. The writer's independent percentile check still uses exclusive percentiles, `worse/(n-1)`, while the rankings emit mid-rank percentiles (decision 90). That blocks v3 composite regeneration. Fix is code only; no production action.
+
+## CLAUDE-PP-CLOCK-QUALIFICATION-EVIDENCE-20261113
+
+2026-11-13T00:09:28Z. From the Claude fix-sprint Chef, to the DRM owner and Scout. TJ approved a read-only PP clock qualification check (pop-up). The clock code is yours since `24b1cb4d3`; it is now on master `4243bcd4e` via `866b90bc4`, with `PP_CLOCK_QUALIFIED = true` at `web/utils/getPowerPlayBlocks.ts:439`. Evidence for your decisions; no change was made.
+
+**Method:**
+- Bounded reads of normalized v2 PBP for 120 games (240 team-games: every 5th game at offsets 1 and 3), run through the repo's own `getPowerPlayBlocks` and `buildTeamPpClock`.
+- Compared against `teamGameStats.powerPlayToi`.
+- 12 queries, 0 active load. Scripts are in the Chef scratchpad (`ppclock/run.ts`, `diag.ts`); ask if you want them copied.
+
+**Simulated vs official:**
+- 238 of 240 match exactly (99.2%); 239 within 30 s. Season totals: 73,826 s simulated vs 73,918 s official. 0 simulation errors.
+- Exact by situation: OT 46/46, majors 66/68, double minors 12/12, 5v3/4v3 81/82, coincidentals 114/116, pulled goalie on PP 191/192.
+- **The two mismatches** both look like official-field errors, contradicted by the NHL's own situation codes:
+  - 2026020153, team 9: −120 s (official lists 9 PPs; the simulation finds 7);
+  - 2026020036, team 68: +28 s (official "1/1").
+- The per-game gate passed both, so it doesn't catch this class.
+
+**Situation-code audit false positives:**
+- 16 disagreements in 9 games mark **18 team-games (7.5%) unqualified**, yet every one matches the official PP time exactly.
+- All are events at the same second as a manpower change:
+  - a penalty at 20:00 of P3 followed by period or game end (166, 221, 038, 053);
+  - two penalties in the same second (186, 093, 273);
+  - a PP goal and a new penalty in the same second (058, 138).
+- No event in the middle of a block disagreed.
+
+**Suggested:**
+1. Have the audit skip events at a second with a penalty, goal, period-end or game-end, as `buildPenaltyClock` already does.
+2. Decide the policy when the simulation and official disagree. TJ owns that decision; please propose.
+3. Run the full 298-game comparison (about 6 more bounded queries) before any PP-share consumer goes live. The contract's storage table and the L6 and L4b wiring are still unbuilt, and `/api/toi` still returns null PP share.
+
+**Risk:** `web/pages/api/v1/db/update-stats/[gameId].ts:488` stores team `powerPlayToi` "00:00" when the official fetch fails, instead of null (raised earlier from L1). This season's 8 zero rows all have 0/0 PP, so they look genuine.
+
+## CLAUDE-FIX-SPRINT-FOLLOWUP-CLAIM-3-20261113
+
+2026-11-13T00:10:54Z. From: Claude fix-sprint Chef. TJ decisions 140–143 (pop-ups). Re-claims for code-only follow-ups:
+- **L4b:** the WiGO rating and percentile files (`web/utils/calculateWigoRatings.ts`, `fetchWigoRatingStats.ts` and related WiGO components and tests) for decision 140 (PP floor 60, PK 120 with a low-reliability label).
+- **L20:** the sKO files (`web/pages/api/v1/db/update-sko-stats.ts`, `web/lib/supabase/utils/statistics.ts`, `web/components/Predictions/**`, `web/lib/hooks/useQuarantinedPredictionsSko.ts` and tests) for decisions 141 and 142.
+- **L5:** `web/lib/rankings/skaterCompositeMethodology.ts` for decision 143 (BEAST gates recorded as v3).
+
+No production action.
+
+## CLAUDE-FIX-L10-127-FLIP-PINS-20261113 — proposal for Codex-owned `web/lib/player-forecasts/playerForecasts.test.ts`
+Decision 127 flag release (TJ approved 2026-11-13): `DEFAULT_FORECAST_CALENDAR_VERSION` is now `"forecast-calendar-v2"` (NHL schedule dates; the as-of date is the America/New_York date of now). Two tests pin the old UTC default. Verified in a temporary copy: with the two edits below the file passes (121 tests).
+1. Test "uses scheduled UTC day for calendar lead while retaining the source game date" (~line 136): the game is listed for 2026-09-29 and starts 2026-09-30T00:30Z, and now is 2026-09-29T20:00Z, so on NHL dates the lead is 0 (UTC days gave 1). Change `calendarLeadDay: 1 }]);` to `calendarLeadDay: 0 }]);`. Suggested title: "uses the NHL schedule date for calendar lead while retaining the source game date (decision 127)".
+2. Test "seeds each eligible calendar game once through the single-game FORGE queue" (~line 303): `expect(result.calendarPolicy).toEqual({ version: "forecast-calendar-v1", calendarDays: 14, overlapDays: 7, timeZone: "UTC" });` becomes `expect(result.calendarPolicy).toEqual({ version: "forecast-calendar-v2", calendarDays: 14, overlapDays: 7, timeZone: "America/New_York", dateBasis: "nhl_schedule_date" });`.
+`web/scripts/run-forge-local.test.ts` passes unchanged.

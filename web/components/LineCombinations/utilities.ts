@@ -6,6 +6,11 @@ import { getCurrentSeason } from "lib/NHL/server";
 import supabase from "lib/supabase";
 import type { GoalieStats, SkaterStats } from "pages/lines/[abbreviation]";
 import { parseTime } from "utils/getPowerPlayBlocks";
+import {
+  LINES_FIVE_ON_FIVE_ENABLED,
+  buildFiveOnFiveLines,
+  type TeamUnitToiReaderRow
+} from "./fiveOnFiveUnits";
 
 export type LineCombinations = {
   game: {
@@ -16,6 +21,11 @@ export type LineCombinations = {
   };
   /** The games the card stats are totalled over (the team's last 10 with line data). */
   statsGameIds: number[];
+  /**
+   * Where the lines come from: observed 5v5 units placed disjointly
+   * (decisions 107, 137) or the labelled all-strength legacy grouping.
+   */
+  lineSource: LineSource;
   promotions: LineChangeInfo[];
   demotions: LineChangeInfo[];
   forwards: {
@@ -76,9 +86,33 @@ export function resolveLineCombinationSourceContext({
   return { teamId: sourceTeamId, seasonId: sourceSeasonId };
 }
 
+export type LineSource = "five_on_five_observed" | "all_strength_legacy";
+
+const FIVE_ON_FIVE_COLUMNS =
+  "game_id, team_id, snapshot_date, unit_type, player_ids, player_count, unit_toi_seconds, coverage_status";
+
+/**
+ * Replaces a game's stored all-strength forwards and defense with its observed
+ * 5v5 units placed disjointly (decision 137). Returns null when the game has
+ * no complete 5v5 rows, so the caller keeps the labelled legacy grouping.
+ */
+function fiveOnFiveLineCombo<T extends { gameId: number; forwards: number[]; defensemen: number[] }>(
+  game: T,
+  rows: readonly TeamUnitToiReaderRow[]
+): T | null {
+  const lines = buildFiveOnFiveLines(rows.filter((row) => row.game_id === game.gameId));
+  if (!lines) return null;
+  return {
+    ...game,
+    forwards: lines.forwardLines.flatMap((unit) => unit.playerIds),
+    defensemen: lines.defensePairs.flatMap((unit) => unit.playerIds)
+  };
+}
+
 export async function getLineCombinations(
   teamId: number,
-  seasonId?: number
+  seasonId?: number,
+  options: { fiveOnFive?: boolean } = {}
 ): Promise<LineCombinations> {
   try {
     const seasonToUse = seasonId ?? (await getCurrentSeason()).seasonId;
@@ -173,6 +207,28 @@ export async function getLineCombinations(
       "Player ID Info Map:",
       Array.from(playerId_Info.entries())
     );
+
+    // Decision 107/137 switch: observed 5v5 units, off until the
+    // team_unit_toi rebuild. Both games must have 5v5 rows, so promotions and
+    // demotions never compare a 5v5 board with an all-strength one.
+    let lineSource: LineSource = "all_strength_legacy";
+    if (options.fiveOnFive ?? LINES_FIVE_ON_FIVE_ENABLED) {
+      const { data: unitRows } = await supabase
+        .from("team_unit_toi")
+        .select(FIVE_ON_FIVE_COLUMNS)
+        .eq("team_id", teamId)
+        .in("game_id", [lineCombinations[0].gameId, lineCombinations[1].gameId])
+        .in("unit_type", ["forward_line", "defense_pair"])
+        .returns<TeamUnitToiReaderRow[]>()
+        .throwOnError();
+      const current = fiveOnFiveLineCombo(lineCombinations[0], unitRows ?? []);
+      const previous = fiveOnFiveLineCombo(lineCombinations[1], unitRows ?? []);
+      if (current && previous) {
+        lineCombinations[0] = current;
+        lineCombinations[1] = previous;
+        lineSource = "five_on_five_observed";
+      }
+    }
 
     // Determine promotions and demotions
     const { promotions, demotions } = getLineChanges([
@@ -329,6 +385,7 @@ export async function getLineCombinations(
     });
 
     result.statsGameIds = lineCombinations.map((game: any) => game.gameId);
+    result.lineSource = lineSource;
 
     // Assign game info
     result.game = {

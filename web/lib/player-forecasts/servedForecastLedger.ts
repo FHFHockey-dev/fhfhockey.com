@@ -17,9 +17,10 @@ export const LEDGER_SCORING_VERSION = "served-ledger-scoring-v2";
 /** "unconditional": expected contribution over the full eligible pregame universe (a confirmed non-appearance scores 0).
  * "conditional_dressed": expected contribution if the player dresses (a non-appearance voids the forecast). */
 export type LedgerForecastBasis = "unconditional" | "conditional_dressed";
-/** The L4a migration adds `forecast_basis` to the ledger and the `forge_served_forecast_universe` table. While false the
- * snapshot sends neither, and the basis is derived from source and class (identical by construction, see ledgerForecastBasis). */
-export const LEDGER_BASIS_SCHEMA_ENABLED = false;
+/** L4a migration 138 (applied 2026-11-12) adds `forecast_basis` to the ledger and the `forge_served_forecast_universe`
+ * table; on since the 2026-11-13 flag release (TJ approved). Rows written before it carry a null basis, which readers derive
+ * from source and class (identical by construction, see ledgerForecastBasis). */
+export const LEDGER_BASIS_SCHEMA_ENABLED = true;
 export const LEDGER_UNIVERSE_TABLE = "forge_served_forecast_universe";
 type Row = Record<string, any>;
 type Num = number | null;

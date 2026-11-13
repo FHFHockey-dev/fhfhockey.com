@@ -75,8 +75,8 @@ export function getMcmComponentGroups(strength: "all" | "5v5" | "ev" | "pp" | "p
 export const MCM_MINIMUM_PEER_COUNT = 3;
 // v3 (2026-11-11): mid-rank component percentiles (decision 90), Offense and
 // Defense refuse missing inputs (decision 102) and are labelled scores
-// (decision 74). BEAST thresholds are carried from v2 unchanged and still need
-// re-evaluation on the v3 scale before any cut-off change (decision 74).
+// (decision 74). BEAST gates were re-evaluated on the v3 scale and recorded as
+// the v3 gates with the same numbers (decision 143; see BEAST_TIER_GATES_VERSION).
 export const SKATER_COMPOSITE_METHODOLOGY_VERSION = "contextual_composites_v3";
 export const MCM_SOURCE_PENDING_COMPONENTS = [] as const;
 
@@ -92,6 +92,7 @@ export const MCM_SCORE_CONTRACT = {
   percentileConvention: "Mid-rank (decision 90): 100 * (strictly worse peers + half the other tied peers) / (qualified peers - 1); tied values share one percentile.",
   minimumPeerCount: MCM_MINIMUM_PEER_COUNT,
   tierComparison: "Compare the unrounded weighted score; round only for display.",
+  tierGatesVersion: "beast_tier_gates_v3",
   sourcePendingComponents: MCM_SOURCE_PENDING_COMPONENTS,
   requiredOutputFields: [
     "mcm_score",
@@ -110,6 +111,15 @@ export const MCM_SCORE_CONTRACT = {
     "Rates describe the selected strength/window. Six-input and seven-input variants are not interchangeable, and small GP/TOI samples remain volatile.",
   ],
 } as const;
+
+/**
+ * BEAST gates, version v3 (decision 143, TJ 2026-11-13). Decision 74 requires
+ * re-evaluating and versioning the gates when the percentile scale changes; the
+ * v3 scale (mid-rank component percentiles, decision 90) was checked with a
+ * read-only 5v5 simulation that moved one player's tier, and TJ kept the same
+ * numbers as the v3 gates. Any later change to these numbers is a new version.
+ */
+export const BEAST_TIER_GATES_VERSION = "beast_tier_gates_v3";
 
 export const BEAST_TIER_GATES = [
   {

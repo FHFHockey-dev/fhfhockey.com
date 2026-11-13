@@ -25,7 +25,8 @@ import { formatSeasonRange } from "./tableUtils";
 import useCurrentSeason, { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
 import {
-  WIGO_ST_FLOOR_VALIDATED,
+  WIGO_PK_LOW_RELIABILITY_NOTE,
+  WIGO_ST_FLOOR_BASIS,
   WIGO_ST_MIN_MINUTES_DEFAULT,
   isWigoSpecialTeamsStrength,
   meetsWigoMinutesFloor,
@@ -465,9 +466,10 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
         full: `Insufficient sample: ${selectedPlayerToiMinutes === null ? "no" : Math.round(selectedPlayerToiMinutes)} ${strengthLabel} minutes, below the ${floorText} floor.`
       });
     }
+    const defaultFloor = WIGO_ST_MIN_MINUTES_DEFAULT[specialTeams];
     thresholdMessages.push({
-      short: `${groupName} · ${floorText}+`,
-      full: `${strengthLabel} ranks ${groupName} only, with at least ${floorText}. The ${floorText} default is provisional${WIGO_ST_FLOOR_VALIDATED ? "" : " (not yet validated by split-half stability)"}; lower it with the slider.`
+      short: `${groupName} · ${floorText}+${specialTeams === "pk" ? " · low reliability" : ""}`,
+      full: `${strengthLabel} ranks ${groupName} only, with at least ${floorText}. The ${defaultFloor}-min default comes from ${WIGO_ST_FLOOR_BASIS}; lower it with the slider.${specialTeams === "pk" ? ` ${WIGO_PK_LOW_RELIABILITY_NOTE}.` : ""}`
     });
   }
   if (

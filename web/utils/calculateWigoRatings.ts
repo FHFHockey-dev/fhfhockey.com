@@ -50,16 +50,19 @@ export function wigoPositionGroup(code: string | null | undefined): WigoPosition
 }
 
 // Special-teams cohorts (decision 81): a per-strength minutes floor instead of games,
-// and forwards and defensemen ranked apart. The default floor is a provisional
-// presentation choice (rule 12): it has not yet been validated by split-half
-// stability, and the page says so. Users can lower it.
+// and forwards and defensemen ranked apart. Default floors (decision 140, 2025-26
+// split-half reliability, threshold .5 over a full season): PP 60 minutes (forwards
+// .55, defense .63; 30 minutes gave only .37/.47) and PK 120 minutes (.52/.55, still
+// weak, so PK ratings carry a low-reliability note). Users can lower either floor.
 export const WIGO_SPECIAL_TEAMS_STRENGTHS = ["pp", "pk"] as const;
 export type WigoSpecialTeamsStrength = (typeof WIGO_SPECIAL_TEAMS_STRENGTHS)[number];
 export const WIGO_ST_MIN_MINUTES_DEFAULT: Record<WigoSpecialTeamsStrength, number> = {
-  pp: 30,
-  pk: 30
+  pp: 60,
+  pk: 120
 };
-export const WIGO_ST_FLOOR_VALIDATED = false;
+export const WIGO_ST_FLOOR_BASIS = "2025-26 split-half reliability (decision 140)";
+export const WIGO_PK_LOW_RELIABILITY_NOTE =
+  "Low reliability: PK percentiles stay only weakly stable even at 120 PK minutes (2025-26 split-half .52 forwards, .55 defense)";
 export const isWigoSpecialTeamsStrength = (strength: string): strength is WigoSpecialTeamsStrength =>
   (WIGO_SPECIAL_TEAMS_STRENGTHS as readonly string[]).includes(strength);
 

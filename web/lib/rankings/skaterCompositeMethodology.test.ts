@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   BEAST_TIER_GATES,
+  BEAST_TIER_GATES_VERSION,
   DEFENSE_RATING_CONTRACT,
   MCM_COMPONENTS,
   MCM_SCORE_CONTRACT,
@@ -11,6 +12,7 @@ import {
   RESULTS_LUCK_INDEX_CONTRACT,
   RESULTS_LUCK_SIGNAL_COMPONENTS,
   SKATER_ARCHETYPE_TAG_CONTRACTS,
+  SKATER_COMPOSITE_METHODOLOGY_VERSION,
   SKATER_COMPOSITE_SOURCE_TABLE,
 } from "./skaterCompositeMethodology";
 
@@ -63,6 +65,44 @@ describe("skaterCompositeMethodology", () => {
     const watch = BEAST_TIER_GATES.at(-1);
     expect(watch?.tier).toBe("MCM Watch");
     expect(watch?.minimumMcmScore).toBeNull();
+  });
+
+  it("pins the v3 BEAST gate set kept by decision 143", () => {
+    // Decision 74 requires versioned gates on a new scale; decision 143 kept
+    // these numbers as v3. Changing any value needs a new version.
+    expect(BEAST_TIER_GATES_VERSION).toBe("beast_tier_gates_v3");
+    expect(MCM_SCORE_CONTRACT.tierGatesVersion).toBe(BEAST_TIER_GATES_VERSION);
+    expect(BEAST_TIER_GATES).toEqual([
+      {
+        tier: "BEAST+",
+        minimumMcmScore: 88,
+        riffThresholds: { count: 3, percentile: 80 },
+        scoringThresholds: { count: 2, percentile: 75 },
+        allCategoryThresholds: { count: 4, percentile: 80 },
+      },
+      {
+        tier: "BEAST",
+        minimumMcmScore: 80,
+        riffThresholds: { count: 2, percentile: 75 },
+        scoringThresholds: { count: 1, percentile: 70 },
+        allCategoryThresholds: { count: 4, percentile: 70 },
+      },
+      {
+        tier: "MCM",
+        minimumMcmScore: 70,
+        riffThresholds: { count: 2, percentile: 70 },
+        scoringThresholds: { count: 1, percentile: 60 },
+        allCategoryThresholds: null,
+      },
+      {
+        tier: "MCM Watch",
+        minimumMcmScore: null,
+        riffThresholds: { count: 2, percentile: 60 },
+        scoringThresholds: { count: 1, percentile: 60 },
+        allCategoryThresholds: null,
+      },
+    ]);
+    expect(SKATER_COMPOSITE_METHODOLOGY_VERSION).toBe("contextual_composites_v3");
   });
 
   it("documents transparent archetype tags and a non-overlapping luck baseline", () => {

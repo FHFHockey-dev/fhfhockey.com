@@ -32,6 +32,7 @@ import {
   WGOSkaterStat,
 } from "lib/NHL/types";
 import adminOnly from "utils/adminOnlyMiddleware";
+import { normalizeShiftIntervals } from "lib/supabase/Upserts/nhlShiftStints";
 
 /**
  * Query params:
@@ -126,41 +127,192 @@ function finiteNumberOrNull(value: unknown): number | null {
 }
 
 export type SkoIppUnavailableReason =
+  | "single_game_window"
   | "points_missing"
   | "on_ice_goals_for_component_missing"
   | "no_on_ice_goals_for"
-  | "points_exceed_on_ice_goals_for";
+  | "points_include_goals_while_off_ice";
+
+type SkoIppWindowRow = {
+  points: unknown;
+  es_goals_for: unknown;
+  pp_goals_for: unknown;
+  sh_goals_for: unknown;
+};
 
 /**
- * IPP = points ÷ on-ice goals for (ES + PP + SH) × 100. Every part must be known: a missing
- * component is unknown, never 0 (W3-7 D5). Points above on-ice GF is impossible and also
- * stores null; its cause (a goal state missing from WGO's ES/PP/SH split) is not established.
+ * Decision 141: IPP = Σ points ÷ Σ on-ice goals for (ES + PP + SH) × 100 over a pooled
+ * multi-game window, never one game. Every part must be known (rule 5). On-ice GF is
+ * shift-based, so points can include assists on goals scored after the player changed off;
+ * when the window's points exceed its on-ice GF the IPP is null with that reason.
  */
-export function resolveSkoIpp({
-  points,
-  evenStrengthGoalsFor,
-  powerPlayGoalFor,
-  shortHandedGoalsFor,
-}: {
-  points: unknown;
-  evenStrengthGoalsFor: unknown;
-  powerPlayGoalFor: unknown;
-  shortHandedGoalsFor: unknown;
-}): { ipp: number | null; reason: SkoIppUnavailableReason | null } {
-  const knownPoints = finiteNumberOrNull(points);
-  if (knownPoints === null) return { ipp: null, reason: "points_missing" };
-  const parts = [evenStrengthGoalsFor, powerPlayGoalFor, shortHandedGoalsFor].map(
-    finiteNumberOrNull,
-  );
-  if (parts.some((part) => part === null)) {
-    return { ipp: null, reason: "on_ice_goals_for_component_missing" };
+export function pooledSkoIpp(rows: SkoIppWindowRow[]): {
+  ipp: number | null;
+  reason: SkoIppUnavailableReason | null;
+} {
+  if (rows.length < 2) return { ipp: null, reason: "single_game_window" };
+  let points = 0;
+  let onIceGoalsFor = 0;
+  for (const row of rows) {
+    const rowPoints = finiteNumberOrNull(row.points);
+    if (rowPoints === null) return { ipp: null, reason: "points_missing" };
+    const parts = [row.es_goals_for, row.pp_goals_for, row.sh_goals_for].map(
+      finiteNumberOrNull,
+    );
+    if (parts.some((part) => part === null)) {
+      return { ipp: null, reason: "on_ice_goals_for_component_missing" };
+    }
+    points += rowPoints;
+    onIceGoalsFor += (parts as number[]).reduce((sum, part) => sum + part, 0);
   }
-  const onIceGoalsFor = (parts as number[]).reduce((sum, part) => sum + part, 0);
   if (onIceGoalsFor <= 0) return { ipp: null, reason: "no_on_ice_goals_for" };
-  if (knownPoints > onIceGoalsFor) {
-    return { ipp: null, reason: "points_exceed_on_ice_goals_for" };
+  if (points > onIceGoalsFor) {
+    return { ipp: null, reason: "points_include_goals_while_off_ice" };
   }
-  return { ipp: (knownPoints / onIceGoalsFor) * 100, reason: null };
+  return { ipp: (points / onIceGoalsFor) * 100, reason: null };
+}
+
+type ShiftRowInput = Parameters<typeof normalizeShiftIntervals>[0][number] & {
+  type_code?: number | null;
+};
+
+type GoalEventInput = {
+  game_id: number | null;
+  period_number: number | null;
+  period_seconds_elapsed: number | null;
+  event_owner_team_id: number | null;
+  period_type?: string | null;
+};
+
+export type ShiftOnIceGoalCounts = { goalsFor: number; goalsAgainst: number };
+
+/**
+ * Shift-based on-ice goals for/against for one player in one game. A goal at the second a
+ * shift ends counts for that shift; one at the second a shift starts does not (shift-chart
+ * convention, as in `findShiftStintAtTime`). Shootout goals are not on-ice goals. No shift
+ * rows, or a goal with an unknown time or team, → null (unknown).
+ */
+export function shiftOnIceGoalCounts({
+  playerId,
+  shiftRows,
+  goalEvents,
+}: {
+  playerId: number;
+  shiftRows: ShiftRowInput[];
+  goalEvents: GoalEventInput[];
+}): ShiftOnIceGoalCounts | null {
+  const intervals = normalizeShiftIntervals(
+    shiftRows.filter((row) => row.type_code !== 505),
+  ).filter((interval) => interval.playerId === playerId);
+  if (!intervals.length) return null;
+  const { gameId, teamId } = intervals[0];
+  let goalsFor = 0;
+  let goalsAgainst = 0;
+  for (const event of goalEvents) {
+    if (event.game_id !== gameId || event.period_type === "SO") continue;
+    const period = finiteNumberOrNull(event.period_number);
+    const second = finiteNumberOrNull(event.period_seconds_elapsed);
+    const owner = finiteNumberOrNull(event.event_owner_team_id);
+    if (period === null || second === null || owner === null) return null;
+    const onIce = intervals.some(
+      (interval) =>
+        interval.period === period &&
+        interval.startSecond < second &&
+        second <= interval.endSecond,
+    );
+    if (!onIce) continue;
+    if (owner === teamId) goalsFor += 1;
+    else goalsAgainst += 1;
+  }
+  return { goalsFor, goalsAgainst };
+}
+
+const ZERO_ON_ICE_GOALS_FOR = {
+  evenStrengthGoalsFor: 0,
+  powerPlayGoalFor: 0,
+  shortHandedGoalsFor: 0,
+};
+
+export type GoalsForAgainstResolution =
+  | "report_row"
+  | "shift_confirmed_zero"
+  | "unknown_no_ice_time"
+  | "unknown_no_shift_count"
+  | "unknown_shift_count_nonzero";
+
+/**
+ * Decision 142: the NHL goalsForAgainst report omits a skater who was on ice for no goals.
+ * A missing row becomes 0/0/0 only when he had ice time, has shift rows, and the shift-based
+ * count is 0 for and 0 against; otherwise the on-ice goals stay unknown.
+ */
+export function resolveGoalsForAgainstStat<T>({
+  reportRow,
+  timeOnIceSeconds,
+  shiftCounts,
+}: {
+  reportRow: T | undefined;
+  timeOnIceSeconds: number | null;
+  shiftCounts: ShiftOnIceGoalCounts | null;
+}): {
+  stat: T | typeof ZERO_ON_ICE_GOALS_FOR | undefined;
+  resolution: GoalsForAgainstResolution;
+} {
+  if (reportRow) return { stat: reportRow, resolution: "report_row" };
+  if (timeOnIceSeconds === null || timeOnIceSeconds <= 0) {
+    return { stat: undefined, resolution: "unknown_no_ice_time" };
+  }
+  if (!shiftCounts) return { stat: undefined, resolution: "unknown_no_shift_count" };
+  if (shiftCounts.goalsFor === 0 && shiftCounts.goalsAgainst === 0) {
+    return { stat: { ...ZERO_ON_ICE_GOALS_FOR }, resolution: "shift_confirmed_zero" };
+  }
+  return { stat: undefined, resolution: "unknown_shift_count_nonzero" };
+}
+
+/**
+ * Reads stored shift rows for these players on this date and the goal events of their games,
+ * and returns each player's shift-based on-ice goal counts (null when unknown). Two bounded
+ * queries, only for players missing a goalsForAgainst row.
+ */
+export async function loadShiftOnIceGoalCounts(
+  client: Pick<typeof supabase, "from">,
+  date: string,
+  playerIds: number[],
+): Promise<Map<number, ShiftOnIceGoalCounts | null>> {
+  const counts = new Map<number, ShiftOnIceGoalCounts | null>();
+  if (!playerIds.length) return counts;
+  const { data: shiftRows, error: shiftError } = await (client as any)
+    .from("nhl_api_shift_rows")
+    .select(
+      "game_id,shift_id,team_id,player_id,period,start_seconds,end_seconds,duration_seconds,season_id,shift_number,game_date,type_code",
+    )
+    .eq("game_date", date)
+    .in("player_id", playerIds);
+  if (shiftError) throw shiftError;
+  const shifts = (shiftRows ?? []) as ShiftRowInput[];
+  const gameIds = Array.from(new Set(shifts.map((row) => Number(row.game_id))));
+  let goalEvents: GoalEventInput[] = [];
+  if (gameIds.length) {
+    const { data, error } = await (client as any)
+      .from("nhl_api_pbp_events")
+      .select(
+        "game_id,period_number,period_seconds_elapsed,event_owner_team_id,period_type",
+      )
+      .in("game_id", gameIds)
+      .eq("type_code", 505);
+    if (error) throw error;
+    goalEvents = (data ?? []) as GoalEventInput[];
+  }
+  for (const playerId of playerIds) {
+    counts.set(
+      playerId,
+      shiftOnIceGoalCounts({
+        playerId,
+        shiftRows: shifts.filter((row) => Number(row.player_id) === playerId),
+        goalEvents,
+      }),
+    );
+  }
+  return counts;
 }
 
 export function buildSkoSkaterStatsRow({
@@ -175,7 +327,10 @@ export function buildSkoSkaterStatsRow({
   seasonId,
 }: {
   stat: WGOSummarySkaterStat;
-  goalsForAgainstStat?: WGOGoalsForAgainstSkaterStat;
+  goalsForAgainstStat?: Pick<
+    WGOGoalsForAgainstSkaterStat,
+    "evenStrengthGoalsFor" | "powerPlayGoalFor" | "shortHandedGoalsFor"
+  >;
   powerPlayStat?: WGOPowerPlaySkaterStat;
   puckPossessionStat?: WGOPuckPossessionSkaterStat;
   scoringRatesStat?: WGOScoringRatesSkaterStat;
@@ -191,12 +346,6 @@ export function buildSkoSkaterStatsRow({
   const timeOnIceSeconds = finiteNumberOrNull(timeOnIceStat?.timeOnIce);
   const shots = finiteNumberOrNull(stat.shots);
   const points = finiteNumberOrNull(stat.points);
-  const { ipp } = resolveSkoIpp({
-    points,
-    evenStrengthGoalsFor: goalsForAgainstStat?.evenStrengthGoalsFor,
-    powerPlayGoalFor: goalsForAgainstStat?.powerPlayGoalFor,
-    shortHandedGoalsFor: goalsForAgainstStat?.shortHandedGoalsFor,
-  });
   const timeOnIceMinutes =
     timeOnIceSeconds !== null && timeOnIceSeconds > 0
       ? timeOnIceSeconds / 60
@@ -231,7 +380,8 @@ export function buildSkoSkaterStatsRow({
     total_secondary_assists: finiteNumberOrNull(
       scoringPerGameStat?.totalSecondaryAssists,
     ),
-    ipp,
+    // Decision 141: never a per-game IPP; pool a multi-game window with `pooledSkoIpp`.
+    ipp: null,
     sog_per_60:
       shots !== null && timeOnIceMinutes
         ? (shots / timeOnIceMinutes) * 60
@@ -735,19 +885,47 @@ async function updateSkaterStats(
   }
 
   const mergedRows: SkoSkaterStatsInsert[] = [];
-  const ippUnavailable: Partial<Record<SkoIppUnavailableReason, number>> = {};
+  const onIceGoalsForResolution: Partial<
+    Record<GoalsForAgainstResolution, number>
+  > = {};
+  const timeOnIceOf = (playerId: number) =>
+    finiteNumberOrNull(
+      timeOnIceStats.find((candidate) => candidate.playerId === playerId)
+        ?.timeOnIce,
+    );
+  const missingReportIds = skaterStats
+    .map((stat) => Number(stat.playerId))
+    .filter(
+      (playerId) =>
+        !goalsForAgainstStats.some((row) => row.playerId === playerId) &&
+        (timeOnIceOf(playerId) ?? 0) > 0,
+    );
+  // A failed shift read leaves those players' on-ice goals unknown (fail closed) rather than
+  // failing the whole date.
+  let shiftCounts = new Map<number, ShiftOnIceGoalCounts | null>();
+  try {
+    shiftCounts = await loadShiftOnIceGoalCounts(
+      supabase,
+      formattedDate,
+      missingReportIds,
+    );
+  } catch (error) {
+    console.warn(
+      `[update-sko-stats] shift-based on-ice goal read failed for ${formattedDate}; leaving ${missingReportIds.length} rows unknown`,
+      normalizeDependencyError(error).message,
+    );
+  }
 
   for (const stat of skaterStats) {
-    const goalsFor = goalsForAgainstStats.find(
-      (candidate) => candidate.playerId === stat.playerId,
-    );
-    const { reason } = resolveSkoIpp({
-      points: stat.points,
-      evenStrengthGoalsFor: goalsFor?.evenStrengthGoalsFor,
-      powerPlayGoalFor: goalsFor?.powerPlayGoalFor,
-      shortHandedGoalsFor: goalsFor?.shortHandedGoalsFor,
+    const { stat: goalsFor, resolution } = resolveGoalsForAgainstStat({
+      reportRow: goalsForAgainstStats.find(
+        (candidate) => candidate.playerId === stat.playerId,
+      ),
+      timeOnIceSeconds: timeOnIceOf(stat.playerId),
+      shiftCounts: shiftCounts.get(Number(stat.playerId)) ?? null,
     });
-    if (reason) ippUnavailable[reason] = (ippUnavailable[reason] ?? 0) + 1;
+    onIceGoalsForResolution[resolution] =
+      (onIceGoalsForResolution[resolution] ?? 0) + 1;
     mergedRows.push(
       buildSkoSkaterStatsRow({
         stat,
@@ -804,8 +982,8 @@ async function updateSkaterStats(
     updated: true,
     upsertedRows: mergedRows.length,
     diagnostics,
-    /** Rows whose IPP is stored null, by reason (no reason column exists in sko_skater_stats). */
-    ippUnavailable,
+    /** How each row's on-ice goals for were resolved (decision 142). */
+    onIceGoalsForResolution,
     skaterStats,
     skatersBio,
     miscSkaterStats,
@@ -1533,7 +1711,9 @@ async function updateSkaterStatsForDateWindow(
   let totalDaysProcessed = 0;
   const dateDiagnostics: ReturnType<typeof buildSkoSourceIngestDiagnostics>[] =
     [];
-  const ippUnavailable: Partial<Record<SkoIppUnavailableReason, number>> = {};
+  const onIceGoalsForResolution: Partial<
+    Record<GoalsForAgainstResolution, number>
+  > = {};
 
   while (true) {
     const formattedDate = format(currentDate, "yyyy-MM-dd");
@@ -1546,10 +1726,11 @@ async function updateSkaterStatsForDateWindow(
     totalUpdates += result.upsertedRows;
     totalDaysProcessed += 1;
     dateDiagnostics.push(result.diagnostics);
-    for (const [reason, count] of Object.entries(result.ippUnavailable) as Array<
-      [SkoIppUnavailableReason, number]
-    >) {
-      ippUnavailable[reason] = (ippUnavailable[reason] ?? 0) + count;
+    for (const [resolution, count] of Object.entries(
+      result.onIceGoalsForResolution,
+    ) as Array<[GoalsForAgainstResolution, number]>) {
+      onIceGoalsForResolution[resolution] =
+        (onIceGoalsForResolution[resolution] ?? 0) + count;
     }
     currentDate = addDays(currentDate, 1);
   }
@@ -1562,7 +1743,7 @@ async function updateSkaterStatsForDateWindow(
     totalDaysProcessed,
     totalUpdates,
     diagnostics: aggregateSkoSourceIngestDiagnostics(dateDiagnostics),
-    ippUnavailable,
+    onIceGoalsForResolution,
   };
 }
 

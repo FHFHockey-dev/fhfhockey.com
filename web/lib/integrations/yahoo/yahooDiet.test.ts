@@ -31,6 +31,20 @@ describe("RSO Yahoo diet flag", () => {
 });
 
 describe("verified Yahoo identity resolver (D8)", () => {
+  it("requires Judd Caulfield's explicit Yahoo crosswalk in both reader paths", () => {
+    const players = [{ id: "7531", nhlId: 8481538 }, { id: "10163", nhlId: 8481540 }];
+    const key = "477.p.31129";
+    // A canonical NHL player alone cannot identify an incoming Yahoo roster row.
+    expect(legacyYahooIdentities([], "477", players).get(key)).toBeUndefined();
+    expect(uniqueVerifiedYahooIdentities([], "477").get(key)).toBeUndefined();
+    expect(legacyYahooIdentities([{ nhl_player_id: 8481538, yahoo_player_id: key }], "477", players).get(key)).toBe("7531");
+    expect(uniqueVerifiedYahooIdentities([{ external_player_id: key, fhfh_player_id: 7531 }], "477").get(key)).toBe("7531");
+    // Do not resolve a conflicting Cole Caufield identity or reuse another season's key.
+    expect(uniqueVerifiedYahooIdentities([
+      { external_player_id: key, fhfh_player_id: 7531 }, { external_player_id: key, fhfh_player_id: 10163 },
+    ], "477").get(key)).toBeUndefined();
+    expect(legacyYahooIdentities([{ nhl_player_id: 8481538, yahoo_player_id: "465.p.31129" }], "477", players).get(key)).toBeUndefined();
+  });
   it("keeps only pairs unique in both directions for this game", () => {
     const map = uniqueVerifiedYahooIdentities([
       { external_player_id: "453.p.1", fhfh_player_id: 11 },

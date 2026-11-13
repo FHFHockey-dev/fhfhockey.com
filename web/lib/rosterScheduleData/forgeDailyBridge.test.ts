@@ -702,7 +702,7 @@ describe("FORGE daily bridge", () => {
     const late = [game("1", "TOR", "2026-10-20T03:00:00Z")].map(row => ({ ...row, date: "2026-10-19" }));
     const s1 = (calendar: AnyForecastCalendarPolicy) => buildForgeDailyBridgeForecasts(inputs(), players, late, now, 20262027, calendar)
       .forecasts.filter(row => row.playerId === "s1").map(row => row.gameId);
-    expect(s1(forecastCalendarPolicy(1))).toEqual([]);
+    expect(s1(forecastCalendarPolicy(1, "forecast-calendar-v1"))).toEqual([]);
     expect(s1(forecastCalendarPolicy(1, "forecast-calendar-v2"))).toEqual(["1"]);
   });
 
@@ -788,6 +788,45 @@ describe("FORGE daily bridge", () => {
     expect(opponentTilts([...allowed("SJS", 2.4), ...allowed("MTL", 0.3), ...allowed("TOR", 0.3)], 20262027).get("SJS|D")!.points).toBe(1.15);
     expect(tilts.get("TOR|D")!.points).toBeCloseTo(1, 3);
     expect(opponentTilts([], 20262027).size).toBe(0);
+  });
+
+  // Decision 136: the tilt only redistributes. At the league's reference mix, D and F factors keep the team total
+  // (share_D × f_D + share_F × f_F = 1), even when a clamp binds (the old mirror leaked to 0.95 here).
+  it("conserves the team total after clamping, for points and shots (decision 136, Astra PR5B)", () => {
+    const allowed = (opponent: string, dPoints: number, dShots: number) => [
+      { season_id: 20262027, opponent, position_group: "F", games: 60, points: (3 - dPoints) * 60, shots: (28 - dShots) * 60 },
+      { season_id: 20262027, opponent, position_group: "D", games: 60, points: dPoints * 60, shots: dShots * 60 }];
+    const rows = [...allowed("SJS", 2.4, 20), ...allowed("MTL", 0.3, 4), ...allowed("TOR", 0.3, 4)];
+    const tilts = opponentTilts(rows, 20262027);
+    const reference = { points: (2.4 / 3 + 0.1 + 0.1) / 3, shots: (20 / 28 + 4 / 28 + 4 / 28) / 3 };
+    for (const team of ["SJS", "MTL", "TOR"]) for (const stat of ["points", "shots"] as const) {
+      const d = tilts.get(`${team}|D`)![stat], f = tilts.get(`${team}|F`)![stat], share = reference[stat];
+      expect(share * d + (1 - share) * f, `${team} ${stat}`).toBeCloseTo(1, 12);
+      for (const factor of [d, f]) { expect(factor).toBeGreaterThanOrEqual(0.85 - 1e-12); expect(factor).toBeLessThanOrEqual(1.15 + 1e-12); }
+    }
+    // The clamp still binds on SJS's defence side.
+    expect(tilts.get("SJS|D")!.points).toBe(1.15);
+    // Row order never changes a factor.
+    expect(opponentTilts([...rows].reverse(), 20262027)).toEqual(tilts);
+  });
+
+  // W1-6 D19 (decision 136): FORGE never applied a positional tilt for the opponent it projected, so a moved line takes
+  // the destination's tilt alone; it is never divided by the source opponent's.
+  it("moves a line by the destination's tilt only, never dividing by one FORGE did not apply", () => {
+    const base = inputs();
+    base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2" ? { ...row, opponent_team_id: 8 } : row);
+    const allowed = (opponent: string, dPoints: number) => [
+      { season_id: 20262027, opponent, position_group: "F", games: 60, points: (3 - dPoints) * 60, shots: 20 * 60 },
+      { season_id: 20262027, opponent, position_group: "D", games: 60, points: dPoints * 60, shots: 8 * 60 }];
+    const positionAllowed = [...allowed("SJS", 1.2), ...allowed("MTL", 0.6), ...allowed("TOR", 0.9)];
+    const sjsForwards = opponentTilts(positionAllowed, 20262027).get("SJS|F")!;
+    const goals = (sourceOpponent: string) => buildForgeDailyBridgeForecasts({ ...base, positionAllowed }, players,
+      games.map(game => game.id === "2" ? { ...game, opponent: "SJS" } : game.id === "1" ? { ...game, opponent: sourceOpponent } : game), now, 20262027, policy)
+      .forecasts.find(row => row.playerId === "s1" && row.gameId === "2")!.stats.GOALS!;
+    // No team-strength priors or schedule here, so only the tilt moves his 0.35 goals.
+    expect(goals("MTL")).toBeCloseTo(0.35 * sjsForwards.points, 4);
+    // A source opponent with no tilt data no longer blocks the destination's tilt.
+    expect(goals("XXX")).toBeCloseTo(0.35 * sjsForwards.points, 4);
   });
 
   it("re-aims a skater line by the opponent's positional tilt", () => {

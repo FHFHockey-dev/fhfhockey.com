@@ -18,7 +18,9 @@ describe("consumer revision calendar horizon (decision 127)", () => {
   };
 
   it("measures the horizon on the policy's date basis, using the schedule's own date under v2", () => {
-    expect(exclusionsUnder(forecastCalendarPolicy(14)).outside_horizon).toBeUndefined();
+    expect(exclusionsUnder(forecastCalendarPolicy(14, "forecast-calendar-v1")).outside_horizon).toBeUndefined();
+    // The default is v2 since decision 127's flip.
+    expect(exclusionsUnder(undefined).outside_horizon).toBe(1);
     expect(exclusionsUnder(forecastCalendarPolicy(14, "forecast-calendar-v2")).outside_horizon).toBe(1);
     // The schedule date wins over the start instant: listed for Nov 25, the same start is lead 13 under v2.
     const exclusions: Record<string, number> = {};

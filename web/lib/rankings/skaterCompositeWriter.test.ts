@@ -486,6 +486,43 @@ describe("composite source and publication integrity", () => {
     expect(result.publication.blockers.join()).toContain("does not match the complete raw population");
   });
 
+  it("accepts tied mid-rank percentiles and rejects the old exclusive ones (decision 90)", async () => {
+    // Players 1 and 2 tie on hits: mid-rank gives both (0 + 1/2) ... = 75.
+    const tied = completeSurfaces();
+    const hits = tied.get("hits_per_60")!.rankings;
+    hits[0].metric.value = 2; hits[0].metric.percentile = 75;
+    hits[1].metric.value = 2; hits[1].metric.percentile = 75;
+    hits[2].metric.value = 1; hits[2].metric.percentile = 0;
+    surfacesMock.mockResolvedValue(tied);
+    const accepted = await buildSkaterCompositeRatingRows(request);
+    expect(accepted.publication.blockers.join()).not.toContain("does not match the complete raw population");
+    expect(accepted.publication.ready).toBe(true);
+
+    // The exclusive convention (50, 50, 0) no longer matches the population.
+    hits[0].metric.percentile = 50;
+    hits[1].metric.percentile = 50;
+    surfacesMock.mockResolvedValue(tied);
+    const rejected = await buildSkaterCompositeRatingRows(request);
+    expect(rejected.publication.blockers.join()).toContain("hits_per_60: percentile or peer count does not match");
+  });
+
+  it("expects 50 for a sole qualified peer (decision 90)", async () => {
+    const single = (percentile: number) => {
+      const surfaces = completeSurfaces();
+      const hits = surfaces.get("hits_per_60")!;
+      hits.rankings = hits.rankings.map((row, index) => index === 0
+        ? { ...row, metric: { ...row.metric, percentile, qualifiedPeerCount: 1 } }
+        : { ...row, sample: { ...row.sample, minimumSampleMet: false }, metric: { ...row.metric, rawRank: null, percentile: null, qualifiedPeerCount: 1 } });
+      return surfaces;
+    };
+    surfacesMock.mockResolvedValue(single(50));
+    const midRank = await buildSkaterCompositeRatingRows(request);
+    expect(midRank.publication.blockers.join()).not.toContain("hits_per_60: percentile or peer count");
+    surfacesMock.mockResolvedValue(single(100));
+    const exclusive = await buildSkaterCompositeRatingRows(request);
+    expect(exclusive.publication.blockers.join()).toContain("hits_per_60: percentile or peer count does not match");
+  });
+
   it("reproduces published six-component sample arithmetic independently checked by the audit", () => {
     const beast = { sog_per_60: 95.890, hits_per_60: 94.110, blocks_per_60: 86.712, goals_per_60: 84.658, primary_assists_per_60: 86.849, points_per_60: 85.890, pp_points_per_60: null };
     const other = { sog_per_60: 70.959, hits_per_60: 10.685, blocks_per_60: 6.575, goals_per_60: 92.055, primary_assists_per_60: 52.740, points_per_60: 92.466, pp_points_per_60: null };

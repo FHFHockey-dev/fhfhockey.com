@@ -1,0 +1,136 @@
+# Fix-sprint production queue after release (Chef; each step needs its own TJ pop-up with a verified plan)
+
+Release: PR #430 squash = master `631a00c19`. fhfhockey `dpl_137qFEpUhovkj9Q6NaPbD4jAHNzP` is READY. Smoke 5 of 5 GETs returned 200. octoberBranch synced as `c577225e2`.
+
+## Done
+| # | Step | Receipt |
+|---|---|---|
+| 0a | Migrations 125–136, 138–140 | authority rows, commits `d08318dce`, `7c3116717`, `82f643878`, `74c85b556` |
+| 0b | Goalie summary rebuild 2026-27 (decision 111) | `GOALIE-REBUILD-2026-27-PLAN.md`; 298/298 games at rev 2 |
+| 0c | Migration 141 (goalie_totals_unified, regular season only) | `1aa886c92` |
+
+## Remaining, in dependency order
+| # | Step | Lane / note | Depends on | Status |
+|---|---|---|---|---|
+| 1 | Strength v2 re-normalization, 2026-27 regular season (298 games) | L1 | release | **DONE 2026-11-12 19:35Z: 298/298 v2 complete.** Windowed run, then incident, then slow single-game phases A–E; 11 OT games recovered from official HTML (`GAME-2026020159-RECOVERY-PLAN.md`). Changed heads: `HEADS-CHANGED-2026-11-12.tsv`. |
+| 2 | Summary refresh for the re-normalized games | L1, L2, L2-landing | 1 | **DONE 2026-11-12 20:03–20:28Z** (serial step 4): team 41,720 rows in 7 windows (0 stale); player 43,764 partition rows in 44 dates; goalie 14,094 partitions, 298/298 at rev 2. Handoff 3 posted to Codex. |
+| 3 | xG: v2 shot features for 2026-27; cfg9bac2706 demotion with per-consumer handling (decision 5); aggregate rebuilds; v2 model build, with training and approval separate | L14 `L14-cfg9bac2706-demotion-plan.md`, decision 99 | 1 | to prepare |
+| 4 | forge_team_game_strength rebuild (classifier change) | L9a | 1 | to prepare |
+| 5 | Rolling rebuild, after reconciling held rolling/FORGE writes; player-trend v3 rebuild | L6 `L6-production-steps.md` | 1, 3 | to prepare |
+| 6 | Trend-band history rebuild (decision 36) | L7 handover | 5 | to prepare |
+| 7 | Power ratings v3 recompute; CTPI v2; SOS v2 | L12 | 1 | to prepare |
+| 8 | Rankings and composite regeneration (dryRun unless a publish is approved); team_unit_toi rebuild | L5 handover | 5, 7 | to prepare |
+| 9 | WiGO rebuild | L4b handover | 5 | to prepare |
+| 10 | FORGE run with the new L9a/L9b/L9c writers (Codex's H1 run request; Start Chart labels being applied by Codex) | L9a/b/c, Codex | 4, 5, Codex Start Chart labels | Codex coordinates; TJ approval |
+| 11 | Reserve projections migration (authority 101, decision 52), then FORGE_RESERVE_PASS_ENABLED | L9a | 10 | to prepare |
+| 12 | Index migrations 123/124: confirm whether still needed | pre-sprint queue | — | to check |
+| 13 | Pause the update-predictions-sko cron (decision 129); gate get-predictions-sko if TJ chooses | L20 | — | **DONE 2026-11-12 23:50Z** (TJ "send it"): `cron.alter_job(327, active := false)`; readback: job 327 `update-predictions-sko`, 45 10 * * *, active false; the only matching job. Undo: the same call with active := true. |
+| 14 | Log checks for legacy routes (decisions 79, 124) | L19, L20 | — | to prepare |
+| 15 | goalie_totals_unified_snapshot refresh | L4a | 0c | **DONE 2026-11-12 23:50Z** (TJ "send it"): plain REFRESH in 6.2 s; 402 rows / 3 seasons (materialized 2025-09-29) → 476 rows / 5 seasons; sample 2025-26 goalies match the live view (GP 58/64/56, 5v5 GAA 2.186/2.353/2.700). No app readers. |
+| 16 | LEDGER_BASIS_SCHEMA_ENABLED flip (code constant: a commit plus a production release) | L10 | 0a (138) | batch with the next release |
+| 16b | Decision-127 default flip: `DEFAULT_FORECAST_CALENDAR_VERSION` in `web/lib/player-forecasts/contributions.ts:14` is still `forecast-calendar-v1`. L11's call sites accept v1 and v2 (`49c9b3501`), and L10 left the default at v1 for a joint flip that never landed. The flip is a one-line code change plus its test pins and a release. `contributions.ts` was released to Scout on 2026-11-12, so re-claim it through the mailbox or ask Scout. | L10, L11 | release | batch with 16 |
+| 17 | Comprehensive FIX-SPRINT-DEBRIEF.md and ASTRA-SPRINT-AUDIT-PROMPT.md | Chef | — | after production steps, or in parallel |
+
+## Step 1 + 2 verified plan: strength v2 re-normalization, 2026-27 regular season
+Read-only checks, 2026-11-12 ~15:15Z:
+- **Inventory:** 298 regular-season games over 44 dates (2026-09-29 to 2026-11-11), all type 2. All 298 have normalization status `complete` at `strength_version 1` (all PBP events are v1). The deployed code writes `STRENGTH_VERSION 2` (new parser fingerprint), so tonight's games will be v2 and the season will be mixed until this runs.
+- **No scheduled re-normalizer:** no pg_cron, Vercel or GitHub job calls `update-nhl-play-by-play`, `update-nhl-shift-charts` or `sweep-gamecenter-normalization`. Cron 381 (09:35Z) ingests only yesterday's games, so it doesn't overlap this range.
+- **Route:** `GET /api/v1/db/update-nhl-play-by-play?seasonId=20262027&startDate=D1&endDate=D2&limit=25`, date-range mode. The route rejects any range over 25 games. Per game, sequentially, it makes 4 NHL API GETs (play-by-play, boxscore, landing, shiftcharts; HTML shift report only as a fallback). It then runs one normalization RPC, which replaces that game's events and shifts at v2. It does no summary refresh and makes no NST or Yahoo calls. NHL GETs total about 1,200.
+- **Load:** windows are built from the per-date inventory so each holds 25 games or fewer. The first window is the smallest date (3 games), to measure seconds per game. Windows are then sized so projected time stays at 150 s or less (`maxDuration` is 240 s). Calls run sequentially, 10 s apart, with the DB guard before each (5 or fewer active, none over 10 s).
+- **Stop on:** any non-200, `NHL_RAW_INGEST_PARTIAL_FAILURE`, `succeededGameIds` shorter than `gameIds`, or a call over 200 s.
+- **Reconciliation after each call (read-only):** for the window's games, normalization status is `complete` with the new parser fingerprint and `strength_version = 2`, and event and shift row counts are observed = expected. A partial failure reruns once by `gameId`, then stops.
+- **Step 2:** `GET /api/v1/db/sweep-gamecenter-normalization?lookbackDays=44&limit=50`. The route has no start or end date: its window runs from today in ET minus `lookbackDays` up to today, and 44 days reaches back to 2026-09-29, so it leaves out the 2026-09-19..26 preseason. It's DB-only and refreshes team and player summaries for games normalized after their summaries were built. Sequential, repeated until nothing is selected. Then rerun the approved goalie partition script (44 calls, about 3 min).
+- **Final receipts:** `nhl_api_pbp_events` for the 298 games are all v2; summary markers are fresh; goalie partitions are rev 2. No smoke GETs; the budget is spent.
+
+## Incident 2026-11-12 (step 1 run)
+- **15:35:50–15:45:54Z:** 9 sequential windows. Seconds per game rose from about 2.6 to more than 6.6, and the 9th window (2026-10-20..21, 13 games) got no reply within 230 s. The cause looks like write and I/O saturation: a checkpoint took 270 s to write at 15:42Z.
+- **Impact, about 15:44–15:50Z:** Supabase REST returned 522 and 5xx errors to the site, and the pooler couldn't check out connections (`ECHECKOUTTIMEOUT`). The script stopped itself on the timeout and sent nothing more.
+- **Recovered 15:50:30Z** without intervention: 0 active queries.
+- **State:** 146 of 298 games are at v2, each complete with matching row counts. That includes 6 games from the interrupted window, written as whole games. The other 152 games remain at v1, and no game is half-written. The sweep and goalie refresh did not run.
+- **Lesson:** a guard that only counts active queries can't see I/O pressure, and 10 s between 20-game windows was too fast. Any resume uses single-game calls, long gaps, a per-call latency stop, a quiet hour, and TJ's approval.
+
+## Step 2 (serial-order step 4) verified plan: summaries for the 298 re-normalized games
+I'm not using the sweep route, because it re-warms the season landing cache on every call. These three summary-only routes, run in order, write no raw data, make no provider calls and delete nothing:
+
+**A. Team summaries:** `POST /api/v1/db/rebuild-team-underlying-summaries?seasonId=20262027&gameType=2&startDate=&endDate=`
+- The route allows at most 14 days and 120 games per call; it defaults to dryRun.
+- Windows of 7 days (about 45 games) or fewer.
+- First, one `dryRun=true` call on the first window, to time it and see `rowsGenerated` and `staleKeyCount`. Then real calls window by window (`dryRun=false`).
+- Stale keys are reported, not deleted.
+
+**B. Player summaries:** `GET /api/v1/db/update-player-underlying-summaries?seasonId=20262027&gameType=2&startDate=D&endDate=D`
+- Date-range mode builds from the stored v2 events and shifts.
+- 44 date calls; no cache warming until the final call (`warmLandingCache=true`).
+
+**C. Goalie partitions:** the approved 44-date goalie script again (it took about 3 min last time).
+
+**Guards for every call:**
+- DB preflight first: probe under 1 s, no query over 5 s, no I/O or lock waits.
+- 10 s between calls.
+- Stop on a non-200, `success:false`, 0 rows for a window that has games, any call over 150 s, or pressure that doesn't clear.
+- The first call of A and of B is the smallest window, to time it.
+
+**Readback:**
+- Team: rows per window as expected; stale keys listed.
+- Player: partition `formulaRevision` is 2 for all 298 games.
+- Goalie: 298/298 at rev 2.
+- Smoke: none (budget spent). If wanted, one GET each on the player and team landing APIs, with your OK.
+
+**Handoff:** when C ends, post Claude DB handoff 3 for the DRM repair (step 5).
+
+## TJ approvals, 2026-11-13 ~00:00Z (pop-ups)
+- **H1 game 2026020307:** let it pass. Codex plans properly for a later game: compute on with a canary for that game, a clean-export deploy, and the full HTTP footprint. Codex owns H1.
+- **Next Claude production work:** FORGE inputs first (forge_team_game_strength, rolling, player-trend v3), each as its own verified plan and pop-up.
+- **Flag release:** prepare a small release for `LEDGER_BASIS_SCHEMA_ENABLED` and the decision-127 default. Re-claim the files from Scout through the mailbox; gate; push and merge by pop-up.
+- **Index migrations 123/124:** check need read-only, then a CONCURRENTLY plan if still needed.
+- **Approved read-only work:**
+  - Decisions 79/124 legacy-route log check (Vercel runtime logs, 7 days).
+  - PP clock qualification reads (L8).
+  - The 42 IPP rows (L20 D5).
+  - WiGO PP/PK floor split-half validation (L4b).
+  - BEAST v3 cut-off analysis (decision 139).
+- **Approved write:** 2025-26 goalie partition rebuild, summary-only, paced (about 190 dates, 1,417 games).
+- **Debrief:** finalize now, with remaining steps marked pending; write the Astra prompt.
+- **Decisions 135–138:** implementation needs lanes and re-claimed files; production steps are separate approvals.
+
+## Log check (decisions 79/124), 2026-11-13 ~00:05Z: inconclusive with available tools
+- Vercel runtime logs on this plan (Pro) go back **1 day**, and they contain only console output, not every request.
+- Last 23 h, production: no logged activity on `/api/Averages/[playerId]`, `/api/ThreeYearAverages/[playerId]`, `/api/v1/ml/get-predictions-sko` or `/api/v1/forge/scoreboard`. Only our own cron routes `update-wgo-averages` and `update-predictions-sko` matched.
+- Request-level counts need **Vercel Observability Plus** (API returned 402 payment_required) or the Vercel CLI request logs (not installed here).
+- **Not proof of zero external use.** Options for TJ: check the Vercel dashboard request logs by path, install and authenticate the Vercel CLI, or enable Observability Plus.
+
+## Read-only results, 2026-11-13 (agent, verified by Chef where noted)
+**BEAST (decision 139):**
+- Cut-offs are `BEAST_TIER_GATES` (`skaterCompositeMethodology.ts:114`), carried over from v2.
+- The stored snapshot is `contextual_composites_v1` (2026-11-07, written 11-09) and predates v3.
+- v3 simulation on 5v5, all skaters: switching to mid-rank moves only one player's tier (2 / 30 / 49 / 67 for BEAST+ / BEAST / MCM / Watch).
+- **Proposal:** keep the same numbers, recorded as the v3 gates. Re-check the default all-strengths view after regeneration.
+
+**Composite regeneration blocker (Chef-verified):** `skaterCompositeWriter.ts:202-224` checks percentiles with the exclusive formula `100·worse/(n−1)`, while the rankings emit mid-rank (decision 90). Ties fail, and the writer refuses non-dry-run writes. No cron runs the writer. Ticket sent to L5.
+
+**Indexes 123/124 are still needed:**
+- Neither exists. `pg_stat_statements` over about 8 h:
+  - the player-page coverage query: 267 calls, mean 313 ms, max 2.5 s against a 3 s timeout;
+  - `line_source_snapshots` newest-500: mean 3.5 s, max 6.8 s against an 8 s timeout;
+  - `lines_ccc`: mean 1.1 s.
+- 124 (12 MB and 5 MB tables) is trivial.
+- 123 (`wgo_skater_stats`, 2.2 GB): must use `CREATE INDEX CONCURRENTLY`, about 3–10 min, outside a transaction. The migration file's plain `create index` would lock WGO writes. Run it after the 2025-26 goalie rebuild, off-peak.
+- Optionally add a partial `where team_abbrev is not null`, and drop one of two identical date indexes (separate approval).
+
+## PP clock qualification check, 2026-11-13 (read-only, agent; flag state Chef-verified)
+- `PP_CLOCK_QUALIFIED = true` is already on master `4243bcd4e`, via Codex DRM `866b90bc4` / `24b1cb4d3`. No consumer serves PP share yet.
+- **Match rate:** the simulated clock matches official `powerPlayToi` on 238 of 240 sampled team-games exactly. The 2 mismatches look like official-field errors.
+- **Audit false positives:** the per-game audit wrongly unqualifies 7.5% of team-games, all events at manpower-change seconds. A fix was proposed to Codex.
+- **Open:** a disagreement policy (TJ decides, Codex to propose); a full-season run; the storage table and consumer wiring. Mailbox `CLAUDE-PP-CLOCK-QUALIFICATION-EVIDENCE-20261113`.
+
+## IPP rows and WiGO floor (read-only, agent, 2026-11-13; 36 bounded queries)
+**L20 W3-7 D5, 43 rows in 2026-27 (points above on-ice GF):**
+- **31 rows:** the excess points are assists on goals where shift charts have the player **off the ice**, 1–11 s from a shift boundary, so he changed off after the pass. Stored GF equals the shift-chart on-ice count exactly. This is a property of shift-based on-ice counts, not a writer bug. There's no evidence of extra-attacker or empty-net omission: the 4 empty-net goals with the player on ice are all counted.
+- **12 rows:** null GF, because the NHL goalsForAgainst report has no row when the player was on ice for no goals. One exception is unexplained (8480834, game 2026020104).
+- **Recommendation:** rename the guard reason to "points include goals while off ice"; compute IPP only over pooled windows; owner decision on whether a missing report row means 0/0/0.
+- Earlier seasons have about 1,400 such rows each, not examined.
+
+**L4b W3-1 D3, WiGO floors** (2025-26 split-half reliability, threshold ≥ .5 full-season):
+- **PP:** 60 min. Forwards .55, defence .63; 30 min gives only .37–.47.
+- **PK:** about 120 min (.52/.55), and still weak, so label it low reliability.
+- These replace the provisional 30 min, and need owner approval.
