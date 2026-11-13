@@ -1,0 +1,94 @@
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=4 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=1 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+hygiene active=0 longest_active_s=0
+write batch 1/31: games 2026020001..2026020010 4.19 s, readback matches the dry run
+write batch 2/31: games 2026020011..2026020020 3.39 s, readback matches the dry run
+write batch 3/31: games 2026020021..2026020030 2.5 s, readback matches the dry run
+write batch 4/31: games 2026020031..2026020040 3.04 s, readback matches the dry run
+write batch 5/31: games 2026020041..2026020050 5.47 s, readback matches the dry run
+write batch 6/31: games 2026020051..2026020060 3.25 s, readback matches the dry run
+write batch 7/31: games 2026020061..2026020070 3.11 s, readback matches the dry run
+write batch 8/31: games 2026020071..2026020080 2.92 s, readback matches the dry run
+write batch 9/31: games 2026020081..2026020090 2.97 s, readback matches the dry run
+write batch 10/31: games 2026020091..2026020100 3.75 s, readback matches the dry run
+write batch 11/31: games 2026020101..2026020110 3.88 s, readback matches the dry run
+write batch 12/31: games 2026020111..2026020120 4.87 s, readback matches the dry run
+write batch 13/31: games 2026020121..2026020130 3.08 s, readback matches the dry run
+write batch 14/31: games 2026020131..2026020140 4.6 s, readback matches the dry run
+write batch 15/31: games 2026020141..2026020150 3.21 s, readback matches the dry run
+write batch 16/31: games 2026020151..2026020160 3.15 s, readback matches the dry run
+write batch 17/31: games 2026020161..2026020170 2.87 s, readback matches the dry run
+write batch 18/31: games 2026020171..2026020180 2.33 s, readback matches the dry run
+write batch 19/31: games 2026020181..2026020190 2.49 s, readback matches the dry run
+write batch 20/31: games 2026020191..2026020200 3.1 s, readback matches the dry run
+write batch 21/31: games 2026020201..2026020210 2.5 s, readback matches the dry run
+write batch 22/31: games 2026020211..2026020220 2.6 s, readback matches the dry run
+write batch 23/31: games 2026020221..2026020230 2.48 s, readback matches the dry run
+write batch 24/31: games 2026020231..2026020240 2.99 s, readback matches the dry run
+write batch 25/31: games 2026020241..2026020250 2.87 s, readback matches the dry run
+write batch 26/31: games 2026020251..2026020260 2.44 s, readback matches the dry run
+write batch 27/31: games 2026020261..2026020270 2.32 s, readback matches the dry run
+write batch 28/31: games 2026020271..2026020280 2.42 s, readback matches the dry run
+write batch 29/31: games 2026020281..2026020290 2.73 s, readback matches the dry run
+write batch 30/31: games 2026020291..2026020300 2.37 s, readback matches the dry run
+write batch 31/31: games 2026020301..2026020309 2.5 s, readback matches the dry run
+done: batches 1..31 written and read back

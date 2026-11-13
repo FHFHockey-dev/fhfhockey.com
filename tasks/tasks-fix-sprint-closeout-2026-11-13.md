@@ -68,7 +68,7 @@
 - [ ] 5.0 Records and housekeeping (Chef)
   - [ ] 5.1 Push the local record commits only with the next release, never alone.
   - [ ] 5.2 Update the debrief with #439–#441, migrations 147 and 149, the decision 152 refresh, and the results of 3.0 and 4.0.
-  - [ ] 5.3 Ask TJ whether to have Astra recheck #439–#441, migrations 147/149 and the refresh. If yes, write the prompt pinned to a commit.
+  - [x] 5.3 Ask TJ whether to have Astra recheck #439–#441, migrations 147/149 and the refresh. If yes, write the prompt pinned to a commit. *(TJ: yes, ~22:20Z. Prompt `master/ASTRA-RECHECK-439-442-PROMPT.md`.)*
   - [ ] 5.4 Retire the Chef diary once 3.0 and 4.0 are recorded; keep it while any check is pending.
 - [x] 6.0 NEW: flag-off client parity gap (found in F11 `05c43f981`)
   - [x] 6.1 *(Accepted: serving went on directly after #442, so no flag-off period exists. Reopen only if serving is ever turned off.)* With `PP_SHARE_SERVING_ENABLED` off, the client readers (PowerPlayCombos, LinemateMatrix, the shift chart) still make one cached request to `/api/v1/pp-share/team-game-clock` (a function invocation, ≤5 min cache). LinemateMatrix and the shift chart PP mode briefly show "Checking the stored power-play clock...". That isn't strictly today's behaviour. It matters only while serving is off: resolve it, or record it as accepted, before any future flag-off period. Serving is approved to follow the reader release directly.
