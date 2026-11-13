@@ -320,3 +320,15 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - No other game is split.
   - Log (on disk, gitignored): `production/penalty-shot-rebuild-2026-11-13/rebuild-2026-11-13T1746Z.log`.
   - **AF-07 stays open** until the separately approved landing summary refresh runs and the landing is verified (TJ).
+- **Landing summary refresh, canary game 2026020065 only** (TJ approved this one game; the other seven and any team-summary writes are not approved):
+  - Dry run DRY_RUN_OK (Chef re-run 17:57Z, runner `6f381c802`).
+  - `--execute --max-games 1` at 17:59:39–18:00:13Z: the player route rewrote 135/135 current partitions, plus the goalie route. The runner's key-by-key readback passed for both:
+    - every current partition rewritten;
+    - only the shooter's and goalie's allStrengths/allScores counts moved by the penalty shot;
+    - all strength buckets, onIce and unrelated values unchanged;
+    - game 065 has 0 orphans.
+  - Served readback, Chef, `/api/v1/underlying-stats/players` and `/goalies`, 2026-27 regular season, date 2026-10-08:
+    - Eichel (8478403), all strengths: GP 1, 1 G, 6 S, iCf 8, iFf 6 (was 0 G / 5 S / iCf 7 / iFf 5). No double count.
+    - Eichel even strength: 0 G, 5 S, unchanged; the penalty shot isn't in ES.
+    - Bobrovsky (8475683, team 10): GP 1, SA 43, SV 40, GA 3, which equals the official boxscore (43 SOG / 3 goals).
+  - Remaining: 2026020094, 101, 119, 131, 150, 159, 203, which wait for TJ.
