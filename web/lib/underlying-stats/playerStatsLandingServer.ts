@@ -4787,7 +4787,7 @@ function buildDetailApiResultFromAggregationRows(args: {
 
 export { buildDetailApiResultFromAggregationRows };
 
-function buildLandingChartApiResultFromSummaryRows(args: {
+export function buildLandingChartApiResultFromSummaryRows(args: {
   playerId: number;
   splitTeamId: number | null;
   state: PlayerStatsLandingFilterState;
@@ -4830,10 +4830,17 @@ function buildLandingChartApiResultFromSummaryRows(args: {
       { date: right.gameDate, id: right.gameId }
     )
   );
+  // The minimum TOI is a player-eligibility filter on the window's total. A
+  // one-game point is not compared with it: a season minimum (say 100 min) is
+  // larger than any single game's TOI and would empty the chart (W2-3 D13).
+  const chartPointState: PlayerStatsLandingFilterState = {
+    ...args.state,
+    expandable: { ...args.state.expandable, minimumToiSeconds: null },
+  };
   const chartRows = chronologicallySortedRows
     .map((row) => {
       const baseRow = createLandingRowFromSummaryRows({
-        state: args.state,
+        state: chartPointState,
         games: args.games,
         rows: [row],
         metrics: row.metrics,

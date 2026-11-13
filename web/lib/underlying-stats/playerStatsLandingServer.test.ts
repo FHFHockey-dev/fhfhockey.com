@@ -8,6 +8,7 @@ import {
   buildDetailApiResultFromAggregationRows,
   buildPlayerStatsSummaryPartitionSourceUrl,
   buildLandingApiResultFromAggregationRows,
+  buildLandingChartApiResultFromSummaryRows,
   buildPlayerStatsDetailAggregationFromSummaryRows,
   buildPlayerStatsLandingAggregation,
   buildPlayerStatsLandingAggregationFromSummaryRows,
@@ -2004,6 +2005,36 @@ describe("buildPlayerStatsLandingAggregationFromSummaryRows", () => {
       toiSeconds: 1100,
       gamesPlayed: 2,
     });
+  });
+
+  it("keeps one-game chart points that are each below the season minimum TOI (W2-3 D13)", () => {
+    const games: PlayerStatsSourceGameRow[] = [
+      { id: 401, seasonId: 20252026, date: "2025-10-10", startTime: "2025-10-10T23:00:00.000Z",
+        homeTeamId: 6, awayTeamId: 14, type: 2, created_at: "2025-10-10T00:00:00.000Z" },
+      { id: 402, seasonId: 20252026, date: "2025-10-12", startTime: "2025-10-12T23:00:00.000Z",
+        homeTeamId: 6, awayTeamId: 14, type: 2, created_at: "2025-10-12T00:00:00.000Z" },
+    ];
+    const state = createDefaultLandingFilterState({ currentSeasonId: 20252026 });
+    state.primary.statMode = "individual";
+    state.primary.displayMode = "counts";
+    state.primary.strength = "fiveOnFive";
+    // The player qualifies on the season total (1,200 s) but no single game reaches 1,000 s.
+    state.expandable.minimumToiSeconds = 1000;
+    const row = (gameId: number, gameDate: string) => createSummaryRow({
+      playerId: 9001, playerName: "Eligible Skater", positionCode: "C", gameId,
+      seasonId: 20252026, gameDate, teamId: 6, teamAbbrev: "BOS", opponentTeamId: 14, toiSeconds: 600,
+    });
+
+    const chart = buildLandingChartApiResultFromSummaryRows({
+      playerId: 9001,
+      splitTeamId: null,
+      state,
+      games,
+      rows: [row(401, "2025-10-10"), row(402, "2025-10-12")] as any,
+    });
+
+    expect(chart.rows.map((point) => point.gameId)).toEqual([401, 402]);
+    expect(state.expandable.minimumToiSeconds).toBe(1000);
   });
 
   it("returns null rate metrics when the relevant denominator is zero", () => {
