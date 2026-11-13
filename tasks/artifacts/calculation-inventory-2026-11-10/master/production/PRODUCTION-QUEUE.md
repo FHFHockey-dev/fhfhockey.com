@@ -351,6 +351,10 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - **Strict served landing re-verification, all 8 games** (Astra addendum 3, A3-01; TJ "Run the 24 GETs"), 18:45:30–18:46:00Z: **ALL_OK**, exit 0.
   - Script `production/penalty-shot-rebuild-2026-11-13/verify-landing-strict.py`. Expectations come only from retained files: the stored partitions in `run/summary-after-<game>.jsonl` must equal the first pre-refresh baseline in `run/summary-run.jsonl` before any request.
   - ES is asserted against the stored ES row, which equals the pre-refresh row for the 7 non-canary games; the canary's before file was overwritten (A3-02).
+  - **Canary 2026020065 citation:** the pre-refresh reference is the original run log, not the overwritten `summary-before-2026020065.jsonl`. That log is `run/summary-run.jsonl` (gitignored, kept on disk; 59 lines, sha256 `4003ac05…6bd1`), line 2, baseline at 17:54:22Z:
+    - Eichel, all strengths: 0 G / 5 S / iCf 7 / iFf 5, expected 1 / 6 / 8 / 6;
+    - Bobrovsky: SA 42 / SV 40 / GA 2, expected 43 / 40 / 3.
+    - The log records no ES row, so the canary's ES (0 G / 5 S) rests on the stored after row and the canary readback above.
   - Every field must be present and equal; GP is 1 for the shooter all/ES rows and the goalie; each player appears exactly once.
   - Offline self-test first: exact rows pass; Astra's false-pass case (ES 999, goalie SA/SV/GA missing, GP 999) fails for all 8 games; duplicate row, missing row and non-200 fail.
   - 24 sequential GETs, 1 s apart, all 200 and `x-vercel-cache: MISS`. Raw responses and `result.json` are in `landing-verify-20261113T184529Z/`.
