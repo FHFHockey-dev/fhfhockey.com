@@ -80,8 +80,10 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 
 - Follow-up: a complete, successful dry run writes nothing (skipAuditWhenNoOp with isSuccessfulDryRunBody on both routes, as F9/F15); failed dry runs and writes keep their audit row. Tests use the real audit wrapper with an insert spy (batch 21, writer 18).
 
+- Write gate (TJ): PP_STORED_CALCULATION_WRITES_ENABLED (only "true" = on). Off: write calls (cron 388 included) read and write nothing and answer success/skipped/pp_stored_calculation_writes_disabled, audited as skipped; dry runs work either way; the writer function refuses a direct write call before any read. Tradeoff noted in REPORT §12: no new powerPlayCombinations rows until TJ sets the flag. Tests: batch 29, writer 21.
+
 ## Next
-Chef routes the dry run (target choice: release vs local dev) to TJ. No production step from this lane. Chef routes remaining owner and code items. No production step from this lane.
+Ticket 2 (the local dry run) from the Chef. No production step from this lane. Chef routes remaining owner and code items. No production step from this lane.
 
 ## Blockers
 None.

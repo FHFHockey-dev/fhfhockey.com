@@ -27,6 +27,24 @@ import {
  * "not applicable", never 0%.
  */
 export const PP_COMBINATIONS_CALCULATION_VERSION = "pp-shifts-qualified-clock-v1";
+/**
+ * Writes stay off until TJ approves them (decision 152): unless PP_STORED_CALCULATION_WRITES_ENABLED is exactly
+ * "true", a non-dry-run call writes nothing and answers as an intentional skip (decision 42: audited as skipped,
+ * not a failure). Dry runs work either way. Until the flag is set, new games get no powerPlayCombinations rows.
+ */
+export const PP_STORED_WRITES_DISABLED_REASON = "pp_stored_calculation_writes_disabled";
+export function ppStoredCalculationWritesEnabled(): boolean {
+  return process.env.PP_STORED_CALCULATION_WRITES_ENABLED === "true";
+}
+export function storedWritesDisabledBody(extra: Record<string, unknown> = {}) {
+  return {
+    success: true,
+    skipped: true,
+    reason: PP_STORED_WRITES_DISABLED_REASON,
+    message: 'Power-play stored-calculation writes are off (PP_STORED_CALCULATION_WRITES_ENABLED is not "true"); nothing was written.',
+    ...extra
+  };
+}
 // A team on the power play has at least four skaters on the ice, so far fewer than that means its shifts are incomplete.
 const MIN_SKATERS_PER_PP_SECOND = 3;
 const SHIFT_TYPE_CODE = 517;
@@ -395,6 +413,10 @@ export async function updatePowerPlayCombinations(
   supabase: SupabaseType,
   options: { dryRun?: boolean } = {}
 ): Promise<PowerPlayCombinationUpdateSummary> {
+  if (options.dryRun !== true && !ppStoredCalculationWritesEnabled()) {
+    // The routes answer with a skip before calling this; a direct caller is refused before any read.
+    throw new Error(`Writes are off (${PP_STORED_WRITES_DISABLED_REASON}); run with dryRun or set PP_STORED_CALCULATION_WRITES_ENABLED=true.`);
+  }
   const inputs = await readStoredGameInputs(gameId, supabase);
   const { clockRows, playerRows } = buildPowerPlayGameSet(inputs);
   const stored = await readAllRows<StoredPowerPlayRow>("powerPlayCombinations", (from, to) =>
@@ -474,6 +496,9 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
     });
   }
   const dryRun = req.query.dryRun === "true" || req.query.dryRun === "1";
+  if (!dryRun && !ppStoredCalculationWritesEnabled()) {
+    return res.json(storedWritesDisabledBody({ gameId }));
+  }
 
   try {
     const summary = await updatePowerPlayCombinations(gameId, supabase, { dryRun });

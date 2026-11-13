@@ -6,6 +6,8 @@ import { SupabaseType } from "lib/supabase/client";
 
 import {
   isSuccessfulDryRunBody,
+  ppStoredCalculationWritesEnabled,
+  storedWritesDisabledBody,
   updatePowerPlayCombinations,
   type PowerPlayCombinationUpdateSummary
 } from "./[gameId]";
@@ -133,6 +135,15 @@ export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) 
       success: false,
       message: `concurrency must be a whole number from 1 to ${MAX_CONCURRENT_GAMES}.`
     });
+  }
+  // Writes stay off until TJ sets the flag: a write call (nightly cron 388 included) reads and writes nothing.
+  if (!dryRun && !ppStoredCalculationWritesEnabled()) {
+    return res.json(storedWritesDisabledBody({
+      gameIds: [],
+      processed: 0,
+      failed: 0,
+      requestedScope: gameIds.length > 0 ? { gameIds } : { startDate: startDate!, endDate: endDate! }
+    }));
   }
 
   try {

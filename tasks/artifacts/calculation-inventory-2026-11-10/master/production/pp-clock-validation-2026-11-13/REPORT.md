@@ -464,7 +464,18 @@ TJ approved building the section 11.3 recommendation offline for review. **PP sh
 
 Both clock rows are available: home 22 at 297 s (skater-seconds 1,485) and away 12 at 126 s (630).
 
-**Release order, for separate approval:** apply the migration (TJ's pop-up), then release the writer, then run the bounded refresh from section 11.3 (dry run first). Readers stay withheld until the served values are verified. Reader changes are named in section 11.3 and are not part of this build.
+**Write gate (TJ, 11-13):**
+- Writes stay off until TJ approves them. Both routes and the writer function check `PP_STORED_CALCULATION_WRITES_ENABLED`; anything but `"true"` (unset by default) is off.
+- **Off:**
+  - a non-dry-run call reads and writes nothing (no replace RPC);
+  - it answers `success: true, skipped: true, reason: "pp_stored_calculation_writes_disabled"`;
+  - it is audited as **skipped**, not as a failure (decision 42); this includes the nightly cron 388 call;
+  - the rolling-forge pipeline treats it as a successful step.
+- **Dry runs** work either way.
+- **On:** the writer above.
+- **TJ's accepted tradeoff:** from the release of this code until TJ approves writes and sets the flag, new games get **no `powerPlayCombinations` rows**. Readers that use them (rolling writer, Lines, planning, social share) see those games as missing.
+
+**Release order, for separate approval:** apply the migration (TJ's pop-up), then release the writer (writes off), then run the bounded refresh from section 11.3 (dry run first; the write phase needs the flag set on its target). Readers stay withheld until the served values are verified. Reader changes are named in section 11.3 and are not part of this build.
 
 ## 13. Decision 152: dry-run tooling for the refresh (built offline; not run)
 

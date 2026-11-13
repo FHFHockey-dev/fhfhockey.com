@@ -5,7 +5,8 @@ Scope: the frozen 2026-27 regular-season list in results/after-d152/refresh-batc
 618 team-games, 31 batches of at most 10), checked against BATCHES_SHA256 below.
 
 Target: a deployment of the reviewed writer (update-power-play-combinations/index.ts and [gameId].ts at the reviewed
-commit, Part A registry included). For the write phase, migration 20261113220000 must be applied first.
+commit, Part A registry included). For the write phase, migration 20261113220000 must be applied first and the target must run with
+PP_STORED_CALCULATION_WRITES_ENABLED=true (otherwise every call answers as a skip and the runner stops at batch 1).
 
   dry:   python3 -I 20-refresh-runner.py dry --base-url URL --out DIR
          Every batch with dryRun=true&concurrency=1, one call at a time, at least 5 s apart, hygiene gate before

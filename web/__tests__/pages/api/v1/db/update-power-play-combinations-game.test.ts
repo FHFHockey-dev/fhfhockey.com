@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("utils/adminOnlyMiddleware", () => ({
   default: (handler: any) => handler
@@ -502,6 +502,51 @@ function storedDatabase(inputs: PowerPlayGameInputs, stored: StoredRow[]) {
 }
 
 describe("decision 152: dry run and transactional replace", () => {
+  // Writes on, as after TJ's approval; the gate tests turn the flag off.
+  beforeEach(() => {
+    process.env.PP_STORED_CALCULATION_WRITES_ENABLED = "true";
+  });
+  afterAll(() => {
+    delete process.env.PP_STORED_CALCULATION_WRITES_ENABLED;
+  });
+
+  describe("writes off until TJ approves them (PP_STORED_CALCULATION_WRITES_ENABLED unset)", () => {
+    beforeEach(() => {
+      delete process.env.PP_STORED_CALCULATION_WRITES_ENABLED;
+    });
+
+    it("a write call reads nothing, calls no replace RPC and answers with a skip", async () => {
+      const db = storedDatabase(game2026020163, stored163);
+      const json = vi.fn();
+      await handler({ query: { gameId: "2026020163" }, supabase: db.supabase } as any, { json, status: () => ({ json }) } as any);
+      expect(db.rpc).not.toHaveBeenCalled();
+      expect(db.reads).toEqual([]);
+      expect(db.writes).toEqual([]);
+      expect(json).toHaveBeenCalledWith(expect.objectContaining({
+        success: true, skipped: true, reason: "pp_stored_calculation_writes_disabled", gameId: 2026020163
+      }));
+      await expect(updatePowerPlayCombinations(2026020163, db.supabase)).rejects.toThrow(/Writes are off/);
+      expect(db.reads).toEqual([]);
+    });
+
+    it("a dry run still returns the full diff", async () => {
+      const db = storedDatabase(game2026020163, stored163);
+      const summary = await updatePowerPlayCombinations(2026020163, db.supabase, { dryRun: true });
+      expect(summary.diff.deleted.map((row) => row.playerId)).toEqual([8476958, 8478970, 8480336]);
+      expect(summary.diff.unchanged).toBe(26);
+      expect(db.rpc).not.toHaveBeenCalled();
+    });
+
+    it("with the flag set to true, a write calls the replace RPC", async () => {
+      process.env.PP_STORED_CALCULATION_WRITES_ENABLED = "true";
+      const db = storedDatabase(game2026020163, stored163);
+      const json = vi.fn();
+      await handler({ query: { gameId: "2026020163" }, supabase: db.supabase } as any, { json, status: () => ({ json }) } as any);
+      expect(db.rpc).toHaveBeenCalledOnce();
+      expect(json).toHaveBeenCalledWith(expect.objectContaining({ success: true, dryRun: false }));
+    });
+  });
+
   it("the dry run returns the exact diff and writes nothing (2026020163: the 3 stale rows go)", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("no network"));
     const db = storedDatabase(game2026020163, stored163);

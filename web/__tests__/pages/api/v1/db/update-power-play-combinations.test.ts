@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { updatePowerPlayCombinationsMock, auditState, auditInsertMock } = vi.hoisted(() => ({
   updatePowerPlayCombinationsMock: vi.fn(),
@@ -30,7 +30,7 @@ vi.mock("lib/cron/nhlOffSeason", () => ({
 }));
 
 vi.mock("../../../../../pages/api/v1/db/update-power-play-combinations/[gameId]", async (importOriginal) => ({
-  isSuccessfulDryRunBody: (await importOriginal<any>()).isSuccessfulDryRunBody,
+  ...(await importOriginal<any>()),
   updatePowerPlayCombinations: updatePowerPlayCombinationsMock
 }));
 
@@ -91,7 +91,12 @@ describe("/api/v1/db/update-power-play-combinations", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.SUPABASE_SERVICE_ROLE_KEY = "";
+    // Writes on, as after TJ's approval; the gate tests below turn it off.
+    process.env.PP_STORED_CALCULATION_WRITES_ENABLED = "true";
     updatePowerPlayCombinationsMock.mockResolvedValue(undefined);
+  });
+  afterAll(() => {
+    delete process.env.PP_STORED_CALCULATION_WRITES_ENABLED;
   });
 
   it("repairs power-play combinations across a date range", async () => {
@@ -487,6 +492,74 @@ describe("/api/v1/db/update-power-play-combinations", () => {
         expect(isSuccessfulDryRunBody({ ...complete, games: [{}] })).toBe(false);
         expect(isSuccessfulDryRunBody({ ...complete, dryRun: undefined })).toBe(false);
         expect(isSuccessfulDryRunBody({ ...complete, success: false })).toBe(false);
+      });
+    });
+
+    describe("writes off (PP_STORED_CALCULATION_WRITES_ENABLED unset) until TJ approves them", () => {
+      beforeEach(() => {
+        delete process.env.PP_STORED_CALCULATION_WRITES_ENABLED;
+        auditInsertMock.mockResolvedValue({ error: null });
+      });
+      const audited = async () => {
+        const actual = await vi.importActual<typeof import("lib/cron/withCronJobAudit")>("lib/cron/withCronJobAudit");
+        return actual.withCronJobAudit(handler, auditState.opts);
+      };
+
+      it("cron 388's call (a date range, no dryRun) is an audited skip, not a failure, and reads or writes nothing", async () => {
+        const req = requestFor({ startDate: "2026-11-11", endDate: "2026-11-13" }, gamesOf(8));
+        const res = createMockRes();
+
+        await (await audited())(req, res);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toMatchObject({ success: true, skipped: true, reason: "pp_stored_calculation_writes_disabled",
+          processed: 0, failed: 0, requestedScope: { startDate: "2026-11-11", endDate: "2026-11-13" } });
+        expect(req.mockSupabase.from).not.toHaveBeenCalled();
+        expect(updatePowerPlayCombinationsMock).not.toHaveBeenCalled();
+        expect(auditInsertMock).toHaveBeenCalledOnce();
+        expect(auditInsertMock.mock.calls[0][0].status).toBe("skipped");
+      });
+
+      it("a write call with gameIds also skips", async () => {
+        const res = createMockRes();
+        await handler(requestFor({ gameIds: "1000,1001", concurrency: "1" }, gamesOf(2)), res);
+        expect(res.body).toMatchObject({ success: true, skipped: true, reason: "pp_stored_calculation_writes_disabled",
+          requestedScope: { gameIds: [1000, 1001] } });
+        expect(updatePowerPlayCombinationsMock).not.toHaveBeenCalled();
+      });
+
+      it("a dry run still returns every game's full diff", async () => {
+        updatePowerPlayCombinationsMock
+          .mockResolvedValueOnce(summaryFor(1000, { deleted: 2, updated: 1, inserted: 0, unchanged: 9 }));
+        const res = createMockRes();
+
+        await handler(requestFor({ gameIds: "1000", dryRun: "true", concurrency: "1" }, gamesOf(1)), res);
+
+        expect(res.statusCode).toBe(200);
+        expect(updatePowerPlayCombinationsMock.mock.calls[0]?.[2]).toEqual({ dryRun: true });
+        expect(res.body).toMatchObject({ success: true, dryRun: true, totals: { deleted: 2, updated: 1, unchanged: 9 } });
+        expect(res.body.games[0].diff.deleted).toHaveLength(2);
+      });
+
+      it("with the flag set to true, a write call runs the writer", async () => {
+        process.env.PP_STORED_CALCULATION_WRITES_ENABLED = "true";
+        updatePowerPlayCombinationsMock.mockResolvedValue({ keptUnproven: 0 });
+        const req = requestFor({ startDate: "2026-11-12", endDate: "2026-11-13" }, gamesOf(2));
+        const res = createMockRes();
+
+        await handler(req, res);
+
+        expect(res.body).toMatchObject({ success: true, processed: 2 });
+        expect(res.body.skipped).toBe(0);
+        expect(updatePowerPlayCombinationsMock.mock.calls).toEqual([[1000, req.mockSupabase], [1001, req.mockSupabase]]);
+      });
+
+      it.each(["false", "1", "TRUE", ""])("any value other than \"true\" (%j) keeps writes off", async (value) => {
+        process.env.PP_STORED_CALCULATION_WRITES_ENABLED = value;
+        const res = createMockRes();
+        await handler(requestFor({ startDate: "2026-11-12", endDate: "2026-11-13" }, gamesOf(2)), res);
+        expect(res.body.reason).toBe("pp_stored_calculation_writes_disabled");
+        expect(updatePowerPlayCombinationsMock).not.toHaveBeenCalled();
       });
     });
 
