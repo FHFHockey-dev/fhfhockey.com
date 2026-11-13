@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { Pool } from "pg";
 
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
+import { type GameFinalityInput, resolveGameFinality } from "lib/games/gameFinality";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import serviceRoleClient from "lib/supabase/server";
 import { ingestNhlApiRawGamesBestEffort } from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
@@ -23,12 +24,14 @@ let underlyingStatsAdminPgPool: Pool | null = null;
 
 export type QueryValue = string | string[] | undefined;
 
-type GameRow = {
+type GameRow = GameFinalityInput & {
   id: number | string | null;
   date: string | null;
-  startTime?: string | null;
   type?: number | string | null;
 };
+
+const GAME_FINALITY_SELECT =
+  "id,date,startTime,seasonId,type,game_state,game_schedule_state,game_state_observed_at";
 
 export type RawIngestBatchResult = {
   aggregatedResults: Array<{
@@ -290,9 +293,8 @@ export async function fetchFinishedSeasonGameIds(args: {
   supabase?: SupabaseClient;
 }): Promise<number[]> {
   const supabase = args.supabase ?? serviceRoleClient;
-  const today = new Date().toISOString().slice(0, 10);
   const now = new Date();
-  const finishedCutoff = new Date(now.getTime() - 8 * 60 * 60 * 1000);
+  const today = now.toISOString().slice(0, 10);
 
   const rows = await fetchAllRows<GameRow>((from, to) =>
     ((query: any) => {
@@ -304,7 +306,7 @@ export async function fetchFinishedSeasonGameIds(args: {
     })(
       supabase
         .from("games")
-        .select("id,date,startTime,seasonId,type")
+        .select(GAME_FINALITY_SELECT)
         .eq("seasonId", args.seasonId)
         .lte("date", today)
         .order("date", { ascending: false })
@@ -314,14 +316,12 @@ export async function fetchFinishedSeasonGameIds(args: {
 
   return rows.flatMap<number>((row) => {
     const id = Number(row.id);
-    const date = row.date;
-    const startTime = row.startTime;
 
     if (!Number.isFinite(id)) return [];
-    if (typeof date !== "string" || date >= today) return [];
-    if (typeof startTime === "string" && new Date(startTime) > finishedCutoff) {
-      return [];
-    }
+    if (typeof row.date !== "string") return [];
+    // Rule 19: the stored game state decides (contract nhl-game-state-v1);
+    // start + 8 h is only the labelled fallback while the state is unknown.
+    if (!resolveGameFinality(row, now).isFinal) return [];
 
     return [id];
   });
@@ -413,21 +413,19 @@ export async function selectMissingTeamSummaryGameIds(args: {
     getUnderlyingStatsAdminPgPool() != null
   ) {
     try {
-      const today = new Date().toISOString().slice(0, 10);
-      const finishedCutoff = new Date(
-        Date.now() - 8 * 60 * 60 * 1000
-      ).toISOString();
-      const rows = await fetchUnderlyingStatsAdminPgRows<{
-        id: number | string | null;
-      }>(
-        `select g.id
+      const now = new Date();
+      const today = now.toISOString().slice(0, 10);
+      // Candidates only (dated today or earlier); the stored game state decides
+      // finality in code below (rule 19, contract nhl-game-state-v1). A date
+      // before today alone is not final: a late game can still be live.
+      const rows = await fetchUnderlyingStatsAdminPgRows<
+        GameFinalityInput & { id: number | string | null }
+      >(
+        `select g.id, g."startTime", g.game_state, g.game_schedule_state, g.game_state_observed_at
            from public.games g
           where g."seasonId" = $1
             and ($2::int is null or g.type = $2)
-            and (
-              g.date < $3::date
-              or (g.date = $3::date and g."startTime" is not null and g."startTime" <= $4::timestamptz)
-            )
+            and g.date <= $3::date
             and not exists (
               select 1
                 from public.team_underlying_stats_summary s
@@ -439,20 +437,15 @@ export async function selectMissingTeamSummaryGameIds(args: {
                group by s.game_id
               having count(distinct s.team_id) filter (where s.toi_seconds > 0) >= 2
             )
-          order by g.date desc, g.id desc
-          limit $5`,
-        [
-          args.seasonId,
-          args.requestedGameType ?? null,
-          today,
-          finishedCutoff,
-          Math.max(1, args.limit)
-        ]
+          order by g.date desc, g.id desc`,
+        [args.seasonId, args.requestedGameType ?? null, today]
       );
 
       return rows
+        .filter((row) => resolveGameFinality(row, now).isFinal)
         .map((row) => Number(row.id))
-        .filter((gameId) => Number.isFinite(gameId));
+        .filter((gameId) => Number.isFinite(gameId))
+        .slice(0, Math.max(1, args.limit));
     } catch (error) {
       console.warn(
         "[team-underlying] falling back from direct PG missing-game selection",

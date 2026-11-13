@@ -10,6 +10,7 @@ vi.mock("../../../../../lib/supabase/serverReadonly", () => ({
 
 import handler, {
   buildSkoSourceWarnings,
+  isPredictionsSkoReadApiEnabled,
 } from "../../../../../pages/api/v1/ml/get-predictions-sko";
 
 function createMockRes() {
@@ -46,9 +47,39 @@ function createQuery(result: {
   return query;
 }
 
+describe("/api/v1/ml/get-predictions-sko decision 124 gate", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("withholds the paused predictions by default, before any database read", async () => {
+    const req: any = { method: "GET", query: {} };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(503);
+    expect(res.body).toMatchObject({
+      success: false,
+      withheld: true,
+      reason: "predictions_sko_paused",
+      decisions: [124, 129],
+    });
+    expect(serverReadonlyClientMock.from).not.toHaveBeenCalled();
+  });
+
+  it("serves only when PREDICTIONS_SKO_READ_API_ENABLED is exactly true", () => {
+    expect(isPredictionsSkoReadApiEnabled({})).toBe(false);
+    expect(isPredictionsSkoReadApiEnabled({ PREDICTIONS_SKO_READ_API_ENABLED: "1" })).toBe(false);
+    expect(isPredictionsSkoReadApiEnabled({ PREDICTIONS_SKO_READ_API_ENABLED: "true" })).toBe(true);
+  });
+});
+
 describe("/api/v1/ml/get-predictions-sko", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv("PREDICTIONS_SKO_READ_API_ENABLED", "true");
   });
 
   it("rejects non-GET methods before database work", async () => {

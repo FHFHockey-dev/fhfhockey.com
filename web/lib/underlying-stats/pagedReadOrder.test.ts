@@ -82,8 +82,8 @@ describe("team summary rebuild helpers", () => {
   it("selects finished games in the window by unique id order", async () => {
     const { client, orders } = recordingClient({
       games: [
-        { id: 2025020001, date: "2025-10-07" },
-        { id: 2025020002, date: "2999-01-01" },
+        { id: 2025020001, date: "2025-10-07", startTime: "2025-10-07T23:00:00Z" },
+        { id: 2025020002, date: "2999-01-01", startTime: "2999-01-01T23:00:00Z" },
       ],
     });
     const ids = await fetchTeamSummaryRebuildGameIds({

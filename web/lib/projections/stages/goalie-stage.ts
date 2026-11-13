@@ -128,7 +128,7 @@ export async function runPerGameGoalieStage(args: {
   gameMarketSummary?: Record<string, MarketTypeSummary>;
   /** The run's league save % cache (one per run, so each run records its own read). */
   leagueSavePctCache: SeasonLeagueSavePctCache;
-  teamShotsByTeamId: Map<number, { shotsEs: number; shotsPp: number }>;
+  teamShotsByTeamId: Map<number, { shotsEs: number; shotsPp: number; shotsPk?: number | null }>;
   teamGoalsByTeamId: Map<number, number>;
   teamAbbreviationById: Map<number, string>;
   teamStrengthPriorCache: Map<string, TeamStrengthPrior | null>;
@@ -199,7 +199,7 @@ export async function runPerGameGoalieStage(args: {
       continue;
     }
     const opponentProjectedShotsAgainst = Number(
-      (oppShots.shotsEs + oppShots.shotsPp).toFixed(3),
+      (oppShots.shotsEs + oppShots.shotsPp + (oppShots.shotsPk ?? 0)).toFixed(3),
     );
     const defendingTeamAbbrev = teamAbbreviationById.get(c.teamId) ?? null;
     const opponentTeamAbbrev =
@@ -881,6 +881,7 @@ export async function runPerGameGoalieStage(args: {
       proj_win_prob: winProb === null ? null : Number(winProb.toFixed(4)),
       proj_shutout_prob: Number(shutoutProb.toFixed(4)),
       uncertainty: { ...goalieUncertainty, daily_board_candidates: dailyBoardCandidates, win_populations: winPopulationsMeta,
+        pk_shots: oppShots.shotsPk == null ? "unknown" : "known",
         // This stored row is the team's goalie slot (a start-weighted mixture) under the projected starter's id,
         // not that goalie's own line; per-goalie rows are goalie_candidates (W2-8 PR5).
         row_basis: "team_goalie_slot_mixture",

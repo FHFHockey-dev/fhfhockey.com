@@ -274,7 +274,8 @@ describe("/underlying-stats landing page", () => {
             sosPast: 0.612,
             sosPastRank: 3,
             sosFuture: 0.558,
-            sosFutureRank: 9
+            sosFutureRank: 9,
+            sosSnapshotDate: "2026-04-05"
           }),
           buildRating("VAN", {
             offRating: 102,
@@ -282,11 +283,18 @@ describe("/underlying-stats landing page", () => {
             paceRating: 100,
             trend10: -1.12,
             sosPast: 0.521,
-            sosFuture: 0.509
+            sosFuture: 0.509,
+            sosSnapshotDate: "2026-04-05"
           })
         ])}
       />
     );
+
+    // Decision 146: the 2:1 weighting and the as-of date are visible, not only in tooltips.
+    const sosLabel = screen.getByText(/Record SoS = opponents' points % weighted 2:1/);
+    expect(sosLabel.textContent).toContain("two-thirds opponents, one-third opponents' opponents");
+    expect(sosLabel.textContent).toContain("records as of Apr 5, 2026");
+    expect(sosLabel.getAttribute("title")).toContain("not as known before each game");
 
     const select = screen.getByLabelText("Snapshot date");
     expect(within(select).getAllByRole("option")).toHaveLength(3);

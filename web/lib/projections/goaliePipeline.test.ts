@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { STARTER_DECISION_SHARE } from "./goalie/goalieOutcomes";
+import { summarizeGameMarketRows, type MarketPriceContextRow } from "./queries/market-queries";
 import { getGoalieForgePipelineSpec } from "./goaliePipeline";
 import { runPerGameGoalieStage } from "./stages/goalie-stage";
 import { readGoalieCandidatesContract } from "./goalie/goalieCandidates";
@@ -52,7 +53,7 @@ describe("goalie producer confirmation evidence", () => {
   const evidence = (assertions = [assertion()]): DailyBoardEvidence => ({ informationCutoffAt: cutoff, assertions, conflicts: [] });
   async function run(source?: DailyBoardEvidence, options: {
     probability?: number; override?: boolean; cutoffAt?: string | null; horizon?: number; goalsFor?: number | null; opponentGoalsFor?: number | null;
-    weakerBackup?: boolean;
+    weakerBackup?: boolean; shotsPk?: number | null;
   } = {}) {
     const probability = options.probability ?? 0.8;
     const cache = <T,>(value: T) => new Map([[`10:${date}`, value], [`11:${date}`, value]]);
@@ -70,7 +71,7 @@ describe("goalie producer confirmation evidence", () => {
         seasonStartPctByGoalieId: new Map(), seasonGamesPlayedByGoalieId: new Map(),
         override: options.override === false ? null : { goalieId: 100, starterProb: probability },
       }],
-      teamShotsByTeamId: new Map([[11, { shotsEs: 25, shotsPp: 5 }]]), teamGoalsByTeamId: new Map([
+      teamShotsByTeamId: new Map([[11, { shotsEs: 25, shotsPp: 5, ...("shotsPk" in options ? { shotsPk: options.shotsPk } : {}) }]]), teamGoalsByTeamId: new Map([
         ...(options.goalsFor === null ? [] : [[10, options.goalsFor ?? 3] as [number, number]]),
         ...(options.opponentGoalsFor === null ? [] : [[11, options.opponentGoalsFor ?? 3] as [number, number]]),
       ]),
@@ -102,6 +103,23 @@ describe("goalie producer confirmation evidence", () => {
     selected: { goalieId: result.selected.goalieId, starterProbability: result.selected.starterProbability, saves: result.selected.saves },
     candidates: result.candidates.map(row => ({ playerId: row.playerId, startingProbability: row.startingProbability, conditional: row.conditional })),
     marketMean: result.market.expected_value,
+  });
+
+  it("includes known opponent PK shots in goalie shots against (decision 24)", async () => {
+    const zero = await run(undefined, { shotsPk: 0 });
+    const known = await run(undefined, { shotsPk: 3 });
+    // The existing game-context adjustment applies to all 33 shots, including the three PK shots.
+    expect(known.row.proj_shots_against).toBeCloseTo(zero.row.proj_shots_against * 33 / 30, 3);
+    expect(known.row.uncertainty.pk_shots).toBe("known");
+    const candidates = readGoalieCandidatesContract(known.row.uncertainty)!;
+    expect(candidates.rows.every(row => row.if_starts.shots_against === known.row.proj_shots_against)).toBe(true);
+  });
+
+  it.each([null, undefined])("keeps unknown opponent PK shots %s labelled without inventing shots", async shotsPk => {
+    const zero = await run(undefined, { shotsPk: 0 });
+    const unknown = await run(undefined, { shotsPk });
+    expect(unknown.row.proj_shots_against).toBe(zero.row.proj_shots_against);
+    expect(unknown.row.uncertainty.pk_shots).toBe("unknown");
   });
 
   it.each([true, false])("preserves nullable offense through goalie output, candidate branches and metadata (override=%s)", async override => {
@@ -305,14 +323,35 @@ describe("goalie producer paired game win probabilities", () => {
     expect(even[10]).toBeCloseTo(even[11], 4);
   });
 
-  it("uses the de-vigged moneyline when the game has one", async () => {
-    const outcome = (key: string, price: number) => ({ outcomeKey: key, averageLineValue: null, averagePriceAmerican: price,
-      averageImpliedProbability: null, sportsbookCount: 1 });
-    const wins = await runPair({ gameMarketSummary: { h2h: { marketType: "h2h", sourceRank: 1, sourceNames: ["synthetic"],
-      sportsbookKeys: ["synthetic"], observedAt: null, freshnessExpiresAt: null,
-      outcomes: [outcome("team:AAA", 120), outcome("team:BBB", -140)] } } });
+  const marketRow = (book: string, team: string, price: number, age: "fresh" | "expired"): MarketPriceContextRow => ({
+    snapshot_date: date, game_id: game.id, market_type: "h2h", sportsbook_key: book, outcome_key: `team:${team}`,
+    line_value: null, price_american: price, implied_probability: null, source_rank: 1,
+    source_observed_at: age === "fresh" ? "2026-10-10T17:00:00.000Z" : "2026-10-10T09:00:00.000Z",
+    freshness_expires_at: age === "fresh" ? "2026-10-10T17:15:00.000Z" : "2026-10-10T09:15:00.000Z",
+    provenance: { provider: "synthetic" }, metadata: {} });
+  const servedMarket = (rows: MarketPriceContextRow[]) => summarizeGameMarketRows(rows, "2026-10-10T17:05:00.000Z");
+
+  it("uses the de-vigged moneyline when the game has a fresh same-book pair", async () => {
+    const wins = await runPair({ gameMarketSummary: servedMarket([marketRow("dk", "AAA", 120, "fresh"),
+      marketRow("dk", "BBB", -140, "fresh"), marketRow("fd", "AAA", -300, "expired"), marketRow("fd", "BBB", 250, "expired")]) });
     const home = (100 / 220) / (100 / 220 + 140 / 240);
     expect(wins[10]).toBeCloseTo(home * STARTER_DECISION_SHARE, 3);
     expect(wins[11]).toBeCloseTo((1 - home) * STARTER_DECISION_SHARE, 3);
+  });
+
+  // Astra AF-04: disjoint books or mixed ages never form a moneyline; the served value stays on the Poisson race.
+  it("ignores disjoint-book and mixed-age moneyline quotes", async () => {
+    const model = await runPair();
+    const disjoint = await runPair({ gameMarketSummary: servedMarket([marketRow("dk", "AAA", 120, "fresh"),
+      marketRow("fd", "BBB", -140, "fresh")]) });
+    const mixedAge = await runPair({ gameMarketSummary: servedMarket([marketRow("dk", "AAA", 120, "fresh"),
+      marketRow("dk", "BBB", -140, "expired")]) });
+    const expiredDisjoint = await runPair({ gameMarketSummary: servedMarket([marketRow("dk", "AAA", -110, "expired"),
+      marketRow("fd", "BBB", -110, "expired")]) });
+    for (const wins of [disjoint, mixedAge, expiredDisjoint]) {
+      expect(wins[10]).toBeCloseTo(model[10], 10);
+      expect(wins[11]).toBeCloseTo(model[11], 10);
+    }
+    expect(model[10]).not.toBeCloseTo(0.5 * STARTER_DECISION_SHARE, 2);
   });
 });

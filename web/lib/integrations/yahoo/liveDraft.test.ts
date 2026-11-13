@@ -59,6 +59,31 @@ describe("Yahoo live draft parser", () => {
     expect(settings.requiresScoringConfirmation).toBe(false);
   });
 
+  it.each([
+    ["17", "FL", "FACEOFFS_LOST", "1", -1],
+    ["17", "FL", "FACEOFFS_LOST", "0", 1],
+    ["17", "FL", "FACEOFFS_LOST", 1, -1],
+    ["17", "FL", "FACEOFFS_LOST", 0, 1],
+    ["1", "G", "GOALS", "0", -1],
+    ["1", "G", "GOALS", "1", 1],
+    ["17", "FL", "FACEOFFS_LOST", undefined, 1],
+    ["17", "FL", "FACEOFFS_LOST", "unknown", 1],
+  ])("preserves Yahoo category direction for %s with sort_order %s", (statId, abbr, key, sortOrder, weight) => {
+    const payload = { league_key: "477.l.123", scoring_type: "head", stat_categories: {
+      stats: [{ stat: [{ stat_id: statId }, { abbr }, { sort_order: sortOrder }] }],
+    } };
+    expect(parseYahooDraftSettings(payload, GAME_CONTEXT).categoryWeights).toEqual({ [key as string]: weight });
+    expect(parseYahooBoardSettings(payload).categoryWeights).toEqual({ [key as string]: weight });
+  });
+  it("keeps points modifiers unchanged when Yahoo supplies a category sort order", () => {
+    const settings = parseYahooBoardSettings({ scoring_type: "headpoint",
+      stat_categories: { stats: [{ stat_id: "17", abbr: "FL", sort_order: "1" }] },
+      stat_modifiers: { stats: [{ stat_id: "17", value: -2 }] },
+    });
+    expect(settings.scoringCategories).toEqual({ FACEOFFS_LOST: -2 });
+    expect(settings.categoryWeights).toEqual({});
+  });
+
   it("reuses league scoring for in-season boards without applying auction draft restrictions", () => {
     const result = parseYahooBoardSettings({ draft_type: "auction", scoring_type: "headpoint", weekly_deadline: "intraday",
       roster_positions: [{ position: "C", count: 2 }, { position: "IR+", count: 1 }, { position: "F", count: 1 }],

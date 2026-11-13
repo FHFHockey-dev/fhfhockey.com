@@ -1,4 +1,7 @@
-import { DESCRIPTIVE_SOS_VERSION } from "./strengthOfScheduleContract";
+import {
+  DESCRIPTIVE_SOS_VERSION,
+  SOS_HEADLINE_METRIC,
+} from "./strengthOfScheduleContract";
 import type { TeamSosSnapshotRow } from "./teamSosSnapshot";
 
 /** v1 `sos_standings` row: issued history (rule 21), no longer served. */
@@ -46,7 +49,7 @@ export type CanonicalSosRanking = {
   teamId: number;
   team: string;
   abbreviation: string;
-  /** Opponents' win% (0-1); null when unknown, never 0. */
+  /** Opponents' points% (0-1, decision 146); null when unknown, never 0. */
   sos: number | null;
 };
 
@@ -253,7 +256,42 @@ export type SosRatingV2 = {
   future: SosBucketV2;
   /** Fixture-weighted mean of past and future win%; null if either is unknown. */
   combinedWinPct: number | null;
+  /** Fixture-weighted mean of past and future points%; null if either is unknown. */
+  combinedPointsPct: number | null;
+  /** Headline (decision 146): combinedPointsPct x 100. */
   sosScore: number | null;
+};
+
+/**
+ * Decision 146: every SOS surface headlines opponents' standings points% in
+ * completed games. Stored values are opponents' records as of the snapshot
+ * cutoff (retrospective); no result-known times exist, so they are never
+ * presented as known before each game.
+ */
+export const SOS_HEADLINE = {
+  metric: SOS_HEADLINE_METRIC,
+  shortLabel: "opp. points %",
+  definition:
+    "Opponents' standings points % ((2W + OTL) / 2GP) in completed games only, excluding games against the team. Unavailable, not 0%, when there are no completed games.",
+  asOfNote: "Opponents' records as of the snapshot date, not as known before each game.",
+} as const;
+
+/** The headline value of a v2 bucket (points%), shared by every reader. */
+export const sosHeadline = (bucket: Pick<SosBucketV2, "pointsPct"> | null | undefined) =>
+  bucket?.pointsPct ?? null;
+
+/** "Nov 13, 2026" for a YYYY-MM-DD snapshot date; null when unknown. */
+export const formatSosAsOfDate = (date: string | null | undefined): string | null => {
+  const iso = typeof date === "string" ? date.slice(0, 10) : "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const parsed = new Date(`${iso}T12:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 };
 
 const finite = (value: unknown): number | null => {
@@ -322,6 +360,12 @@ export function computeSosRatingsV2(rows: TeamSosReaderRow[]): SosRatingV2[] {
         future.winPct,
         futureFixtures,
       );
+      const combinedPointsPct = combineFixtureMeans(
+        sosHeadline(past),
+        pastFixtures,
+        sosHeadline(future),
+        futureFixtures,
+      );
       return {
         team: row.team_abbrev,
         teamId: row.team_id,
@@ -331,7 +375,9 @@ export function computeSosRatingsV2(rows: TeamSosReaderRow[]): SosRatingV2[] {
         past,
         future,
         combinedWinPct,
-        sosScore: combinedWinPct === null ? null : Number((combinedWinPct * 100).toFixed(2)),
+        combinedPointsPct,
+        sosScore:
+          combinedPointsPct === null ? null : Number((combinedPointsPct * 100).toFixed(2)),
       };
     })
     .sort((a, b) => compareNullableDesc(a.sosScore, b.sosScore, a.team, b.team));
@@ -356,8 +402,8 @@ export function buildCanonicalSosRankingsV2(
     const team = currentTeamsById.get(teamId)!;
     const base = { teamId, team: team.name, abbreviation: team.abbreviation };
     const round = (value: number | null) => (value === null ? null : Number(value.toFixed(3)));
-    past.push({ ...base, sos: round(finite(row.past_direct_win_pct)) });
-    future.push({ ...base, sos: round(finite(row.future_direct_win_pct)) });
+    past.push({ ...base, sos: round(finite(row.past_direct_points_pct)) });
+    future.push({ ...base, sos: round(finite(row.future_direct_points_pct)) });
   }
   const order = (a: CanonicalSosRanking, b: CanonicalSosRanking) =>
     compareNullableDesc(a.sos, b.sos, a.abbreviation, b.abbreviation);

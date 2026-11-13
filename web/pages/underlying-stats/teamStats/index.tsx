@@ -635,7 +635,7 @@ export default function TeamUnderlyingStatsLandingRoute() {
         ) : rows.length === 0 ? (
           <section aria-live="polite">
             {coverage && coverage.completedGames > 0 && coverage.summarizedGames === 0
-              ? `Team data for this season is not available yet: 0 of ${coverage.completedGames} scheduled games before today have been processed.`
+              ? `Team data for this season is not available yet: 0 of ${coverage.completedGames} final games have been processed.`
               : "No team results matched the current team filters."}
           </section>
         ) : (
@@ -643,7 +643,7 @@ export default function TeamUnderlyingStatsLandingRoute() {
             {coverage && coverage.summarizedGames < coverage.completedGames ? (
               <div role="status" className={styles.explorerNotice}>
                 Partial season: team data covers approximately {coverage.summarizedGames} of{" "}
-                {coverage.completedGames} scheduled games before today, so totals may lag official standings.
+                {coverage.completedGames} final games, so totals may lag official standings.
               </div>
             ) : null}
             <div className={styles.explorerSummary}>

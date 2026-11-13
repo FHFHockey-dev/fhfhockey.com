@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "lib/supabase/database-generated.types";
+import { type GameFinalityInput, resolveGameFinality } from "lib/games/gameFinality";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import serviceRoleClient from "lib/supabase/server";
 import { evaluateNormalizedEventInclusion } from "lib/supabase/Upserts/nhlEventInclusion";
@@ -1106,21 +1107,25 @@ export async function findStaleTeamSummaryKeys(args: {
     .filter((row) => !rebuilt.has(teamSummaryKey(row)));
 }
 
-// Finished games in an explicit date window, for rebuilding games that already have summaries.
+// Final games in an explicit date window, for rebuilding games that already have summaries.
+// Rule 19: finality comes from the stored game state (contract nhl-game-state-v1);
+// start + 8 h decides only while the state is unknown. A late game dated before
+// today can still be live, so the date alone never makes a game final.
 export async function fetchTeamSummaryRebuildGameIds(args: {
   seasonId: number;
   startDate: string;
   endDate: string;
   gameType?: number | null;
   supabase?: TeamUnderlyingSupabaseClient;
+  now?: Date;
 }): Promise<number[]> {
   const databaseClient = (args.supabase ?? serviceRoleClient) as any;
-  const today = new Date().toISOString().slice(0, 10);
-  const rows = await fetchAllRows<{ id: number | string | null; date: string | null }>(
+  const now = args.now ?? new Date();
+  const rows = await fetchAllRows<GameFinalityInput & { id: number | string | null }>(
     (from, to) => {
       let query = databaseClient
         .from("games")
-        .select("id,date")
+        .select("id,startTime,game_state,game_schedule_state,game_state_observed_at")
         .eq("seasonId", args.seasonId)
         .gte("date", args.startDate)
         .lte("date", args.endDate);
@@ -1129,7 +1134,7 @@ export async function fetchTeamSummaryRebuildGameIds(args: {
     }
   );
   return rows
-    .filter((row) => typeof row.date === "string" && row.date < today)
+    .filter((row) => resolveGameFinality(row, now).isFinal)
     .map((row) => Number(row.id))
     .filter((id) => Number.isFinite(id));
 }

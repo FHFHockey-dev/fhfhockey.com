@@ -2,6 +2,8 @@
 /** v2: "past" means final only; started or postponed fixtures are pending (decision 21). */
 export const DESCRIPTIVE_SOS_VERSION = "descriptive-sos-v2" as const;
 export type SosMetric = "win-pct" | "points-pct";
+/** Decision 146: the shared SOS headline base is opponents' standings points%. */
+export const SOS_HEADLINE_METRIC = "points-pct" as const satisfies SosMetric;
 export type SosView = "past-as-known-then" | "past-retrospective" | "future";
 
 export type SosFixture = {

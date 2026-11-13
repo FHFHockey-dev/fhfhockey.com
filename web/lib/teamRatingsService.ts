@@ -24,6 +24,7 @@ export type TeamRating = {
   trend10: number;
   components: RatingComponents;
   finishingRating: number | null;
+  /** "5-on-5 goaltending" (decision 145): 5v5 xGA/60 minus GA/60; null when unknown. */
   goalieRating: number | null;
   dangerRating: number | null;
   specialRating: number | null;

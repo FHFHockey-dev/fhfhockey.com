@@ -2,26 +2,41 @@
 
 import React from "react";
 import Image from "next/legacy/image";
-import type { CanonicalSosRanking } from "lib/trends/strengthOfSchedule";
+import {
+  formatSosAsOfDate,
+  SOS_HEADLINE,
+  type CanonicalSosRanking,
+} from "lib/trends/strengthOfSchedule";
 
 interface StrengthOfScheduleProps {
   type: "past" | "future";
   rankings: CanonicalSosRanking[];
+  /** snapshot_date of the served descriptive-sos-v2 rows. */
+  asOf?: string | null;
 }
 
 const StrengthOfSchedule: React.FC<StrengthOfScheduleProps> = ({
   type,
   rankings,
+  asOf = null,
 }) => {
+  const asOfLabel = formatSosAsOfDate(asOf);
   return (
     <div>
       <div className={`sos-table ${type}`}>
         <table className="sosTableClass">
+          <caption title={SOS_HEADLINE.asOfNote}>
+            {asOfLabel
+              ? `Opponents' records as of ${asOfLabel}`
+              : "Opponents' records as of the latest snapshot"}
+          </caption>
           <thead>
             <tr>
               <th>Team</th>
-              <th title="Mean over fixtures of opponents' win % (W / GP), excluding games against the team. Past counts final games only. descriptive-sos-v2.">
-                SoS (opp. win %)
+              <th
+                title={`Mean over fixtures of ${SOS_HEADLINE.shortLabel}: ${SOS_HEADLINE.definition} ${type === "past" ? "Past counts final games only. " : ""}${SOS_HEADLINE.asOfNote} descriptive-sos-v2.`}
+              >
+                SoS ({SOS_HEADLINE.shortLabel})
               </th>
             </tr>
           </thead>

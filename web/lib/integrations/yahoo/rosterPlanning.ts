@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { activeTeamAbbreviations } from "lib/teamsInfo";
 import type { BridgeRunProof } from "lib/rosterScheduleData/bridgeForecastWire";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
 import { INFERRED_ACQUISITION_TIMING_KEY, INFERRED_ACQUISITION_TIMING_SOURCE } from "lib/rosterScheduleOptimizer/providerRules";
@@ -27,18 +28,27 @@ const leagueFactsCache = yahooReadCache<{ result: YahooProviderJsonResult; signa
 type DiscoveryScan = { rows: Row[]; pagesAttempted: number; pagesChecked: number; pagesAccepted: number; rowsAccepted: number;
   repeatedRows: number; elapsed: number; stop: string; complete: boolean; limitations: string[]; signature: string };
 const discoveryCache = yahooReadCache<DiscoveryScan>();
-/** Private elapsed-day lineups (D4 migration, not yet applied): player keys and slots only. */
+/** Private elapsed-day lineups (D4 migration, not yet applied): player keys, slots and the dated NHL team when supplied. */
 const PAST_LINEUP_TABLE = "rso_yahoo_past_lineups";
+type YahooPastLineup = Omit<PastLineup, "entries"> & {
+  entries: Array<PastLineup["entries"][number] & { teamAbbreviation?: string | null }>;
+};
 
 /** The per-game WGO column behind each points-league stat Yahoo scores per game (shared with recent form). */
 const SKATER_POINT_COLUMNS = SKATER_RECENT_COLUMNS, GOALIE_POINT_COLUMNS = GOALIE_RECENT_COLUMNS;
 const isGoalieStat = (key: string) => key.endsWith("_GOALIE") || ["GAMES_STARTED", "GOALS_AGAINST_AVERAGE", "SAVE_PERCENTAGE"].includes(key);
+const datedTeamAbbreviation = (value: string | null | undefined): string | null => {
+  const raw = value?.trim().toUpperCase() ?? "";
+  const aliases: Record<string, string> = { LA: "LAK", NJ: "NJD", SJ: "SJS", TB: "TBL", WAS: "WSH", MON: "MTL" };
+  const team = aliases[raw] ?? raw;
+  return activeTeamAbbreviations.has(team) ? team : null;
+};
 
 /**
  * Each recorded player's actual fantasy points that night, from the NHL game stats in `wgo_skater_stats` /
- * `wgo_goalie_stats` and the league's own weights (points leagues only). A player who sat out a landed game scores 0;
- * no game is null, and so is a game not final yet, one whose stats haven't landed, or a league weight that can't be
- * scored per game. Yahoo's own total can differ after its stat corrections.
+ * `wgo_goalie_stats` and the league's own weights (points leagues only). The player's own dated WGO row identifies
+ * the historical game independently of his current NHL team. Missing/ambiguous rows remain unknown: teammate rows
+ * are not an identity-complete non-appearance receipt. Yahoo's own total can differ after its stat corrections.
  */
 export async function yahooPastLineupPoints(db: SupabaseClient<any>, args: {
   pastLineups: PastLineup[]; players: PlanningPlayer[]; games: PlanningGame[]; scoring: LeagueRules["scoring"];
@@ -50,12 +60,9 @@ export async function yahooPastLineupPoints(db: SupabaseClient<any>, args: {
     goalie: { weights: weights.filter(([key]) => isGoalieStat(key)), columns: GOALIE_POINT_COLUMNS, table: "wgo_goalie_stats", id: "goalie_id" },
   } as const;
   const byId = new Map(args.players.map(player => [player.id, player]));
-  const gameOf = (player: PlanningPlayer, date: string) => args.games.find(game => game.date === date && game.teamAbbreviation === player.teamAbbreviation);
-  const gameIds = new Set<number>();
-  for (const day of args.pastLineups) for (const entry of day.entries) {
-    const player = entry.playerId ? byId.get(entry.playerId) : undefined, game = player ? gameOf(player, day.date) : undefined;
-    if (game?.status === "final" && Number.isSafeInteger(Number(game.id))) gameIds.add(Number(game.id));
-  }
+  const dates = new Set(args.pastLineups.map(day => day.date));
+  const gameIds = new Set(args.games.filter(game => dates.has(game.date) && game.status === "final"
+    && Number.isSafeInteger(Number(game.id))).map(game => Number(game.id)));
   const rowsFor = new Map<"skater" | "goalie", Row[] | null>();
   for (const [playerClass, tier] of Object.entries(tiers) as Array<["skater" | "goalie", (typeof tiers)["skater" | "goalie"]]>) {
     if (!gameIds.size || !tier.weights.every(([key]) => key in tier.columns)) { rowsFor.set(playerClass, null); continue; }
@@ -72,15 +79,13 @@ export async function yahooPastLineupPoints(db: SupabaseClient<any>, args: {
     rowsFor.set(playerClass, failed ? null : rows);
   }
   const pointsOf = (player: PlanningPlayer | undefined, date: string): number | null => {
-    if (!player || player.nhlId === null || !player.teamAbbreviation) return null;
-    const game = gameOf(player, date);
-    if (game?.status !== "final") return null;
+    if (!player || player.nhlId === null) return null;
     const tier = tiers[player.playerClass], rows = rowsFor.get(player.playerClass);
     if (!rows) return null;
-    const gameRows = rows.filter(row => Number(row.game_id) === Number(game.id));
-    if (!gameRows.length) return null;
-    const own = gameRows.find(row => Number(row[tier.id]) === player.nhlId);
-    if (!own) return 0;
+    const datedIds = new Set(args.games.filter(game => game.date === date && game.status === "final").map(game => Number(game.id)));
+    const ownRows = rows.filter(row => datedIds.has(Number(row.game_id)) && Number(row[tier.id]) === player.nhlId);
+    if (ownRows.length !== 1) return null;
+    const own = ownRows[0];
     let total = 0;
     for (const [key, weight] of tier.weights) {
       const raw = own[tier.columns[key]];
@@ -102,12 +107,12 @@ export async function yahooPastLineupPoints(db: SupabaseClient<any>, args: {
  * landed, so a partial read never undercounts.
  */
 export async function yahooCreditedGoalieAppearances(db: SupabaseClient<any>, args: {
-  periodStart?: string | null; today: string; pastLineups: PastLineup[]; slots: ReadonlyArray<{ id: string; type: string }>;
+  periodStart?: string | null; today: string; pastLineups: YahooPastLineup[]; slots: ReadonlyArray<{ id: string; type: string }>;
   players: PlanningPlayer[]; games: PlanningGame[];
 }): Promise<number | null> {
   if (!args.periodStart || !/^\d{4}-\d{2}-\d{2}$/.test(args.periodStart)) return null;
   const goalieSlots = new Set(args.slots.filter(slot => slot.type === "G").map(slot => slot.id));
-  const checks: Array<{ gameId: number; nhlId: number }> = [];
+  const checks: Array<{ date: string; nhlId: number; teamAbbreviation: string | null }> = [];
   for (let time = Date.parse(`${args.periodStart}T12:00:00Z`); ; time += 86400000) {
     const day = new Date(time).toISOString().slice(0, 10);
     if (day >= args.today) break;
@@ -116,24 +121,34 @@ export async function yahooCreditedGoalieAppearances(db: SupabaseClient<any>, ar
     for (const entry of lineup.entries) {
       if (!entry.slotId || !goalieSlots.has(entry.slotId)) continue;
       const player = args.players.find(row => row.id === entry.playerId);
-      if (!player || player.nhlId === null || !player.teamAbbreviation) return null;
-      const game = args.games.find(row => row.date === day && row.teamAbbreviation === player.teamAbbreviation);
-      if (!game || game.status === "cancelled" || game.status === "postponed") continue;
-      if (game.status !== "final" || !Number.isSafeInteger(Number(game.id))) return null;
-      checks.push({ gameId: Number(game.id), nhlId: player.nhlId });
+      if (!player || player.nhlId === null) return null;
+      checks.push({ date: day, nhlId: player.nhlId, teamAbbreviation: datedTeamAbbreviation(entry.teamAbbreviation) });
     }
   }
   if (!checks.length) return 0;
-  const { data, error } = await db.from("wgo_goalie_stats").select("goalie_id,game_id,games_played")
-    .in("game_id", [...new Set(checks.map(check => check.gameId))]);
+  const dates = new Set(checks.map(check => check.date));
+  const gameIds = new Set(args.games.filter(game => dates.has(game.date) && game.status === "final"
+    && Number.isSafeInteger(Number(game.id))).map(game => Number(game.id)));
+  const { data, error } = gameIds.size ? await db.from("wgo_goalie_stats").select("goalie_id,game_id,games_played")
+    .in("game_id", [...gameIds]) : { data: [], error: null };
   if (error) return null;
   const rows = (data ?? []) as Array<{ goalie_id: number | null; game_id: number | null; games_played: number | null }>;
   let credited = 0;
   for (const check of checks) {
-    const gameRows = rows.filter(row => Number(row.game_id) === check.gameId);
-    // No goalie rows yet for a final game: the WGO load hasn't landed, so progress stays unknown.
-    if (!gameRows.length) return null;
-    if (gameRows.some(row => Number(row.goalie_id) === check.nhlId && Number(row.games_played) > 0)) credited += 1;
+    const datedGames = args.games.filter(game => game.date === check.date);
+    const datedIds = new Set(datedGames.filter(game => game.status === "final").map(game => Number(game.id)));
+    const ownRows = rows.filter(row => datedIds.has(Number(row.game_id)) && Number(row.goalie_id) === check.nhlId);
+    if (!ownRows.length) {
+      // Only the dated lineup can establish an idle team; the player's current team cannot.
+      if (!check.teamAbbreviation) return null;
+      const teamGames = datedGames.filter(game => game.teamAbbreviation === check.teamAbbreviation);
+      if (teamGames.every(game => game.status === "cancelled" || game.status === "postponed")) continue;
+      return null;
+    }
+    if (ownRows.length !== 1) return null;
+    const played = numeric(ownRows[0].games_played);
+    if (played === null || (played !== 0 && played !== 1)) return null;
+    credited += played;
   }
   return credited;
 }
@@ -387,7 +402,7 @@ export async function loadYahooPlanningSnapshot(args: {
     if (!stored.error) for (const row of (stored.data ?? []) as Row[]) {
       const entries = Array.isArray(row.entries) ? row.entries : [];
       if (entries.every((entry: Row) => typeof entry?.player_key === "string" && typeof entry?.position === "string"))
-        storedPast.set(String(row.lineup_date), entries.map((entry: Row) => ({ player_key: entry.player_key, selected_position: { position: entry.position } })));
+        storedPast.set(String(row.lineup_date), entries.map((entry: Row) => ({ player_key: entry.player_key, selected_position: { position: entry.position }, editorial_team_abbr: entry.teamAbbreviation })));
     }
   }
   const pastRosterReads = Promise.all(pastDates.map(async date => {
@@ -403,7 +418,7 @@ export async function loadYahooPlanningSnapshot(args: {
       if (pastRosterCache.size >= PAST_ROSTER_CACHE_LIMIT) pastRosterCache.delete(pastRosterCache.keys().next().value!);
       pastRosterCache.set(key, rows);
       if (diet) await db.from(PAST_LINEUP_TABLE).upsert({ user_id: userId, external_team_id: team.id, season_id: query.seasonId, lineup_date: date,
-        entries: rows.map(row => ({ player_key: String(row.player_key), position: text(yahooFields(row.selected_position).position) ?? "BN" })) },
+        entries: rows.map(row => ({ player_key: String(row.player_key), position: text(yahooFields(row.selected_position).position) ?? "BN", teamAbbreviation: text(row.editorial_team_abbr) })) },
       { onConflict: "user_id,external_team_id,lineup_date" }).then(() => undefined, () => undefined);
       return { date, rows };
     } catch (error) { optionalFailure(error); return { date, rows: null }; }
@@ -559,7 +574,7 @@ export async function loadYahooPlanningSnapshot(args: {
     if (slot) usedSlots.add(slot.id);
     lockedAssignments.push({ date: today, playerId: player.id, slotId: slot?.id ?? null });
   }
-  const pastLineups: PastLineup[] = [];
+  const pastLineups: YahooPastLineup[] = [];
   for (const { date, rows } of await pastRosterReads) {
     if (!rows) { limitations.push(`Yahoo's recorded lineup for ${date} could not be read; that day shows no lineup.`); continue; }
     const usedPast = new Set<string>();
@@ -568,7 +583,7 @@ export async function loadYahooPlanningSnapshot(args: {
       const position = text(yahooFields(row.selected_position).position) ?? "BN";
       const slot = slots.find(entry => entry.type === position.toUpperCase() && !usedPast.has(entry.id));
       if (slot) usedPast.add(slot.id);
-      return { playerId: player?.id ?? null, name: player?.name ?? text(yahooFields(row.name).full) ?? String(row.player_key), position, slotId: slot?.id ?? null };
+      return { playerId: player?.id ?? null, name: player?.name ?? text(yahooFields(row.name).full) ?? String(row.player_key), position, slotId: slot?.id ?? null, teamAbbreviation: text(row.editorial_team_abbr) };
     }) });
   }
   // Appearances already credited this matchup, from the lineups Yahoo recorded on its elapsed days.

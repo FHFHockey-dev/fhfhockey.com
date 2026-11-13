@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import { resolveStatDirection } from "lib/projectionsConfig/statsMasterList";
 
 import type { YahooGameContext } from "./gameContext";
 
@@ -392,7 +393,8 @@ function statCategoryRows(payload: unknown) {
       entityScalar(entity, ["abbr", "display_name", "name"]),
     );
     const displayOnly = entityScalar(entity, ["is_only_display_stat"]);
-    return statId ? [{ statId, abbreviation, displayOnly: displayOnly === true || displayOnly === 1 || displayOnly === "1" }] : [];
+    const sortOrder = toText(entityScalar(entity, ["sort_order"]));
+    return statId ? [{ statId, abbreviation, sortOrder, displayOnly: displayOnly === true || displayOnly === 1 || displayOnly === "1" }] : [];
   });
 }
 
@@ -464,7 +466,7 @@ function adaptScoring(payload: unknown) {
   const modifiers = new Map(
     statModifierRows(payload).map(({ statId, value }) => [statId, value]),
   );
-  for (const { statId, abbreviation, displayOnly } of categories) {
+  for (const { statId, abbreviation, sortOrder, displayOnly } of categories) {
     if (displayOnly) continue;
     const labelKey = String(abbreviation ?? "")
       .toUpperCase()
@@ -487,7 +489,8 @@ function adaptScoring(payload: unknown) {
       if (modifier === undefined) unsupportedStatIds.add(statId);
       else scoringCategories[statKey] = modifier;
     } else {
-      categoryWeights[statKey] = 1;
+      const direction = sortOrder === "1" ? "higher" : sortOrder === "0" ? "lower" : null;
+      categoryWeights[statKey] = direction && direction !== resolveStatDirection(statKey) ? -1 : 1;
     }
   }
   return {

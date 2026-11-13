@@ -1,0 +1,150 @@
+{
+  "source": "fhfh-nhl-penalty-context-clock-v2",
+  "algorithmQualifiedFlag": true,
+  "games": 1895,
+  "teamGames": 3790,
+  "bySeasonType": {
+    "20252026|1": {
+      "no_pbp": 208
+    },
+    "20252026|2": {
+      "match": 1672,
+      "clock_qualified": 2524,
+      "clock_qualified_aligned": 2606,
+      "clock_unqualified": 82,
+      "verified_no_pp": 52,
+      "clock_error": 18,
+      "within_2s": 1,
+      "official_placeholder_confirmed": 879,
+      "mismatch": 2
+    },
+    "20252026|3": {
+      "match": 161,
+      "clock_qualified": 150,
+      "clock_qualified_aligned": 164,
+      "mismatch": 1,
+      "verified_no_pp": 2,
+      "missing_official": 46,
+      "clock_unqualified": 14
+    },
+    "20262027|1": {
+      "match": 54,
+      "clock_qualified": 52,
+      "clock_qualified_aligned": 56,
+      "no_pbp": 68,
+      "official_placeholder_confirmed": 4,
+      "clock_unqualified": 8,
+      "clock_error": 2,
+      "verified_no_pp": 2
+    },
+    "20262027|2": {
+      "match": 606,
+      "clock_qualified": 578,
+      "clock_qualified_aligned": 618,
+      "clock_unqualified": 40,
+      "mismatch": 2,
+      "verified_no_pp": 9,
+      "within_2s": 1
+    }
+  },
+  "unqualifiedReasons": {
+    "no stored play-by-play": 322,
+    "N event(s) disagree with the official situation codes.": 140,
+    "Penalty-clock disagrees with PBP manpower at game second N": 12,
+    "Unsupported penalty-clock penalty MAT/15": 8,
+    "Complete final NHL play-by-play is required to qualify PP time.": 4
+  },
+  "diffHistogram": {
+    "0": 2493,
+    "±1-2": 2,
+    "+11-60": 2,
+    "+61+": 1,
+    "-61+": 2
+  },
+  "byFeature": {
+    "coincident": {
+      "n": 1120,
+      "match": 1115,
+      "within2": 1,
+      "mismatch": 4,
+      "absDiff": 363
+    },
+    "major": {
+      "n": 532,
+      "match": 526,
+      "within2": 1,
+      "mismatch": 5,
+      "absDiff": 394
+    },
+    "goalEndsPp": {
+      "n": 1794,
+      "match": 1789,
+      "within2": 1,
+      "mismatch": 4,
+      "absDiff": 300
+    },
+    "all": {
+      "n": 2500,
+      "match": 2493,
+      "within2": 2,
+      "mismatch": 5,
+      "absDiff": 395
+    },
+    "expiryAcrossPeriod": {
+      "n": 924,
+      "match": 921,
+      "within2": 0,
+      "mismatch": 3,
+      "absDiff": 268
+    },
+    "fiveOnThree": {
+      "n": 456,
+      "match": 454,
+      "within2": 0,
+      "mismatch": 2,
+      "absDiff": 151
+    },
+    "pulledGoalieInPp": {
+      "n": 346,
+      "match": 343,
+      "within2": 2,
+      "mismatch": 1,
+      "absDiff": 122
+    },
+    "none": {
+      "n": 174,
+      "match": 174,
+      "within2": 0,
+      "mismatch": 0,
+      "absDiff": 0
+    },
+    "overtimePp": {
+      "n": 172,
+      "match": 172,
+      "within2": 0,
+      "mismatch": 0,
+      "absDiff": 0
+    },
+    "shootout": {
+      "n": 207,
+      "match": 207,
+      "within2": 0,
+      "mismatch": 0,
+      "absDiff": 0
+    },
+    "ppEndsAtGameEnd": {
+      "n": 345,
+      "match": 343,
+      "within2": 0,
+      "mismatch": 2,
+      "absDiff": 148
+    },
+    "doubleMinor": {
+      "n": 206,
+      "match": 205,
+      "within2": 0,
+      "mismatch": 1,
+      "absDiff": 94
+    }
+  }
+}

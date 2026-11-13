@@ -3,14 +3,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   POSTGREST_PAGE_SIZE,
+  buildGenuineTeamGames,
   calculateEwma,
   calculateFinalRating,
   calculateLeagueMetrics,
   calculateRawDistribution,
   calculateRawScores,
   calculateZScores,
+  computeDailyPowerRatings,
   fetchGameLogs,
   fetchPaginatedRows,
+  goalie5v5InputsFromCounts,
+  type GameLog,
   type TeamGame,
 } from "./power-ratings";
 
@@ -42,7 +46,7 @@ describe("power-ratings PostgREST pagination", () => {
 
     expect(started).toEqual([
       "nst_team_gamelogs_as_rates",
-      "nst_team_5v5",
+      "nst_team_gamelogs_es_counts",
       "nst_team_gamelogs_pp_rates",
       "nst_team_gamelogs_pk_rates",
       "wgo_team_stats",
@@ -157,5 +161,198 @@ describe("power-ratings missing PDO handling", () => {
     const raw = calculateRawScores(result);
     const rating = calculateFinalRating(raw, calculateRawDistribution([raw]));
     expect(rating.variance_flag).toBe(0);
+  });
+});
+
+describe("power-ratings 5-on-5 goaltending (decision 145)", () => {
+  const rowsClient = (rowsByTable: Record<string, unknown[]>) =>
+    ({
+      from(table: string) {
+        const result = { data: rowsByTable[table] ?? [], error: null };
+        const chain: any = {
+          select: () => chain,
+          eq: () => chain,
+          gte: () => chain,
+          lte: () => chain,
+          order: () => chain,
+          range: () => Promise.resolve(result),
+          then: (resolve: any, reject: any) =>
+            Promise.resolve(result).then(resolve, reject),
+        };
+        return chain;
+      },
+    }) as unknown as SupabaseClient;
+
+  /** All-situations NST rate row (GA/60 over a 60-minute game). */
+  const allRow = (team: string, date: string, gaPer60: number) => ({
+    team_abbreviation: team,
+    date,
+    season_id: 20262027,
+    situation: "all",
+    gp: 1,
+    toi_seconds: 3600,
+    cf_per_60: 55,
+    ca_per_60: 55,
+    sf_per_60: 28,
+    sa_per_60: 28,
+    gf_per_60: 3,
+    ga_per_60: gaPer60,
+    xgf_per_60: 2.8,
+    xga_per_60: 2.8,
+    hdcf_per_60: 10,
+    hdca_per_60: 10,
+    pdo: 1,
+  });
+
+  /** NST 5v5 counts row: GA, SA, xGA and 5-on-5 TOI in seconds. */
+  const counts5v5 = (
+    team: string,
+    date: string,
+    ga: number | null,
+    sa: number | null,
+    xga: number | null,
+    toi: number | null,
+  ) => ({
+    team_abbreviation: team,
+    date,
+    situation: "5v5",
+    ga,
+    sa,
+    xga,
+    toi_seconds: toi,
+  });
+
+  it("excludes an empty-net goal: LAK 2026-11-12 (5 GA incl. 1 EN; 3 GA at 5v5)", async () => {
+    const date = "2026-11-12";
+    // LAK's all-situations row carries the empty-net goal; TWN is identical at
+    // 5-on-5 but allowed no empty-net goal.
+    const logs = await fetchGameLogs(
+      rowsClient({
+        nst_team_gamelogs_as_rates: [
+          allRow("LAK", date, 5),
+          allRow("TWN", date, 4),
+          allRow("AAA", date, 3),
+          allRow("BBB", date, 2),
+        ],
+        nst_team_gamelogs_es_counts: [
+          counts5v5("LAK", date, 3, 19, 1.25, 3077),
+          counts5v5("TWN", date, 3, 19, 1.25, 3077),
+          counts5v5("AAA", date, 2, 25, 2.1, 2900),
+          counts5v5("BBB", date, 1, 22, 2.4, 2950),
+        ],
+      }),
+      "2026-06-15",
+      date,
+    );
+
+    const lak = logs.find((log) => log.team_abbreviation === "LAK")!;
+    expect(lak.ga_per_60).toBe(5);
+    expect(lak.goalie_5v5?.ga_per_60).toBeCloseTo((3 * 3600) / 3077, 9);
+    expect(lak.goalie_5v5?.sa_per_60).toBeCloseTo((19 * 3600) / 3077, 9);
+    expect(lak.goalie_5v5?.xga_per_60).toBeCloseTo((1.25 * 3600) / 3077, 9);
+    expect(lak.goalie_5v5?.toi_seconds).toBe(3077);
+
+    const ratings = computeDailyPowerRatings(buildGenuineTeamGames(logs), date);
+    const lakRating = ratings.get("LAK")!.rating;
+    const twnRating = ratings.get("TWN")!.rating;
+    expect(lakRating.goalie_rating).not.toBeNull();
+    expect(lakRating.goalie_rating!).toBeCloseTo(twnRating.goalie_rating!, 9);
+    // The other components still read all situations (unchanged).
+    expect(lakRating.ga60).toBeGreaterThan(twnRating.ga60);
+  });
+
+  it("keeps 5-on-5 goaltending unknown when a 5-on-5 row is missing or incomplete", async () => {
+    const day1 = "2026-11-11";
+    const day2 = "2026-11-12";
+    const complete = ["AAA", "BBB", "CCC"];
+    const logs = await fetchGameLogs(
+      rowsClient({
+        nst_team_gamelogs_as_rates: ["MIS", "INC", ...complete].flatMap(
+          (team, i) => [allRow(team, day1, 2 + i / 2), allRow(team, day2, 3 + i / 3)],
+        ),
+        nst_team_gamelogs_es_counts: [
+          // MIS has no 5-on-5 row for day 1; INC's day-2 row has no TOI.
+          counts5v5("MIS", day2, 2, 20, 2.2, 2900),
+          counts5v5("INC", day1, 2, 20, 2.2, 2900),
+          counts5v5("INC", day2, 2, 20, 2.2, null),
+          ...complete.flatMap((team, i) => [
+            counts5v5(team, day1, i, 20 + i, 2 + i / 10, 2800 + 50 * i),
+            counts5v5(team, day2, 3 - i, 24 - i, 2.5 - i / 10, 3000 - 40 * i),
+          ]),
+        ],
+      }),
+      "2026-06-15",
+      day2,
+    );
+
+    const ratings = computeDailyPowerRatings(buildGenuineTeamGames(logs), day2);
+    for (const team of ["MIS", "INC"]) {
+      const rating = ratings.get(team)!.rating;
+      expect(rating.goalie_rating).toBeNull();
+      expect(Number.isFinite(rating.off_rating)).toBe(true);
+    }
+    for (const team of complete) {
+      expect(Number.isFinite(ratings.get(team)!.rating.goalie_rating)).toBe(true);
+    }
+  });
+
+  it("reads a 5-on-5 counts row as unknown unless GA, SA, xGA and TOI are all present", () => {
+    const row = { ga: 3, sa: 19, xga: 1.25, toi_seconds: 3077 };
+    expect(goalie5v5InputsFromCounts(row)).not.toBeNull();
+    expect(goalie5v5InputsFromCounts(undefined)).toBeNull();
+    expect(goalie5v5InputsFromCounts({ ...row, ga: null })).toBeNull();
+    expect(goalie5v5InputsFromCounts({ ...row, sa: null })).toBeNull();
+    expect(goalie5v5InputsFromCounts({ ...row, xga: "" })).toBeNull();
+    expect(goalie5v5InputsFromCounts({ ...row, toi_seconds: 0 })).toBeNull();
+  });
+});
+
+describe("power-ratings genuine games exclude season-total rows (v4)", () => {
+  const log = (
+    date: string,
+    seasonId: number,
+    gp: number | null,
+    xgfPer60: number,
+  ): GameLog => ({
+    team_abbreviation: "AAA",
+    date,
+    season_id: seasonId,
+    cf_per_60: 55,
+    ca_per_60: 55,
+    sf_per_60: 28,
+    sa_per_60: 28,
+    gf_per_60: 3,
+    ga_per_60: 3,
+    xgf_per_60: xgfPer60,
+    xga_per_60: 2.8,
+    gp: gp as number,
+    toi_seconds: null,
+    pace_per_60: 55,
+    hdcf_per_60: 10,
+    hdca_per_60: 10,
+    pdo: 1,
+    data_mode: "all",
+    pp_xgf_per_60: null,
+    pk_xga_per_60: null,
+    penalties_drawn_per_60: null,
+    penalties_taken_per_60: null,
+  });
+
+  it("does not count a gp = 82 season-total row dated before the season start", () => {
+    const logs = [
+      // Stored 2025-26 season totals and a row with no gp: neither is one game.
+      log("2026-06-29", 20252026, null, 9.9),
+      log("2026-06-30", 20252026, 82, 9.9),
+      log("2026-09-29", 20262027, 1, 2),
+      log("2026-10-01", 20262027, 1, 3),
+    ];
+
+    const games = buildGenuineTeamGames(logs).get("AAA")!;
+    expect(games.map((game) => game.date)).toEqual(["2026-10-01", "2026-09-29"]);
+    expect(games.map((game) => game.gp_to_date)).toEqual([2, 1]);
+
+    const ewma = calculateEwma(games, "2026-10-01")!;
+    const w = Math.pow(0.5, 1 / 10);
+    expect(ewma.xgf60_ewma).toBeCloseTo((3 + 2 * w) / (1 + w), 12);
   });
 });

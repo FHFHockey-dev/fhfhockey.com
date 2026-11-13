@@ -39,7 +39,7 @@ describe("Team Power Terminal (W1 P0 #22, decision 58)", () => {
     expect(offense.style.marginLeft).toBe("50%");
     expect(offense.style.width).toBe("50%"); // 130 = +2 SD reaches the edge
     expect(screen.queryByTestId("rating-bar-Pace")!.style.width).toBe("0%"); // exactly average
-    const goalie = screen.getByTestId("rating-bar-Goalie");
+    const goalie = screen.getByTestId("rating-bar-5v5 Goalie");
     expect(goalie.style.marginLeft).toBe("0%");
     expect(goalie.style.width).toBe("50%");
   });

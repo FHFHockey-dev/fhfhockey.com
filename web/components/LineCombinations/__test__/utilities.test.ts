@@ -168,7 +168,11 @@ describe("convertToLines", () => {
 
 describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
   type Rows = Record<string, any[]>;
-  function routeTables(rows: Rows, calls: { table: string; method: string; args: unknown[] }[]) {
+  function routeTables(
+    rows: Rows,
+    calls: { table: string; method: string; args: unknown[] }[],
+    returned: { table: string; data: any[] }[] = []
+  ) {
     fromMock.mockImplementation((table: string) => {
       const own: { method: string; args: unknown[] }[] = [];
       const query: Record<string, any> = {};
@@ -193,6 +197,7 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
                 : (value as unknown[]).includes(row[String(key)])
           )
         );
+        returned.push({ table, data });
         return resolve({ data, error: null });
       };
       return query;
@@ -271,12 +276,18 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
     snapshot_date = "2026-11-11",
     coverage_status = "complete"
   ) => ({
-    game_id, team_id: 22, snapshot_date, unit_type, player_ids,
+    season_id: 20252026, game_id, team_id: 22, snapshot_date, unit_type, unit_number: 1, player_ids,
     player_count: player_ids.length, unit_toi_seconds: clockSeconds * player_ids.length,
     coverage_status
   });
+  // Rank each unit type's rows 1, 2, ... as the builder stores them.
+  const ranked = (rows: ReturnType<typeof unitRow>[]) =>
+    rows.map((row, index) => ({
+      ...row,
+      unit_number: rows.slice(0, index).filter((other) => other.unit_type === row.unit_type).length + 1
+    }));
   // Overlapping observed units: the board must still place each player once.
-  const overlappingUnits = (gameId: number, snapshotDate?: string, coverage?: string) => [
+  const overlappingUnits = (gameId: number, snapshotDate?: string, coverage?: string) => ranked([
     unitRow(gameId, "forward_line", [11, 12, 13], 300, snapshotDate, coverage),
     unitRow(gameId, "forward_line", [13, 14, 15], 250, snapshotDate, coverage),
     unitRow(gameId, "forward_line", [14, 15, 16], 200, snapshotDate, coverage),
@@ -285,7 +296,7 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
     unitRow(gameId, "defense_pair", [22, 23], 150, snapshotDate, coverage),
     unitRow(gameId, "defense_pair", [23, 24], 100, snapshotDate, coverage),
     unitRow(gameId, "defense_pair", [25, 26], 50, snapshotDate, coverage)
-  ];
+  ]);
 
   test("by default the board is disjoint observed 5v5 units (decision 137 switch on)", async () => {
     const rows = baseRows();
@@ -297,6 +308,8 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
     const result = await getLineCombinations(22, 20252026);
     const lineIds = (line: { playerId: number }[]) => line.map((player) => player.playerId);
     expect(result.lineSource).toBe("five_on_five_observed");
+    // Each board unit's 5v5 seconds together in the last game, line 1 first.
+    expect(result.fiveOnFiveUnitSeconds).toEqual({ forwards: [300, 200, 100], defense: [200, 100, 50] });
     expect(result.goalies.line1[0].season.GAA).toBeNull();
     expect(result.goalies.line1[0].season.SVPercentage).toBeCloseTo(31 / 33, 6);
     expect(lineIds(result.forwards.line1)).toEqual([11, 12, 13]);
@@ -312,6 +325,43 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
     expect(new Set(boardIds).size).toBe(boardIds.length);
     expect(result.promotions).toEqual([]);
     expect(result.demotions).toEqual([]);
+  });
+
+  test("reads 5v5 units within the season and only each game's latest snapshot", async () => {
+    const rows = baseRows();
+    rows.skatersGameStats = skaterRows();
+    rows.team_unit_toi = [
+      ...overlappingUnits(102, "2026-11-12"),
+      ...overlappingUnits(101, "2026-11-11"),
+      // Superseded snapshots: game 101's 11-08 one, and game 102's 11-11 one
+      // (which shares its date with game 101's latest).
+      ...overlappingUnits(101, "2026-11-08"),
+      ...overlappingUnits(102, "2026-11-11")
+    ];
+    const calls: { table: string; method: string; args: unknown[] }[] = [];
+    const returned: { table: string; data: any[] }[] = [];
+    routeTables(rows, calls, returned);
+    const result = await getLineCombinations(22, 20252026);
+
+    expect(result.lineSource).toBe("five_on_five_observed");
+    // Every team_unit_toi read is season-scoped, so its season-led index serves it.
+    const unitReads = calls.filter((call) => call.table === "team_unit_toi" && call.method === "select");
+    const seasonFilters = calls.filter(
+      (call) => call.table === "team_unit_toi" && call.method === "eq" && call.args[0] === "season_id"
+    );
+    expect(unitReads.length).toBeGreaterThan(0);
+    expect(seasonFilters).toHaveLength(unitReads.length);
+    expect(seasonFilters.every((call) => call.args[1] === 20252026)).toBe(true);
+    // The unit read asks only for the games' latest snapshot dates; the old
+    // query read every snapshot, 11-08 included.
+    const unitRowsRead = returned
+      .filter((entry) => entry.table === "team_unit_toi")
+      .flatMap((entry) => entry.data)
+      .filter((row) => row.unit_number !== 1);
+    expect(unitRowsRead.length).toBeGreaterThan(0);
+    expect(new Set(unitRowsRead.map((row) => row.snapshot_date))).toEqual(
+      new Set(["2026-11-12", "2026-11-11"])
+    );
   });
 
   test("unknown 5v5 time stays unknown: a partial latest snapshot keeps the labelled legacy board", async () => {
@@ -338,6 +388,7 @@ describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
     routeTables(baseRows(), []);
     const result = await getLineCombinations(22, 20252026, { fiveOnFive: false });
     expect(result.lineSource).toBe("all_strength_legacy");
+    expect(result.fiveOnFiveUnitSeconds).toBeNull();
     expect(fromMock).not.toHaveBeenCalledWith("team_unit_toi");
   });
 

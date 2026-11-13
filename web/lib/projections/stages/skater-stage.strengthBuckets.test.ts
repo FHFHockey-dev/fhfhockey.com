@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { runPerGameSkaterStage } from "./skater-stage";
+import { fetchOpponentGoalieCandidateQuality } from "../opponentGoalieQuality";
 import { resolveSkaterRolloutConfig } from "../skaterRollout";
 import { computeSkaterPhysicalEventRates } from "../calculators/skater-adjustments";
 import {
@@ -26,7 +27,7 @@ const fx = vi.hoisted(() => ({
   metrics: { data_quality: {} as Record<string, number>, warnings: [] as string[] },
   // Opponent goalie fixtures (#21): start rows by team, history by goalie id.
   goalieStarts: new Map<number, Array<{ player_id: number; start_probability: number }>>(),
-  goalieHistory: new Map<number, Array<{ shots_against: number; goals_allowed: number }>>(),
+  goalieHistory: new Map<number, Array<{ shots_against: unknown; goals_allowed: unknown }>>(),
   evOverride: new Map<number, Record<string, unknown>>(),
 }));
 vi.mock("lib/supabase/server", () => ({ default: { from: (table: string) => {
@@ -212,38 +213,81 @@ describe("strength-bucket calculators", () => {
   });
 });
 
-describe("FORGE opponent goalie context (W1 P0 #21)", () => {
+describe("FORGE opponent goalie context (W1 P0 #21, decision 148)", () => {
   const strength = { toiEsSecondsAvg: 15000, toiPpSecondsAvg: 1200, toiPkSecondsAvg: 1800, shotsEsAvg: 25, shotsPpAvg: 6, shotsPkAvg: 3 };
   const history = (games: number, shots: number, goals: number) => Array.from({ length: games }, () => ({ shots_against: shots, goals_allowed: goals }));
+  // Everything but the labelled goalie context and the write timestamp.
+  const withoutGoalieContext = (rows: Array<Record<string, any>>) => rows.map(({ updated_at: _written, ...row }) => {
+    const { opponent_goalie_context: _context, ...selection } = row.uncertainty.model.skater_selection;
+    return { ...row, uncertainty: { ...row.uncertainty, model: { ...row.uncertainty.model, skater_selection: selection } } };
+  });
+  const reset = () => { fx.goalieStarts.clear(); fx.goalieHistory.clear(); };
 
-  it("scales goals per shot by the start-weighted posterior save quality, unresolved mass at league average", async () => {
+  it("keeps the start-weighted posterior as labelled context with a neutral 1.0 multiplier", async () => {
     // Team 11's goalies face team 10's skaters: a strong starter, a weak backup, 10% unresolved.
     fx.goalieStarts.set(11, [{ player_id: 9001, start_probability: 0.7 }, { player_id: 9002, start_probability: 0.2 }]);
     fx.goalieHistory.set(9001, history(60, 30, 2));   // 1800 shots, .9333
     fx.goalieHistory.set(9002, history(20, 30, 4));   // 600 shots, .8667
     const { players } = await runStage(strength);
+    reset();
     const context = players[0].uncertainty.model.skater_selection.opponent_goalie_context;
     const league = context.league_save_pct;
     const posterior = (shots: number, goals: number) => (shots - goals + 6000 * league) / (shots + 6000);
     const expectedGa = 0.7 * (1 - posterior(1800, 120)) + 0.2 * (1 - posterior(600, 80)) + 0.1 * (1 - league);
     expect(context).toMatchObject({ feature: "goalie_save_quality_posterior", unresolved_start_mass: 0.1,
-      pass_through: "full_multiplicative_unvalidated", start_mass_normalized: false });
-    expect(context.goal_rate_multiplier).toBeCloseTo(expectedGa / (1 - league), 4);
-    expect(context.candidates.map((c: any) => c.goalie_id)).toEqual([9001, 9002]);
+      adjustment: "neutral_unvalidated", start_mass_normalized: false, goal_rate_multiplier: 1, assist_rate_multiplier: 1 });
+    expect(context).not.toHaveProperty("pass_through");
+    expect(context.expected_goals_allowed_per_shot).toBeCloseTo(expectedGa, 6);
+    expect(context.candidates.map((c: any) => [c.goalie_id, c.posterior_save_pct])).toEqual([
+      [9001, Number(posterior(1800, 120).toFixed(5))], [9002, Number(posterior(600, 80).toFixed(5))]]);
     expect(context).not.toHaveProperty("weighted_projected_gsaa_per_60");
   });
 
-  it("projects fewer skater goals against a better goalie than against a league-average one", async () => {
+  it("writes an identical skater and team payload against a strong and a weak opponent goalie", async () => {
     fx.goalieStarts.set(11, [{ player_id: 9001, start_probability: 1 }]);
-    fx.goalieHistory.set(9001, history(200, 30, 1));
-    const strong = (await runStage(strength)).players;
-    fx.goalieStarts.set(11, []);
-    const average = (await runStage(strength)).players;
-    expect(average[0].uncertainty.model.skater_selection.opponent_goalie_context.goal_rate_multiplier).toBe(1);
-    expect(sum(strong, "proj_goals_es")).toBeLessThan(sum(average, "proj_goals_es"));
-    expect(sum(strong, "proj_goals_pk")).toBeLessThan(sum(average, "proj_goals_pk"));
-    fx.goalieStarts.clear();
-    fx.goalieHistory.clear();
+    fx.goalieHistory.set(9001, history(200, 30, 1));   // .967 history
+    const strong = await runStage(strength);
+    fx.goalieHistory.set(9001, history(200, 30, 6));   // .800 history
+    const weak = await runStage(strength);
+    reset();
+    const strongContext = strong.players[0].uncertainty.model.skater_selection.opponent_goalie_context;
+    const weakContext = weak.players[0].uncertainty.model.skater_selection.opponent_goalie_context;
+    expect(strongContext.candidates[0].posterior_save_pct).toBeGreaterThan(weakContext.candidates[0].posterior_save_pct);
+    for (const context of [strongContext, weakContext]) {
+      expect(context).toMatchObject({ adjustment: "neutral_unvalidated", goal_rate_multiplier: 1, assist_rate_multiplier: 1 });
+    }
+    expect(sum(strong.players, "proj_goals_es")).toBeGreaterThan(0);
+    expect(withoutGoalieContext(strong.players)).toEqual(withoutGoalieContext(weak.players));
+    expect({ ...strong.team, updated_at: null }).toEqual({ ...weak.team, updated_at: null });
+    expect([...strong.teamGoalsByTeamId]).toEqual([...weak.teamGoalsByTeamId]);
+  });
+
+  it("drops history games with an unknown, empty or non-integer count instead of reading them as zero (Astra AF-02)", async () => {
+    fx.goalieStarts.set(11, [{ player_id: 9003, start_probability: 0.6 }, { player_id: 9004, start_probability: null as unknown as number }]);
+    fx.goalieHistory.set(9003, [
+      { shots_against: 30, goals_allowed: null },       // was a 30-shot shutout
+      { shots_against: null, goals_allowed: 2 },
+      { shots_against: "", goals_allowed: "" },
+      { shots_against: 30, goals_allowed: undefined },
+      { shots_against: "abc", goals_allowed: 1 },
+      { shots_against: 30.5, goals_allowed: 2 },
+      { shots_against: 20, goals_allowed: 25 },
+      { shots_against: 28, goals_allowed: 3 },
+      { shots_against: "31", goals_allowed: "4" },
+    ]);
+    const adapter = await fetchOpponentGoalieCandidateQuality({ gameId: 2026020002, opponentTeamId: 11, asOfDate: "2026-10-07" });
+    expect(adapter).toEqual([{ goalieId: 9003, startProbability: 0.6, historyShotsAgainst: 59, historyGoalsAllowed: 7 }]);
+
+    // A goalie whose only game has a null goals count has no evidence: the posterior is the league prior.
+    fx.goalieStarts.set(11, [{ player_id: 9003, start_probability: 1 }]);
+    fx.goalieHistory.set(9003, [{ shots_against: 30, goals_allowed: null }]);
+    const { players } = await runStage(strength);
+    reset();
+    const context = players[0].uncertainty.model.skater_selection.opponent_goalie_context;
+    expect(context.candidates).toEqual([{ goalie_id: 9003, start_probability: 1, history_shots_against: 0,
+      posterior_save_pct: Number(context.league_save_pct.toFixed(5)) }]);
+    expect(context.expected_goals_allowed_per_shot).toBeCloseTo(1 - context.league_save_pct, 6);
+    expect(context).toMatchObject({ adjustment: "neutral_unvalidated", goal_rate_multiplier: 1, assist_rate_multiplier: 1 });
   });
 });
 

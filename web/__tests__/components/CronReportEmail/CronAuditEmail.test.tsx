@@ -6,6 +6,29 @@ import { describe, expect, it } from "vitest";
 import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
 
 describe("CronAuditEmail", () => {
+  it("labels intentional skips separately without treating a later skip as recovery", () => {
+    const base = { key: "", label: "forecast", jobName: "forecast", runTimeDisplay: "2026-11-13T12:00:00Z",
+      method: "POST", route: "/forecast", routePath: "/forecast", targetTable: null,
+      statusCode: 200, durationMs: 100, rowsUpserted: null, rowsAffected: null, failedRows: null,
+      reason: null, lastKnownSuccessDisplay: "2026-11-12T12:00:00Z", failedRowSamples: [] };
+    const html = renderToStaticMarkup(<CronAuditEmail sinceDate="2026-11-12T13:00:00Z"
+      summary={{ auditRuns: 3, auditSuccesses: 0, auditFailures: 1, auditSkipped: 1, auditUnknown: 1,
+        totalRowsUpserted: 0, totalFailedRows: 0 }}
+      audits={[
+        { ...base, key: "failed", status: "failure", reason: "write failed" },
+        { ...base, key: "skip", status: "skipped", runTimeDisplay: "2026-11-13T12:05:00Z", reason: "no_production_model" },
+        { ...base, key: "unknown", jobName: "unproven", status: "unknown",
+          missingObservationWarnings: ["Operation was skipped or produced no output"] },
+      ]} />);
+    expect(html).toContain(">SKIPPED</strong>");
+    expect(html).toContain(">UNKNOWN</strong>");
+    expect(html).toContain("no_production_model");
+    expect(html).toContain("1 skipped");
+    expect(html).toContain("Failures need attention.");
+    expect(html).not.toContain("Earlier failures have recovered.");
+    expect(html).not.toContain("SKIPPED / NO OUTPUT");
+  });
+
   it("shows missing HD coverage independently from execution health", () => {
     const html = renderToStaticMarkup(<CronAuditEmail audits={[]} sinceDate="2026-11-01T13:00:00Z"
       summary={{ auditRuns: 0, auditSuccesses: 0, auditFailures: 0, auditUnknown: 0, totalRowsUpserted: 0, totalFailedRows: 0 }}
@@ -178,7 +201,7 @@ describe("CronAuditEmail", () => {
     expect(markup).toContain("statement timeout");
   });
 
-  it("shows skipped observations separately from execution failures", () => {
+  it("keeps ambiguous no-output warnings unknown without inferring an intentional skip", () => {
     const markup = renderToStaticMarkup(<CronAuditEmail
       sinceDate="2026-10-02T21:15:00.000Z"
       summary={{ auditRuns: 1, auditSuccesses: 0, auditFailures: 0, auditUnknown: 1, totalRowsUpserted: 0, totalFailedRows: 0 }}
@@ -187,7 +210,8 @@ describe("CronAuditEmail", () => {
         durationMs: 100, rowsUpserted: 0, rowsAffected: 0, failedRows: 0, reason: "serving gate skipped", lastKnownSuccessDisplay: null,
         failedRowSamples: [], missingObservationWarnings: ["Operation was skipped or produced no output"] }]}
     />);
-    expect(markup).toContain("SKIPPED / NO OUTPUT");
+    expect(markup).toContain(">UNKNOWN</strong>");
+    expect(markup).not.toContain(">SKIPPED</strong>");
     expect(markup).toContain("serving gate skipped");
   });
 

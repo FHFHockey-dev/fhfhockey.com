@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { formatWinOdds, calculateBlendedWinOdds } from "./utils/calcWinOdds";
+import { formatWinOdds, calculateBlendedWinOdds, GAME_GRID_WIN_ODDS } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
 import { useTeam } from "./contexts/GameGridContext";
 import {
@@ -333,6 +333,7 @@ export function MatchUpCell({
   const hasResult = us.score !== undefined && opponent.score !== undefined;
   let text = "";
   let stat = "";
+  let oddsTitle: string | undefined;
 
   if (hasResult) {
     const usScore = us.score!;
@@ -341,10 +342,16 @@ export function MatchUpCell({
     text = win ? "WIN" : "LOSS";
     stat = `${usScore}-${opponentScore}`;
   } else {
-    // Calculate blended win odds
+    // Win odds are withheld (decision 64): say so, never a stale value or a bare dash.
     const blendedWinOdds = calculateBlendedWinOdds(us.winOdds, us.apiWinOdds);
-    stat = blendedWinOdds !== null ? formatWinOdds(blendedWinOdds) : "-";
+    if (blendedWinOdds !== null) stat = formatWinOdds(blendedWinOdds);
+    else if (GAME_GRID_WIN_ODDS.status === "unavailable") {
+      stat = "Odds n/a";
+      oddsTitle = GAME_GRID_WIN_ODDS.message;
+    } else stat = "-";
   }
+  const cellLabel = `${usTeam.name} ${home ? "vs" : "at"} ${opponentTeam.name}. ${
+    hasResult ? `${text} ${stat}` : oddsTitle ? `${stat}: ${oddsTitle}` : `Win odds ${stat}`}. Open game details.`;
 
   // Define tooltipContent within MatchUpCell
   const tooltipContent = (
@@ -358,8 +365,8 @@ export function MatchUpCell({
   );
 
   return (
-    <GoalieMatchupCell game={game} teamId={us.id} excluded={excluded} fallback={<Tooltip content={tooltipContent}>
-      <div className={styles.matchupCell} style={matchupCellStyle}>
+    <GoalieMatchupCell game={game} teamId={us.id} excluded={excluded} fallback={<Tooltip content={tooltipContent} label={cellLabel}>
+      <div className={styles.matchupCell} style={matchupCellStyle} title={oddsTitle}>
         {isMobile ? (
           <div
             className={clsx(

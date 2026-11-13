@@ -10,7 +10,7 @@ import type { CronClassification } from "lib/cron/nhlOffSeason";
 
 // "continued" marks a planned partial run: the route stopped at its runtime
 // budget and handed back a cursor for the next call. It is not a failure.
-type AuditStatus = "success" | "failure" | "continued";
+type AuditStatus = "success" | "failure" | "continued" | "skipped";
 
 type CronAuditRow = {
   job_name: string;
@@ -54,6 +54,7 @@ function responseOutcome(body: unknown) {
     "success", "status", "error", "asOfDate", "nextGameId", "nextStartDate",
     "lastCompletedGameId", "rowsUpserted", "rowsVerified", "rowsPruned",
   ], 2000);
+  Object.assign(outcome, outcomeFields(record, ["skipped", "outcome", "reason"]));
   if (Array.isArray(record.errors)) {
     outcome.errors = {
       count: record.errors.length,
@@ -331,11 +332,18 @@ export function withCronJobAudit(
     const failedRows = recordRowMetrics ? inferFailedRows(capturedBody) : null;
     const plannedContinuation =
       thrown == null && isPlannedContinuation(statusCode, capturedBody);
+    const explicitSkip = capturedBody != null && typeof capturedBody === "object" &&
+      !Array.isArray(capturedBody) && (capturedBody as Record<string, unknown>).skipped === true;
     const inferredFailure =
       !plannedContinuation && (thrown != null ||
       statusCode === 207 ||
       statusCode >= 400 ||
+      (explicitSkip && (inferFailedRows(capturedBody) ?? 0) > 0) ||
       inferFailure(capturedBody));
+    // Preserve the established seasonal pause contract. Other explicit skips
+    // are execution outcomes, never evidence of a successful data refresh.
+    const intentionalSkip = explicitSkip && statusCode >= 200 && statusCode < 300 &&
+      (capturedBody as Record<string, unknown>).reason !== "nhl_off_season";
 
     if (
       opts?.includeFinalAuditReceipt &&
@@ -384,7 +392,7 @@ export function withCronJobAudit(
         ? "continued"
         : inferredFailure
           ? "failure"
-          : "success",
+          : intentionalSkip ? "skipped" : "success",
       rows_affected: rowsUpserted,
       details: {
         invocationSource: req.headers?.["user-agent"] === "vercel-cron/1.0" ? "vercel-cron-claimed" : "unspecified",

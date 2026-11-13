@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   refreshGoalieUnderlyingSummarySnapshotsForGameIdsMock,
@@ -39,7 +39,33 @@ vi.mock("lib/underlying-stats/goalieStatsRefreshWindow", () => ({
     resolveGoalieStatsIncrementalSelectionMock,
 }));
 
+import { fetchSeasonGoalieSummaryGameIdSet } from "lib/underlying-stats/goalieStatsSummaryRefresh";
 import handler from "../../../../../pages/api/v1/db/update-goalie-underlying-summaries";
+
+// Rule 19 fixtures at 2026-04-03T03:30Z (contract nhl-game-state-v1).
+const FINALITY_GAMES = [
+  { id: 2025021001, date: "2026-04-01", startTime: "2026-04-01T23:00:00.000Z", seasonId: 20252026,
+    type: 2, game_state: "FINAL", game_schedule_state: "OK", game_state_observed_at: "2026-04-02T02:00:00.000Z" },
+  // A 10 pm ET start dated Apr 2: before UTC today, still being played.
+  { id: 2025021002, date: "2026-04-02", startTime: "2026-04-03T02:00:00.000Z", seasonId: 20252026,
+    type: 2, game_state: "LIVE", game_schedule_state: "OK", game_state_observed_at: "2026-04-03T03:20:00.000Z" },
+  // Dated before today and past start + 8 h, but postponed: never final.
+  { id: 2025021003, date: "2026-04-01", startTime: "2026-04-01T23:00:00.000Z", seasonId: 20252026,
+    type: 2, game_state: "FUT", game_schedule_state: "PPD", game_state_observed_at: "2026-04-01T18:00:00.000Z" },
+  // Unknown state: the labelled start + 8 h fallback decides.
+  { id: 2025021004, date: "2026-03-31", startTime: "2026-03-31T23:00:00.000Z", seasonId: 20252026,
+    type: 2, game_state: null, game_schedule_state: null, game_state_observed_at: null },
+];
+const finalityGamesChain = () => {
+  const chain: any = {
+    select: vi.fn(() => chain),
+    eq: vi.fn(() => chain),
+    lte: vi.fn(() => chain),
+    order: vi.fn(() => chain),
+    range: vi.fn((from: number) => Promise.resolve({ data: from === 0 ? FINALITY_GAMES : [], error: null })),
+  };
+  return chain;
+};
 
 function createMockApiContext(args?: {
   method?: string;
@@ -102,6 +128,29 @@ describe("/api/v1/db/update-goalie-underlying-summaries", () => {
       }
 
       throw new Error(`Unexpected table access: ${table}`);
+    });
+  });
+
+  describe("backfill finished-game selection (rule 19)", () => {
+    afterEach(() => vi.useRealTimers());
+
+    it("selects by stored game state: a LIVE late game and a postponed game are not finished", async () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-04-03T03:30:00.000Z"));
+      vi.mocked(fetchSeasonGoalieSummaryGameIdSet).mockResolvedValue(new Set());
+      serviceRoleFromMock.mockImplementation((table: string) => {
+        if (table === "games") return finalityGamesChain();
+        throw new Error(`Unexpected table access: ${table}`);
+      });
+      const { req, res } = createMockApiContext({
+        query: { backfill: "true", seasonId: "20252026", limit: "10" },
+      });
+
+      await handler(req as never, res as never);
+
+      expect(refreshGoalieUnderlyingSummarySnapshotsForGameIdsMock).toHaveBeenCalledWith(
+        expect.objectContaining({ gameIds: [2025021001, 2025021004] })
+      );
     });
   });
 

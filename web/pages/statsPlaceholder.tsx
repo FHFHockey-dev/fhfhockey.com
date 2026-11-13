@@ -28,6 +28,8 @@ type StatsProps = {
   teams: Team[];
   pastSoSRankings: CanonicalSosRanking[];
   futureSoSRankings: CanonicalSosRanking[];
+  /** snapshot_date of the served descriptive-sos-v2 rows (decision 146 label). */
+  sosAsOf: string | null;
   teamPowerRankings: PowerRanking[];
 };
 
@@ -43,6 +45,7 @@ function Stats({
   teams,
   pastSoSRankings,
   futureSoSRankings,
+  sosAsOf,
   teamPowerRankings,
 }: StatsProps) {
   const size = useScreenSize();
@@ -172,7 +175,11 @@ function Stats({
                     Strength of Schedule -{" "}
                     <span className="spanColorBlue">Past</span>
                   </h2>
-                  <StrengthOfSchedule type="past" rankings={pastSoSRankings} />
+                  <StrengthOfSchedule
+                    type="past"
+                    rankings={pastSoSRankings}
+                    asOf={sosAsOf}
+                  />
                 </div>
 
                 <div className="sos-container">
@@ -183,6 +190,7 @@ function Stats({
                   <StrengthOfSchedule
                     type="future"
                     rankings={futureSoSRankings}
+                    asOf={sosAsOf}
                   />
                 </div>
               </div>
@@ -196,7 +204,11 @@ function Stats({
                   Strength of Schedule -{" "}
                   <span className="spanColorBlue">Past</span>
                 </h2>
-                <StrengthOfSchedule type="past" rankings={pastSoSRankings} />
+                <StrengthOfSchedule
+                  type="past"
+                  rankings={pastSoSRankings}
+                  asOf={sosAsOf}
+                />
               </div>
 
               <div className="goalie-trends-container">
@@ -211,6 +223,7 @@ function Stats({
                 <StrengthOfSchedule
                   type="future"
                   rankings={futureSoSRankings}
+                  asOf={sosAsOf}
                 />
               </div>
             </>
@@ -316,6 +329,7 @@ export async function getStaticProps() {
   // 2. Latest descriptive-sos-v2 snapshot for that season (v1 sos_standings
   //    rows are issued history and are not served).
   let sosRows: TeamSosReaderRow[] = [];
+  let sosAsOf: string | null = null;
   // team_sos_daily joins the generated types once its migration is applied.
   const sosDb = supabase as unknown as SupabaseClient<any>;
   try {
@@ -337,6 +351,7 @@ export async function getStaticProps() {
         .eq("snapshot_date", snapshotDate);
       if (snapshot.error) throw snapshot.error;
       sosRows = (snapshot.data as unknown as TeamSosReaderRow[]) ?? [];
+      sosAsOf = sosRows.length ? String(snapshotDate) : null;
     }
   } catch (error) {
     console.error("Unable to load current-season team SOS (v2) data.", error);
@@ -349,6 +364,7 @@ export async function getStaticProps() {
         teams,
         pastSoSRankings: [],
         futureSoSRankings: [],
+        sosAsOf: null,
         teamPowerRankings: [],
       },
       revalidate: 3600, // Revalidate every hour
@@ -377,6 +393,7 @@ export async function getStaticProps() {
         teams,
         pastSoSRankings,
         futureSoSRankings,
+        sosAsOf,
         teamPowerRankings: [],
       },
       revalidate: 3600, // Revalidate every hour
@@ -395,6 +412,7 @@ export async function getStaticProps() {
       teams,
       pastSoSRankings,
       futureSoSRankings,
+      sosAsOf,
       teamPowerRankings,
     },
     revalidate: 3600, // 1 hour in seconds

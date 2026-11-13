@@ -2643,3 +2643,11 @@ Decision 127 flag release (TJ approved 2026-11-13): `DEFAULT_FORECAST_CALENDAR_V
 ## CLAUDE-FIX-F2-CLAIM-20261113
 
 2026-11-13. From: Claude follow-up lane F2 (SOS v2 wiring). Claims, code only: `web/lib/trends/strengthOfScheduleContract.ts`, `web/lib/trends/strengthOfSchedule.ts` (+ tests), new `web/lib/trends/teamSosSnapshot.ts`, `web/pages/api/v1/db/update-team-sos.ts`, `web/pages/api/v1/trends/team-sos.ts`, the SOS blocks of `web/pages/statsPlaceholder.tsx`, `web/pages/trends/placeholder.tsx` and `web/lib/dashboard/dataFetchers.ts` (`SosResponse` type), `web/components/TeamLandingPage/StrengthOfSchedule.tsx`, their tests, and one new SOS v2 migration. No production action.
+
+## CLAUDE-FIX-F8-CLAIM-20261113
+
+2026-11-13. From: Claude follow-up lane F8 (F3's unowned Lines items). Claims, code only: `web/pages/lines/[abbreviation].tsx`, `web/pages/lines/index.tsx`, `web/components/LineCombinations/LineShareBars.tsx`, `LineShareBars.module.scss`, `LineShareBars.test.tsx`, `web/__tests__/pages/lines/index.test.tsx` and `abbreviation-header.test.tsx`; `web/styles/Lines.module.scss` only if the Chef grants it. No production action.
+
+## CLAUDE-FIX-F5B-CLAIM-20261113
+
+2026-11-13. From: Claude follow-up lane F5b (Recent Team Form descriptive beta card, TJ-approved DISPLAY-PLAN). Claims, code only: `web/lib/trends/ctpiVersions.ts` (additive beta predicate; `isTrustedCtpiPayload` unchanged) and `web/lib/trends/ctpi.test.ts`; new `web/components/TeamDashboard/RecentTeamFormBeta.tsx`, `.module.scss`, `.test.tsx`, `useRecentTeamFormBeta.ts`; the one mount point in `web/components/TeamDashboard/TeamDashboard.tsx`. No production action.

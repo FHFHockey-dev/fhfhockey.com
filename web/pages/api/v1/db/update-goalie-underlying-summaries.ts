@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { type GameFinalityInput, resolveGameFinality } from "lib/games/gameFinality";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import serviceRoleClient from "lib/supabase/server";
 import {
@@ -34,10 +35,9 @@ type SummaryRefreshResponse =
     };
 
 type QueryValue = string | string[] | undefined;
-type GameRow = {
+type GameRow = GameFinalityInput & {
   id: number | string | null;
   date: string | null;
-  startTime?: string | null;
   type?: number | string | null;
 };
 
@@ -88,9 +88,8 @@ async function fetchFinishedSeasonGames(args: {
   seasonId: number;
   gameType?: number | null;
 }): Promise<Array<{ id: number; date: string }>> {
-  const today = new Date().toISOString().slice(0, 10);
   const now = new Date();
-  const finishedCutoff = new Date(now.getTime() - 8 * 60 * 60 * 1000);
+  const today = now.toISOString().slice(0, 10);
 
   const rows = await fetchAllRows<GameRow>((from, to) =>
     ((query: any) => {
@@ -102,7 +101,9 @@ async function fetchFinishedSeasonGames(args: {
     })(
       serviceRoleClient
         .from("games")
-        .select("id,date,startTime,seasonId,type")
+        .select(
+          "id,date,startTime,seasonId,type,game_state,game_schedule_state,game_state_observed_at"
+        )
         .eq("seasonId", args.seasonId)
         .lte("date", today)
         .order("date", { ascending: false })
@@ -116,10 +117,10 @@ async function fetchFinishedSeasonGames(args: {
     const startTime = row.startTime;
 
     if (!Number.isFinite(id)) return [];
-    if (typeof date !== "string" || date >= today) return [];
-    if (typeof startTime === "string" && new Date(startTime) > finishedCutoff) {
-      return [];
-    }
+    if (typeof date !== "string") return [];
+    // Rule 19: the stored game state decides (contract nhl-game-state-v1);
+    // start + 8 h is only the labelled fallback while the state is unknown.
+    if (!resolveGameFinality(row, now).isFinal) return [];
 
     return [{ id, date, startTime }];
   });

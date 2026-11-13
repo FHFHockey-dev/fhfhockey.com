@@ -122,8 +122,8 @@ describe("/api/v1/trends/team-sos", () => {
       team_sos_daily: [
         v2Row("AAA", { snapshot_date: "2026-01-13", past_direct_win_pct: 0.1 }),
         v2Row("AAA", { pending_fixtures: 2 }),
-        v2Row("BBB", { future_fixtures: 0, future_direct_win_pct: null }),
-        v2Row("CCC", { future_direct_win_pct: null }),
+        v2Row("BBB", { future_fixtures: 0, future_direct_win_pct: null, future_direct_points_pct: null }),
+        v2Row("CCC", { future_direct_win_pct: null, future_direct_points_pct: null }),
         v2Row("DDD", { sos_version: "descriptive-sos-v3", past_direct_win_pct: 0.99 }),
       ],
     };
@@ -134,22 +134,28 @@ describe("/api/v1/trends/team-sos", () => {
     expect(res.body).toMatchObject({
       sosVersion: "descriptive-sos-v2",
       pastView: "past-retrospective",
+      metric: "points-pct",
       dateUsed: "2026-01-14",
       cutoffAt: "2026-01-15T09:12:03.000Z",
     });
     expect(res.body.definition).toContain("final games only");
+    expect(res.body.definition).toContain("points %");
+    expect(res.body.definition).toContain("not as known before each game");
     const byTeam = Object.fromEntries(res.body.teams.map((t: any) => [t.team, t]));
     expect(Object.keys(byTeam).sort()).toEqual(["AAA", "BBB", "CCC"]);
-    // Both values are means over fixtures, so combined weights by fixture counts:
-    // (0.6 x 30 + 0.4 x 50) / 80 = 0.475 (v1 rows would give 0.5).
+    // Decision 146: the headline is points%. Both values are means over
+    // fixtures, so combined weights by fixture counts:
+    // (0.65 x 30 + 0.45 x 50) / 80 = 0.525 (win% would give 0.475).
     expect(byTeam.AAA.past).toMatchObject({ winPct: 0.6, pointsPct: 0.65, fixtures: 30, pendingFixtures: 2 });
+    expect(byTeam.AAA.combinedPointsPct).toBeCloseTo(0.525, 12);
+    expect(byTeam.AAA.sosScore).toBe(52.5);
     expect(byTeam.AAA.combinedWinPct).toBeCloseTo(0.475, 12);
-    expect(byTeam.AAA.sosScore).toBe(47.5);
     // No future fixtures: combined is the past value alone.
-    expect(byTeam.BBB.combinedWinPct).toBeCloseTo(0.6, 12);
+    expect(byTeam.BBB.combinedPointsPct).toBeCloseTo(0.65, 12);
     // Unknown future with fixtures stays unknown, not 0, and ranks last.
-    expect(byTeam.CCC.future.winPct).toBeNull();
-    expect(byTeam.CCC.combinedWinPct).toBeNull();
+    expect(byTeam.CCC.future.pointsPct).toBeNull();
+    expect(byTeam.CCC.combinedPointsPct).toBeNull();
+    expect(byTeam.CCC.sosScore).toBeNull();
     expect(res.body.teams.map((t: any) => t.team)).toEqual(["BBB", "AAA", "CCC"]);
     expect(res.body.warnings).toContain(
       "2 team-games started before the cutoff without a final result are pending and not counted as past.",

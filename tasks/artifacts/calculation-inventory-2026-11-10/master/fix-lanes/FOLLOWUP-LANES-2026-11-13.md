@@ -41,3 +41,23 @@ These are code items that must land before their production steps can run. Start
   - Design a stored finality source, for example a `games.game_state` column filled by the schedule ingester (`update-games`), and write the migration (not applied).
   - Switch the landing and detail readers to it, with the date/time heuristic only as a labelled fallback when the state is unknown. Rule 19 says finality comes from a game state, and changing the basis is a versioned contract shared by consumers; list every consumer you change.
 - **Done:** migration (pending) plus ingester and reader changes with tests; a rollout order (apply the migration, backfill the state, then release the readers).
+
+## Lane F5: CTPI v2 validation and approval change (TJ "Start a validation lane", 2026-11-13)
+- **Why:**
+  - Release #433 ships only v2 candidate rows (`recent-team-form-v2-candidate-2`, `candidate_unapproved`); 1,102 have been issued for 2026-27 (10-07 → 11-13).
+  - Readers default to v2 and serve only approved rows (`isTrustedCtpiPayload`, `web/lib/trends/ctpiVersions.ts`), and v1 is frozen (migration 144). **Recent Team Form serves no rows** until v2 is validated and approved (W1-4).
+- **Do:**
+  1. **Held-out study, no production writes.** Compare v1 and v2 as predictors of next-N-games goal differential per game and points% (rule 11).
+     - Compute earlier-season v2 offline with `web/scripts/audit-ctpi-*.ts` or a local script.
+     - Production reads are bounded and read-only under read hygiene. No NST or NHL calls.
+     - Write the report to `master/production/ctpi-v2-validation-2026-11-13/REPORT.md`.
+  2. **If v2 is at least as good:** write the successor change. The writer issues `approved` from a stated date; stored candidate rows are never relabelled (rule 21).
+     - Files: `web/lib/trends/ctpiVersions.ts`, `web/lib/trends/recentTeamFormV2*.ts`, `web/pages/api/v1/db/update-team-ctpi-daily.ts` and their tests.
+     - Add regression tests. Commit; don't release.
+  3. **If v2 is worse:** report why and propose options.
+  4. List the production steps (the approval date and any re-issue) for TJ.
+- **Context:**
+  - F1 notes: `~/Library/Application Support/Claude/side-session-notes/local_78a99adf-5ef6-4703-8c93-35994d6c995d/F1-ctpi-v2-production-steps.md`.
+  - Lane brief: `fix-lanes/L12.md`.
+  - Game-prediction features stay pinned to v1.
+- **Done:** the report, plus either a verified commit or a reasoned no-go. Report to the Chef session `local_016832c1-5630-43a9-9b8f-59627cb65bda` with SendMessage. The common rules at the top of this file apply.

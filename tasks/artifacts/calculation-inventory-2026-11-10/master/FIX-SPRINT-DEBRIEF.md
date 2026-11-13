@@ -32,11 +32,11 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
 ## 2. Release state
 | Item | State |
 |---|---|
-| master | `502a93b4c` (PR #431, follow-up release). Before it: Codex `4243bcd4e` (Goalie Grid) and `866b90bc4` (DRM pipeline), then the sprint release `631a00c19` (PR #430). |
-| PR #431 contents | Flag release (calendar v2 default, decision 127; ledger basis schema on, migration 138; workspace keeps `scheduleDate`). Decisions 136, 137 (flag off), 140, 141/142 and 143. Composite writer mid-rank fix. Adopted Codex areas 5–11. Migration files 142/143 (not applied). |
-| Deployed | fhfhockey `dpl_2bhMeBzKvwzq8a3Cw36uAPLKymKE`; cms-fhfhockey, functions-fhfhockey and fhfhockey.com CANCELED by ignored-build. |
-| octoberBranch | Synced with master `4243bcd4e` locally as `22a94090a` (merge), then areas 4–11 and the TeamDetails test fix committed. Sync to `502a93b4c` follows. |
-| Excluded from releases | Lane diaries. Codex areas 2+3 (goalie consolidation, under review). Area 4 (DRM reader/UI/history plus superstyle, committed `97685d418`, ships next release). |
+| master | `4d9b6a10d` (PR #433, 2026-11-13 13:27Z). Before it: `e1ab46318` (#432, pipeline stall fix and Codex areas 2–4), `502a93b4c` (#431, follow-up release), Codex `4243bcd4e` and `866b90bc4`, then the sprint release `631a00c19` (#430). |
+| PR #433 contents | F1 CTPI v2 writer and versioned readers (v2 gated as a candidate, W1-4). F2 SOS v2 writer and readers, plus F2b (underlying-stats landing on `team_sos_daily`). F3 Lines disjoint 5v5 units (decision 137). F4 stored game finality (`nhl-game-state-v1`). W2-3 D13 chart TOI fix. Production records. Migrations 144–146 were applied before the merge. |
+| Deployed | fhfhockey production deployment completed 13:31:56Z (GitHub deployment 7766487447); cms-fhfhockey, functions-fhfhockey and fhfhockey.com canceled by the Ignored Build Step. `FORGE_RESERVE_PASS_ENABLED=true` set by TJ before the merge. |
+| octoberBranch | Synced to master `4d9b6a10d` by an ours-merge after the release (tree unchanged). |
+| Excluded from releases | Lane diaries. |
 
 ## 3. Production actions taken (each with TJ's pop-up)
 | When (UTC, 2026-11-12) | Action | Receipt |
@@ -66,6 +66,14 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
 | 2026-11-13 01:30–01:42 | (Codex) Goalie H1 for game 2026020308 (TJ-authorized), on temporary deployment `dpl_CarX` built from 502a93b4c; production restored | `tasks/artifacts/goalie-h1-2026-11-13/HANDBACK.md` |
 | 2026-11-13 01:47–01:55 | Release #432: pipeline stall fix and Codex areas 2–4. Master `e1ab46318`; 1 build + 3 cancels. | §2 |
 | 2026-11-13 01:55–02:00 | **DB incident 2:** Postgres froze after a checkpoint started and self-restarted at 02:00:46. TJ restarted it again from the dashboard at 02:08:28. Smoke passed afterwards. | `PRODUCTION-QUEUE.md` |
+| 2026-11-13 05:39 | Migration 101 (`forge_reserve_projections` table) applied; the env flag ships with the next release (TJ "Table now, flag next release") | `043f71f9c` |
+| 2026-11-13 06:57–07:02 | Index 124 (2 s) and index 123 (concurrent, 37 s on the 2.2 GB `wgo_skater_stats`), both valid; power ratings v3 recompute, 45 one-day calls, 1,440 rows; xG champion `cfg9bac2706` retired with a registry backup and 3 reader checks (decision 5) | `2990aef75` |
+| 2026-11-13 07:03–07:08 | Dry runs (rankings, composites, team_unit_toi, trend bands); composites v3 published (764 rows; BEAST+ 2, BEAST 24, MCM 53, Watch 63); rankings written (50,320); `team_unit_toi` snapshot 2026-11-13 (299 games; 13 partial, labelled, from goalie-shift gaps) | `0ec520c28` |
+| 2026-11-13 11:01 | Pipeline check: all 11 stages complete by 10:46; stage 2 at 10:07:53 (stall fix held); FORGE runs for 11-13..11-15; rolling 396 rows per strength for 11-12. WiGO cron 231: 988/990 players in 111 s, 2 rejected for missing WGO identity. NST gamelog: one unmatched player (Josh Mahura), 16 of 20 datasets flagged, data for 395 players landed. | `546b24442` |
+| 2026-11-13 11:41–13:16 | Trend-band history rebuild 2026-27 (decision 36; TJ "Later, paced"): 77 calls of 10 players, 60 s gaps, all 200, max 9.5 s; 769 players, 666,376 bands | `production/trend-bands-2026-11-13/` |
+| 2026-11-13 13:16 | Migrations 144 (CTPI v2 publication), 145 (`team_sos_daily`; `sos_standings` frozen) and 146 (games game state) applied singly, each read back | `cd5604159` |
+| 2026-11-13 13:25–13:32 | Release #433: branch pushed (no build at 95 s), PR squash-merged as master `4d9b6a10d` (tree = candidate `359789456`); 1 build + 3 cancels, watched through GitHub statuses. Smoke 5/5 at 200. | §2 |
+| 2026-11-13 13:33–13:34 | Post-release runs, all 200: `update-games` (1,409 games with a stored state); CTPI v2 backfill (1,102 candidate rows, 10-07 → 11-13; v1 unchanged); `update-team-sos` (32 v2 rows, 84 fixtures per team) | `production/PRODUCTION-QUEUE.md` |
 
 Coordination: steps 1–6 ran serially with Codex under a TJ-approved order (mailbox entries `CLAUDE-FIX-SPRINT-SERIAL-ORDER-20261112` and onward), each with an explicit DB handoff.
 
@@ -107,7 +115,7 @@ The re-run at `496b5c9de` was clean, apart from the expected git-history pins. T
 ### Wave 1
 | # | Defect | Lane | Status |
 |---|---|---|---|
-| 1 | Leaky xG champion cfg9bac2706 | L14 | Code fixed (registry pin, selector, gate). **Demotion pending** (queue 3). |
+| 1 | Leaky xG champion cfg9bac2706 | L14 | Code fixed (registry pin, selector, gate). **Retired** 2026-11-13 07:01Z with a registry backup (decision 5). No in-house xG model is active until a v2 model is approved. |
 | 2 | Bucket-heuristic xG on underlying stats | L2, L14 | Display retired. Parity and the team writer still compute it, hidden (accepted). |
 | 3 | Team shot map mirrored | L14 | Fixed |
 | 4 | Score-state filters empty | L1, L2 | Fixed. Player and team summaries are rebuilt in queue 2. |
@@ -120,14 +128,14 @@ The re-run at `496b5c9de` was clean, apart from the expected git-history pins. T
 | 11 | Trend page scales and empty calendar views | L6 | Fixed; player-trend v3 rebuild in queue 5 |
 | 12 | Power ratings standardised against the slate | L12 | Fixed; v3 recompute in queue 7. The prior min(1, GP/10) is unfitted (decision 125). |
 | 13 | PP/PK tiers from one game | L12 | Fixed; recompute in queue 7 |
-| 14 | Game Grid win odds | L12 | **Partly.** Odds withheld on the data path. The held UI labels are a Codex proposal; the Game Grid UI now belongs to Codex. |
+| 14 | Game Grid win odds | L12, F6 | **Fixed in the final 2026-11-13 release.** The data path withholds odds (L12). F6 `9b51a17ea` reads odds only through the withheld helper and labels each cell "Odds n/a: Model odds unavailable"; `9b97c4656` fixes the transposed cell's away team. Astra confirmed partial at #433. |
 | 15 | Top Adds NaN | L12 | Fixed (expected points, decision 118/132) |
 | 16 | Starter probability over-confident | L9b | **Partly.** Credited start, cutoffs, closed vector and unknown rest are fixed. The refit isn't run (plan `L9b-starter-refit-plan.md`). The accuracy job is a Codex proposal. |
-| 17 | Start Chart raw L10 share (conditional) | L9b | **Partly.** Labelled "L10 start share". The writer fix is a Codex proposal. |
-| 18 | PK bucket omitted | L9a | Fixed; FORGE rerun in queue 10 |
+| 17 | Start Chart raw L10 share (conditional) | L9b, Codex dev | **Partly.** Labelled "L10 start share". The writer fix (`update-goalie-projections-v2.ts`) is Codex dev item 1 on 2026-11-13. Astra confirmed partial and noted the RSO bridge as another L10 consumer (AF-01, F12). |
+| 18 | PK bucket omitted | L9a, F7 | **Partly fixed at #433** (Astra AF-05): the writer adds PK heads (572/572 rows on 11-13), but readers counted a missing PK head as 0. Fixed by F7 `369e00828` (version-aware PK admission; reserve rows labelled "PK unmodelled"), which ships in the final 2026-11-13 release. |
 | 19 | Hits/blocks count PK twice | L9a | Fixed; FORGE rerun |
-| 20 | Goalie row is the team slot | L9b | Fixed: `forge_goalie_candidates_v1`. The FORGE rerun fills it. |
-| 21 | Opponent-goalie .900 | L9a | Fixed. Held-out validation is in the backlog. |
+| 20 | Goalie row is the team slot | L9b, F12 | **Disputed by Astra (AF-01, P0):** the writer emits `forge_goalie_candidates_v1`, but RSO's bridge (`forgeDailyBridge.ts`) still built its own vector and could use another goalie's line. F12 is moving the bridge to the per-candidate contract for the final 2026-11-13 release. |
+| 21 | Opponent-goalie .900 | L9a, F13 | **Partly fixed** (Astra AF-02, AF-06): the independent posterior is in. Null goals-against no longer becomes 0, and the multiplier is neutral until validated (decision 148), both in F13 `0eaa1f5b4` for the final release. The held-out study is Codex goalie-model work. |
 | 22 | Power Terminal | L12 | Fixed |
 | 23 | Trend-band TOI 60× | L7 | Fixed; band rebuild in queue 6 |
 | 24 | Sandbox band status | L7 | Fixed (usual range `validated:false`) |
@@ -648,8 +656,8 @@ On 2026-11-13 TJ moved all remaining project work to the Claude Chef session ("N
 ## 11. Verification of the draft's "unverified" items (2026-11-13; read-only code check at HEAD 89bf543fb)
 | Item | Status | Evidence |
 |---|---|---|
-| L2 W2-3 D7 (finished-game rule) | **Not fixed** | `playerStatsLandingServer.ts:849-869` still treats NHL date vs UTC today, plus start + 8 h, as final; no game state is read |
-| L2 W2-3 D13 (chart minimum TOI) | **Not fixed** | The minimum applies to each one-game chart point (`playerStatsLandingServer.ts:4835-4841`, `:3983-3989`), so a season minimum wipes the chart |
+| L2 W2-3 D7 (finished-game rule) | **Fixed and released** in #433 (lane F4, `94e4c7c67`, `073a5905e`). Migration 146 added `games.game_state`; `update-games` fills it (all 1,409 games for 2026-27 read back), and the landing and detail readers decide finality from it with a labelled start + 8 h fallback. | Other heuristic consumers, listed by F4 (`teamStatsSummaryRefresh.ts:1132`, `teamStatsQueries.ts:1023` and `teamUnitToiNightly.ts:149` are date-only), as a follow-up lane |
+| L2 W2-3 D13 (chart minimum TOI) | **Fixed and released** `33b919192` in #433. Chart points skip the minimum; table rows keep it. The regression test fails on the old code. | Done |
 | BC W1-6 D8 (goalie rest and trend boosts) | **Not fixed** | `goalie-stage.ts:344-363`, `projection-weights.ts:26-30`. This is the goalie stage (L9b), not L9a. The debrief's L9a "D8 fixed" was W1-7 D8 (WGO TOI unit), a different finding. |
 | BC W1-6 D13 (no home term in goalie outcomes) | **Not fixed** | `goalieOutcomes.ts:92-123`, `goalie-stage.ts:383-385` |
 | BC W1-6 D14 (on-ice goals split by TOI only) | **Not fixed** | `skater-stage.ts:2885-2891, 2915-2916` |
@@ -685,11 +693,23 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 ## 13. Follow-up ticket status (2026-11-13, Chef)
 | Item | Status | Next |
 |---|---|---|
-| L2 W2-3 D13 (chart minimum TOI) | **Fixed** `33b919192` (unreleased). Chart points skip the minimum; table rows keep it. The regression test fails on the old code. | Next release |
-| L2 W2-3 D7 (finished-game rule) | Blocked on data. Rule 19 needs finality from a game state, and no table stores one (`games` has no state; normalization tables have no final flag). | Design: add a game-state column filled by the schedule ingester (migration plus ingester), then switch every reader (versioned contract) |
+| L2 W2-3 D13 (chart minimum TOI) | **Fixed and released** `33b919192` in #433. Chart points skip the minimum; table rows keep it. The regression test fails on the old code. | Done |
+| L2 W2-3 D7 (finished-game rule) | **Fixed and released** in #433 (lane F4, `94e4c7c67`, `073a5905e`). Migration 146 added `games.game_state`; `update-games` fills it (all 1,409 games for 2026-27 read back), and the landing and detail readers decide finality from it with a labelled start + 8 h fallback. | Other heuristic consumers, listed by F4 (`teamStatsSummaryRefresh.ts:1132`, `teamStatsQueries.ts:1023` and `teamUnitToiNightly.ts:149` are date-only), as a follow-up lane |
 | Week Score ordering (BC W1-12 D5) | Depends on decision 53 (off-night value measured from roster scenarios, validated on held-out weeks); the 6/4 weights are a modelling choice | Off-night value study |
 | L9a → L10 PK head counted as 0 | Deferred. Every FORGE row now served predates L9a's PK writer (runs created 11-09), so treating null PK as unknown would blank totals sitewide | After the first FORGE run on released code, confirm PK heads are written for every player, then treat null PK as unknown |
 | BA W1-4 B D9 (EN in team goaltending) | Owner decision. The rating reads NST all-situations rows, which include empty-net events | Choose 5v5 rows, or subtract PBP-derived team EN events; then the power-ratings recompute (queue 7) |
 | BC W1-6 D8/D13/D14 (goalie stage) | Model changes needing refits and held-out checks (L9b plan) | Owner decision and refit plan |
 | L11 registry and goalie-contract wiring | Not started (integration) | A lane of its own |
 | L9a ice-time classifier vs Codex penalty clock | Codex's `24b1cb4d3` replaced L9a's `8bc43a855` in `ingest/shifts.ts`; derived event counts still use situation codes | Read-only cross-check of edge cases |
+| CTPI v2 publication (W1-4) | Released gated. The writer issues only v2 candidate rows (1,102 backfilled, 10-07 → 11-13); readers default to v2 and hide candidates, and v1 is frozen. **Recent Team Form serves no rows until v2 is approved.** | Owner decision: validate and approve v2 (successor code change), or label-serve the last v1 date meanwhile |
+| SOS v2 (decision 21) | Released (#433, F2 + F2b). The first snapshot holds 32 rows, 0 pending, 84 fixtures per team (2026-27 is an 84-game season). `sos_standings` is frozen. | Q6 (win% vs points% headline, 2:1 landing weights, as-of semantics) stays open |
+| NST gamelog identity: Josh Mahura 8479372 | Found at the 11:01Z check. NST matched him on 12 of 14 games and failed on 11-07 and 11-12 (16 of 20 datasets flagged each time; other players landed). | Find NST's name or id for him on those dates (read-only), then an alias or identity fix and a bounded re-fetch of the 2 dates within the NST limits |
+| WiGO `missing_identity` rejects | Cron 231 writes 988/990 players; 8478446 (2022-11-12) and 8481827 (2021-11-06) have `wgo_skater_stats` rows with no team, opponent or game id, so the run audits as `failure` daily | A 2-row WGO repair from the NHL game logs (needs TJ) |
+| F3 unowned Lines items | Stale header comment in `[abbreviation].tsx`; `lines/index.tsx` mixes labels; LineShareBars TOI | A small Lines lane |
+| Astra AF-07 penalty shots (decision 149) | **Partly fixed.** F15 `8463912d8` ships the shared adapter `classifyEventStrengthBucket`, with tests pinning the builder gap on games 2026020065 and 2026020094. TJ kept the derived builder unswitched: the derived tables only have ES, PP and PK columns, and readers sum those for all-situation totals. | Coordinated rollout after the handoff: a `shots_ps`/`goals_ps` column with a version marker, a new transactional RPC, every ES+PP+PK reader, and an 8-game rebuild (`production/penalty-shot-rebuild-2026-11-13/PLAN.md`, draft, not approved) |
+| Astra AF-08 finality consumers | **Fixed in the final release:** F7 `5bb89aef1` and `706937676`. `teamUnitToiNightly` needs a PBP game-end event; settlement needs a FINAL/OFF boxscore. | — |
+| Astra: social skater rankings score a missing stat like a known zero | Confirmed by Astra after checkpoint 1; doesn't block release | Ticket (TJ): a targeted fix once Astra gives the file and line |
+| PP clock (decision 144) | F11 report `48dd8fe8f`: 2,493/2,500 team-games exact. C3 (MAT/15 throw) fixed `a98eda63f`. PP share stays withheld. | C1 (`qualified` ignores the official total), C2 (audit at stoppages), and owner items O1–O4 |
+| Codex dev items 1, 2, 6 | **Held by Codex and excluded from the final release:** `fc34b053a` (goalie writer), `284f99045` (accuracy job), `c89ff5d24` (game-stat placeholders, with an unapplied migration) | Codex: league SV% helper nulls, pregame issuance contract, Splits and Lines readers before migration |
+| CTPI descriptive beta card (F5b) | Committed `122dd880b`, visual polish still in progress; **held from the final release** (TJ) | A later release after TJ approves the finished card |
+| Power ratings v4 (decisions 145, 147) | Code in the final release (F9 `06c8316a4`, `d6626b521`, `820e5cb6d`). **Not rebuilt.** | The 45-call loop (`production/power-g5v5-2026-11-13/`) after TJ approves |

@@ -15,7 +15,10 @@ import type { Team } from "lib/NHL/types";
 import styles from "styles/Lines.module.scss";
 import { getTeams, getCurrentSeason } from "lib/NHL/server";
 import ClientOnly from "components/ClientOnly";
-import { getLineCombinations } from "components/LineCombinations/utilities";
+import {
+  getLineCombinations,
+  type LineSource
+} from "components/LineCombinations/utilities";
 import { fetchLatestPlayerNewsFlags, type PlayerNewsFlag } from "lib/newsFeed";
 import supabase from "lib/supabase";
 
@@ -28,7 +31,14 @@ export type RowData = {
    * Team abbreviation
    */
   abbreviation: string;
+  /** The board the team's move compares: observed 5v5 units or the legacy grouping. */
+  lineSource: LineSource;
   newsFlag?: PlayerNewsFlag | null;
+};
+
+const LINE_SOURCE_LABEL: Record<LineSource, string> = {
+  five_on_five_observed: "5v5 units",
+  all_strength_legacy: "Legacy lines",
 };
 
 type LandingPageProps = {
@@ -80,6 +90,7 @@ export const getStaticProps: GetStaticProps = async () => {
               ({
                 ...p,
                 abbreviation: team.abbreviation,
+                lineSource: lineCombos.lineSource,
               } as any)
           )
         );
@@ -90,6 +101,7 @@ export const getStaticProps: GetStaticProps = async () => {
               ({
                 ...p,
                 abbreviation: team.abbreviation,
+                lineSource: lineCombos.lineSource,
               } as any)
           )
         );
@@ -105,12 +117,22 @@ export const getStaticProps: GetStaticProps = async () => {
             );
             promotions.push(
               ...lineCombos.promotions.map(
-                (p) => ({ ...p, abbreviation: team.abbreviation } as any)
+                (p) =>
+                  ({
+                    ...p,
+                    abbreviation: team.abbreviation,
+                    lineSource: lineCombos.lineSource,
+                  } as any)
               )
             );
             demotions.push(
               ...lineCombos.demotions.map(
-                (p) => ({ ...p, abbreviation: team.abbreviation } as any)
+                (p) =>
+                  ({
+                    ...p,
+                    abbreviation: team.abbreviation,
+                    lineSource: lineCombos.lineSource,
+                  } as any)
               )
             );
           } catch (fallbackErr) {
@@ -212,6 +234,11 @@ function Players({
         <ClientOnly style={{ display: "inline" }}>
           Page refreshed <TimeAgo date={pageRefreshedAt} />
         </ClientOnly>
+      </p>
+      <p className={styles.sourceNote}>
+        Each move compares a team&apos;s last two games. 5v5 units: its most-used
+        5v5 units. Legacy lines: the all-strength grouping, used when either
+        game lacks complete 5v5 data.
       </p>
       <div className={styles.tables}>
         <Table type="promotions" data={promotions} />
@@ -323,6 +350,7 @@ function Row({ player }: { player: RowData }) {
         <LineChanges
           previousLine={player.previousLine}
           currentLine={player.currentLine}
+          lineSource={player.lineSource}
         />
       </span>
       <span className={styles.abbreviation}>{player.abbreviation}</span>
@@ -336,20 +364,24 @@ function Row({ player }: { player: RowData }) {
 type LineChangesProps = {
   previousLine: number | null;
   currentLine: number | null;
+  lineSource: LineSource;
 };
 
-function LineChanges({ previousLine, currentLine }: LineChangesProps) {
+function LineChanges({ previousLine, currentLine, lineSource }: LineChangesProps) {
   const previous = previousLine === null ? "New" : `L${previousLine}`;
   const current = currentLine === null ? "Out" : `L${currentLine}`;
+
+  const change =
+    previousLine === null
+      ? `new to the lineup on ${current}`
+      : currentLine === null
+        ? `moved from ${previous} out of the lineup`
+        : `moved from ${previous} to ${current}`;
 
   return (
     <span className={classNames(styles.changes, styles.lineChanges)}>
       <span className={styles.visuallyHidden}>
-        {previousLine === null
-          ? `new to the lineup on ${current}`
-          : currentLine === null
-            ? `moved from ${previous} out of the lineup`
-            : `moved from ${previous} to ${current}`}
+        {`${change}, by ${LINE_SOURCE_LABEL[lineSource].toLowerCase()}`}
       </span>
       <span aria-hidden="true" className={styles.changesVisual}>
         {previous}
@@ -365,6 +397,9 @@ function LineChanges({ previousLine, currentLine }: LineChangesProps) {
           height={24}
         />
         {current}
+      </span>
+      <span aria-hidden="true" className={styles.lineSource}>
+        {LINE_SOURCE_LABEL[lineSource]}
       </span>
     </span>
   );

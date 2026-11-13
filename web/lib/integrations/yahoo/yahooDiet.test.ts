@@ -278,7 +278,7 @@ describe("provider snapshot cadence with RSO_YAHOO_DIET=1 (D2, D3, D5, D6, D8)",
     expect(result.snapshot.pastLineups?.map(day => [day.date, day.entries.map(entry => [entry.playerId, entry.position])]))
       .toEqual([["2026-09-29", [["1", "C"]]], ["2026-09-30", [["1", "BN"]]]]);
     expect(upserts).toEqual([[{ user_id: "owner-a", external_team_id: "team-a", season_id: 20262027, lineup_date: "2026-09-30",
-      entries: [{ player_key: "453.p.1", position: "BN" }] }, { onConflict: "user_id,external_team_id,lineup_date" }]]);
+      entries: [{ player_key: "453.p.1", position: "BN", teamAbbreviation: null }] }, { onConflict: "user_id,external_team_id,lineup_date" }]]);
     expect(JSON.stringify(upserts)).not.toContain("Private Name");
   });
 

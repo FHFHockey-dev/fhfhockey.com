@@ -211,7 +211,7 @@ const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
   "/api/v1/db/update-PbP": "play_by_play",
 };
 
-type NormalizedStatus = "success" | "failure" | "unknown";
+type NormalizedStatus = "success" | "failure" | "unknown" | "skipped";
 type ReportStatus = NormalizedStatus | "disabled";
 // "continued": the latest call stopped at its runtime budget on purpose and the
 // UTC day has not ended, so a later call can still complete it.
@@ -258,6 +258,7 @@ type ParsedAuditDetails = {
   method: string | null;
   error: string | null;
   response: unknown;
+  responseOutcome: Record<string, unknown> | null;
   responseMessage: string | null;
   goalieRowsProcessed: number | null;
   skaterRowsProcessed: number | null;
@@ -323,6 +324,7 @@ type JobSummary = {
   runsCount: number;
   auditRunsCount: number;
   okCount24h: number;
+  skippedCount24h: number;
   failCount24h: number;
   rowsUpsertedLast: number | null;
   rowsAffectedLast: number | null;
@@ -380,12 +382,14 @@ type ReportCounts = {
   omittedFailureObservations: number;
   auditUnknown: number;
   auditContinued: number;
+  auditSkipped: number;
   auditDisabled: number;
   jobsOkLast: number;
   jobsFailingLast: number;
   jobsMissingLast: number;
   jobsUnknownLast: number;
   jobsContinuedLast: number;
+  jobsSkippedLast: number;
   jobsDisabledLast: number;
   unscheduledRuns: number;
   totalRowsUpserted: number;
@@ -423,6 +427,7 @@ function normalizeStatus(value: unknown): NormalizedStatus {
   if (!v) return "unknown";
   if (["success", "succeeded", "ok", "passed"].includes(v)) return "success";
   if (["failure", "failed", "error", "errored"].includes(v)) return "failure";
+  if (v === "skipped") return "skipped";
   return "unknown";
 }
 
@@ -465,6 +470,7 @@ function isQuarantinedLegacyRoute(routePath: string | null): boolean {
 }
 
 function skippedOperationWarning(row: AuditRow): string | null {
+  if (classifyIntentionalSkip(row) === "skipped") return null;
   const response = row.parsed.response;
   if (row.status === "success" && response && typeof response === "object" && !Array.isArray(response)) {
     const receipt = response as Record<string, unknown>;
@@ -496,6 +502,7 @@ function expectedWorkWarning(
     : classification === NHL_SEASONAL_GAME_DATA;
   if (seasonWindow.state !== "in_season" || row.status !== "success" ||
       !isGameData) return null;
+  if (classifyIntentionalSkip(row) === "skipped") return null;
   const response = row.parsed.response;
   if (response && typeof response === "object" && !Array.isArray(response) &&
       (response as Record<string, unknown>).reason === "nhl_off_season") return null;
@@ -530,13 +537,38 @@ function incompleteYahooReceiptWarning(row: AuditRow): string | null {
 }
 
 function incompleteAuditResponseWarning(row: AuditRow): string | null {
+  if (classifyIntentionalSkip(row) === "skipped") return null;
   return row.parsed.responseIncomplete ? "Audit response is truncated or malformed; operation outcome and durable output are unverified." : null;
+}
+
+/** Only explicit receipts establish a skip; zero output and missing data do not. */
+function classifyIntentionalSkip(row: Pick<AuditRow, "continued" | "status" | "parsed">): "skipped" | "failure" | null {
+  if (row.status === "failure") return "failure";
+  if (row.continued) return null;
+  const response = row.parsed.response;
+  const receipt = response && typeof response === "object" && !Array.isArray(response)
+    ? response as Record<string, unknown> : row.parsed.responseOutcome;
+  const explicit = receipt?.skipped === true || receipt?.outcome === "skipped";
+  if (row.status !== "skipped" && (!explicit || receipt?.reason === "nhl_off_season")) return null;
+  const errors = receipt?.errors;
+  const errorCount = Array.isArray(errors) ? errors.length
+    : errors && typeof errors === "object" ? toFiniteNumber((errors as Record<string, unknown>).count) : null;
+  if (receipt?.success === false || normalizeStatus(receipt?.status) === "failure" ||
+      (typeof receipt?.error === "string" && receipt.error.trim()) || row.parsed.error ||
+      (row.parsed.statusCode != null && (row.parsed.statusCode >= 400 || row.parsed.statusCode === 207)) ||
+      (row.parsed.failedRows ?? 0) > 0 || (row.parsed.failedOperations ?? 0) > 0 ||
+      (toFiniteNumber(receipt?.failedRequests) ?? 0) > 0 || (errorCount ?? 0) > 0) return "failure";
+  // A legacy success needs an intact receipt (or the bounded structured outcome).
+  if (row.status !== "skipped" && row.parsed.responseIncomplete && !row.parsed.responseOutcome) return null;
+  return "skipped";
 }
 
 function classifyAuditStatus(row: AuditRow): ReportStatus {
   // A known failure must survive skipped/partial/malformed response evidence.
   if (row.status === "failure") return row.parsed.statusCode === 410 &&
     isQuarantinedLegacyRoute(row.parsed.routePath) ? "disabled" : "failure";
+  const skipStatus = classifyIntentionalSkip(row);
+  if (skipStatus) return skipStatus;
   if (incompleteAuditResponseWarning(row) || skippedOperationWarning(row) || incompleteYahooReceiptWarning(row) || row.expectedWorkWarning) return "unknown";
   return row.status;
 }
@@ -870,6 +902,7 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     method: null,
     error: null,
     response: null,
+    responseOutcome: null,
     responseMessage: null,
     goalieRowsProcessed: null,
     skaterRowsProcessed: null,
@@ -901,8 +934,8 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
   if (typeof obj.response === "string" && /^[{[\"]/.test(obj.response.trim())) {
     try { JSON.parse(obj.response); } catch { malformedResponse = true; }
   }
-  // The bounded outcome is diagnostic evidence, not a substitute for the full
-  // response or its write metrics. Use it only when that response is unavailable.
+  // The bounded outcome can establish an explicit skip, never write metrics.
+  // Use it only when the full response is unavailable.
   const missingResponse = response == null || malformedResponse;
   const outcome = missingResponse && obj.responseOutcome &&
     typeof obj.responseOutcome === "object" && !Array.isArray(obj.responseOutcome)
@@ -941,6 +974,7 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     method: typeof obj.method === "string" ? obj.method.toUpperCase() : null,
     error: extractPrimaryMessage(obj.error),
     response,
+    responseOutcome: outcome,
     responseMessage: (outcome ? extractPrimaryMessage({ ...outcome, errors: outcomeSamples }) : null)
       ?? extractPrimaryMessage(response),
     goalieRowsProcessed,
@@ -1548,7 +1582,7 @@ function compactUnscheduledRuns(runs: RunDigest[]): RunDigest[] {
   const seen = new Set<string>();
   const alerts: RunDigest[] = [];
 
-  const severity: Record<ReportStatus, number> = { failure: 0, disabled: 1, unknown: 2, success: 3 };
+  const severity: Record<ReportStatus, number> = { failure: 0, disabled: 1, unknown: 2, skipped: 3, success: 4 };
   const ranked = [...runs].sort((a, b) => severity[a.status] - severity[b.status] ||
     Date.parse(b.runTime) - Date.parse(a.runTime) || a.key.localeCompare(b.key));
   for (const run of ranked) {
@@ -1962,11 +1996,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       const okCount24h =
         matchingAudits.length > 0
-          ? matchingAudits.filter((row) => row.status === "success").length
+          ? matchingAudits.filter((row) => classifyAuditStatus(row) === "success").length
           : matchingRuns.filter((row) => row.status === "success").length;
+      const skippedCount24h = matchingAudits.filter((row) => classifyAuditStatus(row) === "skipped").length;
       const failCount24h =
         matchingAudits.length > 0
-          ? matchingAudits.filter((row) => row.status === "failure").length
+          ? matchingAudits.filter((row) => classifyAuditStatus(row) === "failure").length
           : matchingRuns.filter((row) => row.status === "failure").length;
 
       const rowsUpsertedLast = lastAudit?.parsed.rowsUpserted ?? null;
@@ -2032,6 +2067,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       });
 
       const notes: string[] = [];
+      if (lastAudit && classifyAuditStatus(lastAudit) === "skipped") {
+        notes.push(`Intentional skip${message ? `: ${message}` : ""}. No data refresh established.`);
+      }
       if (!job.expectedRunAt && requiredSlot && !lastAudit && !lastRun) {
         notes.push(`Latest required recurring slot ${formatReportTime(requiredSlot)} has no observation after the five-minute completion grace.`);
       }
@@ -2146,6 +2184,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         runsCount: matchingRuns.length,
         auditRunsCount: matchingAudits.length,
         okCount24h,
+        skippedCount24h,
         failCount24h,
         rowsUpsertedLast,
         rowsAffectedLast,
@@ -2322,11 +2361,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           row.parsed.routePath === "/api/v1/db/update-yahoo-players" ||
           row.jobName === "update-yahoo-players"
       )
-      .map((row) => ({
-        time: row.time,
-        status: row.status,
-        response: row.parsed.response,
-      })),
+      .map((row) => {
+        const status = classifyIntentionalSkip(row) ?? row.status;
+        return {
+          time: row.time,
+          // This health reader has a three-state contract. Retain a skip as a
+          // non-success observation so it neither refreshes nor hides history.
+          status: status === "skipped" ? "unknown" as const : status,
+          response: row.parsed.response,
+        };
+      }),
     nowMs: now.getTime(),
   });
 
@@ -2382,6 +2426,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       (row) => !row.continued && classifyAuditStatus(row) === "unknown"
     ).length,
     auditContinued: auditRows.filter((row) => row.continued).length,
+    auditSkipped: auditRows.filter((row) => classifyAuditStatus(row) === "skipped").length,
     auditDisabled: auditRows.filter(
       (row) => classifyAuditStatus(row) === "disabled"
     ).length,
@@ -2395,6 +2440,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       .length,
     jobsContinuedLast: jobSummaries.filter((job) => job.lastStatus === "continued")
       .length,
+    jobsSkippedLast: jobSummaries.filter((job) => job.lastStatus === "skipped").length,
     jobsDisabledLast: jobSummaries.filter(
       (job) => job.lastStatus === "disabled"
     ).length,
@@ -2474,6 +2520,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             jobsFailingLast: counts.jobsFailingLast,
             jobsMissingLast: counts.jobsMissingLast,
             jobsUnknownLast: counts.jobsUnknownLast,
+            jobsSkippedLast: counts.jobsSkippedLast,
             childObservations: unscheduledRuns.length,
             metricErrorsKnown: auditBriefings.filter((row) => row.failedRows != null).length,
             metricRowsKnown: auditBriefings.filter((row) => row.rowsUpserted != null).length,
@@ -2483,6 +2530,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             cronFailures: counts.cronFailures,
             omittedFailureObservations: counts.omittedFailureObservations,
             auditUnknown: counts.auditUnknown,
+            auditSkipped: counts.auditSkipped,
             auditDisabled: counts.auditDisabled,
             slowJobDenotation: SLOW_JOB_DENOTATION,
             slowMsThreshold: null,

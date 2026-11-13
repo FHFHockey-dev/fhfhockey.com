@@ -2,9 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   buildCanonicalSosRankings,
   buildCanonicalSosRankingsV2,
+  computeSosRatingsV2,
+  formatSosAsOfDate,
+  SOS_HEADLINE,
+  sosHeadline,
   type SosStandingRow,
   type TeamSosReaderRow,
 } from "./strengthOfSchedule";
+import { adaptClubSchedules, buildTeamSosSnapshotRows, snapshotCutoff } from "./teamSosSnapshot";
+import { computeUnderlyingStatsTeamScheduleStrength } from "../underlying-stats/teamScheduleStrength";
 // The event-level version is deliberately separate from legacy pooled snapshots.
 import {
   computeDescriptiveSos,
@@ -111,18 +117,19 @@ describe("buildCanonicalSosRankingsV2", () => {
     { id: 1, name: "New Jersey Devils", abbreviation: "NJD" },
   ];
 
-  it("serves v2 direct win% with canonical identity and keeps unknown unknown, ranked last", () => {
+  it("serves v2 direct points% with canonical identity and keeps unknown unknown, ranked last", () => {
     const rankings = buildCanonicalSosRankingsV2(
       [
         v2Row(68),
-        v2Row(1, { team_abbrev: "NJD", past_direct_win_pct: 0.5, future_direct_win_pct: 0.51 }),
-        v2Row(53, { team_abbrev: "ARI", past_direct_win_pct: 0.9 }),
+        // Win% would rank UTA (0.4567) below NJD (0.6); points% ranks UTA first.
+        v2Row(1, { team_abbrev: "NJD", past_direct_win_pct: 0.6, past_direct_points_pct: 0.5, future_direct_points_pct: 0.51 }),
+        v2Row(53, { team_abbrev: "ARI", past_direct_points_pct: 0.9 }),
       ],
       teams,
     );
     expect(rankings.past).toEqual([
+      { teamId: 68, team: "Utah Mammoth", abbreviation: "UTA", sos: 0.55 },
       { teamId: 1, team: "New Jersey Devils", abbreviation: "NJD", sos: 0.5 },
-      { teamId: 68, team: "Utah Mammoth", abbreviation: "UTA", sos: 0.457 },
     ]);
     // v1 turned missing totals into 0; v2 keeps the unknown future as null.
     expect(rankings.future.map((row) => [row.abbreviation, row.sos])).toEqual([
@@ -134,13 +141,104 @@ describe("buildCanonicalSosRankingsV2", () => {
   it("ignores other versions and uses the latest cutoff per team", () => {
     const rankings = buildCanonicalSosRankingsV2(
       [
-        v2Row(68, { cutoff_at: "2026-01-16T09:12:03.000Z", past_direct_win_pct: 0.6 }),
+        v2Row(68, { cutoff_at: "2026-01-16T09:12:03.000Z", past_direct_points_pct: 0.6 }),
         v2Row(68),
-        v2Row(68, { cutoff_at: "2026-01-17T09:12:03.000Z", sos_version: "descriptive-sos-v3" as any, past_direct_win_pct: 0.1 }),
+        v2Row(68, { cutoff_at: "2026-01-17T09:12:03.000Z", sos_version: "descriptive-sos-v3" as any, past_direct_points_pct: 0.1 }),
       ],
       teams,
     );
     expect(rankings.past.map((row) => row.sos)).toEqual([0.6]);
+  });
+});
+
+/**
+ * Decision 146 end to end: NHL club schedules -> writer row -> every reader.
+ * B beat D in regulation and lost to E in overtime: win% 0.5, points% 0.75.
+ */
+describe("decision 146: shared points% SOS base", () => {
+  const seasonId = 20252026;
+  const nhlGame = (id: number, home: string, away: string, day: number,
+    score?: { home: number; away: number; period: "REG" | "OT" | "SO" }) => ({
+    id, season: seasonId, gameType: 2,
+    startTimeUTC: `2026-01-${String(day).padStart(2, "0")}T00:00:00Z`,
+    gameState: score ? "OFF" : "FUT", gameScheduleState: "OK",
+    homeTeam: { abbrev: home, ...(score ? { score: score.home } : {}) },
+    awayTeam: { abbrev: away, ...(score ? { score: score.away } : {}) },
+    ...(score ? { gameOutcome: { lastPeriodType: score.period } } : {}),
+  });
+  const teams = ["A", "B", "C", "D", "E"].map((abbrev, index) => ({ abbrev, id: index + 1 }));
+  const snapshot = (games: ReturnType<typeof nhlGame>[]) => {
+    const observedAt = "2026-01-10T08:00:00.000Z";
+    const adapted = adaptClubSchedules({
+      seasonId,
+      schedules: teams.map(({ abbrev }) => ({ team: abbrev, observedAt,
+        games: games.filter((game) => game.homeTeam.abbrev === abbrev || game.awayTeam.abbrev === abbrev) })),
+    });
+    const rows = buildTeamSosSnapshotRows({ seasonId, snapshotDate: "2026-01-10",
+      cutoff: snapshotCutoff(adapted, Date.parse("2026-01-10T09:12:00.000Z")),
+      teams, adapted, schedulesFetched: teams.length });
+    return { rows, focal: rows.find((row) => row.team_abbrev === "A")! };
+  };
+  const completed = [
+    nhlGame(1, "B", "D", 2, { home: 3, away: 1, period: "REG" }),
+    nhlGame(2, "E", "B", 3, { home: 3, away: 2, period: "OT" }),
+    nhlGame(3, "C", "D", 4, { home: 2, away: 0, period: "REG" }),
+    nhlGame(4, "E", "C", 5, { home: 4, away: 1, period: "REG" }),
+  ];
+  const focalPast = nhlGame(5, "A", "B", 6, { home: 2, away: 1, period: "REG" });
+  const focalFuture = nhlGame(6, "C", "A", 20);
+  const canonicalTeams = teams.map(({ abbrev, id }) => ({ id, name: abbrev, abbreviation: abbrev }));
+
+  it("an overtime loss separates points% from win%, and every surface reads points%", () => {
+    const { rows, focal } = snapshot([...completed, focalPast, focalFuture]);
+    // Writer stores both; no migration or writer change was needed.
+    expect(focal.past_direct_win_pct).toBe(0.5);
+    expect(focal.past_direct_points_pct).toBe(0.75);
+    expect(focal.future_direct_points_pct).toBe(0.5);
+    expect(focal.past_indirect_points_pct).toBe(0.5);
+
+    // API (and the dashboard type): headline score is points%, win% secondary.
+    const api = computeSosRatingsV2(rows).find((rating) => rating.team === "A")!;
+    expect(api.combinedPointsPct).toBeCloseTo(0.625, 12);
+    expect(api.sosScore).toBe(62.5);
+    expect(api.combinedWinPct).toBeCloseTo(0.5, 12);
+    // Trends: the power-ladder column reads the headline from the API bucket.
+    expect(sosHeadline(api.past)).toBe(0.75);
+    expect(sosHeadline(api.future)).toBe(0.5);
+    // Stats placeholder.
+    const placeholder = buildCanonicalSosRankingsV2(rows, canonicalTeams);
+    expect(placeholder.past.find((row) => row.abbreviation === "A")?.sos).toBe(0.75);
+    expect(placeholder.future.find((row) => row.abbreviation === "A")?.sos).toBe(0.5);
+    // Team landing (/underlying-stats): same base, its own 2:1 weighting.
+    const landing = computeUnderlyingStatsTeamScheduleStrength({ date: "2026-01-10", scheduleRows: rows }).get("A")!;
+    expect(landing.past.directOpponentPointPct).toBe(sosHeadline(api.past));
+    expect(landing.past.indirectOpponentPointPct).toBe(0.5);
+    expect(landing.past.sos).toBeCloseTo((2 * 0.75 + 0.5) / 3, 12);
+    expect(landing.future.directOpponentPointPct).toBe(sosHeadline(api.future));
+    expect(SOS_HEADLINE.metric).toBe("points-pct");
+  });
+
+  it("with no completed games every surface is unavailable, never 0%", () => {
+    const unplayed = (game: ReturnType<typeof nhlGame>) =>
+      nhlGame(game.id, game.homeTeam.abbrev, game.awayTeam.abbrev, Number(game.startTimeUTC.slice(8, 10)));
+    const { rows, focal } = snapshot([...completed, focalPast, focalFuture].map(unplayed));
+    expect(focal).toMatchObject({ past_fixtures: 0, pending_fixtures: 1, future_fixtures: 1,
+      past_direct_points_pct: null, future_direct_points_pct: null });
+    const api = computeSosRatingsV2(rows).find((rating) => rating.team === "A")!;
+    expect([api.combinedPointsPct, api.sosScore, sosHeadline(api.past), sosHeadline(api.future)])
+      .toEqual([null, null, null, null]);
+    const placeholder = buildCanonicalSosRankingsV2(rows, canonicalTeams);
+    expect(placeholder.past.every((row) => row.sos === null)).toBe(true);
+    expect(placeholder.future.every((row) => row.sos === null)).toBe(true);
+    const landing = computeUnderlyingStatsTeamScheduleStrength({ date: "2026-01-10", scheduleRows: rows }).get("A")!;
+    expect([landing.sos, landing.past.sos, landing.future.sos]).toEqual([null, null, null]);
+  });
+
+  it("labels the snapshot date as an as-of date, never as known before each game", () => {
+    expect(formatSosAsOfDate("2026-11-13")).toBe("Nov 13, 2026");
+    expect(formatSosAsOfDate(null)).toBeNull();
+    expect(formatSosAsOfDate("not-a-date")).toBeNull();
+    expect(SOS_HEADLINE.asOfNote).toContain("not as known before each game");
   });
 });
 

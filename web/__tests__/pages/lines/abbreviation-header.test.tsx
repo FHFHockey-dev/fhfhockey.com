@@ -16,7 +16,7 @@ vi.mock("components/LineCombinations/utilities", async (importOriginal) => ({
   getLineCombinations: getLineCombinationsMock,
 }));
 
-import { Header, getStaticProps } from "pages/lines/[abbreviation]";
+import { Header, getStaticProps, lineShareLines } from "pages/lines/[abbreviation]";
 
 afterEach(cleanup);
 
@@ -105,5 +105,25 @@ describe("team lines getStaticProps", () => {
     await expect(
       getStaticProps({ params: { abbreviation: "EDM" } } as any),
     ).rejects.toThrow("statement timeout");
+  });
+});
+
+describe("lineShareLines", () => {
+  it("gives line N the 5v5 seconds of board unit N, and none on the legacy board", () => {
+    const player = (playerId: number) => ({ playerId, playerName: `P ${playerId}` });
+    const board = {
+      forwards: { line1: [player(1)], line2: [player(2)], line3: [player(3)], line4: [] },
+      fiveOnFiveUnitSeconds: { forwards: [300, 200, 100], defense: [250, 150, 50] },
+    } as any;
+
+    expect(lineShareLines(board).map((line) => [line.label, line.fiveOnFiveSeconds])).toEqual([
+      ["L1", 300],
+      ["L2", 200],
+      ["L3", 100],
+      ["L4", null],
+    ]);
+    expect(
+      lineShareLines({ ...board, fiveOnFiveUnitSeconds: null }).map((line) => line.fiveOnFiveSeconds),
+    ).toEqual([null, null, null, null]);
   });
 });

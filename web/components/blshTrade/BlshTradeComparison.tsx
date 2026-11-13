@@ -8,8 +8,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { DisplayProfile } from "lib/buyLowSellHigh/displayProfile";
 import { BLSH_FIXTURE_STORAGE_KEY, BLSH_STORAGE_KEY, type BlshLocalState } from "lib/buyLowSellHigh/storage";
 import { sameDraft, useBlshLocalState } from "lib/buyLowSellHigh/useBlshLocalState";
-import { compareTrade, FHFH_STANDARD_SCORING, forecastQualification, playerScoredValues, type ForecastQualification, type TradeScoring } from "lib/buyLowSellHigh/trade";
+import { compareTrade, FHFH_STANDARD_SCORING, forecastAdmissionReason, forecastQualification, playerScoredValues, type ForecastQualification, type TradeScoring } from "lib/buyLowSellHigh/trade";
+import { formatForecastGap } from "lib/buyLowSellHigh/market";
 import { DEFAULT_HORIZON, GOALIE_TARGETS, HORIZON_OPTIONS, SKATER_TARGETS, TARGET_LABELS, type HorizonGames, type InterpretationRecord } from "lib/skoElement/contract";
+import { weightedPointsGap } from "lib/skoElement/interpret";
 import { retrospectiveComparison, retrospectivePlayer } from "./retrospective";
 import styles from "./BlshTrade.module.scss";
 
@@ -331,8 +333,46 @@ function PlayerCard({ playerId, record, profile, scoring, horizon, removalDisabl
         ) : <p className={styles.withheldBlock}>No forecast number is shown for this player.</p>}
       </section>
 
+      {record && <ForecastContext record={record} scoring={scoring} qualification={qualification} />}
       <EvidenceBlock name={name} playerId={playerId} profile={profile} goalie={record?.identity.modelClass === "G"} />
     </article>
+  );
+}
+
+function ForecastContext({ record, scoring, qualification }: {
+  record: InterpretationRecord; scoring: TradeScoring; qualification: ForecastQualification;
+}) {
+  if (record.identity.modelClass === "G") return null;
+  const metrics = record.metrics.filter(metric => scoring.mode === "points" ? scoring.weights[metric.target] : scoring.categories.includes(metric.target));
+  const unavailable = qualification.status === "unavailable" ? qualification.reasons.join("; ") : null;
+  const weighted = scoring.mode === "points" ? weightedPointsGap(record, scoring.weights) : null;
+  const weightedReason = unavailable ?? metrics.map(metric => forecastAdmissionReason(record, metric.target)).find(Boolean);
+  const measured = (value: { value: number | null; reason: string | null }, unit: string) => value.value === null
+    ? `Unavailable (${reasonLabel(value.reason)})` : `${fixed(value.value, 2, true).replace("-", "−")} ${unit}`;
+  return (
+    <details className={styles.evidence}>
+      <summary>Forecast and recent context</summary>
+      {weighted && <p>{formatForecastGap(weightedReason ? { value: null, reason: weightedReason } : weighted.gap, "fantasy points per team game")}</p>}
+      {metrics.map(metric => {
+        const reason = unavailable ?? forecastAdmissionReason(record, metric.target);
+        const unit = `${metric.label.toLowerCase()} per team game`;
+        return (
+          <div key={metric.target} role="group" aria-label={`${metric.label} comparisons`}>
+            <p className={styles.kicker}>{metric.label}</p>
+            <p>{formatForecastGap(reason ? { value: null, reason } : metric.comparisons.forecastVsRecent, unit)}</p>
+            <dl className={styles.facts}>
+              <div><dt>Recent − personal reference</dt><dd>{measured(metric.comparisons.recentVsPersonalReference, unit)}</dd></div>
+              <div><dt>Observed − same-window support</dt><dd>{measured(metric.comparisons.observedVsSameWindowSupport, unit)}</dd></div>
+            </dl>
+          </div>
+        );
+      })}
+      {record.opportunity && <section aria-label={`Opportunity for ${record.identity.name}`}>
+        <p>{record.opportunity.label}</p>
+        <p className={styles.muted}>Comparison block coverage: {record.opportunity.blockCoverage.teamGames} team games, {record.opportunity.blockCoverage.appearances} appearances
+          {" · "}{record.opportunity.blockCoverage.startDate ?? "Unknown start"} to {record.opportunity.blockCoverage.endDate ?? "unknown end"}. This does not measure how long an opportunity change lasts.</p>
+      </section>}
+    </details>
   );
 }
 
