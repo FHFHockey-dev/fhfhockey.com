@@ -35,7 +35,10 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
   - power ratings v3, then v4 (1,425 v4 rows plus 47 labelled legacy carries);
   - xG champion retired; composites v3, rankings, team_unit_toi and trend bands;
   - game state, CTPI v2 (gated) and SOS v2 backfills.
-- **Astra:** checkpoint 1 on frozen #433 (one P0, AF-01, now closed) and the #434 addendum (no new P0; two P1s on power v4, fixed in #435 and its rebuild gate). The #435 addendum is pending (`ASTRA-ADDENDUM-435-PROMPT.md`).
+- **Astra:**
+  - The frozen #433 audit is **complete**. The final report is `astra/ASTRA-FIX-SPRINT-AUDIT-checkpoint-1-2026-11-13.md` (byte-identical to Astra's final file). It found one P0, AF-01, now closed. Its later social-rankings finding is being fixed by lane F17.
+  - The #434 addendum is **complete**: no new P0, and two P1s on power v4, fixed in #435 and the gated rebuild.
+  - **Pending:** the #435 addendum and the review of the rebuild receipts (`ASTRA-ADDENDUM-435-PROMPT.md`).
 - **Integration gate:** clean `git archive` export of `496b5c9de`.
   - Vitest: 19,122 passed, 0 failed (1,391 files).
   - Typecheck: passed.
