@@ -31,7 +31,10 @@ Checked:
 - Only complete, valid goals/shots pairs count: a null goals-allowed is no longer a shutout, and GA > SA is excluded. Excluded rows are counted and reported.
 - If the scan hits its 12,000-row bound, it falls back to the labelled prior instead of using a partial sample. At most 30 dates come from one scan.
 - `SeasonLeagueSavePct` gains `excludedRows` and `sampleComplete`.
-- **It's also read by FORGE:** `stages/goalie-stage.ts:188` and `stages/skater-stage.ts:1960`. So releasing it can change FORGE's league save % input whenever `forge_goalie_game` has incomplete or invalid goals/shots pairs. That's independent of the 09:30Z write. The size of the effect is unmeasured; it needs one bounded read-only count, with TJ's OK.
+- **It's also read by FORGE:** `stages/goalie-stage.ts:188` and `stages/skater-stage.ts:1960`. So releasing it can change FORGE's league save % input whenever `forge_goalie_game` has incomplete or invalid goals/shots pairs. That's independent of the 09:30Z write.
+  - **Measured 2026-11-13 ~20:10Z** (TJ "Run the one count"): one guarded aggregate SELECT after the `pg_stat_activity` check (1 active, not busy). The window was 2025-07-01 to 2026-11-14, **2,764 rows**, far under the 12,000-row bound.
+  - **Every row is a valid pair:** 0 null goals-allowed with shots, 0 null shots, 0 goals above shots and 0 negative values. The old and new helpers give identical sums: current season SA 16,983 / GA 1,850, previous season SA 57,742 / GA 6,029.
+  - **So the helper doesn't change FORGE's league save % as of 2026-11-14:** the blended value is about .8935 under both. A future incomplete row would now be excluded and counted, instead of becoming a shutout.
 
 ## 3. Gate on the exact candidate (clean `git archive` export, `$TMPDIR/gate-item1`)
 - **Focused Vitest: 313 passed, 10 files.** The writer has 33 tests, and the helper and its consumers are covered: `leagueSavePct`, `goalieOutcomes`, `goaliePipeline`, `startChartPipeline`, `module-imports`, `runProjectionV2.alignedConversion`, `run-forge-projections.resume`, `nativeInputEligibility`, `nativeGoalAccounting`.
