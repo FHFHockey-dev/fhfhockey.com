@@ -1019,7 +1019,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
 
   const renderGoaltendingPopover = (team: UnderlyingStatsLandingRating) => (
     <MetricPopover
-      label="Goaltending"
+      label="5-on-5 goaltending"
       summary={
         <span
           className={`${styles.componentBadge} ${getComponentBadgeClass(
@@ -1031,16 +1031,10 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
       }
     >
       <p>
-        Higher is better. Formula: expected goals against rate minus actual
-        goals against rate.
+        Higher is better. Formula: 5-on-5 expected goals against rate minus
+        5-on-5 actual goals against rate. Empty-net goals are excluded.
       </p>
       <ul className={styles.popoverList}>
-        <li>GA/60: {team.components.ga60.toFixed(2)}</li>
-        <li>xGA/60: {team.components.xga60.toFixed(2)}</li>
-        <li>
-          Save gap:{" "}
-          {formatSignedNumber(team.components.xga60 - team.components.ga60)}
-        </li>
         <li>League-average score is 100.</li>
       </ul>
     </MetricPopover>
@@ -1320,9 +1314,9 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         label: (
                           <abbr
                             className={styles.metricHeader}
-                            title="Goaltending = expected goals against versus actual goals against."
+                            title="5-on-5 goaltending = expected goals against versus actual goals against at 5-on-5; empty-net goals excluded."
                           >
-                            Goaltending
+                            5v5 Goaltending
                           </abbr>
                         )
                       })}
