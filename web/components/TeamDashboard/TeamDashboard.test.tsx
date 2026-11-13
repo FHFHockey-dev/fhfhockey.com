@@ -36,6 +36,10 @@ vi.mock("./AdvancedL10Metrics", () => ({
   AdvancedL10Metrics: () => <div>Advanced metrics</div>,
 }));
 
+vi.mock("./RecentTeamFormBeta", () => ({
+  RecentTeamFormBeta: () => <div>Recent Team Form beta</div>,
+}));
+
 vi.mock("./TeamLeaders", () => ({
   TeamLeaders: () => <div>Team leaders</div>,
 }));

@@ -242,3 +242,19 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - "sko": only our cron `/api/v1/db/update-sko-stats`, no `get-predictions-sko`;
   - "scoreboard": no matches.
 - **Result:** 0 requests in about 24 h to `/api/Averages/[playerId]`, `/api/ThreeYearAverages/[playerId]`, `/api/v1/ml/get-predictions-sko` and `/api/v1/forge/scoreboard`. One day of evidence: it rules out a daily caller, not a weekly or occasional one.
+- **Release #434** (TJ "Push and merge"):
+  - Candidate `01ed7f7bc`: octoberBranch `6873c28ce` tree without diaries, Codex items 1/2/6 (`fc34b053a`, `284f99045`, `c89ff5d24`) and the beta card (`122dd880b`). No migrations.
+  - Gate:
+    - typecheck 0, ESLint 0 errors, CSS pure 2/2;
+    - Vitest 19,754 passed; its 20 failures are in 6 git- or checkout-dependent files, which pass in the real checkout (179/179);
+    - pytest 217 in the checkout;
+    - TweetSwipeTrainer and planning 195/195 solo;
+    - both RSO readers' AF-01 tests fail on the pre-fix code and pass on the candidate (129/129).
+  - Branch `chef/release-2026-11-13-final` pushed 15:54:25Z, with no build at 90 s.
+  - PR #434 squash-merged as master `496ab3766`, tree identical to the candidate.
+  - Build: fhfhockey deployment completed at 16:01:05Z; fhfhockey.com, cms-fhfhockey and functions-fhfhockey canceled by the Ignored Build Step.
+  - Smoke, 5 sequential GETs, all as expected:
+    - `/api/v1/trends/team-sos` 200 (`metric: points-pct`);
+    - `/api/v1/ml/get-predictions-sko` 503 (withheld, decisions 124/129);
+    - `/underlying-stats` 200, `/lines/EDM` 200, `/` 200.
+  - octoberBranch ours-merge `94d7c2340` pushed at 16:01:45Z, with no build at 90 s.

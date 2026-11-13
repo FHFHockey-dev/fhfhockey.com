@@ -109,6 +109,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   const smokeTestMode = getRequestFlag(req, "smokeTest");
+  // dryRun=true computes exactly one date and returns the rows it would
+  // upsert (with calculation_version and source_through_date); it writes
+  // nothing, so a rebuild can bind the live route to its version first.
+  const dryRun = getRequestFlag(req, "dryRun");
+  if (
+    dryRun &&
+    (explicitStartDate != null ||
+      (parsedDateParam == null && parsedEndDateParam == null))
+  ) {
+    return res.status(400).json({
+      error: "dryRun computes one date: pass date=YYYY-MM-DD without startDate",
+    });
+  }
 
   try {
     // Check if table is empty to decide if we need to backfill
@@ -120,7 +133,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const tableWasEmpty = count === 0;
     const explicitRangeApplied = Boolean(explicitStartDate);
     const autoBackfillApplied =
-      !explicitRangeApplied && tableWasEmpty && !smokeTestMode;
+      !explicitRangeApplied && tableWasEmpty && !smokeTestMode && !dryRun;
     let lateArrivalRepairApplied = false;
     if (autoBackfillApplied) {
       console.log("Table is empty. Fetching season start date...");
@@ -151,6 +164,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       ) + 1;
     let processedCount = 0;
     let totalUpserts = 0;
+    const dryRunRows: any[] = [];
 
     // Loop through each day from startDate to endDate
     for (
@@ -268,8 +282,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         }
       }
 
-      // Upsert
-      if (upserts.length > 0) {
+      if (dryRun) {
+        dryRunRows.push(...upserts);
+      } else if (upserts.length > 0) {
         const { error } = await supabase
           .from("team_power_ratings_daily" as any)
           .upsert(upserts, { onConflict: "team_abbreviation, date" });
@@ -281,11 +296,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     return res.status(200).json({
-      message: "Updated ratings",
+      message: dryRun
+        ? "Dry run: ratings computed, nothing written"
+        : "Updated ratings",
+      dryRun,
       startDate: startDateStr,
       endDate: targetDateParam,
       processedDays: processedCount,
       totalUpserts,
+      ...(dryRun ? { wouldUpsert: dryRunRows.length, rows: dryRunRows } : {}),
       calculationVersion: TEAM_POWER_RATING_CALCULATION_VERSION,
       executionScope: {
         requestedDate: targetDateParam,
@@ -312,4 +331,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+export default adminOnly(
+  withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
+    // A successful dry run wrote nothing, so it leaves no audit row either.
+    skipAuditWhenNoOp: (body) =>
+      body != null &&
+      typeof body === "object" &&
+      (body as { dryRun?: unknown }).dryRun === true,
+  }),
+);

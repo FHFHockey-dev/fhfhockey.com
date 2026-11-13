@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fromMock, lteMock } = vi.hoisted(() => ({
+const { fromMock, lteMock, selectMock } = vi.hoisted(() => ({
   fromMock: vi.fn(),
-  lteMock: vi.fn()
+  lteMock: vi.fn(),
+  selectMock: vi.fn()
 }));
 
 type QueryResult = {
@@ -12,7 +13,8 @@ type QueryResult = {
 
 function createQueryBuilder(resolver: () => QueryResult) {
   const builder: any = {
-    select() {
+    select(...args: unknown[]) {
+      selectMock(...args);
       return builder;
     },
     eq() {
@@ -99,6 +101,61 @@ describe("teamRatingsService", () => {
         finishingRating: 0.4
       })
     ]);
+  });
+
+  it("carries calculation version and source date into the read model (Astra #434 P1)", async () => {
+    const base = {
+      date: "2026-09-30",
+      off_rating: 100,
+      def_rating: 100,
+      pace_rating: 100,
+      trend10: 0,
+      goalie_rating: 104
+    };
+    fromMock.mockImplementation(() =>
+      createQueryBuilder(() => ({
+        data: [
+          {
+            ...base,
+            team_abbreviation: "TOR",
+            calculation_version: "team-power-v4-5v5-goaltending",
+            source_through_date: "2026-09-29"
+          },
+          {
+            ...base,
+            team_abbreviation: "SEA",
+            calculation_version: "legacy_unversioned",
+            source_through_date: "2026-08-29T00:00:00+00:00"
+          },
+          { ...base, team_abbreviation: "UTA", calculation_version: null, source_through_date: null }
+        ],
+        error: null
+      }))
+    );
+
+    const rows = await fetchTeamRatings("2026-09-30");
+
+    expect(String(selectMock.mock.calls[0]?.[0])).toContain(
+      "calculation_version,source_through_date"
+    );
+    expect(
+      rows.map(({ teamAbbr, calculationVersion, sourceThroughDate }) => [
+        teamAbbr,
+        calculationVersion,
+        sourceThroughDate
+      ])
+    ).toEqual([
+      ["TOR", "team-power-v4-5v5-goaltending", "2026-09-29"],
+      ["SEA", "legacy_unversioned", "2026-08-29"],
+      ["UTA", null, null]
+    ]);
+
+    clearTeamRatingsCache();
+    const asOf = await fetchTeamRatingsAsOf("2026-09-30");
+    expect(asOf.ratings[1]).toMatchObject({
+      calculationVersion: "legacy_unversioned",
+      sourceThroughDate: "2026-08-29"
+    });
   });
 
   it("keeps an unknown PP/PK tier unknown instead of tier 0 (W1 P0 #13)", async () => {

@@ -402,3 +402,11 @@ Source: `WAVE3-CONSOLIDATED.md`, "Owner decisions still open" Q42 and Q49. The 1
    - Penalty-shot goals and shots (situation code 1010) count in all-situation totals and in no strength bucket (ES, 5v5, PP, PK), matching the canonical classifier.
    - One shared adapter serves events and exposure.
    - The derived-table rebuild afterwards is TJ's terminal loop, after approval.
+150. **Power ratings v4 carry-forward** (decision 145/147 rebuild):
+   - **Policy (approved):** keep the writer's labelled carry-forward for the 47 team-dates on 2026-09-29..10-02 (teams yet to play). Preserve the 09-28 snapshot's rating, its `legacy_unversioned` label and its original 2026-08-29 source date. Don't delete those rows, label them v4, or fill gaps just to reach 32 rows per date.
+   - **The rebuild itself isn't approved yet.** It waits for TJ's review of a read-only preflight:
+     - the deployed writer is v4;
+     - the backup covers every row the loop can overwrite;
+     - the exact 47 keys, values, versions and source dates;
+     - the served readers keep carried rows distinct;
+     - the readback checks and expected exceptions.

@@ -364,6 +364,81 @@ describe("/underlying-stats landing page", () => {
     expect(unknown[0].textContent).toBe("—");
   });
 
+  describe("goaltending version labels (Astra #434 P1)", () => {
+    const V4 = "team-power-v4-5v5-goaltending";
+    const V3 = "team-power-v3-all-team-baseline-prior-after-norm-pooled-st";
+    const renderRatings = (ratings: UnderlyingStatsLandingRating[]) => {
+      render(
+        <TeamPowerRankingsPage
+          availableDates={["2026-04-05"]}
+          routeStatus={routeStatus}
+          initialSnapshot={buildSnapshot(ratings)}
+        />
+      );
+      const table = screen.getByRole("table", { name: "Detailed team table" });
+      const header = within(table)
+        .getAllByRole("columnheader")
+        .find((cell) => /goaltending/i.test(cell.textContent ?? ""))!;
+      const goalieCell = (team: string) => {
+        const row = within(table).getByText(team).closest("tr")!;
+        return within(row).getByText(/goaltending/i, { selector: "strong" }).closest("td")!;
+      };
+      return { header, goalieCell };
+    };
+
+    it("tags every value with its own calculation when one view mixes versions", () => {
+      const { header, goalieCell } = renderRatings([
+        buildRating("TOR", { calculationVersion: V4, sourceThroughDate: "2026-09-29" }),
+        buildRating("VAN", { calculationVersion: V3, sourceThroughDate: "2026-09-29" }),
+        buildRating("SEA", {
+          calculationVersion: "legacy_unversioned",
+          sourceThroughDate: "2026-08-29"
+        }),
+        buildRating("UTA", { calculationVersion: null, sourceThroughDate: null })
+      ]);
+
+      expect(header.textContent).not.toMatch(/5v5/i);
+      expect(within(goalieCell("TOR")).getByText("5-on-5 goaltending")).toBeTruthy();
+      expect(within(goalieCell("TOR")).getByText("5v5")).toBeTruthy();
+
+      for (const [team, label, tag] of [
+        ["VAN", "Goaltending (all situations, v3)", "all sit. · v3"],
+        ["SEA", "Goaltending (carried from 2025-26 · as of Aug 29)", "carried · Aug 29"],
+        ["UTA", "Goaltending (version unverified)", "unverified"]
+      ] as const) {
+        const cell = goalieCell(team);
+        expect(within(cell).getByText(label)).toBeTruthy();
+        expect(within(cell).getByText(tag)).toBeTruthy();
+        expect(cell.textContent).not.toMatch(/5v5|5-on-5 goaltending/i);
+      }
+    });
+
+    it("puts a shared non-5v5 basis in the header and never says 5v5 for v3 or legacy rows", () => {
+      const v3 = renderRatings([
+        buildRating("TOR", { calculationVersion: V3, sourceThroughDate: "2026-11-12" }),
+        buildRating("VAN", { calculationVersion: V3, sourceThroughDate: "2026-11-12" })
+      ]);
+      expect(v3.header.textContent).not.toMatch(/5v5/i);
+      expect(within(v3.header).getByText("all situations, v3")).toBeTruthy();
+      expect(within(v3.goalieCell("TOR")).queryByText("all sit. · v3")).toBeNull();
+      cleanup();
+
+      const legacy = renderRatings([
+        buildRating("TOR", { calculationVersion: "legacy_unversioned", sourceThroughDate: "2026-08-29" })
+      ]);
+      expect(legacy.header.textContent).not.toMatch(/5v5/i);
+      expect(within(legacy.header).getByText("carried from 2025-26 · as of Aug 29")).toBeTruthy();
+      cleanup();
+
+      const v4 = renderRatings([
+        buildRating("TOR", { calculationVersion: V4, sourceThroughDate: "2026-11-12" }),
+        buildRating("VAN", { calculationVersion: V4, sourceThroughDate: "2026-11-12" })
+      ]);
+      expect(within(v4.header).getByText("5v5 Goaltending")).toBeTruthy();
+      expect(within(v4.goalieCell("TOR")).queryByText("5v5")).toBeNull();
+    });
+  });
+
   it("opens and closes real metric explanations independently through their focusable summaries", () => {
     render(
       <TeamPowerRankingsPage
