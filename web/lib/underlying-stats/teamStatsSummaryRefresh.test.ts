@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildTeamUnderlyingSummaryRowsForGame,
   fetchSeasonTeamSummaryGameIdSet,
+  fetchTeamSummaryRebuildGameIds,
   resolveGameOutcomeFromOfficialPayload,
 } from "./teamStatsSummaryRefresh";
 
@@ -91,6 +92,82 @@ describe("fetchSeasonTeamSummaryGameIdSet", () => {
     });
 
     expect([...covered]).toEqual([10]);
+  });
+});
+
+describe("fetchTeamSummaryRebuildGameIds (rule 19, contract nhl-game-state-v1)", () => {
+  type GameRow = {
+    id: number;
+    seasonId: number;
+    type: number;
+    date: string;
+    startTime: string;
+    game_state: string | null;
+    game_schedule_state: string | null;
+    game_state_observed_at: string | null;
+  };
+  const game = (overrides: Partial<GameRow> & Pick<GameRow, "id">): GameRow => ({
+    seasonId: 20252026,
+    type: 2,
+    date: "2026-04-01",
+    startTime: "2026-04-01T23:00:00.000Z",
+    game_state: null,
+    game_schedule_state: null,
+    game_state_observed_at: null,
+    ...overrides,
+  });
+  const gamesClient = (rows: GameRow[]) => ({
+    from(table: string) {
+      if (table !== "games") throw new Error(`Unexpected table: ${table}`);
+      const filters: Array<(row: GameRow) => boolean> = [];
+      const builder = {
+        select: () => builder,
+        eq: (column: keyof GameRow, value: unknown) => {
+          filters.push((row) => row[column] === value);
+          return builder;
+        },
+        gte: (column: keyof GameRow, value: string) => {
+          filters.push((row) => String(row[column]) >= value);
+          return builder;
+        },
+        lte: (column: keyof GameRow, value: string) => {
+          filters.push((row) => String(row[column]) <= value);
+          return builder;
+        },
+        order: () => builder,
+        range: async (from: number, to: number) => ({
+          data: rows.filter((row) => filters.every((keep) => keep(row))).slice(from, to + 1),
+          error: null,
+        }),
+      };
+      return builder;
+    },
+  });
+
+  it("keeps a late game dated before today out while its stored state is LIVE", async () => {
+    const supabase = gamesClient([
+      game({ id: 1, game_state: "FINAL", game_schedule_state: "OK",
+        game_state_observed_at: "2026-04-02T02:00:00.000Z" }),
+      // 10 pm ET start on Apr 2: dated before "today" (UTC Apr 3) but still being played.
+      game({ id: 2, date: "2026-04-02", startTime: "2026-04-03T02:00:00.000Z", game_state: "LIVE",
+        game_schedule_state: "OK", game_state_observed_at: "2026-04-03T03:20:00.000Z" }),
+      // No stored state: the labelled start + 8 h fallback decides.
+      game({ id: 3 }),
+      game({ id: 4, date: "2026-04-02", startTime: "2026-04-02T23:00:00.000Z", game_state: "FUT",
+        game_schedule_state: "PPD", game_state_observed_at: "2026-04-02T20:00:00.000Z" }),
+      game({ id: 5, seasonId: 20242025, game_state: "OFF",
+        game_state_observed_at: "2026-04-02T02:00:00.000Z" }),
+    ]);
+
+    const ids = await fetchTeamSummaryRebuildGameIds({
+      seasonId: 20252026,
+      startDate: "2026-04-01",
+      endDate: "2026-04-02",
+      supabase: supabase as never,
+      now: new Date("2026-04-03T03:30:00.000Z"),
+    });
+
+    expect(ids).toEqual([1, 3]);
   });
 });
 

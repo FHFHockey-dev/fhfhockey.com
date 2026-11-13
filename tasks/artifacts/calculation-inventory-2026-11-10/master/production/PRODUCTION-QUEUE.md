@@ -218,3 +218,27 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - **Pipeline check at 11:01Z** (`daily_incremental:2026-11-13`): all 11 stages `complete` by 10:46:19Z. Stage 2 `upstream_skater_sources` completed at 10:07:53 (the a25f3f542 fix, released in #432, held). FORGE runs `succeeded` for 11-13, 11-14 and 11-15 (created 10:20–10:31). Rolling has 396 rows per strength for game date 11-12.
   - `update-nst-gamelog` (10:05:29–10:06:12) logged `failure`: 395 players and 6,688 rows landed, but 1 troublesome player made 16 of 20 datasets `parse_or_identity_unresolved`. The player is Josh Mahura 8479372 (SEA D): WGO has 14 games, NST has 12, missing 11-07 and 11-12. The 11-08 run (game date 11-07) failed the same way. The players table has one Mahura row, so NST is likely listing him under a different name or provider id on those dates. Follow-up: identity alias, no NST calls made.
 - **Trend bands** started as a paced background run (TJ "Later, paced"): `trend-bands-2026-11-13/trend-bands-history.py`, from 11:41Z, 769 players at 10 per call, 60 s gaps, pause 11:58–12:08Z for job 392, stops on any non-200, per-player error, call over 60 s or guard failure. Table: `sustainability_trend_bands`, 5.2 GB, ~11.0M rows before the run.
+- **Trend bands DONE** 13:16:02Z: 77 calls, 769 players, 666,376 bands, all 200 (max 9.5 s), guard waits only (each cleared). Readback by snapshot date: about 60 bands per player per snapshot (10-01 484 players, 10-21 208, 11-12 528).
+- **F2b** (TJ "Landing fix first"): `ebfc82bc7`. The underlying-stats landing reads the latest `team_sos_daily` v2 snapshot within 7 days and never `sos_standings`. 8 regression tests fail on the old code; underlying-stats tests 219/219; typecheck 0; ESLint 0.
+- **Migrations 144, 145, 146** applied singly at 13:16:37, 13:16:47 and 13:16:56Z (TJ "Yes, after trend bands"). Each matched its header readback; ledger rows inserted; authority now 112 applied / 6 pending (`cd5604159`).
+- **Release #433** (TJ "Yes, watch via GitHub"):
+  - Candidate `359789456` (octoberBranch `cd5604159` tree without diaries) was gated in a clean export: typecheck 0, ESLint 0, PG15 proofs OK. The vitest and pytest failures were export-only, and each passes in the checkout.
+  - Branch `chef/release-2026-11-13-f1-f4` pushed 13:25:22Z; no status, deployment or check run at 95 s.
+  - Squash-merged as master `4d9b6a10d`, tree identical to the candidate.
+  - GitHub statuses: fhfhockey "Deployment has completed" at 13:31:56Z; fhfhockey.com, functions-fhfhockey and cms-fhfhockey canceled by the Ignored Build Step. The Vercel MCP was unavailable (list_deployments disabled in connector settings), so the watch used GitHub statuses.
+  - TJ set `FORGE_RESERVE_PASS_ENABLED=true` in production before the merge.
+- **Smoke** (5 sequential GETs, all 200): `/api/v1/trends/team-sos` (descriptive-sos-v2), `/api/v1/trends/team-ctpi` (0 teams: the v2 candidate is gated by design, W1-4; v1 is frozen), `/underlying-stats`, `/lines/EDM` and `/`.
+- **Post-release runs** (TJ "Run them after release"; `release-433-followups/post-release.py`), all 200:
+  - `update-games`: 1,409 games for 2026-27, all with a stored state (OFF 309, FINAL 65, FUT 1,035).
+  - CTPI v2 backfill in 2 chunks: 622 + 480 rows. v2 has 1,102 rows over 38 dates (10-07 → 11-13); v1 is unchanged at 9,489.
+  - `update-team-sos`: 32 rows, 1 cutoff, 0 pending. Every team has 84 fixtures (the lane note expected 82; 2026-27 is an 84-game season). `sos_standings` is unchanged at 15,680 rows.
+- **Open decision:** Recent Team Form (CTPI) has no served rows until v2 is validated and approved (W1-4). Readers default to v2, and v1 can't receive new rows.
+
+## Log check (decisions 79/124), 2026-11-13 ~14:55Z: request logs, last day
+- Source: the Vercel dashboard (TJ's signed-in Chrome, read-only), project fhfhockey → Logs → **Request Logs** view (every request, not only console output), timeline "Last day". That's the longest window without Observability Plus, a paid upgrade that wasn't used.
+- Request Path facet search (case-insensitive):
+  - "verages" matches only our crons `/api/v1/db/update-rolling-player-averages` and `/api/v1/db/update-wgo-averages`, so the facet works;
+  - "ThreeYear": no matches;
+  - "sko": only our cron `/api/v1/db/update-sko-stats`, no `get-predictions-sko`;
+  - "scoreboard": no matches.
+- **Result:** 0 requests in about 24 h to `/api/Averages/[playerId]`, `/api/ThreeYearAverages/[playerId]`, `/api/v1/ml/get-predictions-sko` and `/api/v1/forge/scoreboard`. One day of evidence: it rules out a daily caller, not a weekly or occasional one.

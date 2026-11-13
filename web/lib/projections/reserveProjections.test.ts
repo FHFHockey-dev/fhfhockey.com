@@ -6,6 +6,8 @@ import {
   buildReserveGoalieRow, buildReserveSkaterLine, buildReserveSkaterRow, forgeReservePassEnabled,
   RESERVE_ROLE_DEFAULT_TOI_ES_SECONDS, selectReserveSkaters,
 } from "./reserveProjections";
+import { skaterAvailabilityForGame } from "./skaterCoverage";
+import { timeAwayDisclosure, timeAwayEvidence } from "./timeAwayDecay";
 
 const rolling = (strength: "ev" | "pp" | "all", overrides: Partial<RollingRow> = {}): RollingRow => ({
   game_id: 2026020010, season: 20262027, player_id: 7, strength_state: strength, game_date: "2026-10-20",
@@ -45,6 +47,16 @@ describe("FORGE reserve skater line", () => {
     expect(depth.goalsPp).toBe(0);
   });
 
+  it("keeps the exposure of a known zero-shot history (BC W1-6 A2)", () => {
+    // 100 hours with no shots is evidence; no history at all is not. Without toiSecondsAll both read the prior.
+    const known = (strength: "ev" | "pp") => rolling(strength, { shots_total_all: 0, sog_per_60_all: 0, toi_seconds_total_all: 360000 });
+    const unknown = (strength: "ev" | "pp") => rolling(strength, { shots_total_all: null, sog_per_60_all: null, toi_seconds_total_all: 360000 });
+    const zeroShooter = line({ ev: known("ev"), pp: known("pp") })!, noHistory = line({ ev: unknown("ev"), pp: unknown("pp") })!;
+    expect(zeroShooter.toiEs).toBe(noHistory.toiEs);
+    expect(zeroShooter.shotsEs).toBeLessThan(noHistory.shotsEs);
+    expect(zeroShooter.shotsPp).toBeLessThan(noHistory.shotsPp);
+  });
+
   it("applies the game's context multipliers and refuses a player with no NHL usage", () => {
     const base = line()!, boosted = line({ context: { ...neutral, goalRateMultiplier: 1.2, toiMultiplier: 0.9 } })!;
     expect(boosted.toiEs).toBeCloseTo(base.toiEs * 0.9, 6);
@@ -72,6 +84,43 @@ describe("FORGE reserve selection and rows", () => {
       model: { shotsAgainst: 28, projectedSaves: 25.4, projectedGoalsAllowed: 2.6, shutoutProbability: 0.05, modeledSavePct: 0.907 } });
     expect(goalie).toMatchObject({ player_class: "goalie", conditioning: "if_starts", proj_goals_es: null, proj_saves: 25.4,
       uncertainty: { conditioning: "if_starts", start_probability: null, excluded_from_team_totals: true } });
+  });
+
+  const event = (event_type: string, payload: Record<string, unknown> = {}) => ({ event_id: 9, event_type, confidence: 0.75, payload });
+  const rowScope = { runId: "r", asOfDate: "2026-10-26", horizonGames: 1, gameId: 5, playerId: 7, teamId: 10, opponentTeamId: 12 };
+
+  it("labels a scratch for this game and keeps his if-plays line with 0 expected (decision 31)", () => {
+    const scratched = buildReserveSkaterRow({ ...rowScope, reason: "ruled_out", line: line()!, horizonScalar: 1,
+      availability: skaterAvailabilityForGame({ gameId: 5, event: event("SCRATCH", { game_id: 5 }), inLineup: false }) });
+    expect(scratched.reserve_reason).toBe("scratched_not_expected_to_dress");
+    expect(scratched.uncertainty).toMatchObject({ reserve_reason: "scratched_not_expected_to_dress", participation_probability: null,
+      availability: { state: "confirmed_out", expected_for_game: 0, label: "scratched / not expected to dress" } });
+    expect(scratched.proj_shots_es).toBeGreaterThan(0);
+    // An injury keeps the ruled-out reason; a scratch for another game says nothing about this one.
+    const injured = buildReserveSkaterRow({ ...rowScope, reason: "ruled_out", line: line()!, horizonScalar: 1,
+      availability: skaterAvailabilityForGame({ gameId: 5, event: event("INJURY_OUT"), inLineup: false }) });
+    expect(injured.reserve_reason).toBe("ruled_out");
+    const otherGame = buildReserveSkaterRow({ ...rowScope, reason: "not_in_lineup", line: line()!, horizonScalar: 1,
+      availability: skaterAvailabilityForGame({ gameId: 5, event: event("SCRATCH", { game_id: 6 }), inLineup: false }) });
+    expect(otherGame.reserve_reason).toBe("not_in_lineup");
+  });
+
+  it("serializes availability and time away beside the line, never a participation chance (decision 132.2-132.4)", () => {
+    const out = buildReserveSkaterRow({ ...rowScope, reason: "ruled_out", line: line()!, horizonScalar: 1,
+      availability: skaterAvailabilityForGame({ gameId: 5, event: event("INJURY_OUT"), inLineup: false }),
+      timeAway: timeAwayDisclosure(timeAwayEvidence("2026-10-20", rowScope.asOfDate)) });
+    expect(out.uncertainty.participation_probability).toBeNull();
+    expect(out.uncertainty.availability).toMatchObject({ state: "confirmed_out", expected_for_game: 0, participation_probability: null });
+    expect(out.proj_goals_es).toBeGreaterThan(0);
+    // No row in the 365-day scope, one 600 days ago: he still gets a line, and the row says he has been away.
+    const lastGame = "2025-03-05";
+    const longAway = line({ ev: rolling("ev", { game_date: lastGame }), pp: rolling("pp", { game_date: lastGame }), all: rolling("all", { game_date: lastGame }) })!;
+    const away = buildReserveSkaterRow({ ...rowScope, reason: "hard_stale", line: longAway, horizonScalar: 1,
+      availability: skaterAvailabilityForGame({ gameId: 5, event: undefined, inLineup: false }),
+      timeAway: timeAwayDisclosure(timeAwayEvidence(lastGame, rowScope.asOfDate)) });
+    expect(away.proj_toi_es_seconds).toBeGreaterThan(0);
+    expect(away.uncertainty.time_away).toMatchObject({ status: "away", days_away: 600, last_game_date: lastGame });
+    expect(away.uncertainty.availability).toMatchObject({ state: "unknown", expected_for_game: null });
   });
 
   it("keeps the reserve shutout per game over a multi-game horizon and labels each basis (W3-4 N6)", () => {

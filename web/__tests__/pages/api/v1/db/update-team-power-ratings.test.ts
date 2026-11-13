@@ -304,7 +304,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
     };
 
     fetchGameLogsMock.mockResolvedValue([
-      { team_abbreviation: "ANA", date: yesterday, data_mode: "all" },
+      { team_abbreviation: "ANA", date: yesterday, data_mode: "all", gp: 1 },
     ]);
     fetchAllRatingsMock.mockImplementation((_supabase, _table, targetDate) =>
       Promise.resolve(targetDate === today ? [repairedRating] : []),
@@ -329,7 +329,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       startDate: yesterday,
       endDate: today,
       processedDays: 2,
-      calculationVersion: "team-power-v3-all-team-baseline-prior-after-norm-pooled-st",
+      calculationVersion: "team-power-v4-5v5-goaltending",
       executionScope: {
         requestedDate: today,
         startDate: yesterday,
@@ -349,7 +349,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       expect.objectContaining({
         team_abbreviation: "ANA",
         date: yesterday,
-        calculation_version: "team-power-v3-all-team-baseline-prior-after-norm-pooled-st",
+        calculation_version: "team-power-v4-5v5-goaltending",
         source_through_date: yesterday,
         off_rating: 111,
       }),
@@ -360,7 +360,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       expect.objectContaining({
         team_abbreviation: "ANA",
         date: today,
-        calculation_version: "team-power-v3-all-team-baseline-prior-after-norm-pooled-st",
+        calculation_version: "team-power-v4-5v5-goaltending",
         source_through_date: yesterday,
         off_rating: 111,
       }),
@@ -371,11 +371,11 @@ describe("/api/v1/db/update-team-power-ratings", () => {
     countState.value = 32;
 
     fetchGameLogsMock.mockResolvedValue([
-      { team_abbreviation: "COL", date: "2026-04-05", data_mode: "all" },
-      { team_abbreviation: "COL", date: "2026-04-03", data_mode: "all" },
-      { team_abbreviation: "COL", date: "2026-04-01", data_mode: "all" },
-      { team_abbreviation: "COL", date: "2026-03-30", data_mode: "all" },
-      { team_abbreviation: "COL", date: "2026-03-28", data_mode: "all" },
+      { team_abbreviation: "COL", date: "2026-04-05", data_mode: "all", gp: 1 },
+      { team_abbreviation: "COL", date: "2026-04-03", data_mode: "all", gp: 1 },
+      { team_abbreviation: "COL", date: "2026-04-01", data_mode: "all", gp: 1 },
+      { team_abbreviation: "COL", date: "2026-03-30", data_mode: "all", gp: 1 },
+      { team_abbreviation: "COL", date: "2026-03-28", data_mode: "all", gp: 1 },
     ]);
     fetchAllRatingsMock.mockResolvedValue([
       {
@@ -447,7 +447,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
     expect(upserts).toEqual([
       expect.objectContaining({
         team_abbreviation: "COL",
-        calculation_version: "team-power-v3-all-team-baseline-prior-after-norm-pooled-st",
+        calculation_version: "team-power-v4-5v5-goaltending",
         source_through_date: "2026-04-05",
         trend10: 13,
       }),

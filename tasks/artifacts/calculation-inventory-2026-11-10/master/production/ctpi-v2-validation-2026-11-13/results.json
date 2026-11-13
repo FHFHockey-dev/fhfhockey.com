@@ -1,0 +1,2088 @@
+{
+  "generatedAt": "2026-11-13T14:07:07.728Z",
+  "design": {
+    "seasons": [
+      20252026,
+      20262027
+    ],
+    "horizons": [
+      5,
+      10,
+      20
+    ],
+    "primaryHorizon": 10,
+    "informationSet": "games strictly before snapshot date D (both versions)",
+    "targets": "team's next N games dated on or after D: GD per game, points% = points / (2N)",
+    "snapshotDates": "every game day of the season",
+    "minTeamsPerDate": 16,
+    "bootstrap": {
+      "kind": "moving-block over ordered game days",
+      "blockGameDays": 20,
+      "reps": 2000
+    },
+    "heldOutSplit": "2026-01-01",
+    "nonInferiorityMargin": 0.03
+  },
+  "harness": [
+    {
+      "version": 2,
+      "seasonId": 20262027,
+      "storedRows": 1102,
+      "dates": 38,
+      "compared": 1102,
+      "exactWithin1e9": 1102,
+      "maxAbsDiff": 0,
+      "pearson": 1,
+      "storedOnly": 0,
+      "offlineOnly": 0
+    },
+    {
+      "version": 1,
+      "seasonId": 20262027,
+      "storedRows": 1425,
+      "dates": 46,
+      "compared": 1425,
+      "exactWithin1e9": 1425,
+      "maxAbsDiff": 0,
+      "pearson": 1,
+      "storedOnly": 0,
+      "offlineOnly": 0
+    },
+    {
+      "version": 1,
+      "seasonId": 20252026,
+      "storedRows": 8064,
+      "dates": 252,
+      "compared": 8019,
+      "exactWithin1e9": 32,
+      "maxAbsDiff": 2.103022372,
+      "pearson": 0.745775,
+      "storedOnly": 45,
+      "offlineOnly": 0
+    }
+  ],
+  "coverage": {
+    "20252026": {
+      "sourceRows": 2534,
+      "resultRows": 2556,
+      "teams": 32,
+      "gameDays": 163,
+      "firstGameDay": "2025-10-07",
+      "lastGameDay": "2026-04-16",
+      "teamDates": 5216,
+      "v1Scored": 5139,
+      "v2Scored": 4900,
+      "v2StatusCounts": {
+        "unavailable": 239,
+        "partial": 283,
+        "ready": 4617
+      },
+      "pairedSamples": 4900,
+      "pairedWithTarget": {
+        "5": 4658,
+        "10": 4331,
+        "20": 3669
+      },
+      "v1VsV2Pearson": 0.9686,
+      "v1VsV2Spearman": 0.9629
+    },
+    "20262027": {
+      "sourceRows": 618,
+      "resultRows": 618,
+      "teams": 32,
+      "gameDays": 45,
+      "firstGameDay": "2026-09-29",
+      "lastGameDay": "2026-11-12",
+      "teamDates": 1440,
+      "v1Scored": 1361,
+      "v2Scored": 1070,
+      "v2StatusCounts": {
+        "unavailable": 291,
+        "partial": 297,
+        "ready": 773
+      },
+      "pairedSamples": 1070,
+      "pairedWithTarget": {
+        "5": 759,
+        "10": 385,
+        "20": 0
+      },
+      "v1VsV2Pearson": 0.9845,
+      "v1VsV2Spearman": 0.9785
+    }
+  },
+  "primary": {
+    "horizon": 10,
+    "nonInferiorityMargin": 0.03,
+    "gd": {
+      "dates": 135,
+      "ciEstimable": true,
+      "firstDate": "2025-10-18",
+      "lastDate": "2026-03-24",
+      "meanTeamsPerDate": 31.8,
+      "meanSpearman": {
+        "v1": 0.2726,
+        "v2": 0.2613,
+        "v1NoLuck": 0.2627,
+        "v2PlusLuck": 0.2746,
+        "seasonGd": 0.2159,
+        "seasonPointsPct": 0.1957
+      },
+      "meanSpearmanCi95": {
+        "v1": [
+          0.2227,
+          0.3592
+        ],
+        "v2": [
+          0.212,
+          0.3436
+        ],
+        "v1NoLuck": [
+          0.2141,
+          0.3445
+        ],
+        "v2PlusLuck": [
+          0.2234,
+          0.3611
+        ],
+        "seasonGd": [
+          0.0819,
+          0.356
+        ],
+        "seasonPointsPct": [
+          0.0652,
+          0.3342
+        ]
+      },
+      "v2MinusV1": {
+        "point": -0.0113,
+        "ci95": [
+          -0.0301,
+          0.0081
+        ],
+        "shareBootstrapAboveZero": 0.14
+      },
+      "v2MinusV1NoLuck": {
+        "point": -0.0014,
+        "ci95": [
+          -0.0096,
+          0.0091
+        ],
+        "shareBootstrapAboveZero": 0.421
+      },
+      "v2PlusLuckMinusV1": {
+        "point": 0.002,
+        "ci95": [
+          -0.0058,
+          0.013
+        ]
+      },
+      "v2MinusSeasonGd": {
+        "point": 0.0454,
+        "ci95": [
+          -0.0653,
+          0.1877
+        ],
+        "shareBootstrapAboveZero": 0.819
+      },
+      "v2MinusSeasonPointsPct": {
+        "point": 0.0656,
+        "ci95": [
+          -0.0527,
+          0.2149
+        ],
+        "shareBootstrapAboveZero": 0.866
+      }
+    },
+    "pts": {
+      "dates": 135,
+      "ciEstimable": true,
+      "firstDate": "2025-10-18",
+      "lastDate": "2026-03-24",
+      "meanTeamsPerDate": 31.8,
+      "meanSpearman": {
+        "v1": 0.219,
+        "v2": 0.2132,
+        "v1NoLuck": 0.2105,
+        "v2PlusLuck": 0.2249,
+        "seasonGd": 0.1331,
+        "seasonPointsPct": 0.1244
+      },
+      "meanSpearmanCi95": {
+        "v1": [
+          0.1691,
+          0.3141
+        ],
+        "v2": [
+          0.1552,
+          0.3085
+        ],
+        "v1NoLuck": [
+          0.1543,
+          0.3045
+        ],
+        "v2PlusLuck": [
+          0.1744,
+          0.319
+        ],
+        "seasonGd": [
+          0.0086,
+          0.27
+        ],
+        "seasonPointsPct": [
+          0.026,
+          0.2532
+        ]
+      },
+      "v2MinusV1": {
+        "point": -0.0057,
+        "ci95": [
+          -0.0274,
+          0.0132
+        ],
+        "shareBootstrapAboveZero": 0.252
+      },
+      "v2MinusV1NoLuck": {
+        "point": 0.0027,
+        "ci95": [
+          -0.0075,
+          0.0177
+        ],
+        "shareBootstrapAboveZero": 0.741
+      },
+      "v2PlusLuckMinusV1": {
+        "point": 0.006,
+        "ci95": [
+          -0.0017,
+          0.0211
+        ]
+      },
+      "v2MinusSeasonGd": {
+        "point": 0.0801,
+        "ci95": [
+          -0.0292,
+          0.2364
+        ],
+        "shareBootstrapAboveZero": 0.922
+      },
+      "v2MinusSeasonPointsPct": {
+        "point": 0.0888,
+        "ci95": [
+          -0.0182,
+          0.2211
+        ],
+        "shareBootstrapAboveZero": 0.947
+      }
+    }
+  },
+  "crossSectional": {
+    "20252026.gd5": {
+      "dates": 146,
+      "ciEstimable": true,
+      "firstDate": "2025-10-18",
+      "lastDate": "2026-04-04",
+      "meanTeamsPerDate": 31.7,
+      "meanSpearman": {
+        "v1": 0.2061,
+        "v2": 0.2044,
+        "v1NoLuck": 0.2083,
+        "v2PlusLuck": 0.2061,
+        "seasonGd": 0.1735,
+        "seasonPointsPct": 0.1602
+      },
+      "meanSpearmanCi95": {
+        "v1": [
+          0.1617,
+          0.264
+        ],
+        "v2": [
+          0.1613,
+          0.2504
+        ],
+        "v1NoLuck": [
+          0.1631,
+          0.2549
+        ],
+        "v2PlusLuck": [
+          0.1636,
+          0.2613
+        ],
+        "seasonGd": [
+          0.0663,
+          0.2842
+        ],
+        "seasonPointsPct": [
+          0.0649,
+          0.2738
+        ]
+      },
+      "v2MinusV1": {
+        "point": -0.0018,
+        "ci95": [
+          -0.0227,
+          0.0122
+        ],
+        "shareBootstrapAboveZero": 0.28
+      },
+      "v2MinusV1NoLuck": {
+        "point": -0.0039,
+        "ci95": [
+          -0.01,
+          0.0043
+        ],
+        "shareBootstrapAboveZero": 0.186
+      },
+      "v2PlusLuckMinusV1": {
+        "point": -0.0001,
+        "ci95": [
+          -0.0063,
+          0.0093
+        ]
+      },
+      "v2MinusSeasonGd": {
+        "point": 0.0309,
+        "ci95": [
+          -0.068,
+          0.1257
+        ],
+        "shareBootstrapAboveZero": 0.712
+      },
+      "v2MinusSeasonPointsPct": {
+        "point": 0.0441,
+        "ci95": [
+          -0.0576,
+          0.1303
+        ],
+        "shareBootstrapAboveZero": 0.768
+      }
+    },
+    "20252026.pts5": {
+      "dates": 146,
+      "ciEstimable": true,
+      "firstDate": "2025-10-18",
+      "lastDate": "2026-04-04",
+      "meanTeamsPerDate": 31.7,
+      "meanSpearman": {
+        "v1": 0.1609,
+        "v2": 0.1629,
+        "v1NoLuck": 0.1605,
+        "v2PlusLuck": 0.1653,
+        "seasonGd": 0.1063,
+        "seasonPointsPct": 0.1025
+      },
+      "meanSpearmanCi95": {
+        "v1": [
+          0.0991,
+          0.2442
+        ],
+        "v2": [
+          0.0983,
+          0.2365
+        ],
+        "v1NoLuck": [
+          0.0941,
+          0.2376
+        ],
+        "v2PlusLuck": [
+          0.1051,
+          0.2479
+        ],
+        "seasonGd": [
+          0.0045,
+          0.2161
+        ],
+        "seasonPointsPct": [
+          0.0216,
+          0.2083
+        ]
+      },
+      "v2MinusV1": {
+        "point": 0.002,
+        "ci95": [
+          -0.024,
+          0.0216
+        ],
+        "shareBootstrapAboveZero": 0.476
+      },
+      "v2MinusV1NoLuck": {
+        "point": 0.0024,
+        "ci95": [
+          -0.0059,
+          0.0128
+        ],
+        "shareBootstrapAboveZero": 0.747
+      },
+      "v2PlusLuckMinusV1": {
+        "point": 0.0044,
+        "ci95": [
+          -0.0021,
+          0.0163
+        ]
+      },
+      "v2MinusSeasonGd": {
+        "point": 0.0566,
+        "ci95": [
+          -0.0387,
+          0.1708
+        ],
+        "shareBootstrapAboveZero": 0.875
+      },
+      "v2MinusSeasonPointsPct": {
+        "point": 0.0604,
+        "ci95": [
+          -0.0356,
+          0.1492
+        ],
+        "shareBootstrapAboveZero": 0.88
+      }
+    },
+    "20252026.gd10": {
+      "dates": 135,
+      "ciEstimable": true,
+      "firstDate": "2025-10-18",
+      "lastDate": "2026-03-24",
+      "meanTeamsPerDate": 31.8,
+      "meanSpearman": {
+        "v1": 0.2726,
+        "v2": 0.2613,
+        "v1NoLuck": 0.2627,
+        "v2PlusLuck": 0.2746,
+        "seasonGd": 0.2159,
+        "seasonPointsPct": 0.1957
+      },
+      "meanSpearmanCi95": {
+        "v1": [
+          0.2227,
+          0.3592
+        ],
+        "v2": [
+          0.212,
+          0.3436
+        ],
+        "v1NoLuck": [
+          0.2141,
+          0.3445
+        ],
+        "v2PlusLuck": [
+          0.2234,
+          0.3611
+        ],
+        "seasonGd": [
+          0.0819,
+          0.356
+        ],
+        "seasonPointsPct": [
+          0.0652,
+          0.3342
+        ]
+      },
+      "v2MinusV1": {
+        "point": -0.0113,
+        "ci95": [
+          -0.0301,
+          0.0081
+        ],
+        "shareBootstrapAboveZero": 0.14
+      },
+      "v2MinusV1NoLuck": {
+        "point": -0.0014,
+        "ci95": [
+          -0.0096,
+          0.0091
+        ],
+        "shareBootstrapAboveZero": 0.421
+      },
+      "v2PlusLuckMinusV1": {
+        "point": 0.002,
+        "ci95": [
+          -0.0058,
+          0.013
+        ]
+      },
+      "v2MinusSeasonGd": {
+        "point": 0.0454,
+        "ci95": [
+          -0.0653,
+          0.1877
+        ],
+        "shareBootstrapAboveZero": 0.819
+      },
+      "v2MinusSeasonPointsPct": {
+        "point": 0.0656,
+        "ci95": [
+          -0.0527,
+          0.2149
+        ],
+        "shareBootstrapAboveZero": 0.866
+      }
+    },
+    "20252026.pts10": {
+      "dates": 135,
+      "ciEstimable": true,
+      "firstDate": "2025-10-18",
+      "lastDate": "2026-03-24",
+      "meanTeamsPerDate": 31.8,
+      "meanSpearman": {
+        "v1": 0.219,
+        "v2": 0.2132,
+        "v1NoLuck": 0.2105,
+        "v2PlusLuck": 0.2249,
+        "seasonGd": 0.1331,
+        "seasonPointsPct": 0.1244
+      },
+      "meanSpearmanCi95": {
+        "v1": [
+          0.1691,
+          0.3141
+        ],
+        "v2": [
+          0.1552,
+          0.3085
+        ],
+        "v1NoLuck": [
+          0.1543,
+          0.3045
+        ],
+        "v2PlusLuck": [
+          0.1744,
+          0.319
+        ],
+        "seasonGd": [
+          0.0086,
+          0.27
+        ],
+        "seasonPointsPct": [
+          0.026,
+          0.2532
+        ]
+      },
+      "v2MinusV1": {
+        "point": -0.0057,
+        "ci95": [
+          -0.0274,
+          0.0132
+        ],
+        "shareBootstrapAboveZero": 0.252
+      },
+      "v2MinusV1NoLuck": {
+        "point": 0.0027,
+        "ci95": [
+          -0.0075,
+          0.0177
+        ],
+        "shareBootstrapAboveZero": 0.741
+      },
+      "v2PlusLuckMinusV1": {
+        "point": 0.006,
+        "ci95": [
+          -0.0017,
+          0.0211
+        ]
+      },
+      "v2MinusSeasonGd": {
+        "point": 0.0801,
+        "ci95": [
+          -0.0292,
+          0.2364
+        ],
+        "shareBootstrapAboveZero": 0.922
+      },
+      "v2MinusSeasonPointsPct": {
+        "point": 0.0888,
+        "ci95": [
+          -0.0182,
+          0.2211
+        ],
+        "shareBootstrapAboveZero": 0.947
+      }
+    },
+    "20252026.gd20": {
+      "dates": 115,
+      "ciEstimable": true,
+      "firstDate": "2025-10-18",
+      "lastDate": "2026-03-04",
+      "meanTeamsPerDate": 31.6,
+      "meanSpearman": {
+        "v1": 0.2695,
+        "v2": 0.2632,
+        "v1NoLuck": 0.2657,
+        "v2PlusLuck": 0.2717,
+        "seasonGd": 0.1943,
+        "seasonPointsPct": 0.1864
+      },
+      "meanSpearmanCi95": {
+        "v1": [
+          0.2262,
+          0.36
+        ],
+        "v2": [
+          0.2334,
+          0.3453
+        ],
+        "v1NoLuck": [
+          0.2312,
+          0.3497
+        ],
+        "v2PlusLuck": [
+          0.2371,
+          0.3608
+        ],
+        "seasonGd": [
+          0.031,
+          0.3804
+        ],
+        "seasonPointsPct": [
+          0.0407,
+          0.3653
+        ]
+      },
+      "v2MinusV1": {
+        "point": -0.0063,
+        "ci95": [
+          -0.0301,
+          0.0241
+        ],
+        "shareBootstrapAboveZero": 0.364
+      },
+      "v2MinusV1NoLuck": {
+        "point": -0.0025,
+        "ci95": [
+          -0.0087,
+          0.0076
+        ],
+        "shareBootstrapAboveZero": 0.391
+      },
+      "v2PlusLuckMinusV1": {
+        "point": 0.0022,
+        "ci95": [
+          -0.0066,
+          0.0177
+        ]
+      },
+      "v2MinusSeasonGd": {
+        "point": 0.069,
+        "ci95": [
+          -0.0685,
+          0.2295
+        ],
+        "shareBootstrapAboveZero": 0.832
+      },
+      "v2MinusSeasonPointsPct": {
+        "point": 0.0768,
+        "ci95": [
+          -0.0504,
+          0.2277
+        ],
+        "shareBootstrapAboveZero": 0.861
+      }
+    },
+    "20252026.pts20": {
+      "dates": 115,
+      "ciEstimable": true,
+      "firstDate": "2025-10-18",
+      "lastDate": "2026-03-04",
+      "meanTeamsPerDate": 31.6,
+      "meanSpearman": {
+        "v1": 0.2029,
+        "v2": 0.204,
+        "v1NoLuck": 0.1993,
+        "v2PlusLuck": 0.2114,
+        "seasonGd": 0.125,
+        "seasonPointsPct": 0.1308
+      },
+      "meanSpearmanCi95": {
+        "v1": [
+          0.1688,
+          0.2982
+        ],
+        "v2": [
+          0.1819,
+          0.2851
+        ],
+        "v1NoLuck": [
+          0.1755,
+          0.2884
+        ],
+        "v2PlusLuck": [
+          0.1844,
+          0.3008
+        ],
+        "seasonGd": [
+          -0.0381,
+          0.3021
+        ],
+        "seasonPointsPct": [
+          -0.0136,
+          0.3049
+        ]
+      },
+      "v2MinusV1": {
+        "point": 0.0011,
+        "ci95": [
+          -0.0283,
+          0.0363
+        ],
+        "shareBootstrapAboveZero": 0.548
+      },
+      "v2MinusV1NoLuck": {
+        "point": 0.0047,
+        "ci95": [
+          -0.0082,
+          0.0224
+        ],
+        "shareBootstrapAboveZero": 0.743
+      },
+      "v2PlusLuckMinusV1": {
+        "point": 0.0086,
+        "ci95": [
+          -0.0034,
+          0.0275
+        ]
+      },
+      "v2MinusSeasonGd": {
+        "point": 0.079,
+        "ci95": [
+          -0.0488,
+          0.25
+        ],
+        "shareBootstrapAboveZero": 0.89
+      },
+      "v2MinusSeasonPointsPct": {
+        "point": 0.0732,
+        "ci95": [
+          -0.0527,
+          0.2267
+        ],
+        "shareBootstrapAboveZero": 0.871
+      }
+    },
+    "20262027.gd5": {
+      "dates": 24,
+      "ciEstimable": false,
+      "firstDate": "2026-10-11",
+      "lastDate": "2026-11-03",
+      "meanTeamsPerDate": 30.4,
+      "meanSpearman": {
+        "v1": 0.3034,
+        "v2": 0.3213,
+        "v1NoLuck": 0.3219,
+        "v2PlusLuck": 0.296,
+        "seasonGd": 0.1657,
+        "seasonPointsPct": 0.1627
+      },
+      "meanSpearmanCi95": {
+        "v1": null,
+        "v2": null,
+        "v1NoLuck": null,
+        "v2PlusLuck": null,
+        "seasonGd": null,
+        "seasonPointsPct": null
+      },
+      "v2MinusV1": {
+        "point": 0.0179,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      },
+      "v2MinusV1NoLuck": {
+        "point": -0.0006,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      },
+      "v2PlusLuckMinusV1": {
+        "point": -0.0074,
+        "ci95": null
+      },
+      "v2MinusSeasonGd": {
+        "point": 0.1556,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      },
+      "v2MinusSeasonPointsPct": {
+        "point": 0.1586,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      }
+    },
+    "20262027.pts5": {
+      "dates": 24,
+      "ciEstimable": false,
+      "firstDate": "2026-10-11",
+      "lastDate": "2026-11-03",
+      "meanTeamsPerDate": 30.4,
+      "meanSpearman": {
+        "v1": 0.2978,
+        "v2": 0.3035,
+        "v1NoLuck": 0.3074,
+        "v2PlusLuck": 0.291,
+        "seasonGd": 0.2035,
+        "seasonPointsPct": 0.1846
+      },
+      "meanSpearmanCi95": {
+        "v1": null,
+        "v2": null,
+        "v1NoLuck": null,
+        "v2PlusLuck": null,
+        "seasonGd": null,
+        "seasonPointsPct": null
+      },
+      "v2MinusV1": {
+        "point": 0.0057,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      },
+      "v2MinusV1NoLuck": {
+        "point": -0.0039,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      },
+      "v2PlusLuckMinusV1": {
+        "point": -0.0068,
+        "ci95": null
+      },
+      "v2MinusSeasonGd": {
+        "point": 0.1,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      },
+      "v2MinusSeasonPointsPct": {
+        "point": 0.1189,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      }
+    },
+    "20262027.gd10": {
+      "dates": 12,
+      "ciEstimable": false,
+      "firstDate": "2026-10-11",
+      "lastDate": "2026-10-22",
+      "meanTeamsPerDate": 28.4,
+      "meanSpearman": {
+        "v1": 0.4758,
+        "v2": 0.4596,
+        "v1NoLuck": 0.4857,
+        "v2PlusLuck": 0.4526,
+        "seasonGd": 0.2818,
+        "seasonPointsPct": 0.2647
+      },
+      "meanSpearmanCi95": {
+        "v1": null,
+        "v2": null,
+        "v1NoLuck": null,
+        "v2PlusLuck": null,
+        "seasonGd": null,
+        "seasonPointsPct": null
+      },
+      "v2MinusV1": {
+        "point": -0.0163,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      },
+      "v2MinusV1NoLuck": {
+        "point": -0.0261,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      },
+      "v2PlusLuckMinusV1": {
+        "point": -0.0232,
+        "ci95": null
+      },
+      "v2MinusSeasonGd": {
+        "point": 0.1777,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      },
+      "v2MinusSeasonPointsPct": {
+        "point": 0.1949,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      }
+    },
+    "20262027.pts10": {
+      "dates": 12,
+      "ciEstimable": false,
+      "firstDate": "2026-10-11",
+      "lastDate": "2026-10-22",
+      "meanTeamsPerDate": 28.4,
+      "meanSpearman": {
+        "v1": 0.4845,
+        "v2": 0.457,
+        "v1NoLuck": 0.4948,
+        "v2PlusLuck": 0.4586,
+        "seasonGd": 0.3088,
+        "seasonPointsPct": 0.2773
+      },
+      "meanSpearmanCi95": {
+        "v1": null,
+        "v2": null,
+        "v1NoLuck": null,
+        "v2PlusLuck": null,
+        "seasonGd": null,
+        "seasonPointsPct": null
+      },
+      "v2MinusV1": {
+        "point": -0.0276,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      },
+      "v2MinusV1NoLuck": {
+        "point": -0.0379,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      },
+      "v2PlusLuckMinusV1": {
+        "point": -0.026,
+        "ci95": null
+      },
+      "v2MinusSeasonGd": {
+        "point": 0.1481,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      },
+      "v2MinusSeasonPointsPct": {
+        "point": 0.1796,
+        "ci95": null,
+        "shareBootstrapAboveZero": null
+      }
+    },
+    "20262027.gd20": null,
+    "20262027.pts20": null
+  },
+  "pooled": {
+    "20252026.gd5": {
+      "samples": 4658,
+      "pearson": {
+        "v1": 0.2276,
+        "v2": 0.2266,
+        "v1NoLuck": 0.2297,
+        "v2PlusLuck": 0.2251,
+        "seasonGd": 0.1887,
+        "seasonPointsPct": 0.1629
+      }
+    },
+    "20252026.pts5": {
+      "samples": 4658,
+      "pearson": {
+        "v1": 0.1958,
+        "v2": 0.1953,
+        "v1NoLuck": 0.1984,
+        "v2PlusLuck": 0.1933,
+        "seasonGd": 0.1333,
+        "seasonPointsPct": 0.1091
+      }
+    },
+    "20252026.gd10": {
+      "samples": 4331,
+      "pearson": {
+        "v1": 0.3085,
+        "v2": 0.2991,
+        "v1NoLuck": 0.3029,
+        "v2PlusLuck": 0.3055,
+        "seasonGd": 0.2387,
+        "seasonPointsPct": 0.2083
+      }
+    },
+    "20252026.pts10": {
+      "samples": 4331,
+      "pearson": {
+        "v1": 0.2558,
+        "v2": 0.2512,
+        "v1NoLuck": 0.2535,
+        "v2PlusLuck": 0.2541,
+        "seasonGd": 0.1683,
+        "seasonPointsPct": 0.1404
+      }
+    },
+    "20252026.gd20": {
+      "samples": 3669,
+      "pearson": {
+        "v1": 0.309,
+        "v2": 0.3032,
+        "v1NoLuck": 0.3054,
+        "v2PlusLuck": 0.3075,
+        "seasonGd": 0.2376,
+        "seasonPointsPct": 0.2223
+      }
+    },
+    "20252026.pts20": {
+      "samples": 3669,
+      "pearson": {
+        "v1": 0.2403,
+        "v2": 0.2417,
+        "v1NoLuck": 0.2381,
+        "v2PlusLuck": 0.2442,
+        "seasonGd": 0.1597,
+        "seasonPointsPct": 0.1524
+      }
+    },
+    "20262027.gd5": {
+      "samples": 759,
+      "pearson": {
+        "v1": 0.3674,
+        "v2": 0.3919,
+        "v1NoLuck": 0.3971,
+        "v2PlusLuck": 0.3628,
+        "seasonGd": 0.1871,
+        "seasonPointsPct": 0.2092
+      }
+    },
+    "20262027.pts5": {
+      "samples": 759,
+      "pearson": {
+        "v1": 0.3543,
+        "v2": 0.3725,
+        "v1NoLuck": 0.3803,
+        "v2PlusLuck": 0.3473,
+        "seasonGd": 0.1921,
+        "seasonPointsPct": 0.2041
+      }
+    },
+    "20262027.gd10": {
+      "samples": 385,
+      "pearson": {
+        "v1": 0.5358,
+        "v2": 0.5391,
+        "v1NoLuck": 0.5594,
+        "v2PlusLuck": 0.5173,
+        "seasonGd": 0.2786,
+        "seasonPointsPct": 0.2782
+      }
+    },
+    "20262027.pts10": {
+      "samples": 385,
+      "pearson": {
+        "v1": 0.5368,
+        "v2": 0.5331,
+        "v1NoLuck": 0.5587,
+        "v2PlusLuck": 0.5134,
+        "seasonGd": 0.2728,
+        "seasonPointsPct": 0.2648
+      }
+    },
+    "20262027.gd20": {
+      "samples": 0,
+      "pearson": {
+        "v1": null,
+        "v2": null,
+        "v1NoLuck": null,
+        "v2PlusLuck": null,
+        "seasonGd": null,
+        "seasonPointsPct": null
+      }
+    },
+    "20262027.pts20": {
+      "samples": 0,
+      "pearson": {
+        "v1": null,
+        "v2": null,
+        "v1NoLuck": null,
+        "v2PlusLuck": null,
+        "seasonGd": null,
+        "seasonPointsPct": null
+      }
+    }
+  },
+  "issuedV1": {
+    "20252026.gd5": {
+      "samples": 4658,
+      "dates": 146,
+      "meanSpearmanIssuedV1": 0.165,
+      "meanSpearmanV2": 0.2044,
+      "v2MinusIssuedV1": {
+        "point": 0.0394,
+        "ci95": [
+          0.0072,
+          0.0939
+        ]
+      }
+    },
+    "20252026.pts5": {
+      "samples": 4658,
+      "dates": 146,
+      "meanSpearmanIssuedV1": 0.1306,
+      "meanSpearmanV2": 0.1629,
+      "v2MinusIssuedV1": {
+        "point": 0.0323,
+        "ci95": [
+          -0.0337,
+          0.118
+        ]
+      }
+    },
+    "20252026.gd10": {
+      "samples": 4331,
+      "dates": 135,
+      "meanSpearmanIssuedV1": 0.2092,
+      "meanSpearmanV2": 0.2613,
+      "v2MinusIssuedV1": {
+        "point": 0.0521,
+        "ci95": [
+          0.0078,
+          0.143
+        ]
+      }
+    },
+    "20252026.pts10": {
+      "samples": 4331,
+      "dates": 135,
+      "meanSpearmanIssuedV1": 0.1724,
+      "meanSpearmanV2": 0.2132,
+      "v2MinusIssuedV1": {
+        "point": 0.0408,
+        "ci95": [
+          -0.0138,
+          0.1427
+        ]
+      }
+    },
+    "20252026.gd20": {
+      "samples": 3669,
+      "dates": 115,
+      "meanSpearmanIssuedV1": 0.2232,
+      "meanSpearmanV2": 0.2632,
+      "v2MinusIssuedV1": {
+        "point": 0.04,
+        "ci95": [
+          -0.0163,
+          0.1491
+        ]
+      }
+    },
+    "20252026.pts20": {
+      "samples": 3669,
+      "dates": 115,
+      "meanSpearmanIssuedV1": 0.1583,
+      "meanSpearmanV2": 0.204,
+      "v2MinusIssuedV1": {
+        "point": 0.0457,
+        "ci95": [
+          -0.008,
+          0.15
+        ]
+      }
+    },
+    "20262027.gd5": {
+      "samples": 759,
+      "dates": 24,
+      "meanSpearmanIssuedV1": 0.3034,
+      "meanSpearmanV2": 0.3213,
+      "v2MinusIssuedV1": {
+        "point": 0.0179,
+        "ci95": null
+      }
+    },
+    "20262027.pts5": {
+      "samples": 759,
+      "dates": 24,
+      "meanSpearmanIssuedV1": 0.2978,
+      "meanSpearmanV2": 0.3035,
+      "v2MinusIssuedV1": {
+        "point": 0.0057,
+        "ci95": null
+      }
+    },
+    "20262027.gd10": {
+      "samples": 385,
+      "dates": 12,
+      "meanSpearmanIssuedV1": 0.4758,
+      "meanSpearmanV2": 0.4596,
+      "v2MinusIssuedV1": {
+        "point": -0.0163,
+        "ci95": null
+      }
+    },
+    "20262027.pts10": {
+      "samples": 385,
+      "dates": 12,
+      "meanSpearmanIssuedV1": 0.4845,
+      "meanSpearmanV2": 0.457,
+      "v2MinusIssuedV1": {
+        "point": -0.0276,
+        "ci95": null
+      }
+    },
+    "20262027.gd20": null,
+    "20262027.pts20": null
+  },
+  "heldOut": {
+    "within2025-26.gd5": {
+      "horizon": 5,
+      "trainRows": 2027,
+      "testRows": 2382,
+      "testDates": 77,
+      "testFirstDate": "2026-01-01",
+      "testLastDate": "2026-04-06",
+      "fits": {
+        "v1": {
+          "intercept": -0.003,
+          "slope": 0.4266
+        },
+        "v2": {
+          "intercept": -0.0029,
+          "slope": 0.4627
+        },
+        "v1NoLuck": {
+          "intercept": -0.003,
+          "slope": 0.485
+        },
+        "v2PlusLuck": {
+          "intercept": -0.0029,
+          "slope": 0.4115
+        },
+        "seasonGd": {
+          "intercept": -0.0032,
+          "slope": 0.139
+        },
+        "seasonPointsPct": {
+          "intercept": -0.3181,
+          "slope": 0.5564
+        }
+      },
+      "rmse": {
+        "v1": 1.2122,
+        "v2": 1.2125,
+        "v1NoLuck": 1.212,
+        "v2PlusLuck": 1.2125,
+        "seasonGd": 1.2321,
+        "seasonPointsPct": 1.2393,
+        "baseline": 1.2518
+      },
+      "skillVsTrainMean": {
+        "v1": 0.0622,
+        "v2": 0.0618,
+        "v1NoLuck": 0.0625,
+        "v2PlusLuck": 0.0617,
+        "seasonGd": 0.0312,
+        "seasonPointsPct": 0.0198
+      },
+      "v2MinusV1Skill": {
+        "point": -0.0004,
+        "ci95": [
+          -0.0099,
+          0.0103
+        ]
+      },
+      "v2MinusV1NoLuckSkill": {
+        "point": -0.0007,
+        "ci95": [
+          -0.0054,
+          0.006
+        ]
+      },
+      "v2PlusLuckMinusV1Skill": {
+        "point": -0.0005,
+        "ci95": [
+          -0.0047,
+          0.0054
+        ]
+      },
+      "ciEstimable": true
+    },
+    "2025-26to2026-27.gd5": {
+      "horizon": 5,
+      "trainRows": 4658,
+      "testRows": 759,
+      "testDates": 30,
+      "testFirstDate": "2026-10-07",
+      "testLastDate": "2026-11-05",
+      "fits": {
+        "v1": {
+          "intercept": 0.0008,
+          "slope": 0.5496
+        },
+        "v2": {
+          "intercept": 0.0008,
+          "slope": 0.5675
+        },
+        "v1NoLuck": {
+          "intercept": 0.0008,
+          "slope": 0.59
+        },
+        "v2PlusLuck": {
+          "intercept": 0.0008,
+          "slope": 0.532
+        },
+        "seasonGd": {
+          "intercept": -0.0001,
+          "slope": 0.3934
+        },
+        "seasonPointsPct": {
+          "intercept": -1.1543,
+          "slope": 2.0411
+        }
+      },
+      "rmse": {
+        "v1": 1.1217,
+        "v2": 1.1132,
+        "v1NoLuck": 1.1104,
+        "v2PlusLuck": 1.1238,
+        "seasonGd": 1.1958,
+        "seasonPointsPct": 1.1789,
+        "baseline": 1.2022
+      },
+      "skillVsTrainMean": {
+        "v1": 0.1295,
+        "v2": 0.1427,
+        "v1NoLuck": 0.1469,
+        "v2PlusLuck": 0.1263,
+        "seasonGd": 0.0107,
+        "seasonPointsPct": 0.0385
+      },
+      "v2MinusV1Skill": {
+        "point": 0.0132,
+        "ci95": null
+      },
+      "v2MinusV1NoLuckSkill": {
+        "point": -0.0042,
+        "ci95": null
+      },
+      "v2PlusLuckMinusV1Skill": {
+        "point": -0.0033,
+        "ci95": null
+      },
+      "ciEstimable": false
+    },
+    "within2025-26.pts5": {
+      "horizon": 5,
+      "trainRows": 2027,
+      "testRows": 2382,
+      "testDates": 77,
+      "testFirstDate": "2026-01-01",
+      "testLastDate": "2026-04-06",
+      "fits": {
+        "v1": {
+          "intercept": 0.5688,
+          "slope": 0.0694
+        },
+        "v2": {
+          "intercept": 0.5688,
+          "slope": 0.0785
+        },
+        "v1NoLuck": {
+          "intercept": 0.5688,
+          "slope": 0.082
+        },
+        "v2PlusLuck": {
+          "intercept": 0.5688,
+          "slope": 0.0672
+        },
+        "seasonGd": {
+          "intercept": 0.5688,
+          "slope": 0.0128
+        },
+        "seasonPointsPct": {
+          "intercept": 0.556,
+          "slope": 0.0227
+        }
+      },
+      "rmse": {
+        "v1": 0.2159,
+        "v2": 0.2161,
+        "v1NoLuck": 0.216,
+        "v2PlusLuck": 0.216,
+        "seasonGd": 0.2197,
+        "seasonPointsPct": 0.2208,
+        "baseline": 0.2212
+      },
+      "skillVsTrainMean": {
+        "v1": 0.0472,
+        "v2": 0.046,
+        "v1NoLuck": 0.0468,
+        "v2PlusLuck": 0.0466,
+        "seasonGd": 0.0135,
+        "seasonPointsPct": 0.0038
+      },
+      "v2MinusV1Skill": {
+        "point": -0.0012,
+        "ci95": [
+          -0.0104,
+          0.0077
+        ]
+      },
+      "v2MinusV1NoLuckSkill": {
+        "point": -0.0008,
+        "ci95": [
+          -0.0059,
+          0.0055
+        ]
+      },
+      "v2PlusLuckMinusV1Skill": {
+        "point": -0.0006,
+        "ci95": [
+          -0.005,
+          0.0044
+        ]
+      },
+      "ciEstimable": true
+    },
+    "2025-26to2026-27.pts5": {
+      "horizon": 5,
+      "trainRows": 4658,
+      "testRows": 759,
+      "testDates": 30,
+      "testFirstDate": "2026-10-07",
+      "testLastDate": "2026-11-05",
+      "fits": {
+        "v1": {
+          "intercept": 0.5655,
+          "slope": 0.0841
+        },
+        "v2": {
+          "intercept": 0.5655,
+          "slope": 0.087
+        },
+        "v1NoLuck": {
+          "intercept": 0.5655,
+          "slope": 0.0907
+        },
+        "v2PlusLuck": {
+          "intercept": 0.5655,
+          "slope": 0.0813
+        },
+        "seasonGd": {
+          "intercept": 0.5654,
+          "slope": 0.0495
+        },
+        "seasonPointsPct": {
+          "intercept": 0.4279,
+          "slope": 0.2432
+        }
+      },
+      "rmse": {
+        "v1": 0.2135,
+        "v2": 0.2126,
+        "v1NoLuck": 0.212,
+        "v2PlusLuck": 0.214,
+        "seasonGd": 0.2225,
+        "seasonPointsPct": 0.2218,
+        "baseline": 0.2265
+      },
+      "skillVsTrainMean": {
+        "v1": 0.1116,
+        "v2": 0.1191,
+        "v1NoLuck": 0.1242,
+        "v2PlusLuck": 0.1074,
+        "seasonGd": 0.0357,
+        "seasonPointsPct": 0.0413
+      },
+      "v2MinusV1Skill": {
+        "point": 0.0075,
+        "ci95": null
+      },
+      "v2MinusV1NoLuckSkill": {
+        "point": -0.0052,
+        "ci95": null
+      },
+      "v2PlusLuckMinusV1Skill": {
+        "point": -0.0042,
+        "ci95": null
+      },
+      "ciEstimable": false
+    },
+    "within2025-26.gd10": {
+      "horizon": 10,
+      "trainRows": 1706,
+      "testRows": 2055,
+      "testDates": 68,
+      "testFirstDate": "2026-01-01",
+      "testLastDate": "2026-03-28",
+      "fits": {
+        "v1": {
+          "intercept": -0.0073,
+          "slope": 0.4989
+        },
+        "v2": {
+          "intercept": -0.0074,
+          "slope": 0.5315
+        },
+        "v1NoLuck": {
+          "intercept": -0.0072,
+          "slope": 0.5512
+        },
+        "v2PlusLuck": {
+          "intercept": -0.0075,
+          "slope": 0.4872
+        },
+        "seasonGd": {
+          "intercept": -0.0077,
+          "slope": 0.1255
+        },
+        "seasonPointsPct": {
+          "intercept": -0.2746,
+          "slope": 0.4715
+        }
+      },
+      "rmse": {
+        "v1": 0.8727,
+        "v2": 0.8784,
+        "v1NoLuck": 0.8781,
+        "v2PlusLuck": 0.8729,
+        "seasonGd": 0.9108,
+        "seasonPointsPct": 0.9194,
+        "baseline": 0.9334
+      },
+      "skillVsTrainMean": {
+        "v1": 0.1259,
+        "v2": 0.1143,
+        "v1NoLuck": 0.1149,
+        "v2PlusLuck": 0.1255,
+        "seasonGd": 0.0478,
+        "seasonPointsPct": 0.0297
+      },
+      "v2MinusV1Skill": {
+        "point": -0.0116,
+        "ci95": [
+          -0.023,
+          -0.0081
+        ]
+      },
+      "v2MinusV1NoLuckSkill": {
+        "point": -0.0006,
+        "ci95": [
+          -0.0076,
+          0.0076
+        ]
+      },
+      "v2PlusLuckMinusV1Skill": {
+        "point": -0.0004,
+        "ci95": [
+          -0.0067,
+          0.0067
+        ]
+      },
+      "ciEstimable": true
+    },
+    "2025-26to2026-27.gd10": {
+      "horizon": 10,
+      "trainRows": 4331,
+      "testRows": 385,
+      "testDates": 19,
+      "testFirstDate": "2026-10-07",
+      "testLastDate": "2026-10-25",
+      "fits": {
+        "v1": {
+          "intercept": -0.0037,
+          "slope": 0.5658
+        },
+        "v2": {
+          "intercept": -0.0039,
+          "slope": 0.5717
+        },
+        "v1NoLuck": {
+          "intercept": -0.0039,
+          "slope": 0.5928
+        },
+        "v2PlusLuck": {
+          "intercept": -0.0037,
+          "slope": 0.5489
+        },
+        "seasonGd": {
+          "intercept": -0.0047,
+          "slope": 0.3735
+        },
+        "seasonPointsPct": {
+          "intercept": -1.11,
+          "slope": 1.9541
+        }
+      },
+      "rmse": {
+        "v1": 0.8376,
+        "v2": 0.8392,
+        "v1NoLuck": 0.8293,
+        "v2PlusLuck": 0.8463,
+        "seasonGd": 0.9531,
+        "seasonPointsPct": 0.9403,
+        "baseline": 0.9738
+      },
+      "skillVsTrainMean": {
+        "v1": 0.2602,
+        "v2": 0.2572,
+        "v1NoLuck": 0.2748,
+        "v2PlusLuck": 0.2446,
+        "seasonGd": 0.0419,
+        "seasonPointsPct": 0.0676
+      },
+      "v2MinusV1Skill": {
+        "point": -0.0029,
+        "ci95": null
+      },
+      "v2MinusV1NoLuckSkill": {
+        "point": -0.0175,
+        "ci95": null
+      },
+      "v2PlusLuckMinusV1Skill": {
+        "point": -0.0155,
+        "ci95": null
+      },
+      "ciEstimable": false
+    },
+    "within2025-26.pts10": {
+      "horizon": 10,
+      "trainRows": 1706,
+      "testRows": 2055,
+      "testDates": 68,
+      "testFirstDate": "2026-01-01",
+      "testLastDate": "2026-03-28",
+      "fits": {
+        "v1": {
+          "intercept": 0.5664,
+          "slope": 0.0696
+        },
+        "v2": {
+          "intercept": 0.5664,
+          "slope": 0.0781
+        },
+        "v1NoLuck": {
+          "intercept": 0.5664,
+          "slope": 0.0787
+        },
+        "v2PlusLuck": {
+          "intercept": 0.5664,
+          "slope": 0.07
+        },
+        "seasonGd": {
+          "intercept": 0.5664,
+          "slope": 0.0106
+        },
+        "seasonPointsPct": {
+          "intercept": 0.5567,
+          "slope": 0.0173
+        }
+      },
+      "rmse": {
+        "v1": 0.1586,
+        "v2": 0.1591,
+        "v1NoLuck": 0.1591,
+        "v2PlusLuck": 0.1585,
+        "seasonGd": 0.164,
+        "seasonPointsPct": 0.1652,
+        "baseline": 0.1656
+      },
+      "skillVsTrainMean": {
+        "v1": 0.0828,
+        "v2": 0.0775,
+        "v1NoLuck": 0.0775,
+        "v2PlusLuck": 0.0834,
+        "seasonGd": 0.0196,
+        "seasonPointsPct": 0.0051
+      },
+      "v2MinusV1Skill": {
+        "point": -0.0054,
+        "ci95": [
+          -0.0177,
+          -0.0003
+        ]
+      },
+      "v2MinusV1NoLuckSkill": {
+        "point": 0,
+        "ci95": [
+          -0.0049,
+          0.0056
+        ]
+      },
+      "v2PlusLuckMinusV1Skill": {
+        "point": 0.0005,
+        "ci95": [
+          -0.0036,
+          0.0052
+        ]
+      },
+      "ciEstimable": true
+    },
+    "2025-26to2026-27.pts10": {
+      "horizon": 10,
+      "trainRows": 4331,
+      "testRows": 385,
+      "testDates": 19,
+      "testFirstDate": "2026-10-07",
+      "testLastDate": "2026-10-25",
+      "fits": {
+        "v1": {
+          "intercept": 0.5636,
+          "slope": 0.0816
+        },
+        "v2": {
+          "intercept": 0.5635,
+          "slope": 0.0836
+        },
+        "v1NoLuck": {
+          "intercept": 0.5635,
+          "slope": 0.0864
+        },
+        "v2PlusLuck": {
+          "intercept": 0.5636,
+          "slope": 0.0795
+        },
+        "seasonGd": {
+          "intercept": 0.5634,
+          "slope": 0.0458
+        },
+        "seasonPointsPct": {
+          "intercept": 0.4338,
+          "slope": 0.2292
+        }
+      },
+      "rmse": {
+        "v1": 0.1601,
+        "v2": 0.1608,
+        "v1NoLuck": 0.159,
+        "v2PlusLuck": 0.1617,
+        "seasonGd": 0.175,
+        "seasonPointsPct": 0.1754,
+        "baseline": 0.1819
+      },
+      "skillVsTrainMean": {
+        "v1": 0.2246,
+        "v2": 0.2183,
+        "v1NoLuck": 0.2353,
+        "v2PlusLuck": 0.2094,
+        "seasonGd": 0.0739,
+        "seasonPointsPct": 0.0703
+      },
+      "v2MinusV1Skill": {
+        "point": -0.0063,
+        "ci95": null
+      },
+      "v2MinusV1NoLuckSkill": {
+        "point": -0.017,
+        "ci95": null
+      },
+      "v2PlusLuckMinusV1Skill": {
+        "point": -0.0152,
+        "ci95": null
+      },
+      "ciEstimable": false
+    },
+    "within2025-26.gd20": {
+      "horizon": 20,
+      "trainRows": 1062,
+      "testRows": 1393,
+      "testDates": 47,
+      "testFirstDate": "2026-01-01",
+      "testLastDate": "2026-03-07",
+      "fits": {
+        "v1": {
+          "intercept": 0.0102,
+          "slope": 0.43
+        },
+        "v2": {
+          "intercept": 0.0098,
+          "slope": 0.494
+        },
+        "v1NoLuck": {
+          "intercept": 0.0101,
+          "slope": 0.527
+        },
+        "v2PlusLuck": {
+          "intercept": 0.0099,
+          "slope": 0.4122
+        },
+        "seasonGd": {
+          "intercept": 0.0083,
+          "slope": 0.05
+        },
+        "seasonPointsPct": {
+          "intercept": -0.0597,
+          "slope": 0.121
+        }
+      },
+      "rmse": {
+        "v1": 0.723,
+        "v2": 0.7285,
+        "v1NoLuck": 0.7277,
+        "v2PlusLuck": 0.724,
+        "seasonGd": 0.7604,
+        "seasonPointsPct": 0.7661,
+        "baseline": 0.7703
+      },
+      "skillVsTrainMean": {
+        "v1": 0.119,
+        "v2": 0.1055,
+        "v1NoLuck": 0.1076,
+        "v2PlusLuck": 0.1165,
+        "seasonGd": 0.0256,
+        "seasonPointsPct": 0.0107
+      },
+      "v2MinusV1Skill": {
+        "point": -0.0135,
+        "ci95": [
+          -0.0281,
+          -0.0064
+        ]
+      },
+      "v2MinusV1NoLuckSkill": {
+        "point": -0.0021,
+        "ci95": [
+          -0.0091,
+          -0.0013
+        ]
+      },
+      "v2PlusLuckMinusV1Skill": {
+        "point": -0.0025,
+        "ci95": [
+          -0.008,
+          -0.0024
+        ]
+      },
+      "ciEstimable": true
+    },
+    "2025-26to2026-27.gd20": {
+      "trainRows": 3669,
+      "testRows": 0,
+      "skipped": true
+    },
+    "within2025-26.pts20": {
+      "horizon": 20,
+      "trainRows": 1062,
+      "testRows": 1393,
+      "testDates": 47,
+      "testFirstDate": "2026-01-01",
+      "testLastDate": "2026-03-07",
+      "fits": {
+        "v1": {
+          "intercept": 0.5684,
+          "slope": 0.0372
+        },
+        "v2": {
+          "intercept": 0.5684,
+          "slope": 0.0504
+        },
+        "v1NoLuck": {
+          "intercept": 0.5684,
+          "slope": 0.0494
+        },
+        "v2PlusLuck": {
+          "intercept": 0.5684,
+          "slope": 0.0394
+        },
+        "seasonGd": {
+          "intercept": 0.5683,
+          "slope": -0.0045
+        },
+        "seasonPointsPct": {
+          "intercept": 0.5883,
+          "slope": -0.0354
+        }
+      },
+      "rmse": {
+        "v1": 0.1261,
+        "v2": 0.1259,
+        "v1NoLuck": 0.126,
+        "v2PlusLuck": 0.1259,
+        "seasonGd": 0.1312,
+        "seasonPointsPct": 0.1314,
+        "baseline": 0.1303
+      },
+      "skillVsTrainMean": {
+        "v1": 0.0642,
+        "v2": 0.0669,
+        "v1NoLuck": 0.0653,
+        "v2PlusLuck": 0.0675,
+        "seasonGd": -0.0129,
+        "seasonPointsPct": -0.0166
+      },
+      "v2MinusV1Skill": {
+        "point": 0.0027,
+        "ci95": [
+          -0.0117,
+          0.0104
+        ]
+      },
+      "v2MinusV1NoLuckSkill": {
+        "point": 0.0016,
+        "ci95": [
+          -0.0034,
+          0.0023
+        ]
+      },
+      "v2PlusLuckMinusV1Skill": {
+        "point": 0.0034,
+        "ci95": [
+          -0.0005,
+          0.0041
+        ]
+      },
+      "ciEstimable": true
+    },
+    "2025-26to2026-27.pts20": {
+      "trainRows": 3669,
+      "testRows": 0,
+      "skipped": true
+    }
+  },
+  "teamClusterSensitivity": {
+    "2025-26.gd5": {
+      "teams": 32,
+      "spearmanDeltaCi95": {
+        "v2Minus_v1": [
+          -0.0254,
+          0.0205
+        ],
+        "v2Minus_v1NoLuck": [
+          -0.0169,
+          0.0092
+        ]
+      },
+      "heldOutSkillDelta": {
+        "v2Minus_v1": {
+          "point": -0.0004,
+          "ci95": [
+            -0.0114,
+            0.0112
+          ]
+        },
+        "v2Minus_v1NoLuck": {
+          "point": -0.0007,
+          "ci95": [
+            -0.0051,
+            0.004
+          ]
+        }
+      }
+    },
+    "2025-26.pts5": {
+      "teams": 32,
+      "spearmanDeltaCi95": {
+        "v2Minus_v1": [
+          -0.0209,
+          0.0228
+        ],
+        "v2Minus_v1NoLuck": [
+          -0.0107,
+          0.0159
+        ]
+      },
+      "heldOutSkillDelta": {
+        "v2Minus_v1": {
+          "point": -0.0012,
+          "ci95": [
+            -0.0116,
+            0.009
+          ]
+        },
+        "v2Minus_v1NoLuck": {
+          "point": -0.0008,
+          "ci95": [
+            -0.005,
+            0.0038
+          ]
+        }
+      }
+    },
+    "2025-26.gd10": {
+      "teams": 32,
+      "spearmanDeltaCi95": {
+        "v2Minus_v1": [
+          -0.0356,
+          0.0152
+        ],
+        "v2Minus_v1NoLuck": [
+          -0.019,
+          0.0153
+        ]
+      },
+      "heldOutSkillDelta": {
+        "v2Minus_v1": {
+          "point": -0.0116,
+          "ci95": [
+            -0.0305,
+            0.0076
+          ]
+        },
+        "v2Minus_v1NoLuck": {
+          "point": -0.0006,
+          "ci95": [
+            -0.0093,
+            0.0093
+          ]
+        }
+      }
+    },
+    "2025-26.pts10": {
+      "teams": 32,
+      "spearmanDeltaCi95": {
+        "v2Minus_v1": [
+          -0.0309,
+          0.0188
+        ],
+        "v2Minus_v1NoLuck": [
+          -0.0142,
+          0.0207
+        ]
+      },
+      "heldOutSkillDelta": {
+        "v2Minus_v1": {
+          "point": -0.0054,
+          "ci95": [
+            -0.0215,
+            0.0108
+          ]
+        },
+        "v2Minus_v1NoLuck": {
+          "point": 0,
+          "ci95": [
+            -0.0065,
+            0.0072
+          ]
+        }
+      }
+    },
+    "2025-26.gd20": {
+      "teams": 32,
+      "spearmanDeltaCi95": {
+        "v2Minus_v1": [
+          -0.0423,
+          0.0282
+        ],
+        "v2Minus_v1NoLuck": [
+          -0.0245,
+          0.021
+        ]
+      },
+      "heldOutSkillDelta": {
+        "v2Minus_v1": {
+          "point": -0.0135,
+          "ci95": [
+            -0.0442,
+            0.0178
+          ]
+        },
+        "v2Minus_v1NoLuck": {
+          "point": -0.0021,
+          "ci95": [
+            -0.0199,
+            0.02
+          ]
+        }
+      }
+    },
+    "2025-26.pts20": {
+      "teams": 32,
+      "spearmanDeltaCi95": {
+        "v2Minus_v1": [
+          -0.0373,
+          0.0377
+        ],
+        "v2Minus_v1NoLuck": [
+          -0.0187,
+          0.0293
+        ]
+      },
+      "heldOutSkillDelta": {
+        "v2Minus_v1": {
+          "point": 0.0027,
+          "ci95": [
+            -0.0218,
+            0.0263
+          ]
+        },
+        "v2Minus_v1NoLuck": {
+          "point": 0.0016,
+          "ci95": [
+            -0.0084,
+            0.0156
+          ]
+        }
+      }
+    }
+  }
+}

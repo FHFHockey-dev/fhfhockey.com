@@ -23,7 +23,13 @@ import {
 } from "../../lib/underlying-stats/teamLandingRatings";
 import type { UlsRouteStatus } from "../../lib/underlying-stats/ulsRouteStatus";
 import { buildUnderlyingStatsLandingDashboard } from "../../lib/underlying-stats/teamLandingDashboard";
+import { formatSosAsOfDate, SOS_HEADLINE } from "../../lib/trends/strengthOfSchedule";
 import styles from "./indexUS.module.scss";
+
+// Decision 146: points% base shared with every SOS surface; the landing keeps
+// its 2:1 direct:indirect weighting and says so where users see it.
+const SOS_LANDING_WEIGHTING =
+  "opponents' points % weighted 2:1 (two-thirds opponents, one-third opponents' opponents)";
 
 type PageProps = {
   availableDates: string[];
@@ -370,6 +376,9 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
   const dashboard = useMemo(
     () => hasSelectedSnapshot ? snapshot.dashboard : buildUnderlyingStatsLandingDashboard([]),
     [hasSelectedSnapshot, snapshot.dashboard]
+  );
+  const sosAsOfLabel = formatSosAsOfDate(
+    ratings.find((team) => team.sosSnapshotDate)?.sosSnapshotDate
   );
   const activeTeamAbbr = hoveredTeamAbbr ?? pinnedTeamAbbr;
   const defaultDate = availableDates[0] ?? initialSnapshot.resolvedDate ?? "";
@@ -1010,7 +1019,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
 
   const renderGoaltendingPopover = (team: UnderlyingStatsLandingRating) => (
     <MetricPopover
-      label="Goaltending"
+      label="5-on-5 goaltending"
       summary={
         <span
           className={`${styles.componentBadge} ${getComponentBadgeClass(
@@ -1022,16 +1031,10 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
       }
     >
       <p>
-        Higher is better. Formula: expected goals against rate minus actual
-        goals against rate.
+        Higher is better. Formula: 5-on-5 expected goals against rate minus
+        5-on-5 actual goals against rate. Empty-net goals are excluded.
       </p>
       <ul className={styles.popoverList}>
-        <li>GA/60: {team.components.ga60.toFixed(2)}</li>
-        <li>xGA/60: {team.components.xga60.toFixed(2)}</li>
-        <li>
-          Save gap:{" "}
-          {formatSignedNumber(team.components.xga60 - team.components.ga60)}
-        </li>
         <li>League-average score is 100.</li>
       </ul>
     </MetricPopover>
@@ -1183,7 +1186,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         label: (
                           <abbr
                             className={styles.metricHeader}
-                            title="Record SoS Future = upcoming opponents' point % (BCS-style: two-thirds opponents, one-third opponents' opponents). Record only; not adjusted for team ratings."
+                            title={`Record SoS Future = ${SOS_LANDING_WEIGHTING} of upcoming opponents, using their completed games to date. ${SOS_HEADLINE.asOfNote} Record only; not adjusted for team ratings.`}
                           >
                             Record SoS Future
                           </abbr>
@@ -1245,7 +1248,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         label: (
                           <abbr
                             className={styles.metricHeader}
-                            title="Record SoS Past = point % of opponents already played (BCS-style: two-thirds opponents, one-third opponents' opponents). Record only; not adjusted for team ratings."
+                            title={`Record SoS Past = ${SOS_LANDING_WEIGHTING} of opponents already played (final games). ${SOS_HEADLINE.asOfNote} Record only; not adjusted for team ratings.`}
                           >
                             Record SoS Past
                           </abbr>
@@ -1256,7 +1259,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         label: (
                           <abbr
                             className={styles.metricHeader}
-                            title="Record SoS Future = upcoming opponents' point % (BCS-style: two-thirds opponents, one-third opponents' opponents). Record only; not adjusted for team ratings."
+                            title={`Record SoS Future = ${SOS_LANDING_WEIGHTING} of upcoming opponents, using their completed games to date. ${SOS_HEADLINE.asOfNote} Record only; not adjusted for team ratings.`}
                           >
                             Record SoS Future
                           </abbr>
@@ -1311,9 +1314,9 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         label: (
                           <abbr
                             className={styles.metricHeader}
-                            title="Goaltending = expected goals against versus actual goals against."
+                            title="5-on-5 goaltending = expected goals against versus actual goals against at 5-on-5; empty-net goals excluded."
                           >
-                            Goaltending
+                            5v5 Goaltending
                           </abbr>
                         )
                       })}
@@ -1624,6 +1627,10 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
           <footer className={styles.pageFooterMeta}>
             <span>
               Updated for {selectedDate ? formatDateLabel(selectedDate) : "the latest snapshot"}
+            </span>
+            <span title={SOS_HEADLINE.asOfNote}>
+              Record SoS = {SOS_LANDING_WEIGHTING}
+              {sosAsOfLabel ? ` · records as of ${sosAsOfLabel}` : ""}
             </span>
             <span>Data refreshed daily · All dates ET</span>
           </footer>

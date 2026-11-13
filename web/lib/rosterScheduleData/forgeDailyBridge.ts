@@ -1,13 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { calendarLeadDay, validForecastCalendarPolicy, type AnyForecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { loadDailyBoardEvidence, type DailyBoardEvidence } from "lib/projections/dailyBoardEvidence";
-import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
+import { buildSkaterModeledHeadTotals, resolveSkaterPkBasis } from "lib/projections/modeledHeadTotals";
 import { excludeOffReleaseRuns, restrictRunsToHorizon } from "lib/projections/releasedRunFence";
 import { loadExternalInputProof, runProofDiagnostics } from "lib/projections/externalInputProof";
 import { forgeReservePassEnabled } from "lib/projections/reserveProjections";
 import { computeTeamStrengthContextAdjustment } from "lib/projections/calculators/team-context-adjustments";
 import { computeSkaterRestScheduleAdjustments } from "lib/projections/calculators/skater-adjustments";
-import { STARTER_DECISION_SHARE, teamWinProbability as forgeTeamWinProbability } from "lib/projections/goalie/goalieOutcomes";
+import { goalieWinPopulations, STARTER_DECISION_SHARE, teamWinProbability as forgeTeamWinProbability } from "lib/projections/goalie/goalieOutcomes";
+import { readGoalieCandidatesContract, type GoalieCandidateRow, type GoalieCandidatesContract } from "lib/projections/goalie/goalieCandidates";
 import { DEFENSE_B2B_FATIGUE_BOOST, OPPONENT_AWAY_PENALTY, OPPONENT_B2B_PENALTY, OPPONENT_HOME_BOOST, OPPONENT_RESTED_BOOST } from "lib/projections/constants/projection-weights";
 import type { TeamStrengthPrior } from "lib/projections/types/run-forge-projections.types";
 import type { GameForecast, PlanningGame, PlanningPlayer, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
@@ -47,18 +48,23 @@ const TOTAL_COLUMNS: Record<string, string> = { PENALTY_MINUTES: "penalty_minute
 const DAY_MS = 86400000;
 const VALID_DAYS = 8;
 const FORECAST_LIMITATION = "Interim FORGE projection: the player's latest FORGE game line, reused for this game.";
-const SKATER_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_toi_es_seconds,proj_toi_pp_seconds,proj_toi_pk_seconds,proj_hits,proj_blocks,proj_pim,proj_plus_minus,availability_state:uncertainty->availability->>state,availability_game_id:uncertainty->availability->>game_id";
+const SKATER_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_toi_es_seconds,proj_toi_pp_seconds,proj_toi_pk_seconds,proj_hits,proj_blocks,proj_pim,proj_plus_minus,availability_state:uncertainty->availability->>state,availability_game_id:uncertainty->availability->>game_id,es_definition:uncertainty->model->skater_selection->strength_accounting->>es_definition";
 const RESERVE_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,player_class,conditioning,reserve_reason,proj_goals_es,proj_goals_pp,proj_assists_es,proj_assists_pp,proj_shots_es,proj_shots_pp,proj_toi_es_seconds,proj_toi_pp_seconds,proj_hits,proj_blocks,proj_saves,proj_goals_allowed,proj_shots_against,proj_shutout_prob,availability_state:uncertainty->availability->>state,availability_game_id:uncertainty->availability->>game_id";
-const GOALIE_COLUMNS = "run_id,as_of_date,horizon_games,game_id,goalie_id,team_id,opponent_team_id,starter_probability,proj_saves,proj_goals_allowed,proj_shots_against,proj_win_prob,proj_shutout_prob";
+// The stored proj_* are the team's goalie slot (a start-weighted mixture), not any goalie's own line (W2-8 PR5); each
+// goalie's own line and start chance are the per-candidate contract in uncertainty.goalie_candidates (AF-01).
+const GOALIE_COLUMNS = "run_id,as_of_date,horizon_games,game_id,goalie_id,team_id,opponent_team_id,starter_probability,proj_saves,proj_goals_allowed,proj_shots_against,proj_win_prob,proj_shutout_prob,goalie_candidates:uncertainty->goalie_candidates";
+const GOALIE_KEYS = ["SAVES_GOALIE", "GOALS_AGAINST_GOALIE", "SHOTS_AGAINST_GOALIE", "SHUTOUTS_GOALIE", "GOALIE_MINUTES", "GAMES_STARTED", "WINS_GOALIE", "LOSSES_GOALIE", "OTL_GOALIE"];
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 const round = (value: number | null) => value === null ? null : Math.round(value * 10000) / 10000;
-const share = (value: unknown) => finite(value) && value >= 0 && value <= 1 ? value : null;
 
 export type ForgeDailyBridgeInputs = {
   /** Selected runs (each may carry `proof`, its runProofDiagnostics); only those with `external_input_proven: true` (their captured snapshot proves third-party fantasy
    * inputs were excluded) are used. Others are counted as withheld and their rows ignored. */
-  runs: Row[]; skaters: Row[]; goalies: Row[]; goalieShares: Row[];
+  runs: Row[]; skaters: Row[];
+  /** `forge_goalie_projections` rows; each goalie's start chance and lines come only from their `goalie_candidates`
+   * contract (AF-01). Last-10 and season start shares are not read: they are not start probabilities (W1 P0 #17). */
+  goalies: Row[];
   /** `wgo_skater_stats_totals` rows for this season and last; absent means the season rates could not be read. */
   seasonTotals?: Row[];
   /** Accepted IFTTT goalie news for the upcoming games; absent means it could not be read. */
@@ -79,8 +85,6 @@ const TILT_LAST_SEASON_GAMES = 20, TILT_SHRINK_GAMES = 30, TILT_LIMIT = 0.15;
 type Tilt = { points: number; shots: number };
 /** Last season's team xG counts as this many games in the blended prior. */
 export const LAST_SEASON_PRIOR_GAMES = 20;
-/** On the second night of a back-to-back, the usual starter keeps this share of his start chance (no goalie news). */
-export const BACK_TO_BACK_STARTER_SHARE = 0.55;
 type GameContext = { teamRestDays: number | null; opponentRestDays: number | null; isHome: boolean };
 const DAY = 86400000;
 /** FORGE team-strength terms for one team against one opponent (fractional adjustments, already sample-weighted and clamped). */
@@ -285,8 +289,13 @@ function withPowerPlayZeros(row: Row): { row: Row; filled: boolean; unknown: boo
   return { row: { ...row, ...Object.fromEntries(blanks.map(key => [key, 0])) }, filled: true, unknown: false };
 }
 
+/** AF-05: the row's strength-accounting marker (read as `es_definition`), in the shape the head-total helper reads, so a
+ * row written under the penalty-kill contract needs its PK heads even when all three are blank. */
+const withStrengthAccounting = (row: Row): Row => typeof row.es_definition === "string" && row.uncertainty === undefined
+  ? { ...row, uncertainty: { model: { skater_selection: { strength_accounting: { es_definition: row.es_definition } } } } } : row;
+
 function skaterStats(row: Row, rates: SeasonRates | null): StatLine | null {
-  const heads = buildSkaterModeledHeadTotals(row);
+  const heads = buildSkaterModeledHeadTotals(withStrengthAccounting(row));
   if (heads.goals === null || heads.assists === null || heads.shots === null) return null;
   const toi = finite(row.proj_toi_es_seconds) && finite(row.proj_toi_pp_seconds)
     ? (row.proj_toi_es_seconds + row.proj_toi_pp_seconds + (finite(row.proj_toi_pk_seconds) ? row.proj_toi_pk_seconds : 0)) / 60 : null;
@@ -313,8 +322,49 @@ function goalieLine(row: Row): StatLine {
   return Object.fromEntries(Object.entries(line).map(([key, value]) => [key, round(value)]));
 }
 
+/** The released per-candidate contract on a FORGE goalie row (L9b, forge_goalie_candidates_v1), or null when the row
+ * predates it, fails validation or names another game or team: unknown, never rebuilt from the slot row. */
+export function candidateContract(row: Row | undefined): GoalieCandidatesContract | null {
+  if (!row) return null;
+  const contract = readGoalieCandidatesContract({ goalie_candidates: row.goalie_candidates });
+  return contract && contract.game_id === Number(row.game_id) && contract.team_id === row.team_id ? contract : null;
+}
+const known = (value: unknown) => finite(value) ? round(value) : null;
+/** A candidate's own line if he starts: his credited Win if he starts; regulation L and OTL unknown (W1 P0 #28). */
+function candidateLine(candidate: GoalieCandidateRow): StatLine {
+  const line = candidate.if_starts;
+  return { SAVES_GOALIE: known(line.saves), GOALS_AGAINST_GOALIE: known(line.goals_allowed), SHOTS_AGAINST_GOALIE: known(line.shots_against),
+    SHUTOUTS_GOALIE: known(line.shutout_prob), GOALIE_MINUTES: 60, GAMES_STARTED: 1, WINS_GOALIE: known(line.credited_win_prob), LOSSES_GOALIE: null, OTL_GOALIE: null };
+}
+/** A candidate's unconditional values as the contract issued them (P(start) times his line, zero relief for counts; his
+ * credited Win includes his modelled relief share). */
+function contractUnconditional(candidate: GoalieCandidateRow): StatLine {
+  const line = candidate.unconditional, p = candidate.start_probability;
+  return { SAVES_GOALIE: known(line.saves), GOALS_AGAINST_GOALIE: known(line.goals_allowed), SHOTS_AGAINST_GOALIE: known(line.shots_against),
+    SHUTOUTS_GOALIE: known(line.shutout_prob), GOALIE_MINUTES: round(60 * p), GAMES_STARTED: round(p), WINS_GOALIE: known(line.credited_win_prob),
+    LOSSES_GOALIE: null, OTL_GOALIE: null };
+}
+/** Credited Wins under start chances that news changed: FORGE's own win populations over each candidate's contract
+ * "team wins if he starts". Null when a goalie with a start chance has no such value (his relief effect is unknown). */
+function newsAdjustedWins(probability: Map<number, number>, candidates: Map<number, GoalieCandidateRow>): Map<number, number> | null {
+  const teamWinIfStarts = (id: number) => {
+    const credited = candidates.get(id)?.if_starts.credited_win_prob;
+    return finite(credited) ? credited / STARTER_DECISION_SHARE : null;
+  };
+  if ([...probability].some(([id, p]) => p > 0 && teamWinIfStarts(id) === null)) return null;
+  return new Map(goalieWinPopulations([...probability].map(([goalieId, startProbability]) => ({ goalieId, startProbability,
+    teamWinIfStarts: teamWinIfStarts(goalieId) ?? 0 }))).goalies.map(goalie => [goalie.goalieId, goalie.unconditionalWin]));
+}
+
+/** VORP S3: one goalie candidate's own line if he starts (AF-01), in native units, with no assumed start or minutes: the
+ * same keys `forgeNativeLine` gives a goalie's own reserve row. */
+export function forgeCandidateNativeLine(candidate: GoalieCandidateRow): StatLine {
+  const { GOALIE_MINUTES: _minutes, GAMES_STARTED: _started, WINS_GOALIE: _wins, LOSSES_GOALIE: _losses, OTL_GOALIE: _otl, ...line } = candidateLine(candidate);
+  return line;
+}
 /** VORP S3: one FORGE h1 row's own per-game line in league stat keys, in native units, with no season-rate substitute
- * (stats FORGE does not project stay null) and, for a goalie, no assumed start or minutes. Null when its heads are missing. */
+ * (stats FORGE does not project stay null) and, for a goalie, no assumed start or minutes. Null when its heads are missing.
+ * A goalie line is only for his own reserve row: a stored forge_goalie_projections row is the team's slot (AF-01). */
 export function forgeNativeLine(row: Row, playerClass: "skater" | "goalie"): StatLine | null {
   if (playerClass === "skater") return skaterStats(withPowerPlayZeros(row).row, null);
   const { GOALIE_MINUTES: _minutes, GAMES_STARTED: _started, ...line } = goalieLine(row);
@@ -351,23 +401,13 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const exactSkater = latest(skaterRows, row => `${row.game_id}:${row.player_id}`);
   const teamLatestDate = new Map<number, string>();
   for (const row of skaterRows) if ((teamLatestDate.get(row.team_id) ?? "") < row.as_of_date) teamLatestDate.set(row.team_id, row.as_of_date);
-  const goalieLatest = latest(goalieRows, row => row.goalie_id), teamGoalieLatest = latest(goalieRows, row => row.team_id);
   const exactGoalie = latest(goalieRows, row => `${row.game_id}:${row.team_id}`);
-  // A start share counts only from a row for the goalie's current team this season (the season is the game id's first
-  // four digits): a row from before a trade, or from another season, describes another role, so it is ignored.
-  const goalieTeams = new Map(players.filter(player => player.playerClass === "goalie" && player.nhlId !== null && finite(player.nhlTeamId))
-    .map(player => [player.nhlId!, player.nhlTeamId!]));
-  const seasonStartYear = Math.floor(seasonId / 10000);
-  const latestShares = new Map<number, number>(), exactShares = new Map<string, number>(), unboundShares = new Set<number>();
-  const shareOrder = new Map<number, string>();
-  for (const row of inputs.goalieShares) {
-    const value = share(row.l10_start_pct) ?? share(row.season_start_pct), key = `${row.game_date}|${row.updated_at ?? ""}`;
-    if (value === null || !finite(row.player_id)) continue;
-    if (!finite(row.team_id) || row.team_id !== goalieTeams.get(row.player_id) || !finite(row.game_id)
-      || Math.floor(row.game_id / 1000000) !== seasonStartYear) { unboundShares.add(row.player_id); continue; }
-    exactShares.set(`${row.game_id}:${row.player_id}`, value);
-    if ((shareOrder.get(row.player_id) ?? "") >= key) continue;
-    latestShares.set(row.player_id, value); shareOrder.set(row.player_id, key);
+  // Each goalie's own latest candidate line (his row in the latest contract that lists him), kept only as his "if he
+  // starts" line for games no contract covers.
+  const ownCandidateLatest = new Map<number, { row: Row; candidate: GoalieCandidateRow }>();
+  for (const row of goalieRows) for (const candidate of candidateContract(row)?.rows ?? []) {
+    const previous = ownCandidateLatest.get(candidate.goalie_id);
+    if (!previous || order(row) > order(previous.row)) ownCandidateLatest.set(candidate.goalie_id, { row, candidate });
   }
   const rates = inputs.seasonTotals ? seasonRates(inputs.seasonTotals, seasonId) : null;
   const priors = teamStrengthPriors(inputs.teamPriors ?? [], inputs.lastSeasonTeams ?? [], seasonId);
@@ -440,7 +480,9 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const identified = players.filter(player => player.nhlId !== null && finite(player.nhlTeamId) && player.rosterRevision && player.teamAbbreviation);
   let staleSkaters = 0, teamMismatch = 0, noPowerPlay = 0, unknownPowerPlay = 0, reserveSkaterGames = 0, reserveGoalieGames = 0;
   const unknownPowerPlayIds = new Set<number>();
-  const unknownHeads = new Set<number>(), unsharedGoalies = new Set<number>(), unratedSkaters = new Set<number>();
+  const unknownHeads = new Set<number>(), unratedSkaters = new Set<number>();
+  // AF-05: lineup lines with no PK bucket (ES holds all non-PP time); reserve lines never carry one.
+  const pkUnmodelledSkaters = new Set<number>();
   const reserveSkaters = new Set<number>();
   // Reserve rows count only from the team's latest lineup run, so a player is either in that run's lineup or its reserve,
   // never both; a lineup line always wins.
@@ -547,6 +589,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       if (special.unknown) { unknownPowerPlay++; unknownPowerPlayIds.add(player.nhlId!); }
       const line = skaterStats(special.row, playerRates);
       if (line && rates && !playerRates) unratedSkaters.add(player.nhlId!);
+      if (line && resolveSkaterPkBasis(withStrengthAccounting(special.row)) === "pk_unmodelled") pkUnmodelledSkaters.add(player.nhlId!);
       if (!line && !special.unknown) unknownHeads.add(player.nhlId!);
       return line;
     };
@@ -584,8 +627,14 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     const otherRow = opponentId === undefined ? undefined : exactGoalie.get(`${game.id}:${opponentId}`);
     const own = finite(ownRow?.proj_win_prob) ? ownRow!.proj_win_prob : null, other = finite(otherRow?.proj_win_prob) ? otherRow!.proj_win_prob : null;
     const unit = (value: number) => Math.min(1, Math.max(0, value));
+    // The candidate contract states the team's win probability itself (AF-01); older rows carry only the goalie slot's
+    // credited Win, read as before.
+    const ownTeam = candidateContract(ownRow)?.team_win_probability, otherTeam = candidateContract(otherRow)?.team_win_probability;
     let result: BridgeTeamWin | null = null;
-    if (own !== null && other !== null && own + other > 0) result = { gameId: game.id, team, probability: own / (own + other), source: "forge" };
+    if (finite(ownTeam) && finite(otherTeam) && ownTeam + otherTeam > 0) result = { gameId: game.id, team, probability: ownTeam / (ownTeam + otherTeam), source: "forge" };
+    else if (finite(ownTeam)) result = { gameId: game.id, team, probability: unit(ownTeam), source: "forge" };
+    else if (finite(otherTeam)) result = { gameId: game.id, team, probability: 1 - unit(otherTeam), source: "forge_paired" };
+    else if (own !== null && other !== null && own + other > 0) result = { gameId: game.id, team, probability: own / (own + other), source: "forge" };
     else if (own !== null) result = { gameId: game.id, team, probability: unit(own / STARTER_DECISION_SHARE), source: "forge" };
     else if (other !== null) result = { gameId: game.id, team, probability: 1 - unit(other / STARTER_DECISION_SHARE), source: "forge_paired" };
     else if (!ownRow && !otherRow) {
@@ -605,94 +654,82 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   let unknownWins = 0;
   const goaliesByTeam = new Map<number, PlanningPlayer[]>();
   for (const player of identified.filter(row => row.playerClass === "goalie")) goaliesByTeam.set(player.nhlTeamId!, [...(goaliesByTeam.get(player.nhlTeamId!) ?? []), player]);
-  // Every goalie on a team's current roster counts toward whether its shares are complete, identified or not. A goalie
-  // with no current team counts at the team his latest current-season start row (else FORGE line) names.
-  const rosterGoalies = new Map<number, number[]>();
-  for (const [id, team] of goalieTeams) rosterGoalies.set(team, [...(rosterGoalies.get(team) ?? []), id]);
-  const teamless = players.filter(player => player.playerClass === "goalie" && player.nhlId !== null && !finite(player.nhlTeamId));
-  const teamlessTeams = new Set(teamless.flatMap(goalie => {
-    const rows = inputs.goalieShares.filter(row => row.player_id === goalie.nhlId && finite(row.team_id) && finite(row.game_id)
-      && Math.floor(row.game_id / 1000000) === seasonStartYear).sort((a, b) => `${b.game_date}|${b.updated_at ?? ""}`.localeCompare(`${a.game_date}|${a.updated_at ?? ""}`));
-    const team = rows[0]?.team_id ?? goalieLatest.get(goalie.nhlId)?.team_id;
-    return finite(team) ? [team] : [];
-  }));
-  let openTeamGames = 0;
+  /** A goalie's own "if he starts" line, never a teammate's: his candidate row for this game; else his own reserve line for
+   * this game; else his latest own candidate or reserve line for this team, moved to this game (its Win then unknown). */
+  const ownGoalieLine = (goalie: PlanningPlayer, game: PlanningGame, teamId: number, exact: Row | undefined, candidate: GoalieCandidateRow | undefined) => {
+    if (exact && candidate) return { source: exact, line: candidateLine(candidate), moved: false };
+    const decisionsUnknown = { WINS_GOALIE: null, LOSSES_GOALIE: null, OTL_GOALIE: null };
+    const reserve = exactReserve.get(`goalie:${game.id}:${goalie.nhlId}`);
+    if (reserve && reserve.team_id === teamId) return { source: reserve, line: { ...goalieLine(reserve), ...decisionsUnknown }, moved: false };
+    const latestCandidate = ownCandidateLatest.get(goalie.nhlId!), latestReserve = reserveLatest.get(`goalie:${goalie.nhlId}`);
+    const options = [...latestCandidate && latestCandidate.row.team_id === teamId ? [{ source: latestCandidate.row, line: candidateLine(latestCandidate.candidate) }] : [],
+      ...latestReserve && latestReserve.team_id === teamId ? [{ source: latestReserve, line: goalieLine(latestReserve) }] : []];
+    const pick = options.sort((a, b) => order(b.source).localeCompare(order(a.source)))[0];
+    if (!pick) return null;
+    const { source } = pick, here = String(source.game_id) === game.id;
+    const from = here ? null : context(goalie.teamAbbreviation, opponentAbbreviation(source.opponent_team_id)), to = from ? context(goalie.teamAbbreviation, game.opponent) : null;
+    const fromGame = here ? null : gameContext(source.game_id, teamId), toGame = fromGame ? gameContext(game.id, teamId) : null;
+    const venue = fromGame && toGame ? { from: goalieShotContext(fromGame), to: goalieShotContext(toGame) } : undefined;
+    return { source, line: { ...from && to ? retargetGoalieLine(pick.line, from, to, venue) : pick.line, ...decisionsUnknown }, moved: true };
+  };
+  // AF-01 (W1 P0 #20; decisions 25, 63): each goalie's start chance, "if he starts" line and unconditional values come from
+  // FORGE's per-candidate contract for that team-game, his own row only. A goalie the contract does not list, or a game no
+  // contract covers, has an unknown start chance (never a teammate's line, never a last-10 share); a contract whose chances
+  // sum to less than 1 keeps the rest unassigned.
+  let noContractTeamGames = 0, partialMassTeamGames = 0, absentCandidateGames = 0;
+  const absentCandidates = new Set<number>();
   for (const [teamId, goalies] of goaliesByTeam) for (const game of upcoming(goalies[0].teamAbbreviation!)) {
-    const exact = exactGoalie.get(`${game.id}:${teamId}`), exactProbability = exact ? share(exact.starter_probability) : null;
-    // This game's own start-share row first, else the goalie's latest bound row.
-    const shares = new Map(goalies.flatMap(goalie => {
-      const value = exactShares.get(`${game.id}:${goalie.nhlId}`) ?? latestShares.get(goalie.nhlId!);
-      return value === undefined ? [] : [[goalie.nhlId!, value] as const];
-    }));
-    const probability = new Map<string, number>();
-    // Never scale chances up past a goalie whose chance is unknown: the known ones keep their shares as read (scaled down
-    // only to fit), so the team's start chances may sum to less than 1. With every goalie known they sum to 1 as before.
-    const open = () => teamlessTeams.has(teamId) || (rosterGoalies.get(teamId) ?? []).some(id => !probability.has(String(id)));
-    const rescale = (except: string | null, mass: number) => {
-      const others = [...probability].filter(([id]) => id !== except), total = others.reduce((sum, [, value]) => sum + value, 0);
-      const factor = total > 0 ? open() ? Math.min(1, mass / total) : mass / total : 0;
-      for (const [id, value] of others) probability.set(id, value * factor);
-    };
-    for (const goalie of goalies) if (shares.has(goalie.nhlId!)) probability.set(String(goalie.nhlId), shares.get(goalie.nhlId!)!);
-    if (exact && exactProbability !== null && goalies.some(goalie => goalie.nhlId === exact.goalie_id)) {
-      probability.set(String(exact.goalie_id), exactProbability);
-      rescale(String(exact.goalie_id), 1 - exactProbability);
-    } else rescale(null, 1);
-    // Second night of a back-to-back: the usual starter rarely starts both, so part of his chance moves to the others
-    // (and stays unassigned when one of them is unknown).
-    if (!exact && gameContext(game.id, teamId)?.teamRestDays === 1 && probability.size > 1) {
-      const [starter, share] = [...probability].sort((a, b) => b[1] - a[1])[0];
-      const moved = share * (1 - BACK_TO_BACK_STARTER_SHARE), others = [...probability].filter(([id]) => id !== starter);
-      const total = others.reduce((sum, [, value]) => sum + value, 0);
-      probability.set(starter, share - moved);
-      if (!open()) for (const [id, value] of others) probability.set(id, value + (total > 0 ? moved * value / total : moved / others.length));
-    }
-    // Accepted IFTTT goalie news overrides start shares: confirmed and ruled out outright, likely/projected as floors.
+    // The team's win probability is served for the game (teamWins); no goalie's Win is derived from it.
+    teamWin(game, teamId);
+    const exact = exactGoalie.get(`${game.id}:${teamId}`), contract = candidateContract(exact);
+    if (!contract) noContractTeamGames++;
+    const candidates = new Map((contract?.rows ?? []).map(row => [row.goalie_id, row]));
+    const probability = new Map([...candidates].map(([id, row]) => [id, row.start_probability]));
+    // Accepted IFTTT goalie news on top: confirmed and ruled out outright, likely/projected as floors. A chance taken from
+    // one goalie is never handed to another (it stays unassigned); a floor scales the others down only to fit.
     const disputed = inputs.goalieNews?.conflicts.some(row => row.dimension === "goalie" && row.gameId === Number(game.id) && row.teamId === teamId);
     const signal = disputed ? undefined : inputs.goalieNews?.assertions.find(row => row.dimension === "goalie" && row.gameId === Number(game.id)
       && row.teamId === teamId && goalies.some(goalie => goalie.nhlId === row.playerId));
     if (disputed) news.disputed++;
-    let confirmedId: string | null = null;
+    let confirmedId: number | null = null;
     if (signal) {
-      const named = String(signal.playerId), floor = FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS[signal.value];
-      if (signal.value === "confirmed") { rescale(named, 0); probability.set(named, 1); confirmedId = named; news.confirmed++; }
-      else if (signal.value === "ruled_out") { probability.set(named, 0); rescale(named, 1); news.ruledOut++; }
-      else if (floor !== undefined) { const p = Math.max(probability.get(named) ?? 0, floor); probability.set(named, p); rescale(named, 1 - p); news.speculative++; }
-    }
-    if (probability.size && open() && [...probability.values()].reduce((sum, value) => sum + value, 0) < 1 - 1e-9) openTeamGames++;
-    for (const goalie of goalies) {
-      const p = probability.get(String(goalie.nhlId));
-      const own = goalieLatest.get(goalie.nhlId);
-      // His own line first: this game's starter row, then his reserve line from the team's latest run, then his latest
-      // starter row; the team's starter line only when FORGE has none of his own.
-      const reserve = exactReserve.get(`goalie:${game.id}:${goalie.nhlId}`) ?? reserveLatest.get(`goalie:${goalie.nhlId}`);
-      const source = exact && exact.goalie_id === goalie.nhlId ? exact : reserve && reserve.team_id === teamId ? reserve
-        : own && own.team_id === teamId ? own : teamGoalieLatest.get(teamId);
-      if (p === undefined) unsharedGoalies.add(goalie.nhlId!);
-      if (!source) continue;
-      const from = String(source.game_id) === game.id ? null : context(goalies[0].teamAbbreviation, opponentAbbreviation(source.opponent_team_id));
-      const to = from ? context(goalies[0].teamAbbreviation, game.opponent) : null;
-      const fromGame = String(source.game_id) === game.id ? null : gameContext(source.game_id, teamId), toGame = fromGame ? gameContext(game.id, teamId) : null;
-      const venue = fromGame && toGame ? { from: goalieShotContext(fromGame), to: goalieShotContext(toGame) } : undefined;
-      const forgeLine = from && to ? retargetGoalieLine(goalieLine(source), from, to, venue) : goalieLine(source);
-      // If he starts he is credited with FORGE's decision share of his team's wins; unknown stays unknown.
-      const win = teamWin(game, teamId), startWin = win === null ? null : win.probability * STARTER_DECISION_SHARE;
-      if (win === null) unknownWins++;
-      // Decision 46 (W1 P0 #28): W, regulation L, OT/SO L and no decision reconcile to the start, so L is never 1 − W.
-      // With no fitted overtime split and Yahoo's L/OTL mapping unverified, regulation L and OTL stay unknown.
-      const line = { ...forgeLine, WINS_GOALIE: round(startWin), LOSSES_GOALIE: null, OTL_GOALIE: null };
-      // FORGE has no line of his own, so this "if he starts" line is his team starter's (selected-starter rows name their
-      // goalie; reserve rows are always his own). With the reserve pass on, the forecast says so.
-      const teamLine = finite(source.goalie_id) && source.goalie_id !== goalie.nhlId;
-      // Unknown start chance: the "if he starts" line stays visible and plans count 0 starts, labelled as such.
-      if (p === undefined) {
-        emitReserve(goalie, game, runs.get(source.run_id)!, line, teamLine ? "goalie:start_unknown_team_line" : "goalie:start_unknown");
-        reserveGoalieGames++; continue;
+      const named = signal.playerId!, floor = FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS[signal.value];
+      if (signal.value === "confirmed") {
+        for (const id of [...candidates.keys(), ...goalies.map(goalie => goalie.nhlId!)]) probability.set(id, 0);
+        probability.set(named, 1); confirmedId = named; news.confirmed++;
+      } else if (signal.value === "ruled_out") { probability.set(named, 0); news.ruledOut++; }
+      else if (floor !== undefined) {
+        const p = Math.max(probability.get(named) ?? 0, floor), others = [...probability].filter(([id]) => id !== named);
+        const total = others.reduce((sum, [, value]) => sum + value, 0);
+        probability.set(named, p);
+        if (total > 1 - p) for (const [id, value] of others) probability.set(id, value * (1 - p) / total);
+        news.speculative++;
       }
-      // Start probabilities stay unrounded through emission and the wire (W2-8 D2): four-decimal rounding can lift a
-      // group above 1 and void every line in it. Counts round, with saves re-derived so SA = SV + GA still holds.
-      emit(goalie, game, runs.get(source.run_id)!, reconcileSaves(Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value === null ? null : round(value * p)]))),
-        p, line, confirmedId === String(goalie.nhlId), teamLine && inputs.reserves !== undefined ? "goalie:team_line" : undefined);
+    }
+    const mass = [...probability.values()].reduce((sum, value) => sum + value, 0);
+    if (probability.size && mass < 1 - probability.size * 5e-7) partialMassTeamGames++;
+    const changed = probability.size !== candidates.size || [...candidates].some(([id, row]) => probability.get(id) !== row.start_probability);
+    const adjustedWins = changed ? newsAdjustedWins(probability, candidates) : null;
+    for (const goalie of goalies) {
+      const id = goalie.nhlId!, candidate = candidates.get(id), p = probability.get(id);
+      if (contract && !candidate) { absentCandidates.add(id); absentCandidateGames++; }
+      const own = ownGoalieLine(goalie, game, teamId, exact, candidate);
+      if (!own) {
+        // No line of his own. Not listed by this game's contract: labelled unknown here; with no contract the no-line pass
+        // labels him.
+        if (exact && contract) { emit(goalie, game, runs.get(exact.run_id)!, Object.fromEntries(GOALIE_KEYS.map(key => [key, null])), null, undefined, false, "goalie:start_unknown"); reserveGoalieGames++; }
+        continue;
+      }
+      const run = runs.get(own.source.run_id)!;
+      // Unknown start chance: his own "if he starts" line stays visible and plans read him as unknown, labelled as such.
+      if (p === undefined) { emitReserve(goalie, game, run, own.line, "goalie:start_unknown"); reserveGoalieGames++; continue; }
+      // As issued when news left the chances alone; otherwise P(start) times his line (zero relief for counts, as the
+      // contract) and his credited Win under the new chances. Start probabilities stay unrounded (W2-8 D2).
+      const stats = candidate && !changed ? contractUnconditional(candidate) : reconcileSaves({
+        ...Object.fromEntries(Object.entries(own.line).map(([key, value]) => [key, value === null ? null : round(value * p)])),
+        WINS_GOALIE: own.moved ? null : round(adjustedWins?.get(id) ?? null), LOSSES_GOALIE: null, OTL_GOALIE: null });
+      if (stats.WINS_GOALIE === null) unknownWins++;
+      emit(goalie, game, run, stats, p, own.line, confirmedId === id);
     }
   }
   // No FORGE line: an identified player still without a row for a game in the horizon gets a labelled unknown row
@@ -762,32 +799,31 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const coveredTeams = new Set(forecasts.map(row => row.issuedContext!.teamId)).size;
   const teamCount = new Set(identified.map(player => player.nhlTeamId)).size;
   const dates = [...runs.values()].map(run => run.asOfDate).sort();
-  const staleShareGoalies = [...unboundShares].filter(id => goalieTeams.has(id) && !latestShares.has(id)).length;
   const limitations = [
     `Interim FORGE projections until native forecasts go live: each player's latest FORGE v2 daily line (runs ${dates[0]} to ${dates.at(-1)}) stands in for his remaining games; ${coveredTeams} of ${teamCount} teams covered.`,
     ...(withheldRuns ? [`${withheldRuns} FORGE runs in the last week cannot prove they excluded third-party fantasy projections, so they are withheld; players covered only by them get no forecast.`] : []),
     rates ? "Penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are season per-game rates (this season plus half of last, pulled toward league rates), not FORGE projections."
       : "Season rates could not be read, so penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are unknown; totals that score them are withheld.",
     ...(unratedSkaters.size ? [`${unratedSkaters.size} skaters have no season totals this season or last, so their penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are unknown.`] : []),
-    priors.size ? `Future games move each FORGE line to that game's opponent with FORGE's team-strength adjustment (team xG for and against, ${priors.size} teams${inputs.lastSeasonTeams?.length ? `, last season blended in as ${LAST_SEASON_PRIOR_GAMES} games` : ""})${scheduleById.size ? ", plus FORGE's home-ice and rest model (back-to-backs included); a goalie's start chance drops on the second night of a back-to-back" : ""}${tilts.size ? ", and each opponent's tilt toward forwards or defencemen (points and shots allowed by position vs league, shrunk)" : ""}.`
+    priors.size ? `Future games move each FORGE line to that game's opponent with FORGE's team-strength adjustment (team xG for and against, ${priors.size} teams${inputs.lastSeasonTeams?.length ? `, last season blended in as ${LAST_SEASON_PRIOR_GAMES} games` : ""})${scheduleById.size ? ", plus FORGE's home-ice and rest model (back-to-backs included)" : ""}${tilts.size ? ", and each opponent's tilt toward forwards or defencemen (points and shots allowed by position vs league, shrunk)" : ""}.`
       : "Team strength could not be read, so future games reuse each FORGE line without an opponent adjustment.",
-    ...(teamWins.size ? [`Goalie wins: FORGE's per-game team win probability (both teams sum to 1) × ${STARTER_DECISION_SHARE} starter decision share, times his start chance; games FORGE has not projected yet use FORGE's same win model on team xG.`] : []),
+    "Goalie starts and lines: FORGE's per-candidate goalie contract for each team-game it projected gives each goalie his own start probability, \"if he starts\" line and unconditional values (counts assume no relief appearances); a teammate's line never stands in, and last-10 start shares are not start probabilities, so they are not used.",
+    ...(partialMassTeamGames ? [`${partialMassTeamGames} team-games have goalie start chances that sum to less than 1; the rest stays unassigned, never spread over the listed goalies.`] : []),
+    ...(absentCandidates.size ? [`${absentCandidates.size} goalies are not among FORGE's start candidates for ${absentCandidateGames} team-games, so their start chance is unknown; only a line of their own, where FORGE has one, is kept as their "if he starts" line.`] : []),
+    ...(noContractTeamGames ? [`${noContractTeamGames} team-games have no FORGE goalie-candidate contract (not projected yet, or projected before the contract), so goalie start chances there are unknown; a goalie's own latest line, moved to the game, is kept as his "if he starts" line and never counts.`] : []),
+    "Goalie wins: each goalie's credited Win from the contract (if he starts; unconditional with his modelled relief share), recomputed with FORGE's win populations when news changes start chances; the team's win probability is served apart and never multiplied into a goalie's Win.",
     ...(teamWins.size ? ["Goalie losses: regulation L and OT/SO L are unknown (no fitted overtime split, and the provider's L/OTL mapping is unverified), so totals that score them read unknown; L is never 1 − W, which would count overtime losses and no-decisions as losses."] : []),
-    ...(unknownWins ? [`${unknownWins} goalie-games have no team win probability (FORGE left it blank, or a team-strength prior is missing), so their wins are unknown.`] : []),
-    "Goalie starts use each goalie's last-10 start share (season share when missing) from start rows for his current team this season: the row for that game when one exists, otherwise his latest. FORGE's own starter probability applies to an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.",
-    ...(openTeamGames ? [`${openTeamGames} team-games have a goalie with no start share; the others keep their own shares, never scaled up, so start chances there sum to less than 1.`] : []),
-    ...(teamless.length ? [`${teamless.length} goalies have no current NHL team, so their start chances are unknown; the team their latest start row or FORGE line names keeps its other goalies' shares unscaled.`] : []),
-    ...(staleShareGoalies ? [`${staleShareGoalies} goalies have start shares only from another team or season; those are ignored, so their start chance is unknown.`] : []),
+    ...(unknownWins ? [`${unknownWins} goalie-games with a start chance have no credited-Win value (the contract left it blank, his line is not from this game's contract, or news named a goalie with no contract Win), so their wins are unknown.`] : []),
     inputs.goalieNews ? `Goalie news (IFTTT, accepted automatically): ${news.confirmed} confirmed, ${news.speculative} likely or projected (start chance at least ${FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS.likely * 100}% / ${FORGE_DAILY_BRIDGE_GOALIE_NEWS_FLOORS.projected * 100}%), ${news.ruledOut} ruled out${news.disputed ? `, ${news.disputed} disputed and ignored` : ""}.`
-      : "Goalie news could not be read; start chances use start shares only.",
+      : "Goalie news could not be read; start chances use FORGE's goalie contracts only.",
     ...(noPowerPlay ? [`${noPowerPlay} skaters with no FORGE power-play line and at most ${NO_POWER_PLAY_SECONDS} s of projected power-play time count 0 power-play production.`] : []),
     ...(unknownPowerPlay ? [`${unknownPowerPlay} skaters have no FORGE power-play line and real or unrecorded power-play time, so they get no forecast.`] : []),
-    ...(unknownHeads.size ? [`${unknownHeads.size} skaters have a FORGE line with blank even-strength goals, assists or shots; such lines give no forecast.`] : []),
+    ...(unknownHeads.size ? [`${unknownHeads.size} skaters have a FORGE line with blank even-strength goals, assists or shots, or a line that models the penalty kill with a blank penalty-kill head; such lines give no forecast.`] : []),
+    ...(pkUnmodelledSkaters.size || reserveSkaters.size ? [`Penalty kill not modelled for ${pkUnmodelledSkaters.size} skaters' lineup lines (written before FORGE's penalty-kill bucket, or for a team whose penalty-kill time FORGE could not model)${reserveSkaters.size ? " and for every FORGE reserve line" : ""}: their goals, assists, points and shots count even strength over all time outside the power play, at even-strength rates.`] : []),
     ...(staleSkaters ? [`${staleSkaters} skaters missing from their team's latest FORGE run have no current FORGE line (likely scratched, injured or moved).`] : []),
     ...(teamMismatch ? [`${teamMismatch} skaters whose latest FORGE line is for a different team than their current one have no current FORGE line.`] : []),
     ...(noLineGames ? [`No FORGE line: ${noLinePlayers.size} players (${noLineGames} player-games) have no current FORGE line, so plans count 0 for them (a conservative assumption, not a zero chance); a player's last FORGE line, where one exists, is kept as his "if he plays" line and never counts.`] : []),
     ...(withheldLinePlayers.size ? [`${withheldLinePlayers.size} players have no proven FORGE line because a newer run for their team cannot prove it excluded third-party fantasy projections; they get no forecast rather than a 0.`] : []),
-    ...(unsharedGoalies.size ? [`${unsharedGoalies.size} goalies have no start share; their start chance is unknown, so plans count 0 starts for them (a conservative assumption, not a zero chance) beside FORGE's "if he starts" line.`] : []),
     ...(inputs.reserves === undefined ? [] : inputs.reserves ? [`FORGE reserve lines: ${reserveSkaters.size} skaters outside FORGE's projected lineup carry an "if he dresses" line (${reserveSkaterGames} player-games); dressing counts only when accepted news confirms it, otherwise plans count 0 and say why.${reserveGoalieGames ? ` ${reserveGoalieGames} goalie-games use an "if he starts" line with an unknown start chance.` : ""}`]
       : ["FORGE reserve lines could not be read, so players outside FORGE's projected lineups have no \"if he dresses\" line."]),
     ...(priors.size && missingPriors.size ? [`${missingPriors.size} opponents have no team-strength prior, so lines projected against or moved to them skip the opponent adjustment.`] : []),
@@ -824,20 +860,17 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
     else withheld.push({ ...row, external_input_proven: false });
   }
   const runs = [...latestByDate.values()], runIds = runs.map(row => row.run_id);
-  if (!runIds.length) return buildForgeDailyBridgeForecasts({ runs: withheld, skaters: [], goalies: [], goalieShares: [] }, players, games, now, seasonId, calendarPolicy);
+  if (!runIds.length) return buildForgeDailyBridgeForecasts({ runs: withheld, skaters: [], goalies: [] }, players, games, now, seasonId, calendarPolicy);
   const previousSeason = String((Math.floor(seasonId / 10000) - 1) * 10001 + 1);
   const upcomingGameIds = [...new Set(games.filter(game => game.status === "scheduled" && game.startsAt && Date.parse(game.startsAt) > now.getTime())
     .map(game => Number(game.id)).filter(Number.isSafeInteger))].slice(0, 500);
   const windowEnd = games.map(game => game.date).sort().at(-1) ?? to;
   const scheduleFrom = new Date(Date.parse(`${from}T12:00:00Z`) - 7 * DAY_MS).toISOString().slice(0, 10);
-  const [skaters, goalies, goalieShares, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed, reserves] = await Promise.all([
+  const [skaters, goalies, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed, reserves] = await Promise.all([
     pages(() => db.from("forge_player_projections").select(SKATER_COLUMNS, { count: "exact" }).in("run_id", runIds).eq("horizon_games", 1)
       .order("run_id").order("game_id").order("player_id"), readDeadline, 15000, row => [row.run_id, row.game_id, row.player_id]),
     pages(() => db.from("forge_goalie_projections").select(GOALIE_COLUMNS, { count: "exact" }).in("run_id", runIds).eq("horizon_games", 1)
       .order("run_id").order("game_id").order("goalie_id"), readDeadline, 2000, row => [row.run_id, row.game_id, row.goalie_id]),
-    pages(() => db.from("goalie_start_projections").select("player_id,team_id,game_id,game_date,l10_start_pct,season_start_pct,updated_at", { count: "exact" })
-      .gte("game_date", from).lte("game_date", to).order("game_date", { ascending: false }).order("game_id").order("player_id"),
-    readDeadline, 5000, row => [row.game_id, row.player_id]),
     // Optional inputs: a failed read keeps the projections and says so in the evidence.
     pages(() => db.from("wgo_skater_stats_totals").select("player_id,season,games_played,goals,gw_goals,penalty_minutes,plus_minus,sh_goals,sh_assists,sh_points,total_fow,total_fol", { count: "exact" })
       .in("season", [String(seasonId), previousSeason]).order("season").order("player_id"), readDeadline, 5000, row => [row.season, row.player_id]).catch(() => undefined),
@@ -859,5 +892,5 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
       .order("run_id").order("game_id").order("player_id"), readDeadline, 15000, row => [row.run_id, row.game_id, row.player_id]).catch(() => null) : Promise.resolve(undefined),
   ]);
   capture?.({ startedAt: captureStartedAt, completedAt: new Date().toISOString(), runs, skaters, goalies, reserves });
-  return buildForgeDailyBridgeForecasts({ runs: [...runs, ...withheld], skaters, goalies, goalieShares, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed, reserves }, players, games, now, seasonId, calendarPolicy);
+  return buildForgeDailyBridgeForecasts({ runs: [...runs, ...withheld], skaters, goalies, seasonTotals, goalieNews, teamPriors, lastSeasonTeams, teamGames, positionAllowed, reserves }, players, games, now, seasonId, calendarPolicy);
 }

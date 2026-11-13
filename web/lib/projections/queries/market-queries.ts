@@ -54,6 +54,9 @@ export type MarketSummaryQuote = {
   outcome_key: string;
   line_value: number | null;
   price_american: number | null;
+  /** The quote's own observation and expiry (ISO), so consumers can pair one book's sides from one observation. */
+  source_observed_at?: string | null;
+  freshness_expires_at?: string | null;
 };
 
 function toIsoTimestamp(value: string | null | undefined): string | null {
@@ -63,13 +66,16 @@ function toIsoTimestamp(value: string | null | undefined): string | null {
   return new Date(timestamp).toISOString();
 }
 
+/** Observed at or before now and not yet expired; rows missing either timestamp are never fresh. */
 function isFreshAt(row: {
   freshness_expires_at: string | null;
   source_observed_at: string | null;
 }, nowIso: string): boolean {
+  const now = toIsoTimestamp(nowIso);
+  const observedAt = toIsoTimestamp(row.source_observed_at);
   const freshnessExpiresAt = toIsoTimestamp(row.freshness_expires_at);
-  if (freshnessExpiresAt) return freshnessExpiresAt >= nowIso;
-  return toIsoTimestamp(row.source_observed_at) != null;
+  if (!now || !observedAt || !freshnessExpiresAt) return false;
+  return observedAt <= now && freshnessExpiresAt >= now;
 }
 
 function averageNullable(values: Array<number | null | undefined>): number | null {
@@ -111,7 +117,9 @@ function perBookQuotes<T extends MarketPriceContextRow>(rows: T[]): MarketSummar
       sportsbook_key: row.sportsbook_key,
       outcome_key: row.outcome_key,
       line_value: row.line_value,
-      price_american: row.price_american
+      price_american: row.price_american,
+      source_observed_at: toIsoTimestamp(row.source_observed_at),
+      freshness_expires_at: toIsoTimestamp(row.freshness_expires_at)
     }))
     .sort(
       (a, b) =>
@@ -125,8 +133,8 @@ function summarizeRowsByMarketType<T extends MarketPriceContextRow>(
   rows: T[],
   nowIso: string
 ): Record<string, MarketTypeSummary> {
-  const freshRows = rows.filter((row) => isFreshAt(row, nowIso));
-  const activeRows = freshRows.length > 0 ? freshRows : rows;
+  // Stale or untimestamped rows are dropped, never used as a fallback (Astra AF-04).
+  const activeRows = rows.filter((row) => isFreshAt(row, nowIso));
   if (activeRows.length === 0) return {};
 
   const bestSourceRank = activeRows.reduce((best, row) => {

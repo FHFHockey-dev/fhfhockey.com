@@ -490,6 +490,45 @@ describe("/api/v1/forge/players", () => {
     expect(res.body.data[0].sog).toBeCloseTo(2.5, 6);
   });
 
+  it("withholds totals that need a missing PK head on an all-situations row (AF-05)", async () => {
+    const prior = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_player_projections") {
+        return createQueryBuilder(() => ({
+          data: [
+            {
+              player_id: 8478403, team_id: 8,
+              players: { fullName: "Missing PK Goals", position: "C" },
+              teams: { id: 8, abbreviation: "MTL", name: "Montréal Canadiens" },
+              proj_goals_es: 0.2, proj_goals_pp: 0.1, proj_goals_pk: null,
+              proj_assists_es: 0.3, proj_assists_pp: 0.15, proj_assists_pk: 0.01,
+              proj_shots_es: 2, proj_shots_pp: 0.5, proj_shots_pk: 0.2,
+              proj_hits: 0.6, proj_blocks: 0.4,
+              uncertainty: { model: { skater_selection: { strength_accounting: {
+                version: "forge-skater-strength-buckets-v1", es_definition: "even_strength", pk_status: "modeled" } } } },
+            },
+          ],
+          count: 1,
+          error: null,
+        }));
+      }
+      if (table === "rosters") {
+        return createQueryBuilder(() => ({ data: [{ playerId: 8478403 }], error: null }));
+      }
+      return prior(table);
+    });
+    const res = createMockRes();
+
+    await handler({ method: "GET", query: { date: "2026-02-07", horizon: "1" } } as any, res);
+
+    expect(res.statusCode).toBe(200);
+    // ES .2 + PP .1 is not served as goals when the PK goals head is missing.
+    expect(res.body.data[0]).toMatchObject({ g: null, pts: null, pk_status: "modeled" });
+    expect(res.body.data[0].a).toBeCloseTo(0.46, 6);
+    expect(res.body.data[0].sog).toBeCloseTo(2.7, 6);
+    expect(res.body.data[0].ppp).toBeCloseTo(0.25, 6);
+  });
+
   it("passes availability and time away through and labels if-plays lines (decision 132, L9c)", async () => {
     const prior = fromMock.getMockImplementation()!;
     const availability = {

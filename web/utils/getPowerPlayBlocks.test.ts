@@ -652,3 +652,80 @@ describe("penalty-service timing regressions", () => {
     });
   });
 });
+
+describe("match penalty recorded as MAT/15 (decision 144, F11 C3)", () => {
+  // Stored 2025-26 game 2025021128 (nhl_api_pbp_events): every penalty, goal and
+  // period marker. The NHL records the match penalty with its game-misconduct
+  // minutes folded in (MAT/15); only the 5-minute major changes manpower.
+  // Official team PP TOI (teamGameStats): home 05:00, away 04:00.
+  const homeTeamId = 19;
+  const awayTeamId = 15;
+  const gameTeams = { homeTeamId, awayTeamId, gameType: 2 };
+  type Row = [eventId: number, sortOrder: number, period: number, time: string, code: string, type: string,
+    teamId?: number, typeCode?: string, descKey?: string, duration?: number, committedBy?: number, servedBy?: number];
+  const rows: Row[] = [
+    [54, 10, 1, "00:00", "1551", "period-start"],
+    [156, 106, 1, "07:46", "1551", "penalty", homeTeamId, "MIN", "hooking", 2, 8484188],
+    [324, 172, 1, "13:45", "1551", "penalty", awayTeamId, "MIN", "tripping", 2, 8479345],
+    [395, 236, 1, "19:12", "1551", "penalty", homeTeamId, "MIN", "slashing", 2, 8482089],
+    [17, 248, 1, "20:00", "1541", "period-end"],
+    [410, 254, 2, "00:00", "1541", "period-start"],
+    [444, 291, 2, "02:39", "1551", "goal", homeTeamId],
+    [616, 355, 2, "07:38", "1551", "penalty", homeTeamId, "MAJ", "fighting", 5, 8484230],
+    [612, 357, 2, "07:38", "1551", "penalty", awayTeamId, "MAJ", "fighting", 5, 8484186],
+    [34, 412, 2, "12:04", "1551", "penalty", awayTeamId, "MIN", "roughing", 2, 8476880],
+    [681, 414, 2, "12:04", "1551", "penalty", awayTeamId, "MIN", "roughing", 2, 8476880],
+    [678, 416, 2, "12:04", "1551", "penalty", homeTeamId, "MIN", "roughing", 2, 8483516],
+    [685, 418, 2, "12:04", "1551", "penalty", homeTeamId, "MIN", "roughing", 2, 8480023],
+    [718, 444, 2, "14:34", "1560", "penalty", awayTeamId, "MIN", "slashing", 2, 8481580],
+    [39, 516, 2, "20:00", "1551", "period-end"],
+    [790, 523, 3, "00:00", "1551", "period-start"],
+    [893, 622, 3, "08:25", "1551", "penalty", awayTeamId, "MAT", "match-penalty", 15, 8479400, 8483491],
+    [50, 624, 3, "08:25", "1551", "penalty", homeTeamId, "MIN", "interference", 2, 8480023, 8480459],
+    [918, 647, 3, "10:38", "1451", "penalty", homeTeamId, "BEN", "too-many-men-on-the-ice", 2, undefined, 8482089],
+    [970, 699, 3, "14:52", "1551", "goal", homeTeamId],
+    [1038, 768, 3, "19:19", "0651", "goal", homeTeamId],
+    [463, 772, 3, "20:00", "1551", "period-end"],
+    [467, 776, 3, "20:00", "1551", "game-end"]
+  ];
+  const storedPlays = () => rows.map(
+    ([eventId, sortOrder, period, timeInPeriod, situationCode, typeDescKey, teamId, typeCode, descKey, duration, committedBy, servedBy]) => ({
+      eventId,
+      sortOrder,
+      typeDescKey,
+      periodDescriptor: { number: period, periodType: "REG" },
+      timeInPeriod,
+      situationCode,
+      details: {
+        ...(teamId == null ? {} : { eventOwnerTeamId: teamId }),
+        ...(typeCode == null ? {} : { typeCode, descKey, duration }),
+        ...(committedBy == null ? {} : { committedByPlayerId: committedBy }),
+        ...(servedBy == null ? {} : { servedByPlayerId: servedBy })
+      }
+    })
+  );
+  const at = (period: number, timeInPeriod: string) => ({ period, type: "REG", timeInPeriod });
+
+  it("serves the match penalty as one 5-minute major and reproduces the official PP totals", () => {
+    const blocks = getPowerPlayBlocks(storedPlays(), gameTeams);
+    expect(blocks).toEqual([
+      { teamId: awayTeamId, start: at(1, "07:46"), end: at(1, "09:46") },
+      { teamId: homeTeamId, start: at(1, "13:45"), end: at(1, "15:45") },
+      { teamId: awayTeamId, start: at(1, "19:12"), end: at(2, "01:12") },
+      { teamId: homeTeamId, start: at(2, "14:34"), end: at(2, "16:34") },
+      // 08:25 major vs the home minor: 4v4 to 10:25, then the major alone;
+      // the 10:38 bench minor evens it until 12:38; the major ends at 13:25.
+      { teamId: homeTeamId, start: at(3, "10:25"), end: at(3, "10:38") },
+      { teamId: homeTeamId, start: at(3, "12:38"), end: at(3, "13:25") }
+    ]);
+    expect(teamPpClockSeconds(blocks, homeTeamId)).toBe(300);
+    expect(teamPpClockSeconds(blocks, awayTeamId)).toBe(240);
+  });
+
+  it("still refuses a match penalty recorded with any other duration", () => {
+    const plays = storedPlays().map((p) =>
+      p.eventId === 893 ? { ...p, details: { ...p.details, duration: 10 } } : p
+    );
+    expect(() => getPowerPlayBlocks(plays, gameTeams)).toThrow("Unsupported penalty-clock penalty MAT/10");
+  });
+});

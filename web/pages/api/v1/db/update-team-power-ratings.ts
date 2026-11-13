@@ -21,9 +21,17 @@ import {
  * v3 (L12, 2026-11-12): genuine all-situation games, all teams standardised
  * against one daily baseline as of their latest game, prior after normalisation
  * (decision 19), pooled season-to-date PP/PK tiers with unknown = null (decision 20).
+ * v4 (2026-11-13), two changes to v3:
+ * 1. Decision 145: goalie_rating is "5-on-5 goaltending": xGA/60 minus GA/60
+ *    from NST 5-on-5 rows (empty-net goals excluded), null when any game in the
+ *    window lacks complete 5-on-5 inputs.
+ * 2. Season-total rows excluded (TJ, 2026-11-13): only NST rows with gp = 1
+ *    count as games, so stored gp = 82 season totals no longer fill early-season
+ *    windows for any component. A team with no genuine game in the lookback is
+ *    carried forward from its last stored row, as in the offseason.
  */
 export const TEAM_POWER_RATING_CALCULATION_VERSION =
-  "team-power-v3-all-team-baseline-prior-after-norm-pooled-st";
+  "team-power-v4-5v5-goaltending";
 const LEGACY_TEAM_POWER_RATING_VERSION = "legacy_unversioned";
 
 function parseBooleanFlag(value: unknown): boolean {

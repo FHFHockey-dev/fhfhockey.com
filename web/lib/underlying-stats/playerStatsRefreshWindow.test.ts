@@ -11,6 +11,8 @@ vi.mock("./playerStatsSummaryRefresh", () => ({
   fetchSeasonSummaryGameIdSet: mocks.summaryGameIds,
   PLAYER_STATS_SUMMARY_PARTITION_SOURCE_URL_PREFIX: "derived://underlying-player-summary-v2/",
 }));
+vi.mock("./teamStatsSummaryRefresh", () => ({ fetchSeasonTeamSummaryGameIdSet: mocks.summaryGameIds }));
+vi.mock("./goalieStatsSummaryRefresh", () => ({ fetchSeasonGoalieSummaryGameIdSet: mocks.summaryGameIds }));
 vi.mock("lib/supabase/pagination", () => ({
   fetchAllSupabasePages: async (factory: (page: { from: number; to: number }) => PromiseLike<{ data: unknown[] }>) =>
     (await factory({ from: 0, to: 999 })).data,
@@ -23,7 +25,9 @@ vi.mock("lib/supabase/server", () => {
   return { default: { from: () => query } };
 });
 
+import { resolveGoalieStatsIncrementalSelection } from "./goalieStatsRefreshWindow";
 import { resolvePlayerStatsIncrementalSelection } from "./playerStatsRefreshWindow";
+import { resolveTeamStatsIncrementalSelection } from "./teamStatsRefreshWindow";
 
 const id = (n: number) => 2026020000 + n;
 /** Finished regular-season games; `ns` are offsets from 2026020000. */
@@ -121,5 +125,39 @@ describe("resolvePlayerStatsIncrementalSelection", () => {
     expect(await resolvePlayerStatsIncrementalSelection()).toEqual({ mode: "incremental", seasonId: 20262027,
       requestedGameType: 2, startDate: null, endDate: null, latestCoveredDate: null, gameIds: [] });
     expect(mocks.summaryGameIds).not.toHaveBeenCalled();
+  });
+});
+
+describe.each([
+  ["player", resolvePlayerStatsIncrementalSelection],
+  ["team", resolveTeamStatsIncrementalSelection],
+  ["goalie", resolveGoalieStatsIncrementalSelection],
+])("%s refresh window finality (rule 19, contract nhl-game-state-v1)", (_label, resolveSelection) => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-26T16:00:00Z"));
+    mocks.getCurrentSeason.mockResolvedValue({ seasonId: 20262027 });
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("selects games by stored state: final before start + 8 h is in, postponed and live are out", async () => {
+    const state = (gameState: string, scheduleState: string, observedAt: string) =>
+      ({ game_state: gameState, game_schedule_state: scheduleState, game_state_observed_at: observedAt });
+    install([
+      // Matinee dated today, OFF an hour after it ended: final now, before start + 8 h.
+      { ...slate("2026-10-26", [300])[0], startTime: "2026-10-26T12:30:00Z", ...state("OFF", "OK", "2026-10-26T15:30:00Z") },
+      // Dated before today and past start + 8 h, but postponed: never final.
+      { ...slate("2026-10-25", [301])[0], ...state("FUT", "PPD", "2026-10-25T18:00:00Z") },
+      // Still LIVE when observed after start + 8 h (a long delay): not final.
+      { ...slate("2026-10-25", [302])[0], startTime: "2026-10-25T02:00:00Z", ...state("LIVE", "OK", "2026-10-25T11:00:00Z") },
+      // No stored state: the labelled start + 8 h fallback decides.
+      ...slate("2026-10-24", [303]),
+    ] as ReturnType<typeof slate>, [id(300), id(301), id(302), id(303)]);
+
+    const selection = await resolveSelection();
+
+    expect(selection.gameIds).toEqual([id(303), id(300)]);
+    expect(selection.endDate).toBe("2026-10-26");
   });
 });

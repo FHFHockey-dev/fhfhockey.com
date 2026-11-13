@@ -56,7 +56,10 @@ export type SkaterStats = PlayerBasic & {
   Hits: number;
   Blocks: number;
   PlusMinus: number;
+  /** All-strength TOI summed over the player's games among the team's last 10 with lines. */
   TOISeconds?: number;
+  /** How many of those games the player has a stat row for (the reader's `numGames`). */
+  numGames?: number;
 };
 
 export type GoalieStats = PlayerBasic & {
@@ -309,12 +312,8 @@ export default function TeamLC({
 
             <div className={styles.lineShare}>
               <LineShareBars
-                lines={[
-                  { label: "L1", players: lineCombinations.forwards.line1 },
-                  { label: "L2", players: lineCombinations.forwards.line2 },
-                  { label: "L3", players: lineCombinations.forwards.line3 },
-                  { label: "L4", players: lineCombinations.forwards.line4 }
-                ]}
+                lineSource={lineCombinations.lineSource}
+                lines={lineShareLines(lineCombinations)}
               />
             </div>
           </div>
@@ -452,8 +451,28 @@ export const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
+/**
+ * The four forward lines for LineShareBars. On the 5v5 board, line N is board
+ * unit N, so it carries that unit's 5v5 seconds together in the last game.
+ */
+export function lineShareLines(lineCombinations: LineCombinations) {
+  const { forwards, fiveOnFiveUnitSeconds } = lineCombinations;
+  return [forwards.line1, forwards.line2, forwards.line3, forwards.line4].map(
+    (players, index) => ({
+      label: `L${index + 1}`,
+      players,
+      fiveOnFiveSeconds: fiveOnFiveUnitSeconds?.forwards[index] ?? null
+    })
+  );
+}
+
 type HeaderProps = {
-  /** Defaults to the legacy grouping, which is what Lines serves today. */
+  /**
+   * Where the board's lines come from. Lines serves the disjoint observed 5v5
+   * units (decisions 107, 137); a team falls back to the labelled all-strength
+   * legacy grouping when either of its two latest games lacks complete
+   * `team_unit_toi` rows. When omitted, the header shows the legacy label.
+   */
   lineSource?: LineSource;
   teamName: string;
   teamAbbreviation: string;

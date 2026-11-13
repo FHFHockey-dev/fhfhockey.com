@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { PlanningGame, PlanningPlayer } from "lib/rosterScheduleOptimizer/planningTypes";
+import { buildGoalieCandidatesContract } from "lib/projections/goalie/goalieCandidates";
 import type { ForgeDailyBridgeInputs } from "./forgeDailyBridge";
 
 /**
@@ -21,7 +22,7 @@ export function league(days: number, shape: Shape = "typical") {
   const players: PlanningPlayer[] = [], games: PlanningGame[] = [];
   const run = { run_id: uuid("run"), as_of_date: "2026-10-26", created_at: "2026-10-26T10:00:00Z", git_sha: "a".repeat(40), external_input_proven: true };
   const skaters: Record<string, unknown>[] = [], goalies: Record<string, unknown>[] = [], reserves: Record<string, unknown>[] = [];
-  const goalieShares: Record<string, unknown>[] = [], seasonTotals: Record<string, unknown>[] = [];
+  const seasonTotals: Record<string, unknown>[] = [];
   let nextId = 30000;
   // Teams playing that day, paired in order (an odd one out sits).
   const schedule = new Map<number, Array<{ gameId: number; startsAt: string; opponent: number; home: boolean }>>();
@@ -55,17 +56,25 @@ export function league(days: number, shape: Shape = "typical") {
         if (index < LINEUP) skaters.push({ ...scope, ...line, proj_goals_pk: null, proj_assists_pk: null, proj_shots_pk: null, proj_toi_pk_seconds: null, proj_pim: null, proj_plus_minus: null });
         else reserves.push({ ...scope, ...line, player_class: "skater", conditioning: "if_dressed", reserve_reason: "not_in_lineup" });
       } else if (index === SKATERS) {
-        goalies.push({ ...scope, goalie_id: nhlId, starter_probability: 0.62, proj_saves: 24.8713, proj_goals_allowed: 2.7412,
-          proj_shots_against: 27.6125, proj_win_prob: 0.2914, proj_shutout_prob: 0.0512 });
+        // Production runs FORGE today..+6, so every team-game has a goalie row whose candidate contract lists the usual
+        // pair, each on his own line; the third and fourth goalies are not candidates (unknown start chance).
+        const line = (saves: number, goalsAllowed: number, shutoutProbability: number) =>
+          ({ shotsAgainst: saves + goalsAllowed, saves, goalsAllowed, shutoutProbability, modeledSavePct: saves / (saves + goalsAllowed) });
+        for (const game of own) goalies.push({ ...scope, game_id: game.gameId, opponent_team_id: game.opponent, goalie_id: nhlId, starter_probability: 0.62,
+          proj_saves: 24.8713, proj_goals_allowed: 2.7412, proj_shots_against: 27.6125, proj_win_prob: 0.2914, proj_shutout_prob: 0.0512,
+          goalie_candidates: buildGoalieCandidatesContract({ gameId: game.gameId, teamId: team, teamWinProbability: 0.5124, teamWinSource: "poisson_race",
+            issuance: { run_id: run.run_id, as_of_date: run.as_of_date, issued_at: run.created_at, information_cutoff_at: "2026-10-26T09:00:00Z",
+              starter_labels: { source: "wgo_goalie_stats.games_started", window_games: 10, known_games: 10, unknown_games: 0 } },
+            candidates: [{ goalieId: nhlId, startProbability: 0.7, startProbabilityStatus: "uncalibrated_model", confirmationEvidenceIds: [],
+              ifStarts: line(24.8713, 2.7412, 0.0512), creditedWinIfStarts: 0.4972, unconditionalCreditedWin: 0.3529 },
+            { goalieId: nhlId + 1, startProbability: 0.3, startProbabilityStatus: "uncalibrated_model", confirmationEvidenceIds: [],
+              ifStarts: line(23.9124, 2.9133, 0.0413), creditedWinIfStarts: 0.4711, unconditionalCreditedWin: 0.1468 }] }) });
       } else reserves.push({ ...scope, player_class: "goalie", conditioning: "if_starts", reserve_reason: "backup_goalie",
         proj_saves: 23.9124, proj_goals_allowed: 2.9133, proj_shots_against: 26.8257, proj_shutout_prob: 0.0413 });
-      // The usual pair have start shares; the third and fourth goalies have none (unknown start chance).
-      if (goalie && index <= SKATERS + 1) goalieShares.push({ player_id: nhlId, team_id: team, game_id: first.gameId, game_date: first.startsAt.slice(0, 10),
-        l10_start_pct: index === SKATERS ? 0.7 : 0.3, season_start_pct: null, updated_at: "2026-10-26T09:00:00Z" });
     }
   }
   for (let index = 0; index < 58; index++) players.push({ id: String(nextId++), nhlId: 8490000 + index, name: `Teamless ${index}`, teamAbbreviation: null,
     eligiblePositions: ["C"], eligibilityVerified: false, playerClass: "skater", availability: "unknown", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] });
-  const inputs: ForgeDailyBridgeInputs = { runs: [run], skaters, goalies, goalieShares, seasonTotals, reserves, goalieNews: { assertions: [], conflicts: [] } };
+  const inputs: ForgeDailyBridgeInputs = { runs: [run], skaters, goalies, seasonTotals, reserves, goalieNews: { assertions: [], conflicts: [] } };
   return { players, games, inputs };
 }

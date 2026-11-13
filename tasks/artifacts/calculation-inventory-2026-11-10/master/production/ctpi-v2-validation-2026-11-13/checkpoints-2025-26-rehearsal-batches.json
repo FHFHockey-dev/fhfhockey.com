@@ -1,0 +1,345 @@
+{
+  "generatedAt": "2026-11-13T14:31:42.111Z",
+  "seasonId": 20252026,
+  "asOf": "2026-04-17",
+  "formalRequested": true,
+  "formalSet": "batches 10/20/30 (reference only)",
+  "partialBatchesAllowed": false,
+  "formalReady": true,
+  "decision": "inconclusive: keep the descriptive beta; predictive use stays gated",
+  "margin": 0.03,
+  "design": {
+    "checkpoints": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "formalBatches": [
+      10,
+      20,
+      30
+    ],
+    "issueDate": "day after the team's k-th game; inputs = games before that date",
+    "target": "team games k+1 … k+10: GD per game and points% (points / 20)",
+    "statistic": "mean over batches of per-batch Spearman across teams; Δ = left − right",
+    "uncertainty": "wider of a team-cluster bootstrap and a dependency-graph jackknife (links: same team, or target games shared with the other forecast's target or input games)",
+    "minTeamsPerBatch": 16,
+    "reps": 2000
+  },
+  "coverage": [
+    {
+      "checkpoint": 10,
+      "teamsIssued": 32,
+      "issueDates": [
+        "2025-10-26",
+        "2025-11-01"
+      ],
+      "v2Status": {
+        "ready": 32
+      },
+      "v2MissingComponents": {},
+      "v2PdoContextAvailable": 32,
+      "issuedV2Rows": 0,
+      "issuedV2MatchesOffline": 0,
+      "issuedV2Mismatches": 0,
+      "v1VsV2RankSpearman": 0.9285,
+      "matured": 32,
+      "eligible": 32
+    },
+    {
+      "checkpoint": 20,
+      "teamsIssued": 32,
+      "issueDates": [
+        "2025-11-16",
+        "2025-11-23"
+      ],
+      "v2Status": {
+        "ready": 32
+      },
+      "v2MissingComponents": {},
+      "v2PdoContextAvailable": 32,
+      "issuedV2Rows": 0,
+      "issuedV2MatchesOffline": 0,
+      "issuedV2Mismatches": 0,
+      "v1VsV2RankSpearman": 0.9186,
+      "matured": 32,
+      "eligible": 32
+    },
+    {
+      "checkpoint": 30,
+      "teamsIssued": 32,
+      "issueDates": [
+        "2025-12-07",
+        "2025-12-15"
+      ],
+      "v2Status": {
+        "ready": 32
+      },
+      "v2MissingComponents": {},
+      "v2PdoContextAvailable": 32,
+      "issuedV2Rows": 0,
+      "issuedV2MatchesOffline": 0,
+      "issuedV2Mismatches": 0,
+      "v1VsV2RankSpearman": 0.9714,
+      "matured": 32,
+      "eligible": 32
+    },
+    {
+      "checkpoint": 40,
+      "teamsIssued": 32,
+      "issueDates": [
+        "2025-12-28",
+        "2026-01-06"
+      ],
+      "v2Status": {
+        "ready": 32
+      },
+      "v2MissingComponents": {},
+      "v2PdoContextAvailable": 32,
+      "issuedV2Rows": 0,
+      "issuedV2MatchesOffline": 0,
+      "issuedV2Mismatches": 0,
+      "v1VsV2RankSpearman": 0.8992,
+      "matured": 32,
+      "eligible": 32
+    }
+  ],
+  "maturedBatches": [
+    10,
+    20,
+    30
+  ],
+  "eligibleForecasts": 96,
+  "perBatchSpearman": {
+    "gd": {
+      "10": {
+        "v1": 0.1494,
+        "v1NoPdo": 0.1201,
+        "v2": 0.1369,
+        "v2PlusPdo": 0.1065
+      },
+      "20": {
+        "v1": 0.2919,
+        "v1NoPdo": 0.2607,
+        "v2": 0.2765,
+        "v2PlusPdo": 0.3202
+      },
+      "30": {
+        "v1": 0.1987,
+        "v1NoPdo": 0.202,
+        "v2": 0.1861,
+        "v2PlusPdo": 0.1758
+      }
+    },
+    "pts": {
+      "10": {
+        "v1": 0.0175,
+        "v1NoPdo": 0.0249,
+        "v2": 0.0399,
+        "v2PlusPdo": -0.0079
+      },
+      "20": {
+        "v1": 0.2763,
+        "v1NoPdo": 0.2509,
+        "v2": 0.3193,
+        "v2PlusPdo": 0.3636
+      },
+      "30": {
+        "v1": 0.2532,
+        "v1NoPdo": 0.2664,
+        "v2": 0.2298,
+        "v2PlusPdo": 0.218
+      }
+    }
+  },
+  "comparisons": {
+    "gd": {
+      "v2_minus_v1": {
+        "point": -0.013522045204272387,
+        "teamBootstrapCi95": [
+          -0.0806544025252527,
+          0.060614587561246554
+        ],
+        "dependencyGraphCi95": [
+          -0.09040785609641484,
+          0.06336376568787007
+        ],
+        "dependencyEdges": 1109,
+        "lower": -0.09040785609641484,
+        "upper": 0.06336376568787007
+      },
+      "v2_minus_v1NoPdo": {
+        "point": 0.005571723320004954,
+        "teamBootstrapCi95": [
+          -0.061536097114741416,
+          0.07455248609584904
+        ],
+        "dependencyGraphCi95": [
+          -0.0808585025573601,
+          0.09200194919737001
+        ],
+        "dependencyEdges": 1109,
+        "lower": -0.0808585025573601,
+        "upper": 0.09200194919737001
+      },
+      "v2PlusPdo_minus_v1": {
+        "point": -0.012538749382340036,
+        "teamBootstrapCi95": [
+          -0.058391578213414536,
+          0.03440162047713176
+        ],
+        "dependencyGraphCi95": [
+          -0.05880152005975864,
+          0.033724021295078566
+        ],
+        "dependencyEdges": 1109,
+        "lower": -0.05880152005975864,
+        "upper": 0.03440162047713176
+      },
+      "v1_minus_v1NoPdo": {
+        "point": 0.01909376852427734,
+        "teamBootstrapCi95": [
+          -0.026803154856726442,
+          0.06577260659504784
+        ],
+        "dependencyGraphCi95": [
+          -0.029202615085530174,
+          0.06739015213408486
+        ],
+        "dependencyEdges": 1109,
+        "lower": -0.029202615085530174,
+        "upper": 0.06739015213408486
+      },
+      "v2PlusPdo_minus_v2": {
+        "point": 0.0009832958219323507,
+        "teamBootstrapCi95": [
+          -0.05388328439857926,
+          0.05793929534208846
+        ],
+        "dependencyGraphCi95": [
+          -0.0574159972227817,
+          0.0593825888666464
+        ],
+        "dependencyEdges": 1109,
+        "lower": -0.0574159972227817,
+        "upper": 0.0593825888666464
+      }
+    },
+    "pts": {
+      "v2_minus_v1": {
+        "point": 0.014000974909181646,
+        "teamBootstrapCi95": [
+          -0.050119935836254334,
+          0.08763150660348433
+        ],
+        "dependencyGraphCi95": [
+          -0.05640619953748993,
+          0.08440814935585322
+        ],
+        "dependencyEdges": 1109,
+        "lower": -0.05640619953748993,
+        "upper": 0.08763150660348433
+      },
+      "v2_minus_v1NoPdo": {
+        "point": 0.01556808152924633,
+        "teamBootstrapCi95": [
+          -0.04511900476757219,
+          0.08477144692647268
+        ],
+        "dependencyGraphCi95": [
+          -0.056830300464864585,
+          0.08796646352335724
+        ],
+        "dependencyEdges": 1109,
+        "lower": -0.056830300464864585,
+        "upper": 0.08796646352335724
+      },
+      "v2PlusPdo_minus_v1": {
+        "point": 0.008914518043574718,
+        "teamBootstrapCi95": [
+          -0.04376189031171798,
+          0.0631994648866829
+        ],
+        "dependencyGraphCi95": [
+          -0.046120490955316486,
+          0.06394952704246593
+        ],
+        "dependencyEdges": 1109,
+        "lower": -0.046120490955316486,
+        "upper": 0.06394952704246593
+      },
+      "v1_minus_v1NoPdo": {
+        "point": 0.0015671066200646834,
+        "teamBootstrapCi95": [
+          -0.04090934702550928,
+          0.045141918155422185
+        ],
+        "dependencyGraphCi95": [
+          -0.04921612552901333,
+          0.052350338769142704
+        ],
+        "dependencyEdges": 1109,
+        "lower": -0.04921612552901333,
+        "upper": 0.052350338769142704
+      },
+      "v2PlusPdo_minus_v2": {
+        "point": -0.005086456865606927,
+        "teamBootstrapCi95": [
+          -0.05803161930397298,
+          0.04730137479751215
+        ],
+        "dependencyGraphCi95": [
+          -0.055764702245038475,
+          0.045591788513824616
+        ],
+        "dependencyEdges": 1109,
+        "lower": -0.05803161930397298,
+        "upper": 0.04730137479751215
+      }
+    }
+  },
+  "issuedV1": {
+    "gd": [
+      {
+        "batch": 10,
+        "n": 32,
+        "issued": 0.1013,
+        "v2": 0.1369
+      },
+      {
+        "batch": 20,
+        "n": 32,
+        "issued": 0.3009,
+        "v2": 0.2765
+      },
+      {
+        "batch": 30,
+        "n": 32,
+        "issued": 0.1618,
+        "v2": 0.1861
+      }
+    ],
+    "pts": [
+      {
+        "batch": 10,
+        "n": 32,
+        "issued": 0.072,
+        "v2": 0.0399
+      },
+      {
+        "batch": 20,
+        "n": 32,
+        "issued": 0.2938,
+        "v2": 0.3193
+      },
+      {
+        "batch": 30,
+        "n": 32,
+        "issued": 0.2383,
+        "v2": 0.2298
+      }
+    ]
+  },
+  "stability": null
+}

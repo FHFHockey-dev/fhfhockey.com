@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { classifyEventStrengthBucket } from "lib/supabase/Upserts/nhlStrengthState";
 import {
   isShootoutPlay,
   parseSituationDigits,
@@ -109,5 +110,58 @@ describe("situationCode parsing + strength mapping", () => {
     expect(
       isShootoutPlay({ gameid: 2026030111, periodnumber: 5, periodtype: "OT" }),
     ).toBe(false);
+  });
+});
+
+describe("shared event-strength adapter vs strengthForTeam (AF-07, decision 149)", () => {
+  const sideOf = (teamId: number, homeTeamId: number) =>
+    teamId === homeTeamId ? "home" : "away";
+
+  it("agrees on every valid code where both sides have skaters", () => {
+    const HOME = 1;
+    const AWAY = 2;
+    let checked = 0;
+    for (const ag of [0, 1])
+      for (let as = 1; as <= 6; as += 1)
+        for (let hs = 1; hs <= 6; hs += 1)
+          for (const hg of [0, 1]) {
+            const digits = parseSituationDigits(`${ag}${as}${hs}${hg}`)!;
+            for (const teamId of [HOME, AWAY]) {
+              expect(
+                classifyEventStrengthBucket(digits, sideOf(teamId, HOME)),
+              ).toBe(strengthForTeam(digits, teamId, HOME, AWAY));
+            }
+            checked += 1;
+          }
+    expect(checked).toBe(2 * 6 * 6 * 2);
+  });
+
+  it.each([
+    // Real 2026-27 regulation penalty shots (pbp_plays read 2026-11-13).
+    // game, period, code, shooter team, home, away, shooter side
+    [2026020065, 2, "1010", 54, 54, 10, "home"],
+    [2026020094, 2, "0101", 55, 4, 55, "away"],
+  ] as const)(
+    "%s: a period-%s %s penalty shot is not a shootout attempt; the adapter gives no bucket, the builder still says ES (AF-07 open)",
+    (gameid, periodnumber, code, shooter, home, away, side) => {
+      expect(isShootoutPlay({ gameid, periodnumber, periodtype: "REG" })).toBe(
+        false,
+      );
+      const digits = parseSituationDigits(code)!;
+      expect(sideOf(shooter, home)).toBe(side);
+      expect(classifyEventStrengthBucket(digits, side)).toBeNull();
+      // The derived builder is not switched until the coordinated penalty-shot
+      // column rollout (TJ, 2026-11-13); flip this when it is.
+      expect(strengthForTeam(digits, shooter, home, away)).toBe("es");
+    },
+  );
+
+  it("drops a shootout attempt by period before either classifier sees it", () => {
+    expect(
+      isShootoutPlay({ gameid: 2026020239, periodnumber: 5, periodtype: "SO" }),
+    ).toBe(true);
+    expect(
+      classifyEventStrengthBucket(parseSituationDigits("0101")!, "away"),
+    ).toBeNull();
   });
 });

@@ -60,7 +60,8 @@ describe("bounded draft refresh", () => {
     const { req, res } = fixture({ scheduled: "true" }); await handler(req, res);
     expect(res.body.skipped).toBe(true); expect(mocks.preview).not.toHaveBeenCalled();
     const row = auditRow();
-    expect(row.status).toBe("success");
+    // Decision 42 (cron audit): an explicit `skipped: true` receipt is recorded as skipped, not success.
+    expect(row.status).toBe("skipped");
     expect(JSON.parse(row.details.response)).toEqual({ success: true, skipped: true, reason: "Prospect writes are disabled." });
   });
   it("resumes the claimed cursor and persists progress after the batch succeeds", async () => {
@@ -109,7 +110,7 @@ describe("bounded draft refresh", () => {
     const { req, res } = fixture({ scheduled: "true" }); mocks.rpc.mockResolvedValue({ data: false, error: null });
     await handler(req, res); expect(res.body.skipped).toBe(true); expect(mocks.preview).not.toHaveBeenCalled();
     expect(mocks.state.updates).toHaveLength(0);
-    expect(auditRow().status).toBe("success");
+    expect(auditRow().status).toBe("skipped");
   });
   it("honors an explicit dry run even when scheduled writes are enabled", async () => {
     enableWrites();

@@ -290,6 +290,7 @@ import {
 import {
   computeOpponentGoalieFinishingContext,
   fetchOpponentGoalieCandidateQuality,
+  OPPONENT_GOALIE_ADJUSTMENT,
   type OpponentGoalieFinishingContext,
 } from "../opponentGoalieQuality";
 import {
@@ -1955,7 +1956,7 @@ export async function runPerGameSkaterStage(args: {
       metrics.data_quality.team_level_context_adjustments_applied += 1;
     }
     // Opponent goalie (W1 P0 #21): posterior save quality from pre-cutoff history, mixed by start
-    // probability with unresolved mass at league average; goals per shot scale by the ratio.
+    // probability with unresolved mass at league average. Labelled context only (decision 148).
     const leagueSavePct = await getSeasonLeagueSavePct(asOfDate, args.leagueSavePctCache ?? localLeagueSavePctCache);
     if (leagueSavePct.warning && !metrics.warnings.includes(leagueSavePct.warning)) metrics.warnings.push(leagueSavePct.warning);
     const opponentGoalieCandidates = await fetchOpponentGoalieCandidateQuality({
@@ -1970,13 +1971,13 @@ export async function runPerGameSkaterStage(args: {
       : null;
     if (opponentGoalieFinishing != null) {
       metrics.data_quality.opponent_goalie_context_profiles_found += 1;
-      metrics.data_quality.opponent_goalie_context_adjustments_applied += 1;
     }
-    // Assists are shares of on-ice goals, so they follow the goal effect rather than a second term.
+    // Decision 148 (Astra AF-06): neutral until validated. Goals and assists take no opponent-goalie
+    // multiplier until a held-out study of the final skater output passes; the posterior stays context.
     const opponentGoalieContextAdjustment = {
       sampleWeight: opponentGoalieFinishing?.resolvedStartMass ?? 0,
-      goalRateMultiplier: opponentGoalieFinishing?.goalRateMultiplier ?? 1,
-      assistRateMultiplier: opponentGoalieFinishing?.goalRateMultiplier ?? 1,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1,
       starterCertainty: opponentGoalieFinishing?.candidates[0]?.startProbability ?? 0,
     };
     if (!teamRestDaysCache.has(teamDateKey(teamId))) {
@@ -3368,7 +3369,7 @@ export async function runPerGameSkaterStage(args: {
               unresolved_start_mass: p.opponentGoalieFinishing
                 ? Number(p.opponentGoalieFinishing.unresolvedStartMass.toFixed(4)) : null,
               start_mass_normalized: p.opponentGoalieFinishing?.startMassNormalized ?? null,
-              pass_through: p.opponentGoalieFinishing?.passThrough ?? null,
+              adjustment: OPPONENT_GOALIE_ADJUSTMENT,
               candidates: (p.opponentGoalieFinishing?.candidates ?? []).map((c) => ({
                 goalie_id: c.goalieId,
                 start_probability: Number(c.startProbability.toFixed(4)),
@@ -3763,6 +3764,8 @@ export async function runPerGameSkaterStage(args: {
         }
         const latest = [reserveEv.get(candidate.playerId)?.game_date, reservePp.get(candidate.playerId)?.game_date]
           .filter((date): date is string => typeof date === "string").sort().at(-1) ?? null;
+        // Availability and time away are states beside the if-plays line, never folded into it (decision 132.2/132.3);
+        // a scratch for this game labels the row scratched_not_expected_to_dress (decision 31).
         const row = buildReserveSkaterRow({
           runId, asOfDate, horizonGames, gameId: game.id, playerId: candidate.playerId, teamId, opponentTeamId,
           reason: candidate.reason, line, horizonScalar: teamHorizonTotalScalar,
@@ -3770,12 +3773,11 @@ export async function runPerGameSkaterStage(args: {
             availabilityEventId: availabilityEventByPlayer.get(candidate.playerId)?.event_id ?? null,
             latestMetricDate: latest,
           },
+          availability: skaterAvailabilityForGame({ gameId: game.id, event: availabilityEventByPlayer.get(candidate.playerId), inLineup: false }),
+          timeAway: timeAwayDisclosure(timeAwayEvidence(latest, asOfDate)),
         });
         reserveProjectedIds.push(candidate.playerId);
-        // Availability and time away are states beside the if-plays line, never folded into it (decision 132.2/132.3).
-        return [{ ...row, uncertainty: { ...row.uncertainty,
-          availability: skaterAvailabilityForGame({ gameId: game.id, event: availabilityEventByPlayer.get(candidate.playerId), inLineup: false }),
-          time_away: timeAwayDisclosure(timeAwayEvidence(latest, asOfDate)) } }];
+        return [row];
       });
       metrics.data_quality.reserve_skaters_projected =
         (metrics.data_quality.reserve_skaters_projected ?? 0) + reserveRows.length;

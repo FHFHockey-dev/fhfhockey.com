@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createDefaultTeamLandingFilterState } from "./teamStatsFilters";
 import {
@@ -686,6 +686,102 @@ describe("sortTeamStatsRows (W2-P0-7, rule 20)", () => {
     expect(
       sortTeamStatsRows(allNull, { sortKey: "shPct", direction: "desc" }).map((row: any) => row.teamLabel)
     ).toEqual(["AAA", "BBB", "CCC", "DDD"]);
+  });
+});
+
+describe("queryTeamStatsLanding season coverage (rule 19, contract nhl-game-state-v1)", () => {
+  type GameRow = {
+    id: number;
+    seasonId: number;
+    type: number;
+    date: string;
+    startTime: string;
+    game_state: string | null;
+    game_schedule_state: string | null;
+    game_state_observed_at: string | null;
+  };
+  const game = (overrides: Partial<GameRow> & Pick<GameRow, "id">): GameRow => ({
+    seasonId: 20252026,
+    type: 2,
+    date: "2026-04-01",
+    startTime: "2026-04-01T23:00:00.000Z",
+    game_state: null,
+    game_schedule_state: null,
+    game_state_observed_at: null,
+    ...overrides,
+  });
+  // Both tables answer row pages (range) and exact head counts (awaited builder).
+  const coverageClient = (games: GameRow[], summaryCount: number) => ({
+    from(table: string) {
+      const rows: Array<Record<string, unknown>> = table === "games" ? games : [];
+      if (table !== "games" && table !== "team_underlying_stats_summary") {
+        throw new Error(`Unexpected table: ${table}`);
+      }
+      const filters: Array<(row: Record<string, unknown>) => boolean> = [];
+      const matching = () => rows.filter((row) => filters.every((keep) => keep(row)));
+      const builder = {
+        select: () => builder,
+        eq: (column: string, value: unknown) => {
+          filters.push((row) => row[column] === value);
+          return builder;
+        },
+        lt: (column: string, value: string) => {
+          filters.push((row) => String(row[column]) < value);
+          return builder;
+        },
+        lte: (column: string, value: string) => {
+          filters.push((row) => String(row[column]) <= value);
+          return builder;
+        },
+        gte: (column: string, value: string) => {
+          filters.push((row) => String(row[column]) >= value);
+          return builder;
+        },
+        order: () => builder,
+        range: async (from: number, to: number) => ({
+          data: matching().slice(from, to + 1),
+          error: null,
+        }),
+        then: (resolve: (value: unknown) => unknown) =>
+          resolve({
+            data: null,
+            error: null,
+            count: table === "games" ? matching().length : summaryCount,
+          }),
+      };
+      return builder;
+    },
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("counts a game as completed by its stored state: a LIVE late game dated before today is not", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-04-03T03:30:00.000Z"));
+    const supabase = coverageClient(
+      [
+        game({ id: 1, game_state: "FINAL", game_schedule_state: "OK",
+          game_state_observed_at: "2026-04-02T02:00:00.000Z" }),
+        // 10 pm ET start on Apr 2: dated before UTC today but still being played.
+        game({ id: 2, date: "2026-04-02", startTime: "2026-04-03T02:00:00.000Z", game_state: "LIVE",
+          game_schedule_state: "OK", game_state_observed_at: "2026-04-03T03:20:00.000Z" }),
+        // No stored state: the labelled start + 8 h fallback decides.
+        game({ id: 3 }),
+        // Postponed: never completed.
+        game({ id: 4, date: "2026-04-02", startTime: "2026-04-02T23:00:00.000Z", game_state: "FUT",
+          game_schedule_state: "PPD", game_state_observed_at: "2026-04-02T20:00:00.000Z" }),
+        game({ id: 5, date: "2026-04-03", startTime: "2026-04-03T23:00:00.000Z", game_state: "FUT",
+          game_schedule_state: "OK", game_state_observed_at: "2026-04-03T03:00:00.000Z" }),
+      ],
+      2
+    );
+    const state = createDefaultTeamLandingFilterState({ currentSeasonId: 20252026, pageSize: 50 });
+
+    const response = await queryTeamStatsLanding({ state, supabase: supabase as never });
+
+    expect(response.coverage).toEqual({ completedGames: 2, summarizedGames: 1 });
   });
 });
 

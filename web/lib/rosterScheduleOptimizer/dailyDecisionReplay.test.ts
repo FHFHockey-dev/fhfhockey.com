@@ -229,6 +229,9 @@ describe("RSO daily decision replay (offline fixture)", () => {
     // Same contract as the shared modeled-head reader: a missing head is unknown.
     expect(buildSkaterModeledHeadTotals({ proj_goals_es: 0.4, proj_goals_pp: null }).goals).toBeNull();
     expect(buildSkaterModeledHeadTotals({ proj_goals_es: 0.4, proj_goals_pp: 0 }).goals).toBe(0.4);
+    // AF-05: a line that carries PK heads but misses one is unknown, never ES + PP.
+    expect(buildSkaterModeledHeadTotals({ proj_goals_es: 0.4, proj_goals_pp: 0, proj_goals_pk: null,
+      proj_assists_pk: 0, proj_shots_pk: 0 }).goals).toBeNull();
     // Starting z leaves the plan's points unknown rather than adding 0.
     const metrics = candidatePlanMetrics(data, intent);
     const zPlans = metrics.candidates.find(row => row.playerId === "z")!.plans;

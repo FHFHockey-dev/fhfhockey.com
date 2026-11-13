@@ -468,7 +468,11 @@ export default function TeamPowerCard({
                   <th scope="col">Speed</th>
                   <th scope="col">Recent</th>
                   <th scope="col">Finish</th>
-                  <th scope="col">Goalie</th>
+                  <th scope="col">
+                    <abbr title="5-on-5 goaltending: expected minus actual goals against at 5-on-5, empty-net goals excluded">
+                      5v5 Goalie
+                    </abbr>
+                  </th>
                   <th scope="col">Stability</th>
                 </tr>
               </thead>

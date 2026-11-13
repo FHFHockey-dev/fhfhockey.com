@@ -1,22 +1,29 @@
 /**
- * Buy Low/Sell High watchlists and market-reference comparability.
+ * Buy Low/Sell High signed-gap lists and market-reference comparability.
  * Consumes Sko Element interpretation records read-only. Nothing here changes a forecast,
  * gap or sign; a market gap exists only for an explicit, comparable reference.
  */
-import type { GapDirection, InterpretationRecord, Measured, SkaterTarget } from "lib/skoElement/contract";
+import { TARGET_LABELS, type GapSign, type InterpretationRecord, type Measured, type SkaterTarget } from "lib/skoElement/contract";
 import { weightedPointsGap } from "lib/skoElement/interpret";
 
 export type WatchTarget = SkaterTarget | "LEAGUE_POINTS";
 
 export type WatchRow = {
   playerId: string; name: string; team: string | null; modelClass: InterpretationRecord["identity"]["modelClass"];
-  target: WatchTarget; observed: Measured; expected: Measured; gap: Measured; direction: GapDirection;
+  target: WatchTarget; observed: Measured; expected: Measured; gap: Measured; gapSign: GapSign; gapLabel: string;
   opportunityLabel: string; evidenceStatus: InterpretationRecord["freshness"]["evidenceStatus"]; sparse: boolean;
   /** Why the row is unranked, if it is. */
   reason: string | null;
 };
 
-export type Watchlists = { rebound: WatchRow[]; cooling: WatchRow[]; level: WatchRow[]; unranked: WatchRow[] };
+export type Watchlists = { positive: WatchRow[]; negative: WatchRow[]; zero: WatchRow[]; unranked: WatchRow[] };
+
+/** A signed difference in explicit units, without an alert or recommendation label. */
+export function formatForecastGap(gap: Measured, unit: string): string {
+  const value = gap.value;
+  if (value === null) return `Forecast − recent: unavailable (${(gap.reason ?? "unavailable").replace(/_/g, " ")})`;
+  return `Forecast − recent: ${value < 0 ? "−" : value > 0 ? "+" : ""}${Math.abs(value).toFixed(2)} ${unit}`;
+}
 
 function rowFor(record: InterpretationRecord, target: WatchTarget, weights: Partial<Record<SkaterTarget, number>>): WatchRow {
   const base = {
@@ -26,22 +33,22 @@ function rowFor(record: InterpretationRecord, target: WatchTarget, weights: Part
   };
   if (record.identity.modelClass === "G") {
     const pending = { value: null, reason: "pending_goalie_adapter" };
-    return { ...base, observed: pending, expected: pending, gap: pending, direction: "unavailable", sparse: false, reason: "pending_goalie_adapter" };
+    return { ...base, observed: pending, expected: pending, gap: pending, gapSign: "unavailable", gapLabel: formatForecastGap(pending, "fantasy points per team game"), sparse: false, reason: "pending_goalie_adapter" };
   }
   if (target === "LEAGUE_POINTS") {
     const view = weightedPointsGap(record, weights);
-    return { ...base, observed: view.observed, expected: view.expected, gap: view.gap, direction: view.direction,
+    return { ...base, observed: view.observed, expected: view.expected, gap: view.gap, gapSign: view.gapSign, gapLabel: formatForecastGap(view.gap, "fantasy points per team game"),
       sparse: record.metrics.some(metric => metric.sparse), reason: view.gap.reason };
   }
   const metric = record.metrics.find(item => item.target === target)!;
   return { ...base, observed: metric.observedPerTeamGame, expected: metric.expectedPerTeamGame, gap: metric.gapPerTeamGame,
-    direction: metric.direction, sparse: metric.sparse, reason: metric.gapPerTeamGame.reason };
+    gapSign: metric.gapSign, gapLabel: formatForecastGap(metric.gapPerTeamGame, `${TARGET_LABELS[target].toLowerCase()} per team game`), sparse: metric.sparse, reason: metric.gapPerTeamGame.reason };
 }
 
 const byName = (a: WatchRow, b: WatchRow) => a.name.localeCompare(b.name) || a.playerId.localeCompare(b.playerId);
 
 /**
- * Rebound = positive signed gap (more expected than recently produced), Cooling = negative.
+ * Positive = more forecast than recently produced; negative = less forecast than recently produced.
  * Inclusion is by sign only: alert magnitude, duration and hysteresis are undecided.
  * Ties break by name then id; unavailable gaps are listed separately, never ranked as zero.
  */
@@ -49,10 +56,10 @@ export function buildWatchlists(records: readonly InterpretationRecord[], target
   weights: Partial<Record<SkaterTarget, number>> = {}): Watchlists {
   const rows = records.map(record => rowFor(record, target, weights));
   return {
-    rebound: rows.filter(row => row.direction === "rebound").sort((a, b) => b.gap.value! - a.gap.value! || byName(a, b)),
-    cooling: rows.filter(row => row.direction === "cooling").sort((a, b) => a.gap.value! - b.gap.value! || byName(a, b)),
-    level: rows.filter(row => row.direction === "level").sort(byName),
-    unranked: rows.filter(row => row.direction === "unavailable").sort(byName),
+    positive: rows.filter(row => row.gapSign === "positive").sort((a, b) => b.gap.value! - a.gap.value! || byName(a, b)),
+    negative: rows.filter(row => row.gapSign === "negative").sort((a, b) => a.gap.value! - b.gap.value! || byName(a, b)),
+    zero: rows.filter(row => row.gapSign === "zero").sort(byName),
+    unranked: rows.filter(row => row.gapSign === "unavailable").sort(byName),
   };
 }
 

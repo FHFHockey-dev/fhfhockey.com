@@ -75,6 +75,13 @@
       color: vars.$text-secondary;
     }
 
+    // Legend for the per-row line source captions.
+    .sourceNote {
+      margin: 0 0 vars.$space-md;
+      font-size: vars.$font-size-xs;
+      color: vars.$text-secondary;
+    }
+
     .tables {
       .table {
         margin-bottom: vars.$space-xl;
@@ -185,6 +192,20 @@
           .changesVisual {
             display: flex;
             align-items: center;
+          }
+
+          // The L2 → L1 change with its line source ("5v5 units" / "Legacy lines") under it.
+          .lineChanges {
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+          }
+
+          .lineSource {
+            font-size: vars.$font-size-xs;
+            font-weight: 400;
+            color: vars.$text-secondary;
+            white-space: nowrap;
           }
 
           .abbreviation {

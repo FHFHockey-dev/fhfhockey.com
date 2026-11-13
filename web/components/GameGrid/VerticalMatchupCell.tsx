@@ -3,7 +3,7 @@ import React from "react";
 import Image from "next/legacy/image";
 import Tooltip from "./PDHC/Tooltip";
 import PoissonHeatmap from "./PDHC/PoissonHeatMap";
-import { formatWinOdds } from "./utils/calcWinOdds";
+import { calculateBlendedWinOdds, formatWinOdds, GAME_GRID_WIN_ODDS } from "./utils/calcWinOdds";
 import { useTeam } from "./contexts/GameGridContext";
 import styles from "./GameGrid.module.scss"; // Or create a dedicated module if desired
 
@@ -40,27 +40,32 @@ export default function VerticalMatchupCell({
   const hasResult =
     gameData.homeTeam.score !== undefined &&
     gameData.awayTeam.score !== undefined;
+  // Win odds are read through the withheld path (decision 64), never from the raw payload.
+  const us = home ? gameData.homeTeam : gameData.awayTeam;
+  const blendedWinOdds = hasResult ? null : calculateBlendedWinOdds(us.winOdds, us.apiWinOdds);
+  const oddsTitle = !hasResult && blendedWinOdds === null && GAME_GRID_WIN_ODDS.status === "unavailable"
+    ? GAME_GRID_WIN_ODDS.message : undefined;
   const displayValue = hasResult
     ? `${gameData.homeTeam.score}-${gameData.awayTeam.score}`
-    : (home ? gameData.homeTeam.winOdds : gameData.awayTeam.winOdds) != null
-    ? formatWinOdds(
-        home ? gameData.homeTeam.winOdds! : gameData.awayTeam.winOdds!
-      )
-    : "-";
+    : blendedWinOdds !== null ? formatWinOdds(blendedWinOdds)
+    : oddsTitle ? "Odds n/a" : "-";
+  const cellLabel = `${home ? "Home game vs" : "Away game at"} ${opponentTeam.name}. ${
+    oddsTitle ? `${displayValue}: ${oddsTitle}` : displayValue}. Open game details.`;
 
   const tooltipContent = (
     <div>
       <PoissonHeatmap
-        homeTeamId={home ? gameData.homeTeam.id : opponent.id}
-        awayTeamId={home ? opponent.id : gameData.homeTeam.id}
+        homeTeamId={gameData.homeTeam.id}
+        awayTeamId={gameData.awayTeam.id}
         gameId={gameData.id}
       />
     </div>
   );
 
   return (
-    <Tooltip content={tooltipContent}>
+    <Tooltip content={tooltipContent} label={cellLabel}>
       <div
+        title={oddsTitle}
         style={{
           display: "flex",
           flexDirection: "column",

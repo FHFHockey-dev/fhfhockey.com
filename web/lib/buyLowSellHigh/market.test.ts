@@ -14,15 +14,25 @@ const deepFreeze = <T,>(value: T): T => {
 describe("watchlists", () => {
   it("ranks by the shared signed gap with deterministic order and keeps the Sko sign", () => {
     const lists = buildWatchlists(records, "POINTS");
-    const rebound = lists.rebound.map(row => row.gap.value!);
-    const cooling = lists.cooling.map(row => row.gap.value!);
+    const rebound = lists.positive.map(row => row.gap.value!);
+    const cooling = lists.negative.map(row => row.gap.value!);
     expect(rebound).toEqual([...rebound].sort((a, b) => b - a));
     expect(cooling).toEqual([...cooling].sort((a, b) => a - b));
-    for (const row of [...lists.rebound, ...lists.cooling, ...lists.level]) {
+    for (const row of [...lists.positive, ...lists.negative, ...lists.zero]) {
       const metric = byId(row.playerId).metrics.find(item => item.target === "POINTS")!;
       expect(row.gap).toEqual(metric.gapPerTeamGame);
-      expect(row.direction).toBe(metric.direction);
+      expect(row.gapSign).toBe(metric.gapSign);
     }
+  });
+
+  it("names signed differences with units without alert labels", () => {
+    const record = structuredClone(byId("fx-f5"));
+    const metric = record.metrics.find(item => item.target === "POINTS")!;
+    metric.gapSign = "negative";
+    metric.gapPerTeamGame = { value: -0.15, reason: null };
+    const lists = buildWatchlists([record], "POINTS");
+    expect(lists.negative[0].gapLabel).toBe("Forecast − recent: −0.15 points per team game");
+    expect(JSON.stringify(lists)).not.toMatch(/rebound|cooling|watch/i);
   });
 
   it("lists unavailable gaps separately with their reasons, never as zero", () => {
@@ -38,12 +48,12 @@ describe("watchlists", () => {
   it("breaks equal gaps by name then id", () => {
     const base = byId("fx-f5");
     const twin = { ...structuredClone(base), identity: { ...base.identity, playerId: "fx-twin", name: "Aaa Fixture Twin" } };
-    const cooling = buildWatchlists([base, twin], "POINTS").cooling;
+    const cooling = buildWatchlists([base, twin], "POINTS").negative;
     expect(cooling.map(row => row.playerId)).toEqual(["fx-twin", "fx-f5"]);
   });
 
   it("keeps role context on a reversal instead of turning it into a recommendation", () => {
-    const demoted = buildWatchlists(records, "POINTS").rebound.find(row => row.playerId === "fx-f3")!;
+    const demoted = buildWatchlists(records, "POINTS").positive.find(row => row.playerId === "fx-f3")!;
     expect(demoted.opportunityLabel).toBe("Opportunity falling; durability uncertain");
   });
 

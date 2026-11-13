@@ -13,6 +13,8 @@ import {
   teamWinProbability,
 } from "./goalieOutcomes";
 import { blendSeasonLeagueSavePct, LEAGUE_SAVE_PCT_CARRYOVER_SHOTS } from "./leagueSavePct";
+import { OVERTIME_RULE, finalWinProbabilitiesFromRegulation } from "lib/game-predictions/overtimeRule";
+import { summarizeGameMarketRows, type MarketPriceContextRow } from "../queries/market-queries";
 
 vi.mock("lib/supabase/server", () => ({ default: { from: () => { throw new Error("no database in unit tests"); } } }));
 
@@ -61,16 +63,76 @@ describe("goalie outcome math", () => {
     expect(() => teamWinProbability(Number.NaN, 3)).toThrow();
   });
 
-  it("de-vigs a two-way moneyline by proportional normalisation", () => {
-    const outcome = (key: string, price: number) => ({ outcomeKey: key, averageLineValue: null, averagePriceAmerican: price,
-      averageImpliedProbability: null, sportsbookCount: 1 });
-    const h2h = { marketType: "h2h", sourceRank: 1, sourceNames: ["synthetic"], sportsbookKeys: ["synthetic"], observedAt: null,
-      freshnessExpiresAt: null, outcomes: [outcome("team:AAA", -150), outcome("team:BBB", 130)] };
-    const home = marketTeamWinProbability(h2h, "AAA", "BBB")!;
-    const away = marketTeamWinProbability(h2h, "BBB", "AAA")!;
+  // Astra AF-03 / decision 45: a frozen regulation distribution for unequal teams (lambda 4 vs 2,
+  // shrink 0.75 -> 3.75 vs 2.25, tie x1.33). The old f/(f+a) OT split gave .7380469927; the
+  // complement and monotonicity checks above pass under both splits, this one does not.
+  it("splits a regulation tie for unequal teams by the shared 50/50 overtime rule", () => {
+    const frozen = { homeRegulationWin: 0.6215835796, awayRegulationWin: 0.1920749595, regulationTie: 0.1863414609 };
+    expect(OVERTIME_RULE.homeShareOfTie).toBe(0.5); // a home edge would need this consumer to pass the side
+    const shared = finalWinProbabilitiesFromRegulation(frozen)!;
+    expect(teamWinProbability(4, 2)).toBeCloseTo(0.71475431, 8);
+    expect(teamWinProbability(4, 2)).toBeCloseTo(shared.home, 9);
+    expect(teamWinProbability(2, 4)).toBeCloseTo(shared.away, 9);
+    expect(Math.abs(teamWinProbability(4, 2) - 0.7380469927)).toBeGreaterThan(0.02);
+  });
+
+  const quote = (book: string, team: string, price: number, observedAt: string | null = "2026-10-10T17:00:00.000Z",
+    expiresAt: string | null = "2026-10-10T17:15:00.000Z") => ({ sportsbook_key: book, outcome_key: `team:${team}`,
+    line_value: null, price_american: price, source_observed_at: observedAt, freshness_expires_at: expiresAt });
+  const h2hOf = (quotes: ReturnType<typeof quote>[]) => ({ marketType: "h2h", sourceRank: 1, sourceNames: ["synthetic"],
+    sportsbookKeys: Array.from(new Set(quotes.map((q) => q.sportsbook_key))), observedAt: null, freshnessExpiresAt: null,
+    outcomes: [], quotes });
+
+  it("de-vigs each book's two-way moneyline and takes the median across books", () => {
+    const one = h2hOf([quote("dk", "AAA", -150), quote("dk", "BBB", 130)]);
+    const home = marketTeamWinProbability(one, "AAA", "BBB")!;
+    const away = marketTeamWinProbability(one, "BBB", "AAA")!;
     expect(home).toBeCloseTo(0.6 / (0.6 + 100 / 230), 10);
     expect(home + away).toBeCloseTo(1, 12);
-    expect(marketTeamWinProbability(h2h, "AAA", "CCC")).toBeNull();
+    expect(marketTeamWinProbability(one, "AAA", "CCC")).toBeNull();
+    const fd = 0.5 / (0.5 + 0.5);
+    const two = h2hOf([quote("dk", "AAA", -150), quote("dk", "BBB", 130), quote("fd", "AAA", -110), quote("fd", "BBB", -110)]);
+    expect(marketTeamWinProbability(two, "AAA", "BBB")).toBeCloseTo((home + fd) / 2, 10);
+    expect(marketTeamWinProbability(two, "AAA", "BBB")! + marketTeamWinProbability(two, "BBB", "AAA")!).toBeCloseTo(1, 12);
+  });
+
+  // Astra AF-04: disjoint books, mixed ages, missing timestamps and average-only summaries never pair.
+  it("rejects unmatched, mixed-age and untimestamped moneyline quotes", () => {
+    expect(marketTeamWinProbability(h2hOf([quote("dk", "AAA", -150), quote("fd", "BBB", 130)]), "AAA", "BBB")).toBeNull();
+    expect(marketTeamWinProbability(h2hOf([quote("dk", "AAA", -150),
+      quote("dk", "BBB", 130, "2026-10-10T16:00:00.000Z", "2026-10-10T17:15:00.000Z")]), "AAA", "BBB")).toBeNull();
+    expect(marketTeamWinProbability(h2hOf([quote("dk", "AAA", -150, null), quote("dk", "BBB", 130, null)]), "AAA", "BBB"))
+      .toBeNull();
+    expect(marketTeamWinProbability(h2hOf([quote("dk", "AAA", -150, undefined, null), quote("dk", "BBB", 130, undefined, null)]),
+      "AAA", "BBB")).toBeNull();
+    expect(marketTeamWinProbability(h2hOf([quote("dk", "AAA", -150), quote("dk", "AAA", -140), quote("dk", "BBB", 130)]),
+      "AAA", "BBB")).toBeNull();
+    const averagesOnly = { ...h2hOf([]), quotes: undefined, outcomes: [
+      { outcomeKey: "team:AAA", averageLineValue: null, averagePriceAmerican: -150, averageImpliedProbability: null, sportsbookCount: 1 },
+      { outcomeKey: "team:BBB", averageLineValue: null, averagePriceAmerican: 130, averageImpliedProbability: null, sportsbookCount: 1 }] };
+    expect(marketTeamWinProbability(averagesOnly, "AAA", "BBB")).toBeNull();
+  });
+
+  it("reads only fresh, complete same-book pairs from stored rows", () => {
+    const now = "2026-10-10T17:05:00.000Z";
+    const row = (book: string, team: string, price: number, observedAt: string | null, expiresAt: string | null):
+      MarketPriceContextRow => ({ snapshot_date: "2026-10-10", game_id: 1, market_type: "h2h", sportsbook_key: book,
+      outcome_key: `team:${team}`, line_value: null, price_american: price, implied_probability: null, source_rank: 1,
+      source_observed_at: observedAt, freshness_expires_at: expiresAt, provenance: { provider: "synthetic" }, metadata: {} });
+    const fresh = ["2026-10-10T17:00:00.000Z", "2026-10-10T17:15:00.000Z"] as const;
+    const expired = ["2026-10-10T09:00:00.000Z", "2026-10-10T09:15:00.000Z"] as const;
+    const read = (rows: MarketPriceContextRow[]) => marketTeamWinProbability(summarizeGameMarketRows(rows, now).h2h, "AAA", "BBB");
+    // Astra's probe: two expired offers from disjoint books once read as .5.
+    expect(read([row("dk", "AAA", -110, ...expired), row("fd", "BBB", -110, ...expired)])).toBeNull();
+    // Fresh disjoint books.
+    expect(read([row("dk", "AAA", -150, ...fresh), row("fd", "BBB", 130, ...fresh)])).toBeNull();
+    // Mixed age inside one book: the expired side drops out, leaving an incomplete pair.
+    expect(read([row("dk", "AAA", -150, ...fresh), row("dk", "BBB", 130, ...expired)])).toBeNull();
+    // Untimestamped rows.
+    expect(read([row("dk", "AAA", -150, null, null), row("dk", "BBB", 130, null, null)])).toBeNull();
+    // A complete fresh pair is read even beside a stale book.
+    expect(read([row("dk", "AAA", -150, ...fresh), row("dk", "BBB", 130, ...fresh),
+      row("fd", "AAA", 200, ...expired), row("fd", "BBB", -240, ...expired)])).toBeCloseTo(0.6 / (0.6 + 100 / 230), 10);
   });
 
   it("moves the team win probability by the starter's goals-per-shot ratio", () => {

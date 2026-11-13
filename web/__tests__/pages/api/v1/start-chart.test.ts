@@ -1202,6 +1202,28 @@ describe("/api/v1/start-chart", () => {
     expect(row(masked.player_id).proj_shots).toBeCloseTo(3.5, 6);
   });
 
+  it("never scores a scoring line missing one PK head as complete (AF-05)", async () => {
+    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
+    const missingPk = { ...defaultProjection, player_id: 8478404, proj_goals_pk: null };
+    const prior = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => table === "forge_runs" ? createQueryBuilder(() => ({
+      data: [{ run_id: "missing-pk-run", as_of_date: "2026-02-07", git_sha: "a".repeat(40),
+        metrics: { input_provenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }) },
+        forge_player_projections: [defaultProjection, missingPk] }], error: null,
+    })) : prior(table));
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    const row = res.body.players.find((player: any) => player.player_id === missingPk.player_id);
+    // ES .4 + PP .2 is not the goals total once the row carries PK heads and the goals one is missing.
+    expect(row).toMatchObject({ proj_goals: null, proj_fantasy_points: null, position_ranks: {} });
+    expect(row.proj_assists).toBeCloseTo(0.6, 6);
+    expect(row.proj_shots).toBeCloseTo(3.5, 6);
+    expect(row.proj_pp_points).toBeCloseTo(0.3, 6);
+  });
+
   describe("legacy run external-input exclusion proof", () => {
     // forge_runs rows newest first; a run_id filter, when the reader sends one, selects that run.
     const install = (runs: Array<Record<string, unknown>>) => {

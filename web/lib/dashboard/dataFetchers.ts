@@ -69,6 +69,9 @@ export type SosResponse = {
   /** descriptive-sos-v2 labels (absent on the empty fallback). */
   sosVersion?: string;
   pastView?: string;
+  /** Headline base (decision 146): "points-pct". */
+  metric?: string;
+  definition?: string;
   cutoffAt?: string | null;
   teams: Array<{
     team: string;
@@ -79,6 +82,7 @@ export type SosResponse = {
     past: SosBucketV2 & { pendingFixtures: number };
     future: SosBucketV2;
     combinedWinPct: number | null;
+    combinedPointsPct: number | null;
     sosScore: number | null;
   }>;
 };

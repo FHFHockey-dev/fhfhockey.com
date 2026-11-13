@@ -3,12 +3,14 @@
 // Every constant below was fitted on 2018-19..2024-25 regular seasons (wgo_goalie_stats /
 // wgo_team_stats, read-only, 2026-10-22); 2025-26 was held out for the backtest in
 // scripts/forge-goalie-backtest.ts.
-import type { MarketTypeSummary } from "../queries/market-queries";
+import { finalWinProbabilitiesFromRegulation } from "lib/game-predictions/overtimeRule";
+import type { MarketSummaryQuote, MarketTypeSummary } from "../queries/market-queries";
 import {
   MAX_VALID_BOOK_SUM,
   MIN_VALID_BOOK_SUM,
   americanToImpliedProbability,
-  devigProportional
+  devigProportional,
+  median
 } from "../utils/devig";
 
 // Beta prior strength (shots) for save %. Split-half reliability gave k ~2,200, year-over-year
@@ -86,8 +88,8 @@ function poissonPmf(lambda: number): number[] {
 
 /**
  * P(team wins, including OT/SO) from both teams' expected goals. The two teams' values sum to
- * exactly 1: regulation is an independent Poisson race with inflated ties, and OT/SO goes to the
- * team with the larger share of scoring.
+ * exactly 1: regulation is an independent Poisson race with inflated ties, and a regulation tie is
+ * split by the shared overtime rule (game-predictions/overtimeRule, 50/50).
  */
 export function teamWinProbability(
   lambdaFor: number,
@@ -117,15 +119,32 @@ export function teamWinProbability(
   }
   tie /= win + tie + loss;
   const inflatedTie = clamp(tie * tieInflation, 0, 0.95);
-  const regulationWin = (win + loss > 0 ? win / (win + loss) : 0.5) * (1 - inflatedTie);
-  const overtimeShare = f + a > 0 ? f / (f + a) : 0.5;
-  return clamp(regulationWin + inflatedTie * overtimeShare, 0, 1);
+  const regulationWinShare = win + loss > 0 ? win / (win + loss) : 0.5;
+  // OT/SO goes through the one shared rule (owner decision 45). The rule has no home edge
+  // (homeShareOfTie 0.5), so placing this team in its home slot is exact without knowing the side.
+  const final = finalWinProbabilitiesFromRegulation({
+    homeRegulationWin: regulationWinShare * (1 - inflatedTie),
+    awayRegulationWin: (1 - regulationWinShare) * (1 - inflatedTie),
+    regulationTie: inflatedTie
+  });
+  if (!final) throw new Error("Regulation outcome probabilities must sum to 1");
+  return clamp(final.home, 0, 1);
+}
+
+function quoteTimestamp(value: string | null | undefined): number | null {
+  if (typeof value !== "string" || value.trim().length === 0) return null;
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : null;
 }
 
 /**
- * De-vigged moneyline P(team wins) from a stored h2h summary (outcome keys `team:<ABBR>`), by
- * proportional normalisation of the two implied probabilities (utils/devig). Null when either side
- * is missing or the pair does not look like a real book (e.g. decimal odds stored as American).
+ * De-vigged moneyline P(team wins) from a stored h2h summary (outcome keys `team:<ABBR>`). Each
+ * sportsbook is de-vigged on its own (proportional normalisation, utils/devig) and the books are
+ * then combined by the median, so the two teams' values still sum to 1. A book counts only with a
+ * complete pair from one observation: exactly one quote per side, both observed at the same time
+ * and carrying a freshness expiry, and a sum inside the book sanity band. Quotes from different
+ * books, ages or untimestamped rows are never paired; with no such pair the market is null.
+ * Freshness against the decision time is enforced when the summary is built (market-queries).
  */
 export function marketTeamWinProbability(
   h2h: MarketTypeSummary | null | undefined,
@@ -133,20 +152,34 @@ export function marketTeamWinProbability(
   opponentAbbrev: string | null
 ): number | null {
   if (!h2h || !teamAbbrev || !opponentAbbrev) return null;
-  const implied = (abbrev: string) => {
-    const outcome = h2h.outcomes.find((o) => o.outcomeKey === `team:${abbrev}`);
-    if (!outcome) return null;
-    const direct = outcome.averageImpliedProbability;
-    return direct != null && Number.isFinite(direct) && direct > 0 && direct < 1
-      ? direct
-      : americanToImpliedProbability(outcome.averagePriceAmerican);
-  };
-  const team = implied(teamAbbrev);
-  const opponent = implied(opponentAbbrev);
-  if (team == null || opponent == null) return null;
-  const bookSum = team + opponent;
-  if (bookSum < MIN_VALID_BOOK_SUM || bookSum > MAX_VALID_BOOK_SUM) return null;
-  return devigProportional([team, opponent])?.probabilities[0] ?? null;
+  const teamKey = `team:${teamAbbrev}`;
+  const opponentKey = `team:${opponentAbbrev}`;
+  const sidesByBook = new Map<string, MarketSummaryQuote[]>();
+  for (const quote of h2h.quotes ?? []) {
+    if (quote.outcome_key !== teamKey && quote.outcome_key !== opponentKey) continue;
+    const list = sidesByBook.get(quote.sportsbook_key) ?? [];
+    list.push(quote);
+    sidesByBook.set(quote.sportsbook_key, list);
+  }
+  const bookProbabilities: number[] = [];
+  for (const quotes of sidesByBook.values()) {
+    const team = quotes.filter((q) => q.outcome_key === teamKey);
+    const opponent = quotes.filter((q) => q.outcome_key === opponentKey);
+    if (team.length !== 1 || opponent.length !== 1) continue;
+    const observedAt = [team[0], opponent[0]].map((q) => quoteTimestamp(q.source_observed_at));
+    const expiresAt = [team[0], opponent[0]].map((q) => quoteTimestamp(q.freshness_expires_at));
+    if (observedAt.some((t) => t == null) || expiresAt.some((t) => t == null)) continue;
+    if (observedAt[0] !== observedAt[1]) continue;
+    if (expiresAt.some((t) => t! < observedAt[0]!)) continue;
+    const teamImplied = americanToImpliedProbability(team[0].price_american);
+    const opponentImplied = americanToImpliedProbability(opponent[0].price_american);
+    if (teamImplied == null || opponentImplied == null) continue;
+    const bookSum = teamImplied + opponentImplied;
+    if (bookSum < MIN_VALID_BOOK_SUM || bookSum > MAX_VALID_BOOK_SUM) continue;
+    const devigged = devigProportional([teamImplied, opponentImplied]);
+    if (devigged) bookProbabilities.push(devigged.probabilities[0]);
+  }
+  return median(bookProbabilities);
 }
 
 /**

@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import {
   computeSosRatingsV2,
+  SOS_HEADLINE,
   TEAM_SOS_READER_COLUMNS,
   type SosRatingV2,
   type TeamSosReaderRow
@@ -23,8 +24,9 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
+// Decision 146: points% headline; win% stays alongside as a secondary value.
 const SOS_DEFINITION =
-  "Mean over fixtures of opponents' win% (W / GP), excluding games against the team. Past counts final games only, with opponents' records as of the cutoff; started or postponed games are pending, never played. Future uses opponents' records to date.";
+  `${SOS_HEADLINE.definition} Each value is a mean over fixtures. Past counts final games only; started or postponed games are pending, never played. Future uses opponents' records to date. ${SOS_HEADLINE.asOfNote} sosScore = combinedPointsPct x 100; winPct and combinedWinPct are secondary.`;
 
 /** Latest descriptive-sos-v2 snapshot; v1 sos_standings rows are not served. */
 async function fetchLatestRows(seasonId: number): Promise<TeamSosReaderRow[]> {
@@ -67,6 +69,7 @@ export default async function handler(
     const labels = {
       sosVersion: DESCRIPTIVE_SOS_VERSION,
       pastView: TEAM_SOS_PAST_VIEW,
+      metric: SOS_HEADLINE.metric,
       definition: SOS_DEFINITION
     };
 
@@ -121,8 +124,9 @@ export default async function handler(
         };
       };
       const summary = {
-        pastWinPct: summarize(ratings.map((r) => r.past.winPct)),
-        futureWinPct: summarize(ratings.map((r) => r.future.winPct)),
+        pastPointsPct: summarize(ratings.map((r) => r.past.pointsPct)),
+        futurePointsPct: summarize(ratings.map((r) => r.future.pointsPct)),
+        combinedPointsPct: summarize(ratings.map((r) => r.combinedPointsPct)),
         combinedWinPct: summarize(ratings.map((r) => r.combinedWinPct))
       };
       if (debug) {
