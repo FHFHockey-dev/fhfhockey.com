@@ -186,7 +186,8 @@ Nothing is written before step 6. Steps 1–5 are also the whole `--preflight`.
 
 1. **Cron windows and DB guard** (§9 has the evidence).
    - **Live cron check:** `cron.job` 283 must still be `15 10 * * *` and active, with no run in progress. No other active job may mention the table or route (commands are filtered in the database and never selected). Else stop 4.
-   - **Start margin:** the runner refuses to start inside a guard window, or within 15 minutes of one. It checks again right before the pre-run snapshot. Each call is checked against the window too, and the runner stops 4 inside one (resumable).
+   - **Start margin (25 min):** the runner refuses to start inside a guard window or within 25 minutes of one, and checks again right before the pre-run snapshot.
+   - **Call margin (15 min), via `write_gate()`:** right before every mutating call the runner stops 4 (resumable) if a window is within 15 minutes. It checks before the DB guard and **again after the guard returns**, because the guard can sleep up to 120 s (Astra #435 P2). A run that is allowed to start finishes (about 8 minutes) before the call margin begins.
      - 08:00–08:20 UTC (03:00–03:20 ET)
      - 09:25–11:00 UTC (04:25–06:00 ET)
      - 11:15–11:40 UTC (06:15–06:40 ET)
@@ -326,12 +327,19 @@ Nothing is written before step 6. Steps 1–5 are also the whole `--preflight`.
 
 **Guard window around 283:** 09:25–11:00 UTC = 04:25–06:00 ET.
 - That is 50 minutes before 10:15 and 45 minutes after the route's last observed finish.
-- With the 15-minute start margin, a run must not start between 09:10 and 11:00 UTC (04:10–06:00 ET). Each call is checked again before it is sent.
-- A full run takes about 8 minutes (46 calls at about 3.5 s plus a 5 s pause, the pre-write checks and the 65 s served-cache wait). A run started outside the margin finishes before the next window, and a call can never overlap 283.
-- **Allowed start times:** from 11:40 UTC to 07:44 UTC the next day (06:40 ET to 02:44 ET). The runner refuses to start inside a window or within 15 minutes of one: 07:45–08:20, 09:10–11:00 and 11:00–11:40 UTC.
+- **No mutating call** within 15 minutes of a window: none between 09:10 and 11:00 UTC (04:10–06:00 ET) around 283. This is checked after the DB guard wait, immediately before each call.
+- **No run starts** within 25 minutes of a window: none between 09:00 and 11:40 UTC (04:00–06:40 ET). The 11:15 window's margin extends the 283 zone to 11:40.
+- A full run takes about 8 minutes (46 calls at about 3.5 s plus a 5 s pause, the pre-write checks and the 65 s served-cache wait). A run started outside the start margin finishes before the call margin, and no call can overlap 283.
+- **Allowed start times:** from 11:40 UTC to 07:34 UTC the next day (06:40 ET to 02:34 ET). The runner refuses to start from 07:35 to 08:20 and from 09:00 to 11:40 UTC.
 
 **Tests (16:31Z):**
-- Window arithmetic: 14/14 cases pass. They cover the 15-minute margin edges at 07:44/07:45, 09:09/09:10 and 11:00, each window's inside and edges, and midnight wrap.
+- Window arithmetic: 14/14 cases passed at 16:31Z. They are now in the committed fixture test (below).
+- **Fixture test `test_power_g5v5_loop.py`** (round 6). It loads the runner's window code with a fake clock, guard and stop; no database, secrets or network.
+  - **Clock crossing:** at 09:08:30 the pre-guard check is clear. The guard waits 120 s to 09:10:30, the post-guard check stops 4 (resume from the same date), and no write is sent.
+  - **Controls:** clear before and after the guard (08:40) lets the write through; already at 09:10, it stops before the guard; 10:15 is inside the 283 window.
+  - **Window cases:** 18, covering both margins, every window edge and midnight wrap.
+  - **Result:** 6/6 tests pass. All fail on the previous runner (`9f58e0423`), which had no post-guard check.
+  - Run: `python3 -I tasks/artifacts/calculation-inventory-2026-11-10/master/production/power-g5v5-2026-11-13/test_power_g5v5_loop.py`
 - Live cron check: passed (283 `15 10 * * *` active; no other active job; no run in progress).
 
 ## Commands for TJ

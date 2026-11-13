@@ -8,7 +8,8 @@ Carry-forward (decision 150): the 47 team-dates in carry-manifest.tsv keep the t
 
 Fails closed, in this order (Astra #434 P1 rebuild gate). Nothing is written before step 6.
   1. Cron windows (live-checked: cron 283 must still be the only active job touching the table, at 15 10 * * *)
-     and read-only DB guard. Refuses to start within START_MARGIN_MIN of a window; stops before any call in one.
+     and read-only DB guard. Refuses to start within START_MARGIN_MIN of a window. Immediately before every
+     mutating call, AFTER the DB guard (which can sleep up to 120 s), stops if a window is within CALL_MARGIN_MIN.
   2. Backup: created if missing, then ALWAYS verified: it must hold every (team, date) in range, 32 per date,
      every column, and equal the live row wherever the live row is still the issued v3 row.
   3. Manifest: the 47 keys must equal the live "no genuine game in the lookback" keys, and their values the
@@ -71,7 +72,8 @@ WINDOWS = [(480, 500, "08:00-08:20 UTC (03:00-03:20 ET): morning ingest jobs"),
            (565, 660, "09:25-11:00 UTC (04:25-06:00 ET): cron 283 at 10:15 (route runs ~10:15:01-10:15:06) "
                       "and the 10:05-10:55 FORGE pipeline"),
            (675, 700, "11:15-11:40 UTC (06:15-06:40 ET): sustainability and forecast jobs")]
-START_MARGIN_MIN = 15          # the whole run takes about 8 minutes
+CALL_MARGIN_MIN = 15           # no mutating call within 15 min of a window (so none from 09:10 UTC before 283)
+START_MARGIN_MIN = 25          # a run (about 8 minutes) must finish before the call margin begins
 # Columns the writer copies from the previous stored row (trend10 too: a team with no genuine game has no
 # trend override). pp_tier/pk_tier are recomputed per date, so not compared.
 CARRY_COLS = ["off_rating", "def_rating", "pace_rating", "xgf60", "gf60", "sf60", "xga60", "ga60", "sa60",
@@ -149,8 +151,16 @@ def window_at(margin_min=0):
     return None
 
 
-def in_cron_window():
-    return window_at(0)
+def write_gate(d):
+    """Immediately before a mutating call: no guard window within CALL_MARGIN_MIN, checked before the DB
+    guard and again after it returns, because guard() can sleep up to 120 s (Astra #435 P2)."""
+    w = window_at(CALL_MARGIN_MIN)
+    if w:
+        stop(4, f"guard window within {CALL_MARGIN_MIN} min: {w}", resume_from=d)
+    guard()
+    w = window_at(CALL_MARGIN_MIN)
+    if w:
+        stop(4, f"guard window within {CALL_MARGIN_MIN} min after the DB guard wait: {w}", resume_from=d)
 
 
 def check_cron_jobs():
@@ -501,9 +511,7 @@ if todo:
     if problems:
         stop(8, "pre-run snapshot does not cover the range")
 for n, d in enumerate(todo, 1):
-    if in_cron_window():
-        stop(4, f"entering the guard window {in_cron_window()}", resume_from=d)
-    guard()
+    write_gate(d)  # the window is rechecked after guard() returns, right before the write
     status, dur, j = call(d, dry=False)
     last_write = time.time()
     log(event="call", n=n, date=d, status=status, duration_s=round(dur, 1),
