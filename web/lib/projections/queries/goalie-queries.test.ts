@@ -86,3 +86,22 @@ describe("fetchGoalieRestSplitProfile: pregame cutoff", () => {
     expect(dateFilters).toEqual([["wgo_goalie_stats", "lt", ["date", "2025-11-08"]]]);
   });
 });
+
+describe("credited-start source consolidation regressions", () => {
+  it("does not silently resolve an incomplete appearance label set", async () => {
+    seed([
+      { game_id: 1, game_date: "2026-11-01", goalie_id: STARTER },
+      { game_id: 1, game_date: "2026-11-01", goalie_id: RELIEVER }
+    ], [{ game_id: 1, goalie_id: STARTER, games_started: 1 }], { id: 1, date: "2026-11-01" });
+    const context = await fetchTeamGoalieStarterContext(10, "2026-11-02");
+    expect(context.previousGameStarterGoalieId).toBeNull();
+    expect(context.unknownStartGames).toBe(1);
+  });
+  it("does not overwrite conflicting official label rows", async () => {
+    seed([{ game_id: 1, game_date: "2026-11-01", goalie_id: STARTER }], [
+      { game_id: 1, goalie_id: STARTER, games_started: 0 },
+      { game_id: 1, goalie_id: STARTER, games_started: 1 }
+    ], { id: 1, date: "2026-11-01" });
+    expect((await fetchTeamGoalieStarterContext(10, "2026-11-02")).previousGameStarterGoalieId).toBeNull();
+  });
+});
