@@ -270,3 +270,14 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     - `/api/team-ratings?date=2026-11-12` serves `calculationVersion` (v3) and `sourceThroughDate`;
     - `/stats/team/TOR`, `/forge/command-center`, `/underlying-stats` and `/`.
   - octoberBranch ours-merge `251a4f7bf` pushed 16:43:20Z, with no build at 90 s.
+- **Power ratings v4 rebuild** (decisions 145, 147, 150; TJ "Approve, Claude runs it" after the live no-write preflight):
+  - Preflight at 16:45Z, PREFLIGHT_OK with 0 writes; the Chef confirmed no write, no 2000-01-01 row and no audit row.
+  - Run at 16:46–16:53Z: deployed-writer gate `6f1cb0767`; dry-run probe v4; pre-run snapshot of 1,472 rows (sha256 84d4ac83…); 46 calls (09-29 → 11-13), all 200; one guard wait, which cleared.
+  - Per-date readback: 09-29 10 v4 + 22 carried, 09-30 15 + 17, 10-01 25 + 7, 10-02 31 + 1, then 32 v4. DONE.
+  - Chef readback:
+    - 1,425 `team-power-v4-5v5-goaltending` (09-29..11-13, goalie_rating never null);
+    - 47 `legacy_unversioned`, all source 2026-08-29 and equal to the team's 09-28 row;
+    - 0 v3 left;
+    - `/api/team-ratings?date=2026-09-29` serves 22 legacy (source 2026-08-29) + 10 v4.
+  - Log (on disk, gitignored): `production/power-g5v5-2026-11-13/run/rebuild-2026-11-13T1646Z.jsonl`. Backups: `run/issued-rows-…tsv` and `run/pre-run-20261113T164613Z.tsv`.
+  - Cron 283 writes v4 from 2026-11-14 10:15Z (05:15 ET).
