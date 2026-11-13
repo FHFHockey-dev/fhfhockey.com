@@ -122,3 +122,15 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - **Match rate:** the simulated clock matches official `powerPlayToi` on 238 of 240 sampled team-games exactly. The 2 mismatches look like official-field errors.
 - **Audit false positives:** the per-game audit wrongly unqualifies 7.5% of team-games, all events at manpower-change seconds. A fix was proposed to Codex.
 - **Open:** a disagreement policy (TJ decides, Codex to propose); a full-season run; the storage table and consumer wiring. Mailbox `CLAUDE-PP-CLOCK-QUALIFICATION-EVIDENCE-20261113`.
+
+## IPP rows and WiGO floor (read-only, agent, 2026-11-13; 36 bounded queries)
+**L20 W3-7 D5, 43 rows in 2026-27 (points above on-ice GF):**
+- **31 rows:** the excess points are assists on goals where shift charts have the player **off the ice**, 1–11 s from a shift boundary, so he changed off after the pass. Stored GF equals the shift-chart on-ice count exactly. This is a property of shift-based on-ice counts, not a writer bug. There's no evidence of extra-attacker or empty-net omission: the 4 empty-net goals with the player on ice are all counted.
+- **12 rows:** null GF, because the NHL goalsForAgainst report has no row when the player was on ice for no goals. One exception is unexplained (8480834, game 2026020104).
+- **Recommendation:** rename the guard reason to "points include goals while off ice"; compute IPP only over pooled windows; owner decision on whether a missing report row means 0/0/0.
+- Earlier seasons have about 1,400 such rows each, not examined.
+
+**L4b W3-1 D3, WiGO floors** (2025-26 split-half reliability, threshold ≥ .5 full-season):
+- **PP:** 60 min. Forwards .55, defence .63; 30 min gives only .37–.47.
+- **PK:** about 120 min (.52/.55), and still weak, so label it low reliability.
+- These replace the provisional 30 min, and need owner approval.
