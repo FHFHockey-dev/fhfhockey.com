@@ -2,7 +2,8 @@ import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSPr
 import Image from "next/image";
 import useResizeObserver from "hooks/useResizeObserver";
 import { LinemateMatrixView, ppModeVerdicts, type Mode } from "components/LinemateMatrix";
-import { usePpTeamGameClocks } from "lib/ppShare/usePpTeamGameClocks";
+import { ppClockKey, ppClockVerdict } from "lib/ppShare/serving";
+import { usePpTeamGameClocks, type PpClockGate } from "lib/ppShare/usePpTeamGameClocks";
 import {
   clampTime,
   formatClock,
@@ -10,6 +11,8 @@ import {
   matrixData,
   positionGroup,
   ppSecondsByTeam,
+  ppTimelineVerdicts,
+  type PpTimelineVerdict,
   sortedPlayers,
   statsAt,
   toiAt,
@@ -33,14 +36,15 @@ const MatrixPanel = memo(function MatrixPanel({
   game,
   mode,
   onModeChanged,
+  ppGate,
 }: {
   game: Game;
   mode: Mode;
   onModeChanged: (mode: Mode) => void;
+  ppGate: PpClockGate;
 }) {
   // Decision 152: while PP share is served, PP mode uses the qualified clock and shows only teams whose stored
   // clock is available and matches it.
-  const ppGate = usePpTeamGameClocks([game.id], mode === "pp-toi");
   const servedPpClock = ppGate.status === "on";
   const data = useMemo(() => matrixData(game, mode, servedPpClock), [game, mode, servedPpClock]);
   const teams = useMemo(() => [game.home, game.away], [game]);
@@ -77,6 +81,30 @@ export default function Replay({
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [filter, setFilter] = useState<TimelineFilter>("all");
+  // Decision 152: one stored-clock read for the timeline bands and the PP-mode matrix. While PP share is served, a
+  // team's PP bands are drawn only when they reconcile with the stored qualified clock (never stretched to fit).
+  const ppGate = usePpTeamGameClocks([game.id]);
+  let ppTimeline: Record<number, PpTimelineVerdict> | "pending" | undefined;
+  if (ppGate.status === "loading") ppTimeline = "pending";
+  else if (ppGate.status === "error") {
+    ppTimeline = Object.fromEntries([game.home, game.away].map((team) =>
+      [team.id, { show: false, label: "PP timeline unavailable: the stored PP clock couldn't be loaded." }]));
+  } else if (ppGate.status === "on") {
+    ppTimeline = ppTimelineVerdicts(game, (teamId) => ppClockVerdict(ppGate.clocks.get(ppClockKey(game.id, teamId))));
+  }
+  const hiddenKey = ppTimeline === undefined ? ""
+    : ppTimeline === "pending" ? "pending"
+    : [game.home, game.away].filter((team) => !(ppTimeline as Record<number, PpTimelineVerdict>)[team.id].show)
+      .map((team) => team.id).join(",");
+  const hiddenPpTeams = useMemo<ReadonlySet<number> | "all" | undefined>(
+    () => hiddenKey === "" ? undefined : hiddenKey === "pending" ? "all" : new Set(hiddenKey.split(",").map(Number)),
+    [hiddenKey],
+  );
+  const timelineLabel = (teamId: number) => {
+    if (ppTimeline === undefined || ppTimeline === "pending") return null;
+    const verdict = ppTimeline[teamId];
+    return verdict && !verdict.show ? verdict.label : null;
+  };
   useEffect(() => {
     if (!playing) return;
     // Preserve the existing accelerated replay: the 1x setting advances four game seconds per second.
@@ -402,7 +430,13 @@ export default function Replay({
                     <th colSpan={5} scope="rowgroup">
                       <span>{team.abbrev}</span> {team.name}
                     </th>
-                    <td />
+                    <td>
+                      {timelineLabel(team.id) ? (
+                        <span role="status" aria-label={`${team.abbrev}: ${timelineLabel(team.id)}`}>
+                          {timelineLabel(team.id)}
+                        </span>
+                      ) : null}
+                    </td>
                   </tr>
                   {visiblePlayers
                     .filter((p) => p.teamId === team.id)
@@ -428,7 +462,7 @@ export default function Replay({
                         <td>{formatClock(toiAt(player, time))}</td>
                         <td>{stats.shots[player.id] ?? 0}</td>
                         <td className={styles.trackCell}>
-                          <ShiftBars player={player} game={game} />
+                          <ShiftBars player={player} game={game} hiddenPpTeams={hiddenPpTeams} />
                           <span
                             className={styles.cursor}
                             style={{
@@ -445,7 +479,7 @@ export default function Replay({
           </div>
         </section>
       </div>
-      <MatrixPanel game={game} mode={mode} onModeChanged={onModeChanged} />
+      <MatrixPanel game={game} mode={mode} onModeChanged={onModeChanged} ppGate={ppGate} />
     </>
   );
 }
@@ -487,14 +521,20 @@ const Formation = memo(function Formation({
 const ShiftBars = memo(function ShiftBars({
   player,
   game,
+  hiddenPpTeams,
 }: {
   player: Player;
   game: Game;
+  /** Decision 152: power plays of these teams are not drawn ("all": none are). Omit to draw every band. */
+  hiddenPpTeams?: ReadonlySet<number> | "all";
 }) {
   const group = positionGroup(player.position);
+  const bands = hiddenPpTeams === undefined
+    ? game.powerPlays
+    : hiddenPpTeams === "all" ? [] : game.powerPlays.filter((pp) => !hiddenPpTeams.has(pp.teamId));
   return (
     <div className={styles.track} style={{ backgroundSize: `${300 / game.axisDuration * 100}% 100%` }}>
-      {game.powerPlays.map((pp, i) => (
+      {bands.map((pp, i) => (
         <span
           key={`pp-${i}`}
           className={

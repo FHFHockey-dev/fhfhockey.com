@@ -104,8 +104,10 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 
 - Acceptance criteria: flag-off pin of the rolling writer's upsert rows vs a baseline recorded from 05c43f981^ (= origin/master) by swapping the two files and restoring them from HEAD (verified clean); cross-surface test on real fixtures 2026020131 t18 (120 s, all surfaces agree) and 2026020038 t55 (N/A everywhere). Found: ShiftChart drops situation codes → today's replay bands give 29 s; added qualifiedPowerPlays (served PP mode only), today's path pinned. One bounded read-only read for shooter/scorer ids. 14 files / 224 tests; typecheck 0; ESLint 0. REPORT §16.
 
+- Replay bands (TJ: blocks the release): served bands drawn only when merged band seconds == stored clock_seconds (or N/A with no bands); else withheld whole with "PP timeline unavailable: timing mismatch." (or the stored reason). Gate lifted into Replay (one read for bands + matrix); bands hidden while loading; serving off = today's bands. Cases: 131 t18 withheld + label + 92/8 grid; 131 t19 drawn (578 = 578); 038 t55 N/A no shading; off pinned. REPORT §17.
+
 ## Next
-TJ's serving review (flag on, release, verification) via the Chef; the replay timeline bands (29 s today) are a separate decision. No production write from this lane. Chef routes remaining owner and code items. No production step from this lane.
+TJ's serving review via the Chef. No production write from this lane. Chef routes remaining owner and code items. No production step from this lane.
 
 ## Blockers
 None.

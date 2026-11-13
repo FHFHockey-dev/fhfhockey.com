@@ -1,5 +1,6 @@
 import getPowerPlayBlocks from "utils/getPowerPlayBlocks";
 import type { PlayerData, TOIData, Mode } from "components/LinemateMatrix";
+import type { PpShareVerdict } from "lib/ppShare/serving";
 
 export type Interval = { start: number; end: number };
 export type Period = {
@@ -421,23 +422,58 @@ function overlap(a: Interval[], b: Interval[]): Interval[] {
   }
   return result;
 }
-/**
- * Decision 152: this replay's power-play seconds per team (merged intervals). While PP share is served, the PP-mode
- * matrix shows only when this equals the stored qualified clock.
- */
-export function ppSecondsByTeam(game: Game): Record<number, number> {
-  if (!game.qualifiedPowerPlays) return {};
-  const powerPlays = game.qualifiedPowerPlays;
-  return Object.fromEntries(
+const mergedSecondsByTeam = (game: Game, intervals: PowerPlay[]): Record<number, number> =>
+  Object.fromEntries(
     [game.home, game.away].map((team) => [
       team.id,
-      mergeIntervals(powerPlays.filter((p) => p.teamId === team.id)).reduce(
+      mergeIntervals(intervals.filter((p) => p.teamId === team.id)).reduce(
         (sum, interval) => sum + interval.end - interval.start,
         0,
       ),
     ]),
   );
+
+/**
+ * Decision 152: this replay's power-play seconds per team (merged intervals). While PP share is served, the PP-mode
+ * matrix shows only when this equals the stored qualified clock.
+ */
+export function ppSecondsByTeam(game: Game): Record<number, number> {
+  return game.qualifiedPowerPlays ? mergedSecondsByTeam(game, game.qualifiedPowerPlays) : {};
 }
+
+/** Today's timeline PP bands (`powerPlays`), merged seconds per team. */
+export function ppBandSecondsByTeam(game: Game): Record<number, number> {
+  return mergedSecondsByTeam(game, game.powerPlays);
+}
+
+export const PP_TIMELINE_MISMATCH_LABEL = "PP timeline unavailable: timing mismatch.";
+export type PpTimelineVerdict = { show: true } | { show: false; label: string };
+
+/**
+ * Decision 152, while PP share is served: a team's PP bands (its power plays, drawn on both teams' tracks) are
+ * drawn only when they reconcile with the stored qualified clock. The rule is the one the live PP views use: the
+ * stored verdict is available and the bands' merged seconds equal its clock_seconds exactly, or the verdict is
+ * not applicable and the team has no bands. Otherwise the team's bands are withheld whole, never stretched,
+ * rescaled or redistributed, and the timeline says why.
+ */
+export function ppTimelineVerdicts(
+  game: Game,
+  storedVerdict: (teamId: number) => PpShareVerdict,
+): Record<number, PpTimelineVerdict> {
+  const bands = ppBandSecondsByTeam(game);
+  return Object.fromEntries(
+    [game.home, game.away].map((team): [number, PpTimelineVerdict] => {
+      const stored = storedVerdict(team.id);
+      const seconds = bands[team.id] ?? 0;
+      if (stored.status === "unavailable") {
+        return [team.id, { show: false, label: `PP timeline unavailable: ${stored.reason}` }];
+      }
+      const reconciles = stored.status === "available" ? seconds === stored.clockSeconds : seconds === 0;
+      return [team.id, reconciles ? { show: true } : { show: false, label: PP_TIMELINE_MISMATCH_LABEL }];
+    }),
+  );
+}
+
 // Same shared-seconds measure as the standalone matrix, using pre-normalized intervals. While PP share is served
 // (decision 152), PP mode uses the qualified clock's intervals.
 export function matrixData(game: Game, mode: Mode, servedPpClock = false) {
