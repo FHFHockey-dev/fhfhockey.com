@@ -1,0 +1,673 @@
+{
+ "verdict": "ALL_OK",
+ "gets": 24,
+ "requests": [
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-08&endDate=2026-10-08&strength=allStrengths&statMode=individual&teamId=54",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:30 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::6w26f-1794595529786-c75fdad2f01c",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-08&endDate=2026-10-08&strength=evenStrength&statMode=individual&teamId=54",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:31 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::ds9lg-1794595531311-0e1bc1a804f9",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/goalies?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-08&endDate=2026-10-08&strength=allStrengths&teamId=10",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:33 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::q2s6s-1794595532698-f31c7c55072d",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-13&endDate=2026-10-13&strength=allStrengths&statMode=individual&teamId=55",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:34 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::mlz7g-1794595534213-088f776ca0d2",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-13&endDate=2026-10-13&strength=evenStrength&statMode=individual&teamId=55",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:35 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::bgxpz-1794595535580-29618ff78b60",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/goalies?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-13&endDate=2026-10-13&strength=allStrengths&teamId=4",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:37 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::2ct2p-1794595536887-f485418aa2dc",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-13&endDate=2026-10-13&strength=allStrengths&statMode=individual&teamId=18",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:38 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::47crk-1794595538404-f41ba56ea638",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-13&endDate=2026-10-13&strength=evenStrength&statMode=individual&teamId=18",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:39 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::dq92g-1794595539740-03db25463a68",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/goalies?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-13&endDate=2026-10-13&strength=allStrengths&teamId=54",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:41 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::khl4t-1794595541076-31ab1c6f099b",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-16&endDate=2026-10-16&strength=allStrengths&statMode=individual&teamId=21",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:42 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::74tkq-1794595542361-42db98163270",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-16&endDate=2026-10-16&strength=evenStrength&statMode=individual&teamId=21",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:43 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::n2hgg-1794595543783-f9a01d4bafc3",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/goalies?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-16&endDate=2026-10-16&strength=allStrengths&teamId=5",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:45 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::b7s88-1794595545002-2e32085fbf8e",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-17&endDate=2026-10-17&strength=allStrengths&statMode=individual&teamId=18",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:46 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::t67ts-1794595546343-6aad89c42c93",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-17&endDate=2026-10-17&strength=evenStrength&statMode=individual&teamId=18",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:47 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::pvbws-1794595547640-9c3a89fc4825",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/goalies?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-17&endDate=2026-10-17&strength=allStrengths&teamId=19",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:49 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::hcwf2-1794595548961-40e6ad43762a",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-20&endDate=2026-10-20&strength=allStrengths&statMode=individual&teamId=12",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:50 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::khl4t-1794595550251-2750dba74278",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-20&endDate=2026-10-20&strength=evenStrength&statMode=individual&teamId=12",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:51 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::vlt6r-1794595551586-c2ddb3c8b84d",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/goalies?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-20&endDate=2026-10-20&strength=allStrengths&teamId=23",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:53 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::khl4t-1794595552814-623056520bda",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-22&endDate=2026-10-22&strength=allStrengths&statMode=individual&teamId=26",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:54 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::n4446-1794595554193-0ccf01dd2c6a",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-22&endDate=2026-10-22&strength=evenStrength&statMode=individual&teamId=26",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:55 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::72z9w-1794595555491-032d166f8cd1",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/goalies?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-22&endDate=2026-10-22&strength=allStrengths&teamId=2",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:56 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::hbf5h-1794595556806-7874aad0956c",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-29&endDate=2026-10-29&strength=allStrengths&statMode=individual&teamId=16",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:58 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::lw7fj-1794595558092-1f2fe8823e1d",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/players?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-29&endDate=2026-10-29&strength=evenStrength&statMode=individual&teamId=16",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:45:59 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::ghjmm-1794595559441-0d61c8b3b169",
+    "cache-control": "private, max-age=60"
+   }
+  },
+  {
+   "path": "/api/v1/underlying-stats/goalies?fromSeasonId=20262027&throughSeasonId=20262027&seasonType=regularSeason&scoreState=allScores&displayMode=counts&scope=dateRange&minimumToiSeconds=0&startDate=2026-10-29&endDate=2026-10-29&strength=allStrengths&teamId=17",
+   "status": 200,
+   "headers": {
+    "date": "Fri, 13 Nov 2026 18:46:00 GMT",
+    "age": "0",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "iad1::iad1::7bpwj-1794595560709-a5dc9319825c",
+    "cache-control": "private, max-age=60"
+   }
+  }
+ ],
+ "problems": [],
+ "results": [
+  {
+   "game": 2026020065,
+   "shooter": 8478403,
+   "goalie": 8475683,
+   "served": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 1,
+     "shots": 6,
+     "iCf": 8,
+     "iFf": 6
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 5,
+     "iCf": 5,
+     "iFf": 5
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 43,
+     "saves": 40,
+     "goalsAgainst": 3
+    }
+   },
+   "expected": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 1,
+     "shots": 6,
+     "iCf": 8,
+     "iFf": 6
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 5,
+     "iCf": 5,
+     "iFf": 5
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 43,
+     "saves": 40,
+     "goalsAgainst": 3
+    }
+   },
+   "es_source": "stored after row; pre-refresh file overwritten (A3-02)"
+  },
+  {
+   "game": 2026020094,
+   "shooter": 8474586,
+   "goalie": 8478435,
+   "served": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 3,
+     "iCf": 4,
+     "iFf": 4
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 2,
+     "iCf": 3,
+     "iFf": 3
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 31,
+     "saves": 29,
+     "goalsAgainst": 2
+    }
+   },
+   "expected": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 3,
+     "iCf": 4,
+     "iFf": 4
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 2,
+     "iCf": 3,
+     "iFf": 3
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 31,
+     "saves": 29,
+     "goalsAgainst": 2
+    }
+   },
+   "es_source": "stored after row = pre-refresh row"
+  },
+  {
+   "game": 2026020101,
+   "shooter": 8480835,
+   "goalie": 8478499,
+   "served": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 2,
+     "iCf": 2,
+     "iFf": 2
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 1,
+     "iCf": 1,
+     "iFf": 1
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 28,
+     "saves": 26,
+     "goalsAgainst": 2
+    }
+   },
+   "expected": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 2,
+     "iCf": 2,
+     "iFf": 2
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 1,
+     "iCf": 1,
+     "iFf": 1
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 28,
+     "saves": 26,
+     "goalsAgainst": 2
+    }
+   },
+   "es_source": "stored after row = pre-refresh row"
+  },
+  {
+   "game": 2026020119,
+   "shooter": 8477492,
+   "goalie": 8481668,
+   "served": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 1,
+     "shots": 9,
+     "iCf": 11,
+     "iFf": 9
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 6,
+     "iCf": 8,
+     "iFf": 6
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 32,
+     "saves": 27,
+     "goalsAgainst": 5
+    }
+   },
+   "expected": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 1,
+     "shots": 9,
+     "iCf": 11,
+     "iFf": 9
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 6,
+     "iCf": 8,
+     "iFf": 6
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 32,
+     "saves": 27,
+     "goalsAgainst": 5
+    }
+   },
+   "es_source": "stored after row = pre-refresh row"
+  },
+  {
+   "game": 2026020131,
+   "shooter": 8476539,
+   "goalie": 8476412,
+   "served": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 1,
+     "shots": 4,
+     "iCf": 4,
+     "iFf": 4
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 1,
+     "iCf": 1,
+     "iFf": 1
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 24,
+     "saves": 19,
+     "goalsAgainst": 5
+    }
+   },
+   "expected": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 1,
+     "shots": 4,
+     "iCf": 4,
+     "iFf": 4
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 1,
+     "iCf": 1,
+     "iFf": 1
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 24,
+     "saves": 19,
+     "goalsAgainst": 5
+    }
+   },
+   "es_source": "stored after row = pre-refresh row"
+  },
+  {
+   "game": 2026020150,
+   "shooter": 8478427,
+   "goalie": 8482447,
+   "served": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 4,
+     "iCf": 11,
+     "iFf": 7
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 2,
+     "iCf": 4,
+     "iFf": 4
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 43,
+     "saves": 38,
+     "goalsAgainst": 5
+    }
+   },
+   "expected": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 4,
+     "iCf": 11,
+     "iFf": 7
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 2,
+     "iCf": 4,
+     "iFf": 4
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 43,
+     "saves": 38,
+     "goalsAgainst": 5
+    }
+   },
+   "es_source": "stored after row = pre-refresh row"
+  },
+  {
+   "game": 2026020159,
+   "shooter": 8477960,
+   "goalie": 8473575,
+   "served": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 5,
+     "iCf": 8,
+     "iFf": 8
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 4,
+     "iCf": 6,
+     "iFf": 6
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 27,
+     "saves": 24,
+     "goalsAgainst": 3
+    }
+   },
+   "expected": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 5,
+     "iCf": 8,
+     "iFf": 8
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 4,
+     "iCf": 6,
+     "iFf": 6
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 27,
+     "saves": 24,
+     "goalsAgainst": 3
+    }
+   },
+   "es_source": "stored after row = pre-refresh row"
+  },
+  {
+   "game": 2026020203,
+   "shooter": 8483493,
+   "goalie": 8476434,
+   "served": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 1,
+     "iCf": 1,
+     "iFf": 1
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 0,
+     "iCf": 0,
+     "iFf": 0
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 19,
+     "saves": 18,
+     "goalsAgainst": 1
+    }
+   },
+   "expected": {
+    "all": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 1,
+     "iCf": 1,
+     "iFf": 1
+    },
+    "es": {
+     "gamesPlayed": 1,
+     "goals": 0,
+     "shots": 0,
+     "iCf": 0,
+     "iFf": 0
+    },
+    "goalie": {
+     "gamesPlayed": 1,
+     "shotsAgainst": 19,
+     "saves": 18,
+     "goalsAgainst": 1
+    }
+   },
+   "es_source": "stored after row = pre-refresh row"
+  }
+ ]
+}

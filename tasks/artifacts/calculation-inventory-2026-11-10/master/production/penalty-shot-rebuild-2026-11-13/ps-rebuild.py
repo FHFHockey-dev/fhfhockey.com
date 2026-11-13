@@ -16,11 +16,12 @@ Fails closed, in this order:
      persistence are the F15 ones (gameId filter, v2 writer). Read-only GitHub API calls.
   4. Manifest: the stored play-by-play's penalty shots for 2026-27 equal the 8 expected (game, team, result)
      exactly, and every game has stored derived rows (2 team rows) and a stored official boxscore.
-  5. Official baseline per game: legacy all-situation totals (ES + PP + PK) against the boxscore (SOG; goals =
+  5. Official baseline per PLANNED game (a game already in the done file is reported, never re-baselined): legacy all-situation totals (ES + PP + PK) against the boxscore (SOG; goals =
      score minus the shootout winner's extra goal). A pre-existing mismatch is reported and the game is then
      held to "unchanged" instead of "equal to the boxscore".
   --dry-run (default) stops here and prints the 8 planned calls.
-  6. --execute: per game, ascending: guard and window check, before-snapshot of every team and player row,
+  6. --execute: per game, ascending: guard and window check, before-snapshot of every team and player row (to a
+     run-unique run/before-<game>-<runstamp>-<seq>.json opened "x", never overwritten; after-files likewise; A3-02),
      one call (200 s timeout), then a key-by-key readback:
        - same player keys; every row marked split (1);
        - per player, ES + PP + PK + PS after == ES + PP + PK before (shots and goals), ES after == ES before - PS,
@@ -37,7 +38,7 @@ Usage: python3 -I ps-rebuild.py              # dry run, read-only
 Exit codes: 0 done / dry run passed, 2 HTTP or body failure, 3 DB guard, 4 window, 5 slow call,
             6 readback or manifest mismatch, 7 migration or deployment not ready.
 """
-import argparse, json, os, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
+import argparse, glob, itertools, json, os, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
 
 ROOT = "/Users/tim/Code/fhfhockey.com"
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -138,6 +139,53 @@ def readback_problems(game_id, before, after, official, baseline_ok):
         if all_situation(a) != want:
             problems.append(f"team {tid} all-situation {all_situation(a)} != {'official' if baseline_ok else 'before'} {want}")
     return problems
+
+
+# Evidence files are never overwritten (Astra A3-02): run-unique names, opened "x".
+RUN_STAMP = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()) + f"-{os.getpid()}"
+_EVIDENCE_SEQ = itertools.count(1)
+
+
+def evidence_path(kind, game_id, ext):
+    """A run-unique evidence path, e.g. run/before-<game>-<runstamp>-<seq>.json."""
+    return os.path.join(OUT, f"{kind}-{game_id}-{RUN_STAMP}-{next(_EVIDENCE_SEQ):02d}.{ext}")
+
+
+def write_evidence(path, text):
+    """Create the file; an existing file is never truncated (FileExistsError instead)."""
+    with open(path, "x") as f:
+        f.write(text)
+    return path
+
+
+def authority_file(kind, game_id, ext):
+    """The first run-unique evidence file of this kind for the game (the authority, e.g. for rollback). Legacy
+    un-stamped files (before-<game>.json) are not considered: before A3-02 a rerun could overwrite them."""
+    files = sorted(glob.glob(os.path.join(OUT, f"{kind}-{game_id}-*.{ext}")))
+    return files[0] if files else None
+
+
+def planned_games(done):
+    return [(g, d) for g, d, _t, _r in MANIFEST if str(g) not in done]
+
+
+def preflight(plan, done):
+    """Baseline the planned games only; a done game is reported, never re-baselined (A3-02)."""
+    for g, _d, _t, _r in MANIFEST:
+        if str(g) in done:
+            authority = authority_file("before", g, "json")
+            log(event="already_done", game=g, authority_before=authority and os.path.relpath(authority, HERE))
+    baseline = {}
+    for g, d in plan:
+        rows, official = rows_for(g), official_for(g)
+        if len(rows["teams"]) != 2 or not rows["players"] or official is None:
+            stop(6, "game lacks derived rows or a stored boxscore", game=g)
+        current = {tid: all_situation(r) for tid, r in rows["teams"].items()}
+        markers = sorted({str(r.get("penalty_shot_split_version")) for r in rows["teams"].values()})
+        ok = all(current[t] == official.get(t) for t in current)
+        baseline[g] = ok
+        log(event="baseline", game=g, date=d, markers=markers, derived=current, official=official, equal=ok)
+    return baseline
 
 
 def window_at(minute_of_day, margin_min=0):
@@ -302,19 +350,9 @@ def main():
     if problems:
         stop(6, "manifest mismatch", problems=problems)
 
-    baseline = {}
-    for g, d, _t, _r in MANIFEST:
-        rows, official = rows_for(g), official_for(g)
-        if len(rows["teams"]) != 2 or not rows["players"] or official is None:
-            stop(6, "game lacks derived rows or a stored boxscore", game=g)
-        current = {tid: all_situation(r) for tid, r in rows["teams"].items()}
-        markers = sorted({str(r.get("penalty_shot_split_version")) for r in rows["teams"].values()})
-        ok = all(current[t] == official.get(t) for t in current)
-        baseline[g] = ok
-        log(event="baseline", game=g, date=d, markers=markers, derived=current, official=official, equal=ok)
-
     done = set(open(DONE).read().split()) if os.path.exists(DONE) else set()
-    plan = [(g, d) for g, d, _t, _r in MANIFEST if str(g) not in done]
+    plan = planned_games(done)
+    baseline = preflight(plan, done)
     for g, d in plan:
         log(event="planned_call", game=g, url=f"{ROUTE}?startDate={d}&gameId={g}&maxDurationMs=180000")
     if not args.execute:
@@ -335,12 +373,10 @@ def main():
         guard()
         window_gate(g)
         before = rows_for(g)
-        with open(os.path.join(OUT, f"before-{g}.json"), "w") as f:
-            json.dump(before, f, sort_keys=True)
+        write_evidence(evidence_path("before", g, "json"), json.dumps(before, sort_keys=True))
         took, body = call(g, d, secret)
         after = rows_for(g)
-        with open(os.path.join(OUT, f"after-{g}.json"), "w") as f:
-            json.dump(after, f, sort_keys=True)
+        write_evidence(evidence_path("after", g, "json"), json.dumps(after, sort_keys=True))
         problems = readback_problems(g, before, after, official_for(g), baseline[g])
         if problems:
             stop(6, "readback mismatch", game=g, problems=problems[:20])
@@ -354,7 +390,9 @@ def main():
         rows, official = rows_for(g), official_for(g)
         if any(r.get("penalty_shot_split_version") != 1 for r in [*rows["players"].values(), *rows["teams"].values()]):
             final.append(f"{g} not fully split")
-        if baseline[g] and any(all_situation(r) != official.get(t) for t, r in rows["teams"].items()):
+        # A game done in an earlier run was checked against the official record then (its baseline matched on
+        # 2026-11-13), so it is held to the official record now.
+        if baseline.get(g, True) and any(all_situation(r) != official.get(t) for t, r in rows["teams"].items()):
             final.append(f"{g} differs from the official record")
     if final:
         stop(6, "final readback mismatch", problems=final)

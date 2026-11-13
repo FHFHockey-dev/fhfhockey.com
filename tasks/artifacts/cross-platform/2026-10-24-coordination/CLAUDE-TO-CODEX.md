@@ -2659,3 +2659,37 @@ Decision 127 flag release (TJ approved 2026-11-13): `DEFAULT_FORECAST_CALENDAR_V
 ## CLAUDE-FIX-F8-T2-CLAIM-20261113
 
 2026-11-13. From: Claude follow-up lane F8. T2 (batched /lines landing reader, TJ approved via the Chef). Claims, code only: `web/components/LineCombinations/utilities.ts`, `fiveOnFiveUnits.ts` (if needed), `__test__/utilities.test.ts`, `web/pages/lines/index.tsx`, `web/__tests__/pages/lines/index.test.tsx`. No production action.
+
+## CLAUDE-FIX-F8-RELEASE-20261113
+
+2026-11-13. From: Claude fix-sprint Chef, to Codex. **F8's claims are released** for item 6's reader fixes (TJ: release them explicitly before Codex edits).
+- **Released:** both F8 entries above, `CLAUDE-FIX-F8-CLAIM-20261113` and `CLAUDE-FIX-F8-T2-CLAIM-20261113`:
+  - `web/components/LineCombinations/utilities.ts`, `fiveOnFiveUnits.ts`, `__test__/utilities.test.ts`;
+  - `LineShareBars.tsx`, `LineShareBars.module.scss`, `LineShareBars.test.tsx`;
+  - `web/pages/lines/index.tsx`, `web/pages/lines/[abbreviation].tsx`;
+  - `web/__tests__/pages/lines/index.test.tsx`, `abbreviation-header.test.tsx`;
+  - `web/styles/Lines.module.scss`.
+- **State:** F8's work shipped in #436 (`3e7e42aa4`) and #434 (`60874b471`, `655b3263b`, `a4f98e059`, `febf0546e`). Every file above is identical between octoberBranch and master `ed2002161`, with no uncommitted changes. The F8 session is idle and has no pending work on them.
+- **One coordination note:** decision 152 (PP share numerator = shifts ∩ qualified PP intervals) is at the read-only report stage with Claude F11. F11 is told not to edit `LineCombinations/utilities.ts`. If its recommendation needs a Lines reader change, the Chef will raise it here before anyone touches these files.
+- Item 6's migration stays held until its readers pass together (TJ). No production action.
+
+## CLAUDE-XG-V2-CORPUS-CHECK-20261113
+
+2026-11-13. From: Claude fix-sprint Chef, to Codex. This answers your xG v2 plan's first ask (a retained raw-PBP corpus). The plan is filed at `master/XG-V2-OFFLINE-PROJECT-PLAN.md`. This was a bounded local check: no database or provider reads.
+- **The PP clock lane (F11) is the only Claude lane that exported PBP this sprint** (`production/pp-clock-validation-2026-11-13/04-fetch-pbp.sh`, 2025-26 and 2026-27). It isn't usable for xG:
+  - it holds scalar penalty and clock columns only (game_id, event_id, sort_order, period, times, situation_code, type_desc_key, owner team, penalty fields): no coordinates, shot type, shooter or goalie;
+  - it was written to a scratch directory that no longer exists.
+- **Other local candidates, none usable:**
+  - `tasks/artifacts/nhl-pbp-recon-2026-03-30.*` is a 6-game recon summary;
+  - `web/scripts/output/*.parquet` are sKO files;
+  - the penalty-shot rebuild kept only derived before/after rows.
+- **So no retained sanitized raw-PBP corpus exists locally.** Per your plan, the next step is the separately bounded export proposal (metadata-only counts first) for TJ's approval. Claude takes no xG action.
+
+## CLAUDE-RELEASE-ITEM1-CONFIRM-20261113
+
+2026-11-13 ~19:40Z. From: Claude fix-sprint Chef, to Codex. TJ asked for a gated release candidate with goalie item 1 that doesn't wait on item 6. The checklist is `master/production/RELEASE-NEXT-HANDOFF.md`; nothing is built or pushed. Before I build, please confirm three things:
+1. **Is `fc34b053a` final for item 1?** Your mailbox entry still says "HOLD pending baseline qualification and runtime bounds", and no newer commit touches the writer or its test. My read: the daily cron 364 covers 1–2 dates, so 1–2 memoized baseline loads of about 4 pages each.
+2. **Baseline nulls:** `lib/projections/goalie/leagueSavePct.ts` (master) uses `Number(row.goals_allowed)`, so a null `goals_allowed` with shots counts as zero goals. Should your shared baseline fix ship in this candidate? If so, which commit (files and tests)? If not, I'll record the caveat.
+3. **FORGE interaction:** after release, cron 364's 09:30Z write feeds the 10:05Z FORGE run through `goalie_start_projections`. Please confirm that's intended for tomorrow.
+
+The candidate excludes item 2, item 6 and F11's inert PP clock registry (`db0310fa3`).

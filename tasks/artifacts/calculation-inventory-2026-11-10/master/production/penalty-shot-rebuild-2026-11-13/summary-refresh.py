@@ -24,15 +24,18 @@ Fails closed, in this order:
      fix (includeInAllSituationsOnly) and keeps PLAYER_STATS_SUMMARY_FORMULA_REVISION = 2.
   4. Manifest: the stored play-by-play's penalty-shot attempts equal the 8 expected (game, shooter, goalie,
      result) exactly.
-  5. Before-snapshot (read-only) of every player partition head and goalie partition row of each game, saved
-     to run/summary-before-<game>.jsonl. Current partitions are version 1 / formula revision 2; any other head
+  5. Before-snapshot (read-only) of every player partition head and goalie partition row of each PLANNED game
+     (not yet in the done file; a done game is only reported, never re-snapshotted or re-baselined), saved to a
+     run-unique run/summary-before-<game>-<runstamp>-<seq>.jsonl opened "x": evidence is never overwritten, and
+     the first such file per game is the authority (A3-02). Current partitions are version 1 / formula revision 2; any other head
      is an ORPHAN from an older build (the landing reader skips it, the current builder no longer writes it),
      named in the log and left untouched. Stops if a game has no current partitions or a non-current payload
      is newer than its current build. The dry run prints each shooter's and goalie's current "all" line and
      the expected one.
   --dry-run (default) stops here.
-  6. --execute, per game: window, guard, window; fresh before-snapshot; player call; readback; goalie call;
-     readback; the game id goes to run/summary-refresh.done (a rerun skips it).
+  6. --execute, per game: window, guard, window; fresh before-snapshot (another run-unique file); player call;
+     readback; goalie call; readback; after-snapshot (run-unique); the game id goes to run/summary-refresh.done
+     (a rerun skips it).
 Readback, key by key (exit 6 on any difference):
   - the same partition set; every current player head is new (fetched_at later than before) with formula
     revision 2; every orphan is byte-for-byte unchanged;
@@ -51,7 +54,7 @@ Usage: python3 -I summary-refresh.py                            # dry run, read-
 Exit codes: 0 done / dry run passed, 2 HTTP or body failure, 3 DB guard, 4 window, 5 slow call,
             6 readback or manifest mismatch, 7 deployment not ready.
 """
-import argparse, copy, json, os, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
+import argparse, copy, glob, itertools, json, os, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
 
 ROOT = "/Users/tim/Code/fhfhockey.com"
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -86,6 +89,9 @@ CALL_MARGIN_MIN = 15
 PAUSE_S = 10
 SLOW_S = 240
 PRIMARY_SCORE_STATES = ("tied", "leading", "trailing")
+# Evidence files are never overwritten (Astra A3-02): every snapshot gets a run-unique name, opened "x".
+RUN_STAMP = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()) + f"-{os.getpid()}"
+_EVIDENCE_SEQ = itertools.count(1)
 PS_WHERE = ("p.situationcode ~ '^[01][0-6][0-6][01]$' and (substr(p.situationcode, 2, 1) = '0' "
             "or substr(p.situationcode, 3, 1) = '0') and coalesce(p.periodtype, '') <> 'SO' "
             "and not ((p.gameid / 10000) % 100 in (1, 2) and coalesce(p.periodnumber, 0) >= 5)")
@@ -232,6 +238,26 @@ def baseline_problems(heads, goalies):
     return problems
 
 
+def evidence_path(kind, game_id, ext):
+    """A run-unique evidence path, e.g. run/summary-before-<game>-<runstamp>-<seq>.jsonl."""
+    return os.path.join(OUT, f"{kind}-{game_id}-{RUN_STAMP}-{next(_EVIDENCE_SEQ):02d}.{ext}")
+
+
+def write_evidence(path, text):
+    """Create the file; an existing file is never truncated (FileExistsError instead)."""
+    with open(path, "x") as f:
+        f.write(text)
+    return path
+
+
+def authority_file(kind, game_id, ext):
+    """The first run-unique evidence file of this kind for the game: the authority (e.g. the pre-write state for
+    rollback). Legacy un-stamped files (summary-before-<game>.jsonl) are not considered: before A3-02 a later run
+    could overwrite them."""
+    files = sorted(glob.glob(os.path.join(OUT, f"{kind}-{game_id}-*.{ext}")))
+    return files[0] if files else None
+
+
 def window_at(minute_of_day, margin_min=0):
     for start, end, label in WINDOWS:
         if any(start <= (minute_of_day + k) % 1440 < end for k in range(margin_min + 1)):
@@ -333,12 +359,43 @@ def goalie_rows(game_id):
 
 def snapshot(game_id, tag):
     heads, goalies = player_heads(game_id), goalie_rows(game_id)
-    with open(os.path.join(OUT, f"summary-{tag}-{game_id}.jsonl"), "w") as f:
-        for url in sorted(heads):
-            f.write(json.dumps({"table": "nhl_api_game_payloads_raw", **heads[url]}, sort_keys=True) + "\n")
-        for key in sorted(goalies):
-            f.write(json.dumps({"table": "goalie_underlying_summary_partitions", **goalies[key]}, sort_keys=True) + "\n")
+    lines = [json.dumps({"table": "nhl_api_game_payloads_raw", **heads[url]}, sort_keys=True) for url in sorted(heads)]
+    lines += [json.dumps({"table": "goalie_underlying_summary_partitions", **goalies[key]}, sort_keys=True)
+              for key in sorted(goalies)]
+    path = write_evidence(evidence_path(f"summary-{tag}", game_id, "jsonl"), "".join(line + "\n" for line in lines))
+    log(event="evidence", game=game_id, tag=tag, file=os.path.relpath(path, HERE),
+        authority=os.path.relpath(authority_file(f"summary-{tag}", game_id, "jsonl"), HERE))
     return heads, goalies
+
+
+def planned_games(done, max_games):
+    """Games not yet in the done file, at most max_games of them, in manifest order."""
+    return [m for m in MANIFEST if str(m[0]) not in done][: max(0, max_games)]
+
+
+def preflight(plan, done):
+    """Snapshot and baseline the planned games only. A done game is reported as done and never re-snapshotted
+    or re-baselined: its rows are already refreshed, so a new baseline would double-count the penalty shot
+    (A3-02)."""
+    for g, *_rest in MANIFEST:
+        if str(g) in done:
+            authority = authority_file("summary-before", g, "jsonl")
+            log(event="already_done", game=g, authority_before=authority and os.path.relpath(authority, HERE))
+    for g, shooter, goalie, result in plan:
+        heads, goalies = snapshot(g, "before")
+        problems = baseline_problems(heads, goalies)
+        if problems:
+            stop(6, "game lacks current summaries", game=g, problems=problems[:10])
+        orphans_p = orphan_keys({u: h["p"] for u, h in heads.items()})
+        orphans_g = orphan_keys({k: r["p"] for k, r in goalies.items()})
+        now_s, now_g = line_of(heads, "individual", (g, shooter)), line_of(heads, "goalies", (g, goalie))
+        log(event="baseline", game=g, partitions=len(heads), current_partitions=len(heads) - len(orphans_p),
+            goalie_rows=len(goalies), current_goalie_rows=len(goalies) - len(orphans_g),
+            orphans_left_untouched=sorted(u.split("v2/")[1] for u in orphans_p) + [f"goalie {k}" for k in sorted(orphans_g)],
+            shooter=shooter, shooter_all_now=now_s,
+            shooter_all_expected=now_s and {k: now_s[k] + d for k, d in expected_move("individual", result)["individual"].items()},
+            goalie=goalie, goalie_all_now=now_g,
+            goalie_all_expected=now_g and {k: now_g[k] + d for k, d in expected_move("goalies", result)["goalies"].items()})
 
 
 def line_of(heads, mode, subject):
@@ -387,24 +444,9 @@ def main():
     if problems:
         stop(6, "manifest mismatch", problems=problems)
 
-    for g, shooter, goalie, result in MANIFEST:
-        heads, goalies = snapshot(g, "before")
-        problems = baseline_problems(heads, goalies)
-        if problems:
-            stop(6, "game lacks current summaries", game=g, problems=problems[:10])
-        orphans_p = orphan_keys({u: h["p"] for u, h in heads.items()})
-        orphans_g = orphan_keys({k: r["p"] for k, r in goalies.items()})
-        now_s, now_g = line_of(heads, "individual", (g, shooter)), line_of(heads, "goalies", (g, goalie))
-        log(event="baseline", game=g, partitions=len(heads), current_partitions=len(heads) - len(orphans_p),
-            goalie_rows=len(goalies), current_goalie_rows=len(goalies) - len(orphans_g),
-            orphans_left_untouched=sorted(u.split("v2/")[1] for u in orphans_p) + [f"goalie {k}" for k in sorted(orphans_g)],
-            shooter=shooter, shooter_all_now=now_s,
-            shooter_all_expected=now_s and {k: now_s[k] + d for k, d in expected_move("individual", result)["individual"].items()},
-            goalie=goalie, goalie_all_now=now_g,
-            goalie_all_expected=now_g and {k: now_g[k] + d for k, d in expected_move("goalies", result)["goalies"].items()})
-
     done = set(open(DONE).read().split()) if os.path.exists(DONE) else set()
-    plan = [m for m in MANIFEST if str(m[0]) not in done][: max(0, args.max_games)]
+    plan = planned_games(done, args.max_games)
+    preflight(plan, done)
     if not args.execute:
         log(event="DRY_RUN_OK", sha=sha, games=len(plan), calls=2 * len(plan))
         return

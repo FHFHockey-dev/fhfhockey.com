@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Offline tests for summary-refresh.py's pure helpers (no DB, no network). Run: python3 -I test_summary_refresh.py"""
 import copy
+import glob
 import importlib.util
 import os
+import tempfile
 import unittest
 
 spec = importlib.util.spec_from_file_location(
@@ -137,6 +139,74 @@ class Helpers(unittest.TestCase):
         self.assertIsNotNone(sr.window_at(9 * 60 + 15, sr.CALL_MARGIN_MIN))
         self.assertIsNotNone(sr.window_at(11 * 60 + 30))
         self.assertIsNone(sr.window_at(18 * 60, sr.CALL_MARGIN_MIN))
+
+
+class ResumeEvidence(unittest.TestCase):
+    """Astra A3-02: a resume never overwrites pre-write evidence and never re-baselines a done game."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="sr-a302-")
+        self.saved = {name: getattr(sr, name) for name in ("OUT", "log", "player_heads", "goalie_rows", "stop")}
+        self.events = []
+        sr.OUT = self.tmp
+        sr.log = lambda **kw: self.events.append(kw)
+
+        def fake_stop(code, reason, **kw):
+            raise AssertionError(f"stop {code}: {reason} {kw}")
+        sr.stop = fake_stop
+        sr.player_heads = lambda g: {
+            f"{P}individual/allStrengths/{g}": {"f": "2026-11-12T20:11:00Z", "p": payload({SHOOTER: metrics()})},
+            f"{P}goalies/allStrengths/{g}": {"f": "2026-11-12T20:11:00Z", "p": payload({GOALIE: metrics(sa=20, sv=18, ga=2)})},
+        }
+        sr.goalie_rows = lambda g: {("allStrengths", "allScores"): {"f": "2026-11-12T20:23:00Z", "p": payload({GOALIE: metrics()})}}
+
+    def tearDown(self):
+        for name, value in self.saved.items():
+            setattr(sr, name, value)
+
+    def test_resume_with_the_canary_done_leaves_its_before_files_alone(self):
+        canary = sr.MANIFEST[0][0]
+        legacy = os.path.join(self.tmp, f"summary-before-{canary}.jsonl")
+        first = os.path.join(self.tmp, f"summary-before-{canary}-20261113T183000Z-111-01.jsonl")
+        for path, text in ((legacy, "legacy\n"), (first, "true pre-refresh rows: Eichel 0 G / 5 S\n")):
+            with open(path, "w") as f:
+                f.write(text)
+        done = {str(canary)}
+        plan = sr.planned_games(done, len(sr.MANIFEST))
+        self.assertEqual([m[0] for m in plan], [m[0] for m in sr.MANIFEST[1:]])
+
+        sr.preflight(plan, done)
+
+        self.assertEqual(open(first).read(), "true pre-refresh rows: Eichel 0 G / 5 S\n")
+        self.assertEqual(open(legacy).read(), "legacy\n")
+        self.assertEqual(sorted(glob.glob(os.path.join(self.tmp, f"summary-*-{canary}*"))), sorted([legacy, first]))
+        baselined = [e["game"] for e in self.events if e.get("event") == "baseline"]
+        self.assertNotIn(canary, baselined)
+        self.assertEqual(baselined, [m[0] for m in plan])
+        done_events = [e for e in self.events if e.get("event") == "already_done"]
+        self.assertEqual([e["game"] for e in done_events], [canary])
+        self.assertTrue(done_events[0]["authority_before"].endswith(os.path.basename(first)))
+        for g in baselined:
+            self.assertEqual(len(glob.glob(os.path.join(self.tmp, f"summary-before-{g}-*.jsonl"))), 1)
+
+    def test_an_existing_evidence_file_is_never_truncated(self):
+        g = sr.MANIFEST[1][0]
+        path = os.path.join(self.tmp, f"summary-before-{g}-x.jsonl")
+        with open(path, "w") as f:
+            f.write("keep me\n")
+        with self.assertRaises(FileExistsError):
+            sr.write_evidence(path, "overwrite\n")
+        self.assertEqual(open(path).read(), "keep me\n")
+
+    def test_repeated_snapshots_of_a_game_add_files_and_the_first_stays_authority(self):
+        g = sr.MANIFEST[2][0]
+        sr.snapshot(g, "before")
+        sr.snapshot(g, "before")
+        sr.snapshot(g, "after")
+        befores = sorted(glob.glob(os.path.join(self.tmp, f"summary-before-{g}-*.jsonl")))
+        self.assertEqual(len(befores), 2)
+        self.assertEqual(sr.authority_file("summary-before", g, "jsonl"), befores[0])
+        self.assertEqual(len(glob.glob(os.path.join(self.tmp, f"summary-after-{g}-*.jsonl"))), 1)
 
 
 if __name__ == "__main__":
