@@ -424,3 +424,20 @@ Source: `WAVE3-CONSOLIDATED.md`, "Owner decisions still open" Q42 and Q49. The 1
      - For each game, show what the summary explains and whether it passes O1 and the other checks; if it doesn't reconcile, keep it withheld.
      - Don't widen the tolerance, write repairs or turn on PP share as part of this check.
    - **PP share stays withheld for now** (TJ, 2026-11-13).
+152. **PP share sources** (decision 151 follow-up; TJ, 2026-11-13, in the Chef session):
+   - **The five O4 scrum team-games:**
+     - Accept the NHL HTML Penalty Summary as the official reference for those specific team-games, and only where it reconciles **exactly** with the reconstructed clock and the other qualification checks pass.
+     - Preserve both source values (the stored `teamGameStats` total and the Penalty Summary total) and the reason for choosing the HTML report.
+     - Don't overwrite the stored total, and don't make this a blanket override.
+   - **The numerator:**
+     - The source of truth is actual player shifts, or shared unit intervals, intersected with qualified team PP intervals.
+     - It replaces the stored `powerPlayCombinations` calculation rather than a one-off rebuild of the 14 disagreeing games (16 team-games) that would leave the old calculation in place.
+     - First, a read-only comparison against the stored combinations and a cost measurement.
+     - If computing on demand is cheap enough, the reader uses that calculation. If not, propose storing the output of the same calculation, plus a bounded refresh, for separate approval.
+   - **Availability:**
+     - Zero official PP time is "not applicable".
+     - Missing inputs and impossible shares stay unavailable; never capped.
+     - PP share stays withheld until the final served values are verified.
+   - **Recorded alongside (no decision needed):**
+     - Codex takes the local item 1/2 work and xG v2 scoping. It maps item 6's reader ownership without editing those readers yet; item 6's migration and any production work stay separate.
+     - CTPI: the descriptive beta stays live; prediction stays gated through the planned checkpoints (games 20, 30, 40).

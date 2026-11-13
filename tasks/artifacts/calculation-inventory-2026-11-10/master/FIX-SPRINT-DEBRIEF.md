@@ -771,11 +771,11 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 - C1 and C2 `de4650c77` (#436);
 - decision-151 checks `9e3d73640`.
 
-2026-27 regular season: 616/618 pass the clock check (607 with PP time, 9 verified zero). 607/607 could display with shifts ∩ qualified intervals, but only 591/607 from today's stored `powerPlayCombinations` (16 team-games in 14 games disagree). O4: all 5 scrum games reconcile exactly with the NHL Penalty Summary; the stored `teamGameStats` total is the outlier (−28 to +120 s). **PP share stays withheld** (TJ). | Owner calls before enabling PP share:
-1. May a verified Penalty Summary total serve as the official reference for those 5, recorded without overwriting the raw row?
-2. Rebuild the 14 games' `powerPlayCombinations` (a production write), or have the reader compute shifts ∩ intervals itself.
+2026-27 regular season: 616/618 pass the clock check (607 with PP time, 9 verified zero). 607/607 could display with shifts ∩ qualified intervals, but only 591/607 from today's stored `powerPlayCombinations` (16 team-games in 14 games disagree). O4: all 5 scrum games reconcile exactly with the NHL Penalty Summary; the stored `teamGameStats` total is the outlier (−28 to +120 s). **PP share stays withheld** (TJ). | **Decided (decision 152, 2026-11-13):**
+- The Penalty Summary is the official reference only for those exact-reconciling team-games, with both values and the reason kept and the stored total untouched.
+- The numerator is shifts or unit intervals ∩ qualified PP intervals, replacing the stored-combinations calculation.
 
-Then the C4 storage, the C6 readers and a display lane. |
+**Next (F11 `local_efbef655`):** the five-game reference in code, then a read-only comparison against stored combinations and a cost measurement. Then TJ chooses between computing in the reader and storing the output with a bounded refresh. PP share stays withheld until the served values are verified. |
 | Codex dev items 1, 2, 6 | **Held by Codex and excluded from the final release:** `fc34b053a` (goalie writer), `284f99045` (accuracy job), `c89ff5d24` (game-stat placeholders, with an unapplied migration) | Codex: league SV% helper nulls, pregame issuance contract, Splits and Lines readers before migration |
 | CTPI descriptive beta card (F5b) | **Live:** shipped in #435 (`122dd880b`, `17b342f76`, `3b6d82edc`), with the same-games label fix in #437. Badged "Descriptive beta · not a forecast"; the approved-only predictive path stays gated | — |
 | Power ratings v4 (decisions 145, 147, 150) | **Released and rebuilt.** Code in #434; version-aware labels and the writer dry run in #435. Rebuilt 2026-11-13 16:46–16:53Z after a live no-write preflight: 1,425 v4 + 47 labelled legacy carries (09-29..10-02, source 08-29), 0 v3 left, served labels checked. | — |
