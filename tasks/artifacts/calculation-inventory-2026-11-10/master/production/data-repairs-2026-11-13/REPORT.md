@@ -1,6 +1,33 @@
 # F18 data repairs, 2026-11-13
 
-Read-only investigation. Nothing was written to production and no route was run. Each of the two repairs below needs TJ's approval.
+The investigation was read-only. TJ then approved both repairs by pop-up (about 17:15Z). Both are now applied and verified.
+
+## Outcomes
+- **Gap 2 applied about 17:16Z.**
+  - `wgo-legacy-identity-14-rows.sql` ran as written. The hygiene check showed 0 active queries.
+  - The guarded `DO` block committed exactly 14 rows.
+  - After readback: all 14 rows carry the NHL game id, team, opponent and home/road.
+  - WiGO frame check: 0 bad rows for both players (Gawdin 14 games and 14 distinct ids, McCartney 3 and 3).
+  - Log: `wgo-apply-readback.txt`.
+- **Gap 1 re-fetch, 2026-11-07: complete.**
+  - Run 17:18:19 to 17:19:02Z on localhost:3000. Audit `success`, 7,176 rows.
+  - All 20 datasets `rows_persisted`, 0 `parse_or_identity_unresolved`, `troublesomePlayersCount` 0.
+  - 20 NST requests, no retries.
+  - Mahura is present in all 16 non-PP tables (PP is correctly absent: he had 0 PP time).
+- **Gap 1 re-fetch, 2026-11-12: partial.**
+  - Run 17:20:18 to 17:20:36Z. HTTP 500, audit `failure`: `writePersistence: not_confirmed`, 3,564 rows. Continuation blocked at `evenStrengthRates`.
+  - Supabase edge logs show 9 confirmed writes (201): as ×4, 5v5 ×4, es_counts. **No request for `nst_gamelog_es_rates` reached Supabase**, so the failed write committed nothing.
+  - The error came from the dev server's side before the request was sent. Its console is not readable from this session, so the exact cause is unknown.
+  - Mahura on 11-12: present in as ×4, 5v5 ×4 and es_counts. Still missing: es_rates, es_counts_oi, es_rates_oi and pk ×4 (7 datasets).
+  - Per the route's rule, it was not rerun automatically. TJ approved a narrow re-run by pop-up.
+- **Gap 1 re-run, 2026-11-12 ES and PK groups: complete.**
+  - `datasetGroup=evenStrength`, 17:23:20 to 17:23:31Z: `success`, 4 of 4 `rows_persisted`, 1,584 rows.
+  - `datasetGroup=penaltyKill`, 17:24:46 to 17:24:52Z: `success`, 4 of 4, 948 rows.
+  - Both: 0 unresolved, `troublesomePlayersCount` 0, no other NST job active before either call.
+- **Final readback:**
+  - Mahura has 16 of 16 non-PP rows on 11-07 and on 11-12 (PP is correctly absent).
+  - WGO and NST now both have 14 games for him since 10-01.
+  - NST requests used: 20 + about 10 (the partial run) + 4 + 4, about 38, all through the shared admission and spaced as planned.
 
 ## Gap 1: Josh Mahura (8479372) missing from NST game logs on 11-07 and 11-12
 
