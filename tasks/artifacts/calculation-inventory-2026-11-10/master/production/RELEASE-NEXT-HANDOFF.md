@@ -71,3 +71,18 @@ Checked:
 3. Then release `c89ff5d24` plus the reader fixes together, with their own gate and pop-up.
    - Readers: Splits and season bootstrap (no known conflict), the Lines utilities (F8 claims released to Codex in `d9123ac86`) and DRM (a regression test).
    - The migration stays held until those readers pass together.
+
+## 7. Item 6 app candidate (built 2026-11-13 ~19:55Z on #439)
+- **Candidate `2681a05bc2d83506999fd0ff44a9ac4199b80e56`** on master `a448842d1` (#439). It takes the composed candidate `a36a878c5`, not `c89ff5d24` alone (TJ).
+- **Contents:**
+  - all 16 app files from `ed2002161..a36a878c5`, each identical to its `a36a878c5` blob: the readers (`6eaddbddd`: Splits server, surface, page and test; season bootstrap; Lines utilities and test; DateRangeMatrix test; the native-input test) and the nullable writer (`a36a878c5`; its writer files equal `c89ff5d24`'s);
+  - the baseline migration test at `d9ac09ca2`, which counts 147 as applied;
+  - `tasks/` records, with diaries at master's.
+- **Out:** F11's migration `20261113220000` and its writer (no `supabase/` change at all), item 2, and the PP clock registry. The migration needs no rerun: 147 was applied at 19:45:17Z.
+- **Gate** (clean export, `$TMPDIR/gate-item6`):
+  - 209 focused tests across the 11 affected files;
+  - typecheck 0; ESLint 0; no `.scss` changes;
+  - full Vitest 19,901 passed. requestBudget is a load flake and passes 21/21 on its own; the BLSH bootstrap file is export-only and unchanged from master.
+  - pytest 213; the 4 export-only git-pin tests are unchanged from master.
+- **Release** (TJ pop-up): 1 fhfhockey build plus 3 cancels expected. Smoke: `/`, `/splits`, `/lines`, `/lines/EDM`, `/drm`.
+- **After release:** the next scheduled `update-stats-job` (*/20) run writes through the nullable writer. Read back read-only that new rows hold null only where the source is unknown, and that readers show those values as unavailable. No manual cron run or refresh.
