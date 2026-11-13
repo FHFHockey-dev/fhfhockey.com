@@ -69,16 +69,18 @@
 - [ ] 6.0 NEW: flag-off client parity gap (found in F11 `05c43f981`)
   - [ ] 6.1 With `PP_SHARE_SERVING_ENABLED` off, the client readers (PowerPlayCombos, LinemateMatrix, the shift chart) still make one cached request to `/api/v1/pp-share/team-game-clock` (a function invocation, ≤5 min cache). LinemateMatrix and the shift chart PP mode briefly show "Checking the stored power-play clock...". That isn't strictly today's behaviour. It matters only while serving is off: resolve it, or record it as accepted, before any future flag-off period. Serving is approved to follow the reader release directly.
 - [ ] 7.0 NEW, now blocking 2.0 (TJ, ~21:50Z): the shift chart withholds PP shading that doesn't reconcile with the qualified clock
-  - [ ] 7.1 With serving on, when a team-game's shift-chart PP intervals don't reconcile with the stored qualified clock:
+  - [x] 7.1 With serving on, when a team-game's shift-chart PP intervals don't reconcile with the stored qualified clock:
     - withhold that team-game's PP shading and label it "PP timeline unavailable: timing mismatch.";
     - keep the verified share visible;
     - never stretch or rescale a band (the total doesn't say where the seconds belong).
     With serving off, behaviour stays as today.
-  - [ ] 7.2 Tests:
+  - [x] 7.2 Tests:
     - mismatch case 2026020131 t18 (shading withheld, label shown, 120 s share visible);
     - an unaffected available team-game (shading shown and equal to the clock);
     - the zero-PP case 2026020038 t55 (N/A);
     - flag off (today's output, pinned).
+
+    *Done: F11 `486da9666`, REPORT §17. Chef reran 34 tests. Known limit: the check compares totals only, so right-total bands in the wrong place would still draw; Astra's parser fix (8.0) removes the gap.*
   - [ ] 7.3 Chef verifies, then rebuilds and re-gates the reader candidate (supersedes `f848c3c2`).
 - [ ] 8.0 NEW: the actual shift-chart parser fix (owner Astra/Codex, separate; TJ ~21:55Z)
   - [ ] 8.1 Astra fixes the root cause: the shift chart's play parser drops situation codes, so its PP bands come from the old algorithm. Astra doesn't touch F11's release files (7.0's ShiftChart files; the reader-gate files). The guard in 7.0 ships first. Once the fix lands and bands reconcile, the "timing mismatch" label disappears without a data change.

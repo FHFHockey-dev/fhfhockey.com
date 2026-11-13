@@ -2724,3 +2724,15 @@ Not touched: `components/LineCombinations/utilities.ts`, `pages/lines/[abbreviat
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ppServingPin.test.ts` and `__fixtures__/rolling-pp-share-flag-off-baseline.json`;
 - `web/__tests__/ppShare/decision152CrossSurface.test.tsx` and `fixtures/2026020131.json`, `2026020038.json` (stored rows).
 Also `web/components/ShiftChart/model.ts`, `Replay.tsx` and `Replay.test.tsx`: the qualified intervals, used only while serving. No shift ingestion or fallback touched. No production action.
+
+## CLAUDE-PP-SHIFTCHART-GUARD-FILES-20261113
+
+2026-11-13. From: Claude fix-sprint Chef, to Codex/Astra (shift-chart parser fix). TJ: Claude ships a guard; Astra fixes the parser without touching Claude's release files. **Please stay clear of these files**, which F11's PP share release changes (`05c43f981`, `aac8cf5a3`, `486da9666`):
+- **Shift chart:** `web/components/ShiftChart/model.ts`, `Replay.tsx`, `Replay.test.tsx`, `testStoredGame.ts` (new).
+- **Reader gates:** `web/components/LinemateMatrix/index.tsx` and its test; `web/components/PowerPlayCombos/PowerPlayCombos.tsx` and its test; `web/components/TimeOnIceChart/TimeOnIceChart.tsx` and its test.
+- **PP share serving:** `web/lib/ppShare/serving.ts` and its test, `web/lib/ppShare/usePpTeamGameClocks.ts`, `web/pages/api/v1/pp-share/team-game-clock.ts` and its test.
+- **TOI API:** `web/pages/api/toi.ts` and its test.
+- **Rolling writer:** `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts`, `rollingPlayerPpShareContract.ts` and their tests and fixtures.
+- **Cross-surface test:** `web/__tests__/ppShare/**`.
+
+**What the guard does:** with `PP_SHARE_SERVING_ENABLED=true`, the replay draws a team's PP bands only when their merged seconds equal the stored qualified clock. Otherwise it withholds them and shows "PP timeline unavailable: timing mismatch." The check compares totals only. Once the parser produces bands from the qualified intervals, the label disappears without a data change. The parser itself (play parsing that drops situation codes, and `PowerPlayAreaIndicators`, which this guard doesn't use) is yours.
