@@ -167,3 +167,21 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - 142: v2_skill nullable numeric plus CHECK; composite_skill_score unchanged.
 - 143: viewdefs replaced. Traded skaters' percent_games went from NULL to GP / games available, e.g. 0.8675, 0.6667, 0.6250. Two players with no team match stay NULL (rule 13); the single-team control stays 1.0.
 - Ledger rows inserted for both. Authority now has 106 applied and 9 pending.
+
+## Release #432 and DB incident 2, 2026-11-13
+- Release #432 (TJ pop-up "Push and merge", after Codex's H1 handback):
+  - Branch pushed 01:47:04Z; no build or checks at ~100 s. PR #432 squash-merged 01:48:52Z as master e1ab46318 (tree = candidate 10bec8b32).
+  - fhfhockey dpl_7MEwsPkGHYco15B5jwjyLoDoubjU READY 01:55:24Z and auto-aliased; cms, functions and fhfhockey.com CANCELED.
+- Smoke: healthz 200 (0.13 s); `/` timed out at 45 s, so the smoke stopped there.
+- **DB hang:** Postgres logs stop at 01:55:12Z, right after "checkpoint starting: time". The previous checkpoint wrote for 270 s. Connections via the session pooler fail ("authentication did not complete within 15000ms", then "{:error, :timeout}"). The control plane says ACTIVE_HEALTHY.
+  - Starter-board audits fail from 01:56:39 ("Audit acknowledgement timed out").
+  - Rolling recompute call 21 (started 01:55:25) got a 504 at 240 s; the runner stopped itself at 01:59:25 (cursor 8478831; calls 1–20 at 200).
+  - Release #432 wrote nothing to the DB.
+- Probable cause: sustained write load tonight on a burst I/O budget, the same pattern as 11-12. Contributors: 2025-26 goalie rebuild, migrations, rolling recompute (~1,000 rows per 100 s plus jsonb support payloads), Codex H1.
+- TJ: "Wait and watch". One short probe per minute for up to 10 min, nothing else against the DB.
+- **Recovery:** Postgres restarted at 02:00:46Z (`pg_postmaster_start_time`). Logs show "not accepting connections" at 02:00:46, then pg_cron restarted at 02:00:49. No PANIC or OOM line in the Supabase log stream. Probe at 02:03:58: up, not in recovery. Hang lasted 01:55:12–02:00:46 (~5.5 min).
+- Smoke (budget 5) after recovery: `/` 200 0.87 s, `/drm` 200 0.32 s, `/game-grid` 307 (redirect to the default view).
+- octoberBranch ours-merge 7f3e6ae09 (tree unchanged) pushed 02:04:45Z; no-build watch running.
+- Rolling recompute paused at cursor 8478831: 280 of 764 skaters written (calls 1–20 at 200). Call 21 (12 players) is uncertain, but it is idempotent upserts, so a resume from 8478831 redoes it. Resuming needs TJ's re-approval, as after 11-12.
+- 02:08:28Z: TJ restarted the database from the Supabase dashboard (`pg_postmaster_start_time` 02:08:28). At 02:08:44: up, not in recovery, 0 active queries. The rolling recompute is still paused at cursor 8478831; TJ will resume it with the slower steps (8 players per call, 60 s gaps).
+- 03:57Z: 2026-27 rolling recompute complete (L6 fixes): 764 skaters × 5 strengths, 10,727 rows each through 11-11, every sampled payload on the L6 shape. Details in FORGE-INPUTS-PLAN-2026-11-13.md. Queue step 5 is done: holds recorded only (TJ), rolling rebuilt, trend v3 forward-only via job 392 (TJ: keep v2 history).
