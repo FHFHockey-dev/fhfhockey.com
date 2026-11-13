@@ -1,9 +1,18 @@
 # Math-audit fix sprint: debrief
 
-Status: **Final for the code sprint, 2026-11-13.**
-- All lane code, the decision 135–143 follow-ups and Codex's adopted work are committed.
-- Two releases have shipped: PR #430 and PR #431.
-- The remaining data steps run from `production/PRODUCTION-QUEUE.md`, one TJ pop-up per action: FORGE inputs and run, trend bands, power ratings, rankings, xG demotion, and migrations 142/143. §3 and the queue record each one as it finishes.
+Status: **Sprint closed, 2026-11-13.**
+- **Closure:** no P0 or P1 is open. Releases through #438 are live, and Astra's audit and all its addenda are complete. Astra's A3 recheck passed both findings at `5fbb2d3a2`.
+- **Penalty shots and power v4:** penalty shots are verified end to end for the 8 games; power v4 is rebuilt and verified.
+- **Two scheduled production checks pending (2026-11-14).** These are post-release checks, not unfinished fixes:
+  1. the first scheduled FORGE reserve rows, from the 10:05Z run;
+  2. cron 283's first scheduled v4 power write, at 10:15Z (05:15 ET).
+- **Separate tickets, not sprint blockers:**
+  - **PP share** stays withheld pending two owner decisions: whether to accept the NHL Penalty Summary as the official reference for 5 games, and whether to rebuild the 14 affected games' stored `powerPlayCombinations` or compute the share from shifts and qualified intervals.
+  - **Codex:**
+    - items 1, 2 and 6; item 6 needs its reader fixes before its migration;
+    - the model studies: the shared goalie baseline fix and xG v2 scoping can start now, and the goalie/starter refits and the Week Score off-night study follow.
+  - **CTPI prediction:** needs more completed games (checkpoints at games 20, 30 and 40). The descriptive Recent Team Form beta is already live.
+- **Records:** the local record commits ride with the next release.
 
 Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one per lane, in the sole checkout `octoberBranch`, with exact file ownership. Every production action had TJ's own pop-up approval.
 
@@ -47,7 +56,7 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
   - Addendum 3 (#436–#438) is **complete** (`astra/ASTRA-FIX-SPRINT-AUDIT-ADDENDUM-436-438-2026-11-13.md`): application changes accepted, no P0/P1, no rollback or rerun. Two operational P2s:
     - A3-01, the landing verifier could print ALL_OK with wrong ES or missing goalie fields: **closed.** The strict `verify-landing-strict.py` passed its offline self-test (Astra's false-pass case fails for all 8 games), then a TJ-approved 24-GET rerun returned ALL_OK with raw responses kept.
     - A3-02, the resumed summary runner overwrote the canary's before snapshot: **closed locally.** F15's runner fixes and resume tests cover all three runners, plus the team runner's stop-before-write gates (33 tests). No production rerun.
-    - A short independent Astra recheck of both is next (`ASTRA-RECHECK-A3-PROMPT.md`).
+    - Astra's independent recheck, run offline at `5fbb2d3a2`: **both PASS** (`astra/ASTRA-RECHECK-A3-2026-11-13.md`). The canary's original ES baseline is still lost; its ES-unchanged evidence is the original recorded readback.
 - **Integration gate:** clean `git archive` export of `496b5c9de`.
   - Vitest: 19,122 passed, 0 failed (1,391 files).
   - Typecheck: passed.
@@ -772,7 +781,7 @@ Then the C4 storage, the C6 readers and a display lane. |
 | Power ratings v4 (decisions 145, 147, 150) | **Released and rebuilt.** Code in #434; version-aware labels and the writer dry run in #435. Rebuilt 2026-11-13 16:46–16:53Z after a live no-write preflight: 1,425 v4 + 47 labelled legacy carries (09-29..10-02, source 08-29), 0 v3 left, served labels checked. | — |
 | Astra #435 addendum P2: CTPI beta card says "same 10 games" while warning about a date mismatch | **Closed** (addendum 3): date-by-date comparison, regression included | — |
 | Astra #435 addendum P2: runner cron guard can go stale after the load wait | **Closed** (addendum 3): runner `630127066` rechecks after the guard | — |
-| Astra A3-01 P2: landing verifier could falsely pass | **Closed 2026-11-13:** `verify-landing-strict.py` (self-test plus strict 24-GET rerun, ALL_OK, raw responses kept). The record's "21 GETs" was a miscount of 24. ES unchanged by the refresh is shown by the 7 surviving pre-refresh snapshots. For the canary, the pre-refresh values are cited from the original run log (`run/summary-run.jsonl` line 2), not the overwritten snapshot; that log has no ES row. | — |
+| Astra A3-01 P2: landing verifier could falsely pass | **Closed 2026-11-13:** `verify-landing-strict.py` (self-test plus strict 24-GET rerun, ALL_OK, raw responses kept). The record's "21 GETs" was a miscount of 24. ES unchanged by the refresh is shown by the 7 surviving pre-refresh snapshots. For the canary, the pre-refresh values are cited from the original run log (`run/summary-run.jsonl` line 2), not the overwritten snapshot; that log has no ES row. **Astra recheck: PASS** at `5fbb2d3a2` (24 responses replayed, log hash matches). | — |
 | Astra A3-02 P2: resumed summary runner overwrites the canary's before snapshot (and re-baselines done games) | **Closed locally 2026-11-13 (offline; no production rerun):** F15 `f3b411463`, `9cc43a0b6`, `6d24ba51e`, `bfeabb283`, `f4c8cc701`.
 - All three runners write run-unique snapshots that can't be overwritten (the first per game is the original). A resume skips done games before any snapshot or baseline; the PS runner's final read-only totals check is not a baseline.
 - Resume tests for all three runners, each with one completed and one pending game: the completed game's files stay byte-identical, and only the pending game gets new snapshots.
@@ -781,7 +790,7 @@ Then the C4 storage, the C6 readers and a display lane. |
   - a per-game diff response that doesn't confirm a dry run with zero writes (exit 2; dryRun missing or false, rowsUpserted ≠ 0, truncated).
 - Chef reran pytest: 33 passed.
 
-The canary's original before rows are lost; its true pre-refresh values (0 G / 5 S) survive in `summary-run.jsonl` | Astra recheck (`ASTRA-RECHECK-A3-PROMPT.md`) |
+The canary's original before rows are lost; its true pre-refresh values (0 G / 5 S) survive in `summary-run.jsonl`. **Astra recheck: PASS** at `5fbb2d3a2`. | — |
 | Astra #435 addendum, model handoff: `homeMinusAwayGoalieRating` mixes v4 (5-on-5) and legacy goaltending across history; `featureBuilder.ts` drops the provenance | Not a release blocker; there's no production game model (decision 42) | Codex model work: version the feature, filter or withhold mixed inputs, and keep reconstructed inputs apart from issued ones |
 | Social rankings missing-vs-zero (Astra #433 follow-up) | **Fixed and released (#436):** F17 `f2df257b6`. The social share skater score is withheld when any input stat is missing. | — |
 | NST identity gap (Mahura) and WiGO rejects | **Repaired 2026-11-13** (F18, TJ-approved): 14 WGO legacy-identity rows fixed and 2 NST dates re-fetched. The alias code fix `77a6e7592` shipped in #437. | Ticket: the wider 2020-21 to 2022-23 WGO game-identity backfill (most legacy rows lack game ids) |
