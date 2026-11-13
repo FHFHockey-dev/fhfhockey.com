@@ -46,7 +46,8 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
   - The #435 addendum is **complete**: the F16 label P1 is closed and the rebuild receipts reconcile (1,425 v4 + 47 legacy). Its two P2s (CTPI "same games", runner cron guard) were fixed in #436–#438, and addendum 3 closed both.
   - Addendum 3 (#436–#438) is **complete** (`astra/ASTRA-FIX-SPRINT-AUDIT-ADDENDUM-436-438-2026-11-13.md`): application changes accepted, no P0/P1, no rollback or rerun. Two operational P2s:
     - A3-01, the landing verifier could print ALL_OK with wrong ES or missing goalie fields: **closed.** The strict `verify-landing-strict.py` passed its offline self-test (Astra's false-pass case fails for all 8 games), then a TJ-approved 24-GET rerun returned ALL_OK with raw responses kept.
-    - A3-02, the resumed summary runner overwrote the canary's before snapshot: routed to F15 (runner artifact, no release).
+    - A3-02, the resumed summary runner overwrote the canary's before snapshot: **closed locally.** F15's runner fixes and resume tests cover all three runners, plus the team runner's stop-before-write gates (33 tests). No production rerun.
+    - A short independent Astra recheck of both is next (`ASTRA-RECHECK-A3-PROMPT.md`).
 - **Integration gate:** clean `git archive` export of `496b5c9de`.
   - Vitest: 19,122 passed, 0 failed (1,391 files).
   - Typecheck: passed.
@@ -737,7 +738,7 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 | BC W1-6 D8/D13/D14 (goalie stage) | Model changes needing refits and held-out checks (L9b plan) | Owner decision and refit plan |
 | L11 registry and goalie-contract wiring | Not started (integration) | A lane of its own |
 | L9a ice-time classifier vs Codex penalty clock | Codex's `24b1cb4d3` replaced L9a's `8bc43a855` in `ingest/shifts.ts`; derived event counts still use situation codes | Read-only cross-check of edge cases |
-| CTPI v2 publication (W1-4) | Released gated. The writer issues only v2 candidate rows (1,102 backfilled, 10-07 → 11-13); readers default to v2 and hide candidates, and v1 is frozen. **Recent Team Form serves no rows until v2 is approved.** | Owner decision: validate and approve v2 (successor code change), or label-serve the last v1 date meanwhile |
+| CTPI v2 publication (W1-4) | Released gated. The writer issues only v2 candidate rows (1,102 backfilled, 10-07 → 11-13); readers default to v2 and hide candidates, and v1 is frozen. **The descriptive Recent Team Form beta is live** (#435; same-games label #437). Only the approved-only predictive path stays gated until v2 is approved. | Owner decision: validate and approve v2 for prediction (successor code change); CTPI checkpoints at games 20, 30 and 40 |
 | SOS v2 (decision 21) | Released (#433, F2 + F2b). The first snapshot holds 32 rows, 0 pending, 84 fixtures per team (2026-27 is an 84-game season). `sos_standings` is frozen. | Q6 (win% vs points% headline, 2:1 landing weights, as-of semantics) stays open |
 | NST gamelog identity: Josh Mahura 8479372 | Found at the 11:01Z check. NST matched him on 12 of 14 games and failed on 11-07 and 11-12 (16 of 20 datasets flagged each time; other players landed). | Find NST's name or id for him on those dates (read-only), then an alias or identity fix and a bounded re-fetch of the 2 dates within the NST limits |
 | WiGO `missing_identity` rejects | Cron 231 writes 988/990 players; 8478446 (2022-11-12) and 8481827 (2021-11-06) have `wgo_skater_stats` rows with no team, opponent or game id, so the run audits as `failure` daily | A 2-row WGO repair from the NHL game logs (needs TJ) |
@@ -754,7 +755,7 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 1. all 8 games pass the post-write checks;
 2. the bounded underlying-stats summary refresh for those 8 games (separate plan, reviewed and approved on its own) has run, and the landing is verified against the rebuilt rows. |
 | Astra AF-08 finality consumers | **Fixed in the final release:** F7 `5bb89aef1` and `706937676`. `teamUnitToiNightly` needs a PBP game-end event; settlement needs a FINAL/OFF boxscore. | — |
-| Astra: social skater rankings score a missing stat like a known zero | Confirmed by Astra after checkpoint 1; doesn't block release | Ticket (TJ): a targeted fix once Astra gives the file and line |
+| Astra: social skater rankings score a missing stat like a known zero | Confirmed by Astra after checkpoint 1. **Fixed (#436)**; see the F17 row below | — |
 | PP clock (decisions 144, 151) | F11:
 - report `48dd8fe8f`: 2,493/2,500 exact;
 - C3 `a98eda63f` (#434);
@@ -767,12 +768,20 @@ Also fixed here: the Game Grid TeamDetails test mock had been failing on master 
 
 Then the C4 storage, the C6 readers and a display lane. |
 | Codex dev items 1, 2, 6 | **Held by Codex and excluded from the final release:** `fc34b053a` (goalie writer), `284f99045` (accuracy job), `c89ff5d24` (game-stat placeholders, with an unapplied migration) | Codex: league SV% helper nulls, pregame issuance contract, Splits and Lines readers before migration |
-| CTPI descriptive beta card (F5b) | Committed `122dd880b`, visual polish still in progress; **held from the final release** (TJ) | A later release after TJ approves the finished card |
+| CTPI descriptive beta card (F5b) | **Live:** shipped in #435 (`122dd880b`, `17b342f76`, `3b6d82edc`), with the same-games label fix in #437. Badged "Descriptive beta · not a forecast"; the approved-only predictive path stays gated | — |
 | Power ratings v4 (decisions 145, 147, 150) | **Released and rebuilt.** Code in #434; version-aware labels and the writer dry run in #435. Rebuilt 2026-11-13 16:46–16:53Z after a live no-write preflight: 1,425 v4 + 47 labelled legacy carries (09-29..10-02, source 08-29), 0 v3 left, served labels checked. | — |
 | Astra #435 addendum P2: CTPI beta card says "same 10 games" while warning about a date mismatch | **Closed** (addendum 3): date-by-date comparison, regression included | — |
 | Astra #435 addendum P2: runner cron guard can go stale after the load wait | **Closed** (addendum 3): runner `630127066` rechecks after the guard | — |
 | Astra A3-01 P2: landing verifier could falsely pass | **Closed 2026-11-13:** `verify-landing-strict.py` (self-test plus strict 24-GET rerun, ALL_OK, raw responses kept). The record's "21 GETs" was a miscount of 24. ES unchanged by the refresh is shown by the 7 surviving pre-refresh snapshots. For the canary, the pre-refresh values are cited from the original run log (`run/summary-run.jsonl` line 2), not the overwritten snapshot; that log has no ES row. | — |
-| Astra A3-02 P2: resumed summary runner overwrites the canary's before snapshot (and re-baselines done games) | Routed to F15 (`local_c389b3c5`): planned games only, immutable run-unique snapshots, tests. The canary's original before rows are lost; its true pre-refresh values (0 G / 5 S) survive in `summary-run.jsonl` | Before any future runner use |
+| Astra A3-02 P2: resumed summary runner overwrites the canary's before snapshot (and re-baselines done games) | **Closed locally 2026-11-13 (offline; no production rerun):** F15 `f3b411463`, `9cc43a0b6`, `6d24ba51e`, `bfeabb283`, `f4c8cc701`.
+- All three runners write run-unique snapshots that can't be overwritten (the first per game is the original). A resume skips done games before any snapshot or baseline; the PS runner's final read-only totals check is not a baseline.
+- Resume tests for all three runners, each with one completed and one pending game: the completed game's files stay byte-identical, and only the pending game gets new snapshots.
+- Team runner: execute diffs only pending games, against the original approved diff. Two cases each stop before any write or snapshot, with the done file and the approved diff byte-identical:
+  - a changed diff (exit 6);
+  - a per-game diff response that doesn't confirm a dry run with zero writes (exit 2; dryRun missing or false, rowsUpserted ≠ 0, truncated).
+- Chef reran pytest: 33 passed.
+
+The canary's original before rows are lost; its true pre-refresh values (0 G / 5 S) survive in `summary-run.jsonl` | Astra recheck (`ASTRA-RECHECK-A3-PROMPT.md`) |
 | Astra #435 addendum, model handoff: `homeMinusAwayGoalieRating` mixes v4 (5-on-5) and legacy goaltending across history; `featureBuilder.ts` drops the provenance | Not a release blocker; there's no production game model (decision 42) | Codex model work: version the feature, filter or withhold mixed inputs, and keep reconstructed inputs apart from issued ones |
 | Social rankings missing-vs-zero (Astra #433 follow-up) | **Fixed and released (#436):** F17 `f2df257b6`. The social share skater score is withheld when any input stat is missing. | — |
-| NST identity gap (Mahura) and WiGO rejects | **Repaired 2026-11-13** (F18, TJ-approved): 14 WGO legacy-identity rows fixed and 2 NST dates re-fetched. The alias code fix `77a6e7592` ships in the next release. | Ticket: the wider 2020-21 to 2022-23 WGO game-identity backfill (most legacy rows lack game ids) |
+| NST identity gap (Mahura) and WiGO rejects | **Repaired 2026-11-13** (F18, TJ-approved): 14 WGO legacy-identity rows fixed and 2 NST dates re-fetched. The alias code fix `77a6e7592` shipped in #437. | Ticket: the wider 2020-21 to 2022-23 WGO game-identity backfill (most legacy rows lack game ids) |
