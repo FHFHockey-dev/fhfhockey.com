@@ -80,3 +80,5 @@
     - the zero-PP case 2026020038 t55 (N/A);
     - flag off (today's output, pinned).
   - [ ] 7.3 Chef verifies, then rebuilds and re-gates the reader candidate (supersedes `f848c3c2`).
+- [ ] 8.0 NEW: the actual shift-chart parser fix (owner Astra/Codex, separate; TJ ~21:55Z)
+  - [ ] 8.1 Astra fixes the root cause: the shift chart's play parser drops situation codes, so its PP bands come from the old algorithm. Astra doesn't touch F11's release files (7.0's ShiftChart files; the reader-gate files). The guard in 7.0 ships first. Once the fix lands and bands reconcile, the "timing mismatch" label disappears without a data change.
