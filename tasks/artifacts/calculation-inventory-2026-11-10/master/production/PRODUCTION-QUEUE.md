@@ -390,3 +390,26 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - Cron 388 stays on the old path, or gated off by `PP_STORED_CALCULATION_WRITES_ENABLED` (off), until TJ approves writes.
   - Then the migration, release and refresh each get their own approval. PP share stays hidden until the refresh and readbacks pass and TJ separately approves serving it.
   - Assigned to F11 (`local_efbef655`).
+- **Decision 152 local dry run** (TJ-approved, F11 `79f4552e3`, candidate code `8f73d2931`; REPORT §14):
+  - **Export:** read-only, 309 games, 31 batches, load gate before each, ≥5 s apart.
+    - Manifest sha256 `bbcba75c…c145`.
+    - Contents: 99,128 PBP, 231,749 shift (517), 12,360 roster, 618 teamGameStats, 7,190 powerPlayCombinations rows.
+    - No writes, audit rows or cron changes; no NHL/NST calls.
+  - **Dry run:** `dry-run.json` sha256 **`db94a9de864b9dfa8fa69f24c6be9045dd037ed1937393c3b03dd69d9ec4f15c`**. 31 calls, all 200; 309/309 games; 0 failed or skipped.
+  - **Chef's independent reconciliation of the raw file:**
+    - 618 clock rows, all qualified: 609 available, 9 not applicable, 0 unavailable;
+    - **593 available team-games unchanged**;
+    - **16 changed = exactly F11's groups A ∪ B ∪ C** (Part B list, written before this run). The 15 deletions fall only in group A's 11 games, and updates and inserts only in B ∪ C.
+    - Changes: 15 deleted, 23 PP-time/share updates, 5 inserted;
+    - 0 impossible values (share ≤ 1, PPTOI ≤ clock), no rows on a non-available team-game, no unit changes;
+    - the 9 not-applicable team-games have no rows.
+  - **Flagged for TJ:**
+    1. **14 more updates inside the 16:** unit-relative fields only (`pp_unit_relative_toi`, `pp_vs_unit_avg`, `pp_unit_usage_index`/`percentageOfPP`) of teammates in group B's overtime team-games. Their unit averages move when the OT seconds return. Breakdown: 161 t52 ×3, 174 t29 ×6, 192 t2 ×1, 197 t23 ×4. Total updated rows: 37 (23 + 14). `percentageOfPP` is the legacy name for the usage index (it can exceed 1), not a share.
+    2. **Read-only method:** the pooler dropped `PGOPTIONS`, so read-only was enforced in-session: `SET default_transaction_read_only=on` plus `START TRANSACTION READ ONLY`, 10 s timeout. All 31 logs show it on, and a write inside was refused.
+    3. **One earlier probe** created a session-only temporary table outside a read-only transaction. It was dropped at disconnect and touched no stored data.
+  - **Next, each its own TJ approval:**
+    1. migration 149 (`MIGRATION-149-PACKET.md`);
+    2. the writer and registry release with `PP_STORED_CALCULATION_WRITES_ENABLED` off;
+    3. the refresh, bound to `db94a9de…` and with the flag on;
+    4. readbacks;
+    5. serving PP share.
