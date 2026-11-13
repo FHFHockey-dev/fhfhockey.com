@@ -14,7 +14,8 @@ import { attachPreviousBoardForecast, boardGoalieForecast, boardSkaterForecast, 
 import { goalieStartLabel, normalizeStartChartResponse } from "./startChartContract";
 import { claimStarterBoardJobs, computeStarterBoardJob, dispatchStarterBoardJobs, drainStarterBoardQueue, STARTER_BOARD_LATENCY } from "./starterBoardQueue";
 import { starterBoardCanaryGameIds, starterBoardFlags, starterBoardScopeAllowed } from "./starterBoardFlags";
-import { exportFrozenBoardForecasts, readFrozenBoardSource, type FrozenBoardSource } from "./starterBoardDataset";
+import { exportFrozenBoardForecasts, exportFrozenGoalieCandidates, readFrozenBoardSource, type FrozenBoardSource } from "./starterBoardDataset";
+import { buildGoalieCandidatesContract } from "./goalie/goalieCandidates";
 import { optimizeToday, rankTodayStreams, type TodayPlayer, type TodayStream } from "./starterBoardPersonalization";
 import { weightedAssignment } from "./weightedAssignment";
 import * as forgeRunner from "./run-forge-projections";
@@ -115,6 +116,136 @@ describe("immutable daily-board forecast exports", () => {
     from.mockClear();
     await expect(readFrozenBoardSource({ from }, "2026-02-01", 1)).rejects.toThrow("holdout");
     expect(from).not.toHaveBeenCalled();
+  });
+  describe("canonical frozen goalie population", () => {
+    const canonicalFixture = () => {
+      const source = fixture();
+      (source.observation.payload.reads[1].result as any).data.push({ id: 4, team_id: 8, position: "G" }, { id: 5, team_id: 8, position: "G" });
+      source.observation.payload_hash = projectionInputHash(source.observation.payload);
+      const row = source.revision.payload.goalies[0];
+      row.as_of_date = source.game.date; row.opponent_team_id = 10;
+      row.uncertainty.goalie_candidates = buildGoalieCandidatesContract({ gameId: 1, teamId: 8,
+        teamWinProbability: 0.6, teamWinSource: "fixture_team_probability",
+        issuance: { run_id: "run-1", as_of_date: source.game.date, issued_at: "2026-10-10T20:00:02.500001Z",
+          information_cutoff_at: source.observation.payload.inputCutoff, starter_labels: null },
+        candidates: [0.6, 0.2, 0.1].map((probability, i) => ({ goalieId: i + 3, startProbability: probability,
+          startProbabilityStatus: "uncalibrated_model", confirmationEvidenceIds: [],
+          ifStarts: { shotsAgainst: 30, saves: 28, goalsAllowed: 2, shutoutProbability: 0.1, modeledSavePct: 28 / 30 },
+          creditedWinIfStarts: i === 2 ? null : 0.54 - i / 10, unconditionalCreditedWin: i === 2 ? null : 0.2 })) });
+      return source;
+    };
+    it("exports every canonical candidate and unknown mass without legacy Win substitution or qualification", () => {
+      const source = canonicalFixture(), before = JSON.stringify(source);
+      const exported = exportFrozenGoalieCandidates(source);
+      expect(exportFrozenGoalieCandidates(source)).toEqual(exported);
+      expect(JSON.stringify(source)).toBe(before);
+      expect(exported.rows.map(row => [row.goalie_id, row.rank, row.start_probability])).toEqual([[3, 1, 0.6], [4, 2, 0.2], [5, 3, 0.1]]);
+      expect(exported.rows[0]).toMatchObject({ game_id: 1, team_id: 8, opponent_team_id: 10, credited_win_if_starts: 0.54,
+        issued_at: "2026-10-10T20:00:02.500001Z", evaluation_exclusions: { goalie_start: [], goalie_credited_win_if_starting: [] } });
+      expect(exported.teams.find(team => team.team_id === 8)).toMatchObject({ candidate_count: 3, start_probability_mass: 0.9,
+        unresolved_start_mass: 0.1, team_win_probability: 0.6, reason: null });
+      expect(exported.teams.find(team => team.team_id === 10)).toMatchObject({ candidate_count: null, unresolved_start_mass: null, reason: "goalie_projection_missing" });
+      expect(exported.manifest).toMatchObject({ version: "forge-goalie-frozen-candidates-v1", population: "declared_candidate_goalie_game",
+        promotionEligible: false, completeCandidateUniverse: false, completeTeamCoverage: false, sourceHash: projectionInputHash(source),
+        targets: { goalie_credited_win_if_starting: { conditioning: "official_start", nonstarterOutcome: "excluded" } } });
+      expect(exported.rows.every(row => !Object.hasOwn(row, "outcome"))).toBe(true);
+      // The existing Start Chart export keeps its explicitly different serving population and value.
+      expect(exportFrozenBoardForecasts(source).rows.find(row => row.player_id === 3 && row.target_key === "WINS_GOALIE"
+        && row.conditioning === "conditional_start")?.estimates.forge).toBe(0.6);
+      delete source.revision.payload.goalies[0].uncertainty.daily_board_candidates;
+      expect(exportFrozenGoalieCandidates(source).rows).toEqual(exported.rows);
+      expect(exportFrozenBoardForecasts(source).rows.filter(row => row.population === "goalie")).toEqual([]);
+    });
+    it("keeps null distinct from zero and marks each target independently", () => {
+      const source = canonicalFixture(), candidates = source.revision.payload.goalies[0].uncertainty.goalie_candidates.rows;
+      candidates[0].if_starts.credited_win_prob = 0;
+      const exported = exportFrozenGoalieCandidates(source);
+      expect(exported.rows[0].credited_win_if_starts).toBe(0);
+      expect(exported.rows[0].evaluation_exclusions.goalie_credited_win_if_starting).toEqual([]);
+      expect(exported.rows[2]).toMatchObject({ credited_win_if_starts: null, evaluation_exclusions: { goalie_start: [],
+        goalie_credited_win_if_starting: ["credited_win_probability_unavailable"] } });
+      const legacyOnly = canonicalFixture(); delete legacyOnly.revision.payload.goalies[0].uncertainty.goalie_candidates;
+      const missing = exportFrozenGoalieCandidates(legacyOnly);
+      expect(missing.rows).toEqual([]);
+      expect(missing.teams.find(team => team.team_id === 8)).toMatchObject({ reason: "canonical_candidate_contract_missing", candidate_count: null });
+    });
+    it("retains membership exclusions and missing cutoffs without dropping candidates or renormalizing", () => {
+      const source = canonicalFixture();
+      (source.observation.payload.reads[1].result as any).data = [{ id: 3, team_id: 8 }, { id: 4, team_id: 8 }, { id: 4, team_id: 10 }];
+      source.observation.payload_hash = projectionInputHash(source.observation.payload);
+      const exported = exportFrozenGoalieCandidates(source);
+      expect(exported.rows).toHaveLength(3);
+      expect(exported.rows[0].evaluation_exclusions.goalie_start).toEqual([]);
+      expect(exported.rows.slice(1).every(row => row.evaluation_exclusions.goalie_start.includes("pregame_membership_missing_or_conflicting"))).toBe(true);
+      expect(exported.teams.find(team => team.team_id === 8)?.unresolved_start_mass).toBe(0.1);
+      source.revision.payload.goalies[0].uncertainty.goalie_candidates.issuance.information_cutoff_at = null;
+      expect(exportFrozenGoalieCandidates(source).rows.every(row => row.evaluation_exclusions.goalie_start.includes("candidate_cutoff_missing"))).toBe(true);
+      source.game.type = 1;
+      source.observation.payload_hash = projectionInputHash(source.observation.payload);
+      expect(exportFrozenGoalieCandidates(source).rows.every(row => row.evaluation_exclusions.goalie_start.includes("regular_season_required"))).toBe(true);
+    });
+    it("preserves zero, wire rounding and a known empty declared pool", () => {
+      const source = canonicalFixture(), contract = source.revision.payload.goalies[0].uncertainty.goalie_candidates;
+      contract.rows.forEach((row: any) => { row.start_probability = 0.333333; });
+      contract.start_probability_mass = 1; contract.unresolved_start_mass = 0;
+      expect(exportFrozenGoalieCandidates(source).rows.map(row => row.start_probability)).toEqual([0.333333, 0.333333, 0.333333]);
+      contract.rows[0].start_probability = 0; contract.start_probability_mass = 0.666666; contract.unresolved_start_mass = 0.333334;
+      expect(exportFrozenGoalieCandidates(source).rows[0].start_probability).toBe(0);
+      contract.rows = []; contract.start_probability_mass = 0; contract.unresolved_start_mass = 1;
+      const empty = exportFrozenGoalieCandidates(source);
+      expect(empty.rows).toEqual([]);
+      expect(empty.teams.find(team => team.team_id === 8)).toMatchObject({ candidate_count: 0, selected_goalie_id: null,
+        start_probability_mass: 0, unresolved_start_mass: 1, reason: "no_declared_candidates" });
+    });
+    it("keeps confirmed probabilities raw and records contradictory captured positions", () => {
+      const source = canonicalFixture(), candidate = source.revision.payload.goalies[0].uncertainty.goalie_candidates.rows[0];
+      candidate.start_probability_status = "confirmed_evidence";
+      expect(exportFrozenGoalieCandidates(source).rows[0].evaluation_exclusions.goalie_start).toContain("confirmation_evidence_missing");
+      candidate.confirmation_evidence_ids = ["news-revision-1"];
+      expect(exportFrozenGoalieCandidates(source).rows[0]).toMatchObject({ start_probability: 0.6,
+        confirmation_evidence_ids: ["news-revision-1"], evaluation_exclusions: { goalie_start: [] } });
+      (source.observation.payload.reads[1].result as any).data.find((player: any) => player.id === 3).position = "C";
+      (source.observation.payload.reads[1].result as any).data.push({ id: 3, team_id: 8, position: "G" });
+      source.observation.payload_hash = projectionInputHash(source.observation.payload);
+      expect(exportFrozenGoalieCandidates(source).rows[0].evaluation_exclusions.goalie_start).toContain("captured_position_conflict");
+    });
+    it.each([
+      ["outer run", (s: FrozenBoardSource) => { s.revision.payload.goalies[0].run_id = "other"; }],
+      ["outer opponent", (s: FrozenBoardSource) => { s.revision.payload.goalies[0].opponent_team_id = 8; }],
+      ["outer date", (s: FrozenBoardSource) => { s.revision.payload.goalies[0].as_of_date = "2026-10-11"; }],
+      ["horizon", (s: FrozenBoardSource) => { s.revision.payload.goalies[0].horizon_games = 2; }],
+      ["duplicate team", (s: FrozenBoardSource) => { s.revision.payload.goalies.push(s.revision.payload.goalies[0]); }],
+      ["revision", (s: FrozenBoardSource) => { s.frozen.revision_id = "another"; }],
+      ["snapshot hash", (s: FrozenBoardSource) => { s.observation.payload_hash = "0".repeat(64); }],
+      ["canonical identity", (s: FrozenBoardSource) => { s.revision.payload.goalies[0].uncertainty.goalie_candidates.game_id = 2; }],
+      ["candidate run", (s: FrozenBoardSource) => { s.revision.payload.goalies[0].uncertainty.goalie_candidates.issuance.run_id = "other"; }],
+      ["candidate cutoff", (s: FrozenBoardSource) => { s.revision.payload.goalies[0].uncertainty.goalie_candidates.issuance.information_cutoff_at = "2026-10-10T20:00:00.000001Z"; }],
+      ["candidate probability", (s: FrozenBoardSource) => { s.revision.payload.goalies[0].uncertainty.goalie_candidates.rows[0].start_probability = 1.1; }],
+      ["cross-team candidate", (s: FrozenBoardSource) => { const row = structuredClone(s.revision.payload.goalies[0]);
+        row.team_id = 10; row.opponent_team_id = 8; row.uncertainty.goalie_candidates.team_id = 10; s.revision.payload.goalies.push(row); }],
+      ["candidate duplicate", (s: FrozenBoardSource) => { const c = s.revision.payload.goalies[0].uncertainty.goalie_candidates; c.rows[1].goalie_id = 3; }],
+      ["candidate unsafe id", (s: FrozenBoardSource) => { s.revision.payload.goalies[0].uncertainty.goalie_candidates.rows[0].goalie_id = 2 ** 53; }],
+      ["duplicate rank", (s: FrozenBoardSource) => { s.revision.payload.goalies[0].uncertainty.goalie_candidates.rows[1].rank = 1; }],
+      ["unresolved mass", (s: FrozenBoardSource) => { s.revision.payload.goalies[0].uncertainty.goalie_candidates.unresolved_start_mass = 0; }],
+      ["declared mass", (s: FrozenBoardSource) => { s.revision.payload.goalies[0].uncertainty.goalie_candidates.start_probability_mass = 1; }],
+      ["invalid Win", (s: FrozenBoardSource) => { s.revision.payload.goalies[0].uncertainty.goalie_candidates.rows[0].if_starts.credited_win_prob = 1.1; }],
+    ] as const)("rejects %s corruption", (_name, mutate) => {
+      const source = canonicalFixture(); mutate(source); expect(() => exportFrozenGoalieCandidates(source)).toThrow();
+    });
+    it("preserves microseconds and rejects post-cutoff or impossible candidate clocks", () => {
+      const source = canonicalFixture();
+      source.observation.payload.reads[1].receivedAt = "2026-10-10T20:00:02.000001Z";
+      source.observation.payload.decisionAsOf = source.revision.decision_as_of = "2026-10-10T20:00:02.000001Z";
+      source.observation.payload_hash = projectionInputHash(source.observation.payload);
+      expect(exportFrozenGoalieCandidates(source).manifest.maximumFeatureReceivedAt).toBe("2026-10-10T20:00:02.000001Z");
+      source.observation.payload.decisionAsOf = source.revision.decision_as_of = "2026-10-10T20:00:02.000000Z";
+      source.observation.payload_hash = projectionInputHash(source.observation.payload);
+      expect(() => exportFrozenGoalieCandidates(source)).toThrow("cutoff");
+      for (const value of ["2026-10-10T20:00:03.000001Z", "2026-10-10T20:00:02.5000001Z", "2026-10-10T23:00:00Z"]) {
+        const changed = canonicalFixture(); changed.revision.payload.goalies[0].uncertainty.goalie_candidates.issuance.issued_at = value;
+        expect(() => exportFrozenGoalieCandidates(changed)).toThrow();
+      }
+    });
   });
   it("writes a private CLI artifact and verifies exact retries without rewriting", () => {
     const directory = mkdtempSync(join(tmpdir(), "starter-board-export-"));
