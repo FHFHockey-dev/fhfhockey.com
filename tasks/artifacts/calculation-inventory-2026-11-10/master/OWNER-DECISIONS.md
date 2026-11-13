@@ -411,3 +411,16 @@ Source: `WAVE3-CONSOLIDATED.md`, "Owner decisions still open" Q42 and Q49. The 1
      - the served readers keep carried rows distinct;
      - the readback checks and expected exceptions.
    - **2026-11-13: rebuild approved** (TJ "Approve, Claude runs it" in the Chef pop-up, answered before 16:46:01Z). Chronology from the receipts: the run process started at 16:46:01Z, this record was committed in `d24bf142a` at 16:46:06Z, and the first write receipt is 16:46:15Z. An earlier draft said "~16:47Z"; Astra's #435 addendum flagged the rounding. This followed the live no-write preflight (PREFLIGHT_OK; deployed `6f1cb0767`; dry-run probe v4 with 0 upserts; 09-29 dry run 10 v4 + 22 carried matching the manifest; 11-12 dry run matching the sample; served version and source date). The Chef independently confirmed zero writes.
+151. **PP clock qualification calls** (F11 report O1–O4; decision 144):
+   - **O1 tolerance:**
+     - **The rule:** a reconstructed clock qualifies when it's within **2 seconds, inclusive,** of a verified official NHL team PP total and the other clock checks pass.
+     - **Scope of the tolerance:** it applies only to comparing the two clocks. A verified zero is "not applicable"; missing or placeholder totals stay unqualified.
+     - **Never** cap a share at 100%, or use the tolerance to excuse unit time above the qualified clock.
+     - **Reporting:** team-games passing the clock check are reported separately from those that can actually display PP share.
+   - **O2:** the 2025-26 placeholder team-games stay withheld.
+   - **O3:** the six clock-refusal games stay withheld; no expiry tolerance.
+   - **O4:**
+     - Fetch only the five NHL HTML Penalty Summaries as a read-only check; keep the raw clock and official totals unchanged; the games stay unavailable during the check.
+     - For each game, show what the summary explains and whether it passes O1 and the other checks; if it doesn't reconcile, keep it withheld.
+     - Don't widen the tolerance, write repairs or turn on PP share as part of this check.
+   - **PP share stays withheld for now** (TJ, 2026-11-13).
