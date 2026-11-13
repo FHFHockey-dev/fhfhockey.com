@@ -105,6 +105,33 @@ class Helpers(unittest.TestCase):
         self.assertEqual(sr.goalie_table_problems(table(BEFORE), save_after, GOALIE, "save"), [])
         self.assertNotEqual(sr.goalie_table_problems(table(BEFORE), save_after, GOALIE, "goal"), [])
 
+    def test_orphan_partitions_are_left_untouched(self):
+        # 2026020094-style: an empty-net partition from a 2026-11-09 build (no formula revision) that the
+        # current builder no longer writes. The refresh leaves it as it is; the readback requires exactly that.
+        orphan_url = f"{P}individual/withEmptyNet/{G}"
+        orphan = {"version": 1, "generatedAt": "2026-11-09", "rows": [{"playerId": SHOOTER, "metrics": metrics()}]}
+        before = dict(BEFORE, **{orphan_url: orphan})
+        after = dict(GOOD_AFTER, **{orphan_url: copy.deepcopy(orphan)})
+        orphans = sr.orphan_keys(before)
+        self.assertEqual(orphans, {orphan_url})
+        self.assertEqual(sr.partition_problems(before, after, SHOOTER, GOALIE, "goal", orphans), [])
+        # Without the orphan rule it would be flagged as an old revision.
+        self.assertNotEqual(sr.partition_problems(before, after, SHOOTER, GOALIE, "goal"), [])
+        changed = copy.deepcopy(after)
+        changed[orphan_url]["rows"][0]["metrics"]["individual"]["shots"] = 9
+        self.assertNotEqual(sr.partition_problems(before, changed, SHOOTER, GOALIE, "goal", orphans), [])
+
+    def test_baseline_gate(self):
+        heads = {u: {"f": "2026-11-12T20:11:00Z", "p": p} for u, p in BEFORE.items()}
+        goalies = {("allStrengths", "allScores"): {"f": "2026-11-12T20:23:00Z", "p": BEFORE[f"{P}goalies/allStrengths/{G}"]}}
+        self.assertEqual(sr.baseline_problems(heads, goalies), [])
+        old = dict(heads, **{f"{P}onIce/withEmptyNet/{G}": {"f": "2026-11-09T15:03:23Z", "p": {"version": 1, "rows": []}}})
+        self.assertEqual(sr.baseline_problems(old, goalies), [])
+        newer = dict(heads, **{f"{P}onIce/withEmptyNet/{G}": {"f": "2026-11-13T09:00:00Z", "p": {"version": 1, "rows": []}}})
+        self.assertNotEqual(sr.baseline_problems(newer, goalies), [])
+        no_current = {u: {"f": h["f"], "p": dict(h["p"], formulaRevision=1)} for u, h in heads.items()}
+        self.assertNotEqual(sr.baseline_problems(no_current, goalies), [])
+
     def test_windows(self):
         self.assertIsNotNone(sr.window_at(8 * 60 + 5))
         self.assertIsNotNone(sr.window_at(9 * 60 + 15, sr.CALL_MARGIN_MIN))

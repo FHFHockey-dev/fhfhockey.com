@@ -25,19 +25,23 @@ Fails closed, in this order:
   4. Manifest: the stored play-by-play's penalty-shot attempts equal the 8 expected (game, shooter, goalie,
      result) exactly.
   5. Before-snapshot (read-only) of every player partition head and goalie partition row of each game, saved
-     to run/summary-before-<game>.jsonl; every head is version 1 / formula revision 2. The dry run prints each
-     shooter's and goalie's current "all" line and the expected one.
+     to run/summary-before-<game>.jsonl. Current partitions are version 1 / formula revision 2; any other head
+     is an ORPHAN from an older build (the landing reader skips it, the current builder no longer writes it),
+     named in the log and left untouched. Stops if a game has no current partitions or a non-current payload
+     is newer than its current build. The dry run prints each shooter's and goalie's current "all" line and
+     the expected one.
   --dry-run (default) stops here.
   6. --execute, per game: window, guard, window; fresh before-snapshot; player call; readback; goalie call;
      readback; the game id goes to run/summary-refresh.done (a rerun skips it).
 Readback, key by key (exit 6 on any difference):
-  - the same partition set; every player head is new (fetched_at later than before) with formula revision 2;
+  - the same partition set; every current player head is new (fetched_at later than before) with formula
+    revision 2; every orphan is byte-for-byte unchanged;
   - allStrengths, allScores: the shooter's individual goals/shots/iCf/iFf and the goalie's shotsAgainst/saves/
     goalsAgainst move by exactly the penalty shot; every other metric of every row is unchanged;
   - allStrengths score states: exactly one of tied/leading/trailing carries the same move; any other score
     state either carries it or is unchanged;
   - every other strength and the onIce mode: every row's metrics unchanged.
-Route checks: HTTP 200, success true, mode "game", gameIds [game], rowsUpserted = partitions in the snapshot.
+Route checks: HTTP 200, success true, mode "game", gameIds [game], rowsUpserted = current partitions.
 A stop after a call leaves the new rows in place: review before rolling back (SUMMARY-REFRESH.md, Rollback).
 Never prints secrets: CRON_SECRET is read from web/.env.local into memory only.
 
@@ -139,8 +143,21 @@ def classify_partition_change(before, after, mode, subject, result):
     return f"player {subject} changed by something other than the penalty shot"
 
 
-def partition_problems(before_heads, after_heads, shooter, goalie, result):
-    """Readback of one game's player partitions. heads: {source_url: payload}."""
+def is_current(payload):
+    """Written by the current writer: payload version 1 and formula revision 2 (isCurrentPlayerStatsSummaryPayload)."""
+    return payload.get("version") == PAYLOAD_VERSION and payload.get("formulaRevision") == FORMULA_REVISION
+
+
+def orphan_keys(rows):
+    """Keys whose newest stored payload is not current. The landing reader skips them; they are left over
+    from older builds that produced partitions the current builder no longer writes (e.g. threeOnThree in a
+    regulation-only game, or empty-net partitions before decision 84), so the refresh neither writes nor
+    touches them."""
+    return {key for key, payload in rows.items() if not is_current(payload)}
+
+
+def partition_problems(before_heads, after_heads, shooter, goalie, result, orphans=frozenset()):
+    """Readback of one game's player partitions. heads: {source_url: payload}; orphans must stay as they were."""
     problems = []
     if set(before_heads) != set(after_heads):
         return [f"partition set differs: -{sorted(set(before_heads) - set(after_heads))[:3]} "
@@ -148,8 +165,12 @@ def partition_problems(before_heads, after_heads, shooter, goalie, result):
     moved_states = {"individual": [], "goalies": []}
     for url, before in before_heads.items():
         after = after_heads[url]
+        if url in orphans:
+            if after != before:
+                problems.append(f"{url}: orphan partition changed")
+            continue
         mode, strength, score_state = parse_partition(url)
-        if after.get("version") != PAYLOAD_VERSION or after.get("formulaRevision") != FORMULA_REVISION:
+        if not is_current(after):
             problems.append(f"{url}: version {after.get('version')} / revision {after.get('formulaRevision')}")
         subject = shooter if mode == "individual" else goalie if mode == "goalies" else None
         may_move = strength == "allStrengths" and subject is not None
@@ -167,7 +188,7 @@ def partition_problems(before_heads, after_heads, shooter, goalie, result):
     return problems
 
 
-def goalie_table_problems(before_rows, after_rows, goalie, result):
+def goalie_table_problems(before_rows, after_rows, goalie, result, orphans=frozenset()):
     """Readback of goalie_underlying_summary_partitions. rows: {(strength, score_state): payload}."""
     problems = []
     if set(before_rows) != set(after_rows):
@@ -175,7 +196,11 @@ def goalie_table_problems(before_rows, after_rows, goalie, result):
     moved = []
     for key, before in before_rows.items():
         after = after_rows[key]
-        if after.get("formulaRevision") != FORMULA_REVISION:
+        if key in orphans:
+            if after != before:
+                problems.append(f"goalie {key}: orphan partition changed")
+            continue
+        if not is_current(after):
             problems.append(f"goalie {key}: revision {after.get('formulaRevision')}")
         verdict = classify_partition_change(before, after, "goalies", goalie, result)
         if verdict == "moved" and key[0] == "allStrengths":
@@ -186,6 +211,24 @@ def goalie_table_problems(before_rows, after_rows, goalie, result):
         problems.append("goalie allStrengths/allScores did not gain the penalty shot")
     if len([s for s in moved if s in PRIMARY_SCORE_STATES]) != 1:
         problems.append(f"goalie penalty shot in {moved} of tied/leading/trailing")
+    return problems
+
+
+def baseline_problems(heads, goalies):
+    """Dry-run gate for one game. heads: {url: {"f": fetched_at, "p": payload}}; goalies: {key: {...}}."""
+    problems = []
+    current = [h for u, h in heads.items() if is_current(h["p"])]
+    if not current:
+        return ["no current player partitions"]
+    if not any(is_current(r["p"]) for r in goalies.values()):
+        problems.append("no current goalie partitions")
+    for key in ("individual", "goalies"):
+        if not any(parse_partition(u)[:2] == (key, "allStrengths") and is_current(h["p"]) for u, h in heads.items()):
+            problems.append(f"no current {key}/allStrengths partition")
+    oldest_current = min(h["f"] for h in current)
+    for url, head in heads.items():
+        if not is_current(head["p"]) and head["f"] >= oldest_current:
+            problems.append(f"{url}: non-current payload written after the current build")
     return problems
 
 
@@ -346,12 +389,15 @@ def main():
 
     for g, shooter, goalie, result in MANIFEST:
         heads, goalies = snapshot(g, "before")
-        stale = [u for u, h in heads.items() if h["p"].get("version") != PAYLOAD_VERSION
-                 or h["p"].get("formulaRevision") != FORMULA_REVISION]
-        if not heads or not goalies or stale:
-            stop(6, "game lacks current summaries", game=g, heads=len(heads), goalie_rows=len(goalies), stale=stale[:5])
+        problems = baseline_problems(heads, goalies)
+        if problems:
+            stop(6, "game lacks current summaries", game=g, problems=problems[:10])
+        orphans_p = orphan_keys({u: h["p"] for u, h in heads.items()})
+        orphans_g = orphan_keys({k: r["p"] for k, r in goalies.items()})
         now_s, now_g = line_of(heads, "individual", (g, shooter)), line_of(heads, "goalies", (g, goalie))
-        log(event="baseline", game=g, partitions=len(heads), goalie_rows=len(goalies),
+        log(event="baseline", game=g, partitions=len(heads), current_partitions=len(heads) - len(orphans_p),
+            goalie_rows=len(goalies), current_goalie_rows=len(goalies) - len(orphans_g),
+            orphans_left_untouched=sorted(u.split("v2/")[1] for u in orphans_p) + [f"goalie {k}" for k in sorted(orphans_g)],
             shooter=shooter, shooter_all_now=now_s,
             shooter_all_expected=now_s and {k: now_s[k] + d for k, d in expected_move("individual", result)["individual"].items()},
             goalie=goalie, goalie_all_now=now_g,
@@ -375,13 +421,18 @@ def main():
             time.sleep(PAUSE_S)
         window_gate(g); guard(); window_gate(g)
         before_heads, before_goalies = snapshot(g, "before")
+        orphans_p = orphan_keys({u: h["p"] for u, h in before_heads.items()})
+        orphans_g = orphan_keys({k: r["p"] for k, r in before_goalies.items()})
         took, body = call(PLAYER_ROUTE, g, secret)
-        if body.get("rowsUpserted") != len(before_heads):
-            stop(6, "player rowsUpserted != partitions", game=g, rowsUpserted=body.get("rowsUpserted"), partitions=len(before_heads))
+        if body.get("rowsUpserted") != len(before_heads) - len(orphans_p):
+            stop(6, "player rowsUpserted != current partitions", game=g, rowsUpserted=body.get("rowsUpserted"),
+                 current_partitions=len(before_heads) - len(orphans_p))
         after_heads = player_heads(g)
-        stale = [u for u in after_heads if before_heads.get(u) and after_heads[u]["f"] <= before_heads[u]["f"]]
+        stale = [u for u in after_heads if u not in orphans_p and before_heads.get(u)
+                 and after_heads[u]["f"] <= before_heads[u]["f"]]
         problems = ([f"{len(stale)} partitions not rewritten"] if stale else []) + partition_problems(
-            {u: h["p"] for u, h in before_heads.items()}, {u: h["p"] for u, h in after_heads.items()}, shooter, goalie, result)
+            {u: h["p"] for u, h in before_heads.items()}, {u: h["p"] for u, h in after_heads.items()},
+            shooter, goalie, result, orphans_p)
         if problems:
             stop(6, "player summary readback mismatch", game=g, problems=problems[:20])
         log(event="player_done", game=g, seconds=took, rowsUpserted=body.get("rowsUpserted"))
@@ -389,12 +440,13 @@ def main():
         time.sleep(PAUSE_S)
         window_gate(g); guard(); window_gate(g)
         took, body = call(GOALIE_ROUTE, g, secret)
-        if body.get("rowsUpserted") != len(before_goalies):
-            stop(6, "goalie rowsUpserted != partitions", game=g, rowsUpserted=body.get("rowsUpserted"), partitions=len(before_goalies))
+        if body.get("rowsUpserted") != len(before_goalies) - len(orphans_g):
+            stop(6, "goalie rowsUpserted != current partitions", game=g, rowsUpserted=body.get("rowsUpserted"),
+                 current_partitions=len(before_goalies) - len(orphans_g))
         after_goalies = goalie_rows(g)
         snapshot(g, "after")
         problems = goalie_table_problems({k: r["p"] for k, r in before_goalies.items()},
-                                         {k: r["p"] for k, r in after_goalies.items()}, goalie, result)
+                                         {k: r["p"] for k, r in after_goalies.items()}, goalie, result, orphans_g)
         if problems:
             stop(6, "goalie summary readback mismatch", game=g, problems=problems[:20])
         with open(DONE, "a") as f:
