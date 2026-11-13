@@ -16,6 +16,7 @@ import {
   buildPlayerStatsLandingSummarySnapshotsFromPayloadRows,
   buildPlayerStatsNativeGameParity,
   buildStoredPbpEventSequence,
+  fetchPlayerStatsLandingGamesByIds,
   fetchPlayerStatsLandingIdentityMaps,
   fetchPlayerStatsLandingSourceBundleForGames,
   fetchSupabaseRowsForGameChunks,
@@ -23,6 +24,7 @@ import {
   filterPlayerStatsLandingSourceGames,
   groupPlayerStatsSourceRowsByGameId,
   resolvePlayerStatsSeasonGameType,
+  resolvePlayerStatsSourceGameFinality,
   type PlayerStatsSourceEventRow,
   type PlayerStatsSourceGameRow,
   type PlayerStatsSourceRosterSpotRow,
@@ -262,6 +264,112 @@ describe("filterPlayerStatsLandingSourceGames", () => {
         (game) => game.id
       )
     ).toEqual([2, 5]);
+  });
+});
+
+describe("source game finality from the stored game state (rule 19)", () => {
+  // ET date 2026-04-02; the 22:00 ET game starts at 02:00 UTC on 2026-04-03.
+  const game = (
+    id: number,
+    startTime: string,
+    state: Partial<PlayerStatsSourceGameRow> = {}
+  ): PlayerStatsSourceGameRow => ({
+    id,
+    seasonId: 20252026,
+    date: "2026-04-02",
+    startTime,
+    homeTeamId: 10,
+    awayTeamId: 20 + id,
+    type: 2,
+    ...state,
+  });
+  const state = createDefaultLandingFilterState({ currentSeasonId: 20252026 });
+  state.primary.seasonRange = {
+    fromSeasonId: 20252026,
+    throughSeasonId: 20252026,
+  };
+  const ids = (games: PlayerStatsSourceGameRow[], now: string) =>
+    filterPlayerStatsLandingSourceGames(games, state, new Date(now)).map(
+      (row) => row.id
+    );
+
+  it("keeps last night's late games out mid-game after the UTC date rolls over", () => {
+    const games = [
+      game(1, "2026-04-02T23:00:00.000Z", {
+        game_state: "LIVE",
+        game_schedule_state: "OK",
+        game_state_observed_at: "2026-04-03T01:00:00.000Z",
+      }),
+      game(2, "2026-04-03T02:00:00.000Z"),
+    ];
+
+    expect(ids(games, "2026-04-03T02:30:00.000Z")).toEqual([]);
+  });
+
+  it("includes a game as soon as its stored state is final", () => {
+    const games = [
+      game(3, "2026-04-02T17:00:00.000Z", {
+        game_state: "OFF",
+        game_schedule_state: "OK",
+        game_state_observed_at: "2026-04-02T20:20:00.000Z",
+      }),
+    ];
+
+    expect(ids(games, "2026-04-02T20:30:00.000Z")).toEqual([3]);
+  });
+
+  it("excludes a postponed game whatever its date", () => {
+    const games = [
+      game(4, "2026-04-02T23:00:00.000Z", {
+        game_state: "FUT",
+        game_schedule_state: "PPD",
+        game_state_observed_at: "2026-04-03T03:00:00.000Z",
+      }),
+    ];
+
+    expect(ids(games, "2026-04-10T00:00:00.000Z")).toEqual([]);
+  });
+
+  it("labels the detail reader's start + 8 h decision as the fallback when the state is unknown", () => {
+    expect(
+      resolvePlayerStatsSourceGameFinality(
+        game(5, "2026-04-03T02:00:00.000Z"),
+        new Date("2026-04-03T10:00:00.000Z")
+      )
+    ).toEqual({
+      isFinal: true,
+      basis: "schedule_heuristic_fallback",
+      reason: "state_unknown",
+    });
+  });
+
+  it("reads the stored game state with the source games", async () => {
+    const selects: string[] = [];
+    const client = {
+      from: () => {
+        const query: any = {
+          select: (columns: string) => {
+            selects.push(columns);
+            return query;
+          },
+          in: () => query,
+          order: () => query,
+          range: async () => ({ data: [], error: null }),
+        };
+        return query;
+      },
+    };
+
+    await fetchPlayerStatsLandingGamesByIds([1], client as any);
+
+    expect(selects[0]?.split(",")).toEqual(
+      expect.arrayContaining([
+        "startTime",
+        "game_state",
+        "game_schedule_state",
+        "game_state_observed_at",
+      ])
+    );
   });
 });
 

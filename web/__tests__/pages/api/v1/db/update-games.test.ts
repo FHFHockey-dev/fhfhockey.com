@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getMock, getCurrentSeasonMock, sharedSupabaseMock } = vi.hoisted(() => ({
@@ -56,7 +58,7 @@ vi.mock("lib/supabase/server", () => ({
   default: sharedSupabaseMock
 }));
 
-import handler, { prepareBoundedSchedule } from "../../../../../pages/api/v1/db/update-games";
+import handler, { prepareBoundedSchedule, toGamesRow } from "../../../../../pages/api/v1/db/update-games";
 
 function createMockRes() {
   const res: any = {
@@ -189,6 +191,72 @@ describe("/api/v1/db/update-games", () => {
       success: false,
       message: expect.stringContaining("Failed to fetch games for every team")
     });
+  });
+});
+
+describe("stored game state (rule 19, contract nhl-game-state-v1)", () => {
+  const clubGame = (overrides: Record<string, unknown> = {}) => ({
+    id: 2025020101, gameDate: "2026-04-02", startTimeUTC: "2026-04-03T02:00:00Z", gameType: 2,
+    gameState: "LIVE", gameScheduleState: "OK", homeTeam: { id: 1 }, awayTeam: { id: 2 }, ...overrides
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-04-03T03:00:00.000Z"));
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "";
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20252026 });
+  });
+  afterEach(() => vi.useRealTimers());
+
+  async function run(byTeam: Record<string, unknown[]>) {
+    getMock.mockImplementation((url: string) =>
+      Promise.resolve({ games: byTeam[url.split("/")[2]] ?? [] }));
+    const db = createMockSupabase();
+    const res = createMockRes();
+    await handler({ method: "GET", query: {}, mockSupabase: db } as any, res);
+    return { res, rows: db.upsert.mock.calls[0]?.[0] as any[] };
+  }
+
+  it("writes the observed NHL game state, schedule state and observation time", async () => {
+    const { res, rows } = await run({ ANA: [clubGame()] });
+    expect(res.statusCode).toBe(200);
+    expect(rows).toEqual([{
+      id: 2025020101, date: "2026-04-02", seasonId: 20252026, startTime: "2026-04-03T02:00:00Z", type: 2,
+      homeTeamId: 1, awayTeamId: 2, game_state: "LIVE", game_schedule_state: "OK",
+      game_state_observed_at: "2026-04-03T03:00:00.000Z"
+    }]);
+    expect(res.body.gameStateObservedAt).toBe("2026-04-03T03:00:00.000Z");
+  });
+
+  it("keeps the copy furthest along when the two clubs' schedules disagree", async () => {
+    for (const [first, second] of [["ANA", "BOS"], ["BOS", "ANA"]]) {
+      const { rows } = await run({ [first]: [clubGame({ gameState: "OFF" })], [second]: [clubGame()] });
+      expect(rows.map((row) => row.game_state)).toEqual(["OFF"]);
+    }
+  });
+
+  it("stores an unknown NHL state as NULL and warns, without failing the run", async () => {
+    const { res, rows } = await run({ ANA: [clubGame({ gameState: "FINAL_OT", gameScheduleState: undefined })] });
+    expect(res.statusCode).toBe(200);
+    expect(rows[0]).toMatchObject({ game_state: null, game_schedule_state: null, game_state_observed_at: null });
+    expect(res.body.warnings).toEqual(["Unknown NHL gameState FINAL_OT stored as NULL (finality unknown)"]);
+  });
+
+  it("writes only columns of public.games after migration 20261113180000", () => {
+    const repoRoot = path.resolve(process.cwd(), path.basename(process.cwd()) === "web" ? ".." : ".");
+    const baseline = readFileSync(path.join(repoRoot,
+      "supabase/migrations/20260716112908_production_schema_baseline.sql"), "utf8");
+    const migration = readFileSync(path.join(repoRoot,
+      "supabase/migrations/20261113180000_games_game_state.sql"), "utf8");
+    const table = /CREATE TABLE public\.games \(\n([\s\S]*?)\n\);/.exec(baseline)?.[1] ?? "";
+    const columns = [
+      ...[...table.matchAll(/^\s+"?([A-Za-z_]+)"?\s/gm)].map((match) => match[1]),
+      ...[...migration.matchAll(/^\s+add column ([a-z_]+) /gm)].map((match) => match[1]),
+    ];
+    expect(columns).toEqual(expect.arrayContaining(["game_state", "game_schedule_state", "game_state_observed_at"]));
+    const row = toGamesRow(clubGame(), 20252026, "2026-04-03T03:00:00.000Z");
+    expect(Object.keys(row).filter((key) => !columns.includes(key))).toEqual([]);
   });
 });
 
