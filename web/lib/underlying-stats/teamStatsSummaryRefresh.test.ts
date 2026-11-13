@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildTeamUnderlyingSummaryRowsForGame,
+  compareTeamSummaryRows,
   fetchSeasonTeamSummaryGameIdSet,
   fetchTeamSummaryRebuildGameIds,
   resolveGameOutcomeFromOfficialPayload,
@@ -452,5 +453,168 @@ describe("buildTeamUnderlyingSummaryRowsForGame overtime and outcome (W2-3 A2, D
     const playoff = buildFixtureGame({ gameId: 2026030111, gameType: 3, events: overtimeEvents(1), shots: [] });
     expect(rowFor(playoff, AWAY, "allStrengths")).toMatchObject({ losses: 1, otl: 0, points: 0 });
     expect(rowFor(playoff, HOME, "allStrengths")).toMatchObject({ wins: 1, losses: 0, otl: 0 });
+  });
+});
+
+describe("buildTeamUnderlyingSummaryRowsForGame penalty shots: all-situations only (decision 149, Astra AF-07)", () => {
+  // Fixtures shaped on the official NHL boxscores of three of the 8 games with a
+  // penalty shot in 2026-27 (stored boxscores, read 2026-11-13). Ordinary shots
+  // are 5v5 (1551); the penalty shot has no shot feature, as in production.
+  type Side = typeof HOME | typeof AWAY;
+  function officialGame(args: {
+    gameId: number;
+    home: { sog: number; goals: number };
+    away: { sog: number; goals: number };
+    penaltyShot: { owner: Side; scored: boolean; period: number; t: number };
+    shootout?: Array<{ owner: Side; scored: boolean }>;
+  }) {
+    const events: FixtureEvent[] = [];
+    const shots: Parameters<typeof buildFixtureGame>[0]["shots"] = [];
+    let id = 1;
+    const score = { home: 0, away: 0 };
+    for (let period = 1; period <= 3; period += 1) {
+      events.push({ event_id: id++, t: 0, code: "1551", type: "faceoff", period });
+      if (period === args.penaltyShot.period) {
+        const ps = args.penaltyShot;
+        if (ps.scored) score[ps.owner === HOME ? "home" : "away"] += 1;
+        events.push({
+          event_id: id++,
+          t: ps.t,
+          code: ps.owner === HOME ? "1010" : "0101",
+          type: ps.scored ? "goal" : "shot-on-goal",
+          owner: ps.owner,
+          period,
+          ...(ps.scored ? { home_score: score.home, away_score: score.away } : {}),
+        });
+      }
+      for (const [owner, key] of [[HOME, "home"], [AWAY, "away"]] as const) {
+        const psOnGoal = args.penaltyShot.owner === owner ? 1 : 0;
+        const psGoal = args.penaltyShot.owner === owner && args.penaltyShot.scored ? 1 : 0;
+        const total = args[key].sog - psOnGoal;
+        const goals = args[key].goals - psGoal;
+        // Spread this side's ordinary shots over the three periods.
+        for (let n = period - 1; n < total; n += 3) {
+          const goal = n < goals;
+          if (goal) score[key] += 1;
+          const eventId = id++;
+          events.push({
+            event_id: eventId,
+            t: 100 + n,
+            code: "1551",
+            type: goal ? "goal" : "shot-on-goal",
+            owner,
+            period,
+            ...(goal ? { home_score: score.home, away_score: score.away } : {}),
+          });
+          shots.push({ eventId, owner, type: goal ? "goal" : "shot-on-goal", strengthExact: "5v5", ownerScoreDiffBeforeEvent: null });
+        }
+      }
+      events.push({ event_id: id++, t: 1200, code: "1551", type: "period-end", period });
+    }
+    for (const attempt of args.shootout ?? []) {
+      events.push({
+        event_id: id++,
+        t: 0,
+        code: attempt.owner === HOME ? "1010" : "0101",
+        type: attempt.scored ? "goal" : "shot-on-goal",
+        owner: attempt.owner,
+        period: 5,
+        periodType: "SO",
+      });
+    }
+    return buildFixtureGame({ gameId: args.gameId, events, shots });
+  }
+
+  const allSituations = (rows: ReturnType<typeof buildFixtureGame>, team: number) => {
+    const row = rowFor(rows, team, "allStrengths");
+    return { sf: row.sf, gf: row.gf, sa: row.sa, ga: row.ga };
+  };
+
+  it("2026020131: a scored home penalty shot is one goal and one shot for, and against the other team", () => {
+    // Official: home 24 SOG / 5 goals, away 26 SOG / 2 goals; home penalty-shot goal in P1.
+    const rows = officialGame({
+      gameId: 2026020131,
+      home: { sog: 24, goals: 5 },
+      away: { sog: 26, goals: 2 },
+      penaltyShot: { owner: HOME, scored: true, period: 1, t: 520 },
+    });
+    expect(allSituations(rows, HOME)).toEqual({ sf: 24, gf: 5, sa: 26, ga: 2 });
+    expect(allSituations(rows, AWAY)).toEqual({ sf: 26, gf: 2, sa: 24, ga: 5 });
+    // ES/PP/PK unchanged: the penalty shot is in no strength split.
+    expect(rowFor(rows, HOME, "evenStrength")).toMatchObject({ sf: 23, gf: 4 });
+    expect(rowFor(rows, AWAY, "evenStrength")).toMatchObject({ sa: 23, ga: 4 });
+    for (const strength of ["powerPlay", "penaltyKill", "fiveOnFive", "withEmptyNet", "againstEmptyNet"]) {
+      expect(rowFor(rows, HOME, strength).gf).toBe(strength === "fiveOnFive" ? 4 : 0);
+    }
+    // One attempt for, one against; never in xG or scoring chances.
+    expect(rowFor(rows, HOME, "allStrengths").cf - rowFor(rows, HOME, "evenStrength").cf).toBe(1);
+    expect(rowFor(rows, AWAY, "allStrengths").ca - rowFor(rows, AWAY, "evenStrength").ca).toBe(1);
+    expect(rowFor(rows, HOME, "allStrengths").xgf).toBeCloseTo(rowFor(rows, HOME, "evenStrength").xgf, 9);
+    expect(rowFor(rows, HOME, "allStrengths").scf).toBe(rowFor(rows, HOME, "evenStrength").scf);
+    // Tied / leading / trailing still partition the all-situation totals, penalty shot included.
+    for (const key of ["sf", "gf", "sa", "ga", "cf"] as const) {
+      const partition = ["tied", "leading", "trailing"].reduce(
+        (total, state) => total + rowFor(rows, HOME, "allStrengths", state)[key],
+        0
+      );
+      expect([key, partition]).toEqual([key, rowFor(rows, HOME, "allStrengths")[key]]);
+    }
+  });
+
+  it("2026020101: a saved home penalty shot is one shot, no goal", () => {
+    // Official: home 28 SOG / 2 goals, away 25 SOG / 5 goals; home penalty-shot save in P1.
+    const rows = officialGame({
+      gameId: 2026020101,
+      home: { sog: 28, goals: 2 },
+      away: { sog: 25, goals: 5 },
+      penaltyShot: { owner: HOME, scored: false, period: 1, t: 789 },
+    });
+    expect(allSituations(rows, HOME)).toEqual({ sf: 28, gf: 2, sa: 25, ga: 5 });
+    expect(allSituations(rows, AWAY)).toEqual({ sf: 25, gf: 5, sa: 28, ga: 2 });
+    expect(rowFor(rows, HOME, "evenStrength")).toMatchObject({ sf: 27, gf: 2 });
+  });
+
+  it("2026020094: an away penalty-shot save counts once; shootout attempts never count", () => {
+    // Official: home 26 SOG / 2 goals, away 31 SOG / 2 goals (shootout goal removed);
+    // away penalty-shot save in P2; the shootout had goals and saves on both sides.
+    const rows = officialGame({
+      gameId: 2026020094,
+      home: { sog: 26, goals: 2 },
+      away: { sog: 31, goals: 2 },
+      penaltyShot: { owner: AWAY, scored: false, period: 2, t: 383 },
+      shootout: [
+        { owner: HOME, scored: false },
+        { owner: AWAY, scored: true },
+        { owner: HOME, scored: true },
+        { owner: AWAY, scored: false },
+      ],
+    });
+    expect(allSituations(rows, HOME)).toEqual({ sf: 26, gf: 2, sa: 31, ga: 2 });
+    expect(allSituations(rows, AWAY)).toEqual({ sf: 31, gf: 2, sa: 26, ga: 2 });
+    expect(rowFor(rows, AWAY, "evenStrength")).toMatchObject({ sf: 30, gf: 2 });
+  });
+});
+
+describe("compareTeamSummaryRows (read-only diff mode)", () => {
+  it("reports only the fields a rebuild would change, and missing stored rows", () => {
+    const rebuilt = [
+      { game_id: 1, team_id: 10, strength: "allStrengths", score_state: "allScores", sf: 24, gf: 5, xgf: 1.23 },
+      { game_id: 1, team_id: 10, strength: "evenStrength", score_state: "allScores", sf: 23, gf: 4, xgf: 1.23 },
+      { game_id: 1, team_id: 20, strength: "allStrengths", score_state: "allScores", sf: 26, gf: 2, xgf: 0.5 },
+    ] as never[];
+    const stored = [
+      { game_id: "1", team_id: "10", strength: "allStrengths", score_state: "allScores", sf: 23, gf: 4, xgf: "1.2300000001" },
+      { game_id: 1, team_id: 10, strength: "evenStrength", score_state: "allScores", sf: 23, gf: 4, xgf: 1.23 },
+    ];
+    expect(compareTeamSummaryRows(stored, rebuilt)).toEqual([
+      {
+        game_id: 1,
+        team_id: 10,
+        strength: "allStrengths",
+        score_state: "allScores",
+        changes: { sf: { stored: 23, rebuilt: 24 }, gf: { stored: 4, rebuilt: 5 } },
+      },
+      { game_id: 1, team_id: 20, strength: "allStrengths", score_state: "allScores", missing: true, changes: {} },
+    ]);
   });
 });

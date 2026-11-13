@@ -71,6 +71,54 @@ describe("/api/v1/db/rebuild-team-underlying-summaries", () => {
     expect(fetchGameIdsMock).not.toHaveBeenCalled();
   });
 
+  it("diffs exactly the requested final games, read-only (penalty-shot refresh, decision 149)", async () => {
+    fetchGameIdsMock.mockResolvedValue([2026020065, 2026020094]);
+    refreshMock.mockResolvedValue({
+      rowsUpserted: 0,
+      rowsGenerated: 280,
+      gameIdsProcessed: [2026020065, 2026020094],
+      staleKeys: [],
+      diffs: [
+        {
+          game_id: 2026020065,
+          team_id: 54,
+          strength: "allStrengths",
+          score_state: "allScores",
+          changes: { sf: { stored: 42, rebuilt: 43 }, gf: { stored: 2, rebuilt: 3 } },
+        },
+      ],
+    });
+    const res = await call({ seasonId: "20262027", gameIds: "2026020065,2026020094", diff: "true" });
+    expect(res.statusCode).toBe(200);
+    expect(fetchGameIdsMock).toHaveBeenCalledWith(
+      expect.objectContaining({ seasonId: 20262027, gameIds: [2026020065, 2026020094] })
+    );
+    expect(refreshMock).toHaveBeenCalledWith(
+      expect.objectContaining({ dryRun: true, reportDiffs: true, gameIds: [2026020065, 2026020094] })
+    );
+    expect(res.body).toMatchObject({ dryRun: true, rowsUpserted: 0, diffRowCount: 1, diffsTruncated: false });
+  });
+
+  it.each([
+    [{ seasonId: "20262027", gameIds: "2026020065", diff: "true", dryRun: "false" }, "read-only"],
+    [{ seasonId: "20262027", gameIds: "1,2,3,4,5,6,7,8,9,10,11" }, "1-10 distinct"],
+    [{ seasonId: "20262027", gameIds: "2026020065,2026020065" }, "1-10 distinct"],
+    [{ seasonId: "20262027", gameIds: "2026020065", startDate: "2026-10-08", endDate: "2026-10-08" }, "not both"],
+  ])("rejects an invalid gameIds request %#", async (query, message) => {
+    const res = await call(query as Record<string, string>);
+    expect(res.statusCode).toBe(400);
+    expect(String(res.body.error)).toContain(message);
+    expect(refreshMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a requested game that is not a final game of the season", async () => {
+    fetchGameIdsMock.mockResolvedValue([2026020065]);
+    const res = await call({ seasonId: "20262027", gameIds: "2026020065,2026029999" });
+    expect(res.statusCode).toBe(400);
+    expect(String(res.body.error)).toContain("2026029999");
+    expect(refreshMock).not.toHaveBeenCalled();
+  });
+
   it("refuses a window that selects too many games", async () => {
     fetchGameIdsMock.mockResolvedValue(Array.from({ length: 121 }, (_, index) => index + 1));
     const res = await call({ seasonId: "20252026", startDate: "2025-10-07", endDate: "2025-10-13" });

@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""Offline tests for team-refresh.py's pure helpers (no DB, no network). Run: python3 -I test_team_refresh.py"""
+import copy
+import importlib.util
+import os
+import unittest
+
+spec = importlib.util.spec_from_file_location(
+    "team_refresh", os.path.join(os.path.dirname(os.path.abspath(__file__)), "team-refresh.py"))
+tr = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(tr)
+
+# 2026020131: home 18 scored the penalty shot; official 18: 24 SOG / 5 G, 19: 26 / 2.
+G, SHOOTER, OPP = 2026020131, 18, 19
+
+
+def change(stored, rebuilt):
+    return {"stored": stored, "rebuilt": rebuilt}
+
+
+def game_diffs(game=G, shooter=SHOOTER, opp=OPP, goal=True, sf=(23, 24), gf=(4, 5), state="tied"):
+    out = []
+    for score_state in ("allScores", state, "withinOne"):
+        shooter_changes = {"cf": change(40, 41), "ff": change(30, 31), "sf": change(*sf)}
+        opp_changes = {"ca": change(40, 41), "fa": change(30, 31), "sa": change(*sf)}
+        if goal:
+            shooter_changes["gf"] = change(*gf)
+            opp_changes["ga"] = change(*gf)
+        out.append({"game_id": game, "team_id": shooter, "strength": "allStrengths", "score_state": score_state,
+                    "changes": shooter_changes})
+        out.append({"game_id": game, "team_id": opp, "strength": "allStrengths", "score_state": score_state,
+                    "changes": opp_changes})
+    return out
+
+
+def all_games_clean():
+    diffs, official = [], {}
+    for game, shooter, result in tr.MANIFEST:
+        opp = shooter + 1000
+        goal = result == "goal"
+        diffs += game_diffs(game, shooter, opp, goal, sf=(23, 24), gf=(4, 5))
+        official[game] = {shooter: (24, 5 if goal else 4), opp: (26, 2)}
+    return diffs, official
+
+
+class Helpers(unittest.TestCase):
+    def test_official_totals(self):
+        box = {"homeTeam": {"id": 54, "sog": 43, "score": 4}, "awayTeam": {"id": 10, "sog": 24, "score": 3},
+               "gameOutcome": {"lastPeriodType": "SO"}}
+        self.assertEqual(tr.official_totals(box), {54: (43, 3), 10: (24, 3)})
+
+    def test_expected_changes(self):
+        self.assertEqual(tr.expected_changes(18, 18, "goal"), {"cf": 1, "ff": 1, "sf": 1, "gf": 1})
+        self.assertEqual(tr.expected_changes(19, 18, "save"), {"ca": 1, "fa": 1, "sa": 1})
+
+    def test_clean_diff_passes(self):
+        diffs, official = all_games_clean()
+        self.assertEqual(tr.diff_problems(diffs, [], official), [])
+
+    def test_diff_catches_each_failure(self):
+        diffs, official = all_games_clean()
+        cases = {}
+        es = copy.deepcopy(diffs); es[0]["strength"] = "evenStrength"
+        cases["moved a strength split"] = (es, [], official)
+        twice = copy.deepcopy(diffs); twice[0]["changes"]["sf"] = change(23, 25)
+        cases["counted twice"] = (twice, [], official)
+        xg = copy.deepcopy(diffs); xg[0]["changes"]["xgf"] = change(1.0, 1.2)
+        cases["xG changed"] = (xg, [], official)
+        no_all = [d for d in diffs if not (d["game_id"] == G and d["score_state"] == "allScores")]
+        cases["allScores missing"] = (no_all, [], official)
+        two_primary = diffs + [dict(d, score_state="leading") for d in diffs if d["game_id"] == G and d["score_state"] == "tied"]
+        cases["two primary states"] = (two_primary, [], official)
+        other_game = diffs + [dict(diffs[0], game_id=2026029999)]
+        cases["unexpected game"] = (other_game, [], official)
+        missing = copy.deepcopy(diffs); missing[0]["missing"] = True
+        cases["stored row missing"] = (missing, [], official)
+        cases["stale keys"] = (diffs, [{"game_id": G}], official)
+        wrong_official = copy.deepcopy(official); wrong_official[G] = {SHOOTER: (25, 5), OPP: (26, 2)}
+        cases["rebuilt SF differs from the boxscore"] = (diffs, [], wrong_official)
+        for name, (d, stale, off) in cases.items():
+            with self.subTest(name):
+                self.assertNotEqual(tr.diff_problems(d, stale, off), [])
+
+    def test_readback(self):
+        key = (SHOOTER, "allStrengths", "allScores")
+        other = (SHOOTER, "evenStrength", "allScores")
+        before = {key: {"sf": 23, "gf": 4, "xgf": 1.5, "updated_at": "a"}, other: {"sf": 23, "gf": 4, "xgf": 1.5}}
+        approved = [{"game_id": G, "team_id": SHOOTER, "strength": "allStrengths", "score_state": "allScores",
+                     "changes": {"sf": change(23, 24), "gf": change(4, 5)}}]
+        after = {key: {"sf": 24, "gf": 5, "xgf": 1.5000000001, "updated_at": "b"}, other: {"sf": 23, "gf": 4, "xgf": 1.5}}
+        self.assertEqual(tr.readback_problems(before, after, approved), [])
+        drift = copy.deepcopy(after); drift[other]["sf"] = 24
+        self.assertNotEqual(tr.readback_problems(before, drift, approved), [])
+        short = copy.deepcopy(after); short[key]["gf"] = 4
+        self.assertNotEqual(tr.readback_problems(before, short, approved), [])
+
+    def test_windows(self):
+        self.assertIsNotNone(tr.window_at(10 * 60))
+        self.assertIsNone(tr.window_at(18 * 60, tr.CALL_MARGIN_MIN))
+
+
+if __name__ == "__main__":
+    unittest.main()
