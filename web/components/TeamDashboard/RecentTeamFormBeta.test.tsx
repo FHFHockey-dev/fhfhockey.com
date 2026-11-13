@@ -13,7 +13,11 @@ import {
   RECENT_TEAM_FORM_V2_CANDIDATE_INPUT_VERSION,
 } from "lib/trends/recentTeamFormV2";
 import { RECENT_TEAM_FORM_APPROVED_PUBLICATION_STATUS } from "lib/trends/ctpi";
-import { RecentTeamFormBeta, RECENT_TEAM_FORM_INFO_TIP } from "./RecentTeamFormBeta";
+import {
+  RecentTeamFormBeta,
+  RECENT_TEAM_FORM_INFO_TIP,
+  RECENT_TEAM_FORM_PARTS_CAPTION,
+} from "./RecentTeamFormBeta";
 import {
   buildRecentTeamFormBetaModel,
   RECENT_TEAM_FORM_BETA_SELECT,
@@ -107,6 +111,9 @@ describe("RecentTeamFormBeta", () => {
     ).toBeTruthy();
     expect(screen.getByText("As of Nov 13 · 10 of 10 games included")).toBeTruthy();
     expect(screen.queryByText(/percentile/i)).toBeNull();
+    const parts = screen.getByRole("list", { name: RECENT_TEAM_FORM_PARTS_CAPTION });
+    expect(within(parts).getAllByRole("listitem")).toHaveLength(4);
+    expect(RECENT_TEAM_FORM_PARTS_CAPTION).toContain("standard deviations (SD)");
     expect(screen.getByText("+0.6").textContent).toBe("+0.6 SD");
     expect(screen.getByText("−0.3").textContent).toBe("−0.3 SD");
 
@@ -171,7 +178,9 @@ describe("RecentTeamFormBeta", () => {
     ).toBeTruthy();
     expect(screen.queryByText(/Nov 3 – Nov 11/)).toBeNull();
     expect(
-      screen.getByText(/5-on-5 rows found for 9 of 10 games/),
+      screen.getByText(
+        "5-on-5 stats cover 9 of these 10 games, so puck luck uses those 9.",
+      ),
     ).toBeTruthy();
     expect(screen.getByText(/^Puck luck/).textContent).toContain("9 of the 10 games");
   });
@@ -194,6 +203,16 @@ describe("RecentTeamFormBeta", () => {
       await screen.findByText("Recent Team Form is not available for this team and season."),
     ).toBeTruthy();
     expect(screen.queryByText("62")).toBeNull();
+  });
+
+  it("marks the card busy only while it loads", async () => {
+    install({ team_ctpi_daily: [ctpiRow()], nst_team_5v5: gameRows });
+    renderCard();
+    const region = screen.getByRole("region", { name: "Recent Team Form" });
+    expect(region.getAttribute("aria-busy")).toBe("true");
+    expect(within(region).getByText("Loading Recent Team Form…")).toBeTruthy();
+    await screen.findByText("62");
+    expect(region.hasAttribute("aria-busy")).toBe(false);
   });
 
   it("opens the info tip from an expandable button", async () => {

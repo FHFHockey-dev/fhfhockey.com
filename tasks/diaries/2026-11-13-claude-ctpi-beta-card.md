@@ -38,15 +38,20 @@ States not in live data are forced with a local Playwright response rewrite
 (scratchpad `qa/states.cjs`: partial, notenough, mismatch, short, unavailable, info).
 
 | card \ pass | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
-| Recent Team Form beta | ✓ | ✓ | ✓ | | | | | |
+| Recent Team Form beta | ✓ | ✓ | ✓ | ✓ | ✓ | | | |
 
 - Pass 0: clean (rendered detector both viewports, static check).
 - Pass 1 (approved): mismatch window line says "games through <score's last game>" (+ regression test);
   SD unit as a muted condensed suffix; `text-wrap: pretty` on prose lines.
 - Pass 2 (approved): 4-size type ladder + weight tokens; info button and divider tokens.
+- Commit `122dd880b` (passes 0–2 + build; typecheck exit 0, 79 tests).
+- Pass 3 (approved): axe clean both viewports, focus sweep clean; negative bars → `$danger-color`
+  (2.77 → 5.26:1); `aria-busy` while loading (+ test).
+- Pass 4 (approved): plain mismatch note (3 cases); SD caption naming the parts list.
+  Plan-fixed strings (badge, tip, scale, window, as-of, puck-luck heading) untouched.
 
 ## Next
-Pass 3 (accessibility), then 4–8, screenshots, commit, report.
+Pass 5 (unslop), then 6–8, screenshots, commit, report.
 
 ## Gotchas
 - Never set GIT_DIR in test runs. Use `npm run typecheck`, not plain `npx tsc`.

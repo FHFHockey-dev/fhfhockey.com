@@ -18,6 +18,9 @@ import styles from "./RecentTeamFormBeta.module.scss";
 export const RECENT_TEAM_FORM_INFO_TIP =
   "Describes how the team has played over its last 10 games: shot quality for and against, goaltending against expected, and power-play and penalty-kill rates pooled by ice time. Each is compared with the league on the same date, and 50 is league average. It is not a prediction and is still being validated.";
 
+export const RECENT_TEAM_FORM_PARTS_CAPTION =
+  "Score parts vs league average (the middle line), in standard deviations (SD)";
+
 /** Bars span ±2 SD; larger values fill the half-track. */
 const BAR_DOMAIN_SD = 2;
 
@@ -36,6 +39,17 @@ function formatSd(value: number): string {
   const rounded = Math.round(value * 10) / 10;
   if (rounded === 0) return "0.0";
   return `${rounded > 0 ? "+" : "−"}${Math.abs(rounded).toFixed(1)}`;
+}
+
+/** Plain-language note for 5-on-5 games that don't line up with the score's. */
+function mismatchNote(found: number, expected: number): string {
+  if (found === 0) {
+    return "5-on-5 stats are missing for these games, so puck luck is unavailable.";
+  }
+  if (found < expected) {
+    return `5-on-5 stats cover ${found} of these ${expected} games, so puck luck uses those ${found}.`;
+  }
+  return "5-on-5 game dates don't match the score's games, so puck luck may cover different games.";
 }
 
 function ComponentRow({ component }: { component: RecentTeamFormBetaComponent }) {
@@ -108,6 +122,7 @@ function ScoreBody({
 }: {
   model: Extract<RecentTeamFormBetaModel, { kind: "score" }>;
 }) {
+  const partsId = useId();
   const { windowDates, recentGameCount, puckLuck } = model;
   // The 5-on-5 dates name the window only when they are the score's games;
   // otherwise the line keeps to what the row itself states.
@@ -143,12 +158,12 @@ function ScoreBody({
         </p>
       ))}
       {model.windowMismatch ? (
-        <p className={styles.mismatchNote}>
-          5-on-5 rows found for {puckLuck.games} of {recentGameCount} games; their
-          dates may differ from the score&rsquo;s games.
-        </p>
+        <p className={styles.mismatchNote}>{mismatchNote(puckLuck.games, recentGameCount)}</p>
       ) : null}
-      <ul className={styles.components} aria-label="Score components, league-relative">
+      <p id={partsId} className={styles.partsCaption}>
+        {RECENT_TEAM_FORM_PARTS_CAPTION}
+      </p>
+      <ul className={styles.components} aria-labelledby={partsId}>
         {model.components.map((component) => (
           <ComponentRow key={component.key} component={component} />
         ))}
@@ -235,7 +250,11 @@ export function RecentTeamFormBeta({
   }
 
   return (
-    <section className={styles.beta} aria-labelledby={headingId}>
+    <section
+      className={styles.beta}
+      aria-labelledby={headingId}
+      aria-busy={result.state === "loading" || undefined}
+    >
       <div className={styles.header}>
         <h4 id={headingId} className={styles.title}>
           Recent Team Form

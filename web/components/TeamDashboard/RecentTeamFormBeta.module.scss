@@ -128,10 +128,16 @@ $type-fine: 0.7rem;
   font-size: $type-caption;
 }
 
+.partsCaption {
+  margin: v.$space-sm 0 0;
+  color: v.$text-secondary;
+  font-size: $type-caption;
+}
+
 .components {
   display: grid;
   gap: v.$space-xs;
-  margin: v.$space-sm 0 0;
+  margin: v.$space-xs 0 0;
   padding: 0;
   list-style: none;
 }
@@ -184,10 +190,12 @@ $type-fine: 0.7rem;
     background: v.$schedule-green;
   }
 
+  // Same red as the negative digits: 5.3:1 on the track (schedule-red was
+  // 2.8:1), close to the green's 6.4:1 so both arms read with equal weight.
   &.below {
     right: 50%;
     border-radius: v.$radius-xs 0 0 v.$radius-xs;
-    background: v.$schedule-red;
+    background: v.$danger-color;
   }
 }
 
