@@ -163,6 +163,19 @@ describe("FORGE availability beside the if-plays line (decision 132.3, decision 
     expect(players.find(row => row.player_id === 1007)!.uncertainty.availability).toMatchObject({ state: "projected_lineup" });
   });
 
+  it("labels a scratch for this game scratched_not_expected_to_dress on the written row, keeping the injury reason (decision 31)", async () => {
+    const { reserves } = await runStage(SLATE_EVENTS());
+    const byId = new Map(reserves.map(row => [row.player_id, row]));
+    const scratched = byId.get(1023)!;
+    expect(scratched.reserve_reason).toBe("scratched_not_expected_to_dress");
+    expect(scratched.uncertainty).toMatchObject({ reserve_reason: "scratched_not_expected_to_dress", participation_probability: null,
+      availability: { game_id: GAME_ID, state: "confirmed_out", expected_for_game: 0, event_type: "SCRATCH", event_id: 2 },
+      time_away: { line_basis: "last_active_games" } });
+    expect(scratched.proj_shots_es).toBeGreaterThan(0);
+    expect(byId.get(1019)!.reserve_reason).toBe("ruled_out");
+    expect(byId.get(1022)!.reserve_reason).toBe("not_in_lineup");
+  });
+
   it("does not scale a day-to-day skater's line by the unqualified legacy multiplier", async () => {
     const without = await runStage([]);
     const withDtd = await runStage([event(3, 1005, "DTD")]);

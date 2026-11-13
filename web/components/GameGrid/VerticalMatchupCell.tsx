@@ -55,8 +55,8 @@ export default function VerticalMatchupCell({
   const tooltipContent = (
     <div>
       <PoissonHeatmap
-        homeTeamId={home ? gameData.homeTeam.id : opponent.id}
-        awayTeamId={home ? opponent.id : gameData.homeTeam.id}
+        homeTeamId={gameData.homeTeam.id}
+        awayTeamId={gameData.awayTeam.id}
         gameId={gameData.id}
       />
     </div>

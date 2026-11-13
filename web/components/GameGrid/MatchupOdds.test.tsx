@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GameData, Team } from "lib/NHL/types";
 import TeamRow from "./TeamRow";
@@ -14,7 +14,9 @@ vi.mock("./contexts/GameGridContext", () => ({ useTeam: (id: number) => teams[id
   useGoaliePresentation: () => ({ enabled: false, requested: false, snapshot: null, contextKey: "", asOf: "2026-10-07T12:00:00Z", status: "unavailable" }) }));
 vi.mock("next/image", () => ({ default: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} /> }));
 vi.mock("next/legacy/image", () => ({ default: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} /> }));
-vi.mock("./PDHC/PoissonHeatMap", () => ({ default: () => null }));
+const heatMap = vi.hoisted(() => ({ props: [] as Array<{ homeTeamId: number; awayTeamId: number; gameId: number }> }));
+vi.mock("./PDHC/PoissonHeatMap", () => ({ default: (props: { homeTeamId: number; awayTeamId: number; gameId: number }) => {
+  heatMap.props.push(props); return null; } }));
 
 afterEach(cleanup);
 
@@ -44,5 +46,15 @@ describe("Game Grid matchup cells withhold model odds (W1 P0 #14, decision 64)",
     const final = { ...game, gameState: "OFF", homeTeam: { ...game.homeTeam, score: 4 }, awayTeam: { ...game.awayTeam, score: 2 } } as GameData;
     render(<VerticalMatchupCell gameData={final} teamId={13} />);
     expect(screen.getByRole("button").getAttribute("aria-label")).toBe("Away game at Carolina Hurricanes. 4-2. Open game details.");
+  });
+
+  it("gives the transposed cell's game details the real home and away teams from either side", () => {
+    for (const teamId of [12, 13]) {
+      heatMap.props.length = 0;
+      render(<VerticalMatchupCell gameData={game} teamId={teamId} />);
+      fireEvent.click(screen.getByRole("button"));
+      expect(heatMap.props.at(-1)).toEqual({ homeTeamId: 12, awayTeamId: 13, gameId: game.id });
+      cleanup();
+    }
   });
 });

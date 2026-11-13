@@ -3763,6 +3763,8 @@ export async function runPerGameSkaterStage(args: {
         }
         const latest = [reserveEv.get(candidate.playerId)?.game_date, reservePp.get(candidate.playerId)?.game_date]
           .filter((date): date is string => typeof date === "string").sort().at(-1) ?? null;
+        // Availability and time away are states beside the if-plays line, never folded into it (decision 132.2/132.3);
+        // a scratch for this game labels the row scratched_not_expected_to_dress (decision 31).
         const row = buildReserveSkaterRow({
           runId, asOfDate, horizonGames, gameId: game.id, playerId: candidate.playerId, teamId, opponentTeamId,
           reason: candidate.reason, line, horizonScalar: teamHorizonTotalScalar,
@@ -3770,12 +3772,11 @@ export async function runPerGameSkaterStage(args: {
             availabilityEventId: availabilityEventByPlayer.get(candidate.playerId)?.event_id ?? null,
             latestMetricDate: latest,
           },
+          availability: skaterAvailabilityForGame({ gameId: game.id, event: availabilityEventByPlayer.get(candidate.playerId), inLineup: false }),
+          timeAway: timeAwayDisclosure(timeAwayEvidence(latest, asOfDate)),
         });
         reserveProjectedIds.push(candidate.playerId);
-        // Availability and time away are states beside the if-plays line, never folded into it (decision 132.2/132.3).
-        return [{ ...row, uncertainty: { ...row.uncertainty,
-          availability: skaterAvailabilityForGame({ gameId: game.id, event: availabilityEventByPlayer.get(candidate.playerId), inLineup: false }),
-          time_away: timeAwayDisclosure(timeAwayEvidence(latest, asOfDate)) } }];
+        return [row];
       });
       metrics.data_quality.reserve_skaters_projected =
         (metrics.data_quality.reserve_skaters_projected ?? 0) + reserveRows.length;
