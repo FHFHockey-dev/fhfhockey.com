@@ -383,3 +383,10 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - **Build:** fhfhockey completed 20:07:58Z; cms, functions and fhfhockey.com canceled. **Deployed SHA `70ad65546`.**
   - **Smoke** 5/5 at 200 (20:08:26–27Z): `/` 4.15 s (cold), `/splits` 0.23 s, `/lines` 0.20 s, `/lines/EDM` 0.30 s, `/drm` 0.17 s.
   - **octoberBranch** `4acd28814` takes the 16 released files (11 related test files, 249 passed). Ours-merge `1bb298b79` pushed 20:08:45Z; no build at 20:10:19Z.
+  - **First natural update-stats-job run after #440** (read-only check, 20:22:31Z): pg_cron job 2 run 239021 succeeded at 20:20:00Z. The audit row at 20:20:02Z is `success`: `attemptedGameIds: []`, `updatedGameIds: []`, so no eligible game. **#440 is live; a nullable write is not yet observed.** No rerun, and the release isn't held open for it.
+- **Decision 152 dry run** (TJ, ~20:25Z): run **locally**, before migration 149 or any release.
+  - It uses the exact candidate code on loopback. Production reads go only through DB-enforced read-only psql sessions (`default_transaction_read_only=on`); there are no writes, audit rows or cron changes. A disposable local PG15 is used if the new schema is needed.
+  - All 309 games run sequentially under the load gate, and all 618 team-games are reconciled. It stops at the first mismatch or unsafe load. The hashed diff goes to TJ.
+  - Cron 388 stays on the old path, or gated off by `PP_STORED_CALCULATION_WRITES_ENABLED` (off), until TJ approves writes.
+  - Then the migration, release and refresh each get their own approval. PP share stays hidden until the refresh and readbacks pass and TJ separately approves serving it.
+  - Assigned to F11 (`local_efbef655`).
