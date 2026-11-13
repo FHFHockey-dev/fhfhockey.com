@@ -247,6 +247,12 @@ const MIN_ROLLING_CLAIM_MS = 30_000;
 // run-projection-v2 stops at its own deadline and resumes its run on the next
 // call; give it at least this long.
 const MIN_PROJECTION_RUNTIME_MS = 30_000;
+// The upstream stage's WGO season-totals refresh starts only this early in an
+// invocation (about 170 s before the 240 s kill). pg_cron job 14 refreshes the
+// totals daily at 07:40 UTC and no later stage reads them, so on a slow morning
+// skipping it is safe; starting it late let the kill land inside the step, which
+// left the stage "running" and blocked every later slot that day (2026-11-10..12).
+const WGO_TOTALS_START_CUTOFF_MS = 70_000;
 // Outlives the 240 s kill, so a dead invocation's stage frees up before the
 // next 5-minute call.
 const RESUMABLE_STAGE_LEASE_MS = 270_000;
@@ -646,6 +652,8 @@ async function runStage(args: {
   rollingResumeFrom?: number | null;
   nstResumeCursor?: number | null;
   sourceDeadlineAtMs?: number;
+  // Epoch ms when this invocation started; gates the optional WGO totals refresh.
+  invocationStartedAtMs?: number;
   // Epoch ms: the rolling stage starts no chunk and the route claims no
   // player after this.
   rollingClaimUntilMs?: number;
@@ -780,14 +788,31 @@ async function runStage(args: {
           startDate: args.sourceStartDate
         }
       });
-      await addStep({
-        id: "update-wgo-totals",
-        route: "/api/v1/db/update-wgo-totals",
-        handler: updateWgoTotalsHandler,
-        query: {
-          season: "current"
-        }
-      });
+      if (
+        args.invocationStartedAtMs != null &&
+        Date.now() - args.invocationStartedAtMs > WGO_TOTALS_START_CUTOFF_MS
+      ) {
+        steps.push({
+          id: "update-wgo-totals",
+          route: "/api/v1/db/update-wgo-totals",
+          status: "skipped",
+          statusCode: 200,
+          durationMs: 0,
+          summary: null,
+          query: { season: "current" },
+          reason:
+            "Too little time left in this invocation; pg_cron job 14 refreshes WGO season totals daily at 07:40 UTC."
+        });
+      } else {
+        await addStep({
+          id: "update-wgo-totals",
+          route: "/api/v1/db/update-wgo-totals",
+          handler: updateWgoTotalsHandler,
+          query: {
+            season: "current"
+          }
+        });
+      }
       break;
     }
     case "contextual_builders": {
@@ -1373,7 +1398,8 @@ async function runResumablePipeline(args: {
       ...(stage.id === "upstream_skater_sources"
         ? {
             nstResumeCursor: lease.cursorGameId,
-            sourceDeadlineAtMs: args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS
+            sourceDeadlineAtMs: args.startedAt + RESUMABLE_INVOCATION_BUDGET_MS,
+            invocationStartedAtMs: args.startedAt
           }
         : {}),
       ...(stage.id === "contextual_builders"
@@ -1635,6 +1661,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
         ...stageArgs,
         id: stage.id,
         sourceDeadlineAtMs: oneShotDeadlineMs,
+        invocationStartedAtMs: startedAt,
         // One-shot runs chunk the rolling step too, so a killed call still
         // reports the cursor of every finished chunk in its audit row.
         rollingClaimUntilMs: oneShotDeadlineMs - (FUNCTION_MAX_DURATION_MS - RESUMABLE_INVOCATION_BUDGET_MS),

@@ -916,6 +916,33 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
       });
 
+      it("skips the optional WGO totals refresh late in an invocation so the stage still hands off", async () => {
+        // 2026-11-10..12: NST plus WGO skaters ran past 120 s, the 240 s kill landed inside
+        // update-wgo-totals and the stage stayed "running" for the rest of the morning.
+        updateWgoSkatersMock.mockImplementationOnce(slowSuccess(100_000));
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        const upstream = stageStatus(res, "upstream_skater_sources");
+        expect(upstream.status).toBe("success");
+        expect(upstream.steps.map((step: any) => [step.id, step.status])).toEqual([
+          ["update-nst-gamelog", "success"], ["update-wgo-skaters", "success"], ["update-wgo-totals", "skipped"],
+        ]);
+        expect(updateWgoTotalsMock).not.toHaveBeenCalled();
+        expect(nstStageRow()).toMatchObject({ status: "complete" });
+      });
+
+      it("still refreshes WGO totals when the invocation is early", async () => {
+        updateWgoSkatersMock.mockImplementationOnce(slowSuccess(30_000));
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        expect(stageStatus(res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
+          ["update-nst-gamelog", "success"], ["update-wgo-skaters", "success"], ["update-wgo-totals", "success"],
+        ]);
+        expect(updateWgoTotalsMock).toHaveBeenCalledTimes(1);
+      });
+
       it("advances to WGO on the expected no-completed-games skip", async () => {
         updateNstGamelogMock.mockImplementationOnce(reply(200, { success: true, operationStatus: "skipped_no_completed_games" }));
 

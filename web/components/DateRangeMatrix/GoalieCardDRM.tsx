@@ -34,6 +34,8 @@ const GoalieCardDRM: React.FC<GoalieCardProps> = ({
         ["--secondary-color" as any]: teamColors.secondary,
         ["--primary-color" as any]: teamColors.primary,
         ["--jersey-color" as any]: teamColors.jersey,
+        ["--card-ink" as any]: teamColors.ink,
+        ["--card-ink-secondary" as any]: teamColors.inkSecondary,
       }}
     >
       <div className={styles.goalieCardHeader}>
@@ -46,7 +48,7 @@ const GoalieCardDRM: React.FC<GoalieCardProps> = ({
       <div className={styles.goalieRecord}>
         <span className={`${styles.line} ${styles.left}`}></span>
         <span>
-          {player.GP} GP in {scopeGameCount} matching{" "}
+          Played {player.GP} of {scopeGameCount}{" "}
           {scopeGameCount === 1 ? "game" : "games"}
         </span>
         <span className={`${styles.line} ${styles.right}`}></span>
@@ -55,27 +57,27 @@ const GoalieCardDRM: React.FC<GoalieCardProps> = ({
       {stats ? (
         <div className={styles.statsGridGoalies}>
           <div className={styles.goalieStat}>
-            <span className={styles.goalieStatLabel}>GP</span>
+            <abbr className={styles.goalieStatLabel} title="Games played">GP</abbr>
             <span className={styles.goalieStatValue}>{stats.gamesPlayed}</span>
           </div>
           <div className={styles.goalieStat}>
-            <span className={styles.goalieStatLabel}>SV%</span>
+            <abbr className={styles.goalieStatLabel} title="Save percentage">SV%</abbr>
             <span className={styles.goalieStatValue}>{formattedSavePct}</span>
           </div>
           <div className={styles.goalieStat}>
-            <span className={styles.goalieStatLabel}>GAA</span>
+            <abbr className={styles.goalieStatLabel} title="Goals-against average">GAA</abbr>
             <span className={styles.goalieStatValue}>
               {stats.goalsAgainstAverage.toFixed(2)}
             </span>
           </div>
           <div className={styles.goalieStat}>
-            <span className={styles.goalieStatLabel}>SV</span>
+            <abbr className={styles.goalieStatLabel} title="Saves">SV</abbr>
             <span className={styles.goalieStatValue}>{stats.saves}</span>
           </div>
         </div>
       ) : (
         <p className={styles.statsUnavailable} role="status">
-          Goalie stats unavailable for this matrix scope.
+          No goalie stats for this range.
         </p>
       )}
     </div>

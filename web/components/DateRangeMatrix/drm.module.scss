@@ -19,22 +19,24 @@
   margin: 0;
   color: v.$text-primary;
   border-bottom-color: v.$border-accent;
-  // restore team-color hard-line gradient background
+  // Team-colour stripes in fixed pixel heights (same look at the 73px band),
+  // so the primary stripe is a known box the team name can centre in:
+  // primary runs from 6px to (100% - 26px).
   background: linear-gradient(
     180deg,
-    var(--secondary-color) 0%,
-    var(--secondary-color) 3%,
-    var(--accent-color) 3%,
-    var(--accent-color) 8%,
-    var(--primary-color) 8%,
-    var(--primary-color) 65%,
-    var(--jersey-color) 65%,
-    var(--jersey-color) 70%,
-    var(--accent-color) 70%,
-    var(--accent-color) 75%,
-    var(--secondary-color) 75%,
-    var(--secondary-color) 80%,
-    var(--jersey-color) 80%,
+    var(--secondary-color) 0,
+    var(--secondary-color) 2px,
+    var(--accent-color) 2px,
+    var(--accent-color) 6px,
+    var(--primary-color) 6px,
+    var(--primary-color) calc(100% - 26px),
+    var(--jersey-color) calc(100% - 26px),
+    var(--jersey-color) calc(100% - 22px),
+    var(--accent-color) calc(100% - 22px),
+    var(--accent-color) calc(100% - 18px),
+    var(--secondary-color) calc(100% - 18px),
+    var(--secondary-color) calc(100% - 14px),
+    var(--jersey-color) calc(100% - 14px),
     var(--jersey-color) 100%
   );
 }
@@ -45,26 +47,28 @@
   margin-left: v.$space-sm;
   margin-right: v.$space-sm;
   z-index: 1;
-  filter: drop-shadow(0 0 5px v.$border-accent);
 }
 
 .teamName {
   flex-grow: 1;
   z-index: 1;
   margin-left: v.$space-sm;
+  // Centre the name in the primary stripe, not the whole band: the stripe's
+  // centre sits (26px - 6px) / 2 = 10px above the band's centre.
+  padding-bottom: 20px;
 }
 
-.teamLocation {
-  color: v.$text-secondary;
-}
-
+// White on every team's primary stripe: 5.08:1 at worst (PHI #cf3308).
+// The old greys (#aaa / #ccc) fell below 4.5:1 on 7 teams (PHI 2.19 … CGY 4.32).
+.teamLocation,
 .teamShortName {
-  color: v.$text-primary;
+  color: v.$color-white;
 }
 
 // New two-column container spanning controls and content
 .columnsContainer {
-  width: 95%;
+  width: 100%;
+  max-width: v.$page-max-width; // 90% centred workspace (fhfh-styles §2.1)
   min-width: 0;
   margin: v.$space-md auto;
   display: grid;
@@ -117,14 +121,12 @@
 .options1 {
   @include v.component-wrapper;
   padding: v.$space-sm;
-  // Date controls need more room than the single-value selectors.
+  // Timeframe runs across the top; Team, Opponent and the dates sit
+  // below it, top-aligned, instead of floating beside a tall stack.
   display: grid;
-  grid-template-columns:
-    minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr)
-    minmax(0, 1.75fr);
-  column-gap: v.$space-sm;
-  align-items: stretch;
-  min-height: 75px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
+  gap: v.$space-sm v.$space-md;
+  align-items: start;
 
   // Ensure children shrink properly within columns
   > .timeFrameGroup,
@@ -133,51 +135,42 @@
     min-width: 0;
   }
 
-  // Thin separator between columns
-  > *:not(:first-child) {
-    border-left: 1px solid v.$border-secondary;
-    padding-left: v.$space-sm;
+  > .timeFrameGroup {
+    grid-column: 1 / -1;
   }
 }
 
 .options2 {
   @include v.component-wrapper;
   padding: v.$space-sm;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
+  // Season/venue buttons on top; Matrix layout, Data source and Strength
+  // share the row below so every matrix control lives in one panel.
+  // auto-fit: production hides the dev-only Data source select.
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
   gap: v.$space-sm;
-  flex-wrap: wrap;
-  min-height: 82.5px;
+  align-items: start;
 
-  // Desired order: buttons (left), select (right)
-  .buttonsContainer {
-    order: 1;
-  }
-  .selectWrapper {
-    order: 2;
+  > .buttonsContainer {
+    grid-column: 1 / -1;
   }
 }
 
 .dropdownGroup {
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: v.$space-xxs;
-  justify-content: center;
+  gap: v.$space-xs;
 }
 
 .dropdownGroup,
 .datePickerGroup {
   display: flex;
-  align-items: center;
+  align-items: stretch;
 }
 
 .datePickerGroup {
   overflow: visible; // allow popper to escape panel
   gap: v.$space-sm;
   flex: 1;
-  justify-content: space-evenly;
 }
 
 .label {
@@ -194,10 +187,9 @@
   flex: 1 1 0;
   min-width: 0;
   flex-direction: column;
-  gap: v.$space-xxs;
-  justify-content: center;
-  align-items: center;
+  gap: v.$space-xs;
 }
+.dropdownGroup .label,
 .datePicker .label {
   margin: 0;
   min-width: auto;
@@ -208,8 +200,7 @@
 .timeFrameGroup {
   display: flex;
   flex-direction: column;
-  gap: v.$space-xxs;
-  margin-left: v.$space-sm;
+  gap: v.$space-xs;
 }
 .timeFrameGroup .label {
   margin: 0;
@@ -221,13 +212,13 @@
   position: relative;
   display: inline-block;
   width: 100%;
-  font-family: "Roboto Condensed", sans-serif;
+  font-family: v.$font-family-primary;
 
   select {
     width: 100%;
     padding: 0 v.$space-md;
     height: var(--control-h);
-    border: 1px solid v.$border-secondary;
+    border: v.$border-control;
     border-radius: v.$border-radius-md;
     background-color: v.$background-medium;
     color: v.$text-primary;
@@ -235,8 +226,7 @@
     -webkit-appearance: none;
     -moz-appearance: none;
     cursor: pointer;
-    font-family:
-      "Roboto Condensed", sans-serif; /* Apply font to the select element */
+    font-family: v.$font-family-primary;
   }
 
   &::after {
@@ -246,8 +236,8 @@
     right: 12px;
     transform: translateY(-50%);
     pointer-events: none; /* Arrow doesn't block the dropdown */
-    color: white;
-    font-size: 12px;
+    color: v.$color-white;
+    font-size: v.$font-size-xs;
   }
 
   select:focus {
@@ -255,7 +245,7 @@
   }
 
   select:focus-visible {
-    outline: 3px solid v.$focus-color;
+    outline: 2px solid v.$primary-color;
     outline-offset: 2px;
   }
 
@@ -263,7 +253,7 @@
     background-color: v.$background-lighter;
     color: v.$text-button;
     padding: 10px;
-    font-family: "Roboto Condensed", sans-serif; /* Apply font to options */
+    font-family: v.$font-family-primary;
   }
 
   select option:hover {
@@ -283,9 +273,9 @@
   :global(.react-datepicker__time-name) {
     color: v.$text-primary; /* Change text color to site token */
     background-color: v.$background-medium; /* Change background color */
-    border-radius: 5px; /* Add some border-radius */
-    font-family: "Roboto Condensed", sans-serif; /* Use Roboto Condensed font */
-    font-size: 14px; /* Adjust font size if needed */
+    border-radius: v.$radius-xs;
+    font-family: v.$font-family-primary;
+    font-size: v.$font-size-sm;
   }
 
   /* Override selected day */
@@ -312,7 +302,7 @@
   min-width: 0;
   box-sizing: border-box;
   background-color: v.$background-medium;
-  border: 1px solid v.$border-secondary;
+  border: v.$border-control; // 3.6:1 field edge (WCAG 1.4.11); $border-secondary was 2.1:1
   border-radius: v.$border-radius-md;
   padding: 0 v.$space-md;
   height: var(--control-h, 40px);
@@ -327,28 +317,29 @@
   }
 
   &:focus-visible {
-    outline: 3px solid v.$focus-color;
+    outline: 2px solid v.$primary-color;
     outline-offset: 2px;
   }
 }
 
-.datePickers {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
 .selectWrapper {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs; // label clears the 2px focus ring
   font-size: v.$font-size-sm;
   font-weight: 600;
+
+  .label {
+    margin: 0;
+    min-width: auto;
+    text-align: left;
+  }
 }
 
 .buttonsContainer {
   display: flex;
-  justify-content: space-between;
-  gap: v.$space-md;
-  margin-left: v.$space-sm;
+  gap: v.$space-sm;
   flex-wrap: wrap;
 }
 
@@ -362,10 +353,20 @@
   &:hover {
     color: v.$text-primary;
   }
+  &:focus {
+    outline: none;
+  }
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+  // Toggle rule: 40% primary fill, white text (8.6:1), 2px primary ring.
+  // White on solid primary was 2.9:1.
   &.active {
-    background-color: v.$primary-color;
-    color: v.$text-button;
+    background-color: v.$primary-color-opaque;
+    color: v.$color-white;
     border-color: v.$primary-color;
+    box-shadow: inset 0 0 0 1px v.$primary-color;
   }
 }
 
@@ -377,17 +378,11 @@
   width: 100%;
 }
 
-.pulsatingGridWrapper {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 10; /* Ensure it's on top of everything */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.7); /* Optional: Add a background overlay */
+// Observed combinations, line cards and the matrix span both columns, below
+// both control panels (full roster fits; no dead right column).
+.linePairGrid,
+.dateRangeMatrixContainer {
+  grid-column: 1 / -1;
 }
 
 .timeFrameToggle {
@@ -402,33 +397,35 @@
   padding: 2px;
 }
 .timeFrameToggle .button {
-  flex: 1 1 3rem;
+  flex: 1 1 6rem;
   min-width: 0;
+  height: auto;
+  min-height: var(--control-h, 40px);
+  padding: .5rem;
   background: transparent;
   border: 0;
+  // Nested corners: 6px frame − 2px padding = 4px inner radius.
+  border-radius: v.$radius-xs;
   color: v.$text-secondary;
 }
 .timeFrameToggle .button.active {
-  background: v.$primary-color;
-  color: v.$text-button;
-  border-radius: v.$radius-sm;
+  background: v.$primary-color-opaque;
+  color: v.$color-white; // 9.3:1 (white on solid primary was 2.9:1)
+  box-shadow: inset 0 0 0 2px v.$primary-color;
 }
 
 .scopeSummary,
-.linePairNotice {
+.linePairNotice,
+.strengthNote {
   margin: v.$space-sm 0 0;
   color: v.$text-secondary;
   font-size: v.$font-size-sm;
   line-height: 1.4;
 }
 
-.scopeSummary {
-  padding: 0 v.$space-sm;
-}
-
+.scopeSummary,
 .linePairNotice {
-  padding: v.$space-lg;
-  text-align: center;
+  padding: 0 v.$space-sm;
 }
 
 // Reflow controls into real grid columns on tablets. The prior
@@ -437,19 +434,15 @@
   .options1 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 
-    > *:not(:first-child) {
-      border-left: 0;
-      padding-left: 0;
+    > .datePickerGroup {
+      grid-column: 1 / -1;
     }
   }
 }
 
 @media only screen and (max-width: v.$screen-medium-max) {
   .options2 {
-    flex: 0 0 100%;
-    max-width: 100%;
-    flex-direction: column;
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .selectWrapper {
@@ -463,17 +456,11 @@
 
 @media only screen and (max-width: v.$screen-small-max) {
   .columnsContainer {
-    width: calc(100% - (2 * v.$space-sm));
     margin: v.$space-sm auto;
   }
 
   .options1 {
     grid-template-columns: minmax(0, 1fr);
-
-    > *:not(:first-child) {
-      border-top: 1px solid v.$border-secondary;
-      padding-top: v.$space-sm;
-    }
   }
 
   .dropdownGroup,
@@ -504,5 +491,102 @@
   .buttonsContainer {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.observedUnits {
+  margin-bottom: v.$space-lg;
+  line-height: 1.5;
+  // Wide screens: forward lines take 2/3, defence pairs 1/3, and the
+  // special-teams groups run beneath both (TJ, 2026-11-12).
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  column-gap: v.$space-xl;
+  align-items: start;
+
+  > h2,
+  > p,
+  > section[data-kind="power_play"],
+  > section[data-kind="penalty_kill"] {
+    grid-column: 1 / -1;
+  }
+
+  @media only screen and (max-width: v.$screen-medium-max) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  p { margin: v.$space-xs 0; font-size: v.$font-size-sm; color: v.$text-secondary; }
+  h2 { @include v.section-title; margin-bottom: v.$space-sm; }
+  h3 { margin: v.$space-md 0 v.$space-xs; font-size: v.$font-size-sm; font-weight: 600; }
+  ol { margin: 0; padding: 0; list-style: none; counter-reset: unit; }
+  // One row per unit: rank | players | games | time together. A grid keeps
+  // the numbers on the first line even when long names wrap on phones.
+  li {
+    counter-increment: unit;
+    display: grid;
+    grid-template-columns: 1.5em minmax(0, 1fr) auto auto;
+    column-gap: v.$space-sm;
+    align-items: baseline;
+    padding: v.$space-xs 0;
+    border-bottom: 1px solid v.$border-soft;
+    font-size: v.$font-size-sm;
+    font-variant-numeric: tabular-nums;
+  }
+  li::before { content: counter(unit) "."; color: v.$text-secondary; }
+  summary { cursor: pointer; margin-top: v.$space-xs; font-size: v.$font-size-sm; color: v.$text-secondary; }
+}
+
+.unitPlayers { color: v.$text-primary; }
+.unitGames { order: 1; color: v.$text-secondary; white-space: nowrap; }
+.unitTime { order: 2; font-weight: 600; white-space: nowrap; }
+// Thin bar under the row: time together relative to the group's longest unit.
+.unitBar {
+  order: 3;
+  grid-column: 2 / -1;
+  display: block;
+  height: 3px;
+  margin-top: v.$space-xxs;
+  width: calc(var(--unit-share, 0) * 100%);
+  border-radius: 0 2px 2px 0;
+  background: v.$primary-color;
+}
+
+// Matrix coverage: a compact caption block so a long exclusion list
+// doesn't outweigh the controls beside it.
+.coverage {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  font-size: v.$font-size-sm;
+  line-height: 1.4;
+  color: v.$text-secondary;
+
+  p { margin: 0; }
+  > p:first-child {
+    color: v.$text-primary;
+    font-weight: 600;
+  }
+  summary {
+    cursor: pointer;
+    color: v.$text-primary;
+    font-weight: 600;
+  }
+}
+
+.coverageGroup {
+  margin-top: v.$space-xs;
+  padding: v.$space-xs v.$space-sm;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: v.$space-xxs v.$space-md;
+    margin: v.$space-xxs 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  li {
+    font-size: v.$font-size-xs;
+    font-variant-numeric: tabular-nums;
   }
 }

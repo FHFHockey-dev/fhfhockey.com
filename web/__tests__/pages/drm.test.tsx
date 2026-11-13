@@ -6,9 +6,10 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import DRMPage, {
+  getDRMPresetRange,
   parseDRMDate,
   sanitizeDRMMode,
   sanitizeDRMSeasonId,
@@ -16,10 +17,9 @@ import DRMPage, {
 } from "pages/drm";
 
 const mocks = vi.hoisted(() => ({
-  fetchAggregatedData: vi.fn(),
+  fetchDeploymentMatrix: vi.fn(),
   fetchCurrentSeason: vi.fn(),
   fetchSeasonById: vi.fn(),
-  getDateRangeForGames: vi.fn(),
   datePickerProps: vi.fn(),
   linePairGridProps: vi.fn(),
   setDateRangeMatrixMode: vi.fn(),
@@ -49,11 +49,13 @@ vi.mock("components/DateRangeMatrix/fetchAggregatedData", () => ({
     skatersByPlayerId: {},
     goaliesByPlayerId: {},
   },
-  fetchAggregatedData: mocks.fetchAggregatedData,
 }));
 
+vi.mock("components/DateRangeMatrix/fetchDeploymentMatrix", () => ({ fetchDeploymentMatrix: mocks.fetchDeploymentMatrix }));
+vi.mock("components/DateRangeMatrix/ObservedUnits", () => ({ default: () => null }));
+vi.mock("components/DateRangeMatrix/MatrixCoverage", () => ({ default: () => null }));
+
 vi.mock("components/DateRangeMatrix/utilities", () => ({
-  getDateRangeForGames: mocks.getDateRangeForGames,
   getTeamColors: () => ({
     primary: "#000000",
     secondary: "#111111",
@@ -181,6 +183,11 @@ vi.mock("hooks/useUrlQueryState", () => ({
     const [value, setValue] = useState<string | null>(
       mocks.queryValues[key] ?? fallback,
     );
+    useEffect(() => {
+      const sync = () => setValue(mocks.queryValues[key] ?? fallback);
+      window.addEventListener("popstate", sync);
+      return () => window.removeEventListener("popstate", sync);
+    }, [fallback, key]);
     const setter = useCallback(
       (nextValue: string | null) => {
         mocks.queryValues[key] = nextValue;
@@ -196,10 +203,15 @@ vi.mock("hooks/useUrlQueryState", () => ({
   },
 }));
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-12T17:00:00Z"));
   mocks.queryReady = true;
   for (const key of Object.keys(mocks.queryValues)) {
     delete mocks.queryValues[key];
@@ -268,8 +280,9 @@ function aggregateResponse(
     playoffData: { gameIds: [] },
   };
   return {
-    regularSeasonPlayersData: { [playerId]: player },
-    playoffPlayersData: {},
+    byStrength: Object.fromEntries(["all", "fiveOnFive", "otherEs", "pp", "pk"].map(strength => [strength, { [playerId]: player }])),
+    units: [],
+    coverage: { inputRows: 1, rosterRows: 1, skippedRows: 0, games: [] },
     matchedGameIds,
     cardStats: {
       scopeGameIds: Array.from(new Set(matchedGameIds)),
@@ -279,26 +292,10 @@ function aggregateResponse(
   };
 }
 
-function rangeResponse(
-  startDate: string,
-  endDate: string,
-  gamesBack: 7 | 14 | 30,
-) {
-  return {
-    startDate,
-    endDate,
-    gameIds: Array.from(
-      { length: gamesBack },
-      (_, index) => 2025021000 + gamesBack - index,
-    ),
-    requestedGameCount: gamesBack,
-    resolvedGameCount: gamesBack,
-  };
-}
-
 const emptyAggregateResponse = {
-  regularSeasonPlayersData: {},
-  playoffPlayersData: {},
+  byStrength: { all: {}, fiveOnFive: {}, otherEs: {}, pp: {}, pk: {} },
+  units: [],
+  coverage: { inputRows: 0, rosterRows: 0, skippedRows: 0, games: [] },
   matchedGameIds: [],
   cardStats: {
     scopeGameIds: [],
@@ -316,6 +313,37 @@ async function waitForSeasonInitialization() {
 }
 
 describe("DRMPage latest-request ownership", () => {
+  it.each([
+    ["L7", "2026-03-09T02:00:00Z", "2026-03-02", "2026-03-08"],
+    ["L14", "2026-11-02T03:30:00Z", "2026-10-19", "2026-11-01"],
+    ["L30", "2024-03-01T03:30:00Z", "2024-01-31", "2024-02-29"],
+  ] as const)("uses inclusive Eastern calendar dates for %s across DST/leap boundaries", (preset, now, start, end) => {
+    const range = getDRMPresetRange(preset, {
+      start: parseDRMDate("2023-10-01"), end: parseDRMDate("2027-06-30"),
+    }, new Date(now));
+    expect(toDateKey(range?.start)).toBe(start);
+    expect(toDateKey(range?.end)).toBe(end);
+  });
+
+  it("clamps presets to the first season days and loads with fewer than seven games", async () => {
+    vi.setSystemTime(new Date("2026-10-03T03:00:00Z")); // Still Oct 2 in New York.
+    mocks.fetchCurrentSeason.mockResolvedValue({
+      id: 20262027, startDate: "2026-10-01", regularSeasonEndDate: "2027-04-15", endDate: "2027-06-24",
+    });
+    Object.assign(mocks.queryValues, { team: "EDM", timeframe: "L7" });
+    mocks.fetchDeploymentMatrix.mockResolvedValue(aggregateResponse(97, [2026020001]));
+    render(<DRMPage />);
+    await waitFor(() => expect(mocks.fetchDeploymentMatrix).toHaveBeenCalledTimes(1));
+    expect(mocks.fetchDeploymentMatrix).toHaveBeenLastCalledWith(expect.objectContaining({
+      startDate: "2026-10-01", endDate: "2026-10-02", seasonId: 20262027,
+    }));
+    await waitFor(() => expect(screen.getByTestId("line-pair-grid")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "Season to date" }));
+    expect(mocks.fetchDeploymentMatrix).toHaveBeenLastCalledWith(expect.objectContaining({
+      startDate: "2026-10-01", endDate: "2026-10-02",
+    }));
+  });
+
   it("round-trips date-only keys through local calendar dates", () => {
     const parsed = parseDRMDate("2026-03-10");
     expect(parsed.getFullYear()).toBe(2026);
@@ -368,7 +396,7 @@ describe("DRMPage latest-request ownership", () => {
       );
     });
     expect(mocks.fetchCurrentSeason).not.toHaveBeenCalled();
-    expect(mocks.fetchAggregatedData).not.toHaveBeenCalled();
+    expect(mocks.fetchDeploymentMatrix).not.toHaveBeenCalled();
     expect(
       screen
         .getByRole("button", { name: "Custom" })
@@ -387,7 +415,7 @@ describe("DRMPage latest-request ownership", () => {
       start: "2025-05-01",
       end: "2025-05-12",
     });
-    mocks.fetchAggregatedData.mockResolvedValue(aggregateResponse(97));
+    mocks.fetchDeploymentMatrix.mockResolvedValue(aggregateResponse(97));
 
     render(<DRMPage />);
 
@@ -472,12 +500,12 @@ describe("DRMPage latest-request ownership", () => {
       timeframe: "Totals",
       source: "aggregated",
     });
-    mocks.fetchAggregatedData.mockResolvedValue(aggregateResponse(97));
+    mocks.fetchDeploymentMatrix.mockResolvedValue(aggregateResponse(97));
 
     render(<DRMPage />);
 
     await waitFor(() =>
-      expect(mocks.fetchAggregatedData).toHaveBeenCalledWith(
+      expect(mocks.fetchDeploymentMatrix).toHaveBeenCalledWith(
         expect.objectContaining({
           teamId: 22,
           seasonId: 20242025,
@@ -523,7 +551,7 @@ describe("DRMPage latest-request ownership", () => {
         "line-combination",
       );
     });
-    expect(mocks.fetchAggregatedData).not.toHaveBeenCalled();
+    expect(mocks.fetchDeploymentMatrix).not.toHaveBeenCalled();
   });
 
   it("exposes labeled controls with pressed-state semantics", async () => {
@@ -538,15 +566,15 @@ describe("DRMPage latest-request ownership", () => {
     ).toBeTruthy();
     expect(screen.getByRole("group", { name: "Timeframe" })).toBeTruthy();
 
-    const seasonTimeframe = screen.getByRole("button", { name: "Season" });
-    const l7Timeframe = screen.getByRole("button", { name: "L7" });
+    const seasonTimeframe = screen.getByRole("button", { name: "Season to date" });
+    const l7Timeframe = screen.getByRole("button", { name: "Last 7 days" });
     expect(seasonTimeframe.getAttribute("aria-pressed")).toBe("true");
     expect(l7Timeframe.getAttribute("aria-pressed")).toBe("false");
 
     const team = screen.getByLabelText("Team");
     const opponent = screen.getByLabelText("Opponent");
-    const startDate = screen.getByLabelText("Start Date");
-    const endDate = screen.getByLabelText("End Date");
+    const startDate = screen.getByLabelText("Start date");
+    const endDate = screen.getByLabelText("End date");
     const matrixLayout = screen.getByLabelText("Matrix layout");
 
     expect(team.id).toBe("drm-team");
@@ -581,7 +609,7 @@ describe("DRMPage latest-request ownership", () => {
     expect(matrixLayout.getAttribute("name")).toBe("daterange-matrix-mode");
 
     const regularSeason = screen.getByRole("button", {
-      name: "Regular Season",
+      name: "Regular season",
     });
     const playoffs = screen.getByRole("button", { name: "Playoffs" });
     const home = screen.getByRole("button", { name: "Home" });
@@ -604,7 +632,7 @@ describe("DRMPage latest-request ownership", () => {
   it("does not let an older aggregate request overwrite a newer team", async () => {
     const first = deferred<ReturnType<typeof aggregateResponse>>();
     const second = deferred<ReturnType<typeof aggregateResponse>>();
-    mocks.fetchAggregatedData
+    mocks.fetchDeploymentMatrix
       .mockReturnValueOnce(first.promise)
       .mockReturnValueOnce(second.promise);
 
@@ -613,11 +641,11 @@ describe("DRMPage latest-request ownership", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Select EDM" }));
     await waitFor(() =>
-      expect(mocks.fetchAggregatedData).toHaveBeenCalledTimes(1),
+      expect(mocks.fetchDeploymentMatrix).toHaveBeenCalledTimes(1),
     );
     fireEvent.click(screen.getByRole("button", { name: "Select TOR" }));
     await waitFor(() =>
-      expect(mocks.fetchAggregatedData).toHaveBeenCalledTimes(2),
+      expect(mocks.fetchDeploymentMatrix).toHaveBeenCalledTimes(2),
     );
 
     await act(async () => {
@@ -642,203 +670,74 @@ describe("DRMPage latest-request ownership", () => {
     ]);
   });
 
-  it("does not let an older last-N date lookup replace a newer range", async () => {
-    const first = deferred<ReturnType<typeof rangeResponse>>();
-    const second = deferred<ReturnType<typeof rangeResponse>>();
-    mocks.getDateRangeForGames
-      .mockReturnValueOnce(first.promise)
-      .mockReturnValueOnce(second.promise);
-    mocks.fetchAggregatedData.mockResolvedValue(emptyAggregateResponse);
-
+  it("does not let an older preset aggregate replace a newer calendar range", async () => {
+    mocks.queryValues.team = "EDM";
+    mocks.fetchDeploymentMatrix.mockResolvedValueOnce(emptyAggregateResponse);
+    const first = deferred<ReturnType<typeof aggregateResponse>>();
+    const second = deferred<ReturnType<typeof aggregateResponse>>();
     render(<DRMPage />);
     await waitForSeasonInitialization();
-    fireEvent.click(screen.getByRole("button", { name: "Select EDM" }));
-    await waitFor(() => expect(mocks.fetchAggregatedData).toHaveBeenCalled());
-    const initialAggregateCalls = mocks.fetchAggregatedData.mock.calls.length;
+    await waitFor(() => expect(mocks.fetchDeploymentMatrix).toHaveBeenCalledTimes(1));
+    mocks.fetchDeploymentMatrix.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
 
-    fireEvent.click(screen.getByRole("button", { name: "L7" }));
-    await waitFor(() =>
-      expect(mocks.getDateRangeForGames).toHaveBeenCalledTimes(1),
-    );
-    expect(mocks.fetchAggregatedData).toHaveBeenCalledTimes(
-      initialAggregateCalls,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "L14" }));
-    await waitFor(() =>
-      expect(mocks.getDateRangeForGames).toHaveBeenCalledTimes(2),
-    );
-    expect(mocks.fetchAggregatedData).toHaveBeenCalledTimes(
-      initialAggregateCalls,
-    );
-
-    await act(async () => {
-      second.resolve(rangeResponse("2026-03-01", "2026-04-01", 14));
-      await second.promise;
-    });
-    await waitFor(() => {
-      const latestRequest = mocks.fetchAggregatedData.mock.calls.at(-1)?.[0];
-      expect(latestRequest).toEqual(
-        expect.objectContaining({
-          teamId: 22,
-          seasonId: 20252026,
-          startDate: "2026-03-01",
-          endDate: "2026-04-01",
-          seasonType: "regularSeason",
-        }),
-      );
-    });
-
-    await act(async () => {
-      first.resolve(rangeResponse("2026-01-01", "2026-02-01", 7));
-      await first.promise;
-    });
-    const latestRequest = mocks.fetchAggregatedData.mock.calls.at(-1)?.[0];
-    expect(latestRequest?.startDate).toBe("2026-03-01");
-    expect(latestRequest?.endDate).toBe("2026-04-01");
+    fireEvent.click(screen.getByRole("button", { name: "Last 7 days" }));
+    fireEvent.click(screen.getByRole("button", { name: "Last 14 days" }));
+    expect(mocks.fetchDeploymentMatrix.mock.calls.slice(1).map(([args]) => [args.startDate, args.endDate]))
+      .toEqual([["2026-04-09", "2026-04-15"], ["2026-04-02", "2026-04-15"]]);
+    await act(async () => { second.resolve(aggregateResponse(2)); await second.promise; });
+    await act(async () => { first.resolve(aggregateResponse(1)); await first.promise; });
+    expect(mocks.useDateRangeMatrixData.mock.calls.at(-1)?.[0].aggregatedData)
+      .toEqual([expect.objectContaining({ playerId: 2 })]);
   });
 
-  it("treats re-clicking an active rolling preset as a no-op", async () => {
-    const lookup = deferred<ReturnType<typeof rangeResponse>>();
-    mocks.getDateRangeForGames.mockReturnValueOnce(lookup.promise);
-    mocks.fetchAggregatedData.mockResolvedValue(aggregateResponse(97));
-
+  it("treats re-clicking an active calendar preset as a no-op", async () => {
+    mocks.queryValues.team = "EDM";
+    mocks.fetchDeploymentMatrix.mockResolvedValue(aggregateResponse(97));
     render(<DRMPage />);
     await waitForSeasonInitialization();
-    fireEvent.click(screen.getByRole("button", { name: "Select EDM" }));
-    await waitFor(() => expect(mocks.fetchAggregatedData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole("button", { name: "L7" }));
-    fireEvent.click(screen.getByRole("button", { name: "L7" }));
-    await waitFor(() =>
-      expect(mocks.getDateRangeForGames).toHaveBeenCalledTimes(1),
-    );
-
-    const resolved = rangeResponse("2026-03-01", "2026-04-01", 7);
-    await act(async () => {
-      lookup.resolve(resolved);
-      await lookup.promise;
-    });
-    await waitFor(() =>
-      expect(mocks.fetchAggregatedData).toHaveBeenLastCalledWith(
-        expect.objectContaining({ gameIds: resolved.gameIds }),
-      ),
-    );
-    const aggregateCalls = mocks.fetchAggregatedData.mock.calls.length;
-
-    fireEvent.click(screen.getByRole("button", { name: "L7" }));
-    await act(async () => Promise.resolve());
-    expect(mocks.getDateRangeForGames).toHaveBeenCalledTimes(1);
-    expect(mocks.fetchAggregatedData).toHaveBeenCalledTimes(aggregateCalls);
+    await waitFor(() => expect(mocks.fetchDeploymentMatrix).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("button", { name: "Last 7 days" }));
+    fireEvent.click(screen.getByRole("button", { name: "Last 7 days" }));
+    await waitFor(() => expect(mocks.fetchDeploymentMatrix).toHaveBeenCalledTimes(2));
+    expect(mocks.fetchDeploymentMatrix).toHaveBeenLastCalledWith(expect.objectContaining({
+      startDate: "2026-04-09", endDate: "2026-04-15",
+    }));
   });
 
-  it("clears an old range and exposes a failed last-N lookup", async () => {
-    const lookup = deferred<ReturnType<typeof rangeResponse>>();
-    mocks.getDateRangeForGames.mockReturnValueOnce(lookup.promise);
-    mocks.fetchAggregatedData.mockResolvedValue(emptyAggregateResponse);
-
+  it("does not fetch future games before the selected season type starts", async () => {
+    vi.setSystemTime(new Date("2026-04-15T16:00:00Z"));
+    Object.assign(mocks.queryValues, { team: "EDM", seasonType: "playoffs", timeframe: "L7" });
     render(<DRMPage />);
-    await waitForSeasonInitialization();
-    fireEvent.click(screen.getByRole("button", { name: "Select EDM" }));
-    await waitFor(() => expect(mocks.fetchAggregatedData).toHaveBeenCalled());
-
-    fireEvent.click(screen.getByRole("button", { name: "L7" }));
-    await waitFor(() => {
-      const latest = mocks.useDateRangeMatrixData.mock.calls.at(-1)?.[0];
-      expect(latest.startDate).toBe("");
-      expect(latest.endDate).toBe("");
-      expect(latest.aggregateStatus).toBe("loading");
-      expect(latest.aggregatedData).toEqual([]);
-    });
-
-    await act(async () => {
-      lookup.reject(new Error("date lookup failed"));
-      try {
-        await lookup.promise;
-      } catch {
-        // The page owns this rejection and converts it to a safe result state.
-      }
-    });
-    await waitFor(() => {
-      const latest = mocks.useDateRangeMatrixData.mock.calls.at(-1)?.[0];
-      expect(latest.aggregateStatus).toBe("error");
-      expect(latest.aggregateError).toBe(
-        "Unable to resolve the matrix date range.",
-      );
-      expect(latest.aggregatedData).toEqual([]);
-    });
+    await waitFor(() => expect(screen.getByText("The selected season has not started yet.")).toBeTruthy());
+    expect(mocks.fetchDeploymentMatrix).not.toHaveBeenCalled();
+    expect(mocks.useDateRangeMatrixData.mock.calls.at(-1)?.[0]).toEqual(expect.objectContaining({
+      startDate: "", endDate: "", aggregateStatus: "empty",
+    }));
   });
 
-  it("keeps an Option-A L7 window fixed while filters narrow it", async () => {
-    const resolvedRange = rangeResponse("2026-03-10", "2026-04-01", 7);
-    mocks.getDateRangeForGames.mockResolvedValue(resolvedRange);
-    mocks.fetchAggregatedData.mockResolvedValue(
-      aggregateResponse(97, [2025021007, 2025021007, 2025021006]),
-    );
-
+  it("keeps the calendar window fixed while team and venue/opponent filters narrow it", async () => {
+    Object.assign(mocks.queryValues, { team: "EDM", timeframe: "L7", start: "2026-01-01", end: "2026-01-02" });
+    mocks.fetchDeploymentMatrix.mockResolvedValue(aggregateResponse(97, [2025021007, 2025021007, 2025021006]));
     render(<DRMPage />);
-    await waitForSeasonInitialization();
-    fireEvent.click(screen.getByRole("button", { name: "Select EDM" }));
-    await waitFor(() => expect(mocks.fetchAggregatedData).toHaveBeenCalled());
-
-    fireEvent.click(screen.getByRole("button", { name: "L7" }));
-    await waitFor(() =>
-      expect(mocks.getDateRangeForGames).toHaveBeenCalledWith({
-        teamId: 22,
-        seasonId: 20252026,
-        seasonType: "regularSeason",
-        gamesBack: 7,
-        scopeStartDate: "2025-10-01",
-        scopeEndDate: "2026-04-15",
-      }),
-    );
-    await waitFor(() =>
-      expect(mocks.fetchAggregatedData).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          startDate: "2026-03-10",
-          endDate: "2026-04-01",
-          gameIds: resolvedRange.gameIds,
-          homeOrAway: "",
-          opponentTeamAbbreviation: "",
-        }),
-      ),
-    );
-    expect(
-      screen.getByText(
-        "Matrix scope: 2 matching games within last 7 team games.",
-      ),
-    ).toBeTruthy();
+    await waitFor(() => expect(mocks.fetchDeploymentMatrix).toHaveBeenCalled());
+    expect(screen.getByText("Showing games from Apr 9 to Apr 15, 2026.")).toBeTruthy();
     expect(screen.getByTestId("line-pair-grid")).toBeTruthy();
-
     fireEvent.click(screen.getByRole("button", { name: "Home" }));
-    await waitFor(() =>
-      expect(mocks.fetchAggregatedData).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          startDate: "2026-03-10",
-          endDate: "2026-04-01",
-          gameIds: resolvedRange.gameIds,
-          homeOrAway: "home",
-        }),
-      ),
-    );
-
-    const opponentDropdown = screen.getAllByTestId("team-dropdown")[1];
-    fireEvent.change(opponentDropdown, { target: { value: "TOR" } });
-    await waitFor(() =>
-      expect(mocks.fetchAggregatedData).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          startDate: "2026-03-10",
-          endDate: "2026-04-01",
-          gameIds: resolvedRange.gameIds,
-          homeOrAway: "home",
-          opponentTeamAbbreviation: "TOR",
-        }),
-      ),
-    );
-    expect(mocks.getDateRangeForGames).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getAllByTestId("team-dropdown")[1], { target: { value: "TOR" } });
+    fireEvent.click(screen.getByRole("button", { name: "Select TOR" }));
+    await waitFor(() => expect(mocks.fetchDeploymentMatrix).toHaveBeenLastCalledWith(expect.objectContaining({
+      teamId: 10, homeOrAway: "home", opponentTeamAbbreviation: "TOR",
+    })));
+    for (const [args] of mocks.fetchDeploymentMatrix.mock.calls) {
+      expect(args).toEqual(expect.objectContaining({ startDate: "2026-04-09", endDate: "2026-04-15" }));
+      expect(args.gameIds).toBeUndefined();
+    }
+    expect(mocks.queryValues).toEqual(expect.objectContaining({ timeframe: "L7", start: "2026-04-09", end: "2026-04-15" }));
   });
 
   it("hides a resolved line-card scope on the first render of a changed filter", async () => {
     const changedScope = deferred<ReturnType<typeof aggregateResponse>>();
-    mocks.fetchAggregatedData
+    mocks.fetchDeploymentMatrix
       .mockResolvedValueOnce(aggregateResponse(97, [2025021007]))
       .mockReturnValueOnce(changedScope.promise);
 
@@ -855,11 +754,11 @@ describe("DRMPage latest-request ownership", () => {
     expect(screen.queryByTestId("line-pair-grid")).toBeNull();
     expect(
       screen.getByText(
-        "Updating line and goalie stat cards for the selected matrix scope.",
+        "Updating line and goalie cards…",
       ),
     ).toBeTruthy();
     await waitFor(() =>
-      expect(mocks.fetchAggregatedData).toHaveBeenCalledTimes(2),
+      expect(mocks.fetchDeploymentMatrix).toHaveBeenCalledTimes(2),
     );
 
     await act(async () => {
@@ -874,7 +773,7 @@ describe("DRMPage latest-request ownership", () => {
   });
 
   it("forwards the hook's canonical line and pair groups to the line-card renderer", async () => {
-    mocks.fetchAggregatedData.mockResolvedValue(aggregateResponse(97));
+    mocks.fetchDeploymentMatrix.mockResolvedValue(aggregateResponse(97));
 
     render(<DRMPage />);
     await waitForSeasonInitialization();
@@ -889,10 +788,28 @@ describe("DRMPage latest-request ownership", () => {
     );
   });
 
+  it("switches strength from the same qualified response without refetching the date scope", async () => {
+    mocks.queryValues.team = "EDM";
+    const result = aggregateResponse(97, [2025021007]);
+    result.byStrength.pp = aggregateResponse(29).byStrength.all;
+    const unit = { teamId: 22, gameIds: [2025021007], strength: "pp", kind: "power_play", playerIds: [1, 2, 3, 4, 5], seconds: 120, skaterCount: 5 };
+    mocks.fetchDeploymentMatrix.mockResolvedValue({ ...result, units: [unit] });
+    render(<DRMPage />);
+    await waitFor(() => expect(mocks.useDateRangeMatrixData.mock.calls.at(-1)?.[0].aggregatedData[0]?.playerId).toBe(97));
+    const calls = mocks.fetchDeploymentMatrix.mock.calls.length;
+    fireEvent.change(screen.getByLabelText("Strength"), { target: { value: "pp" } });
+    await waitFor(() => {
+      const latest = mocks.useDateRangeMatrixData.mock.calls.at(-1)?.[0];
+      expect(latest.aggregatedData[0].playerId).toBe(29);
+      expect(latest.observedUnits).toEqual([unit]);
+    });
+    expect(mocks.fetchDeploymentMatrix).toHaveBeenCalledTimes(calls);
+  });
+
   it("keeps usable aggregate data visible while propagating skipped-game coverage", async () => {
-    mocks.fetchAggregatedData.mockResolvedValue({
+    mocks.fetchDeploymentMatrix.mockResolvedValue({
       ...aggregateResponse(97, [2025021007]),
-      coverage: { inputRows: 3, rosterRows: 1, skippedRows: 2 },
+      coverage: { inputRows: 3, rosterRows: 1, skippedRows: 2, games: [] },
     });
 
     render(<DRMPage />);
@@ -906,6 +823,7 @@ describe("DRMPage latest-request ownership", () => {
         inputRows: 3,
         rosterRows: 1,
         skippedRows: 2,
+        games: [],
       });
       expect(latest.aggregatedData).toEqual([
         expect.objectContaining({ playerId: 97 }),
@@ -914,73 +832,61 @@ describe("DRMPage latest-request ownership", () => {
     expect(mocks.linePairGridProps).toHaveBeenCalled();
   });
 
-  it("does not reuse another team's resolved rolling IDs while its new window loads", async () => {
-    const edmRange = rangeResponse("2026-03-10", "2026-04-01", 7);
-    const torLookup = deferred<ReturnType<typeof rangeResponse>>();
-    mocks.getDateRangeForGames
-      .mockResolvedValueOnce(edmRange)
-      .mockReturnValueOnce(torLookup.promise);
-    mocks.fetchAggregatedData.mockResolvedValue(aggregateResponse(97));
-
+  it("blocks stale dates while a restored season changes and ignores its late response", async () => {
+    mocks.queryValues.team = "EDM";
+    mocks.fetchDeploymentMatrix.mockResolvedValue(emptyAggregateResponse);
     render(<DRMPage />);
     await waitForSeasonInitialization();
-    fireEvent.click(screen.getByRole("button", { name: "Select EDM" }));
-    await waitFor(() => expect(mocks.fetchAggregatedData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole("button", { name: "L7" }));
-    await waitFor(() =>
-      expect(mocks.fetchAggregatedData).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          teamId: 22,
-          gameIds: edmRange.gameIds,
-        }),
-      ),
-    );
-    const edmAggregateCalls = mocks.fetchAggregatedData.mock.calls.length;
-
-    fireEvent.click(screen.getByRole("button", { name: "Select TOR" }));
-    await waitFor(() =>
-      expect(mocks.getDateRangeForGames).toHaveBeenCalledTimes(2),
-    );
-    expect(mocks.fetchAggregatedData).toHaveBeenCalledTimes(edmAggregateCalls);
-
-    const torRange = rangeResponse("2026-03-12", "2026-04-03", 7);
-    await act(async () => {
-      torLookup.resolve(torRange);
-      await torLookup.promise;
+    const initialCalls = mocks.fetchDeploymentMatrix.mock.calls.length;
+    const oldSeason = deferred<Record<string, unknown>>();
+    const newerSeason = deferred<Record<string, unknown>>();
+    mocks.fetchSeasonById.mockReturnValueOnce(oldSeason.promise).mockReturnValueOnce(newerSeason.promise);
+    act(() => {
+      mocks.queryValues.season = "20242025";
+      mocks.queryValues.timeframe = "L7";
+      window.dispatchEvent(new Event("popstate"));
     });
-    await waitFor(() =>
-      expect(mocks.fetchAggregatedData).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          teamId: 10,
-          startDate: "2026-03-12",
-          endDate: "2026-04-03",
-          gameIds: torRange.gameIds,
-        }),
-      ),
-    );
+    await waitFor(() => expect(mocks.fetchSeasonById).toHaveBeenCalledWith(20242025));
+    expect(mocks.fetchDeploymentMatrix).toHaveBeenCalledTimes(initialCalls);
+    act(() => {
+      mocks.queryValues.season = "20232024";
+      window.dispatchEvent(new Event("popstate"));
+    });
+    await act(async () => {
+      newerSeason.resolve({ id: 20232024, startDate: "2023-10-10", regularSeasonEndDate: "2024-04-18", endDate: "2024-06-24" });
+      await newerSeason.promise;
+    });
+    await waitFor(() => expect(mocks.fetchDeploymentMatrix).toHaveBeenLastCalledWith(expect.objectContaining({
+      seasonId: 20232024, startDate: "2024-04-12", endDate: "2024-04-18",
+    })));
+    const settledCalls = mocks.fetchDeploymentMatrix.mock.calls.length;
+    await act(async () => {
+      oldSeason.resolve({ id: 20242025, startDate: "2024-10-04", regularSeasonEndDate: "2025-04-17", endDate: "2025-06-17" });
+      await oldSeason.promise;
+    });
+    expect(mocks.fetchDeploymentMatrix).toHaveBeenCalledTimes(settledCalls);
   });
 
   it("enters exact Custom mode and preserves its dates across team and filters", async () => {
-    mocks.fetchAggregatedData.mockResolvedValue(aggregateResponse(97));
+    mocks.fetchDeploymentMatrix.mockResolvedValue(aggregateResponse(97));
 
     render(<DRMPage />);
     await waitForSeasonInitialization();
     fireEvent.click(screen.getByRole("button", { name: "Select EDM" }));
-    await waitFor(() => expect(mocks.fetchAggregatedData).toHaveBeenCalled());
+    await waitFor(() => expect(mocks.fetchDeploymentMatrix).toHaveBeenCalled());
 
-    fireEvent.change(screen.getByLabelText("Start Date"), {
+    fireEvent.change(screen.getByLabelText("Start date"), {
       target: { value: "2026-02-01" },
     });
-    fireEvent.change(screen.getByLabelText("End Date"), {
+    fireEvent.change(screen.getByLabelText("End date"), {
       target: { value: "2026-02-10" },
     });
     await waitFor(() =>
-      expect(mocks.fetchAggregatedData).toHaveBeenLastCalledWith(
+      expect(mocks.fetchDeploymentMatrix).toHaveBeenLastCalledWith(
         expect.objectContaining({
           teamId: 22,
           startDate: "2026-02-01",
           endDate: "2026-02-10",
-          gameIds: undefined,
         }),
       ),
     );
@@ -992,22 +898,25 @@ describe("DRMPage latest-request ownership", () => {
     ).toBe("true");
     expect(
       screen.getByText(
-        "Custom range: 2026-02-01 through 2026-02-10 (inclusive).",
+        "Showing games from Feb 1 to Feb 10, 2026.",
       ),
     ).toBeTruthy();
-    expect(screen.queryByTestId("line-pair-grid")).toBeNull();
-    expect(
-      screen.getByText(
-        "Line and goalie stat cards are unavailable for Custom ranges; the matrix uses the selected dates.",
-      ),
-    ).toBeTruthy();
+    await waitFor(() => expect(screen.queryByTestId("line-pair-grid")).not.toBeNull());
+    expect(mocks.linePairGridProps).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        scopeKey: expect.stringContaining("2026-02-01:2026-02-10"),
+        lines: mocks.canonicalLines,
+        pairs: mocks.canonicalPairs,
+      }),
+    );
+    expect(mocks.useDateRangeMatrixData.mock.calls.at(-1)?.[0].observedUnits).toEqual([]);
 
     fireEvent.click(screen.getByRole("button", { name: "Select TOR" }));
     fireEvent.click(screen.getByRole("button", { name: "Home" }));
     const opponentDropdown = screen.getAllByTestId("team-dropdown")[1];
     fireEvent.change(opponentDropdown, { target: { value: "TOR" } });
     await waitFor(() =>
-      expect(mocks.fetchAggregatedData).toHaveBeenLastCalledWith(
+      expect(mocks.fetchDeploymentMatrix).toHaveBeenLastCalledWith(
         expect.objectContaining({
           teamId: 10,
           startDate: "2026-02-01",
@@ -1017,22 +926,19 @@ describe("DRMPage latest-request ownership", () => {
         }),
       ),
     );
-    expect(mocks.getDateRangeForGames).not.toHaveBeenCalled();
   });
 
   it("resets Custom to the selected season and lets a preset recalculate", async () => {
-    mocks.fetchAggregatedData.mockResolvedValue(aggregateResponse(97));
-    const playoffRange = rangeResponse("2026-05-01", "2026-06-01", 7);
-    mocks.getDateRangeForGames.mockResolvedValue(playoffRange);
+    mocks.fetchDeploymentMatrix.mockResolvedValue(aggregateResponse(97));
 
     render(<DRMPage />);
     await waitForSeasonInitialization();
     fireEvent.click(screen.getByRole("button", { name: "Select EDM" }));
-    await waitFor(() => expect(mocks.fetchAggregatedData).toHaveBeenCalled());
-    fireEvent.change(screen.getByLabelText("Start Date"), {
+    await waitFor(() => expect(mocks.fetchDeploymentMatrix).toHaveBeenCalled());
+    fireEvent.change(screen.getByLabelText("Start date"), {
       target: { value: "2026-02-01" },
     });
-    fireEvent.change(screen.getByLabelText("End Date"), {
+    fireEvent.change(screen.getByLabelText("End date"), {
       target: { value: "2026-02-10" },
     });
 
@@ -1045,38 +951,28 @@ describe("DRMPage latest-request ownership", () => {
     });
     expect(
       screen
-        .getByRole("button", { name: "Season" })
+        .getByRole("button", { name: "Season to date" })
         .getAttribute("aria-pressed"),
     ).toBe("true");
 
-    fireEvent.click(screen.getByRole("button", { name: "L7" }));
-    await waitFor(() =>
-      expect(mocks.getDateRangeForGames).toHaveBeenCalledWith({
-        teamId: 22,
-        seasonId: 20252026,
-        seasonType: "playoffs",
-        gamesBack: 7,
-        scopeStartDate: "2026-04-16",
-        scopeEndDate: "2026-06-24",
-      }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Last 7 days" }));
     await waitFor(() => {
       const latest = mocks.useDateRangeMatrixData.mock.calls.at(-1)?.[0];
-      expect(latest.startDate).toBe("2026-05-01");
-      expect(latest.endDate).toBe("2026-06-01");
+      expect(latest.startDate).toBe("2026-06-18");
+      expect(latest.endDate).toBe("2026-06-24");
     });
   });
 
   it("fails closed for missing or reversed Custom dates", async () => {
-    mocks.fetchAggregatedData.mockResolvedValue(aggregateResponse(97));
+    mocks.fetchDeploymentMatrix.mockResolvedValue(aggregateResponse(97));
 
     render(<DRMPage />);
     await waitForSeasonInitialization();
     fireEvent.click(screen.getByRole("button", { name: "Select EDM" }));
-    await waitFor(() => expect(mocks.fetchAggregatedData).toHaveBeenCalled());
+    await waitFor(() => expect(mocks.fetchDeploymentMatrix).toHaveBeenCalled());
 
-    const initialCalls = mocks.fetchAggregatedData.mock.calls.length;
-    fireEvent.change(screen.getByLabelText("Start Date"), {
+    const initialCalls = mocks.fetchDeploymentMatrix.mock.calls.length;
+    fireEvent.change(screen.getByLabelText("Start date"), {
       target: { value: "" },
     });
     await waitFor(() => {
@@ -1086,17 +982,17 @@ describe("DRMPage latest-request ownership", () => {
         "Select both Custom dates to load matrix data.",
       );
     });
-    expect(mocks.fetchAggregatedData).toHaveBeenCalledTimes(initialCalls);
+    expect(mocks.fetchDeploymentMatrix).toHaveBeenCalledTimes(initialCalls);
     expect(screen.getByRole("alert").textContent).toBe(
       "Select both Custom dates to load matrix data.",
     );
 
-    fireEvent.change(screen.getByLabelText("Start Date"), {
+    fireEvent.change(screen.getByLabelText("Start date"), {
       target: { value: "2026-04-10" },
     });
-    await waitFor(() => expect(mocks.fetchAggregatedData).toHaveBeenCalled());
-    const validCalls = mocks.fetchAggregatedData.mock.calls.length;
-    fireEvent.change(screen.getByLabelText("End Date"), {
+    await waitFor(() => expect(mocks.fetchDeploymentMatrix).toHaveBeenCalled());
+    const validCalls = mocks.fetchDeploymentMatrix.mock.calls.length;
+    fireEvent.change(screen.getByLabelText("End date"), {
       target: { value: "2026-04-01" },
     });
     await waitFor(() => {
@@ -1106,47 +1002,30 @@ describe("DRMPage latest-request ownership", () => {
         "Custom start date must not follow the end date.",
       );
     });
-    expect(mocks.fetchAggregatedData).toHaveBeenCalledTimes(validCalls);
+    expect(mocks.fetchDeploymentMatrix).toHaveBeenCalledTimes(validCalls);
     expect(screen.getByRole("alert").textContent).toBe(
       "Custom start date must not follow the end date.",
     );
     expect(screen.queryByTestId("line-pair-grid")).toBeNull();
   });
 
-  it("does not let a late rolling lookup overwrite a manual Custom range", async () => {
-    const lookup = deferred<ReturnType<typeof rangeResponse>>();
-    mocks.getDateRangeForGames.mockReturnValueOnce(lookup.promise);
-    mocks.fetchAggregatedData.mockResolvedValue(aggregateResponse(97));
-
+  it("does not let a late preset aggregate overwrite manual Custom dates", async () => {
+    mocks.queryValues.team = "EDM";
+    mocks.fetchDeploymentMatrix.mockResolvedValue(aggregateResponse(97));
     render(<DRMPage />);
     await waitForSeasonInitialization();
-    fireEvent.click(screen.getByRole("button", { name: "Select EDM" }));
-    await waitFor(() => expect(mocks.fetchAggregatedData).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole("button", { name: "L7" }));
-    await waitFor(() => expect(mocks.getDateRangeForGames).toHaveBeenCalled());
-
-    fireEvent.change(screen.getByLabelText("Start Date"), {
-      target: { value: "2026-02-01" },
-    });
-    fireEvent.change(screen.getByLabelText("End Date"), {
-      target: { value: "2026-02-10" },
-    });
-    await waitFor(() =>
-      expect(mocks.fetchAggregatedData).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          startDate: "2026-02-01",
-          endDate: "2026-02-10",
-          gameIds: undefined,
-        }),
-      ),
-    );
-
-    await act(async () => {
-      lookup.resolve(rangeResponse("2026-03-01", "2026-04-01", 7));
-      await lookup.promise;
-    });
-    const latest = mocks.useDateRangeMatrixData.mock.calls.at(-1)?.[0];
-    expect(latest.startDate).toBe("2026-02-01");
-    expect(latest.endDate).toBe("2026-02-10");
+    const pending = deferred<ReturnType<typeof aggregateResponse>>();
+    mocks.fetchDeploymentMatrix.mockReturnValueOnce(pending.promise);
+    fireEvent.click(screen.getByRole("button", { name: "Last 7 days" }));
+    fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2026-02-01" } });
+    fireEvent.change(screen.getByLabelText("End date"), { target: { value: "2026-02-10" } });
+    await waitFor(() => expect(mocks.fetchDeploymentMatrix).toHaveBeenLastCalledWith(expect.objectContaining({
+      startDate: "2026-02-01", endDate: "2026-02-10",
+    })));
+    await act(async () => { pending.resolve(aggregateResponse(1)); await pending.promise; });
+    expect(mocks.useDateRangeMatrixData.mock.calls.at(-1)?.[0]).toEqual(expect.objectContaining({
+      startDate: "2026-02-01", endDate: "2026-02-10", aggregatedData: [expect.objectContaining({ playerId: 97 })],
+    }));
   });
+
 });

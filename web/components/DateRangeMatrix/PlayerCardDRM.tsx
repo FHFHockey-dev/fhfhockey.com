@@ -18,13 +18,13 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
   stats,
   scopeGameCount,
 }) => {
-  const { primary, secondary, jersey, accentColor } = getTeamColors(
+  const { primary, secondary, jersey, accentColor, ink, inkSecondary } = getTeamColors(
     player.teamId,
   );
   const nameParts = player.name.trim().split(/\s+/);
   const firstName = nameParts[0] || player.playerAbbrevName;
   const lastName = nameParts.slice(1).join(" ") || player.lastName;
-  const gameLabel = `${player.GP} GP in ${scopeGameCount} matching ${
+  const gameLabel = `Played ${player.GP} of ${scopeGameCount} ${
     scopeGameCount === 1 ? "game" : "games"
   }`;
 
@@ -36,6 +36,8 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
         ["--secondary-color" as any]: secondary,
         ["--primary-color" as any]: primary,
         ["--jersey-color" as any]: jersey,
+        ["--card-ink" as any]: ink,
+        ["--card-ink-secondary" as any]: inkSecondary,
       }}
     >
       <div className={styles.playerCardHeader}>
@@ -55,24 +57,24 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
       {stats ? (
         <div className={styles.statsGrid}>
           {[
-            ["G", stats.goals],
-            ["A", stats.assists],
-            ["PTS", stats.points],
-            ["PPP", stats.powerPlayPoints],
-            ["SOG", stats.shots],
-            ["HITS", stats.hits],
-            ["BLKS", stats.blockedShots],
-            ["+/-", stats.plusMinus],
-          ].map(([label, value]) => (
+            ["G", "Goals", stats.goals],
+            ["A", "Assists", stats.assists],
+            ["PTS", "Points", stats.points],
+            ["PPP", "Power-play points", stats.powerPlayPoints],
+            ["SOG", "Shots on goal", stats.shots],
+            ["HITS", "Hits", stats.hits],
+            ["BLKS", "Blocked shots", stats.blockedShots],
+            ["+/-", "Plus-minus", stats.plusMinus],
+          ].map(([label, name, value]) => (
             <div className={styles.stat} key={label}>
-              <span className={styles.statLabel}>{label}</span>
+              <abbr className={styles.statLabel} title={String(name)}>{label}</abbr>
               <span className={styles.statValue}>{value}</span>
             </div>
           ))}
         </div>
       ) : (
         <p className={styles.statsUnavailable} role="status">
-          Box-score stats unavailable for this matrix scope.
+          No box-score stats for this range.
         </p>
       )}
     </div>

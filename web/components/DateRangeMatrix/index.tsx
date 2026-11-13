@@ -209,11 +209,7 @@ function sortByFullRoster(
 }
 
 function sortByTotalTOI(players: PlayerData[]): PlayerData[] {
-  return [...players].sort((a, b) => {
-    const atoia = parseTime(a.ATOI);
-    const atoib = parseTime(b.ATOI);
-    return atoib - atoia;
-  });
+  return [...players].sort((a, b) => b.totalTOI - a.totalTOI || a.id - b.id);
 }
 
 function sortByLineCombination(
@@ -238,6 +234,7 @@ function sortByLineCombination(
 }
 
 type DateRangeMatrixInternalProps = {
+  strengthLabel?: string;
   teamId: number;
   teamName: string;
   toiData: TOIData[];
@@ -250,6 +247,8 @@ type DateRangeMatrixInternalProps = {
   pairs: PlayerData[][];
 };
 
+type GroupEdges = { top: boolean; right: boolean; bottom: boolean; left: boolean };
+
 type CellIdentity = {
   rowPlayerId: number;
   columnPlayerId: number;
@@ -259,7 +258,20 @@ function getCellKey(rowPlayerId: number, columnPlayerId: number): string {
   return `${rowPlayerId}:${columnPlayerId}`;
 }
 
+function describeCell(column: PlayerData, row: PlayerData, strength: string) {
+  if (column.id === row.id) {
+    const atoi = formatATOI(column.ATOI);
+    return atoi === "N/A"
+      ? `${column.name}: average ice time per game not available (${strength})`
+      : `${column.name}: ${atoi} average ice time per game (${strength})`;
+  }
+  if (!(column.totalTOI > 0)) return `${column.name} has no ice time in these games (${strength}).`;
+  const share = column.percentToiWith[row.id] || column.percentToiWithMixed?.[row.id] || 0;
+  return `${row.name} shared ${share.toFixed(2)}% of ${column.name}'s ice time (${strength})`;
+}
+
 export function DateRangeMatrixInternal({
+  strengthLabel = "all-strength",
   teamId,
   teamName,
   roster = [],
@@ -320,6 +332,31 @@ export function DateRangeMatrixInternal({
     });
     return max;
   }, [sortedRoster]);
+
+  // Line Combination: forward lines (3x3) and defence pairs (2x2) sit on the
+  // diagonal; each block gets a white outline (TJ). Presentation only.
+  const unitOf = useMemo(() => {
+    const map = new Map<number, { unit: number; index: number; size: number }>();
+    if (mode !== "line-combination") return map;
+    [...lines, ...pairs].forEach((unit, unitIndex) => {
+      if (unit.length < 2) return;
+      unit.forEach((player, index) =>
+        map.set(player.id, { unit: unitIndex, index, size: unit.length }),
+      );
+    });
+    return map;
+  }, [mode, lines, pairs]);
+  const groupEdgesFor = (rowId: number, columnId: number): GroupEdges | undefined => {
+    const row = unitOf.get(rowId);
+    const column = unitOf.get(columnId);
+    if (!row || !column || row.unit !== column.unit) return undefined;
+    return {
+      top: row.index === 0,
+      bottom: row.index === row.size - 1,
+      left: column.index === 0,
+      right: column.index === column.size - 1,
+    };
+  };
 
   const rosterPlayerIds = useMemo(
     () => new Set(sortedRoster.map(({ id }) => id)),
@@ -411,6 +448,28 @@ export function DateRangeMatrixInternal({
 
   return (
     <section id={matrixId} className={containerClass}>
+      <p className={styles.matrixExplanation}>Each cell shows how much of the column player’s ice time ({strengthLabel}) the row player shared. Diagonal cells show each player’s average ice time per game.</p>
+      {sortedRoster.length > 0 && (
+        <p className={styles.matrixLegend}>
+          <span>Brighter cell = bigger share.</span>
+          <span className={styles.legendKey}><span className={styles.legendSwatch} style={{ backgroundColor: getColor("C", "C") }} aria-hidden="true" />Forward + forward</span>
+          <span className={styles.legendKey}><span className={styles.legendSwatch} style={{ backgroundColor: getColor("C", "D") }} aria-hidden="true" />Forward + defense</span>
+          <span className={styles.legendKey}><span className={styles.legendSwatch} style={{ backgroundColor: getColor("D", "D") }} aria-hidden="true" />Defense + defense</span>
+          {mode === "line-combination" && (
+            <span className={styles.legendKey}><span className={`${styles.legendSwatch} ${styles.legendOutline}`} aria-hidden="true" />Line or pair</span>
+          )}
+        </p>
+      )}
+      <output className={styles.matrixReadout} aria-label="Selected cell value" aria-live="polite">
+        {activeCell ? describeCell(
+          sortedRoster.find(player => player.id === activeCell.columnPlayerId)!,
+          sortedRoster.find(player => player.id === activeCell.rowPlayerId)!, strengthLabel,
+        ) : "Hover or tap a cell to see its value."}
+      </output>
+      {sortedRoster.length > 0 && (
+        <p className={styles.scrollHint}>Scroll sideways to see all {sortedRoster.length} players.</p>
+      )}
+      {sortedRoster.length === 0 && <p role="status">No full lines or pairs were found at this strength. Switch the layout to Full Roster or Total TOI to see each player’s time.</p>}
       <div
         className={classNames(styles.grid, "content")}
         role="grid"
@@ -429,8 +488,9 @@ export function DateRangeMatrixInternal({
                 className={styles.cornerCell}
                 role="columnheader"
                 aria-colindex={1}
-                aria-label="Players"
-              />
+              >
+                <span className={styles.visuallyHidden}>Players</span>
+              </div>
               {sortedRoster.map((player: PlayerData, col: number) => (
                 <div
                   key={player.id}
@@ -493,11 +553,13 @@ export function DateRangeMatrixInternal({
                           : -1
                       }
                       teamAvgToi={avgSharedToi}
+                      strengthLabel={strengthLabel}
                       shadeMax={shadeMax}
                       sharedToi={sharedToi}
                       p1={columnPlayer}
                       p2={rowPlayer}
                       highlight={isSelf}
+                      groupEdges={groupEdgesFor(rowPlayer.id, columnPlayer.id)}
                       onPointerEnter={() => setHoveredCell(cellIdentity)}
                       onPointerLeave={() => setHoveredCell(null)}
                       onFocus={() => {
@@ -522,6 +584,7 @@ export function DateRangeMatrixInternal({
 }
 
 type CellProps = {
+  strengthLabel: string;
   teamAvgToi: number;
   /** Largest non-self share in the matrix; the shade scale's maximum. */
   shadeMax: number;
@@ -538,11 +601,13 @@ type CellProps = {
   onBlur?: () => void;
   onKeyDown?: (event: ReactKeyboardEvent<HTMLDivElement>) => void;
   highlight: boolean;
+  groupEdges?: GroupEdges;
   isSelf: boolean;
   ATOI?: string;
 };
 
 function Cell({
+  strengthLabel,
   teamAvgToi,
   shadeMax,
   sharedToi,
@@ -553,6 +618,7 @@ function Cell({
   colIndex,
   tabIndex,
   highlight,
+  groupEdges,
   onPointerEnter = () => {},
   onPointerLeave = () => {},
   onFocus = () => {},
@@ -563,12 +629,10 @@ function Cell({
 }: CellProps) {
   const mixedToi = p1.percentToiWithMixed?.[p2.id] || 0;
   const effectiveToi = sharedToi || mixedToi;
-  const opacity = isSelf ? 1 : shadeMax > 0 ? effectiveToi / shadeMax : 0;
+  const denominatorKnown = p1.totalTOI > 0;
+  const opacity = isSelf ? 1 : denominatorKnown && shadeMax > 0 ? effectiveToi / shadeMax : 0;
   const color = getColor(p1.position, p2.position);
-  const meaning = isSelf
-    ? `${formatATOI(ATOI ?? "")} ATOI`
-    : // Denominator is p1's own all-strength TOI, so the two cells of a pair differ (W2-6 D5).
-      `${effectiveToi.toFixed(2)}% of ${p1.name}'s all-strength TOI shared with ${p2.name}`;
+  const meaning = describeCell(p1, p2, strengthLabel);
   const accessibleName = isSelf
     ? `${p1.name} average time on ice`
     : `${p2.name} with ${p1.name}`;
@@ -583,7 +647,13 @@ function Cell({
       aria-label={accessibleName}
       aria-describedby={tooltipId}
       tabIndex={tabIndex}
-      className={classNames(styles.cell, { [styles.highlight]: highlight })}
+      className={classNames(styles.cell, {
+        [styles.highlight]: highlight,
+        [styles.unitTop]: groupEdges?.top,
+        [styles.unitRight]: groupEdges?.right,
+        [styles.unitBottom]: groupEdges?.bottom,
+        [styles.unitLeft]: groupEdges?.left,
+      })}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
       onFocus={onFocus}

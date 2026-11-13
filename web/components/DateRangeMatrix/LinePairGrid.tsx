@@ -121,14 +121,16 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
   return (
     <div className={styles.gridContainer} data-scope-key={scopeKey}>
       <div className={styles.forwardColumn}>
-        <div className={styles.sectionLabel}>Forward Lines</div>
+        <h3 className={styles.sectionLabel}>Forward lines</h3>
         <div className={styles.forwardLines} data-testid="forward-lines">
-          {visibleLines.map((line) => (
+          {visibleLines.map((line, index) => (
             <div
               className={styles.forwardLine}
               data-testid="forward-line"
               key={groupKey("line", line)}
             >
+              {/* Phones only: names the row so a line reads as one unit. */}
+              <p className={styles.unitLabel}>Line {index + 1}</p>
               {line.map((player) => (
                 <PlayerCard
                   key={player.id}
@@ -145,14 +147,15 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
       <div className={styles.divider}></div>
 
       <div className={styles.defenseColumn}>
-        <div className={styles.sectionLabel}>Defense Pairs</div>
+        <h3 className={styles.sectionLabel}>Defense pairs</h3>
         <div className={styles.defensePairs} data-testid="defense-pairs">
-          {visiblePairs.map((pair) => (
+          {visiblePairs.map((pair, index) => (
             <div
               className={styles.defensePair}
               data-testid="defense-pair"
               key={groupKey("pair", pair)}
             >
+              <p className={styles.unitLabel}>Pair {index + 1}</p>
               {pair.map((player) => (
                 <PlayerCard
                   key={player.id}
@@ -166,7 +169,7 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
         </div>
 
         <div className={styles.goalieContainer}>
-          <div className={styles.goalieLabel}>Goaltenders</div>
+          <h3 className={styles.goalieLabel}>Goaltenders</h3>
           <div className={styles.goalieCards}>
             {goalies.map((goalie) => (
               <GoalieCard
