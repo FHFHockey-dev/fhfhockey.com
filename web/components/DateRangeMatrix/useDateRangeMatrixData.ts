@@ -5,6 +5,7 @@ import type { AggregatedMatrixPlayer } from "./fetchAggregatedData";
 import { getTOIDataForGames } from "./useTOIData";
 import type { Mode, TOIData } from "./index";
 import type { PlayerData } from "./utilities";
+import { selectMainDeploymentUnits, type ObservedDeploymentUnit } from "lib/drm/observedDeployment";
 
 type Source = "raw" | "aggregated";
 export type DRMSeasonType = "regularSeason" | "playoffs";
@@ -38,6 +39,7 @@ type UseDRMParams = {
   aggregateStatus?: DRMDataStatus;
   aggregateError?: string | null;
   aggregateCoverage?: DRMDataCoverage;
+  observedUnits?: ObservedDeploymentUnit[];
 };
 
 export type UseDRMReturn = {
@@ -134,6 +136,7 @@ export function useDateRangeMatrixData({
   aggregateStatus = "success",
   aggregateError = null,
   aggregateCoverage,
+  observedUnits,
 }: UseDRMParams): UseDRMReturn {
   const aggregateInputRows = aggregateCoverage?.inputRows;
   const aggregateSkippedRows = aggregateCoverage?.skippedRows;
@@ -351,10 +354,27 @@ export function useDateRangeMatrixData({
   // still needs the same capped line-combination contract.
   const { lines, pairs } = useMemo(() => {
     if (!roster || roster.length === 0) return { lines: [], pairs: [] };
+    if (observedUnits !== undefined) {
+      const { main } = selectMainDeploymentUnits(observedUnits);
+      const players = new Map(roster.map(player => [player.id, player]));
+      const groups = main.map(unit => ({ unit, players: unit.playerIds.map(id => players.get(id)).filter((player): player is PlayerData => !!player) }))
+        .filter(group => group.players.length === group.unit.playerIds.length);
+      // A special-teams formation can contain the same player at another size.
+      // Show each identity once in the matrix, while retaining every unit in its list.
+      const used = new Set<number>();
+      const unique = groups.map(group => ({ ...group, players: group.players.filter(player => {
+        if (used.has(player.id)) return false;
+        used.add(player.id); return true;
+      }) }));
+      return {
+        lines: unique.filter(group => group.unit.kind !== "defense_pair").map(group => group.players),
+        pairs: unique.filter(group => group.unit.kind === "defense_pair").map(group => group.players),
+      };
+    }
     const groupingMode =
       mode === "full-roster" ? "full-roster" : "line-combination";
     return calculateLinesAndPairs(roster, groupingMode);
-  }, [roster, mode]);
+  }, [roster, mode, observedUnits]);
 
   const resultIsCurrent = resolvedRequestIdentity === requestIdentity;
   const transitionStatus: DRMDataStatus =

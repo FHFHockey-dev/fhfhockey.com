@@ -155,6 +155,9 @@ $color-teal-alt: #1985A1;           // alternative teal; secondary positive acce
 // Core brand & semantic palette
 $primary-color: #14a2d2;
 $primary-color-opaque: rgba(20, 163, 210, 0.4);
+// Site button fill (blue text on a light tint, 2px primary ring; fhfh-styles §9.4).
+$button-tint: rgba($primary-color, 0.12);
+$button-tint-hover: rgba($primary-color, 0.2);
 $yellow-color-opaque: rgba($color-brand-yellow, 0.4);
 $secondary-color: #07aae2;
 $warning-color: #ffcc33;
@@ -822,6 +825,18 @@ $z-desktop-toast: 650;
   font-size: $font-size-sm; // Uses $font-size-sm Def 1 (0.875rem)
   text-align: left;
   width: 100%;
+}
+
+// Section title (fhfh-styles §8.4): outlined accent face, uppercase, medium tracking.
+@mixin section-title {
+  margin: 0;
+  font-family: $font-family-accent, $font-family-primary, sans-serif;
+  font-weight: 400;
+  font-size: clamp(1.15rem, 2.5vw, 1.35rem);
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: $color-white;
 }
 
 @mixin component-wrapper {

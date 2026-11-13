@@ -1,0 +1,64 @@
+@use "styles/vars" as v;
+
+.history {
+  // Same panel shell as the matrix controls above it.
+  @include v.component-wrapper;
+  width: 100%;
+  max-width: v.$page-max-width;
+  margin: v.$space-md auto;
+  padding: v.$space-md;
+  color: v.$text-primary;
+  overflow-wrap: anywhere;
+
+  h2, h3, h4 { margin: v.$space-sm 0; font-weight: 600; }
+  h2 { @include v.section-title; margin-bottom: v.$space-sm; }
+  p { line-height: 1.5; }
+  a { color: v.$primary-color; text-decoration: underline; }
+
+  // Each report stream is its own block: a divider and space above,
+  // so a heading no longer butts against the previous stream's button.
+  section {
+    margin-top: v.$space-lg;
+    padding-top: v.$space-md;
+    border-top: 1px solid v.$border-soft;
+  }
+
+  button, select {
+    max-width: 100%;
+    min-height: v.$control-height-md;
+    padding: v.$space-xs v.$space-md;
+    border-radius: v.$radius-control;
+    font: inherit;
+    font-size: v.$font-size-sm;
+    cursor: pointer;
+    &:disabled { cursor: wait; opacity: 0.5; }
+  }
+  // Buttons: blue text on a light primary tint with a 2px ring (site button rule).
+  button {
+    border: 2px solid v.$primary-color;
+    background: v.$button-tint;
+    color: v.$primary-color;
+    &:hover:not(:disabled) { background: v.$button-tint-hover; }
+  }
+  label {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: v.$space-xs v.$space-sm;
+  }
+  select {
+    border: v.$border-control;
+    background: v.$background-medium;
+    color: v.$text-primary;
+  }
+  button:focus-visible, select:focus-visible, a:focus-visible, summary:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 3px;
+  }
+}
+.report {
+  padding: v.$space-md 0;
+  border-top: 1px solid v.$border-secondary;
+  summary { cursor: pointer; }
+}
+.text { white-space: pre-wrap; }

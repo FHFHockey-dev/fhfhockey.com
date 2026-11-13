@@ -827,9 +827,10 @@ type CellProps = {
   highlight: boolean; // New prop to indicate if the cell should be highlighted
 };
 
-const RED = "#D65108";
+// Same pair palette as /drm (DateRangeMatrix utilities getColor).
+const ORANGE = "#D65108";
 const BLUE = "#0267C1";
-const PURPLE = "#EFA00B";
+const VIOLET = "#9085E9";
 const FORWARDS_POSITIONS = ["L", "R", "C"];
 const DEFENSE_POSITIONS = ["D"];
 
@@ -849,12 +850,12 @@ function isMixing(p1Pos: string, p2Pos: string) {
 }
 
 /**
- * Forward pairs are blue, defense pairs orange, and mixed pairs gold.
+ * Forward pairs are orange, defense pairs blue, and mixed pairs violet.
  */
 function getColor(p1Pos: string, p2Pos: string) {
-  if (isForward(p1Pos) && isForward(p2Pos)) return BLUE;
-  if (isDefense(p1Pos) && isDefense(p2Pos)) return RED;
-  if (isMixing(p1Pos, p2Pos)) return PURPLE; // the check can be omitted
+  if (isForward(p1Pos) && isForward(p2Pos)) return ORANGE;
+  if (isDefense(p1Pos) && isDefense(p2Pos)) return BLUE;
+  if (isMixing(p1Pos, p2Pos)) return VIOLET; // the check can be omitted
   return "#6b7280";
 }
 

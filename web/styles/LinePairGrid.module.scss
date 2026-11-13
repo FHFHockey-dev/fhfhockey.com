@@ -35,13 +35,15 @@
 
 .sectionLabel {
   text-align: center;
+  font-size: v.$font-size-base;
+  font-weight: 400;
   color: v.$text-secondary;
   margin: 0;
   line-height: 1;
   padding-bottom: v.$space-xs;
   font-family: v.$font-family-accent;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em; // same tracking as the section-title mixin
 }
 
 .goalieContainer {
@@ -53,19 +55,21 @@
 
 .goalieLabel {
   text-align: center;
+  font-size: v.$font-size-base;
+  font-weight: 400;
   color: v.$text-secondary;
   margin: 0;
   line-height: 1;
   padding-bottom: v.$space-sm;
   font-family: v.$font-family-accent;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em; // same tracking as the section-title mixin
 }
 
 .goalieCards {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  gap: v.$space-sm;
   width: 100%;
   align-items: start;
 }
@@ -74,11 +78,6 @@
   background-color: v.$border-secondary;
   width: 2px;
   align-self: stretch;
-}
-
-.goalies .goalieCard {
-  height: calc(100% - 0.5rem);
-  font-family: "Roboto Condensed", sans-serif;
 }
 
 .goalieCard {
@@ -106,58 +105,54 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  font-family: v.$font-family-accent;
 }
 
 .firstNameGoalieCard {
-  font-weight: 600;
+  font-weight: 400;
   font-size: v.$font-size-sm;
-  letter-spacing: 0.08em;
-  color: var(--secondary-color);
-  margin-right: 0.2rem;
+  color: var(--card-ink-secondary);
+  margin-right: v.$space-xs;
 }
 
 .lastNameGoalieCard {
-  font-weight: 800;
-  font-size: v.$font-size-sm;
-  letter-spacing: 0.08em;
-  color: var(--accent-color);
+  font-weight: 600;
+  font-size: v.$font-size-base;
+  color: var(--card-ink);
 }
 
 .goalieRecord {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-top: v.$space-sm;
+  margin-bottom: v.$space-sm;
 }
 
 .goalieRecord .line.left {
   flex: 1;
-  height: 0.5px;
-  background-color: var(--accent-color);
-  margin-right: 0.2rem;
+  height: 1px; // hairline (0.5px rendered unevenly)
+  background-color: var(--card-ink);
+  margin-right: v.$space-xs;
 }
 
 .goalieRecord .line.right {
   flex: 1;
-  height: 0.5px;
-  background-color: var(--accent-color);
-  margin-left: 0.2rem;
+  height: 1px; // hairline (0.5px rendered unevenly)
+  background-color: var(--card-ink);
+  margin-left: v.$space-xs;
 }
 
 .goalieRecord span {
-  font-size: 0.6rem;
-  font-weight: bold;
-  color: var(--accent-color);
-  letter-spacing: 1px;
+  font-size: v.$font-size-xs;
+  font-weight: 500;
+  color: var(--card-ink);
 }
 
 .statsGridGoalies {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
-  gap: 0.5rem;
+  gap: v.$space-sm;
   width: 100%;
 }
 
@@ -176,8 +171,8 @@
 
 .goalieStatValue {
   font-size: v.$font-size-sm;
-  color: var(--accent-color);
-  font-weight: 700;
+  color: var(--card-ink);
+  font-weight: 600;
 }
 
 .playerCard {
@@ -189,7 +184,10 @@
   border: 1px solid v.$border-secondary;
   border-radius: v.$radius-sm;
   color: v.$text-primary;
-  font-family: v.$font-family-accent;
+  // Card content (names, labels, numbers) reads in the body face; the
+  // outlined accent face is for section titles only (fhfh-styles §8.4).
+  font-family: v.$font-family-primary;
+  font-variant-numeric: tabular-nums;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -211,17 +209,15 @@
 }
 
 .firstNamePlayerCard {
-  font-weight: 600;
-  font-size: v.$font-size-xs;
-  letter-spacing: 0.08em;
-  color: var(--secondary-color);
+  font-weight: 400;
+  font-size: v.$font-size-sm;
+  color: var(--card-ink-secondary);
 }
 
 .lastNamePlayerCard {
-  font-weight: 800;
-  font-size: v.$font-size-sm;
-  letter-spacing: 0.08em;
-  color: var(--accent-color);
+  font-weight: 600;
+  font-size: v.$font-size-base;
+  color: var(--card-ink);
 }
 
 .lastTenGames {
@@ -232,29 +228,28 @@
 
 .lastTenGames .line.left {
   flex: 1;
-  height: 0.5px;
-  background-color: var(--accent-color);
-  margin-right: 0.2rem;
+  height: 1px; // hairline (0.5px rendered unevenly)
+  background-color: var(--card-ink);
+  margin-right: v.$space-xs;
 }
 
 .lastTenGames .line.right {
   flex: 1;
-  height: 0.5px;
-  background-color: var(--accent-color);
-  margin-left: 0.2rem;
+  height: 1px; // hairline (0.5px rendered unevenly)
+  background-color: var(--card-ink);
+  margin-left: v.$space-xs;
 }
 
 .lastTenGames span {
-  font-size: v.$font-size-xxs;
-  font-weight: 700;
-  color: var(--accent-color);
-  letter-spacing: 0.08em;
+  font-size: v.$font-size-xs;
+  font-weight: 500;
+  color: var(--card-ink);
 }
 
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
+  gap: v.$space-sm;
   width: 100%;
 }
 
@@ -273,8 +268,8 @@
 
 .statValue {
   font-size: v.$font-size-sm;
-  color: var(--accent-color);
-  font-weight: 700;
+  color: var(--card-ink);
+  font-weight: 600;
 }
 
 .statsUnavailable {
@@ -287,11 +282,11 @@
 
 .displayPosition {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background-color: rgba(v.$background-dark, 0.72);
+  top: v.$space-sm;
+  right: v.$space-sm;
+  background-color: v.$background-dark;
   color: v.$text-primary;
-  padding: 2px 4px;
+  padding: v.$space-xxs v.$space-xs;
   border-radius: v.$radius-xs;
   font-size: v.$font-size-xs;
 }
@@ -308,14 +303,104 @@
   }
 }
 
+// Line/pair label: phones only (desktop rows already read as units).
+.unitLabel {
+  display: none;
+}
+
+// Phones: each line (3) or pair (2) stays on one row of compact cards with
+// name, position and G · A · PTS · +/- (TJ, 2026-11-12). A narrow first column
+// carries the vertical Line/Pair label; D pairs use the forward card width and
+// the two goalies take the right-most column beside Pairs 1 and 2.
 @media only screen and (max-width: v.$screen-small-max) {
   .forwardLine,
+  .defenseColumn {
+    display: grid;
+    // Label column hugs the vertical label (was a fixed 1.25rem).
+    grid-template-columns: max-content repeat(3, minmax(0, 1fr));
+    gap: v.$space-xs;
+    align-items: stretch;
+  }
+
+  // Flatten the D-pair and goalie wrappers into the defence grid.
+  .defensePairs,
   .defensePair,
+  .goalieContainer,
   .goalieCards {
-    grid-template-columns: minmax(0, 1fr);
+    display: contents;
+  }
+
+  .defenseColumn > .sectionLabel {
+    grid-column: 1 / 4;
+    grid-row: 1;
+  }
+
+  .goalieLabel {
+    grid-column: 4;
+    grid-row: 1;
+    align-self: end;
+    padding-bottom: v.$space-xs;
+    font-size: v.$font-size-xs;
+    letter-spacing: 0.04em;
+  }
+
+  .goalieCards > :nth-child(1) { grid-column: 4; grid-row: 2; }
+  .goalieCards > :nth-child(2) { grid-column: 4; grid-row: 3; }
+
+  .unitLabel {
+    display: block;
+    grid-column: 1;
+    align-self: center;
+    margin: 0;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+    line-height: 1;
+    font-family: v.$font-family-sporty;
+    font-size: v.$font-size-xs;
+    font-style: italic;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: v.$text-secondary;
+  }
+
+  .playerCard,
+  .goalieCard {
+    padding: v.$space-xs;
+  }
+
+  .goalieCard {
+    height: auto;
+  }
+
+  .firstNamePlayerCard,
+  .firstNameGoalieCard {
+    font-size: v.$font-size-xs;
+  }
+
+  .lastNamePlayerCard,
+  .lastNameGoalieCard {
+    font-size: v.$font-size-sm;
+    overflow-wrap: anywhere;
+  }
+
+  // The GP lines and the secondary stats (PPP, SOG, HITS, BLKS) drop out.
+  .playerCard .lastTenGames,
+  .goalieCard .goalieRecord,
+  .statsGrid > .stat:nth-child(n + 4):nth-child(-n + 7) {
+    display: none;
   }
 
   .statsGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: v.$space-xxs;
+    margin-top: v.$space-xs;
   }
+}
+
+// Stat abbreviations carry their full name in title; no dotted underline.
+.statLabel,
+.goalieStatLabel {
+  text-decoration: none;
+  cursor: help;
 }

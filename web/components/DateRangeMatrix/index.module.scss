@@ -15,46 +15,11 @@
   }
 }
 
-.toggleWrapper {
-  display: flex;
-  justify-content: center;
-  margin: 1rem 0;
-
-  button {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    margin: 0 0.5rem;
-    cursor: pointer;
-    transition: background-color 0.3s;
-
-    &.active {
-      background-color: #0056b3;
-    }
-
-    &:hover {
-      background-color: #0056b3;
-    }
-  }
-}
-
-.date-picker {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 1rem 0;
-
-  .react-datepicker-wrapper {
-    margin: 0 1rem;
-  }
-}
-
 // single matrix container
 .container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: vars.$space-sm;
   flex: 1;
   width: 100%;
   min-width: 0;
@@ -62,52 +27,27 @@
   --spacing: 6px;
   --player-info-size: 90px;
   --matrix-cell-min: 44px;
-  font-size: 0.875rem;
+  font-size: vars.$font-size-sm;
 
   @media only screen and (max-width: vars.$screen-small-max) {
     --player-info-size: 80px;
     --matrix-cell-min: 40px;
-    font-size: 0.7rem;
+    font-size: vars.$font-size-xs;
   }
 
+  // Total TOI and Full Roster show more players, so cells shrink; name
+  // labels stay at the 12px floor (were 8.8px uppercase) with room to fit.
   &.totalToiMode,
   &.fullRosterMode {
-    --player-info-size: 60px; // Smaller size for Total TOI and Full Roster modes
+    --player-info-size: 88px;
     --matrix-cell-min: 36px;
-    font-size: 0.55rem; // Smaller font size for the labels
-    text-transform: uppercase;
+    font-size: 0.8125rem; // 13px (TJ); no token sits between xs 12 and sm 14
 
     @media only screen and (max-width: vars.$screen-small-max) {
-      --player-info-size: 50px;
+      --player-info-size: 72px;
       --matrix-cell-min: 32px;
-      font-size: 0.65rem;
+      font-size: vars.$font-size-xs;
     }
-  }
-
-  .goalieBar {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
-    background-color: #f5f5f5;
-    border-top: 1px solid #ddd;
-  }
-
-  .goalie {
-    font-size: 14px;
-    font-weight: bold;
-  }
-
-  // #__next > div > div.ShiftChart_shiftChartContainer__CgnMf > div:nth-child(3) > div > div.DateRangeMatrix_gridWrapper__d0Bm9 > section:nth-child(2) > h4
-
-  h4 {
-    font-family: montesserat, sans-serif;
-    font-size: 1.5rem;
-    padding: 0;
-
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: -0.075em;
-    font-style: italic;
   }
 
   .grid {
@@ -115,11 +55,11 @@
     background-color: vars.$background-medium;
     color: vars.$text-primary;
     display: grid;
-    width: 100%;
+    // Size to the cells; scroll sideways only when the roster is wider than the page.
+    width: fit-content;
     min-width: 0;
     max-width: 100%;
     box-sizing: border-box;
-    aspect-ratio: 1 / 1;
     padding: 20px;
     border: 1px solid vars.$border-primary;
     border-radius: vars.$border-radius-lg;
@@ -146,8 +86,7 @@
       top: 0;
       background: vars.$background-medium;
       z-index: 3;
-      transition: transform 0.2s;
-      font-variant: small-caps;
+      transition: color 150ms ease;
       border-bottom: 1px solid vars.$border-secondary;
     }
     .topPlayerName .inner {
@@ -161,9 +100,7 @@
       top: 100%;
       left: 50%;
       padding: 0 var(--spacing);
-      font-family:
-        roboto condensed,
-        sans-serif;
+      font-family: vars.$font-family-primary;
     }
 
     .leftPlayerName {
@@ -173,21 +110,19 @@
       z-index: 2;
       text-align: right;
       text-overflow: ellipsis;
-      font-variant: small-caps;
       overflow: hidden;
       white-space: nowrap;
       padding: 0 var(--spacing);
-      transition: transform 0.2s ease-in-out;
+      transition: color 150ms ease;
       align-self: center;
-      font-family:
-        roboto condensed,
-        sans-serif;
+      font-family: vars.$font-family-primary;
       border-right: 1px solid vars.$border-secondary;
     }
 
+    // The row/column of the hovered or focused cell: colour only, no movement.
     .active {
       color: vars.$primary-color;
-      transform: scale(1.03);
+      font-weight: 600; // reads without colour too
     }
 
     .cell {
@@ -208,26 +143,46 @@
         border: 1px solid vars.$border-accent; // Use a class to apply the highlight style
       }
 
+      // White outline around each forward line (3x3) and defence pair (2x2)
+      // block: edge cells draw their outer side over the 1px cell border.
+      &.unitTop,
+      &.unitRight,
+      &.unitBottom,
+      &.unitLeft {
+        &::after {
+          content: "";
+          position: absolute;
+          inset: -1px;
+          z-index: 1;
+          border: 0 solid vars.$color-white;
+          pointer-events: none;
+        }
+      }
+      &.unitTop::after { border-top-width: 2px; }
+      &.unitRight::after { border-right-width: 2px; }
+      &.unitBottom::after { border-bottom-width: 2px; }
+      &.unitLeft::after { border-left-width: 2px; }
+
       & .content {
         width: 100%;
         height: 100%;
       }
 
       .cellTooltip {
-        visibility: hidden;
-        opacity: 0;
+        // display: none keeps hidden tooltips out of the scroll area
+        // (they widened it by ~200px); aria-describedby still reads it.
+        display: none;
         white-space: nowrap;
         background-color: vars.$background-lighter;
         color: vars.$text-primary;
         text-align: center;
-        border-radius: 6px;
-        padding: 5px;
+        border-radius: vars.$radius-sm;
+        padding: vars.$space-xs vars.$space-sm;
         position: absolute;
         z-index: 5;
         bottom: 120%;
         left: 50%;
         transform: translateX(-50%);
-        transition: opacity 0.3s;
         pointer-events: none;
 
         &::after {
@@ -235,7 +190,7 @@
           position: absolute;
           top: 100%;
           left: 50%;
-          margin-left: -2.5px;
+          margin-left: -5px; // half the 10px arrow, so it centres on the cell
           border-width: 5px;
           border-style: solid;
           border-color: vars.$background-lighter transparent transparent
@@ -245,9 +200,123 @@
 
       &:hover .cellTooltip,
       &:focus .cellTooltip {
-        visibility: visible;
-        opacity: 1;
+        display: block;
       }
     }
+  }
+}
+// The matrix and its captions share the grid's width: the captions use
+// contain: inline-size so they wrap to the grid instead of widening it.
+.matrixFrame {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-sm;
+}
+
+// Loading / empty / error: no grid to centre on, so align with the page.
+.matrixFrameMessage {
+  width: 100%;
+}
+
+.sectionTitle {
+  @include vars.section-title;
+}
+
+.matrixStatus,
+.matrixExplanation,
+.matrixReadout {
+  contain: inline-size;
+  margin: 0;
+  font-size: vars.$font-size-sm;
+  line-height: 1.5;
+  text-transform: none;
+}
+
+.matrixStatus {
+  color: vars.$warning-color;
+}
+
+// Colour key, same pattern as the /lines matrix legend.
+.matrixLegend {
+  contain: inline-size;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: vars.$space-xs vars.$space-md;
+  margin: 0;
+  font-size: vars.$font-size-xs;
+  color: vars.$text-secondary;
+}
+
+.legendKey {
+  display: inline-flex;
+  align-items: center;
+  gap: vars.$space-xs;
+}
+
+.legendSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+// The white line/pair outline drawn on the matrix.
+.legendOutline {
+  border: 2px solid vars.$color-white;
+  border-radius: 0;
+}
+
+// Loading, error and empty messages: full caption width (not contained).
+.matrixMessage {
+  margin: 0;
+  font-size: vars.$font-size-sm;
+  line-height: 1.5;
+  color: vars.$text-primary;
+}
+
+.matrixExplanation {
+  color: vars.$text-secondary;
+}
+
+.matrixReadout {
+  display: block;
+  min-height: 1.5em;
+  color: vars.$text-primary;
+  font-weight: 600;
+}
+
+// Text for screen readers only (the matrix corner header reads "Players").
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Phones can't fit a full roster; say the grid scrolls (hidden where it fits).
+.scrollHint {
+  display: none;
+  contain: inline-size;
+  margin: 0;
+  font-size: vars.$font-size-xs;
+  color: vars.$text-secondary;
+
+  @media only screen and (max-width: vars.$screen-small-max) {
+    display: block;
+  }
+}
+
+// Phones: fade the grid's right edge so cut-off columns read as continuing.
+@media only screen and (max-width: vars.$screen-small-max) {
+  .container .grid {
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
   }
 }
