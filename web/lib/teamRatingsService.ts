@@ -1,4 +1,5 @@
 import supabaseServer from "./supabase/server";
+import type { TeamPowerVersionFields } from "./teamRatingVersion";
 
 export type SpecialTeamTier = 1 | 2 | 3;
 
@@ -24,13 +25,16 @@ export type TeamRating = {
   trend10: number;
   components: RatingComponents;
   finishingRating: number | null;
-  /** "5-on-5 goaltending" (decision 145): 5v5 xGA/60 minus GA/60; null when unknown. */
+  /**
+   * Goaltending: xGA/60 minus GA/60. 5-on-5 only on v4 rows (decision 145);
+   * read its scope with describeGoaltendingBasis, never assume 5v5.
+   */
   goalieRating: number | null;
   dangerRating: number | null;
   specialRating: number | null;
   disciplineRating: number | null;
   varianceFlag: number | null;
-};
+} & TeamPowerVersionFields;
 
 type CacheEntry = {
   expiresAt: number;
@@ -89,6 +93,12 @@ const mapRowToTeamRating = (row: Record<string, unknown>): TeamRating => ({
   varianceFlag:
     row.variance_flag !== undefined && row.variance_flag !== null
       ? Number(row.variance_flag)
+      : null,
+  calculationVersion:
+    typeof row.calculation_version === "string" ? row.calculation_version : null,
+  sourceThroughDate:
+    typeof row.source_through_date === "string"
+      ? row.source_through_date.slice(0, 10)
       : null
 });
 
@@ -133,7 +143,9 @@ export const fetchTeamRatings = async (
     "danger_rating",
     "special_rating",
     "discipline_rating",
-    "variance_flag"
+    "variance_flag",
+    "calculation_version",
+    "source_through_date"
   ];
 
   const selectColumns = (includeExtended: boolean): string =>

@@ -1,5 +1,9 @@
 import { computeTeamPowerScore } from "../dashboard/teamContext";
 import type { TeamRating } from "../teamRatingsService";
+import {
+  describeGoaltendingBasis,
+  type TeamPowerVersionFields
+} from "../teamRatingVersion";
 import type { UnderlyingStatsScheduleTexture } from "./teamScheduleStrength";
 
 export type TeamRatingNarrativeSnapshot = {
@@ -24,7 +28,8 @@ export type TeamRatingNarrativeSource = Pick<
   | "pkTier"
   | "ppTier"
   | "teamAbbr"
-> & {
+> &
+  TeamPowerVersionFields & {
   luckPdoZ?: number | null;
   scheduleTexture?: UnderlyingStatsScheduleTexture | null;
   sosFuture?: number | null;
@@ -263,12 +268,13 @@ const buildContextBullet = ({
     return "Scoring is running behind expected chance quality right now.";
   }
 
-  if (typeof row.goalieRating === "number" && row.goalieRating >= 105) {
-    return "5-on-5 goaltending is outperforming expected goals against right now.";
+  const goaltending = describeGoaltendingSubject(row);
+  if (goaltending && typeof row.goalieRating === "number" && row.goalieRating >= 105) {
+    return `${goaltending} is outperforming expected goals against right now.`;
   }
 
-  if (typeof row.goalieRating === "number" && row.goalieRating <= 95) {
-    return "5-on-5 goaltending is lagging behind expected goals against right now.";
+  if (goaltending && typeof row.goalieRating === "number" && row.goalieRating <= 95) {
+    return `${goaltending} is lagging behind expected goals against right now.`;
   }
 
   const texture = row.scheduleTexture;
@@ -279,6 +285,24 @@ const buildContextBullet = ({
   }
 
   return null;
+};
+
+/**
+ * The goaltending sentence names its own scope (Astra #434 P1): "5-on-5" only
+ * on verified v4 rows. A legacy carry or unverified row is not a "right now"
+ * read, so it gets no goaltending sentence.
+ */
+const describeGoaltendingSubject = (
+  row: TeamRatingNarrativeSource
+): string | null => {
+  switch (describeGoaltendingBasis(row).scope) {
+    case "v4_5v5":
+      return "5-on-5 goaltending";
+    case "v3_all_situations":
+      return "All-situations goaltending";
+    default:
+      return null;
+  }
 };
 
 const buildDrivers = ({

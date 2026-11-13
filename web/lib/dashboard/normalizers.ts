@@ -98,6 +98,9 @@ export type NormalizedTeamRatingRow = TeamPowerSnapshot & {
   specialRating: number | null;
   disciplineRating: number | null;
   varianceFlag: number | null;
+  /** Goaltending scope depends on it (lib/teamRatingVersion); null = unverified. */
+  calculationVersion: string | null;
+  sourceThroughDate: string | null;
 };
 
 const toTier = (value: unknown): 1 | 2 | 3 | null => {
@@ -145,7 +148,13 @@ export const normalizeTeamRatings = (payload: unknown): NormalizedTeamRatingRow[
         dangerRating,
         specialRating,
         disciplineRating,
-        varianceFlag
+        varianceFlag,
+        calculationVersion: toStringOrNull(
+          row.calculationVersion ?? row.calculation_version
+        ),
+        sourceThroughDate: toStringOrNull(
+          row.sourceThroughDate ?? row.source_through_date
+        )
       };
     })
     .filter((row): row is NormalizedTeamRatingRow => Boolean(row));
