@@ -304,7 +304,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
     };
 
     fetchGameLogsMock.mockResolvedValue([
-      { team_abbreviation: "ANA", date: yesterday, data_mode: "all" },
+      { team_abbreviation: "ANA", date: yesterday, data_mode: "all", gp: 1 },
     ]);
     fetchAllRatingsMock.mockImplementation((_supabase, _table, targetDate) =>
       Promise.resolve(targetDate === today ? [repairedRating] : []),
@@ -371,11 +371,11 @@ describe("/api/v1/db/update-team-power-ratings", () => {
     countState.value = 32;
 
     fetchGameLogsMock.mockResolvedValue([
-      { team_abbreviation: "COL", date: "2026-04-05", data_mode: "all" },
-      { team_abbreviation: "COL", date: "2026-04-03", data_mode: "all" },
-      { team_abbreviation: "COL", date: "2026-04-01", data_mode: "all" },
-      { team_abbreviation: "COL", date: "2026-03-30", data_mode: "all" },
-      { team_abbreviation: "COL", date: "2026-03-28", data_mode: "all" },
+      { team_abbreviation: "COL", date: "2026-04-05", data_mode: "all", gp: 1 },
+      { team_abbreviation: "COL", date: "2026-04-03", data_mode: "all", gp: 1 },
+      { team_abbreviation: "COL", date: "2026-04-01", data_mode: "all", gp: 1 },
+      { team_abbreviation: "COL", date: "2026-03-30", data_mode: "all", gp: 1 },
+      { team_abbreviation: "COL", date: "2026-03-28", data_mode: "all", gp: 1 },
     ]);
     fetchAllRatingsMock.mockResolvedValue([
       {

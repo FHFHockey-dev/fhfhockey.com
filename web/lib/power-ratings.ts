@@ -187,18 +187,6 @@ export async function fetchGameLogs(
     ["date", "team_abbreviation"],
   );
 
-  // Fetch nst_team_5v5 (situation = 'all')
-  const f5v5DataPromise = fetchPaginatedRows<any>(
-    () =>
-      supabase
-        .from("nst_team_5v5")
-        .select("*")
-        .eq("situation", "all")
-        .gte("date", startDate)
-        .lte("date", endDate),
-    ["date", "team_abbreviation"],
-  );
-
   // 5-on-5 goaltending inputs (decision 145): per-game NST 5v5 counts, which
   // exclude empty-net goals against.
   const goalie5v5DataPromise = fetchPaginatedRows<any>(
@@ -255,7 +243,6 @@ export async function fetchGameLogs(
     .select("id, abbreviation, name");
   const [
     allData,
-    f5v5Data,
     goalie5v5Data,
     ppData,
     pkData,
@@ -264,7 +251,6 @@ export async function fetchGameLogs(
   ] =
     await Promise.all([
       allDataPromise,
-      f5v5DataPromise,
       goalie5v5DataPromise,
       ppDataPromise,
       pkDataPromise,
@@ -279,11 +265,6 @@ export async function fetchGameLogs(
   });
 
   // Create Maps for easy lookup
-  const allDataMap = new Map<string, any>();
-  allData?.forEach((row) => {
-    allDataMap.set(`${row.team_abbreviation}|${row.date}`, row);
-  });
-
   const goalie5v5Map = new Map<string, any>();
   goalie5v5Data?.forEach((row) => {
     goalie5v5Map.set(`${row.team_abbreviation}|${row.date}`, row);
@@ -349,43 +330,6 @@ export async function fetchGameLogs(
         ? toNullableNumber(wgo.penalties_taken_per_60)
         : null,
       goalie_5v5: goalie5v5InputsFromCounts(goalie5v5Map.get(key)),
-    });
-  });
-
-  // Process '5v5' rows
-  f5v5Data?.forEach((row) => {
-    const key = `${row.team_abbreviation}|${row.date}`;
-    const allRow = allDataMap.get(key);
-    const pp = ppMap.get(key);
-    const pk = pkMap.get(key);
-    const wgo = wgoMap.get(key);
-
-    const toi = Number(row.toi);
-    const factor = toi > 0 ? 3600.0 / toi : 0;
-
-    logs.push({
-      team_abbreviation: row.team_abbreviation,
-      date: row.date,
-      season_id: allRow?.season_id ?? 20242025,
-      cf_per_60: toi > 0 ? Number(row.cf) * factor : null,
-      ca_per_60: toi > 0 ? Number(row.ca) * factor : null,
-      sf_per_60: toi > 0 ? Number(row.sf) * factor : null,
-      sa_per_60: toi > 0 ? Number(row.sa) * factor : null,
-      gf_per_60: toi > 0 ? Number(row.gf) * factor : null,
-      ga_per_60: toi > 0 ? Number(row.ga) * factor : null,
-      xgf_per_60: toi > 0 ? Number(row.xgf) * factor : null,
-      xga_per_60: toi > 0 ? Number(row.xga) * factor : null,
-      gp: row.gp,
-      toi_seconds: null,
-      pace_per_60: null,
-      hdcf_per_60: null,
-      hdca_per_60: null,
-      pdo: allRow ? toNullableNumber(allRow.pdo) : null,
-      data_mode: "5v5",
-      pp_xgf_per_60: pp ? Number(pp.xgf_per_60) : null,
-      pk_xga_per_60: pk ? Number(pk.xga_per_60) : null,
-      penalties_drawn_per_60: wgo ? Number(wgo.penalties_drawn_per_60) : null,
-      penalties_taken_per_60: wgo ? Number(wgo.penalties_taken_per_60) : null,
     });
   });
 
@@ -932,13 +876,17 @@ export type DailyPowerRating = {
 /**
  * Genuine games only: one all-situations row per team and date (no all/5v5
  * mixing, BA W1-4 C). `gp_to_date` counts the team's games in that season.
+ * A row is one game only when NST reports gp = 1: a team plays at most once
+ * per date, so gp > 1 marks a multi-game aggregate (e.g. the gp = 82 season
+ * totals stored for 2026-04-17..06-30), and a missing gp proves nothing.
+ * Those rows are not games and never enter a window (v4).
  */
 export function buildGenuineTeamGames(
   logs: readonly GameLog[],
 ): Map<string, TeamGame[]> {
   const byTeam = new Map<string, Map<string, GameLog>>();
   logs.forEach((log) => {
-    if (log.data_mode !== "all") return;
+    if (log.data_mode !== "all" || log.gp !== 1) return;
     const games = byTeam.get(log.team_abbreviation) ?? new Map<string, GameLog>();
     if (!games.has(log.date)) games.set(log.date, log);
     byTeam.set(log.team_abbreviation, games);

@@ -14,6 +14,7 @@ import {
   fetchGameLogs,
   fetchPaginatedRows,
   goalie5v5InputsFromCounts,
+  type GameLog,
   type TeamGame,
 } from "./power-ratings";
 
@@ -45,7 +46,6 @@ describe("power-ratings PostgREST pagination", () => {
 
     expect(started).toEqual([
       "nst_team_gamelogs_as_rates",
-      "nst_team_5v5",
       "nst_team_gamelogs_es_counts",
       "nst_team_gamelogs_pp_rates",
       "nst_team_gamelogs_pk_rates",
@@ -304,5 +304,55 @@ describe("power-ratings 5-on-5 goaltending (decision 145)", () => {
     expect(goalie5v5InputsFromCounts({ ...row, sa: null })).toBeNull();
     expect(goalie5v5InputsFromCounts({ ...row, xga: "" })).toBeNull();
     expect(goalie5v5InputsFromCounts({ ...row, toi_seconds: 0 })).toBeNull();
+  });
+});
+
+describe("power-ratings genuine games exclude season-total rows (v4)", () => {
+  const log = (
+    date: string,
+    seasonId: number,
+    gp: number | null,
+    xgfPer60: number,
+  ): GameLog => ({
+    team_abbreviation: "AAA",
+    date,
+    season_id: seasonId,
+    cf_per_60: 55,
+    ca_per_60: 55,
+    sf_per_60: 28,
+    sa_per_60: 28,
+    gf_per_60: 3,
+    ga_per_60: 3,
+    xgf_per_60: xgfPer60,
+    xga_per_60: 2.8,
+    gp: gp as number,
+    toi_seconds: null,
+    pace_per_60: 55,
+    hdcf_per_60: 10,
+    hdca_per_60: 10,
+    pdo: 1,
+    data_mode: "all",
+    pp_xgf_per_60: null,
+    pk_xga_per_60: null,
+    penalties_drawn_per_60: null,
+    penalties_taken_per_60: null,
+  });
+
+  it("does not count a gp = 82 season-total row dated before the season start", () => {
+    const logs = [
+      // Stored 2025-26 season totals and a row with no gp: neither is one game.
+      log("2026-06-29", 20252026, null, 9.9),
+      log("2026-06-30", 20252026, 82, 9.9),
+      log("2026-09-29", 20262027, 1, 2),
+      log("2026-10-01", 20262027, 1, 3),
+    ];
+
+    const games = buildGenuineTeamGames(logs).get("AAA")!;
+    expect(games.map((game) => game.date)).toEqual(["2026-10-01", "2026-09-29"]);
+    expect(games.map((game) => game.gp_to_date)).toEqual([2, 1]);
+
+    const ewma = calculateEwma(games, "2026-10-01")!;
+    const w = Math.pow(0.5, 1 / 10);
+    expect(ewma.xgf60_ewma).toBeCloseTo((3 + 2 * w) / (1 + w), 12);
   });
 });
