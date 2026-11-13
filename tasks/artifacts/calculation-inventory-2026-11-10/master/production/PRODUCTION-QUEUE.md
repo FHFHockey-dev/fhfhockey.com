@@ -185,3 +185,8 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
 - Rolling recompute paused at cursor 8478831: 280 of 764 skaters written (calls 1–20 at 200). Call 21 (12 players) is uncertain, but it is idempotent upserts, so a resume from 8478831 redoes it. Resuming needs TJ's re-approval, as after 11-12.
 - 02:08:28Z: TJ restarted the database from the Supabase dashboard (`pg_postmaster_start_time` 02:08:28). At 02:08:44: up, not in recovery, 0 active queries. The rolling recompute is still paused at cursor 8478831; TJ will resume it with the slower steps (8 players per call, 60 s gaps).
 - 03:57Z: 2026-27 rolling recompute complete (L6 fixes): 764 skaters × 5 strengths, 10,727 rows each through 11-11, every sampled payload on the L6 shape. Details in FORGE-INPUTS-PLAN-2026-11-13.md. Queue step 5 is done: holds recorded only (TJ), rolling rebuilt, trend v3 forward-only via job 392 (TJ: keep v2 history).
+
+## Reserve projections table (queue 11), 2026-11-13 05:39Z (TJ pop-up "Table now, flag next release")
+- Migration 20261027090000 (authority 101) applied with `psql -1` (the file sets local timeouts and has no begin/commit); sha256 matches. Pre-check: 0 active queries.
+- Readback: `forge_reserve_projections`, 28 columns, RLS on, 1 select policy, pkey plus 2 indexes, anon/authenticated SELECT only. Ledger row inserted. Authority now has 107 applied and 8 pending.
+- `FORGE_RESERVE_PASS_ENABLED` stays unset until it ships with the next release.

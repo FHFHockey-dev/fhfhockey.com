@@ -1017,10 +1017,10 @@
       "path": "supabase/migrations/20261027090000_forge_reserve_projections.sql",
       "sha256": "1ca5816e835da899833499cc95d345a9253227ea176898c1ca2ba382fdd55da8",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "feature",
       "rolloutGate": "FORGE reserve pass (TJ pop-up 2026-10-26: separate table; commits 074694095, a02159b64): creates forge_reserve_projections, with RLS public read, SELECT only for anon/authenticated after revoke all, and service_role read/write. Written and read only behind forgeReservePassEnabled() (off). Apply before turning the flag on (C7 R43 N1). Hosted apply needs TJ's separate explicit approval; no migration command was run.",
-      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Receipt: tasks/artifacts/forge-week-coverage-2026-10-26/RESERVE-PASS-RECEIPT.md; review C7 R43."
+      "stateEvidence": "Production schema_migrations version 20261027090000 (forge_reserve_projections); applied 2026-11-13 05:39Z by the fix-sprint Chef with TJ's pop-up approval ('Table now, flag next release'), psql -1 via the IPv4 session pooler (the file has set local lock 5s / statement 30s and no begin/commit), exact file (sha256 matches this row); ledger row inserted (statements null). Pre-apply: 0 active queries. Readback: table forge_reserve_projections, 28 columns, RLS on, 1 policy (public_read select), indexes pkey + idx_forge_reserve_projections_run + idx_forge_reserve_projections_player, anon/authenticated SELECT only. Empty table; FORGE_RESERVE_PASS_ENABLED stays unset until it ships with a release."
     },
     {
       "order": 102,
