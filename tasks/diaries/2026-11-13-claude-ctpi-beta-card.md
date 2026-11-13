@@ -61,8 +61,26 @@ States not in live data are forced with a local Playwright response rewrite
 - Gotcha: dataviz validator lives in the bundled dataviz skill dir; its "lightness band"
   FAIL is a categorical check and does not apply to a two-arm diverging pair.
 
+- Commit `3b6d82edc` (passes 5–8). Release #434 (`496ab3766`) does not contain the card.
+- Screenshots sent to TJ; copies + hand-over note in the shared notes folder
+  (`F5b-recent-team-form-beta-card.md`, `F5b-screenshots/`).
+
+## Follow-up: Astra #435 P2 (Chef, 2026-11-13)
+- Bug: equal-count 5-on-5 rows from other dates showed "same 10 games" beside the mismatch
+  warning (card compared counts only). No game ids exist anywhere (games keyed team + date)
+  and the CTPI row stores only its last game date, so identity needs the score's own dates.
+- TJ approved (pop-up) a third anon read: `nst_team_gamelogs_as_rates` (`public_read`),
+  `date` with exact count, team/season/gp = 1/date < snapshot, limit recentGameCount.
+  Dates confirmed only if newest = sourceThroughDate, length = recentGameCount and exact
+  count = sourceGameCount (catches rows added after issue). Read error → unconfirmed.
+- Card: window line uses confirmed score dates (else "games through"); puck luck says
+  "same N games" only when every 5-on-5 date matches; else "separate sample: N games, A – B".
+- Regressions (both failed on the old code): equal-count shifted dates; same count + same last
+  game with one inner date different. Live PHI still confirms "same 10 games".
+
 ## Next
-Pass 8 (final sweep), then screenshots, commit, report, screenshots, commit, report.
+Release only with TJ's separate approval, batched (one fhfhockey build). Predictive use stays
+gated until the game-40 checkpoint (~2027-01-04).
 
 ## Gotchas
 - Never set GIT_DIR in test runs. Use `npm run typecheck`, not plain `npx tsc`.

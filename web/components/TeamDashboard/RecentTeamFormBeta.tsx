@@ -41,15 +41,33 @@ function formatSd(value: number): string {
   return `${rounded > 0 ? "+" : "−"}${Math.abs(rounded).toFixed(1)}`;
 }
 
-/** Plain-language note for 5-on-5 games that don't line up with the score's. */
-function mismatchNote(found: number, expected: number): string {
-  if (found === 0) {
+/** "Oct 21 – Nov 11" (one date alone when the range has one game). */
+function formatDateRange(dates: readonly string[]): string {
+  if (dates.length === 0) return "";
+  const first = formatShortDate(dates[0]);
+  const last = formatShortDate(dates[dates.length - 1]);
+  return first === last ? first : `${first} – ${last}`;
+}
+
+type ScoreModel = Extract<RecentTeamFormBetaModel, { kind: "score" }>;
+
+/** Plain-language note when puck luck is not over the score's own games. */
+function separateSampleNote(model: ScoreModel): string {
+  if (model.puckLuck.games === 0) {
     return "5-on-5 stats are missing for these games, so puck luck is unavailable";
   }
-  if (found < expected) {
-    return `5-on-5 stats cover ${found} of these ${expected} games, so puck luck uses those ${found}`;
+  if (model.windowDates.length === 0) {
+    return "The score's game dates couldn't be confirmed, so puck luck below is a separate 5-on-5 sample";
   }
-  return "5-on-5 game dates don't match the score's games, so puck luck may cover different games";
+  return "5-on-5 games don't match the score's games, so puck luck below is a separate sample";
+}
+
+/** Puck-luck scope: "same N games" only when every date matches the score's. */
+function puckLuckScope(model: ScoreModel): string {
+  const { games, dates } = model.puckLuck;
+  if (model.sameGames) return `5-on-5, same ${games} games; not part of the score`;
+  if (games === 0) return "5-on-5; not part of the score";
+  return `5-on-5, separate sample: ${games} ${games === 1 ? "game" : "games"}, ${formatDateRange(dates)}; not part of the score`;
 }
 
 function ComponentRow({ component }: { component: RecentTeamFormBetaComponent }) {
@@ -122,22 +140,18 @@ function DebugDetail({ debug }: { debug: RecentTeamFormBetaDebug | null }) {
 function ScoreBody({
   model,
 }: {
-  model: Extract<RecentTeamFormBetaModel, { kind: "score" }>;
+  model: ScoreModel;
 }) {
   const partsId = useId();
   const { windowDates, recentGameCount, puckLuck } = model;
-  // The 5-on-5 dates name the window only when they are the score's games;
-  // otherwise the line keeps to what the row itself states.
-  const range = model.windowMismatch
-    ? model.sourceThroughDate
-      ? ` (games through ${formatShortDate(model.sourceThroughDate)})`
-      : ""
-    : windowDates.length > 0
-      ? ` (${formatShortDate(windowDates[0])} – ${formatShortDate(
-          windowDates[windowDates.length - 1],
-        )})`
-      : "";
-  const sameGames = puckLuck.games === recentGameCount;
+  // The window names the score's own confirmed dates; otherwise it keeps to
+  // what the row itself states (its last game).
+  const range =
+    windowDates.length > 0
+      ? ` (${formatDateRange(windowDates)})`
+      : model.sourceThroughDate
+        ? ` (games through ${formatShortDate(model.sourceThroughDate)})`
+        : "";
   return (
     <>
       <div className={styles.scoreRow}>
@@ -159,9 +173,9 @@ function ScoreBody({
           {note}
         </p>
       ))}
-      {model.windowMismatch ? (
-        <p className={styles.mismatchNote}>{mismatchNote(puckLuck.games, recentGameCount)}</p>
-      ) : null}
+      {model.sameGames ? null : (
+        <p className={styles.mismatchNote}>{separateSampleNote(model)}</p>
+      )}
       <p id={partsId} className={styles.partsCaption}>
         {RECENT_TEAM_FORM_PARTS_CAPTION}
       </p>
@@ -173,13 +187,7 @@ function ScoreBody({
       <div className={styles.puckLuck}>
         <h5 className={styles.puckLuckHeading}>
           Puck luck{" "}
-          <span className={styles.puckLuckScope}>
-            (5-on-5,{" "}
-            {sameGames
-              ? `same ${puckLuck.games} games`
-              : `${puckLuck.games} of the ${recentGameCount} games`}
-            ; not part of the score)
-          </span>
+          <span className={styles.puckLuckScope}>({puckLuckScope(model)})</span>
         </h5>
         <dl className={styles.puckLuckStats}>
           <div>

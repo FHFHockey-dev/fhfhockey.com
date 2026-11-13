@@ -26,8 +26,8 @@ import {
 
 type Rows = Record<string, unknown>[];
 
-function query(rows: Rows) {
-  const result = Promise.resolve({ data: rows, error: null });
+function query(rows: Rows, count: number | null = null) {
+  const result = Promise.resolve({ data: rows, error: null, count });
   const q: any = {};
   for (const method of ["select", "eq", "gte", "lte", "lt", "or", "order", "limit"]) {
     q[method] = vi.fn(() => q);
@@ -36,10 +36,16 @@ function query(rows: Rows) {
   return q;
 }
 
-function install(tables: Record<string, Rows>) {
+// The score's own games default to the fixture row's: Nov 3 – Nov 12, with 16
+// season games before the snapshot (its sourceGameCount).
+function install(
+  tables: Record<string, Rows>,
+  counts: Record<string, number | null> = { nst_team_gamelogs_as_rates: 16 },
+) {
+  const defaults: Record<string, Rows> = { nst_team_gamelogs_as_rates: scoreDateRows };
   const queries: Record<string, any[]> = {};
   fromMock.mockImplementation((table: string) => {
-    const q = query(tables[table] ?? []);
+    const q = query(tables[table] ?? defaults[table] ?? [], counts[table] ?? null);
     (queries[table] ??= []).push(q);
     return q;
   });
@@ -87,6 +93,9 @@ const gameRows = Array.from({ length: 10 }, (_, index) => ({
   sa: 30,
 }));
 
+// The score's own games (the writer's source table), newest first.
+const scoreDateRows = gameRows.map((game) => ({ date: game.date }));
+
 afterEach(() => {
   cleanup();
   fromMock.mockReset();
@@ -131,6 +140,13 @@ describe("RecentTeamFormBeta", () => {
     expect(gameQuery.lt).toHaveBeenCalledWith("date", "2026-11-13");
     expect(gameQuery.or).toHaveBeenCalledWith("gp.neq.0,gp.is.null");
     expect(gameQuery.limit).toHaveBeenCalledWith(10);
+    const [scoreQuery] = queries.nst_team_gamelogs_as_rates;
+    expect(scoreQuery.select).toHaveBeenCalledWith("date", { count: "exact" });
+    expect(scoreQuery.eq).toHaveBeenCalledWith("team_abbreviation", "PHI");
+    expect(scoreQuery.eq).toHaveBeenCalledWith("season_id", 20262027);
+    expect(scoreQuery.eq).toHaveBeenCalledWith("gp", 1);
+    expect(scoreQuery.lt).toHaveBeenCalledWith("date", "2026-11-13");
+    expect(scoreQuery.limit).toHaveBeenCalledWith(10);
   });
 
   it("marks bars that run past the ±2 SD scale", async () => {
@@ -183,21 +199,69 @@ describe("RecentTeamFormBeta", () => {
     expect(screen.getByText("Partial: special teams unavailable")).toBeTruthy();
   });
 
-  it("never names 5-on-5 dates as the score's window when they do not line up", async () => {
-    install({ team_ctpi_daily: [ctpiRow()], nst_team_5v5: gameRows.slice(1) });
+  it("never names 5-on-5 dates as the score's window when the score's dates are unconfirmed", async () => {
+    install({
+      team_ctpi_daily: [ctpiRow()],
+      nst_team_gamelogs_as_rates: [],
+      nst_team_5v5: gameRows.slice(1),
+    });
     renderCard();
     expect(
       await screen.findByText(
         "Last 10 games before Nov 13 (games through Nov 12); recent games count more",
       ),
     ).toBeTruthy();
-    expect(screen.queryByText(/Nov 3 – Nov 11/)).toBeNull();
     expect(
       screen.getByText(
-        "5-on-5 stats cover 9 of these 10 games, so puck luck uses those 9",
+        "The score's game dates couldn't be confirmed, so puck luck below is a separate 5-on-5 sample",
       ),
     ).toBeTruthy();
-    expect(screen.getByText(/^Puck luck/).textContent).toContain("9 of the 10 games");
+    expect(screen.getByText(/^Puck luck/).textContent).toBe(
+      "Puck luck (5-on-5, separate sample: 9 games, Nov 3 – Nov 11; not part of the score)",
+    );
+  });
+
+  // Astra #435 P2: equal counts are not game identity. Games are keyed by
+  // team + date (no game ids), so "same games" needs every date to match.
+  it("calls equal-count 5-on-5 rows from other dates a separate sample, never the same games", async () => {
+    // Score: Nov 3 – Nov 12. 5-on-5: ten rows, Nov 2 – Nov 11.
+    const shifted = gameRows.map((game, index) => ({
+      ...game,
+      date: `2026-11-${String(11 - index).padStart(2, "0")}`,
+    }));
+    install({
+      team_ctpi_daily: [ctpiRow()],
+      nst_team_gamelogs_as_rates: scoreDateRows,
+      nst_team_5v5: shifted,
+    });
+    renderCard();
+    const heading = await screen.findByText(/^Puck luck/);
+    expect(heading.textContent).not.toMatch(/same/);
+    expect(heading.textContent).toBe(
+      "Puck luck (5-on-5, separate sample: 10 games, Nov 2 – Nov 11; not part of the score)",
+    );
+    expect(
+      screen.getByText("5-on-5 games don't match the score's games, so puck luck below is a separate sample"),
+    ).toBeTruthy();
+    expect(
+      screen.getByText("Last 10 games before Nov 13 (Nov 3 – Nov 12); recent games count more"),
+    ).toBeTruthy();
+  });
+
+  it("does not claim the same games when one inner date differs", async () => {
+    // Same count and same last game (Nov 12), but Nov 11 is missing and Nov 2 added.
+    const innerGap = [gameRows[0], ...gameRows.slice(2), { ...gameRows[9], date: "2026-11-02" }];
+    install({
+      team_ctpi_daily: [ctpiRow()],
+      nst_team_gamelogs_as_rates: scoreDateRows,
+      nst_team_5v5: innerGap,
+    });
+    renderCard();
+    const heading = await screen.findByText(/^Puck luck/);
+    expect(heading.textContent).toContain("separate sample: 10 games, Nov 2 – Nov 12");
+    expect(
+      screen.getByText("Last 10 games before Nov 13 (Nov 3 – Nov 12); recent games count more"),
+    ).toBeTruthy();
   });
 
   it("shows Not enough games yet with no score when the team has fewer than 5 games", async () => {
@@ -262,23 +326,43 @@ describe("RecentTeamFormBeta", () => {
 });
 
 describe("buildRecentTeamFormBetaModel", () => {
-  it("flags 5-on-5 rows that do not match the score's games", () => {
-    const model = buildRecentTeamFormBetaModel(ctpiRow(), gameRows.slice(1));
-    expect(model.kind).toBe("score");
-    if (model.kind !== "score") return;
-    expect(model.windowMismatch).toBe(true);
-    expect(model.puckLuck.games).toBe(9);
-    const aligned = buildRecentTeamFormBetaModel(ctpiRow(), gameRows);
-    expect(aligned.kind === "score" && aligned.windowMismatch).toBe(false);
+  const scoreGames = { dates: scoreDateRows.map((game) => game.date), seasonGameCount: 16 };
+
+  it("calls them the same games only when every date matches the confirmed score dates", () => {
+    const aligned = buildRecentTeamFormBetaModel(ctpiRow(), gameRows, scoreGames);
+    expect(aligned.kind === "score" && aligned.sameGames).toBe(true);
+    expect(aligned.kind === "score" && aligned.windowDates[0]).toBe("2026-11-03");
+
+    const short = buildRecentTeamFormBetaModel(ctpiRow(), gameRows.slice(1), scoreGames);
+    expect(short.kind === "score" && short.sameGames).toBe(false);
+    expect(short.kind === "score" && short.puckLuck.games).toBe(9);
+
+    // Without the score's own dates nothing is confirmed, even when counts match.
+    const unconfirmed = buildRecentTeamFormBetaModel(ctpiRow(), gameRows, null);
+    expect(unconfirmed.kind === "score" && unconfirmed.sameGames).toBe(false);
+    expect(unconfirmed.kind === "score" && unconfirmed.windowDates).toEqual([]);
+  });
+
+  it("does not confirm score dates that no longer reproduce the issued row", () => {
+    // A row added after the score was written changes the season game count.
+    const lateRow = buildRecentTeamFormBetaModel(ctpiRow(), gameRows, {
+      ...scoreGames,
+      seasonGameCount: 17,
+    });
+    expect(lateRow.kind === "score" && lateRow.windowDates).toEqual([]);
+    expect(lateRow.kind === "score" && lateRow.sameGames).toBe(false);
+    // A different last game than the row states.
+    const otherLast = buildRecentTeamFormBetaModel(ctpiRow({ source_through_date: "2026-11-11" }), gameRows, scoreGames);
+    expect(otherLast.kind === "score" && otherLast.sameGames).toBe(false);
   });
 
   it("separates too early from not available when no row exists", () => {
-    expect(buildRecentTeamFormBetaModel(null, [], 4)).toEqual({
+    expect(buildRecentTeamFormBetaModel(null, [], null, 4)).toEqual({
       kind: "notEnoughGames",
       gamesPlayed: 4,
       minimumGames: 5,
     });
-    expect(buildRecentTeamFormBetaModel(null, [], 5)).toEqual({ kind: "unavailable", debug: null });
+    expect(buildRecentTeamFormBetaModel(null, [], null, 5)).toEqual({ kind: "unavailable", debug: null });
   });
 });
 
