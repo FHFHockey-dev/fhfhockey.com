@@ -866,7 +866,7 @@ describe("nhlNstParityMetrics", () => {
     expect(skater91.toi).toBe(61);
   });
 
-  it("excludes penalty-shot and shootout events from parity while preserving EV, PP, and PK split outputs", () => {
+  it("counts a penalty-shot goal in all only, excludes the shootout, and preserves EV, PP, and PK split outputs (decision 149)", () => {
     const events = parseEvents([
       {
         eventId: 400,
@@ -1033,11 +1033,16 @@ describe("nhlNstParityMetrics", () => {
     });
     expect(skater91EvRates.shots_per_60).toBeCloseTo(720, 5);
     expect(skater91PpRates.shots_per_60).toBeCloseTo(360, 5);
-    expect(skater34All.goals).toBe(0);
+    // Event 403 is a penalty-shot goal (reason "Penalty Shot"): 1 goal and 1
+    // shot in all-situations, no assist, and nothing in any strength split.
+    expect(skater34All).toMatchObject({ goals: 1, shots: 1, icf: 1, iff: 1, total_assists: 0 });
+    for (const split of ["ev", "fiveOnFive", "pp", "pk"] as const) {
+      expect(output.skaters[split].counts.find((row) => row.player_id === 34)?.goals ?? 0).toBe(0);
+    }
     expect(goalie31All).toMatchObject({
-      shots_against: 2,
+      shots_against: 3,
       saves: 2,
-      goals_against: 0,
+      goals_against: 1,
     });
     expect(goalie31Ev).toMatchObject({
       shots_against: 1,
@@ -1418,10 +1423,15 @@ describe("nhlNstParityMetrics", () => {
       expect(output.goalies.all.counts.find((row) => row.player_id === 31)!.rush_attempts_against).toBe(1);
     });
 
-    it("excludes a 1010 penalty-shot attempt and never files it as empty net", () => {
+    it("counts penalty-shot attempts in all only and never files them as empty net (decision 149)", () => {
       const events = parseEvents([
         play(1, 100, "1551", "faceoff", { eventOwnerTeamId: HOME, winningPlayerId: 91, losingPlayerId: 21, zoneCode: "N" }),
+        // Home penalty-shot save (1010), home penalty-shot goal, home penalty-shot miss.
         play(2, 500, "1010", "shot-on-goal", { eventOwnerTeamId: HOME, shootingPlayerId: 91, goalieInNetId: 31, xCoord: 70, yCoord: 0, zoneCode: "O" }),
+        play(3, 700, "1010", "goal", { eventOwnerTeamId: HOME, scoringPlayerId: 91, goalieInNetId: 31, xCoord: 75, yCoord: 0, zoneCode: "O" }),
+        play(4, 800, "1010", "missed-shot", { eventOwnerTeamId: HOME, shootingPlayerId: 91, goalieInNetId: 31, xCoord: 72, yCoord: 0, zoneCode: "O" }),
+        // Away penalty-shot save (0101).
+        play(5, 900, "0101", "shot-on-goal", { eventOwnerTeamId: AWAY, shootingPlayerId: 21, goalieInNetId: 30, xCoord: -70, yCoord: 0, zoneCode: "O" }),
       ]);
       const shifts = fullPeriodShifts();
       const shotFeatures = buildShotFeatureRows(events, shifts as any, HOME, AWAY);
@@ -1432,9 +1442,39 @@ describe("nhlNstParityMetrics", () => {
         awayTeamId: AWAY,
       });
 
-      expect(output.skaters.all.counts.find((row) => row.player_id === 91)?.shots ?? 0).toBe(0);
-      expect(output.skaters.againstEmptyNet.counts.find((row) => row.player_id === 91)).toBeUndefined();
-      expect(output.goalies.all.counts.find((row) => row.player_id === 31)?.shots_against ?? 0).toBe(0);
+      // Official: goal = 1 goal + 1 shot, save = 1 shot, miss = an attempt only.
+      expect(output.skaters.all.counts.find((row) => row.player_id === 91)).toMatchObject({
+        goals: 1,
+        shots: 2,
+        icf: 3,
+        iff: 3,
+        total_assists: 0,
+      });
+      expect(output.skaters.all.counts.find((row) => row.player_id === 21)).toMatchObject({ shots: 1, goals: 0 });
+      expect(output.goalies.all.counts.find((row) => row.player_id === 31)).toMatchObject({
+        shots_against: 2,
+        saves: 1,
+        goals_against: 1,
+      });
+      expect(output.goalies.all.counts.find((row) => row.player_id === 30)).toMatchObject({
+        shots_against: 1,
+        saves: 1,
+        goals_against: 0,
+      });
+      // No strength split, no empty net, no on-ice and no xG for a penalty shot.
+      for (const split of ["ev", "fiveOnFive", "pp", "pk", "threeOnThree", "withEmptyNet", "againstEmptyNet"] as const) {
+        for (const playerId of [91, 21]) {
+          const row = output.skaters[split].counts.find((r) => r.player_id === playerId);
+          expect([split, playerId, row?.shots ?? 0, row?.goals ?? 0]).toEqual([split, playerId, 0, 0]);
+        }
+        for (const goalieId of [30, 31]) {
+          expect(output.goalies[split].counts.find((r) => r.player_id === goalieId)?.shots_against ?? 0).toBe(0);
+        }
+      }
+      expect(shotFeatures).toHaveLength(0);
+      const oi = output.skaters.all.countsOi.find((row) => row.player_id === 91);
+      expect([oi?.sf ?? 0, oi?.gf ?? 0, oi?.cf ?? 0]).toEqual([0, 0, 0]);
+      expect(output.skaters.all.counts.find((row) => row.player_id === 91)?.ixg ?? 0).toBe(0);
     });
 
     it("declares PDO on the percent scale and converts to NST's 1.0 scale at the adapter", () => {

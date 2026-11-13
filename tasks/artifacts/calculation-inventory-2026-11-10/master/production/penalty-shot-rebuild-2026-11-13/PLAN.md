@@ -58,7 +58,13 @@ New games become split rows as the nightly derived build writes them.
   - `run-projection-v2.ts`, `xg/participation.ts`: freshness and participation only.
   - `sourceOwnership.ts`, `rollingForgePipeline.ts`, `goaliePipeline.ts`, `run-forge-projections.ts`, `qualify-native-players-offline.ts`: table names only.
   - No SQL view reads these tables.
-- **Not changed here: canonical NST parity.** `nhlEventInclusion.ts` `includeInParity` drops penalty shots from parity "all". It sits in separate files and needs an on-ice/xG decision, so it is proposed as its own session ("F15b").
+- **Canonical NST parity** (separate commit after 30fa0f00a): a new `includeInAllSituationsOnly` flag in `nhlEventInclusion.ts` covers a penalty-shot goal, shot on goal or miss outside the shootout.
+  - `nhlNstParityMetrics.ts` counts those attempts in the `all` split only: goals, shots, iCF and iFF, plus the goalie's shots against, saves and goals against. They never enter a strength split, on-ice stats or xG. (A penalty shot is one-on-one, and it has no shot feature.)
+  - `includeInParity` stays false, so penalty expiry and penalty counting are unchanged (decision 13).
+  - No parity version stamp exists. But the underlying-stats landing reads **stored** summary payloads (`playerStatsLandingServer.ts`, formula revision 2, plus the goalie partitions), so the 8 games keep their old "all" figures until their summaries are rewritten.
+  - The formula revision is deliberately not bumped: that would mark every stored summary stale and force a broad rebuild.
+  - Follow-up for TJ's separate approval: a bounded summary refresh of these 8 games after the release. Its route and bounds are not yet planned.
+  - Assumption: NST's all-situations totals include penalty shots, as the official totals do.
 - **Build route:** `gameId=` builds one game on its `startDate`, so the rebuild touches only these 8 games and not every game on their 7 dates. An unknown or misdated id fails the date with no write.
 
 ## Affected games (confirmed 2026-11-13, read-only)
