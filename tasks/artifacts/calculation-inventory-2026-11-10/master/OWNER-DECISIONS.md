@@ -397,3 +397,8 @@ Source: `WAVE3-CONSOLIDATED.md`, "Owner decisions still open" Q42 and Q49. The 1
    - **The bug:** the NST team game-log tables hold 1,920 rows of 2025-26 season totals (gp = 82, dated 2026-05-02..06-30). The 150-day lookback counted each as one game, so early 2026-27 windows for every component included a full 82-game season row.
    - **The fix:** exclude non-game rows for **all components**, in the same v4 as decision 145, and rebuild after release with the 45-call plan.
    - **The label:** v4 states both changes.
+148. **Opponent-goalie multiplier** (Astra AF-06; W1 #21): **neutral until validated.** FORGE applies no opponent-goalie goal/assist multiplier (factor 1.0); the posterior save percentage is kept as labelled context. The held-out final-output study joins Codex's goalie model work. W1 #21 stays partly fixed until that study passes.
+149. **Penalty shots** (Astra AF-07): **all-situations only.**
+   - Penalty-shot goals and shots (situation code 1010) count in all-situation totals and in no strength bucket (ES, 5v5, PP, PK), matching the canonical classifier.
+   - One shared adapter serves events and exposure.
+   - The derived-table rebuild afterwards is TJ's terminal loop, after approval.
