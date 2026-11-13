@@ -110,3 +110,24 @@ Checked:
   4. the refresh (`PP-REFRESH-PLAN.md`);
   5. readbacks;
   6. TJ's decision to serve PP share.
+
+## 9. Decision 152 final release candidate (writes gated off), built 2026-11-13 ~20:40Z after migration 149
+- **Candidate `48c4bcb835fb504fc517e2f09708ab1904113024`**, tree `6cbe9d47c`, on master `70ad65546` (#440).
+- **Contents:** 11 app files, all at octoberBranch HEAD:
+  - Part A registry: `getPowerPlayBlocks.ts` and its test, `ppPenaltySummaryRegistry.ts`;
+  - the writer `[gameId].ts` and the batch route `index.ts` (dry run, concurrency 1–4, audit skip on a successful dry run, `PP_STORED_CALCULATION_WRITES_ENABLED` gate), both tests;
+  - migration 149's file, proof and rollback;
+  - the baseline test at 115/6;
+  - records, with diaries at master's.
+- **Identity:** every PP file equals the code the accepted dry run used (`8f73d2931`). Item 2 is out.
+- **Gate:**
+  - 463 focused tests (writer, batch, PP clock, baseline, cron-audit wrappers, cron report, rolling-forge pipeline, withCronJobAudit);
+  - typecheck 0; ESLint 0; PG proof RESULT OK;
+  - full Vitest 19,915 passed (only the export-only BLSH file fails);
+  - pytest 213 (4 export-only).
+- **Live effect with the flag unset:**
+  - every non-dry-run call skips: cron 388 at 08:05Z returns `skipped` with no reads, writes or RPC call;
+  - new games get no `powerPlayCombinations` rows until TJ approves writes (TJ's accepted tradeoff);
+  - readers are unchanged and PP share stays withheld.
+- **Smoke:** `/`, `/lines`, `/lines/EDM`, `/splits`, `/underlying-stats`. Never call the PP routes for QA.
+- **After release:** cron 388's 08:05Z run audits as `skipped`, a read-only check kept separate from the FORGE and power checks. The refresh, bound to `db94a9de` and with the flag on, is its own approval.
