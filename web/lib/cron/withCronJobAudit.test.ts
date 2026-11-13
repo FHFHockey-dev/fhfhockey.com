@@ -60,6 +60,37 @@ function createMockRes() {
 }
 
 describe("withCronJobAudit", () => {
+  it("persists an intentional no-model skip and compact reason without changing HTTP", async () => {
+    const body = { success: true, padding: "x".repeat(5000), skipped: true,
+      outcome: "skipped", reason: "no_production_model", status: "no_production_model" };
+    const res = createMockRes();
+    await withCronJobAudit(async (_req, out) => out.status(200).json(body))(createMockReq(), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual(body);
+    expect(insertMock.mock.calls[0][0]).toMatchObject({ status: "skipped", rows_affected: null,
+      details: { responseTruncated: true, responseOutcome: {
+        success: true, skipped: true, outcome: "skipped", reason: "no_production_model",
+      } } });
+  });
+
+  it.each([
+    [200, { success: false, skipped: true }, "failure"],
+    [500, { success: true, skipped: true }, "failure"],
+    [200, { success: true, skipped: true, errors: ["write failed"] }, "failure"],
+    [200, { success: true, skipped: true, failedRows: 2 }, "failure"],
+    [207, { success: false, skipped: true, termination: { state: "continuation_required" } }, "continued"],
+    [207, { success: false, skipped: true, termination: { state: "continuation_required" }, failedRows: 2 }, "failure"],
+    [200, { success: true, rowsUpserted: 0 }, "success"],
+    [200, { success: true, skipped: 3 }, "success"],
+    [200, { success: true, skipped: true, reason: "nhl_off_season" }, "success"],
+  ])("classifies HTTP %i receipt %j as %s", async (code, body, status) => {
+    const res = createMockRes();
+    await withCronJobAudit(async (_req, out) => out.status(code).json(body))(createMockReq(), res);
+    expect(insertMock.mock.calls[0][0].status).toBe(status);
+    expect(res.statusCode).toBe(code);
+    expect(res.body).toEqual(body);
+  });
+
   beforeEach(() => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
     insertMock.mockReset();

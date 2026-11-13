@@ -14,7 +14,7 @@ interface AuditEntry {
   key: string;
   label: string;
   jobName: string;
-  status: "success" | "failure" | "unknown" | "disabled" | "continued";
+  status: "success" | "failure" | "unknown" | "disabled" | "continued" | "skipped";
   runTimeDisplay: string;
   method: string | null;
   route: string | null;
@@ -29,7 +29,7 @@ interface AuditEntry {
   repositoryLimitMs?: number | null;
   runtimeBudgetMs?: number | null;
   timingProvenance?: string;
-  observedExecutionStatus?: "success" | "failure" | "unknown" | "missing" | "disabled";
+  observedExecutionStatus?: "success" | "failure" | "unknown" | "missing" | "disabled" | "skipped";
   observationKind?: "scheduled" | "extra";
   reason: string | null;
   lastKnownSuccessDisplay: string | null;
@@ -66,6 +66,7 @@ interface CronAuditEmailProps {
     cronFailures?: number;
     omittedFailureObservations?: number;
     auditUnknown: number;
+    auditSkipped?: number;
     auditDisabled?: number;
     slowJobDenotation?: string;
     slowMsThreshold?: number | null;
@@ -77,7 +78,6 @@ interface CronAuditEmailProps {
   };
 }
 
-const skipped = (row: AuditEntry) => (row.missingObservationWarnings ?? []).some((warning) => warning.includes("Operation was skipped"));
 const missing = (row: AuditEntry) => row.status === "unknown" && (row.missingObservationWarnings ?? []).some((warning) => warning.includes("No cron or audit observation matched"));
 const nearLimit = (row: AuditEntry) => isNearRepositoryLimit(row.durationMs, row.repositoryLimitMs ?? null) || isNearRepositoryLimit(row.durationMs, row.runtimeBudgetMs ?? null);
 const clean = (text: string) => text.replace(/\s+/g, " ").trim();
@@ -85,13 +85,13 @@ const concise = (text: string, max = 220) => clean(text).length > max ? `${clean
 // Display times are "ISO / local"; the email shows the local half and compares the ISO half.
 const isoOf = (display: string | null) => { const time = Date.parse(display?.split(" / ")[0] ?? ""); return Number.isFinite(time) ? time : null; };
 const localOf = (display: string) => display.split(" / ")[1] ?? display;
-const label = (row: AuditEntry) => row.status === "failure" ? "FAIL" : row.status === "continued" ? "CONTINUED / IN PROGRESS" : skipped(row) ? "SKIPPED / NO OUTPUT" : missing(row) ? "MISSING"
+const label = (row: AuditEntry) => row.status === "failure" ? "FAIL" : row.status === "continued" ? "CONTINUED / IN PROGRESS" : row.status === "skipped" ? "SKIPPED" : missing(row) ? "MISSING"
   : row.status === "success" ? (row.failedRows ?? 0) > 0 || (row.failedOperations ?? 0) > 0 ? "PARTIAL" : nearLimit(row) ? isNearRepositoryLimit(row.durationMs, row.repositoryLimitMs ?? null) ? "NEAR LIMIT" : "NEAR BUDGET" : "OK" : row.status.toUpperCase();
 const details = (row: AuditEntry) => Array.from(new Set([
   row.reason && !row.reason.includes("Telemetry source unavailable") ? row.reason : null,
   ...(row.missingObservationWarnings ?? []).filter((warning) => !warning.includes("Telemetry source unavailable") && !warning.includes("timing metadata") && !warning.includes("Operation was skipped")),
 ].filter((value): value is string => Boolean(value))));
-const LABEL_ORDER = ["MISSING", "PARTIAL", "NEAR LIMIT", "NEAR BUDGET", "CONTINUED / IN PROGRESS", "SKIPPED / NO OUTPUT", "UNKNOWN", "DISABLED"];
+const LABEL_ORDER = ["MISSING", "PARTIAL", "NEAR LIMIT", "NEAR BUDGET", "CONTINUED / IN PROGRESS", "SKIPPED", "UNKNOWN", "DISABLED"];
 
 type FailureGroup = { jobName: string; rows: AuditEntry[]; latest: AuditEntry; lastSuccess: string | null; recovered: boolean };
 
@@ -241,6 +241,7 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
 
     <div style={{ ...muted, borderTop: "1px solid #D9DDD4", paddingTop: 14, marginTop: 16 }}>
       <div>{summary.auditRuns} audit runs · {summary.auditSuccesses} successful · {totalsComplete ? `${summary.auditFailures} failed receipts` : `Failure total unknown (${summary.auditFailures} observed)`}
+        {` · ${summary.auditSkipped ?? 0} skipped`}
         {summary.cronFailures ? ` · ${summary.cronFailures} cron execution failure receipts` : ""}
         {` · Upserts: ${summary.metricRowsKnown === 0 ? "total unknown (0 confirmed observations)" : `${summary.totalRowsUpserted.toLocaleString("en-US")}${writeTotalKnown ? "" : " observed; total unknown"}`}`}
         {` · Error rows: ${errorTotalKnown ? `${summary.totalFailedRows.toLocaleString("en-US")} explicitly reported` : `total unknown (${summary.totalFailedRows.toLocaleString("en-US")} observed in ${summary.metricErrorsKnown ?? 0}/${metricJobs ?? "unknown"} applicable job receipts)`}`}

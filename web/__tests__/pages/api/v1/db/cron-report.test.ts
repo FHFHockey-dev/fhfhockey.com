@@ -129,6 +129,7 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
 }));
 
 import handler from "../../../../../pages/api/v1/db/cron-report";
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 
 function createMockRes() {
   const res: any = {
@@ -150,6 +151,105 @@ function createMockRes() {
 }
 
 describe("/api/v1/db/cron-report", () => {
+  it("carries a truncated no-model skip from writer through report and rendered email", async () => {
+    const route = "/api/v1/game-predictions/forecast";
+    readFileMock.mockResolvedValue(`SELECT cron.schedule('forecast','0 12 * * *',$$select net.http_post(url:='https://fhfhockey.com${route}');$$);`);
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    const receipt = { success: true, padding: "x".repeat(5000), skipped: true,
+      outcome: "skipped", reason: "no_production_model", status: "no_production_model" };
+    const response = createMockRes();
+    await withCronJobAudit(async (_req, res) => res.status(200).json(receipt))(
+      { method: "POST", url: route } as any, response);
+    const persisted = cronJobAuditInsertMock.mock.calls.at(-1)![0];
+    expect(persisted.status).toBe("skipped");
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual(receipt);
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ ...persisted, run_time: "2026-03-20T12:05:00.000Z" }], error: null });
+    const { CronAuditEmail } = await vi.importActual<typeof import("components/CronReportEmail/CronAuditEmail")>("components/CronReportEmail/CronAuditEmail");
+    cronAuditEmailMock.mockImplementationOnce((props: any) => createElement(CronAuditEmail, props));
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.counts).toMatchObject({ auditSkipped: 1, jobsSkippedLast: 1,
+      auditSuccesses: 0, auditFailures: 0, auditUnknown: 0, jobsMissingLast: 0 });
+    const props = cronAuditEmailMock.mock.calls.at(-1)![0];
+    expect(props.audits[0]).toMatchObject({ status: "skipped", rowsUpserted: null,
+      lastKnownSuccessDisplay: null, reason: expect.stringContaining("no_production_model") });
+    const html = renderToStaticMarkup(resendSendMock.mock.calls.at(-1)![0].react);
+    expect(html).toContain(">SKIPPED</strong>");
+    expect(html).toContain("no_production_model");
+    expect(html).toContain("1 skipped");
+    expect(props.audits.filter((row: any) => row.status === "unknown")).toHaveLength(0);
+  });
+
+  it.each([
+    ["success", { success: true, skipped: true, reason: "no_production_model" }, "skipped"],
+    ["success", { success: true, outcome: "skipped", reason: "no_production_model" }, "skipped"],
+    ["failure", { success: true, skipped: true }, "failure"],
+    ["success", { success: false, skipped: true }, "failure"],
+    ["skipped", { success: true, skipped: true, errors: ["failed"] }, "failure"],
+    ["success", { success: true, rowsUpserted: 0 }, "success"],
+    ["success", { success: true, skipped: true, reason: "nhl_off_season" }, "success"],
+  ])("classifies retained %s receipt %j as %s", async (status, response, expected) => {
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    readFileMock.mockResolvedValue(`SELECT cron.schedule('forecast','0 12 * * *',$$select net.http_post(url:='https://fhfhockey.com/api/v1/game-predictions/forecast');$$);`);
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "forecast", run_time: "2026-03-20T12:05:00.000Z", status,
+      details: { method: "POST", url: "/api/v1/game-predictions/forecast", statusCode: 200, response } }], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    expect(cronAuditEmailMock.mock.calls.at(-1)![0].audits[0].status).toBe(expected);
+    expect(res.body.counts.auditSkipped).toBe(expected === "skipped" ? 1 : 0);
+  });
+
+  it.each(["success", "skipped"])("excludes a later %s skip from durable success history", async (status) => {
+    const route = "/api/v1/game-predictions/forecast";
+    readFileMock.mockResolvedValue(`SELECT cron.schedule('forecast','0 12 * * *',$$select net.http_post(url:='https://fhfhockey.com${route}');$$);`);
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    const details = { method: "POST", url: route, statusCode: 200 };
+    cronJobAuditSelectMock.mockResolvedValue({ data: [
+      { job_name: "forecast", run_time: "2026-03-20T12:01:00.000Z", status: "success",
+        details: { ...details, response: { success: true, rowsUpserted: 4 } } },
+      { job_name: "forecast", run_time: "2026-03-20T12:02:00.000Z", status: "failure",
+        details: { ...details, statusCode: 500, response: { success: false, error: "write failed" } } },
+      { job_name: "forecast", run_time: "2026-03-20T12:03:00.000Z", status,
+        details: { ...details, response: { success: true, skipped: true, reason: "no_production_model" } } },
+    ], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    const rows = cronAuditEmailMock.mock.calls.at(-1)![0].audits;
+    expect(rows.find((row: any) => row.status === "failure").lastKnownSuccessDisplay).toContain("2026-03-20T12:01:00.000Z");
+    expect(res.body.counts).toMatchObject({ auditSuccesses: 1, auditFailures: 1, auditSkipped: 1, auditUnknown: 0 });
+  });
+
+  it.each(["success", "failure"])("uses structured explicit skip evidence for a truncated legacy %s row", async (status) => {
+    readFileMock.mockResolvedValue(`SELECT cron.schedule('forecast','0 12 * * *',$$select net.http_post(url:='https://fhfhockey.com/api/v1/game-predictions/forecast');$$);`);
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "forecast", run_time: "2026-03-20T12:05:00.000Z", status,
+      details: { method: "POST", url: "/api/v1/game-predictions/forecast", statusCode: 200,
+        response: '{"padding":"…', responseTruncated: true,
+        responseOutcome: { success: true, skipped: true, outcome: "skipped", reason: "no_production_model" } } }], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    expect(cronAuditEmailMock.mock.calls.at(-1)![0].audits[0]).toMatchObject({
+      status: status === "failure" ? "failure" : "skipped", reason: expect.stringContaining("no_production_model") });
+    expect(res.body.counts.auditUnknown).toBe(0);
+  });
+
+  it.each(["success", "skipped"])("keeps a %s skip non-successful in Yahoo health without inventing consecutive failures", async (status) => {
+    const route = "/api/v1/db/update-yahoo-players";
+    readFileMock.mockResolvedValue(`SELECT cron.schedule('yahoo','0 12 * * *',$$select net.http_get(url:='https://fhfhockey.com${route}');$$);`);
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    const audit = (time: string, state: string, response: Record<string, unknown>) => ({
+      job_name: "update-yahoo-players", run_time: `2026-03-20T${time}:00.000Z`, status: state,
+      details: { method: "GET", url: route, statusCode: state === "failure" ? 500 : 200, response },
+    });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [
+      audit("12:01", "failure", { success: false }), audit("12:02", "failure", { success: false }),
+      audit("12:03", status, { success: true, skipped: true, reason: "no_work" }),
+    ], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    expect(res.body.counts).toMatchObject({ auditSkipped: 1, auditSuccesses: 0, auditFailures: 2 });
+    const warnings = res.body.warnings.yahooLifecycle.map((warning: any) => warning.code);
+    expect(warnings).toContain("stale_last_success");
+    expect(warnings).not.toContain("repeated_ownership_failure");
+  });
+
   it("reads the poller and backlog sections, storing the backlog snapshot only on a real run", async () => {
     const preview = createMockRes();
     await handler({ method: "GET", query: { preview: "json" } } as any, preview);
@@ -1629,7 +1729,7 @@ ${JSON.stringify(jobs)}
       job_name: "update-rolling-player-averages", run_time: runTime, status,
       details: { method: "GET", url: "/api/v1/db/update-rolling-player-averages", statusCode: status === "continued" ? 207 : 200, response },
     });
-    const continued = { success: false, operationStatus: "partial", resume: { required: true, request: { resumeFrom: 8477000 } } };
+    const continued = { success: false, skipped: true, operationStatus: "partial", resume: { required: true, request: { resumeFrom: 8477000 } } };
 
     beforeEach(() => {
       cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
@@ -2284,10 +2384,9 @@ ${JSON.stringify(jobs)}
     expect(res.body.counts).toMatchObject({ scheduledJobs: 2, jobsOkLast: 1, jobsFailingLast: 1, jobsMissingLast: 0, auditFailures: 1 });
     const audits = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits;
     const score = audits.find((row: any) => row.route?.includes("rebuild-score"));
-    expect(score).toMatchObject({ status: "unknown", lastKnownSuccessDisplay: null });
-    expect(score.missingObservationWarnings).toContain(
-      "Operation was skipped or produced no output; successful HTTP execution does not establish data refresh."
-    );
+    expect(score).toMatchObject({ status: "skipped", lastKnownSuccessDisplay: null,
+      reason: "source_already_processed" });
+    expect(res.body.counts.auditSkipped).toBe(1);
     expect(resendSendMock.mock.calls[0][0].subject).not.toContain("✅");
   });
 
