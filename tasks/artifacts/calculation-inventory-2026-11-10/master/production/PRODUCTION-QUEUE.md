@@ -455,3 +455,34 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     - **other seasons untouched:** 40,498 rows, 0 stamped; table total 47,678.
   - **PP share stays hidden.** Readers are unchanged; serving it needs reader gates (named in REPORT §11.3, not built) and TJ's separate approval.
   - **Next scheduled:** cron 388 at 08:05Z on 2026-11-14 writes the last 3 dates through the new calculation. Read it back separately (audit `success`, rows stamped).
+- **Release #442: decision 152 PP share readers and shift-chart timing guard** (TJ's conditional approval, ~21:40Z and ~21:50–21:55Z; checks passed):
+  - **Candidate** `28fdbadd6` on master `f5c7adc2d`: 26 app files (F11 `05c43f981`, `aac8cf5a3`, `486da9666`), no scss. F11's later `8b94e18c0` only folds the test helper into `Replay.test.tsx` (app code identical), so it isn't in this release.
+  - **Gate:** 265 focused tests (the cross-surface test and rolling flag-off pin included); typecheck 0; ESLint 0. Full Vitest 19,965 passed: ArticleReader and BLSH are export-only; TweetSwipeTrainer is a load flake, 22/22 alone. pytest 213.
+  - **Branch** pushed 22:00:17Z; no build at 22:01:53Z.
+  - **PR #442** squash-merged 22:02:07Z as master `44de2f107`, tree identical.
+  - **Build:** fhfhockey completed 22:07:23Z; cms, functions and fhfhockey.com canceled.
+  - **Smoke** 5/5 at 200 (22:07:57–58Z), with serving off: `/` 4.23 s (cold), `/lines` 0.30 s, `/lines/EDM` 0.21 s, `/shiftChart` 0.21 s, `/underlying-stats` 0.13 s.
+  - **octoberBranch** ours-merge `732468246` pushed 22:08:08Z.
+- **Serving on** (TJ-approved after checks 1.2, 1.3 and 7.2 passed):
+  - `PP_SHARE_SERVING_ENABLED=true` added to Production through the Vercel CLI at ~22:09Z; `PP_STORED_CALCULATION_WRITES_ENABLED=true` left as is.
+  - A clean-export CLI production deploy of master `44de2f107` started ~22:10Z.
+  - **Serving deploy:** `dpl_3dTQdAD3RHsEhP3nvtn5yZHSmzpn`, built 22:08:28–22:13:40Z, **Ready**, aliased to fhfhockey.com. Master `44de2f107`; one extra fhfhockey build.
+  - **Live verification** (bounded: 3 sequential API requests plus 2 page views in TJ's Chrome; read-only), **all agree**:
+    1. **Clock API** `GET /api/v1/pp-share/team-game-clock?gameIds=2026020131,2026020038` (22:13:57Z): 200, `servingEnabled: true`.
+       - 131: t18 available 120 s, t19 available 578 s.
+       - 038: t55 not_applicable 0 s, t20 available 172 s.
+    2. **`/api/toi`** for 8475158, 2026-10-17 (22:14:04Z): 200. `powerPlayStatus.available` true; PP 1.8667 min (112 s), **share 93.33%**, status available, team clock 2 min (120 s).
+    3. **`/api/toi`** for 8474586 (t55), 2026-10-04 (22:14:17Z): 200. PP 0, **share null, status `not_applicable`**: N/A, never 0%.
+    4. **Shift chart** `/shiftChart?gameId=2026020131`: the status **"NSH: PP timeline unavailable: timing mismatch."** for team 18 only. STL (t19, reconciled) has no label.
+    5. **Line-combo PP mode** `/lines/line-combo/2026020131`, Power Play TOI. The Predators matrix has 10 skaters; diagonal O'Reilly 1:52, Stamkos 1:51, Josi 1:50, Marchessault 1:50, Forsberg 1:49 (PP1); Skjei 0:11, Kerfoot 0:10, Perbix 0:10, Wood 0:09, Colton 0:08 (PP2). This equals the accepted dry run (112/111/110/110/109; 11/10/10/9/8).
+  - **Not checked live:** the Lines PowerPlayCombos for game 131. It's verified offline in the cross-surface test, and `/lines` returns 200.
+  - **PP share is now served (decision 152).** No refresh or cron rerun.
+- **Forced tests** (TJ, ~22:30Z: "force the cron to run now … test it"; both approved by pop-up; the scheduled overnight runs are unchanged):
+  - **Job 388 run once now:** its exact pg_cron command executed through SQL (`\gexec`; the secret stays in the vault), 22:32:49Z.
+    - Response: pg_net request 1098 returned 200; route audit `success` (window 2026-11-11..13, 3.7 s).
+    - **All 379 `powerPlayCombinations` rows for games 2026020293–311 have identical values** (before/after snapshot); `computed_at` moved to 22:32:51–54Z.
+    - **The 34 existing clock rows are identical.**
+    - **Deviation from the stated expectation:** the 2 unplayed games (310, 311) weren't skipped. The writer stored 4 `unavailable` clock rows, "No play-by-play for this game.", which is its designed handling of missing inputs. No player rows; replaced once the games are played and processed.
+  - **#440 write path, game 2026020309:**
+    - `GET /api/v1/db/update-stats/2026020309` once, 22:34:45Z: 200 in 0.9 s; audit `success`. About 3–4 NHL API reads (no NST).
+    - **Team (2), goalie (4) and skater (36) rows are identical to before, apart from timestamps.** 0 nulls written, since the source is complete. This shows the nullable writer and the migration-147 RPC work end to end. A null case awaits a game with unknown source values.

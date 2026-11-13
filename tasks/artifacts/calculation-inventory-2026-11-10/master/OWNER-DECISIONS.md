@@ -441,3 +441,11 @@ Source: `WAVE3-CONSOLIDATED.md`, "Owner decisions still open" Q42 and Q49. The 1
    - **Recorded alongside (no decision needed):**
      - Codex takes the local item 1/2 work and xG v2 scoping. It maps item 6's reader ownership without editing those readers yet; item 6's migration and any production work stay separate.
      - CTPI: the descriptive beta stays live; prediction stays gated through the planned checkpoints (games 20, 30, 40).
+   - **Status, 2026-11-13 (closed for 2026-27 regular season):**
+     - Migration 149 applied (20:36:48Z).
+     - The writer released with writes gated (#441), then `PP_STORED_CALCULATION_WRITES_ENABLED=true` and a clean-export deploy.
+     - The refresh was bound to the accepted dry run `db94a9de`: 31/31 batches matched; 7,180 stamped rows, 618 clock rows.
+     - The readers and the shift-chart timing guard released (#442). Then `PP_SHARE_SERVING_ENABLED=true` and a clean-export deploy (`dpl_3dTQdAD3`).
+     - Live checks agree for 2026020131 t18 (120 s) and show N/A for 2026020038 t55.
+     - **PP share is served.**
+     - **Follow-ups:** Astra's shift-chart parser fix (until then, one team-game's timeline shows "PP timeline unavailable: timing mismatch.") and other seasons (still on the earlier writer, with null version).

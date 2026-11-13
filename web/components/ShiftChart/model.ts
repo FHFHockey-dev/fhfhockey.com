@@ -38,7 +38,8 @@ export type Game = {
   powerPlays: PowerPlay[];
   /**
    * Decision 152: the same penalty clock the stored calculation qualifies (all play fields, this game's own home
-   * and away teams). Used only while PP share is served; null when it can't be built. `powerPlays` is unchanged.
+   * and away teams). Used by the matrix and timeline while PP share is served; null when it can't be built.
+   * `powerPlays` remains the legacy, serving-off interval set.
    */
   qualifiedPowerPlays: PowerPlay[] | null;
   shootout: boolean;
@@ -441,7 +442,7 @@ export function ppSecondsByTeam(game: Game): Record<number, number> {
   return game.qualifiedPowerPlays ? mergedSecondsByTeam(game, game.qualifiedPowerPlays) : {};
 }
 
-/** Today's timeline PP bands (`powerPlays`), merged seconds per team. */
+/** Legacy, serving-off timeline PP bands (`powerPlays`), merged seconds per team. */
 export function ppBandSecondsByTeam(game: Game): Record<number, number> {
   return mergedSecondsByTeam(game, game.powerPlays);
 }
@@ -453,18 +454,22 @@ export type PpTimelineVerdict = { show: true } | { show: false; label: string };
  * Decision 152, while PP share is served: a team's PP bands (its power plays, drawn on both teams' tracks) are
  * drawn only when they reconcile with the stored qualified clock. The rule is the one the live PP views use: the
  * stored verdict is available and the bands' merged seconds equal its clock_seconds exactly, or the verdict is
- * not applicable and the team has no bands. Otherwise the team's bands are withheld whole, never stretched,
- * rescaled or redistributed, and the timeline says why.
+ * not applicable and the team has no bands. These are the full-field local intervals used by the matrix, not
+ * intervals inferred from the stored total. Unknown local intervals never count as a qualified zero. Otherwise
+ * the team's bands are withheld whole, never stretched, rescaled or redistributed, and the timeline says why.
  */
 export function ppTimelineVerdicts(
   game: Game,
   storedVerdict: (teamId: number) => PpShareVerdict,
 ): Record<number, PpTimelineVerdict> {
-  const bands = ppBandSecondsByTeam(game);
+  const bands = ppSecondsByTeam(game);
   return Object.fromEntries(
     [game.home, game.away].map((team): [number, PpTimelineVerdict] => {
       const stored = storedVerdict(team.id);
-      const seconds = bands[team.id] ?? 0;
+      const seconds = bands[team.id];
+      if (seconds === undefined) {
+        return [team.id, { show: false, label: "PP timeline unavailable: no qualified local intervals." }];
+      }
       if (stored.status === "unavailable") {
         return [team.id, { show: false, label: `PP timeline unavailable: ${stored.reason}` }];
       }

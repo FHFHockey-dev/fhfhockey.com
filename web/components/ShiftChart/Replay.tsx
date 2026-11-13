@@ -18,6 +18,7 @@ import {
   toiAt,
   type Game,
   type Player,
+  type PowerPlay,
   type Team,
   type TimelineFilter,
 } from "./model";
@@ -84,6 +85,10 @@ export default function Replay({
   // Decision 152: one stored-clock read for the timeline bands and the PP-mode matrix. While PP share is served, a
   // team's PP bands are drawn only when they reconcile with the stored qualified clock (never stretched to fit).
   const ppGate = usePpTeamGameClocks([game.id]);
+  // The legacy adapter drops situation codes (including penalty-shot identity). Serve the same full-field
+  // intervals as the matrix, and pass one list to both the PP owner's tracks and the opponent's PK tracks.
+  const timelinePowerPlays = ppGate.status === "on"
+    ? game.qualifiedPowerPlays ?? [] : game.powerPlays;
   let ppTimeline: Record<number, PpTimelineVerdict> | "pending" | undefined;
   if (ppGate.status === "loading") ppTimeline = "pending";
   else if (ppGate.status === "error") {
@@ -462,7 +467,7 @@ export default function Replay({
                         <td>{formatClock(toiAt(player, time))}</td>
                         <td>{stats.shots[player.id] ?? 0}</td>
                         <td className={styles.trackCell}>
-                          <ShiftBars player={player} game={game} hiddenPpTeams={hiddenPpTeams} />
+                          <ShiftBars player={player} game={game} powerPlays={timelinePowerPlays} hiddenPpTeams={hiddenPpTeams} />
                           <span
                             className={styles.cursor}
                             style={{
@@ -521,17 +526,19 @@ const Formation = memo(function Formation({
 const ShiftBars = memo(function ShiftBars({
   player,
   game,
+  powerPlays,
   hiddenPpTeams,
 }: {
   player: Player;
   game: Game;
+  powerPlays: PowerPlay[];
   /** Decision 152: power plays of these teams are not drawn ("all": none are). Omit to draw every band. */
   hiddenPpTeams?: ReadonlySet<number> | "all";
 }) {
   const group = positionGroup(player.position);
   const bands = hiddenPpTeams === undefined
-    ? game.powerPlays
-    : hiddenPpTeams === "all" ? [] : game.powerPlays.filter((pp) => !hiddenPpTeams.has(pp.teamId));
+    ? powerPlays
+    : hiddenPpTeams === "all" ? [] : powerPlays.filter((pp) => !hiddenPpTeams.has(pp.teamId));
   return (
     <div className={styles.track} style={{ backgroundSize: `${300 / game.axisDuration * 100}% 100%` }}>
       {bands.map((pp, i) => (
