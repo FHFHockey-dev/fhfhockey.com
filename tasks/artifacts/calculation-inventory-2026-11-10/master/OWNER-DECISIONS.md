@@ -393,3 +393,7 @@ Source: `WAVE3-CONSOLIDATED.md`, "Owner decisions still open" Q42 and Q49. The 1
    - **Weighting and labels:** the team landing keeps its 2:1 direct-to-indirect weighting, labelled where users see it. Standardize the base statistic, not the weighting; surfaces may show different SOS values. Data is labelled "as of today", and historical views are never presented as known at the time, because no result-known timestamps exist.
    - **Regression case:** an overtime loss makes points% differ from win%; all four surfaces use the same base definition while the landing keeps its weighting.
    - **Ships** in the final release candidate, not deployed separately.
+147. **Power ratings v4: season-total rows** (F9 finding, decision 145 follow-up):
+   - **The bug:** the NST team game-log tables hold 1,920 rows of 2025-26 season totals (gp = 82, dated 2026-05-02..06-30). The 150-day lookback counted each as one game, so early 2026-27 windows for every component included a full 82-game season row.
+   - **The fix:** exclude non-game rows for **all components**, in the same v4 as decision 145, and rebuild after release with the 45-call plan.
+   - **The label:** v4 states both changes.
