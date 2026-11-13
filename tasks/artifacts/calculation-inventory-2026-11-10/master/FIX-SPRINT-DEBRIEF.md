@@ -1,6 +1,6 @@
 # Math-audit fix sprint: debrief
 
-Status: **DRAFT (2026-11-12)**. The per-lane sections are final. The production section is updated as each approved step finishes, and the draft becomes final once the remaining production steps in `production/PRODUCTION-QUEUE.md` are done or deferred.
+Status: **DRAFT, updated 2026-11-13**. The per-lane sections are final. The production section is updated as each approved step finishes, and the draft becomes final once the remaining production steps in `production/PRODUCTION-QUEUE.md` are done or deferred.
 
 Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one per lane, in the sole checkout `octoberBranch`, with exact file ownership. Every production action had TJ's own pop-up approval.
 
@@ -45,8 +45,16 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
 | 15:0x | Migration 141 (goalie season view, regular season only): 5v5 GAA coverage 73 → 97 of 98 goalie-seasons | `1aa886c92` |
 | 15:09–15:10 | Smoke, 5 sequential GETs: all 200 | §2 |
 | 15:10 | octoberBranch ours-merge pushed: no build at 103 s | `c577225e2` |
-| 15:35–15:46 | Strength v2 re-normalization, windowed: 146 games, then **incident** (§4.3) | `PRODUCTION-QUEUE.md` incident section |
-| 15:54– | Strength v2 re-normalization, slow single-game run (TJ re-approved after the crash was disclosed) | in progress; see the queue |
+| 15:35–15:46 | Strength v2 re-normalization, windowed: 146 games, then the **incident** (§4.3) | `PRODUCTION-QUEUE.md` incident section |
+| 15:54–19:35 | Strength v2 re-normalization, slow single-game phases A–E (TJ re-approved after the crash was disclosed). All **298/298** 2026-27 games at v2, complete. | `HEADS-CHANGED-2026-11-12.tsv`; handoff 2 |
+| 18:22; 19:18–19:2x | 11 OT games recovered from **official HTML** shift reports. NHL JSON was dropping one team's OT shifts; each game was qualified for identity, overlaps, coverage, ES skater TOI and GS goalie TOI. One new raw snapshot each; JSON snapshots kept. | `production/GAME-2026020159-RECOVERY-PLAN.md` |
+| 19:36–19:43 | (Codex) Trends six-row repair; Goalie Grid names-first release `4243bcd4e` | Codex mailbox |
+| 20:03–20:28 | Summary refresh (serial step 4): team 41,720 rows (0 stale), player 43,764 partition rows, goalie 298/298 at rev 2 | handoff 3 |
+| 21:05–23:25 | (Codex) DRM step 5: 296 games repaired, 2 current. Game-57 HTML source exception, TJ-approved. | Codex `drm-ddatv-2026-11-12/production/step5/` |
+| 23:50 | pg_cron job 327 `update-predictions-sko` paused (decision 129); `goalie_totals_unified_snapshot` refreshed (402 → 476 rows) | `PRODUCTION-QUEUE.md` |
+| 2026-11-13 00:0x– | 2025-26 goalie partition rebuild (summary-only, 1,417 games), TJ-approved | in progress |
+
+Coordination: steps 1–6 ran serially with Codex under a TJ-approved order (mailbox entries `CLAUDE-FIX-SPRINT-SERIAL-ORDER-20261112` and onward), each with an explicit DB handoff.
 
 ## 4. Cross-lane checks
 ### 4.1 Integration gate (clean export)
