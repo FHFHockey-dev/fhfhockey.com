@@ -68,3 +68,5 @@
   - [ ] 5.4 Retire the Chef diary once 3.0 and 4.0 are recorded; keep it while any check is pending.
 - [ ] 6.0 NEW: flag-off client parity gap (found in F11 `05c43f981`)
   - [ ] 6.1 With `PP_SHARE_SERVING_ENABLED` off, the client readers (PowerPlayCombos, LinemateMatrix, the shift chart) still make one cached request to `/api/v1/pp-share/team-game-clock` (a function invocation, ≤5 min cache). LinemateMatrix and the shift chart PP mode briefly show "Checking the stored power-play clock...". That isn't strictly today's behaviour. It matters only while serving is off: resolve it, or record it as accepted, before any future flag-off period. Serving is approved to follow the reader release directly.
+- [ ] 7.0 NEW: shift chart timeline PP bands still use today's parser (F11 REPORT §16; TJ: proceed, bands as a follow-up)
+  - [ ] 7.1 Switch the shift chart's timeline PP bands (`ShiftChart` play parser / `PowerPlayAreaIndicators`) to the qualified interval set that the served PP mode uses. Only 2026020131 t18 differs today (29 s shaded against 120 s qualified). Offline build with a regression test on that team-game; then a release with TJ's approval.
