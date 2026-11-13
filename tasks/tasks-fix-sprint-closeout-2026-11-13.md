@@ -65,8 +65,8 @@
   - [x] 4.3 *(waived, not observed)* The same FORGE run: which `goalie_start_projections` rows it consumed, against cron 364's 09:30Z write under #439 (`a448842d1`).
   - [x] 4.4 *(waived, not observed)* 10:15Z cron 283: the first scheduled v4 power write.
   - [x] 4.5 #440: the first natural update-stats-job write after tonight's games, with nulls only where the source is unknown and readers showing them as unavailable. *(Write path pre-tested 22:34Z on 2026020309: rows identical, audit success. The natural write was waived, not observed.)*
-- [ ] 5.0 Records and housekeeping (Chef)
-  - [ ] 5.1 Push the local record commits only with the next release, never alone.
+- [x] 5.0 Records and housekeeping (Chef)
+  - [x] 5.1 Push the local record commits only with the next release, never alone. *(TJ, ~22:45Z: push now. Records only; no-build check below.)*
   - [x] 5.2 Update the debrief with #439–#441, migrations 147 and 149, the decision 152 refresh, and the results of 3.0 and 4.0. *(Done: the debrief status is rewritten for #439–#442, decision 152 served, the forced tests, and the 4.0 waiver.)*
   - [x] 5.3 Ask TJ whether to have Astra recheck #439–#441, migrations 147/149 and the refresh. If yes, write the prompt pinned to a commit. *(TJ: yes, ~22:20Z. Prompt `master/ASTRA-RECHECK-439-442-PROMPT.md`.)*
   - [x] 5.4 Retire the Chef diary once 3.0 and 4.0 are recorded; keep it while any check is pending. *(Kept on purpose under AGENTS.md: the Chef still gates and releases Astra's parser fix (8.0), so it stays as the handoff record.)*
