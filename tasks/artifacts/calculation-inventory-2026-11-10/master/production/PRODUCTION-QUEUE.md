@@ -233,3 +233,12 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - CTPI v2 backfill in 2 chunks: 622 + 480 rows. v2 has 1,102 rows over 38 dates (10-07 → 11-13); v1 is unchanged at 9,489.
   - `update-team-sos`: 32 rows, 1 cutoff, 0 pending. Every team has 84 fixtures (the lane note expected 82; 2026-27 is an 84-game season). `sos_standings` is unchanged at 15,680 rows.
 - **Open decision:** Recent Team Form (CTPI) has no served rows until v2 is validated and approved (W1-4). Readers default to v2, and v1 can't receive new rows.
+
+## Log check (decisions 79/124), 2026-11-13 ~14:55Z: request logs, last day
+- Source: the Vercel dashboard (TJ's signed-in Chrome, read-only), project fhfhockey → Logs → **Request Logs** view (every request, not only console output), timeline "Last day". That's the longest window without Observability Plus, a paid upgrade that wasn't used.
+- Request Path facet search (case-insensitive):
+  - "verages" matches only our crons `/api/v1/db/update-rolling-player-averages` and `/api/v1/db/update-wgo-averages`, so the facet works;
+  - "ThreeYear": no matches;
+  - "sko": only our cron `/api/v1/db/update-sko-stats`, no `get-predictions-sko`;
+  - "scoreboard": no matches.
+- **Result:** 0 requests in about 24 h to `/api/Averages/[playerId]`, `/api/ThreeYearAverages/[playerId]`, `/api/v1/ml/get-predictions-sko` and `/api/v1/forge/scoreboard`. One day of evidence: it rules out a daily caller, not a weekly or occasional one.
