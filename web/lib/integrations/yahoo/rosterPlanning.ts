@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { activeTeamAbbreviations } from "lib/teamsInfo";
 import type { BridgeRunProof } from "lib/rosterScheduleData/bridgeForecastWire";
 import { loadPlanningData, parsePlanningDataQuery } from "lib/rosterScheduleData/planning";
 import { INFERRED_ACQUISITION_TIMING_KEY, INFERRED_ACQUISITION_TIMING_SOURCE } from "lib/rosterScheduleOptimizer/providerRules";
@@ -36,6 +37,12 @@ type YahooPastLineup = Omit<PastLineup, "entries"> & {
 /** The per-game WGO column behind each points-league stat Yahoo scores per game (shared with recent form). */
 const SKATER_POINT_COLUMNS = SKATER_RECENT_COLUMNS, GOALIE_POINT_COLUMNS = GOALIE_RECENT_COLUMNS;
 const isGoalieStat = (key: string) => key.endsWith("_GOALIE") || ["GAMES_STARTED", "GOALS_AGAINST_AVERAGE", "SAVE_PERCENTAGE"].includes(key);
+const datedTeamAbbreviation = (value: string | null | undefined): string | null => {
+  const raw = value?.trim().toUpperCase() ?? "";
+  const aliases: Record<string, string> = { LA: "LAK", NJ: "NJD", SJ: "SJS", TB: "TBL", WAS: "WSH", MON: "MTL" };
+  const team = aliases[raw] ?? raw;
+  return activeTeamAbbreviations.has(team) ? team : null;
+};
 
 /**
  * Each recorded player's actual fantasy points that night, from the NHL game stats in `wgo_skater_stats` /
@@ -115,7 +122,7 @@ export async function yahooCreditedGoalieAppearances(db: SupabaseClient<any>, ar
       if (!entry.slotId || !goalieSlots.has(entry.slotId)) continue;
       const player = args.players.find(row => row.id === entry.playerId);
       if (!player || player.nhlId === null) return null;
-      checks.push({ date: day, nhlId: player.nhlId, teamAbbreviation: entry.teamAbbreviation ?? null });
+      checks.push({ date: day, nhlId: player.nhlId, teamAbbreviation: datedTeamAbbreviation(entry.teamAbbreviation) });
     }
   }
   if (!checks.length) return 0;

@@ -798,6 +798,15 @@ describe("Yahoo goalie appearances already credited", () => {
     await expect(yahooCreditedGoalieAppearances(db(played.filter(row => row.goalie_id !== 2)), base)).resolves.toBeNull();
     await expect(yahooCreditedGoalieAppearances(db(played.map(row => row.goalie_id === 2 ? { ...row, games_played: null } : row) as any), base)).resolves.toBeNull();
   });
+  it("does not mistake a Yahoo team alias or invalid dated team for an idle day", async () => {
+    const pastLineups = base.pastLineups.map(day => ({ ...day, entries: day.entries.filter(entry => entry.playerId === "dal")
+      .map(entry => ({ ...entry, teamAbbreviation: "NJ" })) }));
+    const datedGames = games.map(row => row.teamAbbreviation === "DAL" ? { ...row, teamAbbreviation: "NJD" } : row);
+    const otherGoalies = played.filter(row => row.goalie_id !== 1);
+    await expect(yahooCreditedGoalieAppearances(db(otherGoalies), { ...base, pastLineups, games: datedGames })).resolves.toBeNull();
+    await expect(yahooCreditedGoalieAppearances(db(otherGoalies), { ...base, pastLineups: pastLineups.map(day => ({ ...day,
+      entries: day.entries.map(entry => ({ ...entry, teamAbbreviation: "unknown" })) })) })).resolves.toBeNull();
+  });
   it("is zero before the matchup's first day ends", async () => {
     await expect(yahooCreditedGoalieAppearances(db(played), { ...base, today: "2026-10-19", pastLineups: [] })).resolves.toBe(0);
   });
