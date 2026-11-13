@@ -90,6 +90,52 @@ export type LineSource = "five_on_five_observed" | "all_strength_legacy";
 
 const FIVE_ON_FIVE_COLUMNS =
   "game_id, team_id, snapshot_date, unit_type, player_ids, player_count, unit_toi_seconds, coverage_status";
+const FIVE_ON_FIVE_UNIT_TYPES = ["forward_line", "defense_pair"];
+
+/**
+ * The team's 5v5 unit rows for the given games, each game at its latest
+ * snapshot only. Both reads filter `season_id`, so the
+ * (season_id, game_id, team_id, unit_type) index serves them. The first read
+ * takes one row per unit type and snapshot (`unit_number` 1) to find each
+ * game's latest snapshot; the second reads only those snapshots. Returns no
+ * rows when any game has none: the board switches only when every game has
+ * 5v5 rows.
+ */
+async function fetchLatestFiveOnFiveUnits(
+  teamId: number,
+  seasonId: number,
+  gameIds: number[]
+): Promise<TeamUnitToiReaderRow[]> {
+  const { data: heads } = await supabase
+    .from("team_unit_toi")
+    .select("game_id, snapshot_date")
+    .eq("season_id", seasonId)
+    .eq("team_id", teamId)
+    .in("game_id", gameIds)
+    .in("unit_type", FIVE_ON_FIVE_UNIT_TYPES)
+    .eq("unit_number", 1)
+    .returns<Array<{ game_id: number; snapshot_date: string }>>()
+    .throwOnError();
+  const latest = new Map<number, string>();
+  for (const head of heads ?? []) {
+    const known = latest.get(head.game_id);
+    if (!known || head.snapshot_date > known) latest.set(head.game_id, head.snapshot_date);
+  }
+  if (gameIds.some((gameId) => !latest.has(gameId))) return [];
+
+  const { data: rows } = await supabase
+    .from("team_unit_toi")
+    .select(FIVE_ON_FIVE_COLUMNS)
+    .eq("season_id", seasonId)
+    .eq("team_id", teamId)
+    .in("game_id", gameIds)
+    .in("unit_type", FIVE_ON_FIVE_UNIT_TYPES)
+    .in("snapshot_date", [...new Set(latest.values())])
+    .returns<TeamUnitToiReaderRow[]>()
+    .throwOnError();
+  // One game's older snapshot can share a date with the other game's latest.
+  return (rows ?? []).filter((row) => latest.get(row.game_id) === row.snapshot_date);
+}
 
 /**
  * Replaces a game's stored all-strength forwards and defense with its observed
@@ -213,16 +259,12 @@ export async function getLineCombinations(
     // with an all-strength one; otherwise the labelled legacy grouping stays.
     let lineSource: LineSource = "all_strength_legacy";
     if (options.fiveOnFive ?? LINES_FIVE_ON_FIVE_ENABLED) {
-      const { data: unitRows } = await supabase
-        .from("team_unit_toi")
-        .select(FIVE_ON_FIVE_COLUMNS)
-        .eq("team_id", teamId)
-        .in("game_id", [lineCombinations[0].gameId, lineCombinations[1].gameId])
-        .in("unit_type", ["forward_line", "defense_pair"])
-        .returns<TeamUnitToiReaderRow[]>()
-        .throwOnError();
-      const current = fiveOnFiveLineCombo(lineCombinations[0], unitRows ?? []);
-      const previous = fiveOnFiveLineCombo(lineCombinations[1], unitRows ?? []);
+      const unitRows = await fetchLatestFiveOnFiveUnits(teamId, seasonToUse, [
+        lineCombinations[0].gameId,
+        lineCombinations[1].gameId
+      ]);
+      const current = fiveOnFiveLineCombo(lineCombinations[0], unitRows);
+      const previous = fiveOnFiveLineCombo(lineCombinations[1], unitRows);
       if (current && previous) {
         lineCombinations[0] = current;
         lineCombinations[1] = previous;
