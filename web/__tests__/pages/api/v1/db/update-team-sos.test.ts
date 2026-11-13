@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.hoisted(() => {
@@ -237,6 +240,18 @@ describe("/api/v1/db/update-team-sos (descriptive-sos-v2)", () => {
       conflictingFinals: 0,
     });
     expect(ana.evidence).toMatchObject({ actualEndTimesSupplied: false, schedulesFetched: 32 });
+  });
+
+  it("writes exactly the columns of the team_sos_daily migration", async () => {
+    await run();
+    const root = path.basename(process.cwd()) === "web" ? path.resolve(process.cwd(), "..") : process.cwd();
+    const sql = readFileSync(path.join(root, "supabase/migrations/20261113170000_team_sos_daily_v2.sql"), "utf8");
+    const body = sql.match(/create table public\.team_sos_daily \(\n([\s\S]*?)\n\);/)![1];
+    const columns = body
+      .split("\n")
+      .map((line) => line.match(/^  ([a-z_]+) /)?.[1])
+      .filter((name): name is string => !!name && name !== "constraint");
+    expect(Object.keys(writes[0].rows[0]).sort()).toEqual(columns.sort());
   });
 
   it("refuses historical backfill instead of rebuilding past dates", async () => {
