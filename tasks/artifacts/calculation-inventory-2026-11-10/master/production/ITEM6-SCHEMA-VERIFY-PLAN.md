@@ -55,3 +55,14 @@
 
 - **The ledger and the live schema agree:** the migration isn't applied, and nothing is partly applied. No stop condition fired.
 - **Next:** the migration apply, a separate TJ approval. Then the readers with or before the nullable writer `c89ff5d24`.
+
+## Apply (TJ-approved standalone apply, 2026-11-13)
+- **Applied atomically** at **19:45:17Z** in 1 s (file statements plus the ledger insert in one transaction), 5 min after an update-stats-job run.
+  - Fresh checks: 0 active, 0 lock waits, 0 table locks, job 2 not running, no ledger row; sha and shape checked.
+  - A first attempt at 19:45:03Z stopped in its precheck (a parsing issue: `SET` in the captured output). Nothing was applied.
+- **Readback:**
+  - ledger row present;
+  - all 5 columns `is_nullable = YES`;
+  - 1 overload, invoker, `search_path=""`, owner postgres, md5 `72c23e8270dda6e82c60ef5c01c0b67e`; all six null-check markers = 1;
+  - EXECUTE: postgres and service_role only (anon and authenticated false), unchanged.
+- **Still held:** the reader fixes plus the nullable writer `c89ff5d24` (readers with or before the writer), and any refresh.

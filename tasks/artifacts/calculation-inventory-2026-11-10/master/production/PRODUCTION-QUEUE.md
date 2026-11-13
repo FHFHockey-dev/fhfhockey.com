@@ -358,3 +358,20 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - Every field must be present and equal; GP is 1 for the shooter all/ES rows and the goalie; each player appears exactly once.
   - Offline self-test first: exact rows pass; Astra's false-pass case (ES 999, goalie SA/SV/GA missing, GP 999) fails for all 8 games; duplicate row, missing row and non-200 fail.
   - 24 sequential GETs, 1 s apart, all 200 and `x-vercel-cache: MISS`. Raw responses and `result.json` are in `landing-verify-20261113T184529Z/`.
+- **Release #439, goalie item 1** (TJ "Push and merge" after the full gate):
+  - **Candidate** `7a3a69ef4` on master `ed2002161`: Codex item 1 writer and test, plus the shared `leagueSavePct` helper and test, all at their `0e8d377ae` blobs (Astra's follow-up; not cherry-picked whole, because it also touches item 2). Records included. Item 2, item 6, migrations and F11's registry are out.
+  - **Gate:** typecheck 0; ESLint 0; 313 focused tests. Full Vitest 19,865 passed (the BLSH bootstrap file is export-only and passes 32/32 in the checkout). pytest 213 (the 4 git-pin tests pass in the checkout).
+  - **FORGE count** (TJ-approved, 1 read-only query): 2,764 `forge_goalie_game` rows since 2025-07-01, all valid goals/shots pairs. Old and new helper totals are identical, so FORGE's league save % doesn't change as of 2026-11-14 (≈ .8935).
+  - **Branch** pushed 19:35:18Z; no status, check or deployment at 19:36:56Z.
+  - **PR #439** squash-merged 19:37:26Z as master `a448842d1`, tree identical to the candidate.
+  - **Build:** fhfhockey "Deployment has completed" 19:41:57Z; cms, functions and fhfhockey.com canceled by the Ignored Build Step. **Deployed SHA `a448842d1`, live before tomorrow's 09:30Z goalie write.**
+  - **Smoke** 5/5 at 200, 19:42:18–19Z: `/` 4.24 s (cold), `/start-chart` 0.15 s, `/forge/command-center` 0.14 s, `/underlying-stats` 0.20 s, `/lines` 0.28 s.
+  - **octoberBranch** `22844dd38` takes the released item 1 files; typecheck 0; item 1/2 tests 134/134. Ours-merge `426f5113d` pushed 19:42:40Z, no build at 19:44:10Z.
+  - **Tomorrow (separate from the reserve-row and power checks):** after the 10:05Z FORGE run, verify read-only which `goalie_start_projections` rows it consumed, against cron 364's 09:30Z write. No manual reruns.
+- **Item 6 schema check** (TJ-approved, 6 read-only catalog queries, ~19:39Z): the ledger and live schema agree, not applied. Details in `production/ITEM6-SCHEMA-VERIFY-PLAN.md`.
+- **Migration 147 / `20261113190000`** (item 6, TJ-approved standalone apply at the next safe window):
+  - **Fresh checks** at 19:45:15Z: 0 active, 0 lock waits, 0 locks on either table, job 2 not running, no ledger row; sha256 and file shape checked. (A first attempt at 19:45:03Z stopped in the precheck: a `SET` line in the captured output. Nothing was applied.)
+  - **Applied atomically** at 19:45:17Z: one transaction holding the file's statements plus the ledger insert, in 1 s, 5 min after an update-stats-job run.
+  - **Readback:** ledger row present. The 5 columns are now nullable (`teamGameStats.powerPlayToi` and the 4 `goaliesGameStats` ratios). One `persist_complete_game_stats_v1` overload: SECURITY INVOKER, `search_path=""`, owner postgres, md5 `72c23e82…` (was `4418a49a…`), all six null checks present once. EXECUTE still only postgres and service_role. Row estimates unchanged.
+  - **Authority:** 114 applied / 6 pending.
+  - **Not done** (separate approvals): the reader fixes and the nullable writer `c89ff5d24` (readers with or before the writer), and any refresh.
