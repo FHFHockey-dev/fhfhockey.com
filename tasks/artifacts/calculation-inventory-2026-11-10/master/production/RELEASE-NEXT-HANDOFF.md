@@ -40,7 +40,11 @@ Checked:
 - **Focused Vitest: 313 passed, 10 files.** The writer has 33 tests, and the helper and its consumers are covered: `leagueSavePct`, `goalieOutcomes`, `goaliePipeline`, `startChartPipeline`, `module-imports`, `runProjectionV2.alignedConversion`, `run-forge-projections.resume`, `nativeInputEligibility`, `nativeGoalAccounting`.
 - **Typecheck:** `npm run typecheck`, exit 0.
 - **ESLint** on the 4 files: exit 0, no errors.
-- **Not run:** full Vitest, pytest and CSS. No `.module.scss` or Python changes. TJ asked for typecheck plus focused tests; run the full suite before the push if wanted.
+- **Full gate** (TJ "Full gate, then ask", ~20:15Z):
+  - **Vitest:** 19,865 passed. The one failing file is `scripts/blsh/nativeProcessCaptureBootstrap.test.ts` (16 tests), a known export-only failure; it passes 32/32 in the checkout.
+  - **pytest:** 213 passed. The 4 git-pin tests that fail in the export pass 4/4 in the checkout.
+  - The BLSH scripts and `modeling/` are identical to master.
+- **CSS check:** n/a (no `.module.scss` changes).
 
 ## 4. Push, merge, watch (one TJ pop-up: "Push and merge")
 1. Inventory the 4 linked Vercel projects. Expect 1 fhfhockey build plus 3 cancels: no `functions/` change.
