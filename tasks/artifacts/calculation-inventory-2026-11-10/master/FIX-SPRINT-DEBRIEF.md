@@ -32,10 +32,11 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
 ## 2. Release state
 | Item | State |
 |---|---|
-| master | `4d9b6a10d` (PR #433, 2026-11-13 13:27Z). Before it: `e1ab46318` (#432, pipeline stall fix and Codex areas 2–4), `502a93b4c` (#431, follow-up release), Codex `4243bcd4e` and `866b90bc4`, then the sprint release `631a00c19` (#430). |
-| PR #433 contents | F1 CTPI v2 writer and versioned readers (v2 gated as a candidate, W1-4). F2 SOS v2 writer and readers, plus F2b (underlying-stats landing on `team_sos_daily`). F3 Lines disjoint 5v5 units (decision 137). F4 stored game finality (`nhl-game-state-v1`). W2-3 D13 chart TOI fix. Production records. Migrations 144–146 were applied before the merge. |
-| Deployed | fhfhockey production deployment completed 13:31:56Z (GitHub deployment 7766487447); cms-fhfhockey, functions-fhfhockey and fhfhockey.com canceled by the Ignored Build Step. `FORGE_RESERVE_PASS_ENABLED=true` set by TJ before the merge. |
-| octoberBranch | Synced to master `4d9b6a10d` by an ours-merge after the release (tree unchanged). |
+| master | `496ab3766` (PR #434, 2026-11-13 15:56Z). Before it: `4d9b6a10d` (#433), `e1ab46318` (#432), `502a93b4c` (#431), Codex `4243bcd4e` and `866b90bc4`, then the sprint release `631a00c19` (#430). |
+| PR #434 contents | Astra checkpoint 1 responses: AF-01 (both RSO readers), AF-02 to AF-06, AF-07 adapter, AF-08. Lanes F5 to F15. Codex dev items 3, 5, 7, 8, 9. The sKO read API gate (decision 124). Held: Codex items 1, 2, 6 and the CTPI beta card. No migrations. |
+| PR #433 contents | F1 CTPI v2 writer (gated); F2 and F2b SOS v2; F3 Lines 5v5; F4 stored game finality; W2-3 D13; migrations 144–146 applied before the merge. |
+| Deployed | #434: fhfhockey production deployment completed 16:01:05Z (GitHub deployment 7769867793). #433: completed 13:31:56Z (7766487447). Each time cms-fhfhockey, functions-fhfhockey and fhfhockey.com were canceled by the Ignored Build Step. `FORGE_RESERVE_PASS_ENABLED=true` was set by TJ before the #433 merge. |
+| octoberBranch | Synced to master `496ab3766` by an ours-merge, `94d7c2340` (tree unchanged; no build). |
 | Excluded from releases | Lane diaries. |
 
 ## 3. Production actions taken (each with TJ's pop-up)
@@ -74,6 +75,8 @@ Chef: the Claude fix-sprint Chef session (Opus). Lanes ran as Opus sessions, one
 | 2026-11-13 13:16 | Migrations 144 (CTPI v2 publication), 145 (`team_sos_daily`; `sos_standings` frozen) and 146 (games game state) applied singly, each read back | `cd5604159` |
 | 2026-11-13 13:25–13:32 | Release #433: branch pushed (no build at 95 s), PR squash-merged as master `4d9b6a10d` (tree = candidate `359789456`); 1 build + 3 cancels, watched through GitHub statuses. Smoke 5/5 at 200. | §2 |
 | 2026-11-13 13:33–13:34 | Post-release runs, all 200: `update-games` (1,409 games with a stored state); CTPI v2 backfill (1,102 candidate rows, 10-07 → 11-13; v1 unchanged); `update-team-sos` (32 v2 rows, 84 fixtures per team) | `production/PRODUCTION-QUEUE.md` |
+| 2026-11-13 14:47 | Legacy-route request-log check (decisions 79, 124): 0 requests in the last day on all four routes (read-only, TJ's dashboard). sKO read API gated (TJ "Gate it tonight"). | `08fe51d9e`, `aae1d7c93` |
+| 2026-11-13 15:54–16:02 | Release #434 (TJ "Push and merge"): branch pushed (no build at 90 s), squash-merged as master `496ab3766` (tree = candidate `01ed7f7bc`). 1 build plus 3 cancels. Smoke 5/5 as expected. octoberBranch `94d7c2340`, no build. | §2 |
 
 Coordination: steps 1–6 ran serially with Codex under a TJ-approved order (mailbox entries `CLAUDE-FIX-SPRINT-SERIAL-ORDER-20261112` and onward), each with an explicit DB handoff.
 
