@@ -8,6 +8,7 @@ Lane F11, 2026-11-13. A separate validation lane: not part of tonight's release 
 - **The decision-144 risk cases all reconcile** (counts are comparable team-games in games with that feature): overtime PP 172/172 exact; shootout games 207/207; 5-on-3 454/456; penalty expiry across a period 921/924; pulled goalie during a PP 343/346, plus 2 within 1 s; double minors 205/206; coincident penalties 1,115/1,120.
 - **Legacy placeholder "00:00":** 3,728 team-game rows hold "00:00" even though the team had at least one PP opportunity. 2025-26 has 881 in the regular season (games 2025020467–476 and 2025020657–021095, dated 2025-12-09 to 2025-12-10 and 2026-01-04 to 2026-03-20), and 2024-25 has 2,392. The clock confirms real PP time in all 879 that it can check. **They can't be repaired from stored evidence:** right-rail is not stored, the stored boxscore and landing payloads carry no PP TOI, and the HTML summary is only memory-cached. 2026-27 regular season has none.
 - **Smallest verified display scope:** per-game player PP time and PP share for **2026-27 regular-season team-games that pass the rules below: 607 of 618 show a share, 9 show "not applicable" (verified zero), and 2 are withheld** (2026020036 team 68 and 2026020153 team 9). 307 of the 309 games qualify for both teams. Season-to-date windows for teams 68 and 9 would be a labelled covered subset, or unknown. **After decision 152 (section 10), those two qualify on the NHL Penalty Summary: 618 of 618 pass the clock check, 609 show a share and 9 show "not applicable".**
+- **Numerator (decision 152 Part B, section 11):** stored `powerPlayCombinations` agrees with shifts ∩ qualified intervals on 593 of 609 team-games. The 16 that don't have three causes (stale pre-11-01 rows, missing overtime shifts in the feed at write time, and production's older clock); none is a formula error. The recommendation is to store the output of the same calculation from one writer that reads stored shifts and PBP. Several readers need many games of history, so computing on demand doesn't fit them.
 - **Three code gaps stood between the contract and that scope.** All three are now fixed: C3 in `a98eda63f` (11-13 release), C1 and C2 in `de4650c77` (TJ approved through the Chef, 11-13). Section 8 has the offline re-run.
   1. `buildTeamPpClock` never compares against the official total. On `octoberBranch` it would mark 5 mismatched team-games and 856 placeholder-row team-games `qualified`.
   2. The situation-code audit is stricter than the clock at stoppage events. It rejects 117 team-games that agree with the official total, 40 of them in 2026-27 regular season.
@@ -271,6 +272,143 @@ TJ's decision 152 accepts the NHL HTML Penalty Summary as the official reference
 - 2026-27 regular season: 618 of 618 team-games pass the clock check (609 with PP time, 9 verified zero), and 309 of 309 games qualify for both teams.
 - `14-share-coverage.ts` on these results: 609 of 609 can display a share from shifts within the qualified PP intervals, with no player or unit time above the clock. 593 of 609 are consistent in the stored `powerPlayCombinations` table; the 16 that aren't are unchanged from section 9.
 
+## 11. Decision 152 Part B: the PP share numerator (read-only)
+
+TJ's decision 152: the numerator is player shifts (or shared unit intervals) within the qualified team PP intervals. It replaces the stored `powerPlayCombinations` calculation; there is no one-off rebuild. **Nothing here was written, wired or enabled.** All reads were guarded (hygiene gate, 10 s statement timeout, scalar columns or one extracted field, paged by game), with no NHL or NST calls. One audit query hit the 10 s timeout and was cancelled; it was replaced by weekly index-only reads, not retried.
+
+### 11.1 Computed vs stored, 2026-27 regular season (`16-numerator-compare.ts`)
+
+The comparison covers the 609 team-games that pass the clock check with PP time (the 607 plus the two scrum team-games from section 10). "Computed" means stored shift rows within the qualified v2 clock intervals, skaters only.
+
+| Measure | Result |
+|---|---|
+| Team-games where every player agrees (PPTOI within 2 s, share within 0.005, same players) | **593 of 609** |
+| Stored rows that agree | 7,152 of 7,190 |
+| Stored unit labels reproduced by the writer's own rule (pivot plus the 4 with the most shared PP time, then PP2 the same way) | 7,172 of 7,190; all 18 misses are inside the 16 team-games below |
+| Team-games that disagree | 16, in 14 games |
+
+**No single cause explains all 16.** There are three groups, each traced with the stored rows' `created_at`, the writer's `cron_job_audit` runs and the three writer clock versions:
+- **pre-11-01:** `getPowerPlayBlocks` at `d793446f9^`, production until 11-01.
+- **11-01:** `d793446f9`, production since 11-01 and still on `master`.
+- **v2:** the qualified clock on `octoberBranch`.
+
+**A. Stale pre-11-01 rows: 15 rows in 11 team-games.**
+- Team-games: 2026020004 t23, 068 t5, 073 t30, 077 t5, 081 t14, 163 t12, 177 t14, 187 t22, 192 t18, 197 t24 and 207 t19.
+- Each row's player has 0 PP seconds under both the 11-01 and v2 clocks. Its PPTOI and implied denominator match the pre-11-01 clock exactly, and it was created between 09-30 and 10-30.
+- On 11-07 (21:29–21:30 UTC), a bounded re-run of every game dated 09-29 to 10-30 (32 batch calls; three more on 11-01 covered 10-31; `results/after-d152/writer-repair-runs.csv`) rewrote the other rows with the 11-01 writer.
+- It kept these rows because the writer deletes a row only when the boxscore proves the player's shifts complete. The run's own `keptUnproven` counts are 2, 1, 4, 3, 1, 1, 2 and 1 by date: 15, exactly these rows.
+- This group includes the "above the clock" case: 2026020197 t24 stores 49 s with a 120 s pre-11-01 denominator, against a 43 s clock.
+
+**B. Overtime PP missing from player time: 18 rows in 4 team-games.**
+- Team-games: 2026020161 t52, 174 t29, 192 t2 and 197 t23.
+- The stored team denominator equals the clock, but the players on the ice in overtime are short by exactly the OT part of a PP span: 16, 44, 120 and 120 s.
+- Production's own code (`master` `getPairwiseTOI` with `master` blocks, `19-production-pairwise-check.ts`) gives the full time on the stored shifts (378, 203, 356 and 448 s). So the shift feed the writer read live from the NHL on 11-07 lacked those OT seconds.
+- The stored shift rows were loaded later, on 11-12. That feed isn't stored, so why it lacked the OT seconds is unknown.
+
+**C. The production clock ends a PP early: 1 team-game (2026020131 t18).**
+- The 11-01 clock gives one block, P1 8:11–8:40 (29 s). The v2 clock and the official total give 120 s.
+- The stored rows hold 5 players at 29 s with share 1.0, and the other 5 skaters are missing.
+- Production's clock differs from v2 on this team-game only (608 of 609 agree).
+
+None of the three is an arithmetic error in the share formula. All three come from the stored table's inputs and versions (an old clock, a live feed at write time, and the unreleased v2 clock). Computing from stored shifts within the qualified intervals clears all 16 without a rebuild.
+
+**An existing store already holds the same numbers.**
+- `forge_player_game_strength.toi_pp_seconds` equals the computed numerator for **all 7,195** player-games (exact, 0 s). Those rows were updated on 11-12 and 11-13.
+- However, `master`'s shift-chart code (`lib/projections/ingest/shifts.ts`) derives PP from situation codes (more skaters than the opponent), which also counts extra-attacker time.
+- The owner should confirm which code wrote the 11-12/11-13 values, and what the nightly production run will write, before any reader relies on it.
+
+### 11.2 Cost of computing on demand, per page load
+
+Measured with `17-cost-probe.sql` (`EXPLAIN ANALYZE`, 3 runs: team 2 cold and warm, team 10 cold; outputs in `results/after-d152/cost-probe-*.txt`) and `18-compute-timing.ts`. The existing indexes serve every input read: the PBP index `(game_id, sort_order)`, the shift indexes `(game_id, team_id, …)` and `(game_id, player_id, …)`, and the `teamGameStats` primary key. No sequential scans.
+
+| Unit of work | Rows | Bytes | DB time, cold | DB time, warm |
+|---|---|---|---|---|
+| One team-game: PBP | 328–329 | 17.5–17.8 KB | 11–48 ms | <1 ms |
+| One team-game: team shifts | 393–398 | 7.9 KB | 2–46 ms | <1 ms |
+| One team-game: official row | 2 | — | 4–5 ms | <0.1 ms |
+| One player season (18–21 games): player shifts | 450–556 | 9–11 KB | 253–432 ms | <1 ms |
+| One player or team season: PBP | 5,630–6,757 | 304–363 KB | 414–554 ms | ~10 ms |
+| One team season: team shifts | 6,952–7,920 | 195–222 KB | 614–1,247 ms | ~8 ms |
+| *Today, stored:* one game | 25–29 | 0.8 KB | 3–6 ms | <0.1 ms |
+| *Today, stored:* one player season | 17–20 | 0.4 KB | 24 ms | 0.2 ms |
+| *Today, stored:* one player, all games (no index starts with `playerId`) | 88 | — | 59–82 ms | 1.3 ms |
+
+Compute, the clock plus the audit for both teams plus intervals ∩ shifts, takes **12 ms per game** (p50 11.7, p99 14–15, max 19.5 ms) on this machine for all 309 games. A serverless function is likely 2–3× slower (an estimate, not measured).
+
+**Per surface**
+
+1. **`/lines/[abbr]` PowerPlayCombos** (every view, client-side, no cache).
+   - Today: 2 `powerPlayCombinations` reads, about 70–85 rows and ~2 KB. It uses `unit`, plus PPTOI for ordering only.
+   - On demand, for the current game plus the last 5 games of one team: about 2,000 PBP rows (~107 KB), 2,400 shift rows (~47 KB) and 12 official rows, in 3 batched queries.
+   - Cost: roughly 0.3–0.6 s cold DB time (scaled from the season probes) or under 10 ms warm, plus about 40 ms of compute. That is about 75× the bytes, and today it would run in the browser.
+2. **LinemateMatrix on `/lines/[abbr]` and `/lines/line-combo/[gameId]`, and the `/shiftChart` PP mode.**
+   - Today: **3 uncached NHL requests per view** through `/api/cors` (shift charts, boxscore, play-by-play), with PP computed locally on production's unqualified 11-01 clock.
+   - From stored rows instead: one game's PBP plus both teams' shifts (~1,130 rows, ~35 KB), under 100 ms cold or ~2 ms warm, and ~12 ms of compute. That is cheaper than today.
+3. **`/charts` → `/api/toi`** (2 POSTs per load; PP needed in one).
+   - Today it already reads the window's `forge_player_game_strength.toi_pp_seconds`, which equals the computed numerator, and `teamGameStats`. PP is withheld.
+   - On demand for a season window it adds the window's PBP (5,600–6,800 rows, 300–360 KB, 0.4–0.55 s cold) plus 18–21 × ~7 ms of compute for the clock. Computing from shifts instead of FORGE adds the player's 450–556 shift rows.
+4. **Rolling writer** (daily for the previous day's ~16 games × ~36 skaters; weekly over 14 days).
+   - Today: per player, `powerPlayCombinations` by `playerId` in chunks of 100 career games.
+   - On demand it would need the PBP of every career game for every player: about 165k rows (~9 MB) for a 500-game career, repeated for each of up to ~576 players a day. **Not feasible.**
+5. **`team_unit_toi` writer** (nightly, at most 40 games).
+   - Today it reads the shift rows plus `powerPlayCombinations`.
+   - On demand it adds about 13k PBP rows (~0.7 MB) and ~0.5 s of compute. Feasible for a batch job.
+6. **Planning deployment chips** (`lib/rosterScheduleData/planning.ts`; unit only, 32 games, 2 s deadline).
+   - On demand: about 10.5k PBP rows plus about 25k shift rows. That is over 1–2 s cold, which **misses the deadline**.
+7. **Social share modules** (unit only, up to 24 games or each skater's newest game) and the SQL `refresh_player_lineup_deployment_tallies` (season-wide unit join).
+   - They need stored units. A SQL function can't compute this on demand.
+
+### 11.3 Recommendation: (b) store the output of the same calculation, from one writer
+
+On-demand computing suits one-game surfaces (item 2 is even cheaper than today). It doesn't suit the readers that need per-game values across many games: rolling history, planning, social share and the SQL tallies. Several readers need the same numbers, so the source of truth should be computed once per team-game and stored. This replaces today's calculation; it isn't a rebuild of the old one.
+
+**Store** (proposal for separate approval; nothing done):
+- **`powerPlayCombinations`, same columns** so readers keep working, with these definitions:
+  - `PPTOI` = shifts ∩ qualified spans (skaters);
+  - `pp_share_of_team` = PPTOI / qualified clock seconds;
+  - `unit` = today's pivot and shared-PP-time rule, computed from the same intervals;
+  - the unit-relative fields as today.
+  - Add `calculation_version` and `computed_at`. Today `created_at` never changes on upsert, which is why section 11.1 needed the audit log.
+- **New `pp_team_game_clock`** (game_id, team_id): `clock_seconds`, `qualified`, `unqualified_reason`, `reference_source`, official and Penalty Summary seconds, audit counts, `calculation_version`, `computed_at`. Readers gate on this row.
+
+**Writer:**
+- Rework `update-power-play-combinations/[gameId].ts` to read the stored `nhl_api_pbp_events`, `nhl_api_shift_rows` (type 517) and `teamGameStats` instead of live NHL HTTP.
+- Call `buildTeamPpClock`, then intersect shifts with the qualified spans.
+- When the inputs are complete (normalization complete, skater-seconds ≥ 3 × clock), replace the team-game's rows as a set in one transaction. That removes stale rows like group A. Otherwise write the clock row as unavailable and leave player rows unread.
+- Run after that day's PBP, shift and `teamGameStats` loads.
+- It depends on releasing the v2 clock and C1, C2, C3 and Part A, which are on `octoberBranch`, not `master`. Production still writes with the 11-01 clock (group C).
+
+**Bounded refresh** (for TJ's separate approval), 2026-27 regular season, 309 games:
+1. Dry-run first. It should change exactly the 16 team-games:
+   - delete 15 stale rows (A);
+   - update 18 rows (B);
+   - update 5 rows and insert 5 (C).
+2. Then 31 calls of 10 games each, concurrency 1, at least 5 s apart, with the hygiene gate before each call.
+3. Reads are about 1,130 rows per game from the database. No NHL or NST calls.
+4. After each call, read back:
+   - the row count per team-game against the dry run;
+   - share ≤ 1 and PPTOI ≤ clock;
+   - units 1–3, with PP1 and PP2 at most 5 players each.
+5. Stop on the first mismatch.
+6. After that, the existing nightly schedule (08:05 UTC cron, last 3 days) keeps it current.
+
+**Availability rules:**
+- A qualified clock of 0 is **not applicable**, never 0%.
+- These stay **unavailable**, never capped:
+  - an unqualified clock;
+  - missing PBP, shifts or official row;
+  - incomplete shifts (skater-seconds < 3 × clock);
+  - a player or unit above the clock;
+  - a share above 100%.
+- Readers show the reason.
+- PP share stays withheld until the served values are verified.
+
+**Reader changes to coordinate (named, not made):**
+- `components/LinemateMatrix/index.tsx` and `utilities.ts` (PP mode), and `components/ShiftChart/model.ts`, should read the stored, qualified clock rather than computing on production's 11-01 clock from live NHL data.
+- PowerPlayCombos needs only a gate on the clock row.
+- `/api/toi` and the rolling writer need the clock row for the denominator.
+- None of this touches `components/LineCombinations/utilities.ts`.
+
 ## Open items for the owner (Chef to route)
 
 Decided in decision 151 (2026-11-13): O1 ±2 s inclusive; O2 and O3 stay withheld; O4 read-only check done (section 9). Decision 152 (2026-11-13) accepts the Penalty Summary for the five O4 team-games (section 10). The original wording is kept below.
@@ -299,6 +437,10 @@ node $S/compare.mjs $S/classes-2025-2027.csv $S/pbp $S/out          # → team-g
 # 13-fetch-penalty-summaries.sh $S/o4-html  (exactly 5 nhl.com requests, 10 s apart; decision 151 only)
 # python3 -I 15-parse-penalty-summary.py $S/o4-html/GS-<gameId>.HTM
 # decision 152: rebuild compare.mjs at the registry commit, rerun into $S/out-d152, then share.mjs on it (results/after-d152)
+# 16-fetch-numerator-provenance.sh <classes.csv> $S/provenance  (guarded; created_at + writer audit runs)
+# 16-numerator-compare.ts: build with the aliases in its header; node numerator.mjs <after-d152 results> $S/pbp2026 $S/shifts $S/ppcombos $S/provenance <out>
+# 17-cost-probe.sql: hygiene.sh, then psql -v game= -v team= -v player= -v games= -f 17-cost-probe.sql
+# 18-compute-timing.ts and 19-production-pairwise-check.ts: build and run as their headers say
 ```
 
 Raw PBP and shift pages stay outside the repository (about 550k and 230k rows). Only the per-team-game results and the summaries are committed in `results/`.

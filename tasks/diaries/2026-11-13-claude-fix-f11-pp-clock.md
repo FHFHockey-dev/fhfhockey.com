@@ -51,8 +51,20 @@ Lane F11: validate the team PP clock against stored `teamGameStats.powerPlayToi`
 - Checks: getPowerPlayBlocks tests 74/74; `npm run typecheck` exit 0; ESLint on the 3 files exit 0.
 - Offline re-run: exactly the 5 registered team-games change (2,568 → 2,573 qualified); 2026-27 reg 618/618, 309/309 games; share displayable 609/609 recomputed, 593/609 stored. `results/after-d152/` summaries.
 
+## Decision 152 Part B (numerator source, read-only)
+- Scope: computed (shifts ∩ qualified intervals) vs stored powerPlayCombinations per player for 2026-27 reg; common cause of the 16; full page-load cost per reader on demand vs today; recommend (a) reader computes or (b) store same calculation + bounded refresh. No writes, no reader wiring; don't edit LineCombinations/utilities.ts (Codex item 6).
+- Comparison (16-numerator-compare.ts): 593/609 team-games agree; 7,152/7,190 stored rows; units 7,172/7,190 using the writer's own pivot + shared-time rule (all 18 misses inside the 16).
+- 16 = 3 causes: A 11 team-games/15 rows stale pre-11-01 rows kept by the 11-07 bulk re-run (audit keptUnproven sums to 15); B 4 team-games, OT PP seconds missing per player (production code on stored shifts gives full time → feed at write time lacked OT); C 2026020131 t18 production 11-01 clock 29 s vs 120 s.
+- Provenance reads: created_at (7,190 rows), cron_job_audit index-only by week (707 runs) + details for 35 repair runs. The first ILIKE audit query hit the 10 s statement timeout (cancelled, not retried); weekly index-only windows worked.
+- Cost probe (17-cost-probe.sql): team-game on demand ≈ 730 rows/26 KB, cold 18–100 ms, warm <2 ms; player/team season 6–15k rows, cold 0.4–1.25 s, warm <10 ms; stored reads cold 3–60 ms. Compute ≈ 12 ms/game both teams locally.
+- Gotcha: zsh `$r:web` is a modifier; use `${r}:path` in git show.
+
+- FORGE `toi_pp_seconds` = computed numerator for all 7,195 player-games (updated 11-12/13); master shifts.ts uses situation codes, so the owner must confirm provenance.
+- Reader map (Explore agent, verified key paths): PowerPlayCombos (unit + PPTOI order), LinemateMatrix/shiftChart (3 live NHL calls per view, master clock), /api/toi (withheld; already reads FORGE), rolling writer (career chunks), team_unit_toi, planning (2 s deadline), social share, SQL tallies.
+- Recommendation (b): one writer from stored PBP/shifts/teamGameStats via buildTeamPpClock; same pPC columns + calculation_version/computed_at; new pp_team_game_clock; replace team-game rows as a set; bounded 2026-27 refresh plan for TJ approval. REPORT section 11.
+
 ## Next
-Wait for Part B of decision 152 from the Chef. Chef routes remaining owner and code items. No production step from this lane.
+Chef routes the decision-152 Part B recommendation. No production step from this lane. Chef routes remaining owner and code items. No production step from this lane.
 
 ## Blockers
 None.

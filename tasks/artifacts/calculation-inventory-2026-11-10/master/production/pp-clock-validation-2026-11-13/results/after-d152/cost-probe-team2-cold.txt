@@ -1,0 +1,127 @@
+                                                         QUERY PLAN                                                         
+----------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort (actual time=6.243..10.917 rows=329 loops=1)
+   Sort Key: sort_order, event_id
+   Presorted Key: sort_order
+   Full-sort Groups: 11  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+   Buffers: shared hit=172 read=48
+   ->  Index Scan using nhl_api_pbp_events_game_sort_idx on nhl_api_pbp_events (actual time=3.601..10.742 rows=329 loops=1)
+         Index Cond: (game_id = 2026020192)
+         Buffers: shared hit=163 read=48
+ Planning:
+   Buffers: shared hit=313 read=24
+ Planning Time: 25.846 ms
+ Execution Time: 10.993 ms
+(12 rows)
+
+Time: 68.276 ms
+                                             QUERY PLAN                                             
+----------------------------------------------------------------------------------------------------
+ Index Scan using "teamGameStats_pkey" on "teamGameStats" (actual time=4.877..4.881 rows=2 loops=1)
+   Index Cond: ("gameId" = 2026020192)
+   Buffers: shared read=3
+ Planning:
+   Buffers: shared hit=30 read=3
+ Planning Time: 2.517 ms
+ Execution Time: 4.941 ms
+(7 rows)
+
+Time: 38.205 ms
+                                                     QUERY PLAN                                                      
+---------------------------------------------------------------------------------------------------------------------
+ Index Scan using nhl_api_shift_rows_game_team_idx on nhl_api_shift_rows (actual time=0.047..1.505 rows=398 loops=1)
+   Index Cond: ((game_id = 2026020192) AND (team_id = 2))
+   Filter: (type_code = 517)
+   Buffers: shared hit=717
+ Planning:
+   Buffers: shared hit=134
+ Planning Time: 0.393 ms
+ Execution Time: 1.562 ms
+(8 rows)
+
+Time: 32.566 ms
+                                                                                                                                   QUERY PLAN                                                                                                                                    
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using nhl_api_shift_rows_game_player_idx on nhl_api_shift_rows (actual time=5.385..253.049 rows=450 loops=1)
+   Index Cond: ((game_id = ANY ('{2026020008,2026020029,2026020048,2026020062,2026020081,2026020097,2026020109,2026020125,2026020143,2026020159,2026020181,2026020192,2026020210,2026020220,2026020255,2026020270,2026020285,2026020308}'::bigint[])) AND (player_id = 8477500))
+   Filter: (type_code = 517)
+   Rows Removed by Filter: 7
+   Buffers: shared hit=392 read=365 dirtied=11
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.181 ms
+ Execution Time: 253.251 ms
+(9 rows)
+
+Time: 285.248 ms
+                                                                                                                        QUERY PLAN                                                                                                                         
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort (actual time=9.423..413.468 rows=5630 loops=1)
+   Sort Key: game_id, sort_order, event_id
+   Presorted Key: game_id, sort_order
+   Full-sort Groups: 176  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+   Buffers: shared hit=3293 read=1044
+   ->  Index Scan using nhl_api_pbp_events_game_sort_idx on nhl_api_pbp_events (actual time=2.501..409.847 rows=5630 loops=1)
+         Index Cond: (game_id = ANY ('{2026020008,2026020029,2026020048,2026020062,2026020081,2026020097,2026020109,2026020125,2026020143,2026020159,2026020181,2026020192,2026020210,2026020220,2026020255,2026020270,2026020285,2026020308}'::bigint[]))
+         Buffers: shared hit=3293 read=1044
+ Planning Time: 0.185 ms
+ Execution Time: 413.870 ms
+(10 rows)
+
+Time: 510.570 ms
+                                                                                                                               QUERY PLAN                                                                                                                                
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using nhl_api_shift_rows_game_team_idx on nhl_api_shift_rows (actual time=1.951..613.583 rows=6952 loops=1)
+   Index Cond: ((game_id = ANY ('{2026020008,2026020029,2026020048,2026020062,2026020081,2026020097,2026020109,2026020125,2026020143,2026020159,2026020181,2026020192,2026020210,2026020220,2026020255,2026020270,2026020285,2026020308}'::bigint[])) AND (team_id = 2))
+   Filter: (type_code = 517)
+   Rows Removed by Filter: 45
+   Buffers: shared hit=7450 read=1648
+ Planning Time: 0.157 ms
+ Execution Time: 614.442 ms
+(7 rows)
+
+Time: 641.960 ms
+                                                              QUERY PLAN                                                              
+--------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_power_play_combinations_contextual_lookup on "powerPlayCombinations" (actual time=3.794..5.853 rows=29 loops=1)
+   Index Cond: ("gameId" = 2026020192)
+   Buffers: shared hit=17 read=6
+ Planning:
+   Buffers: shared hit=67 read=8
+ Planning Time: 7.440 ms
+ Execution Time: 5.933 ms
+(7 rows)
+
+Time: 47.658 ms
+                                                                                                                                    QUERY PLAN                                                                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_power_play_combinations_contextual_lookup on "powerPlayCombinations" (actual time=1.260..23.966 rows=17 loops=1)
+   Index Cond: (("gameId" = ANY ('{2026020008,2026020029,2026020048,2026020062,2026020081,2026020097,2026020109,2026020125,2026020143,2026020159,2026020181,2026020192,2026020210,2026020220,2026020255,2026020270,2026020285,2026020308}'::bigint[])) AND ("playerId" = 8477500))
+   Buffers: shared hit=21 read=34
+ Planning Time: 0.135 ms
+ Execution Time: 24.010 ms
+(5 rows)
+
+Time: 56.891 ms
+                                                              QUERY PLAN                                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_power_play_combinations_contextual_lookup on "powerPlayCombinations" (actual time=1.936..81.649 rows=88 loops=1)
+   Index Cond: ("playerId" = 8477500)
+   Buffers: shared hit=39 read=338
+ Planning Time: 0.075 ms
+ Execution Time: 81.735 ms
+(5 rows)
+
+Time: 108.508 ms
+          scope           | rows | bytes  
+--------------------------+------+--------
+ pbp one game             |  329 |  17845
+ pbp team season          | 5630 | 303687
+ shifts one team-game     |  398 |   7960
+ shifts one player season |  450 |   9000
+ shifts team season       | 6952 | 194656
+ stored one game          |   29 |    870
+ stored player season     |   17 |    374
+(7 rows)
+
+Time: 49.439 ms
