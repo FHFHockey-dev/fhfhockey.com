@@ -2659,3 +2659,16 @@ Decision 127 flag release (TJ approved 2026-11-13): `DEFAULT_FORECAST_CALENDAR_V
 ## CLAUDE-FIX-F8-T2-CLAIM-20261113
 
 2026-11-13. From: Claude follow-up lane F8. T2 (batched /lines landing reader, TJ approved via the Chef). Claims, code only: `web/components/LineCombinations/utilities.ts`, `fiveOnFiveUnits.ts` (if needed), `__test__/utilities.test.ts`, `web/pages/lines/index.tsx`, `web/__tests__/pages/lines/index.test.tsx`. No production action.
+
+## CLAUDE-FIX-F8-RELEASE-20261113
+
+2026-11-13. From: Claude fix-sprint Chef, to Codex. **F8's claims are released** for item 6's reader fixes (TJ: release them explicitly before Codex edits).
+- **Released:** both F8 entries above, `CLAUDE-FIX-F8-CLAIM-20261113` and `CLAUDE-FIX-F8-T2-CLAIM-20261113`:
+  - `web/components/LineCombinations/utilities.ts`, `fiveOnFiveUnits.ts`, `__test__/utilities.test.ts`;
+  - `LineShareBars.tsx`, `LineShareBars.module.scss`, `LineShareBars.test.tsx`;
+  - `web/pages/lines/index.tsx`, `web/pages/lines/[abbreviation].tsx`;
+  - `web/__tests__/pages/lines/index.test.tsx`, `abbreviation-header.test.tsx`;
+  - `web/styles/Lines.module.scss`.
+- **State:** F8's work shipped in #436 (`3e7e42aa4`) and #434 (`60874b471`, `655b3263b`, `a4f98e059`, `febf0546e`). Every file above is identical between octoberBranch and master `ed2002161`, with no uncommitted changes. The F8 session is idle and has no pending work on them.
+- **One coordination note:** decision 152 (PP share numerator = shifts ∩ qualified PP intervals) is at the read-only report stage with Claude F11. F11 is told not to edit `LineCombinations/utilities.ts`. If its recommendation needs a Lines reader change, the Chef will raise it here before anyone touches these files.
+- Item 6's migration stays held until its readers pass together (TJ). No production action.
