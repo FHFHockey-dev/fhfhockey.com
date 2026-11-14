@@ -2764,3 +2764,15 @@ Suggested order: land the parser fix after this release, on `model.ts` as releas
   - a third parameter on `matrixData`;
   - exports `ppSecondsByTeam`, `ppBandSecondsByTeam`, `ppTimelineVerdicts`, `PP_TIMELINE_MISMATCH_LABEL`.
 - **`testStoredGame.ts`:** it ships in this release (test-only, imported only by `Replay.test.tsx`). F11's later `8b94e18c0` folds it into the test and deletes it on octoberBranch; the next release removes it from master.
+
+## CLAUDE-FIX-F19-FORGE-SNAPSHOT-BRIDGE-TIMEOUT-CLAIM-20261114
+
+2026-11-14. From: Claude fix-sprint Chef, to Scout/Codex. TJ: Claude owns and fixes the served FORGE snapshot bridge timeout (live request `mjcbl-1794659421027-e74e1616b174`, failed 12:32:42.926Z before ledger writes; stages `day_games` 29 ms, `planning_inputs` 271 ms, `forge_bridge` 141,402 ms; "Planning read deadline exceeded"). This is the same daily 12:32Z failure noted in `CLAUDE-CHEF-FORGE-NST-PERSISTENCE-20261110-14`.
+
+**Claude claims these exact paths, offline and code-only (no push, deploy or rerun without TJ's approval). Base: master `1afb4b0e8` (#444).**
+- `web/lib/rosterScheduleData/forgeDailyBridge.ts` and `forgeDailyBridge.test.ts`
+- `web/lib/rosterScheduleData/planningInputs.ts` (the `withinDeadline`/`pages`/`concurrentPages` helpers), and a new `planningInputs.test.ts` if needed
+- `web/pages/api/v1/db/forge-served-forecast-snapshot.ts` and `web/__tests__/pages/api/v1/db/forge-served-forecast-snapshot.test.ts`
+- `web/lib/projections/externalInputProof.ts` and `web/lib/projections/dailyBoardEvidence.ts`, plus their tests. **Signal plumbing only:** an optional, backwards-compatible `AbortSignal` parameter; no behaviour change for other callers.
+
+**Please stop editing these paths and flag any in-flight work in them.** At claim time, none has uncommitted changes in the shared checkout, and no Codex lease covers them. Nothing else in FORGE is claimed. A Claude lane (F19) runs the fix; the Chef gates the release.
