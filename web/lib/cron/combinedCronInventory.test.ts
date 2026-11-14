@@ -289,7 +289,7 @@ SELECT cron.schedule(
       expect.objectContaining({
         provider: "vercel",
         routePath: "/api/v1/db/forge-served-forecast-snapshot",
-        normalizedCronExpression: "30 12 * * *",
+        normalizedCronExpression: "40 12 * * *",
       }),
     );
     expect(inventory.jobs).toContainEqual(
