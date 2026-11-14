@@ -1,7 +1,7 @@
 # Math-audit fix sprint: debrief
 
 Status: **Sprint closed, 2026-11-13; evening follow-ups closed the same day.**
-- **Closure:** no P0 or P1 is open. Releases through **#442** are live. Astra's audit and all its addenda are complete, and its A3 recheck passed both findings at `5fbb2d3a2`.
+- **Closure:** no P0 or P1 is open. Releases through **#443** are live. Astra's audit and all its addenda are complete, and its A3 recheck passed both findings at `5fbb2d3a2`.
 - **Penalty shots and power v4:** penalty shots are verified end to end for the 8 games; power v4 is rebuilt and verified.
 - **Evening (TJ-approved, live-verified):**
   - #439 goalie item 1;
@@ -10,7 +10,7 @@ Status: **Sprint closed, 2026-11-13; evening follow-ups closed the same day.**
   - TJ-requested forced tests at 22:32–22:34Z: job 388 rewrote 379 PP rows with identical values; game 2026020309's stats rewrite left its rows identical.
 - **The 2026-11-14 scheduled readbacks were waived by TJ** (~22:40Z, "assume success"). The 08:05Z cron 388 write, the 10:05Z FORGE reserve rows and goalie inputs, the 10:15Z cron 283 v4 write and #440's first natural nullable write all still run on schedule, but **none were observed here**.
 - **Open, owned elsewhere:**
-  - **Astra:** the shift-chart parser fix (task 8.0, in `ShiftChart/model.ts` after #442; until it lands, 2026020131 team 18 shows "PP timeline unavailable: timing mismatch."). Then the #439–#442 recheck (`ASTRA-RECHECK-439-442-PROMPT.md`). The Chef gates and releases the parser fix.
+  - **Astra:** the #439–#442 recheck (`ASTRA-RECHECK-439-442-PROMPT.md`). The shift-chart parser fix shipped as #443 (`4adef4fc8`) and is live-verified. Astra wrote #443, so its independent check is the Chef's gate and live check.
   - **Codex:** the xG model (in progress), item 2's issuance contract, the goalie and starter refits, the Week Score study.
   - **CTPI prediction:** checkpoints at games 20, 30 and 40. The descriptive beta is live.
   - **Data:** the 2020-21 to 2022-23 WGO identity backfill, and the 2025-26 penalty-shot games.

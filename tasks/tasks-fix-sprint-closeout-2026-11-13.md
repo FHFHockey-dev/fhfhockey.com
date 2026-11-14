@@ -69,7 +69,7 @@
   - [x] 5.1 Push the local record commits only with the next release, never alone. *(TJ, ~22:45Z: push now. Records only; no-build check below.)*
   - [x] 5.2 Update the debrief with #439–#441, migrations 147 and 149, the decision 152 refresh, and the results of 3.0 and 4.0. *(Done: the debrief status is rewritten for #439–#442, decision 152 served, the forced tests, and the 4.0 waiver.)*
   - [x] 5.3 Ask TJ whether to have Astra recheck #439–#441, migrations 147/149 and the refresh. If yes, write the prompt pinned to a commit. *(TJ: yes, ~22:20Z. Prompt `master/ASTRA-RECHECK-439-442-PROMPT.md`.)*
-  - [x] 5.4 Retire the Chef diary once 3.0 and 4.0 are recorded; keep it while any check is pending. *(Kept on purpose under AGENTS.md: the Chef still gates and releases Astra's parser fix (8.0), so it stays as the handoff record.)*
+  - [x] 5.4 Retire the Chef diary once 3.0 and 4.0 are recorded; keep it while any check is pending. *(Retired 2026-11-13 ~22:58Z after 8.0 shipped (#443). Outcomes are in the debrief, the production queue and this checklist.)*
 - [x] 6.0 NEW: flag-off client parity gap (found in F11 `05c43f981`)
   - [x] 6.1 *(Accepted: serving went on directly after #442, so no flag-off period exists. Reopen only if serving is ever turned off.)* With `PP_SHARE_SERVING_ENABLED` off, the client readers (PowerPlayCombos, LinemateMatrix, the shift chart) still make one cached request to `/api/v1/pp-share/team-game-clock` (a function invocation, ≤5 min cache). LinemateMatrix and the shift chart PP mode briefly show "Checking the stored power-play clock...". That isn't strictly today's behaviour. It matters only while serving is off: resolve it, or record it as accepted, before any future flag-off period. Serving is approved to follow the reader release directly.
 - [x] 7.0 NEW, now blocking 2.0 (TJ, ~21:50Z): the shift chart withholds PP shading that doesn't reconcile with the qualified clock
@@ -86,5 +86,5 @@
 
     *Done: F11 `486da9666`, REPORT §17. Chef reran 34 tests. Known limit: the check compares totals only, so right-total bands in the wrong place would still draw; Astra's parser fix (8.0) removes the gap.*
   - [x] 7.3 Chef verifies, then rebuilds and re-gates the reader candidate (supersedes `f848c3c2`).
-- [ ] 8.0 NEW: the actual shift-chart parser fix (owner Astra/Codex, separate; TJ ~21:55Z)
-  - [ ] 8.1 Astra fixes the root cause: the shift chart's play parser drops situation codes, so its PP bands come from the old algorithm. Astra doesn't touch F11's release files (7.0's ShiftChart files; the reader-gate files). The guard in 7.0 ships first. Once the fix lands and bands reconcile, the "timing mismatch" label disappears without a data change.
+- [x] 8.0 NEW: the actual shift-chart parser fix (owner Astra/Codex, separate; TJ ~21:55Z)
+  - [x] 8.1 Astra fixes the root cause: the shift chart's play parser drops situation codes, so its PP bands come from the old algorithm. Astra doesn't touch F11's release files (7.0's ShiftChart files; the reader-gate files). The guard in 7.0 ships first. Once the fix lands and bands reconcile, the "timing mismatch" label disappears without a data change. *(Done: Astra `519c49f4` released as #443 (master `4adef4fc8`, 22:45Z). Live: NSH 8:11–10:11 drawn, STL 578 s = clock, no label.)*

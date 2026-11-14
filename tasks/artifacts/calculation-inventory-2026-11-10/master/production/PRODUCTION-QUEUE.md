@@ -486,3 +486,19 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
   - **#440 write path, game 2026020309:**
     - `GET /api/v1/db/update-stats/2026020309` once, 22:34:45Z: 200 in 0.9 s; audit `success`. About 3–4 NHL API reads (no NST).
     - **Team (2), goalie (4) and skater (36) rows are identical to before, apart from timestamps.** 0 nulls written, since the source is complete. This shows the nullable writer and the migration-147 RPC work end to end. A null case awaits a game with unknown source values.
+- **Release #443: task 8.0, Astra's shift-chart timeline fix** (TJ: "Release if suite passes"):
+  - **Candidate** `75f489b11` = master `44de2f107` plus exactly the 5 files of Astra's `519c49f4` (`model.ts`, `Replay.tsx`, their tests, the cross-surface test), plus records.
+    - With serving on, the timeline draws `qualifiedPowerPlays`, one list shared by the PP owner's and the opponent's PK tracks. Serving off keeps the legacy bands.
+    - New label for games with no buildable intervals: "PP timeline unavailable: no qualified local intervals."
+  - **Gate:** 74 focused tests; typecheck 0; ESLint 0; full Vitest 19,974 passed (ArticleReader and BLSH export-only); pytest 213.
+  - **Branch** pushed 22:43:40Z; no build at 22:45:10Z. **PR #443** squash-merged 22:45:22Z as master `4adef4fc8`, tree identical.
+  - **Build:** fhfhockey completed 22:52:17Z; 3 canceled. Both PP flags still in Production; the Git build carries them.
+  - **Smoke** 5/5 at 200 (22:52:43–44Z).
+  - **octoberBranch:** `5c06dbc74` sets its ShiftChart files to equal master. Astra's base still had the `testStoredGame.ts` helper that F11's `8b94e18c0` had folded in; 48 related tests pass. Ours-merge `bca3d192c` pushed 22:52:52Z.
+  - **Live check** of `/shiftChart?gameId=2026020131` in TJ's Chrome (read-only DOM):
+    - no "PP timeline unavailable" text;
+    - **NSH PP band 8:11 + 120 s** (8:11–10:11), with STL's PK band at the same spot;
+    - STL PP bands 19:30 (120), 25:58 (98), 37:41, 44:06, 54:08 (120 each) = **578 s**, STL's stored clock, each mirrored as NSH PK;
+    - total PP 698 s = 120 + 578.
+
+    **Task 8.0 closed.**

@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
 
-const { tables, fromMock, upsertMock, bridgeMock, planningMock, flags } = vi.hoisted(() => ({
-  flags: { market: undefined as boolean | undefined, basis: undefined as boolean | undefined },
+const { tables, fromMock, upsertMock, bridgeMock, planningMock, flags, stalled, signals } = vi.hoisted(() => ({
+  // buildDelayMs / marketBuildDelayMs: wall-clock time the ledger or market build appears to take (Date is faked).
+  flags: { market: undefined as boolean | undefined, basis: undefined as boolean | undefined, buildDelayMs: 0, marketBuildDelayMs: 0 },
   fromMock: vi.fn(),
   tables: {} as Record<string, Record<string, any>[]>,
+  // Reads of these tables settle only when their abort signal fires, as fetch does; each table's signals are kept.
+  stalled: new Set<string>(),
+  signals: {} as Record<string, AbortSignal[]>,
   upsertMock: vi.fn(async (..._args: any[]) => ({ error: null as null | { message: string } })),
   bridgeMock: vi.fn(),
   planningMock: vi.fn(),
@@ -18,13 +22,27 @@ vi.mock("lib/rosterScheduleData/forgeDailyBridge", async importOriginal => ({ ..
 vi.mock("lib/player-forecasts/servedForecastLedger", async importOriginal => {
   const actual = await importOriginal<any>();
   // Unset: the real constant (decision 126); set: a scenario override.
-  return { ...actual, get LEDGER_MARKET_ENABLED() { return flags.market ?? actual.LEDGER_MARKET_ENABLED; }, get LEDGER_BASIS_SCHEMA_ENABLED() { return flags.basis ?? actual.LEDGER_BASIS_SCHEMA_ENABLED; } };
+  const slow = <A extends any[], R>(build: (...args: A) => R, delay: () => number) => (...args: A): R => {
+    if (delay()) vi.setSystemTime(Date.now() + delay());
+    return build(...args);
+  };
+  return { ...actual, get LEDGER_MARKET_ENABLED() { return flags.market ?? actual.LEDGER_MARKET_ENABLED; }, get LEDGER_BASIS_SCHEMA_ENABLED() { return flags.basis ?? actual.LEDGER_BASIS_SCHEMA_ENABLED; },
+    buildLedgerRows: slow(actual.buildLedgerRows, () => flags.buildDelayMs), buildMarketLedgerRows: slow(actual.buildMarketLedgerRows, () => flags.marketBuildDelayMs) };
 });
 vi.mock("lib/supabase/server", () => ({
   default: {
     from: (table: string) => {
       fromMock(table);
       const filters: Array<(row: any) => boolean> = [];
+      let signal: AbortSignal | undefined;
+      const settle = async () => {
+        if (stalled.has(table)) return new Promise(resolve => {
+          const abort = () => resolve({ data: null, count: null, error: { message: "AbortError: This operation was aborted" } });
+          if (signal?.aborted) abort(); else signal?.addEventListener("abort", abort, { once: true });
+        });
+        const data = (tables[table] ?? []).filter(row => filters.every(filter => filter(row)));
+        return { data, count: data.length, error: null };
+      };
       const builder: any = {
         select: () => builder, order: () => builder, range: () => builder,
         eq: (column: string, value: unknown) => { filters.push(row => row[column] === value); return builder; },
@@ -32,11 +50,8 @@ vi.mock("lib/supabase/server", () => ({
         lt: (column: string, value: string) => { filters.push(row => row[column] < value); return builder; },
         lte: (column: string, value: string) => { filters.push(row => row[column] <= value); return builder; },
         gte: (column: string, value: string) => { filters.push(row => row[column] >= value); return builder; },
-        abortSignal: async () => {
-          const data = (tables[table] ?? []).filter(row => filters.every(filter => filter(row)));
-          return { data, count: data.length, error: null };
-        },
-        then: (resolve: (value: unknown) => unknown) => builder.abortSignal().then(resolve),
+        abortSignal: (value: AbortSignal) => { signal = value; (signals[table] ??= []).push(value); return builder; },
+        then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => settle().then(resolve, reject),
         upsert: (rows: any[], options: any) => upsertMock(table, rows, options),
       };
       return builder;
@@ -53,12 +68,19 @@ const res = () => {
 };
 const side = (id: string, team: string, opponent: string, home: boolean, startsAt: string) =>
   ({ id, date: "2026-10-21", startsAt, teamAbbreviation: team, opponent, home, status: "scheduled", scheduleRevision: "r" });
+const bridgeResult = () => ({ limitations: [], forecasts: [{ playerId: "p11", gameId: "100", revisionId: "forge-daily-bridge-v1:run-today",
+  stats: { GOALS: 0.4, ASSISTS: 0.5, PP_POINTS: 0.2, SHOTS_ON_GOAL: 3, HITS: 1, BLOCKED_SHOTS: 0.5 }, startProbability: null,
+  issuedAt: "2026-10-21T10:30:00Z", cutoffAt: "2026-10-21T10:30:00Z", expiresAt: "2026-10-21T23:00:00Z", modelVersion: "v", conditioning: "unconditional" }] });
 
 describe("forge-served-forecast-snapshot", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     flags.market = undefined;
     flags.basis = undefined;
+    flags.buildDelayMs = 0;
+    flags.marketBuildDelayMs = 0;
+    stalled.clear();
+    for (const table of Object.keys(signals)) delete signals[table];
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-21T12:30:00Z"));
     Object.assign(tables, {
@@ -79,9 +101,7 @@ describe("forge-served-forecast-snapshot", () => {
       games: [side("100", "AAA", "BBB", true, "2026-10-21T23:00:00.000Z"), side("100", "BBB", "AAA", false, "2026-10-21T23:00:00.000Z"),
         side("101", "DDD", "CCC", true, "2026-10-21T12:00:00.000Z"), side("101", "CCC", "DDD", false, "2026-10-21T12:00:00.000Z")],
     });
-    bridgeMock.mockResolvedValue({ limitations: [], forecasts: [{ playerId: "p11", gameId: "100", revisionId: "forge-daily-bridge-v1:run-today",
-      stats: { GOALS: 0.4, ASSISTS: 0.5, PP_POINTS: 0.2, SHOTS_ON_GOAL: 3, HITS: 1, BLOCKED_SHOTS: 0.5 }, startProbability: null,
-      issuedAt: "2026-10-21T10:30:00Z", cutoffAt: "2026-10-21T10:30:00Z", expiresAt: "2026-10-21T23:00:00Z", modelVersion: "v", conditioning: "unconditional" }] });
+    bridgeMock.mockResolvedValue(bridgeResult());
   });
 
   it("snapshots bridge and naive rows for unstarted games, refusing a started one", async () => {
@@ -219,6 +239,79 @@ describe("forge-served-forecast-snapshot", () => {
     expect(out.body).toEqual({ success: false, date: "2026-10-21", error: "Planning read deadline exceeded",
       stage: "forge_bridge", stageMs: { day_games: 0, planning_inputs: 95000, forge_bridge: 0 } });
     expect(upsertMock).not.toHaveBeenCalled();
+  });
+
+  describe("absolute deadline (F19: a blocked event loop delays the deadline timers)", () => {
+    it("writes no ledger row from a bridge result that arrives after the deadline", async () => {
+      // The bridge succeeds, but 50 s into the route's 45 s budget: its timers ran late, so the result won the race.
+      bridgeMock.mockImplementationOnce(async () => { vi.setSystemTime(Date.now() + 50000); return bridgeResult(); });
+      const out = res();
+      await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
+      expect(out.statusCode).toBe(500);
+      expect(out.body).toEqual({ success: false, date: "2026-10-21", error: "Planning read deadline exceeded", stage: "forge_bridge",
+        stageMs: { day_games: 0, planning_inputs: 0, forge_bridge: 50000 }, lateMs: 5000 });
+      expect(fromMock).not.toHaveBeenCalledWith("player_forecast_source_observations");
+      expect(upsertMock).not.toHaveBeenCalled();
+    });
+
+    it("names the bridge branch still running and how late the deadline timer ran", async () => {
+      const { PlanningReadDeadlineError } = await import("lib/rosterScheduleData/planningInputs");
+      bridgeMock.mockImplementationOnce(async (...args: any[]) => {
+        const timing = args[8];
+        timing.startedAt.runs = Date.now(); timing.ms.runs = 12;
+        timing.startedAt.skaters = Date.now();
+        vi.setSystemTime(Date.now() + 141000);
+        throw new PlanningReadDeadlineError(135000);
+      });
+      const out = res();
+      await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
+      expect(out.statusCode).toBe(500);
+      expect(out.body).toMatchObject({ stage: "forge_bridge", lateMs: 135000,
+        bridge: { branchMs: { runs: 12, skaters: 141000 }, pending: ["skaters"], slowest: "skaters" } });
+      expect(upsertMock).not.toHaveBeenCalled();
+    });
+
+    it("cancels a stalled write-boundary proof read at the deadline and writes nothing", async () => {
+      // The Date-only fake from beforeEach is replaced, so the deadline timers run on the fake clock too.
+      vi.useRealTimers();
+      vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+      vi.setSystemTime(new Date("2026-10-21T12:30:00Z"));
+      stalled.add("player_forecast_source_observations");
+      try {
+        const out = res();
+        const done = handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
+        for (let tick = 0; tick < 1000 && !signals.player_forecast_source_observations; tick++) await Promise.resolve();
+        expect(signals.player_forecast_source_observations).toHaveLength(1);
+        await vi.advanceTimersByTimeAsync(45000);
+        await done;
+        expect(out.statusCode).toBe(500);
+        expect(out.body).toMatchObject({ success: false, error: "Planning read deadline exceeded", stage: "forge_bridge_proof", lateMs: 0 });
+        // The proof's snapshot read was aborted with the deadline; its attribution read never started.
+        expect(signals.player_forecast_source_observations.map(signal => signal.aborted)).toEqual([true]);
+        expect(fromMock).not.toHaveBeenCalledWith("forge_runs");
+        expect(upsertMock).not.toHaveBeenCalled();
+      } finally { vi.useRealTimers(); }
+    });
+
+    it("refuses at the write boundary when the ledger build ends after the deadline", async () => {
+      flags.buildDelayMs = 46000;
+      const out = res();
+      await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
+      expect(out.statusCode).toBe(500);
+      expect(out.body).toMatchObject({ success: false, error: "Planning read deadline exceeded", stage: "ledger_upsert", lateMs: 1000,
+        stageMs: expect.objectContaining({ ledger_build: 46000 }) });
+      expect(upsertMock).not.toHaveBeenCalled();
+    });
+
+    it("writes no market row once the deadline has passed, keeping the served rows written in time", async () => {
+      flags.market = true;
+      flags.marketBuildDelayMs = 46000;
+      const out = res();
+      await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
+      expect(out.statusCode).toBe(207);
+      expect(out.body).toMatchObject({ success: false, rowsUpserted: 3, marketError: "Planning read deadline exceeded" });
+      expect(upsertMock.mock.calls.map(call => call[0])).toEqual(["forge_served_forecast_ledger", "forge_served_forecast_universe"]);
+    });
   });
 
   it("reports a failed write", async () => {

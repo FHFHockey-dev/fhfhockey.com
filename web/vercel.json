@@ -125,7 +125,7 @@
     },
     {
       "path": "/api/v1/db/forge-served-forecast-snapshot",
-      "schedule": "30 12 * * *"
+      "schedule": "40 12 * * *"
     },
     {
       "path": "/api/v1/db/cron-report",
