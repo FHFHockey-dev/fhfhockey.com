@@ -12,7 +12,7 @@ import {
   hasBenchmarkAnnotationKind,
   type BenchmarkAnnotation,
 } from "lib/cron/benchmarkNotes";
-import { withCronJobAudit, cronClassificationFromAuditDetails } from "lib/cron/withCronJobAudit";
+import { withCronJobAudit, cronClassificationFromAuditDetails, rollingForgeFailureSummary } from "lib/cron/withCronJobAudit";
 import {
   buildSlowJobWarning,
   SLOW_JOB_DENOTATION,
@@ -961,6 +961,19 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     .map((entry) => formatFailureSample(entry))
     .filter((entry): entry is string => Boolean(entry))
     .slice(0, 3);
+  const forgeFailure = routePath === "/api/v1/db/run-rolling-forge-pipeline"
+    ? rollingForgeFailureSummary(outcome ?? response) : null;
+  const failureStage = forgeFailure?.terminalStop ?? forgeFailure?.firstFailure;
+  const failureStep = forgeFailure?.firstFailure?.stageId === failureStage?.stageId
+    ? forgeFailure?.firstFailure : null;
+  const failureCode = failureStage?.code ?? failureStep?.code;
+  const forgeFailureMessage = failureStage
+    ? [failureStage.stageId,
+      failureStep?.stepId ? `/${failureStep.stepId}` : "",
+      failureCode ? ` (${failureCode})` : "",
+      failureStep?.statusCode ? ` [HTTP ${failureStep.statusCode}]` : ""].join("")
+    : null;
+
   const metrics = readReportMetrics(response, routePath);
 
   return {
@@ -975,7 +988,7 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     error: extractPrimaryMessage(obj.error),
     response,
     responseOutcome: outcome,
-    responseMessage: (outcome ? extractPrimaryMessage({ ...outcome, errors: outcomeSamples }) : null)
+    responseMessage: forgeFailureMessage ?? (outcome ? extractPrimaryMessage({ ...outcome, errors: outcomeSamples }) : null)
       ?? extractPrimaryMessage(response),
     goalieRowsProcessed,
     skaterRowsProcessed,

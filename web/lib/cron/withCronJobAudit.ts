@@ -46,8 +46,38 @@ function outcomeFields(value: unknown, keys: readonly string[], maxLen = 300) {
   return result;
 }
 
+function rollingForgeFailureFields(value: unknown, isTerminal = false) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const row = value as Record<string, unknown>;
+  const identifier = (v: unknown) => typeof v === "string" && /^[a-z][a-z0-9_-]{0,127}$/.test(v) ? v : null;
+  const stageId = identifier(row.stageId);
+  const code = typeof row.code === "string" && /^(?:[a-z][a-z0-9_]{0,63}|[A-Z][A-Z0-9_]{0,63})$/.test(row.code) ? row.code : null;
+  if (!stageId || (isTerminal && !code)) return null;
+  const fields: { stageId: string; code?: string; stepId?: string; statusCode?: number } = { stageId };
+  if (code) fields.code = code;
+  if (isTerminal) return fields;
+  const stepId = identifier(row.stepId);
+  if (stepId) fields.stepId = stepId;
+  if (typeof row.statusCode === "number" && Number.isInteger(row.statusCode) && row.statusCode >= 100 && row.statusCode <= 599) {
+    fields.statusCode = row.statusCode;
+  }
+  // A child’s message and endpoint are untrusted free-form responses; never copy them.
+  return fields;
+}
+
+/** Observed failure context only. This does not establish what committed. */
+export function rollingForgeFailureSummary(body: unknown) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const { success, failureSummary } = body as Record<string, unknown>;
+  if (success !== false || !failureSummary || typeof failureSummary !== "object" || Array.isArray(failureSummary)) return null;
+  const summary = failureSummary as Record<string, unknown>;
+  const firstFailure = rollingForgeFailureFields(summary.firstFailure);
+  const terminalStop = rollingForgeFailureFields(summary.terminalStop, true);
+  return firstFailure || terminalStop ? { firstFailure, terminalStop } : null;
+}
+
 /** Keep outcome facts queryable even when the legacy response preview is cut. */
-function responseOutcome(body: unknown) {
+function responseOutcome(body: unknown, jobName: string) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return null;
   const record = body as Record<string, unknown>;
   const outcome: Record<string, unknown> = outcomeFields(record, [
@@ -67,6 +97,10 @@ function responseOutcome(body: unknown) {
     outcome.termination = outcomeFields(record.termination, [
       "state", "resumeRequired", "nextStartDate",
     ]);
+  }
+  if (jobName === "run-rolling-forge-pipeline") {
+    const failureSummary = rollingForgeFailureSummary(record);
+    if (failureSummary) outcome.failureSummary = failureSummary;
   }
   if (record.preflight && typeof record.preflight === "object") {
     const preflight = record.preflight as Record<string, unknown>;
@@ -417,7 +451,7 @@ export function withCronJobAudit(
             : null,
         response: responsePreview,
         responseTruncated: responsePreview?.endsWith("…") ?? false,
-        responseOutcome: responseOutcome(auditBody),
+        responseOutcome: responseOutcome(auditBody, jobName),
         cronClassification: cronClassificationOf(res),
       },
     };
