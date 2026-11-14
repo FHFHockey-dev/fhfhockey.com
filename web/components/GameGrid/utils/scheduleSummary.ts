@@ -1,7 +1,7 @@
 import { DAYS, EXTENDED_DAY_ABBREVIATION, TeamDataWithTotals, WeekData } from "lib/NHL/types";
 import { calcTotalOffNights, getTotalGamePlayed, isRegularScheduleGame } from "./helper";
 import { convertTeamRowToWinOddsList, GAME_GRID_WIN_ODDS } from "./calcWinOdds";
-import calcWeekScore, { calculateSlateCrowding, calculateMatchupBonus, WEEK_SCORE_VERSION } from "./calcWeekScore";
+import calcWeekScore, { calculateSlateCrowding, calculateMatchupBonus, calculateQuietNightBonus, WEEK_SCORE_VERSION } from "./calcWeekScore";
 
 /** Keep missing standings separate from genuine zero points percentages. */
 export function getOpponentPointPct(
@@ -68,16 +68,20 @@ export function getTeamScheduleSummary(
   const totalLeagueGames = days.reduce((sum, day, i) =>
     sum + (excludedDays.includes(day) ? 0 : regularGamesPerDay[i] ?? 0), 0);
   const scheduleComplete = days.every((day, i) => excludedDays.includes(day) || coveredDays?.[i] === true);
+  const quietNightInputsCoherent = days.every((day, i) => excludedDays.includes(day) ||
+    (Number.isInteger(regularGamesPerDay[i]) && regularGamesPerDay[i] >= 0 && regularGamesPerDay[i] <= 16));
   const slateCounts = days.flatMap((day, i) =>
     excludedDays.includes(day) || !isRegularScheduleGame(row[day]) ? [] :
       [coveredDays?.[i] ? regularGamesPerDay[i] : null]);
   const crowding = calculateSlateCrowding(slateCounts, totalGamesPlayed, scheduleComplete);
+  const quietNightBonus = calculateQuietNightBonus(slateCounts, totalGamesPlayed, totalOffNights, totalLeagueGames, scheduleComplete && quietNightInputsCoherent);
 
   return {
     totalGamesPlayed,
     totalOffNights,
-    weekScore: calcWeekScore(winOdds, totalOffNights, totalLeagueGames, totalGamesPlayed, slateCounts, scheduleComplete),
+    weekScore: calcWeekScore(winOdds, totalOffNights, totalLeagueGames, totalGamesPlayed, slateCounts, scheduleComplete, quietNightInputsCoherent),
     crowding,
+    quietNightBonus,
     scoreDecomposition: {
       version: WEEK_SCORE_VERSION,
       games: 6 * (totalGamesPlayed - totalLeagueGames / 16),
@@ -85,7 +89,8 @@ export function getTeamScheduleSummary(
       matchup: calculateMatchupBonus(winOdds, totalGamesPlayed),
       /** Decision 64: odds and their matchup nudge are withheld. */
       matchupStatus: GAME_GRID_WIN_ODDS.status,
-      crowding: crowding.adjustment
+      crowding: crowding.adjustment,
+      quietNights: quietNightBonus.adjustment
     }
   };
 }

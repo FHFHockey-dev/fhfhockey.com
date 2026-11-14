@@ -1,4 +1,4 @@
-import calcWeekScore from "components/GameGrid/utils/calcWeekScore";
+import calcWeekScore, { WEEK_SCORE_VERSION } from "components/GameGrid/utils/calcWeekScore";
 import { countsAsOpportunity } from "lib/socialShare/mondayGrid";
 import { PICKUP_YAHOO_TEAM_ALIASES, type PickupOwnershipRow } from "lib/socialShare/pickupsFixture";
 import { positionGroup, RECENT_MAX_AGE_DAYS, resolveOwnership, MIN_SKATER_GAMES, type ShareMapRow } from "lib/socialShare/players";
@@ -140,11 +140,12 @@ export function offNightSchedule(input: OffNightEditions, dates: OffNightDates) 
   const dayOf = new Map(editions.flatMap(edition => edition.days).map(day => [day.date, day]));
   const teams = [...new Map(editions.flatMap(edition => edition.teams).map(team => [team.id, team])).values()];
   const trusted = editions.every(edition => edition.source.state === "ready");
+  const quietNightReady = editions.every(edition => edition.state === "ready");
   const scored = teams.flatMap(team => {
     const own = counted.filter(game => game.homeTeam.id === team.id || game.awayTeam.id === team.id);
     if (!own.length) return [];
     const offNightGames = own.filter(game => dayOf.get(game.date)?.offNight).length;
-    const score = calcWeekScore([], offNightGames, counted.length, own.length, own.map(game => dayOf.get(game.date)!.leagueGames), trusted);
+    const score = calcWeekScore([], offNightGames, counted.length, own.length, own.map(game => dayOf.get(game.date)!.leagueGames), trusted, quietNightReady);
     const onDay = (date: string) => own.filter(game => game.date === date);
     return [{ team, score, games: own.length, offNightGames, gamesByDay: days.map(day => onDay(day.date).length), opponentsByDay: days.map(day => onDay(day.date).map(game => (game.homeTeam.id === team.id ? game.awayTeam : game.homeTeam).abbreviation)) }];
   });
@@ -152,7 +153,7 @@ export function offNightSchedule(input: OffNightEditions, dates: OffNightDates) 
   const ranked = competitionRanks(scored, row => Math.round(row.score * 1e6) / 1e6, row => row.team.abbreviation);
   const toRow = ({ row, rank }: typeof ranked[number]): OffNightScheduleRow => ({ team: row.team.abbreviation, teamName: row.team.name, rank, score: row.score, games: row.games, offNightGames: row.offNightGames, gamesByDay: row.gamesByDay, opponentsByDay: row.opponentsByDay });
   const top = ranked.slice(0, OFF_NIGHT_TEAMS), lastRank = top[top.length - 1]?.rank;
-  return { days, countedGames: counted.length, teamsWithGames: ranked.length, rows: top.map(toRow), tiedOut: ranked.slice(OFF_NIGHT_TEAMS).filter(item => item.rank === lastRank).map(item => item.row.team.abbreviation) };
+  return { scoreVersion: WEEK_SCORE_VERSION, days, countedGames: counted.length, teamsWithGames: ranked.length, rows: top.map(toRow), tiedOut: ranked.slice(OFF_NIGHT_TEAMS).filter(item => item.rank === lastRank).map(item => item.row.team.abbreviation) };
 }
 
 const NO_EXCLUSIONS: OffNightExclusions = { aboveCeiling: 0, unknownOwnership: 0, staleOwnership: 0, unavailable: 0, inactive: 0, sample: 0, identity: 0 };

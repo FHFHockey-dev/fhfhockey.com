@@ -2,7 +2,7 @@ import { DAYS, type WeekData } from "lib/NHL/types";
 import { teamsInfo, activeTeamAbbreviations } from "lib/teamsInfo";
 import { planningScheduleStatus } from "lib/rosterScheduleData/normalize";
 import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
-import calcWeekScore from "components/GameGrid/utils/calcWeekScore";
+import calcWeekScore, { WEEK_SCORE_VERSION } from "components/GameGrid/utils/calcWeekScore";
 import { calcWeightedOffNights } from "components/GameGrid/utils/helper";
 import { SCHEDULE_FORMATS, SHARE_TIME_ZONE, type ShareGame, type ShareTeam, type SocialScheduleData, type SocialScheduleGame, type SocialShareFormat, type SocialShareSnapshot } from "./types";
 
@@ -52,7 +52,7 @@ function publicTeam(team: SocialScheduleGame["homeTeam"]): ShareTeam {
 }
 function editionId(snapshot: SocialShareSnapshot): string {
   // Content fingerprint, not a security identifier.
-  const content = JSON.stringify([snapshot.format, snapshot.weekStart, snapshot.generatedAt, snapshot.source, snapshot.games, snapshot.selectedDates]);
+  const content = JSON.stringify([snapshot.format, snapshot.weekStart, snapshot.generatedAt, snapshot.source, snapshot.games, snapshot.selectedDates, snapshot.weekScoreVersion ?? null]);
   let hash = 2166136261;
   for (let i = 0; i < content.length; i++) hash = Math.imul(hash ^ content.charCodeAt(i), 16777619);
   return `schedule-${(hash >>> 0).toString(16)}`;
@@ -105,9 +105,9 @@ export function selectScheduleDates(snapshot: SocialShareSnapshot, selectedDates
     }
     const offNightGames = opportunities.filter(game => days.find(day => day.date === game.date)?.offNight).length;
     const slateCounts = opportunities.map(game => days.find(day => day.date === game.date)!.leagueGames);
-    return { team, rank: 0, score: calcWeekScore([], offNightGames, remaining.length, opportunities.length, slateCounts, snapshot.source.state === "ready"), remainingGames: opportunities.length, offNightGames, weightedOffNights, games };
+    return { team, rank: 0, score: calcWeekScore([], offNightGames, remaining.length, opportunities.length, slateCounts, snapshot.source.state === "ready", state === "ready"), remainingGames: opportunities.length, offNightGames, weightedOffNights, games };
   }).sort((a, b) => b.score - a.score || a.team.abbreviation.localeCompare(b.team.abbreviation) || a.team.id - b.team.id).map((row, i) => ({ ...row, rank: i + 1 }));
-  const result = { ...snapshot, selectedDates: selected, state, reasons: [...new Set(reasons)], days, rows, expiresAt };
+  const result = { ...snapshot, weekScoreVersion: WEEK_SCORE_VERSION, selectedDates: selected, state, reasons: [...new Set(reasons)], days, rows, expiresAt };
   result.id = editionId(result);
   return result;
 }

@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import calcWeekScore, { calculateMatchupBonus, calculateSlateCrowding, formatWeekScore } from "./calcWeekScore";
+import calcWeekScore, { calculateMatchupBonus, calculateSlateCrowding, calculateQuietNightBonus, formatWeekScore } from "./calcWeekScore";
 
 describe("schedule-first Week Score", () => {
   test("uses percentage-scale odds and displayed off-night counts", () => {
@@ -115,4 +115,50 @@ describe("one horizon-wide slate crowding adjustment", () => {
     }
     expect(assertions).toBe(1824);
   });
+});
+
+
+describe("provisional capped quiet-night bonus", () => {
+  test.each([[1, .25], [2, .25], [6, .05], [7, 0], [8, 0], [9, 0], [16, 0]])("slate %s adds %s without changing the integer off-night definition", (g, expected) => {
+    const on = g <= 8 ? 1 : 0;
+    expect(calculateQuietNightBonus([g], 1, on, g)).toMatchObject({ status: "available" });
+    expect(calculateQuietNightBonus([g], 1, on, g).adjustment).toBeCloseTo(expected);
+    const base = 6 * (1 - g / 16) + 4 * on + calculateSlateCrowding([g], 1).adjustment;
+    expect(calcWeekScore([], on, g, 1, [g])).toBeCloseTo(base + expected);
+  });
+  test("caps once over any horizon and counts each included game, including two games on one slate", () => {
+    expect(calculateQuietNightBonus([2, 2], 2, 2, 2).adjustment).toBe(.4);
+    expect(calculateQuietNightBonus(Array(10).fill(1), 10, 10, 10).adjustment).toBe(.4);
+    expect(calculateQuietNightBonus([6, 6], 2, 2, 6).adjustment).toBeCloseTo(.1);
+  });
+  test("unknown or incoherent evidence is neutral, without modifying legacy terms", () => {
+    for (const counts of [[], [null], [undefined], [NaN], [Infinity], [0], [-1], [17], [2.5], [2, 2]]) {
+      expect(calculateQuietNightBonus(counts, 1, 1, 10).adjustment).toBe(0);
+    }
+    for (const [gp, on, league, complete] of [[1, 1, 10, false], [1, 0, 10, true], [1, 1, .5, true], [1, 1, NaN, true], [1, 1, 0, true], [1.5, 1, 10, true]]) {
+      expect(calculateQuietNightBonus([2], gp, on, league, complete)).toMatchObject({ adjustment: 0, status: "unavailable" });
+    }
+    expect(calcWeekScore([], 0, 0, 0, [])).toBe(-100);
+    expect(calculateQuietNightBonus([], 0, 0, 0).status).toBe("no_games");
+  });
+  test("retains the protected two-point base edge even with all legacy and new swings", () => {
+    // The worst possible combined swing is 1 + .5 + .4 = 1.9 < 2.
+    expect(2 - 1 - .5 - .4).toBeGreaterThan(0);
+    const four = calcWeekScore([0, 0, 0, 0], 1, 50, 4, [8, 16, 16, 16]);
+    const three = calcWeekScore([100, 100, 100], 2, 50, 3, [1, 2, 9]);
+    expect(four).toBeGreaterThan(three);
+  });
+});
+
+
+test("zero-bonus slates preserve exact incumbent scores and ordering", () => {
+  const rows = [[7], [8], [9], [16], [7, 8], [9, 16], [7, 9, 16]].map((slates, id) => {
+    const gp = slates.length, on = slates.filter(g => g <= 8).length;
+    const incumbent = 6 * (gp - 100 / 16) + 4 * on + calculateMatchupBonus([], gp) + calculateSlateCrowding(slates, gp).adjustment;
+    const candidate = calcWeekScore([], on, 100, gp, slates, true);
+    expect(candidate).toBe(incumbent);
+    return { id, incumbent, candidate };
+  });
+  expect([...rows].sort((a, b) => b.candidate - a.candidate).map(r => r.id))
+    .toEqual([...rows].sort((a, b) => b.incumbent - a.incumbent).map(r => r.id));
 });

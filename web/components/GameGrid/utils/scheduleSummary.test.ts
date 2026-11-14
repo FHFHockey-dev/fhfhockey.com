@@ -138,8 +138,8 @@ describe("selected Game Grid scoring period", () => {
     expect(excluded.crowding.adjustment).toBeCloseTo((.05 - .25) / 2);
     expect(getTeamScheduleSummary(row, counts, [], EXTENDED_DAYS, [false, ...covered.slice(1)]).crowding)
       .toMatchObject({ adjustment: 0, status: "unavailable", knownGames: 2, expectedGames: 3 });
-    const { games, offNights, matchup, crowding } = extended.scoreDecomposition;
-    expect(games + offNights + matchup + crowding).toBe(extended.weekScore);
+    const { games, offNights, matchup, crowding, quietNights } = extended.scoreDecomposition;
+    expect(games + offNights + matchup + crowding + quietNights).toBe(extended.weekScore);
   });
 
   it("withholds matchup odds from Week Score (decision 64): stored odds cannot move it", () => {
@@ -286,4 +286,26 @@ it("labels relative skater defense difficulty without changing opportunity, pres
   expect(Object.values(buildScheduleOpportunity(rows, universe, "2026-09-28", cutoff, stats)).every((v) => v.weeks[3].skaterMatchup === "average")).toBe(true);
   stats.T2.xga = null;
   expect(buildScheduleOpportunity(rows, universe, "2026-09-28", cutoff, stats)[1].weeks[3]).toMatchObject({ opportunity: 1, skaterMatchup: "unknown" });
+});
+
+
+describe("quiet-night bonus uses the same selected and covered inputs", () => {
+  it("toggles days, preserves quiet zero days, rejects invalid quiet-day coverage and decomposes exactly", () => {
+    const row = { teamId: 1, MON: game(1001), WED: game(1002), FRI: game(1003) };
+    const counts = [2, 0, 6, 0, 7, 0, 0], covered = Array(7).fill(true);
+    const full = getTeamScheduleSummary(row, counts, [], DAYS, covered);
+    expect(full.quietNightBonus).toMatchObject({ status: "available" });
+    expect(full.scoreDecomposition.quietNights).toBeCloseTo(.3);
+    expect(full.totalOffNights).toBe(3);
+    const { games, offNights, matchup, crowding, quietNights } = full.scoreDecomposition;
+    expect(games + offNights + matchup + crowding + quietNights).toBe(full.weekScore);
+    expect(getTeamScheduleSummary(row, counts, ["MON"], DAYS, covered).scoreDecomposition.quietNights).toBeCloseTo(.05);
+    expect(getTeamScheduleSummary(row, counts, [], DAYS, [true, false, ...covered.slice(2)]).scoreDecomposition.quietNights).toBe(0);
+    const invalidQuiet = [2, -1, 6, 0, 7, 0, 0];
+    const invalid = getTeamScheduleSummary(row, invalidQuiet, [], DAYS, covered);
+    expect(invalid.scoreDecomposition.quietNights).toBe(0);
+    expect(invalid.crowding).toEqual(full.crowding); // New coherence gate does not alter the legacy crowding term.
+    expect(getTeamScheduleSummary(row, invalidQuiet, ["TUE"], DAYS, covered).scoreDecomposition.quietNights).toBeCloseTo(.3);
+    expect(getTeamScheduleSummary(row, counts, ["MON", "WED", "FRI"], DAYS, covered).weekScore).toBe(-100);
+  });
 });
