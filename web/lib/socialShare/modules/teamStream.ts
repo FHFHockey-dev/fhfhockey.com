@@ -206,7 +206,7 @@ export function teamStreamSchedule(editions: readonly SocialShareSnapshot[], dat
   const gameOf = (date: string, team: string, opponent: string) => games.find(game => game.date === date && [game.homeTeam.abbreviation, game.awayTeam.abbreviation].sort().join() === [team, opponent].sort().join());
   const rows = top.map(row => ({ team: row.team, teamName: row.teamName, rank: row.rank, score: row.score, games: row.games, offNightGames: row.offNightGames,
     schedule: row.opponentsByDay.map((opponents, index) => opponents.map((opponent): TeamStreamGame => { const game = gameOf(schedule.days[index].date, row.team, opponent); return { opponent, home: game ? game.homeTeam.abbreviation === row.team : null, played: game ? game.status === "live" || game.status === "final" : false }; })) }));
-  return { days: schedule.days, countedGames: schedule.countedGames, teamsWithGames: schedule.teamsWithGames, rows, tiedOut };
+  return { scoreVersion: schedule.scoreVersion, days: schedule.days, countedGames: schedule.countedGames, teamsWithGames: schedule.teamsWithGames, rows, tiedOut };
 }
 
 const OWNERSHIP_TABLES = ["yahoo_players", "yahoo_nhl_player_map_read"] as const;

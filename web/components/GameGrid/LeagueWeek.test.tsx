@@ -64,8 +64,8 @@ describe("Game Grid on a complete 32-team week", () => {
       summaries.forEach((s) => {
         expect(s.totalOffNights).toBeLessThanOrEqual(s.totalGamesPlayed);
         if (s.totalGamesPlayed === 0) { expect(s.weekScore).toBe(-100); return; }
-        const { games, offNights, matchup, crowding } = s.scoreDecomposition;
-        expect(games + offNights + matchup + crowding).toBeCloseTo(s.weekScore, 9);
+        const { games, offNights, matchup, crowding, quietNights } = s.scoreDecomposition;
+        expect(games + offNights + matchup + crowding + quietNights).toBeCloseTo(s.weekScore, 9);
         expect(s.crowding.status).toBe("available");
       });
       // 6×GP + 4×ON dominates the bounded matchup (≤1) and crowding (≤0.5) swings.
