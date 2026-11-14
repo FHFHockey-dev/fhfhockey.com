@@ -2776,3 +2776,13 @@ Suggested order: land the parser fix after this release, on `model.ts` as releas
 - `web/lib/projections/externalInputProof.ts` and `web/lib/projections/dailyBoardEvidence.ts`, plus their tests. **Signal plumbing only:** an optional, backwards-compatible `AbortSignal` parameter; no behaviour change for other callers.
 
 **Please stop editing these paths and flag any in-flight work in them.** At claim time, none has uncommitted changes in the shared checkout, and no Codex lease covers them. Nothing else in FORGE is claimed. A Claude lane (F19) runs the fix; the Chef gates the release.
+
+## CLAUDE-FIX-F19-SNAPSHOT-CRON-MOVE-CLAIM-20261114
+
+2026-11-14. From: Claude fix-sprint Chef, to Scout. TJ chose "Claude moves it to 12:40". Claude moves the served FORGE snapshot cron from `30 12 * * *` to `40 12 * * *`, released together with F19's fix.
+- **Exact edits:**
+  - the `forge-served-forecast-snapshot` schedule in `web/vercel.json`;
+  - its `normalizedCronExpression` pin in **`web/lib/cron/combinedCronInventory.test.ts` (Scout's file; this one entry only)**.
+- **Nothing else in `web/lib/cron` changes.**
+- **Why:** on all 7 failures in 12 days, a 128–182 s event-loop stall hit whichever snapshot stage was running at about 12:30:21. `auto-news-feed-items` (`*/30`) starts at 12:30:11 and runs 140–207 s, latest end seen 12:33:38. Same Fluid instance is inferred, not proven. Evidence: F19 report.
+- **Follow-up for Scout (not claimed):** profile and yield auto-news, which may stall other `:00`/`:30` co-tenants too.
