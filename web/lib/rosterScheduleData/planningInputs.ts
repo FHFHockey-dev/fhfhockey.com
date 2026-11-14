@@ -36,22 +36,38 @@ export function normalizePlanningGames(rows: Row[], timeZone?: string): Planning
 }
 
 export class PlanningReadDeadlineError extends Error {
-  constructor() { super("Planning read deadline exceeded"); }
+  /** How long after the deadline it was raised, when known. A timer that runs far past its deadline means the event loop
+   * was blocked (synchronous work in this process), not that a read was slow. */
+  readonly lateMs: number | null;
+  constructor(lateMs: number | null = null) { super("Planning read deadline exceeded"); this.lateMs = lateMs; }
 }
 
 export async function withinDeadline<T>(deadline: number, work: (signal: AbortSignal) => PromiseLike<T>): Promise<T> {
   const remaining = deadline - Date.now();
-  if (!Number.isFinite(remaining) || remaining <= 0) throw new PlanningReadDeadlineError();
+  if (!Number.isFinite(remaining) || remaining <= 0) throw new PlanningReadDeadlineError(Number.isFinite(remaining) ? -remaining : null);
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    return await Promise.race([Promise.resolve().then(() => work(controller.signal)), new Promise<never>((_, reject) => {
-      timer = setTimeout(() => { controller.abort(); reject(new PlanningReadDeadlineError()); }, remaining);
+    const result = await Promise.race([Promise.resolve().then(() => work(controller.signal)), new Promise<never>((_, reject) => {
+      timer = setTimeout(() => { controller.abort(); reject(new PlanningReadDeadlineError(Math.max(0, Date.now() - deadline))); }, remaining);
     })]);
+    // A blocked event loop delays the timer, so a result can settle first though the deadline has passed: refuse it.
+    const late = Date.now() - deadline;
+    if (late > 0) throw new PlanningReadDeadlineError(late);
+    return result;
   } finally {
     if (timer) clearTimeout(timer);
     controller.abort();
   }
+}
+
+/** For a reader that takes a client but no signal: every query built through this client carries `signal`, so the deadline
+ * that aborts it cancels the reader's in-flight and later requests too. Reads only; writes are not exposed. */
+export function abortableReads(db: SupabaseClient<any>, signal: AbortSignal): SupabaseClient<any> {
+  return { from: (table: string) => ({
+    select: (columns?: string, options?: { count?: "exact" | "planned" | "estimated"; head?: boolean }) =>
+      db.from(table).select(columns, options).abortSignal(signal),
+  }) } as unknown as SupabaseClient<any>;
 }
 
 export async function pages(build: () => any, deadline: number, maximum = 15000,
