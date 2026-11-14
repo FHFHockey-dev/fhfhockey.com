@@ -7,8 +7,8 @@ import adminOnly from "utils/adminOnlyMiddleware";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { buildLedgerRows, buildMarketLedgerRows, LEDGER_BASIS_SCHEMA_ENABLED, LEDGER_MARKET_ENABLED, LEDGER_SCORING_VERSION, LEDGER_SOURCES, LEDGER_UNIVERSE_TABLE,
   type LedgerGame, type LedgerMarketQuote, type LedgerPlayer, type LedgerRow } from "lib/player-forecasts/servedForecastLedger";
-import { loadForgeDailyBridgeForecasts, teamStrengthPriors, teamWinProbability } from "lib/rosterScheduleData/forgeDailyBridge";
-import { loadPlanningInputs, pages } from "lib/rosterScheduleData/planningInputs";
+import { forgeBridgeTimingSummary, loadForgeDailyBridgeForecasts, teamStrengthPriors, teamWinProbability, type ForgeBridgeTiming } from "lib/rosterScheduleData/forgeDailyBridge";
+import { abortableReads, loadPlanningInputs, pages, PlanningReadDeadlineError, withinDeadline } from "lib/rosterScheduleData/planningInputs";
 import { loadExternalInputProof, runProofDiagnostics } from "lib/projections/externalInputProof";
 
 /** S-B1: snapshots what the RSO bridge serves for one ET date (plus naive controls) into forge_served_forecast_ledger.
@@ -36,8 +36,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const stageMs: Record<string, number> = {};
   let stage = "day_games", stageStart = Date.now();
   const enter = (next: string) => { stageMs[stage] = Date.now() - stageStart; stage = next; stageStart = Date.now(); };
+  // Per-branch timing inside the bridge, so a bridge failure names the branch that spent the time.
+  const bridgeTiming: ForgeBridgeTiming = { startedAt: {}, ms: {} };
   try {
     const db = supabase as unknown as SupabaseClient<any>, deadline = Date.now() + 45000;
+    // The deadline is absolute and also binds the writes: a blocked event loop can delay a read's timer until after its
+    // result has settled, so a result that arrives late must still never reach the ledger.
+    const inTime = () => { const late = Date.now() - deadline; if (late > 0) throw new PlanningReadDeadlineError(late); };
     const dayGames = await pages(() => db.from("games").select("id,date,seasonId,startTime,homeTeamId,awayTeamId", { count: "exact" }).eq("date", date).order("id"), deadline, 40);
     if (!dayGames.length) return res.status(200).json({ success: true, date, games: 0, rowsUpserted: 0, countsBySource: {}, skippedGames: [] });
     const seasonId = Number(dayGames[0].seasonId);
@@ -57,11 +62,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       && player.teamAbbreviation && teamIds.has(player.nhlTeamId!));
     const players: LedgerPlayer[] = identified.map(player => ({ nhlId: player.nhlId!, planningId: player.id, playerClass: player.playerClass, teamId: player.nhlTeamId! }));
     enter("forge_bridge");
-    const bridge = await loadForgeDailyBridgeForecasts(db, identified, planning.games, now, seasonId, deadline, forecastCalendarPolicy());
+    const bridge = await loadForgeDailyBridgeForecasts(db, identified, planning.games, now, seasonId, deadline, forecastCalendarPolicy(), undefined, bridgeTiming);
+    inTime();
     const runOf = (row: { revisionId: string }) => row.revisionId.split(":").at(-1)!;
     // The ledger is durable: re-check exclusion proof at the write boundary, so no row ever records an unproven run.
     enter("forge_bridge_proof");
-    const proof = await loadExternalInputProof(db, [...new Set(bridge.forecasts.map(runOf).filter(Boolean))]);
+    const proofRunIds = [...new Set(bridge.forecasts.map(runOf).filter(Boolean))];
+    const proof = await withinDeadline(deadline, signal => loadExternalInputProof(abortableReads(db, signal), proofRunIds));
     const bridgeForecasts = bridge.forecasts.filter(row => proof.has(runOf(row)));
     const withheld = bridge.forecasts.length - bridgeForecasts.length;
     const bridgeLimitations = withheld ? [...bridge.limitations,
@@ -99,6 +106,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const { rows, universe, skippedGameIds } = buildLedgerRows({ date, seasonId, now, games, players, bridgeForecasts,
       runDates: new Map(runs.map(row => [row.run_id, row.as_of_date])), scheduleGames, wgoGameRows, goalieGameRows });
     enter("ledger_upsert");
+    // The write boundary: nothing is written once the deadline has passed. A write phase begun in time finishes as one unit.
+    inTime();
     let rowsUpserted = 0, universeUpserted = 0;
     const stored = (list: LedgerRow[]) => LEDGER_BASIS_SCHEMA_ENABLED ? list : list.map(({ forecast_basis: _basis, ...row }) => row);
     for (const batch of chunks(stored(rows), UPSERT_BATCH)) {
@@ -126,6 +135,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       const positions = new Map(identified.map(player => [player.nhlId!, player.eligiblePositions[0]]));
       marketRows = buildMarketLedgerRows({ date, now, rows, propQuotes: propQuotes as LedgerMarketQuote[], gameQuotes: gameQuotes as LedgerMarketQuote[],
         positions, teamAbbreviations, teamWin });
+      inTime();
       for (const batch of chunks(stored(marketRows), UPSERT_BATCH)) {
         const { error } = await db.from(LEDGER_TABLE).upsert(batch, { onConflict: "served_date,player_id,game_id,source" });
         if (error) throw new Error(error.message);
@@ -143,8 +153,12 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       bridgeRunProofs: [...proof].filter(([runId]) => runIds.includes(runId)).map(([runId, value]) => runProofDiagnostics(runId, value)) });
   } catch (error: any) {
     stageMs[stage] = Date.now() - stageStart;
-    console.error("forge-served-forecast-snapshot failed:", stage, stageMs, error);
-    return res.status(500).json({ success: false, date, error: error?.message ?? String(error), stage, stageMs });
+    // Timing only (branch names and ms); a large lateMs means a blocked event loop delayed the deadline timer.
+    const bridge = Object.keys(bridgeTiming.startedAt).length ? forgeBridgeTimingSummary(bridgeTiming) : undefined;
+    const lateMs = error instanceof PlanningReadDeadlineError && error.lateMs !== null ? error.lateMs : undefined;
+    console.error("forge-served-forecast-snapshot failed:", stage, stageMs, ...(bridge ? [bridge] : []), ...(lateMs !== undefined ? [{ lateMs }] : []), error);
+    return res.status(500).json({ success: false, date, error: error?.message ?? String(error), stage, stageMs,
+      ...(bridge ? { bridge } : {}), ...(lateMs !== undefined ? { lateMs } : {}) });
   }
 };
 

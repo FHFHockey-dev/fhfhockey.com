@@ -7,12 +7,13 @@ import type { PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot } fro
 import { runHorizonFilter } from "lib/projections/releasedRunFence";
 import { goalieWinPopulations, STARTER_DECISION_SHARE, teamWinProbability } from "lib/projections/goalie/goalieOutcomes";
 import { buildGoalieCandidatesContract, type GoalieCandidateLine } from "lib/projections/goalie/goalieCandidates";
-import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_BYTE_BUDGET, FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET, FORGE_DAILY_BRIDGE_SEASON_RATED, FORGE_DAILY_BRIDGE_VERSION, FORGE_RESERVE_EXPANDED_BYTE_BUDGET, loadForgeDailyBridgeForecasts, opponentTilts, teamStrengthPriors, teamWinProbability as ledgerTeamWin, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
+import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_BYTE_BUDGET, FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET, FORGE_DAILY_BRIDGE_SEASON_RATED, FORGE_DAILY_BRIDGE_VERSION, FORGE_RESERVE_EXPANDED_BYTE_BUDGET, forgeBridgeTimingSummary, loadForgeDailyBridgeForecasts, opponentTilts, teamStrengthPriors, teamWinProbability as ledgerTeamWin, type ForgeBridgeTiming, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
 import { league, now as weekNow, seasonId as weekSeasonId, type Shape } from "./forgeReservePayload.fixture";
 import { bridgeRunProofs, compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, jsonUtf8Bytes, packPlanningSnapshots, RESERVE_FORECAST_NOTES, reserveCodeOf, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
 import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
 import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
+import { PlanningReadDeadlineError } from "./planningInputs";
 
 const now = new Date("2026-10-19T18:00:00Z");
 const policy = forecastCalendarPolicy(14);
@@ -453,7 +454,8 @@ describe("FORGE daily bridge", () => {
       const failing = proofDb(runRows, []);
       const from = failing.db.from;
       failing.db.from = (table: string) => table === "player_forecast_source_observations"
-        ? { select: () => ({ eq: () => ({ eq: () => ({ in: async () => ({ data: null, error: { message: "denied" } }) }) }) }) } as never : from(table);
+        ? { select: () => { const query = { abortSignal: () => query, eq: () => ({ eq: () => ({ in: async () => ({ data: null, error: { message: "denied" } }) }) }) }; return query; } } as never
+        : from(table);
       await expect(loadForgeDailyBridgeForecasts(failing.db as never, players, games, now, 20262027, Date.now() + 5000, policy)).rejects.toEqual({ message: "denied" });
     });
   });
@@ -1442,3 +1444,73 @@ describe("FORGE reserve lines in the bridge", () => {
   });
 });
 
+
+describe("read deadlines and cancellation (F19: the 12:30Z served-snapshot stall)", () => {
+  const BOARD_TABLES = ["player_forecast_lineup_snapshots", "player_forecast_goalie_start_observations", "player_forecast_observation_conflicts"];
+  /** One proven run with one skater line. A `stalled` table's reads settle only when their signal aborts (as fetch does);
+   * a `blocking` table holds the event loop until `until()` before resolving, so a deadline timer cannot run first. */
+  function deadlineDb({ stalled = [], blocking }: { stalled?: string[]; blocking?: { table: string; until: () => number } } = {}) {
+    const reads: string[] = [], signals: Record<string, AbortSignal[]> = {};
+    const db = { from: (table: string) => {
+      reads.push(table);
+      const rows = table === "forge_runs" ? [{ run_id: "r", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "abc" }]
+        : table === "player_forecast_source_observations" ? [provenSnapshotRow("r")]
+        : table === "forge_player_projections" ? [skater("r", "2026-10-19", 1, 101, 10)] : [];
+      let signal: AbortSignal | undefined;
+      const settle = (): Promise<unknown> => {
+        if (stalled.includes(table)) return new Promise(resolve => {
+          const abort = () => resolve({ data: null, count: null, error: { message: "AbortError: This operation was aborted" } });
+          if (signal?.aborted) abort(); else signal?.addEventListener("abort", abort, { once: true });
+        });
+        if (blocking?.table === table) { const end = blocking.until(); while (Date.now() <= end) { /* synchronous work: the event loop is blocked */ } }
+        return Promise.resolve({ data: rows, count: rows.length, error: null });
+      };
+      const chain: any = new Proxy({}, { get: (_target, property) => property === "then"
+        ? (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => settle().then(resolve, reject)
+        : property === "abortSignal" ? (value: AbortSignal) => { signal = value; (signals[table] ??= []).push(value); return chain; }
+        : () => chain });
+      return chain;
+    } };
+    return { db, reads, signals };
+  }
+
+  it("cancels a stalled proof read at the read deadline, reads nothing after it, and names the proof", async () => {
+    const { db, reads, signals } = deadlineDb({ stalled: ["player_forecast_source_observations"] });
+    const timing: ForgeBridgeTiming = { startedAt: {}, ms: {} };
+    await expect(loadForgeDailyBridgeForecasts(db as never, players, games, now, 20262027, Date.now() + 60, policy, undefined, timing))
+      .rejects.toBeInstanceOf(PlanningReadDeadlineError);
+    // The proof's snapshot read carried the deadline's signal and was aborted with it.
+    expect(signals.player_forecast_source_observations?.map(signal => signal.aborted)).toEqual([true]);
+    // No attribution read (forge_runs again) and no projection read follows the cancelled proof.
+    expect(reads.filter(table => table === "forge_runs")).toHaveLength(1);
+    expect(reads).not.toContain("forge_player_projections");
+    const summary = forgeBridgeTimingSummary(timing);
+    expect(summary).toMatchObject({ slowest: "proof", pending: [] });
+    expect(summary.branchMs.proof).toBeGreaterThanOrEqual(50);
+  });
+
+  it("cancels stalled board-evidence reads at the read deadline and keeps the projections, saying the news could not be read", async () => {
+    const { db, signals } = deadlineDb({ stalled: BOARD_TABLES });
+    const timing: ForgeBridgeTiming = { startedAt: {}, ms: {} };
+    const result = await loadForgeDailyBridgeForecasts(db as never, players, games, now, 20262027, Date.now() + 60, policy, undefined, timing);
+    for (const table of BOARD_TABLES) expect(signals[table]?.map(signal => signal.aborted)).toEqual([true]);
+    expect(result.limitations).toContain("Goalie news could not be read; start chances use FORGE's goalie contracts only.");
+    expect(result.forecasts.find(row => row.playerId === "s1" && row.gameId === "1")?.revisionId).toBe(`${FORGE_DAILY_BRIDGE_VERSION}:r`);
+    const summary = forgeBridgeTimingSummary(timing);
+    expect(summary).toMatchObject({ slowest: "board_evidence", pending: [] });
+    expect(Object.keys(summary.branchMs)).toEqual(expect.arrayContaining(["runs", "proof", "skaters", "goalies", "season_totals",
+      "board_evidence", "team_priors", "last_season_teams", "team_games", "position_allowed", "build"]));
+  });
+
+  it("refuses a mandatory read that settles after the deadline before its delayed timer could run (a blocked event loop)", async () => {
+    const deadline = Date.now() + 40;
+    const { db } = deadlineDb({ blocking: { table: "forge_player_projections", until: () => deadline + 30 } });
+    const timing: ForgeBridgeTiming = { startedAt: {}, ms: {} };
+    const error = await loadForgeDailyBridgeForecasts(db as never, players, games, now, 20262027, deadline, policy, undefined, timing)
+      .then(() => null, (reason: unknown) => reason);
+    expect(error).toBeInstanceOf(PlanningReadDeadlineError);
+    expect((error as PlanningReadDeadlineError).lateMs).toBeGreaterThan(0);
+    // The build never ran on the late rows.
+    expect(timing.startedAt.build).toBeUndefined();
+  });
+});
