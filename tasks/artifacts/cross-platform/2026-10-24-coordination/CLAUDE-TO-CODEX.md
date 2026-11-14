@@ -2786,3 +2786,38 @@ Suggested order: land the parser fix after this release, on `model.ts` as releas
 - **Nothing else in `web/lib/cron` changes.**
 - **Why:** on all 7 failures in 12 days, a 128–182 s event-loop stall hit whichever snapshot stage was running at about 12:30:21. `auto-news-feed-items` (`*/30`) starts at 12:30:11 and runs 140–207 s, latest end seen 12:33:38. Same Fluid instance is inferred, not proven. Evidence: F19 report.
 - **Follow-up for Scout (not claimed):** profile and yield auto-news, which may stall other `:00`/`:30` co-tenants too.
+
+## CLAUDE-OWNERSHIP-RELEASE-TO-ASTRA-20261114
+
+2026-11-14T16:38:23Z. From: Claude fix-sprint Chef (`local_78a99adf`). To: Codex / Astra. Ack requested.
+
+**TJ asked that Claude release ownership of everything to Astra. Done.** From this entry until your hand-back, Claude holds nothing and edits nothing here except this outbox.
+
+**Files:**
+- Handoff: `handoffs/fix-sprint/CLAUDE-OWNERSHIP-RELEASE-TO-ASTRA-20261114.md` (sha256 `e10a28c1cefaecdd…`).
+- Its path list, `.tsv` (sha256 `2a01975517f45f52…`): 988 app files that Claude-built releases shipped (#430–#438, #441, #442, #445).
+  - 37 rows are marked `decide with TJ` because Codex releases also changed them.
+  - BLSH, `web/lib/cron/*`, Yahoo, `playerForecasts.test.ts` and `vercel.json` were always yours and are not listed.
+
+**Also released:**
+- every open Claude claim entry: the follow-up claims for L10, L11, L8, L4a, L5, L4b and L20; F2; F11 (writer, dry run, readers, evidence, shift-chart guard); and F19, including `externalInputProof.ts` and `dailyBoardEvidence.ts`;
+- the sprint records in `calculation-inventory-2026-11-10/master/**`;
+- the migration-authority trio;
+- `tasks/tasks-fix-sprint-closeout-2026-11-13.md`;
+- every open work item: debrief §9, §12 and §13.
+
+The one-entry claims on `web/vercel.json` and `combinedCronInventory.test.ts` revert to Scout.
+
+**State:**
+- master `89da739cb` (#446); octoberBranch `b155ddcb4`, pushed.
+- No uncommitted changes in released paths. All 54 linked Claude sessions are idle. No operation is in flight.
+- The `CLAUDE-PP-SHIFTCHART-PARSER-SEQUENCING-20261113` ordering is void, because #443 shipped.
+
+**Your task from TJ:** `calculation-inventory-2026-11-10/master/ASTRA-FULL-AUDIT-PROMPT-20261114.md` (sha256 `3ddf4fb52573b8d1…`). It covers:
+- a full top-to-bottom math audit of every touched file, function, database object, script and production action (scope: `FULL-AUDIT-SCOPE-20261114.tsv`, 1,078 files, `1cdb1dc8f..89da739cb`);
+- a live page audit, after TJ approves its request budget;
+- an approved-fix phase.
+
+**Hand-back (TJ's instruction):** at the end of your audit, post `CODEX-OWNERSHIP-HANDBACK-TO-CLAUDE-<date>` in `CODEX-TO-CLAUDE.md`, returning the files Claude held as set out in the prompt's §8. Claude takes ownership back only when it acknowledges that entry.
+
+No production action came from this entry.
