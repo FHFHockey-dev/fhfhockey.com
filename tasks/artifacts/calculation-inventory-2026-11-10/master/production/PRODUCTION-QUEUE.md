@@ -502,3 +502,15 @@ I'm not using the sweep route, because it re-warms the season landing cache on e
     - total PP 698 s = 120 + 578.
 
     **Task 8.0 closed.**
+- **Release #445: F19, served FORGE snapshot deadline safety plus cron move to 12:40** (TJ: "Release it" and "Claude moves it to 12:40"):
+  - **Ownership:** Claude took the issue (mailbox `CLAUDE-FIX-F19-…-CLAIM-20261114`, `…-SNAPSHOT-CRON-MOVE-CLAIM-20261114`). F19 lane `127a7b496`.
+  - **Cause:**
+    - Known: a 128–182 s event-loop stall hit whichever snapshot stage was running at about 12:30:21 on all 7 failures in 12 days; on 11-14 the timer callback ran about 135 s late. The bridge inputs were small.
+    - Inferred, not proven: `auto-news-feed-items` (`*/30`) starts at 12:30:11 and runs 140–207 s in the same Fluid instance.
+  - **Candidate** `36778db02` on master `1afb4b0e8` (#444): F19's 5 files, plus the `vercel.json` snapshot schedule `30 12` → `40 12`, plus the matching pin in `combinedCronInventory.test.ts`.
+  - **Gate:** 776 tests across 47 files (cron plus 11 dependent suites, 7 new regressions); typecheck 0; ESLint 0. Full Vitest 19,997 passed and pytest 213 on the same code without the schedule line: export-only failures, plus `teamStats/index.test.tsx`, a load flake that passes 7/7 alone.
+  - **Branch** pushed 15:19:22Z; no build at 15:20:52Z. **PR #445** squash-merged 15:21:04Z as master `51f818cef`, tree identical.
+  - **Build:** fhfhockey completed 15:25:55Z (`dpl_A29qcrcLg6`, Ready, aliased); 3 canceled.
+  - **Smoke** (15:26:24–30Z): `/` 200, `/lines` 200, `/underlying-stats` 200, `/game-grid` 307 (its usual redirect), `/forge/command-center` 200.
+  - **octoberBranch:** `0bff132c0` brings over #444's 12 files (125 tests pass), then an ours-merge.
+  - **Not done:** no cron or route run. The first natural run is 2026-11-15 12:40Z; it should succeed if the stall is the 12:30 co-tenant. **Follow-up for Scout:** profile auto-news.
