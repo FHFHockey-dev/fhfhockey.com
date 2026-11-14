@@ -5,8 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import TeamStreamCard from "components/SocialShare/modules/TeamStreamCard";
 import TeamStreamPanel from "components/SocialShare/modules/TeamStreamPanel";
 import { fictionalLeagueWeek } from "lib/socialShare/fixtures";
-import { buildScheduleSnapshot, calendarWeekStart, currentSeason } from "lib/socialShare/schedule";
-import type { SocialScheduleData } from "lib/socialShare/types";
+import { buildScheduleSnapshot, calendarWeekStart, currentSeason, selectScheduleDates as selectScheduleDatesForTest } from "lib/socialShare/schedule";
+import type { SocialScheduleData, SocialScheduleGame } from "lib/socialShare/types";
+import { activeTeamAbbreviations, teamsInfo } from "lib/teamsInfo";
+import calcWeekScore, { WEEK_SCORE_VERSION } from "components/GameGrid/utils/calcWeekScore";
 import { parseShareSettings, SharePostRequestError, type SharePostSnapshot } from "./contract";
 import { lineRowsFromCombinations } from "./lastNightsStandouts";
 import { OFF_NIGHT_THIS_WEEK, offNightSchedule, offNightSelectedDates, type OffNightYahooRow } from "./offNightEdge";
@@ -285,5 +287,39 @@ describe("loader", () => {
     expect(calls.find(call => call.table === "lineCombinations")!.filters).toEqual(["in:gameId", "eq:source_kind"]);
     expect(result.data!.teams[0].candidates[0]).toMatchObject({ nhlId: 11, role: { line: "L1", pp: 1 } });
     expect(result.pageNotes).toContain("NST game logs could not be read, so ixG/60, iSCF/60 and iCF/60 show —.");
+  });
+});
+
+
+describe("shared quiet-night ranking and top-eight cutoff", () => {
+  it("preserves cutoff ties and Off-Night Edge parity with complete synthetic 2/6/16-game slates", () => {
+    const teams = [...activeTeamAbbreviations].map(abbrev => ({ id: teamsInfo[abbrev].id, abbrev: String(abbrev) }));
+    const days = Array.from({ length: 7 }, (_, i) => shiftDays(WEEK, i));
+    const games: SocialScheduleGame[] = [];
+    const add = (day: number, members: typeof teams) => {
+      for (let i = 0; i < members.length; i += 2) games.push({ id: 2026029000 + games.length, season: 20262027, gameType: 2,
+        gameDate: days[day], startTimeUTC: `${days[day]}T23:00:00Z`, gameState: "FUT", gameScheduleState: "OK", homeTeam: members[i], awayTeam: members[i + 1] });
+    };
+    add(0, teams.slice(0, 4)); add(2, teams.slice(0, 4)); add(4, teams.slice(4, 16)); add(6, teams);
+    const counts = [2, 0, 2, 0, 6, 0, 16];
+    const input = buildScheduleSnapshot({ format: "game-grid", weekStart: WEEK, generatedAt: `${WEEK}T12:00:00Z`,
+      schedule: { data: {}, games, coveredDates: days, fetchedAt: `${WEEK}T11:59:00Z`, numGamesPerDay: counts } });
+    expect(input.source.state).toBe("ready");
+    const edge = offNightSchedule(input, "weekly"), stream = teamStreamSchedule([input], "weekly");
+    expect(stream.scoreVersion).toBe(WEEK_SCORE_VERSION);
+    expect(stream.rows.map(r => [r.team, r.rank, r.score])).toEqual(edge.rows.slice(0, 8).map(r => [r.team, r.rank, r.score]));
+    expect(stream.rows).toHaveLength(8);
+    expect(stream.rows.map(r => r.rank)).toEqual([1, 1, 1, 1, 5, 5, 5, 5]);
+    expect(stream.tiedOut).toHaveLength(8);
+    expect(stream.tiedOut.every(team => edge.rows.find(row => row.team === team)!.rank === 5)).toBe(true);
+    expect(stream.rows[0].score).toBeCloseTo(calcWeekScore([], 2, 26, 3, [2, 2, 16], true));
+    const partial = teamStreamSchedule([{ ...input, state: "partial" }], "weekly");
+    expect(partial.rows[0].score).toBeCloseTo(calcWeekScore([], 2, 26, 3, [2, 2, 16], true, false));
+    expect(stream.rows[4].score).toBeCloseTo(calcWeekScore([], 1, 26, 2, [6, 16], true));
+    const excluded = selectScheduleDatesForTest(input, [days[6]]);
+    const zero = teamStreamSchedule([excluded], "weekly");
+    expect(zero.rows.every(row => row.rank === 1)).toBe(true);
+    expect(zero.tiedOut).toHaveLength(24);
+    expect(zero.rows.every(row => row.score === calcWeekScore([], 0, 16, 1, [16], true))).toBe(true);
   });
 });

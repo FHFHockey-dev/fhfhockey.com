@@ -216,6 +216,8 @@ export type ShareTrendLayer = {
 /** Public presentation only; never a forecast capture packet or private league state. */
 export type SocialShareSnapshot = {
   schemaVersion: 1;
+  /** Set only when rescored; older retained editions may omit this. */
+  weekScoreVersion?: string;
   id: string;
   format: SocialShareFormat;
   state: ShareDataState;

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "./schedule";
+import calcWeekScore, { WEEK_SCORE_VERSION } from "components/GameGrid/utils/calcWeekScore";
 import { assertExportable } from "./export";
 import type { SocialScheduleGame as GameData, SocialScheduleData as ScheduleData } from "./types";
 const upstream = vi.hoisted(() => ({ getSchedule: vi.fn() }));
@@ -163,10 +164,10 @@ describe("schedule-only edition", () => {
       homeTeam: { id: 1, abbrev: "NJD", winOdds: 100, apiWinOdds: 100 },
       awayTeam: { id: 2, abbrev: "NYI", winOdds: 0, apiWinOdds: 0 },
     })]);
-    // 6 × (2 - 2/16) + 4 × 2 + 0.25 for a complete one-game slate.
-    expect(initial.rows[0].score).toBe(19.5);
+    // Existing volume/off-nights/crowding plus the capped quiet-night bonus.
+    expect(initial.rows[0].score).toBeCloseTo(19.9);
     expect(initial.rows[0].weightedOffNights).not.toBe(initial.rows[0].offNightGames);
-    expect(selectScheduleDates(initial, [dates[3]]).rows[0].score).toBe(9.875);
+    expect(selectScheduleDates(initial, [dates[3]]).rows[0].score).toBe(10.125);
     expect(JSON.stringify(initial)).not.toMatch(/winOdds|apiWinOdds/);
   });
   it("fails closed for the current shared reader without inventing timing or complete records", () => {
@@ -530,4 +531,45 @@ describe("shared cache policy", () => {
     expect(shareCacheControl(ready({ opponents: null }), nowMs)).toBe("public, max-age=0, s-maxage=60");
     expect(shareCacheControl(ready({ opponents: { ...opponents, state: "stale" } }), nowMs)).toBe("public, max-age=0, s-maxage=60");
   });
+});
+
+
+describe("shared provisional quiet-night score", () => {
+  it("counts distinct doubleheader games, deduplicates copies and preserves older edition provenance", () => {
+    const first = game(), second = game(2025020011, dates[0], { awayTeam: { id: 3, abbrev: "NYR" } });
+    const initial = snapshot([first, first, second]);
+    const njd = initial.rows.find(row => row.team.id === 1)!;
+    expect(initial.source.state).toBe("ready");
+    expect(njd).toMatchObject({ remainingGames: 2, offNightGames: 2 });
+    expect(njd.score).toBeCloseTo(calcWeekScore([], 2, 2, 2, [2, 2], true));
+    expect(initial.weekScoreVersion).toBe(WEEK_SCORE_VERSION);
+    for (const version of [undefined, "schedule-v4-provisional-quiet-night-0.40"]) {
+      const legacy = { ...initial, id: "retained-prior-edition", weekScoreVersion: version };
+      const retained = JSON.stringify(legacy);
+      const rescored = selectScheduleDates(legacy, [dates[0]]);
+      expect(rescored.weekScoreVersion).toBe(WEEK_SCORE_VERSION);
+      expect(rescored.weekScoreVersion).not.toBe(legacy.weekScoreVersion);
+      expect(rescored.id).not.toBe(legacy.id);
+      expect(JSON.stringify(legacy)).toBe(retained);
+    }
+    expect(selectScheduleDates(initial, []).rows.every(row => row.score === -100)).toBe(true);
+  });
+  it("requires full source coverage for the new bonus, including a quiet zero-game day", () => {
+    const games = [game()];
+    const complete = snapshot(games), partial = snapshot(games, { coveredDates: dates.filter(d => d !== dates[1]) });
+    const base = 6 * (1 - 1 / 16) + 4;
+    expect(complete.rows.find(r => r.team.id === 1)!.score).toBeCloseTo(base + .25 + .25);
+    expect(partial.source.state).not.toBe("ready");
+    expect(partial.rows.find(r => r.team.id === 1)!.score).toBe(base);
+  });
+});
+
+
+it("neutralizes only the quiet-night term when selected game state makes an otherwise covered edition partial", () => {
+  const unknown = game(2025020099, dates[0], { homeTeam: { id: 3, abbrev: "NYR" }, awayTeam: { id: 6, abbrev: "BOS" }, gameState: "UNKNOWN" });
+  const partial = snapshot([game(), unknown]);
+  expect(partial.source.state).toBe("ready");
+  expect(partial.state).toBe("partial");
+  expect(partial.rows.find(row => row.team.id === 1)!.score).toBeCloseTo(calcWeekScore([], 1, 1, 1, [1], true, false));
+  expect(partial.rows.find(row => row.team.id === 1)!.score).toBeCloseTo(9.875);
 });

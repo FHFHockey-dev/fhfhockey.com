@@ -1,7 +1,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\utils\calcWeekScore.ts
 
-/** v3: matchup odds withheld (decision 64); the matchup term is 0. */
-export const WEEK_SCORE_VERSION = "schedule-v3-odds-withheld-crowding-0.25";
+/** Provisional v4: odds stay withheld; quiet-night bonus is capped per horizon. */
+export const WEEK_SCORE_VERSION = "schedule-v4-provisional-quiet-night-0.40-r1";
 
 /** One centered adjustment for the entire included horizon, not per game. */
 export function calculateSlateCrowding(
@@ -21,6 +21,28 @@ export function calculateSlateCrowding(
     knownGames: validCounts.length,
     expectedGames: totalTeamGames,
     status: totalTeamGames === 0 ? "no_games" as const : complete ? "available" as const : "unavailable" as const
+  };
+}
+
+/** Separate from centered crowding and the displayed integer off-night count. */
+export function calculateQuietNightBonus(
+  slateCounts: readonly (number | null | undefined)[],
+  totalTeamGames: number,
+  offNights: number,
+  totalGamesPerWeek: number,
+  scheduleComplete = true
+) {
+  const coverage = calculateSlateCrowding(slateCounts, totalTeamGames, scheduleComplete);
+  const coherent = scheduleComplete === true && coverage.status === "available" &&
+    Number.isInteger(totalTeamGames) && Number.isInteger(totalGamesPerWeek) &&
+    totalGamesPerWeek >= totalTeamGames && Number.isInteger(offNights) &&
+    offNights === slateCounts.filter(count => typeof count === "number" && count <= 8).length;
+  const uncappedAdjustment = coherent ? slateCounts.reduce<number>((sum, count) =>
+    sum + 0.25 * Math.max(0, Math.min(1, (7 - count!) / 5)), 0) : 0;
+  return {
+    adjustment: Math.min(0.40, uncappedAdjustment),
+    uncappedAdjustment,
+    status: totalTeamGames === 0 ? "no_games" as const : coherent ? "available" as const : "unavailable" as const
   };
 }
 
@@ -48,8 +70,8 @@ export function calculateMatchupBonus(
 
 /**
  * Prioritize included game volume and displayed off-night games. The complete
- * matchup swing is one point and the entire crowding swing is half a point,
- * preserving the two-point schedule edge of 4GP/1ON over 3GP/2ON.
+ * matchup swing is one point, crowding half a point, and quiet-night bonus
+ * at most 0.40, preserving the two-point base edge of 4GP/1ON over 3GP/2ON.
  * @param winOddsList Current adjusted win odds on a 0–100 percentage scale.
  * @param offNights Displayed integer count of included off-night games.
  * @param totalGamesPerWeek Included league games, each game counted once.
@@ -62,7 +84,8 @@ export default function calcWeekScore(
   totalGamesPerWeek: number,
   totalTeamGames: number,
   slateCounts: readonly (number | null | undefined)[] = [],
-  scheduleComplete = true
+  scheduleComplete = true,
+  quietNightInputsCoherent = true
 ) {
   if (totalTeamGames === 0) return -100;
 
@@ -77,7 +100,8 @@ export default function calcWeekScore(
     adjustedTeamGames * totalGamesWeight +
     offNights * offNightsWeight +
     calculateMatchupBonus(winOddsList, totalTeamGames) +
-    calculateSlateCrowding(slateCounts, totalTeamGames, scheduleComplete).adjustment
+    calculateSlateCrowding(slateCounts, totalTeamGames, scheduleComplete).adjustment +
+    calculateQuietNightBonus(slateCounts, totalTeamGames, offNights, totalGamesPerWeek, scheduleComplete && quietNightInputsCoherent).adjustment
   );
 }
 

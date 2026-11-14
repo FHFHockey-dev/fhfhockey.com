@@ -23,6 +23,7 @@ import PlayerPickupTable from "components/PlayerPickupTable/PlayerPickupTable";
 
 import { parseGameGridDateRange, startAndEndOfWeek } from "./utils/date-func";
 import { getRegularGamesPerDay } from "./utils/helper";
+import { WEEK_SCORE_VERSION } from "./utils/calcWeekScore";
 import { getSelectedOpponentIds, getTeamScheduleSummary, getFourWeekAverages } from "./utils/scheduleSummary";
 
 import useSchedule from "./utils/useSchedule";
@@ -381,6 +382,8 @@ function GameGridInternal({
       {" "}off nights {summary.scoreDecomposition.offNights.toFixed(2)}, {summary.scoreDecomposition.matchupStatus === "unavailable" ? "matchup withheld (model odds unavailable)" : `matchup ${summary.scoreDecomposition.matchup.toFixed(2)}`},
       {" "}crowding {summary.scoreDecomposition.crowding.toFixed(2)}
       {summary.crowding.status === "available" ? ` (${summary.crowding.knownGames}/${summary.crowding.expectedGames} games)` : " (neutral; slate evidence unavailable)"}.
+      {" "}Quiet-night bonus {summary.scoreDecomposition.quietNights.toFixed(2)}
+      {summary.quietNightBonus.status === "available" ? " (capped at +0.40)" : " (neutral; complete, coherent slate evidence required)"}.
       {" "}{summary.scoreDecomposition.version}; a schedule heuristic for the selected dates.
     </p>}
     </>;
@@ -896,9 +899,12 @@ function GameGridInternal({
               and each game on an off-night (8 or fewer NHL games) adds 4.
             </p>
             <p>
-              Two small nudges follow: a matchup bonus from win odds (−0.5 to
-              +0.5, adjusted for back-to-backs) and a light-slate bonus (−0.25
-              to +0.25) when the selected days are quieter across the league.
+              A centered crowding adjustment ranges from −0.25 to +0.25.
+              A separate quiet-night bonus adds 0.25 on a two-game night,
+              0.05 on a six-game night, and zero on nights with seven or more
+              games, capped at +0.40 for the selection. A one-game night also
+              adds 0.25. Missing or incoherent slate evidence makes this bonus
+              neutral. Matchup odds remain withheld.
             </p>
             <p>
               Only days that are switched on count. Teams with no games show a
@@ -1629,18 +1635,17 @@ function GameGridInternal({
 
       <p id="weekScoreDesc" className={styles.srOnly}>
         Week Score = (Adjusted Team Games × 6) + (Off-Night Games × 4) +
-        Matchup Bonus + Slate Crowding. Adjusted Team Games = Team Games – League Average Games.
+        Matchup Bonus + Slate Crowding + Quiet-Night Bonus. Adjusted Team Games = Team Games – League Average Games.
         GP and off nights take priority; off-night games occur on days with 8
         or fewer NHL regular-season games. Counts and averages use included
-        days in the selected period. The matchup bonus ranges from −0.5 to
-        +0.5 using current win odds (0–100%) with the existing back-to-back
-        adjustment. Missing odds contribute a neutral bonus.
+        days in the selected period. Matchup odds are withheld; that term is zero.
         One centered slate crowding adjustment is bounded to −0.25 through
         +0.25 across all included team games; missing coverage is neutral.
-        Formula version schedule-v2-crowding-0.25.
+        The provisional quiet-night bonus is 0.25 × clamp((7 − league games that night) / 5, 0, 1)
+        per included team game, capped at +0.40 per selection; incomplete or incoherent evidence is neutral.
+        Formula version {WEEK_SCORE_VERSION}.
         This is an interim heuristic, not a calibrated fantasy projection
-        or opponent-only scoring difficulty rating. Higher odds add a small
-        edge when schedules match. Teams with no games display a dash.
+        or opponent-only scoring difficulty rating. Teams with no games display a dash.
       </p>
 
       {isDateRangeOpen && (
