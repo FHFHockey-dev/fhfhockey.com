@@ -17,6 +17,35 @@ import adminOnly from "utils/adminOnlyMiddleware";
 type RawIngestOutcome = Awaited<ReturnType<typeof ingestNhlApiRawGamesBestEffort>>;
 type RawIngestFailure = RawIngestOutcome["failures"][number];
 
+type UnderlyingStatsStage = "selection" | "raw_ingest" | "player_summary_refresh" | "team_summary_refresh";
+type UnderlyingStatsSqlState = "57014" | "55P03" | "40P01" | "40001";
+type UnderlyingStatsFailure = {
+  stage: UnderlyingStatsStage;
+  classification: "statement_timeout" | "query_canceled" | "lock_timeout" |
+    "lock_unavailable" | "deadlock" | "serialization_failure" | "unexpected_failure";
+  sqlState: UnderlyingStatsSqlState | null;
+  writes: "not_started" | "may_have_committed";
+};
+
+function describeStageFailure(stage: UnderlyingStatsStage, error: unknown): UnderlyingStatsFailure {
+  const value = error !== null && typeof error === "object" ? error as Record<string, unknown> : null;
+  const code = value?.code;
+  const sqlState = code === "57014" || code === "55P03" || code === "40P01" || code === "40001" ? code : null;
+  const message = typeof value?.message === "string" ? value.message : typeof error === "string" ? error : "";
+  // A SQLSTATE can cover several causes. Infer timeout only from the canonical
+  // server phrase, and never copy the provider message itself into the receipt.
+  const classification = (code == null || sqlState === "57014") && /\bcanceling statement due to statement timeout\b/i.test(message) ? "statement_timeout"
+    : (code == null || sqlState === "55P03") && /\bcanceling statement due to lock timeout\b/i.test(message) ? "lock_timeout"
+    : sqlState === "57014" ? "query_canceled"
+    : sqlState === "55P03" ? "lock_unavailable"
+    : sqlState === "40P01" ? "deadlock"
+    : sqlState === "40001" ? "serialization_failure"
+    : "unexpected_failure";
+  // Selection is read-only. Once raw ingest starts, a thrown call or later
+  // failure cannot establish that this invocation or earlier batches wrote zero.
+  return { stage, classification, sqlState, writes: stage === "selection" ? "not_started" : "may_have_committed" };
+}
+
 type UpdatePlayerUnderlyingStatsResponse =
   | {
       success: true;
@@ -55,6 +84,7 @@ type UpdatePlayerUnderlyingStatsResponse =
       error: string;
       issues?: string[];
       failures?: RawIngestFailure[];
+      stageFailure?: UnderlyingStatsFailure;
       summaryFailure?: {
         code: string;
         stage: string;
@@ -131,6 +161,7 @@ async function handler(
     });
   }
 
+  let stage: UnderlyingStatsStage = "selection";
   try {
     const incrementalSelectionRequested = isTruthyQueryFlag(req.query.incremental);
     const catchUpRequested =
@@ -205,6 +236,7 @@ async function handler(
 
     for (let batchIndex = 0; batchIndex < gameIdBatches.length; batchIndex += 1) {
       const batchGameIds = gameIdBatches[batchIndex] ?? [];
+      stage = "raw_ingest";
       const rawIngest = await ingestNhlApiRawGamesBestEffort(serviceRoleClient, batchGameIds);
       const rawResults = rawIngest.results;
       aggregatedResults.push(...rawResults);
@@ -225,6 +257,7 @@ async function handler(
         shouldWarmLandingCache &&
         batchIndex === gameIdBatches.length - 1 &&
         failures.length === 0;
+      stage = "player_summary_refresh";
       const summaryRefresh = await refreshPlayerUnderlyingSummarySnapshotsForGameIds({
         gameIds: successfulGameIds,
         seasonId: selection.seasonId,
@@ -239,6 +272,7 @@ async function handler(
 
       // Team Explorer summaries are built from the same native inputs; no
       // other scheduled job writes them.
+      stage = "team_summary_refresh";
       const teamSummaryRefresh = await refreshTeamUnderlyingSummaryRowsForGameIds({
         gameIds: successfulGameIds,
         seasonId: selection.seasonId,
@@ -315,28 +349,17 @@ async function handler(
         },
       });
     }
-    const message = (() => {
-      if (error instanceof Error) {
-        return error.message;
-      }
-
-      if (error && typeof error === "object") {
-        try {
-          return JSON.stringify(error);
-        } catch {}
-      }
-
-      if (typeof error === "string") {
-        return error;
-      }
-
-      return "Unable to update player underlying stats.";
-    })();
+    const stageFailure = describeStageFailure(stage, error);
+    const sqlStateSuffix = stageFailure.sqlState ? `; SQLSTATE ${stageFailure.sqlState}` : "";
+    const writeContext = stageFailure.writes === "not_started"
+      ? "Writes were not started." : "Writes may have committed; verify before retry.";
+    const message = `Underlying stats ${stageFailure.stage} failed (${stageFailure.classification}${sqlStateSuffix}). ${writeContext}`;
 
     return res.status(500).json({
       success: false,
       error: message,
       issues: [message],
+      stageFailure,
     });
   }
 }
