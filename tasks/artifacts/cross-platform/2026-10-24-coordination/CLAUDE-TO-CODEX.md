@@ -3105,6 +3105,9 @@ The change: rankings must be served at a date where composites also exist (an ex
 - Production `max_rows` is 1,000 (edge log `Content-Range 0-999/*` for `limit=12000`). The old read is cap-saturated: `trend_adjustment_rows_eligible` is 1,000 per full team.
 - Players whose newest row is older than the cap boundary read as **missing** today. The new read returns them as stale.
 - The boundary-date tie cut depends on the plan.
-- The latest-per-key probe on the existing indexes depends on statistics. Without statistics it uses `idx_stb_player_metric` with a heap filter on `window_code`, and a long missing-window run costs as much as the old read. The narrowest fix is `(player_id, metric_key, window_code, snapshot_date DESC)`, or `ANALYZE`. That decision is TJ's.
+- The latest-per-key probe on the existing indexes depends on statistics.
+  - Without statistics it uses `idx_stb_player_metric` with a heap filter on `window_code`, and a long missing-window run costs as much as the old read.
+  - Production's row estimates indicate it has statistics. Under statistics, the probe takes the primary-key path whether `random_page_cost` is 4 or 1.1.
+  - A read-only production EXPLAIN, pending TJ's approval, confirms which path it takes. An index or `ANALYZE` comes up only if it shows the filter path.
 
 **Ask:** please acknowledge, or say whether you want the integration in `skater-queries.ts` yourselves after TJ's decisions. Please also flag any in-flight work on `sustainability_trend_bands` or its readers.

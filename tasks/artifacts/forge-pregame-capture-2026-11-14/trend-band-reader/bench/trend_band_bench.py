@@ -517,6 +517,53 @@ def proof():
     print(f"{'FAILED' if failures else 'OK'}: {len(failures)} failure(s)")
     sys.exit(1 if failures else 0)
 
+
+# The old reader's eligibleRows is min(eligible history, 1000); this is the cheapest statement that reproduces it.
+CAPPED_COUNT_SOURCE = (f"SELECT count(*) AS n FROM (SELECT 1 FROM {T} WHERE {T}.\"player_id\" = ANY ($1) AND {T}.\"metric_key\" = ANY ($2) "
+                       f"AND {T}.\"window_code\" = ANY ($3) AND {T}.\"snapshot_date\" <= $4 LIMIT 1000) AS capped")
+
+
+def plan_indexes(result):
+    found = set()
+
+    def walk(node):
+        if node.get("Index Name"):
+            found.add(f"{node['Node Type']}:{node['Index Name']}" + (":backward" if node.get("Scan Direction") == "Backward" else ""))
+        for child in node.get("Plans", []):
+            walk(child)
+    walk(result["plan"][0]["Plan"])
+    for notice in result.get("nested", []):
+        for part in notice.split("->"):
+            if " using " in part:
+                found.add(part.strip().split(" on ")[0])
+    return sorted(found)
+
+
+def bench_settings():
+    """Analyzed statistics under stock costs and under random_page_cost = 1.1 (common on hosted SSD storage)."""
+    start() if not (DATA / "postmaster.pid").exists() else None
+    conn = connect()
+    conn.autocommit = True
+    set_stats(conn.cursor(), "analyzed")
+    conn.close()
+    picked = {k: v for k, v in teams().items() if k in ("typical_a", "all_cron", "worst_l5_gap_60d", "worst_l5_never")}
+    lines, report = [], {}
+    for cost in ("4", "1.1"):
+        lines.append(f"\n== statistics: analyzed, random_page_cost = {cost} ==")
+        setup = (f"set random_page_cost = {cost}",)
+        for name, team in picked.items():
+            for label, source, generic, nested in (("old_custom", OLD_SOURCE.format(tie=""), False, False),
+                                                   ("new_custom", NEW_SOURCE, False, True),
+                                                   ("new_generic", NEW_SOURCE, True, True),
+                                                   ("capped_count_custom", CAPPED_COUNT_SOURCE, False, False)):
+                result = cold(source, team, generic=generic, nested=nested, setup=setup)
+                used = plan_indexes(result)
+                report[f"rpc{cost}/{name}/{label}"] = {"cold": result["cold"], "warm": result["warm"], "indexes": used}
+                lines.append(summary_line(f"{name}/{label}", result) + "  via " + ", ".join(used))
+                print(lines[-1], flush=True)
+    (OUT / "bench-settings.json").write_text(json.dumps(report, indent=1, default=str) + "\n")
+    (OUT / "bench-settings.txt").write_text("\n".join(lines) + "\n")
+
 if __name__ == "__main__":
     if not os.environ.get("STB_BENCH_DIR"):
         sys.exit("Set STB_BENCH_DIR to a scratch directory outside the repository")
@@ -532,6 +579,8 @@ if __name__ == "__main__":
         shutil.rmtree(BASE)
     elif command == "bench-index":
         bench_index()
+    elif command == "bench-settings":
+        bench_settings()
     elif command == "proof":
         proof()
     elif command == "fixture":
@@ -539,4 +588,4 @@ if __name__ == "__main__":
     elif command == "bench":
         bench()
     else:
-        sys.exit("usage: init | start | stop | destroy | bench | bench-index | proof | fixture")
+        sys.exit("usage: init | start | stop | destroy | bench | bench-index | bench-settings | proof | fixture")

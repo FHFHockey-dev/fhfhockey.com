@@ -1,0 +1,36 @@
+
+== statistics: analyzed, random_page_cost = 4 ==
+typical_a/old_custom                         cold read=  7567 hit=  5656    199.3 ms | warm    23.8 ms rows=1  via Bitmap Index Scan:sustainability_trend_bands_pkey
+typical_a/new_custom                         cold read=   211 hit=  1052      5.8 ms | warm     0.8 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+typical_a/new_generic                        cold read=   207 hit=  1047      3.4 ms | warm     0.7 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+typical_a/capped_count_custom                cold read=    74 hit=    24      0.8 ms | warm     0.6 ms rows=1  via Index Only Scan:sustainability_trend_bands_pkey
+all_cron/old_custom                          cold read= 11760 hit=  7851    379.5 ms | warm    35.7 ms rows=1  via Bitmap Index Scan:sustainability_trend_bands_pkey
+all_cron/new_custom                          cold read=   228 hit=  1053      3.6 ms | warm     0.8 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+all_cron/new_generic                         cold read=   224 hit=  1048      3.2 ms | warm     0.7 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+all_cron/capped_count_custom                 cold read=    48 hit=     6      0.8 ms | warm     0.7 ms rows=1  via Index Only Scan:sustainability_trend_bands_pkey
+worst_l5_gap_60d/old_custom                  cold read= 11152 hit=  6997    324.9 ms | warm    31.9 ms rows=1  via Bitmap Index Scan:sustainability_trend_bands_pkey
+worst_l5_gap_60d/new_custom                  cold read=   589 hit=  1972      7.7 ms | warm     5.1 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+worst_l5_gap_60d/new_generic                 cold read=   585 hit=  1967      8.3 ms | warm     4.5 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+worst_l5_gap_60d/capped_count_custom         cold read=    52 hit=     6      0.8 ms | warm     0.7 ms rows=1  via Index Only Scan:sustainability_trend_bands_pkey
+worst_l5_never/old_custom                    cold read= 10711 hit=  6829    323.0 ms | warm    28.9 ms rows=1  via Bitmap Index Scan:sustainability_trend_bands_pkey
+worst_l5_never/new_custom                    cold read=  1079 hit=  3786     16.8 ms | warm    11.8 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+worst_l5_never/new_generic                   cold read=  1075 hit=  3781     16.4 ms | warm    11.8 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+worst_l5_never/capped_count_custom           cold read=    94 hit=    14      1.5 ms | warm     1.5 ms rows=1  via Index Only Scan:sustainability_trend_bands_pkey
+
+== statistics: analyzed, random_page_cost = 1.1 ==
+typical_a/old_custom                         cold read=  6967 hit=   156     26.9 ms | warm     7.9 ms rows=1  via Bitmap Index Scan:idx_stb_player_metric
+typical_a/new_custom                         cold read=   211 hit=  1052      3.2 ms | warm     0.8 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+typical_a/new_generic                        cold read=   207 hit=  1047      2.8 ms | warm     0.7 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+typical_a/capped_count_custom                cold read=    74 hit=    24      0.9 ms | warm     0.7 ms rows=1  via Index Only Scan:sustainability_trend_bands_pkey
+all_cron/old_custom                          cold read= 10880 hit=   144     35.1 ms | warm    10.9 ms rows=1  via Bitmap Index Scan:idx_stb_player_metric
+all_cron/new_custom                          cold read=   228 hit=  1053      3.4 ms | warm     0.8 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+all_cron/new_generic                         cold read=   224 hit=  1048      3.6 ms | warm     0.7 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+all_cron/capped_count_custom                 cold read=    48 hit=     6      1.3 ms | warm     0.7 ms rows=1  via Index Only Scan:sustainability_trend_bands_pkey
+worst_l5_gap_60d/old_custom                  cold read= 10515 hit=  3903     36.9 ms | warm    12.1 ms rows=1  via Index Scan:idx_stb_player_metric
+worst_l5_gap_60d/new_custom                  cold read=   589 hit=  1972      7.8 ms | warm     4.9 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+worst_l5_gap_60d/new_generic                 cold read=   585 hit=  1967      7.7 ms | warm     5.0 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+worst_l5_gap_60d/capped_count_custom         cold read=    52 hit=     6      0.8 ms | warm     0.9 ms rows=1  via Index Only Scan:sustainability_trend_bands_pkey
+worst_l5_never/old_custom                    cold read= 10156 hit=   142     29.7 ms | warm     9.6 ms rows=1  via Bitmap Index Scan:idx_stb_player_metric
+worst_l5_never/new_custom                    cold read=  1079 hit=  3786     15.8 ms | warm    12.0 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+worst_l5_never/new_generic                   cold read=  1075 hit=  3781     15.8 ms | warm    13.1 ms rows=1  via Index Scan Backward using sustainability_trend_bands_pkey
+worst_l5_never/capped_count_custom           cold read=    94 hit=    14      1.7 ms | warm     1.7 ms rows=1  via Index Only Scan:sustainability_trend_bands_pkey

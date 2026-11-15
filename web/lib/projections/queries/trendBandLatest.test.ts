@@ -20,6 +20,7 @@ vi.mock("lib/supabase/server", () => ({ default: {
 } }));
 
 import { TREND_BAND_METRIC_PRIORITY, TREND_BAND_WINDOW_PRIORITY } from "../constants/projection-weights";
+import { resolveTrendBandReaderMode } from "../utils/trend-adjustments";
 import { fetchLatestSkaterTrendAdjustments } from "./skater-queries";
 import {
   expectedLatestTrendBandKeys,
@@ -57,6 +58,7 @@ function newestDateByPlayer(rows: LatestTrendBandKeyRow[]) {
 
 describe("batched latest trend-band read vs the capped history GET (same benchmark rows)", () => {
   it("uses the reader's exact lists and the request the benchmark replayed", async () => {
+    expect(resolveTrendBandReaderMode()).toEqual({ mode: "inert" });
     expect(fixture.readerMetrics).toEqual([...TREND_BAND_METRIC_PRIORITY]);
     expect(fixture.readerWindows).toEqual([...TREND_BAND_WINDOW_PRIORITY]);
     const team = fixture.teams.typical_a;
@@ -91,6 +93,12 @@ describe("batched latest trend-band read vs the capped history GET (same benchma
         if (kind === "beyond_cap") {
           expect(old.adjustments.has(playerId)).toBe(false);
           expect(fresh.adjustments.get(playerId)?.snapshotDate).toBe(date);
+        }
+        // While the reader is inert (Decision 26), a changed selection moves no rate and no uncertainty.
+        if (kind === "beyond_cap" || kind === "boundary") {
+          const adjustment = fresh.adjustments.get(playerId);
+          expect([adjustment?.shotRateMultiplier, adjustment?.goalRateMultiplier, adjustment?.assistRateMultiplier,
+            adjustment?.uncertaintyVolatilityMultiplier].every((m) => m === undefined || m === 1)).toBe(true);
         }
       }
       // A boundary player is one where the old statement's unspecified tie order decides what it sees.

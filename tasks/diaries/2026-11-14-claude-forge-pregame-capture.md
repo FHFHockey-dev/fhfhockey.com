@@ -208,7 +208,7 @@
 - **Checks:**
   - narrow tsc (temp tsconfig on the two files): exit 0;
   - eslint: exit 0;
-  - function proof: 12/12 on local PG15.
+  - function proof: 11/11 on local PG15.
 - **Findings:**
   - In-cap selection is identical for 95/95 players.
   - Beyond-cap players are now stale, not missing.
@@ -221,3 +221,8 @@
   - The PostgREST tie order differs from both explicit tie orders.
 - **Next:** TJ's decisions (counter, beyond-cap, read-only production EXPLAIN, then index or ANALYZE). Astra/Scout acknowledgement before any reader switch.
 - **Local data:** the bench DB (≈5.4 GB) stays in the scratchpad (`stb-bench`), server stopped.
+- **Review fixes (18:45Z):**
+  - Production has statistics: its 29,699-row estimate matches the analyzed plans. Under `random_page_cost = 1.1` the old read uses `idx_stb_player_metric`, as production's did, and the probe stays on the primary key.
+  - The capped count preserving `eligibleRows` costs 48–94 pages.
+  - "Rates unchanged" is conditional on the inert reader; the test asserts it.
+  - Plan excerpts added; the production EXPLAIN SQL is drafted, not run. Wider suites 243/243.
