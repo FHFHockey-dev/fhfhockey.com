@@ -60,9 +60,11 @@ const ENTITY_RANKING_SELECT_FIELDS = [
 ].join(",");
 
 const snapshotDateCache = new Map<string, { expiresAt: number; value: string | null }>();
+const pairedCutoffCache = new Map<string, { expiresAt: number; value: Promise<string | null> }>();
 
 export function clearEntityMetricRankingReaderCachesForTests() {
   snapshotDateCache.clear();
+  pairedCutoffCache.clear();
 }
 
 function finiteNumber(value: unknown): number | null {
@@ -229,6 +231,44 @@ function sortRows(
   });
 }
 
+// Rankings and composites publish as one pair, and the matrix joins composites
+// on the exact rankings date. Serve rankings no newer than the latest composite
+// date for the season and strength, so a half-finished publish keeps the last
+// complete pair visible. A season/strength with no composites is not capped.
+async function fetchPairedPublicationCutoff(
+  request: ContextualRankingsRequest,
+  cutoff: string,
+) {
+  const cacheKey = [request.season, cutoff, request.strength].join(":");
+  const cached = pairedCutoffCache.get(cacheKey);
+  const now = Date.now();
+  if (cached && cached.expiresAt > now) return cached.value;
+
+  // Cache the promise so concurrent metric lookups share one read.
+  const value = (async () => {
+    const { data, error } = await supabase
+      .from("skater_composite_ratings")
+      .select("snapshot_date")
+      .eq("season_id", request.season)
+      .eq("strength_state", request.strength)
+      .eq("window_type", "season")
+      .eq("window_size", 0)
+      .eq("peer_group_type", "all_skaters")
+      .lte("snapshot_date", cutoff)
+      .order("snapshot_date", { ascending: false })
+      .limit(1);
+    if (error) throw error;
+    const snapshotDate = data?.[0]?.snapshot_date;
+    return typeof snapshotDate === "string" ? snapshotDate : null;
+  })();
+  pairedCutoffCache.set(cacheKey, {
+    expiresAt: now + SNAPSHOT_DATE_CACHE_TTL_MS,
+    value,
+  });
+  value.catch(() => pairedCutoffCache.delete(cacheKey));
+  return value;
+}
+
 async function fetchLatestSnapshotDate(
   request: ContextualRankingsRequest,
   scope: PublishedScope = exactScope(request),
@@ -236,7 +276,11 @@ async function fetchLatestSnapshotDate(
   const definition = getContextualRankingMetricDefinition(request.metric);
   if (definition?.availabilityStatus !== "available" ||
       (definition.defaultStrengthState === "5v5" && request.strength !== "5v5")) return null;
-  const cutoff = request.asOfDate ?? new Date().toISOString().slice(0, 10);
+  const requestedCutoff = request.asOfDate ?? new Date().toISOString().slice(0, 10);
+  const pairedCutoff = await fetchPairedPublicationCutoff(request, requestedCutoff);
+  const cutoff = pairedCutoff != null && pairedCutoff < requestedCutoff
+    ? pairedCutoff
+    : requestedCutoff;
   const cacheKey = [
     request.season,
     cutoff,
