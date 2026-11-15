@@ -140,3 +140,15 @@
 - **Probe:** reports each property through `tokenInspect.ts` and retains its request, response and report in a new 0700 folder. Offline tests cover pass, missing accuracy, a wrong signer, an unreachable TSA and a reused folder.
 - **Candidate re-pinned:** `1cd29b4b9`. Clean-export typecheck exits 0. Vitest 147/147. Migration unchanged (`0d2b6aa6…`).
 - **Next:** TJ's go-ahead for P1 (one probe call). Then re-pin the policy, D1/D2 clearance, the G1 schedule lookup, and propose the earliest eligible game for approval.
+
+## Checkpoint 2026-11-15T03:xxZ: P1 probe run and re-pinned (Chef)
+- **P1 (TJ-approved):** one POST to DigiCert at 02:37:45Z, 235 ms. Receipt in `~/forge-pilot/probe-20261115T023745Z/`.
+  - The strict verifier refused on accuracy; OpenSSL `ts -verify` passed.
+  - The token has no Accuracy field, whole-second genTime, policy 2.16.840.1.114412.7.1, and bundles a cross-signed G4 (`33846b54…`).
+- **Fixes:**
+  - Bound adds genTime resolution (code + SQL `tsa_resolution_us`).
+  - Off-path certificates are accepted only by exact pinned SHA-256. A first "same subject + key" attempt was caught by the exhaustive flip test.
+  - Policy re-pinned. D3 = 60 s (TJ).
+  - DigiCert's real token kept as a regression fixture.
+- **Candidate:** `6562138932`; clean-export typecheck exit 0. Migration SHA-256 `4213b110…`; SQL proof 113/113; vitest 131 + baseline 21.
+- **Next:** D1 (migration apply) and D2 (verifier credential), each cleared separately by TJ; then G1 schedule lookup → earliest eligible game for TJ's approval (fallback: Tue 2026020334).

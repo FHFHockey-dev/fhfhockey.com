@@ -2,20 +2,20 @@
 
 - **Status:** ready for TJ's review. Nothing in this packet has been run against production, and nothing here is approved by being written.
 - **Owner:** Claude Chef session `local_e8064f61` ("FORGE pregame input capture").
-- **Packet date:** 2026-11-15. Revision 2: the probe is fixed and its trust is pinned in code; the candidate is re-pinned; the game is now the earliest eligible one, with Tuesday as fallback.
+- **Packet date:** 2026-11-15. Revision 3: P1 probe run (approved) and re-pinned; D3 decided (60 s); candidate re-pinned. Revision 2 had fixed the probe and set the game policy to earliest eligible, with Tuesday as fallback.
 
 ## 1. Exact candidate
 | item | value |
 | --- | --- |
-| Candidate code commit | `1cd29b4b989800c67864b6773ad1acc5ec06c2c7` (octoberBranch, local only, not pushed). Supersedes `55ed51604`. |
-| How it runs | From a clean `git archive 1cd29b4b9` export of the whole tree (13,403 tracked files, no untracked files), with `web/node_modules` linked from the checkout. Not from the working checkout. |
-| Custody migration | `supabase/migrations/20261115000000_forge_pregame_capture_custody.sql`, SHA-256 `0d2b6aa6e277b3f5060e7f5e18fd7c9c43ccc76f8770a5ee837e48e6a393d177`. Registered as **pending** authority row 150; not applied. |
+| Candidate code commit | `6562138932daab6829ebc178221b19eb9e4cda4a` (octoberBranch, local only, not pushed). Supersedes `1cd29b4b9` and `55ed51604`. |
+| How it runs | From a clean `git archive 6562138932` export of the whole tree (13,406 tracked files, no untracked files), with `web/node_modules` linked from the checkout. Not from the working checkout. |
+| Custody migration | `supabase/migrations/20261115000000_forge_pregame_capture_custody.sql`, SHA-256 `4213b1104ac4c0c262800c94eb12710b27dcea5460da96c314abb908d0df98b9`. Registered as **pending** authority row 150; not applied. |
 | Rollback | `supabase/tests/forge_pregame_capture_custody_rollback.sql` |
 | Pilot script | `web/scripts/forge-pregame-capture.ts` (policy `pregame-native-v1`) |
-| TSA profile (pinned in code) | `digicert-g4-v1` in `web/lib/projections/pregameCapture/tsaProfiles.ts`: URL `http://timestamp.digicert.com`; the G4 anchor is embedded and its SHA-256 checked on every load; the **policy slot is empty until a probe**. A capture refuses an unpinned profile; only the probe may use one. |
+| TSA profile (pinned in code) | `digicert-g4-v1` in `web/lib/projections/pregameCapture/tsaProfiles.ts`: URL `http://timestamp.digicert.com`; the G4 anchor is embedded and its SHA-256 checked on every load. **Re-pinned from the probe:** policy `2.16.840.1.114412.7.1`; DigiCert's off-path cross-signed G4 accepted only by exact SHA-256 `33846b54…b941`; fallback accuracy 60 s (D3). A capture refuses any unpinned profile. |
 | Trust root (public cert) | `tasks/artifacts/forge-pregame-capture-2026-11-14/digicert-trusted-root-g4.crt`: DigiCert Trusted Root G4, self-signed, valid 2013-08-01 to 2038-01-15, SHA-256 `55:2F:7B:DC:F1:A7:AF:9E:6C:E6:72:01:7F:4F:12:AB:F7:72:40:C7:8E:76:1A:C2:03:D1:D9:D2:0A:C8:99:88`. Exported from the macOS system root store; no download. |
 
-Any later commit used to run the pilot must show `git diff --stat 1cd29b4b9 <run SHA> -- web supabase` empty (docs only), or this packet is void. The one planned code change is the policy re-pin after the probe (§4); it produces a new candidate SHA, a fresh clean-export typecheck and a revised packet.
+Any later commit used to run the pilot must show `git diff --stat 6562138932 <run SHA> -- web supabase` empty (docs only), or this packet is void.
 
 ## 2. Game: earliest eligible, Tuesday as fallback
 **Primary: the earliest eligible game,** proposed only after P1 (the probe) passes and is re-pinned, and D1 (migration) and D2 (verifier) are cleared. TJ approves the specific game before it runs.
@@ -54,25 +54,43 @@ Any later commit used to run the pilot must show `git diff --stat 1cd29b4b9 <run
 - **TSA:** DigiCert public timestamp service, `http://timestamp.digicert.com`.
   - Tokens are signed, so the transport needs no TLS for integrity.
   - Only a SHA-256 digest leaves the process; no FHFH data does.
-  - Anchor: DigiCert Trusted Root G4 above. The signer must chain to it, carry a critical timestamping-only EKU, be valid at genTime, and be bound by ESS signingCertificate(V2).
-- **Probe (P1; separate from the capture; one call; no database access, no credentials):**
-  - **Command,** from the clean export's `web/`:
-    `NODE_PATH=. npx ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/forge-pregame-capture.ts --tsa-probe --confirm-probe --tsa-profile digicert-g4-v1 --out ~/forge-pilot/probe-<UTC timestamp>`
-  - **What it sends:** one POST of a 32-random-byte digest with a nonce to `http://timestamp.digicert.com`, with a 10 s timeout.
-  - **What it retains** (in the new 0700 `--out` folder; files 0600):
-    - the request (`probe-request.tsq`);
-    - the digest and nonce;
-    - the raw response (`probe-response.tsr`);
-    - `probe-report.json`: strict verdict, timing, full token inspection (policy OID, accuracy fields, nonce, signer version and identifier, ESS v1/v2, signed and unsigned attributes, every bundled certificate's subject and SHA-256 with EKU criticality), and the proposed pin.
-  - **Pass condition:** the strict verifier accepts the token against the G4 anchor (exact DER tags, NULL-only algorithm parameters, no unsigned attributes, bundled certificates on the path or equal to the anchor, critical timestamping-only EKU, ESS binding, validity at genTime), and the token carries an `Accuracy` field.
-  - **Independent cross-check, local and no network:** `openssl ts -reply -in probe-response.tsr -text` and `openssl ts -verify -digest <hex> -in probe-response.tsr -CAfile digicert-trusted-root-g4.crt`.
-  - **Re-pin:** a reviewed commit sets `policies` in `digicert-g4-v1` to the observed policy OID, and nothing else.
-  - **If it fails:** the report names the failing property. Any strict-rule mismatch with DigiCert's real token needs a code change, offline tests and review before any capture.
-- **Accuracy:** if the probe shows no `Accuracy` field, the capture cannot qualify unless TJ approves a pinned fallback bound (D3); the default refuses.
-- **Revocation policy (proposed for the pilot):**
-  - No online revocation check during the pilot; OCSP or CRL would be further external calls.
-  - The verifier checks the chain to the pinned root and validity at genTime. The witness keeps the signer certificate SHA-256 and the full token.
-  - A post-hoc CRL/OCSP check of the recorded signer can be approved separately later.
+
+**P1 probe: done 2026-11-15T02:37:45Z (TJ approved, one call, 235 ms).** It ran from the clean export of `1cd29b4b9`. The receipt is in `~/forge-pilot/probe-20261115T023745Z/` (folder 0700, files 0600): request, digest and nonce, raw response, full report.
+
+**What the token showed:**
+
+| property | result |
+| --- | --- |
+| Status | granted |
+| Policy | `2.16.840.1.114412.7.1` |
+| Imprint algorithm | SHA-256 |
+| Nonce | present, matches |
+| genTime | `20261115023745Z`, **whole seconds** |
+| Accuracy | **absent** |
+| SignedData | v3 |
+| Signer | v1, issuer-and-serial |
+| ESS binding | v1 and v2 both signed |
+| Unsigned attributes / trailing elements | none / none |
+| Signature | rsaEncryption + SHA-256 |
+
+**Bundled certificates:**
+1. Responder "DigiCert SHA256 RSA4096 Timestamp Responder 2026 1" (`2da09da7…`), EKU critical and timestamping-only, valid 2026-08-05 to 2037-11-04.
+2. Intermediate "DigiCert Trusted G4 TimeStamping RSA4096 SHA256 2025 CA1" (`ca0b1554…`).
+3. A cross-signed "DigiCert Trusted Root G4" (`33846b54…`, issuer DigiCert Assured ID Root CA). It is not our self-signed G4 anchor.
+
+**Independent cross-check, local:** OpenSSL `ts -verify` against the pinned G4 root returned "Verification: OK", both request-bound and digest-bound.
+
+**What changed because of the probe (offline, tested, committed in `6562138932`):**
+- **Re-pin:** policy `2.16.840.1.114412.7.1`. The off-path cross-signed G4 is accepted only by exact SHA-256; any other off-path certificate is still refused. The exhaustive flip test still refuses every single-bit change.
+- **Resolution:** the conservative bound now adds genTime's resolution (1 s for DigiCert), in the verifier and in SQL (`tsa_resolution_us`; upper bound = gen + accuracy + resolution).
+- **D3 (TJ, 2026-11-15): fallback accuracy 60 s.** For DigiCert the bound is genTime + 61 s. The database-clock cross-check tolerance widens to match.
+- **Regression fixture:** DigiCert's real token (random digest, no FHFH data) is in the test fixtures. Without a fallback it is refused; under the final capture profile it verifies, with bound = genTime + 61 s.
+
+**Revocation policy for the pilot:**
+- No online revocation check (OCSP or CRL would be further external calls).
+- The verifier checks the chain to the pinned root and validity at genTime.
+- The witness keeps the signer certificate SHA-256 and the full token.
+- A post-hoc CRL/OCSP check of the recorded signer can be approved separately later.
 
 ## 5. Limits (refusal caps; any breach fails the capture as `source_failed`, never a partial packet)
 | limit | value |
@@ -133,7 +151,7 @@ Any later commit used to run the pilot must show `git diff --stat 1cd29b4b9 <run
 
 ## 9. Verified offline (local only, no production, no external calls)
 - **Byte-for-byte writer parity of the stage split** in 14 scenarios (9 with compute on; 5 with compute off, including a resumed run). See `SPLIT-PARITY-EVIDENCE.md`.
-- **Custody SQL proof:** 112/112 on local PostgreSQL 15, run as a non-superuser owner (`supabase/tests/forge_pregame_capture_custody.py`). It covers:
+- **Custody SQL proof:** 113/113 on local PostgreSQL 15, run as a non-superuser owner (`supabase/tests/forge_pregame_capture_custody.py`). It covers:
   - claim refusals and the concurrent single winner;
   - save once, the settle fence and the sweeper;
   - outcome/claim consistency;
@@ -141,7 +159,7 @@ Any later commit used to run the pilot must show `git diff --stat 1cd29b4b9 <run
   - an earlier current start;
   - immutability, including replica mode;
   - grants and rollback.
-- **Vitest:** 147 tests in 9 files (capture modules, pilot script, probe, baseline migration), including:
+- **Vitest:** 131 tests in 8 files (capture modules, pilot script, probe, real DigiCert token), plus the baseline migration test 21/21, including:
   - **Fail-first cutoff test:** a token bound within T−60 with a final readback after it does not qualify. It failed on the old verifier and passes now.
   - **Exhaustive tamper test:** every single-bit flip in a token is refused.
   - **Strict RFC 3161 checks:** EKU, signer identity, version, accuracy, DER and time-range checks.
@@ -160,16 +178,16 @@ Any later commit used to run the pilot must show `git diff --stat 1cd29b4b9 <run
   | token in time, final readback late | not qualified |
 
   In every case: no writes reached input sources, no forecast or revision surface was touched, reads stayed on the allowlist, and the packet held no outputs.
-- **9a. Clean-export typecheck of `1cd29b4b9`:** `git archive` of the full tree (13,403 files, no untracked files), `npm run typecheck` under the heavy lock: **exit 0, 0 errors**.
+- **9a. Clean-export typecheck of `6562138932`:** `git archive` of the full tree (13,406 files, no untracked files), `npm run typecheck` under the heavy lock: **exit 0, 0 errors**.
 
 ## 10. Needs TJ's approval (each separately; nothing here is approved)
 | # | action | scope |
 | --- | --- | --- |
 | D1 | Apply migration `20261115000000` to production | Singly, after fresh load checks; read back; record in `schema_migrations`; flip authority row 150 to applied with the receipt. |
 | D2 | Verifier credential | (a, recommended for the pilot) the same `service_role` with a separate client, plus the Astra/OpenSSL post-hoc check; or (b) create a dedicated verifier role with read-only EXECUTE on `read_v1`/`record_witness_v1` (a new permission and migration). |
-| D3 | Accuracy fallback | Only if the probe shows no Accuracy field: approve a pinned bound (e.g. 1 s per DigiCert's published policy) or keep refusing. |
+| D3 | ~~Accuracy fallback~~ **decided** | TJ, 2026-11-15: 60 s (bound = genTime + 61 s with the 1 s resolution). |
 | D4 | Astra's own read-only readback | One `forge_pregame_capture_read_v1` call after the run, for independent verification. |
-| P1 | **TSA probe** (external) | One POST to `timestamp.digicert.com` through profile `digicert-g4-v1`, random digest, no FHFH data, no database access or credentials; receipt retained under `~/forge-pilot/`. Then the re-pin commit (§4). |
+| P1 | ~~TSA probe~~ **done** | Ran 2026-11-15T02:37:45Z with TJ's approval and was re-pinned in `6562138932` (§4). |
 | G1 | **Schedule lookup** (read-only) | After P1, D1 and D2 clear: one bounded read of `games` (ids, date, start, sides) from now through the fallback date, to name the earliest eligible game for TJ's approval. |
 | P2 | **Capture run** (live reads + private writes + one TSA call) | The earliest eligible game TJ approves (fallback 2026020334 at 18:00 ET on 2026-11-17), policy `pregame-native-v1`, the re-pinned candidate, limits as in §5, credentials loaded from `web/.env.local` only for that run. |
 
