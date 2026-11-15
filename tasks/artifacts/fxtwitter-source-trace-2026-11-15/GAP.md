@@ -30,6 +30,11 @@ It holds two stored reports for one post:
   `linesCccIngestion.ts`), and only when the post's context is `game`.
 - No game binding, a one-team or unknown game, a goalie with no team, a goalie outside the game, or two goalies on the same
   team: no sharing, so only the second goalie is confirmed (the old behaviour). Other callers pass no game and are unchanged.
+- The matchup link joins only a lone goalie on each side. "Ellis and Lyon vs Hill in goal" no longer confirms both Sabres
+  goalies (reproduced on cd5ab85b2, fixed after). A plain "and" list ("A and B in goal") still confirms both, as before.
+- Production feeds the gate (code read): `update-line-sources.ts:380-388` and `update-lines-ccc.ts:256-264` map both home
+  and away teams to the game and drop teams with two games that day (the gate then stays closed). Roster entries carry
+  `teamId` from `rosters` (`lineSourceProcessing.ts:181-186`).
 - First cut (f42acc8aa) shared the predicate for any two goalies, so two same-team goalies could both become confirmed
   starters, and the team filter downstream could not catch it. The follow-up commit closes that.
 - Tests: `tweetInterpretation.test.ts` ("goalie matchup 'A vs B in goal'": opposite sides, same team, unresolved sides) and
@@ -39,10 +44,13 @@ It holds two stored reports for one post:
 **Version:** `TWEET_INTERPRETATION_VERSION` is bumped `2026-11-06.1` → `2026-11-15.1`. It is part of the immutable report
 key and the claim version, so new reports sit beside the old ones. `projectedLineups.test.ts` checks that the pre-bump
 report stays unchanged, both rows coexist, the internal reader returns both, and the public reader selects the current one.
-No historical replay was run.
+Claims: `lib/lines/sourceClaims.test.ts` checks that the same post under both versions gets distinct claim ids and versions
+and that `activeLineClaims` keeps only the newer one. The DRM history reader lists every version by design (existing test
+"keeps claim versions/corrections"). No historical replay was run.
+- **Release:** `tweetPlayerEvents.ts`, `linesCccIngestion.ts` and `tweetInterpretation.ts` must ship together.
 
 **Production effect (code read, not run):**
-- Rosters: the processor passes every team's roster (`linesCccIngestion.ts:1631,1760` flatten `rosterByTeam`), so Ellis is in scope.
+- Rosters: the processor passes every team's roster (`linesCccIngestion.ts:1640,1770` flatten `rosterByTeam`), so Ellis is in scope.
 - VGK row: the consumer drops events for another team (`sourceObservations.ts:160`), so Ellis's event cannot land on it.
 - BUF row: `expandLinesCccGoalieClaims` now splits this post into a BUF child and a VGK child once it is reinterpreted.
   Whether a BUF row exists today in production is still unknown (the sample holds team 54 only).
@@ -50,7 +58,7 @@ No historical replay was run.
 **Checks:**
 - New regressions fail on f42acc8aa and pass with the fix.
 - Vitest across `lib/sources`, `lib/lines`, `lib/player-forecasts`, news feed, Lines API and line-source route tests:
-  108 files, 3008 passed, 0 failed.
+  108 files, 3009 passed, 0 failed.
 - Scoped eslint: exit 0. `npm run typecheck`: exit 0.
 
 ## Newest FORGE capture is not FxTwitter evidence

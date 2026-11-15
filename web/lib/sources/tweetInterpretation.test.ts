@@ -748,6 +748,15 @@ describe("retained audit claim regressions", () => {
     });
     it("never makes two same-team goalies both confirmed starters", () => {
       expect(goalies([{ ...ellis, teamId: 54 }, hill], [7, 54])).toEqual(hillOnly);
+      // A list joined to one side must not ride the matchup into a second same-team starter.
+      const lyon = { playerId: 3, fullName: "Alex Lyon", lastName: "Lyon", position: "G", teamId: 7 };
+      const schmid = { playerId: 4, fullName: "Akira Schmid", lastName: "Schmid", position: "G", teamId: 54 };
+      const chained = (chainText: string) => extractTweetPlayerEvents({ text: chainText, players: [ellis, lyon, hill, schmid], publishedAt: null, gameTeamIds: [7, 54] })
+        .filter((event) => event.state === "confirmed").map((event) => event.playerId);
+      expect(chained("Colten Ellis and Alex Lyon vs Adin Hill in goal")).toEqual([2]);
+      expect(chained("Colten Ellis, Alex Lyon vs Adin Hill in goal")).toEqual([2]);
+      expect(chained("Colten Ellis vs Adin Hill and Akira Schmid in goal")).not.toContain(1);
+      expect(chained("Colten Ellis vs Adin Hill vs Akira Schmid in goal")).not.toContain(1);
     });
     it("does not share the predicate when either side is unresolved", () => {
       expect(goalies([ellis, hill])).toEqual(hillOnly);
