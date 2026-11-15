@@ -267,3 +267,8 @@
   - Added the stale-player end-to-end test and a transport HTTP test.
   - Suites: 107 files, 2,076 tests.
   - The pilot packet needs a revision (three RPCs, new SHA).
+
+## Checkpoint 2026-11-15T19:35Z: migration 151 apply packet ready (Chef)
+- **Prepared:** `trend-band-reader/MIGRATION-151-APPLY-PACKET.md`, `operator/apply-migration-151.sh` (fail-closed: preflight, apply, readback, smoke) and `operator/apply-migration-151-selftest.sh` (10/10 on a disposable PG15).
+- **Not run in production:** no preflight, apply or smoke yet. They wait on TJ's pop-up.
+- **Gotcha:** a local postmaster under the default macOS locale fails with "became multithreaded during startup". Set `LC_ALL=C`.
