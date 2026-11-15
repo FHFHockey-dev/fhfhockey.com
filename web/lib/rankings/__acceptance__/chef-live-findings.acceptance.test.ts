@@ -184,6 +184,8 @@ describe("Chef live finding 2: team filter (F13)", () => {
         position_group: id === 6 ? "defense" : "forward",
         deployment_bucket: id === 1 || id === 4 ? "L1" : "L2",
       })),
+      // No completion markers yet: the reader keeps the #449 date match.
+      ranking_publications: [],
       skater_composite_ratings: ids.map((id) => compositeRow(id, 100 - id)),
       // The rolling fallback is a day newer than the durable publication.
       rolling_player_game_metrics: ids.map((id) => ({
@@ -237,6 +239,8 @@ describe("Chef live finding 3: snapshot for an unpublished skater (F14)", () => 
     const ids = Array.from({ length: 120 }, (_, index) => index + 1);
     db.tables = {
       entity_metric_rankings: ids.map((id) => durableRow(id, 200 - id)),
+      // No completion markers yet: the reader keeps the #449 date match.
+      ranking_publications: [],
       skater_composite_ratings: [],
       rolling_player_game_metrics: [],
       rolling_player_metric_support_payloads: [],

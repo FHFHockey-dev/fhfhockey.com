@@ -20,8 +20,11 @@ const COMPLETE_SEASON_ROWS = [{ player_id: 1 }, { player_id: 2 }];
 import {
   buildEntityMetricRankingRows,
   defaultEntityMetricRankingMetricKeys,
+  planEntityMetricRankingPublication,
+  publishEntityMetricRankingRows,
   upsertEntityMetricRankingRows,
   type EntityMetricRankingBuildRequest,
+  type EntityMetricRankingBuildResult,
   type EntityMetricRankingInsert,
 } from "./entityMetricRankingWriter";
 import type { ContextualRankingSnapshotMetricRows } from "./rankingQueries";
@@ -288,6 +291,7 @@ describe("entityMetricRankingWriter", () => {
     expect(upsertMock.mock.calls[0]?.[1]).toEqual({
       onConflict:
         "entity_type,entity_id,season_id,snapshot_date,window_type,window_size,strength_state,metric_key,peer_group_type,peer_group_key",
+      count: "exact",
     });
   });
 
@@ -326,5 +330,173 @@ describe("entityMetricRankingWriter", () => {
     expect(upsertMock.mock.calls[0]?.[0]).toHaveLength(4);
     expect(upsertMock.mock.calls[1]?.[0]).toHaveLength(2);
     expect(upsertMock.mock.calls[2]?.[0]).toHaveLength(2);
+  });
+});
+
+describe("Rankings publication completion markers", () => {
+  const metricKeys = defaultEntityMetricRankingMetricKeys({ strength: "5v5" });
+  const fullRequest: EntityMetricRankingBuildRequest = {
+    season: 20262027,
+    asOfDate: "2026-11-14",
+    windows: ["season", "last10"],
+    position: "all",
+    deployment: "all",
+    strength: "5v5",
+    minGp: 1,
+    minToiSeconds: 300,
+    teamId: null,
+    peerGroupType: "all_skaters",
+    metricKeys,
+  };
+  const rowsFor = (window: "season" | "last_10", size: number, date = "2026-11-14", players = [1, 2]) =>
+    players.flatMap((entity_id) =>
+      metricKeys.map((metric_key) => ({
+        entity_type: "skater",
+        entity_id,
+        season_id: 20262027,
+        snapshot_date: date,
+        window_type: window,
+        window_size: size,
+        window_semantics: "season_to_date",
+        strength_state: "5v5",
+        metric_key,
+        peer_group_type: "all_skaters",
+        peer_group_key: "all",
+      })),
+    ) as EntityMetricRankingInsert[];
+  const built = (overrides: Partial<EntityMetricRankingBuildResult> = {}): EntityMetricRankingBuildResult => ({
+    request: fullRequest,
+    rows: [...rowsFor("season", 0), ...rowsFor("last_10", 10)],
+    contexts: [],
+    sourceFreshness: [],
+    unavailableMetrics: [],
+    expectedEntities: 2,
+    ...overrides,
+  });
+
+  // Records every write in order; `failRankingsAfter` makes the Nth rankings
+  // upsert fail, `shortCount` makes the database report one row fewer.
+  function fakeClient(options: { failRankingsAfter?: number; shortCount?: boolean; noCount?: boolean; markerError?: unknown } = {}) {
+    const log: Array<{ table: string; rows: any[]; options: any }> = [];
+    let rankingsCalls = 0;
+    const client = {
+      from: vi.fn((table: string) => ({
+        upsert: vi.fn(async (rows: any[], upsertOptions: any) => {
+          log.push({ table, rows, options: upsertOptions });
+          if (table === "ranking_publications") {
+            return { error: options.markerError ?? null };
+          }
+          rankingsCalls += 1;
+          if (options.failRankingsAfter != null && rankingsCalls > options.failRankingsAfter) {
+            return { error: { message: "fixture chunk failure" }, count: null };
+          }
+          if (options.noCount) return { error: null, count: null };
+          return { error: null, count: options.shortCount ? rows.length - 1 : rows.length };
+        }),
+      })),
+    };
+    return { client, log };
+  }
+  const markers = (log: Array<{ table: string; rows: any[] }>) =>
+    log.filter((entry) => entry.table === "ranking_publications").flatMap((entry) => entry.rows);
+
+  it("marks every window writing before the first row, then complete after the database confirms each window", async () => {
+    const { client, log } = fakeClient();
+    const result = await publishEntityMetricRankingRows(client as any, built(), { chunkSize: 50 });
+    expect(log[0]?.table).toBe("ranking_publications");
+    expect(log[0]?.rows.map((row) => [row.window_type, row.status])).toEqual([
+      ["season", "writing"],
+      ["last_10", "writing"],
+    ]);
+    const finals = markers(log).slice(2);
+    expect(finals.map((row) => [row.window_type, row.status, row.db_written_rows, row.written_entities])).toEqual([
+      ["season", "complete", metricKeys.length * 2, 2],
+      ["last_10", "complete", metricKeys.length * 2, 2],
+    ]);
+    expect(finals[0]).toMatchObject({
+      surface: "entity_metric_rankings", season_id: 20262027, snapshot_date: "2026-11-14",
+      strength_state: "5v5", peer_group_type: "all_skaters", peer_group_key: "all",
+      min_gp: 1, min_toi_seconds: 300, expected_rows: metricKeys.length * 2, expected_entities: 2,
+      metric_set: [...metricKeys].sort(),
+    });
+    expect(finals[0]?.completed_at).toEqual(expect.any(String));
+    expect(result.complete).toBe(true);
+  });
+
+  it("leaves the marker at writing when a chunk fails part-way", async () => {
+    const { client, log } = fakeClient({ failRankingsAfter: 1 });
+    await expect(publishEntityMetricRankingRows(client as any, built(), { chunkSize: 10 })).rejects.toThrow("fixture chunk failure");
+    expect(markers(log).every((row) => row.status === "writing")).toBe(true);
+  });
+
+  it("does not mark complete when the database reports fewer rows than were built", async () => {
+    const { client, log } = fakeClient({ shortCount: true });
+    const result = await publishEntityMetricRankingRows(client as any, built());
+    expect(result.complete).toBe(false);
+    expect(markers(log).every((row) => row.status === "writing")).toBe(true);
+    expect(result.windows[0]?.blockers.join(" ")).toContain("The database reported");
+  });
+
+  it("does not mark complete when the database reports no count", async () => {
+    const { client } = fakeClient({ noCount: true });
+    const result = await publishEntityMetricRankingRows(client as any, built());
+    expect(result.complete).toBe(false);
+    expect(result.windows[0]?.blockers.join(" ")).toContain("did not report");
+  });
+
+  it("refuses a full publication before writing when a window is short of the source-coverage population", async () => {
+    const { client, log } = fakeClient();
+    await expect(publishEntityMetricRankingRows(client as any, built({ expectedEntities: 3 }))).rejects.toThrow("population is 3");
+    expect(log).toHaveLength(0);
+  });
+
+  it("refuses a window whose rows span more than one snapshot date", async () => {
+    const { client, log } = fakeClient();
+    const rows = [...rowsFor("season", 0, "2026-11-14", [1]), ...rowsFor("season", 0, "2026-11-13", [2]), ...rowsFor("last_10", 10)];
+    await expect(publishEntityMetricRankingRows(client as any, built({ rows }))).rejects.toThrow("span 2 snapshot dates");
+    expect(log).toHaveLength(0);
+  });
+
+  it("refuses when a default metric has no rows in a window", async () => {
+    const { client } = fakeClient();
+    const rows = [...rowsFor("season", 0).filter((row) => row.metric_key !== metricKeys[0]), ...rowsFor("last_10", 10)];
+    await expect(publishEntityMetricRankingRows(client as any, built({ rows }))).rejects.toThrow(`no rows for ${metricKeys[0]}`);
+  });
+
+  it.each([
+    ["one metric", { metricKeys: [metricKeys[0]!] }],
+    ["a custom GP floor", { minGp: 10 }],
+    ["a team scope", { teamId: 22, peerGroupType: "team" as const }],
+  ])("writes %s without any marker", async (_label, overrides) => {
+    const { client, log } = fakeClient();
+    const result = await publishEntityMetricRankingRows(client as any, built({ request: { ...fullRequest, ...overrides } }));
+    expect(result.marked).toBe(false);
+    expect(markers(log)).toHaveLength(0);
+    expect(result.rowsUpserted).toBe(built().rows.length);
+  });
+
+  it("writes no marker when a metric was unavailable", async () => {
+    const { client, log } = fakeClient();
+    const result = await publishEntityMetricRankingRows(client as any, built({
+      unavailableMetrics: [{ window: "season", metricKey: metricKeys[0]!, reason: "fixture" }],
+    }));
+    expect(result.marked).toBe(false);
+    expect(markers(log)).toHaveLength(0);
+  });
+
+  it("stops before writing rows when the marker table is not deployed", async () => {
+    const { client, log } = fakeClient({ markerError: { code: "PGRST205", message: "Could not find the table 'public.ranking_publications' in the schema cache" } });
+    await expect(publishEntityMetricRankingRows(client as any, built())).rejects.toThrow("not deployed");
+    expect(log.filter((entry) => entry.table === "entity_metric_rankings")).toHaveLength(0);
+  });
+
+  it("plans a dry run without writing", () => {
+    const plan = planEntityMetricRankingPublication(built({ expectedEntities: 3 }));
+    expect(plan.marked).toBe(true);
+    expect(plan.windows.map((window) => [window.windowType, window.expectedRows, window.writtenEntities])).toEqual([
+      ["season", metricKeys.length * 2, 2],
+      ["last_10", metricKeys.length * 2, 2],
+    ]);
+    expect(plan.windows[0]?.blockers.join(" ")).toContain("population is 3");
   });
 });

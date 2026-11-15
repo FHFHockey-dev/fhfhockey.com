@@ -4,9 +4,11 @@ import type { NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
   buildSkaterCompositeRatingRows,
-  upsertSkaterCompositeRatingRows,
+  publishSkaterCompositeRatingRows,
+  RankingsNotCompleteError,
   type SkaterCompositeBuildRequest,
 } from "lib/rankings/skaterCompositeWriter";
+import { RankingPublicationTableMissingError } from "lib/rankings/rankingPublications";
 import type { ContextualRankingPeerGroupType } from "lib/rankings/rankingCalculator";
 import type {
   ContextualRankingsDeploymentFilter,
@@ -153,12 +155,15 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
         rowsUpserted: 0,
       });
     }
-    const rowsUpserted = dryRun
-      ? 0
-      : await upsertSkaterCompositeRatingRows(req.supabase, built.rows);
+    const published = dryRun
+      ? null
+      : await publishSkaterCompositeRatingRows(req.supabase, built);
+    const incomplete = published?.marked === true && published.status !== "complete";
+    const rowsUpserted = published?.rowsUpserted ?? 0;
 
-    return res.status(200).json({
-      success: true,
+    return res.status(incomplete ? 409 : 200).json({
+      success: !incomplete,
+      completion: published,
       dryRun,
       request,
       snapshotDate: built.snapshotDate,
@@ -173,6 +178,12 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
       sampleRows: built.rows.slice(0, 3),
     });
   } catch (error) {
+    if (
+      error instanceof RankingsNotCompleteError ||
+      error instanceof RankingPublicationTableMissingError
+    ) {
+      return res.status(409).json({ success: false, rowsUpserted: 0, error: error.message });
+    }
     return res.status(400).json({
       success: false,
       error:

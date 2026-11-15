@@ -15,10 +15,18 @@ vi.mock("../../../../../utils/adminOnlyMiddleware", () => ({
     handler({ ...req, supabase: fakeSupabase }, res),
 }));
 
-vi.mock("../../../../../lib/rankings/skaterCompositeWriter", () => ({
-  buildSkaterCompositeRatingRows: buildRowsMock,
-  upsertSkaterCompositeRatingRows: upsertRowsMock,
-}));
+vi.mock("../../../../../lib/rankings/skaterCompositeWriter", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../../../../lib/rankings/skaterCompositeWriter")>();
+  return {
+    ...actual,
+    buildSkaterCompositeRatingRows: buildRowsMock,
+    publishSkaterCompositeRatingRows: upsertRowsMock,
+  };
+});
+
+import { RankingsNotCompleteError } from "../../../../../lib/rankings/skaterCompositeWriter";
+import { RankingPublicationTableMissingError } from "../../../../../lib/rankings/rankingPublications";
 
 import handler from "../../../../../pages/api/v1/db/update-skater-composite-ratings";
 
@@ -63,7 +71,10 @@ describe("/api/v1/db/update-skater-composite-ratings", () => {
       unavailableMetrics: [],
       publication: { ready: true, blockers: [], candidateCount: 2, scoredCount: 2, unscoredCount: 0, truncated: false },
     });
-    upsertRowsMock.mockResolvedValue(2);
+    upsertRowsMock.mockResolvedValue({
+      rowsUpserted: 2, dbWrittenRows: 2, marked: true, status: "complete",
+      snapshotDate: "2026-04-16", writtenEntities: 2, blockers: [],
+    });
   });
 
   it("returns 405 for unsupported methods", async () => {
@@ -141,10 +152,10 @@ describe("/api/v1/db/update-skater-composite-ratings", () => {
 
     await handler(req, res);
 
-    expect(upsertRowsMock).toHaveBeenCalledWith(fakeSupabase, [
-      { player_id: 1 },
-      { player_id: 2 },
-    ]);
+    expect(upsertRowsMock).toHaveBeenCalledWith(
+      fakeSupabase,
+      expect.objectContaining({ rows: [{ player_id: 1 }, { player_id: 2 }] }),
+    );
     expect(buildRowsMock).toHaveBeenCalledWith(
       expect.objectContaining({
         limit: 1000,
@@ -163,6 +174,33 @@ describe("/api/v1/db/update-skater-composite-ratings", () => {
     expect(res.statusCode).toBe(409);
     expect(res.body.rowsUpserted).toBe(0);
     expect(upsertRowsMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 and writes nothing until Rankings at the cutoff are complete", async () => {
+    upsertRowsMock.mockRejectedValueOnce(new RankingsNotCompleteError("Rankings at 2026-04-16 (5v5, season) are not a complete publication"));
+    const res = createMockRes();
+    await handler({ method: "POST", query: { season: "20262027", dryRun: "false" } } as any, res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ success: false, rowsUpserted: 0 });
+    expect(res.body.error).toMatch(/not a complete publication/);
+  });
+
+  it("returns 409 when the marker table is not deployed", async () => {
+    upsertRowsMock.mockRejectedValueOnce(new RankingPublicationTableMissingError());
+    const res = createMockRes();
+    await handler({ method: "POST", query: { season: "20262027", dryRun: "false" } } as any, res);
+    expect(res.statusCode).toBe(409);
+  });
+
+  it("returns 409 when the composite write did not complete", async () => {
+    upsertRowsMock.mockResolvedValueOnce({
+      rowsUpserted: 2, dbWrittenRows: 1, marked: true, status: "writing",
+      snapshotDate: "2026-04-16", writtenEntities: 2, blockers: ["short"],
+    });
+    const res = createMockRes();
+    await handler({ method: "POST", query: { season: "20262027", dryRun: "false" } } as any, res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ success: false, completion: { status: "writing" } });
   });
 
   it("returns 400 when season is missing", async () => {

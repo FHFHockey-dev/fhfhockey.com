@@ -5,9 +5,11 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
   buildEntityMetricRankingRows,
   defaultEntityMetricRankingMetricKeys,
-  upsertEntityMetricRankingRows,
+  planEntityMetricRankingPublication,
+  publishEntityMetricRankingRows,
   type EntityMetricRankingBuildRequest,
 } from "lib/rankings/entityMetricRankingWriter";
+import { RankingPublicationTableMissingError } from "lib/rankings/rankingPublications";
 import {
   getContextualRankingMetricDefinition,
   type ContextualRankingMetricKey,
@@ -214,25 +216,33 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
       max: 500,
     });
     const built = await buildEntityMetricRankingRows(request);
-    const rowsUpserted = dryRun
-      ? 0
-      : await upsertEntityMetricRankingRows(req.supabase, built.rows, {
+    const published = dryRun
+      ? null
+      : await publishEntityMetricRankingRows(req.supabase, built, {
           chunkSize: upsertChunkSize ?? undefined,
         });
+    // A full publication that did not complete keeps its markers at
+    // `writing`; the reader keeps serving the last complete pair.
+    const incomplete = published?.marked === true && !published.complete;
 
-    return res.status(200).json({
-      success: true,
+    return res.status(incomplete ? 409 : 200).json({
+      success: !incomplete,
       dryRun,
       request,
       upsertChunkSize,
       generatedRows: built.rows.length,
-      rowsUpserted,
+      rowsUpserted: published?.rowsUpserted ?? 0,
+      dbWrittenRows: published?.dbWrittenRows ?? null,
+      publication: published ?? planEntityMetricRankingPublication(built),
       contexts: built.contexts,
       sourceFreshness: built.sourceFreshness,
       unavailableMetrics: built.unavailableMetrics,
       sampleRows: built.rows.slice(0, 3),
     });
   } catch (error) {
+    if (error instanceof RankingPublicationTableMissingError) {
+      return res.status(409).json({ success: false, error: error.message });
+    }
     return res.status(400).json({
       success: false,
       error:

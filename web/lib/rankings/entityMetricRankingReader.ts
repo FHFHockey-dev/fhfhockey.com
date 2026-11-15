@@ -10,6 +10,10 @@ import {
 import {
   CONTEXTUAL_RANKINGS_METHODOLOGY_UPDATED_AT,
 } from "./rankingMetadata";
+import {
+  RANKING_PUBLICATIONS_TABLE,
+  isMissingPublicationTableError,
+} from "./rankingPublications";
 import type {
   ContextualRankingApiRow,
   ContextualRankingsRequest,
@@ -61,10 +65,15 @@ const ENTITY_RANKING_SELECT_FIELDS = [
 
 const snapshotDateCache = new Map<string, { expiresAt: number; value: string | null }>();
 const pairedCutoffCache = new Map<string, { expiresAt: number; value: Promise<string | null> }>();
+const publicationMarkerCache = new Map<
+  string,
+  { expiresAt: number; value: Promise<PublicationMarkers | null> }
+>();
 
 export function clearEntityMetricRankingReaderCachesForTests() {
   snapshotDateCache.clear();
   pairedCutoffCache.clear();
+  publicationMarkerCache.clear();
 }
 
 function finiteNumber(value: unknown): number | null {
@@ -270,6 +279,71 @@ async function fetchPairedPublicationCutoff(
 }
 
 const MAX_PAIRING_STEPS = 8;
+const PUBLICATION_MARKER_LIMIT = 200;
+
+type PublicationMarker = {
+  surface: string;
+  snapshot_date: string;
+  window_type: string;
+  window_size: number;
+  peer_group_type: string;
+  peer_group_key: string;
+  status: string;
+};
+type PublicationMarkers = {
+  // Oldest marker date of any status for the season and strength: the start
+  // of the marker era.
+  eraStart: string;
+  recent: PublicationMarker[];
+};
+
+// Completion markers for a season and strength, newest first, with the era
+// start. Null when there are none or the table is not deployed yet: the
+// reader then keeps the #449 date match.
+async function fetchPublicationMarkers(
+  request: ContextualRankingsRequest,
+  cutoff: string,
+) {
+  const cacheKey = [request.season, cutoff, request.strength].join(":");
+  const cached = publicationMarkerCache.get(cacheKey);
+  const now = Date.now();
+  if (cached && cached.expiresAt > now) return cached.value;
+
+  const value = (async (): Promise<PublicationMarkers | null> => {
+    const base = () =>
+      supabase
+        .from(RANKING_PUBLICATIONS_TABLE)
+        .select("surface,snapshot_date,window_type,window_size,peer_group_type,peer_group_key,status")
+        .eq("season_id", request.season)
+        .eq("strength_state", request.strength)
+        .lte("snapshot_date", cutoff);
+    const [recent, oldest] = await Promise.all([
+      base().order("snapshot_date", { ascending: false }).limit(PUBLICATION_MARKER_LIMIT),
+      base().order("snapshot_date", { ascending: true }).limit(1),
+    ]);
+    for (const result of [recent, oldest]) {
+      if (result.error) {
+        if (isMissingPublicationTableError(result.error)) return null;
+        throw result.error;
+      }
+    }
+    const eraStart = (oldest.data?.[0] as PublicationMarker | undefined)?.snapshot_date;
+    if (typeof eraStart !== "string") return null;
+    return { eraStart, recent: (recent.data ?? []) as PublicationMarker[] };
+  })();
+  publicationMarkerCache.set(cacheKey, {
+    expiresAt: now + SNAPSHOT_DATE_CACHE_TTL_MS,
+    value,
+  });
+  value.catch(() => publicationMarkerCache.delete(cacheKey));
+  return value;
+}
+
+function dayBefore(date: string) {
+  const previous = new Date(`${date}T00:00:00.000Z`);
+  previous.setUTCDate(previous.getUTCDate() - 1);
+  return previous.toISOString().slice(0, 10);
+}
 
 async function fetchLatestSnapshotDate(
   request: ContextualRankingsRequest,
@@ -280,10 +354,48 @@ async function fetchLatestSnapshotDate(
       (definition.defaultStrengthState === "5v5" && request.strength !== "5v5")) return null;
   const requestedCutoff = request.asOfDate ?? new Date().toISOString().slice(0, 10);
 
-  // Serve the newest date that has both rankings and composites. Step down
-  // until the two dates match: a rankings-only date (between two composite
-  // dates, or ahead of its composites) is skipped. Where no pair exists at
-  // all, keep the plain latest rankings date.
+  // Markers are written only for the all-skater publication. Inside the
+  // marker era a date is served only when its Rankings (requested window) and
+  // composites (season window) are both complete and this metric has rows
+  // there. Until the era has a complete pair (the first marked publish, or
+  // between its Rankings and composites writes), the #449 date match runs
+  // below the era start, so the last unmarked pair stays live.
+  const allSkaters = scope.peerGroupType === "all_skaters" && scope.peerGroupKey === "all";
+  const markers = allSkaters ? await fetchPublicationMarkers(request, requestedCutoff) : null;
+  if (!markers) return fetchPairedSnapshotDate(request, scope, requestedCutoff);
+
+  const completeDates = (surface: string, type: string, size: number) =>
+    new Set(markers.recent
+      .filter((marker) =>
+        marker.surface === surface && marker.status === "complete" &&
+        marker.window_type === type && marker.window_size === size &&
+        marker.peer_group_type === "all_skaters" && marker.peer_group_key === "all")
+      .map((marker) => marker.snapshot_date));
+  const rankingDates = completeDates("entity_metric_rankings", windowType(request.window), windowSize(request.window));
+  const compositeDates = completeDates("skater_composite_ratings", "season", 0);
+  // A season and strength with no composites at all (e.g. all-strength) is
+  // not paired, as under #449: its complete Rankings markers decide alone.
+  const hasComposites = (await fetchPairedPublicationCutoff(request, requestedCutoff)) != null;
+  const pairDates = [...rankingDates]
+    .filter((date) => !hasComposites || compositeDates.has(date))
+    .sort()
+    .reverse()
+    .slice(0, MAX_PAIRING_STEPS);
+  for (const date of pairDates) {
+    if ((await fetchLatestRankingDate(request, scope, date)) === date) return date;
+  }
+  return fetchPairedSnapshotDate(request, scope, dayBefore(markers.eraStart));
+}
+
+// #449: serve the newest date that has both rankings and composites. Step
+// down until the two dates match: a rankings-only date (between two composite
+// dates, or ahead of its composites) is skipped. Where no pair exists at all,
+// keep the plain latest rankings date.
+async function fetchPairedSnapshotDate(
+  request: ContextualRankingsRequest,
+  scope: PublishedScope,
+  requestedCutoff: string,
+) {
   let cutoff = requestedCutoff;
   for (let step = 0; step < MAX_PAIRING_STEPS; step += 1) {
     const compositeDate = await fetchPairedPublicationCutoff(request, cutoff);

@@ -25062,6 +25062,75 @@ export type Database = {
           },
         ]
       }
+      ranking_publications: {
+        Row: {
+          completed_at: string | null
+          db_written_rows: number | null
+          expected_entities: number | null
+          expected_rows: number
+          methodology_version: string
+          metric_set: string[]
+          min_gp: number | null
+          min_toi_seconds: number | null
+          peer_group_key: string
+          peer_group_type: string
+          season_id: number
+          snapshot_date: string
+          started_at: string
+          status: string
+          strength_state: string
+          surface: string
+          updated_at: string
+          window_size: number
+          window_type: string
+          written_entities: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          db_written_rows?: number | null
+          expected_entities?: number | null
+          expected_rows?: number
+          methodology_version: string
+          metric_set?: string[]
+          min_gp?: number | null
+          min_toi_seconds?: number | null
+          peer_group_key: string
+          peer_group_type: string
+          season_id: number
+          snapshot_date: string
+          started_at?: string
+          status: string
+          strength_state: string
+          surface: string
+          updated_at?: string
+          window_size: number
+          window_type: string
+          written_entities?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          db_written_rows?: number | null
+          expected_entities?: number | null
+          expected_rows?: number
+          methodology_version?: string
+          metric_set?: string[]
+          min_gp?: number | null
+          min_toi_seconds?: number | null
+          peer_group_key?: string
+          peer_group_type?: string
+          season_id?: number
+          snapshot_date?: string
+          started_at?: string
+          status?: string
+          strength_state?: string
+          surface?: string
+          updated_at?: string
+          window_size?: number
+          window_type?: string
+          written_entities?: number | null
+        }
+        Relationships: []
+      }
       raw_standings_sos: {
         Row: {
           date: string
