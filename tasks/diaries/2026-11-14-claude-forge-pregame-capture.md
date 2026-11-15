@@ -108,3 +108,28 @@
   - Gateway body limit and packet size: measure in the pilot.
 - **Commits:** 6478ec5d0 (SQL v2, proof 108/108 as a non-superuser owner); 09498f181 (TS, vitest 95/95, ESLint clean, scoped tsc 0).
 - **Not changed:** the claim "ack_upper understates the true ack by TSA latency". The witness proves commit ≤ read ≤ genTime ≤ upper, so a slow TSA only makes the bound later (more conservative).
+
+## Checkpoint 2026-11-15: offline prerequisites done; packet ready (Chef)
+- **Authority:** authority row 150 is pending (`ee4d5fc96`; hash updated in `55ed51604`). Count pins are 150 rows / 7 pending, and the summary count is updated. Claim note: `CLAUDE-PREGAME-CAPTURE-AUTHORITY-ROW-20261115`. The baseline test had failed since `d4625ed40` because the migration file was unregistered; that is fixed.
+- **Pilot script:** `web/scripts/forge-pregame-capture.ts`.
+  - Default: plan only.
+  - `--rehearse`: forces synthetic env and traps network.
+  - `--tsa-probe` and `--execute`: separately gated.
+  - The runner now goes through an injectable `captureDeps`; the fake custody database is a shared fixture.
+- **TJ's mid-task cutoff rule:**
+  - The fail-first test failed on the old verifier, as expected.
+  - Qualification now also needs the final committed readback (database clock) at or before T−60 of the earliest start, enforced in both the verifier and SQL (`final_read_at`, `capture_witness_final_read_late`).
+  - The rehearsal case passes. SQL proof 112/112.
+- **RFC 3161 hardening:** the exhaustive single-bit flip test now passes (each of 2,253 bytes refused).
+  - Exact tags are required.
+  - Algorithm parameters must be absent or NULL.
+  - No unsigned content is accepted.
+  - Bundled certificates must be on the validated path or equal to an anchor.
+  - The test CA's validity is fixed at 2020–2100, because the verifier enforces certificate validity at genTime.
+- **Packet:** `tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-APPROVAL-PACKET.md`.
+  - Candidate `55ed51604`; its clean-export typecheck exits 0.
+  - Migration SHA-256 `0d2b6aa6…d177`.
+  - Proposed game: 2026020334 WSH@TBL, launch 18:00 ET / 23:00Z on 2026-11-17, T−60 at 18:30 ET / 23:30Z.
+  - TSA: DigiCert, root G4 (PEM saved).
+- **Next:** TJ reviews the packet. Nothing live until D1–D4 and P1/P2 are each approved.
+- **Gotcha:** `rg`/glob searches over the live-capture artifact folders are slow; target specific files.
