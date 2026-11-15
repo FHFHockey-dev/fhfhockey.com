@@ -18,6 +18,10 @@ export type LeagueOptions = {
   homeThreeGoalies?: boolean;
   /** Away team has no line combination and no rolling history: its lineup is unavailable (opponent-shots gate). */
   awayNoLineup?: boolean;
+  /** Home played yesterday with its usual starter and near-even start priors: the model ranks the backup first. */
+  homeBackToBack?: boolean;
+  /** Accepted, confirmed lineup evidence for the home team (lines, PP, one scratch, a call-up dressed). */
+  homeLineupEvidence?: boolean;
   /** One home top-six forward is out (INJURY_OUT), effective before the slate. */
   homeForwardOut?: boolean;
 };
@@ -73,7 +77,8 @@ export function buildLeague(options: LeagueOptions = {}): World {
   const historyCount = 8;
   for (const [teamIndex, teamId] of [TARGET.homeTeamId, TARGET.awayTeamId].entries()) {
     for (let index = 0; index < historyCount; index += 1) {
-      const date = options.seasonOpening ? addDays("2026-04-16", -2 * index - teamIndex) : addDays(TARGET.slateDate, -2 * (index + 1) - teamIndex);
+      const shift = options.homeBackToBack && teamId === TARGET.homeTeamId ? 1 : 0;
+      const date = options.seasonOpening ? addDays("2026-04-16", -2 * index - teamIndex) : addDays(TARGET.slateDate, -2 * (index + 1) - teamIndex + shift);
       const seasonId = options.seasonOpening ? 20252026 : TARGET.seasonId;
       const opponent = OTHER_TEAMS[index % OTHER_TEAMS.length].id;
       const id = (options.seasonOpening ? 2025021200 : 2026020100) + teamIndex * 50 + index;
@@ -161,6 +166,44 @@ export function buildLeague(options: LeagueOptions = {}): World {
   }
   push("rolling_player_game_metrics", ...rollingRows);
 
+  // Context relations: deployment, unified NST, trend bands, team strength, 5v5 and NST team xGA.
+  for (const [teamId, roster] of rosters) {
+    const abbrev = teamId === TARGET.homeTeamId ? TARGET.homeAbbrev : TARGET.awayAbbrev;
+    const teamGames = history.filter((game) => game.home === teamId || game.away === teamId);
+    for (const player of roster) {
+      if (player.position === "G") continue;
+      if (options.awayNoLineup && teamId === TARGET.awayTeamId) continue;
+      if (player.tier >= 12 && player.position !== "D") continue;
+      const isD = player.position === "D";
+      for (const game of teamGames.slice(0, 4)) {
+        const toi = round((isD ? 1300 : 1000) * (1 - player.tier * 0.03) * (0.9 + random() * 0.2), 1);
+        const ppToi = player.tier < (isD ? 4 : 9) ? round(90 + random() * 80, 1) : 0;
+        push("wgo_skater_stats", { player_id: player.id, game_id: game.id, date: game.date, team_abbrev: abbrev,
+          toi_per_game: toi, es_toi_per_game: round(toi - ppToi, 1), pp_toi_per_game: ppToi, pp_toi: ppToi,
+          pp_shots: ppToi > 0 ? Math.floor(random() * 2) : 0 });
+      }
+      const latest = teamGames.map((game) => game.date).sort().at(-1)!;
+      push("player_stats_unified", { player_id: player.id, date: latest,
+        nst_shots_per_60: round((isD ? 4 : 8) * (0.8 + random() * 0.4)), nst_ixg_per_60: round((isD ? 0.2 : 0.8) * (0.7 + random() * 0.6)),
+        nst_rush_attempts_per_60: round(random() * 1.5), nst_rebounds_created_per_60: round(random()),
+        nst_oi_xgf_per_60: round(2.2 + random()), nst_oi_xga_per_60: round(2.2 + random()), nst_oi_cf_pct_rates: round(45 + random() * 10, 2),
+        nst_oi_cf_pct: null, possession_pct_safe: round(45 + random() * 10, 2) });
+      if (player.tier % 3 === 0) {
+        const value = round(6 + random() * 6);
+        push("sustainability_trend_bands", { player_id: player.id, snapshot_date: addDays(TARGET.slateDate, -1 - (player.tier % 4)),
+          metric_key: "shots_per_60", window_code: player.tier % 2 ? "l10" : "l5", value,
+          ci_lower: round(value - (player.tier % 2 ? 3 : -0.5)), ci_upper: round(value + 1), n_eff: 4 + player.tier });
+      }
+    }
+    for (const [index, date] of [addDays(TARGET.slateDate, -1), addDays(TARGET.slateDate, -8)].entries()) {
+      push("nhl_team_data", { team_abbrev: abbrev, date, games_played: 16 - index * 3, xga: round(45 - index * 8), xga_per_game: round((45 - index * 8) / (16 - index * 3)),
+        xgf: round(48 - index * 7), xgf_per_game: round((48 - index * 7) / (16 - index * 3)), goals_for_per_game: 3.1, goals_against_per_game: 2.8 });
+      push("wgo_team_stats", { team_id: teamId, date, games_played: 16 - index * 3, save_pct_5v5: round(0.915 + random() * 0.01, 4),
+        shooting_plus_save_pct_5v5: round(0.995 + random() * 0.02, 4) });
+      push("nst_team_all", { team_abbreviation: abbrev, situation: "all", date, gp: 16 - index * 3, toi: (16 - index * 3) * 3700, xga: round(44 - index * 8) });
+    }
+  }
+
   // Goalie history.
   for (const game of history) {
     for (const teamId of [game.home, game.away]) {
@@ -184,7 +227,8 @@ export function buildLeague(options: LeagueOptions = {}): World {
   // Goalie start projections for the target game.
   for (const teamId of [TARGET.homeTeamId, TARGET.awayTeamId]) {
     const goalies = rosters.get(teamId)!.filter((p) => p.position === "G");
-    const probabilities = goalies.length === 3 ? [0.52, 0.33, 0.15] : [0.68, 0.32];
+    const probabilities = goalies.length === 3 ? [0.52, 0.33, 0.15]
+      : options.homeBackToBack && teamId === TARGET.homeTeamId ? [0.55, 0.45] : [0.68, 0.32];
     goalies.forEach((goalie, index) => push("goalie_start_projections", {
       game_id: TARGET.gameId, game_date: TARGET.slateDate, team_id: teamId, player_id: goalie.id,
       start_probability: probabilities[index], confirmed_status: false, l10_start_pct: probabilities[index],
@@ -198,6 +242,26 @@ export function buildLeague(options: LeagueOptions = {}): World {
     push("forge_roster_events", { event_id: 501, team_id: TARGET.awayTeamId, player_id: backup.id, event_type: "GOALIE_START_CONFIRMED",
       confidence: 1, payload: { game_id: TARGET.gameId }, effective_from: "2026-11-14T16:00:00Z", effective_to: null,
       created_at: "2026-11-14T16:00:00Z" });
+  }
+
+  if (options.homeLineupEvidence) {
+    const roster = rosters.get(TARGET.homeTeamId)!;
+    const snapshot = { id: "fixture-lineup-1", game_id: TARGET.gameId, team_id: TARGET.homeTeamId, observed_at: "2026-11-14T17:30:00Z",
+      available_at: "2026-11-14T17:31:00Z", created_at: "2026-11-14T17:31:00Z", expires_at: null, accepted: true,
+      source_key: "fixture-line-source", source_account: "fixture-reporter", source_url: null, parser_version: "line-source-v2" };
+    push("player_forecast_lineup_snapshots", snapshot);
+    const forwards = roster.filter((p) => p.position !== "D" && p.position !== "G");
+    const defense = roster.filter((p) => p.position === "D");
+    // Tier 2 forward scratched; the extra (tier 12) forward dresses on the fourth line.
+    const dressed = [...forwards.filter((p) => p.tier !== 2 && p.tier < 12), forwards.find((p) => p.tier === 12)!];
+    let index = 0;
+    const assign = (player: Player, unit_type: string, unit_number: number | null, assignment_status: string) =>
+      push("player_forecast_lineup_assignments", { id: `fixture-assignment-${(index += 1)}`, snapshot_id: snapshot.id, player_id: player.id,
+        unit_type, unit_number, assignment_status, created_at: snapshot.created_at });
+    dressed.forEach((player, position) => assign(player, "forward_line", Math.floor(position / 3) + 1, "confirmed"));
+    defense.slice(0, 6).forEach((player, position) => assign(player, "defense_pair", Math.floor(position / 2) + 1, "confirmed"));
+    [...dressed.slice(0, 4), defense[0]].forEach((player) => assign(player, "power_play", 1, "confirmed"));
+    assign(forwards.find((p) => p.tier === 2)!, "scratch", null, "ruled_out");
   }
 
   if (options.homeForwardOut) {

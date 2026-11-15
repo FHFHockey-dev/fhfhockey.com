@@ -1492,7 +1492,7 @@
      ]
     }
    ],
-   "resultHash": "a54b57135102f05299917f33d830fdcc0ee08bab73ca468567548e3803f4c43d"
+   "resultHash": "6912d677cf55781cf85cb49d932cefd0155d0ff551e8dd65c88cc854e5723b7a"
   },
   {
    "request": [
@@ -1538,7 +1538,7 @@
      ]
     }
    ],
-   "resultHash": "a54b57135102f05299917f33d830fdcc0ee08bab73ca468567548e3803f4c43d"
+   "resultHash": "2490134ddd35f98bb5fe9a0f93312719e01795fa2a3748b238990239f0b77c2e"
   },
   {
    "request": [
@@ -1588,7 +1588,7 @@
      "args": []
     }
    ],
-   "resultHash": "a9fc17866970a2b2383ccbee620750c536f3b1ebb9fda6a37881528dcbfa4bed"
+   "resultHash": "698dd028583a1c185074e75e29d8271c258dbdfa65c3846caacd7b0d249bc2a4"
   },
   {
    "request": [
@@ -1638,7 +1638,7 @@
      "args": []
     }
    ],
-   "resultHash": "a9fc17866970a2b2383ccbee620750c536f3b1ebb9fda6a37881528dcbfa4bed"
+   "resultHash": "91ec942ce4090f35960b9e8217c718c7e976b042b09581184ab934e404534bca"
   },
   {
    "request": [
@@ -1695,64 +1695,7 @@
      "args": []
     }
    ],
-   "resultHash": "a9fc17866970a2b2383ccbee620750c536f3b1ebb9fda6a37881528dcbfa4bed"
-  },
-  {
-   "request": [
-    {
-     "method": "from",
-     "args": [
-      "nst_team_stats"
-     ]
-    },
-    {
-     "method": "select",
-     "args": [
-      "season,gp,toi,xga"
-     ]
-    },
-    {
-     "method": "eq",
-     "args": [
-      "team_abbreviation",
-      "TOR"
-     ]
-    },
-    {
-     "method": "eq",
-     "args": [
-      "situation",
-      "all"
-     ]
-    },
-    {
-     "method": "lte",
-     "args": [
-      "season",
-      2026
-     ]
-    },
-    {
-     "method": "order",
-     "args": [
-      "season",
-      {
-       "ascending": false
-      }
-     ]
-    },
-    {
-     "method": "limit",
-     "args": [
-      1
-     ]
-    },
-    {
-     "method": "maybeSingle",
-     "args": []
-    }
-   ],
-   "resultHash": "a9fc17866970a2b2383ccbee620750c536f3b1ebb9fda6a37881528dcbfa4bed"
+   "resultHash": "1ffd9d946bdd8d3c4287a5633c6b1078279206a771cdb044141170d4ba239184"
   },
   {
    "request": [
@@ -1809,64 +1752,7 @@
      "args": []
     }
    ],
-   "resultHash": "a9fc17866970a2b2383ccbee620750c536f3b1ebb9fda6a37881528dcbfa4bed"
-  },
-  {
-   "request": [
-    {
-     "method": "from",
-     "args": [
-      "nst_team_stats"
-     ]
-    },
-    {
-     "method": "select",
-     "args": [
-      "season,gp,toi,xga"
-     ]
-    },
-    {
-     "method": "eq",
-     "args": [
-      "team_abbreviation",
-      "BOS"
-     ]
-    },
-    {
-     "method": "eq",
-     "args": [
-      "situation",
-      "all"
-     ]
-    },
-    {
-     "method": "lte",
-     "args": [
-      "season",
-      2026
-     ]
-    },
-    {
-     "method": "order",
-     "args": [
-      "season",
-      {
-       "ascending": false
-      }
-     ]
-    },
-    {
-     "method": "limit",
-     "args": [
-      1
-     ]
-    },
-    {
-     "method": "maybeSingle",
-     "args": []
-    }
-   ],
-   "resultHash": "a9fc17866970a2b2383ccbee620750c536f3b1ebb9fda6a37881528dcbfa4bed"
+   "resultHash": "1ffd9d946bdd8d3c4287a5633c6b1078279206a771cdb044141170d4ba239184"
   },
   {
    "request": [
@@ -1931,7 +1817,7 @@
      ]
     }
    ],
-   "resultHash": "7983e59dd6340439b205e36886912bfb293bc24f395db4e817b99db953af42f6"
+   "resultHash": "b63234c05abf1451c62b63007ca6e9e93bcb53901a2365175db2857f3ee39e52"
   },
   {
    "request": [
@@ -2023,7 +1909,7 @@
      ]
     }
    ],
-   "resultHash": "36b2b33d022b2285ab35d857e2216558adddd173d463b04b068bc35dc8f4f340"
+   "resultHash": "1e90b40e6730a5cfa8b4082cc82903bafadf560baf22837c6022109228a385c2"
   },
   {
    "request": [
@@ -2069,7 +1955,7 @@
      ]
     }
    ],
-   "resultHash": "9811df7832a0e6d6f822ed1d7c33caf43e467532942ae2b7882cf497214dccf2"
+   "resultHash": "64795581f00ee3a9ffa65373b63ee5f8b820003871134ac796cc78feb08d23f9"
   },
   {
    "request": [
@@ -2239,7 +2125,7 @@
      ]
     }
    ],
-   "resultHash": "a54b57135102f05299917f33d830fdcc0ee08bab73ca468567548e3803f4c43d"
+   "resultHash": "9b95406102e2aaa5373fc256b74de40e4d147f21c69132f75006582684350b8e"
   },
   {
    "request": [
@@ -2311,7 +2197,7 @@
      ]
     }
    ],
-   "resultHash": "a54b57135102f05299917f33d830fdcc0ee08bab73ca468567548e3803f4c43d"
+   "resultHash": "56d4ef66dec570623a982197201a4a4e1a370e8992153c9237b4beab2941cd73"
   },
   {
    "request": [
@@ -2398,7 +2284,7 @@
      ]
     }
    ],
-   "resultHash": "a54b57135102f05299917f33d830fdcc0ee08bab73ca468567548e3803f4c43d"
+   "resultHash": "135e8e0fac1afed7b527acec3873612805f424f9de810d2cfaac6b2f56a0170b"
   },
   {
    "request": [
@@ -2529,7 +2415,7 @@
      ]
     }
    ],
-   "resultHash": "8f28c8de56ec0875ec9c354a05ea5a688038216b8a2884ba0bab0279eda1cb82"
+   "resultHash": "c431c629ce4b95808acc5f6dfcdc39cd42b301c02ad2326c81108d2a4acee1b3"
   },
   {
    "request": [
@@ -2655,7 +2541,7 @@
      ]
     }
    ],
-   "resultHash": "a54b57135102f05299917f33d830fdcc0ee08bab73ca468567548e3803f4c43d"
+   "resultHash": "c3fac9d0fede1499ddda7c2c393b8b83d5bab13104091037db945636bcd6a560"
   },
   {
    "request": [
@@ -3656,11 +3542,11 @@
  "writes": [
   {
    "table": "forge_player_projections",
-   "hash": "4069017457dcbec143b33ff9220c4fba2060954781637ddc5ce2ff2b4ae6d433"
+   "hash": "9f859022628908a1b03e7c5a1ee7fb648bd1030f9e2b1a1050eebfd98a024462"
   },
   {
    "table": "forge_team_projections",
-   "hash": "9f60096e1cf4fb7735bac1c8f6a3b4e98c5c0cdac3c85bddebe254f6fbd44c97"
+   "hash": "768de7662fa0fdebdb8e66c015513d2bc5119970a082f82ef851c2e91b3cdb04"
   },
   {
    "table": "player_prediction_outputs",
@@ -3672,7 +3558,7 @@
   },
   {
    "table": "game_prediction_outputs",
-   "hash": "be8f136be0a2efa9eceb3d824ef9755863721a56167152e4ddd8896099c1f055"
+   "hash": "3429040811cf6098690fef916aadd2b9d1ea291a259b5a975ef42dc8781e882d"
   },
   {
    "table": "model_market_flags_daily",
@@ -3680,10 +3566,10 @@
   },
   {
    "table": "forge_runs",
-   "hash": "093bcc265e93b2db0e8ddfd26e14d3e2bca1c878675cff9cd835c982b4421d5b"
+   "hash": "4aaed4d1d777189e4c6f5f1b484a34f0820bbce52e027293c3262c613cf4de36"
   }
  ],
- "outputHash": "23c065fe50eee408d48f357706d9ae28a06b964d3fb05448d6dc76bc742fc49d",
+ "outputHash": "8d078d9b95842b8dd5f9ae7102521d53c3e46481ee23a6cd4d6aaac8a8912ddd",
  "candidates": {
   "skaters": {
    "10": [

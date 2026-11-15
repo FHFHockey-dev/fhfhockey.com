@@ -5,6 +5,7 @@
 import { projectionInputHash, type ProjectionInputRead } from "lib/projections/inputCapture";
 import { projectionWritesHash } from "lib/projections/gameRevisions";
 import { buildLeague, TARGET, type LeagueOptions } from "../__fixtures__/world/league";
+import type { World } from "../__fixtures__/world/store";
 import { FROZEN_NOW, useWorld, withScenarioEnv, writerCaptures, type ScenarioEnv } from "./harness";
 
 type Operation = { method: string; args: unknown[] };
@@ -29,6 +30,8 @@ export const SCENARIOS: Scenario[] = [
   { name: "goalie-override-multi-candidate", world: { awayGoalieOverride: true, homeThreeGoalies: true, homeForwardOut: true },
     env: { FORGE_RESERVE_PASS_ENABLED: "true" }, decisionAsOf: CUTOFF },
   { name: "opponent-shots-gate", world: { awayNoLineup: true }, env: {}, decisionAsOf: CUTOFF },
+  { name: "goalie-model-reorders-candidates", world: { homeBackToBack: true }, env: { FORGE_RESERVE_PASS_ENABLED: "true" }, decisionAsOf: CUTOFF },
+  { name: "lineup-evidence-gate", world: { homeLineupEvidence: true }, env: { FORGE_RESERVE_PASS_ENABLED: "true" }, decisionAsOf: CUTOFF },
 ];
 
 export type CandidateSets = {
@@ -86,8 +89,10 @@ export function oracleRecord(scenario: string, reads: ProjectionInputRead[], wri
 }
 
 /** Runs the production writer on the captured path for one scenario and returns its own capture. */
-export async function runWriterScenario(scenario: Scenario) {
-  useWorld(buildLeague(scenario.world));
+export async function runWriterScenario(scenario: Scenario, mutate?: (world: World) => void) {
+  const world = buildLeague(scenario.world);
+  mutate?.(world);
+  useWorld(world);
   const { runProjectionV2ForDate } = await import("lib/projections/run-forge-projections");
   writerCaptures.length = 0;
   const result = await withScenarioEnv(scenario.env, () => runProjectionV2ForDate(TARGET.slateDate, {
