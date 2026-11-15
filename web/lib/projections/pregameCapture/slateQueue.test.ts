@@ -70,12 +70,15 @@ describe("slate planner (pure)", () => {
 describe("slate executor (simulated custody, virtual clock, fixture TSA)", () => {
   it("captures three games with the same start under a cap of 2: all qualified by T−60, never more than 2 in flight", async () => {
     const sim = new SlateSim(START_MS - minutes(180));
-    for (const id of [1, 2, 3]) sim.addGame({ gameId: id, start: START });
+    // Long reads (110 s) so staggered captures genuinely overlap.
+    for (const id of [1, 2, 3]) sim.addGame({ gameId: id, start: START }, { readMs: 110_000 });
     const result = await drive(sim, runSlate(sim.executorDeps(), sim.slate()));
     expect(result.unresolved).toEqual([]);
     expect(result.results.map((r) => r.outcome)).toEqual(["qualified", "qualified", "qualified"]);
-    expect(sim.maxInFlight).toBeLessThanOrEqual(2);
-    expect(result.maxInFlight).toBeLessThanOrEqual(2);
+    expect(sim.maxInFlight).toBe(2);
+    // Re-planning around a running capture never pushes a game past its planned dispatch.
+    for (const r of result.results) expect(r.dispatchedAt[0]).toBeLessThanOrEqual(r.plannedDispatchAt!);
+    expect(result.maxInFlight).toBe(2);
     for (const id of [1, 2, 3]) expect(ackWithinDeadline(sim, id)).toBe(true);
     expect(sim.invariants()).toEqual([]);
   });

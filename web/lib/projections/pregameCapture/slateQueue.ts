@@ -104,19 +104,23 @@ export function planSlate(games: SlateGame[], config: SlateQueueConfig, now: num
   const conflict = (t: number) => assigned.find((other) => Math.abs(other - t) < config.staggerMs);
   const dispatches: PlannedGame[] = [];
   for (const entry of feasible) {
-    let best: { at: number; slot: number } | null = null;
+    // A slot that keeps the full lead always wins (latest such time); otherwise the earliest fallback time wins.
+    let best: { at: number; slot: number; fallback: boolean } | null = null;
     for (let slot = 0; slot < config.concurrency; slot++) {
+      let fallback = false;
       const ceiling = Math.min(entry.latestDispatchAt, nextBusy[slot] - occupancy);
       // Preferred: as late as the lead allows, moved earlier to respect the stagger.
       let at = Math.min(entry.latestDispatchAt - config.leadMs, ceiling);
       for (let hit = conflict(at); hit !== undefined; hit = conflict(at)) at = hit - config.staggerMs;
       if (at < frontFree[slot]) {
         // Not enough room for the full lead: start as soon as the slot is free, moved later to respect the stagger.
+        fallback = true;
         at = frontFree[slot];
         for (let hit = conflict(at); hit !== undefined; hit = conflict(at)) at = hit + config.staggerMs;
         if (at > ceiling) continue;
       }
-      if (!best || at > best.at) best = { at, slot };
+      const better = !best || (best.fallback && !fallback) || (best.fallback === fallback && (fallback ? at < best.at : at > best.at));
+      if (better) best = { at, slot, fallback };
     }
     if (!best) { skipped.push({ game: entry.game, reason: "no_capacity_before_deadline" }); continue; }
     nextBusy[best.slot] = best.at;
