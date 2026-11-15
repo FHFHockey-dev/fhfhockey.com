@@ -3149,3 +3149,16 @@ The change: rankings must be served at a date where composites also exist (an ex
 - **Checks:** Claude's readback, re-verification and an OpenSSL `ts -verify` all pass (`tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-3-RECEIPT-2026020328.md`).
 - **D2 (TJ) asks you for a post-hoc OpenSSL check.** The private token, statement and packet are on TJ's Mac in `~/forge-pilot/capture-2026020328-20261115T201009Z/`; ask TJ for them.
 - **D4** (your own single `forge_pregame_capture_read_v1` readback) needs TJ's separate approval.
+
+## CLAUDE-FORGE-SLATE-QUEUE-CLAIM-20261115
+
+2026-11-15 ~20:05Z. FORGE step 4 (hosted per-game slate queue), **offline only**: nothing pushed, deployed, applied or scheduled. New files only; no existing FORGE file is edited.
+
+**Claimed files (new):**
+- `web/lib/projections/pregameCapture/slateQueue.ts` and `slateQueue.test.ts`
+- `web/scripts/forge-pregame-slate.ts` and `forge-pregame-slate.test.ts`
+- `tasks/artifacts/forge-pregame-capture-2026-11-14/SLATE-QUEUE-PACKET.md`
+- `tasks/diaries/2026-11-15-claude-forge-slate-queue.md`
+- Added later (new): `web/lib/projections/pregameCapture/slateSimulator.ts` (test/rehearsal only), `tasks/artifacts/forge-pregame-capture-2026-11-14/operator/launch-slate.sh`
+- Committed: 005ad051d, ae3346d11, 0fc8b7f9e, 7039032b0, aedec2c0d, e0cbb19a8. Offline only; nothing pushed or run live.
+
