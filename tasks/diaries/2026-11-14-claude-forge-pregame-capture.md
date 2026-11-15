@@ -79,3 +79,7 @@
   - Migration authority row 150 and the count pins, after the review settles the SQL bytes.
   - `web/scripts/forge-pregame-capture.ts`, after the worker lands `nativeInputs.ts`.
   - Pilot packet: TSA choice, anchor, a probe for the accuracy field.
+- 2026-11-15T03:00Z **Parity decision (Chef):** the worker found that the goalie-input read *order* depends on model output: the top starter is loaded first, and its ranking uses skater compute output. The read *set* doesn't.
+  - Approved: the per-team goalie-input block is compared as a multiset (same op-chain hashes and counts). Everything else stays exact-order. Writes must be byte-identical.
+  - The loader uses a deterministic, model-free order. Candidate coverage is asserted. Existing resume, local-attempt and startChart tests must pass unmodified. Error-path and deadline differences get listed.
+  - Replay is unaffected, since it matches by hash.
