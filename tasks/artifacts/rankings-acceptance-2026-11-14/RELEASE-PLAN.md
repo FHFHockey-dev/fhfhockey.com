@@ -85,3 +85,8 @@ The page-default skater matrix was not smoked directly. It moves into the republ
 - Gate: 650 tests, typecheck 0, ESLint 0.
 - Vercel: `dpl_548ZqDQqELLzkBmLwPiPdrrPqKpD`; 3 companions CANCELED.
 - First marked publish completed at 2026-11-14. Live now serves 775 skaters with composites. Receipt: `first-marked-publish/PACKET.md`.
+
+## #452 migration-record reconcile (TJ: "Release it")
+- Candidate `81edc325e` = master `c0c5fe9b2` + 12 files (migrations 150-152, their proof/rollback scripts, authority records, summary count line, pins 152/118), blobs identical to octoberBranch. Clean export: `vitest run lib/supabase/` 72 files / 601 tests passed.
+- Merged as `86c249382` (#452); merged tree == candidate. No database action.
+- Vercel for 86c249382: fhfhockey `dpl_2jUj8jVfAnpr982KYiGLeB7XoJs6` building; fhfhockey.com, cms-fhfhockey, functions-fhfhockey CANCELED.
