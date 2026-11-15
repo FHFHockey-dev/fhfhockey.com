@@ -50,16 +50,15 @@ describe("RFC 3161 verification", () => {
     expect(pinned).toMatchObject({ accuracySource: "pinned_policy", accuracyMicros: BigInt(2_000_000) });
   });
 
-  it("refuses any altered byte in the signed content or signature", () => {
+  it("refuses every single-bit flip anywhere in the token, including unsigned metadata and bundled certificates", () => {
     const token = extractToken(read("good.tsr"));
-    const errors = new Set<string>();
-    for (const offset of [token.length - 5, Math.floor(token.length / 2), 120]) {
+    const accepted: number[] = [];
+    for (let offset = 0; offset < token.length; offset++) {
       const tampered = Buffer.from(u8(token));
       tampered[offset] ^= 0x01;
-      try { verifyTimeStampToken(tampered, { sha256Digest: digest, nonce }, trust); errors.add("accepted"); }
-      catch (error) { errors.add(error instanceof Error ? error.message.split(":")[0] : String(error)); }
+      try { verifyTimeStampToken(tampered, { sha256Digest: digest, nonce }, trust); accepted.push(offset); } catch { /* refused */ }
     }
-    expect(errors.has("accepted")).toBe(false);
+    expect(accepted).toEqual([]);
   });
 
   it("builds a DER TimeStampReq for a SHA-256 digest with nonce and certReq", () => {

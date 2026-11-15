@@ -62,12 +62,16 @@ create table forge_pregame_capture.witnesses (
   tsa_signer_sha256 text not null check (tsa_signer_sha256 ~ '^[0-9a-f]{64}$'),
   ack_upper timestamptz not null,
   db_read_at timestamptz not null,
+  -- Database clock of the verifier's final committed readback, after the stamp. Required for a qualified witness.
+  final_read_at timestamptz,
   verdict text not null check (verdict in ('qualified', 'saved_without_valid_witness')),
   verdict_reason text,
   recorded_at timestamptz not null default clock_timestamp(),
   constraint witnesses_reason check ((verdict = 'qualified') = (verdict_reason is null)),
   constraint witnesses_upper check (ack_upper = tsa_gen_time + (tsa_accuracy_us::text || ' microseconds')::interval),
-  constraint witnesses_digest check (statement_sha256 = encode(sha256(convert_to(statement_text, 'UTF8')), 'hex'))
+  constraint witnesses_digest check (statement_sha256 = encode(sha256(convert_to(statement_text, 'UTF8')), 'hex')),
+  constraint witnesses_final_read check (final_read_at is null or final_read_at >= db_read_at),
+  constraint witnesses_qualified_final_read check (verdict <> 'qualified' or final_read_at is not null)
 );
 
 create table forge_pregame_capture.outcomes (
@@ -238,12 +242,14 @@ end $$;
 
 -- Retains the verifier's witness. The database checks what it can: the statement names exactly the committed
 -- bytes, game and policy; its digest is computed here; the upper bound is gen_time + accuracy; the read that the
--- statement attests followed the commit and preceded now; a qualified acknowledgement is at or before T-60.
+-- statement attests followed the commit and preceded now. A qualified witness needs BOTH the token's upper bound and
+-- the verifier's final committed readback at or before T-60 of the earliest applicable start (the claimed start or
+-- the current games."startTime", whichever is earlier).
 -- The RFC 3161 signature itself is verified by the verifier and re-verifiable offline from the stored token.
 create function public.forge_pregame_capture_record_witness_v1(
   p_claim_id uuid, p_statement_text text, p_tsa_token_base64 text, p_tsa_gen_time timestamptz, p_tsa_accuracy_us bigint,
   p_tsa_accuracy_source text, p_tsa_signer_sha256 text, p_ack_upper timestamptz, p_db_read_at timestamptz,
-  p_verdict text, p_verdict_reason text)
+  p_final_read_at timestamptz, p_verdict text, p_verdict_reason text)
 returns timestamptz
 language plpgsql security definer set search_path = '' set lock_timeout = '5s' as $$
 declare
@@ -251,7 +257,10 @@ declare
   bound record;
   statement jsonb := p_statement_text::jsonb;
 begin
-  select a.raw_sha256, a.canonical_sha256, a.inserted_at, a.xmin::text as row_version, c.ack_deadline, c.game_id, c.policy_id into bound
+  select a.raw_sha256, a.canonical_sha256, a.inserted_at, a.xmin::text as row_version, c.game_id, c.policy_id,
+    least(c.scheduled_start, coalesce((select g."startTime" from public.games g where g.id = c.game_id), c.scheduled_start))
+      - interval '60 minutes' as earliest_deadline
+  into bound
   from forge_pregame_capture.artifacts a join forge_pregame_capture.claims c on c.id = a.claim_id where a.claim_id = p_claim_id;
   if not found then raise exception 'capture_artifact_missing' using errcode = 'P0002'; end if;
   if statement->>'claimId' is distinct from p_claim_id::text or statement->>'rawSha256' is distinct from bound.raw_sha256
@@ -263,14 +272,20 @@ begin
      or p_db_read_at < bound.inserted_at or p_db_read_at > clock_timestamp() then
     raise exception 'capture_witness_read_order' using errcode = '22023';
   end if;
-  if p_verdict = 'qualified' and p_ack_upper > bound.ack_deadline then
+  if p_final_read_at is not null and (p_final_read_at < p_db_read_at or p_final_read_at > clock_timestamp()) then
+    raise exception 'capture_witness_read_order' using errcode = '22023';
+  end if;
+  if p_verdict = 'qualified' and p_ack_upper > bound.earliest_deadline then
     raise exception 'capture_witness_late' using errcode = '22023';
   end if;
+  if p_verdict = 'qualified' and (p_final_read_at is null or p_final_read_at > bound.earliest_deadline) then
+    raise exception 'capture_witness_final_read_late' using errcode = '22023';
+  end if;
   insert into forge_pregame_capture.witnesses (claim_id, statement_text, statement, statement_sha256, tsa_token, tsa_gen_time,
-    tsa_accuracy_us, tsa_accuracy_source, tsa_signer_sha256, ack_upper, db_read_at, verdict, verdict_reason)
+    tsa_accuracy_us, tsa_accuracy_source, tsa_signer_sha256, ack_upper, db_read_at, final_read_at, verdict, verdict_reason)
   values (p_claim_id, p_statement_text, statement, pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(p_statement_text, 'UTF8')), 'hex'),
     pg_catalog.decode(p_tsa_token_base64, 'base64'), p_tsa_gen_time, p_tsa_accuracy_us, p_tsa_accuracy_source, p_tsa_signer_sha256,
-    p_ack_upper, p_db_read_at, p_verdict, p_verdict_reason)
+    p_ack_upper, p_db_read_at, p_final_read_at, p_verdict, p_verdict_reason)
   returning recorded_at into recorded;
   return recorded;
 end $$;
@@ -364,7 +379,7 @@ begin
     'public.forge_pregame_capture_settle_v1(uuid)',
     'public.forge_pregame_capture_read_v1(uuid)',
     'public.forge_pregame_capture_lookup_v1(bigint, text)',
-    'public.forge_pregame_capture_record_witness_v1(uuid, text, text, timestamptz, bigint, text, text, timestamptz, timestamptz, text, text)',
+    'public.forge_pregame_capture_record_witness_v1(uuid, text, text, timestamptz, bigint, text, text, timestamptz, timestamptz, timestamptz, text, text)',
     'public.forge_pregame_capture_record_outcome_v1(bigint, text, uuid, text, jsonb)',
     'public.forge_pregame_capture_sweep_v1(integer, integer)'
   ] loop

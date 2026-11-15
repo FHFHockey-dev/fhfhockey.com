@@ -6,7 +6,7 @@ import { mintTimeStampResponse, parseTimeStampRequest, testTsaTrust } from "./__
 import { buildTimeStampRequest } from "./rfc3161";
 import { reverifyStoredWitness } from "./verifier";
 import { formatMicros, MICROS_PER_MS, parseInstantMicros } from "./time";
-import type { CaptureRpc, ClaimArgs, ReadRow, TerminalOutcome, WitnessArgs } from "./rpc";
+import { dbText, FakeClock as Clock, FakeCustodyDb } from "./__fixtures__/fakeCustody";
 
 /**
  * Offline acceptance for the custody path. FakeDb mirrors the SQL semantics proven in
@@ -25,168 +25,29 @@ const MIN = 60_000;
 const POLICY = "pregame-native-v1";
 const KEY = `${GAME}/${POLICY}`;
 
-class Clock {
-  constructor(public ms: number) {}
-  advance(ms: number) { this.ms += ms; }
-}
-
-/** Database timestamps are rendered with offsets and microseconds, as PostgREST does. */
-const dbText = (ms: number, offsetMinutes = 0, extraMicros = 123) => {
-  const local = new Date(ms + offsetMinutes * MIN).toISOString().slice(0, 23);
-  const sign = offsetMinutes < 0 ? "-" : "+";
-  const abs = Math.abs(offsetMinutes);
-  return `${local}${String(extraMicros).padStart(3, "0")}${sign}${String(Math.floor(abs / 60)).padStart(2, "0")}:${String(abs % 60).padStart(2, "0")}`;
-};
-
-interface Claim { id: string; args: ClaimArgs; inputCutoff: string; ackDeadlineMs: number }
-class FakeDb {
-  claims = new Map<string, Claim>();
-  artifacts = new Map<string, { bytes: Buffer; raw: string; canonical: string; version: number; insertedMs: number }>();
-  fences = new Set<string>();
-  witnesses = new Map<string, WitnessArgs>();
-  outcomes = new Map<string, { outcome: TerminalOutcome; claimId: string | null; metadata: Record<string, unknown> }>();
-  calls: string[] = [];
-  currentStartMs: number | null = START_MS;
-  statuses = ["BOS:FUT:OK", "MIN:FUT:OK"];
-  offsetMinutes = -300; // render DB times at -05:00
-  /** Hooks for adversarial scenarios. */
-  hooks: {
-    beforeSave?(claimId: string): void; afterSaveCommit?(): void; tamperRead?(row: ReadRow, n: number): ReadRow;
-    afterClaimCommit?(): void; afterWitnessCommit?(): void; afterOutcomeCommit?(): void; settle?(): void;
-  } = {};
-  reads = 0;
-  constructor(readonly clock: Clock) {}
-  /** Stored instants are exact; clock readings (now, read time) carry sub-millisecond digits. */
-  text(ms: number) { return dbText(ms, this.offsetMinutes, 0); }
-  clockText(ms: number) { return dbText(ms, this.offsetMinutes, 789); }
-  claimFor(gameId: number, policyId: string) { return [...this.claims.values()].find((c) => c.args.gameId === gameId && c.args.policyId === policyId); }
-
-  rpc(): CaptureRpc {
-    return {
-      claim: async (args) => {
-        this.calls.push("claim");
-        const now = this.clock.ms;
-        if (args.gameId !== GAME || args.scheduledStart !== START || args.homeTeamId !== 6 || args.awayTeamId !== 30) {
-          return { outcome: "binding_mismatch", claimId: null, ackDeadline: null, dbNow: this.clockText(now), inputCutoff: null };
-        }
-        const deadline = START_MS - 60 * MIN;
-        if (this.claimFor(args.gameId, args.policyId) || this.outcomes.has(`${args.gameId}/${args.policyId}`)) {
-          return { outcome: "duplicate", claimId: null, ackDeadline: this.text(deadline), dbNow: this.clockText(now), inputCutoff: null };
-        }
-        if (now >= deadline) return { outcome: "late_start", claimId: null, ackDeadline: this.text(deadline), dbNow: this.clockText(now), inputCutoff: null };
-        if (now + args.requiredMs > deadline) return { outcome: "insufficient_time", claimId: null, ackDeadline: this.text(deadline), dbNow: this.clockText(now), inputCutoff: null };
-        const id = `claim-${this.claims.size + 1}`;
-        this.claims.set(id, { id, args, inputCutoff: this.clockText(now), ackDeadlineMs: deadline });
-        this.hooks.afterClaimCommit?.();
-        return { outcome: "claimed", claimId: id, ackDeadline: this.text(deadline), dbNow: this.clockText(now), inputCutoff: this.clockText(now) };
-      },
-      save: async (claimId, b64, raw, canonical, signal) => {
-        this.calls.push("save");
-        this.hooks.beforeSave?.(claimId);
-        if (signal.aborted) throw new Error("AbortError: request aborted");
-        const claim = this.claims.get(claimId);
-        if (!claim) throw new Error("capture_claim_missing");
-        if (this.fences.has(claimId)) throw new Error("capture_save_fenced");
-        if (this.clock.ms > claim.ackDeadlineMs) throw new Error("capture_save_late");
-        const bytes = Buffer.from(b64, "base64");
-        if (sha256Hex(u8(bytes)) !== raw) throw new Error("capture_raw_hash_mismatch");
-        if (this.artifacts.has(claimId)) throw new Error("duplicate key value violates unique constraint");
-        this.artifacts.set(claimId, { bytes, raw, canonical, version: 1000 + this.artifacts.size, insertedMs: this.clock.ms });
-        this.hooks.afterSaveCommit?.();
-        return { rawSha256: raw, byteLength: bytes.byteLength, dbNow: this.clockText(this.clock.ms) };
-      },
-      settle: async (claimId) => {
-        this.calls.push("settle");
-        this.hooks.settle?.();
-        if (this.artifacts.has(claimId)) return { state: "present", dbNow: this.clockText(this.clock.ms) };
-        this.fences.add(claimId);
-        return { state: "fenced", dbNow: this.clockText(this.clock.ms) };
-      },
-      read: async (claimId) => {
-        this.calls.push("read");
-        const claim = this.claims.get(claimId);
-        if (!claim) return null;
-        const artifact = this.artifacts.get(claimId);
-        const witness = this.witnesses.get(claimId);
-        const row: ReadRow = {
-          claimId, gameId: claim.args.gameId, policyId: claim.args.policyId, slateDate: claim.args.slateDate,
-          homeTeamId: claim.args.homeTeamId, awayTeamId: claim.args.awayTeamId, calendarRevision: claim.args.calendarRevision,
-          scheduledStart: this.text(START_MS), inputCutoff: claim.inputCutoff, ackDeadline: this.text(claim.ackDeadlineMs),
-          codeVersion: claim.args.codeVersion, artifactPresent: Boolean(artifact), saveFenced: this.fences.has(claimId),
-          packetBase64: artifact?.bytes.toString("base64") ?? null, rawSha256: artifact ? sha256Hex(u8(artifact.bytes)) : null,
-          storedRawSha256: artifact?.raw ?? null, canonicalSha256: artifact?.canonical ?? null, byteLength: artifact?.bytes.byteLength ?? null,
-          rowVersion: artifact ? String(artifact.version) : null, artifactInsertedAt: artifact ? this.clockText(artifact.insertedMs) : null,
-          currentStart: this.currentStartMs === null ? null : this.text(this.currentStartMs),
-          teamGameStatuses: [...this.statuses], teamGameFetchedAt: this.text(this.clock.ms - MIN),
-          witnessVerdict: witness?.verdict ?? null, witnessStatementText: witness?.statementText ?? null, witnessTokenBase64: witness?.tsaTokenBase64 ?? null,
-          outcome: [...this.outcomes.values()].find((o) => o.claimId === claimId)?.outcome ?? null, dbReadAt: this.clockText(this.clock.ms),
-        };
-        this.reads += 1;
-        return this.hooks.tamperRead ? this.hooks.tamperRead(row, this.reads) : row;
-      },
-      lookup: async (gameId, policyId) => {
-        this.calls.push("lookup");
-        const claim = this.claimFor(gameId, policyId);
-        return { claimId: claim?.id ?? null, artifactPresent: Boolean(claim && this.artifacts.has(claim.id)), saveFenced: Boolean(claim && this.fences.has(claim.id)),
-          witnessVerdict: claim ? this.witnesses.get(claim.id)?.verdict ?? null : null, outcome: this.outcomes.get(`${gameId}/${policyId}`)?.outcome ?? null,
-          dbNow: this.clockText(this.clock.ms) };
-      },
-      recordWitness: async (w) => {
-        this.calls.push("recordWitness");
-        const claim = this.claims.get(w.claimId)!;
-        const artifact = this.artifacts.get(w.claimId);
-        if (!artifact) throw new Error("capture_artifact_missing");
-        const statement = JSON.parse(w.statementText) as Record<string, string>;
-        if (statement.rawSha256 !== artifact.raw || statement.canonicalSha256 !== artifact.canonical || statement.rowVersion !== String(artifact.version)
-          || statement.gameId !== String(claim.args.gameId) || statement.claimId !== w.claimId) throw new Error("capture_witness_binding");
-        if (parseInstantMicros(w.ackUpper) !== parseInstantMicros(w.tsaGenTime) + w.tsaAccuracyMicros) throw new Error("witnesses_upper");
-        if (w.verdict === "qualified" && parseInstantMicros(w.ackUpper) > BigInt(claim.ackDeadlineMs) * MICROS_PER_MS) throw new Error("capture_witness_late");
-        if (this.witnesses.has(w.claimId)) throw new Error("duplicate key");
-        this.witnesses.set(w.claimId, w);
-        this.hooks.afterWitnessCommit?.();
-        return this.clockText(this.clock.ms);
-      },
-      recordOutcome: async (gameId, policyId, claimId, outcome, metadata) => {
-        this.calls.push("recordOutcome");
-        const key = `${gameId}/${policyId}`;
-        if (claimId === null) {
-          if (outcome !== "never_dispatched") throw new Error("capture_outcome_needs_claim");
-          if (this.claimFor(gameId, policyId)) throw new Error("capture_outcome_claim_exists");
-        } else {
-          const hasArtifact = this.artifacts.has(claimId);
-          const verdict = this.witnesses.get(claimId)?.verdict;
-          if ((outcome === "qualified" && verdict !== "qualified") || (outcome === "saved_without_valid_witness" && (!hasArtifact || verdict === "qualified"))
-            || ((outcome === "source_failed" || outcome === "save_unknown") && hasArtifact) || outcome === "never_dispatched") throw new Error("capture_outcome_state");
-          if (outcome === "source_failed" || outcome === "save_unknown") this.fences.add(claimId);
-        }
-        if (this.outcomes.has(key)) throw new Error("duplicate key");
-        this.outcomes.set(key, { outcome, claimId, metadata });
-        this.hooks.afterOutcomeCommit?.();
-        return this.clockText(this.clock.ms);
-      },
-      sweep: async () => [],
-    };
-  }
-}
-
 const pinned: PinnedGame = { gameId: GAME, slateDate: SLATE, homeTeamId: 6, awayTeamId: 30, homeAbbrev: "BOS", awayAbbrev: "MIN", scheduledStart: START, calendarRevision: REV };
 const BUDGET = { readMs: 90_000, saveWaitMs: 15_000, tsaTimeoutMs: 10_000, skewToleranceMs: 2_000, rpcMs: 5_000 };
 
 function setup(options: {
   startOffsetMs?: number; tsaSkewMs?: number; tsaAccuracyMs?: number | null; collect?: (clock: Clock) => Partial<Collected>;
   readMs?: number; tsaDown?: boolean; tsaWrongDigest?: boolean; requiredMs?: number;
+  /** Runs just before the token is minted (genTime = clock then); then the response takes tsaLatencyMs to arrive. */
+  tsaBeforeMint?: (clock: Clock) => void; tsaLatencyMs?: number;
 } = {}) {
   const clock = new Clock(START_MS - 70 * MIN + (options.startOffsetMs ?? 0));
-  const db = new FakeDb(clock);
+  const db = new FakeCustodyDb(clock, { gameId: GAME, scheduledStart: START, homeTeamId: 6, awayTeamId: 30, homeAbbrev: "BOS", awayAbbrev: "MIN" });
   const deps: CaptureDeps = {
     writer: db.rpc(), verifier: db.rpc(), trust: testTsaTrust(),
     tsa: {
       stamp: async (request) => {
         if (options.tsaDown) throw new Error("ECONNRESET");
         clock.advance(400);
+        options.tsaBeforeMint?.(clock);
+        const genTimeMs = clock.ms;
+        if (options.tsaLatencyMs) clock.advance(options.tsaLatencyMs);
         // A wrong-digest TSA signs some other statement with the same nonce.
         const signed = options.tsaWrongDigest ? buildTimeStampRequest(Buffer.alloc(32, 0x11), parseTimeStampRequest(request).nonce ?? BigInt(0)) : request;
-        return mintTimeStampResponse(signed, { genTimeMicros: BigInt(clock.ms + (options.tsaSkewMs ?? 0)) * MICROS_PER_MS,
+        return mintTimeStampResponse(signed, { genTimeMicros: BigInt(genTimeMs + (options.tsaSkewMs ?? 0)) * MICROS_PER_MS,
           accuracyMillis: options.tsaAccuracyMs === undefined ? 500 : options.tsaAccuracyMs });
       },
     },
@@ -379,6 +240,34 @@ describe("pregame capture custody (offline acceptance)", () => {
     expect((await runPregameCapture(setup({ tsaAccuracyMs: null }).deps, request)).reason).toBe("tsa_failed:tsa_accuracy_missing");
     expect(await runPregameCapture(setup({ tsaDown: true }).deps, request)).toMatchObject({ outcome: "saved_without_valid_witness", reason: "tsa_failed:ECONNRESET" });
     expect((await runPregameCapture(setup({ tsaSkewMs: -30_000 }).deps, request)).reason).toContain("db_clock_disagrees_with_tsa");
+  });
+
+  it("does not qualify when the token bound is within T−60 but the final authoritative readback is after it", async () => {
+    const deadlineMs = START_MS - 60 * MIN;
+    // Token minted 2 s before T−60 (accuracy 0.5 s → bound 1.5 s before T−60); the reply arrives 10 s later, so the
+    // verifier's final committed readback (database clock) lands 8.4 s after T−60.
+    const { db, deps } = setup({ tsaBeforeMint: (clock) => { clock.ms = deadlineMs - 2_000; }, tsaLatencyMs: 10_000 });
+    const report = await runPregameCapture(deps, request);
+    expect(parseInstantMicros(report.verify!.ackUpper!)).toBeLessThanOrEqual(BigInt(deadlineMs) * MICROS_PER_MS);
+    expect(report.outcome).toBe("saved_without_valid_witness");
+    expect(report.reason).toContain("final_readback_after_deadline");
+    expect(db.witnesses.get(report.claimId!)?.verdict).toBe("saved_without_valid_witness");
+  });
+
+  it("qualifies when both the token bound and the final readback are at or before T−60", async () => {
+    const deadlineMs = START_MS - 60 * MIN;
+    const { deps } = setup({ tsaBeforeMint: (clock) => { clock.ms = deadlineMs - 20_000; }, tsaLatencyMs: 5_000 });
+    expect((await runPregameCapture(deps, request)).outcome).toBe("qualified");
+  });
+
+  it("measures the final readback against the earliest applicable start (an earlier reschedule)", async () => {
+    const earlierStartMs = START_MS - 5 * MIN; // after the first read, before the original T−60
+    // Token bound within the rescheduled T−60, but the final readback is after it.
+    const { db, deps } = setup({ tsaBeforeMint: (clock) => { clock.ms = earlierStartMs - 60 * MIN - 2_000; }, tsaLatencyMs: 10_000 });
+    db.hooks.tamperRead = (row, n) => (n >= 2 ? { ...row, currentStart: dbText(earlierStartMs, 0, 0) } : row);
+    const report = await runPregameCapture(deps, request);
+    expect(report.outcome).toBe("saved_without_valid_witness");
+    expect(report.reason).toContain("final_readback_after_deadline");
   });
 
   it("reconciles a witness or outcome write whose response was lost, never retrying it", async () => {

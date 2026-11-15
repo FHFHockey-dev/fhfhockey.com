@@ -119,6 +119,9 @@ export async function verifyAndWitness(deps: VerifierDeps, expect: VerifyExpecta
     currentScheduledStart: known.length ? formatMicros(minMicros(...known.map((s) => parseInstantMicros(s)))) : null,
   };
   if (!ackQualifies(stamped.upperMicros, clocks)) reasons.push("ack_after_deadline");
+  // The final authoritative readback (database clock) must also be at or before T−60 of the earliest applicable start:
+  // custody is acknowledged only once the committed version is re-observed in time, not merely stamped in time.
+  if (second && !ackQualifies(parseInstantMicros(second.dbReadAt), clocks)) reasons.push("final_readback_after_deadline");
   const ackDeadline = parseInstantMicros(first.ackDeadline);
   const ackUpper = formatMicros(stamped.upperMicros);
   const verdict = reasons.length === 0 ? "qualified" : "saved_without_valid_witness";
@@ -133,7 +136,7 @@ export async function verifyAndWitness(deps: VerifierDeps, expect: VerifyExpecta
     await deps.rpc.recordWitness({
       claimId: first.claimId, statementText, tsaTokenBase64: token.toString("base64"), tsaGenTime: formatMicros(stamped.genTimeMicros),
       tsaAccuracyMicros: stamped.accuracyMicros, tsaAccuracySource: stamped.accuracySource, tsaSignerSha256: stamped.signerSha256,
-      ackUpper, dbReadAt: first.dbReadAt, verdict, verdictReason: reason,
+      ackUpper, dbReadAt: first.dbReadAt, finalReadAt: second?.dbReadAt ?? null, verdict, verdictReason: reason,
     });
     witnessRecorded = true;
   } catch (error) {

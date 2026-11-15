@@ -181,12 +181,14 @@ def run(host):
         body.update(override)
         return json.dumps(body, sort_keys=True, separators=(",", ":"))
 
-    def witness(cid, game, verdict, reason=None, accuracy_us=1_500_000, upper=None, row=None, text=None):
+    def witness(cid, game, verdict, reason=None, accuracy_us=1_500_000, upper=None, row=None, text=None, gen=None, final="read"):
         row = row or read(cid)
-        gen = row["db_read_at"] + datetime.timedelta(seconds=1)
+        gen = gen or row["db_read_at"] + datetime.timedelta(seconds=1)
         upper = upper or gen + datetime.timedelta(microseconds=accuracy_us)
-        s.execute("select public.forge_pregame_capture_record_witness_v1(%s, %s, %s, %s, %s, 'token', %s, %s, %s, %s, %s)",
-                  (cid, text or statement_for(cid, game, row), b64(b"\x30" * 80), gen, accuracy_us, "b" * 64, upper, row["db_read_at"], verdict, reason))
+        final_at = row["db_read_at"] if final == "read" else final
+        s.execute("select public.forge_pregame_capture_record_witness_v1(%s, %s, %s, %s, %s, 'token', %s, %s, %s, %s, %s, %s)",
+                  (cid, text or statement_for(cid, game, row), b64(b"\x30" * 80), gen, accuracy_us, "b" * 64, upper, row["db_read_at"],
+                   final_at, verdict, reason))
         return s.fetchone()[0]
 
     # --- claims ---
@@ -244,6 +246,15 @@ def run(host):
     straddle_row = read(straddle[1])
     check("writer that commits after the deadline is stored", straddle_row["artifact_present"] and straddle_row["db_read_at"] > straddle_row["ack_deadline"])
     raises("late acknowledgement cannot qualify", lambda: witness(straddle[1], 4, "qualified", row=straddle_row), "capture_witness_late")
+    # Token bound inside T-60, but the final committed readback (database clock) after it: still not qualified.
+    in_time_gen = straddle_row["ack_deadline"] - datetime.timedelta(seconds=3)
+    raises("token in time but final readback after T-60 cannot qualify",
+           lambda: witness(straddle[1], 4, "qualified", row=straddle_row, gen=in_time_gen), "capture_witness_final_read_late")
+    raises("a qualified witness needs a final readback",
+           lambda: witness(straddle[1], 4, "qualified", row=straddle_row, gen=in_time_gen, final=None), "capture_witness_final_read_late")
+    raises("final readback cannot precede the attested read",
+           lambda: witness(straddle[1], 4, "saved_without_valid_witness", "x", row=straddle_row,
+                           final=straddle_row["db_read_at"] - datetime.timedelta(seconds=1)), "capture_witness_read_order")
     check("late writer can only be witnessed without qualification",
           witness(straddle[1], 4, "saved_without_valid_witness", "ack_after_deadline", row=straddle_row) is not None)
 
@@ -254,6 +265,13 @@ def run(host):
     early = dict(row, db_read_at=row["db_read_at"] - datetime.timedelta(hours=1))
     raises("attested read must follow the commit", lambda: witness(claim_id, 1, "qualified", row=early), "capture_witness_read_order")
     raises("negative accuracy refused", lambda: witness(claim_id, 1, "qualified", accuracy_us=-1), "check constraint")
+
+    # Earliest applicable start: an earlier current games."startTime" tightens both bounds.
+    start[11] = add_game(11, 3 * 3600)
+    c11 = claim(11)[1]
+    save(c11)
+    own.execute('update public.games set "startTime" = clock_timestamp() + interval \'30 minutes\' where id = 11')
+    raises("earlier current start refuses a token bound past its T-60", lambda: witness(c11, 11, "qualified"), "capture_witness_late")
 
     # --- outcomes ---
     raises("qualified outcome needs a qualified witness", lambda: outcome(1, claim_id, "qualified"), "capture_outcome_state")

@@ -30,6 +30,8 @@ export interface WitnessArgs {
   statementText: string;
   tsaTokenBase64: string; tsaGenTime: string; tsaAccuracyMicros: bigint; tsaAccuracySource: "token" | "pinned_policy";
   tsaSignerSha256: string; ackUpper: string; dbReadAt: string;
+  /** Database clock of the verifier's final committed readback (after the stamp); required for a qualified witness. */
+  finalReadAt: string | null;
   verdict: "qualified" | "saved_without_valid_witness"; verdictReason: string | null;
 }
 export interface SweepRow { claimId: string; gameId: number; policyId: string; outcome: TerminalOutcome }
@@ -100,7 +102,7 @@ export function supabaseCaptureRpc(client: Client): CaptureRpc {
       return one(client.rpc("forge_pregame_capture_record_witness_v1", {
         p_claim_id: w.claimId, p_statement_text: w.statementText, p_tsa_token_base64: w.tsaTokenBase64, p_tsa_gen_time: w.tsaGenTime,
         p_tsa_accuracy_us: w.tsaAccuracyMicros.toString(), p_tsa_accuracy_source: w.tsaAccuracySource, p_tsa_signer_sha256: w.tsaSignerSha256,
-        p_ack_upper: w.ackUpper, p_db_read_at: w.dbReadAt, p_verdict: w.verdict, p_verdict_reason: w.verdictReason,
+        p_ack_upper: w.ackUpper, p_db_read_at: w.dbReadAt, p_final_read_at: w.finalReadAt, p_verdict: w.verdict, p_verdict_reason: w.verdictReason,
       }));
     },
     async recordOutcome(gameId, policyId, claimId, outcome, metadata) {

@@ -1,11 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 import { captureForgeIssuedContexts, type ForgeIssuedContextV1 } from "../issuedContext";
 import { captureProjectionInputs, projectionInputHash } from "../inputCapture";
-import { runPregameCapture, type CaptureBudget, type CaptureReport, type Collected, type PinnedGame } from "./custody";
+import { runPregameCapture, type CaptureBudget, type CaptureDeps, type CaptureReport, type Collected, type PinnedGame } from "./custody";
 import type { CaptureBinding } from "./packet";
 import type { TsaTrust } from "./rfc3161";
-import { supabaseCaptureRpc } from "./rpc";
-import { createCaptureTransport, DEFAULT_TRANSPORT_BUDGET, type CaptureTarget } from "./transport";
+import { supabaseCaptureRpc, type CaptureRpc } from "./rpc";
+import { createCaptureTransport, DEFAULT_TRANSPORT_BUDGET, type CaptureClientFactory, type CaptureTarget, type TransportBudget } from "./transport";
 import type { TsaClient } from "./verifier";
 
 /**
@@ -58,32 +58,37 @@ export interface RunnerConfig {
   seasonBootstrap: (args: { slateDate: string; gameId: number; inputCutoff: string }) => boolean;
   modelEnvironment: () => Record<string, string | null>;
   budget?: Partial<CaptureBudget>;
+  transportLimits?: Partial<Omit<TransportBudget, "deadlineMs">>;
   env?: Record<string, string | undefined>;
 }
 
-export async function runPrivatePregameCapture(config: RunnerConfig, request: {
-  gameId: number; slateDate: string; policyId: string; codeVersion: string; scheduledLaunchAt?: string;
-}): Promise<CaptureReport> {
-  const env = config.env ?? process.env;
-  if (env[CAPTURE_ENABLED_ENV] !== "true") throw new Error(`${CAPTURE_ENABLED_ENV} is not "true"; pregame capture is disabled.`);
-  const budget: CaptureBudget = { ...DEFAULT_CAPTURE_BUDGET, ...config.budget };
-  const auth = { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false };
-  // Two independent clients: the verifier never shares the writer's connection state.
-  const writer = supabaseCaptureRpc(createClient(config.supabaseUrl, config.serviceRoleKey, { auth }) as any);
-  const verifier = supabaseCaptureRpc(createClient(config.supabaseUrl, config.serviceRoleKey, { auth }) as any);
-  const transportFor = (target: CaptureTarget, deadlineMs: number) => createCaptureTransport({
-    target, restBaseUrl: `${config.supabaseUrl.replace(/\/+$/, "")}/rest/v1`,
-    budget: { ...DEFAULT_TRANSPORT_BUDGET, deadlineMs },
-    createClient: (guarded) => createClient(config.supabaseUrl, config.serviceRoleKey, { auth, global: { fetch: guarded } }) as any,
-  });
+/** Everything the capture needs; the live runner builds it from Supabase/TSA, the rehearsal from fixtures. */
+export interface CaptureWiring {
+  writer: CaptureRpc; verifier: CaptureRpc; tsa: TsaClient; trust: TsaTrust;
+  /** Client for strict input reads; it must route every request through the guarded fetch it receives. */
+  createReadClient: CaptureClientFactory;
+  restBaseUrl: string;
+  collectNative: NativeCollector;
+  seasonBootstrap: RunnerConfig["seasonBootstrap"];
+  modelEnvironment: () => Record<string, string | null>;
+  budget: CaptureBudget;
+  transportLimits: Omit<TransportBudget, "deadlineMs">;
+  now: () => number;
+  nonce?: () => bigint;
+}
 
-  return runPregameCapture({
-    writer, verifier, tsa: httpTsaClient(config.tsaUrl), trust: config.tsaTrust, budget,
-    modelEnvironment: config.modelEnvironment, now: Date.now,
+export function captureDeps(w: CaptureWiring): CaptureDeps {
+  const transportFor = (target: CaptureTarget, deadlineMs: number) => createCaptureTransport({
+    target, restBaseUrl: w.restBaseUrl, budget: { ...w.transportLimits, deadlineMs }, createClient: w.createReadClient, now: w.now,
+  });
+  return {
+    writer: w.writer, verifier: w.verifier, tsa: w.tsa, trust: w.trust, budget: w.budget,
+    modelEnvironment: w.modelEnvironment, now: w.now, nonce: w.nonce,
     async pin(gameId, slateDate, deadlineMs): Promise<PinnedGame> {
       const transport = transportFor({ gameId, slateDate, homeTeamId: -1, awayTeamId: -2, homeAbbrev: "", awayAbbrev: "" }, deadlineMs);
       const run = await captureProjectionInputs(() => captureForgeIssuedContexts(slateDate, [gameId]), { transport });
       if (transport.usage.refusals.length) throw new Error(`pin_refused:${transport.usage.refusals[0]}`);
+      if (run.writes.length) throw new Error("pin_wrote");
       const [context] = run.result;
       if (!context || context.game.id !== gameId) throw new Error("pin_context_missing");
       const abbrev = (teamId: number) => context.schedule.find((row) => row.teamId === teamId)?.teamAbbreviation;
@@ -99,9 +104,9 @@ export async function runPrivatePregameCapture(config: RunnerConfig, request: {
         gameId: binding.gameId, slateDate: binding.slateDate, homeTeamId: binding.homeTeamId, awayTeamId: binding.awayTeamId,
         homeAbbrev: binding.homeAbbrev, awayAbbrev: binding.awayAbbrev,
       }, deadlineMs);
-      const seasonBootstrap = config.seasonBootstrap({ slateDate: binding.slateDate, gameId: binding.gameId, inputCutoff: binding.inputCutoff });
+      const seasonBootstrap = w.seasonBootstrap({ slateDate: binding.slateDate, gameId: binding.gameId, inputCutoff: binding.inputCutoff });
       const run = await captureProjectionInputs(
-        () => config.collectNative({ slateDate: binding.slateDate, gameId: binding.gameId, inputCutoff: binding.inputCutoff, deadlineMs, seasonBootstrap }),
+        () => w.collectNative({ slateDate: binding.slateDate, gameId: binding.gameId, inputCutoff: binding.inputCutoff, deadlineMs, seasonBootstrap }),
         { transport, deadlineMs });
       const after = run.result.issuedContextAfter;
       if (!after || after.game.id !== binding.gameId) throw new Error("collector_context_missing");
@@ -109,12 +114,32 @@ export async function runPrivatePregameCapture(config: RunnerConfig, request: {
         reads: run.reads, candidates: run.result.candidates,
         seasonBootstrapApplied: seasonBootstrap,
         transport: { calls: transport.usage.calls, httpCalls: transport.usage.httpCalls, rows: transport.usage.rows, bytes: transport.usage.bytes,
-          stampToleranceMs: DEFAULT_TRANSPORT_BUDGET.stampToleranceMs,
+          stampToleranceMs: w.transportLimits.stampToleranceMs,
           // Strict capture throws before recording a write; any recorded write is still a refusal.
           refusals: [...transport.usage.refusals, ...(run.writes.length ? [`writes_recorded:${run.writes.length}`] : [])] },
         // The closing context from inside the packet must still match the pinned calendar revision.
         calendarRevision: calendarRevisionOf(after.schedule),
       };
     },
-  }, request);
+  };
+}
+
+export async function runPrivatePregameCapture(config: RunnerConfig, request: {
+  gameId: number; slateDate: string; policyId: string; codeVersion: string; scheduledLaunchAt?: string;
+}): Promise<CaptureReport> {
+  const env = config.env ?? process.env;
+  if (env[CAPTURE_ENABLED_ENV] !== "true") throw new Error(`${CAPTURE_ENABLED_ENV} is not "true"; pregame capture is disabled.`);
+  const auth = { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false };
+  // Two independent clients: the verifier never shares the writer's connection state.
+  const writer = supabaseCaptureRpc(createClient(config.supabaseUrl, config.serviceRoleKey, { auth }) as any);
+  const verifier = supabaseCaptureRpc(createClient(config.supabaseUrl, config.serviceRoleKey, { auth }) as any);
+  return runPregameCapture(captureDeps({
+    writer, verifier, tsa: httpTsaClient(config.tsaUrl), trust: config.tsaTrust,
+    restBaseUrl: `${config.supabaseUrl.replace(/\/+$/, "")}/rest/v1`,
+    createReadClient: (guarded) => createClient(config.supabaseUrl, config.serviceRoleKey, { auth, global: { fetch: guarded } }) as any,
+    collectNative: config.collectNative, seasonBootstrap: config.seasonBootstrap, modelEnvironment: config.modelEnvironment,
+    budget: { ...DEFAULT_CAPTURE_BUDGET, ...config.budget },
+    transportLimits: { ...DEFAULT_TRANSPORT_BUDGET, ...config.transportLimits },
+    now: Date.now,
+  }), request);
 }

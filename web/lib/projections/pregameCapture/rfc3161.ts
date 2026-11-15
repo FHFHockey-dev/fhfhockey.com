@@ -64,7 +64,7 @@ export function verifyTimeStampToken(tokenDer: Buffer, expect: { sha256Digest: B
   if (oid(contentInfo[0]) !== OID.signedData) throw new Error("tsa_not_signed_data");
   const signedData = kids(kids(contentInfo[1], 0xa0)[0], 0x30);
   if (integer(signedData[0]) !== BigInt(3)) throw new Error("tsa_signed_data_version");
-  const digestAlgorithms = kids(signedData[1], 0x31).map((alg) => oid(kids(alg, 0x30)[0]));
+  const digestAlgorithms = kids(signedData[1], 0x31).map(algorithmOid);
   let i = 2;
   const encap = kids(signedData[i++], 0x30);
   if (oid(encap[0]) !== OID.tstInfo) throw new Error("tsa_not_tstinfo");
@@ -83,8 +83,8 @@ export function verifyTimeStampToken(tokenDer: Buffer, expect: { sha256Digest: B
   const policy = oid(tst[1]);
   if (trust.policies?.length && !trust.policies.includes(policy)) throw new Error("tsa_policy_not_pinned");
   const imprint = kids(tst[2], 0x30);
-  if (oid(kids(imprint[0], 0x30)[0]) !== OID.sha256) throw new Error("tsa_imprint_alg");
-  if (!Buffer.from(u8(imprint[1].value)).equals(u8(expect.sha256Digest))) throw new Error("tsa_imprint_mismatch");
+  if (algorithmOid(imprint[0]) !== OID.sha256) throw new Error("tsa_imprint_alg");
+  if (imprint[1]?.tag !== 0x04 || !Buffer.from(u8(imprint[1].value)).equals(u8(expect.sha256Digest))) throw new Error("tsa_imprint_mismatch");
   const serial = integer(tst[3]).toString();
   const gen = generalizedTimeMicros(tst[4]);
   let accuracyMicros: bigint | null = null, nonce: bigint | null = null;
@@ -111,14 +111,17 @@ export function verifyTimeStampToken(tokenDer: Buffer, expect: { sha256Digest: B
   const signerVersion = integer(signer[0]);
   const sid = signer[1];
   let s = 2;
-  const digestOid = oid(kids(signer[s++], 0x30)[0]);
+  const digestOid = algorithmOid(signer[s++]);
   const digestAlg = HASH_BY_OID[digestOid];
   if (!digestAlg) throw new Error("tsa_digest_alg");
   if (!digestAlgorithms.includes(digestOid)) throw new Error("tsa_digest_alg_unlisted");
   if (signer[s]?.tag !== 0xa0) throw new Error("tsa_no_signed_attrs");
   const signedAttrsNode = signer[s++];
-  const sigAlgOid = oid(kids(signer[s++], 0x30)[0]);
+  const sigAlgOid = algorithmOid(signer[s++]);
+  if (signer[s]?.tag !== 0x04) throw new Error("tsa_signature_encoding");
   const signature = Buffer.from(u8(signer[s].value));
+  // No unsigned attributes or trailing elements: nothing unverified travels with the token.
+  if (signer.length !== s + 1) throw new Error("tsa_unsigned_content");
   const attrs = new Map<string, DerNode>();
   for (const attr of kids(signedAttrsNode)) {
     const [type, values] = kids(attr, 0x30);
@@ -128,7 +131,7 @@ export function verifyTimeStampToken(tokenDer: Buffer, expect: { sha256Digest: B
   }
   if (oid(attrs.get(OID.contentType)!) !== OID.tstInfo) throw new Error("tsa_attr_content_type");
   const md = attrs.get(OID.messageDigest);
-  if (!md || !Buffer.from(u8(md.value)).equals(u8(createHash(digestAlg).update(u8(tstInfoDer)).digest()))) throw new Error("tsa_message_digest");
+  if (!md || md.tag !== 0x04 || !Buffer.from(u8(md.value)).equals(u8(createHash(digestAlg).update(u8(tstInfoDer)).digest()))) throw new Error("tsa_message_digest");
 
   // Identify the signer through the signed ESS certificate binding (not the unsigned sid alone).
   const signerCert = certs.find((cert) => essBinds(attrs, cert));
@@ -144,7 +147,14 @@ export function verifyTimeStampToken(tokenDer: Buffer, expect: { sha256Digest: B
   if (!timestampingOnlyCritical(signerCert)) throw new Error("tsa_signer_not_timestamping");
   const genMs = Number(gen.micros / BigInt(1000));
   assertValidAt(signerCert, genMs);
-  chainToAnchor(signerCert, certs, trust.anchorsPem.map((pem) => new X509Certificate(pem)), genMs);
+  const anchors = trust.anchorsPem.map((pem) => new X509Certificate(pem));
+  const path = chainToAnchor(signerCert, certs, anchors, genMs);
+  // Every bundled certificate must be on the validated path or byte-identical to a pinned anchor: no unverified bytes.
+  for (const cert of certs) {
+    if (!path.some((used) => used.raw.equals(u8(cert.raw))) && !anchors.some((a) => a.raw.equals(u8(cert.raw)))) {
+      throw new Error("tsa_unexpected_certificate");
+    }
+  }
 
   return {
     genTime: gen.text, genTimeMicros: gen.micros, accuracyMicros, accuracySource,
@@ -164,7 +174,7 @@ function essBinds(attrs: Map<string, DerNode>, cert: X509Certificate): boolean {
   const parts = kids(first, 0x30);
   let alg = v2 ? "sha256" : "sha1", hashNode = parts[0];
   if (v2 && parts[0].tag === 0x30) { alg = HASH_BY_OID[oid(kids(parts[0])[0])] ?? ""; hashNode = parts[1]; }
-  if (!alg) return false;
+  if (!alg || hashNode?.tag !== 0x04) return false;
   return Buffer.from(u8(hashNode.value)).equals(u8(createHash(alg).update(u8(cert.raw)).digest()));
 }
 
@@ -213,16 +223,27 @@ function assertValidAt(cert: X509Certificate, ms: number) {
   if (ms < Date.parse(cert.validFrom) || ms > Date.parse(cert.validTo)) throw new Error("tsa_cert_not_valid_at_gentime");
 }
 
-function chainToAnchor(leaf: X509Certificate, pool: X509Certificate[], anchors: X509Certificate[], atMs: number) {
+/** Returns the certificates used from the leaf up to (not including) the pinned anchor. */
+function chainToAnchor(leaf: X509Certificate, pool: X509Certificate[], anchors: X509Certificate[], atMs: number): X509Certificate[] {
   if (anchors.length === 0) throw new Error("tsa_no_anchor");
   let current = leaf;
+  const path: X509Certificate[] = [leaf];
   for (let depth = 0; depth < 6; depth++) {
     const anchor = anchors.find((a) => a.raw.equals(u8(current.raw)) || (current.checkIssued(a) && current.verify(a.publicKey)));
-    if (anchor) { assertValidAt(anchor, atMs); return; }
+    if (anchor) { assertValidAt(anchor, atMs); return path; }
     const issuer = pool.find((c) => !c.raw.equals(u8(current.raw)) && current.checkIssued(c) && current.verify(c.publicKey));
     if (!issuer || !issuer.ca) throw new Error("tsa_chain_unanchored");
     assertValidAt(issuer, atMs);
+    path.push(issuer);
     current = issuer;
   }
   throw new Error("tsa_chain_too_deep");
+}
+
+/** AlgorithmIdentifier: OID with parameters absent or exactly NULL (05 00); anything else is refused. */
+function algorithmOid(node: DerNode): string {
+  const parts = kids(node, 0x30);
+  if (parts.length > 2) throw new Error("tsa_algorithm_parameters");
+  if (parts.length === 2 && !(parts[1].tag === 0x05 && parts[1].length === 0)) throw new Error("tsa_algorithm_parameters");
+  return oid(parts[0]);
 }

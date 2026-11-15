@@ -43,11 +43,33 @@ basicConstraints = critical,CA:true
 keyUsage = critical,keyCertSign
 CNF
 echo 01 > tsaserial
-openssl req -x509 -newkey rsa:2048 -nodes -keyout ca.key -out ca.crt -subj "/CN=FHFH Test TSA Root" -days 36500 -extensions ext_ca -config tsa.cnf 2>/dev/null
-openssl req -x509 -newkey rsa:2048 -nodes -keyout other.key -out other.crt -subj "/CN=Untrusted Root" -days 36500 -extensions ext_ca -config tsa.cnf 2>/dev/null
+# A fixed validity window (2020-2100) keeps the fixtures independent of the day they were generated.
+cat >> tsa.cnf <<'CNF'
+[ ca ]
+default_ca = test_ca
+[ test_ca ]
+dir = .
+database = ./index.txt
+new_certs_dir = ./issued
+serial = ./caserial
+default_md = sha256
+policy = policy_any
+unique_subject = no
+copy_extensions = none
+[ policy_any ]
+commonName = supplied
+CNF
+mkdir issued; : > index.txt; echo 1000 > caserial
+START=20200101000000Z; END=21000101000000Z
+for root in ca other; do
+  openssl req -new -newkey rsa:2048 -nodes -keyout $root.key -out $root.csr -subj "/CN=FHFH Test $root Root" 2>/dev/null
+  openssl ca -batch -notext -selfsign -config tsa.cnf -keyfile $root.key -in $root.csr -out $root.crt \
+    -startdate $START -enddate $END -extensions ext_ca 2>/dev/null
+done
 for name in tsa plain; do
-  openssl req -newkey rsa:2048 -nodes -keyout $name.key -out $name.csr -subj "/CN=FHFH Test $name" 2>/dev/null
-  openssl x509 -req -in $name.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out $name.crt -days 36500 -extfile tsa.cnf -extensions ext_$name 2>/dev/null
+  openssl req -new -newkey rsa:2048 -nodes -keyout $name.key -out $name.csr -subj "/CN=FHFH Test $name" 2>/dev/null
+  openssl ca -batch -notext -config tsa.cnf -cert ca.crt -keyfile ca.key -in $name.csr -out $name.crt \
+    -startdate $START -enddate $END -extensions ext_$name -extfile tsa.cnf 2>/dev/null
 done
 printf 'packet-bytes' > data.bin
 openssl ts -query -data data.bin -sha256 -cert -no_nonce -out q_nononce.tsq 2>/dev/null
