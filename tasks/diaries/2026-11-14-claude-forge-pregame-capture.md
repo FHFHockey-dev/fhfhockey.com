@@ -299,3 +299,14 @@
 - **Receipt:** `PILOT-3-RECEIPT-2026020328.md`.
 - **Parallel:** session `forge-slate-queue` (`local_4478746c`) is building the hosted slate queue offline (TJ: use the hour).
 - **Gotcha:** a stray `cat >> file` with no input hung a command (it reads stdin). Never leave a bare `cat` in a chain.
+
+## Checkpoint 2026-11-15T20:30Z: slate queue reviewed; TJ decisions (Chef)
+- **Review:** slate-queue session commits `005ad051d`, `ae3346d11` and `0fc8b7f9e` touch only new files plus `SLATE-QUEUE-PACKET.md`, with no attribution lines. The Chef rerun passes 190/190 (slate, capture, script, trend, baseline pins).
+- **Logic:** lookup on every entry; retry only pin failures with no claim; ambiguous cases settled by lookup and sweep; an empty refresh is ignored. Finding: a crash after the save commits ends as `saved_without_valid_witness`.
+- **TJ:**
+  - Mac hosting;
+  - live queue pilot tonight on 2026020329 + 2026020330 (02:00Z);
+  - build the stop rules first;
+  - record `never_dispatched` for removed games.
+- **Chef defaults:** keep the `claim_failed` handling, lead 10 min, global sweep OK for the pilot.
+- **Sent to the session:** stop rules, `--execute`, `launch-slate.sh`, rehearsal, packet run plan; due 22:00Z. Then Chef verifies a clean export and asks TJ to approve the exact run.
