@@ -23,3 +23,22 @@
 - Survey the native read graph inside `runProjectionCalculations`: which reads depend on compute output.
 - Fix the packet contract.
 - Staff the extraction and parity lane.
+
+## Checkpoint 2026-11-15T00:45Z: custody foundations (Chef)
+- **TJ decisions (pop-ups):** Claude owns the lane end to end, including the needed edits to existing files. Raise Chef to xhigh: TJ has to do it in the app, since a self-change is refused. Witness = RFC 3161 TSA + DB clock cross-check.
+- **Claims:** `CLAUDE-PREGAME-CAPTURE-CLAIM-20261115` (744c15549, which also committed Scout's steer entry) and addendum 1 (a5af283c9).
+- **Built:**
+  - `pregameCapture/time.ts`: µs instants, no string order.
+  - `pregameCapture/deadline.ts`: T−60, earliest start, start budget.
+  - `pregameCapture/der.ts` + `pregameCapture/rfc3161.ts`: request builder; strict token verification with ESS binding, EKU, chain to pinned anchor, nonce, policy and accuracy.
+  - TSA test fixtures and their generator script.
+  - Migration `20261115000000_forge_pregame_capture_custody.sql` (not applied).
+  - Proof `supabase/tests/forge_pregame_capture_custody.py` + rollback.
+- **Checks:**
+  - Vitest pregameCapture 16/16.
+  - OpenSSL parses the builder's TimeStampReq.
+  - SQL proof 55/55 on local PG15.
+- **Gotchas:**
+  - `vitest --root /` hangs: it scans the whole filesystem. Use esbuild for one-off scripts.
+  - OpenSSL refuses to sign a TSA reply with a non-EKU cert, so the EKU refusal has no fixture. The code path is checked by reading only.
+- **Pending:** the authority row 150 and test count pins, added when the migration bytes freeze.
