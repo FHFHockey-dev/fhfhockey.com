@@ -10,7 +10,7 @@ import type { ProjectionInputRead } from "lib/projections/inputCapture";
 type Operation = { method: string; args: unknown[] };
 let active: ReturnType<typeof createWorldClient> | null = null;
 
-export function useWorld(world: World) {
+export function activateWorld(world: World) {
   active = createWorldClient(world);
 }
 
@@ -37,6 +37,10 @@ export const worldServerModule = () => {
 
 /** Captures recorded by the writer's own `captureProjectionInputs` call, newest last. */
 export const writerCaptures: Array<{ reads: ProjectionInputRead[]; writes: Operation[][] }> = [];
+/** Writes recorded by `replayProjectionInputs`, newest last. */
+export const replayWrites: Operation[][][] = [];
+/** Snapshots the writer handed to `saveForgeInputSnapshot`, newest last. */
+export const savedSnapshots: unknown[] = [];
 
 export const FROZEN_NOW = "2026-11-14T20:00:00.000Z";
 export const CODE_VERSION = "fixture-code-version";

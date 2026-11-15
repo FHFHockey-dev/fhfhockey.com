@@ -6,7 +6,7 @@ import { projectionInputHash, type ProjectionInputRead } from "lib/projections/i
 import { projectionWritesHash } from "lib/projections/gameRevisions";
 import { buildLeague, TARGET, type LeagueOptions } from "../__fixtures__/world/league";
 import type { World } from "../__fixtures__/world/store";
-import { FROZEN_NOW, useWorld, withScenarioEnv, writerCaptures, type ScenarioEnv } from "./harness";
+import { FROZEN_NOW, activateWorld, withScenarioEnv, writerCaptures, type ScenarioEnv } from "./harness";
 
 type Operation = { method: string; args: unknown[] };
 
@@ -92,7 +92,7 @@ export function oracleRecord(scenario: string, reads: ProjectionInputRead[], wri
 export async function runWriterScenario(scenario: Scenario, mutate?: (world: World) => void) {
   const world = buildLeague(scenario.world);
   mutate?.(world);
-  useWorld(world);
+  activateWorld(world);
   const { runProjectionV2ForDate } = await import("lib/projections/run-forge-projections");
   writerCaptures.length = 0;
   const result = await withScenarioEnv(scenario.env, () => runProjectionV2ForDate(TARGET.slateDate, {

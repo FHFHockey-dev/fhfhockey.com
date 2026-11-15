@@ -300,12 +300,14 @@ import {
   persistPerGameAnalyticsOutputs,
 } from "./stages/persistence-stage";
 import {
+  goalieStageLoaders,
   runPerGameGoalieStage,
+  type GoalieStageArgs,
   type GoalieStageCandidate,
   type SelectedGoalieProjection,
 } from "./stages/goalie-stage";
 import type { SeasonLeagueSavePctCache } from "./goalie/leagueSavePct";
-import { runPerGameSkaterStage } from "./stages/skater-stage";
+import { loadSkaterGameInputs, runPerGameSkaterStage, type SkaterStageArgs } from "./stages/skater-stage";
 import {
   ANALYTICS_MODEL_NAME,
   ANALYTICS_MODEL_VERSION,
@@ -393,6 +395,7 @@ import { saveForgeInputSnapshot, publishForgeGameRevisions, projectionWritesHash
 import { captureForgeIssuedContexts, forgeIssuedContextsFingerprint, type ForgeIssuedContextV1 } from "./issuedContext";
 import { applyDailyBoardEvidence } from "./dailyBoardEvidence";
 import { starterBoardFlags, starterBoardScopeAllowed } from "./starterBoardFlags";
+import { latestInstant } from "./pregameCapture/time";
 
 export const projectionModelEnvironment = () => Object.fromEntries([
   "FORGE_SKATER_MODEL_MODE", "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION", "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION",
@@ -450,6 +453,20 @@ export function forgeModelIdentity(codeVersion: string, modelEnvironment: Record
 }
 
 /**
+ * Whether the writer applies the season-opening bootstrap: a computing, single-horizon live run (no explicit cutoff)
+ * for today or later in New York, with the bootstrap flag on. Pure, so a pregame capture can record the same decision.
+ */
+export function forgeSeasonBootstrapApplies(args: {
+  compute: boolean; explicitCutoff: boolean; horizonGames: number; asOfDate: string; decisionAsOf: string;
+  env?: Readonly<Record<string, string | undefined>>;
+}): boolean {
+  const env = args.env ?? process.env;
+  return args.compute && !args.explicitCutoff && args.horizonGames === 1
+    && env.STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED === "true"
+    && args.asOfDate >= new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(args.decisionAsOf));
+}
+
+/**
  * `postRunFailure`: the run finalized `succeeded` with its rows written, then a
  * later step that its outputs do not depend on failed.
  */
@@ -477,9 +494,9 @@ export async function runProjectionV2ForDate(
   const compute = computeEnabled && starterBoardScopeAllowed(opts?.gameIds);
   if (compute && (opts?.gameIds?.length ?? 0) > 16) throw new Error("Issued FORGE run exceeds the 16-game context limit.");
   const captureIssuedContext = compute && (opts?.horizonGames ?? 1) === 1 && Boolean(opts?.gameIds?.length);
-  const seasonBootstrap = compute && !opts?.decisionAsOf && (opts?.horizonGames ?? 1) === 1
-    && process.env.STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED === "true"
-    && asOfDate >= new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(decisionAsOf));
+  const seasonBootstrap = forgeSeasonBootstrapApplies({
+    compute, explicitCutoff: Boolean(opts?.decisionAsOf), horizonGames: opts?.horizonGames ?? 1, asOfDate, decisionAsOf,
+  });
   const codeVersion = process.env.FORGE_CODE_VERSION ?? process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GIT_SHA;
   if (captureEnabled && !codeVersion) throw new Error("Captured FORGE runs require an immutable FORGE_CODE_VERSION or deployment commit SHA.");
   const verifyExecution = (checkpoint: Parameters<NonNullable<RunProjectionOptions["executionGuard"]>["verify"]>[0]) => {
@@ -557,7 +574,8 @@ export async function runProjectionV2ForDate(
     const snapshot: ForgeInputSnapshot = {
       version: "forge-inputs-v1", runId, slateDate: asOfDate,
       inputCutoff: decisionAsOf,
-      decisionAsOf: capture.reads.reduce((latest, read) => read.receivedAt > latest ? read.receivedAt : latest, decisionAsOf),
+      // Parsed instants, never string order: an offset-format cutoff must not outrank a later read.
+      decisionAsOf: latestInstant(capture.reads.map((read) => read.receivedAt), decisionAsOf),
       capturedAt: new Date().toISOString(),
       codeVersion: codeVersion!,
       modelMode: resolveSkaterRolloutConfig().mode,
@@ -638,7 +656,7 @@ export async function captureForgeReconstruction(args: {
   } : undefined });
   const snapshot: ForgeInputSnapshot = {
     version: "forge-inputs-v1", runId, slateDate: args.slateDate,
-    decisionAsOf: capture.reads.reduce((latest, read) => read.receivedAt > latest ? read.receivedAt : latest, args.inputCutoff),
+    decisionAsOf: latestInstant(capture.reads.map((read) => read.receivedAt), args.inputCutoff),
     inputCutoff: args.inputCutoff, capturedAt: new Date().toISOString(), codeVersion: args.codeVersion,
     modelMode: resolveSkaterRolloutConfig().mode, modelEnvironment: projectionModelEnvironment(),
     inputProvenance: buildForgeInputProvenance(), deterministicSeed: 0, horizonGames: 1, gameIds: [args.gameId],
@@ -683,6 +701,196 @@ export async function replayForgeSnapshot(snapshot: ForgeInputSnapshot, expected
   const outputHash = projectionWritesHash(replay.writes);
   if (outputHash !== snapshot.outputHash) throw new Error("FORGE replay output mismatch; use the captured code/model version.");
   return { runId: snapshot.runId, outputHash, matched: true };
+}
+
+/** Run-scoped read caches: one set per writer run, or per pregame collection. */
+function createForgeRunCaches() {
+  return {
+    activeRosterSkaterIdsByTeamId: new Map<number, number[]>(),
+    goalieEvidenceCache: new Map<string, GoalieEvidence>(),
+    teamStrengthCache: new Map<string, TeamStrengthAverages>(),
+    leaguePhysicalTotalsCache: new Map<string, LeaguePhysicalTotals | null>(),
+    // One league save % read per run and date, shared by the skater and goalie stages.
+    leagueSavePctCache: new Map() as SeasonLeagueSavePctCache,
+    teamHorizonScalarsCache: new Map<string, number[]>(),
+    teamSkaterRoleHistoryCache: new Map<string, Map<number, string[]>>(),
+  };
+}
+
+/** Per-game read caches and stage outputs shared by the skater and goalie stages. */
+function createForgeGameCaches() {
+  return {
+    teamShotsByTeamId: new Map<number, { shotsEs: number; shotsPp: number }>(),
+    teamGoalsByTeamId: new Map<number, number>(),
+    fallbackGoalieByTeamId: new Map<number, number | null>(),
+    teamGoalieStarterContextCache: new Map<string, TeamGoalieStarterContext>(),
+    teamDefensiveEnvironmentCache: new Map<string, TeamDefensiveEnvironment>(),
+    teamOffenseEnvironmentCache: new Map<string, TeamOffenseEnvironment>(),
+    teamRestDaysCache: new Map<string, number | null>(),
+    teamStrengthPriorCache: new Map<string, TeamStrengthPrior | null>(),
+    teamFiveOnFiveProfileCache: new Map<string, TeamFiveOnFiveProfile | null>(),
+    teamNstExpectedGoalsCache: new Map<string, TeamNstExpectedGoalsProfile | null>(),
+    teamLineComboGoaliePriorCache: new Map<string, Map<number, number>>(),
+    goalieWorkloadContextCache: new Map<string, GoalieWorkloadContext>(),
+    goalieRestSplitProfileCache: new Map<string, GoalieRestSplitProfile | null>(),
+    currentTeamGoalieIdsCache: new Map<string, Set<number>>(),
+    playerPredictionOutputRows: [] as Array<Record<string, unknown>>,
+    modelMarketFlagRows: [] as Array<Record<string, unknown>>,
+    selectedGoalieByTeamId: new Map<number, SelectedGoalieProjection>(),
+    goalieCandidates: [] as GoalieStageCandidate[],
+  };
+}
+
+type ForgeStageBase = {
+  asOfDate: string; runId: string; horizonGames: number; game: GameRow; deadlineMs: number;
+  seasonBootstrap?: boolean; evidenceCutoffAt: string | null;
+  skaterRollout: ReturnType<typeof resolveSkaterRolloutConfig>;
+  preflight: Awaited<ReturnType<typeof runProjectionPreflightStage>>;
+  runCaches: ReturnType<typeof createForgeRunCaches>;
+  gameCaches: ReturnType<typeof createForgeGameCaches>;
+};
+
+/** The skater stage's arguments for one game; the writer and the pregame collector build them only here. */
+function forgeSkaterStageArgs(base: ForgeStageBase, learningCounters: SkaterStageArgs["learningCounters"],
+  metrics: Record<string, any>): SkaterStageArgs {
+  const { preflight, runCaches, gameCaches } = base;
+  return {
+    asOfDate: base.asOfDate,
+    runId: base.runId,
+    horizonGames: base.horizonGames,
+    game: base.game,
+    deadlineMs: base.deadlineMs,
+    currentSeasonId: preflight.currentSeasonId,
+    seasonBootstrap: base.seasonBootstrap,
+    skaterRollout: base.skaterRollout,
+    teamAbbreviationById: preflight.teamAbbreviationById,
+    ...applyDailyBoardEvidence({
+      gameId: base.game.id, evidence: preflight.dailyBoardEvidence,
+      playerAvailabilityMultiplier: preflight.playerAvailabilityMultiplier,
+      availabilityEventByPlayer: preflight.availabilityEventByPlayer, roleEventByPlayer: preflight.roleEventByPlayer,
+      ppEventByPlayer: preflight.ppEventByPlayer, goalieOverrideByTeamId: preflight.goalieOverrideByTeamId,
+    }),
+    dailyBoardEvidence: preflight.dailyBoardEvidence,
+    activeRosterSkaterIdsByTeamId: runCaches.activeRosterSkaterIdsByTeamId,
+    teamHorizonScalarsCache: runCaches.teamHorizonScalarsCache,
+    teamSkaterRoleHistoryCache: runCaches.teamSkaterRoleHistoryCache,
+    teamShotsByTeamId: gameCaches.teamShotsByTeamId,
+    teamGoalsByTeamId: gameCaches.teamGoalsByTeamId,
+    fallbackGoalieByTeamId: gameCaches.fallbackGoalieByTeamId,
+    teamGoalieStarterContextCache: gameCaches.teamGoalieStarterContextCache,
+    teamDefensiveEnvironmentCache: gameCaches.teamDefensiveEnvironmentCache,
+    teamOffenseEnvironmentCache: gameCaches.teamOffenseEnvironmentCache,
+    teamRestDaysCache: gameCaches.teamRestDaysCache,
+    teamStrengthPriorCache: gameCaches.teamStrengthPriorCache,
+    teamStrengthCache: runCaches.teamStrengthCache,
+    leaguePhysicalTotalsCache: runCaches.leaguePhysicalTotalsCache,
+    // One league save % read per run and date, shared with the goalie stage below.
+    leagueSavePctCache: runCaches.leagueSavePctCache,
+    teamFiveOnFiveProfileCache: gameCaches.teamFiveOnFiveProfileCache,
+    teamNstExpectedGoalsCache: gameCaches.teamNstExpectedGoalsCache,
+    teamLineComboGoaliePriorCache: gameCaches.teamLineComboGoaliePriorCache,
+    currentTeamGoalieIdsCache: gameCaches.currentTeamGoalieIdsCache,
+    playerPropContextByGamePlayerKey: preflight.playerPropContextByGamePlayerKey,
+    playerPredictionOutputRows: gameCaches.playerPredictionOutputRows,
+    modelMarketFlagRows: gameCaches.modelMarketFlagRows,
+    goalieCandidates: gameCaches.goalieCandidates,
+    learningCounters,
+    metrics,
+  };
+}
+
+/** The goalie stage's arguments for one game; the writer and the pregame collector build them only here. */
+function forgeGoalieStageArgs(base: ForgeStageBase, metrics: { warnings: string[] }): GoalieStageArgs {
+  const { preflight, runCaches, gameCaches } = base;
+  return {
+    seasonBootstrap: base.seasonBootstrap,
+    dailyBoardEvidence: preflight.dailyBoardEvidence,
+    evidenceCutoffAt: base.evidenceCutoffAt,
+    asOfDate: base.asOfDate,
+    runId: base.runId,
+    horizonGames: base.horizonGames,
+    game: base.game,
+    deadlineMs: base.deadlineMs,
+    goalieCandidates: gameCaches.goalieCandidates,
+    teamShotsByTeamId: gameCaches.teamShotsByTeamId,
+    teamGoalsByTeamId: gameCaches.teamGoalsByTeamId,
+    teamAbbreviationById: preflight.teamAbbreviationById,
+    teamStrengthPriorCache: gameCaches.teamStrengthPriorCache,
+    teamFiveOnFiveProfileCache: gameCaches.teamFiveOnFiveProfileCache,
+    teamNstExpectedGoalsCache: gameCaches.teamNstExpectedGoalsCache,
+    teamDefensiveEnvironmentCache: gameCaches.teamDefensiveEnvironmentCache,
+    teamOffenseEnvironmentCache: gameCaches.teamOffenseEnvironmentCache,
+    teamRestDaysCache: gameCaches.teamRestDaysCache,
+    teamGoalieStarterContextCache: gameCaches.teamGoalieStarterContextCache,
+    goalieEvidenceCache: runCaches.goalieEvidenceCache,
+    goalieWorkloadContextCache: gameCaches.goalieWorkloadContextCache,
+    goalieRestSplitProfileCache: gameCaches.goalieRestSplitProfileCache,
+    teamHorizonScalarsCache: runCaches.teamHorizonScalarsCache,
+    playerPropContextByGamePlayerKey: preflight.playerPropContextByGamePlayerKey,
+    selectedGoalieByTeamId: gameCaches.selectedGoalieByTeamId,
+    playerPredictionOutputRows: gameCaches.playerPredictionOutputRows,
+    modelMarketFlagRows: gameCaches.modelMarketFlagRows,
+    gameMarketSummary: preflight.gameMarketContextByGameId.get(base.game.id),
+    leagueSavePctCache: runCaches.leagueSavePctCache,
+    metrics,
+  };
+}
+
+/** The target game's stored PBP and shift-chart completeness, read exactly as the writer reads them. */
+async function readForgeGameCompleteness(gameId: number, metrics: Record<string, any>) {
+  const pbpComplete = await hasCompleteStoredPbpGame(gameId);
+  if (!pbpComplete) {
+    metrics.data_quality.missing_pbp_games += 1;
+  } else if (
+    (await classifyStoredShiftChartStrengthGame({ gameId }))
+      .status !== "complete"
+  ) {
+    metrics.data_quality.missing_shift_totals += 1;
+  }
+}
+
+export type ForgeNativeCandidates = { skaters: number[]; goalies: number[]; reserves: number[] };
+
+/**
+ * The writer's native reads for one slate scope, with no scoring and no writes: preflight, each game's PBP and shift
+ * completeness, both teams' skater loaders and the goalie loader, built from the same stage arguments as
+ * runProjectionCalculations. Data-quality bookkeeping goes to a scratch object. Candidate sets are what the loaders
+ * selected: lineup skaters, goalie candidates with roster goalies (when the reserve pass is on), reserve skaters.
+ */
+export async function loadForgeNativeInputs(asOfDate: string, opts: {
+  gameIds: number[]; decisionAsOf: string; deadlineMs: number; seasonBootstrap?: boolean;
+}): Promise<{ candidates: ForgeNativeCandidates }> {
+  const metrics = { warnings: [] as string[], data_quality: {} as Record<string, any> };
+  const learningCounters = { players: 0, goalRecent: 0, assistRecent: 0 };
+  const preflight = await runProjectionPreflightStage({
+    asOfDate,
+    decisionAsOf: opts.decisionAsOf,
+    requestedGameIds: opts.gameIds,
+  });
+  const runCaches = createForgeRunCaches();
+  const skaterRollout = resolveSkaterRolloutConfig();
+  const skaters = new Set<number>(), goalies = new Set<number>(), reserves = new Set<number>();
+  for (const game of (preflight.games ?? []) as GameRow[]) {
+    if (Date.now() > opts.deadlineMs) throw new Error("FORGE native input collection passed its deadline.");
+    await readForgeGameCompleteness(game.id, metrics);
+    const gameCaches = createForgeGameCaches();
+    const base: ForgeStageBase = {
+      asOfDate, runId: "native-input-collection", horizonGames: 1, game, deadlineMs: opts.deadlineMs,
+      seasonBootstrap: opts.seasonBootstrap, evidenceCutoffAt: opts.decisionAsOf, skaterRollout, preflight, runCaches, gameCaches,
+    };
+    const teams = await loadSkaterGameInputs(forgeSkaterStageArgs(base, learningCounters, metrics));
+    for (const team of teams) {
+      // The writer adds a team's goalie candidates once its compute completes; every loaded team completes.
+      if (team.goalieCandidate) gameCaches.goalieCandidates.push(team.goalieCandidate);
+      team.lineupPlayerIds.forEach((id) => skaters.add(id));
+      team.reserveCandidates.forEach((candidate) => reserves.add(candidate.playerId));
+    }
+    const projectedTeamIds = new Set(teams.map((team) => team.teamId));
+    const goalieInputs = await goalieStageLoaders.game(forgeGoalieStageArgs(base, metrics), (teamId) => projectedTeamIds.has(teamId));
+    for (const ids of goalieInputs.goalieIdsByTeamId.values()) ids.forEach((id) => goalies.add(id));
+  }
+  const sorted = (ids: Set<number>) => [...ids].sort((a, b) => a - b);
+  return { candidates: { skaters: sorted(skaters), goalies: sorted(goalies), reserves: sorted(reserves) } };
 }
 
 async function runProjectionCalculations(
@@ -822,11 +1030,7 @@ async function runProjectionCalculations(
     const playerPropContextByGamePlayerKey =
       preflight.playerPropContextByGamePlayerKey;
 
-    const activeRosterSkaterIdsByTeamId = new Map<number, number[]>();
-    const goalieEvidenceCache = new Map<string, GoalieEvidence>();
-    const teamStrengthCache = new Map<string, TeamStrengthAverages>();
-    const leaguePhysicalTotalsCache = new Map<string, LeaguePhysicalTotals | null>();
-    const leagueSavePctCache: SeasonLeagueSavePctCache = new Map();
+    const runCaches = createForgeRunCaches();
     const learningCounters = {
       players: 0,
       goalRecent: 0,
@@ -850,8 +1054,6 @@ async function runProjectionCalculations(
     let playerRowsUpserted = safeNumber(prior?.player_rows, 0);
     let teamRowsUpserted = safeNumber(prior?.team_rows, 0);
     let goalieRowsUpserted = safeNumber(prior?.goalie_rows, 0);
-    const teamHorizonScalarsCache = new Map<string, number[]>();
-    const teamSkaterRoleHistoryCache = new Map<string, Map<number, string[]>>();
 
     const slateGames = (games ?? []) as GameRow[];
     const pendingGames = slateGames.filter((game) => !completedGameIds.has(game.id));
@@ -895,113 +1097,19 @@ async function runProjectionCalculations(
       // Ownership is re-confirmed at each game and stage boundary (a no-op
       // outside a claimed run); each write checks only the lease deadline.
       await assertRunStillOwned();
-      const pbpComplete = await hasCompleteStoredPbpGame(game.id);
-      if (!pbpComplete) {
-        metrics.data_quality.missing_pbp_games += 1;
-      } else if (
-        (await classifyStoredShiftChartStrengthGame({ gameId: game.id }))
-          .status !== "complete"
-      ) {
-        metrics.data_quality.missing_shift_totals += 1;
-      }
+      await readForgeGameCompleteness(game.id, metrics);
 
       // Removed: const lineCombos = await fetchLineCombinations(game.id);
       // We now fetch per-team latest LCs inside the loop.
 
-      const teamShotsByTeamId = new Map<
-        number,
-        { shotsEs: number; shotsPp: number }
-      >();
-      const teamGoalsByTeamId = new Map<number, number>();
-      const fallbackGoalieByTeamId = new Map<number, number | null>();
-      const teamGoalieStarterContextCache = new Map<
-        string,
-        TeamGoalieStarterContext
-      >();
-      const teamDefensiveEnvironmentCache = new Map<
-        string,
-        TeamDefensiveEnvironment
-      >();
-      const teamOffenseEnvironmentCache = new Map<
-        string,
-        TeamOffenseEnvironment
-      >();
-      const teamRestDaysCache = new Map<string, number | null>();
-      const teamStrengthPriorCache = new Map<
-        string,
-        TeamStrengthPrior | null
-      >();
-      const teamFiveOnFiveProfileCache = new Map<
-        string,
-        TeamFiveOnFiveProfile | null
-      >();
-      const teamNstExpectedGoalsCache = new Map<
-        string,
-        TeamNstExpectedGoalsProfile | null
-      >();
-      const teamLineComboGoaliePriorCache = new Map<
-        string,
-        Map<number, number>
-      >();
-      const goalieWorkloadContextCache = new Map<
-        string,
-        GoalieWorkloadContext
-      >();
-      const goalieRestSplitProfileCache = new Map<
-        string,
-        GoalieRestSplitProfile | null
-      >();
-      const currentTeamGoalieIdsCache = new Map<string, Set<number>>();
-      const playerPredictionOutputRows: Array<Record<string, unknown>> = [];
-      const modelMarketFlagRows: Array<Record<string, unknown>> = [];
-      const selectedGoalieByTeamId = new Map<
-        number,
-        SelectedGoalieProjection
-      >();
-      const goalieCandidates: GoalieStageCandidate[] = [];
+      const gameCaches = createForgeGameCaches();
+      const { teamGoalsByTeamId, playerPredictionOutputRows, modelMarketFlagRows, selectedGoalieByTeamId } = gameCaches;
 
-      const skaterStageResult = await runPerGameSkaterStage({
-        asOfDate,
-        runId,
-        horizonGames,
-        game,
-        deadlineMs,
-        currentSeasonId,
-        seasonBootstrap: opts?.seasonBootstrap,
-        skaterRollout,
-        teamAbbreviationById,
-        ...applyDailyBoardEvidence({
-          gameId: game.id, evidence: preflight.dailyBoardEvidence,
-          playerAvailabilityMultiplier, availabilityEventByPlayer, roleEventByPlayer,
-          ppEventByPlayer: preflight.ppEventByPlayer, goalieOverrideByTeamId,
-        }),
-        dailyBoardEvidence: preflight.dailyBoardEvidence,
-        activeRosterSkaterIdsByTeamId,
-        teamHorizonScalarsCache,
-        teamSkaterRoleHistoryCache,
-        teamShotsByTeamId,
-        teamGoalsByTeamId,
-        fallbackGoalieByTeamId,
-        teamGoalieStarterContextCache,
-        teamDefensiveEnvironmentCache,
-        teamOffenseEnvironmentCache,
-        teamRestDaysCache,
-        teamStrengthPriorCache,
-        teamStrengthCache,
-        leaguePhysicalTotalsCache,
-        // One league save % read per run and date, shared with the goalie stage below.
-        leagueSavePctCache,
-        teamFiveOnFiveProfileCache,
-        teamNstExpectedGoalsCache,
-        teamLineComboGoaliePriorCache,
-        currentTeamGoalieIdsCache,
-        playerPropContextByGamePlayerKey,
-        playerPredictionOutputRows,
-        modelMarketFlagRows,
-        goalieCandidates,
-        learningCounters,
-        metrics,
-      });
+      const stageBase = {
+        asOfDate, runId, horizonGames, game, deadlineMs, seasonBootstrap: opts?.seasonBootstrap,
+        evidenceCutoffAt: opts?.decisionAsOf ?? null, skaterRollout, preflight, runCaches, gameCaches,
+      };
+      const skaterStageResult = await runPerGameSkaterStage(forgeSkaterStageArgs(stageBase, learningCounters, metrics));
       playerRowsUpserted += skaterStageResult.playerRowsUpserted;
       teamRowsUpserted += skaterStageResult.teamRowsUpserted;
       if (skaterStageResult.timedOut) {
@@ -1011,38 +1119,7 @@ async function runProjectionCalculations(
 
       // Create goalie projections after both teams are projected so we can use opponent shots.
       await assertRunStillOwned();
-      const goalieStageResult = await runPerGameGoalieStage({
-        seasonBootstrap: opts?.seasonBootstrap,
-        dailyBoardEvidence: preflight.dailyBoardEvidence,
-        evidenceCutoffAt: opts?.decisionAsOf ?? null,
-        asOfDate,
-        runId,
-        horizonGames,
-        game,
-        deadlineMs,
-        goalieCandidates,
-        teamShotsByTeamId,
-        teamGoalsByTeamId,
-        teamAbbreviationById,
-        teamStrengthPriorCache,
-        teamFiveOnFiveProfileCache,
-        teamNstExpectedGoalsCache,
-        teamDefensiveEnvironmentCache,
-        teamOffenseEnvironmentCache,
-        teamRestDaysCache,
-        teamGoalieStarterContextCache,
-        goalieEvidenceCache,
-        goalieWorkloadContextCache,
-        goalieRestSplitProfileCache,
-        teamHorizonScalarsCache,
-        playerPropContextByGamePlayerKey,
-        selectedGoalieByTeamId,
-        playerPredictionOutputRows,
-        modelMarketFlagRows,
-        gameMarketSummary: gameMarketContextByGameId.get(game.id),
-        leagueSavePctCache,
-        metrics: metrics as { warnings: string[] },
-      });
+      const goalieStageResult = await runPerGameGoalieStage(forgeGoalieStageArgs(stageBase, metrics as { warnings: string[] }));
       goalieRowsUpserted += goalieStageResult.goalieRowsUpserted;
       if (goalieStageResult.timedOut) {
         timedOut = true;
