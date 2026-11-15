@@ -83,3 +83,10 @@
   - Approved: the per-team goalie-input block is compared as a multiset (same op-chain hashes and counts). Everything else stays exact-order. Writes must be byte-identical.
   - The loader uses a deterministic, model-free order. Candidate coverage is asserted. Existing resume, local-attempt and startChart tests must pass unmodified. Error-path and deadline differences get listed.
   - Replay is unaffected, since it matches by hash.
+- 2026-11-15T03:20Z **Worker:**
+  - The oracle is committed on the unmodified writer: 1216f6e17, enriched in 52c3b6919.
+  - Goalie read order confirmed model-dependent. Scenario: goalie-model-reorders-candidates.
+  - The seasonBootstrap decision moves to a pure exported function in the writer. The runner records the value in the packet.
+  - **Gotchas:**
+    - My directory pathspec commits (daded823b, ede7f2d8f) swept in the worker's in-progress `__fixtures__/world/**` and `parity/**`. From now on Chef commits by exact file.
+    - 1216f6e17 carries a Co-Authored-By trailer, against TJ's no-attribution rule. It's on shared history, so not rewritten; flagged to TJ.
