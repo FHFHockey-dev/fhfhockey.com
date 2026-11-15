@@ -65,6 +65,35 @@ Full typecheck at HEAD (`5a7ca3cd1` tree, split included, `npm run typecheck` un
 - Compute branches no scenario reaches are not covered. The role-stability clamp floor is one known example. No coverage provider is installed, and adding one would change dependencies.
 - Reads match the oracle exactly in 8 scenarios. In goalie-model-reorders-candidates only the per-goalie input block reorders (compared as a multiset, per Chef's decision). Writes are byte-identical there too.
 
-## Open before acceptance (TJ: keep local until proven)
-- Production runs FORGE today with `STARTER_BOARD_COMPUTE_ENABLED` off, on the uncaptured, resumable path, and no scenario covers it yet. The worker is adding compute-off scenarios (normal, reserve on, goalie multi-candidate, and if possible one resumed run). Their oracle is recorded from a `git archive 52c3b6919` export; existing oracle files are never re-recorded. This byte-level comparison will be repeated on them.
-- Season bootstrap under the strict transport was refused (`games!inner` embed). Chef narrowed the rule: embedding is admitted only for allowlisted relations, and dotted filters only on those embeds. The worker removes that known refusal next.
+## Compute-off (production path today): byte-identical
+- **Path:** production runs FORGE with `STARTER_BOARD_COMPUTE_ENABLED` off, uncaptured and resumable (`claimResumableRun` / `writeClaimedRun`, full slate, no cutoff).
+- **Oracle:** the worker added 5 scenarios (`d2cb5b5f2`). Their oracle was recorded from a `git archive 52c3b6919` export.
+- **Chef's independent dump, same method as above:**
+  - **Unmodified writer:** the `52c3b6919` export, plus the current test-only harness, scenario, read-order and fixture files.
+  - **Split:** a `git archive HEAD` export.
+  - The two copies' `run-forge-projections.ts`, `skater-stage.ts` and `goalie-stage.ts` differ, as expected.
+- **Result:** every invocation's raw writes and results are byte-identical (5 of 5 files).
+- **Sensitivity check:** a forced change in the split copy changed 5 of 5.
+- **Resumed run:** invocation 1 times out after the home team's rows; invocation 2 resumes and redoes the game. Both are identical.
+
+| file | bytes | sha256 (first 16) |
+| --- | ---: | --- |
+| compute-off-goalie-model-reorders-candidates.json | 660845 | e89bc2808b76dd87 |
+| compute-off-goalie-override-multi-candidate.json | 644678 | 2f2a9c77379b6b4e |
+| compute-off-normal-one-game.json | 652664 | 8392e1ab9cd1aff4 |
+| compute-off-reserve-pass-on.json | 660827 | 8516bf25bbee00f3 |
+| compute-off-resumed-run.json | 969953 | 9330fff63776530b |
+
+**Tables:** `forge_runs`, `forge_player_projections`, `forge_team_projections`, `forge_goalie_projections`, `player_prediction_outputs`, `game_prediction_outputs`, `model_market_flags_daily`.
+
+**Full typecheck at HEAD (after compute-off):** exit 2. Both errors are in another session's untracked `web/lib/rankings/__acceptance__/` (r04-r06-team, r05-goalie-samples). There are none in projections or capture code. The earlier run at `5a7ca3cd1` exited 0.
+
+**Repository suites at HEAD:** `vitest`, 12 files, 302 tests passed. That is the set above plus `parity/computeOff.test.ts`.
+
+**Strict transport:** season bootstrap is admitted after Chef's `dc6c4cb7c`. The collector runs with zero refusals in all 9 compute-on scenarios.
+
+## Status
+- Byte-for-byte output parity holds in all 14 scenarios: 9 compute-on and 5 compute-off, including a resumed run.
+- The reserve-test change is explained above: an audit exclusion of test support only.
+- The split stays local until TJ decides on release. Nothing is pushed.
+- **Remaining limit:** branches no scenario reaches (e.g. the role-stability clamp floor) are not covered.
