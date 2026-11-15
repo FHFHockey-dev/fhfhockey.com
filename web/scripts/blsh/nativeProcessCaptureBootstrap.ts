@@ -10,16 +10,16 @@ import type { NativeCaptureRunInput } from "./nativeProcessCaptureRunner";
 
 const WEB = "/Users/tim/Code/fhfhockey.com/web";
 const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
-const OUTPUT = "/Users/tim/Library/Application Support/fhfh-blsh-native-20261113T140500Z";
-const SLOT = "2026-11-13T14:05:00.000Z";
+const OUTPUT = "/Users/tim/Library/Application Support/fhfh-blsh-native-20261117T140500Z";
+const SLOT = "2026-11-17T14:05:00.000Z";
 // One start in this 60-second window; at most 120 seconds of capture work.
 const LAST_START = Date.parse(SLOT) + 60_000;
 const NODE_SHA256 = "daa77e22e1b8778361b392461e9921a6d292d0382ebf4ae872a0081f02f01fef";
 const resolveModule = createRequire(__filename).resolve;
 const SOURCE_PINS = {
-  runner: ["scripts/blsh/nativeProcessCaptureRunner.ts", "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb"],
+  runner: ["scripts/blsh/nativeProcessCaptureRunner.ts", "a74cbb0a59d4b3525572a2f71811b4777b36c63bdb26c42b4dea7ea911af81b0"],
   preparation: ["scripts/blsh/nativeProcessCapturePreparation.ts", "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7"],
-  adapter: ["scripts/blsh/nativeProcessCaptureAdapter.ts", "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368"],
+  adapter: ["scripts/blsh/nativeProcessCaptureAdapter.ts", "aa6237bdb8d977cbd21f3ed769d9f5c7f9028e23a921965f41e278e021947be0"],
   client: ["lib/nst/client.ts", "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d"],
   budget: ["lib/nst/requestBudget.ts", "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a"],
   admission: ["lib/nst/sharedAdmission.ts", "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a"],
@@ -116,9 +116,14 @@ export async function nativeProcessCaptureBootstrap(args: readonly string[]) {
   readAuthorization(args[1], preflight.bootstrapSHA256);
   const checkExecution = () => {
     need(Date.now() >= Date.parse(SLOT) && Date.now() < LAST_START, "bootstrap_outside_approved_slot");
-    need(process.env.NEXT_PUBLIC_SUPABASE_URL === ORIGIN && process.env.NST_JOB_LIFECYCLE_ENABLED !== "true", "bootstrap_configured_environment_mismatch");
+    // The evidence bridge requires NST_JOB_LIFECYCLE_ENABLED to be absent; "false" is refused
+    // here so a launcher cannot spend live calls on a packet the bridge will refuse.
+    need(process.env.NEXT_PUBLIC_SUPABASE_URL === ORIGIN && !Object.prototype.hasOwnProperty.call(process.env, "NST_JOB_LIFECYCLE_ENABLED"), "bootstrap_configured_environment_mismatch");
   };
   checkExecution();
+  // Nothing may register an undici dispatcher before these imports. The runner anchors on the
+  // one its own imports register (npm undici, via cheerio) and refuses any later replacement.
+  need((globalThis as unknown as Record<symbol, unknown>)[Symbol.for("undici.globalDispatcher.1")] === undefined, "bootstrap_global_dispatcher_preinstalled");
   // No runtime module or adapter factory is loaded by --check. Credential access
   // begins only in the separately approved path, after every local gate above.
   const { prepareNativeProcessCapture } = await import("./nativeProcessCapturePreparation");
@@ -126,7 +131,7 @@ export async function nativeProcessCaptureBootstrap(args: readonly string[]) {
   const { createNativeProcessCaptureAdapter } = await import("./nativeProcessCaptureAdapter");
   checkExecution();
   const input: NativeCaptureRunInput = {
-    plan: prepareNativeProcessCapture({ seasonId: 20262027, date: "2026-11-07", plannedAtUTC: new Date().toISOString(), groups: ["individual", "onIce"] }),
+    plan: prepareNativeProcessCapture({ seasonId: 20262027, date: "2026-11-11", plannedAtUTC: new Date().toISOString(), groups: ["individual", "onIce"] }),
     supabaseOrigin: ORIGIN, lifecycleMode: "disabled",
     sourceSHA256: Object.fromEntries(Object.entries(SOURCE_PINS).map(([role, [, hash]]) => [role, hash])) as NativeCaptureRunInput["sourceSHA256"],
   };

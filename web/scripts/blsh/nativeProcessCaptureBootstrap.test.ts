@@ -20,15 +20,15 @@ vi.mock("node:net", () => { throw new Error("real sockets forbidden"); });
 vi.mock("node:tls", () => { throw new Error("real TLS forbidden"); });
 
 const WEB = "/Users/tim/Code/fhfhockey.com/web";
-const OUTPUT = "/Users/tim/Library/Application Support/fhfh-blsh-native-20261113T140500Z";
+const OUTPUT = "/Users/tim/Library/Application Support/fhfh-blsh-native-20261117T140500Z";
 const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
-const SLOT = "2026-11-13T14:05:00.000Z";
+const SLOT = "2026-11-17T14:05:00.000Z";
 const originalArgs = process.execArgv;
 let directory: string;
 let bootstrap: typeof import("./nativeProcessCaptureBootstrap").nativeProcessCaptureBootstrap;
 let runtimeResolve: (target: string) => string;
 const hash = (path: string) => createHash("sha256").update(new Uint8Array(fs.readFileSync(path))).digest("hex");
-const receipt = () => ({ version: "fhfh.blsh.native-pilot-authorization.v1", approvedBy: "TJ", approvedAtUTC: "2026-11-12T20:00:00.000Z",
+const receipt = () => ({ version: "fhfh.blsh.native-pilot-authorization.v1", approvedBy: "TJ", approvedAtUTC: "2026-11-16T20:00:00.000Z",
   approvalReference: "fixture:not-real-approval", operator: "fixture-operator", bootstrapSHA256: hash(resolve(__dirname, "nativeProcessCaptureBootstrap.ts")),
   slotStartUTC: SLOT, outputDirectory: OUTPUT, supabaseOrigin: ORIGIN, lifecycleMode: "disabled", maximumHTTPAttempts: 5,
   coordinationReceipt: "fixture:coordination", runtimeReceipt: "fixture:runtime", admissionReceipt: "fixture:admission" });
@@ -37,7 +37,13 @@ const writeReceipt = (change: Record<string, unknown> = {}) => {
   fs.writeFileSync(path, JSON.stringify({ ...receipt(), ...change }), { mode: 0o600 });
   return path;
 };
+// A real launch has no undici dispatcher before the bootstrap's imports; the vitest worker does.
+// The entry is non-configurable, so model the launch by assigning undefined, then restore it.
+const DISPATCHER_KEY = Symbol.for("undici.globalDispatcher.1");
+const dispatcherRegistry = globalThis as unknown as Record<symbol, unknown>;
+let workerDispatcher: unknown;
 beforeEach(async () => {
+  workerDispatcher = dispatcherRegistry[DISPATCHER_KEY]; dispatcherRegistry[DISPATCHER_KEY] = undefined;
   vi.resetModules(); vi.clearAllMocks();
   const real = await vi.importActual<typeof import("node:fs")>("node:fs");
   const modules = await vi.importActual<typeof import("node:module")>("node:module");
@@ -68,6 +74,7 @@ beforeEach(async () => {
   bootstrap = (await import("./nativeProcessCaptureBootstrap")).nativeProcessCaptureBootstrap;
 });
 afterEach(() => {
+  dispatcherRegistry[DISPATCHER_KEY] = workerDispatcher;
   process.execArgv = originalArgs; vi.useRealTimers(); vi.unstubAllEnvs(); vi.unstubAllGlobals();
   fs.rmSync(directory, { recursive: true, force: true });
 });
@@ -92,8 +99,8 @@ describe("one-shot native capture bootstrap, entirely offline", () => {
     expect(await bootstrap(["--run", approved])).toMatchObject({ state: "packet_complete_pending_review", sourceAcceptance: false });
     expect(calls.factory).toHaveBeenCalledTimes(1); expect(calls.runner).toHaveBeenCalledTimes(1);
     const [input, adapter, output] = calls.runner.mock.calls[0];
-    expect(input).toMatchObject({ lifecycleMode: "disabled", supabaseOrigin: ORIGIN, plan: { input: { plannedAtUTC: SLOT, date: "2026-11-07", groups: ["individual", "onIce"] } } });
-    expect(input.sourceSHA256.runner).toBe("5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb");
+    expect(input).toMatchObject({ lifecycleMode: "disabled", supabaseOrigin: ORIGIN, plan: { input: { plannedAtUTC: SLOT, date: "2026-11-11", groups: ["individual", "onIce"] } } });
+    expect(input.sourceSHA256.runner).toBe("a74cbb0a59d4b3525572a2f71811b4777b36c63bdb26c42b4dea7ea911af81b0");
     expect(Object.keys(input.sourceSHA256)).toHaveLength(9); expect(adapter).toEqual({ synthetic: true }); expect(output).toBe(OUTPUT);
     await expect(bootstrap(["--run", approved])).rejects.toThrow("bootstrap_already_attempted");
     expect(calls.runner).toHaveBeenCalledTimes(1); expect(fetch).not.toHaveBeenCalled(); expect(fs.existsSync(OUTPUT)).toBe(false);
@@ -105,20 +112,26 @@ describe("one-shot native capture bootstrap, entirely offline", () => {
 
   it.each([
     { bootstrapSHA256: "0".repeat(64) }, { lifecycleMode: "enabled" }, { maximumHTTPAttempts: 8 },
-    { outputDirectory: "/tmp/alternate" }, { supabaseOrigin: "https://example.invalid" }, { slotStartUTC: "2026-11-14T14:05:00.000Z" },
-    { approvedBy: "fixture-no-human" }, { approvedAtUTC: "2026-11-14T14:05:00.000Z" }, { coordinationReceipt: "" }, { force: true },
+    { outputDirectory: "/tmp/alternate" }, { supabaseOrigin: "https://example.invalid" }, { slotStartUTC: "2026-11-18T14:05:00.000Z" },
+    { approvedBy: "fixture-no-human" }, { approvedAtUTC: "2026-11-18T14:05:00.000Z" }, { coordinationReceipt: "" }, { force: true },
   ])("rejects scope/evidence mismatch %j without adapter construction", async change => {
     await expect(bootstrap(["--run", writeReceipt(change)])).rejects.toThrow();
     expect(calls.factory).not.toHaveBeenCalled(); expect(calls.runner).not.toHaveBeenCalled();
   });
 
-  it.each(["2026-11-13T14:04:59.999Z", "2026-11-13T14:06:00.000Z", "2026-11-15T00:00:00.000Z"])("rejects outside the one start window: %s", async now => {
+  it.each(["2026-11-17T14:04:59.999Z", "2026-11-17T14:06:00.000Z", "2026-11-19T00:00:00.000Z"])("rejects outside the one start window: %s", async now => {
     vi.setSystemTime(now); await expect(bootstrap(["--run", writeReceipt()])).rejects.toThrow("bootstrap_outside_approved_slot");
     expect(calls.factory).not.toHaveBeenCalled();
   });
 
-  it.each([["NEXT_PUBLIC_SUPABASE_URL", undefined], ["NST_JOB_LIFECYCLE_ENABLED", "true"]])("rejects configured environment mismatch %s", async (key, value) => {
+  it.each([["NEXT_PUBLIC_SUPABASE_URL", undefined], ["NST_JOB_LIFECYCLE_ENABLED", "true"], ["NST_JOB_LIFECYCLE_ENABLED", "false"], ["NST_JOB_LIFECYCLE_ENABLED", ""]])("rejects configured environment mismatch %s=%s", async (key, value) => {
     vi.stubEnv(key!, value); await expect(bootstrap(["--run", writeReceipt()])).rejects.toThrow("bootstrap_configured_environment_mismatch"); expect(calls.factory).not.toHaveBeenCalled();
+  });
+
+  it("refuses an undici dispatcher registered before its imports, without adapter construction", async () => {
+    dispatcherRegistry[DISPATCHER_KEY] = { constructor: { name: "Agent" } };
+    await expect(bootstrap(["--run", writeReceipt()])).rejects.toThrow("bootstrap_global_dispatcher_preinstalled");
+    expect(calls.factory).not.toHaveBeenCalled(); expect(calls.runner).not.toHaveBeenCalled();
   });
 
   it("rejects runtime overrides during check without importing the adapter", async () => {
@@ -161,7 +174,7 @@ describe("one-shot native capture bootstrap, entirely offline", () => {
   });
 
   it("rechecks the start window after adapter construction before runner dispatch", async () => {
-    calls.factory.mockImplementationOnce(() => { vi.setSystemTime("2026-11-13T14:06:00.000Z"); return { synthetic: true }; });
+    calls.factory.mockImplementationOnce(() => { vi.setSystemTime("2026-11-17T14:06:00.000Z"); return { synthetic: true }; });
     await expect(bootstrap(["--run", writeReceipt()])).rejects.toThrow("bootstrap_capture_failed_preserve_packet_no_retry"); expect(calls.runner).not.toHaveBeenCalled();
   });
 });

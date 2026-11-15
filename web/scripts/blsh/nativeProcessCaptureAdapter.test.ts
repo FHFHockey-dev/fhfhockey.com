@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { createHash } from "node:crypto";
+import { channel } from "node:diagnostics_channel";
 import * as fs from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -18,18 +19,20 @@ vi.mock("../../lib/nst/requestBudget", async original => ({
 vi.mock("node:http", () => { throw new Error("real HTTP forbidden"); });
 vi.mock("node:https", () => { throw new Error("real HTTPS forbidden"); });
 vi.mock("node:net", () => { throw new Error("real sockets forbidden"); });
-vi.mock("node:tls", () => { throw new Error("real TLS forbidden"); });
+// The runner's runtime receipt reads only the CA lists; any real TLS connection stays forbidden.
+vi.mock("node:tls", () => ({ rootCertificates: ["fixture-bundled-root"], getCACertificates: () => ["fixture-default-root"],
+  connect: () => { throw new Error("real TLS forbidden"); }, createSecureContext: () => { throw new Error("real TLS forbidden"); } }));
 
 import { createNativeProcessCaptureAdapter } from "./nativeProcessCaptureAdapter";
 import { prepareNativeProcessCapture } from "./nativeProcessCapturePreparation";
 import { runNativeProcessCapture, type NativeCaptureRunInput } from "./nativeProcessCaptureRunner";
 import { withNstRequestBudget } from "../../lib/nst/requestBudget";
 
-const NOW = "2026-11-09T15:10:00.000Z", ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
+const NOW = "2026-11-13T15:10:00.000Z", ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
 const KEY = "fixture-NST-secret-123", SERVICE = "fixture-service-secret-456";
 const MIB = 1024 * 1024;
 const html = `<table><tr><td>Fixture é 🏒 /?key=${KEY}&x=1</td></tr></table>\r\n`;
-const schedule = () => ({ gameWeek: [{ date: "2026-11-07", games: [{ id: 2026020201, season: 20262027, gameType: 2, gameState: "OFF", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "NJD" }, awayTeam: { id: 2, abbrev: "NYI" } }] }] });
+const schedule = () => ({ gameWeek: [{ date: "2026-11-11", games: [{ id: 2026020201, season: 20262027, gameType: 2, gameState: "OFF", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "NJD" }, awayTeam: { id: 2, abbrev: "NYI" } }] }] });
 const sourceFiles = {
   runner: resolve(__dirname, "nativeProcessCaptureRunner.ts"), preparation: resolve(__dirname, "nativeProcessCapturePreparation.ts"),
   adapter: resolve(__dirname, "nativeProcessCaptureAdapter.ts"), client: resolve(__dirname, "../../lib/nst/client.ts"),
@@ -42,6 +45,29 @@ let directory: string, input: NativeCaptureRunInput, calls: Call[];
 let failAt: string | undefined;
 let customize: ((call: Call, body: string) => string | Response | Promise<Response>) | undefined;
 const out = () => join(directory, "packet");
+// node:tls stays blocked; undici's per-request event is modelled with a synthetic socket.
+type TlsFault = "missing" | "wrong_origin" | "plain_socket" | "duplicate" | "resumed" | "resumed_unauthorized" | "keepalive";
+let tlsFaults: Partial<Record<string, TlsFault>> = {};
+const lastSocket = new Map<string, object>();
+const sendHeaders = channel("undici:client:sendHeaders");
+const fakeSocket = (host: string) => {
+  const root: Record<string, unknown> = { issuer: { CN: "Fixture Root" } }; root.issuerCertificate = root;
+  const leaf = { fingerprint256: Array(32).fill("CD").join(":"), valid_from: "Nov  1 00:00:00 2026 GMT", valid_to: "Jan 30 00:00:00 2027 GMT",
+    subject: { CN: host }, issuer: { CN: "Fixture Intermediate" }, issuerCertificate: { issuer: { CN: "Fixture Root" }, issuerCertificate: root } };
+  return { encrypted: true, authorized: true, servername: host, alpnProtocol: "http/1.1", isSessionReused: () => false, getProtocol: () => "TLSv1.3",
+    getCipher: () => ({ name: "TLS_AES_128_GCM_SHA256", standardName: "TLS_AES_128_GCM_SHA256", version: "TLSv1.3" }), getPeerCertificate: () => leaf };
+};
+// Node 22.23.4 exposes no peer certificate on a resumed session.
+const resumedSocket = (host: string, authorized = true) => ({ ...fakeSocket(host), authorized, isSessionReused: () => true, getPeerCertificate: () => ({}) });
+const publishTls = (kind: string, parsed: URL, method: string) => {
+  const fault = tlsFaults[kind];
+  if (fault === "missing") return;
+  const socket = fault === "plain_socket" ? { encrypted: false } : fault === "resumed" ? resumedSocket(parsed.hostname)
+    : fault === "resumed_unauthorized" ? resumedSocket(parsed.hostname, false) : fault === "keepalive" ? lastSocket.get(parsed.hostname)! : fakeSocket(parsed.hostname);
+  lastSocket.set(parsed.hostname, socket);
+  const message = { request: { origin: fault === "wrong_origin" ? "https://other.invalid" : parsed.origin, path: `${parsed.pathname}${parsed.search}`, method }, headers: [], socket };
+  sendHeaders.publish(message); if (fault === "duplicate") sendHeaders.publish(message);
+};
 const exists = (file: string) => fs.existsSync(join(out(), file));
 const read = (file: string) => JSON.parse(fs.readFileSync(join(out(), file), "utf8"));
 const response = (body: string | ReadableStream<Uint8Array>, url: string, status = 200, redirected = false) => {
@@ -59,8 +85,8 @@ beforeEach(() => {
   vi.useFakeTimers(); vi.setSystemTime(NOW); vi.clearAllMocks();
   vi.stubEnv("NST_KEY", KEY); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", SERVICE);
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", ORIGIN); vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "false");
-  directory = fs.mkdtempSync(join(tmpdir(), "blsh-actual-adapter-test-")); calls = []; failAt = undefined; customize = undefined;
-  input = { plan: prepareNativeProcessCapture({ seasonId: 20262027, date: "2026-11-07", plannedAtUTC: NOW, groups: ["individual", "onIce"] }),
+  directory = fs.mkdtempSync(join(tmpdir(), "blsh-actual-adapter-test-")); calls = []; failAt = undefined; customize = undefined; tlsFaults = {}; lastSocket.clear();
+  input = { plan: prepareNativeProcessCapture({ seasonId: 20262027, date: "2026-11-11", plannedAtUTC: NOW, groups: ["individual", "onIce"] }),
     supabaseOrigin: ORIGIN, lifecycleMode: "disabled", sourceSHA256: Object.fromEntries(Object.entries(sourceFiles).map(([role, path]) => [role, createHash("sha256").update(new Uint8Array(fs.readFileSync(path))).digest("hex")])) as NativeCaptureRunInput["sourceSHA256"] };
   vi.stubGlobal("fetch", vi.fn(async (target: string | URL | Request, init: RequestInit = {}) => {
     const url = String(target), parsed = new URL(url), name = parsed.pathname.split("/").at(-1);
@@ -79,6 +105,7 @@ beforeEach(() => {
       body = JSON.stringify({ status: { begin: "started", finish: "finished", hold: "held" }[kind], token: args.p_token });
     } else throw new Error("unexpected network target blocked");
     const call = { kind, url, at: Date.now(), init }; calls.push(call);
+    publishTls(kind, parsed, init.method ?? "GET");
     expect(init.redirect).toBe("error"); expect(init.signal).toBeInstanceOf(AbortSignal);
     if (kind === failAt) throw new Error(`fixture transport failure ${KEY} ${SERVICE}`);
     const customized = await customize?.(call, body);
@@ -106,6 +133,13 @@ describe("actual native capture adapter through mocked transports", () => {
     expect(fs.readFileSync(join(out(), "individual.parser-input.html"), "utf8")).toBe(html.replace(KEY, "[REDACTED]"));
     expect(read("individual.TRANSPORT-OBSERVATION.json")).toMatchObject({ retrievedAtUTC: new Date(nst[0].at).toISOString(), TLSVerified: null, independentlyAccepted: false });
     const manifest = read("MANIFEST.json"); expect(manifest.operationCount).toBe(mode === "enabled" ? 7 : 5);
+    const observed = (manifest.files as { file: string }[]).filter(file => /^operation-\d+-SETTLED\.json$/.test(file.file)).map(file => read(file.file))
+      .filter(record => !["begin", "finish", "hold"].includes(record.operation));
+    expect(observed.map(record => [record.operation, record.tls.servername])).toEqual([["schedule", "api-web.nhle.com"], ["admission:individual", "fyhftlxokyjtpndbkfse.supabase.co"],
+      ["nst:individual", "data.naturalstattrick.com"], ["admission:onIce", "fyhftlxokyjtpndbkfse.supabase.co"], ["nst:onIce", "data.naturalstattrick.com"]]);
+    for (const record of observed) expect(record.tls).toMatchObject({ channel: "undici:client:sendHeaders", authorized: true, authorizationError: null, alpnProtocol: "http/1.1", protocol: "TLSv1.3",
+      peerCertificate: { fingerprint256: Array(32).fill("CD").join(":"), issuerCNChain: ["Fixture Intermediate", "Fixture Root", "Fixture Root"] } });
+    expect(read("onIce.TRANSPORT-OBSERVATION.json").tls).toEqual(observed[4].tls);
     if (mode === "enabled") expect(read("operation-2-STARTED.json").jobToken).toBe(JSON.parse(String(calls.find(call => call.kind === "begin")!.init.body)).p_token);
     for (const file of manifest.files) {
       const bytes = fs.readFileSync(join(out(), file.file)); expect(createHash("sha256").update(new Uint8Array(bytes)).digest("hex")).toBe(file.sha256);
@@ -198,5 +232,28 @@ describe("actual native capture adapter through mocked transports", () => {
     await pending;
     expect(calls.find(call => call.kind === kind)?.init.signal?.aborted).toBe(true); expect(bodyStopped).toBe(true);
     expect(exists("MANIFEST.json")).toBe(false); expect(calls.some(call => call.kind === "nst:onIce")).toBe(false);
+  });
+
+  it.each((["schedule", "admission:individual", "nst:individual"] as const).flatMap(kind => (["missing", "wrong_origin", "plain_socket", "duplicate"] as const).map(fault => [kind, fault] as const)))(
+    "fails closed when %s has a %s TLS observation", async (kind, fault) => {
+      tlsFaults = { [kind]: fault };
+      await run(false);
+      const order = ["schedule", "admission:individual", "nst:individual"];
+      expect(calls.map(call => call.kind)).toEqual(order.slice(0, order.indexOf(kind) + 1)); expect(exists("MANIFEST.json")).toBe(false);
+    });
+
+  it.each(["resumed", "keepalive"] as const)("binds %s onIce operations to the individual operations on the same hosts", async fault => {
+    tlsFaults = { "admission:onIce": fault, "nst:onIce": fault };
+    await run();
+    for (const [index, from] of [[4, 2], [5, 3]]) expect(read(`operation-${index}-SETTLED.json`).tls).toMatchObject(fault === "resumed"
+      ? { sessionReused: true, peerCertificate: null, resumedFromOperation: from, connectionReused: false }
+      : { sessionReused: false, connectionReused: true, connectionFromOperation: from, peerCertificate: { fingerprint256: Array(32).fill("CD").join(":") } });
+  });
+
+  it.each([["schedule", "resumed"], ["nst:individual", "resumed"], ["admission:onIce", "resumed_unauthorized"]] as const)("fails closed when %s is %s without a usable earlier handshake", async (kind, fault) => {
+    tlsFaults = { [kind]: fault };
+    await run(false);
+    const order = ["schedule", "admission:individual", "nst:individual", "admission:onIce"];
+    expect(calls.map(call => call.kind)).toEqual(order.slice(0, order.indexOf(kind) + 1)); expect(exists("MANIFEST.json")).toBe(false);
   });
 });
