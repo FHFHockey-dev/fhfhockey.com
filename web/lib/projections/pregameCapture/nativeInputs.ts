@@ -8,7 +8,12 @@ import { parseInstantMicros } from "./time";
  * no RPC beyond the two read-only rolling/physical-totals reads the loaders already make. Run it inside
  * `captureProjectionInputs` with the strict transport; replaying the writer against those reads consumes every one.
  *
- * `seasonBootstrap` must match the writer run it stands for (the writer applies it only to live runs).
+ * `seasonBootstrap` must match the writer run it stands for; decide it with `forgeSeasonBootstrapApplies`.
+ *
+ * Goalie inputs load in a deterministic, model-free order per team: the override goalie, then the candidate list as
+ * the skater loader selected it from reads (before any start-probability ranking), then roster goalies in roster order
+ * when the reserve pass is on. The writer itself now loads in this order; the pre-split writer loaded the
+ * model's top-ranked goalie first, so only the order inside that block can differ from older captures.
  */
 export async function collectNativePregameInputs(args: {
   slateDate: string; gameId: number; inputCutoff: string; deadlineMs: number; seasonBootstrap?: boolean;

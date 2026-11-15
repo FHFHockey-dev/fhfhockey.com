@@ -221,6 +221,21 @@ describe.skipIf(RECORD)("mutation checks", () => {
     expect(readTokens(moved)).not.toEqual(readTokens(reads));
   });
 
+  it("a dropped or duplicated goalie-input read fails the oracle comparison; reordering inside the block does not", () => {
+    const reads = oracle().reads;
+    const start = reads.findIndex((read) => isGoalieInputRead(read.request));
+    expect(start).toBeGreaterThan(0);
+    const dropped = reads.filter((_, index) => index !== start + 1);
+    expect(readTokens(dropped)).not.toEqual(readTokens(reads));
+    const duplicated = [...reads.slice(0, start + 1), reads[start + 1], ...reads.slice(start + 1)];
+    expect(readTokens(duplicated)).not.toEqual(readTokens(reads));
+    const swapped = [...reads];
+    const other = swapped.findIndex((read, index) => index > start && isGoalieInputRead(read.request)
+      && JSON.stringify(read) !== JSON.stringify(reads[start]));
+    [swapped[start], swapped[other]] = [swapped[other], swapped[start]];
+    expect(readTokens(swapped)).toEqual(readTokens(reads));
+  });
+
   it("replay refuses a capture with one read dropped", async () => {
     const scenario = SCENARIOS.find((item) => item.name === "normal-one-game")!;
     const collected = await collect(scenario);
