@@ -351,10 +351,11 @@ async function rehearseExecuteWiring(): Promise<ExecuteRehearsal[]> {
   const { SlateSim, minutes } = await import("../lib/projections/pregameCapture/slateSimulator");
   const { TEST_TSA_POLICY } = await import("../lib/projections/pregameCapture/__fixtures__/testTsa");
   const { createHash, X509Certificate } = await import("node:crypto");
+  const { u8 } = await import("../lib/projections/pregameCapture/der");
   const dir = mkdtempSync(join(tmpdir(), "forge-slate-rehearsal-"));
   const fixtureCa = readFileSync(join(__dirname, "..", "lib", "projections", "pregameCapture", "__fixtures__", "tsa", "ca.crt"), "utf8");
   const profile: TsaProfile = { id: "test-tsa-pinned", url: "https://tsa.invalid", anchorsPem: [fixtureCa], policies: [TEST_TSA_POLICY], extraCertsSha256: [],
-    anchorSha256: [createHash("sha256").update(new X509Certificate(fixtureCa).raw).digest("hex")] };
+    anchorSha256: [createHash("sha256").update(u8(new X509Certificate(fixtureCa).raw)).digest("hex")] };
   const resolveProfile = (id: string) => (id === profile.id ? profile : tsaProfile(id));
   const openGate = join(dir, "gate-open.sh"), closedGate = join(dir, "gate-closed.sh");
   writeFileSync(openGate, "echo 'gate ok active=0'\nexit 0\n", { mode: 0o700 });
