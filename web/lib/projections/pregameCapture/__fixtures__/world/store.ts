@@ -212,7 +212,9 @@ export function createWorldClient(world: World) {
     rpc(name: string, args: Record<string, any> = {}, options?: Record<string, unknown>) {
       const ops: Op[] = [];
       return builder(() => {
-        if (ops.length) throw new Error(`fixture world: rpc ${name} chained ${ops.map((op) => op.method).join(",")}`);
+        // A capture deadline adds abortSignal to the live query (never to the recorded request); nothing else may chain.
+        const chained = ops.filter((op) => op.method !== "abortSignal");
+        if (chained.length) throw new Error(`fixture world: rpc ${name} chained ${chained.map((op) => op.method).join(",")}`);
         const handler = world.rpc[name];
         if (!handler) return { data: null, error: { code: "PGRST202", message: `fixture world: no rpc ${name}` } };
         return clone(handler(clone(args), options));

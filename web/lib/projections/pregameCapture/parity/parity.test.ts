@@ -9,7 +9,10 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { captureProjectionInputs, projectionInputHash, type ProjectionInputRead } from "lib/projections/inputCapture";
 import { candidatesFromWrites, CUTOFF, oracleRecord, runWriterScenario, SCENARIOS, type OracleRecord, type Scenario } from "./scenarios";
-import { readTokens, type RecordedRead } from "./readOrder";
+import { isGoalieInputRead, readTokens, type RecordedRead } from "./readOrder";
+import { createCaptureTransport, DEFAULT_TRANSPORT_BUDGET } from "../transport";
+import { createWorldClient } from "../__fixtures__/world/store";
+import { fetchTeamRestDays } from "lib/projections/queries/team-context-queries";
 import { CODE_VERSION, FROZEN_NOW, replayWrites, savedSnapshots, activateWorld, withScenarioEnv, writerCaptures } from "./harness";
 import { buildLeague, TARGET } from "../__fixtures__/world/league";
 import type { World } from "../__fixtures__/world/store";
@@ -86,15 +89,24 @@ function observeLoaders() {
   };
 }
 
-async function collect(scenario: Scenario, mutate?: (world: World) => void) {
+async function collect(scenario: Scenario, options: { strict?: boolean } = {}) {
   const world = buildLeague(scenario.world);
-  mutate?.(world);
   activateWorld(world);
   const { collectNativePregameInputs } = await import("../nativeInputs");
-  return withScenarioEnv(scenario.env, () => captureProjectionInputs(() => collectNativePregameInputs({
+  const deadlineMs = Date.parse(FROZEN_NOW) + 600_000;
+  // Chef's strict transport with the world as its client: chain validation and result inspection run; the HTTP
+  // guard does not (the world is not an HTTP server).
+  const transport = options.strict ? createCaptureTransport({
+    target: { gameId: TARGET.gameId, slateDate: TARGET.slateDate, homeTeamId: TARGET.homeTeamId, awayTeamId: TARGET.awayTeamId,
+      homeAbbrev: TARGET.homeAbbrev, awayAbbrev: TARGET.awayAbbrev },
+    budget: { ...DEFAULT_TRANSPORT_BUDGET, deadlineMs }, restBaseUrl: "https://fixture.invalid/rest/v1",
+    createClient: () => createWorldClient(world), now: () => Date.now(),
+  }) : undefined;
+  const run = await withScenarioEnv(scenario.env, () => captureProjectionInputs(() => collectNativePregameInputs({
     slateDate: TARGET.slateDate, gameId: TARGET.gameId, inputCutoff: cutoffOf(scenario),
-    deadlineMs: Date.parse(FROZEN_NOW) + 600_000, seasonBootstrap: bootstrapOf(scenario),
-  })));
+    deadlineMs, seasonBootstrap: bootstrapOf(scenario),
+  }), transport ? { transport, deadlineMs } : undefined));
+  return { ...run, transport };
 }
 
 /** Replays the writer (`replayForgeSnapshot`) against captured reads; it must consume every read. */
@@ -162,6 +174,9 @@ describe.skipIf(RECORD)("native input collector", () => {
       // Consistent with the oracle's outputs: every lineup row, goalie candidate and reserve row was selected.
       const oracle = loadOracle(scenario.name);
       expect(collected.result.candidates.skaters).toEqual(sorted(Object.values(oracle.candidates.skaters).flat()));
+      // Goalies are pinned to the unmodified writer: exactly the goalies whose inputs it read.
+      const goalieIdOf = (read: RecordedRead) => Number(read.request.find((op) => op.method === "eq" && op.args[0] === "goalie_id")!.args[1]);
+      expect(collected.result.candidates.goalies).toEqual(sorted(oracle.reads.filter((read) => isGoalieInputRead(read.request)).map(goalieIdOf)));
       for (const id of Object.values(oracle.candidates.goalies).flat()) expect(collected.result.candidates.goalies).toContain(id);
       for (const id of Object.values(oracle.candidates.reserves).flat()) {
         expect([...collected.result.candidates.reserves, ...collected.result.candidates.goalies]).toContain(id);
@@ -220,6 +235,66 @@ describe.skipIf(RECORD)("mutation checks", () => {
     await expect(replayWriter(scenario, [...collected.reads, collected.reads[12]], collected.result.issuedContextAfter,
       loadOracle(scenario.name).outputHash)).rejects.toThrow(/did not consume/);
   });
+});
+
+describe.skipIf(RECORD)("collector mutations", () => {
+  const scenario = () => SCENARIOS.find((item) => item.name === "normal-one-game")!;
+  // Mutates the collector itself through the loader seam: a pre-seeded cache drops a read; an early fetch reorders one.
+  const tamper = (mode: "drop" | "reorder") => {
+    const team = skaterStageLoaders.team;
+    vi.spyOn(skaterStageLoaders, "team").mockImplementation(async (args, scope, teamId) => {
+      const key = `${teamId}:${args.asOfDate}`;
+      if (teamId === TARGET.homeTeamId && !args.teamRestDaysCache.has(key)) {
+        args.teamRestDaysCache.set(key, mode === "drop" ? 1 : await fetchTeamRestDays(teamId, args.asOfDate));
+      }
+      return team(args, scope, teamId);
+    });
+  };
+
+  it("a collector that drops one read no longer matches the writer, and replay refuses its capture", async () => {
+    const writer = await runWriterScenario(scenario());
+    tamper("drop");
+    const collected = await collect(scenario());
+    vi.restoreAllMocks();
+    expect(collected.reads.length).toBe(writer.reads.length - 1);
+    expect(recorded(collected.reads)).not.toEqual(recorded(writer.reads));
+    await expect(replayWriter(scenario(), collected.reads, collected.result.issuedContextAfter, loadOracle(scenario().name).outputHash))
+      .rejects.toThrow(/Unrecorded projection input/);
+  });
+
+  it("a collector that reorders one read no longer matches the writer", async () => {
+    const writer = await runWriterScenario(scenario());
+    tamper("reorder");
+    const collected = await collect(scenario());
+    vi.restoreAllMocks();
+    expect(collected.reads.length).toBe(writer.reads.length);
+    expect(recorded(collected.reads)).not.toEqual(recorded(writer.reads));
+    expect(readTokens(recorded(collected.reads))).not.toEqual(readTokens(recorded(writer.reads)));
+  });
+});
+
+/** Strict-transport refusals the collector meets today, routed to Chef (transport owner); empty means none expected. */
+const KNOWN_STRICT_REFUSALS: Record<string, RegExp> = {
+  // Season bootstrap reads skatersGameStats through games!inner(...) and filters games.seasonId.
+  "season-bootstrap": /embedding_refused/,
+};
+
+describe.skipIf(RECORD)("collector under the strict capture transport", () => {
+  for (const scenario of SCENARIOS) {
+    it(`${scenario.name}: ${KNOWN_STRICT_REFUSALS[scenario.name] ? "refused as known" : "no refusal, same reads"}`, async () => {
+      const plain = await collect(scenario);
+      const known = KNOWN_STRICT_REFUSALS[scenario.name];
+      if (known) {
+        await expect(collect(scenario, { strict: true })).rejects.toThrow(known);
+        return;
+      }
+      const strict = await collect(scenario, { strict: true });
+      expect(strict.transport!.usage.refusals).toEqual([]);
+      expect(strict.writes).toEqual([]);
+      expect(recorded(strict.reads)).toEqual(recorded(plain.reads));
+      expect(strict.result.candidates).toEqual(plain.result.candidates);
+    });
+  }
 });
 
 describe.skipIf(RECORD)("snapshot decisionAsOf", () => {
