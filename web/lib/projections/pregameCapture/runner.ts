@@ -77,6 +77,18 @@ export interface CaptureWiring {
   nonce?: () => bigint;
 }
 
+/**
+ * Readers wrap transport failures in their own errors (e.g. "Issued FORGE context read was incomplete"), which hides the
+ * cause. Prefix the transport's recorded refusals (bounded) so the receipt says what actually failed.
+ */
+async function withRefusals<T>(transport: { usage: { refusals: string[] } }, work: Promise<T>): Promise<T> {
+  try { return await work; } catch (error) {
+    const refusals = transport.usage.refusals.slice(0, 3).map((r) => r.slice(0, 90));
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(refusals.length ? `[transport ${refusals.join(" | ")}] ${message}` : message);
+  }
+}
+
 export function captureDeps(w: CaptureWiring): CaptureDeps {
   const transportFor = (target: CaptureTarget, deadlineMs: number) => createCaptureTransport({
     target, restBaseUrl: w.restBaseUrl, budget: { ...w.transportLimits, deadlineMs }, createClient: w.createReadClient, now: w.now,
@@ -86,7 +98,7 @@ export function captureDeps(w: CaptureWiring): CaptureDeps {
     modelEnvironment: w.modelEnvironment, now: w.now, nonce: w.nonce,
     async pin(gameId, slateDate, deadlineMs): Promise<PinnedGame> {
       const transport = transportFor({ gameId, slateDate, homeTeamId: -1, awayTeamId: -2, homeAbbrev: "", awayAbbrev: "" }, deadlineMs);
-      const run = await captureProjectionInputs(() => captureForgeIssuedContexts(slateDate, [gameId]), { transport });
+      const run = await withRefusals(transport, captureProjectionInputs(() => captureForgeIssuedContexts(slateDate, [gameId]), { transport }));
       if (transport.usage.refusals.length) throw new Error(`pin_refused:${transport.usage.refusals[0]}`);
       if (run.writes.length) throw new Error("pin_wrote");
       const [context] = run.result;
@@ -105,9 +117,9 @@ export function captureDeps(w: CaptureWiring): CaptureDeps {
         homeAbbrev: binding.homeAbbrev, awayAbbrev: binding.awayAbbrev,
       }, deadlineMs);
       const seasonBootstrap = w.seasonBootstrap({ slateDate: binding.slateDate, gameId: binding.gameId, inputCutoff: binding.inputCutoff });
-      const run = await captureProjectionInputs(
+      const run = await withRefusals(transport, captureProjectionInputs(
         () => w.collectNative({ slateDate: binding.slateDate, gameId: binding.gameId, inputCutoff: binding.inputCutoff, deadlineMs, seasonBootstrap }),
-        { transport, deadlineMs });
+        { transport, deadlineMs }));
       const after = run.result.issuedContextAfter;
       if (!after || after.game.id !== binding.gameId) throw new Error("collector_context_missing");
       return {

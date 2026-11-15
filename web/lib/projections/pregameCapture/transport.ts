@@ -141,11 +141,16 @@ export function createCaptureTransport(options: {
     let response: Response, body: Uint8Array;
     try {
       response = await fetchImpl(url, { ...init, method, signal: controller.signal });
-      if (response.status >= 400 && !ALLOWED_ERROR_STATUSES.has(response.status)) refuse("http_status", String(response.status));
+      if (response.status >= 400 && !ALLOWED_ERROR_STATUSES.has(response.status)) {
+        refuse("http_status", `${response.status}${await errorDetail(response)}`);
+      }
       body = await readCapped(response, budget.maxResponseBytes, refuse);
     } catch (error) {
       if (error instanceof CaptureRefused) throw error;
-      return refuse(controller.signal.aborted ? "http_aborted" : "http_error", error instanceof Error ? error.message.slice(0, 80) : String(error));
+      // Keep the cause code (e.g. ENOTFOUND, ECONNRESET): it separates a local network failure from a server error.
+      const cause = (error as { cause?: { code?: unknown } } | null)?.cause?.code;
+      const text = error instanceof Error ? error.message.slice(0, 80) : String(error).slice(0, 80);
+      return refuse(controller.signal.aborted ? "http_aborted" : "http_error", typeof cause === "string" ? `${text}:${cause}` : text);
     } finally {
       clearTimeout(timer);
       init?.signal?.removeEventListener("abort", forward);
@@ -257,6 +262,17 @@ export function embedsOf(select: string): Map<string, string> | null {
 function dottedKeyAllowed(key: string, embeds: Map<string, string>): boolean {
   const path = key.split(".");
   return path.length >= 2 && path.slice(0, -1).every((segment) => embeds.has(segment));
+}
+
+/** Bounded PostgREST error code/message for the refusal (metadata only; never row data): ":57014:canceling statement…". */
+async function errorDetail(response: Response): Promise<string> {
+  try {
+    const text = (await response.text()).slice(0, 2048);
+    const parsed = JSON.parse(text) as { code?: unknown; message?: unknown };
+    const code = typeof parsed.code === "string" ? parsed.code.slice(0, 16) : "";
+    const message = typeof parsed.message === "string" ? parsed.message.replace(/\s+/g, " ").slice(0, 80) : "";
+    return code || message ? `:${code}:${message}` : "";
+  } catch { return ""; }
 }
 
 const FILTER_KEY_METHODS = new Set(["eq", "neq", "in", "is", "lt", "lte", "gt", "gte", "like", "ilike", "filter", "contains", "containedBy", "not"]);

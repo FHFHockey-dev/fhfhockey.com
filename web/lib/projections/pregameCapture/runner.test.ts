@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { calendarRevisionOf, CAPTURE_ENABLED_ENV, httpTsaClient, runPrivatePregameCapture } from "./runner";
+import { createClient } from "@supabase/supabase-js";
+import { calendarRevisionOf, CAPTURE_ENABLED_ENV, captureDeps, DEFAULT_CAPTURE_BUDGET, httpTsaClient, runPrivatePregameCapture } from "./runner";
+import { DEFAULT_TRANSPORT_BUDGET } from "./transport";
 
 describe("pregame capture runner wiring", () => {
   it("is disabled unless the enable flag is exactly \"true\"", async () => {
@@ -31,5 +33,20 @@ describe("pregame capture runner wiring", () => {
     await expect(html.stamp(Buffer.alloc(59), new AbortController().signal)).rejects.toThrow("tsa_content_type");
     const err = httpTsaClient("https://tsa.test/ts", (async () => new Response("", { status: 503 })) as typeof fetch);
     await expect(err.stamp(Buffer.alloc(59), new AbortController().signal)).rejects.toThrow("tsa_http_503");
+  });
+
+  it("says why the pin failed: the transport's refusal comes first in the error (0327: DNS)", async () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () => { throw Object.assign(new TypeError("fetch failed"), { cause: { code: "ENOTFOUND" } }); }) as typeof fetch;
+    try {
+      const deps = captureDeps({
+        writer: {} as any, verifier: {} as any, tsa: { stamp: async () => Buffer.alloc(0) }, trust: { anchorsPem: [] },
+        createReadClient: (guarded) => createClient("https://rehearsal.invalid", "k", { auth: { persistSession: false }, global: { fetch: guarded } }) as any,
+        restBaseUrl: "https://rehearsal.invalid/rest/v1", collectNative: async () => { throw new Error("unused"); },
+        seasonBootstrap: () => false, modelEnvironment: () => ({}), budget: { ...DEFAULT_CAPTURE_BUDGET },
+        transportLimits: { ...DEFAULT_TRANSPORT_BUDGET }, now: Date.now,
+      });
+      await expect(deps.pin(2026020327, "2026-11-15", Date.now() + 30_000)).rejects.toThrow(/^\[transport http_error:fetch failed:ENOTFOUND/);
+    } finally { globalThis.fetch = realFetch; }
   });
 });

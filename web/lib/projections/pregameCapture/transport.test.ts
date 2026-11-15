@@ -144,10 +144,10 @@ describe("strict capture transport", () => {
     expect(down.transport.usage.refusals[0]).toMatch(/^http_error:/);
     const flaky = transportFor(() => ({ status: 503, body: { message: "upstream" } }));
     await captureProjectionInputs(async () => db.from("games").select("id").eq("id", 1), { transport: flaky.transport });
-    expect(flaky.transport.usage.refusals).toEqual(["http_status:503"]);
+    expect(flaky.transport.usage.refusals).toEqual(["http_status:503::upstream"]);
     const missing = transportFor(() => ({ status: 404, body: { message: "relation does not exist" } }));
     await captureProjectionInputs(async () => db.from("games").select("id").eq("id", 1), { transport: missing.transport });
-    expect(missing.transport.usage.refusals).toEqual(["http_status:404"]);
+    expect(missing.transport.usage.refusals).toEqual(["http_status:404::relation does not exist"]);
     // .single() with no row is PostgREST's honest 406, not a source failure.
     const none = transportFor(() => ({ status: 406, body: { code: "PGRST116", message: "0 rows" } }));
     await captureProjectionInputs(async () => db.from("games").select("id").eq("id", 1).single(), { transport: none.transport });
@@ -214,6 +214,18 @@ describe("strict capture transport", () => {
     expect(past.transport.usage).toMatchObject({ naiveStamps: 1, refusals: [] });
     const future = transportFor(() => ({ body: [{ id: 1, source_published_at: new Date(Date.now() + 3_600_000).toISOString().replace("Z", "") }] }));
     await expect(captureProjectionInputs(async () => db.from("forge_roster_events").select("*").eq("id", 1), { transport: future.transport })).rejects.toThrow("future_stamped_row");
+  });
+
+  it("keeps the database error code of a refused HTTP error and the cause code of a network failure", async () => {
+    const timeout = transportFor(() => ({ status: 500, body: { code: "57014", message: "canceling statement due to statement timeout", details: null } }));
+    await captureProjectionInputs(async () => db.from("games").select("id").eq("id", 1), { transport: timeout.transport });
+    expect(timeout.transport.usage.refusals).toEqual(["http_status:500:57014:canceling statement due to statement timeout"]);
+    const opaque = transportFor(() => ({ status: 502, body: "<html>bad gateway</html>" }));
+    await captureProjectionInputs(async () => db.from("games").select("id").eq("id", 1), { transport: opaque.transport });
+    expect(opaque.transport.usage.refusals).toEqual(["http_status:502"]);
+    const dns = transportFor(() => { throw Object.assign(new TypeError("fetch failed"), { cause: { code: "ENOTFOUND" } }); });
+    await captureProjectionInputs(async () => db.from("games").select("id").eq("id", 1), { transport: dns.transport });
+    expect(dns.transport.usage.refusals).toEqual(["http_error:fetch failed:ENOTFOUND"]);
   });
 
   it("cannot be combined with write suppression or controlled news", async () => {

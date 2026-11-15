@@ -171,3 +171,18 @@
   - Offline: keep the bounded PostgREST error code/message in refusal metadata.
   - Then propose the next game (Tuesday fallback or the next eligible game).
 - **Gotcha:** refusing on status before reading the body cost the diagnosis. Fix offline.
+
+## Checkpoint 2026-11-15T18:00Z: 0327 investigated (Chef)
+- **0327:** stopped at the pin ("context read was incomplete", 10.5 s, no claim).
+- **I missed reporting it** when the timer ended; TJ found the receipt.
+- **Cause:** local DNS. The gate's psql couldn't resolve the pooler at 15:15:01Z. TJ-approved edge logs show **no pin request reached Supabase** during the run.
+- **The gate failed open** (my bug).
+- **Fixes (TJ: log check + offline fixes):**
+  - fail-closed `operator/gate.sh` and `launch-capture.sh`, self-tested;
+  - refusals keep DB error and network cause codes;
+  - pin/collect errors are prefixed with the refusals.
+- **Tests:** vitest 133/133.
+- **Decision:** no retry of 0326/0327 (TJ).
+- **Open:**
+  - The trend-bands timeout fix belongs to Astra/Scout; routed.
+  - The next capture needs a new candidate SHA and TJ's approval.
