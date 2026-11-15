@@ -1353,12 +1353,21 @@ export function buildRowGoalies(args: { interpretation: TweetInterpretation; eve
   return { goalies: states.filter((state) => state.stored).map((state) => state.name), states };
 }
 
+/** Both teams of the game bound to the resolved team, when the schedule names exactly two. */
+function boundGameTeamIds(team: TeamDirectoryEntry | null, gameIdByTeamId?: Map<number, number>): number[] | undefined {
+  const gameId = team ? gameIdByTeamId?.get(team.id) : undefined;
+  if (gameId == null) return undefined;
+  const teamIds = [...gameIdByTeamId!].filter(([, id]) => id === gameId).map(([teamId]) => teamId);
+  return teamIds.length === 2 ? teamIds : undefined;
+}
+
 function buildStructuredContent(args: {
   publishedAt?: string | null;
   text: string;
   classification: GameDayTweetsClassification;
   rosterEntries: RosterNameEntry[];
   eventPlayers?: RosterNameEntry[];
+  gameTeamIds?: number[];
 }): Pick<
   ParsedLinesCccSource,
   | "forwards"
@@ -1470,7 +1479,7 @@ function buildStructuredContent(args: {
   const eventPlayers = interpretation ? (args.eventPlayers ?? args.rosterEntries).filter((player) =>
     surnameMentionPresent(args.text, player.lastName) || [player.fullName, ...(player.aliases ?? [])].some((name) => identityMentionPresent(args.text, name))) : [];
   const playerEvents = interpretation ? extractTweetPlayerEvents({ text: args.text, players: eventPlayers, publishedAt: args.publishedAt ?? null,
-    includeClaimAnchors: process.env.TWEET_CLAIMS_MODE === "shadow" }).concat(lineupChangeEvents(args.text, interpretation.changes)) : [];
+    includeClaimAnchors: process.env.TWEET_CLAIMS_MODE === "shadow", gameTeamIds: interpretation.context === "game" ? args.gameTeamIds : undefined }).concat(lineupChangeEvents(args.text, interpretation.changes)) : [];
   const participationObservations = interpretation ? [] : extractTweetPlayerEvents({ text: args.text, players: args.rosterEntries, publishedAt: args.publishedAt ?? null })
     .filter((event) => event.kind === "participation" && event.state === "observed" && event.modality === "negated");
   let goalieStates: RowGoalieState[] | null = null;
@@ -1629,6 +1638,7 @@ export function buildLinesCccSourceFromIftttEvent(args: {
     classification,
     rosterEntries,
     eventPlayers: [...args.rosterByTeam.values()].flat(),
+    gameTeamIds: boundGameTeamIds(team, args.gameIdByTeamId),
   });
   const nhlFilterStatus: LinesCccNhlFilterStatus = !text
     ? "rejected_insufficient_text"
@@ -1758,6 +1768,7 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
     classification,
     rosterEntries,
     eventPlayers: [...args.rosterByTeam.values()].flat(),
+    gameTeamIds: boundGameTeamIds(team, args.gameIdByTeamId),
   });
   const goalieName = extractGoalieName(text);
   const goalieIdentity = goalieName ? resolveTweetNameToRosterEntry(goalieName, rosterEntries, "goalie") : null;

@@ -117,6 +117,8 @@ export function extractTweetPlayerEvents(args: {
   priorStatus?: Map<number, "injured" | "healthy">;
   includeClaimAnchors?: boolean;
   claimAware?: boolean;
+  /** Both team ids of the game the post is bound to; without them "vs" never shares a goalie predicate. */
+  gameTeamIds?: readonly number[];
 }): TweetPlayerEvent[] {
   // Preserve legacy report/event payloads while the new compatibility lane is off.
   const claimAware = args.claimAware ?? args.includeClaimAnchors ?? (process.env.TWEET_CLAIMS_MODE === "shadow");
@@ -165,8 +167,11 @@ export function extractTweetPlayerEvents(args: {
   const unresolvedStarts = unresolvedMentions.filter((unresolved) => !mentions.some((mention) => unresolved.start >= mention.start && unresolved.end <= mention.end)).map((mention) => mention.start);
   const extracted = mentions.flatMap(({ player, start, end: mentionEnd, basis }, index): TweetPlayerEvent[] => {
     // Anatomical notes can qualify a shared claim; a parenthetical predicate cannot.
-    // "A vs B in goal" names both starters; "vs" joins goalies only.
+    // "A vs B in goal" names both starters only when A and B are on opposite sides of the bound game.
+    const opposingSides = (a: PlayerIdentity, b: PlayerIdentity) => args.gameTeamIds?.length === 2 && a.teamId != null && b.teamId != null
+      && a.teamId !== b.teamId && args.gameTeamIds.includes(a.teamId) && args.gameTeamIds.includes(b.teamId);
     const goalieMatchup = (left: number, right: number) => mentions[left]!.player.position === "G" && mentions[right]!.player.position === "G"
+      && opposingSides(mentions[left]!.player, mentions[right]!.player)
       && /^\s*(?:vs\.?|versus)\s*$/i.test(args.text.slice(mentions[left]!.end, mentions[right]!.start));
     const coordinated = (left: number, right: number) => goalieMatchup(left, right) || /^(?:[ \t]|,|&|\band\b)+$/i.test(args.text.slice(mentions[left]!.end, mentions[right]!.start)
       .replace(/\(\s*(?:(?:upper|lower)[ -]body|(?:(?:left|right)[ -])?(?:ankle|arm|back|foot|hand|hip|knee|leg|shoulder|wrist))(?:[ -]injury)?\s*\)/gi, "")

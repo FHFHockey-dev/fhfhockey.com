@@ -25,21 +25,33 @@ It holds two stored reports for one post:
 - So Ellis's clause is just " vs ". The shared predicate "in goal" attaches only to Hill.
 
 **Fix:**
-- `vs` / `vs.` / `versus` between two **goalie** mentions now counts as coordination, so both get the shared predicate.
-- Skaters are unaffected: the `vs` branch requires both mentions to be `G`. The skater case in the test has no predicate, so it does not exercise the branch directly.
-- Regression test: `web/lib/sources/tweetInterpretation.test.ts`, "confirms both goalies in an opposing 'A vs B in goal' matchup". It fails on HEAD (Hill only) and passes with the fix.
+- `vs` / `vs.` / `versus` between two **goalie** mentions shares the predicate only when the two goalies resolve to
+  **opposite sides of the bound game**. Ingestion passes the bound game's two team ids (`boundGameTeamIds` in
+  `linesCccIngestion.ts`), and only when the post's context is `game`.
+- No game binding, a one-team or unknown game, a goalie with no team, a goalie outside the game, or two goalies on the same
+  team: no sharing, so only the second goalie is confirmed (the old behaviour). Other callers pass no game and are unchanged.
+- First cut (f42acc8aa) shared the predicate for any two goalies, so two same-team goalies could both become confirmed
+  starters, and the team filter downstream could not catch it. The follow-up commit closes that.
+- Tests: `tweetInterpretation.test.ts` ("goalie matchup 'A vs B in goal'": opposite sides, same team, unresolved sides) and
+  `linesCccIngestion.test.ts` (the retained post splits into a BUF and a VGK starter only when both teams share the game).
+  Same-team, unresolved and ingestion cases fail on f42acc8aa and pass now.
+
+**Version:** `TWEET_INTERPRETATION_VERSION` is bumped `2026-11-06.1` → `2026-11-15.1`. It is part of the immutable report
+key and the claim version, so new reports sit beside the old ones. `projectedLineups.test.ts` checks that the pre-bump
+report stays unchanged, both rows coexist, the internal reader returns both, and the public reader selects the current one.
+No historical replay was run.
 
 **Production effect (code read, not run):**
 - Rosters: the processor passes every team's roster (`linesCccIngestion.ts:1631,1760` flatten `rosterByTeam`), so Ellis is in scope.
-- VGK row: the consumer drops events for another team (`sourceObservations.ts:160`). The new Ellis event cannot put a second starter on the VGK row, so the change is safe there.
-- BUF row: Ellis's event takes effect only if a BUF (team 7) row exists for this post. The sample holds team 54 only, so that is unproven.
-- Release decision: events change while `TWEET_INTERPRETATION_VERSION` stays `2026-11-06.1`. Whether to bump it is TJ's call; I left it unchanged.
+- VGK row: the consumer drops events for another team (`sourceObservations.ts:160`), so Ellis's event cannot land on it.
+- BUF row: `expandLinesCccGoalieClaims` now splits this post into a BUF child and a VGK child once it is reinterpreted.
+  Whether a BUF row exists today in production is still unknown (the sample holds team 54 only).
 
 **Checks:**
-- Regression test fails on HEAD and passes with the fix.
-- 10 event-consuming Vitest files: 589 passed, 0 failed.
-- Scoped eslint: exit 0.
-- `npm run typecheck`: exit 0.
+- New regressions fail on f42acc8aa and pass with the fix.
+- Vitest across `lib/sources`, `lib/lines`, `lib/player-forecasts`, news feed, Lines API and line-source route tests:
+  108 files, 3008 passed, 0 failed.
+- Scoped eslint: exit 0. `npm run typecheck`: exit 0.
 
 ## Newest FORGE capture is not FxTwitter evidence
 Pilot 3, CGY @ ANA, game 2026020328, cutoff 2026-11-15 20:10Z. Packet: `~/forge-pilot/capture-2026020328-20261115T201009Z/`.
