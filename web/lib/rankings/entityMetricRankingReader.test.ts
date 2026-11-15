@@ -22,6 +22,7 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
     supportRows: [] as Array<Record<string, unknown>>,
     players: null as Array<Record<string, unknown>> | null,
     teams: null as Array<Record<string, unknown>> | null,
+    composites: null as Array<Record<string, unknown>> | null,
   };
 
   function resolveQuery(state: QueryState) {
@@ -31,7 +32,8 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
           : state.table === "rolling_player_metric_support_payloads" ? scenario.supportRows
           : state.table === "games" ? scenario.rollingRows.map(row => ({ date: row.game_date, seasonId: row.season }))
             : state.table === "players" ? scenario.players ?? scenario.rows.map(row => ({ id: row.entity_id, fullName: `Fixture ${row.entity_id}`, position: row.position_group === "defense" ? "D" : "C", team_id: row.team_id }))
-              : state.table === "teams" ? scenario.teams ?? [{ id: 10, abbreviation: "TST", name: "Fictional team" }] : [];
+              : state.table === "teams" ? scenario.teams ?? [{ id: 10, abbreviation: "TST", name: "Fictional team" }]
+                : state.table === "skater_composite_ratings" ? scenario.composites ?? [] : [];
       rows = rows.filter(row => Object.entries(state.filters).every(([key, value]) =>
         key in state.cutoffs || (Array.isArray(value) ? value.includes(row[key]) : row[key] === value),
       ) && Object.entries(state.cutoffs).every(([key, value]) => String(row[key]) <= String(value)));
@@ -229,10 +231,71 @@ describe("entityMetricRankingReader", () => {
     scenario.rollingRows = [];
     scenario.players = null;
     scenario.teams = null;
+    scenario.composites = null;
     vi.useRealTimers();
     clearEntityMetricRankingReaderCachesForTests();
     clearContextualRankingsQueryCachesForTests();
     supabaseMock.from.mockClear();
+  });
+
+  describe("paired rankings + composites publication", () => {
+    const seasonRows = (date: string) => [1, 2, 3].map(id => snapshotRow(id, {
+      season_id: 20262027, snapshot_date: date, window_type: "season", window_size: 0,
+    }));
+    const compositeRow = (date: string) => ({
+      player_id: 1, season_id: 20262027, snapshot_date: date, window_type: "season", window_size: 0,
+      strength_state: "5v5", peer_group_type: "all_skaters", peer_group_key: "all_skaters",
+    });
+    const seasonRequest = (window: ContextualRankingsRequest["window"] = "season") =>
+      request({ season: 20262027, asOfDate: "2026-11-20", window });
+
+    it("keeps serving the last complete pair while composites at the new cutoff are missing", async () => {
+      scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-13")];
+      scenario.composites = [compositeRow("2026-11-11")];
+      const surfaces = await buildEntityMetricRankingSurfaces(seasonRequest(), ["points_per_60"]);
+      expect(surfaces.get("points_per_60")?.meta.snapshotDate).toBe("2026-11-11");
+    });
+
+    it("moves to the new cutoff once composites at that date are published", async () => {
+      scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-13")];
+      scenario.composites = [compositeRow("2026-11-11"), compositeRow("2026-11-13")];
+      const surfaces = await buildEntityMetricRankingSurfaces(seasonRequest(), ["points_per_60"]);
+      expect(surfaces.get("points_per_60")?.meta.snapshotDate).toBe("2026-11-13");
+    });
+
+    it("keeps the previous rankings date when composites are published first", async () => {
+      scenario.rows = seasonRows("2026-11-11");
+      scenario.composites = [compositeRow("2026-11-11"), compositeRow("2026-11-13")];
+      const surfaces = await buildEntityMetricRankingSurfaces(seasonRequest(), ["points_per_60"]);
+      expect(surfaces.get("points_per_60")?.meta.snapshotDate).toBe("2026-11-11");
+    });
+
+    it("applies the same cutoff to last-N windows, which have no composites of their own", async () => {
+      scenario.rows = [
+        ...seasonRows("2026-11-11").map(row => ({ ...row, window_type: "last_10", window_size: 10 })),
+        ...seasonRows("2026-11-13").map(row => ({ ...row, window_type: "last_10", window_size: 10 })),
+      ];
+      scenario.composites = [compositeRow("2026-11-11")];
+      const surfaces = await buildEntityMetricRankingSurfaces(seasonRequest("last10"), ["points_per_60"]);
+      expect(surfaces.get("points_per_60")?.meta.snapshotDate).toBe("2026-11-11");
+    });
+
+    it("reads the composite date once for all metrics of a request", async () => {
+      scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-13")].flatMap(row => [
+        row, { ...row, metric_key: "goals_per_60" }, { ...row, metric_key: "ixg_per_60" },
+      ]);
+      scenario.composites = [compositeRow("2026-11-11")];
+      const surfaces = await buildEntityMetricRankingSurfaces(seasonRequest(), ["points_per_60", "goals_per_60", "ixg_per_60"]);
+      expect([...surfaces.values()].map(surface => surface.meta.snapshotDate)).toEqual(["2026-11-11", "2026-11-11", "2026-11-11"]);
+      expect(queryCalls.filter(call => call.table === "skater_composite_ratings")).toHaveLength(1);
+    });
+
+    it("leaves rankings uncapped when the season has no composites", async () => {
+      scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-13")];
+      scenario.composites = [];
+      const surfaces = await buildEntityMetricRankingSurfaces(seasonRequest(), ["points_per_60"]);
+      expect(surfaces.get("points_per_60")?.meta.snapshotDate).toBe("2026-11-13");
+    });
   });
 
   it("reranks the complete snapshot cohort under selected minimums before applying a limit", async () => {
