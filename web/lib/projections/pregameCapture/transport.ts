@@ -30,8 +30,9 @@ export const CAPTURE_RELATIONS: ReadonlySet<string> = new Set([
 
 /**
  * TJ-approved 2026-11-15: exactly these STABLE, SECURITY INVOKER RPCs, by GET only. forge_latest_trend_bands was added
- * with the trend-band reader (TJ, 2026-11-15); the sustainability_trend_bands table read stays allowed for the release
- * window, when the reader falls back to it.
+ * with the trend-band reader (TJ, 2026-11-15). The sustainability_trend_bands table stays in CAPTURE_RELATIONS (the
+ * writer's fallback before the function is applied), but a capture cannot use it: the RPC's 404 (PGRST202) is a
+ * recorded refusal first. Apply the function before the next capture.
  */
 export const CAPTURE_RPCS: ReadonlySet<string> = new Set(["forge_latest_rolling_rows", "forge_league_skater_physical_totals",
   "forge_latest_trend_bands"]);

@@ -63,7 +63,26 @@ describe("strict capture transport", () => {
     expect(transport.usage.refusals.every((code) => code.startsWith("mutation_refused"))).toBe(true);
   });
 
-  it("admits exactly the two approved RPCs and only by GET", async () => {
+  it("admits forge_latest_trend_bands by GET with array parameters; an undeployed function's 404 is a refusal", async () => {
+    const args = { p_player_ids: [8478402, 8477934], p_metric_keys: ["fantasy_score", "ixg_per_60", "shots_per_60", "points_per_60_5v5"],
+      p_window_codes: ["l5", "l10"], p_as_of: "2026-11-15" };
+    const ok = transportFor(() => ({ body: [] }));
+    const run = await captureProjectionInputs(async () => db.rpc("forge_latest_trend_bands", args, { get: true }), { transport: ok.transport });
+    expect(run.result.error).toBeNull();
+    expect(ok.calls).toHaveLength(1);
+    const url = new URL(ok.calls[0].url);
+    expect([ok.calls[0].method, url.pathname]).toEqual(["GET", "/rest/v1/rpc/forge_latest_trend_bands"]);
+    expect(Object.fromEntries(url.searchParams)).toEqual({ p_player_ids: "{8478402,8477934}",
+      p_metric_keys: "{fantasy_score,ixg_per_60,shots_per_60,points_per_60_5v5}", p_window_codes: "{l5,l10}", p_as_of: "2026-11-15" });
+    expect(ok.transport.usage.refusals).toEqual([]);
+    // Until the function is applied, PostgREST answers 404 PGRST202. The writer falls back to the history GET; a capture
+    // cannot qualify, because the 404 is a recorded refusal. Applying the function comes before the next capture.
+    const missing = transportFor(() => ({ status: 404, body: { code: "PGRST202", message: "Could not find the function public.forge_latest_trend_bands" } }));
+    await captureProjectionInputs(async () => db.rpc("forge_latest_trend_bands", args, { get: true }), { transport: missing.transport });
+    expect(missing.transport.usage.refusals).toEqual(["http_status:404:PGRST202:Could not find the function public.forge_latest_trend_bands"]);
+  });
+
+  it("admits only the approved RPCs and only by GET", async () => {
     const { transport, calls } = transportFor(() => ({ body: [] }));
     await captureProjectionInputs(async () => db.rpc("forge_league_skater_physical_totals", { p_season_id: 20262027, p_cutoff: "2026-11-20" }, { get: true }), { transport });
     expect(calls[0].method).toBe("GET");

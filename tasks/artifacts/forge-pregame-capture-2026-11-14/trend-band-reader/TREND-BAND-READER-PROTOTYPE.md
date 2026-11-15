@@ -145,14 +145,22 @@ cd web && npx vitest run lib/projections/queries/trendBandLatest.test.ts
   The fallback reduces the history to the newest row per key and keeps the old selection exactly; the test checks this against the old algorithm.
 - **Counter:** `trend_adjustment_candidate_rows` replaces `trend_adjustment_rows_eligible` (`skater-stage.ts`, `run-forge-projections.ts`). The diagnostics field is `candidateRows`.
 - **Capture:**
-  - `forge_latest_trend_bands` is the third allowed GET RPC in `CAPTURE_RPCS` (TJ, 2026-11-15). The table read stays allowed for the release window.
+  - `forge_latest_trend_bands` is the third allowed GET RPC in `CAPTURE_RPCS` (TJ, 2026-11-15).
+  - **Correction:** the table read stays in the capture's relation list, but a capture cannot use it. Until the function is applied, PostgREST answers 404 PGRST202, and the strict transport records that as a refusal before the reader can fall back (`transport.test.ts`). **Applying migration 151 is a hard prerequisite for the next capture.** Only the writer, not a capture, benefits from the fallback during the release window.
   - `loadForgeNativeInputs` refuses any failed or incomplete trend read, which closes both refusal holes; the writer still runs on.
   - The source audit lists the new RPC (`FORGE_AUDITED_INPUT_SOURCES`, `EXTERNAL-INPUT-AUDIT.md`, the dynamic-site list in the test).
 - **Fixture world:** a `forge_latest_trend_bands` handler.
-- **Oracles:** re-recorded with TJ's approval. Every changed read and write is listed in `ORACLE-DIFF-20261115.md`.
+- **End to end through the writer** (`parity.test.ts`, "trend-band reads through the writer"): a player whose only bands are hard-stale is now reported as stale. Diffing full write payloads with and without those rows changes only that player's `trend_adjustment` block, the `data_quality` trend counters and the hard-stale warning; every projection number is identical and all multipliers are 1. A failed or short read leaves the writer running and makes native input collection refuse.
+- **Oracles:** re-recorded with TJ's approval, except the two goalie-reorder oracles. Those were patched with only the trend delta, because their tests require the pre-split goalie order. Every changed read and write is listed in `ORACLE-DIFF-20261115.md`.
 - **Migration:** order 151 in `migration-authority.json`, pending.
   - Proof: `supabase/tests/forge_latest_trend_bands.py` (18/18).
   - Rollback: `supabase/tests/forge_latest_trend_bands_rollback.sql`.
 - **Release order (each needs TJ's approval):**
   1. Apply the function.
   2. Push or deploy the reader. If the reader ships first, it falls back to the history GET and logs a PGRST202 warning, with no outage.
+- **Checks at `bbb85af7b` plus follow-up:**
+  - clean-export typecheck (`git archive` of web and supabase): exit 0, 0 errors;
+  - FORGE scripts plus `lib/projections`: 107 files, 2,076 tests;
+  - migration-reading tests: 15 files;
+  - eslint on the changed files: no output.
+- **Before any capture ask:** `PILOT-APPROVAL-PACKET.md` still says exactly two RPCs and names the old candidate SHA, so it needs a new revision.

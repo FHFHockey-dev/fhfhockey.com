@@ -397,8 +397,44 @@ describe.skipIf(RECORD)("fixture world coverage", () => {
   }
 });
 
-describe.skipIf(RECORD)("trend-band read failures", () => {
+describe.skipIf(RECORD)("trend-band reads through the writer", () => {
   const scenario = SCENARIOS.find((item) => item.name === "normal-one-game")!;
+  const diffPaths = (a: unknown, b: unknown, path = "", out: string[] = []): string[] => {
+    if (Array.isArray(a) && Array.isArray(b)) {
+      if (a.length !== b.length) out.push(`${path}.length`);
+      a.slice(0, Math.min(a.length, b.length)).forEach((item, index) => diffPaths(item, b[index], `${path}[${index}]`, out));
+    } else if (a && b && typeof a === "object" && typeof b === "object") {
+      for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) diffPaths((a as any)[key], (b as any)[key], `${path}.${key}`, out);
+    } else if (!Object.is(a, b)) out.push(path);
+    return out;
+  };
+  const playerRows = (writes: unknown[][]) => (writes as Array<Array<{ method: string; args: any[] }>>)
+    .filter((ops) => ops[0]?.args[0] === "forge_player_projections")
+    .flatMap((ops) => ops.filter((op) => op.method === "upsert" || op.method === "insert").flatMap((op) => [op.args[0]].flat()));
+
+  it("a player whose only bands are hard-stale is reported as stale: only trend metadata, counters and the warning change", async () => {
+    const base = await runWriterScenario(scenario);
+    const target = playerRows(base.writes).find((row) => row.uncertainty?.model?.skater_selection?.trend_adjustment?.selected === false);
+    expect(target).toBeTruthy();
+    const staleDate = new Date(Date.parse(`${TARGET.slateDate}T00:00:00Z`) - 40 * 86_400_000).toISOString().slice(0, 10);
+    const stale = await runWriterScenario(scenario, (world: World) => {
+      for (const metric_key of ["fantasy_score", "ixg_per_60", "shots_per_60", "points_per_60_5v5"]) {
+        for (const window_code of ["l5", "l10"]) {
+          (world.tables.sustainability_trend_bands ??= []).push({ player_id: target.player_id, snapshot_date: staleDate, metric_key,
+            window_code, value: 9, ci_lower: 4, ci_upper: 6, n_eff: 6 });
+        }
+      }
+    });
+    const after = playerRows(stale.writes).find((row) => row.player_id === target.player_id);
+    expect(after.uncertainty.model.skater_selection.trend_adjustment).toMatchObject({ selected: true, recency_class: "hard_stale",
+      snapshot_date: staleDate, effect_state: "neutralized_by_recency",
+      multipliers: { shot_rate: 1, goal_rate: 1, assist_rate: 1, uncertainty_volatility: 1 } });
+    const paths = diffPaths(base.writes, stale.writes);
+    expect(paths.length).toBeGreaterThan(0);
+    expect(paths.filter((path) => !/\.skater_selection\.trend_adjustment\.|\.metrics\.data_quality\.trend_adjustment_|\.metrics\.warnings/.test(path))).toEqual([]);
+    expect(JSON.stringify(stale.writes)).toContain("included 1 hard-stale rows");
+  });
+
   const failures: Record<string, () => unknown> = {
     timeout: () => ({ data: null, error: { code: "57014", message: "canceling statement due to statement timeout" } }),
     "short response": () => ({ data: [], error: null }),

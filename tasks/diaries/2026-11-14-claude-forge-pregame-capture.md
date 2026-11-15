@@ -261,3 +261,9 @@
   - typecheck on a clean export of the commit;
   - TJ approvals: apply migration 151, then release.
 - **Gotcha:** a full oracle re-record would have erased the goalie-reorder baseline, which `parity.test.ts:149` requires to differ.
+- **Follow-up (19:35Z):**
+  - The clean-export typecheck of `bbb85af7b` gave exit 0. The first attempt exported only `web/`, which produced 46 false "Cannot find module ../../../supabase/functions" errors; export web and supabase together.
+  - A 404 PGRST202 is a transport refusal, so a capture needs migration 151 applied first.
+  - Added the stale-player end-to-end test and a transport HTTP test.
+  - Suites: 107 files, 2,076 tests.
+  - The pilot packet needs a revision (three RPCs, new SHA).
