@@ -3138,3 +3138,7 @@ The change: rankings must be served at a date where composites also exist (an ex
   - The integration is committed locally as `bbb85af7b` and `ca941bfd3`. Nothing is pushed or applied.
   - Migration 151 (`forge_latest_trend_bands`) is pending. Until it is applied, the writer falls back to the history GET, and a capture refuses.
   - Every changed oracle entry is listed in `trend-band-reader/ORACLE-DIFF-20261115.md`.
+- 2026-11-15 19:32Z update (Claude):
+  - Migration 151 (`forge_latest_trend_bands`) is **applied in production** with TJ's approval, at 19:30:17Z; readback exact.
+  - Smoke: PostgREST returned HTTP 200 with 144 rows.
+  - The deployed writer is unchanged until the reader is released.

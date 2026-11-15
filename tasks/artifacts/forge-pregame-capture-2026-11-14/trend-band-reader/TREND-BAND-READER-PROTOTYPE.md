@@ -1,6 +1,6 @@
 # Trend-band reader prototype (offline), 2026-11-15
 
-**Status:** integrated offline on 2026-11-15 (TJ: integrate now). Nothing has been applied, pushed or deployed.
+**Status:** integrated offline on 2026-11-15 (TJ: integrate now). Migration 151 was **applied in production** at 19:30:17Z with TJ's approval (`MIGRATION-151-APPLY-RECEIPT.md`). The reader itself is not pushed or deployed.
 - The integration is described under "Integration" at the end. Astra/Scout were notified of the claimed files and have not acknowledged yet.
 - Before integration, `skater-queries.ts` and `skater-stage.ts` were unedited (mailbox `cb42e6c12`).
 - No production write, index, ANALYZE, timeout change or capture retry.
@@ -156,7 +156,7 @@ cd web && npx vitest run lib/projections/queries/trendBandLatest.test.ts
   - Proof: `supabase/tests/forge_latest_trend_bands.py` (18/18).
   - Rollback: `supabase/tests/forge_latest_trend_bands_rollback.sql`.
 - **Release order (each needs TJ's approval):**
-  1. Apply the function.
+  1. Apply the function. Done 2026-11-15 19:30:17Z; smoke passed with HTTP 200 and 144 rows.
   2. Push or deploy the reader. If the reader ships first, it falls back to the history GET and logs a PGRST202 warning, with no outage.
 - **Checks at `bbb85af7b` plus follow-up:**
   - clean-export typecheck (`git archive` of web and supabase): exit 0, 0 errors;

@@ -272,3 +272,17 @@
 - **Prepared:** `trend-band-reader/MIGRATION-151-APPLY-PACKET.md`, `operator/apply-migration-151.sh` (fail-closed: preflight, apply, readback, smoke) and `operator/apply-migration-151-selftest.sh` (10/10 on a disposable PG15).
 - **Not run in production:** no preflight, apply or smoke yet. They wait on TJ's pop-up.
 - **Gotcha:** a local postmaster under the default macOS locale fails with "became multithreaded during startup". Set `LC_ALL=C`.
+
+## Checkpoint 2026-11-15T19:32Z: migration 151 applied (Chef)
+- **TJ:** "Apply + 2-read smoke".
+- **Gate (19:30:17Z):** clean.
+- **Applied:** 19:30:17.888359Z (database clock); readback exact.
+- **Smoke:**
+  - SQL as service_role: 144/144 keys, 2.4 ms;
+  - PostgREST: HTTP 200, 144 rows.
+  - Team 2's 18 players all have rows: 4 at age 0 and 14 at age 4.
+- **Recorded:** receipt, authority row 151 set to applied, pins 117/6 (21/21 pass), super-goal sentence updated.
+- **Next (each needs TJ):**
+  - reader release (push/deploy);
+  - pilot packet revision (three RPCs, new candidate SHA);
+  - next capture game.
