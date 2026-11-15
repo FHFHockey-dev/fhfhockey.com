@@ -286,3 +286,8 @@
   - reader release (push/deploy);
   - pilot packet revision (three RPCs, new candidate SHA);
   - next capture game.
+
+## Checkpoint 2026-11-15T19:36Z: pilot packet rev 4 (Chef)
+- **Candidate:** `29451c573`. Clean export: typecheck exit 0; 16 files / 326 tests pass.
+- **Proposed game:** 2026020328 (CGY @ ANA), puck drop 01:00Z, T−60 00:00Z, last claim 23:56Z. Fallbacks: 0329/0330 tonight, 0331 Monday.
+- **Pending:** TJ's P2 approval.
