@@ -24,3 +24,9 @@
 ## Gotchas
 - Chef's directory-level `git add` swept in my in-progress world files (daded823b, ede7f2d8f).
 - macOS sed has no `\b`; use perl.
+
+## Checkpoint: compute-off parity (Chef requirement)
+- `d2cb5b5f2`: 5 compute-off scenarios on the uncaptured resumable path, including a deadline-then-resume run. Oracle recorded in a `git archive 52c3b6919 web` export under the scratchpad (node_modules symlinked; test-only fixture/harness files copied in). Recorded twice, byte-identical. HEAD matches: results and writes identical; reads exact except the goalie-input block.
+- The fixture world gains stateful `forge_runs`, deep JSON paths and an `onWrite` hook. `randomUUID` is mocked to a counter in that test.
+- season-bootstrap now passes the strict transport after Chef's dc6c4cb7c; removed from known refusals. `readCount` was dropped by Chef.
+- Checks: lib/projections 1877 pass; eslint clean. `npm run typecheck` exit 2, with only 2 errors in another session's untracked `lib/rankings/__acceptance__/` and none in projections.
