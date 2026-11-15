@@ -290,8 +290,7 @@ describe.skipIf(RECORD)("collector mutations", () => {
 
 /** Strict-transport refusals the collector meets today, routed to Chef (transport owner); empty means none expected. */
 const KNOWN_STRICT_REFUSALS: Record<string, RegExp> = {
-  // Season bootstrap reads skatersGameStats through games!inner(...) and filters games.seasonId.
-  "season-bootstrap": /embedding_refused/,
+  // season-bootstrap (games!inner embed) was refused until the transport admitted allowlisted embeds (dc6c4cb7c).
 };
 
 describe.skipIf(RECORD)("collector under the strict capture transport", () => {

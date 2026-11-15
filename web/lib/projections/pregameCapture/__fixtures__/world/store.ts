@@ -1,13 +1,20 @@
 /**
  * Offline fixture world: an in-memory relation store that answers the PostgREST builder ops the FORGE writer uses.
- * Test-only. Writes are acknowledged and never change the relations, so every read sees the same frozen world.
+ * Test-only. Writes are acknowledged and never change the relations, so every read sees the same frozen world,
+ * except relations listed in `mutable` (the run lifecycle), which apply inserts, updates and deletes.
  * Unknown builder methods throw, so a new read shape fails loudly instead of returning a silent empty page.
  */
 export type Row = Record<string, any>;
 export type RpcHandler = (args: Record<string, any>, options?: Record<string, unknown>) => { data: unknown; error: unknown };
 /** Many-to-one embeds: `${table}.${embed}` -> local column on the table, foreign column on the embedded relation. */
 export type Join = { relation: string; local: string; foreign: string };
-export type World = { tables: Record<string, Row[]>; rpc: Record<string, RpcHandler>; joins?: Record<string, Join> };
+export type World = {
+  tables: Record<string, Row[]>; rpc: Record<string, RpcHandler>; joins?: Record<string, Join>;
+  /** Relations whose writes apply, with the defaults a database would fill on insert. */
+  mutable?: Record<string, (row: Row) => Row>;
+  /** Observes every write (applied or not), e.g. to advance a frozen clock at a fixed point in the run. */
+  onWrite?: (table: string, method: string, rows: Row[]) => void;
+};
 type Op = { method: string; args: any[] };
 
 const MUTATIONS = new Set(["insert", "upsert", "update", "delete"]);
@@ -28,7 +35,11 @@ function splitTopLevel(text: string): string[] {
 }
 
 const read = (row: Row, column: string) => {
-  const path = /^(\w+)->>?(\w+)$/.exec(column) ?? /^(\w+)\.(\w+)$/.exec(column);
+  if (column.includes("->")) {
+    const value = column.split(/->>?/).reduce<any>((value, key) => value?.[key], row);
+    return value === undefined ? null : column.includes("->>") && value !== null ? String(value) : value;
+  }
+  const path = /^(\w+)\.(\w+)$/.exec(column);
   return path ? row[path[1]]?.[path[2]] ?? null : row[column];
 };
 const EMBED = /^(\w+)(!inner)?\((.*)\)$/;
@@ -124,7 +135,34 @@ export function createWorldClient(world: World) {
     if (mutation) {
       const returning = ops.some((op) => op.method === "select");
       const payload = mutation.args[0];
-      const rows = Array.isArray(payload) ? payload : payload ? [payload] : [];
+      let rows: Row[] = Array.isArray(payload) ? payload : payload ? [payload] : [];
+      world.onWrite?.(table, mutation.method, clone(rows));
+      const defaults = world.mutable?.[table];
+      if (defaults) {
+        const stored = (world.tables[table] ??= []);
+        const filters = ops.filter((op) => ["eq", "in", "is", "lt", "lte", "gt", "gte", "neq"].includes(op.method))
+          .map((op) => predicate(op.args[0], op.method, op.args[1]));
+        const matched = stored.filter((row) => filters.every((test) => test(row)));
+        if (mutation.method === "insert") {
+          rows = rows.map((row) => defaults(clone(row)));
+          stored.push(...rows);
+        } else if (mutation.method === "update") {
+          for (const row of matched) Object.assign(row, clone(payload));
+          rows = matched;
+        } else if (mutation.method === "delete") {
+          world.tables[table] = stored.filter((row) => !matched.includes(row));
+          rows = matched;
+        } else {
+          throw new Error(`fixture world: ${mutation.method} on mutable ${table} not supported`);
+        }
+        const columns = String(ops.find((op) => op.method === "select")?.args[0] ?? "*");
+        const data = rows.map((row) => project(row, columns));
+        if (ops.some((op) => op.method === "single")) {
+          return data.length === 1 ? { data: data[0], error: null, count: null, status: 201 }
+            : { data: null, error: { code: "PGRST116", message: "fixture world: single() row count" }, count: null, status: 406 };
+        }
+        return { data: returning ? data : null, error: null, count: null, status: 201 };
+      }
       return { data: returning ? clone(rows) : null, error: null, count: null, status: 201 };
     }
     let rows = clone(world.tables[table] ?? []);
