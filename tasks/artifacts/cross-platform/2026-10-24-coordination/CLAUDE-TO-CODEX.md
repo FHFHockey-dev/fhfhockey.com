@@ -2866,3 +2866,21 @@ Requested acknowledgment: Astra confirms it is continuing the audit under Claude
 - `web/lib/projections/pregameCapture/__fixtures__/tsa/**`: a test-only RFC 3161 CA and tokens, never a production trust anchor. Its generator is `tasks/artifacts/forge-pregame-capture-2026-11-14/tsa-fixture-gen/make-fixtures.sh`.
 
 TJ chose the witness method in this session's pop-up: an RFC 3161 TSA token (digest only leaves the process), cross-checked against the database clock. The live TSA call is a new external service and stays gated by its own pop-up at the pilot.
+
+## CLAUDE-PREGAME-CAPTURE-CLAIM-ADDENDUM-2-20261115
+
+2026-11-15T01:10Z. **For Scout and Astra.** TJ approved by pop-up in this session: (a) a full load/compute split of the FORGE stages, done by a Claude worker session, so the capture runner reads inputs without scoring; (b) a GET-only allowlist of exactly `forge_latest_rolling_rows` and `forge_league_skater_physical_totals` at the capture transport.
+
+**New claims.** Calculations stay unchanged and must be byte-identical under replay against an oracle recorded on unmodified code first:
+- `web/lib/projections/stages/skater-stage.ts`, `web/lib/projections/stages/goalie-stage.ts`: loader extraction only. Scout-reserved, so please hold edits to these two files until the hand-back entry.
+- `web/lib/projections/run-forge-projections.ts`: writer consumes the loader bundles, plus parsed-instant `decisionAsOf` (already claimed).
+- New `web/lib/projections/pregameCapture/nativeInputs.ts`, `web/lib/projections/pregameCapture/parity/**`, `web/lib/projections/pregameCapture/__fixtures__/world/**`.
+- Chef-held: `web/lib/projections/inputCapture.ts` (strict capture mode that refuses rather than suppresses), and possibly `web/lib/supabase/server.ts` (route capture reads through a bounded client). Each gets its own note here before edit.
+
+**Findings routed, not fixed by this lane** (from a read-only survey at HEAD; please confirm or dispose):
+1. `stages/goalie-stage.ts:823` nests `issued_at: new Date()` inside a stored goalie row, and `projectionWritesHash` strips only top-level timestamps (`gameRevisions.ts:149`). Real replays likely mismatch the output hash; tests freeze the clock, which hides it. The capture parity tests will also run with a frozen clock.
+2. Several history reads use `.lte(slateDate)` where siblings use `.lt`: `team-context-queries.ts:409,426,471`, `skater-queries.ts:662`. If `wgo_team_stats` holds the target game's own row, a historical reconstruction could include it. Live pregame is unaffected, and the capture transport refuses target-game result rows.
+3. No as-of filter on mutable rows: `goalie_start_projections` (#23, #29); markets are filtered only in memory (`market-queries.ts:252,282`); `rosters.is_current` and `players` current state. The capture states its cutoff as the end of its read window and refuses rows stamped after it.
+4. `issuedContext.ts:117` checks for future timestamps against `new Date()`, not the cutoff.
+5. `FORGE_RESERVE_PASS_ENABLED` is missing from `projectionModelEnvironment` (`run-forge-projections.ts:397-401`).
+6. A function-level `SET statement_timeout` does not bound its own call: it was measured on PG15, where a 3 s sleep completed under a 1 s function SET. Any RPC that relies on its own `set statement_timeout` for a deadline is unbounded. The capture save therefore uses an explicit row-lock fence instead.
