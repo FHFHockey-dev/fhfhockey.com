@@ -165,7 +165,10 @@ export function extractTweetPlayerEvents(args: {
   const unresolvedStarts = unresolvedMentions.filter((unresolved) => !mentions.some((mention) => unresolved.start >= mention.start && unresolved.end <= mention.end)).map((mention) => mention.start);
   const extracted = mentions.flatMap(({ player, start, end: mentionEnd, basis }, index): TweetPlayerEvent[] => {
     // Anatomical notes can qualify a shared claim; a parenthetical predicate cannot.
-    const coordinated = (left: number, right: number) => /^(?:[ \t]|,|&|\band\b)+$/i.test(args.text.slice(mentions[left]!.end, mentions[right]!.start)
+    // "A vs B in goal" names both starters; "vs" joins goalies only.
+    const goalieMatchup = (left: number, right: number) => mentions[left]!.player.position === "G" && mentions[right]!.player.position === "G"
+      && /^\s*(?:vs\.?|versus)\s*$/i.test(args.text.slice(mentions[left]!.end, mentions[right]!.start));
+    const coordinated = (left: number, right: number) => goalieMatchup(left, right) || /^(?:[ \t]|,|&|\band\b)+$/i.test(args.text.slice(mentions[left]!.end, mentions[right]!.start)
       .replace(/\(\s*(?:(?:upper|lower)[ -]body|(?:(?:left|right)[ -])?(?:ankle|arm|back|foot|hand|hip|knee|leg|shoulder|wrist))(?:[ -]injury)?\s*\)/gi, "")
       .replace(/\b(?:forward|defenseman|defenceman|goaltender)\b/gi, ""));
     let first = index, last = index;

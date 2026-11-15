@@ -731,6 +731,18 @@ describe("retained audit claim regressions", () => {
     expect(claims).toHaveLength(1);
     expect(claims[0]!.state).not.toBe("confirmed");
   });
+  it("confirms both goalies in an opposing 'A vs B in goal' matchup", () => {
+    // Retained report receipt (VGK, game 2026020278, 11-08): only Hill was confirmed; Ellis got no event.
+    const text = "It’s Colten Ellis vs Adin Hill in goal. The Bills are en route to Minny for MNF, so it’s the #Sabres and #Vgk.";
+    const players = [
+      { playerId: 1, fullName: "Colten Ellis", lastName: "Ellis", position: "G", teamId: 7 },
+      { playerId: 2, fullName: "Adin Hill", lastName: "Hill", position: "G", teamId: 54 },
+    ];
+    expect(extractTweetPlayerEvents({ text, players, publishedAt: null }).map((event) => [event.playerId, event.kind, event.state]))
+      .toEqual([[1, "goalie", "confirmed"], [2, "goalie", "confirmed"]]);
+    const skaters = players.map((player) => ({ ...player, position: "C" }));
+    expect(extractTweetPlayerEvents({ text: "Colten Ellis vs Adin Hill tonight", players: skaters, publishedAt: null })).toEqual([]);
+  });
   it("keeps genuine full-name Bäck claims while abstaining on ordinary lower-case nouns", () => {
     const players = [{ playerId: 8480840, fullName: "Oskar Bäck", lastName: "Bäck", position: "C" }];
     expect(extractTweetPlayerEvents({ text: "Oskar Bäck suffered an injury", players, publishedAt: null })).toMatchObject([{ playerId: 8480840, kind: "injury" }]);
