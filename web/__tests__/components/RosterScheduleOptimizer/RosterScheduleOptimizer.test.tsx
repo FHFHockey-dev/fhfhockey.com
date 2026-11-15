@@ -939,6 +939,45 @@ describe("RosterScheduleOptimizer workspace", () => {
     await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.objective).toBe("outcome"));
     await waitFor(() => expect(points.getAttribute("aria-pressed")).toBe("true"));
   });
+  it("objective switch acceptance (SYNTHETIC): the chosen goal reaches the real planner and the Compare strip shows both plans", async () => {
+    const { scenario, fixturePolicy } = await import("lib/rosterScheduleOptimizer/objectiveSwitchScenario.fixture");
+    const rsoPolicy = await import("lib/player-forecasts/rsoUsePolicy");
+    vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixturePolicy);
+    const workspace = defaultWorkspace();
+    workspace.roster = [{ playerId: player.id, position: "active" }];
+    workspace.manualPlayers = [{ ...player, eligibilityVerified: true }];
+    window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
+    const schedule: PlanningData = { ...data, games: [{ id: "game", date: workspace.context.startDate, startsAt: null, teamAbbreviation: "CAR", opponent: "NYR", home: true, status: "scheduled" }],
+      evidence: { schedule: { source: "fixture", asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness: "complete", limitations: [] } } };
+    // Pass-through spy: the component's chosen objective goes into the REAL planner on the synthetic week.
+    const seen: Array<PlanIntent["objective"]> = [];
+    // The component admits a result only for its own snapshot id and intent revision, so the synthetic week carries that id.
+    planningState.evaluate = (snapshot, intent) => { seen.push(intent.objective); return planRoster({ ...scenario(), id: snapshot.id }, intent, { maxSteps: 0 }); };
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: url.includes("/data?"), json: async () => ({ success: true, data: schedule }) })));
+    render(<RosterScheduleOptimizer />);
+    const goal = await screen.findByRole("group", { name: "Lineup goal" });
+    const starts = within(goal).getByRole("button", { name: "Most starts" });
+    const points = within(goal).getByRole("button", { name: "Best projected points" });
+    await waitFor(() => expect(starts.hasAttribute("disabled")).toBe(false));
+    expect(points.hasAttribute("disabled")).toBe(false);
+    const compare = () => screen.getByLabelText("Lineup comparison");
+    const matchup = () => screen.getByRole("region", { name: "Matchup" }).textContent ?? "";
+    fireEvent.click(starts);
+    await waitFor(() => expect(starts.getAttribute("aria-pressed")).toBe("true"));
+    expect(seen.at(-1)).toBe("agp");
+    expect(compare().textContent).toContain("Most starts 4 GP · -3 pts");
+    expect(compare().textContent).toContain("Best projected points 2 GP · 3 pts");
+    expect(within(compare()).getByText(/Most starts/).closest("p")!.getAttribute("data-selected")).toBe("true");
+    expect(matchup()).toContain("Selected plan4 active · -3 projected");
+    fireEvent.click(points);
+    await waitFor(() => expect(points.getAttribute("aria-pressed")).toBe("true"));
+    expect(seen.at(-1)).toBe("outcome");
+    expect(within(compare()).getByText(/Best projected points/).closest("p")!.getAttribute("data-selected")).toBe("true");
+    expect(matchup()).toContain("Selected plan2 active · 3 projected");
+    fireEvent.click(screen.getByRole("button", { name: "Plan details" }));
+    console.log("PLAN-DETAILS", screen.getByRole("region", { name: "Plan details" }).textContent);
+    console.log("UI-OBJECTIVES", JSON.stringify(seen), "COMPARE", compare().textContent);
+  });
   it("can repeatedly return to best projected points with partial lineup forecasts", async () => {
     const workspace = defaultWorkspace();
     workspace.roster = [{ playerId: player.id, position: "active" }];
