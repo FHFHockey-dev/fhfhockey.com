@@ -3045,3 +3045,51 @@ The live forecast writer catches this error and runs with **no trend adjustments
 - **Options for the owner (Astra/Scout):** bound `snapshot_date`, read latest-per-key, add a `(player_id, metric_key, window_code, snapshot_date DESC)` index, or ANALYZE. Any change must keep writer and capture parity.
 
 Details: `tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-1-DIAGNOSIS-TREND-BANDS-500.md`.
+
+## CLAUDE-RANKINGS-PAIRED-SNAPSHOT-CLAIM-20261115
+TJ asked for this in-session. Claude Chef claims `web/lib/rankings/entityMetricRankingReader.ts` and `web/lib/rankings/entityMetricRankingReader.test.ts`, local only.
+
+The change: the durable reader serves rankings no newer than the latest composite snapshot for the season and strength. The last complete rankings + composites pair therefore stays visible until both are published at a new cutoff.
+
+No writer, schema, data or deploy change in this claim.
+- Update 2026-11-15: the paired-snapshot reader change is committed locally as `9c54766df` on `octoberBranch` (2 claimed files). The claim is released. Not pushed or deployed. Once released, the rankings date is capped at the latest composite date for the season and strength.
+
+## CLAUDE-BLSH-V5-APPLIED-NOTICE-20261115
+
+For Scout (owner of `web/scripts/blsh/**`). At TJ's explicit direction (pop-up, 2026-11-15), Claude Chef applied BLSH successor v5 (`SUCCESSOR.patch` sha256 `e8be50de…`) in the canonical checkout, octoberBranch at HEAD `eb0a07e9`. **It is uncommitted**: 6 modified files, the bootstrap, runner and adapter plus their tests. Role hashes match the candidate: bootstrap `dbf69c47…`, runner `a74cbb0a…`, adapter `aa6237bd…`; the 7 unchanged roles match.
+
+- **Checks:** capture suites 228/228; credential-free `--check` exit 0; G3 tree match, 0 uncovered.
+- **Evidence:** `tasks/artifacts/blsh-pilot-readiness-2026-11-14/g1-canonical/`.
+
+Please review the applied diff and either accept it (and commit it yourself if you want it committed) or say what to revert. Nothing was committed, pushed or deployed. Separately, the admission read TJ approved was run once: `enforced = false`, bodies match the migrations.
+
+## CLAUDE-RANKINGS-PAIRED-SNAPSHOT-EXACT-CLAIM-20261115
+TJ asked in-session for a follow-up to the #448 guard. Claude Chef re-claims `web/lib/rankings/entityMetricRankingReader.ts` and its test, local only.
+
+The change: rankings must be served at a date where composites also exist (an exact match), not just at or before the latest composite date. With the #448 cap alone, a Rankings-only date between two composite dates can still blank composites.
+- 2026-11-15: #448 is merged (`b5a580c45`; 1 build, 3 cancels). The exact-match follow-up is committed locally as `5c1c79963` (2 files) and is not yet released. Claim released.
+
+## CLAUDE-TREND-BAND-READER-PROTOTYPE-COORDINATION-20261115
+
+2026-11-15 ~18:30Z. **For Astra/Scout.** TJ asked the capture lane to coordinate with you on the shared trend-band reader (`fetchSkaterTrendAdjustments` in `web/lib/projections/queries/skater-queries.ts`) and to prototype a fix **offline**. Pilot 1 hit the 8 s statement timeout there.
+
+**TJ's constraints:**
+- One batched lookup of the newest eligible row per player as of the slate.
+- Same tie-breaks: newest date, then metric priority, then window priority.
+- Indexed `ORDER BY snapshot_date DESC LIMIT 1` per player/metric/window inside one query.
+- Hard-stale stays distinct from missing.
+- No 21-day floor and no rate change.
+- Strict capture refusal is kept.
+- Old and new are compared on the same inputs (ties, hard-stale, missing) across rates, metadata and `data_quality`. `eligibleRows` keeps its meaning, or a counter change comes to TJ for approval.
+- The old endpoint's effective row cap gets checked.
+- Existing indexes are tried first.
+- Nothing goes to production without separate approval.
+
+**Claimed, prototype only:**
+- New `web/lib/projections/queries/trendBandLatest.ts` + test.
+- New migration `supabase/migrations/<ts>_forge_latest_trend_bands.sql` (a STABLE GET RPC; **not applied**), with a local proof under `supabase/tests/`.
+- Records under `tasks/artifacts/forge-pregame-capture-2026-11-14/trend-band-reader/`.
+
+**Not edited:** `skater-queries.ts` and `skater-stage.ts` stay as they are until you acknowledge, or tell me you'd rather take the integration. Please flag any in-flight work on this reader.
+
+**Early finding:** the repo's `supabase/config.toml` sets `max_rows = 1000`. If production matches, the old `limit(12000)` returns at most the newest 1,000 rows (about the last 7 dates for 18 players × 8 keys). Players whose newest snapshot falls beyond that already read as "missing" today, and equal-date rows at the cut-off are cut in an unspecified order.
