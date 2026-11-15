@@ -80,3 +80,8 @@ The page-default skater matrix was not smoked directly. It moves into the republ
   - S1, page-default matrix: 200 in 4.24 s, 769 ranked at 11-13, 0 null composites. Byte-identical to the local check apart from `generatedAt`.
   - S2, team=EDM: 200 in 2.22 s, 23 rows, derived-pool warning, 0 null composites.
 - **Live result:** output is unchanged, as expected. No markers exist yet, so the reader uses the #449 date match.
+
+**#451, merged as `c0c5fe9b2`:** hotfix for the composite marker key (`"all"`, not the composite rows' `"all_skaters"`).
+- Gate: 650 tests, typecheck 0, ESLint 0.
+- Vercel: `dpl_548ZqDQqELLzkBmLwPiPdrrPqKpD`; 3 companions CANCELED.
+- First marked publish completed at 2026-11-14. Live now serves 775 skaters with composites. Receipt: `first-marked-publish/PACKET.md`.

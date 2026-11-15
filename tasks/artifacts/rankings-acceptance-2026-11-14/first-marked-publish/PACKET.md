@@ -35,3 +35,16 @@
 6. **Live GET:** 200, still **11-13**, 769 ranked, 0 null composites. The guard held the last complete pair, as designed.
 
 **Fix (local):** composite markers now key the all-skater cohort as `"all"` on both surfaces, and the fixture uses the real `"all_skaters"` row key. Next: release the hotfix, then rerun step 4 and steps 5–6.
+
+## Hotfix and run 2 (TJ: "Release fix, then finish")
+- **#451, merged as `c0c5fe9b2`** (candidate `99ec20d22`: master plus `skaterCompositeWriter.ts` and its test).
+  - Gate: 61 files, 650 tests; ESLint 0; typecheck 0.
+  - Vercel `dpl_548ZqDQqELLzkBmLwPiPdrrPqKpD`; 3 companions CANCELED.
+- **Composites write** at 20:35:50Z, on :3110 from the exact merged tree: 200 in 23.7 s. 775 built = 775 upserted = **775 reported by the database**; `complete` (775/775).
+- **Readback SQL:** 5 markers at 2026-11-14, all `complete` with equal counts:
+  - 4 Rankings windows, 13,175 rows each, 775/775;
+  - composites season window, 775, 775/775.
+- **Smoke** (2 GETs), served by the deployed #450 reader:
+  - S1, page-default matrix: 200 in 5.57 s, **2026-11-14, 775 ranked**, 0 null composites;
+  - S2, team=EDM: 200 in 2.59 s, 11-14, 23 rows, 0 null composites.
+- **Exposure:** none. Live served 11-13 throughout, then switched to the complete 11-14 pair in one step.
