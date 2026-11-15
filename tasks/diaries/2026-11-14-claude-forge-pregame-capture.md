@@ -238,3 +238,26 @@
   - capture refusal on `fetchFailed`;
   - fixture-world RPC handler and oracle regeneration;
   - then TJ approves: applying the function, the third GET RPC in `CAPTURE_RPCS`, and the push.
+
+## Checkpoint 2026-11-15T19:15Z: trend-band reader integrated offline (Chef)
+- **TJ:**
+  - integrate now (without waiting for Astra/Scout);
+  - the third capture RPC is allowed (the table read stays for the release window);
+  - re-record the oracles with a diff note.
+- **Done:**
+  - RPC-first reader with a history-GET fallback (reconstruction, legacy replay, PGRST202);
+  - counter renamed to `trend_adjustment_candidate_rows`;
+  - `loadForgeNativeInputs` refuses failed trend reads;
+  - `CAPTURE_RPCS` has 3 entries, and the source audit is updated;
+  - fixture-world RPC;
+  - oracles re-recorded: `ORACLE-DIFF-20261115.md`. The two goalie-reorder oracles were patched with only the trend delta, to keep the pre-split order check;
+  - pending migration 151, proof 18/18, rollback.
+- **Checks:**
+  - projections suite: 96 files, 1,901 tests;
+  - migration-reading tests 15/15;
+  - capture and query suites 282/282;
+  - eslint clean.
+- **Next:**
+  - typecheck on a clean export of the commit;
+  - TJ approvals: apply migration 151, then release.
+- **Gotcha:** a full oracle re-record would have erased the goalie-reorder baseline, which `parity.test.ts:149` requires to differ.

@@ -2310,90 +2310,50 @@
   {
    "request": [
     {
-     "method": "from",
+     "method": "rpc",
      "args": [
-      "sustainability_trend_bands"
-     ]
-    },
-    {
-     "method": "select",
-     "args": [
-      "player_id,snapshot_date,metric_key,window_code,value,ci_lower,ci_upper,n_eff"
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "player_id",
-      [
-       8471001,
-       8471002,
-       8471003,
-       8471004,
-       8471005,
-       8471006,
-       8471007,
-       8471008,
-       8471009,
-       8471010,
-       8471011,
-       8471012,
-       8471021,
-       8471022,
-       8471023,
-       8471024,
-       8471025,
-       8471026,
-       8471027
-      ]
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "metric_key",
-      [
-       "fantasy_score",
-       "ixg_per_60",
-       "shots_per_60",
-       "points_per_60_5v5"
-      ]
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "window_code",
-      [
-       "l5",
-       "l10"
-      ]
-     ]
-    },
-    {
-     "method": "lte",
-     "args": [
-      "snapshot_date",
-      "2026-11-14"
-     ]
-    },
-    {
-     "method": "order",
-     "args": [
-      "snapshot_date",
+      "forge_latest_trend_bands",
       {
-       "ascending": false
+       "p_player_ids": [
+        8471001,
+        8471002,
+        8471003,
+        8471004,
+        8471005,
+        8471006,
+        8471007,
+        8471008,
+        8471009,
+        8471010,
+        8471011,
+        8471012,
+        8471021,
+        8471022,
+        8471023,
+        8471024,
+        8471025,
+        8471026,
+        8471027
+       ],
+       "p_metric_keys": [
+        "fantasy_score",
+        "ixg_per_60",
+        "shots_per_60",
+        "points_per_60_5v5"
+       ],
+       "p_window_codes": [
+        "l5",
+        "l10"
+       ],
+       "p_as_of": "2026-11-14"
+      },
+      {
+       "get": true
       }
-     ]
-    },
-    {
-     "method": "limit",
-     "args": [
-      12000
      ]
     }
    ],
-   "resultHash": "03c449d3ed562aa5d4e42cd52a7f71b8196cf98b35b7b967f8aac5ef576754b7"
+   "resultHash": "b04320c71e732920358a4ea60340f9c6daa56c1f7945f697c31d1f1e640e1886"
   },
   {
    "request": [
@@ -4036,90 +3996,50 @@
   {
    "request": [
     {
-     "method": "from",
+     "method": "rpc",
      "args": [
-      "sustainability_trend_bands"
-     ]
-    },
-    {
-     "method": "select",
-     "args": [
-      "player_id,snapshot_date,metric_key,window_code,value,ci_lower,ci_upper,n_eff"
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "player_id",
-      [
-       8470601,
-       8470602,
-       8470603,
-       8470604,
-       8470605,
-       8470606,
-       8470607,
-       8470608,
-       8470609,
-       8470610,
-       8470611,
-       8470612,
-       8470621,
-       8470622,
-       8470623,
-       8470624,
-       8470625,
-       8470626,
-       8470627
-      ]
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "metric_key",
-      [
-       "fantasy_score",
-       "ixg_per_60",
-       "shots_per_60",
-       "points_per_60_5v5"
-      ]
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "window_code",
-      [
-       "l5",
-       "l10"
-      ]
-     ]
-    },
-    {
-     "method": "lte",
-     "args": [
-      "snapshot_date",
-      "2026-11-14"
-     ]
-    },
-    {
-     "method": "order",
-     "args": [
-      "snapshot_date",
+      "forge_latest_trend_bands",
       {
-       "ascending": false
+       "p_player_ids": [
+        8470601,
+        8470602,
+        8470603,
+        8470604,
+        8470605,
+        8470606,
+        8470607,
+        8470608,
+        8470609,
+        8470610,
+        8470611,
+        8470612,
+        8470621,
+        8470622,
+        8470623,
+        8470624,
+        8470625,
+        8470626,
+        8470627
+       ],
+       "p_metric_keys": [
+        "fantasy_score",
+        "ixg_per_60",
+        "shots_per_60",
+        "points_per_60_5v5"
+       ],
+       "p_window_codes": [
+        "l5",
+        "l10"
+       ],
+       "p_as_of": "2026-11-14"
+      },
+      {
+       "get": true
       }
-     ]
-    },
-    {
-     "method": "limit",
-     "args": [
-      12000
      ]
     }
    ],
-   "resultHash": "76de22dee2a16f5489925f945ce037762c0f71f1127147dc4c1f24f3a143c776"
+   "resultHash": "93b44967943d1331fc31a9ec09606eb1f2e6ad6139ed2a5c242ca8c0357fa092"
   },
   {
    "request": [
@@ -5612,7 +5532,7 @@
   },
   {
    "table": "forge_runs",
-   "hash": "17fbada76647e957c21f971c0183df394cd4e0c2f7cc233751f05c12f040ea5b"
+   "hash": "014148e836d0a167de2a3c2a7602d57a6a575e554fd3cdd4d860c435f2504e93"
   }
  ],
  "outputHash": "a31a8b633dc08fcbfe10beb9d204244b662a341e2686932cc9696e615d94b603",

@@ -4,7 +4,9 @@
  * path (claimResumableRun / writeClaimedRun). Each scenario wraps that writer call in a plain input capture (no
  * suppressWrites, so the RPC path is used) to record its reads and writes. The oracle in oracle/compute-off was recorded
  * by this file run inside a `git archive 52c3b6919 web` export (the unmodified writer); RECORD_FORGE_ORACLE=1 writes it.
- * Never re-record it from a changed writer.
+ * Never re-record it from a changed writer. One TJ-approved re-record (2026-11-15, trend-band reader integration)
+ * changed only the trend read and the renamed counter: tasks/artifacts/forge-pregame-capture-2026-11-14/trend-band-reader/
+ * ORACLE-DIFF-20261115.md.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

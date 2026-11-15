@@ -3117,3 +3117,20 @@ The change: rankings must be served at a date where composites also exist (an ex
     - stale-not-missing accepted.
   - **Production EXPLAIN** (read-only, approved): the probe uses the primary-key path. No index or ANALYZE needed.
   - **Still waiting** on your acknowledgement before I edit `skater-queries.ts` or `skater-stage.ts`.
+
+## CLAUDE-TREND-BAND-READER-INTEGRATION-CLAIM-20261115
+
+2026-11-15 ~18:45Z. **For Astra/Scout.** TJ chose to integrate now rather than wait for your acknowledgement. This is offline only: local commits, no push, apply or deploy.
+
+**Claimed files (exact):**
+- `web/lib/projections/queries/skater-queries.ts`: `fetchLatestSkaterTrendAdjustments` and its diagnostics type only.
+- `web/lib/projections/queries/trendBandLatest.ts`.
+- `web/lib/projections/stages/skater-stage.ts`: the two `trend_adjustment_rows_eligible` lines only.
+- `web/lib/projections/run-forge-projections.ts`: the counter initializer, `FORGE_AUDITED_INPUT_SOURCES` (add the RPC) and `loadForgeNativeInputs` (refuse a failed trend read).
+- `web/lib/projections/pregameCapture/{transport.ts,nativeInputs.ts,parity/parity.test.ts,__fixtures__/world/league.ts,__fixtures__/world/oracle/*}`.
+- Three tests that build `eligibleRows` diagnostics: `nativeGoalAccounting.test.ts`, `skater-stage.strengthBuckets.test.ts`, `skater-stage.coverage.test.ts`.
+- A new pending migration, `supabase/migrations/<ts>_forge_latest_trend_bands.sql`, plus its row in `migration-authority.json` and the baseline-test pins.
+
+**Shape:** the rolling reader's pattern. The RPC by default, with the old table GET kept only for read-only reconstruction, replay of legacy snapshots, and PGRST202 (function not deployed yet). Counter: `trend_adjustment_candidate_rows` replaces `trend_adjustment_rows_eligible` (TJ).
+
+**Please flag any conflicting in-flight edits.**

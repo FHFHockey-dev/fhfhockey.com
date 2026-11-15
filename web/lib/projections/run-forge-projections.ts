@@ -412,7 +412,8 @@ export const FORGE_AUDITED_INPUT_SOURCES: ReadonlySet<string> = new Set([
   "skatersGameStats", "goaliesGameStats", "wgo_skater_stats", "wgo_goalie_stats", "wgo_team_stats",
   "pbp_games", "pbp_plays", "shift_charts", "nhl_api_shift_rows", "lineCombinations", "expected_goals",
   "forge_goalie_game", "forge_team_game_strength", "rolling_player_game_metrics", "rolling_player_metric_support_payloads",
-  "forge_latest_rolling_rows", "forge_league_skater_physical_totals", "player_stats_unified", "sustainability_trend_bands",
+  "forge_latest_rolling_rows", "forge_league_skater_physical_totals", "forge_latest_trend_bands", "player_stats_unified",
+  "sustainability_trend_bands",
   "nst_team_all", "nst_team_stats", "nhl_team_data", "nhl_xg_team_rolling_aggregates", "goalie_start_projections",
   "forge_roster_events", "forge_board_news_events", "player_forecast_lineup_snapshots", "player_forecast_goalie_start_observations",
   "player_forecast_observation_conflicts", "player_forecast_lineup_assignments", "player_forecast_conflict_resolutions",
@@ -860,7 +861,7 @@ export type ForgeNativeCandidates = { skaters: number[]; goalies: number[]; rese
 export async function loadForgeNativeInputs(asOfDate: string, opts: {
   gameIds: number[]; decisionAsOf: string; deadlineMs: number; seasonBootstrap?: boolean;
 }): Promise<{ candidates: ForgeNativeCandidates }> {
-  const metrics = { warnings: [] as string[], data_quality: {} as Record<string, any> };
+  const metrics = { warnings: [] as string[], data_quality: { trend_adjustment_fetch_failures: 0 } as Record<string, any> };
   const learningCounters = { players: 0, goalRecent: 0, assistRecent: 0 };
   const preflight = await runProjectionPreflightStage({
     asOfDate,
@@ -879,6 +880,10 @@ export async function loadForgeNativeInputs(asOfDate: string, opts: {
       seasonBootstrap: opts.seasonBootstrap, evidenceCutoffAt: opts.decisionAsOf, skaterRollout, preflight, runCaches, gameCaches,
     };
     const teams = await loadSkaterGameInputs(forgeSkaterStageArgs(base, learningCounters, metrics));
+    // The writer runs on without trend modifiers when the trend-band read fails or is incomplete; a capture refuses.
+    if (metrics.data_quality.trend_adjustment_fetch_failures > 0) {
+      throw new Error(`Native input collection refuses: the sustainability trend-band read failed for ${metrics.data_quality.trend_adjustment_fetch_failures} team(s).`);
+    }
     for (const team of teams) {
       // The writer adds a team's goalie candidates once its compute completes; every loaded team completes.
       if (team.goalieCandidate) gameCaches.goalieCandidates.push(team.goalieCandidate);
@@ -972,7 +977,7 @@ async function runProjectionCalculations(
       shot_quality_adjustments_applied: 0,
       on_ice_context_profiles_found: 0,
       on_ice_context_adjustments_applied: 0,
-      trend_adjustment_rows_eligible: 0,
+      trend_adjustment_candidate_rows: 0,
       trend_adjustment_players_with_rows: 0,
       trend_adjustment_players_adjusted: 0,
       trend_adjustment_players_missing_rows: 0,

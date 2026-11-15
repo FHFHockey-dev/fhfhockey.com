@@ -2045,8 +2045,8 @@ export async function loadSkaterTeamInputs(args: SkaterStageArgs, scope: SkaterG
       shotQualityByPlayerId.size;
     metrics.data_quality.on_ice_context_profiles_found +=
       onIceContextByPlayerId.size;
-    metrics.data_quality.trend_adjustment_rows_eligible +=
-      trendAdjustmentFetch.diagnostics.eligibleRows;
+    metrics.data_quality.trend_adjustment_candidate_rows +=
+      trendAdjustmentFetch.diagnostics.candidateRows;
     metrics.data_quality.trend_adjustment_players_with_rows +=
       trendAdjustmentFetch.diagnostics.playersWithRows;
     metrics.data_quality.trend_adjustment_players_adjusted +=

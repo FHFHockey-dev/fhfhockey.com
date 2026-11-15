@@ -1722,89 +1722,49 @@
     {
      "request": [
       {
-       "method": "from",
+       "method": "rpc",
        "args": [
-        "sustainability_trend_bands"
-       ]
-      },
-      {
-       "method": "select",
-       "args": [
-        "player_id,snapshot_date,metric_key,window_code,value,ci_lower,ci_upper,n_eff"
-       ]
-      },
-      {
-       "method": "in",
-       "args": [
-        "player_id",
-        [
-         8471001,
-         8471002,
-         8471003,
-         8471004,
-         8471005,
-         8471006,
-         8471007,
-         8471008,
-         8471009,
-         8471010,
-         8471011,
-         8471012,
-         8471021,
-         8471022,
-         8471023,
-         8471024,
-         8471025,
-         8471026
-        ]
-       ]
-      },
-      {
-       "method": "in",
-       "args": [
-        "metric_key",
-        [
-         "fantasy_score",
-         "ixg_per_60",
-         "shots_per_60",
-         "points_per_60_5v5"
-        ]
-       ]
-      },
-      {
-       "method": "in",
-       "args": [
-        "window_code",
-        [
-         "l5",
-         "l10"
-        ]
-       ]
-      },
-      {
-       "method": "lte",
-       "args": [
-        "snapshot_date",
-        "2026-11-14"
-       ]
-      },
-      {
-       "method": "order",
-       "args": [
-        "snapshot_date",
+        "forge_latest_trend_bands",
         {
-         "ascending": false
+         "p_player_ids": [
+          8471001,
+          8471002,
+          8471003,
+          8471004,
+          8471005,
+          8471006,
+          8471007,
+          8471008,
+          8471009,
+          8471010,
+          8471011,
+          8471012,
+          8471021,
+          8471022,
+          8471023,
+          8471024,
+          8471025,
+          8471026
+         ],
+         "p_metric_keys": [
+          "fantasy_score",
+          "ixg_per_60",
+          "shots_per_60",
+          "points_per_60_5v5"
+         ],
+         "p_window_codes": [
+          "l5",
+          "l10"
+         ],
+         "p_as_of": "2026-11-14"
+        },
+        {
+         "get": true
         }
-       ]
-      },
-      {
-       "method": "limit",
-       "args": [
-        12000
        ]
       }
      ],
-     "resultHash": "4b39d252980d76645236442bf310443fd5ac7733a5c69ccb3c64c9bc4f1e5976"
+     "resultHash": "e1c526d4af10a808213e0c02ead89caa53bf9f1f23ae5c70b50c0ae28ca83c50"
     },
     {
      "request": [
@@ -2429,7 +2389,7 @@
     },
     {
      "table": "forge_runs",
-     "hash": "f71d97d8e2cd00a89bd73d967f28fe1a8ed13c75a62ed10741045fc0e2e7322a"
+     "hash": "3cbdd38a777dc0d75010d10f8b735a4fdd8b665b74d6990459acf70d7721cb46"
     }
    ]
   },
@@ -2494,7 +2454,7 @@
        ]
       }
      ],
-     "resultHash": "d9f19102432a149d8894e52c17c5b61bc63a66e369d7d58e544bd3e8573d873c"
+     "resultHash": "3144dc54a6aefd0bb7e24e9fb2ce279c60c14851cadf1b315bf929dc8e07a65c"
     },
     {
      "request": [
@@ -4180,89 +4140,49 @@
     {
      "request": [
       {
-       "method": "from",
+       "method": "rpc",
        "args": [
-        "sustainability_trend_bands"
-       ]
-      },
-      {
-       "method": "select",
-       "args": [
-        "player_id,snapshot_date,metric_key,window_code,value,ci_lower,ci_upper,n_eff"
-       ]
-      },
-      {
-       "method": "in",
-       "args": [
-        "player_id",
-        [
-         8471001,
-         8471002,
-         8471003,
-         8471004,
-         8471005,
-         8471006,
-         8471007,
-         8471008,
-         8471009,
-         8471010,
-         8471011,
-         8471012,
-         8471021,
-         8471022,
-         8471023,
-         8471024,
-         8471025,
-         8471026
-        ]
-       ]
-      },
-      {
-       "method": "in",
-       "args": [
-        "metric_key",
-        [
-         "fantasy_score",
-         "ixg_per_60",
-         "shots_per_60",
-         "points_per_60_5v5"
-        ]
-       ]
-      },
-      {
-       "method": "in",
-       "args": [
-        "window_code",
-        [
-         "l5",
-         "l10"
-        ]
-       ]
-      },
-      {
-       "method": "lte",
-       "args": [
-        "snapshot_date",
-        "2026-11-14"
-       ]
-      },
-      {
-       "method": "order",
-       "args": [
-        "snapshot_date",
+        "forge_latest_trend_bands",
         {
-         "ascending": false
+         "p_player_ids": [
+          8471001,
+          8471002,
+          8471003,
+          8471004,
+          8471005,
+          8471006,
+          8471007,
+          8471008,
+          8471009,
+          8471010,
+          8471011,
+          8471012,
+          8471021,
+          8471022,
+          8471023,
+          8471024,
+          8471025,
+          8471026
+         ],
+         "p_metric_keys": [
+          "fantasy_score",
+          "ixg_per_60",
+          "shots_per_60",
+          "points_per_60_5v5"
+         ],
+         "p_window_codes": [
+          "l5",
+          "l10"
+         ],
+         "p_as_of": "2026-11-14"
+        },
+        {
+         "get": true
         }
-       ]
-      },
-      {
-       "method": "limit",
-       "args": [
-        12000
        ]
       }
      ],
-     "resultHash": "4b39d252980d76645236442bf310443fd5ac7733a5c69ccb3c64c9bc4f1e5976"
+     "resultHash": "e1c526d4af10a808213e0c02ead89caa53bf9f1f23ae5c70b50c0ae28ca83c50"
     },
     {
      "request": [
@@ -5705,89 +5625,49 @@
     {
      "request": [
       {
-       "method": "from",
+       "method": "rpc",
        "args": [
-        "sustainability_trend_bands"
-       ]
-      },
-      {
-       "method": "select",
-       "args": [
-        "player_id,snapshot_date,metric_key,window_code,value,ci_lower,ci_upper,n_eff"
-       ]
-      },
-      {
-       "method": "in",
-       "args": [
-        "player_id",
-        [
-         8470601,
-         8470602,
-         8470603,
-         8470604,
-         8470605,
-         8470606,
-         8470607,
-         8470608,
-         8470609,
-         8470610,
-         8470611,
-         8470612,
-         8470621,
-         8470622,
-         8470623,
-         8470624,
-         8470625,
-         8470626
-        ]
-       ]
-      },
-      {
-       "method": "in",
-       "args": [
-        "metric_key",
-        [
-         "fantasy_score",
-         "ixg_per_60",
-         "shots_per_60",
-         "points_per_60_5v5"
-        ]
-       ]
-      },
-      {
-       "method": "in",
-       "args": [
-        "window_code",
-        [
-         "l5",
-         "l10"
-        ]
-       ]
-      },
-      {
-       "method": "lte",
-       "args": [
-        "snapshot_date",
-        "2026-11-14"
-       ]
-      },
-      {
-       "method": "order",
-       "args": [
-        "snapshot_date",
+        "forge_latest_trend_bands",
         {
-         "ascending": false
+         "p_player_ids": [
+          8470601,
+          8470602,
+          8470603,
+          8470604,
+          8470605,
+          8470606,
+          8470607,
+          8470608,
+          8470609,
+          8470610,
+          8470611,
+          8470612,
+          8470621,
+          8470622,
+          8470623,
+          8470624,
+          8470625,
+          8470626
+         ],
+         "p_metric_keys": [
+          "fantasy_score",
+          "ixg_per_60",
+          "shots_per_60",
+          "points_per_60_5v5"
+         ],
+         "p_window_codes": [
+          "l5",
+          "l10"
+         ],
+         "p_as_of": "2026-11-14"
+        },
+        {
+         "get": true
         }
-       ]
-      },
-      {
-       "method": "limit",
-       "args": [
-        12000
        ]
       }
      ],
-     "resultHash": "2c2eb584e2336d50a7b7f72f9ff34921c543b825217f0571e864fb845a3b5351"
+     "resultHash": "914032eb1f0ae1ca256feb7323a1f22a31a10f7cc7f2408689477d010ec47a89"
     },
     {
      "request": [
@@ -7804,7 +7684,7 @@
    "writes": [
     {
      "table": "forge_runs",
-     "hash": "3b00ff5109633bdaaffa1a7f3e59a46f3063277bf23dea12db5ca70d97ab7465"
+     "hash": "75c326e44f5d5fe0ef8a03a22033f52c96e1d01df55c96fd0c8eeb03b46dc8c1"
     },
     {
      "table": "forge_player_projections",
@@ -7860,11 +7740,11 @@
     },
     {
      "table": "forge_runs",
-     "hash": "0988c759bf9057fd47f59f41da18d671c81b86c89379d55172c032aa2398cd0b"
+     "hash": "6799415ad1b2b54d1347de252b1844ebe0e099c1e8993150282b2356b42ff6d0"
     },
     {
      "table": "forge_runs",
-     "hash": "87fccd8d8edf50579e858f7573a99087bb8590e780532dcfd0dfb7b9ab31cbeb"
+     "hash": "87c20f8468d0fe579d268966f63d03eb0de56af36a0f4eabb0688a5f64674cc2"
     }
    ]
   }

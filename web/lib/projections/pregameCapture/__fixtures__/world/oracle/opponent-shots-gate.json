@@ -2202,89 +2202,49 @@
   {
    "request": [
     {
-     "method": "from",
+     "method": "rpc",
      "args": [
-      "sustainability_trend_bands"
-     ]
-    },
-    {
-     "method": "select",
-     "args": [
-      "player_id,snapshot_date,metric_key,window_code,value,ci_lower,ci_upper,n_eff"
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "player_id",
-      [
-       8471001,
-       8471002,
-       8471003,
-       8471004,
-       8471005,
-       8471006,
-       8471007,
-       8471008,
-       8471009,
-       8471010,
-       8471011,
-       8471012,
-       8471021,
-       8471022,
-       8471023,
-       8471024,
-       8471025,
-       8471026
-      ]
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "metric_key",
-      [
-       "fantasy_score",
-       "ixg_per_60",
-       "shots_per_60",
-       "points_per_60_5v5"
-      ]
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "window_code",
-      [
-       "l5",
-       "l10"
-      ]
-     ]
-    },
-    {
-     "method": "lte",
-     "args": [
-      "snapshot_date",
-      "2026-11-14"
-     ]
-    },
-    {
-     "method": "order",
-     "args": [
-      "snapshot_date",
+      "forge_latest_trend_bands",
       {
-       "ascending": false
+       "p_player_ids": [
+        8471001,
+        8471002,
+        8471003,
+        8471004,
+        8471005,
+        8471006,
+        8471007,
+        8471008,
+        8471009,
+        8471010,
+        8471011,
+        8471012,
+        8471021,
+        8471022,
+        8471023,
+        8471024,
+        8471025,
+        8471026
+       ],
+       "p_metric_keys": [
+        "fantasy_score",
+        "ixg_per_60",
+        "shots_per_60",
+        "points_per_60_5v5"
+       ],
+       "p_window_codes": [
+        "l5",
+        "l10"
+       ],
+       "p_as_of": "2026-11-14"
+      },
+      {
+       "get": true
       }
-     ]
-    },
-    {
-     "method": "limit",
-     "args": [
-      12000
      ]
     }
    ],
-   "resultHash": "135e8e0fac1afed7b527acec3873612805f424f9de810d2cfaac6b2f56a0170b"
+   "resultHash": "dfee1e9417f7bed6142c5de626e63e5dc7d6efea37bedf9cd251d213b03ae9b0"
   },
   {
    "request": [
@@ -3566,7 +3526,7 @@
   },
   {
    "table": "forge_runs",
-   "hash": "4aaed4d1d777189e4c6f5f1b484a34f0820bbce52e027293c3262c613cf4de36"
+   "hash": "dbffd92aaa11adbdfd61aef3e9659937a0c023deddd88348c6c0fcd1dac0529d"
   }
  ],
  "outputHash": "8d078d9b95842b8dd5f9ae7102521d53c3e46481ee23a6cd4d6aaac8a8912ddd",

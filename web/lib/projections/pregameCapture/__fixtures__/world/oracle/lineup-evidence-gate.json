@@ -2254,88 +2254,48 @@
   {
    "request": [
     {
-     "method": "from",
+     "method": "rpc",
      "args": [
-      "sustainability_trend_bands"
-     ]
-    },
-    {
-     "method": "select",
-     "args": [
-      "player_id,snapshot_date,metric_key,window_code,value,ci_lower,ci_upper,n_eff"
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "player_id",
-      [
-       8471001,
-       8471002,
-       8471004,
-       8471005,
-       8471006,
-       8471007,
-       8471008,
-       8471009,
-       8471010,
-       8471011,
-       8471012,
-       8471021,
-       8471022,
-       8471023,
-       8471024,
-       8471025,
-       8471026
-      ]
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "metric_key",
-      [
-       "fantasy_score",
-       "ixg_per_60",
-       "shots_per_60",
-       "points_per_60_5v5"
-      ]
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "window_code",
-      [
-       "l5",
-       "l10"
-      ]
-     ]
-    },
-    {
-     "method": "lte",
-     "args": [
-      "snapshot_date",
-      "2026-11-14"
-     ]
-    },
-    {
-     "method": "order",
-     "args": [
-      "snapshot_date",
+      "forge_latest_trend_bands",
       {
-       "ascending": false
+       "p_player_ids": [
+        8471001,
+        8471002,
+        8471004,
+        8471005,
+        8471006,
+        8471007,
+        8471008,
+        8471009,
+        8471010,
+        8471011,
+        8471012,
+        8471021,
+        8471022,
+        8471023,
+        8471024,
+        8471025,
+        8471026
+       ],
+       "p_metric_keys": [
+        "fantasy_score",
+        "ixg_per_60",
+        "shots_per_60",
+        "points_per_60_5v5"
+       ],
+       "p_window_codes": [
+        "l5",
+        "l10"
+       ],
+       "p_as_of": "2026-11-14"
+      },
+      {
+       "get": true
       }
-     ]
-    },
-    {
-     "method": "limit",
-     "args": [
-      12000
      ]
     }
    ],
-   "resultHash": "4b39d252980d76645236442bf310443fd5ac7733a5c69ccb3c64c9bc4f1e5976"
+   "resultHash": "50cadc94f1baaafe77110d793cea5d965a03fde298e9348f3d19dcee1b999ee8"
   },
   {
    "request": [
@@ -4166,89 +4126,49 @@
   {
    "request": [
     {
-     "method": "from",
+     "method": "rpc",
      "args": [
-      "sustainability_trend_bands"
-     ]
-    },
-    {
-     "method": "select",
-     "args": [
-      "player_id,snapshot_date,metric_key,window_code,value,ci_lower,ci_upper,n_eff"
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "player_id",
-      [
-       8470601,
-       8470602,
-       8470603,
-       8470604,
-       8470605,
-       8470606,
-       8470607,
-       8470608,
-       8470609,
-       8470610,
-       8470611,
-       8470612,
-       8470621,
-       8470622,
-       8470623,
-       8470624,
-       8470625,
-       8470626
-      ]
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "metric_key",
-      [
-       "fantasy_score",
-       "ixg_per_60",
-       "shots_per_60",
-       "points_per_60_5v5"
-      ]
-     ]
-    },
-    {
-     "method": "in",
-     "args": [
-      "window_code",
-      [
-       "l5",
-       "l10"
-      ]
-     ]
-    },
-    {
-     "method": "lte",
-     "args": [
-      "snapshot_date",
-      "2026-11-14"
-     ]
-    },
-    {
-     "method": "order",
-     "args": [
-      "snapshot_date",
+      "forge_latest_trend_bands",
       {
-       "ascending": false
+       "p_player_ids": [
+        8470601,
+        8470602,
+        8470603,
+        8470604,
+        8470605,
+        8470606,
+        8470607,
+        8470608,
+        8470609,
+        8470610,
+        8470611,
+        8470612,
+        8470621,
+        8470622,
+        8470623,
+        8470624,
+        8470625,
+        8470626
+       ],
+       "p_metric_keys": [
+        "fantasy_score",
+        "ixg_per_60",
+        "shots_per_60",
+        "points_per_60_5v5"
+       ],
+       "p_window_codes": [
+        "l5",
+        "l10"
+       ],
+       "p_as_of": "2026-11-14"
+      },
+      {
+       "get": true
       }
-     ]
-    },
-    {
-     "method": "limit",
-     "args": [
-      12000
      ]
     }
    ],
-   "resultHash": "2c2eb584e2336d50a7b7f72f9ff34921c543b825217f0571e864fb845a3b5351"
+   "resultHash": "914032eb1f0ae1ca256feb7323a1f22a31a10f7cc7f2408689477d010ec47a89"
   },
   {
    "request": [
@@ -7038,7 +6958,7 @@
   },
   {
    "table": "forge_runs",
-   "hash": "945237ed031442215c023bd60ddfa54766a5c013864e3b7e7b67dbfe6b685a44"
+   "hash": "9675b7c1ecef2e7c894049b25531879b41e03d649fdd6f0d84fc8b1d304e951f"
   }
  ],
  "outputHash": "332b9423c63f9baf505be5a535735288c031fdfce889304524b26320a53657cf",

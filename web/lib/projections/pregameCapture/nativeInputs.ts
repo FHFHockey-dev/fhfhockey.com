@@ -5,8 +5,10 @@ import { parseInstantMicros } from "./time";
 /**
  * Model-free collection of one game's native FORGE inputs: exactly the writer's reads for a captured single-game run
  * (issued context before and after, preflight, completeness, skater and goalie loaders), with no scoring, no writes and
- * no RPC beyond the two read-only rolling/physical-totals reads the loaders already make. Run it inside
- * `captureProjectionInputs` with the strict transport; replaying the writer against those reads consumes every one.
+ * no RPC beyond the three read-only rolling, physical-totals and latest trend-band reads the loaders already make. A
+ * failed or incomplete trend-band read refuses the collection (the writer would run on without trend modifiers).
+ * Run it inside `captureProjectionInputs` with the strict transport; replaying the writer against those reads consumes
+ * every one.
  *
  * `seasonBootstrap` must match the writer run it stands for; decide it with `forgeSeasonBootstrapApplies`.
  *

@@ -28,8 +28,13 @@ export const CAPTURE_RELATIONS: ReadonlySet<string> = new Set([
   "prop_market_prices_daily", "nhl_xg_model_registry",
 ]);
 
-/** TJ-approved 2026-11-15: exactly these two STABLE, SECURITY INVOKER RPCs, by GET only. */
-export const CAPTURE_RPCS: ReadonlySet<string> = new Set(["forge_latest_rolling_rows", "forge_league_skater_physical_totals"]);
+/**
+ * TJ-approved 2026-11-15: exactly these STABLE, SECURITY INVOKER RPCs, by GET only. forge_latest_trend_bands was added
+ * with the trend-band reader (TJ, 2026-11-15); the sustainability_trend_bands table read stays allowed for the release
+ * window, when the reader falls back to it.
+ */
+export const CAPTURE_RPCS: ReadonlySet<string> = new Set(["forge_latest_rolling_rows", "forge_league_skater_physical_totals",
+  "forge_latest_trend_bands"]);
 
 /** Relations whose rows are game results. A row for the target game means it is no longer pregame. */
 export const RESULT_RELATIONS: ReadonlySet<string> = new Set([

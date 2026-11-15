@@ -1,5 +1,3 @@
--- CANDIDATE MIGRATION (not in supabase/migrations; unapplied; needs TJ approval to move and apply).
---
 -- FORGE skater trend-band reader (web/lib/projections/queries/skater-queries.ts,
 -- fetchLatestSkaterTrendAdjustments): the latest sustainability_trend_bands row on or
 -- before p_as_of for each requested (player, metric, window). It replaces one GET
@@ -16,7 +14,10 @@
 --
 -- Refused instead of truncated: null or empty inputs, null elements, and more than
 -- 1,000 keys (PostgREST would otherwise cut the result at max_rows without an error).
--- Read-only and STABLE, so the reader calls it by GET.
+-- Read-only and STABLE, so the reader calls it by GET. The reader falls back to its history GET
+-- (PGRST202) until this is applied. Production read-only EXPLAIN of the body (2026-11-15): one
+-- backward primary-key scan per key, no new index needed. Evidence:
+-- tasks/artifacts/forge-pregame-capture-2026-11-14/trend-band-reader/.
 
 create or replace function public.forge_latest_trend_bands(
   p_player_ids integer[],

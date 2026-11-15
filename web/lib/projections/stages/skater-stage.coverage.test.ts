@@ -61,7 +61,7 @@ vi.mock("../queries/skater-queries", () => ({
   fetchLatestWgoSkaterDeploymentProfiles: async () => new Map(),
   fetchLatestSkaterContextProfiles: async () => ({ shotQuality: new Map(), onIceContext: new Map() }),
   fetchLatestSkaterTrendAdjustments: async () => ({ adjustments: new Map(), diagnostics: {
-    eligibleRows: 0, playersWithRows: 0, playersAdjusted: 0, playersMissingRows: 0, playersNeutralizedByRecency: 0,
+    candidateRows: 0, playersWithRows: 0, playersAdjusted: 0, playersMissingRows: 0, playersNeutralizedByRecency: 0,
     selectedSoftStaleRows: 0, selectedHardStaleRows: 0, fetchFailed: false,
   } }),
 }));

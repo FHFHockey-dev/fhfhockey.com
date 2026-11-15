@@ -35,7 +35,7 @@ import psycopg2
 PG = Path("/opt/homebrew/opt/postgresql@15/bin")
 PORT = 55542
 HERE = Path(__file__).resolve().parent
-FUNCTION_SQL = HERE.parent / "sql" / "forge_latest_trend_bands.sql"
+FUNCTION_SQL = HERE.parents[4] / "supabase/migrations/20261115190000_forge_latest_trend_bands.sql"
 OUT = HERE.parent / "results"
 BASE = Path(os.environ.get("STB_BENCH_DIR", ""))
 DATA = BASE / "data"

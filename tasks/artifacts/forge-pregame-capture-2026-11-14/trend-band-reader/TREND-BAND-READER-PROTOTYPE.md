@@ -1,7 +1,8 @@
 # Trend-band reader prototype (offline), 2026-11-15
 
-**Status:** offline only. Nothing has been applied, deployed or wired in.
-- `skater-queries.ts` and `skater-stage.ts` are unedited and wait on Astra/Scout (mailbox `cb42e6c12`).
+**Status:** integrated offline on 2026-11-15 (TJ: integrate now). Nothing has been applied, pushed or deployed.
+- The integration is described under "Integration" at the end. Astra/Scout were notified of the claimed files and have not acknowledged yet.
+- Before integration, `skater-queries.ts` and `skater-stage.ts` were unedited (mailbox `cb42e6c12`).
 - No production write, index, ANALYZE, timeout change or capture retry.
 - Read-only actions taken: two Supabase edge-log queries (section 1).
 
@@ -16,7 +17,7 @@
   - 15 players with rows and 21 missing.
 
 ## 2. Prototype
-- **Candidate SQL:** `sql/forge_latest_trend_bands.sql`. It is not in `supabase/migrations`, so nothing can push it by accident.
+- **SQL:** prototyped in this folder, then moved at integration to `supabase/migrations/20261115190000_forge_latest_trend_bands.sql`, which is pending and unapplied.
   - Returns one row per requested (player, metric, window): the newest row on or before the as-of date, via `ORDER BY snapshot_date DESC LIMIT 1`, or nulls when there is none.
   - Output is ordered by player, metric, window in byte order.
   - Refuses null or empty input and more than 1,000 keys; PostgREST would otherwise truncate silently.
@@ -135,3 +136,23 @@ LC_ALL=C /usr/local/bin/python3 -I tasks/artifacts/forge-pregame-capture-2026-11
 cd web && npx vitest run lib/projections/queries/trendBandLatest.test.ts
 ```
 `bench` also writes `results/rows-by-team.json` and `bench-report.json` (full plans, about 6 MB). They are not committed; `fixture` packs the rows the test needs.
+
+## Integration (offline, 2026-11-15)
+- **Reader:** `fetchLatestSkaterTrendAdjustments` (`skater-queries.ts`) makes one GET of `forge_latest_trend_bands` per team. This follows the rolling reader's pattern: it falls back to the old history GET (`fetchTrendBandRowsByLegacyHistoryRead`) only in three cases:
+  - in read-only reconstruction, where RPCs are refused;
+  - when replaying a snapshot captured before the RPC;
+  - on PGRST202, before the function is deployed.
+  The fallback reduces the history to the newest row per key and keeps the old selection exactly; the test checks this against the old algorithm.
+- **Counter:** `trend_adjustment_candidate_rows` replaces `trend_adjustment_rows_eligible` (`skater-stage.ts`, `run-forge-projections.ts`). The diagnostics field is `candidateRows`.
+- **Capture:**
+  - `forge_latest_trend_bands` is the third allowed GET RPC in `CAPTURE_RPCS` (TJ, 2026-11-15). The table read stays allowed for the release window.
+  - `loadForgeNativeInputs` refuses any failed or incomplete trend read, which closes both refusal holes; the writer still runs on.
+  - The source audit lists the new RPC (`FORGE_AUDITED_INPUT_SOURCES`, `EXTERNAL-INPUT-AUDIT.md`, the dynamic-site list in the test).
+- **Fixture world:** a `forge_latest_trend_bands` handler.
+- **Oracles:** re-recorded with TJ's approval. Every changed read and write is listed in `ORACLE-DIFF-20261115.md`.
+- **Migration:** order 151 in `migration-authority.json`, pending.
+  - Proof: `supabase/tests/forge_latest_trend_bands.py` (18/18).
+  - Rollback: `supabase/tests/forge_latest_trend_bands_rollback.sql`.
+- **Release order (each needs TJ's approval):**
+  1. Apply the function.
+  2. Push or deploy the reader. If the reader ships first, it falls back to the history GET and logs a PGRST202 warning, with no outage.

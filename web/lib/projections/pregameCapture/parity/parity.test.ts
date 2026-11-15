@@ -3,6 +3,8 @@
  * Offline parity for the FORGE load/compute split. Every scenario runs the production writer on its captured
  * path against the fixture world with a frozen clock. Set RECORD_FORGE_ORACLE=1 only to record the oracle,
  * which was done on the unmodified writer (1216f6e17, 52c3b6919); the oracle must never be re-recorded to fit a change.
+ * One TJ-approved re-record (2026-11-15, trend-band reader integration) changed only the trend read and the renamed
+ * counter; every difference is listed in tasks/artifacts/forge-pregame-capture-2026-11-14/trend-band-reader/ORACLE-DIFF-20261115.md.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -51,7 +53,7 @@ const RECORD = process.env.RECORD_FORGE_ORACLE === "1";
 const RESERVED_RUN_ID = "00000000-0000-4000-8000-0000000000aa";
 /** Scenarios in which the model ranks a goalie other than the first candidate: only the goalie-input block reorders. */
 const GOALIE_REORDER_SCENARIOS = new Set(["goalie-model-reorders-candidates"]);
-const CAPTURE_RPCS = new Set(["forge_latest_rolling_rows", "forge_league_skater_physical_totals"]);
+const CAPTURE_RPCS = new Set(["forge_latest_rolling_rows", "forge_league_skater_physical_totals", "forge_latest_trend_bands"]);
 
 const loadOracle = (name: string): OracleRecord => JSON.parse(readFileSync(join(ORACLE_DIR, `${name}.json`), "utf8"));
 const recorded = (reads: ProjectionInputRead[]): RecordedRead[] => oracleRecord("", reads, []).reads;
@@ -391,6 +393,28 @@ describe.skipIf(RECORD)("fixture world coverage", () => {
         rows.forEach(perturb);
       });
       expect(oracleRecord(scenario.name, run.reads, run.writes).outputHash).not.toBe(loadOracle(scenario.name).outputHash);
+    });
+  }
+});
+
+describe.skipIf(RECORD)("trend-band read failures", () => {
+  const scenario = SCENARIOS.find((item) => item.name === "normal-one-game")!;
+  const failures: Record<string, () => unknown> = {
+    timeout: () => ({ data: null, error: { code: "57014", message: "canceling statement due to statement timeout" } }),
+    "short response": () => ({ data: [], error: null }),
+  };
+  for (const [kind, rpc] of Object.entries(failures)) {
+    it(`${kind}: the writer runs on without trend modifiers, and native input collection refuses`, async () => {
+      const run = await runWriterScenario(scenario, (world: World) => { world.rpc.forge_latest_trend_bands = rpc as any; });
+      expect(JSON.stringify(run.writes)).toMatch(/"trend_adjustment_fetch_failures":2\b/);
+      const world = buildLeague(scenario.world);
+      world.rpc.forge_latest_trend_bands = rpc as any;
+      activateWorld(world);
+      const { collectNativePregameInputs } = await import("../nativeInputs");
+      await expect(withScenarioEnv(scenario.env, () => captureProjectionInputs(() => collectNativePregameInputs({
+        slateDate: TARGET.slateDate, gameId: TARGET.gameId, inputCutoff: cutoffOf(scenario),
+        deadlineMs: Date.parse(FROZEN_NOW) + 600_000, seasonBootstrap: bootstrapOf(scenario),
+      })))).rejects.toThrow("Native input collection refuses: the sustainability trend-band read failed for 2 team(s).");
     });
   }
 });

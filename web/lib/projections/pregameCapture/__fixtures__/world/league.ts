@@ -309,6 +309,23 @@ export function buildLeague(options: LeagueOptions = {}): World {
       error: null,
     };
   };
+  // forge_latest_trend_bands: one row per requested key in byte order, the newest row on or before p_as_of, else nulls.
+  const latestTrendBands = (args: Record<string, any>) => {
+    const byCodePoint = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+    const bands = tables.sustainability_trend_bands ?? [];
+    const players = [...new Set<number>(args.p_player_ids)].sort((a, b) => a - b);
+    const metrics = [...new Set<string>(args.p_metric_keys)].sort(byCodePoint);
+    const windows = [...new Set<string>(args.p_window_codes)].sort(byCodePoint);
+    return {
+      data: players.flatMap((playerId) => metrics.flatMap((metricKey) => windows.map((windowCode) => {
+        const latest = bands.filter((row) => row.player_id === playerId && row.metric_key === metricKey && row.window_code === windowCode
+          && row.snapshot_date <= args.p_as_of).sort((a, b) => byCodePoint(b.snapshot_date, a.snapshot_date))[0];
+        return { player_id: playerId, metric_key: metricKey, window_code: windowCode, snapshot_date: latest?.snapshot_date ?? null,
+          value: latest?.value ?? null, ci_lower: latest?.ci_lower ?? null, ci_upper: latest?.ci_upper ?? null, n_eff: latest?.n_eff ?? null };
+      }))),
+      error: null,
+    };
+  };
   const physicalTotals = () => ({
     data: [
       { position_group: "F", scope: "to_date", hits: 4200, blocks: 1500, toi_seconds: 2_400_000 },
@@ -328,6 +345,7 @@ export function buildLeague(options: LeagueOptions = {}): World {
     rpc: {
       forge_latest_rolling_rows: latestRolling,
       forge_league_skater_physical_totals: physicalTotals,
+      forge_latest_trend_bands: latestTrendBands,
       begin_forge_game_run: () => ({ data: "00000000-0000-4000-8000-0000000000aa", error: null }),
     },
   };

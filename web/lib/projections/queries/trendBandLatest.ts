@@ -1,25 +1,22 @@
 /**
- * PROTOTYPE (offline, not wired into the writer or the capture). A batched latest-row read of
- * sustainability_trend_bands for the FORGE skater trend adjustment, to replace the history GET in
- * skater-queries.ts `fetchLatestSkaterTrendAdjustments` once Astra/Scout and TJ approve.
+ * Latest-row trend-band read for the FORGE skater trend adjustment (skater-queries.ts
+ * `fetchLatestSkaterTrendAdjustments`).
  *
- * The old GET asks for every snapshot of the team's players (limit=12000) ordered by snapshot_date only.
- * PostgREST caps it at max_rows = 1,000 rows (production Content-Range 0-999/*, 2026-11-15), so the reader
- * already sees only the newest ~1,000 rows, with an unspecified cut among rows tied on the boundary date. It
- * timed out (57014, 8 s) for one team on 2026-11-15.
+ * The old read was one GET for every snapshot of the team's players (limit=12000), ordered by snapshot_date only.
+ * PostgREST caps it at max_rows = 1,000 rows (production Content-Range 0-999/*, 2026-11-15), so it saw only the
+ * newest ~1,000 rows, with an unspecified cut among rows tied on the boundary date, and it timed out (57014, 8 s)
+ * for one team on 2026-11-15. Players whose newest rows fell past the cap read as missing.
  *
- * The candidate RPC `forge_latest_trend_bands` (SQL in tasks/artifacts/forge-pregame-capture-2026-11-14/
- * trend-band-reader/sql) returns one row per requested (player, metric, window): the newest row on or before
- * the as-of date, or nulls when there is none. Selection is unchanged: newest date first, then metric priority,
- * then window priority, through the same compare/compute helpers as the old reader. Because the selected row is
- * always on the player's newest eligible date, the per-key latest rows contain every row the old selection could
- * pick; a stale row comes back as stale, never as missing.
+ * `forge_latest_trend_bands` (STABLE GET RPC) returns one row per requested (player, metric, window): the newest row
+ * on or before the as-of date, or nulls when there is none. Selection is unchanged: newest date first, then metric
+ * priority, then window priority, through the same compare/compute helpers. The selected row is always on the
+ * player's newest eligible date, so the per-key latest rows hold every row the selection could pick; a stale row
+ * comes back as stale, never as missing (TJ, 2026-11-15). Production plans each probe as a backward primary-key scan
+ * (read-only EXPLAIN, 2026-11-15). Evidence: tasks/artifacts/forge-pregame-capture-2026-11-14/trend-band-reader/.
  *
- * Counter change (TJ, 2026-11-15): `eligibleRows` counted the rows the capped GET returned (1,000 per full team in
- * production). Here it counts the latest candidate rows (at most metrics x windows per player). The integration writes
- * it to `data_quality.trend_adjustment_candidate_rows` and drops `trend_adjustment_rows_eligible`. Stale players are
- * reported as stale, not missing (TJ, 2026-11-15). Production plans each probe as a backward primary-key scan
- * (read-only EXPLAIN, 2026-11-15), so no new index is needed.
+ * `candidateRows` counts the latest candidate rows (at most metrics x windows per player) and is written to
+ * `data_quality.trend_adjustment_candidate_rows`, replacing `trend_adjustment_rows_eligible`, which counted the
+ * capped GET's rows (1,000 per full team) (TJ, 2026-11-15).
  */
 import {
   TREND_BAND_METRIC_PRIORITY,
@@ -43,7 +40,6 @@ import {
 export const FORGE_LATEST_TREND_BANDS_RPC = "forge_latest_trend_bands";
 /** The function refuses more keys than PostgREST's max_rows would return; the reader checks first. */
 export const LATEST_TREND_BAND_MAX_KEYS = 1000;
-export const LATEST_TREND_BAND_ELIGIBLE_ROWS_MEANING = "latest_candidate_rows" as const;
 
 export type LatestTrendBandKeyRow = {
   player_id: number;
@@ -58,20 +54,23 @@ export type LatestTrendBandKeyRow = {
 
 export type LatestTrendBandKey = { playerId: number; metricKey: string; windowCode: string };
 
+const metricKeys = new Set<string>(TREND_BAND_METRIC_PRIORITY);
+const windowCodes = new Set<string>(TREND_BAND_WINDOW_PRIORITY);
+
 /** The requested keys in the function's output order (player_id, metric_key, window_code; text by code point). */
 export function expectedLatestTrendBandKeys(
   playerIds: number[],
-  metricKeys: readonly string[] = TREND_BAND_METRIC_PRIORITY,
-  windowCodes: readonly string[] = TREND_BAND_WINDOW_PRIORITY
+  metrics: readonly string[] = TREND_BAND_METRIC_PRIORITY,
+  windows: readonly string[] = TREND_BAND_WINDOW_PRIORITY
 ): LatestTrendBandKey[] {
   const byCodePoint = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
   const players = Array.from(new Set(playerIds)).sort((a, b) => a - b);
-  const metrics = Array.from(new Set(metricKeys)).sort(byCodePoint);
-  const windows = Array.from(new Set(windowCodes)).sort(byCodePoint);
+  const sortedMetrics = Array.from(new Set(metrics)).sort(byCodePoint);
+  const sortedWindows = Array.from(new Set(windows)).sort(byCodePoint);
   const keys: LatestTrendBandKey[] = [];
   for (const playerId of players) {
-    for (const metricKey of metrics) {
-      for (const windowCode of windows) keys.push({ playerId, metricKey, windowCode });
+    for (const metricKey of sortedMetrics) {
+      for (const windowCode of sortedWindows) keys.push({ playerId, metricKey, windowCode });
     }
   }
   return keys;
@@ -104,10 +103,26 @@ export function latestTrendBandCoverageProblem(
   return null;
 }
 
-function emptyDiagnostics(requestedPlayers: number): SkaterTrendAdjustmentFetchDiagnostics {
+/**
+ * The legacy history read's rows reduced to the newest row per key, for the table-read path (read-only
+ * reconstruction, replay of a legacy snapshot, or before the RPC is deployed). It keeps the old selection exactly,
+ * but still sees only the capped history.
+ */
+export function latestTrendBandRowsFromHistory(rows: SustainabilityTrendBandRow[]): LatestTrendBandKeyRow[] {
+  const latest = new Map<string, LatestTrendBandKeyRow>();
+  for (const row of rows) {
+    if (!Number.isFinite(Number(row.player_id)) || !metricKeys.has(row.metric_key) || !windowCodes.has(row.window_code)) continue;
+    const key = `${Number(row.player_id)}|${row.metric_key}|${row.window_code}`;
+    const held = latest.get(key);
+    if (!held || (held.snapshot_date ?? "") < row.snapshot_date) latest.set(key, { ...row, player_id: Number(row.player_id) });
+  }
+  return Array.from(latest.values());
+}
+
+export function emptyTrendAdjustmentDiagnostics(requestedPlayers: number): SkaterTrendAdjustmentFetchDiagnostics {
   return {
     requestedPlayers,
-    eligibleRows: 0,
+    candidateRows: 0,
     playersWithRows: 0,
     playersAdjusted: 0,
     playersMissingRows: 0,
@@ -119,20 +134,30 @@ function emptyDiagnostics(requestedPlayers: number): SkaterTrendAdjustmentFetchD
   };
 }
 
-/** Same selection and diagnostics as the old reader, over the latest candidate rows. */
+/** No adjustments and every player missing: the writer continues without trend modifiers; a capture refuses. */
+export function failedTrendAdjustmentFetch(requestedPlayers: number, message: string): SkaterTrendAdjustmentFetchResult {
+  const diagnostics = emptyTrendAdjustmentDiagnostics(requestedPlayers);
+  diagnostics.fetchFailed = true;
+  diagnostics.fetchErrorMessage = message;
+  diagnostics.playersMissingRows = requestedPlayers;
+  return { adjustments: new Map(), diagnostics };
+}
+
+/** Selection and diagnostics over the latest candidate rows (null rows are keys without data). */
 export function selectSkaterTrendAdjustmentsFromLatest(
   rows: LatestTrendBandKeyRow[],
   requestedPlayerIds: number[],
   asOfDate: string
 ): SkaterTrendAdjustmentFetchResult {
   const uniquePlayerIds = Array.from(new Set(requestedPlayerIds)).filter((id) => Number.isFinite(id));
-  const diagnostics = emptyDiagnostics(uniquePlayerIds.length);
+  const diagnostics = emptyTrendAdjustmentDiagnostics(uniquePlayerIds.length);
   const rowsByPlayer = new Map<number, SustainabilityTrendBandRow[]>();
   for (const raw of rows) {
     if (raw.snapshot_date == null) continue;
     const playerId = Number(raw.player_id);
     if (!Number.isFinite(playerId)) continue;
-    const candidate: SustainabilityTrendBandRow = {
+    const list = rowsByPlayer.get(playerId) ?? [];
+    list.push({
       player_id: raw.player_id,
       snapshot_date: raw.snapshot_date,
       metric_key: raw.metric_key,
@@ -141,12 +166,10 @@ export function selectSkaterTrendAdjustmentsFromLatest(
       ci_lower: raw.ci_lower,
       ci_upper: raw.ci_upper,
       n_eff: raw.n_eff
-    };
-    const list = rowsByPlayer.get(playerId) ?? [];
-    list.push(candidate);
+    });
     rowsByPlayer.set(playerId, list);
   }
-  diagnostics.eligibleRows = Array.from(rowsByPlayer.values()).reduce((sum, list) => sum + list.length, 0);
+  diagnostics.candidateRows = Array.from(rowsByPlayer.values()).reduce((sum, list) => sum + list.length, 0);
   diagnostics.playersWithRows = rowsByPlayer.size;
   diagnostics.playersMissingRows = Math.max(0, uniquePlayerIds.length - diagnostics.playersWithRows);
 
@@ -164,50 +187,4 @@ export function selectSkaterTrendAdjustmentsFromLatest(
     adjustments.set(playerId, adjustment);
   }
   return { adjustments, diagnostics };
-}
-
-type RpcClient = {
-  rpc: (fn: string, args: Record<string, unknown>, options: { get: true }) => PromiseLike<{
-    data: unknown;
-    error: { message?: string } | null;
-  }>;
-};
-
-/**
- * One GET call for the team's players. A failed or incomplete read keeps the old reader's contract (no
- * adjustments, fetchFailed with a message; the writer runs on), and the capture transport records the HTTP
- * refusal. An oversized request is refused before any call.
- */
-export async function fetchLatestSkaterTrendAdjustmentsBatched(
-  db: RpcClient,
-  playerIds: number[],
-  asOfDate: string
-): Promise<SkaterTrendAdjustmentFetchResult> {
-  const uniquePlayerIds = Array.from(new Set(playerIds)).filter((id) => Number.isSafeInteger(id));
-  if (uniquePlayerIds.length === 0) {
-    return { adjustments: new Map(), diagnostics: emptyDiagnostics(0) };
-  }
-  const keys = expectedLatestTrendBandKeys(uniquePlayerIds);
-  const failed = (message: string): SkaterTrendAdjustmentFetchResult => {
-    const diagnostics = emptyDiagnostics(uniquePlayerIds.length);
-    diagnostics.fetchFailed = true;
-    diagnostics.fetchErrorMessage = message;
-    diagnostics.playersMissingRows = uniquePlayerIds.length;
-    return { adjustments: new Map(), diagnostics };
-  };
-  if (keys.length > LATEST_TREND_BAND_MAX_KEYS) return failed(`trend_band_keys_exceed_limit:${keys.length}`);
-  const { data, error } = await db.rpc(
-    FORGE_LATEST_TREND_BANDS_RPC,
-    {
-      p_player_ids: uniquePlayerIds,
-      p_metric_keys: [...TREND_BAND_METRIC_PRIORITY],
-      p_window_codes: [...TREND_BAND_WINDOW_PRIORITY],
-      p_as_of: asOfDate
-    },
-    { get: true }
-  );
-  if (error) return failed(error.message ?? "Unknown sustainability trend-band fetch failure");
-  const problem = latestTrendBandCoverageProblem(data, keys, asOfDate);
-  if (problem) return failed(`trend_band_coverage:${problem}`);
-  return selectSkaterTrendAdjustmentsFromLatest(data as LatestTrendBandKeyRow[], uniquePlayerIds, asOfDate);
 }

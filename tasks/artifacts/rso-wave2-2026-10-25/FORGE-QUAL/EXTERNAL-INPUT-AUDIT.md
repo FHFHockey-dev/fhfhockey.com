@@ -64,7 +64,8 @@ So the withheld label is correct today.
 | `forge_goalie_game`, `forge_team_game_strength` | `queries/goalie-queries.ts:68-278`; `queries/team-context-queries.ts:46`, `:487`, `:529` | strength-split history | derived from NHL PbP and shifts *(writer not traced)* |
 | `rolling_player_game_metrics` | `queries/skater-queries.ts:362`; `stages/skater-stage.ts:408` | rolling rates and deployment | derived (NHL, NST, line context) *(writer not traced)*. No fantasy, ownership or rank column is selected in the run's queries (`rg` over `queries/*`). |
 | `player_stats_unified` | `queries/skater-queries.ts:569` | season rates | derived view over NHL and NST stats *(writer not traced)* |
-| `sustainability_trend_bands` | `queries/skater-queries.ts:644` | regression bands | FHFH model-derived *(writer not traced)* |
+| `sustainability_trend_bands` | `queries/skater-queries.ts` (history GET fallback) | regression bands | FHFH model-derived *(writer not traced)* |
+| RPC `forge_latest_trend_bands` | `queries/skater-queries.ts` (`fetchLatestSkaterTrendAdjustments`) | the same regression bands, newest row per player, metric and window (added 2026-11-15) | FHFH model-derived, over `sustainability_trend_bands` |
 | RPC `forge_league_skater_physical_totals` | `queries/skater-queries.ts:466` | league hits and blocks priors | derived from NHL stats *(not traced)* |
 | `nst_team_all`, `nst_team_stats` | `queries/team-context-queries.ts:432`, `:459` | team xG and shot context | third-party **hockey analytics** (Natural Stat Trick, computed from NHL data). Not a fantasy input. |
 | `nhl_team_data`, `nhl_xg_team_rolling_aggregates` | `queries/team-context-queries.ts:362`, `:373`, `:295` | team strength priors | FHFH xG model on NHL data *(writer not traced)* |
