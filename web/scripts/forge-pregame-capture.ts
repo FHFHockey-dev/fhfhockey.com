@@ -5,22 +5,25 @@
  *   (default) --plan       Print what a run would do. No environment, credentials or network.
  *   --rehearse             Offline rehearsal on the fixture world: real runner wiring, collector, strict transport,
  *                          verifier and RFC 3161 checks; in-memory custody and a test-only TSA. Network is trapped.
- *   --tsa-probe            LIVE external call: one timestamp request over a random digest (no FHFH data) to check the
- *                          TSA's token, chain, EKU and accuracy. Needs --confirm-probe. No database access.
+ *   --tsa-probe            LIVE external call: one timestamp request over a random digest (no FHFH data) to the pinned
+ *                          profile's TSA. Retains the raw request/response, a strict verdict and a full inspection in
+ *                          --out. Needs --confirm-probe. No database access and no credentials.
  *   --execute              LIVE capture of one game: strict reads, one claim, one save, independent verification and
  *                          RFC 3161 witness, one outcome. Needs every gate below. Never scores, writes forecasts or
  *                          publishes revisions.
  *
  * Live gates (--execute): FORGE_PREGAME_CAPTURE_ENABLED="true"; --confirm-game-id equal to --game-id; --approval equal to
- * FORGE_PREGAME_CAPTURE_APPROVAL; --code-version (40-hex commit of the exact candidate); --tsa-url and --tsa-anchor (PEM);
- * --out (new private directory). Credentials are loaded only in live modes.
+ * FORGE_PREGAME_CAPTURE_APPROVAL; --code-version (40-hex commit of the exact candidate); --tsa-profile (a pinned profile
+ * whose policy has been re-pinned after a probe); --out (new private directory). Credentials are loaded only by --execute.
  *
  * Run from web/:  NODE_PATH=. npx ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' \
  *                   scripts/forge-pregame-capture.ts [--rehearse]
  */
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { tsaProfile, trustFromProfile, type TsaProfile } from "../lib/projections/pregameCapture/tsaProfiles";
+import type { TsaClient } from "../lib/projections/pregameCapture/verifier";
 
 export const POLICY_ID = "pregame-native-v1";
 /** Pilot read limits (refusal caps; exceeding one fails the capture as source_failed, never a partial packet). */
@@ -32,13 +35,13 @@ export const PILOT_BUDGET = { readMs: 120_000, saveWaitMs: 20_000, tsaTimeoutMs:
 type Mode = "plan" | "rehearse" | "tsa-probe" | "execute";
 export interface PilotOptions {
   mode: Mode; gameId?: number; slateDate?: string; confirmGameId?: number; approval?: string; codeVersion?: string;
-  tsaUrl?: string; tsaAnchor?: string; tsaPolicy?: string; out?: string; confirmProbe: boolean;
+  tsaProfile?: string; out?: string; confirmProbe: boolean;
 }
 
 export function parsePilotArgs(argv: string[]): PilotOptions {
   const flags = new Set<string>();
   const values = new Map<string, string>();
-  const valued = new Set(["--game-id", "--slate-date", "--confirm-game-id", "--approval", "--code-version", "--tsa-url", "--tsa-anchor", "--tsa-policy", "--out"]);
+  const valued = new Set(["--game-id", "--slate-date", "--confirm-game-id", "--approval", "--code-version", "--tsa-profile", "--out"]);
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (valued.has(arg)) { if (i + 1 >= argv.length) throw new Error(`${arg} needs a value`); values.set(arg, argv[++i]); }
@@ -51,14 +54,15 @@ export function parsePilotArgs(argv: string[]): PilotOptions {
   const num = (key: string) => (values.has(key) ? Number(values.get(key)) : undefined);
   return {
     mode, gameId: num("--game-id"), slateDate: values.get("--slate-date"), confirmGameId: num("--confirm-game-id"),
-    approval: values.get("--approval"), codeVersion: values.get("--code-version"), tsaUrl: values.get("--tsa-url"),
-    tsaAnchor: values.get("--tsa-anchor"), tsaPolicy: values.get("--tsa-policy"), out: values.get("--out"),
+    approval: values.get("--approval"), codeVersion: values.get("--code-version"), tsaProfile: values.get("--tsa-profile"),
+    out: values.get("--out"),
     confirmProbe: flags.has("--confirm-probe"),
   };
 }
 
 /** Throws unless every live gate holds. Pure: takes the environment explicitly. */
-export function assertLiveGates(options: PilotOptions, env: Record<string, string | undefined>): void {
+export function assertLiveGates(options: PilotOptions, env: Record<string, string | undefined>,
+  resolveProfile: (id: string) => TsaProfile = tsaProfile): void {
   const problems: string[] = [];
   if (env.FORGE_PREGAME_CAPTURE_ENABLED !== "true") problems.push('FORGE_PREGAME_CAPTURE_ENABLED is not "true"');
   if (!Number.isSafeInteger(options.gameId) || (options.gameId ?? 0) <= 0) problems.push("--game-id missing");
@@ -66,7 +70,11 @@ export function assertLiveGates(options: PilotOptions, env: Record<string, strin
   if (!options.slateDate || !/^\d{4}-\d{2}-\d{2}$/.test(options.slateDate)) problems.push("--slate-date missing (YYYY-MM-DD, ET)");
   if (!options.approval || options.approval !== env.FORGE_PREGAME_CAPTURE_APPROVAL) problems.push("--approval missing or not equal to FORGE_PREGAME_CAPTURE_APPROVAL");
   if (!options.codeVersion || !/^[0-9a-f]{40}$/.test(options.codeVersion)) problems.push("--code-version must be the 40-hex candidate commit");
-  if (!options.tsaUrl || !options.tsaAnchor) problems.push("--tsa-url and --tsa-anchor are required");
+  if (!options.tsaProfile) problems.push("--tsa-profile is required");
+  else {
+    try { trustFromProfile(resolveProfile(options.tsaProfile), "capture"); }
+    catch (error) { problems.push(`--tsa-profile not usable for a capture: ${error instanceof Error ? error.message : String(error)}`); }
+  }
   if (!options.out || existsSync(options.out)) problems.push("--out must name a new directory");
   if (problems.length) throw new Error(`Live capture refused:\n- ${problems.join("\n- ")}`);
 }
@@ -77,7 +85,8 @@ export function planText(options: PilotOptions): string {
     `game ${options.gameId ?? "<--game-id>"} on slate ${options.slateDate ?? "<--slate-date>"} (ET), policy ${POLICY_ID}`,
     `claim requires ${PILOT_BUDGET.requiredMs} ms before T−60 (read ${PILOT_BUDGET.readMs}, save wait ${PILOT_BUDGET.saveWaitMs}, TSA ${PILOT_BUDGET.tsaTimeoutMs})`,
     `read limits: ${JSON.stringify(PILOT_TRANSPORT_LIMITS)}`,
-    "live modes: --tsa-probe (one external TSA call, no data) and --execute (the capture); both are gated and off by default.",
+    "live modes: --tsa-probe --tsa-profile <id> --out <new dir> --confirm-probe (one external TSA call, random digest, no data)",
+    "            --execute (the capture; needs every gate and a profile whose policy is pinned). Both are off by default.",
   ].join("\n");
 }
 
@@ -212,24 +221,67 @@ async function rehearseWithSyntheticEnv(): Promise<{ ok: boolean; cases: Rehears
 // Live modes (never exercised offline; each refuses unless its gates hold)
 // ---------------------------------------------------------------------------------------------------------------
 
-async function tsaProbe(options: PilotOptions) {
-  if (!options.confirmProbe) throw new Error("TSA probe refused: pass --confirm-probe (one external call, random digest, no data).");
-  if (!options.tsaUrl || !options.tsaAnchor) throw new Error("TSA probe refused: --tsa-url and --tsa-anchor are required.");
-  const { httpTsaClient } = await import("../lib/projections/pregameCapture/runner");
+export interface ProbeResult {
+  profile: string; url: string; pass: boolean; verdict: string; elapsedMs: number;
+  verified: { genTime: string; accuracyMicros: string; accuracySource: string; policy: string; signerSha256: string; tokenSha256: string } | null;
+  inspection: import("../lib/projections/pregameCapture/tokenInspect").TokenInspection | null;
+  /** What a reviewed re-pin commit would set, from the observed token (never applied automatically). */
+  proposedPin: { policy: string | null; accuracyPresent: boolean; chain: Array<{ subject: string; sha256: string }> } | null;
+  files: string[];
+}
+
+/** One probe request through the pinned profile; retains everything in `out` (a new 0700 directory). */
+export async function runTsaProbe(args: { profile: TsaProfile; tsa: TsaClient; out: string; now?: () => number; timeoutMs?: number }): Promise<ProbeResult> {
   const { buildTimeStampRequest, extractToken, verifyTimeStampToken } = await import("../lib/projections/pregameCapture/rfc3161");
+  const { inspectTimeStampResponse } = await import("../lib/projections/pregameCapture/tokenInspect");
+  const trust = trustFromProfile(args.profile, "probe");
+  if (existsSync(args.out)) throw new Error("TSA probe refused: --out must name a new directory.");
+  mkdirSync(args.out, { recursive: false, mode: 0o700 });
+  const now = args.now ?? Date.now;
   const digest = randomBytes(32);
   const nonce = BigInt(`0x${randomBytes(8).toString("hex")}`);
+  const request = buildTimeStampRequest(digest, nonce);
+  const files: string[] = [];
+  const keep = (name: string, data: string | Uint8Array) => { writeFileSync(resolve(args.out, name), data, { mode: 0o600 }); files.push(name); };
+  keep("probe-request.tsq", new Uint8Array(request));
+  keep("probe-digest.json", `${JSON.stringify({ sha256Digest: digest.toString("hex"), nonce: nonce.toString() }, null, 1)}\n`);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PILOT_BUDGET.tsaTimeoutMs);
-  const started = Date.now();
-  try {
-    const response = await httpTsaClient(options.tsaUrl).stamp(buildTimeStampRequest(digest, nonce), controller.signal);
-    const elapsedMs = Date.now() - started;
-    const stamped = verifyTimeStampToken(extractToken(response), { sha256Digest: digest, nonce },
-      { anchorsPem: [readFileSync(options.tsaAnchor, "utf8")], policies: options.tsaPolicy ? [options.tsaPolicy] : [] });
-    return { elapsedMs, genTime: stamped.genTime, accuracyMicros: stamped.accuracyMicros.toString(), accuracySource: stamped.accuracySource,
-      policy: stamped.policy, signerSha256: stamped.signerSha256, tokenSha256: stamped.tokenSha256 };
+  const timer = setTimeout(() => controller.abort(), args.timeoutMs ?? PILOT_BUDGET.tsaTimeoutMs);
+  const started = now();
+  let response: Buffer;
+  try { response = await args.tsa.stamp(request, controller.signal); }
+  catch (error) {
+    const result: ProbeResult = { profile: args.profile.id, url: args.profile.url, pass: false, verdict: `request_failed:${error instanceof Error ? error.message : String(error)}`,
+      elapsedMs: now() - started, verified: null, inspection: null, proposedPin: null, files };
+    keep("probe-report.json", `${JSON.stringify(result, null, 1)}\n`);
+    return result;
   } finally { clearTimeout(timer); }
+  const elapsedMs = now() - started;
+  keep("probe-response.tsr", new Uint8Array(response));
+  const inspection = inspectTimeStampResponse(response);
+  let verified: ProbeResult["verified"] = null, verdict = "pass";
+  try {
+    const stamped = verifyTimeStampToken(extractToken(response), { sha256Digest: digest, nonce }, trust);
+    verified = { genTime: stamped.genTime, accuracyMicros: stamped.accuracyMicros.toString(), accuracySource: stamped.accuracySource,
+      policy: stamped.policy, signerSha256: stamped.signerSha256, tokenSha256: stamped.tokenSha256 };
+  } catch (error) { verdict = `strict_verification_failed:${error instanceof Error ? error.message : String(error)}`; }
+  const result: ProbeResult = {
+    profile: args.profile.id, url: args.profile.url, pass: verified !== null, verdict, elapsedMs, verified, inspection,
+    proposedPin: { policy: inspection.tstInfo.policy, accuracyPresent: inspection.tstInfo.accuracy.present,
+      chain: inspection.certificates.map((cert) => ({ subject: cert.subject, sha256: cert.sha256 })) },
+    files,
+  };
+  keep("probe-report.json", `${JSON.stringify(result, null, 1)}\n`);
+  return result;
+}
+
+async function tsaProbe(options: PilotOptions) {
+  if (!options.confirmProbe) throw new Error("TSA probe refused: pass --confirm-probe (one external call, random digest, no data).");
+  if (!options.tsaProfile) throw new Error("TSA probe refused: --tsa-profile is required.");
+  if (!options.out) throw new Error("TSA probe refused: --out (a new private directory) is required.");
+  const { httpTsaClient } = await import("../lib/projections/pregameCapture/runner");
+  const profile = tsaProfile(options.tsaProfile);
+  return runTsaProbe({ profile, tsa: httpTsaClient(profile.url), out: options.out });
 }
 
 async function executeLive(options: PilotOptions) {
@@ -242,10 +294,11 @@ async function executeLive(options: PilotOptions) {
   const { runPrivatePregameCapture } = await import("../lib/projections/pregameCapture/runner");
   const { collectNativePregameInputs } = await import("../lib/projections/pregameCapture/nativeInputs");
   const { forgeSeasonBootstrapApplies, projectionModelEnvironment } = await import("../lib/projections/run-forge-projections");
-  const trust = { anchorsPem: [readFileSync(options.tsaAnchor!, "utf8")], policies: options.tsaPolicy ? [options.tsaPolicy] : [] };
+  const profile = tsaProfile(options.tsaProfile!);
+  const trust = trustFromProfile(profile, "capture");
   mkdirSync(options.out!, { recursive: false, mode: 0o700 });
   const report = await runPrivatePregameCapture({
-    supabaseUrl, serviceRoleKey, tsaUrl: options.tsaUrl!, tsaTrust: trust,
+    supabaseUrl, serviceRoleKey, tsaUrl: profile.url, tsaTrust: trust,
     collectNative: collectNativePregameInputs,
     seasonBootstrap: ({ slateDate, inputCutoff }) => forgeSeasonBootstrapApplies({ compute: true, explicitCutoff: true, horizonGames: 1,
       asOfDate: slateDate, decisionAsOf: inputCutoff }),

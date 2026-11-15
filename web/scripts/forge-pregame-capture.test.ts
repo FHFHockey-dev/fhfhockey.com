@@ -1,6 +1,19 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { assertLiveGates, parsePilotArgs, planText, rehearsePilot } from "./forge-pregame-capture";
+import { createHash, X509Certificate } from "node:crypto";
+import { existsSync, mkdtempSync, readFileSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { assertLiveGates, parsePilotArgs, planText, rehearsePilot, runTsaProbe } from "./forge-pregame-capture";
+import { tsaProfile, trustFromProfile, type TsaProfile } from "../lib/projections/pregameCapture/tsaProfiles";
+import { mintTimeStampResponse, TEST_TSA_POLICY } from "../lib/projections/pregameCapture/__fixtures__/testTsa";
+import { u8 } from "../lib/projections/pregameCapture/der";
+
+const fixtureCa = readFileSync(join(__dirname, "..", "lib", "projections", "pregameCapture", "__fixtures__", "tsa", "ca.crt"), "utf8");
+/** A profile built on the TEST-ONLY fixture CA, unpinned like a profile before its first probe. */
+const testProfile = (): TsaProfile => ({ id: "test-tsa", url: "https://tsa.invalid", anchorsPem: [fixtureCa], policies: [],
+  anchorSha256: [createHash("sha256").update(u8(new X509Certificate(fixtureCa).raw)).digest("hex")] });
+const newOut = () => join(mkdtempSync(join(tmpdir(), "forge-probe-test-")), "out");
 
 describe("forge-pregame-capture pilot script", () => {
   it("defaults to a plan that needs no environment, credentials or network", () => {
@@ -16,16 +29,19 @@ describe("forge-pregame-capture pilot script", () => {
 
   it("refuses a live capture unless every gate holds", () => {
     const base = parsePilotArgs(["--execute", "--game-id", "2026020300", "--confirm-game-id", "2026020300", "--slate-date", "2026-11-16",
-      "--approval", "tj-approval-1", "--code-version", "a".repeat(40), "--tsa-url", "https://tsa.invalid", "--tsa-anchor", "/dev/null",
+      "--approval", "tj-approval-1", "--code-version", "a".repeat(40), "--tsa-profile", "test-tsa-pinned",
       "--out", "/nonexistent/forge-pilot-out"]);
     const env = { FORGE_PREGAME_CAPTURE_ENABLED: "true", FORGE_PREGAME_CAPTURE_APPROVAL: "tj-approval-1" };
-    expect(() => assertLiveGates(base, env)).not.toThrow();
-    expect(() => assertLiveGates(base, {})).toThrow("FORGE_PREGAME_CAPTURE_ENABLED");
-    expect(() => assertLiveGates({ ...base, confirmGameId: 2026020301 }, env)).toThrow("--confirm-game-id");
-    expect(() => assertLiveGates(base, { ...env, FORGE_PREGAME_CAPTURE_APPROVAL: "other" })).toThrow("--approval");
-    expect(() => assertLiveGates({ ...base, codeVersion: "HEAD" }, env)).toThrow("--code-version");
-    expect(() => assertLiveGates({ ...base, out: "/tmp" }, env)).toThrow("--out");
-    expect(() => assertLiveGates({ ...base, tsaAnchor: undefined }, env)).toThrow("--tsa-anchor");
+    const pinned = (id: string) => (id === "test-tsa-pinned" ? { ...testProfile(), policies: [TEST_TSA_POLICY] } : tsaProfile(id));
+    expect(() => assertLiveGates(base, env, pinned)).not.toThrow();
+    expect(() => assertLiveGates(base, {}, pinned)).toThrow("FORGE_PREGAME_CAPTURE_ENABLED");
+    expect(() => assertLiveGates({ ...base, confirmGameId: 2026020301 }, env, pinned)).toThrow("--confirm-game-id");
+    expect(() => assertLiveGates(base, { ...env, FORGE_PREGAME_CAPTURE_APPROVAL: "other" }, pinned)).toThrow("--approval");
+    expect(() => assertLiveGates({ ...base, codeVersion: "HEAD" }, env, pinned)).toThrow("--code-version");
+    expect(() => assertLiveGates({ ...base, out: "/tmp" }, env, pinned)).toThrow("--out");
+    expect(() => assertLiveGates({ ...base, tsaProfile: undefined }, env, pinned)).toThrow("--tsa-profile is required");
+    // The DigiCert profile is not usable for a capture until its policy is re-pinned after a probe.
+    expect(() => assertLiveGates({ ...base, tsaProfile: "digicert-g4-v1" }, env, pinned)).toThrow("tsa_profile_policy_unpinned");
   });
 
   it("rehearses offline end to end: one exact game, no forecast writes, late and ambiguous captures refused, verified by T−60", async () => {
@@ -48,4 +64,46 @@ describe("forge-pregame-capture pilot script", () => {
     for (const c of result.cases) expect(Object.values(c.checks).every(Boolean), c.name).toBe(true);
     expect(result.ok).toBe(true);
   }, 120_000);
+
+  it("pins the DigiCert profile: embedded G4 anchor matches its fingerprint; capture refuses until the policy is re-pinned", () => {
+    const profile = tsaProfile("digicert-g4-v1");
+    expect(profile.url).toBe("http://timestamp.digicert.com");
+    expect(() => trustFromProfile(profile, "probe")).not.toThrow();
+    expect(() => trustFromProfile(profile, "capture")).toThrow("tsa_profile_policy_unpinned");
+    expect(() => trustFromProfile({ ...profile, anchorSha256: ["0".repeat(64)] }, "probe")).toThrow("tsa_profile_anchor_mismatch");
+    expect(() => tsaProfile("unknown")).toThrow("Unknown TSA profile");
+  });
+
+  it("probe (offline, test TSA): passes, retains request/response/report privately, and proposes the observed pin", async () => {
+    const out = newOut();
+    const result = await runTsaProbe({ profile: testProfile(), out,
+      tsa: { stamp: async (request) => mintTimeStampResponse(request, { genTimeMicros: BigInt(Date.now()) * BigInt(1000) }) } });
+    expect(result).toMatchObject({ pass: true, verdict: "pass", profile: "test-tsa" });
+    expect(result.proposedPin).toMatchObject({ policy: TEST_TSA_POLICY, accuracyPresent: true });
+    expect(result.proposedPin!.chain.length).toBeGreaterThan(0);
+    expect(result.inspection).toMatchObject({ status: 0, signedDataVersion: 3, signer: { essVersion: "v2", unsignedAttributesPresent: false, trailingElements: 0 } });
+    expect(result.files.sort()).toEqual(["probe-digest.json", "probe-report.json", "probe-request.tsq", "probe-response.tsr"]);
+    expect(statSync(out).mode & 0o777).toBe(0o700);
+    expect(statSync(join(out, "probe-response.tsr")).mode & 0o777).toBe(0o600);
+  });
+
+  it("probe reports each failing property instead of a bare failure", async () => {
+    const noAccuracy = await runTsaProbe({ profile: testProfile(), out: newOut(),
+      tsa: { stamp: async (request) => mintTimeStampResponse(request, { genTimeMicros: BigInt(Date.now()) * BigInt(1000), accuracyMillis: null }) } });
+    expect(noAccuracy).toMatchObject({ pass: false, verdict: "strict_verification_failed:tsa_accuracy_missing" });
+    expect(noAccuracy.inspection!.tstInfo.accuracy.present).toBe(false);
+    const wrongSigner = await runTsaProbe({ profile: testProfile(), out: newOut(),
+      tsa: { stamp: async (request) => mintTimeStampResponse(request, { genTimeMicros: BigInt(Date.now()) * BigInt(1000), signer: "plain" }) } });
+    expect(wrongSigner.verdict).toBe("strict_verification_failed:tsa_signer_not_timestamping");
+    expect(wrongSigner.inspection!.certificates[0].ekuCritical).toBe(null);
+    const down = await runTsaProbe({ profile: testProfile(), out: newOut(), tsa: { stamp: async () => { throw new Error("ECONNREFUSED"); } } });
+    expect(down).toMatchObject({ pass: false, verdict: "request_failed:ECONNREFUSED" });
+  });
+
+  it("probe refuses to reuse an output directory", async () => {
+    const out = newOut();
+    await runTsaProbe({ profile: testProfile(), out, tsa: { stamp: async (request) => mintTimeStampResponse(request, { genTimeMicros: BigInt(Date.now()) * BigInt(1000) }) } });
+    expect(existsSync(out)).toBe(true);
+    await expect(runTsaProbe({ profile: testProfile(), out, tsa: { stamp: async () => Buffer.alloc(0) } })).rejects.toThrow("new directory");
+  });
 });
