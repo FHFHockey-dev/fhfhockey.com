@@ -33,8 +33,8 @@ export class SimClock extends FakeClock {
   kill() { this.timers = []; }
   /** Runs `work` to completion in virtual time. Returns settled:false if it stalls with no timer left (a hung/killed process). */
   async drive<T>(work: Promise<T>): Promise<{ settled: true; value: T } | { settled: false }> {
-    let state: { done: false } | { done: true; value?: T; error?: unknown; failed: boolean } = { done: false };
-    work.then((value) => { state = { done: true, value, failed: false }; }, (error) => { state = { done: true, error, failed: true }; });
+    const state: { done: boolean; failed: boolean; value?: T; error?: unknown } = { done: false, failed: false };
+    work.then((value) => { state.done = true; state.value = value; }, (error) => { state.done = true; state.failed = true; state.error = error; });
     for (let fired = 0; fired < 100_000; fired++) {
       await macrotask(); await macrotask();
       if (state.done) {

@@ -85,9 +85,8 @@ export function planSlate(games: SlateGame[], config: SlateQueueConfig, now: num
     if (ids.has(game.gameId)) throw new Error(`slate_duplicate_game:${game.gameId}`);
     ids.add(game.gameId);
   }
-  const occupancy = slotOccupancyMs(config.budget);
   const skipped: SkippedGame[] = [];
-  const feasible: Array<{ game: SlateGame; deadlineMs: number; latestDispatchAt: number }> = [];
+  const feasible: Feasible[] = [];
   for (const game of games) {
     if (!PREGAME_STATUSES.has(game.status)) { skipped.push({ game, reason: `status:${game.status}` }); continue; }
     let deadlineMs: number;
@@ -96,14 +95,33 @@ export function planSlate(games: SlateGame[], config: SlateQueueConfig, now: num
     if (latestDispatchAt < now) { skipped.push({ game, reason: "no_time_before_t_minus_60" }); continue; }
     feasible.push({ game, deadlineMs, latestDispatchAt });
   }
-  feasible.sort((a, b) => b.latestDispatchAt - a.latestDispatchAt || b.game.gameId - a.game.gameId);
+  const backward = scheduleBackward(feasible, config, now, busyUntil);
+  // Backward placement keeps the lead but can strand a game that still fits if everything starts as soon as possible
+  // (late planning, a gate delay). Then an earliest-deadline-first pass from now is used if it strands fewer.
+  let chosen = backward;
+  if (backward.stranded.length) {
+    const forward = scheduleForward(feasible, config, now, busyUntil);
+    if (forward.stranded.length < backward.stranded.length) chosen = forward;
+  }
+  const dispatches = chosen.dispatches;
+  for (const game of chosen.stranded) skipped.push({ game, reason: "no_capacity_before_deadline" });
+  dispatches.sort((a, b) => a.dispatchAt - b.dispatchAt || a.game.gameId - b.game.gameId);
+  return { plannedAt: now, dispatches, skipped };
+}
 
+type Feasible = { game: SlateGame; deadlineMs: number; latestDispatchAt: number };
+interface Placement { dispatches: PlannedGame[]; stranded: SlateGame[] }
+
+function scheduleBackward(feasible: Feasible[], config: SlateQueueConfig, now: number, busyUntil: number[]): Placement {
+  const occupancy = slotOccupancyMs(config.budget);
+  const ordered = [...feasible].sort((a, b) => b.latestDispatchAt - a.latestDispatchAt || b.game.gameId - a.game.gameId);
   const nextBusy = Array.from({ length: config.concurrency }, () => Number.POSITIVE_INFINITY);
   const frontFree = Array.from({ length: config.concurrency }, (_, s) => Math.max(now, busyUntil[s] ?? now));
   const assigned: number[] = [];
   const conflict = (t: number) => assigned.find((other) => Math.abs(other - t) < config.staggerMs);
   const dispatches: PlannedGame[] = [];
-  for (const entry of feasible) {
+  const stranded: SlateGame[] = [];
+  for (const entry of ordered) {
     // A slot that keeps the full lead always wins (latest such time); otherwise the earliest fallback time wins.
     let best: { at: number; slot: number; fallback: boolean } | null = null;
     for (let slot = 0; slot < config.concurrency; slot++) {
@@ -122,13 +140,32 @@ export function planSlate(games: SlateGame[], config: SlateQueueConfig, now: num
       const better = !best || (best.fallback && !fallback) || (best.fallback === fallback && (fallback ? at < best.at : at > best.at));
       if (better) best = { at, slot, fallback };
     }
-    if (!best) { skipped.push({ game: entry.game, reason: "no_capacity_before_deadline" }); continue; }
+    if (!best) { stranded.push(entry.game); continue; }
     nextBusy[best.slot] = best.at;
     assigned.push(best.at);
     dispatches.push({ game: entry.game, deadlineMs: entry.deadlineMs, latestDispatchAt: entry.latestDispatchAt, dispatchAt: best.at, slot: best.slot });
   }
-  dispatches.sort((a, b) => a.dispatchAt - b.dispatchAt || a.game.gameId - b.game.gameId);
-  return { plannedAt: now, dispatches, skipped };
+  return { dispatches, stranded };
+}
+
+/** Earliest-deadline-first from now: each game takes the slot that frees first. */
+function scheduleForward(feasible: Feasible[], config: SlateQueueConfig, now: number, busyUntil: number[]): Placement {
+  const occupancy = slotOccupancyMs(config.budget);
+  const ordered = [...feasible].sort((a, b) => a.latestDispatchAt - b.latestDispatchAt || a.game.gameId - b.game.gameId);
+  const free = Array.from({ length: config.concurrency }, (_, s) => Math.max(now, busyUntil[s] ?? now));
+  const assigned: number[] = [];
+  const dispatches: PlannedGame[] = [];
+  const stranded: SlateGame[] = [];
+  for (const entry of ordered) {
+    const slot = free.indexOf(Math.min(...free));
+    let at = free[slot];
+    for (let hit = assigned.find((t) => Math.abs(t - at) < config.staggerMs); hit !== undefined; hit = assigned.find((t) => Math.abs(t - at) < config.staggerMs)) at = hit + config.staggerMs;
+    if (at > entry.latestDispatchAt) { stranded.push(entry.game); continue; }
+    free[slot] = at + occupancy;
+    assigned.push(at);
+    dispatches.push({ game: entry.game, deadlineMs: entry.deadlineMs, latestDispatchAt: entry.latestDispatchAt, dispatchAt: at, slot });
+  }
+  return { dispatches, stranded };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -269,6 +306,8 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
     lastRefresh = deps.now();
     let games: SlateGame[];
     try { games = await deps.refreshSlate(); } catch (error) { log({ event: "refresh_failed", error: String(error) }); return false; }
+    // An empty schedule read is treated as a failed read: it would otherwise close every pending game as removed.
+    if (!games.length) { log({ event: "refresh_empty_ignored" }); return false; }
     refreshes += 1;
     const seen = new Set(games.map((g) => g.gameId));
     await admit(games.filter((g) => !states.has(g.gameId)));

@@ -57,6 +57,14 @@ describe("slate planner (pure)", () => {
     expect(plan.dispatches[0].dispatchAt).toBeLessThanOrEqual(plan.dispatches[0].latestDispatchAt);
   });
 
+  it("planning late with contention still fits every game that can start as soon as possible (forward fallback)", () => {
+    const now = START_MS - minutes(75);
+    const plan = planSlate([game(1), game(2), game(3)], CONFIG, now);
+    expect(plan.skipped).toEqual([]);
+    expect(plan.dispatches).toHaveLength(3);
+    for (const d of plan.dispatches) expect(d.dispatchAt).toBeLessThanOrEqual(d.latestDispatchAt);
+  });
+
   it("uses the earliest known start (a reschedule earlier tightens the window) and rejects bad configuration", () => {
     const moved = { ...game(1), currentScheduledStart: iso(START_MS - minutes(30)) };
     const plan = planSlate([moved], CONFIG, START_MS - minutes(180));
@@ -205,6 +213,30 @@ describe("slate executor (simulated custody, virtual clock, fixture TSA)", () =>
     expect(result[1].dispatchedAt[0]).toBeGreaterThan(result[1].plannedDispatchAt!);
     expect(result[2]).toMatchObject({ outcome: "never_dispatched", reason: "load_gate_closed:db_load_high" });
     expect(sim.claimCalls(2)).toBe(0);
+    expect(sim.invariants()).toEqual([]);
+  });
+
+  it("a load-gate blip during a contended wave delays dispatch without dropping any game", async () => {
+    const sim = new SlateSim(START_MS - minutes(180));
+    for (const id of [1, 2, 3]) sim.addGame({ gameId: id, start: START }, { readMs: 110_000 });
+    const openAt = START_MS - minutes(76);
+    const result = await drive(sim, runSlate(sim.executorDeps({ loadGate: async () => ({ open: sim.clock.ms >= openAt, reason: "db_load_high" }) }), sim.slate()));
+    expect(result.results.map((r) => r.outcome)).toEqual(["qualified", "qualified", "qualified"]);
+    expect(Math.min(...result.results.map((r) => r.dispatchedAt[0]))).toBeGreaterThanOrEqual(openAt);
+    expect(sim.maxInFlight).toBeLessThanOrEqual(2);
+    expect(sim.invariants()).toEqual([]);
+  });
+
+  it("settles a lost claim response by lookup (never re-claimed) and a lost never_dispatched record by lookup (never resent)", async () => {
+    const sim = new SlateSim(START_MS - minutes(180));
+    sim.addGame({ gameId: 1, start: START }).hooks.afterClaimCommit = () => { throw new Error("fetch failed: socket hang up"); };
+    sim.addGame({ gameId: 2, start: START, status: "PPD" }).hooks.afterOutcomeCommit = () => { throw new Error("fetch failed"); };
+    const result = byId(await drive(sim, runSlate(sim.executorDeps(), sim.slate())));
+    expect(result[1]).toMatchObject({ outcome: "save_unknown", source: "sweep" });
+    expect(result[1].reports[0].reason).toBe("claim_ambiguous_left_for_sweeper");
+    expect(sim.claimCalls(1)).toBe(1);
+    expect(result[2]).toMatchObject({ outcome: "never_dispatched", source: "lookup", reason: "status:PPD" });
+    expect(sim.db(2).calls.filter((c) => c === "recordOutcome")).toHaveLength(1);
     expect(sim.invariants()).toEqual([]);
   });
 

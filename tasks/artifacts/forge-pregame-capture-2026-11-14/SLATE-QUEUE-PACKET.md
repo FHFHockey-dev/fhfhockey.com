@@ -20,6 +20,7 @@ No existing FORGE file was edited. The queue reuses `custody.ts`, `deadline.ts` 
 - **Preferred dispatch:** latest safe dispatch − lead (default 10 min, so about T−76).
 - **Concurrency cap** (default 2): enforced on live in-flight count, not only on the plan. A worker slot is held for pin + required = 6 min.
 - **Stagger:** at least 30 s between any two dispatches. Simultaneous starts are scheduled backward, so a busy slot only ever moves a dispatch **earlier**.
+- **Late planning:** if the backward pass would strand a game that still fits (late planning, a gate delay), an earliest-deadline-first pass from now is used instead, provided it strands fewer games.
 - **Can't fit:** a game that can't fit (past the latest safe dispatch, no free slot, not `FUT`/`PRE`, removed from the slate, load gate never opens) is recorded `never_dispatched` by the queue with a null claim id and a reason. It is never claimed late.
 - **Last check before dispatch:** the queue applies `decideStart` again on its own clock, so a late claim is never even attempted.
 
@@ -62,7 +63,7 @@ The production DB has been overloaded before (Lines P3, 2026-11-07, twice). Each
 
 ## 3. Evidence (offline)
 
-`cd web && npx vitest run lib/projections/pregameCapture/slateQueue.test.ts scripts/forge-pregame-slate.test.ts`: 15/15. Whole folder plus script: 144/144. `npm run typecheck`: see the commit report.
+`cd web && npx vitest run lib/projections/pregameCapture/slateQueue.test.ts scripts/forge-pregame-slate.test.ts`: 18/18. `npm run typecheck` (under the heavy lock): result in the final commit message.
 
 **Scenarios covered:**
 - 3 games at the same start, cap 2. Two captures genuinely overlap (max in flight is exactly 2), all qualified, each acknowledgement ≤ T−60, and none dispatched later than planned.
@@ -73,13 +74,19 @@ The production DB has been overloaded before (Lines P3, 2026-11-07, twice). Each
 - Crash between save and settle: in-process → qualified; process death → re-entry → sweep.
 - Crash after the claim, with re-entry: one claim call in total → `save_unknown`.
 - TSA outage → `saved_without_valid_witness`. Transport refusal → `source_failed`, no save. Postponed → `never_dispatched` with a null claim id. A 110 s pin with zero lead still qualifies.
-- Load gate: closed then open → dispatched later. Never open → `never_dispatched`.
+- Load gate: closed then open → dispatched later. Never open → `never_dispatched`. A gate blip during a contended wave (3 games, cap 2) drops no game.
+- Late planning with contention (3 same-start games, planned at T−75) fits all three.
+- A lost claim response is found by lookup (one claim call; sweep → `save_unknown`). A lost `never_dispatched` record response is confirmed by lookup, not resent.
 - A pin failure is re-dispatched. Re-running a finished slate does nothing (all `prior_run`, no new claim).
 - **Invariant on every scenario:** exactly one recorded outcome per game, at most one claim call, and at most one save.
 
 `--rehearse` runs three of these slates through the same path and reports `networkAttempts: 0`.
 
-**Not covered:** real PostgREST latency, the real schedule source for `refreshSlate`, a real load-gate signal, and the real sweep SQL (mirrored, not executed).
+**Not covered:**
+- Real PostgREST latency, the real schedule source for `refreshSlate`, a real load-gate signal, and the real sweep SQL (mirrored, not executed).
+- The `no_claim_after_window`, `run_threw` and failed-lookup branches have no dedicated test.
+- **Refresh timing:** the schedule is re-read only at a dispatch wave and once before settling. An earlier reschedule or a late add for the first or only game is not seen before that game's original dispatch time, by which point it may no longer fit.
+- **Short refresh:** an empty refresh is ignored. A refresh that succeeds but omits a pending game closes it as `removed_from_slate` permanently (see the postponed/removed question in §4).
 
 ## 4. Decisions for TJ
 
@@ -91,7 +98,7 @@ The production DB has been overloaded before (Lines P3, 2026-11-07, twice). Each
    - **Refreshes:** the schedule is re-read before each dispatch wave and once before settling.
    - No cron.
 4. **Pilot subset:** 2–3 games of one slate, ideally 2 with the **same start**, to exercise the cap and stagger, plus 1 later game.
-5. **Stop conditions (whole queue):**
+5. **Stop conditions (whole queue). PROPOSED, NOT BUILT:** `runSlate` implements only the per-game rules above. These would be added before a live queue:
    - **Pause dispatch on any of:**
      - an unresolved game;
      - a `save_unknown`;
@@ -104,4 +111,4 @@ The production DB has been overloaded before (Lines P3, 2026-11-07, twice). Each
    - **Global sweep:** `forge_pregame_capture_sweep_v1` closes *any* orphaned claim past its deadline, not just this slate's (limit 100). Acceptable, or should a slate-scoped sweep RPC be added (needs a migration)?
    - **Postponed or removed games:** recording `never_dispatched` closes that (game, policy) **permanently**. A postponed game replayed later under the same game id could not be captured under `pregame-native-v1`. Record it, or leave such games unrecorded?
    - **`claim_failed` with no claim found:** today the queue treats it as ambiguous and closes it only after the claim window. That costs the capture but is safe. A re-claim would be faster but retries a mutation whose server-side fate is unknown. *(Recommended: keep the current behaviour.)*
-   - **Lead:** 10 min by default. Pilot launches used about T−64 to T−70. Keep 10?
+   - **Lead:** 10 min by default, so the dispatch is about T−76. The pilot packet only bounded launches at or before T−64. Keep 10?
