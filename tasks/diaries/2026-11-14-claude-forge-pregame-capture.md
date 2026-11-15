@@ -161,3 +161,13 @@
   - BLSH asked about a 2026-11-17 13:45–14:15Z slot; replied clear.
 - **Next:** G1 (one read-only schedule lookup) needs TJ's go-ahead. Then propose the earliest eligible game for approval; fallback is Tue 2026020334.
 - **Gotcha:** `$TMPDIR/pgpool.sh` from earlier lanes no longer exists. I rebuilt an equivalent in the scratchpad: pooler aws-0-us-east-1:5432, user postgres.<ref>, read from `SUPABASE_DB_URL`, never echoed.
+
+## Checkpoint 2026-11-15T14:45Z: pilot 1 = source_failed (Chef)
+- **G1 lookup:** earliest eligible game is 2026020326. TJ approved it, launched in about 30 min, attended. The gate at 14:40:09Z was clean.
+- **Result:** `source_failed`, `http_status:500` on `sustainability_trend_bands`, in 31 s (reads 30.3 s). No save, no TSA call. Claim `216da95d…` fenced; one outcome. Readback matches. Receipt and mailbox finding are posted.
+- The live writer swallows this same error, which is the honest-input failure the capture must refuse.
+- **Next:**
+  - Diagnose the 500 read-only (needs TJ's approval): API/Postgres logs for that window, recent `forge_runs` trend diagnostics, an EXPLAIN without ANALYZE.
+  - Offline: keep the bounded PostgREST error code/message in refusal metadata.
+  - Then propose the next game (Tuesday fallback or the next eligible game).
+- **Gotcha:** refusing on status before reading the body cost the diagnosis. Fix offline.

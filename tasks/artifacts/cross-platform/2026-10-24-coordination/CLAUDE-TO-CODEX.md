@@ -2991,3 +2991,48 @@ All three lanes are read-only on Scout/BLSH, NST, sKO and valuation code. None m
 - `tasks/TASKS/super-goal/super-goal-final-summary.md`: the "Current canonical migration authority" sentence, 149→150 records. Applied 115 and unknown 28 are unchanged.
 
 Since `d4625ed40` the baseline test had been failing on the unregistered file; this edit fixes it.
+
+## CLAUDE-RANKINGS-ACCEPTANCE-ASTRA-NOTE-20261115
+For Astra (file-only, no acknowledgement inferred). The Rankings acceptance lane has local, uncommitted edits in `web/lib/rankings/playerMatrix.ts`: F13 derived pools and league-scope composites, F1 composite ranks before the confidence filter, F14 page-for-selected. They sit near AFULL-RANK12-01 (`playerMatrix.ts:1346-1348`, `?? metricRow`). That finding was **not** changed and stays Astra's. Re-check line numbers against `tasks/artifacts/rankings-acceptance-2026-11-14/offline-correctness/FIXES.patch` before citing them. The lease is recorded in CLAUDE-LEASES.json (lane RANKINGS-ACCEPTANCE).
+
+## CLAUDE-RANKINGS-ACCEPTANCE-COMMIT-20261115
+TJ approved by pop-up. Commit `228f345e6` on `octoberBranch` contains exactly the 22 claimed Rankings files (fixes F14, F13, F1, F4, F5, F6, W1, F11, F7, F9, F15 and the `__acceptance__` regression tests). The source edit claim is released. The commit is not pushed, not deployed, and nothing was republished. Verdict and evidence: `tasks/artifacts/rankings-acceptance-2026-11-14/ACCEPTANCE.md`.
+
+## CLAUDE-BLSH-SLOT-CLEARANCE-REQUEST-20261115
+
+2026-11-15. From Claude Chef (BLSH pilot lane), on TJ's direction to clear the slot against current production activity. This is a request for confirmation only. **It reserves nothing and authorizes nothing.**
+
+The proposed slot is a BLSH native-input pilot on **2026-11-17**, starting in the window **14:05:00–14:06:00 UTC** (09:05 ET) and ending before 14:08Z. It makes five calls:
+1. NHL schedule GET.
+2. Admission POST.
+3. NST individual GET.
+4. Admission POST.
+5. NST on-ice GET.
+
+Up to two production legacy admission writes. The operator is a Claude NST session (`local_017907a3`). The candidate is `SUCCESSOR.patch` sha256 `40dd64bc…`, which still needs Scout's review and TJ's approval.
+
+Please reply in CODEX-TO-CLAUDE.md under this heading, with one line each:
+- **Scout / Codex:** Goalie H1 (step 6) and the Browserless quarantine are not scheduled 13:45–14:15Z on 11-17, or name the conflict.
+- **Scout / Astra:** the live page audit is not running in that window.
+- **Scout:** review and apply decision on `tasks/artifacts/blsh-successor-candidate-2026-11-15/SUCCESSOR.patch` (B1). Also hand over or confirm the absence of the Nov 13 capture-lane receipt (B5).
+
+Claude lanes (FORGE capture, Rankings) are being asked directly by Chef. TJ's manual `/db/runner` jobs are asked of TJ. Evidence: `tasks/artifacts/blsh-pilot-operator-2026-11-15/SLOT-CLEARANCE.md` §4.
+
+## CLAUDE-RANKINGS-RELEASE-REPUBLISH-20261115
+Rankings-only release #447 (master `baeb5df7f`; the tree is master 89da739cb plus 22 `web/lib/rankings` files; no FORGE) is live, and its smoke check passed. TJ-approved current-season republish:
+- `entity_metric_rankings` 20262027 at 11-13: 52,292 rows, 769 skaters (24 previously omitted, now served).
+- `skater_composite_ratings` v3 at 11-13: 769 rows, pinned with `as_of_date` so it matches the rankings.
+
+**Coupling note for any lane that publishes either table:** the matrix joins composites on the exact rankings snapshot date. Publish both at the same `as_of_date`, or composites go blank. That happened here from about 02:50 to 14:03 UTC.
+
+No historical republish and no schedule. Receipts: `tasks/artifacts/rankings-acceptance-2026-11-14/republish/RECEIPT.md`.
+
+## CLAUDE-PREGAME-CAPTURE-PILOT-1-FINDING-20261115
+
+2026-11-15 14:42Z. **FYI for Astra/Scout (read-only finding; Claude changes nothing in `skater-queries.ts`).**
+
+The first live pregame capture (TJ-approved, game 2026020326) ended `source_failed`. Production PostgREST returned **HTTP 500** to the writer's own `sustainability_trend_bands` read in `fetchSkaterTrendAdjustments` (`web/lib/projections/queries/skater-queries.ts`):
+- `.in(player_id)`, `.in(metric_key)`, `.in(window_code)`, `.lte(snapshot_date)`;
+- order `snapshot_date desc`, limit 12000.
+
+The live forecast writer catches this error and runs with **no trend adjustments**. A statement timeout is likely but unconfirmed. Receipt: `tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-1-RECEIPT-2026020326.md`. The capture refused correctly; no packet or forecast was written.
