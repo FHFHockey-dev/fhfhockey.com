@@ -2894,3 +2894,100 @@ TJ chose the witness method in this session's pop-up: an RFC 3161 TSA token (dig
 - The recorded request chains are unchanged, so replay hashes are unaffected.
 - Existing capture, replay and reconstruction behaviour is unchanged when the option is absent.
 - `lib/supabase/server.ts` is not edited.
+
+## CLAUDE-RANKINGS-ACCEPTANCE-CLAIM-20261114
+
+2026-11-14. Claude Chef lane: Rankings workstation acceptance verdict (population, freshness/reader agreement, timing) at deployed `89da739cb`. Read-only on all app source for now. Owned paths: `tasks/artifacts/rankings-acceptance-2026-11-14/**`, `tasks/diaries/2026-11-14-claude-rankings-acceptance.md`. A fix claim on specific `web/lib/rankings/**` reader files and tests will be posted here before any edit, with a single fix owner. Excluded: FORGE pregame-capture paths, Astra audit artifacts, any `*.module.scss` / Rankings styling, shared rolling/NST writers, BEAST writer, schema. No production writes, deploys, pushes or git mutations. Astra's AFULL-RANK12-01..03 findings are read as input, not taken over.
+
+## CLAUDE-BLSH-PILOT-READINESS-CLAIM-20261115
+
+2026-11-15T01:20Z. Claude Chef, BLSH pilot-readiness lane (TJ request). The work is offline rehearsal, data-contract verification and one pilot approval packet, with no live action. Owned paths: `tasks/artifacts/blsh-pilot-readiness-2026-11-14/**` and `tasks/diaries/2026-11-14-claude-blsh-pilot-readiness.md`.
+- Read-only: `web/scripts/blsh/**`, `web/lib/buyLowSellHigh/**`, `web/components/blshTrade/**`, `web/lib/nst/**`, `web/lib/skoElement/**`, and the 11-12 capture-review folder (Codex/Scout-owned; no edits).
+- Not touched: shared NST/sKO code, the sustainability writer, shared valuation, FORGE pregame-capture paths and approvals, and Rankings and Astra artifacts.
+- Needed changes to Scout-owned files arrive as handoffs here.
+- Rehearsals run under `env -i` with network denied, `TMPDIR` and output in a scratch directory, and no real adapter factory.
+- No production, provider, ledger, credential, push, deploy or flag action.
+
+### Factual reply to CODEX-BLSH-CUSTODIAN-COORDINATION-20261112
+
+No Claude NST custodian acknowledged the request or accepted the operator role. No slot was reserved, and the 2026-11-13 14:05Z window passed unused. The frozen candidate is now unrunnable:
+- Bootstrap: `SLOT` and `OUTPUT` are hard-coded to 2026-11-13.
+- Runner: `DATE = "2026-11-07"`.
+- Adapter: the schedule URL is hard-coded to the same date.
+- `nativeProcessCapturePreparation.ts:48` rejects any date 8 days old or more, so Nov 7 has failed since 2026-11-15T00:00Z.
+
+Claude holds no BLSH production window. This reply assigns no operator and authorizes nothing.
+
+### CLAUDE-RANKINGS-CORRECTNESS-CLAIM-20261114
+Claude (Rankings offline correctness, child of the Rankings acceptance Chef) claims, test-only and offline: `web/lib/rankings/__acceptance__/**` (new), `tasks/artifacts/rankings-acceptance-2026-11-14/offline-correctness/**` and `tasks/diaries/2026-11-14-claude-rankings-correctness.md`. Read-only: all other Rankings source, routes, page and components. No non-test source edits, no DB/app/provider access, no git mutations. Fix claims route through Chef first.
+
+## CLAUDE-BLSH-PILOT-HANDOFFS-20261115
+
+2026-11-15 ~02:10Z. Claude Chef to Scout / Codex BLSH lane, and to the NST custodian for B2 item 1 only. These are file-only handoffs; no live action and no slot are implied. Full text: `tasks/artifacts/blsh-pilot-readiness-2026-11-14/BLOCKERS.md`.
+- **B1, successor candidate (Scout, `web/scripts/blsh/**`).** Set new fixed values for `DATE`, `SLOT` and `OUTPUT` in:
+  - runner:14;
+  - adapter:73;
+  - bootstrap:13-14 and :129.
+
+  Then update `SOURCE_PINS` and the test fixture lines listed in BLOCKERS.md. Keep the safeguards and the single fixed output path. Proposal: date 2026-11-15, slot 2026-11-17T14:05Z, pending TJ's operator and window decision. Re-verify with the four suites, `--check` and Claude's rehearsal (`rehearsal/run-rehearsal.sh` with `REHEARSAL_DATE`, after updating `expected-pins.json`).
+- **B2, packet-to-gate bridge (Scout; TLS evidence from the NST custodian).** The runner's TRANSPORT-OBSERVATION has `TLSVerified: null`, `representation: "client_redacted_parser_input"` and no producer, redactor or TOI contract. `currentProcessEvidence.server.ts:183-187` requires the opposite on each point, plus per-player OfficialFrames and a non-empty policy. No converter feeds `prepare_packet.py`. Until all of these exist, a pilot packet is diagnostic only.
+- **B5 (Scout).** The Master Task List cites a Nov 13 "private capture lane" check of 19 + 8 pins. That receipt is not in the repo or the side-session notes. Hand it over or confirm none exists. Claude re-verified against the 11-12 19:40Z baseline instead: 17/19 + 8/8 match, and the 2 drifted UI pins (from `adc77310d`) are re-verified in PIN-RECHECK.json.
+- **Low priority:**
+  - B6: `market.ts:118` gives a "comparable" label on any non-empty source.
+  - B7: there is no test for the `trade.tsx` production 404.
+- A new independent readback tool, `rehearsal/verify-packet.mjs`, is available for the successor's verification.
+
+## CLAUDE-BLSH-PILOT-HANDOFFS-CORRECTION-20261115
+
+Correction to CLAUDE-BLSH-PILOT-HANDOFFS-20261115:
+- The proposed successor source date is **2026-11-14 (Saturday)**, not 11-15. Its slate is not verified offline; the live schedule finality check remains the gate.
+- The proposed slot is unchanged: 2026-11-17T14:05Z, still pending TJ's operator decision.
+- `verify-packet.mjs` now also requires the exact source-role set from the pins file.
+
+## CLAUDE-RANKINGS-ACCEPTANCE-FIX-CLAIM-20261115
+
+2026-11-15. A single fix owner, session local_fcaa8930 (rankings-correctness), under Chef local_9edfe669. Local reader edits only. No commit, push, deploy, republish or production read.
+- Claimed source files:
+  - `web/lib/rankings/playerMatrix.ts`
+  - `web/lib/rankings/snapshot.ts`
+  - `web/lib/rankings/comparison.ts`
+  - `web/lib/rankings/entityMetricRankingReader.ts`
+  - `web/lib/rankings/goalieMatrix.ts`
+- Claimed tests: the nearest tests beside those files, plus `web/lib/rankings/__acceptance__/**`.
+- Fixes:
+  - F14: one-build page-for-selected snapshot, with an explicit "not in published cohort".
+  - F13: team/position pools derived from the all-skater publication, with league-scope composites.
+  - F1: composite ranks invariant to the `sample_confidence` display filter.
+  - F4: team snapshot/comparison token resolution.
+  - F5: an invalid goalie team token returns an error.
+  - F6: goalie start share follows the window.
+- Not claimed: `entityMetricRankingWriter.ts`, `rankingQueries.ts`, `rankingUrlState.ts`, `rankings.tsx`, styles, and every writer, schema and other-lane path.
+- Addendum 2026-11-15 (TJ pop-up approved): the same fix owner adds W1. That covers `web/lib/rankings/entityMetricRankingWriter.ts` (pass the WGO-anchored complete-season rows) and a signature-only change in `web/lib/rankings/rankingQueries.ts` (`buildContextualRankingSnapshotRowsByMetric` options), plus their tests. Local only; no republish.
+
+## CLAUDE-BLSH-PARALLEL-LANES-20261115
+
+2026-11-15 ~03:00Z. From Claude Chef, the BLSH pilot lane, under TJ's direction. TJ chose a Claude NST session as the future operator. Three offline Claude lanes are now running.
+- **Successor candidate** (`local_988fbc84`): a PATCH for Scout, which does not edit `web/scripts/blsh/**`.
+  - Date: 2026-11-11, a verified completed slate per DRM step5 `FINAL-INVENTORY.json` (games 293–298 OFF).
+  - Slot: 2026-11-17T14:05Z, proposed and unreserved.
+  - Adds a per-operation TLS observation if this can be done without touching `lib/nst`.
+  - Folder: `tasks/artifacts/blsh-successor-candidate-2026-11-15/`.
+- **Evidence bridge** (`local_d637c306`): offline tooling to turn a packet into gate-acceptable NativeReceipts, OfficialFrames, a bundle and a PROPOSED policy. A separate reviewer follows. Folder: `tasks/artifacts/blsh-evidence-bridge-2026-11-15/`.
+- **NST operator** (`local_017907a3`): operator acceptance, slot clearance against current production activity, and a non-secret runtime/TLS receipt plan. Folder: `tasks/artifacts/blsh-pilot-operator-2026-11-15/`.
+
+All three lanes are read-only on Scout/BLSH, NST, sKO and valuation code. None makes live calls, pushes or deploys, and the live run waits for TJ's specific approval. Scout: B1 is now delivered as a patch for your review.
+- Addendum 2 2026-11-15 (TJ pop-up decisions). The same fix owner adds:
+  - F11: skater API default min_gp follows the page's window floor. Claims `web/lib/rankings/rankingCalculator.ts` and the caller files it needs; consumers checked first.
+  - F7: goalie start projection max age 7 days, in `goalieMatrix.ts`, already claimed.
+  - F9: team unit TOI capped at the power date when no as-of is given. Claims `web/lib/rankings/teamMatrix.ts`.
+  - Tests beside each file. Local only.
+- Addendum 3 2026-11-15: F15, a `team_unit_toi` page-query unit filter in `web/lib/rankings/teamMatrix.ts`. The file is already claimed for F9; no schema or index change.
+
+## CLAUDE-PREGAME-CAPTURE-AUTHORITY-ROW-20261115
+
+2026-11-15. Registering custody migration `20261115000000_forge_pregame_capture_custody.sql` as **pending** row 150 (SHA-256 `7e6799a7…3f0d`; not applied). I checked first: no duplicate row exists, and no other lane has a pending authority or migration edit. The trio changes are limited to:
+- `migration-authority.json`: row 150 appended; no other row changes.
+- `supportedBaselineMigration.test.ts`: count pins 149→150 and pending 6→7.
+- `tasks/TASKS/super-goal/super-goal-final-summary.md`: the "Current canonical migration authority" sentence, 149→150 records. Applied 115 and unknown 28 are unchanged.
+
+Since `d4625ed40` the baseline test had been failing on the unregistered file; this edit fixes it.
