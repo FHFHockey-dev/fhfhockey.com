@@ -15,8 +15,8 @@ import type { TsaClient } from "./verifier";
 
 export const CAPTURE_ENABLED_ENV = "FORGE_PREGAME_CAPTURE_ENABLED";
 export const DEFAULT_CAPTURE_BUDGET: CaptureBudget = {
-  readMs: 120_000, saveWaitMs: 20_000, tsaTimeoutMs: 10_000, skewToleranceMs: 2_000,
-  // read + save wait + settle + two reads + TSA + margin; T−60 itself never moves.
+  readMs: 120_000, saveWaitMs: 20_000, tsaTimeoutMs: 10_000, skewToleranceMs: 2_000, rpcMs: 10_000,
+  // >= minimumRequiredMs (read + save wait + 3 settles + 2 reads + TSA + witness + outcome + skew); T−60 never moves.
   requiredMs: 240_000,
 };
 
@@ -25,7 +25,7 @@ export const DEFAULT_CAPTURE_BUDGET: CaptureBudget = {
  * (including the issued-context reads before and after) and returns the closing issued context, so the runner
  * adds no read of its own to the packet: replay must consume every captured read.
  */
-export type NativeCollector = (args: { slateDate: string; gameId: number; inputCutoff: string; deadlineMs: number }) =>
+export type NativeCollector = (args: { slateDate: string; gameId: number; inputCutoff: string; deadlineMs: number; seasonBootstrap: boolean }) =>
   Promise<{ candidates: Collected["candidates"]; issuedContextAfter: ForgeIssuedContextV1 }>;
 
 export function calendarRevisionOf(schedule: Array<{ revision: string }>): string {
@@ -54,6 +54,8 @@ export interface RunnerConfig {
   supabaseUrl: string; serviceRoleKey: string;
   tsaUrl: string; tsaTrust: TsaTrust;
   collectNative: NativeCollector;
+  /** The writer's own season-bootstrap decision (exported from run-forge-projections), so capture reads what the writer would. */
+  seasonBootstrap: (args: { slateDate: string; gameId: number; inputCutoff: string }) => boolean;
   modelEnvironment: () => Record<string, string | null>;
   budget?: Partial<CaptureBudget>;
   env?: Record<string, string | undefined>;
@@ -97,14 +99,17 @@ export async function runPrivatePregameCapture(config: RunnerConfig, request: {
         gameId: binding.gameId, slateDate: binding.slateDate, homeTeamId: binding.homeTeamId, awayTeamId: binding.awayTeamId,
         homeAbbrev: binding.homeAbbrev, awayAbbrev: binding.awayAbbrev,
       }, deadlineMs);
+      const seasonBootstrap = config.seasonBootstrap({ slateDate: binding.slateDate, gameId: binding.gameId, inputCutoff: binding.inputCutoff });
       const run = await captureProjectionInputs(
-        () => config.collectNative({ slateDate: binding.slateDate, gameId: binding.gameId, inputCutoff: binding.inputCutoff, deadlineMs }),
+        () => config.collectNative({ slateDate: binding.slateDate, gameId: binding.gameId, inputCutoff: binding.inputCutoff, deadlineMs, seasonBootstrap }),
         { transport, deadlineMs });
       const after = run.result.issuedContextAfter;
       if (!after || after.game.id !== binding.gameId) throw new Error("collector_context_missing");
       return {
         reads: run.reads, candidates: run.result.candidates,
+        seasonBootstrapApplied: seasonBootstrap,
         transport: { calls: transport.usage.calls, httpCalls: transport.usage.httpCalls, rows: transport.usage.rows, bytes: transport.usage.bytes,
+          stampToleranceMs: DEFAULT_TRANSPORT_BUDGET.stampToleranceMs,
           // Strict capture throws before recording a write; any recorded write is still a refusal.
           refusals: [...transport.usage.refusals, ...(run.writes.length ? [`writes_recorded:${run.writes.length}`] : [])] },
         // The closing context from inside the packet must still match the pinned calendar revision.

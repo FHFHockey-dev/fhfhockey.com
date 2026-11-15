@@ -35,15 +35,23 @@ export const CAPTURE_RPCS: ReadonlySet<string> = new Set(["forge_latest_rolling_
 export const RESULT_RELATIONS: ReadonlySet<string> = new Set([
   "pbp_plays", "shift_charts", "nhl_api_shift_rows", "skatersGameStats", "goaliesGameStats", "wgo_skater_stats",
   "wgo_goalie_stats", "wgo_team_stats", "forge_goalie_game", "forge_team_game_strength", "expected_goals",
-  "rolling_player_game_metrics", "player_stats_unified", "lineCombinations", "nst_team_all", "nst_team_stats",
+  "rolling_player_game_metrics", "rolling_player_metric_support_payloads", "player_stats_unified", "lineCombinations",
+  "nst_team_all", "nst_team_stats",
 ]);
 const GAME_COLUMNS = ["game_id", "gameid", "gameId"];
 const DATE_COLUMNS = ["date", "game_date", "gameDate"];
 const TEAM_COLUMNS = ["team_id", "teamId", "team_abbreviation", "team_abbrev", "teamAbbrev", "team"];
-const AVAILABILITY_COLUMNS = ["created_at", "available_at", "observed_at", "inserted_at", "fetched_at", "updated_at", "captured_at", "detected_at", "resolved_at"];
+const AVAILABILITY_COLUMNS = ["created_at", "available_at", "observed_at", "inserted_at", "fetched_at", "updated_at", "captured_at",
+  "detected_at", "resolved_at", "received_at", "accepted_at", "published_at", "source_published_at"];
 
-const FILTER_METHODS = new Set(["eq", "neq", "in", "is", "lt", "lte", "gt", "gte", "like", "ilike", "not", "or", "filter", "match", "contains", "containedBy"]);
+/** Filters that narrow a read. range/limit/neq/not are allowed but do not by themselves make a read "filtered". */
+const NARROWING_METHODS = new Set(["eq", "in", "is", "lt", "lte", "gt", "gte", "like", "ilike", "or", "filter", "match", "contains", "containedBy"]);
+const OTHER_FILTER_METHODS = new Set(["neq", "not"]);
 const SHAPE_METHODS = new Set(["select", "order", "range", "limit", "single", "maybeSingle", "abortSignal", "returns", "overrideTypes"]);
+/** PostgREST resource embedding and spreads would read other relations through foreign keys. */
+const EMBEDDING = /[()!]|\.\.\./;
+/** 406 is PostgREST's .single()/.maybeSingle() cardinality reply and 416 an empty range: both are honest empty reads. */
+const ALLOWED_ERROR_STATUSES = new Set([406, 416]);
 const MUTATIONS = new Set(["insert", "upsert", "update", "delete"]);
 const UNFILTERED_OK: ReadonlySet<string> = new Set(["seasons", "teams", "nhl_xg_model_registry"]);
 
@@ -61,7 +69,7 @@ export interface TransportBudget {
 export const DEFAULT_TRANSPORT_BUDGET: Omit<TransportBudget, "deadlineMs"> = {
   maxCalls: 2_000, maxRows: 1_500_000, maxBytes: 192 * 1024 * 1024, maxResponseBytes: 32 * 1024 * 1024, stampToleranceMs: 5_000,
 };
-export interface TransportUsage { calls: number; httpCalls: number; rows: number; bytes: number; refusals: string[] }
+export interface TransportUsage { calls: number; httpCalls: number; rows: number; bytes: number; naiveStamps: number; refusals: string[] }
 
 type Operation = { method: string; args: unknown[] };
 
@@ -89,7 +97,7 @@ export function createCaptureTransport(options: {
   const now = options.now ?? Date.now;
   const fetchImpl = options.fetchImpl ?? fetch;
   const base = new URL(options.restBaseUrl.endsWith("/") ? options.restBaseUrl : `${options.restBaseUrl}/`);
-  const usage: TransportUsage = { calls: 0, httpCalls: 0, rows: 0, bytes: 0, refusals: [] };
+  const usage: TransportUsage = { calls: 0, httpCalls: 0, rows: 0, bytes: 0, naiveStamps: 0, refusals: [] };
   const refuse = (code: string, detail?: string): never => {
     usage.refusals.push(detail ? `${code}:${detail}` : code);
     throw new CaptureRefused(code, detail);
@@ -106,19 +114,32 @@ export function createCaptureTransport(options: {
     if (extra.length) refuse("http_path", rest);
     if (head === "rpc") { if (!name || !CAPTURE_RPCS.has(name)) refuse("http_rpc", name); }
     else if (name !== undefined || !CAPTURE_RELATIONS.has(head)) refuse("http_relation", head);
+    for (const [key, value] of url.searchParams) {
+      if (key.includes(".") || (key === "select" && EMBEDDING.test(value))) refuse("http_embedding", key);
+    }
+    const headers = new Headers(init?.headers ?? request?.headers);
+    for (const profile of ["accept-profile", "content-profile"]) {
+      const value = headers.get(profile);
+      if (value !== null && value !== "public") refuse("http_profile", value);
+    }
     if (++usage.httpCalls > budget.maxCalls) refuse("call_budget");
     const remaining = budget.deadlineMs - now();
     if (remaining <= 0) refuse("deadline");
-    // supabase-js converts a thrown fetch error into an { error } result, so every refusal here is also
-    // recorded in usage.refusals; the runner fails any capture with a recorded refusal.
+    // supabase-js converts a thrown fetch error into an { error } result that a reader may swallow, so every
+    // failure here — refusal, network error, abort, timeout or error status — is recorded in usage.refusals,
+    // and the runner fails any capture with a recorded refusal.
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(new CaptureRefused("deadline")), remaining);
-    const forward = () => controller.abort(init?.signal?.reason);
+    const timer = setTimeout(() => controller.abort(), remaining);
+    const forward = () => controller.abort();
     if (init?.signal?.aborted) forward(); else init?.signal?.addEventListener("abort", forward, { once: true });
     let response: Response, body: Uint8Array;
     try {
       response = await fetchImpl(url, { ...init, method, signal: controller.signal });
+      if (response.status >= 400 && !ALLOWED_ERROR_STATUSES.has(response.status)) refuse("http_status", String(response.status));
       body = await readCapped(response, budget.maxResponseBytes, refuse);
+    } catch (error) {
+      if (error instanceof CaptureRefused) throw error;
+      return refuse(controller.signal.aborted ? "http_aborted" : "http_error", error instanceof Error ? error.message.slice(0, 80) : String(error));
     } finally {
       clearTimeout(timer);
       init?.signal?.removeEventListener("abort", forward);
@@ -145,8 +166,10 @@ export function createCaptureTransport(options: {
       let filtered = method === "rpc";
       for (const op of chain) {
         if (MUTATIONS.has(op.method)) refuse("mutation_refused", `${name}.${op.method}`);
-        if (FILTER_METHODS.has(op.method) || op.method === "range" || op.method === "limit") filtered = true;
-        else if (!SHAPE_METHODS.has(op.method)) refuse("method_not_allowed", `${name}.${op.method}`);
+        if (NARROWING_METHODS.has(op.method)) filtered = true;
+        else if (!OTHER_FILTER_METHODS.has(op.method) && !SHAPE_METHODS.has(op.method)) refuse("method_not_allowed", `${name}.${op.method}`);
+        if (op.method === "select" && typeof op.args[0] === "string" && EMBEDDING.test(op.args[0])) refuse("embedding_refused", name);
+        if (FILTER_KEY_METHODS.has(op.method) && typeof op.args[0] === "string" && op.args[0].includes(".")) refuse("embedding_refused", `${name}.${op.args[0]}`);
       }
       if (!filtered && !UNFILTERED_OK.has(name)) refuse("unfiltered_read", name);
     },
@@ -163,14 +186,15 @@ export function createCaptureTransport(options: {
       for (const row of rows as Array<Record<string, unknown>>) {
         if (!row || typeof row !== "object") continue;
         for (const column of AVAILABILITY_COLUMNS) {
-          const value = row[column];
-          if (typeof value !== "string") continue;
-          let stamped: bigint;
-          try { stamped = parseInstantMicros(value); } catch { continue; } // date-only or non-instant text
-          if (stamped > receivedMicros) refuse("future_stamped_row", `${relation}.${column}`);
+          const stamped = availabilityInstant(row[column], usage);
+          if (stamped !== null && stamped > receivedMicros) refuse("future_stamped_row", `${relation}.${column}`);
         }
       }
-      if (method !== "from") return;
+      if (method !== "from") {
+        // RPC rows (e.g. rolling rows) may carry game ids, nested too: no target-game row may be captured.
+        for (const row of rows) if (mentionsGame(row, target.gameId, 0)) refuse("target_game_result", `rpc.${relation}`);
+        return;
+      }
       if (relation === "pbp_games") {
         for (const row of rows as Array<Record<string, unknown>>) {
           if (Number(row.id) === target.gameId && [row.hometeamscore, row.awayteamscore].some((score) => score !== null && score !== undefined && Number(score) > 0)) {
@@ -181,7 +205,7 @@ export function createCaptureTransport(options: {
       }
       if (!RESULT_RELATIONS.has(relation)) return;
       const count = (result as { count?: number | null } | null)?.count;
-      const filtersTarget = operations.some((op) => op.method === "eq" && GAME_COLUMNS.includes(String(op.args[0])) && Number(op.args[1]) === target.gameId);
+      const filtersTarget = operations.some((op) => filterTargetsGame(op, target.gameId));
       if (filtersTarget && ((typeof count === "number" && count > 0) || rows.length > 0)) refuse("target_game_result", relation);
       for (const row of rows as Array<Record<string, unknown>>) {
         if (GAME_COLUMNS.some((column) => row[column] !== undefined && Number(row[column]) === target.gameId)) refuse("target_game_result", relation);
@@ -192,6 +216,45 @@ export function createCaptureTransport(options: {
       }
     },
   };
+}
+
+const FILTER_KEY_METHODS = new Set(["eq", "neq", "in", "is", "lt", "lte", "gt", "gte", "like", "ilike", "filter", "contains", "containedBy", "not"]);
+
+/** True when a filter op selects the target game through a game column (eq, in, match, filter, or). */
+function filterTargetsGame(op: Operation, gameId: number): boolean {
+  const [first, second, third] = op.args;
+  const isGameColumn = (column: unknown) => GAME_COLUMNS.includes(String(column));
+  const mentions = (value: unknown) => new RegExp(`(^|[^0-9])${gameId}([^0-9]|$)`).test(String(value));
+  switch (op.method) {
+    case "eq": return isGameColumn(first) && Number(second) === gameId;
+    case "in": return isGameColumn(first) && Array.isArray(second) && second.some((value) => Number(value) === gameId);
+    case "match": return Boolean(first) && typeof first === "object" && GAME_COLUMNS.some((column) => Number((first as Record<string, unknown>)[column]) === gameId);
+    case "filter": return isGameColumn(first) && mentions(third);
+    case "or": return GAME_COLUMNS.some((column) => String(first).includes(column)) && mentions(first);
+    default: return false;
+  }
+}
+
+function mentionsGame(value: unknown, gameId: number, depth: number): boolean {
+  if (!value || typeof value !== "object" || depth > 3) return false;
+  if (Array.isArray(value)) return value.some((item) => mentionsGame(item, gameId, depth + 1));
+  const record = value as Record<string, unknown>;
+  if (GAME_COLUMNS.some((column) => record[column] !== undefined && record[column] !== null && Number(record[column]) === gameId)) return true;
+  return Object.values(record).some((nested) => mentionsGame(nested, gameId, depth + 1));
+}
+
+/**
+ * Parses an availability stamp. Instants with an offset parse as given; naive timestamps (timestamp without time
+ * zone columns) are read as UTC, the database's own convention, and counted in usage.naiveStamps for audit.
+ */
+function availabilityInstant(value: unknown, usage: TransportUsage): bigint | null {
+  if (typeof value !== "string") return null;
+  try { return parseInstantMicros(value); } catch { /* fall through */ }
+  if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d{1,9})?$/.test(value.trim())) {
+    usage.naiveStamps += 1;
+    return parseInstantMicros(`${value.trim()}Z`);
+  }
+  return null; // date-only or non-instant text
 }
 
 function sameTeam(value: unknown, target: CaptureTarget) {

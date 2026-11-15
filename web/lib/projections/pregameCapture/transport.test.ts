@@ -8,6 +8,7 @@ const BASE = "https://capture.test/rest/v1";
 const target: CaptureTarget = { gameId: 2026020400, slateDate: "2026-11-20", homeTeamId: 6, awayTeamId: 30, homeAbbrev: "BOS", awayAbbrev: "MIN" };
 
 type Route = (url: URL, init?: RequestInit) => { body?: unknown; count?: number; status?: number };
+// A route may also throw to simulate a network failure.
 function backend(route: Route) {
   const calls: Array<{ method: string; url: string }> = [];
   const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -134,6 +135,65 @@ describe("strict capture transport", () => {
     expect(bytes.transport.usage.refusals).toEqual(["response_bytes:4109"]); // declared content-length of the JSON body
     const late = transportFor(() => ({ body: [] }), { deadlineMs: Date.now() - 1 });
     await expect(captureProjectionInputs(async () => db.from("games").select("id").eq("id", 1), { transport: late.transport })).rejects.toThrow("deadline");
+  });
+
+  it("records network errors, aborts and error statuses as refusals even though readers only see { error }", async () => {
+    const down = transportFor(() => { throw new Error("ECONNRESET"); });
+    const r1 = await captureProjectionInputs(async () => db.from("games").select("id").eq("id", 1), { transport: down.transport });
+    expect(r1.result.error).toBeTruthy();
+    expect(down.transport.usage.refusals[0]).toMatch(/^http_error:/);
+    const flaky = transportFor(() => ({ status: 503, body: { message: "upstream" } }));
+    await captureProjectionInputs(async () => db.from("games").select("id").eq("id", 1), { transport: flaky.transport });
+    expect(flaky.transport.usage.refusals).toEqual(["http_status:503"]);
+    const missing = transportFor(() => ({ status: 404, body: { message: "relation does not exist" } }));
+    await captureProjectionInputs(async () => db.from("games").select("id").eq("id", 1), { transport: missing.transport });
+    expect(missing.transport.usage.refusals).toEqual(["http_status:404"]);
+    // .single() with no row is PostgREST's honest 406, not a source failure.
+    const none = transportFor(() => ({ status: 406, body: { code: "PGRST116", message: "0 rows" } }));
+    await captureProjectionInputs(async () => db.from("games").select("id").eq("id", 1).single(), { transport: none.transport });
+    expect(none.transport.usage.refusals).toEqual([]);
+  });
+
+  it("refuses PostgREST embedding, spreads, embedded filters and schema profile switches", async () => {
+    const { transport, calls } = transportFor(() => ({ body: [] }));
+    await expect(captureProjectionInputs(async () => db.from("games").select("id,forge_runs(*)").eq("id", 1), { transport })).rejects.toThrow("embedding_refused");
+    await expect(captureProjectionInputs(async () => db.from("games").select("id,...teams(*)").eq("id", 1), { transport })).rejects.toThrow("embedding_refused");
+    await expect(captureProjectionInputs(async () => db.from("games").select("id,teams!inner(id)").eq("id", 1), { transport })).rejects.toThrow("embedding_refused");
+    await expect(captureProjectionInputs(async () => db.from("games").select("id").eq("teams.id", 1), { transport })).rejects.toThrow("embedding_refused");
+    await expect(transport.fetch(`${BASE}/games?select=id,forge_runs(*)&id=eq.1`, { method: "GET" })).rejects.toThrow("http_embedding");
+    await expect(transport.fetch(`${BASE}/games?select=id&teams.id=eq.1`, { method: "GET" })).rejects.toThrow("http_embedding");
+    await expect(transport.fetch(`${BASE}/games?select=id&id=eq.1`, { method: "GET", headers: { "Accept-Profile": "forge_pregame_capture" } })).rejects.toThrow("http_profile");
+    expect(calls).toHaveLength(0);
+  });
+
+  it("does not treat range, limit or neq alone as a filter", async () => {
+    const { transport } = transportFor(() => ({ body: [] }));
+    await expect(captureProjectionInputs(async () => db.from("rosters").select("*").range(0, 999), { transport })).rejects.toThrow("unfiltered_read");
+    await expect(captureProjectionInputs(async () => db.from("rosters").select("*").neq("teamId", 0).limit(10), { transport })).rejects.toThrow("unfiltered_read");
+  });
+
+  it("refuses target-game results selected through in, match, filter or or, and nested in RPC rows", async () => {
+    const hit = () => transportFor(() => ({ body: [{ value: 1 }], count: 3 }));
+    for (const read of [
+      () => db.from("shift_charts").select("value").in("game_id", [2026020399, target.gameId]),
+      () => db.from("shift_charts").select("value").match({ game_id: target.gameId }),
+      () => db.from("shift_charts").select("value").filter("game_id", "eq", String(target.gameId)),
+      () => db.from("shift_charts").select("value").or(`game_id.eq.${target.gameId},game_id.eq.1`),
+    ]) {
+      const { transport } = hit();
+      await expect(captureProjectionInputs(async () => read(), { transport })).rejects.toThrow("target_game_result");
+    }
+    const nested = transportFor(() => ({ body: [{ player_id: 1, row: { game_id: target.gameId, toi: 900 } }] }));
+    await expect(captureProjectionInputs(async () => db.rpc("forge_latest_rolling_rows", { p_player_ids: [1] }, { get: true }),
+      { transport: nested.transport })).rejects.toThrow("target_game_result");
+  });
+
+  it("reads naive availability stamps as UTC, counts them, and still refuses future ones", async () => {
+    const past = transportFor(() => ({ body: [{ id: 1, created_at: new Date(Date.now() - 60_000).toISOString().replace("Z", "") }] }));
+    await captureProjectionInputs(async () => db.from("forge_roster_events").select("*").eq("id", 1), { transport: past.transport });
+    expect(past.transport.usage).toMatchObject({ naiveStamps: 1, refusals: [] });
+    const future = transportFor(() => ({ body: [{ id: 1, source_published_at: new Date(Date.now() + 3_600_000).toISOString().replace("Z", "") }] }));
+    await expect(captureProjectionInputs(async () => db.from("forge_roster_events").select("*").eq("id", 1), { transport: future.transport })).rejects.toThrow("future_stamped_row");
   });
 
   it("cannot be combined with write suppression or controlled news", async () => {

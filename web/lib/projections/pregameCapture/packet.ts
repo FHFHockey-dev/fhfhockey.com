@@ -22,21 +22,24 @@ export interface PregamePacket {
   binding: CaptureBinding;
   /** Every read completed inside this window; the stated availability cutoff is its end. */
   readWindow: { start: string; end: string };
+  /** readWindow.end plus the transport's stamp tolerance: every captured row was available by then on either clock. */
   statedCutoff: string;
+  seasonBootstrapApplied: boolean;
   modelEnvironment: Record<string, string | null>;
   candidates: { skaters: number[]; goalies: number[]; reserves: number[] };
-  transport: { calls: number; httpCalls: number; rows: number; bytes: number };
+  transport: { calls: number; httpCalls: number; rows: number; bytes: number; stampToleranceMs: number };
   reads: ProjectionInputRead[];
 }
 
 export function canonicalJson(value: unknown): string {
   return JSON.stringify(canonical(value));
 }
-// Same ordering as inputCapture's canonical(): object keys sorted with localeCompare, arrays kept in order.
+// Object keys sorted by UTF-16 code unit (locale- and ICU-independent, so any host re-verifies the same bytes);
+// arrays kept in order.
 function canonical(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonical);
   if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => [k, canonical(v)]));
+    return Object.fromEntries(Object.entries(value).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([k, v]) => [k, canonical(v)]));
   }
   return value;
 }
@@ -71,9 +74,12 @@ export function assertPacket(packet: PregamePacket): void {
     throw new Error("packet_binding");
   }
   for (const text of [b.scheduledStart, b.inputCutoff, packet.readWindow.start, packet.readWindow.end, packet.statedCutoff]) parseInstantMicros(text);
-  if (parseInstantMicros(packet.statedCutoff) !== parseInstantMicros(packet.readWindow.end)) throw new Error("packet_stated_cutoff");
+  const tolerance = packet.transport?.stampToleranceMs;
+  if (!Number.isSafeInteger(tolerance) || tolerance < 0 || tolerance > 60_000) throw new Error("packet_stamp_tolerance");
+  if (parseInstantMicros(packet.statedCutoff) !== parseInstantMicros(packet.readWindow.end) + BigInt(tolerance) * BigInt(1000)) throw new Error("packet_stated_cutoff");
   if (parseInstantMicros(packet.readWindow.start) > parseInstantMicros(packet.readWindow.end)) throw new Error("packet_read_window");
-  if (parseInstantMicros(b.inputCutoff) > parseInstantMicros(packet.readWindow.start)) throw new Error("packet_cutoff_after_reads");
+  if (typeof packet.seasonBootstrapApplied !== "boolean") throw new Error("packet_bootstrap_flag");
+  // inputCutoff is a database-clock reading and receivedAt a local one: they are not compared here (different clocks).
   if (!Array.isArray(packet.reads) || packet.reads.length === 0) throw new Error("packet_no_reads");
   for (const read of packet.reads) {
     const at = parseInstantMicros(read.receivedAt);

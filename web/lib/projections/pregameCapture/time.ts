@@ -27,7 +27,8 @@ export function parseInstantMicros(text: string, round: "floor" | "ceil" = "floo
   const [, y, mo, d, h, mi, s, fraction = "", zone] = match;
   const year = Number(y), month = Number(mo), day = Number(d);
   const hour = Number(h), minute = Number(mi), second = Number(s);
-  if (month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)
+  // Date.UTC maps years 0-99 to 19xx; no capture instant can precede the Unix epoch.
+  if (year < 1970 || month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)
     || hour > 23 || minute > 59 || second > 59) throw new Error(`instant_out_of_range:${text}`);
   const baseMs = Date.UTC(year, month - 1, day, hour, minute, second);
   if (!Number.isFinite(baseMs)) throw new Error(`instant_out_of_range:${text}`);

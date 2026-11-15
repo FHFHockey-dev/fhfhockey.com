@@ -56,6 +56,6 @@ openssl ts -reply -config tsa.cnf -section tsa_config -queryfile q.tsq -out good
 openssl ts -reply -config tsa.cnf -section tsa_noacc -queryfile q.tsq -out noacc.tsr 2>/dev/null
 openssl ts -reply -config tsa.cnf -section tsa_config -queryfile q.tsq -signer plain.crt -inkey plain.key -out plain.tsr 2>/dev/null || true
 openssl ts -query -in q.tsq -text 2>/dev/null | sed -n 's/.*Nonce: //p' > nonce.txt
-mkdir -p "$OUT"; cp ca.crt other.crt tsa.crt tsa.key good.tsr noacc.tsr data.bin nonce.txt "$OUT"/
+mkdir -p "$OUT"; cp ca.crt other.crt tsa.crt tsa.key plain.crt plain.key good.tsr noacc.tsr data.bin nonce.txt "$OUT"/
 [ -s plain.tsr ] && cp plain.tsr "$OUT"/ || true
 rm -rf "$W"

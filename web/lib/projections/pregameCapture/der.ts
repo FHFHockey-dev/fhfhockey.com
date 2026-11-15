@@ -59,23 +59,32 @@ export function kids(node: DerNode, expectTag?: number): DerNode[] {
 export function oid(node: DerNode): string {
   if (node.tag !== 0x06 || node.value.length === 0) throw new Error("der_not_oid");
   const bytes = node.value;
-  const parts: number[] = [];
-  let value = 0;
+  if (bytes[bytes.length - 1] & 0x80) throw new Error("der_oid_truncated");
+  const parts: string[] = [];
+  let value = BigInt(0);
+  let started = false;
   for (let i = 0; i < bytes.length; i++) {
-    value = value * 128 + (bytes[i] & 0x7f);
+    if (!started && bytes[i] === 0x80) throw new Error("der_oid_non_minimal");
+    started = true;
+    value = value * BigInt(128) + BigInt(bytes[i] & 0x7f);
     if (!(bytes[i] & 0x80)) {
-      if (parts.length === 0) parts.push(value < 80 ? Math.floor(value / 40) : 2, value < 80 ? value % 40 : value - 80);
-      else parts.push(value);
-      value = 0;
+      if (parts.length === 0) {
+        const first = value < BigInt(80) ? value / BigInt(40) : BigInt(2);
+        parts.push(first.toString(), (value - first * BigInt(40)).toString());
+      } else parts.push(value.toString());
+      value = BigInt(0);
+      started = false;
     }
   }
   return parts.join(".");
 }
 
 export function integer(node: DerNode): bigint {
-  if (node.tag !== 0x02 && (node.tag & 0xc0) !== 0x80) throw new Error("der_not_integer");
+  // Universal INTEGER, or a context-specific PRIMITIVE implicit integer (constructed encodings are refused).
+  if (node.tag !== 0x02 && ((node.tag & 0xc0) !== 0x80 || (node.tag & 0x20) !== 0)) throw new Error("der_not_integer");
   const bytes = node.value;
   if (bytes.length === 0) throw new Error("der_empty_integer");
+  if (bytes.length > 1 && ((bytes[0] === 0x00 && !(bytes[1] & 0x80)) || (bytes[0] === 0xff && (bytes[1] & 0x80)))) throw new Error("der_integer_non_minimal");
   let value = BigInt(0);
   for (const byte of bytes) value = (value << BigInt(8)) | BigInt(byte);
   if (bytes[0] & 0x80) value -= BigInt(1) << BigInt(bytes.length * 8);
@@ -89,7 +98,11 @@ export function generalizedTimeMicros(node: DerNode): { micros: bigint; text: st
   const match = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(?:\.(\d*[1-9]))?Z$/.exec(text);
   if (!match) throw new Error("der_bad_generalized_time");
   const [, y, mo, d, h, mi, s, fraction = ""] = match;
-  const ms = Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s));
+  const year = Number(y), month = Number(mo), day = Number(d), hour = Number(h), minute = Number(mi), second = Number(s);
+  // Date.UTC would silently normalise month 13, hour 24 or years 0-99; refuse instead.
+  if (year < 1970 || month < 1 || month > 12 || day < 1 || day > new Date(Date.UTC(year, month, 0)).getUTCDate()
+    || hour > 23 || minute > 59 || second > 59) throw new Error("der_generalized_time_range");
+  const ms = Date.UTC(year, month - 1, day, hour, minute, second);
   const padded = fraction.padEnd(9, "0");
   let micros = BigInt(ms) * BigInt(1000) + BigInt(padded.slice(0, 6));
   if (/[1-9]/.test(padded.slice(6))) micros += BigInt(1);

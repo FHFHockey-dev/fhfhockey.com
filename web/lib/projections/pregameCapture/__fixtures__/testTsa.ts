@@ -35,18 +35,24 @@ export function parseTimeStampRequest(request: Buffer): { digest: Buffer; nonce:
   return { digest, nonce };
 }
 
-export interface TestTsaOptions { genTimeMicros: bigint; accuracyMillis?: number | null; serial?: bigint; policy?: string; status?: number }
+export interface TestTsaOptions {
+  genTimeMicros: bigint; accuracyMillis?: number | null; serial?: bigint; policy?: string; status?: number;
+  /** Adversarial knobs: raw GeneralizedTime text, raw Accuracy DER, a signer without the timestamping EKU, a wrong sid serial. */
+  rawGenTime?: string; rawAccuracy?: Buffer; signer?: "tsa" | "plain"; sidSerial?: bigint;
+}
 
 /** Mints a TimeStampResp for a TimeStampReq, signed by the fixture TSA key with ESS signingCertificateV2. */
 export function mintTimeStampResponse(request: Buffer, options: TestTsaOptions): Buffer {
   if (options.status && options.status !== 0) return seq(seq(encodeUnsigned(BigInt(options.status))));
   const { digest, nonce } = parseTimeStampRequest(request);
-  const certDer = pemToDer(readFileSync(join(dir, "tsa.crt"), "utf8"));
-  const key = readFileSync(join(dir, "tsa.key"), "utf8");
-  const accuracy = options.accuracyMillis === null ? [] : [seq(tlv(0x80, encodeUnsigned(BigInt(options.accuracyMillis ?? 500)).subarray(2)))];
+  const certDer = pemToDer(readFileSync(join(dir, `${options.signer ?? "tsa"}.crt`), "utf8"));
+  const key = readFileSync(join(dir, `${options.signer ?? "tsa"}.key`), "utf8");
+  const accuracy = options.rawAccuracy ? [options.rawAccuracy]
+    : options.accuracyMillis === null ? [] : [seq(tlv(0x80, encodeUnsigned(BigInt(options.accuracyMillis ?? 500)).subarray(2)))];
   const tstInfo = seq(
     encodeUnsigned(BigInt(1)), encodeOid(options.policy ?? TEST_TSA_POLICY), seq(sha256Alg(), octets(digest)),
-    encodeUnsigned(options.serial ?? BigInt(1)), generalizedTime(options.genTimeMicros), ...accuracy,
+    encodeUnsigned(options.serial ?? BigInt(1)),
+    options.rawGenTime ? tlv(0x18, Buffer.from(options.rawGenTime, "latin1")) : generalizedTime(options.genTimeMicros), ...accuracy,
     ...(nonce === null ? [] : [encodeUnsigned(nonce)]),
   );
   const attr = (oid: string, value: Buffer) => seq(encodeOid(oid), set(value));
@@ -59,7 +65,7 @@ export function mintTimeStampResponse(request: Buffer, options: TestTsaOptions):
   const tbs = kids(kids(readDer(certDer), 0x30)[0], 0x30);
   const [serialNode, , issuerNode] = tbs[0].tag === 0xa0 ? tbs.slice(1) : tbs;
   const signerInfo = seq(
-    encodeUnsigned(BigInt(1)), seq(issuerNode.bytes, serialNode.bytes), sha256Alg(),
+    encodeUnsigned(BigInt(1)), seq(issuerNode.bytes, options.sidSerial === undefined ? serialNode.bytes : encodeUnsigned(options.sidSerial)), sha256Alg(),
     concatBytes([Buffer.from([0xa0]), signedAttrsSet.subarray(1)]),
     seq(encodeOid("1.2.840.113549.1.1.11"), NULL), octets(signature),
   );

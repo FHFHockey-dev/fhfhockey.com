@@ -6,7 +6,7 @@ describe("pregame capture runner wiring", () => {
     for (const value of [undefined, "1", "TRUE", "false"]) {
       await expect(runPrivatePregameCapture({
         supabaseUrl: "https://x.test", serviceRoleKey: "k", tsaUrl: "https://tsa.test", tsaTrust: { anchorsPem: [] },
-        collectNative: async () => { throw new Error("must not run"); }, modelEnvironment: () => ({}),
+        collectNative: async () => { throw new Error("must not run"); }, seasonBootstrap: () => false, modelEnvironment: () => ({}),
         env: { [CAPTURE_ENABLED_ENV]: value },
       }, { gameId: 1, slateDate: "2026-11-20", policyId: "pregame-native-v1", codeVersion: "abcdef0" })).rejects.toThrow("disabled");
     }
