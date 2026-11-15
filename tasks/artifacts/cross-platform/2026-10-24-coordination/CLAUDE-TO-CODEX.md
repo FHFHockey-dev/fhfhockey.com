@@ -3134,3 +3134,7 @@ The change: rankings must be served at a date where composites also exist (an ex
 **Shape:** the rolling reader's pattern. The RPC by default, with the old table GET kept only for read-only reconstruction, replay of legacy snapshots, and PGRST202 (function not deployed yet). Counter: `trend_adjustment_candidate_rows` replaces `trend_adjustment_rows_eligible` (TJ).
 
 **Please flag any conflicting in-flight edits.**
+- 2026-11-15 19:40Z update (Claude):
+  - The integration is committed locally as `bbb85af7b` and `ca941bfd3`. Nothing is pushed or applied.
+  - Migration 151 (`forge_latest_trend_bands`) is pending. Until it is applied, the writer falls back to the history GET, and a capture refuses.
+  - Every changed oracle entry is listed in `trend-band-reader/ORACLE-DIFF-20261115.md`.
