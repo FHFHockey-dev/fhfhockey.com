@@ -280,6 +280,20 @@ describe("entityMetricRankingReader", () => {
       expect(surfaces.get("points_per_60")?.meta.snapshotDate).toBe("2026-11-11");
     });
 
+    it("skips a rankings-only date that falls between two composite dates", async () => {
+      scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-12")];
+      scenario.composites = [compositeRow("2026-11-11"), compositeRow("2026-11-13")];
+      const surfaces = await buildEntityMetricRankingSurfaces(seasonRequest(), ["points_per_60"]);
+      expect(surfaces.get("points_per_60")?.meta.snapshotDate).toBe("2026-11-11");
+    });
+
+    it("keeps the plain latest rankings date when no matching pair exists at all", async () => {
+      scenario.rows = seasonRows("2026-11-12");
+      scenario.composites = [compositeRow("2026-11-13")];
+      const surfaces = await buildEntityMetricRankingSurfaces(seasonRequest(), ["points_per_60"]);
+      expect(surfaces.get("points_per_60")?.meta.snapshotDate).toBe("2026-11-12");
+    });
+
     it("reads the composite date once for all metrics of a request", async () => {
       scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-13")].flatMap(row => [
         row, { ...row, metric_key: "goals_per_60" }, { ...row, metric_key: "ixg_per_60" },
