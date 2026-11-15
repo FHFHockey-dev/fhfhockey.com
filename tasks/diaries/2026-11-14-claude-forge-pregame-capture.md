@@ -42,3 +42,28 @@
   - `vitest --root /` hangs: it scans the whole filesystem. Use esbuild for one-off scripts.
   - OpenSSL refuses to sign a TSA reply with a non-EKU cert, so the EKU refusal has no fixture. The code path is checked by reading only.
 - **Pending:** the authority row 150 and test count pins, added when the migration bytes freeze.
+
+## Checkpoint 2026-11-15T02:10Z: transport + custody orchestrator (Chef)
+- **TJ pop-ups:**
+  - Full stage load/compute split by a high-effort worker session. Proposed as card `task_558b7a87`: the app refused a direct start from a notification-started turn, so TJ starts it.
+  - Exactly two GET RPCs allowlisted.
+  - Chef is now at xhigh.
+- **Decisions:**
+  - Parity = identical read multiset. The writer's target-game PBP/shift completeness reads stay; the capture refuses if they show any result. Removing them would break replay of all retained snapshots: unconsumed reads throw.
+  - The stated cutoff = end of the read window. The claim's DB clock is the as-of value passed to filters (null cutoff → claimed_at).
+  - A function-level `SET statement_timeout` does NOT bound its own call (PG15 measured: a 3 s sleep completed). Unknown saves are settled through `settle_v1` (claim row lock + fence), never timed out.
+  - HTTP-layer refusals come back as `{ error }` results (supabase-js wraps fetch throws), so the runner fails any capture with a recorded refusal.
+- **Commits:**
+  - 9078b6f0e: fence + proof.
+  - 93089a4fe: strict transport and the `inputCapture` option.
+  - This checkpoint: packet, rpc, verifier, custody, test TSA signer, acceptance tests.
+- **Checks:**
+  - SQL proof 69/69.
+  - Vitest pregameCapture 39/39.
+  - inputCapture consumers: 15 files, 839 passed.
+  - ESLint clean.
+  - Full typecheck running under `/tmp/fhfh-heavy.lock`.
+- **Next:**
+  - Wire `runner.ts` (real pin/collect via the worker's `collectNativePregameInputs`, HTTP TSA client, Supabase clients) and a local script with a dry offline mode.
+  - Fresh-context review of custody (`d4625ed40` onward).
+  - Then the pilot packet for TJ.

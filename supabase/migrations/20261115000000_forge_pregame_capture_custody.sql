@@ -93,39 +93,40 @@ revoke all on function forge_pregame_capture.reject_mutation() from public, anon
 create function public.forge_pregame_capture_claim_v1(
   p_game_id bigint, p_policy_id text, p_slate_date date, p_home_team_id smallint, p_away_team_id smallint,
   p_calendar_revision text, p_scheduled_start timestamptz, p_input_cutoff timestamptz, p_required_ms integer, p_code_version text)
-returns table (outcome text, claim_id uuid, ack_deadline timestamptz, db_now timestamptz)
+returns table (outcome text, claim_id uuid, ack_deadline timestamptz, db_now timestamptz, input_cutoff timestamptz)
 language plpgsql security definer set search_path = '' set lock_timeout = '5s' as $$
 declare
   game record;
   now_at timestamptz := clock_timestamp();
   deadline timestamptz;
   inserted uuid;
+  cutoff timestamptz := coalesce(p_input_cutoff, now_at); -- null: the claim's own database clock
 begin
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtext('forge_pregame_capture_claim'), pg_catalog.hashtext(p_game_id::text || '/' || p_policy_id));
   select g.date, g."startTime", g."homeTeamId", g."awayTeamId" into game from public.games g where g.id = p_game_id;
   if not found or game.date <> p_slate_date or game."homeTeamId" <> p_home_team_id or game."awayTeamId" <> p_away_team_id
      or game."startTime" <> p_scheduled_start then
-    return query select 'binding_mismatch'::text, null::uuid, null::timestamptz, now_at; return;
+    return query select 'binding_mismatch'::text, null::uuid, null::timestamptz, now_at, null::timestamptz; return;
   end if;
   deadline := p_scheduled_start - interval '60 minutes';
   if exists (select 1 from forge_pregame_capture.claims c where c.game_id = p_game_id and c.policy_id = p_policy_id) then
-    return query select 'duplicate'::text, null::uuid, deadline, now_at; return;
+    return query select 'duplicate'::text, null::uuid, deadline, now_at, null::timestamptz; return;
   end if;
-  if p_input_cutoff > now_at then
-    return query select 'future_cutoff'::text, null::uuid, deadline, now_at; return;
+  if cutoff > now_at then
+    return query select 'future_cutoff'::text, null::uuid, deadline, now_at, null::timestamptz; return;
   end if;
   if now_at >= deadline then
-    return query select 'late_start'::text, null::uuid, deadline, now_at; return;
+    return query select 'late_start'::text, null::uuid, deadline, now_at, null::timestamptz; return;
   end if;
   if p_required_ms is null or now_at + make_interval(secs => p_required_ms / 1000.0) > deadline then
-    return query select 'insufficient_time'::text, null::uuid, deadline, now_at; return;
+    return query select 'insufficient_time'::text, null::uuid, deadline, now_at, null::timestamptz; return;
   end if;
   insert into forge_pregame_capture.claims (game_id, policy_id, slate_date, home_team_id, away_team_id, calendar_revision,
     scheduled_start, input_cutoff, ack_deadline, required_ms, code_version, claimed_at)
   values (p_game_id, p_policy_id, p_slate_date, p_home_team_id, p_away_team_id, p_calendar_revision,
-    p_scheduled_start, p_input_cutoff, deadline, p_required_ms, p_code_version, now_at)
+    p_scheduled_start, cutoff, deadline, p_required_ms, p_code_version, now_at)
   returning id into inserted;
-  return query select 'claimed'::text, inserted, deadline, now_at;
+  return query select 'claimed'::text, inserted, deadline, now_at, cutoff;
 end $$;
 
 -- Save the packet once. A hash mismatch, late save or second save raises and stores nothing.

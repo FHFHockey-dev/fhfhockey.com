@@ -123,7 +123,7 @@ def run(host):
         args = dict(game=game, policy=policy, date=override.get("date"), home=override.get("home", 10), away=override.get("away", 20),
                     start=override.get("start", start[game]), cutoff=cutoff, required=required)
         s.execute("""select * from public.forge_pregame_capture_claim_v1(%(game)s, %(policy)s, coalesce(%(date)s::date, current_date),
-          %(home)s::smallint, %(away)s::smallint, '""" + REV + """', %(start)s, case when %(cutoff)s = 'now' then clock_timestamp()
+          %(home)s::smallint, %(away)s::smallint, '""" + REV + """', %(start)s, case when %(cutoff)s::text = 'now' then clock_timestamp()
           else %(cutoff)s::timestamptz end, %(required)s, '""" + CODE + "')", args)
         return s.fetchone()
 
@@ -142,6 +142,8 @@ def run(host):
     check("claim succeeds", first[0] == "claimed" and first[1] is not None)
     check("ack deadline is start minus 60 minutes", first[2] == start[1] - __import__("datetime").timedelta(minutes=60))
     check("duplicate refused", claim(1)[0] == "duplicate" and claim_count() == 1)
+    nullcut = claim(5, policy="null-cutoff", cutoff=None)
+    check("null cutoff uses the claim's database clock", nullcut[0] == "claimed" and nullcut[4] == nullcut[3])
     claim_id = first[1]
 
     results = []
