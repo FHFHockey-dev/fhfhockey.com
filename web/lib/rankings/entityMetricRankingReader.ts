@@ -92,6 +92,54 @@ function requestPeerGroupKey(request: ContextualRankingsRequest) {
   return "all";
 }
 
+type PublishedScope = {
+  peerGroupType: string;
+  peerGroupKey: string;
+  /** True when the declared pool is re-ranked from the all-skater cohort. */
+  derived: boolean;
+};
+
+const ALL_SKATER_SCOPE: PublishedScope = {
+  peerGroupType: "all_skaters",
+  peerGroupKey: "all",
+  derived: true,
+};
+
+export const DERIVED_PEER_POOL_WARNING =
+  "Ranks are re-computed inside the selected pool from the all-skater publication.";
+
+function exactScope(request: ContextualRankingsRequest): PublishedScope {
+  return {
+    peerGroupType: request.peerGroupType,
+    peerGroupKey: requestPeerGroupKey(request),
+    derived: false,
+  };
+}
+
+// Only the all-skater cohort is published. Team, position and even-strength
+// deployment pools can be re-ranked from it (its rows carry team_id,
+// position_group and the EV deployment bucket); PP/PK units cannot.
+function canDeriveFromAllSkaters(request: ContextualRankingsRequest) {
+  return (
+    request.peerGroupType !== "all_skaters" &&
+    !request.deployment.startsWith("PP") &&
+    !request.deployment.startsWith("PK")
+  );
+}
+
+function rowInDeclaredPool(
+  row: EntityMetricRankingRow,
+  request: ContextualRankingsRequest,
+) {
+  if (request.teamId != null && row.team_id !== request.teamId) return false;
+  if (request.position === "F" && row.position_group !== "forward") return false;
+  if (request.position === "D" && row.position_group !== "defense") return false;
+  if (request.deployment !== "all" && row.deployment_bucket !== request.deployment) {
+    return false;
+  }
+  return true;
+}
+
 function formatMetricValue(metricKey: ContextualRankingMetricKey, value: number | null) {
   if (value == null) return null;
   if (metricKey.endsWith("_percentage")) return `${value.toFixed(1)}%`;
@@ -181,7 +229,10 @@ function sortRows(
   });
 }
 
-async function fetchLatestSnapshotDate(request: ContextualRankingsRequest) {
+async function fetchLatestSnapshotDate(
+  request: ContextualRankingsRequest,
+  scope: PublishedScope = exactScope(request),
+) {
   const definition = getContextualRankingMetricDefinition(request.metric);
   if (definition?.availabilityStatus !== "available" ||
       (definition.defaultStrengthState === "5v5" && request.strength !== "5v5")) return null;
@@ -193,8 +244,8 @@ async function fetchLatestSnapshotDate(request: ContextualRankingsRequest) {
     windowSize(request.window),
     request.strength,
     request.metric,
-    request.peerGroupType,
-    requestPeerGroupKey(request),
+    scope.peerGroupType,
+    scope.peerGroupKey,
   ].join(":");
   const cached = snapshotDateCache.get(cacheKey);
   const now = Date.now();
@@ -209,8 +260,8 @@ async function fetchLatestSnapshotDate(request: ContextualRankingsRequest) {
     .eq("window_size", windowSize(request.window))
     .eq("strength_state", request.strength)
     .eq("metric_key", request.metric)
-    .eq("peer_group_type", request.peerGroupType)
-    .eq("peer_group_key", requestPeerGroupKey(request));
+    .eq("peer_group_type", scope.peerGroupType)
+    .eq("peer_group_key", scope.peerGroupKey);
   query = query.lte("snapshot_date", cutoff);
   query = query.order("snapshot_date", { ascending: false });
   const { data, error } = await query.limit(1);
@@ -228,6 +279,7 @@ async function fetchEntityMetricRows(
   request: ContextualRankingsRequest,
   snapshotDate: string,
   metricKeys: ContextualRankingMetricKey[] = [request.metric],
+  scope: PublishedScope = exactScope(request),
 ) {
   const rows: EntityMetricRankingRow[] = [];
   const uniqueMetricKeys = Array.from(new Set(metricKeys));
@@ -242,8 +294,8 @@ async function fetchEntityMetricRows(
       .eq("window_size", windowSize(request.window))
       .eq("strength_state", request.strength)
       .in("metric_key", uniqueMetricKeys)
-      .eq("peer_group_type", request.peerGroupType)
-      .eq("peer_group_key", requestPeerGroupKey(request))
+      .eq("peer_group_type", scope.peerGroupType)
+      .eq("peer_group_key", scope.peerGroupKey)
       .order("metric_key", { ascending: true })
       .order("entity_id", { ascending: true });
     const { data, error } = await query.range(from, from + ENTITY_RANKING_QUERY_PAGE_SIZE - 1);
@@ -256,7 +308,9 @@ async function fetchEntityMetricRows(
     }
   }
 
-  return rows;
+  return scope.derived
+    ? rows.filter((row) => rowInDeclaredPool(row, request))
+    : rows;
 }
 
 async function fetchPlayerMeta(playerIds: number[]) {
@@ -363,9 +417,11 @@ function toApiRow(args: {
       percentile: ranking.percentile,
       qualifiedPeerCount: ranking.qualifiedPeerCount,
     },
+    // The pool the row was ranked in: the stored one, or the declared pool
+    // re-ranked from the all-skater publication.
     peerGroup: {
-      type: args.row.peer_group_type as ContextualRankingApiRow["peerGroup"]["type"],
-      key: args.row.peer_group_key,
+      type: args.ranking.peerGroupType,
+      key: args.ranking.peerGroupKey,
     },
     tags: [
       ...parseJsonStringArray(args.row.tags).filter(tag => tag !== "low-sample"),
@@ -390,6 +446,7 @@ function buildEntityMetricRankingSurfaceFromRows(args: {
   teamsById: Map<number, TeamMeta>;
   generatedAt: string;
   snapshotDate: string | null;
+  derivedFromAllSkaters?: boolean;
 }): ContextualRankingsResponse {
   const definition = getContextualRankingMetricDefinition(args.request.metric);
   const metricSupported = definition?.availabilityStatus === "available" &&
@@ -432,6 +489,7 @@ function buildEntityMetricRankingSurfaceFromRows(args: {
     peerGroupType: args.request.peerGroupType,
     minGp: args.request.minGp ?? undefined,
     minToiSeconds: args.request.minToiSeconds ?? undefined,
+    window: args.request.window,
     candidates: args.rows.map(row => ({
       entityId: row.entity_id,
       teamId: row.team_id,
@@ -485,7 +543,7 @@ function buildEntityMetricRankingSurfaceFromRows(args: {
         ? CONTEXTUAL_RANKINGS_METHODOLOGY_UPDATED_AT
         : null,
       sourceQualityFlags: [...(definition?.sourceQualityFlags ?? [])],
-      sourceWarnings: [],
+      sourceWarnings: args.derivedFromAllSkaters ? [DERIVED_PEER_POOL_WARNING] : [],
       message:
         args.rows.length === 0
           ? "No entity_metric_rankings rows matched the selected snapshot."
@@ -506,27 +564,44 @@ export async function buildEntityMetricRankingSurfaces(
   const generatedAt = new Date().toISOString();
   const snapshotEntries = await Promise.all(
     uniqueMetricKeys.map(async (metricKey) => {
-      const snapshotDate = await fetchLatestSnapshotDate({ ...request, metric: metricKey });
-      return [metricKey, snapshotDate] as const;
+      const metricRequest = { ...request, metric: metricKey };
+      let scope = exactScope(metricRequest);
+      let snapshotDate = await fetchLatestSnapshotDate(metricRequest, scope);
+      if (snapshotDate == null && canDeriveFromAllSkaters(metricRequest)) {
+        scope = ALL_SKATER_SCOPE;
+        snapshotDate = await fetchLatestSnapshotDate(metricRequest, scope);
+      }
+      return { metricKey, snapshotDate, scope };
     }),
   );
-  const snapshotDateByMetric = new Map(snapshotEntries);
-  const metricKeysBySnapshotDate = new Map<string, ContextualRankingMetricKey[]>();
-
-  for (const [metricKey, snapshotDate] of snapshotDateByMetric) {
+  const snapshotDateByMetric = new Map(
+    snapshotEntries.map(({ metricKey, snapshotDate }) => [metricKey, snapshotDate] as const),
+  );
+  const derivedMetricKeys = new Set(
+    snapshotEntries
+      .filter(({ snapshotDate, scope }) => snapshotDate != null && scope.derived)
+      .map(({ metricKey }) => metricKey),
+  );
+  const metricKeysBySnapshotScope = new Map<
+    string,
+    { snapshotDate: string; scope: PublishedScope; metricKeys: ContextualRankingMetricKey[] }
+  >();
+  for (const { metricKey, snapshotDate, scope } of snapshotEntries) {
     if (snapshotDate == null) continue;
-    const existing = metricKeysBySnapshotDate.get(snapshotDate) ?? [];
-    existing.push(metricKey);
-    metricKeysBySnapshotDate.set(snapshotDate, existing);
+    const groupKey = `${snapshotDate}:${scope.peerGroupType}:${scope.peerGroupKey}`;
+    const existing = metricKeysBySnapshotScope.get(groupKey) ??
+      { snapshotDate, scope, metricKeys: [] };
+    existing.metricKeys.push(metricKey);
+    metricKeysBySnapshotScope.set(groupKey, existing);
   }
 
   const rowsByMetric = new Map<ContextualRankingMetricKey, EntityMetricRankingRow[]>(
     uniqueMetricKeys.map((metricKey) => [metricKey, []]),
   );
   const rowGroups = await Promise.all(
-    Array.from(metricKeysBySnapshotDate.entries()).map(
-      async ([snapshotDate, snapshotMetricKeys]) =>
-        fetchEntityMetricRows(request, snapshotDate, snapshotMetricKeys),
+    Array.from(metricKeysBySnapshotScope.values()).map(
+      async ({ snapshotDate, scope, metricKeys: snapshotMetricKeys }) =>
+        fetchEntityMetricRows(request, snapshotDate, snapshotMetricKeys, scope),
     ),
   );
   const allRows = rowGroups.flat();
@@ -551,6 +626,7 @@ export async function buildEntityMetricRankingSurfaces(
           teamsById,
           generatedAt,
           snapshotDate: snapshotDateByMetric.get(metricKey) ?? null,
+          derivedFromAllSkaters: derivedMetricKeys.has(metricKey),
         }),
       ] as const;
     });

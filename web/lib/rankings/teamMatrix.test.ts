@@ -25,6 +25,14 @@ const { supabaseFromMock, rangeCalls, queryCalls, pagingFixture } = vi.hoisted((
     const orders = state.orders.filter((order) => order.key !== pagingFixture.omitOrder);
     const data = [...(pagingFixture.rows[state.table] ?? [])]
       .filter((row) => !pagingFixture.enforceFilters || state.filters.every(({ method, key, value }) => {
+        if (method === "or") {
+          // Flat PostgREST eq list, e.g. "unit_type.eq.power_play,unit_number.eq.1".
+          return String(value).split(",").some((clause) => {
+            const [column, op, ...rest] = clause.split(".");
+            if (op !== "eq") throw new Error(`Unimplemented fixture or-op: ${op}`);
+            return String(row[column]) === rest.join(".");
+          });
+        }
         if (row[key] == null) return false;
         if (method === "eq") return row[key] === value;
         if (method === "gte") return row[key] >= value;
@@ -55,6 +63,10 @@ const { supabaseFromMock, rangeCalls, queryCalls, pagingFixture } = vi.hoisted((
         return query;
       };
     }
+    query.or = (expression: string) => {
+      state.filters.push({ method: "or", key: "", value: expression });
+      return query;
+    };
     query.limit = (limit: number) => { state.limit = limit; return query; };
     query.order = (key: string, options?: { ascending?: boolean }) => {
       state.orders.push({ key, ascending: options?.ascending ?? true });
@@ -750,13 +762,16 @@ describe("teamMatrix", () => {
       expect(calls[0].filters).toContainEqual({ method: "in", key: "team_abbreviation", value: abbreviations });
     });
 
-    it("uses latest corrected unit generation when no historical information cutoff is requested", async () => {
+    it("caps an in-season unit generation at the power snapshot without as_of (F9); an explicit later as_of reads a corrected generation", async () => {
       pagingFixture.rows.team_unit_toi = [
         unit(), unit({ id: 2, snapshot_date: "2026-06-01", unit_share: 0.4 }),
         unit({ id: 3, snapshot_date: "2026-06-01", game_id: 2, game_date: "2026-04-11", unit_share: 1 }),
       ];
-      const result = await buildTeamMatrixSurface(request());
-      expect(result.rows[0].unitUsage).toMatchObject({ games: 1, snapshotDate: "2026-06-01", forwardTopLoadIndex: 40 });
+      const capped = await buildTeamMatrixSurface(request());
+      expect(capped.rows[0].unitUsage).toMatchObject({ games: 1, snapshotDate: "2026-04-09", forwardTopLoadIndex: 30 });
+      clearTeamMatrixSurfaceCachesForTests();
+      const corrected = await buildTeamMatrixSurface({ ...request(), asOfDate: "2026-06-01" });
+      expect(corrected.rows[0].unitUsage).toMatchObject({ games: 1, snapshotDate: "2026-06-01", forwardTopLoadIndex: 40 });
     });
 
     it("excludes playoff and unidentified games even when their dates fall inside the season bounds", async () => {

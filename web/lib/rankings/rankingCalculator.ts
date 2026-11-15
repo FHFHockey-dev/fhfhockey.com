@@ -2,6 +2,7 @@ import {
   getContextualRankingMetricDefinition,
   type ContextualRankingMetricKey,
 } from "./metricDefinitions";
+import { defaultMinGpForWindow, type RankingsFilterState } from "./rankingUrlState";
 
 export type ContextualRankingPositionGroup = "forward" | "defense";
 
@@ -52,6 +53,12 @@ export type BuildContextualRankingRowsInput = {
   minGp?: number;
   minToiSeconds?: number;
   minimumPeerCount?: number;
+  /**
+   * The ranked window. When minGp is omitted it sets the page's window floor
+   * (10 GP for the season window); without it the metric definition's
+   * minimum applies. An explicit minGp always wins.
+   */
+  window?: RankingsFilterState["window"];
 };
 
 export type NormalizedRankingValue<Id extends number | string> = {
@@ -271,7 +278,11 @@ export function buildContextualRankingRows(
   input: BuildContextualRankingRowsInput,
 ): ContextualRankingRow[] {
   const definition = getContextualRankingMetricDefinition(input.metricKey);
-  const minGp = input.minGp ?? definition?.minimumGp ?? 0;
+  const minGp =
+    input.minGp ??
+    (input.window != null ? Number(defaultMinGpForWindow(input.window)) : undefined) ??
+    definition?.minimumGp ??
+    0;
   const minToiSeconds =
     input.minToiSeconds ?? definition?.minimumToiSeconds ?? 0;
   const minimumPeerCount = input.minimumPeerCount ?? 3;
