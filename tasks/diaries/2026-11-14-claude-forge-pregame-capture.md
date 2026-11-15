@@ -226,3 +226,15 @@
   - The capped count preserving `eligibleRows` costs 48–94 pages.
   - "Rates unchanged" is conditional on the inert reader; the test asserts it.
   - Plan excerpts added; the production EXPLAIN SQL is drafted, not run. Wider suites 243/243.
+
+## Checkpoint 2026-11-15T18:35Z: TJ decisions + production EXPLAIN (Chef)
+- **TJ:**
+  - counter: rename to `trend_adjustment_candidate_rows` and drop the old key;
+  - stale-not-missing: accepted;
+  - production EXPLAIN: approved.
+- **EXPLAIN** (18:33:47Z; read-only transaction, 5 s/1 s timeouts, pooler DNS checked first): generic and custom plans both use a backward primary-key scan with all four columns in `Index Cond`. No index and no ANALYZE needed. Production has `random_page_cost` 1.1, `jit` off and statistics present. Private copy in `~/forge-pilot/trend-explain-20261115/`.
+- **Next (integration; each needs its own approval):**
+  - after Astra/Scout acknowledge: switch `skater-queries.ts` and rename the counter in `skater-stage.ts` and `run-forge-projections.ts`;
+  - capture refusal on `fetchFailed`;
+  - fixture-world RPC handler and oracle regeneration;
+  - then TJ approves: applying the function, the third GET RPC in `CAPTURE_RPCS`, and the push.

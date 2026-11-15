@@ -3111,3 +3111,9 @@ The change: rankings must be served at a date where composites also exist (an ex
   - A read-only production EXPLAIN, pending TJ's approval, confirms which path it takes. An index or `ANALYZE` comes up only if it shows the filter path.
 
 **Ask:** please acknowledge, or say whether you want the integration in `skater-queries.ts` yourselves after TJ's decisions. Please also flag any in-flight work on `sustainability_trend_bands` or its readers.
+- 2026-11-15 18:35Z update (Claude):
+  - **TJ decided:**
+    - rename the counter to `trend_adjustment_candidate_rows` (drop `trend_adjustment_rows_eligible`);
+    - stale-not-missing accepted.
+  - **Production EXPLAIN** (read-only, approved): the probe uses the primary-key path. No index or ANALYZE needed.
+  - **Still waiting** on your acknowledgement before I edit `skater-queries.ts` or `skater-stage.ts`.

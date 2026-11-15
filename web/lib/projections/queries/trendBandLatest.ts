@@ -15,8 +15,11 @@
  * always on the player's newest eligible date, the per-key latest rows contain every row the old selection could
  * pick; a stale row comes back as stale, never as missing.
  *
- * Explicit counter change (needs approval): `eligibleRows` counted the rows the capped GET returned (1,000 per
- * full team in production). Here it counts the latest candidate rows (at most metrics x windows per player).
+ * Counter change (TJ, 2026-11-15): `eligibleRows` counted the rows the capped GET returned (1,000 per full team in
+ * production). Here it counts the latest candidate rows (at most metrics x windows per player). The integration writes
+ * it to `data_quality.trend_adjustment_candidate_rows` and drops `trend_adjustment_rows_eligible`. Stale players are
+ * reported as stale, not missing (TJ, 2026-11-15). Production plans each probe as a backward primary-key scan
+ * (read-only EXPLAIN, 2026-11-15), so no new index is needed.
  */
 import {
   TREND_BAND_METRIC_PRIORITY,

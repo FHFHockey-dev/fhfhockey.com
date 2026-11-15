@@ -82,7 +82,9 @@ The OS cache cannot be dropped without sudo, and local SSD is not Supabase stora
 - **Production's likely plan** (`results/bench-settings.txt`):
   - Production's 0326 EXPLAIN estimated 29,699 rows for the old read. That matches the analyzed local plans (16.9k–18.8k rows), not the no-statistics ones (63–409), so production has statistics.
   - With statistics and `random_page_cost = 1.1`, the old read switches to `idx_stb_player_metric`, as production's did. The probe stays on the backward primary-key scan under both cost settings.
-  - So the existing indexes probably suffice. That is unconfirmed; the read-only production EXPLAIN in section 7 decides it.
+  - **Confirmed in production** (TJ-approved read-only EXPLAIN, 2026-11-15T18:33:47Z; `results/production-explain-20261115T183347Z.txt`):
+    - Both the generic and the custom plan use `Index Scan Backward using sustainability_trend_bands_pkey`, with player, date, metric and window all in `Index Cond` under `Limit 1`. That is the robust path, so **no new index and no ANALYZE are needed**.
+    - Production settings: `random_page_cost` 1.1, `jit` off, statistics present (player_id n_distinct 1,293; snapshot_date 273), reltuples 11.0M.
   - Plan excerpts are in `results/plan-excerpts.txt`.
 - **The narrowest new index** (only if needed): `(player_id, metric_key, window_code, snapshot_date DESC)`. It reads 275–374 pages in every case, whatever the statistics. Locally it is 441 MB and built in 5.4 s; in production it would be `CREATE INDEX CONCURRENTLY`, with minutes of I/O.
 - **Not shown offline:**
@@ -100,7 +102,13 @@ The OS cache cannot be dropped without sudo, and local SSD is not Supabase stora
   - **Two strict-refusal holes to close at integration:** an over-limit request refused in the client, and a coverage mismatch on an HTTP 200. Both surface only as `fetchFailed`. The transport never sees them, so a capture could still qualify. The capture must refuse on either.
 - **Retained real inputs:** these hold only the capped responses, so they could confirm only the in-cap class. Reading them is a production read, which was not done. Section 4 uses synthetic, production-shaped rows.
 
-## 7. Decisions needed (none taken)
+## 7. Decisions
+**TJ, 2026-11-15:**
+- **Counter:** rename it. Integration writes `trend_adjustment_candidate_rows` (the latest candidate count) and drops `trend_adjustment_rows_eligible`.
+- **Stale rows:** stale-not-missing is accepted. Counters, the per-player `trend_adjustment` block and the hard-stale warning change; rates are unchanged while the reader is inert.
+- **Production EXPLAIN:** run once, read-only. Result: the primary-key path, so item 4 below is not needed.
+
+The original list, kept for the record:
 1. The counter change for `eligibleRows` (section 4).
 2. The beyond-cap changes: stale rows reported as stale, not missing, plus their metadata.
 3. One read-only production EXPLAIN (no ANALYZE), exactly as in `sql/production-explain-proposal.sql`:
