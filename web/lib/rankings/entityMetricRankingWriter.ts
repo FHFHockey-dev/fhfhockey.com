@@ -13,6 +13,13 @@ import type {
   ContextualRankingRow,
 } from "./rankingCalculator";
 import { buildContextualRankingSnapshotRowsByMetric } from "./rankingQueries";
+import {
+  PUBLICATION_MIN_GP,
+  PUBLICATION_MIN_TOI_SECONDS,
+  publicationCompletionBlockers,
+  upsertPublicationMarkers,
+  type RankingPublicationInsert,
+} from "./rankingPublications";
 import { loadSkaterCompositeSeasonSources } from "./skaterCompositeSourceCoverage";
 import type {
   ContextualRankingsDeploymentFilter,
@@ -64,6 +71,8 @@ export type EntityMetricRankingBuildResult = {
     metricKey: ContextualRankingMetricKey;
     reason: string;
   }>;
+  // Distinct players in the WGO-anchored source-coverage population.
+  expectedEntities: number;
 };
 
 const METHODOLOGY_VERSION = "contextual_rankings_v1";
@@ -315,10 +324,22 @@ export async function buildEntityMetricRankingRows(
     contexts,
     sourceFreshness,
     unavailableMetrics,
+    expectedEntities: sourceCoverage.expectedPlayerCount,
   };
 }
 
 export async function upsertEntityMetricRankingRows(
+  client: SupabaseClient<Database>,
+  rows: EntityMetricRankingInsert[],
+  options: { chunkSize?: number } = {},
+) {
+  return (await upsertEntityMetricRankingRowsCounted(client, rows, options))
+    .rowsUpserted;
+}
+
+// dbWrittenRows sums the affected-row counts PostgREST reports for each
+// chunk (count: "exact"); it is null when any chunk did not report one.
+async function upsertEntityMetricRankingRowsCounted(
   client: SupabaseClient<Database>,
   rows: EntityMetricRankingInsert[],
   options: { chunkSize?: number } = {},
@@ -328,11 +349,17 @@ export async function upsertEntityMetricRankingRows(
     MAX_UPSERT_CHUNK_SIZE,
   );
   let rowsUpserted = 0;
+  let dbWrittenRows: number | null = 0;
 
   for (let index = 0; index < rows.length; index += chunkSize) {
     const chunk = rows.slice(index, index + chunkSize);
     try {
-      rowsUpserted += await upsertEntityMetricRankingChunk(client, chunk);
+      const counted = await upsertEntityMetricRankingChunk(client, chunk);
+      rowsUpserted += counted.rows;
+      dbWrittenRows =
+        dbWrittenRows == null || counted.dbRows == null
+          ? null
+          : dbWrittenRows + counted.dbRows;
     } catch (error) {
       throw new Error(
         `Failed to upsert entity_metric_rankings: ${errorMessage(error)}`,
@@ -340,19 +367,19 @@ export async function upsertEntityMetricRankingRows(
     }
   }
 
-  return rowsUpserted;
+  return { rowsUpserted, dbWrittenRows };
 }
 
 async function upsertEntityMetricRankingChunk(
   client: SupabaseClient<Database>,
   rows: EntityMetricRankingInsert[],
-): Promise<number> {
+): Promise<{ rows: number; dbRows: number | null }> {
   try {
-    const { error } = await client
+    const { error, count } = await client
       .from("entity_metric_rankings")
-      .upsert(rows, { onConflict: UPSERT_CONFLICT_COLUMNS });
+      .upsert(rows, { onConflict: UPSERT_CONFLICT_COLUMNS, count: "exact" });
     if (error) throw error;
-    return rows.length;
+    return { rows: rows.length, dbRows: typeof count === "number" ? count : null };
   } catch (error) {
     if (rows.length === 1) throw error;
 
@@ -370,6 +397,276 @@ async function upsertEntityMetricRankingChunk(
     );
     const firstCount = await upsertEntityMetricRankingChunk(client, firstHalf);
     const secondCount = await upsertEntityMetricRankingChunk(client, secondHalf);
-    return firstCount + secondCount;
+    return {
+      rows: firstCount.rows + secondCount.rows,
+      dbRows:
+        firstCount.dbRows == null || secondCount.dbRows == null
+          ? null
+          : firstCount.dbRows + secondCount.dbRows,
+    };
   }
+}
+
+type PublicationWindowPlan = {
+  windowType: string;
+  windowSize: number;
+  snapshotDate: string | null;
+  peerGroupType: string;
+  peerGroupKey: string;
+  rows: EntityMetricRankingInsert[];
+  writtenEntities: number;
+  blockers: string[];
+};
+
+export type EntityMetricRankingPublicationPlan = {
+  // A full publication (default metrics, floors and the all-skater cohort)
+  // is marked; any other run writes rows the reader never serves.
+  marked: boolean;
+  notMarkedReasons: string[];
+  expectedEntities: number;
+  windows: Array<Omit<PublicationWindowPlan, "rows"> & { expectedRows: number }>;
+};
+
+function sameKeySet(left: readonly string[], right: readonly string[]) {
+  const a = [...new Set(left)].sort();
+  const b = [...new Set(right)].sort();
+  return a.length === b.length && a.every((key, index) => key === b[index]);
+}
+
+function buildPublicationWindows(built: EntityMetricRankingBuildResult) {
+  const { request } = built;
+  const metricKeys = [...new Set(request.metricKeys)].sort();
+  const notMarkedReasons: string[] = [];
+  if (
+    request.peerGroupType !== "all_skaters" ||
+    request.teamId != null ||
+    request.position !== "all" ||
+    request.deployment !== "all"
+  ) {
+    notMarkedReasons.push("Only the all-skater cohort is a full publication.");
+  }
+  if (
+    (request.minGp ?? PUBLICATION_MIN_GP) !== PUBLICATION_MIN_GP ||
+    (request.minToiSeconds ?? PUBLICATION_MIN_TOI_SECONDS) !==
+      PUBLICATION_MIN_TOI_SECONDS
+  ) {
+    notMarkedReasons.push("Custom sample floors are not a full publication.");
+  }
+  if (
+    !sameKeySet(
+      metricKeys,
+      defaultEntityMetricRankingMetricKeys({ strength: request.strength }),
+    )
+  ) {
+    notMarkedReasons.push("Only the default metric set is a full publication.");
+  }
+  if (built.unavailableMetrics.length > 0) {
+    notMarkedReasons.push(
+      `${built.unavailableMetrics.length} metric/window pairs were unavailable.`,
+    );
+  }
+
+  const windows: PublicationWindowPlan[] = [];
+  for (const window of [...new Set(request.windows)]) {
+    const type = windowType(window);
+    const size = windowSize(window);
+    const rows = built.rows.filter(
+      (row) => row.window_type === type && row.window_size === size,
+    );
+    const blockers: string[] = [];
+    const dates = [...new Set(rows.map((row) => row.snapshot_date))];
+    if (rows.length === 0) blockers.push(`${window}: no rows were built.`);
+    if (dates.length > 1) {
+      blockers.push(`${window}: rows span ${dates.length} snapshot dates (${dates.sort().join(", ")}).`);
+    }
+    const metricsWithRows = new Set(rows.map((row) => row.metric_key));
+    const missingMetrics = metricKeys.filter((key) => !metricsWithRows.has(key));
+    if (missingMetrics.length > 0) {
+      blockers.push(`${window}: no rows for ${missingMetrics.join(", ")}.`);
+    }
+    const writtenEntities = new Set(rows.map((row) => row.entity_id)).size;
+    if (writtenEntities !== built.expectedEntities) {
+      blockers.push(
+        `${window}: ${writtenEntities} skaters were built; the source-coverage population is ${built.expectedEntities}.`,
+      );
+    }
+    windows.push({
+      windowType: type,
+      windowSize: size,
+      snapshotDate: dates.length === 1 ? dates[0] ?? null : null,
+      peerGroupType: rows[0]?.peer_group_type ?? request.peerGroupType,
+      peerGroupKey: rows[0]?.peer_group_key ?? "all",
+      rows,
+      writtenEntities,
+      blockers,
+    });
+  }
+  return { marked: notMarkedReasons.length === 0, notMarkedReasons, windows };
+}
+
+export function planEntityMetricRankingPublication(
+  built: EntityMetricRankingBuildResult,
+): EntityMetricRankingPublicationPlan {
+  const plan = buildPublicationWindows(built);
+  return {
+    marked: plan.marked,
+    notMarkedReasons: plan.notMarkedReasons,
+    expectedEntities: built.expectedEntities,
+    windows: plan.windows.map(({ rows, ...window }) => ({
+      ...window,
+      expectedRows: rows.length,
+    })),
+  };
+}
+
+function publicationMarker(
+  built: EntityMetricRankingBuildResult,
+  window: PublicationWindowPlan,
+  fields: Partial<RankingPublicationInsert>,
+): RankingPublicationInsert {
+  return {
+    surface: "entity_metric_rankings",
+    season_id: built.request.season,
+    snapshot_date: window.snapshotDate as string,
+    strength_state: built.request.strength,
+    window_type: window.windowType,
+    window_size: window.windowSize,
+    peer_group_type: window.peerGroupType,
+    peer_group_key: window.peerGroupKey,
+    metric_set: [...new Set(built.request.metricKeys)].sort(),
+    min_gp: PUBLICATION_MIN_GP,
+    min_toi_seconds: PUBLICATION_MIN_TOI_SECONDS,
+    methodology_version: METHODOLOGY_VERSION,
+    expected_rows: window.rows.length,
+    expected_entities: built.expectedEntities,
+    ...fields,
+  } as RankingPublicationInsert;
+}
+
+export type EntityMetricRankingPublishResult = {
+  rowsUpserted: number;
+  dbWrittenRows: number | null;
+  marked: boolean;
+  notMarkedReasons: string[];
+  complete: boolean;
+  windows: Array<{
+    windowType: string;
+    windowSize: number;
+    snapshotDate: string | null;
+    status: "writing" | "complete" | "unmarked";
+    expectedRows: number;
+    dbWrittenRows: number | null;
+    writtenEntities: number;
+    blockers: string[];
+  }>;
+};
+
+// Writes a build and, for a full publication, its completion markers:
+// every window is marked `writing` before the first row (a republish hides
+// the date until it is rewritten), each window's rows go in with counted
+// upserts, and a window turns `complete` only when the database confirmed
+// its row count and the skater count matches the source-coverage population.
+// A failure part-way leaves the markers at `writing`, so the reader keeps the
+// last complete pair.
+export async function publishEntityMetricRankingRows(
+  client: SupabaseClient<Database>,
+  built: EntityMetricRankingBuildResult,
+  options: { chunkSize?: number } = {},
+): Promise<EntityMetricRankingPublishResult> {
+  const plan = buildPublicationWindows(built);
+  if (!plan.marked) {
+    const counted = await upsertEntityMetricRankingRowsCounted(
+      client,
+      built.rows,
+      options,
+    );
+    return {
+      ...counted,
+      marked: false,
+      notMarkedReasons: plan.notMarkedReasons,
+      complete: false,
+      windows: plan.windows.map((window) => ({
+        windowType: window.windowType,
+        windowSize: window.windowSize,
+        snapshotDate: window.snapshotDate,
+        status: "unmarked",
+        expectedRows: window.rows.length,
+        dbWrittenRows: null,
+        writtenEntities: window.writtenEntities,
+        blockers: [],
+      })),
+    };
+  }
+
+  const preflight = plan.windows.flatMap((window) => window.blockers);
+  if (preflight.length > 0) {
+    throw new Error(
+      ["Full publication refused before writing any row.", ...preflight].join(" "),
+    );
+  }
+
+  const startedAt = new Date().toISOString();
+  await upsertPublicationMarkers(
+    client,
+    plan.windows.map((window) =>
+      publicationMarker(built, window, {
+        status: "writing",
+        db_written_rows: null,
+        written_entities: null,
+        started_at: startedAt,
+        completed_at: null,
+      }),
+    ),
+  );
+
+  let rowsUpserted = 0;
+  let dbWrittenRows: number | null = 0;
+  const windows: EntityMetricRankingPublishResult["windows"] = [];
+  for (const window of plan.windows) {
+    const counted = await upsertEntityMetricRankingRowsCounted(
+      client,
+      window.rows,
+      options,
+    );
+    rowsUpserted += counted.rowsUpserted;
+    dbWrittenRows =
+      dbWrittenRows == null || counted.dbWrittenRows == null
+        ? null
+        : dbWrittenRows + counted.dbWrittenRows;
+    const blockers = publicationCompletionBlockers({
+      expectedRows: window.rows.length,
+      dbWrittenRows: counted.dbWrittenRows,
+      expectedEntities: built.expectedEntities,
+      writtenEntities: window.writtenEntities,
+    });
+    const complete = blockers.length === 0;
+    await upsertPublicationMarkers(client, [
+      publicationMarker(built, window, {
+        status: complete ? "complete" : "writing",
+        db_written_rows: counted.dbWrittenRows,
+        written_entities: window.writtenEntities,
+        started_at: startedAt,
+        completed_at: complete ? new Date().toISOString() : null,
+      }),
+    ]);
+    windows.push({
+      windowType: window.windowType,
+      windowSize: window.windowSize,
+      snapshotDate: window.snapshotDate,
+      status: complete ? "complete" : "writing",
+      expectedRows: window.rows.length,
+      dbWrittenRows: counted.dbWrittenRows,
+      writtenEntities: window.writtenEntities,
+      blockers,
+    });
+  }
+
+  return {
+    rowsUpserted,
+    dbWrittenRows,
+    marked: true,
+    notMarkedReasons: [],
+    complete: windows.every((window) => window.status === "complete"),
+    windows,
+  };
 }

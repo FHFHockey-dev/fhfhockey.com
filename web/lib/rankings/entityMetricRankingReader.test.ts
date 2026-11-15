@@ -23,9 +23,14 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
     players: null as Array<Record<string, unknown>> | null,
     teams: null as Array<Record<string, unknown>> | null,
     composites: null as Array<Record<string, unknown>> | null,
+    markers: null as Array<Record<string, unknown>> | null,
+    markersError: null as Record<string, unknown> | null,
   };
 
   function resolveQuery(state: QueryState) {
+    if (state.table === "ranking_publications" && scenario.markersError) {
+      return { data: null, error: scenario.markersError };
+    }
     if (scenario.rows != null) {
       let rows: Array<Record<string, unknown>> = state.table === "entity_metric_rankings" ? scenario.rows
         : state.table === "rolling_player_game_metrics" ? scenario.rollingRows
@@ -33,7 +38,8 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
           : state.table === "games" ? scenario.rollingRows.map(row => ({ date: row.game_date, seasonId: row.season }))
             : state.table === "players" ? scenario.players ?? scenario.rows.map(row => ({ id: row.entity_id, fullName: `Fixture ${row.entity_id}`, position: row.position_group === "defense" ? "D" : "C", team_id: row.team_id }))
               : state.table === "teams" ? scenario.teams ?? [{ id: 10, abbreviation: "TST", name: "Fictional team" }]
-                : state.table === "skater_composite_ratings" ? scenario.composites ?? [] : [];
+                : state.table === "skater_composite_ratings" ? scenario.composites ?? []
+                  : state.table === "ranking_publications" ? scenario.markers ?? [] : [];
       rows = rows.filter(row => Object.entries(state.filters).every(([key, value]) =>
         key in state.cutoffs || (Array.isArray(value) ? value.includes(row[key]) : row[key] === value),
       ) && Object.entries(state.cutoffs).every(([key, value]) => String(row[key]) <= String(value)));
@@ -232,6 +238,8 @@ describe("entityMetricRankingReader", () => {
     scenario.players = null;
     scenario.teams = null;
     scenario.composites = null;
+    scenario.markers = null;
+    scenario.markersError = null;
     vi.useRealTimers();
     clearEntityMetricRankingReaderCachesForTests();
     clearContextualRankingsQueryCachesForTests();
@@ -302,6 +310,103 @@ describe("entityMetricRankingReader", () => {
       const surfaces = await buildEntityMetricRankingSurfaces(seasonRequest(), ["points_per_60", "goals_per_60", "ixg_per_60"]);
       expect([...surfaces.values()].map(surface => surface.meta.snapshotDate)).toEqual(["2026-11-11", "2026-11-11", "2026-11-11"]);
       expect(queryCalls.filter(call => call.table === "skater_composite_ratings")).toHaveLength(1);
+    });
+
+    describe("with completion markers", () => {
+      const marker = (surface: string, date: string, status: string, window: [string, number] = ["season", 0]) => ({
+        surface, season_id: 20262027, snapshot_date: date, strength_state: "5v5",
+        window_type: window[0], window_size: window[1], peer_group_type: "all_skaters", peer_group_key: "all", status,
+      });
+      const pair = (date: string, rankings = "complete", composites = "complete") => [
+        marker("entity_metric_rankings", date, rankings),
+        marker("skater_composite_ratings", date, composites),
+      ];
+      const served = async (window: ContextualRankingsRequest["window"] = "season", metric: ContextualRankingMetricKey = "points_per_60") =>
+        (await buildEntityMetricRankingSurfaces(seasonRequest(window), [metric])).get(metric)?.meta.snapshotDate;
+
+      it("serves the newest date where Rankings and composites are both complete", async () => {
+        scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-14")];
+        scenario.composites = [compositeRow("2026-11-11"), compositeRow("2026-11-14")];
+        scenario.markers = [...pair("2026-11-11"), ...pair("2026-11-14")];
+        expect(await served()).toBe("2026-11-14");
+      });
+
+      it("skips a date whose Rankings rows exist but whose composites are still writing", async () => {
+        scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-14")];
+        scenario.composites = [compositeRow("2026-11-11"), compositeRow("2026-11-14")];
+        scenario.markers = [...pair("2026-11-11"), ...pair("2026-11-14", "complete", "writing")];
+        expect(await served()).toBe("2026-11-11");
+      });
+
+      it("steps back to the previous pair while a date is being republished", async () => {
+        scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-14")];
+        scenario.composites = [compositeRow("2026-11-11"), compositeRow("2026-11-14")];
+        scenario.markers = [...pair("2026-11-11"), ...pair("2026-11-14", "writing")];
+        expect(await served()).toBe("2026-11-11");
+      });
+
+      it("keeps the last unmarked pair live during the first marked publish", async () => {
+        scenario.rows = [...seasonRows("2026-11-13"), ...seasonRows("2026-11-14")];
+        scenario.composites = [compositeRow("2026-11-13")];
+        // Rankings still writing.
+        scenario.markers = [marker("entity_metric_rankings", "2026-11-14", "writing")];
+        expect(await served()).toBe("2026-11-13");
+        // Rankings complete, composites not yet written.
+        clearEntityMetricRankingReaderCachesForTests();
+        scenario.markers = [marker("entity_metric_rankings", "2026-11-14", "complete")];
+        expect(await served()).toBe("2026-11-13");
+        // Both complete.
+        clearEntityMetricRankingReaderCachesForTests();
+        scenario.composites = [compositeRow("2026-11-13"), compositeRow("2026-11-14")];
+        scenario.markers = pair("2026-11-14");
+        expect(await served()).toBe("2026-11-14");
+      });
+
+      it("keeps last-N windows on the last unmarked pair until their own window is complete", async () => {
+        const lastTen = (date: string) => seasonRows(date).map(row => ({ ...row, window_type: "last_10", window_size: 10 }));
+        scenario.rows = [...lastTen("2026-11-13"), ...lastTen("2026-11-14")];
+        scenario.composites = [compositeRow("2026-11-13"), compositeRow("2026-11-14")];
+        scenario.markers = [...pair("2026-11-14"), marker("entity_metric_rankings", "2026-11-14", "writing", ["last_10", 10])];
+        expect(await served("last10")).toBe("2026-11-13");
+        clearEntityMetricRankingReaderCachesForTests();
+        scenario.markers = [...pair("2026-11-14"), marker("entity_metric_rankings", "2026-11-14", "complete", ["last_10", 10])];
+        expect(await served("last10")).toBe("2026-11-14");
+      });
+
+      it("steps to an older complete pair when the metric has no rows at the newest one", async () => {
+        scenario.rows = [
+          ...seasonRows("2026-11-11").map(row => ({ ...row, metric_key: "goals_per_60" })),
+          ...seasonRows("2026-11-14"),
+        ];
+        scenario.composites = [compositeRow("2026-11-11"), compositeRow("2026-11-14")];
+        scenario.markers = [...pair("2026-11-11"), ...pair("2026-11-14")];
+        expect(await served("season", "goals_per_60")).toBe("2026-11-11");
+      });
+
+      it("falls back to the date match when the marker table is not deployed", async () => {
+        scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-13")];
+        scenario.composites = [compositeRow("2026-11-11")];
+        scenario.markersError = { code: "PGRST205", message: "Could not find the table 'public.ranking_publications' in the schema cache" };
+        expect(await served()).toBe("2026-11-11");
+      });
+
+      it("surfaces any other marker read error", async () => {
+        scenario.rows = seasonRows("2026-11-11");
+        scenario.markersError = { code: "57014", message: "canceling statement due to statement timeout" };
+        await expect(served()).rejects.toMatchObject({ code: "57014" });
+      });
+
+      it("reads the markers once for all metrics of a request", async () => {
+        scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-14")].flatMap(row => [
+          row, { ...row, metric_key: "goals_per_60" }, { ...row, metric_key: "ixg_per_60" },
+        ]);
+        scenario.composites = [compositeRow("2026-11-11"), compositeRow("2026-11-14")];
+        scenario.markers = [...pair("2026-11-11"), ...pair("2026-11-14")];
+        const surfaces = await buildEntityMetricRankingSurfaces(seasonRequest(), ["points_per_60", "goals_per_60", "ixg_per_60"]);
+        expect([...surfaces.values()].map(surface => surface.meta.snapshotDate)).toEqual(["2026-11-14", "2026-11-14", "2026-11-14"]);
+        // One newest-first read and one era-start read.
+        expect(queryCalls.filter(call => call.table === "ranking_publications")).toHaveLength(2);
+      });
     });
 
     it("leaves rankings uncapped when the season has no composites", async () => {

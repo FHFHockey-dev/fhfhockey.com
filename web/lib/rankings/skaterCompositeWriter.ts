@@ -9,6 +9,14 @@ import {
 } from "./skaterCompositeSourceCoverage";
 
 import type { ContextualRankingMetricKey } from "./metricDefinitions";
+import {
+  PUBLICATION_MIN_GP,
+  PUBLICATION_MIN_TOI_SECONDS,
+  fetchPublicationMarker,
+  publicationCompletionBlockers,
+  upsertPublicationMarkers,
+  type RankingPublicationInsert,
+} from "./rankingPublications";
 import { buildContextualRankingsSurfaces } from "./rankingQueries";
 import type {
   ContextualRankingApiRow,
@@ -795,15 +803,143 @@ export async function upsertSkaterCompositeRatingRows(
   client: SupabaseClient<Database>,
   rows: SkaterCompositeRatingInsert[],
 ) {
-  if (rows.length === 0) return 0;
+  return (await upsertSkaterCompositeRatingRowsCounted(client, rows)).rowsUpserted;
+}
+
+async function upsertSkaterCompositeRatingRowsCounted(
+  client: SupabaseClient<Database>,
+  rows: SkaterCompositeRatingInsert[],
+) {
+  if (rows.length === 0) return { rowsUpserted: 0, dbWrittenRows: 0 };
   if (rows.length > 1000) throw new Error("Composite publication exceeds the 1000-row cohort bound.");
   // One PostgREST bulk statement is atomic. Chunked upserts could expose a
   // partly replaced cohort when a later chunk fails.
-  const { error } = await client
+  const { error, count } = await client
     .from("skater_composite_ratings")
-    .upsert(rows, { onConflict: UPSERT_CONFLICT_COLUMNS });
+    .upsert(rows, { onConflict: UPSERT_CONFLICT_COLUMNS, count: "exact" });
   if (error) {
     throw new Error(`Failed to upsert skater_composite_ratings: ${error.message}`);
   }
-  return rows.length;
+  return {
+    rowsUpserted: rows.length,
+    dbWrittenRows: typeof count === "number" ? count : null,
+  };
+}
+
+export class RankingsNotCompleteError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RankingsNotCompleteError";
+  }
+}
+
+export type SkaterCompositePublishResult = {
+  rowsUpserted: number;
+  dbWrittenRows: number | null;
+  marked: boolean;
+  status: "writing" | "complete" | "unmarked";
+  snapshotDate: string | null;
+  writtenEntities: number;
+  blockers: string[];
+};
+
+// Composites publish second, at the date of a complete Rankings publication
+// for the same season, strength and window (all-skater cohort, default
+// floors). They are marked `writing` before the single atomic upsert and
+// `complete` once the database confirmed the row count and the player count
+// matches the source-coverage population. Other peer-group scopes are written
+// unmarked: the reader pairs only the all-skater composites.
+export async function publishSkaterCompositeRatingRows(
+  client: SupabaseClient<Database>,
+  built: SkaterCompositeBuildResult,
+): Promise<SkaterCompositePublishResult> {
+  const writtenEntities = new Set(built.rows.map((row) => row.player_id)).size;
+  if (built.request.peerGroupType !== "all_skaters") {
+    const counted = await upsertSkaterCompositeRatingRowsCounted(client, built.rows);
+    return {
+      ...counted,
+      marked: false,
+      status: "unmarked",
+      snapshotDate: built.snapshotDate,
+      writtenEntities,
+      blockers: [],
+    };
+  }
+  const first = built.rows[0];
+  if (!built.snapshotDate || !first) {
+    throw new RankingsNotCompleteError("No composite rows or snapshot date to publish.");
+  }
+  if (built.rows.some((row) => row.snapshot_date !== built.snapshotDate)) {
+    throw new RankingsNotCompleteError("Composite rows span more than one snapshot date.");
+  }
+  const key = {
+    season_id: built.request.season,
+    snapshot_date: built.snapshotDate,
+    strength_state: built.request.strength,
+    window_type: first.window_type,
+    window_size: first.window_size ?? 0,
+    peer_group_type: first.peer_group_type ?? built.request.peerGroupType,
+    peer_group_key: first.peer_group_key ?? requestPeerGroupKey(built.request),
+  };
+  const rankings = await fetchPublicationMarker(client, {
+    surface: "entity_metric_rankings",
+    ...key,
+  });
+  if (
+    rankings?.status !== "complete" ||
+    rankings.min_gp !== PUBLICATION_MIN_GP ||
+    rankings.min_toi_seconds !== PUBLICATION_MIN_TOI_SECONDS
+  ) {
+    throw new RankingsNotCompleteError(
+      `Rankings at ${built.snapshotDate} (${key.strength_state}, ${key.window_type}) are not a complete publication; publish and verify Rankings at this cutoff first.`,
+    );
+  }
+
+  const marker = (fields: Partial<RankingPublicationInsert>) =>
+    ({
+      surface: "skater_composite_ratings",
+      ...key,
+      metric_set: [],
+      min_gp: PUBLICATION_MIN_GP,
+      min_toi_seconds: PUBLICATION_MIN_TOI_SECONDS,
+      methodology_version: METHODOLOGY_VERSION,
+      expected_rows: built.rows.length,
+      expected_entities: built.sourceCoverage.expectedPlayerCount,
+      ...fields,
+    }) as RankingPublicationInsert;
+  const startedAt = new Date().toISOString();
+  await upsertPublicationMarkers(client, [
+    marker({
+      status: "writing",
+      db_written_rows: null,
+      written_entities: null,
+      started_at: startedAt,
+      completed_at: null,
+    }),
+  ]);
+  const counted = await upsertSkaterCompositeRatingRowsCounted(client, built.rows);
+  const blockers = publicationCompletionBlockers({
+    expectedRows: built.rows.length,
+    dbWrittenRows: counted.dbWrittenRows,
+    expectedEntities: built.sourceCoverage.expectedPlayerCount,
+    writtenEntities,
+  });
+  const complete = blockers.length === 0;
+  await upsertPublicationMarkers(client, [
+    marker({
+      status: complete ? "complete" : "writing",
+      db_written_rows: counted.dbWrittenRows,
+      written_entities: writtenEntities,
+      started_at: startedAt,
+      completed_at: complete ? new Date().toISOString() : null,
+    }),
+  ]);
+  return {
+    ...counted,
+    marked: true,
+    status: complete ? "complete" : "writing",
+    snapshotDate: built.snapshotDate,
+    writtenEntities,
+    blockers,
+  };
 }

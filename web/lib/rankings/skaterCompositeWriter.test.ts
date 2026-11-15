@@ -5,6 +5,7 @@ import {
   buildSkaterCompositeRatingRow,
   buildSkaterCompositeRatingRows,
   upsertSkaterCompositeRatingRows,
+  publishSkaterCompositeRatingRows,
   calculateArchetypeScores,
   calculateDefenseRating,
   calculateMcmScore,
@@ -594,5 +595,114 @@ describe("atomic composite publication", () => {
     const client = { from: vi.fn(() => ({ upsert })) };
     await expect(upsertSkaterCompositeRatingRows(client as any, [{ player_id: 1 }] as any)).rejects.toThrow("fixture failure");
     expect(upsert).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("composite publication completion markers", () => {
+  const compositeRows = (players = [1, 2], date = "2026-11-14") => players.map((player_id) => ({
+    player_id, season_id: 20262027, snapshot_date: date, window_type: "season", window_size: 0,
+    strength_state: "5v5", peer_group_type: "all_skaters", peer_group_key: "all",
+  }));
+  const builtResult = (overrides: Record<string, unknown> = {}) => ({
+    request: { season: 20262027, strength: "5v5", peerGroupType: "all_skaters", window: "season" },
+    rows: compositeRows(),
+    snapshotDate: "2026-11-14",
+    sourceCoverage: { expectedPlayerCount: 2 },
+    publication: { ready: true, blockers: [] },
+    ...overrides,
+  }) as any;
+  const rankingsMarker = (overrides: Record<string, unknown> = {}) => ({
+    surface: "entity_metric_rankings", season_id: 20262027, snapshot_date: "2026-11-14",
+    strength_state: "5v5", window_type: "season", window_size: 0, peer_group_type: "all_skaters",
+    peer_group_key: "all", status: "complete", min_gp: 1, min_toi_seconds: 300, ...overrides,
+  });
+
+  function fakeClient(options: { markers?: any[]; shortCount?: boolean; markerReadError?: unknown } = {}) {
+    const log: Array<{ table: string; op: string; rows?: any[]; filters?: Record<string, unknown> }> = [];
+    const client = {
+      from: vi.fn((table: string) => {
+        const filters: Record<string, unknown> = {};
+        const query: any = {
+          select: () => query,
+          eq: (key: string, value: unknown) => { filters[key] = value; return query; },
+          limit: async () => {
+            log.push({ table, op: "select", filters });
+            if (options.markerReadError) return { data: null, error: options.markerReadError };
+            const data = (options.markers ?? []).filter((marker) =>
+              Object.entries(filters).every(([key, value]) => marker[key] === value));
+            return { data, error: null };
+          },
+          upsert: async (rows: any[]) => {
+            log.push({ table, op: "upsert", rows });
+            if (table === "ranking_publications") return { error: null };
+            return { error: null, count: options.shortCount ? rows.length - 1 : rows.length };
+          },
+        };
+        return query;
+      }),
+    };
+    return { client, log };
+  }
+
+  it("requires a complete Rankings publication at the same date before writing", async () => {
+    const { client, log } = fakeClient({ markers: [] });
+    await expect(publishSkaterCompositeRatingRows(client as any, builtResult())).rejects.toThrow("not a complete publication");
+    expect(log.filter((entry) => entry.op === "upsert")).toHaveLength(0);
+  });
+
+  it.each([
+    ["still writing", { status: "writing" }],
+    ["at another date", { snapshot_date: "2026-11-13" }],
+    ["with other floors", { min_gp: 10 }],
+  ])("refuses a Rankings marker %s", async (_label, overrides) => {
+    const { client, log } = fakeClient({ markers: [rankingsMarker(overrides)] });
+    await expect(publishSkaterCompositeRatingRows(client as any, builtResult())).rejects.toThrow("not a complete publication");
+    expect(log.filter((entry) => entry.op === "upsert")).toHaveLength(0);
+  });
+
+  it("marks composites writing, writes the cohort once, then marks them complete", async () => {
+    const { client, log } = fakeClient({ markers: [rankingsMarker()] });
+    const result = await publishSkaterCompositeRatingRows(client as any, builtResult());
+    const writes = log.filter((entry) => entry.op === "upsert");
+    expect(writes.map((entry) => [entry.table, entry.rows?.[0]?.status ?? null])).toEqual([
+      ["ranking_publications", "writing"],
+      ["skater_composite_ratings", null],
+      ["ranking_publications", "complete"],
+    ]);
+    expect(writes[2]?.rows?.[0]).toMatchObject({
+      surface: "skater_composite_ratings", snapshot_date: "2026-11-14", window_type: "season",
+      peer_group_key: "all", expected_rows: 2, db_written_rows: 2, expected_entities: 2, written_entities: 2,
+    });
+    expect(result.status).toBe("complete");
+  });
+
+  it("stays writing when the database reports fewer rows", async () => {
+    const { client, log } = fakeClient({ markers: [rankingsMarker()], shortCount: true });
+    const result = await publishSkaterCompositeRatingRows(client as any, builtResult());
+    expect(result.status).toBe("writing");
+    expect(log.filter((entry) => entry.table === "ranking_publications" && entry.op === "upsert").map((entry) => entry.rows?.[0]?.status)).toEqual(["writing", "writing"]);
+  });
+
+  it("stays writing when fewer players were written than the source-coverage population", async () => {
+    const { client } = fakeClient({ markers: [rankingsMarker()] });
+    const result = await publishSkaterCompositeRatingRows(client as any, builtResult({ sourceCoverage: { expectedPlayerCount: 3 } }));
+    expect(result.status).toBe("writing");
+    expect(result.blockers.join(" ")).toContain("population is 3");
+  });
+
+  it("refuses when the marker table is not deployed", async () => {
+    const { client, log } = fakeClient({ markerReadError: { code: "PGRST205", message: "missing" } });
+    await expect(publishSkaterCompositeRatingRows(client as any, builtResult())).rejects.toThrow("not deployed");
+    expect(log.filter((entry) => entry.op === "upsert")).toHaveLength(0);
+  });
+
+  it("writes other peer-group scopes unmarked", async () => {
+    const { client, log } = fakeClient();
+    const rows = compositeRows().map((row) => ({ ...row, peer_group_type: "team", peer_group_key: "22" }));
+    const result = await publishSkaterCompositeRatingRows(client as any, builtResult({
+      request: { season: 20262027, strength: "5v5", peerGroupType: "team", window: "season" }, rows,
+    }));
+    expect(result.marked).toBe(false);
+    expect(log.map((entry) => entry.table)).toEqual(["skater_composite_ratings"]);
   });
 });
