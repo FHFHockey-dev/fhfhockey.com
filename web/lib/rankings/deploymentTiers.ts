@@ -737,6 +737,7 @@ async function buildDirectSpecialTeamsSection(args: {
         peerGroupType: args.request.position === "all" ? "all_skaters" : "position",
         minGp: args.request.minGp ?? undefined,
         minToiSeconds: SPECIAL_TEAMS_MIN_TOI_SECONDS,
+        window: args.request.window,
       });
       return [
         metricKey,

@@ -16,6 +16,7 @@ import {
   parseTeamMatrixRequest,
   type TeamMatrixResponse,
 } from "./teamMatrix";
+import { resolveTeamTokenFromRows } from "./teamTokenResolver";
 
 type QueryValue = string | string[] | undefined;
 type SnapshotEntity = "skaters" | "goalies" | "teams";
@@ -163,21 +164,30 @@ function available(args: {
   };
 }
 
-async function scanPages<TPayload extends { meta: { pageCount: number } }>(
-  buildPage: (page: number) => Promise<TPayload>,
-  findRow: (payload: TPayload) => SnapshotRow | null,
-) {
-  let sourcePayload: TPayload | null = null;
-  const maxPages = 100;
-  for (let page = 1; page <= maxPages; page += 1) {
-    const payload = await buildPage(page);
-    sourcePayload = sourcePayload ?? payload;
-    const row = findRow(payload);
-    if (row) return { row, sourcePayload: payload };
-    if (page >= payload.meta.pageCount) return { row: null, sourcePayload };
-  }
-  return { row: null, sourcePayload };
+/**
+ * Finds a team-matrix row by id, abbreviation or full name, using the same
+ * resolver as the skater and goalie team filters (no extra read: the matrix
+ * rows carry each team's identity).
+ */
+export function findTeamRowByToken<T extends TeamMatrixResponse["rows"][number]>(
+  rows: readonly T[],
+  token: string,
+): T | null {
+  const resolved = resolveTeamTokenFromRows(
+    token,
+    rows.flatMap((row) =>
+      row.team.id == null
+        ? []
+        : [{ id: row.team.id, abbreviation: row.team.abbreviation, name: row.team.name }],
+    ),
+  );
+  if (resolved == null) return null;
+  return rows.find((row) => row.team.id === resolved.teamId) ?? null;
 }
+
+// Goalie and team surfaces rank their whole cohort in memory, so one build
+// with a page that holds every row finds any subject (no per-page rebuilds).
+const SINGLE_BUILD_PAGE_SIZE = 10_000;
 
 function playerSource(payload: PlayerMatrixResponse): SnapshotSource {
   return {
@@ -228,12 +238,14 @@ export async function buildContextualRankingSnapshotSurface(
       metric: query.metric ?? query.goalie_metric,
       page_size: "50",
     });
-    const { row, sourcePayload } = await scanPages(
-      (page) => buildGoalieMatrixSurface({ ...request, page, pageSize: 50 }),
-      (payload) =>
-        payload.rows.find((entry) => entry.entity.id === selectedGoalieId) ?? null,
-    );
-    const source = sourcePayload ? goalieSource(sourcePayload) : null;
+    const sourcePayload = await buildGoalieMatrixSurface({
+      ...request,
+      page: 1,
+      pageSize: SINGLE_BUILD_PAGE_SIZE,
+    });
+    const row =
+      sourcePayload.rows.find((entry) => entry.entity.id === selectedGoalieId) ?? null;
+    const source = goalieSource(sourcePayload);
     if (!row) {
       return unavailable({
         entity,
@@ -244,7 +256,7 @@ export async function buildContextualRankingSnapshotSurface(
         selectedTeam: null,
         source,
         reason: "Selected goalie is unavailable for the requested filter context.",
-        caveats: sourcePayload?.meta.sourceWarnings ?? [],
+        caveats: sourcePayload.meta.sourceWarnings,
       });
     }
     return available({
@@ -254,7 +266,7 @@ export async function buildContextualRankingSnapshotSurface(
       selectedPlayerId: null,
       selectedGoalieId,
       selectedTeam: null,
-      source: goalieSource(sourcePayload as GoalieMatrixResponse),
+      source,
       row,
       caveats: (row as GoalieMatrixResponse["rows"][number]).warnings,
     });
@@ -274,14 +286,13 @@ export async function buildContextualRankingSnapshotSurface(
       metric: query.metric ?? query.team_metric,
       page_size: "50",
     });
-    const { row, sourcePayload } = await scanPages(
-      (page) => buildTeamMatrixSurface({ ...request, page, pageSize: 50 }),
-      (payload) =>
-        payload.rows.find(
-          (entry) => entry.team.abbreviation.toUpperCase() === selectedTeam,
-        ) ?? null,
-    );
-    const source = sourcePayload ? teamSource(sourcePayload) : null;
+    const sourcePayload = await buildTeamMatrixSurface({
+      ...request,
+      page: 1,
+      pageSize: SINGLE_BUILD_PAGE_SIZE,
+    });
+    const row = findTeamRowByToken(sourcePayload.rows, selectedTeam);
+    const source = teamSource(sourcePayload);
     if (!row) {
       return unavailable({
         entity,
@@ -292,7 +303,7 @@ export async function buildContextualRankingSnapshotSurface(
         selectedTeam,
         source,
         reason: "Selected team is unavailable for the requested filter context.",
-        caveats: sourcePayload?.meta.sourceWarnings ?? [],
+        caveats: sourcePayload.meta.sourceWarnings,
       });
     }
     return available({
@@ -302,7 +313,7 @@ export async function buildContextualRankingSnapshotSurface(
       selectedPlayerId: null,
       selectedGoalieId: null,
       selectedTeam,
-      source: teamSource(sourcePayload as TeamMatrixResponse),
+      source,
       row,
       caveats: (row as TeamMatrixResponse["rows"][number]).warnings,
     });
@@ -319,12 +330,17 @@ export async function buildContextualRankingSnapshotSurface(
     selected_player: String(selectedPlayerId),
     page_size: "50",
   });
-  const { row, sourcePayload } = await scanPages(
-    (page) => buildPlayerMatrixSurface({ ...request, page, pageSize: 50 }),
-    (payload) =>
-      payload.rows.find((entry) => entry.entity.id === selectedPlayerId) ?? null,
-  );
-  const source = sourcePayload ? playerSource(sourcePayload) : null;
+  // One build: the matrix serves the page that holds the selected skater, or
+  // reports that the skater is outside the ranked cohort (no page scan).
+  const sourcePayload = await buildPlayerMatrixSurface({
+    ...request,
+    page: 1,
+    pageSize: 50,
+    pageForSelected: true,
+  });
+  const row =
+    sourcePayload.rows.find((entry) => entry.entity.id === selectedPlayerId) ?? null;
+  const source = playerSource(sourcePayload);
   if (!row) {
     return unavailable({
       entity,
@@ -334,10 +350,14 @@ export async function buildContextualRankingSnapshotSurface(
       selectedGoalieId: null,
       selectedTeam: null,
       source,
-      reason: "Selected skater is unavailable for the requested filter context.",
-      caveats: sourcePayload?.meta.unavailableMetrics.map(
+      reason: !sourcePayload.meta.selectedPlayerAbsent
+        ? "Selected skater is unavailable for the requested filter context."
+        : sourcePayload.meta.rankingSource === "entity_metric_rankings"
+          ? "Selected skater is not in the published cohort for this context."
+          : "Selected skater is not in the ranked cohort for this context.",
+      caveats: sourcePayload.meta.unavailableMetrics.map(
         (metric) => `${metric.label}: ${metric.reason}`,
-      ) ?? [],
+      ),
     });
   }
   return available({
@@ -347,7 +367,7 @@ export async function buildContextualRankingSnapshotSurface(
     selectedPlayerId,
     selectedGoalieId: null,
     selectedTeam: null,
-    source: playerSource(sourcePayload as PlayerMatrixResponse),
+    source,
     row,
     caveats: (row as PlayerMatrixResponse["rows"][number]).warnings,
   });

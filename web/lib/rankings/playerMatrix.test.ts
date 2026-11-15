@@ -548,13 +548,17 @@ describe("playerMatrix", () => {
     });
   });
 
+  // F11: an omitted min_gp uses the page's window floor (10 GP for the season
+  // window); the metric's own TOI minimum (600 s for composites) still applies.
   it.each([
-    { gp: 10, toi: 6000, minGp: null, minToi: null, confidence: "high", qualified: true },
+    { gp: 10, toi: 6000, minGp: null, minToi: null, confidence: "medium", qualified: true },
+    { gp: 20, toi: 12000, minGp: null, minToi: null, confidence: "high", qualified: true },
     { gp: null, toi: 6000, minGp: null, minToi: null, confidence: "low", qualified: false },
     { gp: 10, toi: null, minGp: null, minToi: null, confidence: "low", qualified: false },
-    { gp: 1, toi: 599, minGp: null, minToi: null, confidence: "low", qualified: false },
-    { gp: 1, toi: 600, minGp: null, minToi: null, confidence: "medium", qualified: true },
-    { gp: 2, toi: 1200, minGp: null, minToi: null, confidence: "high", qualified: true },
+    { gp: 10, toi: 599, minGp: null, minToi: null, confidence: "low", qualified: false },
+    { gp: 1, toi: 600, minGp: null, minToi: null, confidence: "low", qualified: false },
+    { gp: 1, toi: 600, minGp: 1, minToi: null, confidence: "medium", qualified: true },
+    { gp: 2, toi: 1200, minGp: 1, minToi: null, confidence: "high", qualified: true },
     { gp: 2, toi: 1200, minGp: 3, minToi: 1800, confidence: "low", qualified: false },
   ])("qualifies published composite cells and sorting against their sample minimums: %j", async ({ gp, toi, minGp, minToi, confidence, qualified }) => {
     buildContextualRankingsSurfacesMock.mockImplementation(

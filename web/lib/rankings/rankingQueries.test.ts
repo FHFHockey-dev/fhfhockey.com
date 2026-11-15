@@ -419,7 +419,9 @@ describe("rankingQueries", () => {
       methodology_version: "contextual_composites_v1",
     }];
     const res: any = { statusCode: 200, body: null, status(code: number) { this.statusCode = code; return this; }, json(body: unknown) { this.body = body; return this; } };
-    const query = { season: "20252026", strength: "all", sort_metric: "mcm_score" };
+    // Explicit 1 GP (F11: an omitted min_gp now uses the 10-GP season floor),
+    // so this case keeps testing the MCM TOI minimum.
+    const query = { season: "20252026", strength: "all", sort_metric: "mcm_score", min_gp: "1" };
     await matrixHandler({ method: "GET", query } as any, res);
     expect(res.statusCode).toBe(200);
     expect(res.body.rows[0].sample).toMatchObject({ gamesPlayed, toiSeconds, minimumSampleMet: meets, confidence: meets ? "medium" : "low" });

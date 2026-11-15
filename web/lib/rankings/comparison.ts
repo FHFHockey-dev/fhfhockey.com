@@ -16,6 +16,7 @@ import {
   parseTeamMatrixRequest,
   type TeamMatrixResponse,
 } from "./teamMatrix";
+import { findTeamRowByToken } from "./snapshot";
 
 type QueryValue = string | string[] | undefined;
 type ComparisonEntity = "skaters" | "goalies" | "teams";
@@ -294,28 +295,12 @@ export async function buildContextualRankingComparisonSurface(
       metric: query.metric ?? query.team_metric,
       page_size: "50",
     });
-    const wanted = new Set(teams);
-    const result = await scanPages(
-      (page) => buildTeamMatrixSurface({ ...request, page, pageSize: 50 }),
-      (payload) =>
-        payload.rows.filter((row) =>
-          wanted.has(row.team.abbreviation.toUpperCase()),
-        ),
-      (rows) =>
-        new Set(
-          rows.map((row) =>
-            (row as TeamMatrixResponse["rows"][number]).team.abbreviation.toUpperCase(),
-          ),
-        ).size >= wanted.size,
+    // Teams fit in one build; each subject token resolves by id, abbreviation
+    // or name against the built rows.
+    const teamPayload = await buildTeamMatrixSurface({ ...request, page: 1, pageSize: 50 });
+    const subjects = teams.map((team) =>
+      teamSubject(findTeamRowByToken(teamPayload.rows, team), team),
     );
-    const rowsByTeam = new Map(
-      result.rows.map((row) => [
-        (row as TeamMatrixResponse["rows"][number]).team.abbreviation.toUpperCase(),
-        row as TeamMatrixResponse["rows"][number],
-      ]),
-    );
-    const subjects = teams.map((team) => teamSubject(rowsByTeam.get(team) ?? null, team));
-    const sourcePayload = result.sourcePayload as TeamMatrixResponse | null;
     return {
       success: true,
       version: "contextual_ranking_comparison_v1",
@@ -327,10 +312,10 @@ export async function buildContextualRankingComparisonSurface(
         metric: request.metric,
         subjectCount: subjects.length,
       },
-      source: sourcePayload ? teamSource(sourcePayload) : null,
-      metricColumns: metricColumns(sourcePayload),
+      source: teamSource(teamPayload),
+      metricColumns: metricColumns(teamPayload),
       subjects,
-      caveats: sourcePayload?.meta.sourceWarnings ?? [],
+      caveats: teamPayload.meta.sourceWarnings,
     };
   }
 

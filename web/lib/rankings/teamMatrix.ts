@@ -1127,7 +1127,12 @@ function buildStylePayload(args: {
   };
 }
 
-type TeamEventWindow = { startDate: string; endDate: string };
+type TeamEventWindow = {
+  startDate: string;
+  endDate: string;
+  /** The season's last regular-season date (from `seasons`), before any cutoff. */
+  regularSeasonEndDate?: string;
+};
 
 async function fetchTeamSeasonWindow(
   request: TeamMatrixRequest,
@@ -1162,6 +1167,7 @@ async function fetchTeamSeasonWindow(
       request.asOfDate != null && request.asOfDate < seasonEndDate
         ? request.asOfDate
         : seasonEndDate,
+    regularSeasonEndDate: seasonEndDate,
   };
 }
 
@@ -1309,17 +1315,28 @@ async function fetchRegularSeasonGames(
   return new Map(rows.map((row) => [Number(row.id), row]));
 }
 
-async function fetchLatestTeamUnitToiSnapshotDate(request: TeamMatrixRequest) {
+async function fetchLatestTeamUnitToiSnapshotDate(
+  request: TeamMatrixRequest,
+  window: TeamEventWindow,
+) {
+  // One event cutoff per response. An explicit as-of caps the publication.
+  // Without one, an in-progress season (power snapshot before the last
+  // regular-season date) is capped at the power date (window.endDate) so a
+  // later rebuild cannot leak in. A completed season's later publication has
+  // the same event cutoff (season end), so its latest snapshot is used; rows
+  // stay bounded by game_date <= power date either way.
+  const seasonInProgress =
+    window.regularSeasonEndDate == null || window.endDate < window.regularSeasonEndDate;
+  const publicationCap = request.asOfDate ?? (seasonInProgress ? window.endDate : null);
   let query = supabase
     .from("team_unit_toi")
     .select("snapshot_date")
-    .eq("season_id", request.season)
+    .eq("season_id", request.season);
+  if (publicationCap != null) query = query.lte("snapshot_date", publicationCap);
+  const { data, error } = await query
     .order("snapshot_date", { ascending: false })
-    .limit(1);
-  if (request.asOfDate != null) {
-    query = query.lte("snapshot_date", request.asOfDate);
-  }
-  const { data, error } = await query.maybeSingle();
+    .limit(1)
+    .maybeSingle();
   if (error) throw new Error(`Unable to load team unit-TOI snapshot: ${error.message}`);
   return data?.snapshot_date ?? null;
 }
@@ -1328,7 +1345,7 @@ async function fetchTeamUnitToiRows(
   request: TeamMatrixRequest,
   window: TeamEventWindow,
 ) {
-  const snapshotDate = await fetchLatestTeamUnitToiSnapshotDate(request);
+  const snapshotDate = await fetchLatestTeamUnitToiSnapshotDate(request, window);
   if (snapshotDate == null) {
     return { snapshotDate: null, rows: [] as TeamUnitToiRow[] };
   }
@@ -1340,6 +1357,10 @@ async function fetchTeamUnitToiRows(
       .select(TEAM_UNIT_TOI_SELECT)
       .eq("season_id", request.season)
       .eq("snapshot_date", snapshotDate)
+      // Read only the rows aggregateTeamUnitToiRows consumes: unit 1 of each
+      // 5v5 type and every power-play unit. The writer numbers each team-game's
+      // units from 1, so no team-game loses all its rows.
+      .or("unit_type.eq.power_play,unit_number.eq.1")
       .order("game_date", { ascending: false })
       .order("id", { ascending: true })
       .range(from, from + TEAM_QUERY_PAGE_SIZE - 1);

@@ -22,6 +22,7 @@ import type {
   ContextualRankingsDeploymentFilter,
   ContextualRankingsPositionFilter,
   ContextualRankingsRequest,
+  ContextualRankingsResponse,
   ContextualRankingsSortDirection,
 } from "./rankingTypes";
 import { ContextualRankingsQueryError } from "./rankingTypes";
@@ -42,6 +43,7 @@ import {
   type SkaterWindowStrengthState,
 } from "./skaterWindowAggregation";
 import { CONTEXTUAL_RANKINGS_METHODOLOGY_UPDATED_AT } from "./rankingMetadata";
+import { defaultMinGpForWindow } from "./rankingUrlState";
 import { WINDOW_COUNT_SUPPORT_TABLE } from "./rollingWindowCountSupportReader";
 import {
   resolveTeamToken,
@@ -70,6 +72,11 @@ export type PlayerMatrixRequest = {
   pageSize: number;
   selectedPlayerId: number | null;
   rankingSourcePreference: "fallback" | "entity_metric_rankings";
+  /**
+   * Snapshot use only (never parsed from a query): serve the page that holds
+   * selectedPlayerId in one build, or no page when the player is absent.
+   */
+  pageForSelected?: boolean;
 };
 
 export type PlayerMatrixMetricCell = {
@@ -108,6 +115,9 @@ export type PlayerMatrixComposite = {
   methodologyVersion: string | null;
   snapshotDate: string | null;
   updatedAt: string | null;
+  /** The published cohort the composite value belongs to (all_skaters = league scope). */
+  peerGroupType?: string | null;
+  peerGroupKey?: string | null;
 };
 
 export type PlayerMatrixRankScope = {
@@ -156,6 +166,8 @@ export type PlayerMatrixResponse = {
     page: number;
     pageSize: number;
     pageCount: number;
+    /** Set with pageForSelected: the selected player is not in the ranked cohort. */
+    selectedPlayerAbsent?: boolean;
     sortMetric: ContextualRankingMetricKey;
     sortDirection: ContextualRankingsSortDirection;
     metricGroups: MatrixMetricGroup[];
@@ -650,6 +662,8 @@ function toComposite(
     methodologyVersion: row.methodology_version,
     snapshotDate: row.snapshot_date,
     updatedAt: row.updated_at,
+    peerGroupType: row.peer_group_type,
+    peerGroupKey: row.peer_group_key,
   };
 }
 
@@ -782,38 +796,52 @@ async function fetchCompositeRatingsByPlayerId(args: {
     "methodology_version",
   ].join(",");
 
-  for (
-    let index = 0;
-    index < uniquePlayerIds.length;
-    index += COMPOSITE_IN_FILTER_CHUNK_SIZE
-  ) {
-    const chunk = uniquePlayerIds.slice(
-      index,
-      index + COMPOSITE_IN_FILTER_CHUNK_SIZE,
-    );
-    for (let from = 0; ; from += COMPOSITE_QUERY_PAGE_SIZE) {
-      const { data, error } = await supabase
-        .from("skater_composite_ratings")
-        .select(selectFields)
-        .eq("season_id", args.request.season)
-        .eq("snapshot_date", args.snapshotDate)
-        .eq("window_type", matrixCompositeWindowType(args.request.window))
-        .eq("window_size", matrixCompositeWindowSize(args.request.window))
-        .eq("strength_state", args.request.strength)
-        .eq("peer_group_type", args.request.peerGroupType)
-        .eq("peer_group_key", matrixCompositePeerGroupKey(args.request))
-        .in("player_id", chunk)
-        .range(from, from + COMPOSITE_QUERY_PAGE_SIZE - 1);
-      if (error) throw error;
+  const snapshotDate = args.snapshotDate;
+  const readScope = async (peerGroupType: string, peerGroupKey: string) => {
+    for (
+      let index = 0;
+      index < uniquePlayerIds.length;
+      index += COMPOSITE_IN_FILTER_CHUNK_SIZE
+    ) {
+      const chunk = uniquePlayerIds.slice(
+        index,
+        index + COMPOSITE_IN_FILTER_CHUNK_SIZE,
+      );
+      for (let from = 0; ; from += COMPOSITE_QUERY_PAGE_SIZE) {
+        const { data, error } = await supabase
+          .from("skater_composite_ratings")
+          .select(selectFields)
+          .eq("season_id", args.request.season)
+          .eq("snapshot_date", snapshotDate)
+          .eq("window_type", matrixCompositeWindowType(args.request.window))
+          .eq("window_size", matrixCompositeWindowSize(args.request.window))
+          .eq("strength_state", args.request.strength)
+          .eq("peer_group_type", peerGroupType)
+          .eq("peer_group_key", peerGroupKey)
+          .in("player_id", chunk)
+          .range(from, from + COMPOSITE_QUERY_PAGE_SIZE - 1);
+        if (error) throw error;
 
-      const page = (data ?? []) as unknown as CompositeRatingRow[];
-      rows.push(...page);
-      if (page.length < COMPOSITE_QUERY_PAGE_SIZE) break;
+        const page = (data ?? []) as unknown as CompositeRatingRow[];
+        rows.push(...page);
+        if (page.length < COMPOSITE_QUERY_PAGE_SIZE) break;
+      }
     }
+  };
+
+  await readScope(args.request.peerGroupType, matrixCompositePeerGroupKey(args.request));
+  // Composites are published for the all-skater cohort only. A narrower pool
+  // shows those league-scope values (labelled via peer_group_type) and the
+  // matrix re-ranks them inside the pool; it never mixes scopes.
+  if (rows.length === 0 && args.request.peerGroupType !== "all_skaters") {
+    await readScope("all_skaters", "all_skaters");
   }
 
   return new Map(rows.map((row) => [row.player_id, row]));
 }
+
+export const LEAGUE_SCOPE_COMPOSITE_WARNING =
+  "Composite ratings are league-scope values from the all-skater publication; their ranks are re-computed inside the selected pool.";
 
 function metricUnavailableReason(args: {
   column: MatrixMetricColumnDefinition;
@@ -875,7 +903,8 @@ function compositeSample(
 ): ContextualRankingApiRow["sample"] {
   const requirements =
     getContextualRankingMetricDefinition(metricKey)?.sampleRequirements;
-  const minGp = request.minGp ?? requirements?.minimumGp ?? 0;
+  // Same default as the ranking calculator: the page's window floor.
+  const minGp = request.minGp ?? Number(defaultMinGpForWindow(request.window));
   const minToiSeconds =
     request.minToiSeconds ?? requirements?.minimumToiSeconds ?? 0;
   const gamesPlayed = finiteNumber(sample.gamesPlayed);
@@ -1080,15 +1109,16 @@ export async function buildPlayerMatrixSurface(
   if (!sortSurface) {
     throw new Error(`Ranking surface unavailable for ${baseSortMetric}`);
   }
-  let sortedRows = sortSurface.rankings
-    .map((row) =>
-      sortUsesComposite
-        ? { ...row, sample: compositeSample(row.sample, sortMetric, request) }
-        : row,
-    )
-    .filter((row) =>
-      sampleConfidenceMatches(row.sample.confidence, request.sampleConfidence),
-    );
+  // The whole ranked pool. Sample confidence, like search, only narrows the
+  // displayed rows; ranks are computed over this pool.
+  const cohortRows = sortSurface.rankings.map((row) =>
+    sortUsesComposite
+      ? { ...row, sample: compositeSample(row.sample, sortMetric, request) }
+      : row,
+  );
+  let sortedRows = cohortRows.filter((row) =>
+    sampleConfidenceMatches(row.sample.confidence, request.sampleConfidence),
+  );
   const anyCompositeColumn = metricColumns.some(
     (column) =>
       isCompositeMetricKey(column.metricKey) &&
@@ -1098,7 +1128,7 @@ export async function buildPlayerMatrixSurface(
     ? await fetchCompositeRatingsByPlayerId({
         request,
         snapshotDate: sortSurface.meta.snapshotDate,
-        playerIds: sortedRows.map((row) => row.entity.id),
+        playerIds: cohortRows.map((row) => row.entity.id),
       })
     : new Map<number, CompositeRatingRow>();
   if (sortUsesComposite) {
@@ -1127,7 +1157,7 @@ export async function buildPlayerMatrixSurface(
     COMPOSITE_METRIC_KEYS.filter((key) => key !== "beast_tier").map((key) => [
       key,
       rankNormalizedMetricValues(
-        sortedRows.map((row) => ({
+        cohortRows.map((row) => ({
           id: row.entity.id,
           normalizedValue: row.sample.minimumSampleMet
             ? compositeMetricValue(compositeSortRowsByPlayerId.get(row.entity.id), key)
@@ -1149,8 +1179,19 @@ export async function buildPlayerMatrixSurface(
       : row.metric.value;
     return row.sample.minimumSampleMet && value != null && Number.isFinite(value);
   }).length;
-  const start = (request.page - 1) * request.pageSize;
-  const pageRows = sortedRows.slice(start, start + request.pageSize);
+  const selectedIndex =
+    request.pageForSelected && request.selectedPlayerId != null
+      ? sortedRows.findIndex((row) => row.entity.id === request.selectedPlayerId)
+      : null;
+  const selectedPlayerAbsent = selectedIndex === -1;
+  const page =
+    selectedIndex != null && selectedIndex >= 0
+      ? Math.floor(selectedIndex / request.pageSize) + 1
+      : request.page;
+  const start = (page - 1) * request.pageSize;
+  const pageRows = selectedPlayerAbsent
+    ? []
+    : sortedRows.slice(start, start + request.pageSize);
   const pagePlayerIds = pageRows.map((row) => row.entity.id);
   const overallPeerRequest: PlayerMatrixRequest = {
     ...request,
@@ -1168,8 +1209,11 @@ export async function buildPlayerMatrixSurface(
     peerGroupType: "deployment",
     sortMetric: baseSortMetric,
   };
-  const buildSelectedRankingSurfaces =
-    rankingSource === "entity_metric_rankings"
+  // An absent selected player has no page to enrich: skip the per-page reads.
+  const buildSelectedRankingSurfaces = selectedPlayerAbsent
+    ? async (..._args: unknown[]) =>
+        new Map<ContextualRankingMetricKey, ContextualRankingsResponse>()
+    : rankingSource === "entity_metric_rankings"
       ? buildEntityMetricRankingSurfaces
       : buildContextualRankingsSurfaces;
   const currentSurfacesPromise = buildSelectedRankingSurfaces(
@@ -1441,7 +1485,8 @@ export async function buildPlayerMatrixSurface(
       rowCount: rows.length,
       totalRankedRows: sortedRows.length,
       sortMetricAvailableRowCount,
-      page: request.page,
+      page,
+      ...(request.pageForSelected ? { selectedPlayerAbsent } : {}),
       pageSize: request.pageSize,
       pageCount: Math.max(1, Math.ceil(sortedRows.length / request.pageSize)),
       sortMetric,
@@ -1482,6 +1527,12 @@ export async function buildPlayerMatrixSurface(
       ),
       sourceWarnings: [
         ...(rankingSourceFallbackReason ? [rankingSourceFallbackReason] : []),
+        ...(sortSurface.meta.sourceWarnings ?? []),
+        ...([...compositeRowsByPlayerId.values()].some(
+          (row) => row.peer_group_type !== request.peerGroupType,
+        )
+          ? [LEAGUE_SCOPE_COMPOSITE_WARNING]
+          : []),
       ],
       compositeSourceTable: "skater_composite_ratings",
       message:

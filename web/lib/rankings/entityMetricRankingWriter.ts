@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import supabase from "lib/supabase/server";
 import type { Database, Json } from "lib/supabase/database-generated.types";
 
 import {
@@ -12,6 +13,7 @@ import type {
   ContextualRankingRow,
 } from "./rankingCalculator";
 import { buildContextualRankingSnapshotRowsByMetric } from "./rankingQueries";
+import { loadSkaterCompositeSeasonSources } from "./skaterCompositeSourceCoverage";
 import type {
   ContextualRankingsDeploymentFilter,
   ContextualRankingsPositionFilter,
@@ -227,6 +229,22 @@ export async function buildEntityMetricRankingRows(
   const unavailableMetrics: EntityMetricRankingBuildResult["unavailableMetrics"] = [];
   const metricKeys = Array.from(new Set(request.metricKeys));
   const windows = Array.from(new Set(request.windows));
+  // Publish the complete WGO-anchored season population (as the composite
+  // writer does), not the interactive 30-date / 200-game recent-row search.
+  const { report: sourceCoverage, rows: completeSeasonRows } =
+    await loadSkaterCompositeSeasonSources(supabase, {
+      season: request.season,
+      strength: request.strength,
+      cutoffDate: request.asOfDate ?? new Date().toISOString().slice(0, 10),
+    });
+  if (!sourceCoverage.verified) {
+    throw new Error(
+      [
+        "Source coverage is not verified; no entity metric rankings were built.",
+        ...sourceCoverage.blockers,
+      ].join(" "),
+    );
+  }
 
   for (const window of windows) {
     const snapshotRowsByMetric = await buildContextualRankingSnapshotRowsByMetric(
@@ -236,6 +254,7 @@ export async function buildEntityMetricRankingRows(
         metric: metricKeys[0] ?? "points_per_60",
       }),
       metricKeys,
+      { completeSeasonRows },
     );
     const contextStartRowCount = rows.length;
     let contextSnapshotDate: string | null = null;
