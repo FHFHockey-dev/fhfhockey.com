@@ -52,7 +52,7 @@ export interface CaptureReport {
 export async function runPregameCapture(deps: CaptureDeps, request: CaptureRequest): Promise<CaptureReport> {
   const t = { start: deps.now() } as Record<string, number>;
   const timings: Record<string, number> = {};
-  if (request.scheduledLaunchAt) timings.dispatchDelayMs = t.start - Number(parseInstantMicros(request.scheduledLaunchAt) / 1000n);
+  if (request.scheduledLaunchAt) timings.dispatchDelayMs = t.start - Number(parseInstantMicros(request.scheduledLaunchAt) / BigInt(1000));
   let claimId: string | null = null;
   let saveCalls = 0;
   const finish = async (outcome: TerminalOutcome, reason: string | null, verify?: VerifyResult): Promise<CaptureReport> => {

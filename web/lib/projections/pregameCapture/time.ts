@@ -11,9 +11,9 @@ export type Micros = bigint;
 const ISO_INSTANT =
   /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?(Z|z|[+-]\d{2}(?::?\d{2})?)$/;
 
-export const MICROS_PER_MS = 1_000n;
-export const MICROS_PER_SECOND = 1_000_000n;
-export const MICROS_PER_MINUTE = 60n * MICROS_PER_SECOND;
+export const MICROS_PER_MS = BigInt(1_000);
+export const MICROS_PER_SECOND = BigInt(1_000_000);
+export const MICROS_PER_MINUTE = BigInt(60) * MICROS_PER_SECOND;
 
 /**
  * Parses an ISO-8601 / RFC 3339 instant that carries an explicit offset.
@@ -33,7 +33,7 @@ export function parseInstantMicros(text: string, round: "floor" | "ceil" = "floo
   if (!Number.isFinite(baseMs)) throw new Error(`instant_out_of_range:${text}`);
   const digits = fraction.padEnd(9, "0");
   let micros = BigInt(digits.slice(0, 6));
-  if (round === "ceil" && /[1-9]/.test(digits.slice(6))) micros += 1n;
+  if (round === "ceil" && /[1-9]/.test(digits.slice(6))) micros += BigInt(1);
   let offsetMinutes = 0;
   if (zone !== "Z" && zone !== "z") {
     const sign = zone.startsWith("-") ? -1 : 1;
@@ -59,7 +59,7 @@ export function formatMicros(value: Micros): string {
   const ms = value / MICROS_PER_MS;
   let rem = value % MICROS_PER_MS;
   let wholeMs = ms;
-  if (rem < 0n) { rem += MICROS_PER_MS; wholeMs -= 1n; }
+  if (rem < BigInt(0)) { rem += MICROS_PER_MS; wholeMs -= BigInt(1); }
   const iso = new Date(Number(wholeMs)).toISOString(); // ...sss Z
   return `${iso.slice(0, 23)}${rem.toString().padStart(3, "0")}Z`;
 }

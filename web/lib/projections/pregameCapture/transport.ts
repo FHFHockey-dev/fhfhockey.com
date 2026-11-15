@@ -159,7 +159,7 @@ export function createCaptureTransport(options: {
       const rows = Array.isArray(data) ? data : data && typeof data === "object" ? [data] : [];
       usage.rows += rows.length;
       if (usage.rows > budget.maxRows) refuse("row_budget");
-      const receivedMicros = parseInstantMicros(receivedAt) + BigInt(budget.stampToleranceMs) * 1000n;
+      const receivedMicros = parseInstantMicros(receivedAt) + BigInt(budget.stampToleranceMs) * BigInt(1000);
       for (const row of rows as Array<Record<string, unknown>>) {
         if (!row || typeof row !== "object") continue;
         for (const column of AVAILABILITY_COLUMNS) {

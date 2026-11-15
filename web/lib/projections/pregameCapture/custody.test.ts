@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { runPregameCapture, type CaptureDeps, type Collected, type PinnedGame } from "./custody";
 import { decodePacket, sha256Hex } from "./packet";
+import { u8 } from "./der";
 import { mintTimeStampResponse, parseTimeStampRequest, testTsaTrust } from "./__fixtures__/testTsa";
 import { buildTimeStampRequest } from "./rfc3161";
 import { formatMicros, MICROS_PER_MS, parseInstantMicros } from "./time";
@@ -82,7 +83,7 @@ class FakeDb {
         if (this.fences.has(claimId)) throw new Error("capture_save_fenced");
         if (this.clock.ms > claim.ackDeadlineMs) throw new Error("capture_save_late");
         const bytes = Buffer.from(b64, "base64");
-        if (sha256Hex(bytes) !== raw) throw new Error("capture_raw_hash_mismatch");
+        if (sha256Hex(u8(bytes)) !== raw) throw new Error("capture_raw_hash_mismatch");
         if (this.artifacts.has(claimId)) throw new Error("duplicate key value violates unique constraint");
         this.artifacts.set(claimId, { bytes, raw, canonical, version: 1000 + this.artifacts.size });
         this.hooks.afterSaveCommit?.();
@@ -105,7 +106,7 @@ class FakeDb {
           homeTeamId: claim.args.homeTeamId, awayTeamId: claim.args.awayTeamId, calendarRevision: claim.args.calendarRevision,
           scheduledStart: this.text(START_MS), inputCutoff: claim.inputCutoff, ackDeadline: this.text(claim.ackDeadlineMs),
           codeVersion: claim.args.codeVersion, artifactPresent: Boolean(artifact), saveFenced: this.fences.has(claimId),
-          packetBase64: artifact?.bytes.toString("base64") ?? null, rawSha256: artifact ? sha256Hex(artifact.bytes) : null,
+          packetBase64: artifact?.bytes.toString("base64") ?? null, rawSha256: artifact ? sha256Hex(u8(artifact.bytes)) : null,
           storedRawSha256: artifact?.raw ?? null, canonicalSha256: artifact?.canonical ?? null, byteLength: artifact?.bytes.byteLength ?? null,
           rowVersion: artifact ? String(artifact.version) : null, currentStart: this.text(this.currentStartMs),
           teamGameStatuses: [...this.statuses], dbReadAt: this.clockText(this.clock.ms),
@@ -155,7 +156,7 @@ function setup(options: {
         tsaCalls.push(clock.ms);
         // A wrong-digest TSA signs some other statement with the same nonce.
         const signed = options.tsaWrongDigest
-          ? buildTimeStampRequest(Buffer.alloc(32, 0x11), parseTimeStampRequest(request).nonce ?? 0n) : request;
+          ? buildTimeStampRequest(Buffer.alloc(32, 0x11), parseTimeStampRequest(request).nonce ?? BigInt(0)) : request;
         return mintTimeStampResponse(signed, { genTimeMicros: BigInt(clock.ms + (options.tsaSkewMs ?? 0)) * MICROS_PER_MS,
           accuracyMillis: options.tsaAccuracyMs === undefined ? 500 : options.tsaAccuracyMs });
       },
@@ -177,7 +178,7 @@ function setup(options: {
     },
     modelEnvironment: () => ({ FORGE_SKATER_MODEL_MODE: "v2" }),
     now: () => clock.ms,
-    nonce: () => 0x5eedn,
+    nonce: () => BigInt(0x5eed),
     budget: { requiredMs: options.requiredMs ?? 120_000, readMs: 90_000, saveWaitMs: 15_000, tsaTimeoutMs: 10_000, skewToleranceMs: 2_000 },
   };
   return { clock, db, deps, tsaCalls };
@@ -194,7 +195,7 @@ describe("pregame capture custody (offline acceptance)", () => {
     expect(db.calls.filter((c) => c === "save")).toHaveLength(1);
     expect(db.calls.every((c) => CAPTURE_RPCS.has(c))).toBe(true); // no forecast, revision or serving RPC exists here
     const artifact = db.artifacts.get(report.claimId!)!;
-    const { packet } = decodePacket(artifact.bytes);
+    const { packet } = decodePacket(u8(artifact.bytes));
     expect(packet.binding).toMatchObject({ gameId: GAME, slateDate: SLATE, calendarRevision: REV, claimId: report.claimId });
     // Inputs only: no writes, output hash, scores or forecasts are part of the packet.
     expect(Object.keys(packet).sort()).toEqual(["binding", "candidates", "modelEnvironment", "readWindow", "reads", "statedCutoff", "transport", "version"]);
@@ -248,7 +249,7 @@ describe("pregame capture custody (offline acceptance)", () => {
     expect(db.fences.has(report.claimId!)).toBe(true);
     // A straggling save from that attempt can no longer commit.
     db.hooks.beforeSave = undefined;
-    await expect(db.rpc().save(report.claimId!, Buffer.from("x").toString("base64"), sha256Hex(Buffer.from("x")), "0".repeat(64), new AbortController().signal)).rejects.toThrow("capture_save_fenced");
+    await expect(db.rpc().save(report.claimId!, Buffer.from("x").toString("base64"), sha256Hex(u8(Buffer.from("x"))), "0".repeat(64), new AbortController().signal)).rejects.toThrow("capture_save_fenced");
   });
 
   it("does not qualify a writer that starts before the cutoff but commits after it", async () => {

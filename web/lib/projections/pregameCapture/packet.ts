@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { gunzipSync, gzipSync } from "node:zlib";
 import type { ProjectionInputRead } from "../inputCapture";
 import { parseInstantMicros } from "./time";
+import { u8 } from "./der";
 
 /** Private, model-free native input packet for one exact game. No forecast or score is ever included. */
 export const PACKET_VERSION = "forge-pregame-native-inputs-v1" as const;
@@ -47,9 +48,9 @@ export interface EncodedPacket { bytes: Buffer; rawSha256: string; canonicalSha2
 export function encodePacket(packet: PregamePacket): EncodedPacket {
   assertPacket(packet);
   const json = canonicalJson(packet);
-  const bytes = gzipSync(Buffer.from(json, "utf8"), { level: 9 });
+  const bytes = gzipSync(u8(Buffer.from(json, "utf8")), { level: 9 });
   if (bytes.byteLength > MAX_PACKET_BYTES) throw new Error("packet_too_large");
-  return { bytes, rawSha256: sha256Hex(bytes), canonicalSha256: sha256Hex(json) };
+  return { bytes, rawSha256: sha256Hex(u8(bytes)), canonicalSha256: sha256Hex(json) };
 }
 
 export function decodePacket(bytes: Uint8Array): { packet: PregamePacket; rawSha256: string; canonicalSha256: string } {

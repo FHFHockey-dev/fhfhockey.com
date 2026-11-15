@@ -42,7 +42,7 @@ describe("deadline policy", () => {
 
   it("accepts an acknowledgement exactly at T−60 and refuses one microsecond later", () => {
     expect(ackQualifies(t60, { scheduledStart: start })).toBe(true);
-    expect(ackQualifies(t60 + 1n, { scheduledStart: start })).toBe(false);
+    expect(ackQualifies(t60 + BigInt(1), { scheduledStart: start })).toBe(false);
   });
 
   it("tightens on an earlier reschedule or actual start", () => {
@@ -55,7 +55,7 @@ describe("deadline policy", () => {
   it("refuses late starts and starts without time for read + save + verify", () => {
     const base = { readMs: 60_000, saveMs: 10_000, verifyMs: 10_000, marginMs: 30_000 };
     expect(decideStart({ scheduledStart: start }, { ...base, nowUpper: t60 })).toMatchObject({ ok: false, reason: "late_start" });
-    expect(decideStart({ scheduledStart: start }, { ...base, nowUpper: t60 - 100_000_000n })).toMatchObject({ ok: false, reason: "insufficient_time" });
-    expect(decideStart({ scheduledStart: start }, { ...base, nowUpper: t60 - 110_000_000n })).toMatchObject({ ok: true, slackMicros: 0n });
+    expect(decideStart({ scheduledStart: start }, { ...base, nowUpper: t60 - BigInt(100_000_000) })).toMatchObject({ ok: false, reason: "insufficient_time" });
+    expect(decideStart({ scheduledStart: start }, { ...base, nowUpper: t60 - BigInt(110_000_000) })).toMatchObject({ ok: true, slackMicros: BigInt(0) });
   });
 });

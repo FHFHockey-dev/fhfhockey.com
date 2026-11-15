@@ -16,6 +16,10 @@ export type LeagueOptions = {
   awayGoalieOverride?: boolean;
   /** Three goalies with start projections for the home team (multiple candidates). */
   homeThreeGoalies?: boolean;
+  /** Away team has no line combination and no rolling history: its lineup is unavailable (opponent-shots gate). */
+  awayNoLineup?: boolean;
+  /** One home top-six forward is out (INJURY_OUT), effective before the slate. */
+  homeForwardOut?: boolean;
 };
 
 export const TARGET = {
@@ -108,6 +112,7 @@ export function buildLeague(options: LeagueOptions = {}): World {
       const roster = rosters.get(teamId);
       if (!roster) continue;
       if (options.thinHomePool && teamId === TARGET.homeTeamId) continue;
+      if (options.awayNoLineup && teamId === TARGET.awayTeamId) continue;
       const forwards = roster.filter((p) => p.position !== "D" && p.position !== "G" && p.tier < 12).map((p) => p.id);
       const defense = roster.filter((p) => p.position === "D" && p.tier < 6).map((p) => p.id);
       const goalies = roster.filter((p) => p.position === "G");
@@ -125,6 +130,7 @@ export function buildLeague(options: LeagueOptions = {}): World {
     for (const player of roster) {
       if (player.position === "G") continue;
       if (options.thinHomePool && teamId === TARGET.homeTeamId && player.tier >= 4) continue;
+      if (options.awayNoLineup && teamId === TARGET.awayTeamId) continue;
       if (player.tier >= 12 && player.position !== "D") continue; // extra forward: no NHL usage (reserve without metrics)
       const isD = player.position === "D";
       for (const [index, game] of teamGames.slice(0, 3).entries()) {
@@ -194,6 +200,33 @@ export function buildLeague(options: LeagueOptions = {}): World {
       created_at: "2026-11-14T16:00:00Z" });
   }
 
+  if (options.homeForwardOut) {
+    const out = rosters.get(TARGET.homeTeamId)!.find((p) => p.tier === 1)!;
+    push("forge_roster_events", { event_id: 502, team_id: TARGET.homeTeamId, player_id: out.id, event_type: "INJURY_OUT",
+      confidence: 0.9, payload: {}, effective_from: "2026-11-13T18:00:00Z", effective_to: null, created_at: "2026-11-13T18:00:00Z" });
+  }
+
+  // Box-score history (season bootstrap reads it through games!inner).
+  for (const game of history) {
+    for (const teamId of [game.home, game.away]) {
+      const roster = rosters.get(teamId);
+      if (!roster) continue;
+      for (const player of roster) {
+        if (player.position === "G") {
+          if (player.tier !== (game.id % 3 === 0 ? 1 : 0)) continue;
+          const shots = 28 + (game.id % 7);
+          push("goaliesGameStats", { playerId: player.id, gameId: game.id, saveShotsAgainst: `${shots - 2}/${shots}`, goalsAgainst: 2, toi: "60:00" });
+          continue;
+        }
+        if (player.tier >= 12 && player.position !== "D") continue;
+        push("skatersGameStats", { playerId: player.id, gameId: game.id, goals: game.id % 5 === player.tier % 5 ? 1 : 0,
+          assists: game.id % 4 === player.tier % 4 ? 1 : 0, shots: 1 + ((game.id + player.tier) % 4), hits: (game.id + player.tier) % 3,
+          blockedShots: player.position === "D" ? 2 : 0, pim: 0, powerPlayGoals: 0, powerPlayPoints: 0,
+          toi: player.position === "D" ? "21:30" : "16:10", powerPlayToi: player.tier < 8 ? "02:05" : "00:00" });
+      }
+    }
+  }
+
   if (options.targetPbpPregameRow) {
     push("pbp_games", { id: TARGET.gameId, date: TARGET.slateDate, hometeamid: TARGET.homeTeamId, awayteamid: TARGET.awayTeamId,
       type: 2, season: TARGET.seasonId, hometeamabbrev: TARGET.homeAbbrev, awayteamabbrev: TARGET.awayAbbrev,
@@ -202,7 +235,7 @@ export function buildLeague(options: LeagueOptions = {}): World {
 
   const latestRolling = (args: Record<string, any>) => {
     const ids: number[] = args.p_player_ids;
-    const columns: string[] = args.p_columns.split(",");
+    const columns: string[] = Array.isArray(args.p_columns) ? args.p_columns : String(args.p_columns).split(",");
     return {
       data: ids.map((playerId) => {
         const latest = rollingRows.filter((row) => row.player_id === playerId && row.strength_state === args.p_strength && row.game_date < args.p_before)
@@ -224,6 +257,10 @@ export function buildLeague(options: LeagueOptions = {}): World {
 
   return {
     tables,
+    joins: {
+      "skatersGameStats.games": { relation: "games", local: "gameId", foreign: "id" },
+      "goaliesGameStats.games": { relation: "games", local: "gameId", foreign: "id" },
+    },
     rpc: {
       forge_latest_rolling_rows: latestRolling,
       forge_league_skater_physical_totals: physicalTotals,

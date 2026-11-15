@@ -5,7 +5,9 @@
  */
 export type Row = Record<string, any>;
 export type RpcHandler = (args: Record<string, any>, options?: Record<string, unknown>) => { data: unknown; error: unknown };
-export type World = { tables: Record<string, Row[]>; rpc: Record<string, RpcHandler> };
+/** Many-to-one embeds: `${table}.${embed}` -> local column on the table, foreign column on the embedded relation. */
+export type Join = { relation: string; local: string; foreign: string };
+export type World = { tables: Record<string, Row[]>; rpc: Record<string, RpcHandler>; joins?: Record<string, Join> };
 type Op = { method: string; args: any[] };
 
 const MUTATIONS = new Set(["insert", "upsert", "update", "delete"]);
@@ -26,9 +28,10 @@ function splitTopLevel(text: string): string[] {
 }
 
 const read = (row: Row, column: string) => {
-  const path = /^(\w+)->>?(\w+)$/.exec(column);
+  const path = /^(\w+)->>?(\w+)$/.exec(column) ?? /^(\w+)\.(\w+)$/.exec(column);
   return path ? row[path[1]]?.[path[2]] ?? null : row[column];
 };
+const EMBED = /^(\w+)(!inner)?\((.*)\)$/;
 
 function compare(a: unknown, b: unknown): number {
   if (a == null && b == null) return 0;
@@ -102,6 +105,8 @@ function project(row: Row, columns: string): Row {
   const out: Row = {};
   for (const item of splitTopLevel(columns)) {
     if (item === "*") { Object.assign(out, clone(row)); continue; }
+    const embed = EMBED.exec(item);
+    if (embed) { out[embed[1]] = row[embed[1]] == null ? null : project(row[embed[1]], embed[3]); continue; }
     if (item.includes("(")) throw new Error(`fixture world: embedded select ${item} not supported`);
     const alias = /^(\w+):(.+)$/.exec(item);
     const name = alias ? alias[1] : item.replace(/->>?/, "_");
@@ -123,6 +128,16 @@ export function createWorldClient(world: World) {
       return { data: returning ? clone(rows) : null, error: null, count: null, status: 201 };
     }
     let rows = clone(world.tables[table] ?? []);
+    const selected = String(ops.find((op) => op.method === "select")?.args[0] ?? "*");
+    for (const item of splitTopLevel(selected)) {
+      const embed = EMBED.exec(item);
+      if (!embed) continue;
+      const join = world.joins?.[`${table}.${embed[1]}`];
+      if (!join) throw new Error(`fixture world: no join for ${table}.${embed[1]}`);
+      const foreign = world.tables[join.relation] ?? [];
+      rows = rows.map((row) => ({ ...row, [embed[1]]: clone(foreign.find((other) => looseEqual(other[join.foreign], row[join.local])) ?? null) }));
+      if (embed[2]) rows = rows.filter((row) => row[embed[1]] != null);
+    }
     let columns = "*", count: string | undefined, head = false;
     const orders: Array<{ column: string; ascending: boolean; nullsFirst: boolean }> = [];
     let from = 0, to = Number.POSITIVE_INFINITY, limit = Number.POSITIVE_INFINITY;

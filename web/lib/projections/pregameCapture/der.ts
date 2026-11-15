@@ -76,9 +76,9 @@ export function integer(node: DerNode): bigint {
   if (node.tag !== 0x02 && (node.tag & 0xc0) !== 0x80) throw new Error("der_not_integer");
   const bytes = node.value;
   if (bytes.length === 0) throw new Error("der_empty_integer");
-  let value = 0n;
-  for (const byte of bytes) value = (value << 8n) | BigInt(byte);
-  if (bytes[0] & 0x80) value -= 1n << BigInt(bytes.length * 8);
+  let value = BigInt(0);
+  for (const byte of bytes) value = (value << BigInt(8)) | BigInt(byte);
+  if (bytes[0] & 0x80) value -= BigInt(1) << BigInt(bytes.length * 8);
   return value;
 }
 
@@ -91,10 +91,17 @@ export function generalizedTimeMicros(node: DerNode): { micros: bigint; text: st
   const [, y, mo, d, h, mi, s, fraction = ""] = match;
   const ms = Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s));
   const padded = fraction.padEnd(9, "0");
-  let micros = BigInt(ms) * 1000n + BigInt(padded.slice(0, 6));
-  if (/[1-9]/.test(padded.slice(6))) micros += 1n;
+  let micros = BigInt(ms) * BigInt(1000) + BigInt(padded.slice(0, 6));
+  if (/[1-9]/.test(padded.slice(6))) micros += BigInt(1);
   return { micros, text };
 }
+
+/**
+ * Buffer is a Uint8Array at runtime, but @types/node 18 Buffers do not type-check against TS 5.7's
+ * generic Uint8Array parameters. u8() is a zero-cost type view for those call sites.
+ */
+export const u8 = (bytes: Buffer | Uint8Array): Uint8Array => bytes as unknown as Uint8Array;
+export const concatBytes = (parts: Array<Buffer | Uint8Array>): Buffer => Buffer.concat(parts.map(u8));
 
 // ----- writer (TimeStampReq only) -----
 
@@ -104,8 +111,8 @@ function encodeLength(length: number): Buffer {
   for (let v = length; v > 0; v = Math.floor(v / 256)) bytes.unshift(v & 0xff);
   return Buffer.from([0x80 | bytes.length, ...bytes]);
 }
-export const tlv = (tag: number, value: Buffer) => Buffer.concat([Buffer.from([tag]), encodeLength(value.length), value]);
-export const seq = (...items: Buffer[]) => tlv(0x30, Buffer.concat(items));
+export const tlv = (tag: number, value: Buffer) => concatBytes([Buffer.from([tag]), encodeLength(value.length), value]);
+export const seq = (...items: Buffer[]) => tlv(0x30, concatBytes(items));
 export function encodeOid(text: string): Buffer {
   const parts = text.split(".").map(Number);
   const out: number[] = [parts[0] * 40 + parts[1]];
@@ -117,10 +124,10 @@ export function encodeOid(text: string): Buffer {
   return tlv(0x06, Buffer.from(out));
 }
 export function encodeUnsigned(value: bigint): Buffer {
-  if (value < 0n) throw new Error("der_negative");
+  if (value < BigInt(0)) throw new Error("der_negative");
   let hex = value.toString(16);
   if (hex.length % 2) hex = `0${hex}`;
   let bytes = Buffer.from(hex, "hex");
-  if (bytes[0] & 0x80) bytes = Buffer.concat([Buffer.from([0]), bytes]);
+  if (bytes[0] & 0x80) bytes = concatBytes([Buffer.from([0]), bytes]);
   return tlv(0x02, bytes);
 }

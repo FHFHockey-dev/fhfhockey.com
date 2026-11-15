@@ -1,5 +1,5 @@
 import { createHash, verify as verifySignature, X509Certificate } from "node:crypto";
-import { encodeOid, encodeUnsigned, generalizedTimeMicros, integer, kids, oid, parseDerExact, seq, tlv, type DerNode } from "./der";
+import { concatBytes, encodeOid, encodeUnsigned, generalizedTimeMicros, integer, kids, oid, parseDerExact, seq, tlv, u8, type DerNode } from "./der";
 
 /**
  * RFC 3161 trusted timestamp: request building and strict offline verification.
@@ -26,7 +26,7 @@ const SIG_HASH: Record<string, string | null> = {
 export function buildTimeStampRequest(sha256Digest: Buffer, nonce: bigint): Buffer {
   if (sha256Digest.length !== 32) throw new Error("tsa_digest_not_sha256");
   const imprint = seq(seq(encodeOid(OID.sha256), Buffer.from([0x05, 0x00])), tlv(0x04, sha256Digest));
-  return seq(encodeUnsigned(1n), imprint, encodeUnsigned(nonce), Buffer.from([0x01, 0x01, 0xff]));
+  return seq(encodeUnsigned(BigInt(1)), imprint, encodeUnsigned(nonce), Buffer.from([0x01, 0x01, 0xff]));
 }
 
 export interface TsaTrust {
@@ -52,11 +52,11 @@ export function extractToken(der: Buffer): Buffer {
   const parts = kids(root, 0x30);
   if (parts[0]?.tag === 0x30 && parts[0].children?.[0]?.tag === 0x02) {
     const status = integer(parts[0].children[0]);
-    if (status !== 0n && status !== 1n) throw new Error(`tsa_status_${status}`);
+    if (status !== BigInt(0) && status !== BigInt(1)) throw new Error(`tsa_status_${status}`);
     if (!parts[1]) throw new Error("tsa_no_token");
-    return Buffer.from(parts[1].bytes);
+    return Buffer.from(u8(parts[1].bytes));
   }
-  return Buffer.from(der);
+  return Buffer.from(u8(der));
 }
 
 export function verifyTimeStampToken(tokenDer: Buffer, expect: { sha256Digest: Buffer; nonce: bigint | null }, trust: TsaTrust): VerifiedTimestamp {
@@ -69,9 +69,9 @@ export function verifyTimeStampToken(tokenDer: Buffer, expect: { sha256Digest: B
   if (oid(encap[0]) !== OID.tstInfo) throw new Error("tsa_not_tstinfo");
   const tstOctets = kids(encap[1], 0xa0)[0];
   if (tstOctets.tag !== 0x04) throw new Error("tsa_tstinfo_not_octets");
-  const tstInfoDer = Buffer.from(tstOctets.value);
+  const tstInfoDer = Buffer.from(u8(tstOctets.value));
   let certs: X509Certificate[] = [];
-  if (signedData[i]?.tag === 0xa0) certs = kids(signedData[i++]).map((node) => new X509Certificate(node.bytes));
+  if (signedData[i]?.tag === 0xa0) certs = kids(signedData[i++]).map((node) => new X509Certificate(u8(node.bytes)));
   if (signedData[i]?.tag === 0xa1) i++;
   const signerInfos = kids(signedData[i], 0x31);
   if (signerInfos.length !== 1) throw new Error("tsa_signer_count");
@@ -83,16 +83,16 @@ export function verifyTimeStampToken(tokenDer: Buffer, expect: { sha256Digest: B
   if (trust.policies?.length && !trust.policies.includes(policy)) throw new Error("tsa_policy_not_pinned");
   const imprint = kids(tst[2], 0x30);
   if (oid(kids(imprint[0], 0x30)[0]) !== OID.sha256) throw new Error("tsa_imprint_alg");
-  if (!Buffer.from(imprint[1].value).equals(expect.sha256Digest)) throw new Error("tsa_imprint_mismatch");
+  if (!Buffer.from(u8(imprint[1].value)).equals(u8(expect.sha256Digest))) throw new Error("tsa_imprint_mismatch");
   const serial = integer(tst[3]).toString();
   const gen = generalizedTimeMicros(tst[4]);
   let accuracyMicros: bigint | null = null, nonce: bigint | null = null;
   for (const node of tst.slice(5)) {
     if (node.tag === 0x30) {
-      accuracyMicros = 0n;
+      accuracyMicros = BigInt(0);
       for (const part of kids(node)) {
-        if (part.tag === 0x02) accuracyMicros += integer(part) * 1_000_000n;
-        else if (part.tag === 0x80) accuracyMicros += integer(part) * 1_000n;
+        if (part.tag === 0x02) accuracyMicros += integer(part) * BigInt(1_000_000);
+        else if (part.tag === 0x80) accuracyMicros += integer(part) * BigInt(1_000);
         else if (part.tag === 0x81) accuracyMicros += integer(part);
       }
     } else if (node.tag === 0x02) nonce = integer(node);
@@ -112,7 +112,7 @@ export function verifyTimeStampToken(tokenDer: Buffer, expect: { sha256Digest: B
   if (signer[s]?.tag !== 0xa0) throw new Error("tsa_no_signed_attrs");
   const signedAttrsNode = signer[s++];
   const sigAlgOid = oid(kids(signer[s++], 0x30)[0]);
-  const signature = Buffer.from(signer[s].value);
+  const signature = Buffer.from(u8(signer[s].value));
   const attrs = new Map<string, DerNode>();
   for (const attr of kids(signedAttrsNode)) {
     const [type, values] = kids(attr, 0x30);
@@ -122,19 +122,19 @@ export function verifyTimeStampToken(tokenDer: Buffer, expect: { sha256Digest: B
   }
   if (oid(attrs.get(OID.contentType)!) !== OID.tstInfo) throw new Error("tsa_attr_content_type");
   const md = attrs.get(OID.messageDigest);
-  if (!md || !Buffer.from(md.value).equals(createHash(digestAlg).update(tstInfoDer).digest())) throw new Error("tsa_message_digest");
+  if (!md || !Buffer.from(u8(md.value)).equals(u8(createHash(digestAlg).update(u8(tstInfoDer)).digest()))) throw new Error("tsa_message_digest");
 
   // Identify the signer through the signed ESS certificate binding (not the unsigned sid alone).
   const signerCert = certs.find((cert) => essBinds(attrs, cert));
   if (!signerCert) throw new Error("tsa_signer_cert_unbound");
-  const toVerify = Buffer.concat([Buffer.from([0x31]), signedAttrsNode.bytes.subarray(1)]);
+  const toVerify = concatBytes([Buffer.from([0x31]), signedAttrsNode.bytes.subarray(1)]);
   const sigHash = SIG_HASH[sigAlgOid] === null ? digestAlg : SIG_HASH[sigAlgOid];
   if (!sigHash) throw new Error("tsa_signature_alg");
-  if (!verifySignature(sigHash, toVerify, signerCert.publicKey, signature)) throw new Error("tsa_bad_signature");
+  if (!verifySignature(sigHash, u8(toVerify), signerCert.publicKey, u8(signature))) throw new Error("tsa_bad_signature");
 
   // Signer must be a timestamping certificate valid at genTime and chain to a pinned anchor.
   if (!(signerCert.keyUsage ?? []).includes(OID.timeStamping)) throw new Error("tsa_signer_not_timestamping");
-  const genMs = Number(gen.micros / 1000n);
+  const genMs = Number(gen.micros / BigInt(1000));
   assertValidAt(signerCert, genMs);
   chainToAnchor(signerCert, certs, trust.anchorsPem.map((pem) => new X509Certificate(pem)), genMs);
 
@@ -142,8 +142,8 @@ export function verifyTimeStampToken(tokenDer: Buffer, expect: { sha256Digest: B
     genTime: gen.text, genTimeMicros: gen.micros, accuracyMicros, accuracySource,
     lowerMicros: gen.micros - accuracyMicros, upperMicros: gen.micros + accuracyMicros,
     policy, serial, nonce: nonce === null ? null : nonce.toString(),
-    signerSha256: createHash("sha256").update(signerCert.raw).digest("hex"),
-    tokenSha256: createHash("sha256").update(tokenDer).digest("hex"),
+    signerSha256: createHash("sha256").update(u8(signerCert.raw)).digest("hex"),
+    tokenSha256: createHash("sha256").update(u8(tokenDer)).digest("hex"),
   };
 }
 
@@ -157,7 +157,7 @@ function essBinds(attrs: Map<string, DerNode>, cert: X509Certificate): boolean {
   let alg = v2 ? "sha256" : "sha1", hashNode = parts[0];
   if (v2 && parts[0].tag === 0x30) { alg = HASH_BY_OID[oid(kids(parts[0])[0])] ?? ""; hashNode = parts[1]; }
   if (!alg) return false;
-  return Buffer.from(hashNode.value).equals(createHash(alg).update(cert.raw).digest());
+  return Buffer.from(u8(hashNode.value)).equals(u8(createHash(alg).update(u8(cert.raw)).digest()));
 }
 
 function assertValidAt(cert: X509Certificate, ms: number) {
@@ -168,9 +168,9 @@ function chainToAnchor(leaf: X509Certificate, pool: X509Certificate[], anchors: 
   if (anchors.length === 0) throw new Error("tsa_no_anchor");
   let current = leaf;
   for (let depth = 0; depth < 6; depth++) {
-    const anchor = anchors.find((a) => a.raw.equals(current.raw) || (current.checkIssued(a) && current.verify(a.publicKey)));
+    const anchor = anchors.find((a) => a.raw.equals(u8(current.raw)) || (current.checkIssued(a) && current.verify(a.publicKey)));
     if (anchor) { assertValidAt(anchor, atMs); return; }
-    const issuer = pool.find((c) => !c.raw.equals(current.raw) && current.checkIssued(c) && current.verify(c.publicKey));
+    const issuer = pool.find((c) => !c.raw.equals(u8(current.raw)) && current.checkIssued(c) && current.verify(c.publicKey));
     if (!issuer || !issuer.ca) throw new Error("tsa_chain_unanchored");
     assertValidAt(issuer, atMs);
     current = issuer;

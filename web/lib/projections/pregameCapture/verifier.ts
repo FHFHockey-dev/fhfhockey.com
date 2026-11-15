@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { decodePacket, canonicalJson, sha256Hex } from "./packet";
+import { u8 } from "./der";
 import { buildTimeStampRequest, extractToken, verifyTimeStampToken, type TsaTrust, type VerifiedTimestamp } from "./rfc3161";
 import { ackQualifies, type StartClocks } from "./deadline";
 import { formatMicros, MICROS_PER_MS, minMicros, parseInstantMicros } from "./time";
@@ -46,10 +47,10 @@ export async function verifyAndWitness(deps: VerifierDeps, expect: VerifyExpecta
   try { first = await deps.rpc.read(expect.claimId); } catch (error) { return fail(`read_failed:${message(error)}`); }
   if (!first || !first.artifactPresent || !first.packetBase64) return fail("artifact_absent");
   const bytes = Buffer.from(first.packetBase64, "base64");
-  const raw = sha256Hex(bytes);
+  const raw = sha256Hex(u8(bytes));
   if (raw !== first.rawSha256 || raw !== first.storedRawSha256 || raw !== expect.rawSha256) return fail("raw_hash_mismatch");
   let decoded: ReturnType<typeof decodePacket>;
-  try { decoded = decodePacket(bytes); } catch (error) { return fail(`packet_invalid:${message(error)}`); }
+  try { decoded = decodePacket(u8(bytes)); } catch (error) { return fail(`packet_invalid:${message(error)}`); }
   if (decoded.canonicalSha256 !== first.canonicalSha256 || decoded.canonicalSha256 !== expect.canonicalSha256) return fail("canonical_hash_mismatch");
   const b = decoded.packet.binding;
   if (first.claimId !== expect.claimId || first.gameId !== expect.gameId || first.policyId !== expect.policyId) return fail("claim_binding_mismatch");

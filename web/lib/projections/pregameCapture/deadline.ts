@@ -1,7 +1,7 @@
 import { MICROS_PER_MINUTE, MICROS_PER_MS, minMicros, parseInstantMicros, type Micros } from "./time";
 
 /** A capture qualifies only when its verified acknowledgement is at or before T−60 minutes. */
-export const ACK_LEAD_MINUTES = 60n;
+export const ACK_LEAD_MINUTES = BigInt(60);
 
 export interface StartClocks {
   /** Official scheduled puck drop pinned with the calendar revision. */
@@ -44,7 +44,7 @@ export function decideStart(clocks: StartClocks, budget: StartBudget): StartDeci
   const needed = BigInt(Math.ceil(budget.readMs + budget.saveMs + budget.verifyMs + budget.marginMs)) * MICROS_PER_MS;
   const slackMicros = deadline - budget.nowUpper - needed;
   if (budget.nowUpper >= deadline) return { ok: false, reason: "late_start", deadline, slackMicros };
-  if (slackMicros < 0n) return { ok: false, reason: "insufficient_time", deadline, slackMicros };
+  if (slackMicros < BigInt(0)) return { ok: false, reason: "insufficient_time", deadline, slackMicros };
   return { ok: true, deadline, slackMicros };
 }
 
