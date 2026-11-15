@@ -2884,3 +2884,13 @@ TJ chose the witness method in this session's pop-up: an RFC 3161 TSA token (dig
 4. `issuedContext.ts:117` checks for future timestamps against `new Date()`, not the cutoff.
 5. `FORGE_RESERVE_PASS_ENABLED` is missing from `projectionModelEnvironment` (`run-forge-projections.ts:397-401`).
 6. A function-level `SET statement_timeout` does not bound its own call: it was measured on PG15, where a 3 s sleep completed under a 1 s function SET. Any RPC that relies on its own `set statement_timeout` for a deadline is unbounded. The capture save therefore uses an explicit row-lock fence instead.
+
+## CLAUDE-PREGAME-CAPTURE-INPUTCAPTURE-EDIT-20261115
+
+2026-11-15T01:30Z. Chef is now editing `web/lib/projections/inputCapture.ts`. The change is additive: a strict capture option (`transport`) for `captureProjectionInputs`.
+- When the option is set, reads run on a dedicated bounded client: GET/HEAD only, relation and RPC allowlist, call/row/byte/time caps.
+- Mutations, non-allowlisted RPCs and unknown builder methods throw instead of returning a fake success.
+- Each result is inspected for target-game results and for rows stamped after their read.
+- The recorded request chains are unchanged, so replay hashes are unaffected.
+- Existing capture, replay and reconstruction behaviour is unchanged when the option is absent.
+- `lib/supabase/server.ts` is not edited.
