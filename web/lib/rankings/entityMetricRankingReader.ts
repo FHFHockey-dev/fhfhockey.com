@@ -269,6 +269,8 @@ async function fetchPairedPublicationCutoff(
   return value;
 }
 
+const MAX_PAIRING_STEPS = 8;
+
 async function fetchLatestSnapshotDate(
   request: ContextualRankingsRequest,
   scope: PublishedScope = exactScope(request),
@@ -277,10 +279,28 @@ async function fetchLatestSnapshotDate(
   if (definition?.availabilityStatus !== "available" ||
       (definition.defaultStrengthState === "5v5" && request.strength !== "5v5")) return null;
   const requestedCutoff = request.asOfDate ?? new Date().toISOString().slice(0, 10);
-  const pairedCutoff = await fetchPairedPublicationCutoff(request, requestedCutoff);
-  const cutoff = pairedCutoff != null && pairedCutoff < requestedCutoff
-    ? pairedCutoff
-    : requestedCutoff;
+
+  // Serve the newest date that has both rankings and composites. Step down
+  // until the two dates match: a rankings-only date (between two composite
+  // dates, or ahead of its composites) is skipped. Where no pair exists at
+  // all, keep the plain latest rankings date.
+  let cutoff = requestedCutoff;
+  for (let step = 0; step < MAX_PAIRING_STEPS; step += 1) {
+    const compositeDate = await fetchPairedPublicationCutoff(request, cutoff);
+    if (compositeDate == null) break;
+    const rankingDate = await fetchLatestRankingDate(request, scope, compositeDate);
+    if (rankingDate == null) break;
+    if (rankingDate === compositeDate) return rankingDate;
+    cutoff = rankingDate;
+  }
+  return fetchLatestRankingDate(request, scope, requestedCutoff);
+}
+
+async function fetchLatestRankingDate(
+  request: ContextualRankingsRequest,
+  scope: PublishedScope,
+  cutoff: string,
+) {
   const cacheKey = [
     request.season,
     cutoff,
