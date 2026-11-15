@@ -97,14 +97,12 @@ describe("buildContextualRankingSnapshotSurface", () => {
     });
   });
 
-  it("scans cached skater matrix pages until the selected player snapshot is found", async () => {
+  it("asks the matrix for the page holding the selected player in one build", async () => {
     const playerRow = {
       entity: { id: 87, name: "Selected Skater" },
       warnings: ["low_sample"],
     };
-    mocks.buildPlayerMatrixSurface
-      .mockResolvedValueOnce(playerPayload([{ entity: { id: 12 }, warnings: [] }], 1, 2))
-      .mockResolvedValueOnce(playerPayload([playerRow], 2, 2));
+    mocks.buildPlayerMatrixSurface.mockResolvedValueOnce(playerPayload([playerRow], 2, 2));
 
     const result = await buildContextualRankingSnapshotSurface({
       entity: "skaters",
@@ -128,10 +126,34 @@ describe("buildContextualRankingSnapshotSurface", () => {
       caveats: ["low_sample"],
     });
     expect(result.row).toBe(playerRow);
-    expect(mocks.buildPlayerMatrixSurface).toHaveBeenCalledTimes(2);
+    expect(mocks.buildPlayerMatrixSurface).toHaveBeenCalledTimes(1);
     expect(mocks.buildPlayerMatrixSurface).toHaveBeenLastCalledWith(
-      expect.objectContaining({ page: 2, pageSize: 50 }),
+      expect.objectContaining({ page: 1, pageSize: 50, pageForSelected: true }),
     );
+  });
+
+  it("reports a skater outside the published cohort explicitly, without scanning pages", async () => {
+    mocks.buildPlayerMatrixSurface.mockResolvedValueOnce({
+      ...playerPayload([], 1, 15),
+      meta: {
+        ...playerPayload([], 1, 15).meta,
+        selectedPlayerAbsent: true,
+        rankingSource: "entity_metric_rankings",
+      },
+    });
+
+    const result = await buildContextualRankingSnapshotSurface({
+      entity: "skaters",
+      season: "20252026",
+      player_id: "8473533",
+    });
+
+    expect(result).toMatchObject({
+      status: "unavailable",
+      row: null,
+      reason: "Selected skater is not in the published cohort for this context.",
+    });
+    expect(mocks.buildPlayerMatrixSurface).toHaveBeenCalledTimes(1);
   });
 
   it("returns a goalie snapshot from the goalie matrix source", async () => {

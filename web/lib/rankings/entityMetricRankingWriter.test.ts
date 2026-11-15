@@ -1,12 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { buildSnapshotRowsMock } = vi.hoisted(() => ({
+const { buildSnapshotRowsMock, loadSeasonSourcesMock } = vi.hoisted(() => ({
   buildSnapshotRowsMock: vi.fn(),
+  loadSeasonSourcesMock: vi.fn(),
 }));
 
 vi.mock("./rankingQueries", () => ({
   buildContextualRankingSnapshotRowsByMetric: buildSnapshotRowsMock,
 }));
+
+vi.mock("./skaterCompositeSourceCoverage", () => ({
+  loadSkaterCompositeSeasonSources: loadSeasonSourcesMock,
+}));
+
+vi.mock("lib/supabase/server", () => ({ default: {} }));
+
+const COMPLETE_SEASON_ROWS = [{ player_id: 1 }, { player_id: 2 }];
 
 import {
   buildEntityMetricRankingRows,
@@ -109,6 +118,10 @@ function snapshot(
 describe("entityMetricRankingWriter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    loadSeasonSourcesMock.mockResolvedValue({
+      report: { verified: true, blockers: [] },
+      rows: COMPLETE_SEASON_ROWS,
+    });
   });
 
   it("defaults to rolling-backed matrix metrics only", () => {
@@ -128,6 +141,12 @@ describe("entityMetricRankingWriter", () => {
 
     const result = await buildEntityMetricRankingRows(request);
 
+    expect(loadSeasonSourcesMock).toHaveBeenCalledTimes(1);
+    expect(loadSeasonSourcesMock).toHaveBeenCalledWith(expect.anything(), {
+      season: 20252026,
+      strength: "5v5",
+      cutoffDate: "2026-04-16",
+    });
     expect(buildSnapshotRowsMock).toHaveBeenCalledWith(
       expect.objectContaining({
         window: "last5",
@@ -135,6 +154,7 @@ describe("entityMetricRankingWriter", () => {
         limit: null,
       }),
       ["points_per_60"],
+      { completeSeasonRows: COMPLETE_SEASON_ROWS },
     );
     expect(result.rows).toHaveLength(2);
     expect(result.rows[0]).toMatchObject({
@@ -188,6 +208,18 @@ describe("entityMetricRankingWriter", () => {
         generatedRows: 2,
       },
     ]);
+  });
+
+  it("refuses to build when the complete-population source coverage is unverified", async () => {
+    loadSeasonSourcesMock.mockResolvedValue({
+      report: { verified: false, blockers: ["2 players lack a verified current rolling row"] },
+      rows: [],
+    });
+
+    await expect(buildEntityMetricRankingRows(request)).rejects.toThrow(
+      "Source coverage is not verified; no entity metric rankings were built. 2 players lack a verified current rolling row",
+    );
+    expect(buildSnapshotRowsMock).not.toHaveBeenCalled();
   });
 
   it("reports unavailable snapshot metrics without inventing rows", async () => {

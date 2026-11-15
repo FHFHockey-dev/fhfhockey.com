@@ -519,6 +519,16 @@ function parseGoalieRole(value: string | string[] | undefined): GoalieMatrixRole
 const DEFAULT_GOALIE_METRIC: GoalieMatrixMetricKey = "save_percentage";
 /** Decision 98: visible, user-lowerable default floor (5 starts). */
 export const DEFAULT_GOALIE_MIN_STARTS = 5;
+/** F7: a start projection older than this, relative to the team's latest game, is context only. */
+export const GOALIE_PROJECTION_MAX_AGE_DAYS = 7;
+
+function daysBetween(fromDate: string, toDate: string) {
+  return (
+    (Date.parse(`${toDate.slice(0, 10)}T00:00:00.000Z`) -
+      Date.parse(`${fromDate.slice(0, 10)}T00:00:00.000Z`)) /
+    86_400_000
+  );
+}
 export const DEFAULT_GOALIE_MIN_SHOTS = 100;
 
 export function parseGoalieMatrixRequest(
@@ -712,6 +722,7 @@ function metricValue(
   metricKey: GoalieMatrixMetricKey,
   roleContext?: ReturnType<typeof buildGoalieRoleContext>,
   relativeContext?: GoalieRelativeSaveContext | null,
+  window: GoalieMatrixWindow = "season",
 ) {
   // Relative SV% has its own matched team-game sample, separate from the
   // player's appearance window (which can span multiple teams).
@@ -763,8 +774,11 @@ function metricValue(
     });
   }
   if (metricKey === "start_share") {
+    // A last-N view shows the share over that window's team games; the
+    // projection's season share remains role context only.
+    if (window !== "season") return roleContext?.rawStartShare ?? null;
     return (
-      finite(projection?.season_start_pct) ??
+      (roleContext?.projectionStale ? null : finite(projection?.season_start_pct)) ??
       roleContext?.adjustedStartShare ??
       roleContext?.rawStartShare ??
       null
@@ -1328,7 +1342,12 @@ function buildGoalieRoleContext(args: {
   aggregate: GoalieAggregate;
   projection: GoalieStartProjectionRow | null;
   workloadContexts: Map<number, GoalieTeamWorkloadContext>;
+  /** Goalies whose projection is older than the max age (F7): context only. */
+  staleProjectionIds?: ReadonlySet<number>;
 }) {
+  const projectionStale = Boolean(
+    args.projection && args.staleProjectionIds?.has(args.aggregate.playerId),
+  );
   const workloadContext =
     args.aggregate.teamId == null
       ? null
@@ -1348,7 +1367,9 @@ function buildGoalieRoleContext(args: {
   // Top-two membership alone is not evidence of an emergency replacement or
   // an absent starter. Keep core share descriptive; exclude no team starts.
   const adjustedStartShare = null;
-  const projectedSeasonShare = finite(args.projection?.season_start_pct);
+  const projectedSeasonShare = projectionStale
+    ? null
+    : finite(args.projection?.season_start_pct);
   const roleShare = projectedSeasonShare ?? rawStartShare;
   const deploymentBucket = getGoalieDeploymentBucket(roleShare);
   const roleConfidence: GoalieMatrixRow["role"]["roleConfidence"] =
@@ -1369,7 +1390,9 @@ function buildGoalieRoleContext(args: {
     "Core share is descriptive only. No team starts are excluded without verified absence and emergency-replacement evidence.",
     projectedSeasonShare != null
       ? "Matching-team projected season start share is available and remains the primary role source."
-      : "Matching-team projected season start share is unavailable; role uses verified selected-window team workload.",
+      : projectionStale
+        ? `Matching-team start projection is more than ${GOALIE_PROJECTION_MAX_AGE_DAYS} days older than the team's latest game; it is shown as context only and role uses verified selected-window team workload.`
+        : "Matching-team projected season start share is unavailable; role uses verified selected-window team workload.",
   ];
 
   return {
@@ -1389,6 +1412,7 @@ function buildGoalieRoleContext(args: {
     roleConfidence,
     roleNotes,
     windowStartShare: rawStartShare,
+    projectionStale,
   };
 }
 
@@ -1623,6 +1647,13 @@ export async function buildGoalieMatrixSurface(
   const teamGames = population.teamGames;
   const latestAvailableSnapshotDate = population.latestObservationDate;
   const filterTeamIds = resolveGoalieTeamFilterIds(request.team, [...teamsById.values()]);
+  if (request.team != null && filterTeamIds?.length === 0) {
+    // Same query error as the skater team parsers (an unknown token is not an
+    // empty cohort).
+    throw new ContextualRankingsQueryError(`No team matched ${request.team.trim()}`, {
+      team: "must be a numeric id, team abbreviation, or team name",
+    });
+  }
   // Team is a cohort filter on the latest verified team. Fetching only that
   // team's logs first would relabel departed goalies and truncate traded ones.
   const aggregates = aggregateGoalieGameRows(gameRows, request.window, {
@@ -1662,6 +1693,32 @@ export async function buildGoalieMatrixSurface(
       mismatchedProjectionIds.add(aggregate.playerId);
     }
   }
+  // F7: a projection more than GOALIE_PROJECTION_MAX_AGE_DAYS older than the
+  // team's latest game in the window (or the goalie's own, without a team) is
+  // role context only. An undated projection has no provable age.
+  const teamLatestGameDate = new Map<number, string>();
+  for (const game of teamGames) {
+    for (const teamId of [game.homeTeamId, game.awayTeamId]) {
+      if (teamId != null && (teamLatestGameDate.get(teamId) ?? "") < game.date) {
+        teamLatestGameDate.set(teamId, game.date);
+      }
+    }
+  }
+  const staleProjectionIds = new Set<number>();
+  for (const aggregate of aggregates) {
+    const projection = projectionByPlayerId.get(aggregate.playerId);
+    if (!projection) continue;
+    const referenceDate =
+      (aggregate.teamId == null ? null : teamLatestGameDate.get(aggregate.teamId)) ??
+      aggregate.latestGameDate;
+    if (
+      projection.game_date == null ||
+      (referenceDate != null &&
+        daysBetween(projection.game_date, referenceDate) > GOALIE_PROJECTION_MAX_AGE_DAYS)
+    ) {
+      staleProjectionIds.add(aggregate.playerId);
+    }
+  }
 
   const metricColumns = METRIC_COLUMNS_BY_STRENGTH[request.strength];
   const valuesByMetric = new Map<
@@ -1678,6 +1735,7 @@ export async function buildGoalieMatrixSurface(
             aggregate,
             projection,
             workloadContexts,
+            staleProjectionIds,
           });
           return (
             aggregate.gamesStarted >= request.minStarts &&
@@ -1692,6 +1750,7 @@ export async function buildGoalieMatrixSurface(
           aggregate,
           projection,
           workloadContexts,
+          staleProjectionIds,
         });
           return {
             id: aggregate.playerId,
@@ -1701,6 +1760,7 @@ export async function buildGoalieMatrixSurface(
               column.metricKey,
               roleContext,
               relativeSaveContexts.get(aggregate.playerId) ?? null,
+              request.window,
             ),
           };
       });
@@ -1711,6 +1771,7 @@ export async function buildGoalieMatrixSurface(
         aggregate,
         projection,
         workloadContexts,
+        staleProjectionIds,
       });
       values.set(aggregate.playerId, {
         value: metricValue(
@@ -1719,6 +1780,7 @@ export async function buildGoalieMatrixSurface(
           column.metricKey,
           roleContext,
           relativeSaveContexts.get(aggregate.playerId) ?? null,
+          request.window,
         ),
         ranks,
       });
@@ -1733,6 +1795,7 @@ export async function buildGoalieMatrixSurface(
       aggregate,
       projection,
       workloadContexts,
+      staleProjectionIds,
     });
     const teamId = aggregate.teamId ?? projection?.team_id ?? null;
     const team = teamId == null ? null : teamsById.get(teamId) ?? null;
@@ -1826,6 +1889,7 @@ export async function buildGoalieMatrixSurface(
           : teamContexts.warnings.get(aggregate.teamId) ??
             (workloadContexts.has(aggregate.teamId) ? [] : ["partial_goalie_team_game_coverage"])),
         ...(mismatchedProjectionIds.has(aggregate.playerId) ? ["mismatched_team_start_projection"] : []),
+        ...(staleProjectionIds.has(aggregate.playerId) ? ["stale_start_projection"] : []),
         ...(minimumSampleMet ? [] : ["sample_below_minimum"]),
       ],
     };

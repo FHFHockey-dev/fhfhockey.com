@@ -441,6 +441,7 @@ async function buildRankedSnapshotFromRows(
         peerGroupType: request.peerGroupType,
         minGp: request.minGp ?? undefined,
         minToiSeconds: request.minToiSeconds ?? undefined,
+        window: request.window,
       }),
     ]),
   );
@@ -965,8 +966,13 @@ export async function buildContextualRankingsSurfaces(
 export async function buildContextualRankingSnapshotRowsByMetric(
   request: ContextualRankingsRequest,
   metricKeys: ContextualRankingMetricKey[],
+  options?: { completeSeasonRows?: RollingPlayerGameMetricRow[] },
 ): Promise<Map<ContextualRankingMetricKey, ContextualRankingSnapshotMetricRows>> {
-  const resolution = await resolveRankedSnapshotsForMetrics(request, metricKeys);
+  const resolution = await resolveRankedSnapshotsForMetrics(
+    request,
+    metricKeys,
+    options?.completeSeasonRows,
+  );
   const snapshots = new Map<
     ContextualRankingMetricKey,
     ContextualRankingSnapshotMetricRows
