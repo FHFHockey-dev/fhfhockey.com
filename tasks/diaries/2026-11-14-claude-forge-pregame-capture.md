@@ -291,3 +291,11 @@
 - **Candidate:** `29451c573`. Clean export: typecheck exit 0; 16 files / 326 tests pass.
 - **Proposed game:** 2026020328 (CGY @ ANA), puck drop 01:00Z, T−60 00:00Z, last claim 23:56Z. Fallbacks: 0329/0330 tonight, 0331 Monday.
 - **Pending:** TJ's P2 approval.
+- **19:35Z:** TJ approved P2 for 2026020328 (launch about 30 minutes later). Fresh export: `~/forge-pilot/export-29451c573-20261115T193518Z` (13,437 files). Migration hashes match authority rows 150 and 151. Launch no earlier than 20:05Z, aiming for about 20:10Z (the 20:17Z cron is avoided).
+
+## Checkpoint 2026-11-15T20:12Z: PILOT 3 QUALIFIED (Chef)
+- **Capture:** game 2026020328 launched 20:10:10Z through the fail-closed gate. `qualified` in 20.7 s: 133 reads, 163 KB packet, genTime 20:10:32Z, bound 20:11:33Z against T−60 00:00Z.
+- **Checks:** post-run readback matches (hashes, binding); `reverifyStoredWitness` OK; OpenSSL `ts -verify` OK against the pinned root.
+- **Receipt:** `PILOT-3-RECEIPT-2026020328.md`.
+- **Parallel:** session `forge-slate-queue` (`local_4478746c`) is building the hosted slate queue offline (TJ: use the hour).
+- **Gotcha:** a stray `cat >> file` with no input hung a command (it reads stdin). Never leave a bare `cat` in a chain.

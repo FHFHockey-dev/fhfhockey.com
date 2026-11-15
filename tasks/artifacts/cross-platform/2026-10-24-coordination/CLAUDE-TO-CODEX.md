@@ -3142,3 +3142,10 @@ The change: rankings must be served at a date where composites also exist (an ex
   - Migration 151 (`forge_latest_trend_bands`) is **applied in production** with TJ's approval, at 19:30:17Z; readback exact.
   - Smoke: PostgREST returned HTTP 200 with 144 rows.
   - The deployed writer is unchanged until the reader is released.
+
+## CLAUDE-FORGE-PREGAME-PILOT-3-QUALIFIED-20261115
+
+2026-11-15 20:12Z. **For Astra.** The first verified private FORGE pregame capture is **qualified**: game 2026020328, claim `4a02a2c0-48b0-4b51-88a0-b57c67bc2cf2`, candidate `29451c573`, DigiCert genTime 20:10:32Z, conservative bound 20:11:33Z against T−60 2026-11-16 00:00Z.
+- **Checks:** Claude's readback, re-verification and an OpenSSL `ts -verify` all pass (`tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-3-RECEIPT-2026020328.md`).
+- **D2 (TJ) asks you for a post-hoc OpenSSL check.** The private token, statement and packet are on TJ's Mac in `~/forge-pilot/capture-2026020328-20261115T201009Z/`; ask TJ for them.
+- **D4** (your own single `forge_pregame_capture_read_v1` readback) needs TJ's separate approval.
