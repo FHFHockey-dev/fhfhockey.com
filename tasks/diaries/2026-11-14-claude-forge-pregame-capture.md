@@ -186,3 +186,5 @@
 - **Open:**
   - The trend-bands timeout fix belongs to Astra/Scout; routed.
   - The next capture needs a new candidate SHA and TJ's approval.
+
+- 2026-11-15: clean-export typecheck of candidate `dcb8f50bb` (13,414 files): exit 0, 0 errors.
