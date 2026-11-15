@@ -310,3 +310,4 @@
   - record `never_dispatched` for removed games.
 - **Chef defaults:** keep the `claim_failed` handling, lead 10 min, global sweep OK for the pilot.
 - **Sent to the session:** stop rules, `--execute`, `launch-slate.sh`, rehearsal, packet run plan; due 22:00Z. Then Chef verifies a clean export and asks TJ to approve the exact run.
+- **20:45Z:** candidate `e0cbb19a8` verified on a clean export: typecheck exit 0, 350/350 tests, rehearse with 0 network attempts, plan matches. Bringing TJ the queue-pilot run approval.
