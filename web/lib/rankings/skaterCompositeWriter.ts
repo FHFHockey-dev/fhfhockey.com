@@ -878,8 +878,10 @@ export async function publishSkaterCompositeRatingRows(
     strength_state: built.request.strength,
     window_type: first.window_type,
     window_size: first.window_size ?? 0,
-    peer_group_type: first.peer_group_type ?? built.request.peerGroupType,
-    peer_group_key: first.peer_group_key ?? requestPeerGroupKey(built.request),
+    // Markers key the all-skater cohort as "all" on both surfaces, as the
+    // Rankings rows and the reader do; composite rows store "all_skaters".
+    peer_group_type: "all_skaters",
+    peer_group_key: "all",
   };
   if (writtenEntities !== built.sourceCoverage.expectedPlayerCount) {
     throw new RankingsNotCompleteError(
