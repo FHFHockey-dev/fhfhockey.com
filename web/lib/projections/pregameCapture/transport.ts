@@ -48,8 +48,12 @@ const AVAILABILITY_COLUMNS = ["created_at", "available_at", "observed_at", "inse
 const NARROWING_METHODS = new Set(["eq", "in", "is", "lt", "lte", "gt", "gte", "like", "ilike", "or", "filter", "match", "contains", "containedBy"]);
 const OTHER_FILTER_METHODS = new Set(["neq", "not"]);
 const SHAPE_METHODS = new Set(["select", "order", "range", "limit", "single", "maybeSingle", "abortSignal", "returns", "overrideTypes"]);
-/** PostgREST resource embedding and spreads would read other relations through foreign keys. */
-const EMBEDDING = /[()!]|\.\.\./;
+/**
+ * PostgREST resource embedding reads other relations through foreign keys. It is admitted only when every embedded
+ * relation is itself on the allowlist (e.g. the writer's season bootstrap embeds games!inner); anything else in a
+ * select (unparsed parentheses, hints without a relation, spreads of other relations) is refused.
+ */
+const EMBED_TOKEN = /(?:([A-Za-z_]\w*):)?(\.\.\.)?([A-Za-z_]\w*)(?:!([A-Za-z_]\w*))?\(/g;
 /** 406 is PostgREST's .single()/.maybeSingle() cardinality reply and 416 an empty range: both are honest empty reads. */
 const ALLOWED_ERROR_STATUSES = new Set([406, 416]);
 const MUTATIONS = new Set(["insert", "upsert", "update", "delete"]);
@@ -114,8 +118,10 @@ export function createCaptureTransport(options: {
     if (extra.length) refuse("http_path", rest);
     if (head === "rpc") { if (!name || !CAPTURE_RPCS.has(name)) refuse("http_rpc", name); }
     else if (name !== undefined || !CAPTURE_RELATIONS.has(head)) refuse("http_relation", head);
-    for (const [key, value] of url.searchParams) {
-      if (key.includes(".") || (key === "select" && EMBEDDING.test(value))) refuse("http_embedding", key);
+    const httpEmbeds = embedsOf(url.searchParams.get("select") ?? "");
+    if (!httpEmbeds) refuse("http_embedding", "select");
+    for (const key of url.searchParams.keys()) {
+      if (key.includes(".") && !dottedKeyAllowed(key, httpEmbeds!)) refuse("http_embedding", key);
     }
     const headers = new Headers(init?.headers ?? request?.headers);
     for (const profile of ["accept-profile", "content-profile"]) {
@@ -164,12 +170,14 @@ export function createCaptureTransport(options: {
         if (opts?.get !== true && opts?.head !== true) refuse("rpc_not_get", name);
       } else if (!CAPTURE_RELATIONS.has(name)) refuse("relation_not_allowed", name);
       let filtered = method === "rpc";
+      const select = chain.find((op) => op.method === "select")?.args[0];
+      const embeds = embedsOf(typeof select === "string" ? select : "") ?? refuse("embedding_refused", name);
       for (const op of chain) {
         if (MUTATIONS.has(op.method)) refuse("mutation_refused", `${name}.${op.method}`);
         if (NARROWING_METHODS.has(op.method)) filtered = true;
         else if (!OTHER_FILTER_METHODS.has(op.method) && !SHAPE_METHODS.has(op.method)) refuse("method_not_allowed", `${name}.${op.method}`);
-        if (op.method === "select" && typeof op.args[0] === "string" && EMBEDDING.test(op.args[0])) refuse("embedding_refused", name);
-        if (FILTER_KEY_METHODS.has(op.method) && typeof op.args[0] === "string" && op.args[0].includes(".")) refuse("embedding_refused", `${name}.${op.args[0]}`);
+        if (FILTER_KEY_METHODS.has(op.method) && typeof op.args[0] === "string" && op.args[0].includes(".")
+          && !dottedKeyAllowed(op.args[0], embeds)) refuse("embedding_refused", `${name}.${op.args[0]}`);
       }
       if (!filtered && !UNFILTERED_OK.has(name)) refuse("unfiltered_read", name);
     },
@@ -207,8 +215,13 @@ export function createCaptureTransport(options: {
       const count = (result as { count?: number | null } | null)?.count;
       const filtersTarget = operations.some((op) => filterTargetsGame(op, target.gameId));
       if (filtersTarget && ((typeof count === "number" && count > 0) || rows.length > 0)) refuse("target_game_result", relation);
+      const select = operations.find((op) => op.method === "select")?.args[0];
+      const gameEmbeds = [...(embedsOf(typeof select === "string" ? select : "") ?? new Map()).entries()]
+        .filter(([, embedded]) => embedded === "games").map(([key]) => key);
       for (const row of rows as Array<Record<string, unknown>>) {
         if (GAME_COLUMNS.some((column) => row[column] !== undefined && Number(row[column]) === target.gameId)) refuse("target_game_result", relation);
+        // A result row whose embedded games row is the target game is the target game's result.
+        if (gameEmbeds.some((key) => Number((row[key] as Record<string, unknown> | null)?.id) === target.gameId)) refuse("target_game_result", `${relation}.games`);
         const date = DATE_COLUMNS.map((column) => row[column]).find((value) => typeof value === "string") as string | undefined;
         if (date?.slice(0, 10) === target.slateDate && TEAM_COLUMNS.some((column) => sameTeam(row[column], target))) {
           refuse("target_game_result", `${relation}.slate_date_team_row`);
@@ -216,6 +229,34 @@ export function createCaptureTransport(options: {
       }
     },
   };
+}
+
+/**
+ * Embedded relations of a select, keyed by the name rows carry them under (alias or relation), or null when the select
+ * embeds anything not on the allowlist or contains parentheses/hints this parser does not recognise.
+ */
+export function embedsOf(select: string): Map<string, string> | null {
+  const embeds = new Map<string, string>();
+  let recognised = 0;
+  for (const match of select.matchAll(EMBED_TOKEN)) {
+    const [, alias, , relation] = match;
+    if (!CAPTURE_RELATIONS.has(relation)) return null;
+    embeds.set(alias ?? relation, relation);
+    recognised += 1;
+  }
+  const opens = (select.match(/\(/g) ?? []).length;
+  const bangs = (select.match(/!/g) ?? []).length;
+  const hinted = [...select.matchAll(EMBED_TOKEN)].filter((match) => match[4]).length;
+  const spreads = (select.match(/\.\.\./g) ?? []).length;
+  const spreadEmbeds = [...select.matchAll(EMBED_TOKEN)].filter((match) => match[2]).length;
+  if (opens !== recognised || bangs !== hinted || spreads !== spreadEmbeds) return null;
+  return embeds;
+}
+
+/** A dotted filter key (embedded.column, possibly nested) may only traverse embeds of the same select. */
+function dottedKeyAllowed(key: string, embeds: Map<string, string>): boolean {
+  const path = key.split(".");
+  return path.length >= 2 && path.slice(0, -1).every((segment) => embeds.has(segment));
 }
 
 const FILTER_KEY_METHODS = new Set(["eq", "neq", "in", "is", "lt", "lte", "gt", "gte", "like", "ilike", "filter", "contains", "containedBy", "not"]);

@@ -154,16 +154,36 @@ describe("strict capture transport", () => {
     expect(none.transport.usage.refusals).toEqual([]);
   });
 
-  it("refuses PostgREST embedding, spreads, embedded filters and schema profile switches", async () => {
+  it("refuses embedding of non-allowlisted relations, unparsed selects, stray embedded filters and profile switches", async () => {
     const { transport, calls } = transportFor(() => ({ body: [] }));
     await expect(captureProjectionInputs(async () => db.from("games").select("id,forge_runs(*)").eq("id", 1), { transport })).rejects.toThrow("embedding_refused");
-    await expect(captureProjectionInputs(async () => db.from("games").select("id,...teams(*)").eq("id", 1), { transport })).rejects.toThrow("embedding_refused");
-    await expect(captureProjectionInputs(async () => db.from("games").select("id,teams!inner(id)").eq("id", 1), { transport })).rejects.toThrow("embedding_refused");
+    await expect(captureProjectionInputs(async () => db.from("games").select("id,...forge_runs(*)").eq("id", 1), { transport })).rejects.toThrow("embedding_refused");
+    await expect(captureProjectionInputs(async () => db.from("games").select("id,count()").eq("id", 1), { transport })).rejects.toThrow("embedding_refused");
+    await expect(captureProjectionInputs(async () => db.from("games").select("id,x:forge_runs!inner(id)").eq("id", 1), { transport })).rejects.toThrow("embedding_refused");
     await expect(captureProjectionInputs(async () => db.from("games").select("id").eq("teams.id", 1), { transport })).rejects.toThrow("embedding_refused");
     await expect(transport.fetch(`${BASE}/games?select=id,forge_runs(*)&id=eq.1`, { method: "GET" })).rejects.toThrow("http_embedding");
     await expect(transport.fetch(`${BASE}/games?select=id&teams.id=eq.1`, { method: "GET" })).rejects.toThrow("http_embedding");
     await expect(transport.fetch(`${BASE}/games?select=id&id=eq.1`, { method: "GET", headers: { "Accept-Profile": "forge_pregame_capture" } })).rejects.toThrow("http_profile");
     expect(calls).toHaveLength(0);
+  });
+
+  it("admits the writer's season-bootstrap embed of an allowlisted relation and its dotted filters", async () => {
+    const { transport, calls } = transportFor(() => ({ body: [{ playerId: 1, games: { id: 2026020100, date: "2026-10-20", seasonId: 20262027, type: 2 } }] }));
+    await captureProjectionInputs(async () => db.from("skatersGameStats").select("playerId,games!inner(id,date,seasonId,type)")
+      .eq("games.seasonId", 20262027).eq("games.type", 2).lt("games.date", "2026-11-20"), { transport });
+    expect(transport.usage.refusals).toEqual([]);
+    expect(calls).toHaveLength(1);
+    expect(new URL(calls[0].url).searchParams.get("select")).toBe("playerId,games!inner(id,date,seasonId,type)");
+    const aliased = transportFor(() => ({ body: [] }));
+    await captureProjectionInputs(async () => db.from("skatersGameStats").select("playerId,g:games!inner(id)").eq("g.seasonId", 20262027),
+      { transport: aliased.transport });
+    expect(aliased.transport.usage.refusals).toEqual([]);
+  });
+
+  it("refuses a result row whose embedded games row is the target game", async () => {
+    const { transport } = transportFor(() => ({ body: [{ playerId: 1, games: { id: target.gameId, date: "2026-11-20" } }] }));
+    await expect(captureProjectionInputs(async () => db.from("skatersGameStats").select("playerId,games!inner(id,date)").lte("games.date", "2026-11-20"),
+      { transport })).rejects.toThrow("target_game_result");
   });
 
   it("does not treat range, limit or neq alone as a filter", async () => {
