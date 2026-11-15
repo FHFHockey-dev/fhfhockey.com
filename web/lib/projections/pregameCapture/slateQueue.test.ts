@@ -205,6 +205,7 @@ describe("slate executor (simulated custody, virtual clock, fixture TSA)", () =>
     sim.addGame({ gameId: 2, start: iso(START_MS + minutes(60)) });
     const openAt = START_MS - minutes(72); // planned dispatch is ~T−76 min
     const deps = sim.executorDeps({
+      stopRules: { gateClosedInARow: Number.POSITIVE_INFINITY }, // this test exercises the per-game delay, not the stop rule
       loadGate: async (g) => (g.gameId === 2 ? { open: false, reason: "db_load_high" } : { open: sim.clock.ms >= openAt, reason: "db_load_high" }),
     });
     const result = byId(await drive(sim, runSlate(deps, sim.slate())));
@@ -220,7 +221,8 @@ describe("slate executor (simulated custody, virtual clock, fixture TSA)", () =>
     const sim = new SlateSim(START_MS - minutes(180));
     for (const id of [1, 2, 3]) sim.addGame({ gameId: id, start: START }, { readMs: 110_000 });
     const openAt = START_MS - minutes(76);
-    const result = await drive(sim, runSlate(sim.executorDeps({ loadGate: async () => ({ open: sim.clock.ms >= openAt, reason: "db_load_high" }) }), sim.slate()));
+    const result = await drive(sim, runSlate(sim.executorDeps({ stopRules: { gateClosedInARow: Number.POSITIVE_INFINITY },
+      loadGate: async () => ({ open: sim.clock.ms >= openAt, reason: "db_load_high" }) }), sim.slate()));
     expect(result.results.map((r) => r.outcome)).toEqual(["qualified", "qualified", "qualified"]);
     expect(Math.min(...result.results.map((r) => r.dispatchedAt[0]))).toBeGreaterThanOrEqual(openAt);
     expect(sim.maxInFlight).toBeLessThanOrEqual(2);
@@ -249,5 +251,86 @@ describe("slate executor (simulated custody, virtual clock, fixture TSA)", () =>
     expect(again[1]).toMatchObject({ outcome: "qualified", source: "prior_run", dispatches: 0 });
     expect(sim.claimCalls(1)).toBe(1);
     expect(sim.invariants()).toEqual([]);
+  });
+});
+
+describe("slate executor stop rules (pause dispatch, settle every claim, stop)", () => {
+  const later = iso(START_MS + minutes(120));
+  async function stopRun(build: (sim: SlateSim) => void, overrides: Parameters<SlateSim["executorDeps"]>[0] = {}) {
+    const sim = new SlateSim(START_MS - minutes(180));
+    build(sim);
+    const result = await drive(sim, runSlate(sim.executorDeps(overrides), sim.slate()));
+    expect(sim.invariants()).toEqual([]);
+    expect(result.unresolved).toEqual([]);
+    return { sim, result, games: byId(result) };
+  }
+
+  it("stops on a save_unknown: later games are never dispatched", async () => {
+    const { result, games, sim } = await stopRun((sim) => {
+      sim.addGame({ gameId: 1, start: START }).hooks.beforeSave = () => { throw new Error("fetch failed: ETIMEDOUT"); };
+      sim.addGame({ gameId: 2, start: later });
+    });
+    expect(result.stopped).toMatchObject({ trigger: "save_unknown", gameId: 1 });
+    expect(games[1].outcome).toBe("save_unknown");
+    expect(games[2]).toMatchObject({ outcome: "never_dispatched", source: "queue", reason: "queue_stopped:save_unknown" });
+    expect(sim.claimCalls(2)).toBe(0);
+  });
+
+  it("stops after two source_failed in a row, not after one", async () => {
+    const { result, games } = await stopRun((sim) => {
+      sim.addGame({ gameId: 1, start: START }, { transportRefusal: "http_status:503" });
+      sim.addGame({ gameId: 2, start: iso(START_MS + minutes(30)) }, { transportRefusal: "http_status:503" });
+      sim.addGame({ gameId: 3, start: later });
+    });
+    expect(result.stopped).toMatchObject({ trigger: "source_failed_twice", gameId: 2 });
+    expect([games[1].outcome, games[2].outcome]).toEqual(["source_failed", "source_failed"]);
+    expect(games[3].reason).toBe("queue_stopped:source_failed_twice");
+    const once = await stopRun((sim) => {
+      sim.addGame({ gameId: 1, start: START }, { transportRefusal: "http_status:503" });
+      sim.addGame({ gameId: 2, start: later });
+    });
+    expect(once.result.stopped).toBeNull();
+    expect(once.games[2].outcome).toBe("qualified");
+  });
+
+  it("stops on a statement-timeout refusal (57014)", async () => {
+    const { result, games } = await stopRun((sim) => {
+      sim.addGame({ gameId: 1, start: START }, { transportRefusal: "http_status:500:57014 canceling statement due to statement timeout" });
+      sim.addGame({ gameId: 2, start: later });
+    });
+    expect(result.stopped).toMatchObject({ trigger: "statement_timeout", gameId: 1 });
+    expect(games[1].outcome).toBe("source_failed");
+    expect(games[2].reason).toBe("queue_stopped:statement_timeout");
+  });
+
+  it("stops when the load gate is closed at two consecutive dispatch waves, and at once on a DNS failure", async () => {
+    const closed = await stopRun((sim) => {
+      sim.addGame({ gameId: 1, start: START });
+      sim.addGame({ gameId: 2, start: later });
+    }, { loadGate: async () => ({ open: false, reason: "GATE FAIL: busy (active=9 longest=12s lock_waits=0)" }) });
+    expect(closed.result.stopped).toMatchObject({ trigger: "load_gate_closed_twice", gameId: 1 });
+    expect(closed.games[1]).toMatchObject({ outcome: "never_dispatched", reason: "queue_stopped:load_gate_closed_twice", dispatches: 0 });
+    expect(closed.games[2].reason).toBe("queue_stopped:load_gate_closed_twice");
+    let checks = 0;
+    const dns = await stopRun((sim) => { sim.addGame({ gameId: 1, start: START }); },
+      { loadGate: async () => { checks += 1; return { open: false, reason: "GATE FAIL: cannot resolve db.example.supabase.co" }; } });
+    expect(dns.result.stopped).toMatchObject({ trigger: "gate_dns_failure" });
+    expect(checks).toBe(1);
+    expect(dns.games[1].dispatches).toBe(0);
+  });
+
+  it("stops on an ambiguous game but never abandons claims: the in-flight capture finishes and the orphan is swept", async () => {
+    const { result, games, sim } = await stopRun((sim) => {
+      // Game 1 dispatches first (stagger) and is still reading when game 2's claim response is lost.
+      sim.addGame({ gameId: 1, start: START }, { readMs: 110_000 });
+      sim.addGame({ gameId: 2, start: START }).hooks.afterClaimCommit = () => { throw new Error("fetch failed: socket hang up"); };
+      sim.addGame({ gameId: 3, start: later });
+    });
+    expect(result.stopped).toMatchObject({ trigger: "ambiguous_game", gameId: 2 });
+    expect(games[1].outcome).toBe("qualified");
+    expect(games[1].dispatchedAt[0]).toBeLessThan(result.stopped!.at);
+    expect(games[2]).toMatchObject({ outcome: "save_unknown", source: "sweep" });
+    expect(games[3]).toMatchObject({ outcome: "never_dispatched", reason: "queue_stopped:ambiguous_game" });
+    expect(sim.claimCalls(2)).toBe(1);
   });
 });

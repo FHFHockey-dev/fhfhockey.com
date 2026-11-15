@@ -198,7 +198,19 @@ export interface SlateExecutorDeps {
   sweepAttempts?: number;
   sweepRetryMs?: number;
   log?(event: Record<string, unknown>): void;
+  /** Whole-queue stop rules (SLATE-QUEUE-PACKET §4.5). Infinity disables a counted rule (tests only). */
+  stopRules?: { sourceFailedInARow?: number; gateClosedInARow?: number };
 }
+
+/**
+ * Whole-queue stop triggers. On the first one the queue dispatches nothing more, records never_dispatched
+ * (`queue_stopped:<trigger>`) for every game not yet dispatched, lets in-flight captures finish, settles every claim
+ * (lookup, then sweep after T−60 + grace), and returns. A claimed game is never abandoned.
+ */
+export type StopTrigger =
+  | "ambiguous_game" | "save_unknown" | "source_failed_twice" | "load_gate_closed_twice" | "gate_dns_failure" | "statement_timeout";
+const STATEMENT_TIMEOUT = /57014|statement timeout/i;
+const DNS_FAILURE = /cannot resolve|ENOTFOUND|EAI_AGAIN|getaddrinfo/i;
 
 export type ResultSource = "capture" | "queue" | "sweep" | "prior_run" | "lookup";
 export interface GameResult {
@@ -213,7 +225,10 @@ export interface GameResult {
   plannedDispatchAt: number | null;
   reports: Array<{ outcome: TerminalOutcome | null; reason: string | null; outcomeRecorded: boolean }>;
 }
-export interface SlateRunResult { results: GameResult[]; unresolved: number[]; maxInFlight: number; sweeps: number; refreshes: number }
+export interface SlateRunResult {
+  results: GameResult[]; unresolved: number[]; maxInFlight: number; sweeps: number; refreshes: number;
+  stopped: { trigger: StopTrigger; gameId: number | null; detail: string | null; at: number } | null;
+}
 
 type Phase = "pending" | "running" | "resolve" | "done";
 interface GameState {
@@ -242,6 +257,16 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
   const states = new Map<number, GameState>();
   const running = new Map<number, { startedAt: number; done: Promise<void> }>();
   let maxInFlight = 0, sweeps = 0, refreshes = 0, lastRefresh = Number.NEGATIVE_INFINITY, finalRefreshDone = false;
+  // A holder, not a let: closures set it, and narrowing would otherwise pin it to null.
+  const halt: { value: SlateRunResult["stopped"] } = { value: null };
+  let sourceFailedRun = 0, gateClosedRun = 0;
+  const sourceFailedLimit = deps.stopRules?.sourceFailedInARow ?? 2;
+  const gateClosedLimit = deps.stopRules?.gateClosedInARow ?? 2;
+  const trip = (trigger: StopTrigger, gameId: number | null, detail: string | null) => {
+    if (halt.value) return;
+    halt.value = { trigger, gameId, detail: detail ? detail.slice(0, 160) : null, at: deps.now() };
+    log({ event: "queue_stopped", ...halt.value });
+  };
 
   const finish = (state: GameState, outcome: TerminalOutcome, source: ResultSource, reason: string | null, claimId?: string | null) => {
     state.phase = "done";
@@ -322,6 +347,18 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
   };
 
   const handleReport = (state: GameState, report: CaptureReport) => {
+    applyReport(state, report);
+    const id = state.game.gameId;
+    if (STATEMENT_TIMEOUT.test(report.reason ?? "")) trip("statement_timeout", id, report.reason);
+    if (state.phase === "resolve" && state.pendingReason !== null) trip("ambiguous_game", id, state.pendingReason);
+    if (state.phase === "done" && state.result.source === "capture") {
+      if (state.result.outcome === "save_unknown") trip("save_unknown", id, report.reason);
+      sourceFailedRun = state.result.outcome === "source_failed" ? sourceFailedRun + 1 : 0;
+      if (sourceFailedRun >= sourceFailedLimit) trip("source_failed_twice", id, report.reason);
+    }
+  };
+
+  const applyReport = (state: GameState, report: CaptureReport) => {
     state.result.reports.push({ outcome: report.outcome, reason: report.reason, outcomeRecorded: report.outcomeRecorded });
     if (report.claimId) state.result.claimId = report.claimId;
     const reason = report.reason ?? "";
@@ -346,7 +383,11 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
       scheduledLaunchAt: new Date(state.dispatchAt).toISOString() };
     const done = (async () => {
       try { handleReport(state, await run(deps.captureDeps(state.game), request)); }
-      catch (error) { state.result.reports.push({ outcome: null, reason: `run_threw:${String(error).slice(0, 120)}`, outcomeRecorded: false }); toResolve(state, "run_threw"); }
+      catch (error) {
+        state.result.reports.push({ outcome: null, reason: `run_threw:${String(error).slice(0, 120)}`, outcomeRecorded: false });
+        toResolve(state, "run_threw");
+        trip("ambiguous_game", state.game.gameId, "run_threw");
+      }
       finally { running.delete(state.game.gameId); }
     })();
     running.set(state.game.gameId, { startedAt, done });
@@ -364,6 +405,13 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
   replan();
 
   for (;;) {
+    const stoppedNow = halt.value;
+    if (stoppedNow) {
+      // Pause dispatch for good: nothing not yet dispatched will be.
+      for (const state of states.values()) {
+        if (state.phase === "pending") { state.phase = "resolve"; state.closeReason = `queue_stopped:${stoppedNow.trigger}`; }
+      }
+    }
     let due = [...states.values()].filter((s) => s.phase === "pending" && s.dispatchAt <= deps.now());
     if (due.length && running.size < deps.config.concurrency && await refresh()) {
       replan();
@@ -377,11 +425,18 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
       let gate: { open: boolean; reason?: string };
       try { gate = await deps.loadGate(state.game); } catch (error) { gate = { open: false, reason: `gate_error:${String(error).slice(0, 60)}` }; }
       if (!gate.open) {
+        // One closed check delays this whole wave; closures are counted per wave.
+        gateClosedRun += 1;
+        if (DNS_FAILURE.test(gate.reason ?? "")) trip("gate_dns_failure", state.game.gameId, gate.reason ?? null);
+        if (gateClosedRun >= gateClosedLimit) trip("load_gate_closed_twice", state.game.gameId, gate.reason ?? null);
         const retryAt = deps.now() + gateRetryMs;
-        if (retryAt <= state.latestDispatchAt) state.dispatchAt = retryAt;
-        else { state.phase = "resolve"; state.closeReason = `load_gate_closed:${gate.reason ?? "closed"}`; }
-        continue;
+        for (const waiting of due.filter((s) => s.phase === "pending")) {
+          if (retryAt <= waiting.latestDispatchAt) waiting.dispatchAt = retryAt;
+          else { waiting.phase = "resolve"; waiting.closeReason = `load_gate_closed:${gate.reason ?? "closed"}`; }
+        }
+        break;
       }
+      gateClosedRun = 0;
       dispatch(state);
     }
     const pending = [...states.values()].filter((s) => s.phase === "pending");
@@ -392,7 +447,7 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
     if (!waits.length) {
       if (pending.length) continue; // due now with a free slot
       // Last chance for a late-added game before the queue settles what is left.
-      if (!finalRefreshDone) {
+      if (!finalRefreshDone && !halt.value) {
         finalRefreshDone = true;
         if (await refresh(true)) { replan(); continue; }
       }
@@ -451,5 +506,5 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
   }
 
   const results = [...states.values()].map((s) => s.result).sort((a, b) => a.gameId - b.gameId);
-  return { results, unresolved: results.filter((r) => r.outcome === null).map((r) => r.gameId), maxInFlight, sweeps, refreshes };
+  return { results, unresolved: results.filter((r) => r.outcome === null).map((r) => r.gameId), maxInFlight, sweeps, refreshes, stopped: halt.value };
 }
