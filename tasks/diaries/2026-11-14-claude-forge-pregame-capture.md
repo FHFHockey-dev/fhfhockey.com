@@ -152,3 +152,12 @@
   - DigiCert's real token kept as a regression fixture.
 - **Candidate:** `6562138932`; clean-export typecheck exit 0. Migration SHA-256 `4213b110…`; SQL proof 113/113; vitest 131 + baseline 21.
 - **Next:** D1 (migration apply) and D2 (verifier credential), each cleared separately by TJ; then G1 schedule lookup → earliest eligible game for TJ's approval (fallback: Tue 2026020334).
+
+## Checkpoint 2026-11-15T14:10Z: D1 applied, D2 decided (Chef)
+- **D1:** migration 150 applied at 14:06:02Z (atomic, ledger row). Readback all as expected; receipt in `MIGRATION-150-APPLY-RECEIPT.md`. Authority row 150 is applied; pins 116/6.
+- **D2 (TJ):** same service_role key + separate client; Astra's post-hoc OpenSSL check after the run.
+- **Other lanes:**
+  - Side session started for the 12:40Z served-snapshot verification: `local_dee180eb`.
+  - BLSH asked about a 2026-11-17 13:45–14:15Z slot; replied clear.
+- **Next:** G1 (one read-only schedule lookup) needs TJ's go-ahead. Then propose the earliest eligible game for approval; fallback is Tue 2026020334.
+- **Gotcha:** `$TMPDIR/pgpool.sh` from earlier lanes no longer exists. I rebuilt an equivalent in the scratchpad: pooler aws-0-us-east-1:5432, user postgres.<ref>, read from `SUPABASE_DB_URL`, never echoed.
