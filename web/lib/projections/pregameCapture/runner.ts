@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { captureForgeIssuedContexts } from "../issuedContext";
+import { captureForgeIssuedContexts, type ForgeIssuedContextV1 } from "../issuedContext";
 import { captureProjectionInputs, projectionInputHash } from "../inputCapture";
 import { runPregameCapture, type CaptureBudget, type CaptureReport, type Collected, type PinnedGame } from "./custody";
 import type { CaptureBinding } from "./packet";
@@ -20,9 +20,13 @@ export const DEFAULT_CAPTURE_BUDGET: CaptureBudget = {
   requiredMs: 240_000,
 };
 
-/** The worker-owned collector (nativeInputs.ts) satisfies this signature. */
+/**
+ * The worker-owned collector (nativeInputs.ts) satisfies this signature. It performs exactly the writer's reads
+ * (including the issued-context reads before and after) and returns the closing issued context, so the runner
+ * adds no read of its own to the packet: replay must consume every captured read.
+ */
 export type NativeCollector = (args: { slateDate: string; gameId: number; inputCutoff: string; deadlineMs: number }) =>
-  Promise<{ candidates: Collected["candidates"] }>;
+  Promise<{ candidates: Collected["candidates"]; issuedContextAfter: ForgeIssuedContextV1 }>;
 
 export function calendarRevisionOf(schedule: Array<{ revision: string }>): string {
   return projectionInputHash(schedule.map((row) => row.revision));
@@ -93,18 +97,18 @@ export async function runPrivatePregameCapture(config: RunnerConfig, request: {
         gameId: binding.gameId, slateDate: binding.slateDate, homeTeamId: binding.homeTeamId, awayTeamId: binding.awayTeamId,
         homeAbbrev: binding.homeAbbrev, awayAbbrev: binding.awayAbbrev,
       }, deadlineMs);
-      const run = await captureProjectionInputs(async () => {
-        const collected = await config.collectNative({ slateDate: binding.slateDate, gameId: binding.gameId, inputCutoff: binding.inputCutoff, deadlineMs });
-        // Closing schedule check inside the packet: the calendar must still match the pinned revision.
-        const [after] = await captureForgeIssuedContexts(binding.slateDate, [binding.gameId]);
-        return { collected, after };
-      }, { transport, deadlineMs });
+      const run = await captureProjectionInputs(
+        () => config.collectNative({ slateDate: binding.slateDate, gameId: binding.gameId, inputCutoff: binding.inputCutoff, deadlineMs }),
+        { transport, deadlineMs });
+      const after = run.result.issuedContextAfter;
+      if (!after || after.game.id !== binding.gameId) throw new Error("collector_context_missing");
       return {
-        reads: run.reads, candidates: run.result.collected.candidates,
+        reads: run.reads, candidates: run.result.candidates,
         transport: { calls: transport.usage.calls, httpCalls: transport.usage.httpCalls, rows: transport.usage.rows, bytes: transport.usage.bytes,
           // Strict capture throws before recording a write; any recorded write is still a refusal.
           refusals: [...transport.usage.refusals, ...(run.writes.length ? [`writes_recorded:${run.writes.length}`] : [])] },
-        calendarRevision: calendarRevisionOf(run.result.after.schedule),
+        // The closing context from inside the packet must still match the pinned calendar revision.
+        calendarRevision: calendarRevisionOf(after.schedule),
       };
     },
   }, request);
