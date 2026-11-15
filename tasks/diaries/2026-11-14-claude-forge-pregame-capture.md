@@ -67,3 +67,15 @@
   - Wire `runner.ts` (real pin/collect via the worker's `collectNativePregameInputs`, HTTP TSA client, Supabase clients) and a local script with a dry offline mode.
   - Fresh-context review of custody (`d4625ed40` onward).
   - Then the pilot packet for TJ.
+
+## Checkpoint 2026-11-15T02:45Z
+- **Worker:** TJ started [FORGE stage load/compute split](local_e8e29114-61cc-4add-bcc5-77515117bf0d) from the first card. An amendment was sent by message: the collector returns `issuedContextAfter`, must give zero transport refusals in the fixture world, and the oracle must not use `suppressWrites`. A duplicate card was proposed and withdrawn.
+- **Commits:**
+  - ede7f2d8f: runner wiring plus type fixes. The repo targets ES2015, so BigInt values use `BigInt(...)`. A `u8()` view covers @types/node 18 Buffer vs TS 5.7 `Uint8Array`.
+  - 5b2b67103: no runner-added read in the packet.
+- **Checks:** scoped tsc (pregameCapture + inputCapture) shows 0 errors; vitest 42/42; ESLint clean. The full typecheck before the fixes exited 2, with errors only in the new files; rerun it at freeze.
+- **Pending:**
+  - Fresh-context review (subagent) of custody.
+  - Migration authority row 150 and the count pins, after the review settles the SQL bytes.
+  - `web/scripts/forge-pregame-capture.ts`, after the worker lands `nativeInputs.ts`.
+  - Pilot packet: TSA choice, anchor, a probe for the accuracy field.
