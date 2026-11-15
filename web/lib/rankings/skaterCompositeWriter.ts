@@ -881,6 +881,11 @@ export async function publishSkaterCompositeRatingRows(
     peer_group_type: first.peer_group_type ?? built.request.peerGroupType,
     peer_group_key: first.peer_group_key ?? requestPeerGroupKey(built.request),
   };
+  if (writtenEntities !== built.sourceCoverage.expectedPlayerCount) {
+    throw new RankingsNotCompleteError(
+      `Composite publication refused before writing: ${writtenEntities} players were built; the source-coverage population is ${built.sourceCoverage.expectedPlayerCount}.`,
+    );
+  }
   const rankings = await fetchPublicationMarker(client, {
     surface: "entity_metric_rankings",
     ...key,

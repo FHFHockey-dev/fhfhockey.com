@@ -373,8 +373,11 @@ async function fetchLatestSnapshotDate(
       .map((marker) => marker.snapshot_date));
   const rankingDates = completeDates("entity_metric_rankings", windowType(request.window), windowSize(request.window));
   const compositeDates = completeDates("skater_composite_ratings", "season", 0);
+  // A season and strength with no composites at all (e.g. all-strength) is
+  // not paired, as under #449: its complete Rankings markers decide alone.
+  const hasComposites = (await fetchPairedPublicationCutoff(request, requestedCutoff)) != null;
   const pairDates = [...rankingDates]
-    .filter((date) => compositeDates.has(date))
+    .filter((date) => !hasComposites || compositeDates.has(date))
     .sort()
     .reverse()
     .slice(0, MAX_PAIRING_STEPS);

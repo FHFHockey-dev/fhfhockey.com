@@ -683,11 +683,11 @@ describe("composite publication completion markers", () => {
     expect(log.filter((entry) => entry.table === "ranking_publications" && entry.op === "upsert").map((entry) => entry.rows?.[0]?.status)).toEqual(["writing", "writing"]);
   });
 
-  it("stays writing when fewer players were written than the source-coverage population", async () => {
-    const { client } = fakeClient({ markers: [rankingsMarker()] });
-    const result = await publishSkaterCompositeRatingRows(client as any, builtResult({ sourceCoverage: { expectedPlayerCount: 3 } }));
-    expect(result.status).toBe("writing");
-    expect(result.blockers.join(" ")).toContain("population is 3");
+  it("refuses before writing when fewer players were built than the source-coverage population", async () => {
+    const { client, log } = fakeClient({ markers: [rankingsMarker()] });
+    await expect(publishSkaterCompositeRatingRows(client as any, builtResult({ sourceCoverage: { expectedPlayerCount: 3 } })))
+      .rejects.toThrow("population is 3");
+    expect(log.filter((entry) => entry.op === "upsert")).toHaveLength(0);
   });
 
   it("refuses when the marker table is not deployed", async () => {

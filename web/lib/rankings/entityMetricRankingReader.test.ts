@@ -383,6 +383,17 @@ describe("entityMetricRankingReader", () => {
         expect(await served("season", "goals_per_60")).toBe("2026-11-11");
       });
 
+      it("serves the newest complete Rankings when the strength has no composites at all", async () => {
+        scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-14"), ...seasonRows("2026-11-15")];
+        scenario.composites = [];
+        scenario.markers = [
+          marker("entity_metric_rankings", "2026-11-11", "complete"),
+          marker("entity_metric_rankings", "2026-11-14", "complete"),
+          marker("entity_metric_rankings", "2026-11-15", "writing"),
+        ];
+        expect(await served()).toBe("2026-11-14");
+      });
+
       it("falls back to the date match when the marker table is not deployed", async () => {
         scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-13")];
         scenario.composites = [compositeRow("2026-11-11")];
