@@ -92,6 +92,13 @@ Full typecheck at HEAD (`5a7ca3cd1` tree, split included, `npm run typecheck` un
 
 **Strict transport:** season bootstrap is admitted after Chef's `dc6c4cb7c`. The collector runs with zero refusals in all 9 compute-on scenarios.
 
+## Clean-export typecheck of the exact candidate
+- **Candidate:** `711ca63b52cf86d7c247f0a355445aa41466b730` (octoberBranch).
+- **Export:** `git archive 711ca63b5` of the full tree into a scratch directory: 13,389 tracked files, exactly the commit, with no untracked files (so no `web/lib/rankings/__acceptance__/`). `web/node_modules` is symlinked from the checkout.
+- **Result:** `npm run typecheck` (`tsc --noEmit`, 8 GB heap, under `/tmp/fhfh-heavy.lock`) exited 0 with 0 errors.
+- **First attempt, discarded:** an export of `web/` alone gave 46 errors, all in four X-timeline files (`__tests__/lib/xIntakeSafetyNet.test.ts`, `__tests__/lib/xTimelineFxtwitter.test.ts`, `lib/cron/xPollerHealth.server.ts`, `scripts/x-timeline-parity-replay.ts`). Those files import `supabase/functions/**`, which sits outside `web/`; the errors came from the partial export, not from the code.
+- **Scope:** this settles the build/type question for the candidate. It does not prove a real capture, and the live pilot needs separate approval.
+
 ## Status
 - Byte-for-byte output parity holds in all 14 scenarios: 9 compute-on and 5 compute-off, including a resumed run.
 - The reserve-test change is explained above: an audit exclusion of test support only.
