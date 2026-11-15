@@ -90,3 +90,21 @@
   - **Gotchas:**
     - My directory pathspec commits (daded823b, ede7f2d8f) swept in the worker's in-progress `__fixtures__/world/**` and `parity/**`. From now on Chef commits by exact file.
     - 1216f6e17 carries a Co-Authored-By trailer, against TJ's no-attribution rule. It's on shared history, so not rewritten; flagged to TJ.
+
+## Checkpoint 2026-11-15T05:30Z: independent review fixed (Chef)
+- **Review:** fresh-context subagent; 2 P1, 5 P2, many P3.
+- **Fixed:**
+  - **P1-1:** failed reads could still qualify. Network errors, aborts and HTTP status ≥400 (except 406/416) are now recorded refusals.
+  - **P1-2:** the outcome slot wasn't bound to the claim. Outcomes now agree with claim state under the claim lock; lookup reconciles lost responses; a closed game stays closed.
+  - **P2-4:** idempotent settle is retried. Witness and outcome writes are reconciled by readback, never retried.
+  - **P2-5:** unexpected errors after the claim close it consistently. A sweeper closes orphaned claims and skips row-locked ones.
+  - **P2-6:** embedding and profile switching refused.
+  - **P2-7:** cross-clock cutoff check removed.
+  - **P2-3 (partial):** SQL now computes the statement digest, checks upper = gen + accuracy, read order and row version; `reverifyStoredWitness` re-checks offline.
+  - **P3:** EKU critical-only, sid/version/digest-list checks, accuracy ranges, DER INTEGER/OID minimality, GeneralizedTime and pre-epoch ranges, `ENABLE ALWAYS` triggers, code-unit canonical sort, ASCII migration, stricter "filtered" rule, target-game checks via in/match/filter/or and nested RPC rows, naive stamps read as UTC and counted, extra availability columns, schedule PPD/CNCL and missing start, stated cutoff includes the stamp tolerance.
+- **Deferred to TJ at the pilot:**
+  - A separate DB role for the verifier (new permission; P2-3 remainder).
+  - TSA revocation (OCSP would be another external call).
+  - Gateway body limit and packet size: measure in the pilot.
+- **Commits:** 6478ec5d0 (SQL v2, proof 108/108 as a non-superuser owner); 09498f181 (TS, vitest 95/95, ESLint clean, scoped tsc 0).
+- **Not changed:** the claim "ack_upper understates the true ack by TSA latency". The witness proves commit ≤ read ≤ genTime ≤ upper, so a slow TSA only makes the bound later (more conservative).
