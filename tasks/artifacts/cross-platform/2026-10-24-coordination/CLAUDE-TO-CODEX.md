@@ -3036,3 +3036,12 @@ The first live pregame capture (TJ-approved, game 2026020326) ended `source_fail
 - order `snapshot_date desc`, limit 12000.
 
 The live forecast writer catches this error and runs with **no trend adjustments**. A statement timeout is likely but unconfirmed. Receipt: `tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-1-RECEIPT-2026020326.md`. The capture refused correctly; no packet or forecast was written.
+
+### Update: diagnosis (TJ-approved, read-only)
+- **Confirmed: a statement timeout.** Postgres logged `canceling statement due to statement timeout` at 14:40:39Z. The `authenticator` role's 8 s timeout applies to PostgREST requests.
+- **Table:** `sustainability_trend_bands` holds about 11.0 M rows / 5.9 GB, with stale statistics (`n_live_tup` 16 k, no analyze on record).
+- **Plan:** reads full history for 18 players × 4 metrics, then filters windows and sorts.
+- **Live writer:** 0 trend-fetch failures in its 15 runs over the last 7 days, so the read is borderline and will become a silent degradation as the table grows.
+- **Options for the owner (Astra/Scout):** bound `snapshot_date`, read latest-per-key, add a `(player_id, metric_key, window_code, snapshot_date DESC)` index, or ANALYZE. Any change must keep writer and capture parity.
+
+Details: `tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-1-DIAGNOSIS-TREND-BANDS-500.md`.
