@@ -23,9 +23,11 @@ vi.mock("../../../../../lib/rankings/entityMetricRankingWriter", async (importOr
   return {
     ...actual,
     buildEntityMetricRankingRows: buildRowsMock,
-    upsertEntityMetricRankingRows: upsertRowsMock,
+    publishEntityMetricRankingRows: upsertRowsMock,
   };
 });
+
+import { RankingPublicationTableMissingError } from "../../../../../lib/rankings/rankingPublications";
 
 import handler from "../../../../../pages/api/v1/db/update-entity-metric-rankings";
 
@@ -66,8 +68,12 @@ describe("/api/v1/db/update-entity-metric-rankings", () => {
       ],
       sourceFreshness: [],
       unavailableMetrics: [],
+      expectedEntities: 2,
     });
-    upsertRowsMock.mockResolvedValue(2);
+    upsertRowsMock.mockResolvedValue({
+      rowsUpserted: 2, dbWrittenRows: 2, marked: false, notMarkedReasons: ["fixture"],
+      complete: false, windows: [],
+    });
   });
 
   it("returns 405 for unsupported methods", async () => {
@@ -148,7 +154,7 @@ describe("/api/v1/db/update-entity-metric-rankings", () => {
     );
     expect(upsertRowsMock).toHaveBeenCalledWith(
       fakeSupabase,
-      [{ entity_id: 1 }, { entity_id: 2 }],
+      expect.objectContaining({ rows: [{ entity_id: 1 }, { entity_id: 2 }] }),
       { chunkSize: 25 },
     );
     expect(res.body).toMatchObject({
@@ -156,6 +162,33 @@ describe("/api/v1/db/update-entity-metric-rankings", () => {
       upsertChunkSize: 25,
       rowsUpserted: 2,
     });
+  });
+
+  it("reports the publication plan on a dry run without writing", async () => {
+    const res = createMockRes();
+    await handler({ method: "GET", query: { season: "20252026" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.publication).toMatchObject({ marked: expect.any(Boolean), expectedEntities: 2 });
+    expect(upsertRowsMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 when a full publication did not complete", async () => {
+    upsertRowsMock.mockResolvedValueOnce({
+      rowsUpserted: 2, dbWrittenRows: 1, marked: true, notMarkedReasons: [], complete: false,
+      windows: [{ windowType: "season", status: "writing", blockers: ["short"] }],
+    });
+    const res = createMockRes();
+    await handler({ method: "POST", query: { season: "20262027", dryRun: "false" } } as any, res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ success: false, publication: { complete: false } });
+  });
+
+  it("returns 409 when the marker table is not deployed", async () => {
+    upsertRowsMock.mockRejectedValueOnce(new RankingPublicationTableMissingError());
+    const res = createMockRes();
+    await handler({ method: "POST", query: { season: "20262027", dryRun: "false" } } as any, res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body.error).toMatch(/not deployed/);
   });
 
   it("rejects composite-only metrics rather than inventing snapshot rows", async () => {

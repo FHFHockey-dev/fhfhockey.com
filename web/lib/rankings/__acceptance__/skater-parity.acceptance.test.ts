@@ -87,6 +87,8 @@ function seedSkaterDb() {
   db.tables = {
     entity_metric_rankings: PLAYERS.map((player) =>
       durableRow(player, "points_per_60", player.points)),
+    // No completion markers yet: the reader keeps the #449 date match.
+    ranking_publications: [],
     skater_composite_ratings: PLAYERS.map((player) => ({
       player_id: player.id, season_id: SEASON, snapshot_date: SNAPSHOT,
       window_type: "season", window_size: 0, strength_state: "all",
