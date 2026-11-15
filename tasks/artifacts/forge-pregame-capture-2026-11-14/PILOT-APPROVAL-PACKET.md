@@ -2,33 +2,41 @@
 
 - **Status:** ready for TJ's review. Nothing in this packet has been run against production, and nothing here is approved by being written.
 - **Owner:** Claude Chef session `local_e8064f61` ("FORGE pregame input capture").
-- **Packet date:** 2026-11-15.
+- **Packet date:** 2026-11-15. Revision 2: the probe is fixed and its trust is pinned in code; the candidate is re-pinned; the game is now the earliest eligible one, with Tuesday as fallback.
 
 ## 1. Exact candidate
 | item | value |
 | --- | --- |
-| Candidate code commit | `55ed51604f1a02c9e6d0598c6796938fb15a018b` (octoberBranch, local only, not pushed) |
-| How it runs | From a clean `git archive 55ed51604` export of the whole tree (13,392 tracked files, no untracked files), with `web/node_modules` linked from the checkout. Not from the working checkout. |
+| Candidate code commit | `1cd29b4b989800c67864b6773ad1acc5ec06c2c7` (octoberBranch, local only, not pushed). Supersedes `55ed51604`. |
+| How it runs | From a clean `git archive 1cd29b4b9` export of the whole tree (13,403 tracked files, no untracked files), with `web/node_modules` linked from the checkout. Not from the working checkout. |
 | Custody migration | `supabase/migrations/20261115000000_forge_pregame_capture_custody.sql`, SHA-256 `0d2b6aa6e277b3f5060e7f5e18fd7c9c43ccc76f8770a5ee837e48e6a393d177`. Registered as **pending** authority row 150; not applied. |
 | Rollback | `supabase/tests/forge_pregame_capture_custody_rollback.sql` |
 | Pilot script | `web/scripts/forge-pregame-capture.ts` (policy `pregame-native-v1`) |
+| TSA profile (pinned in code) | `digicert-g4-v1` in `web/lib/projections/pregameCapture/tsaProfiles.ts`: URL `http://timestamp.digicert.com`; the G4 anchor is embedded and its SHA-256 checked on every load; the **policy slot is empty until a probe**. A capture refuses an unpinned profile; only the probe may use one. |
 | Trust root (public cert) | `tasks/artifacts/forge-pregame-capture-2026-11-14/digicert-trusted-root-g4.crt`: DigiCert Trusted Root G4, self-signed, valid 2013-08-01 to 2038-01-15, SHA-256 `55:2F:7B:DC:F1:A7:AF:9E:6C:E6:72:01:7F:4F:12:AB:F7:72:40:C7:8E:76:1A:C2:03:D1:D9:D2:0A:C8:99:88`. Exported from the macOS system root store; no download. |
 
-Any later commit used to run the pilot must show `git diff --stat 55ed51604 <run SHA> -- web supabase` empty (docs only), or this packet is void.
+Any later commit used to run the pilot must show `git diff --stat 1cd29b4b9 <run SHA> -- web supabase` empty (docs only), or this packet is void. The one planned code change is the policy re-pin after the probe (§4); it produces a new candidate SHA, a fresh clean-export typecheck and a revised packet.
 
-## 2. Proposed game and times
+## 2. Game: earliest eligible, Tuesday as fallback
+**Primary: the earliest eligible game,** proposed only after P1 (the probe) passes and is re-pinned, and D1 (migration) and D2 (verifier) are cleared. TJ approves the specific game before it runs.
+- **Eligible means all of these:**
+  - The launch is at least 30 minutes after TJ's approval of that game (time to prepare the clean export and gates).
+  - The launch is at or before T−60 minus 4 minutes, so the 240 s claim budget finishes by T−60.
+  - Status FUT/OK at the pin.
+  - One game only; the earliest such puck drop wins.
+- **Finding it:** needs one read-only schedule lookup (G1 below). The live `games` table is the source of truth; the local Oct 29 snapshot is too old to choose from.
+
+**Fallback (not a date to wait for):** 2026020334, WSH @ TBL. The local snapshot says Tue 2026-11-17 19:30 ET (2026-11-18 00:30:00Z):
+
 | | ET | UTC |
 | --- | --- | --- |
-| Game | **2026020334, WSH @ TBL**, slate date 2026-11-17 | |
 | Scheduled puck drop | Tue 2026-11-17 19:30 | 2026-11-18 00:30:00 |
 | Acknowledgement deadline (T−60) | 18:30 | 23:30:00 (2026-11-17) |
 | Last possible claim (T−60 minus the 240 s budget) | 18:26 | 23:26:00 |
-| **Proposed launch and input cutoff** | **18:00** | **23:00:00** (2026-11-17) |
+| Proposed launch and input cutoff | 18:00 | 23:00:00 (2026-11-17) |
 
-- **Cutoff:** the input cutoff is the claim's own database clock at launch; the target is about 23:00:00Z. The packet states its availability cutoff as the end of its read window plus 5 s.
-- **Source:** the NHL club-schedule snapshot in `tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/team-schedule.json`, captured around 2026-10-29. It is old, so at launch the script's pin step re-reads `games` and `roster_optimizer_team_games` and refuses on any change of id, date, sides or start. The `games` row for 2026020334 has not been read (no production access).
-- **Why this game:** an evening game with the slate date and UTC date crossing midnight (the rehearsed case), about 2½ days away, which leaves time for the migration apply and the probe.
-- **Fallback, only if TJ approves it separately:** 2026020349, EDM @ TBL, Thu 2026-11-19 19:30 ET / 2026-11-20 00:30Z. No substitution without approval.
+- **Cutoff:** for any game, the input cutoff is the claim's own database clock at launch. The packet states its availability cutoff as the end of its read window plus 5 s.
+- **Pin step:** at launch the pin re-reads `games` and `roster_optimizer_team_games` and refuses any change of id, date, sides or start.
 
 ## 3. Operator and independent verifier
 - **Operator:** Claude (this Chef session) runs the script from the clean export on TJ's Mac, with TJ present. TJ supplies the approval token by exporting `FORGE_PREGAME_CAPTURE_APPROVAL` in the run shell.
@@ -47,16 +55,19 @@ Any later commit used to run the pilot must show `git diff --stat 55ed51604 <run
   - Tokens are signed, so the transport needs no TLS for integrity.
   - Only a SHA-256 digest leaves the process; no FHFH data does.
   - Anchor: DigiCert Trusted Root G4 above. The signer must chain to it, carry a critical timestamping-only EKU, be valid at genTime, and be bound by ESS signingCertificate(V2).
-- **Probe (proposed; separate from the capture; one call; no database access):**
-  - **Command:** `forge-pregame-capture.ts --tsa-probe --confirm-probe --tsa-url http://timestamp.digicert.com --tsa-anchor …/digicert-trusted-root-g4.crt`
-  - **What it sends:** one POST of a 32-random-byte digest with a nonce.
-  - **What it reports:** genTime, accuracy, policy OID, signer SHA-256 and round-trip time.
-  - **When:** at least a day before the capture.
-  - **Pass condition:** the token verifies under the strict rules: exact DER tags, NULL-only algorithm parameters, no unsigned attributes, and every bundled certificate either on the validated path or identical to the anchor.
-  - **What it settles:**
-    - whether DigiCert tokens carry an `Accuracy` field;
-    - which policy OID to pin;
-    - whether the strict rules accept DigiCert's real token. If they don't, a code change and a new review come before any capture.
+- **Probe (P1; separate from the capture; one call; no database access, no credentials):**
+  - **Command,** from the clean export's `web/`:
+    `NODE_PATH=. npx ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/forge-pregame-capture.ts --tsa-probe --confirm-probe --tsa-profile digicert-g4-v1 --out ~/forge-pilot/probe-<UTC timestamp>`
+  - **What it sends:** one POST of a 32-random-byte digest with a nonce to `http://timestamp.digicert.com`, with a 10 s timeout.
+  - **What it retains** (in the new 0700 `--out` folder; files 0600):
+    - the request (`probe-request.tsq`);
+    - the digest and nonce;
+    - the raw response (`probe-response.tsr`);
+    - `probe-report.json`: strict verdict, timing, full token inspection (policy OID, accuracy fields, nonce, signer version and identifier, ESS v1/v2, signed and unsigned attributes, every bundled certificate's subject and SHA-256 with EKU criticality), and the proposed pin.
+  - **Pass condition:** the strict verifier accepts the token against the G4 anchor (exact DER tags, NULL-only algorithm parameters, no unsigned attributes, bundled certificates on the path or equal to the anchor, critical timestamping-only EKU, ESS binding, validity at genTime), and the token carries an `Accuracy` field.
+  - **Independent cross-check, local and no network:** `openssl ts -reply -in probe-response.tsr -text` and `openssl ts -verify -digest <hex> -in probe-response.tsr -CAfile digicert-trusted-root-g4.crt`.
+  - **Re-pin:** a reviewed commit sets `policies` in `digicert-g4-v1` to the observed policy OID, and nothing else.
+  - **If it fails:** the report names the failing property. Any strict-rule mismatch with DigiCert's real token needs a code change, offline tests and review before any capture.
 - **Accuracy:** if the probe shows no `Accuracy` field, the capture cannot qualify unless TJ approves a pinned fallback bound (D3); the default refuses.
 - **Revocation policy (proposed for the pilot):**
   - No online revocation check during the pilot; OCSP or CRL would be further external calls.
@@ -104,10 +115,10 @@ Any later commit used to run the pilot must show `git diff --stat 55ed51604 <run
 - **Migration apply:** stop if fresh load checks show active long queries, lock waits or overlapping cron windows. Stop on any readback mismatch: schema, tables, triggers `ENABLE ALWAYS`, function owners and SECURITY DEFINER, EXECUTE granted only to `service_role`.
 - **Probe:** stop on any verification failure, missing accuracy (unless D3 is approved), or a chain that doesn't anchor at G4. Nothing else is called.
 - **Before launch:** stop if:
-  - the export SHA differs from `55ed51604`;
+  - the export SHA differs from the re-pinned candidate named in the approval;
   - the migration hash differs from the authority row;
   - the probe hasn't passed;
-  - the launch clock is past 18:26 ET.
+  - the launch clock is past the approved game's T−60 minus 4 minutes.
 - **During the run (automatic):**
   - Pin or claim refused: stop; `late_start` and `insufficient_time` record `never_dispatched`.
   - Any transport refusal, calendar change or failed read: `source_failed`; the claim is fenced.
@@ -130,11 +141,12 @@ Any later commit used to run the pilot must show `git diff --stat 55ed51604 <run
   - an earlier current start;
   - immutability, including replica mode;
   - grants and rollback.
-- **Vitest:** 122 tests (capture modules + pilot script), including:
+- **Vitest:** 147 tests in 9 files (capture modules, pilot script, probe, baseline migration), including:
   - **Fail-first cutoff test:** a token bound within T−60 with a final readback after it does not qualify. It failed on the old verifier and passes now.
   - **Exhaustive tamper test:** every single-bit flip in a token is refused.
   - **Strict RFC 3161 checks:** EKU, signer identity, version, accuracy, DER and time-range checks.
 - **Baseline migration test:** 21/21 (authority row 150, pending).
+- **Probe tooling:** offline, against the test TSA, covering pass with a retained receipt, missing accuracy, a non-timestamping signer, TSA unreachable, and refusal of a reused folder; the pinned profile's anchor fingerprint and the capture's refusal of an unpinned policy.
 - **Rehearsal** (`--rehearse`, through the real runner wiring, collector, strict transport and verifier; network trapped, 0 attempts):
 
   | case | result |
@@ -148,7 +160,7 @@ Any later commit used to run the pilot must show `git diff --stat 55ed51604 <run
   | token in time, final readback late | not qualified |
 
   In every case: no writes reached input sources, no forecast or revision surface was touched, reads stayed on the allowlist, and the packet held no outputs.
-- **9a. Clean-export typecheck of `55ed51604`:** `git archive` of the full tree (13,392 files, no untracked files), `npm run typecheck` under the heavy lock: **exit 0, 0 errors**.
+- **9a. Clean-export typecheck of `1cd29b4b9`:** `git archive` of the full tree (13,403 files, no untracked files), `npm run typecheck` under the heavy lock: **exit 0, 0 errors**.
 
 ## 10. Needs TJ's approval (each separately; nothing here is approved)
 | # | action | scope |
@@ -157,7 +169,8 @@ Any later commit used to run the pilot must show `git diff --stat 55ed51604 <run
 | D2 | Verifier credential | (a, recommended for the pilot) the same `service_role` with a separate client, plus the Astra/OpenSSL post-hoc check; or (b) create a dedicated verifier role with read-only EXECUTE on `read_v1`/`record_witness_v1` (a new permission and migration). |
 | D3 | Accuracy fallback | Only if the probe shows no Accuracy field: approve a pinned bound (e.g. 1 s per DigiCert's published policy) or keep refusing. |
 | D4 | Astra's own read-only readback | One `forge_pregame_capture_read_v1` call after the run, for independent verification. |
-| P1 | **TSA probe** (external) | One POST to `timestamp.digicert.com`, random digest, no FHFH data, no database access. |
-| P2 | **Capture run** (live reads + private writes + one TSA call) | Game 2026020334 at 18:00 ET on 2026-11-17, policy `pregame-native-v1`, code `55ed51604`, limits as in §5, credentials loaded from `web/.env.local` only for that run. |
+| P1 | **TSA probe** (external) | One POST to `timestamp.digicert.com` through profile `digicert-g4-v1`, random digest, no FHFH data, no database access or credentials; receipt retained under `~/forge-pilot/`. Then the re-pin commit (§4). |
+| G1 | **Schedule lookup** (read-only) | After P1, D1 and D2 clear: one bounded read of `games` (ids, date, start, sides) from now through the fallback date, to name the earliest eligible game for TJ's approval. |
+| P2 | **Capture run** (live reads + private writes + one TSA call) | The earliest eligible game TJ approves (fallback 2026020334 at 18:00 ET on 2026-11-17), policy `pregame-native-v1`, the re-pinned candidate, limits as in §5, credentials loaded from `web/.env.local` only for that run. |
 
 **Not part of this pilot:** push, deploy, flag changes, cron or hosted slate queue, forecasts, serving changes, reruns, or any second game.

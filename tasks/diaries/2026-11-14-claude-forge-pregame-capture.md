@@ -133,3 +133,10 @@
   - TSA: DigiCert, root G4 (PEM saved).
 - **Next:** TJ reviews the packet. Nothing live until D1–D4 and P1/P2 are each approved.
 - **Gotcha:** `rg`/glob searches over the live-capture artifact folders are slow; target specific files.
+
+## Checkpoint 2026-11-15: probe fixed and pinned (Chef)
+- TJ: "Fix and repin the probe now"; the earliest eligible game comes after the probe passes and the migration and verifier are cleared; Tuesday is the fallback; TJ approves the replacement game before it runs.
+- **TSA profile `digicert-g4-v1`:** pinned in `tsaProfiles.ts`. The G4 PEM is embedded, with its SHA-256 checked on load. The policy slot stays empty until a probe; a capture refuses an unpinned profile.
+- **Probe:** reports each property through `tokenInspect.ts` and retains its request, response and report in a new 0700 folder. Offline tests cover pass, missing accuracy, a wrong signer, an unreachable TSA and a reused folder.
+- **Candidate re-pinned:** `1cd29b4b9`. Clean-export typecheck exits 0. Vitest 147/147. Migration unchanged (`0d2b6aa6…`).
+- **Next:** TJ's go-ahead for P1 (one probe call). Then re-pin the policy, D1/D2 clearance, the G1 schedule lookup, and propose the earliest eligible game for approval.
