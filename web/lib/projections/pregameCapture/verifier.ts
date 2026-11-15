@@ -135,7 +135,7 @@ export async function verifyAndWitness(deps: VerifierDeps, expect: VerifyExpecta
   try {
     await deps.rpc.recordWitness({
       claimId: first.claimId, statementText, tsaTokenBase64: token.toString("base64"), tsaGenTime: formatMicros(stamped.genTimeMicros),
-      tsaAccuracyMicros: stamped.accuracyMicros, tsaAccuracySource: stamped.accuracySource, tsaSignerSha256: stamped.signerSha256,
+      tsaAccuracyMicros: stamped.accuracyMicros, tsaResolutionMicros: stamped.resolutionMicros, tsaAccuracySource: stamped.accuracySource, tsaSignerSha256: stamped.signerSha256,
       ackUpper, dbReadAt: first.dbReadAt, finalReadAt: second?.dbReadAt ?? null, verdict, verdictReason: reason,
     });
     witnessRecorded = true;

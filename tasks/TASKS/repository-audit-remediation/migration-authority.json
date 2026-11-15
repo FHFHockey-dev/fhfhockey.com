@@ -1505,11 +1505,11 @@
     {
       "order": 150,
       "path": "supabase/migrations/20261115000000_forge_pregame_capture_custody.sql",
-      "sha256": "0d2b6aa6e277b3f5060e7f5e18fd7c9c43ccc76f8770a5ee837e48e6a393d177",
+      "sha256": "4213b1104ac4c0c262800c94eb12710b27dcea5460da96c314abb908d0df98b9",
       "sourceStatus": "source-authorized",
       "deploymentState": "pending",
       "migrationClass": "feature",
-      "rolloutGate": "Private FORGE pregame input capture custody (Claude capture lane; TJ steer 20261115). New private schema forge_pregame_capture (claims, artifacts, save_fences, witnesses, outcomes; insert-only, immutability triggers ENABLE ALWAYS, no table grants) and eight SECURITY DEFINER public RPCs, EXECUTE service_role only: forge_pregame_capture_{claim,save,settle,read,lookup,record_witness,record_outcome,sweep}_v1. Touches no existing table, policy, grant or function; reads public.games and public.roster_optimizer_team_games only. Apply singly only after TJ's own pop-up approval of the pilot packet (tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-APPROVAL-PACKET.md), with fresh load checks, then read back the schema, functions, grants and triggers and record schema_migrations. Proof: supabase/tests/forge_pregame_capture_custody.py (112/112 on local PostgreSQL 15 as a non-superuser owner). Rollback: supabase/tests/forge_pregame_capture_custody_rollback.sql (drops the schema and functions; export any retained capture evidence first).",
+      "rolloutGate": "Private FORGE pregame input capture custody (Claude capture lane; TJ steer 20261115). New private schema forge_pregame_capture (claims, artifacts, save_fences, witnesses, outcomes; insert-only, immutability triggers ENABLE ALWAYS, no table grants) and eight SECURITY DEFINER public RPCs, EXECUTE service_role only: forge_pregame_capture_{claim,save,settle,read,lookup,record_witness,record_outcome,sweep}_v1. Touches no existing table, policy, grant or function; reads public.games and public.roster_optimizer_team_games only. Apply singly only after TJ's own pop-up approval of the pilot packet (tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-APPROVAL-PACKET.md), with fresh load checks, then read back the schema, functions, grants and triggers and record schema_migrations. Proof: supabase/tests/forge_pregame_capture_custody.py (113/113 on local PostgreSQL 15 as a non-superuser owner). Rollback: supabase/tests/forge_pregame_capture_custody_rollback.sql (drops the schema and functions; export any retained capture evidence first).",
       "stateEvidence": "Not applied. Source committed on octoberBranch 2026-11-15; no production schema_migrations row and no forge_pregame_capture schema expected (not read: no production access authorized)."
     }
   ],

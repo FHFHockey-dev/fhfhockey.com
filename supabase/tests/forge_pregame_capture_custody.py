@@ -181,14 +181,15 @@ def run(host):
         body.update(override)
         return json.dumps(body, sort_keys=True, separators=(",", ":"))
 
-    def witness(cid, game, verdict, reason=None, accuracy_us=1_500_000, upper=None, row=None, text=None, gen=None, final="read"):
+    def witness(cid, game, verdict, reason=None, accuracy_us=1_500_000, upper=None, row=None, text=None, gen=None, final="read",
+                resolution_us=1_000_000):
         row = row or read(cid)
         gen = gen or row["db_read_at"] + datetime.timedelta(seconds=1)
-        upper = upper or gen + datetime.timedelta(microseconds=accuracy_us)
+        upper = upper or gen + datetime.timedelta(microseconds=accuracy_us + resolution_us)
         final_at = row["db_read_at"] if final == "read" else final
-        s.execute("select public.forge_pregame_capture_record_witness_v1(%s, %s, %s, %s, %s, 'token', %s, %s, %s, %s, %s, %s)",
-                  (cid, text or statement_for(cid, game, row), b64(b"\x30" * 80), gen, accuracy_us, "b" * 64, upper, row["db_read_at"],
-                   final_at, verdict, reason))
+        s.execute("select public.forge_pregame_capture_record_witness_v1(%s, %s, %s, %s, %s, %s, 'token', %s, %s, %s, %s, %s, %s)",
+                  (cid, text or statement_for(cid, game, row), b64(b"\x30" * 80), gen, accuracy_us, resolution_us, "b" * 64, upper,
+                   row["db_read_at"], final_at, verdict, reason))
         return s.fetchone()[0]
 
     # --- claims ---
@@ -261,7 +262,9 @@ def run(host):
     # --- witness constraints ---
     raises("witness hash binding mismatch refused", lambda: witness(claim_id, 1, "qualified", text=statement_for(claim_id, 1, row, rawSha256="1" * 64)), "capture_witness_binding")
     raises("witness row version mismatch refused", lambda: witness(claim_id, 1, "qualified", text=statement_for(claim_id, 1, row, rowVersion="1")), "capture_witness_binding")
-    raises("upper bound must equal gen time + accuracy", lambda: witness(claim_id, 1, "qualified", upper=row["db_read_at"]), "witnesses_upper")
+    raises("upper bound must equal gen time + accuracy + resolution", lambda: witness(claim_id, 1, "qualified", upper=row["db_read_at"]), "witnesses_upper")
+    raises("upper bound without the genTime resolution is refused", lambda: witness(claim_id, 1, "qualified",
+           upper=row["db_read_at"] + datetime.timedelta(seconds=1, microseconds=1_500_000)), "witnesses_upper")
     early = dict(row, db_read_at=row["db_read_at"] - datetime.timedelta(hours=1))
     raises("attested read must follow the commit", lambda: witness(claim_id, 1, "qualified", row=early), "capture_witness_read_order")
     raises("negative accuracy refused", lambda: witness(claim_id, 1, "qualified", accuracy_us=-1), "check constraint")

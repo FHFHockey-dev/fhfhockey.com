@@ -15,6 +15,8 @@ export interface TsaProfile {
   anchorsPem: string[];
   anchorSha256: string[];
   policies: string[];
+  /** Off-path bundled certificates the TSA sends, pinned by exact SHA-256 from a probe. */
+  extraCertsSha256: string[];
   /** Only with TJ's approval (packet D3) and only if the probe shows no Accuracy field. */
   fallbackAccuracyMicros?: bigint;
 }
@@ -59,7 +61,13 @@ export const TSA_PROFILES: Readonly<Record<string, TsaProfile>> = {
     url: "http://timestamp.digicert.com",
     anchorsPem: [DIGICERT_TRUSTED_ROOT_G4],
     anchorSha256: ["552f7bdcf1a7af9e6ce672017f4f12abf77240c78e761ac203d1d9d20ac89988"],
-    policies: [], // PIN after the probe: the observed policy OID, by a reviewed commit.
+    // Re-pinned from the 2026-11-15T02:37:45Z probe (~/forge-pilot/probe-20261115T023745Z; OpenSSL ts -verify OK).
+    policies: ["2.16.840.1.114412.7.1"],
+    // DigiCert bundles a cross-signed "DigiCert Trusted Root G4" (issuer DigiCert Assured ID Root CA) off our path.
+    extraCertsSha256: ["33846b545a49c9be4903c60e01713c1bd4e4ef31ea65cd95d69e62794f30b941"],
+    // DigiCert tokens carry no Accuracy field. TJ decided D3 on 2026-11-15: pin a conservative 60 s bound, far beyond any
+    // plausible TSA clock error; the verifier also adds genTime's 1 s resolution (bound = genTime + 61 s).
+    fallbackAccuracyMicros: BigInt(60_000_000),
   },
 };
 
@@ -78,5 +86,6 @@ export function trustFromProfile(profile: TsaProfile, use: "probe" | "capture"):
   });
   if (!/^https?:\/\/[^/\s]+/.test(profile.url)) throw new Error("tsa_profile_url");
   if (use === "capture" && profile.policies.length === 0) throw new Error(`tsa_profile_policy_unpinned:${profile.id}`);
-  return { anchorsPem: [...profile.anchorsPem], policies: [...profile.policies], fallbackAccuracyMicros: profile.fallbackAccuracyMicros };
+  return { anchorsPem: [...profile.anchorsPem], policies: [...profile.policies], fallbackAccuracyMicros: profile.fallbackAccuracyMicros,
+    extraCertsSha256: [...profile.extraCertsSha256] };
 }

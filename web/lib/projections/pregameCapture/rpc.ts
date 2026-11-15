@@ -28,7 +28,7 @@ export interface WitnessArgs {
   claimId: string;
   /** The exact canonical text the RFC 3161 imprint covers; the database recomputes its digest. */
   statementText: string;
-  tsaTokenBase64: string; tsaGenTime: string; tsaAccuracyMicros: bigint; tsaAccuracySource: "token" | "pinned_policy";
+  tsaTokenBase64: string; tsaGenTime: string; tsaAccuracyMicros: bigint; tsaResolutionMicros: bigint; tsaAccuracySource: "token" | "pinned_policy";
   tsaSignerSha256: string; ackUpper: string; dbReadAt: string;
   /** Database clock of the verifier's final committed readback (after the stamp); required for a qualified witness. */
   finalReadAt: string | null;
@@ -101,7 +101,7 @@ export function supabaseCaptureRpc(client: Client): CaptureRpc {
     async recordWitness(w) {
       return one(client.rpc("forge_pregame_capture_record_witness_v1", {
         p_claim_id: w.claimId, p_statement_text: w.statementText, p_tsa_token_base64: w.tsaTokenBase64, p_tsa_gen_time: w.tsaGenTime,
-        p_tsa_accuracy_us: w.tsaAccuracyMicros.toString(), p_tsa_accuracy_source: w.tsaAccuracySource, p_tsa_signer_sha256: w.tsaSignerSha256,
+        p_tsa_accuracy_us: w.tsaAccuracyMicros.toString(), p_tsa_resolution_us: w.tsaResolutionMicros.toString(), p_tsa_accuracy_source: w.tsaAccuracySource, p_tsa_signer_sha256: w.tsaSignerSha256,
         p_ack_upper: w.ackUpper, p_db_read_at: w.dbReadAt, p_final_read_at: w.finalReadAt, p_verdict: w.verdict, p_verdict_reason: w.verdictReason,
       }));
     },

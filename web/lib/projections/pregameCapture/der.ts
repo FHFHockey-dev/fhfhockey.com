@@ -92,7 +92,11 @@ export function integer(node: DerNode): bigint {
 }
 
 /** GeneralizedTime "YYYYMMDDHHMMSS[.fff…]Z" → microseconds since epoch, rounded up (conservative upper bound). */
-export function generalizedTimeMicros(node: DerNode): { micros: bigint; text: string } {
+/**
+ * GeneralizedTime → microseconds (sub-microsecond digits rounded up) plus its resolution: the unit of the last digit given
+ * (1 s for whole-second tokens). The TSA may truncate, so the true time can be up to one resolution unit later.
+ */
+export function generalizedTimeMicros(node: DerNode): { micros: bigint; text: string; resolutionMicros: bigint } {
   if (node.tag !== 0x18) throw new Error("der_not_generalized_time");
   const text = node.value.toString("latin1");
   const match = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(?:\.(\d*[1-9]))?Z$/.exec(text);
@@ -106,7 +110,8 @@ export function generalizedTimeMicros(node: DerNode): { micros: bigint; text: st
   const padded = fraction.padEnd(9, "0");
   let micros = BigInt(ms) * BigInt(1000) + BigInt(padded.slice(0, 6));
   if (/[1-9]/.test(padded.slice(6))) micros += BigInt(1);
-  return { micros, text };
+  const resolutionMicros = BigInt(10 ** Math.max(0, 6 - fraction.length)); // number math: the repo targets ES2015 (no bigint **)
+  return { micros, text, resolutionMicros };
 }
 
 /**

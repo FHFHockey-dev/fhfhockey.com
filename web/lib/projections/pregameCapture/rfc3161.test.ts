@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseDerExact, kids, integer, oid, readDer, seq, tlv, encodeUnsigned, u8 } from "./der";
 import { mintTimeStampResponse, testTsaTrust } from "./__fixtures__/testTsa";
+import { tsaProfile, trustFromProfile } from "./tsaProfiles";
 import { parseInstantMicros } from "./time";
 import { buildTimeStampRequest, extractToken, verifyTimeStampToken } from "./rfc3161";
 
@@ -19,7 +20,10 @@ describe("RFC 3161 verification", () => {
     const result = verifyTimeStampToken(extractToken(read("good.tsr")), { sha256Digest: digest, nonce }, trust);
     expect(result.accuracyMicros).toBe(BigInt(1_500_000));
     expect(result.accuracySource).toBe("token");
-    expect(result.upperMicros - result.genTimeMicros).toBe(BigInt(1_500_000));
+    // OpenSSL issues whole-second genTime: the bound adds the 1 s resolution as well as the 1.5 s accuracy.
+    expect(result.resolutionMicros).toBe(BigInt(1_000_000));
+    expect(result.upperMicros - result.genTimeMicros).toBe(BigInt(2_500_000));
+    expect(result.genTimeMicros - result.lowerMicros).toBe(BigInt(2_500_000));
     expect(result.policy).toBe("1.3.6.1.4.1.99999.1");
     expect(result.nonce).toBe(nonce.toString());
   });
@@ -80,8 +84,21 @@ describe("RFC 3161 refusals for malformed or mis-issued tokens", () => {
     extractToken(mintTimeStampResponse(request, { genTimeMicros: at, ...options }));
   const verify = (token: Buffer) => verifyTimeStampToken(token, { sha256Digest: digest32, nonce: nonce7 }, testTsaTrust());
 
-  it("accepts the test signer's well-formed token", () => {
-    expect(verify(mint()).upperMicros - at).toBe(BigInt(500_000));
+  it("accepts the test signer's well-formed token and widens the bound by genTime's resolution", () => {
+    // `at` is a whole second, so genTime carries no fraction: accuracy 0.5 s + resolution 1 s.
+    expect(verify(mint()).upperMicros - at).toBe(BigInt(1_500_000));
+    const fractional = verify(mint({ genTimeMicros: at + BigInt(250_000) }));
+    expect(fractional.resolutionMicros).toBe(BigInt(10_000)); // ".25" → 10 ms
+    expect(fractional.upperMicros - (at + BigInt(250_000))).toBe(BigInt(510_000));
+  });
+
+  it("accepts an off-path cross-signed anchor only by exact pinned SHA-256, and refuses any other stray certificate", () => {
+    const pinCross = (token: Buffer) => verifyTimeStampToken(token, { sha256Digest: digest32, nonce: nonce7 },
+      { ...testTsaTrust(), extraCertsSha256: ["bcefe97bba16b1447a9109385605036c6a170334938e1dcbf2b7c178284328fe"] });
+    expect(() => pinCross(mint({ bundle: ["ca-cross.crt"] }))).not.toThrow();
+    expect(() => verify(mint({ bundle: ["ca-cross.crt"] }))).toThrow("tsa_unexpected_certificate"); // not pinned
+    expect(() => verify(mint({ bundle: ["ca.crt"] }))).not.toThrow(); // byte-identical anchor
+    expect(() => pinCross(mint({ bundle: ["other.crt"] }))).toThrow("tsa_unexpected_certificate");
   });
 
   it("refuses a signer whose EKU is not critical, timestamping-only", () => {
@@ -119,5 +136,37 @@ describe("RFC 3161 refusals for malformed or mis-issued tokens", () => {
 
   it("refuses instants before the Unix epoch", () => {
     expect(() => parseInstantMicros("0069-11-20T22:00:00Z")).toThrow("instant_out_of_range");
+  });
+});
+
+describe("DigiCert's real probe token (2026-11-15T02:37:45Z; random digest, no FHFH data)", () => {
+  const tokenDer = extractToken(read("digicert-probe-20261115T023745Z.tsr"));
+  const probe = JSON.parse(read("digicert-probe-20261115T023745Z.json").toString()) as { sha256Digest: string; nonce: string };
+  const expectDigest = { sha256Digest: Buffer.from(probe.sha256Digest, "hex"), nonce: BigInt(probe.nonce) };
+  const profile = tsaProfile("digicert-g4-v1");
+
+  it("carries no Accuracy field: refused without a pinned fallback", () => {
+    const { fallbackAccuracyMicros: _omit, ...withoutFallback } = trustFromProfile(profile, "probe");
+    void _omit;
+    expect(() => verifyTimeStampToken(tokenDer, expectDigest, withoutFallback)).toThrow("tsa_accuracy_missing");
+  });
+
+  it("verifies under the final capture profile: pinned policy, cross-signed root and the D3 60 s bound (+1 s resolution)", () => {
+    const stamped = verifyTimeStampToken(tokenDer, expectDigest, trustFromProfile(profile, "capture"));
+    expect(stamped).toMatchObject({ accuracySource: "pinned_policy", accuracyMicros: BigInt(60_000_000), resolutionMicros: BigInt(1_000_000) });
+    expect(stamped.upperMicros - stamped.genTimeMicros).toBe(BigInt(61_000_000));
+  });
+
+  it("passes every other strict rule (illustrative fallback, not an approved value)", () => {
+    const stamped = verifyTimeStampToken(tokenDer, expectDigest, { ...trustFromProfile(profile, "probe"), fallbackAccuracyMicros: BigInt(1) });
+    expect(stamped).toMatchObject({ policy: "2.16.840.1.114412.7.1", accuracySource: "pinned_policy", genTime: "20261115023745Z" });
+    expect(stamped.resolutionMicros).toBe(BigInt(1_000_000));
+    expect(stamped.signerSha256).toBe("2da09da7f4131f9fe72db6c5e6e9c9656755af043f1ea742cc0d2120e141ebfc");
+  });
+
+  it("is refused for a different digest or nonce", () => {
+    const trust = { ...trustFromProfile(profile, "probe"), fallbackAccuracyMicros: BigInt(1) };
+    expect(() => verifyTimeStampToken(tokenDer, { ...expectDigest, sha256Digest: Buffer.alloc(32) }, trust)).toThrow("tsa_imprint_mismatch");
+    expect(() => verifyTimeStampToken(tokenDer, { ...expectDigest, nonce: expectDigest.nonce + BigInt(1) }, trust)).toThrow("tsa_nonce_mismatch");
   });
 });

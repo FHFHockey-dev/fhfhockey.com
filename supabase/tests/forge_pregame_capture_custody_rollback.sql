@@ -3,7 +3,7 @@
 begin;
 drop function if exists public.forge_pregame_capture_sweep_v1(integer, integer);
 drop function if exists public.forge_pregame_capture_record_outcome_v1(bigint, text, uuid, text, jsonb);
-drop function if exists public.forge_pregame_capture_record_witness_v1(uuid, text, text, timestamptz, bigint, text, text, timestamptz, timestamptz, timestamptz, text, text);
+drop function if exists public.forge_pregame_capture_record_witness_v1(uuid, text, text, timestamptz, bigint, bigint, text, text, timestamptz, timestamptz, timestamptz, text, text);
 drop function if exists public.forge_pregame_capture_lookup_v1(bigint, text);
 drop function if exists public.forge_pregame_capture_read_v1(uuid);
 drop function if exists public.forge_pregame_capture_settle_v1(uuid);

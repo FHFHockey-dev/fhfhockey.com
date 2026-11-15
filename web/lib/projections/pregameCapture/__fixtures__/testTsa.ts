@@ -39,6 +39,8 @@ export interface TestTsaOptions {
   genTimeMicros: bigint; accuracyMillis?: number | null; serial?: bigint; policy?: string; status?: number;
   /** Adversarial knobs: raw GeneralizedTime text, raw Accuracy DER, a signer without the timestamping EKU, a wrong sid serial. */
   rawGenTime?: string; rawAccuracy?: Buffer; signer?: "tsa" | "plain"; sidSerial?: bigint;
+  /** Extra fixture certificates (file names under tsa/) bundled after the signer, e.g. a cross-signed anchor. */
+  bundle?: string[];
 }
 
 /** Mints a TimeStampResp for a TimeStampReq, signed by the fixture TSA key with ESS signingCertificateV2. */
@@ -72,7 +74,7 @@ export function mintTimeStampResponse(request: Buffer, options: TestTsaOptions):
   const signedData = seq(
     encodeUnsigned(BigInt(3)), set(sha256Alg()),
     seq(encodeOid("1.2.840.113549.1.9.16.1.4"), tlv(0xa0, octets(tstInfo))),
-    tlv(0xa0, certDer), set(signerInfo),
+    tlv(0xa0, concatBytes([certDer, ...(options.bundle ?? []).map((name) => pemToDer(readFileSync(join(dir, name), "utf8")))])), set(signerInfo),
   );
   const token = seq(encodeOid("1.2.840.113549.1.7.2"), tlv(0xa0, signedData));
   return seq(seq(encodeUnsigned(BigInt(0))), token);

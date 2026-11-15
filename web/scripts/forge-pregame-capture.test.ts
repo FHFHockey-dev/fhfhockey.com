@@ -11,7 +11,7 @@ import { u8 } from "../lib/projections/pregameCapture/der";
 
 const fixtureCa = readFileSync(join(__dirname, "..", "lib", "projections", "pregameCapture", "__fixtures__", "tsa", "ca.crt"), "utf8");
 /** A profile built on the TEST-ONLY fixture CA, unpinned like a profile before its first probe. */
-const testProfile = (): TsaProfile => ({ id: "test-tsa", url: "https://tsa.invalid", anchorsPem: [fixtureCa], policies: [],
+const testProfile = (): TsaProfile => ({ id: "test-tsa", url: "https://tsa.invalid", anchorsPem: [fixtureCa], policies: [], extraCertsSha256: [],
   anchorSha256: [createHash("sha256").update(u8(new X509Certificate(fixtureCa).raw)).digest("hex")] });
 const newOut = () => join(mkdtempSync(join(tmpdir(), "forge-probe-test-")), "out");
 
@@ -40,8 +40,9 @@ describe("forge-pregame-capture pilot script", () => {
     expect(() => assertLiveGates({ ...base, codeVersion: "HEAD" }, env, pinned)).toThrow("--code-version");
     expect(() => assertLiveGates({ ...base, out: "/tmp" }, env, pinned)).toThrow("--out");
     expect(() => assertLiveGates({ ...base, tsaProfile: undefined }, env, pinned)).toThrow("--tsa-profile is required");
-    // The DigiCert profile is not usable for a capture until its policy is re-pinned after a probe.
-    expect(() => assertLiveGates({ ...base, tsaProfile: "digicert-g4-v1" }, env, pinned)).toThrow("tsa_profile_policy_unpinned");
+    // A profile whose policy is not pinned is not usable for a capture.
+    expect(() => assertLiveGates({ ...base, tsaProfile: "test-tsa-unpinned" }, env,
+      (id) => (id === "test-tsa-unpinned" ? testProfile() : pinned(id)))).toThrow("tsa_profile_policy_unpinned");
   });
 
   it("rehearses offline end to end: one exact game, no forecast writes, late and ambiguous captures refused, verified by T−60", async () => {
@@ -65,11 +66,15 @@ describe("forge-pregame-capture pilot script", () => {
     expect(result.ok).toBe(true);
   }, 120_000);
 
-  it("pins the DigiCert profile: embedded G4 anchor matches its fingerprint; capture refuses until the policy is re-pinned", () => {
+  it("pins the DigiCert profile: embedded G4 anchor fingerprint, probe-observed policy and cross-signed root; capture refuses an unpinned policy", () => {
     const profile = tsaProfile("digicert-g4-v1");
     expect(profile.url).toBe("http://timestamp.digicert.com");
+    expect(profile.policies).toEqual(["2.16.840.1.114412.7.1"]);
+    expect(profile.extraCertsSha256).toEqual(["33846b545a49c9be4903c60e01713c1bd4e4ef31ea65cd95d69e62794f30b941"]);
+    expect(profile.fallbackAccuracyMicros).toBe(BigInt(60_000_000)); // D3, TJ 2026-11-15
     expect(() => trustFromProfile(profile, "probe")).not.toThrow();
-    expect(() => trustFromProfile(profile, "capture")).toThrow("tsa_profile_policy_unpinned");
+    expect(() => trustFromProfile(profile, "capture")).not.toThrow();
+    expect(() => trustFromProfile({ ...profile, policies: [] }, "capture")).toThrow("tsa_profile_policy_unpinned");
     expect(() => trustFromProfile({ ...profile, anchorSha256: ["0".repeat(64)] }, "probe")).toThrow("tsa_profile_anchor_mismatch");
     expect(() => tsaProfile("unknown")).toThrow("Unknown TSA profile");
   });

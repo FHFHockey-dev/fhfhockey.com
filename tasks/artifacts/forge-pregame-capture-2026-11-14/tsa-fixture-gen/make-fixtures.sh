@@ -66,6 +66,10 @@ for root in ca other; do
   openssl ca -batch -notext -selfsign -config tsa.cnf -keyfile $root.key -in $root.csr -out $root.crt \
     -startdate $START -enddate $END -extensions ext_ca 2>/dev/null
 done
+# Cross-signed form of the test CA: same subject and key, issued by the other root (like DigiCert's bundled cross-signed G4).
+openssl req -new -key ca.key -out ca-cross.csr -subj "/CN=FHFH Test ca Root" 2>/dev/null
+openssl ca -batch -notext -config tsa.cnf -cert other.crt -keyfile other.key -in ca-cross.csr -out ca-cross.crt \
+  -startdate $START -enddate $END -extensions ext_ca -extfile tsa.cnf 2>/dev/null
 for name in tsa plain; do
   openssl req -new -newkey rsa:2048 -nodes -keyout $name.key -out $name.csr -subj "/CN=FHFH Test $name" 2>/dev/null
   openssl ca -batch -notext -config tsa.cnf -cert ca.crt -keyfile ca.key -in $name.csr -out $name.crt \
@@ -78,6 +82,6 @@ openssl ts -reply -config tsa.cnf -section tsa_config -queryfile q.tsq -out good
 openssl ts -reply -config tsa.cnf -section tsa_noacc -queryfile q.tsq -out noacc.tsr 2>/dev/null
 openssl ts -reply -config tsa.cnf -section tsa_config -queryfile q.tsq -signer plain.crt -inkey plain.key -out plain.tsr 2>/dev/null || true
 openssl ts -query -in q.tsq -text 2>/dev/null | sed -n 's/.*Nonce: //p' > nonce.txt
-mkdir -p "$OUT"; cp ca.crt other.crt tsa.crt tsa.key plain.crt plain.key good.tsr noacc.tsr data.bin nonce.txt "$OUT"/
+mkdir -p "$OUT"; cp ca.crt ca-cross.crt other.crt tsa.crt tsa.key plain.crt plain.key good.tsr noacc.tsr data.bin nonce.txt "$OUT"/
 [ -s plain.tsr ] && cp plain.tsr "$OUT"/ || true
 rm -rf "$W"

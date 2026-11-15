@@ -130,7 +130,7 @@ export class FakeCustodyDb {
         const statement = JSON.parse(w.statementText) as Record<string, string>;
         if (statement.rawSha256 !== artifact.raw || statement.canonicalSha256 !== artifact.canonical || statement.rowVersion !== String(artifact.version)
           || statement.gameId !== String(claim.args.gameId) || statement.claimId !== w.claimId) throw new Error("capture_witness_binding");
-        if (parseInstantMicros(w.ackUpper) !== parseInstantMicros(w.tsaGenTime) + w.tsaAccuracyMicros) throw new Error("witnesses_upper");
+        if (parseInstantMicros(w.ackUpper) !== parseInstantMicros(w.tsaGenTime) + w.tsaAccuracyMicros + w.tsaResolutionMicros) throw new Error("witnesses_upper");
         if (w.verdict === "qualified" && parseInstantMicros(w.ackUpper) > BigInt(claim.ackDeadlineMs) * MICROS_PER_MS) throw new Error("capture_witness_late");
         // Database-owned final readback: a qualified witness needs it at or before T−60 of the earliest known start.
         const earliestStartMs = Math.min(Date.parse(this.game.scheduledStart), this.currentStartMs ?? Infinity);

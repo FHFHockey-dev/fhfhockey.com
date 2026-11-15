@@ -36,11 +36,15 @@ export interface TsaTrust {
   policies?: string[];
   /** Used only when a token omits Accuracy; recorded as accuracySource "pinned_policy". Absent → refuse. */
   fallbackAccuracyMicros?: bigint;
+  /** Bundled certificates off the validated path accepted only by exact SHA-256 (e.g. a TSA's cross-signed anchor). */
+  extraCertsSha256?: string[];
 }
 
 export interface VerifiedTimestamp {
   genTime: string; genTimeMicros: bigint;
   accuracyMicros: bigint; accuracySource: "token" | "pinned_policy";
+  /** Unit of genTime's last digit (1 s for whole seconds); the bounds widen by it in both directions. */
+  resolutionMicros: bigint;
   lowerMicros: bigint; upperMicros: bigint;
   policy: string; serial: string; nonce: string | null;
   signerSha256: string; tokenSha256: string;
@@ -150,15 +154,20 @@ export function verifyTimeStampToken(tokenDer: Buffer, expect: { sha256Digest: B
   const anchors = trust.anchorsPem.map((pem) => new X509Certificate(pem));
   const path = chainToAnchor(signerCert, certs, anchors, genMs);
   // Every bundled certificate must be on the validated path or byte-identical to a pinned anchor: no unverified bytes.
+  // Off-path bundled certificates (e.g. a cross-signed form of the anchor) are accepted only by exact pinned SHA-256,
+  // so no bundled byte goes unverified.
+  const extra = new Set(trust.extraCertsSha256 ?? []);
   for (const cert of certs) {
-    if (!path.some((used) => used.raw.equals(u8(cert.raw))) && !anchors.some((a) => a.raw.equals(u8(cert.raw)))) {
+    if (!path.some((used) => used.raw.equals(u8(cert.raw))) && !anchors.some((a) => a.raw.equals(u8(cert.raw)))
+      && !extra.has(createHash("sha256").update(u8(cert.raw)).digest("hex"))) {
       throw new Error("tsa_unexpected_certificate");
     }
   }
 
   return {
     genTime: gen.text, genTimeMicros: gen.micros, accuracyMicros, accuracySource,
-    lowerMicros: gen.micros - accuracyMicros, upperMicros: gen.micros + accuracyMicros,
+    resolutionMicros: gen.resolutionMicros,
+    lowerMicros: gen.micros - accuracyMicros - gen.resolutionMicros, upperMicros: gen.micros + accuracyMicros + gen.resolutionMicros,
     policy, serial, nonce: nonce === null ? null : nonce.toString(),
     signerSha256: createHash("sha256").update(u8(signerCert.raw)).digest("hex"),
     tokenSha256: createHash("sha256").update(u8(tokenDer)).digest("hex"),
