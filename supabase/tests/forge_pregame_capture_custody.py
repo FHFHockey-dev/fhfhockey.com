@@ -10,6 +10,9 @@ nothing; one claim per (game, policy), also under two concurrent sessions.
 Save: hash mismatch stores nothing; a second save is refused and the first bytes stay; a late save is refused.
 A writer whose save runs before the deadline but commits after it is stored, yet can only be witnessed as
 saved_without_valid_witness: a qualified witness with an acknowledgement after the deadline is refused.
+Settle (never retry): it waits on the claim row lock for an in-flight save, reports present after its commit,
+fences after its rollback or when no save exists (a later save then collides), and fails at lock_timeout rather
+than guessing. A function-level statement_timeout does not bound a call, so no timer is trusted for absence.
 Read: recomputes the hash from committed bytes, reports the row version, the current start and the DB clock.
 Witness/outcome: statement must bind claim, game, policy and both hashes; qualified outcome needs a qualified
 witness; one outcome per (game, policy).
@@ -98,7 +101,11 @@ def run(host):
       (2, current_date, 20262027, clock_timestamp() + interval '30 minutes', 10, 20),
       (3, current_date, 20262027, clock_timestamp() + interval '60 minutes' + interval '6 seconds', 10, 20),
       (4, current_date, 20262027, clock_timestamp() + interval '60 minutes' + interval '6 seconds', 10, 20),
-      (5, current_date, 20262027, clock_timestamp() + interval '4 hours', 10, 20);
+      (5, current_date, 20262027, clock_timestamp() + interval '4 hours', 10, 20),
+      (6, current_date, 20262027, clock_timestamp() + interval '3 hours', 10, 20),
+      (7, current_date, 20262027, clock_timestamp() + interval '3 hours', 10, 20),
+      (8, current_date, 20262027, clock_timestamp() + interval '3 hours', 10, 20),
+      (9, current_date, 20262027, clock_timestamp() + interval '3 hours', 10, 20);
       insert into public.roster_optimizer_team_games values (1, 'AAA', 'FUT'), (1, 'BBB', 'FUT');""")
     cur.execute("select id, \"startTime\" from public.games order by id")
     start = dict(cur.fetchall())
@@ -106,6 +113,11 @@ def run(host):
     svc = connect()
     s = svc.cursor()
     s.execute("set role service_role")
+
+    def connect_as_service():
+        conn = connect()
+        conn.cursor().execute("set role service_role")
+        return conn
 
     def claim(game, policy="pregame-native-v1", cutoff="now", required=60000, **override):
         args = dict(game=game, policy=policy, date=override.get("date"), home=override.get("home", 10), away=override.get("away", 20),
@@ -197,6 +209,55 @@ def run(host):
     present, read_at, deadline = s.fetchone()
     check("writer that commits after the deadline is stored", present and read_at > deadline)
 
+    # --- settle fence: an unknown save is settled, never retried ---
+    def settle(cid, conn=None):
+        c = (conn or svc).cursor()
+        c.execute("select state from public.forge_pregame_capture_settle_v1(%s)", (cid,))
+        return c.fetchone()[0]
+
+    def save_on(cursor, cid, data=packet):
+        cursor.execute("select * from public.forge_pregame_capture_save_v1(%s, %s, %s, %s)", (cid, b64(data), sha(data), canonical))
+
+    # (a) in-flight save commits while settle waits on the claim lock -> present
+    c6 = claim(6)[1]
+    inflight = connect(); inflight.autocommit = False
+    ic = inflight.cursor(); ic.execute("set role service_role"); save_on(ic, c6)
+    settled = {}
+    waiter = threading.Thread(target=lambda: settled.setdefault("state", settle(c6, connect_as_service())))
+    waiter.start(); time.sleep(1.0)
+    check("settle waits for the in-flight save", waiter.is_alive())
+    inflight.commit(); waiter.join(10)
+    check("settle after commit reports present", settled.get("state") == "present")
+    # (b) in-flight save rolls back -> settle fences; a late retry collides with the fence
+    c7 = claim(7)[1]
+    inflight = connect(); inflight.autocommit = False
+    ic = inflight.cursor(); ic.execute("set role service_role"); save_on(ic, c7)
+    settled = {}
+    waiter = threading.Thread(target=lambda: settled.setdefault("state", settle(c7, connect_as_service())))
+    waiter.start(); time.sleep(1.0); inflight.rollback(); waiter.join(10)
+    check("settle after rollback fences", settled.get("state") == "fenced")
+    try:
+        save_on(s, c7)
+        check("save after fence refused", False)
+    except psycopg2.Error as error:
+        check("save after fence refused", "capture_save_fenced" in str(error))
+    s.execute("select artifact_present, save_fenced from public.forge_pregame_capture_read_v1(%s)", (c7,))
+    check("read reports fence and no artifact", s.fetchone() == (False, True))
+    # (c) no save at all -> fenced; settle is repeatable
+    c8 = claim(8)[1]
+    check("settle with no save fences", settle(c8) == "fenced" and settle(c8) == "fenced")
+    # (d) a save that holds the lock longer than lock_timeout makes settle fail, not guess
+    c9 = claim(9)[1]
+    inflight = connect(); inflight.autocommit = False
+    ic = inflight.cursor(); ic.execute("set role service_role"); save_on(ic, c9)
+    started = time.time()
+    try:
+        settle(c9)
+        check("settle bounded by lock_timeout", False)
+    except psycopg2.Error as error:
+        check("settle bounded by lock_timeout", "lock timeout" in str(error) and 4.0 <= time.time() - started <= 8.0)
+    inflight.rollback()
+
     def statement(cid, game, raw, canon):
         body = {"claimId": str(cid), "gameId": str(game), "policyId": "pregame-native-v1", "rawSha256": raw, "canonicalSha256": canon}
         return json.dumps(body), sha(json.dumps(body, sort_keys=True).encode())
@@ -238,7 +299,7 @@ def run(host):
     check("never-dispatched outcome without a claim", s.fetchone()[0] is not None)
 
     # --- grants and immutability ---
-    for table in ("claims", "artifacts", "witnesses", "outcomes"):
+    for table in ("claims", "artifacts", "save_fences", "witnesses", "outcomes"):
         for role in ("service_role", "anon", "authenticated"):
             conn = connect()
             c = conn.cursor()

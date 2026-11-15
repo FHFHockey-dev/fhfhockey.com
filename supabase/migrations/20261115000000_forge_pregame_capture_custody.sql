@@ -39,6 +39,13 @@ create table forge_pregame_capture.artifacts (
   constraint artifacts_raw_hash check (raw_sha256 = encode(sha256(packet), 'hex') and byte_length = octet_length(packet))
 );
 
+-- A save whose outcome is unknown is settled, never retried: settle_v1 takes the claim's row lock, so it either
+-- sees the committed artifact or records a fence that every later save collides with.
+create table forge_pregame_capture.save_fences (
+  claim_id uuid primary key references forge_pregame_capture.claims(id),
+  fenced_at timestamptz not null default clock_timestamp()
+);
+
 create table forge_pregame_capture.witnesses (
   claim_id uuid primary key references forge_pregame_capture.artifacts(claim_id),
   statement jsonb not null,
@@ -74,7 +81,7 @@ end $$;
 do $$
 declare name text;
 begin
-  foreach name in array array['claims', 'artifacts', 'witnesses', 'outcomes'] loop
+  foreach name in array array['claims', 'artifacts', 'save_fences', 'witnesses', 'outcomes'] loop
     execute format('revoke all on forge_pregame_capture.%I from public, anon, authenticated, service_role', name);
     execute format('create trigger %I before update or delete on forge_pregame_capture.%I for each row execute function forge_pregame_capture.reject_mutation()', name || '_immutable', name);
     execute format('create trigger %I before truncate on forge_pregame_capture.%I for each statement execute function forge_pregame_capture.reject_mutation()', name || '_no_truncate', name);
@@ -87,7 +94,7 @@ create function public.forge_pregame_capture_claim_v1(
   p_game_id bigint, p_policy_id text, p_slate_date date, p_home_team_id smallint, p_away_team_id smallint,
   p_calendar_revision text, p_scheduled_start timestamptz, p_input_cutoff timestamptz, p_required_ms integer, p_code_version text)
 returns table (outcome text, claim_id uuid, ack_deadline timestamptz, db_now timestamptz)
-language plpgsql security definer set search_path = '' set lock_timeout = '5s' set statement_timeout = '10s' as $$
+language plpgsql security definer set search_path = '' set lock_timeout = '5s' as $$
 declare
   game record;
   now_at timestamptz := clock_timestamp();
@@ -122,17 +129,22 @@ begin
 end $$;
 
 -- Save the packet once. A hash mismatch, late save or second save raises and stores nothing.
--- Callers never retry: an ambiguous outcome is reconciled with read_v1 by claim id.
+-- Callers never retry: an ambiguous outcome is settled with settle_v1, then read back with read_v1, by claim id.
+-- Callers bound their own wait; a function-level statement_timeout would not bound this call.
 create function public.forge_pregame_capture_save_v1(p_claim_id uuid, p_packet_base64 text, p_raw_sha256 text, p_canonical_sha256 text)
 returns table (raw_sha256 text, byte_length integer, db_now timestamptz)
-language plpgsql security definer set search_path = '' set lock_timeout = '5s' set statement_timeout = '20s' as $$
+language plpgsql security definer set search_path = '' set lock_timeout = '5s' as $$
 declare
   bytes bytea := pg_catalog.decode(p_packet_base64, 'base64');
   claim record;
   digest text;
 begin
-  select c.ack_deadline into claim from forge_pregame_capture.claims c where c.id = p_claim_id;
+  -- The claim row lock serializes this save with settle_v1 until this transaction ends.
+  select c.ack_deadline into claim from forge_pregame_capture.claims c where c.id = p_claim_id for update;
   if not found then raise exception 'capture_claim_missing' using errcode = 'P0002'; end if;
+  if exists (select 1 from forge_pregame_capture.save_fences f where f.claim_id = p_claim_id) then
+    raise exception 'capture_save_fenced' using errcode = '55000';
+  end if;
   if clock_timestamp() > claim.ack_deadline then raise exception 'capture_save_late' using errcode = '22023'; end if;
   digest := pg_catalog.encode(pg_catalog.sha256(bytes), 'hex');
   if digest <> p_raw_sha256 then raise exception 'capture_raw_hash_mismatch' using errcode = '22023'; end if;
@@ -141,20 +153,37 @@ begin
   return query select digest, pg_catalog.octet_length(bytes), clock_timestamp();
 end $$;
 
+-- Settles an unknown save without retrying it. Waits (bounded by lock_timeout) for any in-flight save on the
+-- claim's row lock, then returns 'present' if the artifact committed, otherwise fences the claim: 'fenced'.
+-- A function-level statement_timeout does not bound its own call, so absence is never inferred from a timer.
+create function public.forge_pregame_capture_settle_v1(p_claim_id uuid)
+returns table (state text, db_now timestamptz)
+language plpgsql security definer set search_path = '' set lock_timeout = '5s' as $$
+begin
+  perform 1 from forge_pregame_capture.claims c where c.id = p_claim_id for update;
+  if not found then raise exception 'capture_claim_missing' using errcode = 'P0002'; end if;
+  if exists (select 1 from forge_pregame_capture.artifacts a where a.claim_id = p_claim_id) then
+    return query select 'present'::text, clock_timestamp(); return;
+  end if;
+  insert into forge_pregame_capture.save_fences (claim_id) values (p_claim_id) on conflict (claim_id) do nothing;
+  return query select 'fenced'::text, clock_timestamp();
+end $$;
+
 -- Authoritative committed read for the independent verifier and for reconciliation.
 -- Recomputes the hash from stored bytes and reports the row version and the database clock.
 create function public.forge_pregame_capture_read_v1(p_claim_id uuid)
 returns table (
   claim_id uuid, game_id bigint, policy_id text, slate_date date, home_team_id smallint, away_team_id smallint,
   calendar_revision text, scheduled_start timestamptz, input_cutoff timestamptz, ack_deadline timestamptz, code_version text,
-  artifact_present boolean, packet_base64 text, raw_sha256 text, stored_raw_sha256 text, canonical_sha256 text,
+  artifact_present boolean, save_fenced boolean, packet_base64 text, raw_sha256 text, stored_raw_sha256 text, canonical_sha256 text,
   byte_length integer, row_version text, current_start timestamptz, team_game_statuses text[], db_read_at timestamptz)
-language plpgsql volatile security definer set search_path = '' set statement_timeout = '20s' as $$
+language plpgsql volatile security definer set search_path = '' as $$
 begin
   return query
   select c.id, c.game_id, c.policy_id, c.slate_date, c.home_team_id, c.away_team_id, c.calendar_revision,
     c.scheduled_start, c.input_cutoff, c.ack_deadline, c.code_version,
-    a.claim_id is not null, pg_catalog.encode(a.packet, 'base64'), pg_catalog.encode(pg_catalog.sha256(a.packet), 'hex'),
+    a.claim_id is not null, exists (select 1 from forge_pregame_capture.save_fences f where f.claim_id = c.id),
+    pg_catalog.encode(a.packet, 'base64'), pg_catalog.encode(pg_catalog.sha256(a.packet), 'hex'),
     a.raw_sha256, a.canonical_sha256, a.byte_length, a.xmin::text,
     (select g."startTime" from public.games g where g.id = c.game_id),
     array(select t.team_abbreviation::text || ':' || t.game_status from public.roster_optimizer_team_games t
@@ -169,7 +198,7 @@ create function public.forge_pregame_capture_record_witness_v1(
   p_claim_id uuid, p_statement jsonb, p_statement_sha256 text, p_tsa_token_base64 text, p_tsa_gen_time timestamptz,
   p_tsa_accuracy_us bigint, p_ack_upper timestamptz, p_db_read_at timestamptz, p_verdict text, p_verdict_reason text)
 returns timestamptz
-language plpgsql security definer set search_path = '' set lock_timeout = '5s' set statement_timeout = '10s' as $$
+language plpgsql security definer set search_path = '' set lock_timeout = '5s' as $$
 declare
   recorded timestamptz;
   bound record;
@@ -196,7 +225,7 @@ end $$;
 
 create function public.forge_pregame_capture_record_outcome_v1(p_game_id bigint, p_policy_id text, p_claim_id uuid, p_outcome text, p_metadata jsonb)
 returns timestamptz
-language plpgsql security definer set search_path = '' set lock_timeout = '5s' set statement_timeout = '10s' as $$
+language plpgsql security definer set search_path = '' set lock_timeout = '5s' as $$
 declare recorded timestamptz;
 begin
   if p_claim_id is not null and not exists (select 1 from forge_pregame_capture.claims c
@@ -219,6 +248,7 @@ begin
   foreach signature in array array[
     'public.forge_pregame_capture_claim_v1(bigint, text, date, smallint, smallint, text, timestamptz, timestamptz, integer, text)',
     'public.forge_pregame_capture_save_v1(uuid, text, text, text)',
+    'public.forge_pregame_capture_settle_v1(uuid)',
     'public.forge_pregame_capture_read_v1(uuid)',
     'public.forge_pregame_capture_record_witness_v1(uuid, jsonb, text, text, timestamptz, bigint, timestamptz, timestamptz, text, text)',
     'public.forge_pregame_capture_record_outcome_v1(bigint, text, uuid, text, jsonb)'

@@ -4,6 +4,7 @@ begin;
 drop function if exists public.forge_pregame_capture_record_outcome_v1(bigint, text, uuid, text, jsonb);
 drop function if exists public.forge_pregame_capture_record_witness_v1(uuid, jsonb, text, text, timestamptz, bigint, timestamptz, timestamptz, text, text);
 drop function if exists public.forge_pregame_capture_read_v1(uuid);
+drop function if exists public.forge_pregame_capture_settle_v1(uuid);
 drop function if exists public.forge_pregame_capture_save_v1(uuid, text, text, text);
 drop function if exists public.forge_pregame_capture_claim_v1(bigint, text, date, smallint, smallint, text, timestamptz, timestamptz, integer, text);
 drop schema if exists forge_pregame_capture cascade;
