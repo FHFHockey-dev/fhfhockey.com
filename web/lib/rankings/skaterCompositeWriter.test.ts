@@ -601,7 +601,8 @@ describe("atomic composite publication", () => {
 describe("composite publication completion markers", () => {
   const compositeRows = (players = [1, 2], date = "2026-11-14") => players.map((player_id) => ({
     player_id, season_id: 20262027, snapshot_date: date, window_type: "season", window_size: 0,
-    strength_state: "5v5", peer_group_type: "all_skaters", peer_group_key: "all",
+    // Composite rows store the all-skater key as "all_skaters" (requestPeerGroupKey).
+    strength_state: "5v5", peer_group_type: "all_skaters", peer_group_key: "all_skaters",
   }));
   const builtResult = (overrides: Record<string, unknown> = {}) => ({
     request: { season: 20262027, strength: "5v5", peerGroupType: "all_skaters", window: "season" },
