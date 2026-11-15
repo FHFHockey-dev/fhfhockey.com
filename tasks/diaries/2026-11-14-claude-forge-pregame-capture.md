@@ -188,3 +188,36 @@
   - The next capture needs a new candidate SHA and TJ's approval.
 
 - 2026-11-15: clean-export typecheck of candidate `dcb8f50bb` (13,414 files): exit 0, 0 errors.
+
+## Checkpoint 2026-11-15T18:05Z: trend-band reader prototype started (Chef, TJ plan)
+- **Scope:** offline prototype of a batched latest-row trend-band read. Mailbox claim `cb42e6c12`. `skater-queries.ts` and `skater-stage.ts` stay unedited until Astra/Scout acknowledge.
+- **Effective cap (edge logs, read-only):** at 14:40:24Z the old GET sent `limit=12000` and got `Content-Range 0-999/*`, origin 2,553 ms. Team 2's GET took 8,050 ms and returned 500. Production max_rows = 1,000.
+- **Retained run evidence:** `tasks/artifacts/goalie-h1-2026-11-13/READBACK.json` (2 teams) has `rows_eligible 2000`, which is cap-saturated; players with rows 15, missing 21.
+- **Writer shape:**
+  - The daily cron writes `snapshot_date = today` for player_totals_unified rows 0–999, ordered by player_id.
+  - Each snapshot has 15 metrics × 4 windows (l3/l5/l10/l20).
+  - A window is skipped when it has no known value. History mode re-upserts up to `game_limit` game-date snapshots.
+- **Plan:**
+  - The candidate SQL lives in this lane's artifact dir, not `supabase/migrations`, until TJ approves it (no accidental push).
+  - Test against a disposable PG15 with about 11M production-shaped rows.
+  - Run the real old SQL and the new function against the same rows, then through the real TS selection.
+  - Report pages read, calibrated against production's 2.55 s and 8.05 s timings.
+
+## Checkpoint 2026-11-15T18:30Z (local 13:30 ET): trend-band reader prototype ready for review (Chef)
+- **Note:** `trend-band-reader/TREND-BAND-READER-PROTOTYPE.md`. Candidate SQL in `trend-band-reader/sql/` (not in supabase/migrations). TS `web/lib/projections/queries/trendBandLatest.ts` + test (13/13) + gz fixture.
+- **Checks:**
+  - narrow tsc (temp tsconfig on the two files): exit 0;
+  - eslint: exit 0;
+  - function proof: 12/12 on local PG15.
+- **Findings:**
+  - In-cap selection is identical for 95/95 players.
+  - Beyond-cap players are now stale, not missing.
+  - The boundary tie is plan-dependent in the old read.
+  - `eligibleRows` goes from 1000 to 70–144 (counter change).
+- **Headroom (pages):** old 6.8k–11.8k; new 206–351 for normal teams. The worst case without statistics is 4.1k–10.2k. The narrow index gives 275–374 in every case.
+- **Gotchas:**
+  - Unix socket paths are limited to 103 bytes, so the bench socket is `/tmp/stb-sock-55542`.
+  - `python3 -I` drops the script dir from sys.path.
+  - The PostgREST tie order differs from both explicit tie orders.
+- **Next:** TJ's decisions (counter, beyond-cap, read-only production EXPLAIN, then index or ANALYZE). Astra/Scout acknowledgement before any reader switch.
+- **Local data:** the bench DB (≈5.4 GB) stays in the scratchpad (`stb-bench`), server stopped.

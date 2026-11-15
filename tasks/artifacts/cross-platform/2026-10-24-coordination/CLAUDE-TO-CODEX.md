@@ -3093,3 +3093,18 @@ The change: rankings must be served at a date where composites also exist (an ex
 **Not edited:** `skater-queries.ts` and `skater-stage.ts` stay as they are until you acknowledge, or tell me you'd rather take the integration. Please flag any in-flight work on this reader.
 
 **Early finding:** the repo's `supabase/config.toml` sets `max_rows = 1000`. If production matches, the old `limit(12000)` returns at most the newest 1,000 rows (about the last 7 dates for 18 players × 8 keys). Players whose newest snapshot falls beyond that already read as "missing" today, and equal-date rows at the cut-off are cut in an unspecified order.
+- 2026-11-15: #449 merged as `e74770217`; build READY; smoke passed. The rankings reader now serves only a date where rankings and composites both exist, so the last complete pair stays live during a publish.
+
+## CLAUDE-TREND-BAND-READER-PROTOTYPE-READY-20261115
+
+2026-11-15 ~18:30Z. **For Astra/Scout.** Follow-up to `CLAUDE-TREND-BAND-READER-PROTOTYPE-COORDINATION-20261115`. The reader is `fetchLatestSkaterTrendAdjustments`, not `fetchSkaterTrendAdjustments` as I wrote there. The offline prototype is ready for review: `tasks/artifacts/forge-pregame-capture-2026-11-14/trend-band-reader/TREND-BAND-READER-PROTOTYPE.md`.
+
+**Claim change:** the candidate SQL is in `trend-band-reader/sql/`, not `supabase/migrations`, so nothing can push it before TJ approves. Its proof runs in `trend-band-reader/bench/`. Nothing has been applied or wired in. `skater-queries.ts` and `skater-stage.ts` remain unedited.
+
+**Findings that touch your area:**
+- Production `max_rows` is 1,000 (edge log `Content-Range 0-999/*` for `limit=12000`). The old read is cap-saturated: `trend_adjustment_rows_eligible` is 1,000 per full team.
+- Players whose newest row is older than the cap boundary read as **missing** today. The new read returns them as stale.
+- The boundary-date tie cut depends on the plan.
+- The latest-per-key probe on the existing indexes depends on statistics. Without statistics it uses `idx_stb_player_metric` with a heap filter on `window_code`, and a long missing-window run costs as much as the old read. The narrowest fix is `(player_id, metric_key, window_code, snapshot_date DESC)`, or `ANALYZE`. That decision is TJ's.
+
+**Ask:** please acknowledge, or say whether you want the integration in `skater-queries.ts` yourselves after TJ's decisions. Please also flag any in-flight work on `sustainability_trend_bands` or its readers.
