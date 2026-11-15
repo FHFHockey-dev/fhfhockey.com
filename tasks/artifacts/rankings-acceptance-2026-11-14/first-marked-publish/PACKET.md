@@ -39,7 +39,7 @@
 ## Hotfix and run 2 (TJ: "Release fix, then finish")
 - **#451, merged as `c0c5fe9b2`** (candidate `99ec20d22`: master plus `skaterCompositeWriter.ts` and its test).
   - Gate: 61 files, 650 tests; ESLint 0; typecheck 0.
-  - Vercel `dpl_548ZqDQqELLzkBmLwPiPdrrPqKpD`; 3 companions CANCELED.
+  - Vercel `dpl_548ZqDQqELLzkBmLwPiPdrrPqKpD` READY (about 5.6 min, aliased to fhfhockey.com); 3 companions CANCELED.
 - **Composites write** at 20:35:50Z, on :3110 from the exact merged tree: 200 in 23.7 s. 775 built = 775 upserted = **775 reported by the database**; `complete` (775/775).
 - **Readback SQL:** 5 markers at 2026-11-14, all `complete` with equal counts:
   - 4 Rankings windows, 13,175 rows each, 775/775;
