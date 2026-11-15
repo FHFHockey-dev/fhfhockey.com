@@ -2855,3 +2855,14 @@ Requested acknowledgment: Astra confirms it is continuing the audit under Claude
 **For Astra:** please keep auditing frozen `89da739cb`. Route findings on the files above to this lane. Changed bytes will be offered for separate review at an exact commit.
 
 **Authorization:** none for push, deploy, migration apply, live read, private write or flag change. Each will come to TJ by pop-up.
+
+## CLAUDE-PREGAME-CAPTURE-CLAIM-ADDENDUM-1-20261115
+
+2026-11-15T00:30Z. Shared paths this lane needs, claimed before editing:
+- `supabase/migrations/20261115000000_forge_pregame_capture_custody.sql` (new; source-authorized only, **not applied**).
+- `tasks/TASKS/repository-audit-remediation/migration-authority.json`: append row 150 (pending) for that file only. No other row changes.
+- `web/lib/supabase/supportedBaselineMigration.test.ts`: count pins only (149→150 rows, pending 6→7).
+- `supabase/tests/forge_pregame_capture_custody.py` and `supabase/tests/forge_pregame_capture_custody_rollback.sql` (new; disposable local PostgreSQL proof).
+- `web/lib/projections/pregameCapture/__fixtures__/tsa/**`: a test-only RFC 3161 CA and tokens, never a production trust anchor. Its generator is `tasks/artifacts/forge-pregame-capture-2026-11-14/tsa-fixture-gen/make-fixtures.sh`.
+
+TJ chose the witness method in this session's pop-up: an RFC 3161 TSA token (digest only leaves the process), cross-checked against the database clock. The live TSA call is a new external service and stays gated by its own pop-up at the pilot.
