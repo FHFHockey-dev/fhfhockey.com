@@ -311,3 +311,7 @@
 - **Chef defaults:** keep the `claim_failed` handling, lead 10 min, global sweep OK for the pilot.
 - **Sent to the session:** stop rules, `--execute`, `launch-slate.sh`, rehearsal, packet run plan; due 22:00Z. Then Chef verifies a clean export and asks TJ to approve the exact run.
 - **20:45Z:** candidate `e0cbb19a8` verified on a clean export: typecheck exit 0, 350/350 tests, rehearse with 0 network attempts, plan matches. Bringing TJ the queue-pilot run approval.
+- **20:37Z:** TJ approved the slate queue pilot: 2026020329 + 2026020330, candidate `e0cbb19a8`, attended launch 19:10–19:35 ET (00:10–00:35Z).
+  - Plan: fresh export about 00:05Z, launch about 00:15Z.
+  - Token: `tj-slate-2026020329-2026020330-20261115`.
+  - Command: `operator/launch-slate.sh <export>/web e0cbb19a8… 2026-11-15 <token> <new out> 2026020329@2026-11-16T02:00:00Z,2026020330@2026-11-16T02:00:00Z`.
