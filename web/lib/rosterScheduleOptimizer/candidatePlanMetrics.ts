@@ -2,7 +2,7 @@ import { contributionLedger } from "./contributionLedger";
 import { normalizeEligibility } from "./eligibility";
 import { candidateAcquisitionSteps, candidateHorizonPoints, evaluatePlan, playerValueKnown, scheduleAdmissionProblem, swapCategoryBreakdown, type CategorySwapRow } from "./planning";
 import { comparablePointsDelta } from "./pointsComparison";
-import { dropContribution, droppedOwnership, knownDropOrder } from "./retention";
+import { dropContribution, droppedOwnership, knownDropOrder, providerListsOut } from "./retention";
 import { expandActiveSlots } from "./slots";
 import type { PlanEvaluation, PlanIntent, PlanningSnapshot, PlanStep } from "./planningTypes";
 
@@ -119,7 +119,9 @@ export function candidatePlanMetrics(snapshot: PlanningSnapshot, intent: PlanInt
       !positions.valid && "League positions are unsupported.",
       positions.playerClass !== player.playerClass && "Positions do not match the player's skater/goalie class.",
       !["free_agent", "manager_available", "waivers"].includes(player.availability) && "League availability is not verified for acquisition.",
-      !scheduledTeams.has(player.teamAbbreviation) && "No scheduled team game is in the selected range."]
+      !scheduledTeams.has(player.teamAbbreviation) && "No scheduled team game is in the selected range.",
+      // TJ 2026-11-16: an Out player is never lined up, so he never takes a bounded evaluation slot from a healthy one.
+      providerListsOut(player) && "Listed out by the provider (IR or O): his projection isn't counted, so he isn't ranked."]
       .filter((reason): reason is string => typeof reason === "string");
     return { player, reasons };
   }).sort((a, b) => a.player.id.localeCompare(b.player.id));

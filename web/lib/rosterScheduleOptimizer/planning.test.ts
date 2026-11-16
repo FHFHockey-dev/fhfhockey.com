@@ -8,6 +8,7 @@ import { explainBenchDecisions } from "./benchDecisions";
 import { candidatePlanForSort, candidatePlanMetrics, ownershipBrokeTie } from "./candidatePlanMetrics";
 import { lineupGapReport } from "./lineupGaps";
 import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
+import { notCountedText } from "./retention";
 import type { GameForecast, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
 
 // Algorithm fixtures have explicit fictional reviews. Production catalog stays empty;
@@ -1864,6 +1865,18 @@ describe("injured players", () => {
       expect(read("b", "B0")).toEqual({ points: 1.5, basis: "if_dresses" });
       expect(read("b", "B1")).toEqual({ points: null, basis: "none" });
       expect(injuredOutWeek(display(out), "b")).toEqual({ games: 2, points: null, basis: "mixed" });
+    });
+
+    it("greys no value outside points leagues, and says when an Out player has no games left", () => {
+      const cats = open("O");
+      cats.rules = { ...cats.rules, scoring: { mode: "categories", weights: {}, categories: [{ key: "pts", direction: "higher" }] } };
+      expect(injuredOutPointsReader(display(cats))("b", "B0")).toBeNull();
+      expect(injuredOutWeek(display(cats), "b")).toBeNull();
+      const idle = open("O");
+      idle.games = idle.games.filter(game => game.teamAbbreviation !== "B");
+      const week = injuredOutWeek(display(idle), "b")!;
+      expect(week).toEqual({ games: 0, points: null, basis: "none" });
+      expect(notCountedText(idle.players.find(row => row.id === "b")!, week, "week")).toBe("Injured · not counted while he's listed O. No games left this week.");
     });
 
     it("never ranks an Out free agent for Best Fit by his projection; the same value ranks him once cleared", () => {

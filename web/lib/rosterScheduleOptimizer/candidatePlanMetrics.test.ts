@@ -259,6 +259,23 @@ describe("complete timed candidate metrics", () => {
     expect(result.diagnostics.filter(row => row.stopReason === "candidate_limit")).toHaveLength(1);
   });
 
+  it("never spends a bounded evaluation slot on an Out candidate (TJ, 2026-11-16)", () => {
+    // No candidate has a projection, so the shortlist falls back to games then id, and "100" (Out) would sort first.
+    const data = auditSearchFixture(41);
+    const owned = new Set(data.roster.map(row => row.playerId));
+    data.forecasts = data.forecasts.filter(row => owned.has(row.playerId));
+    data.players = data.players.map(player => player.id === "100" ? { ...player, injury: { status: "O", label: "Out", note: null } } : player);
+    const result = candidateMetrics(data, defaultIntent());
+    expect(result.search).toMatchObject({ candidates: 40, eligibleCandidates: 40, maxCandidates: 40 });
+    expect(result.diagnostics.find(row => row.playerId === "100")).toMatchObject({ status: "filtered",
+      reasons: ["Listed out by the provider (IR or O): his projection isn't counted, so he isn't ranked."] });
+    expect(result.candidates.some(row => row.playerId === "100")).toBe(false);
+    expect(result.diagnostics.filter(row => row.stopReason === "candidate_limit")).toHaveLength(0);
+    // Day-to-day is still a candidate.
+    data.players = data.players.map(player => player.id === "100" ? { ...player, injury: { status: "DTD", label: "Day-to-Day", note: null } } : player);
+    expect(candidateMetrics(data, defaultIntent()).candidates.some(row => row.playerId === "100")).toBe(true);
+  });
+
   it("boosts goalie candidates into the bounded set only while a league goalie minimum may be missed", () => {
     const data = auditSearchFixture(44), [template] = data.players, [forecast] = data.forecasts;
     data.players.push({ ...template, id: "g1", nhlId: 20000, name: "Synthetic goalie", eligiblePositions: ["G"], playerClass: "goalie", availability: "free_agent" });

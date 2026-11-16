@@ -5,6 +5,7 @@ import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import { candidateAlternativeForSort, candidatePlanForSort, type CandidateComparison, type CandidateDiagnostic, type CandidatePlan } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 import type { PlanIntent, PlanningPlayer, PlanningResult, PlanningSnapshot, PlanStep } from "lib/rosterScheduleOptimizer/planningTypes";
 import type { InjuredOutWeek } from "lib/rosterScheduleOptimizer/planning";
+import { providerListsOut } from "lib/rosterScheduleOptimizer/retention";
 import { nextLocalMidnight, zonedMidnight } from "lib/rosterScheduleOptimizer/planningDates";
 import styles from "./RosterScheduleOptimizer.module.scss";
 import cardStyles from "./CandidateCard.module.scss";
@@ -136,6 +137,8 @@ export default function CandidateBrowser({ emptyRoster = false, executionOptions
     const notCompared = filtered.filter(row => !row.plan && row.diagnostic?.status === "not_selected").length;
     if (notCompared) unrankedReasons.push(`${notCompared} player${notCompared === 1 ? " wasn't" : "s weren't"} compared automatically. Use "Compare this player" to check one.`);
     if (metrics && !filtered.some(item => item.comparison?.plans.length)) unrankedReasons.push("No legal add/drop was found for your roster this week.");
+    const out = filtered.filter(row => providerListsOut(row.player)).length;
+    if (out) unrankedReasons.push(`${out} player${out === 1 ? " is" : "s are"} listed out (IR or O), so ${out === 1 ? "his projection isn't" : "their projections aren't"} counted or ranked. Find one to see it greyed.`);
   }
   const compareGroups = (a: Candidate, b: Candidate) => a.activeGames !== null || a.activePoints !== null || b.activeGames !== null || b.activePoints !== null
     ? compareCandidateFits(a, b, categories ? "schedule" : sort) : compareDiscovery(a, b);
@@ -159,10 +162,13 @@ export default function CandidateBrowser({ emptyRoster = false, executionOptions
   const boosted = (row: Candidate) => Number(goalieBoost && (row.plan?.netGoalieStarts ?? 0) > 0);
   const lists = (rows: Candidate[]) => {
     const pointsFirst = !categories && sort === "points";
-    const forecasted = pointsFirst ? rows.filter(item => item.activePoints !== null).sort((a, b) => boosted(b) - boosted(a) || compareCandidateFits(a, b, "points")) : [];
-    const schedule = rows.filter(item => item.activeGames !== null && (!pointsFirst || item.activePoints === null)).sort((a, b) => boosted(b) - boosted(a) || byFit(a, b));
-    const unranked = rows.filter(item => item.activeGames === null && (!pointsFirst || item.activePoints === null))
-      .sort(compareDiscovery);
+    // TJ 2026-11-16: an Out player stays searchable and inspectable, but never ranked, so he can't take a ranked slot.
+    const healthy = rows.filter(item => !providerListsOut(item.player));
+    const forecasted = pointsFirst ? healthy.filter(item => item.activePoints !== null).sort((a, b) => boosted(b) - boosted(a) || compareCandidateFits(a, b, "points")) : [];
+    const schedule = healthy.filter(item => item.activeGames !== null && (!pointsFirst || item.activePoints === null)).sort((a, b) => boosted(b) - boosted(a) || byFit(a, b));
+    const ranked = new Set([...forecasted, ...schedule]);
+    const unranked = rows.filter(item => !ranked.has(item))
+      .sort((a, b) => Number(providerListsOut(a.player)) - Number(providerListsOut(b.player)) || compareDiscovery(a, b));
     const visibleForecasted = forecasted.slice(0, limit);
     const visibleSchedule = schedule.slice(0, limit - visibleForecasted.length);
     const visibleUnranked = unranked.slice(0, limit - visibleForecasted.length - visibleSchedule.length);
