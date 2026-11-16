@@ -88,11 +88,19 @@ Display must cover normal lineup lines and FORGE reserve ("if he dresses") lines
   regression that fails without the fix; Best Fit test gained the zero-gain tie. 1000-player test times out only
   under load (load avg 170-214); alone 2.2-2.3 s with or without the change. TJ pop-up: ship after the FORGE batch.
 
+- 19:00Z Chef: #459 merged adbd5ebba (FORGE batch, adds production build gate). Candidate3 5d83956d7 = adbd5ebba + 3
+  files of 9fec8a527. Export3: closure a6a3bb7a (expected), build-gate dry run "is verified"; typecheck exit 0; RSO
+  tests 1258/1259 (1000-player timing test timed out at 5.65 s under load; alone 185/185, 4.5 s at load 48-132).
+- 19:04:29Z pushed chef/rso-planner-out; PR #460; +99 s no deployment/status. 19:06:25Z squash-merged: master 2b8651da8.
+
+- 19:11:14Z #460 fhfhockey dpl_2P2DYb2viF2KE1zT2TUwyUQ9TdUD READY (3 others CANCELED); merge tree 3d85e747 == candidate3.
+  Smoke: page 200 (planner change adds no new bundle string; evidence is the production deployment SHA). Lease released.
+
 ## Next
 Done. Open for Chef / TJ:
-- octoberBranch local commits 9abf48330 and fcffe5777 duplicate master #457/#458 content (sync from master 179befb34);
+- octoberBranch local commits 9abf48330, fcffe5777 and 9fec8a527 duplicate master #457/#458/#460 (sync from master 2b8651da8);
   coordination commits 4756fb99d, 5310ab15c, b9170fc62 and the close-out commit. octoberBranch not pushed.
-- Remote branches chef/rso-injured-display and chef/rso-best-fit-out still exist (merged).
+- Remote branches chef/rso-injured-display, chef/rso-best-fit-out and chef/rso-planner-out still exist (merged).
 - Bridge finding for read-paths lane: an unconfirmed FORGE reserve line stays uncounted after Yahoo clears the player.
 - Live UI not exercised with real Out players (no Yahoo calls from this lane). Today FORGE projects only the dressed 18
   and the reserve pass is off, so most Out players will show a struck '—' (no projection); only players hurt after
@@ -103,7 +111,7 @@ Done. Open for Chef / TJ:
 - Cosmetic (deferred by TJ): grid row tags dropped for space; Out card repeats its value in the sentence.
 
 ## Blockers / approvals
-- Waiting for the Chef's new master SHA (FORGE batch) before building the 9fec8a527 candidate; must merge by 21:45Z.
+- None.
 
 ## Gotchas
 - contributionLedger marks Out game days "unknown" (no receipt), so the roster row's AGP/DUST stay "—".
