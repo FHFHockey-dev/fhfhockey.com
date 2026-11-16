@@ -1,3 +1,5 @@
+import { spawnSync } from "node:child_process";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { assessForgeBuildAdmission, assessThisForgeBuild } from "./forge-build-admission";
@@ -80,4 +82,33 @@ describe("assessThisForgeBuild", () => {
     expect(assessThisForgeBuild(listed, env).action).toBe("pass");
     expect(assessThisForgeBuild(UNLISTED, env).action).toBe("fail");
   });
+});
+
+describe("next.config.js production build guard", () => {
+  // Runs the real config the way `next build` loads it (closure hash, then this check), with a scrubbed build env.
+  // Every case lacks a commit SHA, so it holds whatever the working tree's closure is; no build runs.
+  const loadConfig = (env: Record<string, string>) => {
+    const base = Object.fromEntries(Object.entries(process.env)
+      .filter(([key]) => !["VERCEL_ENV", "VERCEL_GIT_COMMIT_SHA", "GIT_SHA"].includes(key)));
+    return spawnSync(process.execPath, ["-e", 'require("./next.config.js")("phase-production-build"); console.log("CONFIG_LOADED")'],
+      { cwd: resolve(__dirname, ".."), encoding: "utf8", env: { ...base, ...env } as NodeJS.ProcessEnv, timeout: 60_000 });
+  };
+
+  it("stops a production build that has no commit SHA", () => {
+    const result = loadConfig({ VERCEL_ENV: "production" });
+    expect(result.status).not.toBe(0);
+    expect(result.stdout).not.toContain("CONFIG_LOADED");
+    expect(result.stderr).toContain("FORGE build admission FAILED (VERCEL_ENV=production)");
+    expect(result.stderr).toContain("commit_sha_missing");
+    expect(result.stderr).toContain("Production builds stop here");
+  }, 60_000);
+
+  it.each([[{ VERCEL_ENV: "preview" }, "VERCEL_ENV=preview"], [{}, "VERCEL_ENV=(unset)"]])(
+    "only warns on a non-production build (%j)", (env, label) => {
+      const result = loadConfig(env);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("CONFIG_LOADED");
+      expect(result.stderr).toContain(`FORGE build admission WARNING (${label})`);
+      expect(result.stderr).toContain("commit_sha_missing");
+    }, 60_000);
 });

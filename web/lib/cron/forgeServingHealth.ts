@@ -228,10 +228,12 @@ export function assessForgeServingHealth(input: {
   return { ...base, status, servedRun, todayRuns, problems };
 }
 
-/** The report subject with the FORGE verdict: a critical verdict always shows; a warning downgrades an all-clear. */
+/** The report subject with the FORGE verdict: a critical verdict always shows; a warning, or a check that could not
+ * read in season (never silent, unlike C1), downgrades an all-clear. */
 export function withForgeServingSubject(subject: string, health: ForgeServingHealth | null | undefined): string {
-  if (!health || (health.status !== "critical" && health.status !== "warning")) return subject;
+  if (!health || !["critical", "warning", "unknown"].includes(health.status)) return subject;
   const rest = subject.replace(/^(✅|⚠️|❌)\s*/u, "");
   if (health.status === "critical") return `❌ ${rest} · FORGE not served for ${health.date}`;
-  return `${subject.startsWith("❌") ? "❌" : "⚠️"} ${rest} · FORGE stale for ${health.date}`;
+  const suffix = health.status === "warning" ? "FORGE stale" : "FORGE check failed";
+  return `${subject.startsWith("❌") ? "❌" : "⚠️"} ${rest} · ${suffix} for ${health.date}`;
 }

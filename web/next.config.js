@@ -164,12 +164,13 @@ function checkForgeBuildAdmission(closureSha256) {
   } catch (error) {
     failure = `FORGE build admission check could not run (${error.message}).`;
   }
+  const target = `VERCEL_ENV=${process.env.VERCEL_ENV ?? "(unset)"}`;
   if (verdict?.action === "pass") {
-    console.log(`FORGE build admission: closure ${verdict.closureSha256} is verified; runs stamp ${verdict.commitSha}.`);
+    console.log(`FORGE build admission (${target}): closure ${verdict.closureSha256} is verified; runs stamp ${verdict.commitSha}.`);
     return;
   }
   const problems = failure ? [failure] : verdict.problems.map((problem) => `${problem.code}: ${problem.message}`);
-  const report = ["FORGE build admission FAILED: runs from this build would be withheld from every reader.",
+  const report = [`FORGE build admission FAILED (${target}): runs from this build would be withheld from every reader.`,
     ...problems.map((problem) => `  - ${problem}`)].join("\n");
   if (production) throw new Error(`${report}\nProduction builds stop here (VERCEL_ENV=production).`);
   console.warn(`\n${report.replace("FAILED", "WARNING")}\n  (Not a production build, so it continues.)\n`);

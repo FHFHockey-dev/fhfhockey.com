@@ -165,7 +165,14 @@ describe("assessForgeServingHealth", () => {
 });
 
 describe("withForgeServingSubject", () => {
-  const health = (status: "ok" | "warning" | "critical") => ({ status, date: "2026-11-13" }) as Parameters<typeof withForgeServingSubject>[1];
+  const health = (status: "ok" | "warning" | "critical" | "unknown" | "not_applicable") =>
+    ({ status, date: "2026-11-13" }) as Parameters<typeof withForgeServingSubject>[1];
+  it("never leaves an all-clear when the check itself could not read in season", () => {
+    expect(withForgeServingSubject("✅ Daily Cron Report — 40/40 jobs ok", health("unknown")))
+      .toBe("⚠️ Daily Cron Report — 40/40 jobs ok · FORGE check failed for 2026-11-13");
+    expect(withForgeServingSubject("✅ Daily Cron Report — 40/40 jobs ok", health("not_applicable")))
+      .toBe("✅ Daily Cron Report — 40/40 jobs ok");
+  });
   it("always shows a critical verdict and downgrades an all-clear on a warning", () => {
     expect(withForgeServingSubject("✅ Daily Cron Report — 40/40 jobs ok", health("critical")))
       .toBe("❌ Daily Cron Report — 40/40 jobs ok · FORGE not served for 2026-11-13");
