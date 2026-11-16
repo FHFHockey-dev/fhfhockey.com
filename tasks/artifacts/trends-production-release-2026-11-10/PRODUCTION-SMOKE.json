@@ -1,0 +1,46 @@
+{
+  "startedAt": "2026-11-10T20:25:59.351Z",
+  "candidate": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5",
+  "maximumRequests": 2,
+  "status": "passed",
+  "checks": [
+    {
+      "index": 1,
+      "url": "https://fhfhockey.com/api/v1/transactions/ownership-trends?window=3&metric=ownership&limit=10&offset=0",
+      "startedAt": "2026-11-10T20:25:59.351Z",
+      "status": "passed",
+      "httpStatus": 200,
+      "milliseconds": 9321,
+      "bytes": 18173,
+      "cache": "MISS",
+      "success": true,
+      "sourceDate": "2026-11-10",
+      "mappedPlayerCount": 2373,
+      "unmappedPlayerCount": 2065,
+      "totalRisers": 89,
+      "totalFallers": 200,
+      "returnedRisers": 10,
+      "returnedFallers": 10,
+      "pageLevelIdentityCount": "Not measured: diagnostic used nhlPlayerId instead of response playerId. No additional request; aggregate mappedPlayerCount is directly observed and valid."
+    },
+    {
+      "index": 2,
+      "url": "https://fhfhockey.com/api/v1/transactions/ownership-snapshots?playerIds=8478402",
+      "startedAt": "2026-11-10T20:26:08.674Z",
+      "status": "passed",
+      "httpStatus": 200,
+      "milliseconds": 205,
+      "bytes": 215,
+      "cache": "MISS",
+      "success": true,
+      "sourceDate": null,
+      "playerCount": 1,
+      "playerId": 8478402,
+      "ownership": null,
+      "observedOn": null,
+      "unavailableReason": "ambiguous_identity",
+      "resolution": "explicit_fail_closed_ambiguity"
+    }
+  ],
+  "finishedAt": "2026-11-10T20:26:08.880Z"
+}

@@ -1,0 +1,2 @@
+cols
+updated_at date accuracy_avg mae rmse player_count accuracy_sum error_abs_sum error_sq_sum running_accuracy_sum running_error_abs_sum running_error_sq_sum running_player_count running_accuracy_avg running_mae running_rmse scope

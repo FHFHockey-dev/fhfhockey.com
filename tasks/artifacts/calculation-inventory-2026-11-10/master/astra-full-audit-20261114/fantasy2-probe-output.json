@@ -1,0 +1,21 @@
+{
+  "target": "89da739cb",
+  "path": "web/lib/fantasy-projections/evaluator.ts",
+  "sha256": "baff7db4e61e5d8051ff6a2d9270b66d0267c7da4ca77e4aaf82770427805a5b",
+  "expression": "Math.max(rate, (residual / P10_Z) ** 2)",
+  "mutant": "Math.max(rate, residual ** 2)",
+  "existingFixture": {
+    "rate": 4,
+    "residual": 2,
+    "correctVariance": 4,
+    "wrongVariance": 4,
+    "mixtureVariance": 5.760000000000001
+  },
+  "discriminatingFixture": {
+    "rate": 1,
+    "residual": 4,
+    "correctVariance": 9.741992966043915,
+    "wrongVariance": 16
+  },
+  "checks": "all assertions passed; existing test cannot distinguish the missing z conversion"
+}

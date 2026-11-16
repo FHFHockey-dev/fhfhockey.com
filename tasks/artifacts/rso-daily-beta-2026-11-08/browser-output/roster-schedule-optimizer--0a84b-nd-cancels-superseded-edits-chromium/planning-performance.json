@@ -1,0 +1,53 @@
+{
+  "profile": {
+    "roster": 25,
+    "candidates": 300,
+    "days": 7,
+    "games": 70,
+    "forecasts": 2275,
+    "positions": "C only",
+    "input": "fictional complete forecasts, default worker search quotas"
+  },
+  "fullPlanMs": 6197.5999999940395,
+  "cancellationMs": [
+    28.400000005960464,
+    29.400000005960464
+  ],
+  "editToStaleResultClearMs": 32.19999998807907,
+  "dates": [
+    "2026-10-05",
+    "2026-10-06",
+    "2026-10-07",
+    "2026-10-08",
+    "2026-10-09",
+    "2026-10-10",
+    "2026-10-11"
+  ],
+  "activeGames": 70,
+  "search": {
+    "policyVersion": "rso-search-v3",
+    "evaluated": 51,
+    "candidates": 48,
+    "maxDepthReached": 2,
+    "complete": false,
+    "elapsedMs": 1728,
+    "limitations": [
+      "Candidate shortlist contains 40 of 300 available players.",
+      "Per-depth sampling left candidate transitions unexplored.",
+      "Bench explanations reached their work quota; unchecked scoring decisions remain unresolved."
+    ],
+    "benchEvidence": {
+      "policyVersion": "rso-bench-v1",
+      "evaluated": 250,
+      "maxEvaluations": 250,
+      "complete": false,
+      "workQuotaReached": true,
+      "timeLimitReached": false
+    }
+  },
+  "mainThread": {
+    "ticks": 695,
+    "maxGapMs": 231.80000001192093
+  },
+  "scope": "Native headless planner workers; event-to-termination and DOM invalidation; development observation, no latency guarantee"
+}

@@ -1,0 +1,27 @@
+{
+  "gameId": 2026020057,
+  "players": 38,
+  "officialValues": 152,
+  "mismatches": [],
+  "passed": true,
+  "sourceRows": 749,
+  "readerTeamsQualified": 2,
+  "status": "offline_only_not_published",
+  "htmlShiftIdentity": [
+    {
+      "file": "TV020057.HTM",
+      "sha256": "1b47ee1541a7979c60344a2bf31ced5c8f1e427166bcef1294f9b1873609e362",
+      "team": "DALLAS STARS",
+      "game": 2026020057,
+      "date": "2026-10-08"
+    },
+    {
+      "file": "TH020057.HTM",
+      "sha256": "98667b784d62313bbc10003b63127cd2c0b17b5c73caddb0835f6c820d49310c",
+      "team": "BUFFALO SABRES",
+      "game": 2026020057,
+      "date": "2026-10-08"
+    }
+  ],
+  "overlaps": []
+}

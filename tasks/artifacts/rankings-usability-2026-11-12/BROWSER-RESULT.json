@@ -1,0 +1,115 @@
+{
+  "cases": [
+    {
+      "name": "html keyboard recovery",
+      "tabs": 13,
+      "focus": {
+        "outline": "auto",
+        "outlineWidth": "1px",
+        "visible": true
+      },
+      "primaryRequests": 2,
+      "pendingRetryRequestDelta": 1,
+      "restoredOrPreservedFocus": true
+    },
+    {
+      "name": "network keyboard recovery",
+      "tabs": 13,
+      "focus": {
+        "outline": "auto",
+        "outlineWidth": "1px",
+        "visible": true
+      },
+      "primaryRequests": 2,
+      "pendingRetryRequestDelta": 1,
+      "restoredOrPreservedFocus": true
+    },
+    {
+      "name": "No automatic primary retry",
+      "simulatedMilliseconds": 60000,
+      "primaryRequests": 1
+    },
+    {
+      "name": "Repeated failure retains keyboard recovery",
+      "primaryRequests": 2
+    },
+    {
+      "name": "Empty season response offers recovery"
+    },
+    {
+      "name": "metric_explorer season loading/error/recovery",
+      "width": 390
+    },
+    {
+      "name": "deployment_tiers season loading/error/recovery",
+      "width": 390
+    },
+    {
+      "name": "trending season loading/error/recovery",
+      "width": 390
+    },
+    {
+      "name": "splits season loading/error/recovery",
+      "width": 390
+    },
+    {
+      "name": "war season loading/error/recovery",
+      "width": 390
+    },
+    {
+      "name": "Retry reflow and scoped accessibility",
+      "width": 1440,
+      "geometry": {
+        "left": 92,
+        "right": 238.453125,
+        "width": 146.453125,
+        "height": 30,
+        "viewport": 1440,
+        "pageWidth": 1440
+      },
+      "a11y": {
+        "violations": [],
+        "passes": 13,
+        "incomplete": []
+      }
+    },
+    {
+      "name": "Retry reflow and scoped accessibility",
+      "width": 390,
+      "geometry": {
+        "left": 30,
+        "right": 176.453125,
+        "width": 146.453125,
+        "height": 30,
+        "viewport": 390,
+        "pageWidth": 390
+      },
+      "a11y": {
+        "violations": [],
+        "passes": 13,
+        "incomplete": []
+      }
+    },
+    {
+      "name": "Retry reflow and scoped accessibility",
+      "width": 320,
+      "geometry": {
+        "left": 30,
+        "right": 176.453125,
+        "width": 146.453125,
+        "height": 30,
+        "viewport": 320,
+        "pageWidth": 320
+      },
+      "a11y": {
+        "violations": [],
+        "passes": 13,
+        "incomplete": []
+      }
+    }
+  ],
+  "externalRequests": [],
+  "unexpectedApiRequests": [],
+  "pageErrors": [],
+  "status": "passed"
+}

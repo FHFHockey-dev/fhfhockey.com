@@ -1,0 +1,162 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "sources": [
+    "web/lib/teamsInfo.ts",
+    "web/lib/socialShare/teamNeon.ts",
+    "web/lib/socialShare/modules/shared/definitions.ts",
+    "web/lib/socialShare/modules/shared/completeThrough.ts",
+    "web/lib/projections/goalie/historyLedger.ts",
+    "web/lib/socialShare/modules/shared/goalieLedger.ts",
+    "web/lib/socialShare/modules/creaseShift.ts",
+    "web/lib/socialShare/modules/shared/categoryCounts.ts",
+    "web/lib/socialShare/modules/shared/goalieBoards.ts",
+    "web/lib/socialShare/modules/goalieGsax.ts",
+    "web/components/GoaliePage/goalieCalculations.ts",
+    "web/lib/socialShare/modules/goaliePeriod.ts"
+  ],
+  "misplaced": {
+    "state": "ready",
+    "team": {
+      "team": "NJD",
+      "shift": 100,
+      "games": 1,
+      "short": false,
+      "firstDate": "2026-10-04",
+      "lastDate": "2026-10-04",
+      "comparisonGames": 1,
+      "comparisonShort": false,
+      "overlap": 0,
+      "shortComparison": false,
+      "startersUsed": 1,
+      "goalies": [
+        {
+          "goalieId": 1,
+          "name": "G1",
+          "starts": 1,
+          "relief": 0,
+          "share": 1,
+          "comparisonStarts": 0,
+          "comparisonRelief": 0,
+          "comparisonShare": 0,
+          "change": 100,
+          "otherTeams": [],
+          "runningShare": [
+            1
+          ]
+        },
+        {
+          "goalieId": 2,
+          "name": "G2",
+          "starts": 0,
+          "relief": 0,
+          "share": 0,
+          "comparisonStarts": 1,
+          "comparisonRelief": 0,
+          "comparisonShare": 1,
+          "change": -100,
+          "otherTeams": [],
+          "runningShare": [
+            0
+          ]
+        }
+      ],
+      "unresolvedGames": 0,
+      "comparisonUnresolvedGames": 0,
+      "missingGames": 0,
+      "series": [
+        {
+          "gameId": 1,
+          "date": "2026-10-04",
+          "state": "resolved",
+          "starterId": 1
+        }
+      ],
+      "withheld": null,
+      "rank": 1
+    },
+    "coverage": {
+      "observed": 4,
+      "expected": 4,
+      "missing": 0,
+      "unit": "team games"
+    }
+  },
+  "unfinishedGsax": {
+    "state": "partial",
+    "reasons": [
+      "1 of 2 scheduled games through NST's date has no final game state yet, so it is not counted as completed."
+    ],
+    "row": {
+      "goalieId": 1,
+      "name": "G1",
+      "teams": [
+        "NJD"
+      ],
+      "appearances": 2,
+      "short": true,
+      "starts": 2,
+      "relief": 0,
+      "firstDate": "2026-10-01",
+      "lastDate": "2026-10-03",
+      "covered": 2,
+      "missing": 0,
+      "coveragePct": 100,
+      "admitted": true,
+      "gsax": 11,
+      "xgAgainst": 15,
+      "goalsAgainst": 4,
+      "shotsAgainst": 60,
+      "toiSeconds": 7200,
+      "gsaxPer60": 5.5,
+      "rank": 1,
+      "worstRank": 1
+    }
+  },
+  "unfinishedPeriod": {
+    "state": "partial",
+    "reasons": [
+      "1 of 2 scheduled games in this period's weeks has no final game state yet, so it is not counted as completed."
+    ],
+    "rows": [
+      {
+        "goalieId": 1,
+        "starts": 2,
+        "game": {
+          "above": 0,
+          "below": 0,
+          "tied": 10,
+          "unavailable": 0,
+          "better": 0,
+          "worse": 0,
+          "compared": 10
+        }
+      },
+      {
+        "goalieId": 2,
+        "starts": 2,
+        "game": {
+          "above": 0,
+          "below": 0,
+          "tied": 10,
+          "unavailable": 0,
+          "better": 0,
+          "worse": 0,
+          "compared": 10
+        }
+      }
+    ]
+  },
+  "nonMember": {
+    "gsaxState": "ready",
+    "gsax": 11,
+    "periodState": "ready",
+    "starts": 2
+  },
+  "validControl": {
+    "state": "ready",
+    "gsax": 1,
+    "per60": 1
+  },
+  "limits": "Exact frozen pure modules. Descriptor identity and settings-field list are inert stubs; unused calendar/source dependencies deny access. No app imports, network, real loaders, DB, environment or browser. Supplied Vitest suites not run. Partial cards are source-confirmed visible but unexportable; out-of-schedule appearance cases return ready."
+}

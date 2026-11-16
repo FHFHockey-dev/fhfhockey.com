@@ -1,0 +1,1 @@
+select job_name, to_char(run_time,'HH24:MI:SS') t, status, rows_affected, details->'timing'->>'durationMs' ms, left(details->>'response', 400) r from cron_job_audit where run_time >= '2026-11-16 10:17' and run_time < '2026-11-16 10:30' order by run_time

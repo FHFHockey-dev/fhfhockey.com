@@ -1,0 +1,267 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "authorityRead": "working-tree",
+  "migrationChecks": [
+    {
+      "row": 88,
+      "path": "supabase/migrations/20261020211500_forge_league_skater_physical_totals.sql",
+      "targetSha256": "b5f86c6bd990d28d5fe31c60782ca8888b0f9248735b2c370fc6e4935ff107a2",
+      "authoritySha256": "b5f86c6bd990d28d5fe31c60782ca8888b0f9248735b2c370fc6e4935ff107a2",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 101,
+      "path": "supabase/migrations/20261027090000_forge_reserve_projections.sql",
+      "targetSha256": "1ca5816e835da899833499cc95d345a9253227ea176898c1ca2ba382fdd55da8",
+      "authoritySha256": "1ca5816e835da899833499cc95d345a9253227ea176898c1ca2ba382fdd55da8",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 123,
+      "path": "supabase/migrations/20261109210000_wgo_skater_stats_team_date_index.sql",
+      "targetSha256": "90fc0a155976709ea5ce19d60b9bb2c0890b1eaf527e440060c37c54bb58c205",
+      "authoritySha256": "90fc0a155976709ea5ce19d60b9bb2c0890b1eaf527e440060c37c54bb58c205",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 124,
+      "path": "supabase/migrations/20261109213000_line_source_observed_at_indexes.sql",
+      "targetSha256": "e33c8a67d8aa2e5dbfd70cfa6877a941e87de2cdbb63789bf34f1879ce26211f",
+      "authoritySha256": "e33c8a67d8aa2e5dbfd70cfa6877a941e87de2cdbb63789bf34f1879ce26211f",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 125,
+      "path": "supabase/migrations/20261111180000_fix_nst_seasonlong_counts_regular_season.sql",
+      "targetSha256": "7ce241a333d148d8300fc578196982987fb9d9895f7e550c06c67fe22b3ffe0c",
+      "authoritySha256": "7ce241a333d148d8300fc578196982987fb9d9895f7e550c06c67fe22b3ffe0c",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 126,
+      "path": "supabase/migrations/20261111180100_fix_nst_seasonlong_rates_unknown_and_ozs.sql",
+      "targetSha256": "1941a1a3fc29fdbf0a07449a0297f5ff36181e2fa098bb4ddf57c06c29cf3b63",
+      "authoritySha256": "1941a1a3fc29fdbf0a07449a0297f5ff36181e2fa098bb4ddf57c06c29cf3b63",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 127,
+      "path": "supabase/migrations/20261111180200_fix_game_score_season_scope.sql",
+      "targetSha256": "3db6cd19c293b7ef6b7b30ee3bbf8a67e65149a64f703c8a2aa95692bd305efb",
+      "authoritySha256": "3db6cd19c293b7ef6b7b30ee3bbf8a67e65149a64f703c8a2aa95692bd305efb",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 128,
+      "path": "supabase/migrations/20261111180300_fix_skaters_avg_stats_regular_season.sql",
+      "targetSha256": "906afe80b1ecb3ecd84765ff26799abe570697bbd1c031b037ebb525b350d8f2",
+      "authoritySha256": "906afe80b1ecb3ecd84765ff26799abe570697bbd1c031b037ebb525b350d8f2",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 129,
+      "path": "supabase/migrations/20261111180400_fix_nhl_team_data_season_identity.sql",
+      "targetSha256": "3634494808fee15cd3af0f1ab5fb3ba94f6e92b51c4d90577316d9f315a2a1f1",
+      "authoritySha256": "3634494808fee15cd3af0f1ab5fb3ba94f6e92b51c4d90577316d9f315a2a1f1",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 130,
+      "path": "supabase/migrations/20261111180500_fix_game_outcomes_level_score_unknown.sql",
+      "targetSha256": "cb599ca7629ecc4198186fb6e7074137cd656b8aec4f575781f3116491380adc",
+      "authoritySha256": "cb599ca7629ecc4198186fb6e7074137cd656b8aec4f575781f3116491380adc",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 131,
+      "path": "supabase/migrations/20261111180600_fix_goalie_weekly_zero_denominators.sql",
+      "targetSha256": "d28332d6df502cbbaf527caafe800e377d205fc755adcd899cbe3a8d70762bb5",
+      "authoritySha256": "d28332d6df502cbbaf527caafe800e377d205fc755adcd899cbe3a8d70762bb5",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 132,
+      "path": "supabase/migrations/20261111180700_fix_lineup_deployment_slot_and_pp_share.sql",
+      "targetSha256": "867db3a96f05fe1e5b41ec18cac98cb7e5a9d53a8e100d825694d87585b2d78b",
+      "authoritySha256": "867db3a96f05fe1e5b41ec18cac98cb7e5a9d53a8e100d825694d87585b2d78b",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 133,
+      "path": "supabase/migrations/20261111180800_fix_percent_games_multi_team_unknown.sql",
+      "targetSha256": "31c224d84dc17fbd171b20e2730759c83d2cb4efeeeacfec97411b834f9c0daa",
+      "authoritySha256": "31c224d84dc17fbd171b20e2730759c83d2cb4efeeeacfec97411b834f9c0daa",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 134,
+      "path": "supabase/migrations/20261111180900_fix_skater_game_stats_placeholders_nullable.sql",
+      "targetSha256": "934be7806aecec9f956b229f15cd6364d382aa56b1e5db68c4584495a5b99d83",
+      "authoritySha256": "934be7806aecec9f956b229f15cd6364d382aa56b1e5db68c4584495a5b99d83",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 135,
+      "path": "supabase/migrations/20261111181000_fix_goalie_totals_nst_units_aggregate_gsaa.sql",
+      "targetSha256": "61f922ae3e07246514f3e94053a71cdf806b8bdb33113f6ed313f83c4835b909",
+      "authoritySha256": "61f922ae3e07246514f3e94053a71cdf806b8bdb33113f6ed313f83c4835b909",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 136,
+      "path": "supabase/migrations/20261111181100_add_nst_seasonlong_5v5_views.sql",
+      "targetSha256": "f741beed8fb32c065353700d3022e9c8a6dec6157db234ae6fa786200ba40e1a",
+      "authoritySha256": "f741beed8fb32c065353700d3022e9c8a6dec6157db234ae6fa786200ba40e1a",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 137,
+      "path": "supabase/migrations/20261112090000_guard_forge_league_skater_physical_totals_cutoff.sql",
+      "targetSha256": "629904b3e5580f3732e9a45dee74b6450a1afb6ecda63ff1a46b433aa8778573",
+      "authoritySha256": "629904b3e5580f3732e9a45dee74b6450a1afb6ecda63ff1a46b433aa8778573",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 138,
+      "path": "supabase/migrations/20261112100000_add_forge_ledger_forecast_basis_and_universe.sql",
+      "targetSha256": "13858e5380efe8644e3448efcb796630f830471a1ec152d5e6aca5a42322859d",
+      "authoritySha256": "13858e5380efe8644e3448efcb796630f830471a1ec152d5e6aca5a42322859d",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 139,
+      "path": "supabase/migrations/20261112110000_player_forecast_season_expected_games_nullable.sql",
+      "targetSha256": "873f94ac574c2406cb025a94d706711cd3f606a4b8ddad626bd98f452b571472",
+      "authoritySha256": "873f94ac574c2406cb025a94d706711cd3f606a4b8ddad626bd98f452b571472",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 140,
+      "path": "supabase/migrations/20261112120000_add_predictions_sko_vdp_view.sql",
+      "targetSha256": "5d2b71499a00429594804455d6a7bb72d43758675a2cb5da7c8ad723a3b13dc6",
+      "authoritySha256": "5d2b71499a00429594804455d6a7bb72d43758675a2cb5da7c8ad723a3b13dc6",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 141,
+      "path": "supabase/migrations/20261112130000_goalie_totals_unified_regular_season.sql",
+      "targetSha256": "733f9077d2f67991862f6e8c5a4bb83374f877c5be5dd745d5914a4c88c458c8",
+      "authoritySha256": "733f9077d2f67991862f6e8c5a4bb83374f877c5be5dd745d5914a4c88c458c8",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 142,
+      "path": "supabase/migrations/20261113090000_player_forecast_accountability_v2_skill.sql",
+      "targetSha256": "dd20dad47aa3e0647925fac5608f61ac5221d4eda40018105dacb7193c9864ed",
+      "authoritySha256": "dd20dad47aa3e0647925fac5608f61ac5221d4eda40018105dacb7193c9864ed",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 143,
+      "path": "supabase/migrations/20261113090100_percent_games_team_of_record_by_date.sql",
+      "targetSha256": "7283788621eebd0b77983d56fe41c955628f8cd6937d36bc8682f44802da5999",
+      "authoritySha256": "7283788621eebd0b77983d56fe41c955628f8cd6937d36bc8682f44802da5999",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 144,
+      "path": "supabase/migrations/20261113160000_team_ctpi_daily_v2_publication.sql",
+      "targetSha256": "5c6e7cea335e2a0c85895dc9fb2bb4b7c85e56ea60f308120badd42e2d749eb4",
+      "authoritySha256": "5c6e7cea335e2a0c85895dc9fb2bb4b7c85e56ea60f308120badd42e2d749eb4",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 145,
+      "path": "supabase/migrations/20261113170000_team_sos_daily_v2.sql",
+      "targetSha256": "f2dcd5ca8bfbb6869c874f3992ec5f073c65e7ad8c69826d5900be9bef79675b",
+      "authoritySha256": "f2dcd5ca8bfbb6869c874f3992ec5f073c65e7ad8c69826d5900be9bef79675b",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 146,
+      "path": "supabase/migrations/20261113180000_games_game_state.sql",
+      "targetSha256": "beb5e13955111836ce224fb4ecd4817577a89d407c3217c883b5a9be9a904878",
+      "authoritySha256": "beb5e13955111836ce224fb4ecd4817577a89d407c3217c883b5a9be9a904878",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 147,
+      "path": "supabase/migrations/20261113190000_fix_team_goalie_game_stats_placeholders_nullable.sql",
+      "targetSha256": "a623eec89b5d5dcb75bf824598e2f790aaa44c33a5996b7f53875b7ed1aa4a9d",
+      "authoritySha256": "a623eec89b5d5dcb75bf824598e2f790aaa44c33a5996b7f53875b7ed1aa4a9d",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 148,
+      "path": "supabase/migrations/20261113200000_forge_strength_penalty_shot_split.sql",
+      "targetSha256": "5b661a6618dec827196cd23e2f60c647ee215477c358d6580a6e6d5157b6c07c",
+      "authoritySha256": "5b661a6618dec827196cd23e2f60c647ee215477c358d6580a6e6d5157b6c07c",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    },
+    {
+      "row": 149,
+      "path": "supabase/migrations/20261113220000_pp_team_game_clock.sql",
+      "targetSha256": "ed7015782f62c16e48e6ccfaec2e81f496159db11595d6e517b63322f20976d3",
+      "authoritySha256": "ed7015782f62c16e48e6ccfaec2e81f496159db11595d6e517b63322f20976d3",
+      "sourceMatches": true,
+      "deploymentClaim": "applied",
+      "appliedDefinitionVerified": false
+    }
+  ]
+}

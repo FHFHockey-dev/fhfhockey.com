@@ -1,0 +1,31 @@
+after cheerio (main): Agent
+undici modules loaded: 110 [
+  './node_modules/undici/index.js',
+  './node_modules/undici/lib/dispatcher/client.js'
+]
+undici version: 7.29.0
+descriptor: {"writable":true,"configurable":false,"enumerable":false}
+node:internal/modules/cjs/loader:1433
+  throw err;
+  ^
+
+Error: Cannot find module './node_modules/cheerio/package.json'
+Require stack:
+- <scratch>/probe/who-sets.cjs
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1430:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+    at Function._load (node:internal/modules/cjs/loader:1216:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.require (node:internal/modules/cjs/loader:1527:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (<scratch>/probe/who-sets.cjs:8:44)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '<scratch>/probe/who-sets.cjs'
+  ]
+}
+
+Node.js v22.23.4

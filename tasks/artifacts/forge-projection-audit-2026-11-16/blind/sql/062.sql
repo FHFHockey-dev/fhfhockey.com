@@ -1,0 +1,1 @@
+select game_id, team_id, count(*) n, round(sum(start_probability)::numeric,3) sum_p, max(updated_at) upd, max(created_at) crt from goalie_start_projections where game_id in (2026020331,2026020332) group by 1,2 order by 1,2

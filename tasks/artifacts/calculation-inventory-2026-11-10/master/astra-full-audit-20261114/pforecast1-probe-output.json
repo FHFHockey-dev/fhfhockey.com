@@ -1,0 +1,104 @@
+{
+  "pin": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "path": "web/lib/player-forecasts/evaluation.ts",
+  "sha256": "c7fea4bf2b1de325a404f43f69348457f3a8cfe11f050c6843103232ce49126c",
+  "checks": {
+    "metrics": {
+      "points": [
+        {
+          "target": "goals",
+          "conditioning": "unconditional",
+          "population": "forward",
+          "calendarLeadDays": 1,
+          "teamGameOrdinal": 1,
+          "samples": 2,
+          "mae": 3.5,
+          "bias": 3.5,
+          "pairedMae": 1,
+          "pairedBias": 1,
+          "baselineMae": 2,
+          "baselineSamples": 1
+        }
+      ],
+      "participation": [
+        {
+          "target": "plays",
+          "conditioning": "playing_probability",
+          "population": "forward",
+          "calendarLeadDays": 1,
+          "teamGameOrdinal": 1,
+          "samples": 1,
+          "brier": 0.03999999999999998,
+          "pairedBrier": 0.03999999999999998,
+          "baselineBrier": 0.25,
+          "baselineSamples": 1
+        }
+      ],
+      "excluded": {
+        "protected_holdout": 1,
+        "invalid_cutoff": 1,
+        "duplicate_output": 1
+      }
+    },
+    "paired": {
+      "evaluated": [
+        {
+          "id": "p",
+          "candidate": 0,
+          "noMove": 5,
+          "agp": 0,
+          "opportunityLoss": 5
+        }
+      ],
+      "excluded": {},
+      "meanOpportunityLoss": 5
+    },
+    "shortBackendPageCalls": [
+      [
+        0,
+        999
+      ],
+      [
+        1,
+        1000
+      ],
+      [
+        2,
+        1001
+      ]
+    ],
+    "rejected": [
+      {
+        "kind": "missing_count",
+        "message": "Prospective evaluation read was incomplete or changed during pagination"
+      },
+      {
+        "kind": "changed_count",
+        "message": "Prospective evaluation read was incomplete or changed during pagination"
+      },
+      {
+        "kind": "no_progress",
+        "message": "Prospective evaluation read was incomplete or changed during pagination"
+      },
+      {
+        "kind": "query_error",
+        "message": "synthetic read failed"
+      },
+      {
+        "kind": "row_cap",
+        "message": "Prospective evaluation query row cap reached"
+      }
+    ],
+    "protectedDateRanges": [
+      {
+        "start": "2026-04-17",
+        "end": "2026-10-06"
+      }
+    ]
+  },
+  "boundaries": [
+    "Exact pinned evaluation module with imports removed; external-dependent functions not invoked",
+    "Synthetic arithmetic and fake range responses only; no Supabase/app/provider/browser/server/build",
+    "No Vitest or actual production evaluation, promotion, model qualification, or fixes"
+  ]
+}

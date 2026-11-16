@@ -1,0 +1,30 @@
+{
+  "version": "rso-saved-response-preflight-v1",
+  "consistentAtCapture": true,
+  "findings": [],
+  "currentUseHolds": [
+    "saved_capture_is_not_current_authenticated_acceptance",
+    "serving_source_and_forecast_use_not_established"
+  ],
+  "bodySha256": "873aaeba593d227c15297da99e4c5e4d7809bf75a26b01daef6bc20b0cb54b01",
+  "observedAt": "2026-10-16T07:56:05.301Z",
+  "evaluatedAt": "2026-11-09T20:27:47.793Z",
+  "counts": {
+    "players": 1065,
+    "games": 100,
+    "rawForecasts": 0,
+    "bridgeRows": 0,
+    "bridgeRuns": 0,
+    "proofs": 0,
+    "bridgeNullStats": 0,
+    "bridgeZeroStats": 0
+  },
+  "authority": {
+    "networkVerified": false,
+    "captureAuthenticityVerified": false,
+    "servingBranchEstablished": false,
+    "authenticatedAcceptance": false,
+    "forecastUseGranted": false,
+    "managerIntentChanged": false
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "at": "2026-11-09T20:27:46.426233+00:00",
+  "finishedAt": "2026-11-09T20:27:47.896663+00:00",
+  "durationSeconds": 1.47,
+  "exitCode": 0,
+  "historicalCaptureOnly": true,
+  "scope": "Original October 16 public planning response; no current authenticated or Yahoo acceptance.",
+  "sourceLocationReference": "Named consumer-rso-manual-ui-v3 retained packet; private body not copied.",
+  "sourceHashes": {
+    "api-001-body.json": "873aaeba593d227c15297da99e4c5e4d7809bf75a26b01daef6bc20b0cb54b01",
+    "api-001-receipt.json": "e0243e1137ab00ef748461fcef649c4d5940f7f4b12bb449edeb02065a7cb3ad",
+    "independent-actual-evidence-audit.json": "9171d5cc0167f1dd3e64d9373ab414d99d43e1d0342359e81858fee6b23bc9d4"
+  },
+  "receiptDerivation": "Original response body SHA-256, original response completion time and exact original request query; no filesystem/default-clock scope inference.",
+  "originalIndependentAuditHashBindingsMatch": true,
+  "inputFilesUnchanged": true,
+  "typeChecking": true,
+  "newLiveRequests": 0,
+  "newAuthOperations": 0,
+  "report": "historical-preflight.json"
+}

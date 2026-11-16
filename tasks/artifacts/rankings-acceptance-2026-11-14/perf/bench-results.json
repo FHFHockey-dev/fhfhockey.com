@@ -1,0 +1,681 @@
+{
+  "label": "OFFLINE synthetic cohort; not production latency",
+  "fetchCalls": 0,
+  "results": [
+    {
+      "name": "matrix.durable.page1.size10",
+      "roundTrips": 77,
+      "rowsRead": 26330,
+      "mockBytesRead": 11470291,
+      "byTable": {
+        "entity_metric_rankings": {
+          "calls": 61,
+          "rows": 26284,
+          "bytes": 11464617
+        },
+        "skater_composite_ratings": {
+          "calls": 2,
+          "rows": 0,
+          "bytes": 4
+        },
+        "players": {
+          "calls": 2,
+          "rows": 20,
+          "bytes": 2334
+        },
+        "teams": {
+          "calls": 2,
+          "rows": 16,
+          "bytes": 758
+        },
+        "rolling_player_game_metrics": {
+          "calls": 10,
+          "rows": 10,
+          "bytes": 2578
+        }
+      },
+      "totalMsNoLatency": 687,
+      "mockMs": 629,
+      "computeMs": 58,
+      "serializeMs": 0.4,
+      "responseBytes": 220187,
+      "status": "entity_metric_rankings",
+      "rows": 10,
+      "msAt20msPerTrip": 826,
+      "serialDepthEstimate": 9
+    },
+    {
+      "name": "matrix.durable.page1.size50",
+      "roundTrips": 117,
+      "rowsRead": 26484,
+      "mockBytesRead": 11491527,
+      "byTable": {
+        "entity_metric_rankings": {
+          "calls": 61,
+          "rows": 26284,
+          "bytes": 11464617
+        },
+        "skater_composite_ratings": {
+          "calls": 2,
+          "rows": 0,
+          "bytes": 4
+        },
+        "players": {
+          "calls": 2,
+          "rows": 100,
+          "bytes": 11656
+        },
+        "teams": {
+          "calls": 2,
+          "rows": 50,
+          "bytes": 2374
+        },
+        "rolling_player_game_metrics": {
+          "calls": 50,
+          "rows": 50,
+          "bytes": 12876
+        }
+      },
+      "totalMsNoLatency": 642,
+      "mockMs": 601,
+      "computeMs": 41,
+      "serializeMs": 1.6,
+      "responseBytes": 897366,
+      "status": "entity_metric_rankings",
+      "rows": 50,
+      "msAt20msPerTrip": 982,
+      "serialDepthEstimate": 17
+    },
+    {
+      "name": "matrix.durable.page1.size10.warm-repeat(within 30s)",
+      "roundTrips": 0,
+      "rowsRead": 0,
+      "mockBytesRead": 0,
+      "byTable": {},
+      "totalMsNoLatency": 0,
+      "mockMs": 0,
+      "computeMs": 0,
+      "serializeMs": 0.5,
+      "responseBytes": 220187,
+      "status": "entity_metric_rankings",
+      "rows": 10
+    },
+    {
+      "name": "matrix.durable.page2.size10.after-page1",
+      "roundTrips": 43,
+      "rowsRead": 26294,
+      "mockBytesRead": 11469099,
+      "byTable": {
+        "entity_metric_rankings": {
+          "calls": 27,
+          "rows": 26250,
+          "bytes": 11463529
+        },
+        "skater_composite_ratings": {
+          "calls": 2,
+          "rows": 0,
+          "bytes": 4
+        },
+        "players": {
+          "calls": 2,
+          "rows": 20,
+          "bytes": 2334
+        },
+        "teams": {
+          "calls": 2,
+          "rows": 14,
+          "bytes": 666
+        },
+        "rolling_player_game_metrics": {
+          "calls": 10,
+          "rows": 10,
+          "bytes": 2566
+        }
+      },
+      "totalMsNoLatency": 879,
+      "mockMs": 837,
+      "computeMs": 42,
+      "serializeMs": 0.4,
+      "responseBytes": 220326,
+      "status": "entity_metric_rankings",
+      "rows": 10
+    },
+    {
+      "name": "matrix.fallback.page1.size10.common(ladder stops at date 0)",
+      "roundTrips": 88,
+      "rowsRead": 25459,
+      "mockBytesRead": 77214474,
+      "byTable": {
+        "entity_metric_rankings": {
+          "calls": 1,
+          "rows": 0,
+          "bytes": 2
+        },
+        "rolling_player_game_metrics": {
+          "calls": 43,
+          "rows": 11263,
+          "bytes": 45635325
+        },
+        "games": {
+          "calls": 3,
+          "rows": 600,
+          "bytes": 13203
+        },
+        "rolling_player_metric_support_payloads": {
+          "calls": 30,
+          "rows": 11250,
+          "bytes": 31299105
+        },
+        "players": {
+          "calls": 6,
+          "rows": 2250,
+          "bytes": 262278
+        },
+        "teams": {
+          "calls": 3,
+          "rows": 96,
+          "bytes": 4557
+        },
+        "skater_composite_ratings": {
+          "calls": 2,
+          "rows": 0,
+          "bytes": 4
+        }
+      },
+      "totalMsNoLatency": 698,
+      "mockMs": 501,
+      "computeMs": 197,
+      "serializeMs": 0.4,
+      "responseBytes": 222819,
+      "status": "fallback_rolling_player_game_metrics",
+      "rows": 10,
+      "msAt20msPerTrip": 1003,
+      "serialDepthEstimate": 15
+    },
+    {
+      "name": "matrix.fallback.page1.size50.common",
+      "roundTrips": 128,
+      "rowsRead": 25499,
+      "mockBytesRead": 77224736,
+      "byTable": {
+        "entity_metric_rankings": {
+          "calls": 1,
+          "rows": 0,
+          "bytes": 2
+        },
+        "rolling_player_game_metrics": {
+          "calls": 83,
+          "rows": 11303,
+          "bytes": 45645587
+        },
+        "games": {
+          "calls": 3,
+          "rows": 600,
+          "bytes": 13203
+        },
+        "rolling_player_metric_support_payloads": {
+          "calls": 30,
+          "rows": 11250,
+          "bytes": 31299105
+        },
+        "players": {
+          "calls": 6,
+          "rows": 2250,
+          "bytes": 262278
+        },
+        "teams": {
+          "calls": 3,
+          "rows": 96,
+          "bytes": 4557
+        },
+        "skater_composite_ratings": {
+          "calls": 2,
+          "rows": 0,
+          "bytes": 4
+        }
+      },
+      "totalMsNoLatency": 597,
+      "mockMs": 492,
+      "computeMs": 105,
+      "serializeMs": 1.6,
+      "responseBytes": 909713,
+      "status": "fallback_rolling_player_game_metrics",
+      "rows": 50,
+      "msAt20msPerTrip": 1137,
+      "serialDepthEstimate": 27
+    },
+    {
+      "name": "matrix.fallback.page1.size10.full-ladder(no season totals)",
+      "roundTrips": 1130,
+      "rowsRead": 396283,
+      "mockBytesRead": 960621721,
+      "byTable": {
+        "entity_metric_rankings": {
+          "calls": 1,
+          "rows": 0,
+          "bytes": 2
+        },
+        "rolling_player_game_metrics": {
+          "calls": 478,
+          "rows": 174388,
+          "bytes": 707310070
+        },
+        "games": {
+          "calls": 3,
+          "rows": 600,
+          "bytes": 13203
+        },
+        "rolling_player_metric_support_payloads": {
+          "calls": 465,
+          "rows": 174375,
+          "bytes": 247961715
+        },
+        "players": {
+          "calls": 120,
+          "rows": 45000,
+          "bytes": 5245584
+        },
+        "teams": {
+          "calls": 61,
+          "rows": 1920,
+          "bytes": 91143
+        },
+        "skater_composite_ratings": {
+          "calls": 2,
+          "rows": 0,
+          "bytes": 4
+        }
+      },
+      "totalMsNoLatency": 8510,
+      "mockMs": 6868,
+      "computeMs": 1642,
+      "serializeMs": 0.4,
+      "responseBytes": 222044,
+      "status": "fallback_rolling_player_game_metrics",
+      "rows": 10,
+      "msAt20msPerTrip": 12208,
+      "serialDepthEstimate": 179
+    },
+    {
+      "name": "discriminator.sax_percentage.full-ladder",
+      "metaKeys": [
+        "generatedAt",
+        "rowCount",
+        "totalRankedRows",
+        "sortMetricAvailableRowCount",
+        "page",
+        "pageSize",
+        "pageCount",
+        "sortMetric",
+        "sortDirection",
+        "metricGroups",
+        "metricColumns",
+        "plannedMetrics",
+        "unavailableMetrics",
+        "colorScaleBands",
+        "activePeerGroupDescription",
+        "snapshotDate",
+        "latestAvailableSnapshotDate",
+        "snapshotUpdatedAt",
+        "snapshotSelectionReason",
+        "sourceTable",
+        "sourceTables",
+        "rankingSource",
+        "rankingSourcePreference",
+        "rankingSourceFallbackReason",
+        "methodologyVersion",
+        "methodologyUpdatedAt",
+        "sourceQualityFlags",
+        "sourceWarnings",
+        "compositeSourceTable",
+        "message"
+      ],
+      "unavailableMetrics": [
+        {
+          "metricKey": "sax_percentage",
+          "label": "Shooting Above Expected",
+          "reason": "Requested metric has no calculable values for the current filters."
+        }
+      ],
+      "metaMentionsSax": [
+        "rDescription\":\"Individual unblocked shot attempts (iFF) over the same games as ixG (decision 17).\",\"methodologyVersion\":\"contextual_rankings_v1\"},{\"metricKey\":\"sax_percentage\",\"groupKey\":\"regression_finishing\",\"shortLabel\":\"SAX%\",\"fullLabel\":\"Shooting Above Expected\",\"tooltip\":\"Goals minus individual xG, per 100 unblocked attempts (Fenwick), on the same games.\",\"defaultVisible\":true,\"playerTypes\":[\"s",
+        "kater\"],\"definition\":{\"metricKey\":\"sax_percentage\",\"displayName\":\"SAX%\",\"entityType\":\"skater\",\"category\":\"Regression\",\"description\":\"Shooting percentage above expected.\",\"formulaDescription\":\"(goals - individual xG) / individual unblocked attempts * 100 on the same games\",\"higherIsBetter\":true,\"defaultStreng",
+        "ic-specific denominator described by the formula and methodology metadata.\",\"methodologyVersion\":\"contextual_rankings_v1\"}],\"unavailableMetrics\":[{\"metricKey\":\"sax_percentage\",\"label\":\"Shooting Above Expected\",\"reason\":\"Requested metric has no calculable values for the current filters.\"}],\"colorScaleBands\":[{\"label\":\"0-19\",\"min\":0,\"max\":19.999,\"tone\":\"poor\"},{\"label\":\"20-39\",\"min\":20,\"max\":39.999,\"to"
+      ],
+      "firstRowSaxFragment": ":[],\"rankScopes\":{\"overall\":{\"rank\":139,\"percentile\":74.967,\"qualifiedPeerCount\":750,\"peerGroupKey\":\"all\"},\"deployment\":{\"rank\":35,\"percentile\":70.968,\"qualifiedPeerCount\":125,\"peerGroupKey\":\"P3\"}}},\"sax_percentage\":{\"metricKey\":\"sax_percentage\",\"shortLabel\":\"SAX%\",\"fullLabel\":\"Shooting Above Expected\",\"groupKey\":\"regression_finishing\",\"rawValue\":null,\"formattedValue\":null,\"rank\":null,\"percentile\":null,\"qualifiedPeerCount\":0,\"lowerIsBetter\":false,\"availabilityState\":\"unavailable\",\"availabilityReason\":\"Requested metric has no calculable values for the current filters.\",\"sampleConfidence\":\"low\",\"sourceQuality",
+      "rankingSource": "fallback_rolling_player_game_metrics",
+      "snapshotDate": "2026-11-13",
+      "latestAvailableSnapshotDate": "2026-11-13"
+    },
+    {
+      "name": "snapshot.durable.last-page-player(pages=15)",
+      "roundTrips": 864,
+      "rowsRead": 264536,
+      "mockBytesRead": 114905407,
+      "byTable": {
+        "entity_metric_rankings": {
+          "calls": 304,
+          "rows": 262534,
+          "bytes": 114636378
+        },
+        "skater_composite_ratings": {
+          "calls": 20,
+          "rows": 0,
+          "bytes": 40
+        },
+        "players": {
+          "calls": 20,
+          "rows": 1000,
+          "bytes": 116584
+        },
+        "teams": {
+          "calls": 20,
+          "rows": 502,
+          "bytes": 23836
+        },
+        "rolling_player_game_metrics": {
+          "calls": 500,
+          "rows": 500,
+          "bytes": 128569
+        }
+      },
+      "totalMsNoLatency": 6710,
+      "mockMs": 6287,
+      "computeMs": 423,
+      "serializeMs": 0,
+      "responseBytes": 17427,
+      "status": "available",
+      "rows": null,
+      "msAt20msPerTrip": 9637,
+      "serialDepthEstimate": 152
+    },
+    {
+      "name": "snapshot.fallback.last-page-player.common",
+      "roundTrips": 1066,
+      "rowsRead": 67485,
+      "mockBytesRead": 81326531,
+      "byTable": {
+        "entity_metric_rankings": {
+          "calls": 1,
+          "rows": 0,
+          "bytes": 2
+        },
+        "rolling_player_game_metrics": {
+          "calls": 825,
+          "rows": 12045,
+          "bytes": 45826794
+        },
+        "games": {
+          "calls": 45,
+          "rows": 9000,
+          "bytes": 198045
+        },
+        "rolling_player_metric_support_payloads": {
+          "calls": 30,
+          "rows": 11250,
+          "bytes": 31299105
+        },
+        "players": {
+          "calls": 90,
+          "rows": 33750,
+          "bytes": 3934170
+        },
+        "teams": {
+          "calls": 45,
+          "rows": 1440,
+          "bytes": 68355
+        },
+        "skater_composite_ratings": {
+          "calls": 30,
+          "rows": 0,
+          "bytes": 60
+        }
+      },
+      "totalMsNoLatency": 1321,
+      "mockMs": 513,
+      "computeMs": 808,
+      "serializeMs": 0,
+      "responseBytes": 17613,
+      "status": "available",
+      "rows": null,
+      "msAt20msPerTrip": 7396,
+      "serialDepthEstimate": 303
+    },
+    {
+      "name": "snapshot.fallback.last-page-player.full-ladder",
+      "roundTrips": 4516,
+      "rowsRead": 1062345,
+      "mockBytesRead": 1035712266,
+      "byTable": {
+        "entity_metric_rankings": {
+          "calls": 1,
+          "rows": 0,
+          "bytes": 2
+        },
+        "rolling_player_game_metrics": {
+          "calls": 1260,
+          "rows": 175170,
+          "bytes": 707501539
+        },
+        "games": {
+          "calls": 45,
+          "rows": 9000,
+          "bytes": 198045
+        },
+        "rolling_player_metric_support_payloads": {
+          "calls": 465,
+          "rows": 174375,
+          "bytes": 247961715
+        },
+        "players": {
+          "calls": 1800,
+          "rows": 675000,
+          "bytes": 78683760
+        },
+        "teams": {
+          "calls": 915,
+          "rows": 28800,
+          "bytes": 1367145
+        },
+        "skater_composite_ratings": {
+          "calls": 30,
+          "rows": 0,
+          "bytes": 60
+        }
+      },
+      "totalMsNoLatency": 20548,
+      "mockMs": 7402,
+      "computeMs": 13146,
+      "serializeMs": 0,
+      "responseBytes": 17518,
+      "status": "available",
+      "rows": null,
+      "msAt20msPerTrip": 51750,
+      "serialDepthEstimate": 1188
+    },
+    {
+      "name": "comparison.durable.default-load(top-6 ids)",
+      "roundTrips": 117,
+      "rowsRead": 26484,
+      "mockBytesRead": 11491527,
+      "byTable": {
+        "entity_metric_rankings": {
+          "calls": 61,
+          "rows": 26284,
+          "bytes": 11464617
+        },
+        "skater_composite_ratings": {
+          "calls": 2,
+          "rows": 0,
+          "bytes": 4
+        },
+        "players": {
+          "calls": 2,
+          "rows": 100,
+          "bytes": 11656
+        },
+        "teams": {
+          "calls": 2,
+          "rows": 50,
+          "bytes": 2374
+        },
+        "rolling_player_game_metrics": {
+          "calls": 50,
+          "rows": 50,
+          "bytes": 12876
+        }
+      },
+      "totalMsNoLatency": 693,
+      "mockMs": 654,
+      "computeMs": 40,
+      "serializeMs": 0.1,
+      "responseBytes": 105659,
+      "status": "available",
+      "rows": 6,
+      "msAt20msPerTrip": 996,
+      "serialDepthEstimate": 18
+    },
+    {
+      "name": "comparison.fallback.default-load(top-6 ids).common",
+      "roundTrips": 1066,
+      "rowsRead": 67485,
+      "mockBytesRead": 81326531,
+      "byTable": {
+        "entity_metric_rankings": {
+          "calls": 1,
+          "rows": 0,
+          "bytes": 2
+        },
+        "rolling_player_game_metrics": {
+          "calls": 825,
+          "rows": 12045,
+          "bytes": 45826794
+        },
+        "games": {
+          "calls": 45,
+          "rows": 9000,
+          "bytes": 198045
+        },
+        "rolling_player_metric_support_payloads": {
+          "calls": 30,
+          "rows": 11250,
+          "bytes": 31299105
+        },
+        "players": {
+          "calls": 90,
+          "rows": 33750,
+          "bytes": 3934170
+        },
+        "teams": {
+          "calls": 45,
+          "rows": 1440,
+          "bytes": 68355
+        },
+        "skater_composite_ratings": {
+          "calls": 30,
+          "rows": 0,
+          "bytes": 60
+        }
+      },
+      "totalMsNoLatency": 1250,
+      "mockMs": 533,
+      "computeMs": 717,
+      "serializeMs": 0.2,
+      "responseBytes": 107290,
+      "status": "available",
+      "rows": 6,
+      "msAt20msPerTrip": 7644,
+      "serialDepthEstimate": 320
+    },
+    {
+      "name": "comparison.durable.6-way",
+      "roundTrips": 1113,
+      "rowsRead": 343888,
+      "mockBytesRead": 149376792,
+      "byTable": {
+        "entity_metric_rankings": {
+          "calls": 385,
+          "rows": 341284,
+          "bytes": 149026965
+        },
+        "skater_composite_ratings": {
+          "calls": 26,
+          "rows": 0,
+          "bytes": 52
+        },
+        "players": {
+          "calls": 26,
+          "rows": 1300,
+          "bytes": 151568
+        },
+        "teams": {
+          "calls": 26,
+          "rows": 654,
+          "bytes": 31058
+        },
+        "rolling_player_game_metrics": {
+          "calls": 650,
+          "rows": 650,
+          "bytes": 167149
+        }
+      },
+      "totalMsNoLatency": 8732,
+      "mockMs": 8216,
+      "computeMs": 516,
+      "serializeMs": 0.2,
+      "responseBytes": 105846,
+      "status": "available",
+      "rows": 6,
+      "msAt20msPerTrip": 12860,
+      "serialDepthEstimate": 202
+    },
+    {
+      "name": "comparison.10-ids",
+      "threw": "Invalid query param: player_ids",
+      "statusCode": 400,
+      "roundTrips": 0
+    },
+    {
+      "name": "trending.default",
+      "roundTrips": 80,
+      "rowsRead": 26432,
+      "mockBytesRead": 77305276,
+      "byTable": {
+        "rolling_player_game_metrics": {
+          "calls": 34,
+          "rows": 11254,
+          "bytes": 45632787
+        },
+        "games": {
+          "calls": 4,
+          "rows": 800,
+          "bytes": 17604
+        },
+        "rolling_player_metric_support_payloads": {
+          "calls": 30,
+          "rows": 11250,
+          "bytes": 31299105
+        },
+        "players": {
+          "calls": 8,
+          "rows": 3000,
+          "bytes": 349704
+        },
+        "teams": {
+          "calls": 4,
+          "rows": 128,
+          "bytes": 6076
+        }
+      },
+      "totalMsNoLatency": 648,
+      "mockMs": 525,
+      "computeMs": 123,
+      "serializeMs": 0.3,
+      "responseBytes": 87015,
+      "status": null,
+      "rows": 25,
+      "msAt20msPerTrip": 802,
+      "serialDepthEstimate": 8
+    }
+  ]
+}

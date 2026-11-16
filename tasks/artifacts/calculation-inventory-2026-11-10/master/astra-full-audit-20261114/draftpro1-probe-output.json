@@ -1,0 +1,36 @@
+{
+  "receipts": [
+    {
+      "path": "web/lib/projectionsConfig/statsMasterList.ts",
+      "sha256": "ebe6d83bb6731b6c349e455101ad9f9f8c9a956976f00d619d96839047237e57"
+    },
+    {
+      "path": "web/lib/scoring/categoryScores.ts",
+      "sha256": "baf1961a9533c76642e39a80e4e375f6691d0c35c157e4024f3c2a916cf5d663"
+    },
+    {
+      "path": "web/lib/draft-pro/scenarios.ts",
+      "sha256": "2fe3e8b9d7f4982c18a707b200f04051c37840d84af8cd0ded05b46b5467b1f0"
+    },
+    {
+      "path": "web/lib/draft-pro/reports.ts",
+      "sha256": "2e418a3c75b2d132755187cd7e31d068d7d23181a46581876ea105d71780cab9"
+    }
+  ],
+  "report": {
+    "ourPoints": -30,
+    "peerPoints": -60,
+    "strengths": [
+      "No category is stronger than Peer roster."
+    ],
+    "weaknesses": [
+      "goals against goalie is weaker than Peer roster"
+    ]
+  },
+  "scenario": {
+    "goalsAgainstAdded": 5,
+    "pointEffect": -15,
+    "claimedDirection": "higher"
+  },
+  "boundary": "Synthetic ordinary points scoring; exact pure source; registry setup from exact GA entry; no API/server/React/persistence."
+}

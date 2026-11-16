@@ -1,0 +1,181 @@
+{
+  "action": "One new current capture only; no repairs, writes, migration, provider fetch, settings persistence, scores",
+  "adaptedFrom": {
+    "LIVE-READ-SCOPE.json": "4fff47f62df59c574ba3d752f92ede4fe135d5087ee1ecfd8fd198eed104145a",
+    "capture_reader.py": "9b5a9550749e5bc962b4a0ee0c73047ad1c01fa008dc9912af907acf7d64d231",
+    "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-reader-20261101-01",
+    "read_only_session.py": "c5dbb850b8da135b13090f3a03c8d92b802296087120ffb55cf44451506ed9ec"
+  },
+  "authority": "None by this file. The single live read needs TJ approval of the exact RUNBOOK command and this file hash.",
+  "bounds": {
+    "automaticRetries": 0,
+    "closeSeconds": 2,
+    "collectionSeconds": 150,
+    "concurrency": 1,
+    "connectionSeconds": 4,
+    "idleInTransactionSeconds": 10,
+    "lockTimeoutSeconds": 1,
+    "maxConnectionAttempts": 1,
+    "maxKeyBytes": 131072,
+    "maxLinkedRowsPerSourcePerKey": 8,
+    "maxSQLDispatches": 35,
+    "maxSinglePageBytes": 262144,
+    "maxTotalSourceBytes": 8388608,
+    "maxWgoRows": 10000,
+    "pageKeys": 400,
+    "querySeconds": 5
+  },
+  "candidates": {
+    "v5": {
+      "lineageSHA256": "14e0816c65fd8988b1401e21952b0873fcb142da6866523f6c87d8f1b72ff4da",
+      "nodeSHA256": "daa77e22e1b8778361b392461e9921a6d292d0382ebf4ae872a0081f02f01fef",
+      "packet": "fhfh-blsh-native-20261117T140500Z",
+      "pinsSHA256": "a2a1e694dfa79ba9ebc110a3e45a249540b739c0061e0558fc6887e0f30367d1",
+      "verifierSHA256": "b86af692e5c4b3b9b1650f949171cbbaeed6663c6d1668efdc443e91fa0ad5c5"
+    },
+    "v5-1118": {
+      "lineageSHA256": "14e0816c65fd8988b1401e21952b0873fcb142da6866523f6c87d8f1b72ff4da",
+      "nodeSHA256": "daa77e22e1b8778361b392461e9921a6d292d0382ebf4ae872a0081f02f01fef",
+      "packet": "fhfh-blsh-native-20261118T140500Z",
+      "pinsSHA256": "3f61f9d4725fb66efc3d0f2f201e74c46998d67856b84f9c9c7230357b866376",
+      "verifierSHA256": "b86af692e5c4b3b9b1650f949171cbbaeed6663c6d1668efdc443e91fa0ad5c5"
+    }
+  },
+  "columns": {
+    "calendar": [
+      "id",
+      "seasonId",
+      "date",
+      "type"
+    ],
+    "individual": [
+      "id",
+      "player_id",
+      "season",
+      "date_scraped",
+      "gp",
+      "toi",
+      "ixg",
+      "goals",
+      "shots"
+    ],
+    "onIce": [
+      "id",
+      "player_id",
+      "season",
+      "date_scraped",
+      "gp",
+      "toi",
+      "xgf",
+      "xga"
+    ],
+    "wgo": [
+      "id",
+      "player_id",
+      "game_id",
+      "season_id",
+      "date",
+      "player_name",
+      "team_abbrev",
+      "position_code",
+      "games_played",
+      "toi_per_game",
+      "es_toi_per_game",
+      "pp_toi_per_game",
+      "goals",
+      "assists",
+      "pp_points",
+      "shots",
+      "hits",
+      "blocked_shots",
+      "total_primary_assists",
+      "total_secondary_assists",
+      "penalties_drawn",
+      "penalties",
+      "total_fow",
+      "total_fol",
+      "sat_for",
+      "sat_against",
+      "es_goals_for",
+      "pp_goals_for",
+      "sh_goals_for",
+      "es_goals_against",
+      "pp_goals_against",
+      "sh_goals_against",
+      "points"
+    ]
+  },
+  "custody": "Not pinned (RUNBOOK \"Custody\"): stdlib source/lib-dynload under /opt/anaconda3 (user-owned), the libcrypto hashlib uses, and .pth start-up hooks (recorded as startupNonStdlibModules).",
+  "dateFrom": "2026-10-14",
+  "dateThrough": "2026-11-11",
+  "endpoint": "aws-0-us-east-1.pooler.supabase.com:5432 session pooler",
+  "pins": {
+    "external": {
+      "currentInput.ts": {
+        "path": "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/currentInput.ts",
+        "sha256": "58a87ea119a98b33d7d67fb6849a269e375c22210610b607dfa30ba034c76232"
+      },
+      "node": {
+        "path": "/usr/local/bin/node",
+        "sha256": "daa77e22e1b8778361b392461e9921a6d292d0382ebf4ae872a0081f02f01fef"
+      },
+      "poolerUrl": {
+        "path": "/Users/tim/Code/fhfhockey.com/supabase/.temp/pooler-url",
+        "sha256": "7e2022a7dab204038626afd3458c151ce8a4db0138f15d2b23276f5bd41317bc"
+      },
+      "productionReference.ts": {
+        "path": "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/productionReference.ts",
+        "sha256": "ec3afb69ff6001068586d50faf718585f17392524196cb343020f3b98eda192e"
+      },
+      "projectRef": {
+        "path": "/Users/tim/Code/fhfhockey.com/supabase/.temp/project-ref",
+        "sha256": "c9edea1738aac56a721a2c6be3e633950665de9e0143e054bddf2d497f05b821"
+      },
+      "psycopg2": {
+        "kind": "tree",
+        "path": "/opt/anaconda3/lib/python3.13/site-packages/psycopg2",
+        "sha256": "d4f93813987c40e871f5afadf44845944392351a119d3bc5cf7649d58b5fdbfe"
+      },
+      "python": {
+        "path": "/opt/anaconda3/bin/python3.13",
+        "sha256": "79ac8b8795c90bffb1498343cbe29d40ed39b9180fab14f0a0101e03803fb91a"
+      },
+      "trustBundle": {
+        "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-execution-v4-01/pooler-qualification-01/attempt-01/existing-trusted-roots.pem",
+        "sha256": "50c3011a9542c7efe601ff2e0c0101a63af042fc0278fe68b3fa3ceefff4c3c5"
+      },
+      "typescript.js": {
+        "path": "/Users/tim/Code/fhfhockey.com/web/node_modules/typescript/lib/typescript.js",
+        "sha256": "0fba5508ecbe50cd00a45f132a76582fb22a4ec55769fd3d794fd0e026f9fb67"
+      }
+    },
+    "local": {
+      "COLUMNS.json": "c14231f0e62595eed0cb37175360cab33e4731e48a520f22f4bf494e0c127750",
+      "capture_reader.py": "841f2bb6722eb8e71016ca9eb6080e1a7a591aa016d83e0959bfdd5fa2200adc",
+      "export_context.cjs": "7b8f2df5fe46c95c27435500be39154bc9955ad37b86b2eb4288e2317d5a6cc0",
+      "production_context.cjs": "198fe2a74e3011bf87c59b6c3239c5758501fe7e6d4c722930ebddaacc673510",
+      "read_only_session.py": "352214a27c8628fde8594b97a5e457afb11fe970788fd84173f281d96331ac59",
+      "run_live_read.py": "c23eb286bea0509030014e23ce3d564714cb3962a13a9ad828768528f1c8cd6c"
+    }
+  },
+  "project": "fyhftlxokyjtpndbkfse",
+  "pycachePrefix": "/var/empty",
+  "root": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-request-reader-20261111",
+  "seasonId": 20262027,
+  "tables": {
+    "calendar": "public.games",
+    "individual": "public.nst_gamelog_as_counts",
+    "onIce": "public.nst_gamelog_as_counts_oi",
+    "wgo": "public.wgo_skater_stats"
+  },
+  "testsReceiptSHA256": "c6a8c5fca11344fbd3d6f95402f485754af3dd8657b46c05e8ed06353398b844",
+  "tls": "verify-full; hash-pinned trust bundle",
+  "transaction": "REPEATABLE READ READ ONLY; rollback at completion; transaction-local settings only",
+  "version": "fhfh.blsh.request-reader-read-scope.20261111",
+  "window": {
+    "afterLatestNativeRetrieval": true,
+    "close": "2026-11-19T00:00:00+00:00",
+    "maxHoursAfterEarliestNativeRetrieval": 12,
+    "open": "2026-11-17T14:05:00+00:00"
+  }
+}

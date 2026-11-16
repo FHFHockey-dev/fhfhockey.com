@@ -1,0 +1,96 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "files": [
+    {
+      "path": "web/pages/api/v1/db/update-games.ts",
+      "sha256": "472bcda435ba02e5988f35e4fdd3f91e4095e045e5cf6251419887db104613da",
+      "lines": 275,
+      "fullRead": true,
+      "bytes": 13456,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          275
+        ]
+      ],
+      "rows": 96
+    },
+    {
+      "path": "web/pages/api/v1/db/update-goalie-projections-v2.ts",
+      "sha256": "cb6470f54531e169c49dfc7dfecf46b2475c9e54062cdbb441c58c16494787a9",
+      "lines": 548,
+      "fullRead": true,
+      "bytes": 22127,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          548
+        ]
+      ],
+      "rows": 133
+    },
+    {
+      "path": "web/pages/api/v1/db/update-goalie-underlying-summaries.ts",
+      "sha256": "df958db20c51fd2b735035dec88ee96b9e201d2780fca30722948b38ee37f033",
+      "lines": 324,
+      "fullRead": true,
+      "bytes": 9805,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          324
+        ]
+      ],
+      "rows": 80
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-adjusted-impact.ts",
+      "sha256": "79b8910ff0d5f666030fd876b9ce3f2fcc20dfe969eafe2c333bab54b2b40796",
+      "lines": 493,
+      "fullRead": true,
+      "bytes": 16973,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          493
+        ]
+      ],
+      "rows": 108
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-aggregates.ts",
+      "sha256": "bb51fac2aed849791290264a3e1bff226af9c910ec7245cf7b4709618bf069fd",
+      "lines": 561,
+      "fullRead": true,
+      "bytes": 19143,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          561
+        ]
+      ],
+      "rows": 123
+    }
+  ],
+  "scopeLines": 2201,
+  "rows": 540,
+  "probe": "pages6-probe-output.json",
+  "checks": [
+    "Five full frozen source reads",
+    "Unique AST source-offset identities",
+    "Exact AST orchestration and helpers with finite inert doubles; five counterexamples passed once; no scientific qualification or supplied suites"
+  ],
+  "notRun": [
+    "Vitest",
+    "real database/provider",
+    "real loaders, live finality or card rendering",
+    "application imports or actual environment",
+    "browser/server/build",
+    "later Rankings exact-commit review"
+  ]
+}

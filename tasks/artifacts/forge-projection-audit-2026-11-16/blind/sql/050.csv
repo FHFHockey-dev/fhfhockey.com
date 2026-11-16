@@ -1,0 +1,2 @@
+string_agg
+gameId:bigint teamId:smallint forwards:ARRAY defensemen:ARRAY goalies:ARRAY observed_at:timestamp with time zone source_key:text source_url:text source_capture_key:text source_kind:text

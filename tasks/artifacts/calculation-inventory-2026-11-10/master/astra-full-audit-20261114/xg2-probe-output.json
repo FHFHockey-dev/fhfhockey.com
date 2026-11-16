@@ -1,0 +1,147 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "createdCoverage": {
+    "emptyProofRows": 1,
+    "emptyProofValue": 0.2,
+    "provenZeroOnlyRows": 0,
+    "provenZeroOnlyReason": null
+  },
+  "promotionFailure": {
+    "oldActive": false,
+    "oldChampion": false,
+    "pin": {
+      "model": null,
+      "reason": "no_active_approved_model"
+    }
+  },
+  "postponedParticipation": {
+    "games": [
+      3,
+      1,
+      2
+    ],
+    "latestWindowEmitted": false
+  },
+  "stoppageFreeze": {
+    "termination": "goalie_freeze_covered_puck",
+    "label": 1
+  },
+  "dumpEntry": {
+    "events": [
+      "controlled_entry_proxy",
+      "dump_in_entry_proxy",
+      "entry_assist_proxy",
+      "transition_created_shot"
+    ],
+    "controlledEntries": 2
+  },
+  "featureFetch": {
+    "eligibleRows": 1500,
+    "returned": 1000,
+    "requestedGames": 15
+  },
+  "badTransform": {
+    "contractPassed": true,
+    "rawProbability": 0.5,
+    "xg": 0.5
+  },
+  "controls": {
+    "v1RebuildRefused": true,
+    "v2Accepted": true,
+    "shadowCronRefused": true,
+    "retiredPinRefused": true,
+    "priorEventPagingResolved": 1200
+  },
+  "sources": [
+    {
+      "path": "web/lib/xg/createdXg.ts",
+      "sha256": "0d6d1cbdf13aeed6c3627acce69be4a0f99666355801d95ac461b25f93988de5"
+    },
+    {
+      "path": "web/lib/xg/aggregates.ts",
+      "sha256": "8387c16ae2348c5962602b9c5c6c2884cff1549bae8c0e345cd339c44224d39b"
+    },
+    {
+      "path": "web/lib/xg/flurryAdjusted.ts",
+      "sha256": "217d4337904dbf823cbdf58634eaa1cbb95546269c76cbee3772954fc1fd1220"
+    },
+    {
+      "path": "web/lib/xg/modelRegistry.ts",
+      "sha256": "654192e4cf34944403021e02663166465afdfb0bf07f56c72c16c45447da1682"
+    },
+    {
+      "path": "web/lib/xg/approvalGate.ts",
+      "sha256": "569edd51c6aa846f67228d90dea3c6b1087453d37afcccf620d30aa1105a6413"
+    },
+    {
+      "path": "web/lib/xg/baselineDataset.ts",
+      "sha256": "31d8f18e4e525db114b80fba4ee775a4ca6744eba0529215826aafe768065969"
+    },
+    {
+      "path": "web/lib/xg/shotFeaturePersistence.ts",
+      "sha256": "0d421098068da51e04f56dfd17cb9642f592ae1eb0c635a3c5a38485d4399a76"
+    },
+    {
+      "path": "web/lib/xg/featureCoverage.ts",
+      "sha256": "e4f1d28e2c520584987bf933697bf82d9dcc3e9a64edfd6d5902604633a260df"
+    },
+    {
+      "path": "web/lib/xg/calibration.ts",
+      "sha256": "217ec03f6978323608e6d05a77ce097c77747b0f54306dfbd19d736259871ddc"
+    },
+    {
+      "path": "web/lib/xg/binaryLogistic.ts",
+      "sha256": "c9d933e935e9547b81c98b836d7281919d320dde670f0d984a0e543a1532f0ac"
+    },
+    {
+      "path": "web/lib/xg/participation.ts",
+      "sha256": "3be8cde4622257dafa954c8a60276f0b46929d27d37e1aa34e97379e74b9ffbe"
+    },
+    {
+      "path": "web/lib/xg/reboundRichLabels.ts",
+      "sha256": "8d8d5017884097838b79f800d2ef0d2749e1d942e8ff4093a904a27d48fc01d5"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlCoordinates.ts",
+      "sha256": "471d25794eb557dbfd5e10eac6f679b9a137d6d4d76dff5ec0eea69ee076bcb1"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlEventInclusion.ts",
+      "sha256": "0e11a148cb7fc19776cee3a8e71c9133da5374ced082afbe142a7e2c126ea73e"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlStrengthState.ts",
+      "sha256": "10efefac1808c1ce3828c65bad54055b4d524b31d9acb647d5c006ffdc460c92"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlPossessionChains.ts",
+      "sha256": "c182acf11762ed59c1c85c0537b2611184de5da6ca8b8f8f689c7324e5aba7df"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlRebounds.ts",
+      "sha256": "cbfef2f00165cda8755d37ab75f4b2b47f23452429595cec9a0481082e915152"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlPriorEventContext.ts",
+      "sha256": "e6442b0af70bfa3775f1d8b3009b05669d5a48d321e0560dcb3ea871adf655e4"
+    },
+    {
+      "path": "web/lib/xg/transitions.ts",
+      "sha256": "fd9b55c1773cc232ac3d9978ad3105d868b556630c4881eb78ed1bb981950f55"
+    },
+    {
+      "path": "web/lib/xg/featureVersion.ts",
+      "sha256": "fd69761cece457b908bcfa8dfb628f8994ec6aac46af084829bdd9dc2b245a02"
+    },
+    {
+      "path": "web/lib/xg/shadowScoring.ts",
+      "sha256": "d944869a96558c1f87646dc12392fa14177d6f32556f6f08573f3eeeb0fa9714"
+    },
+    {
+      "path": "web/lib/xg/shotAssists.ts",
+      "sha256": "0f82a35fe8648fed131996fea0d86239e1debae69cbe72bf995468b19e6c67da"
+    }
+  ],
+  "limits": "Exact frozen modules, safe hash/path builtins, blocked filesystem/network, finite in-memory SELECT/update/upsert doubles only. Promotion failure injected. No real writes, app environment, provider calls, training, Vitest, pages or production observations."
+}

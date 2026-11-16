@@ -1,0 +1,77 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "pinResults": [
+    {
+      "role": "runner",
+      "path": "scripts/blsh/nativeProcessCaptureRunner.ts",
+      "expected": "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb",
+      "observed": "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb",
+      "match": true
+    },
+    {
+      "role": "preparation",
+      "path": "scripts/blsh/nativeProcessCapturePreparation.ts",
+      "expected": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+      "observed": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+      "match": true
+    },
+    {
+      "role": "adapter",
+      "path": "scripts/blsh/nativeProcessCaptureAdapter.ts",
+      "expected": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+      "observed": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+      "match": true
+    },
+    {
+      "role": "client",
+      "path": "lib/nst/client.ts",
+      "expected": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+      "observed": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+      "match": true
+    },
+    {
+      "role": "budget",
+      "path": "lib/nst/requestBudget.ts",
+      "expected": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "observed": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "match": true
+    },
+    {
+      "role": "admission",
+      "path": "lib/nst/sharedAdmission.ts",
+      "expected": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+      "observed": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+      "match": true
+    },
+    {
+      "role": "admissionOrigin",
+      "path": "lib/nst/admissionOrigin.ts",
+      "expected": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+      "observed": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+      "match": true
+    },
+    {
+      "role": "lifecycle",
+      "path": "lib/nst/jobLifecycle.server.ts",
+      "expected": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+      "observed": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+      "match": true
+    },
+    {
+      "role": "ratePolicy",
+      "path": "lib/cron/nstRateLimitPolicy.ts",
+      "expected": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+      "observed": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+      "match": true
+    }
+  ],
+  "controls": [
+    "OFF admitted",
+    "LIVE/FUT/CRIT refused",
+    "escaped duplicate status refused",
+    "duplicate day/game refused",
+    "invalid UTF8 refused"
+  ],
+  "boundary": "Frozen git blobs and isolated pure completedGames function only. No bootstrap, adapter, runner, actual filesystem packet, timers, env, network, credentials or supplied tests executed. Later 348a122d6 review remains separate."
+}

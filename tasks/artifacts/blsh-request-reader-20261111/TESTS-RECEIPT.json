@@ -1,0 +1,27 @@
+{
+  "failed": 0,
+  "passed": 77,
+  "pins": {
+    "COLUMNS.json": "c14231f0e62595eed0cb37175360cab33e4731e48a520f22f4bf494e0c127750",
+    "capture_reader.py": "841f2bb6722eb8e71016ca9eb6080e1a7a591aa016d83e0959bfdd5fa2200adc",
+    "export_context.cjs": "7b8f2df5fe46c95c27435500be39154bc9955ad37b86b2eb4288e2317d5a6cc0",
+    "production_context.cjs": "198fe2a74e3011bf87c59b6c3239c5758501fe7e6d4c722930ebddaacc673510",
+    "read_only_session.py": "352214a27c8628fde8594b97a5e457afb11fe970788fd84173f281d96331ac59",
+    "run_live_read.py": "c23eb286bea0509030014e23ce3d564714cb3962a13a9ad828768528f1c8cd6c"
+  },
+  "suites": {
+    "e2e": {
+      "fail": 0,
+      "pass": 18
+    },
+    "node": {
+      "fail": 0,
+      "pass": 9
+    },
+    "python": {
+      "ran": 50,
+      "rc": 0
+    }
+  },
+  "version": "fhfh.blsh.request-reader-tests-receipt.v1"
+}

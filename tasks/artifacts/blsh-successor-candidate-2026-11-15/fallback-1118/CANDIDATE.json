@@ -1,0 +1,75 @@
+{
+ "version": "fhfh.blsh.native-capture-fallback.v5-1118",
+ "status": "parked_fallback_not_applied_not_approved",
+ "baseHead": "348a122d6ab035145daf9f0c574d80012c0e8979",
+ "baseBranch": "octoberBranch",
+ "baseIs": "v5 as committed (SUCCESSOR.patch e8be50de applied): bootstrap dbf69c47, runner a74cbb0a, adapter aa6237bd",
+ "patch": {
+  "file": "FALLBACK.patch",
+  "sha256": "209b34ebe121a3de08c91ec74aaabd61844ad09e1ae0538cd045872bfc2fe8cf",
+  "files": [
+   "web/scripts/blsh/nativeProcessCaptureBootstrap.ts",
+   "web/scripts/blsh/nativeProcessCaptureBootstrap.test.ts"
+  ],
+  "contents": "slot and output pins only: SLOT 2026-11-17T14:05Z -> 2026-11-18T14:05Z; OUTPUT ...20261117T140500Z -> ...20261118T140500Z; bootstrap test fixtures shifted one day (see HANDOFF.md)",
+  "applyCheck": "git apply --check passes on 348a122d6 (check only; nothing applied)"
+ },
+ "bootstrapSHA256": "849009ee3b68527858f93512c050ef5d0c01c20ef740c9e62addec4df21b4465",
+ "replacesBootstrapSHA256": "dbf69c474bedefd9c34fbd783d4beccc1840e8288fd2fa3435b5d89e8521bb46",
+ "runtimeRoleSHA256": {
+  "runner": "a74cbb0a59d4b3525572a2f71811b4777b36c63bdb26c42b4dea7ea911af81b0",
+  "preparation": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+  "adapter": "aa6237bdb8d977cbd21f3ed769d9f5c7f9028e23a921965f41e278e021947be0",
+  "client": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+  "budget": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+  "admission": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+  "admissionOrigin": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+  "lifecycle": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+  "ratePolicy": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c"
+ },
+ "changedRoles": [],
+ "date": "2026-11-11",
+ "seasonId": 20262027,
+ "slot": {
+  "startUTC": "2026-11-18T14:05:00.000Z",
+  "latestStartExclusiveUTC": "2026-11-18T14:06:00.000Z"
+ },
+ "outputDirectory": "/Users/tim/Library/Application Support/fhfh-blsh-native-20261118T140500Z",
+ "sourceDateExpiry": "2026-11-19T00:00:00.000Z",
+ "timing": {
+  "captureAgeAtSlot": "7 d 14 h 05 m after 2026-11-11T00:00Z (bound: < 8 d, nativeProcessCapturePreparation.ts:48); 9 h 55 m margin to 2026-11-19T00:00Z",
+  "evaluationDateRule": "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts:210,215: eventRecent = UTC-midnight(evaluatedAt) - 2026-11-11T00:00Z <= maxEventAgeDays (7, retained policy blsh-capture-reader-v1-event7days-capture24hours) => evaluation UTC date <= 2026-11-18",
+  "captureAgeRule": "currentProcessEvidence.server.ts:211,213-214: evaluatedAt - earliest(native retrieval, frame observation, calendar/wgo/group feed captures) <= 24 h",
+  "currentUseEvaluationWindow": "about 2026-11-18T14:07Z to 2026-11-18T23:59:59.999Z, about 9 h 53 m, less conversion, boxscore frames and CURRENT-REQUEST capture; the date rule binds, the 24 h rule does not",
+  "comparedToV5Slot": "a 2026-11-17 capture gets about 24 h (to about 2026-11-18T14:05Z, bound by capture age)",
+  "afterTheDeadline": "evaluated on 2026-11-19 UTC: current use fails (current_use_evidence_stale_or_unknown); source-observation qualification alone survives until 24 h after the earliest evidence",
+  "verdict": "tight but usable, only if the frame read, conversion, CURRENT-REQUEST capture and evaluation are approved in advance and run the same UTC day; the frames approval must be re-issued because acquire-boxscores.mjs changes (aa8a9cb7 is pinned in frames.mjs:31)",
+  "policyNote": "maxEventAgeDays 7 and maxCaptureAgeHours 24 are request freshnessPolicy values (validated currentInput.ts:194), not code constants",
+  "otherRecencyGates": "currentProcessEvidence.server.ts:252, currentInput.ts:165/172 and :257/260 all use <= 7 days with the same anchors; none is stricter than :215"
+ },
+ "checks": {
+  "freshExportWithPatch": "209/228 (all 19 failures bootstrap_wrong_checkout: the bootstrap binds canonical web/)",
+  "relocatedNonCandidate": "228/228 (only the WEB literal changed)",
+  "tscScoped": "0 errors (logs/tsc-exp.log is empty and records no exit code; superseded by typecheck)",
+  "typecheck": "npm run typecheck (8 GB tsc --noEmit) on git archive 348a122d6 web+supabase: unpatched exit 0, patched exit 0 (logs/typecheck.log)",
+  "mutations": "old SLOT: 11/35 bootstrap tests fail; old OUTPUT: 12/35 fail",
+  "rehearsal": "41 lines, outcome-identical to the v5 rehearsal (0 differences) at CLOCK 2026-11-18T14:05:30Z; 0 network attempts; 0 ledger entries",
+  "crossPins": "fallback packet vs v5 pins: vetoed runtime_bootstrap_not_candidate; vs fallback pins: complete_pending_review",
+  "dependencyTree": "operator dependency-tree-hash.mjs on the patched export: treeSHA256 76c7d466 unchanged; against the current baseline it refuses with bootstrap_differs_from_baseline only"
+ },
+ "verifierInputs": {
+  "verifier": {
+   "file": "rehearsal/verify-packet.mjs",
+   "sha256": "b86af692e5c4b3b9b1650f949171cbbaeed6663c6d1668efdc443e91fa0ad5c5",
+   "changed": false
+  },
+  "pins": {
+   "file": "rehearsal/expected-pins.json",
+   "sha256": "3f61f9d4725fb66efc3d0f2f201e74c46998d67856b84f9c9c7230357b866376",
+   "replaces": "a2a1e694dfa79ba9ebc110a3e45a249540b739c0061e0558fc6887e0f30367d1",
+   "_bootstrapSHA256": "849009ee3b68527858f93512c050ef5d0c01c20ef740c9e62addec4df21b4465"
+  }
+ },
+ "cannotRunInExport": "bootstrap suite (19 tests) and --check need the canonical web/ path; authoritative only after apply in the real checkout",
+ "knockOnPins": "HANDOFF.md section 3 (bridge, operator, readiness, review lane, mailbox; web/ swept clean)"
+}

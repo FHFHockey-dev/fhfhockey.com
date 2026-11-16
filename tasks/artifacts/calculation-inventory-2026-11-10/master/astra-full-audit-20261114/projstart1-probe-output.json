@@ -1,0 +1,177 @@
+{
+  "pin": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "hashes": {
+    "web/lib/projections/inputCapture.ts": "98f1c6e6d04ec43b9973f7a5a968d963405a83090afdea81007b18b0735bf0cf",
+    "web/lib/projections/evidenceTime.ts": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+    "web/lib/projectionsConfig/fantasyPointsConfig.ts": "dfe1ae8426a7b9ae3469216ad8e48944cbd7dda6cea6952cdd6bdf6f41deb50b",
+    "web/lib/projections/starterBoardScoring.ts": "c478da7854d68a8ef4c44fe4b4d0b0d6522e8d8bf906a22c757ab20a0911f327",
+    "web/lib/projections/starterBoardDataset.ts": "a9f542fc9da2fe23492ea47b4cc921c4d32168fd242ed11e643fc58c004a4492",
+    "web/lib/projections/startChartPipeline.test.ts": "dbeb76b012f4891588d1213fbf014f95ab6a9fca8fd88f2d026fd5c557edfc19"
+  },
+  "partialStrength": {
+    "sourceFields": {
+      "es": 0.2,
+      "pp": 0.1,
+      "pk": null
+    },
+    "legacyAdapter": {
+      "identity": {
+        "gameId": 1,
+        "teamId": 10,
+        "playerId": 1,
+        "horizonGames": 1
+      },
+      "proj_goals": 0.30000000000000004,
+      "proj_assists": 0.5,
+      "proj_shots": 2.5,
+      "proj_pp_points": 0.30000000000000004,
+      "proj_hits": 2,
+      "proj_blocks": 1,
+      "proj_pim": null,
+      "proj_toi_minutes": null
+    },
+    "strictPublicAdapter": {
+      "identity": {
+        "gameId": 1,
+        "teamId": 10,
+        "playerId": 1,
+        "horizonGames": 1
+      },
+      "proj_goals": null,
+      "proj_assists": null,
+      "proj_shots": null,
+      "proj_pp_points": 0.30000000000000004,
+      "proj_hits": 2,
+      "proj_blocks": 1,
+      "proj_pim": null,
+      "proj_toi_minutes": null
+    },
+    "exported": {
+      "goals": {
+        "contractVersion": "starter-board-evaluation-v1",
+        "game_id": 1,
+        "game_date": "2026-10-10",
+        "game_type": 2,
+        "player_id": 1,
+        "team_id": 10,
+        "opponent_team_id": 8,
+        "population": "skater",
+        "target_key": "GOALS",
+        "conditioning": "conditional_playing",
+        "estimates": {
+          "forge": 0.30000000000000004
+        },
+        "segments": {
+          "position": "C",
+          "uncertain_lineup": true
+        },
+        "snapshot_hash": "abd7da0421d38ead6b06a5faecfb6b298d8334cd69282c023f85123368cfa3c9",
+        "historical_team_membership_verified": true,
+        "membership_basis": "captured_pregame_team_records",
+        "evidence_classification": "captured_live",
+        "checkpoint": "frozen_final_pregame",
+        "revision_id": "revision-1",
+        "model_id": "forge:baseline:commit-1",
+        "model_code_version": "commit-1",
+        "cutoff_at": "2026-10-10T20:00:02Z",
+        "source_query_cutoff_at": "2026-10-10T20:00:00Z",
+        "maximum_feature_available_at": "2026-10-10T20:00:02.000Z",
+        "issued_at": "2026-10-10T20:00:04Z",
+        "scheduled_start_at": "2026-10-10T23:00:00Z"
+      },
+      "shots": {
+        "contractVersion": "starter-board-evaluation-v1",
+        "game_id": 1,
+        "game_date": "2026-10-10",
+        "game_type": 2,
+        "player_id": 1,
+        "team_id": 10,
+        "opponent_team_id": 8,
+        "population": "skater",
+        "target_key": "SHOTS_ON_GOAL",
+        "conditioning": "conditional_playing",
+        "estimates": {
+          "forge": 2.5
+        },
+        "segments": {
+          "position": "C",
+          "uncertain_lineup": true
+        },
+        "snapshot_hash": "abd7da0421d38ead6b06a5faecfb6b298d8334cd69282c023f85123368cfa3c9",
+        "historical_team_membership_verified": true,
+        "membership_basis": "captured_pregame_team_records",
+        "evidence_classification": "captured_live",
+        "checkpoint": "frozen_final_pregame",
+        "revision_id": "revision-1",
+        "model_id": "forge:baseline:commit-1",
+        "model_code_version": "commit-1",
+        "cutoff_at": "2026-10-10T20:00:02Z",
+        "source_query_cutoff_at": "2026-10-10T20:00:00Z",
+        "maximum_feature_available_at": "2026-10-10T20:00:02.000Z",
+        "issued_at": "2026-10-10T20:00:04Z",
+        "scheduled_start_at": "2026-10-10T23:00:00Z"
+      },
+      "fantasy": {
+        "contractVersion": "starter-board-evaluation-v1",
+        "game_id": 1,
+        "game_date": "2026-10-10",
+        "game_type": 2,
+        "player_id": 1,
+        "team_id": 10,
+        "opponent_team_id": 8,
+        "population": "skater",
+        "target_key": "FANTASY_POINTS",
+        "conditioning": "conditional_playing",
+        "estimates": {
+          "forge": 3.35
+        },
+        "segments": {
+          "position": "C",
+          "uncertain_lineup": true
+        },
+        "snapshot_hash": "abd7da0421d38ead6b06a5faecfb6b298d8334cd69282c023f85123368cfa3c9",
+        "historical_team_membership_verified": true,
+        "membership_basis": "captured_pregame_team_records",
+        "evidence_classification": "captured_live",
+        "checkpoint": "frozen_final_pregame",
+        "revision_id": "revision-1",
+        "model_id": "forge:baseline:commit-1",
+        "model_code_version": "commit-1",
+        "cutoff_at": "2026-10-10T20:00:02Z",
+        "source_query_cutoff_at": "2026-10-10T20:00:00Z",
+        "maximum_feature_available_at": "2026-10-10T20:00:02.000Z",
+        "issued_at": "2026-10-10T20:00:04Z",
+        "scheduled_start_at": "2026-10-10T23:00:00Z",
+        "scoring_weights": {
+          "GOALS": 3,
+          "ASSISTS": 2,
+          "PP_POINTS": 1,
+          "SHOTS_ON_GOAL": 0.2,
+          "HITS": 0.2,
+          "BLOCKED_SHOTS": 0.25
+        }
+      },
+      "promotionEligible": false
+    },
+    "confirmedExpected": {
+      "GOALS": 0.30000000000000004,
+      "ASSISTS": 0.5,
+      "PP_POINTS": 0.30000000000000004,
+      "SHOTS_ON_GOAL": 2.5,
+      "HITS": 2,
+      "BLOCKED_SHOTS": 1,
+      "PENALTY_MINUTES": null,
+      "TIME_ON_ICE_PER_GAME": null
+    },
+    "goalsOnlyPoints": {
+      "points": 0.9,
+      "missingCategories": []
+    },
+    "scope": "Exact private frozen serving exporter and scoring helpers; Yahoo caller source trace only, not a Yahoo/API run"
+  },
+  "boundaries": [
+    "Synthetic frozen source from pinned fixture with explicit null-PK mutation",
+    "Pinned pure hash/evidence/scoring/export helpers only",
+    "No real captured data, rankings/Yahoo network, app imports, Vitest, DB/provider/page/server/build or promotion"
+  ]
+}

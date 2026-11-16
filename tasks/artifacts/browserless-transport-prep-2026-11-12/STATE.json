@@ -1,0 +1,89 @@
+{
+  "checkedAt": "2026-11-12T17:50:24.081437+00:00",
+  "branch": "octoberBranch",
+  "head": "24b1cb4d3048a3dba8234cf92c62e8f2b72f877f",
+  "recordedRedactionRelease": {
+    "at": "2026-11-10T15:51:17.161015+00:00",
+    "commit": "86f2e3cf742a86b5981abb3de41160b2ea7950e3",
+    "deployment": "dpl_3r1Gg58pkS1wTJDeuGkxtpwb6ZXb",
+    "productionAlias": "https://fhfhockey.com",
+    "status": "READY",
+    "completedBuilds": 1,
+    "canceledCompanionEntries": 3,
+    "redactionTests": 25,
+    "exactReleaseExportTests": 24,
+    "originalIndependentHarnessReplayChecks": 36,
+    "scopedLint": "passed",
+    "scopedTypescript": "passed",
+    "postDeployLogQuery": {
+      "deploymentScoped": true,
+      "query": "on-new-line-combo",
+      "since": "10m",
+      "limit": 20,
+      "result": "No logs found",
+      "runtimeErrorSampleAvailable": false
+    },
+    "realWebhookInvocations": 0,
+    "credentialChanges": 0,
+    "configurationChanges": 0,
+    "existingLogsRetroactivelySanitized": false,
+    "nextOptionalVerification": "Inspect existing webhook error logs after naturally occurring traffic; never induce webhook side effects solely for QA."
+  },
+  "releaseCommitIsAncestorOfLocalHead": true,
+  "sources": {
+    "web/pages/api/v1/webhooks/on-new-line-combo.ts": {
+      "recordedReleaseSha256": "4d21291d58056c10a4cac32265032b1822bff842fcd2688b4af11ae49cf7a457",
+      "gitCandidateMatchesReceipt": true,
+      "localBeforePreparationMatchesRelease": true,
+      "currentSha256": "4d21291d58056c10a4cac32265032b1822bff842fcd2688b4af11ae49cf7a457",
+      "runtime": true
+    },
+    "web/lib/lines/webhookErrorDiagnostic.ts": {
+      "recordedReleaseSha256": "0ca6dcc5e1557dcdc2989756a5eca298ab59d33d31c597b596f4225872c88002",
+      "gitCandidateMatchesReceipt": true,
+      "localBeforePreparationMatchesRelease": true,
+      "currentSha256": "0ca6dcc5e1557dcdc2989756a5eca298ab59d33d31c597b596f4225872c88002",
+      "runtime": true
+    },
+    "web/lib/lines/webhookErrorDiagnostic.test.ts": {
+      "recordedReleaseSha256": "f2e33444c92f5278392bb4813d64f6937350d6a8039f0311a936cd0885d648f5",
+      "gitCandidateMatchesReceipt": true,
+      "localBeforePreparationMatchesRelease": true,
+      "currentSha256": "95a12687888433d15575cfa3441a75236ff264976ce5e759a57577b3c886aec4",
+      "runtime": false
+    },
+    "web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts": {
+      "recordedReleaseSha256": "1b8f5d328555562ea4357c7e321343b2eb7fa24ada8048f9e5c5345235ce7d0a",
+      "gitCandidateMatchesReceipt": true,
+      "localBeforePreparationMatchesRelease": true,
+      "currentSha256": "3eca2af3bc301674f180ef91b7ba8d573056e0fbb5f575dc20a43def4d5ff839",
+      "runtime": false
+    }
+  },
+  "transportObservation": {
+    "source": "tasks/artifacts/browserless-redaction-release-2026-11-10/SERVICE.json",
+    "observationDate": "2026-11-10",
+    "scheme": "ws",
+    "selfHosted": true,
+    "tokenQueryPresent": true,
+    "environments": [
+      "production",
+      "preview",
+      "development"
+    ],
+    "recheckedLive": false
+  },
+  "limits": [
+    "Historical deployment receipt corroborated with Git objects and local source only; current production alias/configuration not queried.",
+    "No credentials or local environment files read.",
+    "Only local source consumer found for PUPPETEER_ENDPOINT is on-new-line-combo.ts; external clients remain unknown.",
+    "No encrypted transport enforcement or configuration added."
+  ],
+  "installedDependencies": {
+    "node": "22.23.4",
+    "puppeteer-core": "22.13.1",
+    "ws": "8.21.1",
+    "vitest": "3.2.7",
+    "wsResolvedFromPuppeteer": "web/node_modules/ws/package.json"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "head": "2c1cd633d4e5f23ba75d7af53f4bf8a95dc3eafb",
+  "local_master": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5",
+  "reported_release_candidate": "c0c5fe9b287096aeba51191586a87980e2b7e82f",
+  "reported_release_boundary": "Owner-reported #451, not fresh deployment verification. Local master ref is older than audit pin.",
+  "paths": 988,
+  "mandatory_return": 951,
+  "shared_return": 37,
+  "codex_kept_from_shared": [],
+  "approval": "TJ direct answers to call_99b22e37e7484911a485aaddff3472c2: No Astra fixes; hand findings to Claude. Return all 37 to Claude.",
+  "fixes": "none by TJ decision",
+  "audit_app_commits": [],
+  "dirty_returned": [
+    "web/pages/api/v1/sustainability/rebuild-score.ts"
+  ],
+  "different_from_reported_release": [
+    "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+    "web/__tests__/pages/api/v1/db/cron-report.test.ts",
+    "web/lib/projections/ingest/shifts.test.ts",
+    "web/lib/projections/ingest/shifts.ts",
+    "web/lib/projections/nativeGoalAccounting.test.ts",
+    "web/lib/projections/queries/skater-queries.ts",
+    "web/lib/projections/reserveProjections.test.ts",
+    "web/lib/projections/run-forge-projections.ts",
+    "web/lib/projections/stages/goalie-stage.ts",
+    "web/lib/projections/stages/skater-stage.coverage.test.ts",
+    "web/lib/projections/stages/skater-stage.strengthBuckets.test.ts",
+    "web/lib/projections/stages/skater-stage.ts",
+    "web/lib/supabase/supportedBaselineMigration.test.ts",
+    "web/pages/api/v1/db/cron-report.ts"
+  ],
+  "preserved_working_sha256": {
+    "web/pages/api/v1/sustainability/rebuild-score.ts": "c0d6efca7d0a3732ee3bbe06f824e8a7f77b0b44d36e415f12470874253137c2",
+    "web/__tests__/pages/api/v1/sustainability/rebuild-score.test.ts": "2eac62c899f264df9fc35bb29f8fc24179f8e977de91d03f7804b5569581a561",
+    "web/next-env.d.ts": "ced3cb1bdbb8082cae388902481ba6a8a1e454ec7daed6125b368118f06e4a77"
+  },
+  "report_sha256": "45794fc7c8eab6c3604133b618d666f8a68f9700410b8334e22c932c2660c623",
+  "publication_entry": "CODEX-OWNERSHIP-HANDBACK-TO-CLAUDE-20261115",
+  "publication_status": "prepared; mailbox entry is authoritative",
+  "acknowledgement": "pending Claude mailbox acknowledgement"
+}

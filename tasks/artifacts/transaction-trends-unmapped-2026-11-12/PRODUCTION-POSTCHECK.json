@@ -1,0 +1,45 @@
+{
+  "mode": "postcheck",
+  "started_at": "2026-11-12T19:42:12.436096+00:00",
+  "project_id": "fyhftlxokyjtpndbkfse",
+  "host": "db.fyhftlxokyjtpndbkfse.supabase.co",
+  "sql_file": "post-repair-check.sql",
+  "sql_sha256": "9544dfa2fc23c965b9eab3ec06e2d8c80e81340774662c14252abc13b43a581f",
+  "status": "returned",
+  "verified": true,
+  "returncode": 0,
+  "stdout": "BEGIN\nSET\nSET\nplayer_key,nhl_player_id,source_ok,identity_ok,approval_and_repair_marker_ok,reader_ok,unique_external_key\n453.p.30000,8481754,t,t,t,t,t\n453.p.30024,8483493,t,t,t,t,t\n453.p.30111,8482221,t,t,t,t,t\nCOMMIT\n",
+  "stderr": "",
+  "finished_at": "2026-11-12T19:42:12.901543+00:00",
+  "verified_at": "2026-11-12T19:42:41.645849+00:00",
+  "rows": [
+    {
+      "player_key": "453.p.30000",
+      "nhl_player_id": "8481754",
+      "source_ok": "t",
+      "identity_ok": "t",
+      "approval_and_repair_marker_ok": "t",
+      "reader_ok": "t",
+      "unique_external_key": "t"
+    },
+    {
+      "player_key": "453.p.30024",
+      "nhl_player_id": "8483493",
+      "source_ok": "t",
+      "identity_ok": "t",
+      "approval_and_repair_marker_ok": "t",
+      "reader_ok": "t",
+      "unique_external_key": "t"
+    },
+    {
+      "player_key": "453.p.30111",
+      "nhl_player_id": "8482221",
+      "source_ok": "t",
+      "identity_ok": "t",
+      "approval_and_repair_marker_ok": "t",
+      "reader_ok": "t",
+      "unique_external_key": "t"
+    }
+  ],
+  "validation": "Exactly three expected keys and NHL IDs; all five checks true for each"
+}

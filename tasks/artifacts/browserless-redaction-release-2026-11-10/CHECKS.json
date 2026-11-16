@@ -1,0 +1,37 @@
+{
+  "checkedAt": "2026-11-10T14:00:17.127473+00:00",
+  "candidatePinsVerified": {
+    "web/pages/api/v1/webhooks/on-new-line-combo.ts": true,
+    "web/lib/lines/webhookErrorDiagnostic.ts": true,
+    "web/lib/lines/webhookErrorDiagnostic.test.ts": true,
+    "web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts": true
+  },
+  "vitest": {
+    "status": "passed",
+    "files": 3,
+    "tests": 25,
+    "scope": "24 original diagnostic and route tests plus current matrix-selector contract"
+  },
+  "eslint": {
+    "status": "passed",
+    "scope": "four candidate paths"
+  },
+  "typescript": {
+    "status": "passed",
+    "scope": "four candidate paths plus imports, not full application"
+  },
+  "independentHarnessReplay": {
+    "status": "passed",
+    "checks": 36,
+    "scope": "Original independent harness replayed against current base and candidate; not a fresh independent review"
+  },
+  "originalIndependentAcceptance": "/Users/tim/Documents/Codex/2026-10-22/task-4/evidence/REVIEW.md",
+  "productionApplicationRequests": 0,
+  "deploymentsTriggered": 0,
+  "credentialChanges": 0,
+  "runtimeObservation": {
+    "status": "no matching group in 30-minute query",
+    "limit": "No sampled failing request; cannot establish runtime redaction from an empty sample. 24h log read rejected by retention limit."
+  },
+  "releaseStatus": "pending fresh Chef clearance and preceding separate RSO release; no Git/index/ref operation by this lane"
+}

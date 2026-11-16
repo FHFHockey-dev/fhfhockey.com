@@ -1,0 +1,476 @@
+{
+  "passed": true,
+  "before": "863fab152c70a251754ee3a772f14cebbae067a4",
+  "after": "29451c57304866d54abd2a3302625f0696472ab0",
+  "files": [
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/compute-off/compute-off-goalie-model-reorders-candidates.json",
+      "changes": [
+        {
+          "path": [
+            "invocations",
+            0,
+            "reads",
+            36
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "invocations",
+            0,
+            "reads",
+            73
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "invocations",
+            0,
+            "writes",
+            15
+          ],
+          "kind": "forge_runs_write_hash"
+        },
+        {
+          "path": [
+            "invocations",
+            0,
+            "writes",
+            16
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    },
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/compute-off/compute-off-goalie-override-multi-candidate.json",
+      "changes": [
+        {
+          "path": [
+            "invocations",
+            0,
+            "reads",
+            34
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "invocations",
+            0,
+            "reads",
+            72
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "invocations",
+            0,
+            "writes",
+            15
+          ],
+          "kind": "forge_runs_write_hash"
+        },
+        {
+          "path": [
+            "invocations",
+            0,
+            "writes",
+            16
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    },
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/compute-off/compute-off-normal-one-game.json",
+      "changes": [
+        {
+          "path": [
+            "invocations",
+            0,
+            "reads",
+            36
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "invocations",
+            0,
+            "reads",
+            66
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "invocations",
+            0,
+            "writes",
+            11
+          ],
+          "kind": "forge_runs_write_hash"
+        },
+        {
+          "path": [
+            "invocations",
+            0,
+            "writes",
+            12
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    },
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/compute-off/compute-off-reserve-pass-on.json",
+      "changes": [
+        {
+          "path": [
+            "invocations",
+            0,
+            "reads",
+            36
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "invocations",
+            0,
+            "reads",
+            73
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "invocations",
+            0,
+            "writes",
+            15
+          ],
+          "kind": "forge_runs_write_hash"
+        },
+        {
+          "path": [
+            "invocations",
+            0,
+            "writes",
+            16
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    },
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/compute-off/compute-off-resumed-run.json",
+      "changes": [
+        {
+          "path": [
+            "invocations",
+            0,
+            "reads",
+            36
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "invocations",
+            0,
+            "writes",
+            3
+          ],
+          "kind": "forge_runs_write_hash"
+        },
+        {
+          "path": [
+            "invocations",
+            1,
+            "reads",
+            0
+          ],
+          "kind": "resumed_forge_runs_read"
+        },
+        {
+          "path": [
+            "invocations",
+            1,
+            "reads",
+            37
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "invocations",
+            1,
+            "reads",
+            67
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "invocations",
+            1,
+            "writes",
+            0
+          ],
+          "kind": "forge_runs_write_hash"
+        },
+        {
+          "path": [
+            "invocations",
+            1,
+            "writes",
+            14
+          ],
+          "kind": "forge_runs_write_hash"
+        },
+        {
+          "path": [
+            "invocations",
+            1,
+            "writes",
+            15
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    },
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/goalie-model-reorders-candidates.json",
+      "changes": [
+        {
+          "path": [
+            "reads",
+            42
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "reads",
+            79
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "writes",
+            14
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    },
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/goalie-override-multi-candidate.json",
+      "changes": [
+        {
+          "path": [
+            "reads",
+            40
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "reads",
+            78
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "writes",
+            14
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    },
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/lineup-evidence-gate.json",
+      "changes": [
+        {
+          "path": [
+            "reads",
+            43
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "reads",
+            80
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "writes",
+            14
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    },
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/normal-one-game.json",
+      "changes": [
+        {
+          "path": [
+            "reads",
+            42
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "reads",
+            72
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "writes",
+            10
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    },
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/opponent-shots-gate.json",
+      "changes": [
+        {
+          "path": [
+            "reads",
+            42
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "writes",
+            6
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    },
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/reserve-pass-on.json",
+      "changes": [
+        {
+          "path": [
+            "reads",
+            42
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "reads",
+            79
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "writes",
+            14
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    },
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/season-bootstrap.json",
+      "changes": [
+        {
+          "path": [
+            "reads",
+            43
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "reads",
+            76
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "writes",
+            9
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    },
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/skater-pool-recovery.json",
+      "changes": [
+        {
+          "path": [
+            "reads",
+            50
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "reads",
+            80
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "writes",
+            10
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    },
+    {
+      "file": "web/lib/projections/pregameCapture/__fixtures__/world/oracle/target-pbp-pregame.json",
+      "changes": [
+        {
+          "path": [
+            "reads",
+            42
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "reads",
+            72
+          ],
+          "kind": "trend_read"
+        },
+        {
+          "path": [
+            "writes",
+            10
+          ],
+          "kind": "forge_runs_write_hash"
+        }
+      ]
+    }
+  ],
+  "boundary": "All retained fields other than listed read entries and forge_runs hashes are exactly unchanged. Full write payloads are not retained in these oracles; counter-only payload equivalence is owner-reported, not independently reproduced."
+}

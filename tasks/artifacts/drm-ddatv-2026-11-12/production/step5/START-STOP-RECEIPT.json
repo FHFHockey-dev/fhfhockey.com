@@ -1,0 +1,50 @@
+{
+  "status": "stopped_before_capture",
+  "reason": "health_probe_roundtrip_exceeded_1000ms",
+  "probeDurationMs": 3937,
+  "healthRows": [
+    {
+      "checked_at": "2026-11-12 20:59:53.093703+00",
+      "active_other": 0,
+      "longest_active_seconds": "0",
+      "io_lock_waits": 0,
+      "checkpoints_requested": 1,
+      "stats_reset": "2026-11-12 15:50:06.237806+00"
+    }
+  ],
+  "projectStatus": "ACTIVE_HEALTHY",
+  "deployment": {
+    "id": "dpl_HH8SPE1cLyonVBW9uN3rUi1MN3Sa",
+    "sha": "4243bcd4e29889c035e832562e25850d14af0ee1",
+    "state": "READY",
+    "target": "production",
+    "alias": [
+      "fhfhockey.com",
+      "fhfhockey.vercel.app",
+      "www.fhfhockey.com",
+      "fhfhockey-fhfhockeydevs-projects.vercel.app",
+      "fhfhockey-git-master-fhfhockeydevs-projects.vercel.app"
+    ]
+  },
+  "counts": {
+    "healthSqlRequests": 1,
+    "writerStatusReads": 0,
+    "deploymentMetadataRequests": 1,
+    "projectMetadataRequests": 1,
+    "databaseCaptures": 0,
+    "writeRpcs": 0,
+    "providerRequests": 0,
+    "applicationGets": 0
+  },
+  "scheduledWriterCompletion": "unverified; not inferred from elapsed time",
+  "latencyAttribution": "unknown; measured complete connector roundtrip including connection path",
+  "automaticRetry": false,
+  "approvalRetained": true,
+  "deployedSourceCheck": {
+    "status": "passed",
+    "sourcePaths": 21,
+    "releasedAncestor": "866b90bc46a169b42cbc3c54a7d64b0daf764121",
+    "method": "Current deployment metadata SHA matched local Git object;21pinnedfilehashes match."
+  },
+  "recordedAt": "2026-11-12T21:00:55.905410+00:00"
+}

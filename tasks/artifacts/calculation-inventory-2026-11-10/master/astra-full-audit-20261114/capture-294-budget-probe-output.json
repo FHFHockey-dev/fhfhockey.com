@@ -1,0 +1,21 @@
+{
+  "pin": "29451c57304866d54abd2a3302625f0696472ab0",
+  "sourceSha256": "ec2b230afea66fbe559065eac39cabeb94832297a6181d6323d73c754bbd8d92",
+  "passed": true,
+  "configuredRpcMs": 10,
+  "simulatedClaimWaitMs": 10000,
+  "custodyTimersWhileWaiting": [],
+  "report": {
+    "outcome": "never_dispatched",
+    "reason": "claim_refused:late_start",
+    "claimId": null,
+    "outcomeRecorded": true,
+    "timings": {
+      "pinMs": 0,
+      "claimMs": 10000,
+      "totalMs": 10000
+    },
+    "saveCalls": 0
+  },
+  "boundary": "Exact custody module, stubbed imports and manually controlled pending claim. No network, DB, real credentials, live runner, or clock/env mutation."
+}

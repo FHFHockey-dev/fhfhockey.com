@@ -1,0 +1,43 @@
+{
+  "at": "2026-11-09T21:03:38.103242+00:00",
+  "branch": "octoberBranch",
+  "head": "fb964e2c21f679bf068c84a650f5c34e77281db3",
+  "localOnly": true,
+  "patchSha256": "f7e563518c2138d14d4dbbc1be42ccc9008872d59d8e663c48afdeaf0f721b5e",
+  "files": [
+    {
+      "path": "web/lib/in-season/workspaceSchema.ts",
+      "sha256": "0a4509cf3f9ae8c6784697e566ec829a413c17b79d2518c80fe2dc04bc4e9f03"
+    },
+    {
+      "path": "web/lib/in-season/workspaceSchema.test.ts",
+      "sha256": "81a5843ed0ca2fe26ab208ecc463377846e81a996f501d858a4de96066ea5200"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+      "sha256": "cdf59f784452e1317d80adb68d5e0827c28ded9a250c58e5ead80de64dd85e65"
+    }
+  ],
+  "checks": {
+    "schemaRegressionBefore": "2 failed as expected; 52 filtered out",
+    "schemaAfter": "54 passed; zero failed or skipped",
+    "existingProofWithholdingRegression": "1 passed; 91 filtered out",
+    "typecheck": "final exit 0; initial missing snapshot field corrected",
+    "scopedEslint": "exit 0 for all three edited files",
+    "diffCheck": "exit 0",
+    "currentPrivateFileInspection": "exit 0; semantic fields preserved; source and input hashes matched",
+    "newNetworkAttemptLogPresent": false
+  },
+  "authority": {
+    "deployedFix": false,
+    "authenticatedAcceptance": false,
+    "forecastUseGranted": false,
+    "managerMoveContinuityAccepted": false
+  },
+  "remaining": [
+    "original response and withheld-run proof/admission evidence",
+    "TJ selected move, undo and reopen result in an agreed offline/local context",
+    "refresh preferences and real league-rule confirmation",
+    "separate exact-candidate release authorization if desired"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "at": "2026-11-10T20:20:24.996678+00:00",
+  "candidate": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5",
+  "maximumRequests": 2,
+  "concurrency": 1,
+  "method": "GET",
+  "authentication": false,
+  "cookies": false,
+  "redirects": "manual",
+  "timeoutMsPerRequest": 60000,
+  "stopOn": "First HTTP, transport or response-contract failure; no retry; stop after two checks",
+  "routes": [
+    "https://fhfhockey.com/api/v1/transactions/ownership-trends?window=3&metric=ownership&limit=10&offset=0",
+    "https://fhfhockey.com/api/v1/transactions/ownership-snapshots?playerIds=8478402"
+  ],
+  "contract": [
+    "Trends success, source date, array pages and mappedPlayerCount > 0. Record counts and latency, not a general performance guarantee.",
+    "Snapshots success and one requested NHL id; valid ownership/date or explicit fail-closed ambiguous identity. Record which occurred."
+  ],
+  "usage": "Two public data reads only; first may scan full history once through 14 bounded source queries plus mapping queries. No writes, providers, cron, refresh, cache-busting loops or UI crawl."
+}

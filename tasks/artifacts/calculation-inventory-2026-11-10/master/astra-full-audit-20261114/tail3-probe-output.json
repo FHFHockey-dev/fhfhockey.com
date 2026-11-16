@@ -1,0 +1,58 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "hashes": {
+    "web/hooks/useGoals.tsx": "4359fc1b1915ca3c0d685f170ad9d224ee540d47987419ba6d6dae397f44d6bb",
+    "web/utils/getPowerPlayBlocks.ts": "226fffe709258a0ddc6978fb7869f8108b12e5bbf9789e6d112b35c5233034b9",
+    "web/lib/projections/penaltyClock.ts": "a05eb0db3ea4ab6f56b7cd35e097f5b7a4e48248d62f3c3ea4ceee5d14449046",
+    "web/lib/projections/derived/situation.ts": "09ce0f6c2d1afc97a0f2f4be80559f270a11f76831ec2eb8909de93d2267214f",
+    "web/lib/projections/shiftChartCompleteness.ts": "7f79dc80aefafc9eaf218d8f0a00a926ebcc981786da63a71fdd2c8ce5c92cdc",
+    "web/lib/supabase/Upserts/nhlStrengthState.ts": "10efefac1808c1ce3828c65bad54055b4d524b31d9acb647d5c006ffdc460c92",
+    "web/utils/ppPenaltySummaryRegistry.ts": "996ec5c380edb8f53c1e167132fd0f56468c1a409c6a366a4f5d4ee283c57d76",
+    "web/utils/getPowerPlayBlocks.test.ts": "90c34aac614db8b8a10413903d261258caf2f6b280049f0b7a8d254412e1d8a5",
+    "web/vercel.json": "97ca4b1bde04094b5081992adff389a6f3c1cbad5660ee566aaa0731a2aa5ba9"
+  },
+  "summaries": [
+    {
+      "game": 2026020036,
+      "team": 68,
+      "seconds": 148,
+      "officialSeconds": 120
+    },
+    {
+      "game": 2026020153,
+      "team": 9,
+      "seconds": 626,
+      "officialSeconds": 746
+    },
+    {
+      "game": 2025021248,
+      "team": 8,
+      "seconds": 840,
+      "officialSeconds": 746
+    },
+    {
+      "game": 2025021097,
+      "team": 20,
+      "seconds": 595,
+      "officialSeconds": 564
+    },
+    {
+      "game": 2025030112,
+      "team": 6,
+      "seconds": 492,
+      "officialSeconds": 612
+    }
+  ],
+  "controls": [
+    "six ordinary stored team-game fixtures qualify",
+    "unregistered and absent official records refused",
+    "incomplete play-by-play refused",
+    "2-second tolerance admitted; 3 refused",
+    "missing play-by-play unknown; placeholder unknown",
+    "verified zero stays not applicable",
+    "five registry identities; invalid seconds refused",
+    "32 unique cron paths; 12:40 snapshot and 240-second runtime"
+  ],
+  "boundary": "Exact frozen pure modules and retained test fixtures; hooks/network stubs throw if called. No supplied Vitest, provider, DB, browser, env, cron invocation or writes."
+}

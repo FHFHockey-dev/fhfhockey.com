@@ -1,0 +1,23 @@
+{
+  "at": "2026-11-09T20:55:36.869430+00:00",
+  "head": "fb964e2c21f679bf068c84a650f5c34e77281db3",
+  "owner": "Codex RSO lane",
+  "paths": [
+    {
+      "path": "web/lib/in-season/workspaceSchema.ts",
+      "sha256": "a786b796d803fe80e4cb626891f60870e11e6eb1fb9911e54427cfae3305f9ab"
+    },
+    {
+      "path": "web/lib/in-season/workspaceSchema.test.ts",
+      "sha256": "37bb6f99316bb5c3aedd49f9c0cc25195eed151688722f43649f73825d3f9de3"
+    }
+  ],
+  "reason": "Current supplied export rejected: built-in forecast/evidence explanations exceed identifier cap and optional matchupWeeks is absent from snapshot schema. Existing exact leases released; files clean before claim. Local validation repair only; no forecast policy or production change.",
+  "priorLeaseAcknowledgementClaimed": false,
+  "additionalClaim": {
+    "at": "2026-11-09T20:59:37.973191+00:00",
+    "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+    "sha256": "c405a32610063a672311b7df7423a06afb91620e00c87ccf9208546eab61e62d",
+    "reason": "Typecheck exposed the same optional matchupWeeks omission in PlanningSnapshot; reuse existing PlanningData field type. Matching old Claude lease RELEASED; current file clean."
+  }
+}

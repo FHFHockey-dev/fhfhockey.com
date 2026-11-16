@@ -1,0 +1,49 @@
+{
+  "observedAt": "2026-11-09T21:30:19.857994+00:00",
+  "team": "team_KVFicHhQJARTbO6wRD2x6jpq",
+  "candidate": "44582b13a213dfd4c75238d8413cf4031ca98b6f",
+  "base": "788668cb57454e55316fc25db06562f567997ee4",
+  "source": "Vercel MCP project inventory; authenticated read-only dashboard settings; candidate vercel.json files",
+  "projects": [
+    {
+      "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "name": "fhfhockey",
+      "root": "web",
+      "productionBranch": "master",
+      "previewTracking": "Disabled",
+      "ignoredBuild": "repo web/vercel.json scoped web + cron schedule diff; override verified in dashboard",
+      "expected": "one production build"
+    },
+    {
+      "id": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+      "name": "functions-fhfhockey",
+      "root": "functions",
+      "productionBranch": "master",
+      "previewTracking": "Disabled",
+      "ignoredBuild": "repo functions/vercel.json scoped own-root diff; override verified in dashboard",
+      "expected": "ignored/canceled entry, no application build"
+    },
+    {
+      "id": "prj_gG8SHX7C5GbCDJoind7trh9bj6dK",
+      "name": "cms-fhfhockey",
+      "root": "cms",
+      "productionBranch": "master",
+      "previewTracking": "Disabled",
+      "ignoredBuild": "repo cms/vercel.json scoped own-root diff; override verified in dashboard",
+      "expected": "ignored/canceled entry, no application build"
+    },
+    {
+      "id": "prj_3X6goi9DxqUnD0sHChwEwaRakquG",
+      "name": "fhfhockey.com",
+      "root": "",
+      "productionBranch": "master",
+      "previewTracking": "Disabled",
+      "ignoredBuild": "candidate root vercel.json exit 0; dashboard Automatic (no prior production override displayed)",
+      "expected": "ignored/canceled entry, no application build"
+    }
+  ],
+  "expectedEntries": 4,
+  "expectedCompletedBuilds": 1,
+  "settingsChanged": false,
+  "activeRebuildStatus": "awaiting current owner/user confirmation; last diary stopped at window26"
+}

@@ -1,0 +1,80 @@
+{
+  "status": "independently_reviewed_release_ready_local_not_deployed",
+  "branch": "octoberBranch",
+  "base": "24b1cb4d3048a3dba8234cf92c62e8f2b72f877f",
+  "files": {
+    "web/pages/rankings.tsx": "6dfc9f9f598707cf8d7d9f07491ff9705eb969751493a8ae6551ad6f12490d04",
+    "web/__tests__/pages/rankings.test.tsx": "24cb7433184acd1fe7d21b4ece79fcc234ac2d90bfbc3b9ee578e3b381a7b9d3"
+  },
+  "vitest": {
+    "passed": 23,
+    "failed": 0
+  },
+  "browser": {
+    "passed": 13,
+    "failed": 0,
+    "external_requests": 0,
+    "api_requests": 0,
+    "page_errors": 0
+  },
+  "scoped_axe": {
+    "widths": [
+      320,
+      390,
+      1440
+    ],
+    "checks_each": 13,
+    "violations": 0,
+    "incomplete": 0
+  },
+  "typecheck": {
+    "command": "npm run typecheck -- --incremental false",
+    "exit_code": 0
+  },
+  "lint": {
+    "exit_code": 0,
+    "existing_no_img_element_warnings": 3
+  },
+  "diff_check": "passed",
+  "remaining_limits": [
+    "Native screen-reader speech not tested",
+    "Full Next.js shell/live E2E not exercised",
+    "No production performance or cost measurements",
+    "Parent review and release authorization remain separate"
+  ],
+  "independent_review": {
+    "report": "INDEPENDENT-REVIEW.md",
+    "sha256": "fc38e41d7d9ca8cdacaedca9a40d5147528ff2e1cd5d93b0c4468fc0454a39c2",
+    "actionable_findings": 0,
+    "blockers": 0,
+    "source_pins_verified": true
+  },
+  "source_patch": {
+    "path": "SOURCE.patch",
+    "sha256": "b520d6a1ad0d6b6602a76bed8cde536ebc2007dcefeeab92429ef0717bd6f779",
+    "dry_reverse_apply_check": "passed"
+  },
+  "post_review_focused_checks": {
+    "vitest_passed": 23,
+    "vitest_failed": 0,
+    "lint_exit_code": 0,
+    "existing_lint_warnings": 3,
+    "diff_check": "passed"
+  },
+  "future_release_preparation": {
+    "plan": "RELEASE-PLAN.md",
+    "preflight": "RELEASE-PREFLIGHT.json",
+    "source_pins_unchanged": true,
+    "safe_apply_bases": [
+      "f821bcf8018c0a38badbf785e7f7a8ce5fce8597",
+      "866b90bc46a169b42cbc3c54a7d64b0daf764121",
+      "4243bcd4e29889c035e832562e25850d14af0ee1"
+    ],
+    "unsuitable_local_master": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5",
+    "build_slot_allocated": false,
+    "builds_used": 0,
+    "deployments": 0,
+    "remote_calls": 0,
+    "shared_index_mutated": false
+  }
+}

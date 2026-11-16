@@ -1,0 +1,116 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "goalieOneDay": {
+    "selected": [
+      {
+        "lo": "2026-10-01",
+        "hi": "2026-10-02"
+      },
+      {
+        "lo": "2026-10-01",
+        "hi": "2026-10-02"
+      }
+    ],
+    "runs": [
+      {
+        "code": 200,
+        "success": true,
+        "updates": 2
+      },
+      {
+        "code": 200,
+        "success": true,
+        "updates": 2
+      }
+    ],
+    "writtenDates": [
+      [
+        "2026-10-01"
+      ],
+      [
+        "2026-10-01"
+      ]
+    ],
+    "storedLastDate": "2026-10-01",
+    "unreached": "2026-10-02"
+  },
+  "adjustedScope": {
+    "runs": [
+      {
+        "season": 20252026,
+        "modelVersion": "ridge_sgd_v1-synthetic-synthetic-source-f3"
+      },
+      {
+        "season": 20262027,
+        "modelVersion": "ridge_sgd_v1-synthetic-synthetic-source-f3"
+      }
+    ],
+    "modelRunSeasons": [
+      20262027
+    ],
+    "retainedPlayerSeasons": [
+      {
+        "player": 1,
+        "season": 20252026
+      },
+      {
+        "player": 2,
+        "season": 20262027
+      }
+    ]
+  },
+  "adjustedFeatureRead": {
+    "expectedVersion": 3,
+    "eventIds": 500,
+    "returnedMapSize": 1000,
+    "matchingVersion": 0,
+    "filters": [
+      [
+        [
+          "game_id",
+          1
+        ],
+        [
+          "event_id",
+          500
+        ]
+      ]
+    ]
+  },
+  "aggregateQAGuard": {
+    "status": 200,
+    "success": true,
+    "qa": {
+      "passed": false,
+      "errors": [
+        "synthetic mismatch"
+      ]
+    },
+    "writes": 1
+  },
+  "missingExternalMetric": {
+    "null": 0,
+    "emptyString": 0,
+    "undefined": null
+  },
+  "sources": [
+    {
+      "path": "web/pages/api/v1/db/update-goalie-projections-v2.ts",
+      "sha256": "cb6470f54531e169c49dfc7dfecf46b2475c9e54062cdbb441c58c16494787a9"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-adjusted-impact.ts",
+      "sha256": "79b8910ff0d5f666030fd876b9ce3f2fcc20dfe969eafe2c333bab54b2b40796"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-adjusted-impact.ts",
+      "sha256": "79b8910ff0d5f666030fd876b9ce3f2fcc20dfe969eafe2c333bab54b2b40796"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-aggregates.ts",
+      "sha256": "bb51fac2aed849791290264a3e1bff226af9c910ec7245cf7b4709618bf069fd"
+    }
+  ],
+  "limits": "Exact frozen AST functions with finite inert database/provider/model doubles. Goalies use synthetic dates/logs; no actual provider imports or requests. Adjusted model output/validation and aggregate QA are stubbed to test publication orchestration only, not fit or actual aggregate corruption. Feature cap is a synthetic1000-row PostgREST-style response. No real queries/writes/env/server/browser or supplied suites."
+}

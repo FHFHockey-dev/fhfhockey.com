@@ -1,0 +1,250 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "tableReceipts": [
+    {
+      "table": "games",
+      "rows": 2,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "seasons",
+      "rows": 1,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "teams",
+      "rows": 2,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "players",
+      "rows": 38,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "rosters",
+      "rows": 38,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "fhfh_player_identities",
+      "rows": 38,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "roster_optimizer_team_games",
+      "rows": 2,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "lineCombinations",
+      "rows": 2,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "rolling_player_game_metrics",
+      "rows": 72,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "forge_team_game_strength",
+      "rows": 2,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "forge_goalie_game",
+      "rows": 2,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "player_forecast_lineup_snapshots",
+      "rows": 1,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "player_forecast_lineup_assignments",
+      "rows": 2,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "player_forecast_goalie_start_observations",
+      "rows": 1,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "market_prices_daily",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "prop_market_prices_daily",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "forge_roster_events",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "pbp_games",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "pbp_plays",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "player_forecast_observation_conflicts",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "player_forecast_conflict_resolutions",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "wgo_skater_stats",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "player_stats_unified",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "sustainability_trend_bands",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "nhl_xg_team_rolling_aggregates",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "nhl_team_data",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "wgo_team_stats",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "nst_team_all",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "nst_team_stats",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "wgo_goalie_stats",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "goalie_start_projections",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "forge_board_news_events",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    },
+    {
+      "table": "rolling_player_metric_support_payloads",
+      "rows": 0,
+      "countMatch": true,
+      "hashMatch": true,
+      "synthetic": true
+    }
+  ],
+  "totalFixtureRows": 203,
+  "fixtureControls": {
+    "rosterAndIdentityMapping": true,
+    "uniquePlayerStrengthPairs": 72
+  },
+  "calendar": {
+    "callerContinuesOwnershipRecoveryAfterCancellation": true,
+    "signalPassed": false,
+    "deadlinePassed": false,
+    "explicitWriteAndRecoveryBounds": true,
+    "changedContextRejected": true
+  },
+  "boundary": "Whole synthetic JSON tree with exact canonical hashes, counts and row identities; isolated argument/context helpers and exact execution function with all filesystem/process/environment/supervisor/recovery effects replaced by finite doubles. No child process, real ownership archive, DB, network, provider, env or write execution."
+}

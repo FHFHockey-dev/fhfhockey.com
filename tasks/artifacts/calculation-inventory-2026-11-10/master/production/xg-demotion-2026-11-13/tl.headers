@@ -1,0 +1,13 @@
+HTTP/2 200 
+age: 0
+cache-control: public
+content-type: application/json; charset=utf-8
+date: Fri, 13 Nov 2026 07:01:48 GMT
+etag: "ydgui72cmj1o"
+server: Vercel
+strict-transport-security: max-age=63072000
+x-matched-path: /api/v1/xg/team-timeline
+x-vercel-cache: MISS
+x-vercel-id: iad1::iad1::fqf4b-1794553308899-fad39de0c63e
+content-length: 60
+

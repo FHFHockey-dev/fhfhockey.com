@@ -1,0 +1,33 @@
+{
+  "completedAt": "2026-11-10T15:30:02.971Z",
+  "requests": 1,
+  "response": null,
+  "readError": "fetch failed",
+  "currentPublicDataReceived": false,
+  "beforeCoverage": {
+    "activePlayersMissing": 2,
+    "activePlayerGamesMissing": 7
+  },
+  "afterCoverage": {
+    "activePlayersMissing": 17,
+    "activePlayerGamesMissing": 56
+  },
+  "baseline": {
+    "legal": true,
+    "comparisonEligible": false,
+    "projectedPointsKnown": false
+  },
+  "candidates": {
+    "count": 3,
+    "finiteNetPoints": 0,
+    "evaluated": 12,
+    "eligibleCandidates": 766,
+    "searchComplete": false
+  },
+  "currentWeekProofs": 0,
+  "originalInputUnchanged": true,
+  "yahooRequests": 0,
+  "credentialAccess": false,
+  "authenticatedYahooAcceptance": false,
+  "scope": "Current public serving plus bounded arithmetic using previously saved league inputs; no lineup change."
+}

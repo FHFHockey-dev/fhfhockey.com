@@ -1,0 +1,1 @@
+select scope_key, operation_key, status, revision rev, cursor_game_id cur, left(last_error,70) err, to_char(created_at,'MM-DD HH24:MI:SS') crt, to_char(updated_at,'MM-DD HH24:MI:SS') upd from projection_pipeline_state where pipeline_key='rolling_forge_pipeline' and updated_at > '2026-11-08' order by scope_key desc, created_at

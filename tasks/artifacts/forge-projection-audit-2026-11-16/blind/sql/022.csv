@@ -1,0 +1,2 @@
+string_agg
+id date seasonId startTime type created_at homeTeamId awayTeamId game_state game_schedule_state game_state_observed_at

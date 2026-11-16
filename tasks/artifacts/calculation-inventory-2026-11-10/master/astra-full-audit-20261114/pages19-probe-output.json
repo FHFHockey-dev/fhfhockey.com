@@ -1,0 +1,68 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "goaliePartialWeek": {
+    "requestedEnd": "2027-04-14",
+    "lastEnumeratedEnd": "2027-04-11",
+    "omittedDates": [
+      "2027-04-12",
+      "2027-04-13",
+      "2027-04-14"
+    ],
+    "sundayEndControl": "2027-04-18",
+    "route": "/variance/goalies"
+  },
+  "goalieDraftLabel": {
+    "draftRange": "2026-10-12..2026-10-18",
+    "tableProps": {
+      "goalies": [
+        {
+          "playerId": 1,
+          "saves": 27,
+          "fixtureWindow": "2026-10-05..2026-10-11"
+        }
+      ],
+      "startDate": "10/12/2026",
+      "endDate": "10/18/2026"
+    },
+    "boundary": "Exact derived-window callback and JSX prop expressions. Applied source rows held fixed; no hook/browser timing simulation."
+  },
+  "homepageCount": {
+    "injectedError": "fixture unavailable",
+    "resolvedCount": 0,
+    "renderedLabel": "0 indexed"
+  },
+  "homepageDate": {
+    "requested": "2026-11-14",
+    "returned": "2026-11-15",
+    "failed": false,
+    "existingFinding": "AFULL-HOME-01"
+  },
+  "splitsControls": {
+    "unknown": "em dash",
+    "zero": "0.00",
+    "saveFraction": "90.00%",
+    "seconds1474": "24:34",
+    "negativeSeconds": "em dash"
+  },
+  "sources": [
+    {
+      "path": "web/pages/goalies.js",
+      "sha256": "ca3676b643437752df2a19c9b41bbd70f644d701e32d078f0f98cfd6580e91ae"
+    },
+    {
+      "path": "web/pages/index.tsx",
+      "sha256": "70405a46640fc479cc14b3236842d40d35ea808422b76a232404396c3882a3f0"
+    },
+    {
+      "path": "web/pages/splits/index.tsx",
+      "sha256": "c0fd8376a4f1c7bd88c7dd4297be56099fed1f6c743caa3712cf7064a91f24ba"
+    },
+    {
+      "path": "web/pages/variance/goalies.js",
+      "sha256": "a6041f8350a745a8b7987cb1e2f1487d3e964cd0da7b5af9e875ce0d9973937b",
+      "boundary": "one-line outside-scope routing dependency; no extra scope credit"
+    }
+  ],
+  "boundary": "Exact frozen expressions/helpers with local date-fns and finite dependencies; no real network, page, database, application client or suite."
+}

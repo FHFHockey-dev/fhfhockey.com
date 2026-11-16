@@ -1,0 +1,8 @@
+{
+  "at": "2026-11-10T15:41:27.884487+00:00",
+  "exitCode": 0,
+  "candidate": "86f2e3cf742a86b5981abb3de41160b2ea7950e3",
+  "parent": "47df3e6bf0ecb0fab01cc864fedf4e5ea6fab748",
+  "retryAfterNewSpecificApproval": 1,
+  "result": "exact fast-forward push succeeded"
+}

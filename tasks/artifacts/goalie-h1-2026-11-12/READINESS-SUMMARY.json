@@ -1,0 +1,46 @@
+{
+  "checkedAt": "2026-11-12T23:46:47Z",
+  "status": "readiness_inspection_complete_not_execution_ready",
+  "game": {
+    "id": 2026020307,
+    "date": "2026-11-12",
+    "type": 2,
+    "seasonId": 20262027,
+    "startTime": "2026-11-13T02:00:00+00:00",
+    "awayTeamId": 19,
+    "homeTeamId": 68,
+    "stillUpcoming": true
+  },
+  "fenceVerified": true,
+  "freshnessVerified": false,
+  "hostedFlagsVerified": false,
+  "privatePreviewPassed": true,
+  "privatePreviewCanServeLiveGrid": false,
+  "canonicalHead": "ad7451db583570c60d505004916b3cdda13f7023",
+  "requests": {
+    "sql": 3,
+    "restReads": 2,
+    "writes": 0,
+    "provider": 0,
+    "application": 0
+  },
+  "backgroundProcessRetained": false,
+  "productionExecutionAuthorized": false,
+  "evidence": [
+    "READINESS-RECEIPT.json",
+    "SCOPE-RECEIPT.json",
+    "PREVIEW-RECEIPT.json"
+  ],
+  "next": "Released-producer scope, flags, freshness and bounded footprint review; no automatic retry or game substitution.",
+  "currentDisposition": {
+    "recordedAt": "2026-11-13T00:06:53Z",
+    "selectedGameId": null,
+    "skippedGameIds": [
+      2026020307
+    ],
+    "databaseWindow": "held_by_claude_rebuild_and_checks",
+    "executionAuthorized": false,
+    "historicalGameReceiptOnly": true,
+    "next": "Local later-game released-producer/configuration/restore plan; fresh explicit handoff and scope required before live checks or execution."
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "coverage": {
+    "orphanOldRevisionPartitionMarksGameCovered": true,
+    "missingSelectorWithOrphan": [],
+    "missingSelectorWithoutAnyPartition": [
+      2026020100
+    ]
+  },
+  "refresh": {
+    "rowsUpserted": 1,
+    "storedKeys": [
+      "powerPlay/allScores",
+      "allStrengths/allScores"
+    ],
+    "obsoleteSplitStillAcceptedByRevisionGate": true
+  },
+  "date": {
+    "zone": "America/New_York",
+    "input": "2026-11-13",
+    "actual": "Nov 12",
+    "expected": "Nov 13"
+  },
+  "controls": [
+    "Historical overlay hidden",
+    "Filter URL roundtrip",
+    "Missing percentage remains em dash; known zero remains zero",
+    "1474 seconds renders 24:34"
+  ],
+  "sources": [
+    {
+      "path": "web/lib/underlying-stats/playerStatsLandingServer.ts",
+      "sha256": "d3eac2444fff6ce88d26f1f57dd356b40bd8055eaf0a4c1ffdf6a0d5ac35a532"
+    },
+    {
+      "path": "web/lib/underlying-stats/goalieStatsSummaryRefresh.ts",
+      "sha256": "da00e16f1d3e394702574fa31e9d5cf8ce3cce07227125e4dfbddd3fd1ad67ac"
+    },
+    {
+      "path": "web/lib/underlying-stats/adminRouteHelpers.ts",
+      "sha256": "56a03aed964a09f76c9fb26e54def81739631b9e83ab089ddec7c64ff394ff76"
+    },
+    {
+      "path": "web/lib/games/gameFinality.ts",
+      "sha256": "872f7ffd52ca712fa72b2e8933f9bd753213e11a9faf769056922ba06674560c"
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsFilters.ts",
+      "sha256": "5bde162093f8a73c19379f0498825d5d11122b1dd1f4b828504d8b1e8c4a99cb"
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsTypes.ts",
+      "sha256": "b6b6bd41e9d6c21587550e2a70d0de7b9a4ce5ecf65f0f21ffc6bb8fe91b2133"
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsFormatting.ts",
+      "sha256": "f62de8714983c3a505f9ac018cdc354436d9525183643d5156293b466c3c7bde"
+    },
+    {
+      "path": "web/lib/underlying-stats/entityRatingsOverlay.ts",
+      "sha256": "70e60e54dafdce6afdc8280108b46296dc78e87f3b2a2c056721e80f9fa16ee4"
+    }
+  ],
+  "limits": "Exact frozen modules and AST-isolated admin/gate helpers; in-memory finite query/upsert double, supplied synthetic snapshot producer, no application/DB/provider invocation. Supplied test suites not executed."
+}

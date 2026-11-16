@@ -1,0 +1,12 @@
+{
+  "start": "2026-11-09T20:57:27.265531+00:00",
+  "completedAt": "2026-11-09T20:58:39.910543+00:00",
+  "command": [
+    "npx",
+    "tsc",
+    "--noEmit",
+    "--incremental",
+    "false"
+  ],
+  "exitCode": 2
+}

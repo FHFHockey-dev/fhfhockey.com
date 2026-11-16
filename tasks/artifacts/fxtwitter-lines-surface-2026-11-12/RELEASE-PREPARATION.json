@@ -1,0 +1,167 @@
+{
+  "checkedAt": "2026-11-12T23:51:17.636265+00:00",
+  "status": "Preparation only; no commit/build/push/deploy authorization",
+  "recordedReleaseBase": "4243bcd4e29889c035e832562e25850d14af0ee1",
+  "localHead": "17f76b1d022a60a64a2d5393ec3ff23e9f15d132",
+  "releaseCommit": null,
+  "linesFiles": [
+    {
+      "path": "web/pages/api/v1/lines/projected.ts",
+      "sha256": "c8257b494c1543388926a515c6f831bd51222e76add9dfd7fffeb1211935239e",
+      "pinMatches": true
+    },
+    {
+      "path": "web/components/LineCombinations/ProjectedLineups.tsx",
+      "sha256": "1c780998a158608059e08d6523f4adfba341ac2242891895f0ea0499edcadef5",
+      "pinMatches": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/lines/projected.test.ts",
+      "sha256": "1d662f8f23d2bc5164f6661e20f07d5b46d1c3740e16c8bff6c93933062e85bb",
+      "pinMatches": true
+    },
+    {
+      "path": "web/components/LineCombinations/ProjectedLineups.test.tsx",
+      "sha256": "8bc65c3c98ff887ba71a4ddecaceb697c671de529066e05bbbb04b0590a470a1",
+      "pinMatches": true
+    }
+  ],
+  "drmPriorInventoryCount": 54,
+  "drmChangedSincePriorInventory": [
+    {
+      "path": "web/__tests__/pages/drm.test.tsx",
+      "previousSha256": "044adeb535ecdb2a2b4c35565d32114ce555d04d803254a0f7431f68835984e9",
+      "currentSha256": "0c20c843c9c04cfc651af4be01a1b95b3760e2e495f8b0bdc579695b3c0b5d9c"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/DateRangeMatrixView.test.tsx",
+      "previousSha256": "0e3b97728881dfb544220a11df0d62e7e5fed2b5d1ebc636ced6b424d10ed0e9",
+      "currentSha256": "0c00ab5589e6efdf3c9be779e457c091cf299d0962bd046839a58a6411cd828c"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/DateRangeMatrixView.tsx",
+      "previousSha256": "5b81a69a00036e99127322715008183224297dd2d01fdb7a7df90a0881ff9780",
+      "currentSha256": "216e845bf0711345579d9901b97bb0477be7c62acdef7964f7adaf54724781da"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/LineHistory.module.scss",
+      "previousSha256": "ba3d0d8ad34ece2944bee6f37d9fdc9aa842e78413cc6c6e31f9569184cde353",
+      "currentSha256": "e04cf5696f1299dc9a75954c4ad633cffc18ad1a9152d1b0847ba0a8766a4295"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/LineHistory.test.tsx",
+      "previousSha256": "5ed404e6404764a6f67a5b4e2f5a911eea72ca2d90b13284eac0337c86e8d66b",
+      "currentSha256": "219d26f2c3398973139a8bfdf82a5325719cfac4f0cae890dd75c2a7b21e2818"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/LineHistory.tsx",
+      "previousSha256": "d0bc8b90cc389835826d4b0ab2cf6e50db74aaa26a2fd37d9306408b4fc6909e",
+      "currentSha256": "5f554f415321f3599be2603d07f6bc4dd4d933df766b393af0565f6ab34e2b67"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/MatrixCoverage.tsx",
+      "previousSha256": "2d63f84c11da9da852d10314c9bbc7c7e08957f16df9361902da06bc8290fa28",
+      "currentSha256": "06413021ca53a935027432ac3a26a496c69df8cbd85e691f916dc3403ea96bc9"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/ObservedUnits.tsx",
+      "previousSha256": "2029fca800ce8474c77ead9e1d7625a2c842bd1c980365e818e51f4f4ab425da",
+      "currentSha256": "59773a35ce55ad7b8a71d5b1c5e12086ab9f516996f30ca8306b2ee7571bbe89"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/drm.module.scss",
+      "previousSha256": "835dbc826aca240117a4f5fe34164787af435b9ac48c8738492582a541ee43bf",
+      "currentSha256": "57163a4201511daf66002baa181f882284ed0e73e74f52becbe05623e262d2bb"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/index.accessibility.test.tsx",
+      "previousSha256": "83ee90d25492957b93ab294e61b8a3d2b945bd06f56d71ac0f36296d5b0c177b",
+      "currentSha256": "42252a474b588e952e9c3fdb51fca2de698aac5bf59007f826b03fa99c758a44"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/index.module.scss",
+      "previousSha256": "01c73d0089cf5ffcb15e8943dcc6f6cb50d22563b53bdf88ff3e0cdacdc349ac",
+      "currentSha256": "a3503e6f45b603326506c1f2cd3c998b0d2a31a1b9032b1ca54efa7b0964e1e1"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/index.tsx",
+      "previousSha256": "b63b3016b6022363e8674d41b3ca8df7d52fccd98fc73cc6d439453d3d263f50",
+      "currentSha256": "4611250dae280e219db4a8f453c9f6bfac739489665bbb03e3ea306c7e15d2d3"
+    },
+    {
+      "path": "web/e2e/drm-previews.spec.ts",
+      "previousSha256": "e483bcc5165674d9a1d3e850bc900fde285750f42cd8f86b4b84e52303fe2090",
+      "currentSha256": "2e510e4aa970bf8b13808beaa2df181e09b2097fa8d789180271e8a328fc9e0c"
+    },
+    {
+      "path": "web/lib/drm/readMatrix.test.ts",
+      "previousSha256": "7ad6e69b5e6e468a58ddaa2a3144c158b38658fa992e2396c95981819756ccc1",
+      "currentSha256": "2b380c98bd4064ad2db644bef2499591cc5155e71afad6765dceb6f358f4f6d0"
+    },
+    {
+      "path": "web/lib/drm/readMatrix.ts",
+      "previousSha256": "a5b185aae831e4bac69e9c2e3fb2320e50527dc5da71dcc90008e0f87835e32e",
+      "currentSha256": "4ffc78762ec06f6918640a6cb5f8324dd63426deb41213c10d7dec30b2675a36"
+    },
+    {
+      "path": "web/lib/drm/types.ts",
+      "previousSha256": "ec2ae0a534585b0ec9a50a23be7e638fca1987bafc7cf4422229a98d57578f3e",
+      "currentSha256": "2028b04df6a22b8d47558e6599335418fdbe346e7b43f2139a744089def7577c"
+    },
+    {
+      "path": "web/pages/drm.tsx",
+      "previousSha256": "500d5029219eb38e960344e02a3696ff396e26dc4a895b345419fc6bb8e0b7ab",
+      "currentSha256": "b69339754547043807cb8abec937152334201a02f72595befe3e7f73ee294a36"
+    }
+  ],
+  "localLinkedProjects": [
+    {
+      "location": ".vercel/project.json",
+      "project": {
+        "projectId": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+        "orgId": "team_KVFicHhQJARTbO6wRD2x6jpq",
+        "projectName": "fhfhockey"
+      }
+    },
+    {
+      "location": "web/.vercel/project.json",
+      "project": {
+        "projectId": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+        "orgId": "team_KVFicHhQJARTbO6wRD2x6jpq",
+        "projectName": "fhfhockey"
+      }
+    },
+    {
+      "location": "functions/.vercel/project.json",
+      "project": {
+        "projectId": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+        "orgId": "team_KVFicHhQJARTbO6wRD2x6jpq",
+        "projectName": "functions-fhfhockey",
+        "settings": {
+          "createdAt": 1664338666362,
+          "framework": null,
+          "devCommand": null,
+          "installCommand": null,
+          "buildCommand": null,
+          "outputDirectory": null,
+          "rootDirectory": "functions",
+          "directoryListing": false,
+          "nodeVersion": "20.x"
+        }
+      }
+    }
+  ],
+  "remoteProjectInventoryVerified": false,
+  "verification": "Prior 47 relevant tests, full-web tsc, scoped eslint and diff checks passed. All four source pins unchanged; no redundant checks rerun.",
+  "exclusions": [
+    "All DRM/history files pending combined-owner reconciliation",
+    "Unrelated dirty files and local-only commits",
+    "Tasks diaries/artifacts",
+    "Database/schema/flags/processors/provider calls"
+  ],
+  "blockers": [
+    "No exact future release SHA yet; user asked to leave DRM uncommitted",
+    "Live linked-project/settings inventory and build fan-out not verified; prior API read403",
+    "DRM candidate has 17 changed files and must be re-frozen by existing owners"
+  ]
+}

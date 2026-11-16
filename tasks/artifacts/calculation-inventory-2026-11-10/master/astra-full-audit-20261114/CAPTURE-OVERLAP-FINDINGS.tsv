@@ -1,0 +1,18 @@
+id	severity	overlap_paths	frozen_evidence	scope
+AFULL-PCALC1-01	P1	web/lib/projections/stages/skater-stage.ts	batch-lib-projcalc-1.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PCALC1-02	P1	web/lib/projections/stages/skater-stage.ts	batch-lib-projcalc-1.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PMARKET1-01	P1	web/lib/projections/run-forge-projections.ts; web/lib/projections/stages/skater-stage.ts	batch-lib-projmarket-1.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PQUERY1-01	P1	web/lib/projections/stages/goalie-stage.ts	batch-lib-projquery-1.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PQUERY1-02	P1	web/lib/projections/stages/goalie-stage.ts	batch-lib-projquery-1.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PQUERY2-01	P1	web/lib/projections/stages/skater-stage.ts	batch-lib-projquery-2.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PQUERY2-02	P1	web/lib/projections/stages/goalie-stage.ts; web/lib/projections/stages/skater-stage.ts	batch-lib-projquery-2.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PQUERY2-03	P1	web/lib/projections/stages/goalie-stage.ts	batch-lib-projquery-2.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PQUERY2-04	P1	web/lib/projections/stages/goalie-stage.ts	batch-lib-projquery-2.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PQUERY2-05	P1	web/lib/projections/queries/skater-queries.ts; web/lib/projections/stages/skater-stage.ts	batch-lib-projquery-2.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PRUN1-01	P1	web/lib/projections/run-forge-projections.ts; web/lib/projections/stages/goalie-stage.ts	batch-lib-projrun-1.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PSTAGE1-01	P1	web/lib/projections/stages/goalie-stage.ts; web/lib/projections/stages/skater-stage.ts	batch-lib-projstage-1.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PSTAGE1-02	P1	web/lib/projections/stages/goalie-stage.ts	batch-lib-projstage-1.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PSTAGE2-01	P1	web/lib/projections/stages/skater-stage.ts	batch-lib-projstage-2.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PSTAGE2-03	P1	web/lib/projections/stages/skater-stage.ts	batch-lib-projstage-2.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PRUN1-02	P2	web/lib/projections/run-forge-projections.ts; web/lib/projections/stages/goalie-stage.ts; web/lib/projections/stages/skater-stage.ts	batch-lib-projrun-1.md	89da739cb finding; successor applicability must be checked at the exact candidate
+AFULL-PSTAGE2-02	P2	web/lib/projections/stages/skater-stage.ts	batch-lib-projstage-2.md	89da739cb finding; successor applicability must be checked at the exact candidate

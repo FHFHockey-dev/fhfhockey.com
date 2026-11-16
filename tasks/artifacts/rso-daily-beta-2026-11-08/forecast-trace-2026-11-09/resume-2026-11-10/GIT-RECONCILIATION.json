@@ -1,0 +1,22 @@
+{
+  "completedAt": "2026-11-10T15:33:14.919499+00:00",
+  "previousHead": "f248f7aacad96e5d8a61de2e258f2ae495cf6d98",
+  "releasedMaster": "47df3e6bf0ecb0fab01cc864fedf4e5ea6fab748",
+  "newOctoberHead": "d31dcb33f72d4c9d69b507874c388f0cd549fe2f",
+  "tree": "dadff300fc8b6e2a6b90af5b42d8b159dd42f954",
+  "parents": [
+    "f248f7aacad96e5d8a61de2e258f2ae495cf6d98",
+    "47df3e6bf0ecb0fab01cc864fedf4e5ea6fab748"
+  ],
+  "exactAcceptedPaths": [
+    "web/lib/projections/verifiedForgeReleases.ts",
+    "web/lib/projections/verifiedForgeReleases.test.ts",
+    "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/a5816ce6d1eeeba4b7213d1f66c96025f0b5818e.json",
+    "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/d66408de3a0d1ccea1daaadfce8a3a9ae20cb680.json"
+  ],
+  "unrelatedDirtyFileHashesPreserved": 37,
+  "noWorkingFilesWritten": true,
+  "sharedIndexMatchesNewHead": true,
+  "newBranchesOrWorktrees": 0,
+  "pushedOctoberBranch": false
+}

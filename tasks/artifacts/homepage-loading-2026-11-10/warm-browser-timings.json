@@ -1,0 +1,147 @@
+[
+  {
+    "startedAt": "2026-11-10T18:20:37.971000+00:00",
+    "name": "ensure-page",
+    "durationMs": 0.64,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:37.977000+00:00",
+    "name": "ensure-page",
+    "durationMs": 0.69,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:37.984000+00:00",
+    "name": "ensure-page",
+    "durationMs": 0.36,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:38.194000+00:00",
+    "name": "ensure-page",
+    "durationMs": 0.23,
+    "tags": {
+      "inputPage": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:38.196000+00:00",
+    "name": "ensure-page",
+    "durationMs": 0.32,
+    "tags": {
+      "inputPage": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:38.194000+00:00",
+    "name": "handle-request",
+    "durationMs": 151.08,
+    "tags": {
+      "url": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:39.321000+00:00",
+    "name": "ensure-page",
+    "durationMs": 0.28,
+    "tags": {
+      "inputPage": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:39.323000+00:00",
+    "name": "ensure-page",
+    "durationMs": 0.13,
+    "tags": {
+      "inputPage": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:39.321000+00:00",
+    "name": "handle-request",
+    "durationMs": 85.11,
+    "tags": {
+      "url": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:37.972000+00:00",
+    "name": "handle-request",
+    "durationMs": 2674.92,
+    "tags": {
+      "url": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:40.704000+00:00",
+    "name": "ensure-page",
+    "durationMs": 2.68,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:41.108000+00:00",
+    "name": "navigation-to-hydration",
+    "durationMs": 3141.0,
+    "tags": {
+      "pathname": "/",
+      "query": ""
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:41.236000+00:00",
+    "name": "ensure-page",
+    "durationMs": 0.65,
+    "tags": {
+      "inputPage": "/api/v1/transactions/ownership-trends"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:43.207000+00:00",
+    "name": "ensure-page",
+    "durationMs": 1787.61,
+    "tags": {
+      "inputPage": "/api/v1/transactions/ownership-trends"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:21:01.231000+00:00",
+    "name": "ensure-page",
+    "durationMs": 0.69,
+    "tags": {
+      "inputPage": "/api/v1/transactions/ownership-trends"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:21:01.236000+00:00",
+    "name": "ensure-page",
+    "durationMs": 0.3,
+    "tags": {
+      "inputPage": "/api/v1/transactions/ownership-trends"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:20:41.237000+00:00",
+    "name": "handle-request",
+    "durationMs": 21192.57,
+    "tags": {
+      "url": "/api/v1/transactions/ownership-trends?window=3&metric=ownership&limit=10&offset=0"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:21:01.232000+00:00",
+    "name": "handle-request",
+    "durationMs": 11426.05,
+    "tags": {
+      "url": "/api/v1/transactions/ownership-trends?window=3&metric=ownership&limit=10&offset=0"
+    }
+  }
+]

@@ -1,0 +1,65 @@
+diff --git a/web/scripts/blsh/nativeProcessCaptureBootstrap.test.ts b/web/scripts/blsh/nativeProcessCaptureBootstrap.test.ts
+index 713877a..af75155 100644
+--- a/web/scripts/blsh/nativeProcessCaptureBootstrap.test.ts
++++ b/web/scripts/blsh/nativeProcessCaptureBootstrap.test.ts
+@@ -20,15 +20,15 @@ vi.mock("node:net", () => { throw new Error("real sockets forbidden"); });
+ vi.mock("node:tls", () => { throw new Error("real TLS forbidden"); });
+ 
+ const WEB = "/Users/tim/Code/fhfhockey.com/web";
+-const OUTPUT = "/Users/tim/Library/Application Support/fhfh-blsh-native-20261117T140500Z";
++const OUTPUT = "/Users/tim/Library/Application Support/fhfh-blsh-native-20261118T140500Z";
+ const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
+-const SLOT = "2026-11-17T14:05:00.000Z";
++const SLOT = "2026-11-18T14:05:00.000Z";
+ const originalArgs = process.execArgv;
+ let directory: string;
+ let bootstrap: typeof import("./nativeProcessCaptureBootstrap").nativeProcessCaptureBootstrap;
+ let runtimeResolve: (target: string) => string;
+ const hash = (path: string) => createHash("sha256").update(new Uint8Array(fs.readFileSync(path))).digest("hex");
+-const receipt = () => ({ version: "fhfh.blsh.native-pilot-authorization.v1", approvedBy: "TJ", approvedAtUTC: "2026-11-16T20:00:00.000Z",
++const receipt = () => ({ version: "fhfh.blsh.native-pilot-authorization.v1", approvedBy: "TJ", approvedAtUTC: "2026-11-17T20:00:00.000Z",
+   approvalReference: "fixture:not-real-approval", operator: "fixture-operator", bootstrapSHA256: hash(resolve(__dirname, "nativeProcessCaptureBootstrap.ts")),
+   slotStartUTC: SLOT, outputDirectory: OUTPUT, supabaseOrigin: ORIGIN, lifecycleMode: "disabled", maximumHTTPAttempts: 5,
+   coordinationReceipt: "fixture:coordination", runtimeReceipt: "fixture:runtime", admissionReceipt: "fixture:admission" });
+@@ -112,14 +112,14 @@ describe("one-shot native capture bootstrap, entirely offline", () => {
+ 
+   it.each([
+     { bootstrapSHA256: "0".repeat(64) }, { lifecycleMode: "enabled" }, { maximumHTTPAttempts: 8 },
+-    { outputDirectory: "/tmp/alternate" }, { supabaseOrigin: "https://example.invalid" }, { slotStartUTC: "2026-11-18T14:05:00.000Z" },
+-    { approvedBy: "fixture-no-human" }, { approvedAtUTC: "2026-11-18T14:05:00.000Z" }, { coordinationReceipt: "" }, { force: true },
++    { outputDirectory: "/tmp/alternate" }, { supabaseOrigin: "https://example.invalid" }, { slotStartUTC: "2026-11-17T14:05:00.000Z" },
++    { approvedBy: "fixture-no-human" }, { approvedAtUTC: "2026-11-19T14:05:00.000Z" }, { coordinationReceipt: "" }, { force: true },
+   ])("rejects scope/evidence mismatch %j without adapter construction", async change => {
+     await expect(bootstrap(["--run", writeReceipt(change)])).rejects.toThrow();
+     expect(calls.factory).not.toHaveBeenCalled(); expect(calls.runner).not.toHaveBeenCalled();
+   });
+ 
+-  it.each(["2026-11-17T14:04:59.999Z", "2026-11-17T14:06:00.000Z", "2026-11-19T00:00:00.000Z"])("rejects outside the one start window: %s", async now => {
++  it.each(["2026-11-18T14:04:59.999Z", "2026-11-18T14:06:00.000Z", "2026-11-19T00:00:00.000Z"])("rejects outside the one start window: %s", async now => {
+     vi.setSystemTime(now); await expect(bootstrap(["--run", writeReceipt()])).rejects.toThrow("bootstrap_outside_approved_slot");
+     expect(calls.factory).not.toHaveBeenCalled();
+   });
+@@ -174,7 +174,7 @@ describe("one-shot native capture bootstrap, entirely offline", () => {
+   });
+ 
+   it("rechecks the start window after adapter construction before runner dispatch", async () => {
+-    calls.factory.mockImplementationOnce(() => { vi.setSystemTime("2026-11-17T14:06:00.000Z"); return { synthetic: true }; });
++    calls.factory.mockImplementationOnce(() => { vi.setSystemTime("2026-11-18T14:06:00.000Z"); return { synthetic: true }; });
+     await expect(bootstrap(["--run", writeReceipt()])).rejects.toThrow("bootstrap_capture_failed_preserve_packet_no_retry"); expect(calls.runner).not.toHaveBeenCalled();
+   });
+ });
+diff --git a/web/scripts/blsh/nativeProcessCaptureBootstrap.ts b/web/scripts/blsh/nativeProcessCaptureBootstrap.ts
+index 44102ad..614704f 100644
+--- a/web/scripts/blsh/nativeProcessCaptureBootstrap.ts
++++ b/web/scripts/blsh/nativeProcessCaptureBootstrap.ts
+@@ -10,8 +10,8 @@ import type { NativeCaptureRunInput } from "./nativeProcessCaptureRunner";
+ 
+ const WEB = "/Users/tim/Code/fhfhockey.com/web";
+ const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
+-const OUTPUT = "/Users/tim/Library/Application Support/fhfh-blsh-native-20261117T140500Z";
+-const SLOT = "2026-11-17T14:05:00.000Z";
++const OUTPUT = "/Users/tim/Library/Application Support/fhfh-blsh-native-20261118T140500Z";
++const SLOT = "2026-11-18T14:05:00.000Z";
+ // One start in this 60-second window; at most 120 seconds of capture work.
+ const LAST_START = Date.parse(SLOT) + 60_000;
+ const NODE_SHA256 = "daa77e22e1b8778361b392461e9921a6d292d0382ebf4ae872a0081f02f01fef";

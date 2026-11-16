@@ -1,0 +1,1 @@
+select to_char(run_time,'MM-DD HH24:MI:SS') t, status, details->>'response' r from cron_job_audit where run_time >= '2026-11-16 12:40' and run_time < '2026-11-16 12:42' and job_name='/api/v1/db/forge-served-forecast-snapshot'

@@ -1,0 +1,22 @@
+# Player Trends — frozen source audit
+
+Target `89da739cb45d7d572ed59bfa0b209c79c5d99299`; full1,400-line read of `web/pages/trends/player/[playerId].tsx`,240 unique AST rows. Exact local probe passed once; evidence in `pages28-probe.cjs`, output and manifest. No source changes or real calls.
+
+## AFULL-TRENDPLAYER1-01 — P1: missing games disappear from the streak and become zero when all are unknown
+
+- **Location:** page:838–879,1199–1234. Claim: latest and consecutive-game summaries retain missingness (rule21) and the shared streak threshold still applies to consecutive games.
+- **Evidence:** exact page chart/streak memos plus actual `trendsSurface.summarizeTrendStreak`. Four chronological games have rolling shots1.2,null,1.2,null against baseline1. Chart deltas correctly remain20,null,20,null. The streak memo filters out nulls and returns hot,2straight games,latest20%, despite the latest game being unknown and a gap between the known observations. An all-null series returns numeric latest0/average0 and steady; JSX prints `+0.0%`.
+- **What's wrong:** valid observations are compressed into a false contiguous streak and a stale value is called latest. The no-data branch additionally invents a measured zero. This is a reachable nullable-row counterexample, not proof of a production row.
+- **Fix/readers:** retain one entry per game; an unknown latest game withholds the latest/streak result, and an internal unknown breaks the streak. Keep nullable latest/average values and show unavailable. The player Trends sustained-streak cards, colors and ordering are affected. The shared helper's8% threshold and its known20,0,20→one-game control are correct; fix the caller without weakening that rule.
+
+## Full-source checks
+
+Metric configuration covers additive averages, TOI averages, per60 rates and ratio/index families. Additive/TOI readers intentionally select `*_avg_*` only, preventing cumulative totals from masquerading as per-game values; exact controls preserve known0 and withhold an absent average even when total15 exists. Rate/ratio fields use shared canonical-first compatibility; canonical3 beats legacy4. Sidecar historicalCompatibility merges by game_date, and count support is decoded separately for calendar pooling. No new claim is made that legacy fallback is currently populated contrary to writer contracts.
+
+Chart arithmetic correctly withholds relative delta when recent/baseline is missing or baseline0; absolute difference remains1 for recent1/baseline0. Relative deltas divide by absolute baseline, and all plotted lines share relative-percent units. Card formatting delegates to declared scale contracts for fraction,percent,index and seconds. Calendar views use ET today and7/14/30days; unsupported historical count rows withhold the result and partial metric observations have explicit sample text. Rolling10 compares the latest stored window, not a calendar-ten-day window. The handed-off date is explicitly described as preserved for return navigation, not an as-of filter.
+
+URL metric selection is group-bounded and deduplicated. Baseline/window/quick-view values are allowlisted. Initial URL hydration avoids writing defaults over explicit initial state; later browser-history interactions were not exercised. Empty metric selection can be normalized back to group defaults in URL parsing; no numeric-result claim is made from that interaction alone.
+
+Reads paginate player history and support in1,000-row pages with no overall season/date ceiling; full history is intentional for the cumulative chart but is an unmeasured load concern for §6. All-strength is explicit; chart contains historical seasons and any game types admitted upstream, with no new source-population qualification. Support join assumes a unique per-player/strength/date row. Loader success is mounted-guarded, but errors are not, and loading/failure gates only the main chart, not quick/streak cards; old values can persist during a transition. This is retained as an unexercised interaction limitation, not a separately asserted numeric defect. Date-only strings are formatted via browser-local Date in ticks/tooltips/brush, so date presentation must be checked in the approved browser pass. `connectNulls` visually bridges missing chart observations and must not be mistaken for completeness.
+
+No React mount, browser render, live DB/query cost, source occurrence, actual sidecar read, provider, environment import, build, server or supplied suite ran. Pure controls and hash/AST reconciliation passed.

@@ -1,0 +1,97 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "seasonalPp": {
+    "actual": 0.3,
+    "pooledExpected": 0.14,
+    "inputs": [
+      {
+        "gp": 10,
+        "playerSeconds": 50,
+        "providerShare": 0.5
+      },
+      {
+        "gp": 10,
+        "playerSeconds": 90,
+        "providerShare": 0.1
+      }
+    ]
+  },
+  "fallbackExposure": {
+    "wgoGp": 10,
+    "wgoPoints": 10,
+    "wgoToi": null,
+    "nstGp": 5,
+    "nstMinutes": 50,
+    "actualPointsPer60": 12,
+    "actualAtoi": 5
+  },
+  "tiedNstSelection": {
+    "forward": 1,
+    "reverse": 3
+  },
+  "budgetProgress": {
+    "attempts": [
+      {
+        "status": 207,
+        "processed": 1,
+        "firstNotReached": 2
+      },
+      {
+        "status": 207,
+        "processed": 1,
+        "firstNotReached": 2
+      }
+    ],
+    "writes": [
+      {
+        "table": "wigo_career",
+        "ids": [
+          1
+        ]
+      },
+      {
+        "table": "wigo_recent",
+        "ids": [
+          1
+        ]
+      },
+      {
+        "table": "wigo_career",
+        "ids": [
+          1
+        ]
+      },
+      {
+        "table": "wigo_recent",
+        "ids": [
+          1
+        ]
+      }
+    ]
+  },
+  "explicitGameMissingInputs": {
+    "status": 200,
+    "success": true,
+    "gamesVerified": 0,
+    "skippedGames": [
+      {
+        "date": "2026-10-08",
+        "gameId": 2026020065,
+        "reason": "projection_inputs_unavailable"
+      }
+    ],
+    "nextStartDate": null
+  },
+  "sources": [
+    {
+      "path": "web/pages/api/v1/db/calculate-wigo-stats.ts",
+      "sha256": "d759afbbe76ced47c394f2061fa9eb444e9b432217d1aa90af15e42dee2afb45"
+    },
+    {
+      "path": "web/pages/api/v1/db/build-projection-derived-v2.ts",
+      "sha256": "11677254d5c10bf476bdc2dc756982e39acb0bc43495dfce16509d41cc5e2b52"
+    }
+  ],
+  "limits": "Frozen local VM and AST helpers only. HTTP handler functions are evaluated with all transports, auth/audit/provider/DB dependencies replaced by finite inert doubles, not invoked as routes. In-memory upserts only; clock cost synthetic. No actual network, DB, environment, app imports, provider or writes. No supplied Vitest suite run."
+}

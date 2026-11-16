@@ -1,0 +1,41 @@
+{
+  "copiedAt": "2026-11-12T23:37:03.988227+00:00",
+  "canonicalHead": "ad7451db583570c60d505004916b3cdda13f7023",
+  "originalFiles": {
+    "NEXT-DATA-STEP.md": "448b060c19cdd21eb8c545c6f8cda2645a01d0b63a598eb787f850ef18293e72",
+    "H1-SOURCE-PINS.json": "2eddcc3a3c2deefadbc095e3eda3932325df3735e51b28dd903344898a63f4de"
+  },
+  "runtimeFileChecks": [
+    {
+      "path": "web/pages/api/v1/db/run-projection-v2.ts",
+      "expected": "91a1124fb7e0578997940c2e0a4feb38e772a3926b165b78524922ad25aab59d",
+      "current": "91a1124fb7e0578997940c2e0a4feb38e772a3926b165b78524922ad25aab59d",
+      "matches": true
+    },
+    {
+      "path": "web/lib/projections/run-forge-projections.ts",
+      "expected": "0185b84d930bda6cb5d956adaf46b3d7f61c46648dc2cf16d7a7dfcaccd7fd53",
+      "current": "0185b84d930bda6cb5d956adaf46b3d7f61c46648dc2cf16d7a7dfcaccd7fd53",
+      "matches": true
+    },
+    {
+      "path": "web/lib/projections/stages/persistence-stage.ts",
+      "expected": "64bdab989990433cbb16a010f0f5b5ed416df29e12f8c90e083ad2c0527852d6",
+      "current": "64bdab989990433cbb16a010f0f5b5ed416df29e12f8c90e083ad2c0527852d6",
+      "matches": true
+    },
+    {
+      "path": "web/lib/projections/starterBoardFlags.ts",
+      "expected": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d",
+      "current": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/run-forge-local.ts",
+      "expected": "27548d2069ae5739a41e0c83930d737e16108969c65ef98c49051a6d8fd23ef0",
+      "current": "27548d2069ae5739a41e0c83930d737e16108969c65ef98c49051a6d8fd23ef0",
+      "matches": true
+    }
+  ],
+  "productionVerified": false
+}

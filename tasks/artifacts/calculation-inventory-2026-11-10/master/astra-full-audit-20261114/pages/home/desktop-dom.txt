@@ -1,0 +1,1293 @@
+- banner:
+  - link "FHFH home":
+    - /url: /
+    - img "FHFH"
+    - generic: Hockey Analytics
+  - navigation "Primary navigation":
+    - list:
+      - link "Home":
+        - /url: /
+      - link "Game Grid":
+        - /url: /game-grid
+      - link "Underlying Stats":
+        - /url: /underlying-stats
+      - button "Analytics":
+        - text: Analytics
+      - button "Tools":
+        - text: Tools
+      - link "Blog":
+        - /url: /blog
+      - button "Community":
+        - text: Community
+  - button "Search players":
+    - generic: Search players
+  - link "Buy me a coffee":
+    - /url: https://www.buymeacoffee.com/tjsusername
+    - img "Buy me a coffee"
+  - button "Open account menu":
+    - img "TjsUsername"
+- main:
+  - region "The Slate":
+    - heading "The Slate" [level=1]
+    - paragraph: Real-time analytics. Built for fantasy.
+    - generic: Players indexed
+    - strong: "4437"
+    - generic: Up to date
+    - generic: News updates
+    - strong: "8"
+    - generic: Latest headlines
+    - generic: Injuries tracked
+    - strong: "54"
+    - generic: Current updates
+    - generic: Model odds unavailable
+    - strong: Today's Edge
+    - paragraph: 5 games on the board, starting at 7:30 PM EST.
+    - generic: Data updated
+    - generic: a few seconds ago
+    - navigation "Contextual homepage tools":
+      - link "Starter Board":
+        - /url: /start-chart
+      - link "Game Grid":
+        - /url: /game-grid/7-Day-Forecast
+      - link "Trends":
+        - /url: /trends
+      - link "Underlying Stats":
+        - /url: /underlying-stats
+    - navigation "Homepage tools":
+      - text: Quick links
+      - link "Starter Board ›":
+        - /url: /start-chart
+        - generic: Starter Board
+        - text: ›
+      - link "Game Grid ›":
+        - /url: /game-grid/7-Day-Forecast
+        - generic: Game Grid
+        - text: ›
+      - link "Trends ›":
+        - /url: /trends
+        - generic: Trends
+        - text: ›
+      - link "Underlying Stats ›":
+        - /url: /underlying-stats
+        - generic: Underlying Stats
+        - text: ›
+  - region "Today's Games":
+    - heading "Today's Games" [level=2]
+    - button "Previous Day": ‹
+    - button "Choose game date, currently November 15, 2026":
+      - generic: Sun, Nov 15
+    - button "Next Day": ›
+    - generic "Slate summary":
+      - strong: "5"
+      - text: Games
+      - strong: "10"
+      - text: Teams
+      - strong: "0"
+      - text: Games started
+    - generic "light desktop slate, 5 games":
+      - link "EDM at PHI, Scheduled, FHFH prediction unavailable":
+        - /url: /game/2026020326
+        - generic: Scheduled
+        - generic: 7:30 PM EST
+        - generic "SN"
+        - strong: EDM
+        - generic: AT
+        - strong: PHI
+        - generic: RecordsEDM 15-3-3 · PHI 6-10-6
+        - generic: ›
+      - link "FLA at DAL, Scheduled, FHFH prediction unavailable":
+        - /url: /game/2026020327
+        - generic: Scheduled
+        - generic: 8:00 PM EST
+        - generic "NHLN"
+        - strong: FLA
+        - generic: AT
+        - strong: DAL
+        - generic: RecordsFLA 12-7-2 · DAL 11-6-2
+        - generic: ›
+      - link "CGY at ANA, Scheduled, FHFH prediction unavailable":
+        - /url: /game/2026020328
+        - generic: Scheduled
+        - generic: 8:00 PM EST
+        - generic "SN1"
+        - strong: CGY
+        - generic: AT
+        - strong: ANA
+        - generic: RecordsCGY 9-10-1 · ANA 10-9-1
+        - generic: ›
+      - link "VAN at VGK, Scheduled, FHFH prediction unavailable":
+        - /url: /game/2026020329
+        - generic: Scheduled
+        - generic: 9:00 PM EST
+        - generic "SNP"
+        - strong: VAN
+        - generic: AT
+        - strong: VGK
+        - generic: RecordsVAN 3-17-1 · VGK 13-5-3
+        - generic: ›
+      - link "NSH at SJS, Scheduled, FHFH prediction unavailable":
+        - /url: /game/2026020330
+        - generic: Scheduled
+        - generic: 9:00 PM EST
+        - generic "NBCSCA"
+        - strong: NSH
+        - generic: AT
+        - strong: SJS
+        - generic: RecordsNSH 11-4-5 · SJS 9-11-2
+        - generic: ›
+      - note: FHFH predictions unavailable while the model is developed and validated.
+      - link "View all 5 games":
+        - /url: /game-grid/7-Day-Forecast
+        - text: View all 5 games
+        - generic: ›
+  - region "Transaction Trends":
+    - heading "Transaction Trends" [level=2]
+    - link "View all":
+      - /url: /trends
+    - paragraph: Ownership movement over the last 3 days.
+    - generic: Metric
+    - group "Trend metric":
+      - button "Ownership" [pressed]
+      - button "ADP"
+    - generic: Position
+    - group "Position filter":
+      - button "All" [pressed]
+      - button "F"
+      - button "C"
+      - button "LW"
+      - button "RW"
+      - button "D"
+      - button "G"
+    - generic: Timeframe
+    - group "Time windows":
+      - button "1D"
+      - button "3D" [pressed]
+      - button "5D"
+      - button "10D"
+    - region "Top Risers (Δ 3D)":
+      - heading "Top Risers (Δ 3D)" [level=3]
+      - table "Top Risers":
+        - rowgroup:
+          - row "# Player Team · Elig Own % Trend (3D) Δ 3D":
+            - columnheader "#"
+            - columnheader "Player"
+            - columnheader "Team · Elig"
+            - columnheader "Own %"
+            - columnheader "Trend (3D)"
+            - columnheader "Δ 3D"
+        - rowgroup:
+          - row "1 Victor Olofsson VGK · LW, RW 33.0% Victor Olofsson ownership trend over 3 days Up 20.0 percentage points":
+            - rowheader "1"
+            - cell "Victor Olofsson":
+              - link "Victor Olofsson":
+                - /url: /trends/player/8478109
+            - cell "VGK · LW, RW"
+            - cell "33.0%"
+            - cell "Victor Olofsson ownership trend over 3 days":
+              - img "Victor Olofsson ownership trend over 3 days":
+            - cell "Up 20.0 percentage points":
+              - generic "Up 20.0 percentage points": ▲ +20.0%
+          - row "2 Charle-Edouard D'Astous TB · D 54.0% Charle-Edouard D'Astous ownership trend over 3 days Up 12.0 percentage points":
+            - rowheader "2"
+            - cell "Charle-Edouard D'Astous":
+              - link "Charle-Edouard D'Astous":
+                - /url: /trends/player/8480426
+            - cell "TB · D"
+            - cell "54.0%"
+            - cell "Charle-Edouard D'Astous ownership trend over 3 days":
+              - img "Charle-Edouard D'Astous ownership trend over 3 days":
+            - cell "Up 12.0 percentage points":
+              - generic "Up 12.0 percentage points": ▲ +12.0%
+          - row "3 Ivan Barbashev VGK · LW 40.0% Ivan Barbashev ownership trend over 3 days Up 11.0 percentage points":
+            - rowheader "3"
+            - cell "Ivan Barbashev":
+              - link "Ivan Barbashev":
+                - /url: /trends/player/8477964
+            - cell "VGK · LW"
+            - cell "40.0%"
+            - cell "Ivan Barbashev ownership trend over 3 days":
+              - img "Ivan Barbashev ownership trend over 3 days":
+            - cell "Up 11.0 percentage points":
+              - generic "Up 11.0 percentage points": ▲ +11.0%
+          - row "4 Dawson Mercer WPG · C, RW 13.0% Dawson Mercer ownership trend over 3 days Up 10.0 percentage points":
+            - rowheader "4"
+            - cell "Dawson Mercer":
+              - link "Dawson Mercer":
+                - /url: /trends/player/8482110
+            - cell "WPG · C, RW"
+            - cell "13.0%"
+            - cell "Dawson Mercer ownership trend over 3 days":
+              - img "Dawson Mercer ownership trend over 3 days":
+            - cell "Up 10.0 percentage points":
+              - generic "Up 10.0 percentage points": ▲ +10.0%
+          - row "5 Adin Hill VGK · G 50.0% Adin Hill ownership trend over 3 days Up 8.0 percentage points":
+            - rowheader "5"
+            - cell "Adin Hill":
+              - link "Adin Hill":
+                - /url: /trends/player/8478499
+            - cell "VGK · G"
+            - cell "50.0%"
+            - cell "Adin Hill ownership trend over 3 days":
+              - img "Adin Hill ownership trend over 3 days":
+            - cell "Up 8.0 percentage points":
+              - generic "Up 8.0 percentage points": ▲ +8.0%
+          - row "6 Mikael Granlund ANA · C, LW 73.0% Mikael Granlund ownership trend over 3 days Up 6.0 percentage points":
+            - rowheader "6"
+            - cell "Mikael Granlund":
+              - link "Mikael Granlund":
+                - /url: /trends/player/8475798
+            - cell "ANA · C, LW"
+            - cell "73.0%"
+            - cell "Mikael Granlund ownership trend over 3 days":
+              - img "Mikael Granlund ownership trend over 3 days":
+            - cell "Up 6.0 percentage points":
+              - generic "Up 6.0 percentage points": ▲ +6.0%
+          - row "7 Cole Perfetti WPG · LW, RW 64.0% Cole Perfetti ownership trend over 3 days Up 6.0 percentage points":
+            - rowheader "7"
+            - cell "Cole Perfetti":
+              - link "Cole Perfetti":
+                - /url: /trends/player/8482149
+            - cell "WPG · LW, RW"
+            - cell "64.0%"
+            - cell "Cole Perfetti ownership trend over 3 days":
+              - img "Cole Perfetti ownership trend over 3 days":
+            - cell "Up 6.0 percentage points":
+              - generic "Up 6.0 percentage points": ▲ +6.0%
+          - row "8 Shane Wright NSH · C, RW 8.0% Shane Wright ownership trend over 3 days Up 6.0 percentage points":
+            - rowheader "8"
+            - cell "Shane Wright":
+              - link "Shane Wright":
+                - /url: /trends/player/8483524
+            - cell "NSH · C, RW"
+            - cell "8.0%"
+            - cell "Shane Wright ownership trend over 3 days":
+              - img "Shane Wright ownership trend over 3 days":
+            - cell "Up 6.0 percentage points":
+              - generic "Up 6.0 percentage points": ▲ +6.0%
+          - row "9 Brayden Schenn NYI · C, LW 27.0% Brayden Schenn ownership trend over 3 days Up 5.0 percentage points":
+            - rowheader "9"
+            - cell "Brayden Schenn":
+              - link "Brayden Schenn":
+                - /url: /trends/player/8475170
+            - cell "NYI · C, LW"
+            - cell "27.0%"
+            - cell "Brayden Schenn ownership trend over 3 days":
+              - img "Brayden Schenn ownership trend over 3 days":
+            - cell "Up 5.0 percentage points":
+              - generic "Up 5.0 percentage points": ▲ +5.0%
+          - row "10 Brock Boeser VAN · LW, RW 43.0% Brock Boeser ownership trend over 3 days Up 5.0 percentage points":
+            - rowheader "10"
+            - cell "Brock Boeser":
+              - link "Brock Boeser":
+                - /url: /trends/player/8478444
+            - cell "VAN · LW, RW"
+            - cell "43.0%"
+            - cell "Brock Boeser ownership trend over 3 days":
+              - img "Brock Boeser ownership trend over 3 days":
+            - cell "Up 5.0 percentage points":
+              - generic "Up 5.0 percentage points": ▲ +5.0%
+    - region "Top Fallers (Δ 3D)":
+      - heading "Top Fallers (Δ 3D)" [level=3]
+      - table "Top Fallers":
+        - rowgroup:
+          - row "# Player Team · Elig Own % Trend (3D) Δ 3D":
+            - columnheader "#"
+            - columnheader "Player"
+            - columnheader "Team · Elig"
+            - columnheader "Own %"
+            - columnheader "Trend (3D)"
+            - columnheader "Δ 3D"
+        - rowgroup:
+          - row "1 Laurent Brossoit ANA · G 5.0% Laurent Brossoit ownership trend over 3 days Down 12.0 percentage points":
+            - rowheader "1"
+            - cell "Laurent Brossoit":
+              - link "Laurent Brossoit":
+                - /url: /trends/player/8476316
+            - cell "ANA · G"
+            - cell "5.0%"
+            - cell "Laurent Brossoit ownership trend over 3 days":
+              - img "Laurent Brossoit ownership trend over 3 days":
+            - cell "Down 12.0 percentage points":
+              - generic "Down 12.0 percentage points": ▼ -12.0%
+          - row "2 Zach Benson BUF · LW 53.0% Zach Benson ownership trend over 3 days Down 6.0 percentage points":
+            - rowheader "2"
+            - cell "Zach Benson":
+              - link "Zach Benson":
+                - /url: /trends/player/8484145
+            - cell "BUF · LW"
+            - cell "53.0%"
+            - cell "Zach Benson ownership trend over 3 days":
+              - img "Zach Benson ownership trend over 3 days":
+            - cell "Down 6.0 percentage points":
+              - generic "Down 6.0 percentage points": ▼ -6.0%
+          - row "3 Ukko-Pekka Luukkonen BUF · G 59.0% Ukko-Pekka Luukkonen ownership trend over 3 days Down 6.0 percentage points":
+            - rowheader "3"
+            - cell "Ukko-Pekka Luukkonen":
+              - link "Ukko-Pekka Luukkonen":
+                - /url: /trends/player/8480045
+            - cell "BUF · G"
+            - cell "59.0%"
+            - cell "Ukko-Pekka Luukkonen ownership trend over 3 days":
+              - img "Ukko-Pekka Luukkonen ownership trend over 3 days":
+            - cell "Down 6.0 percentage points":
+              - generic "Down 6.0 percentage points": ▼ -6.0%
+          - row "4 Kasperi Kapanen EDM · RW 17.0% Kasperi Kapanen ownership trend over 3 days Down 4.0 percentage points":
+            - rowheader "4"
+            - cell "Kasperi Kapanen":
+              - link "Kasperi Kapanen":
+                - /url: /trends/player/8477953
+            - cell "EDM · RW"
+            - cell "17.0%"
+            - cell "Kasperi Kapanen ownership trend over 3 days":
+              - img "Kasperi Kapanen ownership trend over 3 days":
+            - cell "Down 4.0 percentage points":
+              - generic "Down 4.0 percentage points": ▼ -4.0%
+          - row "5 Viktor Arvidsson DET · LW, RW 35.0% Viktor Arvidsson ownership trend over 3 days Down 4.0 percentage points":
+            - rowheader "5"
+            - cell "Viktor Arvidsson":
+              - link "Viktor Arvidsson":
+                - /url: /trends/player/8478042
+            - cell "DET · LW, RW"
+            - cell "35.0%"
+            - cell "Viktor Arvidsson ownership trend over 3 days":
+              - img "Viktor Arvidsson ownership trend over 3 days":
+            - cell "Down 4.0 percentage points":
+              - generic "Down 4.0 percentage points": ▼ -4.0%
+          - row "6 Arturs Silovs PIT · G 30.0% Arturs Silovs ownership trend over 3 days Down 4.0 percentage points":
+            - rowheader "6"
+            - cell "Arturs Silovs":
+              - link "Arturs Silovs":
+                - /url: /trends/player/8481668
+            - cell "PIT · G"
+            - cell "30.0%"
+            - cell "Arturs Silovs ownership trend over 3 days":
+              - img "Arturs Silovs ownership trend over 3 days":
+            - cell "Down 4.0 percentage points":
+              - generic "Down 4.0 percentage points": ▼ -4.0%
+          - row "7 Emmitt Finnie DET · C, LW 19.0% Emmitt Finnie ownership trend over 3 days Down 3.0 percentage points":
+            - rowheader "7"
+            - cell "Emmitt Finnie":
+              - link "Emmitt Finnie":
+                - /url: /trends/player/8484471
+            - cell "DET · C, LW"
+            - cell "19.0%"
+            - cell "Emmitt Finnie ownership trend over 3 days":
+              - img "Emmitt Finnie ownership trend over 3 days":
+            - cell "Down 3.0 percentage points":
+              - generic "Down 3.0 percentage points": ▼ -3.0%
+          - row "8 Porter Martone PHI · RW 58.0% Porter Martone ownership trend over 3 days Down 3.0 percentage points":
+            - rowheader "8"
+            - cell "Porter Martone":
+              - link "Porter Martone":
+                - /url: /trends/player/8485406
+            - cell "PHI · RW"
+            - cell "58.0%"
+            - cell "Porter Martone ownership trend over 3 days":
+              - img "Porter Martone ownership trend over 3 days":
+            - cell "Down 3.0 percentage points":
+              - generic "Down 3.0 percentage points": ▼ -3.0%
+          - row "9 Jake Allen NJ · G 18.0% Jake Allen ownership trend over 3 days Down 3.0 percentage points":
+            - rowheader "9"
+            - cell "Jake Allen":
+              - link "Jake Allen":
+                - /url: /trends/player/8474596
+            - cell "NJ · G"
+            - cell "18.0%"
+            - cell "Jake Allen ownership trend over 3 days":
+              - img "Jake Allen ownership trend over 3 days":
+            - cell "Down 3.0 percentage points":
+              - generic "Down 3.0 percentage points": ▼ -3.0%
+          - row "10 Cam Talbot CBJ · G 17.0% Cam Talbot ownership trend over 3 days Down 3.0 percentage points":
+            - rowheader "10"
+            - cell "Cam Talbot":
+              - link "Cam Talbot":
+                - /url: /trends/player/8475660
+            - cell "CBJ · G"
+            - cell "17.0%"
+            - cell "Cam Talbot ownership trend over 3 days":
+              - img "Cam Talbot ownership trend over 3 days":
+            - cell "Down 3.0 percentage points":
+              - generic "Down 3.0 percentage points": ▼ -3.0%
+    - generic: Page 1
+    - generic: ·
+    - generic: "Risers: 95 | Fallers: 145"
+    - paragraph: Δ = change in Yahoo! percent ownership (percentage points) over the selected window. Sparkline shows recent daily trajectory.
+    - navigation "Pagination":
+      - button "Prev" [disabled]:
+        - generic: ‹
+        - text: Prev
+      - button "Next":
+        - text: Next
+        - generic: ›
+  - region "League news and trends":
+    - heading "Latest News" [level=2]
+    - link "View all":
+      - /url: /news
+    - article:
+      - generic: NHL
+      - generic: Source report
+      - 'heading "Mike Reilly: Waiver Move: Colorado has claimed Mike Reilly off waivers from Carolina." [level=2]': Source report
+      - paragraph: "Mike Reilly: Waiver Move: Colorado has claimed Mike Reilly off waivers from Carolina."
+      - generic: Published 11/15/2026, 2:30:11 PM
+      - generic: Observed Nov 15, 2:12 PM
+      - generic: Original source pending
+      - complementary:
+        - img "NHL logo"
+    - article:
+      - generic: CAR
+      - generic: Source report
+      - heading "Avs claimed defenseman Mike Reilly from the Hurricanes on waivers. He's a lefty with a consistent track record of good underlying numbers, even if he's been in some places where the coach didn't always trust him. Given the injuries, a solid, low-stakes bet." [level=2]: Source report
+      - paragraph: Avs claimed defenseman Mike Reilly from the Hurricanes on waivers. He's a lefty with a consistent track record of good underlying numbers, even if he's been in some places where the coach didn't always trust him. Given the injuries, a solid, low-stakes bet.
+      - generic: Published 11/15/2026, 2:30:11 PM
+      - generic: Observed Nov 15, 2:08 PM
+      - generic: "@cmasisak22"
+      - link "View original post for Source report":
+        - /url: https://x.com/cmasisak22/status/2122043487080026450?ref_src=twsrc%5Etfw
+      - complementary:
+        - img "CAR logo"
+    - article:
+      - generic: STL
+      - generic: Source report
+      - 'heading "Broberg and Neighbours are day to day, according to Jim Montgomery. Broberg is lower body, Neighbours upper. #stlblues" [level=2]': Source report
+      - generic: Philip Broberg · Ongoing report
+      - generic: Jake Neighbours · Ongoing report
+      - paragraph: "Broberg and Neighbours are day to day, according to Jim Montgomery. Broberg is lower body, Neighbours upper. #stlblues"
+      - generic: Published 11/15/2026, 1:30:11 PM
+      - generic: Observed Nov 15, 1:16 PM
+      - generic: "@lkorac10"
+      - link "View original post for Source report":
+        - /url: https://x.com/lkorac10/status/2122030546574258408?ref_src=twsrc%5Etfw
+      - complementary:
+        - img "STL logo"
+    - article:
+      - generic: PIT
+      - generic: Line Combination
+      - generic: Power Play
+      - heading "PP1) Karlsson, Crosby, Rakell, Novak, Kindel PP2) Letang, Malkin, Chinakhov, Lapierre, Brazeau" [level=2]: PIT line combination update
+      - paragraph: Lineup snapshot
+      - paragraph: Structured special-teams units unavailable for this report.
+      - paragraph: PP1) Karlsson, Crosby, Rakell, Novak, Kindel PP2) Letang, Malkin, Chinakhov, Lapierre, Brazeau
+      - generic: Published 11/15/2026, 1:30:11 PM
+      - generic: Observed Nov 15, 1:00 PM
+      - generic: "@PensInsideScoop"
+      - link "View original post for PIT line combination update":
+        - /url: https://x.com/PensInsideScoop/status/2122025949181161639?ref_src=twsrc%5Etfw
+      - complementary:
+        - img "PIT logo"
+    - article:
+      - generic: MTL
+      - generic: Source report
+      - 'heading "Montreal has placed Josh Anderson and Chris Kreider on IR. They''ve also recalled David Reinbacher from Laval. #GoHabsGo" [level=2]': Source report
+      - generic: Josh Anderson · Unknown report
+      - generic: Chris Kreider · Unknown report
+      - paragraph: "Montreal has placed Josh Anderson and Chris Kreider on IR. They've also recalled David Reinbacher from Laval. #GoHabsGo"
+      - generic: Published 11/15/2026, 1:30:11 PM
+      - generic: Observed Nov 15, 1:02 PM
+      - generic: Original source pending
+      - complementary:
+        - img "MTL logo"
+    - heading "League separation" [level=3]
+    - img "Team standings by games played":
+      - generic: "0"
+      - generic: "10"
+      - generic: "22"
+      - generic: Games Played
+      - generic: −10
+      - generic: −5
+      - generic: "0"
+      - generic: "5"
+      - generic: "10"
+      - generic: Points Above .500
+    - complementary "League separation controls":
+      - button "Clear all"
+      - button "Select all"
+      - generic: Conference
+      - combobox "Conference":
+        - option "All conferences" [selected]
+        - option "Eastern"
+        - option "Western"
+      - generic: Division
+      - combobox "Division":
+        - option "All divisions" [selected]
+        - option "Atlantic"
+        - option "Metropolitan"
+        - option "Central"
+        - option "Pacific"
+      - generic: Metric
+      - combobox "Metric":
+        - option "Points" [selected]
+        - option "Point Percentage"
+        - option "Goals Against/Game"
+        - option "Goals For/Game"
+        - option "PK%"
+        - option "PP%"
+      - strong: Atlantic
+      - checkbox "BOS" [checked]
+      - img "BOS"
+      - checkbox "BUF" [checked]
+      - img "BUF"
+      - checkbox "DET" [checked]
+      - img "DET"
+      - checkbox "FLA" [checked]
+      - img "FLA"
+      - checkbox "MTL" [checked]
+      - img "MTL"
+      - checkbox "OTT" [checked]
+      - img "OTT"
+      - checkbox "TBL" [checked]
+      - img "TBL"
+      - checkbox "TOR" [checked]
+      - img "TOR"
+      - strong: Metropolitan
+      - checkbox "CAR" [checked]
+      - img "CAR"
+      - checkbox "CBJ" [checked]
+      - img "CBJ"
+      - checkbox "NJD" [checked]
+      - img "NJD"
+      - checkbox "NYI" [checked]
+      - img "NYI"
+      - checkbox "NYR" [checked]
+      - img "NYR"
+      - checkbox "PHI" [checked]
+      - img "PHI"
+      - checkbox "PIT" [checked]
+      - img "PIT"
+      - checkbox "WSH" [checked]
+      - img "WSH"
+      - strong: Central
+      - checkbox "CHI" [checked]
+      - img "CHI"
+      - checkbox "COL" [checked]
+      - img "COL"
+      - checkbox "DAL" [checked]
+      - img "DAL"
+      - checkbox "MIN" [checked]
+      - img "MIN"
+      - checkbox "NSH" [checked]
+      - img "NSH"
+      - checkbox "STL" [checked]
+      - img "STL"
+      - checkbox "UTA" [checked]
+      - img "UTA"
+      - checkbox "WPG" [checked]
+      - img "WPG"
+      - strong: Pacific
+      - checkbox "ANA" [checked]
+      - img "ANA"
+      - checkbox "CGY" [checked]
+      - img "CGY"
+      - checkbox "EDM" [checked]
+      - img "EDM"
+      - checkbox "LAK" [checked]
+      - img "LAK"
+      - checkbox "SEA" [checked]
+      - img "SEA"
+      - checkbox "SJS" [checked]
+      - img "SJS"
+      - checkbox "VAN" [checked]
+      - img "VAN"
+      - checkbox "VGK" [checked]
+      - img "VGK"
+  - region "NHL standings and roster updates":
+    - heading "NHL Standings" [level=2]
+    - generic: 32 teams
+    - table "NHL League Standings":
+      - caption: NHL League Standings
+      - rowgroup:
+        - row "# Team GP W L OTL PTS P% STRK":
+          - columnheader "#"
+          - columnheader "Team"
+          - columnheader "GP"
+          - columnheader "W"
+          - columnheader "L"
+          - columnheader "OTL"
+          - columnheader "PTS"
+          - columnheader "P%"
+          - columnheader "STRK"
+      - rowgroup:
+        - row "1 Carolina Hurricanes logo Carolina Hurricanes 21 16 3 2 34 .810 W":
+          - rowheader "1"
+          - cell "Carolina Hurricanes logo Carolina Hurricanes":
+            - link "Carolina Hurricanes logo Carolina Hurricanes":
+              - /url: /stats/team/CAR
+              - img "Carolina Hurricanes logo"
+              - generic: Carolina Hurricanes
+          - cell "21"
+          - cell "16"
+          - cell "3"
+          - cell "2"
+          - cell "34"
+          - cell ".810"
+          - cell "W"
+        - row "2 Minnesota Wild logo Minnesota Wild 22 15 3 4 34 .773 W":
+          - rowheader "2"
+          - cell "Minnesota Wild logo Minnesota Wild":
+            - link "Minnesota Wild logo Minnesota Wild":
+              - /url: /stats/team/MIN
+              - img "Minnesota Wild logo"
+              - generic: Minnesota Wild
+          - cell "22"
+          - cell "15"
+          - cell "3"
+          - cell "4"
+          - cell "34"
+          - cell ".773"
+          - cell "W"
+        - row "3 Edmonton Oilers logo Edmonton Oilers 21 15 3 3 33 .786 W":
+          - rowheader "3"
+          - cell "Edmonton Oilers logo Edmonton Oilers":
+            - link "Edmonton Oilers logo Edmonton Oilers":
+              - /url: /stats/team/EDM
+              - img "Edmonton Oilers logo"
+              - generic: Edmonton Oilers
+          - cell "21"
+          - cell "15"
+          - cell "3"
+          - cell "3"
+          - cell "33"
+          - cell ".786"
+          - cell "W"
+        - row "4 New Jersey Devils logo New Jersey Devils 21 15 6 0 30 .714 W":
+          - rowheader "4"
+          - cell "New Jersey Devils logo New Jersey Devils":
+            - link "New Jersey Devils logo New Jersey Devils":
+              - /url: /stats/team/NJD
+              - img "New Jersey Devils logo"
+              - generic: New Jersey Devils
+          - cell "21"
+          - cell "15"
+          - cell "6"
+          - cell "0"
+          - cell "30"
+          - cell ".714"
+          - cell "W"
+        - row "5 Vegas Golden Knights logo Vegas Golden Knights 21 13 5 3 29 .690 OT":
+          - rowheader "5"
+          - cell "Vegas Golden Knights logo Vegas Golden Knights":
+            - link "Vegas Golden Knights logo Vegas Golden Knights":
+              - /url: /stats/team/VGK
+              - img "Vegas Golden Knights logo"
+              - generic: Vegas Golden Knights
+          - cell "21"
+          - cell "13"
+          - cell "5"
+          - cell "3"
+          - cell "29"
+          - cell ".690"
+          - cell "OT"
+        - row "6 Tampa Bay Lightning logo Tampa Bay Lightning 20 13 5 2 28 .700 L":
+          - rowheader "6"
+          - cell "Tampa Bay Lightning logo Tampa Bay Lightning":
+            - link "Tampa Bay Lightning logo Tampa Bay Lightning":
+              - /url: /stats/team/TBL
+              - img "Tampa Bay Lightning logo"
+              - generic: Tampa Bay Lightning
+          - cell "20"
+          - cell "13"
+          - cell "5"
+          - cell "2"
+          - cell "28"
+          - cell ".700"
+          - cell "L"
+        - row "7 Montréal Canadiens logo Montréal Canadiens 20 12 4 4 28 .700 L":
+          - rowheader "7"
+          - cell "Montréal Canadiens logo Montréal Canadiens":
+            - link "Montréal Canadiens logo Montréal Canadiens":
+              - /url: /stats/team/MTL
+              - img "Montréal Canadiens logo"
+              - generic: Montréal Canadiens
+          - cell "20"
+          - cell "12"
+          - cell "4"
+          - cell "4"
+          - cell "28"
+          - cell ".700"
+          - cell "L"
+        - row "8 Ottawa Senators logo Ottawa Senators 21 13 6 2 28 .667 W":
+          - rowheader "8"
+          - cell "Ottawa Senators logo Ottawa Senators":
+            - link "Ottawa Senators logo Ottawa Senators":
+              - /url: /stats/team/OTT
+              - img "Ottawa Senators logo"
+              - generic: Ottawa Senators
+          - cell "21"
+          - cell "13"
+          - cell "6"
+          - cell "2"
+          - cell "28"
+          - cell ".667"
+          - cell "W"
+        - row "9 Boston Bruins logo Boston Bruins 20 13 6 1 27 .675 L":
+          - rowheader "9"
+          - cell "Boston Bruins logo Boston Bruins":
+            - link "Boston Bruins logo Boston Bruins":
+              - /url: /stats/team/BOS
+              - img "Boston Bruins logo"
+              - generic: Boston Bruins
+          - cell "20"
+          - cell "13"
+          - cell "6"
+          - cell "1"
+          - cell "27"
+          - cell ".675"
+          - cell "L"
+        - row "10 Nashville Predators logo Nashville Predators 20 11 4 5 27 .675 W":
+          - rowheader "10"
+          - cell "Nashville Predators logo Nashville Predators":
+            - link "Nashville Predators logo Nashville Predators":
+              - /url: /stats/team/NSH
+              - img "Nashville Predators logo"
+              - generic: Nashville Predators
+          - cell "20"
+          - cell "11"
+          - cell "4"
+          - cell "5"
+          - cell "27"
+          - cell ".675"
+          - cell "W"
+        - row "11 Colorado Avalanche logo Colorado Avalanche 21 12 6 3 27 .643 W":
+          - rowheader "11"
+          - cell "Colorado Avalanche logo Colorado Avalanche":
+            - link "Colorado Avalanche logo Colorado Avalanche":
+              - /url: /stats/team/COL
+              - img "Colorado Avalanche logo"
+              - generic: Colorado Avalanche
+          - cell "21"
+          - cell "12"
+          - cell "6"
+          - cell "3"
+          - cell "27"
+          - cell ".643"
+          - cell "W"
+        - row "12 Florida Panthers logo Florida Panthers 21 12 7 2 26 .619 W":
+          - rowheader "12"
+          - cell "Florida Panthers logo Florida Panthers":
+            - link "Florida Panthers logo Florida Panthers":
+              - /url: /stats/team/FLA
+              - img "Florida Panthers logo"
+              - generic: Florida Panthers
+          - cell "21"
+          - cell "12"
+          - cell "7"
+          - cell "2"
+          - cell "26"
+          - cell ".619"
+          - cell "W"
+        - row "13 New York Rangers logo New York Rangers 21 12 8 1 25 .595 W":
+          - rowheader "13"
+          - cell "New York Rangers logo New York Rangers":
+            - link "New York Rangers logo New York Rangers":
+              - /url: /stats/team/NYR
+              - img "New York Rangers logo"
+              - generic: New York Rangers
+          - cell "21"
+          - cell "12"
+          - cell "8"
+          - cell "1"
+          - cell "25"
+          - cell ".595"
+          - cell "W"
+        - row "14 Dallas Stars logo Dallas Stars 19 11 6 2 24 .632 W":
+          - rowheader "14"
+          - cell "Dallas Stars logo Dallas Stars":
+            - link "Dallas Stars logo Dallas Stars":
+              - /url: /stats/team/DAL
+              - img "Dallas Stars logo"
+              - generic: Dallas Stars
+          - cell "19"
+          - cell "11"
+          - cell "6"
+          - cell "2"
+          - cell "24"
+          - cell ".632"
+          - cell "W"
+        - row "15 Utah Mammoth logo Utah Mammoth 21 10 8 3 23 .548 OT":
+          - rowheader "15"
+          - cell "Utah Mammoth logo Utah Mammoth":
+            - link "Utah Mammoth logo Utah Mammoth":
+              - /url: /stats/team/UTA
+              - img "Utah Mammoth logo"
+              - generic: Utah Mammoth
+          - cell "21"
+          - cell "10"
+          - cell "8"
+          - cell "3"
+          - cell "23"
+          - cell ".548"
+          - cell "OT"
+        - row "16 Winnipeg Jets logo Winnipeg Jets 21 10 8 3 23 .548 W":
+          - rowheader "16"
+          - cell "Winnipeg Jets logo Winnipeg Jets":
+            - link "Winnipeg Jets logo Winnipeg Jets":
+              - /url: /stats/team/WPG
+              - img "Winnipeg Jets logo"
+              - generic: Winnipeg Jets
+          - cell "21"
+          - cell "10"
+          - cell "8"
+          - cell "3"
+          - cell "23"
+          - cell ".548"
+          - cell "W"
+        - row "17 New York Islanders logo New York Islanders 19 9 6 4 22 .579 W":
+          - rowheader "17"
+          - cell "New York Islanders logo New York Islanders":
+            - link "New York Islanders logo New York Islanders":
+              - /url: /stats/team/NYI
+              - img "New York Islanders logo"
+              - generic: New York Islanders
+          - cell "19"
+          - cell "9"
+          - cell "6"
+          - cell "4"
+          - cell "22"
+          - cell ".579"
+          - cell "W"
+        - row "18 Anaheim Ducks logo Anaheim Ducks 20 10 9 1 21 .525 L":
+          - rowheader "18"
+          - cell "Anaheim Ducks logo Anaheim Ducks":
+            - link "Anaheim Ducks logo Anaheim Ducks":
+              - /url: /stats/team/ANA
+              - img "Anaheim Ducks logo"
+              - generic: Anaheim Ducks
+          - cell "20"
+          - cell "10"
+          - cell "9"
+          - cell "1"
+          - cell "21"
+          - cell ".525"
+          - cell "L"
+        - row "19 Washington Capitals logo Washington Capitals 18 10 8 0 20 .556 L":
+          - rowheader "19"
+          - cell "Washington Capitals logo Washington Capitals":
+            - link "Washington Capitals logo Washington Capitals":
+              - /url: /stats/team/WSH
+              - img "Washington Capitals logo"
+              - generic: Washington Capitals
+          - cell "18"
+          - cell "10"
+          - cell "8"
+          - cell "0"
+          - cell "20"
+          - cell ".556"
+          - cell "L"
+        - row "20 St. Louis Blues logo St. Louis Blues 20 9 9 2 20 .500 L":
+          - rowheader "20"
+          - cell "St. Louis Blues logo St. Louis Blues":
+            - link "St. Louis Blues logo St. Louis Blues":
+              - /url: /stats/team/STL
+              - img "St. Louis Blues logo"
+              - generic: St. Louis Blues
+          - cell "20"
+          - cell "9"
+          - cell "9"
+          - cell "2"
+          - cell "20"
+          - cell ".500"
+          - cell "L"
+        - row "21 Buffalo Sabres logo Buffalo Sabres 20 8 8 4 20 .500 L":
+          - rowheader "21"
+          - cell "Buffalo Sabres logo Buffalo Sabres":
+            - link "Buffalo Sabres logo Buffalo Sabres":
+              - /url: /stats/team/BUF
+              - img "Buffalo Sabres logo"
+              - generic: Buffalo Sabres
+          - cell "20"
+          - cell "8"
+          - cell "8"
+          - cell "4"
+          - cell "20"
+          - cell ".500"
+          - cell "L"
+        - row "22 San Jose Sharks logo San Jose Sharks 22 9 11 2 20 .455 W":
+          - rowheader "22"
+          - cell "San Jose Sharks logo San Jose Sharks":
+            - link "San Jose Sharks logo San Jose Sharks":
+              - /url: /stats/team/SJS
+              - img "San Jose Sharks logo"
+              - generic: San Jose Sharks
+          - cell "22"
+          - cell "9"
+          - cell "11"
+          - cell "2"
+          - cell "20"
+          - cell ".455"
+          - cell "W"
+        - row "23 Seattle Kraken logo Seattle Kraken 18 9 8 1 19 .528 L":
+          - rowheader "23"
+          - cell "Seattle Kraken logo Seattle Kraken":
+            - link "Seattle Kraken logo Seattle Kraken":
+              - /url: /stats/team/SEA
+              - img "Seattle Kraken logo"
+              - generic: Seattle Kraken
+          - cell "18"
+          - cell "9"
+          - cell "8"
+          - cell "1"
+          - cell "19"
+          - cell ".528"
+          - cell "L"
+        - row "24 Calgary Flames logo Calgary Flames 20 9 10 1 19 .475 W":
+          - rowheader "24"
+          - cell "Calgary Flames logo Calgary Flames":
+            - link "Calgary Flames logo Calgary Flames":
+              - /url: /stats/team/CGY
+              - img "Calgary Flames logo"
+              - generic: Calgary Flames
+          - cell "20"
+          - cell "9"
+          - cell "10"
+          - cell "1"
+          - cell "19"
+          - cell ".475"
+          - cell "W"
+        - row "25 Detroit Red Wings logo Detroit Red Wings 21 8 10 3 19 .452 W":
+          - rowheader "25"
+          - cell "Detroit Red Wings logo Detroit Red Wings":
+            - link "Detroit Red Wings logo Detroit Red Wings":
+              - /url: /stats/team/DET
+              - img "Detroit Red Wings logo"
+              - generic: Detroit Red Wings
+          - cell "21"
+          - cell "8"
+          - cell "10"
+          - cell "3"
+          - cell "19"
+          - cell ".452"
+          - cell "W"
+        - row "26 Toronto Maple Leafs logo Toronto Maple Leafs 22 8 12 2 18 .409 L":
+          - rowheader "26"
+          - cell "Toronto Maple Leafs logo Toronto Maple Leafs":
+            - link "Toronto Maple Leafs logo Toronto Maple Leafs":
+              - /url: /stats/team/TOR
+              - img "Toronto Maple Leafs logo"
+              - generic: Toronto Maple Leafs
+          - cell "22"
+          - cell "8"
+          - cell "12"
+          - cell "2"
+          - cell "18"
+          - cell ".409"
+          - cell "L"
+        - row "27 Philadelphia Flyers logo Philadelphia Flyers 22 6 10 6 18 .409 W":
+          - rowheader "27"
+          - cell "Philadelphia Flyers logo Philadelphia Flyers":
+            - link "Philadelphia Flyers logo Philadelphia Flyers":
+              - /url: /stats/team/PHI
+              - img "Philadelphia Flyers logo"
+              - generic: Philadelphia Flyers
+          - cell "22"
+          - cell "6"
+          - cell "10"
+          - cell "6"
+          - cell "18"
+          - cell ".409"
+          - cell "W"
+        - row "28 Pittsburgh Penguins logo Pittsburgh Penguins 20 7 11 2 16 .400 L":
+          - rowheader "28"
+          - cell "Pittsburgh Penguins logo Pittsburgh Penguins":
+            - link "Pittsburgh Penguins logo Pittsburgh Penguins":
+              - /url: /stats/team/PIT
+              - img "Pittsburgh Penguins logo"
+              - generic: Pittsburgh Penguins
+          - cell "20"
+          - cell "7"
+          - cell "11"
+          - cell "2"
+          - cell "16"
+          - cell ".400"
+          - cell "L"
+        - row "29 Columbus Blue Jackets logo Columbus Blue Jackets 18 7 11 0 14 .389 L":
+          - rowheader "29"
+          - cell "Columbus Blue Jackets logo Columbus Blue Jackets":
+            - link "Columbus Blue Jackets logo Columbus Blue Jackets":
+              - /url: /stats/team/CBJ
+              - img "Columbus Blue Jackets logo"
+              - generic: Columbus Blue Jackets
+          - cell "18"
+          - cell "7"
+          - cell "11"
+          - cell "0"
+          - cell "14"
+          - cell ".389"
+          - cell "L"
+        - row "30 Los Angeles Kings logo Los Angeles Kings 18 5 11 2 12 .333 L":
+          - rowheader "30"
+          - cell "Los Angeles Kings logo Los Angeles Kings":
+            - link "Los Angeles Kings logo Los Angeles Kings":
+              - /url: /stats/team/LAK
+              - img "Los Angeles Kings logo"
+              - generic: Los Angeles Kings
+          - cell "18"
+          - cell "5"
+          - cell "11"
+          - cell "2"
+          - cell "12"
+          - cell ".333"
+          - cell "L"
+        - row "31 Chicago Blackhawks logo Chicago Blackhawks 20 5 13 2 12 .300 OT":
+          - rowheader "31"
+          - cell "Chicago Blackhawks logo Chicago Blackhawks":
+            - link "Chicago Blackhawks logo Chicago Blackhawks":
+              - /url: /stats/team/CHI
+              - img "Chicago Blackhawks logo"
+              - generic: Chicago Blackhawks
+          - cell "20"
+          - cell "5"
+          - cell "13"
+          - cell "2"
+          - cell "12"
+          - cell ".300"
+          - cell "OT"
+        - row "32 Vancouver Canucks logo Vancouver Canucks 21 3 17 1 7 .167 L":
+          - rowheader "32"
+          - cell "Vancouver Canucks logo Vancouver Canucks":
+            - link "Vancouver Canucks logo Vancouver Canucks":
+              - /url: /stats/team/VAN
+              - img "Vancouver Canucks logo"
+              - generic: Vancouver Canucks
+          - cell "21"
+          - cell "3"
+          - cell "17"
+          - cell "1"
+          - cell "7"
+          - cell ".167"
+          - cell "L"
+    - heading "Recent Transactions & Injuries" [level=2]
+    - link "View all":
+      - /url: /news
+    - tablist "Roster updates":
+      - tab "All updates" [selected]
+      - tab "Transactions"
+      - tab "Injuries"
+    - table "Recent NHL transactions and injury updates":
+      - caption: Recent NHL transactions and injury updates
+      - rowgroup:
+        - row "Date Team Update Type Details":
+          - columnheader "Date"
+          - columnheader "Team"
+          - columnheader "Update"
+          - columnheader "Type"
+          - columnheader "Details"
+      - rowgroup:
+        - 'row "11/15/26 NHL logo Transaction source report Transaction report. Source text only; transaction completion is not verified. Mike Reilly: Waiver Move: Colorado has claimed Mike Reilly off waivers from Carolina. Original source pending"':
+          - cell "11/15/26"
+          - cell "NHL logo":
+            - img "NHL logo"
+          - cell "Transaction source report"
+          - cell "Transaction report. Source text only; transaction completion is not verified.": Transaction report
+          - 'cell "Mike Reilly: Waiver Move: Colorado has claimed Mike Reilly off waivers from Carolina. Original source pending"':
+            - 'generic "Mike Reilly: Waiver Move: Colorado has claimed Mike Reilly off waivers from Carolina."'
+            - generic: Original source pending
+        - row "11/15/26 CAR logo Transaction source report Transaction / Injury report. Source text only; transaction completion is not verified. Avs claimed defenseman Mike Reilly from the Hurricanes on waivers. He's a lefty with a consistent track record of good underlying numbers, even if he's been in some places where the coach didn't always trust him. Given the injuries, a solid, low-stakes bet. @cmasisak22 View original post for Transaction source report":
+          - cell "11/15/26"
+          - cell "CAR logo":
+            - img "CAR logo"
+          - cell "Transaction source report"
+          - cell "Transaction / Injury report. Source text only; transaction completion is not verified.": Transaction / Injury report
+          - cell "Avs claimed defenseman Mike Reilly from the Hurricanes on waivers. He's a lefty with a consistent track record of good underlying numbers, even if he's been in some places where the coach didn't always trust him. Given the injuries, a solid, low-stakes bet. @cmasisak22 View original post for Transaction source report":
+            - generic "Avs claimed defenseman Mike Reilly from the Hurricanes on waivers. He's a lefty with a consistent track record of good underlying numbers, even if he's been in some places where the coach didn't always trust him. Given the injuries, a solid, low-stakes bet."
+            - generic: "@cmasisak22"
+            - link "View original post for Transaction source report":
+              - /url: https://x.com/cmasisak22/status/2122043487080026450?ref_src=twsrc%5Etfw
+        - 'row "11/15/26 STL logo Philip Broberg, Jake Neighbours Injury Ongoing report; Injury Ongoing report Broberg and Neighbours are day to day, according to Jim Montgomery. Broberg is lower body, Neighbours upper. #stlblues @lkorac10 View original post for Philip Broberg, Jake Neighbours"':
+          - cell "11/15/26"
+          - cell "STL logo":
+            - img "STL logo"
+          - cell "Philip Broberg, Jake Neighbours"
+          - cell "Injury Ongoing report; Injury Ongoing report"
+          - 'cell "Broberg and Neighbours are day to day, according to Jim Montgomery. Broberg is lower body, Neighbours upper. #stlblues @lkorac10 View original post for Philip Broberg, Jake Neighbours"':
+            - 'generic "Broberg and Neighbours are day to day, according to Jim Montgomery. Broberg is lower body, Neighbours upper. #stlblues"'
+            - generic: "@lkorac10"
+            - link "View original post for Philip Broberg, Jake Neighbours":
+              - /url: https://x.com/lkorac10/status/2122030546574258408?ref_src=twsrc%5Etfw
+        - 'row "11/15/26 STL logo Jake Neighbours Injury Unknown report; Injury Ongoing report Jake Neighbours: Injury: Neighbours (upper-body) is considered day-to-day. Original source pending"':
+          - cell "11/15/26"
+          - cell "STL logo":
+            - img "STL logo"
+          - cell "Jake Neighbours"
+          - cell "Injury Unknown report; Injury Ongoing report"
+          - 'cell "Jake Neighbours: Injury: Neighbours (upper-body) is considered day-to-day. Original source pending"':
+            - 'generic "Jake Neighbours: Injury: Neighbours (upper-body) is considered day-to-day."'
+            - generic: Original source pending
+        - 'row "11/15/26 MTL logo Transaction source report Report. Source text only; transaction completion is not verified. Montreal has placed Josh Anderson and Chris Kreider on IR. They''ve also recalled David Reinbacher from Laval. #GoHabsGo Original source pending"':
+          - cell "11/15/26"
+          - cell "MTL logo":
+            - img "MTL logo"
+          - cell "Transaction source report"
+          - cell "Report. Source text only; transaction completion is not verified.": Report
+          - 'cell "Montreal has placed Josh Anderson and Chris Kreider on IR. They''ve also recalled David Reinbacher from Laval. #GoHabsGo Original source pending"':
+            - 'generic "Montreal has placed Josh Anderson and Chris Kreider on IR. They''ve also recalled David Reinbacher from Laval. #GoHabsGo"'
+            - generic: Original source pending
+        - 'row "11/15/26 VAN logo Transaction source report Report. Source text only; transaction completion is not verified. Vancouver has recalled Nikita Tolopilo from Abbotsford. #Canucks Original source pending"':
+          - cell "11/15/26"
+          - cell "VAN logo":
+            - img "VAN logo"
+          - cell "Transaction source report"
+          - cell "Report. Source text only; transaction completion is not verified.": Report
+          - 'cell "Vancouver has recalled Nikita Tolopilo from Abbotsford. #Canucks Original source pending"':
+            - 'generic "Vancouver has recalled Nikita Tolopilo from Abbotsford. #Canucks"'
+            - generic: Original source pending
+        - 'row "11/15/26 VAN logo Transaction source report Report. Source text only; transaction completion is not verified. Nikita Tolopilo appears to have be recalled from Abbotsford. He''s appearing on the #Canucks roster on the NHL media site. @BatchHockey View original post for Transaction source report"':
+          - cell "11/15/26"
+          - cell "VAN logo":
+            - img "VAN logo"
+          - cell "Transaction source report"
+          - cell "Report. Source text only; transaction completion is not verified.": Report
+          - 'cell "Nikita Tolopilo appears to have be recalled from Abbotsford. He''s appearing on the #Canucks roster on the NHL media site. @BatchHockey View original post for Transaction source report"':
+            - 'generic "Nikita Tolopilo appears to have be recalled from Abbotsford. He''s appearing on the #Canucks roster on the NHL media site."'
+            - generic: "@BatchHockey"
+            - link "View original post for Transaction source report":
+              - /url: https://x.com/BatchHockey/status/2122007844673483032?ref_src=twsrc%5Etfw
+        - row "11/15/26 MTL logo Transaction source report Report. Source text only; transaction completion is not verified. Les Canadiens ont rappelé le défenseur David Reinbacher du Rocket de Laval. The Canadiens have recalled defenseman David Reinbacher from the Laval Rocket. @CanadiensMTL View original post for Transaction source report":
+          - cell "11/15/26"
+          - cell "MTL logo":
+            - img "MTL logo"
+          - cell "Transaction source report"
+          - cell "Report. Source text only; transaction completion is not verified.": Report
+          - cell "Les Canadiens ont rappelé le défenseur David Reinbacher du Rocket de Laval. The Canadiens have recalled defenseman David Reinbacher from the Laval Rocket. @CanadiensMTL View original post for Transaction source report":
+            - generic "Les Canadiens ont rappelé le défenseur David Reinbacher du Rocket de Laval. The Canadiens have recalled defenseman David Reinbacher from the Laval Rocket."
+            - generic: "@CanadiensMTL"
+            - link "View original post for Transaction source report":
+              - /url: https://x.com/CanadiensMTL/status/2122003079549919488?ref_src=twsrc%5Etfw
+        - row "11/15/26 NHL logo Logan Stanley Injury Unknown report Logan Stanley won't return. Lower-body, per the Isles. @ethan_sears View original post for Logan Stanley":
+          - cell "11/15/26"
+          - cell "NHL logo":
+            - img "NHL logo"
+          - cell "Logan Stanley":
+            - link "Logan Stanley":
+              - /url: /stats/player/8479378
+          - cell "Injury Unknown report"
+          - cell "Logan Stanley won't return. Lower-body, per the Isles. @ethan_sears View original post for Logan Stanley":
+            - generic "Logan Stanley won't return. Lower-body, per the Isles."
+            - generic: "@ethan_sears"
+            - link "View original post for Logan Stanley":
+              - /url: https://x.com/ethan_sears/status/2121833298003677353?ref_src=twsrc%5Etfw
+        - 'row "11/14/26 MTL logo Mike Matheson Injury Ongoing report Wrapper text MTL: Mike Matheson will not play tonight Quoted text Mike Matheson n''est pas sur la glace pour l''échauffement. Il ne jouera donc pas contre l''Avalanche. Original source pending"':
+          - cell "11/14/26"
+          - cell "MTL logo":
+            - img "MTL logo"
+          - cell "Mike Matheson":
+            - link "Mike Matheson":
+              - /url: /stats/player/8476875
+          - cell "Injury Ongoing report"
+          - 'cell "Wrapper text MTL: Mike Matheson will not play tonight Quoted text Mike Matheson n''est pas sur la glace pour l''échauffement. Il ne jouera donc pas contre l''Avalanche. Original source pending"':
+            - 'generic "Wrapper text MTL: Mike Matheson will not play tonight Quoted text Mike Matheson n''est pas sur la glace pour l''échauffement. Il ne jouera donc pas contre l''Avalanche."'
+            - generic: Original source pending
+        - 'row "11/14/26 MTL logo Mike Matheson Injury New Injury report; Injury Unknown report Mike Matheson: Injury: Matheson (lower-body) will not play Saturday vs. the Avalanche. Original source pending"':
+          - cell "11/14/26"
+          - cell "MTL logo":
+            - img "MTL logo"
+          - cell "Mike Matheson"
+          - cell "Injury New Injury report; Injury Unknown report"
+          - 'cell "Mike Matheson: Injury: Matheson (lower-body) will not play Saturday vs. the Avalanche. Original source pending"':
+            - 'generic "Mike Matheson: Injury: Matheson (lower-body) will not play Saturday vs. the Avalanche."'
+            - generic: Original source pending
+        - 'row "11/14/26 MTL logo Mike Matheson Injury New Injury report; Injury Unknown report Mike Matheson: Injury: Matheson (lower-body) will not play Saturday vs. the Avalanche. Original source pending"':
+          - cell "11/14/26"
+          - cell "MTL logo":
+            - img "MTL logo"
+          - cell "Mike Matheson"
+          - cell "Injury New Injury report; Injury Unknown report"
+          - 'cell "Mike Matheson: Injury: Matheson (lower-body) will not play Saturday vs. the Avalanche. Original source pending"':
+            - 'generic "Mike Matheson: Injury: Matheson (lower-body) will not play Saturday vs. the Avalanche."'
+            - generic: Original source pending
+        - 'row "11/14/26 STL logo — Report. Source text only; player and status are not verified. Pius Suter is taking warmups, which indicates he will play. Jonatan Berggren also taking warmups but is expected to be a healthy scratch. #stlblues @lkorac10 View original post for —"':
+          - cell "11/14/26"
+          - cell "STL logo":
+            - img "STL logo"
+          - cell "—"
+          - cell "Report. Source text only; player and status are not verified.": Report
+          - 'cell "Pius Suter is taking warmups, which indicates he will play. Jonatan Berggren also taking warmups but is expected to be a healthy scratch. #stlblues @lkorac10 View original post for —"':
+            - 'generic "Pius Suter is taking warmups, which indicates he will play. Jonatan Berggren also taking warmups but is expected to be a healthy scratch. #stlblues"'
+            - generic: "@lkorac10"
+            - link "View original post for —":
+              - /url: https://x.com/lkorac10/status/2121747546385334501?ref_src=twsrc%5Etfw
+        - 'row "11/14/26 MTL logo Mike Matheson Injury Ongoing report Wrapper text MTL: Mike Matheson will not play tonight Quoted text Mike Matheson n''est pas sur la glace pour l''échauffement. Il ne jouera donc pas contre l''Avalanche. Original source pending"':
+          - cell "11/14/26"
+          - cell "MTL logo":
+            - img "MTL logo"
+          - cell "Mike Matheson":
+            - link "Mike Matheson":
+              - /url: /stats/player/8476875
+          - cell "Injury Ongoing report"
+          - 'cell "Wrapper text MTL: Mike Matheson will not play tonight Quoted text Mike Matheson n''est pas sur la glace pour l''échauffement. Il ne jouera donc pas contre l''Avalanche. Original source pending"':
+            - 'generic "Wrapper text MTL: Mike Matheson will not play tonight Quoted text Mike Matheson n''est pas sur la glace pour l''échauffement. Il ne jouera donc pas contre l''Avalanche."'
+            - generic: Original source pending
+        - row "11/14/26 TOR logo Morgan Rielly Injury Ongoing report Morgan Rielly, who has been day-to-day, is not warming up and will be scratched again today. Brendan Brisson is taking part in warmups. @Ozoon_CA @davidalter View original post for Morgan Rielly":
+          - cell "11/14/26"
+          - cell "TOR logo":
+            - img "TOR logo"
+          - cell "Morgan Rielly":
+            - link "Morgan Rielly":
+              - /url: /stats/player/8476853
+          - cell "Injury Ongoing report"
+          - cell "Morgan Rielly, who has been day-to-day, is not warming up and will be scratched again today. Brendan Brisson is taking part in warmups. @Ozoon_CA @davidalter View original post for Morgan Rielly":
+            - generic "Morgan Rielly, who has been day-to-day, is not warming up and will be scratched again today. Brendan Brisson is taking part in warmups. @Ozoon_CA"
+            - generic: "@davidalter"
+            - link "View original post for Morgan Rielly":
+              - /url: https://x.com/davidalter/status/2121749924144431491
+        - 'row "11/14/26 WPG logo Transaction source report Trade report. Source text only; transaction completion is not verified. Morgan Barron and Brayden Yager have also traded places for #NHLJets to start the 2nd. @WiebesWorld View original post for Transaction source report"':
+          - cell "11/14/26"
+          - cell "WPG logo":
+            - img "WPG logo"
+          - cell "Transaction source report"
+          - cell "Trade report. Source text only; transaction completion is not verified.": Trade report
+          - 'cell "Morgan Barron and Brayden Yager have also traded places for #NHLJets to start the 2nd. @WiebesWorld View original post for Transaction source report"':
+            - 'generic "Morgan Barron and Brayden Yager have also traded places for #NHLJets to start the 2nd."'
+            - generic: "@WiebesWorld"
+            - link "View original post for Transaction source report":
+              - /url: https://x.com/WiebesWorld/status/2121718924173824153?ref_src=twsrc%5Etfw
+        - 'row "11/14/26 CGY logo Dustin Wolf Goalie Confirmed report Head coach Ryan Huska says Dustin Wolf starts tonight in Los Angeles. Looked at practice Friday like William Stromgren back in the lineup, Brennan Othmann out. #Flames @SteinbergYYC View original post for Dustin Wolf"':
+          - cell "11/14/26"
+          - cell "CGY logo":
+            - img "CGY logo"
+          - cell "Dustin Wolf":
+            - link "Dustin Wolf":
+              - /url: /stats/player/8481692
+          - cell "Goalie Confirmed report"
+          - 'cell "Head coach Ryan Huska says Dustin Wolf starts tonight in Los Angeles. Looked at practice Friday like William Stromgren back in the lineup, Brennan Othmann out. #Flames @SteinbergYYC View original post for Dustin Wolf"':
+            - 'generic "Head coach Ryan Huska says Dustin Wolf starts tonight in Los Angeles. Looked at practice Friday like William Stromgren back in the lineup, Brennan Othmann out. #Flames"'
+            - generic: "@SteinbergYYC"
+            - link "View original post for Dustin Wolf":
+              - /url: https://x.com/SteinbergYYC/status/2121701406218543439?ref_src=twsrc%5Etfw
+    - button "Previous" [disabled]
+    - generic: Page 1 of 6
+    - button "Next"
+- contentinfo:
+  - link "FHFH home":
+    - /url: /
+  - generic: Five Hole Fantasy Hockey
+  - generic: © 2026 FHFHockey
+  - navigation "Footer navigation":
+    - link "Underlying Stats":
+      - /url: /underlying-stats
+    - link "Game Grid":
+      - /url: /game-grid
+    - link "Stats":
+      - /url: /stats
+    - link "Blog":
+      - /url: /blog
+    - link "Podcast":
+      - /url: /podfeed
+    - link "Privacy":
+      - /url: /privacy
+  - link "Support FHFH":
+    - /url: https://www.buymeacoffee.com/tjsusername
+  - link "Twitter":
+    - /url: https://www.twitter.com/fhfhockey
+    - img "Twitter"
+  - link "Discord":
+    - /url: https://discord.gg/kfnyrn7
+    - img "Discord"
+  - link "Patreon":
+    - /url: https://www.patreon.com/FHFHRadio
+    - img "Patreon"
+  - link "Youtube":
+    - /url: https://www.youtube.com/fiveholefantasyhockey
+    - img "Youtube"
+  - link "Spotify":
+    - /url: https://open.spotify.com/show/0tcyfS62ZHdLYA3Xf3QgSQ?si=HtfgMe8_QD6KfwiOw2fC1g
+    - img "Spotify"
+- alert

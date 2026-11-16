@@ -1,0 +1,4 @@
+psql:/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/tmpthqtvpga.sql:10: ERROR:  invalid input syntax for type json
+DETAIL:  Token ""contextual-buil…" is invalid.
+CONTEXT:  JSON data, line 1: ...l Builders","operatorSurface":"contextual-buil…
+

@@ -1,0 +1,56 @@
+{
+  "completedAt": "2026-11-10T19:08:45.322864+00:00",
+  "status": "released_and_publicly_verified_with_limitations",
+  "commit": "64105d05615df03dd5f5ca650647846b2ab0ca64",
+  "commitUrl": "https://github.com/FHFHockey-dev/fhfhockey.com/commit/64105d05615df03dd5f5ca650647846b2ab0ca64",
+  "productionUrl": "https://fhfhockey.com",
+  "deploymentId": "dpl_FeC8YvGcuWdbRXZmK5kUpXxUTzi8",
+  "deploymentInspector": "https://vercel.com/fhfhockeydevs-projects/fhfhockey/FeC8YvGcuWdbRXZmK5kUpXxUTzi8",
+  "refs": {
+    "HEAD": "64105d05615df03dd5f5ca650647846b2ab0ca64",
+    "master": "64105d05615df03dd5f5ca650647846b2ab0ca64",
+    "origin/master": "64105d05615df03dd5f5ca650647846b2ab0ca64",
+    "origin/octoberBranch": "64105d05615df03dd5f5ca650647846b2ab0ca64"
+  },
+  "atomicPush": true,
+  "forcePush": false,
+  "checkoutSwitched": false,
+  "testedRuntimeUnchanged": true,
+  "reviewedCandidateFiles": 123,
+  "remoteMasterDiffFiles": 124,
+  "builds": {
+    "completedWeb": 1,
+    "ignoredCompanions": 3
+  },
+  "checks": {
+    "focusedRootTests": 358,
+    "homeTests": 63,
+    "rsoDistinctTests": 351,
+    "schemaTests": 54,
+    "rsoBrowserScenarios": 13,
+    "typecheck": "passed",
+    "lint": "passed; six prior RSO warnings",
+    "artifactCheckerDistinctCases": 101,
+    "secretPatternScan": "no matches"
+  },
+  "publicSmoke": {
+    "requests": 5,
+    "http200": 5,
+    "rsoTitleAndLoadingShell": "passed",
+    "apiContracts": 3,
+    "homepage": "HTTP 200 and Next data marker passed; title not independently verified due to initial harness extraction bug; not retried"
+  },
+  "limitations": [
+    "Cold ownership history request remains slow: 11.744 seconds on this production check; teams query 11.060 seconds. Process-local caching and render overlap reduce duplicate work, not the entire cold database cost.",
+    "Ownership trends response reports zero mapped and 4438 unmapped source players. Mapping loader and fallback are unchanged from the previous production source. Root cause not established by this smoke; no data repair or extra production request performed.",
+    "Authenticated Yahoo/account acceptance was not tested. RSO browser tests used synthetic isolated data.",
+    "Primary-source completeness, historical goalie cohort shrinkage, identity/read ceilings and projection freshness remain explicit Rankings/BEAST follow-ups.",
+    "No database repair, composite publish, cron change, BLSH activation or live capture was performed."
+  ],
+  "preservedLocal": [
+    "Private account/league/browser evidence and raw responses, generated artifacts, Git index snapshots, tar archives and diaries",
+    "Standalone destructive goalie data repair SQL",
+    "Generated web/next-env.d.ts test-output reference",
+    "Post-candidate coordination notes and release receipts"
+  ]
+}

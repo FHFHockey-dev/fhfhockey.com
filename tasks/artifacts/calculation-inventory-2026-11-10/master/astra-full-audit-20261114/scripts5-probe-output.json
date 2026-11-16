@@ -1,0 +1,28 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "findings": {
+    "unknownActuals": {
+      "G": 0,
+      "A": 0,
+      "PPP": 0
+    },
+    "admittedHeads": [
+      "G",
+      "A",
+      "PPP"
+    ],
+    "selectedRun": "postgame",
+    "duplicateRowsScored": 2,
+    "historicalTeamTarget": {
+      "old": null,
+      "new": 120
+    }
+  },
+  "controls": {
+    "fallbackTargetCap": 1200,
+    "handRmseDelta": -0.6773784311643926,
+    "deterministicSeed": true
+  },
+  "boundary": "Exact isolated selection/admission/aggregation/bootstrap/allocation helpers. evaluateRow numerical prediction reconstruction is stubbed only to isolate export admission; not producer qualification. No exports, real forecasts, actual tests, files, CLI, DB or provider."
+}

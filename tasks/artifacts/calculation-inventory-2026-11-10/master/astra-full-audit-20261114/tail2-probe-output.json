@@ -1,0 +1,25 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "unknownPkToi": {
+    "ppRating": 97.61904761904762,
+    "pkRating": null,
+    "overallSpecial": 97.61904761904762
+  },
+  "duplicateFields": {
+    "forwardToi": 1200,
+    "reverseToi": 600,
+    "forwardTeam": "BOS",
+    "reverseTeam": "TOR"
+  },
+  "controls": {
+    "observedMissingPkRatingWithheld": true,
+    "knownZeroPkExcluded": true,
+    "fullWeightCoverageRequired": true,
+    "minuteFloorHeld": true,
+    "pointConflictRejected": true,
+    "playoffExcluded": true,
+    "zeroVersusGapPreserved": true
+  },
+  "boundary": "Exact extracted pure calculator/rank helpers and reader against finite query double; no module import, environment, DB/provider/page/test suite or writes."
+}

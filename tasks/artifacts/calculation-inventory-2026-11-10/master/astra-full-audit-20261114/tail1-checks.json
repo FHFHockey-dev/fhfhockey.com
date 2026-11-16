@@ -1,0 +1,16 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "rankColors": {
+    "first": "rgba(0, 204, 0, 0.25)",
+    "last": "rgba(204, 0, 0, 0.25)",
+    "below": "rgba(0, 204, 0, 0.25)",
+    "above": "rgba(204, 0, 0, 0.25)",
+    "single": "rgba(0, 204, 0, 0.25)"
+  },
+  "typeMismatch": {
+    "runtime": 2,
+    "declaredEventInput": 1
+  },
+  "boundary": "Exact frozen Sass compiled in memory with built-in modules only; static frozen declaration/runtime comparison. No app build, emitted CSS, typecheck, test suite or live action."
+}

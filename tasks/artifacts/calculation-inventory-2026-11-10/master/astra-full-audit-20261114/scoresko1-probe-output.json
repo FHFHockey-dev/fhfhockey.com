@@ -1,0 +1,191 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "sources": [
+    "web/lib/projectionsConfig/formatToMMSS.ts",
+    "web/lib/projectionsConfig/statsMasterList.ts",
+    "web/lib/scoring/categoryScores.ts",
+    "web/lib/skoElement/contract.ts",
+    "web/lib/skoElement/interpret.ts",
+    "web/lib/skoElement/fixtures.ts"
+  ],
+  "categoryControl": {
+    "poolGaa": 2.5,
+    "score": 0.7071067811865475,
+    "unknown": {
+      "score": null,
+      "contributions": {
+        "GOALS_AGAINST_AVERAGE": null
+      },
+      "missing": [
+        "GOALS_AGAINST_AVERAGE"
+      ]
+    }
+  },
+  "unplacedGoalie": {
+    "window": {
+      "requestedTeamGames": 10,
+      "teamGames": 10,
+      "appearances": 10,
+      "unknownGames": 0,
+      "confirmedAbsences": 0,
+      "startDate": "2026-10-05",
+      "endDate": "2026-10-14",
+      "rule": "last 10 completed team games at as-of; a game whose row was invalid or not yet available stays unknown",
+      "gameIds": [
+        "FX2-PRE-011",
+        "FX2-PRE-012",
+        "FX2-PRE-013",
+        "FX2-PRE-014",
+        "FX2-PRE-015",
+        "FX2-PRE-016",
+        "FX2-PRE-017",
+        "FX2-PRE-018",
+        "FX2-PRE-019",
+        "FX2-PRE-020"
+      ],
+      "membership": "incomplete",
+      "unplacedRows": 1
+    },
+    "observed": {
+      "appearances": 10,
+      "saves": null,
+      "shotsAgainst": null,
+      "goalsAgainst": null,
+      "minutes": null,
+      "savePercentage": {
+        "value": null,
+        "reason": "window_membership_incomplete"
+      },
+      "goalsAgainstAverage": {
+        "value": null,
+        "reason": "window_membership_incomplete"
+      },
+      "starts": {
+        "value": 10,
+        "reason": null
+      },
+      "reliefAppearances": {
+        "value": 0,
+        "reason": null
+      },
+      "startShare": {
+        "value": 1,
+        "reason": null
+      }
+    }
+  },
+  "deniedForecast": {
+    "admission": "not_admitted",
+    "horizon": {
+      "requestedGames": 10,
+      "scheduledGames": 10,
+      "complete": false,
+      "gameIds": [
+        "FX1-2026-001",
+        "FX1-2026-002",
+        "FX1-2026-003",
+        "FX1-2026-004",
+        "FX1-2026-005",
+        "FX1-2026-006",
+        "FX1-2026-007",
+        "FX1-2026-008",
+        "FX1-2026-009",
+        "FX1-2026-010"
+      ],
+      "startDate": "2026-10-20",
+      "endDate": "2026-11-07",
+      "expectedAppearances": 9.5,
+      "expectedStarts": null,
+      "reason": "forecast_read_after_as_of"
+    },
+    "points": {
+      "expected": null,
+      "unit": "count",
+      "reason": "forecast_read_after_as_of"
+    }
+  },
+  "conflictingDateOrder": {
+    "firstOld": {
+      "window": {
+        "requestedTeamGames": 10,
+        "teamGames": 10,
+        "appearances": 10,
+        "unknownGames": 0,
+        "confirmedAbsences": 0,
+        "startDate": "2026-10-04",
+        "endDate": "2026-10-13",
+        "rule": "last 10 completed team games at as-of; a game whose row was invalid or not yet available stays unknown",
+        "gameIds": [
+          "FX1-PRE-010",
+          "FX1-PRE-011",
+          "FX1-PRE-012",
+          "FX1-PRE-013",
+          "FX1-PRE-014",
+          "FX1-PRE-015",
+          "FX1-PRE-016",
+          "FX1-PRE-017",
+          "FX1-PRE-018",
+          "FX1-PRE-019"
+        ],
+        "membership": "complete",
+        "unplacedRows": 0
+      },
+      "points": {
+        "value": 0.8,
+        "reason": null
+      },
+      "diagnostics": {
+        "excludedFutureRows": 0,
+        "invalidRows": 0,
+        "duplicateRows": 0,
+        "conflictingGameIds": [
+          "FX1-PRE-020"
+        ],
+        "retrospective": false,
+        "unplacedRows": 0
+      }
+    },
+    "firstNew": {
+      "window": {
+        "requestedTeamGames": 10,
+        "teamGames": 10,
+        "appearances": 9,
+        "unknownGames": 1,
+        "confirmedAbsences": 0,
+        "startDate": "2026-10-05",
+        "endDate": "2026-10-14",
+        "rule": "last 10 completed team games at as-of; a game whose row was invalid or not yet available stays unknown",
+        "gameIds": [
+          "FX1-PRE-011",
+          "FX1-PRE-012",
+          "FX1-PRE-013",
+          "FX1-PRE-014",
+          "FX1-PRE-015",
+          "FX1-PRE-016",
+          "FX1-PRE-017",
+          "FX1-PRE-018",
+          "FX1-PRE-019",
+          "FX1-PRE-020"
+        ],
+        "membership": "complete",
+        "unplacedRows": 0
+      },
+      "points": {
+        "value": null,
+        "reason": "unknown_team_game_status"
+      },
+      "diagnostics": {
+        "excludedFutureRows": 0,
+        "invalidRows": 0,
+        "duplicateRows": 0,
+        "conflictingGameIds": [
+          "FX1-PRE-020"
+        ],
+        "retrospective": false,
+        "unplacedRows": 0
+      }
+    }
+  },
+  "limits": "Complete exact frozen pure category and interpretation modules with frozen synthetic fixtures. No actual app imports, environment, I/O, provider or pages; supplied Vitest not run. Interpreter callers in pin are fixture preview paths/tests; production preview routes are 404 as separately source-reviewed."
+}

@@ -1,0 +1,5 @@
+- 1: unpatched export baseline: 159/175 (16 bootstrap_wrong_checkout).
+- 2: fresh git archive + SUCCESSOR.patch: 209/228 (all 19 failures are bootstrap_wrong_checkout; the bootstrap binds the canonical web/).
+- 3: the same successor bytes with only the WEB literal relocated (non-candidate bytes): 228/228.
+- tsc-scoped-*: tsc on scripts/blsh/nativeProcessCapture*.ts (empty file = 0 errors).
+- Earlier layers are in ../superseded/logs.

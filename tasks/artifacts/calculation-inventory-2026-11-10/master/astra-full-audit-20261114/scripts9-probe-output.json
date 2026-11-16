@@ -1,0 +1,43 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "cappedReads": {
+    "requestedIds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "retainedIds": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "queries": 2,
+    "goaltenderSameLoss": true
+  },
+  "artifactCollision": {
+    "sameConfigSignature": "a97b4775",
+    "sameOutputPath": true,
+    "replacedPriorRows": true
+  },
+  "invalidScope": {
+    "invalidGameIdsBecomeNull": true,
+    "invalidLimitIgnored": true,
+    "selectedGames": 3,
+    "validExplicitIdHeld": true
+  },
+  "controls": {
+    "handScoredBrier": 0.5625,
+    "emptyUnknown": true,
+    "trainOnlyStandardization": true,
+    "tiedAuc": 0.5,
+    "perfectAuc": 1,
+    "unknownGoalieExcluded": true
+  },
+  "boundary": "Exact extracted functions; finite capped transport and in-memory filesystem doubles. No main/import/dotenv, actual artifact read/write, model fit, DB/provider, test suite or live operation."
+}

@@ -1,0 +1,62 @@
+tablename,indexname,d
+forge_game_revisions,forge_game_revisions_pkey, btree (id)
+forge_game_revisions,forge_game_revisions_run_id_game_id_key," btree (run_id, game_id)"
+forge_game_revisions,forge_game_revisions_slate_idx," btree (slate_date, game_id, decision_as_of DESC, published_at DESC)"
+forge_goalie_projections,goalie_projections_v2_pkey," btree (run_id, game_id, goalie_id, horizon_games)"
+forge_goalie_projections,idx_goalie_projections_v2_as_of_date, btree (as_of_date)
+forge_goalie_projections,idx_goalie_projections_v2_date_horizon," btree (as_of_date, horizon_games)"
+forge_goalie_projections,idx_goalie_projections_v2_date_team_horizon," btree (as_of_date, team_id, horizon_games)"
+forge_goalie_projections,idx_goalie_projections_v2_game, btree (game_id)
+forge_goalie_projections,idx_goalie_projections_v2_goalie, btree (goalie_id)
+forge_player_game_strength,idx_player_game_strength_v2_game_date, btree (game_date)
+forge_player_game_strength,idx_player_game_strength_v2_team_game," btree (team_id, game_id)"
+forge_player_game_strength,player_game_strength_v2_pkey," btree (game_id, player_id)"
+forge_player_projections,idx_player_projections_v2_as_of_date, btree (as_of_date)
+forge_player_projections,idx_player_projections_v2_date_horizon," btree (as_of_date, horizon_games)"
+forge_player_projections,idx_player_projections_v2_date_opponent_horizon," btree (as_of_date, opponent_team_id, horizon_games)"
+forge_player_projections,idx_player_projections_v2_date_team_horizon," btree (as_of_date, team_id, horizon_games)"
+forge_player_projections,idx_player_projections_v2_game, btree (game_id)
+forge_player_projections,idx_player_projections_v2_player, btree (player_id)
+forge_player_projections,idx_player_projections_v2_team, btree (team_id)
+forge_player_projections,player_projections_v2_pkey," btree (run_id, game_id, player_id, horizon_games)"
+forge_reserve_projections,forge_reserve_projections_pkey," btree (run_id, game_id, player_id, horizon_games)"
+forge_reserve_projections,idx_forge_reserve_projections_player, btree (player_id)
+forge_reserve_projections,idx_forge_reserve_projections_run," btree (run_id, horizon_games)"
+forge_runs,idx_projection_runs_v2_as_of_date, btree (as_of_date)
+forge_runs,idx_projection_runs_v2_status, btree (status)
+forge_runs,projection_runs_v2_pkey, btree (run_id)
+forge_team_projections,idx_team_projections_v2_as_of_date, btree (as_of_date)
+forge_team_projections,idx_team_projections_v2_date_horizon," btree (as_of_date, horizon_games)"
+forge_team_projections,idx_team_projections_v2_date_team_horizon," btree (as_of_date, team_id, horizon_games)"
+forge_team_projections,idx_team_projections_v2_game, btree (game_id)
+forge_team_projections,idx_team_projections_v2_team, btree (team_id)
+forge_team_projections,team_projections_v2_pkey," btree (run_id, game_id, team_id, horizon_games)"
+games,games_pkey, btree (id)
+games,idx_games_date, btree (date)
+goalie_start_projections,goalie_start_projections_pkey," btree (game_id, player_id)"
+goalie_start_projections,idx_goalie_start_projections_game, btree (game_id)
+goalie_start_projections,idx_goalie_start_projections_player, btree (player_id)
+goalie_start_projections,idx_goalie_start_projections_team, btree (team_id)
+lineCombinations,idx_line_combinations_contextual_lookup," btree (""gameId"", ""teamId"")"
+lineCombinations,lineCombinations_pkey," btree (""gameId"", ""teamId"")"
+pbp_games,pbp_games_pkey, btree (id)
+rolling_player_game_metrics,idx_rolling_player_game_metrics_contextual_lookup," btree (season, strength_state, game_date DESC, team_id, player_id)"
+rolling_player_game_metrics,idx_rolling_player_game_metrics_contextual_role," btree (season, strength_state, line_combo_group, line_combo_slot, pp_unit, game_date DESC)"
+rolling_player_game_metrics,idx_rpgm_latest_snapshot_lookup," btree (season, strength_state, game_date DESC, player_id, updated_at DESC NULLS LAST)"
+rolling_player_game_metrics,idx_rpgm_season_team_date," btree (season, team_id, game_date)"
+rolling_player_game_metrics,idx_rpgm_strength_date," btree (strength_state, game_date)"
+rolling_player_game_metrics,rolling_player_game_metrics_pkey," btree (player_id, game_date, strength_state)"
+rosters,rosters_one_current_team_per_player_season," btree (""playerId"", ""seasonId"") WHERE (is_current = true)"
+rosters,rosters_pkey," btree (""playerId"", ""seasonId"", ""teamId"")"
+shift_charts,idx_game_date, btree (game_date)
+shift_charts,idx_game_type, btree (game_type)
+shift_charts,idx_player_id, btree (player_id)
+shift_charts,idx_shift_charts_es_shifts, gin (es_shifts)
+shift_charts,idx_shift_charts_pp_shifts, gin (pp_shifts)
+shift_charts,idx_shift_charts_shifts, gin (shifts)
+shift_charts,idx_team_abbreviation, btree (team_abbreviation)
+shift_charts,idx_team_id, btree (team_id)
+shift_charts,idx_team_id_game_date," btree (team_id, game_date)"
+shift_charts,idx_team_id_game_date_covering," btree (team_id, game_date) INCLUDE (game_id, game_type, player_id)"
+shift_charts,shift_charts_pkey, btree (id)
+shift_charts,unique_shift," btree (game_id, player_id)"

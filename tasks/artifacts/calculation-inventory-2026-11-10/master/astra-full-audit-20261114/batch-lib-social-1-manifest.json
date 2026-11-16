@@ -1,0 +1,133 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "files": [
+    {
+      "path": "web/lib/socialShare/modules/creaseShift.sources.ts",
+      "local": "/tmp/astra-social1/0-creaseShift.sources.ts",
+      "lines": 96,
+      "sha256": "8a0833f2746ba0a90aa6df0b59ea275ee0c258b080e28fd8f8846dc87d964710",
+      "fullRead": true,
+      "bytes": 8069,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          96
+        ]
+      ],
+      "rows": 59
+    },
+    {
+      "path": "web/lib/socialShare/modules/creaseShift.test.ts",
+      "local": "/tmp/astra-social1/1-creaseShift.test.ts",
+      "lines": 647,
+      "sha256": "687fd673615100a444c4ba867f7f951760677bc8ae513d3ec9e0c3baafe660cd",
+      "fullRead": true,
+      "bytes": 51910,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          647
+        ]
+      ],
+      "rows": 460
+    },
+    {
+      "path": "web/lib/socialShare/modules/creaseShift.ts",
+      "local": "/tmp/astra-social1/2-creaseShift.ts",
+      "lines": 283,
+      "sha256": "af4738533f43a57c781950d0e25e0a7016783fe9b0f9c4b7ce7369ee0eeaced3",
+      "fullRead": true,
+      "bytes": 25623,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          283
+        ]
+      ],
+      "rows": 261
+    },
+    {
+      "path": "web/lib/socialShare/modules/goalieGsax.test.ts",
+      "local": "/tmp/astra-social1/3-goalieGsax.test.ts",
+      "lines": 317,
+      "sha256": "48a848dcaf4ca098deacc8cbd80b07de7b80d55eae81df87e2cc13004f635972",
+      "fullRead": true,
+      "bytes": 28083,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          317
+        ]
+      ],
+      "rows": 207
+    },
+    {
+      "path": "web/lib/socialShare/modules/goalieGsax.ts",
+      "local": "/tmp/astra-social1/4-goalieGsax.ts",
+      "lines": 182,
+      "sha256": "c917d570c8bd014116ed671249d071330655424a93e2a3dff95a2e1cf27f89a4",
+      "fullRead": true,
+      "bytes": 18862,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          182
+        ]
+      ],
+      "rows": 223
+    },
+    {
+      "path": "web/lib/socialShare/modules/goaliePeriod.test.ts",
+      "local": "/tmp/astra-social1/5-goaliePeriod.test.ts",
+      "lines": 569,
+      "sha256": "b09758ef38e2f305196d5074e23b298c39afbd59a26df587f0c017a5701fab98",
+      "fullRead": true,
+      "bytes": 49184,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          569
+        ]
+      ],
+      "rows": 305
+    },
+    {
+      "path": "web/lib/socialShare/modules/goaliePeriod.ts",
+      "local": "/tmp/astra-social1/6-goaliePeriod.ts",
+      "lines": 256,
+      "sha256": "3f3057139237681cc07c5de0fb2f40a5792179740697a3e8f4c23091f957c5ef",
+      "fullRead": true,
+      "bytes": 24836,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          256
+        ]
+      ],
+      "rows": 229
+    }
+  ],
+  "scopeLines": 2350,
+  "rows": 1744,
+  "probe": "social1-probe-output.json",
+  "checks": [
+    "Seven full frozen source reads",
+    "Unique AST source-offset identities",
+    "Exact goalie probes passed after fixture-order correction; extension for nonmember ready-state passed"
+  ],
+  "notRun": [
+    "Vitest",
+    "real database/provider",
+    "real loaders, live finality or card rendering",
+    "application imports or actual environment",
+    "browser/server/build",
+    "later Rankings exact-commit review"
+  ]
+}

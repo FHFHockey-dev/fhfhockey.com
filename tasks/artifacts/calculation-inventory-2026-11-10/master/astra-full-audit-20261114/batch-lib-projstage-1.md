@@ -1,0 +1,41 @@
+# Frozen preflight and goalie stages
+
+Target89da739cb. Fully read preflight259lines and goalie1004lines:2paths/1263lines/280ledger rows. Stage source comes only from the frozen pin, not Claude's changing capture files. Manifests and probe outputs retain hashes. Skater output3575–3685 was read only as dependency evidence; its whole-file audit is still pending.
+
+Preflight selects the slate's games, resolves season, filters requested IDs, reads markets at decisionAsOf, then selects roster availability/role/PP and goalie overrides. Injury/IR/suspension/senddown are separate zero-availability states; DTD/benching use bounded legacy multipliers; RETURN/callup restore availability; scratch is game-scoped. Latest availability/line event is selected by effective_from, PP keeps the first descending event, goalie overrides prefer greatest probability. Board evidence can supersede scoped assertions or clear conflicts, but absent newer evidence leaves preflight values intact. Existing PREL1-01 remains the expired RETURN/persistent injury lifecycle defect.
+
+Goalie stage derives opponent volume from skater outputs, blends defensive history and bounded context, uses season-current league save-percent with explicit fallback disclosure, then applies each goalie's evidence/workload/rest inputs. Existing nullable-pair, incomplete offense and inclusive-date query findings remain active dependencies. Candidate start probabilities, team-game Win, credited starter/relief Win and own conditional lines are separately serialized. Source confirmation uses exact scoped evidence; legacy override or probability1 is not itself a confirmed-source label. Top-two legacy mixture retains residual fallback, while all candidates receive own contracts. Counts scale by horizon; probabilities are labelled per game. Unknown PK is labelled and can correspond to the legacy ES-as-all-non-PP basis, so no new unknown-PK omission finding is asserted without the full skater basis trace. Reserve rows remain separate and flag-gated.
+
+## AFULL-PSTAGE1-01 — P1, horizons greater than1: horizon totals re-enter the per-game goalie model
+
+- Expected: per-game goalie shots are derived from per-game opponent shots, with horizon counts scaled once; per-game Win lambdas stay on a per-game basis.
+- Source: `skater-stage.ts:3639–3645` scales ES/PP/PK shots by teamHorizonTotalScalar;3672–3676 copies those persisted totals to teamShotsByTeamId. `goalie-stage.ts:200–202` uses the map as per-game opponent shots, and864–881 multiplies modeled counts by goalieHorizonTotalScalar again. The goalie candidate contract is labelled single_game despite using that inflated input. Team goal map3678–3681 similarly supplies reported horizon means to goalie-stage377–386's per-game Win calculation.
+- Reproduction: exact full goalie-stage control flow with neutral context, fully supplied synthetic caches, deterministic synthetic save-rate model, exact mixture/contract helpers and five unit horizon weights. H1 receives30shots and writes30; H5 receives the skater contract's150shots and writes750, whereas one scaling gives150. Per-game Win function receives[3,2] atH1 and[15,10] atH5. This is an orchestration/unit reproduction, not a fitted-model or live-run test.
+- Impact: multi-game goalie counts and candidate single-game values are inflated; per-game Win inputs use the wrong exposure. H1 is unaffected by this scaling defect. Existing isolated goalie suite supplies the same25+5shot map for every horizon and misses the producer/consumer boundary.
+- Suggested approved fix: pass per-game count/goal means between stages and scale only at serialization, or make the transfer basis explicit and consistently unscale. Preserve native goal basis and nullability. Add one integration fixture passing the actual skater horizon output to goalie stage, including nonuniform/opponent-specific scalars.
+
+## AFULL-PSTAGE1-02 — P1: named goalie prop uses the team-slot mixture
+
+- Expected: a named goalie's saves prop is compared with that goalie's own conditional-start line.
+- Source: `goalie-stage.ts:688–691` uses blendedProjection's slot counts;934–945 passes horizon-scaled blended saves to the selected goalie's prop, then954–1000 labels/writes/compares it under selectedGoalieId. The same function already has the selectedGoalieFullStartModel and builds per-candidate own lines815–862.
+- Reproduction: exact isolated stage with candidates100/101 at.6/.4 and save rates.9/.8 on30shots yields selected goalie100's own27saves, slot25.8 and named-goalie prop expected_value25.8. H5 case also uses horizon counts for a single-game market; that exposure issue overlaps PSTAGE1-01, not a second numerical inflation finding.
+- Impact: a backup's performance changes another named goalie's prop mean and potential probability/edge, despite the selected goalie's unchanged own conditional model. No actual offered book line or hosted edge was queried.
+- Suggested approved fix: consume the matching candidate's correctly conditioned per-game line; withhold incompatible horizon/population comparisons. Add a differing-backup fixture asserting own candidate27, not mixture25.8, on the named prop.
+
+## AFULL-PSTAGE1-03 — P1: event expiry is evaluated at midnight instead of the information cutoff
+
+- Expected: an event whose effective_to has passed by the projection cutoff cannot remain an active current override.
+- Source: preflight188/230–235 passes startTs from slate midnight; selector98–100 compares expiry only to that. Query219–227 bounds created/effective_from by decisionAsOf but does not require effective_to to remain active. `dailyBoardEvidence.ts:203–208` carries existing maps when no superseding assertion/conflict exists.
+- Reproduction: exact selector admits a GOALIE_START_CONFIRMED event expiring2026-11-14T10:00Z for the same slate's20:00Z decision because midnight precedes expiry; checking at20:00Z excludes it. The retained override has starterProb1. This is distinct from PREL1-01, which concerns an expired RETURN uncovering an old persistent injury.
+- Impact: intraday-expired goalie/role/availability evidence remains usable through the slate day. A manual/legacy override is still not called source-confirmed by the repaired goalie serializer, but its probability and selected player are affected.
+- Suggested approved fix: define event applicability against the actual decision/game cutoff, preserve strict source-availability clocks, and test expiry before/at/after the cutoff. Avoid treating an approval or newer code as evidence this pin is fixed.
+
+## AFULL-PSTAGE1-04 — P2: capped roster history silently loses persistent states
+
+- Expected: a truncated evidence history is unavailable/incomplete, not proof of absence of older persistent injury or other state.
+- Source: preflight219–227 requests all historical events for slate teams, sorts descending and limits5000, with neither exact count nor paging nor saturation rejection. This may also meet a lower server return cap; its current setting was not queried.
+- Reproduction: exact full preflight with a fake filter/order/limit client and5001matching events returns only the newest5000line-change rows, dropping an older INJURY_OUT with no expiry. Preflight has no availability entry for that player; the exact selector given the retained injury yields0. `projstage1-preflight-probe-output.json` records5001matched/5000returned.
+- Impact: a busy team's accumulated history can erase an ongoing unavailable state while the run succeeds. Synthetic threshold scenario only; no production row-count or incidence claim.
+- Suggested approved fix: bounded complete pagination or an authoritative latest-state query/receipt; detect exceeded bounds and propagate unavailable evidence. Include a persistent old injury behind many unrelated newer rows and a simulated server cap.
+
+Both isolated probes passed once. All real-query dependencies in the goalie probe throw if reached; persistence is an in-memory collector. The save-rate model and context adjustments are explicit synthetic stubs, so these results establish stage population/exposure flow, not production forecast numbers. Preflight season/market helpers are stubbed. Supplied Vitest suites were not run. No production/provider/page, actual environment read, application import/edit, server/build, Git mutation, fix or release.

@@ -1,0 +1,16 @@
+const fs=require('fs'),cp=require('child_process'),vm=require('vm'),crypto=require('crypto');
+const ts=require('/Users/tim/Code/fhfhockey.com/web/node_modules/typescript');
+const path='web/components/underlying-stats/PlayerStatsExpandedRowChart.tsx';
+const data=fs.readFileSync(path);if(!data.equals(cp.execFileSync('git',['show','89da739cb:'+path])))throw Error('target drift');
+const sf=ts.createSourceFile(path,data.toString(),ts.ScriptTarget.Latest,true);
+const names=['toFiniteNumber','formatShortDate','formatLongDate','readNumber','share','ratio','resolvePooledRatioSpec','poolRatio','getExpandedRowChartSummaryLabels','buildExpandedRowChartData','calculateRollingAverage','calculateAverage'];
+const code=sf.statements.filter(n=>ts.isFunctionDeclaration(n)&&names.includes(n.name.text)||ts.isVariableStatement(n)&&n.declarationList.declarations.some(d=>d.name.getText(sf)==='POOLED_RATIO_SPECS')).map(n=>n.getText(sf).replace(/^export\s+/,'')).join('\n');
+const js=ts.transpileModule(code,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;
+const ctx=vm.runInNewContext(js+'\n;({buildExpandedRowChartData,getExpandedRowChartSummaryLabels,formatShortDate,formatLongDate})',{exports:{}},{timeout:1000});
+const known=[{gameDate:'2026-11-14',ipp:1,totalPoints:1},{gameDate:'2026-11-15',ipp:0.5,totalPoints:5}];
+const mixed=[known[0],{gameDate:'2026-11-15',ipp:null,totalPoints:5}];
+const ipp=ctx.buildExpandedRowChartData(known,'ipp'),unknown=ctx.buildExpandedRowChartData(mixed,'ipp');
+const pooledSave=ctx.buildExpandedRowChartData([{gameDate:'2026-11-14',saves:1,shotsAgainst:1,savePct:1},{gameDate:'2026-11-15',saves:5,shotsAgainst:10,savePct:0.5}],'savePct');
+const label={short:ctx.formatShortDate('2026-11-14'),long:ctx.formatLongDate('2026-11-14')};
+if(ipp[1].rolling5!==0.75||unknown[1].rolling5!==1||Math.abs(pooledSave[1].rolling5-6/11)>1e-12||label.short!=='Nov 13')throw Error('unexpected probe or wrong timezone');
+console.log(JSON.stringify({target:'89da739cb',sha256:crypto.createHash('sha256').update(data).digest('hex'),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,mode:'exact-source VM, no application imports or requests',ipp:{sourceDenominators:[1,10],expectedPooled:6/11,actualRolling:ipp[1].rolling5,actualWindow:ipp[1].seasonAverage,labels:ctx.getExpandedRowChartSummaryLabels('ipp')},unknownIpp:{actualRolling:unknown[1].rolling5,actualWindow:unknown[1].seasonAverage},preservedSavePct:pooledSave[1].rolling5,dateLabel:label},null,2));

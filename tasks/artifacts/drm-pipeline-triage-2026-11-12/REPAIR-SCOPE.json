@@ -1,0 +1,730 @@
+{
+  "capturedAt": "2026-11-12",
+  "season": 20262027,
+  "liveScan": {
+    "startDate": "2026-10-01",
+    "endDate": "2026-11-11",
+    "gameCount": 283
+  },
+  "repairGameCount": 92,
+  "games": [
+    {
+      "gameId": 2026020009,
+      "date": "2026-10-01",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 15,
+      "overlappingIntervals": 26,
+      "duplicateSeconds": 1278
+    },
+    {
+      "gameId": 2026020013,
+      "date": "2026-10-01",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 49
+    },
+    {
+      "gameId": 2026020017,
+      "date": "2026-10-02",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 51
+    },
+    {
+      "gameId": 2026020022,
+      "date": "2026-10-03",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 92
+    },
+    {
+      "gameId": 2026020023,
+      "date": "2026-10-03",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 38
+    },
+    {
+      "gameId": 2026020031,
+      "date": "2026-10-03",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 4,
+      "overlappingIntervals": 11,
+      "duplicateSeconds": 674
+    },
+    {
+      "gameId": 2026020034,
+      "date": "2026-10-03",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 3,
+      "overlappingIntervals": 5,
+      "duplicateSeconds": 288
+    },
+    {
+      "gameId": 2026020037,
+      "date": "2026-10-04",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 49
+    },
+    {
+      "gameId": 2026020038,
+      "date": "2026-10-04",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 5,
+      "overlappingIntervals": 5,
+      "duplicateSeconds": 261
+    },
+    {
+      "gameId": 2026020044,
+      "date": "2026-10-06",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 5,
+      "overlappingIntervals": 8,
+      "duplicateSeconds": 297
+    },
+    {
+      "gameId": 2026020048,
+      "date": "2026-10-06",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 94
+    },
+    {
+      "gameId": 2026020050,
+      "date": "2026-10-06",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 54
+    },
+    {
+      "gameId": 2026020051,
+      "date": "2026-10-06",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 35
+    },
+    {
+      "gameId": 2026020053,
+      "date": "2026-10-07",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 52
+    },
+    {
+      "gameId": 2026020054,
+      "date": "2026-10-07",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 8,
+      "overlappingIntervals": 8,
+      "duplicateSeconds": 439
+    },
+    {
+      "gameId": 2026020064,
+      "date": "2026-10-08",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 32
+    },
+    {
+      "gameId": 2026020066,
+      "date": "2026-10-09",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 84
+    },
+    {
+      "gameId": 2026020067,
+      "date": "2026-10-09",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 286
+    },
+    {
+      "gameId": 2026020068,
+      "date": "2026-10-09",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 4,
+      "duplicateSeconds": 131
+    },
+    {
+      "gameId": 2026020073,
+      "date": "2026-10-10",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 9,
+      "overlappingIntervals": 9,
+      "duplicateSeconds": 429
+    },
+    {
+      "gameId": 2026020075,
+      "date": "2026-10-10",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 3,
+      "duplicateSeconds": 128
+    },
+    {
+      "gameId": 2026020077,
+      "date": "2026-10-10",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 11,
+      "overlappingIntervals": 25,
+      "duplicateSeconds": 1264
+    },
+    {
+      "gameId": 2026020080,
+      "date": "2026-10-10",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 39
+    },
+    {
+      "gameId": 2026020081,
+      "date": "2026-10-10",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 5,
+      "overlappingIntervals": 5,
+      "duplicateSeconds": 217
+    },
+    {
+      "gameId": 2026020082,
+      "date": "2026-10-10",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 4,
+      "overlappingIntervals": 8,
+      "duplicateSeconds": 430
+    },
+    {
+      "gameId": 2026020083,
+      "date": "2026-10-10",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 12
+    },
+    {
+      "gameId": 2026020100,
+      "date": "2026-10-13",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 6,
+      "duplicateSeconds": 336
+    },
+    {
+      "gameId": 2026020109,
+      "date": "2026-10-15",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 5,
+      "overlappingIntervals": 15,
+      "duplicateSeconds": 876
+    },
+    {
+      "gameId": 2026020111,
+      "date": "2026-10-15",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 110
+    },
+    {
+      "gameId": 2026020114,
+      "date": "2026-10-15",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 3,
+      "overlappingIntervals": 9,
+      "duplicateSeconds": 344
+    },
+    {
+      "gameId": 2026020115,
+      "date": "2026-10-15",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 5,
+      "overlappingIntervals": 5,
+      "duplicateSeconds": 406
+    },
+    {
+      "gameId": 2026020116,
+      "date": "2026-10-15",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 4,
+      "overlappingIntervals": 4,
+      "duplicateSeconds": 75
+    },
+    {
+      "gameId": 2026020124,
+      "date": "2026-10-17",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 112
+    },
+    {
+      "gameId": 2026020126,
+      "date": "2026-10-17",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 3,
+      "duplicateSeconds": 93
+    },
+    {
+      "gameId": 2026020127,
+      "date": "2026-10-17",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 3,
+      "overlappingIntervals": 3,
+      "duplicateSeconds": 245
+    },
+    {
+      "gameId": 2026020128,
+      "date": "2026-10-17",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 105
+    },
+    {
+      "gameId": 2026020131,
+      "date": "2026-10-17",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 11,
+      "overlappingIntervals": 22,
+      "duplicateSeconds": 891
+    },
+    {
+      "gameId": 2026020143,
+      "date": "2026-10-20",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 4,
+      "overlappingIntervals": 4,
+      "duplicateSeconds": 263
+    },
+    {
+      "gameId": 2026020147,
+      "date": "2026-10-20",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 3,
+      "overlappingIntervals": 3,
+      "duplicateSeconds": 286
+    },
+    {
+      "gameId": 2026020149,
+      "date": "2026-10-20",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 132
+    },
+    {
+      "gameId": 2026020156,
+      "date": "2026-10-22",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 35
+    },
+    {
+      "gameId": 2026020159,
+      "date": "2026-10-22",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 3,
+      "overlappingIntervals": 3,
+      "duplicateSeconds": 559
+    },
+    {
+      "gameId": 2026020162,
+      "date": "2026-10-22",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 4,
+      "overlappingIntervals": 4,
+      "duplicateSeconds": 123
+    },
+    {
+      "gameId": 2026020163,
+      "date": "2026-10-22",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 3,
+      "overlappingIntervals": 11,
+      "duplicateSeconds": 548
+    },
+    {
+      "gameId": 2026020164,
+      "date": "2026-10-22",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 3,
+      "overlappingIntervals": 3,
+      "duplicateSeconds": 154
+    },
+    {
+      "gameId": 2026020168,
+      "date": "2026-10-24",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 45
+    },
+    {
+      "gameId": 2026020170,
+      "date": "2026-10-24",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 28
+    },
+    {
+      "gameId": 2026020171,
+      "date": "2026-10-24",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 8,
+      "overlappingIntervals": 8,
+      "duplicateSeconds": 194
+    },
+    {
+      "gameId": 2026020176,
+      "date": "2026-10-24",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 24
+    },
+    {
+      "gameId": 2026020177,
+      "date": "2026-10-24",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 37
+    },
+    {
+      "gameId": 2026020180,
+      "date": "2026-10-25",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 51
+    },
+    {
+      "gameId": 2026020186,
+      "date": "2026-10-26",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 46
+    },
+    {
+      "gameId": 2026020190,
+      "date": "2026-10-27",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 36
+    },
+    {
+      "gameId": 2026020194,
+      "date": "2026-10-27",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 23
+    },
+    {
+      "gameId": 2026020202,
+      "date": "2026-10-28",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 41
+    },
+    {
+      "gameId": 2026020204,
+      "date": "2026-10-29",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 69
+    },
+    {
+      "gameId": 2026020205,
+      "date": "2026-10-29",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 7,
+      "overlappingIntervals": 11,
+      "duplicateSeconds": 501
+    },
+    {
+      "gameId": 2026020206,
+      "date": "2026-10-29",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 128
+    },
+    {
+      "gameId": 2026020207,
+      "date": "2026-10-29",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 3,
+      "duplicateSeconds": 157
+    },
+    {
+      "gameId": 2026020214,
+      "date": "2026-10-30",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 3,
+      "duplicateSeconds": 89
+    },
+    {
+      "gameId": 2026020219,
+      "date": "2026-10-31",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 63
+    },
+    {
+      "gameId": 2026020221,
+      "date": "2026-10-31",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 3,
+      "duplicateSeconds": 287
+    },
+    {
+      "gameId": 2026020223,
+      "date": "2026-10-31",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 3,
+      "duplicateSeconds": 156
+    },
+    {
+      "gameId": 2026020224,
+      "date": "2026-10-31",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 26
+    },
+    {
+      "gameId": 2026020225,
+      "date": "2026-10-31",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 80
+    },
+    {
+      "gameId": 2026020232,
+      "date": "2026-11-02",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 69
+    },
+    {
+      "gameId": 2026020248,
+      "date": "2026-11-04",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 100
+    },
+    {
+      "gameId": 2026020249,
+      "date": "2026-11-04",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 31
+    },
+    {
+      "gameId": 2026020250,
+      "date": "2026-11-04",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 3,
+      "duplicateSeconds": 102
+    },
+    {
+      "gameId": 2026020253,
+      "date": "2026-11-05",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 4,
+      "duplicateSeconds": 217
+    },
+    {
+      "gameId": 2026020254,
+      "date": "2026-11-05",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 37
+    },
+    {
+      "gameId": 2026020260,
+      "date": "2026-11-05",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 3,
+      "overlappingIntervals": 5,
+      "duplicateSeconds": 137
+    },
+    {
+      "gameId": 2026020261,
+      "date": "2026-11-05",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 4,
+      "overlappingIntervals": 8,
+      "duplicateSeconds": 306
+    },
+    {
+      "gameId": 2026020267,
+      "date": "2026-11-07",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 2,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 71
+    },
+    {
+      "gameId": 2026020269,
+      "date": "2026-11-07",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 3,
+      "overlappingIntervals": 3,
+      "duplicateSeconds": 186
+    },
+    {
+      "gameId": 2026020272,
+      "date": "2026-11-07",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 35
+    },
+    {
+      "gameId": 2026020273,
+      "date": "2026-11-07",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 5,
+      "overlappingIntervals": 11,
+      "duplicateSeconds": 500
+    },
+    {
+      "gameId": 2026020275,
+      "date": "2026-11-07",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 12,
+      "overlappingIntervals": 12,
+      "duplicateSeconds": 620
+    },
+    {
+      "gameId": 2026020276,
+      "date": "2026-11-07",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 17
+    },
+    {
+      "gameId": 2026020279,
+      "date": "2026-11-08",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 53
+    },
+    {
+      "gameId": 2026020280,
+      "date": "2026-11-08",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 9
+    },
+    {
+      "gameId": 2026020282,
+      "date": "2026-11-08",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 79
+    },
+    {
+      "gameId": 2026020283,
+      "date": "2026-11-09",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 2,
+      "duplicateSeconds": 89
+    },
+    {
+      "gameId": 2026020285,
+      "date": "2026-11-09",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 3,
+      "overlappingIntervals": 7,
+      "duplicateSeconds": 400
+    },
+    {
+      "gameId": 2026020287,
+      "date": "2026-11-10",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 1,
+      "overlappingIntervals": 1,
+      "duplicateSeconds": 63
+    },
+    {
+      "gameId": 2026020291,
+      "date": "2026-11-10",
+      "reason": "overlapping_intervals",
+      "affectedPlayers": 5,
+      "overlappingIntervals": 6,
+      "duplicateSeconds": 234
+    },
+    {
+      "gameId": 2026020293,
+      "date": "2026-11-11",
+      "reason": "relationship_pending"
+    },
+    {
+      "gameId": 2026020294,
+      "date": "2026-11-11",
+      "reason": "relationship_pending"
+    },
+    {
+      "gameId": 2026020295,
+      "date": "2026-11-11",
+      "reason": "relationship_pending"
+    },
+    {
+      "gameId": 2026020296,
+      "date": "2026-11-11",
+      "reason": "relationship_pending"
+    },
+    {
+      "gameId": 2026020297,
+      "date": "2026-11-11",
+      "reason": "relationship_pending"
+    },
+    {
+      "gameId": 2026020298,
+      "date": "2026-11-11",
+      "reason": "relationship_pending"
+    }
+  ]
+}

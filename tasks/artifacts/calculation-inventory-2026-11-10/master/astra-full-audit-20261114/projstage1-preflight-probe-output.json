@@ -1,0 +1,31 @@
+{
+  "pin": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "hashes": {
+    "web/lib/projections/utils/number-utils.ts": "46a78073bdc6336c44dfe0ffb5e33370c5c1730ab74c4fc23a7fe6937e858222",
+    "web/lib/projections/utils/date-utils.ts": "2cffcc04886d2aad6f7d40ebf48ef91cece1ba8317fb0623b3baaf2ca9793c93",
+    "web/lib/projections/stages/preflight-stage.ts": "a4f2b1ad09a15e42d4af6584436b0b25ed623dff4389632d7254ec3a65824b52"
+  },
+  "receipts": [
+    {
+      "table": "games",
+      "matched": 1,
+      "returned": 1,
+      "limit": null
+    },
+    {
+      "table": "forge_roster_events",
+      "matched": 5001,
+      "returned": 5000,
+      "limit": 5000
+    }
+  ],
+  "checks": {
+    "persistentInjuryPresentInSource": true,
+    "preflightOmitsInjuredPlayer": true,
+    "uncappedSelectorExpected": 0
+  },
+  "boundaries": [
+    "Exact isolated preflight with fake filter/order/limit client and synthetic 5001-event history",
+    "External helpers stubbed; no actual app imports, Vitest, database/provider/page, environment, server/build or writes"
+  ]
+}

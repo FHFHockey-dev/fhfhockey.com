@@ -1,0 +1,53 @@
+{
+  "pin": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "hashes": {
+    "web/lib/projections/inputCapture.ts": "98f1c6e6d04ec43b9973f7a5a968d963405a83090afdea81007b18b0735bf0cf",
+    "web/lib/projections/gameRevisions.ts": "52228ce0a762b2770fd256b79787b32966e41b95d8a852fcea084dfb81a8c18a",
+    "web/lib/projections/goalie/goalieCandidates.ts": "0ade4eb05b712d05825dfbe37f6b3054faebc77c28a50fafc74cf46690bfae67",
+    "web/lib/projections/run-forge-projections.ts": "0185b84d930bda6cb5d956adaf46b3d7f61c46648dc2cf16d7a7dfcaccd7fd53"
+  },
+  "checks": {
+    "goalieTimestamp": {
+      "firstHash": "237d5a3a660d03b0d695927829ce4cb51edeab4c698e50c442fac135d0e36dc8",
+      "laterHash": "6ce3669ff945efb7c773c80fa9337df83c86ee5cbd3cff6bb86aca4e65902b12",
+      "nestedTimestampChangesHash": true,
+      "topLevelUpdatedAtIgnored": true
+    },
+    "reserveConfiguration": {
+      "configOff": {
+        "FORGE_SKATER_MODEL_MODE": null,
+        "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION": null,
+        "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION": null,
+        "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES": null,
+        "NHL_XG_MODEL_VERSION": null,
+        "START_CHART_GAME_REVISIONS": null,
+        "STARTER_BOARD_COMPUTE_ENABLED": "true",
+        "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED": null
+      },
+      "configOn": {
+        "FORGE_SKATER_MODEL_MODE": null,
+        "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION": null,
+        "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION": null,
+        "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES": null,
+        "NHL_XG_MODEL_VERSION": null,
+        "START_CHART_GAME_REVISIONS": null,
+        "STARTER_BOARD_COMPUTE_ENABLED": "true",
+        "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED": null
+      },
+      "configurationHash": "f50e9e2d36371aab0b9c175a74f621b317b7fef21f870313dad88ba6243423a1",
+      "artifactHash": "95c3ebafd6d47998119f98fed159e3edfa024c4a75a77ca571e3c0164c5e2e94",
+      "flagOmitted": true
+    },
+    "externalFantasyTranscript": {
+      "empty": false,
+      "listed": true,
+      "fantasy": false,
+      "unlisted": false
+    }
+  },
+  "boundaries": [
+    "Exact isolated model identity, goalie candidate builder and hash helpers",
+    "Synthetic environment only; no actual environment access",
+    "No full runner, stage, replay execution, Vitest, app imports, live client, database, provider, browser, server or build"
+  ]
+}

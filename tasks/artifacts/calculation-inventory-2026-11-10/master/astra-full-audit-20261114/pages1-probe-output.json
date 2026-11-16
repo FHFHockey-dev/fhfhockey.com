@@ -1,0 +1,179 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "careerStints": {
+    "distinctSeasons": 1,
+    "actualCountMean": 15,
+    "expectedCountMean": 30,
+    "reportedSeasons": 2,
+    "pooledShootingControl": 0.1,
+    "pooledSog60Control": 12
+  },
+  "positionHistory": {
+    "inputGames": 2,
+    "returnedGames": 1,
+    "queries": [
+      {
+        "table": "skatersGameStats",
+        "filters": [
+          [
+            "eq",
+            "playerId",
+            1
+          ],
+          [
+            "eq",
+            "position",
+            "C"
+          ],
+          [
+            "gte",
+            "games.date",
+            "2026-10-01"
+          ],
+          [
+            "lte",
+            "games.date",
+            "2026-10-02"
+          ]
+        ],
+        "select": "toi, games!inner(date,id)"
+      }
+    ]
+  },
+  "qualifiedPp": {
+    "withoutForge": {
+      "toi": 20,
+      "powerPlayToi": null,
+      "powerPlayToiShare": null,
+      "powerPlayShareStatus": {
+        "availability": "unavailable",
+        "reason": "No stored PP clock for this team-game yet."
+      },
+      "date": "2026-10-01",
+      "modelPowerPlay": {
+        "source": "forge_player_game_strength.toi_pp_seconds",
+        "playerPpMinutes": null,
+        "teamPpClockMinutes": null,
+        "exceedsTeamClock": null
+      }
+    },
+    "withForge": {
+      "toi": 20,
+      "powerPlayToi": 1,
+      "powerPlayToiShare": 50,
+      "powerPlayShareStatus": {
+        "availability": "available",
+        "reason": null
+      },
+      "date": "2026-10-01",
+      "modelPowerPlay": {
+        "source": "forge_player_game_strength.toi_pp_seconds",
+        "playerPpMinutes": null,
+        "teamPpClockMinutes": null,
+        "exceedsTeamClock": null
+      }
+    }
+  },
+  "sustainabilityRequests": [
+    {
+      "stype": "2",
+      "sit": "all",
+      "score": "all",
+      "rate": "n",
+      "pos": "S",
+      "loc": "B",
+      "toi": "0",
+      "gpfilt": "gpdate",
+      "tgp": "410",
+      "lines": "single",
+      "draftteam": "ALL",
+      "fromseason": "20252026",
+      "thruseason": "20252026",
+      "fd": "2025-10-01",
+      "td": "2025-10-10",
+      "team": "TOR",
+      "stdoi": "std"
+    },
+    {
+      "stype": "2",
+      "sit": "all",
+      "score": "all",
+      "rate": "n",
+      "pos": "S",
+      "loc": "B",
+      "toi": "0",
+      "gpfilt": "gpdate",
+      "tgp": "410",
+      "lines": "single",
+      "draftteam": "ALL",
+      "fromseason": "20252026",
+      "thruseason": "20252026",
+      "fd": "2025-10-01",
+      "td": "2025-10-10",
+      "team": "TOR",
+      "stdoi": "oi"
+    },
+    {
+      "stype": "2",
+      "sit": "all",
+      "score": "all",
+      "rate": "n",
+      "pos": "S",
+      "loc": "B",
+      "toi": "0",
+      "gpfilt": "gpdate",
+      "tgp": "410",
+      "lines": "single",
+      "draftteam": "ALL",
+      "fromseason": "20262027",
+      "thruseason": "20262027",
+      "fd": "2026-10-01",
+      "td": "2026-10-10",
+      "team": "undefined",
+      "stdoi": "std"
+    },
+    {
+      "stype": "2",
+      "sit": "all",
+      "score": "all",
+      "rate": "n",
+      "pos": "S",
+      "loc": "B",
+      "toi": "0",
+      "gpfilt": "gpdate",
+      "tgp": "410",
+      "lines": "single",
+      "draftteam": "ALL",
+      "fromseason": "20262027",
+      "thruseason": "20262027",
+      "fd": "2026-10-01",
+      "td": "2026-10-10",
+      "team": "undefined",
+      "stdoi": "oi"
+    }
+  ],
+  "sources": [
+    {
+      "path": "web/pages/api/CareerAverages/[playerId].ts",
+      "sha256": "5980d6efabedaac227b9652bdaea2510b110c7d5af5031e21eea33ee99ee293d"
+    },
+    {
+      "path": "web/lib/NHL/TOI.ts",
+      "sha256": "3e0914765766f0274c40b35a3670952a85e12ae2c8b140945901a29983cebe42"
+    },
+    {
+      "path": "web/pages/api/toi.ts",
+      "sha256": "2d75b28a7bccf1b5aba659d30924de0572581f791d9278370cd414288b94439b"
+    },
+    {
+      "path": "web/lib/ppShare/serving.ts",
+      "sha256": "8f7a02b0a009ce1d24b27d9ffef5e46d887061568e97f957c2da83418d88e640"
+    },
+    {
+      "path": "web/pages/api/SustainabilityStats/[playerId].ts",
+      "sha256": "1e96150cc8088f9846a1fcab7fc823912c2ddcf2d5a011ad6d6c3f4b6f524bf6"
+    }
+  ],
+  "limits": "Exact frozen code in VM with synthetic finite data/queries and rejecting transport; no real provider/DB, route invocation, app imports, environment values, writes, browser, Vitest or live evidence. Private helpers exported only within VM copy."
+}

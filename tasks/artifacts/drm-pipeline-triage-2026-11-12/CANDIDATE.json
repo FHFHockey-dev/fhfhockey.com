@@ -1,0 +1,127 @@
+{
+  "status": "local_mathematical_validation_passed_not_deployed",
+  "branch": "octoberBranch",
+  "baseHead": "cd0d4670de40ffb3d245663e88116f27c4f50674",
+  "files": [
+    {
+      "path": "web/components/DateRangeMatrix/fetchAggregatedData.ts",
+      "sha256": "9882b8d97ba6dbdd1694feee78f2b1682375616a91f330e0913c03901dad5165"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/fetchAggregatedData.test.ts",
+      "sha256": "a14a7fb0649ebdd4b3681194c52c0b175934197204eed1e63c868690b374d583"
+    },
+    {
+      "path": "web/lib/projections/ingest/shifts.ts",
+      "sha256": "625e1032d56a3b7ef1bb364321a2f638a77a45818a33047c3131007f08801413"
+    },
+    {
+      "path": "web/lib/projections/ingest/shifts.test.ts",
+      "sha256": "6b71aa59919c5f1d6747a4b7a76362d782cc79c72823879f2cce543410041073"
+    },
+    {
+      "path": "web/lib/projections/ingest/projectionInputPersistence.ts",
+      "sha256": "6ece7b9715be537659de1f84b792754888f8346dccd744d4d4ef49d6a769b2a7"
+    },
+    {
+      "path": "web/lib/projections/relationshipMaterialization.ts",
+      "sha256": "f6302505ee111a562e8d3dc0dcea7edbf3e0820ea7b30268e5507caefd947e61"
+    },
+    {
+      "path": "web/lib/projections/relationshipMaterialization.test.ts",
+      "sha256": "da34748242e1d1ec8f7b5bca6b545e8b7e4fd01ae11d2c401474528925cb738f"
+    },
+    {
+      "path": "web/pages/api/v1/db/shift-charts.ts",
+      "sha256": "52187934aafa0a5d57a69b65affb0ea435b4cadee8ec93ef3a00a2cb87e5b324"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/shift-charts.audit.test.ts",
+      "sha256": "90924bd9d9ddc4e973fe52a2aaf97704fe2d8f7cea67ff397fe07b193e7d98ce"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/shift-charts.queue.test.ts",
+      "sha256": "52a2aab699a274c0aa91d28662373f709a6aea8c944c89080ef8d0b212061fd8"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/build-projection-derived-v2.test.ts",
+      "sha256": "d6d84777b0ca85d2fbc519b9863b7174ca2317a692a05b5332cd33ab214a5f07"
+    },
+    {
+      "path": "web/lib/projections/shiftChartRelationshipPayload.ts",
+      "sha256": "2a591f6731629bcd2b0140dbe4059b9ab3b83fda12b4bb94def38e0646377ba9"
+    },
+    {
+      "path": "web/lib/projections/shiftChartRelationshipPayload.test.ts",
+      "sha256": "e0049846d65dc77bb3700175cbd23eb37980d6d2b1e1e3eac0a218076a88805e"
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+      "sha256": "d5cf5cd9d0a5ee64952e481e2d4954a3a613b2d18cea718fd618dc5f8a7bbd98"
+    },
+    {
+      "path": "web/lib/projections/penaltyClock.ts",
+      "sha256": "e9c89921b180826e7fd7ef8a5f15b9c0ddb58d5f8d7ef39dd535b748fddfa5f1"
+    },
+    {
+      "path": "web/utils/getPowerPlayBlocks.ts",
+      "sha256": "2ae53fc1ae5ded090e36347351395e9796f5c7b4becccdcb8423a242d7e149ae"
+    },
+    {
+      "path": "web/utils/getPowerPlayBlocks.test.ts",
+      "sha256": "b07296bd1c8846519edbfe5556de43e685d072ebf3a467003fb1be8cdf34044d"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlRawGamecenter.mjs",
+      "sha256": "cfe532f5bc53055a9177a80764b41c863426c449a9d784dd327c88f1a2e88656"
+    },
+    {
+      "path": "web/lib/projections/ingest/shifts.htmlFallback.test.ts",
+      "sha256": "484fd026a3d15fab73f59ef731df1e9ccc4fbea4c7559dfc6c0eda332b8e7b48"
+    },
+    {
+      "path": "web/components/ShiftChart/model.test.ts",
+      "sha256": "796782014a00a966d7aac5d335fb879a34faf6ab89dbe47d2244823daab769f4"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-power-play-combinations-game.test.ts",
+      "sha256": "686ff7f8a0861e2edc00f2a419bea6fe7d7a5bb86a29d5a3a1ed2af27f5d07ab"
+    }
+  ],
+  "checks": {
+    "officialEndToEndReplay": "190 players;760 exact official total/ES/PP/PK clocks;3420 directed pairs;10 qualified team clocks; two reconciled official HTML source candidates",
+    "historicalSourceDisagreements": "12 original JSON player totals/ES;5 stale captures;7 current JSON endpoint conflicts; originals preserved, selected reports independently reconcile",
+    "independentIntervalOracle": "250 cases;15500 source intervals;750 player totals and500 directed pairs pass",
+    "finalFocusedTests": "111 passed; separate integration112, consumers78, raw parser46 passed; earlier groups overlap",
+    "typecheck": "whole-web TypeScript passed on final implementation",
+    "lint": "scoped ESLint passed",
+    "independentReview": "all concrete findings closed in reviewed final paths; held serial and malformed terminal probes passed"
+  },
+  "remoteActions": {
+    "databaseReads": true,
+    "applicationRequests": 0,
+    "nhlGamecenterApiRequests": 0,
+    "publicNhlSummaryReadsAttempted": 5,
+    "publicNhlSummaryReadsSucceeded": 4,
+    "productionDataWrites": 0,
+    "cronScheduleTransactions": 1,
+    "cronChanges": 2,
+    "deployments": 0,
+    "builds": 0,
+    "currentValidationEvidence": {
+      "savedOfficialHtmlReports": 14,
+      "diagnosticJsonReads": 2,
+      "officialRulebookRead": true,
+      "additionalBrowserSourceLookups": "see transcript; public read-only research",
+      "productionWrites": 0,
+      "deployments": 0,
+      "applicationRequests": 0
+    }
+  },
+  "remaining": [
+    "approved release assembly, linked-project build inventory and exact candidate SHA",
+    "source-aware historical repair scope beyond original92-game overlap/pending set",
+    "approved source/input\u2192relationship\u2192derived publication and production acceptance",
+    "next-cycle cron observation"
+  ]
+}

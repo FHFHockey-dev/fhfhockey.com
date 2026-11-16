@@ -1,0 +1,104 @@
+{
+  "at": "2026-11-09T15:26:29.885100+00:00",
+  "status": "LOCAL_SAVED_INPUT_PREFLIGHT_VERIFIED_SYNTHETIC_ONLY",
+  "scope": "New file-only artifact tool, adjacent tests, source/reconciliation pins and handoff; no application change.",
+  "tests": {
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0,
+    "typeCheckedByTsNode": true,
+    "node": "v22.23.4",
+    "receipt": "tests-final.json",
+    "log": "tests-final.log"
+  },
+  "priorAttempts": [
+    {
+      "receipt": "tests-first.json",
+      "result": "TypeScript Buffer/ArrayBufferLike declaration error; no tests executed."
+    },
+    {
+      "receipt": "tests-after-buffer-fix.json",
+      "result": "TypeScript union narrowing error; no tests executed."
+    },
+    {
+      "receipt": "tests-before-clock-redaction.json",
+      "result": "18 passed; subsequent invalid-clock redaction assertion added and verified in final run."
+    }
+  ],
+  "sourceReconciliation": "RECONCILIATION.json",
+  "validation": {
+    "focusedDiffChecks": [
+      {
+        "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/inspect-saved-planning.ts",
+        "exitCode": 1,
+        "output": "",
+        "interpretation": "Exit 1 denotes the new file differs from /dev/null; empty output means no whitespace diagnostics."
+      },
+      {
+        "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/inspect-saved-planning.test.ts",
+        "exitCode": 1,
+        "output": "",
+        "interpretation": "Exit 1 denotes the new file differs from /dev/null; empty output means no whitespace diagnostics."
+      },
+      {
+        "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/README.md",
+        "exitCode": 1,
+        "output": "",
+        "interpretation": "Exit 1 denotes the new file differs from /dev/null; empty output means no whitespace diagnostics."
+      }
+    ],
+    "readmeLocalLinksExist": true,
+    "blockedNetworkAttempts": 0
+  },
+  "files": [
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/inspect-saved-planning.ts",
+      "sha256": "c61250114b3b2262b474f21c04b1d8d016ad6764ce4915aec601038117d79f25"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/inspect-saved-planning.test.ts",
+      "sha256": "bb088849f2eb4f2e8ad1558aa696067168c61ffaa3b2d424bada50f73fcbbd78"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/README.md",
+      "sha256": "378b45068f44668d3a58151b08f89f6423ea2e1159a9a93886443be4183f3d7e"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/SOURCE-PINS.json",
+      "sha256": "59f4f09dd6fd7bcc50558adae666193f16de3a1c169b7f5e0de04e36935a0ad3"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/RECONCILIATION.json",
+      "sha256": "ee89498b75a36debfdea4069b89babdea1d685f7b3a12f435baa9a863c1f0e4b"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/tests-final.json",
+      "sha256": "61aa4f5d99614e9ee42a9ed3c0549f1c9f931dc0223f9755435f88d19ec6ec3e"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/tests-final.log",
+      "sha256": "f5783dc2f779b5cec140a1d2807b39ce472b68a353f304e5b0e3497246eb36a7"
+    }
+  ],
+  "realInputProcessed": false,
+  "authority": {
+    "authenticatedAcceptance": false,
+    "forecastUseGranted": false,
+    "deploymentVerified": false
+  },
+  "externalActions": {
+    "providerCalls": 0,
+    "applicationRequests": 0,
+    "databaseOperations": 0,
+    "credentialReadsOrRefreshes": 0,
+    "remoteMetadataQueries": 0,
+    "pushes": 0,
+    "deployments": 0
+  },
+  "remainingGates": [
+    "Original authorized private saved response with capture receipt and source-selection evidence, or owner confirmation of non-retention.",
+    "TJ private manual and saved-Yahoo acceptance using actual slots/rules and manager choices.",
+    "Separate native prospective qualification where that is the selected source.",
+    "No live Yahoo operation under this sprint; any later window must expressly include refresh/persistence effects and complete bounds."
+  ]
+}

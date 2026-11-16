@@ -1,0 +1,96 @@
+{
+ "node": "v22.23.4",
+ "undici": "6.29.1",
+ "raw13": {
+  "maxVersion": "TLSv1.3",
+  "first": {
+   "sessionReused": false,
+   "ok": true,
+   "fullHandshakeShape": true,
+   "authorized": true,
+   "connectionReused": false,
+   "connectionSequence": 1,
+   "peerCertificateNull": false,
+   "protocol": "TLSv1.3",
+   "fingerprint256": "4A:91:08:35",
+   "subjectCN": "localhost",
+   "issuerCNChain": [
+    "FHFH Loopback Test Root",
+    "FHFH Loopback Test Root"
+   ]
+  },
+  "resumed": {
+   "ticketReceived": true,
+   "sessionReused": true,
+   "ok": true,
+   "fullHandshakeShape": false,
+   "authorized": true,
+   "connectionReused": false,
+   "connectionSequence": 2,
+   "peerCertificateNull": true,
+   "protocol": "TLSv1.3"
+  }
+ },
+ "raw12": {
+  "maxVersion": "TLSv1.2",
+  "first": {
+   "sessionReused": false,
+   "ok": true,
+   "fullHandshakeShape": true,
+   "authorized": true,
+   "connectionReused": false,
+   "connectionSequence": 3,
+   "peerCertificateNull": false,
+   "protocol": "TLSv1.2",
+   "fingerprint256": "4A:91:08:35",
+   "subjectCN": "localhost",
+   "issuerCNChain": [
+    "FHFH Loopback Test Root",
+    "FHFH Loopback Test Root"
+   ]
+  },
+  "resumed": {
+   "ticketReceived": true,
+   "sessionReused": true,
+   "ok": true,
+   "fullHandshakeShape": false,
+   "authorized": true,
+   "connectionReused": false,
+   "connectionSequence": 4,
+   "peerCertificateNull": true,
+   "protocol": "TLSv1.2"
+  }
+ },
+ "bundledFetchTls12": [
+  {
+   "request": 1,
+   "sessionReused": false,
+   "fullHandshakeShape": true,
+   "protocol": "TLSv1.2",
+   "issuerCNChain": [
+    "FHFH Loopback Test Root",
+    "FHFH Loopback Test Root"
+   ]
+  },
+  {
+   "request": 2,
+   "sessionReused": false,
+   "fullHandshakeShape": true,
+   "protocol": "TLSv1.2",
+   "issuerCNChain": [
+    "FHFH Loopback Test Root",
+    "FHFH Loopback Test Root"
+   ]
+  },
+  {
+   "request": 3,
+   "sessionReused": false,
+   "fullHandshakeShape": true,
+   "protocol": "TLSv1.2",
+   "issuerCNChain": [
+    "FHFH Loopback Test Root",
+    "FHFH Loopback Test Root"
+   ]
+  }
+ ]
+}

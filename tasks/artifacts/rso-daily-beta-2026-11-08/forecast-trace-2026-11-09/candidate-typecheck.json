@@ -1,0 +1,13 @@
+{
+  "startedAt": "2026-11-09T21:29:41.008333+00:00",
+  "completedAt": "2026-11-09T21:30:54.253875+00:00",
+  "candidate": "44582b13a213dfd4c75238d8413cf4031ca98b6f",
+  "tree": "d9a2bd4fe3c0190e07c5cdcc49f8259725048800",
+  "command": [
+    "npx",
+    "tsc",
+    "--noEmit"
+  ],
+  "exitCode": 0,
+  "summary": []
+}

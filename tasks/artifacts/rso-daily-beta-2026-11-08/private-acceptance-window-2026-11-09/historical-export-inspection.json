@@ -1,0 +1,30 @@
+{
+  "version": "rso-retained-export-inspection-v1",
+  "historicalOnly": true,
+  "inputSha256": "6ace0921a0d4415c9e24aa6ed93be75076ab7d9111bb7cf6204017d41e5ee92e",
+  "inputBytes": 5780319,
+  "recognizedExport": true,
+  "snapshotSchemaAccepted": true,
+  "clocksPresentAndValid": true,
+  "preservedFields": {
+    "rules": true,
+    "roster": true,
+    "lockedAssignments": true,
+    "realized": true,
+    "opponent": true
+  },
+  "rosterCount": 19,
+  "selectedMoveCount": 0,
+  "protectedPlayerCount": 0,
+  "hasProviderSnapshot": false,
+  "restorableBackup": false,
+  "currentAuthenticatedAcceptance": false,
+  "forecastUseGranted": false,
+  "limits": [
+    "historical_saved_input_only",
+    "export_is_not_a_restorable_workspace",
+    "empty_intent_cannot_prove_selected_move_continuity",
+    "no_response_only_bridge_proof",
+    "manager_private_acceptance_still_required"
+  ]
+}

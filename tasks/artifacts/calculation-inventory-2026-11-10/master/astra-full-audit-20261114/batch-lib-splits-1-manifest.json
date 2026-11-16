@@ -1,0 +1,81 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "files": [
+    {
+      "path": "web/lib/splits/splitsServer.test.ts",
+      "sha256": "7a5419e3ea9e0a6ef5ffad64f60e9b593ea7774135f68e27e972f6ee5d038894",
+      "lines": 156,
+      "fullRead": true,
+      "bytes": 8281,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          156
+        ]
+      ],
+      "rows": 52
+    },
+    {
+      "path": "web/lib/splits/splitsServer.ts",
+      "sha256": "0bf93b4cc9115060708dca9af55cc8a26a4166d72bd528638d2f4a541b28fab4",
+      "lines": 1218,
+      "fullRead": true,
+      "bytes": 37511,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          1218
+        ]
+      ],
+      "rows": 336
+    },
+    {
+      "path": "web/lib/splits/splitsSurface.ts",
+      "sha256": "d11d0c9a9019487c709ee04344db3a295e7a906d34665c4f926c54ba6483fa2f",
+      "lines": 141,
+      "fullRead": true,
+      "bytes": 3353,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          141
+        ]
+      ],
+      "rows": 94
+    },
+    {
+      "path": "web/lib/supabase/GoaliePage/updateWeeklyData.ts",
+      "sha256": "a984b1f5547eb2c3ca5f6cc1711412e0c63f19f684b4fe9c1f1082ffdc863e61",
+      "lines": 93,
+      "fullRead": true,
+      "bytes": 2829,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          93
+        ]
+      ],
+      "rows": 17
+    }
+  ],
+  "scopeLines": 1608,
+  "rows": 499,
+  "probe": "splits1-probe-output.json",
+  "checks": [
+    "Four full frozen source reads",
+    "Unique AST source-offset identities",
+    "Exact Splits probes passed with synthetic arrays and two-table scoped mock; supplied tests not executed; standalone writer never imported"
+  ],
+  "notRun": [
+    "Vitest",
+    "real database/provider",
+    "real loaders, live finality or card rendering",
+    "application imports or actual environment",
+    "browser/server/build",
+    "later Rankings exact-commit review"
+  ]
+}

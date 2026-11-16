@@ -1,0 +1,203 @@
+--- a/web/scripts/blsh/nativeProcessCaptureAdapter.test.ts
++++ b/web/scripts/blsh/nativeProcessCaptureAdapter.test.ts
+@@ -25,11 +25,11 @@
+ import { runNativeProcessCapture, type NativeCaptureRunInput } from "./nativeProcessCaptureRunner";
+ import { withNstRequestBudget } from "../../lib/nst/requestBudget";
+ 
+-const NOW = "2026-11-09T15:10:00.000Z", ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
++const NOW = "2026-11-13T15:10:00.000Z", ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
+ const KEY = "fixture-NST-secret-123", SERVICE = "fixture-service-secret-456";
+ const MIB = 1024 * 1024;
+ const html = `<table><tr><td>Fixture é 🏒 /?key=${KEY}&x=1</td></tr></table>\r\n`;
+-const schedule = () => ({ gameWeek: [{ date: "2026-11-07", games: [{ id: 2026020201, season: 20262027, gameType: 2, gameState: "OFF", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "NJD" }, awayTeam: { id: 2, abbrev: "NYI" } }] }] });
++const schedule = () => ({ gameWeek: [{ date: "2026-11-11", games: [{ id: 2026020201, season: 20262027, gameType: 2, gameState: "OFF", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "NJD" }, awayTeam: { id: 2, abbrev: "NYI" } }] }] });
+ const sourceFiles = {
+   runner: resolve(__dirname, "nativeProcessCaptureRunner.ts"), preparation: resolve(__dirname, "nativeProcessCapturePreparation.ts"),
+   adapter: resolve(__dirname, "nativeProcessCaptureAdapter.ts"), client: resolve(__dirname, "../../lib/nst/client.ts"),
+@@ -60,7 +60,7 @@
+   vi.stubEnv("NST_KEY", KEY); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", SERVICE);
+   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", ORIGIN); vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "false");
+   directory = fs.mkdtempSync(join(tmpdir(), "blsh-actual-adapter-test-")); calls = []; failAt = undefined; customize = undefined;
+-  input = { plan: prepareNativeProcessCapture({ seasonId: 20262027, date: "2026-11-07", plannedAtUTC: NOW, groups: ["individual", "onIce"] }),
++  input = { plan: prepareNativeProcessCapture({ seasonId: 20262027, date: "2026-11-11", plannedAtUTC: NOW, groups: ["individual", "onIce"] }),
+     supabaseOrigin: ORIGIN, lifecycleMode: "disabled", sourceSHA256: Object.fromEntries(Object.entries(sourceFiles).map(([role, path]) => [role, createHash("sha256").update(new Uint8Array(fs.readFileSync(path))).digest("hex")])) as NativeCaptureRunInput["sourceSHA256"] };
+   vi.stubGlobal("fetch", vi.fn(async (target: string | URL | Request, init: RequestInit = {}) => {
+     const url = String(target), parsed = new URL(url), name = parsed.pathname.split("/").at(-1);
+--- a/web/scripts/blsh/nativeProcessCaptureAdapter.ts
++++ b/web/scripts/blsh/nativeProcessCaptureAdapter.ts
+@@ -70,7 +70,7 @@
+       assertEnvironment();
+       return dispatch("schedule", spec => {
+         assertEnvironment();
+-        need(spec.method === "GET" && spec.url === "https://api-web.nhle.com/v1/schedule/2026-11-07", "capture_schedule_scope_invalid");
++        need(spec.method === "GET" && spec.url === "https://api-web.nhle.com/v1/schedule/2026-11-11", "capture_schedule_scope_invalid");
+         return boundedFetch(spec, { headers: { Accept: "application/json" } });
+       });
+     },
+--- a/web/scripts/blsh/nativeProcessCaptureBootstrap.test.ts
++++ b/web/scripts/blsh/nativeProcessCaptureBootstrap.test.ts
+@@ -20,15 +20,15 @@
+ vi.mock("node:tls", () => { throw new Error("real TLS forbidden"); });
+ 
+ const WEB = "/Users/tim/Code/fhfhockey.com/web";
+-const OUTPUT = "/Users/tim/Library/Application Support/fhfh-blsh-native-20261113T140500Z";
++const OUTPUT = "/Users/tim/Library/Application Support/fhfh-blsh-native-20261117T140500Z";
+ const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
+-const SLOT = "2026-11-13T14:05:00.000Z";
++const SLOT = "2026-11-17T14:05:00.000Z";
+ const originalArgs = process.execArgv;
+ let directory: string;
+ let bootstrap: typeof import("./nativeProcessCaptureBootstrap").nativeProcessCaptureBootstrap;
+ let runtimeResolve: (target: string) => string;
+ const hash = (path: string) => createHash("sha256").update(new Uint8Array(fs.readFileSync(path))).digest("hex");
+-const receipt = () => ({ version: "fhfh.blsh.native-pilot-authorization.v1", approvedBy: "TJ", approvedAtUTC: "2026-11-12T20:00:00.000Z",
++const receipt = () => ({ version: "fhfh.blsh.native-pilot-authorization.v1", approvedBy: "TJ", approvedAtUTC: "2026-11-16T20:00:00.000Z",
+   approvalReference: "fixture:not-real-approval", operator: "fixture-operator", bootstrapSHA256: hash(resolve(__dirname, "nativeProcessCaptureBootstrap.ts")),
+   slotStartUTC: SLOT, outputDirectory: OUTPUT, supabaseOrigin: ORIGIN, lifecycleMode: "disabled", maximumHTTPAttempts: 5,
+   coordinationReceipt: "fixture:coordination", runtimeReceipt: "fixture:runtime", admissionReceipt: "fixture:admission" });
+@@ -92,8 +92,8 @@
+     expect(await bootstrap(["--run", approved])).toMatchObject({ state: "packet_complete_pending_review", sourceAcceptance: false });
+     expect(calls.factory).toHaveBeenCalledTimes(1); expect(calls.runner).toHaveBeenCalledTimes(1);
+     const [input, adapter, output] = calls.runner.mock.calls[0];
+-    expect(input).toMatchObject({ lifecycleMode: "disabled", supabaseOrigin: ORIGIN, plan: { input: { plannedAtUTC: SLOT, date: "2026-11-07", groups: ["individual", "onIce"] } } });
+-    expect(input.sourceSHA256.runner).toBe("5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb");
++    expect(input).toMatchObject({ lifecycleMode: "disabled", supabaseOrigin: ORIGIN, plan: { input: { plannedAtUTC: SLOT, date: "2026-11-11", groups: ["individual", "onIce"] } } });
++    expect(input.sourceSHA256.runner).toBe("e9a96c0388c0e82c65ef2559818aafcdee5175e46ddd0a82b609bfb71d006597");
+     expect(Object.keys(input.sourceSHA256)).toHaveLength(9); expect(adapter).toEqual({ synthetic: true }); expect(output).toBe(OUTPUT);
+     await expect(bootstrap(["--run", approved])).rejects.toThrow("bootstrap_already_attempted");
+     expect(calls.runner).toHaveBeenCalledTimes(1); expect(fetch).not.toHaveBeenCalled(); expect(fs.existsSync(OUTPUT)).toBe(false);
+@@ -105,14 +105,14 @@
+ 
+   it.each([
+     { bootstrapSHA256: "0".repeat(64) }, { lifecycleMode: "enabled" }, { maximumHTTPAttempts: 8 },
+-    { outputDirectory: "/tmp/alternate" }, { supabaseOrigin: "https://example.invalid" }, { slotStartUTC: "2026-11-14T14:05:00.000Z" },
+-    { approvedBy: "fixture-no-human" }, { approvedAtUTC: "2026-11-14T14:05:00.000Z" }, { coordinationReceipt: "" }, { force: true },
++    { outputDirectory: "/tmp/alternate" }, { supabaseOrigin: "https://example.invalid" }, { slotStartUTC: "2026-11-18T14:05:00.000Z" },
++    { approvedBy: "fixture-no-human" }, { approvedAtUTC: "2026-11-18T14:05:00.000Z" }, { coordinationReceipt: "" }, { force: true },
+   ])("rejects scope/evidence mismatch %j without adapter construction", async change => {
+     await expect(bootstrap(["--run", writeReceipt(change)])).rejects.toThrow();
+     expect(calls.factory).not.toHaveBeenCalled(); expect(calls.runner).not.toHaveBeenCalled();
+   });
+ 
+-  it.each(["2026-11-13T14:04:59.999Z", "2026-11-13T14:06:00.000Z", "2026-11-15T00:00:00.000Z"])("rejects outside the one start window: %s", async now => {
++  it.each(["2026-11-17T14:04:59.999Z", "2026-11-17T14:06:00.000Z", "2026-11-19T00:00:00.000Z"])("rejects outside the one start window: %s", async now => {
+     vi.setSystemTime(now); await expect(bootstrap(["--run", writeReceipt()])).rejects.toThrow("bootstrap_outside_approved_slot");
+     expect(calls.factory).not.toHaveBeenCalled();
+   });
+@@ -161,7 +161,7 @@
+   });
+ 
+   it("rechecks the start window after adapter construction before runner dispatch", async () => {
+-    calls.factory.mockImplementationOnce(() => { vi.setSystemTime("2026-11-13T14:06:00.000Z"); return { synthetic: true }; });
++    calls.factory.mockImplementationOnce(() => { vi.setSystemTime("2026-11-17T14:06:00.000Z"); return { synthetic: true }; });
+     await expect(bootstrap(["--run", writeReceipt()])).rejects.toThrow("bootstrap_capture_failed_preserve_packet_no_retry"); expect(calls.runner).not.toHaveBeenCalled();
+   });
+ });
+--- a/web/scripts/blsh/nativeProcessCaptureBootstrap.ts
++++ b/web/scripts/blsh/nativeProcessCaptureBootstrap.ts
+@@ -10,16 +10,16 @@
+ 
+ const WEB = "/Users/tim/Code/fhfhockey.com/web";
+ const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
+-const OUTPUT = "/Users/tim/Library/Application Support/fhfh-blsh-native-20261113T140500Z";
+-const SLOT = "2026-11-13T14:05:00.000Z";
++const OUTPUT = "/Users/tim/Library/Application Support/fhfh-blsh-native-20261117T140500Z";
++const SLOT = "2026-11-17T14:05:00.000Z";
+ // One start in this 60-second window; at most 120 seconds of capture work.
+ const LAST_START = Date.parse(SLOT) + 60_000;
+ const NODE_SHA256 = "daa77e22e1b8778361b392461e9921a6d292d0382ebf4ae872a0081f02f01fef";
+ const resolveModule = createRequire(__filename).resolve;
+ const SOURCE_PINS = {
+-  runner: ["scripts/blsh/nativeProcessCaptureRunner.ts", "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb"],
++  runner: ["scripts/blsh/nativeProcessCaptureRunner.ts", "e9a96c0388c0e82c65ef2559818aafcdee5175e46ddd0a82b609bfb71d006597"],
+   preparation: ["scripts/blsh/nativeProcessCapturePreparation.ts", "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7"],
+-  adapter: ["scripts/blsh/nativeProcessCaptureAdapter.ts", "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368"],
++  adapter: ["scripts/blsh/nativeProcessCaptureAdapter.ts", "4876a60654cc6828da279d932d48b7539b1248fc5460ab3c0df2b9d37cadbe39"],
+   client: ["lib/nst/client.ts", "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d"],
+   budget: ["lib/nst/requestBudget.ts", "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a"],
+   admission: ["lib/nst/sharedAdmission.ts", "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a"],
+@@ -126,7 +126,7 @@
+   const { createNativeProcessCaptureAdapter } = await import("./nativeProcessCaptureAdapter");
+   checkExecution();
+   const input: NativeCaptureRunInput = {
+-    plan: prepareNativeProcessCapture({ seasonId: 20262027, date: "2026-11-07", plannedAtUTC: new Date().toISOString(), groups: ["individual", "onIce"] }),
++    plan: prepareNativeProcessCapture({ seasonId: 20262027, date: "2026-11-11", plannedAtUTC: new Date().toISOString(), groups: ["individual", "onIce"] }),
+     supabaseOrigin: ORIGIN, lifecycleMode: "disabled",
+     sourceSHA256: Object.fromEntries(Object.entries(SOURCE_PINS).map(([role, [, hash]]) => [role, hash])) as NativeCaptureRunInput["sourceSHA256"],
+   };
+--- a/web/scripts/blsh/nativeProcessCaptureRunner.test.ts
++++ b/web/scripts/blsh/nativeProcessCaptureRunner.test.ts
+@@ -17,7 +17,7 @@
+ vi.mock("node:net", () => { throw new Error("sockets forbidden"); });
+ vi.mock("node:tls", () => { throw new Error("TLS forbidden"); });
+ 
+-const NOW = "2026-11-09T01:00:00.000Z";
++const NOW = "2026-11-13T01:00:00.000Z";
+ const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
+ const MIB = 1024 * 1024;
+ const jobReference = { jobToken: "11111111-1111-4111-8111-111111111111" };
+@@ -30,7 +30,7 @@
+   admissionOrigin: resolve(__dirname, "../../lib/nst/admissionOrigin.ts"),
+   ratePolicy: resolve(__dirname, "../../lib/cron/nstRateLimitPolicy.ts"), adapter: __filename,
+ };
+-const schedule = () => ({ gameWeek: [{ date: "2026-11-07", games: [{ id: 2026020201, season: 20262027, gameType: 2, gameState: "OFF", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "NJD" }, awayTeam: { id: 2, abbrev: "NYI" } }] }] });
++const schedule = () => ({ gameWeek: [{ date: "2026-11-11", games: [{ id: 2026020201, season: 20262027, gameType: 2, gameState: "OFF", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "NJD" }, awayTeam: { id: 2, abbrev: "NYI" } }] }] });
+ const html = Buffer.from('<!doctype html>\r\n<table><thead><tr><th>Player</th></tr></thead><tbody><tr><td>Synthetic é 🏒 &amp;key=[REDACTED]</td></tr></tbody></table>\n');
+ let directory: string;
+ let sent: { operation: CaptureOperation; at: number; atMonotonic?: number; spec: CaptureDispatchSpec }[];
+@@ -90,7 +90,7 @@
+   directory = fs.mkdtempSync(join(tmpdir(), "blsh-durable-runner-test-")); sent = []; failOperation = undefined; mutateResponse = undefined; onDispatch = undefined;
+   adapter = makeAdapter("disabled");
+   input = {
+-    plan: prepareNativeProcessCapture({ seasonId: 20262027, date: "2026-11-07", plannedAtUTC: NOW, groups: ["individual", "onIce"] }),
++    plan: prepareNativeProcessCapture({ seasonId: 20262027, date: "2026-11-11", plannedAtUTC: NOW, groups: ["individual", "onIce"] }),
+     supabaseOrigin: ORIGIN, lifecycleMode: "disabled",
+     sourceSHA256: Object.fromEntries(Object.entries(sourceFiles).map(([role, path]) => [role, sha(fs.readFileSync(path))])) as NativeCaptureRunInput["sourceSHA256"],
+   };
+@@ -248,7 +248,7 @@
+     await run();
+     const sequence = sent.map(call => call.operation);
+     expect(sequence).toEqual(mode === "enabled" ? ["schedule", "begin", "admission:individual", "nst:individual", "admission:onIce", "nst:onIce", "finish"] : ["schedule", "admission:individual", "nst:individual", "admission:onIce", "nst:onIce"]);
+-    expect(sent[0].spec.url).toBe("https://api-web.nhle.com/v1/schedule/2026-11-07");
++    expect(sent[0].spec.url).toBe("https://api-web.nhle.com/v1/schedule/2026-11-11");
+     for (const call of sent.filter(call => call.operation.startsWith("admission:"))) expect(call.spec.url).toBe(`${ORIGIN}/rest/v1/rpc/${mode === "enabled" ? "nst_admit_job_attempt_v1" : "nst_admit_attempt_v1"}`);
+     const gets = sent.filter(call => call.operation.startsWith("nst:"));
+     expect(gets.map(call => call.spec.url)).toEqual(input.plan.pages.map(page => page.url)); expect(gets[1].at - gets[0].at).toBe(22000);
+@@ -268,7 +268,7 @@
+     if (kind === "mode") adapter.lifecycleMode = "enabled";
+     if (kind === "pin") input.sourceSHA256.client = "0".repeat(64);
+     if (kind === "stale") vi.setSystemTime(Date.now() + 15 * 60000 + 1);
+-    if (kind === "date") input.plan = prepareNativeProcessCapture({ ...input.plan.input, date: "2026-11-08" });
++    if (kind === "date") input.plan = prepareNativeProcessCapture({ ...input.plan.input, date: "2026-11-12" });
+     if (kind === "url") input.plan.pages[0].url = "https://example.org";
+     if (kind === "existing") fs.mkdirSync(out());
+     if (kind === "symlink") fs.symlinkSync(directory, out());
+@@ -279,7 +279,7 @@
+     mutateResponse = (operation, result) => {
+       if (operation !== "schedule") return;
+       const body = schedule(), day = body.gameWeek[0], game = day.games[0];
+-      if (kind === "missing_day") day.date = "2026-11-08";
++      if (kind === "missing_day") day.date = "2026-11-12";
+       if (kind === "duplicate_day") body.gameWeek.push(day);
+       if (kind === "empty") day.games = [];
+       if (kind === "season") game.season = 20252026;
+@@ -399,7 +399,7 @@
+ 
+   it("rejects a fabricated clock/response that did not come from the dispatch observation", async () => {
+     const original = adapter.schedule;
+-    adapter.schedule = async dispatch => ({ ...await original(dispatch), completedAtUTC: "2026-11-09T00:59:59.000Z" });
++    adapter.schedule = async dispatch => ({ ...await original(dispatch), completedAtUTC: "2026-11-13T00:59:59.000Z" });
+     await run(false); expect(sent).toHaveLength(1); expect(exists("schedule.raw.json")).toBe(false);
+   });
+ 
+--- a/web/scripts/blsh/nativeProcessCaptureRunner.ts
++++ b/web/scripts/blsh/nativeProcessCaptureRunner.ts
+@@ -11,7 +11,7 @@
+ import { prepareNativeProcessCapture, type NativeProcessCapturePlan } from "./nativeProcessCapturePreparation";
+ 
+ const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
+-const DATE = "2026-11-07";
++const DATE = "2026-11-11";
+ const MIB = 1024 * 1024;
+ const GROUPS = ["individual", "onIce"] as const;
+ type Group = typeof GROUPS[number];

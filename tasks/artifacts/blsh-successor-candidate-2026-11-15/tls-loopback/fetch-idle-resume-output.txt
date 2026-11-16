@@ -1,0 +1,2 @@
+TLSv1.3 serverHandshakes 3 [{"reused":false,"proto":"TLSv1.3","fp":"present"},{"reused":false,"proto":"TLSv1.3","fp":"present"},{"reused":false,"proto":"TLSv1.3","fp":"present"}]
+TLSv1.2 serverHandshakes 3 [{"reused":false,"proto":"TLSv1.2","fp":"present"},{"reused":false,"proto":"TLSv1.2","fp":"present"},{"reused":false,"proto":"TLSv1.2","fp":"present"}]

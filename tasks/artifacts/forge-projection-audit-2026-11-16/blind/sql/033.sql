@@ -1,0 +1,1 @@
+select metrics->'execution_scope'->>'mode' mode, count(*) n, min(created_at)::date lo, max(created_at)::date hi, count(*) filter (where git_sha like 'local:%') local_sha, count(*) filter (where git_sha is null) null_sha from forge_runs where created_at > now() - interval '30 days' group by 1

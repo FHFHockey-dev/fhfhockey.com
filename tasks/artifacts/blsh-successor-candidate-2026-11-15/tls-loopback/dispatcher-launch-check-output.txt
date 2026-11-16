@@ -1,0 +1,1 @@
+{"node":"v22.23.4","atStart":"unset","after:nativeProcessCapturePreparation.ts":"unset","after:nativeProcessCaptureRunner.ts":"Agent","after:nativeProcessCaptureAdapter.ts":"Agent","after:nativeProcessCaptureBootstrap.ts":"Agent"}

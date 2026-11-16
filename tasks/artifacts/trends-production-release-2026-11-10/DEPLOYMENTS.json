@@ -1,0 +1,71 @@
+{
+  "at": "2026-11-10T20:25:59.131Z",
+  "web": {
+    "id": "dpl_FJA5zA8CW8SASx7jsd5DN96YyV9j",
+    "name": "fhfhockey",
+    "url": "fhfhockey-dmhs1c6hu-fhfhockeydevs-projects.vercel.app",
+    "type": "LAMBDAS",
+    "state": "READY",
+    "createdAt": 1794342063525,
+    "creator": {
+      "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+      "username": "fhfhockey-dev"
+    },
+    "project": {
+      "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "name": "fhfhockey",
+      "framework": "nextjs"
+    },
+    "meta": {
+      "githubCommitRef": "master",
+      "githubCommitSha": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5",
+      "githubCommitMessage": "Fix seasonal ownership identities and avoid skipped history aggregation",
+      "githubRepo": "fhfhockey.com",
+      "githubOrg": "FHFHockey-dev"
+    },
+    "alias": [
+      "fhfhockey.com",
+      "fhfhockey.vercel.app",
+      "www.fhfhockey.com",
+      "fhfhockey-fhfhockeydevs-projects.vercel.app",
+      "fhfhockey-git-master-fhfhockeydevs-projects.vercel.app"
+    ],
+    "target": "production",
+    "regions": [
+      "iad1"
+    ],
+    "buildingAt": 1794342064387,
+    "ready": 1794342329400,
+    "readyState": "READY",
+    "source": "git",
+    "aliasError": null
+  },
+  "entries": [
+    {
+      "id": "dpl_GfSJMPv8bk8agesPJxD329QYWzJW",
+      "name": "fhfhockey.com",
+      "state": "CANCELED",
+      "sha": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5"
+    },
+    {
+      "id": "dpl_7w3Ze9LNRU62jsDZjQDNFpC7wATT",
+      "name": "cms-fhfhockey",
+      "state": "CANCELED",
+      "sha": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5"
+    },
+    {
+      "id": "dpl_8svD3G91WCcrLWBVLbpcdKRv5SSM",
+      "name": "functions-fhfhockey",
+      "state": "CANCELED",
+      "sha": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5"
+    },
+    {
+      "id": "dpl_FJA5zA8CW8SASx7jsd5DN96YyV9j",
+      "name": "fhfhockey",
+      "state": "READY",
+      "sha": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5"
+    }
+  ],
+  "completedWebBuilds": 1,
+  "ignoredCompanions": 3
+}

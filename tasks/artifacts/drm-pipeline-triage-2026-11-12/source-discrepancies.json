@@ -1,0 +1,763 @@
+{
+  "method": "Independent interval union of captured/current JSON and fresh official TH/TV printed intervals, compared with independently parsed ES summary",
+  "reports": [
+    {
+      "gameId": 2026020009,
+      "reportType": "TH",
+      "teamId": 1,
+      "teamHeader": "NEW JERSEY DEVILS",
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TH020009.HTM",
+      "sourceSha256": "763e574f18f1cd0d0fd0c89279fa9e19d02d4fe2a758275f62e8539876d96b08",
+      "dateVerified": "2026-10-01"
+    },
+    {
+      "gameId": 2026020009,
+      "reportType": "TV",
+      "teamId": 4,
+      "teamHeader": "PHILADELPHIA FLYERS",
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TV020009.HTM",
+      "sourceSha256": "aa9246d1d377b238db420ea11209f12aa24052df9168827e22d00788edde25e8",
+      "dateVerified": "2026-10-01"
+    },
+    {
+      "gameId": 2026020205,
+      "reportType": "TH",
+      "teamId": 5,
+      "teamHeader": "PITTSBURGH PENGUINS",
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TH020205.HTM",
+      "sourceSha256": "2b3ee48ae7027ec163ebf6253de348b359aca1b1fdc53a1e1c6c8dd5289f95bf",
+      "dateVerified": "2026-10-29"
+    },
+    {
+      "gameId": 2026020205,
+      "reportType": "TV",
+      "teamId": 68,
+      "teamHeader": "UTAH MAMMOTH",
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TV020205.HTM",
+      "sourceSha256": "957e23b7c9dee644a8d7c015178cffea8090555c571350bdcfb1c1fce2a5dd66",
+      "dateVerified": "2026-10-29"
+    }
+  ],
+  "currentJsonResponses": [
+    {
+      "gameId": 2026020009,
+      "declaredRows": 809,
+      "returnedRows": 809,
+      "sourceUrl": "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2026020009&start=0&limit=1000",
+      "sourceSha256": "2d3dc7dc3d1610320d8ebd76d4394f08d6b1ae474974d1dd35873448754e89f7"
+    },
+    {
+      "gameId": 2026020205,
+      "declaredRows": 825,
+      "returnedRows": 825,
+      "sourceUrl": "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=2026020205&start=0&limit=1000",
+      "sourceSha256": "df0bfdfb69015dc12d1f311ece9b0481f39732affab1e5e529612150986508ca"
+    }
+  ],
+  "players": [
+    {
+      "gameId": 2026020009,
+      "playerId": 8476474,
+      "teamId": 1,
+      "jersey": 11,
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TH020009.HTM",
+      "officialSummaryUrl": "https://www.nhl.com/scores/htmlreports/20262027/ES020009.HTM",
+      "capturedRawIntervalRows": 11,
+      "printedIntervalRows": 10,
+      "capturedRawUnionSeconds": 369,
+      "printedIntervalUnionSeconds": 360,
+      "currentJsonUnionSeconds": 360,
+      "currentJsonMatchesOfficial": true,
+      "currentJsonDeltaSeconds": 0,
+      "currentJsonExcessCoverageIntervals": [],
+      "printedDurationSumSeconds": 360,
+      "printedSummarySeconds": {
+        "total": 360,
+        "es": 351,
+        "pp": 9,
+        "pk": 0
+      },
+      "officialEsReportSeconds": {
+        "total": 360,
+        "es": 351,
+        "pp": 9,
+        "pk": 0
+      },
+      "deltaCapturedMinusOfficialSeconds": 9,
+      "printedUnionMatchesPrintedSummary": true,
+      "printedSummaryMatchesOfficialEs": true,
+      "capturedOnlyIntervals": [
+        {
+          "shiftNumber": 11,
+          "period": 3,
+          "start": 1080,
+          "end": 1089,
+          "duration": 9,
+          "startClock": "18:00",
+          "endClock": "18:09"
+        }
+      ],
+      "printedOnlyIntervals": [],
+      "capturedExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1080,
+          "end": 1089
+        }
+      ],
+      "printedMissingCoverageIntervals": [],
+      "commonLogicalIntervalCount": 10,
+      "cause": "captured JSON source superseded: current JSON now matches official reports",
+      "limit": "No input clocks capped or adjusted. Two bounded complete JSON reads were diagnostic only; immutable captured fixture unchanged."
+    },
+    {
+      "gameId": 2026020009,
+      "playerId": 8479996,
+      "teamId": 1,
+      "jersey": 12,
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TH020009.HTM",
+      "officialSummaryUrl": "https://www.nhl.com/scores/htmlreports/20262027/ES020009.HTM",
+      "capturedRawIntervalRows": 16,
+      "printedIntervalRows": 15,
+      "capturedRawUnionSeconds": 515,
+      "printedIntervalUnionSeconds": 506,
+      "currentJsonUnionSeconds": 506,
+      "currentJsonMatchesOfficial": true,
+      "currentJsonDeltaSeconds": 0,
+      "currentJsonExcessCoverageIntervals": [],
+      "printedDurationSumSeconds": 506,
+      "printedSummarySeconds": {
+        "total": 506,
+        "es": 450,
+        "pp": 16,
+        "pk": 40
+      },
+      "officialEsReportSeconds": {
+        "total": 506,
+        "es": 450,
+        "pp": 16,
+        "pk": 40
+      },
+      "deltaCapturedMinusOfficialSeconds": 9,
+      "printedUnionMatchesPrintedSummary": true,
+      "printedSummaryMatchesOfficialEs": true,
+      "capturedOnlyIntervals": [
+        {
+          "shiftNumber": 16,
+          "period": 3,
+          "start": 1080,
+          "end": 1089,
+          "duration": 9,
+          "startClock": "18:00",
+          "endClock": "18:09"
+        }
+      ],
+      "printedOnlyIntervals": [],
+      "capturedExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1080,
+          "end": 1089
+        }
+      ],
+      "printedMissingCoverageIntervals": [],
+      "commonLogicalIntervalCount": 15,
+      "cause": "captured JSON source superseded: current JSON now matches official reports",
+      "limit": "No input clocks capped or adjusted. Two bounded complete JSON reads were diagnostic only; immutable captured fixture unchanged."
+    },
+    {
+      "gameId": 2026020009,
+      "playerId": 8483695,
+      "teamId": 1,
+      "jersey": 93,
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TH020009.HTM",
+      "officialSummaryUrl": "https://www.nhl.com/scores/htmlreports/20262027/ES020009.HTM",
+      "capturedRawIntervalRows": 12,
+      "printedIntervalRows": 11,
+      "capturedRawUnionSeconds": 491,
+      "printedIntervalUnionSeconds": 483,
+      "currentJsonUnionSeconds": 483,
+      "currentJsonMatchesOfficial": true,
+      "currentJsonDeltaSeconds": 0,
+      "currentJsonExcessCoverageIntervals": [],
+      "printedDurationSumSeconds": 483,
+      "printedSummarySeconds": {
+        "total": 483,
+        "es": 483,
+        "pp": 0,
+        "pk": 0
+      },
+      "officialEsReportSeconds": {
+        "total": 483,
+        "es": 483,
+        "pp": 0,
+        "pk": 0
+      },
+      "deltaCapturedMinusOfficialSeconds": 8,
+      "printedUnionMatchesPrintedSummary": true,
+      "printedSummaryMatchesOfficialEs": true,
+      "capturedOnlyIntervals": [
+        {
+          "shiftNumber": 12,
+          "period": 3,
+          "start": 1081,
+          "end": 1089,
+          "duration": 8,
+          "startClock": "18:01",
+          "endClock": "18:09"
+        }
+      ],
+      "printedOnlyIntervals": [],
+      "capturedExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1081,
+          "end": 1089
+        }
+      ],
+      "printedMissingCoverageIntervals": [],
+      "commonLogicalIntervalCount": 11,
+      "cause": "captured JSON source superseded: current JSON now matches official reports",
+      "limit": "No input clocks capped or adjusted. Two bounded complete JSON reads were diagnostic only; immutable captured fixture unchanged."
+    },
+    {
+      "gameId": 2026020009,
+      "playerId": 8481122,
+      "teamId": 4,
+      "jersey": 44,
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TV020009.HTM",
+      "officialSummaryUrl": "https://www.nhl.com/scores/htmlreports/20262027/ES020009.HTM",
+      "capturedRawIntervalRows": 21,
+      "printedIntervalRows": 20,
+      "capturedRawUnionSeconds": 812,
+      "printedIntervalUnionSeconds": 809,
+      "currentJsonUnionSeconds": 809,
+      "currentJsonMatchesOfficial": true,
+      "currentJsonDeltaSeconds": 0,
+      "currentJsonExcessCoverageIntervals": [],
+      "printedDurationSumSeconds": 809,
+      "printedSummarySeconds": {
+        "total": 809,
+        "es": 792,
+        "pp": 0,
+        "pk": 17
+      },
+      "officialEsReportSeconds": {
+        "total": 809,
+        "es": 792,
+        "pp": 0,
+        "pk": 17
+      },
+      "deltaCapturedMinusOfficialSeconds": 3,
+      "printedUnionMatchesPrintedSummary": true,
+      "printedSummaryMatchesOfficialEs": true,
+      "capturedOnlyIntervals": [
+        {
+          "shiftNumber": 21,
+          "period": 3,
+          "start": 1083,
+          "end": 1086,
+          "duration": 3,
+          "startClock": "18:03",
+          "endClock": "18:06"
+        }
+      ],
+      "printedOnlyIntervals": [],
+      "capturedExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1083,
+          "end": 1086
+        }
+      ],
+      "printedMissingCoverageIntervals": [],
+      "commonLogicalIntervalCount": 20,
+      "cause": "captured JSON source superseded: current JSON now matches official reports",
+      "limit": "No input clocks capped or adjusted. Two bounded complete JSON reads were diagnostic only; immutable captured fixture unchanged."
+    },
+    {
+      "gameId": 2026020009,
+      "playerId": 8485406,
+      "teamId": 4,
+      "jersey": 94,
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TV020009.HTM",
+      "officialSummaryUrl": "https://www.nhl.com/scores/htmlreports/20262027/ES020009.HTM",
+      "capturedRawIntervalRows": 16,
+      "printedIntervalRows": 15,
+      "capturedRawUnionSeconds": 753,
+      "printedIntervalUnionSeconds": 747,
+      "currentJsonUnionSeconds": 747,
+      "currentJsonMatchesOfficial": true,
+      "currentJsonDeltaSeconds": 0,
+      "currentJsonExcessCoverageIntervals": [],
+      "printedDurationSumSeconds": 747,
+      "printedSummarySeconds": {
+        "total": 747,
+        "es": 676,
+        "pp": 71,
+        "pk": 0
+      },
+      "officialEsReportSeconds": {
+        "total": 747,
+        "es": 676,
+        "pp": 71,
+        "pk": 0
+      },
+      "deltaCapturedMinusOfficialSeconds": 6,
+      "printedUnionMatchesPrintedSummary": true,
+      "printedSummaryMatchesOfficialEs": true,
+      "capturedOnlyIntervals": [
+        {
+          "shiftNumber": 16,
+          "period": 3,
+          "start": 1080,
+          "end": 1086,
+          "duration": 6,
+          "startClock": "18:00",
+          "endClock": "18:06"
+        }
+      ],
+      "printedOnlyIntervals": [],
+      "capturedExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1080,
+          "end": 1086
+        }
+      ],
+      "printedMissingCoverageIntervals": [],
+      "commonLogicalIntervalCount": 15,
+      "cause": "captured JSON source superseded: current JSON now matches official reports",
+      "limit": "No input clocks capped or adjusted. Two bounded complete JSON reads were diagnostic only; immutable captured fixture unchanged."
+    },
+    {
+      "gameId": 2026020205,
+      "playerId": 8477951,
+      "teamId": 68,
+      "jersey": 8,
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TV020205.HTM",
+      "officialSummaryUrl": "https://www.nhl.com/scores/htmlreports/20262027/ES020205.HTM",
+      "capturedRawIntervalRows": 24,
+      "printedIntervalRows": 22,
+      "capturedRawUnionSeconds": 924,
+      "printedIntervalUnionSeconds": 923,
+      "currentJsonUnionSeconds": 924,
+      "currentJsonMatchesOfficial": false,
+      "currentJsonDeltaSeconds": 1,
+      "currentJsonExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1199,
+          "end": 1200
+        }
+      ],
+      "printedDurationSumSeconds": 923,
+      "printedSummarySeconds": {
+        "total": 923,
+        "es": 862,
+        "pp": 61,
+        "pk": 0
+      },
+      "officialEsReportSeconds": {
+        "total": 923,
+        "es": 862,
+        "pp": 61,
+        "pk": 0
+      },
+      "deltaCapturedMinusOfficialSeconds": 1,
+      "printedUnionMatchesPrintedSummary": true,
+      "printedSummaryMatchesOfficialEs": true,
+      "capturedOnlyIntervals": [
+        {
+          "shiftNumber": 21,
+          "period": 3,
+          "start": 1179,
+          "end": 1200,
+          "duration": 21,
+          "startClock": "19:39",
+          "endClock": "20:00"
+        }
+      ],
+      "printedOnlyIntervals": [],
+      "capturedExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1199,
+          "end": 1200
+        }
+      ],
+      "printedMissingCoverageIntervals": [],
+      "commonLogicalIntervalCount": 22,
+      "cause": "current JSON endpoint still disagrees with official printed intervals and summaries",
+      "limit": "No input clocks capped or adjusted. Two bounded complete JSON reads were diagnostic only; immutable captured fixture unchanged."
+    },
+    {
+      "gameId": 2026020205,
+      "playerId": 8482699,
+      "teamId": 68,
+      "jersey": 11,
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TV020205.HTM",
+      "officialSummaryUrl": "https://www.nhl.com/scores/htmlreports/20262027/ES020205.HTM",
+      "capturedRawIntervalRows": 23,
+      "printedIntervalRows": 21,
+      "capturedRawUnionSeconds": 961,
+      "printedIntervalUnionSeconds": 960,
+      "currentJsonUnionSeconds": 961,
+      "currentJsonMatchesOfficial": false,
+      "currentJsonDeltaSeconds": 1,
+      "currentJsonExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1199,
+          "end": 1200
+        }
+      ],
+      "printedDurationSumSeconds": 960,
+      "printedSummarySeconds": {
+        "total": 960,
+        "es": 899,
+        "pp": 61,
+        "pk": 0
+      },
+      "officialEsReportSeconds": {
+        "total": 960,
+        "es": 899,
+        "pp": 61,
+        "pk": 0
+      },
+      "deltaCapturedMinusOfficialSeconds": 1,
+      "printedUnionMatchesPrintedSummary": true,
+      "printedSummaryMatchesOfficialEs": true,
+      "capturedOnlyIntervals": [
+        {
+          "shiftNumber": 20,
+          "period": 3,
+          "start": 1179,
+          "end": 1200,
+          "duration": 21,
+          "startClock": "19:39",
+          "endClock": "20:00"
+        }
+      ],
+      "printedOnlyIntervals": [],
+      "capturedExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1199,
+          "end": 1200
+        }
+      ],
+      "printedMissingCoverageIntervals": [],
+      "commonLogicalIntervalCount": 21,
+      "cause": "current JSON endpoint still disagrees with official printed intervals and summaries",
+      "limit": "No input clocks capped or adjusted. Two bounded complete JSON reads were diagnostic only; immutable captured fixture unchanged."
+    },
+    {
+      "gameId": 2026020205,
+      "playerId": 8476389,
+      "teamId": 68,
+      "jersey": 16,
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TV020205.HTM",
+      "officialSummaryUrl": "https://www.nhl.com/scores/htmlreports/20262027/ES020205.HTM",
+      "capturedRawIntervalRows": 27,
+      "printedIntervalRows": 25,
+      "capturedRawUnionSeconds": 1195,
+      "printedIntervalUnionSeconds": 1194,
+      "currentJsonUnionSeconds": 1195,
+      "currentJsonMatchesOfficial": false,
+      "currentJsonDeltaSeconds": 1,
+      "currentJsonExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1199,
+          "end": 1200
+        }
+      ],
+      "printedDurationSumSeconds": 1194,
+      "printedSummarySeconds": {
+        "total": 1194,
+        "es": 1095,
+        "pp": 59,
+        "pk": 40
+      },
+      "officialEsReportSeconds": {
+        "total": 1194,
+        "es": 1095,
+        "pp": 59,
+        "pk": 40
+      },
+      "deltaCapturedMinusOfficialSeconds": 1,
+      "printedUnionMatchesPrintedSummary": true,
+      "printedSummaryMatchesOfficialEs": true,
+      "capturedOnlyIntervals": [
+        {
+          "shiftNumber": 24,
+          "period": 3,
+          "start": 1179,
+          "end": 1200,
+          "duration": 21,
+          "startClock": "19:39",
+          "endClock": "20:00"
+        }
+      ],
+      "printedOnlyIntervals": [],
+      "capturedExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1199,
+          "end": 1200
+        }
+      ],
+      "printedMissingCoverageIntervals": [],
+      "commonLogicalIntervalCount": 25,
+      "cause": "current JSON endpoint still disagrees with official printed intervals and summaries",
+      "limit": "No input clocks capped or adjusted. Two bounded complete JSON reads were diagnostic only; immutable captured fixture unchanged."
+    },
+    {
+      "gameId": 2026020205,
+      "playerId": 8480855,
+      "teamId": 68,
+      "jersey": 22,
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TV020205.HTM",
+      "officialSummaryUrl": "https://www.nhl.com/scores/htmlreports/20262027/ES020205.HTM",
+      "capturedRawIntervalRows": 20,
+      "printedIntervalRows": 19,
+      "capturedRawUnionSeconds": 756,
+      "printedIntervalUnionSeconds": 754,
+      "currentJsonUnionSeconds": 756,
+      "currentJsonMatchesOfficial": false,
+      "currentJsonDeltaSeconds": 2,
+      "currentJsonExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1177,
+          "end": 1179
+        }
+      ],
+      "printedDurationSumSeconds": 754,
+      "printedSummarySeconds": {
+        "total": 754,
+        "es": 711,
+        "pp": 0,
+        "pk": 43
+      },
+      "officialEsReportSeconds": {
+        "total": 754,
+        "es": 711,
+        "pp": 0,
+        "pk": 43
+      },
+      "deltaCapturedMinusOfficialSeconds": 2,
+      "printedUnionMatchesPrintedSummary": true,
+      "printedSummaryMatchesOfficialEs": true,
+      "capturedOnlyIntervals": [
+        {
+          "shiftNumber": 19,
+          "period": 3,
+          "start": 1177,
+          "end": 1179,
+          "duration": 2,
+          "startClock": "19:37",
+          "endClock": "19:39"
+        }
+      ],
+      "printedOnlyIntervals": [],
+      "capturedExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1177,
+          "end": 1179
+        }
+      ],
+      "printedMissingCoverageIntervals": [],
+      "commonLogicalIntervalCount": 19,
+      "cause": "current JSON endpoint still disagrees with official printed intervals and summaries",
+      "limit": "No input clocks capped or adjusted. Two bounded complete JSON reads were diagnostic only; immutable captured fixture unchanged."
+    },
+    {
+      "gameId": 2026020205,
+      "playerId": 8478831,
+      "teamId": 68,
+      "jersey": 82,
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TV020205.HTM",
+      "officialSummaryUrl": "https://www.nhl.com/scores/htmlreports/20262027/ES020205.HTM",
+      "capturedRawIntervalRows": 25,
+      "printedIntervalRows": 22,
+      "capturedRawUnionSeconds": 825,
+      "printedIntervalUnionSeconds": 823,
+      "currentJsonUnionSeconds": 825,
+      "currentJsonMatchesOfficial": false,
+      "currentJsonDeltaSeconds": 2,
+      "currentJsonExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1177,
+          "end": 1179
+        }
+      ],
+      "printedDurationSumSeconds": 823,
+      "printedSummarySeconds": {
+        "total": 823,
+        "es": 743,
+        "pp": 0,
+        "pk": 80
+      },
+      "officialEsReportSeconds": {
+        "total": 823,
+        "es": 743,
+        "pp": 0,
+        "pk": 80
+      },
+      "deltaCapturedMinusOfficialSeconds": 2,
+      "printedUnionMatchesPrintedSummary": true,
+      "printedSummaryMatchesOfficialEs": true,
+      "capturedOnlyIntervals": [
+        {
+          "shiftNumber": 21,
+          "period": 3,
+          "start": 1177,
+          "end": 1179,
+          "duration": 2,
+          "startClock": "19:37",
+          "endClock": "19:39"
+        }
+      ],
+      "printedOnlyIntervals": [],
+      "capturedExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1177,
+          "end": 1179
+        }
+      ],
+      "printedMissingCoverageIntervals": [],
+      "commonLogicalIntervalCount": 22,
+      "cause": "current JSON endpoint still disagrees with official printed intervals and summaries",
+      "limit": "No input clocks capped or adjusted. Two bounded complete JSON reads were diagnostic only; immutable captured fixture unchanged."
+    },
+    {
+      "gameId": 2026020205,
+      "playerId": 8477220,
+      "teamId": 68,
+      "jersey": 88,
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TV020205.HTM",
+      "officialSummaryUrl": "https://www.nhl.com/scores/htmlreports/20262027/ES020205.HTM",
+      "capturedRawIntervalRows": 36,
+      "printedIntervalRows": 33,
+      "capturedRawUnionSeconds": 1365,
+      "printedIntervalUnionSeconds": 1363,
+      "currentJsonUnionSeconds": 1365,
+      "currentJsonMatchesOfficial": false,
+      "currentJsonDeltaSeconds": 2,
+      "currentJsonExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1177,
+          "end": 1179
+        }
+      ],
+      "printedDurationSumSeconds": 1363,
+      "printedSummarySeconds": {
+        "total": 1363,
+        "es": 1321,
+        "pp": 0,
+        "pk": 42
+      },
+      "officialEsReportSeconds": {
+        "total": 1363,
+        "es": 1321,
+        "pp": 0,
+        "pk": 42
+      },
+      "deltaCapturedMinusOfficialSeconds": 2,
+      "printedUnionMatchesPrintedSummary": true,
+      "printedSummaryMatchesOfficialEs": true,
+      "capturedOnlyIntervals": [
+        {
+          "shiftNumber": 32,
+          "period": 3,
+          "start": 1177,
+          "end": 1179,
+          "duration": 2,
+          "startClock": "19:37",
+          "endClock": "19:39"
+        }
+      ],
+      "printedOnlyIntervals": [],
+      "capturedExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1177,
+          "end": 1179
+        }
+      ],
+      "printedMissingCoverageIntervals": [],
+      "commonLogicalIntervalCount": 33,
+      "cause": "current JSON endpoint still disagrees with official printed intervals and summaries",
+      "limit": "No input clocks capped or adjusted. Two bounded complete JSON reads were diagnostic only; immutable captured fixture unchanged."
+    },
+    {
+      "gameId": 2026020205,
+      "playerId": 8483431,
+      "teamId": 68,
+      "jersey": 92,
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/TV020205.HTM",
+      "officialSummaryUrl": "https://www.nhl.com/scores/htmlreports/20262027/ES020205.HTM",
+      "capturedRawIntervalRows": 26,
+      "printedIntervalRows": 24,
+      "capturedRawUnionSeconds": 1117,
+      "printedIntervalUnionSeconds": 1116,
+      "currentJsonUnionSeconds": 1117,
+      "currentJsonMatchesOfficial": false,
+      "currentJsonDeltaSeconds": 1,
+      "currentJsonExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1199,
+          "end": 1200
+        }
+      ],
+      "printedDurationSumSeconds": 1116,
+      "printedSummarySeconds": {
+        "total": 1116,
+        "es": 1055,
+        "pp": 61,
+        "pk": 0
+      },
+      "officialEsReportSeconds": {
+        "total": 1116,
+        "es": 1055,
+        "pp": 61,
+        "pk": 0
+      },
+      "deltaCapturedMinusOfficialSeconds": 1,
+      "printedUnionMatchesPrintedSummary": true,
+      "printedSummaryMatchesOfficialEs": true,
+      "capturedOnlyIntervals": [
+        {
+          "shiftNumber": 23,
+          "period": 3,
+          "start": 1179,
+          "end": 1200,
+          "duration": 21,
+          "startClock": "19:39",
+          "endClock": "20:00"
+        }
+      ],
+      "printedOnlyIntervals": [],
+      "capturedExcessCoverageIntervals": [
+        {
+          "period": 3,
+          "start": 1199,
+          "end": 1200
+        }
+      ],
+      "printedMissingCoverageIntervals": [],
+      "commonLogicalIntervalCount": 24,
+      "cause": "current JSON endpoint still disagrees with official printed intervals and summaries",
+      "limit": "No input clocks capped or adjusted. Two bounded complete JSON reads were diagnostic only; immutable captured fixture unchanged."
+    }
+  ],
+  "affectedPlayers": 12,
+  "allPrintedIntervalsMatchOfficialSummaries": true
+}

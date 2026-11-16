@@ -1,0 +1,1 @@
+select as_of_date, source_run_id, count(*) n, count(distinct game_id) games, count(*) filter (where player_type='skater') sk, count(*) filter (where player_type='goalie') g from forge_projection_results where as_of_date between '2026-11-09' and '2026-11-13' group by 1,2 order by 1

@@ -1,0 +1,28 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-concurrency=1",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.test.mjs",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com",
+  "startedAt": "2026-11-08T21:21:58.968823+00:00",
+  "finishedAt": "2026-11-08T21:22:01.368633+00:00",
+  "exitCode": 0,
+  "durationSeconds": 2.4,
+  "sourcePins": {
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.mjs": "9c6edc71a3f9c431a982781f19c5a5299779aa90e67771a916d1812d08002c45",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.mjs": "b7aee8bc7dc1893852fd67b15dbd7de491dd47cb126d24c433bd36c3e0ac3a52",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.mjs": "20183ca8beb136daf176607c8492126ce56f8785a20231338b309e90207b5d94",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs": "467a695d2d6749e091ce209bc834c1d452bb7eebb00a30f35cb303188d78f5fe",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.test.mjs": "0d5a06ee20527f93add4864b82cb97e1daa16b06a5dfc88490a83eb46b16d0e0",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs": "fa4e92da8dd9eebbb48598d68daf161255bf043492d85e5878b7a407b3a64678",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs": "29e63d2df71878c092b9bbb8d4d5a0f97466f6df918bd0fed052f4814014614f",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs": "18c72f6638d7f3cf8af904a1ed563266bc3063f638693145dc9cc8147e893abd"
+  },
+  "node": "v22.23.4",
+  "inputs": "Existing fictional fixtures and temporary symlinks only; inert environment; outbound network guard."
+}

@@ -1,0 +1,138 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "sources": [
+    "web/lib/projections/evidenceTime.ts",
+    "web/lib/player-forecasts/contributions.ts",
+    "web/lib/rosterScheduleOptimizer/planningDates.ts",
+    "web/lib/rosterScheduleOptimizer/eligibility.ts",
+    "web/lib/rosterScheduleOptimizer/slots.ts",
+    "web/lib/rosterScheduleOptimizer/planningTimeline.ts",
+    "web/lib/rosterScheduleOptimizer/retention.ts",
+    "web/lib/rosterScheduleOptimizer/pointsComparison.ts",
+    "web/lib/projections/weightedAssignment.ts",
+    "web/lib/rosterScheduleOptimizer/planning.ts",
+    "web/lib/rosterScheduleOptimizer/healthyReserves.ts",
+    "web/lib/rosterScheduleOptimizer/contributionLedger.ts",
+    "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts"
+  ],
+  "nullBanked": {
+    "input": null,
+    "remaining": 2,
+    "projectedStats": {
+      "GOALS": 2
+    },
+    "projectedValue": 2,
+    "comparisonEligible": true
+  },
+  "partialScheduleCandidate": {
+    "candidates": [
+      {
+        "playerId": "p",
+        "plans": [
+          {
+            "objective": "agp",
+            "steps": [
+              {
+                "id": "add:p:0:2026-11-02",
+                "type": "add",
+                "playerId": "p",
+                "at": "2026-11-02T00:00:00.000Z",
+                "effectiveAt": "2026-11-02T00:00:00.000Z",
+                "conditional": true,
+                "dependsOn": []
+              }
+            ],
+            "netAGP": null,
+            "netPoints": null,
+            "netGoalieStarts": 0.8,
+            "dropped": [],
+            "droppedOwnership": null,
+            "displacedPlayerIds": []
+          }
+        ],
+        "complete": true,
+        "alternatives": [],
+        "alternativesTruncated": 0
+      }
+    ],
+    "diagnostics": [
+      {
+        "playerId": "p",
+        "status": "evaluated",
+        "stopReason": "exhausted",
+        "generated": 1,
+        "skipped": 0,
+        "evaluated": 1,
+        "illegal": 0,
+        "unverifiedBudget": 0,
+        "retained": 1,
+        "reasons": [
+          "Planning schedule coverage is incomplete or unknown."
+        ]
+      }
+    ],
+    "points": [
+      [
+        "p",
+        null
+      ]
+    ],
+    "activePoints": [
+      [
+        "p",
+        null
+      ]
+    ],
+    "goalieBoost": true,
+    "activeGames": [
+      [
+        "p",
+        null
+      ]
+    ],
+    "baseline": {
+      "objective": "agp",
+      "activeGames": 0,
+      "projectedPoints": null
+    },
+    "search": {
+      "evaluated": 3,
+      "maxEvaluations": 10,
+      "candidates": 1,
+      "eligibleCandidates": 1,
+      "maxCandidates": 1,
+      "maxProposalsPerCandidate": 12,
+      "complete": true
+    }
+  },
+  "partialSchedule": {
+    "expectedStarts": 0.8,
+    "projectedValue": null,
+    "limitations": [
+      "Planning schedule coverage is incomplete or unknown."
+    ]
+  },
+  "scheduleFits": {
+    "outFirst": [],
+    "healthyAlone": [
+      {
+        "teamAbbreviation": "TOR",
+        "positions": [
+          "C"
+        ],
+        "playerIds": [
+          "b"
+        ],
+        "addedGames": 1,
+        "dates": [
+          "2026-11-02"
+        ]
+      }
+    ]
+  },
+  "dtdAfterStart": [
+    "p"
+  ],
+  "limits": "Exact frozen planning, matching, timeline, dates, eligibility, slots, retention, comparison and reserve modules, with synthetic already-admitted forecasts through an identity contribution-resolver stub. Does not test real forecast authority or current-read admission. Bench/streaming dependencies throw and were not called. No numeric later-impact evaluator, application imports, environment, DB/provider I/O, Vitest or pages."
+}

@@ -1,0 +1,36 @@
+{
+  "status": "ok",
+  "deployment": {
+    "id": "dpl_CarXFBEMdKhyYwMyc9XzTggQcD1o",
+    "url": "https://fhfhockey-dfxrbfq75-fhfhockeydevs-projects.vercel.app",
+    "productionUrl": null,
+    "inspectorUrl": "https://vercel.com/fhfhockeydevs-projects/fhfhockey/CarXFBEMdKhyYwMyc9XzTggQcD1o",
+    "readyState": "INITIALIZING",
+    "target": "production",
+    "environment": "production",
+    "deploymentApiUrl": "https://api.vercel.com/v13/deployments/dpl_CarXFBEMdKhyYwMyc9XzTggQcD1o",
+    "buildMachine": {
+      "cores": 8,
+      "memory": 16384,
+      "machine": "enhanced",
+      "selectionType": "fixed",
+      "selectionSource": "project-setting"
+    },
+    "deploymentProtection": []
+  },
+  "message": "Deployment fhfhockey-dfxrbfq75-fhfhockeydevs-projects.vercel.app ready.",
+  "next": [
+    {
+      "command": "vercel curl https://fhfhockey-dfxrbfq75-fhfhockeydevs-projects.vercel.app",
+      "when": "Verify deployment, including when Deployment Protection is enabled"
+    },
+    {
+      "command": "vercel inspect fhfhockey-dfxrbfq75-fhfhockeydevs-projects.vercel.app --scope team_KVFicHhQJARTbO6wRD2x6jpq",
+      "when": "Inspect deployment"
+    },
+    {
+      "command": "vercel deploy --prod --scope team_KVFicHhQJARTbO6wRD2x6jpq",
+      "when": "Promote to production"
+    }
+  ]
+}

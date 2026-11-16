@@ -1,0 +1,78 @@
+{
+  "checkedAt": "2026-11-12T23:52:41.060830+00:00",
+  "status": "Eight-file batch preparation only; not committed or authorized for deployment",
+  "recordedReleaseBase": "4243bcd4e29889c035e832562e25850d14af0ee1",
+  "releaseCommit": null,
+  "files": [
+    {
+      "path": "web/pages/api/v1/lines/projected.ts",
+      "sha256": "c8257b494c1543388926a515c6f831bd51222e76add9dfd7fffeb1211935239e",
+      "sourceManifest": "tasks/artifacts/fxtwitter-lines-surface-2026-11-12/CANDIDATE.json",
+      "pinMatches": true,
+      "headMatchesRecordedRelease": true
+    },
+    {
+      "path": "web/components/LineCombinations/ProjectedLineups.tsx",
+      "sha256": "1c780998a158608059e08d6523f4adfba341ac2242891895f0ea0499edcadef5",
+      "sourceManifest": "tasks/artifacts/fxtwitter-lines-surface-2026-11-12/CANDIDATE.json",
+      "pinMatches": true,
+      "headMatchesRecordedRelease": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/lines/projected.test.ts",
+      "sha256": "1d662f8f23d2bc5164f6661e20f07d5b46d1c3740e16c8bff6c93933062e85bb",
+      "sourceManifest": "tasks/artifacts/fxtwitter-lines-surface-2026-11-12/CANDIDATE.json",
+      "pinMatches": true,
+      "headMatchesRecordedRelease": true
+    },
+    {
+      "path": "web/components/LineCombinations/ProjectedLineups.test.tsx",
+      "sha256": "8bc65c3c98ff887ba71a4ddecaceb697c671de529066e05bbbb04b0590a470a1",
+      "sourceManifest": "tasks/artifacts/fxtwitter-lines-surface-2026-11-12/CANDIDATE.json",
+      "pinMatches": true,
+      "headMatchesRecordedRelease": true
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "sha256": "d9686db26902c2142fd1cbcc03af5fed6125a80514631326a5212c9892d52b5b",
+      "sourceManifest": "tasks/artifacts/rso-objective-switch-2026-11-12/CANDIDATE.json",
+      "pinMatches": true,
+      "headMatchesRecordedRelease": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "sha256": "5221ba9cc28cd921f503a12766d37696b1bcff63b56965e9cbe89c8cb192d50a",
+      "sourceManifest": "tasks/artifacts/rso-objective-switch-2026-11-12/CANDIDATE.json",
+      "pinMatches": true,
+      "headMatchesRecordedRelease": true
+    },
+    {
+      "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "sha256": "2cc4b3dc0fc9f0a45f3d774341015c229261dc4f1e3cbd301aa163c6b1e229fb",
+      "sourceManifest": "tasks/artifacts/rso-objective-switch-2026-11-12/CANDIDATE.json",
+      "pinMatches": true,
+      "headMatchesRecordedRelease": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/streamingChain.test.ts",
+      "sha256": "1c950421d3612a87a229991dd226f3fd0b1d1cc96a2ab0d7e849773865e42232",
+      "sourceManifest": "tasks/artifacts/rso-objective-switch-2026-11-12/CANDIDATE.json",
+      "pinMatches": true,
+      "headMatchesRecordedRelease": true
+    }
+  ],
+  "duplicatePaths": [],
+  "overlapWithDrmInventory": [],
+  "exclusions": [
+    "DRM",
+    "Data repairs",
+    "Flags/schema/config/lockfiles",
+    "Unrelated local commits",
+    "Diaries/artifacts"
+  ],
+  "limitations": [
+    "No isolated combined release-tree tests yet",
+    "Exact future SHA and remote linked-project/build inventory still required",
+    "Prior tests apply to matching source pins, not a newly assembled release tree"
+  ]
+}

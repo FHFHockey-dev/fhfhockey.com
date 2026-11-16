@@ -1,0 +1,65 @@
+{
+  "status": "source_release_and_reported_three_game_repair_complete",
+  "verifiedAt": "2026-11-12T19:11:39.591874+00:00",
+  "releaseSha": "866b90bc46a169b42cbc3c54a7d64b0daf764121",
+  "canonicalMerge": "039807518def1dcd74395511a80fd763981ed225",
+  "deploymentId": "dpl_5L5wNwQSxfJuMyrVNuuKNUBax4un",
+  "deploymentState": "READY",
+  "actualBuilds": 1,
+  "companionCanceledEntries": 3,
+  "games": [
+    2026020252,
+    2026020278,
+    2026020296
+  ],
+  "rpcWrites": 9,
+  "directRepairRestRequests": 108,
+  "lastWriteReceiptAt": "2026-11-12T19:09:49.055Z",
+  "databaseWindow": "returned_to_Claude_by_user_direction",
+  "remainingCurrentSeasonGames": 295,
+  "uiObserved": {
+    "aggregated": true,
+    "fiveOnFiveMatrix": true,
+    "observedForwardLines": 4,
+    "observedDefensePairs": 3,
+    "skaterCards": true,
+    "goalieCards": "stats unavailable"
+  },
+  "apiCoverage": {
+    "inputRows": 57,
+    "rosterRows": 21,
+    "skippedRows": 0,
+    "scheduledGames": 3,
+    "knownFinalGames": 3,
+    "acceptedGames": 3,
+    "games": [
+      {
+        "gameId": 2026020252,
+        "date": "2026-11-05",
+        "state": "accepted",
+        "reason": "Qualified source generation, historical roster and interval totals agree."
+      },
+      {
+        "gameId": 2026020278,
+        "date": "2026-11-08",
+        "state": "accepted",
+        "reason": "Qualified source generation, historical roster and interval totals agree."
+      },
+      {
+        "gameId": 2026020296,
+        "date": "2026-11-11",
+        "state": "accepted",
+        "reason": "Qualified source generation, historical roster and interval totals agree."
+      }
+    ],
+    "unrepresentedFiveOnFiveSeconds": 62,
+    "excludedSpecialTeamsSeconds": 46
+  },
+  "limits": [
+    "Wider DRM qualification/repair remains unfinished until next Claude DB handoff.",
+    "New DRM page/API/history work remains local; release contains 21 source pipeline paths only.",
+    "No provider calls, raw-source replacements, migration or rolling forecast recompute.",
+    "One pacing deviation: third game began about43s after second, below planned60s; serial, healthy and no overlap. Add executable spacing gate before wider run."
+  ],
+  "requestsNote": "108 = three14-request captures plus three22-request apply/readbacks; SQL guards/inventory and app smoke are additional. One explicit local API GET plus existing-page source/strength control verification; unrelated browser background traffic not attributed."
+}

@@ -1,0 +1,57 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "ctpi": {
+    "mixed": {
+      "dateUsed": "2026-11-14",
+      "partial": false,
+      "fallbackApplied": false,
+      "warnings": [],
+      "teamCutoffs": [
+        {
+          "team": "AAA",
+          "date": "2026-11-14"
+        },
+        {
+          "team": "BBB",
+          "date": "2026-11-01"
+        }
+      ]
+    },
+    "alignedControl": "both current; complete",
+    "boundary": "Exact frozen handler and trust predicate. Synthetic matching version constants, two-team expected population and finite query double; serving-message helper doubled. No approved current v2 or live stale row asserted."
+  },
+  "webhook": {
+    "httpStatus": 500,
+    "calls": 1,
+    "resolvedReceipt": {
+      "success": false,
+      "error": "fixture failure"
+    },
+    "boundary": "Exact send/retry functions with inert fetch; constant parked wrapper remains active and was not bypassed operationally."
+  },
+  "xg": {
+    "nullAdapter": 0,
+    "undefinedAdapter": null,
+    "disposition": "No missing-metric finding: checked-in created-xG schema declares numeric fields NOT NULL. Nullable team ID conversion is a low-impact identity limitation, not evidence of invented stored metrics."
+  },
+  "sources": [
+    {
+      "path": "web/lib/trends/ctpiVersions.ts",
+      "sha256": "cba988cba348c517aeec34de8f5a8a89b8527d73de577b227faa7ddd02fc6368"
+    },
+    {
+      "path": "web/pages/api/v1/trends/team-ctpi.ts",
+      "sha256": "78acff87160c60b536b9cea5517f51dc84dde94ff6f935431123b2322e4d564e"
+    },
+    {
+      "path": "web/pages/api/v1/webhooks/on-new-line-combo.ts",
+      "sha256": "dd3a7255fc37c81124f4cc1416d8db89d8d12b92d3101ccb706d7f5653243de8"
+    },
+    {
+      "path": "web/pages/api/v1/underlying-stats/xg.ts",
+      "sha256": "e5c3b5b612af0e50977bff73a0c806809eb2ff632180a6086c5f133760e91366"
+    }
+  ],
+  "boundary": "No real DB, provider, page, message, environment values, application client, suite or write."
+}

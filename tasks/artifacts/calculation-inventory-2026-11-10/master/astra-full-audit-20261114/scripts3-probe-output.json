@@ -1,0 +1,37 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "zeroCounts": {
+    "rss": 0,
+    "ncIsNaN": true,
+    "dc": 0
+  },
+  "scores": {
+    "exact": {
+      "n": 2,
+      "logScore": 1.2479613016118631,
+      "rps": 0.3000527203138176,
+      "pitTv": 0.6077422742688567,
+      "pitLow": 0,
+      "pitHigh": 0
+    },
+    "binned": {
+      "n": 2,
+      "logScore": 1.5095853734941367,
+      "rps": 0.5818473109132827,
+      "pitTv": 0.42427838392376954,
+      "pitLow": 0,
+      "pitHigh": 0
+    }
+  },
+  "wrongSeasonAccepted": {
+    "input": 20262027,
+    "header": "2023-24 + 2024-25",
+    "pooledAlpha": 0.1
+  },
+  "controls": {
+    "equalExposureCorrection": true,
+    "knownNNLSSolution": true
+  },
+  "boundary": "Exact isolated moments, fitting, scoring and runFit with loader/console doubles; actual pure countPmf and required helpers. No SQL, actual files, provider, environment, model fitting on real data, full module import or supplied simulation test executed."
+}

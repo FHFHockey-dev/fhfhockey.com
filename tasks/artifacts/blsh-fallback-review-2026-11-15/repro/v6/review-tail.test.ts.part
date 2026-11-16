@@ -1,0 +1,54 @@
+
+// ---- V6 review reproducers (appended to a scratch copy of core.test.ts lines 1-108; harness unchanged) ----
+describe("V6-REVIEW reproducers", () => {
+  it("V-R1: a schedule body with NO entry for D (gameWeek: []) is recorded as no_slate, the same as a real off-day", async () => {
+    const real = globalThis.fetch;
+    vi.stubGlobal("fetch", vi.fn(async (target: string | URL | Request, init: RequestInit = {}) => {
+      const url = String(target), parsed = new URL(url);
+      if (parsed.hostname !== "api-web.nhle.com") return real(target, init);
+      fetchKinds.push("schedule");
+      sendHeaders.publish({ request: { origin: parsed.origin, path: parsed.pathname, method: "GET" }, headers: [], socket: fakeSocket(parsed.hostname) });
+      return response(JSON.stringify({ gameWeek: [] }), url);
+    }));
+    const { sink, input, runId } = await setup();
+    const result = await run(sink, input);
+    expect(result).toMatchObject({ ok: true, value: { state: "no_slate", operationCount: 1 } });
+    expect(fake.runs.get(runId)?.state).toBe("no_slate");
+  });
+
+  it("V-R2: the pre-schedule checkpoint (4 uploads) shares the schedule op's 15 s timeout; slow writes burn D with no GET", async () => {
+    const { sink, input, runId } = await setup(4000); // 4 objects x 4 s in the fake store = 16 s (the real writer makes 2 round trips per object)
+    const result = await run(sink, input);
+    expect(result.ok).toBe(false);
+    expect(fetchKinds).toEqual([]);
+    expect(fake.runs.get(runId)?.state).toBe("failed");
+    console.log("V-R2 reason:", fake.runs.get(runId)?.reason);
+  });
+
+  it("V-R3: a pre-try refusal in the core (adapter date mismatch) throws a plain Error and leaves the run row 'claimed' (watchdog -> abandoned_uncertain) with no network", async () => {
+    const { sink, input, runId } = await setup();
+    const result = await run(sink, { ...input, sourceDate: "2026-11-18" });
+    expect(result.ok).toBe(false);
+    expect(result.ok === false && result.error instanceof CaptureRunError).toBe(false);
+    expect(fake.runs.get(runId)?.state).toBe("claimed");
+    expect(fetchKinds).toEqual([]);
+  });
+  for (const target of ["admission:individual", "nst:individual"]) {
+    it(`V-R4: ONE unrelated undici request in the same process during ${target} (e.g. a concurrent route's fetch) fails the run after that call was spent`, async () => {
+      const real = globalThis.fetch;
+      vi.stubGlobal("fetch", vi.fn(async (t: string | URL | Request, init: RequestInit = {}) => {
+        const value = await real(t, init);
+        if (fetchKinds.at(-1) === target) // a different origin and path: another request sharing this process
+          sendHeaders.publish({ request: { origin: "https://unrelated.invalid", path: "/rest/v1/cron_job_audit", method: "POST" }, headers: [], socket: fakeSocket("unrelated.invalid") });
+        return value;
+      }));
+      const { sink, input, runId } = await setup();
+      const result = await run(sink, input);
+      expect(result.ok).toBe(false);
+      expect(fetchKinds.at(-1)).toBe(target);
+      expect(fake.runs.get(runId)?.state).toBe("failed");
+      console.log(`V-R4 ${target}: fetches=${fetchKinds.join(",")} reason=${fake.runs.get(runId)?.reason}`);
+    });
+  }
+});
+

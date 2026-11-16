@@ -1,0 +1,36 @@
+const fs=require('fs'),cp=require('child_process'),vm=require('vm'),assert=require('assert/strict'),crypto=require('crypto'),ts=require('/Users/tim/Code/fhfhockey.com/web/node_modules/typescript');
+const pin='89da739cb',sources=[];
+const denied=new Proxy({}, {get:(_t,name)=>{throw Error('Unused dependency accessed: '+String(name));}});
+function load(path,deps={}){const source=cp.execFileSync('git',['show',pin+':'+path],{encoding:'utf8'}),module={exports:{}};sources.push(path);vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText,{module,exports:module.exports,Date,Intl,TextEncoder,require:name=>{if(!(name in deps))throw Error('Unexpected dependency '+name);return deps[name]}},{filename:path});return module.exports;}
+const time=load('web/lib/projections/evidenceTime.ts'),calendar=load('web/lib/player-forecasts/contributions.ts',{'../projections/evidenceTime':time});
+const dates=load('web/lib/rosterScheduleOptimizer/planningDates.ts');
+const eligibility=load('web/lib/rosterScheduleOptimizer/eligibility.ts');
+const slots=load('web/lib/rosterScheduleOptimizer/slots.ts',{'./eligibility':eligibility});
+const timeline=load('web/lib/rosterScheduleOptimizer/planningTimeline.ts',{'./slots':slots,'./planningDates':dates});
+const retention=load('web/lib/rosterScheduleOptimizer/retention.ts'),comparison=load('web/lib/rosterScheduleOptimizer/pointsComparison.ts');
+const matching=load('web/lib/projections/weightedAssignment.ts');
+const planning=load('web/lib/rosterScheduleOptimizer/planning.ts',{'../projections/weightedAssignment':matching,'../player-forecasts/planningContributions':{resolvePlanningContributions:s=>s},'../player-forecasts/contributions':calendar,'./planningDates':dates,'./eligibility':eligibility,'./slots':slots,'./planningTimeline':timeline,'./benchDecisions':denied,'./pointsComparison':comparison,'./retention':retention,'./streamingChain':{buildStreamingChains:(...args)=>streaming.buildStreamingChains(...args)}});
+const healthy=load('web/lib/rosterScheduleOptimizer/healthyReserves.ts',{'./planning':planning,'./pointsComparison':comparison,'./planningDates':dates,'./slots':slots});
+const player=(id,kind='skater',availability='rostered')=>({id,nhlId:1,name:id,teamAbbreviation:'TOR',eligiblePositions:[kind==='goalie'?'G':'C'],playerClass:kind,availability,eligibilityVerified:true,ownership:null,canDrop:true,holdValue:null,reserveEligibility:[]});
+const game={id:'1',date:'2026-11-02',startsAt:'2026-11-02T23:00:00Z',teamAbbreviation:'TOR',opponent:'MTL',home:true,status:'scheduled'};
+const forecast=(id)=>({playerId:id,gameId:'1',stats:{GOALS:2},conditioning:'unconditional',allowedUses:{assignment:true,totals:true,comparison:true,conditionalTieBreak:false},startProbability:.8,confirmedStart:false,limitations:[]});
+const intent={revision:1,steps:[],protectedPlayerIds:[],excludedPlayerIds:[],goalieCoverage:'accept_risk',goalieWindow:'any',goalieSplit:'mon_thu',alternativeCount:5};
+function input(){return {id:'synthetic',context:{provider:'manual',seasonId:20262027,leagueId:'L',teamId:'t',startDate:'2026-11-02',endDate:'2026-11-02',timeZone:'UTC',asOf:'2026-11-01T12:00:00Z'},players:[player('p')],roster:[{playerId:'p',position:'active'}],games:[game],forecasts:[forecast('p')],rules:{lineupMode:'daily',rosterSlots:{C:1,BN:1},acquisitionTiming:'same_day',acquisitionCost:1,periods:[{id:'w',start:'2026-11-01T00:00:00Z',end:'2026-11-08T00:00:00Z',remaining:3,source:'manager'}],scoring:{mode:'points',weights:{GOALS:1},categories:[]},goalieMinimum:{required:0,credited:0,counts:'starts',penalty:'none'},unsupported:[]},lockedAssignments:[],realized:{GOALS:0},opponent:null,evidence:{schedule:{source:'fixture',asOf:'2026-11-01T11:00:00Z',seasonId:20262027,completeness:'complete',limitations:[]}}};}
+const recent=load('web/lib/rosterScheduleOptimizer/recentForm.ts');
+const streaming=load('web/lib/rosterScheduleOptimizer/streamingChain.ts',{'./planningDates':dates,'./eligibility':eligibility,'./slots':slots,'./planningTimeline':timeline,'./retention':retention,'./pointsComparison':comparison,'./recentForm':recent});
+const s=input();s.context.endDate='2026-11-03';s.players=[{...player('drop'),teamAbbreviation:'IDLE'},player('k','skater','free_agent'),{...player('u','skater','free_agent'),teamAbbreviation:'MTL'}];s.roster=[{playerId:'drop',position:'active'}];s.games=[game,{...game,id:'2',date:'2026-11-03',startsAt:'2026-11-03T23:00:00Z',teamAbbreviation:'MTL'}];s.rules.rosterSlots={C:1};s.rules.periods[0].remaining=2;s.forecasts=[{...forecast('k'),stats:{GOALS:-1}}];
+s.evidence.schedule.completeness='partial';s.forecasts=[{...forecast('k'),stats:{GOALS:2}}];s.players=s.players.filter(p=>p.id!=='u');s.games=[game];
+const result=planning.planRoster(s,intent,{maxSteps:0,maxBenchEvaluations:0});
+assert.equal(result.streaming.chains[0].netGames,1);
+assert.equal(result.streaming.chains[0].netPoints,null);
+assert.equal(result.streaming.chains[0].netScore,2);
+assert.equal(result.streaming.chains[0].evaluation.comparisonEligible,false);
+assert.equal(result.streaming.recommended,1);
+const providers=load('web/lib/rosterScheduleOptimizer/providerGoalieStarts.ts');
+const fg=(playerId,p)=>({playerId,gameId:'1',stats:{SAVES_GOALIE:30*p},conditionalStats:{SAVES_GOALIE:30},startProbability:p,confirmedStart:false,revisionId:'bridge:r1',limitations:[]});
+const gg=id=>({...player(id,'goalie'),nhlTeamId:10});
+const starts=providers.applyProviderGoalieStarts([fg('g1',.6),fg('g2',.2)],{marked:[{...gg('g2'),startingStatus:{source:'yahoo',date:game.date,isStarting:false,observedAt:s.context.asOf}}],catalog:[gg('g1'),gg('g2'),gg('g3')],games:[game],bridgeRevisionIds:new Set(['bridge:r1']),now:Date.parse(s.context.asOf)});
+assert.ok(Math.abs(starts[0].startProbability-.75)<1e-12);assert.equal(starts[1].startProbability,0);
+const cairo=dates.zonedMidnight('2026-04-24','Africa/Cairo');assert.equal(cairo,'2026-04-23T22:00:00.000Z');
+const record={pin,status:'passed',sources,streaming:result.streaming,baseline:{objective:result.baseline.objective,comparisonEligible:result.baseline.comparisonEligible,projectedValue:result.baseline.projectedValue},providerStart:{remaining:starts[0].startProbability,out:starts[1].startProbability},cairo,limits:'Exact frozen planning caller, streaming, matching and supporting modules; identity forecast resolver admits synthetic forecasts. No real admission, I/O, app imports, Vitest, or page execution. One earlier exploratory unknown-chain case was not promoted to an independent finding.'};
+fs.writeFileSync('/tmp/astra-rsoopt3-probe-output.json',JSON.stringify(record,null,2)+'\n');console.log(JSON.stringify({status:record.status,baseline:record.baseline,chain:record.streaming.chains.map(c=>({netGames:c.netGames,netPoints:c.netPoints,netScore:c.netScore,eligible:c.evaluation.comparisonEligible})),providerStart:record.providerStart,cairo}));

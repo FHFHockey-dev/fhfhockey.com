@@ -1,0 +1,250 @@
+{
+  "mode": "preflight",
+  "started_at": "2026-11-12T19:41:40.975636+00:00",
+  "project_id": "fyhftlxokyjtpndbkfse",
+  "host": "db.fyhftlxokyjtpndbkfse.supabase.co",
+  "sql_file": "production-preflight.sql",
+  "sql_sha256": "e108adf2e7efdfa56c5e252afda4a34f0ef43deacde1097bdd2971faf5b37dae",
+  "status": "returned",
+  "verified": true,
+  "returncode": 0,
+  "stdout": "{\"role\": \"postgres\", \"rules\": [], \"tables\": [{\"rls\": true, \"table\": \"yahoo_players\", \"force_rls\": false}, {\"rls\": true, \"table\": \"fhfh_player_external_identities\", \"force_rls\": false}], \"indexes\": [{\"name\": \"fhfh_player_external_identities_pkey\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CREATE UNIQUE INDEX fhfh_player_external_identities_pkey ON public.fhfh_player_external_identities USING btree (id)\"}, {\"name\": \"fhfh_player_external_provider_context_id_unique\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CREATE UNIQUE INDEX fhfh_player_external_provider_context_id_unique ON public.fhfh_player_external_identities USING btree (provider, context_key, external_player_id)\"}, {\"name\": \"fhfh_player_external_player_provider_context_id_unique\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CREATE UNIQUE INDEX fhfh_player_external_player_provider_context_id_unique ON public.fhfh_player_external_identities USING btree (fhfh_player_id, provider, context_key, external_player_id)\"}, {\"name\": \"idx_fhfh_player_external_player\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CREATE INDEX idx_fhfh_player_external_player ON public.fhfh_player_external_identities USING btree (fhfh_player_id, provider, verification_status)\"}, {\"name\": \"idx_fhfh_player_external_season\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CREATE INDEX idx_fhfh_player_external_season ON public.fhfh_player_external_identities USING btree (season_id, provider) WHERE (season_id IS NOT NULL)\"}, {\"name\": \"idx_fhfh_player_external_verified_by\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CREATE INDEX idx_fhfh_player_external_verified_by ON public.fhfh_player_external_identities USING btree (verified_by)\"}, {\"name\": \"yahoo_players_pkey\", \"table\": \"yahoo_players\", \"definition\": \"CREATE UNIQUE INDEX yahoo_players_pkey ON public.yahoo_players USING btree (player_key)\"}, {\"name\": \"yahoo_players_player_id_season_key\", \"table\": \"yahoo_players\", \"definition\": \"CREATE UNIQUE INDEX yahoo_players_player_id_season_key ON public.yahoo_players USING btree (player_id, season)\"}, {\"name\": \"yp_by_season\", \"table\": \"yahoo_players\", \"definition\": \"CREATE INDEX yp_by_season ON public.yahoo_players USING btree (season)\"}, {\"name\": \"yplayers_name_norm_btree\", \"table\": \"yahoo_players\", \"definition\": \"CREATE INDEX yplayers_name_norm_btree ON public.yahoo_players USING btree (immutable_unaccent(lower((player_name)::text)))\"}, {\"name\": \"yplayers_name_norm_trgm\", \"table\": \"yahoo_players\", \"definition\": \"CREATE INDEX yplayers_name_norm_trgm ON public.yahoo_players USING gin (immutable_unaccent(lower((player_name)::text)) gin_trgm_ops)\"}], \"activity\": {\"active_clients\": 0, \"active_over_5s\": 0, \"io_or_lock_waits\": 0, \"idle_transactions\": 0, \"normalization_queries\": 0}, \"database\": \"postgres\", \"triggers\": [{\"name\": \"RI_ConstraintTrigger_c_3124294\", \"table\": \"fhfh_player_external_identities\", \"enabled\": \"O\", \"internal\": true, \"definition\": \"CREATE CONSTRAINT TRIGGER \\\"RI_ConstraintTrigger_c_3124294\\\" AFTER INSERT ON public.fhfh_player_external_identities FROM fhfh_player_identities NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION \\\"RI_FKey_check_ins\\\"()\", \"function_md5\": null}, {\"name\": \"RI_ConstraintTrigger_c_3124295\", \"table\": \"fhfh_player_external_identities\", \"enabled\": \"O\", \"internal\": true, \"definition\": \"CREATE CONSTRAINT TRIGGER \\\"RI_ConstraintTrigger_c_3124295\\\" AFTER UPDATE ON public.fhfh_player_external_identities FROM fhfh_player_identities NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION \\\"RI_FKey_check_upd\\\"()\", \"function_md5\": null}, {\"name\": \"RI_ConstraintTrigger_c_3124299\", \"table\": \"fhfh_player_external_identities\", \"enabled\": \"O\", \"internal\": true, \"definition\": \"CREATE CONSTRAINT TRIGGER \\\"RI_ConstraintTrigger_c_3124299\\\" AFTER INSERT ON public.fhfh_player_external_identities FROM seasons NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION \\\"RI_FKey_check_ins\\\"()\", \"function_md5\": null}, {\"name\": \"RI_ConstraintTrigger_c_3124300\", \"table\": \"fhfh_player_external_identities\", \"enabled\": \"O\", \"internal\": true, \"definition\": \"CREATE CONSTRAINT TRIGGER \\\"RI_ConstraintTrigger_c_3124300\\\" AFTER UPDATE ON public.fhfh_player_external_identities FROM seasons NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION \\\"RI_FKey_check_upd\\\"()\", \"function_md5\": null}, {\"name\": \"RI_ConstraintTrigger_c_3124304\", \"table\": \"fhfh_player_external_identities\", \"enabled\": \"O\", \"internal\": true, \"definition\": \"CREATE CONSTRAINT TRIGGER \\\"RI_ConstraintTrigger_c_3124304\\\" AFTER INSERT ON public.fhfh_player_external_identities FROM auth.users NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION \\\"RI_FKey_check_ins\\\"()\", \"function_md5\": null}, {\"name\": \"RI_ConstraintTrigger_c_3124305\", \"table\": \"fhfh_player_external_identities\", \"enabled\": \"O\", \"internal\": true, \"definition\": \"CREATE CONSTRAINT TRIGGER \\\"RI_ConstraintTrigger_c_3124305\\\" AFTER UPDATE ON public.fhfh_player_external_identities FROM auth.users NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION \\\"RI_FKey_check_upd\\\"()\", \"function_md5\": null}, {\"name\": \"set_fhfh_player_external_identities_updated_at\", \"table\": \"fhfh_player_external_identities\", \"enabled\": \"O\", \"internal\": false, \"definition\": \"CREATE TRIGGER set_fhfh_player_external_identities_updated_at BEFORE UPDATE ON public.fhfh_player_external_identities FOR EACH ROW EXECUTE FUNCTION set_fhfh_player_identity_updated_at()\", \"function_md5\": \"eef16f9804eda9617309941610254ac0\"}], \"view_md5\": \"88f9440fcf64a968772b12215785ed70\", \"reader_md5\": \"495ccc4353268f60559dc3db197698d0\", \"constraints\": [{\"name\": \"yahoo_players_pkey\", \"type\": \"p\", \"table\": \"yahoo_players\", \"definition\": \"PRIMARY KEY (player_key)\"}, {\"name\": \"fhfh_player_external_context_nonblank\", \"type\": \"c\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CHECK ((btrim(context_key) <> ''::text))\"}, {\"name\": \"fhfh_player_external_id_nonblank\", \"type\": \"c\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CHECK ((btrim(external_player_id) <> ''::text))\"}, {\"name\": \"fhfh_player_external_identities_fhfh_player_id_fkey\", \"type\": \"f\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"FOREIGN KEY (fhfh_player_id) REFERENCES fhfh_player_identities(id) ON UPDATE RESTRICT ON DELETE CASCADE\"}, {\"name\": \"fhfh_player_external_identities_pkey\", \"type\": \"p\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"PRIMARY KEY (id)\"}, {\"name\": \"fhfh_player_external_identities_season_id_fkey\", \"type\": \"f\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"FOREIGN KEY (season_id) REFERENCES seasons(id) ON UPDATE RESTRICT ON DELETE RESTRICT\"}, {\"name\": \"fhfh_player_external_identities_verified_by_fkey\", \"type\": \"f\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"FOREIGN KEY (verified_by) REFERENCES auth.users(id) ON DELETE SET NULL\"}, {\"name\": \"fhfh_player_external_match_confidence_valid\", \"type\": \"c\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CHECK (((match_confidence IS NULL) OR ((match_confidence >= (0)::numeric) AND (match_confidence <= (1)::numeric))))\"}, {\"name\": \"fhfh_player_external_match_method_nonblank\", \"type\": \"c\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CHECK ((btrim(match_method) <> ''::text))\"}, {\"name\": \"fhfh_player_external_player_provider_context_id_unique\", \"type\": \"u\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"UNIQUE (fhfh_player_id, provider, context_key, external_player_id)\"}, {\"name\": \"fhfh_player_external_provider_context_id_unique\", \"type\": \"u\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"UNIQUE (provider, context_key, external_player_id)\"}, {\"name\": \"fhfh_player_external_provider_nonblank\", \"type\": \"c\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CHECK ((btrim(provider) <> ''::text))\"}, {\"name\": \"fhfh_player_external_source_provenance_object\", \"type\": \"c\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CHECK ((jsonb_typeof(source_provenance) = 'object'::text))\"}, {\"name\": \"fhfh_player_external_verification_actor_valid\", \"type\": \"c\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CHECK (((verification_status <> 'verified'::text) OR ((verified_at IS NOT NULL) AND ((verified_by IS NOT NULL) OR (NULLIF(btrim(verified_by_system), ''::text) IS NOT NULL)))))\"}, {\"name\": \"fhfh_player_external_verification_status_valid\", \"type\": \"c\", \"table\": \"fhfh_player_external_identities\", \"definition\": \"CHECK ((verification_status = ANY (ARRAY['verified'::text, 'review_required'::text, 'rejected'::text, 'superseded'::text])))\"}], \"observed_at\": \"2026-11-12T19:41:41.511796+00:00\", \"full_visibility\": true, \"update_privileges\": true}\n",
+  "stderr": "",
+  "observed": {
+    "role": "postgres",
+    "rules": [],
+    "tables": [
+      {
+        "rls": true,
+        "table": "yahoo_players",
+        "force_rls": false
+      },
+      {
+        "rls": true,
+        "table": "fhfh_player_external_identities",
+        "force_rls": false
+      }
+    ],
+    "indexes": [
+      {
+        "name": "fhfh_player_external_identities_pkey",
+        "table": "fhfh_player_external_identities",
+        "definition": "CREATE UNIQUE INDEX fhfh_player_external_identities_pkey ON public.fhfh_player_external_identities USING btree (id)"
+      },
+      {
+        "name": "fhfh_player_external_provider_context_id_unique",
+        "table": "fhfh_player_external_identities",
+        "definition": "CREATE UNIQUE INDEX fhfh_player_external_provider_context_id_unique ON public.fhfh_player_external_identities USING btree (provider, context_key, external_player_id)"
+      },
+      {
+        "name": "fhfh_player_external_player_provider_context_id_unique",
+        "table": "fhfh_player_external_identities",
+        "definition": "CREATE UNIQUE INDEX fhfh_player_external_player_provider_context_id_unique ON public.fhfh_player_external_identities USING btree (fhfh_player_id, provider, context_key, external_player_id)"
+      },
+      {
+        "name": "idx_fhfh_player_external_player",
+        "table": "fhfh_player_external_identities",
+        "definition": "CREATE INDEX idx_fhfh_player_external_player ON public.fhfh_player_external_identities USING btree (fhfh_player_id, provider, verification_status)"
+      },
+      {
+        "name": "idx_fhfh_player_external_season",
+        "table": "fhfh_player_external_identities",
+        "definition": "CREATE INDEX idx_fhfh_player_external_season ON public.fhfh_player_external_identities USING btree (season_id, provider) WHERE (season_id IS NOT NULL)"
+      },
+      {
+        "name": "idx_fhfh_player_external_verified_by",
+        "table": "fhfh_player_external_identities",
+        "definition": "CREATE INDEX idx_fhfh_player_external_verified_by ON public.fhfh_player_external_identities USING btree (verified_by)"
+      },
+      {
+        "name": "yahoo_players_pkey",
+        "table": "yahoo_players",
+        "definition": "CREATE UNIQUE INDEX yahoo_players_pkey ON public.yahoo_players USING btree (player_key)"
+      },
+      {
+        "name": "yahoo_players_player_id_season_key",
+        "table": "yahoo_players",
+        "definition": "CREATE UNIQUE INDEX yahoo_players_player_id_season_key ON public.yahoo_players USING btree (player_id, season)"
+      },
+      {
+        "name": "yp_by_season",
+        "table": "yahoo_players",
+        "definition": "CREATE INDEX yp_by_season ON public.yahoo_players USING btree (season)"
+      },
+      {
+        "name": "yplayers_name_norm_btree",
+        "table": "yahoo_players",
+        "definition": "CREATE INDEX yplayers_name_norm_btree ON public.yahoo_players USING btree (immutable_unaccent(lower((player_name)::text)))"
+      },
+      {
+        "name": "yplayers_name_norm_trgm",
+        "table": "yahoo_players",
+        "definition": "CREATE INDEX yplayers_name_norm_trgm ON public.yahoo_players USING gin (immutable_unaccent(lower((player_name)::text)) gin_trgm_ops)"
+      }
+    ],
+    "activity": {
+      "active_clients": 0,
+      "active_over_5s": 0,
+      "io_or_lock_waits": 0,
+      "idle_transactions": 0,
+      "normalization_queries": 0
+    },
+    "database": "postgres",
+    "triggers": [
+      {
+        "name": "RI_ConstraintTrigger_c_3124294",
+        "table": "fhfh_player_external_identities",
+        "enabled": "O",
+        "internal": true,
+        "definition": "CREATE CONSTRAINT TRIGGER \"RI_ConstraintTrigger_c_3124294\" AFTER INSERT ON public.fhfh_player_external_identities FROM fhfh_player_identities NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION \"RI_FKey_check_ins\"()",
+        "function_md5": null
+      },
+      {
+        "name": "RI_ConstraintTrigger_c_3124295",
+        "table": "fhfh_player_external_identities",
+        "enabled": "O",
+        "internal": true,
+        "definition": "CREATE CONSTRAINT TRIGGER \"RI_ConstraintTrigger_c_3124295\" AFTER UPDATE ON public.fhfh_player_external_identities FROM fhfh_player_identities NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION \"RI_FKey_check_upd\"()",
+        "function_md5": null
+      },
+      {
+        "name": "RI_ConstraintTrigger_c_3124299",
+        "table": "fhfh_player_external_identities",
+        "enabled": "O",
+        "internal": true,
+        "definition": "CREATE CONSTRAINT TRIGGER \"RI_ConstraintTrigger_c_3124299\" AFTER INSERT ON public.fhfh_player_external_identities FROM seasons NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION \"RI_FKey_check_ins\"()",
+        "function_md5": null
+      },
+      {
+        "name": "RI_ConstraintTrigger_c_3124300",
+        "table": "fhfh_player_external_identities",
+        "enabled": "O",
+        "internal": true,
+        "definition": "CREATE CONSTRAINT TRIGGER \"RI_ConstraintTrigger_c_3124300\" AFTER UPDATE ON public.fhfh_player_external_identities FROM seasons NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION \"RI_FKey_check_upd\"()",
+        "function_md5": null
+      },
+      {
+        "name": "RI_ConstraintTrigger_c_3124304",
+        "table": "fhfh_player_external_identities",
+        "enabled": "O",
+        "internal": true,
+        "definition": "CREATE CONSTRAINT TRIGGER \"RI_ConstraintTrigger_c_3124304\" AFTER INSERT ON public.fhfh_player_external_identities FROM auth.users NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION \"RI_FKey_check_ins\"()",
+        "function_md5": null
+      },
+      {
+        "name": "RI_ConstraintTrigger_c_3124305",
+        "table": "fhfh_player_external_identities",
+        "enabled": "O",
+        "internal": true,
+        "definition": "CREATE CONSTRAINT TRIGGER \"RI_ConstraintTrigger_c_3124305\" AFTER UPDATE ON public.fhfh_player_external_identities FROM auth.users NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION \"RI_FKey_check_upd\"()",
+        "function_md5": null
+      },
+      {
+        "name": "set_fhfh_player_external_identities_updated_at",
+        "table": "fhfh_player_external_identities",
+        "enabled": "O",
+        "internal": false,
+        "definition": "CREATE TRIGGER set_fhfh_player_external_identities_updated_at BEFORE UPDATE ON public.fhfh_player_external_identities FOR EACH ROW EXECUTE FUNCTION set_fhfh_player_identity_updated_at()",
+        "function_md5": "eef16f9804eda9617309941610254ac0"
+      }
+    ],
+    "view_md5": "88f9440fcf64a968772b12215785ed70",
+    "reader_md5": "495ccc4353268f60559dc3db197698d0",
+    "constraints": [
+      {
+        "name": "yahoo_players_pkey",
+        "type": "p",
+        "table": "yahoo_players",
+        "definition": "PRIMARY KEY (player_key)"
+      },
+      {
+        "name": "fhfh_player_external_context_nonblank",
+        "type": "c",
+        "table": "fhfh_player_external_identities",
+        "definition": "CHECK ((btrim(context_key) <> ''::text))"
+      },
+      {
+        "name": "fhfh_player_external_id_nonblank",
+        "type": "c",
+        "table": "fhfh_player_external_identities",
+        "definition": "CHECK ((btrim(external_player_id) <> ''::text))"
+      },
+      {
+        "name": "fhfh_player_external_identities_fhfh_player_id_fkey",
+        "type": "f",
+        "table": "fhfh_player_external_identities",
+        "definition": "FOREIGN KEY (fhfh_player_id) REFERENCES fhfh_player_identities(id) ON UPDATE RESTRICT ON DELETE CASCADE"
+      },
+      {
+        "name": "fhfh_player_external_identities_pkey",
+        "type": "p",
+        "table": "fhfh_player_external_identities",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "name": "fhfh_player_external_identities_season_id_fkey",
+        "type": "f",
+        "table": "fhfh_player_external_identities",
+        "definition": "FOREIGN KEY (season_id) REFERENCES seasons(id) ON UPDATE RESTRICT ON DELETE RESTRICT"
+      },
+      {
+        "name": "fhfh_player_external_identities_verified_by_fkey",
+        "type": "f",
+        "table": "fhfh_player_external_identities",
+        "definition": "FOREIGN KEY (verified_by) REFERENCES auth.users(id) ON DELETE SET NULL"
+      },
+      {
+        "name": "fhfh_player_external_match_confidence_valid",
+        "type": "c",
+        "table": "fhfh_player_external_identities",
+        "definition": "CHECK (((match_confidence IS NULL) OR ((match_confidence >= (0)::numeric) AND (match_confidence <= (1)::numeric))))"
+      },
+      {
+        "name": "fhfh_player_external_match_method_nonblank",
+        "type": "c",
+        "table": "fhfh_player_external_identities",
+        "definition": "CHECK ((btrim(match_method) <> ''::text))"
+      },
+      {
+        "name": "fhfh_player_external_player_provider_context_id_unique",
+        "type": "u",
+        "table": "fhfh_player_external_identities",
+        "definition": "UNIQUE (fhfh_player_id, provider, context_key, external_player_id)"
+      },
+      {
+        "name": "fhfh_player_external_provider_context_id_unique",
+        "type": "u",
+        "table": "fhfh_player_external_identities",
+        "definition": "UNIQUE (provider, context_key, external_player_id)"
+      },
+      {
+        "name": "fhfh_player_external_provider_nonblank",
+        "type": "c",
+        "table": "fhfh_player_external_identities",
+        "definition": "CHECK ((btrim(provider) <> ''::text))"
+      },
+      {
+        "name": "fhfh_player_external_source_provenance_object",
+        "type": "c",
+        "table": "fhfh_player_external_identities",
+        "definition": "CHECK ((jsonb_typeof(source_provenance) = 'object'::text))"
+      },
+      {
+        "name": "fhfh_player_external_verification_actor_valid",
+        "type": "c",
+        "table": "fhfh_player_external_identities",
+        "definition": "CHECK (((verification_status <> 'verified'::text) OR ((verified_at IS NOT NULL) AND ((verified_by IS NOT NULL) OR (NULLIF(btrim(verified_by_system), ''::text) IS NOT NULL)))))"
+      },
+      {
+        "name": "fhfh_player_external_verification_status_valid",
+        "type": "c",
+        "table": "fhfh_player_external_identities",
+        "definition": "CHECK ((verification_status = ANY (ARRAY['verified'::text, 'review_required'::text, 'rejected'::text, 'superseded'::text])))"
+      }
+    ],
+    "observed_at": "2026-11-12T19:41:41.511796+00:00",
+    "full_visibility": true,
+    "update_privileges": true
+  },
+  "finished_at": "2026-11-12T19:41:41.582862+00:00"
+}

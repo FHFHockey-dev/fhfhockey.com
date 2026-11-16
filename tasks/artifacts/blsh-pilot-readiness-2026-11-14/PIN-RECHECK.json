@@ -1,0 +1,203 @@
+{
+ "checkedAtUTC": "2026-11-15T01:17:58Z",
+ "HEAD": "5a7ca3cd1f6def112a00cfda8d0847008cc2a0d1",
+ "branch": "octoberBranch",
+ "baseline": "tasks/artifacts/blsh-capture-review-2026-11-12/PILOT-READINESS.json (2026-11-12T19:40Z)",
+ "sourcePins": [
+  {
+   "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+   "pinned": "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb",
+   "current": "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb",
+   "matches": true,
+   "runtimeRole": true
+  },
+  {
+   "path": "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+   "pinned": "bfb68aac3aff5d5d2882a34138d42d7602fec5d3c0051a3bbfe0a80526d95b0b",
+   "current": "bfb68aac3aff5d5d2882a34138d42d7602fec5d3c0051a3bbfe0a80526d95b0b",
+   "matches": true,
+   "runtimeRole": false
+  },
+  {
+   "path": "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+   "pinned": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+   "current": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+   "matches": true,
+   "runtimeRole": true
+  },
+  {
+   "path": "web/scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+   "pinned": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030",
+   "current": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030",
+   "matches": true,
+   "runtimeRole": false
+  },
+  {
+   "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+   "pinned": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+   "current": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+   "matches": true,
+   "runtimeRole": true
+  },
+  {
+   "path": "web/lib/nst/client.ts",
+   "pinned": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+   "current": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+   "matches": true,
+   "runtimeRole": true
+  },
+  {
+   "path": "web/lib/nst/sharedAdmission.ts",
+   "pinned": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+   "current": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+   "matches": true,
+   "runtimeRole": true
+  },
+  {
+   "path": "web/lib/nst/admissionOrigin.ts",
+   "pinned": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+   "current": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+   "matches": true,
+   "runtimeRole": true
+  },
+  {
+   "path": "web/lib/nst/jobLifecycle.server.ts",
+   "pinned": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+   "current": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+   "matches": true,
+   "runtimeRole": true
+  },
+  {
+   "path": "web/lib/nst/requestBudget.ts",
+   "pinned": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+   "current": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+   "matches": true,
+   "runtimeRole": true
+  },
+  {
+   "path": "web/lib/cron/nstRateLimitPolicy.ts",
+   "pinned": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+   "current": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+   "matches": true,
+   "runtimeRole": true
+  },
+  {
+   "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+   "pinned": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880",
+   "current": "cf02b86b94649d74c5629a23662f78901e17c55c4223fb0f7ce0acc0b802b914",
+   "matches": false,
+   "runtimeRole": false,
+   "changedBy": "adc77310d (CODEX-DEV-FIX-SPRINT-9-20261113); suites rerun: SUITES-CURRENT-TREE.log"
+  },
+  {
+   "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+   "pinned": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf",
+   "current": "49e0658730278ab017c7b960aa27870ec7e50c3e44b6b986010e36a7d69410ed",
+   "matches": false,
+   "runtimeRole": false,
+   "changedBy": "adc77310d (CODEX-DEV-FIX-SPRINT-9-20261113); suites rerun: SUITES-CURRENT-TREE.log"
+  },
+  {
+   "path": "web/lib/skoElement/contract.ts",
+   "pinned": "6bda1cd0c52980989addb9f16a9fc0b8ccef5d2125334becc91bddeb2e08c40b",
+   "current": "6bda1cd0c52980989addb9f16a9fc0b8ccef5d2125334becc91bddeb2e08c40b",
+   "matches": true,
+   "runtimeRole": false
+  },
+  {
+   "path": "web/lib/skoElement/interpret.ts",
+   "pinned": "c330d79ef1851024109ebfa3b2732954f4e8429c9a82d4ae681b2433cec65e99",
+   "current": "c330d79ef1851024109ebfa3b2732954f4e8429c9a82d4ae681b2433cec65e99",
+   "matches": true,
+   "runtimeRole": false
+  },
+  {
+   "path": "web/lib/skoElement/fixtures.ts",
+   "pinned": "f04a937c6d85425d418fe1399855b37c08b1f06c938eb5fb1fa18740afa395f9",
+   "current": "f04a937c6d85425d418fe1399855b37c08b1f06c938eb5fb1fa18740afa395f9",
+   "matches": true,
+   "runtimeRole": false
+  },
+  {
+   "path": "web/lib/skoElement/interpret.test.ts",
+   "pinned": "3b7fe2d756de9087731e5aefda4144ee172faa96ac734f41ed12dfc13eda29be",
+   "current": "3b7fe2d756de9087731e5aefda4144ee172faa96ac734f41ed12dfc13eda29be",
+   "matches": true,
+   "runtimeRole": false
+  },
+  {
+   "path": "web/scripts/blsh/nativeProcessCaptureBootstrap.ts",
+   "pinned": "d4d2fcac52ffd272307b97bcbe79a008d888f7ee05f96526888cdcea2a34c97f",
+   "current": "d4d2fcac52ffd272307b97bcbe79a008d888f7ee05f96526888cdcea2a34c97f",
+   "matches": true,
+   "runtimeRole": false
+  },
+  {
+   "path": "web/scripts/blsh/nativeProcessCaptureBootstrap.test.ts",
+   "pinned": "47a531687a925dfe4dc045444d4894c7798e572f5b55b1b1078f223672816533",
+   "current": "47a531687a925dfe4dc045444d4894c7798e572f5b55b1b1078f223672816533",
+   "matches": true,
+   "runtimeRole": false
+  }
+ ],
+ "evidencePins": [
+  {
+   "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-TESTS.log",
+   "pinned": "1224ab0490a65752c0b128610ac9556fa02d4433a33aaf1d4fd6593c8433705c",
+   "current": "1224ab0490a65752c0b128610ac9556fa02d4433a33aaf1d4fd6593c8433705c",
+   "matches": true
+  },
+  {
+   "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-TYPECHECK.log",
+   "pinned": "11228127ace25fc2b46c68b6ffab0026dd9d7bdf636e1c4c2603a160f7659eec",
+   "current": "11228127ace25fc2b46c68b6ffab0026dd9d7bdf636e1c4c2603a160f7659eec",
+   "matches": true
+  },
+  {
+   "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-LINT.log",
+   "pinned": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "current": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "matches": true
+  },
+  {
+   "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-OFFLINE-CHECK.json",
+   "pinned": "268b4e502bcc7d8673793f48b80233ad13ca8389e18b6b876e0beae8d78261df",
+   "current": "268b4e502bcc7d8673793f48b80233ad13ca8389e18b6b876e0beae8d78261df",
+   "matches": true
+  },
+  {
+   "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-CLI-REFUSAL.log",
+   "pinned": "7e00bd891a81261beb73a0728267430049708d0c159be4e9a3bf48ec7d690e47",
+   "current": "7e00bd891a81261beb73a0728267430049708d0c159be4e9a3bf48ec7d690e47",
+   "matches": true
+  },
+  {
+   "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-INDEPENDENT-REVIEW.md",
+   "pinned": "fd387a7f40fd98424f3e38f95022f2757f26ad7a1a624b4e339ab1980bdaca4f",
+   "current": "fd387a7f40fd98424f3e38f95022f2757f26ad7a1a624b4e339ab1980bdaca4f",
+   "matches": true
+  },
+  {
+   "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-HANDOFF.md",
+   "pinned": "d0cb9ace5ccf478a4eb89b50e7b909d9d7502468f8ea7fb8e4b39765bdac7064",
+   "current": "d0cb9ace5ccf478a4eb89b50e7b909d9d7502468f8ea7fb8e4b39765bdac7064",
+   "matches": true
+  },
+  {
+   "path": "tasks/artifacts/blsh-capture-review-2026-11-12/CUSTODIAN-HANDOFF.md",
+   "pinned": "d08ea95d7d682219a5177a2f21d397e5c886ebb40e41b94670fd43e1881bf98f",
+   "current": "d08ea95d7d682219a5177a2f21d397e5c886ebb40e41b94670fd43e1881bf98f",
+   "matches": true
+  }
+ ],
+ "summary": {
+  "sourceMatch": 17,
+  "sourceTotal": 19,
+  "evidenceMatch": 8,
+  "evidenceTotal": 8,
+  "runtimeRolesMatch": "9/9",
+  "driftAffectsCapturePath": false,
+  "currentTreeSuites": "7 files / 239 tests passed (4 capture suites + BlshTradeComparison, trade, market)",
+  "missingFromRepo": "Nov 13 'private capture lane' re-verification receipt cited in the Master Task List is not in the repo or the side-session notes; the latest on-disk receipt is the 11-12 baseline above."
+ }
+}

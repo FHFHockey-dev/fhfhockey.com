@@ -1,0 +1,4 @@
+QUERY PLAN
+Limit  (cost=0.00..97.79 rows=1000 width=8)
+  ->  Seq Scan on rosters  (cost=0.00..127.91 rows=1308 width=8)
+"        Filter: (is_current AND (""seasonId"" = 20262027))"

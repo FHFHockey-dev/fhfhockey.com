@@ -1,0 +1,86 @@
+{
+  "rows": 28,
+  "selectedProvenDates": 6,
+  "selectedWithheld": 18,
+  "statusCounts": {
+    "unproven": 21,
+    "proven": 7
+  },
+  "groups": {
+    "a5816ce6d1eeeba4b7213d1f66c96025f0b5818e|9b1821fff8b64983f5e28c572a054cdc7d49f2a320b8e2e18dec514e4ad4c219": {
+      "count": 7,
+      "dates": [
+        "2026-11-15",
+        "2026-11-14",
+        "2026-11-13",
+        "2026-11-12",
+        "2026-11-11",
+        "2026-11-10",
+        "2026-11-09"
+      ],
+      "createdDates": [
+        "2026-11-09",
+        "2026-11-09",
+        "2026-11-09",
+        "2026-11-09",
+        "2026-11-09",
+        "2026-11-09",
+        "2026-11-09"
+      ],
+      "allStampShapesValid": true,
+      "allInvocationCountsMatch": true,
+      "allInvocationsSame": true,
+      "noLocalVersions": true,
+      "snapshotCount": 0,
+      "closureRegistered": false
+    },
+    "4965a872a9746b6129c9ac589c200560d01a1e23|cda1026d4113c98b87f7597ae2dc452549f69ae0e18f00017867ebfc799526d6": {
+      "count": 6,
+      "dates": [
+        "2026-11-04",
+        "2026-11-04",
+        "2026-11-03",
+        "2026-11-03",
+        "2026-11-02",
+        "2026-11-02"
+      ],
+      "createdDates": [
+        "2026-10-31",
+        "2026-10-30",
+        "2026-10-31",
+        "2026-10-30",
+        "2026-10-31",
+        "2026-10-30"
+      ],
+      "allStampShapesValid": true,
+      "allInvocationCountsMatch": true,
+      "allInvocationsSame": true,
+      "noLocalVersions": true,
+      "snapshotCount": 0,
+      "closureRegistered": false
+    },
+    "2126296d24e6f25378175aac1f4c22403799bca5|f550d727d6501fcd61ed27845695e316c482c42ae4bd3fcc97012ca1eb37d0a2": {
+      "count": 5,
+      "dates": [
+        "2026-11-04",
+        "2026-11-03",
+        "2026-11-03",
+        "2026-11-02",
+        "2026-11-02"
+      ],
+      "createdDates": [
+        "2026-10-29",
+        "2026-10-29",
+        "2026-10-28",
+        "2026-10-29",
+        "2026-10-28"
+      ],
+      "allStampShapesValid": true,
+      "allInvocationCountsMatch": true,
+      "allInvocationsSame": true,
+      "noLocalVersions": true,
+      "snapshotCount": 0,
+      "closureRegistered": false
+    }
+  }
+}

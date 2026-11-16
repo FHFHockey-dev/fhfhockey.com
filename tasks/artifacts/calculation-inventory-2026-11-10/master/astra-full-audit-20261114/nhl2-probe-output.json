@@ -1,0 +1,65 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "unknownGoal": {
+    "legacyBefore": {
+      "home": 0,
+      "away": 0,
+      "bucket": "tied"
+    },
+    "canonicalBefore": {
+      "homeScore": null,
+      "awayScore": null
+    }
+  },
+  "sameSecondBreak": {
+    "nstFaceoff": {
+      "isRush": true,
+      "source": 1,
+      "seconds": 4
+    },
+    "defaultStoppage": {
+      "isRush": true,
+      "source": 1
+    }
+  },
+  "controls": [
+    "One-second-earlier stoppage and NST faceoff both stop the rush",
+    "Known-owner goal increments both score implementations"
+  ],
+  "sources": [
+    {
+      "path": "web/lib/supabase/Upserts/nhlPlayByPlayParser.ts",
+      "sha256": "6febc33d13904db4c6cb6bff55fea50060688f825281e419ba719402e4889c08"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlStrengthState.ts",
+      "sha256": "10efefac1808c1ce3828c65bad54055b4d524b31d9acb647d5c006ffdc460c92"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlScoreState.ts",
+      "sha256": "94bad4da270d0120b355f71a5f7b99572da87d7ee5de3f911113e194bb05f789"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlRush.ts",
+      "sha256": "fdea92fd9f50730fd1ff1f0e595eeae0acb83cde0ae9c95e778af9d47432939c"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlEventInclusion.ts",
+      "sha256": "0e11a148cb7fc19776cee3a8e71c9133da5374ced082afbe142a7e2c126ea73e"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlRebounds.ts",
+      "sha256": "cbfef2f00165cda8755d37ab75f4b2b47f23452429595cec9a0481082e915152"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlPriorEventContext.ts",
+      "sha256": "e6442b0af70bfa3775f1d8b3009b05669d5a48d321e0560dcb3ea871adf655e4"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlCoordinates.ts",
+      "sha256": "471d25794eb557dbfd5e10eac6f679b9a137d6d4d76dff5ec0eea69ee076bcb1"
+    }
+  ],
+  "limits": "Exact frozen pure functions only; synthetic events parsed with frozen parser. Shot-feature caller source inspected, not executed. No application environment, Vitest, provider, database or live pages."
+}

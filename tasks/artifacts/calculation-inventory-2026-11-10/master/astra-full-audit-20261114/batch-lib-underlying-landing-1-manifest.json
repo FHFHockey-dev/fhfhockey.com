@@ -1,0 +1,141 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "files": [
+    {
+      "path": "web/lib/underlying-stats/playerStatsLandingServer.test.ts",
+      "sha256": "05f5fa3fc262c6559de1786a3bd6b4ea1464eaeac46dccb5ba567e280868706a",
+      "lines": 3537,
+      "fullRead": true,
+      "bytes": 104974,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          3537
+        ]
+      ],
+      "rows": 248
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsLandingServer.ts",
+      "sha256": "d3eac2444fff6ce88d26f1f57dd356b40bd8055eaf0a4c1ffdf6a0d5ac35a532",
+      "lines": 5737,
+      "fullRead": true,
+      "bytes": 175359,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          5737
+        ]
+      ],
+      "rows": 1137
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsQueries.ts",
+      "sha256": "9dbb71a7003de6048d62ac08e0f5da212afdfce7b35705b855cde96efacc44d3",
+      "lines": 538,
+      "fullRead": true,
+      "bytes": 13192,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          538
+        ]
+      ],
+      "rows": 129
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsRefreshWindow.test.ts",
+      "sha256": "68e49df85a06fcfe7047ca02a72d3ec41acc809e28ca4f13361a0d761c51316f",
+      "lines": 163,
+      "fullRead": true,
+      "bytes": 8576,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          163
+        ]
+      ],
+      "rows": 65
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsRefreshWindow.ts",
+      "sha256": "09519686ea7c0869f7068b16fa4d4dab139389da5c8ba7de1d6e1d3bb7db59e4",
+      "lines": 156,
+      "fullRead": true,
+      "bytes": 4753,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          156
+        ]
+      ],
+      "rows": 52
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsSummaryRefresh.test.ts",
+      "sha256": "0423c2664dbbda04d8e69e340c20effc20133ca11bd779164e34b714c8a8d33f",
+      "lines": 238,
+      "fullRead": true,
+      "bytes": 8497,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          238
+        ]
+      ],
+      "rows": 47
+    },
+    {
+      "path": "web/lib/underlying-stats/teamLandingDashboard.test.ts",
+      "sha256": "8eeb68755c3084c232d20ef4fa558d4c1b9af9cf5b84bcae572c39d610639cc1",
+      "lines": 138,
+      "fullRead": true,
+      "bytes": 3511,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          138
+        ]
+      ],
+      "rows": 10
+    },
+    {
+      "path": "web/lib/underlying-stats/teamLandingDashboard.ts",
+      "sha256": "2d0142c0d068f5f5f8117ca5f247df29a67f6bd87f7c0a9423449545c2106317",
+      "lines": 367,
+      "fullRead": true,
+      "bytes": 9754,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          367
+        ]
+      ],
+      "rows": 125
+    }
+  ],
+  "scopeLines": 10874,
+  "rows": 1813,
+  "probe": "underlying2-probe-output.json",
+  "checks": [
+    "Eight full frozen source reads",
+    "Unique AST source-offset identities",
+    "Exact frozen landing and pure dependencies; finite in-memory query doubles; timing, fallback admission/penalty/chance, nullable pooling, cache, revision and coverage counterexamples plus controls passed; supplied tests not executed"
+  ],
+  "notRun": [
+    "Vitest",
+    "real database/provider",
+    "real loaders, live finality or card rendering",
+    "application imports or actual environment",
+    "browser/server/build",
+    "later Rankings exact-commit review"
+  ]
+}

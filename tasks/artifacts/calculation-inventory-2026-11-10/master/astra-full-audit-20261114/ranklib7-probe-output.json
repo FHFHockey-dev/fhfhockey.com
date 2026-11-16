@@ -1,0 +1,51 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "opponentPositionGap": {
+    "beforeShare": 0.5,
+    "afterShare": 1,
+    "opponentCoverage": "complete",
+    "unknownTeamCoverage": "partial",
+    "nightlyTreatsAsDone": true
+  },
+  "unassignedPp": {
+    "share": 50,
+    "status": "complete",
+    "knownAssignmentShare": 33.333333
+  },
+  "missingBothSources": {
+    "fixtureFinalGames": 5,
+    "reportedCoverage": {
+      "eligibleGames": 4,
+      "coveredGames": 4,
+      "complete": true
+    },
+    "xgf": {
+      "rawValue": 66.666667,
+      "formattedValue": "66.7%",
+      "rank": 1,
+      "percentile": 50,
+      "qualifiedPeerCount": 1,
+      "lowerIsBetter": false
+    }
+  },
+  "partialContext": {
+    "knownPpGames": 1,
+    "reportedGames": 5,
+    "floor": 5,
+    "pp": {
+      "rawValue": 4,
+      "formattedValue": "4.00",
+      "rank": 1,
+      "percentile": 50,
+      "qualifiedPeerCount": 1,
+      "lowerIsBetter": false
+    },
+    "warnings": [
+      "nst_5v5_coverage_incomplete:4/5",
+      "team_unit_toi_source_missing",
+      "raw_contextual_team_style"
+    ]
+  },
+  "limits": "Exact frozen team builder, nightly pure completion, style, ranking and complete matrix modules. Synthetic in-memory read adapter enforces query filters/order/page limits. No real DB, providers, app imports, environments, browser, server, build or Vitest. OFF finality is synthetic oracle data ignored by the source; this adapter does not project selected columns."
+}

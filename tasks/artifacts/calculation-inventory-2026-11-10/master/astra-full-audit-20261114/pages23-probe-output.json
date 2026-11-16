@@ -1,0 +1,30 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "finding": {
+    "id": "AFULL-DBPAGE1-01",
+    "failedCountDisplay": {
+      "players": 0,
+      "seasons": 0,
+      "teams": 0
+    },
+    "trueZeroDisplay": {
+      "players": 0,
+      "seasons": 0,
+      "teams": 0
+    }
+  },
+  "controls": {
+    "knownCount": 7,
+    "forward": "2 requests and 21000 ms requested delay",
+    "failure": "stops after one",
+    "repeatedCursor": "stops before repeated request",
+    "cancel": "zero requests",
+    "backward": "preserved start, decremented cursor, resumed count"
+  },
+  "source": {
+    "path": "web/pages/db/index.tsx",
+    "sha256": "0542c1bfbb2c9a16ea956002c36839fd7b4e2a85c8355327a810b3df0460e694"
+  },
+  "boundary": "Exact frozen effect body/runner declarations with inert query, POST, persistence, cancellation and delay bindings. No real timers, storage, DB, provider, application import, browser or supplied suite."
+}

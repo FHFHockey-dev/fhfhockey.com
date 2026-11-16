@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-11-12T23:53:14.267236+00:00",
+  "base": "4243bcd4e29889c035e832562e25850d14af0ee1",
+  "currentLocalHead": "17f76b1d022a60a64a2d5393ec3ff23e9f15d132",
+  "localMaster": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5",
+  "commitSha": null,
+  "reviewTree": "19380bb95bae3a81734a9c2111c837ab49a84a9d",
+  "patchSha256": "38e219a5ef8b6704f12d7a013bd2a862fda09620a381a4fc20e18240a8f64a38",
+  "applyCheck": "clean on current remote production master; all four candidate hashes reproduced",
+  "files": [
+    {
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "sha256": "d9686db26902c2142fd1cbcc03af5fed6125a80514631326a5212c9892d52b5b"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "sha256": "5221ba9cc28cd921f503a12766d37696b1bcff63b56965e9cbe89c8cb192d50a"
+    },
+    {
+      "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "sha256": "2cc4b3dc0fc9f0a45f3d774341015c229261dc4f1e3cbd301aa163c6b1e229fb"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/streamingChain.test.ts",
+      "sha256": "1c950421d3612a87a229991dd226f3fd0b1d1cc96a2ab0d7e849773865e42232"
+    }
+  ],
+  "localVsReleaseFiles": "no committed differences in these four paths or RSO runtime directory",
+  "actions": "isolated temporary Git index only; immutable tree objects; no worktree/source/index/ref changes or commit"
+}

@@ -1,0 +1,138 @@
+{
+  "target": "89da739cb",
+  "source": {
+    "path": "web/lib/game-predictions/accountability.ts",
+    "sha256": "ee2692e4343f52c12bfc94583cadde4175e9b3c03e33e2cc03e1878e6f7885ae"
+  },
+  "extracted": [
+    {
+      "name": "boundedEdgeProbability",
+      "line": 1363
+    },
+    {
+      "name": "buildBaselineComparison",
+      "line": 1550
+    },
+    {
+      "name": "buildBacktestBaselineComparisons",
+      "line": 1593
+    },
+    {
+      "name": "isRecord",
+      "line": 813
+    },
+    {
+      "name": "parseDateTimeWithGameDate",
+      "line": 617
+    },
+    {
+      "name": "persistedFeatureSnapshotRowToPayload",
+      "line": 3165
+    },
+    {
+      "name": "fetchPersistedFeatureSnapshotPayload",
+      "line": 3210
+    },
+    {
+      "name": "syntheticBacktestPredictionCutoffAt",
+      "line": 670
+    },
+    {
+      "name": "parseDateTimeWithGameDate",
+      "line": 617
+    },
+    {
+      "name": "sortPredictions",
+      "line": 1384
+    },
+    {
+      "name": "finalPregamePredictions",
+      "line": 1398
+    },
+    {
+      "name": "teamAbbreviation",
+      "line": 1377
+    },
+    {
+      "name": "roundMetric",
+      "line": 589
+    },
+    {
+      "name": "buildPredictionCandlestick",
+      "line": 1420
+    },
+    {
+      "name": "fetchAccountabilityDashboard",
+      "line": 2396
+    },
+    {
+      "name": "persistBacktestResult",
+      "line": 3716
+    }
+  ],
+  "missingBenchmark": {
+    "key": "team_power_composite",
+    "label": "Team power composite",
+    "evaluatedGames": 1,
+    "correctGames": 0,
+    "wrongGames": 0,
+    "tieGames": 1,
+    "accuracy": null,
+    "brierScore": 0.25,
+    "logLoss": null,
+    "averagePrediction": 0.5
+  },
+  "clippedMarketBenchmark": {
+    "key": "market_no_vig_moneyline",
+    "label": "Market no-vig moneyline",
+    "evaluatedGames": 1,
+    "correctGames": 1,
+    "wrongGames": 0,
+    "tieGames": 0,
+    "accuracy": null,
+    "brierScore": 0.0025000000000000044,
+    "logLoss": null,
+    "averagePrediction": 0.95
+  },
+  "replayCutoff": {
+    "prediction": "2026-01-10T22:00:00.000Z",
+    "acceptedPayload": "2026-01-10T22:30:00Z",
+    "explicitMaxGuardRejects": true
+  },
+  "history": {
+    "requestedGames": 1,
+    "returnedFinal": "p5",
+    "completeFinal": "p6",
+    "returnedProbability": 0.6,
+    "completeProbability": 0.9,
+    "reads": [
+      "game_prediction_history",
+      [
+        "limit",
+        5
+      ],
+      "games",
+      "teams"
+    ]
+  },
+  "persistence": {
+    "writes": [
+      {
+        "table": "game_prediction_model_versions",
+        "operation": "upsert"
+      },
+      {
+        "table": "game_prediction_backtest_runs",
+        "operation": "insert",
+        "status": "completed"
+      },
+      {
+        "table": "game_prediction_accountability_games",
+        "operation": "insert",
+        "status": null
+      }
+    ],
+    "childFailurePropagated": true
+  },
+  "scope": "in-memory doubles only; metrics helper independently stubbed for input capture; no application model, fitting, client or SQL"
+}

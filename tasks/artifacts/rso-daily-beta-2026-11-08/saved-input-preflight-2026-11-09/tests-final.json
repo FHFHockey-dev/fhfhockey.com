@@ -1,0 +1,19 @@
+{
+  "startedAt": "2026-11-09T15:25:14.137826+00:00",
+  "finishedAt": "2026-11-09T15:25:18.117710+00:00",
+  "command": [
+    "node",
+    "-r",
+    "ts-node/register",
+    "-r",
+    "tsconfig-paths/register",
+    "--test",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/inspect-saved-planning.test.ts"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "node": "v22.23.4",
+  "exitCode": 0,
+  "durationSeconds": 4.0,
+  "typeChecking": true,
+  "inputs": "Synthetic saved response fixtures only; inert environment and outbound guard."
+}

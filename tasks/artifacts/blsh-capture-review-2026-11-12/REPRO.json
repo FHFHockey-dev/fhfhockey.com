@@ -1,0 +1,264 @@
+{
+  "checkedAtUTC": "2026-11-12T17:47:06.587Z",
+  "node": "v22.23.4",
+  "probeSHA256": "327e28849eb49a3c4dad973c5e5ccbd2e88788b6e50b3c0902f5e0bb87883320",
+  "sourceSHA256": {
+    "runner": "f0cad82ee881c9b7c9900527910410c83311017a57479a8df76cbe50813ed8a8",
+    "preparation": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+    "adapter": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+    "client": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+    "budget": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+    "admission": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+    "admissionOrigin": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+    "lifecycle": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+    "ratePolicy": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c"
+  },
+  "realNetworkAttempts": 0,
+  "realLedgerOperations": 0,
+  "reports": [
+    {
+      "kind": "corrected_permit_fence",
+      "outcome": "native_capture_incomplete_see_retained_packet",
+      "injected": true,
+      "calls": [
+        {
+          "operation": "schedule",
+          "wall": 1794505626165,
+          "monotonic": 422.955166,
+          "monotonicSinceStartMs": 58.298374999999965,
+          "startedFileFsynced": true,
+          "packetDirectoryFsyncedAfterStartedFile": false,
+          "startedFile": "packet/operation-1-STARTED.json"
+        },
+        {
+          "operation": "nst_admit_attempt_v1",
+          "wall": 1794505626190,
+          "monotonic": 447.841541,
+          "monotonicSinceStartMs": 83.18337500000001,
+          "startedFileFsynced": true,
+          "packetDirectoryFsyncedAfterStartedFile": false,
+          "startedFile": "packet/operation-2-STARTED.json"
+        }
+      ],
+      "memoryBudgetTransactions": 2,
+      "providerCount": 0,
+      "providerSpacingWallMs": null,
+      "providerSpacingMonotonicMs": null,
+      "completionManifestExists": false,
+      "failureReceiptExists": true,
+      "attemptedOperationStates": [
+        {
+          "operation": "schedule",
+          "state": "settled"
+        },
+        {
+          "operation": "admission:individual",
+          "state": "settled"
+        },
+        {
+          "operation": "nst:individual",
+          "state": "uncertain"
+        }
+      ],
+      "note": "Clock changes are injected fixtures; no real elapsed 121-second wait and no crash/power-cut simulation."
+    },
+    {
+      "kind": "corrected_work_fence",
+      "outcome": "native_capture_incomplete_see_retained_packet",
+      "injected": true,
+      "calls": [
+        {
+          "operation": "schedule",
+          "wall": 1794505626263,
+          "monotonic": 520.53,
+          "monotonicSinceStartMs": 56.22745800000001,
+          "startedFileFsynced": true,
+          "packetDirectoryFsyncedAfterStartedFile": false,
+          "startedFile": "packet/operation-1-STARTED.json"
+        },
+        {
+          "operation": "nst_admit_attempt_v1",
+          "wall": 1794505626289,
+          "monotonic": 546.672291,
+          "monotonicSinceStartMs": 82.369708,
+          "startedFileFsynced": true,
+          "packetDirectoryFsyncedAfterStartedFile": false,
+          "startedFile": "packet/operation-2-STARTED.json"
+        }
+      ],
+      "memoryBudgetTransactions": 2,
+      "providerCount": 0,
+      "providerSpacingWallMs": null,
+      "providerSpacingMonotonicMs": null,
+      "completionManifestExists": false,
+      "failureReceiptExists": true,
+      "attemptedOperationStates": [
+        {
+          "operation": "schedule",
+          "state": "settled"
+        },
+        {
+          "operation": "admission:individual",
+          "state": "settled"
+        },
+        {
+          "operation": "nst:individual",
+          "state": "uncertain"
+        }
+      ],
+      "note": "Clock changes are injected fixtures; no real elapsed 121-second wait and no crash/power-cut simulation."
+    },
+    {
+      "kind": "journal_before_begin",
+      "outcome": "native_capture_incomplete_see_retained_packet",
+      "injected": false,
+      "calls": [
+        {
+          "operation": "schedule",
+          "wall": 1794505626364,
+          "monotonic": 622.319833,
+          "monotonicSinceStartMs": 59.27083399999992,
+          "startedFileFsynced": true,
+          "packetDirectoryFsyncedAfterStartedFile": false,
+          "startedFile": "packet/operation-1-STARTED.json"
+        },
+        {
+          "operation": "nst_job_begin_v1",
+          "wall": 1794505626385,
+          "monotonic": 642.437916,
+          "monotonicSinceStartMs": 79.388959,
+          "startedFileFsynced": true,
+          "packetDirectoryFsyncedAfterStartedFile": false,
+          "startedFile": "packet/operation-2-STARTED.json"
+        }
+      ],
+      "memoryBudgetTransactions": 0,
+      "providerCount": 0,
+      "providerSpacingWallMs": null,
+      "providerSpacingMonotonicMs": null,
+      "completionManifestExists": false,
+      "failureReceiptExists": true,
+      "attemptedOperationStates": [
+        {
+          "operation": "schedule",
+          "state": "settled"
+        },
+        {
+          "operation": "begin",
+          "state": "uncertain"
+        }
+      ],
+      "note": "Clock changes are injected fixtures; no real elapsed 121-second wait and no crash/power-cut simulation."
+    },
+    {
+      "kind": "forward_clock_spacing",
+      "outcome": "native_capture_incomplete_see_retained_packet",
+      "injected": true,
+      "calls": [
+        {
+          "operation": "schedule",
+          "wall": 1794505626451,
+          "monotonic": 708.729666,
+          "monotonicSinceStartMs": 59.98670800000002,
+          "startedFileFsynced": true,
+          "packetDirectoryFsyncedAfterStartedFile": false,
+          "startedFile": "packet/operation-1-STARTED.json"
+        },
+        {
+          "operation": "nst_admit_attempt_v1",
+          "wall": 1794505626472,
+          "monotonic": 729.772791,
+          "monotonicSinceStartMs": 81.02983300000005,
+          "startedFileFsynced": true,
+          "packetDirectoryFsyncedAfterStartedFile": false,
+          "startedFile": "packet/operation-2-STARTED.json"
+        },
+        {
+          "operation": "nst:individual",
+          "wall": 1794505626481,
+          "monotonic": 739.376958,
+          "monotonicSinceStartMs": 90.63404100000002,
+          "startedFileFsynced": true,
+          "packetDirectoryFsyncedAfterStartedFile": false,
+          "startedFile": "packet/operation-3-STARTED.json"
+        },
+        {
+          "operation": "nst_admit_attempt_v1",
+          "wall": 1794505648505,
+          "monotonic": 763.2645,
+          "monotonicSinceStartMs": 114.52158299999996,
+          "startedFileFsynced": true,
+          "packetDirectoryFsyncedAfterStartedFile": false,
+          "startedFile": "packet/operation-4-STARTED.json"
+        },
+        {
+          "operation": "nst:onIce",
+          "wall": 1794505648519,
+          "monotonic": 776.722875,
+          "monotonicSinceStartMs": 127.98016600000005,
+          "startedFileFsynced": true,
+          "packetDirectoryFsyncedAfterStartedFile": false,
+          "startedFile": "packet/operation-5-STARTED.json"
+        }
+      ],
+      "memoryBudgetTransactions": 4,
+      "providerCount": 2,
+      "providerSpacingWallMs": 22038,
+      "providerSpacingMonotonicMs": 37.3459170000001,
+      "completionManifestExists": false,
+      "failureReceiptExists": true,
+      "attemptedOperationStates": [
+        {
+          "operation": "schedule",
+          "state": "settled"
+        },
+        {
+          "operation": "admission:individual",
+          "state": "settled"
+        },
+        {
+          "operation": "nst:individual",
+          "state": "settled"
+        },
+        {
+          "operation": "admission:onIce",
+          "state": "settled"
+        },
+        {
+          "operation": "nst:onIce",
+          "state": "uncertain"
+        }
+      ],
+      "note": "Clock changes are injected fixtures; no real elapsed 121-second wait and no crash/power-cut simulation."
+    },
+    {
+      "kind": "whole_run_monotonic_expiry",
+      "outcome": "native_capture_incomplete_see_retained_packet",
+      "injected": true,
+      "calls": [
+        {
+          "operation": "schedule",
+          "wall": 1794505626581,
+          "monotonic": 121839.04175,
+          "monotonicSinceStartMs": 121055.141459,
+          "startedFileFsynced": true,
+          "packetDirectoryFsyncedAfterStartedFile": false,
+          "startedFile": "packet/operation-1-STARTED.json"
+        }
+      ],
+      "memoryBudgetTransactions": 0,
+      "providerCount": 0,
+      "providerSpacingWallMs": null,
+      "providerSpacingMonotonicMs": null,
+      "completionManifestExists": false,
+      "failureReceiptExists": true,
+      "attemptedOperationStates": [
+        {
+          "operation": "schedule",
+          "state": "uncertain"
+        }
+      ],
+      "note": "Clock changes are injected fixtures; no real elapsed 121-second wait and no crash/power-cut simulation."
+    }
+  ]
+}

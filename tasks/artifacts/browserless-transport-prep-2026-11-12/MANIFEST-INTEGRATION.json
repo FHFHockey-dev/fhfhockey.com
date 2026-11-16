@@ -1,0 +1,116 @@
+{
+  "checkedAt": "2026-11-12T18:17:42.880190+00:00",
+  "status": "applied and locally verified; ownership released to parent",
+  "branch": "octoberBranch",
+  "head": "24b1cb4d3048a3dba8234cf92c62e8f2b72f877f",
+  "targets": [
+    "web/package.json",
+    "web/package-lock.json"
+  ],
+  "authorization": "Parent continuation explicitly permits necessary declarations when ownership is demonstrably free.",
+  "leaseCheck": {
+    "registers": [
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json",
+        "sha256": "e12c1d7dcc5f5d1d6d7b44ed46ff03aeac039471d89acaf0e772084b01d6f316"
+      },
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-LEASES.json",
+        "sha256": "65b919defa9e62a7037a8728248278a88067007f5be89559d7104e9a9973d4bf"
+      }
+    ],
+    "blockingOwner": null,
+    "finding": "No exact manifest holder; package/lockfiles coordination boundary honored by direct peer handoff."
+  },
+  "directCoordination": {
+    "mechanism": "Supported desktop list_threads/read_thread/send_message_to_thread using observed IDs and hostIds; peer-authored acknowledgment files.",
+    "activePeerCount": 4,
+    "acknowledgments": [
+      {
+        "path": "tasks/artifacts/browserless-transport-prep-2026-11-12/manifest-ack-01a1d067-c22d-7c11-af65-28435ec7426e.md",
+        "sha256": "f4205944c0df8101ba5573bf535b7e56b9015ffae79c19cc381b33175e997a59"
+      },
+      {
+        "path": "tasks/artifacts/browserless-transport-prep-2026-11-12/manifest-ack-6af5fab0-ff80-8191-bd87-92341a31c02e.md",
+        "sha256": "a0f54df6eb540723a76c5c84c7cd70bba12e1a2f4b8acd3155f5f9288047d07a"
+      },
+      {
+        "path": "tasks/artifacts/browserless-transport-prep-2026-11-12/manifest-ack-6af5fabb-bf6c-8191-b4d8-0c7c2879a038.md",
+        "sha256": "f53f7d742352ddf876975afe12fe9165c0f738da9121e8cd2d005472eb50d1a7"
+      },
+      {
+        "path": "tasks/artifacts/browserless-transport-prep-2026-11-12/manifest-ack-6af5fac7-0d64-8191-92a9-0cad48abe027.md",
+        "sha256": "2e692fd9afa672c353c2c54d7ac50c93f33f250be037cd91b3025889916f3237"
+      }
+    ],
+    "openFileCheck": "lsof returned no descriptors for either exact manifest (exit 1); no claim this alone proves absence of a concurrent writer.",
+    "handback": "Completion/custody-release notice delivered to all four acknowledged peers through the same supported thread IDs/hosts."
+  },
+  "baselineHashes": {
+    "web/package.json": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+    "web/package-lock.json": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378"
+  },
+  "finalHashes": {
+    "web/package.json": "788c8984a6270e8f8f519735a97650190efb8d64af6624d959fa0d0841171853",
+    "web/package-lock.json": "ef0d84a8ed579c2d7aab945ec5239fc8d7263e02e323785c35c6535febf78ca8"
+  },
+  "patch": {
+    "path": "tasks/artifacts/browserless-transport-prep-2026-11-12/dependency-declarations.patch",
+    "sha256": "a17876fa6b0e886e9ab65c0855bb871b1c417e882747007f08346d41a8463334",
+    "applied": true,
+    "reverseApplyCheck": "passed"
+  },
+  "diff": {
+    "files": 2,
+    "insertions": 4,
+    "deletions": 0,
+    "scope": "ws 8.21.1 dependency and @types/ws 8.18.1 devDependency in package.json and lock root only"
+  },
+  "checks": {
+    "jsonStructuralComparison": "passed: removing exactly the four added declarations makes both parsed files identical to HEAD baselines; entire lock package tree otherwise unchanged",
+    "installedAndLockVersions": "passed",
+    "actualModuleLoad": "passed: require(ws) and require(puppeteer-core), no socket constructed",
+    "lockfileNpmLs": {
+      "command": "npm ls --offline --package-lock-only --depth=0 ws @types/ws",
+      "status": "passed",
+      "exitCode": 0,
+      "versions": {
+        "ws": "8.21.1",
+        "@types/ws": "8.18.1"
+      }
+    },
+    "installedTreeNpmLs": {
+      "command": "npm ls --offline --depth=0 ws @types/ws",
+      "status": "failed",
+      "exitCode": 1,
+      "output": "web@0.1.0; (empty)",
+      "cause": "Resolved offline: pre-existing October 20 self-referencing node_modules/node_modules symlink causes Arborist to reparent installed children beneath the link; depth-zero results are empty. Not missing candidate dependencies.",
+      "followupDiagnosis": "NPM-DIAGNOSIS.json"
+    },
+    "gitDiffCheck": "passed",
+    "reviewedSourceAndPatchHashes": "unchanged; existing 80-fixture/scoped lint/scoped TS and independent re-review evidence reused"
+  },
+  "candidateHashes": {
+    "web/lib/lines/browserlessTransport.ts": "e5a10d123352692b86d116b026a50cfbf6301ba4b91cb373b2d27ee82ba46032",
+    "web/lib/lines/browserlessTransport.test.ts": "f64540bde0ebe715eb95280fa6edfbec56180b960d8d3258962143476f3d7dfc",
+    "web/lib/lines/webhookErrorDiagnostic.ts": "ae67ac61a862946593253dd71ee7341ad29ba9f8f3ff7296f39892fdb72c478f",
+    "web/lib/lines/webhookErrorDiagnostic.test.ts": "57fc5cabf77a6d7dd1e383c14b3f5918ca48b7e9eddf465df8c26dfce0bc9fe7",
+    "web/pages/api/v1/webhooks/on-new-line-combo.ts": "5b25812bc291c1e7cfc8be0d819aca9284c21730b8801f00209c9e6d18fdf5e7",
+    "web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts": "ea625c495a098131f74ea49131ad918a1e91edfe323823279948997825cee80a",
+    "tasks/artifacts/browserless-transport-prep-2026-11-12/dependency-declarations.patch": "a17876fa6b0e886e9ab65c0855bb871b1c417e882747007f08346d41a8463334",
+    "web/package.json": "788c8984a6270e8f8f519735a97650190efb8d64af6624d959fa0d0841171853",
+    "web/package-lock.json": "ef0d84a8ed579c2d7aab945ec5239fc8d7263e02e323785c35c6535febf78ca8"
+  },
+  "notRun": [
+    "dependency install or update",
+    "cache repair",
+    "clean install",
+    "application build",
+    "live TLS/provider checks",
+    "credential rotation",
+    "live configuration change",
+    "deployment"
+  ],
+  "rolloutPlan": "ROLLOUT.md",
+  "liveServiceActions": 0
+}

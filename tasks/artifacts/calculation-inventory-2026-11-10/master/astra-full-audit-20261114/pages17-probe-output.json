@@ -1,0 +1,378 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "defaultSeason": {
+    "selected": 20242025,
+    "rows": 10,
+    "knownCurrentRows": 12,
+    "fallback": true,
+    "explicitSeasonControlRows": 12,
+    "boundary": "Exact SSR; finite table/query double, exact season window; NST/team-resolution/date/page-fetch dependencies doubled. No source completeness claim."
+  },
+  "starter": {
+    "knownStarterFlag": false,
+    "toi": "00:00",
+    "displayStatus": "Starter"
+  },
+  "headToHeadDate": {
+    "input": "2026-11-14",
+    "timezone": "America/New_York",
+    "display": "Nov 13, 2026",
+    "existingFinding": "AFULL-UNDER18-02"
+  },
+  "legacySort": {
+    "suppliedAscending": [
+      1,
+      2
+    ],
+    "displayed": [
+      2,
+      1
+    ]
+  },
+  "controls": {
+    "emptyStarter": null,
+    "explicitStarterId": 2,
+    "unknownBar": null,
+    "zeroBars": 50,
+    "homeShare": 75,
+    "savePercent": ".900"
+  },
+  "queries": [
+    {
+      "table": "players",
+      "ops": [
+        [
+          "eq",
+          "id",
+          1
+        ]
+      ],
+      "returned": 1
+    },
+    {
+      "table": "wgo_skater_stats_totals",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "seasons",
+      "ops": [
+        [
+          "eq",
+          "id",
+          20242025
+        ]
+      ],
+      "returned": 1
+    },
+    {
+      "table": "nst_gamelog_as_counts",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ],
+        [
+          "eq",
+          "season",
+          20242025
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "nst_gamelog_as_counts_oi",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ],
+        [
+          "eq",
+          "season",
+          20242025
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "nst_gamelog_as_rates",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ],
+        [
+          "eq",
+          "season",
+          20242025
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "nst_gamelog_as_rates_oi",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ],
+        [
+          "eq",
+          "season",
+          20242025
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "wgo_skater_stats_playoffs",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "wgo_skater_stats",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ],
+        [
+          "eq",
+          "season_id",
+          20242025
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "wgo_skater_stats",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ]
+      ],
+      "returned": 10
+    },
+    {
+      "table": "player_lineup_deployment_tallies",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ],
+        [
+          "eq",
+          "season_id",
+          20242025
+        ],
+        [
+          "eq",
+          "game_type",
+          2
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "players",
+      "ops": [
+        [
+          "eq",
+          "id",
+          1
+        ]
+      ],
+      "returned": 1
+    },
+    {
+      "table": "wgo_skater_stats_totals",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "seasons",
+      "ops": [
+        [
+          "eq",
+          "id",
+          20262027
+        ]
+      ],
+      "returned": 1
+    },
+    {
+      "table": "nst_gamelog_as_counts",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ],
+        [
+          "eq",
+          "season",
+          20262027
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "nst_gamelog_as_counts_oi",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ],
+        [
+          "eq",
+          "season",
+          20262027
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "nst_gamelog_as_rates",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ],
+        [
+          "eq",
+          "season",
+          20262027
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "nst_gamelog_as_rates_oi",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ],
+        [
+          "eq",
+          "season",
+          20262027
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "wgo_skater_stats_playoffs",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "wgo_skater_stats",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ],
+        [
+          "eq",
+          "season_id",
+          20262027
+        ]
+      ],
+      "returned": 12
+    },
+    {
+      "table": "games",
+      "ops": [
+        [
+          "eq",
+          "seasonId",
+          20262027
+        ]
+      ],
+      "returned": 0
+    },
+    {
+      "table": "player_lineup_deployment_tallies",
+      "ops": [
+        [
+          "eq",
+          "player_id",
+          1
+        ],
+        [
+          "eq",
+          "season_id",
+          20262027
+        ],
+        [
+          "eq",
+          "game_type",
+          2
+        ]
+      ],
+      "returned": 0
+    }
+  ],
+  "sources": [
+    {
+      "path": "web/components/PlayerStats/playerStatsContract.ts",
+      "sha256": "e31b486bb6ebe31ba7c40fbdf303338212e90787941dc4a89f8a7ddce2de365e"
+    },
+    {
+      "path": "web/pages/stats/player/[playerId].tsx",
+      "sha256": "aee5eaf67def1d7b5ab38593e704a89b2cbbc95293595de9703cfc53d514a6e7"
+    },
+    {
+      "path": "web/pages/stats/game/[gameId].tsx",
+      "sha256": "948da061909d8d4fed628207bd94aecb7c2b49a85c21ea819e49ca0f9c84e2f2"
+    },
+    {
+      "path": "web/pages/stats/game/[gameId].tsx",
+      "sha256": "948da061909d8d4fed628207bd94aecb7c2b49a85c21ea819e49ca0f9c84e2f2"
+    },
+    {
+      "path": "web/pages/statsPlaceholder.tsx",
+      "sha256": "f4d453b691be881552e8d3d80c84c61a05a61068d14160e8a2f74fe6f34fa297"
+    }
+  ],
+  "boundary": "No actual DB/provider/page/client/environment value/suite or application source change."
+}

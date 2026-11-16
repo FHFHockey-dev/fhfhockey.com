@@ -1,0 +1,26 @@
+[
+  {
+    "path": "web/__tests__/pages/nhl-predictions.test.tsx",
+    "lines": 310,
+    "sha256": "78431105ef4dd42bb92193c65f1827cee9b6f552396cee2261d35ce78d73a699",
+    "targetMatch": true
+  },
+  {
+    "path": "web/__tests__/pages/rankings.test.tsx",
+    "lines": 2341,
+    "sha256": "24cb7433184acd1fe7d21b4ece79fcc234ac2d90bfbc3b9ee578e3b381a7b9d3",
+    "targetMatch": true
+  },
+  {
+    "path": "web/__tests__/pages/splits/index.test.tsx",
+    "lines": 196,
+    "sha256": "3bc1acdfbfb326ef736eacac7e9a6211ff5383e8c1b9dc8b960f8d3f0dfe75cf",
+    "targetMatch": true
+  },
+  {
+    "path": "web/__tests__/pages/start-chart.test.tsx",
+    "lines": 1720,
+    "sha256": "c81d85ab366ac3b6a60cc30c711b25178468193e8cb1003ef0507ddcdcb62deb",
+    "targetMatch": true
+  }
+]

@@ -1,0 +1,4 @@
+psql:/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/tmpe9zi7yoe.sql:10: ERROR:  column "created_at" does not exist
+LINE 1: ...' union all select 'final_pregame', count(*), max(created_at...
+                                                             ^
+

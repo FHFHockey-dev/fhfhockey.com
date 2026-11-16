@@ -1,0 +1,96 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "reader": {
+    "rowCap": 1000,
+    "requestedPageSize": 2000,
+    "total": 3000,
+    "ranges": [
+      [
+        0,
+        1999
+      ],
+      [
+        2000,
+        3999
+      ]
+    ],
+    "pages": [
+      {
+        "count": 1000,
+        "first": 1,
+        "last": 1000,
+        "pagination": {
+          "page": 1,
+          "pageSize": 2000,
+          "total": 3000,
+          "hasPrevious": false,
+          "hasMore": true
+        }
+      },
+      {
+        "count": 1000,
+        "first": 2001,
+        "last": 3000,
+        "pagination": {
+          "page": 2,
+          "pageSize": 2000,
+          "total": 3000,
+          "hasPrevious": true,
+          "hasMore": false
+        }
+      }
+    ],
+    "omittedIds": "1001..2000",
+    "gate": "Explicit synthetic enabled flag; actual flag not read"
+  },
+  "writer": {
+    "invalid": {
+      "upserts": 2,
+      "playerIds": [
+        1,
+        2
+      ],
+      "filtered": false
+    },
+    "validMissingIdControl": {
+      "rowsWritten": 0,
+      "filter": [
+        "player_id",
+        [
+          999
+        ]
+      ]
+    },
+    "boundary": "Inner handler with prerequisites/lease/admission not exercised; finite query/upsert doubles; operational reader/writer default pause retained"
+  },
+  "controls": {
+    "midrankPercentile": 40,
+    "missingValue": null,
+    "constantShortMultiplier": 1,
+    "missingWindowPace": null
+  },
+  "sources": [
+    {
+      "path": "web/lib/predictions/legacyQuarantine.ts",
+      "sha256": "46a69e81596331389da09bfa3e52f59cab451cc64c4caca23aecd379bf9e6b4f"
+    },
+    {
+      "path": "web/pages/api/v1/ml/get-predictions-sko.ts",
+      "sha256": "7d69b417d90deca63e48f2a02724754481b67158f3a4332a84923ebce40a9ccb"
+    },
+    {
+      "path": "web/pages/api/v1/ml/update-predictions-sko.ts",
+      "sha256": "6528676686419feadacbd5aacd27283001c8045178658cd63f8204fcad443d9a"
+    },
+    {
+      "path": "web/utils/calculatePercentiles.ts",
+      "sha256": "ec46e70a8ac6323c50b2531ae1a9de719ae60e2ec10d344a74c3588e477b52b2"
+    },
+    {
+      "path": "web/pages/api/v1/player/[id]/percentile-rank.ts",
+      "sha256": "a6f93060ceffa79278d59c3928cc024a0a14b03dd5154955ee4f0dcb2584e502"
+    }
+  ],
+  "boundary": "Exact frozen source VM, pure ranking/VDP. No actual DB/provider/appclient/envvalues/pages/suites."
+}
