@@ -12,6 +12,7 @@ import {
   buildScheduleContextFeatures,
   rosterFormBlendWeights,
   type GamePredictionFeatureInputs,
+  type LinesCccRow,
   type NstTeamGamelogRow,
 } from "./featureBuilder";
 import {
@@ -1491,6 +1492,11 @@ describe("game prediction feature builder", () => {
             goalie_1_name: "Confirmed Starter",
             goalie_2_player_id: null,
             goalie_2_name: null,
+            metadata: {
+              goalieStates: [
+                { name: "Confirmed Starter", playerId: 999, state: "confirmed", role: "starter", slot: null, observation: null, source: "event", stored: true },
+              ],
+            },
           },
         ],
       }),
@@ -1928,5 +1934,122 @@ describe("recent-form windows need matched support (BC W1-10 A partial rows)", (
     expect(form.last5.xgfPct).toBeCloseTo(3 / 8, 12);
     expect(form.last5.xgaPer60).toBeCloseTo(5 / 2, 12);
     expect(form.last5.pointPct).toBe(0.5);
+  });
+});
+
+// AFULL-GAME3-02: an accepted Lines CCC row is a source, not a starter confirmation. Only a goalie the source
+// explicitly confirmed (metadata.goalieStates state "confirmed", not a backup) is a 100% starter; everything else
+// falls through to the projection hierarchy (team 1 fixture: unconfirmed projections, goalie 100 at 0.75).
+describe("Lines CCC goalies count as confirmed only on an explicit confirmed state (AFULL-GAME3-02)", () => {
+  const GAME = 2025020001;
+  type GoalieState = { name: string; playerId: number | null; state: string; role: "starter" | "backup" | null; slot?: number | null; stored?: boolean };
+  const state = (entry: GoalieState) => ({ slot: null, observation: null, source: "event", stored: true, ...entry });
+  const A = { name: "Goalie A", playerId: 901 };
+  const B = { name: "Goalie B", playerId: 902 };
+  const row = (args: { goalie1?: { name: string; playerId: number | null } | null; goalie2?: { name: string; playerId: number | null } | null;
+    states?: GoalieState[] | null; observedAt?: string; metadata?: LinesCccRow["metadata"] }): LinesCccRow => ({
+    game_id: GAME, team_id: 1, observed_at: args.observedAt ?? "2026-01-10T16:00:00+00:00", tweet_posted_at: null,
+    classification: "lines", status: "observed", nhl_filter_status: "accepted",
+    goalie_1_player_id: args.goalie1?.playerId ?? null, goalie_1_name: args.goalie1?.name ?? null,
+    goalie_2_player_id: args.goalie2?.playerId ?? null, goalie_2_name: args.goalie2?.name ?? null,
+    metadata: args.metadata !== undefined ? args.metadata : args.states === null ? null : { goalieStates: (args.states ?? []).map(state) },
+  });
+  const blend = (linesCccRows: LinesCccRow[]) =>
+    buildGoalieBlendFeatures(createInputs().goalieStartRows, 1, { gameId: GAME, linesCccRows });
+  const fellThrough = { source: "goalie_start_projections", confirmed: false, topGoalieId: 100, topGoalieStartProbability: 0.75 };
+
+  it("keeps a confirmed starter at probability 1 with zero uncertainty", () => {
+    expect(blend([row({ goalie1: A, goalie2: B, states: [{ ...A, state: "confirmed", role: "starter" }, { ...B, state: "listed", role: "backup", slot: 2 }] })]))
+      .toEqual(expect.objectContaining({ source: "lines_ccc", confirmed: true, candidateCount: 2, topGoalieId: 901, topGoalieName: "Goalie A",
+        topGoalieStartProbability: 1, startUncertainty: 0, probabilityMass: 1 }));
+    // A ✅ marker on a lone goalie row (role null) is the source's own confirmation.
+    expect(blend([row({ goalie1: A, states: [{ ...A, state: "confirmed", role: null, slot: 1 }] })]))
+      .toMatchObject({ source: "lines_ccc", confirmed: true, topGoalieId: 901 });
+  });
+
+  it.each(["projected", "likely", "listed", "observed", "unresolved"])("does not promote a %s goalie_1", (goalieState) => {
+    expect(blend([row({ goalie1: A, states: [{ ...A, state: goalieState, role: "starter" }] })])).toMatchObject(fellThrough);
+  });
+
+  it.each([[A, B], [B, A]])("two listed goalies (%o first) never yield certainty from order", (first, second) => {
+    const feature = blend([row({ goalie1: first, goalie2: second, states: [
+      { ...first, state: "listed", role: "starter", slot: 1 }, { ...second, state: "listed", role: "backup", slot: 2 }] })]);
+    expect(feature).toMatchObject(fellThrough);
+    expect(feature.startUncertainty).toBeGreaterThan(0);
+  });
+
+  it("does not promote a confirmed backup stored as goalie_1", () => {
+    expect(blend([row({ goalie1: A, states: [{ ...A, state: "confirmed", role: "backup" }] })])).toMatchObject(fellThrough);
+  });
+
+  it("does not promote when the confirmed starter is not goalie_1, or when two goalies are both confirmed starters", () => {
+    expect(blend([row({ goalie1: A, goalie2: B, states: [{ ...A, state: "listed", role: "starter", slot: 1 }, { ...B, state: "confirmed", role: "starter" }] })]))
+      .toMatchObject(fellThrough);
+    expect(blend([row({ goalie1: A, goalie2: B, states: [{ ...A, state: "confirmed", role: "starter" }, { ...B, state: "confirmed", role: "starter" }] })]))
+      .toMatchObject(fellThrough);
+  });
+
+  it("never promotes a ruled-out goalie, and a later ruled-out post cancels an earlier confirmation", () => {
+    expect(blend([row({ goalie1: A, states: [{ ...A, state: "ruled_out", role: "starter", stored: false }] })])).toMatchObject(fellThrough);
+    expect(blend([
+      row({ goalie1: A, states: [{ ...A, state: "confirmed", role: "starter" }], observedAt: "2026-01-10T16:00:00+00:00" }),
+      row({ goalie1: null, states: [{ ...A, state: "ruled_out", role: null, stored: false }], observedAt: "2026-01-10T17:00:00+00:00" }),
+    ])).toMatchObject(fellThrough);
+  });
+
+  it("keeps an earlier confirmation when a later post only lists two goalies", () => {
+    expect(blend([
+      row({ goalie1: A, states: [{ ...A, state: "confirmed", role: "starter" }], observedAt: "2026-01-10T16:00:00+00:00" }),
+      row({ goalie1: B, goalie2: A, observedAt: "2026-01-10T17:00:00+00:00",
+        states: [{ ...B, state: "listed", role: "starter", slot: 1 }, { ...A, state: "listed", role: "backup", slot: 2 }] }),
+    ])).toMatchObject({ source: "lines_ccc", confirmed: true, topGoalieId: 901 });
+  });
+
+  it("matches an unresolved-id goalie by name only when the state is confirmed", () => {
+    const literal = { name: "Goalie Literal", playerId: null };
+    expect(blend([row({ goalie1: literal, states: [{ ...literal, state: "unresolved", role: "starter", slot: 1 }] })])).toMatchObject(fellThrough);
+    expect(blend([row({ goalie1: literal, states: [{ ...literal, state: "confirmed", role: "starter" }] })]))
+      .toMatchObject({ source: "lines_ccc", confirmed: true, topGoalieId: null, topGoalieName: "Goalie Literal" });
+  });
+
+  it.each([
+    ["no metadata", null],
+    ["metadata without goalieStates", { }],
+    ["an empty goalieStates array", { goalieStates: [] }],
+    ["a malformed goalieStates value", { goalieStates: "confirmed" }],
+  ])("does not promote a row with %s", (_label, metadata) => {
+    expect(blend([row({ goalie1: A, metadata: metadata as LinesCccRow["metadata"] })])).toMatchObject(fellThrough);
+  });
+
+  it("loads only metadata->goalieStates and maps it back onto metadata", async () => {
+    const inputs = createInputs();
+    const selects: string[] = [];
+    const linesRow = { ...row({ goalie1: A }), metadata: undefined, goalie_states: [state({ ...A, state: "confirmed", role: "starter" })] };
+    const tables: Record<string, unknown[]> = { teams: [inputs.homeTeam, inputs.awayTeam], games: [], lines_ccc: [linesRow] };
+    const power = powerHistoryClient([]);
+    const client = { from(table: string) {
+      if (table === "team_power_ratings_daily") return power.client.from(table);
+      let data = tables[table] ?? [];
+      const query = {
+        select: (columns: string) => { if (table === "lines_ccc") selects.push(columns); return query; },
+        eq: () => query, lt: () => query, lte: () => query, gte: () => query,
+        in: (key: string, values: unknown[]) => {
+          if (table === "teams") data = data.filter((entry) => values.includes((entry as Record<string, unknown>)[key]));
+          return query;
+        },
+        or: () => query, order: () => query, limit: () => query,
+        single: async () => ({ data: { ...inputs.game, date: "2026-01-11" }, error: null }),
+        maybeSingle: async () => ({ data: null, error: null }),
+        then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data, error: null }).then(resolve),
+      };
+      return query;
+    } } as unknown as Parameters<typeof fetchGamePredictionFeatureInputs>[0];
+    const loaded = await fetchGamePredictionFeatureInputs(client, inputs.game.id);
+    expect(selects[0]).toContain("goalie_states:metadata->goalieStates");
+    expect(selects[0]).not.toMatch(/(^|,)metadata(,|$)/);
+    expect(loaded.linesCccRows).toHaveLength(1);
+    expect(loaded.linesCccRows[0]).not.toHaveProperty("goalie_states");
+    expect(loaded.linesCccRows[0]!.metadata).toEqual({ goalieStates: linesRow.goalie_states });
+    expect(buildGoalieBlendFeatures([], 1, { gameId: GAME, linesCccRows: loaded.linesCccRows })).toMatchObject({ source: "lines_ccc", confirmed: true });
   });
 });
