@@ -320,3 +320,12 @@
 - **00:44Z, pilot result:** 0330 `source_failed` (claim `791099cd…`, timeout 57014 on `forge_league_skater_physical_totals`: 8,031 ms). The queue stopped on `statement_timeout`, so 0329 is `never_dispatched`. Launcher exit 0 at 00:44:28Z. No retry. Receipt: `SLATE-PILOT-RECEIPT-2026020329-2026020330.md`.
   - The same RPC took 7,441 ms (0326) and 7,507 ms (0328) earlier today, so it has been just under 8 s all day.
   - **Next:** make physical totals reliably fast (offline prototype and benchmark first, as for the trend bands); needs TJ's go-ahead.
+
+## Checkpoint 2026-11-16T01:05Z: physical-totals read (Chef)
+- **TJ's pop-ups:** "Prototype + prod EXPLAIN", then "Run it" for the exact statement in `physical-totals/sql/production-explain-proposal.sql` (SHA-256 `142aaa4c…02b9`).
+- **Production EXPLAIN, 00:54:36Z** (read-only, rolled back, plain EXPLAIN only; output private in `~/forge-pilot/physical-totals-explain-20261116T005435Z/`):
+  - **Plans:** the current body's generic plan already uses a BitmapOr of two date ranges on `idx_wgo_skater_stats_date` (custom: date plus `pid_date_season`), so it is not a full scan.
+  - **Table:** 2,256,218 rows, 278,574 pages, 2.2 GB heap, about 8 rows per page; date correlation 0.39; toi null 0.46; relallvisible 272,620.
+  - **Diagnosis:** the cost is heap pages for about 2.2 seasons of wide rows scattered by poor correlation. The candidate hull-range rewrite alone gives the same single date range, so it does not cut heap reads.
+- **Local bench:** a production-scale table (2.23M rows, 7 rows per page, correlation 0.25) on PG15 port 55560 (socket `/tmp/ptb-sock-55560`). It tests a covering partial index `(date) include (season_id, position_code, toi_per_game, hits, blocked_shots) where games_played = 1 and toi_per_game > 0`, with and without the rewrite.
+- **Migration number** if needed: 155 (153 and 154 are BLSH), timestamp after 20261116000100.

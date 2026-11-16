@@ -1,0 +1,138 @@
+BEGIN
+SET
+SET
+              name               |             setting              
+---------------------------------+----------------------------------
+ default_statistics_target       | 100
+ effective_cache_size            | 98304
+ jit                             | off
+ max_parallel_workers_per_gather | 1
+ random_page_cost                | 1.1
+ seq_page_cost                   | 1
+ server_version                  | 15.1 (Ubuntu 15.1-1.pgdg20.04+1)
+ work_mem                        | 3500
+(8 rows)
+
+ reltuples | relpages | relallvisible |  heap   |  total  | n_live_tup | n_dead_tup | last_vacuum | last_autovacuum | last_analyze | last_autoanalyze 
+-----------+----------+---------------+---------+---------+------------+------------+-------------+-----------------+--------------+------------------
+   2256218 |   278574 |        272620 | 2176 MB | 2788 MB |          0 |          0 |             |                 |              | 
+(1 row)
+
+                index                |  size  |                                                                    def                                                                    
+-------------------------------------+--------+-------------------------------------------------------------------------------------------------------------------------------------------
+ wgo_skater_stats_pkey               | 90 MB  | CREATE UNIQUE INDEX wgo_skater_stats_pkey ON public.wgo_skater_stats USING btree (id)
+ idx_wgo_skater_stats_player_id      | 38 MB  | CREATE INDEX idx_wgo_skater_stats_player_id ON public.wgo_skater_stats USING btree (player_id)
+ idx_wgo_skater_stats_player_date    | 98 MB  | CREATE INDEX idx_wgo_skater_stats_player_date ON public.wgo_skater_stats USING btree (player_id, date DESC)
+ idx_wgo_skater_stats_date           | 38 MB  | CREATE INDEX idx_wgo_skater_stats_date ON public.wgo_skater_stats USING btree (date DESC)
+ wgo_skater_stats_player_id_date_key | 97 MB  | CREATE UNIQUE INDEX wgo_skater_stats_player_id_date_key ON public.wgo_skater_stats USING btree (player_id, date)
+ skater_name_norm_btree              | 36 MB  | CREATE INDEX skater_name_norm_btree ON public.wgo_skater_stats USING btree (immutable_unaccent(lower(player_name)))
+ wgo_skater_stats_g1_idx             | 75 MB  | CREATE INDEX wgo_skater_stats_g1_idx ON public.wgo_skater_stats USING btree (player_id, date, season_id) WHERE (games_played = 1)
+ wgo_skater_stats_date_idx           | 17 MB  | CREATE INDEX wgo_skater_stats_date_idx ON public.wgo_skater_stats USING btree (date) WHERE (games_played = 1)
+ wgo_skater_stats_gp1_date           | 17 MB  | CREATE INDEX wgo_skater_stats_gp1_date ON public.wgo_skater_stats USING btree (date) WHERE (games_played = 1)
+ wgo_skater_stats_pid_date_season    | 74 MB  | CREATE INDEX wgo_skater_stats_pid_date_season ON public.wgo_skater_stats USING btree (player_id, date, season_id)
+ wgo_skater_stats_date_brin          | 128 kB | CREATE INDEX wgo_skater_stats_date_brin ON public.wgo_skater_stats USING brin (date) WITH (pages_per_range='64') WHERE (games_played = 1)
+ idx_wgo_skater_stats_game_id        | 12 MB  | CREATE INDEX idx_wgo_skater_stats_game_id ON public.wgo_skater_stats USING btree (game_id) WHERE (game_id IS NOT NULL)
+ idx_wgo_skater_stats_team_date      | 17 MB  | CREATE INDEX idx_wgo_skater_stats_team_date ON public.wgo_skater_stats USING btree (team_abbrev, date)
+(13 rows)
+
+    attname    | n_distinct | null_frac | correlation | avg_width 
+---------------+------------+-----------+-------------+-----------
+ date          |       9525 |         0 |     0.38648 |         4
+ position_code |          4 |         0 |    0.241073 |         2
+ games_played  |          1 |         0 |           1 |         4
+ toi_per_game  |       1657 |  0.463533 | -0.00692917 |         8
+ blocked_shots |          9 |         0 |    0.798421 |         4
+ hits          |         11 |         0 |    0.744961 |         4
+ season_id     |        103 |         0 |    0.365518 |         4
+(7 rows)
+
+ columns | avg_row_width 
+---------+---------------
+     244 |          1400
+(1 row)
+
+PREPARE
+PREPARE
+SET
+                                                                                                                                                                                                                                                            QUERY PLAN                                                                                                                                                                                                                                                            
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=25334.92..25335.03 rows=4 width=96)
+   Group Key: "*VALUES*".column1, "*VALUES*".column2
+   ->  Sort  (cost=25334.92..25334.93 rows=4 width=80)
+         Sort Key: "*VALUES*".column1, "*VALUES*".column2
+         ->  Hash Right Join  (cost=281.66..25334.88 rows=4 width=80)
+               Hash Cond: ((CASE WHEN (s.season_id = $1) THEN 'to_date'::text ELSE 'prior2'::text END = "*VALUES*".column1) AND (CASE WHEN (s.position_code = 'D'::text) THEN 'D'::text ELSE 'F'::text END = "*VALUES*".column2))
+               ->  Nested Loop  (cost=281.55..25334.35 rows=41 width=22)
+                     ->  Result  (cost=0.02..0.03 rows=1 width=0)
+                           One-Time Filter: (($1 >= 19001901) AND ($1 <= 29992999) AND (($1 % 10000) = (($1 / 10000) + 1)) AND ($2 >= make_date(($1 / 10000), 9, 1)))
+                     ->  Bitmap Heap Scan on wgo_skater_stats s  (cost=281.53..25333.91 rows=41 width=22)
+                           Recheck Cond: (((date >= make_date(($1 / 10000), 9, 1)) AND (date < LEAST($2, make_date((($1 / 10000) + 1), 9, 1)))) OR ((date >= make_date((($1 / 10000) - 2), 9, 1)) AND (date < make_date(($1 / 10000), 9, 1))))
+                           Filter: ((toi_per_game > '0'::double precision) AND (games_played = 1) AND (position_code = ANY ('{C,L,R,D}'::text[])) AND (((season_id = $1) AND (date >= make_date(($1 / 10000), 9, 1)) AND (date < LEAST($2, make_date((($1 / 10000) + 1), 9, 1)))) OR ((season_id = ANY (ARRAY[($1 - 10001), ($1 - 20002)])) AND (date >= make_date((($1 / 10000) - 2), 9, 1)) AND (date < make_date(($1 / 10000), 9, 1)) AND ((EXTRACT(year FROM (date - '8 mons'::interval)))::integer = (season_id / 10000)))))
+                           ->  BitmapOr  (cost=281.53..281.53 rows=22562 width=0)
+                                 ->  Bitmap Index Scan on idx_wgo_skater_stats_date  (cost=0.00..140.76 rows=11281 width=0)
+                                       Index Cond: ((date >= make_date(($1 / 10000), 9, 1)) AND (date < LEAST($2, make_date((($1 / 10000) + 1), 9, 1))))
+                                 ->  Bitmap Index Scan on idx_wgo_skater_stats_date  (cost=0.00..140.75 rows=11281 width=0)
+                                       Index Cond: ((date >= make_date((($1 / 10000) - 2), 9, 1)) AND (date < make_date(($1 / 10000), 9, 1)))
+               ->  Hash  (cost=0.05..0.05 rows=4 width=64)
+                     ->  Values Scan on "*VALUES*"  (cost=0.00..0.05 rows=4 width=64)
+(19 rows)
+
+SET
+                                                                                                                                                                                                                          QUERY PLAN                                                                                                                                                                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=93427.49..93427.60 rows=4 width=96)
+   Group Key: "*VALUES*".column1, "*VALUES*".column2
+   ->  Sort  (cost=93427.49..93427.50 rows=4 width=80)
+         Sort Key: "*VALUES*".column1, "*VALUES*".column2
+         ->  Hash Right Join  (cost=70937.64..93427.45 rows=4 width=80)
+               Hash Cond: ((CASE WHEN (s.season_id = 20262027) THEN 'to_date'::text ELSE 'prior2'::text END = "*VALUES*".column1) AND (CASE WHEN (s.position_code = 'D'::text) THEN 'D'::text ELSE 'F'::text END = "*VALUES*".column2))
+               ->  Bitmap Heap Scan on wgo_skater_stats s  (cost=70937.53..93426.98 rows=35 width=22)
+                     Recheck Cond: (((date >= '2026-09-01'::date) AND (date < '2026-11-15'::date)) OR ((date >= '2024-09-01'::date) AND (date < '2026-09-01'::date) AND (season_id = ANY ('{20252026,20242025}'::integer[]))))
+                     Filter: ((toi_per_game > '0'::double precision) AND (games_played = 1) AND (position_code = ANY ('{C,L,R,D}'::text[])) AND (((season_id = 20262027) AND (date >= '2026-09-01'::date) AND (date < '2026-11-15'::date)) OR ((season_id = ANY ('{20252026,20242025}'::integer[])) AND (date >= '2024-09-01'::date) AND (date < '2026-09-01'::date) AND ((EXTRACT(year FROM (date - '8 mons'::interval)))::integer = (season_id / 10000)))))
+                     ->  BitmapOr  (cost=70937.53..70937.53 rows=20783 width=0)
+                           ->  Bitmap Index Scan on idx_wgo_skater_stats_date  (cost=0.00..84.90 rows=6797 width=0)
+                                 Index Cond: ((date >= '2026-09-01'::date) AND (date < '2026-11-15'::date))
+                           ->  Bitmap Index Scan on wgo_skater_stats_pid_date_season  (cost=0.00..70852.61 rows=13986 width=0)
+                                 Index Cond: ((date >= '2024-09-01'::date) AND (date < '2026-09-01'::date) AND (season_id = ANY ('{20252026,20242025}'::integer[])))
+               ->  Hash  (cost=0.05..0.05 rows=4 width=64)
+                     ->  Values Scan on "*VALUES*"  (cost=0.00..0.05 rows=4 width=64)
+(16 rows)
+
+SET
+                                                                                                                                                                                                                                                QUERY PLAN                                                                                                                                                                                                                                                 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=11554.80..11554.98 rows=4 width=96)
+   Group Key: "*VALUES*".column1, "*VALUES*".column2
+   ->  Merge Left Join  (cost=11554.80..11554.88 rows=4 width=80)
+         Merge Cond: (("*VALUES*".column1 = (CASE WHEN (s.season_id = $1) THEN 'to_date'::text ELSE 'prior2'::text END)) AND ("*VALUES*".column2 = (CASE WHEN (s.position_code = 'D'::text) THEN 'D'::text ELSE 'F'::text END)))
+         ->  Sort  (cost=0.09..0.10 rows=4 width=64)
+               Sort Key: "*VALUES*".column1, "*VALUES*".column2
+               ->  Values Scan on "*VALUES*"  (cost=0.00..0.05 rows=4 width=64)
+         ->  Sort  (cost=11554.71..11554.72 rows=1 width=22)
+               Sort Key: (CASE WHEN (s.season_id = $1) THEN 'to_date'::text ELSE 'prior2'::text END), (CASE WHEN (s.position_code = 'D'::text) THEN 'D'::text ELSE 'F'::text END)
+               ->  Nested Loop  (cost=0.48..11554.70 rows=1 width=22)
+                     ->  Index Scan using wgo_skater_stats_gp1_date on wgo_skater_stats s  (cost=0.46..11554.66 rows=1 width=22)
+                           Index Cond: ((date >= make_date((GREATEST(3, LEAST(9997, ($1 / 10000))) - 2), 9, 1)) AND (date < LEAST($2, make_date((GREATEST(3, LEAST(9997, ($1 / 10000))) + 1), 9, 1))))
+                           Filter: ((toi_per_game > '0'::double precision) AND (position_code = ANY ('{C,L,R,D}'::text[])) AND (((season_id = $1) AND (date >= make_date(($1 / 10000), 9, 1)) AND (date < LEAST($2, make_date((($1 / 10000) + 1), 9, 1)))) OR ((season_id = ANY (ARRAY[($1 - 10001), ($1 - 20002)])) AND (date >= make_date((($1 / 10000) - 2), 9, 1)) AND (date < make_date(($1 / 10000), 9, 1)) AND ((EXTRACT(year FROM (date - '8 mons'::interval)))::integer = (season_id / 10000)))))
+                     ->  Result  (cost=0.02..0.03 rows=1 width=0)
+                           One-Time Filter: (($1 >= 19001901) AND ($1 <= 29992999) AND (($1 % 10000) = (($1 / 10000) + 1)) AND ($2 >= make_date(($1 / 10000), 9, 1)))
+(15 rows)
+
+SET
+                                                                                                                                                                                                              QUERY PLAN                                                                                                                                                                                                               
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=86546.02..86546.21 rows=4 width=96)
+   Group Key: "*VALUES*".column1, "*VALUES*".column2
+   ->  Merge Left Join  (cost=86546.02..86546.11 rows=4 width=80)
+         Merge Cond: (("*VALUES*".column1 = (CASE WHEN (s.season_id = 20262027) THEN 'to_date'::text ELSE 'prior2'::text END)) AND ("*VALUES*".column2 = (CASE WHEN (s.position_code = 'D'::text) THEN 'D'::text ELSE 'F'::text END)))
+         ->  Sort  (cost=0.09..0.10 rows=4 width=64)
+               Sort Key: "*VALUES*".column1, "*VALUES*".column2
+               ->  Values Scan on "*VALUES*"  (cost=0.00..0.05 rows=4 width=64)
+         ->  Sort  (cost=86545.93..86545.94 rows=2 width=22)
+               Sort Key: (CASE WHEN (s.season_id = 20262027) THEN 'to_date'::text ELSE 'prior2'::text END), (CASE WHEN (s.position_code = 'D'::text) THEN 'D'::text ELSE 'F'::text END)
+               ->  Index Scan using wgo_skater_stats_gp1_date on wgo_skater_stats s  (cost=0.43..86545.92 rows=2 width=22)
+                     Index Cond: ((date >= '2024-09-01'::date) AND (date < '2026-11-15'::date))
+                     Filter: ((toi_per_game > '0'::double precision) AND (position_code = ANY ('{C,L,R,D}'::text[])) AND (((season_id = 20262027) AND (date >= '2026-09-01'::date) AND (date < '2026-11-15'::date)) OR ((season_id = ANY ('{20252026,20242025}'::integer[])) AND (date >= '2024-09-01'::date) AND (date < '2026-09-01'::date) AND ((EXTRACT(year FROM (date - '8 mons'::interval)))::integer = (season_id / 10000)))))
+(12 rows)
+
+ROLLBACK
