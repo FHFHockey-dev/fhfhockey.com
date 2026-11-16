@@ -11,6 +11,18 @@
   - the next game proposed.
 - **Revision 3** (git history) holds the full probe report. Revision 3 re-pinned the TSA after the probe and set D3; revision 2 set the earliest-eligible game policy.
 
+## Revision 5 note (2026-11-16)
+This packet governs single-game runs. Queue runs are planned in `SLATE-QUEUE-PACKET.md`; Monday's proposal is in §7.
+
+**Since revision 4:**
+- **Pilot 3 (2026020328):** **qualified** (`PILOT-3-RECEIPT-2026020328.md`).
+- **Queue pilot (0329 + 0330):** stopped safely on the physical-totals statement timeout (`SLATE-PILOT-RECEIPT-2026020329-2026020330.md`).
+- **The fix:**
+  - migrations 155 and 156 applied;
+  - the read now takes 337 ms with 0 heap fetches;
+  - candidate `bc13b523e` verified (`CANDIDATE-bc13b523e-VERIFICATION.md`).
+- **New gate before any capture:** `operator/apply-migration-155.sh --timed-read` (read-only) must return ≤ 4,000 ms.
+
 ## 0. Since revision 3
 | item | result |
 | --- | --- |

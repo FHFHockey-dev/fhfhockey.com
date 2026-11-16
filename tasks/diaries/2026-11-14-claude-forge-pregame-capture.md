@@ -366,3 +366,8 @@
   - an optional `VACUUM (INDEX_CLEANUP ON)` for the 3,814 pages;
   - the next capture: candidate `bc13b523e` or later with docs only, a Monday game, a timed read of 4 s or less before launch.
 - **01:52Z:** `VACUUM (INDEX_CLEANUP ON)` (TJ: "Run it now") in 7.46 s: 100% of pages all-visible; the capture read has 0 heap fetches and takes 337 ms. The script gained `--index-cleanup` (self-test 17/17). Next: the Monday packet.
+- **02:00Z, Monday packet** (TJ: "Prep Monday packet"):
+  - `CANDIDATE-bc13b523e-VERIFICATION.md` written.
+  - `SLATE-QUEUE-PACKET.md` §7: 0331 + 0332, dispatch 23:13:58Z and 01:13:58Z, launch 22:30–22:55Z, token `tj-slate-2026020331-2026020332-20261116`, with the `--timed-read` ≤ 4 s go/no-go before launch.
+  - Pilot packet revision 5 note added.
+  - The next step needs TJ's run approval.
