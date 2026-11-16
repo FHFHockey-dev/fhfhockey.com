@@ -41,11 +41,39 @@ Display must cover normal lineup lines and FORGE reserve ("if he dresses") lines
   dropped (no room). After screenshots in tasks/artifacts/rso-injured-display-2026-11-16/. Component tests 443 + new
   (grid 10, roster row 7, card 25) pass; pure-mode CSS check ok.
 
+- 18:00Z committed 9abf48330 (product, 18 files) + 4756fb99d (lease/diary). Screenshot PNGs are gitignored; kept in
+  tasks/artifacts/rso-injured-display-2026-11-16/ locally. Candidate c9fb7d8a8 = origin/master 9b3575f8a tree + my
+  18 blobs (diff verified). Export gate: closure 9944628e4582 (239 modules, 0 findings); vitest 57 files 1819 pass,
+  1 load timeout (1000-player test) passed alone 182/182; eslint 0 errors; pure CSS ok. Typecheck: first run lacked
+  repo-root supabase/ in export (46 errors, all x-timeline/fxtwitter imports); rerun with supabase/ waits on heavy lock.
+- Vercel baseline: latest prod entries at 9b3575f8a (#456): fhfhockey READY dpl_6gGJpyunQTDoKjecNFGFDSjaryec; cms,
+  functions-fhfhockey, fhfhockey.com CANCELED; web/functions projects never deploy. No PR-triggered GH workflows.
+- Dev server :3171 stopped by exact PID.
+
+- 18:01Z export typecheck (with supabase/) exit 0, 0 errors. Pushed c9fb7d8a8 -> origin chef/rso-injured-display;
+  PR #457 (MERGEABLE/CLEAN, no PR checks). No Vercel deployment / GH status for the SHA at +10s, +30s.
+- Smoke plan (<=5 sequential GETs): /roster-schedule-optimizer; its page chunk; webpack runtime; up to 2 dynamic
+  chunks looking for "not counted while he's listed". Stop when found.
+
+- 18:02:43Z +99s after push: no Vercel deployment, GH status or GH deployment for c9fb7d8a8.
+- 18:03:06Z PR #457 squash-merged: master a093e4da3 (parent 9b3575f8a; tree 9d6038b6 == candidate tree; no AI lines).
+  Deployments for a093e4da3: fhfhockey BUILDING dpl_C4ECsYnfF37sfq48wKqbRm9cbCc8; functions-fhfhockey + fhfhockey.com
+  CANCELED; cms-fhfhockey building then ignored (GH status success). Watch loop on GH statuses (bounded 25 min).
+- octoberBranch NOT pushed or synced (Chef syncs from released master at its next release).
+
+- 18:07:50Z fhfhockey dpl_C4ECsYnfF37sfq48wKqbRm9cbCc8 READY (aliases fhfhockey.com, www); cms-fhfhockey,
+  functions-fhfhockey, fhfhockey.com CANCELED; web/functions projects did not build.
+- Smoke (4 of 5 GETs, sequential): /roster-schedule-optimizer 200 (title ok); page chunk 200; webpack runtime 200;
+  chunk 2623.4d0fc341838feea8.js 200 contains every new string. Stopped.
+- Scratch e2e spec deleted; export dir removed; lease RSO-INJURED-DISPLAY released.
+
 ## Next
-Commit locally, build candidate, export gate, PR, merge, verify deploy + smoke.
+Done. Open for Chef: relay the bridge finding (unconfirmed reserve line stays uncounted after Yahoo clears the player)
+to the read-paths lane; sync octoberBranch from master a093e4da3 at the next release; live check with TJ's real
+league (no Yahoo calls from this lane); cosmetic polish deferred (grid tag, duplicate value text on the Out card).
 
 ## Blockers / approvals
-- Gate and merge by 21:45Z, else hold until after 03:00Z.
+- None. Release done well before the 22:15Z capture window.
 - Capture window 22:15Z–03:00Z: focused Vitest only.
 
 ## Gotchas
