@@ -89,9 +89,14 @@ export async function upsertGoalieProjectionRows(
     rows: number;
     error: string;
   }> = [];
+  // The table has no trigger, so a refresh must stamp updated_at itself; without
+  // it rows kept their first write time (audit L2) and freshness was unreadable.
+  const updatedAt = new Date().toISOString();
 
   for (let offset = 0; offset < updates.length; offset += chunkSize) {
-    const batch = updates.slice(offset, offset + chunkSize);
+    const batch = updates
+      .slice(offset, offset + chunkSize)
+      .map((row) => ({ ...row, updated_at: updatedAt }));
     const { error } = await client
       .from("goalie_start_projections" as any)
       .upsert(batch, { onConflict: "game_id, player_id" });

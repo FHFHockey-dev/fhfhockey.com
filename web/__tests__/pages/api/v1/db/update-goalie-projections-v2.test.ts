@@ -163,6 +163,14 @@ describe("update-goalie-projections-v2 endDate", () => {
     ]);
   });
 
+  it("stamps updated_at on the rows it writes (audit L2)", async () => {
+    const res = await run({});
+    expect(res.statusCode).toBe(200);
+    const rows = (upsertMock.mock.calls[0] as any[])[0];
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((row: any) => row.updated_at === "2026-10-21T10:00:00.000Z")).toBe(true);
+  });
+
   it("uses only prior-date logs for pregame shares and GSAA", async () => {
     const normalFetch = fetchMock.getMockImplementation()!;
     fetchMock.mockImplementation(async (url: string) => {
@@ -358,7 +366,13 @@ describe("update-goalie-projections-v2 endDate", () => {
 });
 
 describe("update-goalie-projections-v2 persistence", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("counts only successfully persisted chunks", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-16T09:30:00.000Z"));
     const upsert = vi
       .fn()
       .mockResolvedValueOnce({ error: null })
@@ -385,9 +399,13 @@ describe("update-goalie-projections-v2 persistence", () => {
         }
       ]
     });
+    // Every refresh stamps updated_at (audit L2: it never advanced before).
     expect(upsert).toHaveBeenNthCalledWith(
       1,
-      [{ game_id: 1, player_id: 1 }, { game_id: 1, player_id: 2 }],
+      [
+        { game_id: 1, player_id: 1, updated_at: "2026-11-16T09:30:00.000Z" },
+        { game_id: 1, player_id: 2, updated_at: "2026-11-16T09:30:00.000Z" }
+      ],
       { onConflict: "game_id, player_id" }
     );
   });
