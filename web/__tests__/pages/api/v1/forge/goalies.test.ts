@@ -39,6 +39,9 @@ function createQueryBuilder(resolver: () => QueryResult, onEq?: (column: string,
     lte() {
       return builder;
     },
+    gt() {
+      return builder;
+    },
     in(column: string, values: string[]) {
       builder.inValues = values;
       return builder;
@@ -93,7 +96,7 @@ const fallbackGoalie = { goalie_id: 5555, team_id: 3, opponent_team_id: 4, playe
 
 /** forge_runs and forge_goalie_projections tables that honour the filters the reader sends; returns the run ids whose
  * goalie rows were read (head counts excluded). */
-function installRuns(runs: RunRow[], goalieRows: Record<string, any[]>, scheduledGames = 6) {
+function installRuns(runs: RunRow[], goalieRows: Record<string, any[]>, scheduledGames = 6, gamesAfterDate = scheduledGames) {
   const prior = fromMock.getMockImplementation()!;
   const rowReads: string[] = [];
   fromMock.mockImplementation((table: string) => {
@@ -112,17 +115,23 @@ function installRuns(runs: RunRow[], goalieRows: Record<string, any[]>, schedule
       return builder;
     }
     if (table === "forge_goalie_projections") {
-      let runId = "", head = false;
+      let runIds: string[] = [], head = false;
       const builder = createQueryBuilder(() => {
-        if (!head) rowReads.push(runId);
-        const data = goalieRows[runId] ?? [];
+        if (!head) rowReads.push(...runIds);
+        const data = runIds.flatMap(runId => (goalieRows[runId] ?? []).map(row => ({ run_id: runId, ...row })));
         return { data, count: data.length, error: null };
-      }, (column, value) => { if (column === "run_id") runId = String(value); });
+      }, (column, value) => { if (column === "run_id") runIds = [String(value)]; });
       const select = builder.select;
       builder.select = (columns: string, options?: { head?: boolean }) => { head = Boolean(options?.head); return select(columns, options); };
+      builder.in = (column: string, values: string[]) => { if (column === "run_id") runIds = values.map(String); return builder; };
       return builder;
     }
-    if (table === "games") return createQueryBuilder(() => ({ count: scheduledGames, error: null }));
+    if (table === "games") {
+      let after = false;
+      const builder = createQueryBuilder(() => ({ count: after ? gamesAfterDate : scheduledGames, error: null }));
+      builder.gt = () => { after = true; return builder; };
+      return builder;
+    }
     return prior(table);
   });
   return rowReads;
@@ -352,36 +361,35 @@ function createMockRes() {
 
 describe("/api/v1/forge/goalies", () => {
   describe("external-input exclusion proof (Astra F4)", () => {
-    it("serves a proven released fallback after the requested date has no proven run", async () => {
+    it.each([[true], [false]])("never serves a neighboring date's run, proven or not (H6; fallbackToLatestWithData %s)", async fallback => {
       latestMock.mockRejectedValueOnce(Object.assign(new Error("no proven run"), { statusCode: 404 }));
-      const reads = installRuns([released("run-122", "2026-02-06")], { "run-122": [fallbackGoalie] });
+      proofState.unproven = new Set(["legacy-run"]);
+      const reads = installRuns([released("legacy-run", "2026-02-06"), released("run-121", "2026-02-05"),
+        released("run-tomorrow", "2026-02-08"), released("run-local", "2026-02-06", { git_sha: "local:unknown" }),
+        released("run-failed", "2026-02-06", { status: "failed" })],
+      { "legacy-run": [fallbackGoalie], "run-121": [fallbackGoalie], "run-tomorrow": [fallbackGoalie], "run-local": [fallbackGoalie],
+        "run-failed": [fallbackGoalie] });
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date: "2026-02-07", fallbackToLatestWithData: String(fallback) } } as any, res);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({ runId: null, asOfDate: "2026-02-07", requestedDate: "2026-02-07", fallbackApplied: false,
+        reason: "no_proven_run_for_date", message: "FORGE goalie projections are not available for the 2026-02-07 slate.", data: [],
+        serving: { resolvedDate: "2026-02-07", strategy: "requested_date" }, scanSummary: { status: "empty" },
+        diagnostics: { runProof: null, fallback: { enabled: false, applied: false },
+          emptyResultAnalysis: { isEmpty: true, reason: "no_proven_run_for_date", verifiedScheduledGames: 6 } } });
+      expect(reads).toEqual([]);
+    });
+
+    it.each([
+      ["a verified off-day", 0, 40, "no_games", "No NHL games are scheduled on 2026-02-07."],
+      ["a date whose schedule is not stored", 0, 0, "no_proven_run_for_date", "FORGE goalie projections are not available for the 2026-02-07 slate."],
+    ])("serves %s empty with its reason", async (_label, onDate, afterDate, reason, message) => {
+      latestMock.mockRejectedValueOnce(Object.assign(new Error("no proven run"), { statusCode: 404 }));
+      const reads = installRuns([released("run-122", "2026-02-06")], { "run-122": [fallbackGoalie] }, onDate, afterDate);
       const res = createMockRes();
       await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
       expect(res.statusCode).toBe(200);
-      expect(res.body).toMatchObject({ runId: "run-122", asOfDate: "2026-02-06", fallbackApplied: true });
-      expect(res.body.diagnostics.requested.runId).toBeNull();
-      expect(res.body.diagnostics.runProof).toEqual({ runId: "run-122", basis: "captured_snapshot", releaseSha: null, closureSha256: null });
-      expect(reads).toEqual(["run-122"]);
-    });
-
-    it("never falls back to an unproven legacy run, even a newer one with rows", async () => {
-      latestMock.mockRejectedValueOnce(Object.assign(new Error("no proven run"), { statusCode: 404 }));
-      proofState.unproven = new Set(["legacy-run"]);
-      const reads = installRuns([released("legacy-run", "2026-02-06"), released("run-121", "2026-02-05")],
-        { "legacy-run": [fallbackGoalie], "run-121": [fallbackGoalie] });
-      const res = createMockRes();
-      await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
-      expect(res.body).toMatchObject({ runId: "run-121", asOfDate: "2026-02-05", fallbackApplied: true });
-      expect(reads).toEqual(["run-121"]);
-    });
-
-    it("refuses, with a 404, when no run is proven at all", async () => {
-      latestMock.mockRejectedValueOnce(Object.assign(new Error("no proven run"), { statusCode: 404 }));
-      proofState.unproven = new Set(["legacy-run"]);
-      const reads = installRuns([released("legacy-run", "2026-02-06")], { "legacy-run": [fallbackGoalie] });
-      const res = createMockRes();
-      await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
-      expect(res.statusCode).toBe(404);
+      expect(res.body).toMatchObject({ runId: null, reason, message, data: [] });
       expect(reads).toEqual([]);
     });
 
@@ -662,91 +670,35 @@ describe("/api/v1/forge/goalies", () => {
     expect(res.body.diagnostics.notes.join(" ")).toContain("predate per-candidate goalie rows");
   });
 
-  it("falls back to the latest prior date with goalie rows when requested date has no data", async () => {
-    installRuns([released("run-123", "2026-02-07", { metrics: { goalie_rows: 0 } }), released("run-122", "2026-02-06")],
-      { "run-122": [{ ...fallbackGoalie }] });
-    const prior = fromMock.getMockImplementation()!;
-    fromMock.mockImplementation((table: string) => table === "forge_projection_calibration_daily"
-      ? createQueryBuilder(() => ({ data: null, error: null })) : prior(table));
-
-    const req: any = {
-      method: "GET",
-      query: {
-        date: "2026-02-07",
-        horizon: "1"
-      }
-    };
-    const res = createMockRes();
-    await handler(req, res);
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body.fallbackApplied).toBe(true);
-    expect(res.body.runId).toBe("run-122");
-    expect(res.body.asOfDate).toBe("2026-02-06");
-    expect(res.body.serving).toMatchObject({
-      requestedDate: "2026-02-07",
-      resolvedDate: "2026-02-06",
-      fallbackApplied: true,
-      isSameDay: false,
-      state: "fallback",
-      strategy: "latest_available_with_data",
-      gapDays: 1,
-      severity: "error",
-      status: "blocked",
-      message:
-        "Goalie projections is serving 2026-02-06 even though 6 games were scheduled on requested date 2026-02-07. Treat this module as degraded until same-day data is available."
+  it("serves each game from its newest proven run: a single-game rerun only for its own game (H3)", async () => {
+    const game = (gameId: number, goalieId: number, name: string) => ({ ...fallbackGoalie, game_id: gameId, goalie_id: goalieId,
+      players: { fullName: name } });
+    latestMock.mockResolvedValueOnce({ runId: "slate-run", proof: CAPTURED, runsByGame: { baseRunId: "slate-run",
+      overlays: [{ runId: "rerun", proof: CAPTURED, gameIds: [2026020302] }] } });
+    const reads = installRuns([released("slate-run", "2026-02-07"), released("rerun", "2026-02-07")], {
+      "slate-run": [game(2026020301, 1, "Slate A"), game(2026020302, 2, "Slate B (superseded)"), game(2026020303, 3, "Slate C")],
+      rerun: [game(2026020302, 4, "Rerun B")],
     });
-    expect(res.body.scanSummary).toMatchObject({
-      surface: "forge_goalies_reader",
-      requestedDate: "2026-02-07",
-      activeDataDate: "2026-02-06",
-      fallbackApplied: true,
-      status: "partial",
-      rowCounts: {
-        returned: 1,
-        requested: 0,
-        scheduledGamesOnDate: 6
-      },
-      blockingIssueCount: 1
-    });
-    expect(res.body.compatibilityInventory).toMatchObject({
-      inventoryVersion: "forge-compatibility-inventory-v2",
-      canonicalRoute: "/api/v1/forge/goalies",
-      legacyRoute: "/api/v1/projections/goalies",
-      status: "canonical_preferred",
-      goalieStartTable: {
-        decisionVersion: "goalie-start-ownership-v1",
-        table: "goalie_start_projections",
-        decision: "retain_shared_table_name_for_now",
-        canonicalWriterRoute: "/api/v1/db/update-goalie-projections-v2",
-        canonicalWriterStatus: "single_writer",
-        renameDeferred: true
-      }
-    });
-    expect(res.body.data).toHaveLength(1);
-    expect(res.body.data[0]).toMatchObject({
-      goalie_id: 5555,
-      goalie_name: "Fallback Goalie"
-    });
-    expect(res.body.diagnostics.fallback).toMatchObject({
-      enabled: true,
-      applied: true,
-      candidateRunId: "run-122",
-      candidateAsOfDate: "2026-02-06",
-      candidateRowCount: 1
-    });
-  });
-  it("skips failed and running runs when choosing the fallback goalie run", async () => {
-    latestMock.mockRejectedValueOnce(Object.assign(new Error("no proven run"), { statusCode: 404 }));
-    const reads = installRuns([released("run-failed", "2026-02-06", { status: "failed" }),
-      released("run-running", "2026-02-06", { status: "running" }), released("run-121", "2026-02-05")],
-    { "run-failed": [fallbackGoalie], "run-running": [fallbackGoalie], "run-121": [fallbackGoalie] });
     const res = createMockRes();
     await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
-
     expect(res.statusCode).toBe(200);
-    expect(res.body).toMatchObject({ runId: "run-121", asOfDate: "2026-02-05", fallbackApplied: true });
-    expect(reads).toEqual(["run-121"]);
+    expect(reads).toEqual(["slate-run", "rerun"]);
+    expect(res.body.data.map((row: any) => row.goalie_name)).toEqual(["Slate A", "Slate C", "Rerun B"]);
+    expect(res.body).toMatchObject({ runId: "slate-run", reason: null,
+      diagnostics: { gameRuns: [{ runId: "rerun", gameIds: [2026020302], basis: "captured_snapshot" }] } });
+  });
+
+  it("defaults the date to the Eastern-time slate, not the UTC date (L3)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-17T03:30:00Z"));
+    try {
+      const res = createMockRes();
+      await handler({ method: "GET", query: {} } as any, res);
+      expect(latestMock).toHaveBeenCalledWith("2026-11-16");
+      expect(res.body.requestedDate).toBe("2026-11-16");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it.each([null, "local:unknown", `local:${"b".repeat(40)}`])("rejects an explicit off-release run %j with a clear 422", async gitSha => {
@@ -761,17 +713,5 @@ describe("/api/v1/forge/goalies", () => {
     expect(res.statusCode).toBe(422);
     expect(res.body.data).toBeUndefined();
     expect(res.body.error).toContain("not a succeeded released run");
-  });
-
-  it("skips null-sha and local runs when choosing the fallback goalie run", async () => {
-    latestMock.mockRejectedValueOnce(Object.assign(new Error("no proven run"), { statusCode: 404 }));
-    const reads = installRuns([released("run-local", "2026-02-06", { git_sha: "local:unknown" }),
-      released("run-null", "2026-02-06", { git_sha: null }), released("run-121", "2026-02-05")],
-    { "run-local": [fallbackGoalie], "run-null": [fallbackGoalie], "run-121": [fallbackGoalie] });
-    const res = createMockRes();
-    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
-
-    expect(reads).toEqual(["run-121"]);
-    expect(res.body).toMatchObject({ runId: "run-121", asOfDate: "2026-02-05", fallbackApplied: true });
   });
 });

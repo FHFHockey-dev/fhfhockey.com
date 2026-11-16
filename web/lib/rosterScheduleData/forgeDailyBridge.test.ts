@@ -432,6 +432,41 @@ describe("FORGE daily bridge", () => {
       expect(result.limitations).toContain("3 FORGE runs in the last week cannot prove they excluded third-party fantasy projections, so they are withheld; players covered only by them get no forecast.");
     });
 
+    it("keeps the slate run beneath a later single-game rerun of its date: the rerun serves only its own game (H3)", async () => {
+      // 10-19: TOR plays game 1 and MTL game 4. The slate run projects both; the rerun of game 1 projects s1 only (s2 dropped).
+      const slateGames = [...games, game("4", "MTL", "2026-10-19T23:30:00Z")];
+      const runRows = [
+        { run_id: "rerun", as_of_date: "2026-10-19", created_at: "2026-10-19T15:00:00Z", git_sha: "abc",
+          execution_scope: { mode: "selected_games", requested_game_ids: [1] }, scope_key: "h1:1" },
+        { run_id: "slate", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "abc",
+          execution_scope: { mode: "full_slate", requested_game_ids: [] }, scope_key: "h1:full" },
+        { run_id: "older-slate", as_of_date: "2026-10-19", created_at: "2026-10-19T09:00:00Z", git_sha: "abc", scope_key: "h1:full" },
+      ];
+      const { db, runIdReads } = proofDb(runRows, runRows.map(row => provenSnapshotRow(row.run_id)), [
+        { ...skater("rerun", "2026-10-19", 1, 101, 10), proj_goals_es: 0.5 },
+        skater("slate", "2026-10-19", 1, 101, 10), skater("slate", "2026-10-19", 1, 102, 10), skater("slate", "2026-10-19", 4, 103, 8),
+        skater("older-slate", "2026-10-19", 4, 103, 8)]);
+      const result = await loadForgeDailyBridgeForecasts(db as never, players, slateGames, now, 20262027, Date.now() + 5000, policy);
+      expect(runIdReads).toEqual([["rerun", "slate"], ["rerun", "slate"]]);
+      const forecast = (id: string, gameId: string) => result.forecasts.find(row => row.playerId === id && row.gameId === gameId)!;
+      expect(forecast("s1", "1")).toMatchObject({ revisionId: `${FORGE_DAILY_BRIDGE_VERSION}:rerun`, stats: expect.objectContaining({ GOALS: 0.6 }) });
+      // MTL's game keeps the slate run's line (the rerun alone used to blank every other game of the date).
+      expect(forecast("s3", "4")).toMatchObject({ revisionId: `${FORGE_DAILY_BRIDGE_VERSION}:slate`, stats: expect.objectContaining({ GOALS: 0.35 }) });
+      // The rerun dropped s2 from game 1: the slate run's line for him there is not served.
+      expect(reserveCodeOf(forecast("s2", "1"))).toBe("skater:no_forge_line");
+      expect(result.runProofs.map(proof => proof.runId).sort()).toEqual(["rerun", "slate"]);
+    });
+
+    it("lets a newer full-slate run supersede an older single-game rerun of its date", () => {
+      const data = inputs();
+      data.runs.push({ run_id: "old-rerun", as_of_date: "2026-10-19", created_at: "2026-10-19T09:00:00Z", git_sha: "abc", external_input_proven: true,
+        execution_scope: { mode: "selected_games", requested_game_ids: [1] } } as never);
+      data.skaters.push({ ...skater("old-rerun", "2026-10-19", 1, 101, 10), proj_goals_es: 0.9 });
+      const { forecasts } = buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy);
+      expect(forecasts.find(row => row.playerId === "s1" && row.gameId === "1")).toMatchObject({
+        revisionId: `${FORGE_DAILY_BRIDGE_VERSION}:r2`, stats: expect.objectContaining({ GOALS: 0.35 }) });
+    });
+
     it("serves an uncaptured run of the verified release, single invocation only, and never a resumed one", async () => {
       const release = "538100d41ee87e721d2764b694f7bac8c2f2bb34";
       const runRows = [

@@ -4,6 +4,7 @@ import { z } from "zod";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { dateSchema, getQueryStringParam } from "lib/projections/apiHelpers";
+import { goalieNewYorkDate } from "components/GameGrid/utils/goalieWorkloadView";
 
 const querySchema = z.object({
   endDate: dateSchema.optional(),
@@ -36,7 +37,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     if (!supabase) throw new Error("Supabase server client not available");
     const q = parseQuery(req);
-    const targetDate = q.endDate ?? new Date().toISOString().slice(0, 10);
+    // The slate is an Eastern-time date (L3): a UTC default is tomorrow between 00:00 and 05:00 UTC.
+    const targetDate = q.endDate ?? goalieNewYorkDate(new Date().toISOString());
 
     const { data, error } = await supabase
       .from("forge_projection_accuracy_daily")
