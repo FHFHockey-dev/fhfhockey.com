@@ -1,0 +1,50 @@
+{
+  "counts": {
+    "byOutcome": {
+      "native_team_mismatch_or_ambiguous": 54,
+      "row_lineage_checked_proposed_contract:all_fields_literal_match": 234
+    },
+    "fieldStates": {
+      "goals:literal_match": 234,
+      "gp:literal_match": 234,
+      "ixg:literal_match": 234,
+      "shots:literal_match": 234,
+      "toi:literal_match": 234
+    },
+    "heldTeamCodes": {
+      "NJD": 18,
+      "SJS": 18,
+      "TBL": 18
+    },
+    "note": "NST prints N.J / S.J / T.B / L.A; WGO stores NJD / SJS / TBL / LAK",
+    "wgoRows": 288
+  },
+  "fixtures": {
+    "2026-09-30-penaltyKillRatesOi": {
+      "bytes": 84845,
+      "receivedAt": "2026-10-11T15:42:40.936Z",
+      "sha256": "80f79183457fed0ec45a8070f209e7d8de6df6b25c275a48db58c8dcf75b0c15",
+      "sourceUrl": "https://data.naturalstattrick.com/playerteams.php?sit=pk&score=all&stdoi=oi&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-09-30&td=2026-09-30&lines=single&draftteam=ALL&tgp=410"
+    },
+    "2026-10-01-allStrengthsCounts": {
+      "bytes": 172717,
+      "receivedAt": "2026-10-11T15:43:27.878Z",
+      "sha256": "8182551d63eb0672742bc8e87886561d1c4dc33151e92521c6617ad0cb5ddb8a",
+      "sourceUrl": "https://data.naturalstattrick.com/playerteams.php?sit=all&score=all&stdoi=std&rate=n&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-10-01&td=2026-10-01&lines=single&draftteam=ALL&tgp=410"
+    },
+    "2026-10-01-allStrengthsRates": {
+      "bytes": 187198,
+      "receivedAt": "2026-10-11T15:44:25.014Z",
+      "sha256": "f79995aa9cfa898be627f60aa884b4167895e9f8ec0fecd0d44182a7df81ae08",
+      "sourceUrl": "https://data.naturalstattrick.com/playerteams.php?sit=all&score=all&stdoi=std&rate=y&team=ALL&fromseason=20262027&thruseason=20262027&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-10-01&td=2026-10-01&lines=single&draftteam=ALL&tgp=410"
+    }
+  },
+  "lineageSHA256": "14e0816c65fd8988b1401e21952b0873fcb142da6866523f6c87d8f1b72ff4da",
+  "pkOnIcePage": {
+    "outcome": "date_strength_or_count_scope_mismatch"
+  },
+  "ratesPage": {
+    "outcome": "date_strength_or_count_scope_mismatch"
+  },
+  "version": "fhfh.blsh.evidence-bridge.real-fixture-lineage.v1"
+}

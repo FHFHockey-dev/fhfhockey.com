@@ -1,0 +1,189 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "sources": [
+    "web/lib/projections/evidenceTime.ts",
+    "web/lib/player-forecasts/contributions.ts",
+    "web/lib/rosterScheduleOptimizer/planningDates.ts",
+    "web/lib/rosterScheduleOptimizer/eligibility.ts",
+    "web/lib/rosterScheduleOptimizer/slots.ts",
+    "web/lib/rosterScheduleOptimizer/planningTimeline.ts",
+    "web/lib/rosterScheduleOptimizer/retention.ts",
+    "web/lib/rosterScheduleOptimizer/pointsComparison.ts",
+    "web/lib/projections/weightedAssignment.ts",
+    "web/lib/rosterScheduleOptimizer/planning.ts",
+    "web/lib/rosterScheduleOptimizer/healthyReserves.ts",
+    "web/lib/rosterScheduleOptimizer/recentForm.ts",
+    "web/lib/rosterScheduleOptimizer/streamingChain.ts",
+    "web/lib/rosterScheduleOptimizer/providerGoalieStarts.ts"
+  ],
+  "streaming": {
+    "policyVersion": "rso-stream-v1",
+    "recommended": 1,
+    "chains": [
+      {
+        "spots": 1,
+        "legs": [
+          {
+            "spot": 0,
+            "step": {
+              "id": "stream:0:0:k",
+              "type": "add",
+              "playerId": "k",
+              "dropPlayerId": "drop",
+              "at": "2026-11-02T00:00:00.000Z",
+              "effectiveAt": "2026-11-02T00:00:00.000Z",
+              "conditional": true,
+              "dependsOn": []
+            },
+            "actionDate": "2026-11-02",
+            "startDate": "2026-11-02",
+            "endDate": "2026-11-03",
+            "playerId": "k",
+            "dropPlayerId": "drop",
+            "games": 1,
+            "gameDates": [
+              "2026-11-02"
+            ],
+            "points": 2,
+            "options": [
+              {
+                "playerId": "k",
+                "games": 1,
+                "gameDates": [
+                  "2026-11-02"
+                ],
+                "points": 2,
+                "recentPointsPerGame": null,
+                "recentGames": null
+              }
+            ]
+          }
+        ],
+        "steps": [
+          {
+            "id": "stream:0:0:k",
+            "type": "add",
+            "playerId": "k",
+            "dropPlayerId": "drop",
+            "at": "2026-11-02T00:00:00.000Z",
+            "effectiveAt": "2026-11-02T00:00:00.000Z",
+            "conditional": true,
+            "dependsOn": []
+          }
+        ],
+        "evaluation": {
+          "assignmentValue": 2,
+          "comparisonEligible": false,
+          "knownComparison": null,
+          "valueUnknownPlayerIds": [],
+          "forecastManifestId": "synthetic",
+          "forecastInputs": [
+            {
+              "playerId": "k",
+              "gameId": "1",
+              "stats": {
+                "GOALS": 2
+              },
+              "conditioning": "unconditional",
+              "allowedUses": {
+                "assignment": true,
+                "totals": true,
+                "comparison": true,
+                "conditionalTieBreak": false
+              },
+              "startProbability": 0.8,
+              "confirmedStart": false,
+              "limitations": []
+            }
+          ],
+          "recommendation": {
+            "eligible": false,
+            "mode": "schedule_capacity",
+            "reasons": [
+              "Planning schedule coverage is incomplete or unknown.",
+              "Future availability for k must be rechecked before stream:0:0:k."
+            ],
+            "exclusions": [],
+            "unresolved": [],
+            "coverage": {
+              "requiredCount": 1,
+              "assignmentEligibleCount": 1,
+              "totalsEligibleCount": 1,
+              "comparisonEligibleCount": 1,
+              "exclusions": []
+            }
+          },
+          "selectionMethod": "quality",
+          "objective": "agp",
+          "steps": [
+            {
+              "id": "stream:0:0:k",
+              "type": "add",
+              "playerId": "k",
+              "dropPlayerId": "drop",
+              "at": "2026-11-02T00:00:00.000Z",
+              "effectiveAt": "2026-11-02T00:00:00.000Z",
+              "conditional": true,
+              "dependsOn": []
+            }
+          ],
+          "legal": true,
+          "budgetVerified": true,
+          "assignments": [
+            {
+              "date": "2026-11-02",
+              "playerId": "k",
+              "gameId": "1",
+              "slotId": "C#1",
+              "locked": false
+            }
+          ],
+          "scheduledGames": 1,
+          "activeGames": 1,
+          "benchGames": 0,
+          "projectedValue": null,
+          "projectedStats": {
+            "GOALS": 2
+          },
+          "categoryResults": [],
+          "goalie": {
+            "credited": 0,
+            "confirmed": 0,
+            "projected": 0,
+            "expectedStarts": 0,
+            "required": 0,
+            "risk": false,
+            "minimumSatisfied": true
+          },
+          "acquisitions": {
+            "w": 1
+          },
+          "limitations": [
+            "Planning schedule coverage is incomplete or unknown.",
+            "Future availability for k must be rechecked before stream:0:0:k."
+          ]
+        },
+        "netGames": 1,
+        "netPoints": null,
+        "netScore": 2,
+        "addsUsed": 1,
+        "addsAvailable": 2
+      }
+    ],
+    "limitations": [],
+    "alternatives": [],
+    "alternativesTruncated": 0
+  },
+  "baseline": {
+    "objective": "agp",
+    "comparisonEligible": false,
+    "projectedValue": null
+  },
+  "providerStart": {
+    "remaining": 0.7499999999999999,
+    "out": 0
+  },
+  "cairo": "2026-04-23T22:00:00.000Z",
+  "limits": "Exact frozen planning caller, streaming, matching and supporting modules; identity forecast resolver admits synthetic forecasts. No real admission, I/O, app imports, Vitest, or page execution. One earlier exploratory unknown-chain case was not promoted to an independent finding."
+}

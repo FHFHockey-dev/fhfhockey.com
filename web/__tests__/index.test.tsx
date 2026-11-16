@@ -177,28 +177,29 @@ describe("homepage fantasy tool switcher", () => {
 describe("homepage Latest News", () => {
   afterEach(cleanup);
 
-  it("renders no more than five authoritative stories", () => {
-    const latestNews = Array.from({ length: 7 }, (_, index) =>
+  // Superstyle 2026-11-15 (TJ-approved): desktop lists up to eight beside the chart; CSS limits phones to five.
+  it("renders no more than eight authoritative stories", () => {
+    const latestNews = Array.from({ length: 10 }, (_, index) =>
       makeHomepageNewsItem(index + 1),
     );
 
     render(<Home {...(baseProps as any)} latestNews={latestNews} />);
 
-    expect(screen.getAllByRole("article")).toHaveLength(5);
+    expect(screen.getAllByRole("article")).toHaveLength(8);
     expect(
       screen.getByRole("heading", {
-        name: "Complete authoritative story 5.",
+        name: "Complete authoritative story 8.",
       }),
     ).toBeTruthy();
     expect(
       screen.queryByRole("heading", {
-        name: "Complete authoritative story 6.",
+        name: "Complete authoritative story 9.",
       }),
     ).toBeNull();
     const disclosureButtons = screen
       .getAllByRole("button")
       .filter((button) => button.hasAttribute("aria-expanded"));
-    expect(disclosureButtons).toHaveLength(5);
+    expect(disclosureButtons).toHaveLength(8);
     disclosureButtons.forEach((button) => {
       expect(button.getAttribute("aria-expanded")).toBe("false");
       expect(button.textContent).toContain("+");

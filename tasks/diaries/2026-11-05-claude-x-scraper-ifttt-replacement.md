@@ -281,3 +281,25 @@ and turning the 7 applets off.
   migration 20261107192933 applied with TJ's approval; reader + tie-break uncommitted.
 - Still pending: 20261106220000 loud alerts (authority: pending), 20261106210000 + 20261106233000 (unknown).
 - Inventory report: side-session-notes/local_c4e6c533.../inventories/x-intake-ifttt-replacement.md
+- Scheduled read-only check 'x-shadow-coverage-check', run 2026-11-08 ~18:50 UTC (SELECTs only, nothing changed).
+  The task prompt was stale: it assumed only nhl_rosters was switched; every account has been on fxtwitter since 11-07.
+  1 Poller (since 11-06 18:50): cron job 400 1418 runs, all succeeded. x_timeline_poll_runs 1082 runs per account
+    (it misses some responses; net._http_response 12:48+ has 180 poller responses, 113 x 200 / 67 x 207, providers ok).
+    Failed reads: nhl_rosters 6.9%, dfo 7.9%, fhfh 8.9%, ccc 9.2%, gdg 9.3%, gdl 9.3%, gdn 9.6%. Longest streak 2 runs
+    (fhfh and gdl 3, i.e. 6 min). providers 'unavailable' once, at 11-07 22:56 (all accounts). One enqueueError: dfo
+    25P02 at 11-07 22:58, with no lost post (0 missing below).
+  2 Queued once (shadow rows first seen after switched_at vs fxtwitter queue rows), 0 missing / 0 dupes / 0 orphans:
+    nhl_rosters 35 (8 reposts), dfo 141, ccc 51, gdl 47, gdn 65, gdg 38.
+  3 IFTTT dropped: 0 ifttt queue rows after switched_at for every account.
+  4 Status: 0 pending. nhl_rosters 27 processed / 8 rejected (IFTTT 7d before: 20 / 7). Failed: dfo 5, ccc 1, gdn 1
+    (no error text in raw_payload; marked failed ~15 min after receipt, so look for a processor timeout).
+  5 Snapshots: nhl_rosters 35/35 posts have one. All 8 reposts credit the original author in source_handle, and
+    metadata.sourceProvenance.originalAuthor (relayAccount NHL_Rosters). 4 of them processed. primary_text_source =
+    wrapper_oembed; the enriched text drops the "RT @x:" prefix and differs from raw_text on every repost, but the credit
+    still landed, so the text-equality risk did not show up.
+  6 Coverage vs IFTTT (11-06 01:32 -> each switched_at): dfo 47/47, gdg 9/9, gdl 21/21, gdn 29/29, nhl_rosters 7/7,
+    ccc 36/38 (94.7%). Lag (shadow first_seen - IFTTT received): medians -135 to -307 s (scraper first), +3 s for
+    nhl_rosters. p90 at most +60 s (nhl_rosters), +29 s ccc. CCC misses: reply 2118526534642553031 (known reply gap)
+    and 2118791055374225476 ("Nov 6, 2026: NHL Starting Goalies...", not explained).
+  Decision: no pop-up tool in this run and TJ was not present. Recommendation: keep everything on fxtwitter. A
+    nhl_rosters rollback would cut off its intake, since IFTTT credits are exhausted. P3 is moot (DFO switched 11-07).

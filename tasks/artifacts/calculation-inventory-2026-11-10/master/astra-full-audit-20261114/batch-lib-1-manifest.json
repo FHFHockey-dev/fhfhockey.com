@@ -1,0 +1,152 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "files": [
+    {
+      "path": "web/lib/NHL/TOI.test.ts",
+      "sha256": "8e55458a2b686296789a007aa12cef54ad17d1564c7b68588227319188eb0bd1",
+      "lines": 21,
+      "bytes": 706,
+      "fullRead": true,
+      "targetMatch": true,
+      "rows": 3
+    },
+    {
+      "path": "web/lib/NHL/TOI.ts",
+      "sha256": "3e0914765766f0274c40b35a3670952a85e12ae2c8b140945901a29983cebe42",
+      "lines": 116,
+      "bytes": 3382,
+      "fullRead": true,
+      "targetMatch": true,
+      "rows": 33
+    },
+    {
+      "path": "web/lib/NHL/client/index.test.tsx",
+      "sha256": "3688c5fde7a788f760def529a72bcda072ad0a0a74583581d272d24f4f74ccc8",
+      "lines": 123,
+      "bytes": 7189,
+      "fullRead": true,
+      "targetMatch": true,
+      "rows": 65
+    },
+    {
+      "path": "web/lib/NHL/statsPageFetch.test.ts",
+      "sha256": "00b1bd0fa7d9fc529d90fc38b5d3bd81604b9308f3d7e2b334dcbed878d410c2",
+      "lines": 410,
+      "bytes": 15002,
+      "fullRead": true,
+      "targetMatch": true,
+      "rows": 83
+    },
+    {
+      "path": "web/lib/NHL/statsPageFetch.ts",
+      "sha256": "6724b186be849602ee8b77dae7fcfe2e6195f8f93cac46d54477db686cdea67a",
+      "lines": 431,
+      "bytes": 14641,
+      "fullRead": true,
+      "targetMatch": true,
+      "rows": 100
+    },
+    {
+      "path": "web/lib/api/averages/averagesPooling.test.ts",
+      "sha256": "9167ab3949456aec9ca584f30a5d924bbfef9b5cf477e7417b56d34f656efd30",
+      "lines": 310,
+      "bytes": 11183,
+      "fullRead": true,
+      "targetMatch": true,
+      "rows": 71
+    },
+    {
+      "path": "web/lib/api/averages/helpers.ts",
+      "sha256": "6558b15db322d71128ea1a47e42ccaaa84c34b425ba6b693fc9a5ea539c483fb",
+      "lines": 167,
+      "bytes": 5284,
+      "fullRead": true,
+      "targetMatch": true,
+      "rows": 40
+    },
+    {
+      "path": "web/lib/api/averages/statsService.ts",
+      "sha256": "2912a0b6adc8f3c263e778bfe0fbe4d6ff28a9ec699cc0d79988e77a405abf2d",
+      "lines": 399,
+      "bytes": 10894,
+      "fullRead": true,
+      "targetMatch": true,
+      "rows": 67
+    },
+    {
+      "path": "web/lib/api/averages/types.ts",
+      "sha256": "4bf1fa91d7e07d60a648f9d4eb34dba28bf916904140908f6857fd75534e6783",
+      "lines": 232,
+      "bytes": 5805,
+      "fullRead": true,
+      "targetMatch": true,
+      "rows": 1
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/market.test.ts",
+      "sha256": "2caa739f8b212e342cde7328c576fd16bca33e61dc361c3e1d49a0a409e6d55d",
+      "lines": 117,
+      "bytes": 6880,
+      "fullRead": true,
+      "targetMatch": true,
+      "rows": 52
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/market.ts",
+      "sha256": "305ea513bb176316f6b4e5c7ec4fe577631a57e9116b31fd15ef20e777cd0b6a",
+      "lines": 123,
+      "bytes": 7556,
+      "fullRead": true,
+      "targetMatch": true,
+      "rows": 28
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/trade.test.ts",
+      "sha256": "27ddef264be5d523be9a3b5725170f6ab06ddc0515c7dcc87b911106d7b91df5",
+      "lines": 178,
+      "bytes": 12211,
+      "fullRead": true,
+      "targetMatch": true,
+      "rows": 77
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/trade.ts",
+      "sha256": "7dfa4f843c2b96f23fe9c787f608ab4f42a16a6a95a238b2d4b15c90a9a42f55",
+      "lines": 201,
+      "bytes": 15813,
+      "fullRead": true,
+      "targetMatch": true,
+      "rows": 102
+    }
+  ],
+  "scopeLines": 2828,
+  "rows": 722,
+  "probe": {
+    "script": "lib1-probe.cjs",
+    "result": "lib1-probe-output.json",
+    "command": "node lib1-probe.cjs",
+    "exit": 0,
+    "invocations": 1
+  },
+  "contextOnly": [
+    "lib/supabase/database-generated.types.ts:32559-32604,34203-34262 nullable tables",
+    "pages/stats/index.tsx:14,627 SSR reader; rest pending",
+    "pages/api/Averages/[playerId].ts and ThreeYearAverages/[playerId].ts direct shared-function call sites",
+    "components/blshTrade/BlshTradeComparison.tsx:145-159,205-254,297-355 input/qualification guards (fully audited separately)",
+    "pages/buy-low-sell-high/trade.tsx full28lines local preview guard (outside this batch)",
+    "bounded TOI caller search: parseTime callers only; no fetchTOIData production caller"
+  ],
+  "notRun": [
+    "Vitest",
+    "application imports",
+    "React/Recharts",
+    "network/provider/database",
+    "browser/server"
+  ],
+  "checks": [
+    "all13 target hashes match",
+    "unique offset identities",
+    "all assigned sources fully read",
+    "single exact-source probe exit0"
+  ]
+}

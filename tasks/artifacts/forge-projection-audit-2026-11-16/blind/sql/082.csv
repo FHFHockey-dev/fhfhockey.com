@@ -1,0 +1,5 @@
+psql:/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/tmplh7w7tpl.sql:10: ERROR:  column "updated_at" does not exist
+LINE 1: select max(as_of_date) last_asof, max(updated_at) last_upd, ...
+                                              ^
+HINT:  Perhaps you meant to reference the column "forge_projection_results.created_at".
+

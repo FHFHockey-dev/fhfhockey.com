@@ -1,10 +1,12 @@
 import type { NewsLineupPresentation, NewsLineupRow } from "lib/newsLineupPresentation";
 import styles from "./NewsLineupGrid.module.scss";
 
-export default function NewsLineupGrid({ lineup, mini = false, onGoalieSlotClick }: {
+export default function NewsLineupGrid({ lineup, mini = false, hideContext = false, onGoalieSlotClick }: {
   lineup: NewsLineupPresentation;
   mini?: boolean;
   onGoalieSlotClick?: (slotIndex: number) => void;
+  /** The card title already says it ("FLA practice lines"). */
+  hideContext?: boolean;
 }) {
   const goalieRows = lineup.rows.filter((row) => row.kind === "goalie");
   const goalieIndex = (row: NewsLineupRow, index: number) => /^G\d+$/.test(row.label)
@@ -19,10 +21,15 @@ export default function NewsLineupGrid({ lineup, mini = false, onGoalieSlotClick
   ];
   return (
     <div className={`${styles.preview} ${mini ? styles.mini : ""}`}>
-      <p className={styles.context}>{lineup.context}{mini && lineup.rows.length ? " · Scroll if needed" : ""}</p>
+      {!hideContext ? <p className={styles.context}>{lineup.context}</p> : null}
       {lineup.notice ? <p className={styles.notice}>{lineup.notice}</p> : null}
       {lineup.rows.length ? (
-        <div className={styles.viewport} role="region" aria-label={`${lineup.context} players`} tabIndex={0}>
+        <div className={styles.viewport} role={mini ? undefined : "region"}
+          aria-label={mini ? undefined : `${lineup.context} players`} tabIndex={mini ? undefined : 0}>
+          {/* Mini (homepage rail) shows every row: a 180px inner scroller hid
+              the goalies below the fold (TJ, 2026-11-15). Only the full grid
+              can scroll, so only it is a named region with a tab stop; mini
+              regions repeated one name per card (axe landmark-unique). */}
           <div className={styles.grid}>
             {groups.map(({ kind, title }) => {
               const rows = lineup.rows.filter((row) => row.kind === kind);
@@ -32,6 +39,7 @@ export default function NewsLineupGrid({ lineup, mini = false, onGoalieSlotClick
                   {!mini ? <h3>{title}</h3> : null}
                   {rows.map((row, rowIndex) => (
                     <div key={rowIndex} className={styles.unit} role="group"
+                      data-line={kind === "forward" ? `L${rowIndex + 1}` : row.label}
                       aria-label={`${row.group ? `Group ${row.group} · ` : ""}${row.label}${row.partial ? " · partial" : ""}`}>
                       {!mini && row.group ? <span className={styles.groupLabel}>Group {row.group}</span> : null}
                       <div className={styles.players} data-role={kind}>
@@ -39,11 +47,13 @@ export default function NewsLineupGrid({ lineup, mini = false, onGoalieSlotClick
                           const starter = kind === "goalie" && Boolean(name && lineup.startingGoalie &&
                             name.toLowerCase() === lineup.startingGoalie.toLowerCase());
                           const content = <>{!mini ? <span className={styles.role}>{row.label}{starter ? " · Starter" : ""}</span> : null}
-                            <span className={styles.name} title={mini ? name || "Not supplied" : undefined}>{name || "Not supplied"}</span></>;
+                            <span className={styles.name} title={mini ? name || "Not supplied" : undefined}>{name || "Not supplied"}</span>
+                            {mini && starter ? <span className={styles.starterTag}>Starter</span> : null}</>;
                           return kind === "goalie" && onGoalieSlotClick ? (
                             <button key={index} type="button" className={styles.slot}
                               aria-label={`Set G${goalieIndex(row, index) + 1} goalie`} onClick={() => onGoalieSlotClick(goalieIndex(row, index))}>{content}</button>
                           ) : <div key={index} className={styles.slot} data-missing={!name || undefined}
+                            data-starter={starter || undefined}
                             role={mini ? "group" : undefined}
                             aria-label={mini ? `${row.label}${starter ? " · Starter" : ""}: ${name || "Not supplied"}` : undefined}>{content}</div>;
                         })}

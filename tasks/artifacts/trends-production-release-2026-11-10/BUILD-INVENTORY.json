@@ -1,0 +1,46 @@
+{
+  "at": "2026-11-10T20:18:42.807Z",
+  "linkedProjects": [
+    {
+      "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "name": "fhfhockey",
+      "rootDirectory": "web",
+      "productionBranch": "master",
+      "commandForIgnoringBuildStep": "",
+      "gitDeploymentEnabled": null,
+      "previewDeploymentsDisabled": true
+    },
+    {
+      "id": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+      "name": "functions-fhfhockey",
+      "rootDirectory": "functions",
+      "productionBranch": "master",
+      "commandForIgnoringBuildStep": null,
+      "gitDeploymentEnabled": null,
+      "previewDeploymentsDisabled": true
+    },
+    {
+      "id": "prj_gG8SHX7C5GbCDJoind7trh9bj6dK",
+      "name": "cms-fhfhockey",
+      "rootDirectory": "cms",
+      "productionBranch": "master",
+      "commandForIgnoringBuildStep": "",
+      "gitDeploymentEnabled": null,
+      "previewDeploymentsDisabled": true
+    },
+    {
+      "id": "prj_3X6goi9DxqUnD0sHChwEwaRakquG",
+      "name": "fhfhockey.com",
+      "rootDirectory": null,
+      "productionBranch": "master",
+      "commandForIgnoringBuildStep": null,
+      "gitDeploymentEnabled": null,
+      "previewDeploymentsDisabled": true
+    }
+  ],
+  "expectedEntries": 4,
+  "expectedCompletedBuilds": 1,
+  "expectedIgnoredCompanions": 3,
+  "configurationChanged": false,
+  "refreshedAt": "2026-11-10T20:20:24.929Z"
+}

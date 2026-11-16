@@ -1,0 +1,117 @@
+{
+  "target": "89da739cb",
+  "passed": true,
+  "incremental": {
+    "oneStoredRowForLatestDateWindow": {
+      "startDate": null,
+      "endDate": "2026-10-01",
+      "upToDate": true
+    },
+    "qualification": "Window helper takes date only; source MAX date query supplies it without completion proof"
+  },
+  "shiftRead": {
+    "rowsAvailable": 1001,
+    "capped": 1000,
+    "returnedQueries": [
+      "nhl_api_shift_rows",
+      "nhl_api_pbp_events",
+      "nhl_api_shift_rows",
+      "nhl_api_pbp_events"
+    ],
+    "cappedCounts": {
+      "goalsFor": 0,
+      "goalsAgainst": 0
+    },
+    "fullCounts": {
+      "goalsFor": 1,
+      "goalsAgainst": 0
+    },
+    "cappedResolution": {
+      "stat": {
+        "evenStrengthGoalsFor": 0,
+        "powerPlayGoalFor": 0,
+        "shortHandedGoalsFor": 0
+      },
+      "resolution": "shift_confirmed_zero"
+    },
+    "fullResolution": {
+      "resolution": "unknown_shift_count_nonzero"
+    }
+  },
+  "targeted": {
+    "requestedId": 1,
+    "returnedId": 2,
+    "queries": [
+      {
+        "path": "/stats/rest/en/skater/summary",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/bios",
+        "expression": "gameDate<=\"2026-10-01 23:59:59\" and gameDate>=\"2026-11-15\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/realtime",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/faceoffpercentages",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/faceoffwins",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/goalsForAgainst",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/penalties",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/penaltykill",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/powerplay",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/puckPossessions",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/summaryshooting",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/percentages",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/scoringRates",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/scoringpergame",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/shottype",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      },
+      {
+        "path": "/stats/rest/en/skater/timeonice",
+        "expression": "gameDate<=\"2026-11-15 23:59:59\" and gameDate>=\"2026-10-01\" and gameTypeId=2 and skaterFullName likeIgnoreCase \"%John Smith%\""
+      }
+    ]
+  },
+  "pooledIpp": {
+    "value": 50,
+    "singleGame": null,
+    "missingComponent": null
+  },
+  "boundary": "Exact frozen AST functions plus real pure date-fns/shift normalizer; inert finite query and Fetch doubles only. No production/client imports, HTTP, application writes or suites."
+}

@@ -1,0 +1,13 @@
+// Offline exact-commit probe only. Loads four pure capture modules with a deny-by-default require hook.
+const fs=require('fs'),vm=require('vm'),cp=require('child_process'),crypto=require('crypto'),assert=require('assert');
+const ts=require('/Users/tim/Code/fhfhockey.com/web/node_modules/typescript');
+const commit='d4625ed404419df51cf94013991e1ca523b70c08',base='web/lib/projections/pregameCapture/',cache={},hashes={};
+function blob(path){const b=cp.execFileSync('git',['show',commit+':'+path]);hashes[path]=crypto.createHash('sha256').update(b).digest('hex');return b;}
+function load(name){if(cache[name])return cache[name];const b=blob(base+name+'.ts'),m={exports:{}};const js=ts.transpileModule(b.toString(),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText;vm.runInNewContext(js,{module:m,exports:m.exports,Buffer,require:(id)=>{if(id==='node:crypto')return crypto;if(['./time','./der'].includes(id))return load(id.slice(2));throw Error('disallowed '+id)}},{filename:name,timeout:1000});return cache[name]=m.exports;}
+const r=load('rfc3161'),t=load('time'),d=load('deadline');
+const read=name=>blob(base+'__fixtures__/tsa/'+name), digest=crypto.createHash('sha256').update(read('data.bin')).digest(),nonce=BigInt(read('nonce.txt').toString().trim()),trust={anchorsPem:[read('ca.crt').toString()],policies:['1.3.6.1.4.1.99999.1']};
+const good=r.verifyTimeStampToken(r.extractToken(read('good.tsr')),{sha256Digest:digest,nonce},trust);assert.equal(good.accuracyMicros,1500000n);
+const noacc=r.extractToken(read('noacc.tsr'));assert.throws(()=>r.verifyTimeStampToken(noacc,{sha256Digest:digest,nonce},trust),/accuracy_missing/);
+const bad=r.verifyTimeStampToken(noacc,{sha256Digest:digest,nonce},{...trust,fallbackAccuracyMicros:-2000000n});assert(bad.upperMicros<bad.genTimeMicros);assert(bad.lowerMicros>bad.upperMicros);
+const start=t.formatMicros(bad.genTimeMicros+60n*t.MICROS_PER_MINUTE-1000000n);assert.equal(d.ackQualifies(bad.upperMicros,{scheduledStart:start}),true);assert.equal(d.ackQualifies(bad.genTimeMicros,{scheduledStart:start}),false);
+console.log(JSON.stringify({commit,checks:{goodPinnedToken:'passed',noAccuracyWithoutFallback:'refused',negativeFallback:{accuracyMicros:bad.accuracyMicros,lowerMicros:bad.lowerMicros,upperMicros:bad.upperMicros,genTimeMicros:bad.genTimeMicros,earlierThanGenTime:true,reversedInterval:true,lateTokenQualifies:true}},hashes,boundary:'Pure pinned modules and pinned offline signed fixtures only. No Vitest, app modules, external service, database, key creation or fixture edits. Invalid negative accuracy would be rejected by the SQL table; runner/verifier not yet part of this commit.'},(_k,v)=>typeof v==='bigint'?v.toString():v,2));

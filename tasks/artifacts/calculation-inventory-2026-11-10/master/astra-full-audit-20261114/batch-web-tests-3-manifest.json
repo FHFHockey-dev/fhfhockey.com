@@ -1,0 +1,50 @@
+[
+  {
+    "path": "web/__tests__/pages/api/CareerAverages/[playerId].test.ts",
+    "lines": 131,
+    "sha256": "9adb9990ddb522bf7ca1f72ea854cbf1779ee5a0a9a88af0a86c8f799f7039af",
+    "targetMatch": true
+  },
+  {
+    "path": "web/__tests__/pages/api/SustainabilityStats/[playerId].test.ts",
+    "lines": 179,
+    "sha256": "482fc97ce90350fdeab8923719c9b4bb03d275a5d78d990b8fc7d374d61cc05a",
+    "targetMatch": true
+  },
+  {
+    "path": "web/__tests__/pages/api/Teams/teamAbbreviation.sog60.test.ts",
+    "lines": 128,
+    "sha256": "edab0ea220edfa92429298fc8e07868bf6bed0faacfb1b97fe34e345d2caf5de",
+    "targetMatch": true
+  },
+  {
+    "path": "web/__tests__/pages/api/internal/forecast-calendar.test.ts",
+    "lines": 136,
+    "sha256": "92f40e67070f743fd55df6b696540d4e6f68fa88d00f8ff6094695dcf65fb193",
+    "targetMatch": true
+  },
+  {
+    "path": "web/__tests__/pages/api/toi.test.ts",
+    "lines": 230,
+    "sha256": "79022bc34467afb1068bfaed130f63a1c120b8c2be380ab0a8adfe10b36353a3",
+    "targetMatch": true
+  },
+  {
+    "path": "web/__tests__/pages/api/underlying-stats/landing-special-teams.test.ts",
+    "lines": 114,
+    "sha256": "46d8018d9d63c9be9add8f784a443aaa3b882320158f693439402112871cfae1",
+    "targetMatch": true
+  },
+  {
+    "path": "web/__tests__/pages/api/v1/db/build-projection-derived-v2.test.ts",
+    "lines": 538,
+    "sha256": "ba85215cc99c0912d3b778e80b35d0c179e3f72dde59bfe6ce8d5959240f476e",
+    "targetMatch": true
+  },
+  {
+    "path": "web/__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts",
+    "lines": 705,
+    "sha256": "591934903c0053eaa581e6af0c81b2d086c0c6b4905e66cf5e4e526d9437f3b6",
+    "targetMatch": true
+  }
+]

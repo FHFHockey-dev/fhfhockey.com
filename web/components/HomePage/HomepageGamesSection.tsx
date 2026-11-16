@@ -95,21 +95,20 @@ type SlateIconName =
 
 const SLATE_METRIC_PRESENTATION: Record<
   string,
-  { label: string; descriptor: string; icon: SlateIconName }
+  // No descriptor line: "Up to date" / "Latest headlines" said nothing
+  // the label didn't (TJ, 2026-11-15).
+  { label: string; icon: SlateIconName }
 > = {
   players: {
     label: "Players indexed",
-    descriptor: "Up to date",
     icon: "players",
   },
   news: {
     label: "News updates",
-    descriptor: "Latest headlines",
     icon: "news",
   },
   injuries: {
     label: "Injuries tracked",
-    descriptor: "Current updates",
     icon: "injuries",
   },
 };
@@ -515,11 +514,6 @@ export default function HomepageGamesSection({
     ["OVER", "FINAL", "OFF"].includes(game.gameState),
   ).length;
   const upcomingGames = Math.max(games.length - liveGames - finalGames, 0);
-  const uniqueTeamCount = new Set(
-    games
-      .flatMap((game) => [game?.homeTeam?.abbrev, game?.awayTeam?.abbrev])
-      .filter(Boolean),
-  ).size;
   const firstScheduledGame = games.find(
     (game) => typeof game.startTimeUTC === "string",
   );
@@ -805,17 +799,22 @@ export default function HomepageGamesSection({
     focusCalendarDate(nextDate);
   };
 
+  const plural = (count: number, noun: string) =>
+    `${count} ${noun}${count === 1 ? "" : "s"}`;
+  const heroDate = moment(currentDate).format("MMMM D");
+  const upcomingSuffix = upcomingGames > 0 ? `; ${upcomingGames} upcoming` : "";
+  // Plain fan-facing summary: counts and start time, no product jargon.
   const heroDescription = playoffsActive
     ? liveGames > 0
-      ? `${liveGames} playoff game${liveGames === 1 ? "" : "s"} live right now. Track the bracket, tonight's slate, and every best-of-seven race from one surface.`
+      ? `${liveGames} of ${plural(games.length, "playoff game")} live now${upcomingSuffix}.`
       : games.length > 0
-        ? `${games.length} playoff game${games.length === 1 ? "" : "s"} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}.`
-        : `No playoff games are scheduled for ${moment(currentDate).format("MMMM D")}, but the bracket stays live with the next series turn already mapped.`
+        ? `${plural(games.length, "playoff game")} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}.`
+        : `No playoff games on ${heroDate}. The bracket shows where every series stands.`
     : games.length > 0
       ? liveGames > 0
-        ? `${liveGames} game${liveGames === 1 ? "" : "s"} live right now. Move from the slate to confirmed starter context and market movement without leaving the homepage flow.`
-        : `${games.length} game${games.length === 1 ? "" : "s"} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}.`
-      : "No games today.\nUse the tools below to plan your next move.";
+        ? `${liveGames} of ${plural(games.length, "game")} live now${upcomingSuffix}.`
+        : `${plural(games.length, "game")} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}.`
+      : `No games on ${heroDate}.`;
   const modulePresentation = buildHomepageModulePresentation({
     source: "homepage-games",
     loading,
@@ -1041,9 +1040,6 @@ export default function HomepageGamesSection({
                     <span className={styles.slateMetricDefaultCopy}>
                       {metric.caption}
                     </span>
-                    <span className={styles.slateMetricDesktopCopy}>
-                      {presentation.descriptor}
-                    </span>
                   </small>
                 </div>
               );
@@ -1069,20 +1065,6 @@ export default function HomepageGamesSection({
                 </div>
               </ClientOnly>
             ) : null}
-            <nav
-              className={styles.slateContextLinks}
-              aria-label="Contextual homepage tools"
-            >
-              {HOME_SURFACE_LINKS.slice(0, 4).map((link, index) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  data-featured={index === 0 || undefined}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
           </div>
         </div>
 
@@ -1117,7 +1099,7 @@ export default function HomepageGamesSection({
           <button
             type="button"
             onClick={() => onChangeDate(-1)}
-            aria-label="Previous Day"
+            aria-label="Previous day"
           ></button>
           <div className={styles.dateSelector} ref={dateSelectorRef}>
             <button
@@ -1141,16 +1123,12 @@ export default function HomepageGamesSection({
           <button
             type="button"
             onClick={() => onChangeDate(1)}
-            aria-label="Next Day"
+            aria-label="Next day"
           ></button>
           <div className={styles.gamesSummary} aria-label="Slate summary">
             <span>
               <strong>{games.length}</strong>
               Games
-            </span>
-            <span>
-              <strong>{uniqueTeamCount}</strong>
-              Teams
             </span>
             <span data-live={liveGames > 0 || undefined}>
               <strong>

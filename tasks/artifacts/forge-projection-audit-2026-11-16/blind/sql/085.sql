@@ -1,0 +1,1 @@
+select created_at::date d, count(*) n, min(as_of_date) lo, max(as_of_date) hi, string_agg(distinct status, '|') st from forge_runs where created_at > now() - interval '30 days' group by 1 order by 1 desc

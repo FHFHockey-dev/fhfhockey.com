@@ -1,0 +1,13 @@
+# BLSH bootstrap independent reviewer
+- Scope: read-only source/test review of local bootstrap approval, timing, pinning, privacy, and one-shot gates. No live adapter, credentials, network, or external action.
+- Where: canonical octoberBranch; owner only this diary and BOOTSTRAP-INDEPENDENT-REVIEW.md. Shared dirty tree preserved.
+- State: read AGENTS.md/mise-en-place.md and current diff summary. Assigned source/test SHA inputs recorded in parent handoff.
+- Next: inspect bootstrap, nearest mocked tests, adjacent runner/adapter only as needed, and existing verification logs.
+- Limits: one review pass plus one correction follow-up; actual Chef runtime settings unavailable, feasible assignment fallback supplied; no hierarchy verification claimed.
+- Checkpoint: assigned bootstrap/test hashes match a4b0388e… and a46fef4f…. Existing focused log records 28 passing tests; typecheck/lint logs inspected without diagnostics (exit status not embedded). No suite rerun.
+- Finding sent to Chef: extensionless CommonJS runtime imports can prefer an unpinned sibling .js over the hashed .ts targets; need resolution binding before imports, including relevant pinned transitive source roles.
+- Next: record review artifact and use one correction follow-up if requested. Pilot remains unauthorized; no credentials, network, adapter invocation or output created.
+- Correction follow-up: d4d2fcac… source binds all nine actual CommonJS resolutions to canonical pinned .ts paths; original high finding closed in source. Read matching successful check-only CLI artifact.
+- Test successor da58e7ac… currently 14 failures due to Vitest lacking .ts CommonJS resolution; reported specific fixture correction to Chef. Waiting only for corrected test evidence. No additional source pass budget.
+- Handoff: corrected test47a53168… inspected/rehashed; updated log32/32pass. Test resolver keeps real .js preference and models only missing .ts fallback. Sole source finding closed; report finalized. Chef confirms lint exit0 and successor production typecheck pass; final full check after helper adjustment underway.
+- Remaining: Chef integration/final checks; separately authorized pilot approvals/receipts. No live activity. Diary retained for handoff continuity.

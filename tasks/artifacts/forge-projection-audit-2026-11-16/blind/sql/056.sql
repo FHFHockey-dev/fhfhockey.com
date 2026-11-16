@@ -1,0 +1,1 @@
+select l."gameId", g.date, (select count(*) from unnest(l.forwards||l.defensemen) x where x in (8481827,8483436,8481708)) n_of_3 from "lineCombinations" l join games g on g.id=l."gameId" where l."teamId"=68 and g.date >= '2026-11-01' order by g.date

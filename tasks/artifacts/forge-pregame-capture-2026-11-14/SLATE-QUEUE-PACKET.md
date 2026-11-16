@@ -1,6 +1,10 @@
 # FORGE pregame slate queue — decision packet and run plan (step 4)
 
-**Status: built and rehearsed offline only.** Nothing is hosted, scheduled, flagged, deployed or applied. `--execute` exists but has not been run, and nothing here touched the network, credentials or production. Tonight's live pilot (§5) needs TJ's run approval on a clean export, which Chef brings.
+**Status:** first live pilot run on 2026-11-16 00:15Z (0329 + 0330). It stopped safely on a database statement timeout; receipt `SLATE-PILOT-RECEIPT-2026020329-2026020330.md`.
+- **Since then:**
+  - the slow read is fixed (migrations 155 and 156, plus vacuums);
+  - the queue's re-plan slip is fixed (`bc13b523e`, verified on a clean export).
+- **Monday's run plan** (§7) is a proposal that needs TJ's run approval. Nothing is hosted, scheduled, flagged or deployed.
 
 ## 0. TJ's decisions (2026-11-15)
 
@@ -13,6 +17,7 @@
 | `claim_failed` with no claim found | **Keep as is:** treated as ambiguous; closed only after the claim window; never re-claimed |
 | Lead | **10 min** |
 | Global sweep | **OK for the pilot** |
+| Monday 2026-11-16 run (§7) | **Approved (2026-11-16 ~02:15Z): one queue, both games** (0331 + 0332), candidate `bc13b523e`, launch 17:30–17:55 ET after the ≤ 4 s timed read and the statistics re-read |
 
 ## 1. What was built
 
@@ -155,7 +160,65 @@ A claimed game is never abandoned.
 - **During the run:** the stop rules (§3) act automatically. The operator does not interrupt a running capture. If the process dies, re-launch with a **new** `--out`: re-entry looks up first and never re-claims.
 - **After the run:** keep `slate-receipt.json` and `slate-events.jsonl`. Re-verify each qualified witness offline, as for pilot 3.
 
-## 6. Still open (after the pilot)
+## 6. Still open
 
 - Hosting beyond the Mac (the `webhooks/` service) and a slate-scoped sweep RPC, which would need a migration.
 - Whether a stop should leave undispatched games unrecorded, so they can be re-run, instead of recording `never_dispatched` (today: recorded, per TJ's removed-games decision).
+- **Simultaneous starts** are still unexercised: tonight's max in flight was 1. After a clean Monday run, the next step is a cap-2 subset of Tuesday's 19:00 ET cluster, for example 2026020333 LAK@BOS + 2026020335 EDM@FLA (both 00:00Z), with its own approval.
+
+## 7. Run plan for Monday 2026-11-16 (approved by TJ: one queue, both games)
+**What changed since §5:**
+
+| Item | State |
+| --- | --- |
+| Candidate | **`bc13b523e28878e75fb48a5c631f049e4f8c0c45`** (`CANDIDATE-bc13b523e-VERIFICATION.md`: 351/351, typecheck 0, rehearse with 0 network attempts) |
+| The read that stopped 0330 | `forge_league_skater_physical_totals`: 7.4–8.0 s before. Now an Index Only Scan with 0 heap fetches: **337 ms warm** after the index-cleaning vacuum, and **1,537 ms** near-cold after the first vacuum. A fully cold time is unmeasured; the timed read below measures it. Migration 155 applied 01:27:52Z (`physical-totals/MIGRATION-155-APPLY-RECEIPT.md`). The live answer is identical to the old body's, as recorded in the qualified 0328 packet. |
+| Visibility upkeep | Migration 156 (insert-triggered autovacuum) applied 01:50:53Z; table 100% all-visible after the index-cleaning vacuum (`physical-totals/VISIBILITY-156-RECEIPT.md`). The setting is in place but not yet seen to fire; the table's stats counters read 0 before tonight. |
+| Re-plan slip | Fixed in the candidate; regression test included. |
+
+**Games** (from the 2026-11-15 G1 lookup; the pin re-reads `games` and `roster_optimizer_team_games` at launch and refuses any change). Times in EST (UTC−5):
+
+| Game | Start | T−60 (witness due) | Planned dispatch | Latest safe dispatch |
+| --- | --- | --- | --- | --- |
+| 2026020331 MTL @ NYR | 19:30 ET (00:30Z Tue) | 18:30 ET (23:30Z) | **18:13:58 ET** (23:13:58Z) | 18:23:58 ET |
+| 2026020332 VAN @ UTA | 21:30 ET (02:30Z Tue) | 20:30 ET (01:30Z) | **20:13:58 ET** (01:13:58Z) | 20:23:58 ET |
+
+**One queue or two launches (TJ's choice):**
+- **One queue** for both games, the queue's purpose: the run lasts from the launch to about 20:20 ET. A whole-queue stop on 0331 (for example another statement timeout) **permanently closes 0332 as `never_dispatched`** two hours early, as happened to 0329.
+- **Two single-game launches** (two tokens, two launch windows, about 17:30 and 19:30 ET): each game stands alone, at the cost of a second attended launch.
+- Simultaneous starts are exercised in neither (§6).
+
+**Steps** (all from the repository root):
+1. **Export:** a fresh `git archive bc13b523e…` into `~/forge-pilot/export-bc13b523e-<UTC>`, with `web/node_modules` linked. Check migration hashes 150 and 151 against the authority rows and check DNS.
+2. **Go/no-go:** one cold timed read of the capture's own call (season 20262027, cutoff = the slate date 2026-11-16), read-only, about 0.3–1.5 s of database time. **No-go** if over 4,000 ms or on any failure; then no launch, and Chef reports. Then one read-only statistics re-read, which must show the vacuum time and records whether autovacuum has fired since.
+   ```bash
+   zsh tasks/artifacts/forge-pregame-capture-2026-11-14/operator/apply-migration-155.sh --timed-read --cutoff 2026-11-16
+   ```
+   ```bash
+   zsh tasks/artifacts/forge-pregame-capture-2026-11-14/operator/apply-visibility-156.sh --preflight
+   ```
+3. **Launch** between 17:30 and 17:55 ET (22:30–22:55Z), attended, from the export's launcher. Token `tj-slate-2026020331-2026020332-20261116`.
+   ```bash
+   <export>/tasks/artifacts/forge-pregame-capture-2026-11-14/operator/launch-slate.sh <export>/web bc13b523e28878e75fb48a5c631f049e4f8c0c45 2026-11-16 tj-slate-2026020331-2026020332-20261116 <new out> 2026020331@2026-11-17T00:30:00Z,2026020332@2026-11-17T02:30:00Z
+   ```
+4. **After the run:**
+   - keep `slate-receipt.json` and `slate-events.jsonl`;
+   - for each qualified game, one readback plus re-verification (`~/forge-pilot/tools/postrun.sh`) and an OpenSSL `ts -verify`;
+   - write a receipt and commit it by exact paths.
+
+**Stop conditions:**
+- **Before launch:**
+  - the export SHA differs;
+  - a migration hash differs;
+  - the timed read is a no-go;
+  - `gate.sh` fails;
+  - it is past 23:23Z (18:23 ET), which is latest safe for 0331. A launch after that would close 0331 as `never_dispatched`.
+- **During the run:** the stop rules in §3; one attempt per game; no retry.
+
+**Approval needed (one pop-up):**
+- this exact candidate, both games, one queue or two launches, the launch window or windows, the timed-read gate and the statistics re-read;
+- credentials from `web/.env.local` for that run only;
+- one TSA call per game.
+
+**Not included:** push, deploy, a hosted queue, other games or reruns.
+

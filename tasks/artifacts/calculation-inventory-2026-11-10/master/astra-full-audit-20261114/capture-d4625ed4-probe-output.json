@@ -1,0 +1,28 @@
+{
+  "commit": "d4625ed404419df51cf94013991e1ca523b70c08",
+  "checks": {
+    "goodPinnedToken": "passed",
+    "noAccuracyWithoutFallback": "refused",
+    "negativeFallback": {
+      "accuracyMicros": "-2000000",
+      "lowerMicros": "1794701597000000",
+      "upperMicros": "1794701593000000",
+      "genTimeMicros": "1794701595000000",
+      "earlierThanGenTime": true,
+      "reversedInterval": true,
+      "lateTokenQualifies": true
+    }
+  },
+  "hashes": {
+    "web/lib/projections/pregameCapture/rfc3161.ts": "762fa9c224fdd9a72f0afacde6fafa5f9be8bcf61d38a9fde10d1931b0545bd7",
+    "web/lib/projections/pregameCapture/der.ts": "f38af1db785f80d1ca703ff2ebf1e09e11a79d01274139f621bd2f1a6b8e47d9",
+    "web/lib/projections/pregameCapture/time.ts": "2444051923824289273a1201d579b2a3f46641a1d7ac889eaebb47b46fedb481",
+    "web/lib/projections/pregameCapture/deadline.ts": "108d0e3260ec91db9a2bcde5cfa61a7c7900b37da11d0b33547c8faf9c193fb5",
+    "web/lib/projections/pregameCapture/__fixtures__/tsa/data.bin": "c89617aa46c398e6320861b601cd36a3adad36297d1a6e8283081a315882c076",
+    "web/lib/projections/pregameCapture/__fixtures__/tsa/nonce.txt": "9fa487bb5a7a9f99de38ba4d6b195c21c604716fe203c0231b463ae523007d9b",
+    "web/lib/projections/pregameCapture/__fixtures__/tsa/ca.crt": "52182706c054907715f4c4d02994dd6c9ed069c10272bbb8ab22324444f98ce1",
+    "web/lib/projections/pregameCapture/__fixtures__/tsa/good.tsr": "d99abbb0c2857a8e3fa41872136698c9d3406809cd28c2e580700d2f312d78cd",
+    "web/lib/projections/pregameCapture/__fixtures__/tsa/noacc.tsr": "9623ca9b06ec5310681a4ea72f61ed2f3a78f2abc2e5ea5e76c4a95efad6a707"
+  },
+  "boundary": "Pure pinned modules and pinned offline signed fixtures only. No Vitest, app modules, external service, database, key creation or fixture edits. Invalid negative accuracy would be rejected by the SQL table; runner/verifier not yet part of this commit."
+}

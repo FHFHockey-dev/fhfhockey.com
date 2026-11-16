@@ -1,0 +1,9 @@
+indexdef
+CREATE UNIQUE INDEX player_forecast_source_observations_pkey ON public.player_forecast_source_observations USING btree (id)
+"CREATE UNIQUE INDEX player_forecast_source_observ_provider_dataset_key_entity_k_key ON public.player_forecast_source_observations USING btree (provider, dataset_key, entity_key, payload_hash)"
+"CREATE INDEX player_forecast_source_observations_lookup_idx ON public.player_forecast_source_observations USING btree (provider, dataset_key, entity_key, available_at DESC)"
+"CREATE UNIQUE INDEX player_forecast_forge_evidence_identity_idx ON public.player_forecast_source_observations USING btree (provider, dataset_key, entity_key) WHERE (provider = 'forge-evidence'::text)"
+"CREATE INDEX player_forecast_forge_evidence_packet_idx ON public.player_forecast_source_observations USING btree (((payload ->> 'game_id'::text)), ((payload ->> 'profile'::text)), ((payload ->> 'policy_cutoff_at'::text))) WHERE ((provider = 'forge-evidence'::text) AND (dataset_key = 'forge-evidence-packet-v1'::text))"
+"CREATE INDEX player_forecast_forge_evidence_dataset_idx ON public.player_forecast_source_observations USING btree (((payload ->> 'dataset_id'::text)), ((payload ->> 'manifest_revision'::text))) WHERE ((provider = 'forge-evidence'::text) AND (dataset_key = 'forge-evidence-dataset-v1'::text))"
+CREATE UNIQUE INDEX forge_local_attempt_run_idx ON public.player_forecast_source_observations USING btree (entity_key) WHERE ((provider = 'forge'::text) AND (dataset_key = 'forge-local-execution-v1'::text))
+CREATE INDEX forge_local_attempt_game_idx ON public.player_forecast_source_observations USING btree (((payload ->> 'gameId'::text))) WHERE ((provider = 'forge'::text) AND (dataset_key = 'forge-local-execution-v1'::text))

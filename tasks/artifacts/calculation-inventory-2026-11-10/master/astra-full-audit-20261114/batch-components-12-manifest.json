@@ -1,0 +1,508 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "worker": "/root/readfirst_lanes",
+  "verifiedRuntime": "gpt-6-astra/high (verified earlier)",
+  "scope": [
+    {
+      "path": "web/components/Rankings/GoalieMatrixTable.tsx",
+      "local": "00-GoalieMatrixTable.tsx",
+      "bytes": 14546,
+      "lines": 396,
+      "sha256": "df768603ab2be613d6239f8c8ed98a116f123eec27d5204195c67b011bf5d7d8",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          396
+        ]
+      ],
+      "unread": [],
+      "functions": 17,
+      "values": 14,
+      "tests": 0
+    },
+    {
+      "path": "web/components/Rankings/GoalieTeamMatrixTable.test.tsx",
+      "local": "01-GoalieTeamMatrixTable.test.tsx",
+      "bytes": 24345,
+      "lines": 781,
+      "sha256": "1cbabd3fdea0e9bed33a17ef28c01d8bdb9e3834e46d2343f36d85a7045c3538",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          781
+        ]
+      ],
+      "unread": [],
+      "functions": 12,
+      "values": 9,
+      "tests": 6
+    },
+    {
+      "path": "web/components/Rankings/PlayerMatrixTable.test.tsx",
+      "local": "02-PlayerMatrixTable.test.tsx",
+      "bytes": 22511,
+      "lines": 735,
+      "sha256": "5ea11f4074fdd46d16dc42d1b57f5b39757c92d5f7ee0d9d92856728926b151d",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          735
+        ]
+      ],
+      "unread": [],
+      "functions": 14,
+      "values": 14,
+      "tests": 7
+    },
+    {
+      "path": "web/components/Rankings/PlayerMatrixTable.tsx",
+      "local": "03-PlayerMatrixTable.tsx",
+      "bytes": 22585,
+      "lines": 696,
+      "sha256": "c4dd9fcac2f2dd38bfe5440b1b89d9c7275ab6822ab80cef2638d26be3b4886a",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          696
+        ]
+      ],
+      "unread": [],
+      "functions": 43,
+      "values": 33,
+      "tests": 0
+    },
+    {
+      "path": "web/components/Rankings/PlayerSnapshotPanel.test.tsx",
+      "local": "04-PlayerSnapshotPanel.test.tsx",
+      "bytes": 9810,
+      "lines": 311,
+      "sha256": "51635e1cbfd11af05cc7ce7c5206ad9a0c2e020a0a4c2dbc0d6e72576cae22d0",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          311
+        ]
+      ],
+      "unread": [],
+      "functions": 7,
+      "values": 1,
+      "tests": 5
+    },
+    {
+      "path": "web/components/Rankings/PlayerSnapshotPanel.tsx",
+      "local": "05-PlayerSnapshotPanel.tsx",
+      "bytes": 14655,
+      "lines": 449,
+      "sha256": "7a5e664cc0b2c5b101840fde30b3e335163617dacd76503894ec9fbc4090cece",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          449
+        ]
+      ],
+      "unread": [],
+      "functions": 32,
+      "values": 29,
+      "tests": 0
+    },
+    {
+      "path": "web/components/Rankings/RankingsFilters.test.tsx",
+      "local": "06-RankingsFilters.test.tsx",
+      "bytes": 7648,
+      "lines": 208,
+      "sha256": "b5e14e2778c152f8e1e12496c54ab1b50144aeacabcb10e6861505bff7e4088b",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          208
+        ]
+      ],
+      "unread": [],
+      "functions": 9,
+      "values": 16,
+      "tests": 6
+    },
+    {
+      "path": "web/components/Rankings/RankingsFilters.tsx",
+      "local": "07-RankingsFilters.tsx",
+      "bytes": 29427,
+      "lines": 888,
+      "sha256": "79541b045bea6a54ef8c3511978c7a2cc673c1c5fb5eeb8170e3568e19e60fab",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          888
+        ]
+      ],
+      "unread": [],
+      "functions": 51,
+      "values": 22,
+      "tests": 0
+    },
+    {
+      "path": "web/components/Rankings/TeamMatrixTable.tsx",
+      "local": "08-TeamMatrixTable.tsx",
+      "bytes": 16860,
+      "lines": 460,
+      "sha256": "914790345f8aec6735de844cd1270afd743c38a63bd261435e1a2aac6f434bf5",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          460
+        ]
+      ],
+      "unread": [],
+      "functions": 22,
+      "values": 20,
+      "tests": 0
+    },
+    {
+      "path": "web/components/Rankings/caveatLabels.ts",
+      "local": "09-caveatLabels.ts",
+      "bytes": 5452,
+      "lines": 116,
+      "sha256": "03a5c3420e803f7a765045f58fdcc53b985624da32462f8287907a86160614b3",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          116
+        ]
+      ],
+      "unread": [],
+      "functions": 5,
+      "values": 12,
+      "tests": 0
+    }
+  ],
+  "counts": {
+    "rows": 387,
+    "functions": 212,
+    "values": 170,
+    "tests": 24
+  },
+  "supportingSources": [
+    {
+      "path": "web/components/Rankings/matrixScoreFormatting.ts",
+      "local": "dep-00-matrixScoreFormatting.ts",
+      "bytes": 751,
+      "lines": 17,
+      "sha256": "98a315d5075e10a5eb2cb10cee03991d253a0eef8ad8a41b9faa2234ff6b0db1",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          17
+        ]
+      ],
+      "unreadRanges": [],
+      "scopeCredit": "Supporting bounded source; no canonical whole-file credit."
+    },
+    {
+      "path": "web/components/Rankings/ScoreText.tsx",
+      "local": "dep-01-ScoreText.tsx",
+      "bytes": 438,
+      "lines": 13,
+      "sha256": "90ef61e33ba05a552ca9b9f08539226e69cf67f835423f81cdf3eee49f2427cd",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          13
+        ]
+      ],
+      "unreadRanges": [],
+      "scopeCredit": "Supporting bounded source; no canonical whole-file credit."
+    },
+    {
+      "path": "web/lib/rankings/rankingFormatters.ts",
+      "local": "dep-02-rankingFormatters.ts",
+      "bytes": 3052,
+      "lines": 81,
+      "sha256": "6801d9b8b429373ff104e4aeacc7809384e516164e6f7a1a975d903879434ec9",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          81
+        ]
+      ],
+      "unreadRanges": [],
+      "scopeCredit": "Supporting bounded source; no canonical whole-file credit."
+    },
+    {
+      "path": "web/lib/rankings/playerMatrix.ts",
+      "local": "dep-03-playerMatrix.ts",
+      "bytes": 49798,
+      "lines": 1497,
+      "sha256": "cc43040543566d682f94b5dceede134a483a77938eb2b66073c4a3d13c84bbdd",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          580,
+          655
+        ],
+        [
+          753,
+          817
+        ],
+        [
+          830,
+          1005
+        ],
+        [
+          1130,
+          1177
+        ],
+        [
+          1240,
+          1435
+        ]
+      ],
+      "unreadRanges": [
+        [
+          1,
+          579
+        ],
+        [
+          656,
+          752
+        ],
+        [
+          818,
+          829
+        ],
+        [
+          1006,
+          1129
+        ],
+        [
+          1178,
+          1239
+        ],
+        [
+          1436,
+          1497
+        ]
+      ],
+      "scopeCredit": "Supporting bounded source; no canonical whole-file credit."
+    },
+    {
+      "path": "web/lib/rankings/rankingUrlState.ts",
+      "local": "dep-04-rankingUrlState.ts",
+      "bytes": 27324,
+      "lines": 805,
+      "sha256": "8faff39d6a0524c016612e26b456037bb9ee8b42b3adf8ae4a296ca704b91dbc",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          110,
+          180
+        ],
+        [
+          300,
+          318
+        ]
+      ],
+      "unreadRanges": [
+        [
+          1,
+          109
+        ],
+        [
+          181,
+          299
+        ],
+        [
+          319,
+          805
+        ]
+      ],
+      "scopeCredit": "Supporting bounded source; no canonical whole-file credit."
+    },
+    {
+      "path": "web/pages/rankings.tsx",
+      "local": "dep-05-rankings.tsx",
+      "bytes": 74860,
+      "lines": 2092,
+      "sha256": "6dfc9f9f598707cf8d7d9f07491ff9705eb969751493a8ae6551ad6f12490d04",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          190,
+          247
+        ],
+        [
+          1269,
+          1269
+        ],
+        [
+          1497,
+          1498
+        ],
+        [
+          1675,
+          1778
+        ],
+        [
+          1805,
+          2008
+        ]
+      ],
+      "unreadRanges": [
+        [
+          1,
+          189
+        ],
+        [
+          248,
+          1268
+        ],
+        [
+          1270,
+          1496
+        ],
+        [
+          1499,
+          1674
+        ],
+        [
+          1779,
+          1804
+        ],
+        [
+          2009,
+          2092
+        ]
+      ],
+      "scopeCredit": "Supporting bounded source; no canonical whole-file credit."
+    },
+    {
+      "path": "web/lib/rankings/skaterCompositeMethodology.ts",
+      "local": "dep-06-skaterCompositeMethodology.ts",
+      "bytes": 12241,
+      "lines": 322,
+      "sha256": "998b2c5d399a7d7fa298565b5764defeccdc9a54629d732c0f928773f748dad3",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          116
+        ],
+        [
+          208,
+          247
+        ]
+      ],
+      "unreadRanges": [
+        [
+          117,
+          207
+        ],
+        [
+          248,
+          322
+        ]
+      ],
+      "scopeCredit": "Supporting bounded source; no canonical whole-file credit."
+    }
+  ],
+  "probe": {
+    "command": "node /tmp/astra-components-12/probe.cjs > /tmp/astra-components-12/probe-result.json",
+    "exit": 0,
+    "invocations": 2,
+    "secondInvocationReason": "Corrected synthetic peer count from18 to9 so rank6/37.5 is mathematically coherent and used10-row pages matching UI-supported pagination. No application code change.",
+    "result": {
+      "missingDeploymentScope": {
+        "03-PlayerMatrixTable.tsx": {
+          "rank": 6,
+          "percentile": 37.5,
+          "qualifiedPeerCount": 9,
+          "peerGroupKey": null
+        },
+        "05-PlayerSnapshotPanel.tsx": {
+          "rank": 6,
+          "percentile": 37.5,
+          "qualifiedPeerCount": 9,
+          "peerGroupKey": null
+        }
+      },
+      "actualTitle": "MCM Score | Score 61.4 of 100 (a weighted score, not a percentile) | Deployment Rank 6 | Deployment Percentile 37.5%",
+      "pageLocalPublication": {
+        "page1PublishedValue": 61.4,
+        "page1Hidden": [],
+        "page2Hidden": [
+          "MCM"
+        ],
+        "page2SeasonLabel": "2026\u201327"
+      },
+      "metricValueModePrimaryLabels": {
+        "00-GoalieMatrixTable.tsx": "88%",
+        "08-TeamMatrixTable.tsx": "88%"
+      },
+      "boundary": "Only exact AST-extracted pure functions/initializers. Source-traced JSX and callers, no React/browser/app/network/DB execution."
+    },
+    "boundary": "Exact extracted pure functions/initializers in VM; installed TypeScript parser/transpiler only. No app imports/React/render/network/provider/DB."
+  },
+  "receipts": [
+    {
+      "path": "/tmp/astra-components-12/probe.cjs",
+      "bytes": 3436,
+      "sha256": "4149bea562b8858fcc110f0524dc4f7bcf5f2fd39626377f68634fea4db0cdc4"
+    },
+    {
+      "path": "/tmp/astra-components-12/probe-result.json",
+      "bytes": 886,
+      "sha256": "2f284307b6674b318018b5c7027615ed9893dbd9fd6d91d90fad9574710218ca"
+    },
+    {
+      "path": "/tmp/astra-components-12/inventory.cjs",
+      "bytes": 8261,
+      "sha256": "6d8c3ccde6458c13217879bc5c7c0c84733cf7fac0510bc4b2c2c3c96a2cacd5"
+    },
+    {
+      "path": "/tmp/astra-components-12/semantics.json",
+      "bytes": 8741,
+      "sha256": "98ee8391bcb968998acfa82a560d181837d0b39373d5d1673ab6655a91cc7e1a"
+    }
+  ],
+  "checks": [
+    {
+      "command": "Python Git blob extraction and SHA256/current byte comparison",
+      "exit": 0
+    },
+    {
+      "command": "node /tmp/astra-components-12/inventory.cjs",
+      "exit": 0,
+      "invocations": 2,
+      "secondInvocationReason": "Corrected symbol range/offset display after enumeration."
+    },
+    {
+      "command": "Python final TSV schema/unique offsets/counts/scope coverage/pin/current hashes/whitespace validation",
+      "exit": 0
+    }
+  ],
+  "governing": {
+    "reused": "Full governing prompt, owner decisions, rules and L5 brief already read in prerequisites. This batch retains their authority without recreating closure history.",
+    "focusedContracts": [
+      "Rules4,5,7,9",
+      "Owner decisions74,90,98,102,103,104"
+    ],
+    "boundary": "Closed midrank/null/component-policy/model-version work remains closed; new findings concern consumers only."
+  },
+  "unreadEvidence": [
+    "Full playerMatrix producer and ranks/normalization dependencies outside listed ranges.",
+    "Full rankingUrlState, rankings page, composite methodology/version publication policies outside listed ranges.",
+    "Goalie/team producer aggregation, finality/coverage writers, PP qualification and model selection not independently executed or fully audited here.",
+    "Imported SCSS, ScrollRegion, remaining components and app fixtures not read; no browser or visual evidence."
+  ]
+}

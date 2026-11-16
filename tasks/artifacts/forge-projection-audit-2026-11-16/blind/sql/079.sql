@@ -1,0 +1,1 @@
+select pipeline_key, scope_key, operation_key, status, to_char(updated_at,'MM-DD HH24:MI:SS') upd, to_char(lease_expires_at,'MM-DD HH24:MI:SS') lease, left(last_error,60) err, cursor_date, cursor_game_id from projection_pipeline_state where pipeline_key <> 'rolling_forge_pipeline' and updated_at > now() - interval '4 days' order by updated_at desc limit 25

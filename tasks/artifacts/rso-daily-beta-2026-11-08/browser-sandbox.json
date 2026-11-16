@@ -1,0 +1,27 @@
+{
+  "name": "browser",
+  "command": [
+    "node",
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--config",
+    "/tmp/fhfh-rso-daily-beta-20261108-zi789dgv/web/.rso-beta-playwright.config.ts",
+    "e2e/roster-schedule-optimizer.spec.ts",
+    "e2e/rso-acceptance.spec.ts",
+    "e2e/rso-continuity.spec.ts",
+    "--workers=1",
+    "--retries=0",
+    "--max-failures=1",
+    "--reporter=line,json",
+    "--output",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-daily-beta-2026-11-08/browser-output"
+  ],
+  "cwd": "/tmp/fhfh-rso-daily-beta-20261108-zi789dgv/web",
+  "candidateTree": "101448c6c6b6da210b2b71786fb5e6024e747cb5",
+  "startedAt": "2026-11-08T21:08:41.169814+00:00",
+  "finishedAt": "2026-11-08T21:08:42.132106+00:00",
+  "exitCode": 1,
+  "durationSeconds": 0.96,
+  "node": "v22.23.4",
+  "network": "Inert environment, no .env files, Node loopback guard; browser uses existing synthetic fixture interception."
+}

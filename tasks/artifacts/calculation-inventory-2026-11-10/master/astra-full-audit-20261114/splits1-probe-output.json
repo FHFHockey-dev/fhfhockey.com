@@ -1,0 +1,67 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "gameTypeScope": {
+    "mixed": {
+      "gp": 2,
+      "ga": 5,
+      "gaa": 2.5
+    },
+    "regular": {
+      "gp": 1,
+      "ga": 1,
+      "gaa": 1
+    }
+  },
+  "teamDenominator": {
+    "ownTeam": 0.5,
+    "withUnrelatedTeam": 0.083
+  },
+  "missing": {
+    "goals": 0,
+    "hits": 0,
+    "blocks": 0,
+    "ppSecondsPerGame": 0,
+    "ppShare": 0
+  },
+  "zeroGames": {
+    "gp": 0,
+    "ppg": 0
+  },
+  "starterAssignedResult": {
+    "starter": {
+      "gamesPlayed": 1,
+      "gamesStarted": 1,
+      "wins": 1,
+      "losses": 0,
+      "otl": 0,
+      "shutouts": 0,
+      "shutoutsUnavailable": false,
+      "qualityStarts": 0,
+      "qualityStartsUnavailable": false
+    },
+    "reliever": {
+      "gamesPlayed": 1,
+      "gamesStarted": 0,
+      "wins": 0,
+      "losses": 0,
+      "otl": 0,
+      "shutouts": 0,
+      "shutoutsUnavailable": false,
+      "qualityStarts": 0,
+      "qualityStartsUnavailable": false
+    }
+  },
+  "unknownStart": {
+    "gamesPlayed": 1,
+    "gamesStarted": 0,
+    "wins": 0,
+    "losses": 0,
+    "otl": 0,
+    "shutouts": 0,
+    "shutoutsUnavailable": false,
+    "qualityStarts": 0,
+    "qualityStartsUnavailable": true
+  },
+  "limits": "Full frozen splits module, shared goalie methodology, penalty split and surface helpers. Pure checks deny server/pagination access; game-type check uses an in-memory scoped client/pagination mock for two named tables. Synthetic arrays only, no source reads, app imports, Vitest or rendered UI."
+}

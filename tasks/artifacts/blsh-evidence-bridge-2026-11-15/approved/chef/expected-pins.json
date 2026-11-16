@@ -1,0 +1,12 @@
+{
+ "runner": "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb",
+ "adapter": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+ "preparation": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+ "client": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+ "admission": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+ "admissionOrigin": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+ "lifecycle": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+ "budget": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+ "ratePolicy": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+ "_source": "PILOT-READINESS.json 2026-11-12T19:40Z frozen candidate (nine runtime roles)"
+}

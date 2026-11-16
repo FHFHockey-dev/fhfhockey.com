@@ -1,0 +1,69 @@
+{
+  "checkedAt": "2026-11-12T23:55:08.342Z",
+  "source": "Authenticated Vercel connector read-only calls",
+  "deployments": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"result\": {\n    \"deployments\": {\n      \"pagination\": {\n        \"count\": 3,\n        \"next\": 1794494915240,\n        \"prev\": 1794513048811\n      },\n      \"deployments\": [\n        {\n          \"id\": \"dpl_HH8SPE1cLyonVBW9uN3rUi1MN3Sa\",\n          \"name\": \"fhfhockey\",\n          \"url\": \"fhfhockey-ljw1s7t5w-fhfhockeydevs-projects.vercel.app\",\n          \"created\": 1794513048811,\n          \"state\": \"READY\",\n          \"target\": \"production\",\n          \"creator\": {\n            \"uid\": \"RIjKGS50TnQKekn6kUu1bdJw\",\n            \"username\": \"fhfhockey-dev\"\n          },\n          \"meta\": {\n            \"githubCommitRef\": \"master\",\n            \"githubCommitSha\": \"4243bcd4e29889c035e832562e25850d14af0ee1\",\n            \"githubCommitMessage\": \"Bind Goalie Grid admission to the released DRM producer\\n\\nReplace only the unreleased task admission with a fresh exact-commit receipt for the combined producer. Preserve original admissions and all forecast qualification gates. Object-only review candidate; shared source, index and refs unchanged.\",\n            \"githubRepo\": \"fhfhockey.com\",\n            \"githubOrg\": \"FHFHockey-dev\"\n          },\n          \"inspectorUrl\": \"https://vercel.com/fhfhockeydevs-projects/fhfhockey/HH8SPE1cLyonVBW9uN3rUi1MN3Sa\",\n          \"isRollbackCandidate\": true\n        },\n        {\n          \"id\": \"dpl_5L5wNwQSxfJuMyrVNuuKNUBax4un\",\n          \"name\": \"fhfhockey\",\n          \"url\": \"fhfhockey-8mzu205h8-fhfhockeydevs-projects.vercel.app\",\n          \"created\": 1794509982357,\n          \"state\": \"READY\",\n          \"target\": \"production\",\n          \"creator\": {\n            \"uid\": \"RIjKGS50TnQKekn6kUu1bdJw\",\n            \"username\": \"fhfhockey-dev\"\n          },\n          \"meta\": {\n            \"githubCommitRef\": \"master\",\n            \"githubCommitSha\": \"866b90bc46a169b42cbc3c54a7d64b0daf764121\",\n            \"githubCommitMessage\": \"Repair DRM input clocks and strength-segment materialization\\n\\nSource-only release candidate from octoberBranch 24b1cb4d3048a3dba8234cf92c62e8f2b72f877f. Includes the 21 transferred and verified data-pipeline paths; excludes concurrent visual work and context diaries. No deployment performed.\",\n            \"githubRepo\": \"fhfhockey.com\",\n            \"githubOrg\": \"FHFHockey-dev\"\n          },\n          \"inspectorUrl\": \"https://vercel.com/fhfhockeydevs-projects/fhfhockey/5L5wNwQSxfJuMyrVNuuKNUBax4un\",\n          \"isRollbackCandidate\": true\n        },\n        {\n          \"id\": \"dpl_137qFEpUhovkj9Q6NaPbD4jAHNzP\",\n          \"name\": \"fhfhockey\",\n          \"url\": \"fhfhockey-1pi0b1397-fhfhockeydevs-projects.vercel.app\",\n          \"created\": 1794494915240,\n          \"state\": \"READY\",\n          \"target\": \"production\",\n          \"creator\": {\n            \"uid\": \"RIjKGS50TnQKekn6kUu1bdJw\",\n            \"username\": \"fhfhockey-dev\"\n          },\n          \"meta\": {\n            \"githubCommitRef\": \"master\",\n            \"githubCommitSha\": \"631a00c1988dc7acc294573bec9ad8f08c9e3e12\",\n            \"githubCommitMessage\": \"Release: math-audit fix sprint, 25 lanes and audit documents (#430)\\n\\nShips candidate 27edf8381 (octoberBranch 74c85b556 tree without lane diaries) on top of master 1cdb1dc8f. Migrations for authority rows 125-140 were already applied in production.\",\n            \"githubRepo\": \"fhfhockey.com\",\n            \"githubOrg\": \"FHFHockey-dev\"\n          },\n          \"inspectorUrl\": \"https://vercel.com/fhfhockeydevs-projects/fhfhockey/137qFEpUhovkj9Q6NaPbD4jAHNzP\",\n          \"isRollbackCandidate\": true\n        }\n      ]\n    }\n  }\n}"
+      }
+    ],
+    "structuredContent": null,
+    "isError": false
+  },
+  "linkedProjects": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"result\": {\n    \"projects\": [\n      {\n        \"id\": \"prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw\",\n        \"name\": \"fhfhockey\",\n        \"accountId\": \"team_KVFicHhQJARTbO6wRD2x6jpq\",\n        \"createdAt\": 1657082171554,\n        \"updatedAt\": 1794513390744\n      },\n      {\n        \"id\": \"prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ\",\n        \"name\": \"functions-fhfhockey\",\n        \"accountId\": \"team_KVFicHhQJARTbO6wRD2x6jpq\",\n        \"createdAt\": 1664338666362,\n        \"updatedAt\": 1794513049136\n      },\n      {\n        \"id\": \"prj_3X6goi9DxqUnD0sHChwEwaRakquG\",\n        \"name\": \"fhfhockey.com\",\n        \"accountId\": \"team_KVFicHhQJARTbO6wRD2x6jpq\",\n        \"createdAt\": 1758837687643,\n        \"updatedAt\": 1794513049053\n      },\n      {\n        \"id\": \"prj_gG8SHX7C5GbCDJoind7trh9bj6dK\",\n        \"name\": \"cms-fhfhockey\",\n        \"accountId\": \"team_KVFicHhQJARTbO6wRD2x6jpq\",\n        \"createdAt\": 1657084710026,\n        \"updatedAt\": 1794513049021\n      }\n    ],\n    \"pagination\": {\n      \"count\": 4,\n      \"prev\": 1794513390744\n    }\n  }\n}"
+      }
+    ],
+    "structuredContent": null,
+    "isError": false
+  },
+  "projects": [
+    {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"result\": {\n    \"id\": \"prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw\",\n    \"name\": \"fhfhockey\",\n    \"framework\": \"nextjs\",\n    \"accountId\": \"team_KVFicHhQJARTbO6wRD2x6jpq\",\n    \"createdAt\": 1657082171554,\n    \"updatedAt\": 1794513390744,\n    \"nodeVersion\": \"22.x\",\n    \"live\": false,\n    \"latestDeployment\": {\n      \"id\": \"dpl_HH8SPE1cLyonVBW9uN3rUi1MN3Sa\",\n      \"url\": \"fhfhockey-ljw1s7t5w-fhfhockeydevs-projects.vercel.app\",\n      \"createdAt\": 1794513048811,\n      \"readyState\": \"READY\",\n      \"target\": \"production\"\n    },\n    \"domains\": [\n      \"fhfhockey.com\",\n      \"fhfhockey.vercel.app\",\n      \"www.fhfhockey.com\",\n      \"fhfhockey-fhfhockeydevs-projects.vercel.app\",\n      \"fhfhockey-git-master-fhfhockeydevs-projects.vercel.app\"\n    ],\n    \"passwordProtection\": {\n      \"enabled\": false,\n      \"deploymentType\": null\n    },\n    \"ssoProtection\": {\n      \"enabled\": false,\n      \"deploymentType\": null\n    },\n    \"trustedIps\": {\n      \"enabled\": false,\n      \"deploymentType\": null,\n      \"addresses\": [],\n      \"protectionMode\": null\n    }\n  }\n}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    },
+    {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"result\": {\n    \"id\": \"prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ\",\n    \"name\": \"functions-fhfhockey\",\n    \"framework\": null,\n    \"accountId\": \"team_KVFicHhQJARTbO6wRD2x6jpq\",\n    \"createdAt\": 1664338666362,\n    \"updatedAt\": 1794513049136,\n    \"nodeVersion\": \"20.x\",\n    \"live\": false,\n    \"latestDeployment\": {\n      \"id\": \"dpl_B64EcGAth6suT3KtVbuCLGkGspmy\",\n      \"url\": \"functions-fhfhockey-d0nmt0ph3-fhfhockeydevs-projects.vercel.app\",\n      \"createdAt\": 1794513048808,\n      \"readyState\": \"CANCELED\",\n      \"target\": \"production\"\n    },\n    \"domains\": [\n      \"functions-fhfhockey-fhfhockeydevs-projects.vercel.app\",\n      \"functions-fhfhockey-git-master-fhfhockeydevs-projects.vercel.app\"\n    ],\n    \"passwordProtection\": {\n      \"enabled\": false,\n      \"deploymentType\": null\n    },\n    \"ssoProtection\": {\n      \"enabled\": false,\n      \"deploymentType\": null\n    },\n    \"trustedIps\": {\n      \"enabled\": false,\n      \"deploymentType\": null,\n      \"addresses\": [],\n      \"protectionMode\": null\n    }\n  }\n}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    },
+    {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"result\": {\n    \"id\": \"prj_3X6goi9DxqUnD0sHChwEwaRakquG\",\n    \"name\": \"fhfhockey.com\",\n    \"framework\": null,\n    \"accountId\": \"team_KVFicHhQJARTbO6wRD2x6jpq\",\n    \"createdAt\": 1758837687643,\n    \"updatedAt\": 1794513049053,\n    \"nodeVersion\": \"22.x\",\n    \"live\": false,\n    \"latestDeployment\": {\n      \"id\": \"dpl_2nzmS5N5A1F2dUPrsLfEo9JXDsS8\",\n      \"url\": \"fhfhockey-6kqt6cz7y-fhfhockeydevs-projects.vercel.app\",\n      \"createdAt\": 1794513048800,\n      \"readyState\": \"CANCELED\",\n      \"target\": \"production\"\n    },\n    \"domains\": [\n      \"fhfhockeycom-fhfhockeydevs-projects.vercel.app\",\n      \"fhfhockeycom-git-master-fhfhockeydevs-projects.vercel.app\"\n    ],\n    \"passwordProtection\": {\n      \"enabled\": false,\n      \"deploymentType\": null\n    },\n    \"ssoProtection\": {\n      \"enabled\": true,\n      \"deploymentType\": \"all_except_custom_domains\"\n    },\n    \"trustedIps\": {\n      \"enabled\": false,\n      \"deploymentType\": null,\n      \"addresses\": [],\n      \"protectionMode\": null\n    }\n  }\n}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    },
+    {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"result\": {\n    \"id\": \"prj_gG8SHX7C5GbCDJoind7trh9bj6dK\",\n    \"name\": \"cms-fhfhockey\",\n    \"framework\": \"sanity\",\n    \"accountId\": \"team_KVFicHhQJARTbO6wRD2x6jpq\",\n    \"createdAt\": 1657084710026,\n    \"updatedAt\": 1794513049021,\n    \"nodeVersion\": \"20.x\",\n    \"live\": false,\n    \"latestDeployment\": {\n      \"id\": \"dpl_6B72SQUAQngcxcowV7Hu4x4dkUUs\",\n      \"url\": \"cms-fhfhockey-nnhtytz1z-fhfhockeydevs-projects.vercel.app\",\n      \"createdAt\": 1794513048807,\n      \"readyState\": \"CANCELED\",\n      \"target\": \"production\"\n    },\n    \"domains\": [\n      \"cms-fhfhockey-fhfhockeydevs-projects.vercel.app\",\n      \"cms-fhfhockey-git-master-fhfhockeydevs-projects.vercel.app\"\n    ],\n    \"passwordProtection\": {\n      \"enabled\": false,\n      \"deploymentType\": null\n    },\n    \"ssoProtection\": {\n      \"enabled\": false,\n      \"deploymentType\": null\n    },\n    \"trustedIps\": {\n      \"enabled\": false,\n      \"deploymentType\": null,\n      \"addresses\": [],\n      \"protectionMode\": null\n    }\n  }\n}"
+        }
+      ],
+      "structuredContent": null,
+      "isError": false
+    }
+  ],
+  "limitations": [
+    "get_project response omits current rootDirectory and productionBranch/ignored-build settings. Retained 17:41Z inventory and repository rules establish expected roots/filters but must be reconfirmed before release."
+  ]
+}

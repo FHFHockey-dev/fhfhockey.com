@@ -1,0 +1,103 @@
+{
+  "checkedAt": "2026-11-12T18:08:51.409797+00:00",
+  "branch": "octoberBranch",
+  "head": "24b1cb4d3048a3dba8234cf92c62e8f2b72f877f",
+  "status": "local eight-file runtime/dependency candidate verified; not deployed",
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "node": "22.23.4",
+  "vitest": {
+    "status": "passed",
+    "files": 3,
+    "tests": 80,
+    "command": "npm test -- --run lib/lines/browserlessTransport.test.ts lib/lines/webhookErrorDiagnostic.test.ts __tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts",
+    "log": "implementation-tests.log"
+  },
+  "eslint": {
+    "status": "passed",
+    "command": "./node_modules/.bin/eslint lib/lines/browserlessTransport.ts lib/lines/browserlessTransport.test.ts lib/lines/webhookErrorDiagnostic.ts lib/lines/webhookErrorDiagnostic.test.ts pages/api/v1/webhooks/on-new-line-combo.ts __tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts",
+    "log": "implementation-lint.log"
+  },
+  "typescript": {
+    "status": "passed",
+    "command": "./node_modules/.bin/tsc --noEmit -p ../tasks/artifacts/browserless-transport-prep-2026-11-12/tsconfig.browserless.json",
+    "scope": "Browserless source/tests plus imports",
+    "log": "implementation-typecheck.log"
+  },
+  "diffCheck": "passed",
+  "dependencyPatch": {
+    "status": "applied after explicit current-task conditional allocation and four peer no-conflict acknowledgments; structural/reverse checks passed",
+    "path": "tasks/artifacts/browserless-transport-prep-2026-11-12/dependency-declarations.patch",
+    "ws": "8.21.1",
+    "typesWs": "8.18.1",
+    "registryOrInstallCalls": 0,
+    "manifestFilesUnchanged": false,
+    "coordinationAttempt": {
+      "targetThread": "01a1a500-1686-7650-868a-c36b4b48c0e8",
+      "toolResult": "Some requested entity was not found: thread not found",
+      "delivered": false,
+      "reasonForHold": "Shared-manifest acknowledgement required by repository coordination protocol; no acknowledgment obtained."
+    },
+    "manifestBaselines": {
+      "web/package.json": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "web/package-lock.json": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378"
+    },
+    "resolution": "MANIFEST-INTEGRATION.json supersedes prior pending coordination result; installed graph unchanged"
+  },
+  "independentReview": {
+    "status": "completed with no outstanding local security/correctness findings",
+    "passes": 2,
+    "reviewerSelectedModel": "gpt-6.1-sol",
+    "reviewerSelectedEffort": "medium",
+    "runtimeSettingsAndHierarchyVerified": false,
+    "sourceHashesMatchFinalReview": true,
+    "report": "REVIEW.md"
+  },
+  "sourceHashes": {
+    "web/lib/lines/browserlessTransport.ts": "e5a10d123352692b86d116b026a50cfbf6301ba4b91cb373b2d27ee82ba46032",
+    "web/lib/lines/browserlessTransport.test.ts": "f64540bde0ebe715eb95280fa6edfbec56180b960d8d3258962143476f3d7dfc",
+    "web/lib/lines/webhookErrorDiagnostic.ts": "ae67ac61a862946593253dd71ee7341ad29ba9f8f3ff7296f39892fdb72c478f",
+    "web/lib/lines/webhookErrorDiagnostic.test.ts": "57fc5cabf77a6d7dd1e383c14b3f5918ca48b7e9eddf465df8c26dfce0bc9fe7",
+    "web/pages/api/v1/webhooks/on-new-line-combo.ts": "5b25812bc291c1e7cfc8be0d819aca9284c21730b8801f00209c9e6d18fdf5e7",
+    "web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts": "ea625c495a098131f74ea49131ad918a1e91edfe323823279948997825cee80a",
+    "tasks/artifacts/browserless-transport-prep-2026-11-12/dependency-declarations.patch": "a17876fa6b0e886e9ab65c0855bb871b1c417e882747007f08346d41a8463334"
+  },
+  "artifactHashes": {
+    "implementation-tests.log": "d3bd42fbab8de736571601be9c46d8fef494b2681591fc55f25f375387015417",
+    "implementation-lint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "implementation-typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tsconfig.browserless.json": "fc44a5063e7ae5cc65dbdc445f50e29e8a27600becbed0c4f527f3254abafb70",
+    "REVIEW.md": "7f192c3e676817956d0794081851285f3cae0b776929e0fac9ffe3d50a28ef6e"
+  },
+  "productionActions": {
+    "credentialReadsOrWrites": 0,
+    "securityNetworkConfigurationChanges": 0,
+    "providerCalls": 0,
+    "liveChecks": 0,
+    "databaseReadsOrWrites": 0,
+    "forecasts": 0,
+    "deploymentsOrRemoteBuilds": 0
+  },
+  "notRun": [
+    "real socket or TLS handshake",
+    "current remote config/deployment checks",
+    "provider authentication or browser-session cleanup",
+    "dependency installation",
+    "application build",
+    "full application suite"
+  ],
+  "releaseGates": [
+    "Approved verified TLS host/certificate/direct upgrade/upstream/old-ingress/logging configuration",
+    "Credential rotation and consumer activation",
+    "Explicit exact-candidate deployment authorization",
+    "Bounded handshake/revocation and passive sanitized-error evidence"
+  ],
+  "criticalCompatibilityGate": "Last recorded deployed endpoint is plaintext ws; this candidate rejects it. Do not release until approved TLS/configuration cutover.",
+  "manifestIntegrationReceipt": "MANIFEST-INTEGRATION.json",
+  "offlineBuildFollowup": {
+    "receipt": "NPM-DIAGNOSIS.json",
+    "status": "transport bundles and loads offline; source/manifest pins unchanged",
+    "fullNextBuild": "not run"
+  },
+  "hostEvidence": "HOST-EVIDENCE.json",
+  "approvalSummary": "APPROVAL-SUMMARY.md"
+}

@@ -1,0 +1,39 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "findings": [
+    {
+      "id": "AFULL-TRENDLEG1-01",
+      "fallbackOverall": 70,
+      "mixedOffenseComparison": [
+        70,
+        2
+      ],
+      "note": "Page unconditionally labels fallback as CTPI; real API can return empty trusted teams while candidate publication remains gated."
+    },
+    {
+      "id": "AFULL-TRENDLEG1-02",
+      "negativeMoverInImproved": -10,
+      "display": "▲10.0%",
+      "positiveMoverInDegraded": 10,
+      "displayOther": "▼10.0%"
+    },
+    {
+      "id": "AFULL-TRENDLEG1-03",
+      "severity": "P2 dormant until nullable v2 is admitted to trusted prediction reader",
+      "nullError": "Cannot read properties of null (reading 'toFixed')"
+    }
+  ],
+  "controls": {
+    "onePointDelta": null,
+    "earlyTwoPointDelta": 10,
+    "trailingTwoPointMean": 75,
+    "missingChartPoint": "absent",
+    "displayRounding": 50.13
+  },
+  "source": {
+    "path": "web/pages/trends/placeholder.tsx",
+    "sha256": "e48d62722609095f16e56dbe21d74dab9a6145a77d92a8b365bb33945f3ee1d5"
+  },
+  "boundary": "Exact frozen helpers and memo callbacks; finite fixtures. JSX sign formatting source verified, no rendered UI. No real API, provider, DB, environment, browser or suite. Candidate gate remains intact."
+}

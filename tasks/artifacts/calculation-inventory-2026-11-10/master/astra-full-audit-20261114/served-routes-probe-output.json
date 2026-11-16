@@ -1,0 +1,53 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "lateWrite": {
+    "at": "2026-11-14T12:00:40.000Z",
+    "scheduledAt": "2026-11-14T12:00:30.000Z",
+    "issuedAt": "2026-11-14T12:00:00.000Z",
+    "within45s": true
+  },
+  "repeatedKey": {
+    "firstExpGoals": 1,
+    "secondExpGoals": 3,
+    "versionsRetained": 1,
+    "firstIssuedAt": "2026-11-14T12:00:00.000Z",
+    "secondIssuedAt": "2026-11-14T12:00:10.000Z",
+    "mode": "finite upsert double; frozen SQL permits UPDATE and has no immutability trigger"
+  },
+  "deadlineControl": {
+    "status": 500,
+    "newWrites": 0
+  },
+  "independentUniverse": {
+    "builtRows": 0,
+    "builtUniverse": 1,
+    "settleStatus": 200,
+    "settleQueries": [
+      "forge_served_forecast_ledger"
+    ]
+  },
+  "dstDefault": {
+    "springNow": "2026-03-09T04:30:00Z",
+    "springActual": "2026-03-07",
+    "springExpected": "2026-03-08",
+    "fallNow": "2026-11-02T04:30:00Z",
+    "fallActual": "2026-11-01",
+    "fallExpected": "2026-10-31"
+  },
+  "sources": [
+    {
+      "path": "web/lib/player-forecasts/servedForecastLedger.ts",
+      "sha256": "c98ad97650207595dfe998fd369d0863a8ea7114d102cf85115fd2a8dd8f669b"
+    },
+    {
+      "path": "web/pages/api/v1/db/forge-served-forecast-snapshot.ts",
+      "sha256": "54e077dbbcc062971963ebf2694bc90cccd3150338962afde3928048cf187153"
+    },
+    {
+      "path": "web/pages/api/v1/db/forge-served-forecast-settle.ts",
+      "sha256": "1ab5e021d21fcbc4de469b21f9a968bfcc510dcd904a94ef705dbc4168d5a134"
+    }
+  ],
+  "limits": "Frozen route functions run only in isolated VM with every external dependency replaced by finite inert doubles; exact ledger AST builder used, fantasy point computation stubbed null. No actual routes, network, DB, environment, emails, app imports or writes. First snapshot simulates40s history latency within45s; F19 late-write control46s refuses. No supplied Vitest run. Immutability conclusion combines emitted upsert payload with frozen SQL, not live DB behavior."
+}

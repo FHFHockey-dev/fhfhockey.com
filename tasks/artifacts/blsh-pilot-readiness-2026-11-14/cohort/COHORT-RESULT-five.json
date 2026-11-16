@@ -1,0 +1,87 @@
+{
+ "inputs": {
+  "request": {
+   "sha256": "c6d1d13dc7327baa54742c3eb7efe0a1e5d96c6ef6ffefc66de23f4092c12ba2",
+   "eventThroughDate": "2026-10-31",
+   "asOfUTC": "2026-11-01T19:57:38.026058+00:00"
+  },
+  "contexts": {
+   "sha256": "7336bfc30cc56ce18c28af5527e4072baaeaeb99f63f3f32321185e194b29325",
+   "profiles": 740,
+   "withFiveSourceIds": 644
+  }
+ },
+ "cohort": {
+  "rule": "lowest 25 playerIds with five context sourceIds (complete by construction)",
+  "size": 25,
+  "idListSHA256": "22e2b8576e23090e835f3a40bf84dc3259b6a78fbab160cfd4f7a9734ebeb394"
+ },
+ "scope": {
+  "seasonId": 20262027,
+  "populationScope": "captured_WGO_records_only",
+  "asOfKind": "presence_proven_by_capture_not_original_publication",
+  "nativeStrengthScope": [
+   "unknown",
+   "unknown"
+  ]
+ },
+ "records": 322,
+ "identityQualified": 322,
+ "identityReasons": {},
+ "productionComplete": 316,
+ "nativeIndividualQualified": 0,
+ "nativeIndividualReasons": {
+  "unqualified_date_meaning": 322,
+  "unqualified_exposure_unit": 322,
+  "unqualified_strength_scope": 322,
+  "no_matching_process_record": 21
+ },
+ "nativeOnIceQualified": 0,
+ "nativeOnIceReasons": {
+  "unqualified_date_meaning": 322,
+  "unqualified_exposure_unit": 322,
+  "unqualified_strength_scope": 322,
+  "no_matching_process_record": 26
+ },
+ "freshnessAtFrozenAsOf": {
+  "stale": 239,
+  "fresh": 83
+ },
+ "unmatchedNative": {
+  "individual": 0,
+  "onIce": 0
+ },
+ "windows": {
+  "completeFiveGP1": 25,
+  "short": 0,
+  "contextSelectionAgrees": 25,
+  "contextSelectionDisagrees": 0
+ },
+ "productionIncomplete": {
+  "records": 6,
+  "insideLatestFive": 6,
+  "reasons": {
+   "missing_or_invalid_es_goals_against": 6,
+   "missing_or_invalid_es_goals_for": 6,
+   "missing_or_invalid_pp_goals_against": 6,
+   "missing_or_invalid_pp_goals_for": 6,
+   "missing_or_invalid_sh_goals_against": 6,
+   "missing_or_invalid_sh_goals_for": 6
+  }
+ },
+ "zeroVsMissing": {
+  "measuredZeroShots": 83,
+  "missingShots": 0
+ },
+ "claims": {
+  "score": null,
+  "trusted": false,
+  "productionAdopted": false,
+  "blockers": [
+   "operational_reference_not_released",
+   "game_finality_not_established",
+   "current_feed_not_live_qualified",
+   "detector_policy_not_adopted"
+  ]
+ }
+}

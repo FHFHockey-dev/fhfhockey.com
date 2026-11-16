@@ -1,0 +1,16 @@
+{
+  "command": "npm test -- --run scripts/blsh/nativeProcessCaptureRunner.test.ts scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+  "cwd": "web",
+  "node": "v22.23.4",
+  "exitCode": 0,
+  "result": "passed",
+  "testFiles": 2,
+  "tests": 92,
+  "runnerTests": 63,
+  "adapterTests": 29,
+  "durationSeconds": 8.4,
+  "log": "TESTS.log",
+  "network": "blocked/mocked by inspected tests",
+  "localLedger": "mocked",
+  "broaderTypecheckLint": "not rerun; no source changes; November 9 evidence historical"
+}

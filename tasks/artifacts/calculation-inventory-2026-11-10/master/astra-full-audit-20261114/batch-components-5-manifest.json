@@ -1,0 +1,829 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "scope": "FULL-AUDIT-SCOPE rows215–255, all scoped GameGrid paths after GameGrid.tsx",
+  "files": [
+    {
+      "path": "web/components/GameGrid/GoalieMatchupCell.tsx",
+      "lines": 54,
+      "sha256": "8e6e067fe458e685bc137b4ba64e5248c84a562c03eabd07c3d2fe4e76bc1cde",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          54
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 3765,
+      "enumerated_rows": 18
+    },
+    {
+      "path": "web/components/GameGrid/GoalieMatchupDetails.tsx",
+      "lines": 46,
+      "sha256": "5d0cba729c7f03a7f0585f1e335ed945993f7716cf14b6890b01402dc33fe598",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          46
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 4077,
+      "enumerated_rows": 4
+    },
+    {
+      "path": "web/components/GameGrid/GoalieWorkloadPanel.tsx",
+      "lines": 83,
+      "sha256": "52ff182ceb5d6919ef568b7a2732bd9cf1d8494dd21220ef06831554c79b2924",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          83
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 7234,
+      "enumerated_rows": 41
+    },
+    {
+      "path": "web/components/GameGrid/LeagueWeek.test.tsx",
+      "lines": 142,
+      "sha256": "859927aae5ef6c65686ba51243e37fa14ebec13f11e72d0170ce7e791df45dc0",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          142
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 8598,
+      "enumerated_rows": 83
+    },
+    {
+      "path": "web/components/GameGrid/MatchupOdds.test.tsx",
+      "lines": 60,
+      "sha256": "ab2897d746e72cd2c3aec28775efc00baa48bbc7cf49efb9e4545c03f84a10d9",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          60
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 3753,
+      "enumerated_rows": 28
+    },
+    {
+      "path": "web/components/GameGrid/MetricInfoDisclosure.module.scss",
+      "lines": 73,
+      "sha256": "968f5967aa556f988d1816acad5cfc94aa4d92e7203a7d1b0ac4698574deeb85",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          73
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 1896
+    },
+    {
+      "path": "web/components/GameGrid/MetricInfoDisclosure.tsx",
+      "lines": 36,
+      "sha256": "1c6ca1b2bcd3f39df185dcc0a408fb83bc026646c1c33a2997a323581c420635",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          36
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 1616,
+      "enumerated_rows": 2
+    },
+    {
+      "path": "web/components/GameGrid/OpponentMetricsTable.module.scss",
+      "lines": 442,
+      "sha256": "f60b7575bb5948cbe06fa49816b872d0d0acbaccfa4ebeed46232821a94d2f84",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          442
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 12135
+    },
+    {
+      "path": "web/components/GameGrid/OpponentMetricsTable.tsx",
+      "lines": 364,
+      "sha256": "e0f86a1e91d5c3065e6956a7222b70cbb0a2717d631b6ec4990401b0fbb3c517",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          364
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 15797,
+      "enumerated_rows": 77
+    },
+    {
+      "path": "web/components/GameGrid/OpportunitySparkline.test.tsx",
+      "lines": 66,
+      "sha256": "759b77d8f3e205d8b10f0b00352f3cf367f25305a92ccb517c05ba533b5754ad",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          66
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 3791,
+      "enumerated_rows": 25
+    },
+    {
+      "path": "web/components/GameGrid/OpportunitySparkline.tsx",
+      "lines": 180,
+      "sha256": "c27a48eef85d4069507083239a1ebb97a3684bab721a79cd28cf9ed9de3ff70e",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          180
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 9600,
+      "enumerated_rows": 74
+    },
+    {
+      "path": "web/components/GameGrid/PDHC/PoissonHeatMap.test.tsx",
+      "lines": 41,
+      "sha256": "e19da9e55cbfe8648b1407725b5337aad5af1f5b8d2fc649d187316e74e3fdcb",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          41
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 1440,
+      "enumerated_rows": 16
+    },
+    {
+      "path": "web/components/GameGrid/PDHC/PoissonHeatMap.tsx",
+      "lines": 450,
+      "sha256": "fb81b21a0b316f2efcd54a420ab8ede66037c088a7762de73bf35e6cf7b6334f",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          450
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 12254,
+      "enumerated_rows": 47
+    },
+    {
+      "path": "web/components/GameGrid/PDHC/Tooltip.tsx",
+      "lines": 166,
+      "sha256": "3880938190e5db538efabc26a2b1cff698c9b5b939c99eb6b89a771b57db6eba",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          166
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 4987,
+      "enumerated_rows": 31
+    },
+    {
+      "path": "web/components/GameGrid/SortableHeaders.test.tsx",
+      "lines": 581,
+      "sha256": "26dc59187c4aea7d961d4067167be9098db4e730e80853628e5c693c92726eb3",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          581
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 23416,
+      "enumerated_rows": 124
+    },
+    {
+      "path": "web/components/GameGrid/TeamDetails.test.tsx",
+      "lines": 347,
+      "sha256": "6dd735ccba32291b3b6e8e0af57e313a52bbc28c0946fb88e773d44a3492eaa1",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          347
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 23896,
+      "enumerated_rows": 113
+    },
+    {
+      "path": "web/components/GameGrid/TeamRow.tsx",
+      "lines": 447,
+      "sha256": "3e5e5be5d2d2c9061b04cbd98743a2ae8264df455c0bbb1f3fd58c10ece38bcb",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          447
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 14975,
+      "enumerated_rows": 45
+    },
+    {
+      "path": "web/components/GameGrid/TransposedGrid.module.scss",
+      "lines": 267,
+      "sha256": "821885f4875ecac85c0c0b6152c54a459785034063dd34c418c6c402a2a09be0",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          267
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 5838
+    },
+    {
+      "path": "web/components/GameGrid/TransposedGrid.tsx",
+      "lines": 368,
+      "sha256": "ca2cac407e961640d84ad448e1b3498457deb6b0ace1487ee242e3c37485f0ba",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          368
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 15258,
+      "enumerated_rows": 74
+    },
+    {
+      "path": "web/components/GameGrid/VerticalMatchupCell.tsx",
+      "lines": 90,
+      "sha256": "ae1823d26c5ea02eea8f3ae4c89d4fe020fa21d203cf3f870f873544f08e58f7",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          90
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 2823,
+      "enumerated_rows": 11
+    },
+    {
+      "path": "web/components/GameGrid/contexts/GameGridContext.tsx",
+      "lines": 37,
+      "sha256": "0f68759b8c3b9218749f01f53e03b3aeddc2b3e2f1242fe973e0edc59236cd77",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          37
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 1142,
+      "enumerated_rows": 11
+    },
+    {
+      "path": "web/components/GameGrid/utils/FourWeekGrid.tsx",
+      "lines": 137,
+      "sha256": "aca523f0616c7047b2565360e9b10d1911d7f41dedfac2266f269ffcb2b38ea1",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          137
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 11291,
+      "enumerated_rows": 48
+    },
+    {
+      "path": "web/components/GameGrid/utils/calcWeekScore.test.js",
+      "lines": 164,
+      "sha256": "6f72f2d1f29808f76bafc36c6ddc4b594e17d78ee4f8702c46e92c9f67b652e5",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          164
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 8995,
+      "enumerated_rows": 74
+    },
+    {
+      "path": "web/components/GameGrid/utils/calcWeekScore.ts",
+      "lines": 110,
+      "sha256": "7d36b25f32f738e6cde470e3c6953b45cd433f8475db62b4c2a46efd78249a58",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          110
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 4780,
+      "enumerated_rows": 23
+    },
+    {
+      "path": "web/components/GameGrid/utils/calcWinOdds.test.js",
+      "lines": 43,
+      "sha256": "665c798fc0648f39a56270cde28107b5ae3ad2ce4b1849bea309634e233a02ee",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          43
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 1673,
+      "enumerated_rows": 17
+    },
+    {
+      "path": "web/components/GameGrid/utils/calcWinOdds.ts",
+      "lines": 63,
+      "sha256": "2c4182d41feb633df5a5f1383e809f0cacdcf182ce0298e30a1c3810a303a319",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          63
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 2176,
+      "enumerated_rows": 8
+    },
+    {
+      "path": "web/components/GameGrid/utils/goalieGameView.test.ts",
+      "lines": 169,
+      "sha256": "650def6505d7826208cfea08258beaafcc4615cbd8a4ca1fe2f035e629f067ab",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          169
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 12677,
+      "enumerated_rows": 103
+    },
+    {
+      "path": "web/components/GameGrid/utils/goalieGameView.ts",
+      "lines": 139,
+      "sha256": "0da46fbe98b83edaa98afae9e5595a3e1e16b85ebf1f8506f9700c84092171e2",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          139
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 10794,
+      "enumerated_rows": 52
+    },
+    {
+      "path": "web/components/GameGrid/utils/goalieWorkloadView.test.ts",
+      "lines": 117,
+      "sha256": "2816b92178c43701d32c6f055393942c2c26375720a9345cb978c053e5eabad5",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          117
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 8945,
+      "enumerated_rows": 79
+    },
+    {
+      "path": "web/components/GameGrid/utils/goalieWorkloadView.ts",
+      "lines": 108,
+      "sha256": "d78731d28b3f414001d1d04a5e10629aa2c49a7d0621bda354ec1ad820aeb742",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          108
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 9896,
+      "enumerated_rows": 56
+    },
+    {
+      "path": "web/components/GameGrid/utils/poisson.ts",
+      "lines": 23,
+      "sha256": "34e31daac73ad341b9be598a68b8dcbdc1beaa4f396daf680b4517a0825c5552",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          23
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 676,
+      "enumerated_rows": 5
+    },
+    {
+      "path": "web/components/GameGrid/utils/poissonHelpers.test.ts",
+      "lines": 42,
+      "sha256": "5fe83302b0323a074380002e4ad40f89a9516e5c9029c6eee062361c5729953a",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          42
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 1824,
+      "enumerated_rows": 18
+    },
+    {
+      "path": "web/components/GameGrid/utils/poissonHelpers.ts",
+      "lines": 59,
+      "sha256": "0ddff3ffe743dc9f97438a964e4685ae73439bd49c8483e5ac2f807a4d814c99",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          59
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 1727,
+      "enumerated_rows": 13
+    },
+    {
+      "path": "web/components/GameGrid/utils/readGoalieSources.ts",
+      "lines": 50,
+      "sha256": "cb0e18c0dd7fce2b48e75f943badf595d84fc9a4447aeaecc1c5b256f45a6d09",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          50
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 3935,
+      "enumerated_rows": 20
+    },
+    {
+      "path": "web/components/GameGrid/utils/scheduleSummary.test.ts",
+      "lines": 311,
+      "sha256": "63e2f995c05cd25648265264a30175c377f19e318801a31f48587d03434f1b14",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          311
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 20381,
+      "enumerated_rows": 153
+    },
+    {
+      "path": "web/components/GameGrid/utils/scheduleSummary.ts",
+      "lines": 96,
+      "sha256": "37c5c5182237fbbe195080a99a27336429d14c06fbaab59f7ccc5d30519e70ed",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          96
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 5278,
+      "enumerated_rows": 33
+    },
+    {
+      "path": "web/components/GameGrid/utils/useDateRangeTeamGrid.test.ts",
+      "lines": 31,
+      "sha256": "5adf32ec0d92e8f405e0c4bc182b9773a42c76ef59e781ecbe2372af27339c91",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          31
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 1409,
+      "enumerated_rows": 13
+    },
+    {
+      "path": "web/components/GameGrid/utils/useDateRangeTeamGrid.ts",
+      "lines": 200,
+      "sha256": "54dd1762554446fc874db20ce8a6c754c94c4d0d38260d3c52bed15e76bf44d4",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          200
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 5826,
+      "enumerated_rows": 53
+    },
+    {
+      "path": "web/components/GameGrid/utils/useGoalieGameView.ts",
+      "lines": 75,
+      "sha256": "318ae97c7612334a4c7fdb57f14d42b192117687c6e63a363b7a09ccb4ce63ba",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          75
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 5826,
+      "enumerated_rows": 40
+    },
+    {
+      "path": "web/components/GameGrid/utils/useSchedule.test.tsx",
+      "lines": 47,
+      "sha256": "fc4c6cdd06e2ee53893249fdb1be9c3e76e6c0b768bf46c6410afca3881b25d8",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          47
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 3358,
+      "enumerated_rows": 27
+    },
+    {
+      "path": "web/components/GameGrid/utils/useSchedule.ts",
+      "lines": 203,
+      "sha256": "1f1ed4fb1907d38c2cecbd238dc7a56d23d09a34aee313b507e24cea10c9fa91",
+      "local_matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          203
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 9973,
+      "enumerated_rows": 74
+    }
+  ],
+  "file_count": 41,
+  "line_count": 6527,
+  "tsv_rows": 1736,
+  "unread_assigned": [],
+  "support": [
+    {
+      "path": "web/components/GameGrid/DateRangeTeamGrid.tsx",
+      "read_ranges": [
+        [
+          48,
+          55
+        ],
+        [
+          59,
+          72
+        ],
+        [
+          105,
+          143
+        ],
+        [
+          260,
+          330
+        ]
+      ],
+      "sha256": "ae0d2f53876caafccfd40e1df2ed32aa60f003d72c9fb1b813489fc4ad0275de",
+      "local_matches_target": true,
+      "status": "bounded_consumer_or_rule_trace_only"
+    },
+    {
+      "path": "web/components/GameGrid/GameGrid.tsx",
+      "read_ranges": [
+        [
+          235,
+          247
+        ],
+        [
+          308,
+          347
+        ],
+        [
+          400,
+          422
+        ],
+        [
+          1025,
+          1075
+        ],
+        [
+          1548,
+          1590
+        ]
+      ],
+      "sha256": "6716e62b78f00a8106bd7b1db5307b5be70a1a12e9b7f5e5456b8e9eea969ed2",
+      "local_matches_target": true,
+      "status": "bounded_consumer_or_rule_trace_only"
+    },
+    {
+      "path": "web/components/GameGrid/utils/helper.ts",
+      "read_ranges": [
+        [
+          1,
+          85
+        ]
+      ],
+      "sha256": "ebf2348fb67d87cb16579a2bac06d22825829fcfa3ca8e2c148f2987ea6c2708",
+      "local_matches_target": true,
+      "status": "bounded_consumer_or_rule_trace_only"
+    },
+    {
+      "path": "web/lib/NHL/client/index.ts",
+      "read_ranges": [
+        [
+          1,
+          135
+        ]
+      ],
+      "sha256": "4bc8d78b73ea4c04bb8325f9504980ee140ccf954f001c70199e805b11b89546",
+      "local_matches_target": true,
+      "status": "bounded_consumer_or_rule_trace_only"
+    },
+    {
+      "path": "web/lib/NHL/server/index.ts",
+      "read_ranges": [
+        [
+          460,
+          565
+        ]
+      ],
+      "sha256": "0499ac3f3fdedb228efdd2091d2c93b6e79ef35b8fa56328ed60b7201fc3d435",
+      "local_matches_target": true,
+      "status": "bounded_consumer_or_rule_trace_only"
+    },
+    {
+      "path": "web/pages/api/v1/schedule/[startDate].ts",
+      "read_ranges": [
+        [
+          1,
+          43
+        ]
+      ],
+      "sha256": "cb73054e457faa3423be8ad7b1e0e4044d3d82aa71e146e001b7075b337ad635",
+      "local_matches_target": true,
+      "status": "bounded_consumer_or_rule_trace_only"
+    },
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/FIX-SPRINT-DEBRIEF.md",
+      "read_ranges": [
+        [
+          708,
+          728
+        ]
+      ],
+      "sha256": "13daf560b2bc8b69f16c225e9235f5baf77491aec6afcd62c8cf0a4da49fc4da",
+      "local_matches_target": true,
+      "status": "bounded_consumer_or_rule_trace_only"
+    }
+  ],
+  "probe": {
+    "path": "/tmp/astra-components5-probe.cjs",
+    "sha256": "eadac67f1aaf160f8c54343f0a343ed616088af373612f7baf416ea2554505e7",
+    "command": "node /tmp/astra-components5-probe.cjs > /tmp/astra-components5-probe.json",
+    "boundary": "Exact source transpiled into isolated VM; only Node built-ins and TypeScript compiler loaded. No app imports, React hook execution, test runner or external access. Date-transform adapter fixtures use UTC.",
+    "initial_attempt": "Failed before output because extracted threshold constants absent; added exact source threshold declarations before successful corrected run.",
+    "results": {
+      "weekScore": {
+        "maxQuiet": 0.4,
+        "minQuiet": 0,
+        "cases": 160,
+        "protectedMargin": 0.2666666666666657,
+        "knownLexicographicOpen": {
+          "threeGPthreeON": 11.3,
+          "fourGPoneON": 9.241666666666667
+        }
+      },
+      "unobservedRange": {
+        "inputCoveredDates": [],
+        "output": {
+          "teamDateGames": {},
+          "dateMetaByDate": {
+            "2026-11-09": {
+              "regularSeasonGames": 0,
+              "isOffNight": true,
+              "isHeavyNight": false
+            },
+            "2026-11-10": {
+              "regularSeasonGames": 0,
+              "isOffNight": true,
+              "isHeavyNight": false
+            },
+            "2026-11-11": {
+              "regularSeasonGames": 0,
+              "isOffNight": true,
+              "isHeavyNight": false
+            },
+            "2026-11-12": {
+              "regularSeasonGames": 0,
+              "isOffNight": true,
+              "isHeavyNight": false
+            },
+            "2026-11-13": {
+              "regularSeasonGames": 0,
+              "isOffNight": true,
+              "isHeavyNight": false
+            },
+            "2026-11-14": {
+              "regularSeasonGames": 0,
+              "isOffNight": true,
+              "isHeavyNight": false
+            },
+            "2026-11-15": {
+              "regularSeasonGames": 0,
+              "isOffNight": true,
+              "isHeavyNight": false
+            }
+          },
+          "counts": {
+            "off": 0,
+            "b2b": 0,
+            "home": 0,
+            "away": 0
+          }
+        }
+      },
+      "unfinishedLabels": [
+        {
+          "state": "LIVE",
+          "hasResult": true,
+          "cellLabel": "Home vs Away. LOSS 0-0. Open game details."
+        },
+        {
+          "state": "FUT",
+          "hasResult": true,
+          "cellLabel": "Home vs Away. LOSS 0-0. Open game details."
+        }
+      ],
+      "poisson": 1
+    }
+  },
+  "not_run": [
+    "Vitest",
+    "React/application runtime",
+    "browser",
+    "server",
+    "database",
+    "provider",
+    "network",
+    "live page verification"
+  ],
+  "worker": "readfirst_production",
+  "model_effort": "Astra/high previously verified local turn_context"
+}

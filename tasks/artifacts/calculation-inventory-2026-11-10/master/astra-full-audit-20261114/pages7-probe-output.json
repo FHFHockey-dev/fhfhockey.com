@@ -1,0 +1,88 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "partialFeatureGame": {
+    "storedFeatureGame": 2026020001,
+    "normal": [
+      2026020002
+    ],
+    "force": [
+      2026020001,
+      2026020002
+    ],
+    "qualification": "One surviving feature row qualifies the game as existing; exact selector does not inspect completeness."
+  },
+  "predictionBackfill": {
+    "pages": [
+      [
+        0,
+        9
+      ],
+      [
+        1000,
+        1009
+      ]
+    ],
+    "existingFirst10": true,
+    "unscoredEvents11to20": true,
+    "response": {
+      "success": true,
+      "scanned": 10,
+      "written": 0
+    }
+  },
+  "versionOverride": {
+    "status": 200,
+    "passedToScorer": {
+      "artifactVersion": 2,
+      "rowVersions": [
+        1
+      ]
+    },
+    "qualification": "Exact route orchestration, scorer/artifact approval are deliberate doubles; confirms missing equality guard before scorer."
+  },
+  "transitionSourceCap": {
+    "requestedPairs": 1500,
+    "returned": 1000,
+    "thirdGameRows": 0,
+    "queryCount": 1
+  },
+  "createdExtensions": {
+    "status": 200,
+    "qa": {
+      "passed": false,
+      "errors": [
+        "synthetic mismatch"
+      ]
+    },
+    "writes": 1,
+    "coverageFromOneCredit": [
+      "synthetic:3:2026020001"
+    ],
+    "requestedIdentityVersion": 3,
+    "matchingIdentityRows": 0
+  },
+  "sources": [
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-shot-features.ts",
+      "sha256": "0c07f382a83227008067101d7d1eced1444163260cc3e35923f1b16f5fbffb00"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-shot-predictions.ts",
+      "sha256": "14db0474d9c2b74345e8a08efe3ffae94331d60bafbda88dc91c5f80e754effc"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-transitions.ts",
+      "sha256": "01f97db7bcd93eea17d2169779850dae1d5e9a27a9af894b95a23b1aa7abd5cd"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-created-xg.ts",
+      "sha256": "d0020f4cab8b78cce55735e9976a5d6008e731615585c777dc53631fe569cf65"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-created-xg.ts",
+      "sha256": "d0020f4cab8b78cce55735e9976a5d6008e731615585c777dc53631fe569cf65"
+    }
+  ],
+  "limits": "Exact frozen AST selectors/handlers, finite inert doubles only. Feature and source rows are synthetic; no DB/provider/real artifacts/env/route calls. Scorer/model builder/QA are mocked to isolate orchestration, not establish scientific correctness. No actual writes, app imports or supplied tests."
+}

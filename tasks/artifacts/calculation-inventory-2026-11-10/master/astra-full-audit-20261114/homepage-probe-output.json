@@ -1,0 +1,65 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "sources": {
+    "web/components/HomePage/useHomepageGames.ts": "1bed92176a9d8abf1d1a94619feb6baf3213b2dcfa6ba8e9b92bf9f8df850f4f",
+    "web/pages/api/v1/games/index.js": "bb3eb2dd94ff484e2fe3c13017a33117c1d95c24a6ed920fe2323d8c8c55520e"
+  },
+  "malformed": {
+    "state": {
+      "games": [],
+      "error": null,
+      "loading": false,
+      "lastUpdatedAt": "2026-11-14T20:25:23.647Z"
+    },
+    "requests": [
+      {
+        "kind": "mock internal",
+        "url": "/api/v1/games?date=2026-11-14"
+      }
+    ]
+  },
+  "missingRecord": {
+    "state": {
+      "games": [
+        {
+          "id": 1,
+          "gameState": "FUT",
+          "homeTeam": {
+            "abbrev": "TOR",
+            "record": "0-4-1"
+          },
+          "awayTeam": {
+            "abbrev": "BOS",
+            "record": ""
+          },
+          "clock": null,
+          "periodDescriptor": null
+        }
+      ],
+      "error": null,
+      "loading": false,
+      "lastUpdatedAt": "2026-11-14T20:25:23.656Z"
+    },
+    "requests": [
+      {
+        "kind": "mock internal",
+        "url": "/api/v1/games?date=2026-11-14"
+      },
+      {
+        "kind": "mock provider",
+        "url": "https://api-web.nhle.com/v1/standings/now"
+      }
+    ]
+  },
+  "wrongDate": {
+    "requested": "2026-11-14",
+    "status": 200,
+    "body": [
+      {
+        "id": 99,
+        "gameDate": "2026-11-15"
+      }
+    ]
+  },
+  "boundary": "Mock functions only; zero app imports, provider/API/database requests or writes."
+}

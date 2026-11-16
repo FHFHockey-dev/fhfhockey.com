@@ -1,0 +1,165 @@
+{
+  "version": "fhfh.blsh.request-reader-date-from.v1",
+  "source": "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-reader-20261101-01/live-read-01/capture/CURRENT-REQUEST.json",
+  "cap": 10000,
+  "retained": {
+    "wgoRows": 8135,
+    "dates": [
+      "2026-09-29",
+      "2026-10-31"
+    ],
+    "games": 226,
+    "lastGameId": 2026020226,
+    "rowsPerGameMax": 36.0,
+    "duplicatePlayerDates": 0,
+    "rowsByDate": {
+      "2026-09-29": 180,
+      "2026-09-30": 108,
+      "2026-10-01": 288,
+      "2026-10-02": 180,
+      "2026-10-03": 468,
+      "2026-10-04": 180,
+      "2026-10-05": 144,
+      "2026-10-06": 324,
+      "2026-10-07": 108,
+      "2026-10-08": 360,
+      "2026-10-09": 144,
+      "2026-10-10": 504,
+      "2026-10-11": 108,
+      "2026-10-12": 108,
+      "2026-10-13": 575,
+      "2026-10-14": 72,
+      "2026-10-15": 396,
+      "2026-10-16": 72,
+      "2026-10-17": 504,
+      "2026-10-18": 72,
+      "2026-10-19": 144,
+      "2026-10-20": 396,
+      "2026-10-21": 72,
+      "2026-10-22": 432,
+      "2026-10-23": 72,
+      "2026-10-24": 432,
+      "2026-10-25": 180,
+      "2026-10-26": 108,
+      "2026-10-27": 396,
+      "2026-10-28": 144,
+      "2026-10-29": 396,
+      "2026-10-30": 108,
+      "2026-10-31": 360
+    },
+    "gamesByDate": {
+      "2026-09-29": 5,
+      "2026-09-30": 3,
+      "2026-10-01": 8,
+      "2026-10-02": 5,
+      "2026-10-03": 13,
+      "2026-10-04": 5,
+      "2026-10-05": 4,
+      "2026-10-06": 9,
+      "2026-10-07": 3,
+      "2026-10-08": 10,
+      "2026-10-09": 4,
+      "2026-10-10": 14,
+      "2026-10-11": 3,
+      "2026-10-12": 3,
+      "2026-10-13": 16,
+      "2026-10-14": 2,
+      "2026-10-15": 11,
+      "2026-10-16": 2,
+      "2026-10-17": 14,
+      "2026-10-18": 2,
+      "2026-10-19": 4,
+      "2026-10-20": 11,
+      "2026-10-21": 2,
+      "2026-10-22": 12,
+      "2026-10-23": 2,
+      "2026-10-24": 12,
+      "2026-10-25": 5,
+      "2026-10-26": 3,
+      "2026-10-27": 11,
+      "2026-10-28": 4,
+      "2026-10-29": 11,
+      "2026-10-30": 3,
+      "2026-10-31": 10
+    }
+  },
+  "projection": {
+    "newGames": 72,
+    "newGameIds": [
+      2026020227,
+      2026020298
+    ],
+    "newRowsUpperBound": 2592,
+    "fullSeasonRows": 10727,
+    "fullSeasonExceedsCap": true
+  },
+  "latestFiveSpanDays": {
+    "players": 432,
+    "p50": 9,
+    "p90": 13,
+    "p95": 18,
+    "p99": 28,
+    "max": 32
+  },
+  "choice": {
+    "dateFrom": "2026-10-14",
+    "rule": "2026-11-11 minus the p99 latest-five span",
+    "daysBack": 28,
+    "projectedRows": 6948,
+    "headroomRows": 3052,
+    "pages": 18,
+    "dispatches": 28,
+    "latestFiveCoverage": 0.9931
+  },
+  "candidates": {
+    "2026-10-28": {
+      "daysBack": 14,
+      "projectedRows": 3600,
+      "headroomRows": 6400,
+      "pages": 9,
+      "dispatches": 19,
+      "latestFiveCoverage": 0.9213
+    },
+    "2026-10-21": {
+      "daysBack": 21,
+      "projectedRows": 5292,
+      "headroomRows": 4708,
+      "pages": 14,
+      "dispatches": 24,
+      "latestFiveCoverage": 0.9745
+    },
+    "2026-10-14": {
+      "daysBack": 28,
+      "projectedRows": 6948,
+      "headroomRows": 3052,
+      "pages": 18,
+      "dispatches": 28,
+      "latestFiveCoverage": 0.9931
+    },
+    "2026-10-07": {
+      "daysBack": 35,
+      "projectedRows": 8855,
+      "headroomRows": 1145,
+      "pages": 23,
+      "dispatches": 33,
+      "latestFiveCoverage": 1.0
+    },
+    "2026-09-30": {
+      "daysBack": 42,
+      "projectedRows": 10547,
+      "headroomRows": -547,
+      "pages": 27,
+      "dispatches": 37,
+      "latestFiveCoverage": 1.0
+    },
+    "2026-09-23": {
+      "daysBack": 49,
+      "projectedRows": 10727,
+      "headroomRows": -727,
+      "pages": 27,
+      "dispatches": 37,
+      "latestFiveCoverage": 1.0
+    }
+  },
+  "note": "Projection assumes <= 36 WGO rows per game (retained max 36.0, 0 duplicate player-dates) and that game ids 2026020227..298 are the games played 11-01..11-11. A cap hit is a no-retry stop, so headroom wins over coverage."
+}

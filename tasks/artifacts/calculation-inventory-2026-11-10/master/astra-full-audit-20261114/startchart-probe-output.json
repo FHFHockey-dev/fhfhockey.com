@@ -1,0 +1,102 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "postPositionRanks": {
+    "full": [
+      {
+        "id": 1,
+        "ranks": {
+          "C": 1,
+          "LW": 2
+        }
+      },
+      {
+        "id": 2,
+        "ranks": {
+          "LW": 1
+        }
+      }
+    ],
+    "filtered": [
+      {
+        "id": 1,
+        "ranks": {
+          "C": 1,
+          "LW": 1
+        }
+      }
+    ],
+    "qualification": "Exact full route, scoring/parser/ranking/GE comparison guard. Native source selection and loading/response adaptation/normalization are fixture doubles; no real admission qualification."
+  },
+  "teamForm": {
+    "providerState": "LIVE",
+    "sourceFetchesAcrossTwoCalls": 1,
+    "storedHasGameState": false,
+    "convertedState": "OFF",
+    "admitted": [
+      {
+        "date": "2026-11-14",
+        "goalsFor": 1,
+        "goalsAgainst": 0
+      }
+    ],
+    "liveStateControl": 0
+  },
+  "toi": {
+    "partialKnownES600UnknownPPKnownPK0": 10,
+    "knownES600PP120PK0": 12,
+    "allUnknown": null,
+    "over65Minutes": null
+  },
+  "controls": {
+    "tiedDefenseEase": [
+      [
+        "A",
+        25
+      ],
+      [
+        "B",
+        25
+      ],
+      [
+        "C",
+        100
+      ]
+    ],
+    "ownershipAsOf": {
+      "value": 10,
+      "asOfDate": "2026-11-14"
+    }
+  },
+  "sources": [
+    {
+      "path": "web/lib/projectionsConfig/fantasyPointsConfig.ts",
+      "sha256": "dfe1ae8426a7b9ae3469216ad8e48944cbd7dda6cea6952cdd6bdf6f41deb50b"
+    },
+    {
+      "path": "web/lib/projections/startChartFantasyScoring.ts",
+      "sha256": "43c1cb5cecb2071c36d301b0868ecde62a5069929e6f8904adaff89c34f861d2"
+    },
+    {
+      "path": "web/lib/projections/starterBoardScoring.ts",
+      "sha256": "c478da7854d68a8ef4c44fe4b4d0b0d6522e8d8bf906a22c757ab20a0911f327"
+    },
+    {
+      "path": "web/lib/projections/startChartContract.ts",
+      "sha256": "00a5998e65d3d357fc1cbdfc4c1549db4f7a29d4a3e8c6d6d387fac7ebc5772e"
+    },
+    {
+      "path": "web/pages/api/v1/start-chart.ts",
+      "sha256": "cdf2b8358d869a07e3775eb2d9d7369aeb374dda4275bca92f1f784540184511"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchPbP.ts",
+      "sha256": "a2b96201c03f5320942d7b289a443248d9c7f02cf7987a1a8217895233027c13"
+    },
+    {
+      "path": "web/lib/projections/startChartTeamForm.ts",
+      "sha256": "faa713f52da965e720bfe848c96d9c336c7d870b15147de514b5198cb2aa00ba"
+    }
+  ],
+  "boundary": "Exact frozen route/functions and pure scoring; no app imports, client/environment values, DB/provider/page/suites."
+}

@@ -1,0 +1,41 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "partialWindow": {
+    "raw": 6,
+    "numerator": null,
+    "gp": 5,
+    "toi": 3000,
+    "rank": 1,
+    "percentile": 50
+  },
+  "partialSeason": {
+    "xs": 12.5,
+    "xsGp": 30,
+    "xsRank": 1,
+    "sax": null
+  },
+  "legacyCurrentSeason": {
+    "raw": 1.6,
+    "gp": 20,
+    "toi": 18000,
+    "membership": null,
+    "knownSeasonGp": 2
+  },
+  "scopedNonRateSample": {
+    "gax": 2,
+    "gaxToi": null,
+    "gaxMinimumMet": false,
+    "goalsToi": 13500
+  },
+  "missingArchetype": {
+    "mcm": null,
+    "shootFirstScore": 100,
+    "tags": [
+      "shoot_first",
+      "high_shot_volume"
+    ]
+  },
+  "controls": "SAX partial-season refusal, exact current-season rate TOI, complete MCM100/BEAST+, missing Offense refusal passed",
+  "limits": "Exact frozen aggregation, ranking, methodology and writer row-builder code with explicit synthetic versions/inputs and inert adapter traps. Defensive display labels/caveats stubbed; no complete writer publication, ResultsLuck index computation, Vitest, environment, application transport, DB, provider, browser or build."
+}

@@ -1,0 +1,13 @@
+HTTP/2 200 
+age: 0
+cache-control: public, max-age=0, must-revalidate
+content-type: application/json; charset=utf-8
+date: Sun, 15 Nov 2026 01:20:10 GMT
+etag: "hwz4u1m9ux18o6"
+server: Vercel
+strict-transport-security: max-age=63072000
+x-matched-path: /api/v1/contextual-rankings/teams
+x-vercel-cache: MISS
+x-vercel-id: iad1::iad1::mjmj2-1794705599153-f9faf0b2b305
+content-length: 57894
+

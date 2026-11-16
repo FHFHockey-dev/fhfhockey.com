@@ -1,0 +1,462 @@
+{
+  "checkedAtUTC": "2026-11-12T18:08:48.179Z",
+  "purpose": "read_only_local_runtime_metadata_and_source_hashes_no_credentials_no_live_requests",
+  "runtime": {
+    "node": "v22.23.4",
+    "execPath": "/usr/local/bin/node",
+    "execRealPath": "/usr/local/bin/node",
+    "execSHA256": "daa77e22e1b8778361b392461e9921a6d292d0382ebf4ae872a0081f02f01fef",
+    "platform": "darwin",
+    "arch": "arm64",
+    "openssl": "3.5.9",
+    "undici": "6.29.1",
+    "nvmrc": "22.23.4",
+    "npm": "npm@10.9.0",
+    "minTLS": "TLSv1.2",
+    "maxTLS": "TLSv1.3",
+    "bundledCACount": 116,
+    "bundledCASHA256": "98c3b15085b7ebf6691d07a7235e256c53c5f0c2fea71178b72ec62de9255dd9",
+    "defaultCACount": 116,
+    "defaultCASHA256": "98c3b15085b7ebf6691d07a7235e256c53c5f0c2fea71178b72ec62de9255dd9",
+    "fetchSourceSHA256": "c78de68d19b50d7efcc3d7ec3db637f3400cc941012afae13dde2ee8f529fd14"
+  },
+  "nonsecret": {
+    "lifecycleFlagPresent": false,
+    "lifecycleClassification": "disabled_by_unset_default",
+    "publicProjectConfigured": false,
+    "publicProjectMatchesExpected": false,
+    "rejectUnauthorized": "unset",
+    "environmentPresence": {
+      "NODE_OPTIONS": false,
+      "NODE_EXTRA_CA_CERTS": false,
+      "SSL_CERT_FILE": false,
+      "SSL_CERT_DIR": false,
+      "NODE_USE_ENV_PROXY": false,
+      "HTTP_PROXY": false,
+      "HTTPS_PROXY": false,
+      "ALL_PROXY": false,
+      "NO_PROXY": false,
+      "NODE_PATH": false,
+      "TS_NODE_COMPILER_OPTIONS": false
+    },
+    "credentialFilesRead": false,
+    "envFilesLoaded": false,
+    "credentialEnvironmentPresenceOrValuesInspected": false
+  },
+  "dependencies": [
+    {
+      "name": "ts-node",
+      "version": "10.9.2",
+      "entry": "node_modules/ts-node/dist/index.js",
+      "entrySHA256": "87ec393a2dc38640a2a88a806163eb77a63badd805a9fa96c6e9434a7cdf2324",
+      "manifestSHA256": "80961faab4990ab53d33976bf716aa32444d70c64f73a487c23c21b0ca81398e",
+      "matchesNovember9": true
+    },
+    {
+      "name": "typescript",
+      "version": "5.7.3",
+      "entry": "node_modules/typescript/lib/typescript.js",
+      "entrySHA256": "0fba5508ecbe50cd00a45f132a76582fb22a4ec55769fd3d794fd0e026f9fb67",
+      "manifestSHA256": "1e03325943793f3bf11667b94fca412fe5ba617c85b84c16f0474933da156baa",
+      "matchesNovember9": true
+    },
+    {
+      "name": "cheerio",
+      "version": "1.1.2",
+      "entry": "node_modules/cheerio/dist/commonjs/index.js",
+      "entrySHA256": "ed43f738462a3ce5f277d8626dad1a0210464e38331064b3b43e1083b1ffd494",
+      "manifestSHA256": "ff0b5a83f1728f43695a00b920c20d3a8998c61b791712c1e20dcd24ad0a96b4",
+      "matchesNovember9": true
+    },
+    {
+      "name": "memory-cache",
+      "version": "0.2.0",
+      "entry": "node_modules/memory-cache/index.js",
+      "entrySHA256": "080bbdd424b66ccb062e39e8439653f2058c50fe94e830b2e4051db929084123",
+      "manifestSHA256": "b512a5712769e5d7e50b73bd2ded3a2247fb1c348cf9171a59fbf6e90e958daf",
+      "matchesNovember9": true
+    }
+  ],
+  "config": [
+    {
+      "path": "web/.nvmrc",
+      "sha256": "0c4bf84f9bedd485b2c4eac05f59e35addc86ce7dbf0d90435528e04384c6314",
+      "finalObservedSHA256": "0c4bf84f9bedd485b2c4eac05f59e35addc86ce7dbf0d90435528e04384c6314",
+      "changedSinceObservation": false
+    },
+    {
+      "path": "web/package.json",
+      "sha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "finalObservedSHA256": "788c8984a6270e8f8f519735a97650190efb8d64af6624d959fa0d0841171853",
+      "changedSinceObservation": true
+    },
+    {
+      "path": "web/package-lock.json",
+      "sha256": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+      "finalObservedSHA256": "ef0d84a8ed579c2d7aab945ec5239fc8d7263e02e323785c35c6535febf78ca8",
+      "changedSinceObservation": true
+    },
+    {
+      "path": "web/tsconfig.json",
+      "sha256": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "finalObservedSHA256": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "changedSinceObservation": false
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+      "expectedSHA256": "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb",
+      "actualSHA256": "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb"
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "expectedSHA256": "bfb68aac3aff5d5d2882a34138d42d7602fec5d3c0051a3bbfe0a80526d95b0b",
+      "actualSHA256": "bfb68aac3aff5d5d2882a34138d42d7602fec5d3c0051a3bbfe0a80526d95b0b"
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+      "expectedSHA256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+      "actualSHA256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368"
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+      "expectedSHA256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030",
+      "actualSHA256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030"
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+      "expectedSHA256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+      "actualSHA256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7"
+    },
+    {
+      "path": "web/lib/nst/client.ts",
+      "expectedSHA256": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+      "actualSHA256": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d"
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.ts",
+      "expectedSHA256": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+      "actualSHA256": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a"
+    },
+    {
+      "path": "web/lib/nst/admissionOrigin.ts",
+      "expectedSHA256": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+      "actualSHA256": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba"
+    },
+    {
+      "path": "web/lib/nst/jobLifecycle.server.ts",
+      "expectedSHA256": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+      "actualSHA256": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8"
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "expectedSHA256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "actualSHA256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a"
+    },
+    {
+      "path": "web/lib/cron/nstRateLimitPolicy.ts",
+      "expectedSHA256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+      "actualSHA256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c"
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+      "expectedSHA256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880",
+      "actualSHA256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880"
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+      "expectedSHA256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf",
+      "actualSHA256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf"
+    },
+    {
+      "path": "web/lib/skoElement/contract.ts",
+      "expectedSHA256": "6bda1cd0c52980989addb9f16a9fc0b8ccef5d2125334becc91bddeb2e08c40b",
+      "actualSHA256": "6bda1cd0c52980989addb9f16a9fc0b8ccef5d2125334becc91bddeb2e08c40b"
+    },
+    {
+      "path": "web/lib/skoElement/interpret.ts",
+      "expectedSHA256": "c330d79ef1851024109ebfa3b2732954f4e8429c9a82d4ae681b2433cec65e99",
+      "actualSHA256": "c330d79ef1851024109ebfa3b2732954f4e8429c9a82d4ae681b2433cec65e99"
+    },
+    {
+      "path": "web/lib/skoElement/fixtures.ts",
+      "expectedSHA256": "f04a937c6d85425d418fe1399855b37c08b1f06c938eb5fb1fa18740afa395f9",
+      "actualSHA256": "f04a937c6d85425d418fe1399855b37c08b1f06c938eb5fb1fa18740afa395f9"
+    },
+    {
+      "path": "web/lib/skoElement/interpret.test.ts",
+      "expectedSHA256": "3b7fe2d756de9087731e5aefda4144ee172faa96ac734f41ed12dfc13eda29be",
+      "actualSHA256": "3b7fe2d756de9087731e5aefda4144ee172faa96ac734f41ed12dfc13eda29be"
+    }
+  ],
+  "sourcePinsMatched": 17,
+  "captureRuntimeSourceSHA256": {
+    "runner": "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb",
+    "preparation": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+    "adapter": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+    "client": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+    "budget": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+    "admission": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+    "admissionOrigin": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+    "lifecycle": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+    "ratePolicy": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c"
+  },
+  "redactorSectionSHA256": "ab44700a1a907748aeadcaf87264e0118344ac4aabf09bf52ffa79368d2300c5",
+  "comparisonToNovember9": {
+    "nodeExecutableMatches": true,
+    "tsconfigMatches": true,
+    "lockfileMatches": true,
+    "defaultCAsMatch": true,
+    "bundledCAsMatch": true,
+    "fetchSourceMatches": true
+  },
+  "intendedExecution": {
+    "evidence": "Saved November 9 proposal: local NST owner using canonical authenticated client; no Vercel route or deployment",
+    "historicallyNamedCustodian": "Claude NST owner local_3bb2755d, via Chef local_c4e6c533; current execution assignment not established",
+    "packageCaptureScripts": [],
+    "liveCLIExistsInReviewedCaptureModuleSet": false,
+    "approvedBootstrapExists": false,
+    "entryPoint": "web/scripts/blsh/nativeProcessCaptureRunner.ts:runNativeProcessCapture, supplied createNativeProcessCaptureAdapter",
+    "loader": "ts-node/register/transpile-only",
+    "loaderCompilerOptions": {
+      "module": "commonjs",
+      "moduleResolution": "node"
+    },
+    "loaderWorkingDirectory": "/Users/tim/Code/fhfhockey.com/web",
+    "loaderModulePath": "NODE_PATH=.",
+    "executionEnvironmentVerified": false,
+    "operatorConfirmed": false,
+    "privateOutputDirectoryConfirmed": false,
+    "lifecycleModeForExecutionVerified": false,
+    "credentialAvailability": "not inspected",
+    "providerTLSVerified": null,
+    "proposedLoaderCachePolicy": "DISABLE_V8_COMPILE_CACHE=1 in the one-shot process; verified offline, not applied to any current runtime or production configuration"
+  },
+  "historicalTLS": {
+    "evidence": "../blsh-lane-readiness-2026-11-08/RUNTIME-POST-IMPORT-TLS.json",
+    "observedAtUTC": "2026-11-09T20:47:05.315Z",
+    "testsPassed": 4,
+    "note": "Historical synthetic loopback behavior, old candidate import; not a current provider/launcher attestation. No repeat performed."
+  },
+  "actions": {
+    "sourceModulesExecuted": true,
+    "adapterFactoryConstructed": false,
+    "networkRequests": 0,
+    "localLedgerOperations": 0,
+    "databaseOperations": 0,
+    "credentialAccess": 0,
+    "pilotRuns": 0,
+    "note": "Static module initialization only in empty-environment blocked-transport import probes; no capture/factory/adapter methods invoked. Loader-cache write attempts were blocked; final no-cache import had zero attempts."
+  },
+  "authorization": {
+    "status": "draft_blocked_on_exact_operator_launcher_environment_output_and_coordination",
+    "proposedExistingLifecycleMode": "disabled",
+    "maximumHTTPAttempts": 5,
+    "approvalGiven": false,
+    "draft": "PILOT-AUTHORIZATION.md",
+    "missingFields": [
+      "operator assignment and current coordinated slot clearance",
+      "actual configured process/mode/TLS receipt and private credential availability confirmed by operator",
+      "current admission/control evidence from custodian",
+      "operator acceptance of private output path and host write authority",
+      "specific user approval of exact candidate and start window"
+    ],
+    "proposedStartWindowUTC": {
+      "startInclusive": "2026-11-13T14:05:00.000Z",
+      "endExclusive": "2026-11-13T14:06:00.000Z",
+      "workEndsBefore": "2026-11-13T14:08:00.000Z"
+    }
+  },
+  "importVerification": {
+    "checkedAtUTC": "2026-11-12T18:13:43.931Z",
+    "node": "v22.23.4",
+    "execSHA256": "daa77e22e1b8778361b392461e9921a6d292d0382ebf4ae872a0081f02f01fef",
+    "loader": "ts-node 10.9.2 register with transpileOnly true",
+    "compilerOptions": {
+      "module": "commonjs",
+      "moduleResolution": "node"
+    },
+    "cwd": "/Users/tim/Code/fhfhockey.com/web",
+    "childEnvironment": "env -i; PATH=/usr/local/bin:/usr/bin:/bin; NODE_PATH=.; DISABLE_V8_COMPILE_CACHE=1; no inherited credentials or environment files",
+    "modules": [
+      {
+        "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+        "sha256": "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb",
+        "loadedFromExactPath": true
+      },
+      {
+        "path": "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+        "sha256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+        "loadedFromExactPath": true
+      },
+      {
+        "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+        "sha256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+        "loadedFromExactPath": true
+      },
+      {
+        "path": "web/lib/nst/client.ts",
+        "sha256": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+        "loadedFromExactPath": true
+      },
+      {
+        "path": "web/lib/nst/sharedAdmission.ts",
+        "sha256": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+        "loadedFromExactPath": true
+      },
+      {
+        "path": "web/lib/nst/admissionOrigin.ts",
+        "sha256": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+        "loadedFromExactPath": true
+      },
+      {
+        "path": "web/lib/nst/jobLifecycle.server.ts",
+        "sha256": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+        "loadedFromExactPath": true
+      },
+      {
+        "path": "web/lib/nst/requestBudget.ts",
+        "sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+        "loadedFromExactPath": true
+      },
+      {
+        "path": "web/lib/cron/nstRateLimitPolicy.ts",
+        "sha256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+        "loadedFromExactPath": true
+      }
+    ],
+    "adapterFactoryInvoked": false,
+    "captureRunInvoked": false,
+    "networkAttempts": 0,
+    "writeAttemptsDuringImport": 0,
+    "passed": true,
+    "previousAttempts": [
+      {
+        "status": "failed_import_guard_check",
+        "networkAttempts": 0,
+        "actualWrites": 0,
+        "note": "Initial all-write-blocked probe failed the combined check; no success claimed."
+      },
+      {
+        "status": "diagnostic",
+        "modulesLoaded": 9,
+        "networkAttempts": 0,
+        "blockedWriteAttempts": 2,
+        "actualWrites": 0,
+        "note": "Installed v8-compile-cache-lib source exposes DISABLE_V8_COMPILE_CACHE; setting it in the final child removed both blocked writes. No capture or factory call."
+      }
+    ]
+  },
+  "staticAdmissionEvidence": [
+    {
+      "path": "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql",
+      "sha256": "d99730b43d2658861259e81f01c687217e161a38c293843de0192dc1fd69e291",
+      "deployedStateVerified": false
+    },
+    {
+      "path": "supabase/migrations/20261109015836_nst_admission_post_burst_gap.sql",
+      "sha256": "52c611205361d41a97c9cf06bee7ff7ee15488d7a72456bc3ad1948c7cd6f4aa",
+      "deployedStateVerified": false
+    }
+  ],
+  "staticAdmissionEvidenceNote": "Static SQL only. Later saved owner/Chef records now located: post-burst migration reported applied November 9 and live November 10, with local function-body MD5 matching reported prefix. No current deployed full-hash/control readback; no SQL executed. See prerequisiteFollowup.",
+  "coordination": {
+    "manifestWritesOwned": false,
+    "manifestNoConflictAck": "tasks/artifacts/browserless-transport-prep-2026-11-12/manifest-ack-6af5fabb-bf6c-8191-b4d8-0c7c2879a038.md",
+    "note": "Browserless declaration-only change separately authorized. No install/version changes or inclusion in this candidate.",
+    "manifestHandback": "Browserless owner reports custody released after four declaration lines only; read-only diff confirms ws 8.21.1 and @types/ws 8.18.1 additions in package and lock root, with no resolved dependency entries changed. Before/after evidence is maintained by that lane in MANIFEST-INTEGRATION.json."
+  },
+  "finalPinCheckAtUTC": "2026-11-12T18:16:23.204122+00:00",
+  "finalHEAD": "24b1cb4d3048a3dba8234cf92c62e8f2b72f877f",
+  "prerequisiteFollowup": {
+    "checkedAtUTC": "2026-11-12T18:24:42.720786+00:00",
+    "handoff": "PILOT-PREREQUISITES.md",
+    "handoffSHA256": "11f2199b0736d115ea0ee5dcbd146c82df39115a0d6a5f440dadac7aab8e74ac",
+    "proposedOperator": "Claude NST local_3bb2755d; availability/assignment unconfirmed",
+    "currentCoordinationTarget": "Scout plus Claude Chef local_78a99adf",
+    "proposedStartUTC": "2026-11-13T14:05:00Z",
+    "slotCleared": false,
+    "slotBooked": false,
+    "candidateOutput": "/Users/tim/Library/Application Support/fhfh-blsh-native-20261113T140500Z",
+    "outputExists": false,
+    "parentResolved": "/Users/tim/Library/Application Support",
+    "parentMode": "0o700",
+    "parentOwnerMatchesCurrentUID": true,
+    "parentIsDirectory": true,
+    "parentIsSymlink": false,
+    "displayedParentACL": "one deny-delete entry; no additional read grant",
+    "directoryCreated": false,
+    "durabilityProbeRun": false,
+    "bootstrapFound": true,
+    "bootstrapSearchScope": [
+      "web/scripts",
+      "web/lib",
+      "web/pages",
+      "web/package.json"
+    ],
+    "configuredProcessIdentified": false,
+    "nonsecretShellRecheck": {
+      "node": "v22.23.4",
+      "execPath": "/usr/local/bin/node",
+      "project": "unset",
+      "lifecycle": "unset_disabled_default",
+      "NODE_OPTIONSPresent": false,
+      "customCAPresent": false,
+      "TLSBypass": false,
+      "proxyPresent": false,
+      "credentialsInspected": false
+    },
+    "admission": {
+      "bestSavedStatus": "post-burst migration reported applied November 9; later November 10 mailbox corroborates",
+      "budgetBodyMD5": "5e8543085513e308b92ce55b0090557b",
+      "reportedMD5Prefix": "5e854308",
+      "prefixMatches": true,
+      "fileSHA256": "52c611205361d41a97c9cf06bee7ff7ee15488d7a72456bc3ad1948c7cd6f4aa",
+      "currentDeployedFullHashVerified": false,
+      "currentControlsVerified": false,
+      "draftHeaderSupersededByLaterReportedInstall": true
+    },
+    "sourcePinsRechecked": 17,
+    "noSourcePinDrift": true,
+    "externalOperations": 0,
+    "credentialsAccessed": false,
+    "ownerMessageSent": true,
+    "bootstrapNote": "Implemented after the earlier inspection stage; see bootstrap field. No live invocation.",
+    "ownerMessageDeliveryNote": "Scout later delivered once to established mailbox; acknowledgment and slot reservation pending."
+  },
+  "bootstrap": {
+    "status": "implemented_locally_mock_verified_independently_reviewed",
+    "handoff": "BOOTSTRAP-HANDOFF.md",
+    "checks": "BOOTSTRAP-CHECKS.json",
+    "path": "web/scripts/blsh/nativeProcessCaptureBootstrap.ts",
+    "sha256": "d4d2fcac52ffd272307b97bcbe79a008d888f7ee05f96526888cdcea2a34c97f",
+    "testSHA256": "47a531687a925dfe4dc045444d4894c7798e572f5b55b1b1078f223672816533",
+    "testCount": 32,
+    "configuredExecutionProcessVerified": false,
+    "pilotApproved": false
+  },
+  "coordinationDelivery": {
+    "status": "mailbox_delivered_verified_acknowledgment_pending",
+    "actor": "Scout parent coordinator",
+    "mailbox": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+    "heading": "CODEX-BLSH-CUSTODIAN-COORDINATION-20261112",
+    "deliveredAtUTC": "2026-11-12T18:40:41.686022Z",
+    "verifiedAtUTC": "2026-11-12T18:42:01.252097+00:00",
+    "quotedRequestExactMatch": true,
+    "quotedRequestSHA256": "3e785b8d9df05e21cb3cdd7d4f0b279023260320f760367de2092b8dd36f9248",
+    "custodianAcknowledged": false,
+    "slotReserved": false,
+    "pilotApproved": false,
+    "additionalMessageSentByThisWorker": false
+  },
+  "executionReadiness": {
+    "plan": "PILOT-EXECUTION-PLAN.md",
+    "receipt": "PILOT-READINESS.json",
+    "checkedAtUTC": "2026-11-12T19:40:03.642713+00:00",
+    "offlineReady": true,
+    "pilotApproved": false,
+    "custodianAcknowledged": false,
+    "slotReserved": false
+  }
+}

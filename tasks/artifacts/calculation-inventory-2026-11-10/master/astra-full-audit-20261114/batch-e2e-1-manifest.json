@@ -1,0 +1,1391 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "worker": "readfirst_production",
+  "scope": "FULL-AUDIT-SCOPE rows409–421, all13assigned web/e2e paths including fixture/config/server/spec; no laterpath credit.",
+  "files": [
+    {
+      "path": "web/e2e/drm-previews.config.ts",
+      "lines": 10,
+      "sha256": "14b56dfe13d4c925bef045c074180c56756c5e3a11e1e625ab2172c5f3b57dba",
+      "target_sha256": "14b56dfe13d4c925bef045c074180c56756c5e3a11e1e625ab2172c5f3b57dba",
+      "matches_target": true,
+      "bytes": 573,
+      "read_ranges": [
+        [
+          1,
+          10
+        ]
+      ],
+      "status": "fully_read",
+      "enumerated_rows": 1
+    },
+    {
+      "path": "web/e2e/drm-previews.spec.ts",
+      "lines": 156,
+      "sha256": "2e510e4aa970bf8b13808beaa2df181e09b2097fa8d789180271e8a328fc9e0c",
+      "target_sha256": "2e510e4aa970bf8b13808beaa2df181e09b2097fa8d789180271e8a328fc9e0c",
+      "matches_target": true,
+      "bytes": 11810,
+      "read_ranges": [
+        [
+          1,
+          156
+        ]
+      ],
+      "status": "fully_read",
+      "enumerated_rows": 110
+    },
+    {
+      "path": "web/e2e/fixtures/drm-previews/App.tsx",
+      "lines": 10,
+      "sha256": "c5aae71c37c632b3b68c45ae7abbfe9dbaf1a27b7bf85c812e6c4f3de8a7a74a",
+      "target_sha256": "c5aae71c37c632b3b68c45ae7abbfe9dbaf1a27b7bf85c812e6c4f3de8a7a74a",
+      "matches_target": true,
+      "bytes": 442,
+      "read_ranges": [
+        [
+          1,
+          10
+        ]
+      ],
+      "status": "fully_read",
+      "enumerated_rows": 1
+    },
+    {
+      "path": "web/e2e/fixtures/drm-previews/data.tsx",
+      "lines": 157,
+      "sha256": "d228d40f2ad574680e903db5f44250e70fa589a2c31f16244288c3bd83233568",
+      "target_sha256": "d228d40f2ad574680e903db5f44250e70fa589a2c31f16244288c3bd83233568",
+      "matches_target": true,
+      "bytes": 10659,
+      "read_ranges": [
+        [
+          1,
+          157
+        ]
+      ],
+      "status": "fully_read",
+      "enumerated_rows": 111
+    },
+    {
+      "path": "web/e2e/fixtures/drm-previews/index.html",
+      "lines": 9,
+      "sha256": "c56f7d267612710790b519950ab3e118807c4ccb1bc579180f8abf21b451dbca",
+      "target_sha256": "c56f7d267612710790b519950ab3e118807c4ccb1bc579180f8abf21b451dbca",
+      "matches_target": true,
+      "bytes": 465,
+      "read_ranges": [
+        [
+          1,
+          9
+        ]
+      ],
+      "status": "fully_read",
+      "enumerated_rows": 1
+    },
+    {
+      "path": "web/e2e/fixtures/drm-previews/server.mjs",
+      "lines": 71,
+      "sha256": "7ea6da38c87a81c09692165c27c5c268d1abefa62cf48e901075b938a43c5dcc",
+      "target_sha256": "7ea6da38c87a81c09692165c27c5c268d1abefa62cf48e901075b938a43c5dcc",
+      "matches_target": true,
+      "bytes": 3805,
+      "read_ranges": [
+        [
+          1,
+          71
+        ]
+      ],
+      "status": "fully_read",
+      "enumerated_rows": 27
+    },
+    {
+      "path": "web/e2e/fixtures/game-grid-previews/App.tsx",
+      "lines": 76,
+      "sha256": "7b0492a4a4a157898fdde4128bd0fc51b09d2de0a1070a94ff8542fc7e792c93",
+      "target_sha256": "7b0492a4a4a157898fdde4128bd0fc51b09d2de0a1070a94ff8542fc7e792c93",
+      "matches_target": true,
+      "bytes": 6700,
+      "read_ranges": [
+        [
+          1,
+          76
+        ]
+      ],
+      "status": "fully_read",
+      "enumerated_rows": 47
+    },
+    {
+      "path": "web/e2e/fixtures/game-grid-previews/data.ts",
+      "lines": 204,
+      "sha256": "163b29fb974f3468e2d5ecf9b32f0e88237fb120d9943ba64b89c81031b2b557",
+      "target_sha256": "163b29fb974f3468e2d5ecf9b32f0e88237fb120d9943ba64b89c81031b2b557",
+      "matches_target": true,
+      "bytes": 15352,
+      "read_ranges": [
+        [
+          1,
+          204
+        ]
+      ],
+      "status": "fully_read",
+      "enumerated_rows": 187
+    },
+    {
+      "path": "web/e2e/fixtures/game-grid-previews/server.mjs",
+      "lines": 62,
+      "sha256": "03768596c160fbdd0a8e4eabdebb2520c3d7fc6f9c1d689dbb3ec58f8f54ce9b",
+      "target_sha256": "03768596c160fbdd0a8e4eabdebb2520c3d7fc6f9c1d689dbb3ec58f8f54ce9b",
+      "matches_target": true,
+      "bytes": 3566,
+      "read_ranges": [
+        [
+          1,
+          62
+        ]
+      ],
+      "status": "fully_read",
+      "enumerated_rows": 24
+    },
+    {
+      "path": "web/e2e/fixtures/wigo/wigoFixtures.ts",
+      "lines": 293,
+      "sha256": "69d8a57ad563137bfa0ed5bf627a465947f69406a858c19fa2beb15783cd6531",
+      "target_sha256": "69d8a57ad563137bfa0ed5bf627a465947f69406a858c19fa2beb15783cd6531",
+      "matches_target": true,
+      "bytes": 17277,
+      "read_ranges": [
+        [
+          1,
+          293
+        ]
+      ],
+      "status": "fully_read",
+      "enumerated_rows": 203
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "lines": 1371,
+      "sha256": "1ca177545fbeb53cd990af98a3c89a9ef6315bc427e14c5db3c03087ec4975df",
+      "target_sha256": "1ca177545fbeb53cd990af98a3c89a9ef6315bc427e14c5db3c03087ec4975df",
+      "matches_target": true,
+      "bytes": 95077,
+      "read_ranges": [
+        [
+          1,
+          1371
+        ]
+      ],
+      "status": "fully_read",
+      "enumerated_rows": 1067
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "lines": 492,
+      "sha256": "82b6472b71ae27d529219c37da3b9edf34093a69c37a1a12462187c6a30f02cf",
+      "target_sha256": "82b6472b71ae27d529219c37da3b9edf34093a69c37a1a12462187c6a30f02cf",
+      "matches_target": true,
+      "bytes": 41810,
+      "read_ranges": [
+        [
+          1,
+          492
+        ]
+      ],
+      "status": "fully_read",
+      "enumerated_rows": 423
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "lines": 1429,
+      "sha256": "a958b49b58dbef6d2d778bbc2a64103c532635ac9ec1b61b0f92ed7ecf708d1d",
+      "target_sha256": "a958b49b58dbef6d2d778bbc2a64103c532635ac9ec1b61b0f92ed7ecf708d1d",
+      "matches_target": true,
+      "bytes": 104956,
+      "read_ranges": [
+        [
+          1,
+          1429
+        ]
+      ],
+      "status": "fully_read",
+      "enumerated_rows": 1126
+    }
+  ],
+  "file_count": 13,
+  "line_count": 4340,
+  "tsv_rows": 3328,
+  "kinds": {
+    "configuration": 1,
+    "initializer": 918,
+    "test-or-hook": 97,
+    "function-like": 808,
+    "gate": 429,
+    "assertion": 1073,
+    "bootstrap": 1,
+    "document": 1
+  },
+  "symbol_identity": "path#kind:start-end zero-based UTF16 offsets, end exclusive; line pointers1based. Test declarations within loops are source declarations, not executed test count.",
+  "tests": [
+    {
+      "path": "web/e2e/drm-previews.spec.ts",
+      "line": 4,
+      "expression": "test.beforeEach",
+      "title": "async ({ page }) => { await page.clock.setFixedTime('2026-11-12T15:00:00Z'); await page.route('**/*', route => { const url = new URL(route.request().url()); return url.hostname === '127.0.0.1' ? route.continue() : route.abort(); }); }",
+      "dynamic": true,
+      "identity": "web/e2e/drm-previews.spec.ts#test-or-hook:176-441"
+    },
+    {
+      "path": "web/e2e/drm-previews.spec.ts",
+      "line": 12,
+      "expression": "test",
+      "title": "'accepted source rows determine total ordering, asymmetric shares and Custom card scope'",
+      "dynamic": false,
+      "identity": "web/e2e/drm-previews.spec.ts#test-or-hook:444-2241"
+    },
+    {
+      "path": "web/e2e/drm-previews.spec.ts",
+      "line": 35,
+      "expression": "test",
+      "title": "'calendar presets keep sparse games, filters narrow that same date window and layouts work'",
+      "dynamic": false,
+      "identity": "web/e2e/drm-previews.spec.ts#test-or-hook:2244-4011"
+    },
+    {
+      "path": "web/e2e/drm-previews.spec.ts",
+      "line": 57,
+      "expression": "test",
+      "title": "'pending games stay partial and errors do not become empty successful matrices'",
+      "dynamic": false,
+      "identity": "web/e2e/drm-previews.spec.ts#test-or-hook:4014-5867"
+    },
+    {
+      "path": "web/e2e/drm-previews.spec.ts",
+      "line": 81,
+      "expression": "test",
+      "title": "'strength views use one qualified response, keep alternatives separate and distinguish zero from an undefined share'",
+      "dynamic": false,
+      "identity": "web/e2e/drm-previews.spec.ts#test-or-hook:5870-7856"
+    },
+    {
+      "path": "web/e2e/drm-previews.spec.ts",
+      "line": 105,
+      "expression": "test",
+      "title": "'mobile controls and the full roster fit the viewport'",
+      "dynamic": false,
+      "identity": "web/e2e/drm-previews.spec.ts#test-or-hook:7859-8563"
+    },
+    {
+      "path": "web/e2e/drm-previews.spec.ts",
+      "line": 116,
+      "expression": "test",
+      "title": "'history keeps verified game dates and uncertain publication reports in separate sections'",
+      "dynamic": false,
+      "identity": "web/e2e/drm-previews.spec.ts#test-or-hook:8566-11801"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 26,
+      "expression": "test",
+      "title": "'visible player view control enters and leaves goalie content without changing schedule state'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:1393-2762"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 45,
+      "expression": "test",
+      "title": "'goalie cells preserve structure with approved minimum geometry and restore Skater sizing'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:2765-7555"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 98,
+      "expression": "test",
+      "title": "'goalie detail defines conditional win, handles keyboard focus and reopens after mobile layout change'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:7558-9886"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 131,
+      "expression": "test",
+      "title": "'mobile goalie cells truncate long names and open full accessible details by touch'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:9889-11448"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 156,
+      "expression": "test",
+      "title": "'goalie replacement never pairs a new name with old percentages; puck drop removes forecasts'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:11451-13004"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 178,
+      "expression": "test",
+      "title": "'goalie cells show unavailable for unqualified, failed and partial-source states'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:13007-14386"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 198,
+      "expression": "test",
+      "title": "'goalie workload opens from existing Info without layout shifts, with honest windows and keyboard controls'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:14389-19597"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 279,
+      "expression": "test",
+      "title": "'Date Range goalie cells retain schedule structure, equal widths and contained scrolling'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:19600-22462"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 318,
+      "expression": "test",
+      "title": "'transposed goalie grid centers between equal rails and four-week Info supports mobile workload'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:22465-26020"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 363,
+      "expression": "test",
+      "title": "'public goalie readers keep percentages withheld, load history lazily and discard obsolete team responses'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:26023-30347"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 418,
+      "expression": "test",
+      "title": "'24-team keyboard disclosures survive sorting, refresh, mode and orientation; a new week resets'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:30350-33008"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 457,
+      "expression": "test",
+      "title": "'desktop sticky dates stay below the measured site navbar through resize and height changes'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:33011-35515"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 496,
+      "expression": "test",
+      "title": "`mobile grid fits all summary columns without preview controls at ${width}px`",
+      "dynamic": true,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:35560-38101"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 537,
+      "expression": "test",
+      "title": "'qualifying fixture payloads reconcile, preserve zero, and disclose partial, missing, stale and empty states'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:38104-42440"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 588,
+      "expression": "test",
+      "title": "'same-week refresh preserves open panels through partial and covered empty schedules'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:42443-43315"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 603,
+      "expression": "test",
+      "title": "'real reader reaches expandable rows: qualified, partial, stale, legacy, error/retry and elapsed refresh'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:43318-49863"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 690,
+      "expression": "test",
+      "title": "'keyboard refresh keeps focus in the open preview during delayed loading, success and failure'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:49866-53508"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 758,
+      "expression": "test",
+      "title": "`32-team real week keeps rows, totals and rankings through day masks and schedule states at ${width}px`",
+      "dynamic": true,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:54620-57163"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 798,
+      "expression": "test",
+      "title": "'32-team stale schedule receipts are disclosed in previews and never become forecast totals'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:57166-57959"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 811,
+      "expression": "test",
+      "title": "`Game Grid UI corrections keep info readable and controls unchanged at ${width}px`",
+      "dynamic": true,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:57996-62848"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 897,
+      "expression": "test",
+      "title": "`Game Grid legend and warning footer at ${width}px with warning ${warning ? 'present' : 'absent'}`",
+      "dynamic": true,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:62942-66855"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 964,
+      "expression": "test",
+      "title": "`four-week opportunity keeps future NHL Sunday starts across viewer midnight in ${timezoneId}`",
+      "dynamic": true,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:66975-68676"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 991,
+      "expression": "test",
+      "title": "`opponent ratings and four-week opportunity expand independently at ${width}px in ${dayCount}-day mode`",
+      "dynamic": true,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:68790-72832"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 1047,
+      "expression": "test",
+      "title": "'four-week opportunity preserves unknown gaps and exposes touch and keyboard context'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:72835-74097"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 1070,
+      "expression": "test",
+      "title": "'sparkline gradient colors weeks by skater matchup and sticky headers stay aligned'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:74100-75693"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 1096,
+      "expression": "test",
+      "title": "'Game Grid stays responsive while the four-week reader is slow'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:75696-76978"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 1117,
+      "expression": "test",
+      "title": "'sparkline keeps the original team card while the pointer crosses the gap and reads it'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:76982-78173"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 1142,
+      "expression": "test",
+      "title": "'sparkline card preserves keyboard focus and dismisses on Escape and focus away'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:78177-78970"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 1162,
+      "expression": "test",
+      "title": "'sparkline real touch supports card reading, second-tap and outside dismissal'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:78973-79979"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 1185,
+      "expression": "test",
+      "title": "`loading shell keeps its footprint on cold, warm and hard refresh at ${width}px`",
+      "dynamic": true,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:80021-84301"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 1229,
+      "expression": "test",
+      "title": "'loading failures settle without fake totals and reload can recover'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:84304-85738"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 1249,
+      "expression": "test",
+      "title": "`optional ${source} failure leaves the selected schedule usable`",
+      "dynamic": true,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:85784-86965"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 1265,
+      "expression": "test",
+      "title": "'vertical pending grid preserves 32 unknown columns under reduced motion'",
+      "dynamic": false,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:86968-88213"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "line": 1284,
+      "expression": "test",
+      "title": "`Game Grid visual footprint and semantic headers at ${width}px`",
+      "dynamic": true,
+      "identity": "web/e2e/game-grid-previews.spec.ts#test-or-hook:88271-95036"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 64,
+      "expression": "test",
+      "title": "\"crease shift: official share over team games, labeled comparison, and it exports the same snapshot\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:5978-7470"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 84,
+      "expression": "test",
+      "title": "\"crease shift: a schedule gap previews as partial and cannot export\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:7473-8330"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 94,
+      "expression": "test",
+      "title": "\"goalie of the period: Category Counts and the TGV grade stay under their own labels\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:8333-9469"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 118,
+      "expression": "test",
+      "title": "\"goalie of the period: eight rows a side fill the body at five categories\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:10170-12666"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 141,
+      "expression": "test",
+      "title": "\"goalie of the season: a full season fits the body with readable bars\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:12669-15352"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 164,
+      "expression": "test",
+      "title": "\"goalie of the period: a custom range shows its dates and headline\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:15355-16344"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 191,
+      "expression": "test",
+      "title": "\"period control: the pager pages matchups by keyboard, updates the URL and loads each edition without Refresh\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:17924-19776"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 227,
+      "expression": "test",
+      "title": "\"period control: custom dates show only for Custom, a bad range is never sent, and a good one loads on its own\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:19779-21508"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 255,
+      "expression": "test",
+      "title": "\"period control: fits a 375 phone with no page overflow\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:21511-22387"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 270,
+      "expression": "test",
+      "title": "\"GSAx: ten rows a side fill the body\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:22390-23916"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 318,
+      "expression": "test",
+      "title": "`crease shift: ${teamCount} ranked teams fill the body`",
+      "dynamic": true,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:27226-28271"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 333,
+      "expression": "test",
+      "title": "`crease shift: ${picked.length} picked over ${window} game${window === 1 ? \"\" : \"s\"} stack and fill the body`",
+      "dynamic": true,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:28468-29334"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 346,
+      "expression": "test",
+      "title": "\"crease shift: the headers, subtitle and note follow the window and the comparison\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:29337-31401"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 370,
+      "expression": "test",
+      "title": "\"crease shift: teams are picked from a capped grid, blank goes back to the top 12, and old window links still work\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:31404-34023"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 409,
+      "expression": "test",
+      "title": "\"goalie of the period: a failed TGV read shows grades as unavailable and cannot export\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:34026-34836"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 419,
+      "expression": "test",
+      "title": "\"goalie of the period: a game without one labeled starter cannot export\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:34839-35555"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 428,
+      "expression": "test",
+      "title": "\"GSAx: a chosen matchup prints its dates and fills the body, and its pager follows the week\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:35558-37842"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 449,
+      "expression": "test",
+      "title": "\"GSAx: a custom range past NST's newest date shows the lag and cannot export\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:37845-39272"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 463,
+      "expression": "test",
+      "title": "\"GSAx: an old window URL keeps its window and shows the field\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:39275-40228"
+    },
+    {
+      "path": "web/e2e/social-share-crease-category.spec.ts",
+      "line": 475,
+      "expression": "test",
+      "title": "\"GSAx: Best and Worst, NST model and through-date\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share-crease-category.spec.ts#test-or-hook:40231-41781"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 25,
+      "expression": "test.beforeEach",
+      "title": "({ page }) => page.setDefaultTimeout(10000)",
+      "dynamic": true,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:1949-2009"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 191,
+      "expression": "test",
+      "title": "\"default summary, recalculated dates and actual PNG match one frozen edition\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:17611-22227"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 262,
+      "expression": "test",
+      "title": "\"Wednesday excludes Wednesday; mobile controls and detail PNG preserve selected games\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:22230-24828"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 298,
+      "expression": "test",
+      "title": "\"long text and missing logo stay inside the square and export with a branded fallback\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:24831-25713"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 311,
+      "expression": "test",
+      "title": "\"failed refresh preserves only a nonexportable preview and retries the same selection\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:25716-27554"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 341,
+      "expression": "test",
+      "title": "\"partial, stale and valid zero-game sources do not publish rankings\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:27557-28599"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 360,
+      "expression": "test",
+      "title": "\"export font failures are explicit and retry without refetching schedule data\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:28602-29301"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 374,
+      "expression": "test",
+      "title": "\"edition expiry disables export and unsupported formats stay explicitly gated\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:29304-30185"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 391,
+      "expression": "test",
+      "title": "\"Monday default grid ranks every team by Game Grid weekScore in square day cells and exports\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:30188-32466"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 424,
+      "expression": "test",
+      "title": "\"Monday grid falls back to abbreviation tiles and never ranks an untrusted edition\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:32469-33634"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 443,
+      "expression": "test",
+      "title": "\"pinned Monday grid edition exports the same PNG bytes every run\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:33637-36698"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 501,
+      "expression": "test",
+      "title": "\"Easiest schedules and streaming matchup cards rank by Game Grid opponent DEF and export\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:37625-43736"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 578,
+      "expression": "test",
+      "title": "\"matchup cards never rank or export without current, complete opponent ratings\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:43739-45134"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 610,
+      "expression": "test",
+      "title": "\"Pickup tier and specialist cards list ranked players from top Week Score teams and export\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:45337-48189"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 649,
+      "expression": "test",
+      "title": "\"player cards never rank or export without current player sources or a ready schedule\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:48192-49649"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 676,
+      "expression": "test",
+      "title": "\"short pickup columns say how many qualify and the card still exports\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:49652-51071"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 711,
+      "expression": "test",
+      "title": "\"pinned Wednesday and Tuesday editions export the same PNG bytes every run\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:51892-53342"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 730,
+      "expression": "test",
+      "title": "\"Wednesday edition recomputes every card for Thursday to Sunday and names the covered dates\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:53345-55597"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 776,
+      "expression": "test",
+      "title": "\"Tuesday trend cards list the server's sections with definitions and a source line, and export\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:56350-64240"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 929,
+      "expression": "test",
+      "title": "\"Tuesday tiles never collide: name, chips, difference, line ends, sparkline and meta stay apart; names stay in their column (TT-7b, TT-15)\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:70234-73425"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 967,
+      "expression": "test",
+      "title": "\"an empty Recent Form shows an honest empty state and never blocks the other Tuesday exports (TT-3)\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:73428-74391"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 984,
+      "expression": "test",
+      "title": "\"Tuesday cards never rank stale or failed sources, and say why with the as-of date\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:74394-76395"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1017,
+      "expression": "test",
+      "title": "\"a Tuesday PNG is refused when the preview changes between click and capture\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:76398-77564"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1037,
+      "expression": "test",
+      "title": "\"Tuesday OFFLINE FIXTURE evidence: desktop, phone and 1080 PNG per card\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:77567-79370"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1067,
+      "expression": "test",
+      "title": "\"a page load makes exactly one edition API call even under the dev strict-mode double mount\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:79373-80153"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1081,
+      "expression": "test",
+      "title": "\"the eyebrow names the real date context, not the format's posting day\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:80156-80998"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1096,
+      "expression": "test",
+      "title": "\"ticket 10 flair: striped player banners with L5 evidence, three per list, tiered grid scores and cherry picks\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:81001-84244"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1147,
+      "expression": "test",
+      "title": "\"player tiles never claim 'no recent game' when the last-five-games read failed\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:84247-86621"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1180,
+      "expression": "test",
+      "title": "\"GP and off-night counts are coloured per column on Monday and Wednesday editions\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:86624-88367"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1206,
+      "expression": "test",
+      "title": "\"schedule-aware tier list shows only tier teams' players as list rows, strict and widened\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:88370-91002"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1245,
+      "expression": "test",
+      "title": "\"share studio stays closed without a social editor role, and the edition is never requested\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:91005-92079"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1259,
+      "expression": "test",
+      "title": "\"returning to the tab keeps the week, days and card: the gate's re-check remounts the studio without a reset (ticket 15)\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:92082-93988"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1289,
+      "expression": "test",
+      "title": "\"cards carry no ordering or selection-rule captions (SS1-17, TJ)\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:93991-95471"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1312,
+      "expression": "test",
+      "title": "\"hot and cold streak badges sit beside the L5 line and match the streak rules (SS1-18)\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:95474-97539"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1344,
+      "expression": "test",
+      "title": "\"Tuesday GENUINE DATA render: captured layer, offline, export token per card\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:97542-102230"
+    },
+    {
+      "path": "web/e2e/social-share.spec.ts",
+      "line": 1401,
+      "expression": "test",
+      "title": "\"post library: a post's edition previews with its evidence and exports the same snapshot; an unavailable edition cannot\"",
+      "dynamic": false,
+      "identity": "web/e2e/social-share.spec.ts#test-or-hook:102233-104877"
+    }
+  ],
+  "unread_assigned": [],
+  "support": [
+    {
+      "path": "web/playwright.config.ts",
+      "read_ranges": [
+        [
+          1,
+          39
+        ]
+      ],
+      "sha256": "d3ff8662e205fd7eb24a2fcbfa0e33b9e50b7c14ac6ad3c45e9ba36b07b9faee",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/e2e/game-grid-previews.config.ts",
+      "read_ranges": [
+        [
+          1,
+          10
+        ]
+      ],
+      "sha256": "6dd2bc88ef4c6ecd754b05f9a2efb32efd7b34b4274a5820fd6010ef420b92d7",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/e2e/fixtures/game-grid-previews/README.md",
+      "read_ranges": [
+        [
+          1,
+          7
+        ]
+      ],
+      "sha256": "43cf406967317d8cbb18733f28be47c9413dccddb2f575dbb78044420dba1bd4",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/e2e/fixtures/game-grid-previews/real-week-32.ts",
+      "read_ranges": [
+        [
+          1,
+          42
+        ]
+      ],
+      "sha256": "1b5f574a5000d41bd0508f41f1847e3500a0a6f9346970fd102266652ed27b12",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/e2e/fixtures/game-grid-previews/index.html",
+      "read_ranges": [
+        [
+          1,
+          11
+        ]
+      ],
+      "sha256": "a080b77e80f0c00f291f08580ba4727f37f9a1a2ac279283bfdd9cdc7eed0e67",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/e2e/wigo-one-page.spec.ts",
+      "read_ranges": [
+        [
+          1,
+          85
+        ]
+      ],
+      "sha256": "cc42bb7444a801b168f3bc0d8901b7806cc540d3bdb703b8135b31e245cf39b8",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/pages/wigoCharts.tsx",
+      "read_ranges": [
+        [
+          1,
+          90
+        ]
+      ],
+      "sha256": "ac7cb382832a29d96cb0fd176cca98a22973c13b4c690e38acea46c8fa10dcf9",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/package.json",
+      "read_ranges": [
+        [
+          74,
+          76
+        ]
+      ],
+      "sha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/scripts/dev-stable.mjs",
+      "read_ranges": [
+        [
+          1,
+          54
+        ]
+      ],
+      "sha256": "5bfdfb7fb962ce3ffc25b57a9214321590a22dd50b60ac2bc85d9fafdd11f304",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/next.config.js",
+      "read_ranges": [
+        [
+          1,
+          32
+        ]
+      ],
+      "sha256": "45d31d338d7b3b1ab83ff0acd195bbf3c1b06146dfb67fcb38ab3e61489674ec",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/lib/supabase/client.ts",
+      "read_ranges": [
+        [
+          1,
+          25
+        ]
+      ],
+      "sha256": "818aab6190e6a3eed1f8e9b5190ba1da6db6874a05160632c6befa2d5eaf21b2",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/lib/supabase/index.ts",
+      "read_ranges": [
+        [
+          1,
+          80
+        ]
+      ],
+      "sha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/lib/socialShare/access.ts",
+      "read_ranges": [
+        [
+          1,
+          43
+        ]
+      ],
+      "sha256": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/lib/socialShare/matchupWeeksFetch.ts",
+      "read_ranges": [
+        [
+          1,
+          15
+        ]
+      ],
+      "sha256": "89e79431e8543f680a25dcf0d141e8e419d262d371441fd5c74a7f157afb4a7f",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/periodWindow.sources.ts",
+      "read_ranges": [
+        [
+          1,
+          16
+        ]
+      ],
+      "sha256": "c667a60dc1003d249474203074652e27c567aeacef08b0e91d4a87d38a3bbecb",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/pages/api/v1/social-share/matchup-weeks.ts",
+      "read_ranges": [
+        [
+          1,
+          17
+        ]
+      ],
+      "sha256": "be2d912ec918814fa042b29df66e7ab7321496a14bbe844b5649fd05dab71a2b",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/pages/social-share/posts.tsx",
+      "read_ranges": [
+        [
+          1,
+          19
+        ]
+      ],
+      "sha256": "32e4a9553595b47670915ac2dac8a28e84c2d7eb5f3fbeef1037e359fb451217",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/pages/social-share/[format].tsx",
+      "read_ranges": [
+        [
+          1,
+          22
+        ]
+      ],
+      "sha256": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    },
+    {
+      "path": "web/components/SocialShare/PeriodControl.tsx",
+      "read_ranges": [
+        [
+          1,
+          68
+        ]
+      ],
+      "sha256": "3fd00e20269d9b1470694bf3afeab320cfe12978ee466e57c7128b40a49350ec",
+      "matches_target": true,
+      "status": "bounded_dependency_only_not_scope_audit_credit"
+    }
+  ],
+  "installed_dependency": {
+    "path": "web/node_modules/playwright/lib/index.js",
+    "version": "1.60.0",
+    "sha256": "36faa53b7c6fa8f76788f2bcfa21d72edc22e5f528c45328b71d07e215d79a32",
+    "read_ranges": [
+      [
+        112,
+        145
+      ],
+      [
+        315,
+        365
+      ]
+    ],
+    "purpose": "Reject false missing-baseURL finding: runBeforeCreateBrowserContext inherits absent options, including baseURL.",
+    "target_match": "not_git_tracked_installed_dependency"
+  },
+  "fixture_schema_metadata": {
+    "path": "web/e2e/fixtures/wigo/schema.json",
+    "sha256": "7bc709d053d4a894e7484f7ff9c630b46dbf7c73d26d35d2ebbf6cdfe30bc940",
+    "target_sha256": "7bc709d053d4a894e7484f7ff9c630b46dbf7c73d26d35d2ebbf6cdfe30bc940",
+    "tables": 28,
+    "columns": 1764,
+    "status": "metadata only; schema generator/type parity not audited; not runtime rows"
+  },
+  "probe": {
+    "command": "node /tmp/astra-e2e1-probe.cjs",
+    "script_sha256": "293b429ed6567af56049fa8dcff294d54a156cfcdaa22950e6fcb7753360a317",
+    "script": "const fs=require('fs'),vm=require('vm'),ts=require('/Users/tim/Code/fhfhockey.com/web/node_modules/typescript'),crypto=require('crypto');\nconst root='/Users/tim/Code/fhfhockey.com/',spans=[];\nfunction find(path,pred){const text=fs.readFileSync(root+path,'utf8'),sf=ts.createSourceFile(path,text,99,true);const found=[];function visit(n){if(pred(n,sf))found.push(n);ts.forEachChild(n,visit);}visit(sf);return found.map(n=>{const source=n.getText(sf);spans.push({path,start:n.getStart(sf),end:n.end,line:sf.getLineAndCharacterOfPosition(n.getStart(sf)).line+1,source});return source;});}\nconst install=find('web/e2e/social-share-crease-category.spec.ts',n=>ts.isFunctionDeclaration(n)&&n.name?.text==='install')[0];\nconst calendar=find('web/lib/socialShare/matchupWeeksFetch.ts',n=>ts.isFunctionDeclaration(n)&&n.name?.text==='fetchMatchupWeeks')[0];\nconst guards=find('web/e2e/social-share.spec.ts',(n,sf)=>ts.isIfStatement(n)&&/^process\\.env\\.SOCIAL_SHARE_PINNED_/.test(n.expression.getText(sf)));\nconst transpile=s=>ts.transpileModule(s,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;\n(async()=>{\n const routes=[],fetches=[],ctx={URL,Date,editorToken:'fictional',supabaseOrigin:new URL('http://supabase.e2e.invalid'),expect:v=>({toBe:x=>{if(v!==x)throw Error('expect');}}),page:{setDefaultTimeout(){},addInitScript:async()=>{},route:async(pattern)=>routes.push(pattern)},supabase:{auth:{getSession:async()=>({data:{session:{access_token:'fictional'}}})}},bounded:p=>p,exports:{},fetch:()=>{throw Error('forbidden real fetch');}};\n vm.createContext(ctx);vm.runInContext(transpile(install+'\\n'+calendar),ctx,{timeout:1000});await vm.runInContext('install(page)',ctx,{timeout:1000});await ctx.exports.fetchMatchupWeeks(async(url,options)=>{fetches.push({url,options});return{ok:false};});\n // Literal route added by the first goalie-period test at L97.\n const postsPattern='**/api/v1/social-share/posts/**';routes.push(postsPattern);\n const glob=(pattern,url)=>new RegExp('^'+pattern.split('**').map(x=>x.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')).join('.*')+'$').test(url);\n const requestURL='http://127.0.0.1:3100'+fetches[0].url;\n const network={registered_patterns:routes,calendar_request:fetches[0],calendar_matched:routes.some(p=>glob(p,requestURL)),other_external_matched:routes.some(p=>glob(p,'https://unmatched.example.invalid/read'))};\n const runGuards=env=>{let assertions=0,failures=0;const fake={process:{env},digest:'changed',extras:['changed'],playerCards:['changed'],tierCards:['changed'],wednesday:'changed',tuesday:'changed',expect:v=>({toBe:x=>{assertions++;if(v!==x)failures++;}})};vm.createContext(fake);vm.runInContext(guards.join('\\n'),fake,{timeout:1000});return{assertions,failures};};\n const empty=runGuards({}),pinned=runGuards(Object.fromEntries(['GRID','EXTRA','PLAYER','TIERS','WEDNESDAY','TUESDAY'].map(k=>['SOCIAL_SHARE_PINNED_'+k+'_SHA256','original'])));\n if(network.calendar_matched||network.other_external_matched||empty.assertions!==0||pinned.failures!==6)throw Error('probe invariant');\n const receipt={boundary:'Exact extracted install/fetch helper and six if-statements; fake page, fake auth, fake fetch, fake process.env; no application imports/browser/server/network or actual environment read.',spans,results:{network,png_hash_gates:{guard_count:guards.length,changed_hash_with_no_pins:empty,changed_hash_with_all_pins:pinned}}};\n fs.writeFileSync('/tmp/astra-e2e1-probe.json',JSON.stringify(receipt,null,2)+'\\n');console.log(JSON.stringify(receipt.results));\n})().catch(e=>{console.error(e);process.exitCode=1});\n",
+    "receipt_sha256": "b56a6bc74025887ce38eef554080bcc09cf003e446d5a4ae95248e8d2f4d1423",
+    "receipt": {
+      "boundary": "Exact extracted install/fetch helper and six if-statements; fake page, fake auth, fake fetch, fake process.env; no application imports/browser/server/network or actual environment read.",
+      "spans": [
+        {
+          "path": "web/e2e/social-share-crease-category.spec.ts",
+          "start": 3825,
+          "end": 5389,
+          "line": 37,
+          "source": "async function install(page: Page) {\n  page.setDefaultTimeout(10000);\n  // Never against a real project: the fixture host must be a reserved .invalid name, as in social-share.spec.ts.\n  expect(supabaseOrigin.hostname.endsWith(\".invalid\")).toBe(true);\n  const user = { id: \"00000000-0000-4000-8000-00000000e2e1\", aud: \"authenticated\", role: \"authenticated\", email: \"editor@example.invalid\", app_metadata: {}, user_metadata: {} };\n  const session = { access_token: editorToken, refresh_token: \"e2e-fictional-refresh\", token_type: \"bearer\", expires_in: 365 * 86400, expires_at: Math.floor(Date.now() / 1000) + 365 * 86400, user };\n  await page.addInitScript(([key, value]) => window.localStorage.setItem(key, value), [`sb-${supabaseOrigin.hostname.split(\".\")[0]}-auth-token`, JSON.stringify(session)]);\n  await page.route(`${supabaseOrigin.origin}/**`, route => {\n    const request = route.request(), url = new URL(request.url());\n    if (request.method() !== \"GET\") return route.abort();\n    const one = (row: object) => route.fulfill({ json: /vnd\\.pgrst\\.object/.test(request.headers().accept ?? \"\") ? row : [row] });\n    if (url.pathname === \"/rest/v1/users\") return one({ role: \"social_editor\" });\n    if (url.pathname === \"/rest/v1/user_profiles\") return one({ user_id: user.id, display_name: \"Fictional editor\", avatar_url: null, timezone: \"America/New_York\" });\n    if (url.pathname === \"/rest/v1/user_settings\") return one({ user_id: user.id });\n    if (url.pathname === \"/auth/v1/user\") return route.fulfill({ json: user });\n    return route.abort();\n  });\n}"
+        },
+        {
+          "path": "web/lib/socialShare/matchupWeeksFetch.ts",
+          "start": 285,
+          "end": 946,
+          "line": 6,
+          "source": "export async function fetchMatchupWeeks(fetcher: typeof fetch = fetch): Promise<{ rows: MatchupRow[]; cutoff: string } | null> {\n  try {\n    const { data } = await supabase.auth.getSession();\n    if (!data.session?.access_token) return null;\n    const response = await bounded(fetcher(\"/api/v1/social-share/matchup-weeks\", { cache: \"no-store\", credentials: \"omit\", headers: { Authorization: `Bearer ${data.session.access_token}` } }), \"Matchup weeks timed out.\", 10000);\n    if (!response.ok) return null;\n    const body = await response.json();\n    return Array.isArray(body?.rows) && typeof body.cutoff === \"string\" ? body : null;\n  } catch { return null; }\n}"
+        },
+        {
+          "path": "web/e2e/social-share.spec.ts",
+          "start": 34497,
+          "end": 34611,
+          "line": 455,
+          "source": "if (process.env.SOCIAL_SHARE_PINNED_GRID_SHA256) expect(digest).toBe(process.env.SOCIAL_SHARE_PINNED_GRID_SHA256);"
+        },
+        {
+          "path": "web/e2e/social-share.spec.ts",
+          "start": 35186,
+          "end": 35343,
+          "line": 465,
+          "source": "if (process.env.SOCIAL_SHARE_PINNED_EXTRA_SHA256) expect(extras.map(line => line.slice(0, 64)).join(\",\")).toBe(process.env.SOCIAL_SHARE_PINNED_EXTRA_SHA256);"
+        },
+        {
+          "path": "web/e2e/social-share.spec.ts",
+          "start": 35878,
+          "end": 36042,
+          "line": 474,
+          "source": "if (process.env.SOCIAL_SHARE_PINNED_PLAYER_SHA256) expect(playerCards.map(line => line.slice(0, 64)).join(\",\")).toBe(process.env.SOCIAL_SHARE_PINNED_PLAYER_SHA256);"
+        },
+        {
+          "path": "web/e2e/social-share.spec.ts",
+          "start": 36535,
+          "end": 36695,
+          "line": 483,
+          "source": "if (process.env.SOCIAL_SHARE_PINNED_TIERS_SHA256) expect(tierCards.map(line => line.slice(0, 64)).join(\",\")).toBe(process.env.SOCIAL_SHARE_PINNED_TIERS_SHA256);"
+        },
+        {
+          "path": "web/e2e/social-share.spec.ts",
+          "start": 52674,
+          "end": 52801,
+          "line": 720,
+          "source": "if (process.env.SOCIAL_SHARE_PINNED_WEDNESDAY_SHA256) expect(wednesday).toBe(process.env.SOCIAL_SHARE_PINNED_WEDNESDAY_SHA256);"
+        },
+        {
+          "path": "web/e2e/social-share.spec.ts",
+          "start": 53218,
+          "end": 53339,
+          "line": 727,
+          "source": "if (process.env.SOCIAL_SHARE_PINNED_TUESDAY_SHA256) expect(tuesday).toBe(process.env.SOCIAL_SHARE_PINNED_TUESDAY_SHA256);"
+        }
+      ],
+      "results": {
+        "network": {
+          "registered_patterns": [
+            "http://supabase.e2e.invalid/**",
+            "**/api/v1/social-share/posts/**"
+          ],
+          "calendar_request": {
+            "url": "/api/v1/social-share/matchup-weeks",
+            "options": {
+              "cache": "no-store",
+              "credentials": "omit",
+              "headers": {
+                "Authorization": "Bearer fictional"
+              }
+            }
+          },
+          "calendar_matched": false,
+          "other_external_matched": false
+        },
+        "png_hash_gates": {
+          "guard_count": 6,
+          "changed_hash_with_no_pins": {
+            "assertions": 0,
+            "failures": 0
+          },
+          "changed_hash_with_all_pins": {
+            "assertions": 6,
+            "failures": 6
+          }
+        }
+      }
+    }
+  },
+  "findings": [
+    {
+      "id": "AFULL-E2E1-01",
+      "severity": "P2",
+      "status": "provisional_for_Chef",
+      "claim": "Crease/category browser fixture does not fully intercept network; unmatched calendar reaches real server auth boundary."
+    },
+    {
+      "id": "AFULL-E2E1-02",
+      "severity": "P2",
+      "status": "provisional_for_Chef",
+      "claim": "Optional pins mean byte-stability named tests perform no hash equality checks by default."
+    }
+  ],
+  "not_run": [
+    "Playwright discovery/runtime",
+    "browser/server/application module imports",
+    "Vitest",
+    "DB/catalog/provider/network",
+    "actual environment or credentials read",
+    "genuine captured-layer payload",
+    "historical FrozenTools export validation"
+  ],
+  "preserved": [
+    "PP Decision152/DRM qualified interval and provenance closures",
+    "xG champion retirement",
+    "GameGrid GRID5-01 shared coverage finding, no duplicate",
+    "WeekScore #444 remains open",
+    "Forecast fixture is synthetic not calibration or live qualification"
+  ]
+}

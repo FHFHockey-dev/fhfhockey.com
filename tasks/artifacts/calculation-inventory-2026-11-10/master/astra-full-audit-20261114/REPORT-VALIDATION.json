@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "scope_paths": 1078,
+  "ledger_rows": 112127,
+  "finding_rows": 417,
+  "local_report_links": "all resolve",
+  "markdown_tables": "column counts consistent",
+  "report_sha256": "45794fc7c8eab6c3604133b618d666f8a68f9700410b8334e22c932c2660c623",
+  "boundary": "Artifact integrity check only; no application test, SQL execution, or remote call.",
+  "closure_update": "Direct TJ decisions and hand-back references added; findings unchanged."
+}

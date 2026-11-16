@@ -1,0 +1,752 @@
+diff --git a/web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts b/web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts
+index bc220cde5..de3a18ff1 100644
+--- a/web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts
++++ b/web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts
+@@ -1,22 +1,30 @@
+ // @vitest-environment node
++import { EventEmitter } from "node:events";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ 
+ const mocks = vi.hoisted(() => ({
+   connect: vi.fn(),
+   upload: vi.fn(),
+   from: vi.fn(),
+-  fetch: vi.fn()
++  fetch: vi.fn(),
++  createTransport: vi.fn(),
++  closeTransport: vi.fn(),
++  WebSocket: vi.fn()
+ }));
+ 
+ vi.mock("puppeteer-core", () => ({ default: { connect: mocks.connect } }));
+ vi.mock("lib/supabase/server", () => ({ default: { storage: { from: mocks.from } } }));
+ vi.mock("utils/adminOnlyMiddleware", () => ({ default: (handler: unknown) => handler }));
++vi.mock("lib/lines/browserlessTransport", () => ({ createBrowserlessTransport: mocks.createTransport }));
++vi.mock("ws", () => ({ default: mocks.WebSocket }));
+ 
+ import handler from "../../../../../pages/api/v1/webhooks/on-new-line-combo";
+ 
+ const endpoint =
+-  "wss://fixture_user:fixture_password@browserless.invalid/chromium?token=fixture_token";
+-const encodedEndpoint = encodeURIComponent(encodeURIComponent(endpoint));
++  "wss://browserless.invalid/chromium?token=fixture_token";
++const encodedEndpoint = encodeURIComponent(encodeURIComponent(
++  "wss://fixture_user:fixture_password@browserless.invalid/chromium?token=fixture_token"
++));
+ 
+ function dependencyError() {
+   const error = Object.assign(new Error(`request failed ${encodedEndpoint}`), {
+@@ -87,6 +95,7 @@ describe("line-combination webhook safe dependency diagnostics", () => {
+       close: vi.fn().mockResolvedValue(undefined)
+     };
+     mocks.connect.mockResolvedValue(browser);
++    mocks.createTransport.mockResolvedValue({ close: mocks.closeTransport });
+     mocks.from.mockReturnValue({ upload: mocks.upload });
+     mocks.upload.mockResolvedValue({ data: { path: "line-combos/2026020001-10.png" }, error: null });
+     mocks.fetch.mockResolvedValue({ json: vi.fn().mockResolvedValue({ success: true }) });
+@@ -111,6 +120,7 @@ describe("line-combination webhook safe dependency diagnostics", () => {
+ 
+     expectSafeFailure(res);
+     expect(mocks.connect).toHaveBeenCalledTimes(1);
++    expect(mocks.closeTransport).toHaveBeenCalledTimes(1);
+     expect(mocks.upload).not.toHaveBeenCalled();
+     expect(mocks.fetch).not.toHaveBeenCalled();
+     expect(toJSON).not.toHaveBeenCalled();
+@@ -129,9 +139,107 @@ describe("line-combination webhook safe dependency diagnostics", () => {
+     await invoke(res);
+     expectSafeFailure(res);
+     expect(mocks.connect).not.toHaveBeenCalled();
++    expect(mocks.createTransport).not.toHaveBeenCalled();
+     expect(JSON.stringify(vi.mocked(console.error).mock.calls)).toContain("endpoint_not_configured");
+   });
+ 
++  it.each([
++    { code: "ERR_TLS_CERT_ALTNAME_INVALID" },
++    { code: "CERT_HAS_EXPIRED" },
++    { code: "DEPTH_ZERO_SELF_SIGNED_CERT" },
++    { code: "UNABLE_TO_VERIFY_LEAF_SIGNATURE" },
++    { statusCode: 401 },
++    { statusCode: 403 }
++  ])("sanitizes a TLS or authentication handshake failure (%j) without downstream effects", async (fields) => {
++    const error = Object.assign(new Error(`handshake failed ${encodedEndpoint}`), fields, {
++      cert: { subject: { CN: "fixture_subject" } },
++      response: { body: endpoint, headers: { authorization: "Bearer fixture_bearer" } }
++    });
++    const toJSON = vi.fn(() => { throw new Error("must not serialize a WebSocket event"); });
++    mocks.connect.mockRejectedValue({
++      name: "ErrorEvent", message: endpoint, error,
++      target: { _url: endpoint }, toJSON
++    });
++    const res = response();
++    await invoke(res);
++
++    expectSafeFailure(res);
++    expect(mocks.createTransport).toHaveBeenCalledExactlyOnceWith(endpoint);
++    expect(mocks.connect).toHaveBeenCalledExactlyOnceWith({ transport: { close: mocks.closeTransport } });
++    expect(mocks.closeTransport).toHaveBeenCalledTimes(1);
++    expect(browser.newPage).not.toHaveBeenCalled();
++    expect(page.goto).not.toHaveBeenCalled();
++    expect(mocks.from).not.toHaveBeenCalled();
++    expect(mocks.upload).not.toHaveBeenCalled();
++    expect(mocks.fetch).not.toHaveBeenCalled();
++    expect(vi.getTimerCount()).toBe(0);
++    expect(toJSON).not.toHaveBeenCalled();
++    expect(console.error).toHaveBeenCalledTimes(2);
++    expect(console.error).toHaveBeenNthCalledWith(1, "Failed to connect to puppeteer:", {
++      gameId: 2026020001,
++      error: {
++        name: "ErrorEvent",
++        error: { name: "Error", ...("code" in fields ? { code: fields.code } : { status: fields.statusCode }) }
++      }
++    });
++    expect(console.error).toHaveBeenNthCalledWith(2, "on-new-line-combo error:", {
++      gameId: 2026020001, teamId: 10, stage: "screenshots",
++      error: { name: "NonRetryableWebhookError", reason: "browser_endpoint_unavailable" }
++    });
++  });
++
++  it.each([
++    "PUPPETEER_ENDPOINT is invalid or insecure.",
++    "Browserless transport connection failed."
++  ])("does not start Puppeteer or retry a transport rejection (%s)", async (message) => {
++    mocks.createTransport.mockRejectedValue(new Error(message));
++    const res = response();
++    await invoke(res);
++
++    expectSafeFailure(res);
++    expect(mocks.createTransport).toHaveBeenCalledExactlyOnceWith(endpoint);
++    expect(mocks.connect).not.toHaveBeenCalled();
++    expect(mocks.closeTransport).not.toHaveBeenCalled();
++    expect(browser.newPage).not.toHaveBeenCalled();
++    expect(mocks.from).not.toHaveBeenCalled();
++    expect(mocks.fetch).not.toHaveBeenCalled();
++    expect(vi.getTimerCount()).toBe(0);
++  });
++
++  it.each(["success", "insecure", "redirect"])("composes the real transport with the route using fixture sockets (%s)", async (mode) => {
++    const { createBrowserlessTransport } = await vi.importActual<
++      typeof import("../../../../../lib/lines/browserlessTransport")
++    >("lib/lines/browserlessTransport");
++    mocks.createTransport.mockImplementation(createBrowserlessTransport);
++    const socket = Object.assign(new EventEmitter(), { send: vi.fn(), terminate: vi.fn() });
++    mocks.WebSocket.mockImplementation(function () { return socket; });
++    if (mode === "insecure") vi.stubEnv("PUPPETEER_ENDPOINT", endpoint.replace("wss:", "ws:"));
++    const res = response();
++    const pending = invoke(res);
++    if (mode === "success") socket.emit("open");
++    if (mode === "redirect") socket.emit("unexpected-response", {}, {
++      statusCode: 302, headers: { location: endpoint.replace("wss:", "ws:") }
++    });
++    await pending;
++
++    if (mode === "success") {
++      expect(mocks.connect).toHaveBeenCalledExactlyOnceWith({
++        transport: expect.objectContaining({ send: expect.any(Function), close: expect.any(Function) })
++      });
++      expect(mocks.upload).toHaveBeenCalledTimes(1);
++      expect(mocks.fetch).toHaveBeenCalledTimes(1);
++      expect(res.status).not.toHaveBeenCalled();
++    } else {
++      expectSafeFailure(res);
++      expect(mocks.connect).not.toHaveBeenCalled();
++      expect(mocks.upload).not.toHaveBeenCalled();
++      expect(mocks.fetch).not.toHaveBeenCalled();
++    }
++    expect(mocks.WebSocket).toHaveBeenCalledTimes(mode === "insecure" ? 0 : 1);
++    expect(socket.terminate).toHaveBeenCalledTimes(mode === "insecure" ? 0 : 1);
++    expect(vi.getTimerCount()).toBe(0);
++  });
++
+   it.each(["newPage", "goto", "upload", "discord"])("keeps retries and safe diagnostics after a %s failure", async (stage) => {
+     const error = dependencyError();
+     if (stage === "newPage") browser.newPage.mockRejectedValue(error);
+@@ -145,6 +253,7 @@ describe("line-combination webhook safe dependency diagnostics", () => {
+ 
+     expectSafeFailure(res);
+     expect(mocks.connect).toHaveBeenCalledTimes(stage === "discord" ? 1 : 4);
++    expect(mocks.closeTransport).toHaveBeenCalledTimes(stage === "discord" ? 1 : 4);
+     expect(mocks.fetch).toHaveBeenCalledTimes(stage === "discord" ? 4 : 0);
+     const errors = vi.mocked(console.error).mock.calls;
+     expect(errors).toHaveLength(4);
+@@ -182,7 +291,8 @@ describe("line-combination webhook safe dependency diagnostics", () => {
+   it("preserves browser options, screenshot upload, Discord request and success response", async () => {
+     const res = response();
+     await invoke(res);
+-    expect(mocks.connect).toHaveBeenCalledWith({ browserWSEndpoint: endpoint });
++    expect(mocks.createTransport).toHaveBeenCalledExactlyOnceWith(endpoint);
++    expect(mocks.connect).toHaveBeenCalledWith({ transport: { close: mocks.closeTransport } });
+     expect(page.setViewport).toHaveBeenCalledWith({ width: 1440, height: 900, deviceScaleFactor: 1 });
+     expect(page.goto).toHaveBeenCalledWith("https://fhfhockey.com/lines/line-combo/2026020001?isScreenshot=1");
+     expect(page.waitForSelector).toHaveBeenCalledWith(".content");
+@@ -192,6 +302,7 @@ describe("line-combination webhook safe dependency diagnostics", () => {
+       cacheControl: "604800", contentType: "image/png", upsert: true
+     });
+     expect(browser.close).toHaveBeenCalledTimes(1);
++    expect(mocks.closeTransport).toHaveBeenCalledTimes(1);
+     expect(mocks.fetch).toHaveBeenCalledWith(
+       "https://fhfhockey.com/api/v1/discord/send-message/line-combo/2026020001?teamId=10",
+       { method: "POST", headers: { Authorization: "Bearer fixture_cron" } }
+diff --git a/web/lib/lines/webhookErrorDiagnostic.test.ts b/web/lib/lines/webhookErrorDiagnostic.test.ts
+index baeadbb26..6119298c8 100644
+--- a/web/lib/lines/webhookErrorDiagnostic.test.ts
++++ b/web/lib/lines/webhookErrorDiagnostic.test.ts
+@@ -83,9 +83,46 @@ describe("webhookErrorDiagnostic", () => {
+     }
+   });
+ 
++  it.each([
++    "ERR_TLS_CERT_ALTNAME_INVALID",
++    "CERT_HAS_EXPIRED",
++    "DEPTH_ZERO_SELF_SIGNED_CERT",
++    "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
++  ])("retains %s without copying TLS peer or connection details", (code) => {
++    const error = Object.assign(new Error(`${code}: ${endpoint}`), {
++      code,
++      host: "browserless.invalid",
++      cert: { subject: { CN: "fixture_subject" }, raw: Buffer.from("fixture_certificate") },
++      socket: { _url: endpoint },
++      reason: `certificate rejected for ${endpoint}`
++    });
++    error.stack = `${code} at ${endpoint}`;
++
++    expect(webhookErrorDiagnostic(error)).toEqual({ name: "Error", code });
++  });
++
++  it.each([401, 403])("keeps handshake status %s without headers or response body", (statusCode) => {
++    expect(webhookErrorDiagnostic({
++      name: "Error",
++      message: `Unexpected server response: ${statusCode} ${endpoint}`,
++      statusCode,
++      request: { url: endpoint, headers: { authorization: "Bearer fixture_bearer" } },
++      response: { body: endpoint, headers: { "set-cookie": "fixture_cookie" } }
++    })).toEqual({ name: "Error", status: statusCode });
++  });
++
++  it.each([401, 403])("does not infer status %s from an unstructured ws error message", (status) => {
++    // ws abortHandshake creates an Error(message), without a numeric status field.
++    expect(webhookErrorDiagnostic(
++      new Error(`Unexpected server response: ${status} ${endpoint}`)
++    )).toEqual({ name: "Error" });
++  });
++
+   it.each([
+     ["Cannot find the matrix", "matrix_not_found"],
+     ["PUPPETEER_ENDPOINT is not configured.", "endpoint_not_configured"],
++    ["PUPPETEER_ENDPOINT is invalid or insecure.", "endpoint_invalid_or_insecure"],
++    ["Browserless transport connection failed.", "browser_transport_failed"],
+     ["Failed to connect to puppeteer: browser endpoint is unavailable.", "browser_endpoint_unavailable"]
+   ])("keeps the fixed local failure reason (%#)", (message, reason) => {
+     expect(webhookErrorDiagnostic(new Error(message))).toEqual({ name: "Error", reason });
+diff --git a/web/lib/lines/webhookErrorDiagnostic.ts b/web/lib/lines/webhookErrorDiagnostic.ts
+index fcec8e600..44ca3c237 100644
+--- a/web/lib/lines/webhookErrorDiagnostic.ts
++++ b/web/lib/lines/webhookErrorDiagnostic.ts
+@@ -90,6 +90,12 @@ export function webhookErrorDiagnostic(
+   if (message === "PUPPETEER_ENDPOINT is not configured.") {
+     diagnostic.reason = "endpoint_not_configured";
+   }
++  if (message === "PUPPETEER_ENDPOINT is invalid or insecure.") {
++    diagnostic.reason = "endpoint_invalid_or_insecure";
++  }
++  if (message === "Browserless transport connection failed.") {
++    diagnostic.reason = "browser_transport_failed";
++  }
+   if (message === "Failed to connect to puppeteer: browser endpoint is unavailable.") {
+     diagnostic.reason = "browser_endpoint_unavailable";
+   }
+diff --git a/web/package-lock.json b/web/package-lock.json
+index 33057759d..a317d77a6 100644
+--- a/web/package-lock.json
++++ b/web/package-lock.json
+@@ -78,6 +78,7 @@
+         "stripe": "^18.5.0",
+         "swr": "^2.3.6",
+         "winston": "^3.14.2",
++        "ws": "8.21.1",
+         "yahoo-fantasy": "^5.3.0",
+         "yup": "^0.32.11",
+         "zod": "3.25.76"
+@@ -105,6 +106,7 @@
+         "@types/react": "^18.3.18",
+         "@types/react-dom": "^18.3.5",
+         "@types/sanitize-html": "^2.16.1",
++        "@types/ws": "8.18.1",
+         "@typescript-eslint/eslint-plugin": "^8.42.0",
+         "@typescript-eslint/parser": "^8.42.0",
+         "@vitejs/plugin-react": "^4.2.1",
+diff --git a/web/package.json b/web/package.json
+index e9ef85249..d364ff24c 100644
+--- a/web/package.json
++++ b/web/package.json
+@@ -148,6 +148,7 @@
+     "sanitize-html": "^2.17.5",
+     "swr": "^2.3.6",
+     "winston": "^3.14.2",
++    "ws": "8.21.1",
+     "yahoo-fantasy": "^5.3.0",
+     "yup": "^0.32.11",
+     "zod": "3.25.76"
+@@ -175,6 +176,7 @@
+     "@types/react": "^18.3.18",
+     "@types/react-dom": "^18.3.5",
+     "@types/sanitize-html": "^2.16.1",
++    "@types/ws": "8.18.1",
+     "@typescript-eslint/eslint-plugin": "^8.42.0",
+     "@typescript-eslint/parser": "^8.42.0",
+     "@vitejs/plugin-react": "^4.2.1",
+diff --git a/web/pages/api/v1/webhooks/on-new-line-combo.ts b/web/pages/api/v1/webhooks/on-new-line-combo.ts
+index fd86da28b..97448ff32 100644
+--- a/web/pages/api/v1/webhooks/on-new-line-combo.ts
++++ b/web/pages/api/v1/webhooks/on-new-line-combo.ts
+@@ -1,8 +1,10 @@
+ import adminOnly from "utils/adminOnlyMiddleware";
+ import puppeteer from "puppeteer-core";
++import type { ConnectionTransport } from "puppeteer-core";
+ import supabase from "lib/supabase/server";
+ import { linemateMatrixCaptureSelector } from "lib/lines/matrixCapture";
+ import { webhookErrorDiagnostic } from "lib/lines/webhookErrorDiagnostic";
++import { createBrowserlessTransport } from "lib/lines/browserlessTransport";
+ 
+ const BASE_URL = true ? "https://fhfhockey.com" : "http://localhost:3000";
+ 
+@@ -74,11 +76,12 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
+     throw new NonRetryableWebhookError("PUPPETEER_ENDPOINT is not configured.");
+   }
+   let browser: any;
++  let transport: ConnectionTransport | undefined;
+   try {
+-    browser = await puppeteer.connect({
+-      browserWSEndpoint: process.env.PUPPETEER_ENDPOINT
+-    });
++    transport = await createBrowserlessTransport(process.env.PUPPETEER_ENDPOINT);
++    browser = await puppeteer.connect({ transport });
+   } catch (err: unknown) {
++    transport?.close();
+     console.error("Failed to connect to puppeteer:", {
+       gameId,
+       error: webhookErrorDiagnostic(err)
+@@ -88,71 +91,75 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
+     );
+   }
+ 
+-  // Create a page
+-  const page = await browser.newPage();
+-  await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+-
+-  // Go to your site
+-  await page.goto(`${BASE_URL}/lines/line-combo/${gameId}?isScreenshot=1`);
+-  await page.waitForSelector(".content");
+-  console.log(`show linemate duration: ${Date.now() - old}`);
+-
+-  old = Date.now();
+-  // Hide header
+-  await page.evaluate(() => {
+-    const header = document.querySelector("header");
+-    if (!header) return;
+-    header.style.display = "none";
+-  });
+-
+-  // Hide mobile bottom navigation if present (defensive)
+-  await page.evaluate(() => {
+-    const mobile = document.querySelector(
+-      ".mobileNavWrapper"
+-    ) as HTMLElement | null;
+-    if (mobile) mobile.style.display = "none";
+-    const bottom = document.querySelector(".bottomNav") as HTMLElement | null;
+-    if (bottom) bottom.style.display = "none";
+-  });
+-
+-  console.log(`hide header duration: ${Date.now() - old}`);
+-
+-  old = Date.now();
+-
+-  console.log(`get teamIds duration: ${Date.now() - old}`);
+-
+-  const urls = await Promise.all(
+-    teamIds.map(async (teamId) => {
+-      old = Date.now();
+-
+-      const content = await page.$(linemateMatrixCaptureSelector(teamId));
+-      if (!content) throw new Error("Cannot find the matrix");
+-
+-      const image = await content.screenshot({
+-        type: "png"
+-      });
+-      console.log(`take one screenshot duration: ${Date.now() - old}`);
+-
+-      old = Date.now();
+-
+-      const { data, error } = await supabase.storage
+-        .from("images")
+-        .upload(`line-combos/${gameId}-${teamId}.png`, image, {
+-          cacheControl: "604800",
+-          contentType: "image/png",
+-          upsert: true
++  try {
++    // Create a page
++    const page = await browser.newPage();
++    await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
++
++    // Go to your site
++    await page.goto(`${BASE_URL}/lines/line-combo/${gameId}?isScreenshot=1`);
++    await page.waitForSelector(".content");
++    console.log(`show linemate duration: ${Date.now() - old}`);
++
++    old = Date.now();
++    // Hide header
++    await page.evaluate(() => {
++      const header = document.querySelector("header");
++      if (!header) return;
++      header.style.display = "none";
++    });
++
++    // Hide mobile bottom navigation if present (defensive)
++    await page.evaluate(() => {
++      const mobile = document.querySelector(
++        ".mobileNavWrapper"
++      ) as HTMLElement | null;
++      if (mobile) mobile.style.display = "none";
++      const bottom = document.querySelector(".bottomNav") as HTMLElement | null;
++      if (bottom) bottom.style.display = "none";
++    });
++
++    console.log(`hide header duration: ${Date.now() - old}`);
++
++    old = Date.now();
++
++    console.log(`get teamIds duration: ${Date.now() - old}`);
++
++    const urls = await Promise.all(
++      teamIds.map(async (teamId) => {
++        old = Date.now();
++
++        const content = await page.$(linemateMatrixCaptureSelector(teamId));
++        if (!content) throw new Error("Cannot find the matrix");
++
++        const image = await content.screenshot({
++          type: "png"
+         });
++        console.log(`take one screenshot duration: ${Date.now() - old}`);
+ 
+-      console.log(`upload one image duration: ${Date.now() - old}`);
++        old = Date.now();
+ 
+-      if (error) throw error;
+-      return data.path;
+-    })
+-  );
++        const { data, error } = await supabase.storage
++          .from("images")
++          .upload(`line-combos/${gameId}-${teamId}.png`, image, {
++            cacheControl: "604800",
++            contentType: "image/png",
++            upsert: true
++          });
+ 
+-  // Close browser.
+-  await browser.close();
+-  return urls;
++        console.log(`upload one image duration: ${Date.now() - old}`);
++
++        if (error) throw error;
++        return data.path;
++      })
++    );
++
++    // Close browser.
++    await browser.close();
++    return urls;
++  } finally {
++    transport.close();
++  }
+ }
+ 
+ function sendLineComboToDiscord(gameId: number, teamId: number) {
+diff --git a/web/lib/lines/browserlessTransport.ts b/web/lib/lines/browserlessTransport.ts
+new file mode 100644
+index 000000000..559310d9f
+--- /dev/null
++++ b/web/lib/lines/browserlessTransport.ts
+@@ -0,0 +1,92 @@
++import type { ConnectionTransport } from "puppeteer-core";
++import puppeteerPackage from "puppeteer-core/package.json";
++import WebSocket from "ws";
++import { webhookErrorDiagnostic } from "./webhookErrorDiagnostic";
++
++const CONNECT_TIMEOUT_MS = 10_000;
++
++function connectionError(cause?: unknown): Error {
++  return Object.assign(new Error("Browserless transport connection failed."), {
++    cause: webhookErrorDiagnostic(cause)
++  });
++}
++
++export async function createBrowserlessTransport(
++  endpoint: string | undefined
++): Promise<ConnectionTransport> {
++  // The URL is server-owned configuration. Do not include it in errors, even
++  // when URL parsing fails: it may carry the Browserless credential.
++  let url: URL;
++  try {
++    if (!endpoint || /[\u0000-\u0020\u007f\\]/.test(endpoint)) throw new Error();
++    url = new URL(endpoint);
++    if (
++      url.protocol !== "wss:" || !url.hostname || url.username || url.password ||
++      endpoint.includes("#") || !/^wss:\/\/[^/?#]+(?:[/?#]|$)/i.test(endpoint) ||
++      /^wss:\/\/[^/?#]*@/i.test(endpoint)
++    ) throw new Error();
++  } catch {
++    throw new Error("PUPPETEER_ENDPOINT is invalid or insecure.");
++  }
++
++  return new Promise<ConnectionTransport>((resolve, reject) => {
++    let socket: WebSocket | undefined;
++    let state: "connecting" | "open" | "closed" = "connecting";
++    const timer = setTimeout(() => close({ code: "ETIMEDOUT" }), CONNECT_TIMEOUT_MS);
++    const transport: ConnectionTransport = {
++      send(message) {
++        if (state !== "open" || !socket) throw connectionError();
++        try {
++          socket.send(message, (error) => { if (error) close(error); });
++        } catch (error: unknown) {
++          close(error);
++          throw connectionError(error);
++        }
++      },
++      close: () => close()
++    };
++
++    function close(error?: unknown) {
++      if (state === "closed") return;
++      const wasConnecting = state === "connecting";
++      state = "closed";
++      clearTimeout(timer);
++      if (wasConnecting) reject(connectionError(error));
++      // Bound cleanup rather than waiting for a peer's close-handshake. Never
++      // expose an error object from ws, whose fields can contain the full URL.
++      try { socket?.terminate(); } catch { /* Already unusable. */ }
++      if (!wasConnecting) transport.onclose?.();
++    }
++
++    try {
++      // Match Puppeteer's message scheduling; installed ws supports this option
++      // although the current @types/ws version does not yet declare it.
++      const options: WebSocket.ClientOptions & { allowSynchronousEvents: boolean } = {
++        followRedirects: false,
++        rejectUnauthorized: true,
++        allowSynchronousEvents: false,
++        perMessageDeflate: false,
++        maxPayload: 256 * 1024 * 1024,
++        handshakeTimeout: CONNECT_TIMEOUT_MS,
++        headers: { "User-Agent": `Puppeteer ${puppeteerPackage.version}` }
++      };
++      socket = new WebSocket(url, options);
++      socket.on("error", close);
++      socket.on("unexpected-response", (_request, response) => {
++        close({ status: response.statusCode });
++      });
++      socket.on("close", () => close());
++      socket.on("message", (data) => {
++        if (state === "open") transport.onmessage?.(data.toString());
++      });
++      socket.on("open", () => {
++        if (state !== "connecting") return;
++        state = "open";
++        clearTimeout(timer);
++        resolve(transport);
++      });
++    } catch (error: unknown) {
++      close(error);
++    }
++  });
++}
+diff --git a/web/lib/lines/browserlessTransport.test.ts b/web/lib/lines/browserlessTransport.test.ts
+new file mode 100644
+index 000000000..f076d93ec
+--- /dev/null
++++ b/web/lib/lines/browserlessTransport.test.ts
+@@ -0,0 +1,184 @@
++// @vitest-environment node
++import { EventEmitter } from "node:events";
++import { inspect } from "node:util";
++import puppeteerPackage from "puppeteer-core/package.json";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { webhookErrorDiagnostic } from "./webhookErrorDiagnostic";
++
++const mocks = vi.hoisted(() => ({ WebSocket: vi.fn() }));
++vi.mock("ws", () => ({ default: mocks.WebSocket }));
++
++import { createBrowserlessTransport } from "./browserlessTransport";
++
++const endpoint = "wss://browserless.invalid/chromium?token=fixture_secret&launch=fixture_options";
++
++class FixtureSocket extends EventEmitter {
++  send = vi.fn((_message: string, callback: (error?: Error) => void) => callback());
++  terminate = vi.fn(() => { this.emit("close"); });
++}
++
++function unsafeError(code = "ECONNRESET") {
++  return Object.assign(new Error(`${code} ${endpoint}`), {
++    code, url: endpoint, target: { _url: endpoint },
++    headers: { Authorization: "Bearer fixture_secret" },
++    cause: { message: encodeURIComponent(endpoint), stack: endpoint }
++  });
++}
++
++function expectSafe(error: unknown) {
++  expect(error).toBeInstanceOf(Error);
++  for (const output of [inspect(error), JSON.stringify(error)]) {
++    expect(output).not.toContain("fixture_");
++    expect(output).not.toContain("browserless.invalid");
++    expect(output).not.toContain(endpoint);
++  }
++}
++
++describe("Browserless encrypted transport", () => {
++  let socket: FixtureSocket;
++
++  beforeEach(() => {
++    vi.resetAllMocks();
++    vi.useFakeTimers();
++    socket = new FixtureSocket();
++    mocks.WebSocket.mockImplementation(function () { return socket; });
++  });
++
++  afterEach(() => {
++    vi.useRealTimers();
++    vi.unstubAllEnvs();
++  });
++
++  it.each([
++    undefined, "", "fixture_secret", "ws://browserless.invalid?token=fixture_secret",
++    "https://browserless.invalid?token=fixture_secret", "http://browserless.invalid",
++    "wss://fixture_user:fixture_password@browserless.invalid",
++    "wss://@browserless.invalid", `${endpoint}#fixture_fragment`, `${endpoint}#`,
++    ` ${endpoint}`, `${endpoint}\n`, "wss:\\browserless.invalid",
++    "wss:browserless.invalid", "wss:///browserless.invalid", "wss://[invalid"
++  ])("rejects invalid/insecure configuration before allocating a socket (%#)", async (value) => {
++    const error = await createBrowserlessTransport(value).catch((error: unknown) => error);
++    expectSafe(error);
++    expect(webhookErrorDiagnostic(error)).toEqual({ name: "Error", reason: "endpoint_invalid_or_insecure" });
++    expect(mocks.WebSocket).not.toHaveBeenCalled();
++    expect(vi.getTimerCount()).toBe(0);
++  });
++
++  it("keeps the configured path/query and requires verified TLS with no redirects", async () => {
++    vi.stubEnv("NODE_TLS_REJECT_UNAUTHORIZED", "0");
++    const pending = createBrowserlessTransport(endpoint);
++    expect(mocks.WebSocket).toHaveBeenCalledTimes(1);
++    const [url, options] = mocks.WebSocket.mock.calls[0];
++    expect(url.toString()).toBe(endpoint);
++    expect(options).toEqual({
++      followRedirects: false, rejectUnauthorized: true, allowSynchronousEvents: false,
++      perMessageDeflate: false,
++      maxPayload: 256 * 1024 * 1024, handshakeTimeout: 10_000,
++      headers: { "User-Agent": `Puppeteer ${puppeteerPackage.version}` }
++    });
++    socket.emit("open");
++    const transport = await pending;
++    expect(vi.getTimerCount()).toBe(0);
++    expect(inspect(transport)).not.toContain("fixture_secret");
++    transport.close();
++  });
++
++  it.each([
++    "ERR_TLS_CERT_ALTNAME_INVALID", "CERT_HAS_EXPIRED",
++    "DEPTH_ZERO_SELF_SIGNED_CERT", "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
++  ])("sanitizes %s and terminates without retry or insecure fallback", async (code) => {
++    const result = createBrowserlessTransport(endpoint).catch((error: unknown) => error);
++    socket.emit("error", unsafeError(code));
++    const error = await result;
++    expectSafe(error);
++    expect(webhookErrorDiagnostic(error)).toMatchObject({
++      name: "Error", reason: "browser_transport_failed", cause: { code }
++    });
++    expect(socket.terminate).toHaveBeenCalledTimes(1);
++    expect(mocks.WebSocket).toHaveBeenCalledTimes(1);
++    expect(vi.getTimerCount()).toBe(0);
++  });
++
++  it.each([301, 302, 303, 307, 308, 401, 403])("rejects HTTP %s without following Location or exposing the response", async (statusCode) => {
++    const result = createBrowserlessTransport(endpoint).catch((error: unknown) => error);
++    socket.emit("unexpected-response", { url: endpoint }, {
++      statusCode, headers: { location: "ws://downgrade.invalid/?token=fixture_secret" },
++      body: endpoint
++    });
++    const error = await result;
++    expectSafe(error);
++    expect(webhookErrorDiagnostic(error)).toMatchObject({
++      reason: "browser_transport_failed",
++      cause: statusCode >= 400 ? { status: statusCode } : { name: "UnknownError" }
++    });
++    expect(mocks.WebSocket).toHaveBeenCalledTimes(1);
++    expect(socket.terminate).toHaveBeenCalledTimes(1);
++    expect(vi.getTimerCount()).toBe(0);
++  });
++
++  it("bounds the entire handshake, including a stalled DNS lookup and a late open", async () => {
++    const resolved = vi.fn();
++    const result = createBrowserlessTransport(endpoint).then(resolved, (error: unknown) => error);
++    await vi.advanceTimersByTimeAsync(10_000);
++    const error = await result;
++    expectSafe(error);
++    expect(webhookErrorDiagnostic(error)).toMatchObject({ cause: { code: "ETIMEDOUT" } });
++    socket.emit("open");
++    expect(resolved).not.toHaveBeenCalled();
++    expect(socket.terminate).toHaveBeenCalledTimes(1);
++    expect(vi.getTimerCount()).toBe(0);
++  });
++
++  it("sanitizes synchronous constructor errors and clears its deadline", async () => {
++    mocks.WebSocket.mockImplementation(() => { throw unsafeError(); });
++    const error = await createBrowserlessTransport(endpoint).catch((error: unknown) => error);
++    expectSafe(error);
++    expect(vi.getTimerCount()).toBe(0);
++  });
++
++  it("rejects an early socket close instead of leaving the connection pending", async () => {
++    const result = createBrowserlessTransport(endpoint).catch((error: unknown) => error);
++    socket.emit("close");
++    expectSafe(await result);
++    expect(vi.getTimerCount()).toBe(0);
++  });
++
++  it("forwards CDP messages and closes idempotently without exposing a socket", async () => {
++    const pending = createBrowserlessTransport(endpoint);
++    socket.emit("open");
++    const transport = await pending;
++    transport.onmessage = vi.fn();
++    transport.onclose = vi.fn();
++    socket.emit("message", Buffer.from('{"id":1,"result":{}}'));
++    expect(transport.onmessage).toHaveBeenCalledWith('{"id":1,"result":{}}');
++    transport.send('{"id":1,"method":"Browser.getVersion"}');
++    expect(socket.send).toHaveBeenCalledWith('{"id":1,"method":"Browser.getVersion"}', expect.any(Function));
++    transport.close();
++    transport.close();
++    socket.emit("error", unsafeError());
++    socket.emit("message", Buffer.from("late message"));
++    expect(transport.onmessage).toHaveBeenCalledTimes(1);
++    expect(transport.onclose).toHaveBeenCalledExactlyOnceWith();
++    expect(socket.terminate).toHaveBeenCalledTimes(1);
++    expectSafe((() => { try { transport.send("late"); } catch (error) { return error; } })());
++  });
++
++  it.each(["event", "send", "callback"])("closes on an established connection's %s error without exposing it", async (mode) => {
++    const pending = createBrowserlessTransport(endpoint);
++    socket.emit("open");
++    const transport = await pending;
++    transport.onclose = vi.fn();
++    if (mode === "event") socket.emit("error", unsafeError());
++    if (mode === "callback") {
++      socket.send.mockImplementation((_message, callback) => callback(unsafeError()));
++      transport.send("fixture CDP message");
++    }
++    if (mode === "send") {
++      socket.send.mockImplementation(() => { throw unsafeError(); });
++      expectSafe((() => { try { transport.send("fixture CDP message"); } catch (error) { return error; } })());
++    }
++    expect(socket.terminate).toHaveBeenCalledTimes(1);
++    expect(transport.onclose).toHaveBeenCalledExactlyOnceWith();
++    expect(vi.getTimerCount()).toBe(0);
++  });
++});

@@ -1,6 +1,6 @@
 {
   "owner": "Claude orchestrator",
-  "as_of_utc": "2026-11-12T15:11:02Z",
+  "as_of_utc": "2026-11-15T02:22:26Z",
   "base_head": "2f2b432306b048f16bf48c2e274f21e55a7514d4",
   "status": "Claude lanes reclaimed per TJ 2026-10-25T16:24Z",
   "shared_resources": {
@@ -14,7 +14,7 @@
       ],
       "scope": "Scout V41 trial03 geometry/rig refinement; new named candidate only",
       "write_paths": [
-        "/Users/tim/Documents/Codex/2026-10-15/task-3/ — NEW versioned candidate/export/review files only (V42+ names)",
+        "/Users/tim/Documents/Codex/2026-10-15/task-3/ \u2014 NEW versioned candidate/export/review files only (V42+ names)",
         "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q1/"
       ],
       "read_only": [
@@ -30,7 +30,7 @@
         "main-project integration",
         "Git"
       ],
-      "owner": "Claude orchestrator session (this thread) → lane session",
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
       "status": "hold after current V57 checkpoint 2026-10-25T14:12Z (lower priority per today plan)",
       "start_utc": "2026-10-24T14:22:50Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
@@ -49,7 +49,7 @@
       ],
       "scope": "v13 RadarAscent isolated map visual/playability pass; new scene version only",
       "write_paths": [
-        "Isolated validation project named in /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023C/FINAL_HANDOFF.md — new scene version and lane outputs only",
+        "Isolated validation project named in /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023C/FINAL_HANDOFF.md \u2014 new scene version and lane outputs only",
         "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/"
       ],
       "read_only": [
@@ -65,7 +65,7 @@
         "main-project integration",
         "Git"
       ],
-      "owner": "Claude orchestrator session (this thread) → lane session",
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
       "status": "hold 2026-10-25T14:12Z (waiting on TJ pop-up; lower priority per today plan)",
       "start_utc": "2026-10-24T14:22:50Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
@@ -128,8 +128,8 @@
         "player hydration/other S-IDs",
         "Git"
       ],
-      "owner": "Claude orchestrator session (this thread) → lane session",
-      "status": "RELEASED 2026-10-25T04:07Z — TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
       "start_utc": "2026-10-24T14:22:50Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
       "session": "local_bb5804ab-c83a-446e-8acc-6be5b5b2f828 (c1-team-tabs)",
@@ -193,7 +193,7 @@
         "web/components/SurfaceWorkflowLinks/**"
       ],
       "resources": [
-        "Isolated Next slot .next-playwright on :3110 — granted after C1 released it (~15:05Z)"
+        "Isolated Next slot .next-playwright on :3110 \u2014 granted after C1 released it (~15:05Z)"
       ],
       "forbidden": [
         "Game Grid",
@@ -203,8 +203,8 @@
         "tasks/tasks-README.md (C6)",
         "Git"
       ],
-      "owner": "Claude orchestrator session (this thread) → lane session",
-      "status": "RELEASED 2026-10-25T04:07Z — TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
       "start_utc": "2026-10-24T14:22:50Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
       "session": "local_2837d829-8bba-4240-9356-0d1bef41b5a2 (c4-wigo-links)",
@@ -273,8 +273,8 @@
         "remote route execution",
         "Git"
       ],
-      "owner": "Claude orchestrator session (this thread) → lane session",
-      "status": "RELEASED 2026-10-25T04:07Z — TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
       "start_utc": "2026-10-24T14:22:50Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
       "session": "local_ab65c5a7-3c1e-4bba-ac12-131d4ce62e10 (c5-route-audit)"
@@ -335,8 +335,8 @@
         "hosted activation",
         "Git"
       ],
-      "owner": "Claude orchestrator session (this thread) → lane session",
-      "status": "ACTIVE 2026-10-25T16:24Z — independent review of in-tree installs (read-only)",
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "ACTIVE 2026-10-25T16:24Z \u2014 independent review of in-tree installs (read-only)",
       "start_utc": "2026-10-24T14:22:50Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
       "session": "local_f9ee2dca-cbf5-4df7-9274-66687e6ea435 (c7-luna-review)"
@@ -378,9 +378,9 @@
         "real cancellation/refund",
         "Git"
       ],
-      "owner": "Claude orchestrator → lane session",
+      "owner": "Claude orchestrator \u2192 lane session",
       "session": "local_d400a595-ead2-4f50-80a6-862b4414be6e (c3-cancel-reload)",
-      "status": "RELEASED 2026-10-25T04:07Z — TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
       "start_utc": "2026-10-24T15:03Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
       "transfer": "CODEX-20261024-003",
@@ -430,13 +430,13 @@
         "auto-posting",
         "Git"
       ],
-      "owner": "Claude orchestrator → lane session",
+      "owner": "Claude orchestrator \u2192 lane session",
       "session": "local_4542f7f4-e6a6-4e51-83eb-74e26e54ff0f (ss1-gamegrid-share)",
-      "status": "RELEASED 2026-10-26T15:20:05Z — SS1 idle since 2026-10-25T20:39Z; SS1-24 committed 80fa80b5c. Monday files preserved as accepted; Tuesday files move to lane TT (CLAUDE-20261026-103).",
+      "status": "RELEASED 2026-10-26T15:20:05Z \u2014 SS1 idle since 2026-10-25T20:39Z; SS1-24 committed 80fa80b5c. Monday files preserved as accepted; Tuesday files move to lane TT (CLAUDE-20261026-103).",
       "start_utc": "2026-10-24T15:34Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
       "spec": "CLAUDE-20261024-009/-010",
-      "approved_production_reads": "TJ pop-up 2026-10-24T19:25Z: ≤5 sequential local GETs on :3110; read-only yahoo_players(<50%, current season), wgo_skater_stats_totals, wgo_goalie_stats_totals, NHL schedule; no writes",
+      "approved_production_reads": "TJ pop-up 2026-10-24T19:25Z: \u22645 sequential local GETs on :3110; read-only yahoo_players(<50%, current season), wgo_skater_stats_totals, wgo_goalie_stats_totals, NHL schedule; no writes",
       "read_only_security_paths": [
         "web/components/SocialShare/SocialShareAccessGate.test.tsx",
         "web/components/SocialShare/SocialShareAccessGate.tsx",
@@ -444,7 +444,7 @@
         "web/lib/socialShare/access.ts",
         "auth lines in social-share page/API"
       ],
-      "authority": "TJ direct 2026-10-25T16:24Z: 'nor should they have reclaimed anything… most tasks should live here' — Claude lanes reclaimed from CODEX-RECLAIM-WEB-20261025",
+      "authority": "TJ direct 2026-10-25T16:24Z: 'nor should they have reclaimed anything\u2026 most tasks should live here' \u2014 Claude lanes reclaimed from CODEX-RECLAIM-WEB-20261025",
       "canonical_write_paths": [
         {
           "path": "web/components/SocialShare/SocialShare.module.scss",
@@ -651,8 +651,8 @@
         "dispatch on, paid calls, alias writes, public claims",
         "homepage, schema, Git"
       ],
-      "owner": "Claude orchestrator → lane session",
-      "status": "RELEASED 2026-10-25T04:07Z — TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "owner": "Claude orchestrator \u2192 lane session",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
       "start_utc": "2026-10-24T16:11Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
       "session": "local_d396b1e2-0db8-45a7-8200-b02c31cd14a9 (c2-luna-news)",
@@ -691,8 +691,8 @@
         "untracking/deletion",
         "Git"
       ],
-      "owner": "Claude orchestrator → lane session",
-      "status": "RELEASED 2026-10-25T04:07Z — TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "owner": "Claude orchestrator \u2192 lane session",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
       "start_utc": "2026-10-24T16:11Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
       "session": "local_65db6ff7-f175-47b6-ad79-7a2d2a3735c4 (c6-doc-pointers)"
@@ -722,9 +722,9 @@
         "servers",
         "Git"
       ],
-      "owner": "Claude orchestrator → lane session",
+      "owner": "Claude orchestrator \u2192 lane session",
       "session": "local_6ba5e439-2e6a-48c4-8808-33ef36170b72 (rso-free-analysis)",
-      "status": "RELEASED 2026-10-25T04:07Z — TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
+      "status": "RELEASED 2026-10-25T04:07Z \u2014 TJ reclaimed all lanes for Codex handoff (CLAUDE-058)",
       "start_utc": "2026-10-24T21:19Z",
       "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5"
     },
@@ -755,7 +755,7 @@
         "web/lib/player-cards/** (all existing files)",
         "web/components/player-cards/**"
       ],
-      "status": "RELEASED 2026-10-26T15:20:05Z — idle since 2026-10-25T18:54Z; C1-X1b eslint.config.mjs 58cbf257… matches tree; handed back with card paths (CLAUDE-20261026-103).",
+      "status": "RELEASED 2026-10-26T15:20:05Z \u2014 idle since 2026-10-25T18:54Z; C1-X1b eslint.config.mjs 58cbf257\u2026 matches tree; handed back with card paths (CLAUDE-20261026-103).",
       "base_head": "9d4996033c978fb1570c85e3ca226627872fdf30",
       "session": "local_003887f5-f8cd-4290-8920-3d8fa95cf1b2 (c1-evidence-bundle)"
     },
@@ -795,7 +795,7 @@
       "resources": [
         "snapshot server :3140 only (:3125 = Codex card worker)"
       ],
-      "status": "CLOSED 2026-10-25T16:24Z — not approved by TJ; nothing installed",
+      "status": "CLOSED 2026-10-25T16:24Z \u2014 not approved by TJ; nothing installed",
       "base_head": "9d4996033c978fb1570c85e3ca226627872fdf30",
       "session": "local_1bef5915-33f7-48c0-baa4-2a4f0ca452f2 (c2-card-readability)"
     },
@@ -839,10 +839,10 @@
         "lock clearing, backfill, schedule change",
         "goalie-share files (Codex D1)"
       ],
-      "status": "ACTIVE canonical 2026-10-25T16:24Z — install C3a + C3b v2; C3d stays Codex (FORGE file)",
+      "status": "ACTIVE canonical 2026-10-25T16:24Z \u2014 install C3a + C3b v2; C3d stays Codex (FORGE file)",
       "base_head": "9d4996033c978fb1570c85e3ca226627872fdf30",
       "session": "local_dd2e025f-d067-400a-9479-7e3dce2e1bf8 (c3-cron-repro)",
-      "authority": "TJ direct 2026-10-25T16:24Z: 'nor should they have reclaimed anything… most tasks should live here' — Claude lanes reclaimed from CODEX-RECLAIM-WEB-20261025",
+      "authority": "TJ direct 2026-10-25T16:24Z: 'nor should they have reclaimed anything\u2026 most tasks should live here' \u2014 Claude lanes reclaimed from CODEX-RECLAIM-WEB-20261025",
       "canonical_write_paths": [
         {
           "path": "web/__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts",
@@ -870,7 +870,7 @@
       ],
       "session": "local_ec8a69cc-dc02-4a39-9df0-1fedcbae16f4 (wigo-charts-full-audit)",
       "scope": "WiGO full audit + one-page dashboard redesign",
-      "authority": "TJ direct 2026-10-25T16:23Z: 'codex should not have reclaimed wigocharts' — supersedes CODEX-RECLAIM-WEB-20261025 for these paths",
+      "authority": "TJ direct 2026-10-25T16:23Z: 'codex should not have reclaimed wigocharts' \u2014 supersedes CODEX-RECLAIM-WEB-20261025 for these paths",
       "write_paths": [
         {
           "path": "web/__tests__/pages/wigoCharts.test.tsx",
@@ -1162,7 +1162,7 @@
     {
       "lane": "GS",
       "scope": "Goalie-share/FORGE workload (6 handed files)",
-      "authority": "TJ 16:22–16:27 + CODEX-20261025-086 handover",
+      "authority": "TJ 16:22\u201316:27 + CODEX-20261025-086 handover",
       "write_paths": [
         {
           "path": "web/components/GoalieShareChart/index.tsx",
@@ -1204,7 +1204,7 @@
     {
       "lane": "PC",
       "scope": "Player cards (38 handed files)",
-      "authority": "TJ 16:22–16:27 + CODEX-20261025-086 handover",
+      "authority": "TJ 16:22\u201316:27 + CODEX-20261025-086 handover",
       "write_paths": [
         {
           "path": "web/components/player-cards/HeroPlayerCard.tsx",
@@ -1360,14 +1360,14 @@
         "portrait reprocessing",
         "premium/live activation"
       ],
-      "status": "RELEASED 2026-10-26T15:20:05Z — card paths handed back to Codex (CODEX-20261026-001 / CLAUDE-20261026-103). Session idle since 2026-10-25T21:07Z; PC-5 committed 32f82b1ee; all 42 SOURCE-PINS match tree.",
+      "status": "RELEASED 2026-10-26T15:20:05Z \u2014 card paths handed back to Codex (CODEX-20261026-001 / CLAUDE-20261026-103). Session idle since 2026-10-25T21:07Z; PC-5 committed 32f82b1ee; all 42 SOURCE-PINS match tree.",
       "base_head": "ac98431aa0714573f4f89691f3b9502fe4e375ec",
       "session": "local_bd4b0f5c-a517-4d89-98f8-cdb2e7b9b5d7 (pc-player-cards)"
     },
     {
       "lane": "TG",
       "scope": "Testing Grounds namespace (25 handed files)",
-      "authority": "TJ 16:22–16:27 + CODEX-20261025-086 handover",
+      "authority": "TJ 16:22\u201316:27 + CODEX-20261025-086 handover",
       "write_paths": [
         {
           "path": "web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx",
@@ -1485,7 +1485,7 @@
     {
       "lane": "HIR",
       "scope": "RSO healthy-reserve completion (D2)",
-      "authority": "TJ 16:22–16:27 + CODEX-20261025-086 handover",
+      "authority": "TJ 16:22\u201316:27 + CODEX-20261025-086 handover",
       "write_paths": [
         {
           "path": "web/lib/rosterScheduleOptimizer/healthyReserves.ts",
@@ -1892,7 +1892,7 @@
     {
       "lane": "DISCOVERY-NOPUNDIT",
       "scope": "F3: remove pundit-table count reads + health metadata from Draft Rankings discovery",
-      "authority": "TJ direct pop-ups 2026-10-26: fix audit F1+F2+F3; one bounded read (≤3 read-only queries) before release",
+      "authority": "TJ direct pop-ups 2026-10-26: fix audit F1+F2+F3; one bounded read (\u22643 read-only queries) before release",
       "write_paths": [
         {
           "path": "web/lib/draft-ranker/discoveryServer.ts",
@@ -1919,7 +1919,7 @@
       ],
       "scope": "Tuesday Trends social-share edition: live native data, semantic fixes, four sections (hot/cold, ownership movers, deployment, rate standouts). No Monday redesign, no Player Cards/Thursday.",
       "authority": "TJ 2026-10-26 direct (/orchestrator Tuesday Trends) + CODEX-20261026-001 relay",
-      "owner": "Claude Tuesday Trends chef (this session) → TT worker session",
+      "owner": "Claude Tuesday Trends chef (this session) \u2192 TT worker session",
       "start_utc": "2026-10-26T15:20:05Z",
       "base_head": "cd73cbd695347a04c0d217ca7535a87ca609f4fb",
       "write_paths": [
@@ -2224,7 +2224,7 @@
         }
       ],
       "read_only": [
-        "tasks/artifacts/blsh-independent-review-2026-10-28/dry-run-v4/PROFILES-A_development_reference__official_receipt_overlay.jsonl (f8734686…)",
+        "tasks/artifacts/blsh-independent-review-2026-10-28/dry-run-v4/PROFILES-A_development_reference__official_receipt_overlay.jsonl (f8734686\u2026)",
         "web/lib/buyLowSellHigh/supportGap.ts",
         "web/lib/buyLowSellHigh/currentWindows.ts"
       ],
@@ -2331,7 +2331,7 @@
       "ids": [
         "VORP-S2"
       ],
-      "scope": "S2 of VORP/ASSESSMENT.md under S3-SCENARIO-CONTRACT.md v1 §5-§6: pure later-impact engine on synthetic snapshots (boundary rosters, private scenario adapter, result states, unknown propagation); planning.ts only for one narrow internal scenario-evaluation hook; no data, forecast, UI or weekly change. Local edits and offline tests only.",
+      "scope": "S2 of VORP/ASSESSMENT.md under S3-SCENARIO-CONTRACT.md v1 \u00a75-\u00a76: pure later-impact engine on synthetic snapshots (boundary rosters, private scenario adapter, result states, unknown propagation); planning.ts only for one narrow internal scenario-evaluation hook; no data, forecast, UI or weekly change. Local edits and offline tests only.",
       "authority": "TJ pop-up 2026-10-29: start S2 after S1's receipt is verified (verified, 081fcb849); Codex CODEX-RSO-CLAUDE129-S3-V0-REVIEW: S2 unknown/synthetic work may proceed under its own exact lease",
       "session": "local_03aab18a-a6e8-47d3-b69f-db3c44768e85 (rso-future-impact)",
       "write_paths": [
@@ -3581,6 +3581,81 @@
           ]
         }
       ]
+    },
+    {
+      "lane": "RANKINGS-ACCEPTANCE",
+      "ids": [
+        "CLAUDE-RANKINGS-ACCEPTANCE-CLAIM-20261114",
+        "CLAUDE-RANKINGS-ACCEPTANCE-FIX-CLAIM-20261115"
+      ],
+      "scope": "Rankings acceptance verdict plus local reader/writer fixes F14 F13 F1 F4 F5 F6 W1 F11 F7 F9 F15; uncommitted",
+      "write_paths": [
+        "web/lib/rankings/comparison.ts",
+        "web/lib/rankings/deploymentTiers.ts",
+        "web/lib/rankings/entityMetricRankingReader.ts",
+        "web/lib/rankings/entityMetricRankingWriter.test.ts",
+        "web/lib/rankings/entityMetricRankingWriter.ts",
+        "web/lib/rankings/goalieMatrix.ts",
+        "web/lib/rankings/playerMatrix.test.ts",
+        "web/lib/rankings/playerMatrix.ts",
+        "web/lib/rankings/rankingCalculator.ts",
+        "web/lib/rankings/rankingQueries.test.ts",
+        "web/lib/rankings/rankingQueries.ts",
+        "web/lib/rankings/snapshot.test.ts",
+        "web/lib/rankings/snapshot.ts",
+        "web/lib/rankings/teamMatrix.test.ts",
+        "web/lib/rankings/teamMatrix.ts",
+        "web/lib/rankings/__acceptance__/",
+        "tasks/artifacts/rankings-acceptance-2026-11-14/**",
+        "tasks/diaries/2026-11-14-claude-rankings-*.md"
+      ],
+      "base_head": "55ed51604f1a02c9e6d0598c6796938fb15a018b",
+      "deployed_baseline": "89da739cb (#446)",
+      "patch": "tasks/artifacts/rankings-acceptance-2026-11-14/offline-correctness/FIXES.patch",
+      "patch_sha256": "d22c2fb88b6e68f32948f91a30a10f281f2ee4444c21c6031766d4b1594ad28f",
+      "resources": [
+        "isolated next dev :3110 (stopped)"
+      ],
+      "owner": "Claude Chef local_9edfe669 -> fix owner local_fcaa8930",
+      "status": "source released: committed 228f345e6 on octoberBranch (22 files); not pushed, not deployed, no republish",
+      "start_utc": "2026-11-14T00:00:00Z",
+      "commit": "228f345e6"
+    },
+    {
+      "lane": "RANKINGS-COMPLETION-MARKER",
+      "ids": [
+        "Rankings publication completion marker (TJ 2026-11-15)"
+      ],
+      "scope": "ranking_publications table + writers mark complete + reader serves only complete pairs; local build only",
+      "write_paths": [
+        "web/lib/rankings/rankingPublications.ts (new)",
+        "web/lib/rankings/rankingPublications.test.ts (new)",
+        "web/lib/rankings/entityMetricRankingWriter.ts",
+        "web/lib/rankings/entityMetricRankingWriter.test.ts",
+        "web/lib/rankings/skaterCompositeWriter.ts",
+        "web/lib/rankings/skaterCompositeWriter.test.ts",
+        "web/lib/rankings/entityMetricRankingReader.ts",
+        "web/lib/rankings/entityMetricRankingReader.test.ts",
+        "web/pages/api/v1/db/update-entity-metric-rankings.ts",
+        "web/pages/api/v1/db/update-skater-composite-ratings.ts",
+        "web/lib/supabase/database-generated.types.ts (ranking_publications block only)",
+        "supabase/migrations/20261115210000_ranking_publications.sql (new; session rank-pub-migration)",
+        "supabase/tests/ranking_publications.py, supabase/tests/ranking_publications_rollback.sql (new; session rank-pub-migration)",
+        "tasks/TASKS/repository-audit-remediation/migration-authority.json (one new row only; session rank-pub-migration)",
+        "web/lib/supabase/supportedBaselineMigration.test.ts (pending pin only; session rank-pub-migration)",
+        "tasks/artifacts/rankings-acceptance-2026-11-14/**",
+        "tasks/diaries/2026-11-14-claude-rankings-acceptance.md",
+        "web/lib/rankings/__acceptance__/chef-live-findings.acceptance.test.ts (declare empty ranking_publications)",
+        "web/lib/rankings/__acceptance__/skater-parity.acceptance.test.ts (declare empty ranking_publications)",
+        "web/__tests__/pages/api/v1/db/update-entity-metric-rankings.test.ts",
+        "web/__tests__/pages/api/v1/db/update-skater-composite-ratings.test.ts"
+      ],
+      "forbidden": [
+        "production writes, migration apply, push, deploy, publish without TJ pop-up"
+      ],
+      "owner": "Claude Rankings session 9edfe669 (+ local_9e2aa5c2 rank-pub-migration)",
+      "status": "released 2026-11-15T20:40Z: migration 152 applied; #450 (089a6a771) + #451 (c0c5fe9b2) merged; first marked publish complete at 2026-11-14",
+      "start_utc": "2026-11-15T20:10:00Z"
     }
   ],
   "held_or_blocked": [],

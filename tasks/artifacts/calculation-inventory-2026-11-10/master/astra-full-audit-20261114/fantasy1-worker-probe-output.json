@@ -1,0 +1,262 @@
+{
+  "passed": true,
+  "mode": "Exact pure AST helpers in isolated VM; no application imports, handler/provider/database execution",
+  "receipts": [
+    {
+      "path": "web/lib/fantasy-projections/contracts.ts",
+      "symbol": "projectionNumber",
+      "line": 194,
+      "end": 196,
+      "offset": 5467,
+      "sha256": "d49b7e859a7cf8fb73c7951b6193bec834fc5d64e30d1723a9913ce66174fde2"
+    },
+    {
+      "path": "web/lib/fantasy-projections/contracts.ts",
+      "symbol": "CLAMP_TOLERANCE",
+      "line": 479,
+      "end": 479,
+      "offset": 13445,
+      "sha256": "229a40c04ff928c0755d26163d0f5608cc200002ea38124a9d357c81d4c35a26"
+    },
+    {
+      "path": "web/lib/fantasy-projections/contracts.ts",
+      "symbol": "reconcileProjectionValuesWithClamps",
+      "line": 493,
+      "end": 694,
+      "offset": 14062,
+      "sha256": "cd420986a80bdcbb6079829f91507f6b1f7eb258ee29bd3f36048024be546cfd"
+    },
+    {
+      "path": "web/lib/fantasy-projections/contracts.ts",
+      "symbol": "reconcileProjectionValues",
+      "line": 696,
+      "end": 701,
+      "offset": 23234,
+      "sha256": "ae8065c99dc3d1ff44176213e3a36c09108531dc6f0a7e68cd6c0107ac015dce"
+    },
+    {
+      "path": "web/lib/fantasy-projections/contracts.ts",
+      "symbol": "reconcileProjectionQuantiles",
+      "line": 709,
+      "end": 910,
+      "offset": 23798,
+      "sha256": "d46bcbe0036ba573ed3067e3598d106e181e7c420ee157d3c754669c2fb54094"
+    },
+    {
+      "path": "web/lib/fantasy-projections/contracts.ts",
+      "symbol": "nullableProjectionNumber",
+      "line": 935,
+      "end": 939,
+      "offset": 32415,
+      "sha256": "9c3af55bcaff5f0e30874969b5353dc11dc02637e25f55697160226a701b7fa6"
+    },
+    {
+      "path": "web/lib/fantasy-projections/contracts.ts",
+      "symbol": "fantasyProjectionTotalNullable",
+      "line": 956,
+      "end": 984,
+      "offset": 33253,
+      "sha256": "a23b292da98a4df132fa3984274b97c5dfee77cf1488fdbddd78db8c780e555b"
+    },
+    {
+      "path": "web/lib/fantasy-projections/admin.ts",
+      "symbol": "record",
+      "line": 67,
+      "end": 71,
+      "offset": 1970,
+      "sha256": "7dcfd897e327baf1c084b547ede3ba5ce01d9e234cc48c943a489fc20aa6ef8a"
+    },
+    {
+      "path": "web/lib/fantasy-projections/admin.ts",
+      "symbol": "numericRecord",
+      "line": 78,
+      "end": 85,
+      "offset": 2338,
+      "sha256": "d8be62be5d5454c9ea084ab2c1227e1fd707389c27525545b17dd1b4fcc15e85"
+    },
+    {
+      "path": "web/lib/fantasy-projections/admin.ts",
+      "symbol": "SIGNED_TARGETS",
+      "line": 89,
+      "end": 89,
+      "offset": 2704,
+      "sha256": "7544738b20118dc97a03ea65a6df07000a9febefd2240f99aef3886835dcd416"
+    },
+    {
+      "path": "web/lib/fantasy-projections/admin.ts",
+      "symbol": "CHANGE_TOLERANCE",
+      "line": 90,
+      "end": 90,
+      "offset": 2782,
+      "sha256": "79be0aa6cb4fd4f7c7b2e2d01c1f34086db7ab0504f647c1aa6a094474e5c8f9"
+    },
+    {
+      "path": "web/lib/fantasy-projections/admin.ts",
+      "symbol": "unitDependents",
+      "line": 98,
+      "end": 125,
+      "offset": 3089,
+      "sha256": "90bc3e10e57ec88cb7be188476494558da6a798fece19ff80ece15a25f534328"
+    },
+    {
+      "path": "web/lib/fantasy-projections/admin.ts",
+      "symbol": "publishedJointQuantiles",
+      "line": 136,
+      "end": 181,
+      "offset": 4801,
+      "sha256": "ba7918b1f1ba96b0e0fbc1f7585449ced9eb162180940b7e1176ae5c5afebb20"
+    },
+    {
+      "path": "web/lib/fantasy-projections/admin.ts",
+      "symbol": "populationForPosition",
+      "line": 183,
+      "end": 187,
+      "offset": 6533,
+      "sha256": "3399ba4309c330d7dd92121f74beaa4b944d753973980e22d81c80deeab8b336"
+    },
+    {
+      "path": "web/lib/fantasy-projections/admin.ts",
+      "symbol": "setNested",
+      "line": 189,
+      "end": 198,
+      "offset": 6719,
+      "sha256": "58d96318dfe322a3a0ad32aad75b3e08db574e69a28f328dd86f95a96b903957"
+    },
+    {
+      "path": "web/lib/fantasy-projections/admin.ts",
+      "symbol": "effectivePlayer",
+      "line": 416,
+      "end": 528,
+      "offset": 14370,
+      "sha256": "9cc9def6532abe2d6808f1513752daf4bbec10580eb2c78b7933add8eef8c289"
+    },
+    {
+      "path": "web/lib/fantasy-projections/admin.ts",
+      "symbol": "effectiveTeam",
+      "line": 530,
+      "end": 604,
+      "offset": 18515,
+      "sha256": "f8a3c900f499f524a7f8fe2bde8705017f6def986be39439fee0404fa5d1c25c"
+    }
+  ],
+  "results": {
+    "stale": {
+      "raw": {
+        "EXPECTED_ASSISTS": 4,
+        "ON_ICE_CF_PERCENTAGE": 0.75
+      },
+      "edited": {
+        "published": {
+          "GAMES_PLAYED": 10,
+          "GAMES_STARTED": 8,
+          "TOTAL_TOI": 6000,
+          "GOALS_AGAINST_GOALIE": 5,
+          "SHOTS_AGAINST_GOALIE": 50,
+          "SAVES_GOALIE": 45,
+          "SAVE_PERCENTAGE": 0.9,
+          "GOALS_AGAINST_AVERAGE": 3,
+          "RELIEF_APPEARANCES_GOALIE": 2,
+          "START_PERCENTAGE_GOALIE": 0.8,
+          "GOALS_SAVED_ABOVE_EXPECTED": 5
+        },
+        "p10": {
+          "GOALS_SAVED_ABOVE_EXPECTED": 3,
+          "TOTAL_TOI": 5000
+        },
+        "p50": {
+          "GOALS_SAVED_ABOVE_EXPECTED": 5,
+          "TOTAL_TOI": 6000
+        },
+        "p90": {
+          "GOALS_SAVED_ABOVE_EXPECTED": 7,
+          "TOTAL_TOI": 7000
+        }
+      }
+    },
+    "toi": {
+      "metadata": {
+        "expectedToi": 12000,
+        "total": 6000,
+        "gaa": 3,
+        "p50": 6000,
+        "adjustment": {}
+      },
+      "primitive": {
+        "expectedToi": 6000,
+        "total": 12000,
+        "gaa": 1.5,
+        "p50": 12000
+      }
+    },
+    "danger": {
+      "single": {
+        "values": {
+          "HIGH_DANGER_SHOTS_AGAINST_GOALIE": 1,
+          "HIGH_DANGER_GOALS_AGAINST_GOALIE": 1,
+          "HIGH_DANGER_SAVES_GOALIE": 0,
+          "HIGH_DANGER_SAVE_PERCENTAGE_GOALIE": 0
+        },
+        "clamps": []
+      },
+      "quantiles": {
+        "p10": {
+          "HIGH_DANGER_SHOTS_AGAINST_GOALIE": 1,
+          "HIGH_DANGER_GOALS_AGAINST_GOALIE": 1,
+          "HIGH_DANGER_SAVES_GOALIE": 0,
+          "HIGH_DANGER_SAVE_PERCENTAGE_GOALIE": 0
+        },
+        "p50": {
+          "HIGH_DANGER_SHOTS_AGAINST_GOALIE": 10,
+          "HIGH_DANGER_GOALS_AGAINST_GOALIE": 7,
+          "HIGH_DANGER_SAVES_GOALIE": 3,
+          "HIGH_DANGER_SAVE_PERCENTAGE_GOALIE": 0.3
+        },
+        "p90": {
+          "HIGH_DANGER_SHOTS_AGAINST_GOALIE": 20,
+          "HIGH_DANGER_GOALS_AGAINST_GOALIE": 9,
+          "HIGH_DANGER_SAVES_GOALIE": 19,
+          "HIGH_DANGER_SAVE_PERCENTAGE_GOALIE": 1
+        }
+      }
+    },
+    "preserved": {
+      "missingTotal": {
+        "value": null,
+        "complete": false,
+        "missingKeys": [
+          "TAKEAWAYS"
+        ],
+        "invalidWeightKeys": []
+      },
+      "zeroTotal": {
+        "value": 6,
+        "complete": true,
+        "missingKeys": [],
+        "invalidWeightKeys": []
+      },
+      "missingSaves": {
+        "SHOTS_AGAINST_GOALIE": 10
+      },
+      "zeroDenominator": {
+        "SHOTS_AGAINST_GOALIE": 0,
+        "GOALS_AGAINST_GOALIE": 0,
+        "TOTAL_TOI": 0,
+        "SAVES_GOALIE": 0
+      },
+      "joint": {
+        "p10": {
+          "GOALS": 19,
+          "POINTS": 44
+        },
+        "p50": {
+          "GOALS": 25,
+          "POINTS": 55
+        },
+        "p90": {
+          "GOALS": 31,
+          "POINTS": 66
+        }
+      }
+    }
+  }
+}

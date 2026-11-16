@@ -1,0 +1,40 @@
+{
+  "id": "dpl_3r1Gg58pkS1wTJDeuGkxtpwb6ZXb",
+  "name": "fhfhockey",
+  "url": "fhfhockey-72ajfejlu-fhfhockeydevs-projects.vercel.app",
+  "type": "LAMBDAS",
+  "state": "READY",
+  "createdAt": 1794325278485,
+  "creator": {
+    "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+    "username": "fhfhockey-dev"
+  },
+  "project": {
+    "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+    "name": "fhfhockey",
+    "framework": "nextjs"
+  },
+  "meta": {
+    "githubCommitRef": "master",
+    "githubCommitSha": "86f2e3cf742a86b5981abb3de41160b2ea7950e3",
+    "githubCommitMessage": "Sanitize Browserless webhook dependency diagnostics",
+    "githubRepo": "fhfhockey.com",
+    "githubOrg": "FHFHockey-dev"
+  },
+  "alias": [
+    "fhfhockey.com",
+    "fhfhockey.vercel.app",
+    "www.fhfhockey.com",
+    "fhfhockey-fhfhockeydevs-projects.vercel.app",
+    "fhfhockey-git-master-fhfhockeydevs-projects.vercel.app"
+  ],
+  "target": "production",
+  "regions": [
+    "iad1"
+  ],
+  "buildingAt": 1794325279738,
+  "ready": 1794325624412,
+  "readyState": "READY",
+  "source": "git",
+  "aliasError": null
+}

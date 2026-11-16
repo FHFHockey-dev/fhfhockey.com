@@ -1,0 +1,17 @@
+{
+  "observedAt": "2026-11-09T21:33:44.861894+00:00",
+  "announcedNewsCommits": [
+    "a70dece64",
+    "7d05e867b"
+  ],
+  "files": [
+    "tasks/artifacts/news-claims-interpretation-2026-11-09/backfill-plan.md",
+    "web/components/NewsFeed/NewsCard.test.tsx",
+    "web/lib/newsFeed.test.ts",
+    "web/lib/newsFeed.ts",
+    "web/lib/newsReviewBoundary.test.ts",
+    "web/lib/sources/tweetNewsAutomation.ts"
+  ],
+  "producerClosureIntersection": [],
+  "qualification": "Only announced news commits checked; final released tree must be rechecked."
+}

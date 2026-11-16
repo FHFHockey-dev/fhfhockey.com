@@ -1,0 +1,1 @@
+select to_char(max(updated_at),'MM-DD HH24:MI:SS') last_upd, count(*) filter (where updated_at > '2026-11-16') today, count(*) filter (where updated_at >= '2026-11-16 10:20') after1020 from goalie_start_projections where game_id >= 2026020300

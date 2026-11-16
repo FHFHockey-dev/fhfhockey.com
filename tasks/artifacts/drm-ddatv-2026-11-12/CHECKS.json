@@ -1,0 +1,48 @@
+{
+  "candidateFilesHashVerified": 54,
+  "typecheck": {
+    "command": "NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit --pretty false",
+    "result": "passed"
+  },
+  "scopedLint": "passed; one unchanged native-image warning in isolated fixture",
+  "browser": {
+    "allScenarios": 6,
+    "finalLayoutAndValueRerun": 2,
+    "externalRequests": "blocked"
+  },
+  "capturedSourceReplay": {
+    "games": 5,
+    "players": 190,
+    "officialFieldsCompared": 760,
+    "strengthTaggedSegments": 4269,
+    "pairCombinationsChecked": 1710,
+    "unitGroupsChecked": 860,
+    "readerStrengthFieldsCompared": 760,
+    "failures": 0
+  },
+  "rootChecks": {
+    "page": 26,
+    "hook": 15,
+    "matrixAccessibility": 8,
+    "historyComponent": 6,
+    "aggregateReaderViewCards": 63
+  },
+  "workerChecksReused": {
+    "historyBackendAndRoute": 42,
+    "writerAndMaterialization": 38,
+    "newReader": 15,
+    "newReaderRoute": 3
+  },
+  "engineFinal": 22,
+  "applicationBuilds": 0,
+  "productionWrites": 0,
+  "deployments": 0,
+  "commitsByThisChat": 0,
+  "allUnrelatedChangesPreserved": true,
+  "zeroQualifiedFollowup": {
+    "pageAndViewTests": 29,
+    "browserScenario": 1,
+    "scopedLint": "0 errors; existing fixture image warning",
+    "productionWrites": 0
+  }
+}

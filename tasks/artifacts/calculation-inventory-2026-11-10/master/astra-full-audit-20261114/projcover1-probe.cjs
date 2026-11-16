@@ -1,0 +1,17 @@
+const cp=require('child_process'),vm=require('vm'),crypto=require('crypto'),assert=require('assert'),ts=require('/Users/tim/Code/fhfhockey.com/web/node_modules/typescript');
+const pin='89da739cb45d7d572ed59bfa0b209c79c5d99299',hashes={};
+function src(p){const s=cp.execFileSync('git',['show',pin+':'+p]).toString();hashes[p]=crypto.createHash('sha256').update(s).digest('hex');return ts.createSourceFile(p,s,ts.ScriptTarget.Latest,true);}
+function load(p,globals={},names=null,extra=''){const sf=src(p),nodes=sf.statements.filter(n=>!ts.isImportDeclaration(n)&&(!names||names.includes(n.name?.text)));const m={exports:{}};vm.runInNewContext(ts.transpileModule(nodes.map(n=>n.getText(sf)).join('\n')+'\n'+extra,{compilerOptions:{target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.CommonJS}}).outputText,{module:m,exports:m.exports,...globals},{timeout:1000});return m.exports;}
+
+const root='web/lib/projections/';
+const bootstrap=load(root+'seasonBootstrap.ts');
+const preflight=load(root+'stages/preflight-stage.ts',{},['scratchGameIdOf','availabilityMultiplierForEvent']);
+const coverage=load(root+'skaterCoverage.ts',preflight);
+const game=(id,date,seasonId)=>({id,date,seasonId,type:2});
+const history=bootstrap.buildSeasonHistory([{games:game(1,'2026-04-01',20252026),toi:'60:00',saveShotsAgainst:'27/30',goalsAgainst:3},{games:game(2,'2026-04-02',20252026),toi:'60:00',saveShotsAgainst:'29/30',goalsAgainst:null},{games:game(3,'2026-11-13',20262027),toi:'60:00',saveShotsAgainst:'28/30',goalsAgainst:2},{games:game(4,'2026-11-14',20262027),toi:'60:00',saveShotsAgainst:'30/30',goalsAgainst:0}],20262027,'2026-11-14','goalie');
+assert.equal(history.historyGames,1);assert.equal(history.currentSeasonGames,1);assert.equal(history.previous.SAVES_GOALIE,27);assert.equal(history.previous.SHOTS_AGAINST_GOALIE,30);
+const b=bootstrap.bootstrapGoalieLine({SAVES_GOALIE:36,GOALS_AGAINST_GOALIE:4,SHOTS_AGAINST_GOALIE:40},{...history,limitations:['synthetic']});assert.equal(b.stats.SHOTS_AGAINST_GOALIE,40);assert.equal(b.stats.SAVES_GOALIE+b.stats.GOALS_AGAINST_GOALIE,40);assert.equal(b.disclosure.fantasyWeight,0);
+const skater=bootstrap.bootstrapSkaterLine({goalsEs:.2,goalsPp:.1,goalsPk:.05,assistsEs:.2,assistsPp:.1,assistsPk:.02,shotsEs:2,shotsPp:1,shotsPk:.5,hits:2,blocks:1},{previous:{GOALS:.7,ASSISTS:.8,SHOTS_ON_GOAL:7,PP_POINTS:.4,PP_GOALS:.2,HITS:3,BLOCKED_SHOTS:2},currentSeasonGames:0,historyGames:20,limitations:['synthetic']},{goals:1,assists:1,shots:1,ppUsage:1});assert(Math.abs(skater.goalsEs+skater.goalsPp+skater.goalsPk-.7)<1e-10);assert.equal(skater.shotsEs+skater.shotsPp+skater.shotsPk,7);assert(skater.goalsPk>0);
+const c=coverage.buildTeamSkaterCoverage({gameId:5,teamId:1,eligibleIds:[1,2,3,3,4],lineupIds:[1],reserveIds:[1,2],unknownReasonById:new Map([[3,'roster_team_conflict']]),defaultUnknownReason:'no_nhl_usage_in_window'});assert.equal(c.lineup+c.reserve+c.unknown,c.eligible);assert.equal(c.reserve,1);assert.equal(c.complete,false);
+const otherScratch=coverage.skaterAvailabilityForGame({gameId:6,event:{event_id:1,event_type:'SCRATCH',confidence:.8,payload:{game_id:5}},inLineup:false});assert.equal(otherScratch.state,'unknown');assert.equal(otherScratch.expected_for_game,null);
+console.log(JSON.stringify({pin,hashes,checks:{history,goalie:b,skater,coverage:c,otherGameScratch:otherScratch},boundaries:['Exact isolated bootstrap and coverage helpers with synthetic fixtures','No query/client or full stage execution, app imports, Vitest, actual environment, database/provider/page, server/build or app edit']},null,2));

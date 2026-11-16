@@ -1,0 +1,95 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "dateScope": {
+    "requested": "2026-10-10",
+    "fallbackSnapshot": "2026-10-11",
+    "bandHistoryDates": [
+      "2026-10-10",
+      "2026-10-11"
+    ],
+    "limitedHistoryLatestSnapshot": "2026-10-11",
+    "limitedHistoryReturned": [
+      "2026-10-10"
+    ]
+  },
+  "historyComparison": {
+    "actualSeasonAverage": 0.255,
+    "pairedDisjointWindows": 0.05454545454545454
+  },
+  "reason": {
+    "key": "extremeThreshold",
+    "label": "ExtremeThreshold",
+    "value": 5,
+    "direction": "positive",
+    "sentence": "ExtremeThreshold is running above baseline by 5.00 standard deviations."
+  },
+  "emptyLeagueReference": {
+    "reference": {
+      "ixg60": {
+        "mu": 0,
+        "sig": 1
+      },
+      "icf60": {
+        "mu": 0,
+        "sig": 1
+      },
+      "hdcf60": {
+        "mu": 0,
+        "sig": 1
+      }
+    },
+    "score": 98.2,
+    "state": "ok",
+    "warnings": []
+  },
+  "mutableLeagueReference": {
+    "samePlayerWindow": true,
+    "knownInitialReferenceScore": 15.45,
+    "updatedKnownReferenceScore": 99.26,
+    "queryHasSnapshotCutoff": false
+  },
+  "controls": [
+    "All-missing luck family blocked and public score hidden",
+    "Successful same-date score input retained; cutoff fixture matches declared table filters"
+  ],
+  "sources": [
+    {
+      "path": "web/lib/sustainability/entitySurfaceServer.ts",
+      "sha256": "03a8c2a8f3d65e326b46d30821b9052e724192d644571ceecf62d566af582325"
+    },
+    {
+      "path": "web/lib/sustainability/entitySurface.ts",
+      "sha256": "7bb498cce0c9eaed21a1e5d8e84e7f7ef23ac20010ec2d30b291d0b248aba49d"
+    },
+    {
+      "path": "web/lib/sustainability/bands.ts",
+      "sha256": "c7514b9748c7c6e1248b2a14f52a5b3d6a2982a1037ea192be7a1af618d95f40"
+    },
+    {
+      "path": "web/lib/sustainability/usualRange.ts",
+      "sha256": "32b2e972519881ae7401329af6f2d944bd1b3f7e0947a989c4af62b60f6f7e29"
+    },
+    {
+      "path": "web/lib/sustainability/guardrails.ts",
+      "sha256": "84c19922ca620f1754067bbdd396487dc5e8dc566e5fe709001718dfceb76531"
+    },
+    {
+      "path": "web/lib/sustainability/runtimeContract.ts",
+      "sha256": "185b2e367919487f4c253c881fccfeec19c39ac76828043b43379c289378ff96"
+    },
+    {
+      "path": "web/lib/sustainability/read.ts",
+      "sha256": "a676c51e316f51776d7ba614f134624a5b391143ed28dabff028e22a0323f52e"
+    },
+    {
+      "path": "web/lib/sustainability/score.ts",
+      "sha256": "a964db292d556bc38776dace6b27aab0f0f0c4a1321b1e98b699045b7f8b0e5c"
+    },
+    {
+      "path": "web/lib/sustainability/observability.ts",
+      "sha256": "459e2f63cf1e00328963bf8e09350ce3e035797f7d7fbab04983ce57734a9bb1"
+    }
+  ],
+  "limits": "Exact frozen source with allowlisted in-memory database and pagination doubles; teams metadata empty; priors constants/season helper explicit stub. No real query, persistence, app environment, browser, server or Vitest. Later league totals synthetic: proves mutable-reference dependency, not live historical incidence."
+}

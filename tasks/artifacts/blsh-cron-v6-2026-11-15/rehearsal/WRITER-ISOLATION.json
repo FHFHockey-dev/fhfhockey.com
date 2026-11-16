@@ -1,0 +1,50 @@
+{
+  "version": "fhfh.blsh.cron-v6.writer-isolation-loopback.v1",
+  "node": "v22.23.4",
+  "nonLoopbackConnections": 0,
+  "pass": true,
+  "results": {
+    "TLSv1.3": {
+      "control": [
+        {
+          "resumed": false,
+          "peerCertificate": "present"
+        },
+        {
+          "resumed": false,
+          "peerCertificate": "present"
+        }
+      ],
+      "controlServerHandshakes": 2,
+      "writerSendHeadersEvents": 0,
+      "fetchAfterWriter": [
+        {
+          "resumed": false,
+          "peerCertificate": "present"
+        }
+      ],
+      "writerScenarioServerHandshakes": 4
+    },
+    "TLSv1.2": {
+      "control": [
+        {
+          "resumed": false,
+          "peerCertificate": "present"
+        },
+        {
+          "resumed": false,
+          "peerCertificate": "present"
+        }
+      ],
+      "controlServerHandshakes": 2,
+      "writerSendHeadersEvents": 0,
+      "fetchAfterWriter": [
+        {
+          "resumed": false,
+          "peerCertificate": "present"
+        }
+      ],
+      "writerScenarioServerHandshakes": 4
+    }
+  }
+}

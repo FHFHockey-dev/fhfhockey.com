@@ -1,0 +1,138 @@
+{
+  "state": "LOCAL_CHECKS_PASSED_AWAITING_COORDINATOR_COMBINED_TYPECHECK_AND_RELEASE",
+  "frozenAt": "2026-11-10T18:50:06.718747+00:00",
+  "branch": "octoberBranch",
+  "baseCommit": "11e4192d36ecc4ac4b338f9ab48e529c7049c618",
+  "files": [
+    {
+      "path": "web/pages/_app.tsx",
+      "sha256": "bce3613f62b89e5d4025cb54674926988dad8c0d6e34b25247dc256118949322"
+    },
+    {
+      "path": "web/pages/roster-schedule-optimizer.tsx",
+      "sha256": "9ebaf930cd4e1225d67d05a75e92752a164d4be599190785663cf428039a41d6"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RsoLoading.tsx",
+      "sha256": "8c9a1d3ea2a025b938e55bda802c190afb482d6faa7261c834dbf16e1f993b8f"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RsoLoading.module.scss",
+      "sha256": "1ce3937e09eebb8175ae1b80300fd54adb754b93442b5d8ff8fc619115f9849b"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "sha256": "cef3f1fb04f4f83236c5ff87acefcaa7aac967added99102fdac0067f37a2cd5"
+    },
+    {
+      "path": "web/__tests__/pages/_app.test.tsx",
+      "sha256": "d9b05de1cb22069e671afe0ae6d472a9e8e82f3d02386b20be2b6176a313bd21"
+    },
+    {
+      "path": "web/__tests__/pages/roster-schedule-optimizer.test.tsx",
+      "sha256": "741c8d4fb48ba3e95ef8d7fe72311d3e5bfcc564c91d1788e4061810657dbdd3"
+    },
+    {
+      "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "sha256": "9580eab7d224c4dfb9cbc1bb45efdc276234dafd308a834e838fec16c0b971e4"
+    },
+    {
+      "path": "web/e2e/rso-acceptance.spec.ts",
+      "sha256": "6c351f5f7e560a44087a9c5591ad36e4d357560d146fbabfdb75d0945b3f41e9"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateCard.tsx",
+      "sha256": "4d765bc9bfb0e83c661cb55af71fa16c28df463e8eb0da159b3f8bfc26981961"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/StreamingItinerary.tsx",
+      "sha256": "d5055c6ba822e2b91b57adcfb34043c37a364fb188d2876b11875c78873a0a7f"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/inputReadiness.ts",
+      "sha256": "e4047d12741ee7ddcf3b540d151bdc7ba31a6ab644cbbfd2b8c02faaf74bb7b9"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/inputReadiness.test.ts",
+      "sha256": "1b9ebe33fef1fae5f3cc2c1538b3db05e2889058f729b70d134d17a68ddf5bd7"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx",
+      "sha256": "bc0383b0acdb75bec2cf081a0ae7852392851ca7035fb80298c896a9681b65e4"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+      "sha256": "d74610b3624b518a7c27e4fa2b870e1a449b8802eb13c62607f1f18b5a35a2eb"
+    },
+    {
+      "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+      "sha256": "aacdaa9ca81f7d6ef8408f70afa2c5d315adc06f1ad1413d33402184da785fbd"
+    },
+    {
+      "path": "web/e2e/rso-continuity.spec.ts",
+      "sha256": "65eeb204c522e712e0978ce0466f9096bb2f79cb5a052c47eb5bd2ee8d12e825"
+    }
+  ],
+  "confirmationPaths": [
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateCard.tsx",
+    "web/components/RosterScheduleOptimizer/StreamingItinerary.tsx",
+    "web/lib/rosterScheduleOptimizer/inputReadiness.ts",
+    "web/lib/rosterScheduleOptimizer/inputReadiness.test.ts",
+    "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "web/e2e/roster-schedule-optimizer.spec.ts",
+    "web/e2e/rso-acceptance.spec.ts",
+    "web/e2e/rso-continuity.spec.ts"
+  ],
+  "priorLoadingPaths": [
+    "web/pages/_app.tsx",
+    "web/pages/roster-schedule-optimizer.tsx",
+    "web/components/RosterScheduleOptimizer/RsoLoading.tsx",
+    "web/components/RosterScheduleOptimizer/RsoLoading.module.scss",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "web/__tests__/pages/_app.test.tsx",
+    "web/__tests__/pages/roster-schedule-optimizer.test.tsx",
+    "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+    "web/e2e/rso-acceptance.spec.ts"
+  ],
+  "preservedPendingSchemaFiles": [
+    {
+      "path": "web/lib/in-season/workspaceSchema.ts",
+      "sha256": "0a4509cf3f9ae8c6784697e566ec829a413c17b79d2518c80fe2dc04bc4e9f03"
+    },
+    {
+      "path": "web/lib/in-season/workspaceSchema.test.ts",
+      "sha256": "81a5843ed0ca2fe26ab208ecc463377846e81a996f501d858a4de96066ea5200"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+      "sha256": "cdf59f784452e1317d80adb68d5e0827c28ded9a250c58e5ead80de64dd85e65"
+    }
+  ],
+  "checks": {
+    "finalReadinessUnitTests": 268,
+    "relatedUnitTests": 98,
+    "overlappingStreamingCases": 15,
+    "distinctUnitCases": 351,
+    "browserScenarios": 13,
+    "browserEvidence": "CONFIRMATION-BROWSER-CHECKS.json",
+    "typescript": "Coordinator owns final combined pass. Default 4GB attempt exhausted heap; 8GB attempt found only two missing seasonId fields in new test fixtures; fields corrected, not rerun here by coordinator request.",
+    "lint": "Zero errors, six pre-existing RSO hook warnings; final changed paths passed.",
+    "diffWhitespace": "passed"
+  },
+  "priorLoadingEvidence": "LOADING-CANDIDATE.json and HANDOFF.md document earlier local loading/access candidate; three overlapping files superseded here.",
+  "custody": "RELEASE-CUSTODY.json; both artifact trees and diaries preserved locally, excluded from runtime staging.",
+  "cost": {
+    "remoteBuilds": 0,
+    "deployments": 0,
+    "productionRequestsInitiated": 0,
+    "realYahooOrAuthenticationRequestsInitiated": 0
+  },
+  "limitations": [
+    "Browser tests use fictional accounts and intercepted APIs, not actual authenticated acceptance.",
+    "No independent commit/push/deployment; release coordinator owns current user-authorized release.",
+    "Preserved pending three-file schema changes predate this confirmation work; retain their separate validation history."
+  ]
+}

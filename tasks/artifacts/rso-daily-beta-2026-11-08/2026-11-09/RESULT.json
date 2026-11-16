@@ -1,0 +1,60 @@
+{
+  "at": "2026-11-09T00:34:51.499259+00:00",
+  "state": "RETAINED_CHECKER_INSTALLED_PRIVATE_ACCEPTANCE_PLAN_READY",
+  "files": [
+    {
+      "target": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs",
+      "source": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs",
+      "originalSha256": "1788c6549ae6f3a8bf3a24c6cfd82599fb349ef89fafc39f5528cd2277235e2e",
+      "replacementSha256": "467a695d2d6749e091ce209bc834c1d452bb7eebb00a30f35cb303188d78f5fe"
+    },
+    {
+      "target": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs",
+      "source": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs",
+      "originalSha256": "479edbef96b5af789dd8809f04b8809d885c93fc9a2c423e513308ebf6b28230",
+      "replacementSha256": "18c72f6638d7f3cf8af904a1ed563266bc3063f638693145dc9cc8147e893abd"
+    }
+  ],
+  "tests": {
+    "passed": 29,
+    "failed": 0,
+    "skipped": 0,
+    "receipt": "installed-checker.json"
+  },
+  "checks": {
+    "exactReplacementPins": true,
+    "originalBeforeImages": true,
+    "scopeUnchanged": true,
+    "fixturesUnchanged": true,
+    "diffCheck": "passed",
+    "reversePatchApplicable": true,
+    "outboundAttemptsLogged": 0
+  },
+  "appSourceChanged": false,
+  "coordination": {
+    "id": "CODEX-RSO-CHECKER-INSTALL-20261109-02",
+    "mailbox": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+    "previousContentPreserved": true,
+    "entrySha256": "f5792eb585e16ecca0de19a34249873c69a8094acb2eb3f27f7b3624bce37af4",
+    "newOwnerAcknowledgement": false
+  },
+  "closedGates": [
+    "Retained checker exact-file custody for this operation",
+    "Prepared checker installation and installed-layout verification",
+    "RSO 16-file inclusion in locally recorded master #417"
+  ],
+  "openGates": [
+    "Existing current serving-source and served forecast proof/readback evidence",
+    "Private manual acceptance outcome",
+    "Existing private Yahoo capture or fully bounded and explicitly authorized live/auth window"
+  ],
+  "noActions": [
+    "Production operation",
+    "Live provider/database/application call",
+    "Credential/auth change",
+    "Config change",
+    "Git index/ref change",
+    "Push",
+    "Deployment"
+  ]
+}

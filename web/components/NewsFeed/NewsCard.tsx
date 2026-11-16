@@ -1,4 +1,4 @@
-import { useId, type CSSProperties } from "react";
+import { useEffect, useId, useState, type CSSProperties } from "react";
 import Image from "next/legacy/image";
 
 import ExternalNewsLink from "components/common/ExternalNewsLink";
@@ -7,6 +7,7 @@ import { readNewsLineupPresentation } from "lib/newsLineupPresentation";
 import styles from "./NewsCard.module.scss";
 
 import {
+  formatNewsClaimLabel,
   formatNewsFeedLabel,
   getPublicNewsItemDetails,
   getPublicNewsClaimPresentation,
@@ -19,7 +20,7 @@ import {
 import { isLineupNewsCategory } from "lib/newsLineupCard";
 
 // The reader's unresolved reason is an internal contract label and cannot say which check failed.
-const UNVERIFIED_DETAILS_COPY = "We couldn't verify the player details in this report.";
+const UNVERIFIED_DETAILS_COPY = "Player details not verified";
 
 type NewsCardProps = {
   item: Pick<
@@ -64,11 +65,38 @@ const RAIL_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 });
 
+const SHOW_PIPELINE_TIMES = process.env.NODE_ENV !== "production";
+
 function formatDate(value: string | null | undefined): string {
   if (!value) return "Unavailable";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Unavailable";
   return NEWS_TIMESTAMP_FORMATTER.format(date);
+}
+
+const NEWS_DAY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/New_York",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/**
+ * Fan-facing post time: "18m ago" / "3h ago" for posts from today (New York
+ * date), the rail date otherwise (TJ, 2026-11-15). `now` is null until the
+ * card mounts, so server and first client render agree on the absolute time.
+ */
+export function formatNewsFanTime(value: string | null | undefined, now: number | null): string {
+  const absolute = formatRailDate(value);
+  if (!value || now == null) return absolute;
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return absolute;
+  const minutes = Math.floor((now - time) / 60000);
+  if (minutes < 0) return absolute;
+  if (NEWS_DAY_FORMATTER.format(time) !== NEWS_DAY_FORMATTER.format(now)) return absolute;
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  return `${Math.floor(minutes / 60)}h ago`;
 }
 
 function formatRailDate(value: string | null | undefined): string {
@@ -180,6 +208,12 @@ export default function NewsCard({
   onLineupGoalieSlotClick,
 }: NewsCardProps) {
   const generatedDetailsId = useId().replace(/:/g, "");
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const team = getNewsItemTeamColors(item.team_abbreviation);
   const publishedAt = item.published_at;
   const publicSource = getPublicNewsSourceAttribution({
@@ -194,11 +228,23 @@ export default function NewsCard({
     ? readNewsLineupPresentation({ metadata: item.metadata, subcategory: item.subcategory })
     : null;
   const presentation = getPublicNewsClaimPresentation(item);
-  const categoryLabel = lineup ? formatNewsFeedLabel(item.category) : "Source report";
-  const subcategoryLabel = lineup && item.subcategory ? formatNewsFeedLabel(item.subcategory) : null;
+  // Only lineup cards carry a category chip; source reports used to repeat
+  // "report" up to three times per card (TJ, 2026-11-15).
+  // Lineup cards: one title ("FLA practice lines") instead of a
+  // "LINE COMBINATION · PRACTICE LINES" chip pair, a "line combination
+  // update" headline and a "Practice snapshot" line (TJ, 2026-11-15).
+  const categoryLabel = null;
+  const subcategoryLabel = null;
   const details = getPublicNewsItemDetails(lineup ? item : { ...item, metadata: null, headline: "Source passage unavailable" });
-  const originalHeadline = lineup ? sanitizePublicNewsText(item.headline) : presentation.headline;
+  const claimedPlayers = [...new Set(presentation.claims.map((claim) => claim.playerName))];
+  const lineupTitle = lineup
+    ? `${team.abbreviation ?? item.team_abbreviation ?? "NHL"} ${
+        item.subcategory ? normalizeNewsCategory(item.subcategory).toLowerCase() : "lines"
+      }`
+    : null;
+  const originalHeadline = lineupTitle ?? (claimedPlayers.join(", ") || team.name);
   const teamLabel = team.abbreviation ?? item.team_abbreviation ?? "NHL";
+  const HeadlineTag = rail ? "h3" : "h2";
   const railHeadline = details || originalHeadline || "News update";
   const railDetail = lineup ?
     [
@@ -242,13 +288,20 @@ export default function NewsCard({
         className={styles.content}
       >
         <div className={styles.meta}>
-          <span className={styles.metaStrong}>
-            {teamLabel}
-          </span>
-          <span className={styles.mobileMetaDivider} aria-hidden="true">
-            ·
-          </span>
-          <span className={styles.categoryLabel}>{categoryLabel}</span>
+          {/* Lineup titles already start with the team ("SJS practice lines"). */}
+          {!lineupTitle ? (
+            <span className={styles.metaStrong}>
+              {teamLabel}
+            </span>
+          ) : null}
+          {categoryLabel ? (
+            <span className={styles.mobileMetaDivider} aria-hidden="true">
+              ·
+            </span>
+          ) : null}
+          {categoryLabel ? (
+            <span className={styles.categoryLabel}>{categoryLabel}</span>
+          ) : null}
           {subcategoryLabel ? (
             <span className={styles.subcategoryLabel}>{subcategoryLabel}</span>
           ) : null}
@@ -257,30 +310,34 @@ export default function NewsCard({
           ) : null}
         </div>
 
-        <h2
+        {/* Rail cards sit under the homepage's "Latest News" h2. */}
+        <HeadlineTag
           className={styles.headline}
-          aria-label={rail ? railHeadline : undefined}
+          aria-label={rail ? (lineup ? originalHeadline : railHeadline) : undefined}
         >
           {rail ? (
-            <>
-              <span className={styles.railDesktopHeadline} aria-hidden="true">
-                {originalHeadline}
-              </span>
-              <span className={styles.railMobileHeadline} aria-hidden="true">
-                {railHeadline}
-              </span>
-            </>
+            lineup ? (
+              <span aria-hidden="true">{originalHeadline}</span>
+            ) : (
+              // The post itself is the headline on every width; no second
+              // copy in the blurb.
+              <span aria-hidden="true">{railHeadline}</span>
+            )
           ) : (
             originalHeadline
           )}
-        </h2>
+        </HeadlineTag>
 
         {lineup ? (
-          <NewsLineupGrid
-            lineup={lineup}
-            mini={rail}
-            onGoalieSlotClick={onLineupGoalieSlotClick}
-          />
+          // Phones fold the line boxes behind the card's + (TJ, 2026-11-15).
+          <div className={styles.lineupBody}>
+            <NewsLineupGrid
+              lineup={lineup}
+              hideContext
+              mini={rail}
+              onGoalieSlotClick={onLineupGoalieSlotClick}
+            />
+          </div>
         ) : null}
 
         {!lineup && presentation.claims.length > 0 ? (
@@ -290,14 +347,25 @@ export default function NewsCard({
                 key={`${claim.playerId}-${index}`}
                 className={styles.playerChip}
               >
-                {claim.playerName} · {formatNewsFeedLabel(claim.state)} report{claim.observation ? ` · ${claim.observation}` : ""}
+                {/* Only claims that passed the reader's check render here. */}
+                <svg className={styles.verifiedTick} viewBox="0 0 24 24" width="10" height="10"
+                  fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"
+                  strokeLinejoin="round" aria-hidden="true" focusable="false">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                {claim.playerName} · {formatNewsClaimLabel(claim)}
+                <span className={styles.visuallyHidden}> (verified)</span>
               </span>
             ))}
           </div>
         ) : null}
 
-        {!lineup || !lineup.rows.length ? <p className={styles.blurb}>{details}</p> : null}
-        {!lineup && presentation.unresolvedReason ? <p>{UNVERIFIED_DETAILS_COPY}</p> : null}
+        {(!lineup || !lineup.rows.length) && !(rail && !lineup) ? (
+          <p className={styles.blurb}>{details}</p>
+        ) : null}
+        {!lineup && presentation.unresolvedReason ? (
+          <p className={styles.unverifiedNote}>{UNVERIFIED_DETAILS_COPY}</p>
+        ) : null}
 
         {hasDisclosure ? (
           railDetail ? (
@@ -308,13 +376,14 @@ export default function NewsCard({
         ) : null}
 
         <div className={styles.footer}>
-          <span className={styles.desktopTimestamp}>
-            Published {formatDate(publishedAt)}
-          </span>
-          <span className={styles.mobileTimestamp}>
-            Published {formatRailDate(publishedAt)}
-          </span>
-          <span>Observed {formatRailDate(item.observed_at)}</span>
+          {/* One time for fans: when the post was seen. The pipeline's
+              published/observed pair is debug detail (dev only). */}
+          <span>{formatNewsFanTime(item.observed_at ?? publishedAt, now)}</span>
+          {SHOW_PIPELINE_TIMES ? (
+            <span className={styles.devTimestamps}>
+              Published {formatDate(publishedAt)} · Observed {formatRailDate(item.observed_at)}
+            </span>
+          ) : null}
           <span>{sourceAttribution || "Source unavailable"}</span>
           {publicSource.url ? (
             <ExternalNewsLink
@@ -326,18 +395,20 @@ export default function NewsCard({
         </div>
       </div>
 
-      <aside className={styles.teamPane}>
+      {/* A named image, not <aside>: a logo pane inside each card isn't a
+          landmark, and the full team name reads better than "CGY logo". */}
+      <div className={styles.teamPane} role="img" aria-label={team.name}>
         <div className={styles.teamLogo}>
           <Image
             src={team.logoUrl}
-            alt={`${teamLabel} logo`}
+            alt=""
             width={64}
             height={64}
             objectFit="contain"
           />
         </div>
         {!rail ? <div className={styles.teamLabel}>{team.shortName}</div> : null}
-      </aside>
+      </div>
 
       {hasDisclosure ? (
         <button

@@ -1,0 +1,59 @@
+{
+  "at": "2026-11-12T19:27:40.504502+00:00",
+  "status": "LOCAL ONLY; not deployed; transport replacement archived and excluded",
+  "sourceHashes": {
+    "web/pages/api/v1/webhooks/on-new-line-combo.ts": "dd3a7255fc37c81124f4cc1416d8db89d8d12b92d3101ccb706d7f5653243de8",
+    "web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts": "c822f18313318d2f9ff5a75d2d7ea94ec774851310fc70ed872b7fdd4fb0122e"
+  },
+  "tests": {
+    "result": "passed",
+    "count": 18,
+    "guardCases": 5,
+    "existingDiagnosticCases": 13,
+    "log": "guard-tests.log",
+    "exitCode": 0
+  },
+  "lint": {
+    "result": "passed",
+    "scope": [
+      "web/pages/api/v1/webhooks/on-new-line-combo.ts",
+      "web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts"
+    ],
+    "log": "guard-lint.log",
+    "exitCode": 0,
+    "executionReceipt": "exec session 48735 completed with exit_code 0; retained guard-lint.log"
+  },
+  "typecheck": {
+    "result": "passed",
+    "scope": "tsconfig.guard.json",
+    "log": "guard-typecheck.log",
+    "exitCode": 0,
+    "executionReceipt": "exec session 37901 completed with exit_code 0; no output, retained guard-typecheck.log"
+  },
+  "liveActions": 0,
+  "databaseQueries": 0,
+  "databaseWrites": 0,
+  "builds": 0,
+  "deployments": 0,
+  "archiveEightPinsVerified": true,
+  "limitations": [
+    "SQL source review and bounded correction re-review passed; PostgreSQL parsing/execution and coordinated live catalog evidence remain unverified.",
+    "No deployed handler, trigger state or in-flight/queued request behavior verified.",
+    "Auth wrapper retained; fixtures verify cron authorization and missing-header rejection, not live auth."
+  ],
+  "candidateBaseSha": "18c0be1a89a10471ff3bc184996b1a4c07294659",
+  "patchSha256": "22a55c7fe8b41b20f4b0091039faf276b229d5e987f726f8fe9ce10720ab667c",
+  "guardReverseApplyCheck": "passed",
+  "baselineRedactionAndManifestsMatchHead": true,
+  "planFiles": {
+    "TRIGGER-PLAN.md": "252d12d7dd62e5b44c72b78e49f50305a7ff02ee9387b3f5c562af2f167bcba3",
+    "trigger-preflight.sql": "44a3e283e4d479a2c266117a3221c0dd02091478b137a9a420b60126f63a4834",
+    "trigger-set-mode-plan.sql": "5fd8e137a0d27432f1b07afadef65677c8934631571abbf48d580b65a8cdfa18"
+  },
+  "independentReview": {
+    "status": "passed after bounded correction re-review; no remaining local blockers",
+    "path": "QUARANTINE-REVIEW.md",
+    "sha256": "6b7bbe0d816943fbd3ebdb65a19756f00451d5bb7bb690b0c7f3931c04a4ade4",
+    "sqlExecution": "not run; source review only"
+  }
+}

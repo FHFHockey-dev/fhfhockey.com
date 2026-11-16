@@ -1,0 +1,76 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "missingDenominatorPdo": {
+    "actual": 1.1,
+    "expectedPairedComponents": 1,
+    "historicalActual": 1.1
+  },
+  "historicalObservationCount": {
+    "season": 2,
+    "threeYear": 1,
+    "career": 1,
+    "expectedAll": 2
+  },
+  "diagnosticMembership": {
+    "actualGameIds": [
+      101,
+      102,
+      103,
+      4,
+      5
+    ],
+    "expectedGameIds": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "diagnosticAppearances": 2,
+    "expectedAppearances": 5,
+    "canonicalRatio": 1,
+    "filteredAppearanceLast5": 1,
+    "unfilteredAppearanceLast5": 5
+  },
+  "diagnosticPpTrace": {
+    "servedClock": "unavailable",
+    "chosen": {
+      "source": "builder",
+      "playerPpToi": 60,
+      "share": 0.5,
+      "teamPpToiInferred": 120
+    }
+  },
+  "focusedIdentity": {
+    "stored": 4,
+    "recomputed": 5
+  },
+  "sources": [
+    {
+      "path": "web/lib/supabase/Upserts/rollingMetricAggregation.ts",
+      "sha256": "e9c6e24ed0c827e417d928360380db0059744e957cb14890a6d785252860fae8"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingWindowContract.ts",
+      "sha256": "f5b7fd6d0558ecce7a5df9aa393783be28fdbe145c7924234ece51bdb61b4793"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "sha256": "7c0c637d2fe5dd375da7ee9acd1df7fb697aa009fe2628d277de4b4b51b2a1cf"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts",
+      "sha256": "80bd8f43c7787c8d0b3e490bf9289eb49fb8fe4e5b4332514b01cf0d733891e3"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingRatioMetricSpecs.ts",
+      "sha256": "0e8318d4cae5a46b90997cbdf92acb655b8997bf85be54012873b2e65014f71f"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "sha256": "a204c49c32f4366cb61b0787bd14ea83818e2ecccfe0fb96d076be9ffe6b2818"
+    }
+  ],
+  "limits": "Pure frozen aggregation/history modules plus exact AST-extracted pure validation declarations, no import rewrites in application files. No remote dependencies, application environment, database, provider, Vitest, server or browser. Diagnostic caller source inspected; public async payload builder not executed."
+}

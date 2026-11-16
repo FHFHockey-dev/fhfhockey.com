@@ -1,0 +1,64 @@
+{
+  "pin": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "hashes": {
+    "web/components/HomePage/homepageWinPair.ts": "ba38c12554f1e35255608528185fa0a9cab84a097ee8bfbfb9ae1b1c3c20453c",
+    "web/lib/projections/derived/penaltyShotSplit.ts": "ab053a758096f5e69913e0ae0722d38d4c273866a79cdc36acd0b7696b9bc48d",
+    "web/lib/homepageGameAnalytics.ts": "54b86038a7d83c7e624d519c8b66a84635bb6416c58a2d04ad5cbcd32d88d98f",
+    "web/lib/homepagePulse.ts": "33d0d6542d41bba356488bc335527a3bc3b7792cea83c75dffb98e226dbd475c",
+    "web/lib/games/gameFinality.ts": "872f7ffd52ca712fa72b2e8933f9bd753213e11a9faf769056922ba06674560c"
+  },
+  "checks": {
+    "mixedScoreMetadata": {
+      "gameId": 1,
+      "homeProjectedGoals": 3,
+      "awayProjectedGoals": 2,
+      "projectedGoalsComputedAt": "2026-11-14T22:00:00Z",
+      "projectedGoalsFreshness": "fresh",
+      "projectedGoalsModelName": "forge",
+      "projectedGoalsModelVersion": "market-context-v1"
+    },
+    "unrelatedStaleScoreHidesFreshValues": {
+      "gameId": 1,
+      "homeProjectedGoals": 3,
+      "awayProjectedGoals": 2,
+      "projectedGoalsComputedAt": "2026-11-10T22:00:00Z",
+      "projectedGoalsFreshness": "stale",
+      "projectedGoalsModelName": "forge",
+      "projectedGoalsModelVersion": "market-context-v1"
+    },
+    "unknownStartPulse": {
+      "actual": [
+        {
+          "timestamp": "2026-11-14T23:30:00.000Z",
+          "value": 0.30000000000000004
+        },
+        {
+          "timestamp": "2026-11-14T23:45:00.000Z",
+          "value": 0.20000000000000007
+        }
+      ],
+      "actualStartFixtureTruth": "2026-11-14T23:00:00Z",
+      "knownStartResult": []
+    },
+    "preserved": {
+      "splitSog": {
+        "gameId": 1,
+        "homeShotsOnGoal": 25,
+        "awayShotsOnGoal": 24,
+        "shotsUpdatedAt": "2026-11-15T01:00:00Z"
+      },
+      "partialPairCount": 0,
+      "postponedFinality": {
+        "isFinal": false,
+        "basis": "game_state",
+        "reason": "not_played_schedule_state"
+      }
+    }
+  },
+  "boundaries": [
+    "Exact pinned pure modules with import/re-export declarations removed; no app imports",
+    "Synthetic source records; no model fitting or React execution",
+    "No database/provider/page/network/server/write/build/release",
+    "Actual game start is fixture truth withheld from pulse input to reproduce unavailable timing"
+  ]
+}

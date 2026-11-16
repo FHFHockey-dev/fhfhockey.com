@@ -1,0 +1,40 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "findings": [
+    {
+      "id": "AFULL-TRENDSP1-01",
+      "input": {
+        "pts": null,
+        "sog": null
+      },
+      "output": {
+        "pts": 0,
+        "sog": 0,
+        "display": "0.00"
+      }
+    },
+    {
+      "id": "AFULL-TRENDSP1-02",
+      "severity": "P2 latent compatibility path; canonical legacy producer requires complete scoring line",
+      "input": {
+        "goals": null,
+        "assists": 1,
+        "fantasyPoints": 8
+      },
+      "outputHockeyPts": 8,
+      "knownGoals2Control": 3
+    }
+  ],
+  "controls": {
+    "goalieUnknownAndZero": "remain distinct",
+    "leapDate": "invalid rejected, valid retained",
+    "legend": "F. Player",
+    "chart": "sorted GP, missing peer point absent"
+  },
+  "source": {
+    "path": "web/pages/trends/index.tsx",
+    "sha256": "9a7b74c24e523adde4aea8237fd8c9ebc97636f6c41dc2b2b6fe81e0f56e7a6f"
+  },
+  "boundary": "Exact frozen memo and pure helper bodies, finite nullable API-shape inputs; no real API/source occurrence, React/browser/chart render, provider, DB, account or suite."
+}

@@ -1,0 +1,1 @@
+select game_date, count(*) n, count(distinct player_id) players, to_char(max(updated_at),'MM-DD HH24:MI') upd from rolling_player_game_metrics where season=20262027 and strength_state='ev' and game_date >= '2026-11-11' group by 1 order by 1

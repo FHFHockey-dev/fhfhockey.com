@@ -1,0 +1,31 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "featuredWrongDate": {
+    "sourceCommence": "2026-11-16T00:00:00Z",
+    "localDate": "2026-11-14",
+    "writtenGameId": 2026020001,
+    "matchedEvent": "future-event"
+  },
+  "nhlWrongDate": {
+    "sourceDate": "2026-11-16",
+    "sourceGameId": 2026020099,
+    "writtenGameId": 2026020001
+  },
+  "freshness": {
+    "marketAt": "2026-11-14T12:00:00Z",
+    "bookAt": "2026-11-14T14:00:00Z",
+    "expiry": "2026-11-14T14:15:00.000Z",
+    "checkedAt": "2026-11-14T14:05:00.000Z",
+    "accepted": true
+  },
+  "missingClock": {
+    "observedAt": "2026-11-16T00:00:00Z",
+    "expiry": "2026-11-16T00:15:00.000Z"
+  },
+  "decimalControl": {
+    "priceAmerican": null,
+    "implied": 0.5714285714285714
+  },
+  "limits": "Full frozen pure ingestion with exact pure price parser/devig/display/team catalog and extracted reader freshness predicate. Synthetic input only. No route execution, provider, database, application import or Vitest."
+}

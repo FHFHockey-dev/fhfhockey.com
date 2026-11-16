@@ -1,0 +1,59 @@
+{
+ "version": "fhfh.blsh.preapproval-runtime-snapshot.v1",
+ "takenAtUTC": "2026-11-16T01:34:28.097Z",
+ "node": {
+  "version": "v22.23.4",
+  "execPath": "/usr/local/bin/node",
+  "execPathSHA256": "daa77e22e1b8778361b392461e9921a6d292d0382ebf4ae872a0081f02f01fef",
+  "execArgv": [
+   "--require",
+   "./node_modules/ts-node/register/transpile-only"
+  ]
+ },
+ "versions": {
+  "openssl": "3.5.9",
+  "nodeBundledUndici": "6.29.1",
+  "npmUndiciResolvedFromCheerio": {
+   "path": "node_modules/undici/package.json",
+   "version": "7.29.0"
+  },
+  "v8": "12.4.254.21-node.57",
+  "uv": "1.51.0"
+ },
+ "tls": {
+  "defaultMinVersion": "TLSv1.2",
+  "defaultMaxVersion": "TLSv1.3",
+  "defaultECDHCurve": "auto",
+  "caCounts": {
+   "default": 116,
+   "bundled": 116,
+   "system": 0,
+   "extra": 0
+  },
+  "rootCertificatesSHA256": "5aab51f94c9a1ad6b5185229b65ca308fcae0e6fdb31bdf6f34278e099fb024c",
+  "defaultCACertificatesSHA256": "5aab51f94c9a1ad6b5185229b65ca308fcae0e6fdb31bdf6f34278e099fb024c"
+ },
+ "supabaseOrigin": "pinned",
+ "envKeyNames": [
+  "DISABLE_V8_COMPILE_CACHE",
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NODE_PATH",
+  "PATH",
+  "TMPDIR",
+  "TS_NODE_COMPILER_OPTIONS",
+  "__CF_USER_TEXT_ENCODING"
+ ],
+ "overrides": {
+  "overrideEnvKeysPresent": [],
+  "dyldKeysPresent": [],
+  "lifecycleKeyPresent": false,
+  "execArgvIsCaptureExact": true,
+  "defaultCAEqualsBundled": true,
+  "defaultRejectUnauthorized": true,
+  "undiciGlobalDispatcherPreinstalled": false
+ },
+ "noOverrides": true,
+ "statement": "No NODE_TLS_REJECT_UNAUTHORIZED, CA (NODE_EXTRA_CA_CERTS, NODE_USE_SYSTEM_CA, SSL_CERT_FILE/DIR), proxy, OPENSSL_CONF, NODE_OPTIONS or preload override is present; execArgv is exactly the capture's; the default CA store equals Node's bundled store; certificate and hostname verification are at Node's defaults; no undici dispatcher is preinstalled.",
+ "boundary": "Defaults and the absence of overrides before the run only; never TLSVerified provenance (RUNTIME-RECEIPT-PLAN §4).",
+ "valuesRecorded": false
+}

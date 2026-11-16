@@ -1,0 +1,48 @@
+{
+  "source": "Vercel connector deployment metadata, authenticated dashboard read-only settings, candidate repository vercel.json files",
+  "productionSha": "631a00c1988dc7acc294573bec9ad8f08c9e3e12",
+  "releaseCandidate": "866b90bc46a169b42cbc3c54a7d64b0daf764121",
+  "expected": "4 deployment entries: 1 web build, 3 ignored/canceled entries; no previews, no configuration changes",
+  "projects": [
+    {
+      "name": "fhfhockey",
+      "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "root": "web",
+      "productionBranch": "master",
+      "ignoreRule": "web/vercel.json compares web and cron-schedule.md with previous SHA; build on changes",
+      "expected": "build"
+    },
+    {
+      "name": "cms-fhfhockey",
+      "id": "prj_gG8SHX7C5GbCDJoind7trh9bj6dK",
+      "root": "cms",
+      "productionBranch": "master",
+      "ignoreRule": "cms/vercel.json compares cms directory only; fallback HEAD~1",
+      "expected": "skip, no directory changes"
+    },
+    {
+      "name": "functions-fhfhockey",
+      "id": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+      "root": "functions",
+      "productionBranch": "master",
+      "ignoreRule": "functions/vercel.json compares functions directory only; fallback HEAD~1",
+      "expected": "skip, no directory changes"
+    },
+    {
+      "name": "fhfhockey.com",
+      "id": "prj_3X6goi9DxqUnD0sHChwEwaRakquG",
+      "root": "",
+      "productionBranch": "master",
+      "dashboardBehavior": "Automatic; no production override displayed",
+      "ignoreRule": "candidate root vercel.json: exit 0; latest Git entry canceled",
+      "expected": "skip"
+    }
+  ],
+  "unlinkedProjects": [
+    "web",
+    "functions"
+  ],
+  "actions": "Read only. No build, deployment, settings change or application request.",
+  "recordedAt": "2026-11-12T17:41:45.626834+00:00",
+  "existingCandidateDeployments": 0
+}

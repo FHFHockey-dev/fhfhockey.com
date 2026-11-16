@@ -1,0 +1,112 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "receipts": [
+    {
+      "path": "web/lib/fantasy-projections/contracts.ts",
+      "sha256": "17f0d7b19556b0605c602884515d361209bcfcda00673fd0d711ac6a537cfc6c"
+    },
+    {
+      "path": "web/lib/fantasy-projections/properScore.ts",
+      "sha256": "93c68f72227841e2e748c88c595fa2441fbcd58d5baf85d3c56f90bbb8c289a2"
+    },
+    {
+      "path": "web/lib/fantasy-projections/settlement.ts",
+      "sha256": "bb771d6302aab6f5ec7c6854d350336ad49434ba6c82ca121f8c64e1c375b7fd"
+    },
+    {
+      "path": "web/lib/fantasy-projections/queries.ts",
+      "sha256": "b84d28382860ed900bf66a48f94f083da32b9a549809dcd8bf5875ead9efb8ac"
+    }
+  ],
+  "edited": {
+    "modelLosses": {
+      "GOALS": {
+        "metrics": {
+          "actual": 11,
+          "forecast": 1,
+          "squaredError": 100,
+          "absoluteError": 10,
+          "interval80Available": true,
+          "interval80Covered": false,
+          "intervalWidth": 2
+        },
+        "baselineMetrics": {
+          "forecast": 1,
+          "squaredError": 100,
+          "absoluteError": 10
+        }
+      }
+    },
+    "publishedLosses": {
+      "GOALS": {
+        "metrics": {
+          "actual": 11,
+          "forecast": 11,
+          "squaredError": 0,
+          "absoluteError": 0,
+          "interval80Available": true,
+          "interval80Covered": false,
+          "intervalWidth": 2
+        },
+        "baselineMetrics": {
+          "forecast": 1,
+          "squaredError": 100,
+          "absoluteError": 10
+        }
+      }
+    },
+    "unscoredTargets": {}
+  },
+  "unknown": {
+    "modelLosses": {},
+    "publishedLosses": {},
+    "unscoredTargets": {
+      "GOALS": "outcome_unknown"
+    }
+  },
+  "unchanged": {
+    "modelLosses": {
+      "GOALS": {
+        "metrics": {
+          "actual": 1,
+          "forecast": 1,
+          "squaredError": 0,
+          "absoluteError": 0,
+          "interval80Available": true,
+          "interval80Covered": true,
+          "intervalWidth": 2
+        },
+        "baselineMetrics": {
+          "forecast": 1,
+          "squaredError": 0,
+          "absoluteError": 0
+        }
+      }
+    },
+    "publishedLosses": {
+      "GOALS": {
+        "metrics": {
+          "actual": 1,
+          "forecast": 1,
+          "squaredError": 0,
+          "absoluteError": 0,
+          "interval80Available": true,
+          "interval80Covered": true,
+          "intervalWidth": 2
+        },
+        "baselineMetrics": {
+          "forecast": 1,
+          "squaredError": 0,
+          "absoluteError": 0
+        }
+      }
+    },
+    "unscoredTargets": {}
+  },
+  "missingRating": 0,
+  "missingDeploymentConfidence": 0,
+  "knownZeroRating": 0,
+  "knownZeroDeploymentConfidence": 0,
+  "unknownGoalPreserved": null,
+  "checks": "all assertions passed; no app imports/network/runtime clients"
+}

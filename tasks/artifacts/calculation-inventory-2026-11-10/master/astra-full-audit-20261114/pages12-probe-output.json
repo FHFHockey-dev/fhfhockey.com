@@ -1,0 +1,200 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "goalie": {
+    "hints": {
+      "sourceDate": "2026-11-14",
+      "projectionDate": "2026-11-13",
+      "sampleCount30d": 0,
+      "starterBrier": 0,
+      "winBrier": 0,
+      "shutoutBrier": 0,
+      "savesMae30d": 0,
+      "goalsAgainstMae30d": 0,
+      "savesIntervalHitRate": 0,
+      "goalsAllowedIntervalHitRate": 0
+    },
+    "explicitNullTeamWin": 0,
+    "undefinedControl": null
+  },
+  "players": {
+    "historicalRequest": "2026-10-01",
+    "currentRosterExcludesIssuedPlayer": {
+      "rows": 0,
+      "state": "empty",
+      "runId": "synthetic-proven-run"
+    },
+    "matchingRosterControl": 1,
+    "emptyRosterControl": 1,
+    "emitted": {
+      "player_id": 1,
+      "player_name": "Synthetic Former Player",
+      "team_name": "Synthetic Team",
+      "teamIdentity": {
+        "teamId": 10,
+        "seasonId": 20262027
+      },
+      "position": "C",
+      "g": 2,
+      "a": 2,
+      "pts": 4,
+      "ppp": 2,
+      "sog": 3,
+      "hit": null,
+      "blk": null,
+      "pk_status": null,
+      "availability": null,
+      "time_away": null,
+      "line_conditioning": null,
+      "line_label": null,
+      "fw": 0,
+      "fl": 0,
+      "uncertainty": {},
+      "degradedProjectionContext": null,
+      "modelMetadata": {
+        "modelVersion": null,
+        "scenarioCount": null
+      },
+      "confidenceDrivers": {
+        "role": {
+          "evenStrength": null,
+          "unitTier": null,
+          "source": null,
+          "continuityShare": null,
+          "topScenarioProbability": null
+        },
+        "powerPlay": {
+          "allocatedShare": null,
+          "teamTargetSeconds": null
+        },
+        "matchup": {
+          "opponentGoalieGoalRateMultiplier": null,
+          "opponentStarterCertainty": null,
+          "opponentDefenseEdge": null
+        },
+        "rest": {
+          "teamRestDays": null,
+          "opponentRestDays": null,
+          "restDelta": null
+        },
+        "trend": {
+          "effectState": null,
+          "recencyClass": null,
+          "pointsMultiplier": null
+        }
+      },
+      "projectionRange": {
+        "points": {
+          "floor": null,
+          "typical": null,
+          "ceiling": null
+        },
+        "labels": {
+          "floor": "P10: roughly one outcome in ten is expected below this value.",
+          "typical": "P50: the model's median outcome, not a guarantee.",
+          "ceiling": "P90: roughly one outcome in ten is expected above this value."
+        }
+      }
+    },
+    "expectedPkBasis": "pk_unmodelled",
+    "queries": [
+      {
+        "table": "forge_player_projections",
+        "filters": [
+          [
+            "run_id",
+            "synthetic-proven-run"
+          ],
+          [
+            "horizon_games",
+            1
+          ]
+        ]
+      },
+      {
+        "table": "rosters",
+        "filters": [
+          [
+            "seasonId",
+            20262027
+          ],
+          [
+            "is_current",
+            true
+          ]
+        ]
+      },
+      {
+        "table": "forge_player_projections",
+        "filters": [
+          [
+            "run_id",
+            "synthetic-proven-run"
+          ],
+          [
+            "horizon_games",
+            1
+          ]
+        ]
+      },
+      {
+        "table": "rosters",
+        "filters": [
+          [
+            "seasonId",
+            20262027
+          ],
+          [
+            "is_current",
+            true
+          ]
+        ]
+      },
+      {
+        "table": "forge_player_projections",
+        "filters": [
+          [
+            "run_id",
+            "synthetic-proven-run"
+          ],
+          [
+            "horizon_games",
+            1
+          ]
+        ]
+      },
+      {
+        "table": "rosters",
+        "filters": [
+          [
+            "seasonId",
+            20262027
+          ],
+          [
+            "is_current",
+            true
+          ]
+        ]
+      }
+    ]
+  },
+  "sources": [
+    {
+      "path": "web/pages/api/v1/forge/goalies.ts",
+      "sha256": "1ecbb56479592121a03bf417b1fbe434a5b8f3b621109eda6bafec81a9622bf7"
+    },
+    {
+      "path": "web/lib/projections/forgeSkaterContext.ts",
+      "sha256": "76a38d137313d933e90154a91d179b33b8c18dbfb1b4c4b174fe3fea5690d06f"
+    },
+    {
+      "path": "web/lib/projections/modeledHeadTotals.ts",
+      "sha256": "218a996f4cda8caf04a130aeb89a1badd880866ef4300ad77b3299cfba7c25f9"
+    },
+    {
+      "path": "web/pages/api/v1/forge/players.ts",
+      "sha256": "3afa390dea6d6c8084fb10d0e043aa7f597576409b3b0099a6668d0086fede0b"
+    }
+  ],
+  "boundary": "Exact frozen goalie adapter and full skater reader without imports; real pure context/totals helpers. Finite query/proof/team/freshness doubles only. No database, HTTP, provider, environment values, runtime model scoring or actual app imports."
+}

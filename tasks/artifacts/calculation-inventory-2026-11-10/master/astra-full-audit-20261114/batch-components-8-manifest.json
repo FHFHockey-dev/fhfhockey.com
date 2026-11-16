@@ -1,0 +1,728 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "worker": "/root/readfirst_lanes",
+  "verifiedRuntime": "gpt-6-astra/high (verified earlier in task)",
+  "scope": [
+    {
+      "path": "web/components/LineCombinations/LineShareBars.test.tsx",
+      "local": "00-LineShareBars.test.tsx",
+      "bytes": 5405,
+      "lines": 172,
+      "sha256": "fff285d14ffc6daca83f2b4aef9afe036306709d83348c2d426413d51d414fdb",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          172
+        ]
+      ],
+      "unread": [],
+      "functions": 12,
+      "values": 0,
+      "tests": 4
+    },
+    {
+      "path": "web/components/LineCombinations/LineShareBars.tsx",
+      "local": "01-LineShareBars.tsx",
+      "bytes": 5960,
+      "lines": 163,
+      "sha256": "c0a5c5385bdf4d105d110e4026f01c9baca7a20882be409713d0f9911e8d40b6",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          163
+        ]
+      ],
+      "unread": [],
+      "functions": 16,
+      "values": 12,
+      "tests": 0
+    },
+    {
+      "path": "web/components/LineCombinations/PlayerCard/GoalieCard.test.tsx",
+      "local": "02-GoalieCard.test.tsx",
+      "bytes": 1718,
+      "lines": 50,
+      "sha256": "bf4b2162b02a7ec3a51f0d5b0d9d36b6c64142313db4e7f03ec66c72d47c0002",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          50
+        ]
+      ],
+      "unread": [],
+      "functions": 5,
+      "values": 3,
+      "tests": 2
+    },
+    {
+      "path": "web/components/LineCombinations/PlayerCard/GoalieCard.tsx",
+      "local": "03-GoalieCard.tsx",
+      "bytes": 5080,
+      "lines": 147,
+      "sha256": "bc08f92c355f5d155262610adb429164cc1cd33a670cc4741e68c562e3a822f1",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          147
+        ]
+      ],
+      "unread": [],
+      "functions": 7,
+      "values": 9,
+      "tests": 0
+    },
+    {
+      "path": "web/components/LineCombinations/ProjectedLineups.test.tsx",
+      "local": "04-ProjectedLineups.test.tsx",
+      "bytes": 1563,
+      "lines": 26,
+      "sha256": "8bc65c3c98ff887ba71a4ddecaceb697c671de529066e05bbbb04b0590a470a1",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          26
+        ]
+      ],
+      "unread": [],
+      "functions": 6,
+      "values": 1,
+      "tests": 3
+    },
+    {
+      "path": "web/components/LineCombinations/ProjectedLineups.tsx",
+      "local": "05-ProjectedLineups.tsx",
+      "bytes": 6723,
+      "lines": 86,
+      "sha256": "1c780998a158608059e08d6523f4adfba341ac2242891895f0ea0499edcadef5",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          86
+        ]
+      ],
+      "unread": [],
+      "functions": 16,
+      "values": 11,
+      "tests": 0
+    },
+    {
+      "path": "web/components/LineCombinations/__test__/fiveOnFiveUnits.test.ts",
+      "local": "06-fiveOnFiveUnits.test.ts",
+      "bytes": 3662,
+      "lines": 117,
+      "sha256": "47c9833d1600195f62861fb10a5cb97f0ce8efdd4f6cdfe73b2fdb9dff6274ab",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          117
+        ]
+      ],
+      "unread": [],
+      "functions": 17,
+      "values": 7,
+      "tests": 7
+    },
+    {
+      "path": "web/components/LineCombinations/__test__/utilities.test.ts",
+      "local": "07-utilities.test.ts",
+      "bytes": 25044,
+      "lines": 571,
+      "sha256": "799aa404a6ba786e380dbeddc2e077e7bd78d9cd398c4919a556a7bc156e76f0",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          571
+        ]
+      ],
+      "unread": [],
+      "functions": 83,
+      "values": 54,
+      "tests": 20
+    },
+    {
+      "path": "web/components/LineCombinations/fiveOnFiveUnits.ts",
+      "local": "08-fiveOnFiveUnits.ts",
+      "bytes": 5217,
+      "lines": 139,
+      "sha256": "90660e4c2c0eef1f66bc37ce2f01715cf1ccd28933aa10e9c7fc3c29abd4983b",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          139
+        ]
+      ],
+      "unread": [],
+      "functions": 11,
+      "values": 18,
+      "tests": 0
+    },
+    {
+      "path": "web/components/LineCombinations/utilities.ts",
+      "local": "09-utilities.ts",
+      "bytes": 30351,
+      "lines": 923,
+      "sha256": "801b98a3d95849488d841ac769a8627f6fd882b65e86a109076f3640e9ac547f",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          923
+        ]
+      ],
+      "unread": [],
+      "functions": 69,
+      "values": 101,
+      "tests": 0
+    },
+    {
+      "path": "web/components/LinemateMatrix/index.test.tsx",
+      "local": "10-index.test.tsx",
+      "bytes": 12628,
+      "lines": 290,
+      "sha256": "ae126b86593e14c87aaea2998a004c5d756164f46b7baf599b7e75317cca0374",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          290
+        ]
+      ],
+      "unread": [],
+      "functions": 37,
+      "values": 28,
+      "tests": 15
+    },
+    {
+      "path": "web/components/LinemateMatrix/index.tsx",
+      "local": "11-index.tsx",
+      "bytes": 34886,
+      "lines": 1046,
+      "sha256": "cb53de12fdaab35939c03e4a63d232dd9af62a10cc987e75ec036e5514180483",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          1046
+        ]
+      ],
+      "unread": [],
+      "functions": 92,
+      "values": 109,
+      "tests": 0
+    },
+    {
+      "path": "web/components/MetricsTimeline/MetricsTimeline.test.tsx",
+      "local": "12-MetricsTimeline.test.tsx",
+      "bytes": 8568,
+      "lines": 192,
+      "sha256": "e158cb37aacb632701c88505d95b68dc052270eeeb251cf8403b221b1e9f58fc",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          192
+        ]
+      ],
+      "unread": [],
+      "functions": 35,
+      "values": 9,
+      "tests": 10
+    },
+    {
+      "path": "web/components/MetricsTimeline/MetricsTimeline.tsx",
+      "local": "13-MetricsTimeline.tsx",
+      "bytes": 16022,
+      "lines": 502,
+      "sha256": "0bd085c542ae116e7447895497506c306399f9b14a8438f465b9c2db8a8f5e2a",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          502
+        ]
+      ],
+      "unread": [],
+      "functions": 24,
+      "values": 28,
+      "tests": 0
+    },
+    {
+      "path": "web/components/MetricsTimeline/metricsTimelineData.test.ts",
+      "local": "14-metricsTimelineData.test.ts",
+      "bytes": 6006,
+      "lines": 166,
+      "sha256": "2e88f6b6f9c50480537e732cc6a6481bef44e8e4e654094162fceec7a7358ada",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          166
+        ]
+      ],
+      "unread": [],
+      "functions": 13,
+      "values": 10,
+      "tests": 10
+    },
+    {
+      "path": "web/components/MetricsTimeline/metricsTimelineData.ts",
+      "local": "15-metricsTimelineData.ts",
+      "bytes": 4425,
+      "lines": 134,
+      "sha256": "97aace858602aed4c840e8f1595ff3238a8c72b3046e9610e3a814b1d2e87013",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          134
+        ]
+      ],
+      "unread": [],
+      "functions": 7,
+      "values": 11,
+      "tests": 0
+    }
+  ],
+  "counts": {
+    "rows": 866,
+    "functions": 450,
+    "values": 411,
+    "tests": 71
+  },
+  "supportingSources": [
+    {
+      "path": "web/components/LinemateMatrix/utilities.ts",
+      "local": "dep-00-utilities.ts",
+      "lines": 163,
+      "bytes": 4422,
+      "sha256": "e22da6347c03ee981458b106881b2691277659e94cfb274d13a21236a95fb908",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          163
+        ]
+      ],
+      "unreadRanges": [],
+      "scopeCredit": "Supporting source only; no whole-file canonical audit credit."
+    },
+    {
+      "path": "web/lib/ppShare/serving.ts",
+      "local": "dep-01-serving.ts",
+      "lines": 137,
+      "bytes": 6196,
+      "sha256": "8f7a02b0a009ce1d24b27d9ffef5e46d887061568e97f957c2da83418d88e640",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          137
+        ]
+      ],
+      "unreadRanges": [],
+      "scopeCredit": "Supporting source only; no whole-file canonical audit credit."
+    },
+    {
+      "path": "web/lib/ppShare/usePpTeamGameClocks.ts",
+      "local": "dep-02-usePpTeamGameClocks.ts",
+      "lines": 54,
+      "bytes": 2201,
+      "sha256": "3777e6c47b08f974dc3cdd5160c94ffe5b3d88355932671824e4d35dfed3ed25",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          54
+        ]
+      ],
+      "unreadRanges": [],
+      "scopeCredit": "Supporting source only; no whole-file canonical audit credit."
+    },
+    {
+      "path": "web/pages/api/v1/xg/team-timeline.ts",
+      "local": "dep-03-team-timeline.ts",
+      "lines": 68,
+      "bytes": 2861,
+      "sha256": "1119be79e09832f2c4d7f4471860e4e95454e0139bb2ca93e7cbd17cf75e0209",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          68
+        ]
+      ],
+      "unreadRanges": [],
+      "scopeCredit": "Supporting source only; no whole-file canonical audit credit."
+    },
+    {
+      "path": "web/utils/getPowerPlayBlocks.ts",
+      "local": "dep-04-getPowerPlayBlocks.ts",
+      "lines": 652,
+      "bytes": 24062,
+      "sha256": "226fffe709258a0ddc6978fb7869f8108b12e5bbf9789e6d112b35c5233034b9",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          25,
+          55
+        ],
+        [
+          312,
+          365
+        ]
+      ],
+      "unreadRanges": [
+        [
+          1,
+          24
+        ],
+        [
+          56,
+          311
+        ],
+        [
+          366,
+          652
+        ]
+      ],
+      "scopeCredit": "Supporting source only; no whole-file canonical audit credit."
+    },
+    {
+      "path": "web/pages/lines/[abbreviation].tsx",
+      "local": "dep-05-[abbreviation].tsx",
+      "lines": 537,
+      "bytes": 17750,
+      "sha256": "30522c358c2fb4908f1aae810f260c4cb205c98d3e15c063d4aecf174fc4833d",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          300,
+          355
+        ],
+        [
+          455,
+          537
+        ]
+      ],
+      "unreadRanges": [
+        [
+          1,
+          299
+        ],
+        [
+          356,
+          454
+        ]
+      ],
+      "scopeCredit": "Supporting source only; no whole-file canonical audit credit."
+    },
+    {
+      "path": "web/components/LineCombinations/LineCombinationsGrid.tsx",
+      "local": "dep-06-LineCombinationsGrid.tsx",
+      "lines": 228,
+      "bytes": 7337,
+      "sha256": "fb5c6a3c0d50f1c9f1abca1de82527420cc240b3ba3c4b125c466485b18c6de7",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          228
+        ]
+      ],
+      "unreadRanges": [],
+      "scopeCredit": "Supporting source only; no whole-file canonical audit credit."
+    },
+    {
+      "path": "web/components/ShiftChart/Replay.tsx",
+      "local": "dep-07-Replay.tsx",
+      "lines": 623,
+      "bytes": 24691,
+      "sha256": "61f64f40a68f015596802ff668b1de5b06b9217526e00465bc5001caa59bf4e4",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          90
+        ]
+      ],
+      "unreadRanges": [
+        [
+          91,
+          623
+        ]
+      ],
+      "scopeCredit": "Supporting source only; no whole-file canonical audit credit."
+    },
+    {
+      "path": "web/components/LineCombinations/GameLineSnapshots.tsx",
+      "local": "dep-08-GameLineSnapshots.tsx",
+      "lines": 327,
+      "bytes": 23019,
+      "sha256": "d8a7252d07852d649922bf44d61353f7f77f7bf9c3ca5a20d7410c66cf6db91b",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          85
+        ]
+      ],
+      "unreadRanges": [
+        [
+          86,
+          327
+        ]
+      ],
+      "scopeCredit": "Supporting source only; no whole-file canonical audit credit."
+    },
+    {
+      "path": "web/lib/xg/modelRegistry.ts",
+      "local": "dep-09-modelRegistry.ts",
+      "bytes": 12245,
+      "lines": 322,
+      "sha256": "654192e4cf34944403021e02663166465afdfb0bf07f56c72c16c45447da1682",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          238,
+          322
+        ]
+      ],
+      "unreadRanges": [
+        [
+          1,
+          237
+        ]
+      ],
+      "scopeCredit": "Supporting source only; no whole-file canonical audit credit."
+    },
+    {
+      "path": "web/utils/setDifference.ts",
+      "local": "dep-10-setDifference.ts",
+      "bytes": 353,
+      "lines": 14,
+      "sha256": "abf3b1260a9f4bbe1cef44da3164895918ed18fd2f761d6b50bbe26e46ab815f",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          14
+        ]
+      ],
+      "unreadRanges": [],
+      "scopeCredit": "Supporting source only; no whole-file canonical audit credit."
+    },
+    {
+      "path": "web/components/LineCombinations/Line/Line.tsx",
+      "local": "dep-11-Line.tsx",
+      "bytes": 1532,
+      "lines": 64,
+      "sha256": "72719ae697cb07702b37553dae5623355e65d2d8dfc1bf136ad23701a16e76ea",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          64
+        ]
+      ],
+      "unreadRanges": [],
+      "scopeCredit": "Supporting source only; no whole-file canonical audit credit."
+    },
+    {
+      "path": "web/components/LineCombinations/PlayerCard/index.ts",
+      "local": "dep-12-index.ts",
+      "bytes": 40,
+      "lines": 1,
+      "sha256": "69bbd1afb999985492bc26df5a1085afdda9ae2aaeccd1bdb1fdd88060c857cf",
+      "currentMatches": true,
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ],
+      "unreadRanges": [],
+      "scopeCredit": "Supporting source only; no whole-file canonical audit credit."
+    }
+  ],
+  "probe": {
+    "command": "node /tmp/astra-components-8/probe.cjs > /tmp/astra-components-8/probe-result.json",
+    "exit": 0,
+    "invocations": 1,
+    "result": {
+      "goalie": {
+        "stats": {
+          "playerId": 1,
+          "playerName": "Known Goalie",
+          "last10Games": {
+            "GP": null,
+            "SV": null,
+            "SVPercentage": null,
+            "GAA": null,
+            "Record": null
+          },
+          "season": {
+            "GP": null,
+            "SV": null,
+            "SVPercentage": null,
+            "GAA": null,
+            "Record": null
+          }
+        },
+        "hasNoAppearances": true
+      },
+      "pp": {
+        "all": {
+          "ids": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "AVG_PPTOI1": 90,
+          "AVG_PPTOI2": 30,
+          "pp1Percent": 75,
+          "pp2Percent": 25
+        },
+        "defense": {
+          "ids": [
+            5,
+            10
+          ],
+          "AVG_PPTOI1": 60,
+          "AVG_PPTOI2": 0,
+          "pp1Percent": 100,
+          "pp2Percent": 0
+        },
+        "forwards": {
+          "ids": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9
+          ],
+          "AVG_PPTOI1": 78,
+          "AVG_PPTOI2": 30,
+          "pp1Percent": 72.22222222222221,
+          "pp2Percent": 27.77777777777778
+        }
+      },
+      "scope": "Exact extracted producer/filter/percentage code; synthetic fixture; no app imports, React rendering, network or qualification exercise."
+    },
+    "boundary": "Only exact AST-extracted pure functions/initializers, built-in VM and installed TypeScript parser/transpiler. No application imports, React rendering, DB, network or qualification calls."
+  },
+  "receipts": [
+    {
+      "path": "/tmp/astra-components-8/probe.cjs",
+      "bytes": 3099,
+      "sha256": "c4066a1c10d1cd90e441ed4f7f407b9a1675a539f3edbda9c0afb57ae0f603f0"
+    },
+    {
+      "path": "/tmp/astra-components-8/probe-result.json",
+      "bytes": 1254,
+      "sha256": "e6d292d8f16ce643459147b0edb199e66d613945c65352deabab52facebd176a"
+    },
+    {
+      "path": "/tmp/astra-components-8/inventory.cjs",
+      "bytes": 21738,
+      "sha256": "021444e9c46eefa8ce2f40d5cc582385dce902376dee6b21d06b249067e153e4"
+    }
+  ],
+  "checks": [
+    {
+      "command": "node /tmp/astra-components-8/inventory.cjs",
+      "exit": 0,
+      "invocations": 2,
+      "reason": "Second run corrected source-only fixture-helper description, not a test rerun."
+    },
+    {
+      "command": "Python exact Git blob extraction and SHA256/current byte comparisons",
+      "exit": 0
+    },
+    {
+      "command": "Python final schema/row uniqueness/count/full-read-range/pin/current-hash/whitespace validation",
+      "exit": 0
+    }
+  ],
+  "unreadEvidence": [
+    "Full imported PP clock classifier, qualification packets/provider sources, database writers and migrations remain outside this batch; decision152 closure preserved.",
+    "Legacy LineCombinationsData fixture imported by utilities.test.ts was not opened in this batch; fixture-dependent legacy movement test not independent production identity evidence.",
+    "Full ShiftChart Replay, lines page, GameLineSnapshots, modelRegistry and getPowerPlayBlocks files remain pending outside listed ranges.",
+    "Imported stylesheets, chart-library internals, SkaterCard and other callers not opened; no visual/browser qualification."
+  ],
+  "governingRecords": {
+    "reused": "Governing prompt, rules, owner decisions and L8 brief were read in prerequisite pass; this batch rechecked rules1\u201312, owner71/72,137 and152.",
+    "newReadRanges": {
+      "tasks/artifacts/calculation-inventory-2026-11-10/master/RULES-DIGEST.md": [
+        [
+          1,
+          80
+        ]
+      ],
+      "tasks/artifacts/calculation-inventory-2026-11-10/master/OWNER-DECISIONS.md": [
+        [
+          250,
+          267
+        ],
+        [
+          370,
+          450
+        ]
+      ]
+    }
+  },
+  "correctedLookupErrors": [
+    "No /tmp/astra-components-8/dep-04.ts; corrected to enumerated dep-04-getPowerPlayBlocks.ts.",
+    "No web/components/LineCombinations/Line.tsx or PlayerCard/index.tsx; corrected via bounded file enumeration to Line/Line.tsx and PlayerCard/index.ts.",
+    "No master/CALCULATION-RULES.md; corrected to RULES-DIGEST.md.",
+    "Earlier missing stats team path and guessed PP qualification packet path searches were abandoned; no required assigned-source reading was skipped."
+  ],
+  "governingSources": [
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/RULES-DIGEST.md",
+      "bytes": 11650,
+      "sha256": "fd01301176e68fca8b61d4711c6ce117142bd42e74b3469d49a55697bdd75fad",
+      "readRanges": [
+        [
+          1,
+          80
+        ]
+      ],
+      "boundary": "Prior full prerequisite reading retained; these are bounded rechecks."
+    },
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/OWNER-DECISIONS.md",
+      "bytes": 67656,
+      "sha256": "f27b30d4b74355f7f957171444783c16096c1d68030296358fe406657d838497",
+      "readRanges": [
+        [
+          250,
+          267
+        ],
+        [
+          370,
+          450
+        ]
+      ],
+      "boundary": "Prior full prerequisite reading retained; these are bounded rechecks."
+    }
+  ]
+}

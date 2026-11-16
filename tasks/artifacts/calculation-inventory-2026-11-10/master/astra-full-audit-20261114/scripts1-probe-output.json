@@ -1,0 +1,19 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "findings": {
+    "tiedRanks": {
+      "AAA": 1,
+      "BBB": 2
+    },
+    "threeGameOutcomeFromOneKnownGame": 8,
+    "approvalAllowsDifferentCounts": true,
+    "equalCountsDifferentSplitConfigUnwarned": true
+  },
+  "controls": {
+    "unknownAndZeroDistinct": true,
+    "quantileAndPearson": true,
+    "oldSchemaApprovalRejected": true
+  },
+  "boundary": "Exact isolated functions; CTPI producer and correlation capture stubbed only to observe horizon construction; eligibility records are synthetic contract fixtures, not scientifically approved artifacts. No main/import/env/filesystem artifact loading, production reads or network."
+}

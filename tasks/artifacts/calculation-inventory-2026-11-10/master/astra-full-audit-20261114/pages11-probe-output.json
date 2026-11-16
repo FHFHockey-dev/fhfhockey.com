@@ -1,0 +1,117 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "stats": {
+    "missingScoring": {
+      "points": 1,
+      "powerPlayPoints": 0,
+      "shPoints": 0
+    },
+    "completeSummaryPPP": 1,
+    "writeBoundary": "Transaction is inert double; real completeness/clock guards and row builders ran"
+  },
+  "ratings": {
+    "eastern": {
+      "dates": [
+        "2026-11-01"
+      ],
+      "response": {
+        "message": "Updated ratings",
+        "dryRun": false,
+        "startDate": "2026-11-01",
+        "endDate": "2026-11-02",
+        "processedDays": 1,
+        "totalUpserts": 0,
+        "calculationVersion": "team-power-v4-5v5-goaltending",
+        "executionScope": {
+          "requestedDate": "2026-11-02",
+          "requestedStartDate": "2026-11-01",
+          "requestedEndDate": "2026-11-02",
+          "startDate": "2026-11-01",
+          "endDate": "2026-11-02",
+          "windowDays": 2,
+          "tableWasEmpty": false,
+          "smokeTestMode": false,
+          "autoBackfillApplied": false,
+          "lateArrivalRepairApplied": false,
+          "explicitRangeApplied": true,
+          "smokeTestComparable": false,
+          "smokeTestGuidance": "This run expanded beyond a one-day smoke test. Pass smokeTest=true with a target date to force a bounded one-day operational probe when the table is empty."
+        }
+      }
+    },
+    "utc": [
+      "2026-11-01",
+      "2026-11-02"
+    ],
+    "qualification": "Non-UTC deployment/local process reachable; hosted timezone not read"
+  },
+  "ctpi": {
+    "partialExpectedTeams": 2,
+    "persistedProvenanceRows": 1,
+    "plan": {
+      "replay": [],
+      "unchangedDates": [
+        "2026-11-15"
+      ]
+    },
+    "staleTeamRetained": [
+      {
+        "team": "BBB",
+        "ctpi_raw": 9
+      },
+      {
+        "season_id": 20262027,
+        "team": "AAA",
+        "date": "2026-11-15",
+        "ctpi_version": 2,
+        "payload": {
+          "formulaVersion": "f",
+          "inputVersion": "i"
+        },
+        "ctpi_raw": 1
+      }
+    ],
+    "qualification": "Numerical snapshot stub isolates completeness comparison; source upsert exact, finite Map persistence double"
+  },
+  "csv": {
+    "resolvedId": 1,
+    "inserted": [
+      {
+        "player_id": 2,
+        "Name": "John Smith",
+        "Shots": 1,
+        "Active": false
+      }
+    ],
+    "success": true,
+    "qualification": "Pre-existing target table simulated; CREATE IF NOT EXISTS and INSERT were inert doubles, standardizer identity double"
+  },
+  "sources": [
+    {
+      "path": "web/lib/cron/gameStatsCompleteness.ts",
+      "sha256": "61be36d9e20157f3efeee5149b37ccf1eb002459dfcaba972d2532c661231a3f"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-stats/[gameId].ts",
+      "sha256": "96b6604ace78b484d19c67a50fd3357eb8cee53d76fb1214bbdcafa38a8f3f4d"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-power-ratings.ts",
+      "sha256": "36b3dd7715396a01b55786cbd2f0481b0f9c783819f47803674a2a4bc77b1045"
+    },
+    {
+      "path": "web/lib/trends/recentTeamFormV2Provenance.ts",
+      "sha256": "397cb093dbf8c7a1ebb7f680216573c86f589d00c886bcaf01d4b6a565ab27c6"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-ctpi-daily.ts",
+      "sha256": "42f42eb7c9a4a79c2b1286206e7b4a60352ef35398f1271f0c1cdc877fed3c64"
+    },
+    {
+      "path": "web/pages/api/v1/db/upsert-csv.ts",
+      "sha256": "f44638648759bdd63cfdef9fa25823d448c498060f2a7e279b01003b63ac57dc"
+    }
+  ],
+  "boundary": "Exact frozen AST/functions and allowlisted VM with pure real guards. No actual DB, HTTP, env secrets, app imports, provider, server, suite or writes."
+}

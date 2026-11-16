@@ -315,3 +315,69 @@
   - Plan: fresh export about 00:05Z, launch about 00:15Z.
   - Token: `tj-slate-2026020329-2026020330-20261115`.
   - Command: `operator/launch-slate.sh <export>/web e0cbb19a8… 2026-11-15 <token> <new out> 2026020329@2026-11-16T02:00:00Z,2026020330@2026-11-16T02:00:00Z`.
+- **00:06Z:** fresh export `~/forge-pilot/export-e0cbb19a8-20261116T000543Z` (git archive of `e0cbb19a8`, `web/node_modules` linked). Migration 150 and 151 hashes match their authority rows. Its `launch-slate.sh` and `gate.sh` are byte-identical to the checkout's. The offline plan at 00:15Z matches the packet (dispatch 00:43:28Z and 00:43:58Z, latest 00:53:58Z). Launch at 00:15Z, from the export's launcher.
+- **00:15:12Z:** launched. The gate passed (active 1, longest 0 s, lock waits 0). Out: `~/forge-pilot/slate-2026020329-2026020330-20261116T001511Z/`, launcher log beside it (`.launch.log`). The plan event shows dispatch at 00:43:28Z and 00:43:58Z, with none skipped. Monitoring the events.
+- **00:44Z, pilot result:** 0330 `source_failed` (claim `791099cd…`, timeout 57014 on `forge_league_skater_physical_totals`: 8,031 ms). The queue stopped on `statement_timeout`, so 0329 is `never_dispatched`. Launcher exit 0 at 00:44:28Z. No retry. Receipt: `SLATE-PILOT-RECEIPT-2026020329-2026020330.md`.
+  - The same RPC took 7,441 ms (0326) and 7,507 ms (0328) earlier today, so it has been just under 8 s all day.
+  - **Next:** make physical totals reliably fast (offline prototype and benchmark first, as for the trend bands); needs TJ's go-ahead.
+
+## Checkpoint 2026-11-16T01:05Z: physical-totals read (Chef)
+- **TJ's pop-ups:** "Prototype + prod EXPLAIN", then "Run it" for the exact statement in `physical-totals/sql/production-explain-proposal.sql` (SHA-256 `142aaa4c…02b9`).
+- **Production EXPLAIN, 00:54:36Z** (read-only, rolled back, plain EXPLAIN only; output private in `~/forge-pilot/physical-totals-explain-20261116T005435Z/`):
+  - **Plans:** the current body's generic plan already uses a BitmapOr of two date ranges on `idx_wgo_skater_stats_date` (custom: date plus `pid_date_season`), so it is not a full scan.
+  - **Table:** 2,256,218 rows, 278,574 pages, 2.2 GB heap, about 8 rows per page; date correlation 0.39; toi null 0.46; relallvisible 272,620.
+  - **Diagnosis:** the cost is heap pages for about 2.2 seasons of wide rows scattered by poor correlation. The candidate hull-range rewrite alone gives the same single date range, so it does not cut heap reads.
+- **Local bench:** a production-scale table (2.23M rows, 7 rows per page, correlation 0.25) on PG15 port 55560 (socket `/tmp/ptb-sock-55560`). It tests a covering partial index `(date) include (season_id, position_code, toi_per_game, hits, blocked_shots) where games_played = 1 and toi_per_game > 0`, with and without the rewrite.
+- **Migration number** if needed: 155 (153 and 154 are BLSH), timestamp after 20261116000100.
+- **01:40Z, bench result:**
+  - Today's function reads 54,660 pages; with the rewrite only, about 60k; with the index only, 36k.
+  - Index + rewrite: **5,064 pages, Index Only Scan**.
+  - The answer md5 is identical in all four.
+- **Migration 155** `20261116010000_forge_physical_totals_covering_index.sql` (SHA-256 `7835a06d…87f`, authority row 155 pending): proof 13/13, apply script `operator/apply-migration-155.sh` with self-test 15/15, pins 21/21.
+- **Packet:** `physical-totals/MIGRATION-155-APPLY-PACKET.md`. Next: TJ's approval of step 1 (index) and step 2 (function).
+- **Slate re-plan bug** (from the slate session): re-planning at a dispatch instant slipped 0329 by 60 s.
+  - Chef gave an offline go: fix in `slateQueue.ts` plus a regression test.
+  - I verify it on a clean export before any future queue run.
+- **01:17–01:19Z, migration 155 apply** (TJ: "Now, tonight"; roll back on a failed smoke):
+  - **Step 1:** the index built concurrently, valid, 58 MB, 41 s. Kept.
+  - **Step 2:** the plan gate saw an Index Only Scan; applied at 01:18:03Z with an exact readback.
+  - **Smoke:** cold call 2,873 ms, over the 2,000 ms limit, so it rolled back at 01:18:36Z (137 body, ledger removed).
+  - **Diagnosis:** the warm body plan takes 327 ms (Index Only Scan, 9,592 heap fetches, 4.9 MB sort spill). The cold cost is about 3,550 disk pages, mostly current-season heap fetches.
+  - **Receipt:** `physical-totals/MIGRATION-155-APPLY-RECEIPT.md`. Authority row 155 stays pending with that evidence; pins 21/21.
+  - **Next:** TJ decides whether to re-apply step 2 with a new limit or improve the body or visibility first.
+- **01:27–01:28Z, 155 re-applied** (TJ: "Reapply step 2, audit, triage, fix"):
+  - Plan gate passed; step 2 committed at 01:27:52.658Z with an exact readback.
+  - Smoke OK: Index Only Scan, 9,592 heap fetches, 279 ms warm, PostgREST 200.
+  - Authority row 155 applied; pins 121/28/6.
+- **Audit 01:28:20Z (read-only):**
+  - API timeout: 8 s from the `authenticator` role setting; `service_role` sets none.
+  - `wgo_skater_stats` has scale-factor reloptions (migration 93) but no insert trigger, and all its stats counters read 0. So no autovacuum is likely all season; heap fetches will grow.
+  - Next: propose a one-off VACUUM plus an insert-autovacuum reloption (migration 156) to TJ.
+- **Slate fix `bc13b523e`:** a clean-export check is running (`~/forge-pilot/export-bc13b523e-20261116T012855Z`).
+- **01:45Z:**
+  - Slate fix `bc13b523e` verified on a clean export: 351/351, typecheck 0, rehearse with 0 network attempts.
+  - Migration 156 (insert-triggered autovacuum on `wgo_skater_stats`, SHA-256 `3d48946e…3b77`) drafted, with `operator/apply-visibility-156.sh` (one-off `--vacuum`, `--reloptions`, rollback). Self-test 14/14; authority row 156 pending; pins 156/121/7. Awaiting TJ.
+- **01:50Z, visibility** (TJ: "Both, vacuum first"):
+  - One-off VACUUM in 1.86 s: all-visible 97.57% → 98.63%. Index cleanup was bypassed, leaving 3,814 pages with dead items.
+  - Capture read after it: 3,270 heap fetches (was 9,592), 2,055 pages with 1,572 from disk, 1,537 ms, which is near cold.
+  - Migration 156 applied at 01:50:53.061Z with an exact readback; authority row 156 applied; pins 122/28/6.
+  - Receipt: `physical-totals/VISIBILITY-156-RECEIPT.md`.
+- **Open for TJ:**
+  - an optional `VACUUM (INDEX_CLEANUP ON)` for the 3,814 pages;
+  - the next capture: candidate `bc13b523e` or later with docs only, a Monday game, a timed read of 4 s or less before launch.
+- **01:52Z:** `VACUUM (INDEX_CLEANUP ON)` (TJ: "Run it now") in 7.46 s: 100% of pages all-visible; the capture read has 0 heap fetches and takes 337 ms. The script gained `--index-cleanup` (self-test 17/17). Next: the Monday packet.
+- **02:00Z, Monday packet** (TJ: "Prep Monday packet"):
+  - `CANDIDATE-bc13b523e-VERIFICATION.md` written.
+  - `SLATE-QUEUE-PACKET.md` §7: 0331 + 0332, dispatch 23:13:58Z and 01:13:58Z, launch 22:30–22:55Z, token `tj-slate-2026020331-2026020332-20261116`, with the `--timed-read` ≤ 4 s go/no-go before launch.
+  - Pilot packet revision 5 note added.
+  - The next step needs TJ's run approval.
+- **02:10Z, advisor fixes:**
+  - The 155 body's live answer is identical to 0328's recorded 137 answer (offline).
+  - `--timed-read` takes `--cutoff` (Monday uses 2026-11-16); self-test 32/32.
+  - The visibility preflight prints vacuum statistics (19/19).
+  - §7 now offers one queue or two launches, with the warm/cold labels and the statistics re-read.
+  - Candidate scope listed by lane; mailbox correction for the 01:25Z entry.
+- **02:15Z, TJ approved Monday's run:** "One queue, both (Recommended)".
+  - Candidate `bc13b523e`; 0331 + 0332; token `tj-slate-2026020331-2026020332-20261116`.
+  - Plan: fresh export at about 22:15Z Monday, then `--timed-read --cutoff 2026-11-16` (≤ 4 s) and `apply-visibility-156.sh --preflight`, then launch 22:30–22:55Z (17:30–17:55 ET) with TJ present.
+  - Afterwards: postrun and OpenSSL per qualified game, then a receipt. A timer is set for 22:15Z.

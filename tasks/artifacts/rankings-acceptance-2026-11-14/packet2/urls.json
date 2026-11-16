@@ -1,0 +1,46 @@
+[
+  {
+    "id": "P1-skaters-page-default",
+    "path": "/api/v1/contextual-rankings/matrix?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings"
+  },
+  {
+    "id": "P2-skaters-team-EDM",
+    "path": "/api/v1/contextual-rankings/matrix?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings&team=EDM"
+  },
+  {
+    "id": "P3-skaters-position-D",
+    "path": "/api/v1/contextual-rankings/matrix?entity=skaters&season=20262027&window=season&position=D&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10&ranking_source=entity_metric_rankings"
+  },
+  {
+    "id": "P4-snapshot-unpublished-8473533",
+    "path": "/api/v1/contextual-rankings/snapshot?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&goalie_metric=save_percentage&goalie_role=all&team_metric=off_rating&sort_direction=desc&selected_player=8473533"
+  },
+  {
+    "id": "P5-goalies-current",
+    "path": "/api/v1/contextual-rankings/goalies?season=20262027&window=season&strength=5v5&metric=save_percentage&role=all&sort_direction=desc&min_starts=5&min_shots=100&page=1&page_size=10"
+  },
+  {
+    "id": "P6-goalies-2025-26",
+    "path": "/api/v1/contextual-rankings/goalies?season=20252026&window=season&strength=5v5&metric=save_percentage&role=all&sort_direction=desc&min_starts=5&min_shots=100&page=1&page_size=10"
+  },
+  {
+    "id": "P7-goalie-snapshot-traded-8482076",
+    "path": "/api/v1/contextual-rankings/snapshot?entity=goalies&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&goalie_metric=save_percentage&goalie_role=all&team_metric=off_rating&sort_direction=desc&min_starts=5&min_shots=100&selected_goalie=8482076"
+  },
+  {
+    "id": "P8-teams-2025-26",
+    "path": "/api/v1/contextual-rankings/teams?season=20252026&metric=off_rating&sort_direction=desc&min_gp=5&page=1&page_size=10"
+  },
+  {
+    "id": "P9-team-snapshot-EDM",
+    "path": "/api/v1/contextual-rankings/snapshot?entity=teams&season=20262027&window=season&position=all&deployment=all&strength=5v5&min_gp=5&min_toi=300&sort_metric=points_per_60&goalie_metric=save_percentage&goalie_role=all&team_metric=off_rating&sort_direction=desc&selected_team=EDM"
+  },
+  {
+    "id": "P10-trending",
+    "path": "/api/v1/contextual-rankings/trending?entity=skaters&season=20262027&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_direction=desc&limit=25"
+  },
+  {
+    "id": "P11-metric-explorer",
+    "path": "/api/v1/contextual-rankings?entity=skaters&season=20262027&window=season&position=all&deployment=all&strength=5v5&metric=goals_per_60&min_gp=10&min_toi=300&sort=percentile&direction=desc&limit=100"
+  }
+]

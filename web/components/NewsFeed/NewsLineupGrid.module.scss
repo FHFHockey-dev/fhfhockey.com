@@ -69,22 +69,22 @@
   min-width: 0;
   gap: 3px;
   padding: 7px;
-  border: 1px solid color-mix(in srgb, var(--lineup-team-secondary) 45%, #59616b);
+  border: 1px solid color-mix(in srgb, var(--lineup-team-secondary) 45%, #{v.$border-control-color});
   border-radius: 6px;
   // At most 28% team pigment keeps white text readable even for white/gold teams.
-  background: color-mix(in srgb, var(--lineup-team-primary) 28%, #10161e);
-  color: #fff;
+  background: color-mix(in srgb, var(--lineup-team-primary) 28%, #{v.$color-neutral-950});
+  color: v.$color-white;
   font: inherit;
   text-align: left;
 
-  &[data-missing] { background: #20262e; }
+  &[data-missing] { background: v.$color-neutral-900; }
 }
 
 button.slot {
   min-height: 44px;
   cursor: pointer;
 
-  &:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  &:focus-visible { outline: 2px solid v.$color-white; outline-offset: 2px; }
 }
 
 .goalieActions {
@@ -103,7 +103,7 @@ button.slot {
 }
 
 .role {
-  color: #e2e7ed;
+  color: v.$color-neutral-200;
   font-size: 0.6rem;
   font-weight: 600;
 }
@@ -116,10 +116,38 @@ button.slot {
 }
 
 .mini {
-  .viewport { max-height: 180px; overscroll-behavior: contain; }
-  .grid { gap: 5px; }
+  .viewport { overflow: visible; }
+  // Blocks separate (8px); rows inside sit close (2px) (TJ, 2026-11-15).
+  .grid { gap: 8px; }
   .group,
-  .players { gap: 3px; }
+  .players { gap: 2px; }
+
+  // Per-line label (L1–L4, D1–D3, G1, PP1) beside each row (TJ, 2026-11-15).
+  .unit {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: center;
+
+    &::before {
+      content: attr(data-line);
+      color: v.$text-secondary;
+      font-family: v.$font-family-numbers;
+      font-size: v.$font-size-xxs;
+    }
+  }
+
+  .slot[data-starter] {
+    display: flex;
+    align-items: baseline;
+    border: 2px solid v.$primary-color;
+  }
+
+  .starterTag {
+    margin-left: 4px;
+    color: v.$primary-color;
+    font-size: v.$font-size-xxs;
+    font-weight: 600;
+  }
   .name {
     overflow: hidden;
     font-size: 0.68rem;
@@ -127,7 +155,7 @@ button.slot {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .slot { gap: 0; padding: 3px 4px; border-radius: 4px; }
+  .slot { gap: 0; padding: 3px; border-radius: 4px; }
 }
 
 @container news-lineup (max-width: 450px) {

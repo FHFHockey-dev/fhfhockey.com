@@ -1,0 +1,144 @@
+{
+  "at": "2026-11-08T21:26:09.149547+00:00",
+  "state": "LOCAL_OFFLINE_ACCEPTANCE_TOOLING_FIXED_AUTHENTICATED_ACCEPTANCE_PENDING",
+  "headObserved": "a9b94bb8c54da7ff076b61ff842345e80a095279",
+  "changes": [
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.mjs",
+      "beforeSha256": "5f562165df446c276824d1b7ed5d2f07e84d25570ee316e1317c37ad52c1312b",
+      "afterSha256": "9c6edc71a3f9c431a982781f19c5a5299779aa90e67771a916d1812d08002c45"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.test.mjs",
+      "beforeSha256": "d503d7ff210d0a2d6145cf110cd2a472987c22edce4e0a8ad6c03fde15ef5b82",
+      "afterSha256": "0d5a06ee20527f93add4864b82cb97e1daa16b06a5dfc88490a83eb46b16d0e0"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.mjs",
+      "beforeSha256": "a2e003361d75cee8b768f8bc46cd0bcd6d4bbb05f946604193c201ecf8564730",
+      "afterSha256": "b7aee8bc7dc1893852fd67b15dbd7de491dd47cb126d24c433bd36c3e0ac3a52"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs",
+      "beforeSha256": "f4cc19fc4be359cadf432be62a10163275d88ede4bbf9a820f3453f6b27ff74d",
+      "afterSha256": "fa4e92da8dd9eebbb48598d68daf161255bf043492d85e5878b7a407b3a64678"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.mjs",
+      "beforeSha256": "47fb525903fbb24da2d280669fad8f3a3964b8b8d588b407a9135b6e8d032880",
+      "afterSha256": "20183ca8beb136daf176607c8492126ce56f8785a20231338b309e90207b5d94"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs",
+      "beforeSha256": "2b948522e473d184c93d0a540daf1858e558656bf54b73060fcf9c0a0865f858",
+      "afterSha256": "29e63d2df71878c092b9bbb8d4d5a0f97466f6df918bd0fed052f4814014614f"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs",
+      "beforeSha256": "d4b95c100a69d60ce3aea845ed7b4990b43b22c0a6ca5eac8f4d59519a146add",
+      "afterSha256": "467a695d2d6749e091ce209bc834c1d452bb7eebb00a30f35cb303188d78f5fe"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs",
+      "beforeSha256": "4a5ad746e1231e0be099c810ce75a23db0fb6dc496c10cd887cc43fe505c8e23",
+      "afterSha256": "18c72f6638d7f3cf8af904a1ed563266bc3063f638693145dc9cc8147e893abd"
+    }
+  ],
+  "patchSha256": "5f9986ada824f3aa3f98c0066fceba3562276c5c922206fc708b1704c12d8d1b",
+  "checks": {
+    "red": {
+      "passed": 0,
+      "failed": 4,
+      "receipt": "cli-regression-red.json"
+    },
+    "green": {
+      "passed": 72,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "cli-regression-green.json"
+    },
+    "reversePatchApplicable": true,
+    "focusedDiffCheck": "passed",
+    "outboundAttemptsLogged": 0
+  },
+  "preserved": {
+    "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs": "1788c6549ae6f3a8bf3a24c6cfd82599fb349ef89fafc39f5528cd2277235e2e",
+    "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs": "479edbef96b5af789dd8809f04b8809d885c93fc9a2c423e513308ebf6b28230",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/source.patch": "e2ef1e35fd12889838c8ed9c4a2fe6ac85dc72f9715fcde84440954514f87e08",
+    "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/scope.json": "16b7092bea0ba307d07c1b8de3c4559533cc3a044a3af4264abd80dd397ffbe5",
+    "tasks/artifacts/rso-daily-beta-2026-11-08/CORRECTIONS.patch": "f4d80f071a4d737ac90b2a872c7ac04ad98aabf5bbb0f555b52273ee937ef003"
+  },
+  "protocolHash": "49ae034acc864a291393dc27e86cc745697ca83e18cc2f9666508f07db46a4ef",
+  "appCandidate": {
+    "tree": "101448c6c6b6da210b2b71786fb5e6024e747cb5",
+    "canonicalOverlayUnchanged": true,
+    "paths": 16,
+    "checksRepeatedForArtifactEdits": false
+  },
+  "yahooBounds": {
+    "sourcePins": {
+      "web/lib/integrations/yahoo/rosterPlanning.ts": "bf1ea851c024f6e5f5e399f0505347dc9e16d8407b5921f1c3406cc005661cc9",
+      "web/lib/integrations/yahoo/providerClient.ts": "8b9285f9f0803c85256d5e31db09f503582befff646e30c8798b06efe6636f67",
+      "web/lib/integrations/yahoo/planningConfirmations.ts": "f10594218eb0a11be6098405055dc89cb1436993c97870fa1abb0ac09bec140f",
+      "web/lib/integrations/yahoo/tokenManager.ts": "4c905ede3ee15f1bce3a2fb6fe4aced506a0527c3d01a85270c5372893aab009",
+      "web/pages/api/v1/roster-schedule-optimizer/provider.ts": "dacfff009388e1f0003ddaa3b6d68f212868318c4a77f5627cdd70529c334875",
+      "web/pages/api/v1/roster-schedule-optimizer/yahoo-current-data.ts": "05069f9e209f42e90d086332f1e17591684c5ed971c161d5774f3922a345c335",
+      "web/lib/rosterScheduleData/planning.ts": "be7919f534eab6278a7874be4bc8a6fce5db560d9b6ad8aa57e1fe633c0ebf81"
+    },
+    "matchesVerifiedCandidate": {
+      "web/lib/integrations/yahoo/rosterPlanning.ts": true,
+      "web/lib/integrations/yahoo/providerClient.ts": true,
+      "web/lib/integrations/yahoo/planningConfirmations.ts": true,
+      "web/lib/integrations/yahoo/tokenManager.ts": true,
+      "web/pages/api/v1/roster-schedule-optimizer/provider.ts": true,
+      "web/pages/api/v1/roster-schedule-optimizer/yahoo-current-data.ts": true,
+      "web/lib/rosterScheduleData/planning.ts": true
+    },
+    "liveRequests": 0,
+    "coldNoElapsedAdapterMax": 89,
+    "coldNoElapsedResourceAttemptMax": 178,
+    "maxElapsedAdapterMax": 102,
+    "maxElapsedResourceAttemptMax": 204,
+    "confirmationAdapterMax": 1,
+    "confirmationResourceAttemptMax": 2,
+    "excludes": [
+      "OAuth",
+      "database",
+      "auth",
+      "transport redirects",
+      "planning data",
+      "other UI traffic"
+    ]
+  },
+  "limits": {
+    "originalCheckerInstalled": false,
+    "currentForecastQualified": false,
+    "authenticatedYahooAcceptance": false,
+    "privateUserAcceptanceRecorded": false,
+    "liveRequests": 0,
+    "liveWrites": 0,
+    "deployments": 0,
+    "pushes": 0
+  },
+  "retainedCheckerSuccessor": {
+    "patch": "RETAINED-CHECKER-SUCCESSOR.patch",
+    "patchSha256": "703c099664be8b1344d4095c7f923e536173619e98f059e4dbb9ee6ceb93cdcb",
+    "files": [
+      {
+        "target": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs",
+        "source": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs",
+        "originalSha256": "1788c6549ae6f3a8bf3a24c6cfd82599fb349ef89fafc39f5528cd2277235e2e",
+        "replacementSha256": "467a695d2d6749e091ce209bc834c1d452bb7eebb00a30f35cb303188d78f5fe"
+      },
+      {
+        "target": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs",
+        "source": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs",
+        "originalSha256": "479edbef96b5af789dd8809f04b8809d885c93fc9a2c423e513308ebf6b28230",
+        "replacementSha256": "18c72f6638d7f3cf8af904a1ed563266bc3063f638693145dc9cc8147e893abd"
+      }
+    ],
+    "applicabilityCheck": "passed",
+    "installed": false,
+    "pending": "Retained two-file custody and focused installed-layout verification; no application or deployment action."
+  }
+}

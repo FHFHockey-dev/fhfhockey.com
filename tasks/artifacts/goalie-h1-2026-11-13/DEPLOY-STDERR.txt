@@ -1,0 +1,3 @@
+Vercel CLI 65.14.0
+  Inspect         https://vercel.com/fhfhockeydevs-projects/fhfhockey/CarXFBEMdKhyYwMyc9XzTggQcD1o
+▲ Production      https://fhfhockey-dfxrbfq75-fhfhockeydevs-projects.vercel.app

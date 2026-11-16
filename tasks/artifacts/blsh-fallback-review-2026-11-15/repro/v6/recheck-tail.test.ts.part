@@ -1,0 +1,62 @@
+
+// ---- V6-RECHECK reproducers (appended to the harness lines of the CURRENT core.test.ts; harness unchanged) ----
+describe("V6-RECHECK reproducers", () => {
+  const scheduleBody = (body: unknown) => {
+    const real = globalThis.fetch;
+    vi.stubGlobal("fetch", vi.fn(async (target: string | URL | Request, init: RequestInit = {}) => {
+      const url = String(target), parsed = new URL(url);
+      if (parsed.hostname !== "api-web.nhle.com") return real(target, init);
+      fetchKinds.push("schedule");
+      sendHeaders.publish({ request: { origin: parsed.origin, path: parsed.pathname, method: "GET" }, headers: [], socket: fakeSocket(parsed.hostname) });
+      return response(JSON.stringify(body), url);
+    }));
+  };
+  it("L1 fixed: a body without D is failed: schedule_shape_invalid (no longer no_slate)", async () => {
+    scheduleBody({ gameWeek: [] });
+    const { sink, input, runId } = await setup();
+    const result = await run(sink, input);
+    expect(result).toMatchObject({ ok: false, error: { state: "failed", reason: "schedule_shape_invalid", closed: true } });
+    expect(fake.runs.get(runId)).toMatchObject({ state: "failed", reason: "schedule_shape_invalid" });
+  });
+  it("L1 kept: D listed with games: [] is still no_slate", async () => {
+    games = [];
+    const { sink, input, runId } = await setup();
+    expect(await run(sink, input)).toMatchObject({ ok: true, value: { state: "no_slate" } });
+    expect(fake.runs.get(runId)?.state).toBe("no_slate");
+  });
+  it("L2 fixed: 4 slow writes x 4 s (16 s) now fit the 20 s pre-schedule budget; the capture completes", async () => {
+    const { sink, input, runId } = await setup(4000);
+    const result = await run(sink, input);
+    expect(result.ok).toBe(true);
+    expect(fake.runs.get(runId)?.state).toBe("packet_complete_pending_review");
+  });
+  it("L2 fixed: past the 20 s budget the run fails with nothing sent and says so", async () => {
+    const { sink, input, runId } = await setup(6000); // 4 x 6 s = 24 s
+    const result = await run(sink, input);
+    expect(result.ok).toBe(false);
+    expect(fetchKinds).toEqual([]);
+    expect(fake.runs.get(runId)).toMatchObject({ state: "failed", reason: "pre_schedule_checkpoint_failed_nothing_sent" });
+  });
+  it("L3 fixed: a start refusal (adapter date mismatch) closes the run failed with its code, no network", async () => {
+    const { sink, input, runId } = await setup();
+    const result = await run(sink, { ...input, sourceDate: "2026-11-18" });
+    expect(result).toMatchObject({ ok: false, error: { state: "failed", closed: true } });
+    expect(fetchKinds).toEqual([]);
+    console.log("L3 reason:", fake.runs.get(runId)?.state, fake.runs.get(runId)?.reason);
+  });
+  for (const target of ["admission:individual", "nst:individual"]) {
+    it(`M1 mechanism unchanged (gated by the probe): one unrelated undici event during ${target} still fails the run after it was spent`, async () => {
+      const real = globalThis.fetch;
+      vi.stubGlobal("fetch", vi.fn(async (t: string | URL | Request, init: RequestInit = {}) => {
+        const value = await real(t, init);
+        if (fetchKinds.at(-1) === target)
+          sendHeaders.publish({ request: { origin: "https://unrelated.invalid", path: "/x", method: "POST" }, headers: [], socket: fakeSocket("unrelated.invalid") });
+        return value;
+      }));
+      const { sink, input, runId } = await setup();
+      expect((await run(sink, input)).ok).toBe(false);
+      expect(fetchKinds.at(-1)).toBe(target);
+      expect(fake.runs.get(runId)?.state).toBe("failed");
+    });
+  }
+});

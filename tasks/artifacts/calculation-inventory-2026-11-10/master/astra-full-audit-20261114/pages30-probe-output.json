@@ -1,0 +1,43 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "findings": [
+    {
+      "id": "AFULL-TSANDBOX1-01",
+      "source": "NST-only known one point/one shot",
+      "output": {
+        "fantasyScore": 0,
+        "hits": 0,
+        "ppPoints": 0
+      }
+    },
+    {
+      "id": "AFULL-TSANDBOX1-02",
+      "gameRates": [
+        6,
+        2
+      ],
+      "actualSeasonAndRolling": 4,
+      "pooled": 3
+    },
+    {
+      "id": "AFULL-TSANDBOX1-03",
+      "selectedEntityId": 2,
+      "displayedRowEntityId": 1,
+      "oldSeasonUsed": 20252026,
+      "wrongSeasonFallbackRows": 1
+    }
+  ],
+  "controls": {
+    "per60KnownAndMissing": true,
+    "unknownNotFormattedAsZero": true,
+    "unavailableStateLabel": true,
+    "incompleteCorrelationWithheld": true,
+    "neutralBreaksStatusStreak": true
+  },
+  "source": {
+    "path": "web/pages/trendsSandbox.tsx",
+    "sha256": "96117e0918b758b4f3e697f8b2e8c3b613390af10333d483a411b49fe5b1d235"
+  },
+  "boundary": "Exact merge/memos/helpers plus actual pure trend utilities; finite NST-only and selector-transition inputs. No actual source occurrence, request ordering/React/D3 render, browser, service imports, env, network or supplied suite."
+}

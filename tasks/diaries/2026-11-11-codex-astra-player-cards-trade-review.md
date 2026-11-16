@@ -1,0 +1,9 @@
+# Player cards and trade audit peer review
+- Scope: independently review Fable audit commit 961046214; read-only source/fixtures and documentation deliverable only.
+- Where: canonical `/Users/tim/Code/fhfhockey.com`, `octoberBranch`, observed HEAD 729c5607a014a567af90ce5eb6f3a96dcda011d0. Shared dirty tree preserved.
+- State: read repository instructions and identified audit, packets, prior Astra review folder. No DB/provider/production requests, source edits, pushes, or builds.
+- Next: trace live homepage/Top Adds and conditional trade paths against original claims, then save bounded evidence-backed peer review.
+- Blockers: none.
+- Checkpoint: corrected Top Adds live/conditional and ownership/uncertainty claims, refuted D8 mixed-unit radar, separated D7 current-window completeness from historical A1. Source-to-reader fixtures reproduce partial/freshness-masked SOG, missing pulse visitor fallback, partial PvP totals and per-60 false coverage, unknown projection scoring, and unequal-side counterexample. Existing focused Vitest: 13 files / 188 tests passed with inert credentials. No external execution.
+- Next: write review with priorities, reach, corrected tests and reproducible fixture appendix. Review source matches audited commit for principal inspected files; no source edits made.
+- Complete: saved peer review `tasks/artifacts/calculation-inventory-2026-11-10/master/W1-Astra-PR/w3-player-cards-trade-value.md`, including executed source-fixture appendix and corrected implementation order. Extracted appendix reran successfully; Markdown fences balanced; scoped whitespace check passed; principal reviewed source files still match audit commit. No source edits, commits, pushes, builds, production/provider actions or unresolved blockers. Deliverable is ready for parent review.

@@ -1,0 +1,1 @@
+select served_date, source, count(*) n, count(distinct run_id) runs, min(issued_at)::date min_issued, max(issued_at)::date max_issued from forge_served_forecast_ledger where served_date >= '2026-11-07' group by 1,2 order by 1,2

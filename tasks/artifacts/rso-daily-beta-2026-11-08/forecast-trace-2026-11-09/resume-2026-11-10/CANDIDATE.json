@@ -1,0 +1,38 @@
+{
+  "base": "26374f21d41d16a2d2084fa9a1c98fffbff46ec6",
+  "candidate": "47df3e6bf0ecb0fab01cc864fedf4e5ea6fab748",
+  "tree": "5fbc65abb806fe0fb7f604e53083de9447902761",
+  "temporaryObjectDirectory": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/rso-release-20261110-0z4u11vx/objects",
+  "sourceExport": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/rso-release-20261110-0z4u11vx/source",
+  "isolatedIndex": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/rso-release-20261110-0z4u11vx/index",
+  "paths": [
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.ts",
+      "sha256": "e09bdcada3c35bab442cabb997bae3c11e07b695e678302c2c3b02851136a32b"
+    },
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.test.ts",
+      "sha256": "432a680a4f4634b72af848ddab2058bc3ae3473e559245e3a5c352b9f1611ee5"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/a5816ce6d1eeeba4b7213d1f66c96025f0b5818e.json",
+      "sha256": "c5d83514d35cbabf095f23480997ada5ddf7d8dda28b08b03e98ca2b868c0d0e"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/d66408de3a0d1ccea1daaadfce8a3a9ae20cb680.json",
+      "sha256": "0b290aecd9157d6f919634f49de72b966d9f70529fb03ec41a6e5a9f0013a36b"
+    }
+  ],
+  "notPublished": false,
+  "expectedBuilds": 1,
+  "expectedCompanionCanceled": 3,
+  "publication": {
+    "sha": "47df3e6bf0ecb0fab01cc864fedf4e5ea6fab748",
+    "deploymentId": "dpl_D1wAMrmthjMLqY98JFZbDbi9mi31",
+    "state": "READY",
+    "productionAlias": "fhfhockey.com",
+    "readyAt": "2026-11-10T15:27:10.412Z",
+    "actualWebBuilds": 1,
+    "actualCompanionCanceled": 3
+  }
+}

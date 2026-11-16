@@ -1,0 +1,1 @@
+select max(created_at) last_roster_insert, max(official_seen_at) last_seen, count(*) filter (where created_at > now() - interval '7 days') ins_7d, count(*) filter (where ended_at > now() - interval '7 days') ended_7d from rosters where "seasonId"=20262027

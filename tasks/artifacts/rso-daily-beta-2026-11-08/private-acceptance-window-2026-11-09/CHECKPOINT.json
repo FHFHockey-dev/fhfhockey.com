@@ -1,0 +1,80 @@
+{
+  "at": "2026-11-09T20:31:14.820918+00:00",
+  "state": "HISTORICAL_INPUTS_CHECKED_CURRENT_PRIVATE_ACCEPTANCE_PENDING",
+  "headObserved": "a9cc864c0f642c9f06fb4a51838e0a878010c35c",
+  "recordedOriginMaster": "d66408de3a0d1ccea1daaadfce8a3a9ae20cb680",
+  "checks": [
+    {
+      "name": "historical-response",
+      "exitCode": 0,
+      "receipt": "historical-check.json"
+    },
+    {
+      "name": "historical-export",
+      "exitCode": 0,
+      "receipt": "historical-export-check.json"
+    }
+  ],
+  "priorPreflightArtifactPinsUnchanged": true,
+  "priorTestsReused": {
+    "savedPreflight": 18,
+    "installedRetainedChecker": 29
+  },
+  "blockedNetworkAttempts": 0,
+  "newApplicationCodeChanges": 0,
+  "productionOperations": 0,
+  "newCredentialAccessOrRefresh": 0,
+  "providerRequests": 0,
+  "databaseOperations": 0,
+  "pushes": 0,
+  "deployments": 0,
+  "currentOriginalPrivateResponseSupplied": false,
+  "tjAcceptanceObserved": false,
+  "pendingInput": "Current existing saved response or loaded-input export path; otherwise chosen manual/local test context and actual league inputs.",
+  "exactNextSteps": "TJ-NEXT-STEPS.md",
+  "files": [
+    {
+      "path": "TJ-NEXT-STEPS.md",
+      "sha256": "67d8e7cc39b5b4b644cc40c4f3becc405acbfecfcff74b498e11708ce1405a8b"
+    },
+    {
+      "path": "historical-capture-receipt.json",
+      "sha256": "3542399a9ebf1b416e50df6fdd451baa26ac30855412f149834b040277058809"
+    },
+    {
+      "path": "historical-check.json",
+      "sha256": "f866c0d61e5a09cf6dd52bcfd7e6cb4428f394daedabb8dc93dc627800ab46b7"
+    },
+    {
+      "path": "historical-export-check.json",
+      "sha256": "fafec2334d8f3c076391979a69d0f0327a7353603e70bac9654c07ef674fcaac"
+    },
+    {
+      "path": "historical-export-inspection.json",
+      "sha256": "1987b23aecf5afc1b3dd7ec72ef2f97c6abee362ef4c73ab3833db67add98c2f"
+    },
+    {
+      "path": "historical-export-inspection.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "historical-preflight.json",
+      "sha256": "1b0fe05ddee0d82dfe5bda1be0788e63eddf195e18532dbfe27443f7802b6aab"
+    },
+    {
+      "path": "historical-preflight.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "nextStepSourcePins": [
+    {
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "sha256": "73299b6aa95a22a344f78751fd210e67c38fb52e66e3f48d156d11bd212d5699"
+    },
+    {
+      "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+      "sha256": "a16bddc3c2bba0c9e5ec7d8c165c531bb3e78501b1e851e0ca2f8f703490b135"
+    }
+  ],
+  "handoffLinksAndWhitespaceChecked": true
+}

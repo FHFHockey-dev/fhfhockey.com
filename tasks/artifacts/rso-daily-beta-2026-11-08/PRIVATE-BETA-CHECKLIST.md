@@ -1,0 +1,17 @@
+# Private daily RSO acceptance
+
+Use this once the candidate/target is agreed. This checklist does not authorize an assistant to access live leagues, save account state, deploy or change provider lineups. Record only pass/fail, the candidate identity and a non-sensitive explanation; keep private player/account details outside repository artifacts.
+
+| Scenario | Expected result | Gate if it differs |
+|---|---|---|
+| Manual setup with the actual league roster and slot counts | C/LW/RW/D/F/UTIL/G, bench and reserves match the league; dual eligibility is respected. No generic slot template silently replaces the league. | Correct or explicitly confirm the missing input before interpreting a plan. |
+| No moves selected | A legal whole-roster baseline distinguishes scheduled games, usable starts and supported projected value. Missing forecasts remain unknown rather than zero. | Retain schedule planning; qualify the missing forecast/rule evidence separately. |
+| One spot, then two spots in a streaming chain | Each day's candidate is available at its effective time; the net result includes displaced starts and the dropped players' lost contribution. Add/waiver/FAAB limits and dependencies remain visible. | Reject an illegal step; future availability requires rechecking. A larger search does not guarantee a globally optimal answer. |
+| A started game or healthy reserve occupant | Known active/bench locks are retained. Missing started-game locks block certification. An addition at puck drop does not claim that game. An ineligible reserve stash blocks additions without erasing the existing active lineup. | Supply the missing lock or resolve the reserve placement explicitly. |
+| Select a move, protect a player, refresh, Undo and reopen | Existing selected moves and refresh choices survive. Better alternatives do not replace the chosen plan. An invalidated plan offers a repair that requires acceptance. Undo restores the intended prior selection. | Preserve the workspace and capture a non-sensitive reproduction; do not accept an automatic replacement. |
+| Connect one owned Yahoo daily league, read only | Imported slot counts, roster/eligibility, locks, remaining adds, timing and goalie minimum agree with the league. Unsupported settings have their own limitation; unverified facts remain unknown. Manual access remains usable. | Request only the specific missing evidence or manager input. Do not silently synthesize a rule or issue a provider transaction. |
+| Evaluate a projected gain | Required player-game-target forecasts have current approved use, compatible scoring, identity, issuance and horizon. No missing, expired or unreviewed value becomes a confident gain. | Forecast-owner admission/readback remains open; fixture success is not forecast qualification. |
+
+For an assistant-run live check, first agree one league and the exact application routes plus underlying provider reads and possible refresh/persistence effects. Use the [corrected Yahoo bounds](acceptance-preparation/YAHOO-ACCEPTANCE-BOUNDS.md), not the historical 80/100-read plan. Use sequential application requests and stop when the result is conclusive; internal provider calls may still run concurrently. A provider-read POST may fan out to many reads; its method/name is not a cost bound. Production checking follows the repository's separate authorization and smoke budget.
+
+The acceptance outcome is TJ's private daily-use decision. It does not by itself complete weekly support, scientific forecasting validation, commercial launch or production release.

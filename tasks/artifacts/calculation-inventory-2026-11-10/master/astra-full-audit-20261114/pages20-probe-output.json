@@ -1,0 +1,46 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "unknownFreshness": {
+    "historyRows": 0,
+    "snapshotRows": 0,
+    "productionOutputAdmitted": 1,
+    "sourceCutoffs": "absent",
+    "flag": false,
+    "display": "Sources fresh",
+    "proofGate": "explicit true, no environment read"
+  },
+  "accountabilityBasis": {
+    "request": "/api/v1/game-predictions/accountability?limit=1000&latestBacktest=true",
+    "displayedHeading": "Accountability Index",
+    "historicalOrBacktestLabel": false,
+    "boundary": "Exact effect with inert fetch, finite hook setters and exact panel tree; no browser or live replay."
+  },
+  "controls": {
+    "missingEdge": null,
+    "edgePoints": 5,
+    "probability55": "55%",
+    "unknownComparison": false,
+    "equalShare": 50,
+    "staleFlag": true
+  },
+  "sources": [
+    {
+      "path": "web/components/HomePage/homepageWinPair.ts",
+      "sha256": "ba38c12554f1e35255608528185fa0a9cab84a097ee8bfbfb9ae1b1c3c20453c"
+    },
+    {
+      "path": "web/lib/game-predictions/winnerPick.ts",
+      "sha256": "1479d0076c5050ade0d3c6ebd151166e78306bde56f82bbd0c178f5e0bb6f499"
+    },
+    {
+      "path": "web/lib/game-predictions/publicPredictions.ts",
+      "sha256": "180914528be335bc573c3e80b5661d03725446b6ac846cde1ad64d7c93035482"
+    },
+    {
+      "path": "web/pages/nhl-predictions.tsx",
+      "sha256": "b6fd6dadf77bba9438b436366515b8675c9aa03981bf38004edf10eca9e3059c"
+    }
+  ],
+  "boundary": "Exact source modules transpiled without imports; pure winner helper, finite output/model fixture. No DB, provider, page, model training, actual env values or suite."
+}

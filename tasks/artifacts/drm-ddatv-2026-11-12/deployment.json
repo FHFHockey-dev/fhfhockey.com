@@ -1,0 +1,13 @@
+{
+  "status": "fulfilled",
+  "value": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"result\": {\n    \"deployment\": {\n      \"id\": \"dpl_137qFEpUhovkj9Q6NaPbD4jAHNzP\",\n      \"name\": \"fhfhockey\",\n      \"url\": \"fhfhockey-1pi0b1397-fhfhockeydevs-projects.vercel.app\",\n      \"type\": \"LAMBDAS\",\n      \"state\": \"READY\",\n      \"createdAt\": 1794494915240,\n      \"creator\": {\n        \"uid\": \"RIjKGS50TnQKekn6kUu1bdJw\",\n        \"username\": \"fhfhockey-dev\"\n      },\n      \"project\": {\n        \"id\": \"prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw\",\n        \"name\": \"fhfhockey\",\n        \"framework\": \"nextjs\"\n      },\n      \"meta\": {\n        \"githubCommitRef\": \"master\",\n        \"githubCommitSha\": \"631a00c1988dc7acc294573bec9ad8f08c9e3e12\",\n        \"githubCommitMessage\": \"Release: math-audit fix sprint, 25 lanes and audit documents (#430)\\n\\nShips candidate 27edf8381 (octoberBranch 74c85b556 tree without lane diaries) on top of master 1cdb1dc8f. Migrations for authority rows 125-140 were already applied in production.\",\n        \"githubRepo\": \"fhfhockey.com\",\n        \"githubOrg\": \"FHFHockey-dev\"\n      },\n      \"alias\": [\n        \"fhfhockey.com\",\n        \"fhfhockey.vercel.app\",\n        \"www.fhfhockey.com\",\n        \"fhfhockey-fhfhockeydevs-projects.vercel.app\",\n        \"fhfhockey-git-master-fhfhockeydevs-projects.vercel.app\"\n      ],\n      \"target\": \"production\",\n      \"regions\": [\n        \"iad1\"\n      ],\n      \"buildingAt\": 1794494916257,\n      \"ready\": 1794495269383,\n      \"readyState\": \"READY\",\n      \"source\": \"git\",\n      \"aliasError\": null\n    }\n  }\n}"
+      }
+    ],
+    "structuredContent": null,
+    "isError": false
+  }
+}

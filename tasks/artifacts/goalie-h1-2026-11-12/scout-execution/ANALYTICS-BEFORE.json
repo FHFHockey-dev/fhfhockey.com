@@ -1,0 +1,49 @@
+{
+  "checkedAt": "2026-11-13T00:07:32.027171+00:00",
+  "game_prediction_outputs": [
+    {
+      "game_id": 2026020307,
+      "metadata": {
+        "run_id": "fd2d6244-d1e5-42cf-b529-badfb8a49e20",
+        "horizon_games": 1
+      },
+      "components": {
+        "market_inputs": {},
+        "selected_goalies": {
+          "away": {
+            "saves": 25.095,
+            "goalieId": 8480981,
+            "confirmedStatus": false,
+            "starterProbability": 0.9432
+          },
+          "home": {
+            "saves": 25.172,
+            "goalieId": 8478872,
+            "confirmedStatus": false,
+            "starterProbability": 0.7547
+          }
+        }
+      },
+      "model_name": "forge",
+      "provenance": {
+        "input_family": "forge-game-projection",
+        "game_market_provider": null
+      },
+      "updated_at": "2026-11-09T10:22:37.731197+00:00",
+      "computed_at": "2026-11-09T10:22:37.731197+00:00",
+      "away_team_id": 19,
+      "home_team_id": 68,
+      "model_version": "market-context-v1",
+      "snapshot_date": "2026-11-12",
+      "prediction_scope": "pregame",
+      "spread_projection": -0.108,
+      "away_expected_goals": 3.155,
+      "home_expected_goals": 3.047,
+      "away_win_probability": null,
+      "home_win_probability": null,
+      "total_expected_goals": 6.202
+    }
+  ],
+  "model_market_flags_daily": [],
+  "player_prediction_outputs": []
+}

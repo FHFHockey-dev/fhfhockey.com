@@ -1,0 +1,2 @@
+string_agg
+id observed_at available_at payload metadata created_at source_revision_key payload_hash provider dataset_key entity_kind entity_key source_url

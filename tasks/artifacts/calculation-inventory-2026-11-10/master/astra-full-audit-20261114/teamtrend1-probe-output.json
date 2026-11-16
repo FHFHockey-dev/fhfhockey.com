@@ -1,0 +1,153 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "ratingFallback": {
+    "requested": "2026-10-10",
+    "actual": "2026-11-13",
+    "asOfRows": 0
+  },
+  "absentPdo": {
+    "currentPdo": null,
+    "currentPdoZ": 0,
+    "trendDelta": 0,
+    "trendSeries": [
+      {
+        "date": "2026-10-10",
+        "value": 100
+      }
+    ],
+    "varianceFlag": 0,
+    "varianceSeries": [
+      {
+        "date": "2026-10-10",
+        "value": 100
+      }
+    ]
+  },
+  "playerRates": {
+    "actualAverage": 4,
+    "pairedRate": 3
+  },
+  "missingWindow": [
+    {
+      "date": "2026-10-01",
+      "raw": 30,
+      "rolling3": null,
+      "count": 1
+    },
+    {
+      "date": "2026-10-02",
+      "raw": 3,
+      "rolling3": null,
+      "count": 2
+    },
+    {
+      "date": "2026-10-03",
+      "raw": 3,
+      "rolling3": 12,
+      "count": 3
+    },
+    {
+      "date": "2026-10-04",
+      "raw": null,
+      "rolling3": 12,
+      "count": 3
+    },
+    {
+      "date": "2026-10-05",
+      "raw": 3,
+      "rolling3": 3,
+      "count": 4
+    }
+  ],
+  "missingPrimaryAssist": {
+    "raw": 0,
+    "knownZeroControl": 0
+  },
+  "ctpi": {
+    "recentGsax": -0.012145748987854267,
+    "pairedRecentGsax": -0.050420168067226885,
+    "seasonGsax": 0,
+    "pooledPp": 6.055045871559634,
+    "candidatePredictionGated": true
+  },
+  "sos": {
+    "past": 1,
+    "pending": 1,
+    "future": 1,
+    "pointsPct": 0.75,
+    "score": 75,
+    "emptySchedulesAcceptedRows": 4
+  },
+  "constantCorrelation": {
+    "sampleSize": 3,
+    "xMean": 0,
+    "yMean": 4,
+    "r": 0,
+    "r2": 0
+  },
+  "legacyPercentile": {
+    "single": "NaN",
+    "allTied": 0,
+    "midRankControl": 50
+  },
+  "sources": [
+    {
+      "path": "web/lib/teamRatingsService.ts",
+      "sha256": "a175cadce0ae207d9151f3b3f64911c6a0b872f9945516925eb4e838fae48a6b"
+    },
+    {
+      "path": "web/lib/teamRatingVersion.ts",
+      "sha256": "1e8b24fa41a5d9a689723270ae9c26cc4127efdd270c5c55bae8714fe1d5f518"
+    },
+    {
+      "path": "web/lib/teamRatingsTrend.ts",
+      "sha256": "43fa12d500f633c960fe61c70ce4bb6aa40f65a4336cb8f12e112e4f48d3ad0a"
+    },
+    {
+      "path": "web/lib/trends/playerTrendCalculator.ts",
+      "sha256": "39371fcce362538c396a6497214a1734203a4d87a49b5e63399ea92940815618"
+    },
+    {
+      "path": "web/lib/trends/recentTeamFormV2.ts",
+      "sha256": "427f269c1330f7cf79af735817bf3840cd548f288f2afed9a50316e88174ba96"
+    },
+    {
+      "path": "web/lib/trends/ctpi.ts",
+      "sha256": "fcb2d4080ae1e149dd859d50e02057bc6ba272999db3a665496bd85ee8619991"
+    },
+    {
+      "path": "web/lib/trends/ctpiVersions.ts",
+      "sha256": "cba988cba348c517aeec34de8f5a8a89b8527d73de577b227faa7ddd02fc6368"
+    },
+    {
+      "path": "web/lib/trends/recentTeamFormV2Materialization.ts",
+      "sha256": "f97797c295bb3890f34d2e133f8ae4b6ce9a2f2fff4d6ee4ed4d388c7c69b314"
+    },
+    {
+      "path": "web/lib/trends/strengthOfScheduleContract.ts",
+      "sha256": "77f79f80fbe25fbc20ade4d0761fe2e04983e998b9a4797bdf0d5c603ecc3739"
+    },
+    {
+      "path": "web/lib/trends/teamSosSnapshot.ts",
+      "sha256": "f84a698297509a4837e4bc191c5d89d784bb96a6f6f5c62e3090add0b654d8b9"
+    },
+    {
+      "path": "web/lib/trends/strengthOfSchedule.ts",
+      "sha256": "38637b5c8d4d8166335c73cb99f4162ff2fc292901b06e747695f2e4e08696a6"
+    },
+    {
+      "path": "web/lib/trends/utils.ts",
+      "sha256": "1a5523ead73db1b87424e0b4e645fdf8c25ee407fe62bfedf8e375706e832995"
+    },
+    {
+      "path": "web/lib/trends/trendsSurface.ts",
+      "sha256": "d0d844d103a8eda7584476aacb79c533854a1862bbc67346d04d1eca5373bc0e"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingMetricScaleContract.ts",
+      "sha256": "6347bed463ae39c326083388e23f456f7997541407b9cf7371b72ef4db8dfefb"
+    }
+  ],
+  "limits": "Exact frozen modules and one AST-isolated history function; in-memory table/query double and empty env. Synthetic inputs only. Supplied suites, production, app routes, browser, provider and live writer not run."
+}

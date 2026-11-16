@@ -1,0 +1,234 @@
+{
+  "status": "54-file local feature inventory; 21 source paths locally committed; remaining feature/UI paths uncommitted and shared with aesthetic owner",
+  "branch": "octoberBranch",
+  "observedHead": "c0b5b7ff8fea04e1935bc61689f4cc0eea0d44aa",
+  "sourceHandoff": "tasks/artifacts/drm-pipeline-triage-2026-11-12/CANDIDATE.json",
+  "sourceVersions": {
+    "input": "projection-input-materializer-v3-penalty-clock",
+    "relationships": "shift_relationship_materializer_v6_strength_segments"
+  },
+  "files": [
+    {
+      "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+      "sha256": "d5cf5cd9d0a5ee64952e481e2d4954a3a613b2d18cea718fd618dc5f8a7bbd98"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/build-projection-derived-v2.test.ts",
+      "sha256": "d6d84777b0ca85d2fbc519b9863b7174ca2317a692a05b5332cd33ab214a5f07"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/shift-charts.audit.test.ts",
+      "sha256": "c971b4a217443c04b1c74fc4e52297450bde73183bdde78e25ecd5dc58149b80"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/shift-charts.queue.test.ts",
+      "sha256": "52a2aab699a274c0aa91d28662373f709a6aea8c944c89080ef8d0b212061fd8"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-power-play-combinations-game.test.ts",
+      "sha256": "686ff7f8a0861e2edc00f2a419bea6fe7d7a5bb86a29d5a3a1ed2af27f5d07ab"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/drm.test.ts",
+      "sha256": "6d4e78133e2d3a9e983acdce5bc042e9a20a2b33f4e3a49382ddf9fb662396f1"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/lines/history.test.ts",
+      "sha256": "533095517c715a03d97b9b0798a320574efaa1b6cbd006aad1af5a64a156d95c"
+    },
+    {
+      "path": "web/__tests__/pages/drm.test.tsx",
+      "sha256": "044adeb535ecdb2a2b4c35565d32114ce555d04d803254a0f7431f68835984e9"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/DateRangeMatrixView.test.tsx",
+      "sha256": "0e3b97728881dfb544220a11df0d62e7e5fed2b5d1ebc636ced6b424d10ed0e9"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/DateRangeMatrixView.tsx",
+      "sha256": "5b81a69a00036e99127322715008183224297dd2d01fdb7a7df90a0881ff9780"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/LineHistory.module.scss",
+      "sha256": "ba3d0d8ad34ece2944bee6f37d9fdc9aa842e78413cc6c6e31f9569184cde353"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/LineHistory.test.tsx",
+      "sha256": "5ed404e6404764a6f67a5b4e2f5a911eea72ca2d90b13284eac0337c86e8d66b"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/LineHistory.tsx",
+      "sha256": "d0bc8b90cc389835826d4b0ab2cf6e50db74aaa26a2fd37d9306408b4fc6909e"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/MatrixCoverage.tsx",
+      "sha256": "2d63f84c11da9da852d10314c9bbc7c7e08957f16df9361902da06bc8290fa28"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/ObservedUnits.tsx",
+      "sha256": "2029fca800ce8474c77ead9e1d7625a2c842bd1c980365e818e51f4f4ab425da"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/drm.module.scss",
+      "sha256": "835dbc826aca240117a4f5fe34164787af435b9ac48c8738492582a541ee43bf"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/fetchAggregatedData.test.ts",
+      "sha256": "a14a7fb0649ebdd4b3681194c52c0b175934197204eed1e63c868690b374d583"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/fetchAggregatedData.ts",
+      "sha256": "a839f18839b24b7e72e82dc70c7c67a560299ea1d26899e0d71aafbd4bdd7e7e"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/fetchDeploymentMatrix.ts",
+      "sha256": "c34d8a06f097ccf1073504089bb683ea6f58896a0f08fc4e64c3c4f531479e45"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/index.accessibility.test.tsx",
+      "sha256": "83ee90d25492957b93ab294e61b8a3d2b945bd06f56d71ac0f36296d5b0c177b"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/index.module.scss",
+      "sha256": "01c73d0089cf5ffcb15e8943dcc6f6cb50d22563b53bdf88ff3e0cdacdc349ac"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/index.tsx",
+      "sha256": "b63b3016b6022363e8674d41b3ca8df7d52fccd98fc73cc6d439453d3d263f50"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/useDateRangeMatrixData.test.tsx",
+      "sha256": "5e13303c2c126412c4cb8552ae4a31fbfb97b383af623c12a8b7a5015af7b67b"
+    },
+    {
+      "path": "web/components/DateRangeMatrix/useDateRangeMatrixData.ts",
+      "sha256": "b76f09ba4268f957bb860d07746ef0167b9bcce24236898d6ce8d511c2b931df"
+    },
+    {
+      "path": "web/components/ShiftChart/model.test.ts",
+      "sha256": "796782014a00a966d7aac5d335fb879a34faf6ab89dbe47d2244823daab769f4"
+    },
+    {
+      "path": "web/e2e/drm-previews.config.ts",
+      "sha256": "14b56dfe13d4c925bef045c074180c56756c5e3a11e1e625ab2172c5f3b57dba"
+    },
+    {
+      "path": "web/e2e/drm-previews.spec.ts",
+      "sha256": "e483bcc5165674d9a1d3e850bc900fde285750f42cd8f86b4b84e52303fe2090"
+    },
+    {
+      "path": "web/e2e/fixtures/drm-previews/App.tsx",
+      "sha256": "c5aae71c37c632b3b68c45ae7abbfe9dbaf1a27b7bf85c812e6c4f3de8a7a74a"
+    },
+    {
+      "path": "web/e2e/fixtures/drm-previews/data.tsx",
+      "sha256": "d228d40f2ad574680e903db5f44250e70fa589a2c31f16244288c3bd83233568"
+    },
+    {
+      "path": "web/e2e/fixtures/drm-previews/index.html",
+      "sha256": "c56f7d267612710790b519950ab3e118807c4ccb1bc579180f8abf21b451dbca"
+    },
+    {
+      "path": "web/e2e/fixtures/drm-previews/server.mjs",
+      "sha256": "7ea6da38c87a81c09692165c27c5c268d1abefa62cf48e901075b938a43c5dcc"
+    },
+    {
+      "path": "web/lib/drm/observedDeployment.test.ts",
+      "sha256": "02765cc95b9fceabe94aea5a3c90585d6eca6bdaf587bd9a7b982acc1f34b18d"
+    },
+    {
+      "path": "web/lib/drm/observedDeployment.ts",
+      "sha256": "ed4c5d705052b5119678d81192161f60b28f142e4f007fe5f832f074a97f9a7f"
+    },
+    {
+      "path": "web/lib/drm/readMatrix.test.ts",
+      "sha256": "7ad6e69b5e6e468a58ddaa2a3144c158b38658fa992e2396c95981819756ccc1"
+    },
+    {
+      "path": "web/lib/drm/readMatrix.ts",
+      "sha256": "a5b185aae831e4bac69e9c2e3fb2320e50527dc5da71dcc90008e0f87835e32e"
+    },
+    {
+      "path": "web/lib/drm/types.ts",
+      "sha256": "ec2ae0a534585b0ec9a50a23be7e638fca1987bafc7cf4422229a98d57578f3e"
+    },
+    {
+      "path": "web/lib/projections/ingest/projectionInputPersistence.ts",
+      "sha256": "6ece7b9715be537659de1f84b792754888f8346dccd744d4d4ef49d6a769b2a7"
+    },
+    {
+      "path": "web/lib/projections/ingest/shifts.htmlFallback.test.ts",
+      "sha256": "484fd026a3d15fab73f59ef731df1e9ccc4fbea4c7559dfc6c0eda332b8e7b48"
+    },
+    {
+      "path": "web/lib/projections/ingest/shifts.test.ts",
+      "sha256": "6b71aa59919c5f1d6747a4b7a76362d782cc79c72823879f2cce543410041073"
+    },
+    {
+      "path": "web/lib/projections/ingest/shifts.ts",
+      "sha256": "625e1032d56a3b7ef1bb364321a2f638a77a45818a33047c3131007f08801413"
+    },
+    {
+      "path": "web/lib/projections/penaltyClock.ts",
+      "sha256": "e9c89921b180826e7fd7ef8a5f15b9c0ddb58d5f8d7ef39dd535b748fddfa5f1"
+    },
+    {
+      "path": "web/lib/projections/relationshipMaterialization.test.ts",
+      "sha256": "4dd3b01a359e76e385d80c450b4dc1c56c414f083973a79b01b8b60a78c2cc4a"
+    },
+    {
+      "path": "web/lib/projections/relationshipMaterialization.ts",
+      "sha256": "680cdb0c64e1a322fd3bbaaa88d64936727cc918cdf5dccc089afcb0179da9a9"
+    },
+    {
+      "path": "web/lib/projections/shiftChartRelationshipPayload.test.ts",
+      "sha256": "e0049846d65dc77bb3700175cbd23eb37980d6d2b1e1e3eac0a218076a88805e"
+    },
+    {
+      "path": "web/lib/projections/shiftChartRelationshipPayload.ts",
+      "sha256": "2a591f6731629bcd2b0140dbe4059b9ab3b83fda12b4bb94def38e0646377ba9"
+    },
+    {
+      "path": "web/lib/sources/lineHistory.test.ts",
+      "sha256": "f3a12da53c833a2b1c56e509361d5f9a780c4cbe9fa5c19c390e1364b28a8167"
+    },
+    {
+      "path": "web/lib/sources/lineHistory.ts",
+      "sha256": "d1da69a674ae3c78cfbdf1d68a9ecb99dec70162a8393ba31d3792f00ca82817"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlRawGamecenter.mjs",
+      "sha256": "cfe532f5bc53055a9177a80764b41c863426c449a9d784dd327c88f1a2e88656"
+    },
+    {
+      "path": "web/pages/api/v1/db/shift-charts.ts",
+      "sha256": "f94db7641cf6cfbc8fbfe5d561e0a6c36dd57a15d18d503786e1bd27711c0728"
+    },
+    {
+      "path": "web/pages/api/v1/drm.ts",
+      "sha256": "795be2d448512010cda1471c0619140894b4c7bf9115e7c668856611d4c1b1f6"
+    },
+    {
+      "path": "web/pages/api/v1/lines/history.ts",
+      "sha256": "bf2c5bd4ef38ce08e9077e4c43fa12708a4ae3cac5ecf37775d93ac6f3da4bcd"
+    },
+    {
+      "path": "web/pages/drm.tsx",
+      "sha256": "500d5029219eb38e960344e02a3696ff396e26dc4a895b345419fc6bb8e0b7ab"
+    },
+    {
+      "path": "web/utils/getPowerPlayBlocks.test.ts",
+      "sha256": "b07296bd1c8846519edbfe5556de43e685d072ebf3a467003fb1be8cdf34044d"
+    },
+    {
+      "path": "web/utils/getPowerPlayBlocks.ts",
+      "sha256": "2ae53fc1ae5ded090e36347351395e9796f5c7b4becccdcb8423a242d7e149ae"
+    }
+  ],
+  "excluded": "Concurrent unrelated edits and context diaries are not release-candidate files. HEAD is a checkpoint, not a candidate commit SHA.",
+  "productionActions": "No production mutations. User approved DRM data repair and exact source-only release866b90bc46a169b42cbc3c54a7d64b0daf764121 after Claude completion. Waiting for completion/database handoff after Phase-C safety stop.",
+  "followup": "VGK Nov5\u201311: observed 2 stale-generation games and1 pending relationship game. Corrected zero-qualified empty state; no data repair.",
+  "sourceCanonicalCommit": "24b1cb4d3048a3dba8234cf92c62e8f2b72f877f",
+  "sourceOnlyReleaseCandidate": "866b90bc46a169b42cbc3c54a7d64b0daf764121",
+  "sharedOwnership": "User authorizes another chat to edit DRM CSS/style paths. Preserve those changes; do not update whole-file hashes over visual edits or include them in the source-only release."
+}

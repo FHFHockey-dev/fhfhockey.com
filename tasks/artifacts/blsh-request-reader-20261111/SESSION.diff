@@ -1,0 +1,31 @@
+--- upstream/read_only_session.py	2026-11-15 15:31:45
++++ read_only_session.py	2026-11-15 15:31:58
+@@ -50,22 +50,20 @@
+     async def close(self):self.raw.close()
+ 
+ 
+-async def open_existing_read_only():
++async def open_existing_read_only(dsn):
+     # No persistent credential, system trust, role, security or database settings
+     # are created/modified. The fixed existing trusted roots are hash-pinned.
++    # 2026-11-11 retarget: the single SUPABASE_DB_URL value is parsed by run_live_read.py
++    # (private-file, allowlist pattern from the operator lane) and passed in; never printed.
+     c.require(c.sha(BUNDLE.read_bytes())==BUNDLE_SHA256,'existing_trust_bundle_drift')
+-    values=[]
+-    for line in (REPO/'web/.env.local').read_text().splitlines():
+-        key,sep,value=line.partition('=')
+-        if sep and key.strip().removeprefix('export ').strip()=='SUPABASE_DB_URL':values.append(value.strip().strip('"').strip("'"))
+-    c.require(len(values)==1,'unambiguous_existing_credential_required')
++    c.require(isinstance(dsn,str) and bool(dsn),'unambiguous_existing_credential_required')
+     user,password=bind((REPO/'supabase/.temp/project-ref').read_text().strip(),
+-                       (REPO/'supabase/.temp/pooler-url').read_text().strip(),values[0])
++                       (REPO/'supabase/.temp/pooler-url').read_text().strip(),dsn)
+     raw=None
+     try:
+         raw=psycopg2.connect(host=HOST,port=5432,user=user,password=password,dbname='postgres',
+                              sslmode='verify-full',sslrootcert=str(BUNDLE),connect_timeout=3,async_=1,
+-                             application_name='BLSH_READONLY_CAPTURE_20261101',
++                             application_name='BLSH_READONLY_CAPTURE_20261111',
+                              options='-c default_transaction_read_only=on -c statement_timeout=5000')
+         await asyncio.wait_for(ready(raw),4)
+         c.require(raw.info.ssl_in_use and raw.info.host==HOST and raw.info.port==5432 and raw.info.dbname=='postgres','verified_TLS_endpoint_required')

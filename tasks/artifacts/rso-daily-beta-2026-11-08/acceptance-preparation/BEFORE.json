@@ -1,0 +1,46 @@
+{
+  "at": "2026-11-08T21:18:10.766537+00:00",
+  "files": [
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.mjs",
+      "sha256": "5f562165df446c276824d1b7ed5d2f07e84d25570ee316e1317c37ad52c1312b",
+      "before": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-capture/inspect-identity.mjs"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.test.mjs",
+      "sha256": "d503d7ff210d0a2d6145cf110cd2a472987c22edce4e0a8ad6c03fde15ef5b82",
+      "before": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-capture/inspect-identity.test.mjs"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.mjs",
+      "sha256": "a2e003361d75cee8b768f8bc46cd0bcd6d4bbb05f946604193c201ecf8564730",
+      "before": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-capture/inspect-issued-packet.mjs"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs",
+      "sha256": "f4cc19fc4be359cadf432be62a10163275d88ede4bbf9a820f3453f6b27ff74d",
+      "before": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-capture/inspect-issued-packet.test.mjs"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.mjs",
+      "sha256": "47fb525903fbb24da2d280669fad8f3a3964b8b8d588b407a9135b6e8d032880",
+      "before": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-capture/normalize-settlement.mjs"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs",
+      "sha256": "2b948522e473d184c93d0a540daf1858e558656bf54b73060fcf9c0a0865f858",
+      "before": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-capture/normalize-settlement.test.mjs"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs",
+      "sha256": "d4b95c100a69d60ce3aea845ed7b4990b43b22c0a6ca5eac8f4d59519a146add",
+      "before": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-readbacks/tooling/check-readbacks.mjs"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs",
+      "sha256": "4a5ad746e1231e0be099c810ce75a23db0fb6dc496c10cd887cc43fe505c8e23",
+      "before": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-readbacks/tooling/check-readbacks.test.mjs"
+    }
+  ],
+  "scope": "CLI entry detection and regression tests only; original FORGE-QUAL files, scientific protocol, runtime/application and reviewed patch remain unchanged."
+}

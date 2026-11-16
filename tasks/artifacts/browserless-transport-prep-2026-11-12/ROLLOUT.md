@@ -1,0 +1,43 @@
+> PARKED by TJ on 2026-11-12. This is historical replacement/TLS/rotation preparation, not active execution authority. See [PARKED.md](PARKED.md) for the separate local quarantine guard and [TRIGGER-PLAN.md](TRIGGER-PLAN.md) for unexecuted trigger planning.
+
+# Browserless TLS and credential rollout — approval plan only
+
+No step below has been run against a live service. This plan adds operational order and limits to the [rotation/error checklist](HANDOFF.md). Local candidate evidence is in [IMPLEMENTATION.md](IMPLEMENTATION.md); declaration integration is recorded separately in [MANIFEST-INTEGRATION.json](MANIFEST-INTEGRATION.json).
+
+Recovered host evidence: the tracked webhook Compose file uses unpinned `ghcr.io/browserless/chromium`, maps `3001:3000` and contains a literal token setting (value suppressed); the saved production endpoint used port 3000. The old Compose file is not verified as the live configuration and must not be applied blindly. [APPROVAL-SUMMARY.md](APPROVAL-SUMMARY.md) specifies the sanitized operator inventory needed to resolve this mismatch and finalize approvals.
+
+## Targets and facts to pin before approval
+
+| Item | Recorded target / required decision |
+| --- | --- |
+| Application | Vercel project `fhfhockey`, ID `prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw`, root `web`, production branch `master`; reconfirm from metadata before release. |
+| Configuration | `PUPPETEER_ENDPOINT`; last inspected November 10 as self-hosted plain `ws`, token in query, port 3000, shared production/preview/development variable. Current value and scope are unverified. The sanitized host record is `../browserless-redaction-release-2026-11-10/SERVICE.json`. |
+| New transport | Owner-approved DNS name on 443 with hostname-valid certificate, direct WebSocket upgrade, no redirect; same-host loopback backend, or an encrypted/authenticated upstream hop. The DNS name, certificate issuer/renewal owner and proxy/service manager are **not yet identified**. |
+| Credentials | TJ/service owner identifies auth source, supported rotation method, token overlap and connection/session behavior. Generate secrets through the approved secret manager only. Separate production/nonproduction bindings where supported. Record secret version IDs, never values or token hashes. |
+| Source | Eight-file candidate: transport/helper tests, diagnostic/helper tests, webhook/route tests, `web/package.json` and `web/package-lock.json`. Pin final hashes and compose an exact release commit only under release-owner custody; shared HEAD is not a release candidate SHA. |
+| Coordination | Obtain an explicit operational window from the production re-normalization/release owner. Silence, a quiet database sample or source approval does not establish that window. |
+
+The infrastructure prerequisite is bounded: obtain existing host/service configuration evidence for **one Browserless instance**, installed version, auth source name, listener bindings/ports (IPv4 and IPv6), proxy route/log format, certificate/renewal arrangement, consumers and secret binding names. No endpoint probes, token reads, restarts, firewall edits or certificate issuance are included in this prerequisite. If these cannot be supplied from existing records, request a specifically authorized read-only inventory; do not guess shell commands or service names.
+
+## Execution order after separate authorization
+
+1. **Freeze the exact candidate and rollback.** Verify manifest ownership, reviewed source hashes, fixture/static results and direct dependency declarations. Identify the last redaction-qualified application release as a rollback reference. A rollback must retain TLS and the currently valid credential; never restore plain `ws` or a retired token. Approve any rollback deployment explicitly, including its build cost.
+2. **Prepare the secure server path.** The infrastructure owner provisions the approved DNS/certificate/direct upgrade route and protected upstream; disables query-bearing access logs; and prevents public access to plaintext backend listeners. Review the proposed configuration before applying it. Native TLS or same-host proxy is chosen from actual service configuration, not assumed. Keep certificate verification enabled in every consumer. Do not rotate a new credential onto the old plaintext path.
+3. **Choose the rotation schedule.** With supported overlap, enable the new token, switch consumers to the new TLS endpoint, verify, then revoke the old token. With single-token auth, agree a short maintenance gap and coordinate server auth plus consumer secret changes together. Record every production/preview/development binding; do not update a shared three-environment variable blindly. Existing active sessions and immutable old deployments are part of the inventory, not assumed revoked by changing one variable.
+4. **Activate the application once.** A new runtime deployment may be required to pick up environment changes. Deploy only after the TLS configuration and active token binding are ready: the candidate rejects the historically recorded plain `ws` setting. Obtain authorization naming project, environment, branch and exact SHA. Immediately before publishing, inventory all linked projects and inspect deployments for that SHA/environment; reuse READY, wait for in-progress, and inspect failures before any retry.
+5. **Perform the approved bounded acceptance below.** Stop immediately on any unexpected result; do not retry, fall back to plaintext, disable certificate verification or invoke the real webhook. If a new token fails, preserve the last working encrypted configuration/token if it remains valid under the approved overlap plan, or stay in the agreed maintenance gap until the owner decides. Do not silently reactivate the retired credential.
+6. **Close the rotation.** Confirm old-token revocation and consumer activation using version IDs and bounded outcomes. Retain timestamped evidence of old-ingress closure from configuration records. Record TLS, token rotation and observed application redaction as distinct outcomes. Historical logs remain potentially sensitive and are not retroactively sanitized; retention/access investigation is separately authorized.
+
+## Budget and evidence
+
+| Action | Proposed maximum | Stop / evidence |
+| --- | --- | --- |
+| Git-triggered production release | One approved candidate, no preview or duplicate build | Historical November 10 inventory had four entries: `fhfhockey` (`web`) built; `functions-fhfhockey` (`functions`), `cms-fhfhockey` (`cms`) and `fhfhockey.com` (root unset) canceled. This is **not a current guarantee**. Fresh trigger/ignored-build inventory is required; if companions would build, obtain approval for a targeted skip/filter plan first. |
+| WebSocket auth acceptance | Two sequential attempts, 10 seconds each, no retries | New credential accepted; retired credential rejected. Exact approved WSS host/path and cleanup method must be stated. Close only test-owned connections. No CDP navigation, screenshot, upload or Discord call. A successful handshake may allocate a billable Browserless session; session cost and disconnect cleanup remain unknown until host inventory. |
+| Application HTTP smoke | Zero requests in this plan | The webhook has image/Discord side effects. Do not invoke it for QA, even with synthetic game IDs or GET. Any other app request needs a separately specified read-only route and budget. |
+| Existing application error logs | One read, exact serving deployment + webhook route, latest 15 minutes or less, at most 20 events | Display/save only schema verdicts, timestamps, counts and allowlisted diagnostics. No natural sample means `no-sample`, not passed; no polling or induced errors. Use HANDOFF.md for field-level acceptance. |
+| Proxy/Browserless logs, network probes, other credential scopes | Not included | Request distinct bounded authorization if configuration evidence is insufficient. Do not multiply the two-handshake allowance across environments. |
+
+The proposed live acceptance can allocate at most one successful test session and makes no application requests; a rejected old credential should not allocate a session. That expectation must be confirmed for the installed server. There is no measured dollar estimate. No remote build, request, rotation or configuration change is authorized by this document.
+
+Approval is ready to request only after the owner supplies the unresolved TLS/service details, environment bindings, operational window, exact candidate SHA, fresh four-project build inventory and approved failure/rollback choice. Request TLS/network changes, credential rotation/activation, deployment and live verification explicitly; source acceptance alone does not authorize them.

@@ -1,0 +1,19 @@
+{
+  "startedAt": "2026-11-09T00:29:01.789602+00:00",
+  "finishedAt": "2026-11-09T00:29:02.801869+00:00",
+  "durationSeconds": 1.01,
+  "command": [
+    "node",
+    "--test",
+    "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com",
+  "exitCode": 0,
+  "node": "v22.23.4",
+  "sourcePins": {
+    "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs": "467a695d2d6749e091ce209bc834c1d452bb7eebb00a30f35cb303188d78f5fe",
+    "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs": "18c72f6638d7f3cf8af904a1ed563266bc3063f638693145dc9cc8147e893abd"
+  },
+  "scopeSha256": "16b7092bea0ba307d07c1b8de3c4559533cc3a044a3af4264abd80dd397ffbe5",
+  "inputs": "Synthetic retained fixtures only; inert environment; outbound guard."
+}

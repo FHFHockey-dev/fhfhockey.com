@@ -1,0 +1,122 @@
+{
+  "checkedAt": "2026-11-10T18:29:56.541Z",
+  "projects": [
+    {
+      "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "name": "fhfhockey",
+      "rootDirectory": "web",
+      "commandForIgnoringBuildStep": "",
+      "previewDeploymentsDisabled": true,
+      "gitLink": {
+        "type": "github",
+        "org": "FHFHockey-dev",
+        "repo": "fhfhockey.com",
+        "productionBranch": "master"
+      },
+      "targets": {
+        "production": {
+          "id": "dpl_3r1Gg58pkS1wTJDeuGkxtpwb6ZXb",
+          "readyState": "READY",
+          "target": "production",
+          "createdAt": 1794325278485
+        },
+        "preview": {
+          "id": "dpl_9idXKKfju5YpqhDZXbVW2G9YKTKW",
+          "readyState": "READY",
+          "target": null,
+          "createdAt": 1791820526019
+        }
+      }
+    },
+    {
+      "id": "prj_gG8SHX7C5GbCDJoind7trh9bj6dK",
+      "name": "cms-fhfhockey",
+      "rootDirectory": "cms",
+      "commandForIgnoringBuildStep": "",
+      "previewDeploymentsDisabled": true,
+      "gitLink": {
+        "type": "github",
+        "org": "FHFHockey-dev",
+        "repo": "fhfhockey.com",
+        "productionBranch": "master"
+      },
+      "targets": {
+        "production": {
+          "id": "dpl_7xNX87Zwk3pEso4Aqbb6ErjfChGS",
+          "readyState": "CANCELED",
+          "target": "production",
+          "createdAt": 1794325278389
+        },
+        "preview": {
+          "id": "dpl_GiPpCQJs8ggVnvTuQU1i4sHzJgER",
+          "readyState": "CANCELED",
+          "target": null,
+          "createdAt": 1791820525880
+        }
+      }
+    },
+    {
+      "id": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+      "name": "functions-fhfhockey",
+      "rootDirectory": "functions",
+      "commandForIgnoringBuildStep": null,
+      "previewDeploymentsDisabled": true,
+      "gitLink": {
+        "type": "github",
+        "org": "FHFHockey-dev",
+        "repo": "fhfhockey.com",
+        "productionBranch": "master"
+      },
+      "targets": {
+        "production": {
+          "id": "dpl_DD2NtWrNErvBwwxAa2LZwCgSdq97",
+          "readyState": "CANCELED",
+          "target": "production",
+          "createdAt": 1794325278324
+        },
+        "preview": {
+          "id": "dpl_SMVKcbhVBYN2qwdYjkNRCRSBJx8k",
+          "readyState": "CANCELED",
+          "target": null,
+          "createdAt": 1791820525927
+        }
+      }
+    },
+    {
+      "id": "prj_3X6goi9DxqUnD0sHChwEwaRakquG",
+      "name": "fhfhockey.com",
+      "rootDirectory": null,
+      "commandForIgnoringBuildStep": null,
+      "previewDeploymentsDisabled": true,
+      "gitLink": {
+        "type": "github",
+        "org": "FHFHockey-dev",
+        "repo": "fhfhockey.com",
+        "productionBranch": "master"
+      },
+      "targets": {
+        "production": {
+          "id": "dpl_GBvki43v6QVGMKdHCyUYEeqKhwUd",
+          "readyState": "CANCELED",
+          "target": "production",
+          "createdAt": 1794325278280
+        },
+        "preview": {
+          "id": "dpl_3MKWZx58KSkRqb6MB7UZcaiaaEQu",
+          "readyState": "CANCELED",
+          "target": null,
+          "createdAt": 1791820525809
+        }
+      }
+    }
+  ],
+  "pagination": {
+    "count": 6,
+    "next": null,
+    "prev": 1794325625069
+  },
+  "expectedEntries": 4,
+  "expectedCompletedBuilds": 1,
+  "expectedCanceledEntries": 3,
+  "settingsChanged": false
+}

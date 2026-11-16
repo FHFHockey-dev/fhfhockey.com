@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { teamsInfo } from "lib/teamsInfo";
@@ -158,7 +158,7 @@ describe("TeamStandingsChart compact controls", () => {
       Array.from(divisionSelect.options).map((option) => option.textContent),
     ).toEqual(["All divisions", "Atlantic", "Metropolitan", "Central", "Pacific"]);
 
-    const rail = screen.getByRole("complementary", { name: "League separation controls" });
+    const rail = screen.getByRole("group", { name: "League separation controls" });
     expect(rail.contains(conferenceSelect)).toBe(true);
     expect(rail.contains(divisionSelect)).toBe(true);
     expect(rail.contains(screen.getByRole("button", { name: "Clear all" }))).toBe(true);
@@ -194,5 +194,48 @@ describe("TeamStandingsChart compact controls", () => {
         .filter(({ table }) => table === "nhl_standings_details")
         .map(({ start }) => start),
     ).toEqual([0, 1000, 2000]);
+  });
+
+  it("starts the team toggles folded on phones and reopens them when wide", async () => {
+    let onChange: ((event: { matches: boolean }) => void) | undefined;
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query === "(max-width: 600px)",
+      addEventListener: (_: string, listener: typeof onChange) => { onChange = listener; },
+      removeEventListener: () => {},
+    }));
+    try {
+      const { container } = render(<TeamStandingsChart compact />);
+      await within(container).findAllByRole("checkbox");
+      const details = container.querySelector("details") as HTMLDetailsElement;
+      await waitFor(() => expect(details.open).toBe(false));
+      expect(details.querySelector("summary")?.textContent).toBe("Teams · 32 of 32 shown");
+      fireEvent.click(within(container).getByRole("button", { name: "Clear all" }));
+      await waitFor(() =>
+        expect(details.querySelector("summary")?.textContent).toBe("Teams · 0 of 32 shown"),
+      );
+      onChange?.({ matches: false });
+      await waitFor(() => expect(details.open).toBe(true));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("isolates a team from its end logo and clears it", async () => {
+    const { container } = render(<TeamStandingsChart compact />);
+    const svg = await waitFor(() => {
+      const el = container.querySelector("svg");
+      expect(el?.querySelector("image.end-logo")).toBeTruthy();
+      return el as SVGSVGElement;
+    });
+    const logo = svg.querySelector("image.end-logo") as SVGImageElement;
+    const team = (logo.closest("g.team-group") as SVGGElement).dataset.team;
+    fireEvent.click(logo);
+    await waitFor(() => expect(svg.getAttribute("data-isolated")).toBe(team));
+    expect(svg.querySelectorAll("g.team-group[data-active]")).toHaveLength(1);
+    expect(within(container).getByRole("status").textContent).toContain(teamsInfo[team as string].name);
+    // Fixture: points == gamesPlayed, so every team sits at .500 ("0").
+    expect(within(container).getByRole("status").textContent).toContain(" · 0");
+    fireEvent.click(within(container).getByRole("button", { name: "Show all teams" }));
+    await waitFor(() => expect(svg.hasAttribute("data-isolated")).toBe(false));
   });
 });

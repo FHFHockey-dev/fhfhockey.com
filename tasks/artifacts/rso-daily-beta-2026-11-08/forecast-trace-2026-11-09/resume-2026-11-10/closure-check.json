@@ -1,0 +1,17 @@
+{
+  "startedAt": "2026-11-10T13:55:59.522737+00:00",
+  "completedAt": "2026-11-10T13:56:00.167166+00:00",
+  "candidate": "47df3e6bf0ecb0fab01cc864fedf4e5ea6fab748",
+  "tree": "5fbc65abb806fe0fb7f604e53083de9447902761",
+  "command": [
+    "/usr/local/bin/node",
+    "-r",
+    "/Users/tim/Code/fhfhockey.com/web/node_modules/ts-node/register/transpile-only",
+    "scripts/verify-forge-release-sha.ts",
+    "--tree",
+    "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/rso-release-20261110-0z4u11vx/source/web",
+    "--receipt",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/closure.json"
+  ],
+  "exitCode": 0
+}

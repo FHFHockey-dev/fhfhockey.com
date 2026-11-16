@@ -1,0 +1,51 @@
+{
+  "pin": "89da739cb",
+  "checks": "passed",
+  "categoryUnitsAndDirections": "passed",
+  "promotion": {
+    "activeStaticControls": {
+      "status": "blocked_missing_controls",
+      "missingControlCount": 1,
+      "unjoinedControlCount": 2,
+      "emptyNetTreatmentValidated": false
+    },
+    "emptyVerifiedSet": {
+      "status": "rankings_promotable",
+      "missingControlCount": 0,
+      "unjoinedControlCount": 0,
+      "emptyNetTreatmentValidated": true
+    },
+    "status": "latent metadata-only gap; no new active-promotion finding"
+  },
+  "partialPublication": {
+    "before": [
+      1,
+      2
+    ],
+    "intended": [
+      10,
+      20
+    ],
+    "afterFailedUpsert": [
+      10,
+      2
+    ],
+    "error": "Failed to upsert entity_metric_rankings: synthetic row-2 write failure",
+    "calls": [
+      {
+        "ids": [
+          1
+        ],
+        "onConflict": "entity_type,entity_id,season_id,snapshot_date,window_type,window_size,strength_state,metric_key,peer_group_type,peer_group_key"
+      },
+      {
+        "ids": [
+          2
+        ],
+        "onConflict": "entity_type,entity_id,season_id,snapshot_date,window_type,window_size,strength_state,metric_key,peer_group_type,peer_group_key"
+      }
+    ],
+    "readerEvidence": "source-only: latest date query and row fetch carry no publication completion predicate; ranking recomputes raw_value cohort"
+  },
+  "limits": "Exact pure modules with fake transport and explicit unused-import stubs. No real database/provider/app imports, route, Vitest or production incidence."
+}

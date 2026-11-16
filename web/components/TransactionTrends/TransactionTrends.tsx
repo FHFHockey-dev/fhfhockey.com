@@ -112,7 +112,9 @@ function TrendPanel({
               {isAdp ? "Avg Pick" : "Own %"}
             </th>
             <th scope="col" className={styles.sparkCell}>
-              Trend ({windowDays}D)
+              {/* The window is in the panel title ("Top risers (Δ 3D)"); keep it
+                  for screen readers only so the column stays narrow on phones. */}
+              Trend<span className={styles.visuallyHidden}> ({windowDays}D)</span>
             </th>
             <th scope="col" className={styles.deltaCell}>
               Δ {windowDays}D
@@ -218,10 +220,12 @@ function TrendPanel({
                     className={`${styles.deltaValue} ${
                       isRise ? styles.deltaPositive : styles.deltaNegative
                     }`}
-                    aria-label={movementLabel}
                   >
                     <span aria-hidden="true">{isRise ? "▲" : "▼"}</span>{" "}
                     <span aria-hidden="true">{signedDelta}</span>
+                    {/* aria-label isn't allowed on a plain span (axe
+                        aria-prohibited-attr); spoken text goes here instead. */}
+                    <span className={styles.visuallyHidden}>{movementLabel}</span>
                   </span>
                 </td>
               </tr>
@@ -528,7 +532,7 @@ export default function TransactionTrends({
                 }
                 disabled={offset === 0}
               >
-                <span aria-hidden="true">‹</span> Prev
+                <span aria-hidden="true">‹</span> Previous
               </button>
               <button
                 type="button"

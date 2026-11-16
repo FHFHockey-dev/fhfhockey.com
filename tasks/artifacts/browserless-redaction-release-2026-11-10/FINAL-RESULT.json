@@ -1,0 +1,27 @@
+{
+  "at": "2026-11-10T15:51:17.161015+00:00",
+  "commit": "86f2e3cf742a86b5981abb3de41160b2ea7950e3",
+  "deployment": "dpl_3r1Gg58pkS1wTJDeuGkxtpwb6ZXb",
+  "productionAlias": "https://fhfhockey.com",
+  "status": "READY",
+  "completedBuilds": 1,
+  "canceledCompanionEntries": 3,
+  "redactionTests": 25,
+  "exactReleaseExportTests": 24,
+  "originalIndependentHarnessReplayChecks": 36,
+  "scopedLint": "passed",
+  "scopedTypescript": "passed",
+  "postDeployLogQuery": {
+    "deploymentScoped": true,
+    "query": "on-new-line-combo",
+    "since": "10m",
+    "limit": 20,
+    "result": "No logs found",
+    "runtimeErrorSampleAvailable": false
+  },
+  "realWebhookInvocations": 0,
+  "credentialChanges": 0,
+  "configurationChanges": 0,
+  "existingLogsRetroactivelySanitized": false,
+  "nextOptionalVerification": "Inspect existing webhook error logs after naturally occurring traffic; never induce webhook side effects solely for QA."
+}

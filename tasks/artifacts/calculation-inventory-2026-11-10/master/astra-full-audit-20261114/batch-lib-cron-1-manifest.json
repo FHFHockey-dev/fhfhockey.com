@@ -1,0 +1,452 @@
+{
+  "target_commit": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "scope": "all8 scoped web/lib/cron paths, path order",
+  "coverage": {
+    "files": 8,
+    "lines": 4028,
+    "bytes": 136368,
+    "scoped_symbols": 709,
+    "symbol_kinds": {
+      "declaration": 381,
+      "function": 246,
+      "test": 82
+    },
+    "context_only_rows": 8
+  },
+  "files": [
+    {
+      "path": "web/lib/cron/combinedCronInventory.test.ts",
+      "temporary_blob": "/private/tmp/astra-lib-cron-1/web__lib__cron__combinedCronInventory.test.ts",
+      "lines": 514,
+      "bytes": 16408,
+      "sha256": "e93f1263b5aaad8c946ad94349158df41cc3eb602163df541f22f67fa0a529e8",
+      "working_tree_matches": true,
+      "working_tree_sha256": "e93f1263b5aaad8c946ad94349158df41cc3eb602163df541f22f67fa0a529e8",
+      "read_ranges": [
+        [
+          1,
+          514
+        ]
+      ],
+      "coverage": "full_source_audit",
+      "tests_executed": false
+    },
+    {
+      "path": "web/lib/cron/gameStatsCompleteness.test.ts",
+      "temporary_blob": "/private/tmp/astra-lib-cron-1/web__lib__cron__gameStatsCompleteness.test.ts",
+      "lines": 227,
+      "bytes": 6780,
+      "sha256": "89ff8bd5c941ee2894332fae5b3dff2631d5882814342404adaed204b069b2cf",
+      "working_tree_matches": true,
+      "working_tree_sha256": "89ff8bd5c941ee2894332fae5b3dff2631d5882814342404adaed204b069b2cf",
+      "read_ranges": [
+        [
+          1,
+          227
+        ]
+      ],
+      "coverage": "full_source_audit",
+      "tests_executed": false
+    },
+    {
+      "path": "web/lib/cron/gameStatsCompleteness.ts",
+      "temporary_blob": "/private/tmp/astra-lib-cron-1/web__lib__cron__gameStatsCompleteness.ts",
+      "lines": 534,
+      "bytes": 15245,
+      "sha256": "61be36d9e20157f3efeee5149b37ccf1eb002459dfcaba972d2532c661231a3f",
+      "working_tree_matches": true,
+      "working_tree_sha256": "61be36d9e20157f3efeee5149b37ccf1eb002459dfcaba972d2532c661231a3f",
+      "read_ranges": [
+        [
+          1,
+          534
+        ]
+      ],
+      "coverage": "full_source_audit",
+      "tests_executed": false
+    },
+    {
+      "path": "web/lib/cron/transactionalGameStatsPersistence.test.ts",
+      "temporary_blob": "/private/tmp/astra-lib-cron-1/web__lib__cron__transactionalGameStatsPersistence.test.ts",
+      "lines": 443,
+      "bytes": 13383,
+      "sha256": "d339d0a35b53182444164ed69c53677ac4d9cd19062feea217a7863be023ef52",
+      "working_tree_matches": true,
+      "working_tree_sha256": "d339d0a35b53182444164ed69c53677ac4d9cd19062feea217a7863be023ef52",
+      "read_ranges": [
+        [
+          1,
+          443
+        ]
+      ],
+      "coverage": "full_source_audit",
+      "tests_executed": false
+    },
+    {
+      "path": "web/lib/cron/transactionalGameStatsPersistence.ts",
+      "temporary_blob": "/private/tmp/astra-lib-cron-1/web__lib__cron__transactionalGameStatsPersistence.ts",
+      "lines": 743,
+      "bytes": 22402,
+      "sha256": "fbe6dd860802efb04c3437ae511a7bd32363de409ec0a9b8d7a2d8a089611f3f",
+      "working_tree_matches": true,
+      "working_tree_sha256": "fbe6dd860802efb04c3437ae511a7bd32363de409ec0a9b8d7a2d8a089611f3f",
+      "read_ranges": [
+        [
+          1,
+          743
+        ]
+      ],
+      "coverage": "full_source_audit",
+      "tests_executed": false
+    },
+    {
+      "path": "web/lib/cron/withCronJobAudit.test.ts",
+      "temporary_blob": "/private/tmp/astra-lib-cron-1/web__lib__cron__withCronJobAudit.test.ts",
+      "lines": 897,
+      "bytes": 37694,
+      "sha256": "b7170ee7690eb477d43ecbc0daea1173daeb15e0411fbdddb667171594388caf",
+      "working_tree_matches": false,
+      "working_tree_sha256": "b71dde4ee9d0751d5252e2ebcd72551162e87fcc34827866f2d24edc720fba61",
+      "read_ranges": [
+        [
+          1,
+          897
+        ]
+      ],
+      "coverage": "full_source_audit",
+      "tests_executed": false
+    },
+    {
+      "path": "web/lib/cron/withCronJobAudit.ts",
+      "temporary_blob": "/private/tmp/astra-lib-cron-1/web__lib__cron__withCronJobAudit.ts",
+      "lines": 519,
+      "bytes": 19950,
+      "sha256": "9d522e12c8b1877f385b7c1452b5952bde90dbe3f91ae60621a3aa4e157f2263",
+      "working_tree_matches": false,
+      "working_tree_sha256": "e9ac75307709bdf08e8d39739610053373624551a245ca48b8e4010ad535c220",
+      "read_ranges": [
+        [
+          1,
+          519
+        ]
+      ],
+      "coverage": "full_source_audit",
+      "tests_executed": false
+    },
+    {
+      "path": "web/lib/cron/withOperationalRouteAuth.ts",
+      "temporary_blob": "/private/tmp/astra-lib-cron-1/web__lib__cron__withOperationalRouteAuth.ts",
+      "lines": 151,
+      "bytes": 4506,
+      "sha256": "a50c05084450e6dd53aad1145ae4d8c6b8687893b0ea2f1f12dcfb402ae116ac",
+      "working_tree_matches": true,
+      "working_tree_sha256": "a50c05084450e6dd53aad1145ae4d8c6b8687893b0ea2f1f12dcfb402ae116ac",
+      "read_ranges": [
+        [
+          1,
+          151
+        ]
+      ],
+      "coverage": "full_source_audit",
+      "tests_executed": false
+    }
+  ],
+  "context_only": [
+    {
+      "path": "web/pages/api/v1/db/update-stats/[gameId].ts",
+      "bytes": 22661,
+      "lines": 721,
+      "sha256": "96b6604ace78b484d19c67a50fd3357eb8cee53d76fb1214bbdcafa38a8f3f4d",
+      "read_ranges": [
+        [
+          310,
+          465
+        ],
+        [
+          560,
+          721
+        ]
+      ],
+      "coverage": "context_only",
+      "purpose": "Actual single-game source admission, flattened player builders, transaction handoff"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-season-stats.ts",
+      "bytes": 33720,
+      "lines": 1101,
+      "sha256": "0f1f32281bf7be17c16770ec2eb33345e2a742a347e9a442d93157dd9c666354",
+      "read_ranges": [
+        [
+          670,
+          810
+        ]
+      ],
+      "coverage": "context_only",
+      "purpose": "Actual season writer source admission and transaction handoff"
+    },
+    {
+      "path": "web/pages/api/v1/db/cron/update-stats-cron.ts",
+      "bytes": 11405,
+      "lines": 330,
+      "sha256": "76b436ea442ae3f2b5a478149a18ff730ef4c029c8dda0a1bb4573a804c1de12",
+      "read_ranges": [
+        [
+          220,
+          265
+        ]
+      ],
+      "coverage": "context_only",
+      "purpose": "Quarantine caller and exact advancement handoff"
+    },
+    {
+      "path": "web/utils/adminOnlyMiddleware.ts",
+      "bytes": 3918,
+      "lines": 120,
+      "sha256": "de749fa9e811aacbbd1c85a080140f380fd8c3d3794ad378caa9dd4025f444c5",
+      "read_ranges": [
+        [
+          1,
+          120
+        ]
+      ],
+      "coverage": "context_only",
+      "purpose": "Full bounded auth dependency read; context-only for this assigned batch"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/operational-route-auth.test.ts",
+      "bytes": 10261,
+      "lines": 303,
+      "sha256": "143632391fee4488873a227f53175acbf3550d6d981cff87295ebfe0c7697dde",
+      "read_ranges": [
+        [
+          1,
+          303
+        ]
+      ],
+      "coverage": "context_only",
+      "purpose": "Auth/method/dry-run integration oracles and source-string guards; tests read only"
+    },
+    {
+      "path": "web/lib/cron/statsUpdateSafety.ts",
+      "bytes": 2079,
+      "lines": 64,
+      "sha256": "ac16e18554938eb3589c4698df98d8003a464e42bc86657b0d9b8f034e91c2fe",
+      "read_ranges": [
+        [
+          1,
+          64
+        ]
+      ],
+      "coverage": "context_only",
+      "purpose": "Bounded diagnostic sanitizer dependency"
+    },
+    {
+      "path": "supabase/migrations/20261113190000_fix_team_goalie_game_stats_placeholders_nullable.sql",
+      "bytes": 18612,
+      "lines": 476,
+      "sha256": "a623eec89b5d5dcb75bf824598e2f790aaa44c33a5996b7f53875b7ed1aa4a9d",
+      "read_ranges": [
+        [
+          1,
+          155
+        ],
+        [
+          270,
+          476
+        ]
+      ],
+      "coverage": "context_only",
+      "purpose": "Previously fully audited SQL147; current targeted payload-count, prune and complete-manifest trace"
+    },
+    {
+      "path": "supabase/migrations/20260716112908_production_schema_baseline.sql",
+      "bytes": 1787923,
+      "lines": 44825,
+      "sha256": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d",
+      "read_ranges": [
+        [
+          2750,
+          2905
+        ]
+      ],
+      "coverage": "context_only",
+      "purpose": "Quarantine RPC typed fixed-shape return; adjacent trailing function excerpt not audited"
+    }
+  ],
+  "pure_probe": {
+    "passed": true,
+    "mode": "Exact pure AST fragments; no app imports, handler/database/provider execution; synthetic inputs only",
+    "receipts": [
+      {
+        "path": "web/lib/cron/gameStatsCompleteness.ts",
+        "symbol": "isRecord",
+        "line": 128,
+        "end": 130,
+        "offset": 3321,
+        "sha256": "924e991c3639693416c3c0ac1382b1d360bb754ef67f2e95eb9c44f3570a3b98"
+      },
+      {
+        "path": "web/lib/cron/gameStatsCompleteness.ts",
+        "symbol": "getNestedValue",
+        "line": 351,
+        "end": 359,
+        "offset": 9583,
+        "sha256": "8a68e6d08c42085ee51cab4df32acef8b77371a128fcfb9035f09b040bc5d8b9"
+      },
+      {
+        "path": "web/lib/cron/gameStatsCompleteness.ts",
+        "symbol": "assertCompletePlayerGameStatsSource",
+        "line": 419,
+        "end": 474,
+        "offset": 11514,
+        "sha256": "472d2363191cb1cb87490e7a233d58882d9f8e535cb0057b0e8c496ca583c329"
+      },
+      {
+        "path": "web/lib/cron/gameStatsCompleteness.ts",
+        "symbol": "assertCompletePlayerGameStatsBatches",
+        "line": 476,
+        "end": 506,
+        "offset": 13274,
+        "sha256": "cc14db3e975be34fd9ed521c6b56d78955b53624302d7fb199647b8667ddad50"
+      },
+      {
+        "path": "web/lib/cron/gameStatsCompleteness.ts",
+        "symbol": "normalizeGameStatsClock",
+        "line": 260,
+        "end": 264,
+        "offset": 7256,
+        "sha256": "53286485059fd4f1551c2ab2aab3cb4d7b0da35a1dfd303de0fb485bd82c4bfe"
+      },
+      {
+        "path": "web/lib/cron/gameStatsCompleteness.ts",
+        "symbol": "normalizeGoalieShotRatio",
+        "line": 266,
+        "end": 270,
+        "offset": 7426,
+        "sha256": "8b1859945a4278de0222b61495ef87a500230f3ee11b0e1be127e00b0e423f35"
+      },
+      {
+        "path": "web/lib/cron/transactionalGameStatsPersistence.ts",
+        "symbol": "EXPECTED_TEAM_ROWS",
+        "line": 6,
+        "end": 6,
+        "offset": 224,
+        "sha256": "f7575c0fdefe951063d93284fe058e30a987e792f0aebaaae687555a2c25a54b"
+      },
+      {
+        "path": "web/lib/cron/transactionalGameStatsPersistence.ts",
+        "symbol": "MAX_PLAYER_ROWS",
+        "line": 7,
+        "end": 7,
+        "offset": 254,
+        "sha256": "6b060cb6fbb0af72196cfbc9daba816c31d9ed1643eae66dc9a212f4d486b8a1"
+      },
+      {
+        "path": "web/lib/cron/transactionalGameStatsPersistence.ts",
+        "symbol": "normalizePositiveIds",
+        "line": 169,
+        "end": 171,
+        "offset": 4951,
+        "sha256": "f636c6be48fe4d3fe7766667e62c5ec35fc50399e8b1b0f715e4fcdfc045b921"
+      },
+      {
+        "path": "web/lib/cron/transactionalGameStatsPersistence.ts",
+        "symbol": "validatePersistenceInput",
+        "line": 173,
+        "end": 227,
+        "offset": 5082,
+        "sha256": "8b5823c8a2b3138078f839fb86c0a806197679295b09dc2d02c9708d5dcddd04"
+      },
+      {
+        "path": "web/lib/cron/transactionalGameStatsPersistence.ts",
+        "symbol": "quarantineGameStatsBatch",
+        "line": 559,
+        "end": 657,
+        "offset": 17092,
+        "sha256": "94ab75e4e8faaccf0b71d84cc8337e948e95e05d6b10fedc25f3cfd301b2519e"
+      },
+      {
+        "path": "web/lib/cron/transactionalGameStatsPersistence.ts",
+        "symbol": "isRecord",
+        "line": 103,
+        "end": 105,
+        "offset": 2735,
+        "sha256": "924e991c3639693416c3c0ac1382b1d360bb754ef67f2e95eb9c44f3570a3b98"
+      },
+      {
+        "path": "web/lib/cron/transactionalGameStatsPersistence.ts",
+        "symbol": "isCompletionTimestamp",
+        "line": 363,
+        "end": 369,
+        "offset": 10811,
+        "sha256": "110a93dc9f6fe1f65fbbd7d9cdf37858fac961b65cad36c80138680078d64b6f"
+      },
+      {
+        "path": "web/lib/cron/withCronJobAudit.ts",
+        "symbol": "inferFailedRows",
+        "line": 161,
+        "end": 199,
+        "offset": 6262,
+        "sha256": "d3d3bedddafcad630f8a64437826773396274e31f4bdb58de4826d63ad1af12e"
+      },
+      {
+        "path": "web/lib/cron/withCronJobAudit.ts",
+        "symbol": "inferFailure",
+        "line": 201,
+        "end": 233,
+        "offset": 7208,
+        "sha256": "cd543479d484176b3ce584fe9d636115ed8a4f8049e40e45d8d07259299b1c27"
+      },
+      {
+        "path": "web/lib/cron/withCronJobAudit.ts",
+        "symbol": "isPlannedContinuation",
+        "line": 240,
+        "end": 257,
+        "offset": 8341,
+        "sha256": "8e14e0bb969fd9859afd7e5588180b98c8cec4c77c0df18051c194d6983a0297"
+      }
+    ],
+    "results": {
+      "oneSide": {
+        "sourceAccepted": true,
+        "batchesAccepted": true,
+        "transactionIds": [
+          10,
+          20
+        ]
+      },
+      "negativeControls": {
+        "missingSource": true,
+        "bothTeamsEmpty": true,
+        "clockUnknown": null,
+        "clockZero": "00:00",
+        "ratioUnknown": null,
+        "ratioZero": "0/0"
+      },
+      "trailing": {
+        "exact": 1,
+        "extraMalformed": 1,
+        "extraValidRejected": true
+      },
+      "inference": {
+        "failedRows": 2,
+        "inferFailure": false,
+        "zeroCountShadowsNestedErrors": 0,
+        "plannedContinuationWithFailedCount": true
+      }
+    },
+    "limitations": [
+      "Error constructors replaced for negative-control throws only",
+      "Quarantine probe executes only post-RPC receipt-validation statements",
+      "Audit contradictory-receipt behavior is a source risk; current producer reach not established"
+    ]
+  },
+  "runtime_tests": "not run",
+  "network_db_provider_browser_server": "none",
+  "working_tree_note": "withCronJobAudit.ts and test differ; only target blobs audited; no edits to source or Scout inventory",
+  "retained_finding": "AFULL-COMP1-01 remains email query-distinct recovery; not duplicated",
+  "local_failures": [
+    "First probe safety regexp blocked Array.from before execution; inspected and restricted database matcher to supabase.from; corrected probe passed once.",
+    "One git-show lookup used a nonexistent placeholder migration path and failed128; resolved exact SQL147 name from scope. One optional old SQL manifest lookup was absent; no source read claimed from either."
+  ]
+}

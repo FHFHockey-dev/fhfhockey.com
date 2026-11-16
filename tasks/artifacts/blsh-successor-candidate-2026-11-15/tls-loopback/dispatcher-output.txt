@@ -1,0 +1,6 @@
+getCACertificates: function setDefaultCACertificates: function default==bundled: true
+before any fetch: unset
+after first fetch: Agent
+same object after second fetch: true
+after npm undici setGlobalDispatcher: Agent identity changed: true
+bundled fetch used the replaced dispatcher: true

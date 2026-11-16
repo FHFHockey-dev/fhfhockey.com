@@ -1,0 +1,521 @@
+diff --git a/web/pages/api/v1/webhooks/on-new-line-combo.ts b/web/pages/api/v1/webhooks/on-new-line-combo.ts
+index 57379cce1..fd86da28b 100644
+--- a/web/pages/api/v1/webhooks/on-new-line-combo.ts
++++ b/web/pages/api/v1/webhooks/on-new-line-combo.ts
+@@ -2,6 +2,7 @@ import adminOnly from "utils/adminOnlyMiddleware";
+ import puppeteer from "puppeteer-core";
+ import supabase from "lib/supabase/server";
+ import { linemateMatrixCaptureSelector } from "lib/lines/matrixCapture";
++import { webhookErrorDiagnostic } from "lib/lines/webhookErrorDiagnostic";
+ 
+ const BASE_URL = true ? "https://fhfhockey.com" : "http://localhost:3000";
+ 
+@@ -27,6 +28,7 @@ export default adminOnly(async (req, res) => {
+   const gameId = Number(req.query.gameId);
+   const teamId = Number(req.query.teamId);
+   console.log(`start to handle new line combo for ${gameId} team: ${teamId}`);
++  let stage: "screenshots" | "discord" = "screenshots";
+   try {
+     let start = performance.now();
+     await retryAsyncOperation(() => saveLinemateMatrixImages(gameId, [teamId]));
+@@ -39,6 +41,7 @@ export default adminOnly(async (req, res) => {
+ 
+     start = performance.now();
+ 
++    stage = "discord";
+     await retryAsyncOperation(() => sendLineComboToDiscord(gameId, teamId));
+ 
+     console.log(
+@@ -50,8 +53,13 @@ export default adminOnly(async (req, res) => {
+     res.json({
+       message: "Successfully handled the line combo for " + gameId
+     });
+-  } catch (e: any) {
+-    console.error("on-new-line-combo error:", e);
++  } catch (e: unknown) {
++    console.error("on-new-line-combo error:", {
++      gameId,
++      teamId,
++      stage,
++      error: webhookErrorDiagnostic(e)
++    });
+     res.status(500).json({
+       success: false,
+       error: "Line-combination webhook processing failed."
+@@ -70,21 +78,13 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
+     browser = await puppeteer.connect({
+       browserWSEndpoint: process.env.PUPPETEER_ENDPOINT
+     });
+-  } catch (err: any) {
+-    // Attempt to serialize the error with JSON.stringify; fall back to util.inspect
+-    let errSerialized: string;
+-    try {
+-      errSerialized = JSON.stringify(err, Object.getOwnPropertyNames(err), 2);
+-    } catch (_) {
+-      // Use dynamic import to avoid require() (keeps lint happy and works in ESM)
+-      // import() returns a module namespace object
+-      const util = await import("util");
+-      // util.inspect is available on the imported module
+-      errSerialized = (util as any).inspect(err, { depth: 4 });
+-    }
+-    console.error("Failed to connect to puppeteer:", err);
++  } catch (err: unknown) {
++    console.error("Failed to connect to puppeteer:", {
++      gameId,
++      error: webhookErrorDiagnostic(err)
++    });
+     throw new NonRetryableWebhookError(
+-      `Failed to connect to puppeteer: browser endpoint is unavailable. ${errSerialized}`
++      "Failed to connect to puppeteer: browser endpoint is unavailable."
+     );
+   }
+ 
+@@ -184,7 +184,7 @@ async function retryAsyncOperation(
+       if (retryCount >= maxRetries) {
+         throw error; // If max retries reached, rethrow the error
+       }
+-      console.error(`Attempt ${retryCount + 1} failed: ${error.message}`);
++      console.error(`Attempt ${retryCount + 1} failed:`, webhookErrorDiagnostic(error));
+       retryCount++;
+       await new Promise((resolve) => setTimeout(resolve, delay)); // Wait before retrying
+     }
+diff --git a/web/lib/lines/webhookErrorDiagnostic.ts b/web/lib/lines/webhookErrorDiagnostic.ts
+new file mode 100644
+index 000000000..fcec8e600
+--- /dev/null
++++ b/web/lib/lines/webhookErrorDiagnostic.ts
+@@ -0,0 +1,104 @@
++const ERROR_NAMES = new Set([
++  "Error",
++  "ErrorEvent",
++  "TypeError",
++  "RangeError",
++  "TimeoutError",
++  "ProtocolError",
++  "AggregateError",
++  "NonRetryableWebhookError"
++]);
++
++const ERROR_CODES = [
++  "ECONNREFUSED",
++  "ECONNRESET",
++  "ETIMEDOUT",
++  "ENOTFOUND",
++  "EAI_AGAIN",
++  "EHOSTUNREACH",
++  "ENETUNREACH",
++  "EPIPE",
++  "ERR_INVALID_URL",
++  "ERR_TLS_CERT_ALTNAME_INVALID",
++  "CERT_HAS_EXPIRED",
++  "DEPTH_ZERO_SELF_SIGNED_CERT",
++  "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
++] as const;
++
++type ErrorCode = (typeof ERROR_CODES)[number];
++
++type WebhookErrorDiagnostic = {
++  name: string;
++  code?: ErrorCode;
++  syscall?: string;
++  status?: number;
++  reason?: string;
++  cause?: WebhookErrorDiagnostic;
++  error?: WebhookErrorDiagnostic;
++};
++
++function property(value: unknown, key: string): unknown {
++  if (!value || typeof value !== "object") return undefined;
++  try {
++    return (value as Record<string, unknown>)[key];
++  } catch {
++    return undefined;
++  }
++}
++
++// Never copy arbitrary text or objects from dependency errors. In particular, ws
++// ErrorEvents contain a WebSocket target with the authenticated connection URL.
++// Fixed values also cover encoded/nested URLs without relying on URL redaction.
++export function webhookErrorDiagnostic(
++  value: unknown,
++  seen = new Set<unknown>(),
++  depth = 0
++): WebhookErrorDiagnostic {
++  const diagnostic: WebhookErrorDiagnostic = { name: "UnknownError" };
++  if (depth >= 4 || seen.has(value)) return diagnostic;
++  seen.add(value);
++
++  const name = property(value, "name");
++  if (typeof name === "string" && ERROR_NAMES.has(name)) diagnostic.name = name;
++
++  const message = typeof value === "string" ? value : property(value, "message");
++  const code = property(value, "code");
++  const knownCode = ERROR_CODES.find((candidate) => candidate === code);
++  if (knownCode) diagnostic.code = knownCode;
++  else if (typeof message === "string") {
++    diagnostic.code = ERROR_CODES.find((candidate) =>
++      new RegExp(`\\b${candidate}\\b`).test(message)
++    );
++  }
++
++  const syscall = property(value, "syscall");
++  if (
++    syscall === "connect" || syscall === "getaddrinfo" ||
++    syscall === "read" || syscall === "write"
++  ) {
++    diagnostic.syscall = syscall;
++  }
++  const status = property(value, "status") ?? property(value, "statusCode");
++  if (
++    typeof status === "number" && Number.isInteger(status) &&
++    status >= 400 && status <= 599
++  ) {
++    diagnostic.status = status;
++  }
++
++  if (message === "Cannot find the matrix") diagnostic.reason = "matrix_not_found";
++  if (message === "PUPPETEER_ENDPOINT is not configured.") {
++    diagnostic.reason = "endpoint_not_configured";
++  }
++  if (message === "Failed to connect to puppeteer: browser endpoint is unavailable.") {
++    diagnostic.reason = "browser_endpoint_unavailable";
++  }
++
++  for (const key of ["cause", "error"] as const) {
++    const nested = property(value, key);
++    if (nested != null) {
++      diagnostic[key] = webhookErrorDiagnostic(nested, seen, depth + 1);
++    }
++  }
++  return diagnostic;
++}
+diff --git a/web/lib/lines/webhookErrorDiagnostic.test.ts b/web/lib/lines/webhookErrorDiagnostic.test.ts
+new file mode 100644
+index 000000000..baeadbb26
+--- /dev/null
++++ b/web/lib/lines/webhookErrorDiagnostic.test.ts
+@@ -0,0 +1,116 @@
++// @vitest-environment node
++import { describe, expect, it, vi } from "vitest";
++import { webhookErrorDiagnostic } from "./webhookErrorDiagnostic";
++
++const endpoint =
++  "wss://fixture_user:fixture_password@browserless.invalid/chromium?token=fixture_token&api_key=fixture_key";
++
++describe("webhookErrorDiagnostic", () => {
++  it.each([
++    endpoint,
++    encodeURIComponent(endpoint),
++    encodeURIComponent(encodeURIComponent(endpoint)),
++    `https://proxy.invalid/connect?url=${encodeURIComponent(endpoint)}`,
++    "wss://browserless.invalid/?%74oken=fixture_token&ToKeN=fixture_other#fixture_fragment"
++  ])("retains only known diagnostics for URL-bearing errors (%#)", (url) => {
++    const error = Object.assign(new Error(`connect ECONNREFUSED ${url}`), {
++      code: "ECONNREFUSED",
++      syscall: "connect",
++      statusCode: 502,
++      url,
++      headers: { Authorization: "Bearer fixture_bearer" },
++      cause: Object.assign(new TypeError(`nested ${url}`), {
++        code: "ETIMEDOUT"
++      })
++    });
++    error.stack = `Error: ${url}\n at connect (${url}:1:2)`;
++
++    expect(webhookErrorDiagnostic(error)).toEqual({
++      name: "Error",
++      code: "ECONNREFUSED",
++      syscall: "connect",
++      status: 502,
++      cause: { name: "TypeError", code: "ETIMEDOUT" }
++    });
++  });
++
++  it("handles ws ErrorEvent getters without serializing its target or error", () => {
++    const toJSON = vi.fn(() => { throw new Error("must not serialize"); });
++    const inspect = vi.fn(() => endpoint);
++    const event = {
++      get message() { return `connect ECONNREFUSED ${endpoint}`; },
++      get error() {
++        return { code: "ECONNREFUSED", syscall: "connect", stack: endpoint };
++      },
++      target: { _url: endpoint, connection: { url: endpoint } },
++      toJSON,
++      [Symbol.for("nodejs.util.inspect.custom")]: inspect
++    };
++
++    expect(webhookErrorDiagnostic(event)).toEqual({
++      name: "UnknownError",
++      code: "ECONNREFUSED",
++      error: { name: "UnknownError", code: "ECONNREFUSED", syscall: "connect" }
++    });
++    expect(toJSON).not.toHaveBeenCalled();
++    expect(inspect).not.toHaveBeenCalled();
++  });
++
++  it("does not trust even normally safe-looking property names", () => {
++    expect(webhookErrorDiagnostic({
++      name: endpoint,
++      message: endpoint,
++      stack: endpoint,
++      code: `ECONNRESET ${endpoint}`,
++      syscall: endpoint,
++      status: endpoint,
++      cause: { name: endpoint, code: endpoint, error: endpoint }
++    })).toEqual({
++      name: "UnknownError",
++      cause: { name: "UnknownError", error: { name: "UnknownError" } }
++    });
++  });
++
++  it("keeps known code diagnostics from string throws and HTTP status errors", () => {
++    expect(webhookErrorDiagnostic(`ECONNRESET ${endpoint}`)).toEqual({
++      name: "UnknownError", code: "ECONNRESET"
++    });
++    expect(webhookErrorDiagnostic({ status: 503, message: endpoint })).toEqual({
++      name: "UnknownError", status: 503
++    });
++    for (const status of [NaN, Infinity, 503.5, 200, 600]) {
++      expect(webhookErrorDiagnostic({ status })).toEqual({ name: "UnknownError" });
++    }
++  });
++
++  it.each([
++    ["Cannot find the matrix", "matrix_not_found"],
++    ["PUPPETEER_ENDPOINT is not configured.", "endpoint_not_configured"],
++    ["Failed to connect to puppeteer: browser endpoint is unavailable.", "browser_endpoint_unavailable"]
++  ])("keeps the fixed local failure reason (%#)", (message, reason) => {
++    expect(webhookErrorDiagnostic(new Error(message))).toEqual({ name: "Error", reason });
++  });
++
++  it("bounds cyclic and deeply nested causes", () => {
++    const cycle: { cause?: unknown } = {};
++    cycle.cause = cycle;
++    expect(webhookErrorDiagnostic(cycle)).toEqual({
++      name: "UnknownError", cause: { name: "UnknownError" }
++    });
++
++    let nested: unknown = new Error(endpoint);
++    for (let index = 0; index < 100; index++) nested = { cause: nested };
++    const output = JSON.stringify(webhookErrorDiagnostic(nested));
++    expect(output).not.toContain("fixture_");
++    expect(output.length).toBeLessThan(200);
++  });
++
++  it("does not let throwing accessors leak or break reporting", () => {
++    const value = Object.defineProperties({}, Object.fromEntries(
++      ["name", "message", "code", "syscall", "status", "statusCode", "cause", "error"].map(
++        (key) => [key, { get() { throw new Error(endpoint); } }]
++      )
++    ));
++    expect(webhookErrorDiagnostic(value)).toEqual({ name: "UnknownError" });
++  });
++});
+diff --git a/web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts b/web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts
+new file mode 100644
+index 000000000..bc220cde5
+--- /dev/null
++++ b/web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts
+@@ -0,0 +1,202 @@
++// @vitest-environment node
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++
++const mocks = vi.hoisted(() => ({
++  connect: vi.fn(),
++  upload: vi.fn(),
++  from: vi.fn(),
++  fetch: vi.fn()
++}));
++
++vi.mock("puppeteer-core", () => ({ default: { connect: mocks.connect } }));
++vi.mock("lib/supabase/server", () => ({ default: { storage: { from: mocks.from } } }));
++vi.mock("utils/adminOnlyMiddleware", () => ({ default: (handler: unknown) => handler }));
++
++import handler from "../../../../../pages/api/v1/webhooks/on-new-line-combo";
++
++const endpoint =
++  "wss://fixture_user:fixture_password@browserless.invalid/chromium?token=fixture_token";
++const encodedEndpoint = encodeURIComponent(encodeURIComponent(endpoint));
++
++function dependencyError() {
++  const error = Object.assign(new Error(`request failed ${encodedEndpoint}`), {
++    code: "ECONNRESET",
++    syscall: "read",
++    cause: {
++      message: `https://proxy.invalid/?connection=${encodeURIComponent(endpoint)}`,
++      stack: endpoint,
++      connection: { url: endpoint },
++      error: { code: "ETIMEDOUT", url: endpoint }
++    }
++  });
++  error.stack = `Error: ${endpoint}\n at connect (${encodedEndpoint})`;
++  return error;
++}
++
++function response() {
++  return { status: vi.fn().mockReturnThis(), json: vi.fn() };
++}
++
++async function invoke(res: ReturnType<typeof response>) {
++  await handler({ query: { gameId: "2026020001", teamId: "10" } } as any, res as any);
++}
++
++function expectSafeFailure(res: ReturnType<typeof response>) {
++  expect(res.status).toHaveBeenCalledWith(500);
++  expect(res.json).toHaveBeenCalledWith({
++    success: false,
++    error: "Line-combination webhook processing failed."
++  });
++  const output = JSON.stringify({
++    logs: vi.mocked(console.log).mock.calls,
++    errors: vi.mocked(console.error).mock.calls,
++    response: res.json.mock.calls
++  });
++  for (const secret of ["fixture_", "browserless.invalid", "proxy.invalid", endpoint, encodedEndpoint]) {
++    expect(output).not.toContain(secret);
++  }
++}
++
++describe("line-combination webhook safe dependency diagnostics", () => {
++  let page: {
++    setViewport: ReturnType<typeof vi.fn>;
++    goto: ReturnType<typeof vi.fn>;
++    waitForSelector: ReturnType<typeof vi.fn>;
++    evaluate: ReturnType<typeof vi.fn>;
++    $: ReturnType<typeof vi.fn>;
++  };
++  let browser: { newPage: ReturnType<typeof vi.fn>; close: ReturnType<typeof vi.fn> };
++
++  beforeEach(() => {
++    vi.resetAllMocks();
++    vi.useFakeTimers();
++    vi.stubEnv("PUPPETEER_ENDPOINT", endpoint);
++    vi.stubEnv("CRON_SECRET", "fixture_cron");
++    vi.stubGlobal("fetch", mocks.fetch);
++    vi.spyOn(console, "log").mockImplementation(() => {});
++    vi.spyOn(console, "error").mockImplementation(() => {});
++    page = {
++      setViewport: vi.fn().mockResolvedValue(undefined),
++      goto: vi.fn().mockResolvedValue(undefined),
++      waitForSelector: vi.fn().mockResolvedValue(undefined),
++      evaluate: vi.fn().mockResolvedValue(undefined),
++      $: vi.fn().mockResolvedValue({ screenshot: vi.fn().mockResolvedValue(Buffer.from("fixture-image")) })
++    };
++    browser = {
++      newPage: vi.fn().mockResolvedValue(page),
++      close: vi.fn().mockResolvedValue(undefined)
++    };
++    mocks.connect.mockResolvedValue(browser);
++    mocks.from.mockReturnValue({ upload: mocks.upload });
++    mocks.upload.mockResolvedValue({ data: { path: "line-combos/2026020001-10.png" }, error: null });
++    mocks.fetch.mockResolvedValue({ json: vi.fn().mockResolvedValue({ success: true }) });
++  });
++
++  afterEach(() => {
++    vi.useRealTimers();
++    vi.restoreAllMocks();
++    vi.unstubAllGlobals();
++    vi.unstubAllEnvs();
++  });
++
++  it.each(["event", "error", "string"])("does not serialize connection failure (%s) or retry it", async (shape) => {
++    const nested = dependencyError();
++    const toJSON = vi.fn(() => { throw new Error("do not serialize"); });
++    const error = shape === "event"
++      ? { message: endpoint, error: nested, target: { _url: endpoint }, toJSON }
++      : shape === "error" ? nested : `connect ECONNREFUSED ${encodedEndpoint}`;
++    mocks.connect.mockRejectedValue(error);
++    const res = response();
++    await invoke(res);
++
++    expectSafeFailure(res);
++    expect(mocks.connect).toHaveBeenCalledTimes(1);
++    expect(mocks.upload).not.toHaveBeenCalled();
++    expect(mocks.fetch).not.toHaveBeenCalled();
++    expect(toJSON).not.toHaveBeenCalled();
++    expect(console.error).toHaveBeenCalledWith("on-new-line-combo error:", {
++      gameId: 2026020001, teamId: 10, stage: "screenshots",
++      error: { name: "NonRetryableWebhookError", reason: "browser_endpoint_unavailable" }
++    });
++    expect(JSON.stringify(vi.mocked(console.error).mock.calls)).toContain(
++      shape === "string" ? "ECONNREFUSED" : "ECONNRESET"
++    );
++  });
++
++  it("reports missing configuration without connecting or retrying", async () => {
++    vi.stubEnv("PUPPETEER_ENDPOINT", "");
++    const res = response();
++    await invoke(res);
++    expectSafeFailure(res);
++    expect(mocks.connect).not.toHaveBeenCalled();
++    expect(JSON.stringify(vi.mocked(console.error).mock.calls)).toContain("endpoint_not_configured");
++  });
++
++  it.each(["newPage", "goto", "upload", "discord"])("keeps retries and safe diagnostics after a %s failure", async (stage) => {
++    const error = dependencyError();
++    if (stage === "newPage") browser.newPage.mockRejectedValue(error);
++    if (stage === "goto") page.goto.mockRejectedValue(error);
++    if (stage === "upload") mocks.upload.mockResolvedValue({ error, data: null });
++    if (stage === "discord") mocks.fetch.mockRejectedValue(error);
++    const res = response();
++    const pending = invoke(res);
++    await vi.runAllTimersAsync();
++    await pending;
++
++    expectSafeFailure(res);
++    expect(mocks.connect).toHaveBeenCalledTimes(stage === "discord" ? 1 : 4);
++    expect(mocks.fetch).toHaveBeenCalledTimes(stage === "discord" ? 4 : 0);
++    const errors = vi.mocked(console.error).mock.calls;
++    expect(errors).toHaveLength(4);
++    expect(errors.slice(0, 3).map(([label]) => label)).toEqual([
++      "Attempt 1 failed:", "Attempt 2 failed:", "Attempt 3 failed:"
++    ]);
++    expect(errors[3][1]).toMatchObject({
++      gameId: 2026020001, teamId: 10,
++      stage: stage === "discord" ? "discord" : "screenshots",
++      error: { name: "Error", code: "ECONNRESET", syscall: "read" }
++    });
++    expect(JSON.stringify(errors)).toContain("ETIMEDOUT");
++  });
++
++  it("preserves the existing nonretryable ECONNREFUSED classification", async () => {
++    page.goto.mockRejectedValue(new Error(`ECONNREFUSED ${endpoint}`));
++    const res = response();
++    await invoke(res);
++    expectSafeFailure(res);
++    expect(mocks.connect).toHaveBeenCalledTimes(1);
++    expect(console.error).toHaveBeenCalledTimes(1);
++    expect(JSON.stringify(vi.mocked(console.error).mock.calls)).toContain("ECONNREFUSED");
++  });
++
++  it("keeps the useful matrix-not-found reason", async () => {
++    page.$.mockResolvedValue(null);
++    const res = response();
++    const pending = invoke(res);
++    await vi.runAllTimersAsync();
++    await pending;
++    expectSafeFailure(res);
++    expect(JSON.stringify(vi.mocked(console.error).mock.calls)).toContain("matrix_not_found");
++  });
++
++  it("preserves browser options, screenshot upload, Discord request and success response", async () => {
++    const res = response();
++    await invoke(res);
++    expect(mocks.connect).toHaveBeenCalledWith({ browserWSEndpoint: endpoint });
++    expect(page.setViewport).toHaveBeenCalledWith({ width: 1440, height: 900, deviceScaleFactor: 1 });
++    expect(page.goto).toHaveBeenCalledWith("https://fhfhockey.com/lines/line-combo/2026020001?isScreenshot=1");
++    expect(page.waitForSelector).toHaveBeenCalledWith(".content");
++    expect(page.$).toHaveBeenCalledWith("#linemate-matrix-10 .content");
++    expect(mocks.from).toHaveBeenCalledWith("images");
++    expect(mocks.upload).toHaveBeenCalledWith("line-combos/2026020001-10.png", Buffer.from("fixture-image"), {
++      cacheControl: "604800", contentType: "image/png", upsert: true
++    });
++    expect(browser.close).toHaveBeenCalledTimes(1);
++    expect(mocks.fetch).toHaveBeenCalledWith(
++      "https://fhfhockey.com/api/v1/discord/send-message/line-combo/2026020001?teamId=10",
++      { method: "POST", headers: { Authorization: "Bearer fixture_cron" } }
++    );
++    expect(res.json).toHaveBeenCalledWith({ message: "Successfully handled the line combo for 2026020001" });
++    expect(console.error).not.toHaveBeenCalled();
++  });
++});

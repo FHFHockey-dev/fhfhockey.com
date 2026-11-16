@@ -1,0 +1,141 @@
+{
+  "checkedAtUTC": "2026-11-12T18:39:02.072865+00:00",
+  "branch": "octoberBranch",
+  "HEAD": "720dbd3479576805eee7dc27f3c1b454950e88f1",
+  "status": "local_bootstrap_verified_and_independently_reviewed_no_pilot_authority",
+  "sourcePins": [
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureBootstrap.ts",
+      "sha256": "d4d2fcac52ffd272307b97bcbe79a008d888f7ee05f96526888cdcea2a34c97f"
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureBootstrap.test.ts",
+      "sha256": "47a531687a925dfe4dc045444d4894c7798e572f5b55b1b1078f223672816533"
+    }
+  ],
+  "checks": [
+    {
+      "command": "npm test -- --run scripts/blsh/nativeProcessCaptureBootstrap.test.ts",
+      "exitCode": 0,
+      "testsPassed": 32,
+      "durationSeconds": 2.91,
+      "transport": "mocked adapter/runner and blocked network; synthetic receipt; no credential access"
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "note": "Final full check after test-helper correction completed."
+    },
+    {
+      "command": "./node_modules/.bin/eslint scripts/blsh/nativeProcessCaptureBootstrap.ts scripts/blsh/nativeProcessCaptureBootstrap.test.ts",
+      "exitCode": 0
+    },
+    {
+      "command": "empty-environment Node/ts-node --check; exact invocation in BOOTSTRAP-HANDOFF.md",
+      "exitCode": 0,
+      "result": "BOOTSTRAP-OFFLINE-CHECK.json",
+      "actualCaptureInvoked": false
+    },
+    {
+      "command": "same empty-environment CLI with --invalid",
+      "exitCode": 1,
+      "expected": true,
+      "result": "fixed sanitized refusal before prerequisites or runtime imports"
+    }
+  ],
+  "priorAttempts": [
+    {
+      "tests": 28,
+      "passed": 28,
+      "status": "initial_candidate"
+    },
+    {
+      "testsSelected": 4,
+      "failed": 4,
+      "skipped": 28,
+      "status": "regressions_failed_before_resolution_fix",
+      "failure": "promise resolved instead of rejecting mocked JS shadow"
+    },
+    {
+      "tests": 32,
+      "passed": 18,
+      "failed": 14,
+      "status": "test_harness_failure_after_resolution_fix",
+      "cause": "Vitest lacks ts-node .ts hook; corrected test-only fallback; real CLI already passed"
+    }
+  ],
+  "independentReview": {
+    "path": "BOOTSTRAP-INDEPENDENT-REVIEW.md",
+    "finding": "unpinned JS shadow could override hashed TS source",
+    "correction": "bind all nine extensionless source resolutions to exact canonical TS before imports",
+    "disposition": "closed; no remaining code blocker established",
+    "reviewer": "gpt-6.1-sol medium (configured); actual Chef model/effort unavailable, feasible-assignment fallback, hierarchy not claimed"
+  },
+  "evidence": [
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-TESTS.log",
+      "sha256": "1224ab0490a65752c0b128610ac9556fa02d4433a33aaf1d4fd6593c8433705c"
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-TYPECHECK.log",
+      "sha256": "11228127ace25fc2b46c68b6ffab0026dd9d7bdf636e1c4c2603a160f7659eec"
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-LINT.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-OFFLINE-CHECK.json",
+      "sha256": "268b4e502bcc7d8673793f48b80233ad13ca8389e18b6b876e0beae8d78261df"
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-CLI-REFUSAL.log",
+      "sha256": "7e00bd891a81261beb73a0728267430049708d0c159be4e9a3bf48ec7d690e47"
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-INDEPENDENT-REVIEW.md",
+      "sha256": "fd387a7f40fd98424f3e38f95022f2757f26ad7a1a624b4e339ab1980bdaca4f"
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-HANDOFF.md",
+      "sha256": "d0cb9ace5ccf478a4eb89b50e7b909d9d7502468f8ea7fb8e4b39765bdac7064"
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/CUSTODIAN-HANDOFF.md",
+      "sha256": "d08ea95d7d682219a5177a2f21d397e5c886ebb40e41b94670fd43e1881bf98f"
+    }
+  ],
+  "operations": {
+    "liveCapture": 0,
+    "providerRequests": 0,
+    "databaseLedgerOperations": 0,
+    "credentialAccess": 0,
+    "productionChanges": 0,
+    "outputDirectoryCreated": false,
+    "custodianMessageSent": true,
+    "slotReserved": false,
+    "validPilotApprovalCreated": false,
+    "custodianMessageActor": "Scout; one file-only mailbox delivery after original test checkpoint"
+  },
+  "remaining": [
+    "operator assignment and current coordinated slot clearance",
+    "actual configured process/mode/TLS receipt and private credential availability confirmed by operator",
+    "current admission/control evidence from custodian",
+    "operator acceptance of private output path and host write authority",
+    "specific user approval of exact candidate and start window"
+  ],
+  "coordinationDelivery": {
+    "status": "mailbox_delivered_verified_acknowledgment_pending",
+    "actor": "Scout parent coordinator",
+    "mailbox": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+    "heading": "CODEX-BLSH-CUSTODIAN-COORDINATION-20261112",
+    "deliveredAtUTC": "2026-11-12T18:40:41.686022Z",
+    "verifiedAtUTC": "2026-11-12T18:42:01.252097+00:00",
+    "quotedRequestExactMatch": true,
+    "quotedRequestSHA256": "3e785b8d9df05e21cb3cdd7d4f0b279023260320f760367de2092b8dd36f9248",
+    "custodianAcknowledged": false,
+    "slotReserved": false,
+    "pilotApproved": false,
+    "additionalMessageSentByThisWorker": false
+  }
+}

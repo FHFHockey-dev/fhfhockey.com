@@ -1,0 +1,39 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "findings": [
+    {
+      "id": "AFULL-ULSPAGE1-01",
+      "equalPower": 102,
+      "firstOrderRanks": {
+        "AAA": 1,
+        "BBB": 2,
+        "CCC": 3
+      },
+      "reversedRanks": {
+        "BBB": 1,
+        "AAA": 2,
+        "CCC": 3
+      }
+    },
+    {
+      "id": "AFULL-TEAMN1-02",
+      "additionalConsumer": "web/pages/underlying-stats/index.tsx",
+      "paceOnly130ReportedSpecialTeamsBonus": -10
+    }
+  ],
+  "controls": {
+    "differentSnapshotHidden": true,
+    "nullLastBothDirections": true,
+    "sosFractionConversion": true,
+    "percentAsStored": true,
+    "nullAndZeroDistinct": true,
+    "sampleSd1": true,
+    "emptyScheduleChips": true
+  },
+  "source": {
+    "path": "web/pages/underlying-stats/index.tsx",
+    "sha256": "b3a3d081ccda7e0ceb5c03c5b9a2a4ff63cf6d6986f236dec460ed6624f07b7f"
+  },
+  "boundary": "Exact page helpers/memos/formula expression plus actual shared power function. No rendered popover/UI/network, later hosted snapshot, provider, DB, env or supplied suite."
+}

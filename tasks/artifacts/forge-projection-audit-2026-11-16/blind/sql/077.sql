@@ -1,0 +1,1 @@
+select game_date, count(*) n, to_char(min(created_at),'MM-DD HH24:MI:SS') first_created, to_char(max(created_at),'MM-DD HH24:MI:SS') last_created, to_char(max(updated_at),'MM-DD HH24:MI:SS') last_upd from goalie_start_projections where game_date >= '2026-11-13' group by 1 order by 1

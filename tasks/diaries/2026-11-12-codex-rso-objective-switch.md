@@ -1,0 +1,14 @@
+# RSO objective switch
+- Scope: user cannot return from Most starts to Best projected points (section 2).
+- Checkout: canonical octoberBranch. Owning clean files: planning.ts, RosterScheduleOptimizer.tsx, nearest component/streamingChain tests. No deployment or DB changes.
+- Screenshot inspected: points button visibly disabled while starts selected.
+- Cause identified: engine permits known-part outcome comparisons with partial forecasts; UI only permits full recommendation eligibility. Existing toggle test conditionally skips the points click.
+- Next: share engine eligibility with UI, regression for repeated switches and no-forecast disabled guard, focused checks.
+- Regression reproduced pre-fix disabled-state failure. Shared `hasKnownPointsComparison` now used by engine and UI; no change to engine's existing eligibility, forecast gates, or numeric handling. UI no longer requires complete recommendation eligibility for existing supported partial comparisons.
+- 279 component/planning tests passed; final targeted recheck follows type-correct fixture adjustment. Scoped lint passed with six pre-existing hook dependency warnings; diff check passed.
+- First default-heap whole-web TypeScript process OOM at 4 GiB; retry uses 8 GiB and is in progress.
+- Final whole-web TypeScript passed with 8 GiB; final targeted toggle tests passed (2); lint zero errors/six existing warnings and diff check passed. No browser E2E run.
+- Candidate: tasks/artifacts/rso-objective-switch-2026-11-12/CANDIDATE.json, four owned files, based on ad7451db583570c60d505004916b3cdda13f7023. Local and uncommitted; no DB writes or deployment. Parent to prepare exact release scope/approval.
+- Parent authorized object-only batched candidate creation. f42a15054adeee03be4858a9a4859cddb6d31040 on current remote/production 4243bcd4e includes exactly eight reviewed RSO+Lines files, no shared refs/index/checkout changes. Isolated archive test run passed 299 tests; types pending. Remote connector confirms four linked projects and web READY parent/three canceled companions; current roots/ignore settings not exposed by slim responses, retained settings need recheck before release. RELEASE-PLAN.md records exact scope, guarded rollout and rollback. Independent combined review requested.
+- Exact candidate archive TypeScript passed. Excluded Lines ISR HTML from proposed smoke after inspection; proposed three sequential GETs only (RSO shell + two legacy-mode-guarded projected API reads). Waiting for combined independent review and current project settings before publication scope is final.
+- Independent final batch review: no blockers, exact eight-file scope verified, 20 Lines tests passed in candidate archive (plus prior five RSO tests). Release packet complete except fresh root/branch/ignore settings confirmation and explicit publishing approval. No push/deploy performed.

@@ -1,0 +1,92 @@
+{
+  "observedDate": "2026-11-12",
+  "method": "Read official NHL public game summaries; compare to actual local offline replay. No source ingestion or database writes.",
+  "qualification": "Four totals comparisons cannot qualify the penalty simulator; deterministic counterexamples remain.",
+  "games": [
+    {
+      "gameId": 2026020009,
+      "playerId": 8479361,
+      "source": "https://www.nhl.com/scores/htmlreports/20262027/GS020009.HTM",
+      "officialTeamPpSeconds": {
+        "home": 480,
+        "away": 120
+      },
+      "officialGoalieStrength": {
+        "es": "52:49",
+        "pp": "2:00",
+        "pk": "8:00"
+      },
+      "unionOnlyLocalStrength": {
+        "es": "52:11",
+        "pp": "2:18",
+        "pk": "8:20"
+      },
+      "strengthMatchesOfficial": false,
+      "officialAndUnionTotal": "62:49"
+    },
+    {
+      "gameId": 2026020115,
+      "playerId": 8477424,
+      "source": "https://www.nhl.com/scores/htmlreports/20262027/GS020115.HTM",
+      "officialTeamPpSeconds": {
+        "home": 422,
+        "away": 360
+      },
+      "officialGoalieStrength": {
+        "es": "49:46",
+        "pp": "7:02",
+        "pk": "6:00"
+      },
+      "unionOnlyLocalStrength": {
+        "es": "49:11",
+        "pp": "7:24",
+        "pk": "6:13"
+      },
+      "strengthMatchesOfficial": false,
+      "officialAndUnionTotal": "62:48"
+    },
+    {
+      "gameId": 2026020159,
+      "playerId": 8475311,
+      "source": "https://www.nhl.com/scores/htmlreports/20262027/GS020159.HTM",
+      "officialTeamPpSeconds": {
+        "home": 214,
+        "away": 120
+      },
+      "officialGoalieStrength": {
+        "es": "56:52",
+        "pp": "2:00",
+        "pk": "3:34"
+      },
+      "unionOnlyLocalStrength": {
+        "es": "56:02",
+        "pp": "2:41",
+        "pk": "3:43"
+      },
+      "strengthMatchesOfficial": false,
+      "officialAndUnionTotal": "62:26"
+    },
+    {
+      "gameId": 2026020205,
+      "playerId": 8482657,
+      "source": "https://www.nhl.com/scores/htmlreports/20262027/GS020205.HTM",
+      "officialTeamPpSeconds": {
+        "home": 120,
+        "away": 120
+      },
+      "officialGoalieStrength": {
+        "es": "59:07",
+        "pp": "2:00",
+        "pk": "2:00"
+      },
+      "unionOnlyLocalStrength": {
+        "es": "58:54",
+        "pp": "2:11",
+        "pk": "2:02"
+      },
+      "strengthMatchesOfficial": false,
+      "officialAndUnionTotal": "63:07"
+    }
+  ],
+  "unavailableReport": 2026020298
+}

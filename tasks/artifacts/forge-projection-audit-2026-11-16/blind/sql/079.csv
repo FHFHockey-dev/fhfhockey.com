@@ -1,0 +1,5 @@
+pipeline_key,scope_key,operation_key,status,upd,lease,err,cursor_date,cursor_game_id
+projection_input_ingest,completed_game_slates,canonical:2026-11-15:2026-11-15,complete,11-16 10:16:54,,,2026-11-15,2026020330
+projection_input_ingest,completed_game_slates,canonical:2026-11-14:2026-11-14,complete,11-16 09:45:08,,,2026-11-14,2026020325
+projection_input_ingest,completed_game_slates,canonical:2026-11-13:2026-11-13,complete,11-15 09:45:03,,,2026-11-13,2026020311
+projection_input_ingest,completed_game_slates,canonical:2026-11-12:2026-11-12,complete,11-13 09:45:10,,,2026-11-12,2026020309

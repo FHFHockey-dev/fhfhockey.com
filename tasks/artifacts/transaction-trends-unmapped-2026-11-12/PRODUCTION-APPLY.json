@@ -1,0 +1,18 @@
+{
+  "mode": "apply",
+  "started_at": "2026-11-12T19:41:58.462499+00:00",
+  "project_id": "fyhftlxokyjtpndbkfse",
+  "host": "db.fyhftlxokyjtpndbkfse.supabase.co",
+  "sql_file": "repair-season-metadata.sql",
+  "sql_sha256": "99a528b95429e64123e276351240db8ca730da7abcb2440883911c1e15a8f10f",
+  "status": "returned",
+  "verified": true,
+  "returncode": 0,
+  "stdout": "BEGIN\nSET\nSET\nSET\nCREATE TABLE\nINSERT 0 3\nDO\n player_key  | season |        context_key         | season_id | fhfh_player_id | nhl_player_id | verification_status \n-------------+--------+----------------------------+-----------+----------------+---------------+---------------------\n 453.p.30000 |   2024 | yahoo:game:453:season:2024 |  20242025 |           8946 |       8481754 | verified\n 453.p.30024 |   2024 | yahoo:game:453:season:2024 |  20242025 |          10423 |       8483493 | verified\n 453.p.30111 |   2024 | yahoo:game:453:season:2024 |  20242025 |          10251 |       8482221 | verified\n(3 rows)\n\nCOMMIT\n",
+  "stderr": "",
+  "commit_acknowledged": true,
+  "finished_at": "2026-11-12T19:41:59.520884+00:00",
+  "verified_at": "2026-11-12T19:42:41.645849+00:00",
+  "verification_source": "PRODUCTION-POSTCHECK.json",
+  "verification_meaning": "Committed expected state confirmed by the one exact-key postcheck"
+}

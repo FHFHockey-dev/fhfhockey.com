@@ -1,0 +1,23 @@
+{
+  "status": "local-verified-not-deployed",
+  "base": "ad7451db583570c60d505004916b3cdda13f7023",
+  "files": [
+    {
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "sha256": "d9686db26902c2142fd1cbcc03af5fed6125a80514631326a5212c9892d52b5b"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "sha256": "5221ba9cc28cd921f503a12766d37696b1bcff63b56965e9cbe89c8cb192d50a"
+    },
+    {
+      "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "sha256": "2cc4b3dc0fc9f0a45f3d774341015c229261dc4f1e3cbd301aa163c6b1e229fb"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/streamingChain.test.ts",
+      "sha256": "1c950421d3612a87a229991dd226f3fd0b1d1cc96a2ab0d7e849773865e42232"
+    }
+  ],
+  "deployment": "not authorized or performed"
+}

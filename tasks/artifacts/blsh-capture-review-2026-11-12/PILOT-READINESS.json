@@ -1,0 +1,214 @@
+{
+  "checkedAtUTC": "2026-11-12T19:40:03.642713+00:00",
+  "HEAD": "f821bcf8018c0a38badbf785e7f7a8ce5fce8597",
+  "branch": "octoberBranch",
+  "status": "offline_ready_waiting_for_custodian_and_specific_pilot_approval",
+  "executionPlan": "PILOT-EXECUTION-PLAN.md",
+  "executionPlanSHA256": "0fe6094d0d486747563807f871031e2bba46d945657710836f69a4ac3a47436f",
+  "sourcePins": [
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+      "sha256": "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "sha256": "bfb68aac3aff5d5d2882a34138d42d7602fec5d3c0051a3bbfe0a80526d95b0b",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+      "sha256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+      "sha256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+      "sha256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+      "matches": true
+    },
+    {
+      "path": "web/lib/nst/client.ts",
+      "sha256": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+      "matches": true
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.ts",
+      "sha256": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+      "matches": true
+    },
+    {
+      "path": "web/lib/nst/admissionOrigin.ts",
+      "sha256": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+      "matches": true
+    },
+    {
+      "path": "web/lib/nst/jobLifecycle.server.ts",
+      "sha256": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+      "matches": true
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "matches": true
+    },
+    {
+      "path": "web/lib/cron/nstRateLimitPolicy.ts",
+      "sha256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+      "matches": true
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+      "sha256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880",
+      "matches": true
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+      "sha256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf",
+      "matches": true
+    },
+    {
+      "path": "web/lib/skoElement/contract.ts",
+      "sha256": "6bda1cd0c52980989addb9f16a9fc0b8ccef5d2125334becc91bddeb2e08c40b",
+      "matches": true
+    },
+    {
+      "path": "web/lib/skoElement/interpret.ts",
+      "sha256": "c330d79ef1851024109ebfa3b2732954f4e8429c9a82d4ae681b2433cec65e99",
+      "matches": true
+    },
+    {
+      "path": "web/lib/skoElement/fixtures.ts",
+      "sha256": "f04a937c6d85425d418fe1399855b37c08b1f06c938eb5fb1fa18740afa395f9",
+      "matches": true
+    },
+    {
+      "path": "web/lib/skoElement/interpret.test.ts",
+      "sha256": "3b7fe2d756de9087731e5aefda4144ee172faa96ac734f41ed12dfc13eda29be",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureBootstrap.ts",
+      "sha256": "d4d2fcac52ffd272307b97bcbe79a008d888f7ee05f96526888cdcea2a34c97f",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureBootstrap.test.ts",
+      "sha256": "47a531687a925dfe4dc045444d4894c7798e572f5b55b1b1078f223672816533",
+      "matches": true
+    }
+  ],
+  "existingEvidence": [
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-TESTS.log",
+      "sha256": "1224ab0490a65752c0b128610ac9556fa02d4433a33aaf1d4fd6593c8433705c",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-TYPECHECK.log",
+      "sha256": "11228127ace25fc2b46c68b6ffab0026dd9d7bdf636e1c4c2603a160f7659eec",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-LINT.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-OFFLINE-CHECK.json",
+      "sha256": "268b4e502bcc7d8673793f48b80233ad13ca8389e18b6b876e0beae8d78261df",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-CLI-REFUSAL.log",
+      "sha256": "7e00bd891a81261beb73a0728267430049708d0c159be4e9a3bf48ec7d690e47",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-INDEPENDENT-REVIEW.md",
+      "sha256": "fd387a7f40fd98424f3e38f95022f2757f26ad7a1a624b4e339ab1980bdaca4f",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-HANDOFF.md",
+      "sha256": "d0cb9ace5ccf478a4eb89b50e7b909d9d7502468f8ea7fb8e4b39765bdac7064",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-capture-review-2026-11-12/CUSTODIAN-HANDOFF.md",
+      "sha256": "d08ea95d7d682219a5177a2f21d397e5c886ebb40e41b94670fd43e1881bf98f",
+      "matches": true
+    }
+  ],
+  "verification": {
+    "bootstrapTestsPassed": 32,
+    "priorDistinctCaptureSkoUITestsPassed": 204,
+    "typecheckExitCode": 0,
+    "lintExitCode": 0,
+    "actualCheckOnlyCLIExitCode": 0,
+    "invalidCLIExitCode": 1,
+    "invalidCLIExpected": true,
+    "independentReview": "sole established bootstrap defect closed; no remaining code blocker established",
+    "reusedAtUnchangedPins": true,
+    "testsRerunThisContinuation": false,
+    "additionalEstablishedOfflineGap": null
+  },
+  "currentCoordination": {
+    "outgoingHeading": "CODEX-BLSH-CUSTODIAN-COORDINATION-20261112",
+    "outgoingDeliveredOnce": true,
+    "exactIncomingReplyFound": false,
+    "incomingEvidence": [
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+        "heading": "CLAUDE-FIX-SPRINT-SERIAL-ORDER-20261112",
+        "sectionSHA256": "935f60471e7a4209b4d30f326827626e9610c0851173e3ec4ae462a29663c6a9"
+      },
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+        "heading": "CLAUDE-FIX-SPRINT-DB-HANDOFF-2-20261112",
+        "sectionSHA256": "d0ca5a5b22fa8a33834f355b97d200122e2142374c4d9bb57f08e8ee3400fbbe"
+      }
+    ],
+    "savedState": "Claude step1 complete at19:37:08Z; approved next steps Trends then Goalie Grid; no BLSH slot assigned",
+    "liveStateRead": false,
+    "currentSlotClearance": false,
+    "additionalOutreach": false
+  },
+  "gates": {
+    "offlineImplementationAndReviewClosed": true,
+    "sourcePinsMatch": true,
+    "custodianAcknowledged": false,
+    "operatorAssigned": false,
+    "actualConfiguredProcessVerified": false,
+    "currentAdmissionControlsVerified": false,
+    "slotReserved": false,
+    "privateOutputAcceptedByOperator": false,
+    "specificUserPilotApproval": false
+  },
+  "proposedStartWindowUTC": {
+    "startInclusive": "2026-11-13T14:05:00.000Z",
+    "endExclusive": "2026-11-13T14:06:00.000Z",
+    "workEndsBefore": "2026-11-13T14:08:00.000Z"
+  },
+  "maximumHTTPAttempts": 5,
+  "maximumProductionAdmissionTransactions": 2,
+  "proposedAuthorizationFile": {
+    "path": "/Users/tim/Library/Application Support/fhfh-blsh-pilot-authorization-20261113.json",
+    "exists": false,
+    "parentMode": "0700",
+    "created": false
+  },
+  "operationsThisContinuation": {
+    "liveCapture": 0,
+    "providerRequests": 0,
+    "databaseOrLedgerCalls": 0,
+    "credentialAccess": 0,
+    "productionChanges": 0,
+    "runtimeSourceEdits": 0,
+    "newMessages": 0
+  }
+}

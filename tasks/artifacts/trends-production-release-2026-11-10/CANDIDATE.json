@@ -1,0 +1,39 @@
+{
+  "at": "2026-11-10T20:20:24.996678+00:00",
+  "candidate": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5",
+  "baseProduction": "64105d05615df03dd5f5ca650647846b2ab0ca64",
+  "target": {
+    "project": "fhfhockey",
+    "environment": "production",
+    "branch": "master",
+    "syncBranch": "octoberBranch"
+  },
+  "sourceFiles": [
+    {
+      "path": "web/pages/api/v1/transactions/ownership-trends.ts",
+      "sha256": "786d1071d0dbd608db6136c44f3d7b5718a2e312845005438903c98ced94c30a"
+    },
+    {
+      "path": "web/pages/api/v1/transactions/ownership-snapshots.ts",
+      "sha256": "40c831d785cce52ba21818b229a951e424f0203025eceec5a660d97e1ed65320"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts",
+      "sha256": "ba1df0a5c3d68a720a7c9a0bd89147ab5c560036bc0801319a0862bf6c156825"
+    }
+  ],
+  "ownerChecks": {
+    "focusedTests": "62 passed in 3 files",
+    "scopedLint": "passed",
+    "diffCheck": "passed",
+    "typecheck": "passed with 8GB Node heap; default4GB failed OOM"
+  },
+  "independentApiTests": 41,
+  "typecheckRepeated": false,
+  "typecheckEvidence": "Owner 8GB full TypeScript passed; all three final pins unchanged",
+  "reports": "Four audit/report-only commits preserved, no runtime drift",
+  "preservedDiary": "Index removal only; local hash verified",
+  "dbActivityAt": "2026-11-10T20:18:57Z",
+  "dbOtherActiveClients": 0,
+  "dbOtherOpenClientTransactions": 0
+}

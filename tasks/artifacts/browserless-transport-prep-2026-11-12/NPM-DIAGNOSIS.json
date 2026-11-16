@@ -1,0 +1,73 @@
+{
+  "checkedAt": "2026-11-12T18:25:46.091280+00:00",
+  "status": "root cause identified offline; no candidate dependency change required",
+  "runtime": {
+    "node": "22.23.4",
+    "npm": "10.9.9"
+  },
+  "cause": {
+    "path": "web/node_modules/node_modules",
+    "kind": "self-referencing directory symlink",
+    "target": "/Users/tim/Code/fhfhockey.com/web/node_modules",
+    "createdAt": "2026-10-20T19:25:01.490Z",
+    "predatesCandidate": true,
+    "trackedByGit": false,
+    "ignoredByGit": true,
+    "presentInRootOrHiddenLock": false,
+    "explanation": "Arborist treats the nested link as the parent of the installed children. Root children collapses to this one link, so depth-zero filtering reports empty/missing despite the actual package files."
+  },
+  "controlledReadOnlyProbe": {
+    "defaultActualTree": {
+      "rootChildren": 1,
+      "onlyChild": "node_modules",
+      "linkTargetChildren": 1267,
+      "wsRootEdge": "MISSING",
+      "typesWsRootEdge": "MISSING",
+      "puppeteerRootEdge": "MISSING"
+    },
+    "filterExcludingOnlyNestedNodeModules": {
+      "rootChildren": 1266,
+      "ws": {
+        "version": "8.21.1",
+        "valid": true
+      },
+      "@types/ws": {
+        "version": "8.18.1",
+        "valid": true
+      },
+      "puppeteer-core": {
+        "version": "22.13.1",
+        "valid": true
+      }
+    },
+    "method": "Installed npm @npmcli/arborist.loadActual({offline:true,forceActual:true,filter:(_node,name)=>name!==\"node_modules\"}); no filesystem changes or reify call."
+  },
+  "supportingChecks": {
+    "directoryEnumeration": "fs.readdirSync and npm readdirScoped both see ws and Puppeteer",
+    "npmConfiguration": "omit empty, global false, package-lock-only false, no workspace selected; checked from web/",
+    "lockGraph": "previous lockfile-only npm ls passed both direct versions",
+    "actualImports": "previous actual ws/Puppeteer require checks passed",
+    "newDependenciesInstallScripts": "ws and @types/ws have no preinstall/install/postinstall scripts",
+    "offlineBundle": {
+      "command": "./node_modules/.bin/esbuild lib/lines/browserlessTransport.ts --bundle --platform=node --format=cjs --outfile=/tmp/fhfh-browserless-transport-check-20261112.cjs",
+      "status": "passed",
+      "artifactSha256": "689652d56c9c1b3c467ce2c942802c30f209e749799ce98aba3853e17ffc476e",
+      "loadAndInsecureFixture": "passed: compiled export loads; fixed safe error rejects ws fixture before socket construction"
+    },
+    "existingEvidence": "80 fixture tests, scoped lint/typecheck and independent re-review remain valid; candidate pins unchanged"
+  },
+  "buildImpact": {
+    "candidateDependencyBlocker": false,
+    "basis": "Declared/locked versions and module resolution are valid; controlled Arborist view and actual transport bundling succeed. The unmanaged October 20 self-link is absent from the candidate and both lockfiles.",
+    "inference": "A clean dependency tree built from the tracked candidate is not expected to inherit this local symlink. A build that reuses this local tree or gates on its npm ls may still be affected.",
+    "fullNextBuild": "not run; no end-to-end build/deployment claim",
+    "nextAction": "No source/lock repair needed for this discrepancy. Preserve shared installed tree; any optional local symlink cleanup belongs to its dependency-directory owner and is not required for this local candidate review."
+  },
+  "writes": {
+    "nodeModules": false,
+    "npmConfiguration": false,
+    "manifestOrSource": false,
+    "softwareInstalled": false,
+    "networkRequests": 0
+  }
+}

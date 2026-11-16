@@ -1,0 +1,11 @@
+job_name,t,status,sd,ed,gt,gp,fr,errs
+ingest-projection-inputs,11-13 09:45:10,success,2026-11-12,2026-11-12,11,11,0,[]
+ingest-projection-inputs,11-13 10:20:29,success,2026-11-12,2026-11-12,11,0,0,[]
+ingest-projection-inputs,11-14 09:45:01,failure,2026-11-13,2026-11-13,2,0,1,"[{""date"": ""2026-11-13"", ""stage"": ""precheck_shifts"", ""gameId"": 2026020310, ""message"": ""Shift clock/duration mismatch for game 2026020310, player 8480947""}]"
+ingest-projection-inputs,11-14 10:15:51,failure,2026-11-13,2026-11-13,2,0,1,"[{""date"": ""2026-11-13"", ""stage"": ""precheck_shifts"", ""gameId"": 2026020310, ""message"": ""Shift clock/duration mismatch for game 2026020310, player 8480947""}]"
+ingest-projection-inputs,11-14 10:20:29,failure,2026-11-13,2026-11-13,2,0,1,"[{""date"": ""2026-11-13"", ""stage"": ""precheck_shifts"", ""gameId"": 2026020310, ""message"": ""Shift clock/duration mismatch for game 2026020310, player 8480947""}]"
+ingest-projection-inputs,11-15 09:45:04,failure,2026-11-13,2026-11-13,2,1,1,"[{""date"": ""2026-11-13"", ""stage"": ""precheck_shifts"", ""gameId"": 2026020310, ""message"": ""Shift clock/duration mismatch for game 2026020310, player 8480947; period=1 start_s=0 end_s=481 duration_s=470"", ""isolated"": true}]"
+ingest-projection-inputs,11-15 10:21:35,failure,2026-11-14,2026-11-14,14,6,1,"[{""date"": ""2026-11-14"", ""stage"": ""precheck_shifts"", ""gameId"": 2026020318, ""message"": ""Shift clock/duration mismatch for game 2026020318, player 8479292; period=3 start_s=0 end_s=510 duration_s=411""}]"
+ingest-projection-inputs,11-15 10:31:23,failure,2026-11-14,2026-11-14,14,0,1,"[{""date"": ""2026-11-14"", ""stage"": ""precheck_shifts"", ""gameId"": 2026020318, ""message"": ""Shift clock/duration mismatch for game 2026020318, player 8479292; period=3 start_s=0 end_s=510 duration_s=411""}]"
+ingest-projection-inputs,11-16 09:45:08,failure,2026-11-14,2026-11-14,14,7,1,"[{""date"": ""2026-11-14"", ""stage"": ""precheck_shifts"", ""gameId"": 2026020318, ""message"": ""Shift clock/duration mismatch for game 2026020318, player 8479292; period=3 start_s=0 end_s=510 duration_s=411"", ""isolated"": true}]"
+ingest-projection-inputs,11-16 10:16:54,success,2026-11-15,2026-11-15,5,5,0,[]

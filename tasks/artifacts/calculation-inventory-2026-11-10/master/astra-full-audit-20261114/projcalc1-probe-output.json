@@ -1,0 +1,129 @@
+{
+  "pin": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "hashes": {
+    "web/lib/predictions/rollingWindows.ts": "f241f957b11f6fdeab46911d0c8cd1b6b087551de9cb3abdb6c30ffa0c3d2c90",
+    "web/lib/projections/constants/projection-weights.ts": "e98611fbd96d10c248951f14be15d6dcf56272a72beb90b6112f3ac0d023d035",
+    "web/lib/projections/utils/number-utils.ts": "46a78073bdc6336c44dfe0ffb5e33370c5c1730ab74c4fc23a7fe6937e858222",
+    "web/lib/projections/utils/date-utils.ts": "2cffcc04886d2aad6f7d40ebf48ef91cece1ba8317fb0623b3baaf2ca9793c93",
+    "web/lib/projections/calculators/skater-adjustments.ts": "ae120b556adba8d689c54b572346e7c09134e3fad1178fb1f2404d06080dea60",
+    "web/lib/projections/calculators/goalie-save-pct-context.ts": "340f522df9da8aa8e007acd850f8b8cf36d17633ed629ec4b0f78459421d49b6",
+    "web/lib/projections/calculators/goalie-starter.ts": "c1d233b8009d157d780534c7b5ef9d5afb60d9047c238b01c8134263c8352b89",
+    "web/lib/projections/calculators/scenario-blending.ts": "6a48f6be434919ba2c7f3248572c7738e6030d45201c296d13ddff9400dcf8d7",
+    "web/lib/projections/calculators/skater-strength-buckets.ts": "7c5009a1a9dc17fd72fd58427fdef04dbbd71b2a07891e691e9cf90a0fe090c8"
+  },
+  "findings": {
+    "pdo": {
+      "neutral": {
+        "sampleWeight": 0.2206,
+        "shotRateMultiplier": 1,
+        "goalRateMultiplier": 1,
+        "assistRateMultiplier": 1,
+        "paceEdge": 0,
+        "opponentDefenseEdge": 0
+      },
+      "aboveOne": {
+        "sampleWeight": 0.2206,
+        "shotRateMultiplier": 0.9989,
+        "goalRateMultiplier": 1,
+        "assistRateMultiplier": 0.9986,
+        "paceEdge": 0,
+        "opponentDefenseEdge": 0
+      },
+      "belowOne": {
+        "sampleWeight": 0.2206,
+        "shotRateMultiplier": 0.9999,
+        "goalRateMultiplier": 1,
+        "assistRateMultiplier": 0.9998,
+        "paceEdge": 0,
+        "opponentDefenseEdge": 0
+      }
+    },
+    "unknownRushRebounds": {
+      "unknown": {
+        "sampleWeight": 0.6429,
+        "shotRateMultiplier": 0.9743,
+        "goalRateMultiplier": 0.9775,
+        "qualityPerShot": 0.09,
+        "rushReboundPer60": 0
+      },
+      "knownZero": {
+        "sampleWeight": 0.6429,
+        "shotRateMultiplier": 0.9743,
+        "goalRateMultiplier": 0.9775,
+        "qualityPerShot": 0.09,
+        "rushReboundPer60": 0
+      }
+    },
+    "restBaseline": {
+      "profile": {
+        "sourceDate": "synthetic",
+        "savePctByBucket": {
+          "0": 0.9,
+          "1": 0.95
+        },
+        "gamesByBucket": {
+          "0": 2,
+          "1": 2
+        }
+      },
+      "gameWeightedBaseline": 0.925,
+      "pairedSaves": 208,
+      "pairedShots": 220,
+      "pooledSavePct": 0.9454545454545454,
+      "actualAdjustment": 0.006249999999999978,
+      "pairedExposureAdjustment": 0.0011363636363636298,
+      "reach": "multi-game fixture only; current rest split reported inert on one-game WGO rows"
+    }
+  },
+  "controls": {
+    "simplex": [
+      0.495,
+      0.495,
+      0.01
+    ],
+    "pool": {
+      "targetSeconds": 14000,
+      "wasCapped": true,
+      "capReason": "undersized_projected_pool",
+      "unmodeledResidualSeconds": 4000
+    },
+    "budgets": {
+      "totalSeconds": 18000,
+      "toiEsTarget": 14200,
+      "toiPpTarget": 1800,
+      "toiPkTarget": 2000,
+      "shotsPkTarget": 1,
+      "pkShare": 0.1111111111111111,
+      "pkStatus": "modeled",
+      "esDefinition": "even_strength"
+    },
+    "unknownBudget": {
+      "totalSeconds": 18000,
+      "toiEsTarget": 16200,
+      "toiPpTarget": 1800,
+      "toiPkTarget": null,
+      "shotsPkTarget": null,
+      "pkShare": null,
+      "pkStatus": "unknown_team_pk_exposure",
+      "esDefinition": "all_non_pp_time"
+    },
+    "unknownRate": 6.62,
+    "zeroRate": 5.915744680851064,
+    "teamAssists": [
+      {
+        "assistsEs": 1.2374999999999998,
+        "assistsPp": 0.764
+      },
+      {
+        "assistsEs": 2.0625,
+        "assistsPp": 1.146
+      }
+    ]
+  },
+  "boundaries": [
+    "Exact pure pinned modules with imports removed; no production imports",
+    "Aligned-support and compatibility functions not called; no dummy implementation used",
+    "No full stage/forecast/fitting/custody/Vitest/DB/provider/page/server/build executed",
+    "No hosted incidence or retrospective performance asserted"
+  ]
+}

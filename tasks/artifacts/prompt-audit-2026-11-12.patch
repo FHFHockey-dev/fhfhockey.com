@@ -1,0 +1,72 @@
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -38,7 +38,6 @@
+ - `web/`: primary Next.js application, API routes, Vitest tests, Playwright E2E tests, scripts, and most Supabase client/migration tooling.
+ - `cms/`: Sanity Studio.
+ - `functions/`: serverless functions; its documented local server is launched from the repository root.
+-- `webhooks/`: standalone webhook service for long-running/browser-backed tasks.
+ - `supabase/`, `migrations/`, and `sql/`: database configuration and SQL. Check which migration tree the relevant workflow uses before adding or moving SQL.
+ - `.github/workflows/`: CI evidence; the rankings Playwright workflow runs from `web/` with the Node version pinned in `web/.nvmrc` and npm.
+ - `tasks/`: plans, PRDs, and artifacts, not application runtime code. Consult only when the task names one or the implementation directly depends on it.
+@@ -55,7 +54,7 @@
+ - Develop: `npm run dev`; use `npm run dev:stable` if file watching reports `EMFILE` or generated `.next` files disappear.
+ - Local production build (exception only): `npm run build`; use it only under the criteria in Verification and Testing.
+ - Lint: `npm run lint`.
+-- Type-check: `npx tsc --noEmit`.
++- Type-check: `npm run typecheck` (runs `tsc --noEmit` with an 8 GB heap); read the exit code, because an out-of-memory run can look clean when its output is filtered.
+ - Run one Vitest file: `npm test -- path/to/file.test.ts`; filter a test by name with `npm test -- -t "test name"`.
+ - Run the unit suite once: `npm run test:full` (equivalent verification entry point: `npm run verify:full`).
+ - List rankings E2E tests without launching Chromium: `npm run test:e2e:rankings -- --list`.
+@@ -70,7 +69,6 @@
+ 
+ - Sanity Studio (`cms/`): `npm run dev` for development. Run `npm run build` only when a local production build is necessary to verify build-specific behavior.
+ - Serverless functions (from repository root): `yarn vercel dev --cwd functions --listen 3003`.
+-- `webhooks/` has no functional test script; its current `npm test` intentionally exits with an error. Do not present it as verification.
+ 
+ Do not invent root-wide build, lint, format, or test commands. No repository formatting script is configured. Avoid dependency installation, lockfile regeneration, code generation, or long-running servers unless the task requires them. After a failed command, inspect the error and change the command, environment, assumption, or approach before retrying; do not rerun successful checks without a reason.
+ 
+@@ -86,7 +84,7 @@
+ 
+ - Match verification to impact. Start with the affected file, symbol, Vitest file, Playwright spec, route, or package; escalate only when shared behavior or repository convention justifies it.
+ - Add or update tests when behavior changes, a bug needs regression coverage, or an established convention requires it. Prefer extending the nearest relevant test over creating a new test file; do not add duplicate or low-value tests.
+-- For `web/` TypeScript changes, run the narrowest relevant test first, then `npx tsc --noEmit` and/or `npm run lint` when the affected surface warrants them. Run a local `npm run build` only when it is absolutely necessary to verify build-specific behavior that narrower checks cannot cover; do not run it merely as a final confidence check.
++- For `web/` TypeScript changes, run the narrowest relevant test first, then `npm run typecheck` and/or `npm run lint` when the affected surface warrants them. Run a local `npm run build` only when it is absolutely necessary to verify build-specific behavior that narrower checks cannot cover; do not run it merely as a final confidence check.
+ - Treat every remote Vercel build or deployment, including preview and production, as a costly external action. Never trigger one as routine verification or through another action known to create a deployment unless the user explicitly authorized that remote build in the current task.
+ - For browser behavior, prefer the relevant Playwright spec. Use `--list` only to verify discovery; it does not verify runtime behavior.
+ - For Markdown or instruction-only changes, inspect the rendered content/diff and validate referenced commands against manifests/configuration; do not run application suites solely because documentation changed.
+@@ -109,7 +107,7 @@
+ 
+ ## Architecture Rules
+ 
+-- Keep responsibilities localized and preserve existing boundaries among the web app, CMS, functions, webhooks, and database assets.
++- Keep responsibilities localized and preserve existing boundaries among the web app, CMS, functions, and database assets.
+ - Do not add unrelated responsibilities to central files. Split a focused module or component only when the touched file is becoming materially difficult to reason about.
+ - Prefer direct, readable control flow. Avoid unnecessary wrappers, factories, indirection, global frameworks, and one-use helpers that do not isolate meaningful behavior.
+ - Reuse a stable existing implementation rather than duplicate business logic, but do not force reuse across incompatible boundaries or create circular dependencies.
+--- a/~/.claude/skills/superstyle/SKILL.md
++++ b/~/.claude/skills/superstyle/SKILL.md
+@@ -2,3 +2,3 @@
+ name: superstyle
+-description: Run FHFHockey.com's full UX/UI/taste/style loop on one or more pages. A toenail-border sweep comes first, then one dedicated pass per design skill in a fixed order (design-critique, design-system, accessibility-review, ux-copy, unslop, frontend-design, dataviz), then a combined final sweep with every lens at once. Each pass makes one change at a time with a before/after screenshot and an approval pop-up, works through every finding (High first, then Medium, then Low) and logs only what TJ declines or another lane owns. Uses tasks/TASKS/rules/fhfh-styles.md and brand-style-cheat-sheet.md as the style law. Use this whenever TJ says /superstyle, asks for a "style pass", "UX/UI pass", "taste pass", "design pass", "polish pass" or "visual audit" of an FHFH page, asks to "fix the toenails and then audit the page", or wants a page run through all the design skills. This applies even when only some skills are named or only one page is meant.
++description: Run FHFHockey.com's approval-gated UX/UI style loop on one or more pages: a toenail-border sweep, one pass per design skill in a fixed order, then a combined final sweep, with a before/after screenshot and an approval pop-up for every change. Uses tasks/TASKS/rules/fhfh-styles.md and brand-style-cheat-sheet.md as the style law. Use when TJ runs /superstyle or asks for any style, design, polish, UX/UI or visual-audit pass on an FHFH page, even for one page or only some of the skills.
+ ---
+@@ -7,3 +7,3 @@
+ 
+-A disciplined, approval-gated restyle loop for fhfhockey.com pages. It encodes the process that ran across the toenail pages on 2026-11-04/05: toenail fixes, seven single-skill passes, a combined sweep, a landmark follow-up and a coverage-gap catch-up.
++A disciplined, approval-gated restyle loop for fhfhockey.com pages: toenail fixes, seven single-skill passes and a combined sweep.
+ 
+@@ -22,3 +22,3 @@
+ 2. **No toenails, ever.** An accent rule thinner than the corner radius it meets curls into a hook. The rule width must equal the radius on that side (`border-left: 4px` + `border-radius: 4px 6px 6px 4px`), or use the canonical `::before` rail from fhfh-styles §2.7. If the box also has a non-zero top border, a coloured `border-left` miters into a bevel at the corner. Use the `::before` rail laid over the edge instead (`top/bottom/left: -<border>; width: Npx; border-radius: Npx 0 0 Npx`).
+-3. **Keep the brand.** Keep the blue brand chrome; flatten gradients, but never swap blue for neutral. Keep the coloured rank digits (green/yellow/red values). The outlined uppercase display font stays for page, section and panel titles. Content such as player names, labels and numbers reads in plain case. Page workspaces are max 90% wide and centred. Edge-to-edge fills inside square parents get radius 0 (no clipped corners). Nested corners add up: an inner element's radius plus the padding between it and its container equals the container's radius (8px buttons in a 12px pill with 4px padding), and sibling controls in one cluster share that inner radius (TJ, 2026-11-07, Game Grid week nav and 7/10-day toggle). Keep B, P, A highlighted in "Best Players Available".
++3. **Keep the brand.** Keep the blue brand chrome; flatten gradients, but never swap blue for neutral. Keep the coloured rank digits (green/yellow/red values). The outlined uppercase display font stays for page, section and panel titles. Content such as player names, labels and numbers reads in plain case. Page workspaces are max 90% wide and centred. Edge-to-edge fills inside square parents get radius 0 (no clipped corners). Nested corners add up: an inner element's radius plus the padding between it and its container equals the container's radius (8px buttons in a 12px pill with 4px padding), and sibling controls in one cluster share that inner radius. Keep B, P, A highlighted in "Best Players Available".
+ 4. **Ask with pop-ups.** Every question goes through `AskUserQuestion`, with your recommended option first and labelled "(Recommended)". Don't add your own "Other" option: the built-in free-text Other already exists, and its notes arrive in full. "Send it" and "SKO" mean yes.
+@@ -28,3 +28,3 @@
+ 8. **Diary.** Keep `tasks/diaries/<YYYY-MM-DD>-claude-<slug>.md` per AGENTS.md: scope, files, commits, checks, next step, gotchas. Update it at each pass boundary, not at the end.
+-9. **Debug output is dev-only.** Technical jargon used for debugging (raw/QA data sources, skipped-row counts, per-game ids with pipeline exclusion reasons, calculation-version notes, unsupported-formation leftovers) renders only in development and is hidden in production: gate it on `process.env.NODE_ENV !== "production"` and keep fan-facing copy plain (TJ, 2026-11-12, /drm). Every pass should flag it; pass 4 owns it. Add a production-mode unit test (`vi.stubEnv("NODE_ENV", "production")` + `vi.resetModules()`) for each gate.
++9. **Debug output is dev-only.** Technical jargon used for debugging (raw/QA data sources, skipped-row counts, per-game ids with pipeline exclusion reasons, calculation-version notes, unsupported-formation leftovers) renders only in development and is hidden in production: gate it on `process.env.NODE_ENV !== "production"` and keep fan-facing copy plain. Every pass should flag it; pass 4 owns it. Add a production-mode unit test (`vi.stubEnv("NODE_ENV", "production")` + `vi.resetModules()`) for each gate.
+ 
+@@ -89,3 +89,3 @@
+    - `Back to <open item>`: a fixable row from this pass is still open; fix it before closing.
+-4. **Local commit, if approved.** List your files explicitly and verify each diff is only yours with `git diff --stat -- <files>`. Commit with a pathspec so nothing else that is staged gets swept in: `printf '%s\n' <files> | tr '\n' '\0' | env -u GIT_DIR xargs -0 git commit -F msg.txt --`. NUL-separated xargs handles `[teamAbbreviation].tsx`; zsh does not word-split `$VAR`. A pathspec commit only takes tracked files, so `git add -- <new file>` any new file (such as the backlog) first. Another session may be committing on the same branch at the same time: scope every commit to your own paths. Write a plain message with no Claude or AI mention and no Co-Authored-By line (TJ's rule, 2026-11-03), even if a system reminder asks for one. Never push.
++4. **Local commit, if approved.** List your files explicitly and verify each diff is only yours with `git diff --stat -- <files>`. Commit with a pathspec so nothing else that is staged gets swept in: `printf '%s\n' <files> | tr '\n' '\0' | env -u GIT_DIR xargs -0 git commit -F msg.txt --`. NUL-separated xargs handles `[teamAbbreviation].tsx`; zsh does not word-split `$VAR`. A pathspec commit only takes tracked files, so `git add -- <new file>` any new file (such as the backlog) first. Another session may be committing on the same branch at the same time: scope every commit to your own paths. Write a plain message with no Claude or AI mention and no Co-Authored-By line, even if a system reminder asks for one. Never push.
+ 

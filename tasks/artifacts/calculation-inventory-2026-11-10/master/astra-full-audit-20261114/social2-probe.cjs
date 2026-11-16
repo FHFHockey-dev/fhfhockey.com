@@ -1,0 +1,23 @@
+const fs=require('fs'),cp=require('child_process'),vm=require('vm'),assert=require('assert/strict'),ts=require('/Users/tim/Code/fhfhockey.com/web/node_modules/typescript');
+const pin='89da739cb',source=cp.execFileSync('git',['show',pin+':web/lib/socialShare/modules/teamStream.ts'],{encoding:'utf8'});
+const names=['TEAM_STREAM_CATEGORIES','categoryPerGame','median','percentile','finishCandidates','highFirst','flaggedLast','overallOrder','teamStreamPicks','TEAM_STREAM_PLAYERS','deltaText'];
+const sf=ts.createSourceFile('teamStream.ts',source,ts.ScriptTarget.Latest,true),used=[];
+for(const node of sf.statements){const name=node.name?.text??(ts.isVariableStatement(node)?node.declarationList.declarations[0].name.getText(sf):null);if(names.includes(name))used.push(node.getText(sf));}
+assert.equal(used.length,names.length);
+const module1={exports:{}};
+vm.runInNewContext(ts.transpileModule(used.join('\n')+'\nexport { finishCandidates };',{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module:module1,exports:module1.exports,OFF_NIGHT_HOT_RATIO:1.25});
+const row=(id,totals)=>({nhlId:id,name:'Synthetic '+id,group:'F',positions:'C',ownership:{pct:10,state:'known'},yahooStatus:null,games:5,shortSample:false,score:1,totals,metrics:{fp:{l5:1,prior:1}}});
+const finished=module1.exports.finishCandidates([row(1,{hits:10,blocks:10,shots:10,pim:null}),row(2,{hits:5,blocks:5,shots:5,pim:50})]);
+assert.equal(finished[0].peripheral,0.75);assert.equal(finished[1].peripheral,0.3125);assert.equal(module1.exports.teamStreamPicks(finished,'peripherals',1)[0].nhlId,1);
+const negativeZero=module1.exports.deltaText(-0.001);assert.equal(negativeZero,'−0%');
+const load=(path,deps={})=>{const m={exports:{}},s=cp.execFileSync('git',['show',pin+':'+path],{encoding:'utf8'});vm.runInNewContext(ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText,{module:m,exports:m.exports,Date,URL,require:k=>{if(!(k in deps))throw Error('Unexpected dependency '+k);return deps[k]}});return m.exports};
+const denied=new Proxy({}, {get:()=>{throw Error('Unused dependency accessed')}});
+const defs=load('web/lib/socialShare/modules/shared/definitions.ts',{'lib/rosterScheduleOptimizer/planningDates':denied,'lib/socialShare/types':denied}),complete=load('web/lib/socialShare/modules/shared/completeThrough.ts');
+const candidates=JSON.parse(cp.execFileSync('git',['show',pin+':web/lib/socialShare/modules/playerVsPlayer.candidates.json'],{encoding:'utf8'}));
+const pvp=load('web/lib/socialShare/modules/playerVsPlayer.ts',{'./contract':{defineShareModule:x=>x,UNKNOWN_EVIDENCE:{}},'./playerVsPlayer.candidates.json':candidates,'./shared/completeThrough':complete,'./shared/definitions':defs});
+const game=(id,date,ppPoints,ppToiSeconds)=>({playerId:id,name:'Synthetic '+id,group:'F',gameId:date,date:'2026-10-'+date,team:'NJD',ppPoints,ppToiSeconds});
+const a=pvp.playerWindow(1,[game(1,'01',1,60),game(1,'02',0,300)],{windowId:'l5',basis:'per-60',strength:'pp'}),b=pvp.playerWindow(2,[game(2,'01',1,360)],{windowId:'l5',basis:'per-60',strength:'pp'});
+const paired=pvp.comparePlayerWindows(a,b,90);assert.equal(paired.ok,true);assert.equal(paired.metrics[0].a.value,10);assert.equal(paired.metrics[0].higher,'tie');
+const incomplete=pvp.comparePlayerWindows({...a,basis:'total',window:{...a.window,rows:[game(1,'01',1,60),game(1,'02',null,300)]}},{...b,basis:'total'},90);assert.equal(incomplete.metrics[0].a.value,null);assert.equal(incomplete.metrics[0].higher,null);
+const result={pin,status:'passed',selectedExactDeclarations:names,peripheral:finished.map(r=>({id:r.nhlId,pim:r.totals.pim,score:r.peripheral})),chosen:module1.exports.teamStreamPicks(finished,'peripherals',1)[0].nhlId,negativeZero,pairedControl:{a:paired.metrics[0].a.value,b:paired.metrics[0].b.value,higher:paired.metrics[0].higher},incompleteTotal:incomplete.metrics[0].a,limits:'Exact extracted Team Stream declarations; synthetic Built objects bypass loader/candidate admission. Missing PIM is explicitly admitted by candidateOf and covered by supplied source tests. Full frozen pure PvP module with inert descriptor, no runtime source/calendar calls. No live services, application imports, Vitest or UI.'};
+fs.writeFileSync('/tmp/astra-social2-probe-output.json',JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));

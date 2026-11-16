@@ -12,7 +12,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 112px;
   min-height: 172px;
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(v.$color-white, 0.08);
 }
 
 .lineupCard {
@@ -64,8 +64,10 @@
   }
 }
 
+// Slim team strip (TJ, 2026-11-15): the pane identifies the team, the
+// headline gets the width.
 .rail {
-  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-columns: 32px minmax(0, 1fr);
   min-height: 82px;
   border-radius: v.$radius-card;
 
@@ -80,14 +82,14 @@
     grid-column: 1;
     grid-row: 1;
     align-content: center;
-    padding: 5px;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 4px;
+    border-right: 1px solid rgba(v.$color-white, 0.08);
     border-left: 0;
   }
 
   .teamLogo {
-    width: 34px;
-    height: 34px;
+    width: 24px;
+    height: 24px;
   }
 
   .teamLabel,
@@ -116,7 +118,7 @@
   .meta,
   .footer {
     gap: 3px 5px;
-    font-size: 0.6rem;
+    font-size: v.$font-size-xxs;
   }
 
   .playerRow {
@@ -125,7 +127,7 @@
 
   .playerChip {
     padding: 1px 4px;
-    font-size: 0.6rem;
+    font-size: v.$font-size-xxs;
   }
 
 }
@@ -143,10 +145,9 @@
   display: grid;
   gap: v.$space-sm;
   padding: v.$space-md v.$space-lg v.$space-md calc(v.$space-lg + 14px);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-    v.$background-medium;
+  // Flat surface; the team-colour bar carries the accent without a glow
+  // (unslop, TJ 2026-11-15).
+  background: v.$background-medium;
 
   &::before {
     content: "";
@@ -154,7 +155,6 @@
     inset: 0 auto 0 0;
     width: 8px;
     background: var(--news-accent, v.$primary-color);
-    box-shadow: 0 0 18px rgba(20, 162, 210, 0.35);
   }
 }
 
@@ -193,9 +193,9 @@
   align-items: center;
   gap: 6px;
   padding: 5px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
+  border-radius: v.$radius-pill;
+  border: 1px solid rgba(v.$color-white, 0.12);
+  background: rgba(v.$color-white, 0.05);
   color: v.$color-white;
   font-size: 0.78rem;
   font-weight: 600;
@@ -218,11 +218,30 @@
 }
 
 .sourceLink {
+  position: relative;
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: 1.3em;
-  height: 1.3em;
+  width: 18px;
+  height: 18px;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  // The icon is ~13px; give it a 24px hit area (WCAG 2.5.8) without
+  // moving the layout.
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: v.$touch-target-inline;
+    height: v.$touch-target-inline;
+    transform: translate(-50%, -50%);
+  }
   color: v.$primary-color;
   font-weight: 600;
   text-decoration: none;
@@ -248,9 +267,9 @@
   display: inline-flex;
   align-items: center;
   padding: 4px 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: v.$radius-pill;
+  background: rgba(v.$color-white, 0.08);
+  border: 1px solid rgba(v.$color-white, 0.1);
   color: v.$text-primary;
   font-size: 0.72rem;
   letter-spacing: 0.06em;
@@ -261,17 +280,15 @@
   display: grid;
   place-items: center;
   padding: v.$space-md;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    var(--news-team-surface, v.$background-dark);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--news-team-surface, v.$background-dark);
+  border-left: 1px solid rgba(v.$color-white, 0.08);
 }
 
 .teamLogo {
   width: 64px;
   height: 64px;
   object-fit: contain;
-  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 6px 16px rgba(v.$color-black, 0.35));
 }
 
 .teamLabel {
@@ -298,7 +315,7 @@
     justify-content: start;
     padding: v.$mobile-space-md;
     border-left: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(v.$color-white, 0.08);
   }
 
   .teamLogo {
@@ -323,7 +340,7 @@
       align-content: center;
       gap: 0;
       padding: 4px;
-      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      border-right: 1px solid rgba(v.$color-white, 0.08);
       border-bottom: 0;
     }
 
@@ -357,7 +374,7 @@
 
 @media (max-width: v.$breakpoint-tablet) {
   .rail {
-    grid-template-columns: clamp(68px, 18vw, 82px) minmax(0, 1fr) 44px;
+    grid-template-columns: 48px minmax(0, 1fr) 44px;
     align-items: stretch;
     min-height: 92px;
     border: 0;
@@ -371,7 +388,7 @@
     }
 
     &.railNoDisclosure {
-      grid-template-columns: clamp(68px, 18vw, 82px) minmax(0, 1fr);
+      grid-template-columns: 48px minmax(0, 1fr);
     }
 
     .teamPane {
@@ -387,17 +404,12 @@
       overflow: hidden;
       border: 0;
       border-right: 1px solid rgba(v.$color-white, 0.1);
-      background:
-        linear-gradient(
-          135deg,
-          rgba(v.$color-white, 0.045),
-          rgba(v.$color-black, 0.24)
-        ),
-        color-mix(
-          in srgb,
-          var(--news-team-surface, v.$background-dark) 56%,
-          v.$surface-0
-        );
+      // Flat team tint (was a white-to-black gloss over the same mix).
+      background: color-mix(
+        in srgb,
+        var(--news-team-surface, v.$background-dark) 60%,
+        v.$surface-0
+      );
 
       &::before,
       &::after {
@@ -423,8 +435,8 @@
     .teamLogo {
       position: relative;
       z-index: 1;
-      width: clamp(40px, 11vw, 50px);
-      height: clamp(40px, 11vw, 50px);
+      width: 30px;
+      height: 30px;
       display: grid;
       place-items: center;
       filter: drop-shadow(0 4px 8px rgba(v.$color-black, 0.38));
@@ -470,7 +482,7 @@
       min-height: 20px;
       padding: 1px 7px;
       border: 1px solid rgba(v.$primary-color, 0.34);
-      border-radius: 999px;
+      border-radius: v.$radius-pill;
       background: rgba(v.$primary-color, 0.035);
       color: v.$primary-color;
       line-height: 1;
@@ -532,7 +544,7 @@
     .footer {
       gap: 3px 7px;
       color: v.$color-neutral-400;
-      font-size: 0.62rem;
+      font-size: v.$font-size-xxs;
       line-height: 1.15;
     }
 
@@ -548,11 +560,7 @@
       align-content: start;
       gap: 7px;
       padding-block: 11px;
-      background: linear-gradient(
-        90deg,
-        rgba(v.$color-white, 0.018),
-        transparent
-      );
+      background: none;
     }
 
     .headline {
@@ -572,6 +580,11 @@
     }
   }
 
+  // Lineup boxes open with the + on phones; the title and time stay.
+  .rail.lineupCard:not(.railNoDisclosure):not(.expanded) .lineupBody {
+    display: none;
+  }
+
   .rail.lineupCard {
     .content {
       grid-column: 2 / -1;
@@ -580,12 +593,20 @@
 
     .meta,
     .headline {
-      padding-right: 36px;
+      padding-right: 48px;
+    }
+
+    // The title row is as tall as the + button (44px) so the lineup boxes
+    // start below it instead of running under it (TJ, 2026-11-15).
+    .headline {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
     }
 
     .railDisclosureButton {
       align-self: start;
-      margin-top: 8px;
+      margin-top: 6px;
     }
   }
 
@@ -636,19 +657,19 @@
 
 @media (max-width: 360px) {
   .rail {
-    grid-template-columns: 64px minmax(0, 1fr) 44px;
+    grid-template-columns: 48px minmax(0, 1fr) 44px;
 
     &.railNoDisclosure {
-      grid-template-columns: 64px minmax(0, 1fr);
+      grid-template-columns: 48px minmax(0, 1fr);
     }
 
     .teamPane {
-      padding-inline: 11px 6px;
+      padding-inline: 11px 4px;
     }
 
     .teamLogo {
-      width: 38px;
-      height: 38px;
+      width: 30px;
+      height: 30px;
     }
 
     .content {
@@ -657,7 +678,7 @@
 
     .meta {
       gap: 3px 5px;
-      font-size: 0.59rem;
+      font-size: v.$font-size-xxs;
     }
 
     .categoryLabel {
@@ -670,7 +691,46 @@
 
     .footer {
       gap: 3px 5px;
-      font-size: 0.57rem;
+      font-size: v.$font-size-xxs;
     }
   }
+}
+
+// Development only (SHOW_PIPELINE_TIMES): the pipeline's published/observed pair.
+.devTimestamps {
+  // Own line after the fan-facing "time · source" row.
+  flex-basis: 100%;
+  order: 1;
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xxs;
+  opacity: 0.8;
+}
+
+// Unverified interpretation: a quiet caveat, not the loudest line on the card.
+.unverifiedNote {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xxs;
+  font-style: italic;
+  line-height: 1.3;
+}
+
+// Line-icon check (was a ✓ text glyph) on claims that passed the check.
+.verifiedTick {
+  flex: 0 0 auto;
+  margin-right: 3px;
+  // Primary, not success green: green means a positive change elsewhere.
+  color: v.$primary-color;
+  vertical-align: -1px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

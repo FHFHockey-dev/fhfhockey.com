@@ -1,0 +1,62 @@
+{
+  "at": "2026-11-12T19:18:15.307531+00:00",
+  "status": "Replacement PARKED; separate two-file local quarantine guard prepared, not deployed",
+  "authority": "TJ user message Sentinel_bff1e54bcb788191bd2e614ae5276515, 2026-11-12T19:15:49.772164+00:00; parent parking instruction",
+  "branch": "octoberBranch",
+  "preservationBaseSha": "039807518def1dcd74395511a80fd763981ed225",
+  "candidateFiles": {
+    "web/lib/lines/browserlessTransport.ts": "e5a10d123352692b86d116b026a50cfbf6301ba4b91cb373b2d27ee82ba46032",
+    "web/lib/lines/browserlessTransport.test.ts": "f64540bde0ebe715eb95280fa6edfbec56180b960d8d3258962143476f3d7dfc",
+    "web/lib/lines/webhookErrorDiagnostic.ts": "ae67ac61a862946593253dd71ee7341ad29ba9f8f3ff7296f39892fdb72c478f",
+    "web/lib/lines/webhookErrorDiagnostic.test.ts": "57fc5cabf77a6d7dd1e383c14b3f5918ca48b7e9eddf465df8c26dfce0bc9fe7",
+    "web/pages/api/v1/webhooks/on-new-line-combo.ts": "5b25812bc291c1e7cfc8be0d819aca9284c21730b8801f00209c9e6d18fdf5e7",
+    "web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts": "ea625c495a098131f74ea49131ad918a1e91edfe323823279948997825cee80a",
+    "web/package.json": "788c8984a6270e8f8f519735a97650190efb8d64af6624d959fa0d0841171853",
+    "web/package-lock.json": "ef0d84a8ed579c2d7aab945ec5239fc8d7263e02e323785c35c6535febf78ca8"
+  },
+  "preservedPatch": {
+    "path": "tasks/artifacts/browserless-transport-prep-2026-11-12/parked-candidate.patch",
+    "sha256": "ee93cc2dac3dbca66019eabcb6ef81f8d452e92a1c4195d9118756dddf3f0f70",
+    "bytes": 32025
+  },
+  "candidateSourceChanged": true,
+  "resumeRequires": "Explicit TJ/Scout resumption for replacement/TLS/rotation. Guard release and targeted trigger operation require separate exact-candidate/project approval plus Claude DB coordination.",
+  "stoppedWork": [
+    "implementation",
+    "replacement service selection/provisioning",
+    "deployment",
+    "credential rotation",
+    "TLS/network configuration",
+    "live checks"
+  ],
+  "operationalQuarantineApplied": false,
+  "triggerDisabled": false,
+  "productionTrafficStopped": "unknown; no trigger/live inspection or disablement performed",
+  "releaseExclusion": "Transport runtime, diagnostic extensions and dependency declarations removed from active checkout after eight-pin archive verification. Do not restore or release parked archive without new authorization.",
+  "localPreservation": "Eight-file patch and tar archive retain exact prior candidate; only owned pinned delta reverse-applied. No index, refs or unrelated file changes.",
+  "outstandingRisks": [
+    "Current trigger state and continued use of the recorded remote server are unknown; planning quarantine does not stop traffic.",
+    "Last recorded production transport was plaintext ws with a token query; current configuration/credential state remains unverified.",
+    "Tracked Compose has a literal TOKEN setting; whether placeholder/obsolete/active is unknown. Old logs are not retroactively sanitized.",
+    "No usable local administrative profile for the recorded production host was found; actual host/operator/version/TLS ownership remain unresolved.",
+    "The strict local wss candidate rejects current local development ws and the last recorded production ws setting; it must not be accidentally deployed.",
+    "The webhook couples screenshot/storage completion to Discord notification; disabling it can stop both and must be coordinated with Scout.",
+    "Full Next/clean-install and live TLS/provider/browser-session behavior are not verified; local fixture/static/bundle/review evidence does not cover them."
+  ],
+  "liveActionsThisParkingStep": 0,
+  "preservedArchive": {
+    "path": "tasks/artifacts/browserless-transport-prep-2026-11-12/parked-candidate.tar.gz",
+    "sha256": "e57d834a6f028cb1dc1bd9d0c8b4a5995d58e34f0edbda225784bbbaae612e6d",
+    "allEightPinsVerified": true
+  },
+  "activeTransportDeltaRemoved": true,
+  "guardCandidate": {
+    "paths": [
+      "web/pages/api/v1/webhooks/on-new-line-combo.ts",
+      "web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts"
+    ],
+    "checks": "GUARD-CHECKS.json",
+    "patch": "guard-candidate.patch",
+    "deployed": false
+  }
+}

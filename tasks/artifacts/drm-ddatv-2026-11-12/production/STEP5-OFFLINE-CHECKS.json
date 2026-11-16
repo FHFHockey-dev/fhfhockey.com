@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-11-12T20:58:17.155Z",
+  "status": "passed",
+  "networkRequests": 0,
+  "invalidConfigurationsRefused": 24,
+  "coverage": [
+    "pending approval and pending manifest choice blocked",
+    "both explicit manifest policies accepted with correct caps",
+    "missing/ongoing/early/future recent-game completion refused",
+    "1second health probe boundary",
+    "forced checkpoint, stats reset and cooldown refusal",
+    "60second game spacing",
+    "historical296actual-row replay; changed PBP head refused",
+    "24module+3runner pins and budget arithmetic"
+  ],
+  "scopeSha256": "07b108c736a67c2b0a68dc034163ad41128b863f9ff085693e2ec2a765a5afe8",
+  "currentQualification": "not established; no production completion/health/data checks performed"
+}

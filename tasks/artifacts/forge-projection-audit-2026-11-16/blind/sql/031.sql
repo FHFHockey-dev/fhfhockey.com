@@ -1,0 +1,1 @@
+select job_name, to_char(run_time,'MM-DD HH24:MI:SS') t, status, details->'timing'->>'durationMs' ms, left(details->>'response',300) r from cron_job_audit where run_time >= '2026-11-12 10:05' and run_time < '2026-11-12 10:12' and job_name ~ 'nst|wgo|rolling-forge' order by run_time

@@ -1,0 +1,2 @@
+psql:/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/tmpq8sr9071.sql:10: ERROR:  cannot get array length of a non-array
+

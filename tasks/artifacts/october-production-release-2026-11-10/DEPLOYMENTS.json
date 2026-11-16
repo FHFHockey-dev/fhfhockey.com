@@ -1,0 +1,76 @@
+{
+  "verifiedAt": "2026-11-10T19:06:02.923Z",
+  "candidate": "64105d05615df03dd5f5ca650647846b2ab0ca64",
+  "web": {
+    "id": "dpl_FeC8YvGcuWdbRXZmK5kUpXxUTzi8",
+    "name": "fhfhockey",
+    "url": "fhfhockey-13mj3m1ko-fhfhockeydevs-projects.vercel.app",
+    "type": "LAMBDAS",
+    "state": "READY",
+    "createdAt": 1794337216847,
+    "creator": {
+      "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+      "username": "fhfhockey-dev"
+    },
+    "project": {
+      "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "name": "fhfhockey",
+      "framework": "nextjs"
+    },
+    "meta": {
+      "githubCommitRef": "master",
+      "githubCommitSha": "64105d05615df03dd5f5ca650647846b2ab0ca64",
+      "githubCommitMessage": "Preserve concurrent audit reports and keep its diary local",
+      "githubRepo": "fhfhockey.com",
+      "githubOrg": "FHFHockey-dev"
+    },
+    "alias": [
+      "fhfhockey.com",
+      "fhfhockey.vercel.app",
+      "www.fhfhockey.com",
+      "fhfhockey-fhfhockeydevs-projects.vercel.app",
+      "fhfhockey-git-master-fhfhockeydevs-projects.vercel.app"
+    ],
+    "target": "production",
+    "regions": [
+      "iad1"
+    ],
+    "buildingAt": 1794337217889,
+    "ready": 1794337482519,
+    "readyState": "READY",
+    "source": "git",
+    "aliasError": null
+  },
+  "linkedProjectEntries": [
+    {
+      "id": "dpl_4srxDk7B5BwMvYszJRr8iooAfwSp",
+      "name": "functions-fhfhockey",
+      "state": "CANCELED",
+      "url": "functions-fhfhockey-ci9e3glh7-fhfhockeydevs-projects.vercel.app",
+      "sha": "64105d05615df03dd5f5ca650647846b2ab0ca64"
+    },
+    {
+      "id": "dpl_EUP1hHqh1mAMGnQitZw9qqeomiSz",
+      "name": "cms-fhfhockey",
+      "state": "CANCELED",
+      "url": "cms-fhfhockey-agy2a7gbj-fhfhockeydevs-projects.vercel.app",
+      "sha": "64105d05615df03dd5f5ca650647846b2ab0ca64"
+    },
+    {
+      "id": "dpl_F5Y35VtyN73puLENmAJ1BEJZ64M5",
+      "name": "fhfhockey.com",
+      "state": "CANCELED",
+      "url": "fhfhockey-kjw9jcwek-fhfhockeydevs-projects.vercel.app",
+      "sha": "64105d05615df03dd5f5ca650647846b2ab0ca64"
+    },
+    {
+      "id": "dpl_FeC8YvGcuWdbRXZmK5kUpXxUTzi8",
+      "name": "fhfhockey",
+      "state": "READY",
+      "url": "fhfhockey-13mj3m1ko-fhfhockeydevs-projects.vercel.app",
+      "sha": "64105d05615df03dd5f5ca650647846b2ab0ca64"
+    }
+  ],
+  "productionBuildCount": 1,
+  "ignoredCompanionCount": 3
+}

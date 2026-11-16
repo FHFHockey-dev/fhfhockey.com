@@ -1,0 +1,445 @@
+{
+  "mode": "offline current-writer/current-engine replay; capture-only persistence",
+  "scope": "five retained official-source validation games only; not live DB acceptance or full historical qualification",
+  "capturedAt": "2026-11-12",
+  "inputHashes": {
+    "live-replay.json": "ab741d53ac47c92cab53cdcc2495fd73762398b8b2d39f38d5fe89985875f4c9",
+    "PREPARED-REPAIR-ROWS.json": "e267bc907d08bada748639efa4049dc164a7dd37e85503a4a812722616ee783c",
+    "official-player-clocks.json": "68bbc313c1bfd1a8a450753449b1873ccc1af59bd7a3efc6021c9ed4a329d662",
+    "replay-shift-calculations.cjs": "20ed210fc9c8f0eb1e25680022d7ca941369602d0263babe95f5b3b7c3bc4d97"
+  },
+  "algorithmVersion": "shift_relationship_materializer_v6_strength_segments",
+  "games": [
+    {
+      "gameId": 2026020009,
+      "selectedShiftSource": "htmlreports",
+      "players": 38,
+      "strengthTaggedSegments": 882,
+      "officialFieldsCompared": 152,
+      "pairCombinationsChecked": 342,
+      "unitGroupsChecked": 192,
+      "errors": [],
+      "formationCoverage": {
+        "fiveOnFiveSeconds": 2966,
+        "otherEsSecondsByTeam": {
+          "1": 237,
+          "4": 237
+        },
+        "excludedSpecialTeamsSecondsByTeam": {
+          "1": 0,
+          "4": 0
+        },
+        "unrepresentedFiveOnFiveSecondsByTeam": {
+          "1": 22,
+          "4": 46
+        }
+      },
+      "unitKinds": {
+        "forward_line": 112,
+        "defense_pair": 29,
+        "power_play": 17,
+        "penalty_kill": 34
+      },
+      "reader": {
+        "receiptMode": "synthetic complete receipts over retained real payloads; no DB admission asserted",
+        "teams": [
+          {
+            "teamId": 1,
+            "coverage": {
+              "inputRows": 19,
+              "rosterRows": 19,
+              "skippedRows": 0,
+              "scheduledGames": 1,
+              "knownFinalGames": 1,
+              "acceptedGames": 1,
+              "games": [
+                {
+                  "gameId": 2026020009,
+                  "date": "2026-10-01",
+                  "state": "accepted",
+                  "reason": "Qualified source generation, historical roster and interval totals agree."
+                }
+              ],
+              "unrepresentedFiveOnFiveSeconds": 22,
+              "excludedSpecialTeamsSeconds": 0
+            }
+          },
+          {
+            "teamId": 4,
+            "coverage": {
+              "inputRows": 19,
+              "rosterRows": 19,
+              "skippedRows": 0,
+              "scheduledGames": 1,
+              "knownFinalGames": 1,
+              "acceptedGames": 1,
+              "games": [
+                {
+                  "gameId": 2026020009,
+                  "date": "2026-10-01",
+                  "state": "accepted",
+                  "reason": "Qualified source generation, historical roster and interval totals agree."
+                }
+              ],
+              "unrepresentedFiveOnFiveSeconds": 46,
+              "excludedSpecialTeamsSeconds": 0
+            }
+          }
+        ],
+        "playerStrengthFieldsCompared": 152
+      }
+    },
+    {
+      "gameId": 2026020115,
+      "selectedShiftSource": "json-api",
+      "players": 38,
+      "strengthTaggedSegments": 830,
+      "officialFieldsCompared": 152,
+      "pairCombinationsChecked": 342,
+      "unitGroupsChecked": 184,
+      "errors": [],
+      "formationCoverage": {
+        "fiveOnFiveSeconds": 2686,
+        "otherEsSecondsByTeam": {
+          "18": 432,
+          "28": 432
+        },
+        "excludedSpecialTeamsSecondsByTeam": {
+          "18": 0,
+          "28": 0
+        },
+        "unrepresentedFiveOnFiveSecondsByTeam": {
+          "18": 28,
+          "28": 26
+        }
+      },
+      "unitKinds": {
+        "forward_line": 102,
+        "defense_pair": 29,
+        "power_play": 22,
+        "penalty_kill": 31
+      },
+      "reader": {
+        "receiptMode": "synthetic complete receipts over retained real payloads; no DB admission asserted",
+        "teams": [
+          {
+            "teamId": 18,
+            "coverage": {
+              "inputRows": 19,
+              "rosterRows": 19,
+              "skippedRows": 0,
+              "scheduledGames": 1,
+              "knownFinalGames": 1,
+              "acceptedGames": 1,
+              "games": [
+                {
+                  "gameId": 2026020115,
+                  "date": "2026-10-15",
+                  "state": "accepted",
+                  "reason": "Qualified source generation, historical roster and interval totals agree."
+                }
+              ],
+              "unrepresentedFiveOnFiveSeconds": 28,
+              "excludedSpecialTeamsSeconds": 0
+            }
+          },
+          {
+            "teamId": 28,
+            "coverage": {
+              "inputRows": 19,
+              "rosterRows": 19,
+              "skippedRows": 0,
+              "scheduledGames": 1,
+              "knownFinalGames": 1,
+              "acceptedGames": 1,
+              "games": [
+                {
+                  "gameId": 2026020115,
+                  "date": "2026-10-15",
+                  "state": "accepted",
+                  "reason": "Qualified source generation, historical roster and interval totals agree."
+                }
+              ],
+              "unrepresentedFiveOnFiveSeconds": 26,
+              "excludedSpecialTeamsSeconds": 0
+            }
+          }
+        ],
+        "playerStrengthFieldsCompared": 152
+      }
+    },
+    {
+      "gameId": 2026020159,
+      "selectedShiftSource": "json-api",
+      "players": 38,
+      "strengthTaggedSegments": 852,
+      "officialFieldsCompared": 152,
+      "pairCombinationsChecked": 342,
+      "unitGroupsChecked": 146,
+      "errors": [],
+      "formationCoverage": {
+        "fiveOnFiveSeconds": 3038,
+        "otherEsSecondsByTeam": {
+          "2": 391,
+          "26": 391
+        },
+        "excludedSpecialTeamsSecondsByTeam": {
+          "2": 0,
+          "26": 0
+        },
+        "unrepresentedFiveOnFiveSecondsByTeam": {
+          "2": 30,
+          "26": 9
+        }
+      },
+      "unitKinds": {
+        "forward_line": 91,
+        "defense_pair": 29,
+        "power_play": 12,
+        "penalty_kill": 14
+      },
+      "reader": {
+        "receiptMode": "synthetic complete receipts over retained real payloads; no DB admission asserted",
+        "teams": [
+          {
+            "teamId": 2,
+            "coverage": {
+              "inputRows": 19,
+              "rosterRows": 19,
+              "skippedRows": 0,
+              "scheduledGames": 1,
+              "knownFinalGames": 1,
+              "acceptedGames": 1,
+              "games": [
+                {
+                  "gameId": 2026020159,
+                  "date": "2026-10-22",
+                  "state": "accepted",
+                  "reason": "Qualified source generation, historical roster and interval totals agree."
+                }
+              ],
+              "unrepresentedFiveOnFiveSeconds": 30,
+              "excludedSpecialTeamsSeconds": 0
+            }
+          },
+          {
+            "teamId": 26,
+            "coverage": {
+              "inputRows": 19,
+              "rosterRows": 19,
+              "skippedRows": 0,
+              "scheduledGames": 1,
+              "knownFinalGames": 1,
+              "acceptedGames": 1,
+              "games": [
+                {
+                  "gameId": 2026020159,
+                  "date": "2026-10-22",
+                  "state": "accepted",
+                  "reason": "Qualified source generation, historical roster and interval totals agree."
+                }
+              ],
+              "unrepresentedFiveOnFiveSeconds": 9,
+              "excludedSpecialTeamsSeconds": 0
+            }
+          }
+        ],
+        "playerStrengthFieldsCompared": 152
+      }
+    },
+    {
+      "gameId": 2026020205,
+      "selectedShiftSource": "htmlreports",
+      "players": 38,
+      "strengthTaggedSegments": 832,
+      "officialFieldsCompared": 152,
+      "pairCombinationsChecked": 342,
+      "unitGroupsChecked": 140,
+      "errors": [],
+      "formationCoverage": {
+        "fiveOnFiveSeconds": 3340,
+        "otherEsSecondsByTeam": {
+          "5": 227,
+          "68": 227
+        },
+        "excludedSpecialTeamsSecondsByTeam": {
+          "5": 0,
+          "68": 0
+        },
+        "unrepresentedFiveOnFiveSecondsByTeam": {
+          "5": 34,
+          "68": 26
+        }
+      },
+      "unitKinds": {
+        "forward_line": 97,
+        "defense_pair": 25,
+        "power_play": 5,
+        "penalty_kill": 13
+      },
+      "reader": {
+        "receiptMode": "synthetic complete receipts over retained real payloads; no DB admission asserted",
+        "teams": [
+          {
+            "teamId": 5,
+            "coverage": {
+              "inputRows": 19,
+              "rosterRows": 19,
+              "skippedRows": 0,
+              "scheduledGames": 1,
+              "knownFinalGames": 1,
+              "acceptedGames": 1,
+              "games": [
+                {
+                  "gameId": 2026020205,
+                  "date": "2026-10-29",
+                  "state": "accepted",
+                  "reason": "Qualified source generation, historical roster and interval totals agree."
+                }
+              ],
+              "unrepresentedFiveOnFiveSeconds": 34,
+              "excludedSpecialTeamsSeconds": 0
+            }
+          },
+          {
+            "teamId": 68,
+            "coverage": {
+              "inputRows": 19,
+              "rosterRows": 19,
+              "skippedRows": 0,
+              "scheduledGames": 1,
+              "knownFinalGames": 1,
+              "acceptedGames": 1,
+              "games": [
+                {
+                  "gameId": 2026020205,
+                  "date": "2026-10-29",
+                  "state": "accepted",
+                  "reason": "Qualified source generation, historical roster and interval totals agree."
+                }
+              ],
+              "unrepresentedFiveOnFiveSeconds": 26,
+              "excludedSpecialTeamsSeconds": 0
+            }
+          }
+        ],
+        "playerStrengthFieldsCompared": 152
+      }
+    },
+    {
+      "gameId": 2026020298,
+      "selectedShiftSource": "json-api",
+      "players": 38,
+      "strengthTaggedSegments": 873,
+      "officialFieldsCompared": 152,
+      "pairCombinationsChecked": 342,
+      "unitGroupsChecked": 198,
+      "errors": [],
+      "formationCoverage": {
+        "fiveOnFiveSeconds": 2848,
+        "otherEsSecondsByTeam": {
+          "5": 257,
+          "28": 257
+        },
+        "excludedSpecialTeamsSecondsByTeam": {
+          "5": 0,
+          "28": 0
+        },
+        "unrepresentedFiveOnFiveSecondsByTeam": {
+          "5": 25,
+          "28": 27
+        }
+      },
+      "unitKinds": {
+        "forward_line": 106,
+        "defense_pair": 28,
+        "power_play": 21,
+        "penalty_kill": 43
+      },
+      "reader": {
+        "receiptMode": "synthetic complete receipts over retained real payloads; no DB admission asserted",
+        "teams": [
+          {
+            "teamId": 28,
+            "coverage": {
+              "inputRows": 19,
+              "rosterRows": 19,
+              "skippedRows": 0,
+              "scheduledGames": 1,
+              "knownFinalGames": 1,
+              "acceptedGames": 1,
+              "games": [
+                {
+                  "gameId": 2026020298,
+                  "date": "2026-11-11",
+                  "state": "accepted",
+                  "reason": "Qualified source generation, historical roster and interval totals agree."
+                }
+              ],
+              "unrepresentedFiveOnFiveSeconds": 27,
+              "excludedSpecialTeamsSeconds": 0
+            }
+          },
+          {
+            "teamId": 5,
+            "coverage": {
+              "inputRows": 19,
+              "rosterRows": 19,
+              "skippedRows": 0,
+              "scheduledGames": 1,
+              "knownFinalGames": 1,
+              "acceptedGames": 1,
+              "games": [
+                {
+                  "gameId": 2026020298,
+                  "date": "2026-11-11",
+                  "state": "accepted",
+                  "reason": "Qualified source generation, historical roster and interval totals agree."
+                }
+              ],
+              "unrepresentedFiveOnFiveSeconds": 25,
+              "excludedSpecialTeamsSeconds": 0
+            }
+          }
+        ],
+        "playerStrengthFieldsCompared": 152
+      }
+    }
+  ],
+  "failures": [],
+  "sourceAuditFilesUnchanged": true,
+  "loadedCodeHashes": {
+    "web/components/DateRangeMatrix/fetchAggregatedData.ts": "a839f18839b24b7e72e82dc70c7c67a560299ea1d26899e0d71aafbd4bdd7e7e",
+    "web/lib/api/queryParams.ts": "60148f4671f7e8c411a45cc5db9d32b9ae68fbfbe5b578b7c9a45efe097d9c6d",
+    "web/lib/drm/observedDeployment.ts": "ed4c5d705052b5119678d81192161f60b28f142e4f007fe5f832f074a97f9a7f",
+    "web/lib/drm/readMatrix.ts": "a5b185aae831e4bac69e9c2e3fb2320e50527dc5da71dcc90008e0f87835e32e",
+    "web/lib/projections/derived/situation.ts": "3dc662c2f2802aeb80ef6dbb366c02253f62733510d378ad3dc5f0f670547968",
+    "web/lib/projections/gameLength.ts": "f43f61088ab49327aa85271f0fd2f020db728a420ec9c5ac02edff90efc9e14e",
+    "web/lib/projections/ingest/pbp.ts": "bf8a9a597ff2f86d34a5ad7fd2175eadecac3a7c878f5438c744c172007247ab",
+    "web/lib/projections/ingest/projectionInputPersistence.ts": "6ece7b9715be537659de1f84b792754888f8346dccd744d4d4ef49d6a769b2a7",
+    "web/lib/projections/ingest/shifts.ts": "625e1032d56a3b7ef1bb364321a2f638a77a45818a33047c3131007f08801413",
+    "web/lib/projections/ingest/time.ts": "8e5d2152b93925bb7e8221fd4efaa54c4e43e696a627cdb8b00b348b88a3ea0e",
+    "web/lib/projections/materializationFingerprint.ts": "9449439b3e9ad0737738a27da06b1c81004f5d7ba291144663e9b39a21c701fd",
+    "web/lib/projections/pbpCompletenessServer.ts": "d9cdefeaee0b5dabbf0a77ab5f62684c244d3d1807af6ade4e1f8e8f6ef72f96",
+    "web/lib/projections/penaltyClock.ts": "e9c89921b180826e7fd7ef8a5f15b9c0ddb58d5f8d7ef39dd535b748fddfa5f1",
+    "web/lib/projections/relationshipMaterialization.ts": "680cdb0c64e1a322fd3bbaaa88d64936727cc918cdf5dccc089afcb0179da9a9",
+    "web/lib/projections/relationshipPlayerPosition.ts": "94f0b2f74ff547aaa6ac60bc39717c16356bd29180f390a88f2219bbc5ddb3c1",
+    "web/lib/projections/shiftChartCompleteness.ts": "7f79dc80aefafc9eaf218d8f0a00a926ebcc981786da63a71fdd2c8ce5c92cdc",
+    "web/lib/projections/shiftChartRelationshipPayload.ts": "2a591f6731629bcd2b0140dbe4059b9ab3b83fda12b4bb94def38e0646377ba9",
+    "web/lib/rankings/teamUnitToiBuilder.ts": "cf017d45877a0568d365592fa5c42584b40f141e023cf8d213bbd7538e0ea351",
+    "web/lib/supabase/pagination.ts": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+    "web/lib/teamsInfo.ts": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584",
+    "web/pages/api/v1/db/shift-charts.ts": "f94db7641cf6cfbc8fbfe5d561e0a6c36dd57a15d18d503786e1bd27711c0728"
+  },
+  "totals": {
+    "games": 5,
+    "players": 190,
+    "officialFieldsCompared": 760,
+    "strengthTaggedSegments": 4269,
+    "pairCombinationsChecked": 1710,
+    "unitGroupsChecked": 860,
+    "readerStrengthFieldsCompared": 760,
+    "failures": 0
+  },
+  "allChecksPassed": true
+}

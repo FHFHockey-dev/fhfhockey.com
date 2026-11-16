@@ -1,0 +1,337 @@
+{
+  "source": "Existing web/.next/trace; read only, no new application requests",
+  "scope": "2026-11-10 localhost developer session",
+  "limits": "ensure-page spans measure developer compilation/availability. They are not end-to-end click timings. Aborted first access request has no completed handle-request span. No private query values retained.",
+  "events": [
+    {
+      "startedAt": "2026-11-10T15:53:25.798000+00:00",
+      "span": "ensure-page",
+      "route": "/roster-schedule-optimizer",
+      "durationMs": 9237.65
+    },
+    {
+      "startedAt": "2026-11-10T15:53:35.411000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/access",
+      "durationMs": 0.3
+    },
+    {
+      "startedAt": "2026-11-10T15:53:35.412000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/workspace",
+      "durationMs": 0.24
+    },
+    {
+      "startedAt": "2026-11-10T15:53:36.902000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/yahoo-current-data",
+      "durationMs": 4.72
+    },
+    {
+      "startedAt": "2026-11-10T15:53:35.416000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/access",
+      "durationMs": 18456.51
+    },
+    {
+      "startedAt": "2026-11-10T15:53:35.812000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/workspace",
+      "durationMs": 18060.38
+    },
+    {
+      "startedAt": "2026-11-10T15:53:36.917000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/yahoo-current-data",
+      "durationMs": 16955.44
+    },
+    {
+      "startedAt": "2026-11-10T15:53:35.412000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/workspace",
+      "durationMs": 18954.93
+    },
+    {
+      "startedAt": "2026-11-10T15:53:36.907000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/yahoo-current-data",
+      "durationMs": 24492.93
+    },
+    {
+      "startedAt": "2026-11-10T15:54:08.843000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/workspace",
+      "durationMs": 0.28
+    },
+    {
+      "startedAt": "2026-11-10T15:54:08.863000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/data",
+      "durationMs": 0.19
+    },
+    {
+      "startedAt": "2026-11-10T15:54:08.863000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/workspace",
+      "durationMs": 0.48
+    },
+    {
+      "startedAt": "2026-11-10T15:54:08.843000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/workspace",
+      "durationMs": 3204.54
+    },
+    {
+      "startedAt": "2026-11-10T15:54:08.869000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/data",
+      "durationMs": 3576.59
+    },
+    {
+      "startedAt": "2026-11-10T15:54:13.543000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/workspace",
+      "durationMs": 0.51
+    },
+    {
+      "startedAt": "2026-11-10T15:54:13.547000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/workspace",
+      "durationMs": 0.28
+    },
+    {
+      "startedAt": "2026-11-10T15:54:13.544000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/workspace",
+      "durationMs": 313.39
+    },
+    {
+      "startedAt": "2026-11-10T15:54:08.863000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/data",
+      "durationMs": 6451.82
+    },
+    {
+      "startedAt": "2026-11-10T15:54:16.438000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/workspace",
+      "durationMs": 0.27
+    },
+    {
+      "startedAt": "2026-11-10T15:54:16.443000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/workspace",
+      "durationMs": 0.29
+    },
+    {
+      "startedAt": "2026-11-10T15:54:16.483000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/yahoo-current-data",
+      "durationMs": 0.28
+    },
+    {
+      "startedAt": "2026-11-10T15:54:16.486000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/yahoo-current-data",
+      "durationMs": 0.17
+    },
+    {
+      "startedAt": "2026-11-10T15:54:16.438000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/workspace",
+      "durationMs": 122.7
+    },
+    {
+      "startedAt": "2026-11-10T15:54:16.484000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/yahoo-current-data",
+      "durationMs": 3726.97
+    },
+    {
+      "startedAt": "2026-11-10T15:54:26.353000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/eligibility",
+      "durationMs": 0.54
+    },
+    {
+      "startedAt": "2026-11-10T15:54:26.353000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/schedule",
+      "durationMs": 0.77
+    },
+    {
+      "startedAt": "2026-11-10T15:54:26.358000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/eligibility",
+      "durationMs": 5580.11
+    },
+    {
+      "startedAt": "2026-11-10T15:54:26.563000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/schedule",
+      "durationMs": 5375.97
+    },
+    {
+      "startedAt": "2026-11-10T15:54:26.354000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/schedule",
+      "durationMs": 5783.73
+    },
+    {
+      "startedAt": "2026-11-10T15:54:26.353000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/eligibility",
+      "durationMs": 6096.66
+    },
+    {
+      "startedAt": "2026-11-10T15:54:32.466000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/eligibility",
+      "durationMs": 0.32
+    },
+    {
+      "startedAt": "2026-11-10T15:54:32.471000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/eligibility",
+      "durationMs": 0.21
+    },
+    {
+      "startedAt": "2026-11-10T15:54:32.466000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/eligibility",
+      "durationMs": 251.35
+    },
+    {
+      "startedAt": "2026-11-10T15:54:32.721000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/eligibility",
+      "durationMs": 0.36
+    },
+    {
+      "startedAt": "2026-11-10T15:54:32.724000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/eligibility",
+      "durationMs": 0.28
+    },
+    {
+      "startedAt": "2026-11-10T15:54:32.722000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/eligibility",
+      "durationMs": 314.48
+    },
+    {
+      "startedAt": "2026-11-10T15:54:33.041000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/eligibility",
+      "durationMs": 0.19
+    },
+    {
+      "startedAt": "2026-11-10T15:54:33.043000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/eligibility",
+      "durationMs": 0.12
+    },
+    {
+      "startedAt": "2026-11-10T15:54:33.042000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/eligibility",
+      "durationMs": 204.64
+    },
+    {
+      "startedAt": "2026-11-10T15:54:33.407000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/yahoo-current-data",
+      "durationMs": 0.31
+    },
+    {
+      "startedAt": "2026-11-10T15:54:33.425000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/yahoo-current-data",
+      "durationMs": 0.25
+    },
+    {
+      "startedAt": "2026-11-10T15:54:33.407000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/yahoo-current-data",
+      "durationMs": 3441.37
+    },
+    {
+      "startedAt": "2026-11-10T15:56:06.038000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/schedule",
+      "durationMs": 0.47
+    },
+    {
+      "startedAt": "2026-11-10T15:56:06.045000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/schedule",
+      "durationMs": 0.22
+    },
+    {
+      "startedAt": "2026-11-10T15:56:06.084000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/yahoo-current-data",
+      "durationMs": 0.47
+    },
+    {
+      "startedAt": "2026-11-10T15:56:06.091000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/yahoo-current-data",
+      "durationMs": 0.34
+    },
+    {
+      "startedAt": "2026-11-10T15:56:06.039000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/schedule",
+      "durationMs": 260.96
+    },
+    {
+      "startedAt": "2026-11-10T15:56:06.085000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/yahoo-current-data",
+      "durationMs": 4223.86
+    },
+    {
+      "startedAt": "2026-11-10T15:58:35.390000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/access",
+      "durationMs": 0.45
+    },
+    {
+      "startedAt": "2026-11-10T15:58:35.396000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/access",
+      "durationMs": 0.43
+    },
+    {
+      "startedAt": "2026-11-10T15:58:35.390000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/access",
+      "durationMs": 400.24
+    },
+    {
+      "startedAt": "2026-11-10T15:58:35.944000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/provider",
+      "durationMs": 0.62
+    },
+    {
+      "startedAt": "2026-11-10T15:58:35.950000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/provider",
+      "durationMs": 5425.42
+    },
+    {
+      "startedAt": "2026-11-10T15:58:35.944000+00:00",
+      "span": "handle-request",
+      "route": "/api/v1/roster-schedule-optimizer/provider",
+      "durationMs": 16461.63
+    },
+    {
+      "startedAt": "2026-11-10T15:58:52.649000+00:00",
+      "span": "ensure-page",
+      "route": "/api/v1/roster-schedule-optimizer/yahoo-current-data",
+      "durationMs": 0.29
+    }
+  ]
+}

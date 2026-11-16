@@ -1,0 +1,31 @@
+{
+  "name": "lint",
+  "command": [
+    "node",
+    "node_modules/eslint/bin/eslint.js",
+    "components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx",
+    "components/RosterScheduleOptimizer/HealthyReserveAlert.tsx",
+    "e2e/roster-schedule-optimizer.spec.ts",
+    "lib/integrations/yahoo/rosterPlanning.test.ts",
+    "lib/integrations/yahoo/rosterPlanning.ts",
+    "lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+    "lib/rosterScheduleOptimizer/contributionLedger.test.ts",
+    "lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts",
+    "lib/rosterScheduleOptimizer/healthyReserves.test.ts",
+    "lib/rosterScheduleOptimizer/healthyReserves.ts",
+    "lib/rosterScheduleOptimizer/lineupGaps.test.ts",
+    "lib/rosterScheduleOptimizer/lineupGaps.ts",
+    "lib/rosterScheduleOptimizer/planning.test.ts",
+    "lib/rosterScheduleOptimizer/planning.ts",
+    "lib/rosterScheduleOptimizer/planningTimeline.ts",
+    "lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts"
+  ],
+  "cwd": "/tmp/fhfh-rso-daily-beta-20261108-zi789dgv/web",
+  "candidateTree": "101448c6c6b6da210b2b71786fb5e6024e747cb5",
+  "startedAt": "2026-11-08T21:08:12.250764+00:00",
+  "finishedAt": "2026-11-08T21:08:14.402455+00:00",
+  "exitCode": 0,
+  "durationSeconds": 2.15,
+  "node": "v22.23.4",
+  "network": "Inert environment, no .env files, Node loopback guard; browser uses existing synthetic fixture interception."
+}

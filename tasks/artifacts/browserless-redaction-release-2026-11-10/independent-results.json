@@ -1,0 +1,419 @@
+{
+  "result": "passed",
+  "tests": 36,
+  "syntheticOnly": true,
+  "liveCalls": 0,
+  "results": [
+    {
+      "name": "reject secret strings in every normally allowed field and nested error",
+      "result": "passed"
+    },
+    {
+      "name": "retain every known code and name only by exact allowlist membership",
+      "result": "passed"
+    },
+    {
+      "name": "ignore untrusted stacks, headers, targets and serialization hooks without reading them",
+      "result": "passed"
+    },
+    {
+      "name": "do not coerce objects supplied as names codes syscalls statuses or messages",
+      "result": "passed"
+    },
+    {
+      "name": "survive throwing accessors and revoked proxies",
+      "result": "passed"
+    },
+    {
+      "name": "bound fresh binary cause/error getters as well as cycles",
+      "result": "passed"
+    },
+    {
+      "name": "retain only numeric integer HTTP failures, never boxed or secret-bearing values",
+      "result": "passed"
+    },
+    {
+      "name": "handle arbitrary primitive throws without serialization",
+      "result": "passed"
+    },
+    {
+      "name": "route base parity and safe logs/response: success",
+      "result": "passed",
+      "delays": [],
+      "counts": {
+        "connect": 1,
+        "newPage": 1,
+        "viewport": 1,
+        "goto": 1,
+        "selector": 1,
+        "evaluate": 2,
+        "element": 1,
+        "screenshot": 1,
+        "upload": 1,
+        "close": 1,
+        "fetch": 1,
+        "json": 1
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: missing config",
+      "result": "passed",
+      "delays": [],
+      "counts": {}
+    },
+    {
+      "name": "route base parity and safe logs/response: connection failure",
+      "result": "passed",
+      "delays": [],
+      "counts": {
+        "connect": 1
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: connection string",
+      "result": "passed",
+      "delays": [],
+      "counts": {
+        "connect": 1
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: connection ws event",
+      "result": "passed",
+      "delays": [],
+      "counts": {
+        "connect": 1
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: persistent newPage",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 4,
+        "newPage": 4
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: persistent viewport",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 4,
+        "newPage": 4,
+        "viewport": 4
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: persistent goto",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 4,
+        "newPage": 4,
+        "viewport": 4,
+        "goto": 4
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: persistent selector",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 4,
+        "newPage": 4,
+        "viewport": 4,
+        "goto": 4,
+        "selector": 4
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: persistent evaluate",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 4,
+        "newPage": 4,
+        "viewport": 4,
+        "goto": 4,
+        "selector": 4,
+        "evaluate": 4
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: persistent element",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 4,
+        "newPage": 4,
+        "viewport": 4,
+        "goto": 4,
+        "selector": 4,
+        "evaluate": 8,
+        "element": 4
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: persistent screenshot",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 4,
+        "newPage": 4,
+        "viewport": 4,
+        "goto": 4,
+        "selector": 4,
+        "evaluate": 8,
+        "element": 4,
+        "screenshot": 4
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: persistent upload-return",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 4,
+        "newPage": 4,
+        "viewport": 4,
+        "goto": 4,
+        "selector": 4,
+        "evaluate": 8,
+        "element": 4,
+        "screenshot": 4,
+        "upload-return": 4
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: persistent upload",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 4,
+        "newPage": 4,
+        "viewport": 4,
+        "goto": 4,
+        "selector": 4,
+        "evaluate": 8,
+        "element": 4,
+        "screenshot": 4,
+        "upload": 4
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: persistent close",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 4,
+        "newPage": 4,
+        "viewport": 4,
+        "goto": 4,
+        "selector": 4,
+        "evaluate": 8,
+        "element": 4,
+        "screenshot": 4,
+        "upload": 4,
+        "close": 4
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: persistent fetch",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 1,
+        "newPage": 1,
+        "viewport": 1,
+        "goto": 1,
+        "selector": 1,
+        "evaluate": 2,
+        "element": 1,
+        "screenshot": 1,
+        "upload": 1,
+        "close": 1,
+        "fetch": 4
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: persistent json",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 1,
+        "newPage": 1,
+        "viewport": 1,
+        "goto": 1,
+        "selector": 1,
+        "evaluate": 2,
+        "element": 1,
+        "screenshot": 1,
+        "upload": 1,
+        "close": 1,
+        "fetch": 4,
+        "json": 4
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: missing matrix",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 4,
+        "newPage": 4,
+        "viewport": 4,
+        "goto": 4,
+        "selector": 4,
+        "evaluate": 8,
+        "element": 4
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: nonretryable Error",
+      "result": "passed",
+      "delays": [],
+      "counts": {
+        "connect": 1,
+        "newPage": 1,
+        "viewport": 1,
+        "goto": 1
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: nonretryable string",
+      "result": "passed",
+      "delays": [],
+      "counts": {
+        "connect": 1,
+        "newPage": 1,
+        "viewport": 1,
+        "goto": 1
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: screenshot recovery on third attempt",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 3,
+        "newPage": 3,
+        "viewport": 3,
+        "goto": 3,
+        "selector": 3,
+        "evaluate": 6,
+        "element": 3,
+        "screenshot": 3,
+        "upload": 1,
+        "close": 1,
+        "fetch": 1,
+        "json": 1
+      }
+    },
+    {
+      "name": "route base parity and safe logs/response: Discord recovery on third attempt",
+      "result": "passed",
+      "delays": [
+        1000,
+        1000
+      ],
+      "counts": {
+        "connect": 1,
+        "newPage": 1,
+        "viewport": 1,
+        "goto": 1,
+        "selector": 1,
+        "evaluate": 2,
+        "element": 1,
+        "screenshot": 1,
+        "upload": 1,
+        "close": 1,
+        "fetch": 3,
+        "json": 1
+      }
+    },
+    {
+      "name": "route hostile metadata/getters: connect",
+      "result": "passed"
+    },
+    {
+      "name": "route hostile metadata/getters: goto",
+      "result": "passed"
+    },
+    {
+      "name": "route hostile metadata/getters: upload-return",
+      "result": "passed"
+    },
+    {
+      "name": "route hostile metadata/getters: fetch",
+      "result": "passed"
+    },
+    {
+      "name": "edge behavior: null throw now survives diagnostic logging",
+      "result": "passed",
+      "baseAttempts": 1,
+      "patchedAttempts": 4
+    },
+    {
+      "name": "edge behavior: undefined throw now survives diagnostic logging",
+      "result": "passed",
+      "baseAttempts": 1,
+      "patchedAttempts": 4
+    }
+  ]
+}

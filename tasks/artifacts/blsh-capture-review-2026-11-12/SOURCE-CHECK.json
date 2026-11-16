@@ -1,0 +1,300 @@
+{
+  "checkedAtUTC": "2026-11-12T17:45:54.334188+00:00",
+  "branch": "octoberBranch",
+  "HEAD": "24b1cb4d3048a3dba8234cf92c62e8f2b72f877f",
+  "sourcePins": [
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+      "expectedSHA256": "f0cad82ee881c9b7c9900527910410c83311017a57479a8df76cbe50813ed8a8",
+      "actualSHA256": "f0cad82ee881c9b7c9900527910410c83311017a57479a8df76cbe50813ed8a8",
+      "matches": true,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "expectedSHA256": "c98006c5a66b27ef705380945a683f18d72d49273216940d273297ffb6721624",
+      "actualSHA256": "c98006c5a66b27ef705380945a683f18d72d49273216940d273297ffb6721624",
+      "matches": true,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+      "expectedSHA256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+      "actualSHA256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+      "matches": true,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+      "expectedSHA256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030",
+      "actualSHA256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030",
+      "matches": true,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+      "expectedSHA256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+      "actualSHA256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+      "matches": true,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/lib/nst/client.ts",
+      "expectedSHA256": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+      "actualSHA256": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+      "matches": true,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.ts",
+      "expectedSHA256": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+      "actualSHA256": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+      "matches": true,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/lib/nst/admissionOrigin.ts",
+      "expectedSHA256": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+      "actualSHA256": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+      "matches": true,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/lib/nst/jobLifecycle.server.ts",
+      "expectedSHA256": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+      "actualSHA256": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+      "matches": true,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "expectedSHA256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "actualSHA256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "matches": true,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/lib/cron/nstRateLimitPolicy.ts",
+      "expectedSHA256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+      "actualSHA256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+      "matches": true,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+      "expectedSHA256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880",
+      "actualSHA256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880",
+      "matches": true,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+      "expectedSHA256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf",
+      "actualSHA256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf",
+      "matches": true,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/lib/skoElement/contract.ts",
+      "expectedSHA256": "3d2b202003b8c0379bbf7b5e0d04ebc722c52815327ce7e8b96d67538966f37a",
+      "actualSHA256": "6bda1cd0c52980989addb9f16a9fc0b8ccef5d2125334becc91bddeb2e08c40b",
+      "matches": false,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/lib/skoElement/interpret.ts",
+      "expectedSHA256": "789b8fe3480e564a9f24e47658b5d03d4e514b0dc6e94d5aae4fbd08a297200c",
+      "actualSHA256": "c330d79ef1851024109ebfa3b2732954f4e8429c9a82d4ae681b2433cec65e99",
+      "matches": false,
+      "matchesCurrentHEAD": true
+    },
+    {
+      "path": "web/lib/skoElement/fixtures.ts",
+      "expectedSHA256": "b4e7e6b31c9fd9d1e541aba1e0f19993caa413bab8112b1cd05bc10e1b7f2fa2",
+      "actualSHA256": "f04a937c6d85425d418fe1399855b37c08b1f06c938eb5fb1fa18740afa395f9",
+      "matches": false,
+      "matchesCurrentHEAD": true
+    }
+  ],
+  "sourceMatchCount": 13,
+  "sourcePinCount": 16,
+  "manifest": [
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/NST-OWNER-HANDOFF.md",
+      "expectedSHA256": "b7a6a8f03462ccbc4d4905a5e841567b74cd07ee91fcf99de59ba68c4443af29",
+      "actualSHA256": "b7a6a8f03462ccbc4d4905a5e841567b74cd07ee91fcf99de59ba68c4443af29",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/STATUS.md",
+      "expectedSHA256": "a3a46067ba0065043855539604e6c1ebfd99525c4ae83cfa6b88054729f31bdf",
+      "actualSHA256": "a3a46067ba0065043855539604e6c1ebfd99525c4ae83cfa6b88054729f31bdf",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/VERIFICATION.json",
+      "expectedSHA256": "36d5a4db60135b19a90064c24dfa410b798e1c1e1f4457ef1c4d48779b1b8c82",
+      "actualSHA256": "36d5a4db60135b19a90064c24dfa410b798e1c1e1f4457ef1c4d48779b1b8c82",
+      "matches": true
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+      "expectedSHA256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880",
+      "actualSHA256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880",
+      "matches": true
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+      "expectedSHA256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf",
+      "actualSHA256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/FRESH-CAPTURE-PROPOSAL.md",
+      "expectedSHA256": "4833a5b7ca06dfac5297373f7289d4e525dfae002a0d0f3dc0704da7cba4021e",
+      "actualSHA256": "4833a5b7ca06dfac5297373f7289d4e525dfae002a0d0f3dc0704da7cba4021e",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+      "expectedSHA256": "f0cad82ee881c9b7c9900527910410c83311017a57479a8df76cbe50813ed8a8",
+      "actualSHA256": "f0cad82ee881c9b7c9900527910410c83311017a57479a8df76cbe50813ed8a8",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "expectedSHA256": "c98006c5a66b27ef705380945a683f18d72d49273216940d273297ffb6721624",
+      "actualSHA256": "c98006c5a66b27ef705380945a683f18d72d49273216940d273297ffb6721624",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNNER-HANDOFF.md",
+      "expectedSHA256": "ba47d0a7d501ea182e31b95b3d551d9c68f2492c634af2ab7451e0e08dfe83a3",
+      "actualSHA256": "ba47d0a7d501ea182e31b95b3d551d9c68f2492c634af2ab7451e0e08dfe83a3",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNNER-CHECKS.json",
+      "expectedSHA256": "676c92cc84aa59fdf6b6e32d6b86c1c7c6479447e228becf2c67961b4500bcf5",
+      "actualSHA256": "676c92cc84aa59fdf6b6e32d6b86c1c7c6479447e228becf2c67961b4500bcf5",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+      "expectedSHA256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+      "actualSHA256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+      "expectedSHA256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030",
+      "actualSHA256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/ADAPTER-HANDOFF.md",
+      "expectedSHA256": "239675766dd776b1cb04d0f36fef943867b4cfe0da031d7581b12a364d27d317",
+      "actualSHA256": "239675766dd776b1cb04d0f36fef943867b4cfe0da031d7581b12a364d27d317",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/ADAPTER-CHECKS.json",
+      "expectedSHA256": "af42d6bb40f7cd7716913b67a38be283da0a7fccfeb6e271b9b59eda1405aede",
+      "actualSHA256": "af42d6bb40f7cd7716913b67a38be283da0a7fccfeb6e271b9b59eda1405aede",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-AND-RUNTIME.md",
+      "expectedSHA256": "cb29bd670f39b58a3895ef1786b4235f3e7097b542686503fcc0a897795ebfe5",
+      "actualSHA256": "cb29bd670f39b58a3895ef1786b4235f3e7097b542686503fcc0a897795ebfe5",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-PROBE.mjs",
+      "expectedSHA256": "265e45c360b963d0272e87d2d6e8622031bebd4eac73306e489d1a01cf4e9830",
+      "actualSHA256": "265e45c360b963d0272e87d2d6e8622031bebd4eac73306e489d1a01cf4e9830",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-PROBE.json",
+      "expectedSHA256": "58a4ad241d504cd39c0ad9b2da099db405dbfe2e18215b52b87aea0d70740978",
+      "actualSHA256": "58a4ad241d504cd39c0ad9b2da099db405dbfe2e18215b52b87aea0d70740978",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-IMPORT-PROBE.cjs",
+      "expectedSHA256": "fab2ddbc34aada875b5c2e70869f340e13b150b536d7482da357ed244a8946a7",
+      "actualSHA256": "fab2ddbc34aada875b5c2e70869f340e13b150b536d7482da357ed244a8946a7",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-IMPORT-PROBE.json",
+      "expectedSHA256": "0e0cec52ba0c5831658050e8b59f37120133d90bf04b25ef48815ca68c3e383e",
+      "actualSHA256": "0e0cec52ba0c5831658050e8b59f37120133d90bf04b25ef48815ca68c3e383e",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-IMPORT-RECHECK.json",
+      "expectedSHA256": "08a0e2ff062880ef9e9a1731de7bfec2afea458938dcd4ba823372486088ce6c",
+      "actualSHA256": "08a0e2ff062880ef9e9a1731de7bfec2afea458938dcd4ba823372486088ce6c",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-POST-IMPORT-TLS.json",
+      "expectedSHA256": "bad3d4bd1de949221a29a7cf2f115be633fcf3b48857573a7a3a45554437d875",
+      "actualSHA256": "bad3d4bd1de949221a29a7cf2f115be633fcf3b48857573a7a3a45554437d875",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-PREDISPATCH-REPRO.cjs",
+      "expectedSHA256": "c8d565f45c5e3abe1ae01e02ffa4ecfa09db5673e49d51106db61a93f8b56382",
+      "actualSHA256": "c8d565f45c5e3abe1ae01e02ffa4ecfa09db5673e49d51106db61a93f8b56382",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-PREDISPATCH-REPRO.json",
+      "expectedSHA256": "0f707986d397c806cc96e60903f7ffed3c44b1e8b984b043eb7b711c083b705d",
+      "actualSHA256": "0f707986d397c806cc96e60903f7ffed3c44b1e8b984b043eb7b711c083b705d",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-PREDISPATCH-RECHECK.json",
+      "expectedSHA256": "6f08651193ce3ef9666a4cb6d43ec7ccf55189d4e4824df22493e77b50e7f539",
+      "actualSHA256": "6f08651193ce3ef9666a4cb6d43ec7ccf55189d4e4824df22493e77b50e7f539",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/ADAPTER-CHECKS.json.snapshot",
+      "expectedSHA256": "1cd107b315d0a42d03ce45119d84a19c99724f82baf03254b618d9723679592c",
+      "actualSHA256": "1cd107b315d0a42d03ce45119d84a19c99724f82baf03254b618d9723679592c",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/MANIFEST.json",
+      "expectedSHA256": "39e8bbcf49cee9d14e846e4109033db26434b7a03d7f00b2004d975eaa6cd5d7",
+      "actualSHA256": "39e8bbcf49cee9d14e846e4109033db26434b7a03d7f00b2004d975eaa6cd5d7",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/RUNTIME-PROBE.mjs.snapshot",
+      "expectedSHA256": "528c6e3ce0197f82fc0a1303405b7cb54b6f11cbb51869462901963ca24cf2eb",
+      "actualSHA256": "528c6e3ce0197f82fc0a1303405b7cb54b6f11cbb51869462901963ca24cf2eb",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/nativeProcessCaptureRunner.test.ts.snapshot",
+      "expectedSHA256": "96ea409fc37329337e2d192ac1d2e23b694236bf2d0b87e30c2a9f0c0803b8d7",
+      "actualSHA256": "96ea409fc37329337e2d192ac1d2e23b694236bf2d0b87e30c2a9f0c0803b8d7",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/nativeProcessCaptureRunner.ts.snapshot",
+      "expectedSHA256": "c8474d7478640aeee69c0a96aac12ac8a8957e8a89b64bdc3332af74b83961e9",
+      "actualSHA256": "c8474d7478640aeee69c0a96aac12ac8a8957e8a89b64bdc3332af74b83961e9",
+      "matches": true
+    }
+  ],
+  "manifestMatchCount": 29,
+  "manifestCount": 29,
+  "scopeNote": "local current checkout and saved artifacts only; no deployment verification"
+}

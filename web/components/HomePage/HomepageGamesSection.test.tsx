@@ -1080,7 +1080,7 @@ describe("HomepageGamesSection", () => {
           `${slate} [data-prediction-notice='true']`,
         );
         expect(notice?.textContent).toBe(
-          "FHFH predictions unavailable while the model is developed and validated.",
+          "Win odds return once the model is validated.",
         );
       }
       const labels = Array.from(

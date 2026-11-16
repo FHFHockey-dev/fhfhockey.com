@@ -1,0 +1,22 @@
+{
+  "source_pin": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "scope_files": 1078,
+  "ledger_rows": 112127,
+  "audited": 1052,
+  "no_math": 26,
+  "pending": 0,
+  "finding_files": 296,
+  "frozen_and_runner_findings": 417,
+  "severities": {
+    "P0": 0,
+    "P1": 242,
+    "P2": 175
+  },
+  "database_objects": 58,
+  "script_rows": 124,
+  "live_table_rows": 65,
+  "live_observed": 2,
+  "live_loads": 1,
+  "report_sha256": "45794fc7c8eab6c3604133b618d666f8a68f9700410b8334e22c932c2660c623",
+  "closure_update": "Direct TJ decisions and hand-back references added; findings unchanged."
+}

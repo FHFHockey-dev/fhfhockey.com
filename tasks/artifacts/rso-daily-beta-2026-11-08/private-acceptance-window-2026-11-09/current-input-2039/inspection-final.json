@@ -1,0 +1,139 @@
+{
+  "version": "rso-current-export-inspection-v1",
+  "inputSha256": "124984ee2f1f59916c6233566cd896826a91359980bc657531c55f04702db1de",
+  "inputBytes": 12045345,
+  "evaluatedAt": "2026-11-09T21:00:25.015Z",
+  "exportedAt": "2026-11-09T20:39:43.620Z",
+  "readerCheckedAt": "2026-11-09T20:39:22.393Z",
+  "snapshotAsOf": "2026-11-09T20:39:22.393Z",
+  "providerSnapshotAsOf": "2026-11-09T20:39:12.425Z",
+  "clockOrderValid": true,
+  "snapshotAgeSeconds": 1262.622,
+  "providerScopeMatches": true,
+  "schemaPreservedFields": {
+    "rules": true,
+    "roster": true,
+    "lockedAssignments": true,
+    "realized": true,
+    "opponent": true
+  },
+  "providerRosterMatches": true,
+  "schemaPreservedMatchupWeeks": true,
+  "schemaPreservedForecastsAndEvidence": true,
+  "actualSlotConfigurationUsed": true,
+  "populations": {
+    "players": 1065,
+    "roster": 19,
+    "games": 96,
+    "forecasts": 2011,
+    "bridgeRows": 2011,
+    "bridgeRuns": 5,
+    "lockedAssignments": 0,
+    "selectedSteps": 0,
+    "protectedPlayers": 0,
+    "excludedPlayers": 0
+  },
+  "rosterCoverage": {
+    "activePlayersWithoutForecasts": 2,
+    "activeMissingPlayerGames": 7,
+    "inactivePlayersWithoutForecasts": 2,
+    "inactiveMissingPlayerGames": 6
+  },
+  "missingRosterIdentities": 0,
+  "duplicatePlayerIdentities": 0,
+  "duplicateGameSides": 0,
+  "duplicateForecastIdentities": 0,
+  "bridgeManifestMatches": true,
+  "serializedBridgeRowsAuthorizedHere": 0,
+  "originalResponseOnlyProofPresent": false,
+  "forecastRunTimes": {
+    "2026-11-05T10:16:18.501Z": 4,
+    "2026-11-05T10:20:43.434Z": 66,
+    "2026-11-07T10:15:56.727Z": 837,
+    "2026-11-07T10:20:42.383Z": 669,
+    "2026-11-07T10:21:42.475Z": 435
+  },
+  "forecastChecks": {
+    "expiredAtInput": 0,
+    "expiredNow": 0,
+    "invalidClocks": 0,
+    "futureIssuance": 0,
+    "identityMismatch": 0,
+    "expiryAfterGame": 0,
+    "nullStats": 0,
+    "zeroStats": 2771
+  },
+  "earliestForecastExpiry": "2026-11-10T01:00:00.000Z",
+  "latestForecastExpiry": "2026-11-15T10:21:42.475Z",
+  "scheduleAsOf": "2026-11-09T14:52:26.655+00:00",
+  "scheduleAdmittedAtInput": true,
+  "lineupMode": "daily",
+  "unsupportedRuleCount": 0,
+  "scheduleOnlyBaseline": {
+    "legal": true,
+    "budgetVerified": true,
+    "objective": "agp",
+    "scheduledGames": 56,
+    "activeGames": 53,
+    "benchGames": 3,
+    "projectedValue": null,
+    "comparisonEligible": false,
+    "selectionMethod": "schedule_capacity",
+    "recommendationEligible": false,
+    "coverage": {
+      "requiredCount": 360,
+      "assignmentEligibleCount": 0,
+      "totalsEligibleCount": 0,
+      "comparisonEligibleCount": 0
+    },
+    "limitationCount": 15,
+    "limitationTopics": [
+      "forecast",
+      "schedule",
+      "goalie",
+      "minimum",
+      "lock"
+    ]
+  },
+  "serializedOutcomeBaseline": {
+    "legal": true,
+    "budgetVerified": true,
+    "objective": "outcome",
+    "scheduledGames": 56,
+    "activeGames": 53,
+    "benchGames": 3,
+    "projectedValue": null,
+    "comparisonEligible": false,
+    "selectionMethod": "schedule_capacity",
+    "recommendationEligible": false,
+    "coverage": {
+      "requiredCount": 324,
+      "assignmentEligibleCount": 0,
+      "totalsEligibleCount": 0,
+      "comparisonEligibleCount": 0
+    },
+    "limitationCount": 14,
+    "limitationTopics": [
+      "forecast",
+      "schedule",
+      "goalie",
+      "minimum",
+      "lock"
+    ]
+  },
+  "inMemoryInputUnchanged": true,
+  "authority": {
+    "currentAuthenticatedAcceptance": false,
+    "forecastUseGranted": false,
+    "servingBranchEstablished": false,
+    "sourceAuthenticityIndependentlyVerified": false,
+    "originalHttpResponseRecovered": false,
+    "restorableBackup": false
+  },
+  "remaining": [
+    "tj_selected_move_and_undo_reopen_acceptance",
+    "original_served_run_proof_and_source_selection",
+    "manager_confirmation_of_actual_league_rules",
+    "refresh_preferences_not_in_this_export"
+  ]
+}

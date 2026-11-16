@@ -1,0 +1,5 @@
+{"readAtUTC":"2026-11-15","approvedBy":"TJ pop-up 2026-11-15 (Run it now)","project":"fyhftlxokyjtpndbkfse","route":"Supabase MCP execute_sql, one request, read-only transaction, statement_timeout 3s, lock_timeout 1s","rows":[
+{"proname":"nst_admit_attempt_budget_v1","body_md5":"5e8543085513e308b92ce55b0090557b","args":"p_burst boolean, p_planned_requests integer","acl":"{postgres=X/postgres,service_role=X/postgres}","config":"{\"search_path=pg_catalog, public\"}","security_definer":"false"},
+{"proname":"nst_admit_attempt_v1","body_md5":"7e1851c4b176129bf4069bd64081d558","args":"p_burst boolean, p_planned_requests integer","acl":"{postgres=X/postgres,service_role=X/postgres}","config":"{\"search_path=pg_catalog, public\"}","security_definer":"false"},
+{"proname":"nst_admit_job_attempt_v1","body_md5":"a56ce3d4d0a726e921c1abbce5011cf5","args":"p_kind text, p_token uuid, p_burst boolean, p_planned_requests integer","acl":"{postgres=X/postgres,service_role=X/postgres}","config":"{\"search_path=pg_catalog, public\"}","security_definer":"false"},
+{"proname":"nst_job_control","enforced":"false"}]}

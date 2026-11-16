@@ -1,0 +1,1067 @@
+{
+  "capturedAt": "2026-11-12",
+  "project": "fyhftlxokyjtpndbkfse",
+  "readOnly": true,
+  "supplementary": {"unit_schedule":{"sql":"select jobid,jobname,schedule,active from cron.job where jobname ilike '%unit%toi%' or command like '%team-unit-toi%' or command like '%team_unit_toi%';","rows":[{"jobid":403,"jobname":"update-team-unit-toi-nightly","schedule":"55 8 * * *","active":true}]},"boxscore_check":{"sql":"select \"gameId\",\"playerId\",toi from public.\"goaliesGameStats\" where (\"gameId\",\"playerId\") in ((2026020009,8479361),(2026020115,8477424),(2026020159,8475311),(2026020205,8482657)) order by \"gameId\";","rows":[{"gameId":2026020009,"playerId":8479361,"toi":"62:49"},{"gameId":2026020115,"playerId":8477424,"toi":"62:48"},{"gameId":2026020159,"playerId":8475311,"toi":"62:26"},{"gameId":2026020205,"playerId":8482657,"toi":"63:06"}]},"boxscore_source":{"sql":"select game_id,endpoint,fetched_at,payload #> '{playerByGameStats,homeTeam,goalies}' as home_goalies,payload #> '{playerByGameStats,awayTeam,goalies}' as away_goalies from public.nhl_api_game_payloads_raw where game_id=2026020205 and endpoint='boxscore' order by fetched_at desc,id desc limit 1;","rows":[{"game_id":2026020205,"endpoint":"boxscore","fetched_at":"2026-10-30 09:35:07.132+00","home_goalies":[{"pim":0,"toi":"00:00","name":{"default":"S. Murashov"},"saves":0,"starter":false,"playerId":8483703,"position":"G","goalsAgainst":0,"shotsAgainst":0,"sweaterNumber":1,"saveShotsAgainst":"0/0","powerPlayGoalsAgainst":0,"powerPlayShotsAgainst":"0/0","shorthandedGoalsAgainst":0,"shorthandedShotsAgainst":"0/0","evenStrengthGoalsAgainst":0,"evenStrengthShotsAgainst":"0/0"},{"pim":0,"toi":"63:27","name":{"cs":"A. Šilovs","sk":"A. Šilovs","default":"A. Silovs"},"saves":30,"starter":true,"decision":"O","playerId":8481668,"position":"G","savePctg":0.882353,"goalsAgainst":4,"shotsAgainst":34,"sweaterNumber":37,"saveShotsAgainst":"30/34","powerPlayGoalsAgainst":0,"powerPlayShotsAgainst":"0/0","shorthandedGoalsAgainst":0,"shorthandedShotsAgainst":"1/1","evenStrengthGoalsAgainst":4,"evenStrengthShotsAgainst":"29/33"}],"away_goalies":[{"pim":0,"toi":"63:07","name":{"default":"S. Cossa"},"saves":31,"starter":true,"decision":"W","playerId":8482657,"position":"G","savePctg":0.911765,"goalsAgainst":3,"shotsAgainst":34,"sweaterNumber":33,"saveShotsAgainst":"31/34","powerPlayGoalsAgainst":0,"powerPlayShotsAgainst":"1/1","shorthandedGoalsAgainst":1,"shorthandedShotsAgainst":"0/1","evenStrengthGoalsAgainst":2,"evenStrengthShotsAgainst":"30/32"},{"pim":0,"toi":"00:00","name":{"default":"K. Vejmelka"},"saves":0,"starter":false,"playerId":8478872,"position":"G","goalsAgainst":0,"shotsAgainst":0,"sweaterNumber":70,"saveShotsAgainst":"0/0","powerPlayGoalsAgainst":0,"powerPlayShotsAgainst":"0/0","shorthandedGoalsAgainst":0,"shorthandedShotsAgainst":"0/0","evenStrengthGoalsAgainst":0,"evenStrengthShotsAgainst":"0/0"}]}]},"boxscore_source_other":{"sql":"with latest as (select distinct on(game_id) game_id,payload_hash,fetched_at,payload from public.nhl_api_game_payloads_raw where game_id in (2026020009,2026020115,2026020159) and endpoint='boxscore' order by game_id,fetched_at desc,id desc) select l.game_id,l.payload_hash,l.fetched_at,g->>'playerId' as player_id,g->>'toi' as toi from latest l cross join lateral jsonb_array_elements(coalesce(l.payload#>'{playerByGameStats,homeTeam,goalies}','[]'::jsonb)||coalesce(l.payload#>'{playerByGameStats,awayTeam,goalies}','[]'::jsonb)) g where (g->>'playerId')::int in (8479361,8477424,8475311) order by l.game_id;","rows":[{"game_id":2026020009,"payload_hash":"7160ccf3db437edf77f863ec1e321cc168f6e648ce12750cab4cb6f9ca146252","fetched_at":"2026-10-02 02:25:10.018+00","player_id":"8479361","toi":"62:49"},{"game_id":2026020115,"payload_hash":"1f9b814e639a4b1e7939e5a4bed339da2131789a34c7092e72a1e83f1016dfa4","fetched_at":"2026-10-16 09:35:17.539+00","player_id":"8477424","toi":"62:48"},{"game_id":2026020159,"payload_hash":"facbc121ea127a983c70c5d1dcedef1272aa8b5419b865ef0ae59011e93abaa0","fetched_at":"2026-10-23 09:35:08.106+00","player_id":"8475311","toi":"62:26"}]}},
+  "queries": {
+    "scope": {
+      "sql": "with by_game as (select game_id,min(game_date) game_date,count(*) rows,count(*) filter (where game_toi is null) null_toi,count(*) filter (where game_length is null) null_length,count(*) filter(where game_toi is not null and btrim(game_toi) !~ '^([0-9]+|[0-9]+:[0-5][0-9](:[0-5][0-9])?)$') malformed_toi from public.shift_charts where game_date >= '2026-10-01' group by game_id) select coalesce(s.input_status,'no_status') input_status,coalesce(s.relationship_status,'no_status') relationship_status,count(*) games,sum(g.rows) rows,sum(g.null_toi) null_toi,sum(g.null_length) null_length,sum(g.malformed_toi) malformed_toi,min(g.game_date) first_game_date,max(g.game_date) last_game_date from by_game g left join public.projection_game_materialization_status s using(game_id) group by 1,2 order by 1,2;",
+      "rows": [
+        {
+          "input_status": "complete",
+          "relationship_status": "complete",
+          "games": 277,
+          "rows": "10555",
+          "null_toi": "0",
+          "null_length": "0",
+          "malformed_toi": "0",
+          "first_game_date": "2026-10-01",
+          "last_game_date": "2026-11-10"
+        },
+        {
+          "input_status": "complete",
+          "relationship_status": "pending",
+          "games": 6,
+          "rows": "229",
+          "null_toi": "229",
+          "null_length": "229",
+          "malformed_toi": "0",
+          "first_game_date": "2026-11-11",
+          "last_game_date": "2026-11-11"
+        }
+      ]
+    },
+    "sample": {
+      "sql": "select game_id,input_status,input_version,input_completed_at,relationship_status,relationship_version,relationship_algorithm_version,relationship_completed_at,expected_strength_rows,observed_strength_rows,expected_relationship_rows,observed_relationship_rows,parser_version,input_materializer_version,pbp_raw_payload_id,shift_raw_payload_id,input_fingerprint=relationship_input_fingerprint as relationship_matches_input from public.projection_game_materialization_status where game_id=2026020298;",
+      "rows": [
+        {
+          "game_id": 2026020298,
+          "input_status": "complete",
+          "input_version": 1,
+          "input_completed_at": "2026-11-12 09:45:07.391714+00",
+          "relationship_status": "pending",
+          "relationship_version": 0,
+          "relationship_algorithm_version": null,
+          "relationship_completed_at": null,
+          "expected_strength_rows": 38,
+          "observed_strength_rows": 38,
+          "expected_relationship_rows": null,
+          "observed_relationship_rows": null,
+          "parser_version": "nhl-pbp-shifts-v1",
+          "input_materializer_version": "projection-input-materializer-v1",
+          "pbp_raw_payload_id": 95817,
+          "shift_raw_payload_id": 95820,
+          "relationship_matches_input": null
+        }
+      ]
+    },
+    "jobs": {
+      "sql": "select jobid,jobname,schedule,active,command like '%update-shifts%' as relationship_route,command like '%shift-charts%' as shift_route from cron.job where jobname ilike '%shift%' or command like '%update-shifts%' or command like '%shift-charts%' or jobname ilike '%projection%' order by jobid;",
+      "rows": [
+        {
+          "jobid": 16,
+          "jobname": "update-shift-charts",
+          "schedule": "45 7 * * *",
+          "active": true,
+          "relationship_route": true,
+          "shift_route": false
+        },
+        {
+          "jobid": 280,
+          "jobname": "update-start-chart-projections",
+          "schedule": "40 9 * * *",
+          "active": false,
+          "relationship_route": false,
+          "shift_route": false
+        },
+        {
+          "jobid": 308,
+          "jobname": "run-forge-projection-v2",
+          "schedule": "05 10 * * *",
+          "active": false,
+          "relationship_route": false,
+          "shift_route": false
+        },
+        {
+          "jobid": 361,
+          "jobname": "run-projection-accuracy",
+          "schedule": "30 11 * * *",
+          "active": true,
+          "relationship_route": false,
+          "shift_route": false
+        },
+        {
+          "jobid": 363,
+          "jobname": "ingest-projection-inputs",
+          "schedule": "45 9 * * *",
+          "active": true,
+          "relationship_route": false,
+          "shift_route": false
+        },
+        {
+          "jobid": 364,
+          "jobname": "update-goalie-projections-v2",
+          "schedule": "30 9 * * *",
+          "active": true,
+          "relationship_route": false,
+          "shift_route": false
+        },
+        {
+          "jobid": 390,
+          "jobname": "update-game-goal-projections",
+          "schedule": "25 8 * * *",
+          "active": true,
+          "relationship_route": false,
+          "shift_route": false
+        }
+      ]
+    },
+    "pending": {
+      "sql": "select s.game_id,g.date,s.input_completed_at,s.relationship_status,s.relationship_algorithm_version,s.input_fingerprint=s.relationship_input_fingerprint as matches_input from public.projection_game_materialization_status s join public.games g on g.id=s.game_id where s.input_status='complete' and g.date >= '2026-10-01' and (s.relationship_status<>'complete' or s.relationship_input_fingerprint is distinct from s.input_fingerprint or s.relationship_algorithm_version is distinct from 'shift_relationship_materializer_v3_position_bound') order by g.date,s.game_id limit 40;",
+      "rows": [
+        {
+          "game_id": 2026020293,
+          "date": "2026-11-11",
+          "input_completed_at": "2026-11-12 09:45:01.941347+00",
+          "relationship_status": "pending",
+          "relationship_algorithm_version": null,
+          "matches_input": null
+        },
+        {
+          "game_id": 2026020294,
+          "date": "2026-11-11",
+          "input_completed_at": "2026-11-12 09:45:04.3766+00",
+          "relationship_status": "pending",
+          "relationship_algorithm_version": null,
+          "matches_input": null
+        },
+        {
+          "game_id": 2026020295,
+          "date": "2026-11-11",
+          "input_completed_at": "2026-11-12 09:45:05.083725+00",
+          "relationship_status": "pending",
+          "relationship_algorithm_version": null,
+          "matches_input": null
+        },
+        {
+          "game_id": 2026020296,
+          "date": "2026-11-11",
+          "input_completed_at": "2026-11-12 09:45:05.814597+00",
+          "relationship_status": "pending",
+          "relationship_algorithm_version": null,
+          "matches_input": null
+        },
+        {
+          "game_id": 2026020297,
+          "date": "2026-11-11",
+          "input_completed_at": "2026-11-12 09:45:06.715533+00",
+          "relationship_status": "pending",
+          "relationship_algorithm_version": null,
+          "matches_input": null
+        },
+        {
+          "game_id": 2026020298,
+          "date": "2026-11-11",
+          "input_completed_at": "2026-11-12 09:45:07.391714+00",
+          "relationship_status": "pending",
+          "relationship_algorithm_version": null,
+          "matches_input": null
+        }
+      ]
+    },
+    "schedule_details": {
+      "sql": "select jobid,jobname,schedule,active,current_setting('cron.timezone',true) cron_timezone,command like '%build-projection-derived-v2%' as derived_route,command like '%ingest-projection-inputs%' as input_route,command like '%raw-gamecenter%' as raw_route from cron.job where command like '%build-projection-derived-v2%' or command like '%ingest-projection-inputs%' or command like '%raw-gamecenter%' or command like '%update-PbP%' or jobname ilike '%nhl%game%' order by jobid;",
+      "rows": [
+        {
+          "jobid": 104,
+          "jobname": "update-pbp",
+          "schedule": "51 20 * * *",
+          "active": true,
+          "cron_timezone": null,
+          "derived_route": false,
+          "input_route": false,
+          "raw_route": false
+        },
+        {
+          "jobid": 305,
+          "jobname": "build-forge-derived-v2",
+          "schedule": "50 09 * * *",
+          "active": true,
+          "cron_timezone": null,
+          "derived_route": true,
+          "input_route": false,
+          "raw_route": false
+        },
+        {
+          "jobid": 363,
+          "jobname": "ingest-projection-inputs",
+          "schedule": "45 9 * * *",
+          "active": true,
+          "cron_timezone": null,
+          "derived_route": false,
+          "input_route": true,
+          "raw_route": false
+        }
+      ]
+    },
+    "clock_invariants": {
+      "sql": "with clocks as (select game_id,player_id,team_id,game_toi,game_length,case when game_toi ~ '^[0-9]{1,3}:[0-5][0-9]$' then split_part(game_toi,':',1)::int*60+split_part(game_toi,':',2)::int end toi,case when game_length ~ '^[0-9]{1,3}:[0-5][0-9]$' then split_part(game_length,':',1)::int*60+split_part(game_length,':',2)::int end length from public.shift_charts where game_date between '2026-10-01' and '2026-11-11') select count(*) as rows,count(*) filter(where toi is null) missing_or_unparseable_toi,count(*) filter(where length is null) missing_or_unparseable_length,count(*) filter(where toi>length) overlong_appearances,count(*) filter(where length=0) zero_game_length,count(*) filter(where toi=0) zero_toi from clocks;",
+      "rows": [
+        {
+          "rows": 10784,
+          "missing_or_unparseable_toi": 229,
+          "missing_or_unparseable_length": 229,
+          "overlong_appearances": 4,
+          "zero_game_length": 0,
+          "zero_toi": 0
+        }
+      ]
+    },
+    "sample_rows": {
+      "sql": "select game_id,player_id,team_id,game_toi,game_length,total_es_toi,total_pp_toi,total_pk_toi,shifts is null as missing_shifts,time_spent_with is null as missing_same_relationships,time_spent_with_mixed is null as missing_mixed_relationships from public.shift_charts where game_id=2026020298 and player_id in (8471675,8476885,8486103) order by player_id;",
+      "rows": [
+        {
+          "game_id": 2026020298,
+          "player_id": 8471675,
+          "team_id": 5,
+          "game_toi": null,
+          "game_length": null,
+          "total_es_toi": "17:23",
+          "total_pp_toi": "2:33",
+          "total_pk_toi": "0:22",
+          "missing_shifts": true,
+          "missing_same_relationships": true,
+          "missing_mixed_relationships": true
+        },
+        {
+          "game_id": 2026020298,
+          "player_id": 8476885,
+          "team_id": 28,
+          "game_toi": null,
+          "game_length": null,
+          "total_es_toi": "16:50",
+          "total_pp_toi": "5:58",
+          "total_pk_toi": "1:58",
+          "missing_shifts": true,
+          "missing_same_relationships": true,
+          "missing_mixed_relationships": true
+        },
+        {
+          "game_id": 2026020298,
+          "player_id": 8486103,
+          "team_id": 28,
+          "game_toi": null,
+          "game_length": null,
+          "total_es_toi": "16:05",
+          "total_pp_toi": "6:38",
+          "total_pk_toi": "0:00",
+          "missing_shifts": true,
+          "missing_same_relationships": true,
+          "missing_mixed_relationships": true
+        }
+      ]
+    },
+    "pair_invariants": {
+      "sql": "with clocks as (select s.*,split_part(s.game_toi,':',1)::int*60+split_part(s.game_toi,':',2)::int as toi from public.shift_charts s where game_date between '2026-10-01' and '2026-11-11' and game_toi ~ '^[0-9]{1,3}:[0-5][0-9]$'), pairs as (select c.game_id,c.player_id,c.team_id,c.toi,p.key,p.value from clocks c cross join lateral jsonb_each_text(coalesce(c.time_spent_with,'{}'::jsonb)||coalesce(c.time_spent_with_mixed,'{}'::jsonb)) p), checked as(select p.*,partner.player_id partner_id,partner.toi partner_toi,case when p.value ~ '^[0-9]{1,3}:[0-5][0-9]$' then split_part(p.value,':',1)::int*60+split_part(p.value,':',2)::int end shared from pairs p left join clocks partner on partner.game_id=p.game_id and partner.team_id=p.team_id and partner.player_id::text=p.key) select count(*) pair_observations,count(*) filter(where partner_id is null) unknown_partners,count(*) filter(where shared is null) invalid_pair_clocks,count(*) filter(where shared>toi or shared>partner_toi) pair_exceeds_appearance,count(distinct game_id) filter(where shared>toi or shared>partner_toi) affected_games from checked;",
+      "rows": [
+        {
+          "pair_observations": 190572,
+          "unknown_partners": 0,
+          "invalid_pair_clocks": 0,
+          "pair_exceeds_appearance": 126,
+          "affected_games": 16
+        }
+      ]
+    },
+    "pair_affected": {
+      "sql": "with rows as(select game_id,game_date,player_id,team_id,split_part(game_toi,':',1)::int*60+split_part(game_toi,':',2)::int toi,time_spent_with,time_spent_with_mixed from public.shift_charts where game_date between '2026-10-01' and '2026-11-11' and game_toi ~ '^[0-9]{1,3}:[0-5][0-9]$'), pairs as(select r.*,p.key,split_part(p.value,':',1)::int*60+split_part(p.value,':',2)::int shared from rows r cross join lateral jsonb_each_text(coalesce(r.time_spent_with,'{}'::jsonb)||coalesce(r.time_spent_with_mixed,'{}'::jsonb)) p where p.value ~ '^[0-9]{1,3}:[0-5][0-9]$') select p.game_id,min(p.game_date) game_date,count(*) violating_observations from pairs p join rows partner on partner.game_id=p.game_id and partner.team_id=p.team_id and partner.player_id::text=p.key where p.shared>p.toi or p.shared>partner.toi group by p.game_id order by game_date,p.game_id;",
+      "rows": [
+        {
+          "game_id": 2026020009,
+          "game_date": "2026-10-01",
+          "violating_observations": 26
+        },
+        {
+          "game_id": 2026020031,
+          "game_date": "2026-10-03",
+          "violating_observations": 2
+        },
+        {
+          "game_id": 2026020038,
+          "game_date": "2026-10-04",
+          "violating_observations": 4
+        },
+        {
+          "game_id": 2026020073,
+          "game_date": "2026-10-10",
+          "violating_observations": 6
+        },
+        {
+          "game_id": 2026020077,
+          "game_date": "2026-10-10",
+          "violating_observations": 2
+        },
+        {
+          "game_id": 2026020114,
+          "game_date": "2026-10-15",
+          "violating_observations": 4
+        },
+        {
+          "game_id": 2026020115,
+          "game_date": "2026-10-15",
+          "violating_observations": 10
+        },
+        {
+          "game_id": 2026020126,
+          "game_date": "2026-10-17",
+          "violating_observations": 2
+        },
+        {
+          "game_id": 2026020127,
+          "game_date": "2026-10-17",
+          "violating_observations": 2
+        },
+        {
+          "game_id": 2026020131,
+          "game_date": "2026-10-17",
+          "violating_observations": 2
+        },
+        {
+          "game_id": 2026020159,
+          "game_date": "2026-10-22",
+          "violating_observations": 36
+        },
+        {
+          "game_id": 2026020163,
+          "game_date": "2026-10-22",
+          "violating_observations": 2
+        },
+        {
+          "game_id": 2026020205,
+          "game_date": "2026-10-29",
+          "violating_observations": 20
+        },
+        {
+          "game_id": 2026020206,
+          "game_date": "2026-10-29",
+          "violating_observations": 4
+        },
+        {
+          "game_id": 2026020273,
+          "game_date": "2026-11-07",
+          "violating_observations": 2
+        },
+        {
+          "game_id": 2026020285,
+          "game_date": "2026-11-09",
+          "violating_observations": 2
+        }
+      ]
+    },
+    "overlap_scope": {
+      "sql": "with intervals as(select c.game_id,c.game_date,c.player_id,(j->>'period')::int period,split_part(j->>'start_time',':',1)::int*60+split_part(j->>'start_time',':',2)::int start_second,case when j->>'end_time' in ('00:00','0:00') then split_part(j->>'start_time',':',1)::int*60+split_part(j->>'start_time',':',2)::int+split_part(j->>'duration',':',1)::int*60+split_part(j->>'duration',':',2)::int else split_part(j->>'end_time',':',1)::int*60+split_part(j->>'end_time',':',2)::int end as end_second from public.shift_charts c cross join lateral jsonb_array_elements(coalesce(c.shifts,'[]'::jsonb)) j where c.game_date between '2026-10-01' and '2026-11-11'), ordered as(select *,max(end_second) over(partition by game_id,player_id,period order by start_second,end_second rows between unbounded preceding and 1 preceding) prior_end from intervals) select game_id,min(game_date) game_date,count(*) overlapping_intervals,count(distinct player_id) affected_players,sum(least(end_second,prior_end)-start_second) duplicate_seconds from ordered where start_second<prior_end group by game_id order by game_date,game_id;",
+      "rows": [
+        {
+          "game_id": 2026020009,
+          "game_date": "2026-10-01",
+          "overlapping_intervals": 26,
+          "affected_players": 15,
+          "duplicate_seconds": 1278
+        },
+        {
+          "game_id": 2026020013,
+          "game_date": "2026-10-01",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 49
+        },
+        {
+          "game_id": 2026020017,
+          "game_date": "2026-10-02",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 51
+        },
+        {
+          "game_id": 2026020022,
+          "game_date": "2026-10-03",
+          "overlapping_intervals": 2,
+          "affected_players": 1,
+          "duplicate_seconds": 92
+        },
+        {
+          "game_id": 2026020023,
+          "game_date": "2026-10-03",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 38
+        },
+        {
+          "game_id": 2026020031,
+          "game_date": "2026-10-03",
+          "overlapping_intervals": 11,
+          "affected_players": 4,
+          "duplicate_seconds": 674
+        },
+        {
+          "game_id": 2026020034,
+          "game_date": "2026-10-03",
+          "overlapping_intervals": 5,
+          "affected_players": 3,
+          "duplicate_seconds": 288
+        },
+        {
+          "game_id": 2026020037,
+          "game_date": "2026-10-04",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 49
+        },
+        {
+          "game_id": 2026020038,
+          "game_date": "2026-10-04",
+          "overlapping_intervals": 5,
+          "affected_players": 5,
+          "duplicate_seconds": 261
+        },
+        {
+          "game_id": 2026020044,
+          "game_date": "2026-10-06",
+          "overlapping_intervals": 8,
+          "affected_players": 5,
+          "duplicate_seconds": 297
+        },
+        {
+          "game_id": 2026020048,
+          "game_date": "2026-10-06",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 94
+        },
+        {
+          "game_id": 2026020050,
+          "game_date": "2026-10-06",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 54
+        },
+        {
+          "game_id": 2026020051,
+          "game_date": "2026-10-06",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 35
+        },
+        {
+          "game_id": 2026020053,
+          "game_date": "2026-10-07",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 52
+        },
+        {
+          "game_id": 2026020054,
+          "game_date": "2026-10-07",
+          "overlapping_intervals": 8,
+          "affected_players": 8,
+          "duplicate_seconds": 439
+        },
+        {
+          "game_id": 2026020064,
+          "game_date": "2026-10-08",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 32
+        },
+        {
+          "game_id": 2026020066,
+          "game_date": "2026-10-09",
+          "overlapping_intervals": 2,
+          "affected_players": 1,
+          "duplicate_seconds": 84
+        },
+        {
+          "game_id": 2026020067,
+          "game_date": "2026-10-09",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 286
+        },
+        {
+          "game_id": 2026020068,
+          "game_date": "2026-10-09",
+          "overlapping_intervals": 4,
+          "affected_players": 2,
+          "duplicate_seconds": 131
+        },
+        {
+          "game_id": 2026020073,
+          "game_date": "2026-10-10",
+          "overlapping_intervals": 9,
+          "affected_players": 9,
+          "duplicate_seconds": 429
+        },
+        {
+          "game_id": 2026020075,
+          "game_date": "2026-10-10",
+          "overlapping_intervals": 3,
+          "affected_players": 1,
+          "duplicate_seconds": 128
+        },
+        {
+          "game_id": 2026020077,
+          "game_date": "2026-10-10",
+          "overlapping_intervals": 25,
+          "affected_players": 11,
+          "duplicate_seconds": 1264
+        },
+        {
+          "game_id": 2026020080,
+          "game_date": "2026-10-10",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 39
+        },
+        {
+          "game_id": 2026020081,
+          "game_date": "2026-10-10",
+          "overlapping_intervals": 5,
+          "affected_players": 5,
+          "duplicate_seconds": 217
+        },
+        {
+          "game_id": 2026020082,
+          "game_date": "2026-10-10",
+          "overlapping_intervals": 8,
+          "affected_players": 4,
+          "duplicate_seconds": 430
+        },
+        {
+          "game_id": 2026020083,
+          "game_date": "2026-10-10",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 12
+        },
+        {
+          "game_id": 2026020100,
+          "game_date": "2026-10-13",
+          "overlapping_intervals": 6,
+          "affected_players": 2,
+          "duplicate_seconds": 336
+        },
+        {
+          "game_id": 2026020109,
+          "game_date": "2026-10-15",
+          "overlapping_intervals": 15,
+          "affected_players": 5,
+          "duplicate_seconds": 876
+        },
+        {
+          "game_id": 2026020111,
+          "game_date": "2026-10-15",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 110
+        },
+        {
+          "game_id": 2026020114,
+          "game_date": "2026-10-15",
+          "overlapping_intervals": 9,
+          "affected_players": 3,
+          "duplicate_seconds": 344
+        },
+        {
+          "game_id": 2026020115,
+          "game_date": "2026-10-15",
+          "overlapping_intervals": 5,
+          "affected_players": 5,
+          "duplicate_seconds": 406
+        },
+        {
+          "game_id": 2026020116,
+          "game_date": "2026-10-15",
+          "overlapping_intervals": 4,
+          "affected_players": 4,
+          "duplicate_seconds": 75
+        },
+        {
+          "game_id": 2026020124,
+          "game_date": "2026-10-17",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 112
+        },
+        {
+          "game_id": 2026020126,
+          "game_date": "2026-10-17",
+          "overlapping_intervals": 3,
+          "affected_players": 1,
+          "duplicate_seconds": 93
+        },
+        {
+          "game_id": 2026020127,
+          "game_date": "2026-10-17",
+          "overlapping_intervals": 3,
+          "affected_players": 3,
+          "duplicate_seconds": 245
+        },
+        {
+          "game_id": 2026020128,
+          "game_date": "2026-10-17",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 105
+        },
+        {
+          "game_id": 2026020131,
+          "game_date": "2026-10-17",
+          "overlapping_intervals": 22,
+          "affected_players": 11,
+          "duplicate_seconds": 891
+        },
+        {
+          "game_id": 2026020143,
+          "game_date": "2026-10-20",
+          "overlapping_intervals": 4,
+          "affected_players": 4,
+          "duplicate_seconds": 263
+        },
+        {
+          "game_id": 2026020147,
+          "game_date": "2026-10-20",
+          "overlapping_intervals": 3,
+          "affected_players": 3,
+          "duplicate_seconds": 286
+        },
+        {
+          "game_id": 2026020149,
+          "game_date": "2026-10-20",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 132
+        },
+        {
+          "game_id": 2026020156,
+          "game_date": "2026-10-22",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 35
+        },
+        {
+          "game_id": 2026020159,
+          "game_date": "2026-10-22",
+          "overlapping_intervals": 3,
+          "affected_players": 3,
+          "duplicate_seconds": 559
+        },
+        {
+          "game_id": 2026020162,
+          "game_date": "2026-10-22",
+          "overlapping_intervals": 4,
+          "affected_players": 4,
+          "duplicate_seconds": 123
+        },
+        {
+          "game_id": 2026020163,
+          "game_date": "2026-10-22",
+          "overlapping_intervals": 11,
+          "affected_players": 3,
+          "duplicate_seconds": 548
+        },
+        {
+          "game_id": 2026020164,
+          "game_date": "2026-10-22",
+          "overlapping_intervals": 3,
+          "affected_players": 3,
+          "duplicate_seconds": 154
+        },
+        {
+          "game_id": 2026020168,
+          "game_date": "2026-10-24",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 45
+        },
+        {
+          "game_id": 2026020170,
+          "game_date": "2026-10-24",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 28
+        },
+        {
+          "game_id": 2026020171,
+          "game_date": "2026-10-24",
+          "overlapping_intervals": 8,
+          "affected_players": 8,
+          "duplicate_seconds": 194
+        },
+        {
+          "game_id": 2026020176,
+          "game_date": "2026-10-24",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 24
+        },
+        {
+          "game_id": 2026020177,
+          "game_date": "2026-10-24",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 37
+        },
+        {
+          "game_id": 2026020180,
+          "game_date": "2026-10-25",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 51
+        },
+        {
+          "game_id": 2026020186,
+          "game_date": "2026-10-26",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 46
+        },
+        {
+          "game_id": 2026020190,
+          "game_date": "2026-10-27",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 36
+        },
+        {
+          "game_id": 2026020194,
+          "game_date": "2026-10-27",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 23
+        },
+        {
+          "game_id": 2026020202,
+          "game_date": "2026-10-28",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 41
+        },
+        {
+          "game_id": 2026020204,
+          "game_date": "2026-10-29",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 69
+        },
+        {
+          "game_id": 2026020205,
+          "game_date": "2026-10-29",
+          "overlapping_intervals": 11,
+          "affected_players": 7,
+          "duplicate_seconds": 501
+        },
+        {
+          "game_id": 2026020206,
+          "game_date": "2026-10-29",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 128
+        },
+        {
+          "game_id": 2026020207,
+          "game_date": "2026-10-29",
+          "overlapping_intervals": 3,
+          "affected_players": 1,
+          "duplicate_seconds": 157
+        },
+        {
+          "game_id": 2026020214,
+          "game_date": "2026-10-30",
+          "overlapping_intervals": 3,
+          "affected_players": 2,
+          "duplicate_seconds": 89
+        },
+        {
+          "game_id": 2026020219,
+          "game_date": "2026-10-31",
+          "overlapping_intervals": 2,
+          "affected_players": 1,
+          "duplicate_seconds": 63
+        },
+        {
+          "game_id": 2026020221,
+          "game_date": "2026-10-31",
+          "overlapping_intervals": 3,
+          "affected_players": 1,
+          "duplicate_seconds": 287
+        },
+        {
+          "game_id": 2026020223,
+          "game_date": "2026-10-31",
+          "overlapping_intervals": 3,
+          "affected_players": 1,
+          "duplicate_seconds": 156
+        },
+        {
+          "game_id": 2026020224,
+          "game_date": "2026-10-31",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 26
+        },
+        {
+          "game_id": 2026020225,
+          "game_date": "2026-10-31",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 80
+        },
+        {
+          "game_id": 2026020232,
+          "game_date": "2026-11-02",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 69
+        },
+        {
+          "game_id": 2026020248,
+          "game_date": "2026-11-04",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 100
+        },
+        {
+          "game_id": 2026020249,
+          "game_date": "2026-11-04",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 31
+        },
+        {
+          "game_id": 2026020250,
+          "game_date": "2026-11-04",
+          "overlapping_intervals": 3,
+          "affected_players": 2,
+          "duplicate_seconds": 102
+        },
+        {
+          "game_id": 2026020253,
+          "game_date": "2026-11-05",
+          "overlapping_intervals": 4,
+          "affected_players": 2,
+          "duplicate_seconds": 217
+        },
+        {
+          "game_id": 2026020254,
+          "game_date": "2026-11-05",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 37
+        },
+        {
+          "game_id": 2026020260,
+          "game_date": "2026-11-05",
+          "overlapping_intervals": 5,
+          "affected_players": 3,
+          "duplicate_seconds": 137
+        },
+        {
+          "game_id": 2026020261,
+          "game_date": "2026-11-05",
+          "overlapping_intervals": 8,
+          "affected_players": 4,
+          "duplicate_seconds": 306
+        },
+        {
+          "game_id": 2026020267,
+          "game_date": "2026-11-07",
+          "overlapping_intervals": 2,
+          "affected_players": 2,
+          "duplicate_seconds": 71
+        },
+        {
+          "game_id": 2026020269,
+          "game_date": "2026-11-07",
+          "overlapping_intervals": 3,
+          "affected_players": 3,
+          "duplicate_seconds": 186
+        },
+        {
+          "game_id": 2026020272,
+          "game_date": "2026-11-07",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 35
+        },
+        {
+          "game_id": 2026020273,
+          "game_date": "2026-11-07",
+          "overlapping_intervals": 11,
+          "affected_players": 5,
+          "duplicate_seconds": 500
+        },
+        {
+          "game_id": 2026020275,
+          "game_date": "2026-11-07",
+          "overlapping_intervals": 12,
+          "affected_players": 12,
+          "duplicate_seconds": 620
+        },
+        {
+          "game_id": 2026020276,
+          "game_date": "2026-11-07",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 17
+        },
+        {
+          "game_id": 2026020279,
+          "game_date": "2026-11-08",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 53
+        },
+        {
+          "game_id": 2026020280,
+          "game_date": "2026-11-08",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 9
+        },
+        {
+          "game_id": 2026020282,
+          "game_date": "2026-11-08",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 79
+        },
+        {
+          "game_id": 2026020283,
+          "game_date": "2026-11-09",
+          "overlapping_intervals": 2,
+          "affected_players": 1,
+          "duplicate_seconds": 89
+        },
+        {
+          "game_id": 2026020285,
+          "game_date": "2026-11-09",
+          "overlapping_intervals": 7,
+          "affected_players": 3,
+          "duplicate_seconds": 400
+        },
+        {
+          "game_id": 2026020287,
+          "game_date": "2026-11-10",
+          "overlapping_intervals": 1,
+          "affected_players": 1,
+          "duplicate_seconds": 63
+        },
+        {
+          "game_id": 2026020291,
+          "game_date": "2026-11-10",
+          "overlapping_intervals": 6,
+          "affected_players": 5,
+          "duplicate_seconds": 234
+        }
+      ]
+    },
+    "sentinel_scope": {
+      "sql": "select c.game_id,min(c.game_date) game_date,count(*) sentinel_intervals from public.shift_charts c cross join lateral jsonb_array_elements(coalesce(c.shifts,'[]'::jsonb)) j where c.game_date between '2026-10-01' and '2026-11-11' and j->>'end_time' in ('00:00','0:00') and j->>'duration' not in ('00:00','0:00') group by c.game_id order by game_date,c.game_id;",
+      "rows": []
+    },
+    "runs": {
+      "sql": "select job_name,run_time,status,rows_affected,details - 'request' - 'headers' - 'body' - 'requestHeaders' - 'authorization' as details from public.cron_job_audit where run_time >= now()-interval '24 hours' and (job_name ilike '%shift%' or job_name ilike '%projection%') order by run_time desc limit 15;",
+      "rows": [
+        {
+          "job_name": "build-projection-derived-v2",
+          "run_time": "2026-11-12 09:50:03.486789+00",
+          "status": "success",
+          "rows_affected": 294,
+          "durationMs": 2266,
+          "responseOutcome": {
+            "errors": {
+              "count": 0,
+              "sample": []
+            },
+            "success": true,
+            "rowsPruned": 0,
+            "rowsVerified": 294,
+            "nextStartDate": null
+          },
+          "processedDates": [
+            "2026-11-10"
+          ],
+          "startDate": "2026-11-10",
+          "endDate": "2026-11-10"
+        },
+        {
+          "job_name": "ingest-projection-inputs",
+          "run_time": "2026-11-12 09:45:07.655643+00",
+          "status": "success",
+          "rows_affected": 2146,
+          "durationMs": 6755,
+          "responseOutcome": {
+            "errors": {
+              "count": 0,
+              "sample": []
+            },
+            "success": true,
+            "nextGameId": null,
+            "rowsPruned": 0,
+            "rowsUpserted": 2146,
+            "rowsVerified": 2146,
+            "nextStartDate": null,
+            "lastCompletedGameId": 2026020298
+          },
+          "startDate": "2026-11-11",
+          "endDate": "2026-11-11",
+          "gamesProcessed": 6,
+          "shiftRowsUpserted": 229
+        },
+        {
+          "job_name": "update-shift-charts",
+          "run_time": "2026-11-12 07:45:12.286613+00",
+          "status": "success",
+          "rows_affected": 266,
+          "durationMs": 10973,
+          "responseOutcome": {
+            "success": true,
+            "rowsPruned": 0,
+            "rowsVerified": 266
+          },
+          "processedGames": [
+            {
+              "gameId": 2026020286,
+              "shiftSource": "json-api"
+            },
+            {
+              "gameId": 2026020287,
+              "shiftSource": "json-api"
+            },
+            {
+              "gameId": 2026020288,
+              "shiftSource": "json-api"
+            },
+            {
+              "gameId": 2026020289,
+              "shiftSource": "json-api"
+            },
+            {
+              "gameId": 2026020290,
+              "shiftSource": "json-api"
+            },
+            {
+              "gameId": 2026020291,
+              "shiftSource": "json-api"
+            },
+            {
+              "gameId": 2026020292,
+              "shiftSource": "json-api"
+            }
+          ],
+          "gamesProcessed": 7
+        }
+      ]
+    }
+  }
+}

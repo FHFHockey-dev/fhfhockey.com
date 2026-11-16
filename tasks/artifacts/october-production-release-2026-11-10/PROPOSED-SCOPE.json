@@ -1,0 +1,1129 @@
+{
+  "at": "2026-11-10T18:51:47.011382+00:00",
+  "status": "proposed; RSO source and artifact handoff pending",
+  "selected": [
+    "tasks/artifacts/beast-integrity-2026-11-09/BEAST-INTEGRITY.md",
+    "tasks/artifacts/beast-integrity-2026-11-09/REPAIR-INVENTORY.md",
+    "tasks/artifacts/beast-integrity-2026-11-09/rolling-gap-manifest.json",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/ADAPTER-CHECKS.json",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/ADAPTER-HANDOFF.md",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/FRESH-CAPTURE-PROPOSAL.md",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/MANIFEST.json",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/NST-OWNER-HANDOFF.md",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-AND-RUNTIME.md",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-PREDISPATCH-RECHECK.json",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-PREDISPATCH-REPRO.cjs",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-PREDISPATCH-REPRO.json",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNNER-CHECKS.json",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNNER-HANDOFF.md",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-IMPORT-PROBE.cjs",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-IMPORT-PROBE.json",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-IMPORT-RECHECK.json",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-POST-IMPORT-TLS.json",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-PROBE.json",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-PROBE.mjs",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/STATUS.md",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/VERIFICATION.json",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/ADAPTER-CHECKS.json.snapshot",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/MANIFEST.json",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/RUNTIME-PROBE.mjs.snapshot",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/nativeProcessCaptureRunner.test.ts.snapshot",
+    "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/nativeProcessCaptureRunner.ts.snapshot",
+    "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/CHECKS.json",
+    "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/HANDOFF.md",
+    "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/MANIFEST.json",
+    "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/RETAINED-EMPTY-REPLAY.json",
+    "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/SOURCE-PINS.json",
+    "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/closed_gate.cjs",
+    "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/prepare_packet.py",
+    "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/test_prepare_packet.py",
+    "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+    "tasks/artifacts/homepage-loading-2026-11-10/CANDIDATE.json",
+    "tasks/artifacts/homepage-loading-2026-11-10/FINDINGS.md",
+    "tasks/artifacts/homepage-loading-2026-11-10/HANDOFF.md",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.mjs",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.test.mjs",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.mjs",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.mjs",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs",
+    "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs",
+    "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs",
+    "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+    "web/__tests__/pages/_app.test.tsx",
+    "web/__tests__/pages/api/v1/contextual-rankings-matrix.test.ts",
+    "web/__tests__/pages/api/v1/db/update-skater-composite-ratings.test.ts",
+    "web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts",
+    "web/__tests__/pages/homepage-loading.test.ts",
+    "web/__tests__/pages/roster-schedule-optimizer.test.tsx",
+    "web/components/Rankings/ExperimentalToolkitPanel.module.scss",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx",
+    "web/components/RosterScheduleOptimizer/CandidateCard.tsx",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "web/components/RosterScheduleOptimizer/RsoLoading.module.scss",
+    "web/components/RosterScheduleOptimizer/RsoLoading.tsx",
+    "web/components/RosterScheduleOptimizer/StreamingItinerary.tsx",
+    "web/components/TransactionTrends/TransactionTrends.test.tsx",
+    "web/components/TransactionTrends/TransactionTrends.tsx",
+    "web/components/blshTrade/BlshTradeComparison.test.tsx",
+    "web/components/blshTrade/BlshTradeComparison.tsx",
+    "web/e2e/roster-schedule-optimizer.spec.ts",
+    "web/e2e/rso-acceptance.spec.ts",
+    "web/e2e/rso-continuity.spec.ts",
+    "web/lib/homepageSeason.test.ts",
+    "web/lib/homepageSeason.ts",
+    "web/lib/in-season/workspaceSchema.test.ts",
+    "web/lib/in-season/workspaceSchema.ts",
+    "web/lib/rankings/comparison.test.ts",
+    "web/lib/rankings/comparison.ts",
+    "web/lib/rankings/goalieMatrix.test.ts",
+    "web/lib/rankings/goalieMatrix.ts",
+    "web/lib/rankings/goaliePopulation.test.ts",
+    "web/lib/rankings/goaliePopulation.ts",
+    "web/lib/rankings/rankingQueries.test.ts",
+    "web/lib/rankings/rankingQueries.ts",
+    "web/lib/rankings/rankingTypes.ts",
+    "web/lib/rankings/skaterCompositeMethodology.ts",
+    "web/lib/rankings/skaterCompositeSourceCoverage.test.ts",
+    "web/lib/rankings/skaterCompositeSourceCoverage.ts",
+    "web/lib/rankings/skaterCompositeWriter.test.ts",
+    "web/lib/rankings/skaterCompositeWriter.ts",
+    "web/lib/rankings/snapshot.test.ts",
+    "web/lib/rankings/snapshot.ts",
+    "web/lib/rankings/teamMatrix.test.ts",
+    "web/lib/rankings/teamMatrix.ts",
+    "web/lib/rosterScheduleOptimizer/inputReadiness.test.ts",
+    "web/lib/rosterScheduleOptimizer/inputReadiness.ts",
+    "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+    "web/lib/transactions/trendRequestCache.test.ts",
+    "web/lib/transactions/trendRequestCache.ts",
+    "web/pages/_app.tsx",
+    "web/pages/api/v1/db/update-skater-composite-ratings.ts",
+    "web/pages/api/v1/transactions/ownership-trends.ts",
+    "web/pages/index.tsx",
+    "web/pages/roster-schedule-optimizer.tsx",
+    "web/scripts/beast/prepareRollingGapRepair.test.ts",
+    "web/scripts/beast/prepareRollingGapRepair.ts",
+    "web/scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+    "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+    "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+    "web/scripts/blsh/nativeProcessCaptureRunner.ts"
+  ],
+  "retained": [
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/BASELINE.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/BUILD-INVENTORY.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/CANDIDATE.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/CHECKS.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/DEPLOYMENT-READY.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/DEPLOYMENTS-FINAL.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/EXACT-EXPORT.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/FINAL-RESULT.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/GIT-RECONCILIATION.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/HANDOFF.md",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/PREPUSH-RETRY.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/PRESERVE-BEFORE-SYNC.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/PUSH-DENIED.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/PUSH.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/RELEASE-CANDIDATE.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/SERVICE.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/base-route.ts",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/browserless-redaction.patch",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/independent-results.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/reconcile.index",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/release.index",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/replay-independent-review.cjs",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/tsconfig.browserless.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/AUDIT-CONTEXT.md",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/CALCULATIONS-OPUS.md",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/audit-context-opus.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/calculations-opus.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/coverage-notes.md",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/homepage-loading-2026-11-10/after-route-timings.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/homepage-loading-2026-11-10/comparison.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/homepage-loading-2026-11-10/existing-route-timings.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/homepage-loading-2026-11-10/warm-browser-timings.json",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/october-production-release-2026-11-10/BUILD-INVENTORY.json",
+      "reason": "Release scratch evidence, not source"
+    },
+    {
+      "path": "tasks/artifacts/october-production-release-2026-11-10/DEPENDENCY-CHECK.json",
+      "reason": "Release scratch evidence, not source"
+    },
+    {
+      "path": "tasks/artifacts/october-production-release-2026-11-10/INVENTORY.json",
+      "reason": "Release scratch evidence, not source"
+    },
+    {
+      "path": "tasks/artifacts/october-production-release-2026-11-10/VERIFICATION-PROGRESS.json",
+      "reason": "Release scratch evidence, not source"
+    },
+    {
+      "path": "tasks/artifacts/rankings-matrix-flags-2026-11-09/HANDOFF.md",
+      "reason": "Generated or historical evidence retained locally; not an application/runtime dependency"
+    },
+    {
+      "path": "tasks/artifacts/rankings-matrix-flags-2026-11-09/p2-p3-nst-goalie-fix.sql",
+      "reason": "Manual destructive database-repair artifact; outside this code release"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/2026-11-09/CUSTODY.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/2026-11-09/HANDOFF.md",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/2026-11-09/RECONCILIATION.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/2026-11-09/RESULT.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/2026-11-09/before/check-readbacks.mjs",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/2026-11-09/before/check-readbacks.test.mjs",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/2026-11-09/installed-checker.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/CANDIDATE.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/CHECKS.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/COORDINATION.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/CORRECTIONS.patch",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/HANDOFF.md",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/PRIVATE-BETA-CHECKLIST.md",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/SOURCE-PINS.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/VERIFICATION.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/BEFORE.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/CLI-FIX.patch",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/COORDINATION.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/HANDOFF.md",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/RESULT.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/RETAINED-CHECKER-SUCCESSOR.patch",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/YAHOO-ACCEPTANCE-BOUNDS.md",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-capture/inspect-identity.mjs",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-capture/inspect-identity.test.mjs",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-capture/inspect-issued-packet.mjs",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-capture/inspect-issued-packet.test.mjs",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-capture/normalize-settlement.mjs",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-capture/normalize-settlement.test.mjs",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-readbacks/tooling/check-readbacks.mjs",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/before/qualification-readbacks/tooling/check-readbacks.test.mjs",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/cli-regression-green.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/cli-regression-red.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/acceptance-preparation/executed-check.py",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/.last-run.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--0a84b-nd-cancels-superseded-edits-chromium/planning-performance.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/compact-19-focused-states.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/compact-19-metrics.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/slider-alignment-observations.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/compact-bench-viewport-metrics.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/slider-alignment-observations.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--54359-y-and-planned-add-semantics-chromium/candidate-feedback-evidence.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--60f1d-icipation-expiry-connected--chromium/saved-native-inputs.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--71296-ilters-and-retains-zero-AGP-chromium/candidate-performance.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/rso-account-switch-browser.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--94789--preserves-clipped-horizons-chromium/slider-alignment-observations.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--ae298-before-any-plan-is-selected-chromium/audit1-native-worker.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--babee-full-horizon-without-saving-chromium/current-read-preservation.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--babee-full-horizon-without-saving-chromium/slider-alignment-observations.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--bf7a8-ot-rows-and-internal-labels-chromium/compact-29-1000x1600-density.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--bf7a8-ot-rows-and-internal-labels-chromium/compact-29-1440x720-density.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--bf7a8-ot-rows-and-internal-labels-chromium/compact-29-1920x1080-density.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--bf7a8-ot-rows-and-internal-labels-chromium/compact-29-390x844-density.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--bf7a8-ot-rows-and-internal-labels-chromium/compact-29-focused-states.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--bf7a8-ot-rows-and-internal-labels-chromium/compact-29-metrics.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--bf7a8-ot-rows-and-internal-labels-chromium/slider-alignment-observations.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--d2608-ot-rows-and-internal-labels-chromium/compact-20-focused-states.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--d2608-ot-rows-and-internal-labels-chromium/compact-20-metrics.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--d2608-ot-rows-and-internal-labels-chromium/slider-alignment-observations.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--efc74-s-and-unknown-goalie-status-chromium/slider-alignment-observations.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-output/roster-schedule-optimizer--fda39-ne-cooldown-Undo-and-reopen-chromium/refresh-fixture-receipt.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-results.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-sandbox-results.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser-sandbox.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/browser.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/ADMISSION-CUSTODY.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/BUILD-INVENTORY.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/CANDIDATE.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/CHECKPOINT.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/NEWS-RELEASE-OVERLAP.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/RELEASE-CHECKPOINT.md",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/admission-lint.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/admission-regression-before.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/admission-tests.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/candidate-closure.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/candidate-lint.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/candidate-tests.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/candidate-typecheck.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/classification-after.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/classification-before.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/commit-verification-CHECK.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/recorded-master-closure-CHECK.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/recorded-master-closure.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/registration.patch",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/release-files.tar",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/CANDIDATE.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/COLLISION-EVIDENCE-1519.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/COVERAGE-RECONCILIATION.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/DEPLOYMENTS-STARTED.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/GIT-RECONCILIATION.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/PREPUSH.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/PUSH.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/SMOKE-EXECUTION.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/SMOKE-REQUEST-PLAN.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/SMOKE-RETRY-EXECUTION.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/SMOKE-RETRY-PLAN.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/START.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/closure-check.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/closure.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/public-smoke-proxy-retry/public-planning-response.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/public-smoke-proxy-retry/public-serving-smoke.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/public-smoke/public-serving-smoke.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/resume-2026-11-10/tests-check.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/smoke-public-serving.cjs",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/stored-producer-verification-CHECK.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/stored-run-query.sql",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/stored-runs.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/lint.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/CHECKPOINT.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/COORDINATION.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/TJ-NEXT-STEPS.md",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/CHECK-AFTER-SCHEMA.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/CHECK-FINAL.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/CHECK.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/REPORT.md",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/RESULT.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/SCHEMA-CUSTODY.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/SOURCE-PINS.initial-schema.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/SOURCE-PINS.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/first-CHECK.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/first-inspection.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/inspect-export.cjs",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/inspection-after-schema.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/inspection-final.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/inspection.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/planning-types-lint.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/schema-before.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/schema-lint.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/schema-regression-after.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/schema-regression-before.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/schema-repair.patch",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/typecheck-final.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/typecheck.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/current-input-2039/withheld-forecast-regression.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/historical-capture-receipt.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/historical-check.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/historical-export-check.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/historical-export-inspection.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/private-acceptance-window-2026-11-09/historical-preflight.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/regressions-results.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/regressions.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/COORDINATION.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/README.md",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/RECONCILIATION.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/RESULT.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/SOURCE-PINS.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/inspect-saved-planning.test.ts",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/inspect-saved-planning.ts",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/tests-after-buffer-fix.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/tests-before-clock-redaction.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/tests-final.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/saved-input-preflight-2026-11-09/tests-first.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/types.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/verification-harness/check.py",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/verification-harness/guard.cjs",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/verification-harness/prepare.py",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/CANDIDATE.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/CONFIRMATION-BROWSER-CHECKS.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/CONFIRMATION-HANDOFF.md",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/CONFIRMATION-REVIEW.md",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/HANDOFF.md",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/LOADING-CANDIDATE.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/RELEASE-CUSTODY.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/RELEASE-SOURCE-PATHS.txt",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/browser-output/.last-run.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/browser-results.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/browser-run.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/confirmation-browser-output/.last-run.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/confirmation-browser-results.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/confirmation-browser-run.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/confirmation-final-component-tests.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/confirmation-final-note-tests.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/confirmation-final-readiness-tests.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/confirmation-first-tests.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/confirmation-related-tests.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/confirmation-second-tests.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/confirmation-targeted-tests.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/first-confirmation-browser-results.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/first-confirmation-browser-run.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/next-env.before.txt",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/playwright.config.ts",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/retained-dev-timings.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/run-browser.py",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/run-confirmation-browser.py",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/second-confirmation-browser-results.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/second-confirmation-browser-run.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/selector-attempt-browser-results.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/selector-attempt-browser-run.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/third-confirmation-browser-results.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/third-confirmation-browser-run.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/transient-response-results.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/unit-results.json",
+      "reason": "Pending RSO owner artifact classification; not a final exclusion"
+    },
+    {
+      "path": "tasks/diaries/2026-11-05-claude-x-scraper-ifttt-replacement.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-08-claude-player-cards-fix.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-08-claude-rankings-matrix-flags.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-08-codex-blsh-lane.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-08-codex-chef-cron-handoff.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-08-codex-chef-nst-status.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-08-codex-cron-receipt-contract.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-08-codex-rankings-team-filter-integration.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-08-codex-rso-lane.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-09-codex-beast-independent-review.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-09-codex-beast-integrity.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-09-codex-chef-nst-interface-status.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-09-codex-rankings-goalie-cloud-integration.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-09-codex-rankings-goalie-provenance-hotfix.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-09-codex-rankings-goalie-workload-integration.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-09-codex-rankings-matrix-integration.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-10-claude-calc-inventory-opus.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-10-codex-browserless-redaction.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-10-codex-homepage-loading.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-10-codex-october-production-release.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-10-codex-rso-confirmation-implementation.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-10-codex-rso-input-confirmation-review.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "tasks/diaries/2026-11-10-codex-rso-local-loading.md",
+      "reason": "Task diary excluded from release by repository instruction"
+    },
+    {
+      "path": "web/next-env.d.ts",
+      "reason": "Generated development build-directory reference; preserve local bytes"
+    }
+  ]
+}

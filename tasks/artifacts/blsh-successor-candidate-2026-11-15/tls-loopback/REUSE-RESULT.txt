@@ -1,0 +1,129 @@
+{
+ "node": "v22.23.4",
+ "undici": "6.29.1",
+ "keepAlivePhase": {
+  "connections": 2,
+  "tlsHandshakes": 2
+ },
+ "total": {
+  "connections": 3,
+  "tlsHandshakes": 3
+ },
+ "results": [
+  {
+   "label": "A1_first_connection",
+   "ok": true,
+   "side": [
+    {
+     "socket": 1,
+     "sessionReused": false
+    }
+   ],
+   "fullHandshakeShape": true,
+   "authorized": true,
+   "sessionReused": false,
+   "connectionReused": false,
+   "connectionSequence": 1,
+   "peerCertificateNull": false,
+   "protocol": "TLSv1.3",
+   "fingerprint256": "4A:91:08:35:A6:FA:BA:21:B2:DA:0B:0B:25:30:7B:AA:2B:C1:3F:9F:57:A0:5A:68:25:8B:56:D1:94:B7:BD:38",
+   "subjectCN": "localhost",
+   "issuerCNChain": [
+    "FHFH Loopback Test Root",
+    "FHFH Loopback Test Root"
+   ]
+  },
+  {
+   "label": "A2_keepalive_same_socket",
+   "ok": true,
+   "side": [
+    {
+     "socket": 2,
+     "sessionReused": false
+    }
+   ],
+   "fullHandshakeShape": true,
+   "authorized": true,
+   "sessionReused": false,
+   "connectionReused": false,
+   "connectionSequence": 2,
+   "peerCertificateNull": false,
+   "protocol": "TLSv1.3",
+   "fingerprint256": "4A:91:08:35:A6:FA:BA:21:B2:DA:0B:0B:25:30:7B:AA:2B:C1:3F:9F:57:A0:5A:68:25:8B:56:D1:94:B7:BD:38",
+   "subjectCN": "localhost",
+   "issuerCNChain": [
+    "FHFH Loopback Test Root",
+    "FHFH Loopback Test Root"
+   ]
+  },
+  {
+   "label": "B1_closes_after_response",
+   "ok": true,
+   "side": [
+    {
+     "socket": 1,
+     "sessionReused": false
+    }
+   ],
+   "fullHandshakeShape": true,
+   "authorized": true,
+   "sessionReused": false,
+   "connectionReused": true,
+   "connectionSequence": 1,
+   "peerCertificateNull": false,
+   "protocol": "TLSv1.3",
+   "fingerprint256": "4A:91:08:35:A6:FA:BA:21:B2:DA:0B:0B:25:30:7B:AA:2B:C1:3F:9F:57:A0:5A:68:25:8B:56:D1:94:B7:BD:38",
+   "subjectCN": "localhost",
+   "issuerCNChain": [
+    "FHFH Loopback Test Root",
+    "FHFH Loopback Test Root"
+   ]
+  },
+  {
+   "label": "B2_new_connection_resumed_session",
+   "ok": true,
+   "side": [
+    {
+     "socket": 2,
+     "sessionReused": false
+    }
+   ],
+   "fullHandshakeShape": true,
+   "authorized": true,
+   "sessionReused": false,
+   "connectionReused": true,
+   "connectionSequence": 2,
+   "peerCertificateNull": false,
+   "protocol": "TLSv1.3",
+   "fingerprint256": "4A:91:08:35:A6:FA:BA:21:B2:DA:0B:0B:25:30:7B:AA:2B:C1:3F:9F:57:A0:5A:68:25:8B:56:D1:94:B7:BD:38",
+   "subjectCN": "localhost",
+   "issuerCNChain": [
+    "FHFH Loopback Test Root",
+    "FHFH Loopback Test Root"
+   ]
+  },
+  {
+   "label": "B3_new_connection_resumed_session",
+   "ok": true,
+   "side": [
+    {
+     "socket": 3,
+     "sessionReused": false
+    }
+   ],
+   "fullHandshakeShape": true,
+   "authorized": true,
+   "sessionReused": false,
+   "connectionReused": false,
+   "connectionSequence": 3,
+   "peerCertificateNull": false,
+   "protocol": "TLSv1.3",
+   "fingerprint256": "4A:91:08:35:A6:FA:BA:21:B2:DA:0B:0B:25:30:7B:AA:2B:C1:3F:9F:57:A0:5A:68:25:8B:56:D1:94:B7:BD:38",
+   "subjectCN": "localhost",
+   "issuerCNChain": [
+    "FHFH Loopback Test Root",
+    "FHFH Loopback Test Root"
+   ]
+  }
+ ]
+}

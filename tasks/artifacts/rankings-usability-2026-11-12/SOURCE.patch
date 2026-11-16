@@ -1,0 +1,504 @@
+diff --git a/web/__tests__/pages/rankings.test.tsx b/web/__tests__/pages/rankings.test.tsx
+index 1307260dc..3395ce757 100644
+--- a/web/__tests__/pages/rankings.test.tsx
++++ b/web/__tests__/pages/rankings.test.tsx
+@@ -24,7 +24,13 @@ import type {
+ 
+ const { replaceMock, routerState, swrMock, swrMode, seasonState } = vi.hoisted(() => ({
+   // Stands in for the /api/v1/season resolver (W2-4 D12).
+-  seasonState: { data: { seasonId: 20252026 } as { seasonId: number } | null, isError: false },
++  seasonState: {
++    data: { seasonId: 20252026 } as { seasonId: number } | null,
++    isError: false,
++    isSuccess: false,
++    isFetching: false,
++    refetch: vi.fn(),
++  },
+   replaceMock: vi.fn(),
+   routerState: {
+     pathname: "/rankings",
+@@ -1622,7 +1628,13 @@ describe("RankingsPage interactions", () => {
+     swrMode.actual = false;
+     routerState.query = {};
+     routerState.isReady = true;
++    seasonState.data = { seasonId: 20252026 };
++    seasonState.isError = false;
++    seasonState.isSuccess = false;
++    seasonState.isFetching = false;
++    seasonState.refetch.mockReset();
+     replaceMock.mockReset();
++    swrMock.mockClear();
+     setupSWR();
+   });
+ 
+@@ -1631,6 +1643,140 @@ describe("RankingsPage interactions", () => {
+     vi.unstubAllGlobals();
+   });
+ 
++  it.each([
++    ["metric_explorer", "Loading rankings..."],
++    ["deployment_tiers", "Loading deployment summaries..."],
++    ["trending", "Loading trends..."],
++    ["splits", "Loading ranking splits..."],
++    ["war", "Loading WAR availability contract..."],
++  ])("keeps %s in a loading or recoverable error state until the season resolves", (tab, loadingText) => {
++    routerState.query = { tab };
++    seasonState.data = null;
++    const { rerender } = render(<RankingsPage />);
++
++    expect(screen.getByRole("status").textContent).toBe("Loading season info...");
++    expect(screen.getByText(loadingText)).toBeTruthy();
++    expect(swrMock.mock.calls.every(([url]) => url === null || url.endsWith("/metadata"))).toBe(true);
++
++    seasonState.isError = true;
++    rerender(<RankingsPage />);
++    expect(screen.queryByText(loadingText)).toBeNull();
++    expect(screen.getByRole("status").textContent).toContain("Unable to load season info");
++    expect(screen.getByRole("button", { name: "Retry season lookup" })).toBeTruthy();
++  });
++
++  it("lets the reader retry an empty season response while controls are collapsed", () => {
++    seasonState.data = null;
++    seasonState.isSuccess = true;
++    const { rerender } = render(<RankingsPage />);
++    fireEvent.click(screen.getByRole("button", { name: "Hide controls" }));
++    const retry = screen.getByRole("button", { name: "Retry season lookup" });
++    retry.focus();
++    fireEvent.click(retry);
++    expect(seasonState.refetch).toHaveBeenCalledTimes(1);
++    seasonState.isFetching = true;
++    rerender(<RankingsPage />);
++    expect((retry as HTMLButtonElement).disabled).toBe(true);
++    expect(screen.getByRole("status").textContent).toBe("Loading season info...");
++    seasonState.isFetching = false;
++    seasonState.data = { seasonId: 20262027 };
++    rerender(<RankingsPage />);
++    expect(screen.queryByRole("button", { name: "Retry season lookup" })).toBeNull();
++    expect(screen.getByRole("status").textContent).toBe("Rankings ready.");
++    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Skater Rankings" }));
++    expect(swrMock.mock.calls.some(([url]) => url?.includes("/matrix?") && url.includes("season=20262027"))).toBe(true);
++  });
++
++  it.each(["non-JSON", "network"])("recovers a %s failure with one explicit retry and keeps the selected filters", async (failure) => {
++    swrMode.actual = true;
++    routerState.query = { season: "20252026", window: "last5", team: "BUF", page: "2" };
++    let resolveRetry: (value: unknown) => void = () => {};
++    let matrixCalls = 0;
++    const fetchMock = vi.fn((url: string) => {
++      if (url.includes("/matrix?")) {
++        matrixCalls += 1;
++        if (matrixCalls === 1) {
++          if (failure === "network") return Promise.reject(new TypeError("Failed to fetch"));
++          return Promise.resolve({ ok: false, json: async () => { throw new SyntaxError("Unexpected token '<'"); } });
++        }
++        return new Promise((resolve) => { resolveRetry = resolve; });
++      }
++      return Promise.resolve({ ok: true, json: async () => swrMock(url).data });
++    });
++    vi.stubGlobal("fetch", fetchMock);
++    render(<SWRConfig value={{ provider: () => new Map() }}><RankingsPage /></SWRConfig>);
++
++    const retry = await screen.findByRole("button", { name: "Retry Rankings" });
++    expect(screen.getByRole("status").textContent).toContain("Unable to load rankings right now");
++    expect(screen.queryByText(/Unexpected token/)).toBeNull();
++    retry.focus();
++    fireEvent.click(retry);
++    await waitFor(() => expect(matrixCalls).toBe(2));
++    expect((retry as HTMLButtonElement).disabled).toBe(true);
++    expect(screen.getByRole("status").textContent).toBe("Loading Rankings...");
++    fireEvent.click(retry);
++    expect(matrixCalls).toBe(2);
++    const focusAfterRecovery = failure === "network"
++      ? screen.getByRole("button", { name: "Hide controls" })
++      : screen.getByRole("heading", { name: "Skater Rankings" });
++    if (failure === "network") focusAfterRecovery.focus();
++    await act(async () => resolveRetry({ ok: true, json: async () => matrixPayload }));
++    await waitFor(() => expect(screen.queryByRole("button", { name: "Retry Rankings" })).toBeNull());
++    expect(screen.getByRole("status").textContent).toBe("Rankings ready.");
++    expect(document.activeElement).toBe(focusAfterRecovery);
++    expect(replaceMock).not.toHaveBeenCalled();
++    const requests = fetchMock.mock.calls.map(([url]) => url).filter((url) => url.includes("/matrix?"));
++    expect(requests).toHaveLength(2);
++    expect(requests[1]).toBe(requests[0]);
++    expect(requests[0]).toContain("window=last5");
++    expect(requests[0]).toContain("team=BUF");
++    expect(requests[0]).toContain("page=2");
++  });
++
++  it("does not automatically retry failed rankings requests", async () => {
++    swrMode.actual = true;
++    routerState.query = { season: "20252026" };
++    const onErrorRetry = vi.fn();
++    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
++      if (url.includes("/matrix?")) return { ok: false, json: async () => ({ message: "Temporarily unavailable" }) };
++      return { ok: true, json: async () => swrMock(url).data };
++    }));
++    render(<SWRConfig value={{ provider: () => new Map(), onErrorRetry }}><RankingsPage /></SWRConfig>);
++    await screen.findByRole("button", { name: "Retry Rankings" });
++    expect(onErrorRetry).not.toHaveBeenCalled();
++  });
++
++  it.each([
++    ["goalies", "rankings", "/goalies?", "Rankings"],
++    ["teams", "rankings", "/teams?", "Rankings"],
++    ["skaters", "trending", "/trending?", "Trending"],
++  ])("retries only the active %s %s view and permits recovery after another failure", async (entity, tab, path, label) => {
++    swrMode.actual = true;
++    routerState.query = { season: "20252026", entity, tab };
++    let fail = true;
++    const fetchMock = vi.fn(async (url: string) => url.includes(path) && fail
++      ? { ok: false, json: async () => ({ error: "SOURCE_BUSY", message: "Please try again shortly." }) }
++      : { ok: true, json: async () => swrMock(url).data });
++    vi.stubGlobal("fetch", fetchMock);
++    render(<SWRConfig value={{ provider: () => new Map() }}><RankingsPage /></SWRConfig>);
++
++    const retry = await screen.findByRole("button", { name: `Retry ${label}` });
++    expect(screen.getByRole("status").textContent).toBe("Please try again shortly.");
++    expect(screen.queryByText("SOURCE_BUSY")).toBeNull();
++    fetchMock.mockClear();
++    retry.focus();
++    fireEvent.click(retry);
++    await waitFor(() => expect((retry as HTMLButtonElement).disabled).toBe(false));
++    expect(document.activeElement).toBe(retry);
++    expect(fetchMock.mock.calls).toHaveLength(1);
++    expect(fetchMock.mock.calls[0][0]).toContain(path);
++    fail = false;
++    fireEvent.click(retry);
++    await waitFor(() => expect(screen.queryByRole("button", { name: `Retry ${label}` })).toBeNull());
++    expect(screen.getByRole("status").textContent).toBe(`${label} ready.`);
++    expect(replaceMock).not.toHaveBeenCalled();
++  });
++
+   it("defaults to the resolved current season and waits instead of guessing when the lookup fails (W2-4 D12)", async () => {
+     routerState.query = {};
+     seasonState.data = { seasonId: 20262027 };
+diff --git a/web/pages/rankings.tsx b/web/pages/rankings.tsx
+index 3b37cca72..4f57a0bf7 100644
+--- a/web/pages/rankings.tsx
++++ b/web/pages/rankings.tsx
+@@ -1,7 +1,7 @@
+ import Head from "next/head";
+ import { useRouter } from "next/router";
+ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+-import useSWR from "swr";
++import useSWR, { useSWRConfig } from "swr";
+ 
+ import ComparisonSummaryPanel from "components/Rankings/ComparisonSummaryPanel";
+ import { formatCaveat, formatCaveats } from "components/Rankings/caveatLabels";
+@@ -88,8 +88,13 @@ const TABS: Array<{
+ ];
+ 
+ const fetcher = async <T,>(url: string) => {
+-  const response = await fetch(url);
+-  const payload = await response.json();
++  const fallbackMessage = "Unable to load rankings right now. Please try again.";
++  const response = await fetch(url).catch(() => {
++    throw new Error(fallbackMessage);
++  });
++  const payload = await response.json().catch(() => {
++    throw new Error(fallbackMessage);
++  });
+   if (!response.ok) {
+     // 500s carry a stable code in `error` and the readable text in `message`.
+     const message =
+@@ -109,6 +114,13 @@ const RANKINGS_SWR_OPTIONS = {
+   keepPreviousData: false,
+   revalidateOnFocus: false,
+   dedupingInterval: 30_000,
++  errorRetryCount: 2,
++};
++
++const RANKINGS_VIEW_SWR_OPTIONS = {
++  ...RANKINGS_SWR_OPTIONS,
++  // A failed view offers an explicit retry; avoid repeated expensive reads during outages.
++  shouldRetryOnError: false,
+ };
+ 
+ function filtersToQuery(filters: RankingsFilterState) {
+@@ -1249,6 +1261,11 @@ function buildComparisonRequestPath(args: {
+ 
+ export default function RankingsPage() {
+   const router = useRouter();
++  const { mutate } = useSWRConfig();
++  const [retryingPath, setRetryingPath] = useState<string | null>(null);
++  const pageHeadingRef = useRef<HTMLHeadingElement>(null);
++  const retryButtonRef = useRef<HTMLButtonElement>(null);
++  const retryFocusPathRef = useRef<string | null>(null);
+   const [rankMode, setRankMode] = useState<"overall" | "deployment">("overall");
+   const [isControlShellCollapsed, setIsControlShellCollapsed] = useState(false);
+   // Compact desktop matrix: the snapshot + comparison rail becomes a drawer.
+@@ -1289,7 +1306,8 @@ export default function RankingsPage() {
+   // Requests wait for a season: an explicit URL season or the resolved one.
+   const seasonReady = router.isReady && filters.season !== "";
+   const seasonErrorMessage =
+-    !seasonReady && currentSeasonQuery.isError
++    router.isReady && !seasonReady &&
++    (currentSeasonQuery.isError || (currentSeasonQuery.isSuccess && currentSeasonId == null))
+       ? "Unable to load season info right now. Choose a season to continue."
+       : undefined;
+   const matrixRequestPath =
+@@ -1318,6 +1336,9 @@ export default function RankingsPage() {
+     seasonReady && filters.tab === "splits" ? buildSplitsRequestPath(filters) : null;
+   const warRequestPath =
+     seasonReady && filters.tab === "war" ? buildWarRequestPath(filters) : null;
++  const activeRequestPath = matrixRequestPath ?? goalieMatrixRequestPath ??
++    teamMatrixRequestPath ?? explorerRequestPath ?? deploymentTiersRequestPath ??
++    trendingRequestPath ?? splitsRequestPath ?? warRequestPath;
+   const snapshotRequestPath = seasonReady ? buildSnapshotRequestPath(filters) : null;
+   const metadataRequestPath = "/api/v1/contextual-rankings/metadata";
+   const {
+@@ -1327,7 +1348,7 @@ export default function RankingsPage() {
+   } = useSWR<PlayerMatrixResponse>(
+     matrixRequestPath,
+     (url: string) => fetcher<PlayerMatrixResponse>(url),
+-    RANKINGS_SWR_OPTIONS,
++    RANKINGS_VIEW_SWR_OPTIONS,
+   );
+   const {
+     data: goalieMatrixData,
+@@ -1336,7 +1357,7 @@ export default function RankingsPage() {
+   } = useSWR<GoalieMatrixResponse>(
+     goalieMatrixRequestPath,
+     (url: string) => fetcher<GoalieMatrixResponse>(url),
+-    RANKINGS_SWR_OPTIONS,
++    RANKINGS_VIEW_SWR_OPTIONS,
+   );
+   const {
+     data: teamMatrixData,
+@@ -1345,7 +1366,7 @@ export default function RankingsPage() {
+   } = useSWR<TeamMatrixResponse>(
+     teamMatrixRequestPath,
+     (url: string) => fetcher<TeamMatrixResponse>(url),
+-    RANKINGS_SWR_OPTIONS,
++    RANKINGS_VIEW_SWR_OPTIONS,
+   );
+   const {
+     data: explorerData,
+@@ -1354,7 +1375,7 @@ export default function RankingsPage() {
+   } = useSWR<ContextualRankingsResponse>(
+     explorerRequestPath,
+     (url: string) => fetcher<ContextualRankingsResponse>(url),
+-    RANKINGS_SWR_OPTIONS,
++    RANKINGS_VIEW_SWR_OPTIONS,
+   );
+   const {
+     data: deploymentTiersData,
+@@ -1363,7 +1384,7 @@ export default function RankingsPage() {
+   } = useSWR<DeploymentTiersResponse>(
+     deploymentTiersRequestPath,
+     (url: string) => fetcher<DeploymentTiersResponse>(url),
+-    RANKINGS_SWR_OPTIONS,
++    RANKINGS_VIEW_SWR_OPTIONS,
+   );
+   const {
+     data: trendingData,
+@@ -1372,7 +1393,7 @@ export default function RankingsPage() {
+   } = useSWR<TrendingResponse>(
+     trendingRequestPath,
+     (url: string) => fetcher<TrendingResponse>(url),
+-    RANKINGS_SWR_OPTIONS,
++    RANKINGS_VIEW_SWR_OPTIONS,
+   );
+   const {
+     data: splitsData,
+@@ -1381,7 +1402,7 @@ export default function RankingsPage() {
+   } = useSWR<RankingsSplitsResponse>(
+     splitsRequestPath,
+     (url: string) => fetcher<RankingsSplitsResponse>(url),
+-    RANKINGS_SWR_OPTIONS,
++    RANKINGS_VIEW_SWR_OPTIONS,
+   );
+   const {
+     data: warData,
+@@ -1390,7 +1411,7 @@ export default function RankingsPage() {
+   } = useSWR<WarSurfaceResponse>(
+     warRequestPath,
+     (url: string) => fetcher<WarSurfaceResponse>(url),
+-    RANKINGS_SWR_OPTIONS,
++    RANKINGS_VIEW_SWR_OPTIONS,
+   );
+   const { data: snapshotData } = useSWR<ContextualRankingSnapshotResponse>(
+     snapshotRequestPath,
+@@ -1402,6 +1423,46 @@ export default function RankingsPage() {
+     (url: string) => fetcher<ContextualRankingsMetadataResponse>(url),
+     RANKINGS_SWR_OPTIONS,
+   );
++  const activeError = matrixError ?? goalieMatrixError ?? teamMatrixError ??
++    explorerError ?? deploymentTiersError ?? trendingError ?? splitsError ?? warError;
++  const activeErrorMessage = seasonErrorMessage ??
++    (activeError instanceof Error ? activeError.message : undefined);
++  const waitingForSeason = !seasonReady &&
++    (!seasonErrorMessage || currentSeasonQuery.isFetching);
++  const retrying = retryingPath !== null && retryingPath === activeRequestPath;
++  const activeLoading = waitingForSeason || retrying || matrixLoading ||
++    goalieMatrixLoading || teamMatrixLoading || explorerLoading ||
++    deploymentTiersLoading || trendingLoading || splitsLoading || warLoading;
++  const viewStatus = waitingForSeason
++    ? "Loading season info..."
++    : activeLoading
++      ? `Loading ${tabLabel(filters.tab)}...`
++      : activeErrorMessage ?? (activeRequestPath ? `${tabLabel(filters.tab)} ready.` : "");
++  useEffect(() => {
++    const focusPath = retryFocusPathRef.current;
++    if (!focusPath) return;
++    if (focusPath === "season" ? currentSeasonQuery.isFetching : retrying) return;
++    retryFocusPathRef.current = null;
++    if (focusPath !== "season" && focusPath !== activeRequestPath) return;
++    // Keep keyboard users at recovery/results, unless they moved to another control.
++    if (document.activeElement === document.body ||
++        document.activeElement === retryButtonRef.current) {
++      (activeErrorMessage ? retryButtonRef.current : pageHeadingRef.current)?.focus();
++    }
++  }, [retrying, activeRequestPath, activeErrorMessage, currentSeasonQuery.isFetching]);
++  const retryActiveView = async () => {
++    if (!activeRequestPath || retrying) return;
++    retryFocusPathRef.current =
++      document.activeElement === retryButtonRef.current ? activeRequestPath : null;
++    setRetryingPath(activeRequestPath);
++    try {
++      await mutate(activeRequestPath);
++    } catch {
++      // SWR retains the error for the view and its next explicit retry.
++    } finally {
++      setRetryingPath((path) => path === activeRequestPath ? null : path);
++    }
++  };
+   const metric = getContextualRankingMetricDefinition(filters.metric);
+   const selectedPlayerId =
+     filters.selectedPlayerId.trim() === ""
+@@ -1572,7 +1633,7 @@ export default function RankingsPage() {
+         >
+           <header className={styles.header}>
+             <div>
+-              <h1>
++              <h1 ref={pageHeadingRef} tabIndex={-1}>
+                 <span>{labels.headingLead}</span> {labels.headingRest}
+               </h1>
+               <p>{filters.tab === "rankings" && filters.entity === "goalies"
+@@ -1588,7 +1649,7 @@ export default function RankingsPage() {
+                   <span>Dataset snapshot</span>
+                   <strong>
+                     {snapshotApplies
+-                      ? formatSnapshotDate(latestSnapshotDate, snapshotLoading)
++                      ? formatSnapshotDate(latestSnapshotDate, snapshotLoading || waitingForSeason)
+                       : "No snapshot"}
+                   </strong>
+                 </div>
+@@ -1660,7 +1721,7 @@ export default function RankingsPage() {
+                 </button>
+               ))}
+             </nav>
+-            <div className={styles.matrixToolbar}>
++            <div className={styles.matrixToolbar} style={{ flexWrap: "wrap" }}>
+               {filters.tab === "rankings" ? (
+                 <div
+                   className={`${styles.rankModeToggle} ${styles.densityToggle}`}
+@@ -1711,8 +1772,44 @@ export default function RankingsPage() {
+               ) : null}
+             </div>
+           </div>
++          {seasonErrorMessage || (activeError && activeRequestPath) ? (
++            <div className={styles.errorPanel}>
++              <p id="rankings-request-error">{activeErrorMessage}</p>
++              {seasonErrorMessage ? (
++                <button
++                  ref={retryButtonRef}
++                  className={styles.collapseControlButton}
++                  type="button"
++                  disabled={currentSeasonQuery.isFetching}
++                  aria-describedby="rankings-request-error"
++                  onClick={() => {
++                    retryFocusPathRef.current =
++                      document.activeElement === retryButtonRef.current ? "season" : null;
++                    void currentSeasonQuery.refetch();
++                  }}
++                >
++                  Retry season lookup
++                </button>
++              ) : activeError && activeRequestPath ? (
++                <button
++                  ref={retryButtonRef}
++                  className={styles.collapseControlButton}
++                  type="button"
++                  disabled={retrying || activeLoading}
++                  aria-describedby="rankings-request-error"
++                  onClick={() => { void retryActiveView(); }}
++                >
++                  Retry {tabLabel(filters.tab)}
++                </button>
++              ) : null}
++            </div>
++          ) : null}
+         </div>
+ 
++        <p className={styles.visuallyHidden} role="status" aria-atomic="true">
++          {viewStatus}
++        </p>
++
+         {filters.entity === "teams" && filters.tab === "rankings" ? (
+           <section className={workstationClassName}>
+             <div className={styles.matrixMain}>
+@@ -1927,11 +2024,11 @@ export default function RankingsPage() {
+               }
+               sort={filters.sort}
+               direction={filters.direction}
+-              isLoading={explorerLoading}
++              isLoading={explorerLoading || waitingForSeason}
+               errorMessage={
+-                explorerError instanceof Error
++                seasonErrorMessage ?? (explorerError instanceof Error
+                   ? explorerError.message
+-                  : undefined
++                  : undefined)
+               }
+               unavailableMessage={
+                 explorerData?.meta.unavailable
+@@ -1946,29 +2043,29 @@ export default function RankingsPage() {
+         {filters.entity === "skaters" && filters.tab === "deployment_tiers" ? (
+           <DeploymentTiersPanel
+             payload={deploymentTiersData ?? null}
+-            isLoading={deploymentTiersLoading}
++            isLoading={deploymentTiersLoading || waitingForSeason}
+             errorMessage={
+-              deploymentTiersError instanceof Error
++              seasonErrorMessage ?? (deploymentTiersError instanceof Error
+                 ? deploymentTiersError.message
+-                : undefined
++                : undefined)
+             }
+           />
+         ) : null}
+         {filters.entity === "skaters" && filters.tab === "trending" ? (
+           <TrendingPanel
+             payload={trendingData ?? null}
+-            isLoading={trendingLoading}
++            isLoading={trendingLoading || waitingForSeason}
+             errorMessage={
+-              trendingError instanceof Error ? trendingError.message : undefined
++              seasonErrorMessage ?? (trendingError instanceof Error ? trendingError.message : undefined)
+             }
+           />
+         ) : null}
+         {filters.entity === "skaters" && filters.tab === "splits" ? (
+           <SplitsPanel
+             payload={splitsData ?? null}
+-            isLoading={splitsLoading}
++            isLoading={splitsLoading || waitingForSeason}
+             errorMessage={
+-              splitsError instanceof Error ? splitsError.message : undefined
++              seasonErrorMessage ?? (splitsError instanceof Error ? splitsError.message : undefined)
+             }
+           />
+         ) : null}
+@@ -1983,9 +2080,9 @@ export default function RankingsPage() {
+         {filters.tab === "war" ? (
+           <WarPanel
+             payload={warData ?? null}
+-            isLoading={warLoading}
++            isLoading={warLoading || waitingForSeason}
+             errorMessage={
+-              warError instanceof Error ? warError.message : undefined
++              seasonErrorMessage ?? (warError instanceof Error ? warError.message : undefined)
+             }
+           />
+         ) : null}

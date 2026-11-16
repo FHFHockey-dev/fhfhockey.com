@@ -1,0 +1,18 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "path": "web/pages/api/v1/db/cron-report.ts",
+  "sha256": "9fdd3bbab1d7737ea245fb6f8a4aa78cff5aeec3fe15b720d22c0d7632dfbcbd",
+  "continuation": {
+    "baselineStatus": "continued",
+    "ordinaryAssignmentAcceptsWrongOperation": false,
+    "afterWrongOperationStatus": "success",
+    "note": "Completed after 1 continued call(s).",
+    "matchedAudits": [
+      "b",
+      "a"
+    ]
+  },
+  "wigoTargetLabel": "wigo_table_stats",
+  "limits": "Exact frozen pure top-level helpers and AST-extracted job summary expression only. No module-level clients, environment, actual report handler, email/DB/provider/browser or transport runs. Imported display/budget helpers are finite inert doubles; no supplied Vitest suite."
+}

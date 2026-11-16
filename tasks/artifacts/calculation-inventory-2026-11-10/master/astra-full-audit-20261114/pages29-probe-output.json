@@ -1,0 +1,33 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "findings": [
+    {
+      "id": "AFULL-TDEBUG1-01",
+      "selectedDate": "2026-11-01",
+      "focusedDate": "2026-11-05",
+      "storedPanelShots": 9,
+      "comparisonPanelShots": 2,
+      "scopeReadiness": "BLOCKED",
+      "mergedReadiness": "READY"
+    },
+    {
+      "id": "AFULL-TDEBUG1-02",
+      "stored": null,
+      "recomputed": 2,
+      "mismatchOnlyRows": 0,
+      "knownZeroVs2ControlRows": 1
+    }
+  ],
+  "controls": {
+    "blockedNeverGreen": true,
+    "noDiffUnavailable": true,
+    "knownZeroDistinct": true,
+    "noFutureWindowMember": true
+  },
+  "source": {
+    "path": "web/pages/trendsDebug.tsx",
+    "sha256": "1be24c3cafdec6a19fbc5e5663e5a58d7d4cd3d1443e9f5b1a65d931e414e5ac"
+  },
+  "boundary": "Exact source helpers/memos and actual payload readiness function with finite inputs. Source confirms detail disables diagnostics/stored rows. No async mounted UI, actual query/auth/provider/recompute/clipboard/network/environment or suite."
+}

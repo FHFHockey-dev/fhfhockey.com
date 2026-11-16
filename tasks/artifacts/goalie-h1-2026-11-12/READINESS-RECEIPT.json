@@ -1,0 +1,130 @@
+{
+  "health": {
+    "elapsedMs": 554,
+    "rows": [
+      {
+        "checked_at": "2026-11-12 23:42:01.531835+00",
+        "in_recovery": false,
+        "other_active_clients": 0,
+        "lock_waiters": 0
+      }
+    ]
+  },
+  "catalog": {
+    "elapsedMs": 517,
+    "rows": [
+      {
+        "readiness": {
+          "indexes": [
+            {
+              "name": "forge_local_attempt_game_idx",
+              "ready": true,
+              "valid": true,
+              "definition": "CREATE INDEX forge_local_attempt_game_idx ON public.player_forecast_source_observations USING btree (((payload ->> 'gameId'::text))) WHERE ((provider = 'forge'::text) AND (dataset_key = 'forge-local-execution-v1'::text))"
+            },
+            {
+              "name": "forge_local_attempt_run_idx",
+              "ready": true,
+              "valid": true,
+              "definition": "CREATE UNIQUE INDEX forge_local_attempt_run_idx ON public.player_forecast_source_observations USING btree (entity_key) WHERE ((provider = 'forge'::text) AND (dataset_key = 'forge-local-execution-v1'::text))"
+            }
+          ],
+          "triggers": [
+            {
+              "name": "forge_local_publication_guard",
+              "table": "forge_game_revisions",
+              "enabled": "O",
+              "definition": "CREATE TRIGGER forge_local_publication_guard BEFORE INSERT ON public.forge_game_revisions FOR EACH ROW EXECUTE FUNCTION forge_execution_internal.guard_forge_local_publication()"
+            },
+            {
+              "name": "forge_local_reservation_guard",
+              "table": "forge_runs",
+              "enabled": "O",
+              "definition": "CREATE TRIGGER forge_local_reservation_guard BEFORE INSERT ON public.forge_runs FOR EACH ROW EXECUTE FUNCTION forge_execution_internal.guard_forge_local_reservation()"
+            }
+          ],
+          "checkedAt": "2026-11-12T23:42:09.271247+00:00",
+          "functions": [
+            {
+              "name": "active_forge_local_execution",
+              "schema": "forge_execution_internal",
+              "arguments": "p_game_ids bigint[], p_exclude_run uuid",
+              "sourceMd5": "5d6cac43fbf7ed5d5902c284e997456c",
+              "configuration": [
+                "search_path=\"\""
+              ],
+              "securityDefiner": false,
+              "serviceRoleExecute": true
+            },
+            {
+              "name": "guard_forge_local_publication",
+              "schema": "forge_execution_internal",
+              "arguments": "",
+              "sourceMd5": "570947b569b5f837d4ebb7511c3e2a2a",
+              "configuration": [
+                "search_path=\"\""
+              ],
+              "securityDefiner": false,
+              "serviceRoleExecute": false
+            },
+            {
+              "name": "guard_forge_local_reservation",
+              "schema": "forge_execution_internal",
+              "arguments": "",
+              "sourceMd5": "43e3d1e35c291fe02978456cee50353c",
+              "configuration": [
+                "search_path=\"\""
+              ],
+              "securityDefiner": false,
+              "serviceRoleExecute": false
+            },
+            {
+              "name": "lock_forge_execution_scope",
+              "schema": "forge_execution_internal",
+              "arguments": "p_date date, p_game_ids bigint[]",
+              "sourceMd5": "d8f9fa77923e57d425f3af7d93a0a4c1",
+              "configuration": [
+                "search_path=\"\""
+              ],
+              "securityDefiner": false,
+              "serviceRoleExecute": true
+            },
+            {
+              "name": "begin_forge_local_run",
+              "schema": "public",
+              "arguments": "p_operation_id uuid, p_date date, p_game_id bigint, p_code_version text, p_expected_revision_id uuid, p_lease_ms integer",
+              "sourceMd5": "19107a39bf66fbd11aa5de78d9fd83f6",
+              "configuration": [
+                "search_path=\"\""
+              ],
+              "securityDefiner": false,
+              "serviceRoleExecute": true
+            },
+            {
+              "name": "inspect_forge_local_attempt",
+              "schema": "public",
+              "arguments": "p_operation_id uuid",
+              "sourceMd5": "3aa7d5ffa544d1afd94e07cb95d37018",
+              "configuration": [
+                "search_path=\"\""
+              ],
+              "securityDefiner": false,
+              "serviceRoleExecute": true
+            }
+          ],
+          "proposedGame": {
+            "id": 2026020307,
+            "date": "2026-11-12",
+            "type": 2,
+            "seasonId": 20262027,
+            "startTime": "2026-11-13T02:00:00+00:00",
+            "awayTeamId": 19,
+            "homeTeamId": 68
+          }
+        }
+      }
+    ]
+  },
+  "requests": 2,
+  "mutations": 0
+}

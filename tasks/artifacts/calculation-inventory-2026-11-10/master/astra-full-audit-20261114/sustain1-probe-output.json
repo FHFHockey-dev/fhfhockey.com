@@ -1,0 +1,172 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "futureTotals": {
+    "before": {
+      "baseline": 10,
+      "value": 10.105263157894736,
+      "z": 0.083527
+    },
+    "after": {
+      "baseline": 70,
+      "value": 66.94736842105263,
+      "z": -0.939241
+    },
+    "usualRangeUnchanged": true
+  },
+  "unknownBaseline": {
+    "storedBaseline": 0,
+    "priorWeight": 360,
+    "observedRate": 12,
+    "storedValue": 0.631578947368421,
+    "usualRange": {
+      "basis": "pre_window_baseline_predictive",
+      "gamesInWindow": 1,
+      "gamesCovered": 1,
+      "unavailable": true,
+      "reason": "no_prior_season_baseline"
+    }
+  },
+  "ratioPooling": {
+    "pdo": {
+      "actualEwma": 1.5216473087496947,
+      "paired": 1.0107874394651288
+    },
+    "ppShare": {
+      "actualEwma": 0.5811417652426871,
+      "paired": 0.19273087194380428
+    }
+  },
+  "acceptedButUncomputed": [
+    "iscf_per_60",
+    "ihdcf_per_60",
+    "xgf_pct",
+    "scf_pct",
+    "hdcf_pct",
+    "sh_pct_5v5",
+    "pp_sh_pct"
+  ],
+  "missingRecompute": {
+    "snapshotRows": 0,
+    "historyRows": 0,
+    "upserts": 0,
+    "deletions": 0,
+    "existingStoredRowWouldRemain": true
+  },
+  "queries": [
+    {
+      "table": "player_stats_unified",
+      "filters": [
+        [
+          "eq",
+          "player_id",
+          91
+        ],
+        [
+          "lte",
+          "date",
+          "2026-10-10"
+        ]
+      ],
+      "order": [
+        "date",
+        {
+          "ascending": false
+        }
+      ],
+      "limit": 40
+    },
+    {
+      "table": "player_totals_unified",
+      "filters": [
+        [
+          "eq",
+          "player_id",
+          91
+        ]
+      ],
+      "order": [
+        "season_id",
+        {
+          "ascending": false
+        }
+      ],
+      "limit": 4
+    },
+    {
+      "table": "player_stats_unified",
+      "filters": [
+        [
+          "eq",
+          "player_id",
+          91
+        ],
+        [
+          "lte",
+          "date",
+          "2026-10-10"
+        ]
+      ],
+      "order": [
+        "date",
+        {
+          "ascending": false
+        }
+      ],
+      "limit": 160
+    },
+    {
+      "table": "player_totals_unified",
+      "filters": [
+        [
+          "eq",
+          "player_id",
+          91
+        ]
+      ],
+      "order": [
+        "season_id",
+        {
+          "ascending": false
+        }
+      ],
+      "limit": 4
+    }
+  ],
+  "controls": [
+    "Prior-only usual range unchanged by future totals",
+    "Career tiny sample neutral / extreme hot / invalid insufficient",
+    "Uniform beta quantile and exponential gamma quantile analytic controls"
+  ],
+  "sources": [
+    {
+      "path": "web/lib/sustainability/bandCalculator.ts",
+      "sha256": "8e63cb8a769647ae0eb2eb3e7dae7c9b9448137dc3a1ed03f6fe8c484bb0f1a1"
+    },
+    {
+      "path": "web/lib/sustainability/bands.ts",
+      "sha256": "c7514b9748c7c6e1248b2a14f52a5b3d6a2982a1037ea192be7a1af618d95f40"
+    },
+    {
+      "path": "web/lib/sustainability/usualRange.ts",
+      "sha256": "32b2e972519881ae7401329af6f2d944bd1b3f7e0947a989c4af62b60f6f7e29"
+    },
+    {
+      "path": "web/lib/sustainability/runtimeContract.ts",
+      "sha256": "185b2e367919487f4c253c881fccfeec19c39ac76828043b43379c289378ff96"
+    },
+    {
+      "path": "web/lib/sustainability/bandService.ts",
+      "sha256": "2c28b2a722524dbabedb912e7e12efd9637aa0cb2dd64f8d3dacafbe807302db"
+    },
+    {
+      "path": "web/lib/sustainability/dates.ts",
+      "sha256": "66d68ce18666324509bce5f8df7366fa956695ee21f4d737c99e08f9564df0ad"
+    },
+    {
+      "path": "web/lib/sustainability/careerComparison.ts",
+      "sha256": "1a53898be37d8d26bf1fcdda437d947e77266b257824fbb7fb19acab3b8ac067"
+    }
+  ],
+  "limits": "Exact frozen pure modules and service with finite in-memory query/persistence doubles. Fantasy point config is explicit frozen-equivalent stub. No real database/provider/write/app environment/Vitest/server/browser. Public async service executed only against in-memory doubles; source row disappearance persistence conclusion follows zero mutations plus inspected persist logic."
+}

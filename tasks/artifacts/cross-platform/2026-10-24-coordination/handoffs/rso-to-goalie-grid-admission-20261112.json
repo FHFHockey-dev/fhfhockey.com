@@ -1,0 +1,81 @@
+{
+  "version": "exact-file-custody-handoff-v1",
+  "at": "2026-11-12T18:53:50.943536+00:00",
+  "status": "GRANTED_BY_RECORDED_CUSTODIAN_RECEIVER_ACK_NOT_YET_OBSERVED",
+  "grantorThread": "01a19764-091f-763d-a983-8c692d79200b",
+  "grantorRole": "recorded RSO-ADMISSION-FILES custodian",
+  "recipientThread": "01a1cd01-1c99-70a1-b4e1-f1ed610da736",
+  "coordinatorThread": "6af5fbb7-c9c0-8191-9954-aac4e42c800c",
+  "authority": "TJ explicitly authorized Scout to obtain this exact Goalie Grid producer-admission handoff; request received in this existing RSO thread on 2026-11-12.",
+  "branch": "octoberBranch",
+  "observedHead": "efd7c51f713e9b8ad3f33cb8b7dea16871ce00e0",
+  "scope": "One receipt-backed producer-closure admission for the final assembled Goalie Grid candidate, including its six-file Start Chart companion; preserve every existing admission entry. Catalog/test only plus the one exact new receipt path. Local edits and focused offline verification only.",
+  "writePaths": [
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.ts",
+      "baselineSha256": "e09bdcada3c35bab442cabb997bae3c11e07b695e678302c2c3b02851136a32b",
+      "cleanAtGrant": true
+    },
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.test.ts",
+      "baselineSha256": "432a680a4f4634b72af848ddab2058bc3ae3473e559245e3a5c352b9f1611ee5",
+      "cleanAtGrant": true
+    },
+    {
+      "path": "tasks/artifacts/goalie-grid-producer-admission-2026-11-12/receipt.json",
+      "baseline": "absent",
+      "purpose": "one fresh JSON verifier receipt for the final committed producer candidate"
+    }
+  ],
+  "custodyDisposition": "Grantor relinquishes editing custody of the two catalog paths to the recipient for this bounded admission. RSO-ADMISSION-FILES is superseded for these paths during this grant; all other leases are unchanged. Return final file hashes, receipt identity/hash, tests and custody disposition to Scout after completion. This receipt is the explicit transfer, not an inference from idleness.",
+  "evidence": [
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-LEASES.json",
+      "record": "RSO-ADMISSION-FILES",
+      "sha256": "65b919defa9e62a7037a8728248278a88067007f5be89559d7104e9a9973d4bf"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+      "record": "CODEX-RSO-PROVENANCE-20261109-07",
+      "disposition": "bounded #423/#425 entries completed by CODEX-RSO-RELEASE-COMPLETE-20261110-04; latest catalog commit47df3e6bf0ecb0fab01cc864fedf4e5ea6fab748"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/ADMISSION-CUSTODY.json",
+      "sha256": "fc9f7aa69578670a9eb6e48e8aebd184f9e3ae28a328fa187e57b68a6a95ea79"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+      "record": "CLAUDE-FIX-L9A claim excludes verifiedForgeReleases*; November11 sprint notice retains Codex ownership"
+    }
+  ],
+  "requiredBeforeAdmission": [
+    "Assemble all final producer-affecting Grid and Start Chart companion changes, including starterBoardScoring.ts, into the exact source candidate using separately authorized Git custody. No Git operation is authorized by this handoff.",
+    "Run the existing unchanged verifier read-only against that full committed candidate SHA; preserve its exact JSON receipt at the allocated path. Require a passing final-candidate receipt, matching commit/tree/closure and zero findings before adding the entry.",
+    "Bind the new entry to that full source commit, producer closure, receipt path, exact receipt SHA256 and verifier version. Check the final release composition has the same producer closure; admission-only files do not substitute for proof of its runtime source.",
+    "Preserve all current entries and fail-closed behavior. Run the affected catalog tests and appropriate focused admission checks with fixtures/inert environment; keep proof of actual commands/results.",
+    "Recheck current baseline bytes and any newer exact owner before editing. Stop and reconcile drift or a conflicting explicit claim rather than overwrite it."
+  ],
+  "oldReceiptContextOnly": "/tmp/fhfh-goalie-released-producer-631a00c19.json",
+  "oldClosureNotAnAdmissionSubstitute": true,
+  "readOnlyOutsideGrant": [
+    "web/scripts/verify-forge-release-sha.ts",
+    "web/scripts/forge-producer-closure.ts",
+    "producer runtime",
+    "settings",
+    "all other PROV-GUARD paths; separately held Grid ownership is unchanged"
+  ],
+  "notAuthorized": [
+    "Git commits/index/refs/branches",
+    "push",
+    "deployment or hosted build",
+    "database/provider requests",
+    "pipeline or forecast generation",
+    "settings changes",
+    "probability qualification or forecast-use approval"
+  ],
+  "handoffDelivery": "Answer in this existing thread for Scout to read; no direct message to Claude or Grid and no mailbox request sent by this lane.",
+  "catalogChanged": false,
+  "testsRun": false,
+  "receiptGenerated": false,
+  "finalCandidateSupplied": false
+}

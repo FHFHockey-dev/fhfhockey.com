@@ -8,6 +8,7 @@ import {
   getPublicNewsSourceAttribution,
   sanitizePublicNewsFeedItem,
   type NewsFeedItem,
+  sanitizePublicNewsText,
 } from "./newsFeed";
 
 it("filters injury categories in the database query before limiting results", async () => {
@@ -71,7 +72,7 @@ describe("public NewsFeed source attribution", () => {
     const item = buildItem({ source_label: handle, source_account: handle, source_url: `https://x.com/${handle}/status/100`, tweet_url: `https://x.com/${handle}/status/100`,
       headline: `Via @${handle}: Injury update`, blurb: `Via @${handle}: Player remains out`, metadata: { rawPayload: { account: handle }, sourceKey: handle } });
     const publicItem = sanitizePublicNewsFeedItem(item);
-    expect(publicItem.source_label).toBe("Original source pending"); expect(publicItem.source_url).toBeNull();
+    expect(publicItem.source_label).toBe("Source link pending"); expect(publicItem.source_url).toBeNull();
     expect(JSON.stringify(publicItem).toLowerCase()).not.toContain(handle.toLowerCase());
     expect(item.source_account).toBe(handle);
   });
@@ -80,9 +81,9 @@ describe("public NewsFeed source attribution", () => {
       metadata: { primaryTextSource: "wrapper_oembed", quotedAuthorHandle: "OtherWriter", quotedAuthorName: "Other Writer", quotedTweetUrl: "https://x.com/OtherWriter/status/200" } });
     expect(getPublicNewsSourceAttribution({ item })).toEqual({ displayName: "Reporter", account: "@Reporter", url: "https://x.com/Reporter/status/100" });
     expect(getPublicNewsSourceAttribution({ item: { ...item, metadata: { ...item.metadata, primaryTextSource: "quoted_oembed", quotedAuthorHandle: "WrongAuthor" } } }))
-      .toEqual({ displayName: "Original source pending", account: null, url: null });
+      .toEqual({ displayName: "Source link pending", account: null, url: null });
     expect(getPublicNewsSourceAttribution({ item: { ...item, blurb: "RT @OtherWriter: Practice update" } }))
-      .toEqual({ displayName: "Original source pending", account: null, url: null });
+      .toEqual({ displayName: "Source link pending", account: null, url: null });
   });
   it.each(["SOURCE_ACCOUNT", "@null", "undefined", "unknown", "N/A", "bad handle", "bad/handle", "<author>"])("rejects placeholder or malformed account %s", (account) => {
     expect(getPublicNewsSourceAttribution({ item: buildItem({ metadata: null, source_account: account, source_url: null, tweet_url: null }) }).account).toBeNull();
@@ -177,7 +178,7 @@ describe("public NewsFeed source attribution", () => {
   it("suppresses conflicting retained original post IDs without hiding matching quote evidence", () => {
     const metadata = { primaryTextSource: "quoted_oembed", quotedTweetId: "999", quotedTweetUrl: "https://x.com/Reporter/status/1000", quotedAuthorHandle: "Reporter" };
     const item = buildItem({ metadata });
-    const pending = { displayName: "Original source pending", account: null, url: null };
+    const pending = { displayName: "Source link pending", account: null, url: null };
     expect(getPublicNewsSourceAttribution({ item })).toEqual(pending);
     const matching = buildItem({ metadata: { ...metadata, quotedTweetId: "1000" } });
     expect(getPublicNewsSourceAttribution({ item: matching })).toMatchObject({ account: "@Reporter", url: metadata.quotedTweetUrl });
@@ -211,7 +212,7 @@ describe("public NewsFeed source attribution", () => {
     });
     const source = getPublicNewsSourceAttribution({ item });
 
-    expect(source).toEqual({ displayName: "Original source pending", account: null, url: null });
+    expect(source).toEqual({ displayName: "Source link pending", account: null, url: null });
   });
 
   it("removes appended relay bylines from public text", () => {
@@ -311,4 +312,17 @@ it("only emits player flags for bound claims and never borrows creation time for
   const flags = await fetchLatestPlayerNewsFlags({ supabase, playerIds: [123, 456] });
   expect(flags.has(456)).toBe(false);
   expect(flags.get(123)).toMatchObject({ headline: "Fixture Player source report", label: "Ongoing report", publishedAt: null, tone: "neutral" });
+});
+
+describe("sanitizePublicNewsText quote-tweet scaffolding", () => {
+  it("drops the Wrapper text / Quoted text labels and runs the quoted post on as a sentence", () => {
+    expect(
+      sanitizePublicNewsText(
+        "Wrapper text\nMTL: Mike Matheson will not play tonight\n\nQuoted text\nMike Matheson n'est pas sur la glace.",
+      ),
+    ).toBe("MTL: Mike Matheson will not play tonight. Mike Matheson n'est pas sur la glace.");
+    expect(sanitizePublicNewsText("Wrapper text\nLineup update!\n\nQuoted text\nStone is out.")).toBe(
+      "Lineup update! Stone is out.",
+    );
+  });
 });

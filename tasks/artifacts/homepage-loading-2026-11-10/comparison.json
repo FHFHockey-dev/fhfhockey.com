@@ -1,0 +1,18 @@
+{
+  "homepage": {
+    "beforeHydrationMs": 3141,
+    "afterHydrationMs": 2053,
+    "beforeServerMs": 2674.92,
+    "afterServerMs": 1626,
+    "afterBrowserNavigationWallMs": 2011
+  },
+  "trendDirectChecks": {
+    "uncachedMs": 11338.989,
+    "cachedMs": 82.926,
+    "httpStatus": 200,
+    "sourceDate": "2026-11-10",
+    "totalRisers": 89,
+    "totalFallers": 200
+  },
+  "limitations": "Local dev server, not production. No server restart/cache purge. HMR may invalidate API cache. Exact paint time unavailable. Initial unshared history read remains slow."
+}

@@ -1,0 +1,32 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "recentDateHorizon": {
+    "sourceDates": 31,
+    "selectedDates": 30,
+    "oldestSourceDate": "2026-10-15",
+    "oldestExcluded": true,
+    "calls": [
+      {
+        "table": "rolling_player_game_metrics",
+        "limit": 1
+      },
+      {
+        "table": "games",
+        "limit": 200
+      }
+    ]
+  },
+  "crossSeason": {
+    "summary": "2026–2027 performance · Goals/60 splits across all skaters · 5v5 · Last 20 games across seasons · Min 0 GP · Min 0:00 TOI",
+    "splitsScope": null,
+    "deploymentScope": null,
+    "matrixScope": "cross_season"
+  },
+  "controls": {
+    "apiZeroMinimumsPreserved": true,
+    "idsDeduplicated": true,
+    "impossibleCalendarDateAccepted": "2026-02-30"
+  },
+  "limits": "Exact frozen URL/types/definition/registry modules and extracted query date resolver. Synthetic date transport only; no full ranking query, aggregation, application imports, environment, database, provider, browser, server, build or Vitest. Invalid date acceptance recorded as input boundary, not a hosted failure."
+}
