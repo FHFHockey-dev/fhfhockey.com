@@ -1,0 +1,12 @@
+BEGIN
+SET
+SET
+Function Scan on forge_league_skater_physical_totals  (cost=0.25..10.25 rows=1000 width=96) (actual time=2873.076..2873.077 rows=4 loops=1)
+  Buffers: shared hit=1410 read=3550, temp read=1226 written=1229
+Planning Time: 0.034 ms
+Execution Time: 2873.111 ms
+prior2 D 31745 32560 44521 36730882
+prior2 F 62709 77391 32716 56944187
+to_date D 3952 3930 5294 4526148
+to_date F 7747 10329 3813 7055898
+ROLLBACK

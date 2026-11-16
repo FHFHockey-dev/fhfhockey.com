@@ -338,3 +338,10 @@
 - **Slate re-plan bug** (from the slate session): re-planning at a dispatch instant slipped 0329 by 60 s.
   - Chef gave an offline go: fix in `slateQueue.ts` plus a regression test.
   - I verify it on a clean export before any future queue run.
+- **01:17–01:19Z, migration 155 apply** (TJ: "Now, tonight"; roll back on a failed smoke):
+  - **Step 1:** the index built concurrently, valid, 58 MB, 41 s. Kept.
+  - **Step 2:** the plan gate saw an Index Only Scan; applied at 01:18:03Z with an exact readback.
+  - **Smoke:** cold call 2,873 ms, over the 2,000 ms limit, so it rolled back at 01:18:36Z (137 body, ledger removed).
+  - **Diagnosis:** the warm body plan takes 327 ms (Index Only Scan, 9,592 heap fetches, 4.9 MB sort spill). The cold cost is about 3,550 disk pages, mostly current-season heap fetches.
+  - **Receipt:** `physical-totals/MIGRATION-155-APPLY-RECEIPT.md`. Authority row 155 stays pending with that evidence; pins 21/21.
+  - **Next:** TJ decides whether to re-apply step 2 with a new limit or improve the body or visibility first.

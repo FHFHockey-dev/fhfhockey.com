@@ -1,0 +1,24 @@
+BEGIN
+SET
+SET
+PREPARE
+                                                                                                                                                                                                                           QUERY PLAN                                                                                                                                                                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=695.10..695.27 rows=4 width=96)
+   Group Key: "*VALUES*".column1, "*VALUES*".column2
+   ->  Merge Left Join  (cost=695.10..695.17 rows=4 width=80)
+         Merge Cond: (("*VALUES*".column1 = (CASE WHEN (s.season_id = $1) THEN 'to_date'::text ELSE 'prior2'::text END)) AND ("*VALUES*".column2 = (CASE WHEN (s.position_code = 'D'::text) THEN 'D'::text ELSE 'F'::text END)))
+         ->  Sort  (cost=0.09..0.10 rows=4 width=64)
+               Sort Key: "*VALUES*".column1, "*VALUES*".column2
+               ->  Values Scan on "*VALUES*"  (cost=0.00..0.05 rows=4 width=64)
+         ->  Sort  (cost=695.01..695.01 rows=1 width=22)
+               Sort Key: (CASE WHEN (s.season_id = $1) THEN 'to_date'::text ELSE 'prior2'::text END), (CASE WHEN (s.position_code = 'D'::text) THEN 'D'::text ELSE 'F'::text END)
+               ->  Nested Loop  (cost=0.48..695.00 rows=1 width=22)
+                     ->  Index Only Scan using idx_wgo_skater_stats_gp1_physical on wgo_skater_stats s  (cost=0.46..694.95 rows=1 width=22)
+                           Index Cond: ((date >= make_date((GREATEST(3, LEAST(9997, ($1 / 10000))) - 2), 9, 1)) AND (date < LEAST($2, make_date((GREATEST(3, LEAST(9997, ($1 / 10000))) + 1), 9, 1))))
+                           Filter: ((position_code = ANY ('{C,L,R,D}'::text[])) AND (((season_id = $1) AND (date >= make_date(($1 / 10000), 9, 1)) AND (date < LEAST($2, make_date((($1 / 10000) + 1), 9, 1)))) OR ((season_id = ANY (ARRAY[($1 - 10001), ($1 - 20002)])) AND (date >= make_date((($1 / 10000) - 2), 9, 1)) AND (date < make_date(($1 / 10000), 9, 1)) AND ((EXTRACT(year FROM (date - '8 mons'::interval)))::integer = (season_id / 10000)))))
+                     ->  Result  (cost=0.02..0.03 rows=1 width=0)
+                           One-Time Filter: (($1 >= 19001901) AND ($1 <= 29992999) AND (($1 % 10000) = (($1 / 10000) + 1)) AND ($2 >= make_date(($1 / 10000), 9, 1)))
+(15 rows)
+
+ROLLBACK
