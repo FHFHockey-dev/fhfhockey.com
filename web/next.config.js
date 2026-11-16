@@ -1,5 +1,5 @@
 const path = require("path");
-const { execFileSync } = require("child_process");
+const { execFileSync, spawnSync } = require("child_process");
 const { PHASE_PRODUCTION_BUILD } = require("next/constants");
 
 const CMS_URL = process.env.CMS_URL;
@@ -142,9 +142,43 @@ function forgeProducerClosureSha256() {
   return "";
 }
 
+/**
+ * FORGE build admission (C1 prevention, H2; TJ 2026-11-16): readers serve a run only when its stamped closure is in
+ * VERIFIED_FORGE_PRODUCER_CLOSURES and it carries a full commit SHA, so a build missing either ships a producer whose every
+ * run is withheld. scripts/forge-build-admission.ts judges the hash computed above against the allowlist and the build
+ * env. A production build (VERCEL_ENV=production) fails on any problem, including a check that could not run; preview
+ * and local builds only warn. There is no override.
+ */
+function checkForgeBuildAdmission(closureSha256) {
+  const production = process.env.VERCEL_ENV === "production";
+  let verdict = null;
+  let failure = null;
+  const result = spawnSync(process.execPath, [require.resolve("ts-node/dist/bin.js"), "--transpile-only",
+    "--compiler-options", JSON.stringify({ module: "commonjs", moduleResolution: "node" }),
+    path.join(__dirname, "scripts/forge-build-admission.ts"), "--closure", closureSha256],
+  { cwd: __dirname, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
+  try {
+    if (result.error) throw result.error;
+    verdict = JSON.parse(String(result.stdout).trim().split("\n").pop());
+    if (!verdict || !["pass", "warn", "fail"].includes(verdict.action)) throw new Error("no verdict");
+  } catch (error) {
+    failure = `FORGE build admission check could not run (${error.message}).`;
+  }
+  if (verdict?.action === "pass") {
+    console.log(`FORGE build admission: closure ${verdict.closureSha256} is verified; runs stamp ${verdict.commitSha}.`);
+    return;
+  }
+  const problems = failure ? [failure] : verdict.problems.map((problem) => `${problem.code}: ${problem.message}`);
+  const report = ["FORGE build admission FAILED: runs from this build would be withheld from every reader.",
+    ...problems.map((problem) => `  - ${problem}`)].join("\n");
+  if (production) throw new Error(`${report}\nProduction builds stop here (VERCEL_ENV=production).`);
+  console.warn(`\n${report.replace("FAILED", "WARNING")}\n  (Not a production build, so it continues.)\n`);
+}
+
 module.exports = (phase) => {
   if (phase !== PHASE_PRODUCTION_BUILD) return nextConfig;
   const closureSha256 = forgeProducerClosureSha256();
+  checkForgeBuildAdmission(closureSha256);
   return {
     ...nextConfig,
     webpack(config, options) {

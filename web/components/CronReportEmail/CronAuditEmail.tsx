@@ -5,6 +5,8 @@ import { formatReportTime } from "lib/cron/reportSource";
 import type { GoalieFreshness } from "lib/nst/goalieFreshness";
 import type { PollerHealth } from "lib/cron/xPollerHealth";
 import type { TweetBacklog } from "lib/cron/tweetReviewBacklog";
+import type { ForgeServingHealth } from "lib/cron/forgeServingHealth";
+import { ForgeServingSection } from "./ForgeServingSection";
 import { PollerHealthSection } from "./PollerHealthSection";
 import { TweetBacklogSection } from "./TweetBacklogSection";
 
@@ -43,6 +45,7 @@ interface CronAuditEmailProps {
   goalieFreshness?: GoalieFreshness;
   pollerHealth?: PollerHealth;
   tweetBacklog?: TweetBacklog;
+  forgeServing?: ForgeServingHealth;
   audits: AuditEntry[];
   configuredVercelSchedules?: Array<{ route: string; schedule: string; activation: "unverified"; receiptCount?: number; latestReceiptStatus?: string; latestReceiptAt?: string | null }>;
   edgeFunctionDispatches?: Array<{ jobName: string; route: string | null; queued: number; failed: number; latestAt: string | null }>;
@@ -96,7 +99,7 @@ const LABEL_ORDER = ["MISSING", "PARTIAL", "NEAR LIMIT", "NEAR BUDGET", "CONTINU
 
 type FailureGroup = { jobName: string; rows: AuditEntry[]; latest: AuditEntry; lastSuccess: string | null; recovered: boolean };
 
-export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary, configuredVercelSchedules = [], edgeFunctionDispatches = [], goalieFreshness, pollerHealth, tweetBacklog }) => {
+export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary, configuredVercelSchedules = [], edgeFunctionDispatches = [], goalieFreshness, pollerHealth, tweetBacklog, forgeServing }) => {
   const globalWarnings = Array.from(new Set([
     ...fetchErrors,
     ...audits.flatMap((row) => row.missingObservationWarnings ?? []).filter((warning) => warning.includes("Telemetry source unavailable")),
@@ -167,7 +170,7 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
   const hasFailures = summary.auditFailures > 0 || (summary.cronFailures ?? 0) > 0;
   const allRecovered = hasFailures && openFailures.length === 0 && recovered.length > 0 && !(summary.omittedFailureObservations ?? 0) && !(summary.cronFailures ?? 0);
   const goalieCoverageNeedsAttention = goalieFreshness && ["warning", "critical", "unknown"].includes(goalieFreshness.status);
-  const headline = hasFailures && !allRecovered ? "Failures need attention." : goalieCoverageNeedsAttention ? "Goalie coverage needs attention." : pollerHealth?.status === "critical" ? "The X poller needs attention." : allRecovered ? "Earlier failures have recovered." : audits.length === 0 ? "Execution health is unknown." : !totalsComplete ? "Coverage needs attention." : exceptionLines.length > 0 ? "A few jobs need a look." : "Runs look healthy.";
+  const headline = hasFailures && !allRecovered ? "Failures need attention." : forgeServing?.status === "critical" ? "FORGE projections are not being served." : goalieCoverageNeedsAttention ? "Goalie coverage needs attention." : pollerHealth?.status === "critical" ? "The X poller needs attention." : allRecovered ? "Earlier failures have recovered." : audits.length === 0 ? "Execution health is unknown." : !totalsComplete ? "Coverage needs attention." : exceptionLines.length > 0 ? "A few jobs need a look." : "Runs look healthy.";
 
   return <div style={{ backgroundColor: "#F7F7F2", fontFamily: "Arial, sans-serif", fontSize: 14, lineHeight: 1.5, color: "#202020", maxWidth: 640, margin: "0 auto", padding: 20 }}>
     <div style={{ borderTop: "4px solid #B45309", paddingTop: 16 }}>
@@ -185,6 +188,8 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
       {globalWarnings.map((warning, index) => <div key={index} style={{ fontSize: 12, marginTop: 4 }}>{concise(warning)}</div>)}
       <div style={{ fontSize: 12, marginTop: 4 }}>Missing receipts do not establish success.</div>
     </div> : null}
+
+    {forgeServing ? <ForgeServingSection health={forgeServing} /> : null}
 
     {goalieFreshness ? <div style={{ margin: "16px 0", fontSize: 13 }}>
       <strong>NST goalie coverage: {goalieFreshness.status.replace("_", " ").toUpperCase()}</strong>
