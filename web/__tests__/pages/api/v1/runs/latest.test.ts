@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fromMock } = vi.hoisted(() => ({
-  fromMock: vi.fn()
+const { fromMock, notCalls } = vi.hoisted(() => ({
+  fromMock: vi.fn(),
+  notCalls: [] as unknown[][]
 }));
 
 function createQueryBuilder(resolver: () => { data?: any; error: any }) {
   const builder: any = {
     select() {
+      return builder;
+    },
+    not(...args: unknown[]) {
+      notCalls.push(args);
       return builder;
     },
     order() {
@@ -243,6 +248,14 @@ describe("/api/v1/runs/latest", () => {
     expect(res.body.scanSummary.notes.join(" ")).toContain(
       "using latest succeeded run run-good as the actionable state"
     );
+  });
+
+  it("lists only released runs: off-release (null or local:) runs are filtered before the limit (L3)", async () => {
+    notCalls.length = 0;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-03-20" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(notCalls).toEqual([["git_sha", "is", null], ["git_sha", "like", "local:*"]]);
   });
 
   it("redacts dependency details from internal-error responses", async () => {

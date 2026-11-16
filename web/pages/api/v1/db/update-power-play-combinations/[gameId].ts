@@ -130,6 +130,14 @@ export type PowerPlayCombinationUpdateSummary = {
   gameId: number;
   dryRun: boolean;
   calculationVersion: string;
+  /**
+   * "deferred" when a team-game's clock is unavailable (unqualified, or its shift or roster inputs incomplete): that
+   * team gets no player rows yet, only a clock row with the reason, so the game is not done. On 2026-11-16 each of
+   * the five 11-15 games answered rowCount 0 with an unqualified clock (official class "missing") and was reported as
+   * a success.
+   */
+  outcome: "updated" | "deferred";
+  deferredTeams: Array<{ teamId: number; reason: string | null }>;
   rowCount: number;
   teamCount: number;
   clock: PpTeamGameClockRow[];
@@ -427,10 +435,15 @@ export async function updatePowerPlayCombinations(
       .order("playerId", { ascending: true })
       .range(from, to) as unknown as PagedResult<StoredPowerPlayRow>
   );
+  const deferredTeams = clockRows
+    .filter((row) => row.availability === "unavailable")
+    .map((row) => ({ teamId: row.team_id, reason: row.unavailable_reason }));
   const summary: PowerPlayCombinationUpdateSummary = {
     gameId,
     dryRun: options.dryRun === true,
     calculationVersion: PP_COMBINATIONS_CALCULATION_VERSION,
+    outcome: deferredTeams.length > 0 ? "deferred" : "updated",
+    deferredTeams,
     rowCount: playerRows.length,
     teamCount: clockRows.length,
     clock: clockRows,
@@ -502,9 +515,22 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
 
   try {
     const summary = await updatePowerPlayCombinations(gameId, supabase, { dryRun });
+    const deferral = summary.deferredTeams
+      .map((team) => `team ${team.teamId}: ${team.reason ?? "unavailable"}`)
+      .join("; ");
+    if (!dryRun && summary.outcome === "deferred") {
+      // Audited as a skip, not a success: the game's PP rows are not done yet.
+      return res.json({
+        message: `Deferred: game ${gameId} has no power-play rows yet for ${deferral}. Its clock rows record why; a later run fills them.`,
+        success: true,
+        skipped: true,
+        reason: "pp_inputs_not_ready",
+        ...summary
+      });
+    }
     res.json({
       message: dryRun
-        ? `Dry run for game ${gameId}: nothing was written.`
+        ? `Dry run for game ${gameId}: nothing was written.${summary.outcome === "deferred" ? ` Deferred: ${deferral}.` : ""}`
         : "Successfully updated the power play combinations for game " + gameId,
       success: true,
       ...summary

@@ -275,4 +275,33 @@ describe("CronAuditEmail", () => {
     expect(html).toContain("Failures need attention.");
   });
 
+  it("renders the FORGE runtime proof failure and leads with it when nothing else failed", () => {
+    const summary = { auditRuns: 0, auditSuccesses: 0, auditFailures: 0, auditUnknown: 0, totalRowsUpserted: 0, totalFailedRows: 0 };
+    const servedRun = { runId: "1109-as-of-1113", createdAt: "2026-11-09T10:30:00Z", createdOn: "2026-11-09", status: "succeeded",
+      gitSha: "a5816ce6d1eeeba4b7213d1f66c96025f0b5818e", closureSha256: "9b1821fff8b64983f5e28c572a054cdc7d49f2a320b8e2e18dec514e4ad4c219",
+      fullSlate: true, servable: true, withheldReason: null };
+    const withheld = { ...servedRun, runId: "1113-as-of-1113", createdAt: "2026-11-13T10:20:00Z", createdOn: "2026-11-13",
+      gitSha: "e1ab46318ec9c6797deb94ac1aa23d68f5672f26", closureSha256: "f".repeat(64), servable: false,
+      withheldReason: `producer closure ${"f".repeat(64)} is not in VERIFIED_FORGE_PRODUCER_CLOSURES` };
+    const health = { status: "critical" as const, date: "2026-11-13", checkedAt: "2026-11-13T13:01:20Z", servedRun, todayRuns: [withheld],
+      pipeline: { scopeKey: "daily_incremental:2026-11-13", state: "complete" as const, stage: null, detail: "done" },
+      problems: [`Today's run 1113-as- (created 11-13 05:20 ET) is withheld from every reader: ${withheld.withheldReason}.`,
+        "Readers fall back to run 1109-as-, created 11-09 05:30 ET (4 days old)."], notes: [] };
+    const html = renderToStaticMarkup(<CronAuditEmail audits={[]} sinceDate="2026-11-12T13:00:00Z" summary={summary} forgeServing={health} />);
+    expect(html).toContain("FORGE projections are not being served.");
+    expect(html).toContain("FORGE projections for 2026-11-13: <span");
+    expect(html).toContain(">NOT SERVED</span>");
+    expect(html).toContain("Serving 1109-as- · created Nov 9, 5:30 AM EST · succeeded · a5816ce6d1 · closure 9b1821ff");
+    expect(html).toContain("is not in VERIFIED_FORGE_PRODUCER_CLOSURES");
+    expect(html).toContain("Readers fall back to run 1109-as-, created 11-09 05:30 ET (4 days old).");
+    expect(html).toContain("Today: 1113-as- · created Nov 13, 5:20 AM EST · succeeded · e1ab46318e · closure ffffffff · withheld");
+
+    const ok = renderToStaticMarkup(<CronAuditEmail audits={[]} sinceDate="2026-11-12T13:00:00Z" summary={summary}
+      forgeServing={{ ...health, status: "ok", servedRun: { ...servedRun, createdOn: "2026-11-13" }, todayRuns: [], problems: [] }} />);
+    expect(ok).toContain(">OK</span>");
+    expect(ok).not.toContain("FORGE projections are not being served.");
+    expect(renderToStaticMarkup(<CronAuditEmail audits={[]} sinceDate="2026-11-12T13:00:00Z" summary={summary} />))
+      .not.toContain("FORGE projections for");
+  });
+
 });

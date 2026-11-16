@@ -5,7 +5,7 @@ import { buildEndpointScanSummary } from "lib/api/scanSummary";
 import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { buildGoalieReaderCompatibility } from "lib/projections/compatibilityInventory";
 import supabase from "lib/supabase/server";
-import { excludeOffReleaseRuns, isOffReleaseGitSha } from "lib/projections/releasedRunFence";
+import { isOffReleaseGitSha } from "lib/projections/releasedRunFence";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import {
   buildProjectionApiErrorResponse,
@@ -16,8 +16,8 @@ import { readGoalieCandidatesContract } from "lib/projections/goalie/goalieCandi
 import { readGoalieGridBoards } from "lib/projections/goalie/gameGridReader";
 import { loadGoalieGridHistory } from "lib/socialShare/modules/creaseShift.sources";
 import { goalieNewYorkDate } from "components/GameGrid/utils/goalieWorkloadView";
-import { loadExternalInputProof, requireExternalInputProvenRun, requireLatestExternalInputProvenRun, runProofDiagnostics,
-  type ExternalInputProof } from "lib/projections/externalInputProof";
+import { keepRowsOfServingRun, provenRunIdsByGame, requireExternalInputProvenRun, requireLatestExternalInputProvenRun,
+  runProofDiagnostics, type ExternalInputProof, type ProvenRunsByGame } from "lib/projections/externalInputProof";
 
 const querySchema = z.object({
   date: dateSchema.optional(),
@@ -230,45 +230,21 @@ async function fetchGamesScheduledCount(date: string): Promise<number> {
   return count ?? 0;
 }
 
-/** Recent released runs searched for a proven fallback with goalie rows. */
-const FALLBACK_RUN_CANDIDATES = 30;
-
-async function fetchFallbackRunWithGoalieData(
-  targetDate: string,
-  horizon: number,
-): Promise<{ runId: string; asOfDate: string; proof: ExternalInputProof } | null> {
+/** Games stored for the date when the stored schedule reaches past it, so zero is a verified off-day; null when the
+ * schedule cannot say (a failed read, or nothing stored after the date). */
+async function fetchVerifiedScheduledGames(date: string): Promise<number | null> {
   if (!supabase) throw new Error("Supabase server client not available");
-
-  const findCandidate = async (includeFutureDates: boolean) => {
-    // Only succeeded released runs with external-input exclusion proof (Astra F4): goalie lines use opponent shots
-    // derived from the same run's skater lines. Failed, running, off-release (null or local:) or unproven runs'
-    // rows are not served.
-    let query = excludeOffReleaseRuns(supabase
-      .from("forge_runs")
-      .select("run_id,as_of_date")
-      .eq("status", "succeeded"))
-      .order("as_of_date", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(FALLBACK_RUN_CANDIDATES);
-    if (!includeFutureDates) query = query.lte("as_of_date", targetDate);
-    const { data, error } = await query;
-    if (error) throw error;
-    const rows = (data ?? []) as Array<{ run_id: string; as_of_date: string }>;
-    const proof = rows.length ? await loadExternalInputProof(supabase, rows.map((row) => row.run_id)) : new Map();
-    for (const row of rows.filter((candidate) => proof.has(candidate.run_id))) {
-      const { count, error: countError } = await supabase
-        .from("forge_goalie_projections")
-        .select("goalie_id", { count: "exact", head: true })
-        .eq("run_id", row.run_id)
-        .eq("as_of_date", row.as_of_date)
-        .eq("horizon_games", horizon);
-      if (countError) throw countError;
-      if ((count ?? 0) > 0) return { runId: row.run_id, asOfDate: row.as_of_date, proof: proof.get(row.run_id)! };
-    }
+  try {
+    const [onDate, later] = await Promise.all([
+      supabase.from("games").select("id", { count: "exact", head: true }).eq("date", date),
+      supabase.from("games").select("id", { count: "exact", head: true }).gt("date", date),
+    ]);
+    if (onDate.error || later.error || !Number.isSafeInteger(onDate.count)) return null;
+    if (onDate.count! > 0) return onDate.count!;
+    return Number(later.count) > 0 ? 0 : null;
+  } catch {
     return null;
-  };
-
-  return (await findCandidate(false)) ?? (await findCandidate(true));
+  }
 }
 
 export default async function handler(
@@ -308,35 +284,33 @@ export default async function handler(
       return res.status(200).json(snapshot);
     }
     const q = parseQuery(req);
-    const requestedDate = q.date ?? new Date().toISOString().slice(0, 10);
+    // The slate is an Eastern-time date (L3): a UTC default is tomorrow between 00:00 and 05:00 UTC.
+    const requestedDate = q.date ?? goalieNewYorkDate(new Date().toISOString());
     let requestedRunId: string | null = q.runId ?? null;
     let runProof: ExternalInputProof | null = null;
+    let runsByGame: ProvenRunsByGame | null = null;
     if (requestedRunId) {
       // An explicit run is admitted before any of its rows are read: it must exist, be a succeeded release and carry proof.
       runProof = (await requireExternalInputProvenRun(requestedRunId)).proof;
     } else {
+      // The requested date's proven runs, per game (H3). No other date's run stands in for them (H6, TJ 2026-11-16):
+      // a date without one is served empty, with the reason. `fallbackToLatestWithData` is accepted and ignored.
       try {
-        ({ runId: requestedRunId, proof: runProof } = await requireLatestExternalInputProvenRun(requestedDate));
+        ({ runId: requestedRunId, proof: runProof, runsByGame } = await requireLatestExternalInputProvenRun(requestedDate));
       } catch (e) {
-        const statusCode = (e as any)?.statusCode;
-        if (statusCode !== 404 || !q.fallbackToLatestWithData) throw e;
+        if ((e as any)?.statusCode !== 404) throw e;
       }
     }
-    let resolvedDate = requestedDate;
-    let resolvedRunId = requestedRunId;
-    let fallbackApplied = false;
-    let requestedRowCount = 0;
-    let fallbackCandidate: {
-      runId: string;
-      asOfDate: string;
-      rowCount: number;
-    } | null = null;
+    const resolvedDate = requestedDate;
+    const resolvedRunId = requestedRunId;
 
-    const fetchGoalieRows = async (runId: string, asOfDate: string) => {
+    const fetchGoalieRows = async (runs: ProvenRunsByGame, asOfDate: string) => {
       const { data, error } = await supabase
         .from("forge_goalie_projections")
         .select(
           `
+          run_id,
+          game_id,
           goalie_id,
           team_id,
           opponent_team_id,
@@ -360,51 +334,18 @@ export default async function handler(
           uncertainty
         `,
         )
-        .eq("run_id", runId)
+        .in("run_id", provenRunIdsByGame(runs))
         .eq("as_of_date", asOfDate)
         .eq("horizon_games", q.horizon);
       if (error) throw error;
-      return data ?? [];
+      const rows = data ?? [];
+      return runs.overlays.length ? keepRowsOfServingRun(rows, runs) : rows;
     };
 
-    let data: any[] = [];
-    if (resolvedRunId) {
-      data = await fetchGoalieRows(resolvedRunId, resolvedDate);
-      requestedRowCount = data.length;
-    }
-
-    if (data.length === 0 && q.fallbackToLatestWithData) {
-      const fallback = await fetchFallbackRunWithGoalieData(
-        requestedDate,
-        q.horizon,
-      );
-      if (fallback && fallback.runId !== resolvedRunId) {
-        const fallbackRows = await fetchGoalieRows(
-          fallback.runId,
-          fallback.asOfDate,
-        );
-        fallbackCandidate = {
-          runId: fallback.runId,
-          asOfDate: fallback.asOfDate,
-          rowCount: fallbackRows.length,
-        };
-        if (fallbackRows.length > 0) {
-          data = fallbackRows;
-          resolvedRunId = fallback.runId;
-          resolvedDate = fallback.asOfDate;
-          runProof = fallback.proof;
-          fallbackApplied = true;
-        }
-      }
-    }
-
-    if (!resolvedRunId) {
-      const err = new Error(
-        `No succeeded projection run found for date=${requestedDate}`,
-      );
-      (err as any).statusCode = 404;
-      throw err;
-    }
+    const data: any[] = resolvedRunId
+      ? await fetchGoalieRows(runsByGame ?? { baseRunId: resolvedRunId, overlays: [] }, resolvedDate)
+      : [];
+    const requestedRowCount = data.length;
 
     // One row per candidate goalie (decision 25): his own line if he starts, his start probability and
     // the unconditional product. The team win % is its own field, never a goalie's Win, and no row is
@@ -507,43 +448,41 @@ export default async function handler(
 
     const [
       requestedRunSummary,
-      resolvedRunSummaryMaybe,
       requestedScheduledGamesCount,
-      resolvedScheduledGamesCountMaybe,
+      verifiedScheduledGames,
       calibrationHints,
     ] = await Promise.all([
       requestedRunId ? fetchRunSummary(requestedRunId) : Promise.resolve(null),
-      !requestedRunId || requestedRunId === resolvedRunId
-        ? Promise.resolve(null)
-        : fetchRunSummary(resolvedRunId),
       fetchGamesScheduledCount(requestedDate),
-      requestedDate === resolvedDate
-        ? Promise.resolve(null)
-        : fetchGamesScheduledCount(resolvedDate),
+      rows.length === 0 ? fetchVerifiedScheduledGames(requestedDate) : Promise.resolve(null),
       fetchGoalieCalibrationHints(resolvedDate),
     ]);
-    const runSummary = resolvedRunSummaryMaybe ?? requestedRunSummary;
+    const runSummary = requestedRunSummary;
     if (q.runId && requestedRunSummary && isOffReleaseGitSha(requestedRunSummary.git_sha)) {
       const error = new Error(`Projection run ${q.runId} was made off the release path (null or local git_sha) and is not served.`);
       (error as any).statusCode = 422;
       throw error;
     }
-    const scheduledGamesCount =
-      resolvedScheduledGamesCountMaybe ?? requestedScheduledGamesCount;
+    const scheduledGamesCount = requestedScheduledGamesCount;
+    // Why the date is empty, when it is: a verified off-day, or no proven output for a scheduled (or unknown) slate.
+    const emptyReason = rows.length > 0 ? null : verifiedScheduledGames === 0 ? "no_games"
+      : resolvedRunId ? "proven_run_has_no_rows" : "no_proven_run_for_date";
+    // A slate with verified games and no served rows is a blocking issue for operators; pages still render it empty.
+    const slateWithoutRows = emptyReason !== null && emptyReason !== "no_games" && (verifiedScheduledGames ?? 0) > 0;
+    const emptyMessage = emptyReason === "no_games"
+      ? `No NHL games are scheduled on ${requestedDate}.`
+      : emptyReason
+        ? `FORGE goalie projections are not available for the ${requestedDate} slate.`
+        : null;
 
     const notes: string[] = [];
     if (rows.length === 0) {
-      notes.push("No goalie projection rows found for resolved date/run.");
-      if (requestedDate !== resolvedDate || requestedRunId !== resolvedRunId) {
-        notes.push(
-          "Requested context differs from resolved context after fallback resolution.",
-        );
-      }
+      notes.push(emptyMessage!);
       if (scheduledGamesCount === 0) {
         notes.push("No NHL games scheduled on the resolved date.");
       }
       const goalieRowsMetric = Number(runSummary?.metrics?.goalie_rows ?? 0);
-      if (goalieRowsMetric === 0) {
+      if (runSummary && goalieRowsMetric === 0) {
         notes.push(
           "Projection run metrics show zero goalie rows were generated.",
         );
@@ -572,10 +511,8 @@ export default async function handler(
     const serving = buildResolvedDataServingContract({
       requestedDate,
       resolvedDate,
-      fallbackApplied,
-      strategy: fallbackApplied
-        ? "latest_available_with_data"
-        : "requested_date",
+      fallbackApplied: false,
+      strategy: "requested_date",
       requestedScheduledGames: requestedScheduledGamesCount,
       resolvedScheduledGames: scheduledGamesCount,
       sourceLabel: "Goalie projections",
@@ -584,7 +521,7 @@ export default async function handler(
       surface: "forge_goalies_reader",
       requestedDate,
       activeDataDate: resolvedDate,
-      fallbackApplied,
+      fallbackApplied: false,
       status:
         rows.length > 0
           ? serving.severity === "error"
@@ -596,14 +533,8 @@ export default async function handler(
         requested: requestedRowCount,
         scheduledGamesOnDate: scheduledGamesCount,
       },
-      blockingIssueCount: serving.severity === "error" ? 1 : 0,
-      notes: [
-        serving.message,
-        fallbackApplied
-          ? `Serving fallback goalie projections from ${resolvedDate}.`
-          : null,
-        ...notes,
-      ],
+      blockingIssueCount: (serving.severity === "error" ? 1 : 0) + (slateWithoutRows ? 1 : 0),
+      notes: [serving.message, ...notes],
     });
 
     return res.status(200).json({
@@ -616,8 +547,11 @@ export default async function handler(
       scenarioCount,
       calibrationHints,
       requestedDate,
-      fallbackApplied,
-      fallbackToLatestWithData: q.fallbackToLatestWithData,
+      // Never another date's run (H6): kept false for readers of these fields.
+      fallbackApplied: false,
+      fallbackToLatestWithData: false,
+      reason: emptyReason,
+      message: emptyMessage,
       serving,
       scanSummary,
       compatibilityInventory: buildGoalieReaderCompatibility(),
@@ -640,17 +574,12 @@ export default async function handler(
           runCreatedAt: runSummary?.created_at ?? null,
           runMetrics: runSummary?.metrics ?? null,
         },
-        fallback: {
-          enabled: q.fallbackToLatestWithData,
-          applied: fallbackApplied,
-          candidateRunId: fallbackCandidate?.runId ?? null,
-          candidateAsOfDate: fallbackCandidate?.asOfDate ?? null,
-          candidateRowCount: fallbackCandidate?.rowCount ?? null,
-        },
+        fallback: { enabled: false, applied: false },
         emptyResultAnalysis: {
           isEmpty: rows.length === 0,
-          requestedContextChanged:
-            requestedDate !== resolvedDate || requestedRunId !== resolvedRunId,
+          reason: emptyReason,
+          message: emptyMessage,
+          verifiedScheduledGames,
         },
         runStatus: runSummary?.status ?? null,
         runCreatedAt: runSummary?.created_at ?? null,
@@ -658,7 +587,10 @@ export default async function handler(
         scheduledGamesOnDate: scheduledGamesCount,
         rowCount: rows.length,
         // What admitted the served run: captured snapshot, verified producer closure or verified legacy release.
-        runProof: runProofDiagnostics(resolvedRunId, runProof),
+        runProof: resolvedRunId ? runProofDiagnostics(resolvedRunId, runProof) : null,
+        // Newer single-game reruns that serve their own games over the slate run (H3).
+        gameRuns: runsByGame?.overlays.map((overlay) => ({ ...runProofDiagnostics(overlay.runId, overlay.proof),
+          gameIds: overlay.gameIds })) ?? [],
         notes,
       },
       data: rows,

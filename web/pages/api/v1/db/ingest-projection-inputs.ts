@@ -40,6 +40,7 @@ import {
   advanceProjectionPipelineLease,
   buildProjectionPipelineOperationKey,
   finishProjectionPipelineLease,
+  PROJECTION_INPUT_PIPELINE_KEY,
   readOldestProjectionPipelineBacklog,
   type ProjectionPipelineLease,
 } from "lib/projections/projectionPipelineState";
@@ -90,6 +91,14 @@ type Result = {
   nextGameId: number | null;
   lastCompletedGameId: number | null;
   durableOperationAlreadyComplete?: boolean;
+  // Durable scheduled mode: source-rejected games parked for a later retry
+  // (SOURCE_REJECTION_RETRY_SCOPE_KEY) and what happened to them this call.
+  sourceRejectionRetries?: {
+    retried: number;
+    recovered: number;
+    pending: number;
+    final: number;
+  };
   errors: Array<{
     gameId: number;
     date: string;
@@ -109,6 +118,9 @@ type Result = {
     message: string;
     // True when the game was skipped so later games could still run.
     isolated?: boolean;
+    // The skipped game is parked and retried by later scheduled calls until
+    // DURABLE_SOURCE_REJECTION_GRACE_DAYS have passed.
+    retryPending?: boolean;
   }>;
   dependencyContract?: ReturnType<
     typeof getRollingForgeStageDependencyContract
@@ -160,10 +172,90 @@ export function previousUtcDate(now = new Date()): string {
 }
 
 // NHL can publish an empty or still-settling shift feed shortly after a game.
-// The durable scheduled cursor holds on such a game until it is this many UTC
-// days old, then records it as an isolated failure and moves on, so one poison
-// game cannot hold every later slate.
+// The durable scheduled cursor skips such a game at once, so the rest of its
+// slate (and every later slate) is ingested, and parks it in a retry row that
+// later scheduled calls retry until it is this many UTC days old; then it is
+// recorded as a final rejection. A game whose retry row cannot be written
+// holds the cursor instead, so it is never silently dropped.
 export const DURABLE_SOURCE_REJECTION_GRACE_DAYS = 2;
+export const SOURCE_REJECTION_RETRY_SCOPE_KEY = "source_rejected_games";
+const SOURCE_REJECTION_PENDING = "source_rejected_pending";
+const SOURCE_REJECTION_FINAL = "source_rejected_final";
+const MAX_SOURCE_REJECTION_RETRIES = 8;
+
+type SourceRejectionCode =
+  | typeof SOURCE_REJECTION_PENDING
+  | typeof SOURCE_REJECTION_FINAL;
+
+function sourceRejectionLease(game: { id: number; date: string }) {
+  return acquireProjectionPipelineLease({
+    supabase,
+    scopeKey: SOURCE_REJECTION_RETRY_SCOPE_KEY,
+    operationKey: `game:${game.id}`,
+    rangeStartDate: game.date,
+    rangeEndDate: game.date,
+    initialCursorDate: game.date,
+    leaseMs: 30_000,
+  });
+}
+
+/** Parks (pending) or closes (final) a source-rejected game; false if nothing was stored. */
+async function recordSourceRejection(
+  game: { id: number; date: string },
+  code: SourceRejectionCode,
+): Promise<boolean> {
+  const lease = await sourceRejectionLease(game);
+  if (lease.status !== "running") return false;
+  await finishProjectionPipelineLease({
+    supabase,
+    lease,
+    outcome: "failed",
+    failureCode: code,
+  });
+  return true;
+}
+
+async function clearSourceRejection(game: { id: number; date: string }) {
+  const lease = await sourceRejectionLease(game);
+  if (lease.status === "running") {
+    await finishProjectionPipelineLease({ supabase, lease, outcome: "complete" });
+  }
+}
+
+/** Parked games still inside their retry window, oldest first. A row left
+ * running by a dead caller counts once its short lease has expired. */
+async function listParkedSourceRejections(
+  excludeGameIds: Set<number>,
+): Promise<Array<{ id: number; date: string }>> {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from("projection_pipeline_state")
+    .select("operation_key,status,range_start_date,lease_expires_at,last_error")
+    .eq("pipeline_key", PROJECTION_INPUT_PIPELINE_KEY)
+    .eq("scope_key", SOURCE_REJECTION_RETRY_SCOPE_KEY)
+    // Final rows accumulate forever; filtering them here keeps them from
+    // crowding pending games out of the oldest-first page.
+    .or(`and(status.eq.failed,last_error.eq.${SOURCE_REJECTION_PENDING}),status.eq.running`)
+    .order("range_start_date", { ascending: true })
+    .limit(MAX_SOURCE_REJECTION_RETRIES * 4);
+  if (error) throw error;
+  const now = Date.now();
+  const parked: Array<{ id: number; date: string }> = [];
+  for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+    const match = /^game:([1-9]\d*)$/.exec(String(row.operation_key));
+    const id = match ? Number(match[1]) : NaN;
+    const date = typeof row.range_start_date === "string" ? row.range_start_date : "";
+    const waiting =
+      (row.status === "failed" && row.last_error === SOURCE_REJECTION_PENDING) ||
+      (row.status === "running" &&
+        Date.parse(String(row.lease_expires_at)) <= now);
+    if (!waiting || !Number.isSafeInteger(id) || !parseIsoCalendarDate(date)) continue;
+    if (excludeGameIds.has(id)) continue;
+    parked.push({ id, date });
+    if (parked.length >= MAX_SOURCE_REJECTION_RETRIES) break;
+  }
+  return parked;
+}
 
 export function durableSourceRejectionCutoffDate(now = new Date()): string {
   const cutoff = new Date(now.getTime());
@@ -567,7 +659,30 @@ export async function ingestProjectionInputsHandler(
     dependencyContract,
   };
 
-  if (pipelineLease?.status === "complete") {
+  // Parked source rejections are retried after the slate's own games, also
+  // when the slate itself is already complete. They never hold the slate.
+  let parkedGames: Array<{ id: number; date: string }> = [];
+  if (useDurableScheduledCursor) {
+    result.sourceRejectionRetries = { retried: 0, recovered: 0, pending: 0, final: 0 };
+    try {
+      parkedGames = await listParkedSourceRejections(
+        new Set(cursorGames.map((game) => game.id)),
+      );
+    } catch (error) {
+      result.success = false;
+      result.errors.push({
+        gameId: -1,
+        date: effectiveStartDate,
+        stage: "list_games",
+        message: `Could not read parked source rejections: ${(error as any)?.message ?? String(error)}`,
+        isolated: true,
+      });
+    }
+  }
+  const parkedGameIds = new Set(parkedGames.map((game) => game.id));
+  const slateAlreadyComplete = pipelineLease?.status === "complete";
+
+  if (slateAlreadyComplete && parkedGames.length === 0) {
     return res.status(200).json(
       withTiming({
         ...result,
@@ -575,9 +690,17 @@ export async function ingestProjectionInputsHandler(
       }),
     );
   }
+  if (slateAlreadyComplete) result.durableOperationAlreadyComplete = true;
 
-  for (const g of games) {
+  for (const g of [...(slateAlreadyComplete ? [] : games), ...parkedGames]) {
+    const isParked = parkedGameIds.has(g.id);
+    if (isParked) result.sourceRejectionRetries!.retried += 1;
     if (Date.now() > deadlineMs) {
+      if (isParked) {
+        // Unreached retries wait for the next call; the slate is done.
+        result.sourceRejectionRetries!.retried -= 1;
+        break;
+      }
       result.success = false;
       result.timedOut = true;
       result.nextStartDate = g.date;
@@ -707,6 +830,24 @@ export async function ingestProjectionInputsHandler(
         });
       }
 
+      if (isParked) {
+        // A parked game passed this time: close its retry row.
+        result.sourceRejectionRetries!.recovered += 1;
+        try {
+          await clearSourceRejection(g);
+        } catch (clearError) {
+          result.success = false;
+          result.errors.push({
+            gameId,
+            date: g.date,
+            stage: "finish_cursor",
+            message: `Ingested parked game ${gameId}, but its retry row was not closed: ${(clearError as any)?.message ?? String(clearError)}`,
+            isolated: true,
+          });
+        }
+        continue;
+      }
+
       result.gamesProcessed += 1;
       result.lastCompletedGameId = gameId;
 
@@ -736,14 +877,49 @@ export async function ingestProjectionInputsHandler(
         });
       }
     } catch (e) {
+      const message = (e as any)?.message ?? String(e);
+      const insideRetryWindow = g.date > sourceRejectionCutoffDate;
+      if (isParked) {
+        // A parked game never holds the slate. It stays parked while inside
+        // its retry window, whatever failed, and is closed as final after it.
+        const code = insideRetryWindow
+          ? SOURCE_REJECTION_PENDING
+          : SOURCE_REJECTION_FINAL;
+        await recordSourceRejection(g, code).catch(() => false);
+        result.sourceRejectionRetries![insideRetryWindow ? "pending" : "final"] += 1;
+        result.success = false;
+        result.errors.push({
+          gameId: g.id,
+          date: g.date,
+          stage,
+          message,
+          isolated: true,
+          ...(insideRetryWindow ? { retryPending: true } : {}),
+        });
+        continue;
+      }
       const feedUnavailable =
         !useDurableScheduledCursor &&
         (stage === "fetch_pbp" || stage === "fetch_shifts") &&
         isUnavailableGamecenterFeedError(e);
       const isolateSourceRejection =
         shiftSourceRejected &&
-        (!useDurableScheduledCursor || g.date <= sourceRejectionCutoffDate);
-      if (feedUnavailable || isolateSourceRejection) {
+        (!useDurableScheduledCursor || !insideRetryWindow);
+      // The durable cursor skips a fresh rejection only once it is parked.
+      let parked = false;
+      let parkError: string | null = null;
+      if (shiftSourceRejected && useDurableScheduledCursor) {
+        try {
+          parked = await recordSourceRejection(
+            g,
+            insideRetryWindow ? SOURCE_REJECTION_PENDING : SOURCE_REJECTION_FINAL,
+          );
+        } catch (recordError) {
+          parkError = (recordError as any)?.message ?? String(recordError);
+        }
+        if (!insideRetryWindow) parked = false;
+      }
+      if (feedUnavailable || isolateSourceRejection || parked) {
         result.skipped += 1;
         if (feedUnavailable) {
           result.skipReasons.gamecenterFeedUnavailable += 1;
@@ -756,9 +932,13 @@ export async function ingestProjectionInputsHandler(
             gameId: g.id,
             date: g.date,
             stage,
-            message: (e as any)?.message ?? String(e),
+            message,
             isolated: true,
+            ...(parked ? { retryPending: true } : {}),
           });
+          if (result.sourceRejectionRetries) {
+            result.sourceRejectionRetries[parked ? "pending" : "final"] += 1;
+          }
         }
         const nextCursor = nextCursorByGameId.get(g.id);
         if (pipelineLease && nextCursor) {
@@ -805,7 +985,10 @@ export async function ingestProjectionInputsHandler(
         gameId: g.id,
         date: g.date,
         stage,
-        message: (e as any)?.message ?? String(e),
+        message:
+          shiftSourceRejected && useDurableScheduledCursor
+            ? `${message} (not parked for retry${parkError ? `: ${parkError}` : ""}; the cursor holds here)`
+            : message,
       });
       result.failedRows = result.errors.length;
       result.nextStartDate = g.date;
@@ -814,9 +997,10 @@ export async function ingestProjectionInputsHandler(
     }
   }
 
-  if (pipelineLease) {
+  if (pipelineLease && !slateAlreadyComplete) {
     // Isolated games stay in `errors` and keep `success` false, but they do not
-    // hold the durable slate open: retrying them is an explicit-range run.
+    // hold the durable slate open: parked ones are retried by later scheduled
+    // calls, aged ones by an explicit-range run.
     const leaseComplete =
       !result.timedOut && result.errors.every((error) => error.isolated);
     try {

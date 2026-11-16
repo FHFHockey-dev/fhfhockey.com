@@ -52,11 +52,25 @@ function createQueryBuilder(
 ) {
   const state = {
     isHeadCount: false,
+    countExact: false,
+    range: null as [number, number] | null,
   };
   const builder: any = {
-    select(columns: string, options?: { head?: boolean }) {
+    select(columns: string, options?: { head?: boolean; count?: string }) {
       onSelect?.(columns);
       state.isHeadCount = Boolean(options?.head);
+      state.countExact = options?.count === "exact";
+      return builder;
+    },
+    // Paged reads (`pages`): a row window, with the total count of the unwindowed rows.
+    range(from: number, to: number) {
+      state.range = [from, to];
+      return builder;
+    },
+    abortSignal() {
+      return builder;
+    },
+    gt() {
       return builder;
     },
     eq(column: string, value: unknown) {
@@ -98,8 +112,14 @@ function createQueryBuilder(
           resolve({ count: out.count ?? 0, error: out.error }),
         );
       }
+      // PostgREST returns at most 1,000 rows to a read without a range (the hosted row cap).
+      const rows = Array.isArray(out.data) && !state.range ? out.data.slice(0, 1000) : out.data ?? [];
+      if (state.countExact && Array.isArray(out.data)) {
+        return Promise.resolve(resolve({ error: out.error, count: out.data.length,
+          data: state.range ? out.data.slice(state.range[0], state.range[1] + 1) : rows }));
+      }
       return Promise.resolve(
-        resolve({ data: out.data ?? [], error: out.error }),
+        resolve({ data: rows, error: out.error }),
       );
     },
   };
@@ -145,7 +165,25 @@ function snapshotBuilder() {
 }
 
 describe("/api/v1/forge/players", () => {
-  it.each([undefined, "external_inputs_allowed"])("refuses a legacy fallback run whose snapshot lacks exclusion proof (metrics %s)", async contract => {
+  const weeklyRow = {
+    player_id: 8478402,
+    team_id: 8,
+    players: { fullName: "Weekly Skater", position: "C" },
+    teams: { id: 8, abbreviation: "MTL", name: "Montréal Canadiens" },
+    proj_goals_es: 1.2,
+    proj_goals_pp: 0.4,
+    proj_goals_pk: 0,
+    proj_assists_es: 1.4,
+    proj_assists_pp: 0.6,
+    proj_assists_pk: 0,
+    proj_shots_es: 10,
+    proj_shots_pp: 3,
+    proj_shots_pk: 0,
+    proj_hits: 2,
+    proj_blocks: 1,
+    uncertainty: {},
+  };
+  it.each([undefined, "external_inputs_allowed"])("never serves another date's run, even one whose snapshot lacks exclusion proof (metrics %s)", async contract => {
     requireLatestSucceededRunIdMock.mockRejectedValueOnce(Object.assign(new Error("missing"), { statusCode: 404 }));
     unprovenRunIds = new Set(["fallback-external"]);
     const prior = fromMock.getMockImplementation()!;
@@ -155,8 +193,8 @@ describe("/api/v1/forge/players", () => {
     })) : prior(table));
     const res = createMockRes();
     await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
-    expect(res.statusCode).toBe(404);
-    expect(res.body.data).toBeUndefined();
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ runId: null, asOfDate: "2026-02-07", reason: "no_proven_run_for_date", data: [] });
     expect(fromMock.mock.calls.some(([table]) => table === "forge_player_projections")).toBe(false);
   });
 
@@ -181,10 +219,14 @@ describe("/api/v1/forge/players", () => {
         }
         if (table === "forge_player_projections") {
           const builder = prior(table);
-          const eq = builder.eq;
+          const eq = builder.eq, inIds = builder.in;
           builder.eq = (column: string, value: unknown) => {
             if (column === "run_id") projectionRunIds.push(value);
             return eq(column, value);
+          };
+          builder.in = (column: string, values: unknown[]) => {
+            if (column === "run_id") projectionRunIds.push(...values);
+            return inIds(column, values);
           };
           return builder;
         }
@@ -195,25 +237,27 @@ describe("/api/v1/forge/players", () => {
       return { res, projectionRunIds };
     }
 
-    it("refuses an unproven legacy latest run, with no proven fallback, instead of serving its rows", async () => {
+    it("refuses an unproven latest run instead of serving its rows: the date is empty, with the reason", async () => {
       unprovenRunIds = new Set(["legacy-run"]);
       const { res, projectionRunIds } = await route([{ run_id: "legacy-run", as_of_date: "2026-02-07", metrics: {} }]);
-      expect(res.statusCode).toBe(404);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({ runId: null, reason: "no_proven_run_for_date", data: [] });
       expect(projectionRunIds).toEqual([]);
     });
 
-    it("passes over unproven runs in a mixed window for the latest proven one", async () => {
+    it("passes over a date's unproven runs, and never serves a neighboring date's proven run (H6)", async () => {
       unprovenRunIds = new Set(["legacy-today", "legacy-yesterday"]);
       const { res, projectionRunIds } = await route([
         { run_id: "legacy-today", as_of_date: "2026-02-07", metrics: {} },
         { run_id: "legacy-yesterday", as_of_date: "2026-02-06", metrics: {} },
         { run_id: "clean-yesterday", as_of_date: "2026-02-06", metrics: {} },
+        { run_id: "clean-tomorrow", as_of_date: "2026-02-08", metrics: {} },
       ]);
       expect(res.statusCode).toBe(200);
-      expect(res.body).toMatchObject({ runId: "clean-yesterday", asOfDate: "2026-02-06", fallbackApplied: true });
-      expect(res.body.diagnostics.runProof).toMatchObject({ runId: "clean-yesterday", basis: "captured_snapshot" });
-      expect(projectionRunIds).not.toContain("legacy-today");
-      expect(projectionRunIds).not.toContain("legacy-yesterday");
+      expect(res.body).toMatchObject({ runId: null, asOfDate: "2026-02-07", requestedDate: "2026-02-07",
+        fallbackApplied: false, reason: "no_proven_run_for_date", data: [],
+        diagnostics: { state: "empty", reason: "no_proven_run_for_date", runProof: null } });
+      expect(projectionRunIds).toEqual([]);
     });
 
     it("serves a clean run proven by its snapshot although run-start metrics carry no claim", async () => {
@@ -237,6 +281,8 @@ describe("/api/v1/forge/players", () => {
           () => ({
             data: [
               {
+                run_id: "fixture-run",
+                game_id: 2025020001,
                 player_id: 8478402,
                 team_id: 8,
                 players: { fullName: "Nick Suzuki", position: "C" },
@@ -303,7 +349,7 @@ describe("/api/v1/forge/players", () => {
       }
       if (table === "rosters") {
         return createQueryBuilder(() => ({
-          data: [{ playerId: 8478402 }],
+          data: [{ playerId: 8478402, teamId: 8 }],
           error: null,
         }));
       }
@@ -440,6 +486,8 @@ describe("/api/v1/forge/players", () => {
         return createQueryBuilder(() => ({
           data: [
             {
+              run_id: "fixture-run",
+              game_id: 2025020001,
               player_id: 8478403,
               team_id: 8,
               players: { fullName: "Masked Skater", position: "C" },
@@ -464,7 +512,7 @@ describe("/api/v1/forge/players", () => {
       }
       if (table === "rosters") {
         return createQueryBuilder(() => ({
-          data: [{ playerId: 8478403 }],
+          data: [{ playerId: 8478403, teamId: 8 }],
           error: null,
         }));
       }
@@ -497,7 +545,7 @@ describe("/api/v1/forge/players", () => {
         return createQueryBuilder(() => ({
           data: [
             {
-              player_id: 8478403, team_id: 8,
+              run_id: "fixture-run", game_id: 2025020001, player_id: 8478403, team_id: 8,
               players: { fullName: "Missing PK Goals", position: "C" },
               teams: { id: 8, abbreviation: "MTL", name: "Montréal Canadiens" },
               proj_goals_es: 0.2, proj_goals_pp: 0.1, proj_goals_pk: null,
@@ -513,7 +561,7 @@ describe("/api/v1/forge/players", () => {
         }));
       }
       if (table === "rosters") {
-        return createQueryBuilder(() => ({ data: [{ playerId: 8478403 }], error: null }));
+        return createQueryBuilder(() => ({ data: [{ playerId: 8478403, teamId: 8 }], error: null }));
       }
       return prior(table);
     });
@@ -543,7 +591,7 @@ describe("/api/v1/forge/players", () => {
         return createQueryBuilder(() => ({
           data: [
             {
-              player_id: 8478403, team_id: 8,
+              run_id: "fixture-run", game_id: 2025020001, player_id: 8478403, team_id: 8,
               players: { fullName: "Day To Day", position: "C" },
               teams: { id: 8, abbreviation: "MTL", name: "Montréal Canadiens" },
               proj_goals_es: 0.2, proj_goals_pp: 0.05, proj_goals_pk: null,
@@ -558,7 +606,7 @@ describe("/api/v1/forge/players", () => {
         }));
       }
       if (table === "rosters") {
-        return createQueryBuilder(() => ({ data: [{ playerId: 8478403 }], error: null }));
+        return createQueryBuilder(() => ({ data: [{ playerId: 8478403, teamId: 8 }], error: null }));
       }
       return prior(table);
     });
@@ -583,6 +631,8 @@ describe("/api/v1/forge/players", () => {
         return createQueryBuilder(() => ({
           data: [
             {
+              run_id: "fixture-run",
+              game_id: 2025020001,
               player_id: 8478403,
               team_id: 8,
               players: { fullName: "No Physical Line", position: "C" },
@@ -600,7 +650,7 @@ describe("/api/v1/forge/players", () => {
         }));
       }
       if (table === "rosters") {
-        return createQueryBuilder(() => ({ data: [{ playerId: 8478403 }], error: null }));
+        return createQueryBuilder(() => ({ data: [{ playerId: 8478403, teamId: 8 }], error: null }));
       }
       return prior(table);
     });
@@ -639,6 +689,8 @@ describe("/api/v1/forge/players", () => {
           return createQueryBuilder(() => ({
             data: [
               {
+                run_id: "fixture-run",
+                game_id: 2025020001,
                 player_id: 8478402,
                 team_id: source.id,
                 players: { fullName: "Relocated Skater", position: "C" },
@@ -651,7 +703,7 @@ describe("/api/v1/forge/players", () => {
         }
         if (table === "rosters") {
           return createQueryBuilder(() => ({
-            data: [{ playerId: 8478402 }],
+            data: [{ playerId: 8478402, teamId: 8 }],
             error: null,
           }));
         }
@@ -711,6 +763,8 @@ describe("/api/v1/forge/players", () => {
         return createQueryBuilder(() => ({
           data: [
             {
+              run_id: "fixture-run",
+              game_id: 2025020001,
               player_id: 8478402,
               team_id: teamId,
               players: { fullName: "Invalid Identity", position: "C" },
@@ -723,7 +777,7 @@ describe("/api/v1/forge/players", () => {
       }
       if (table === "rosters") {
         return createQueryBuilder(() => ({
-          data: [{ playerId: 8478402 }],
+          data: [{ playerId: 8478402, teamId: 8 }],
           error: null,
         }));
       }
@@ -745,29 +799,18 @@ describe("/api/v1/forge/players", () => {
     expect(res.body.data).toBeUndefined();
   });
 
-  it("reports fallback serving state when it serves the latest prior date with skater rows", async () => {
-    let projectionQueryCount = 0;
+  it("serves the requested date's degraded role context and canonical team identity", async () => {
+    requireLatestSucceededRunIdMock.mockResolvedValue("run-122");
     resolveLatestStartedSeasonIdForDateMock.mockImplementation(
       async (date: string) => (date === "2024-04-06" ? 20232024 : 20242025),
     );
     fromMock.mockImplementation((table: string) => {
       if (table === "forge_player_projections") {
-        projectionQueryCount += 1;
-        if (projectionQueryCount === 1) {
-          return createQueryBuilder(() => ({
-            data: [],
-            error: null,
-          }));
-        }
-        if (projectionQueryCount === 2) {
-          return createQueryBuilder(() => ({
-            count: 1,
-            error: null,
-          }));
-        }
         return createQueryBuilder(() => ({
           data: [
             {
+              run_id: "fixture-run",
+              game_id: 2025020001,
               player_id: 8478402,
               team_id: 53,
               players: { fullName: "Fallback Skater", position: "C" },
@@ -832,7 +875,7 @@ describe("/api/v1/forge/players", () => {
       }
       if (table === "rosters") {
         return createQueryBuilder(() => ({
-          data: [{ playerId: 8478402 }],
+          data: [{ playerId: 8478402, teamId: 8 }],
           error: null,
         }));
       }
@@ -843,7 +886,7 @@ describe("/api/v1/forge/players", () => {
     const req: any = {
       method: "GET",
       query: {
-        date: "2024-04-08",
+        date: "2024-04-06",
         horizon: "1",
       },
     };
@@ -855,10 +898,11 @@ describe("/api/v1/forge/players", () => {
     expect(res.body).toMatchObject({
       runId: "run-122",
       asOfDate: "2024-04-06",
-      requestedDate: "2024-04-08",
-      requestedSeasonId: 20242025,
+      requestedDate: "2024-04-06",
+      requestedSeasonId: 20232024,
       resolvedSeasonId: 20232024,
-      fallbackApplied: true,
+      fallbackApplied: false,
+      reason: null,
       degradedProjectionSummary: {
         degradedPlayerCount: 1,
         lineComboFallbackPlayerCount: 1,
@@ -870,9 +914,9 @@ describe("/api/v1/forge/players", () => {
       },
       scanSummary: {
         surface: "forge_players_reader",
-        requestedDate: "2024-04-08",
+        requestedDate: "2024-04-06",
         activeDataDate: "2024-04-06",
-        fallbackApplied: true,
+        fallbackApplied: false,
         status: "ready",
         rowCounts: {
           returned: 1,
@@ -889,12 +933,11 @@ describe("/api/v1/forge/players", () => {
         status: "canonical_preferred",
       },
       serving: {
-        requestedDate: "2024-04-08",
+        requestedDate: "2024-04-06",
         resolvedDate: "2024-04-06",
-        fallbackApplied: true,
-        isSameDay: false,
-        state: "fallback",
-        strategy: "latest_available_with_data",
+        fallbackApplied: false,
+        isSameDay: true,
+        strategy: "requested_date",
       },
     });
     expect(res.body.data[0]).toMatchObject({
@@ -927,84 +970,27 @@ describe("/api/v1/forge/players", () => {
       "2024-04-06",
       expect.anything(),
     );
-    expect(resolveLatestStartedSeasonIdForDateMock).toHaveBeenCalledWith(
-      "2024-04-08",
-      expect.anything(),
-    );
   });
 
-  it("serves a same-date weekly run when the newest same-date run only owns horizon one", async () => {
-    let projectionQueryCount = 0;
+  it("selects the requested horizon's run for a multi-game request (L3)", async () => {
     const horizonFilters: unknown[] = [];
     fromMock.mockImplementation((table: string) => {
       if (table === "forge_player_projections") {
-        projectionQueryCount += 1;
-        const result =
-          projectionQueryCount === 1
-            ? { data: [], error: null }
-            : projectionQueryCount === 2
-              ? { count: 0, error: null }
-              : projectionQueryCount === 3
-                ? { count: 1, error: null }
-                : {
-                    data: [
-                      {
-                        player_id: 8478402,
-                        team_id: 8,
-                        players: { fullName: "Weekly Skater", position: "C" },
-                        teams: {
-                          id: 8,
-                          abbreviation: "MTL",
-                          name: "Montréal Canadiens",
-                        },
-                        proj_goals_es: 1.2,
-                        proj_goals_pp: 0.4,
-                        proj_goals_pk: 0,
-                        proj_assists_es: 1.4,
-                        proj_assists_pp: 0.6,
-                        proj_assists_pk: 0,
-                        proj_shots_es: 10,
-                        proj_shots_pp: 3,
-                        proj_shots_pk: 0,
-                        proj_hits: 2,
-                        proj_blocks: 1,
-                        uncertainty: {},
-                      },
-                    ],
-                    error: null,
-                  };
         return createQueryBuilder(
-          () => result,
+          () => ({ data: [{ ...weeklyRow, run_id: "weekly-run", game_id: 2026020500 }], error: null }),
           (column, value) => {
             if (column === "horizon_games") horizonFilters.push(value);
           },
         );
       }
-      if (table === "forge_runs") {
-        return createQueryBuilder(() => ({
-          data: [
-            { run_id: "daily-run", as_of_date: "2026-02-07", metrics: { input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } } },
-            { run_id: "weekly-run", as_of_date: "2026-02-07", metrics: { input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } } },
-          ],
-          error: null,
-        }));
-      }
-      if (table === "seasons") {
-        return createQueryBuilder(() => ({
-          data: { id: 20252026 },
-          error: null,
-        }));
-      }
       if (table === "rosters") {
-        return createQueryBuilder(() => ({
-          data: [{ playerId: 8478402 }],
-          error: null,
-        }));
+        return createQueryBuilder(() => ({ data: [{ playerId: 8478402, teamId: 8 }], error: null }));
       }
       if (table === "player_forecast_source_observations") return snapshotBuilder();
       return createQueryBuilder(() => ({ data: [], count: 0, error: null }));
     });
-    requireLatestSucceededRunIdMock.mockResolvedValue("daily-run");
+    requireLatestSucceededRunIdMock.mockImplementation(async (_kind: string, _date: string, horizon: number) =>
+      horizon === 5 ? "weekly-run" : "daily-run");
 
     const res = createMockRes();
     await handler(
@@ -1013,6 +999,7 @@ describe("/api/v1/forge/players", () => {
     );
 
     expect(res.statusCode).toBe(200);
+    expect(requireLatestSucceededRunIdMock).toHaveBeenCalledWith("proven", "2026-02-07", 5);
     expect(res.body).toMatchObject({
       runId: "weekly-run",
       asOfDate: "2026-02-07",
@@ -1024,41 +1011,32 @@ describe("/api/v1/forge/players", () => {
       },
     });
     expect(res.body.data[0].player_name).toBe("Weekly Skater");
-    expect(horizonFilters).toEqual([5, 5, 5, 5]);
+    expect(horizonFilters).toEqual([5]);
   });
 
-  it("reports a blocked contract instead of a healthy empty when only horizon one exists", async () => {
-    let projectionQueryCount = 0;
+  it("reports a blocked contract, found through the real lookup, when the date has only a one-game run", async () => {
+    const actual = await vi.importActual<typeof import("lib/projections/externalInputProof")>("lib/projections/externalInputProof");
+    requireLatestSucceededRunIdMock.mockImplementation((_kind: string, ...args: any[]) =>
+      actual.requireLatestExternalInputProvenRun(args[0], args[1]));
+    const horizonOf = (expression: string) => Number(/horizon_games\.eq\.(\d+)/.exec(expression)?.[1]);
     fromMock.mockImplementation((table: string) => {
       if (table === "forge_player_projections") {
-        projectionQueryCount += 1;
-        return createQueryBuilder(() =>
-          projectionQueryCount === 4
-            ? { count: 1, error: null }
-            : projectionQueryCount === 1
-              ? { data: [], error: null }
-              : { count: 0, error: null },
+        let horizon: unknown = null;
+        return createQueryBuilder(
+          () => ({ count: horizon === 1 ? 1 : 0, data: [], error: null }),
+          (column, value) => { if (column === "horizon_games") horizon = value; },
         );
       }
       if (table === "forge_runs") {
-        return createQueryBuilder(() => ({
-          data: [{ run_id: "daily-run", as_of_date: "2026-02-07", metrics: { input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } } }],
-          error: null,
-        }));
-      }
-      if (table === "seasons") {
-        return createQueryBuilder(() => ({
-          data: { id: 20252026 },
-          error: null,
-        }));
-      }
-      if (table === "rosters") {
-        return createQueryBuilder(() => ({ data: [], error: null }));
+        // Only an h1 run exists for the date: the h5 lookup finds nothing.
+        let horizon = 1;
+        const builder = createQueryBuilder(() => ({ data: horizon === 1 ? [{ run_id: "daily-run" }] : [], error: null }));
+        builder.or = (expression: string) => { horizon = horizonOf(expression); return builder; };
+        return builder;
       }
       if (table === "player_forecast_source_observations") return snapshotBuilder();
       return createQueryBuilder(() => ({ data: [], count: 0, error: null }));
     });
-    requireLatestSucceededRunIdMock.mockResolvedValue("daily-run");
 
     const res = createMockRes();
     await handler(
@@ -1071,6 +1049,7 @@ describe("/api/v1/forge/players", () => {
       runId: "daily-run",
       horizonGames: 5,
       data: [],
+      reason: null,
       scanSummary: {
         status: "blocked",
         blockingIssueCount: 1,
@@ -1087,158 +1066,142 @@ describe("/api/v1/forge/players", () => {
       "one-game output exists but is not relabeled or scaled",
     );
   });
-  describe("legacy fallback run selection (A-02)", () => {
-    const qualified = {
-      input_provenance: {
-        external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT,
-      },
-    };
-    type RunRow = {
-      run_id: string;
-      as_of_date: string;
-      git_sha?: string | null;
-      metrics: Record<string, unknown>;
-    };
 
-    // Applies the run filters the reader sends, so excluded runs never return.
-    function installRuns(runs: RunRow[], scheduledGames = 0) {
+  describe("per-game runs, paged reads and empty dates (audit 2026-11-16 H3, H5, H6, L3)", () => {
+    const SLATE_GAMES = Array.from({ length: 11 }, (_, index) => 2026020300 + index);
+    const RERUN_GAME = SLATE_GAMES[8];
+    const skater = (runId: string, gameId: number, playerId: number) => ({ ...weeklyRow, run_id: runId, game_id: gameId,
+      player_id: playerId, players: { fullName: `${runId} ${playerId}`, position: "C" } });
+    type RunRow = { run_id: string; as_of_date: string; execution_scope?: unknown; scope_key?: string };
+
+    // forge_runs rows filtered by the date the reader sends; projections by the run ids it reads.
+    function install(args: { runs: RunRow[]; projections: Array<Record<string, any>>; rosters?: Array<Record<string, any>>;
+      gamesOnDate?: number; gamesAfterDate?: number }) {
       const projectionRunIds: unknown[] = [];
-      const prior = fromMock.getMockImplementation()!;
       fromMock.mockImplementation((table: string) => {
         if (table === "forge_runs") {
-          const filters: Array<(row: RunRow) => boolean> = [];
-          const builder = createQueryBuilder(() => ({
-            data: runs.filter((row) => filters.every((keep) => keep(row))),
-            error: null,
-          }));
-          builder.gte = (column: string, value: string) => {
-            filters.push((row: any) => row[column] >= value);
-            return builder;
-          };
-          builder.lte = (column: string, value: string) => {
-            filters.push((row: any) => row[column] <= value);
-            return builder;
-          };
-          builder.or = (expression: string) => {
-            expect(expression).toBe("git_sha.is.null,git_sha.not.like.local:*");
-            filters.push((row) => !row.git_sha?.startsWith("local:"));
-            return builder;
-          };
-          builder.not = (column: string, operator: string, value: unknown) => {
-            expect(column).toBe("git_sha");
-            if (operator === "is" && value === null) filters.push((row) => row.git_sha != null);
-            else if (operator === "like" && value === "local:*") {
-              filters.push((row) => row.git_sha != null && !row.git_sha.startsWith("local:"));
-            } else throw new Error(`unexpected filter ${operator} ${String(value)}`);
-            return builder;
-          };
-          return builder;
-        }
-        if (table === "games") {
-          return createQueryBuilder(() => ({ count: scheduledGames, error: null }));
+          let date: unknown;
+          return createQueryBuilder(() => ({ data: args.runs.filter((row) => row.as_of_date === date), error: null }),
+            (column, value) => { if (column === "as_of_date") date = value; });
         }
         if (table === "forge_player_projections") {
-          const builder = prior(table);
-          const eq = builder.eq;
-          builder.eq = (column: string, value: unknown) => {
-            if (column === "run_id") projectionRunIds.push(value);
-            return eq(column, value);
+          let ids: unknown[] = [];
+          const builder = createQueryBuilder(() => ({ data: args.projections.filter((row) => ids.includes(row.run_id)), error: null }));
+          builder.in = (column: string, values: unknown[]) => {
+            if (column === "run_id") { ids = values; projectionRunIds.push(...values); }
+            return builder;
           };
           return builder;
         }
-        return prior(table);
+        if (table === "rosters") {
+          return createQueryBuilder(() => ({ data: args.rosters ?? [...new Set(args.projections.map((row) => row.player_id))]
+            .map((playerId) => ({ playerId, teamId: 8 })), error: null }));
+        }
+        if (table === "games") {
+          let after = false;
+          const builder = createQueryBuilder(() => ({ count: after ? args.gamesAfterDate ?? 0 : args.gamesOnDate ?? 0, error: null }));
+          builder.gt = () => { after = true; return builder; };
+          return builder;
+        }
+        if (table === "player_forecast_source_observations") return snapshotBuilder();
+        return createQueryBuilder(() => ({ data: [], count: 0, error: null }));
       });
       return projectionRunIds;
     }
 
-    beforeEach(() => {
-      requireLatestSucceededRunIdMock.mockRejectedValue(
-        Object.assign(new Error("missing"), { statusCode: 404 }),
-      );
+    beforeEach(async () => {
+      const actual = await vi.importActual<typeof import("lib/projections/externalInputProof")>("lib/projections/externalInputProof");
+      requireLatestSucceededRunIdMock.mockImplementation((_kind: string, ...args: any[]) =>
+        actual.requireLatestExternalInputProvenRun(args[0], args[1]));
     });
 
-    it("does not serve a 20-day-old latest succeeded run as ready", async () => {
-      const projectionRunIds = installRuns([
-        { run_id: "stale-run", as_of_date: "2026-09-29", git_sha: "abc123", metrics: qualified },
-      ]);
-      const res = createMockRes();
-      await handler(
-        { method: "GET", query: { date: "2026-10-19" } } as any,
-        res,
-      );
-
-      expect(res.statusCode).toBe(404);
-      expect(res.body.data).toBeUndefined();
-      expect(res.body.scanSummary).toMatchObject({
-        status: "blocked",
-        activeDataDate: null,
+    it("serves all 11 games when a later single-game rerun exists, the rerun only for its own game (H3)", async () => {
+      // The full slate: 36 skaters per game. The rerun of one game projects 35 of its players, one of them new.
+      const slate = SLATE_GAMES.flatMap((gameId) => Array.from({ length: 36 }, (_, index) => skater("slate-run", gameId, gameId * 100 + index)));
+      const rerun = [...Array.from({ length: 34 }, (_, index) => skater("rerun", RERUN_GAME, RERUN_GAME * 100 + index)),
+        skater("rerun", RERUN_GAME, 9_000_001)];
+      const projectionRunIds = install({
+        runs: [
+          { run_id: "rerun", as_of_date: "2026-11-12", execution_scope: { mode: "selected_games", requested_game_ids: [RERUN_GAME] },
+            scope_key: `h1:${RERUN_GAME}` },
+          { run_id: "slate-run", as_of_date: "2026-11-12", execution_scope: { mode: "full_slate", requested_game_ids: [] }, scope_key: "h1:full" },
+          { run_id: "older-slate-run", as_of_date: "2026-11-12", scope_key: "h1:full" },
+        ],
+        projections: [...slate, ...rerun, skater("older-slate-run", SLATE_GAMES[0], 7_000_001)],
+        gamesOnDate: 11,
       });
-      expect(projectionRunIds).not.toContain("stale-run");
-    });
-
-    it("prefers the full-slate run over a later single-game, local or null-sha run", async () => {
-      const projectionRunIds = installRuns([
-        {
-          run_id: "null-sha-run",
-          as_of_date: "2026-10-18",
-          git_sha: null,
-          metrics: { ...qualified, execution_scope: { requested_game_ids: [] } },
-        },
-        { run_id: "local-run", as_of_date: "2026-10-18", git_sha: `local:${"a".repeat(64)}`, metrics: qualified },
-        {
-          run_id: "scoped-run",
-          as_of_date: "2026-10-18",
-          git_sha: "abc123",
-          metrics: { ...qualified, execution_scope: { requested_game_ids: [2026020101] } },
-        },
-        {
-          run_id: "full-run",
-          as_of_date: "2026-10-18",
-          git_sha: "abc123",
-          metrics: { ...qualified, execution_scope: { requested_game_ids: [] } },
-        },
-      ]);
       const res = createMockRes();
-      await handler(
-        { method: "GET", query: { date: "2026-10-19" } } as any,
-        res,
-      );
+      await handler({ method: "GET", query: { date: "2026-11-12" } } as any, res);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body).toMatchObject({
-        runId: "full-run",
-        asOfDate: "2026-10-18",
-        fallbackApplied: true,
-        serving: { status: "fallback_recent", severity: "warn", gapDays: 1 },
-        scanSummary: { status: "ready", blockingIssueCount: 0 },
-      });
-      expect(projectionRunIds).not.toContain("local-run");
-      expect(projectionRunIds).not.toContain("null-sha-run");
-      expect(projectionRunIds).not.toContain("scoped-run");
+      expect(projectionRunIds).toEqual(["slate-run", "rerun"]);
+      expect(res.body).toMatchObject({ runId: "slate-run", asOfDate: "2026-11-12", reason: null,
+        diagnostics: { state: "ready", gameRuns: [{ runId: "rerun", gameIds: [RERUN_GAME], basis: "captured_snapshot" }] } });
+      const rows = res.body.data as Array<{ player_id: number; player_name: string }>;
+      expect(rows).toHaveLength(10 * 36 + 35);
+      const gameOf = (row: { player_id: number }) => row.player_id === 9_000_001 ? RERUN_GAME : Math.floor(row.player_id / 100);
+      expect(new Set(rows.map(gameOf)).size).toBe(11);
+      // The rerun's game comes only from the rerun: the slate run's line for the player it dropped is not kept.
+      expect(rows.filter((row) => gameOf(row) === RERUN_GAME).every((row) => row.player_name.startsWith("rerun "))).toBe(true);
+      expect(rows.some((row) => row.player_id === RERUN_GAME * 100 + 35)).toBe(false);
+      expect(rows.some((row) => row.player_id === 7_000_001)).toBe(false);
     });
 
-    it("flags a recent fallback as blocked serving when the requested date had games", async () => {
-      installRuns(
-        [{ run_id: "yesterday-run", as_of_date: "2026-10-18", git_sha: "abc123", metrics: qualified }],
-        6,
-      );
+    it("keeps every projected skater when the season has 1,200 current roster rows (H5)", async () => {
+      const projections = [skater("slate-run", SLATE_GAMES[0], 101), skater("slate-run", SLATE_GAMES[0], 1_150)];
+      const rosters = Array.from({ length: 1_200 }, (_, index) => ({ playerId: index + 1, teamId: 8 }));
+      install({ runs: [{ run_id: "slate-run", as_of_date: "2026-11-12" }], projections, rosters, gamesOnDate: 11 });
       const res = createMockRes();
-      await handler(
-        { method: "GET", query: { date: "2026-10-19" } } as any,
-        res,
-      );
+      await handler({ method: "GET", query: { date: "2026-11-12" } } as any, res);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body).toMatchObject({
-        runId: "yesterday-run",
-        serving: {
-          status: "blocked",
-          severity: "error",
-          requestedScheduledGames: 6,
-        },
-        scanSummary: { status: "partial", blockingIssueCount: 1 },
+      // Player 1,150 is outside the first 1,000 roster rows: an unpaged read would have dropped him.
+      expect(res.body.data.map((row: any) => row.player_id).sort((a: number, b: number) => a - b)).toEqual([101, 1_150]);
+      const rosterReads = fromMock.mock.calls.filter(([table]) => table === "rosters");
+      expect(rosterReads).toHaveLength(2);
+    });
+
+    it.each([
+      ["a scheduled date with no proven run", 6, 40, "no_proven_run_for_date", "FORGE skater projections are not available for the 2026-11-16 slate.", 1],
+      ["a verified off-day", 0, 40, "no_games", "No NHL games are scheduled on 2026-11-16.", 0],
+      ["a date whose schedule is not stored", 0, 0, "no_proven_run_for_date", "FORGE skater projections are not available for the 2026-11-16 slate.", 0],
+    ])("serves %s empty, with its reason, and never a neighboring date's rows (H6)", async (_label, gamesOnDate, gamesAfterDate, reason, message, blocking) => {
+      const projectionRunIds = install({
+        runs: [{ run_id: "yesterday", as_of_date: "2026-11-15" }, { run_id: "tomorrow", as_of_date: "2026-11-17" }],
+        projections: [skater("yesterday", 2026020200, 1), skater("tomorrow", 2026020400, 2)],
+        gamesOnDate, gamesAfterDate,
       });
-      expect(res.body.diagnostics.message).toContain("6 games were scheduled");
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date: "2026-11-16" } } as any, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({ runId: null, asOfDate: "2026-11-16", requestedDate: "2026-11-16", fallbackApplied: false,
+        reason, message, data: [], serving: { resolvedDate: "2026-11-16", strategy: "requested_date" },
+        scanSummary: { status: "empty", blockingIssueCount: blocking },
+        diagnostics: { state: "empty", reason, message } });
+      expect(projectionRunIds).toEqual([]);
+    });
+
+    it("serves an exact-date proven run's rows", async () => {
+      install({ runs: [{ run_id: "today", as_of_date: "2026-11-16" }, { run_id: "yesterday", as_of_date: "2026-11-15" }],
+        projections: [skater("today", 2026020200, 1), skater("yesterday", 2026020100, 2)], gamesOnDate: 1 });
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date: "2026-11-16" } } as any, res);
+      expect(res.body).toMatchObject({ runId: "today", asOfDate: "2026-11-16", reason: null, message: null });
+      expect(res.body.data.map((row: any) => row.player_id)).toEqual([1]);
+    });
+
+    it("defaults the date to the Eastern-time slate, not the UTC date (L3)", async () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-11-17T03:30:00Z"));
+      try {
+        install({ runs: [{ run_id: "et-slate", as_of_date: "2026-11-16" }], projections: [skater("et-slate", 2026020200, 1)] });
+        const res = createMockRes();
+        await handler({ method: "GET", query: {} } as any, res);
+        expect(res.body).toMatchObject({ runId: "et-slate", requestedDate: "2026-11-16" });
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });

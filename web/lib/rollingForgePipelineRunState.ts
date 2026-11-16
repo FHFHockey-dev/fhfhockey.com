@@ -20,9 +20,11 @@ import type { RollingForgePipelineMode } from "./rollingPlayerOperationalPolicy"
  * lease RPC gives each stage a single owner, a monotonic cursor (the rolling
  * step's player resume id) and a terminal `complete`/`failed` status, so a
  * later invocation can continue where an earlier one stopped. An invocation
- * killed mid-stage leaves a `running` row. Expiry cannot prove replay safety;
- * only an acknowledged handoff permits automatic continuation. Ambiguous rows
- * remain available for operator reconciliation rather than being reclaimed.
+ * killed mid-stage leaves a `running` row. Expiry alone cannot prove replay
+ * safety, so it is decided per stage: a replay-safe stage (see
+ * ROLLING_FORGE_RETAKEABLE_STAGE_IDS) is retaken once its lease has expired and
+ * the dead invocation is counted; any other stage's ambiguous row remains for
+ * operator reconciliation rather than being reclaimed.
  */
 export const ROLLING_FORGE_RUN_PIPELINE_KEY = "rolling_forge_pipeline";
 
@@ -41,8 +43,37 @@ const HANDOFF_CODE = "stage_handoff";
 export const NST_PERSISTENCE_UNCONFIRMED = "nst_persistence_unconfirmed";
 export const AUDIT_PERSISTENCE_UNCONFIRMED = "audit_persistence_unconfirmed";
 export const STAGE_HANDOFF_UNCONFIRMED = "stage_handoff_unconfirmed";
+/** Failure codes stored as a durable review hold: a stage failed with one is never taken again automatically. */
+export const ROLLING_FORGE_REVIEW_HOLD_CODES: readonly string[] = [
+  NST_PERSISTENCE_UNCONFIRMED,
+  AUDIT_PERSISTENCE_UNCONFIRMED,
+  STAGE_HANDOFF_UNCONFIRMED
+];
 export class RollingForgeStageReviewRequiredError extends Error {}
 
+/**
+ * Stages (and the goalie marker) whose children are idempotent upserts or
+ * resume through their own claim (`run-projection-v2` reuses its `forge_runs`
+ * run and lease; ingest and the derived build keep their own durable cursor),
+ * so a `running` row whose lease expired is retaken. A stored review hold
+ * still blocks them. NST (`upstream_skater_sources`, rate-limited, with its own
+ * acknowledged-progress contract), the rolling recompute and the relationship
+ * build stay review-only.
+ */
+export const ROLLING_FORGE_RETAKEABLE_STAGE_IDS: ReadonlySet<string> = new Set([
+  "core_entity_freshness",
+  "contextual_builders",
+  "projection_input_ingest",
+  "projection_derived_build",
+  "projection_execution",
+  "projection_execution:goalie",
+  "downstream_projection_consumers",
+  "monitoring"
+]);
+
+export function isRollingForgeStageRetakeable(stageId: string) {
+  return ROLLING_FORGE_RETAKEABLE_STAGE_IDS.has(stageId);
+}
 
 const FAILURE_ATTEMPT_PATTERN = /^stage_failed:attempt-(\d+)$/;
 
@@ -188,17 +219,20 @@ export function acquireRollingForgeStage(args: {
     leaseMs: Math.max(30_000, args.leaseExpiresAtMs - now.getTime()),
     now,
     assertResumable: (current) => {
-      if (current.status === "failed" && [NST_PERSISTENCE_UNCONFIRMED, AUDIT_PERSISTENCE_UNCONFIRMED].includes(current.lastError ?? "")) {
+      if (current.status === "failed" && ROLLING_FORGE_REVIEW_HOLD_CODES.includes(current.lastError ?? "")) {
         throw new RollingForgeStageReviewRequiredError("Persistence is unconfirmed; the durable review hold cannot be reacquired.");
       }
       // A running row is durable pre-call intent. Without an acknowledged
-      // handoff, even an expired owner may have written data or lost its hold.
-      // Refuse all running takeovers, including expiry between this read and CAS.
+      // handoff, even an expired owner may have written data or lost its hold,
+      // so only a replay-safe stage is retaken after expiry (the caller counts
+      // the dead invocation first). Every other stage refuses the takeover,
+      // including expiry between this read and the CAS.
       if (current.status === "running") {
         const expiresAt = Date.parse(current.leaseExpiresAt ?? "");
         if (Number.isFinite(expiresAt) && expiresAt > now.getTime()) {
           throw new Error("PROJECTION_PIPELINE_LEASE_HELD");
         }
+        if (isRollingForgeStageRetakeable(args.stageId)) return;
         throw new RollingForgeStageReviewRequiredError("Stage invocation ended without an acknowledged handoff; reconcile child outputs and audit before an operator authorizes resumption.");
       }
     }

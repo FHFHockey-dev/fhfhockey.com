@@ -1075,6 +1075,51 @@ describe("/api/v1/start-chart", () => {
     expect(res.body.players.find((row: any) => row.player_id === defaultProjection.player_id).proj_fantasy_points).toBeGreaterThan(0);
   });
 
+  it("serves each game from its newest proven run: a later single-game rerun only for its own game (H3)", async () => {
+    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
+    const { createClient } = await import("@supabase/supabase-js");
+    const requests: URL[] = [];
+    const line = (runId: string, gameId: number, playerId: number, goals: number) =>
+      ({ ...defaultProjection, run_id: runId, game_id: gameId, player_id: playerId, proj_goals_es: goals });
+    const runs = [
+      { run_id: "rerun", created_at: "2026-02-07T15:00:00Z", metrics: { execution_scope: { mode: "selected_games", requested_game_ids: [1001] },
+        resume: { scope_key: "h1:1001" } }, forge_player_projections: [line("rerun", 1001, 8478402, 0.9)] },
+      { run_id: "slate", created_at: "2026-02-07T12:00:00Z", metrics: { execution_scope: { mode: "full_slate", requested_game_ids: [] },
+        resume: { scope_key: "h1:full" } }, forge_player_projections: [line("slate", 1001, 8478402, 0.1),
+        line("slate", 1001, 8478499, 0.3), line("slate", 1002, 8478411, 0.5)] },
+    ];
+    const client = createClient("http://localhost:59999", "synthetic-key", { global: {
+      fetch: async (input) => {
+        const url = new URL(String(input)); requests.push(url);
+        if (url.searchParams.get("select") === "run_id") return Response.json(runs.map(({ run_id }) => ({ run_id })));
+        const run = runs.find((row) => `eq.${row.run_id}` === url.searchParams.get("run_id"))!;
+        return Response.json({ ...run, as_of_date: "2026-02-07", updated_at: run.created_at, git_sha: "a".repeat(40),
+          metrics: { ...run.metrics, input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } } });
+      },
+    } });
+    const prior = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => table === "forge_runs" ? client.from(table)
+      : table === "games" ? createQueryBuilder(() => ({ data: [{ id: 1001, date: "2026-02-07", homeTeamId: 10, awayTeamId: 8 },
+        { id: 1002, date: "2026-02-07", homeTeamId: 8, awayTeamId: 10 }], error: null }))
+        : prior(table));
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    // The candidates, the newest proven run (the rerun), then the slate run beneath it.
+    expect(requests).toHaveLength(3);
+    expect(res.body.projectionRunId).toBe("slate");
+    const ids = res.body.players.filter((row: any) => !row.positions?.includes("G")).map((row: any) => row.player_id);
+    // Both games are served; game 1001 only from the rerun, so the player it dropped is not kept from the slate run.
+    expect(ids).toEqual(expect.arrayContaining([8478402, 8478411]));
+    expect(ids).not.toContain(8478499);
+    const rerunLine = res.body.players.find((row: any) => row.player_id === 8478402);
+    expect(rerunLine.proj_goals).toBeCloseTo(0.9 + defaultProjection.proj_goals_pp, 6);
+    expect(JSON.stringify(res.body)).toContain(JSON.stringify({ runId: "rerun", basis: "captured_snapshot", releaseSha: null,
+      closureSha256: null, gameIds: [1001] }));
+  });
+
   it("keeps the serving-off FORGE run reader independent of the revision canary", async () => {
     vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
     vi.stubEnv("STARTER_BOARD_CANARY_GAME_IDS", "invalid");
@@ -2060,6 +2105,32 @@ describe("/api/v1/start-chart", () => {
     expect(res.body.recentGoals.source).toBe("nhl_final_scores");
     expect(res.body.recentGoals.teams.find((team: any) => team.team === "MTL").games).toEqual(missing ? [] : [{ date: "2026-02-06", goalsFor: 2, goalsAgainst: 4 }]);
     expect(eqMock).toHaveBeenCalledWith("season", "20252026");
+  });
+
+  it("serves a goalie row refreshed after the target date's UTC end for a game that has not started (audit L2)", async () => {
+    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
+    const prior = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "games") {
+        return createQueryBuilder(() => ({ data: [{ id: 1001, date: "2026-02-07", startTime: "2026-02-08T00:30:00Z",
+          homeTeamId: 10, awayTeamId: 8 }], error: null }));
+      }
+      if (table !== "goalie_start_projections") return prior(table);
+      // Honours an lte bound, as PostgREST would: 19:45 ET on the 7th is 00:45Z on the 8th.
+      const bounds: Array<[string, string]> = [];
+      const builder = createQueryBuilder(() => ({ error: null, data: [{ game_id: 1001, team_id: 10, player_id: 9001,
+        game_date: "2026-02-07", start_probability: 0.72, projected_gsaa_per_60: 0.18, confirmed_status: true,
+        updated_at: "2026-02-08T00:45:00Z" }].filter((row: any) => bounds.every(([column, value]) => row[column] <= value)) }));
+      builder.lte = (column: string, value: string) => { bounds.push([column, value]); return builder; };
+      return builder;
+    });
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.players.find((player: any) => player.player_id === 9001)).toMatchObject({
+      positions: ["G"], confirmed_status: true, start_probability: 1 });
   });
 
   it("reads skaters through the exact FORGE run and exposes canonical-source metadata", async () => {

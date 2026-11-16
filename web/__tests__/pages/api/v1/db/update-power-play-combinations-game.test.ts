@@ -603,6 +603,34 @@ describe("decision 152: dry run and transactional replace", () => {
     ]);
   });
 
+  it("reports a game whose clocks are not qualified yet as deferred, not as a success (audit M4)", async () => {
+    // 2026-11-16: the 11-15 games had no official PP time stored at the 10:10 step.
+    const notReady = { ...game2026020163, teamGameStats: [] };
+    const db = storedDatabase(notReady, []);
+    const json = vi.fn();
+
+    await handler({ query: { gameId: "2026020163" }, supabase: db.supabase } as any, { json, status: () => ({ json }) } as any);
+
+    expect(db.rpc).toHaveBeenCalledOnce();
+    const body = json.mock.calls[0][0];
+    expect(body).toMatchObject({
+      success: true, skipped: true, reason: "pp_inputs_not_ready", outcome: "deferred", rowCount: 0,
+      deferredTeams: [
+        { teamId: 22, reason: "No official team PP total (teamGameStats) for this game." },
+        { teamId: 12, reason: "No official team PP total (teamGameStats) for this game." }
+      ]
+    });
+    expect(body.message).toMatch(/^Deferred: game 2026020163 has no power-play rows yet/);
+    // Audited as an intentional skip, never as a no-op success.
+    expect((auditState.opts.skipAuditWhenNoOp as (body: unknown) => boolean)(body)).toBe(false);
+  });
+
+  it("reports a fully qualified game as updated", async () => {
+    const db = storedDatabase(game2026020163, stored163);
+    const summary = await updatePowerPlayCombinations(2026020163, db.supabase);
+    expect(summary).toMatchObject({ outcome: "updated", deferredTeams: [] });
+  });
+
   it("the route takes dryRun=true and reports the diff", async () => {
     const db = storedDatabase(game2026020163, stored163);
     const json = vi.fn();

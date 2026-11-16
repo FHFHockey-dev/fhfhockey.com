@@ -89,15 +89,15 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
   "diagnostics": {
     "emptyResultAnalysis": {
       "isEmpty": false,
-      "requestedContextChanged": false,
+      "message": null,
+      "reason": null,
+      "verifiedScheduledGames": null,
     },
     "fallback": {
       "applied": false,
-      "candidateAsOfDate": null,
-      "candidateRowCount": null,
-      "candidateRunId": null,
-      "enabled": true,
+      "enabled": false,
     },
+    "gameRuns": [],
     "notes": [
       "1 row(s) predate per-candidate goalie rows: each is the team's goalie slot under the projected starter, with its win withheld.",
     ],
@@ -148,9 +148,11 @@ exports[`/api/v1/forge/goalies > returns stable response shape with model/scenar
   },
   "durationMs": "00:00",
   "fallbackApplied": false,
-  "fallbackToLatestWithData": true,
+  "fallbackToLatestWithData": false,
   "horizonGames": 1,
+  "message": null,
   "modelVersion": "starter-scenario-v1",
+  "reason": null,
   "requestedDate": "2026-02-07",
   "requestedRunId": "run-123",
   "runId": "run-123",

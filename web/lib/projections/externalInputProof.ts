@@ -223,26 +223,90 @@ export async function requireExternalInputProvenRun(runId: string): Promise<{ ru
   return { runId, proof };
 }
 
-/** As requireLatestExternalInputProvenRunId, with the selected run's proof. */
+/** What a forge_runs read selects to tell a full-slate run from a selected_games rerun (H3, audit 2026-11-16). */
+export const RUN_SCOPE_COLUMNS = "execution_scope:metrics->execution_scope,scope_key:metrics->resume->>scope_key";
+
+/** The games a selected_games rerun projected: `metrics.execution_scope.requested_game_ids`, else the ids in its resume
+ * scope key (`h<N>:<ids>`). Null for a full-slate run, and for a run that records no scope (older runs were all full). */
+export function forgeRunScopedGameIds(row: { execution_scope?: unknown; scope_key?: unknown } | null | undefined): number[] | null {
+  const scope = row?.execution_scope as { mode?: unknown; requested_game_ids?: unknown } | null | undefined;
+  const ids = (values: unknown[]) => [...new Set(values.map(Number).filter(id => Number.isSafeInteger(id) && id > 0))].sort((a, b) => a - b);
+  if (Array.isArray(scope?.requested_game_ids) && scope!.requested_game_ids.length) return ids(scope!.requested_game_ids);
+  const key = typeof row?.scope_key === "string" ? /^h\d+:(\d+(?:,\d+)*)$/.exec(row.scope_key) : null;
+  if (key) return ids(key[1].split(","));
+  return scope?.mode === "selected_games" ? [] : null;
+}
+
+/** Which run serves each game of one date: the base (full-slate) run, and newer selected_games runs (newest first),
+ * each over its own games. */
+export type RunsByGame = { baseRunId: string | null; overlays: Array<{ runId: string; gameIds: number[] }> };
+/** A newer selected_games run laid over the date's full-slate run: it serves only its own games. */
+export type ProvenRunOverlay = { runId: string; proof: ExternalInputProof; gameIds: number[] };
+/** RunsByGame over proven runs only: the newest proven full-slate run (null when the date has none) and the proven
+ * selected_games runs newer than it. */
+export type ProvenRunsByGame = { baseRunId: string | null; overlays: ProvenRunOverlay[] };
+
+type ScopedRunRow = { run_id: string; execution_scope?: unknown; scope_key?: unknown };
+
+/** Pure (H3): from one date's admitted runs, newest first, the newest full-slate run and every selected_games run newer
+ * than it. Older runs are superseded by that slate run. A selected_games run with no game ids serves nothing. */
+export function selectRunsByGame(rowsNewestFirst: ScopedRunRow[]): RunsByGame {
+  const overlays: RunsByGame["overlays"] = [];
+  for (const row of rowsNewestFirst) {
+    const gameIds = forgeRunScopedGameIds(row);
+    if (gameIds === null) return { baseRunId: row.run_id, overlays };
+    if (gameIds.length) overlays.push({ runId: row.run_id, gameIds });
+  }
+  return { baseRunId: null, overlays };
+}
+
+/** Pure (H3): selectRunsByGame over the proven runs only; an unproven run is never selected, whatever its scope. */
+export function selectProvenRunsByGame(rowsNewestFirst: ScopedRunRow[], proof: ReadonlyMap<string, ExternalInputProof>): ProvenRunsByGame {
+  const selected = selectRunsByGame(rowsNewestFirst.filter(row => proof.has(row.run_id)));
+  return { baseRunId: selected.baseRunId, overlays: selected.overlays.map(overlay => ({ ...overlay, proof: proof.get(overlay.runId)! })) };
+}
+
+/** The run ids whose output rows a per-game reader reads: the base run, then the overlays. */
+export function provenRunIdsByGame(runs: RunsByGame): string[] {
+  return [...(runs.baseRunId ? [runs.baseRunId] : []), ...runs.overlays.map(overlay => overlay.runId)];
+}
+
+/** Pure (H3): keeps each output row only from the run that serves its game. A game belongs to the newest overlay that
+ * requested it and has rows for it; every other game belongs to the base run. A player the rerun dropped is not kept
+ * from the slate run, and an overlay that wrote nothing for a game does not hide the slate run's rows for it. */
+export function keepRowsOfServingRun<R extends { run_id?: unknown; game_id?: unknown }>(rows: R[], runs: RunsByGame): R[] {
+  if (!runs.overlays.length) return runs.baseRunId ? rows.filter(row => row.run_id === runs.baseRunId) : [];
+  const withRows = new Set(rows.map(row => `${String(row.run_id)}|${Number(row.game_id)}`));
+  const owner = new Map<number, string>();
+  for (const overlay of runs.overlays) for (const gameId of overlay.gameIds) {
+    if (!owner.has(gameId) && withRows.has(`${overlay.runId}|${gameId}`)) owner.set(gameId, overlay.runId);
+  }
+  return rows.filter(row => row.run_id === (owner.get(Number(row.game_id)) ?? runs.baseRunId));
+}
+
+/** As requireLatestExternalInputProvenRunId, with the selected run's proof. `runId` is the date's newest proven
+ * full-slate run (else its newest proven selected_games run); `runsByGame` adds the newer proven selected_games runs,
+ * each serving only its own games (H3). */
 export async function requireLatestExternalInputProvenRun(
   asOfDate: string,
   horizonGames = 1,
-): Promise<{ runId: string; proof: ExternalInputProof }> {
+): Promise<{ runId: string; proof: ExternalInputProof; runsByGame: ProvenRunsByGame }> {
   if (!supabase) throw new Error("Supabase server client not available");
   const { data, error } = await restrictRunsToHorizon(excludeOffReleaseRuns(supabase
     .from("forge_runs")
-    .select("run_id")
+    .select(`run_id,${RUN_SCOPE_COLUMNS}`)
     .eq("as_of_date", asOfDate)
     .eq("status", "succeeded")), horizonGames)
     .order("created_at", { ascending: false })
     .limit(PROVEN_RUN_CANDIDATES);
 
   if (error) throw error;
-  const runIds = ((data ?? []) as Array<{ run_id?: unknown }>)
-    .map((row) => row.run_id)
-    .filter((id): id is string => typeof id === "string");
-  const proof = runIds.length ? await loadExternalInputProof(supabase, runIds) : new Map();
-  const runId = runIds.find((id) => proof.has(id));
+  const rows = ((data ?? []) as Array<{ run_id?: unknown; execution_scope?: unknown; scope_key?: unknown }>)
+    .filter((row): row is { run_id: string; execution_scope?: unknown; scope_key?: unknown } => typeof row.run_id === "string");
+  const runIds = rows.map((row) => row.run_id);
+  const proof = runIds.length ? await loadExternalInputProof(supabase, runIds) : new Map<string, ExternalInputProof>();
+  const runsByGame = selectProvenRunsByGame(rows, proof);
+  const runId = runsByGame.baseRunId ?? runsByGame.overlays[0]?.runId;
   if (!runId) {
     const err = new Error(
       runIds.length
@@ -253,5 +317,5 @@ export async function requireLatestExternalInputProvenRun(
     if (runIds.length) (err as any).details = { reason: "external_input_provenance_unproven", withheldRuns: runIds.length };
     throw err;
   }
-  return { runId, proof: proof.get(runId)! };
+  return { runId, proof: proof.get(runId)!, runsByGame };
 }

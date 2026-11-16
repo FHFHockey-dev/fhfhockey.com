@@ -162,4 +162,29 @@ describe("Dashboard Endpoint 4xx Behavior", () => {
       empty: true
     });
   });
+
+  it("defaults /api/v1/forge/accuracy to the Eastern-time date, not the UTC date (L3)", async () => {
+    const lteCalls: unknown[][] = [];
+    fromMock.mockReturnValueOnce({
+      select: () => ({
+        eq: () => ({
+          lte: (...args: unknown[]) => {
+            lteCalls.push(args);
+            return { order: () => ({ limit: async () => ({ data: [], error: null }) }) };
+          }
+        })
+      })
+    });
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-17T03:30:00Z"));
+    try {
+      const res = createMockRes();
+      await forgeAccuracyHandler({ method: "GET", query: { scope: "overall" } } as any, res);
+      expect(res.statusCode).toBe(200);
+      expect(lteCalls).toEqual([["date", "2026-11-16"]]);
+      expect(res.body.endDate).toBe("2026-11-16");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

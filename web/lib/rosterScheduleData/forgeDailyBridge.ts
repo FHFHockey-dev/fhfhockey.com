@@ -3,7 +3,8 @@ import { calendarLeadDay, validForecastCalendarPolicy, type AnyForecastCalendarP
 import { loadDailyBoardEvidence, type DailyBoardEvidence } from "lib/projections/dailyBoardEvidence";
 import { buildSkaterModeledHeadTotals, resolveSkaterPkBasis } from "lib/projections/modeledHeadTotals";
 import { excludeOffReleaseRuns, restrictRunsToHorizon } from "lib/projections/releasedRunFence";
-import { loadExternalInputProof, runProofDiagnostics } from "lib/projections/externalInputProof";
+import { forgeRunScopedGameIds, keepRowsOfServingRun, loadExternalInputProof, RUN_SCOPE_COLUMNS, runProofDiagnostics, selectRunsByGame,
+  type RunsByGame } from "lib/projections/externalInputProof";
 import { forgeReservePassEnabled } from "lib/projections/reserveProjections";
 import { computeTeamStrengthContextAdjustment } from "lib/projections/calculators/team-context-adjustments";
 import { computeSkaterRestScheduleAdjustments } from "lib/projections/calculators/skater-adjustments";
@@ -394,8 +395,17 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     for (const row of rows) { const previous = result.get(key(row)); if (!previous || order(row) > order(previous)) result.set(key(row), row); }
     return result;
   };
-  const skaterRows = inputs.skaters.filter(row => runs.has(row.run_id) && row.horizon_games === 1 && finite(row.player_id) && finite(row.team_id));
-  const goalieRows = inputs.goalies.filter(row => runs.has(row.run_id) && row.horizon_games === 1 && finite(row.goalie_id) && finite(row.team_id));
+  // H3: per slate date, a game's rows come only from the run that serves it: a newer selected_games rerun serves its
+  // own games, the date's full-slate run the rest, and older runs of the date none.
+  const servingByDate = new Map<string, RunsByGame>();
+  for (const date of new Set([...runs.values()].map(run => run.asOfDate))) servingByDate.set(date, selectRunsByGame(inputs.runs
+    .filter(row => runs.has(row.run_id) && row.as_of_date === date)
+    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || String(a.run_id).localeCompare(String(b.run_id)))
+    .map(row => ({ run_id: row.run_id as string, execution_scope: row.execution_scope, scope_key: row.scope_key }))));
+  const servingRows = (rows: Row[]) => [...servingByDate].flatMap(([date, serving]) =>
+    keepRowsOfServingRun(rows.filter(row => runs.get(row.run_id)?.asOfDate === date), serving));
+  const skaterRows = servingRows(inputs.skaters).filter(row => row.horizon_games === 1 && finite(row.player_id) && finite(row.team_id));
+  const goalieRows = servingRows(inputs.goalies).filter(row => row.horizon_games === 1 && finite(row.goalie_id) && finite(row.team_id));
   const skaterLatest = latest(skaterRows, row => row.player_id);
   // A run that projected this very game (tomorrow's run, once it exists) beats a re-aimed line from another game.
   const exactSkater = latest(skaterRows, row => `${row.game_id}:${row.player_id}`);
@@ -486,7 +496,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const reserveSkaters = new Set<number>();
   // Reserve rows count only from the team's latest lineup run, so a player is either in that run's lineup or its reserve,
   // never both; a lineup line always wins.
-  const reserveRows = (inputs.reserves ?? []).filter(row => runs.has(row.run_id) && row.horizon_games === 1 && finite(row.player_id)
+  const reserveRows = servingRows(inputs.reserves ?? []).filter(row => row.horizon_games === 1 && finite(row.player_id)
     && finite(row.team_id) && row.as_of_date === teamLatestDate.get(row.team_id)
     && (row.player_class === "skater" && row.conditioning === "if_dressed" || row.player_class === "goalie" && row.conditioning === "if_starts"));
   const reserveLatest = latest(reserveRows, row => `${row.player_class}:${row.player_id}`);
@@ -851,9 +861,9 @@ export function forgeBridgeTimingSummary(timing: ForgeBridgeTiming, now = Date.n
   return { branchMs, pending, slowest: slowest?.[0] ?? null };
 }
 
-/** Read-only: the latest successful public h1 FORGE run per slate date, from the lookback through the days ahead, whose
- * proof shows it excluded third-party fantasy inputs. Newer unproven runs of a date are passed on unread, only to be
- * counted. A later run of a date supersedes an earlier one for that date's games. */
+/** Read-only: per slate date, from the lookback through the days ahead, the latest successful public h1 FORGE full-slate
+ * run whose proof shows it excluded third-party fantasy inputs, with the proven selected_games reruns newer than it,
+ * each serving only its own games (H3). Newer unproven runs of a date are passed on unread, only to be counted. */
 export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, players: PlanningPlayer[], games: PlanningGame[], now: Date,
   seasonId: number, deadline: number, calendarPolicy: AnyForecastCalendarPolicy,
   /** VORP S3 only (flag on): receives the admitted runs and their output rows as read; never changes the result. */
@@ -873,20 +883,25 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
   const captureStartedAt = capture ? new Date().toISOString() : "";
   const from = new Date(now.getTime() - FORGE_DAILY_BRIDGE_LOOKBACK_DAYS * DAY_MS).toISOString().slice(0, 10);
   const to = new Date(now.getTime() + FORGE_DAILY_BRIDGE_AHEAD_DAYS * DAY_MS).toISOString().slice(0, 10);
-  const runRows = await timed("runs", () => pages(() => restrictRunsToHorizon(excludeOffReleaseRuns(db.from("forge_runs").select("run_id,as_of_date,created_at,git_sha", { count: "exact" })
+  const runRows = await timed("runs", () => pages(() => restrictRunsToHorizon(excludeOffReleaseRuns(db.from("forge_runs").select(`run_id,as_of_date,created_at,git_sha,${RUN_SCOPE_COLUMNS}`, { count: "exact" })
     .eq("status", "succeeded"))).gte("as_of_date", from).lte("as_of_date", to)
     .order("as_of_date", { ascending: false }).order("created_at", { ascending: false }).order("run_id"), readDeadline, 500, row => row.run_id));
   const issued = runRows.filter(row => Date.parse(row.created_at) <= now.getTime());
   // The proof and board-evidence readers take a client, not a signal: their queries carry the deadline's signal instead.
   const proof = issued.length ? await timed("proof", () => withinDeadline(readDeadline,
     signal => loadExternalInputProof(abortableReads(db, signal), issued.map(row => row.run_id)))) : new Map();
-  const latestByDate = new Map<string, Row>(), withheld: Row[] = [];
+  // Per date, newest first: proven selected_games reruns (H3) until the newest proven full-slate run, which supersedes
+  // every older run of the date. Unproven runs newer than that slate run are withheld and counted, never read.
+  const slateDates = new Set<string>(), runs: Row[] = [], withheld: Row[] = [];
   for (const row of issued) {
-    if (latestByDate.has(row.as_of_date)) continue;
-    if (proof.has(row.run_id)) latestByDate.set(row.as_of_date, { ...row, external_input_proven: true, proof: runProofDiagnostics(row.run_id, proof.get(row.run_id)) });
-    else withheld.push({ ...row, external_input_proven: false });
+    if (slateDates.has(row.as_of_date)) continue;
+    if (!proof.has(row.run_id)) { withheld.push({ ...row, external_input_proven: false }); continue; }
+    const gameIds = forgeRunScopedGameIds(row);
+    if (gameIds?.length === 0) continue;
+    if (gameIds === null) slateDates.add(row.as_of_date);
+    runs.push({ ...row, external_input_proven: true, proof: runProofDiagnostics(row.run_id, proof.get(row.run_id)) });
   }
-  const runs = [...latestByDate.values()], runIds = runs.map(row => row.run_id);
+  const runIds = runs.map(row => row.run_id);
   if (!runIds.length) return build({ runs: withheld, skaters: [], goalies: [] });
   const previousSeason = String((Math.floor(seasonId / 10000) - 1) * 10001 + 1);
   const upcomingGameIds = [...new Set(games.filter(game => game.status === "scheduled" && game.startsAt && Date.parse(game.startsAt) > now.getTime())

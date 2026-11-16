@@ -59,6 +59,8 @@ function reportQuery(mock: ReturnType<typeof vi.fn>, args: unknown[], cron = fal
 vi.mock("lib/nst/goalieFreshness.server", () => ({ readGoalieFreshness: readGoalieFreshnessMock }));
 vi.mock("lib/cron/xPollerHealth.server", () => ({ readPollerHealth: readPollerHealthMock }));
 vi.mock("lib/cron/tweetReviewBacklog.server", () => ({ readTweetBacklog: readTweetBacklogMock }));
+const { readForgeServingHealthMock } = vi.hoisted(() => ({ readForgeServingHealthMock: vi.fn() }));
+vi.mock("lib/cron/forgeServingHealth.server", () => ({ readForgeServingHealth: readForgeServingHealthMock }));
 
 // The two sections as their readers return them before migration 20261106201221 is applied.
 const POLLER_NOT_INSTALLED = { status: "unknown", windowStart: "2026-03-19T12:10:00.000Z", windowEnd: "2026-03-20T12:10:00.000Z", runs: null,
@@ -257,6 +259,20 @@ describe("/api/v1/db/cron-report", () => {
     const warnings = res.body.warnings.yahooLifecycle.map((warning: any) => warning.code);
     expect(warnings).toContain("stale_last_success");
     expect(warnings).not.toContain("repeated_ownership_failure");
+  });
+
+  it("flags a day with no servable FORGE run in the subject, the email and the JSON", async () => {
+    const forgeServing = { status: "critical", date: "2026-03-20", checkedAt: "2026-03-20T12:10:00.000Z", servedRun: null, todayRuns: [],
+      pipeline: { scopeKey: "daily_incremental:2026-03-20", state: "stuck", stage: "projection_execution", detail: "stuck" },
+      problems: ["No full-slate FORGE run for 2026-03-20 was created today."], notes: [] };
+    readForgeServingHealthMock.mockResolvedValueOnce(forgeServing);
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(readForgeServingHealthMock).toHaveBeenCalledWith(expect.objectContaining({ seasonState: "unknown",
+      now: new Date("2026-03-20T12:10:00.000Z") }));
+    expect(resendSendMock.mock.calls[0][0].subject).toMatch(/^❌ .* · FORGE not served for 2026-03-20$/u);
+    expect(cronAuditEmailMock.mock.calls.at(-1)?.[0].forgeServing).toBe(forgeServing);
+    expect(res.body.forgeServing).toEqual(forgeServing);
   });
 
   it("reads the poller and backlog sections, storing the backlog snapshot only on a real run", async () => {
