@@ -402,15 +402,18 @@ it("keeps the loading message when adds remain and names the spent budget when t
   expect(screen.getByRole("status").textContent).toBe("No adds remain this period; adds return when the period resets.");
 });
 
-it.each([false, true])("keeps an Out player searchable but unranked, so he can't take a healthy player's ranked slot (categories: %s)", categories => {
-  // TJ 2026-11-16: the Out player has the best net value, yet all five visible ranked slots go to healthy players.
+it.each([[false, "best"], [true, "best"], [false, "zero tie"], [true, "zero tie"]] as const)("keeps an Out player searchable but unranked, so he can't take a healthy player's ranked slot (categories: %s, Out gain: %s)", (categories, gain) => {
+  // TJ 2026-11-16: whether the Out player has the best net value or ties a zero-gain healthy player for the last slot,
+  // all five visible ranked slots go to healthy players.
   const workspace = defaultWorkspace();
   const base = { nhlId: null, teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "free_agent" as const,
     ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] };
   const players: PlanningPlayer[] = [{ ...base, id: "out", name: "Hurt Star", injury: { status: "O", label: "Out", note: null } },
     ...Array.from({ length: 5 }, (_, index) => ({ ...base, id: `fit${index}`, name: `Healthy Fit ${index}` }))];
-  fixture.candidates = players.map((player, index) => ({ playerId: player.id, complete: true, plans: [{ objective: "outcome", steps: [], netAGP: player.id === "out" ? 3 : 1,
-    netPoints: player.id === "out" ? 9 : 5 - index, dropped: [], displacedPlayerIds: [], categoryComparisonVerified: true }] }));
+  const net = (player: PlanningPlayer, index: number) => player.id === "out" ? gain === "best" ? [3, 9] : [0, 0]
+    : gain === "zero tie" && player.id === "fit4" ? [0, 0] : [1, 6 - index];
+  fixture.candidates = players.map((player, index) => ({ playerId: player.id, complete: true, plans: [{ objective: "outcome", steps: [], netAGP: net(player, index)[0],
+    netPoints: net(player, index)[1], dropped: [], displacedPlayerIds: [], categoryComparisonVerified: true }] }));
   const rules = categories ? { ...workspace.rules, scoring: { mode: "categories" as const, weights: {}, categories: [{ key: "GOALS", direction: "higher" as const }] } } : workspace.rules;
   const snapshot: PlanningSnapshot = { id: "out-ranking", context: workspace.context, rules, games: [], players, roster: [], lockedAssignments: [],
     forecasts: [], realized: {}, opponent: null, evidence: {} };

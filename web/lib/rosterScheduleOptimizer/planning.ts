@@ -1308,6 +1308,8 @@ export function scheduleFits(snapshot: PlanningSnapshot, intent: PlanIntent, bas
   const teams = new Set(snapshot.games.filter(game => game.status === "scheduled" && eligibleGame(game, snapshot)).map(game => game.teamAbbreviation));
   for (const player of snapshot.players) {
     if (owned.has(player.id) || intent.excludedPlayerIds.includes(player.id) || !player.teamAbbreviation || !teams.has(player.teamAbbreviation) || player.availability === "rostered" || !player.eligiblePositions.length) continue;
+    // An Out player adds no games, so he never stands in for his group's fit (TJ, 2026-11-16).
+    if (providerListsOut(player)) continue;
     if (includeZero && (!player.eligibilityVerified || !normalizeEligibility(player.eligiblePositions).valid
       || normalizeEligibility(player.eligiblePositions).playerClass !== player.playerClass)) continue;
     const key = `${player.teamAbbreviation}:${[...player.eligiblePositions].sort().join(",")}`;
@@ -1340,7 +1342,9 @@ function shortlist(snapshot: PlanningSnapshot, intent: PlanIntent, limit: number
   const owned = new Set(snapshot.roster.map(entry => entry.playerId));
   const games = snapshot.games.filter(game => game.status === "scheduled" && game.date >= snapshot.context.startDate && game.date <= snapshot.context.endDate && eligibleGame(game, snapshot));
   const forecasted = new Set(snapshot.forecasts.map(item => `${item.playerId}:${item.gameId}`));
-  const candidates = snapshot.players.filter(player => !owned.has(player.id) && !intent.excludedPlayerIds.includes(player.id) && ["free_agent", "manager_available", "waivers"].includes(player.availability));
+  // Out players are never a planner candidate, so they never take a slot from a healthy one (TJ, 2026-11-16).
+  const candidates = snapshot.players.filter(player => !owned.has(player.id) && !intent.excludedPlayerIds.includes(player.id) && ["free_agent", "manager_available", "waivers"].includes(player.availability)
+    && !providerListsOut(player));
   const fitScores = new Map(fits.flatMap(fit => fit.playerIds.map(id => [id, fit.addedGames] as const)));
   const sorted = candidates.map(player => ({ player, coverage: games.filter(game => game.teamAbbreviation === player.teamAbbreviation && forecasted.has(`${player.id}:${game.id}`)).length }))
     .sort((a, b) => (fitScores.get(b.player.id) ?? 0) - (fitScores.get(a.player.id) ?? 0) || b.coverage - a.coverage || a.player.id.localeCompare(b.player.id));
