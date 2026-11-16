@@ -30,6 +30,8 @@ const {
   gamesOrderMock,
   lineCombosInMock,
   lineCombosSelectMock,
+  ppCombosInMock,
+  ppCombosSelectMock,
   pipelineStateRows,
   pipelineStateFrom,
   pipelineStateRpc
@@ -138,6 +140,12 @@ const {
     error: null
   }));
   const lineCombosSelectMock = vi.fn(() => ({ in: lineCombosInMock }));
+  // powerPlayCombinations rows for the source date's games; every game by default.
+  const ppCombosInMock = vi.fn(async (_column: string, gameIds: number[]) => ({
+    data: gameIds.map((gameId) => ({ gameId })),
+    error: null
+  }));
+  const ppCombosSelectMock = vi.fn(() => ({ in: ppCombosInMock }));
   return {
     updateGamesMock: vi.fn(successResponder),
     updateTeamsMock: vi.fn(successResponder),
@@ -162,6 +170,8 @@ const {
     gamesOrderMock,
     lineCombosInMock,
     lineCombosSelectMock,
+    ppCombosInMock,
+    ppCombosSelectMock,
     pipelineStateRows,
     pipelineStateFrom,
     pipelineStateRpc
@@ -185,7 +195,9 @@ vi.mock("lib/supabase/server", () => ({
           ? pipelineStateFrom()
           : table === "lineCombinations"
             ? { select: lineCombosSelectMock }
-            : { select: gamesSelectMock }
+            : table === "powerPlayCombinations"
+              ? { select: ppCombosSelectMock }
+              : { select: gamesSelectMock }
     ),
     rpc: pipelineStateRpc
   }
@@ -1613,6 +1625,55 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         expect(next.body.failureSummary.terminalStop).toEqual({ code: "stage_handoff_unconfirmed", stageId: "projection_relationship_build" });
         expect(shiftChartsMock).toHaveBeenCalledTimes(1);
         expect(buildProjectionDerivedMock).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("power-play context (audit M4)", () => {
+      const contextual = (res: any) => stageStatus(res, "contextual_builders");
+
+      it("names completed games still without power-play rows as deferred and does not block the day", async () => {
+        ppCombosInMock.mockImplementationOnce(async (_column: string, gameIds: number[]) => ({
+          data: [{ gameId: gameIds[0] }], error: null
+        }));
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        expect(res.statusCode).toBe(200);
+        expect(contextual(res).status).toBe("success");
+        const verify = contextual(res).steps.find((step: any) => step.id === "verify-pp-context");
+        expect(verify).toMatchObject({
+          status: "skipped", degraded: "pp_context_deferred",
+          summary: { completedGames: 2, missingPowerPlayGameIds: [2025021024] }
+        });
+        expect(verify.reason).toMatch(/^Deferred: no power-play rows yet for 1 completed game\(s\) \(2025021024\)/);
+        expect(res.body.failureSummary.degradedSteps).toEqual([
+          expect.objectContaining({ stageId: "contextual_builders", stepId: "verify-pp-context", code: "pp_context_deferred" })
+        ]);
+        expect(updateRollingPlayerAveragesMock).toHaveBeenCalled();
+      });
+
+      it("passes the verification when every completed game has power-play rows", async () => {
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        expect(contextual(res).steps.find((step: any) => step.id === "verify-pp-context")).toMatchObject({
+          status: "success", summary: { missingPowerPlayGameIds: [] }
+        });
+        expect(res.body.failureSummary.degradedSteps).toEqual([]);
+      });
+
+      it("reports a power-play route that wrote nothing as skipped, not success", async () => {
+        updatePowerPlayCombinationsMock.mockImplementationOnce(async (_req: any, res: any) => {
+          res.status(200).json({ success: true, skipped: true, reason: "pp_stored_calculation_writes_disabled",
+            message: "Power-play stored-calculation writes are off; nothing was written." });
+        });
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        const pp = contextual(res).steps.find((step: any) => step.id === "update-power-play-combinations-batch");
+        expect(pp).toMatchObject({ status: "skipped", reason: "The power-play route wrote nothing (pp_stored_calculation_writes_disabled)." });
+        expect(contextual(res).steps.some((step: any) => step.id === "verify-pp-context")).toBe(false);
+        expect(ppCombosInMock).not.toHaveBeenCalled();
+        expect(contextual(res).status).toBe("success");
       });
     });
 

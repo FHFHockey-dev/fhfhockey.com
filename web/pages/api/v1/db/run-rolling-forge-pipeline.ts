@@ -69,7 +69,7 @@ type StepResult = {
   query: Record<string, string>;
   reason?: string;
   // Set when a source shortfall was downgraded so the stage still completes.
-  degraded?: "nst_source_unavailable" | "projection_input_games_rejected";
+  degraded?: "nst_source_unavailable" | "projection_input_games_rejected" | "pp_context_deferred";
   requiresReview?: "nst_persistence_unconfirmed" | "audit_persistence_unconfirmed" | "stage_handoff_unconfirmed";
   // The child did not answer before the invocation's child-step deadline and
   // was abandoned; it may still be running.
@@ -725,6 +725,18 @@ async function listGamesMissingLineContext(gameIds: number[]) {
   return gameIds.filter((gameId) => (teamsByGame.get(gameId)?.size ?? 0) < 2);
 }
 
+// Completed games with no powerPlayCombinations row at all.
+async function listGamesMissingPowerPlayRows(gameIds: number[]) {
+  if (!supabase || gameIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from("powerPlayCombinations")
+    .select("gameId")
+    .in("gameId", gameIds);
+  if (error) throw error;
+  const withRows = new Set((data ?? []).map((row) => Number((row as { gameId: number }).gameId)));
+  return gameIds.filter((gameId) => !withRows.has(gameId));
+}
+
 async function runStage(args: {
   id: RollingForgePipelineStageId;
   mode: RollingForgePipelineMode;
@@ -956,6 +968,14 @@ async function runStage(args: {
           }
         });
       }
+      const ppStep = steps.find((step) => step.id === "update-power-play-combinations-batch");
+      const ppBody = ppStep?.summary && typeof ppStep.summary === "object" && !Array.isArray(ppStep.summary)
+        ? ppStep.summary as Record<string, unknown> : null;
+      if (ppStep?.status === "success" && ppBody?.skipped === true) {
+        // An intentional skip (PP_STORED_CALCULATION_WRITES_ENABLED off) wrote nothing; say so.
+        ppStep.status = "skipped";
+        ppStep.reason = `The power-play route wrote nothing (${String(ppBody.reason ?? "skipped")}).`;
+      }
       if (completedGameIds.length > 0 && !steps.some((step) => step.status === "failed")) {
         const verifyStartedAt = Date.now();
         const missing = await listGamesMissingLineContext(completedGameIds);
@@ -975,6 +995,33 @@ async function runStage(args: {
                 ? `Line rows are missing for ${missing.length} completed game(s) (${missing.join(", ")}); the next invocation retries the stage.`
                 : `Line rows are still missing for ${missing.length} completed game(s) (${missing.join(", ")}); continuing with degraded line context.`
         });
+        // Power-play rows are verified too, but never block: the official PP
+        // time a clock needs can land after this stage (audit M4).
+        if (ppStep?.status === "success") {
+          const ppVerifyStartedAt = Date.now();
+          let missingPp: number[] | null = null;
+          let readError: string | null = null;
+          try {
+            missingPp = await listGamesMissingPowerPlayRows(completedGameIds);
+          } catch (error) {
+            readError = errorMessage(error);
+          }
+          steps.push({
+            id: "verify-pp-context",
+            route: "powerPlayCombinations",
+            status: missingPp?.length === 0 ? "success" : "skipped",
+            statusCode: 200,
+            durationMs: Date.now() - ppVerifyStartedAt,
+            summary: { completedGames: completedGameIds.length, missingPowerPlayGameIds: missingPp },
+            query: {},
+            ...(missingPp?.length ? { degraded: "pp_context_deferred" as const } : {}),
+            reason: readError
+              ? `Power-play rows could not be verified: ${readError}`
+              : missingPp!.length === 0
+                ? `Every completed game of ${args.sourceStartDate} has power-play rows.`
+                : `Deferred: no power-play rows yet for ${missingPp!.length} completed game(s) (${missingPp!.join(", ")}): an input the clock needs (official PP time, shifts or roster) was not stored yet, or the game had no power play. A later power-play run fills them; until then those teams keep their previous power-play context.`
+          });
+        }
       }
       break;
     }
