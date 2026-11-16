@@ -5,13 +5,14 @@
  * Source pins bind a candidate; they do not certify the adapter or accept evidence.
  */
 import { createHash } from "node:crypto";
+import * as tlsModule from "node:tls";
 import { closeSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { load } from "cheerio";
 import { prepareNativeProcessCapture, type NativeProcessCapturePlan } from "./nativeProcessCapturePreparation";
 
 const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
-const DATE = "2026-11-07";
+const DATE = "2026-11-11";
 const MIB = 1024 * 1024;
 const GROUPS = ["individual", "onIce"] as const;
 type Group = typeof GROUPS[number];
@@ -23,6 +24,124 @@ type CaptureBytes = Uint8Array | Buffer;
 const hash = (bytes: CaptureBytes) => createHash("sha256").update(new Uint8Array(bytes)).digest("hex");
 const json = (value: unknown) => Buffer.from(`${JSON.stringify(value, null, 2)}\n`);
 const isObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
+const text = (value: unknown, max: number) => typeof value === "string" && value.length > 0 && value.length <= max && !/[\u0000-\u001f\u007f]/.test(value) ? value : null;
+const nullableText = (value: unknown, max: number) => value === null ? null : text(value, max) ?? fail("tls_field_invalid");
+function peerFacts(value: unknown) {
+  if (value === null) return null;
+  need(isObject(value), "tls_peer_shape");
+  const leaf = value as Record<string, unknown>;
+  need(typeof leaf.fingerprint256 === "string" && /^(?:[0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(leaf.fingerprint256), "tls_fingerprint");
+  need(Array.isArray(leaf.issuerCNChain) && leaf.issuerCNChain.length > 0 && leaf.issuerCNChain.length <= 10, "tls_chain");
+  const peer = { fingerprint256: leaf.fingerprint256 as string, valid_from: text(leaf.valid_from, 64), valid_to: text(leaf.valid_to, 64),
+    subjectCN: nullableText(leaf.subjectCN, 200), issuerCNChain: (leaf.issuerCNChain as unknown[]).map(name => nullableText(name, 200)) };
+  need(peer.valid_from && peer.valid_to, "tls_required_field");
+  return peer;
+}
+interface TlsFacts {
+  channel: string; authorized: boolean; authorizationError: string | null; servername: string; alpnProtocol: string | null; protocol: string | null;
+  cipher: { name: string | null; standardName: string | null; version: string | null };
+  sessionReused: boolean; connectionReused: boolean; connectionSequence: number; resumedFromOperation: number | null; connectionFromOperation: number | null;
+  peerCertificate: ReturnType<typeof peerFacts>;
+}
+type DispatcherFacts = { present: boolean; constructorName: string | null; identityUnchanged: boolean };
+type TlsRecord = { index: number; tls: TlsFacts & { defaultCACertificatesSHA256: string | null; globalDispatcher: DispatcherFacts } };
+/** Copies the adapter's socket-level TLS observation field by field, bound to this
+ * request's host and to this run's earlier observations. Returns null when it is
+ * missing, malformed or unbound. Recording is not verification: TLSVerified stays
+ * null and the evidence bridge decides.
+ * The one-shot process starts with an empty TLS session cache, so a resumed session
+ * (no peer certificate in Node 22.23.4) must descend from a full handshake that this
+ * run already observed for the same servername. A keep-alive reuse must bind to the
+ * operation that opened that connection. Anything else fails closed. */
+function tlsFacts(value: unknown, url: string, earlier: readonly TlsRecord[]): TlsFacts | null {
+  try {
+    need(isObject(value) && value.channel === "undici:client:sendHeaders" && typeof value.authorized === "boolean", "tls_shape");
+    const tls = value as Record<string, unknown>, cipher = tls.cipher;
+    need(tls.servername === new URL(url).hostname && isObject(cipher), "tls_shape");
+    need(typeof tls.sessionReused === "boolean" && typeof tls.connectionReused === "boolean"
+      && Number.isSafeInteger(tls.connectionSequence) && (tls.connectionSequence as number) > 0, "tls_reuse_shape");
+    const suite = cipher as Record<string, unknown>, peerCertificate = peerFacts(tls.peerCertificate);
+    const servername = tls.servername as string, sequence = tls.connectionSequence as number;
+    let resumedFromOperation: number | null = null, connectionFromOperation: number | null = null;
+    if (tls.sessionReused) {
+      need(tls.authorized === true, "tls_resumed_unauthorized");
+      const full = earlier.find(record => record.tls.servername === servername && !record.tls.sessionReused && !record.tls.connectionReused && record.tls.peerCertificate !== null);
+      need(full, "tls_resumed_without_full_handshake");
+      resumedFromOperation = full!.index;
+    } else need(peerCertificate !== null, "tls_peer_missing");
+    const opener = earlier.find(record => record.tls.connectionSequence === sequence);
+    if (tls.connectionReused) {
+      need(opener && opener.tls.servername === servername, "tls_connection_unbound");
+      connectionFromOperation = opener!.index;
+    } else need(!opener, "tls_connection_sequence_reused");
+    const facts: TlsFacts = { channel: "undici:client:sendHeaders", authorized: tls.authorized as boolean, authorizationError: nullableText(tls.authorizationError, 200),
+      servername, alpnProtocol: nullableText(tls.alpnProtocol, 32), protocol: text(tls.protocol, 32),
+      cipher: { name: text(suite.name, 100), standardName: nullableText(suite.standardName, 100), version: nullableText(suite.version, 32) },
+      sessionReused: tls.sessionReused as boolean, connectionReused: tls.connectionReused as boolean, connectionSequence: sequence,
+      resumedFromOperation, connectionFromOperation, peerCertificate };
+    need(facts.protocol && facts.cipher.name, "tls_required_field");
+    return facts;
+  } catch { return null; }
+}
+
+// Non-secret runtime facts bound into the packet before any dispatch. Environment
+// entries are key presence only; values are never read into the packet.
+const RUNTIME_OVERRIDE_KEYS = ["NODE_EXTRA_CA_CERTS", "NODE_TLS_REJECT_UNAUTHORIZED", "NODE_OPTIONS", "NODE_USE_SYSTEM_CA", "NODE_USE_ENV_PROXY",
+  "SSL_CERT_FILE", "SSL_CERT_DIR", "HTTPS_PROXY", "HTTP_PROXY", "ALL_PROXY", "NO_PROXY", "https_proxy", "http_proxy", "all_proxy", "no_proxy"] as const;
+const ADAPTER_ENV_KEYS = ["NST_KEY", "SUPABASE_SERVICE_ROLE_KEY", "NEXT_PUBLIC_SUPABASE_URL", "NST_JOB_LIFECYCLE_ENABLED"] as const;
+// Launch facts: presence only. The bootstrap requires the first three and forbids the rest.
+const LAUNCH_ENV_KEYS = ["NODE_PATH", "DISABLE_V8_COMPILE_CACHE", "TS_NODE_COMPILER_OPTIONS", "OPENSSL_CONF", "TS_NODE_PROJECT", "TS_NODE_SKIP_PROJECT",
+  "TS_NODE_COMPILER", "TS_NODE_TRANSPILE_ONLY", "TS_NODE_REQUIRE", "TS_NODE_CWD", "TS_NODE_DIR", "TS_NODE_COMPILER_HOST", "TS_NODE_EMIT", "TS_NODE_SCOPE",
+  "TS_NODE_SCOPE_DIR", "TS_NODE_SWC", "TS_NODE_TRANSPILER"] as const;
+const present = (key: string) => Object.prototype.hasOwnProperty.call(process.env, key);
+const fileSHA256 = (path: string) => { try { return lstatSync(path).isFile() ? hash(readFileSync(path)) : null; } catch { return null; } };
+/** Hash of Node's effective default CA store (tls.getCACertificates("default"), present in
+ * Node 22.23.4). tls.setDefaultCACertificates can change it in-process, so it is re-read
+ * before and after every dispatch and compared with RUNTIME.json. Null if unavailable. */
+const defaultCAStoreSHA256 = () => {
+  const list = (tlsModule as { getCACertificates?: (type: string) => unknown }).getCACertificates?.("default");
+  return Array.isArray(list) && list.every(item => typeof item === "string") ? hash(Buffer.from(list.join("\n"))) : null;
+};
+// Fetch sends through the undici dispatcher registered under this symbol. Loading this module's
+// cheerio import loads npm undici, which registers its default Agent at import time, so the
+// registry is populated by the time this line runs; the bootstrap refuses a registry that
+// was populated before its imports. That load-time object is the anchor: the same object
+// must be in place at run start and before and after every dispatch. A replacement (for
+// example an Agent with a private CA) is honored by fetch, so it fails closed.
+const GLOBAL_DISPATCHER = Symbol.for("undici.globalDispatcher.1");
+const globalDispatcher = () => (globalThis as unknown as Record<symbol, unknown>)[GLOBAL_DISPATCHER];
+const dispatcherName = (value: unknown) => {
+  if (!value || typeof value !== "object") return null;
+  const name = (value as { constructor?: { name?: unknown } }).constructor?.name;
+  return typeof name === "string" ? name : null;
+};
+const DISPATCHER_AT_RUNNER_LOAD = globalDispatcher();
+let execPathDigest: { path: string; sha256: string } | undefined;
+function runtimeReceipt(input: NativeCaptureRunInput, startedAtUTC: string) {
+  if (execPathDigest?.path !== process.execPath) execPathDigest = { path: process.execPath, sha256: hash(readFileSync(process.execPath)) };
+  const defaultCAs = (tlsModule as { getCACertificates?: (type: string) => string[] }).getCACertificates?.("default");
+  const defaultCACertificatesSHA256 = defaultCAStoreSHA256();
+  need(defaultCACertificatesSHA256, "runtime_ca_store_unavailable");
+  const dispatcherAtStart = globalDispatcher();
+  need(DISPATCHER_AT_RUNNER_LOAD !== undefined && dispatcherAtStart === DISPATCHER_AT_RUNNER_LOAD && dispatcherName(dispatcherAtStart) === "Agent",
+    "global_dispatcher_not_runner_load_default");
+  const entryScript = typeof process.argv[1] === "string" ? resolve(process.argv[1]) : null;
+  const entryScriptSHA256 = entryScript ? fileSHA256(entryScript) : null;
+  const bootstrapPath = resolve(__dirname, "nativeProcessCaptureBootstrap.ts"), bootstrapSHA256 = fileSHA256(bootstrapPath);
+  return { version: "fhfh.blsh.native-capture-runtime.v1", startedAtUTC,
+    node: { version: process.version, execPath: process.execPath, execPathSHA256: execPathDigest.sha256, execArgv: [...process.execArgv] },
+    tls: { rootCertificatesSHA256: hash(Buffer.from(tlsModule.rootCertificates.join("\n"))), rootCertificateCount: tlsModule.rootCertificates.length,
+      defaultCACertificatesSHA256, defaultCACertificateCount: Array.isArray(defaultCAs) ? defaultCAs.length : null },
+    environmentPresence: Object.fromEntries(RUNTIME_OVERRIDE_KEYS.map(key => [key, present(key)])),
+    supabaseOrigin: input.supabaseOrigin, lifecycleMode: input.lifecycleMode,
+    adapterEnvironmentPresence: Object.fromEntries(ADAPTER_ENV_KEYS.map(key => [key, present(key)])),
+    launch: { entryScript, entryScriptSHA256, cwd: process.cwd(), bootstrapPath, bootstrapSHA256,
+      entryIsBootstrap: entryScript === bootstrapPath && entryScriptSHA256 !== null && entryScriptSHA256 === bootstrapSHA256,
+      environmentPresence: Object.fromEntries(LAUNCH_ENV_KEYS.map(key => [key, present(key)])),
+      otherTsNodeKeysPresent: Object.keys(process.env).filter(key => key.startsWith("TS_NODE_") && !(LAUNCH_ENV_KEYS as readonly string[]).includes(key)).sort() },
+    globalDispatcher: { present: dispatcherAtStart !== undefined, constructorName: dispatcherName(dispatcherAtStart), sameAsRunnerLoad: dispatcherAtStart === DISPATCHER_AT_RUNNER_LOAD },
+    valuesRecorded: false };
+}
 
 export interface CaptureDispatchSpec {
   url: string;
@@ -142,6 +261,7 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
   need(input.supabaseOrigin === ORIGIN && adapter.supabaseOrigin === ORIGIN, "wrong_project");
   need(["enabled", "disabled"].includes(input.lifecycleMode) && adapter.lifecycleMode === input.lifecycleMode, "lifecycle_mode_mismatch");
   const sources = sourceSnapshot(input, adapter);
+  const runtime = runtimeReceipt(input, new Date(start).toISOString());
   need(remainingRunMs() > 0, "capture_deadline");
   const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${DATE}`;
   const files: { file: string; bytes: number; sha256: string }[] = [];
@@ -162,6 +282,7 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
   const bindings = sources.map(source => ({ role: source.role, file: source.file, sha256: source.sha256, bytes: source.bytes.length }));
   writeJson("STARTED.json", { version: "fhfh.blsh.native-capture-run.v1", startedAtUTC: new Date(start).toISOString(), supabaseOrigin: ORIGIN, lifecycleMode: input.lifecycleMode, sourceBindings: bindings });
   writeJson("PLAN.json", input.plan);
+  writeJson("RUNTIME.json", runtime);
   for (const source of sources) write(source.file, source.bytes);
   syncDirectory();
 
@@ -172,6 +293,7 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
   const calls = new Map<CaptureOperation, { startedAt: number; state: "started" | "settled" | "uncertain"; completedAtUTC?: string }>();
   const observed = new Map<CaptureOperation, Captured<unknown>>();
   const permits = new Map<Group, { wall: number; monotonic: number }>();
+  const tlsObserved = new Map<CaptureOperation, TlsRecord>();
   const dispatch: CaptureDispatch = async (operation, action, reference) => {
     const guard = (value: unknown, code: string) => { if (!value) { stopped = true; fail(code); } };
     const now = Date.now(), monotonicNow = performance.now(), hold = operation === "hold";
@@ -180,6 +302,8 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
     guard(!stopped || hold, "operation_after_failure");
     guard(!calls.has(operation) && calls.size < (enabled ? 8 : 5), "operation_budget_exhausted");
     guard(now >= start && remainingRunMs(hold) > 0, "capture_deadline");
+    guard(defaultCAStoreSHA256() === runtime.tls.defaultCACertificatesSHA256, "ca_store_changed_before_dispatch");
+    guard(globalDispatcher() === DISPATCHER_AT_RUNNER_LOAD, "global_dispatcher_changed_before_dispatch");
     const lifecycle = ["begin", "finish", "hold"].includes(operation);
     if (lifecycle) {
       guard(reference && Object.keys(reference).join() === "jobToken" && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(reference.jobToken), "lifecycle_reference_missing_or_invalid");
@@ -257,8 +381,21 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
         finalUrlMatchesRequested: value.finalUrl === url, redirected: typeof value.redirected === "boolean" ? value.redirected : null,
         decodedBytes: value.bytes instanceof Uint8Array ? value.bytes.byteLength : Number.isSafeInteger(value.decodedBytes) && (value.decodedBytes as number) >= 0 ? value.decodedBytes : null,
       } : null;
-      writeJson(`operation-${calls.size}-SETTLED.json`, { operation, completedAtUTC: record.completedAtUTC, permit, transport: facts });
+      // Every dispatched HTTPS provider/admission operation needs its TLS observation.
+      // Lifecycle receipts (enabled mode only) are not covered by this observation.
+      // The CA store is re-read after settlement and recorded with the TLS facts.
+      const caStore = defaultCAStoreSHA256();
+      const observedTls = lifecycle ? null : tlsFacts(isObject(value) ? value.tls : undefined, url, [...tlsObserved.values()]);
+      const dispatcherNow = globalDispatcher();
+      const dispatcherFacts: DispatcherFacts = { present: dispatcherNow !== undefined, constructorName: dispatcherName(dispatcherNow),
+        identityUnchanged: dispatcherNow === DISPATCHER_AT_RUNNER_LOAD };
+      const tls = observedTls && { ...observedTls, defaultCACertificatesSHA256: caStore, globalDispatcher: dispatcherFacts };
+      writeJson(`operation-${calls.size}-SETTLED.json`, { operation, completedAtUTC: record.completedAtUTC, permit, transport: facts, ...(lifecycle ? {} : { tls }) });
       need(permit === null || permit === "allowed", "permit_not_usable");
+      need(lifecycle || tls !== null, "tls_observation_missing");
+      need(caStore === runtime.tls.defaultCACertificatesSHA256, "ca_store_changed");
+      need(dispatcherFacts.identityUnchanged, "global_dispatcher_changed");
+      if (tls) tlsObserved.set(operation, { index: calls.size, tls });
       const captured = { operation, completedAtUTC: record.completedAtUTC, witness: Object.freeze({}), value };
       observed.set(operation, captured);
       return captured;
@@ -280,6 +417,8 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
     const transport = observation!.value;
     need(isObject(transport) && transport.status === response.status && transport.finalUrl === response.finalUrl && transport.redirected === response.redirected, "response_transport_facts_changed");
     need(response.status === 200 && response.finalUrl === expectedUrl && response.redirected === false, "response_transport_invalid");
+    const tls = tlsObserved.get(operation)?.tls;
+    need(tls, "response_without_tls_observation");
     need(response.bytes instanceof Uint8Array && response.bytes.length > 0 && response.bytes.length <= (name === "schedule" ? MIB : 2 * MIB), "response_byte_limit");
     const bytes = Buffer.from(new Uint8Array(response.bytes));
     let parsedRows: number | null = null, games: number[] | null = null;
@@ -298,7 +437,7 @@ export async function runNativeProcessCapture(input: NativeCaptureRunInput, adap
     writeJson(`${name}.TRANSPORT-OBSERVATION.json`, {
       status: "candidate_requires_adapter_and_source_review", operation, file, sha256: hash(bytes), bytes: bytes.length,
       retrievedAtUTC: captured.completedAtUTC, retainedAtUTC: new Date().toISOString(), httpStatus: response.status,
-      finalUrl: response.finalUrl, redirected: response.redirected, TLSVerified: null,
+      finalUrl: response.finalUrl, redirected: response.redirected, TLSVerified: null, tls,
       tlsEvidence: "pending_runtime_review", representation: name === "schedule" ? "original_decoded_body" : "client_redacted_parser_input",
       sourceBindings: bindings, parsedRows, completedGameIds: games,
       originalPublicationUTC: null, modelDefinition: "unknown", independentlyAccepted: false, advancedAdmission: false, score: null,

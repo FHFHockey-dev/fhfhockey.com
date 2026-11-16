@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { z } from "zod";
 import {
   buildEndpointScanSummary,
   countFailingPreflightGates,
@@ -13,6 +14,10 @@ import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import supabase from "lib/supabase/server";
 import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
 import { requireExternalInputProvenRun } from "lib/projections/externalInputProof";
+import { creditedStartLabels } from "lib/projections/queries/goalie-queries";
+import { readGoalieCandidatesContract } from "lib/projections/goalie/goalieCandidates";
+import { getSeasonLeagueSavePct } from "lib/projections/goalie/leagueSavePct";
+import { timestampMicros } from "lib/projections/evidenceTime";
 import { evaluateForgeCalibrationEligibility } from "lib/projections/calibrationEligibility";
 import {
   buildSkaterModeledHeadTotals,
@@ -120,6 +125,38 @@ function knownStat(value: unknown): number | null {
   if (value == null) return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+/** NHL WGO game rows store TOI in seconds, including sub-minute appearances. */
+export function wgoActualToiSeconds(actual: Record<string, unknown>): number | null {
+  const parts = [actual.ev_time_on_ice, actual.pp_toi, actual.sh_time_on_ice].map(knownStat);
+  if (parts.every((part): part is number => part != null && part >= 0)) {
+    return parts.reduce((sum, part) => sum + part, 0);
+  }
+  const total = knownStat(actual.toi_per_game);
+  return total != null && total >= 0 ? total : null;
+}
+
+type AccuracyGame = { id: number; date: string; startTime: string; homeTeamId: number; awayTeamId: number };
+type IssuanceDiagnostics = {
+  policy: "latest_date_run_pregame_only";
+  latestPregameSelectionDeferred: true;
+  skaterRowsExcluded: number;
+  goalieTeamRowsExcluded: number;
+};
+
+/** Conservative subset under the current date-wide SQL fence. Never relabel an older run. */
+function isPregameRow(row: Record<string, any>, game: AccuracyGame | undefined, runId: string, asOfDate: string, finishedAt: unknown): boolean {
+  const start = timestampMicros(game?.startTime ?? "");
+  const finished = timestampMicros(typeof finishedAt === "string" ? finishedAt : "");
+  const created = timestampMicros(row.created_at ?? "");
+  const updated = timestampMicros(row.updated_at ?? "");
+  return !!game && row.run_id === runId && row.as_of_date === asOfDate
+    && start != null && finished != null && created != null && updated != null
+    // created_at is database time; updated_at can be stamped just before insertion.
+    && created <= finished && updated <= finished && finished < start
+    && [game.homeTeamId, game.awayTeamId].includes(row.team_id)
+    && row.opponent_team_id === (row.team_id === game.homeTeamId ? game.awayTeamId : game.homeTeamId);
 }
 
 function sumKnown(a: number | null, b: number | null): number | null {
@@ -265,8 +302,44 @@ type ReliabilityBin = {
 
 type ProbabilityCalibrationSummary = {
   sample_count: number;
-  brier_score: number;
+  brier_score: number | null;
   reliability_bins: ReliabilityBin[];
+};
+
+type GoalieProbabilityCalibration = {
+  /** Compatibility key: the stored top pick only, not the full candidate set. */
+  starter_probability: ProbabilityCalibrationSummary;
+  all_candidate_starter_probability: ProbabilityCalibrationSummary;
+  win_probability: ProbabilityCalibrationSummary;
+  shutout_probability: ProbabilityCalibrationSummary;
+};
+
+const probabilityAccumulatorSchema = z.object({
+  count: z.number().int().nonnegative(), brier_sum: z.number().finite().nonnegative(),
+  bins: z.array(z.object({ count: z.number().int().nonnegative(), predicted_sum: z.number().finite().nonnegative(),
+    observed_sum: z.number().int().nonnegative() })).length(10),
+}).refine(acc => acc.brier_sum <= acc.count && acc.bins.reduce((sum, bin) => sum + bin.count, 0) === acc.count
+  && acc.bins.every(bin => bin.predicted_sum <= bin.count && bin.observed_sum <= bin.count));
+const goalieEvaluationDaySchema = z.object({
+  contract: z.literal("credited_candidate_pregame_v1"),
+  probability: z.object({ starter_probability: probabilityAccumulatorSchema, all_candidate_starter_probability: probabilityAccumulatorSchema,
+    win_probability: probabilityAccumulatorSchema, shutout_probability: probabilityAccumulatorSchema }),
+  coverage: z.record(z.object({ total: z.number().int().nonnegative(), in_range: z.number().int().nonnegative() })
+    .refine(value => value.in_range <= value.total)),
+  stats: z.array(z.object({ date: z.string(), stat_key: z.enum(["saves", "goals_against", "win_prob", "shutout_prob"]),
+    player_count: z.number().int().nonnegative(), error_abs_sum: z.number().finite().nonnegative(), error_sq_sum: z.number().finite().nonnegative() }))
+    .max(4).refine(rows => new Set(rows.map(row => row.stat_key)).size === rows.length),
+});
+type GoalieEvaluationDay = z.infer<typeof goalieEvaluationDaySchema>;
+type GoalieRollingDiagnostics = {
+  window_days: 30;
+  contract: GoalieEvaluationDay["contract"];
+  starter_probability_population: "top_pick";
+  conditional_stat_population: "credited_starts";
+  interval_basis: "candidate_intervals_unavailable";
+  dates: string[];
+  probability: GoalieProbabilityCalibration;
+  intervals: IntervalCoverageSummary;
 };
 
 type IntervalCoverageSummary = Record<
@@ -321,7 +394,8 @@ type LaunchGateEvaluation = {
   gate_key: string;
   description: string;
   status: LaunchGateStatus;
-  actual_value: number;
+  actual_value: number | null;
+  available?: boolean;
   threshold: {
     operator: "<=" | ">=" | "between";
     value: number | [number, number];
@@ -968,11 +1042,7 @@ function finalizeSkaterMissAttributionDiagnostics(acc: {
 function buildGoalieLaunchGates(args: {
   actualDate: string;
   goalieStatDiagnostics: GoalieStatDiagnostics;
-  goalieProbabilityCalibration: {
-    starter_probability: ProbabilityCalibrationSummary;
-    win_probability: ProbabilityCalibrationSummary;
-    shutout_probability: ProbabilityCalibrationSummary;
-  };
+  goalieProbabilityCalibration: GoalieProbabilityCalibration;
   goalieIntervalCoverageDiagnostics: IntervalCoverageSummary;
 }): GoalieLaunchGates {
   const t = GOALIE_LAUNCH_GATE_THRESHOLDS;
@@ -992,8 +1062,9 @@ function buildGoalieLaunchGates(args: {
   addGate({
     gate_key: "saves_mae_max_30d",
     description: "30d MAE on goalie saves projection",
-    status: savesMae30 <= t.saves_mae_max_30d ? "PASS" : "FAIL",
-    actual_value: savesMae30,
+    status: sampleCount > 0 && savesMae30 <= t.saves_mae_max_30d ? "PASS" : "FAIL",
+    available: sampleCount > 0,
+    actual_value: sampleCount > 0 ? savesMae30 : null,
     threshold: { operator: "<=", value: t.saves_mae_max_30d },
   });
 
@@ -1001,8 +1072,9 @@ function buildGoalieLaunchGates(args: {
   addGate({
     gate_key: "goals_against_mae_max_30d",
     description: "30d MAE on goalie goals-against projection",
-    status: gaMae30 <= t.goals_against_mae_max_30d ? "PASS" : "FAIL",
-    actual_value: gaMae30,
+    status: args.goalieStatDiagnostics.goals_against.rolling_30d.player_count > 0 && gaMae30 <= t.goals_against_mae_max_30d ? "PASS" : "FAIL",
+    available: args.goalieStatDiagnostics.goals_against.rolling_30d.player_count > 0,
+    actual_value: args.goalieStatDiagnostics.goals_against.rolling_30d.player_count > 0 ? gaMae30 : null,
     threshold: { operator: "<=", value: t.goals_against_mae_max_30d },
   });
 
@@ -1011,7 +1083,8 @@ function buildGoalieLaunchGates(args: {
   addGate({
     gate_key: "starter_brier_max_30d",
     description: "Starter probability Brier score over 30d window",
-    status: starterBrier <= t.starter_brier_max_30d ? "PASS" : "FAIL",
+    status: starterBrier != null && starterBrier <= t.starter_brier_max_30d ? "PASS" : "FAIL",
+    available: starterBrier != null,
     actual_value: starterBrier,
     threshold: { operator: "<=", value: t.starter_brier_max_30d },
   });
@@ -1021,7 +1094,8 @@ function buildGoalieLaunchGates(args: {
   addGate({
     gate_key: "win_brier_max_30d",
     description: "Win probability Brier score over 30d window",
-    status: winBrier <= t.win_brier_max_30d ? "PASS" : "FAIL",
+    status: winBrier != null && winBrier <= t.win_brier_max_30d ? "PASS" : "FAIL",
+    available: winBrier != null,
     actual_value: winBrier,
     threshold: { operator: "<=", value: t.win_brier_max_30d },
   });
@@ -1031,22 +1105,25 @@ function buildGoalieLaunchGates(args: {
   addGate({
     gate_key: "shutout_brier_max_30d",
     description: "Shutout probability Brier score over 30d window",
-    status: shutoutBrier <= t.shutout_brier_max_30d ? "PASS" : "FAIL",
+    status: shutoutBrier != null && shutoutBrier <= t.shutout_brier_max_30d ? "PASS" : "FAIL",
+    available: shutoutBrier != null,
     actual_value: shutoutBrier,
     threshold: { operator: "<=", value: t.shutout_brier_max_30d },
   });
 
   const savesCoverage =
-    args.goalieIntervalCoverageDiagnostics.saves?.p10_p90_hit_rate ?? 0;
+    args.goalieIntervalCoverageDiagnostics.saves?.sample_count
+      ? args.goalieIntervalCoverageDiagnostics.saves.p10_p90_hit_rate : null;
   addGate({
     gate_key: "saves_interval_hit_rate_30d_range",
     description:
       "P10/P90 interval hit-rate for saves in acceptable calibration band",
     status:
-      savesCoverage >= t.saves_interval_hit_rate_30d_range[0] &&
+      savesCoverage != null && savesCoverage >= t.saves_interval_hit_rate_30d_range[0] &&
       savesCoverage <= t.saves_interval_hit_rate_30d_range[1]
         ? "PASS"
         : "FAIL",
+    available: savesCoverage != null,
     actual_value: savesCoverage,
     threshold: {
       operator: "between",
@@ -1055,16 +1132,18 @@ function buildGoalieLaunchGates(args: {
   });
 
   const goalsCoverage =
-    args.goalieIntervalCoverageDiagnostics.goals_allowed?.p10_p90_hit_rate ?? 0;
+    args.goalieIntervalCoverageDiagnostics.goals_allowed?.sample_count
+      ? args.goalieIntervalCoverageDiagnostics.goals_allowed.p10_p90_hit_rate : null;
   addGate({
     gate_key: "goals_allowed_interval_hit_rate_30d_range",
     description:
       "P10/P90 interval hit-rate for goals allowed in acceptable calibration band",
     status:
-      goalsCoverage >= t.goals_allowed_interval_hit_rate_30d_range[0] &&
+      goalsCoverage != null && goalsCoverage >= t.goals_allowed_interval_hit_rate_30d_range[0] &&
       goalsCoverage <= t.goals_allowed_interval_hit_rate_30d_range[1]
         ? "PASS"
         : "FAIL",
+    available: goalsCoverage != null,
     actual_value: goalsCoverage,
     threshold: {
       operator: "between",
@@ -1210,7 +1289,7 @@ function finalizeCalibrationAccumulator(
   const binCount = acc.bins.length;
   return {
     sample_count: acc.count,
-    brier_score: acc.count > 0 ? round4(acc.brier_sum / acc.count) : 0,
+    brier_score: acc.count > 0 ? round4(acc.brier_sum / acc.count) : null,
     reliability_bins: acc.bins.map((bin, idx) => {
       const binStart = idx / binCount;
       const binEnd = (idx + 1) / binCount;
@@ -1227,9 +1306,61 @@ function finalizeCalibrationAccumulator(
   };
 }
 
+async function fetchGoalieEvaluationHistory(actualDate: string): Promise<Array<{ date: string; metrics: GoalieEvaluationDay }>> {
+  const { data, count, error } = await supabase.from("forge_projection_calibration_daily")
+    .select("date,metrics", { count: "exact" }).eq("scope", "goalie_evaluation_accumulators_v1")
+    .gte("date", addDays(actualDate, -29)).lt("date", actualDate).order("date", { ascending: true }).limit(30);
+  if (error) throw error;
+  if (count == null || count !== data?.length || count > 29) throw new Error("Goalie evaluation history is incomplete.");
+  const dates = new Set<string>();
+  return (data ?? []).map(row => {
+    const parsed = goalieEvaluationDaySchema.safeParse(row.metrics);
+    if (!parsed.success || !row.date || row.date < addDays(actualDate, -29) || row.date >= actualDate
+      || dates.has(row.date) || parsed.data.stats.some(stat => stat.date !== row.date)) {
+      throw new Error("Goalie evaluation history has invalid or contradictory accumulator evidence.");
+    }
+    dates.add(row.date);
+    return { date: row.date, metrics: parsed.data };
+  });
+}
+
+function mergeGoalieEvaluationDays(days: Array<{ date: string; metrics: GoalieEvaluationDay }>): GoalieRollingDiagnostics {
+  const probability = { starter_probability: initCalibrationAccumulator(), all_candidate_starter_probability: initCalibrationAccumulator(),
+    win_probability: initCalibrationAccumulator(), shutout_probability: initCalibrationAccumulator() };
+  const coverage = new Map<string, CoverageAccumulator>();
+  for (const day of days) {
+    for (const key of Object.keys(probability) as Array<keyof typeof probability>) {
+      const target = probability[key], source = day.metrics.probability[key];
+      target.count += source.count;
+      target.brier_sum += source.brier_sum;
+      source.bins.forEach((bin, index) => {
+        target.bins[index].count += bin.count;
+        target.bins[index].predicted_sum += bin.predicted_sum;
+        target.bins[index].observed_sum += bin.observed_sum;
+      });
+    }
+    for (const [key, value] of Object.entries(day.metrics.coverage)) {
+      const target = coverage.get(key) ?? { total: 0, in_range: 0 };
+      target.total += value.total;
+      target.in_range += value.in_range;
+      coverage.set(key, target);
+    }
+  }
+  return { window_days: 30, contract: "credited_candidate_pregame_v1",
+    starter_probability_population: "top_pick", conditional_stat_population: "credited_starts",
+    interval_basis: "candidate_intervals_unavailable", dates: days.map(day => day.date).sort(),
+    probability: { starter_probability: finalizeCalibrationAccumulator(probability.starter_probability),
+      all_candidate_starter_probability: finalizeCalibrationAccumulator(probability.all_candidate_starter_probability),
+      win_probability: finalizeCalibrationAccumulator(probability.win_probability),
+      shutout_probability: finalizeCalibrationAccumulator(probability.shutout_probability) },
+    intervals: toIntervalCoverageSummary(finalizeCoverage(coverage)),
+  };
+}
+
 async function fetchGoalieStatDiagnostics(
   actualDate: string,
   dailyGoalieStatRows: StatAggregateRow[],
+  history: Array<{ date: string; metrics: GoalieEvaluationDay }>,
 ): Promise<GoalieStatDiagnostics> {
   const statKeyByDiagnosticKey = {
     saves: "saves",
@@ -1271,27 +1402,9 @@ async function fetchGoalieStatDiagnostics(
     };
   }
 
-  if (!supabase) return diagnostics;
-
-  const statKeys = Object.values(statKeyByDiagnosticKey);
-  const windowStart30d = addDays(actualDate, -29);
-  const { data, error } = await supabase
-    .from("forge_projection_accuracy_stat_daily")
-    .select("date,stat_key,error_abs_sum,error_sq_sum,player_count")
-    .eq("scope", "goalie")
-    .in("stat_key", statKeys)
-    .gte("date", windowStart30d)
-    .lte("date", actualDate)
-    .order("date", { ascending: false });
-  if (error) throw error;
-
-  const rows = (data ?? []) as Array<{
-    date: string | null;
-    stat_key: string | null;
-    error_abs_sum: number | null;
-    error_sq_sum: number | null;
-    player_count: number | null;
-  }>;
+  // Fresh current-day rows replace any previous evaluation of this date. Only
+  // versioned credited-candidate history has compatible populations and sums.
+  const rows = [...history.flatMap(day => day.metrics.stats), ...dailyGoalieStatRows];
 
   for (const [diagnosticKey, statKey] of Object.entries(
     statKeyByDiagnosticKey,
@@ -1457,17 +1570,19 @@ async function persistGoalieCalibrationSnapshots(args: {
   skaterMissAttributionDiagnostics: SkaterComponentMissAttributionDiagnostics;
   skaterRollingDashboard: SkaterRollingDashboard;
   goalieStatDiagnostics: GoalieStatDiagnostics;
-  goalieProbabilityCalibration: {
-    starter_probability: ProbabilityCalibrationSummary;
-    win_probability: ProbabilityCalibrationSummary;
-    shutout_probability: ProbabilityCalibrationSummary;
-  };
+  goalieProbabilityCalibration: GoalieProbabilityCalibration;
   goalieIntervalCoverageDiagnostics: IntervalCoverageSummary;
   goalieMissAttributionDiagnostics: GoalieMissAttributionDiagnostics;
   goalieLaunchGates: GoalieLaunchGates;
+  goalieEvaluationDay: GoalieEvaluationDay;
+  goalieRollingDiagnostics: GoalieRollingDiagnostics;
 }) {
   if (!supabase) return;
   const rows = [
+    { date: args.actualDate, projection_date: args.projectionDate, scope: "goalie_evaluation_accumulators_v1",
+      source_run_id: args.runId, metrics: args.goalieEvaluationDay, updated_at: new Date().toISOString() },
+    { date: args.actualDate, projection_date: args.projectionDate, scope: "goalie_rolling_diagnostics_v1",
+      source_run_id: args.runId, metrics: args.goalieRollingDiagnostics, updated_at: new Date().toISOString() },
     {
       date: args.actualDate,
       projection_date: args.projectionDate,
@@ -1560,19 +1675,19 @@ async function persistGoalieCalibrationSnapshots(args: {
   if (error) throw error;
 }
 
-async function fetchGameDates(gameIds: number[]): Promise<Map<number, string>> {
+async function fetchAccuracyGames(gameIds: number[]): Promise<Map<number, AccuracyGame>> {
   if (!supabase || gameIds.length === 0) return new Map();
-  const dateByGameId = new Map<number, string>();
+  const dateByGameId = new Map<number, AccuracyGame>();
   for (const batch of chunk(gameIds, BATCH_SIZE)) {
     const { data, error } = await supabase
       .from("games")
-      .select("id,date")
+      .select("id,date,startTime,homeTeamId,awayTeamId")
       .in("id", batch);
     if (error) throw error;
     for (const row of data ?? []) {
       const id = (row as any).id as number;
       const date = (row as any).date as string;
-      if (id != null && date) dateByGameId.set(id, date);
+      if (id != null && date) dateByGameId.set(id, row as AccuracyGame);
     }
   }
   return dateByGameId;
@@ -1606,45 +1721,57 @@ async function fetchSkaterActualsByPlayerDate(opts: {
 async function fetchGoalieActualsByDate(
   actualDate: string,
   goalieIds: number[],
-): Promise<Map<number, any>> {
-  const map = new Map<number, any>();
+): Promise<Map<string, any>> {
+  const map = new Map<string, any>();
   if (!supabase || goalieIds.length === 0) return map;
   for (const batch of chunk(goalieIds, BATCH_SIZE)) {
     const { data, error } = await supabase
       .from("goalie_stats_unified")
-      .select("player_id,goals_against,saves,wins,shutouts,date")
+      .select("game_id,team_id,player_id,goals_against,saves,wins,shutouts,date")
       .eq("date", actualDate)
       .in("player_id", batch);
     if (error) throw error;
     for (const row of data ?? []) {
       const playerId = (row as any).player_id as number | null;
       if (playerId == null) continue;
-      map.set(playerId, row);
+      if ((row as any).game_id != null && (row as any).team_id != null) {
+        const key = `${(row as any).game_id}:${(row as any).team_id}:${playerId}`;
+        map.set(key, map.has(key) ? null : row);
+      }
     }
   }
   return map;
 }
 
-async function fetchGoalieActualsFallbackByDate(
-  actualDate: string,
-  goalieIds: number[],
-): Promise<Map<number, any>> {
-  const map = new Map<number, any>();
-  if (!supabase || goalieIds.length === 0) return map;
-  for (const batch of chunk(goalieIds, BATCH_SIZE)) {
-    const { data, error } = await supabase
-      .from("forge_goalie_game")
-      .select("goalie_id,goals_allowed,saves,game_date")
-      .eq("game_date", actualDate)
-      .in("goalie_id", batch);
+async function fetchGoalieAppearances(actualDate: string, gameIds: number[]): Promise<any[]> {
+  const rows: any[] = [];
+  for (const batch of chunk(gameIds, BATCH_SIZE)) {
+    const { data, error } = await supabase.from("forge_goalie_game")
+      .select("game_id,team_id,goalie_id,goals_allowed,saves,game_date")
+      .eq("game_date", actualDate).in("game_id", batch);
     if (error) throw error;
-    for (const row of data ?? []) {
-      const goalieId = (row as any).goalie_id as number | null;
-      if (goalieId == null) continue;
-      map.set(goalieId, row);
-    }
+    rows.push(...(data ?? []));
   }
-  return map;
+  return rows;
+}
+
+async function fetchCreditedStarters(appearances: any[]): Promise<Map<string, number | null>> {
+  const gameIds = [...new Set(appearances.map(row => row.game_id).filter(Number.isSafeInteger))];
+  const labels: Array<{ game_id: number | null; goalie_id: number | null; games_started: number | null }> = [];
+  for (const batch of chunk(gameIds, BATCH_SIZE)) {
+    const { data, error } = await supabase.from("wgo_goalie_stats")
+      .select("game_id,goalie_id,games_started").in("game_id", batch);
+    if (error) throw error;
+    labels.push(...(data ?? []));
+  }
+  const teams = new Map<string, any[]>();
+  for (const row of appearances) {
+    if (row.game_id == null || row.team_id == null) continue;
+    const key = `${row.game_id}:${row.team_id}`;
+    teams.set(key, [...(teams.get(key) ?? []), row]);
+  }
+  return new Map([...teams].map(([key, rows]) => [key,
+    creditedStartLabels(rows, labels)[0]?.starterGoalieId ?? null]));
 }
 
 async function fetchGoalieActualCount(actualDate: string): Promise<number> {
@@ -1684,25 +1811,26 @@ async function runAccuracyForDate(
   goalieRows: number;
   totalRows: number;
   skaterActualMatchDiagnostics: SkaterActualMatchDiagnostics;
+  issuanceDiagnostics: IssuanceDiagnostics;
+  goalieRollingDiagnostics: GoalieRollingDiagnostics;
   unknownPredictionSkips: UnknownPredictionSkips;
   unknownStatSkips: UnknownStatSkips;
   goalieMatchDiagnostics: {
     goalieProjectionCount: number;
+    goalieCandidateCount: number;
     goalieActualCount: number;
     goalieMatchedByPlayer: number;
     goalieActualFallbackCount: number;
   };
   goalieHoldoutComparison: {
     baseline_definition: string;
+    baseline_as_of_date: string;
+    baseline: Awaited<ReturnType<typeof getSeasonLeagueSavePct>> | null;
     saves: MetricComparison;
     goals_against: MetricComparison;
   };
   goalieStatDiagnostics: GoalieStatDiagnostics;
-  goalieProbabilityCalibration: {
-    starter_probability: ProbabilityCalibrationSummary;
-    win_probability: ProbabilityCalibrationSummary;
-    shutout_probability: ProbabilityCalibrationSummary;
-  };
+  goalieProbabilityCalibration: GoalieProbabilityCalibration;
   goalieIntervalCoverageDiagnostics: IntervalCoverageSummary;
   goalieMissAttributionDiagnostics: GoalieMissAttributionDiagnostics;
   goalieLaunchGates: GoalieLaunchGates;
@@ -1729,28 +1857,48 @@ async function runAccuracyForDate(
     (error as any).details = calibrationEligibility;
     throw error;
   }
+  const { data: selectedRun, error: selectedRunError } = await supabase.from("forge_runs")
+    .select("metrics").eq("run_id", runId).maybeSingle();
+  if (selectedRunError) throw selectedRunError;
+  const finishedAt = (selectedRun?.metrics as Record<string, unknown> | null)?.finished_at;
+  const issuanceDiagnostics: IssuanceDiagnostics = {
+    policy: "latest_date_run_pregame_only", latestPregameSelectionDeferred: true,
+    skaterRowsExcluded: 0, goalieTeamRowsExcluded: 0,
+  };
   const { data: projections, error: projErr } = await supabase
     .from("forge_player_projections")
     .select(
-      "game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_toi_es_seconds,proj_toi_pp_seconds,proj_toi_pk_seconds,proj_hits,proj_blocks,uncertainty",
+      "run_id,as_of_date,created_at,updated_at,game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_toi_es_seconds,proj_toi_pp_seconds,proj_toi_pk_seconds,proj_hits,proj_blocks,uncertainty",
     )
     .eq("run_id", runId)
     .eq("as_of_date", projectionDate)
     .eq("horizon_games", 1);
   if (projErr) throw projErr;
 
+  const { data: goalieProjections, error: goalieErr } = await supabase
+    .from("forge_goalie_projections")
+    .select(
+      "run_id,as_of_date,created_at,updated_at,game_id,goalie_id,team_id,opponent_team_id,starter_probability,proj_shots_against,proj_saves,proj_goals_allowed,proj_win_prob,proj_shutout_prob,uncertainty",
+    )
+    .eq("run_id", runId)
+    .eq("as_of_date", projectionDate)
+    .eq("horizon_games", 1);
+  if (goalieErr) throw goalieErr;
+
+  const storedGoalieRows = (goalieProjections ?? []) as any[];
+
   const playerProjections = (projections ?? []) as any[];
   const gameIds = Array.from(
     new Set(
-      playerProjections
+      [...playerProjections, ...storedGoalieRows]
         .map((p) => Number(p.game_id))
         .filter((n) => Number.isFinite(n)),
     ),
   );
-  const gameDatesById = await fetchGameDates(gameIds);
+  const gamesById = await fetchAccuracyGames(gameIds);
   const validGameIds = new Set(
-    Array.from(gameDatesById.entries())
-      .filter(([, date]) => date === actualDate)
+    Array.from(gamesById.entries())
+      .filter(([, game]) => game.date === actualDate)
       .map(([id]) => id),
   );
   const projectedPlayerIds = Array.from(
@@ -1793,6 +1941,10 @@ async function runAccuracyForDate(
   for (const row of playerProjections) {
     const gameId = Number(row.game_id);
     if (!validGameIds.has(gameId)) continue;
+    if (!isPregameRow(row, gamesById.get(gameId), runId, projectionDate, finishedAt)) {
+      issuanceDiagnostics.skaterRowsExcluded += 1;
+      continue;
+    }
     const playerId = Number(row.player_id);
     if (!Number.isFinite(playerId)) continue;
 
@@ -1952,54 +2104,44 @@ async function runAccuracyForDate(
     const predictedToiSeconds = Number.isFinite(predToiSecondsRaw)
       ? Math.max(1, predToiSecondsRaw)
       : 1;
-    const actualEv = Number(actual.ev_time_on_ice ?? 0);
-    const actualPp = Number(actual.pp_toi ?? 0);
-    const actualSh = Number(actual.sh_time_on_ice ?? 0);
-    const actualToiField = Number(actual.toi_per_game ?? 0);
-    const componentsToiRaw = actualEv + actualPp + actualSh;
-    const sourceToiRaw =
-      componentsToiRaw > 0 ? componentsToiRaw : actualToiField;
-    const actualToiSeconds =
-      sourceToiRaw > 0
-        ? sourceToiRaw <= 80
-          ? sourceToiRaw * 60
-          : sourceToiRaw
-        : predictedToiSeconds;
-    const safeActualToiSeconds = Math.max(1, actualToiSeconds);
-    const predictedShotsSafe = Math.max(0, predictedShots);
-    const actualShotsSafe = Math.max(0, actualShots);
-    const predictedScoringFp =
-      DEFAULT_SKATER_FANTASY_POINTS.GOALS * predictedGoals +
-      DEFAULT_SKATER_FANTASY_POINTS.ASSISTS * predictedAssists +
-      DEFAULT_SKATER_FANTASY_POINTS.PP_POINTS * predictedPpPoints;
-    const actualScoringFp =
-      DEFAULT_SKATER_FANTASY_POINTS.GOALS * actualGoals +
-      DEFAULT_SKATER_FANTASY_POINTS.ASSISTS * actualAssists +
-      DEFAULT_SKATER_FANTASY_POINTS.PP_POINTS * actualPpPoints;
-    const predictedShotRate = predictedShotsSafe / predictedToiSeconds;
-    const actualShotRate = actualShotsSafe / safeActualToiSeconds;
-    const predictedFpPerShot =
-      DEFAULT_SKATER_FANTASY_POINTS.SHOTS_ON_GOAL +
-      predictedScoringFp / Math.max(0.1, predictedShotsSafe);
-    const actualFpPerShot =
-      DEFAULT_SKATER_FANTASY_POINTS.SHOTS_ON_GOAL +
-      actualScoringFp / Math.max(0.1, actualShotsSafe);
-    const fpBase = predictedToiSeconds * predictedShotRate * predictedFpPerShot;
-    const fpToiAdjusted =
-      safeActualToiSeconds * predictedShotRate * predictedFpPerShot;
-    const fpShotRateAdjusted =
-      safeActualToiSeconds * actualShotRate * predictedFpPerShot;
-    const fpConversionAdjusted =
-      safeActualToiSeconds * actualShotRate * actualFpPerShot;
-    skaterMissAttribution.sampleCount += 1;
-    skaterMissAttribution.totalAbsFpError += errorAbs;
-    skaterMissAttribution.toiContribution += Math.abs(fpToiAdjusted - fpBase);
-    skaterMissAttribution.shotRateContribution += Math.abs(
-      fpShotRateAdjusted - fpToiAdjusted,
-    );
-    skaterMissAttribution.conversionContribution += Math.abs(
-      fpConversionAdjusted - fpShotRateAdjusted,
-    );
+    const actualToiSeconds = wgoActualToiSeconds(actual);
+    if (actualToiSeconds != null) {
+      const safeActualToiSeconds = Math.max(1, actualToiSeconds);
+      const predictedShotsSafe = Math.max(0, predictedShots);
+      const actualShotsSafe = Math.max(0, actualShots);
+      const predictedScoringFp =
+        DEFAULT_SKATER_FANTASY_POINTS.GOALS * predictedGoals +
+        DEFAULT_SKATER_FANTASY_POINTS.ASSISTS * predictedAssists +
+        DEFAULT_SKATER_FANTASY_POINTS.PP_POINTS * predictedPpPoints;
+      const actualScoringFp =
+        DEFAULT_SKATER_FANTASY_POINTS.GOALS * actualGoals +
+        DEFAULT_SKATER_FANTASY_POINTS.ASSISTS * actualAssists +
+        DEFAULT_SKATER_FANTASY_POINTS.PP_POINTS * actualPpPoints;
+      const predictedShotRate = predictedShotsSafe / predictedToiSeconds;
+      const actualShotRate = actualShotsSafe / safeActualToiSeconds;
+      const predictedFpPerShot =
+        DEFAULT_SKATER_FANTASY_POINTS.SHOTS_ON_GOAL +
+        predictedScoringFp / Math.max(0.1, predictedShotsSafe);
+      const actualFpPerShot =
+        DEFAULT_SKATER_FANTASY_POINTS.SHOTS_ON_GOAL +
+        actualScoringFp / Math.max(0.1, actualShotsSafe);
+      const fpBase = predictedToiSeconds * predictedShotRate * predictedFpPerShot;
+      const fpToiAdjusted =
+        safeActualToiSeconds * predictedShotRate * predictedFpPerShot;
+      const fpShotRateAdjusted =
+        safeActualToiSeconds * actualShotRate * predictedFpPerShot;
+      const fpConversionAdjusted =
+        safeActualToiSeconds * actualShotRate * actualFpPerShot;
+      skaterMissAttribution.sampleCount += 1;
+      skaterMissAttribution.totalAbsFpError += errorAbs;
+      skaterMissAttribution.toiContribution += Math.abs(fpToiAdjusted - fpBase);
+      skaterMissAttribution.shotRateContribution += Math.abs(
+        fpShotRateAdjusted - fpToiAdjusted,
+      );
+      skaterMissAttribution.conversionContribution += Math.abs(
+        fpConversionAdjusted - fpShotRateAdjusted,
+      );
+    }
     skaterResults.push({
       as_of_date: projectionDate,
       actual_date: actualDate,
@@ -2018,17 +2160,35 @@ async function runAccuracyForDate(
     });
   }
 
-  const { data: goalieProjections, error: goalieErr } = await supabase
-    .from("forge_goalie_projections")
-    .select(
-      "game_id,goalie_id,team_id,opponent_team_id,starter_probability,proj_shots_against,proj_saves,proj_goals_allowed,proj_win_prob,proj_shutout_prob,uncertainty",
-    )
-    .eq("run_id", runId)
-    .eq("as_of_date", projectionDate)
-    .eq("horizon_games", 1);
-  if (goalieErr) throw goalieErr;
-
-  const goalieProjectionRows = (goalieProjections ?? []) as any[];
+  const goalieProjectionRows: any[] = [];
+  for (const row of storedGoalieRows) {
+    const game = gamesById.get(Number(row.game_id));
+    const contract = readGoalieCandidatesContract(row.uncertainty);
+    const issuedAt = timestampMicros(contract?.issuance?.issued_at ?? "");
+    const cutoffAt = contract?.issuance?.information_cutoff_at;
+    const cutoff = cutoffAt == null ? null : timestampMicros(cutoffAt);
+    const finished = timestampMicros(typeof finishedAt === "string" ? finishedAt : "");
+    if (!validGameIds.has(Number(row.game_id)) || !isPregameRow(row, game, runId, projectionDate, finishedAt)
+      || !contract || contract.population !== "candidate_goalie_game"
+      || contract.game_id !== row.game_id || contract.team_id !== row.team_id
+      || contract.issuance?.run_id !== runId || contract.issuance?.as_of_date !== projectionDate
+      || issuedAt == null || finished == null || issuedAt > finished
+      || cutoffAt != null && (cutoff == null || cutoff > issuedAt)
+      || storedGoalieRows.filter(other => other.game_id === row.game_id && other.team_id === row.team_id).length !== 1) {
+      issuanceDiagnostics.goalieTeamRowsExcluded += 1;
+      continue;
+    }
+    for (const candidate of contract.rows) {
+      goalieProjectionRows.push({ ...row, goalie_id: candidate.goalie_id, top_pick: candidate.goalie_id === row.goalie_id,
+        starter_probability: candidate.start_probability,
+        proj_shots_against: candidate.if_starts.shots_against, proj_saves: candidate.if_starts.saves,
+        proj_goals_allowed: candidate.if_starts.goals_allowed, proj_win_prob: candidate.if_starts.credited_win_prob,
+        proj_shutout_prob: candidate.if_starts.shutout_prob,
+        // Stored uncertainty intervals describe the team mixture, not this conditional candidate.
+        uncertainty: { model: { save_pct: candidate.if_starts.modeled_save_pct } },
+      });
+    }
+  }
   const goalieIds = Array.from(
     new Set(
       goalieProjectionRows
@@ -2037,10 +2197,15 @@ async function runAccuracyForDate(
     ),
   );
   const goalieActuals = await fetchGoalieActualsByDate(actualDate, goalieIds);
-  const goalieActualsFallback = await fetchGoalieActualsFallbackByDate(
-    actualDate,
-    goalieIds,
-  );
+  const appearances = await fetchGoalieAppearances(actualDate, [...validGameIds]);
+  const creditedStarters = await fetchCreditedStarters(appearances);
+  const goalieActualsFallback = new Map<string, any>();
+  for (const row of appearances) {
+    const key = `${row.game_id}:${row.team_id}:${row.goalie_id}`;
+    goalieActualsFallback.set(key, goalieActualsFallback.has(key) ? null : row);
+  }
+  const leagueBaseline = goalieProjectionRows.length > 0
+    ? await getSeasonLeagueSavePct(projectionDate, new Map()) : null;
   const goalieResults: AccuracyResultRow[] = [];
   const goalieStatAggregates = new Map<string, StatAggregate>();
   const goalieCoverage = new Map<string, CoverageAccumulator>();
@@ -2050,6 +2215,7 @@ async function runAccuracyForDate(
   const goalsAgainstBaselineStats = initErrorStats();
   const goalieActualCount = await fetchGoalieActualCount(actualDate);
   const starterProbabilityCalibration = initCalibrationAccumulator();
+  const allCandidateStarterCalibration = initCalibrationAccumulator();
   const winProbabilityCalibration = initCalibrationAccumulator();
   const shutoutProbabilityCalibration = initCalibrationAccumulator();
   const missAttribution = initMissAttributionAccumulator();
@@ -2059,9 +2225,10 @@ async function runAccuracyForDate(
     if (!Number.isFinite(playerId)) continue;
     // forge_goalie_game has no decision columns, so a fallback row leaves
     // wins and shutouts unknown rather than scoring them as zero.
-    const fallback = goalieActualsFallback.get(playerId);
+    const key = `${row.game_id}:${row.team_id}:${playerId}`;
+    const fallback = goalieActualsFallback.get(key);
     const actualRow =
-      goalieActuals.get(playerId) ??
+      goalieActuals.get(key) ??
       (fallback
         ? {
             saves: fallback.saves,
@@ -2071,31 +2238,27 @@ async function runAccuracyForDate(
           }
         : null);
     const starterProbability = knownStat(row.starter_probability);
-    if (starterProbability == null) {
-      unknownStatSkips.prediction.starter_probability =
-        (unknownStatSkips.prediction.starter_probability ?? 0) + 1;
-    } else {
-      updateCalibrationAccumulator(
-        starterProbabilityCalibration,
-        starterProbability,
-        actualRow ? 1 : 0,
-      );
+    const creditedStarter = creditedStarters.get(`${row.game_id}:${row.team_id}`) ?? null;
+    const startLabel = creditedStarter == null ? null : Number(creditedStarter === playerId);
+    if (recordUnknownStat(unknownStatSkips, "starter_probability", starterProbability, startLabel)) {
+      updateCalibrationAccumulator(allCandidateStarterCalibration, starterProbability!, startLabel!);
+      if (row.top_pick) updateCalibrationAccumulator(starterProbabilityCalibration, starterProbability!, startLabel!);
     }
-    if (!actualRow) continue;
+    // Conditional W/SV/GA lines only have an outcome on the credited starter population.
+    if (startLabel !== 1 || !actualRow) continue;
     // The writer stores null when the win probability is unknown; the goalie's
-    // fantasy-point prediction depends on it, so the whole row is left out.
+    // fantasy-point prediction depends on it; independently known stats still score.
     if (row.proj_win_prob == null) {
       unknownPredictionSkips.goalieWinProbabilityRows += 1;
-      continue;
     }
 
     const actualSaves = knownStat(actualRow.saves);
     const actualGoalsAgainst = knownStat(actualRow.goals_against);
     const actualWins = knownStat(actualRow.wins);
     const actualShutouts = knownStat(actualRow.shutouts);
-    const projectedWins = Number(row.proj_win_prob);
+    const projectedWins = knownStat(row.proj_win_prob);
     const projectedShutouts = knownStat(row.proj_shutout_prob);
-    if (actualWins != null) {
+    if (projectedWins != null && actualWins != null) {
       updateCalibrationAccumulator(
         winProbabilityCalibration,
         projectedWins,
@@ -2116,7 +2279,7 @@ async function runAccuracyForDate(
       (projectedSaves != null && projectedGoalsAgainst != null
         ? Math.max(0, projectedSaves + projectedGoalsAgainst)
         : null);
-    const baselineSavePct = 0.9;
+    const baselineSavePct = leagueBaseline!.savePct;
     const baselineGoalsAgainst =
       projectedShotsAgainst == null
         ? null
@@ -2201,6 +2364,7 @@ async function runAccuracyForDate(
     );
 
     if (
+      projectedWins == null ||
       projectedSaves == null ||
       projectedGoalsAgainst == null ||
       projectedShotsAgainst == null ||
@@ -2238,7 +2402,7 @@ async function runAccuracyForDate(
       ? Math.max(0, Math.min(1, modeledSavePctFromMeta))
       : projectedShotsAgainst > 0
         ? Math.max(0, Math.min(1, projectedSaves / projectedShotsAgainst))
-        : 0.9;
+        : baselineSavePct;
     const actualSavePct =
       actualShotsAgainst > 0
         ? Math.max(0, Math.min(1, actualSaves / actualShotsAgainst))
@@ -2276,6 +2440,7 @@ async function runAccuracyForDate(
     });
   }
 
+  const goalieEvaluationHistory = await fetchGoalieEvaluationHistory(actualDate);
   const allResults = [...skaterResults, ...goalieResults];
   await replaceProjectionResultsAtomic(supabase as any, {
     asOfDate: projectionDate,
@@ -2374,6 +2539,9 @@ async function runAccuracyForDate(
     if (error) throw error;
   }
 
+  for (const key of ["saves", "goals_against", "win_prob", "shutout_prob"]) {
+    if (!goalieStatAggregates.has(key)) goalieStatAggregates.set(key, { count: 0, error_abs_sum: 0, error_sq_sum: 0 });
+  }
   const statDailyRows = [
     ...finalizeStatAggregates(skaterStatAggregates, actualDate, "skater"),
     ...finalizeStatAggregates(goalieStatAggregates, actualDate, "goalie"),
@@ -2389,6 +2557,7 @@ async function runAccuracyForDate(
   const goalieStatDiagnostics = await fetchGoalieStatDiagnostics(
     actualDate,
     dailyGoalieStatRows,
+    goalieEvaluationHistory,
   );
   const skaterStatDiagnostics = await fetchSkaterStatDiagnostics(
     actualDate,
@@ -2427,6 +2596,7 @@ async function runAccuracyForDate(
     starter_probability: finalizeCalibrationAccumulator(
       starterProbabilityCalibration,
     ),
+    all_candidate_starter_probability: finalizeCalibrationAccumulator(allCandidateStarterCalibration),
     win_probability: finalizeCalibrationAccumulator(winProbabilityCalibration),
     shutout_probability: finalizeCalibrationAccumulator(
       shutoutProbabilityCalibration,
@@ -2434,11 +2604,20 @@ async function runAccuracyForDate(
   };
   const goalieMissAttributionDiagnostics =
     finalizeMissAttributionDiagnostics(missAttribution);
+  const goalieEvaluationDay: GoalieEvaluationDay = goalieEvaluationDaySchema.parse({
+    contract: "credited_candidate_pregame_v1",
+    probability: { starter_probability: starterProbabilityCalibration, all_candidate_starter_probability: allCandidateStarterCalibration,
+      win_probability: winProbabilityCalibration, shutout_probability: shutoutProbabilityCalibration },
+    coverage: Object.fromEntries(goalieCoverage), stats: dailyGoalieStatRows,
+  });
+  const goalieRollingDiagnostics = mergeGoalieEvaluationDays([
+    ...goalieEvaluationHistory, { date: actualDate, metrics: goalieEvaluationDay },
+  ]);
   const goalieLaunchGates = buildGoalieLaunchGates({
     actualDate,
     goalieStatDiagnostics,
-    goalieProbabilityCalibration,
-    goalieIntervalCoverageDiagnostics,
+    goalieProbabilityCalibration: goalieRollingDiagnostics.probability,
+    goalieIntervalCoverageDiagnostics: goalieRollingDiagnostics.intervals,
   });
 
   const calibrationSummary = {
@@ -2458,6 +2637,8 @@ async function runAccuracyForDate(
     goalie_probability_calibration: goalieProbabilityCalibration,
     goalie_miss_attribution_diagnostics: goalieMissAttributionDiagnostics,
     goalie_launch_gates: goalieLaunchGates,
+    goalie_rolling_diagnostics: goalieRollingDiagnostics,
+    issuance_diagnostics: issuanceDiagnostics,
   };
   await updateRunCalibrationMetrics(runId, actualDate, calibrationSummary);
   await persistGoalieCalibrationSnapshots({
@@ -2473,11 +2654,14 @@ async function runAccuracyForDate(
     goalieIntervalCoverageDiagnostics,
     goalieMissAttributionDiagnostics,
     goalieLaunchGates,
+    goalieEvaluationDay,
+    goalieRollingDiagnostics,
   });
 
   const goalieMatchedByPlayer = goalieProjectionRows.filter((row) => {
     const goalieId = Number(row.goalie_id);
-    return goalieActuals.has(goalieId) || goalieActualsFallback.has(goalieId);
+    const key = `${row.game_id}:${row.team_id}:${goalieId}`;
+    return !!goalieActuals.get(key) || !!goalieActualsFallback.get(key);
   }).length;
 
   return {
@@ -2488,16 +2672,22 @@ async function runAccuracyForDate(
     goalieRows: goalieResults.length,
     totalRows: allResults.length,
     skaterActualMatchDiagnostics,
+    issuanceDiagnostics,
+    goalieRollingDiagnostics,
     unknownPredictionSkips,
     unknownStatSkips,
     goalieMatchDiagnostics: {
-      goalieProjectionCount: goalieProjectionRows.length,
+      goalieProjectionCount: storedGoalieRows.length,
+      goalieCandidateCount: goalieProjectionRows.length,
       goalieActualCount,
       goalieMatchedByPlayer,
-      goalieActualFallbackCount: goalieActualsFallback.size,
+      goalieActualFallbackCount: goalieProjectionRows.filter(row =>
+        !!goalieActualsFallback.get(`${row.game_id}:${row.team_id}:${row.goalie_id}`)).length,
     },
     goalieHoldoutComparison: {
-      baseline_definition: "fixed_save_pct_0.900_using_projected_shots_against",
+      baseline_definition: "season_league_save_pct_using_candidate_if_starts_shots_against",
+      baseline_as_of_date: projectionDate,
+      baseline: leagueBaseline,
       saves: finalizeMetricComparison(savesModelStats, savesBaselineStats),
       goals_against: finalizeMetricComparison(
         goalsAgainstModelStats,
@@ -2776,6 +2966,8 @@ export default withCronJobAudit(
         goalieRows: result.goalieRows,
         totalRows: result.totalRows,
         skaterActualMatchDiagnostics: result.skaterActualMatchDiagnostics,
+        issuanceDiagnostics: result.issuanceDiagnostics,
+        goalieRollingDiagnostics: result.goalieRollingDiagnostics,
         unknownPredictionSkips: result.unknownPredictionSkips,
         unknownStatSkips: result.unknownStatSkips,
         goalieMatchDiagnostics: result.goalieMatchDiagnostics,

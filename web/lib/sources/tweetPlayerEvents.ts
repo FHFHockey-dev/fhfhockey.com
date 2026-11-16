@@ -117,6 +117,8 @@ export function extractTweetPlayerEvents(args: {
   priorStatus?: Map<number, "injured" | "healthy">;
   includeClaimAnchors?: boolean;
   claimAware?: boolean;
+  /** Both team ids of the game the post is bound to; without them "vs" never shares a goalie predicate. */
+  gameTeamIds?: readonly number[];
 }): TweetPlayerEvent[] {
   // Preserve legacy report/event payloads while the new compatibility lane is off.
   const claimAware = args.claimAware ?? args.includeClaimAnchors ?? (process.env.TWEET_CLAIMS_MODE === "shadow");
@@ -165,9 +167,19 @@ export function extractTweetPlayerEvents(args: {
   const unresolvedStarts = unresolvedMentions.filter((unresolved) => !mentions.some((mention) => unresolved.start >= mention.start && unresolved.end <= mention.end)).map((mention) => mention.start);
   const extracted = mentions.flatMap(({ player, start, end: mentionEnd, basis }, index): TweetPlayerEvent[] => {
     // Anatomical notes can qualify a shared claim; a parenthetical predicate cannot.
-    const coordinated = (left: number, right: number) => /^(?:[ \t]|,|&|\band\b)+$/i.test(args.text.slice(mentions[left]!.end, mentions[right]!.start)
+    const between = (left: number, right: number) => args.text.slice(mentions[left]!.end, mentions[right]!.start);
+    const listJoined = (left: number, right: number) => /^(?:[ \t]|,|&|\band\b)+$/i.test(between(left, right)
       .replace(/\(\s*(?:(?:upper|lower)[ -]body|(?:(?:left|right)[ -])?(?:ankle|arm|back|foot|hand|hip|knee|leg|shoulder|wrist))(?:[ -]injury)?\s*\)/gi, "")
       .replace(/\b(?:forward|defenseman|defenceman|goaltender)\b/gi, ""));
+    const vsJoined = (left: number, right: number) => /^\s*(?:vs\.?|versus)\s*$/i.test(between(left, right));
+    const joined = (left: number, right: number) => listJoined(left, right) || vsJoined(left, right);
+    // "A vs B in goal" names both starters only when A and B are the whole group, one goalie per side of the bound game.
+    const opposingSides = (a: PlayerIdentity, b: PlayerIdentity) => args.gameTeamIds?.length === 2 && a.teamId != null && b.teamId != null
+      && a.teamId !== b.teamId && args.gameTeamIds.includes(a.teamId) && args.gameTeamIds.includes(b.teamId);
+    const goalieMatchup = (left: number, right: number) => vsJoined(left, right)
+      && mentions[left]!.player.position === "G" && mentions[right]!.player.position === "G" && opposingSides(mentions[left]!.player, mentions[right]!.player)
+      && !(left > 0 && joined(left - 1, left)) && !(right + 1 < mentions.length && joined(right, right + 1));
+    const coordinated = (left: number, right: number) => goalieMatchup(left, right) || listJoined(left, right);
     let first = index, last = index;
     while (first > 0 && coordinated(first - 1, first)) first--;
     while (last + 1 < mentions.length && coordinated(last, last + 1)) last++;

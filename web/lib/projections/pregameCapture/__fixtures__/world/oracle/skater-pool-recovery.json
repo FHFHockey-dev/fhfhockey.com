@@ -1,0 +1,6656 @@
+{
+ "version": "forge-load-split-oracle-v1",
+ "scenario": "skater-pool-recovery",
+ "frozenNow": "2026-11-14T20:00:00.000Z",
+ "reads": [
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date,seasonId,startTime,homeTeamId,awayTeamId",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "id",
+      [
+       2026020250
+      ]
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "id"
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "616e52825587637f74f047a5ccff93c68c3bb5e33a37823833cc71db8c593e30"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "roster_optimizer_team_games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_key,season,source_season_id,source_game_id,team_id,opponent_team_id,team_abbreviation,opponent_abbreviation,start_time,game_status,schedule_status,source_updated_at,fetched_at",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "source_season_id",
+      20262027
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "source_game_id",
+      [
+       2026020250
+      ]
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "source_game_id"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "team_id"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_key"
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "dfc41ad6005c85343e16b099d91dc8f5752782af27173b9e2d3670f240fc1b56"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "rosters"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "playerId,teamId,seasonId,created_at",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "seasonId",
+      20262027
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "is_current",
+      true
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "teamId",
+      [
+       10,
+       6
+      ]
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "playerId"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "teamId"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "created_at"
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "26ee5709ba446a86a1321da5bddba817cc82d889e5ac2bc060a0ce1833ec9205"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "rosters"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "playerId,teamId,seasonId,created_at",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "seasonId",
+      20262027
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "is_current",
+      true
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "playerId",
+      [
+       8470601,
+       8470602,
+       8470603,
+       8470604,
+       8470605,
+       8470606,
+       8470607,
+       8470608,
+       8470609,
+       8470610,
+       8470611,
+       8470612,
+       8470613,
+       8470621,
+       8470622,
+       8470623,
+       8470624,
+       8470625,
+       8470626,
+       8470627,
+       8470631,
+       8470632,
+       8471001,
+       8471002,
+       8471003,
+       8471004,
+       8471005,
+       8471006,
+       8471007,
+       8471008,
+       8471009,
+       8471010,
+       8471011,
+       8471012,
+       8471013,
+       8471021,
+       8471022,
+       8471023,
+       8471024,
+       8471025,
+       8471026,
+       8471027,
+       8471031,
+       8471032
+      ]
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "playerId"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "teamId"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "created_at"
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "26ee5709ba446a86a1321da5bddba817cc82d889e5ac2bc060a0ce1833ec9205"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "fhfh_player_identities"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,nhl_player_id,current_nhl_team_id,updated_at",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "verification_status",
+      "verified"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "lifecycle_status",
+      "active_nhl"
+     ]
+    },
+    {
+     "method": "is",
+     "args": [
+      "merged_into_id",
+      null
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "nhl_player_id",
+      [
+       8470601,
+       8470602,
+       8470603,
+       8470604,
+       8470605,
+       8470606,
+       8470607,
+       8470608,
+       8470609,
+       8470610,
+       8470611,
+       8470612,
+       8470613,
+       8470621,
+       8470622,
+       8470623,
+       8470624,
+       8470625,
+       8470626,
+       8470627,
+       8470631,
+       8470632,
+       8471001,
+       8471002,
+       8471003,
+       8471004,
+       8471005,
+       8471006,
+       8471007,
+       8471008,
+       8471009,
+       8471010,
+       8471011,
+       8471012,
+       8471013,
+       8471021,
+       8471022,
+       8471023,
+       8471024,
+       8471025,
+       8471026,
+       8471027,
+       8471031,
+       8471032
+      ]
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "id"
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "cca39db63d54b3268bdd03786212f04425df60299d686081ff6e9e79f199a95d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "seasons"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,startDate,regularSeasonEndDate,endDate,numberOfGames"
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "startDate",
+      "2026-11-14T23:59:59.999Z"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "startDate",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "e64913cb79fec0cba2ad5f52a3070cac6bbf18ca831978556b83f874b9440c85"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date,homeTeamId,awayTeamId"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    }
+   ],
+   "resultHash": "7b8a870d5b1fc89c53237323ef729dc420ac6e95c246628c700adb096036f763"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "teams"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,abbreviation"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "id",
+      [
+       10,
+       6
+      ]
+     ]
+    }
+   ],
+   "resultHash": "e9eee6a254a56915a5bf304363e6c929a555951144925245547d7235068ba37f"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "market_prices_daily"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "snapshot_date,game_id,market_type,sportsbook_key,outcome_key,line_value,price_american,implied_probability,source_rank,source_observed_at,freshness_expires_at,provenance,metadata"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "snapshot_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "game_id",
+      [
+       2026020250
+      ]
+     ]
+    }
+   ],
+   "resultHash": "a54b57135102f05299917f33d830fdcc0ee08bab73ca468567548e3803f4c43d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "prop_market_prices_daily"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "snapshot_date,game_id,player_id,market_type,sportsbook_key,outcome_key,line_value,price_american,implied_probability,source_rank,source_observed_at,freshness_expires_at,provenance,metadata"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "snapshot_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "game_id",
+      [
+       2026020250
+      ]
+     ]
+    }
+   ],
+   "resultHash": "a54b57135102f05299917f33d830fdcc0ee08bab73ca468567548e3803f4c43d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_roster_events"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "event_id,team_id,player_id,event_type,confidence,payload,effective_from,effective_to"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "team_id",
+      [
+       10,
+       6
+      ]
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "created_at",
+      "2026-11-14T19:55:00.000Z"
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "effective_from",
+      "2026-11-14T19:55:00.000Z"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "effective_from",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      5000
+     ]
+    }
+   ],
+   "resultHash": "a54b57135102f05299917f33d830fdcc0ee08bab73ca468567548e3803f4c43d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "player_forecast_lineup_snapshots"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "*",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "game_id",
+      [
+       2026020250
+      ]
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "created_at",
+      "2026-11-14T19:55:00.000Z"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "accepted",
+      true
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "available_at",
+      "2026-11-14T19:55:00.000Z"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "id"
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "4c29ed9ce11b1f897ab1e2c94712041c0758f691f19323f7a3f79807b286d546"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "player_forecast_goalie_start_observations"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "*",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "game_id",
+      [
+       2026020250
+      ]
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "created_at",
+      "2026-11-14T19:55:00.000Z"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "accepted",
+      true
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "available_at",
+      "2026-11-14T19:55:00.000Z"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "id"
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "4c29ed9ce11b1f897ab1e2c94712041c0758f691f19323f7a3f79807b286d546"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "player_forecast_observation_conflicts"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "*",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "game_id",
+      [
+       2026020250
+      ]
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "created_at",
+      "2026-11-14T19:55:00.000Z"
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "detected_at",
+      "2026-11-14T19:55:00.000Z"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "id"
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "4c29ed9ce11b1f897ab1e2c94712041c0758f691f19323f7a3f79807b286d546"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "pbp_games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date,hometeamid,awayteamid,type,season,hometeamabbrev,awayteamabbrev,hometeamscore,awayteamscore"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "id",
+      2026020250
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "a9fc17866970a2b2383ccbee620750c536f3b1ebb9fda6a37881528dcbfa4bed"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "pbp_plays"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id",
+      {
+       "count": "exact",
+       "head": true
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "gameid",
+      2026020250
+     ]
+    }
+   ],
+   "resultHash": "c0937635224c7e77ebf939c247314b51064d6bb430ba03624f798f0746f523b3"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "pbp_plays"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id",
+      {
+       "count": "exact",
+       "head": true
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "gameid",
+      2026020250
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "typedesckey",
+      "game-end"
+     ]
+    }
+   ],
+   "resultHash": "c0937635224c7e77ebf939c247314b51064d6bb430ba03624f798f0746f523b3"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.10,awayTeamId.eq.10"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      12
+     ]
+    }
+   ],
+   "resultHash": "528ed8f4ad81410142015dbb5c6c6d125348b5417219d205ca3b2a47bf010f3d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "lineCombinations"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "gameId,teamId,forwards,defensemen,goalies"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "teamId",
+      10
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "gameId",
+      [
+       2026020100,
+       2026020101,
+       2026020102,
+       2026020103,
+       2026020104,
+       2026020105,
+       2026020106,
+       2026020107
+      ]
+     ]
+    }
+   ],
+   "resultHash": "a54b57135102f05299917f33d830fdcc0ee08bab73ca468567548e3803f4c43d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "rosters"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "playerId,teamId,seasonId",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "teamId",
+      10
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "seasonId",
+      20262027
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "is_current",
+      true
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "playerId",
+      {
+       "ascending": true
+      }
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "24df0ad699d1b67ff125147b085ffd38943863f0fee6c6213ec1654e00ead14e"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "rolling_player_game_metrics"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "player_id,game_date,toi_seconds_avg_last5,toi_seconds_avg_all"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "season",
+      20262027
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      10
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "strength_state",
+      "ev"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "gte",
+     "args": [
+      "game_date",
+      "2026-07-17"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      144
+     ]
+    }
+   ],
+   "resultHash": "c68097bbea8519d9fd22320e38623b07e80c6190f800b640546b279beabdef86"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "players"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,team_id,position"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "id",
+      [
+       8471021,
+       8471023,
+       8471022,
+       8471024,
+       8471001,
+       8471003,
+       8471002,
+       8471004
+      ]
+     ]
+    }
+   ],
+   "resultHash": "e7ca48cdcefc16453050a8ec8c80e238b2afdcac9f9004bd25056673ceeabb11"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_rolling_rows",
+      {
+       "p_player_ids": [
+        8471001,
+        8471002,
+        8471003,
+        8471004,
+        8471021,
+        8471022,
+        8471023,
+        8471024
+       ],
+       "p_strength": "ev",
+       "p_before": "2026-11-14",
+       "p_columns": [
+        "player_id",
+        "game_id",
+        "season",
+        "strength_state",
+        "game_date",
+        "toi_seconds_avg_last5",
+        "toi_seconds_avg_all",
+        "toi_seconds_total_all",
+        "sog_per_60_last5",
+        "sog_per_60_avg_last5",
+        "sog_per_60_all",
+        "sog_per_60_avg_all",
+        "goals_total_last5",
+        "shots_total_last5",
+        "assists_total_last5",
+        "goals_total_all",
+        "shots_total_all",
+        "assists_total_all",
+        "ipp_all",
+        "hits_per_60_last5",
+        "hits_per_60_avg_last5",
+        "hits_per_60_all",
+        "hits_per_60_avg_all",
+        "blocks_per_60_last5",
+        "blocks_per_60_avg_last5",
+        "blocks_per_60_all",
+        "blocks_per_60_avg_all",
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+       ]
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "51d2f676a48ff8c8f5c53d41644a8890c2d1dc081af97bfa24e4650b03a67995"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_rolling_rows",
+      {
+       "p_player_ids": [
+        8471001,
+        8471002,
+        8471003,
+        8471004,
+        8471021,
+        8471022,
+        8471023,
+        8471024
+       ],
+       "p_strength": "pp",
+       "p_before": "2026-11-14",
+       "p_columns": [
+        "player_id",
+        "game_id",
+        "season",
+        "strength_state",
+        "game_date",
+        "toi_seconds_avg_last5",
+        "toi_seconds_avg_all",
+        "toi_seconds_total_all",
+        "sog_per_60_last5",
+        "sog_per_60_avg_last5",
+        "sog_per_60_all",
+        "sog_per_60_avg_all",
+        "goals_total_last5",
+        "shots_total_last5",
+        "assists_total_last5",
+        "goals_total_all",
+        "shots_total_all",
+        "assists_total_all",
+        "ipp_all",
+        "hits_per_60_last5",
+        "hits_per_60_avg_last5",
+        "hits_per_60_all",
+        "hits_per_60_avg_all",
+        "blocks_per_60_last5",
+        "blocks_per_60_avg_last5",
+        "blocks_per_60_all",
+        "blocks_per_60_avg_all",
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+       ]
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "6eeeaddc6dc74614b8ef4f42e235e44f4805eca02f9a422b598d692745ec3ccb"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_rolling_rows",
+      {
+       "p_player_ids": [
+        8471001,
+        8471002,
+        8471003,
+        8471004,
+        8471021,
+        8471022,
+        8471023,
+        8471024
+       ],
+       "p_strength": "pk",
+       "p_before": "2026-11-14",
+       "p_columns": [
+        "player_id",
+        "game_id",
+        "season",
+        "strength_state",
+        "game_date",
+        "toi_seconds_avg_last5",
+        "toi_seconds_avg_all",
+        "toi_seconds_total_all",
+        "sog_per_60_last5",
+        "sog_per_60_avg_last5",
+        "sog_per_60_all",
+        "sog_per_60_avg_all",
+        "goals_total_last5",
+        "shots_total_last5",
+        "assists_total_last5",
+        "goals_total_all",
+        "shots_total_all",
+        "assists_total_all",
+        "ipp_all",
+        "hits_per_60_last5",
+        "hits_per_60_avg_last5",
+        "hits_per_60_all",
+        "hits_per_60_avg_all",
+        "blocks_per_60_last5",
+        "blocks_per_60_avg_last5",
+        "blocks_per_60_all",
+        "blocks_per_60_avg_all",
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+       ]
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "718b6e721567ea216cafc4b9de648e0bff33b039969440c79373df9b3d809100"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_rolling_rows",
+      {
+       "p_player_ids": [
+        8471001,
+        8471002,
+        8471003,
+        8471004,
+        8471021,
+        8471022,
+        8471023,
+        8471024
+       ],
+       "p_strength": "all",
+       "p_before": "2026-11-14",
+       "p_columns": [
+        "player_id",
+        "game_id",
+        "season",
+        "strength_state",
+        "game_date",
+        "toi_seconds_avg_last5",
+        "toi_seconds_avg_all",
+        "toi_seconds_total_all",
+        "sog_per_60_last5",
+        "sog_per_60_avg_last5",
+        "sog_per_60_all",
+        "sog_per_60_avg_all",
+        "goals_total_last5",
+        "shots_total_last5",
+        "assists_total_last5",
+        "goals_total_all",
+        "shots_total_all",
+        "assists_total_all",
+        "ipp_all",
+        "hits_per_60_last5",
+        "hits_per_60_avg_last5",
+        "hits_per_60_all",
+        "hits_per_60_avg_all",
+        "blocks_per_60_last5",
+        "blocks_per_60_avg_last5",
+        "blocks_per_60_all",
+        "blocks_per_60_avg_all",
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+       ]
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "b51e9306e4502988a478b9dd45c2efd6458e551532d544a6181db30eb00343c1"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_league_skater_physical_totals",
+      {
+       "p_season_id": 20262027,
+       "p_cutoff": "2026-11-14"
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "559b265f1696f604453129de92fb3ba1d29bfe5bdb2a8d22f1bf3a9d01004385"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "seasons"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,startDate,regularSeasonEndDate,endDate,numberOfGames"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "id",
+      20262027
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "e64913cb79fec0cba2ad5f52a3070cac6bbf18ca831978556b83f874b9440c85"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date,seasonId,type"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "id",
+      [
+       2026020100
+      ]
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    }
+   ],
+   "resultHash": "4e4bcdf09fe23dcc18729c00f528e202c5ea5985e1093c85a46c39eec5b9372b"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "rolling_player_game_metrics"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "player_id,game_date,toi_seconds_avg_last5,toi_seconds_avg_all"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "season",
+      20262027
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      10
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "strength_state",
+      "ev"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "gte",
+     "args": [
+      "game_date",
+      "2026-07-17"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      192
+     ]
+    }
+   ],
+   "resultHash": "c68097bbea8519d9fd22320e38623b07e80c6190f800b640546b279beabdef86"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "players"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,team_id,position"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "id",
+      [
+       8471021,
+       8471023,
+       8471022,
+       8471024,
+       8471001,
+       8471003,
+       8471002,
+       8471004,
+       8471005,
+       8471006,
+       8471007,
+       8471008,
+       8471009,
+       8471010,
+       8471011,
+       8471012,
+       8471013,
+       8471025,
+       8471026,
+       8471027,
+       8471031,
+       8471032
+      ]
+     ]
+    }
+   ],
+   "resultHash": "a985a5e83af8833b6430000f902513a66c92993213e3608ff151ea8254264907"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_rolling_rows",
+      {
+       "p_player_ids": [
+        8471001,
+        8471002,
+        8471003,
+        8471004,
+        8471005,
+        8471006,
+        8471007,
+        8471008,
+        8471009,
+        8471010,
+        8471011,
+        8471012,
+        8471013,
+        8471021,
+        8471022,
+        8471023,
+        8471024,
+        8471025,
+        8471026,
+        8471027
+       ],
+       "p_strength": "ev",
+       "p_before": "2026-11-14",
+       "p_columns": [
+        "player_id",
+        "game_id",
+        "season",
+        "strength_state",
+        "game_date",
+        "toi_seconds_avg_last5",
+        "toi_seconds_avg_all",
+        "toi_seconds_total_all",
+        "sog_per_60_last5",
+        "sog_per_60_avg_last5",
+        "sog_per_60_all",
+        "sog_per_60_avg_all",
+        "goals_total_last5",
+        "shots_total_last5",
+        "assists_total_last5",
+        "goals_total_all",
+        "shots_total_all",
+        "assists_total_all",
+        "ipp_all",
+        "hits_per_60_last5",
+        "hits_per_60_avg_last5",
+        "hits_per_60_all",
+        "hits_per_60_avg_all",
+        "blocks_per_60_last5",
+        "blocks_per_60_avg_last5",
+        "blocks_per_60_all",
+        "blocks_per_60_avg_all",
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+       ]
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "3521bb3fa01a8cb9587f1a547a39b80f865db4eaff86057fcbecbdf8f5cda887"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_rolling_rows",
+      {
+       "p_player_ids": [
+        8471001,
+        8471002,
+        8471003,
+        8471004,
+        8471005,
+        8471006,
+        8471007,
+        8471008,
+        8471009,
+        8471010,
+        8471011,
+        8471012,
+        8471013,
+        8471021,
+        8471022,
+        8471023,
+        8471024,
+        8471025,
+        8471026,
+        8471027
+       ],
+       "p_strength": "pp",
+       "p_before": "2026-11-14",
+       "p_columns": [
+        "player_id",
+        "game_id",
+        "season",
+        "strength_state",
+        "game_date",
+        "toi_seconds_avg_last5",
+        "toi_seconds_avg_all",
+        "toi_seconds_total_all",
+        "sog_per_60_last5",
+        "sog_per_60_avg_last5",
+        "sog_per_60_all",
+        "sog_per_60_avg_all",
+        "goals_total_last5",
+        "shots_total_last5",
+        "assists_total_last5",
+        "goals_total_all",
+        "shots_total_all",
+        "assists_total_all",
+        "ipp_all",
+        "hits_per_60_last5",
+        "hits_per_60_avg_last5",
+        "hits_per_60_all",
+        "hits_per_60_avg_all",
+        "blocks_per_60_last5",
+        "blocks_per_60_avg_last5",
+        "blocks_per_60_all",
+        "blocks_per_60_avg_all",
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+       ]
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "f10e0a1d939961e2198498b73e66e55603e75f7e9f7528c7b149ecb2c7cb0b6b"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_rolling_rows",
+      {
+       "p_player_ids": [
+        8471001,
+        8471002,
+        8471003,
+        8471004,
+        8471005,
+        8471006,
+        8471007,
+        8471008,
+        8471009,
+        8471010,
+        8471011,
+        8471012,
+        8471013,
+        8471021,
+        8471022,
+        8471023,
+        8471024,
+        8471025,
+        8471026,
+        8471027
+       ],
+       "p_strength": "pk",
+       "p_before": "2026-11-14",
+       "p_columns": [
+        "player_id",
+        "game_id",
+        "season",
+        "strength_state",
+        "game_date",
+        "toi_seconds_avg_last5",
+        "toi_seconds_avg_all",
+        "toi_seconds_total_all",
+        "sog_per_60_last5",
+        "sog_per_60_avg_last5",
+        "sog_per_60_all",
+        "sog_per_60_avg_all",
+        "goals_total_last5",
+        "shots_total_last5",
+        "assists_total_last5",
+        "goals_total_all",
+        "shots_total_all",
+        "assists_total_all",
+        "ipp_all",
+        "hits_per_60_last5",
+        "hits_per_60_avg_last5",
+        "hits_per_60_all",
+        "hits_per_60_avg_all",
+        "blocks_per_60_last5",
+        "blocks_per_60_avg_last5",
+        "blocks_per_60_all",
+        "blocks_per_60_avg_all",
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+       ]
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "862227e51266be39f7daacf20c4f53c75c740efc264e9a7437521ea2f8a2932c"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_rolling_rows",
+      {
+       "p_player_ids": [
+        8471001,
+        8471002,
+        8471003,
+        8471004,
+        8471005,
+        8471006,
+        8471007,
+        8471008,
+        8471009,
+        8471010,
+        8471011,
+        8471012,
+        8471013,
+        8471021,
+        8471022,
+        8471023,
+        8471024,
+        8471025,
+        8471026,
+        8471027
+       ],
+       "p_strength": "all",
+       "p_before": "2026-11-14",
+       "p_columns": [
+        "player_id",
+        "game_id",
+        "season",
+        "strength_state",
+        "game_date",
+        "toi_seconds_avg_last5",
+        "toi_seconds_avg_all",
+        "toi_seconds_total_all",
+        "sog_per_60_last5",
+        "sog_per_60_avg_last5",
+        "sog_per_60_all",
+        "sog_per_60_avg_all",
+        "goals_total_last5",
+        "shots_total_last5",
+        "assists_total_last5",
+        "goals_total_all",
+        "shots_total_all",
+        "assists_total_all",
+        "ipp_all",
+        "hits_per_60_last5",
+        "hits_per_60_avg_last5",
+        "hits_per_60_all",
+        "hits_per_60_avg_all",
+        "blocks_per_60_last5",
+        "blocks_per_60_avg_last5",
+        "blocks_per_60_all",
+        "blocks_per_60_avg_all",
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+       ]
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "8f2a5669c94f7bfe38297fa6c8970ad14d27f89f0a1f4e5d8cccdc03471bda35"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date,seasonId,type"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "id",
+      [
+       2026020100
+      ]
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    }
+   ],
+   "resultHash": "4e4bcdf09fe23dcc18729c00f528e202c5ea5985e1093c85a46c39eec5b9372b"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "nhl_team_data"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "*"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_abbrev",
+      "TOR"
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      20
+     ]
+    }
+   ],
+   "resultHash": "6912d677cf55781cf85cb49d932cefd0155d0ff551e8dd65c88cc854e5723b7a"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "nhl_team_data"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "*"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_abbrev",
+      "BOS"
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      20
+     ]
+    }
+   ],
+   "resultHash": "2490134ddd35f98bb5fe9a0f93312719e01795fa2a3748b238990239f0b77c2e"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_team_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date,games_played,save_pct_5v5,shooting_plus_save_pct_5v5"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      10
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "91f0ff8438c67616e7b5e606aa85cf178449de8f1dee31db51411f75911e3ca8"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_team_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date,games_played,save_pct_5v5,shooting_plus_save_pct_5v5"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      6
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "135680d635a33867cb88ffd0d16e3415d4368380e93abe770b4fc01594eb22c4"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "nst_team_all"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date,gp,toi,xga"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_abbreviation",
+      "TOR"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "situation",
+      "all"
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "1ffd9d946bdd8d3c4287a5633c6b1078279206a771cdb044141170d4ba239184"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "nst_team_all"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date,gp,toi,xga"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_abbreviation",
+      "BOS"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "situation",
+      "all"
+     ]
+    },
+    {
+     "method": "lte",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "1ffd9d946bdd8d3c4287a5633c6b1078279206a771cdb044141170d4ba239184"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_date,shots_against,goals_allowed"
+     ]
+    },
+    {
+     "method": "gte",
+     "args": [
+      "game_date",
+      "2025-07-01"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": true
+      }
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_id",
+      {
+       "ascending": true
+      }
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "goalie_id",
+      {
+       "ascending": true
+      }
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      999
+     ]
+    }
+   ],
+   "resultHash": "508a1aeaf887853bcd128556368945a66bb9c30c53bddb2b419f3e0b393db65d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "goalie_start_projections"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "player_id,start_probability"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "game_id",
+      2026020250
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      6
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "start_probability",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      3
+     ]
+    }
+   ],
+   "resultHash": "dea1d0e4666020d316b90c3a1d2c3c2df9a0a8d07b462c02e74e0bfa00eb27f4"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470631
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      200
+     ]
+    }
+   ],
+   "resultHash": "7c0b9817bbf45c5735a3cefd3973eed24dcb0e9d73e1ac764cc3e9d64c008319"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470632
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      200
+     ]
+    }
+   ],
+   "resultHash": "9460b99334dec7b911f3791da0e7a9cf431f7dca9db8f42ef1913ec979af1ef3"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.10,awayTeamId.eq.10"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "e5b9ad5fa7095f9a76f3c051e70577143dc4e4eb59b49a021c891e86cbaaca90"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.6,awayTeamId.eq.6"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "bfded31c269a218de2f8e8dbb15fb54798a2c5dc39c93cc3647e86d7d356ea86"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_skater_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "player_id,date,toi_per_game,es_toi_per_game,pp_toi_per_game"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "player_id",
+      [
+       8471021,
+       8471023,
+       8471022,
+       8471024,
+       8471001,
+       8471003,
+       8471002,
+       8471004,
+       8471005,
+       8471006,
+       8471007,
+       8471008,
+       8471009,
+       8471010,
+       8471011,
+       8471012,
+       8471013,
+       8471025
+      ]
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "gte",
+     "args": [
+      "date",
+      "2025-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      5000
+     ]
+    }
+   ],
+   "resultHash": "66b86fa240d56f148fa516c1479b9578200b4a6af9436b57c08ac7f63b525a19"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "player_stats_unified"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "player_id,date,nst_shots_per_60,nst_ixg_per_60,nst_rush_attempts_per_60,nst_rebounds_created_per_60,nst_oi_xgf_per_60,nst_oi_xga_per_60,nst_oi_cf_pct_rates,nst_oi_cf_pct,possession_pct_safe"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "player_id",
+      [
+       8471021,
+       8471023,
+       8471022,
+       8471024,
+       8471001,
+       8471003,
+       8471002,
+       8471004,
+       8471005,
+       8471006,
+       8471007,
+       8471008,
+       8471009,
+       8471010,
+       8471011,
+       8471012,
+       8471013,
+       8471025
+      ]
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "gte",
+     "args": [
+      "date",
+      "2025-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      5000
+     ]
+    }
+   ],
+   "resultHash": "7600a5d9e23ba4f285989c6682f372dba15fc761ca56a93fb01057d76faca772"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_trend_bands",
+      {
+       "p_player_ids": [
+        8471021,
+        8471023,
+        8471022,
+        8471024,
+        8471001,
+        8471003,
+        8471002,
+        8471004,
+        8471005,
+        8471006,
+        8471007,
+        8471008,
+        8471009,
+        8471010,
+        8471011,
+        8471012,
+        8471013,
+        8471025
+       ],
+       "p_metric_keys": [
+        "fantasy_score",
+        "ixg_per_60",
+        "shots_per_60",
+        "points_per_60_5v5"
+       ],
+       "p_window_codes": [
+        "l5",
+        "l10"
+       ],
+       "p_as_of": "2026-11-14"
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "65c43b7386591cdaf86e515678c84fb9271dbea1549e20ff41d94b7ffeeb366d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.10,awayTeamId.eq.10"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      120
+     ]
+    }
+   ],
+   "resultHash": "528ed8f4ad81410142015dbb5c6c6d125348b5417219d205ca3b2a47bf010f3d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "lineCombinations"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "gameId,teamId,forwards,defensemen,goalies"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "teamId",
+      10
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "gameId",
+      [
+       2026020100,
+       2026020101,
+       2026020102,
+       2026020103,
+       2026020104,
+       2026020105,
+       2026020106,
+       2026020107
+      ]
+     ]
+    }
+   ],
+   "resultHash": "a54b57135102f05299917f33d830fdcc0ee08bab73ca468567548e3803f4c43d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_team_game_strength"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_date,toi_es_seconds,toi_pp_seconds,toi_pk_seconds,shots_es,shots_pp,shots_pk"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      10
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      10
+     ]
+    }
+   ],
+   "resultHash": "42ed83c353f9d145aba1ce933323ab1f25c48e479185a14e5ebea8c0ed1a8138"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.10,awayTeamId.eq.10"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "type",
+      2
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      10
+     ]
+    }
+   ],
+   "resultHash": "528ed8f4ad81410142015dbb5c6c6d125348b5417219d205ca3b2a47bf010f3d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "teams"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "abbreviation"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "id",
+      10
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "57900e5c9f86bb822b6ac34d827facab01f78e194ccd0008edbab4e397aae5f3"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_skater_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "player_id,game_id,team_abbrev,toi_per_game,pp_toi,pp_toi_per_game,pp_shots"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "game_id",
+      [
+       2026020100,
+       2026020101,
+       2026020102,
+       2026020103,
+       2026020104,
+       2026020105,
+       2026020106,
+       2026020107
+      ]
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_abbrev",
+      "TOR"
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      320
+     ]
+    }
+   ],
+   "resultHash": "a09eb8af2fe053914259a9d5557c9498f428ed1187edcd00614e21ee89be36a1"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "players"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      10
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "position",
+      "G"
+     ]
+    }
+   ],
+   "resultHash": "6c7673ee4c26e9bb96076ab9a1d09ad8f8d6ec7dfef4257545c936b3880f8c17"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "goalie_start_projections"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "player_id,start_probability,confirmed_status,l10_start_pct,season_start_pct,games_played,projected_gsaa_per_60,updated_at,game_date"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "game_id",
+      2026020250
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      10
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "start_probability",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      6
+     ]
+    }
+   ],
+   "resultHash": "9a28317efe7a3da92da03240902a5000eaa1f12a9d995d4e62b2d535571297f2"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "goalie_id,game_date"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      10
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "6c7e6825a5105da62690eafc14981e6c3c63c649d644a276e8dd7a32942a463b"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_id,game_date,goalie_id"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      10
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      80
+     ]
+    }
+   ],
+   "resultHash": "e205da0e1176a2b464e0176a3db6fd2f64a20d20dc7085b74a6baf7369193615"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.10,awayTeamId.eq.10"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "eebb14538ad3ce7848dd728e8422574524aff741e582420eb075895c98b464fd"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_goalie_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_id,goalie_id,games_started"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "game_id",
+      [
+       2026020100,
+       2026020101,
+       2026020102,
+       2026020103,
+       2026020104,
+       2026020105,
+       2026020106,
+       2026020107
+      ]
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "goalie_id",
+      [
+       8471031,
+       8471032
+      ]
+     ]
+    }
+   ],
+   "resultHash": "f28f0e1796a8fe3c752810c4babd86c0f53a229783a05264e08d26da1f4abb98"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.10,awayTeamId.eq.10"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      144
+     ]
+    }
+   ],
+   "resultHash": "528ed8f4ad81410142015dbb5c6c6d125348b5417219d205ca3b2a47bf010f3d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "lineCombinations"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "gameId,teamId,forwards,defensemen,goalies"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "teamId",
+      10
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "gameId",
+      [
+       2026020100,
+       2026020101,
+       2026020102,
+       2026020103,
+       2026020104,
+       2026020105,
+       2026020106,
+       2026020107
+      ]
+     ]
+    }
+   ],
+   "resultHash": "a54b57135102f05299917f33d830fdcc0ee08bab73ca468567548e3803f4c43d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.6,awayTeamId.eq.6"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      12
+     ]
+    }
+   ],
+   "resultHash": "4fce42bd43c1b354af46be011adb600013184ff6e223f8f8c1e61e50505c88c8"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "lineCombinations"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "gameId,teamId,forwards,defensemen,goalies"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "teamId",
+      6
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "gameId",
+      [
+       2026020150,
+       2026020151,
+       2026020152,
+       2026020153,
+       2026020154,
+       2026020155,
+       2026020156,
+       2026020157
+      ]
+     ]
+    }
+   ],
+   "resultHash": "7e8208bacb218180fff8e5bfac9858d72995c9d6ceb27b55bfe2e4be93864cc8"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "rosters"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "playerId,teamId,seasonId",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "teamId",
+      6
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "seasonId",
+      20262027
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "is_current",
+      true
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "playerId",
+      {
+       "ascending": true
+      }
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "c8640227900cd21824f809b24e5fafdb2dbbd260d01c2f13f5a760ed894181e5"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "players"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,team_id,position"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "id",
+      [
+       8470601,
+       8470602,
+       8470603,
+       8470604,
+       8470605,
+       8470606,
+       8470607,
+       8470608,
+       8470609,
+       8470610,
+       8470611,
+       8470612,
+       8470621,
+       8470622,
+       8470623,
+       8470624,
+       8470625,
+       8470626
+      ]
+     ]
+    }
+   ],
+   "resultHash": "a35c54adafe4ea018e3831d8a28c19913aaf4df89a12847e8bfcd9aa9651287d"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_rolling_rows",
+      {
+       "p_player_ids": [
+        8470601,
+        8470602,
+        8470603,
+        8470604,
+        8470605,
+        8470606,
+        8470607,
+        8470608,
+        8470609,
+        8470610,
+        8470611,
+        8470612,
+        8470621,
+        8470622,
+        8470623,
+        8470624,
+        8470625,
+        8470626
+       ],
+       "p_strength": "ev",
+       "p_before": "2026-11-14",
+       "p_columns": [
+        "player_id",
+        "game_id",
+        "season",
+        "strength_state",
+        "game_date",
+        "toi_seconds_avg_last5",
+        "toi_seconds_avg_all",
+        "toi_seconds_total_all",
+        "sog_per_60_last5",
+        "sog_per_60_avg_last5",
+        "sog_per_60_all",
+        "sog_per_60_avg_all",
+        "goals_total_last5",
+        "shots_total_last5",
+        "assists_total_last5",
+        "goals_total_all",
+        "shots_total_all",
+        "assists_total_all",
+        "ipp_all",
+        "hits_per_60_last5",
+        "hits_per_60_avg_last5",
+        "hits_per_60_all",
+        "hits_per_60_avg_all",
+        "blocks_per_60_last5",
+        "blocks_per_60_avg_last5",
+        "blocks_per_60_all",
+        "blocks_per_60_avg_all",
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+       ]
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "a51760af41613cfe18975edec621fab7ea989fefc484a8daa6ebec1581072664"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_rolling_rows",
+      {
+       "p_player_ids": [
+        8470601,
+        8470602,
+        8470603,
+        8470604,
+        8470605,
+        8470606,
+        8470607,
+        8470608,
+        8470609,
+        8470610,
+        8470611,
+        8470612,
+        8470621,
+        8470622,
+        8470623,
+        8470624,
+        8470625,
+        8470626
+       ],
+       "p_strength": "pp",
+       "p_before": "2026-11-14",
+       "p_columns": [
+        "player_id",
+        "game_id",
+        "season",
+        "strength_state",
+        "game_date",
+        "toi_seconds_avg_last5",
+        "toi_seconds_avg_all",
+        "toi_seconds_total_all",
+        "sog_per_60_last5",
+        "sog_per_60_avg_last5",
+        "sog_per_60_all",
+        "sog_per_60_avg_all",
+        "goals_total_last5",
+        "shots_total_last5",
+        "assists_total_last5",
+        "goals_total_all",
+        "shots_total_all",
+        "assists_total_all",
+        "ipp_all",
+        "hits_per_60_last5",
+        "hits_per_60_avg_last5",
+        "hits_per_60_all",
+        "hits_per_60_avg_all",
+        "blocks_per_60_last5",
+        "blocks_per_60_avg_last5",
+        "blocks_per_60_all",
+        "blocks_per_60_avg_all",
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+       ]
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "e98adf5be668aeb8b73fde10a48810e9f9d6b6490246b98924312566bfcf6b94"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_rolling_rows",
+      {
+       "p_player_ids": [
+        8470601,
+        8470602,
+        8470603,
+        8470604,
+        8470605,
+        8470606,
+        8470607,
+        8470608,
+        8470609,
+        8470610,
+        8470611,
+        8470612,
+        8470621,
+        8470622,
+        8470623,
+        8470624,
+        8470625,
+        8470626
+       ],
+       "p_strength": "pk",
+       "p_before": "2026-11-14",
+       "p_columns": [
+        "player_id",
+        "game_id",
+        "season",
+        "strength_state",
+        "game_date",
+        "toi_seconds_avg_last5",
+        "toi_seconds_avg_all",
+        "toi_seconds_total_all",
+        "sog_per_60_last5",
+        "sog_per_60_avg_last5",
+        "sog_per_60_all",
+        "sog_per_60_avg_all",
+        "goals_total_last5",
+        "shots_total_last5",
+        "assists_total_last5",
+        "goals_total_all",
+        "shots_total_all",
+        "assists_total_all",
+        "ipp_all",
+        "hits_per_60_last5",
+        "hits_per_60_avg_last5",
+        "hits_per_60_all",
+        "hits_per_60_avg_all",
+        "blocks_per_60_last5",
+        "blocks_per_60_avg_last5",
+        "blocks_per_60_all",
+        "blocks_per_60_avg_all",
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+       ]
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "c24d03592755d8a43c49def9d558b8eb69ad6369ab43acc8dba0863ceb9221d5"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_rolling_rows",
+      {
+       "p_player_ids": [
+        8470601,
+        8470602,
+        8470603,
+        8470604,
+        8470605,
+        8470606,
+        8470607,
+        8470608,
+        8470609,
+        8470610,
+        8470611,
+        8470612,
+        8470621,
+        8470622,
+        8470623,
+        8470624,
+        8470625,
+        8470626
+       ],
+       "p_strength": "all",
+       "p_before": "2026-11-14",
+       "p_columns": [
+        "player_id",
+        "game_id",
+        "season",
+        "strength_state",
+        "game_date",
+        "toi_seconds_avg_last5",
+        "toi_seconds_avg_all",
+        "toi_seconds_total_all",
+        "sog_per_60_last5",
+        "sog_per_60_avg_last5",
+        "sog_per_60_all",
+        "sog_per_60_avg_all",
+        "goals_total_last5",
+        "shots_total_last5",
+        "assists_total_last5",
+        "goals_total_all",
+        "shots_total_all",
+        "assists_total_all",
+        "ipp_all",
+        "hits_per_60_last5",
+        "hits_per_60_avg_last5",
+        "hits_per_60_all",
+        "hits_per_60_avg_all",
+        "blocks_per_60_last5",
+        "blocks_per_60_avg_last5",
+        "blocks_per_60_all",
+        "blocks_per_60_avg_all",
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+       ]
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "d2692ed1ec5a5d9da06b1851ef84ad6f7bfd6aec8e7242da275c623c75025935"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "seasons"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,startDate,regularSeasonEndDate,endDate,numberOfGames"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "id",
+      20262027
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "e64913cb79fec0cba2ad5f52a3070cac6bbf18ca831978556b83f874b9440c85"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date,seasonId,type"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "id",
+      [
+       2026020150
+      ]
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    }
+   ],
+   "resultHash": "69960d7ae8cfa88a0dc6f65e756f93fdac2cb72b040c9711d22e7c96bd04518c"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "goalie_start_projections"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "player_id,start_probability"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "game_id",
+      2026020250
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      10
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "start_probability",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      3
+     ]
+    }
+   ],
+   "resultHash": "25de4475961b0492ce0f615e16182bd26f4d865dfb43f0a523b091d174929d6e"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471031
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      200
+     ]
+    }
+   ],
+   "resultHash": "0055f6afd2e10fb60fea907841fce54c5aac4cfb562a843a89081f03c43ef91d"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471032
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      200
+     ]
+    }
+   ],
+   "resultHash": "98a0faac35d2fe698f4c0dce8e2638262bba7546c6f7ab1c833b6a38b4f7c579"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_skater_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "player_id,date,toi_per_game,es_toi_per_game,pp_toi_per_game"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "player_id",
+      [
+       8470601,
+       8470602,
+       8470603,
+       8470604,
+       8470605,
+       8470606,
+       8470607,
+       8470608,
+       8470609,
+       8470610,
+       8470611,
+       8470612,
+       8470621,
+       8470622,
+       8470623,
+       8470624,
+       8470625,
+       8470626
+      ]
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "gte",
+     "args": [
+      "date",
+      "2025-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      5000
+     ]
+    }
+   ],
+   "resultHash": "5753df9e9ad7f4a05135c59716eb7525c015555ad235d92c81bd3b354ed08e04"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "player_stats_unified"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "player_id,date,nst_shots_per_60,nst_ixg_per_60,nst_rush_attempts_per_60,nst_rebounds_created_per_60,nst_oi_xgf_per_60,nst_oi_xga_per_60,nst_oi_cf_pct_rates,nst_oi_cf_pct,possession_pct_safe"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "player_id",
+      [
+       8470601,
+       8470602,
+       8470603,
+       8470604,
+       8470605,
+       8470606,
+       8470607,
+       8470608,
+       8470609,
+       8470610,
+       8470611,
+       8470612,
+       8470621,
+       8470622,
+       8470623,
+       8470624,
+       8470625,
+       8470626
+      ]
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "gte",
+     "args": [
+      "date",
+      "2025-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      5000
+     ]
+    }
+   ],
+   "resultHash": "2fedd4a017dbb7ed041a5927918a952fdc55a08b1b95f91532c6c96a3e86055a"
+  },
+  {
+   "request": [
+    {
+     "method": "rpc",
+     "args": [
+      "forge_latest_trend_bands",
+      {
+       "p_player_ids": [
+        8470601,
+        8470602,
+        8470603,
+        8470604,
+        8470605,
+        8470606,
+        8470607,
+        8470608,
+        8470609,
+        8470610,
+        8470611,
+        8470612,
+        8470621,
+        8470622,
+        8470623,
+        8470624,
+        8470625,
+        8470626
+       ],
+       "p_metric_keys": [
+        "fantasy_score",
+        "ixg_per_60",
+        "shots_per_60",
+        "points_per_60_5v5"
+       ],
+       "p_window_codes": [
+        "l5",
+        "l10"
+       ],
+       "p_as_of": "2026-11-14"
+      },
+      {
+       "get": true
+      }
+     ]
+    }
+   ],
+   "resultHash": "e77acef2ac3ec4931c12df1d238d7db5872758dc1001c673946f7a8da7f1e611"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.6,awayTeamId.eq.6"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      120
+     ]
+    }
+   ],
+   "resultHash": "4fce42bd43c1b354af46be011adb600013184ff6e223f8f8c1e61e50505c88c8"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "lineCombinations"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "gameId,teamId,forwards,defensemen,goalies"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "teamId",
+      6
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "gameId",
+      [
+       2026020150,
+       2026020151,
+       2026020152,
+       2026020153,
+       2026020154,
+       2026020155,
+       2026020156,
+       2026020157
+      ]
+     ]
+    }
+   ],
+   "resultHash": "7e8208bacb218180fff8e5bfac9858d72995c9d6ceb27b55bfe2e4be93864cc8"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_team_game_strength"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_date,toi_es_seconds,toi_pp_seconds,toi_pk_seconds,shots_es,shots_pp,shots_pk"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      6
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      10
+     ]
+    }
+   ],
+   "resultHash": "a966e468c51488aa305491e473634ff159e8964a1d8208220f13eef79ee42d1e"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.6,awayTeamId.eq.6"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "type",
+      2
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      10
+     ]
+    }
+   ],
+   "resultHash": "4fce42bd43c1b354af46be011adb600013184ff6e223f8f8c1e61e50505c88c8"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "teams"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "abbreviation"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "id",
+      6
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "8723de18aa185d9fbd4dfead3a608acf10a33ebb5be5c9fa9a81c42edc70cb06"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_skater_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "player_id,game_id,team_abbrev,toi_per_game,pp_toi,pp_toi_per_game,pp_shots"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "game_id",
+      [
+       2026020150,
+       2026020151,
+       2026020152,
+       2026020153,
+       2026020154,
+       2026020155,
+       2026020156,
+       2026020157
+      ]
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_abbrev",
+      "BOS"
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      320
+     ]
+    }
+   ],
+   "resultHash": "072527e4607f70d43abcbe74b4cd3159b60115217b0847f35b0d3c9630bc3eb3"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "players"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      6
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "position",
+      "G"
+     ]
+    }
+   ],
+   "resultHash": "967048f2156c8fb56f89ab5ae55dd79e7c2fa71378b1f6d096dda5aa3870fc23"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "goalie_start_projections"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "player_id,start_probability,confirmed_status,l10_start_pct,season_start_pct,games_played,projected_gsaa_per_60,updated_at,game_date"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "game_id",
+      2026020250
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      6
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "start_probability",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      6
+     ]
+    }
+   ],
+   "resultHash": "034e4302082ad933b931e6d372fa70c791a240dcb45cf935a6612a801ab773d2"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "goalie_id,game_date"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      6
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "d10194837832394eca5837b75d144211076d26bd8b8f0d25c8780bb03865ca23"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_id,game_date,goalie_id"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      6
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      80
+     ]
+    }
+   ],
+   "resultHash": "4b02d51d02ba013e4840a207d27e82481fcd1d7238aef47a13db09bbd5098d84"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.6,awayTeamId.eq.6"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "28c486552148b77cfdfc21a0101e8c2ed39da02a6b282b9dc4e5fe5fadf89456"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_goalie_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_id,goalie_id,games_started"
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "game_id",
+      [
+       2026020150,
+       2026020151,
+       2026020152,
+       2026020153,
+       2026020154,
+       2026020155,
+       2026020156,
+       2026020157
+      ]
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "goalie_id",
+      [
+       8470632,
+       8470631
+      ]
+     ]
+    }
+   ],
+   "resultHash": "438b3b0523eb4c2e6eb63042a9f6888a5ecd6f49d25d09eb2cdbadf6c876d62b"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date"
+     ]
+    },
+    {
+     "method": "or",
+     "args": [
+      "homeTeamId.eq.6,awayTeamId.eq.6"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      144
+     ]
+    }
+   ],
+   "resultHash": "4fce42bd43c1b354af46be011adb600013184ff6e223f8f8c1e61e50505c88c8"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "lineCombinations"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "gameId,teamId,forwards,defensemen,goalies"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "teamId",
+      6
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "gameId",
+      [
+       2026020150,
+       2026020151,
+       2026020152,
+       2026020153,
+       2026020154,
+       2026020155,
+       2026020156,
+       2026020157
+      ]
+     ]
+    }
+   ],
+   "resultHash": "7e8208bacb218180fff8e5bfac9858d72995c9d6ceb27b55bfe2e4be93864cc8"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_id,game_date,shots_against"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      10
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      30
+     ]
+    }
+   ],
+   "resultHash": "9b6f14e409bb5f26625dc129c2f1bb5084ef30742c28e49389c4a07810a0bd38"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_team_game_strength"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_date,shots_es,shots_pp,goals_es,goals_pp"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      6
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      10
+     ]
+    }
+   ],
+   "resultHash": "8fd4bc50201aa75c5a4a8cd150aac3be1c49d2d9d01e0b24a10d9dbdf32f7a61"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed,saves"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471031
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      20
+     ]
+    }
+   ],
+   "resultHash": "e1e0b1275d9e895959569e525b5de9e9db8e766d6892f4d9bdb43731ccf08a4c"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed,saves"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471031
+     ]
+    },
+    {
+     "method": "gte",
+     "args": [
+      "game_date",
+      "2026-07-01"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      120
+     ]
+    }
+   ],
+   "resultHash": "e1e0b1275d9e895959569e525b5de9e9db8e766d6892f4d9bdb43731ccf08a4c"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed,saves"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471031
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      200
+     ]
+    }
+   ],
+   "resultHash": "e1e0b1275d9e895959569e525b5de9e9db8e766d6892f4d9bdb43731ccf08a4c"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_goalie_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date,quality_start,quality_starts_pct"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471031
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "3e5b5d952ef53c4e90ce9b92bad8c65d55ba8f95c94c5c244c7736eb9cb19375"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_date"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471031
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      30
+     ]
+    }
+   ],
+   "resultHash": "ab5151f4854560c0cfbe8aa56898f5367501fa245a1dd9f82f765f0c2485955e"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_goalie_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date,save_pct_days_rest_0,save_pct_days_rest_1,save_pct_days_rest_2,save_pct_days_rest_3,save_pct_days_rest_4_plus,games_played_days_rest_0,games_played_days_rest_1,games_played_days_rest_2,games_played_days_rest_3,games_played_days_rest_4_plus"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471031
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "5e413ca7ae954a9d043f07a347e9409409af29603afb2788419829b15a24ee27"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed,saves"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471032
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      20
+     ]
+    }
+   ],
+   "resultHash": "43ecc5a7ee4c68b0dba9ce4c91617a458caa7deab953efcf68e8f386f90817a2"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed,saves"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471032
+     ]
+    },
+    {
+     "method": "gte",
+     "args": [
+      "game_date",
+      "2026-07-01"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      120
+     ]
+    }
+   ],
+   "resultHash": "43ecc5a7ee4c68b0dba9ce4c91617a458caa7deab953efcf68e8f386f90817a2"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed,saves"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471032
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      200
+     ]
+    }
+   ],
+   "resultHash": "43ecc5a7ee4c68b0dba9ce4c91617a458caa7deab953efcf68e8f386f90817a2"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_goalie_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date,quality_start,quality_starts_pct"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471032
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "b55a53962fba2e3d59d8eb2de6c7b289e8e74b3f189947d18c456f8e0afe0c2c"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_date"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471032
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      30
+     ]
+    }
+   ],
+   "resultHash": "4ab5f1580aef906f24e0c134dbd3fac728c4ae41e569d46587c058ff1a0716d6"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_goalie_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date,save_pct_days_rest_0,save_pct_days_rest_1,save_pct_days_rest_2,save_pct_days_rest_3,save_pct_days_rest_4_plus,games_played_days_rest_0,games_played_days_rest_1,games_played_days_rest_2,games_played_days_rest_3,games_played_days_rest_4_plus"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8471032
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "4c3503f9e2492fca0df07909658bac9031c7d75174fb8f95e2ab52c4fffd0822"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_id,game_date,shots_against"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      6
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      30
+     ]
+    }
+   ],
+   "resultHash": "05ad0c7c7d05599509c77753e50502794aba1ec05e683730548ca7ce75373953"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_team_game_strength"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_date,shots_es,shots_pp,goals_es,goals_pp"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "team_id",
+      10
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      10
+     ]
+    }
+   ],
+   "resultHash": "412ab7536f9cf5eeeb684a5b5de810ba83c995c811f77f003626a82f352e53b7"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed,saves"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470631
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      20
+     ]
+    }
+   ],
+   "resultHash": "10c4849435dc9bb342d6d7e033330e9fbcd16329dd5a0564b79461aec0139476"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed,saves"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470631
+     ]
+    },
+    {
+     "method": "gte",
+     "args": [
+      "game_date",
+      "2026-07-01"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      120
+     ]
+    }
+   ],
+   "resultHash": "10c4849435dc9bb342d6d7e033330e9fbcd16329dd5a0564b79461aec0139476"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed,saves"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470631
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      200
+     ]
+    }
+   ],
+   "resultHash": "10c4849435dc9bb342d6d7e033330e9fbcd16329dd5a0564b79461aec0139476"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_goalie_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date,quality_start,quality_starts_pct"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470631
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "721bfd62ff5d70963b82a2dd5e9502a6c88083c2f65fdcaed97966e6148b2f9f"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_date"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470631
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      30
+     ]
+    }
+   ],
+   "resultHash": "3d1b24afa83f7bc93e5f8d9f52cdb24b5ebdeb5ca984fea1655993d16e5fc965"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_goalie_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date,save_pct_days_rest_0,save_pct_days_rest_1,save_pct_days_rest_2,save_pct_days_rest_3,save_pct_days_rest_4_plus,games_played_days_rest_0,games_played_days_rest_1,games_played_days_rest_2,games_played_days_rest_3,games_played_days_rest_4_plus"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470631
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "603262e035065148db6e5007388c3c37a313bd65fe9f2668c299aeb8f4506846"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed,saves"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470632
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      20
+     ]
+    }
+   ],
+   "resultHash": "1fa52c681da2edb2bd75d901a0209222157b5f79b9ccbf9d9cc55407cb01c656"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed,saves"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470632
+     ]
+    },
+    {
+     "method": "gte",
+     "args": [
+      "game_date",
+      "2026-07-01"
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      120
+     ]
+    }
+   ],
+   "resultHash": "1fa52c681da2edb2bd75d901a0209222157b5f79b9ccbf9d9cc55407cb01c656"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "shots_against,goals_allowed,saves"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470632
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      200
+     ]
+    }
+   ],
+   "resultHash": "1fa52c681da2edb2bd75d901a0209222157b5f79b9ccbf9d9cc55407cb01c656"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_goalie_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date,quality_start,quality_starts_pct"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470632
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "a99c0861792b3dfbcc304f972a468d9dd8bce5c084b6b89c83c0784917f3eeb1"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "forge_goalie_game"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_date"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470632
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "game_date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      30
+     ]
+    }
+   ],
+   "resultHash": "d2c87ffdf1d5af60c52bfd0690f1f6927474f12a32db9d1bbbd5d75b680b0f85"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "wgo_goalie_stats"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "date,save_pct_days_rest_0,save_pct_days_rest_1,save_pct_days_rest_2,save_pct_days_rest_3,save_pct_days_rest_4_plus,games_played_days_rest_0,games_played_days_rest_1,games_played_days_rest_2,games_played_days_rest_3,games_played_days_rest_4_plus"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "goalie_id",
+      8470632
+     ]
+    },
+    {
+     "method": "lt",
+     "args": [
+      "date",
+      "2026-11-14"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "date",
+      {
+       "ascending": false
+      }
+     ]
+    },
+    {
+     "method": "limit",
+     "args": [
+      1
+     ]
+    },
+    {
+     "method": "maybeSingle",
+     "args": []
+    }
+   ],
+   "resultHash": "87294fa09e1fbc62650ad489a780937fd351331bbde2da9bf09e65f1183cbe33"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,date,seasonId,startTime,homeTeamId,awayTeamId",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "id",
+      [
+       2026020250
+      ]
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "id"
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "616e52825587637f74f047a5ccff93c68c3bb5e33a37823833cc71db8c593e30"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "roster_optimizer_team_games"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "game_key,season,source_season_id,source_game_id,team_id,opponent_team_id,team_abbreviation,opponent_abbreviation,start_time,game_status,schedule_status,source_updated_at,fetched_at",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "source_season_id",
+      20262027
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "source_game_id",
+      [
+       2026020250
+      ]
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "source_game_id"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "team_id"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "game_key"
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "dfc41ad6005c85343e16b099d91dc8f5752782af27173b9e2d3670f240fc1b56"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "rosters"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "playerId,teamId,seasonId,created_at",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "seasonId",
+      20262027
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "is_current",
+      true
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "teamId",
+      [
+       10,
+       6
+      ]
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "playerId"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "teamId"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "created_at"
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "26ee5709ba446a86a1321da5bddba817cc82d889e5ac2bc060a0ce1833ec9205"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "rosters"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "playerId,teamId,seasonId,created_at",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "seasonId",
+      20262027
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "is_current",
+      true
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "playerId",
+      [
+       8470601,
+       8470602,
+       8470603,
+       8470604,
+       8470605,
+       8470606,
+       8470607,
+       8470608,
+       8470609,
+       8470610,
+       8470611,
+       8470612,
+       8470613,
+       8470621,
+       8470622,
+       8470623,
+       8470624,
+       8470625,
+       8470626,
+       8470627,
+       8470631,
+       8470632,
+       8471001,
+       8471002,
+       8471003,
+       8471004,
+       8471005,
+       8471006,
+       8471007,
+       8471008,
+       8471009,
+       8471010,
+       8471011,
+       8471012,
+       8471013,
+       8471021,
+       8471022,
+       8471023,
+       8471024,
+       8471025,
+       8471026,
+       8471027,
+       8471031,
+       8471032
+      ]
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "playerId"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "teamId"
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "created_at"
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "26ee5709ba446a86a1321da5bddba817cc82d889e5ac2bc060a0ce1833ec9205"
+  },
+  {
+   "request": [
+    {
+     "method": "from",
+     "args": [
+      "fhfh_player_identities"
+     ]
+    },
+    {
+     "method": "select",
+     "args": [
+      "id,nhl_player_id,current_nhl_team_id,updated_at",
+      {
+       "count": "exact"
+      }
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "verification_status",
+      "verified"
+     ]
+    },
+    {
+     "method": "eq",
+     "args": [
+      "lifecycle_status",
+      "active_nhl"
+     ]
+    },
+    {
+     "method": "is",
+     "args": [
+      "merged_into_id",
+      null
+     ]
+    },
+    {
+     "method": "in",
+     "args": [
+      "nhl_player_id",
+      [
+       8470601,
+       8470602,
+       8470603,
+       8470604,
+       8470605,
+       8470606,
+       8470607,
+       8470608,
+       8470609,
+       8470610,
+       8470611,
+       8470612,
+       8470613,
+       8470621,
+       8470622,
+       8470623,
+       8470624,
+       8470625,
+       8470626,
+       8470627,
+       8470631,
+       8470632,
+       8471001,
+       8471002,
+       8471003,
+       8471004,
+       8471005,
+       8471006,
+       8471007,
+       8471008,
+       8471009,
+       8471010,
+       8471011,
+       8471012,
+       8471013,
+       8471021,
+       8471022,
+       8471023,
+       8471024,
+       8471025,
+       8471026,
+       8471027,
+       8471031,
+       8471032
+      ]
+     ]
+    },
+    {
+     "method": "order",
+     "args": [
+      "id"
+     ]
+    },
+    {
+     "method": "range",
+     "args": [
+      0,
+      499
+     ]
+    }
+   ],
+   "resultHash": "cca39db63d54b3268bdd03786212f04425df60299d686081ff6e9e79f199a95d"
+  }
+ ],
+ "writes": [
+  {
+   "table": "forge_player_projections",
+   "hash": "5fb7aca4e55e07770141e2115a5f848c7f68bf39e8e5d2ce0d475f2028191bfa"
+  },
+  {
+   "table": "forge_team_projections",
+   "hash": "27bdd0b1b7e3ffce2fa35d1a43e06bf9b5db6ffa303432a4123b7420390db0b8"
+  },
+  {
+   "table": "forge_player_projections",
+   "hash": "2cc73e9e458ac3e2d9ae9b8f2c422eb738239ea08ce67479ccb0a773a5b959c9"
+  },
+  {
+   "table": "forge_team_projections",
+   "hash": "36a44bc971fc80491dd4492edf7b799349e8a50fc21ef260042f847561ba4b1c"
+  },
+  {
+   "table": "forge_goalie_projections",
+   "hash": "a21506f7582bc6c7225d6930b9dfc21373842aefb41659309fae2cc8b42b7493"
+  },
+  {
+   "table": "forge_goalie_projections",
+   "hash": "9fe75dd1102190d9a8cfd5ae69494dacb3115297c9c6385b21671ae4bc0cc97a"
+  },
+  {
+   "table": "player_prediction_outputs",
+   "hash": "305e12970b54d88296136060295dc68648bb4619f8ef1d9e21912bf67f50e4f0"
+  },
+  {
+   "table": "game_prediction_outputs",
+   "hash": "f25fb8a9188dd8b5619e0dcefc31786bc5932173a9a546f58a834dd329c0ba1f"
+  },
+  {
+   "table": "game_prediction_outputs",
+   "hash": "cb7bfd55d8fa2f77b312d88d198fa8112bff925dacefb4225ba53721e078724c"
+  },
+  {
+   "table": "model_market_flags_daily",
+   "hash": "500c15a8ff45e93043e0c567b0cbe4c144de088ca3cff86fd3f3083705161c6a"
+  },
+  {
+   "table": "forge_runs",
+   "hash": "f6d43b130151f6976807a810b11ea9b29ffc5ddad655660572cc99fd3ff0a17d"
+  }
+ ],
+ "outputHash": "38480edda0da9565d8c892e993c98d83d4a4974546db5cca98354e26889d92b4",
+ "candidates": {
+  "skaters": {
+   "6": [
+    8470601,
+    8470602,
+    8470603,
+    8470604,
+    8470605,
+    8470606,
+    8470607,
+    8470608,
+    8470609,
+    8470610,
+    8470611,
+    8470612,
+    8470621,
+    8470622,
+    8470623,
+    8470624,
+    8470625,
+    8470626
+   ],
+   "10": [
+    8471001,
+    8471002,
+    8471003,
+    8471004,
+    8471005,
+    8471006,
+    8471007,
+    8471008,
+    8471009,
+    8471010,
+    8471011,
+    8471012,
+    8471013,
+    8471021,
+    8471022,
+    8471023,
+    8471024,
+    8471025
+   ]
+  },
+  "goalies": {
+   "6": [
+    8470631,
+    8470632
+   ],
+   "10": [
+    8471031,
+    8471032
+   ]
+  },
+  "reserves": {}
+ }
+}

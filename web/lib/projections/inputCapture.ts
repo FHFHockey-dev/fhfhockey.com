@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
 import { installProjectionQueryInterceptor, installProjectionReadOnlyProbe } from "./queryCaptureHook";
+import type { CaptureTransport } from "./pregameCapture/transport";
 
 type Operation = { method: string; args: unknown[] };
 installProjectionQueryInterceptor(interceptProjectionQuery);
@@ -20,6 +21,8 @@ type Capture = {
   deadlineMs?: number;
   suppressWrites?: boolean;
   controlledNewsReads?: ControlledNewsReads;
+  /** Strict pregame capture: bounded client, refusals instead of fake success. */
+  transport?: CaptureTransport;
 };
 
 const storage = new AsyncLocalStorage<Capture>();
@@ -55,7 +58,10 @@ export function capturedReadReceipt(reads: ProjectionInputRead[]): ForgeCaptured
     firstReceivedAt: new Date(times[0]).toISOString(), lastReceivedAt: new Date(times[times.length - 1]).toISOString() };
 }
 
-export async function captureProjectionInputs<T>(work: () => Promise<T>, options?: { deadlineMs?: number; suppressWrites?: boolean; controlledNewsReads?: ControlledNewsReads }) {
+export async function captureProjectionInputs<T>(work: () => Promise<T>, options?: { deadlineMs?: number; suppressWrites?: boolean; controlledNewsReads?: ControlledNewsReads; transport?: CaptureTransport }) {
+  if (options?.transport && (options.suppressWrites || options.controlledNewsReads)) {
+    throw new Error("Strict capture cannot suppress writes or use controlled news.");
+  }
   if (options?.controlledNewsReads && !options.suppressWrites) throw new Error("Controlled news requires read-only reconstruction");
   const context: Capture = { mode: "capture", reads: [], writes: [], consumed: new Set(), ...options };
   const result = await storage.run(context, work);
@@ -83,6 +89,8 @@ export function interceptProjectionQuery(
   let pending: Promise<any> | undefined;
   const execute = () => pending ??= (async () => {
     const request = clone(operations);
+    // Strict capture validates the whole chain first: writes and unknown RPCs throw, never fake success.
+    if (context.transport && context.mode === "capture") context.transport.validate(method, request);
     const mutation = operations.some((op) => ["insert", "upsert", "update", "delete"].includes(op.method));
     if (mutation) context.writes.push(request);
     if (context.suppressWrites) {
@@ -123,7 +131,7 @@ export function interceptProjectionQuery(
       if (context.reads[index].failure) throw new Error(context.reads[index].failure);
       return clone(context.reads[index].result);
     }
-    let query = live();
+    let query = context.transport ? context.transport.start(method, args) : live();
     for (const op of operations.slice(1)) query = query[op.method](...op.args);
     let timeout: ReturnType<typeof setTimeout> | undefined;
     if (!mutation && Number.isFinite(context.deadlineMs) && typeof query.abortSignal === "function") {
@@ -143,7 +151,9 @@ export function interceptProjectionQuery(
     } finally {
       if (timeout) clearTimeout(timeout);
     }
-    if (!mutation) context.reads.push({ request, result: clone(result), receivedAt: new Date().toISOString() });
+    const receivedAt = new Date().toISOString();
+    if (!mutation) context.reads.push({ request, result: clone(result), receivedAt });
+    if (context.transport) context.transport.inspect(method, request, result, receivedAt);
     return result;
   })();
   const proxy: any = new Proxy({}, {

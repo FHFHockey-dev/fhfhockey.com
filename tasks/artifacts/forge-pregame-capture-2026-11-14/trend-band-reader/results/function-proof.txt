@@ -1,0 +1,12 @@
+PASS refuses a null as-of date
+PASS refuses an empty player list
+PASS refuses a null element
+PASS refuses more than 1000 keys
+PASS anon cannot execute
+PASS authenticated cannot execute
+PASS one row per distinct key, ordered by player, metric, window in byte order
+PASS a player without rows gets null rows, not none
+PASS a hard-stale player's rows come back with their dates
+PASS rows after the as-of date are ignored (F1 also has 2026-11-15/16 rows)
+PASS STABLE, SECURITY INVOKER, search_path pinned
+OK: 0 failure(s)

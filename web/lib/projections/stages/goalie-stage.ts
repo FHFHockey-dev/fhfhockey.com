@@ -114,7 +114,8 @@ export type SelectedGoalieProjection = {
   saves: number;
 };
 
-export async function runPerGameGoalieStage(args: {
+/** Everything the per-game goalie stage receives from the run; the loader and compute share it. */
+export type GoalieStageArgs = {
   seasonBootstrap?: boolean;
   dailyBoardEvidence?: DailyBoardEvidence;
   evidenceCutoffAt?: string | null;
@@ -150,7 +151,10 @@ export async function runPerGameGoalieStage(args: {
   playerPredictionOutputRows: Array<Record<string, unknown>>;
   modelMarketFlagRows: Array<Record<string, unknown>>;
   metrics: { warnings: string[] };
-}): Promise<{ timedOut: boolean; goalieRowsUpserted: number }> {
+};
+
+/** Compute: projects each candidate team's goalie slot from loaded inputs and writes its rows. Performs no reads. */
+export async function computeGoalieGameProjections(args: GoalieStageArgs, inputs: GoalieGameInputs): Promise<{ timedOut: boolean; goalieRowsUpserted: number }> {
   const {
     asOfDate,
     runId,
@@ -181,11 +185,7 @@ export async function runPerGameGoalieStage(args: {
   const teamDateKey = (teamId: number) => `${teamId}:${asOfDate}`;
   const playerDateKey = (playerId: number) => `${playerId}:${asOfDate}`;
   let goalieRowsUpserted = 0;
-  const seasonYear = Math.floor(game.id / 1_000_000);
-  const bootstrap = args.seasonBootstrap ? await loadSeasonBootstrap(
-    [...new Set(goalieCandidates.flatMap((candidate) => candidate.candidateGoalieIds))],
-    seasonYear * 10000 + seasonYear + 1, asOfDate, "goalie") : new Map<number, SeasonBootstrap>();
-  const seasonLeague = await getSeasonLeagueSavePct(asOfDate, args.leagueSavePctCache);
+  const { bootstrap, seasonLeague } = inputs;
   if (seasonLeague.warning) metrics.warnings.push(seasonLeague.warning);
   for (const c of goalieCandidates) {
     if (Date.now() > deadlineMs) {
@@ -204,95 +204,32 @@ export async function runPerGameGoalieStage(args: {
     const defendingTeamAbbrev = teamAbbreviationById.get(c.teamId) ?? null;
     const opponentTeamAbbrev =
       teamAbbreviationById.get(c.opponentTeamId) ?? null;
-    if (!teamStrengthPriorCache.has(teamDateKey(c.teamId))) {
-      teamStrengthPriorCache.set(
-        teamDateKey(c.teamId),
-        defendingTeamAbbrev
-          ? await fetchTeamStrengthPrior(
-              defendingTeamAbbrev,
-              asOfDate,
-              c.teamId,
-            )
-          : null,
-      );
-    }
-    if (!teamStrengthPriorCache.has(teamDateKey(c.opponentTeamId))) {
-      teamStrengthPriorCache.set(
-        teamDateKey(c.opponentTeamId),
-        opponentTeamAbbrev
-          ? await fetchTeamStrengthPrior(
-              opponentTeamAbbrev,
-              asOfDate,
-              c.opponentTeamId,
-            )
-          : null,
-      );
-    }
     const defendingStrengthPrior =
-      teamStrengthPriorCache.get(teamDateKey(c.teamId)) ?? null;
+      loaded(teamStrengthPriorCache, teamDateKey(c.teamId));
     const opponentStrengthPrior =
-      teamStrengthPriorCache.get(teamDateKey(c.opponentTeamId)) ?? null;
+      loaded(teamStrengthPriorCache, teamDateKey(c.opponentTeamId));
     const teamStrengthContextAdjustment = computeTeamStrengthContextAdjustment({
       defendingTeamPrior: defendingStrengthPrior,
       opponentTeamPrior: opponentStrengthPrior,
     });
-    if (!teamFiveOnFiveProfileCache.has(teamDateKey(c.teamId))) {
-      teamFiveOnFiveProfileCache.set(
-        teamDateKey(c.teamId),
-        await fetchTeamFiveOnFiveProfile(c.teamId, asOfDate),
-      );
-    }
-    if (!teamFiveOnFiveProfileCache.has(teamDateKey(c.opponentTeamId))) {
-      teamFiveOnFiveProfileCache.set(
-        teamDateKey(c.opponentTeamId),
-        await fetchTeamFiveOnFiveProfile(c.opponentTeamId, asOfDate),
-      );
-    }
     const defendingFiveOnFiveProfile =
-      teamFiveOnFiveProfileCache.get(teamDateKey(c.teamId)) ?? null;
+      loaded(teamFiveOnFiveProfileCache, teamDateKey(c.teamId));
     const opponentFiveOnFiveProfile =
-      teamFiveOnFiveProfileCache.get(teamDateKey(c.opponentTeamId)) ?? null;
+      loaded(teamFiveOnFiveProfileCache, teamDateKey(c.opponentTeamId));
     const teamFiveOnFiveContextAdjustment =
       computeTeamFiveOnFiveContextAdjustment({
         defendingTeamProfile: defendingFiveOnFiveProfile,
         opponentTeamProfile: opponentFiveOnFiveProfile,
       });
-    if (!teamNstExpectedGoalsCache.has(teamDateKey(c.teamId))) {
-      teamNstExpectedGoalsCache.set(
-        teamDateKey(c.teamId),
-        defendingTeamAbbrev
-          ? await fetchTeamNstExpectedGoalsProfile(
-              defendingTeamAbbrev,
-              asOfDate,
-            )
-          : null,
-      );
-    }
-    if (!teamNstExpectedGoalsCache.has(teamDateKey(c.opponentTeamId))) {
-      teamNstExpectedGoalsCache.set(
-        teamDateKey(c.opponentTeamId),
-        opponentTeamAbbrev
-          ? await fetchTeamNstExpectedGoalsProfile(opponentTeamAbbrev, asOfDate)
-          : null,
-      );
-    }
     const defendingNstExpectedGoalsProfile =
-      teamNstExpectedGoalsCache.get(teamDateKey(c.teamId)) ?? null;
+      loaded(teamNstExpectedGoalsCache, teamDateKey(c.teamId));
     const opponentNstExpectedGoalsProfile =
-      teamNstExpectedGoalsCache.get(teamDateKey(c.opponentTeamId)) ?? null;
+      loaded(teamNstExpectedGoalsCache, teamDateKey(c.opponentTeamId));
     const nstOpponentDangerAdjustment = computeNstOpponentDangerAdjustment({
       defendingTeamProfile: defendingNstExpectedGoalsProfile,
       opponentTeamProfile: opponentNstExpectedGoalsProfile,
     });
-    if (!teamDefensiveEnvironmentCache.has(teamDateKey(c.teamId))) {
-      teamDefensiveEnvironmentCache.set(
-        teamDateKey(c.teamId),
-        await fetchTeamDefensiveEnvironment(c.teamId, asOfDate),
-      );
-    }
-    const defensiveEnv = teamDefensiveEnvironmentCache.get(
-      teamDateKey(c.teamId),
-    ) as TeamDefensiveEnvironment;
+    const defensiveEnv = loaded(teamDefensiveEnvironmentCache, teamDateKey(c.teamId));
     const teamSaAvg10 = defensiveEnv.avgShotsAgainstLast10;
     const teamSaAvg5 = defensiveEnv.avgShotsAgainstLast5;
     const trendAdj =
@@ -310,31 +247,11 @@ export async function runPerGameGoalieStage(args: {
       Math.max(0, adjustedBaseShotsAgainst).toFixed(3),
     );
     const teamGoalsFor = teamGoalsByTeamId.get(c.teamId) ?? null;
-    if (!teamOffenseEnvironmentCache.has(teamDateKey(c.opponentTeamId))) {
-      teamOffenseEnvironmentCache.set(
-        teamDateKey(c.opponentTeamId),
-        await fetchTeamOffenseEnvironment(c.opponentTeamId, asOfDate),
-      );
-    }
-    if (!teamRestDaysCache.has(teamDateKey(c.teamId))) {
-      teamRestDaysCache.set(
-        teamDateKey(c.teamId),
-        await fetchTeamRestDays(c.teamId, asOfDate),
-      );
-    }
-    if (!teamRestDaysCache.has(teamDateKey(c.opponentTeamId))) {
-      teamRestDaysCache.set(
-        teamDateKey(c.opponentTeamId),
-        await fetchTeamRestDays(c.opponentTeamId, asOfDate),
-      );
-    }
-    const opponentOffense = teamOffenseEnvironmentCache.get(
-      teamDateKey(c.opponentTeamId),
-    ) as TeamOffenseEnvironment;
+    const opponentOffense = loaded(teamOffenseEnvironmentCache, teamDateKey(c.opponentTeamId));
     const defendingRestDays =
-      teamRestDaysCache.get(teamDateKey(c.teamId)) ?? null;
+      loaded(teamRestDaysCache, teamDateKey(c.teamId));
     const opponentRestDays =
-      teamRestDaysCache.get(teamDateKey(c.opponentTeamId)) ?? null;
+      loaded(teamRestDaysCache, teamDateKey(c.opponentTeamId));
     const opponentIsHome = c.opponentTeamId === game.homeTeamId;
 
     const oppShots10 = opponentOffense.avgShotsForLast10;
@@ -416,10 +333,7 @@ export async function runPerGameGoalieStage(args: {
         topStarterScenarios,
       });
     } else {
-      const starterContext =
-        teamGoalieStarterContextCache.get(teamDateKey(c.teamId)) ??
-        (await fetchTeamGoalieStarterContext(c.teamId, asOfDate));
-      teamGoalieStarterContextCache.set(teamDateKey(c.teamId), starterContext);
+      const starterContext = loaded(teamGoalieStarterContextCache, teamDateKey(c.teamId));
       const opponentGoalsForRaw = teamGoalsByTeamId.get(c.opponentTeamId) ?? null;
       const opponentGoalsFor = opponentGoalsForRaw === null ? null : Number(
         Math.max(
@@ -517,18 +431,9 @@ export async function runPerGameGoalieStage(args: {
     // the rest-split and game-context shifts at their legacy effective weight.
     const loadGoalieInputs = async (goalieId: number) => {
       const key = playerDateKey(goalieId);
-      if (!goalieEvidenceCache.has(key)) {
-        goalieEvidenceCache.set(key, await fetchGoalieEvidence(goalieId, asOfDate, leagueSavePct));
-      }
-      if (!goalieWorkloadContextCache.has(key)) {
-        goalieWorkloadContextCache.set(key, await fetchGoalieWorkloadContext(goalieId, asOfDate));
-      }
-      if (!goalieRestSplitProfileCache.has(key)) {
-        goalieRestSplitProfileCache.set(key, await fetchGoalieRestSplitProfile(goalieId, asOfDate));
-      }
-      const goalieEvidence = goalieEvidenceCache.get(key) as GoalieEvidence;
-      const goalieWorkload = goalieWorkloadContextCache.get(key) as GoalieWorkloadContext;
-      const goalieRestSplitProfile = goalieRestSplitProfileCache.get(key) ?? null;
+      const goalieEvidence = loaded(goalieEvidenceCache, key);
+      const goalieWorkload = loaded(goalieWorkloadContextCache, key);
+      const goalieRestSplitProfile = loaded(goalieRestSplitProfileCache, key) ?? null;
       const restAdjustment = goalieRestSavePctAdjustment(goalieWorkload);
       const restSplitAdjustment = computeGoalieRestSplitSavePctAdjustment({
         profile: goalieRestSplitProfile,
@@ -1001,4 +906,160 @@ export async function runPerGameGoalieStage(args: {
     }
   }
   return { timedOut: false, goalieRowsUpserted };
+}
+
+/** A loaded input the compute requires; missing means the loader and compute disagree, so fail closed. */
+function loaded<K, V>(cache: Map<K, V>, key: K): V {
+  if (!cache.has(key)) throw new Error(`FORGE goalie compute input was not loaded: ${String(key)}`);
+  return cache.get(key) as V;
+}
+
+/**
+ * Loader: every goalie-stage read for the game's candidate teams, into the run's caches. A team whose opponent has no
+ * projected lineup is skipped exactly as compute skips it. Each team's goalie inputs load in a model-free order (the
+ * override, then the candidates, then roster goalies when the reserve pass is on); the writer used to load the
+ * model's top-ranked goalie first, so only the order of that block can differ, never its reads.
+ */
+export async function loadGoalieGameInputs(args: GoalieStageArgs, opponentProjected: (teamId: number) => boolean) {
+  const {
+    asOfDate,
+    game,
+    goalieCandidates,
+    teamAbbreviationById,
+    teamStrengthPriorCache,
+    teamFiveOnFiveProfileCache,
+    teamNstExpectedGoalsCache,
+    teamDefensiveEnvironmentCache,
+    teamOffenseEnvironmentCache,
+    teamRestDaysCache,
+    teamGoalieStarterContextCache,
+    goalieEvidenceCache,
+    goalieWorkloadContextCache,
+    goalieRestSplitProfileCache,
+  } = args;
+  const teamDateKey = (teamId: number) => `${teamId}:${asOfDate}`;
+  const playerDateKey = (playerId: number) => `${playerId}:${asOfDate}`;
+  const seasonYear = Math.floor(game.id / 1_000_000);
+  const bootstrap = args.seasonBootstrap ? await loadSeasonBootstrap(
+    [...new Set(goalieCandidates.flatMap((candidate) => candidate.candidateGoalieIds))],
+    seasonYear * 10000 + seasonYear + 1, asOfDate, "goalie") : new Map<number, SeasonBootstrap>();
+  const seasonLeague = await getSeasonLeagueSavePct(asOfDate, args.leagueSavePctCache);
+  const goalieIdsByTeamId = new Map<number, number[]>();
+  for (const c of goalieCandidates) {
+    if (!opponentProjected(c.opponentTeamId)) continue;
+    const defendingTeamAbbrev = teamAbbreviationById.get(c.teamId) ?? null;
+    const opponentTeamAbbrev =
+      teamAbbreviationById.get(c.opponentTeamId) ?? null;
+    if (!teamStrengthPriorCache.has(teamDateKey(c.teamId))) {
+      teamStrengthPriorCache.set(
+        teamDateKey(c.teamId),
+        defendingTeamAbbrev
+          ? await fetchTeamStrengthPrior(
+              defendingTeamAbbrev,
+              asOfDate,
+              c.teamId,
+            )
+          : null,
+      );
+    }
+    if (!teamStrengthPriorCache.has(teamDateKey(c.opponentTeamId))) {
+      teamStrengthPriorCache.set(
+        teamDateKey(c.opponentTeamId),
+        opponentTeamAbbrev
+          ? await fetchTeamStrengthPrior(
+              opponentTeamAbbrev,
+              asOfDate,
+              c.opponentTeamId,
+            )
+          : null,
+      );
+    }
+    if (!teamFiveOnFiveProfileCache.has(teamDateKey(c.teamId))) {
+      teamFiveOnFiveProfileCache.set(
+        teamDateKey(c.teamId),
+        await fetchTeamFiveOnFiveProfile(c.teamId, asOfDate),
+      );
+    }
+    if (!teamFiveOnFiveProfileCache.has(teamDateKey(c.opponentTeamId))) {
+      teamFiveOnFiveProfileCache.set(
+        teamDateKey(c.opponentTeamId),
+        await fetchTeamFiveOnFiveProfile(c.opponentTeamId, asOfDate),
+      );
+    }
+    if (!teamNstExpectedGoalsCache.has(teamDateKey(c.teamId))) {
+      teamNstExpectedGoalsCache.set(
+        teamDateKey(c.teamId),
+        defendingTeamAbbrev
+          ? await fetchTeamNstExpectedGoalsProfile(
+              defendingTeamAbbrev,
+              asOfDate,
+            )
+          : null,
+      );
+    }
+    if (!teamNstExpectedGoalsCache.has(teamDateKey(c.opponentTeamId))) {
+      teamNstExpectedGoalsCache.set(
+        teamDateKey(c.opponentTeamId),
+        opponentTeamAbbrev
+          ? await fetchTeamNstExpectedGoalsProfile(opponentTeamAbbrev, asOfDate)
+          : null,
+      );
+    }
+    if (!teamDefensiveEnvironmentCache.has(teamDateKey(c.teamId))) {
+      teamDefensiveEnvironmentCache.set(
+        teamDateKey(c.teamId),
+        await fetchTeamDefensiveEnvironment(c.teamId, asOfDate),
+      );
+    }
+    if (!teamOffenseEnvironmentCache.has(teamDateKey(c.opponentTeamId))) {
+      teamOffenseEnvironmentCache.set(
+        teamDateKey(c.opponentTeamId),
+        await fetchTeamOffenseEnvironment(c.opponentTeamId, asOfDate),
+      );
+    }
+    if (!teamRestDaysCache.has(teamDateKey(c.teamId))) {
+      teamRestDaysCache.set(
+        teamDateKey(c.teamId),
+        await fetchTeamRestDays(c.teamId, asOfDate),
+      );
+    }
+    if (!teamRestDaysCache.has(teamDateKey(c.opponentTeamId))) {
+      teamRestDaysCache.set(
+        teamDateKey(c.opponentTeamId),
+        await fetchTeamRestDays(c.opponentTeamId, asOfDate),
+      );
+    }
+    if (!c.override && !teamGoalieStarterContextCache.has(teamDateKey(c.teamId))) {
+      teamGoalieStarterContextCache.set(teamDateKey(c.teamId), await fetchTeamGoalieStarterContext(c.teamId, asOfDate));
+    }
+    const goalieIds = [...new Set([
+      ...(c.override ? [c.override.goalieId] : []),
+      ...c.candidateGoalieIds,
+      ...(forgeReservePassEnabled() ? c.rosterGoalieIds ?? [] : []),
+    ])];
+    for (const goalieId of goalieIds) {
+      const key = playerDateKey(goalieId);
+      if (!goalieEvidenceCache.has(key)) {
+        goalieEvidenceCache.set(key, await fetchGoalieEvidence(goalieId, asOfDate, seasonLeague.savePct));
+      }
+      if (!goalieWorkloadContextCache.has(key)) {
+        goalieWorkloadContextCache.set(key, await fetchGoalieWorkloadContext(goalieId, asOfDate));
+      }
+      if (!goalieRestSplitProfileCache.has(key)) {
+        goalieRestSplitProfileCache.set(key, await fetchGoalieRestSplitProfile(goalieId, asOfDate));
+      }
+    }
+    goalieIdsByTeamId.set(c.teamId, goalieIds);
+  }
+  return { bootstrap, seasonLeague, goalieIdsByTeamId };
+}
+export type GoalieGameInputs = Awaited<ReturnType<typeof loadGoalieGameInputs>>;
+
+/** Loader seam: the stage calls the loader through this object so parity tests can observe the writer's bundle. */
+export const goalieStageLoaders = { game: loadGoalieGameInputs };
+
+/** The writer's per-game goalie stage: load every candidate team's inputs, then compute and write from them. */
+export async function runPerGameGoalieStage(args: GoalieStageArgs): Promise<{ timedOut: boolean; goalieRowsUpserted: number }> {
+  const inputs = await goalieStageLoaders.game(args, (teamId) => args.teamShotsByTeamId.has(teamId));
+  return computeGoalieGameProjections(args, inputs);
 }

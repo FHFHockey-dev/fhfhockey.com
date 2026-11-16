@@ -1347,7 +1347,8 @@ async function fetchPlayerMetaByIds(
   );
 }
 
-export async function runPerGameSkaterStage(args: {
+/** Everything the per-game skater stage receives from the run; the loader and compute share it. */
+export type SkaterStageArgs = {
   seasonBootstrap?: boolean;
   asOfDate: string;
   runId: string;
@@ -1400,11 +1401,57 @@ export async function runPerGameSkaterStage(args: {
     assistRecent: number;
   };
   metrics: Record<string, any>;
-}): Promise<{
-  timedOut: boolean;
-  playerRowsUpserted: number;
-  teamRowsUpserted: number;
-}> {
+};
+
+type ProjectedPlayerMarketInput = {
+  teamId: number;
+  opponentTeamId: number;
+  shots: number;
+  goals: number;
+  assists: number;
+  powerPlayPoints: number;
+  blockedShots: number;
+  lineupSourceGameDate: string | null;
+  lineupRecencyDays: number | null;
+  availabilityEvent: RosterEventRow | null;
+};
+
+/** Per-game state shared by both teams' loaders and compute: per-call caches and the market inputs map. */
+export function createSkaterGameScope() {
+  return {
+    localOfficialPpUsageCache: new Map<string, TeamOfficialPpUsage | null>(),
+    localLeagueSavePctCache: new Map() as SeasonLeagueSavePctCache,
+    projectedPlayerMarketInputs: new Map<number, ProjectedPlayerMarketInput>(),
+  };
+}
+export type SkaterGameScope = ReturnType<typeof createSkaterGameScope>;
+
+/** Lineup membership from inputs alone: a pool skater with an EV or PP row, or an emergency or bootstrap inclusion. */
+export function isLineupSkater(playerId: number, args: {
+  evLatest: Map<number, unknown>; ppLatest: Map<number, unknown>;
+  emergencyMissingMetricSkaterIds: Set<number>; bootstrapEligibleIds: Set<number>;
+}): boolean {
+  return args.evLatest.has(playerId) || args.ppLatest.has(playerId)
+    || args.emergencyMissingMetricSkaterIds.has(playerId) || args.bootstrapEligibleIds.has(playerId);
+}
+
+export function selectLineupSkaterIds(args: Parameters<typeof isLineupSkater>[1] & { skaterIds: number[] }): number[] {
+  return args.skaterIds.filter((playerId) => isLineupSkater(playerId, args));
+}
+
+/** Compute fails closed if the rows it projected are not the lineup the loader read reserves against. */
+function assertLoadedLineup(loaded: number[], computed: number[], teamId: number) {
+  if (loaded.length !== computed.length || loaded.some((id, index) => id !== computed[index])) {
+    throw new Error(`FORGE skater loader lineup differs from computed lineup for team ${teamId}`);
+  }
+}
+
+/**
+ * Loader: every read for one team and the read-set selection (lineup source, pool and recovery, lineup gate,
+ * reserve ids, goalie candidates), in the writer's read order. Scores nothing and writes nothing; it records the
+ * same data-quality bookkeeping as before into `args.metrics`. Returns null when the team has no usable lineup.
+ */
+export async function loadSkaterTeamInputs(args: SkaterStageArgs, scope: SkaterGameScope, teamId: number) {
   const {
     asOfDate,
     runId,
@@ -1442,31 +1489,8 @@ export async function runPerGameSkaterStage(args: {
     learningCounters,
     metrics,
   } = args;
-  const teamDateKey = (teamId: number) => `${teamId}:${asOfDate}`;
-  const localOfficialPpUsageCache = new Map<string, TeamOfficialPpUsage | null>();
-  const localLeagueSavePctCache: SeasonLeagueSavePctCache = new Map();
-  let playerRowsUpserted = 0;
-  let teamRowsUpserted = 0;
-  const projectedPlayerMarketInputs = new Map<
-    number,
-    {
-      teamId: number;
-      opponentTeamId: number;
-      shots: number;
-      goals: number;
-      assists: number;
-      powerPlayPoints: number;
-      blockedShots: number;
-      lineupSourceGameDate: string | null;
-      lineupRecencyDays: number | null;
-      availabilityEvent: RosterEventRow | null;
-    }
-  >();
-  for (const teamId of [game.homeTeamId, game.awayTeamId]) {
-    if (Date.now() > deadlineMs) {
-      return { timedOut: true, playerRowsUpserted, teamRowsUpserted };
-    }
-
+  const teamDateKey = (id: number) => `${id}:${asOfDate}`;
+  {
     // Use the most recent line combination for this team (prior to today).
     const lcContext = await fetchLatestLineCombinationForTeam(teamId, asOfDate);
     const lc = lcContext.lineCombination;
@@ -1558,7 +1582,7 @@ export async function runPerGameSkaterStage(args: {
           `lineCombinations hard-failure for game=${game.id} team=${teamId}; no usable line combos or fallback skaters`,
         );
         await recordTeamLineupUnavailable();
-        continue;
+        return null;
       }
     }
     rawSkaterIds = constrainSkaterIdsToActiveRoster({
@@ -1856,7 +1880,7 @@ export async function runPerGameSkaterStage(args: {
         `lineCombinations fallback produced no active skaters for game=${game.id} team=${teamId}`,
       );
       await recordTeamLineupUnavailable();
-      continue;
+      return null;
     }
     metrics.data_quality.filtered_skater_team_or_position +=
       activeSkaterFilter.stats.filteredByTeamOrPosition;
@@ -1883,7 +1907,7 @@ export async function runPerGameSkaterStage(args: {
       );
       metrics.data_quality.empty_skater_rosters += 1;
       await recordTeamLineupUnavailable();
-      continue;
+      return null;
     }
     const teamAbbrev = teamAbbreviationById.get(teamId) ?? null;
     const opponentAbbrev = teamAbbreviationById.get(opponentTeamId) ?? null;
@@ -1957,7 +1981,7 @@ export async function runPerGameSkaterStage(args: {
     }
     // Opponent goalie (W1 P0 #21): posterior save quality from pre-cutoff history, mixed by start
     // probability with unresolved mass at league average. Labelled context only (decision 148).
-    const leagueSavePct = await getSeasonLeagueSavePct(asOfDate, args.leagueSavePctCache ?? localLeagueSavePctCache);
+    const leagueSavePct = await getSeasonLeagueSavePct(asOfDate, args.leagueSavePctCache ?? scope.localLeagueSavePctCache);
     if (leagueSavePct.warning && !metrics.warnings.includes(leagueSavePct.warning)) metrics.warnings.push(leagueSavePct.warning);
     const opponentGoalieCandidates = await fetchOpponentGoalieCandidateQuality({
       gameId: game.id,
@@ -2021,8 +2045,8 @@ export async function runPerGameSkaterStage(args: {
       shotQualityByPlayerId.size;
     metrics.data_quality.on_ice_context_profiles_found +=
       onIceContextByPlayerId.size;
-    metrics.data_quality.trend_adjustment_rows_eligible +=
-      trendAdjustmentFetch.diagnostics.eligibleRows;
+    metrics.data_quality.trend_adjustment_candidate_rows +=
+      trendAdjustmentFetch.diagnostics.candidateRows;
     metrics.data_quality.trend_adjustment_players_with_rows +=
       trendAdjustmentFetch.diagnostics.playersWithRows;
     metrics.data_quality.trend_adjustment_players_adjusted +=
@@ -2055,6 +2079,285 @@ export async function runPerGameSkaterStage(args: {
       teamSkaterRoleHistoryCache.get(teamDateKey(teamId)) ??
       new Map<number, string[]>();
 
+    // Reads the writer used to make inside compute, in the same order.
+    const strengthAverages =
+      teamStrengthCache.get(teamDateKey(teamId)) ??
+      (await fetchTeamStrengthAverages(teamId, asOfDate));
+    teamStrengthCache.set(teamDateKey(teamId), strengthAverages);
+    const officialPpUsageCache =
+      args.teamOfficialPpUsageCache ?? scope.localOfficialPpUsageCache;
+    const officialPpUsageKey = teamDateKey(teamId);
+    if (!officialPpUsageCache.has(officialPpUsageKey)) {
+      officialPpUsageCache.set(
+        officialPpUsageKey,
+        await fetchTeamOfficialPpUsage(teamId, asOfDate),
+      );
+    }
+    const officialPpUsage = officialPpUsageCache.get(officialPpUsageKey) ?? null;
+    // Reuse the same retained goalie-ID read later used by the goalie stage.
+    // These members are outside the skater estimator, not zero offensive residuals.
+    if (!currentTeamGoalieIdsCache.has(teamDateKey(teamId))) currentTeamGoalieIdsCache.set(
+      teamDateKey(teamId), await fetchCurrentTeamGoalieIds(teamId),
+    );
+
+    // Reserve pass ids: every other current-roster skater, against the lineup the inputs select.
+    const reservePassEnabled = forgeReservePassEnabled();
+    const lineupPlayerIds = selectLineupSkaterIds({ skaterIds, evLatest, ppLatest, emergencyMissingMetricSkaterIds: emergencyMissingMetricSkaterIdSet, bootstrapEligibleIds: bootstrapEligible() });
+    const teamGoalieIds = currentTeamGoalieIdsCache.get(teamDateKey(teamId))!;
+    const nonLineupRosterIds = activeRosterSkaterIds.filter((id) => !lineupPlayerIds.includes(id) && !teamGoalieIds.has(id));
+    const nonLineupMeta = reservePassEnabled ? await fetchPlayerMetaByIds(nonLineupRosterIds) : new Map<number, PlayerTeamPositionRow>();
+    const reserveCandidates = !reservePassEnabled ? [] : selectReserveSkaters({
+      teamId,
+      rosterPlayerIds: activeRosterSkaterIds,
+      lineupPlayerIds,
+      goalieIds: teamGoalieIds,
+      metaById: nonLineupMeta,
+      ruledOutIds: [...playerAvailabilityMultiplier]
+        .filter(([, multiplier]) => multiplier <= 0)
+        .map(([id]) => id),
+      hardStaleIds: activeSkaterFilter.excludedSkaterIdsByReason.hardStale,
+      missingMetricIds:
+        activeSkaterFilter.excludedSkaterIdsByReason.missingRecentMetrics,
+    });
+    const coverageUnknownReasonById = new Map<number, SkaterCoverageUnknownReason>();
+    for (const id of nonLineupRosterIds) {
+      const meta = nonLineupMeta.get(id);
+      if (!reservePassEnabled) continue;
+      if (!meta) coverageUnknownReasonById.set(id, "missing_player_record");
+      else if (meta.team_id !== teamId) coverageUnknownReasonById.set(id, "roster_team_conflict");
+    }
+    let reserveRolling: { ev: Map<number, RollingRow>; pp: Map<number, RollingRow>; all: Map<number, RollingRow> } | null = null;
+    if (reserveCandidates.length > 0) {
+      const reserveIds = reserveCandidates.map((c) => c.playerId);
+      const [reserveEv, reservePp, reserveAll] = await Promise.all(
+        (["ev", "pp", "all"] as const).map(async (strength) =>
+          pickLatestByPlayer(
+            await fetchRollingRows(reserveIds, strength, asOfDate),
+          ),
+        ),
+      );
+      // Long absences (decision 132.2): no even-strength or power-play row in the lineup's 365-day scope. His line comes
+      // from his last active games, read from a wider but bounded window; the row discloses the time away.
+      const longAbsentIds = reserveIds.filter((id) => !reserveEv.has(id) && !reservePp.has(id));
+      if (longAbsentIds.length > 0) {
+        const [longEv, longPp, longAll] = await Promise.all(
+          (["ev", "pp", "all"] as const).map(async (strength) =>
+            pickLatestByPlayer(
+              await fetchRollingRows(longAbsentIds, strength, asOfDate, undefined, { lookbackDays: FORGE_LONG_ABSENCE_LOOKBACK_DAYS }),
+            ),
+          ),
+        );
+        for (const [target, source] of [[reserveEv, longEv], [reservePp, longPp], [reserveAll, longAll]] as const) {
+          for (const [id, row] of source) if (!target.has(id)) target.set(id, row);
+        }
+        metrics.data_quality.reserve_skaters_long_absence_reads =
+          (metrics.data_quality.reserve_skaters_long_absence_reads ?? 0) + longAbsentIds.length;
+      }
+      reserveRolling = { ev: reserveEv, pp: reservePp, all: reserveAll };
+    }
+
+    // Goalie: pick the highest probability starter from goalie_start_projections if available.
+    const goalieOverride = goalieOverrideByTeamId.get(teamId);
+    const { data: goalieStarts, error: gsErr } = await supabase
+      .from("goalie_start_projections")
+      .select(
+        "player_id,start_probability,confirmed_status,l10_start_pct,season_start_pct,games_played,projected_gsaa_per_60,updated_at,game_date",
+      )
+      .eq("game_id", game.id)
+      .eq("team_id", teamId)
+      .order("start_probability", { ascending: false })
+      .limit(6);
+    if (gsErr) throw gsErr;
+    if (!fallbackGoalieByTeamId.has(teamId)) {
+      fallbackGoalieByTeamId.set(
+        teamId,
+        await fetchLatestGoalieForTeam(teamId, asOfDate),
+      );
+    }
+    const fallbackGoalieId = fallbackGoalieByTeamId.get(teamId) ?? null;
+    if (!teamGoalieStarterContextCache.has(teamDateKey(teamId))) {
+      teamGoalieStarterContextCache.set(
+        teamDateKey(teamId),
+        await fetchTeamGoalieStarterContext(teamId, asOfDate),
+      );
+    }
+    if (!currentTeamGoalieIdsCache.has(teamDateKey(teamId))) {
+      currentTeamGoalieIdsCache.set(
+        teamDateKey(teamId),
+        await fetchCurrentTeamGoalieIds(teamId),
+      );
+    }
+    if (!teamLineComboGoaliePriorCache.has(teamDateKey(teamId))) {
+      teamLineComboGoaliePriorCache.set(
+        teamDateKey(teamId),
+        await fetchTeamLineComboGoaliePrior(teamId, asOfDate),
+      );
+    }
+    const context = teamGoalieStarterContextCache.get(
+      teamDateKey(teamId),
+    ) as TeamGoalieStarterContext;
+    const currentTeamGoalieIds = currentTeamGoalieIdsCache.get(
+      teamDateKey(teamId),
+    ) as Set<number>;
+    const lineComboPriorByGoalieId =
+      teamLineComboGoaliePriorCache.get(teamDateKey(teamId)) ??
+      new Map<number, number>();
+
+    const priorStartProbByGoalieId = new Map<number, number>();
+    const confirmedStarterByGoalieId = new Map<number, boolean>();
+    const projectedGsaaPer60ByGoalieId = new Map<number, number>();
+    const seasonStartPctByGoalieId = new Map<number, number>();
+    const seasonGamesPlayedByGoalieId = new Map<number, number>();
+    for (const row of goalieStarts ?? []) {
+      const goalieId = Number((row as any)?.player_id);
+      if (!Number.isFinite(goalieId)) continue;
+      priorStartProbByGoalieId.set(
+        goalieId,
+        clamp(Number((row as any)?.start_probability ?? 0.5), 0.01, 0.99),
+      );
+      confirmedStarterByGoalieId.set(
+        goalieId,
+        Boolean((row as any)?.confirmed_status),
+      );
+      const projectedGsaaPer60 = Number((row as any)?.projected_gsaa_per_60);
+      if (Number.isFinite(projectedGsaaPer60)) {
+        projectedGsaaPer60ByGoalieId.set(goalieId, projectedGsaaPer60);
+      }
+      const seasonStartPct = Number((row as any)?.season_start_pct);
+      if (Number.isFinite(seasonStartPct)) {
+        seasonStartPctByGoalieId.set(goalieId, clamp(seasonStartPct, 0, 1));
+      }
+      const gamesPlayed = Number((row as any)?.games_played);
+      if (Number.isFinite(gamesPlayed) && gamesPlayed >= 0) {
+        seasonGamesPlayedByGoalieId.set(goalieId, gamesPlayed);
+      }
+    }
+    if (goalieOverride) {
+      priorStartProbByGoalieId.set(
+        goalieOverride.goalieId,
+        goalieOverride.starterProb,
+      );
+      confirmedStarterByGoalieId.set(
+        goalieOverride.goalieId,
+        goalieOverride.starterProb >= 1,
+      );
+    }
+
+    const contextGoalies = Array.from(context.startsByGoalie.keys()).slice(
+      0,
+      4,
+    );
+    const rawCandidateGoalieIds = Array.from(
+      new Set(
+        [
+          goalieOverride?.goalieId ?? null,
+          ...(goalieStarts ?? []).map((r: any) => Number(r.player_id)),
+          ...(lc?.goalies ?? []),
+          ...contextGoalies,
+          fallbackGoalieId,
+        ].filter((n): n is number => Number.isFinite(n)),
+      ),
+    );
+    const candidateGoalieIds = selectStarterCandidateGoalieIds({
+      asOfDate,
+      rawCandidateGoalieIds,
+      currentTeamGoalieIds,
+      context,
+      goalieOverrideGoalieId: goalieOverride?.goalieId ?? null,
+      priorStartProbByGoalieId,
+      confirmedStarterByGoalieId,
+      limit: 3,
+    });
+
+    const goalieCandidate: GoalieStageCandidate | null = candidateGoalieIds.length === 0 ? null : {
+      teamId,
+      opponentTeamId,
+      candidateGoalieIds,
+      priorStartProbByGoalieId,
+      confirmedStarterByGoalieId,
+      lineComboPriorByGoalieId,
+      projectedGsaaPer60ByGoalieId,
+      seasonStartPctByGoalieId,
+      seasonGamesPlayedByGoalieId,
+      override: goalieOverride ?? null,
+      rosterGoalieIds: [...currentTeamGoalieIds].sort((a, b) => a - b),
+    };
+
+    return {
+      teamId, activeRosterSkaterIds, activeSkaterFilter, allLatest, bootstrap, bootstrapEligible,
+      deploymentPriorByPlayerId, emergencyMissingMetricSkaterIdSet, evLatest, fallbackCandidateCount,
+      latestMetricDateByPlayerId, lc, lcContext, lcRecency, leaguePhysicalTotals, leagueSavePct,
+      lineComboFallbackReason, onIceContextByPlayerId, opponentGoalieContextAdjustment, opponentGoalieFinishing,
+      opponentTeamId, pkLatest, playerMetaById, ppLatest, rawSkaterIds, restScheduleAdjustment,
+      roleHistoryByPlayerId, shotQualityByPlayerId, skaterIds, skaterPoolRecoveryEmergencyIncluded,
+      skaterPoolRecoveryPath, skaterPoolRecoverySupplementalAdded, skaterRoleTags, teamHorizonScalars,
+      teamHorizonTotalScalar, teamLevelContextAdjustment, teamPositionFilteredSkaterIds, trendAdjustmentByPlayerId,
+      unavailableSkaters, usedLineComboFallback, strengthAverages, officialPpUsage, lineupPlayerIds,
+      reservePassEnabled, nonLineupRosterIds, nonLineupMeta, reserveCandidates, coverageUnknownReasonById,
+      reserveRolling, goalieCandidate,
+    };
+  }
+}
+export type SkaterTeamInputs = NonNullable<Awaited<ReturnType<typeof loadSkaterTeamInputs>>>;
+
+/** Loader seam: the stage calls the loader through this object so parity tests can observe the writer's bundles. */
+export const skaterStageLoaders = { team: loadSkaterTeamInputs };
+
+/** Compute: scores one team from its loaded inputs and writes its rows. Performs no reads. */
+export async function computeSkaterTeamProjection(args: SkaterStageArgs, scope: SkaterGameScope, inputs: SkaterTeamInputs) {
+  const {
+    asOfDate,
+    runId,
+    horizonGames,
+    game,
+    deadlineMs,
+    currentSeasonId,
+    skaterRollout,
+    teamAbbreviationById,
+    playerAvailabilityMultiplier,
+    availabilityEventByPlayer,
+    roleEventByPlayer,
+    goalieOverrideByTeamId,
+    activeRosterSkaterIdsByTeamId,
+    teamHorizonScalarsCache,
+    teamSkaterRoleHistoryCache,
+    teamShotsByTeamId,
+    teamGoalsByTeamId,
+    fallbackGoalieByTeamId,
+    teamGoalieStarterContextCache,
+    teamDefensiveEnvironmentCache,
+    teamOffenseEnvironmentCache,
+    teamRestDaysCache,
+    teamStrengthPriorCache,
+    teamStrengthCache,
+    leaguePhysicalTotalsCache,
+    teamFiveOnFiveProfileCache,
+    teamNstExpectedGoalsCache,
+    teamLineComboGoaliePriorCache,
+    currentTeamGoalieIdsCache,
+    playerPropContextByGamePlayerKey,
+    playerPredictionOutputRows,
+    modelMarketFlagRows,
+    goalieCandidates,
+    learningCounters,
+    metrics,
+  } = args;
+  const teamDateKey = (id: number) => `${id}:${asOfDate}`;
+  const { projectedPlayerMarketInputs } = scope;
+  let playerRowsUpserted = 0;
+  let teamRowsUpserted = 0;
+  const {
+    teamId, activeRosterSkaterIds, activeSkaterFilter, allLatest, bootstrap, bootstrapEligible,
+    deploymentPriorByPlayerId, emergencyMissingMetricSkaterIdSet, evLatest, fallbackCandidateCount,
+    latestMetricDateByPlayerId, lc, lcContext, lcRecency, leaguePhysicalTotals, leagueSavePct,
+    lineComboFallbackReason, onIceContextByPlayerId, opponentGoalieContextAdjustment, opponentGoalieFinishing,
+    opponentTeamId, pkLatest, playerMetaById, ppLatest, rawSkaterIds, restScheduleAdjustment, roleHistoryByPlayerId,
+    shotQualityByPlayerId, skaterIds, skaterPoolRecoveryEmergencyIncluded, skaterPoolRecoveryPath,
+    skaterPoolRecoverySupplementalAdded, skaterRoleTags, teamHorizonScalars, teamHorizonTotalScalar,
+    teamLevelContextAdjustment, teamPositionFilteredSkaterIds, trendAdjustmentByPlayerId, unavailableSkaters,
+    usedLineComboFallback,
+  } = inputs;
+  {
     // Initial per-player TOI estimates (seconds)
     const projected = new Map<
       number,
@@ -2152,12 +2455,12 @@ export async function runPerGameSkaterStage(args: {
     for (const playerId of skaterIds) {
       const ev = evLatest.get(playerId);
       const pp = ppLatest.get(playerId);
-      const isEmergencyMissingMetricsInclusion =
-        !ev && !pp && (emergencyMissingMetricSkaterIdSet.has(playerId) || bootstrapEligible().has(playerId));
-      if (!ev && !pp && !isEmergencyMissingMetricsInclusion) {
+      if (!isLineupSkater(playerId, { evLatest, ppLatest, emergencyMissingMetricSkaterIds: emergencyMissingMetricSkaterIdSet, bootstrapEligibleIds: bootstrapEligible() })) {
         noMetricsPlayersSkipped += 1;
         continue;
       }
+      // Past the lineup gate, a skater with neither row is an emergency or season-bootstrap inclusion.
+      const isEmergencyMissingMetricsInclusion = !ev && !pp;
       if (isEmergencyMissingMetricsInclusion) {
         noMetricsPlayersEmergencyIncluded += 1;
         metrics.data_quality.skater_pool_emergency_missing_metrics_included += 1;
@@ -2528,10 +2831,7 @@ export async function runPerGameSkaterStage(args: {
 
     // Task 3.6 reconciliation: hard constraints for team TOI + shots (by strength).
     const targetSkaterSecondsCanonical = 60 * 60 * 5;
-    const strengthAverages =
-      teamStrengthCache.get(teamDateKey(teamId)) ??
-      (await fetchTeamStrengthAverages(teamId, asOfDate));
-    teamStrengthCache.set(teamDateKey(teamId), strengthAverages);
+    const strengthAverages = inputs.strengthAverages;
 
     const preAllocationToiEs = Array.from(projected.values()).reduce(
       (acc, p) => acc + p.toiEs,
@@ -2541,16 +2841,7 @@ export async function runPerGameSkaterStage(args: {
       (acc, p) => acc + p.toiPp,
       0,
     );
-    const officialPpUsageCache =
-      args.teamOfficialPpUsageCache ?? localOfficialPpUsageCache;
-    const officialPpUsageKey = teamDateKey(teamId);
-    if (!officialPpUsageCache.has(officialPpUsageKey)) {
-      officialPpUsageCache.set(
-        officialPpUsageKey,
-        await fetchTeamOfficialPpUsage(teamId, asOfDate),
-      );
-    }
-    const officialPpUsage = officialPpUsageCache.get(officialPpUsageKey) ?? null;
+    const officialPpUsage = inputs.officialPpUsage;
     const {
       ppShare,
       legacyPpShare,
@@ -3504,11 +3795,6 @@ export async function runPerGameSkaterStage(args: {
       });
     }
 
-    // Reuse the same retained goalie-ID read later used by the goalie stage.
-    // These members are outside the skater estimator, not zero offensive residuals.
-    if (!currentTeamGoalieIdsCache.has(teamDateKey(teamId))) currentTeamGoalieIdsCache.set(
-      teamDateKey(teamId), await fetchCurrentTeamGoalieIds(teamId),
-    );
     const teamGoalAccounting = buildNativeTeamGoalAccounting({
       gameId: game.id,
       teamId,
@@ -3682,58 +3968,14 @@ export async function runPerGameSkaterStage(args: {
 
     // Reserve pass: every other current-roster skater gets an "if he dresses" line in its own table, after the team
     // row is written, so the lineup's TOI, goals and team totals above are untouched.
-    const reservePassEnabled = forgeReservePassEnabled();
+    const reservePassEnabled = inputs.reservePassEnabled;
     const lineupPlayerIds = playerUpserts.map((row) => row.player_id);
-    const teamGoalieIds = currentTeamGoalieIdsCache.get(teamDateKey(teamId))!;
-    const nonLineupRosterIds = activeRosterSkaterIds.filter((id) => !lineupPlayerIds.includes(id) && !teamGoalieIds.has(id));
-    const nonLineupMeta = reservePassEnabled ? await fetchPlayerMetaByIds(nonLineupRosterIds) : new Map<number, PlayerTeamPositionRow>();
-    const reserveCandidates = !reservePassEnabled ? [] : selectReserveSkaters({
-      teamId,
-      rosterPlayerIds: activeRosterSkaterIds,
-      lineupPlayerIds,
-      goalieIds: teamGoalieIds,
-      metaById: nonLineupMeta,
-      ruledOutIds: [...playerAvailabilityMultiplier]
-        .filter(([, multiplier]) => multiplier <= 0)
-        .map(([id]) => id),
-      hardStaleIds: activeSkaterFilter.excludedSkaterIdsByReason.hardStale,
-      missingMetricIds:
-        activeSkaterFilter.excludedSkaterIdsByReason.missingRecentMetrics,
-    });
+    assertLoadedLineup(inputs.lineupPlayerIds, lineupPlayerIds, teamId);
+    const { nonLineupRosterIds, nonLineupMeta, reserveCandidates } = inputs;
     const reserveProjectedIds: number[] = [];
-    const coverageUnknownReasonById = new Map<number, SkaterCoverageUnknownReason>();
-    for (const id of nonLineupRosterIds) {
-      const meta = nonLineupMeta.get(id);
-      if (!reservePassEnabled) continue;
-      if (!meta) coverageUnknownReasonById.set(id, "missing_player_record");
-      else if (meta.team_id !== teamId) coverageUnknownReasonById.set(id, "roster_team_conflict");
-    }
+    const coverageUnknownReasonById = new Map(inputs.coverageUnknownReasonById);
     if (reserveCandidates.length > 0) {
-      const reserveIds = reserveCandidates.map((c) => c.playerId);
-      const [reserveEv, reservePp, reserveAll] = await Promise.all(
-        (["ev", "pp", "all"] as const).map(async (strength) =>
-          pickLatestByPlayer(
-            await fetchRollingRows(reserveIds, strength, asOfDate),
-          ),
-        ),
-      );
-      // Long absences (decision 132.2): no even-strength or power-play row in the lineup's 365-day scope. His line comes
-      // from his last active games, read from a wider but bounded window; the row discloses the time away.
-      const longAbsentIds = reserveIds.filter((id) => !reserveEv.has(id) && !reservePp.has(id));
-      if (longAbsentIds.length > 0) {
-        const [longEv, longPp, longAll] = await Promise.all(
-          (["ev", "pp", "all"] as const).map(async (strength) =>
-            pickLatestByPlayer(
-              await fetchRollingRows(longAbsentIds, strength, asOfDate, undefined, { lookbackDays: FORGE_LONG_ABSENCE_LOOKBACK_DAYS }),
-            ),
-          ),
-        );
-        for (const [target, source] of [[reserveEv, longEv], [reservePp, longPp], [reserveAll, longAll]] as const) {
-          for (const [id, row] of source) if (!target.has(id)) target.set(id, row);
-        }
-        metrics.data_quality.reserve_skaters_long_absence_reads =
-          (metrics.data_quality.reserve_skaters_long_absence_reads ?? 0) + longAbsentIds.length;
-      }
+      const { ev: reserveEv, pp: reservePp, all: reserveAll } = inputs.reserveRolling!;
       const reserveRows = reserveCandidates.flatMap((candidate) => {
         const line = buildReserveSkaterLine({
           position: candidate.position,
@@ -3794,134 +4036,42 @@ export async function runPerGameSkaterStage(args: {
       defaultUnknownReason: reservePassEnabled ? "no_nhl_usage_in_window" : "reserve_pass_disabled",
     }));
 
-    // Goalie: pick the highest probability starter from goalie_start_projections if available.
-    const goalieOverride = goalieOverrideByTeamId.get(teamId);
-    const { data: goalieStarts, error: gsErr } = await supabase
-      .from("goalie_start_projections")
-      .select(
-        "player_id,start_probability,confirmed_status,l10_start_pct,season_start_pct,games_played,projected_gsaa_per_60,updated_at,game_date",
-      )
-      .eq("game_id", game.id)
-      .eq("team_id", teamId)
-      .order("start_probability", { ascending: false })
-      .limit(6);
-    if (gsErr) throw gsErr;
-    if (!fallbackGoalieByTeamId.has(teamId)) {
-      fallbackGoalieByTeamId.set(
-        teamId,
-        await fetchLatestGoalieForTeam(teamId, asOfDate),
-      );
-    }
-    const fallbackGoalieId = fallbackGoalieByTeamId.get(teamId) ?? null;
-    if (!teamGoalieStarterContextCache.has(teamDateKey(teamId))) {
-      teamGoalieStarterContextCache.set(
-        teamDateKey(teamId),
-        await fetchTeamGoalieStarterContext(teamId, asOfDate),
-      );
-    }
-    if (!currentTeamGoalieIdsCache.has(teamDateKey(teamId))) {
-      currentTeamGoalieIdsCache.set(
-        teamDateKey(teamId),
-        await fetchCurrentTeamGoalieIds(teamId),
-      );
-    }
-    if (!teamLineComboGoaliePriorCache.has(teamDateKey(teamId))) {
-      teamLineComboGoaliePriorCache.set(
-        teamDateKey(teamId),
-        await fetchTeamLineComboGoaliePrior(teamId, asOfDate),
-      );
-    }
-    const context = teamGoalieStarterContextCache.get(
-      teamDateKey(teamId),
-    ) as TeamGoalieStarterContext;
-    const currentTeamGoalieIds = currentTeamGoalieIdsCache.get(
-      teamDateKey(teamId),
-    ) as Set<number>;
-    const lineComboPriorByGoalieId =
-      teamLineComboGoaliePriorCache.get(teamDateKey(teamId)) ??
-      new Map<number, number>();
 
-    const priorStartProbByGoalieId = new Map<number, number>();
-    const confirmedStarterByGoalieId = new Map<number, boolean>();
-    const projectedGsaaPer60ByGoalieId = new Map<number, number>();
-    const seasonStartPctByGoalieId = new Map<number, number>();
-    const seasonGamesPlayedByGoalieId = new Map<number, number>();
-    for (const row of goalieStarts ?? []) {
-      const goalieId = Number((row as any)?.player_id);
-      if (!Number.isFinite(goalieId)) continue;
-      priorStartProbByGoalieId.set(
-        goalieId,
-        clamp(Number((row as any)?.start_probability ?? 0.5), 0.01, 0.99),
-      );
-      confirmedStarterByGoalieId.set(
-        goalieId,
-        Boolean((row as any)?.confirmed_status),
-      );
-      const projectedGsaaPer60 = Number((row as any)?.projected_gsaa_per_60);
-      if (Number.isFinite(projectedGsaaPer60)) {
-        projectedGsaaPer60ByGoalieId.set(goalieId, projectedGsaaPer60);
-      }
-      const seasonStartPct = Number((row as any)?.season_start_pct);
-      if (Number.isFinite(seasonStartPct)) {
-        seasonStartPctByGoalieId.set(goalieId, clamp(seasonStartPct, 0, 1));
-      }
-      const gamesPlayed = Number((row as any)?.games_played);
-      if (Number.isFinite(gamesPlayed) && gamesPlayed >= 0) {
-        seasonGamesPlayedByGoalieId.set(goalieId, gamesPlayed);
-      }
-    }
-    if (goalieOverride) {
-      priorStartProbByGoalieId.set(
-        goalieOverride.goalieId,
-        goalieOverride.starterProb,
-      );
-      confirmedStarterByGoalieId.set(
-        goalieOverride.goalieId,
-        goalieOverride.starterProb >= 1,
-      );
-    }
+    if (inputs.goalieCandidate) goalieCandidates.push(inputs.goalieCandidate);
+  }
+  return { playerRowsUpserted, teamRowsUpserted };
+}
 
-    const contextGoalies = Array.from(context.startsByGoalie.keys()).slice(
-      0,
-      4,
-    );
-    const rawCandidateGoalieIds = Array.from(
-      new Set(
-        [
-          goalieOverride?.goalieId ?? null,
-          ...(goalieStarts ?? []).map((r: any) => Number(r.player_id)),
-          ...(lc?.goalies ?? []),
-          ...contextGoalies,
-          fallbackGoalieId,
-        ].filter((n): n is number => Number.isFinite(n)),
-      ),
-    );
-    const candidateGoalieIds = selectStarterCandidateGoalieIds({
-      asOfDate,
-      rawCandidateGoalieIds,
-      currentTeamGoalieIds,
-      context,
-      goalieOverrideGoalieId: goalieOverride?.goalieId ?? null,
-      priorStartProbByGoalieId,
-      confirmedStarterByGoalieId,
-      limit: 3,
-    });
-
-    if (candidateGoalieIds.length > 0) {
-      goalieCandidates.push({
-        teamId,
-        opponentTeamId,
-        candidateGoalieIds,
-        priorStartProbByGoalieId,
-        confirmedStarterByGoalieId,
-        lineComboPriorByGoalieId,
-        projectedGsaaPer60ByGoalieId,
-        seasonStartPctByGoalieId,
-        seasonGamesPlayedByGoalieId,
-        override: goalieOverride ?? null,
-        rosterGoalieIds: [...currentTeamGoalieIds].sort((a, b) => a - b),
-      });
+/** The writer's per-game skater stage: for each team, load its inputs, then compute and write from them. */
+export async function runPerGameSkaterStage(args: SkaterStageArgs): Promise<{
+  timedOut: boolean;
+  playerRowsUpserted: number;
+  teamRowsUpserted: number;
+}> {
+  const scope = createSkaterGameScope();
+  let playerRowsUpserted = 0;
+  let teamRowsUpserted = 0;
+  for (const teamId of [args.game.homeTeamId, args.game.awayTeamId]) {
+    if (Date.now() > args.deadlineMs) {
+      return { timedOut: true, playerRowsUpserted, teamRowsUpserted };
     }
+    const inputs = await skaterStageLoaders.team(args, scope, teamId);
+    if (!inputs) continue;
+    const written = await computeSkaterTeamProjection(args, scope, inputs);
+    playerRowsUpserted += written.playerRowsUpserted;
+    teamRowsUpserted += written.teamRowsUpserted;
   }
   return { timedOut: false, playerRowsUpserted, teamRowsUpserted };
+}
+
+/** Collector path: both teams' loaders in the writer's order, with no compute; returns only teams with a lineup. */
+export async function loadSkaterGameInputs(args: SkaterStageArgs) {
+  const scope = createSkaterGameScope();
+  const teams: SkaterTeamInputs[] = [];
+  for (const teamId of [args.game.homeTeamId, args.game.awayTeamId]) {
+    if (Date.now() > args.deadlineMs) throw new Error("FORGE input collection passed its deadline");
+    const inputs = await skaterStageLoaders.team(args, scope, teamId);
+    if (inputs) teams.push(inputs);
+  }
+  return teams;
 }

@@ -16,6 +16,7 @@ const RUN_WRITE_TARGETS = ["player_prediction_outputs", "game_prediction_outputs
 const AUDITED_DYNAMIC_SITES = [
   "lib/projections/dailyBoardEvidence.ts table",
   "lib/projections/queries/run-lifecycle-queries.ts table",
+  "lib/projections/queries/skater-queries.ts FORGE_LATEST_TREND_BANDS_RPC",
   "lib/projections/queries/skater-queries.ts LATEST_ROLLING_ROWS_RPC",
   "lib/projections/queries/skater-queries.ts ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE",
   "lib/projections/seasonBootstrap.ts population === \"skater\" ? \"skatersGameStats\" : \"goaliesGameStats\"",

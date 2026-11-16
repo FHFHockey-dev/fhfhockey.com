@@ -1,7 +1,7 @@
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
 import { breakIdentityTie, normalizeIdentityName, positionSlotRole, resolvePlayerIdentity, type PlayerIdentity, type PlayerSlotRole } from "./playerIdentity";
 
-export const TWEET_INTERPRETATION_VERSION = "2026-11-06.1";
+export const TWEET_INTERPRETATION_VERSION = "2026-11-15.1";
 export type EvidenceSpan = { start: number; end: number; text: string };
 export type TweetUnit = {
   situation: "es_forward" | "es_defense" | "pp" | "pk" | "goalie" | "scratch" | "injury";

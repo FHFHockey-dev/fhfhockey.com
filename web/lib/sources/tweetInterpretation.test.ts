@@ -9,6 +9,7 @@ import { classifyInjuryEvent, extractInjuryTimeline, extractInjuryTimelines, ext
 import { assignmentsFor } from "../player-forecasts/sourceObservations";
 import { buildLinesCccSourceFromIftttEvent } from "./linesCccIngestion";
 import { reconcileAlias } from "./tweetAliasReconciliation";
+import type { PlayerIdentity } from "./playerIdentity";
 import { edmontonSectionRoster, edmontonSectionText, explicit11F7DText, seattleSectionRoster, seattleSectionText } from "../../__tests__/fixtures/lineupSectionFixtures";
 import claimContextCases from "./fixtures/claimContextCases.json";
 import iftttComparison from "./fixtures/iftttComparisonObservations.json";
@@ -730,6 +731,39 @@ describe("retained audit claim regressions", () => {
     const claims = extractTweetPlayerEvents({ text, players: [{ playerId: 100, fullName: "Carter Hart", lastName: "Hart", position: "G" }], publishedAt: null });
     expect(claims).toHaveLength(1);
     expect(claims[0]!.state).not.toBe("confirmed");
+  });
+  describe("goalie matchup 'A vs B in goal'", () => {
+    // Retained report receipt (VGK, game 2026020278 BUF/VGK, 11-08): only Hill was confirmed; Ellis got no event.
+    const text = "It’s Colten Ellis vs Adin Hill in goal. The Bills are en route to Minny for MNF, so it’s the #Sabres and #Vgk.";
+    const ellis = { playerId: 1, fullName: "Colten Ellis", lastName: "Ellis", position: "G", teamId: 7 };
+    const hill = { playerId: 2, fullName: "Adin Hill", lastName: "Hill", position: "G", teamId: 54 };
+    const goalies = (players: PlayerIdentity[], gameTeamIds?: number[]) => extractTweetPlayerEvents({ text, players, publishedAt: null, gameTeamIds })
+      .map((event) => [event.playerId, event.kind, event.state]);
+    const hillOnly = [[2, "goalie", "confirmed"]];
+
+    it("confirms both goalies when they are on opposite sides of the bound game", () => {
+      expect(goalies([ellis, hill], [7, 54])).toEqual([[1, "goalie", "confirmed"], [2, "goalie", "confirmed"]]);
+      const skaters = [ellis, hill].map((player) => ({ ...player, position: "C" }));
+      expect(extractTweetPlayerEvents({ text: "Colten Ellis vs Adin Hill tonight", players: skaters, publishedAt: null, gameTeamIds: [7, 54] })).toEqual([]);
+    });
+    it("never makes two same-team goalies both confirmed starters", () => {
+      expect(goalies([{ ...ellis, teamId: 54 }, hill], [7, 54])).toEqual(hillOnly);
+      // A list joined to one side must not ride the matchup into a second same-team starter.
+      const lyon = { playerId: 3, fullName: "Alex Lyon", lastName: "Lyon", position: "G", teamId: 7 };
+      const schmid = { playerId: 4, fullName: "Akira Schmid", lastName: "Schmid", position: "G", teamId: 54 };
+      const chained = (chainText: string) => extractTweetPlayerEvents({ text: chainText, players: [ellis, lyon, hill, schmid], publishedAt: null, gameTeamIds: [7, 54] })
+        .filter((event) => event.state === "confirmed").map((event) => event.playerId);
+      expect(chained("Colten Ellis and Alex Lyon vs Adin Hill in goal")).toEqual([2]);
+      expect(chained("Colten Ellis, Alex Lyon vs Adin Hill in goal")).toEqual([2]);
+      expect(chained("Colten Ellis vs Adin Hill and Akira Schmid in goal")).not.toContain(1);
+      expect(chained("Colten Ellis vs Adin Hill vs Akira Schmid in goal")).not.toContain(1);
+    });
+    it("does not share the predicate when either side is unresolved", () => {
+      expect(goalies([ellis, hill])).toEqual(hillOnly);
+      expect(goalies([ellis, hill], [54])).toEqual(hillOnly);
+      expect(goalies([{ ...ellis, teamId: null }, hill], [7, 54])).toEqual(hillOnly);
+      expect(goalies([{ ...ellis, teamId: 12 }, hill], [7, 54])).toEqual(hillOnly);
+    });
   });
   it("keeps genuine full-name Bäck claims while abstaining on ordinary lower-case nouns", () => {
     const players = [{ playerId: 8480840, fullName: "Oskar Bäck", lastName: "Bäck", position: "C" }];

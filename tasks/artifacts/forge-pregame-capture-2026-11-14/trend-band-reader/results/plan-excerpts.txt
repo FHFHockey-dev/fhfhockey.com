@@ -1,0 +1,148 @@
+=== analyzed/typical_a / new_generic (auto_explain of the function body; plan shape; buffers are from the warm repeat) ===
+
+NOTICE:  duration: 0.654 ms  plan:
+Query Text: select requested.id, metrics.k, windows.w,
+         latest.snapshot_date, latest.value, latest.ci_lower, latest.ci_upper, latest.n_eff
+  from (select distinct ids.id from unnest(p_player_ids) as ids(id)) as requested
+  cross join (select distinct mk.k from unnest(p_metric_keys) as mk(k)) as metrics
+  cross join (select distinct wc.w from unnest(p_window_codes) as wc(w)) as windows
+  left join lateral (
+    select b.snapshot_date, b.value, b.ci_lower, b.ci_upper, b.n_eff
+    from public.sustainability_trend_bands as b
+    where b.player_id = requested.id
+      and b.metric_key = metrics.k
+      and b.window_code = windows.w
+      and b.snapshot_date <= p_as_of
+    order by b.snapshot_date desc
+    limit 1
+  ) as latest on true
+  order by requested.id, metrics.k collate "C", windows.w collate "C"
+Incremental Sort  (cost=703.55..7039.65 rows=1000 width=160) (actual time=0.204..0.631 rows=144 loops=1)
+  Sort Key: ids.id, mk.k COLLATE "C", wc.w COLLATE "C"
+  Presorted Key: ids.id
+  Full-sort Groups: 5  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+  Buffers: shared hit=732
+  ->  Nested Loop Left Join  (cost=1.08..6971.48 rows=1000 width=160) (actual time=0.017..0.587 rows=144 loops=1)
+        Buffers: shared hit=732
+        ->  Nested Loop  (cost=0.52..14.87 rows=1000 width=68) (actual time=0.008..0.035 rows=144 loops=1)
+              ->  Nested Loop  (cost=0.40..2.02 rows=100 width=36) (actual time=0.006..0.017 rows=72 loops=1)
+                    ->  Unique  (cost=0.27..0.32 rows=10 width=4) (actual time=0.003..0.006 rows=18 loops=1)
+                          ->  Sort  (cost=0.27..0.29 rows=10 width=4) (actual time=0.003..0.003 rows=18 loops=1)
+                                Sort Key: ids.id
+                                Sort Method: quicksort  Memory: 25kB
+                                ->  Function Scan on unnest ids  (cost=0.00..0.10 rows=10 width=4) (actual time=0.001..0.002 rows=18 loops=1)
+                    ->  Materialize  (cost=0.13..0.38 rows=10 width=32) (actual time=0.000..0.000 rows=4 loops=18)
+                          ->  HashAggregate  (cost=0.13..0.23 rows=10 width=32) (actual time=0.002..0.002 rows=4 loops=1)
+                                Group Key: mk.k
+                                Batches: 1  Memory Usage: 24kB
+                                ->  Function Scan on unnest mk  (cost=0.00..0.10 rows=10 width=32) (actual time=0.001..0.001 rows=4 loops=1)
+              ->  Materialize  (cost=0.13..0.38 rows=10 width=32) (actual time=0.000..0.000 rows=2 loops=72)
+                    ->  HashAggregate  (cost=0.13..0.23 rows=10 width=32) (actual time=0.001..0.001 rows=2 loops=1)
+                          Group Key: wc.w
+                          Batches: 1  Memory Usage: 24kB
+                          ->  Function Scan on unnest wc  (cost=0.00..0.10 rows=10 width=32) (actual time=0.000..0.000 rows=2 loops=1)
+        ->  Limit  (cost=0.56..6.94 rows=1 width=28) (actual time=0.004..0.004 rows=1 loops=144)
+              Buffers: shared hit=732
+              ->  Index Scan Backward using sustainability_trend_bands_pkey on sustainability_trend_bands b  (cost=0.56..262.00 rows=41 width=28) (actual time=0.004..0.004 rows=1 loops=144)
+                    Index Cond: ((player_id = ids.id) AND (snapshot_date <= $4) AND (metric_key = mk.k) AND (window_code = wc.w))
+                    Buffers: shared hit=732
+
+=== analyzed/worst_l5_never / new_generic (auto_explain of the function body; plan shape; buffers are from the warm repeat) ===
+
+NOTICE:  duration: 12.838 ms  plan:
+Query Text: select requested.id, metrics.k, windows.w,
+         latest.snapshot_date, latest.value, latest.ci_lower, latest.ci_upper, latest.n_eff
+  from (select distinct ids.id from unnest(p_player_ids) as ids(id)) as requested
+  cross join (select distinct mk.k from unnest(p_metric_keys) as mk(k)) as metrics
+  cross join (select distinct wc.w from unnest(p_window_codes) as wc(w)) as windows
+  left join lateral (
+    select b.snapshot_date, b.value, b.ci_lower, b.ci_upper, b.n_eff
+    from public.sustainability_trend_bands as b
+    where b.player_id = requested.id
+      and b.metric_key = metrics.k
+      and b.window_code = windows.w
+      and b.snapshot_date <= p_as_of
+    order by b.snapshot_date desc
+    limit 1
+  ) as latest on true
+  order by requested.id, metrics.k collate "C", windows.w collate "C"
+Incremental Sort  (cost=703.55..7039.65 rows=1000 width=160) (actual time=3.132..12.821 rows=144 loops=1)
+  Sort Key: ids.id, mk.k COLLATE "C", wc.w COLLATE "C"
+  Presorted Key: ids.id
+  Full-sort Groups: 5  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+  Buffers: shared hit=4334
+  ->  Nested Loop Left Join  (cost=1.08..6971.48 rows=1000 width=160) (actual time=0.185..12.783 rows=144 loops=1)
+        Buffers: shared hit=4334
+        ->  Nested Loop  (cost=0.52..14.87 rows=1000 width=68) (actual time=0.007..0.034 rows=144 loops=1)
+              ->  Nested Loop  (cost=0.40..2.02 rows=100 width=36) (actual time=0.005..0.016 rows=72 loops=1)
+                    ->  Unique  (cost=0.27..0.32 rows=10 width=4) (actual time=0.003..0.005 rows=18 loops=1)
+                          ->  Sort  (cost=0.27..0.29 rows=10 width=4) (actual time=0.002..0.003 rows=18 loops=1)
+                                Sort Key: ids.id
+                                Sort Method: quicksort  Memory: 25kB
+                                ->  Function Scan on unnest ids  (cost=0.00..0.10 rows=10 width=4) (actual time=0.001..0.001 rows=18 loops=1)
+                    ->  Materialize  (cost=0.13..0.38 rows=10 width=32) (actual time=0.000..0.000 rows=4 loops=18)
+                          ->  HashAggregate  (cost=0.13..0.23 rows=10 width=32) (actual time=0.002..0.002 rows=4 loops=1)
+                                Group Key: mk.k
+                                Batches: 1  Memory Usage: 24kB
+                                ->  Function Scan on unnest mk  (cost=0.00..0.10 rows=10 width=32) (actual time=0.000..0.001 rows=4 loops=1)
+              ->  Materialize  (cost=0.13..0.38 rows=10 width=32) (actual time=0.000..0.000 rows=2 loops=72)
+                    ->  HashAggregate  (cost=0.13..0.23 rows=10 width=32) (actual time=0.001..0.001 rows=2 loops=1)
+                          Group Key: wc.w
+                          Batches: 1  Memory Usage: 24kB
+                          ->  Function Scan on unnest wc  (cost=0.00..0.10 rows=10 width=32) (actual time=0.000..0.001 rows=2 loops=1)
+        ->  Limit  (cost=0.56..6.94 rows=1 width=28) (actual time=0.088..0.088 rows=0 loops=144)
+              Buffers: shared hit=4334
+              ->  Index Scan Backward using sustainability_trend_bands_pkey on sustainability_trend_bands b  (cost=0.56..262.00 rows=41 width=28) (actual time=0.088..0.088 rows=0 loops=144)
+                    Index Cond: ((player_id = ids.id) AND (snapshot_date <= $4) AND (metric_key = mk.k) AND (window_code = wc.w))
+                    Buffers: shared hit=4334
+
+=== no_stats/worst_l5_never / new_generic (auto_explain of the function body; plan shape; buffers are from the warm repeat) ===
+
+NOTICE:  duration: 8.401 ms  plan:
+Query Text: select requested.id, metrics.k, windows.w,
+         latest.snapshot_date, latest.value, latest.ci_lower, latest.ci_upper, latest.n_eff
+  from (select distinct ids.id from unnest(p_player_ids) as ids(id)) as requested
+  cross join (select distinct mk.k from unnest(p_metric_keys) as mk(k)) as metrics
+  cross join (select distinct wc.w from unnest(p_window_codes) as wc(w)) as windows
+  left join lateral (
+    select b.snapshot_date, b.value, b.ci_lower, b.ci_upper, b.n_eff
+    from public.sustainability_trend_bands as b
+    where b.player_id = requested.id
+      and b.metric_key = metrics.k
+      and b.window_code = windows.w
+      and b.snapshot_date <= p_as_of
+    order by b.snapshot_date desc
+    limit 1
+  ) as latest on true
+  order by requested.id, metrics.k collate "C", windows.w collate "C"
+Incremental Sort  (cost=35470.77..354713.04 rows=1000 width=264) (actual time=1.892..8.384 rows=144 loops=1)
+  Sort Key: ids.id, mk.k COLLATE "C", wc.w COLLATE "C"
+  Presorted Key: ids.id
+  Full-sort Groups: 5  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+  Buffers: shared hit=14047
+  ->  Nested Loop Left Join  (cost=0.96..354644.87 rows=1000 width=264) (actual time=0.011..8.341 rows=144 loops=1)
+        Buffers: shared hit=14047
+        ->  Nested Loop  (cost=0.52..14.87 rows=1000 width=68) (actual time=0.006..0.033 rows=144 loops=1)
+              ->  Nested Loop  (cost=0.40..2.02 rows=100 width=36) (actual time=0.005..0.017 rows=72 loops=1)
+                    ->  Unique  (cost=0.27..0.32 rows=10 width=4) (actual time=0.003..0.006 rows=18 loops=1)
+                          ->  Sort  (cost=0.27..0.29 rows=10 width=4) (actual time=0.003..0.004 rows=18 loops=1)
+                                Sort Key: ids.id
+                                Sort Method: quicksort  Memory: 25kB
+                                ->  Function Scan on unnest ids  (cost=0.00..0.10 rows=10 width=4) (actual time=0.001..0.002 rows=18 loops=1)
+                    ->  Materialize  (cost=0.13..0.38 rows=10 width=32) (actual time=0.000..0.000 rows=4 loops=18)
+                          ->  HashAggregate  (cost=0.13..0.23 rows=10 width=32) (actual time=0.002..0.002 rows=4 loops=1)
+                                Group Key: mk.k
+                                Batches: 1  Memory Usage: 24kB
+                                ->  Function Scan on unnest mk  (cost=0.00..0.10 rows=10 width=32) (actual time=0.000..0.001 rows=4 loops=1)
+              ->  Materialize  (cost=0.13..0.38 rows=10 width=32) (actual time=0.000..0.000 rows=2 loops=72)
+                    ->  HashAggregate  (cost=0.13..0.23 rows=10 width=32) (actual time=0.001..0.001 rows=2 loops=1)
+                          Group Key: wc.w
+                          Batches: 1  Memory Usage: 24kB
+                          ->  Function Scan on unnest wc  (cost=0.00..0.10 rows=10 width=32) (actual time=0.000..0.000 rows=2 loops=1)
+        ->  Limit  (cost=0.43..354.61 rows=1 width=132) (actual time=0.058..0.058 rows=0 loops=144)
+              Buffers: shared hit=14047
+              ->  Index Scan using idx_stb_player_metric on sustainability_trend_bands b  (cost=0.43..354.61 rows=1 width=132) (actual time=0.057..0.057 rows=0 loops=144)
+                    Index Cond: ((player_id = ids.id) AND (metric_key = mk.k) AND (snapshot_date <= $4))
+                    Filter: (window_code = wc.w)
+                    Rows Removed by Filter: 245
+                    Buffers: shared hit=14047

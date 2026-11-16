@@ -16,16 +16,18 @@ import type {
   SustainabilityTrendBandRow,
   WgoSkaterDeploymentProfile
 } from "../types/run-forge-projections.types";
-import { daysBetweenDates } from "../utils/date-utils";
 import { clamp, finiteOrNull } from "../utils/number-utils";
 import {
-  classifyTrendBandRecency,
-  compareTrendBandRowsForSelection,
-  computeSkaterTrendAdjustment
-} from "../utils/trend-adjustments";
-
-const trendBandMetricPriority = new Set<string>(TREND_BAND_METRIC_PRIORITY);
-const trendBandWindowPriority = new Set<string>(TREND_BAND_WINDOW_PRIORITY);
+  emptyTrendAdjustmentDiagnostics,
+  expectedLatestTrendBandKeys,
+  failedTrendAdjustmentFetch,
+  FORGE_LATEST_TREND_BANDS_RPC,
+  latestTrendBandCoverageProblem,
+  latestTrendBandRowsFromHistory,
+  LATEST_TREND_BAND_MAX_KEYS,
+  selectSkaterTrendAdjustmentsFromLatest,
+  type LatestTrendBandKeyRow
+} from "./trendBandLatest";
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
@@ -151,7 +153,8 @@ function normalizeWgoToiToSeconds(value: number | null | undefined): number | nu
 
 export type SkaterTrendAdjustmentFetchDiagnostics = {
   requestedPlayers: number;
-  eligibleRows: number;
+  /** Latest candidate rows (at most metrics x windows per player); was the capped GET's row count. */
+  candidateRows: number;
   playersWithRows: number;
   playersAdjusted: number;
   playersMissingRows: number;
@@ -624,99 +627,93 @@ export async function fetchLatestSkaterOnIceContextProfiles(playerIds: number[],
   return (await fetchLatestSkaterContextProfiles(playerIds, cutoffDate)).onIceContext;
 }
 
-export async function fetchLatestSkaterTrendAdjustments(
-  playerIds: number[],
-  asOfDate: string
-): Promise<SkaterTrendAdjustmentFetchResult> {
-  assertSupabase();
-  const uniquePlayerIds = Array.from(new Set(playerIds)).filter((id) =>
-    Number.isFinite(id)
-  );
-  const diagnostics: SkaterTrendAdjustmentFetchDiagnostics = {
-    requestedPlayers: uniquePlayerIds.length,
-    eligibleRows: 0,
-    playersWithRows: 0,
-    playersAdjusted: 0,
-    playersMissingRows: 0,
-    playersNeutralizedByRecency: 0,
-    selectedSoftStaleRows: 0,
-    selectedHardStaleRows: 0,
-    fetchFailed: false,
-    fetchErrorMessage: null
-  };
-  if (uniquePlayerIds.length === 0) {
-    return {
-      adjustments: new Map(),
-      diagnostics
-    };
-  }
+let legacyTrendBandReadWarned = false;
 
-  const { data, error } = await supabase
+/**
+ * The old history GET (limit 12000; PostgREST caps it at max_rows = 1,000), kept only for read-only reconstruction,
+ * replay of a snapshot captured before the RPC, and the release window before `forge_latest_trend_bands` is deployed.
+ */
+async function fetchTrendBandRowsByLegacyHistoryRead(
+  playerIds: number[],
+  asOfDate: string,
+  db: typeof supabase
+): Promise<{ rows: LatestTrendBandKeyRow[] } | { errorMessage: string }> {
+  const { data, error } = await db
     .from("sustainability_trend_bands")
     .select(
       "player_id,snapshot_date,metric_key,window_code,value,ci_lower,ci_upper,n_eff"
     )
-    .in("player_id", uniquePlayerIds)
+    .in("player_id", playerIds)
     .in("metric_key", [...TREND_BAND_METRIC_PRIORITY])
     .in("window_code", [...TREND_BAND_WINDOW_PRIORITY])
     .lte("snapshot_date", asOfDate)
     .order("snapshot_date", { ascending: false })
     .limit(12000);
-  if (error) {
-    diagnostics.fetchFailed = true;
-    diagnostics.fetchErrorMessage =
-      error.message ?? "Unknown sustainability trend-band fetch failure";
-    console.warn("Error fetching sustainability trend bands for projections:", error);
-    diagnostics.playersMissingRows = uniquePlayerIds.length;
-    return {
-      adjustments: new Map(),
-      diagnostics
-    };
-  }
+  if (error) return { errorMessage: error.message ?? "Unknown sustainability trend-band fetch failure" };
+  return { rows: latestTrendBandRowsFromHistory((data ?? []) as unknown as SustainabilityTrendBandRow[]) };
+}
 
-  const rowsByPlayer = new Map<number, SustainabilityTrendBandRow[]>();
-  for (const raw of (data ?? []) as unknown as SustainabilityTrendBandRow[]) {
-    const playerId = Number(raw.player_id);
-    if (!Number.isFinite(playerId)) continue;
-    if (!trendBandMetricPriority.has(raw.metric_key)) continue;
-    if (!trendBandWindowPriority.has(raw.window_code)) continue;
-    const rows = rowsByPlayer.get(playerId) ?? [];
-    rows.push(raw);
-    rowsByPlayer.set(playerId, rows);
-  }
-  diagnostics.eligibleRows = Array.from(rowsByPlayer.values()).reduce(
-    (sum, rows) => sum + rows.length,
-    0
+/**
+ * The newest trend band on or before `asOfDate` for each player, by one GET of `forge_latest_trend_bands`
+ * (see trendBandLatest.ts). A failed or incomplete read never throws: the writer continues without trend
+ * modifiers (`fetchFailed`), and native input collection refuses the capture.
+ */
+export async function fetchLatestSkaterTrendAdjustments(
+  playerIds: number[],
+  asOfDate: string,
+  db = supabase
+): Promise<SkaterTrendAdjustmentFetchResult> {
+  if (!db) throw new Error("Supabase server client not available");
+  const uniquePlayerIds = Array.from(new Set(playerIds)).filter((id) =>
+    Number.isFinite(id)
   );
-  diagnostics.playersWithRows = rowsByPlayer.size;
-  diagnostics.playersMissingRows = Math.max(
-    0,
-    uniquePlayerIds.length - diagnostics.playersWithRows
-  );
-
-  const out = new Map<number, SkaterTrendAdjustment>();
-  for (const [playerId, rows] of rowsByPlayer.entries()) {
-    const chosen = rows
-      .slice()
-      .sort((a, b) => compareTrendBandRowsForSelection(a, b, asOfDate))[0];
-    if (!chosen) continue;
-
-    const adjustment = computeSkaterTrendAdjustment({ row: chosen, asOfDate });
-    if (!adjustment) continue;
-    const recencyClass = classifyTrendBandRecency(
-      Math.max(0, daysBetweenDates(asOfDate, adjustment.snapshotDate))
-    );
-    if (recencyClass === "soft_stale") diagnostics.selectedSoftStaleRows += 1;
-    if (recencyClass === "hard_stale") diagnostics.selectedHardStaleRows += 1;
-    if (adjustment.effectState === "neutralized_by_recency") {
-      diagnostics.playersNeutralizedByRecency += 1;
-    }
-    if (adjustment.effectState === "applied") diagnostics.playersAdjusted += 1;
-    out.set(playerId, adjustment);
+  if (uniquePlayerIds.length === 0) {
+    return { adjustments: new Map(), diagnostics: emptyTrendAdjustmentDiagnostics(0) };
   }
-
-  return {
-    adjustments: out,
-    diagnostics
+  const failed = (message: string, cause?: unknown) => {
+    console.warn("Error fetching sustainability trend bands for projections:", cause ?? message);
+    return failedTrendAdjustmentFetch(uniquePlayerIds.length, message);
   };
+  const legacy = async () => {
+    const read = await fetchTrendBandRowsByLegacyHistoryRead(uniquePlayerIds, asOfDate, db);
+    return "errorMessage" in read
+      ? failed(read.errorMessage)
+      : selectSkaterTrendAdjustmentsFromLatest(read.rows, uniquePlayerIds, asOfDate);
+  };
+
+  // Read-only reconstruction refuses every RPC; read by table.
+  if (isReadOnlyProjectionReconstruction()) return legacy();
+  const keys = expectedLatestTrendBandKeys(uniquePlayerIds);
+  if (keys.length > LATEST_TREND_BAND_MAX_KEYS) return failed(`trend_band_keys_exceed_limit:${keys.length}`);
+  let result: { data: unknown; error: { code?: unknown; message?: string } | null } | undefined;
+  try {
+    // One read-only GET per team. Not in the generated types until the migration is applied.
+    result = await (db as any).rpc(FORGE_LATEST_TREND_BANDS_RPC, {
+      p_player_ids: uniquePlayerIds,
+      p_metric_keys: [...TREND_BAND_METRIC_PRIORITY],
+      p_window_codes: [...TREND_BAND_WINDOW_PRIORITY],
+      p_as_of: asOfDate
+    }, { get: true });
+  } catch (cause) {
+    // Replaying a snapshot captured on the history read finds no recorded RPC read: replay that read instead.
+    if (cause instanceof Error && ["RPC is not allowed during read-only FORGE reconstruction",
+      `Unrecorded projection input: rpc ${FORGE_LATEST_TREND_BANDS_RPC}`].includes(cause.message)) {
+      return legacy();
+    }
+    throw cause;
+  }
+  if (result?.error?.code === "PGRST202") {
+    // Release safety: until PostgREST finds the function, read through the history GET.
+    if (!legacyTrendBandReadWarned) {
+      legacyTrendBandReadWarned = true;
+      console.warn(`${FORGE_LATEST_TREND_BANDS_RPC} is not deployed (PGRST202); FORGE reads trend bands by the legacy history GET.`);
+    }
+    return legacy();
+  }
+  if (!result || result.error) {
+    return failed(result?.error?.message ?? "Unknown sustainability trend-band fetch failure", result?.error);
+  }
+  const problem = latestTrendBandCoverageProblem(result.data, keys, asOfDate);
+  if (problem) return failed(`trend_band_coverage:${problem}`);
+  return selectSkaterTrendAdjustmentsFromLatest(result.data as LatestTrendBandKeyRow[], uniquePlayerIds, asOfDate);
 }
