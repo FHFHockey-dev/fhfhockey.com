@@ -56,6 +56,11 @@ export const REVIEWED_DYNAMIC_SITES: Array<{ file: string; argument: string; sou
     source: "upsertInBatches(table): a write helper with no caller in web/ at 538100d41" },
   { file: "lib/sources/iftttRpcDeadline.ts", argument: "name",
     source: "boundedIftttRpc(name): callers pass literal IFTTT receipt RPC names" },
+  { file: "lib/projections/pregameCapture/transport.ts", argument: "String(args[0])",
+    source: "CaptureTransport.start: forwards the run's own literal from()/rpc() name, only in capture mode "
+      + "(inputCapture.ts validates first); validate() refuses any name outside CAPTURE_RELATIONS / CAPTURE_RPCS, "
+      + "literal sets in that file with no pundit table, and the fetch guard checks again. Production runs never "
+      + "construct a transport (reviewed 2026-11-16, TJ approval)" },
 ];
 
 const PROVIDER_CONFIG_IDENTIFIER = /^(PROJECTION_SOURCES_CONFIG|projectionSourcesConfig)$/;
