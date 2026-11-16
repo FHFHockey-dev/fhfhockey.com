@@ -8,7 +8,7 @@
       "line_source_snapshots:dfofantasy:2026-11-15:24:2026020328:2122126809533923555:no-quoted-tweet:practice_lines:accepted"
     ],
     "status": "repairable",
-    "reason": "partial: some units left out",
+    "reason": "all units validated",
     "tiles": [
       [
         "F1",
@@ -17,6 +17,10 @@
       [
         "F2",
         "Jeff Malott-Mikael Granlund-Beckett Sennecke"
+      ],
+      [
+        "F3",
+        "Ian Moore (D listed at F)-Tim Washe-Alex Killorn"
       ],
       [
         "F4",
@@ -35,7 +39,7 @@
         "Pavel Mintyukov-Noah Warren"
       ]
     ],
-    "partial": true,
+    "partial": false,
     "writes": true
   },
   {

@@ -65,7 +65,8 @@ export function planNewsLineupRepair(args: { item: RepairItem; sources: RepairSo
   const validated = validatedNewsLineupRows(newsLineup, item.team_id);
   if (!newsLineup || !validated?.rows.length) return { ...base, sources, gameId: game.id, status: "source_only", reason: "no unit passes validation" };
   return { itemId: item.id, originalTweetId, gameId: game.id, sources, status: "repairable", reason: validated.partial ? "partial: some units left out" : "all units validated",
-    tiles: validated.rows.map((row) => [row.label, row.players.join("-")]), partial: validated.partial, newsLineup };
+    tiles: validated.rows.map((row) => [row.label, row.players.map((player, index) => row.notes?.[index] ? `${player} (${row.notes[index]})` : player).join("-")]),
+    partial: validated.partial, newsLineup };
 }
 
 async function main() {

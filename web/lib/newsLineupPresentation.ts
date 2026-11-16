@@ -6,6 +6,8 @@ export type NewsLineupRow = {
   players: Array<string | null>;
   group: string | null;
   partial: boolean;
+  /** Per-slot source notes, e.g. "D listed at F" for a rostered defenseman the post lists in a forward row. */
+  notes?: Array<string | null>;
 };
 
 export type NewsLineupPresentation = {
@@ -58,15 +60,41 @@ export function buildNewsLineupSnapshot(args: {
     sourceTweetId: args.sourceTweetId }, interpretation: picked };
 }
 
-/** Player ids on the bound team according to the roster the interpreter resolved against. */
-function rosterPlayerIds(rosterRevision: unknown, teamId: number): Set<number> {
-  const ids = new Set<number>();
-  if (typeof rosterRevision !== "string") return ids;
+/** Roster position by player id on the bound team, from the roster the interpreter resolved against. */
+function rosterPositions(rosterRevision: unknown, teamId: number): Map<number, string> {
+  const positions = new Map<number, string>();
+  if (typeof rosterRevision !== "string") return positions;
   for (const entry of rosterRevision.split("|")) {
-    const [playerId, , , team] = entry.split(":");
-    if (Number(team) === teamId && Number.isSafeInteger(Number(playerId))) ids.add(Number(playerId));
+    const [playerId, , , team, position] = entry.split(":");
+    if (Number(team) === teamId && Number.isSafeInteger(Number(playerId))) positions.set(Number(playerId), (position ?? "").toUpperCase());
   }
-  return ids;
+  return positions;
+}
+
+const FORWARD_POSITIONS = new Set(["C", "L", "R", "LW", "RW", "F"]);
+const playerIdsOf = (unit: Record<string, unknown>) => (Array.isArray(unit.players) ? unit.players : []).map((player) => record(player)?.playerId);
+
+/**
+ * A forward row the interpreter held back only because a rostered defenseman is listed in it. The post reports where
+ * he was listed, not where he played: accepted for News as reported, never as a roster or forecast change. The row
+ * must be one resolved team D with two team forwards, the D listed in no defense pair, and the row's only flag the
+ * position rejection naming exactly these players.
+ */
+function defenseListedAtForward(unit: Record<string, unknown>, units: Record<string, unknown>[], unresolved: Record<string, unknown>[],
+  positions: Map<number, string>): Record<string, unknown> | null {
+  const ids = playerIdsOf(unit);
+  if (unit.situation !== "es_forward" || unit.complete !== false || ids.length !== 3 || new Set(ids).size !== 3
+    || !ids.every((id) => Number.isSafeInteger(id) && positions.has(id as number))) return null;
+  const roles = ids.map((id) => positions.get(id as number)!);
+  // Exactly one D among rostered forwards; two would more likely be a mis-merged pair than a deployment.
+  if (roles.filter((role) => role === "D").length !== 1 || !roles.every((role) => role === "D" || FORWARD_POSITIONS.has(role))) return null;
+  const defensePlayers = new Set(units.filter((other) => other.situation === "es_defense").flatMap(playerIdsOf));
+  if (ids.some((id, index) => roles[index] === "D" && defensePlayers.has(id))) return null;
+  const flags = unresolved.filter((issue) => issue.situation === "es_forward" && (issue.number == null || issue.number === unit.number));
+  const flag = flags[0];
+  const candidates = Array.isArray(flag?.candidates) ? flag!.candidates : [];
+  return flags.length === 1 && flag!.reason === "invalid_extraction" && candidates.length === 3
+    && ids.every((id) => candidates.includes(id)) ? flag! : null;
 }
 
 /**
@@ -85,26 +113,32 @@ export function validatedNewsLineupRows(snapshot: unknown, teamId: number | null
   // Game and warm-up posts need the snapshot's own NHL game; practice and camp posts have none.
   if (kind === "game" ? !Number.isSafeInteger(binding.gameId) : kind !== "practice" && kind !== "camp") return null;
   if (!Array.isArray(interpretation.units)) return null;
-  const roster = rosterPlayerIds(interpretation.rosterRevision, teamId!);
+  const positions = rosterPositions(interpretation.rosterRevision, teamId!);
   const unresolved = Array.isArray(interpretation.unresolved) ? interpretation.unresolved.map(record).filter(Boolean) as Record<string, unknown>[] : [];
+  const units = interpretation.units.map(record).filter(Boolean) as Record<string, unknown>[];
   const rows: NewsLineupRow[] = [];
-  let rejected = unresolved.length > 0;
-  for (const raw of interpretation.units) {
-    const unit = record(raw);
-    const role = unit && typeof unit.situation === "string" ? ROLES[unit.situation] : null;
-    const players = Array.isArray(unit?.players) ? unit!.players.map(record) : [];
-    const valid = role && unit!.complete === true && players.length > 0
-      && players.every((player) => player && Number.isSafeInteger(player.playerId) && roster.has(player.playerId as number) && name(player.name))
-      && !unresolved.some((issue) => issue.situation === unit!.situation && (issue.number == null || issue.number === unit!.number));
+  const accepted = new Set<Record<string, unknown>>();
+  let rejected = false;
+  for (const unit of units) {
+    const role = typeof unit.situation === "string" ? ROLES[unit.situation] : null;
+    const players = Array.isArray(unit.players) ? unit.players.map(record) : [];
+    const resolved = role && players.length > 0 && players.every((player) => player && Number.isSafeInteger(player.playerId)
+      && positions.has(player.playerId as number) && name(player.name));
+    const listedAtForward = resolved ? defenseListedAtForward(unit, units, unresolved, positions) : null;
+    const valid = resolved && (listedAtForward || (unit.complete === true
+      && !unresolved.some((issue) => issue.situation === unit.situation && (issue.number == null || issue.number === unit.number))));
     if (!valid) { rejected = true; continue; }
-    const number = Number.isSafeInteger(unit!.number) && Number(unit!.number) > 0 ? unit!.number : "";
-    rows.push({ ...role!, label: `${role!.label}${number}`, players: players.map((player) => name(player!.name)), group: name(unit!.group), partial: false });
+    if (listedAtForward) accepted.add(listedAtForward);
+    const number = Number.isSafeInteger(unit.number) && Number(unit.number) > 0 ? unit.number : "";
+    rows.push({ ...role!, label: `${role!.label}${number}`, players: players.map((player) => name(player!.name)), group: name(unit.group), partial: false,
+      ...(listedAtForward ? { notes: players.map((player) => positions.get(player!.playerId as number) === "D" ? "D listed at F" : null) } : {}) });
   }
+  if (unresolved.some((issue) => !accepted.has(issue))) rejected = true;
   // A starter label needs an explicit goalie claim ("in goal", "starts"); order or "A | B" is not one.
   const goalieNames = new Set(rows.filter((row) => row.kind === "goalie").flatMap((row) => row.players));
   const starter = (Array.isArray(interpretation.events) ? interpretation.events : []).map(record)
     .find((event) => event?.kind === "goalie" && event.state === "confirmed" && event.goalieRole === "starter"
-      && roster.has(event.playerId as number) && goalieNames.has(name(event.playerName)));
+      && positions.has(event.playerId as number) && goalieNames.has(name(event.playerName)));
   const context = kind === "practice" ? "Practice snapshot" : kind === "camp" ? "Camp snapshot"
     : lineContext === "warmup" ? "Warm-up snapshot" : "Game snapshot";
   return { rows, partial: rejected, startingGoalie: name(starter?.playerName), context,

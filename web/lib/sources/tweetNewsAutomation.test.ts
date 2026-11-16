@@ -598,23 +598,43 @@ Scratches: Colangelo, Vatrano, Mitchell`;
   };
   const tiles = (lineup: ReturnType<typeof readNewsLineupPresentation>) => lineup.rows.map((row) => [row.label, row.players.join("-")]);
 
-  it("new card: shows the verified Ducks units, leaves F3, the headline and the goalie pair out, and keeps scratches in their own row", () => {
+  it("new card: shows the verified Ducks units with F3 as a reported 'D listed at F' line, no headline or goalie pair, scratches in their own row", () => {
     vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
     const candidate = buildTweetNewsAutomationCandidate({ row: ducksRow({ retainedInterpretation: retainedInterpretation(), retainedGameId: GAME }),
       players: automationPlayers, nowIso: "2026-11-16T03:45:00.000Z" });
     expect(candidate?.category).toBe("LINE COMBINATION");
     const lineup = publicLineup(candidate!.metadata);
-    expect(tiles(lineup)).toEqual([
+    // Goalie rows depend on the interpreter's "A | B" support; whatever it yields, order alone never makes a starter.
+    expect(tiles({ ...lineup, rows: lineup.rows.filter((row) => row.kind !== "goalie") })).toEqual([
       ["F1", "Judd Caulfield-Leo Carlsson-Cutter Gauthier"], ["F2", "Jeffrey Malott-Mikael Granlund-Beckett Sennecke"],
-      ["F4", "Nikita Nesterenko-Jack McQueen-Troy Terry"],
+      ["F3", "Ian Moore-Tim Washe-Alex Killorn"], ["F4", "Nikita Nesterenko-Jack McQueen-Troy Terry"],
       ["D1", "Jackson LaCombe-Drew Helleson"], ["D2", "Tyson Hinds-Tristan Luneau"], ["D3", "Pavel Mintyukov-Noah Warren"],
       ["Scratch", "Sam Colangelo-Frank Vatrano-Ian Mitchell"],
     ]);
     expect(lineup.rows.find((row) => row.label === "Scratch")!.kind).toBe("scratch");
-    expect(lineup.notice).toMatch(/^Partial snapshot/);
+    // Moore is rostered D: the post lists him at F. That is reported, not a roster change or proof he played there.
+    expect(lineup.rows.find((row) => row.label === "F3")!.notes).toEqual(["D listed at F", null, null]);
+    expect(lineup.rows.filter((row) => row.label !== "F3").every((row) => !row.notes)).toBe(true);
+    expect(lineup.notice).toBeNull();
     expect(lineup.context).toBe("Warm-up snapshot · reported");
     expect(lineup.startingGoalie).toBeNull();
     expect(JSON.stringify(lineup.rows)).not.toMatch(/ZachCav|warm|Husso \||Scratches:/);
+  });
+
+  it("leaves a malformed 'D listed at F' lookalike out and marks the card partial", () => {
+    const f3 = (forwardRow: string, extraPair = "") => {
+      const body = text.replace("Moore-Washe-Killorn", forwardRow).replace("Mintyukov-Warren", `Mintyukov-Warren${extraPair}`);
+      return validatedNewsLineupRows(buildNewsLineupSnapshot({ interpretation: interpretTweetUnits(body, roster), teamId: ANA, gameId: GAME, sourceTweetId: "x" }), ANA)!;
+    };
+    const lacks = (lineup: ReturnType<typeof f3>, label: string) => {
+      expect(lineup.rows.some((row) => row.label === label && row.kind === "forward")).toBe(false);
+      expect(lineup.partial).toBe(true);
+    };
+    lacks(f3("Moore-Washe-Killorn", "\nMoore-Hinds"), "F3"); // also listed in a defense pair: role is ambiguous
+    lacks(f3("Moore-Mintyukov-Killorn"), "F3"); // two rostered D in one forward row
+    lacks(f3("Moore-Washe-Husso"), "F3"); // a goalie in the row
+    lacks(f3("Moore-Washe-Nobody"), "F3"); // an unresolved name
+    expect(f3("Moore-Washe").rows.some((row) => row.players.includes("Ian Moore"))).toBe(false); // short row
   });
 
   it("existing card: never renders the stored text-split lineupCard, even beside retained units without a game binding", () => {
