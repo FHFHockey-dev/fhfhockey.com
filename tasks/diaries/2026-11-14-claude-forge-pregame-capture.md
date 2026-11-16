@@ -345,3 +345,12 @@
   - **Diagnosis:** the warm body plan takes 327 ms (Index Only Scan, 9,592 heap fetches, 4.9 MB sort spill). The cold cost is about 3,550 disk pages, mostly current-season heap fetches.
   - **Receipt:** `physical-totals/MIGRATION-155-APPLY-RECEIPT.md`. Authority row 155 stays pending with that evidence; pins 21/21.
   - **Next:** TJ decides whether to re-apply step 2 with a new limit or improve the body or visibility first.
+- **01:27–01:28Z, 155 re-applied** (TJ: "Reapply step 2, audit, triage, fix"):
+  - Plan gate passed; step 2 committed at 01:27:52.658Z with an exact readback.
+  - Smoke OK: Index Only Scan, 9,592 heap fetches, 279 ms warm, PostgREST 200.
+  - Authority row 155 applied; pins 121/28/6.
+- **Audit 01:28:20Z (read-only):**
+  - API timeout: 8 s from the `authenticator` role setting; `service_role` sets none.
+  - `wgo_skater_stats` has scale-factor reloptions (migration 93) but no insert trigger, and all its stats counters read 0. So no autovacuum is likely all season; heap fetches will grow.
+  - Next: propose a one-off VACUUM plus an insert-autovacuum reloption (migration 156) to TJ.
+- **Slate fix `bc13b523e`:** a clean-export check is running (`~/forge-pilot/export-bc13b523e-20261116T012855Z`).
