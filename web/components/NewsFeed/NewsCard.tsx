@@ -335,7 +335,8 @@ export default function NewsCard({
           <div className={styles.lineupBody}>
             <NewsLineupGrid
               lineup={lineup}
-              hideContext
+              // The title already names the card; a warm-up card still says its lines are only reported.
+              hideContext={!lineup.context.endsWith("· reported")}
               mini={rail}
               onGoalieSlotClick={onLineupGoalieSlotClick}
             />

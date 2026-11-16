@@ -442,6 +442,16 @@ describe("NewsCard", () => {
     expect(within(articles[1]).getByText("Captured Player").getAttribute("title")).toBe("Captured Player");
   });
 
+  it("says a warm-up card's lines are only reported, and hides the context line otherwise", () => {
+    const warmup = lineupMeta([["es_forward", 1, ["A", "B", "C"]]], { context: "game", gameId: 2026020328 });
+    (warmup.newsLineup.interpretation as Record<string, unknown>).lineContext = { context: "warmup", phase: "pregame", evidence: [] };
+    const { rerender } = render(<NewsCard item={makeItem({ category: "LINE COMBINATION", subcategory: "FORWARD LINES", team_id: 13, metadata: warmup })} />);
+    expect(screen.getByText("Warm-up snapshot · reported")).toBeTruthy();
+    rerender(<NewsCard item={makeItem({ category: "LINE COMBINATION", subcategory: "PRACTICE LINES", team_id: 13,
+      metadata: lineupMeta([["es_forward", 1, ["A", "B", "C"]]]) })} />);
+    expect(screen.queryByText(/snapshot/)).toBeNull();
+  });
+
   it("normalizes the supplied canonical team abbreviation without changing player identities", () => {
     const { container } = render(<NewsCard item={makeItem({ team_abbreviation: " nyr ", category: "LINE COMBINATION", team_id: 13,
       metadata: lineupMeta([["es_defense", 1, ["Historical Player", "Partner"]], ["es_forward", 1, ["Unverified"], false]]) })} compact rail />);
