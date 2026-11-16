@@ -4,13 +4,16 @@
  * node:https is routed to an in-process fake Supabase (PostgREST RPCs + Storage, modelling the
  * migration's rules), the real core, adapter, canonical NST client and shared admission.
  * Provider/admission HTTP is a mocked fetch that publishes synthetic undici TLS events.
- * Zero real network: node:net/node:tls/node:http are forbidden and fetch is the mock.
+ * Zero real network: node:net/node:tls/node:http are forbidden and fetch is the mock. The gate-5.5
+ * observer self-test needs a real loopback server, so it is substituted here (its real run and its
+ * refusal path are covered in tlsObservation.test.ts and handler.test.ts); here it gates the claim.
  * Set BLSH_V6_REHEARSAL_OUT=<file> to write the scenario results as JSON. */
 import { channel } from "node:diagnostics_channel";
 import { randomUUID, createHash } from "node:crypto";
 import { writeFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const selfTestState = vi.hoisted(() => ({ result: null as string | null, calls: 0 }));
 const fakeSupabase = vi.hoisted(() => {
   type Run = { runId: string; sourceDate: string; state: string; reason: string | null; manifest: string | null; intents: string[] };
   const state = {
@@ -82,6 +85,10 @@ const fakeSupabase = vi.hoisted(() => {
 });
 vi.mock("node:https", () => fakeSupabase.https);
 vi.mock("node:http", () => { throw new Error("real HTTP forbidden"); });
+vi.mock("./tlsObservation", async original => ({
+  ...await original<typeof import("./tlsObservation")>(),
+  observerSelfTest: vi.fn(async () => { selfTestState.calls++; return selfTestState.result; }),
+}));
 vi.mock("node:net", () => { throw new Error("real sockets forbidden"); });
 vi.mock("node:tls", () => ({ rootCertificates: ["fixture-bundled-root"], getCACertificates: () => ["fixture-default-root"],
   connect: () => { throw new Error("real TLS forbidden"); }, createSecureContext: () => { throw new Error("real TLS forbidden"); } }));
@@ -102,7 +109,7 @@ const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co", CRON = "fixture-cron-
 const DATE = "2026-11-19";
 const results: { scenario: string; status: number; body: unknown; fetches: string[]; runState: string | null; objects: number; ok: boolean }[] = [];
 let fetches: string[], noGames = false, admissionAllowed = true, resumedAdmission = false;
-const sendHeaders = channel("undici:client:sendHeaders");
+const sendHeaders = channel("undici:client:sendHeaders"), requestCreate = channel("undici:request:create");
 let undiciEvents = 0;
 const countEvents = () => { undiciEvents++; };
 const socket = (host: string, resumed: boolean) => {
@@ -135,6 +142,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   Object.assign(fakeSupabase.state, { enabled: true, runs: new Map(), storage: new Map(), objects: [], log: [], audits: [], failRpc: undefined });
   noGames = false; admissionAllowed = true; resumedAdmission = false; undiciEvents = 0;
+  selfTestState.result = null; selfTestState.calls = 0;
   sendHeaders.subscribe(countEvents);
   for (const [key, value] of Object.entries({ CRON_SECRET: CRON, NST_KEY: KEY, SUPABASE_SERVICE_ROLE_KEY: SERVICE, NEXT_PUBLIC_SUPABASE_URL: ORIGIN,
     VERCEL_DEPLOYMENT_ID: "dpl_Rehearsal01", VERCEL_ENV: "production", VERCEL_REGION: "iad1", VERCEL_GIT_COMMIT_SHA: "b".repeat(40) })) vi.stubEnv(key, value);
@@ -152,8 +160,10 @@ beforeEach(() => {
       body = JSON.stringify({ version: 1, scope: "global-nst", permitTtlMs: 1000, allowed: admissionAllowed, waitMs: 0 });
     } else throw new Error("unexpected network target blocked");
     fetches.push(kind); fakeSupabase.state.log.push(`fetch:${kind}`);
-    sendHeaders.publish({ request: { origin: parsed.origin, path: `${parsed.pathname}${parsed.search}`, method: init.method ?? "GET" }, headers: [],
-      socket: socket(parsed.hostname, resumedAdmission && kind.startsWith("admission:")) });
+    // Like undici: the request object is created in the caller's async context, then its headers go out.
+    const request = { origin: parsed.origin, path: `${parsed.pathname}${parsed.search}`, method: init.method ?? "GET" };
+    requestCreate.publish({ request });
+    sendHeaders.publish({ request, headers: [], socket: socket(parsed.hostname, resumedAdmission && kind.startsWith("admission:")) });
     return response(body, url);
   }));
 });
@@ -196,6 +206,18 @@ describe("v6 offline rehearsal through the real route module", () => {
     Object.assign(fakeSupabase.state, { runs: new Map(), objects: [], storage: new Map(), enabled: false }); resumedAdmission = false;
     const off = await trigger("kill_switch_off");
     expect(off.r.body).toMatchObject({ success: true, skipped: "disabled" }); expect(off.entry.fetches).toEqual([]); expect(off.run).toBeNull();
+  });
+
+  it("an observer self-test refusal (gate 5.5) is a 503 before the claim: no row, no network, and the backup trigger still captures D", async () => {
+    selfTestState.result = "observer_selftest_failed";
+    const refused = await trigger("observer_selftest_refused");
+    expect(refused.r.statusCode).toBe(503);
+    expect(refused.r.body).toMatchObject({ success: false, error: "observer_selftest_failed", sourceDate: DATE });
+    expect(refused.run).toBeNull(); expect(refused.entry.fetches).toEqual([]); expect(selfTestState.calls).toBe(1);
+    selfTestState.result = null;
+    const backup = await trigger("observer_selftest_backup_ok", "2026-11-20T12:20:00.000Z");
+    expect(backup.r.body).toMatchObject({ success: true, state: "packet_complete_pending_review", operationCount: 5 });
+    expect(selfTestState.calls).toBe(2);
   });
 
   it("a run killed mid-capture (close unacknowledged) leaves the row claimed with its intents for the watchdog", async () => {

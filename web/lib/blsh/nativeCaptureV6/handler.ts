@@ -7,6 +7,8 @@
  *   3. runtime precheck: CA store hashable, global dispatcher = core-load Agent (503) - no I/O;
  *   4. kill switch: blsh_capture_enabled_v1() through the isolated writer (200 skip when off);
  *   5. plan (prepareNativeProcessCapture, unchanged) and adapter construction (503);
+ *   5.5 observer self-test (M1 fix): a loopback-only check that this runtime attributes undici
+ *      requests to their async context, so a broken observer refuses here (503) instead of burning D;
  *   6. claim: unique (pipeline, source_date); a second trigger gets a 200 skip.
  * After the claim everything is final for D: no retry and no re-run. */
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -16,6 +18,7 @@ import { createNativeCaptureAdapterV6, nativeCaptureEnvironmentProblemV6 } from 
 import { CaptureRunError, PINNED_SUPABASE_ORIGIN, runNativeCaptureV6, runtimePrecheckV6, type NativeCaptureAdapterV6 } from "./core";
 import { createPacketSink, type PacketSink } from "./sink";
 import { selectSourceDate } from "./sourceDate";
+import { observerSelfTest } from "./tlsObservation";
 import { createCaptureStore, type CaptureStore } from "./writer";
 
 export interface BlshNativeCaptureDeps {
@@ -25,6 +28,8 @@ export interface BlshNativeCaptureDeps {
   createAdapter(sourceDate: string): NativeCaptureAdapterV6;
   createSink(store: CaptureStore, runId: string, sourceDate: string): PacketSink;
   run: typeof runNativeCaptureV6;
+  /** Gate 5.5: null when the observer self-test passes, otherwise a refusal code. */
+  selfTest(): Promise<string | null>;
   routeBundlePath: string | null;
 }
 
@@ -59,6 +64,9 @@ export function createBlshNativeCaptureHandler(deps: BlshNativeCaptureDeps) {
       plan = prepareNativeProcessCapture({ seasonId: 20262027, date: D, plannedAtUTC: new Date(deps.now()).toISOString(), groups: ["individual", "onIce"] });
       adapter = deps.createAdapter(D);
     } catch { return res.status(503).json({ success: false, error: "plan_or_adapter_refused", sourceDate: D }); }
+    let selfTest: string | null;
+    try { selfTest = await deps.selfTest(); } catch { selfTest = "observer_selftest_failed"; }
+    if (selfTest) return res.status(503).json({ success: false, error: selfTest, sourceDate: D });
     let claim: Awaited<ReturnType<CaptureStore["claim"]>>;
     try {
       claim = await store.claim({ sourceDate: D, deployment: { deploymentId: process.env.VERCEL_DEPLOYMENT_ID ?? null,
@@ -93,6 +101,7 @@ export function createDefaultBlshNativeCaptureHandler(routeBundlePath: string | 
     createAdapter: sourceDate => createNativeCaptureAdapterV6({ supabaseOrigin: PINNED_SUPABASE_ORIGIN, sourceDate }),
     createSink: (store, runId, sourceDate) => createPacketSink({ store, runId, sourceDate }),
     run: runNativeCaptureV6,
+    selfTest: observerSelfTest,
     routeBundlePath,
   });
 }

@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { AsyncResource } from "node:async_hooks";
 import { channel } from "node:diagnostics_channel";
 import * as fs from "node:fs";
 import { tmpdir } from "node:os";
@@ -39,11 +40,14 @@ type Event = { kind: string; at: number };
 let directory: string, events: Event[], fetchKinds: string[];
 let fake: ReturnType<typeof createFakeCaptureStore>;
 let failAt: string | undefined, admissionAllowed: boolean;
-let tlsFaults: Partial<Record<string, "resumed" | "missing">>;
-const sendHeaders = channel("undici:client:sendHeaders");
-const fakeSocket = (host: string, resumed = false) => {
+let tlsFaults: Partial<Record<string, "resumed" | "missing" | "extra">>;
+let foreignTraffic: string[];
+const sendHeaders = channel("undici:client:sendHeaders"), requestCreate = channel("undici:request:create");
+// Created at module load, outside any observed action: work run in its scope is "another invocation".
+const foreignContext = new AsyncResource("blsh-v6-test-foreign-invocation");
+const fakeSocket = (host: string, resumed = false, fingerprintByte = "CD") => {
   const root: Record<string, unknown> = { issuer: { CN: "Fixture Root" } }; root.issuerCertificate = root;
-  const leaf = { fingerprint256: Array(32).fill("CD").join(":"), valid_from: "Nov  1 00:00:00 2026 GMT", valid_to: "Jan 30 00:00:00 2027 GMT",
+  const leaf = { fingerprint256: Array(32).fill(fingerprintByte).join(":"), valid_from: "Nov  1 00:00:00 2026 GMT", valid_to: "Jan 30 00:00:00 2027 GMT",
     subject: { CN: host }, issuer: { CN: "Fixture Intermediate" }, issuerCertificate: { issuer: { CN: "Fixture Root" }, issuerCertificate: root } };
   return { encrypted: true, authorized: true, servername: host, alpnProtocol: "http/1.1", isSessionReused: () => resumed, getProtocol: () => "TLSv1.3",
     getCipher: () => ({ name: "TLS_AES_128_GCM_SHA256", standardName: "TLS_AES_128_GCM_SHA256", version: "TLSv1.3" }), getPeerCertificate: () => resumed ? {} : leaf };
@@ -83,7 +87,7 @@ beforeEach(() => {
   vi.useFakeTimers(); vi.setSystemTime(NOW); vi.clearAllMocks();
   vi.stubEnv("NST_KEY", KEY); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", SERVICE); vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", ORIGIN);
   delete process.env.NST_JOB_LIFECYCLE_ENABLED;
-  directory = fs.mkdtempSync(join(tmpdir(), "blsh-v6-core-test-")); events = []; fetchKinds = []; failAt = undefined; admissionAllowed = true; tlsFaults = {};
+  directory = fs.mkdtempSync(join(tmpdir(), "blsh-v6-core-test-")); events = []; fetchKinds = []; failAt = undefined; admissionAllowed = true; tlsFaults = {}; foreignTraffic = [];
   games = [{ id: 2026020301 }, { id: 2026020302 }];
   vi.stubGlobal("fetch", vi.fn(async (target: string | URL | Request, init: RequestInit = {}) => {
     const url = String(target), parsed = new URL(url);
@@ -98,8 +102,16 @@ beforeEach(() => {
       body = JSON.stringify({ version: 1, scope: "global-nst", permitTtlMs: 1000, allowed: admissionAllowed, waitMs: admissionAllowed ? 0 : 5000 });
     } else throw new Error("unexpected network target blocked");
     fetchKinds.push(kind); events.push({ kind: `fetch:${kind}`, at: Date.now() });
-    if (tlsFaults[kind] !== "missing") sendHeaders.publish({ request: { origin: parsed.origin, path: `${parsed.pathname}${parsed.search}`, method: init.method ?? "GET" }, headers: [],
-      socket: fakeSocket(parsed.hostname, tlsFaults[kind] === "resumed") });
+    // Like undici: the request object is created in the caller's async context, then its headers go out.
+    const request = { origin: parsed.origin, path: `${parsed.pathname}${parsed.search}`, method: init.method ?? "GET" };
+    const send = (item: object, socket: object) => { requestCreate.publish({ request: item }); sendHeaders.publish({ request: item, headers: [], socket }); };
+    // Another invocation's request to the SAME origin, path and method, on its own socket (fingerprint EE).
+    const foreign = () => foreignContext.runInAsyncScope(() => send({ ...request }, fakeSocket(parsed.hostname, false, "EE")));
+    if (foreignTraffic.includes(kind)) foreign();
+    if (tlsFaults[kind] === "missing") requestCreate.publish({ request });
+    else send(request, fakeSocket(parsed.hostname, tlsFaults[kind] === "resumed"));
+    if (tlsFaults[kind] === "extra") send({ ...request }, fakeSocket(parsed.hostname));
+    if (foreignTraffic.includes(kind)) foreign();
     expect(init.redirect).toBe("error");
     if (kind === failAt) throw new Error(`fixture transport failure ${KEY} ${SERVICE}`);
     return response(body, url);
@@ -197,6 +209,32 @@ describe("v6 core + adapter through the canonical NST client (mocked transports)
     expect(fake.runs.get(runId)).toMatchObject({ state: "failed", reason: "tls_observation_missing" });
   });
 
+  it("ignores another invocation's requests during admission and NST (M1, Fluid): same origin, path and method, before and after ours", async () => {
+    foreignTraffic = ["schedule", "admission:individual", "nst:individual", "admission:onIce", "nst:onIce"];
+    let seen = 0; const count = () => { seen++; }; sendHeaders.subscribe(count);
+    try {
+      const { sink, input, runId } = await setup();
+      const result = await run(sink, input);
+      expect(result).toMatchObject({ ok: true, value: { state: "packet_complete_pending_review", operationCount: 5 } });
+      expect(fetchKinds).toEqual(["schedule", "admission:individual", "nst:individual", "admission:onIce", "nst:onIce"]);
+      expect(seen).toBe(15); // 5 ours + 10 foreign events in the process: v5's observer would have failed at the schedule
+      const stored = [...fake.objects.values()].map(item => item.bytes.toString("utf8")).join("\n");
+      expect(stored).toContain(Array(32).fill("CD").join(":"));
+      expect(stored).not.toContain(Array(32).fill("EE").join(":")); // no foreign socket fact was attributed
+      expect(fake.runs.get(runId)).toMatchObject({ state: "packet_complete_pending_review", reason: null });
+    } finally { sendHeaders.unsubscribe(count); }
+  });
+
+  it.each(["admission:individual", "nst:individual"])("still requires exactly one attributed request: a second request created inside %s fails closed", async kind => {
+    tlsFaults = { [kind]: "extra" };
+    foreignTraffic = [kind];
+    const { sink, input, runId } = await setup();
+    const result = await run(sink, input);
+    expect(result.ok).toBe(false);
+    expect(fetchKinds).toEqual(["schedule", "admission:individual", "nst:individual"].slice(0, kind === "nst:individual" ? 3 : 2));
+    expect(fake.runs.get(runId)).toMatchObject({ state: "failed" });
+  });
+
   it("an intent-row failure stops before any admission", async () => {
     const { sink, input, runId } = await setup();
     fake.store.intent = async () => { throw new Error("store down"); };
@@ -220,7 +258,8 @@ describe("v6 core + adapter through the canonical NST client (mocked transports)
   it("a schedule body without D's day entry is schedule_shape_invalid (failed), not no_slate (L1)", async () => {
     vi.mocked(fetch).mockImplementationOnce(async (target: string | URL | Request) => {
       const url = String(target); fetchKinds.push("schedule");
-      sendHeaders.publish({ request: { origin: new URL(url).origin, path: new URL(url).pathname, method: "GET" }, headers: [], socket: fakeSocket("api-web.nhle.com") });
+      const request = { origin: new URL(url).origin, path: new URL(url).pathname, method: "GET" };
+      requestCreate.publish({ request }); sendHeaders.publish({ request, headers: [], socket: fakeSocket("api-web.nhle.com") });
       return response(JSON.stringify({ gameWeek: [{ date: "2026-11-20", games: [] }] }), url);
     });
     const { sink, input, runId } = await setup();
