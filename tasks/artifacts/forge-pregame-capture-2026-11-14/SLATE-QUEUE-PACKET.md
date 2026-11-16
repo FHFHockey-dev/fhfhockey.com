@@ -17,6 +17,7 @@
 | `claim_failed` with no claim found | **Keep as is:** treated as ambiguous; closed only after the claim window; never re-claimed |
 | Lead | **10 min** |
 | Global sweep | **OK for the pilot** |
+| Monday 2026-11-16 run (§7) | **Approved (2026-11-16 ~02:15Z): one queue, both games** (0331 + 0332), candidate `bc13b523e`, launch 17:30–17:55 ET after the ≤ 4 s timed read and the statistics re-read |
 
 ## 1. What was built
 
@@ -165,7 +166,7 @@ A claimed game is never abandoned.
 - Whether a stop should leave undispatched games unrecorded, so they can be re-run, instead of recording `never_dispatched` (today: recorded, per TJ's removed-games decision).
 - **Simultaneous starts** are still unexercised: tonight's max in flight was 1. After a clean Monday run, the next step is a cap-2 subset of Tuesday's 19:00 ET cluster, for example 2026020333 LAK@BOS + 2026020335 EDM@FLA (both 00:00Z), with its own approval.
 
-## 7. Run plan for Monday 2026-11-16 (proposal; needs TJ's run approval)
+## 7. Run plan for Monday 2026-11-16 (approved by TJ: one queue, both games)
 **What changed since §5:**
 
 | Item | State |

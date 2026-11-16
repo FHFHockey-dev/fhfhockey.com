@@ -377,3 +377,7 @@
   - The visibility preflight prints vacuum statistics (19/19).
   - §7 now offers one queue or two launches, with the warm/cold labels and the statistics re-read.
   - Candidate scope listed by lane; mailbox correction for the 01:25Z entry.
+- **02:15Z, TJ approved Monday's run:** "One queue, both (Recommended)".
+  - Candidate `bc13b523e`; 0331 + 0332; token `tj-slate-2026020331-2026020332-20261116`.
+  - Plan: fresh export at about 22:15Z Monday, then `--timed-read --cutoff 2026-11-16` (≤ 4 s) and `apply-visibility-156.sh --preflight`, then launch 22:30–22:55Z (17:30–17:55 ET) with TJ present.
+  - Afterwards: postrun and OpenSSL per qualified game, then a receipt. A timer is set for 22:15Z.
