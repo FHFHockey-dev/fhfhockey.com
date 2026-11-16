@@ -17,8 +17,9 @@ export const injuryDisplay = (player: Pick<PlanningPlayer, "injury">): "out" | "
   !player.injury ? null : providerListsOut(player) ? "out" : "caution";
 /** The tooltip for an Out player's greyed value: what is shown, and why it is not counted. */
 export function notCountedText(player: Pick<PlanningPlayer, "injury" | "playerClass">,
-  value: { points: number | null; basis: "line" | "if_dresses" | "none" | "mixed" }, scope: "game" | "week" = "game"): string {
+  value: { points: number | null; basis: "line" | "if_dresses" | "none" | "mixed"; games?: number }, scope: "game" | "week" = "game"): string {
   const listed = `while he's listed ${player.injury?.label || player.injury?.status || "out"}`;
+  if (value.games === 0) return `Injured · not counted ${listed}. No games left this ${scope}.`;
   if (value.points === null) return `Injured · not counted ${listed}. ${value.basis === "none" ? `No projection for this ${scope}` : "Part of his projection is missing"}.`;
   const condition = value.basis === "if_dresses" ? player.playerClass === "goalie" ? " if he starts" : " if he dresses"
     : value.basis === "mixed" ? " (some games if he dresses)" : "";

@@ -257,7 +257,7 @@ export default function CompactSchedule({ admittedSnapshot, snapshot, roster, ru
     .flatMap(group => group.rows.filter(row => row.assigned).map(row => row.playerId)))]));
   const goalieEvidence = admittedSnapshot?.id === snapshot?.id ? admittedSnapshot : null;
   // TJ 2026-11-16: an Out player's week shows greyed and "not counted", read from the admitted (display) snapshot.
-  const injuredRead = useMemo(() => goalieEvidence ? injuredOutPointsReader(goalieEvidence) : null, [goalieEvidence]);
+  const injuredRead = useMemo(() => goalieEvidence && rules.scoring.mode === "points" ? injuredOutPointsReader(goalieEvidence) : null, [goalieEvidence, rules.scoring.mode]);
   const completeSchedule = snapshot?.evidence.schedule?.completeness === "complete";
   const gameLabel = (player: PlanningPlayer, day: string): { text: string; detail: string; assigned: boolean; goalie?: string } => {
     if (!dates.includes(day)) return { text: "—", detail: "Outside selected range", assigned: false };

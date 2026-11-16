@@ -169,7 +169,8 @@ export function forecastPointsReader(snapshot: PlanningSnapshot): (playerId: str
  * conditional line ("if he dresses"; a goalie's "if he starts"), kept apart because his participation is unknown or
  * confirmed out. `none`: no projection for the game. */
 export type InjuredOutValue = { points: number | null; basis: "line" | "if_dresses" | "none" };
-/** Reads a resolved (display) snapshot; returns null for a player the provider does not list Out. */
+/** Reads a resolved (display) snapshot; returns null for a player the provider does not list Out, and for everyone
+ * outside points leagues (a category league has no single value to grey out). */
 export function injuredOutPointsReader(snapshot: PlanningSnapshot): (playerId: string, gameId: string) => InjuredOutValue | null {
   const players = new Map(snapshot.players.map(player => [player.id, player]));
   const forecasts = new Map(snapshot.forecasts.filter(row => !row.expiresAt || time(row.expiresAt) > time(snapshot.context.asOf))
@@ -177,24 +178,27 @@ export function injuredOutPointsReader(snapshot: PlanningSnapshot): (playerId: s
   const applicability = statApplicability(snapshot);
   return (playerId, gameId) => {
     const player = players.get(playerId);
-    if (!player || !providerListsOut(player)) return null;
+    if (!player || !providerListsOut(player) || snapshot.rules.scoring.mode !== "points") return null;
     const forecast = forecasts.get(`${playerId}:${gameId}`);
-    if (!forecast || snapshot.rules.scoring.mode !== "points") return { points: null, basis: "none" };
-    const expected = gameForecastPoints(snapshot, forecast).expected;
-    // A confirmed-out reserve row counts a real 0 (appearance 0); its "if he dresses" line is the one to show.
-    if (expected !== null && forecast.appearanceProbability !== 0) return { points: expected, basis: "line" };
     const weights = Object.entries(snapshot.rules.scoring.weights).filter(([key, weight]) => weight !== 0 && applies(key, player.playerClass, applicability));
+    if (!forecast || !weights.length || weights.some(([, weight]) => !finite(weight))) return { points: null, basis: "none" };
+    // gameForecastPoints(...).expected, with applicability read once for the snapshot.
+    const expected = weights.every(([key]) => forecastAllows(forecast, key, "totals") && finite(forecast.stats[key]))
+      ? weights.reduce((sum, [key, weight]) => sum + forecast.stats[key]! * weight, 0) : null;
+    // A confirmed-out reserve row counts a real 0 (appearance 0); its "if he dresses" line is the one to show.
+    if (finite(expected) && forecast.appearanceProbability !== 0) return { points: expected, basis: "line" };
     const line = forecast.conditionalStats;
-    if (!line || !weights.length || weights.some(([key, weight]) => !finite(weight) || !finite(line[key]))) return { points: null, basis: "none" };
+    if (!line || weights.some(([key]) => !finite(line[key]))) return { points: null, basis: "none" };
     return { points: weights.reduce((sum, [key, weight]) => sum + line[key]! * weight, 0), basis: "if_dresses" };
   };
 }
 /** An Out player's remaining games in the range (as the planner counts them) and their display-only total. */
 export type InjuredOutWeek = { games: number; points: number | null; basis: InjuredOutValue["basis"] | "mixed" };
-/** Null when the provider does not list him Out. `points` is null unless every game has a value. */
+/** Null when the provider does not list him Out or the league is not scored in points. `points` is null unless every
+ * game has a value. */
 export function injuredOutWeek(snapshot: PlanningSnapshot, playerId: string, read = injuredOutPointsReader(snapshot)): InjuredOutWeek | null {
   const player = snapshot.players.find(row => row.id === playerId);
-  if (!player || !providerListsOut(player)) return null;
+  if (!player || !providerListsOut(player) || snapshot.rules.scoring.mode !== "points") return null;
   const values = snapshot.games.filter(game => game.teamAbbreviation === player.teamAbbreviation && ["scheduled", "live"].includes(game.status)
     && game.date >= snapshot.context.startDate && game.date <= snapshot.context.endDate && eligibleGame(game, snapshot))
     .map(game => read(playerId, game.id)!);

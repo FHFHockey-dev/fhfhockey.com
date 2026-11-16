@@ -192,6 +192,11 @@ describe("injured free agents (TJ, 2026-11-16)", () => {
     expect(screen.getByText(/Injured · not counted while he's listed Out: 13\.2 projected points this week\. It counts again once he's cleared\./)).toBeTruthy();
     expect(screen.queryByText("No gain this week")).toBeNull();
   });
+  it.each([false, true])("never offers an Out free agent's swap as the recommendation (categories: %s)", categories => {
+    const out = { ...player, injury: { status: "IR", label: "Injured Reserve", note: null } };
+    render(<CandidateCard {...props} categories={categories} plan={{ ...plan, categoryComparisonVerified: true }} player={out} />);
+    expect((screen.getByRole("button", swap) as HTMLButtonElement).disabled).toBe(true);
+  });
   it("keeps a day-to-day free agent's counted gain, with a caution tag", () => {
     render(<CandidateCard {...props} player={{ ...player, injury: { status: "DTD", label: "Day-to-Day", note: null } }} />);
     expect(screen.getByText("DTD").getAttribute("title")).toBe("Day-to-Day: still counted. Check his status before adding.");
