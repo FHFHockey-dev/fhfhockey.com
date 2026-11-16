@@ -27,8 +27,10 @@ export type GamePredictionFeatureSource = {
 // versions keyed on this value never mix vectors built under different rules.
 // v6: homeMinusAwayCtpi is gated on a trusted recent-form payload (5740289cc),
 // and recent-form windows admit only single-game (gp === 1) rows (f85167732).
+// v7: a Lines CCC goalie is a confirmed starter only on an explicit confirmed
+// goalie state, not on row acceptance or slot order (AFULL-GAME3-02, e810f4cd8).
 export const GAME_PREDICTION_FEATURE_SET_VERSION =
-  "game_features_v6_trusted_ctpi_single_game_form";
+  "game_features_v7_confirmed_lines_goalies";
 
 export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
   {
