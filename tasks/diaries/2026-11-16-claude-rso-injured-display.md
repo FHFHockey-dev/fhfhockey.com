@@ -82,6 +82,12 @@ Display must cover normal lineup lines and FORGE reserve ("if he dresses") lines
   Merge tree 098ccfdeb == candidate2 tree. Smoke 2 (4 GETs): page 200; chunk 2623.3d2dcfbd469d8b56.js has the new strings.
 - Lease released; scratch exports and smoke files removed.
 
+- 18:55Z Chef relayed TJ's Best Fit message. From 179befb34 found the planner's own search still ignored injury:
+  scheduleFits scored a team/position group through its first player by id (an Out stand-in hid healthy fits) and the
+  planner shortlist (recommended plan + alternatives) had no injury filter. Fixed in 9fec8a527 with a both-modes
+  regression that fails without the fix; Best Fit test gained the zero-gain tie. 1000-player test times out only
+  under load (load avg 170-214); alone 2.2-2.3 s with or without the change. TJ pop-up: ship after the FORGE batch.
+
 ## Next
 Done. Open for Chef / TJ:
 - octoberBranch local commits 9abf48330 and fcffe5777 duplicate master #457/#458 content (sync from master 179befb34);
@@ -97,7 +103,7 @@ Done. Open for Chef / TJ:
 - Cosmetic (deferred by TJ): grid row tags dropped for space; Out card repeats its value in the sentence.
 
 ## Blockers / approvals
-- None.
+- Waiting for the Chef's new master SHA (FORGE batch) before building the 9fec8a527 candidate; must merge by 21:45Z.
 
 ## Gotchas
 - contributionLedger marks Out game days "unknown" (no receipt), so the roster row's AGP/DUST stay "—".
