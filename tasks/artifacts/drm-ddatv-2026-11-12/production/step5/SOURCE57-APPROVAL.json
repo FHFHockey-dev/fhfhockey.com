@@ -1,0 +1,12 @@
+{
+  "status": "approved_by_TJ",
+  "approvalText": "Approve game 57 source repair",
+  "recordedAt": "2026-11-12T23:19:26.020503+00:00",
+  "gameId": 2026020057,
+  "maximumMutations": 5,
+  "maximumDatabaseRequests": 80,
+  "scope": "one retained HTML shift snapshot; same-game normalized rows; three DRM repair stages; originals preserved; no deployment",
+  "candidateHash": "c169972de23400233e325c1336a30637f9af0bb03eb4cfecc7e39c97a960a9f8",
+  "healthAndTimeoutLimits": "unchanged",
+  "maximumAggregateAttempts": 924
+}

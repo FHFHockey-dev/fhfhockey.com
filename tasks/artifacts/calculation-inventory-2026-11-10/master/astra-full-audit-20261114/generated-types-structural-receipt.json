@@ -1,0 +1,133 @@
+{
+  "sha256": "89e744f7c3c20f70c7b3a45aa78f6455268433391cdc3d01f53c4bb86bfdec05",
+  "bytes": 1736724,
+  "lines": 47624,
+  "nodes": 261717,
+  "fields": 45475,
+  "numeric": 31806,
+  "nullableNumeric": 28765,
+  "functionBodies": 0,
+  "top": [
+    {
+      "name": "Json",
+      "kind": "TypeAliasDeclaration",
+      "start": 1,
+      "end": 7
+    },
+    {
+      "name": "Database",
+      "kind": "TypeAliasDeclaration",
+      "start": 9,
+      "end": 47496
+    },
+    {
+      "name": "DatabaseWithoutInternals",
+      "kind": "TypeAliasDeclaration",
+      "start": 47498,
+      "end": 47498
+    },
+    {
+      "name": "DefaultSchema",
+      "kind": "TypeAliasDeclaration",
+      "start": 47500,
+      "end": 47500
+    },
+    {
+      "name": "Tables",
+      "kind": "TypeAliasDeclaration",
+      "start": 47502,
+      "end": 47529
+    },
+    {
+      "name": "TablesInsert",
+      "kind": "TypeAliasDeclaration",
+      "start": 47531,
+      "end": 47554
+    },
+    {
+      "name": "TablesUpdate",
+      "kind": "TypeAliasDeclaration",
+      "start": 47556,
+      "end": 47579
+    },
+    {
+      "name": "Enums",
+      "kind": "TypeAliasDeclaration",
+      "start": 47581,
+      "end": 47596
+    },
+    {
+      "name": "CompositeTypes",
+      "kind": "TypeAliasDeclaration",
+      "start": 47598,
+      "end": 47613
+    },
+    {
+      "name": "Constants",
+      "kind": "FirstStatement",
+      "start": 47615,
+      "end": 47624
+    }
+  ],
+  "sections": [
+    {
+      "schema": "analytics",
+      "group": "Tables",
+      "entries": 1
+    },
+    {
+      "schema": "analytics",
+      "group": "Views",
+      "entries": 13
+    },
+    {
+      "schema": "analytics",
+      "group": "Functions",
+      "entries": 1
+    },
+    {
+      "schema": "analytics",
+      "group": "Enums",
+      "entries": 0
+    },
+    {
+      "schema": "analytics",
+      "group": "CompositeTypes",
+      "entries": 0
+    },
+    {
+      "schema": "public",
+      "group": "Tables",
+      "entries": 318
+    },
+    {
+      "schema": "public",
+      "group": "Views",
+      "entries": 86
+    },
+    {
+      "schema": "public",
+      "group": "Functions",
+      "entries": 119
+    },
+    {
+      "schema": "public",
+      "group": "Enums",
+      "entries": 1
+    },
+    {
+      "schema": "public",
+      "group": "CompositeTypes",
+      "entries": 0
+    }
+  ],
+  "runtime": [
+    {
+      "kind": "FirstStatement",
+      "line": 47615,
+      "source": "export const Constants = {\n  analytics: {\n    Enums: {},\n  },\n  public: {\n    Enums: {\n      NHL_Position_Code: [\"L\", \"R\", \"G\", \"D\", \"C\"],\n    },\n  },\n} as const"
+    }
+  ],
+  "completeStructuralTraversal": true,
+  "literalFullRead": false
+}

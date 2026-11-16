@@ -299,4 +299,67 @@ describe("/api/v1/sustainability/rebuild-score", () => {
     expect(scoreUpsertMock).not.toHaveBeenCalled();
     expect(distributionUpsertMock).not.toHaveBeenCalled();
   });
+
+  it("tags an empty thrown failure with the phase it followed and no score writes", async () => {
+    loadPlayersForSnapshotMock.mockRejectedValue(new Error(""));
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = createMockRes();
+
+    await rebuildScoreHandler({ query: { season: "current", snapshot_date: "2026-10-19", offset: "0", limit: "250" } } as any, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({
+      success: false,
+      message: "Dependency request failed.",
+      error_source: "thrown",
+      last_completed_phase: "resolve_season",
+      score_writes_started: false,
+      error_name: "Error",
+      error_code: null,
+      error_message_empty: true
+    });
+    expect(error).toHaveBeenCalledWith("rebuild-score error", expect.objectContaining({ last_completed_phase: "resolve_season", score_writes_started: false }));
+    expect(upsertScoresMock).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it("reports possible partial score writes when an offset-0 chunk fails after earlier chunks persist", async () => {
+    prepareSuccessfulPopulation();
+    scoreUpsertMock
+      .mockResolvedValueOnce({ error: null })
+      .mockResolvedValueOnce({ error: { message: "", code: "57014" } });
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = createMockRes();
+
+    await rebuildScoreHandler({ query: { snapshot_date: "2026-10-19", offset: "0", limit: "250", verify_sample: "0" } } as any, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({
+      success: false,
+      error_source: "thrown",
+      last_completed_phase: "verify_sample",
+      score_writes_started: true,
+      error_code: "57014",
+      error_message_empty: true
+    });
+    expect(res.body.message).not.toBe("");
+    // The first chunk stays written: the handler does not roll back or delete.
+    expect(scoreUpsertMock).toHaveBeenCalledTimes(2);
+    expect(scoreUpsertMock.mock.calls[0][0]).toHaveLength(400);
+    error.mockRestore();
+  });
+
+  it("tags a structured prerequisite failure separately from thrown errors", async () => {
+    assertScorePrerequisitesMock.mockRejectedValue(new SustainabilityDependencyError(issue));
+    const res = createMockRes();
+
+    await rebuildScoreHandler({ query: { season: "current", snapshot_date: "2026-03-21" } } as any, res);
+
+    expect(res.statusCode).toBe(424);
+    expect(res.body).toMatchObject({
+      error_source: "structured_dependency",
+      last_completed_phase: "incremental_source",
+      score_writes_started: false
+    });
+  });
 });

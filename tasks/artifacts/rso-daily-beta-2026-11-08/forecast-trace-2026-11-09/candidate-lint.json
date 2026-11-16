@@ -1,0 +1,14 @@
+{
+  "startedAt": "2026-11-09T21:29:41.009882+00:00",
+  "completedAt": "2026-11-09T21:29:42.534386+00:00",
+  "candidate": "44582b13a213dfd4c75238d8413cf4031ca98b6f",
+  "tree": "d9a2bd4fe3c0190e07c5cdcc49f8259725048800",
+  "command": [
+    "npx",
+    "eslint",
+    "lib/projections/verifiedForgeReleases.ts",
+    "lib/projections/verifiedForgeReleases.test.ts"
+  ],
+  "exitCode": 0,
+  "summary": []
+}

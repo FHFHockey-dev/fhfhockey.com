@@ -1,0 +1,8 @@
+{
+  "boxscoreSHA256": "18709a269ef84782a66cb7ede07b85a7fd9852935efdd2a1309db9fd940ffafb",
+  "receiptSHA256": "5c94d24f7f8e175cd86c4820f10ad44e47140d21aaff0b3402afca9f3b1735d4",
+  "skaterFrames": 36,
+  "wgoRowsForGame": 36,
+  "toiEqualToWGOAndStoredNST": 36,
+  "note": "aggregate only; retained official bytes, read-only"
+}

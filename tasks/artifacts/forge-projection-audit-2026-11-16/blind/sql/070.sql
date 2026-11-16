@@ -1,0 +1,1 @@
+select to_char(created_at,'MM-DD HH24:MI') c, as_of_date, git_sha, metrics->'producer_identity'->'code_versions' cv, metrics->'resume'->>'invocations' inv from forge_runs where git_sha like 'local:%' and created_at >= '2026-11-01' order by created_at limit 6

@@ -1,0 +1,44 @@
+{
+  "verifiedAt": "2026-11-08T21:12:08.968625+00:00",
+  "candidateTree": "101448c6c6b6da210b2b71786fb5e6024e747cb5",
+  "trackedFilesMatched": 6302,
+  "mismatches": [],
+  "restoredGeneratedExportFiles": [
+    "web/next-env.d.ts"
+  ],
+  "canonicalOverlayMatches": 16,
+  "currentCanonicalHead": "adb0309945f9e6aa5dc002c92da15358798acefc",
+  "originMasterAtVerification": "46f9717532774337e0866829828fd46471597301",
+  "localServerPort3174": "free",
+  "regressionTests": {
+    "files": 105,
+    "passed": 2304,
+    "failed": 0,
+    "skipped": 0
+  },
+  "browserTests": {
+    "startTime": "2026-11-08T21:09:02.363Z",
+    "duration": 146518.25,
+    "expected": 63,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "typecheck": "passed",
+  "scopedLint": "passed",
+  "remoteBuilds": 0,
+  "deployments": 0,
+  "productionApplicationRequests": 0,
+  "liveYahooRequests": 0,
+  "networkGuard": {
+    "blockedAttempts": [
+      {
+        "check": "browser-blocked-network.log",
+        "hosts": [
+          "registry.npmjs.org"
+        ]
+      }
+    ],
+    "note": "npm registry update check blocked; no outbound request was sent by that attempt."
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "approvedBy": "TJ direct reply call_2beaf6a2f149491c99bee823cd9e74d4",
+  "candidate": "29451c57304866d54abd2a3302625f0696472ab0",
+  "passed": true,
+  "sourceHashes": {
+    "tsaProfiles": "a4e9f86dddc93d7db90f20c929d6f41d906107d30ee0eb321cdb0d6b7d5e9f19",
+    "der": "6289505e5745c377680ba7f886d67e7db53f81642ba106830dd312ac8a17a01e",
+    "rfc3161": "efa360b635f0fc024a6e65e9ed4023a8fd45fa9911f16f33e0450f0d6e95b11d"
+  },
+  "openssl": {
+    "version": "OpenSSL 4.1.0 23 Oct 2026",
+    "observedResult": "Verification: OK",
+    "mode": "ts -verify -token_in -data witness-statement.json -CAfile candidate-pinned public root; no external call"
+  },
+  "checks": [
+    "raw packet hash matches signed statement and retained metadata",
+    "canonical packet hash matches signed statement",
+    "canonical statement hash matches retained metadata",
+    "byte length, claim, game, policy, row version and exact candidate binding match",
+    "nonce and imprint verified by exact candidate verifier",
+    "conservative timestamp upper bound within recorded T-minus-60"
+  ],
+  "hashes": {
+    "rawPacket": "908b9592248caa41e0815b3bd18bb4acd37f10d54c97fc2203d2df804bfbe03e",
+    "canonicalPacket": "0874115f532454cbccc4fad4633b48024588f7bbfb186b8ff2cfb7ba3e51e414",
+    "statement": "631b963c08b1bfe942c505eed4ecd9c802f4c2cf5613605d2720ad2e15edcfa2",
+    "token": "d618e97e814f3c4332fc2db5270f82b73140dd9d44a0b2b9bf1126d8d3ba91c6",
+    "signer": "2da09da7f4131f9fe72db6c5e6e9c9656755af043f1ea742cc0d2120e141ebfc"
+  },
+  "timestamp": {
+    "upperBound": "2026-11-15T20:11:33.000Z",
+    "withinRecordedDeadline": true,
+    "accuracyMicros": "60000000",
+    "resolutionMicros": "1000000"
+  },
+  "boundary": "Local retained files only. This verifies retained cryptographic custody, not a fresh database read, current row immutability, model correctness, forecast qualification or release approval. No private payload reproduced."
+}

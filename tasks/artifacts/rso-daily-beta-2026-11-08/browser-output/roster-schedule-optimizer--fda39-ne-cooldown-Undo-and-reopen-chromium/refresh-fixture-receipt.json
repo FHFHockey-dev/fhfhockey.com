@@ -1,0 +1,26 @@
+{
+  "reads": 4,
+  "scope": "Fictional intercepted session/provider and local storage; controlled online/visibility/time. Authentic isolation and account saves not accepted.",
+  "nonzeroP2": {
+    "revision": 2,
+    "steps": [
+      {
+        "id": "fixture-add",
+        "type": "add",
+        "playerId": "fhfh:2",
+        "at": "2026-10-12T12:00:00Z",
+        "effectiveAt": "2026-10-12T12:00:00Z",
+        "conditional": false,
+        "dependsOn": []
+      }
+    ],
+    "protectedPlayerIds": [
+      "fhfh:1"
+    ],
+    "excludedPlayerIds": [],
+    "goalieCoverage": "cover",
+    "goalieWindow": "any",
+    "goalieSplit": "mon_thu",
+    "alternativeCount": 10
+  }
+}

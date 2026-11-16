@@ -1,0 +1,112 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "penaltyClock": {
+    "expiryAt": 120,
+    "observedNextEventAt": 300,
+    "actualPpSeconds": 300,
+    "eventAtExpiryControl": 120
+  },
+  "unknownGeometry": {
+    "sf": 1,
+    "scf": 0,
+    "hdcf": 0
+  },
+  "nullScore": {
+    "winnerTeamId": 20,
+    "outcomeType": "regulation"
+  },
+  "wrongPeriod": {
+    "winnerTeamId": 10,
+    "outcomeType": "regulation"
+  },
+  "partialPublish": {
+    "expectedRows": 140,
+    "committedBeforeError": 100,
+    "classifiedCovered": true,
+    "nextIncremental": [
+      2026020002
+    ]
+  },
+  "oneSideCoverage": {
+    "completedGames": 1,
+    "summarizedGames": 1
+  },
+  "mixedOverlay": {
+    "sf": 6,
+    "sa": 4,
+    "sfPct": 0.6,
+    "cf5v5": 12,
+    "ca5v5": 7,
+    "preserved5v5Shots": [
+      5,
+      4
+    ]
+  },
+  "rankSelfSort": [
+    {
+      "team": 10,
+      "rank": 1
+    },
+    {
+      "team": 20,
+      "rank": 1
+    }
+  ],
+  "xgAlignmentControl": true,
+  "sources": [
+    {
+      "path": "web/lib/underlying-stats/teamStatsSummaryRefresh.ts",
+      "sha256": "17ef6d6def1d44cfcf97c8df4516b8a5ff3d9302941f2ba7931e6409baed1dcd"
+    },
+    {
+      "path": "web/lib/games/gameFinality.ts",
+      "sha256": "872f7ffd52ca712fa72b2e8933f9bd753213e11a9faf769056922ba06674560c"
+    },
+    {
+      "path": "web/lib/supabase/pagination.ts",
+      "sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlEventInclusion.ts",
+      "sha256": "0e11a148cb7fc19776cee3a8e71c9133da5374ced082afbe142a7e2c126ea73e"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlStrengthState.ts",
+      "sha256": "10efefac1808c1ce3828c65bad54055b4d524b31d9acb647d5c006ffdc460c92"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlScoreState.ts",
+      "sha256": "94bad4da270d0120b355f71a5f7b99572da87d7ee5de3f911113e194bb05f789"
+    },
+    {
+      "path": "web/lib/underlying-stats/underlyingStrengthPredicate.ts",
+      "sha256": "d3111c285f6f1988280abdfd6d7f37aed6b9bba26098a7f75841259009c63c59"
+    },
+    {
+      "path": "web/lib/underlying-stats/teamStatsQueries.ts",
+      "sha256": "3303be64c5963a15e4f1e39ee7420c032a6f5c690f62195acbbacb16ad258d63"
+    },
+    {
+      "path": "web/lib/underlying-stats/teamStatsFilters.ts",
+      "sha256": "a90523fead11cfccc58a29d17e56e5214665bc4e1c9e9a916213522bca3ba85d"
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsTypes.ts",
+      "sha256": "b6b6bd41e9d6c21587550e2a70d0de7b9a4ce5ecf65f0f21ffc6bb8fe91b2133"
+    },
+    {
+      "path": "web/lib/underlying-stats/teamStatsLandingApi.ts",
+      "sha256": "a3de5232488cc4927b1240a4a829baf6a0253f2dc72fa3b32579f5cc67167bb1"
+    },
+    {
+      "path": "web/lib/underlying-stats/teamStatsRefreshWindow.ts",
+      "sha256": "f7442fcb05602adb976991bc574f8882571e980a9608af60151deb1bfa0b655b"
+    },
+    {
+      "path": "web/lib/underlying-stats/xgExplorer.ts",
+      "sha256": "41590d0345059c60344a3b456f7f8f226b6bf199bd264986818745234b7d44b4"
+    }
+  ],
+  "limits": "Exact frozen modules; only two private functions exported for observation. Finite in-memory SELECT/upsert double; failures synthetic. Empty environment and deny-by-default module/network access. No real writes, provider calls, test suite or production incidence."
+}

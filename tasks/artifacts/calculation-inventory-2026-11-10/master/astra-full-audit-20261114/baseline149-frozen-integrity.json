@@ -1,0 +1,15 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "authoritySha256": "ddbf8fc60cb25aee001119172e4bc3bc74b2dd1354567de7415c3853d4702f6c",
+  "records": 149,
+  "activeSql": 149,
+  "states": {
+    "applied": 115,
+    "pending": 6,
+    "unknown": 28
+  },
+  "all149SourceHashesMatch": true,
+  "orderContiguous": true,
+  "limits": "Offline git objects only. Source integrity is not production application or SQL execution proof. Supplied Vitest suite not run. Current Claude capture migration150 is outside this pin and remains untouched."
+}

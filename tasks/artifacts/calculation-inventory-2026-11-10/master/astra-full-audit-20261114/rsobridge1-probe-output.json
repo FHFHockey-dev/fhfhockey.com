@@ -1,0 +1,59 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "sources": [
+    "web/lib/projections/evidenceTime.ts",
+    "web/lib/player-forecasts/contributions.ts",
+    "web/lib/projections/modeledHeadTotals.ts",
+    "web/lib/rosterScheduleData/bridgeForecastWire.ts",
+    "web/lib/rosterScheduleData/forgeDailyBridge.ts"
+  ],
+  "confirmedOut": {
+    "projectedStateGoals": 0.35,
+    "projectedStateTotals": true,
+    "uncertainStateGoals": 0
+  },
+  "nullPriors": {
+    "current": {
+      "source": "nhl_team_data",
+      "sourceDate": "2026-10-19",
+      "xga": 0,
+      "xgaPerGame": 3,
+      "xgfPerGame": 0
+    },
+    "previous": {
+      "source": "nhl_team_data",
+      "sourceDate": null,
+      "xga": 0,
+      "xgaPerGame": 0,
+      "xgfPerGame": 0
+    }
+  },
+  "missingPositionalPoints": {
+    "cleanMtl": {
+      "points": 1,
+      "shots": 1
+    },
+    "missingMtl": {
+      "points": 0.85,
+      "shots": 1
+    },
+    "affectedPeerTor": {
+      "points": 1.15,
+      "shots": 1
+    }
+  },
+  "missingLineLabel": {
+    "goals": null,
+    "totals": false,
+    "aggregateNote": "No FORGE line: 1 players (1 player-games) have no current FORGE line, so plans count 0 for them (a conservative assumption, not a zero chance); a player's last FORGE line, where one exists, is kept as his \"if he plays\" line and never counts.",
+    "rowNote": "No FORGE line: FORGE has no current line for him, so plans treat him as unknown (no totals, never an automatic drop), not as 0; the conditional line is kept separately; his last FORGE line, where one exists, is his \"if he plays\" line."
+  },
+  "invalidReserveCode": {
+    "input": "constructor",
+    "acceptedRows": 1,
+    "noteType": "function",
+    "totals": false
+  },
+  "limits": "Exact frozen complete bridge, wire, calendar and head modules; synthetic input only. Every unused loader, transport, adjustment and goalie dependency throws on access. No live calls, app imports, environment reads, Vitest, producer, authenticated planner or page execution. Direct prior/tilt probes prove admission failures, not production incidence."
+}

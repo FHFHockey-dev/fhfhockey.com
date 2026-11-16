@@ -1,0 +1,104 @@
+diff --git a/web/lib/in-season/workspaceSchema.test.ts b/web/lib/in-season/workspaceSchema.test.ts
+index 43ec361b5..6327afc6f 100644
+--- a/web/lib/in-season/workspaceSchema.test.ts
++++ b/web/lib/in-season/workspaceSchema.test.ts
+@@ -1,6 +1,7 @@
+ import { describe, expect, it } from "vitest";
+ import { saveWorkspaceSchema, workspaceQuerySchema } from "./workspaceSchema";
+ import { deniedRsoUses, restrictRsoForecast } from "../player-forecasts/rsoUsePolicy";
++import { RESERVE_FORECAST_NOTES, reserveCodeOf } from "../rosterScheduleData/bridgeForecastWire";
+ 
+ const context = { provider: "manual", seasonId: 20262027, leagueId: "league", teamId: "team", startDate: "2026-10-01", endDate: "2026-10-07", timeZone: "America/New_York", asOf: "2026-10-01T12:00:00Z" };
+ const rules = { lineupMode: "daily", rosterSlots: { C: 1 }, lineupPeriods: [{ id: "week", start: "2026-10-01T00:00:00Z", end: "2026-10-08T00:00:00Z", lockAt: null }], acquisitionTiming: "unknown", acquisitionCost: null, periods: [], scoring: { mode: "points", weights: {}, categories: [] }, goalieMinimum: { required: null, credited: null, periodStart: "2026-10-01", periodEnd: "2026-10-07", counts: "unknown", penalty: "unknown" }, unsupported: [] };
+@@ -12,6 +13,45 @@ const modeledMetadata = { version: "skater-participation-frequency-v1", event: "
+ const snapshot = { id: "snapshot", context, players: [], roster: [], games: [], forecasts: [], rules, lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
+ 
+ describe("saved in-season workspace validation", () => {
++  it("preserves full FORGE explanations and reserve codes without granting forecast use", () => {
++    const forecasts = Object.values(RESERVE_FORECAST_NOTES).map((note, index) => ({
++      playerId: `p${index}`, gameId: "g", stats: { GOALS: null }, conditionalStats: { GOALS: 0.4 },
++      conditioning: "unconditional", startProbability: null, confirmedStart: false,
++      revisionId: `unreviewed-${index}`, issuedAt: context.asOf, cutoffAt: context.asOf,
++      expiresAt: "2026-10-08T00:00:00Z", modelVersion: null,
++      allowedUses: deniedRsoUses(), limitations: [note],
++    }));
++    const note = "A newer run cannot prove it excluded third-party fantasy projections; its players remain unknown. ".repeat(5).trim();
++    const evidence = { forecasts: { source: "fixture", asOf: context.asOf, seasonId: 20262027,
++      completeness: "partial", limitations: [note] } };
++    expect(note.length).toBeGreaterThan(200);
++    const parsed = saveWorkspaceSchema.parse(JSON.parse(JSON.stringify({ workspace,
++      snapshot: { ...snapshot, forecasts, evidence }, expectedVersion: null })));
++    expect(parsed.snapshot?.forecasts).toEqual(forecasts);
++    expect(parsed.snapshot?.evidence).toEqual(evidence);
++    expect(parsed.snapshot?.forecasts.map(reserveCodeOf)).toEqual(Object.keys(RESERVE_FORECAST_NOTES));
++    expect(parsed.snapshot?.forecasts.every(row => row.stats.GOALS === null
++      && Object.values(row.allowedUses!).every(value => value === false))).toBe(true);
++    for (const invalid of ["", "x".repeat(1001)]) {
++      expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot,
++        forecasts: [{ ...forecasts[0], limitations: [invalid] }] }, expectedVersion: null }).success).toBe(false);
++      expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot,
++        evidence: { forecasts: { ...evidence.forecasts, limitations: [invalid] } } }, expectedVersion: null }).success).toBe(false);
++    }
++    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot,
++      forecasts: [{ ...forecasts[0], playerId: "x".repeat(201) }] }, expectedVersion: null }).success).toBe(false);
++  });
++  it("retains Yahoo matchup weeks through a saved snapshot while validating their shape", () => {
++    const week = { gameKey: "453", week: 1, startDate: "2026-09-28", endDate: "2026-10-04" };
++    const parsed = saveWorkspaceSchema.parse({ workspace, snapshot: { ...snapshot, matchupWeeks: [week] }, expectedVersion: null });
++    expect(parsed.snapshot?.matchupWeeks).toEqual([week]);
++    for (const invalid of [{ ...week, week: 0 }, { ...week, startDate: "2026-02-30" },
++      { ...week, endDate: "2026-09-27" }, { ...week, extra: true }]) {
++      expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, matchupWeeks: [invalid] }, expectedVersion: null }).success).toBe(false);
++    }
++    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot,
++      matchupWeeks: Array.from({ length: 61 }, () => week) }, expectedVersion: null }).success).toBe(false);
++  });
+   it("round-trips optional period zones across rules, manager overrides and account snapshots without adding legacy defaults", () => {
+     const period = { id: "Current week", start: "2026-10-12T07:00:00.000Z", end: "2026-10-19T07:00:00.000Z",
+       timeZone: "America/New_York", remaining: 2, source: "manager" };
+diff --git a/web/lib/in-season/workspaceSchema.ts b/web/lib/in-season/workspaceSchema.ts
+index c9465f93a..80f06c5a7 100644
+--- a/web/lib/in-season/workspaceSchema.ts
++++ b/web/lib/in-season/workspaceSchema.ts
+@@ -13,8 +13,10 @@ const periodTimeZone = timeZone.refine(value => value === "UTC" || value.include
+ const nullableNumber = z.number().finite().nullable();
+ const positiveInteger = z.number().int().positive();
+ const stringArray = z.array(id).max(1000);
++// Human-readable evidence and reserve explanations are longer than identifiers.
++const explanatoryNotes = z.array(z.string().trim().min(1).max(1000)).max(1000);
+ const statLine = z.record(z.string().min(1).max(50), nullableNumber);
+-const evidence = z.object({ source: id, asOf: instant.nullable(), completeness: z.enum(["complete", "partial", "unknown"]), seasonId: z.number().int().nullable(), limitations: stringArray }).strict();
++const evidence = z.object({ source: id, asOf: instant.nullable(), completeness: z.enum(["complete", "partial", "unknown"]), seasonId: z.number().int().nullable(), limitations: explanatoryNotes }).strict();
+ 
+ const contextObjectSchema = z.object({
+   provider: z.enum(["manual", "yahoo", "fantrax"]),
+@@ -108,7 +110,7 @@ const forecast = z.object({ playerId: id, gameId: id, stats: statLine,
+   contributions: z.record(z.string().min(1).max(50), resolvedContribution).optional(),
+   cutoffAt: instant.optional(), expiresAt: instant.optional(),
+   conditioning: z.literal("unconditional"), startProbability: z.number().finite().min(0).max(1).nullable(),
+-  confirmedStart: z.boolean(), revisionId: z.string().min(1).max(4096), issuedAt: instant, modelVersion: id.nullable(), limitations: stringArray }).strict();
++  confirmedStart: z.boolean(), revisionId: z.string().min(1).max(4096), issuedAt: instant, modelVersion: id.nullable(), limitations: explanatoryNotes }).strict();
+ const forecastExclusionReason = z.enum(["serving_disabled", "no_issued_revision", "unreleased_source",
+   "identity_conflict", "missing_target", "stale_source", "future_input", "unsupported_conditioning",
+   "missing_participation", "incompatible_overlap", "incompatible_component_basis", "outside_horizon",
+@@ -188,6 +190,8 @@ export const snapshotSchema: z.ZodType<PlanningSnapshot> = z.object({ id, contex
+   forecasts: z.array(forecast).max(15000), baselineSources: z.array(contributionSource).max(15000).optional(),
+   participationSources: z.array(contributionParticipation).max(15000).optional(),
+   forecastInputExclusions: forecastManifest.shape.exclusions,
++  matchupWeeks: z.array(z.object({ gameKey: id, week: positiveInteger, startDate: date, endDate: date }).strict()
++    .refine(week => week.endDate >= week.startDate, "Matchup week ends before it starts.")).max(60).optional(),
+   forecastManifest: forecastManifest.optional(), rules, lockedAssignments: z.array(lockedAssignment).max(1000), pastLineups: z.array(pastLineup).max(14).optional(),
+   realized: statLine, opponent, evidence: z.record(z.string().min(1), evidence), laterImpactScenario: laterImpactScenarioSchema.optional() }).strict();
+ 
+diff --git a/web/lib/rosterScheduleOptimizer/planningTypes.ts b/web/lib/rosterScheduleOptimizer/planningTypes.ts
+index 45e446ff8..32d7d53bc 100644
+--- a/web/lib/rosterScheduleOptimizer/planningTypes.ts
++++ b/web/lib/rosterScheduleOptimizer/planningTypes.ts
+@@ -187,6 +187,7 @@ export type AcquisitionEvidence = {
+ };
+ export type PlanningSnapshot = {
+   acquisitionEvidence?: AcquisitionEvidence;
++  matchupWeeks?: PlanningData["matchupWeeks"];
+   baselineSources?: ContributionSource[];
+   participationSources?: ContributionParticipation[];
+   forecastManifest?: ForecastManifest;

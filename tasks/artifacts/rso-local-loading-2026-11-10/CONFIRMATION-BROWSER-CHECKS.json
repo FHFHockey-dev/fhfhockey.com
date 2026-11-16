@@ -1,0 +1,83 @@
+{
+  "latestExecutedResultByScenario": {
+    "manual workspace retains reviewed intent, protections and locks through recalculation and reload": {
+      "status": "passed",
+      "file": "roster-schedule-optimizer.spec.ts",
+      "line": 108,
+      "evidence": "first-confirmation-browser-results.json"
+    },
+    "readiness controls reach existing inputs across the required viewports": {
+      "status": "passed",
+      "file": "roster-schedule-optimizer.spec.ts",
+      "line": 204,
+      "evidence": "second-confirmation-browser-results.json"
+    },
+    "streams A to B to C through successive conditional acquisitions and keeps expanded desktop layout": {
+      "status": "passed",
+      "file": "roster-schedule-optimizer.spec.ts",
+      "line": 266,
+      "evidence": "second-confirmation-browser-results.json"
+    },
+    "provider refresh proposes repairs while keeping a selected move": {
+      "status": "passed",
+      "file": "roster-schedule-optimizer.spec.ts",
+      "line": 417,
+      "evidence": "confirmation-browser-results.json"
+    },
+    "Yahoo timeout retains schedule analysis and matchup-week navigation without actionable acquisitions": {
+      "status": "passed",
+      "file": "roster-schedule-optimizer.spec.ts",
+      "line": 715,
+      "evidence": "second-confirmation-browser-results.json"
+    },
+    "mixed Kaprizov coverage stays unresolved until complete evidence supports the bench decision": {
+      "status": "passed",
+      "file": "roster-schedule-optimizer.spec.ts",
+      "line": 762,
+      "evidence": "third-confirmation-browser-results.json"
+    },
+    "Audit1 native candidate Worker finds complete swaps before any plan is selected": {
+      "status": "passed",
+      "file": "roster-schedule-optimizer.spec.ts",
+      "line": 1664,
+      "evidence": "second-confirmation-browser-results.json"
+    },
+    "RSO loading acknowledges navigation before the route arrives and shows a skeleton before the workspace bundle": {
+      "status": "passed",
+      "file": "rso-acceptance.spec.ts",
+      "line": 16,
+      "evidence": "second-confirmation-browser-results.json"
+    },
+    "RSO loading recovers a stalled access check with one retry and preserves the connected plan": {
+      "status": "passed",
+      "file": "rso-acceptance.spec.ts",
+      "line": 47,
+      "evidence": "second-confirmation-browser-results.json"
+    },
+    "RSO inputs reuse connected answers on reload without selecting a plan or certifying a missing allowance": {
+      "status": "passed",
+      "file": "rso-acceptance.spec.ts",
+      "line": 77,
+      "evidence": "confirmation-browser-results.json"
+    },
+    "FR18 desktop 1440\u00d7900 keeps 20 roster slots in one workspace with at most 20 visible slot rows": {
+      "status": "passed",
+      "file": "rso-acceptance.spec.ts",
+      "line": 137,
+      "evidence": "third-confirmation-browser-results.json"
+    },
+    "FR18 mobile tabs reach itinerary, roster, candidates and matchup without overflow": {
+      "status": "passed",
+      "file": "rso-acceptance.spec.ts",
+      "line": 170,
+      "evidence": "third-confirmation-browser-results.json"
+    },
+    "3. a 409 lock_version save conflict is surfaced and the local plan is not lost": {
+      "status": "passed",
+      "file": "rso-continuity.spec.ts",
+      "line": 132,
+      "evidence": "third-confirmation-browser-results.json"
+    }
+  },
+  "scope": "Fictional sessions, mocked APIs; Node and browser network blocked outside loopback. Earlier failures were outdated UI expectations and incomplete new fixture schedule. Last small readiness-summary correction covered by final unit suite."
+}

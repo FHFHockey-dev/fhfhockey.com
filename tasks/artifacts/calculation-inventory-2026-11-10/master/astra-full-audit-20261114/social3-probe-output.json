@@ -1,0 +1,36 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "unknown": {
+    "sourceGP": null,
+    "recentState": "ready",
+    "games": 5,
+    "fpPerGame": 3,
+    "streak": {
+      "kind": "hot",
+      "reasons": [
+        "1.0 P/GP"
+      ]
+    }
+  },
+  "knownFive": {
+    "sourceGP": 5,
+    "recentState": "ready",
+    "games": 5,
+    "fpPerGame": 3,
+    "streak": {
+      "kind": "hot",
+      "reasons": [
+        "1.0 P/GP"
+      ]
+    }
+  },
+  "knownOne": {
+    "sourceGP": 1,
+    "recentState": "ready",
+    "games": 1,
+    "fpPerGame": 15,
+    "streak": null
+  },
+  "limits": "Exact extracted attachRecent and streakInputs plus full frozen score/streak/config/calendar and exact normalizers. Synthetic single skater bypasses source fetch and buildPlayerLayer. Goalie branch denied. No app imports, network, Vitest or UI."
+}

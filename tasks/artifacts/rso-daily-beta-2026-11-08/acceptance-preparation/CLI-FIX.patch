@@ -1,0 +1,227 @@
+diff --git a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.mjs b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.mjs
+--- a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.mjs
++++ b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.mjs
+@@ -1,6 +1,6 @@
+ // Offline metadata consistency check. Never pins a scope or grants release/forecast admission.
+-import { readFileSync } from "node:fs";
+-import { pathToFileURL } from "node:url";
++import { existsSync, readFileSync, realpathSync } from "node:fs";
++import { fileURLToPath } from "node:url";
+ import { canonicalHash } from "../qualification-readbacks/tooling/check-readbacks.mjs";
+ 
+ const envKeys = ["FORGE_SKATER_MODEL_MODE", "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION", "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION",
+@@ -51,7 +51,7 @@
+     consumerSelection: "latest_per_game_metadata_only_not_selected_RPC_or_readback" };
+ }
+ 
+-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
++if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1])) {
+   try {
+     const [input, date] = process.argv.slice(2);
+     const result = inspectIdentity(JSON.parse(readFileSync(input, "utf8")), date);
+diff --git a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.test.mjs b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.test.mjs
+--- a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.test.mjs
++++ b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.test.mjs
+@@ -1,5 +1,10 @@
+ import { test } from "node:test";
+ import assert from "node:assert/strict";
++import { mkdtempSync, writeFileSync, symlinkSync, rmSync } from "node:fs";
++import { spawnSync } from "node:child_process";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import { fileURLToPath } from "node:url";
+ import { canonicalHash } from "../qualification-readbacks/tooling/check-readbacks.mjs";
+ import { inspectIdentity } from "./inspect-identity.mjs";
+ 
+@@ -66,3 +71,20 @@
+   rows[1].method = rows[1].snapshotMethod = "candidate";
+   has(rows, "mixed_model_identities");
+ });
++
++test("CLI executes through a symlink and rejects empty identity evidence", () => {
++  const dir = mkdtempSync(join(tmpdir(), "rso-identity-alias-"));
++  try {
++    const cli = join(dir, "identity alias.mjs"), file = join(dir, "metadata.json");
++    symlinkSync(fileURLToPath(new URL("inspect-identity.mjs", import.meta.url)), cli);
++    writeFileSync(file, JSON.stringify(fixture()));
++    const good = spawnSync(process.execPath, [cli, file, date], { encoding: "utf8" });
++    assert.equal(good.status, 0, good.stderr);
++    assert.equal(JSON.parse(good.stdout).pass, true);
++    assert.equal(JSON.parse(good.stdout).qualificationReady, false);
++    writeFileSync(file, "[]");
++    const bad = spawnSync(process.execPath, [cli, file, date], { encoding: "utf8" });
++    assert.equal(bad.status, 1, bad.stderr);
++    assert.equal(JSON.parse(bad.stdout).pass, false);
++  } finally { rmSync(dir, { recursive: true, force: true }); }
++});
+diff --git a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.mjs b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.mjs
+--- a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.mjs
++++ b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.mjs
+@@ -1,7 +1,7 @@
+ // Offline E1 binding preflight. Validates saved RPC bytes against saved metadata; grants no admission.
+-import { readFileSync } from "node:fs";
++import { existsSync, readFileSync, realpathSync } from "node:fs";
+ import { createHash } from "node:crypto";
+-import { pathToFileURL } from "node:url";
++import { fileURLToPath } from "node:url";
+ import { canonicalHash } from "../qualification-readbacks/tooling/check-readbacks.mjs";
+ import { inspectIdentity } from "./inspect-identity.mjs";
+ import timestampParser from "./timestamp-parser.cjs";
+@@ -75,7 +75,7 @@
+     participationLineageManufactured: false, forecastValuesCalculated: false };
+ }
+ 
+-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
++if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1])) {
+   try {
+     const [file] = process.argv.slice(2);
+     if (!file) throw new Error("usage: inspect-issued-packet.mjs saved-packet.json");
+diff --git a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs
+--- a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs
++++ b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs
+@@ -1,6 +1,6 @@
+ import { test } from "node:test";
+ import assert from "node:assert/strict";
+-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
++import { mkdtempSync, writeFileSync, symlinkSync, rmSync } from "node:fs";
+ import { spawnSync } from "node:child_process";
+ import { tmpdir } from "node:os";
+ import { join } from "node:path";
+@@ -108,3 +108,20 @@
+     assert.match(JSON.parse(result.stdout).packetSha256, /^[a-f0-9]{64}$/);
+   } finally { rmSync(dir, { recursive: true, force: true }); }
+ });
++
++test("CLI executes through a symlink and rejects missing issued revisions", () => {
++  const dir = mkdtempSync(join(tmpdir(), "rso-issued-alias-"));
++  try {
++    const cli = join(dir, "issued alias.mjs"), file = join(dir, "packet.json"), input = fixture();
++    symlinkSync(fileURLToPath(new URL("inspect-issued-packet.mjs", import.meta.url)), cli);
++    writeFileSync(file, JSON.stringify(input));
++    const good = spawnSync(process.execPath, [cli, file], { encoding: "utf8" });
++    assert.equal(good.status, 0, good.stderr);
++    assert.equal(JSON.parse(good.stdout).pass, true);
++    assert.match(JSON.parse(good.stdout).packetSha256, /^[a-f0-9]{64}$/);
++    input.revisions = []; writeFileSync(file, JSON.stringify(input));
++    const bad = spawnSync(process.execPath, [cli, file], { encoding: "utf8" });
++    assert.equal(bad.status, 1, bad.stderr);
++    assert.equal(JSON.parse(bad.stdout).pass, false);
++  } finally { rmSync(dir, { recursive: true, force: true }); }
++});
+diff --git a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.mjs b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.mjs
+--- a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.mjs
++++ b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.mjs
+@@ -1,6 +1,6 @@
+ // Offline E3 adapter for saved forge_player_game_strength rows. No database, network or file writes.
+-import { readFileSync } from "node:fs";
+-import { pathToFileURL } from "node:url";
++import { existsSync, readFileSync, realpathSync } from "node:fs";
++import { fileURLToPath } from "node:url";
+ import timestampParser from "./timestamp-parser.cjs";
+ 
+ const clock = timestampParser.timestampMicros;
+@@ -69,7 +69,7 @@
+     doesNotEstablishFinalGameStatus: true, nonDresserZeroInferred: false, qualificationGranted: false } };
+ }
+ 
+-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
++if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1])) {
+   try {
+     const [captureFile, issuedFile, outcomeFile] = process.argv.slice(2);
+     requireValue(captureFile && issuedFile && outcomeFile, "usage: normalize-settlement.mjs capture.json issued.json strength.json");
+diff --git a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs
+--- a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs
++++ b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs
+@@ -1,6 +1,6 @@
+ import { test } from "node:test";
+ import assert from "node:assert/strict";
+-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
++import { mkdtempSync, writeFileSync, symlinkSync, rmSync } from "node:fs";
+ import { spawnSync } from "node:child_process";
+ import { tmpdir } from "node:os";
+ import { join } from "node:path";
+@@ -136,6 +136,26 @@
+   } finally { rmSync(dir, { recursive: true, force: true }); }
+ });
+ 
++test("CLI executes through a symlink and rejects an empty issued population", () => {
++  const dir = mkdtempSync(join(tmpdir(), "rso-settlement-alias-"));
++  try {
++    const cli = join(dir, "settlement alias.mjs"), input = fixture();
++    symlinkSync(fileURLToPath(new URL("normalize-settlement.mjs", import.meta.url)), cli);
++    const files = ["capture", "issued", "outcomes"].map(name => {
++      const file = join(dir, name + ".json"); writeFileSync(file, JSON.stringify(input[name])); return file;
++    });
++    const good = spawnSync(process.execPath, [cli, ...files], { encoding: "utf8" });
++    assert.equal(good.status, 0, good.stderr);
++    assert.deepEqual(JSON.parse(good.stdout), normalizeSettlement(input).rows);
++    assert.equal(JSON.parse(good.stderr).sourceRows, 1);
++    writeFileSync(files[1], "[]");
++    const bad = spawnSync(process.execPath, [cli, ...files], { encoding: "utf8" });
++    assert.equal(bad.status, 1, bad.stderr);
++    assert.match(bad.stderr, /issued_population_invalid/);
++    assert.equal(bad.stdout, "");
++  } finally { rmSync(dir, { recursive: true, force: true }); }
++});
++
+ function monthEnd() {
+   const input = fixture();
+   input.capture.date = input.issued[0].gameDate = "2026-11-30";
+diff --git a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs
+--- a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs
++++ b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs
+@@ -14,7 +14,7 @@
+ // Exit code: 0 pass, 1 findings, 2 bad input.
+ 
+ import { createHash } from "node:crypto";
+-import { existsSync, readFileSync, writeFileSync } from "node:fs";
++import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+ import { createRequire } from "node:module";
+ import { dirname, join } from "node:path";
+ import { fileURLToPath } from "node:url";
+@@ -201,4 +201,4 @@
+   process.exit(report.summary.pass ? 0 : 1);
+ }
+ 
+-if (import.meta.url === `file://${process.argv[1]}`) main();
++if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1])) main();
+diff --git a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs
+--- a/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs
++++ b/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs
+@@ -1,8 +1,8 @@
+ // Offline self-tests: node --test tooling/check-readbacks.test.mjs (no network, no DB, synthetic fixtures only).
+ import { test } from "node:test";
+ import assert from "node:assert/strict";
+-import { execFileSync } from "node:child_process";
+-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
++import { execFileSync, spawnSync } from "node:child_process";
++import { mkdtempSync, readFileSync, writeFileSync, symlinkSync, rmSync } from "node:fs";
+ import { tmpdir } from "node:os";
+ import { join, dirname } from "node:path";
+ import { fileURLToPath } from "node:url";
+@@ -110,6 +110,25 @@
+   assert.equal(status, 1);
+ });
+ 
++test("CLI executes through a symlink and rejects empty issuance", () => {
++  const dir = mkdtempSync(join(tmpdir(), "forge-qual-alias-"));
++  try {
++    const cli = join(dir, "readback alias.mjs"), issued = join(dir, "issued.json"), fixtures = join(here, "fixtures");
++    symlinkSync(join(here, "check-readbacks.mjs"), cli);
++    writeFileSync(issued, JSON.stringify(fixture("issued.json")));
++    const args = [cli, "--issued", issued, "--rso", join(fixtures, "rso.json"),
++      "--start-chart", join(fixtures, "start-chart.json"), "--scope", join(fixtures, "scope.json")];
++    const good = spawnSync(process.execPath, args, { encoding: "utf8" });
++    assert.equal(good.status, 0, good.stderr);
++    assert.equal(JSON.parse(good.stdout).summary.pass, true);
++    writeFileSync(issued, "[]");
++    const bad = spawnSync(process.execPath, args, { encoding: "utf8" });
++    assert.equal(bad.status, 1, bad.stderr);
++    assert.equal(JSON.parse(bad.stdout).summary.pass, false);
++    assert.equal(JSON.parse(bad.stdout).summary.findingCodes.issued_empty, 1);
++  } finally { rmSync(dir, { recursive: true, force: true }); }
++});
++
+ test("the predeclared scope: its protocol hash must match, and an unpinned identity is refused outside dry runs", () => {
+   const real = JSON.parse(readFileSync(join(here, "..", "scope.json"), "utf8"));
+   assert.equal(canonicalHash(real.protocol), real.protocolHash);

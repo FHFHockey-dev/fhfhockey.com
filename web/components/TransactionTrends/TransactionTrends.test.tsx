@@ -245,10 +245,10 @@ describe("TransactionTrends", () => {
       screen.getAllByLabelText(/average draft pick trend over 3 days/i),
     ).toHaveLength(2);
     expect(
-      screen.getByLabelText("Average pick moved 20.0% earlier"),
+      screen.getByText("Average pick moved 20.0% earlier"),
     ).toBeTruthy();
     expect(
-      screen.getByLabelText("Average pick moved 20.0% later"),
+      screen.getByText("Average pick moved 20.0% later"),
     ).toBeTruthy();
     const risingSparkline = screen.getByLabelText(
       "Rising Player 1 average draft pick trend over 3 days",
@@ -292,8 +292,9 @@ describe("TransactionTrends", () => {
     vi.stubGlobal("fetch", mockResponse(makeResponse(1)));
     renderOwnershipTrends();
 
-    const rise = await screen.findByLabelText("Up 1.0 percentage points");
-    const fall = screen.getByLabelText("Down 1.0 percentage points");
+    const rise = (await screen.findByText("Up 1.0 percentage points")).parentElement!;
+    const fall = screen.getByText("Down 1.0 percentage points").parentElement!;
+    expect(rise.hasAttribute("aria-label")).toBe(false);
     expect(rise.textContent).toContain("▲ +1.0%");
     expect(fall.textContent).toContain("▼ -1.0%");
   });

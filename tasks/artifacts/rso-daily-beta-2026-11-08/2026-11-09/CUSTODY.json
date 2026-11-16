@@ -1,0 +1,49 @@
+{
+  "at": "2026-11-09T00:28:35.900003+00:00",
+  "scope": "Install only prepared retained offline checker and its test; no scientific scope or app change.",
+  "authority": {
+    "parentTask": "Continue toward private RSO beta; resolve custody and safely install prepared two-file retained-checker repair if authorized and unconflicted.",
+    "recordedUserDecision": "2026-11-08 (TJ): Codex owns the BLSH and RSO lanes (handoff prompts 6 and 9 withdrawn).",
+    "decisionFile": "tasks/artifacts/codex-handoff-2026-11-07/TJ-DECISIONS-2026-11-07.md",
+    "humanMessageRead": "Sentinel_65bd16ac08188191a1dd7b0e77e0eeb0",
+    "resolution": "Current RSO retention plus explicit local installation task authorizes this exact artifact repair; no competing exact writer exists. This supersedes the older unresolved allocation request for this operation, without asserting a new Claude acknowledgement."
+  },
+  "legacyLease": {
+    "lane": "FORGE-QUAL",
+    "scope": "Read-only audit: FORGE writer -> admission -> RSO/Start Chart consumer qualification plan and draft readback tooling (artifacts only)",
+    "authority": "TJ direct pop-up 2026-10-25 ~23:45Z (RSO wave 2: Yahoo acceptance, continuity E2E, forecast qualification plan, release wave 1)",
+    "write_paths": [],
+    "artifact_dir": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/"
+  },
+  "leaseSourceHashes": {
+    "CLAUDE-LEASES.json": "9c80b5f13cec89eb6ebd81fb08fa76ac9235e51281e749bd7e4403f63d68bc1b",
+    "CODEX-LEASES.json": "e12c1d7dcc5f5d1d6d7b44ed46ff03aeac039471d89acaf0e772084b01d6f316"
+  },
+  "paths": [
+    {
+      "target": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs",
+      "source": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs",
+      "originalSha256": "1788c6549ae6f3a8bf3a24c6cfd82599fb349ef89fafc39f5528cd2277235e2e",
+      "replacementSha256": "467a695d2d6749e091ce209bc834c1d452bb7eebb00a30f35cb303188d78f5fe"
+    },
+    {
+      "target": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs",
+      "source": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs",
+      "originalSha256": "479edbef96b5af789dd8809f04b8809d885c93fc9a2c423e513308ebf6b28230",
+      "replacementSha256": "18c72f6638d7f3cf8af904a1ed563266bc3063f638693145dc9cc8147e893abd"
+    }
+  ],
+  "patchSha256": "703c099664be8b1344d4095c7f923e536173619e98f059e4dbb9ee6ceb93cdcb",
+  "preflight": {
+    "targetPinsMatch": true,
+    "targetWorkingDiffEmpty": true,
+    "fixtureParity": true,
+    "patchCheck": "passed"
+  },
+  "limits": [
+    "No Git/index/ref changes",
+    "No external traffic",
+    "No credential/auth operation",
+    "No scope/protocol/forecast admission changes"
+  ]
+}

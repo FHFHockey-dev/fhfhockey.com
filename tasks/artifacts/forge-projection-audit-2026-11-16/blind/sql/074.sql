@@ -1,0 +1,1 @@
+select job_name, to_char(run_time,'MM-DD HH24:MI') t, status, rows_affected, left(details->>'response',420) r from cron_job_audit where run_time >= '2026-11-13 00:00' and run_time < '2026-11-15 00:00' and job_name in ('/api/v1/db/forge-served-forecast-snapshot','run-projection-accuracy') order by run_time

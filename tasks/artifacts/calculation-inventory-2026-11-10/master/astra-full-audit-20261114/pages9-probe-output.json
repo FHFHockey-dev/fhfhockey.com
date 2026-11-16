@@ -1,0 +1,42 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "ppWriteAcknowledgement": {
+    "missingReceipt": null,
+    "returnedNormally": true,
+    "mismatchedReceipt": {
+      "deletedPlayerRows": 0,
+      "insertedPlayerRows": 999,
+      "clockRows": 0
+    },
+    "expected": {
+      "insertedPlayerRows": 0,
+      "clockRows": 2
+    },
+    "ambiguousError": "Replacing the power-play rows for game 2026020001 failed; nothing was written: network response lost after simulated commit",
+    "rpcCalls": 3
+  },
+  "exactBatchScope": {
+    "requested": [
+      2026020001,
+      2026020002
+    ],
+    "reported": [
+      2026020001
+    ],
+    "processed": 1,
+    "success": true,
+    "skipsAudit": true
+  },
+  "sources": [
+    {
+      "path": "web/pages/api/v1/db/update-power-play-combinations/[gameId].ts",
+      "sha256": "1bd9e8cb2b66139465ff60c2ac7c984f52621bf9dc4d76b7ee3ab74a4005731c"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-power-play-combinations/index.ts",
+      "sha256": "7489eca9421bfabf49029b1db77cfff2c07bef6c763d043212c4712193ef0e7f"
+    }
+  ],
+  "limits": "Exact frozen update function and batch route VM; arithmetic builder/read inputs are finite doubles to isolate receipts and scope. RPC double only simulates response shapes, never contacts DB. No actual app imports, env/provider/route/DB calls or supplied suites. This is not an independent PP clock/SQL qualification."
+}

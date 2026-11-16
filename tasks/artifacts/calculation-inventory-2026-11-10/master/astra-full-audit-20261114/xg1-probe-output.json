@@ -1,0 +1,204 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "unknownOwner": {
+    "coverageKeys": [
+      "synthetic:2:2026020001"
+    ],
+    "skipped": [
+      {
+        "gameId": 2026020001,
+        "eventId": 1,
+        "reason": "missing_event_owner_team_id"
+      }
+    ],
+    "rolling": [
+      {
+        "team": 10,
+        "xgf": 0,
+        "xga": 0,
+        "games": 1
+      },
+      {
+        "team": 20,
+        "xgf": 0,
+        "xga": 0,
+        "games": 1
+      }
+    ]
+  },
+  "flurryCorruption": {
+    "mutatedTo": 999,
+    "reconciliationPassed": true
+  },
+  "tiedCalibration": {
+    "calibrated": true,
+    "meanPrediction": 0.1,
+    "binObservedRates": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "splitOrder": {
+    "forward": [
+      [
+        1,
+        "train"
+      ],
+      [
+        2,
+        "train"
+      ],
+      [
+        3,
+        "test"
+      ],
+      [
+        4,
+        "validation"
+      ],
+      [
+        5,
+        "train"
+      ],
+      [
+        6,
+        "train"
+      ],
+      [
+        7,
+        "train"
+      ],
+      [
+        8,
+        "train"
+      ],
+      [
+        9,
+        "test"
+      ],
+      [
+        10,
+        "train"
+      ]
+    ],
+    "reversed": [
+      [
+        1,
+        "train"
+      ],
+      [
+        2,
+        "test"
+      ],
+      [
+        3,
+        "train"
+      ],
+      [
+        4,
+        "train"
+      ],
+      [
+        5,
+        "train"
+      ],
+      [
+        6,
+        "train"
+      ],
+      [
+        7,
+        "validation"
+      ],
+      [
+        8,
+        "test"
+      ],
+      [
+        9,
+        "train"
+      ],
+      [
+        10,
+        "train"
+      ]
+    ]
+  },
+  "nonfiniteCalibration": {
+    "served": 0.5,
+    "metrics": {
+      "exampleCount": 1,
+      "goalCount": 1,
+      "goalRate": 1,
+      "averagePrediction": 0.5,
+      "logLoss": 0.693147,
+      "brierScore": 0.25
+    }
+  },
+  "adjustedTarget": {
+    "homeShots": 10,
+    "awayShots": 1,
+    "xgEach": 0.2,
+    "unadjustedDifferential": 1.8,
+    "intercept": 0.2,
+    "coefficients": [
+      {
+        "player": 1,
+        "value": 0
+      },
+      {
+        "player": 2,
+        "value": 0
+      }
+    ],
+    "mse": 0
+  },
+  "controls": {
+    "pooledIsotonicTie": 0.3,
+    "unprovenCoverageNoRolling": true
+  },
+  "sources": [
+    {
+      "path": "web/lib/xg/aggregates.ts",
+      "sha256": "8387c16ae2348c5962602b9c5c6c2884cff1549bae8c0e345cd339c44224d39b"
+    },
+    {
+      "path": "web/lib/xg/flurryAdjusted.ts",
+      "sha256": "217d4337904dbf823cbdf58634eaa1cbb95546269c76cbee3772954fc1fd1220"
+    },
+    {
+      "path": "web/lib/xg/adjustedImpact.ts",
+      "sha256": "e621e895e78622e1805baa3d48e85d3008f9f6a16e7b44f7bc8fa90c2656293c"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlShiftStints.ts",
+      "sha256": "eaf45b7dec17e69ce7934967a7816ca19b975675903de59010ed469cd64be674"
+    },
+    {
+      "path": "web/lib/xg/approvalGate.ts",
+      "sha256": "569edd51c6aa846f67228d90dea3c6b1087453d37afcccf620d30aa1105a6413"
+    },
+    {
+      "path": "web/lib/xg/baselineDataset.ts",
+      "sha256": "31d8f18e4e525db114b80fba4ee775a4ca6744eba0529215826aafe768065969"
+    },
+    {
+      "path": "web/lib/xg/calibration.ts",
+      "sha256": "217ec03f6978323608e6d05a77ce097c77747b0f54306dfbd19d736259871ddc"
+    },
+    {
+      "path": "web/lib/xg/binaryLogistic.ts",
+      "sha256": "c9d933e935e9547b81c98b836d7281919d320dde670f0d984a0e543a1532f0ac"
+    }
+  ],
+  "limits": "Exact frozen modules in deny-by-default VM, synthetic fixtures only. One tiny 11-row/10-iteration in-memory baseline and14-row isotonic control; no real dataset fitting, app imports, network, database, production, supplied test suite or artifact promotion."
+}

@@ -1,0 +1,49 @@
+SET
+SET
+   ?column?   |        clock_timestamp        
+--------------+-------------------------------
+ vacuum_start | 2026-11-16 01:52:36.156863+00
+(1 row)
+
+psql:/Users/tim/forge-pilot/visibility-156-20261116T015026Z/vacuum-index-cleanup/vacuum.sql:5: INFO:  vacuuming "postgres.public.wgo_skater_stats"
+psql:/Users/tim/forge-pilot/visibility-156-20261116T015026Z/vacuum-index-cleanup/vacuum.sql:5: INFO:  launched 1 parallel vacuum worker for index vacuuming (planned: 1)
+psql:/Users/tim/forge-pilot/visibility-156-20261116T015026Z/vacuum-index-cleanup/vacuum.sql:5: INFO:  finished vacuuming "postgres.public.wgo_skater_stats": index scans: 1
+pages: 0 removed, 278574 remain, 11507 scanned (4.13% of total)
+tuples: 0 removed, 2331695 remain, 0 are dead but not yet removable
+removable cutoff: 14837593, which was 0 XIDs old when operation ended
+index scan needed: 3814 pages from table (1.37% of total) had 7426 dead item identifiers removed
+index "wgo_skater_stats_pkey": pages: 11549 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+index "idx_wgo_skater_stats_player_id": pages: 4857 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+index "idx_wgo_skater_stats_player_date": pages: 12571 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+index "idx_wgo_skater_stats_date": pages: 4862 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+index "wgo_skater_stats_player_id_date_key": pages: 12463 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+index "skater_name_norm_btree": pages: 4653 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+index "wgo_skater_stats_g1_idx": pages: 9558 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+index "wgo_skater_stats_date_idx": pages: 2196 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+index "wgo_skater_stats_gp1_date": pages: 2182 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+index "wgo_skater_stats_pid_date_season": pages: 9464 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+index "wgo_skater_stats_date_brin": pages: 16 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+index "idx_wgo_skater_stats_game_id": pages: 1577 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+index "idx_wgo_skater_stats_team_date": pages: 2206 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+index "idx_wgo_skater_stats_gp1_physical": pages: 7373 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+avg read rate: 58.706 MB/s, avg write rate: 6.041 MB/s
+buffer usage: 13895 hits, 56099 misses, 5773 dirtied
+WAL usage: 12161 records, 8252 full page images, 20478578 bytes
+system usage: CPU: user: 0.59 s, system: 0.54 s, elapsed: 7.46 s
+psql:/Users/tim/forge-pilot/visibility-156-20261116T015026Z/vacuum-index-cleanup/vacuum.sql:5: INFO:  vacuuming "postgres.pg_toast.pg_toast_61067"
+psql:/Users/tim/forge-pilot/visibility-156-20261116T015026Z/vacuum-index-cleanup/vacuum.sql:5: INFO:  finished vacuuming "postgres.pg_toast.pg_toast_61067": index scans: 0
+pages: 0 removed, 0 remain, 0 scanned (100.00% of total)
+tuples: 0 removed, 0 remain, 0 are dead but not yet removable
+removable cutoff: 14837593, which was 0 XIDs old when operation ended
+new relfrozenxid: 14837593, which is 30 XIDs ahead of previous value
+index scan not needed: 0 pages from table (100.00% of total) had 0 dead item identifiers removed
+avg read rate: 0.000 MB/s, avg write rate: 0.000 MB/s
+buffer usage: 22 hits, 0 misses, 0 dirtied
+WAL usage: 1 records, 0 full page images, 188 bytes
+system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+VACUUM
+  ?column?   |        clock_timestamp        
+-------------+-------------------------------
+ vacuum_done | 2026-11-16 01:52:43.920875+00
+(1 row)
+

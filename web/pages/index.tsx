@@ -101,7 +101,8 @@ const Home: NextPage = ({
   const [expandedNewsId, setExpandedNewsId] = useState<string | null>(null);
   const [activeHomepageTool, setActiveHomepageTool] =
     useState<(typeof HOMEPAGE_TOOL_TABS)[number]["id"]>("draft-ranker");
-  const homepageNewsItems = latestNews?.slice(0, 5) ?? [];
+  // Desktop shows as many of these as fit beside the chart; phones show 5.
+  const homepageNewsItems = latestNews?.slice(0, 8) ?? [];
 
   const handleHomepageToolKeyDown = (
     event: React.KeyboardEvent<HTMLButtonElement>,
@@ -155,7 +156,7 @@ const Home: NextPage = ({
           heroMetrics={[
             {
               label: "Players",
-              value: String(homepagePlayerCount ?? 0),
+              value: (homepagePlayerCount ?? 0).toLocaleString("en-US"),
               caption: "indexed",
             },
             {

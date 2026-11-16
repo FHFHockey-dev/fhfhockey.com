@@ -1,0 +1,94 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "flatNarrative": [
+    "5v5 offense is rating better than this team’s recent baseline.",
+    "Defense is rating better than this team’s recent baseline."
+  ],
+  "paceOnlyNarrative": [
+    "Pace is helping the overall profile more than usual.",
+    "Special teams are adding a bit less than usual through weaker PP and PK support."
+  ],
+  "partialSos": {
+    "direct": 1,
+    "indirect": null,
+    "actualLandingSos": 1
+  },
+  "sosTies": {
+    "BOS": 1,
+    "TOR": 2,
+    "sharedCompetitionControl": [
+      1,
+      1
+    ]
+  },
+  "postponedSchedule": {
+    "games": 2,
+    "backToBacks": 1,
+    "select": "date,\"homeTeamId\",\"awayTeamId\""
+  },
+  "futureFallback": {
+    "requested": "2026-11-01",
+    "resolved": "2026-11-13"
+  },
+  "pooledSpecialTeams": {
+    "pp": 0.2,
+    "pk": 0.6,
+    "unknownGuard": true
+  },
+  "sources": [
+    {
+      "path": "web/lib/underlying-stats/teamRatingNarrative.ts",
+      "sha256": "2105c8ccebddb418c5836cceb4c79f1b9dba26490635de19013b5be19e8b5eda"
+    },
+    {
+      "path": "web/lib/dashboard/teamContext.ts",
+      "sha256": "a4fb16cd8a144fbe139da81136649365f3824d681097d4fca36ad91dbda4d7b6"
+    },
+    {
+      "path": "web/lib/dashboard/teamMetadata.ts",
+      "sha256": "7cfb169e7ef476e21eac9ce49ac7a590e31f6e888bbb66c911c1285d67ad903b"
+    },
+    {
+      "path": "web/lib/teamsInfo.ts",
+      "sha256": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584"
+    },
+    {
+      "path": "web/lib/teamRatingVersion.ts",
+      "sha256": "1e8b24fa41a5d9a689723270ae9c26cc4127efdd270c5c55bae8714fe1d5f518"
+    },
+    {
+      "path": "web/lib/underlying-stats/teamScheduleStrength.ts",
+      "sha256": "349e3a1ef3b011dfaaa052014c8839d61825567b748451f2203a94c14f72e29f"
+    },
+    {
+      "path": "web/lib/trends/strengthOfScheduleContract.ts",
+      "sha256": "77f79f80fbe25fbc20ade4d0761fe2e04983e998b9a4797bdf0d5c603ecc3739"
+    },
+    {
+      "path": "web/lib/trends/teamSosSnapshot.ts",
+      "sha256": "f84a698297509a4837e4bc191c5d89d784bb96a6f6f5c62e3090add0b654d8b9"
+    },
+    {
+      "path": "web/lib/teamRatingsService.ts",
+      "sha256": "a175cadce0ae207d9151f3b3f64911c6a0b872f9945516925eb4e838fae48a6b"
+    },
+    {
+      "path": "web/lib/underlying-stats/teamSpecialTeamsContext.ts",
+      "sha256": "a30c9cb1bee3470df160cef6e60511d1bbca991e83b0b632a4e22d3cc06ba54d"
+    },
+    {
+      "path": "web/lib/supabase/pagination.ts",
+      "sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660"
+    },
+    {
+      "path": "web/lib/underlying-stats/teamLandingRatings.ts",
+      "sha256": "fb59345187c68fca5eeac4b7cb5bf5a6b6f28b6643c2df2667315e88cf2e28af"
+    },
+    {
+      "path": "web/lib/underlying-stats/teamLandingDashboard.ts",
+      "sha256": "2d0142c0d068f5f5f8117ca5f247df29a67f6bd87f7c0a9423449545c2106317"
+    }
+  ],
+  "limits": "Exact frozen pure modules and AST-isolated snapshot resolver; finite in-memory SELECT double; no remote calls, writes, application environment, test suite, live page or production incidence."
+}

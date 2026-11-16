@@ -1,0 +1,18 @@
+{
+  "ms": 19732,
+  "error": null,
+  "rows": 13073,
+  "distinctEntities": 769,
+  "snapshotDates": [
+    "2026-11-13"
+  ],
+  "metrics": 17,
+  "missing24Now": 24,
+  "unavailable": [],
+  "contexts": [
+    {
+      "w": "season",
+      "d": "2026-11-13"
+    }
+  ]
+}

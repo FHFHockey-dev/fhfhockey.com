@@ -1,0 +1,206 @@
+jsonb_pretty
+"{
+    ""games"": 2,
+    ""resume"": {
+        ""version"": ""forge-run-resume-v1"",
+        ""scope_key"": ""h1:full"",
+        ""invocations"": 2,
+        ""lease_owner"": ""95c5906d-49de-4b0b-b711-89324c047f44"",
+        ""released_by"": ""95c5906d-49de-4b0b-b711-89324c047f44"",
+        ""lease_expires_at"": ""2026-11-13T10:35:47.056Z"",
+        ""completed_game_ids"": [
+            2026020331,
+            2026020332
+        ]
+    },
+    ""learning"": {
+        ""players_considered"": 69,
+        ""recent_window_games"": 5,
+        ""goal_rate_recent_share"": 0.9855072463768116,
+        ""assist_rate_recent_share"": 0.4492753623188406,
+        ""goal_rate_prior_strength"": ""adaptive"",
+        ""goal_rate_recent_players"": 68,
+        ""assist_rate_prior_strength"": ""adaptive"",
+        ""assist_rate_recent_players"": 31
+    },
+    ""warnings"": [
+        ""Trend adjustments for team NYR included 1 hard-stale rows; those signals were decayed to neutral."",
+        ""Trend adjustments for team MTL included 1 hard-stale rows; those signals were decayed to neutral."",
+        ""Trend adjustments for team UTA included 2 hard-stale rows; those signals were decayed to neutral.""
+    ],
+    ""team_rows"": 4,
+    ""timed_out"": false,
+    ""as_of_date"": ""2026-11-16"",
+    ""started_at"": ""2026-11-13T10:33:01.069Z"",
+    ""board_lease"": null,
+    ""finished_at"": ""2026-11-13T10:35:47.056Z"",
+    ""goalie_rows"": 4,
+    ""player_rows"": 69,
+    ""data_quality"": {
+        ""toi_scale_max"": 1.2935157973687996,
+        ""toi_scale_min"": 1.0464296681961271,
+        ""toi_scaled_teams"": 4,
+        ""missing_pbp_games"": 2,
+        ""missing_line_combos"": 0,
+        ""empty_skater_rosters"": 0,
+        ""missing_shift_totals"": 0,
+        ""small_sample_players"": 4,
+        ""skater_coverage_lineup"": 69,
+        ""stale_line_combos_hard"": 0,
+        ""stale_line_combos_soft"": 0,
+        ""skater_coverage_reserve"": 0,
+        ""skater_coverage_unknown"": 63,
+        ""line_combo_hard_failures"": 0,
+        ""role_scenarios_avg_count"": 2.2249999999999996,
+        ""skater_coverage_eligible"": 132,
+        ""line_combo_fallbacks_used"": 0,
+        ""role_usage_bounds_applied"": 3,
+        ""filtered_skater_hard_stale"": 0,
+        ""missing_ev_metrics_players"": 0,
+        ""missing_pp_metrics_players"": 0,
+        ""shot_quality_profiles_found"": 69,
+        ""skater_pool_projected_teams"": 4,
+        ""skater_pool_recovery_failed"": 0,
+        ""skater_unavailable_filtered"": 0,
+        ""soft_stale_skater_penalties"": 0,
+        ""pp_opportunity_teams_modeled"": 4,
+        ""role_scenario_blends_applied"": 0,
+        ""missing_pp_conversion_samples"": 4,
+        ""on_ice_context_profiles_found"": 69,
+        ""skater_pool_recovery_attempts"": 0,
+        ""skater_pool_recovery_restored"": 0,
+        ""small_sample_callup_fallbacks"": 0,
+        ""role_continuity_boosts_applied"": 10,
+        ""role_scenarios_players_modeled"": 69,
+        ""skater_pool_recovery_activated"": 0,
+        ""small_sample_shrinkage_applied"": 4,
+        ""trend_adjustment_rows_eligible"": 4000,
+        ""deployment_prior_profiles_found"": 69,
+        ""filtered_skater_missing_metrics"": 0,
+        ""reconciliation_top_es_share_max"": 0.1071,
+        ""reconciliation_top_pp_share_max"": 0.2414,
+        ""rest_schedule_teams_with_signal"": 4,
+        ""skater_pool_projected_count_avg"": 17.25,
+        ""skater_pool_projected_count_max"": 18,
+        ""skater_pool_projected_count_min"": 15,
+        ""skater_pool_projected_count_sum"": 69,
+        ""trend_adjustment_fetch_failures"": 0,
+        ""filtered_skater_team_or_position"": 0,
+        ""shot_quality_adjustments_applied"": 69,
+        ""pp_opportunity_players_reweighted"": 69,
+        ""rest_schedule_adjustments_applied"": 4,
+        ""role_volatility_penalties_applied"": 57,
+        ""trend_adjustment_players_adjusted"": 0,
+        ""on_ice_context_adjustments_applied"": 69,
+        ""physical_league_totals_unavailable"": 0,
+        ""teammate_coupling_players_adjusted"": 69,
+        ""trend_adjustment_players_with_rows"": 14,
+        ""deployment_prior_toi_blends_applied"": 69,
+        ""role_scenario_horizon_games_modeled"": 0,
+        ""team_level_context_teams_with_signal"": 4,
+        ""trend_adjustment_hard_stale_selected"": 4,
+        ""trend_adjustment_soft_stale_selected"": 0,
+        ""skater_availability_penalties_applied"": 0,
+        ""skater_pool_recovery_candidates_added"": 0,
+        ""trend_adjustment_players_missing_rows"": 55,
+        ""opponent_goalie_context_profiles_found"": 4,
+        ""team_level_context_adjustments_applied"": 4,
+        ""reconciliation_distribution_adjustments"": 0,
+        ""skater_pool_underfilled_projected_teams"": 0,
+        ""skater_pool_players_dropped_no_ev_pp_gate"": 0,
+        ""opponent_goalie_context_adjustments_applied"": 4,
+        ""skater_pool_emergency_toi_target_caps_applied"": 0,
+        ""skater_pool_emergency_missing_metrics_included"": 0,
+        ""trend_adjustment_players_neutralized_by_recency"": 0
+    },
+    ""horizon_games"": 1,
+    ""decision_as_of"": ""2026-11-13T10:35:27.290Z"",
+    ""execution_scope"": {
+        ""mode"": ""full_slate"",
+        ""requested_game_ids"": [
+        ]
+    },
+    ""skater_coverage"": [
+        {
+            ""lineup"": 15,
+            ""game_id"": 2026020332,
+            ""reserve"": 0,
+            ""team_id"": 68,
+            ""unknown"": 9,
+            ""version"": ""forge-skater-coverage-v1"",
+            ""complete"": false,
+            ""eligible"": 24,
+            ""unknown_by_reason"": {
+                ""reserve_pass_disabled"": [
+                    8477220,
+                    8477951,
+                    8478507,
+                    8479293,
+                    8480084,
+                    8482699,
+                    8483431,
+                    8483472,
+                    8485010
+                ]
+            }
+        },
+        {
+            ""lineup"": 18,
+            ""game_id"": 2026020332,
+            ""reserve"": 0,
+            ""team_id"": 23,
+            ""unknown"": 23,
+            ""version"": ""forge-skater-coverage-v1"",
+            ""complete"": false,
+            ""eligible"": 41,
+            ""unknown_by_reason"": {
+                ""reserve_pass_disabled"": [
+                    8476907,
+                    8480075,
+                    8480078,
+                    8480441,
+                    8480851,
+                    8481163,
+                    8481737,
+                    8482144,
+                    8482691,
+                    8482839,
+                    8482915,
+                    8483110,
+                    8483467,
+                    8483768,
+                    8484202,
+                    8484240,
+                    8484406,
+                    8484408,
+                    8484874,
+                    8484901,
+                    8485385,
+                    8485635,
+                    8486074
+                ]
+            }
+        }
+    ],
+    ""analytics_sidecar"": {
+        ""status"": ""enabled"",
+        ""version"": ""forge-analytics-sidecar-scope-v1""
+    },
+    ""producer_identity"": {
+        ""version"": ""forge-producer-closure-v1"",
+        ""invocations"": [
+            ""ee5581d901975dd5701c76ecc58e715b396b449bdb50e05360c571f3f3de710b"",
+            ""ee5581d901975dd5701c76ecc58e715b396b449bdb50e05360c571f3f3de710b""
+        ],
+        ""code_versions"": [
+            null,
+            null
+        ]
+    },
+    ""daily_board_evidence"": {
+        ""conflicts"": [
+        ],
+        ""assertions"": [
+        ]
+    }
+}"

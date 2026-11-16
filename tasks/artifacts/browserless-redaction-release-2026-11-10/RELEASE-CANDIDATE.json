@@ -1,0 +1,21 @@
+{
+  "createdAt": "2026-11-10T15:36:36.648914+00:00",
+  "base": "47df3e6bf0ecb0fab01cc864fedf4e5ea6fab748",
+  "commit": "86f2e3cf742a86b5981abb3de41160b2ea7950e3",
+  "tree": "efd5408f443d064cdb2f6907b8d8a0833ac41285",
+  "paths": {
+    "web/pages/api/v1/webhooks/on-new-line-combo.ts": "4d21291d58056c10a4cac32265032b1822bff842fcd2688b4af11ae49cf7a457",
+    "web/lib/lines/webhookErrorDiagnostic.ts": "0ca6dcc5e1557dcdc2989756a5eca298ab59d33d31c597b596f4225872c88002",
+    "web/lib/lines/webhookErrorDiagnostic.test.ts": "f2e33444c92f5278392bb4813d64f6937350d6a8039f0311a936cd0885d648f5",
+    "web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts": "1b8f5d328555562ea4357c7e321343b2eb7fa24ada8048f9e5c5345235ce7d0a"
+  },
+  "changedPaths": [
+    "web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts",
+    "web/lib/lines/webhookErrorDiagnostic.test.ts",
+    "web/lib/lines/webhookErrorDiagnostic.ts",
+    "web/pages/api/v1/webhooks/on-new-line-combo.ts"
+  ],
+  "target": "origin/master; fhfhockey Production",
+  "sharedIndexChanged": false,
+  "newBranchOrWorktree": false
+}

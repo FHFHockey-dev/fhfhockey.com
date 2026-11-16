@@ -1,0 +1,226 @@
+{
+  "config": {
+    "configFile": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-local-loading-2026-11-10/playwright.config.ts",
+    "rootDir": "/Users/tim/Code/fhfhockey.com/web/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-local-loading-2026-11-10/browser-output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/tim/Code/fhfhockey.com/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev:stable -- -H 127.0.0.1 -p 3186",
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "env": {
+        "PLAYWRIGHT_ISOLATED_NEXT": "1"
+      },
+      "url": "http://127.0.0.1:3186/privacy",
+      "reuseExistingServer": false,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "rso-acceptance.spec.ts",
+      "file": "rso-acceptance.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "RSO loading acknowledges navigation before the route arrives and shows a skeleton before the workspace bundle",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3865,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-10T16:15:31.435Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "navigation-feedback-timing",
+                      "contentType": "application/json",
+                      "body": "eyJmZWVkYmFja01zIjoyNy42NjQzNzQ5OTk5OTk5NSwiY29uZGl0aW9ucyI6IlJvdXRlIGFuZCB3b3Jrc3BhY2UgY2h1bmtzIGhlbGQgaW5kZXBlbmRlbnRseTsgc3ludGhldGljIHJlc3BvbnNlczsgbm8gcmVhbCBsb2dpbiJ9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f27aa7b81de8b1c83ecd-4d3a21589b82ac28e5f2",
+          "file": "rso-acceptance.spec.ts",
+          "line": 15,
+          "column": 5
+        },
+        {
+          "title": "RSO loading recovers a stalled access check with one retry and preserves the connected plan",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1250,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-10T16:15:35.376Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f27aa7b81de8b1c83ecd-84e0e20b00606b95e005",
+          "file": "rso-acceptance.spec.ts",
+          "line": 46,
+          "column": 5
+        },
+        {
+          "title": "FR18 desktop 1440×900 keeps 20 roster slots in one workspace with at most 20 visible slot rows",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1219,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-10T16:15:36.630Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f27aa7b81de8b1c83ecd-ae3b22f2b0ea3ad39ca1",
+          "file": "rso-acceptance.spec.ts",
+          "line": 86,
+          "column": 7
+        },
+        {
+          "title": "FR18 mobile tabs reach itinerary, roster, candidates and matchup without overflow",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1214,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-10T16:15:37.853Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f27aa7b81de8b1c83ecd-d4f51b883913db738b71",
+          "file": "rso-acceptance.spec.ts",
+          "line": 119,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-10T16:15:29.030Z",
+    "duration": 10092.375,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

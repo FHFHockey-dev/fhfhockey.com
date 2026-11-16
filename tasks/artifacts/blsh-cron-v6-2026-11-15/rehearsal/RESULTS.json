@@ -1,0 +1,164 @@
+{
+  "version": "fhfh.blsh.cron-v6.rehearsal.v1",
+  "realNetworkAttempts": 0,
+  "scenarios": [
+    {
+      "scenario": "happy_path",
+      "status": 200,
+      "body": {
+        "success": true,
+        "state": "packet_complete_pending_review",
+        "sourceDate": "2026-11-19",
+        "runId": "d5094528-2962-4a0d-a888-1c4ad1198382",
+        "operationCount": 5,
+        "retained": [
+          "individual",
+          "onIce"
+        ]
+      },
+      "fetches": [
+        "schedule",
+        "admission:individual",
+        "nst:individual",
+        "admission:onIce",
+        "nst:onIce"
+      ],
+      "runState": "packet_complete_pending_review",
+      "objects": 20
+    },
+    {
+      "scenario": "backup_trigger_1220",
+      "status": 200,
+      "body": {
+        "success": true,
+        "skipped": "already_claimed",
+        "sourceDate": "2026-11-19"
+      },
+      "fetches": [],
+      "runState": "packet_complete_pending_review",
+      "objects": 20
+    },
+    {
+      "scenario": "no_slate",
+      "status": 200,
+      "body": {
+        "success": true,
+        "state": "no_slate",
+        "sourceDate": "2026-11-19",
+        "runId": "42cf9ace-5bf6-4801-8627-988137195af9",
+        "operationCount": 1,
+        "retained": []
+      },
+      "fetches": [
+        "schedule"
+      ],
+      "runState": "no_slate",
+      "objects": 8
+    },
+    {
+      "scenario": "admission_denied",
+      "status": 500,
+      "body": {
+        "success": false,
+        "state": "failed",
+        "reason": "permit_not_usable",
+        "runClosed": true,
+        "sourceDate": "2026-11-19",
+        "runId": "816e8d91-024c-4c02-93ea-4540a87b419e"
+      },
+      "fetches": [
+        "schedule",
+        "admission:individual"
+      ],
+      "runState": "failed",
+      "objects": 10
+    },
+    {
+      "scenario": "warm_instance_resumed_tls",
+      "status": 500,
+      "body": {
+        "success": false,
+        "state": "failed",
+        "reason": "tls_observation_missing",
+        "runClosed": true,
+        "sourceDate": "2026-11-19",
+        "runId": "a9ee2114-2291-4d43-a106-8640607c9bba"
+      },
+      "fetches": [
+        "schedule",
+        "admission:individual"
+      ],
+      "runState": "failed",
+      "objects": 10
+    },
+    {
+      "scenario": "kill_switch_off",
+      "status": 200,
+      "body": {
+        "success": true,
+        "skipped": "disabled",
+        "sourceDate": "2026-11-19"
+      },
+      "fetches": [],
+      "runState": null,
+      "objects": 0
+    },
+    {
+      "scenario": "observer_selftest_refused",
+      "status": 503,
+      "body": {
+        "success": false,
+        "error": "observer_selftest_failed",
+        "sourceDate": "2026-11-19"
+      },
+      "fetches": [],
+      "runState": null,
+      "objects": 0
+    },
+    {
+      "scenario": "observer_selftest_backup_ok",
+      "status": 200,
+      "body": {
+        "success": true,
+        "state": "packet_complete_pending_review",
+        "sourceDate": "2026-11-19",
+        "runId": "a82c3545-15f6-4044-80e1-8f22b652590d",
+        "operationCount": 5,
+        "retained": [
+          "individual",
+          "onIce"
+        ]
+      },
+      "fetches": [
+        "schedule",
+        "admission:individual",
+        "nst:individual",
+        "admission:onIce",
+        "nst:onIce"
+      ],
+      "runState": "packet_complete_pending_review",
+      "objects": 20
+    },
+    {
+      "scenario": "close_unacknowledged_left_claimed",
+      "status": 500,
+      "body": {
+        "success": false,
+        "state": "failed",
+        "reason": "store_blsh_capture_close_v1_http_400",
+        "runClosed": false,
+        "sourceDate": "2026-11-19",
+        "runId": "807950c5-90b9-4970-a93c-a8d3f47fd609"
+      },
+      "fetches": [
+        "schedule",
+        "admission:individual",
+        "nst:individual",
+        "admission:onIce",
+        "nst:onIce"
+      ],
+      "runState": "claimed",
+      "objects": 20
+    }
+  ]
+}

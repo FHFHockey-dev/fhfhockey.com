@@ -1,0 +1,121 @@
+{
+  "source": "Local dotenv parsing only; no environment values exported or sourced",
+  "processEnvironmentMatches": [],
+  "files": [
+    {
+      "path": ".env",
+      "configuredNames": [],
+      "endpoints": []
+    },
+    {
+      "path": ".env.local",
+      "configuredNames": [],
+      "endpoints": []
+    },
+    {
+      "path": "web/.env.local",
+      "configuredNames": [],
+      "endpoints": []
+    },
+    {
+      "path": "web/.env.production",
+      "configuredNames": [],
+      "endpoints": []
+    },
+    {
+      "path": "web/.env.development",
+      "configuredNames": [
+        "PUPPETEER_ENDPOINT"
+      ],
+      "endpoints": [
+        {
+          "key": "PUPPETEER_ENDPOINT",
+          "parseable": true,
+          "scheme": "ws",
+          "hostname": "localhost",
+          "port": "3001",
+          "rootPath": true,
+          "hasUserInfo": false,
+          "queryKeys": [
+            "token"
+          ]
+        }
+      ]
+    }
+  ],
+  "sshConfig": {
+    "path": "/Users/tim/.ssh/config",
+    "hostBlockCount": 0,
+    "matchingBrowserlessOrRecordedHostBlocks": [],
+    "includeReferences": [
+      "/Users/tim/.colima/ssh_config"
+    ],
+    "includesFollowed": true,
+    "commandsEvaluated": false,
+    "privateKeysRead": false,
+    "includedConfig": {
+      "path": "/Users/tim/.colima/ssh_config",
+      "exists": true,
+      "profiles": [],
+      "nestedIncludes": [],
+      "filesInspected": [
+        "/Users/tim/.colima/ssh_config"
+      ],
+      "pendingAtBound": false
+    }
+  },
+  "knownHosts": [
+    {
+      "host": "43.156.28.69",
+      "matchFound": false,
+      "keyRecordCount": 0,
+      "exitCode": 1
+    },
+    {
+      "host": "[43.156.28.69]:22",
+      "matchFound": false,
+      "keyRecordCount": 0,
+      "exitCode": 1
+    }
+  ],
+  "dockerContextMetadata": {
+    "directoryPresent": true,
+    "contextsInspected": 1,
+    "matchingContexts": [],
+    "daemonContacted": false,
+    "configuredContexts": [
+      {
+        "name": "colima",
+        "scheme": "unix",
+        "hostname": null,
+        "port": null,
+        "localSocketConfigured": true
+      }
+    ]
+  },
+  "checkedAt": "2026-11-12T18:33:18.228513+00:00",
+  "conclusion": {
+    "localDevelopmentEndpoint": "ws localhost port 3001; matches repository Compose host port",
+    "lastRecordedProductionEndpoint": "ws 43.156.28.69 port 3000, observed November 10; current identity not verified",
+    "productionAdminAccessFound": false,
+    "availableLocalEnvironment": "Configured Colima Docker context using a local Unix socket; no usable SSH host block found. Running VM/container state not queried.",
+    "minimalRequiredInformation": [
+      "Confirm whether 43.156.28.69 is still the Browserless production host.",
+      "Identify its operator and approved management route (existing SSH profile/account or hosting-console/service name), or provide a sanitized running-service inventory. No token, password or private key should be sent."
+    ],
+    "compatibility": "Current local development ws endpoint and last recorded production ws endpoint will be rejected by the secure candidate; no insecure exception added."
+  },
+  "safety": {
+    "environmentFilesSourced": false,
+    "processEnvironmentChanged": false,
+    "tokenValuesEmittedOrRetained": false,
+    "privateKeysRead": false,
+    "sshConnections": 0,
+    "dockerDaemonConnections": 0,
+    "providerCalls": 0,
+    "hostOrNetworkChanges": 0,
+    "candidateChanged": false
+  },
+  "scope": "Local process environment, five named dotenv files, SSH config and its one named include, recorded-address known_hosts lookup, and Docker context metadata only; no cloud/provider/service inventory calls.",
+  "candidatePinsUnchanged": true
+}

@@ -1,0 +1,144 @@
+{
+  "label": "OFFLINE synthetic probe",
+  "metricCount": 17,
+  "roundTrips": 1021,
+  "supportReads": 465,
+  "summary": [
+    {
+      "metric": "goals_per_60",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "points_per_60",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "ixg_per_60",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "assists_per_60",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "primary_assists_per_60",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "sog_per_60",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "shot_attempts_per_60",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "xga_per_60",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "on_ice_gf_percentage",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "on_ice_xgf_percentage",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 749,
+      "message": null
+    },
+    {
+      "metric": "hits_per_60",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "blocks_per_60",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "expected_shooting_percentage",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "sax_percentage",
+      "unavailable": true,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 0,
+      "message": "Requested metric has no calculable values for the current filters."
+    },
+    {
+      "metric": "goals_above_expected",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "unrealized_xg",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    },
+    {
+      "metric": "penalties_taken_per_60",
+      "unavailable": false,
+      "reason": "latest_available",
+      "snapshotDate": "2026-11-13",
+      "nonNullValues": 750,
+      "message": null
+    }
+  ]
+}

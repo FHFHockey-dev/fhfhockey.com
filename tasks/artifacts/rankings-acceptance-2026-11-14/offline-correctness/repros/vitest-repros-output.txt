@@ -1,0 +1,15 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../tasks/artifacts/rankings-acceptance-2026-11-14/offline-correctness/repros/goalie.repro.test.ts > Open: R05 per-metric exposure (F8) > DEFECT PRESENT R05-EXPOSURE: HD SV% is ranked on 1 high-danger shot because only the global start/shot floor gates every metric 11ms
+ ✓ ../tasks/artifacts/rankings-acceptance-2026-11-14/offline-correctness/repros/r01.repro.test.ts > Open: R01 WAR season and static metadata (F10) > DEFECT PRESENT R01-WAR-SEASON: the WAR request silently falls back to 2025-26 when season is missing or invalid 1ms
+ ✓ ../tasks/artifacts/rankings-acceptance-2026-11-14/offline-correctness/repros/r01.repro.test.ts > Open: R01 WAR season and static metadata (F10) > DEFECT PRESENT R01-STATIC-METADATA: on 2026-11-14 the metadata route still serves June 2026 coverage counts and a 2025-26 WAR season as current 2ms
+ ✓ ../tasks/artifacts/rankings-acceptance-2026-11-14/offline-correctness/repros/skater.repro.test.ts > Open: Metric Explorer vs matrix source (F2) > DEFECT PRESENT PARITY-DURABLE-FALLBACK: the matrix takes every column from the source chosen for the sort metric, while Metric Explorer chooses per metric, so Goals/60 is ranked in Metric Explorer but blank in the matrix 9ms
+ ✓ ../tasks/artifacts/rankings-acceptance-2026-11-14/offline-correctness/repros/skater.repro.test.ts > R03 rolling fallback population horizon (F3, interactive path) > DEFECT PRESENT R03-HORIZON: a qualified skater whose last game is older than 30 distinct game dates disappears from the rolling-fallback season ranking 2ms
+ ✓ ../tasks/artifacts/rankings-acceptance-2026-11-14/offline-correctness/repros/skater.repro.test.ts > Open: Fantasy preset floor (product decision) > DEFECT PRESENT R07-FANTASY-PRESET (product decision, not in F11): the Fantasy preset still sets a 1 GP floor 0ms
+
+ Test Files  3 passed (3)
+      Tests  6 passed (6)
+   Start at  21:17:10
+   Duration  364ms (transform 224ms, setup 5ms, collect 390ms, tests 27ms, environment 0ms, prepare 105ms)
+

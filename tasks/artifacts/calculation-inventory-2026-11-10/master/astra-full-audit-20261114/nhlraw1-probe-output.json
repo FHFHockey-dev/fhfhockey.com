@@ -1,0 +1,42 @@
+{
+  "pin": "89da739cb",
+  "path": "web/lib/supabase/Upserts/nhlRawGamecenter.mjs",
+  "sha256": "cfe532f5bc53055a9177a80764b41c863426c449a9d784dd327c88f1a2e88656",
+  "status": "passed",
+  "htmlFallback": {
+    "unmatchedHeading": "99 UNKNOWN, PERSON",
+    "assignedPlayerId": 101,
+    "assignedSeconds": 1200,
+    "strictRefuses": true,
+    "normalizedFinalGameAccepted": true
+  },
+  "offGameInputs": {
+    "requestedId": 2026020001,
+    "returnedId": 2026020002,
+    "syntheticFetchCalls": 4,
+    "capturedBeforeFailure": [
+      {
+        "rowGameId": 2026020001,
+        "endpoint": "play-by-play",
+        "payloadGameId": 2026020002
+      },
+      {
+        "rowGameId": 2026020001,
+        "endpoint": "boxscore",
+        "payloadGameId": 2026020002
+      },
+      {
+        "rowGameId": 2026020001,
+        "endpoint": "landing",
+        "payloadGameId": 2026020002
+      },
+      {
+        "rowGameId": 2026020001,
+        "endpoint": "shiftcharts",
+        "payloadGameId": 2026020002
+      }
+    ],
+    "normalizationRejected": true
+  },
+  "limits": "Exact frozen raw module in VM, existing local HTML parser and crypto only. Every fetch and database write is mocked in memory. No real provider, SQL/RPC, route, environment, application module import, Vitest or live claim. Snapshot/head SQL checked as source, not executed."
+}

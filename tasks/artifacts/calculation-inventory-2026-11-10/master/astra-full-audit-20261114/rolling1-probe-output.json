@@ -1,0 +1,252 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "simpleWindow": {
+    "inputs": [
+      3,
+      1,
+      1,
+      1,
+      1,
+      null
+    ],
+    "actualLast5Total": 7,
+    "actualLast5Average": 1.4,
+    "actualWindowValues": [
+      3,
+      1,
+      1,
+      1,
+      1
+    ],
+    "last5AppearanceKnownSubtotal": 4,
+    "last5AppearanceKnownObservations": 4,
+    "missingObservations": 1,
+    "measuredZeroLast5Total": 4
+  },
+  "gameFinality": {
+    "withUnplayed": {
+      "season": 0.666667,
+      "threeYear": 0.666667,
+      "career": 0.666667,
+      "seasonPlayerGames": 2,
+      "seasonTeamGames": 3,
+      "threeYearPlayerGames": 2,
+      "threeYearTeamGames": 3,
+      "careerPlayerGames": 2,
+      "careerTeamGames": 3
+    },
+    "finalOnly": {
+      "season": 1,
+      "threeYear": 1,
+      "career": 1,
+      "seasonPlayerGames": 2,
+      "seasonTeamGames": 2,
+      "threeYearPlayerGames": 2,
+      "threeYearTeamGames": 2,
+      "careerPlayerGames": 2,
+      "careerTeamGames": 2
+    }
+  },
+  "cache": {
+    "calls": {
+      "powerPlayCombinations": 1,
+      "lineCombinations": 1
+    },
+    "correctedPpSeconds": 30,
+    "returnedPpSeconds": 60,
+    "correctedLineRows": 1,
+    "returnedLineRows": 0
+  },
+  "partialPublish": {
+    "posts": [
+      "mock:support",
+      "mock:wide"
+    ],
+    "oldWideRate": 1,
+    "newSupportRate": 2
+  },
+  "extractions": [
+    {
+      "path": "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "name": "getSeasonWindowKey",
+      "line": 12,
+      "sha256": "700b915bed6cfb3714fcfbd4ec5f9037711ac48a2f45312a89c5af406b811d59"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "name": "createHistoricalAverageAccumulator",
+      "line": 93,
+      "sha256": "2cad89e44ca8f93c8fccce387810a51477ab15d3a141e57c3e8b9bc05fb161ff"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "name": "updateHistoricalAverageAccumulator",
+      "line": 101,
+      "sha256": "f886c43f163e98560276d5a40ff9d930630481ead80626e6f1b739b97f155549"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "name": "toAverage",
+      "line": 115,
+      "sha256": "cc937381d54f173dee2b7d7a6b8e36c0830e3f29e15b2e0c5e5fd7d7ddcb3108"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "name": "getHistoricalAverageSnapshot",
+      "line": 120,
+      "sha256": "5286f9504cdc1e30e3a290f8a30800006a39abd64f9f999a8065d34bbca22feb"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "name": "createHistoricalGpPctAccumulator",
+      "line": 143,
+      "sha256": "95b4dae2ef5f86d5e2469e0f0c54fec3f5f1bbdd579d9c6b4efe4e4ce88a3866"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "name": "pushSlot",
+      "line": 155,
+      "sha256": "d250e482a4f98f5686cd3407586a879d32a62b2f2b48b80b80ee28b299cbd3c6"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "name": "addTeamGames",
+      "line": 176,
+      "sha256": "9774034f9db94a29ef8696800805e6d4f9c650bc095a3f3c6e9a7e6ae763301e"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "name": "updateHistoricalGpPctAccumulator",
+      "line": 203,
+      "sha256": "2554853262b67f8d5cf65c0762ae828f68c3d07e391385272998b0da0ba6893c"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "name": "toRatio",
+      "line": 273,
+      "sha256": "7bf0f852df34fbd5c411e81767365c3635733e337b72b7d276391fa6140a4d5e"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "name": "getHistoricalGpPctSnapshot",
+      "line": 279,
+      "sha256": "8a4e9d4ea652edb82d4068a443778606f40a6c6e95ea3db96bda2ef2dbac6b77"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+      "name": "getRollingGpPctSnapshot",
+      "line": 328,
+      "sha256": "f3a253e1d64a14ddcf834ed6ba401204b15cf23195ccefa944c80adc80e3599c"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "initAccumulator",
+      "line": 1915,
+      "sha256": "374e332e7ffcf4e09afda7966ee506463c9346e1802fb439ea49b4ade6c232c4"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "updateAccumulator",
+      "line": 2555,
+      "sha256": "51bfd9b66405d79c9a2410907ec5e044422f9091aaf6c564d43aa015a6c2cb98"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "deriveOutputs",
+      "line": 2765,
+      "sha256": "60638ef73a7e48555abcfd3c548e4f2437a7b675a098358d755fd05d9dbe8f38"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "buildTeamGameLedger",
+      "line": 1876,
+      "sha256": "9b775eb139b56b9fd6228570d367d8ee6cf3514b8a38775fd38598e9c19c87af"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "getTeamScheduleDates",
+      "line": 1905,
+      "sha256": "841ce0001f59dd3e9b3ae8554fbf02f6bde73d82a69bc3f271048cc53c66bb90"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "isRegularSeasonGame",
+      "line": 932,
+      "sha256": "6f03966003fa6eef3bc9a4493fdf436349004162af847b8859ac9e45b3595772"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "cachedPowerPlayCombos",
+      "line": 1031,
+      "sha256": "d4fdff736c10d01569d7833f2275879d5369a1ee7db48eb81392e71028f9467a"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "cachedLineCombosByGame",
+      "line": 1032,
+      "sha256": "bba31c13b8c37b6fb41b39ae6c50a7a9c61495f1ddb41c5acd825d8afcc0a999"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "getPowerPlayCacheKey",
+      "line": 1034,
+      "sha256": "286d7b28254d72d968fcfeae6bfb6cb51358e888b2faef1eaf2d70d1293829af"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "fetchPowerPlayCombinations",
+      "line": 3207,
+      "sha256": "d3a5a4b0430a5898f505887abd4f1bf3b4d42b4fbdf9fe63f8035b385621fd2a"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "fetchLineCombinations",
+      "line": 3258,
+      "sha256": "eb5acda2a50d5b6c2bc98437f4e6f95aac58d54091c6ede45bba16a396c5d100"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "ROLLING_STORAGE_ALWAYS_KEEP_FIELDS",
+      "line": 418,
+      "sha256": "15b62b6ac17a9ecc092bd6a9d94ee34125f3e67233ea2c357a1092333d355f08"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "isPrunableRollingStorageField",
+      "line": 430,
+      "sha256": "1e35c2224b3823f953c6d9c8b67b562e705df35be01638cfbf6806c98d4583a0"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "isSupportPayloadScalar",
+      "line": 457,
+      "sha256": "c16cfd9882f731f999138cc60cc74d9fb7d245e60cf1d5ff0d850d6341c7fc6c"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "appendSupportPayloadValue",
+      "line": 468,
+      "sha256": "b3f27675e0e648f8c7edbce2ae5bb1f91df66e0782236f9bc3b1f6b764ac7283"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "splitRollingUpsertRowForDurableStorage",
+      "line": 483,
+      "sha256": "74bb4ed92e5c2b8f588001359c8bcfccc2323c7d7a114a6e3bc84ef81cc7454c"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "splitRollingUpsertBatchForDurableStorage",
+      "line": 578,
+      "sha256": "1e7d1086e214e979676f3f4633c1eda9b22be31797a2d65cab05d3941e1e14cc"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "name": "upsertRollingPlayerMetricsBatch",
+      "line": 785,
+      "sha256": "2edf2c3b0513b96d9f15e610729f0f38a752284f5e20a837ae45f2c25faf9df8"
+    }
+  ],
+  "limits": "Exact extracted frozen declarations; one selected simple metric and no-op GP output for that probe. Actual historical GP arithmetic and durable splitter/reader; in-memory cache and failure transport. Cache row adapters are identity stubs with already-normalized synthetic rows. No application import, environment load, database/provider access, Vitest, or deployed-incidence claim."
+}

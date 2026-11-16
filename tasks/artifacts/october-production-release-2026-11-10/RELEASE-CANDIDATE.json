@@ -1,0 +1,31 @@
+{
+  "at": "2026-11-10T18:59:11.592938+00:00",
+  "commit": "64105d05615df03dd5f5ca650647846b2ab0ca64",
+  "tree": "a6c6227063822a44d77ad2061f5f49e9f79f910a",
+  "parent": "dc44c0790f4502aa411df53eedc71ffe4b0dc0c6",
+  "remoteMasterBase": "86f2e3cf742a86b5981abb3de41160b2ea7950e3",
+  "fileCount": 123,
+  "target": "origin/master and origin/octoberBranch; fhfhockey Production",
+  "checks": {
+    "focusedRootTests": 358,
+    "homeTests": 63,
+    "rsoDistinctTests": 351,
+    "schemaTests": 54,
+    "rsoBrowserScenarios": 13,
+    "typecheck": "passed",
+    "lint": "passed; six prior RSO warnings",
+    "artifactCheckerDistinctCases": 101,
+    "secretPatternScan": "no matches"
+  },
+  "buildPlan": {
+    "entries": 4,
+    "completedBuilds": 1,
+    "ignoredCompanions": 3
+  },
+  "productionOperations": "Completed: atomic branch push, one web production deployment, five sequential public read-only requests; see FINAL-RECEIPT.json",
+  "testedRuntimeCommit": "268402092d85843ffaf85082524436042e55fc29",
+  "concurrentAuditCommit": "dc44c0790f4502aa411df53eedc71ffe4b0dc0c6",
+  "remoteDiffFileCount": 124,
+  "runtimeChangedAfterTests": false,
+  "diaryLocalBytesPreserved": true
+}

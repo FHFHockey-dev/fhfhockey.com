@@ -1,0 +1,26 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "checks": {
+    "calendarValidation": "non-leap invalid, leap valid",
+    "easternDate": "2026-11-14",
+    "sixDayShift": "2026-11-07",
+    "unknown": "em dash",
+    "zero": "0.0",
+    "fractionAndPercent": "75%",
+    "contextHref": "/game-grid/7-Day-Forecast?startDate=2026-11-15&endDate=2026-11-21",
+    "expiredPlayers": 0,
+    "expiredGoalies": 0,
+    "retainedScheduleGames": 1,
+    "retainedNonforecastContext": 51,
+    "unknownScoreRank": "withheld",
+    "knownScoreOriginalRank": 2
+  },
+  "sources": [
+    {
+      "path": "web/pages/start-chart.tsx",
+      "sha256": "673dc0a332c415c8a28f2b7aa06261db791f1514fbe153f729ad4c6445f169e3"
+    }
+  ],
+  "boundary": "Exact frozen helper/memo bodies with finite bindings; no React lifecycle, scheduler timer, browser, API, actual environment, client or suite. No new finding."
+}

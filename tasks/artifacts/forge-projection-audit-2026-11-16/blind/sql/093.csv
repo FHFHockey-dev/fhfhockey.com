@@ -1,0 +1,4 @@
+psql:/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/tmpqwq4i6em.sql:10: ERROR:  column "game_id" does not exist
+LINE 1: select game_id, "homeTeamId" h, "awayTeamId" a from games wh...
+               ^
+

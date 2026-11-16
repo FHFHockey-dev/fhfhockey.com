@@ -1,0 +1,1 @@
+select p.id, p."fullName", p.position, p.team_id, r."teamId", r."seasonId", r.is_current from players p left join rosters r on r."playerId"=p.id and r."seasonId"=20262027 where p.id in (8481827,8483436,8481708)

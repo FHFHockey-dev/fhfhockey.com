@@ -1,0 +1,66 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "shiftedColumns": {
+    "headers": 6,
+    "cells": 7,
+    "extraCell": 7,
+    "actual": {
+      "goals": 7,
+      "shots": 1
+    },
+    "expected": {
+      "goals": 1,
+      "shots": 5
+    },
+    "outcome": "rows_persisted",
+    "qualification": "Synthetic extra TD after GP is accepted as Goals; actual Shots TD ignored. Parser result only; no DB write."
+  },
+  "controls": {
+    "aligned": {
+      "goals": 1,
+      "shots": 5
+    },
+    "aggregateGp2Rows": 0
+  },
+  "blockedContinuation": {
+    "prior": {
+      "version": 1,
+      "chainId": "synthetic-chain",
+      "nextIndex": 1,
+      "totalUrls": 2,
+      "blocked": true
+    },
+    "withoutCursor": {
+      "success": true,
+      "operationStatus": "completed",
+      "continuation": {
+        "version": 1,
+        "chainId": "synthetic-chain",
+        "nextIndex": 2,
+        "totalUrls": 2,
+        "blocked": false
+      },
+      "processCalls": 1
+    },
+    "withCursorError": "NST continuation is missing, changed or blocked; inspect the prior audit before retrying.",
+    "qualification": "Exact main orchestration with finite doubles. Optional outer lifecycle can independently gate admission; its default-disabled source mode permits this branch. Actual flag/lease state not read."
+  },
+  "explicitSeasonScope": {
+    "requested": "20252026",
+    "processed": "20262027",
+    "success": true,
+    "qualification": "Exact main date queue generation; finite schedule map and process double, no write."
+  },
+  "sources": [
+    {
+      "path": "web/pages/api/v1/db/update-nst-gamelog.ts",
+      "sha256": "fcd5c122cfb11372dee61056fe41d27a6c09cc9dd79dc6fed57b32392c26fc7b"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-gamelog.ts",
+      "sha256": "fcd5c122cfb11372dee61056fe41d27a6c09cc9dd79dc6fed57b32392c26fc7b"
+    }
+  ],
+  "limits": "Exact AST functions, synthetic HTML parsed by local Cheerio, finite DB/provider/clock doubles. No actual request, route import, dotenv/environment/client creation, real write or supplied test suite."
+}

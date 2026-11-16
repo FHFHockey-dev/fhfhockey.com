@@ -1,0 +1,89 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "confidenceFilter": {
+    "all": {
+      "id": 2,
+      "rank": 2,
+      "percentile": 0,
+      "n": 2,
+      "confidence": "high"
+    },
+    "high": {
+      "id": 2,
+      "rank": 1,
+      "percentile": 50,
+      "n": 1,
+      "confidence": "high"
+    }
+  },
+  "compositeMinimums": {
+    "pointsSort": [
+      {
+        "id": 1,
+        "rank": null,
+        "percentile": null,
+        "n": 2,
+        "confidence": "low"
+      },
+      {
+        "id": 2,
+        "rank": 2,
+        "percentile": 0,
+        "n": 2,
+        "confidence": "high"
+      }
+    ],
+    "mcmSort": [
+      {
+        "id": 1,
+        "rank": null,
+        "percentile": null,
+        "n": 0,
+        "confidence": "low"
+      },
+      {
+        "id": 2,
+        "rank": 1,
+        "percentile": 50,
+        "n": 1,
+        "confidence": "high"
+      }
+    ]
+  },
+  "resultsLuckDirection": {
+    "higherIsBetter": false,
+    "matrix": [
+      {
+        "id": 2,
+        "score": 120,
+        "rank": 1,
+        "percentile": 100
+      },
+      {
+        "id": 1,
+        "score": 70,
+        "rank": 2,
+        "percentile": 0
+      }
+    ],
+    "canonical": [
+      {
+        "id": 1,
+        "rank": 1,
+        "percentile": 100
+      },
+      {
+        "id": 2,
+        "rank": 2,
+        "percentile": 0
+      }
+    ]
+  },
+  "ppWindowMetadata": {
+    "sampleRequirements": "team_last_n_games",
+    "declaredPlayerWindow": "player_last_n_games_played"
+  },
+  "controls": "mid-rank ties, finite exclusion and per-60 arithmetic passed",
+  "limits": "Exact frozen matrix/definition/registry/calculator modules; ranking data adapters and Supabase transport synthetic. No real DB, full query module, Vitest, current source or later commit execution."
+}

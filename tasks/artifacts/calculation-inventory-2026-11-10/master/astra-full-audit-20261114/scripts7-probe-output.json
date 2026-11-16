@@ -1,0 +1,17 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "timestampOrder": {
+    "mixedOffsetsLatestSelected": "earlier",
+    "mixedFractionLatestSelected": "exact",
+    "microsecondFilterHeld": true
+  },
+  "documentedNode": "22.11.0.",
+  "pinnedNode": "22.23.4",
+  "controls": {
+    "rpcAndMutationRejected": true,
+    "missingColumnRejected": true,
+    "exactCountHead": true
+  },
+  "boundary": "Exact in-memory table adapter and pure timestamp helpers only. No global offline fence, current producer, environment, client, qualifier/CLI, child, network, database or supplied test executed."
+}

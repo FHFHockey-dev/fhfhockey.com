@@ -1,0 +1,29 @@
+{
+  "target": "89da739cb",
+  "sha256": "21f34b83561f5bcc137b26e593ba41c884342af65c5b88a03e6d08ca950f02c1",
+  "timezone": "America/New_York",
+  "mode": "exact-source VM, no application imports or requests",
+  "ipp": {
+    "sourceDenominators": [
+      1,
+      10
+    ],
+    "expectedPooled": 0.5454545454545454,
+    "actualRolling": 0.75,
+    "actualWindow": 0.75,
+    "labels": {
+      "rolling5": "5G mean per game",
+      "rolling10": "10G mean per game",
+      "season": "Mean per game"
+    }
+  },
+  "unknownIpp": {
+    "actualRolling": 1,
+    "actualWindow": 1
+  },
+  "preservedSavePct": 0.5454545454545454,
+  "dateLabel": {
+    "short": "Nov 13",
+    "long": "Nov 13, 2026"
+  }
+}

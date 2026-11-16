@@ -1,0 +1,159 @@
+{
+  "pin": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "hashes": {
+    "web/lib/predictions/rollingWindows.ts": "f241f957b11f6fdeab46911d0c8cd1b6b087551de9cb3abdb6c30ffa0c3d2c90",
+    "web/lib/projections/constants/projection-weights.ts": "e98611fbd96d10c248951f14be15d6dcf56272a72beb90b6112f3ac0d023d035",
+    "web/lib/projections/utils/number-utils.ts": "46a78073bdc6336c44dfe0ffb5e33370c5c1730ab74c4fc23a7fe6937e858222",
+    "web/lib/projections/utils/date-utils.ts": "2cffcc04886d2aad6f7d40ebf48ef91cece1ba8317fb0623b3baaf2ca9793c93",
+    "web/lib/projections/calculators/skater-adjustments.ts": "ae120b556adba8d689c54b572346e7c09134e3fad1178fb1f2404d06080dea60",
+    "web/lib/projections/calculators/goalie-save-pct-context.ts": "340f522df9da8aa8e007acd850f8b8cf36d17633ed629ec4b0f78459421d49b6",
+    "web/lib/projections/calculators/goalie-starter.ts": "c1d233b8009d157d780534c7b5ef9d5afb60d9047c238b01c8134263c8352b89",
+    "web/lib/projections/calculators/scenario-blending.ts": "6a48f6be434919ba2c7f3248572c7738e6030d45201c296d13ddff9400dcf8d7",
+    "web/lib/projections/calculators/skater-strength-buckets.ts": "7c5009a1a9dc17fd72fd58427fdef04dbbd71b2a07891e691e9cf90a0fe090c8",
+    "web/lib/rollingPlayerCountSupport.ts": "c16d7a4a1b8667aae6646c8eb1f06b689c57eef8f78425e04cca381afc224efc",
+    "web/lib/projections/modeledHeadTotals.ts": "218a996f4cda8caf04a130aeb89a1badd880866ef4300ad77b3299cfba7c25f9",
+    "web/lib/projections/stages/skater-stage.ts": "9a389ff937d5aff5377271fd09e6e0e7659be6734e4f943eb8ebcf9ba628707a"
+  },
+  "conversion": {
+    "fixture": {
+      "player_id": 101,
+      "game_id": 1,
+      "game_date": "2026-11-13",
+      "season": 20262027,
+      "goals_total_all": null,
+      "shots_total_all": 100,
+      "goals_total_last5": null,
+      "shots_total_last5": 20
+    },
+    "unsafe": {
+      "goalRateEs": 0.09120637967275097,
+      "goalRatePp": 0.1589,
+      "splitRates": {
+        "goalRateEs": 0.09120637967275097,
+        "goalRatePp": 0.1589,
+        "assistRateEs": 1.44,
+        "assistRatePp": 0.9499999999999998
+      }
+    },
+    "genuineZero": {
+      "goalRateEs": 0.09120637967275097,
+      "goalRatePp": 0.1589,
+      "splitRates": {
+        "goalRateEs": 0.09120637967275097,
+        "goalRatePp": 0.1589,
+        "assistRateEs": 1.44,
+        "assistRatePp": 0.9499999999999998
+      }
+    },
+    "supportedGoalRate": null,
+    "maskedGoal": null,
+    "scope": "Exact stage conversion block with neutral contexts and sampleWeight1; not full stage"
+  },
+  "pk": {
+    "budget": {
+      "totalSeconds": 18000,
+      "toiEsTarget": 15000,
+      "toiPpTarget": 1200,
+      "toiPkTarget": 1800,
+      "shotsPkTarget": 3,
+      "pkShare": 0.1,
+      "pkStatus": "modeled",
+      "esDefinition": "even_strength"
+    },
+    "result": {
+      "pkModeled": false,
+      "pkStatus": "no_known_pk_history",
+      "toiEsTarget": 16800,
+      "esDefinition": "all_non_pp_time",
+      "shotsEsTarget": 25,
+      "shotsPpTarget": 6
+    },
+    "downstream": {
+      "goals": null,
+      "assists": null,
+      "points": null,
+      "shots": 31,
+      "ppPoints": null,
+      "pkBasis": "pk_unmodelled"
+    },
+    "knownHistoricalAllShots": 34,
+    "scope": "Exact PK admission/reconciliation target block with no player PK history; actual model is unqualified, no requirement to equal historical totals is invented"
+  },
+  "goalie": {
+    "fixture": {
+      "player_id": 100,
+      "start_probability": 0.9,
+      "confirmed_status": true,
+      "l10_start_pct": 0.6,
+      "season_start_pct": null,
+      "games_played": null,
+      "projected_gsaa_per_60": null,
+      "updated_at": "2026-11-15T01:00:00Z",
+      "game_date": "2026-11-14"
+    },
+    "decisionCutoffForContrast": "2026-11-14T20:00:00Z",
+    "calls": [
+      [
+        "from",
+        "goalie_start_projections"
+      ],
+      [
+        "select",
+        "player_id,start_probability,confirmed_status,l10_start_pct,season_start_pct,games_played,projected_gsaa_per_60,updated_at,game_date"
+      ],
+      [
+        "eq",
+        "game_id",
+        1
+      ],
+      [
+        "eq",
+        "team_id",
+        10
+      ],
+      [
+        "order",
+        "start_probability",
+        {
+          "ascending": false
+        }
+      ],
+      [
+        "limit",
+        6
+      ]
+    ],
+    "result": {
+      "prior": [
+        [
+          100,
+          0.9
+        ]
+      ],
+      "gsaa": [
+        [
+          100,
+          0
+        ]
+      ],
+      "share": [
+        [
+          100,
+          0
+        ]
+      ],
+      "games": [
+        [
+          100,
+          0
+        ]
+      ]
+    },
+    "scope": "Exact query and map blocks using fake client; later updated row admitted; no hosted data or full selection run"
+  },
+  "boundaries": [
+    "Pin only; imported pure helpers AST-isolated",
+    "All client/context data synthetic",
+    "No app imports, Vitest, DB/provider calls, route, build, server, browser or fitted-model qualification"
+  ]
+}

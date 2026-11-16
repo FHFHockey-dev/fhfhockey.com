@@ -1,0 +1,85 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "files": [
+    {
+      "path": "web/lib/rankings/rankingFormatters.test.ts",
+      "local": "/tmp/astra-ranklib4/rankingFormatters.test.ts",
+      "lines": 132,
+      "sha256": "466dd2b4a5d520a06b7906fdcc512315eeba5dd53624bf0180d61a6674c31545",
+      "fullRead": true,
+      "bytes": 3872,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          132
+        ]
+      ],
+      "rows": 8
+    },
+    {
+      "path": "web/lib/rankings/rankingFormatters.ts",
+      "local": "/tmp/astra-ranklib4/rankingFormatters.ts",
+      "lines": 81,
+      "sha256": "6801d9b8b429373ff104e4aeacc7809384e516164e6f7a1a975d903879434ec9",
+      "fullRead": true,
+      "bytes": 3052,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          81
+        ]
+      ],
+      "rows": 16
+    },
+    {
+      "path": "web/lib/rankings/rankingMetadata.test.ts",
+      "local": "/tmp/astra-ranklib4/rankingMetadata.test.ts",
+      "lines": 102,
+      "sha256": "0b5d1e3cb38983e0e5856bc0278ab8b714f5fdc93454b493f6d3f10fb541a524",
+      "fullRead": true,
+      "bytes": 3603,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          102
+        ]
+      ],
+      "rows": 20
+    },
+    {
+      "path": "web/lib/rankings/rankingMetadata.ts",
+      "local": "/tmp/astra-ranklib4/rankingMetadata.ts",
+      "lines": 214,
+      "sha256": "5ecd709236f071a2d329ddbcfe72898902c232ab41fda4bb830e1888d7db95b1",
+      "fullRead": true,
+      "bytes": 8614,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          214
+        ]
+      ],
+      "rows": 6
+    }
+  ],
+  "scopeLines": 529,
+  "rows": 50,
+  "probe": null,
+  "checks": [
+    "Four full frozen source reads",
+    "Unique AST source-offset identities",
+    "Cross-reference previously reviewed metric/admission contracts; no new execution"
+  ],
+  "notRun": [
+    "Vitest",
+    "real database/provider",
+    "full rankingQueries adapter",
+    "application imports or actual environment",
+    "browser/server/build",
+    "later Rankings exact-commit review"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "receipts": [
+    {
+      "path": "web/lib/NHL/statsPageFetch.ts",
+      "sha256": "6724b186be849602ee8b77dae7fcfe2e6195f8f93cac46d54477db686cdea67a"
+    },
+    {
+      "path": "web/lib/NHL/TOI.ts",
+      "sha256": "3e0914765766f0274c40b35a3670952a85e12ae2c8b140945901a29983cebe42"
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/trade.ts",
+      "sha256": "7dfa4f843c2b96f23fe9c787f608ab4f42a16a6a95a238b2d4b15c90a9a42f55"
+    }
+  ],
+  "counts": {
+    "points": 0,
+    "partialBSH": 5,
+    "goalieWins": 0,
+    "admittedLeaderboardRows": 1
+  },
+  "pp": {
+    "actualFourOnThreeClockMinutes": 1,
+    "inferredMinutes": 0.8,
+    "sharePercent": 125,
+    "fakeFetches": 5
+  },
+  "overflow": {
+    "complete": true,
+    "give": "Infinity",
+    "net": "NaN",
+    "summary": "Experimental forecast. Raw projected production over each player's next 5 scheduled team games: the receive side is behind by NaN fantasy points. Offer scenario only; not roster-aware and not proof the other manager accepts."
+  },
+  "boundary": "Exact-source VM, synthetic records and fake fetch; no application import, real network, React or test-suite execution."
+}

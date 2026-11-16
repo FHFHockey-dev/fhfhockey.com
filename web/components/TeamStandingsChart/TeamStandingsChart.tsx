@@ -8,6 +8,13 @@ import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
 import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
 import publicSupabase from "lib/supabase/public-client";
 import styles from "./TeamStandingsChart.module.scss";
+
+// Per-game dots: small on desktop (TJ, 2026-11-15); phones hide them unless a
+// team is isolated (CSS).
+const DOT_RADIUS = 2;
+// Long-press then slide to cycle the isolated team on touch screens.
+const LONG_PRESS_MS = 400;
+const SLIDE_STEP_PX = 18;
 import Fetch from "lib/cors-fetch";
 import OptimizedImage from "components/common/OptimizedImage";
 import { fallbackTeamLogo, getLocalTeamLogoPath } from "lib/images";
@@ -116,6 +123,23 @@ const CONFERENCE_LABELS: Record<string, string> = {
   W: "Western",
 };
 
+/** Marks the isolated team's group; CSS dims the rest and shows its dots. */
+function applyTeamIsolation(svgEl: SVGSVGElement | null, team: string | null) {
+  if (!svgEl) return;
+  const groups = Array.from(svgEl.querySelectorAll<SVGGElement>("g.team-group"));
+  const drawn = Boolean(team && groups.some((group) => group.dataset.team === team));
+  if (drawn) svgEl.setAttribute("data-isolated", team as string);
+  else svgEl.removeAttribute("data-isolated");
+  groups.forEach((group) => {
+    if (drawn && group.dataset.team === team) {
+      group.setAttribute("data-active", "");
+      group.parentNode?.appendChild(group); // draw it on top
+    } else {
+      group.removeAttribute("data-active");
+    }
+  });
+}
+
 const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
   const controlsId = useId();
   const season = useCurrentSeason();
@@ -135,6 +159,25 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
   const [rolling5, setRolling5] = useState(false);
   const [rolling10, setRolling10] = useState(false);
   const [teamTogglesOpen, setTeamTogglesOpen] = useState(true);
+  // One team drawn on top with its dots; the rest dim (tap a logo, or
+  // long-press the plot and slide on phones).
+  const [isolatedTeam, setIsolatedTeam] = useState<string | null>(null);
+  const isolatedTeamRef = useRef<string | null>(null);
+  isolatedTeamRef.current = isolatedTeam;
+
+  // Phones start with the 32 team toggles folded under "Teams" so the
+  // chart is followed by the standings (TJ, 2026-11-15). Wider layouts hide
+  // the summary, so they must always keep the toggles open.
+  useEffect(() => {
+    const query = window.matchMedia?.("(max-width: 600px)");
+    if (!query) return;
+    if (query.matches) setTeamTogglesOpen(false);
+    const reopenWhenWide = (event: MediaQueryListEvent) => {
+      if (!event.matches) setTeamTogglesOpen(true);
+    };
+    query.addEventListener?.("change", reopenWhenWide);
+    return () => query.removeEventListener?.("change", reopenWhenWide);
+  }, []);
 
   // Team toggles: array of team abbreviations selected for display.
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
@@ -143,6 +186,104 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    applyTeamIsolation(svgRef.current, isolatedTeam);
+  }, [isolatedTeam]);
+
+  // Touch: long-press the plot, then slide up/down to step through teams in
+  // the order their lines end (top to bottom). Tap empty plot to clear.
+  useEffect(() => {
+    const svgEl = svgRef.current;
+    if (!svgEl) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let active = false;
+    let suppressClick = false;
+    let startX = 0;
+    let startY = 0;
+    let startIndex = 0;
+    let order: string[] = [];
+
+    const teamOrder = () =>
+      Array.from(svgEl.querySelectorAll<SVGImageElement>("image.end-logo"))
+        .map((logo) => {
+          const rect = logo.getBoundingClientRect();
+          const team = (logo.closest("g.team-group") as SVGGElement | null)?.dataset.team;
+          return { team, y: rect.top + rect.height / 2 };
+        })
+        .filter((entry): entry is { team: string; y: number } => Boolean(entry.team))
+        .sort((a, b) => a.y - b.y);
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      timer = setTimeout(() => {
+        const entries = teamOrder();
+        if (!entries.length) return;
+        order = entries.map((entry) => entry.team);
+        startIndex = entries.reduce(
+          (best, entry, index) =>
+            Math.abs(entry.y - startY) < Math.abs(entries[best].y - startY) ? index : best,
+          0,
+        );
+        active = true;
+        setIsolatedTeam(order[startIndex]);
+      }, LONG_PRESS_MS);
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!active) {
+        if (Math.hypot(touch.clientX - startX, touch.clientY - startY) > 10 && timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        return;
+      }
+      event.preventDefault();
+      const step = Math.round((touch.clientY - startY) / SLIDE_STEP_PX);
+      const index = Math.min(order.length - 1, Math.max(0, startIndex + step));
+      setIsolatedTeam(order[index]);
+    };
+    const onTouchEnd = () => {
+      if (timer) clearTimeout(timer);
+      timer = null;
+      if (active) {
+        suppressClick = true;
+        setTimeout(() => {
+          suppressClick = false;
+        }, 350);
+      }
+      active = false;
+    };
+    const onClick = (event: MouseEvent) => {
+      if (suppressClick) return;
+      const target = event.target as Element;
+      if (target.closest("image.end-logo") || target.closest("circle")) return;
+      setIsolatedTeam(null);
+    };
+    const onContextMenu = (event: Event) => {
+      if (active) event.preventDefault();
+    };
+
+    svgEl.addEventListener("touchstart", onTouchStart, { passive: true });
+    svgEl.addEventListener("touchmove", onTouchMove, { passive: false });
+    svgEl.addEventListener("touchend", onTouchEnd);
+    svgEl.addEventListener("touchcancel", onTouchEnd);
+    svgEl.addEventListener("click", onClick);
+    svgEl.addEventListener("contextmenu", onContextMenu);
+    return () => {
+      if (timer) clearTimeout(timer);
+      svgEl.removeEventListener("touchstart", onTouchStart);
+      svgEl.removeEventListener("touchmove", onTouchMove);
+      svgEl.removeEventListener("touchend", onTouchEnd);
+      svgEl.removeEventListener("touchcancel", onTouchEnd);
+      svgEl.removeEventListener("click", onClick);
+      svgEl.removeEventListener("contextmenu", onContextMenu);
+    };
+    // Re-attach if the svg mounts after data arrives.
+  }, [data.size]);
   const { width, height } = useResizeObserver(containerRef);
   const chartWidth = width || containerRef.current?.clientWidth || 0;
   const minimumChartHeight = compact ? 220 : 600;
@@ -319,7 +460,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
     svg.selectAll("*").remove();
 
     const margin = compact
-      ? { top: 12, right: 28, bottom: 34, left: 48 }
+      ? { top: 12, right: 28, bottom: 46, left: 48 } // room for ticks + axis title
       : { top: 20, right: 30, bottom: 50, left: 60 };
     const innerWidth = Math.max(0, chartWidth - margin.left - margin.right);
     const innerHeight = Math.max(0, chartHeight - margin.top - margin.bottom);
@@ -506,6 +647,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
       const teamG = mainG
         .append("g")
         .attr("class", `team-group team-${abbr}`)
+        .attr("data-team", abbr)
         .property("hoverTimer", null)
         .property("hoverActive", false);
 
@@ -579,6 +721,12 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
               .on("error", function () {
                 d3.select(this).attr("xlink:href", fallbackTeamLogo);
               })
+              .attr("class", "end-logo")
+              .style("cursor", "pointer")
+              .on("click", (event: MouseEvent) => {
+                event.stopPropagation();
+                setIsolatedTeam((current) => (current === abbr ? null : abbr));
+              })
               .attr("x", xScale(lastPoint.gamesPlayed) + 5)
               .attr("y", yScale(getMetricValue(lastPoint[metric], metric)) - 10)
               .attr("width", 20)
@@ -610,7 +758,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
                 ? yScale(d.points - d.gamesPlayed)
                 : yScale(getMetricValue(d[metric], metric)),
           )
-          .attr("r", 3)
+          .attr("r", DOT_RADIUS)
           .attr("fill", color)
           .attr("opacity", 0.8)
           .on("mouseover", function (event, d) {
@@ -636,7 +784,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
               .style("top", `${yPos - 28}px`);
           })
           .on("mouseout", function () {
-            d3.select(this).transition().duration(200).attr("r", 3);
+            d3.select(this).transition().duration(200).attr("r", DOT_RADIUS);
             d3.select(tooltipRef.current).style("display", "none");
           });
         const lastPoint = sortedData[sortedData.length - 1];
@@ -646,6 +794,12 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
           .on("error", function () {
             d3.select(this).attr("xlink:href", fallbackTeamLogo);
           })
+          .attr("class", "end-logo")
+              .style("cursor", "pointer")
+              .on("click", (event: MouseEvent) => {
+                event.stopPropagation();
+                setIsolatedTeam((current) => (current === abbr ? null : abbr));
+              })
           .attr("x", xScale(lastPoint.gamesPlayed) + 5)
           .attr("y", () =>
             metric === "pointPct"
@@ -711,7 +865,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
               .selectAll("circle")
               .transition()
               .duration(200)
-              .attr("r", 3)
+              .attr("r", DOT_RADIUS)
               .attr("opacity", 0.8);
             teamGroup
               .selectAll("svg\\:image, image")
@@ -729,6 +883,57 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
         });
     });
 
+    // End-of-line logos: logos that end within one logo-width of each other
+    // in x are spread apart vertically (18px apart, 20px logos), and every
+    // logo stays inside the plot so none sits on the x-axis ticks.
+    {
+      const LOGO = 20;
+      const GAP = 18;
+      const logos = mainG
+        .selectAll<SVGImageElement, unknown>("image.end-logo")
+        .nodes()
+        .map((node) => ({
+          node,
+          x: Number(node.getAttribute("x")),
+          y: Number(node.getAttribute("y")),
+        }))
+        .sort((a, b) => a.x - b.x);
+      const columns: (typeof logos)[] = [];
+      for (const logo of logos) {
+        const column = columns[columns.length - 1];
+        if (column && logo.x - column[column.length - 1].x < LOGO + 4) column.push(logo);
+        else columns.push([logo]);
+      }
+      for (const column of columns) {
+        column.sort((a, b) => a.y - b.y);
+        // Too many to separate in this plot height (phones): keep each logo at
+        // its line end rather than pushing it away from its own line.
+        // They also shrink to 14px so dense bands overlap less (TJ, 2026-11-15).
+        if (column.length * GAP > innerHeight) {
+          const SMALL = 14;
+          column.forEach((logo) => {
+            const centredY = logo.y + (LOGO - SMALL) / 2;
+            logo.node.setAttribute("width", String(SMALL));
+            logo.node.setAttribute("height", String(SMALL));
+            logo.node.setAttribute(
+              "y",
+              String(Math.max(0, Math.min(centredY, innerHeight - SMALL))),
+            );
+          });
+          continue;
+        }
+        for (let i = 1; i < column.length; i += 1) {
+          column[i].y = Math.max(column[i].y, column[i - 1].y + GAP);
+        }
+        const maxY = innerHeight - LOGO;
+        for (let i = column.length - 1; i >= 0; i -= 1) {
+          const limit = i === column.length - 1 ? maxY : column[i + 1].y - GAP;
+          column[i].y = Math.max(Math.min(column[i].y, limit), 0);
+        }
+        column.forEach(({ node, y }) => node.setAttribute("y", String(y)));
+      }
+    }
+
     // Draw X axis
     const xAxis = d3
       .axisBottom(xScale)
@@ -741,7 +946,8 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
       .append("text")
       .attr("class", "axis-label")
       .attr("x", innerWidth / 2)
-      .attr("y", innerHeight + margin.bottom - 5)
+      // Below the tick labels, never on them (the title sat on the "10" tick).
+      .attr("y", innerHeight + margin.bottom - 4)
       .attr("text-anchor", "middle")
       .text("Games Played");
     // Draw Y axis
@@ -781,6 +987,8 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
       .attr("stdDeviation", 2)
       .attr("flood-color", "white")
       .attr("flood-opacity", 0.5);
+
+    applyTeamIsolation(svgEl, isolatedTeamRef.current);
   }, [
     data,
     metric,
@@ -864,7 +1072,29 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
     emptyMessage: "Standings chart data is unavailable right now.",
     staleMessage: "Standings chart data may be stale.",
   });
+  // The isolated team's latest value in the current metric, as plotted
+  // ("+2" points above .500, "+6.3%" above .500, otherwise the raw value).
+  const isolatedValue = useMemo(() => {
+    if (!isolatedTeam) return null;
+    const entry = Array.from(data.entries()).find(
+      ([teamName]) => teamNameToAbbreviationMap[teamName] === isolatedTeam,
+    );
+    const rows = entry?.[1];
+    if (!rows?.length) return null;
+    const last = [...rows].sort((a, b) => a.gamesPlayed - b.gamesPlayed)[rows.length - 1];
+    const signed = (value: number, digits: number, suffix = "") =>
+      `${value > 0 ? "+" : ""}${value.toFixed(digits)}${suffix}`;
+    if (metric === "points") return signed(last.points - last.gamesPlayed, 0);
+    if (metric === "pointPct") return signed(getMetricValue(last[metric], metric) - 50, 1, "%");
+    return getMetricValue(last[metric], metric).toFixed(2);
+  }, [isolatedTeam, data, metric]);
   const selectedTeamCount = selectedTeams.length;
+  const SummaryTitleTag = compact ? "h2" : "h3";
+  // The folded phone summary says how much of the filtered league is drawn.
+  const visibleTeams = Object.values(teamsByDivision).flat();
+  const shownTeamCount = visibleTeams.filter((abbr) =>
+    selectedTeams.includes(abbr),
+  ).length;
   const summaryLabel = compact
     ? "League separation"
     : metric === "points"
@@ -894,7 +1124,16 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
         <div className={styles.summaryCopy}>
           <div className={styles.summaryIntro}>
             <p className={styles.summaryEyebrow}>Standings signal</p>
-            <h3 className={styles.summaryTitle}>{summaryLabel}</h3>
+            {/* Compact (homepage): a panel title beside "Latest News", so h2. */}
+            <SummaryTitleTag className={styles.summaryTitle}>
+              {compact ? (
+                <>
+                  League <span>separation</span>
+                </>
+              ) : (
+                summaryLabel
+              )}
+            </SummaryTitleTag>
           </div>
           <p className={styles.summaryBody}>
             Use the chart for movement and separation, then fall back to the
@@ -938,8 +1177,27 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
               width={Math.max(chartWidth, 0)}
               height={chartHeight}
             />
+            {isolatedTeam ? (
+              <div className={styles.isolateLabel} role="status">
+                <span>
+                  {teamsInfo[isolatedTeam]?.name ?? isolatedTeam}
+                  {isolatedValue ? (
+                    <span className={styles.isolateValue}> · {isolatedValue}</span>
+                  ) : null}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Show all teams"
+                  onClick={() => setIsolatedTeam(null)}
+                >
+                  ×
+                </button>
+              </div>
+            ) : null}
           </div>
-          <aside className={styles.chartControls} aria-label="League separation controls">
+          {/* A named group, not <aside>: complementary landmarks may not nest
+              inside the page's main content (axe). */}
+          <div className={styles.chartControls} role="group" aria-label="League separation controls">
             <div className={styles.toggleButtons}>
               <button type="button" onClick={clearAllTeams}>Clear all</button>
               <button type="button" onClick={selectAllTeams}>Select all</button>
@@ -1043,7 +1301,12 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
                 setTeamTogglesOpen(event.currentTarget.open)
               }
             >
-              <summary>Teams ({selectedTeamCount})</summary>
+              <summary>
+                Teams ·{" "}
+                <span className={styles.teamCount}>{shownTeamCount}</span> of{" "}
+                <span className={styles.teamCount}>{visibleTeams.length}</span>{" "}
+                shown
+              </summary>
               <div className={styles.teamToggles}>
                 <div className={styles.toggleList}>
                   {DIVISION_ORDER.filter((div) => teamsByDivision[div]?.length).map((div) => (
@@ -1081,7 +1344,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
                 </div>
               </div>
             </details>
-          </aside>
+          </div>
         </div>
       )}
 

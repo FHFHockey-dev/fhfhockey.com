@@ -1,0 +1,621 @@
+{
+ "version": "fhfh.blsh.dependency-tree.v1",
+ "webRoot": "web (relative paths below)",
+ "sources": {
+  "bootstrapSHA256": "a224d62e0cdb1d9e5111e936c2451ec1e7cb4836d2402c110ba5309066cd51e7",
+  "roles": [
+   {
+    "role": "runner",
+    "path": "scripts/blsh/nativeProcessCaptureRunner.ts",
+    "pin": "6a7341dc5d5af4f030927b31aa0f17228351a3d3cd9149b047de7649baa3233a",
+    "matches": true
+   },
+   {
+    "role": "preparation",
+    "path": "scripts/blsh/nativeProcessCapturePreparation.ts",
+    "pin": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+    "matches": true
+   },
+   {
+    "role": "adapter",
+    "path": "scripts/blsh/nativeProcessCaptureAdapter.ts",
+    "pin": "aa6237bdb8d977cbd21f3ed769d9f5c7f9028e23a921965f41e278e021947be0",
+    "matches": true
+   },
+   {
+    "role": "client",
+    "path": "lib/nst/client.ts",
+    "pin": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+    "matches": true
+   },
+   {
+    "role": "budget",
+    "path": "lib/nst/requestBudget.ts",
+    "pin": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+    "matches": true
+   },
+   {
+    "role": "admission",
+    "path": "lib/nst/sharedAdmission.ts",
+    "pin": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+    "matches": true
+   },
+   {
+    "role": "admissionOrigin",
+    "path": "lib/nst/admissionOrigin.ts",
+    "pin": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+    "matches": true
+   },
+   {
+    "role": "lifecycle",
+    "path": "lib/nst/jobLifecycle.server.ts",
+    "pin": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+    "matches": true
+   },
+   {
+    "role": "ratePolicy",
+    "path": "lib/cron/nstRateLimitPolicy.ts",
+    "pin": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+    "matches": true
+   }
+  ],
+  "localFilesWalked": [
+   "lib/cron/nstRateLimitPolicy.ts",
+   "lib/nst/admissionOrigin.ts",
+   "lib/nst/client.ts",
+   "lib/nst/jobLifecycle.server.ts",
+   "lib/nst/requestBudget.ts",
+   "lib/nst/sharedAdmission.ts",
+   "scripts/blsh/nativeProcessCaptureAdapter.ts",
+   "scripts/blsh/nativeProcessCaptureBootstrap.ts",
+   "scripts/blsh/nativeProcessCapturePreparation.ts",
+   "scripts/blsh/nativeProcessCaptureRunner.ts"
+  ],
+  "typeOnlySpecifiersIgnored": [
+   "./nativeProcessCaptureRunner",
+   "./sharedAdmission",
+   "next"
+  ]
+ },
+ "startPackages": [
+  "cheerio",
+  "memory-cache",
+  "ts-node",
+  "typescript"
+ ],
+ "packageCount": 42,
+ "fileCount": 1634,
+ "treeSHA256": "76c7d466725ea13208b87adfb5ac6688a42454b66382996fbd9a7ab36432473a",
+ "packages": [
+  {
+   "name": "@cspotcode/source-map-support",
+   "version": "0.8.1",
+   "path": "node_modules/@cspotcode/source-map-support",
+   "files": 10,
+   "sha256": "4a4560115683099b877eef620d41cd244cc14ceab17fe82ba9f4b90a81655fdc",
+   "nestedNodeModulesSkipped": 1,
+   "requiredBy": [
+    "node_modules/ts-node"
+   ]
+  },
+  {
+   "name": "@jridgewell/trace-mapping",
+   "version": "0.3.9",
+   "path": "node_modules/@cspotcode/source-map-support/node_modules/@jridgewell/trace-mapping",
+   "files": 16,
+   "sha256": "f2656b6c175bb7713087cfce984820693073aae04aa312c04c839c7557fcccff",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/@cspotcode/source-map-support"
+   ]
+  },
+  {
+   "name": "@jridgewell/resolve-uri",
+   "version": "3.1.2",
+   "path": "node_modules/@jridgewell/resolve-uri",
+   "files": 8,
+   "sha256": "8a597fc37500dfc49701626e140ba1367a3c80f3e61d8310fe5cfd49b6475bc1",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/@cspotcode/source-map-support/node_modules/@jridgewell/trace-mapping"
+   ]
+  },
+  {
+   "name": "@jridgewell/sourcemap-codec",
+   "version": "1.5.5",
+   "path": "node_modules/@jridgewell/sourcemap-codec",
+   "files": 27,
+   "sha256": "03b857a214c707f1ec2f2001f03984e3deea6d536d461aef4ade5fc53f52242b",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/@cspotcode/source-map-support/node_modules/@jridgewell/trace-mapping"
+   ]
+  },
+  {
+   "name": "@tsconfig/node10",
+   "version": "1.0.12",
+   "path": "node_modules/@tsconfig/node10",
+   "files": 4,
+   "sha256": "476bd896b5443d230ffc0568ca4b91bd588cbccc0f2c86a25af9c229df0ba1e3",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/ts-node"
+   ]
+  },
+  {
+   "name": "@tsconfig/node12",
+   "version": "1.0.11",
+   "path": "node_modules/@tsconfig/node12",
+   "files": 4,
+   "sha256": "0002ab25fe6e83203a829d201f6c26f7373f1a1223ff4a7c4ed4e4f200682571",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/ts-node"
+   ]
+  },
+  {
+   "name": "@tsconfig/node14",
+   "version": "1.0.3",
+   "path": "node_modules/@tsconfig/node14",
+   "files": 4,
+   "sha256": "30fb446e94d4101900ba2a288005eb93717dd99ea2a27b1ec4a61effd83f641d",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/ts-node"
+   ]
+  },
+  {
+   "name": "@tsconfig/node16",
+   "version": "1.0.4",
+   "path": "node_modules/@tsconfig/node16",
+   "files": 4,
+   "sha256": "5430c6a52cf372d6669093fd4071198a6b1b451eb3930f453e9812841491416f",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/ts-node"
+   ]
+  },
+  {
+   "name": "acorn",
+   "version": "8.15.0",
+   "path": "node_modules/acorn",
+   "files": 10,
+   "sha256": "ea201118fa8cbfa63624677389e5b5fc11cb7dd1c8d6c0e6bb9a2aa1d0bfb843",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/acorn-walk",
+    "node_modules/ts-node"
+   ]
+  },
+  {
+   "name": "acorn-walk",
+   "version": "8.3.4",
+   "path": "node_modules/acorn-walk",
+   "files": 8,
+   "sha256": "49bc9290682da65ab4dfd6ef538e3536351777891ebdd1b688fe9a748f7ff424",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/ts-node"
+   ]
+  },
+  {
+   "name": "arg",
+   "version": "4.1.3",
+   "path": "node_modules/arg",
+   "files": 5,
+   "sha256": "bf4ed54872199505538eb9d6accdfda07f2c64f32f09783109c96938a9c67e26",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/ts-node"
+   ]
+  },
+  {
+   "name": "boolbase",
+   "version": "1.0.0",
+   "path": "node_modules/boolbase",
+   "files": 3,
+   "sha256": "42c05a12a81a7d602b4877e2d53731aa86fc95907906f184ac0bc345457436d9",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/cheerio-select",
+    "node_modules/css-select",
+    "node_modules/nth-check"
+   ]
+  },
+  {
+   "name": "cheerio",
+   "version": "1.1.2",
+   "path": "node_modules/cheerio",
+   "files": 243,
+   "sha256": "fefbb114912e39bd786d67a8c3de413fb819065f7e5fe6ecc03417f03b8bab35",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "bootstrap DEPENDENCIES"
+   ]
+  },
+  {
+   "name": "cheerio-select",
+   "version": "2.1.0",
+   "path": "node_modules/cheerio-select",
+   "files": 28,
+   "sha256": "fea5d69b1b8ede1d6f48db431c9d33430c1560883d3bdfb25a2f68ee4875593a",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/cheerio"
+   ]
+  },
+  {
+   "name": "create-require",
+   "version": "1.1.1",
+   "path": "node_modules/create-require",
+   "files": 6,
+   "sha256": "bdae64ced9e983eee38fb1de406497de17ea1409802abf67c94fe7141e4b3c4e",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/ts-node"
+   ]
+  },
+  {
+   "name": "css-select",
+   "version": "5.2.2",
+   "path": "node_modules/css-select",
+   "files": 116,
+   "sha256": "71ad37ddb24be06aeae5762abd00d964d9f589c835429611d911217a6108ff94",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/cheerio-select"
+   ]
+  },
+  {
+   "name": "css-what",
+   "version": "6.2.2",
+   "path": "node_modules/css-what",
+   "files": 27,
+   "sha256": "ee13b897b1d89c31e05fcfcd6bb8e7c94a8ff07616699f65f678d722cf888dee",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/cheerio-select",
+    "node_modules/css-select"
+   ]
+  },
+  {
+   "name": "diff",
+   "version": "4.0.4",
+   "path": "node_modules/diff",
+   "files": 27,
+   "sha256": "9962b22fd062228d270702fa7dab1e2968624304876c07b4c6e8e9005bc1f678",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/ts-node"
+   ]
+  },
+  {
+   "name": "dom-serializer",
+   "version": "2.0.0",
+   "path": "node_modules/dom-serializer",
+   "files": 16,
+   "sha256": "562ae698fcda3c8015b86db24adf6ee1b9b55e07db085e13e52a0c27547f07a0",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/cheerio",
+    "node_modules/domutils"
+   ]
+  },
+  {
+   "name": "domelementtype",
+   "version": "2.3.0",
+   "path": "node_modules/domelementtype",
+   "files": 10,
+   "sha256": "93e0ff0a11e764cfbb583de1e857b33c645279768b44cd70e8234c264100063d",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/cheerio-select",
+    "node_modules/dom-serializer",
+    "node_modules/domhandler",
+    "node_modules/domutils",
+    "node_modules/htmlparser2"
+   ]
+  },
+  {
+   "name": "domhandler",
+   "version": "5.0.3",
+   "path": "node_modules/domhandler",
+   "files": 16,
+   "sha256": "2c312f48c97a16de2b3a38d554f542b6d2a0e8a3ae22249a9b9306ded260a5bf",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/cheerio",
+    "node_modules/cheerio-select",
+    "node_modules/css-select",
+    "node_modules/dom-serializer",
+    "node_modules/domutils",
+    "node_modules/htmlparser2",
+    "node_modules/parse5-htmlparser2-tree-adapter"
+   ]
+  },
+  {
+   "name": "domutils",
+   "version": "3.2.2",
+   "path": "node_modules/domutils",
+   "files": 68,
+   "sha256": "1d421a63f93f22eb3405a0ed63a9764ce9652cb7eab22f83b99d6dc3c7c922fc",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/cheerio",
+    "node_modules/cheerio-select",
+    "node_modules/css-select",
+    "node_modules/htmlparser2"
+   ]
+  },
+  {
+   "name": "encoding-sniffer",
+   "version": "0.2.1",
+   "path": "node_modules/encoding-sniffer",
+   "files": 23,
+   "sha256": "ea62c49438fa627837e3b2ac8ac3aecfc8034d71b8f4e887c94f47cfcf304610",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/cheerio"
+   ]
+  },
+  {
+   "name": "entities",
+   "version": "4.5.0",
+   "path": "node_modules/entities",
+   "files": 68,
+   "sha256": "31d10131c219a2544ff8a2e24f7540ece41efb252204e42b5553c2e0a6fc6eba",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/dom-serializer"
+   ]
+  },
+  {
+   "name": "htmlparser2",
+   "version": "10.1.0",
+   "path": "node_modules/htmlparser2",
+   "files": 42,
+   "sha256": "70c9dd41bb5c65ce7bf59a30fb65ab2cc00448bc220eb326f141728c3c00793b",
+   "nestedNodeModulesSkipped": 1,
+   "requiredBy": [
+    "node_modules/cheerio"
+   ]
+  },
+  {
+   "name": "entities",
+   "version": "7.0.1",
+   "path": "node_modules/htmlparser2/node_modules/entities",
+   "files": 109,
+   "sha256": "09ba577a02592efdbbc4712460495ef42fe3a584fdbd3adb79257d65e933555d",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/htmlparser2"
+   ]
+  },
+  {
+   "name": "iconv-lite",
+   "version": "0.6.3",
+   "path": "node_modules/iconv-lite",
+   "files": 33,
+   "sha256": "237ebc7ccf7402cbd8226f729f51392a43d731de833fe0788d3b9a06e5417101",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/encoding-sniffer",
+    "node_modules/whatwg-encoding"
+   ]
+  },
+  {
+   "name": "make-error",
+   "version": "1.3.6",
+   "path": "node_modules/make-error",
+   "files": 6,
+   "sha256": "fd35b2630b86b60e794640d3aad937a3e639e856a400024cb5bc363e5a7bbfcb",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/ts-node"
+   ]
+  },
+  {
+   "name": "memory-cache",
+   "version": "0.2.0",
+   "path": "node_modules/memory-cache",
+   "files": 10,
+   "sha256": "8a2ebf5edb8657cf6a2cbd28934348fbda8f4cc01b89d3bb87ee21318127d935",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "bootstrap DEPENDENCIES"
+   ]
+  },
+  {
+   "name": "nth-check",
+   "version": "2.1.1",
+   "path": "node_modules/nth-check",
+   "files": 28,
+   "sha256": "58cffa597ab3f24e7129f121e79cf150af85f3d098412e45e0d070e7a041774c",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/css-select"
+   ]
+  },
+  {
+   "name": "parse5",
+   "version": "7.3.0",
+   "path": "node_modules/parse5",
+   "files": 64,
+   "sha256": "19ad002d3445f3efd212872aa3b9e0d322fdd413e36abad62982793b161f2280",
+   "nestedNodeModulesSkipped": 1,
+   "requiredBy": [
+    "node_modules/cheerio",
+    "node_modules/parse5-htmlparser2-tree-adapter",
+    "node_modules/parse5-parser-stream"
+   ]
+  },
+  {
+   "name": "parse5-htmlparser2-tree-adapter",
+   "version": "7.1.0",
+   "path": "node_modules/parse5-htmlparser2-tree-adapter",
+   "files": 8,
+   "sha256": "6e02482837517181a11489190fc031e194003f44002207909fcacd5df09f84e4",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/cheerio"
+   ]
+  },
+  {
+   "name": "parse5-parser-stream",
+   "version": "7.1.2",
+   "path": "node_modules/parse5-parser-stream",
+   "files": 8,
+   "sha256": "019b67adccec91b66b1045ed0bc8671a6babc4881cf098620bf077c1ad017d3c",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/cheerio"
+   ]
+  },
+  {
+   "name": "entities",
+   "version": "6.0.1",
+   "path": "node_modules/parse5/node_modules/entities",
+   "files": 86,
+   "sha256": "36b942ae51c40910019f2fb67bb77305a54dfe3f6808798666e32e65f8039ccd",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/parse5"
+   ]
+  },
+  {
+   "name": "safer-buffer",
+   "version": "2.1.2",
+   "path": "node_modules/safer-buffer",
+   "files": 7,
+   "sha256": "257cf8cca8eceef9609aacd8255cf75f6cd04c3f9a7be256c062c48629b94294",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/iconv-lite"
+   ]
+  },
+  {
+   "name": "ts-node",
+   "version": "10.9.2",
+   "path": "node_modules/ts-node",
+   "files": 117,
+   "sha256": "6b5283265033ad74354db6e47840058eaa96c91459701e31fd662bc4ec6cdc32",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "bootstrap DEPENDENCIES"
+   ]
+  },
+  {
+   "name": "typescript",
+   "version": "5.7.3",
+   "path": "node_modules/typescript",
+   "files": 129,
+   "sha256": "3556c8c4764b5c0bd2276af5ccac31352355dd24caab158a7065f68adb1956fd",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "bootstrap DEPENDENCIES"
+   ]
+  },
+  {
+   "name": "undici",
+   "version": "7.29.0",
+   "path": "node_modules/undici",
+   "files": 210,
+   "sha256": "3f7368898f81b9ac6681e9ad93ce00addc7a5fa0ab8543692b2f174a6c497058",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/cheerio"
+   ]
+  },
+  {
+   "name": "v8-compile-cache-lib",
+   "version": "3.0.1",
+   "path": "node_modules/v8-compile-cache-lib",
+   "files": 6,
+   "sha256": "7942e0c515fc7b11fa6b525a29b18b9d3f1461506e6a1dcbd054a27543f97af6",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/ts-node"
+   ]
+  },
+  {
+   "name": "whatwg-encoding",
+   "version": "3.1.1",
+   "path": "node_modules/whatwg-encoding",
+   "files": 6,
+   "sha256": "94b3d42c2a31b16ba06ee0cb01868c2e409341da09143b4452b713181c959730",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/encoding-sniffer"
+   ]
+  },
+  {
+   "name": "whatwg-mimetype",
+   "version": "4.0.0",
+   "path": "node_modules/whatwg-mimetype",
+   "files": 8,
+   "sha256": "aff406f4f27308736e3b1dbac2ce79d3d447478166b1cd5c9707017dc3a53009",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/cheerio"
+   ]
+  },
+  {
+   "name": "yn",
+   "version": "3.1.1",
+   "path": "node_modules/yn",
+   "files": 6,
+   "sha256": "b956655964b1e7d98cfc6fd729d95c37b6b28d80365468577ce46af898325a6e",
+   "nestedNodeModulesSkipped": 0,
+   "requiredBy": [
+    "node_modules/ts-node"
+   ]
+  }
+ ],
+ "optionalAbsent": [],
+ "peerDependenciesNotWalked": {
+  "node_modules/ts-node": [
+   "@swc/core",
+   "@swc/wasm",
+   "@types/node",
+   "typescript"
+  ]
+ },
+ "excluded": [
+  {
+   "path": "node_modules/node_modules",
+   "kind": "symlink",
+   "target": "node_modules (self)",
+   "reason": "pre-existing self-symlink to web/node_modules (Oct 20); not a package; never entered by the walk or by Node resolution of any closure package"
+  }
+ ],
+ "bootstrapDependencyPins": {
+  "allMatch": true,
+  "entries": [
+   {
+    "name": "ts-node",
+    "entry": "node_modules/ts-node/dist/index.js",
+    "entryMatches": true,
+    "manifestMatches": true
+   },
+   {
+    "name": "typescript",
+    "entry": "node_modules/typescript/lib/typescript.js",
+    "entryMatches": true,
+    "manifestMatches": true
+   },
+   {
+    "name": "cheerio",
+    "entry": "node_modules/cheerio/dist/commonjs/index.js",
+    "entryMatches": true,
+    "manifestMatches": true
+   },
+   {
+    "name": "memory-cache",
+    "entry": "node_modules/memory-cache/index.js",
+    "entryMatches": true,
+    "manifestMatches": true
+   }
+  ]
+ },
+ "refusals": []
+}

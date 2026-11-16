@@ -4,6 +4,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
+import { sanitizeCronDiagnostic } from "lib/cron/statsUpdateSafety";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { loadPlayersForSnapshot } from "lib/sustainability/windows";
@@ -43,13 +44,38 @@ export async function rebuildScoreHandler(
     withCronJobTiming(body, t0, endedAt);
   const phaseTimingsMs: Record<string, number> = {};
   let phaseStarted = t0;
+  // Failure receipts name the last phase that finished and whether score
+  // writes began, so a 500 shows where it stopped and if rows may be partial.
+  let lastCompletedPhase: string | null = null;
+  let scoreWritesStarted = false;
   const finishPhase = (phase: string) => {
     const ended = Date.now();
     phaseTimingsMs[phase] = ended - phaseStarted;
     phaseStarted = ended;
+    lastCompletedPhase = phase;
+  };
+  const failureReceipt = (errorSource: "thrown" | "structured_dependency") => ({
+    error_source: errorSource,
+    last_completed_phase: lastCompletedPhase,
+    score_writes_started: scoreWritesStarted,
+    phase_timings_ms: phaseTimingsMs,
+  });
+  // Short, scrubbed identifiers only: a PostgREST error can arrive with an
+  // empty message and only its code to say what failed.
+  const errorIdentity = (e: any) => {
+    const shortText = (value: unknown, max: number) =>
+      (typeof value === "string" && value.trim()) || typeof value === "number"
+        ? sanitizeCronDiagnostic(String(value)).slice(0, max)
+        : null;
+    return {
+      error_name: shortText(e?.name, 80),
+      error_code: shortText(e?.code, 40),
+      error_message_empty: !(typeof e?.message === "string" && e.message.trim()),
+    };
   };
   try {
     const season = await resolveSeasonId(req.query.season);
+    lastCompletedPhase = "resolve_season";
     const snapshot = String(
       req.query.snapshot_date || new Date().toISOString().slice(0, 10),
     );
@@ -194,6 +220,7 @@ export async function rebuildScoreHandler(
     );
     finishPhase("verify_sample");
 
+    scoreWritesStarted = !dry && rows.length > 0;
     const { inserted, chunks } = await upsertScores(rows, dry);
     finishPhase("persist_scores");
     const persistedDistributionSnapshots =
@@ -302,16 +329,27 @@ export async function rebuildScoreHandler(
             detail: e.issue.detail,
             htmlLike: false,
           },
+          ...failureReceipt("structured_dependency"),
         }),
       );
     }
     const dependencyError = normalizeDependencyError(e);
-    console.error("rebuild-score error", e?.message || e);
+    const receipt = { ...failureReceipt("thrown"), ...errorIdentity(e) };
+    console.error("rebuild-score error", {
+      message: dependencyError.message,
+      classification: dependencyError.classification,
+      error_name: receipt.error_name,
+      error_code: receipt.error_code,
+      error_message_empty: receipt.error_message_empty,
+      last_completed_phase: receipt.last_completed_phase,
+      score_writes_started: receipt.score_writes_started,
+    });
     return res.status(500).json(
       withTiming({
         success: false,
         message: dependencyError.message,
         dependencyError,
+        ...receipt,
       }),
     );
   }

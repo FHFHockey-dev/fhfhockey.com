@@ -1,0 +1,130 @@
+{
+  "target": "89da739cb",
+  "mode": "exact-source offline VM; no app imports, requests or React",
+  "hashes": {
+    "web/components/ShotVisualization/ShotVisualization.tsx": "eb44b9560b50e37a29ffca2a15e67b62d212f40db899a052590f270f0edef252",
+    "web/components/SkaterPage/skaterMetrics.ts": "dc469b737954c7d62e3fc52ed848e43a76a3be146fe29446fb6802b4d4025bdc",
+    "web/components/SkaterPage/SkaterAdvancedMetricsTable.tsx": "3e3a535c979a1e7e526d92384e64261f145046ccef456964c9e506ae4c9af8f8",
+    "web/components/SocialShare/SocialShare.tsx": "8cf096269e5385f3d8be7904f34580daa4a4f2b4ecb4c86f11c503aa5494accc"
+  },
+  "selectedSaves": {
+    "eventCount": 2,
+    "goalCount": 0,
+    "shotCount": 2,
+    "shootingPct": "0.0"
+  },
+  "completeEvents": {
+    "eventCount": 3,
+    "goalCount": 1,
+    "shotCount": 3,
+    "shootingPct": "33.3"
+  },
+  "opponentScale": {
+    "actualBinMaximum": 1,
+    "passedScale": {
+      "team": {
+        "min": 0,
+        "mid": 5,
+        "max": 9
+      },
+      "opponent": {
+        "min": 0,
+        "mid": 0,
+        "max": 0
+      }
+    },
+    "legendMaximum": 9
+  },
+  "unknown": {
+    "rowType": "player",
+    "playerId": 1,
+    "playerName": "Fixture",
+    "team": "TOR",
+    "valuation": null,
+    "valuationLabel": "OWN%",
+    "bucket": {
+      "key": "unknown",
+      "label": "N/A",
+      "kind": "unknown",
+      "sortOrder": 10000
+    },
+    "gamesPlayed": 1,
+    "averageTimeOnIce": null,
+    "goals": 0,
+    "assists": 0,
+    "points": 0,
+    "shots": 0,
+    "shootingPercentage": null,
+    "averagePowerPlayTimeOnIce": null,
+    "powerPlayGoals": 0,
+    "powerPlayAssists": 0,
+    "powerPlayPoints": 0,
+    "hits": 0,
+    "blocks": 0,
+    "penaltyMinutes": 0,
+    "plusMinus": 0
+  },
+  "mixed": {
+    "rowType": "player",
+    "playerId": 1,
+    "playerName": "Fixture",
+    "team": "TOR",
+    "valuation": null,
+    "valuationLabel": "OWN%",
+    "bucket": {
+      "key": "unknown",
+      "label": "N/A",
+      "kind": "unknown",
+      "sortOrder": 10000
+    },
+    "gamesPlayed": 2,
+    "averageTimeOnIce": 60,
+    "goals": 1,
+    "assists": 0,
+    "points": 0,
+    "shots": 10,
+    "shootingPercentage": 0.1,
+    "averagePowerPlayTimeOnIce": null,
+    "powerPlayGoals": 0,
+    "powerPlayAssists": 0,
+    "powerPlayPoints": 0,
+    "hits": 0,
+    "blocks": 0,
+    "penaltyMinutes": 0,
+    "plusMinus": 0
+  },
+  "ranked": [
+    {
+      "id": "A",
+      "value": 2,
+      "rank": 1
+    },
+    {
+      "id": "B",
+      "value": 2,
+      "rank": 2
+    },
+    {
+      "id": "C",
+      "value": null,
+      "rank": 3
+    }
+  ],
+  "clocks": [
+    {
+      "seconds": 59.6,
+      "actual": "0:60",
+      "roundedSeconds": 60
+    },
+    {
+      "seconds": 119.7,
+      "actual": "1:60",
+      "roundedSeconds": 120
+    },
+    {
+      "seconds": 719.6,
+      "actual": "11:60",
+      "roundedSeconds": 720
+    }
+  ]
+}

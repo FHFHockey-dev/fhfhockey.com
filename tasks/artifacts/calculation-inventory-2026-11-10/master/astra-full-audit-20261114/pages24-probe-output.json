@@ -1,0 +1,28 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "inherited": {
+    "id": "AFULL-FANTASY3-01",
+    "missingPlayerRating": 0,
+    "missingTeamRating": 0,
+    "knownZeroRating": 0,
+    "knownRating": 71
+  },
+  "controls": {
+    "weightedMissing": "withheld",
+    "zeroWeight": "30",
+    "categoryMissing": "withheld",
+    "categoryZero": 0,
+    "nullSort": "last both directions",
+    "priorRole": "unknown",
+    "clock": "1:30",
+    "totalMinutes": "60.0",
+    "saveFraction": ".915",
+    "intervals": "unknown withheld, reversed bounds withheld, valid bounds retained"
+  },
+  "source": {
+    "path": "web/pages/fantasy-projections.tsx",
+    "sha256": "903cda43c25b3e83a73ed266f24f27866f4bf652b3312270fc7cb634772c973b"
+  },
+  "boundary": "Exact frozen pure page functions and contract module with finite props/JSX objects. No React lifecycle, rendering browser, user settings persistence, HTTP/database/provider, application environment or supplied suite."
+}

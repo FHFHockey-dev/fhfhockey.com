@@ -1,0 +1,41 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "finding": {
+    "id": "AFULL-PROJPAGE1-01",
+    "selectedGoalie": 9,
+    "settings": {
+      "GOALS": 3
+    },
+    "tablesRead": [
+      "yahoo_matchup_weeks",
+      "wgo_skater_stats"
+    ],
+    "availableGoalieFixture": {
+      "wins": 1,
+      "games": 1
+    },
+    "shownWeek": {
+      "week": 1,
+      "start_date": "2026-11-01",
+      "end_date": "2026-11-07",
+      "totalFantasyPoints": 0,
+      "gamesPlayed": 0,
+      "avgFantasyPoints": null
+    },
+    "dailyRows": 0
+  },
+  "controls": {
+    "competition": "1,1,3,null,null,4",
+    "incompleteRank": "withheld",
+    "inputMutation": false,
+    "rankOrderInvariant": true,
+    "mixedBasisOverall": "withheld",
+    "tiers": "one containing band across negative/boundary/positive controls; empty fallback"
+  },
+  "source": {
+    "path": "web/pages/projections/index.tsx",
+    "sha256": "28d82e38c1e9c7cc222ac06f6d7e2a7bbd969e86aa7129566f84a71be82aafd6"
+  },
+  "boundary": "Exact frozen expanded-chart callback, finite hook fetch body, pure rank/scoring/tier modules. Inert database/React/JSX/colors. No real page, provider, DB, settings, environment or supplied suites."
+}

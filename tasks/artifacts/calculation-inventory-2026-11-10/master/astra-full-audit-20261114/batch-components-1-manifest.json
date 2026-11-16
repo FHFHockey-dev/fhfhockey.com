@@ -1,0 +1,676 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "assigned": [
+    {
+      "path": "web/components/CronReportEmail/CronAuditEmail.tsx",
+      "local": "00-CronAuditEmail.tsx",
+      "lines": 254,
+      "bytes": 19627,
+      "sha256": "db2a5f56a99f05acb1bee705ff0a0f38202fb6cf74a932d78d3da842889f286e",
+      "currentMatches": true,
+      "currentSha256": "db2a5f56a99f05acb1bee705ff0a0f38202fb6cf74a932d78d3da842889f286e",
+      "readRanges": [
+        [
+          1,
+          254
+        ]
+      ],
+      "unread": [],
+      "functions": 42,
+      "tests": 0,
+      "valueRows": 30
+    },
+    {
+      "path": "web/components/DateRangeMatrix/DateRangeMatrixView.test.tsx",
+      "local": "01-DateRangeMatrixView.test.tsx",
+      "lines": 119,
+      "bytes": 3542,
+      "sha256": "0c00ab5589e6efdf3c9be779e457c091cf299d0962bd046839a58a6411cd828c",
+      "currentMatches": true,
+      "currentSha256": "0c00ab5589e6efdf3c9be779e457c091cf299d0962bd046839a58a6411cd828c",
+      "readRanges": [
+        [
+          1,
+          119
+        ]
+      ],
+      "unread": [],
+      "functions": 8,
+      "tests": 4,
+      "valueRows": 2
+    },
+    {
+      "path": "web/components/DateRangeMatrix/DateRangeMatrixView.tsx",
+      "local": "02-DateRangeMatrixView.tsx",
+      "lines": 87,
+      "bytes": 3165,
+      "sha256": "216e845bf0711345579d9901b97bb0477be7c62acdef7964f7adaf54724781da",
+      "currentMatches": true,
+      "currentSha256": "216e845bf0711345579d9901b97bb0477be7c62acdef7964f7adaf54724781da",
+      "readRanges": [
+        [
+          1,
+          87
+        ]
+      ],
+      "unread": [],
+      "functions": 1,
+      "tests": 0,
+      "valueRows": 2
+    },
+    {
+      "path": "web/components/DateRangeMatrix/GoalieCardDRM.tsx",
+      "local": "03-GoalieCardDRM.tsx",
+      "lines": 87,
+      "bytes": 3333,
+      "sha256": "38ecd242210217599c3f042a50eded6bbb852a915111f9468db99533966c2dac",
+      "currentMatches": true,
+      "currentSha256": "38ecd242210217599c3f042a50eded6bbb852a915111f9468db99533966c2dac",
+      "readRanges": [
+        [
+          1,
+          87
+        ]
+      ],
+      "unread": [],
+      "functions": 1,
+      "tests": 0,
+      "valueRows": 5
+    },
+    {
+      "path": "web/components/DateRangeMatrix/LineHistory.module.scss",
+      "local": "04-LineHistory.module.scss",
+      "lines": 64,
+      "bytes": 1825,
+      "sha256": "e04cf5696f1299dc9a75954c4ad633cffc18ad1a9152d1b0847ba0a8766a4295",
+      "currentMatches": true,
+      "currentSha256": "e04cf5696f1299dc9a75954c4ad633cffc18ad1a9152d1b0847ba0a8766a4295",
+      "readRanges": [
+        [
+          1,
+          64
+        ]
+      ],
+      "unread": [],
+      "functions": 0,
+      "tests": 0
+    },
+    {
+      "path": "web/components/DateRangeMatrix/LineHistory.test.tsx",
+      "local": "05-LineHistory.test.tsx",
+      "lines": 138,
+      "bytes": 9507,
+      "sha256": "219d26f2c3398973139a8bfdf82a5325719cfac4f0cae890dd75c2a7b21e2818",
+      "currentMatches": true,
+      "currentSha256": "219d26f2c3398973139a8bfdf82a5325719cfac4f0cae890dd75c2a7b21e2818",
+      "readRanges": [
+        [
+          1,
+          138
+        ]
+      ],
+      "unread": [],
+      "functions": 21,
+      "tests": 7,
+      "valueRows": 2
+    },
+    {
+      "path": "web/components/DateRangeMatrix/LineHistory.tsx",
+      "local": "06-LineHistory.tsx",
+      "lines": 141,
+      "bytes": 9315,
+      "sha256": "5f554f415321f3599be2603d07f6bc4dd4d933df766b393af0565f6ab34e2b67",
+      "currentMatches": true,
+      "currentSha256": "5f554f415321f3599be2603d07f6bc4dd4d933df766b393af0565f6ab34e2b67",
+      "readRanges": [
+        [
+          1,
+          141
+        ]
+      ],
+      "unread": [],
+      "functions": 24,
+      "tests": 0,
+      "valueRows": 20
+    },
+    {
+      "path": "web/components/DateRangeMatrix/LinePairGrid.test.tsx",
+      "local": "07-LinePairGrid.test.tsx",
+      "lines": 387,
+      "bytes": 11433,
+      "sha256": "98f824f9fc38c1fe0ca5ebb3d7f9246055e15af47f2ae2362a154511341160b3",
+      "currentMatches": true,
+      "currentSha256": "98f824f9fc38c1fe0ca5ebb3d7f9246055e15af47f2ae2362a154511341160b3",
+      "readRanges": [
+        [
+          1,
+          387
+        ]
+      ],
+      "unread": [],
+      "functions": 29,
+      "tests": 7,
+      "valueRows": 0
+    },
+    {
+      "path": "web/components/DateRangeMatrix/LinePairGrid.tsx",
+      "local": "08-LinePairGrid.tsx",
+      "lines": 189,
+      "bytes": 6016,
+      "sha256": "540444e84d88403753f851f377cabde183ef4f29a746208113a674eb0afbfcec",
+      "currentMatches": true,
+      "currentSha256": "540444e84d88403753f851f377cabde183ef4f29a746208113a674eb0afbfcec",
+      "readRanges": [
+        [
+          1,
+          189
+        ]
+      ],
+      "unread": [],
+      "functions": 23,
+      "tests": 0,
+      "valueRows": 8
+    },
+    {
+      "path": "web/components/DateRangeMatrix/MatrixCoverage.tsx",
+      "local": "09-MatrixCoverage.tsx",
+      "lines": 23,
+      "bytes": 2048,
+      "sha256": "06413021ca53a935027432ac3a26a496c69df8cbd85e691f916dc3403ea96bc9",
+      "currentMatches": true,
+      "currentSha256": "06413021ca53a935027432ac3a26a496c69df8cbd85e691f916dc3403ea96bc9",
+      "readRanges": [
+        [
+          1,
+          23
+        ]
+      ],
+      "unread": [],
+      "functions": 4,
+      "tests": 0,
+      "valueRows": 2
+    },
+    {
+      "path": "web/components/DateRangeMatrix/ObservedUnits.tsx",
+      "local": "10-ObservedUnits.tsx",
+      "lines": 52,
+      "bytes": 3701,
+      "sha256": "59773a35ce55ad7b8a71d5b1c5e12086ab9f516996f30ca8306b2ee7571bbe89",
+      "currentMatches": true,
+      "currentSha256": "59773a35ce55ad7b8a71d5b1c5e12086ab9f516996f30ca8306b2ee7571bbe89",
+      "readRanges": [
+        [
+          1,
+          52
+        ]
+      ],
+      "unread": [],
+      "functions": 13,
+      "tests": 0,
+      "valueRows": 6
+    },
+    {
+      "path": "web/components/DateRangeMatrix/PlayerCardDRM.tsx",
+      "local": "11-PlayerCardDRM.tsx",
+      "lines": 84,
+      "bytes": 2964,
+      "sha256": "035426c51e47223acbff7a7260d9375fa10fab09c616c365c916ac5a57c8ac5b",
+      "currentMatches": true,
+      "currentSha256": "035426c51e47223acbff7a7260d9375fa10fab09c616c365c916ac5a57c8ac5b",
+      "readRanges": [
+        [
+          1,
+          84
+        ]
+      ],
+      "unread": [],
+      "functions": 2,
+      "tests": 0,
+      "valueRows": 5
+    },
+    {
+      "path": "web/components/DateRangeMatrix/diagnostics.ts",
+      "local": "12-diagnostics.ts",
+      "lines": 4,
+      "bytes": 281,
+      "sha256": "626786ca86c6914afc8d2cda59c01982099c3ac8b1872bb3ac15dbea076334d1",
+      "currentMatches": true,
+      "currentSha256": "626786ca86c6914afc8d2cda59c01982099c3ac8b1872bb3ac15dbea076334d1",
+      "readRanges": [
+        [
+          1,
+          4
+        ]
+      ],
+      "unread": [],
+      "functions": 0,
+      "tests": 0,
+      "valueRows": 1
+    },
+    {
+      "path": "web/components/DateRangeMatrix/drm.module.scss",
+      "local": "13-drm.module.scss",
+      "lines": 592,
+      "bytes": 14136,
+      "sha256": "57163a4201511daf66002baa181f882284ed0e73e74f52becbe05623e262d2bb",
+      "currentMatches": true,
+      "currentSha256": "57163a4201511daf66002baa181f882284ed0e73e74f52becbe05623e262d2bb",
+      "readRanges": [
+        [
+          1,
+          592
+        ]
+      ],
+      "unread": [],
+      "functions": 0,
+      "tests": 0
+    },
+    {
+      "path": "web/components/DateRangeMatrix/fetchAggregatedData.test.ts",
+      "local": "14-fetchAggregatedData.test.ts",
+      "lines": 1407,
+      "bytes": 41671,
+      "sha256": "9508bc9a97a84fc2181378b8e58d901ecec9fc3c902b5774d691fcaca9460982",
+      "currentMatches": true,
+      "currentSha256": "9508bc9a97a84fc2181378b8e58d901ecec9fc3c902b5774d691fcaca9460982",
+      "readRanges": [
+        [
+          1,
+          1407
+        ]
+      ],
+      "unread": [],
+      "functions": 84,
+      "tests": 25,
+      "valueRows": 3
+    },
+    {
+      "path": "web/components/DateRangeMatrix/fetchAggregatedData.ts",
+      "local": "15-fetchAggregatedData.ts",
+      "lines": 1456,
+      "bytes": 44825,
+      "sha256": "a839f18839b24b7e72e82dc70c7c67a560299ea1d26899e0d71aafbd4bdd7e7e",
+      "currentMatches": true,
+      "currentSha256": "a839f18839b24b7e72e82dc70c7c67a560299ea1d26899e0d71aafbd4bdd7e7e",
+      "readRanges": [
+        [
+          1,
+          1456
+        ]
+      ],
+      "unread": [],
+      "functions": 71,
+      "tests": 0,
+      "valueRows": 147
+    },
+    {
+      "path": "web/components/DateRangeMatrix/fetchDeploymentMatrix.ts",
+      "local": "16-fetchDeploymentMatrix.ts",
+      "lines": 31,
+      "bytes": 1559,
+      "sha256": "c34d8a06f097ccf1073504089bb683ea6f58896a0f08fc4e64c3c4f531479e45",
+      "currentMatches": true,
+      "currentSha256": "c34d8a06f097ccf1073504089bb683ea6f58896a0f08fc4e64c3c4f531479e45",
+      "readRanges": [
+        [
+          1,
+          31
+        ]
+      ],
+      "unread": [],
+      "functions": 4,
+      "tests": 0,
+      "valueRows": 5
+    },
+    {
+      "path": "web/components/DateRangeMatrix/formatScopeDate.ts",
+      "local": "17-formatScopeDate.ts",
+      "lines": 8,
+      "bytes": 327,
+      "sha256": "c30261568d16aa5b1a44d7bd970bfc455c0189ce0f403e3038ed4d5813aa3fca",
+      "currentMatches": true,
+      "currentSha256": "c30261568d16aa5b1a44d7bd970bfc455c0189ce0f403e3038ed4d5813aa3fca",
+      "readRanges": [
+        [
+          1,
+          8
+        ]
+      ],
+      "unread": [],
+      "functions": 1,
+      "tests": 0,
+      "valueRows": 0
+    },
+    {
+      "path": "web/components/DateRangeMatrix/index.accessibility.test.tsx",
+      "local": "18-index.accessibility.test.tsx",
+      "lines": 299,
+      "bytes": 10422,
+      "sha256": "42252a474b588e952e9c3fdb51fca2de698aac5bf59007f826b03fa99c758a44",
+      "currentMatches": true,
+      "currentSha256": "42252a474b588e952e9c3fdb51fca2de698aac5bf59007f826b03fa99c758a44",
+      "readRanges": [
+        [
+          1,
+          299
+        ]
+      ],
+      "unread": [],
+      "functions": 24,
+      "tests": 8,
+      "valueRows": 0
+    },
+    {
+      "path": "web/components/DateRangeMatrix/index.module.scss",
+      "local": "19-index.module.scss",
+      "lines": 322,
+      "bytes": 7944,
+      "sha256": "a3503e6f45b603326506c1f2cd3c998b0d2a31a1b9032b1ca54efa7b0964e1e1",
+      "currentMatches": true,
+      "currentSha256": "a3503e6f45b603326506c1f2cd3c998b0d2a31a1b9032b1ca54efa7b0964e1e1",
+      "readRanges": [
+        [
+          1,
+          322
+        ]
+      ],
+      "unread": [],
+      "functions": 0,
+      "tests": 0
+    },
+    {
+      "path": "web/components/DateRangeMatrix/index.tsx",
+      "local": "20-index.tsx",
+      "lines": 684,
+      "bytes": 22537,
+      "sha256": "4611250dae280e219db4a8f453c9f6bfac739489665bbb03e3ea306c7e15d2d3",
+      "currentMatches": true,
+      "currentSha256": "4611250dae280e219db4a8f453c9f6bfac739489665bbb03e3ea306c7e15d2d3",
+      "readRanges": [
+        [
+          1,
+          684
+        ]
+      ],
+      "unread": [],
+      "functions": 64,
+      "tests": 0,
+      "valueRows": 73
+    },
+    {
+      "path": "web/components/DateRangeMatrix/lineCombinationHelper.test.ts",
+      "local": "21-lineCombinationHelper.test.ts",
+      "lines": 193,
+      "bytes": 6399,
+      "sha256": "b3f6bd39d61e3a57eee499684ac34158e664a2347aff736752e996fa51701612",
+      "currentMatches": true,
+      "currentSha256": "b3f6bd39d61e3a57eee499684ac34158e664a2347aff736752e996fa51701612",
+      "readRanges": [
+        [
+          1,
+          193
+        ]
+      ],
+      "unread": [],
+      "functions": 25,
+      "tests": 6,
+      "valueRows": 0
+    },
+    {
+      "path": "web/components/DateRangeMatrix/lineCombinationHelper.ts",
+      "local": "22-lineCombinationHelper.ts",
+      "lines": 141,
+      "bytes": 4505,
+      "sha256": "3a8a1e39564a451aea9dc77e1166c75d590c14e74703e5e02a27000f2af6a4b7",
+      "currentMatches": true,
+      "currentSha256": "3a8a1e39564a451aea9dc77e1166c75d590c14e74703e5e02a27000f2af6a4b7",
+      "readRanges": [
+        [
+          1,
+          141
+        ]
+      ],
+      "unread": [],
+      "functions": 12,
+      "tests": 0,
+      "valueRows": 18
+    },
+    {
+      "path": "web/components/DateRangeMatrix/useDateRangeMatrixData.test.tsx",
+      "local": "23-useDateRangeMatrixData.test.tsx",
+      "lines": 602,
+      "bytes": 17348,
+      "sha256": "5e13303c2c126412c4cb8552ae4a31fbfb97b383af623c12a8b7a5015af7b67b",
+      "currentMatches": true,
+      "currentSha256": "5e13303c2c126412c4cb8552ae4a31fbfb97b383af623c12a8b7a5015af7b67b",
+      "readRanges": [
+        [
+          1,
+          602
+        ]
+      ],
+      "unread": [],
+      "functions": 70,
+      "tests": 15,
+      "valueRows": 3
+    },
+    {
+      "path": "web/components/DateRangeMatrix/useDateRangeMatrixData.ts",
+      "local": "24-useDateRangeMatrixData.ts",
+      "lines": 416,
+      "bytes": 13256,
+      "sha256": "b76f09ba4268f957bb860d07746ef0167b9bcce24236898d6ce8d511c2b931df",
+      "currentMatches": true,
+      "currentSha256": "b76f09ba4268f957bb860d07746ef0167b9bcce24236898d6ce8d511c2b931df",
+      "readRanges": [
+        [
+          1,
+          416
+        ]
+      ],
+      "unread": [],
+      "functions": 27,
+      "tests": 0,
+      "valueRows": 42
+    },
+    {
+      "path": "web/components/DateRangeMatrix/utilities.ts",
+      "local": "25-utilities.ts",
+      "lines": 268,
+      "bytes": 8431,
+      "sha256": "5da1a9854d3998b5044868c8ab5067b72a01613563a9131759d28fd1d5d945a8",
+      "currentMatches": true,
+      "currentSha256": "5da1a9854d3998b5044868c8ab5067b72a01613563a9131759d28fd1d5d945a8",
+      "readRanges": [
+        [
+          1,
+          268
+        ]
+      ],
+      "unread": [],
+      "functions": 15,
+      "tests": 0,
+      "valueRows": 20
+    }
+  ],
+  "readers": [
+    {
+      "path": "web/pages/drm.tsx",
+      "local": "reader-0-drm.tsx",
+      "sha256": "b69339754547043807cb8abec937152334201a02f72595befe3e7f73ee294a36",
+      "bytes": 39239,
+      "lines": 1061,
+      "checkoutMatches": true,
+      "readRanges": [
+        [
+          640,
+          695
+        ],
+        [
+          1035,
+          1061
+        ]
+      ],
+      "boundary": "Bounded reader trace only; not promoted to full source audit."
+    },
+    {
+      "path": "web/lib/drm/readMatrix.ts",
+      "local": "reader-1-readMatrix.ts",
+      "sha256": "4ffc78762ec06f6918640a6cb5f8324dd63426deb41213c10d7dec30b2675a36",
+      "bytes": 25400,
+      "lines": 307,
+      "checkoutMatches": true,
+      "readRanges": [
+        [
+          1,
+          307
+        ]
+      ],
+      "boundary": "Bounded reader trace only; not promoted to full source audit."
+    },
+    {
+      "path": "web/lib/drm/observedDeployment.ts",
+      "local": "reader-2-observedDeployment.ts",
+      "sha256": "ed4c5d705052b5119678d81192161f60b28f142e4f007fe5f832f074a97f9a7f",
+      "bytes": 18395,
+      "lines": 309,
+      "checkoutMatches": true,
+      "readRanges": [
+        [
+          1,
+          309
+        ]
+      ],
+      "boundary": "Bounded reader trace only; not promoted to full source audit."
+    },
+    {
+      "path": "web/lib/drm/types.ts",
+      "local": "reader-3-types.ts",
+      "sha256": "2028b04df6a22b8d47558e6599335418fdbe346e7b43f2139a744089def7577c",
+      "bytes": 1216,
+      "lines": 33,
+      "checkoutMatches": true,
+      "readRanges": [
+        [
+          1,
+          33
+        ]
+      ],
+      "boundary": "Bounded reader trace only; not promoted to full source audit."
+    },
+    {
+      "path": "web/pages/api/v1/db/cron-report.ts",
+      "local": "reader-4-cron-report.ts",
+      "sha256": "9fdd3bbab1d7737ea245fb6f8a4aa78cff5aeec3fe15b720d22c0d7632dfbcbd",
+      "bytes": 108107,
+      "lines": 2662,
+      "checkoutMatches": false,
+      "readRanges": [
+        [
+          1334,
+          1338
+        ],
+        [
+          1448,
+          1497
+        ],
+        [
+          1558,
+          1612
+        ],
+        [
+          2200,
+          2305
+        ],
+        [
+          2495,
+          2555
+        ]
+      ],
+      "boundary": "Bounded reader trace only; not promoted to full source audit."
+    },
+    {
+      "path": "web/lib/cron/reportMetrics.ts",
+      "local": "reader-5-reportMetrics.ts",
+      "sha256": "005d0a627af91216ea738552c710d3da0930b000abff3fd6c2d18dee1273d768",
+      "bytes": 4128,
+      "lines": 79,
+      "checkoutMatches": true,
+      "readRanges": [
+        [
+          50,
+          79
+        ]
+      ],
+      "boundary": "Bounded reader trace only; not promoted to full source audit."
+    },
+    {
+      "path": "web/lib/socialShare/teamNeon.ts",
+      "local": "reader-6-teamNeon.ts",
+      "sha256": "f693ab1a6663f7215b6a02324f8525e7631d98acd4b89a619ff0917b49112fb5",
+      "bytes": 6445,
+      "lines": 101,
+      "checkoutMatches": true,
+      "readRanges": [
+        [
+          1,
+          17
+        ]
+      ],
+      "boundary": "Bounded reader trace only; not promoted to full source audit."
+    },
+    {
+      "path": "web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx",
+      "local": "reader-7-CronAuditEmail.test.tsx",
+      "sha256": "532138f4c46dd48f5b5d92ead9d591328c75221b6e46365289c32c1fc7d8f930",
+      "bytes": 20154,
+      "lines": 278,
+      "checkoutMatches": true,
+      "readRanges": [
+        [
+          260,
+          278
+        ]
+      ],
+      "boundary": "Bounded reader trace only; not promoted to full source audit."
+    },
+    {
+      "path": "web/components/DateRangeMatrix/utilities.test.ts",
+      "sha256": "5ac9d7e8521c1473a1f605bed11b991db22d2b315efea0312eba365618ed8573",
+      "bytes": 5690,
+      "lines": 196,
+      "checkoutMatches": true,
+      "readRanges": [
+        [
+          80,
+          197
+        ]
+      ],
+      "boundary": "Bounded reader/test excerpt only; remainder pending."
+    },
+    {
+      "path": "web/lib/supabase/pagination.ts",
+      "sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "bytes": 5438,
+      "lines": 227,
+      "checkoutMatches": true,
+      "readRanges": [
+        [
+          1,
+          25
+        ],
+        [
+          100,
+          187
+        ]
+      ],
+      "boundary": "Bounded reader/test excerpt only; remainder pending."
+    }
+  ],
+  "searchOnly": [
+    "web/pages/drm.tsx:109,373-374,964-973 production diagnostic gates",
+    "web/components/DateRangeMatrix/utilities.test.ts test names/call sites",
+    "web/lib/supabase/pagination.ts default constant/function locations"
+  ],
+  "currentDrift": "Cron-report route is a bounded reader and differs; final conclusions use pinned Git blob, not current route."
+}

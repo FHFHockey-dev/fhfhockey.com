@@ -1,0 +1,50 @@
+BEGIN
+SET
+                 name                  | setting | unit 
+---------------------------------------+---------+------
+ autovacuum                            | on      | 
+ autovacuum_analyze_scale_factor       | 0.1     | 
+ autovacuum_analyze_threshold          | 50      | 
+ autovacuum_max_workers                | 3       | 
+ autovacuum_naptime                    | 60      | s
+ autovacuum_vacuum_cost_delay          | 2       | ms
+ autovacuum_vacuum_cost_limit          | -1      | 
+ autovacuum_vacuum_insert_scale_factor | 0.2     | 
+ autovacuum_vacuum_insert_threshold    | 1000    | 
+ autovacuum_vacuum_scale_factor        | 0.2     | 
+ autovacuum_vacuum_threshold           | 50      | 
+ statement_timeout                     | 5000    | ms
+ track_counts                          | on      | 
+ vacuum_cost_limit                     | 200     | 
+(14 rows)
+
+                                 reloptions                                  | reltuples | relpages | relallvisible | pct_all_visible 
+-----------------------------------------------------------------------------+-----------+----------+---------------+-----------------
+ {autovacuum_analyze_scale_factor=0.002,autovacuum_vacuum_scale_factor=0.01} |   2257190 |   278574 |        271811 |           97.57
+(1 row)
+
+ n_live_tup | n_dead_tup | n_mod_since_analyze | n_ins_since_vacuum | n_tup_ins | n_tup_upd | n_tup_hot_upd | n_tup_del | last_vacuum | last_autovacuum | last_analyze | last_autoanalyze | vacuum_count | autovacuum_count | analyze_count | autoanalyze_count 
+------------+------------+---------------------+--------------------+-----------+-----------+---------------+-----------+-------------+-----------------+--------------+------------------+--------------+------------------+---------------+-------------------
+          0 |          0 |                   0 |                  0 |         0 |         0 |             0 |         0 |             |                 |              |                  |            0 |                0 |             0 |                 0
+(1 row)
+
+ datname  | stats_reset 
+----------+-------------
+ postgres | 
+(1 row)
+
+    rolname    |                                                 rolconfig                                                 | db_role_config 
+---------------+-----------------------------------------------------------------------------------------------------------+----------------
+ anon          | {statement_timeout=3s}                                                                                    | 
+ authenticated | {statement_timeout=8s}                                                                                    | 
+ authenticator | {"session_preload_libraries=supautils, safeupdate",statement_timeout=8s,pgrst.db_aggregates_enabled=true} | 
+ postgres      | {"search_path=\"\\$user\", public, extensions"}                                                           | 
+ service_role  |                                                                                                           | 
+(5 rows)
+
+ vacuums_running 
+-----------------
+               0
+(1 row)
+
+ROLLBACK

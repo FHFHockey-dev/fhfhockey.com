@@ -1,0 +1,77 @@
+jobid,schedule,active,cmd
+1,*/25 * * * *,t,"select net.http_get( url:='https://fhfhockey.com/api/v1/db/update-line-combinations?count=10', headers:=jsonb_build_object('Authorization', "
+2,*/20 * * * *,t," select net.http_get(url:='https://fhfhockey.com/api/v1/db/cron/update-stats-cron?count=4', headers:=('{}'::jsonb || jsonb_build_object( 'Au"
+3,0 0 * * *,t," select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-teams', headers:=('{}'::jsonb || jsonb_build_object( 'Authorization', 'Bea"
+5,0 1 * * *,t," select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-seasons', headers:=('{}'::jsonb || jsonb_build_object( 'Authorization', 'B"
+6,0 2 * * *,t," select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-players?dryRun=false', headers:=('{}'::jsonb || jsonb_build_object( 'Autho"
+7,0 3 * * *,t," select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-games', headers:=('{}'::jsonb || jsonb_build_object( 'Authorization', 'Bea"
+8,35 7 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-wgo-goalies?action=all', headers := ('{}'::jsonb || jsonb_build_object("
+9,30 7 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-wgo-skaters?action=all', headers := ('{}'::jsonb || jsonb_build_object("
+14,40 7 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-wgo-totals?season=current', headers := ('{}'::jsonb || jsonb_build_obje"
+16,55 9 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-shifts?action=all', headers := ('{}'::jsonb || jsonb_build_object( 'Aut"
+17,10 8 * * *,f," SELECT net.http_get( url := 'https://fhfhockey.com/api/Teams/nst-team-stats?date=all', headers := ('{}'::jsonb || jsonb_build_object( 'Auth"
+23,55 7 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/powerPlayTimeFrame?gameId=all', headers := ('{}'::jsonb || jsonb_build_object("
+24,00 8 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-line-combinations', headers := ('{}'::jsonb || jsonb_build_object( 'Aut"
+43,15 8 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-standings-details?date=all', headers := ('{}'::jsonb || jsonb_build_obj"
+44,35 9 * * *,t," SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/run-fetch-wgo-data', headers := ('{}'::jsonb || jsonb_build_object( 'Authorizati"
+76,20 8 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-wgo-goalie-totals', headers := ('{}'::jsonb || jsonb_build_object( 'Aut"
+99,30 8 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-nst-goalies', headers := ('{}'::jsonb || jsonb_build_object( 'Authoriza"
+104,51 20 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-PbP?gameId=recent', headers := ('{}'::jsonb || jsonb_build_object( 'Aut"
+106,40 8 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-yahoo-players', headers := ('{}'::jsonb || jsonb_build_object( 'Authori"
+201,0 10 * * *,t,REFRESH MATERIALIZED VIEW yahoo_nhl_player_map_mat;
+220,45 8 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-nst-current-season', headers := ('{""Content-Type"": ""application/json""}'"
+231,50 8 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/calculate-wigo-stats', headers := ('{""Content-Type"": ""application/json""}'::jso"
+233,20 7 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-yahoo-weeks?game_key=nhl', headers := ('{""Content-Type"": ""application/j"
+234,15 21 * * *,f," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/cron-report', headers := ('{}'::jsonb || jsonb_build_object( 'Authorization', "
+247,05 8 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-team-yearly-summary', headers := ('{""Content-Type"": ""application/json""}"
+248,50 7 * * *,t,REFRESH MATERIALIZED VIEW internal_stats.player_stats_unified;
+251,55 8 * * *,f," SELECT net.http_get( url := 'https://fhfhockey.com/api/internal/sync-yahoo-players-to-sheet?gameId=465', headers := ('{}'::jsonb || jsonb_b"
+271,00 04 * * *,t,REFRESH MATERIALIZED VIEW mv_team_stats_nst_wgo;
+272,05 9 * * *,t,REFRESH MATERIALIZED VIEW internal_stats.goalie_stats_unified;
+275,55 9 * * *,f," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-nst-team-daily', headers := ('{}'::jsonb || jsonb_build_object( 'Author"
+277,15 10 * * *,f," WITH s AS ( SELECT * FROM public.seasons ORDER BY id DESC LIMIT 1 ) SELECT public.refresh_team_power_ratings( (SELECT startDate FROM s), LE"
+278,15 8 * * 0,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-rolling-player-averages', headers := ('{}'::jsonb || jsonb_build_object"
+279,10 10 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-team-ctpi-daily', headers := ('{}'::jsonb || jsonb_build_object( 'Autho"
+280,40 9 * * *,f," SELECT net.http_post( url := 'https://fhfhockey.com/api/v1/db/update-start-chart-projections', body := '{}'::jsonb, headers := ('{""Content-"
+281,20 8 * * *,f,REFRESH MATERIALIZED VIEW team_power_ratings_daily;
+283,15 10 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-team-power-ratings', headers := ('{}'::jsonb || jsonb_build_object( 'Au"
+305,25 10 * * *,t," SELECT net.http_post( url := 'https://fhfhockey.com/api/v1/db/build-projection-derived-v2', body := '{}'::jsonb, headers := ('{""Content-Typ"
+308,05 10 * * *,f," SELECT net.http_post( url := 'https://fhfhockey.com/api/v1/db/run-projection-v2', body := '{}'::jsonb, headers := jsonb_build_object( 'Auth"
+318,20 10 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-season-stats', headers := ('{}'::jsonb || jsonb_build_object( 'Authoriz"
+319,25 10 * * *,f," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-rolling-games?date=recent', headers := ('{}'::jsonb || jsonb_build_obje"
+321,30 10 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-sko-stats', headers := ('{}'::jsonb || jsonb_build_object( 'Authorizati"
+323,35 10 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-wgo-averages', headers := ('{}'::jsonb || jsonb_build_object( 'Authoriz"
+326,40 10 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/sustainability/rebuild-baselines', headers := ('{}'::jsonb || jsonb_build_obje"
+327,45 10 * * *,f," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/ml/update-predictions-sko', headers := ('{}'::jsonb || jsonb_build_object( 'Autho"
+328,55 9 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-nst-team-daily', headers := ('{}'::jsonb || jsonb_build_object( 'Author"
+329,15 9 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/Teams/nst-team-stats', headers := ('{}'::jsonb || jsonb_build_object( 'Authorization"
+330,00 11 * * *,f," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-power-rankings', headers := ('{}'::jsonb || jsonb_build_object( 'Author"
+361,30 11 * * *,t," SELECT net.http_post( url := 'https://fhfhockey.com/api/v1/db/run-projection-accuracy?projectionOffsetDays=0', body := '{}'::jsonb, headers"
+363,45 9 * * *,t," SELECT net.http_post( url := 'https://fhfhockey.com/api/v1/db/ingest-projection-inputs', body := '{}'::jsonb, headers := ('{""Content-Type"":"
+364,30 9 * * *,t," SELECT net.http_post( url := 'https://fhfhockey.com/api/v1/db/update-goalie-projections-v2', body := '{}'::jsonb, headers := ('{""Content-Ty"
+365,12 9 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-team-sos', headers := ('{}'::jsonb || jsonb_build_object( 'Authorizatio"
+370,43 10 * * *,f," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-window-z?season=current&runAll=true', headers := ('{}'::js"
+371,44 10 * * *,f," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-score?season=current&runAll=true', headers := ('{}'::jsonb"
+372,46 10 * * *,f," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-trend-bands?runAll=true', headers := ('{}'::jsonb || jsonb"
+374,38 10 * * *,t,REFRESH MATERIALIZED VIEW CONCURRENTLY internal_stats.player_totals_unified;
+376,42 10 * * *,f," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-priors?season=current', headers := ('{}'::jsonb || jsonb_b"
+381,35 9 * * *,t, SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-player-underlying-stats?startDate=' || to_char((CURRENT_DATE - INTERVAL
+383,35 11 * * *,t, SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/game-predictions/forecast?fromOffsetDays=7&toOffsetDays=7&limit=16&maxRuntimeMs=2
+384,36 11 * * *,t, SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/game-predictions/forecast?fromOffsetDays=3&toOffsetDays=3&limit=16&maxRuntimeMs=2
+385,37 11 * * *,t, SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/game-predictions/forecast?fromOffsetDays=1&toOffsetDays=1&limit=16&maxRuntimeMs=2
+386,38 11 * * *,t, SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/game-predictions/forecast?fromOffsetDays=0&toOffsetDays=0&limit=16&maxRuntimeMs=2
+387,40 11 * * *,t, SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/game-predictions/score?startDate=' || to_char((CURRENT_DATE - INTERVAL '1 day')::
+388,05 8 * * *,t, SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-power-play-combinations?startDate=' || to_char((CURRENT_DATE - INTERVAL
+389,25 9 * * *,t,"SELECT net.http_get(url := 'https://fhfhockey.com/api/v1/db/update-nhl-edge-stats?action=all&limit=1000&concurrency=8', headers := ('{}'::js"
+390,25 8 * * *,t," SELECT net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-game-goal-projections?date=all', headers := ('{}'::jsonb || jsonb_build"
+391,55 9 * * *,t," select net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-lineup-deployment-tallies?action=current', headers := ('{}'::jsonb || j"
+392,0 12 * * *,t,"select net.http_post( url := 'https://fhfhockey.com/api/v1/db/update-player-trend-metrics', headers := jsonb_build_object( 'Authorization', "
+394,0 10 * * *,t,select fhfh_internal.invoke_player_forecast_endpoint('/api/v1/player-forecasts/jobs/daily')
+396,20 * * * *,t,select fhfh_internal.invoke_player_forecast_endpoint('/api/v1/player-forecasts/jobs/settle')
+397,*/5 * * * *,t,select fhfh_internal.invoke_player_forecast_endpoint('/api/v1/player-forecasts/jobs/drain?dryRun=true')
+398,42 9 * * *,t,refresh materialized view concurrently public.opponent_skater_allowed_by_position
+399,* * * * *,t," select net.http_get( url := 'https://fhfhockey.com/api/v1/db/route-runner-tick', headers := jsonb_build_object( 'Authorization', 'Bearer ' "
+400,*/2 * * * *,t," select net.http_post( url := 'https://fyhftlxokyjtpndbkfse.supabase.co/functions/v1/x-timeline-poll', headers := jsonb_build_object( 'Conte"
+401,*/5 * * * *,t,select public.x_timeline_watchdog()
+402,*/5 * * * *,t,select public.x_timeline_capture_poll_runs()
+403,55 8 * * *,t," select net.http_get( url := 'https://fhfhockey.com/api/v1/db/update-team-unit-toi?season=20262027&mode=nightly&dryRun=false', headers := ('"

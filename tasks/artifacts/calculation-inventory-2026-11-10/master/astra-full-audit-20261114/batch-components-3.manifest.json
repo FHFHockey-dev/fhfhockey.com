@@ -1,0 +1,264 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "scope": [
+    {
+      "path": "web/components/DraftDashboard/DraftDashboard.tsx",
+      "temporary_blob": "/private/tmp/astra-components-3/DraftDashboard.tsx",
+      "bytes": 203339,
+      "lines": 4490,
+      "sha256": "59b736d74864ea74b4e0f0ac137e503e3f1ee100e7ab546c1b2ab187e0acbe66",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          4490
+        ]
+      ],
+      "status": "fully read; syntax parsed; no runtime execution",
+      "symbol_rows": 491
+    },
+    {
+      "path": "web/components/DraftDashboard/DraftScoringSettings.tsx",
+      "temporary_blob": "/private/tmp/astra-components-3/DraftScoringSettings.tsx",
+      "bytes": 14148,
+      "lines": 386,
+      "sha256": "9949f9d5374546ad128465630ee2e96f4226d4d93d925a379642f62f20b042b9",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          386
+        ]
+      ],
+      "status": "fully read; syntax parsed; no runtime execution",
+      "symbol_rows": 33
+    },
+    {
+      "path": "web/components/DraftDashboard/DraftSummaryModal.tsx",
+      "temporary_blob": "/private/tmp/astra-components-3/DraftSummaryModal.tsx",
+      "bytes": 28967,
+      "lines": 808,
+      "sha256": "90de5a64b74420cdd7823c449292b59baa3f45924f54823aa25df6ad4ad14825",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          808
+        ]
+      ],
+      "status": "fully read; syntax parsed; no runtime execution",
+      "symbol_rows": 62
+    }
+  ],
+  "context_only": [
+    {
+      "path": "web/hooks/useVORPCalculations.ts",
+      "bytes": 11785,
+      "lines": 340,
+      "sha256": "1443a93e53eca14dbfbce868b0f84f97d79d6943e3b7869d69eb9c7cc0ee87b9",
+      "read_ranges": [
+        [
+          1,
+          325
+        ]
+      ],
+      "target_matches_working": true,
+      "note": "Context ranges fully read: VORP producer typed nulls; category basis; source ADP departure/survivor arithmetic. File tail beyond325 not reviewed.",
+      "integration": "context-only; excluded from three full scoped files"
+    },
+    {
+      "path": "web/lib/draftDashboard/playerValues.ts",
+      "bytes": 5223,
+      "lines": 119,
+      "sha256": "519a86edf72e39d3c619a79725f114f924d17d128f793de5e490a3ef6fe5cbf7",
+      "read_ranges": [
+        [
+          1,
+          119
+        ]
+      ],
+      "target_matches_working": true,
+      "note": "Complete context helper read: points84G skaters only; category z-score helper with role referencepool; nonneutral position weights retain unweighted base. Callee category scoring not imported/executed.",
+      "integration": "context-only; excluded from three full scoped files"
+    },
+    {
+      "path": "web/lib/draftDashboard/fantraxPlayerSources.ts",
+      "bytes": 2596,
+      "lines": 58,
+      "sha256": "de03654c8dd012c50c5117964a3d900425431d6350102631ac20e4df816ed05a",
+      "read_ranges": [
+        [
+          1,
+          58
+        ]
+      ],
+      "target_matches_working": true,
+      "note": "Complete context helper read: selected source overwrites shared ADP/position fields after unique identity maps; unmatched selected data null/empty.",
+      "integration": "context-only; excluded from three full scoped files"
+    },
+    {
+      "path": "web/lib/draftDashboard/fantraxDisplay.ts",
+      "bytes": 4863,
+      "lines": 92,
+      "sha256": "f3176827c74436e4ddb9f32cea81c67613a2e3d94b277bea50a3d45e0f5a97e8",
+      "read_ranges": [
+        [
+          1,
+          92
+        ]
+      ],
+      "target_matches_working": true,
+      "note": "Complete context helper read: legacy league override overwrites ADP and matched eligible positions; catalog exception claims not externally verified.",
+      "integration": "context-only; excluded from three full scoped files"
+    },
+    {
+      "path": "web/lib/draftDashboard/positionWeights.ts",
+      "bytes": 2137,
+      "lines": 41,
+      "sha256": "e3065aeb8af7742d8aea61cf09bb8a2d5926502e83e8227e0185f034b67f3038",
+      "read_ranges": [
+        [
+          1,
+          41
+        ]
+      ],
+      "target_matches_working": true,
+      "note": "Complete context helper read: allowed five positions; finite0..2; highest eligible weight once; neutral/default1 omitted.",
+      "integration": "context-only; excluded from three full scoped files"
+    },
+    {
+      "path": "web/lib/draftDashboard/settingsValidation.ts",
+      "bytes": 15803,
+      "lines": 460,
+      "sha256": "f594215e460d0bc0217b669b0d14046e87cb3d9df686f3170d6faeaea3d4c96d",
+      "read_ranges": [
+        [
+          1,
+          160
+        ]
+      ],
+      "target_matches_working": true,
+      "note": "Context excerpt: team2..40; unique exact draftorder; roster integer0..40/total1..100; assignment capacity/eligibility. Remaining validation not read in this batch.",
+      "integration": "context-only; excluded from three full scoped files"
+    },
+    {
+      "path": "web/__tests__/components/DraftDashboard/DraftSummaryModal.test.tsx",
+      "bytes": 7089,
+      "lines": 230,
+      "sha256": "d9ae63e90a084c0089db16beafcd6c0154c163ac880853fb0da0a38b6529604a",
+      "read_ranges": [
+        [
+          1,
+          230
+        ]
+      ],
+      "target_matches_working": true,
+      "note": "Complete context test read; no runtime. Four declarations including rank chart; summary metadata/focus, no numeric winner or source-choice regression.",
+      "integration": "context-only; excluded from three full scoped files"
+    },
+    {
+      "path": "web/__tests__/components/DraftDashboard/DraftSettingsScoring.test.tsx",
+      "bytes": 24423,
+      "lines": 593,
+      "sha256": "397692579f5b0c3eeeff28679f3ed642d007ff3d536e73d77340472f974c8160",
+      "read_ranges": [
+        [
+          1,
+          179
+        ]
+      ],
+      "target_matches_working": true,
+      "note": "Context excerpt read (plus declaration-name search across file): seven declarations for goalie separation, boosts, Pro gate and position percentages; remaining tests not fully read.",
+      "integration": "context-only; excluded from three full scoped files"
+    },
+    {
+      "path": "web/__tests__/components/DraftDashboard/DraftDashboardRecovery.test.tsx",
+      "bytes": 30911,
+      "lines": 461,
+      "sha256": "4464d27cc12b903c325d79c45646700b7cb23f2508d83ad5f5cc73ff57557b01",
+      "read_ranges": [],
+      "target_matches_working": true,
+      "note": "Search-only test declaration names, no body review this batch.",
+      "integration": "context-only; excluded from three full scoped files"
+    },
+    {
+      "path": "web/__tests__/components/DraftDashboard/DraftRetention.test.tsx",
+      "bytes": 10122,
+      "lines": 130,
+      "sha256": "a565619d077798e8a8cb4eb19db0b789fb2c0170208ba2810e57cfafb389bf0c",
+      "read_ranges": [],
+      "target_matches_working": true,
+      "note": "Search-only Fantrax/source/winner/unknown/tie hits; provider hooks/panel mocked. No body review this batch.",
+      "integration": "context-only; excluded from three full scoped files"
+    },
+    {
+      "path": "web/__tests__/components/DraftDashboard/KeeperWorkflow.test.tsx",
+      "bytes": 15543,
+      "lines": 358,
+      "sha256": "f309048bc003a57e15a828c7a500dfaba79e0c9bf7bcfc2e992ef1dd4cef740e",
+      "read_ranges": [],
+      "target_matches_working": true,
+      "note": "Search-only matching names/excerpts; no full body review this batch.",
+      "integration": "context-only; excluded from three full scoped files"
+    },
+    {
+      "path": "web/__tests__/components/DraftDashboard/ProjectionSourceAccuracy.test.tsx",
+      "bytes": 1980,
+      "lines": 60,
+      "sha256": "417a19960e09c33fe90e5e03539cfb8b73d29e2d437663e917a0cdbd4b05c07a",
+      "read_ranges": [],
+      "target_matches_working": true,
+      "note": "Search only (no matching lines), no body review this batch.",
+      "integration": "context-only; excluded from three full scoped files"
+    },
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/OWNER-DECISIONS.md",
+      "bytes": 67656,
+      "lines": 451,
+      "sha256": "f27b30d4b74355f7f957171444783c16096c1d68030296358fe406657d838497",
+      "read_ranges": [
+        [
+          170,
+          210
+        ],
+        [
+          300,
+          341
+        ]
+      ],
+      "target_matches_working": true,
+      "note": "Governing decisions reread excerpts54/55/113/114/115/120; previously full-read governing contract reused. Current registry tracked separately from application pin.",
+      "integration": "context-only; excluded from three full scoped files"
+    }
+  ],
+  "symbol_rows": 586,
+  "context_rows": 13,
+  "total_rows": 599,
+  "probe": {
+    "kind": "independent arithmetic over source formulas; no application code imported",
+    "yahoo": {
+      "departed": [
+        "A"
+      ],
+      "C_vona": -20,
+      "A_pick10_adp_delta": 9
+    },
+    "fantrax": {
+      "departed": [
+        "B"
+      ],
+      "C_vona": -40,
+      "A_pick10_adp_delta": -20
+    },
+    "tied_points_winner_score": 0.5,
+    "boost_50_on_0_2": 0.30000000000000004,
+    "position_percent250_clamped": 2.0
+  },
+  "limits": [
+    "No app modules imported",
+    "No tests run",
+    "No runtime/DB/provider/browser/network actions",
+    "TS syntax only; no typecheck",
+    "Root canonical ledger untouched"
+  ]
+}

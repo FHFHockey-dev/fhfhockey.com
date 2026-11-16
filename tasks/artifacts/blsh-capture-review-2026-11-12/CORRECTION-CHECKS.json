@@ -1,0 +1,224 @@
+{
+  "checkedAtUTC": "2026-11-12T18:05:54.700253+00:00",
+  "branch": "octoberBranch",
+  "HEAD": "24b1cb4d3048a3dba8234cf92c62e8f2b72f877f",
+  "status": "local_correction_verified_independent_followup_complete_not_live",
+  "sourcePins": [
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+      "sha256": "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb",
+      "bytes": 25592,
+      "reviewBaselineSHA256": "f0cad82ee881c9b7c9900527910410c83311017a57479a8df76cbe50813ed8a8"
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "sha256": "bfb68aac3aff5d5d2882a34138d42d7602fec5d3c0051a3bbfe0a80526d95b0b",
+      "bytes": 34246,
+      "reviewBaselineSHA256": "c98006c5a66b27ef705380945a683f18d72d49273216940d273297ffb6721624"
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+      "sha256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+      "bytes": 8741,
+      "reviewBaselineSHA256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368"
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+      "sha256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030",
+      "bytes": 15563,
+      "reviewBaselineSHA256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030"
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+      "sha256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+      "bytes": 10312,
+      "reviewBaselineSHA256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7"
+    },
+    {
+      "path": "web/lib/nst/client.ts",
+      "sha256": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+      "bytes": 16346,
+      "reviewBaselineSHA256": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d"
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.ts",
+      "sha256": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+      "bytes": 7834,
+      "reviewBaselineSHA256": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a"
+    },
+    {
+      "path": "web/lib/nst/admissionOrigin.ts",
+      "sha256": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+      "bytes": 1231,
+      "reviewBaselineSHA256": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba"
+    },
+    {
+      "path": "web/lib/nst/jobLifecycle.server.ts",
+      "sha256": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+      "bytes": 8955,
+      "reviewBaselineSHA256": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8"
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "bytes": 6944,
+      "reviewBaselineSHA256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a"
+    },
+    {
+      "path": "web/lib/cron/nstRateLimitPolicy.ts",
+      "sha256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+      "bytes": 4288,
+      "reviewBaselineSHA256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c"
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+      "sha256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880",
+      "bytes": 25115,
+      "reviewBaselineSHA256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880"
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+      "sha256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf",
+      "bytes": 22695,
+      "reviewBaselineSHA256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf"
+    },
+    {
+      "path": "web/lib/skoElement/contract.ts",
+      "sha256": "6bda1cd0c52980989addb9f16a9fc0b8ccef5d2125334becc91bddeb2e08c40b",
+      "bytes": 16801,
+      "reviewBaselineSHA256": "6bda1cd0c52980989addb9f16a9fc0b8ccef5d2125334becc91bddeb2e08c40b"
+    },
+    {
+      "path": "web/lib/skoElement/interpret.ts",
+      "sha256": "c330d79ef1851024109ebfa3b2732954f4e8429c9a82d4ae681b2433cec65e99",
+      "bytes": 45580,
+      "reviewBaselineSHA256": "c330d79ef1851024109ebfa3b2732954f4e8429c9a82d4ae681b2433cec65e99"
+    },
+    {
+      "path": "web/lib/skoElement/fixtures.ts",
+      "sha256": "f04a937c6d85425d418fe1399855b37c08b1f06c938eb5fb1fa18740afa395f9",
+      "bytes": 18113,
+      "reviewBaselineSHA256": "f04a937c6d85425d418fe1399855b37c08b1f06c938eb5fb1fa18740afa395f9"
+    },
+    {
+      "path": "web/lib/skoElement/interpret.test.ts",
+      "sha256": "3b7fe2d756de9087731e5aefda4144ee172faa96ac734f41ed12dfc13eda29be",
+      "bytes": 38749,
+      "reviewBaselineSHA256": null
+    }
+  ],
+  "checks": [
+    {
+      "command": "npm test -- --run scripts/blsh/nativeProcessCaptureRunner.test.ts -t 'independent review durability'",
+      "status": "failed_before_fix",
+      "testsFailed": 20,
+      "testsSkipped": 63,
+      "asynchronousAssertionErrors": 10,
+      "log": "REGRESSIONS-BEFORE.log"
+    },
+    {
+      "command": "npm test -- --run scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "status": "passed",
+      "tests": 83,
+      "durationSeconds": 8.46,
+      "log": "REGRESSIONS-AFTER.log",
+      "note": "Initial local correction; superseded by final 87-case runner run."
+    },
+    {
+      "command": "npm test -- --run scripts/blsh/nativeProcessCaptureAdapter.test.ts components/blshTrade/BlshTradeComparison.test.tsx lib/skoElement/interpret.test.ts",
+      "status": "passed",
+      "tests": 117,
+      "files": {
+        "adapter": 29,
+        "tradeUI": 22,
+        "skoInterpreter": 66
+      },
+      "durationSeconds": 3.24,
+      "log": "CORRECTION-TESTS.log"
+    },
+    {
+      "command": "npm test -- --run scripts/blsh/nativeProcessCaptureRunner.test.ts -t 'source snapshot reads|completion marker|completion-marker removal'",
+      "status": "failed_before_followup_fix",
+      "testsFailed": 4,
+      "testsSkipped": 83,
+      "asynchronousAssertionErrors": 2,
+      "log": "REVIEW-REGRESSIONS-BEFORE.log"
+    },
+    {
+      "command": "npm test -- --run scripts/blsh/nativeProcessCaptureRunner.test.ts scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+      "status": "passed",
+      "tests": 116,
+      "files": {
+        "runner": 87,
+        "adapter": 29
+      },
+      "durationSeconds": 11.93,
+      "log": "FINAL-RUNNER-TESTS.log"
+    },
+    {
+      "command": "npx eslint scripts/blsh/nativeProcessCaptureRunner.ts scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "log": "LINT.log"
+    },
+    {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "log": "TYPECHECK.log",
+      "note": "Final successor configured 8 GiB typecheck passed after independent-review fixes; first correction also passed.",
+      "exitCode": 0
+    }
+  ],
+  "captureTests": 116,
+  "currentFixtureTestsTotal": 204,
+  "sourceEdits": [
+    "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+    "web/scripts/blsh/nativeProcessCaptureRunner.test.ts"
+  ],
+  "skoReconciliation": {
+    "changedSinceNovember9": [
+      "web/lib/skoElement/contract.ts",
+      "web/lib/skoElement/interpret.ts",
+      "web/lib/skoElement/fixtures.ts"
+    ],
+    "currentImplementationCommit": "0f3614cb96",
+    "scope": "Reviewed source differences, tested current 66-case interpreter and 22-case trade fixture suites; observation-only and unknown-game withholding preserved. No real forecast run; fixtures only."
+  },
+  "independentReview": {
+    "status": "completed_no_remaining_findings_in_bounded_scope",
+    "task": "/root/blsh_correction_review",
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "medium",
+    "chefActualSettingsExposed": false,
+    "staffingNote": "mise-en-place unavailable-runtime fallback; no claimed verified effort hierarchy",
+    "report": "INDEPENDENT-REVIEW.md",
+    "originalFindingsClosed": 2,
+    "reviewerReportSHA256": "afe5caa19a4d6d78a145d60336bf981a6ec3433ed0e3790661e27c248a8a0191"
+  },
+  "externalOperations": {
+    "provider": 0,
+    "database": 0,
+    "realLedger": 0,
+    "capture": 0,
+    "forecast": 0,
+    "build": 0,
+    "deployment": 0
+  },
+  "runtimeIdentificationVerified": false,
+  "pilotAuthorized": false,
+  "newRegressions": 24,
+  "captureRuntimeSourceSHA256": {
+    "runner": "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb",
+    "preparation": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+    "adapter": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+    "client": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+    "budget": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+    "admission": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+    "admissionOrigin": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+    "lifecycle": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+    "ratePolicy": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c"
+  },
+  "runtimeLimitNote": "Synchronous filesystem work cannot be forcibly interrupted by JS timers; elapsed overruns are rejected when control returns. Unknown durability/marker cleanup remains a failed partial packet requiring review.",
+  "finalHEAD": "24b1cb4d3048a3dba8234cf92c62e8f2b72f877f",
+  "finalPinsRechecked": true
+}

@@ -1,0 +1,623 @@
+{
+  "at": "2026-11-10T18:53:31.103480+00:00",
+  "files": [
+    {
+      "path": "tasks/artifacts/beast-integrity-2026-11-09/BEAST-INTEGRITY.md",
+      "bytes": 12041,
+      "sha256": "a31b0e2b984fa63b9d9ede04c73f020f2b321be5c08363415ee6e9822eafbdc2"
+    },
+    {
+      "path": "tasks/artifacts/beast-integrity-2026-11-09/REPAIR-INVENTORY.md",
+      "bytes": 8896,
+      "sha256": "4b070c295dd139776f6e470249b413e0afd23907b7699f04b6a537573d814c81"
+    },
+    {
+      "path": "tasks/artifacts/beast-integrity-2026-11-09/rolling-gap-manifest.json",
+      "bytes": 21947,
+      "sha256": "bb206e10260249b49b1e6dd7e15a5aebdbba4b4501b30fa1e6cc6ba561e89b2b"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/ADAPTER-CHECKS.json",
+      "bytes": 9204,
+      "sha256": "af42d6bb40f7cd7716913b67a38be283da0a7fccfeb6e271b9b59eda1405aede"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/ADAPTER-HANDOFF.md",
+      "bytes": 8555,
+      "sha256": "239675766dd776b1cb04d0f36fef943867b4cfe0da031d7581b12a364d27d317"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/FRESH-CAPTURE-PROPOSAL.md",
+      "bytes": 14182,
+      "sha256": "4833a5b7ca06dfac5297373f7289d4e525dfae002a0d0f3dc0704da7cba4021e"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/MANIFEST.json",
+      "bytes": 12856,
+      "sha256": "66d60342d609b07816736923f3a9d9cf3bdc4e2485f7c4a69d80a56117a58443"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/NST-OWNER-HANDOFF.md",
+      "bytes": 5418,
+      "sha256": "b7a6a8f03462ccbc4d4905a5e841567b74cd07ee91fcf99de59ba68c4443af29"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-AND-RUNTIME.md",
+      "bytes": 6671,
+      "sha256": "cb29bd670f39b58a3895ef1786b4235f3e7097b542686503fcc0a897795ebfe5"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-PREDISPATCH-RECHECK.json",
+      "bytes": 772,
+      "sha256": "6f08651193ce3ef9666a4cb6d43ec7ccf55189d4e4824df22493e77b50e7f539"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-PREDISPATCH-REPRO.cjs",
+      "bytes": 6105,
+      "sha256": "c8d565f45c5e3abe1ae01e02ffa4ecfa09db5673e49d51106db61a93f8b56382"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-PREDISPATCH-REPRO.json",
+      "bytes": 972,
+      "sha256": "0f707986d397c806cc96e60903f7ffed3c44b1e8b984b043eb7b711c083b705d"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNNER-CHECKS.json",
+      "bytes": 4130,
+      "sha256": "676c92cc84aa59fdf6b6e32d6b86c1c7c6479447e228becf2c67961b4500bcf5"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNNER-HANDOFF.md",
+      "bytes": 9367,
+      "sha256": "ba47d0a7d501ea182e31b95b3d551d9c68f2492c634af2ab7451e0e08dfe83a3"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-IMPORT-PROBE.cjs",
+      "bytes": 4792,
+      "sha256": "fab2ddbc34aada875b5c2e70869f340e13b150b536d7482da357ed244a8946a7"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-IMPORT-PROBE.json",
+      "bytes": 3779,
+      "sha256": "0e0cec52ba0c5831658050e8b59f37120133d90bf04b25ef48815ca68c3e383e"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-IMPORT-RECHECK.json",
+      "bytes": 3779,
+      "sha256": "08a0e2ff062880ef9e9a1731de7bfec2afea458938dcd4ba823372486088ce6c"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-POST-IMPORT-TLS.json",
+      "bytes": 7549,
+      "sha256": "bad3d4bd1de949221a29a7cf2f115be633fcf3b48857573a7a3a45554437d875"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-PROBE.json",
+      "bytes": 7455,
+      "sha256": "58a4ad241d504cd39c0ad9b2da099db405dbfe2e18215b52b87aea0d70740978"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-PROBE.mjs",
+      "bytes": 9810,
+      "sha256": "265e45c360b963d0272e87d2d6e8622031bebd4eac73306e489d1a01cf4e9830"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/STATUS.md",
+      "bytes": 15441,
+      "sha256": "a3a46067ba0065043855539604e6c1ebfd99525c4ae83cfa6b88054729f31bdf"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/VERIFICATION.json",
+      "bytes": 45729,
+      "sha256": "36d5a4db60135b19a90064c24dfa410b798e1c1e1f4457ef1c4d48779b1b8c82"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/ADAPTER-CHECKS.json.snapshot",
+      "bytes": 7618,
+      "sha256": "1cd107b315d0a42d03ce45119d84a19c99724f82baf03254b618d9723679592c"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/MANIFEST.json",
+      "bytes": 861,
+      "sha256": "39e8bbcf49cee9d14e846e4109033db26434b7a03d7f00b2004d975eaa6cd5d7"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/RUNTIME-PROBE.mjs.snapshot",
+      "bytes": 9052,
+      "sha256": "528c6e3ce0197f82fc0a1303405b7cb54b6f11cbb51869462901963ca24cf2eb"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/nativeProcessCaptureRunner.test.ts.snapshot",
+      "bytes": 22378,
+      "sha256": "96ea409fc37329337e2d192ac1d2e23b694236bf2d0b87e30c2a9f0c0803b8d7"
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/nativeProcessCaptureRunner.ts.snapshot",
+      "bytes": 23001,
+      "sha256": "c8474d7478640aeee69c0a96aac12ac8a8957e8a89b64bdc3332af74b83961e9"
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/CHECKS.json",
+      "bytes": 2453,
+      "sha256": "7ae1c2b55a0bfea6a5fadef995146ae240daf415fc19822551e4b55528793020"
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/HANDOFF.md",
+      "bytes": 10696,
+      "sha256": "ced0f7b44fbc642054c05dbf551eda0560c73835a0f50ade3dd785d9fc21b82d"
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/MANIFEST.json",
+      "bytes": 3735,
+      "sha256": "8c42a4fca88963730c8e8022748e2b7f319693c804d2bbc06d7afbcd4a3b89af"
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/RETAINED-EMPTY-REPLAY.json",
+      "bytes": 3171,
+      "sha256": "9c202535db392b2087ac7d91ad04591e285dc2400be5cb8700f7bb8d185c52d6"
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/SOURCE-PINS.json",
+      "bytes": 762,
+      "sha256": "bf7d4410a25cbf3a93a0bb95bd0d87a157c2aab03ad0d806fb2460da48190ceb"
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/closed_gate.cjs",
+      "bytes": 4275,
+      "sha256": "b5578fd7d794d233ac7672ecbddf40f30f855121c658e86987c9031216be353c"
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/prepare_packet.py",
+      "bytes": 18232,
+      "sha256": "b8a5fc7f270f040c46e0602ea4d377662676042e39a818dd889369c0ed7e05f3"
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/test_prepare_packet.py",
+      "bytes": 26176,
+      "sha256": "0371c877a19dfadf9dd8d2be6aeed7640e28070c639d6e1657e9462a4d4937f2"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+      "bytes": 779713,
+      "sha256": "bdab64ffbd9807ae03820093c4472cb4f7a1c3bd8f127f4c1f4ebde86750557b"
+    },
+    {
+      "path": "tasks/artifacts/homepage-loading-2026-11-10/CANDIDATE.json",
+      "bytes": 1977,
+      "sha256": "92b60ee2a08550cdb40c20247fc4a2097824b072ce44f61afaecb7cc63ed4a2f"
+    },
+    {
+      "path": "tasks/artifacts/homepage-loading-2026-11-10/FINDINGS.md",
+      "bytes": 4118,
+      "sha256": "84beb48241e79c716cc09feb6e2ee126ccab689e5232055c95710f241056208c"
+    },
+    {
+      "path": "tasks/artifacts/homepage-loading-2026-11-10/HANDOFF.md",
+      "bytes": 3284,
+      "sha256": "07b4743ce2d8eb457398c1f0faa13575b54ba97ba19013585ac5e3b4e49a2203"
+    },
+    {
+      "path": "tasks/artifacts/october-production-release-2026-11-10/RELEASE-NOTES.md",
+      "bytes": 3364,
+      "sha256": "9b8018fe3f4fd32dd6dddcc9374833ff8a366ce0d58aeb6f57d7feecfcd81d5c"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/verification-harness/check.py",
+      "bytes": 3727,
+      "sha256": "9dfad2a36b409e21094e9501d5e6db765d021210ac3f2d4d57536e6c3cacca34"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/verification-harness/guard.cjs",
+      "bytes": 1977,
+      "sha256": "8b296813656a19f1a272efa71a3fc137e9850fabc03655dbfa0c35923fe896f1"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/verification-harness/prepare.py",
+      "bytes": 4660,
+      "sha256": "325972c8a93c9ba9b4bdcfe6bb746ed6f5f11a21f486128ab371179283999dfe"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/CONFIRMATION-REVIEW.md",
+      "bytes": 7499,
+      "sha256": "0621295262561fed8bf3351f7b40dbd7b4763d38d6994a8f741c116c7c299ccf"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/HANDOFF.md",
+      "bytes": 5629,
+      "sha256": "f5a9b2eac2e76897cca51b81827829781e2d72eff77e935be855881e1dcc2320"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/playwright.config.ts",
+      "bytes": 465,
+      "sha256": "1bf08923e0df016605187874fc8e2711b1e1e7eb5a5da4d85194c40a9cb6b901"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/run-browser.py",
+      "bytes": 1601,
+      "sha256": "1bbe5e86c40f322ebbef3b96a4179bdc7be43560d3487d1c6c145cbe555493f8"
+    },
+    {
+      "path": "tasks/artifacts/rso-local-loading-2026-11-10/run-confirmation-browser.py",
+      "bytes": 1732,
+      "sha256": "06f0a85b8b86fe8727f471f2c3a7ca8aa48688d332f7ee01cf66e38a055e8acc"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.mjs",
+      "bytes": 4489,
+      "sha256": "9c6edc71a3f9c431a982781f19c5a5299779aa90e67771a916d1812d08002c45"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.test.mjs",
+      "bytes": 5115,
+      "sha256": "0d5a06ee20527f93add4864b82cb97e1daa16b06a5dfc88490a83eb46b16d0e0"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.mjs",
+      "bytes": 6238,
+      "sha256": "b7aee8bc7dc1893852fd67b15dbd7de491dd47cb126d24c433bd36c3e0ac3a52"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs",
+      "bytes": 8763,
+      "sha256": "fa4e92da8dd9eebbb48598d68daf161255bf043492d85e5878b7a407b3a64678"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.mjs",
+      "bytes": 6125,
+      "sha256": "20183ca8beb136daf176607c8492126ce56f8785a20231338b309e90207b5d94"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs",
+      "bytes": 11857,
+      "sha256": "29e63d2df71878c092b9bbb8d4d5a0f97466f6df918bd0fed052f4814014614f"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs",
+      "bytes": 12997,
+      "sha256": "467a695d2d6749e091ce209bc834c1d452bb7eebb00a30f35cb303188d78f5fe"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs",
+      "bytes": 15198,
+      "sha256": "18c72f6638d7f3cf8af904a1ed563266bc3063f638693145dc9cc8147e893abd"
+    },
+    {
+      "path": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs",
+      "bytes": 12997,
+      "sha256": "467a695d2d6749e091ce209bc834c1d452bb7eebb00a30f35cb303188d78f5fe"
+    },
+    {
+      "path": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs",
+      "bytes": 15198,
+      "sha256": "18c72f6638d7f3cf8af904a1ed563266bc3063f638693145dc9cc8147e893abd"
+    },
+    {
+      "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "bytes": 323084,
+      "sha256": "9580eab7d224c4dfb9cbc1bb45efdc276234dafd308a834e838fec16c0b971e4"
+    },
+    {
+      "path": "web/__tests__/pages/_app.test.tsx",
+      "bytes": 9192,
+      "sha256": "d9b05de1cb22069e671afe0ae6d472a9e8e82f3d02386b20be2b6176a313bd21"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/contextual-rankings-matrix.test.ts",
+      "bytes": 11943,
+      "sha256": "6c3ba629801236a9b547fb9dcfdde76f5c4ff2bf49c40f203274382104dcd65d"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-skater-composite-ratings.test.ts",
+      "bytes": 4978,
+      "sha256": "08dd219e4e096aa9322821874489ae942f274839caaa6f781f870f9ed1e65dbf"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts",
+      "bytes": 16986,
+      "sha256": "f618f184f27cdf81873eb08f095bcecaba53fbc8b0a01e392f6918375947ccc0"
+    },
+    {
+      "path": "web/__tests__/pages/homepage-loading.test.ts",
+      "bytes": 3520,
+      "sha256": "231e330f45613afd8490811a0d6c2fc6e5fc02e4c28d38b99faeef61ccb94aa3"
+    },
+    {
+      "path": "web/__tests__/pages/roster-schedule-optimizer.test.tsx",
+      "bytes": 1139,
+      "sha256": "741c8d4fb48ba3e95ef8d7fe72311d3e5bfcc564c91d1788e4061810657dbdd3"
+    },
+    {
+      "path": "web/components/Rankings/ExperimentalToolkitPanel.module.scss",
+      "bytes": 2243,
+      "sha256": "58f23d71faa57e22cd4edd67bec6ab1d27a9594ee8de8a61c9d9de7f79735283"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+      "bytes": 34282,
+      "sha256": "d74610b3624b518a7c27e4fa2b870e1a449b8802eb13c62607f1f18b5a35a2eb"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx",
+      "bytes": 13340,
+      "sha256": "bc0383b0acdb75bec2cf081a0ae7852392851ca7035fb80298c896a9681b65e4"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateCard.tsx",
+      "bytes": 13512,
+      "sha256": "4d765bc9bfb0e83c661cb55af71fa16c28df463e8eb0da159b3f8bfc26981961"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "bytes": 190283,
+      "sha256": "cef3f1fb04f4f83236c5ff87acefcaa7aac967added99102fdac0067f37a2cd5"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RsoLoading.module.scss",
+      "bytes": 1223,
+      "sha256": "1ce3937e09eebb8175ae1b80300fd54adb754b93442b5d8ff8fc619115f9849b"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RsoLoading.tsx",
+      "bytes": 1824,
+      "sha256": "8c9a1d3ea2a025b938e55bda802c190afb482d6faa7261c834dbf16e1f993b8f"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/StreamingItinerary.tsx",
+      "bytes": 13236,
+      "sha256": "d5055c6ba822e2b91b57adcfb34043c37a364fb188d2876b11875c78873a0a7f"
+    },
+    {
+      "path": "web/components/TransactionTrends/TransactionTrends.test.tsx",
+      "bytes": 14716,
+      "sha256": "b4d788c759e1cb0e850dc5dfa51625f91d2976bef766eb18d3bcc16fb863eec3"
+    },
+    {
+      "path": "web/components/TransactionTrends/TransactionTrends.tsx",
+      "bytes": 18858,
+      "sha256": "3b98a65533939bb63067c34e3977ac883a5dc04e56ca2fd67d7ad31d62cfc035"
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+      "bytes": 22695,
+      "sha256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf"
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+      "bytes": 25115,
+      "sha256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880"
+    },
+    {
+      "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+      "bytes": 201328,
+      "sha256": "aacdaa9ca81f7d6ef8408f70afa2c5d315adc06f1ad1413d33402184da785fbd"
+    },
+    {
+      "path": "web/e2e/rso-acceptance.spec.ts",
+      "bytes": 26950,
+      "sha256": "6c351f5f7e560a44087a9c5591ad36e4d357560d146fbabfdb75d0945b3f41e9"
+    },
+    {
+      "path": "web/e2e/rso-continuity.spec.ts",
+      "bytes": 23804,
+      "sha256": "65eeb204c522e712e0978ce0466f9096bb2f79cb5a052c47eb5bd2ee8d12e825"
+    },
+    {
+      "path": "web/lib/homepageSeason.test.ts",
+      "bytes": 1030,
+      "sha256": "963d2c2e9d51d90c60dd730c2c6a3b23b0e16f24b84ef39a003ac79da51fbc33"
+    },
+    {
+      "path": "web/lib/homepageSeason.ts",
+      "bytes": 817,
+      "sha256": "859c708b045e104c1de4ccd38aae70e9a17144fba1903989ab4ad84c6d9525cb"
+    },
+    {
+      "path": "web/lib/in-season/workspaceSchema.test.ts",
+      "bytes": 34351,
+      "sha256": "81a5843ed0ca2fe26ab208ecc463377846e81a996f501d858a4de96066ea5200"
+    },
+    {
+      "path": "web/lib/in-season/workspaceSchema.ts",
+      "bytes": 23263,
+      "sha256": "0a4509cf3f9ae8c6784697e566ec829a413c17b79d2518c80fe2dc04bc4e9f03"
+    },
+    {
+      "path": "web/lib/rankings/comparison.test.ts",
+      "bytes": 5812,
+      "sha256": "346660cd08d17d2df52923e7b1ada0d66bc1518de152290dadde2bad68a55b35"
+    },
+    {
+      "path": "web/lib/rankings/comparison.ts",
+      "bytes": 12600,
+      "sha256": "783cb99f2a52b52fe9264d229b7879b7a11e1d41de85838b6cb8bac78eb46826"
+    },
+    {
+      "path": "web/lib/rankings/goalieMatrix.test.ts",
+      "bytes": 51531,
+      "sha256": "b3b2ad324f6ee9b1f00cfe62f59306dab253560c132ef936baf0a2090de81b21"
+    },
+    {
+      "path": "web/lib/rankings/goalieMatrix.ts",
+      "bytes": 55577,
+      "sha256": "fe717d020aee0943a985344ad7dace3bcd6db3ec6b4fec070ebe967fa51c3a6c"
+    },
+    {
+      "path": "web/lib/rankings/goaliePopulation.test.ts",
+      "bytes": 11667,
+      "sha256": "b51454f94d175842f5b5e0e05a8848dfe493c4c62b80675de2f8462f164ad656"
+    },
+    {
+      "path": "web/lib/rankings/goaliePopulation.ts",
+      "bytes": 10810,
+      "sha256": "2883458a863ec11ba9fc27d1f3447b9cd95969fac888f1fe9fbf99a2546d4c50"
+    },
+    {
+      "path": "web/lib/rankings/rankingQueries.test.ts",
+      "bytes": 30213,
+      "sha256": "bbb7a82e9096c40d16ae6a098ae7bf412ae5c8dfe8219c66055c1264c1eff4f4"
+    },
+    {
+      "path": "web/lib/rankings/rankingQueries.ts",
+      "bytes": 36214,
+      "sha256": "bfce7388adc0aab607f043a10ea83f4603aa9f9ccc71ecec2fe1adfa199a8223"
+    },
+    {
+      "path": "web/lib/rankings/rankingTypes.ts",
+      "bytes": 11533,
+      "sha256": "64aa0fe24234c33eaddae4d99ff497ae37adcb052b7526772c829c586ce5471c"
+    },
+    {
+      "path": "web/lib/rankings/skaterCompositeMethodology.ts",
+      "bytes": 10807,
+      "sha256": "9f5bc6eb70d31e854e6ec3b09e83e1fe7dfc936b680d7f51ef33f2eda2c345c1"
+    },
+    {
+      "path": "web/lib/rankings/skaterCompositeSourceCoverage.test.ts",
+      "bytes": 9220,
+      "sha256": "f1c6dd98705c216a57aad9b1bf62ee4e1e1eff80aa0be46323e8f216efb083d0"
+    },
+    {
+      "path": "web/lib/rankings/skaterCompositeSourceCoverage.ts",
+      "bytes": 7866,
+      "sha256": "aaa9e2bc650bb523a0b02a7329d1207730d5aec1309cdaa64ccfcda9d06f7502"
+    },
+    {
+      "path": "web/lib/rankings/skaterCompositeWriter.test.ts",
+      "bytes": 20379,
+      "sha256": "ea728357281d7f82d82f912d90c58d73f3b6ada0d56b8db7b081ead899b854dc"
+    },
+    {
+      "path": "web/lib/rankings/skaterCompositeWriter.ts",
+      "bytes": 29054,
+      "sha256": "0a201cb2caa06aba46ce9295145d8596083efaf7f064f24df38fe25707297b73"
+    },
+    {
+      "path": "web/lib/rankings/snapshot.test.ts",
+      "bytes": 5608,
+      "sha256": "0b0ea72847605f27fe9ee4fd393ca4b21e5265658f89708f44db523c0a8d0859"
+    },
+    {
+      "path": "web/lib/rankings/snapshot.ts",
+      "bytes": 10272,
+      "sha256": "8c3ec596497ef54148e8eb7dbde0d9e606c3cb1c34a7d62aad70eb886e6d217f"
+    },
+    {
+      "path": "web/lib/rankings/teamMatrix.test.ts",
+      "bytes": 29594,
+      "sha256": "5de1c7b8990777ffbc7cd88ab0ab0919bc2f2a38b77ba61d28106f6eaf363cd5"
+    },
+    {
+      "path": "web/lib/rankings/teamMatrix.ts",
+      "bytes": 54770,
+      "sha256": "2e0b2ed78a4795f291491b06434bdde4f343cfb6dc66f5aac41ba392a4c1952e"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/inputReadiness.test.ts",
+      "bytes": 6446,
+      "sha256": "1b9ebe33fef1fae5f3cc2c1538b3db05e2889058f729b70d134d17a68ddf5bd7"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/inputReadiness.ts",
+      "bytes": 5186,
+      "sha256": "e4047d12741ee7ddcf3b540d151bdc7ba31a6ab644cbbfd2b8c02faaf74bb7b9"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+      "bytes": 19784,
+      "sha256": "cdf59f784452e1317d80adb68d5e0827c28ded9a250c58e5ead80de64dd85e65"
+    },
+    {
+      "path": "web/lib/transactions/trendRequestCache.test.ts",
+      "bytes": 1902,
+      "sha256": "69fd5cf820f5790b8ebf4f766caa624ddd8719d1c5f68fc166cbdd8774895ce3"
+    },
+    {
+      "path": "web/lib/transactions/trendRequestCache.ts",
+      "bytes": 1349,
+      "sha256": "459725715f0b35a348d7172d11c5607dd5a362cf63ddb25ef69661178311c0d7"
+    },
+    {
+      "path": "web/pages/_app.tsx",
+      "bytes": 4693,
+      "sha256": "bce3613f62b89e5d4025cb54674926988dad8c0d6e34b25247dc256118949322"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-skater-composite-ratings.ts",
+      "bytes": 5512,
+      "sha256": "868e68b7100d116417345b6b9e24e2804a4a217ff4dd25ef3329fb3f2bdb6e9e"
+    },
+    {
+      "path": "web/pages/api/v1/transactions/ownership-trends.ts",
+      "bytes": 18201,
+      "sha256": "d1277cef604d09e37ad60fe013c6fb64c33cc6a0975713cbaa5a94ff77e58776"
+    },
+    {
+      "path": "web/pages/index.tsx",
+      "bytes": 22900,
+      "sha256": "b67169f8de52e5e72aaa4fb366ff2cef641654ac6143b776297fe140b6b003cb"
+    },
+    {
+      "path": "web/pages/roster-schedule-optimizer.tsx",
+      "bytes": 784,
+      "sha256": "9ebaf930cd4e1225d67d05a75e92752a164d4be599190785663cf428039a41d6"
+    },
+    {
+      "path": "web/scripts/beast/prepareRollingGapRepair.test.ts",
+      "bytes": 7106,
+      "sha256": "ca40170c315de56a1c7f1c3851f93d13bfb78147931cc3b6c4e2b3062a394be6"
+    },
+    {
+      "path": "web/scripts/beast/prepareRollingGapRepair.ts",
+      "bytes": 15235,
+      "sha256": "a74e0ab500861d23097a6311c60bf98f4e5d16f9d2cbb6cbc9d93bde0eacd120"
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+      "bytes": 15563,
+      "sha256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030"
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+      "bytes": 8741,
+      "sha256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368"
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "bytes": 25715,
+      "sha256": "c98006c5a66b27ef705380945a683f18d72d49273216940d273297ffb6721624"
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+      "bytes": 24339,
+      "sha256": "f0cad82ee881c9b7c9900527910410c83311017a57479a8df76cbe50813ed8a8"
+    },
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/AUDIT-CONTEXT.md",
+      "bytes": 462241,
+      "sha256": "8c8bea11489e7121fe0237f2519f68383a6c9b085a8b14401338c891fe4ed9e4"
+    },
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/CALCULATIONS-OPUS.md",
+      "bytes": 2150700,
+      "sha256": "f574afbe4646ad10d1cb180d062b912209027804824b38a1e01de401dadb06a7"
+    },
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/audit-context-opus.json",
+      "bytes": 516736,
+      "sha256": "a806865b18d9f68f2706b183572e923ceaf2bff20d4642dacd65b1612d12286a"
+    },
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/calculations-opus.json",
+      "bytes": 2327503,
+      "sha256": "436663d6ea9cf3104f24bed7d3c4f040dd457e127547c5e80d6a8502526f6845"
+    },
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/coverage-notes.md",
+      "bytes": 287308,
+      "sha256": "d135b543ece55299ecafa3c18a382784d1d8aef2e039c57ae21611fba08f7433"
+    }
+  ],
+  "securityPatternFindings": [],
+  "status": "final combined gates passed; reconciled immutable candidate",
+  "concurrentAuditCommit": "dc44c0790f4502aa411df53eedc71ffe4b0dc0c6"
+}

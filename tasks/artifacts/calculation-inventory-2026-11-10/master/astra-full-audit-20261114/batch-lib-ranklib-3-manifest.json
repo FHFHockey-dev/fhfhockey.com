@@ -1,0 +1,117 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "files": [
+    {
+      "path": "web/lib/rankings/metricDefinitions.test.ts",
+      "local": "/tmp/astra-ranklib3/metricDefinitions.test.ts",
+      "lines": 276,
+      "sha256": "49bf5889e4dcbda6504a51b46122bae9f410757f5ca02347bca3b7d3dfa1b8ef",
+      "fullRead": true,
+      "bytes": 12114,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          276
+        ]
+      ],
+      "rows": 28
+    },
+    {
+      "path": "web/lib/rankings/metricDefinitions.ts",
+      "local": "/tmp/astra-ranklib3/metricDefinitions.ts",
+      "lines": 1062,
+      "sha256": "8d207d06c2aa3e3ee9aabbdb933f4760052f9b9a773e9af8a6be43ae39ebf4f2",
+      "fullRead": true,
+      "bytes": 36948,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          1062
+        ]
+      ],
+      "rows": 86
+    },
+    {
+      "path": "web/lib/rankings/playerMatrix.test.ts",
+      "local": "/tmp/astra-ranklib3/playerMatrix.test.ts",
+      "lines": 992,
+      "sha256": "91b6bfeb880d725f604c1ba718f98947f67843359dbcc44d25d923be33ca3ec4",
+      "fullRead": true,
+      "bytes": 38022,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          992
+        ]
+      ],
+      "rows": 119
+    },
+    {
+      "path": "web/lib/rankings/playerMatrix.ts",
+      "local": "/tmp/astra-ranklib3/playerMatrix.ts",
+      "lines": 1497,
+      "sha256": "cc43040543566d682f94b5dceede134a483a77938eb2b66073c4a3d13c84bbdd",
+      "fullRead": true,
+      "bytes": 49798,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          1497
+        ]
+      ],
+      "rows": 367
+    },
+    {
+      "path": "web/lib/rankings/rankingCalculator.test.ts",
+      "local": "/tmp/astra-ranklib3/rankingCalculator.test.ts",
+      "lines": 265,
+      "sha256": "fe87f172df823c6209d31ae085cb66229a17ffb25dfdcae35e112bc614b90148",
+      "fullRead": true,
+      "bytes": 7877,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          265
+        ]
+      ],
+      "rows": 32
+    },
+    {
+      "path": "web/lib/rankings/rankingCalculator.ts",
+      "local": "/tmp/astra-ranklib3/rankingCalculator.ts",
+      "lines": 378,
+      "sha256": "a463875e4e6f4f31565dbe299974974ca14b0db83dc6aa75ce23c8c6deba68af",
+      "fullRead": true,
+      "bytes": 11401,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          378
+        ]
+      ],
+      "rows": 127
+    }
+  ],
+  "scopeLines": 4470,
+  "rows": 759,
+  "probe": "ranklib3-probe-output.json",
+  "checks": [
+    "Six full frozen source reads (rankingCalculator1-280 retained from preceding batch;281-378 completed here)",
+    "Unique AST source-offset identities",
+    "Exact matrix/registry/definition/ranking probe with synthetic reader/transport adapters"
+  ],
+  "notRun": [
+    "Vitest",
+    "real database/provider",
+    "full rankingQueries adapter",
+    "application imports or actual environment",
+    "browser/server/build",
+    "later Rankings exact-commit review"
+  ]
+}

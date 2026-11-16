@@ -1,0 +1,75 @@
+{
+  "refs": {
+    "observed_head": "f821bcf8018c0a38badbf785e7f7a8ce5fce8597",
+    "local_master": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5",
+    "cached_origin_master": "866b90bc46a169b42cbc3c54a7d64b0daf764121",
+    "pending_goalie_candidate": "4243bcd4e29889c035e832562e25850d14af0ee1"
+  },
+  "source_pins_match": true,
+  "staged_paths": [],
+  "patch_sha256": "b520d6a1ad0d6b6602a76bed8cde536ebc2007dcefeeab92429ef0717bd6f779",
+  "candidates": [
+    {
+      "base_label": "observed_head",
+      "base": "f821bcf8018c0a38badbf785e7f7a8ce5fce8597",
+      "before_sha256": {
+        "web/pages/rankings.tsx": "98ccd3fcd5d3675ae01a71682b0132b778278f8f982ad4c06ff130621babca6c",
+        "web/__tests__/pages/rankings.test.tsx": "fa5ac67007af9fb3d18455e61ca85bd9b08ec9e7f818070328d89e88d257afa6"
+      },
+      "patch_apply_check_exit": 0,
+      "message": "",
+      "temporary_file_apply_exit": 0,
+      "result_matches_reviewed_candidate": true
+    },
+    {
+      "base_label": "local_master",
+      "base": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5",
+      "before_sha256": {
+        "web/pages/rankings.tsx": "587707f57ba185118538b81e787cfd6d14b0542e086fce78eab582e6f9a960df",
+        "web/__tests__/pages/rankings.test.tsx": "086f1993f44d01ed715905ad000b04fff2436a9f468d4d826b84112ebd50caf5"
+      },
+      "patch_apply_check_exit": 1,
+      "message": "error: patch failed: web/__tests__/pages/rankings.test.tsx:24\nerror: web/__tests__/pages/rankings.test.tsx: patch does not apply\nerror: patch failed: web/pages/rankings.tsx:1289\nerror: web/pages/rankings.tsx: patch does not apply"
+    },
+    {
+      "base_label": "cached_origin_master",
+      "base": "866b90bc46a169b42cbc3c54a7d64b0daf764121",
+      "before_sha256": {
+        "web/pages/rankings.tsx": "98ccd3fcd5d3675ae01a71682b0132b778278f8f982ad4c06ff130621babca6c",
+        "web/__tests__/pages/rankings.test.tsx": "fa5ac67007af9fb3d18455e61ca85bd9b08ec9e7f818070328d89e88d257afa6"
+      },
+      "patch_apply_check_exit": 0,
+      "message": "",
+      "temporary_file_apply_exit": 0,
+      "result_matches_reviewed_candidate": true
+    },
+    {
+      "base_label": "pending_goalie_candidate",
+      "base": "4243bcd4e29889c035e832562e25850d14af0ee1",
+      "before_sha256": {
+        "web/pages/rankings.tsx": "98ccd3fcd5d3675ae01a71682b0132b778278f8f982ad4c06ff130621babca6c",
+        "web/__tests__/pages/rankings.test.tsx": "fa5ac67007af9fb3d18455e61ca85bd9b08ec9e7f818070328d89e88d257afa6"
+      },
+      "patch_apply_check_exit": 0,
+      "message": "",
+      "temporary_file_apply_exit": 0,
+      "result_matches_reviewed_candidate": true
+    }
+  ],
+  "excluded_dirty_styles": {
+    "path": "web/styles/Rankings.module.scss",
+    "working_sha256": "739f2fa804cb3b6c140c3e5bcb869ffd0a86a8104ff5c58ef3bd7d4c40f6c8fd",
+    "review_baseline_sha256": "12e372e4301fa66a13cbda6c17d4d751afcf3acc244b680ec4921848c02bdfa5",
+    "head_sha256": "12e372e4301fa66a13cbda6c17d4d751afcf3acc244b680ec4921848c02bdfa5",
+    "production_base_sha256": "12e372e4301fa66a13cbda6c17d4d751afcf3acc244b680ec4921848c02bdfa5"
+  },
+  "actions": {
+    "shared_index_mutated": false,
+    "refs_mutated": false,
+    "commit_created": false,
+    "worktree_created": false,
+    "builds": 0,
+    "deployments": 0,
+    "remote_calls": 0
+  }
+}

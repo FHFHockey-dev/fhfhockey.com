@@ -1,0 +1,148 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "overtime": {
+    "canonical": 3610,
+    "hydrated": 910,
+    "previousDelta": -2689,
+    "feature": 910
+  },
+  "fallbackDanger": {
+    "unknownGeometry": 1,
+    "knownLow": null,
+    "knownHigh": 1
+  },
+  "fallbackShotAdmission": {
+    "shootoutGoals": 1,
+    "penaltyShotGoals": 1,
+    "penaltyShotShots": 0
+  },
+  "fallbackPenalties": {
+    "doubleMinorClassCount": 0,
+    "doubleMinorPim": 4,
+    "penaltyShotInfractionCount": 1
+  },
+  "partialPopulation": {
+    "scf": 2,
+    "sca": 4,
+    "share": 0.3333333333333333,
+    "per60": 6
+  },
+  "displayCache": {
+    "ratesFirstGoals": 1,
+    "warmCountsGoals": 1,
+    "coldCountsGoals": 2
+  },
+  "staleRevision": {
+    "revision": 1,
+    "currentGate": false,
+    "servedGoals": 3,
+    "status": null
+  },
+  "incompleteCoverage": {
+    "finalGames": 2,
+    "servedGp": 1,
+    "status": null,
+    "cached": true
+  },
+  "controls": [
+    "Canonical parser cumulative OT time3610",
+    "Known high danger1",
+    "Missing TOI and on-ice denominator remain null"
+  ],
+  "sources": [
+    {
+      "path": "web/lib/underlying-stats/playerStatsLandingServer.ts",
+      "sha256": "d3eac2444fff6ce88d26f1f57dd356b40bd8055eaf0a4c1ffdf6a0d5ac35a532"
+    },
+    {
+      "path": "web/lib/games/gameFinality.ts",
+      "sha256": "872f7ffd52ca712fa72b2e8933f9bd753213e11a9faf769056922ba06674560c"
+    },
+    {
+      "path": "web/lib/supabase/pagination.ts",
+      "sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlPlayByPlayParser.ts",
+      "sha256": "6febc33d13904db4c6cb6bff55fea50060688f825281e419ba719402e4889c08"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlStrengthState.ts",
+      "sha256": "10efefac1808c1ce3828c65bad54055b4d524b31d9acb647d5c006ffdc460c92"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlNstParityMetrics.ts",
+      "sha256": "356ba830c1c9ff07c010cd8ae01397b147608a7b559490bd1489e3c98209c206"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlEventInclusion.ts",
+      "sha256": "0e11a148cb7fc19776cee3a8e71c9133da5374ced082afbe142a7e2c126ea73e"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlScoreState.ts",
+      "sha256": "94bad4da270d0120b355f71a5f7b99572da87d7ee5de3f911113e194bb05f789"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlRush.ts",
+      "sha256": "fdea92fd9f50730fd1ff1f0e595eeae0acb83cde0ae9c95e778af9d47432939c"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlRebounds.ts",
+      "sha256": "cbfef2f00165cda8755d37ab75f4b2b47f23452429595cec9a0481082e915152"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlPriorEventContext.ts",
+      "sha256": "e6442b0af70bfa3775f1d8b3009b05669d5a48d321e0560dcb3ea871adf655e4"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlCoordinates.ts",
+      "sha256": "471d25794eb557dbfd5e10eac6f679b9a137d6d4d76dff5ec0eea69ee076bcb1"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlOnIceAttribution.ts",
+      "sha256": "88898b804a5a2d44d97b967246e1e88ff3e3d18903cfb1273ac594b0abad49ff"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlShiftStints.ts",
+      "sha256": "eaf45b7dec17e69ce7934967a7816ca19b975675903de59010ed469cd64be674"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlShotFeatureBuilder.ts",
+      "sha256": "edb9df386a525e0aecdd5a9760578f6fc66325eac580100a2435285c627b5944"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlContextualFeatures.ts",
+      "sha256": "e169ededf1d4c1f6bfbeca303ffad54d5099717305ff50ec98329e0b87f0ec68"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlFlurries.ts",
+      "sha256": "c9bb0ad36a1f6d6cfd136e79a5f8dcb7ea8807c154621b07424ea646a8d33c65"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlMissReasons.ts",
+      "sha256": "496d211376cbc3a170e67670db07730defe43ab4f6257e47d1ca2a28b9132ab3"
+    },
+    {
+      "path": "web/lib/supabase/Upserts/nhlPossessionChains.ts",
+      "sha256": "c182acf11762ed59c1c85c0537b2611184de5da6ca8b8f8f689c7324e5aba7df"
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsQueries.ts",
+      "sha256": "9dbb71a7003de6048d62ac08e0f5da212afdfce7b35705b855cde96efacc44d3"
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsFilters.ts",
+      "sha256": "5bde162093f8a73c19379f0498825d5d11122b1dd1f4b828504d8b1e8c4a99cb"
+    },
+    {
+      "path": "web/lib/underlying-stats/playerStatsTypes.ts",
+      "sha256": "b6b6bd41e9d6c21587550e2a70d0de7b9a4ce5ecf65f0f21ffc6bb8fe91b2133"
+    },
+    {
+      "path": "web/lib/underlying-stats/underlyingStrengthPredicate.ts",
+      "sha256": "d3111c285f6f1988280abdfd6d7f37aed6b9bba26098a7f75841259009c63c59"
+    }
+  ],
+  "limits": "Exact frozen server, query/filter and pure NHL modules in deny-by-default VM; finite synthetic in-memory SELECT doubles; no database, providers, actual app environment, writes, server, browser, Vitest or persisted production evidence."
+}

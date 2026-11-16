@@ -1,0 +1,36 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "files": [
+    {
+      "path": "web/pages/api/v1/db/update-nst-gamelog.ts",
+      "sha256": "fcd5c122cfb11372dee61056fe41d27a6c09cc9dd79dc6fed57b32392c26fc7b",
+      "lines": 3269,
+      "fullRead": true,
+      "bytes": 119243,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          3269
+        ]
+      ],
+      "rows": 589
+    }
+  ],
+  "scopeLines": 3269,
+  "rows": 589,
+  "probe": "nst-route-probe-output.json",
+  "checks": [
+    "One full frozen source read",
+    "Unique AST source-offset identities",
+    "Exact AST orchestration and helpers with finite inert doubles; three counterexamples and controls passed; season case added and cursor control strengthened with equal prior index; no scientific qualification or supplied suites"
+  ],
+  "notRun": [
+    "Vitest",
+    "real database/provider",
+    "real loaders, live finality or card rendering",
+    "application imports or actual environment",
+    "browser/server/build",
+    "later Rankings exact-commit review"
+  ]
+}

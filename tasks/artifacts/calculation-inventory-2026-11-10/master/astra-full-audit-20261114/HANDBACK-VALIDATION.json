@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "paths_returned": 988,
+  "mandatory": 951,
+  "shared_approved": 37,
+  "retained_shared": 0,
+  "records": 1231,
+  "returned_dirty_paths": [
+    "web/pages/api/v1/sustainability/rebuild-score.ts"
+  ],
+  "different_from_reported_release": 14,
+  "report_sha256": "45794fc7c8eab6c3604133b618d666f8a68f9700410b8334e22c932c2660c623",
+  "preserved_dirty_app_hashes": {
+    "web/pages/api/v1/sustainability/rebuild-score.ts": "c0d6efca7d0a3732ee3bbe06f824e8a7f77b0b44d36e415f12470874253137c2",
+    "web/__tests__/pages/api/v1/sustainability/rebuild-score.test.ts": "2eac62c899f264df9fc35bb29f8fc24179f8e977de91d03f7804b5569581a561",
+    "web/next-env.d.ts": "ced3cb1bdbb8082cae388902481ba6a8a1e454ec7daed6125b368118f06e4a77"
+  },
+  "links": "resolve",
+  "boundary": "Local hand-back record validation only; no app edits, tests, Git mutations or remote operations."
+}

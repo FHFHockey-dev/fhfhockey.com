@@ -1,0 +1,12 @@
+{
+ "runner": "6b3388d17de08350c2d1a218ce3169254a14262bd67297bcfdca34afb3a1db03",
+ "adapter": "05f32054d7b3bbcf3fbf7b2863b5f804345ab9a2c53a908ff2d9e3d925ff5848",
+ "preparation": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+ "client": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+ "admission": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+ "admissionOrigin": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+ "lifecycle": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+ "budget": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+ "ratePolicy": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+ "_source": "successor candidate (DATE 2026-11-11 + per-operation TLS observation), hashed from patched git-archive export of a95510767"
+}

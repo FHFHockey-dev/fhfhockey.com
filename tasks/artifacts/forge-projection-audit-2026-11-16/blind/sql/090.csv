@@ -1,0 +1,2 @@
+string_agg
+created_at actual_date game_id player_id as_of_date team_id opponent_team_id predicted_fp actual_fp error_abs error_sq accuracy source_run_id player_type

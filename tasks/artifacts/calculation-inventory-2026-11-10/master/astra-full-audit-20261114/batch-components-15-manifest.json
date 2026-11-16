@@ -1,0 +1,1102 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "scope": "FULL-AUDIT-SCOPE rows352\u2013363: all12 StatsPage/SustainabilityVSCareerChart/TeamDashboard paths; stop beforeTeamLandingPage",
+  "files": [
+    {
+      "path": "web/components/StatsPage/LeaderboardCategoryGoalie.test.tsx",
+      "lines": 36,
+      "sha256": "28a7b75a954bff4ef116cada50af3c11083bc699f9c69fc3db45d273c5e8eee4",
+      "target_sha256": "28a7b75a954bff4ef116cada50af3c11083bc699f9c69fc3db45d273c5e8eee4",
+      "matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          36
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 1581,
+      "enumerated_rows": 11
+    },
+    {
+      "path": "web/components/StatsPage/LeaderboardCategoryGoalie.tsx",
+      "lines": 88,
+      "sha256": "8db0f5d1120c679663d5e9549e832e68f361a2d239f784d866a6d1c1e5e4b67c",
+      "target_sha256": "8db0f5d1120c679663d5e9549e832e68f361a2d239f784d866a6d1c1e5e4b67c",
+      "matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          88
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 3094,
+      "enumerated_rows": 5
+    },
+    {
+      "path": "web/components/StatsPage/MobileTabInterface.test.tsx",
+      "lines": 162,
+      "sha256": "bc599430c21e95a5279660ad6d9b86d4402968f54c0e097d129991203927b070",
+      "target_sha256": "bc599430c21e95a5279660ad6d9b86d4402968f54c0e097d129991203927b070",
+      "matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          162
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 5460,
+      "enumerated_rows": 26
+    },
+    {
+      "path": "web/components/StatsPage/MobileTabInterface.tsx",
+      "lines": 312,
+      "sha256": "178d959bcfd839d61fac8dba1f6c4a5dc71432473890feb1e3ffacbf1b861105",
+      "target_sha256": "178d959bcfd839d61fac8dba1f6c4a5dc71432473890feb1e3ffacbf1b861105",
+      "matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          312
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 10299,
+      "enumerated_rows": 46
+    },
+    {
+      "path": "web/components/SustainabilityVSCareerChart/SustainabilityVSCareerChart.test.tsx",
+      "lines": 70,
+      "sha256": "cd38e1d4dc78caac3318c5aeb6a2fd53fc9dfb8685d0642ecaaa8786db1c1ddd",
+      "target_sha256": "cd38e1d4dc78caac3318c5aeb6a2fd53fc9dfb8685d0642ecaaa8786db1c1ddd",
+      "matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          70
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 2346,
+      "enumerated_rows": 16
+    },
+    {
+      "path": "web/components/SustainabilityVSCareerChart/SustainabilityVSCareerChart.tsx",
+      "lines": 236,
+      "sha256": "e97abacf330b5df3fbcf775b6e77976608f77f6a21c5757781682c078832923b",
+      "target_sha256": "e97abacf330b5df3fbcf775b6e77976608f77f6a21c5757781682c078832923b",
+      "matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          236
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 6770,
+      "enumerated_rows": 21
+    },
+    {
+      "path": "web/components/TeamDashboard/RecentTeamFormBeta.module.scss",
+      "lines": 349,
+      "sha256": "03184bfdbec3295e1902b549a9e0f5d0a1b093332a51cb2b1369ba1d5fb7e0e1",
+      "target_sha256": "03184bfdbec3295e1902b549a9e0f5d0a1b093332a51cb2b1369ba1d5fb7e0e1",
+      "matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          349
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 7177,
+      "enumerated_rows": 1
+    },
+    {
+      "path": "web/components/TeamDashboard/RecentTeamFormBeta.test.tsx",
+      "lines": 434,
+      "sha256": "9f343a0de7b245bfff5f8402c33e80183ddf001ebcba437d35629ef24793beb4",
+      "target_sha256": "9f343a0de7b245bfff5f8402c33e80183ddf001ebcba437d35629ef24793beb4",
+      "matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          434
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 18035,
+      "enumerated_rows": 107
+    },
+    {
+      "path": "web/components/TeamDashboard/RecentTeamFormBeta.tsx",
+      "lines": 293,
+      "sha256": "d45e732975bcc46471177735a348e3a0ae5628930a206741a90d7d2eeec805b1",
+      "target_sha256": "d45e732975bcc46471177735a348e3a0ae5628930a206741a90d7d2eeec805b1",
+      "matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          293
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 10361,
+      "enumerated_rows": 33
+    },
+    {
+      "path": "web/components/TeamDashboard/TeamDashboard.test.tsx",
+      "lines": 1025,
+      "sha256": "e9835d5f98dd49a90d383469c63e4ab350b9dc6fe4d55eba7ce952beb75643f8",
+      "target_sha256": "e9835d5f98dd49a90d383469c63e4ab350b9dc6fe4d55eba7ce952beb75643f8",
+      "matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          1025
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 33891,
+      "enumerated_rows": 174
+    },
+    {
+      "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+      "lines": 2220,
+      "sha256": "e41b1372b07708cdb1b2d1f3a8b40b132fac27210697c80aea0faeb9789a8312",
+      "target_sha256": "e41b1372b07708cdb1b2d1f3a8b40b132fac27210697c80aea0faeb9789a8312",
+      "matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          2220
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 93321,
+      "enumerated_rows": 232
+    },
+    {
+      "path": "web/components/TeamDashboard/useRecentTeamFormBeta.ts",
+      "lines": 529,
+      "sha256": "6cf2c945ac7f02595a08246cda9d0f1b5d327e4e1433fd61c1f055baf47eb05d",
+      "target_sha256": "6cf2c945ac7f02595a08246cda9d0f1b5d327e4e1433fd61c1f055baf47eb05d",
+      "matches_target": true,
+      "read_ranges": [
+        [
+          1,
+          529
+        ]
+      ],
+      "status": "fully_read",
+      "bytes": 17155,
+      "enumerated_rows": 65
+    }
+  ],
+  "file_count": 12,
+  "line_count": 5754,
+  "tsv_rows": 737,
+  "symbol_identity": "path#kind:start-end; zero-based UTF-16 character offsets, end exclusive; line pointers one-based",
+  "unread_assigned": [],
+  "support": [
+    {
+      "path": "web/hooks/useSustainabilityStats.ts",
+      "read_ranges": [
+        [
+          1,
+          53
+        ]
+      ],
+      "sha256": "f4be3804258596da27f3cc2d8d00cdc2c6e008ec05652b3b0f898f0528e66249",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/hooks/useCareerAveragesStats.ts",
+      "read_ranges": [
+        [
+          1,
+          34
+        ]
+      ],
+      "sha256": "87d7c94c8852673699be6ea24e53e13586a437f3da222770478e4c183dfcc08f",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/lib/sustainability/careerComparison.ts",
+      "read_ranges": [
+        [
+          1,
+          96
+        ]
+      ],
+      "sha256": "1a53898be37d8d26bf1fcdda437d947e77266b257824fbb7fb19acab3b8ac067",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/lib/stats/percentUnits.ts",
+      "read_ranges": [
+        [
+          1,
+          211
+        ]
+      ],
+      "sha256": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/lib/fetchWithCache.ts",
+      "read_ranges": [
+        [
+          1,
+          42
+        ]
+      ],
+      "sha256": "be66ec36281cc82662c593f7e694c5beb37ca515682de2110f4fcb5c28e35b4f",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/lib/NHL/statsPageTypes.ts",
+      "read_ranges": [
+        [
+          1,
+          68
+        ]
+      ],
+      "sha256": "486e67073a7ffe6a5efc94174772da2d0df528d2be362c0eded7b747bd9b8d09",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/lib/NHL/statsPageFetch.ts",
+      "read_ranges": [
+        [
+          365,
+          432
+        ]
+      ],
+      "sha256": "6724b186be849602ee8b77dae7fcfe2e6195f8f93cac46d54477db686cdea67a",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/lib/supabase/database-generated.types.ts",
+      "read_ranges": [
+        [
+          29949,
+          30000
+        ]
+      ],
+      "sha256": "89e744f7c3c20f70c7b3a45aa78f6455268433391cdc3d01f53c4bb86bfdec05",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/lib/trends/ctpiVersions.ts",
+      "read_ranges": [
+        [
+          1,
+          76
+        ],
+        [
+          83,
+          123
+        ]
+      ],
+      "sha256": "cba988cba348c517aeec34de8f5a8a89b8527d73de577b227faa7ddd02fc6368",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/components/TeamTabNavigation/TeamTabNavigation.tsx",
+      "read_ranges": [
+        [
+          310,
+          346
+        ]
+      ],
+      "sha256": "7102583f3e3c2bd9d123dd126de024e7105328fb4a1da9e414cd2bd39ddbee0f",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/pages/stats/team/[teamAbbreviation].tsx",
+      "read_ranges": [
+        [
+          60,
+          102
+        ],
+        [
+          223,
+          243
+        ]
+      ],
+      "sha256": "2d820237a2cf93d27b247f8f0462a0bf0330a90b6933783c9ad3ddb64481ebbc",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/pages/stats/index.tsx",
+      "read_ranges": [
+        [
+          550,
+          625
+        ]
+      ],
+      "sha256": "455119870c13fc0f78d3f41ce6fb30ff694d831a4154d93afd4625f3590f6e95",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/pages/charts.tsx",
+      "read_ranges": [
+        [
+          1,
+          158
+        ],
+        [
+          258,
+          277
+        ]
+      ],
+      "sha256": "9e797b6b12af2016e0f5dbb935e6251926d81feeeb0e4d0283b2891e562677dc",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/pages/api/Teams/nst-team-stats.ts",
+      "read_ranges": [
+        [
+          858,
+          858
+        ],
+        [
+          978,
+          978
+        ]
+      ],
+      "sha256": "50e9366de554b0242d81f5d3ae594aff36ef4a59c51652a685d343e45595783d",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    },
+    {
+      "path": "web/lib/trends/recentTeamFormV2.ts",
+      "read_ranges": [
+        [
+          9,
+          11
+        ]
+      ],
+      "sha256": "427f269c1330f7cf79af735817bf3840cd548f288f2afed9a50316e88174ba96",
+      "matches_target": true,
+      "status": "bounded_dependency_trace_only_not_scope_full_audit_credit"
+    }
+  ],
+  "probes": {
+    "scripts": [
+      {
+        "path": "/tmp/astra-components15-probe.cjs",
+        "sha256": "1b8eb9d57b98738a9164fc4cf1ed5f4de942139b9f69d530dabe53812dec3d2a",
+        "source": "const fs=require('fs'),vm=require('vm'),ts=require('/Users/tim/Code/fhfhockey.com/web/node_modules/typescript');\nconst root='/Users/tim/Code/fhfhockey.com/';\nfunction parsed(path){const source=fs.readFileSync(root+path,'utf8');return{path,source,sf:ts.createSourceFile(path,source,ts.ScriptTarget.Latest,true,path.endsWith('tsx')?ts.ScriptKind.TSX:ts.ScriptKind.TS)};}\nconst team=parsed('web/components/TeamDashboard/TeamDashboard.tsx'),chart=parsed('web/components/SustainabilityVSCareerChart/SustainabilityVSCareerChart.tsx'),career=parsed('web/hooks/useCareerAveragesStats.ts'),mobile=parsed('web/components/StatsPage/MobileTabInterface.tsx');\nconst extracts=[];\nfunction find(file,pred){let found=[];function visit(n){if(pred(n))found.push(n);ts.forEachChild(n,visit);}visit(file.sf);return found;}\nfunction text(file,node){extracts.push({path:file.path,start:node.getStart(file.sf),end:node.end,line:file.sf.getLineAndCharacterOfPosition(node.getStart(file.sf)).line+1,text:node.getText(file.sf)});return node.getText(file.sf);}\nfunction variable(file,name){const nodes=find(file,n=>ts.isVariableDeclaration(n)&&n.name.getText(file.sf)===name);if(nodes.length!==1)throw Error(name+' count '+nodes.length);return text(file,nodes[0].initializer);}\nfunction fn(file,name){const nodes=find(file,n=>ts.isFunctionDeclaration(n)&&n.name?.text===name);if(nodes.length!==1)throw Error(name+' count '+nodes.length);return text(file,nodes[0]);}\nfunction run(code,scope={}){return vm.runInNewContext(ts.transpileModule(code,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText,scope,{timeout:1000});}\nconst completed=variable(team,'completedGames'),processed=variable(team,'processedGoalies'),totals=variable(team,'teamTotals'),save=variable(team,'teamSavePct'),gaa=variable(team,'teamGAA'),rank=variable(team,'calculateRank');\nconst goalie={playerId:1,goalieFullName:'Fixture',lastName:'Fixture',gamesPlayed:1,gamesStarted:1,wins:1,losses:0,otLosses:0,savePct:.92,goalsAgainstAverage:2,shutouts:0,saves:23,shotsAgainst:25,goalsAgainst:2,timeOnIce:3600};\nconst schedule=[{gameType:2,gameDate:'2026-11-12',gameState:'OFF'},{gameType:2,gameDate:'2026-11-13',gameState:'FUT',gameScheduleState:'PPD'},{gameType:2,gameDate:'2026-11-14',gameState:'FUT'}];\nfunction goalies(games,advancedStatsMap={}){const scope={scheduleResponse:{games},startDate:'2026-10-01',goalieEndDate:'2026-11-14',goalieData:[goalie],advancedStatsMap};run('const completedGames='+completed+'; const processedGoalies='+processed+'; const teamTotals='+totals+'; result={completedGames,processedGoalies,teamTotals,teamSavePct:'+save+',teamGAA:'+gaa+'};',scope);return scope.result;}\nconst knownZeroQs={1:{qualityStart:0,qualityStartsPct:0}};\nconst qsExpression=find(team,n=>ts.isConditionalExpression(n)&&n.condition.getText(team.sf)==='goalie.qualityStartsPct');if(qsExpression.length!==1)throw Error('QS expression');const qs=text(team,qsExpression[0]);\nconst qsOut=run(qs,{goalie:{qualityStartsPct:0},formatPercentage:v=>(v*100).toFixed(1)+'%'});\nconst goalsNames=['goalsForSafe','goalsAgainstSafe','gamesPlayedSafe','goalsPerGame','goalsAgainstPerGame','goalDiff','allGoalsPerGame','allGoalsAgainstPerGame','allGoalDiffs','allPoints','allPointPcts'];\nconst summaryCode='const calculateRank='+rank+';'+goalsNames.map(n=>'const '+n+'='+variable(team,n)+';').join('\\n')+' result={goalsPerGame,goalsAgainstPerGame,goalsPerGameRank:calculateRank(goalsPerGame,allGoalsPerGame),goalsAgainstRank:calculateRank(goalsAgainstPerGame,allGoalsAgainstPerGame,false),allPoints,allPointPcts};';\nfunction summary(current){const scope={currentTeamData:current,allTeamsSummary:[current,{team_id:2,games_played:1,goals_for:3,goals_against:2,points:2,point_pct:1}]};run(summaryCode,scope);return scope.result;}\nconst partialRank=run('('+rank+')(0.55,[0.55],true)');\nconst labelColor=run(fn(chart,'statusColor')+'; statusColor(\"cold\",\"hot\")',{GREY:'#a7b4c0',RED:'#F65B61',BLUE:'#07AAE3'});\nconst competition=run('('+variable(mobile,'competitionRank')+')([{rankValue:9},{rankValue:8},{rankValue:8},{rankValue:6}],2)');\nconst pergame=run(fn(team,'formatPerGame')+';formatPerGame(0,0)');\nconst ppRateMap=variable(team,'allPowerPlayPct');const ppScope={currentTeamData:{power_play_pct:.8},allTeamsSummary:[{power_play_pct:.8},{power_play_pct:.5}]};run('const calculateRank='+rank+';const allPowerPlayPct='+ppRateMap+';result=calculateRank(currentTeamData.power_play_pct||0,allPowerPlayPct,true)',ppScope);\nconst effect=find(career,n=>ts.isCallExpression(n)&&n.expression.getText(career.sf)==='useEffect')[0].arguments[0];const effectSource=text(career,effect);\n(async()=>{let state={stats:undefined,loading:false},pending=[];const scope={playerId:1,setStats:v=>{state.stats=v;},setLoading:v=>{state.loading=v;},fetch:(url)=>new Promise(resolve=>pending.push({url,resolve})),console:{error(){}}};run('effect = '+effectSource,scope);const cleanupA=scope.effect();scope.playerId=2;const cleanupB=scope.effect();pending[1].resolve({json:()=>Promise.resolve({success:true,data:{player:'B','S%':.20}})});await new Promise(setImmediate);const afterB=structuredClone(state);pending[0].resolve({json:()=>Promise.resolve({success:true,data:{player:'A','S%':.05}})});await new Promise(setImmediate);const result={workload:{input:schedule,expectedCompletedGames:1,actual:goalies(schedule),emptySchedule:goalies([]),expectedEmptyShare:null},qualityStarts:{missingAdvanced:goalies(schedule).processedGoalies[0],observedZero:goalies(schedule,knownZeroQs).processedGoalies[0],observedZeroLabel:qsOut},summaryUnknown:{input:{team_id:1,games_played:1,goals_for:null,goals_against:null,points:null,point_pct:null},actual:summary({team_id:1,games_played:1,goals_for:null,goals_against:null,points:null,point_pct:null}),expectedRates:null},summaryZeroGp:{actual:summary({team_id:1,games_played:0,goals_for:0,goals_against:0,points:0,point_pct:0}),displayedRate:pergame,expectedRank:null},partialLeagueCohort:{currentCf:.55,knownPopulationValues:[.55],missingPeerPresentInSummary:true,actualRank:partialRank,expected:'Unranked or explicitly partial cohort; absent peer CF is unknown'},ppValueRankMismatch:{shownWgoPpFraction:.25,otherTeamKnownFraction:.5,summaryCurrentFraction:.8,actualRank:ppScope.result,rankOnShownValues:2},legend:{status:'cold',redWhen:'hot',actualColor:labelColor,blueLegend:'Blue: within the career usual range for this sample',expected:'Favorable outside-range status should not be described as within'},careerRace:{pendingUrls:pending.map(p=>p.url),cleanupA:typeof cleanupA,cleanupB:typeof cleanupB,afterB,afterLateA:state,chartCurrentPlayer:'B',expectedCareerPlayer:'B'},preserved:{competitionTieRank:competition,zeroGpDisplay:pergame}};fs.writeFileSync('/tmp/astra-components15-probe.json',JSON.stringify({results:result,extracts},null,2)+'\\n');console.log(JSON.stringify(result,null,2));})().catch(e=>{console.error(e);process.exitCode=1});\n"
+      },
+      {
+        "path": "/tmp/astra-components15-support-probe.cjs",
+        "sha256": "64e9a7ba56eff14e73141505714640263ad57a5b1108492490aefd99ef541f48",
+        "source": "const fs=require('fs'),vm=require('vm'),ts=require('/Users/tim/Code/fhfhockey.com/web/node_modules/typescript');const root='/Users/tim/Code/fhfhockey.com/';\nfunction parse(path){const s=fs.readFileSync(root+path,'utf8');return{path,sf:ts.createSourceFile(path,s,ts.ScriptTarget.Latest,true,path.endsWith('tsx')?ts.ScriptKind.TSX:ts.ScriptKind.TS)};}\nconst t=parse('web/components/TeamDashboard/TeamDashboard.tsx'),u=parse('web/lib/stats/percentUnits.ts'),b=parse('web/components/TeamDashboard/useRecentTeamFormBeta.ts');const extracts=[];\nfunction get(file,name,kind='var'){let found=[];function walk(n){if((kind==='var'?ts.isVariableDeclaration(n):ts.isFunctionDeclaration(n))&&n.name?.getText(file.sf)===name)found.push(n);ts.forEachChild(n,walk);}walk(file.sf);if(found.length!==1)throw Error(name+':'+found.length);const n=kind==='var'?found[0].initializer:found[0];extracts.push({path:file.path,start:n.getStart(file.sf),end:n.end,text:n.getText(file.sf)});return n.getText(file.sf);}\nconst helpers=['isFiniteNumber'].map(n=>'const '+n+'='+get(u,n)+';').join('\\n')+['ratio','sumField','shareOfSums','aggregateNstTeamCounts','aggregateWgoTeamGames'].map(n=>get(u,n,'fn').replace(/^export /,'')).join('\\n');\nconst code=helpers+'\\n'+get(t,'seasonAdvancedByTeam','fn')+'\\n const calculateRank='+get(t,'calculateRank')+';'+get(t,'seasonSpecialTeamsByTeam','fn')+'; const countOrNull='+get(b,'countOrNull')+';';const box={};vm.runInNewContext(ts.transpileModule(code,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText,box,{timeout:1000});\nconst cohort=vm.runInNewContext('const aggregates=seasonAdvancedByTeam([{team_abbreviation:\"EDM\",date:\"2026-11-12\",gp:1,cf:55,ca:45}]);({aggregates,rank:calculateRank(aggregates[0].cf_pct,aggregates.map(x=>x.cf_pct)),expectedRoster:[\"EDM\",\"BOS\"]})',box,{timeout:1000});\nconst wgo=vm.runInNewContext('aggregateWgoTeamGames([{games_played:1,power_play_goals_for:1,pp_opportunities:4,pp_goals_against:1,times_shorthanded:2}])',box,{timeout:1000});\nconst names=['scoreDates','scoreDatesConfirmed','windowDates','windowRows','puckDates','sameGames'];const dateCode=names.map(n=>'const '+n+'='+get(b,n)+';').join('\\n')+'result={windowDates,sameGames};';const js=ts.transpileModule(dateCode,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;\nconst dates=Array.from({length:10},(_,i)=>'2026-11-'+String(12-i).padStart(2,'0'));function check(gameDates,count=16){const s={recentGameCount:10,row:{source_through_date:'2026-11-12',source_game_count:'16'},scoreGames:{dates,seasonGameCount:count},gameRows:gameDates.map(date=>({date})),countOrNull:vm.runInNewContext(\"countOrNull\",box)};vm.runInNewContext(js,s,{timeout:1000});return s.result;}\nconst result={absentPeerAggregate:cohort,shownPpAggregate:{powerPlayPct:wgo.powerPlayPct},preservedSameGames:{aligned:check(dates),shifted:check(dates.map((_,i)=>'2026-11-'+String(11-i).padStart(2,'0'))),innerMismatch:check([dates[0],...dates.slice(2),'2026-11-02']),changedSeasonCount:check(dates,17)}};const p='/tmp/astra-components15-probe.json',prior=JSON.parse(fs.readFileSync(p));prior.support={results:result,extracts};fs.writeFileSync(p,JSON.stringify(prior,null,2)+'\\n');console.log(JSON.stringify(result,null,2));\n"
+      }
+    ],
+    "commands": [
+      "node /tmp/astra-components15-probe.cjs",
+      "node /tmp/astra-components15-support-probe.cjs"
+    ],
+    "receipt_sha256": "c6d92dd0b52c39d024b1519a5b6611f43b968e26861aa56f5eadf93c8516e80e",
+    "receipt": {
+      "results": {
+        "workload": {
+          "input": [
+            {
+              "gameType": 2,
+              "gameDate": "2026-11-12",
+              "gameState": "OFF"
+            },
+            {
+              "gameType": 2,
+              "gameDate": "2026-11-13",
+              "gameState": "FUT",
+              "gameScheduleState": "PPD"
+            },
+            {
+              "gameType": 2,
+              "gameDate": "2026-11-14",
+              "gameState": "FUT"
+            }
+          ],
+          "expectedCompletedGames": 1,
+          "actual": {
+            "completedGames": 3,
+            "processedGoalies": [
+              {
+                "playerId": 1,
+                "goalieFullName": "Fixture",
+                "lastName": "Fixture",
+                "gamesPlayed": 1,
+                "gamesStarted": 1,
+                "wins": 1,
+                "losses": 0,
+                "otLosses": 0,
+                "savePct": 0.92,
+                "gaa": 2,
+                "shutouts": 0,
+                "workloadShare": 33.33333333333333,
+                "qualityStarts": 0,
+                "qualityStartsPct": 0
+              }
+            ],
+            "teamTotals": {
+              "gamesPlayed": 1,
+              "wins": 1,
+              "losses": 0,
+              "otLosses": 0,
+              "saves": 23,
+              "shotsAgainst": 25,
+              "goalsAgainst": 2,
+              "shutouts": 0,
+              "qualityStarts": 0,
+              "timeOnIce": 3600
+            },
+            "teamSavePct": 0.92,
+            "teamGAA": 2
+          },
+          "emptySchedule": {
+            "completedGames": 0,
+            "processedGoalies": [
+              {
+                "playerId": 1,
+                "goalieFullName": "Fixture",
+                "lastName": "Fixture",
+                "gamesPlayed": 1,
+                "gamesStarted": 1,
+                "wins": 1,
+                "losses": 0,
+                "otLosses": 0,
+                "savePct": 0.92,
+                "gaa": 2,
+                "shutouts": 0,
+                "workloadShare": 0,
+                "qualityStarts": 0,
+                "qualityStartsPct": 0
+              }
+            ],
+            "teamTotals": {
+              "gamesPlayed": 1,
+              "wins": 1,
+              "losses": 0,
+              "otLosses": 0,
+              "saves": 23,
+              "shotsAgainst": 25,
+              "goalsAgainst": 2,
+              "shutouts": 0,
+              "qualityStarts": 0,
+              "timeOnIce": 3600
+            },
+            "teamSavePct": 0.92,
+            "teamGAA": 2
+          },
+          "expectedEmptyShare": null
+        },
+        "qualityStarts": {
+          "missingAdvanced": {
+            "playerId": 1,
+            "goalieFullName": "Fixture",
+            "lastName": "Fixture",
+            "gamesPlayed": 1,
+            "gamesStarted": 1,
+            "wins": 1,
+            "losses": 0,
+            "otLosses": 0,
+            "savePct": 0.92,
+            "gaa": 2,
+            "shutouts": 0,
+            "workloadShare": 33.33333333333333,
+            "qualityStarts": 0,
+            "qualityStartsPct": 0
+          },
+          "observedZero": {
+            "playerId": 1,
+            "goalieFullName": "Fixture",
+            "lastName": "Fixture",
+            "gamesPlayed": 1,
+            "gamesStarted": 1,
+            "wins": 1,
+            "losses": 0,
+            "otLosses": 0,
+            "savePct": 0.92,
+            "gaa": 2,
+            "shutouts": 0,
+            "workloadShare": 33.33333333333333,
+            "qualityStarts": 0,
+            "qualityStartsPct": 0
+          },
+          "observedZeroLabel": "N/A"
+        },
+        "summaryUnknown": {
+          "input": {
+            "team_id": 1,
+            "games_played": 1,
+            "goals_for": null,
+            "goals_against": null,
+            "points": null,
+            "point_pct": null
+          },
+          "actual": {
+            "goalsPerGame": 0,
+            "goalsAgainstPerGame": 0,
+            "goalsPerGameRank": 2,
+            "goalsAgainstRank": 1,
+            "allPoints": [
+              0,
+              2
+            ],
+            "allPointPcts": [
+              0,
+              1
+            ]
+          },
+          "expectedRates": null
+        },
+        "summaryZeroGp": {
+          "actual": {
+            "goalsPerGame": 0,
+            "goalsAgainstPerGame": 0,
+            "goalsPerGameRank": 2,
+            "goalsAgainstRank": 2,
+            "allPoints": [
+              0,
+              2
+            ],
+            "allPointPcts": [
+              0,
+              1
+            ]
+          },
+          "displayedRate": "N/A",
+          "expectedRank": null
+        },
+        "partialLeagueCohort": {
+          "currentCf": 0.55,
+          "knownPopulationValues": [
+            0.55
+          ],
+          "missingPeerPresentInSummary": true,
+          "actualRank": 1,
+          "expected": "Unranked or explicitly partial cohort; absent peer CF is unknown"
+        },
+        "ppValueRankMismatch": {
+          "shownWgoPpFraction": 0.25,
+          "otherTeamKnownFraction": 0.5,
+          "summaryCurrentFraction": 0.8,
+          "actualRank": 1,
+          "rankOnShownValues": 2
+        },
+        "legend": {
+          "status": "cold",
+          "redWhen": "hot",
+          "actualColor": "#07AAE3",
+          "blueLegend": "Blue: within the career usual range for this sample",
+          "expected": "Favorable outside-range status should not be described as within"
+        },
+        "careerRace": {
+          "pendingUrls": [
+            "/api/CareerAverages/1",
+            "/api/CareerAverages/2"
+          ],
+          "cleanupA": "undefined",
+          "cleanupB": "undefined",
+          "afterB": {
+            "stats": {
+              "player": "B",
+              "S%": 0.2
+            },
+            "loading": false
+          },
+          "afterLateA": {
+            "stats": {
+              "player": "A",
+              "S%": 0.05
+            },
+            "loading": false
+          },
+          "chartCurrentPlayer": "B",
+          "expectedCareerPlayer": "B"
+        },
+        "preserved": {
+          "competitionTieRank": 2,
+          "zeroGpDisplay": "N/A"
+        }
+      },
+      "extracts": [
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 20497,
+          "end": 20758,
+          "line": 583,
+          "text": "scheduleResponse.games.filter(\n                  (game: any) =>\n                    game.gameType === 2 &&\n                    game.gameDate.split(\"T\")[0] >= startDate &&\n                    game.gameDate.split(\"T\")[0] <= goalieEndDate,\n                ).length"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 21433,
+          "end": 22589,
+          "line": 604,
+          "text": "goalieData.map(\n                    (goalie: any) => {\n                      const advancedStats = advancedStatsMap[goalie.playerId];\n                      return {\n                        playerId: goalie.playerId,\n                        goalieFullName: goalie.goalieFullName,\n                        lastName: goalie.lastName,\n                        gamesPlayed: goalie.gamesPlayed,\n                        gamesStarted: goalie.gamesStarted,\n                        wins: goalie.wins,\n                        losses: goalie.losses,\n                        otLosses: goalie.otLosses,\n                        savePct: goalie.savePct,\n                        gaa: goalie.goalsAgainstAverage,\n                        shutouts: goalie.shutouts,\n                        workloadShare:\n                          completedGames > 0\n                            ? (goalie.gamesStarted / completedGames) * 100\n                            : 0,\n                        qualityStarts: advancedStats?.qualityStart || 0,\n                        qualityStartsPct: advancedStats?.qualityStartsPct || 0,\n                      };\n                    },\n                  )"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 22718,
+          "end": 24116,
+          "line": 630,
+          "text": "goalieData.reduce(\n                    (acc: any, goalie: any) => {\n                      const advancedStats = advancedStatsMap[goalie.playerId];\n                      return {\n                        gamesPlayed: acc.gamesPlayed + goalie.gamesPlayed,\n                        wins: acc.wins + goalie.wins,\n                        losses: acc.losses + goalie.losses,\n                        otLosses: acc.otLosses + goalie.otLosses,\n                        saves: acc.saves + goalie.saves,\n                        shotsAgainst: acc.shotsAgainst + goalie.shotsAgainst,\n                        goalsAgainst: acc.goalsAgainst + goalie.goalsAgainst,\n                        shutouts: acc.shutouts + goalie.shutouts,\n                        qualityStarts:\n                          acc.qualityStarts +\n                          (advancedStats?.qualityStart || 0),\n                        timeOnIce: acc.timeOnIce + goalie.timeOnIce,\n                      };\n                    },\n                    {\n                      gamesPlayed: 0,\n                      wins: 0,\n                      losses: 0,\n                      otLosses: 0,\n                      saves: 0,\n                      shotsAgainst: 0,\n                      goalsAgainst: 0,\n                      shutouts: 0,\n                      qualityStarts: 0,\n                      timeOnIce: 0,\n                    },\n                  )"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 24222,
+          "end": 24342,
+          "line": 664,
+          "text": "teamTotals.shotsAgainst > 0\n                      ? teamTotals.saves / teamTotals.shotsAgainst\n                      : 0"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 24398,
+          "end": 24528,
+          "line": 668,
+          "text": "teamTotals.timeOnIce > 0\n                      ? (teamTotals.goalsAgainst * 3600) / teamTotals.timeOnIce\n                      : 0"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 29277,
+          "end": 30225,
+          "line": 790,
+          "text": "(\n                  value: number | null | undefined,\n                  allValues: (number | null | undefined)[],\n                  higherIsBetter: boolean = true,\n                ) => {\n                  // Zero is the existing unranked sentinel, never a league rank.\n                  if (value === null || value === undefined || !Number.isFinite(value))\n                    return 0;\n                  const validValues = allValues.filter(\n                    (v): v is number => typeof v === \"number\" && Number.isFinite(v),\n                  );\n                  if (validValues.length === 0 || validValues.length !== allValues.length) return 0;\n\n                  const sortedValues = [...validValues].sort((a, b) =>\n                    higherIsBetter ? b - a : a - b,\n                  );\n                  const rank = sortedValues.findIndex((v) => v === value) + 1;\n                  return rank || validValues.length + 1;\n                }"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 89068,
+          "end": 89211,
+          "line": 2118,
+          "text": "goalie.qualityStartsPct\n                                  ? formatPercentage(goalie.qualityStartsPct)\n                                  : \"N/A\""
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 31150,
+          "end": 31180,
+          "line": 830,
+          "text": "currentTeamData.goals_for || 0"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 31225,
+          "end": 31259,
+          "line": 831,
+          "text": "currentTeamData.goals_against || 0"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 31303,
+          "end": 31336,
+          "line": 832,
+          "text": "currentTeamData.games_played || 1"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 31404,
+          "end": 31434,
+          "line": 834,
+          "text": "goalsForSafe / gamesPlayedSafe"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 31502,
+          "end": 31536,
+          "line": 836,
+          "text": "goalsAgainstSafe / gamesPlayedSafe"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 31573,
+          "end": 31604,
+          "line": 837,
+          "text": "goalsForSafe - goalsAgainstSafe"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 31649,
+          "end": 31945,
+          "line": 839,
+          "text": "allTeamsSummary\n                    .filter(\n                      (team) => team.games_played && team.games_played > 0,\n                    )\n                    .map(\n                      (team) =>\n                        (team.goals_for || 0) / (team.games_played || 1),\n                    )"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 31997,
+          "end": 32297,
+          "line": 848,
+          "text": "allTeamsSummary\n                    .filter(\n                      (team) => team.games_played && team.games_played > 0,\n                    )\n                    .map(\n                      (team) =>\n                        (team.goals_against || 0) / (team.games_played || 1),\n                    )"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 32339,
+          "end": 32460,
+          "line": 857,
+          "text": "allTeamsSummary.map(\n                    (team) => (team.goals_for || 0) - (team.goals_against || 0),\n                  )"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 32499,
+          "end": 32587,
+          "line": 861,
+          "text": "allTeamsSummary.map(\n                    (team) => team.points || 0,\n                  )"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 32628,
+          "end": 32719,
+          "line": 864,
+          "text": "allTeamsSummary.map(\n                    (team) => team.point_pct || 0,\n                  )"
+        },
+        {
+          "path": "web/components/SustainabilityVSCareerChart/SustainabilityVSCareerChart.tsx",
+          "start": 2688,
+          "end": 2871,
+          "line": 99,
+          "text": "function statusColor(\n  status: CareerComparisonStatus,\n  redWhen: \"hot\" | \"cold\"\n): string {\n  if (status === \"insufficient\") return GREY;\n  return status === redWhen ? RED : BLUE;\n}"
+        },
+        {
+          "path": "web/components/StatsPage/MobileTabInterface.tsx",
+          "start": 3019,
+          "end": 3133,
+          "line": 96,
+          "text": "(rows: MobileLeaderRow[], index: number) =>\n  rows.findIndex((row) => row.rankValue === rows[index].rankValue) + 1"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 4716,
+          "end": 4933,
+          "line": 177,
+          "text": "function formatPerGame(total: number, gamesPlayed: number): string {\n  if (!Number.isFinite(total) || !Number.isFinite(gamesPlayed)) return \"N/A\";\n  return gamesPlayed > 0 ? (total / gamesPlayed).toFixed(2) : \"N/A\";\n}"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "start": 32835,
+          "end": 32957,
+          "line": 869,
+          "text": "allTeamsSummary\n                    .map((team) => team.power_play_pct || 0)\n                    .filter((pct) => pct > 0)"
+        },
+        {
+          "path": "web/hooks/useCareerAveragesStats.ts",
+          "start": 305,
+          "end": 836,
+          "line": 8,
+          "text": "() => {\n    if (!playerId) return;\n    (async () => {\n      setLoading(true);\n      const { success, message, data } = await fetch(\n        `/api/CareerAverages/${playerId}`,\n        {\n          method: \"POST\",\n          headers: { \"Content-Type\": \"application/json\" }\n        }\n      )\n        .then((res) => res.json())\n        .finally(() => {\n          setLoading(false);\n        });\n\n      if (success) {\n        setStats(data);\n      } else {\n        setStats(undefined);\n        console.error(message);\n      }\n    })();\n  }"
+        }
+      ],
+      "support": {
+        "results": {
+          "absentPeerAggregate": {
+            "aggregates": [
+              {
+                "team_abbreviation": "EDM",
+                "date": "2026-11-12",
+                "cf_pct": 0.55,
+                "xgf_pct": null,
+                "pdo": null,
+                "hdcf_pct": null,
+                "scf_pct": null,
+                "sv_pct": null,
+                "sh_pct": null,
+                "xgf": null,
+                "xga": null
+              }
+            ],
+            "rank": 1,
+            "expectedRoster": [
+              "EDM",
+              "BOS"
+            ]
+          },
+          "shownPpAggregate": {
+            "powerPlayPct": 0.25
+          },
+          "preservedSameGames": {
+            "aligned": {
+              "windowDates": [
+                "2026-11-03",
+                "2026-11-04",
+                "2026-11-05",
+                "2026-11-06",
+                "2026-11-07",
+                "2026-11-08",
+                "2026-11-09",
+                "2026-11-10",
+                "2026-11-11",
+                "2026-11-12"
+              ],
+              "sameGames": true
+            },
+            "shifted": {
+              "windowDates": [
+                "2026-11-03",
+                "2026-11-04",
+                "2026-11-05",
+                "2026-11-06",
+                "2026-11-07",
+                "2026-11-08",
+                "2026-11-09",
+                "2026-11-10",
+                "2026-11-11",
+                "2026-11-12"
+              ],
+              "sameGames": false
+            },
+            "innerMismatch": {
+              "windowDates": [
+                "2026-11-03",
+                "2026-11-04",
+                "2026-11-05",
+                "2026-11-06",
+                "2026-11-07",
+                "2026-11-08",
+                "2026-11-09",
+                "2026-11-10",
+                "2026-11-11",
+                "2026-11-12"
+              ],
+              "sameGames": false
+            },
+            "changedSeasonCount": {
+              "windowDates": [],
+              "sameGames": false
+            }
+          }
+        },
+        "extracts": [
+          {
+            "path": "web/lib/stats/percentUnits.ts",
+            "start": 310,
+            "end": 400,
+            "text": "(value: unknown): value is number =>\n  typeof value === \"number\" && Number.isFinite(value)"
+          },
+          {
+            "path": "web/lib/stats/percentUnits.ts",
+            "start": 1051,
+            "end": 1301,
+            "text": "export function ratio(\n  numerator: number | null,\n  denominator: number | null\n): number | null {\n  if (!isFiniteNumber(numerator) || !isFiniteNumber(denominator)) return null;\n  if (denominator <= 0) return null;\n  return numerator / denominator;\n}"
+          },
+          {
+            "path": "web/lib/stats/percentUnits.ts",
+            "start": 1384,
+            "end": 1692,
+            "text": "export function sumField<T>(\n  rows: readonly T[],\n  read: (row: T) => number | null | undefined\n): number | null {\n  let total: number | null = null;\n  for (const row of rows) {\n    const value = read(row);\n    if (!isFiniteNumber(value)) return null;\n    total = (total ?? 0) + value;\n  }\n  return total;\n}"
+          },
+          {
+            "path": "web/lib/stats/percentUnits.ts",
+            "start": 1743,
+            "end": 1979,
+            "text": "export function shareOfSums(\n  forTotal: number | null,\n  againstTotal: number | null\n): number | null {\n  if (!isFiniteNumber(forTotal) || !isFiniteNumber(againstTotal)) return null;\n  return ratio(forTotal, forTotal + againstTotal);\n}"
+          },
+          {
+            "path": "web/lib/stats/percentUnits.ts",
+            "start": 3232,
+            "end": 4424,
+            "text": "export function aggregateNstTeamCounts(\n  rows: readonly NstTeamCountRow[]\n): NstTeamShareAggregate {\n  const played = rows.filter((row) => row.gp !== 0);\n  const games = played.length === 0 ? 0 : sumField(played, (row) =>\n    isFiniteNumber(row.gp) && row.gp > 0 ? row.gp : null\n  );\n  const sum = (key: keyof NstTeamCountRow) =>\n    games === null ? null : sumField(played, (row) => row[key]);\n\n  const goalsFor = sum(\"gf\");\n  const goalsAgainst = sum(\"ga\");\n  const shootingPct = ratio(goalsFor, sum(\"sf\"));\n  const shotsAgainst = sum(\"sa\");\n  const goalsAgainstRate = ratio(goalsAgainst, shotsAgainst);\n  const savePct = goalsAgainstRate === null ? null : 1 - goalsAgainstRate;\n  const xgf = sum(\"xgf\");\n  const xga = sum(\"xga\");\n\n  return {\n    games,\n    toiSeconds: sum(\"toi\"),\n    goalsFor,\n    goalsAgainst,\n    cfPct: shareOfSums(sum(\"cf\"), sum(\"ca\")),\n    xgfPct: shareOfSums(xgf, xga),\n    hdcfPct: shareOfSums(sum(\"hdcf\"), sum(\"hdca\")),\n    scfPct: shareOfSums(sum(\"scf\"), sum(\"sca\")),\n    shootingPct,\n    savePct,\n    pdo:\n      shootingPct === null || savePct === null ? null : shootingPct + savePct,\n    xgfPerGame: ratio(xgf, games),\n    xgaPerGame: ratio(xga, games)\n  };\n}"
+          },
+          {
+            "path": "web/lib/stats/percentUnits.ts",
+            "start": 5163,
+            "end": 7026,
+            "text": "export function aggregateWgoTeamGames(rows: readonly WgoTeamGameRow[]) {\n  const played = rows.filter((row) => row.games_played !== 0);\n  const games = played.length === 0 ? 0 : sumField(played, (row) =>\n    isFiniteNumber(row.games_played) && row.games_played > 0 ? row.games_played : null\n  );\n  const sum = (read: (row: WgoTeamGameRow) => number | null | undefined) =>\n    games === null ? null : sumField(played, read);\n  const perGameTotal = (read: (row: WgoTeamGameRow) => number | null | undefined) =>\n    sum((row) => {\n      const value = read(row);\n      return isFiniteNumber(value) ? value * (row.games_played ?? 0) : null;\n    });\n\n  const shotsFor = ratio(perGameTotal((row) => row.shots_for_per_game), games);\n  const shotsAgainst = ratio(\n    perGameTotal((row) => row.shots_against_per_game),\n    games\n  );\n  const ppGoalsFor = sum((row) => row.power_play_goals_for);\n  const ppOpportunities = sum((row) => row.pp_opportunities);\n  const ppGoalsAgainst = sum((row) => row.pp_goals_against);\n  const pkGoalsAgainstRate = ratio(\n    ppGoalsAgainst,\n    sum((row) => row.times_shorthanded)\n  );\n  const faceoffsWon = sum((row) => row.faceoffs_won);\n  const faceoffsLost = sum((row) => row.faceoffs_lost);\n\n  return {\n    games,\n    shotsFor,\n    shotsAgainst,\n    shotDifferential:\n      shotsFor === null || shotsAgainst === null ? null : shotsFor - shotsAgainst,\n    powerPlayPct: ratio(ppGoalsFor, ppOpportunities),\n    penaltyKillPct: pkGoalsAgainstRate === null ? null : 1 - pkGoalsAgainstRate,\n    ppOpportunitiesPerGame: ratio(ppOpportunities, games),\n    ppGoalsFor,\n    ppGoalsAgainst,\n    shGoalsFor: sum((row) => row.sh_goals_for),\n    shGoalsAgainst: sum((row) => row.sh_goals_against),\n    faceoffWinPct:\n      faceoffsWon === null || faceoffsLost === null\n        ? null\n        : ratio(faceoffsWon, faceoffsWon + faceoffsLost)\n  };\n}"
+          },
+          {
+            "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+            "start": 5195,
+            "end": 6049,
+            "text": "function seasonAdvancedByTeam(rows: readonly Nst5v5TeamRow[]) {\n  const byTeam = new Map<string, Nst5v5TeamRow[]>();\n  rows.forEach((row) => {\n    const teamRows = byTeam.get(row.team_abbreviation) ?? [];\n    teamRows.push(row);\n    byTeam.set(row.team_abbreviation, teamRows);\n  });\n  return Array.from(byTeam, ([teamAbbreviation, teamRows]) => {\n    const totals = aggregateNstTeamCounts(teamRows);\n    return {\n      team_abbreviation: teamAbbreviation,\n      date: teamRows.reduce(\n        (latest, row) => (row.date > latest ? row.date : latest),\n        \"\",\n      ),\n      cf_pct: totals.cfPct,\n      xgf_pct: totals.xgfPct,\n      pdo: totals.pdo,\n      hdcf_pct: totals.hdcfPct,\n      scf_pct: totals.scfPct,\n      sv_pct: totals.savePct,\n      sh_pct: totals.shootingPct,\n      xgf: totals.xgfPerGame,\n      xga: totals.xgaPerGame,\n    };\n  });\n}"
+          },
+          {
+            "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+            "start": 29277,
+            "end": 30225,
+            "text": "(\n                  value: number | null | undefined,\n                  allValues: (number | null | undefined)[],\n                  higherIsBetter: boolean = true,\n                ) => {\n                  // Zero is the existing unranked sentinel, never a league rank.\n                  if (value === null || value === undefined || !Number.isFinite(value))\n                    return 0;\n                  const validValues = allValues.filter(\n                    (v): v is number => typeof v === \"number\" && Number.isFinite(v),\n                  );\n                  if (validValues.length === 0 || validValues.length !== allValues.length) return 0;\n\n                  const sortedValues = [...validValues].sort((a, b) =>\n                    higherIsBetter ? b - a : a - b,\n                  );\n                  const rank = sortedValues.findIndex((v) => v === value) + 1;\n                  return rank || validValues.length + 1;\n                }"
+          },
+          {
+            "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+            "start": 6122,
+            "end": 6791,
+            "text": "function seasonSpecialTeamsByTeam(rows: readonly WgoSpecialTeamsRow[]) {\n  const byTeam = new Map<number, WgoSpecialTeamsRow[]>();\n  rows.forEach((row) => {\n    if (row.team_id === null) return;\n    const teamRows = byTeam.get(row.team_id) ?? [];\n    teamRows.push(row);\n    byTeam.set(row.team_id, teamRows);\n  });\n  return Array.from(byTeam, ([teamId, teamRows]) => {\n    const totals = aggregateWgoTeamGames(teamRows);\n    return {\n      team_id: teamId,\n      pp_opportunities_per_game: totals.ppOpportunitiesPerGame,\n      power_play_goals_for: totals.ppGoalsFor,\n      pp_goals_against: totals.ppGoalsAgainst,\n      sh_goals_for: totals.shGoalsFor,\n    };\n  });\n}"
+          },
+          {
+            "path": "web/components/TeamDashboard/useRecentTeamFormBeta.ts",
+            "start": 5904,
+            "end": 6152,
+            "text": "(value: unknown): number | null => {\n  if (typeof value !== \"number\" && typeof value !== \"string\") return null;\n  if (value === \"\") return null;\n  const parsed = Number(value);\n  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;\n}"
+          },
+          {
+            "path": "web/components/TeamDashboard/useRecentTeamFormBeta.ts",
+            "start": 10549,
+            "end": 10610,
+            "text": "(scoreGames?.dates ?? []).slice(0, recentGameCount).reverse()"
+          },
+          {
+            "path": "web/components/TeamDashboard/useRecentTeamFormBeta.ts",
+            "start": 10646,
+            "end": 10908,
+            "text": "scoreDates.length === recentGameCount &&\n    row.source_through_date !== null &&\n    scoreDates[scoreDates.length - 1] === row.source_through_date &&\n    scoreGames?.seasonGameCount != null &&\n    scoreGames.seasonGameCount === countOrNull(row.source_game_count)"
+          },
+          {
+            "path": "web/components/TeamDashboard/useRecentTeamFormBeta.ts",
+            "start": 10932,
+            "end": 10969,
+            "text": "scoreDatesConfirmed ? scoreDates : []"
+          },
+          {
+            "path": "web/components/TeamDashboard/useRecentTeamFormBeta.ts",
+            "start": 10993,
+            "end": 11027,
+            "text": "gameRows.slice(0, recentGameCount)"
+          },
+          {
+            "path": "web/components/TeamDashboard/useRecentTeamFormBeta.ts",
+            "start": 11049,
+            "end": 11094,
+            "text": "windowRows.map((game) => game.date).reverse()"
+          },
+          {
+            "path": "web/components/TeamDashboard/useRecentTeamFormBeta.ts",
+            "start": 11175,
+            "end": 11308,
+            "text": "scoreDatesConfirmed &&\n    puckDates.length === scoreDates.length &&\n    puckDates.every((date, index) => date === scoreDates[index])"
+          }
+        ]
+      }
+    },
+    "boundary": "Exact AST functions/expressions/effect callback only; Node built-ins/TypeScript compiler; VM1000ms; controlled fake promises for fetch, no React hook invocation/app imports/network. No source/test changes.",
+    "initial_support_attempt": "Support probe failed because lexical const countOrNull was read as sandbox object property. Corrected to read lexical binding via VM; corrected run passed. Main successful probe was not rerun.",
+    "eligible_played_peer_followup": {
+      "command": "node /tmp/astra-components15-eligible-peer.cjs",
+      "source": "const fs=require('fs'),vm=require('vm'),ts=require('/Users/tim/Code/fhfhockey.com/web/node_modules/typescript');const path='web/components/TeamDashboard/TeamDashboard.tsx',source=fs.readFileSync(path,'utf8'),sf=ts.createSourceFile(path,source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX),names=['calculateRank','currentTeamData','currentTeamAdvanced','allCfPct'],nodes={};function walk(n){if(ts.isVariableDeclaration(n)&&names.includes(n.name.getText(sf)))nodes[n.name.getText(sf)]=n.initializer;ts.forEachChild(n,walk);}walk(sf);const summary=[{team_id:22,season_id:20262027,games_played:1},{team_id:6,season_id:20262027,games_played:1}],advanced=[{team_abbreviation:'EDM',date:'2026-11-12',cf_pct:.55}];const scope={validatedTeamId:22,teamAbbrev:'EDM',allTeamsSummary:summary,allTeamsAdvanced:advanced,latestAdvancedStats:advanced};const code=names.map(n=>'const '+n+'='+nodes[n].getText(sf)+';').join('\\n')+'result={currentTeamFound:!!currentTeamData,currentAdvancedFound:!!currentTeamAdvanced,actualRank:calculateRank(currentTeamAdvanced.cf_pct,allCfPct,true)};';vm.runInNewContext(ts.transpileModule(code,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText,scope,{timeout:1000});const result={condition:'Same selected20262027 season to2026-11-12; both teams have1 completed summary game; BOS secondary season rows entirely absent',summaryRows:summary,advancedRows:advanced,actual:scope.result,expected:'CF league rank unknown or explicitly partial1of2 played teams; BOS is played, not idle/ineligible',sourceExpressions:names.map(name=>({name,start:nodes[name].getStart(sf),end:nodes[name].end,text:nodes[name].getText(sf)}))};fs.writeFileSync('/tmp/astra-components15-eligible-peer.json',JSON.stringify(result,null,2)+'\\n');console.log(JSON.stringify(result));\n",
+      "sha256": "1f76a34256ceaf0183fcb573f52a88b7c3fb15d12e189233d05b4f6919acbaf7",
+      "result": {
+        "condition": "Same selected20262027 season to2026-11-12; both teams have1 completed summary game; BOS secondary season rows entirely absent",
+        "summaryRows": [
+          {
+            "team_id": 22,
+            "season_id": 20262027,
+            "games_played": 1
+          },
+          {
+            "team_id": 6,
+            "season_id": 20262027,
+            "games_played": 1
+          }
+        ],
+        "advancedRows": [
+          {
+            "team_abbreviation": "EDM",
+            "date": "2026-11-12",
+            "cf_pct": 0.55
+          }
+        ],
+        "actual": {
+          "currentTeamFound": true,
+          "currentAdvancedFound": true,
+          "actualRank": 1
+        },
+        "expected": "CF league rank unknown or explicitly partial1of2 played teams; BOS is played, not idle/ineligible",
+        "sourceExpressions": [
+          {
+            "name": "calculateRank",
+            "start": 29277,
+            "end": 30225,
+            "text": "(\n                  value: number | null | undefined,\n                  allValues: (number | null | undefined)[],\n                  higherIsBetter: boolean = true,\n                ) => {\n                  // Zero is the existing unranked sentinel, never a league rank.\n                  if (value === null || value === undefined || !Number.isFinite(value))\n                    return 0;\n                  const validValues = allValues.filter(\n                    (v): v is number => typeof v === \"number\" && Number.isFinite(v),\n                  );\n                  if (validValues.length === 0 || validValues.length !== allValues.length) return 0;\n\n                  const sortedValues = [...validValues].sort((a, b) =>\n                    higherIsBetter ? b - a : a - b,\n                  );\n                  const rank = sortedValues.findIndex((v) => v === value) + 1;\n                  return rank || validValues.length + 1;\n                }"
+          },
+          {
+            "name": "currentTeamData",
+            "start": 30317,
+            "end": 30418,
+            "text": "allTeamsSummary.find(\n                  (team) => team.team_id === validatedTeamId,\n                )"
+          },
+          {
+            "name": "currentTeamAdvanced",
+            "start": 30677,
+            "end": 30785,
+            "text": "allTeamsAdvanced?.find(\n                  (team) => team.team_abbreviation === teamAbbrev,\n                )"
+          },
+          {
+            "name": "allCfPct",
+            "start": 37479,
+            "end": 37570,
+            "text": "latestAdvancedStats.map(\n                      (team) => team.cf_pct,\n                    )"
+          }
+        ]
+      },
+      "reason": "Chef required explicit positiveGP eligibility rather than roster-only expectation; new narrow probe, earlier successful probes not rerun"
+    }
+  },
+  "findings": [
+    {
+      "id": "AFULL-COMP15-01",
+      "severity": "P1",
+      "status": "provisional_for_Chef"
+    },
+    {
+      "id": "AFULL-COMP15-02",
+      "severity": "P1",
+      "status": "provisional_for_Chef"
+    },
+    {
+      "id": "AFULL-COMP15-03",
+      "severity": "P1",
+      "status": "provisional_for_Chef"
+    },
+    {
+      "id": "AFULL-COMP15-04",
+      "severity": "P1",
+      "status": "provisional_for_Chef"
+    },
+    {
+      "id": "AFULL-COMP15-05",
+      "severity": "P1",
+      "status": "provisional_for_Chef"
+    },
+    {
+      "id": "AFULL-COMP15-06",
+      "severity": "P2",
+      "status": "provisional_for_Chef"
+    },
+    {
+      "id": "AFULL-COMP15-07",
+      "severity": "P1",
+      "status": "provisional_for_Chef"
+    }
+  ],
+  "preserved": [
+    "CTPI descriptive candidate admission/predictive separation",
+    "same-games exact date/count/newest checks",
+    "pooled NST/WGO same-sample rates",
+    "StatsPage qualifier/zero/tied-rank fixes",
+    "TeamDashboard request identity and stale-result protection"
+  ],
+  "not_run": [
+    "Vitest",
+    "React hooks/application runtime",
+    "browser/server",
+    "DB/catalog queries",
+    "provider/network",
+    "live incidence or predictive qualification"
+  ],
+  "worker": "readfirst_production",
+  "model_effort": "Astra/high previously verified local turn_context"
+}

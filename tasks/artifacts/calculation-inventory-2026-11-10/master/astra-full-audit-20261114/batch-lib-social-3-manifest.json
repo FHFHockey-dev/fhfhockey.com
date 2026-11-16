@@ -1,0 +1,213 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "files": [
+    {
+      "path": "web/lib/socialShare/pickupsFixture.ts",
+      "local": "/tmp/astra-social1/13-pickupsFixture.ts",
+      "lines": 133,
+      "sha256": "ace70cfb12504d0e5398a8740c557dbd344000bb32232b25fbcec524474da441",
+      "fullRead": true,
+      "bytes": 10540,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          133
+        ]
+      ],
+      "rows": 90
+    },
+    {
+      "path": "web/lib/socialShare/playerSources.test.ts",
+      "local": "/tmp/astra-social1/14-playerSources.test.ts",
+      "lines": 204,
+      "sha256": "05f960ca8c17f6eebd8fd6f41a49d5a0c60641449587338c3116820883249cae",
+      "fullRead": true,
+      "bytes": 18202,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          204
+        ]
+      ],
+      "rows": 116
+    },
+    {
+      "path": "web/lib/socialShare/playerSources.ts",
+      "local": "/tmp/astra-social1/15-playerSources.ts",
+      "lines": 190,
+      "sha256": "037a558b1f6244ced0264f93915601b1166313b5fd9482bed473359f2874250f",
+      "fullRead": true,
+      "bytes": 15357,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          190
+        ]
+      ],
+      "rows": 101
+    },
+    {
+      "path": "web/lib/socialShare/players.test.ts",
+      "local": "/tmp/astra-social1/16-players.test.ts",
+      "lines": 287,
+      "sha256": "13b457a5126fcb8d4a1fd31e3724f406f577591a015011f0a0062239e0efa7e4",
+      "fullRead": true,
+      "bytes": 24431,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          287
+        ]
+      ],
+      "rows": 174
+    },
+    {
+      "path": "web/lib/socialShare/players.ts",
+      "local": "/tmp/astra-social1/17-players.ts",
+      "lines": 290,
+      "sha256": "1fdf74a5503eb94ec9e4336baf75343d54d7181a57e23867087b2bdac8f7b903",
+      "fullRead": true,
+      "bytes": 25211,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          290
+        ]
+      ],
+      "rows": 204
+    },
+    {
+      "path": "web/lib/socialShare/schedule.test.ts",
+      "local": "/tmp/astra-social1/18-schedule.test.ts",
+      "lines": 575,
+      "sha256": "0228531416bcdb06b3c16a20cd6dd60411eb1e49def1ef9c3fdf59340aa5d4cf",
+      "fullRead": true,
+      "bytes": 47887,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          575
+        ]
+      ],
+      "rows": 277
+    },
+    {
+      "path": "web/lib/socialShare/schedule.ts",
+      "local": "/tmp/astra-social1/19-schedule.ts",
+      "lines": 167,
+      "sha256": "d0ac6dbb56a69fdca3f5316fd6e2a5f53dcb692b4fd0263fef14a092903e471c",
+      "fullRead": true,
+      "bytes": 13466,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          167
+        ]
+      ],
+      "rows": 106
+    },
+    {
+      "path": "web/lib/socialShare/score.test.ts",
+      "local": "/tmp/astra-social1/20-score.test.ts",
+      "lines": 82,
+      "sha256": "5ee8ae7e4c7566ce780e19c2689b15609617d650f3c87bd3f9ce2daeabb70046",
+      "fullRead": true,
+      "bytes": 6814,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          82
+        ]
+      ],
+      "rows": 44
+    },
+    {
+      "path": "web/lib/socialShare/score.ts",
+      "local": "/tmp/astra-social1/21-score.ts",
+      "lines": 71,
+      "sha256": "4d3a42f15f8ad2994f3216bf67591fcd1a1146c5160ec18d119d20c054127a48",
+      "fullRead": true,
+      "bytes": 5275,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          71
+        ]
+      ],
+      "rows": 30
+    },
+    {
+      "path": "web/lib/socialShare/streak.test.ts",
+      "local": "/tmp/astra-social1/22-streak.test.ts",
+      "lines": 84,
+      "sha256": "70dcada81ea158e094aac48cd9fb4a03ff60518b291883d3cc1396753c359820",
+      "fullRead": true,
+      "bytes": 6129,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          84
+        ]
+      ],
+      "rows": 18
+    },
+    {
+      "path": "web/lib/socialShare/streak.ts",
+      "local": "/tmp/astra-social1/23-streak.ts",
+      "lines": 71,
+      "sha256": "9f896ee18ad167a35a858933e7628cb02f26ad565dd3c17dd5bcc4316a381795",
+      "fullRead": true,
+      "bytes": 5236,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          71
+        ]
+      ],
+      "rows": 30
+    },
+    {
+      "path": "web/lib/socialShare/types.ts",
+      "local": "/tmp/astra-social1/24-types.ts",
+      "lines": 253,
+      "sha256": "603585185f558acfcfdb56fead6bd51947a92be29faa6af15e5055c031ef4b10",
+      "fullRead": true,
+      "bytes": 13106,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          253
+        ]
+      ],
+      "rows": 243
+    }
+  ],
+  "scopeLines": 2407,
+  "rows": 1433,
+  "probe": "social3-probe-output.json",
+  "checks": [
+    "Twelve full frozen source reads",
+    "Unique AST source-offset identities",
+    "Exact nullable recent-GP probe and known-GP controls passed; canonical identity view excludes the proposed conflicting alias fixture"
+  ],
+  "notRun": [
+    "Vitest",
+    "real database/provider",
+    "real loaders, live finality or card rendering",
+    "application imports or actual environment",
+    "browser/server/build",
+    "later Rankings exact-commit review"
+  ]
+}

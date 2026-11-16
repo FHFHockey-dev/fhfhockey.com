@@ -1,0 +1,167 @@
+{
+  "version": "fhfh.blsh.native-capture-successor-candidate.v1",
+  "status": "offline_candidate_pending_scout_review_not_approved",
+  "baseHead": "a955107671ee7c1b2521891393a6bad6d95e9f89",
+  "baseBranch": "octoberBranch",
+  "liveCheckoutAtHandoff": {
+    "head": "eb0a07e94",
+    "pinnedPathsChangedSinceBase": false,
+    "gitApplyCheck": "SUCCESSOR.patch applies cleanly (check only)"
+  },
+  "patch": {
+    "file": "SUCCESSOR.patch",
+    "sha256": "e8be50de132887be4e4c33b086003a1f639ba554f23c85f08d27d5a780d7752f",
+    "supersedes": [
+      "superseded/SUCCESSOR-v4-66b4eb30.patch",
+      "superseded/SUCCESSOR-v3-40dd64bc.patch",
+      "superseded/CONSTANTS-ONLY.patch",
+      "superseded/TLS-VARIANT-BLOCKED.patch"
+    ],
+    "contents": "DATE 2026-11-11 + slot/output/plan-date pins; per-operation TLS observation with resumed-session and keep-alive binding; RUNTIME.json with launch proof; per-dispatch default-CA-store check; global undici dispatcher identity anchored at runner load; bootstrap refuses a dispatcher registered before its imports; bootstrap refuses a present NST_JOB_LIFECYCLE_ENABLED; tests moved +4 days and extended"
+  },
+  "frozenPredecessor": {
+    "date": "2026-11-07",
+    "slotStartUTC": "2026-11-13T14:05:00.000Z",
+    "runner": "5ef3a631cdc4abb8a6a8f5a2f3a379c75640fa82fb7b563a0feb9444c94099eb",
+    "adapter": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+    "bootstrapSHA256": "d4d2fcac52ffd272307b97bcbe79a008d888f7ee05f96526888cdcea2a34c97f"
+  },
+  "runtimeRoleSHA256": {
+    "runner": "a74cbb0a59d4b3525572a2f71811b4777b36c63bdb26c42b4dea7ea911af81b0",
+    "preparation": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+    "adapter": "aa6237bdb8d977cbd21f3ed769d9f5c7f9028e23a921965f41e278e021947be0",
+    "client": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+    "budget": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+    "admission": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+    "admissionOrigin": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+    "lifecycle": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+    "ratePolicy": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c"
+  },
+  "bootstrapSHA256": "dbf69c474bedefd9c34fbd783d4beccc1840e8288fd2fa3435b5d89e8521bb46",
+  "changedRoles": [
+    "runner",
+    "adapter"
+  ],
+  "unchangedRoles": [
+    "preparation",
+    "client",
+    "budget",
+    "admission",
+    "admissionOrigin",
+    "lifecycle",
+    "ratePolicy"
+  ],
+  "date": "2026-11-11",
+  "seasonId": 20262027,
+  "groups": [
+    "individual",
+    "onIce"
+  ],
+  "slot": {
+    "startUTC": "2026-11-17T14:05:00.000Z",
+    "startET": "2026-11-17 09:05:00 EST",
+    "latestStartExclusiveUTC": "2026-11-17T14:06:00.000Z",
+    "latestStartExclusiveET": "2026-11-17 09:06:00 EST",
+    "startWindowSeconds": 60,
+    "workBudgetSeconds": 120,
+    "reserved": false,
+    "note": "unreserved proposal; needs its own coordination/runtime/admission receipts and TJ approval"
+  },
+  "outputDirectory": "/Users/tim/Library/Application Support/fhfh-blsh-native-20261117T140500Z",
+  "sourceDateExpiry": {
+    "rule": "nativeProcessCapturePreparation.ts:48 now - date < 8 days (unchanged)",
+    "expiresAtUTC": "2026-11-19T00:00:00.000Z",
+    "expiresAtET": "2026-11-18 19:00:00 EST",
+    "marginAtSlotStart": "1 day 9 h 55 min"
+  },
+  "slateEvidence": {
+    "gameIds": [
+      2026020293,
+      2026020294,
+      2026020295,
+      2026020296,
+      2026020297,
+      2026020298
+    ],
+    "gitTracked": false,
+    "caveat": "all cited files are untracked local artifacts; the pilot's own schedule GET is the authority at run time (runner requires every game OFF/FINAL)",
+    "files": [
+      {
+        "path": "tasks/artifacts/drm-ddatv-2026-11-12/production/step5/FINAL-INVENTORY.json",
+        "sha256": "a9ca2d5c17d1680ab6353581608eebc37cfd9255b982ef21f77d6615576ab378",
+        "shows": "298/298 requested games complete, checked_at 2026-11-12 23:25:06Z, no exceptions"
+      },
+      {
+        "path": "tasks/artifacts/drm-ddatv-2026-11-12/production/step5/2026020293-before.json",
+        "sha256": "813dc31f031bc22da9e4b688a8c6f3e59a60d560ea4f40d798dc04051e1facc8",
+        "shows": "game 2026020293: date 2026-11-11, gameState OFF"
+      },
+      {
+        "path": "tasks/artifacts/drm-ddatv-2026-11-12/production/step5/2026020294-before.json",
+        "sha256": "77ff06a9992627710463cd87b1a5c7cb6608b93eba0f6eb4f8376618fcb92455",
+        "shows": "game 2026020294: date 2026-11-11, gameState OFF"
+      },
+      {
+        "path": "tasks/artifacts/drm-ddatv-2026-11-12/production/step5/2026020295-before.json",
+        "sha256": "699bd715c84c8318dddc4329efacdf39e620a755a379ef400dd3577cacd8da75",
+        "shows": "game 2026020295: date 2026-11-11, gameState OFF"
+      },
+      {
+        "path": "tasks/artifacts/drm-ddatv-2026-11-12/production/step5/2026020296-before.json",
+        "sha256": "de9694b8a04cb0ba094cc00c0bc4426c23a78682842f588f1bf49e1e8e32bd34",
+        "shows": "game 2026020296: date 2026-11-11, gameState OFF"
+      },
+      {
+        "path": "tasks/artifacts/drm-ddatv-2026-11-12/production/step5/2026020297-before.json",
+        "sha256": "0cf30f78aca4fdf3c4f717bc3f34b330a25a1693e6351e1d27ebc4e8844b1f6b",
+        "shows": "game 2026020297: date 2026-11-11, gameState OFF"
+      },
+      {
+        "path": "tasks/artifacts/drm-ddatv-2026-11-12/production/step5/2026020298-before.json",
+        "sha256": "bad57867c28b423d0c6d728ec53b3dcbb3c20babd086d9c805691212e1044ebf",
+        "shows": "game 2026020298: date 2026-11-11, gameState OFF"
+      },
+      {
+        "path": "tasks/artifacts/drm-ddatv-2026-11-12/production/step5/2026020292-before.json",
+        "sha256": "97c9dfc5959c2446a43d26df383405516fdc51ce8acf2100384e36a2d226eb0e",
+        "shows": "game 2026020292: date 2026-11-10 (lower bound of the 11-11 slate)"
+      },
+      {
+        "path": "tasks/artifacts/goalie-h1-2026-11-12/NEXT-DATA-STEP.md",
+        "sha256": "91976e6cb08ffbfd596bcb38fba4ddac86da43cf35982178ad846c677c653720",
+        "shows": "line 74: game 2026020299 is date 2026-11-12 (upper bound of the 11-11 slate)"
+      }
+    ]
+  },
+  "unchangedSafeguards": [
+    "5 ordered operations (disabled mode)",
+    "retries 0",
+    "22 s NST spacing",
+    "byte caps",
+    "fsync journal",
+    "manifest wx/hard-link",
+    "one fixed output path + in-process attempted flag",
+    "freshness rule"
+  ],
+  "cannotRunInExport": "bootstrap --check / --run bind the canonical web/ path (bootstrap_wrong_checkout); authoritative bootstrap suite run is in the canonical tree after Scout applies the patch",
+  "packetAdditions": {
+    "tls": "operation-N-SETTLED.json.tls (ops 1-5) and {schedule,individual,onIce}.TRANSPORT-OBSERVATION.json.tls, including tls.defaultCACertificatesSHA256; fields in HANDOFF.md",
+    "runtimeReceipt": "RUNTIME.json (written before the first dispatch, fsynced, in MANIFEST, startedAtUTC == STARTED.startedAtUTC), including launch.*",
+    "lifecycleKey": "bootstrap pre-dispatch check and verifier refuse NST_JOB_LIFECYCLE_ENABLED when present at all",
+    "globalDispatcher": "RUNTIME.json.globalDispatcher {present, constructorName, sameAsRunnerLoad}; operation-N-SETTLED.json.tls.globalDispatcher {present, constructorName, identityUnchanged} (also in TRANSPORT-OBSERVATION tls)"
+  },
+  "verifierInputs": {
+    "verifyPacketSHA256": "b86af692e5c4b3b9b1650f949171cbbaeed6663c6d1668efdc443e91fa0ad5c5",
+    "expectedPinsSHA256": "a2a1e694dfa79ba9ebc110a3e45a249540b739c0061e0558fc6887e0f30367d1",
+    "expectedPinsBootstrapKey": "_bootstrapSHA256"
+  },
+  "transport": {
+    "finding": "Once the runner module loads, its pinned cheerio import loads npm undici 7.29.0, which registers its own default Agent under Symbol.for('undici.globalDispatcher.1'). Node's bundled fetch honors that registry, so live requests go through npm undici 7.29.0's Agent, not Node's bundled undici 6.29.1 (process.versions.undici is not the transport version).",
+    "evidence": [
+      "tls-loopback/TRANSPORT-RESULT.txt",
+      "tls-loopback/dispatcher-launch-check-output.txt",
+      "tls-loopback/who-sets-output.txt"
+    ],
+    "unpinned": "node_modules/undici (the transport) is not in the bootstrap's DEPENDENCIES; only cheerio's entry file is pinned. Recommended for the operator lane's dependency-tree check."
+  }
+}

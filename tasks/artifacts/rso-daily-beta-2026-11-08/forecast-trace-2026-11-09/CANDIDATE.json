@@ -1,0 +1,29 @@
+{
+  "createdAt": "2026-11-09T21:28:33.325896+00:00",
+  "base": "788668cb57454e55316fc25db06562f567997ee4",
+  "candidate": "44582b13a213dfd4c75238d8413cf4031ca98b6f",
+  "tree": "d9a2bd4fe3c0190e07c5cdcc49f8259725048800",
+  "temporaryObjectDirectory": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/rso-missing-points-candidate-rm7x42v0/objects",
+  "sourceExport": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/rso-missing-points-candidate-rm7x42v0/source",
+  "paths": [
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.ts",
+      "sha256": "e09bdcada3c35bab442cabb997bae3c11e07b695e678302c2c3b02851136a32b"
+    },
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.test.ts",
+      "sha256": "432a680a4f4634b72af848ddab2058bc3ae3473e559245e3a5c352b9f1611ee5"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/a5816ce6d1eeeba4b7213d1f66c96025f0b5818e.json",
+      "sha256": "c5d83514d35cbabf095f23480997ada5ddf7d8dda28b08b03e98ca2b868c0d0e"
+    },
+    {
+      "path": "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/d66408de3a0d1ccea1daaadfce8a3a9ae20cb680.json",
+      "sha256": "0b290aecd9157d6f919634f49de72b966d9f70529fb03ec41a6e5a9f0013a36b"
+    }
+  ],
+  "notPublished": true,
+  "productionScope": "RSO missing-points proof registration only",
+  "excluded": "Saved-input schema repair, other lanes, private inputs and working diaries"
+}

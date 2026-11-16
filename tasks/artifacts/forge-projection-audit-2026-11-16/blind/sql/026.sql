@@ -1,0 +1,1 @@
+select job_name, to_char(run_time,'MM-DD HH24:MI:SS') t, status, details->'timing'->>'durationMs' ms, left(details->>'response',200) r from cron_job_audit where run_time >= '2026-11-13 10:20' and run_time < '2026-11-13 10:47' and job_name ~* 'goalie-proj|run-projection|run-rolling' order by run_time

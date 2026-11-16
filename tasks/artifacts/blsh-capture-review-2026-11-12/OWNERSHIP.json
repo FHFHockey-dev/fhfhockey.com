@@ -1,0 +1,58 @@
+{
+  "owner": "Codex BLSH independent review delegated from 01a1a500-1686-7650-868a-c36b4b48c0e8",
+  "scope": "local capture correction, offline verification and bounded-pilot preparation",
+  "branch": "octoberBranch",
+  "initialHEAD": "24b1cb4d3048a3dba8234cf92c62e8f2b72f877f",
+  "writePaths": [
+    "tasks/diaries/2026-11-12-codex-blsh-capture-review.md",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/OWNERSHIP.json",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/SOURCE-CHECK.json",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/TESTS.json",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/TESTS.log",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/REPRO.cjs",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/REPRO.json",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/REVIEW.md",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/CORRECTION-HANDOFF.md",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/CORRECTION-CHECKS.json",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/REGRESSIONS-BEFORE.log",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/REGRESSIONS-AFTER.log",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/CORRECTION-TESTS.log",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/TYPECHECK.log",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/LINT.log",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/REVIEW-REGRESSIONS-BEFORE.log",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/FINAL-RUNNER-TESTS.log",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/RUNTIME-IDENTIFICATION.json",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/PILOT-AUTHORIZATION.md",
+    "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+    "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/PILOT-PREREQUISITES.md",
+    "web/scripts/blsh/nativeProcessCaptureBootstrap.ts",
+    "web/scripts/blsh/nativeProcessCaptureBootstrap.test.ts",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-HANDOFF.md",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-CHECKS.json",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-TESTS.log",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-TYPECHECK.log",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-LINT.log",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/CUSTODIAN-HANDOFF.md",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-OFFLINE-CHECK.json",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-CLI-REFUSAL.log",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/PILOT-EXECUTION-PLAN.md",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/PILOT-READINESS.json"
+  ],
+  "runtimeSourceWritePaths": [
+    "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+    "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+    "web/scripts/blsh/nativeProcessCaptureBootstrap.ts",
+    "web/scripts/blsh/nativeProcessCaptureBootstrap.test.ts"
+  ],
+  "status": "offline candidate/evidence rechecked unchanged; exact five-call execution/reconciliation plan ready; current serial order does not assign BLSH, custodian and specific approval pending",
+  "reviewerWritePaths": [
+    "tasks/diaries/2026-11-12-codex-blsh-correction-reviewer.md",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/INDEPENDENT-REVIEW.md",
+    "tasks/artifacts/blsh-capture-review-2026-11-12/BOOTSTRAP-INDEPENDENT-REVIEW.md",
+    "tasks/diaries/2026-11-12-codex-blsh-bootstrap-reviewer.md"
+  ],
+  "coordinationWritePaths": [
+    "tasks/artifacts/browserless-transport-prep-2026-11-12/manifest-ack-6af5fabb-bf6c-8191-b4d8-0c7c2879a038.md"
+  ]
+}

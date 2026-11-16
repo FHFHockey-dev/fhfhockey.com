@@ -1,0 +1,74 @@
+{
+  "codeVersion": "local:64050d303124f3bd17dfdf66eea8bcf898f89679dd51beccfe1373e097e0e8f1",
+  "modelEnvironment": {
+    "FORGE_SKATER_MODEL_MODE": null,
+    "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION": null,
+    "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION": null,
+    "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES": null,
+    "NHL_XG_MODEL_VERSION": null,
+    "START_CHART_GAME_REVISIONS": null,
+    "STARTER_BOARD_COMPUTE_ENABLED": "true",
+    "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED": null
+  },
+  "nodeVersion": "v22.23.4",
+  "nodeBinaryHash": "daa77e22e1b8778361b392461e9921a6d292d0382ebf4ae872a0081f02f01fef",
+  "packageLockHash": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+  "tsconfigHash": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+  "ownershipDirectory": "/Users/tim/.fhfh/forge-local-ownership",
+  "loadedFiles": 463,
+  "repositorySourceFiles": 85,
+  "dirtyLoadedSources": [
+    {
+      "path": "web/lib/projections/goalie/historyLedger.ts",
+      "status": "?? web/lib/projections/goalie/historyLedger.ts"
+    },
+    {
+      "path": "web/lib/projections/queries/goalie-queries.ts",
+      "status": "M web/lib/projections/queries/goalie-queries.ts"
+    },
+    {
+      "path": "web/lib/projections/starterBoardScoring.ts",
+      "status": "M web/lib/projections/starterBoardScoring.ts"
+    }
+  ],
+  "differentFromNamesFirstRelease": [
+    "web/lib/projections/goalie/historyLedger.ts",
+    "web/lib/projections/queries/goalie-queries.ts"
+  ],
+  "previewReceipt": {
+    "status": "preview",
+    "scope": {
+      "date": "2026-11-12",
+      "gameId": 2026020307,
+      "existingRevisionId": null
+    },
+    "startedAt": "2026-11-12T23:43:49.208Z",
+    "limits": {
+      "maxRequests": 20,
+      "maxWrites": 1,
+      "runtimeMs": 60000,
+      "requestTimeoutMs": 10000
+    },
+    "wouldWrite": true,
+    "requests": {
+      "reads": 2,
+      "writes": 0,
+      "readMs": 425,
+      "writeMs": 0,
+      "acknowledgedWrites": 0,
+      "rejectedWrites": 0,
+      "unknownWrites": 0
+    },
+    "artifact": "/Users/tim/.fhfh/goalie-h1-20261112/preview-2026020307/code.json",
+    "codeVersion": "local:64050d303124f3bd17dfdf66eea8bcf898f89679dd51beccfe1373e097e0e8f1"
+  },
+  "artifactSha256": "2a604e00552fb1375d319248fbb3db6cf00696e31fc53d7e54aeafe97b153c37",
+  "processFlags": {
+    "STARTER_BOARD_CAPTURE_ENABLED": true,
+    "STARTER_BOARD_COMPUTE_ENABLED": true,
+    "STARTER_BOARD_SERVING_ENABLED": false,
+    "STARTER_BOARD_SCHEDULER_ENABLED": false,
+    "STARTER_BOARD_CHALLENGER_ENABLED": false,
+    "STARTER_BOARD_CANARY_GAME_IDS": "2026020307"
+  }
+}

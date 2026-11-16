@@ -1,0 +1,137 @@
+{
+  "pin": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "hashes": {
+    "web/lib/projections/utils/devig.ts": "170e5d06297d49f0692ea07bd4a1b9519183119cde379355e5de8fdf8a331a16",
+    "web/lib/projections/utils/market-output-builders.ts": "84ede5e8c976436537f7fa4831f4887fa02b1f2a1b1d4c55eece32c3cc2b1d7c",
+    "web/lib/projections/stages/persistence-stage.ts": "64bdab989990433cbb16a010f0f5b5ed416df29e12f8c90e083ad2c0527852d6",
+    "web/lib/projections/run-forge-projections.ts": "0185b84d930bda6cb5d956adaf46b3d7f61c46648dc2cf16d7a7dfcaccd7fd53"
+  },
+  "rejectedBook": {
+    "good": {
+      "marketType": "player_shots_on_goal",
+      "line": 2.5,
+      "expectedValue": 3.2,
+      "model": {
+        "over": 0.620096258921627,
+        "under": 0.379903741078373,
+        "push": 0,
+        "overGivenNoPush": 0.620096258921627
+      },
+      "marketProbabilityOver": 0.5,
+      "marketProbabilityBasis": "two-way-devig",
+      "yesOnlyAssumption": null,
+      "probabilityEdgeAtZeroOverround": null,
+      "probabilityEdge": 0.12009625892162701,
+      "threshold": 0.05,
+      "flagType": "model_over",
+      "suppressedFlagType": null,
+      "bestOverPriceAmerican": -110,
+      "bestUnderPriceAmerican": -110,
+      "expectedValueOver": 0.18382013066856073,
+      "expectedValueUnder": -0.2747292215776515,
+      "bookCount": 1,
+      "twoWayBookCount": 1,
+      "yesOnlyBookCount": 0,
+      "devigMethod": "shin",
+      "combine": "median-devig-probability/best-price"
+    },
+    "poisoned": {
+      "marketType": "player_shots_on_goal",
+      "line": 2.5,
+      "expectedValue": 3.2,
+      "model": {
+        "over": 0.620096258921627,
+        "under": 0.379903741078373,
+        "push": 0,
+        "overGivenNoPush": 0.620096258921627
+      },
+      "marketProbabilityOver": 0.5,
+      "marketProbabilityBasis": "two-way-devig",
+      "yesOnlyAssumption": null,
+      "probabilityEdgeAtZeroOverround": null,
+      "probabilityEdge": 0.12009625892162701,
+      "threshold": 0.05,
+      "flagType": "model_over",
+      "suppressedFlagType": null,
+      "bestOverPriceAmerican": 10000,
+      "bestUnderPriceAmerican": 10000,
+      "expectedValueOver": 61.62972215108433,
+      "expectedValueUnder": 37.37027784891567,
+      "bookCount": 2,
+      "twoWayBookCount": 1,
+      "yesOnlyBookCount": 0,
+      "devigMethod": "shin",
+      "combine": "median-devig-probability/best-price"
+    },
+    "rejectedModalLineResult": null
+  },
+  "horizon": {
+    "h1": {
+      "total": 5,
+      "flag": "model_under",
+      "probability": 0.384
+    },
+    "h5": {
+      "total": 25,
+      "flag": "model_over",
+      "probability": 1
+    },
+    "sameDeletionFilters": [
+      [
+        "snapshot_date",
+        "2026-11-14"
+      ],
+      [
+        "game_id",
+        1
+      ],
+      [
+        "model_name",
+        "forge"
+      ],
+      [
+        "model_version",
+        "market-context-v1"
+      ],
+      [
+        "prediction_scope",
+        "pregame"
+      ]
+    ],
+    "sameUpsertConflict": "snapshot_date,game_id,model_name,model_version,prediction_scope",
+    "scope": "Exact runner sidecar block and persistence with fake client, horizon-scaled synthetic team map supplied; not full skater/runner execution or actual DB writes"
+  },
+  "controls": {
+    "americanMinus150": 0.6000000000000001,
+    "twoWay": {
+      "probabilities": [
+        0.5826086956521739,
+        0.4173913043478262
+      ],
+      "overround": 0.03478260869565242,
+      "method": "shin",
+      "shinZ": 0.03481541870479499,
+      "fairA": 0.5826086956521739,
+      "fairB": 0.4173913043478262
+    },
+    "yesOnly": {
+      "implied": 0.25,
+      "overround": 0.08,
+      "overroundSource": "argument",
+      "basis": "assumed-overround",
+      "probability": 0.23148148148148145,
+      "method": "proportional"
+    },
+    "push": {
+      "over": 0.3233235838169365,
+      "under": 0.4060058497098381,
+      "push": 0.2706705664732254,
+      "overGivenNoPush": 0.4433162422274116
+    }
+  },
+  "boundaries": [
+    "Exact pinned pure helpers and sidecar/persistence blocks",
+    "Synthetic data and fake in-memory transport only",
+    "No fitted distribution called, full runner/Vitest/app import, DB/provider/page/server/build or model qualification"
+  ]
+}

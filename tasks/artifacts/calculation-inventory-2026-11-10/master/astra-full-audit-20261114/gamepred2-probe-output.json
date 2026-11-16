@@ -1,0 +1,79 @@
+{
+  "pin": "89da739cb",
+  "checks": {
+    "tiedDiscreteMutualInformation": {
+      "actual": 0,
+      "expectedUncollapsed": 0.3250829733914482
+    },
+    "ignoredExtraTreesWeights": {
+      "weightedExamples": [
+        {
+          "gameId": 1,
+          "featureSnapshotId": "a",
+          "featureKeys": [
+            "x"
+          ],
+          "features": [
+            0
+          ],
+          "label": 1,
+          "weight": 1
+        },
+        {
+          "gameId": 2,
+          "featureSnapshotId": "b",
+          "featureKeys": [
+            "x"
+          ],
+          "features": [
+            0
+          ],
+          "label": 0,
+          "weight": 0.2
+        }
+      ],
+      "actualPrior": 0.5,
+      "actualLeaf": 0.5,
+      "weightedPrior": 0.8333333333333334,
+      "byteEqualToUnitWeights": true
+    },
+    "constantStandardDeviation": {
+      "actual": 1,
+      "expected": 0
+    },
+    "nonfinalFallback": {
+      "outcomes": [
+        {
+          "gameId": 2026020001,
+          "homeTeamId": 1,
+          "awayTeamId": 2,
+          "homeScore": 1,
+          "awayScore": 0,
+          "homeWon": true,
+          "completedAt": "2026-11-14T23:10:00Z"
+        }
+      ],
+      "calls": [
+        {
+          "table": "pp_timeframes",
+          "columns": "game_id,home_team_id,away_team_id,home_team_score,away_team_score,updated_at"
+        },
+        {
+          "table": "pbp_games",
+          "columns": "id,hometeamid,awayteamid,hometeamscore,awayteamscore,created_at"
+        }
+      ],
+      "fixtureState": "LIVE supplied only as external truth; reader neither queries nor checks it"
+    }
+  },
+  "hashes": {
+    "web/lib/game-predictions/baselineModel.ts": "ef7780b99d258d3e674d90283f9a94ee52f37a148ac09faaf22fa98604cf0362",
+    "web/lib/game-predictions/evaluation.ts": "aa69e7c7435380425785fad284a150d257c95f44249f7200ab42ca958dd130de"
+  },
+  "boundaries": [
+    "Pure pinned source in VM; imports replaced with deny-by-default doubles",
+    "ExtraTrees two-row deterministic toy fit only, no production/model artifact generation",
+    "Signal-analysis logistic fit is a zero-weight double; SD and MI are exact source",
+    "No application imports, Vitest, network, DB, provider, page or server"
+  ]
+}

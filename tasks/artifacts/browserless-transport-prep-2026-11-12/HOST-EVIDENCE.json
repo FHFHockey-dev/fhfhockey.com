@@ -1,0 +1,82 @@
+{
+  "checkedAt": "2026-11-12T18:25:46.091280+00:00",
+  "status": "saved evidence recovered; current host configuration remains unverified",
+  "sources": [
+    {
+      "path": "tasks/artifacts/browserless-redaction-release-2026-11-10/SERVICE.json",
+      "sha256": "2cfad201544316a41e719dc4fd60c57a4f29684b8b95a9d8f9aedee1542a6e0c",
+      "observedAt": "2026-11-10T13:57:26.113840+00:00",
+      "facts": {
+        "project": "fhfhockey",
+        "variable": "PUPPETEER_ENDPOINT",
+        "targets": [
+          "production",
+          "preview",
+          "development"
+        ],
+        "scheme": "ws",
+        "host": "43.156.28.69",
+        "port": 3000,
+        "queryKeys": [
+          "token"
+        ],
+        "credentialRetained": false
+      }
+    },
+    {
+      "path": "web/pages/api/v1/webhooks/docker-compose.yaml",
+      "sha256": "787644010640ab42fcff5e9e0084a512b6de13cf944a38af0b65b70e8aa5a97c",
+      "lastCommit": "2c7d2a109",
+      "lastCommitAt": "2024-10-25T14:31:14+08:00",
+      "tracked": true,
+      "dirty": false,
+      "safeMetadata": {
+        "service": "browserless",
+        "image": "ghcr.io/browserless/chromium",
+        "imageTagOrDigestPinned": false,
+        "portMapping": "3001:3000",
+        "hostBindingExplicitlyLimitedToLoopback": false,
+        "restart": "unless-stopped",
+        "environmentKeys": [
+          "CONCURRENT",
+          "TOKEN"
+        ],
+        "tokenValueNonemptyLiteral": true,
+        "tokenValueEmittedOrRetained": false,
+        "commandOverride": false,
+        "volumeCount": 0,
+        "tlsOrCertificateEnvironmentKeys": false
+      },
+      "limits": "Repository intent only; no proof the live host uses this file or image. Lack of TLS settings here does not prove absence of a separate proxy."
+    },
+    {
+      "path": "web/README.md",
+      "finding": "Browserless/Puppeteer webhook runtime is separate from Playwright E2E; no host provisioning details found in relevant passage."
+    }
+  ],
+  "contradictions": [
+    "Compose exposes host port 3001; saved deployed variable points at port 3000. Do not assume this file reproduces the live service."
+  ],
+  "sensitiveFinding": "Tracked Compose contains a nonempty literal TOKEN field. Value was suppressed; whether placeholder, obsolete or active is unknown. Treat any active credential represented there as potentially disclosed and rotate through the approved process; no token comparison or secret-store read was performed.",
+  "boundedSearch": "Named Browserless handoffs; exact webhook Compose; matching repository Docker/proxy filenames; README/docs/.github/functions/cms Browserless references; original October 22 packet file inventory. No environment files, live host/provider or network config queried.",
+  "unknowns": [
+    "Current service owner/access method and actual host identity",
+    "Running container image digest/version and launch configuration",
+    "Current endpoint/secret binding scopes and whether shared across environments",
+    "Auth overlap/revocation behavior and active-session lifecycle",
+    "Approved TLS DNS name, certificate/renewal owner and direct upgrade route",
+    "Proxy and upstream topology; IPv4/IPv6 backend listener/firewall rules",
+    "Proxy/Browserless query-safe log policy and historical exposure",
+    "Current build/install configuration, exact release candidate SHA and release window"
+  ],
+  "operatorPrerequisite": "Owner supplies sanitized current inventory for one instance: host identifier, image digest/version, published/listening ports/bindings, service/proxy names, TLS/DNS/logging topology, env key names only, rotation/overlap/session behavior. Never include TOKEN values, full authenticated URLs, environment dumps or raw logs.",
+  "liveChanges": 0,
+  "liveChecks": 0,
+  "credentialValuesEmitted": false,
+  "localAccessFollowup": {
+    "receipt": "HOST-ACCESS.json",
+    "finding": "Only development ws localhost:3001 is configured locally. SSH configuration/known_hosts and Docker contexts do not identify an administrative path to recorded production address 43.156.28.69.",
+    "credentialValuesRetained": false,
+    "liveConnections": 0
+  }
+}

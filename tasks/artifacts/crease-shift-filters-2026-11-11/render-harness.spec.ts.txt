@@ -1,0 +1,114 @@
+// TEMPORARY render harness for the crease-shift-filters lane (2026-11-11). Not for commit.
+import { expect, test, type Page } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
+import { buildCreaseShift } from "../lib/socialShare/modules/creaseShift";
+import type { GoalieAppearance } from "../lib/socialShare/modules/shared/goalieLedger";
+import { activeTeamAbbreviations, teamsInfo } from "../lib/teamsInfo";
+
+const out = process.env.RENDER_DIR!, set = process.env.RENDER_SET ?? "after";
+const supabaseOrigin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "http://supabase.e2e.invalid");
+const TEAMS = [...activeTeamAbbreviations].map(String).sort();
+const NAMES = ["Ukko-Pekka Luukkonen", "Andrei Vasilevskiy", "Connor Hellebuyck", "Sergei Bobrovsky", "Jake Oettinger", "Igor Shesterkin", "Filip Gustavsson", "Juuse Saros"];
+const day = (g: number) => new Date(Date.UTC(2025, 9, 7 + g)).toISOString().slice(0, 10);
+
+/** Every team in pairs, `games` each (BUF and CAR get `shortPair`), with a recent swing that differs by team. */
+function league(games: number, window: number, shortPair = games) {
+  const scheduled: { id: number; date: string; homeTeamId: number; awayTeamId: number }[] = [], reported: { gameId: number; date: string; team: string }[] = [], appearances: GoalieAppearance[] = [];
+  TEAMS.forEach((team, index) => {
+    if (index % 2) return;
+    const opponent = TEAMS[index + 1], count = team === "BUF" ? shortPair : games;
+    for (let g = 0; g < count; g++) {
+      const id = (index + 1) * 1000 + g;
+      scheduled.push({ id, date: day(g), homeTeamId: teamsInfo[team as "NJD"].id, awayTeamId: teamsInfo[opponent as "NJD"].id });
+      for (const side of [team, opponent]) {
+        const t = TEAMS.indexOf(side), recent = g >= count - window, threshold = recent ? t % 10 : 3;
+        const third = recent && t % 5 === 0 && g === count - 2;
+        const slot = third ? 3 : (g * 7 + t * 3) % 10 < threshold ? 2 : 1;
+        reported.push({ gameId: id, date: day(g), team: side });
+        appearances.push({ goalieId: t * 10 + slot, name: NAMES[(t + (slot - 1) * 3) % NAMES.length], gameId: id, date: day(g), team: side, opponent: null, home: null, started: true, wins: 0, losses: 0, otLosses: 0, saves: 25, shotsAgainst: 28, goalsAgainst: 3, toiSeconds: 3600, shutouts: 0, qualityStart: 0 });
+      }
+    }
+  });
+  return { scheduled, reported, appearances, through: day(games) };
+}
+
+async function install(page: Page) {
+  const user = { id: "00000000-0000-4000-8000-00000000e2e1", aud: "authenticated", role: "authenticated", email: "editor@example.invalid", app_metadata: {}, user_metadata: {} };
+  const session = { access_token: "e2e-fictional-editor-token", refresh_token: "e2e-fictional-refresh", token_type: "bearer", expires_in: 365 * 86400, expires_at: Math.floor(Date.now() / 1000) + 365 * 86400, user };
+  await page.addInitScript(([key, value]) => window.localStorage.setItem(key, value), [`sb-${supabaseOrigin.hostname.split(".")[0]}-auth-token`, JSON.stringify(session)]);
+  await page.route(`${supabaseOrigin.origin}/**`, route => {
+    const request = route.request(), url = new URL(request.url());
+    if (request.method() !== "GET") return route.abort();
+    const one = (row: object) => route.fulfill({ json: /vnd\.pgrst\.object/.test(request.headers().accept ?? "") ? row : [row] });
+    if (url.pathname === "/rest/v1/users") return one({ role: "social_editor" });
+    if (url.pathname === "/rest/v1/user_profiles") return one({ user_id: user.id, display_name: "Fictional editor", avatar_url: null, timezone: "America/New_York" });
+    if (url.pathname === "/rest/v1/user_settings") return one({ user_id: user.id });
+    if (url.pathname === "/auth/v1/user") return route.fulfill({ json: user });
+    return route.abort();
+  });
+}
+
+type Case = { name: string; games: number; window: number; comparison?: "previous" | "std"; min?: number; picked?: string[]; only?: string[]; shortPair?: number };
+const CASES: Case[] = set === "before" ? [
+  { name: "1-team-L10", games: 20, window: 10, only: ["NJD"] },
+  { name: "2-teams-L10", games: 20, window: 10, only: ["NJD", "NYR"] },
+  { name: "4-teams-L10", games: 20, window: 10, only: ["NJD", "NYR", "PHI", "PIT"] },
+  { name: "12-teams-L10", games: 20, window: 10 },
+  { name: "12-teams-L20", games: 40, window: 20 },
+] : [
+  { name: "1-team-L10", games: 20, window: 10, picked: ["NJD"] },
+  { name: "2-teams-L10", games: 20, window: 10, picked: ["NJD", "NYR"] },
+  { name: "3-teams-L10", games: 20, window: 10, picked: ["EDM", "NJD", "NYR"] },
+  { name: "4-teams-L10-one-unranked", games: 20, window: 10, min: 5, shortPair: 12, picked: ["BUF", "NJD", "NYR", "PHI"] },
+  { name: "6-teams-L10", games: 20, window: 10, picked: ["BOS", "EDM", "NJD", "NYR", "PHI", "TOR"] },
+  { name: "12-teams-blank-L10", games: 20, window: 10 },
+  { name: "12-teams-picked-L10", games: 20, window: 10, picked: ["ANA", "BOS", "CBJ", "DAL", "EDM", "LAK", "NJD", "NYR", "PHI", "SEA", "TOR", "VAN"] },
+  { name: "12-teams-blank-L1", games: 20, window: 1, min: 1 },
+  { name: "1-team-L1", games: 20, window: 1, min: 1, picked: ["NJD"] },
+  { name: "2-teams-L84-std-unranked", games: 84, window: 84, comparison: "std", picked: ["NJD", "NYR"] },
+  { name: "12-teams-L84-picked", games: 84, window: 84, comparison: "std", picked: ["ANA", "BOS", "CBJ", "DAL", "EDM", "LAK", "NJD", "NYR", "PHI", "SEA", "TOR", "VAN"] },
+  { name: "1-team-L84", games: 84, window: 84, comparison: "std", picked: ["NJD"] },
+];
+
+for (const c of CASES) test(`render ${set} ${c.name}`, async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 1200 });
+  await install(page);
+  const data = league(c.games, c.window, c.shortPair);
+  const comparison = c.comparison ?? "previous", min = c.min ?? 2, teams = (c.picked ?? []).join(",");
+  const result = buildCreaseShift({ ...data, teams: c.only ?? TEAMS, picked: c.picked, window: c.window, comparison, minComparisonGames: min });
+  const settings = { window: c.window, comparison, minComparisonGames: min, teams };
+  const at = new Date().toISOString();
+  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: { schemaVersion: 1, id: `crease-${c.name}`, post: "crease-shift", state: result.state, reasons: result.reasons ?? [], generatedAt: at, expiresAt: new Date(Date.parse(at) + 600000).toISOString(), timeZone: "America/New_York", settings, fixture: false, teams: result.teams ?? [], evidence: result.evidence, data: result.data, pageNotes: result.pageNotes } }));
+  await page.goto(`/social-share/posts?post=crease-shift&window=${c.window}&comparison=${comparison}&minComparisonGames=${min}&teams=${teams}`);
+  await expect(page.getByTestId("crease-shift-card")).toBeVisible();
+  await mkdir(`${out}/${set}`, { recursive: true });
+  const [file] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download PNG", exact: true }).click()]);
+  await file.saveAs(`${out}/${set}/${c.name}.png`);
+  const fit = await page.getByTestId("crease-shift-card").evaluate(element => { const body = element.parentElement!, last = element.lastElementChild!; return { client: body.clientHeight, scroll: body.scrollHeight, band: Math.round(body.getBoundingClientRect().bottom - last.getBoundingClientRect().bottom), wide: element.scrollWidth - element.clientWidth }; });
+  const measure = await page.getByTestId("crease-shift-card").evaluate(card => {
+    const scale = card.closest("[data-testid=share-square]")!.getBoundingClientRect().width / 1080, px = (value: number) => Math.round(value / scale);
+    const heads = [...card.querySelectorAll('[class*="head"]')].map(head => `${head.textContent}:${px(head.getBoundingClientRect().width)}`);
+    const slack = [...card.querySelectorAll("svg[role=img]")].map(svg => `${svg.getAttribute("width")}x${svg.getAttribute("height")}/slack ${px(svg.parentElement!.getBoundingClientRect().height - svg.getBoundingClientRect().height)}`);
+    const clipped = [...card.querySelectorAll('[class*="lines"] span')].filter(span => span.scrollWidth > span.clientWidth + 1).map(span => span.textContent);
+    const table = card.querySelector('[class*="table"]') as HTMLElement, head = card.querySelector('[class*="head"]')!, note = card.querySelector("p")!, svgs = [...card.querySelectorAll("svg[role=img]")];
+    const overlap = px(svgs.at(-1)!.getBoundingClientRect().bottom - note.getBoundingClientRect().top);
+    return { table: px(table.getBoundingClientRect().height), tableScroll: table.scrollHeight, head: px(head.getBoundingClientRect().height), overlap, heads, slack: slack.slice(0, 2), clipped };
+  });
+  console.log(c.name, JSON.stringify(fit), result.state, JSON.stringify(result.pageNotes ?? []), JSON.stringify(measure));
+});
+
+for (const [label, picks, width] of [["controls-3-picks", ["EDM", "NJD", "NYR"], 1600], ["controls-12-picks", CASES.at(-2)?.picked ?? [], 1600], ["controls-blank-phone", [], 375]] as const) test(`studio ${label}`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 1400 });
+  await install(page);
+  const data = league(20, 10), teams = picks.join(",");
+  const result = buildCreaseShift({ ...data, teams: TEAMS, picked: [...picks], window: 10, comparison: "previous", minComparisonGames: 2 });
+  const at = new Date().toISOString();
+  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: { schemaVersion: 1, id: "crease-controls", post: "crease-shift", state: result.state, reasons: [], generatedAt: at, expiresAt: new Date(Date.parse(at) + 600000).toISOString(), timeZone: "America/New_York", settings: { window: 10, comparison: "previous", minComparisonGames: 2, teams }, fixture: false, teams: result.teams ?? [], evidence: result.evidence, data: result.data, pageNotes: result.pageNotes } }));
+  await page.goto(`/social-share/posts?post=crease-shift&window=10&minComparisonGames=2&teams=${teams}`);
+  await expect(page.getByTestId("crease-shift-card")).toBeVisible();
+  await page.getByRole("button", { name: /^Options/ }).click();
+  await mkdir(`${out}/${set}`, { recursive: true });
+  await page.getByRole("region", { name: "Post settings" }).screenshot({ path: `${out}/${set}/${label}.png` });
+  const boxes = await page.getByRole("checkbox").evaluateAll(inputs => inputs.map(input => `${(input.parentElement as HTMLElement).textContent}:${(input as HTMLInputElement).checked ? "on" : ""}${(input as HTMLInputElement).disabled ? "/disabled" : ""}`));
+  console.log(label, boxes.filter(box => box.includes("on") || box.includes("disabled")).length, boxes.slice(0, 6).join(" "), await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth));
+});

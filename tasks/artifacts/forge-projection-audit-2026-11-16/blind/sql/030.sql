@@ -1,0 +1,1 @@
+select job_name, to_char(run_time,'MM-DD HH24:MI:SS') t, status, details->'timing'->>'durationMs' ms, left(details->>'response',900) r from cron_job_audit where run_time >= '2026-11-06 10:15' and run_time < '2026-11-06 10:40' and job_name in ('run-projection-v2','/api/v1/db/update-goalie-projections-v2') order by run_time

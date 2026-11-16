@@ -1,0 +1,8 @@
+# Strength-tag producer checkpoint
+
+- Changed only the granted shift-charts route, relationship materialization version export and their existing named audit/materialization tests. Preserved prior canonical-interval, shared-clock and input-materializer corrections; no candidate/source-audit receipts changed.
+- Every newly serialized `pp_shifts` / `es_shifts` segment retains its shared-clock `strength` (`es`, `pp`, `pk`). The segment types require that field. Legacy `es_shifts` still contains both ES and PK; totals, clock mathematics and table names are unchanged.
+- Algorithm version is now `shift_relationship_materializer_v6_strength_segments`, fencing earlier materializations without required strength tags. Input version/materializer and database schema unchanged. No historical rebuild or production writes performed.
+- Existing route test verifies PP-tagged PP segments and distinct ES/PK-tagged legacy non-PP segments with exact shared-clock boundaries/durations. Version regression explicitly requeues complete v5 materializations. No other hardcoded v5 test/spec references were found in the targeted `web` search.
+- First verification pass: **38 tests passed** (21 materialization, 17 route audit); scoped four-file ESLint **passed, zero warnings**; owned-path diff whitespace check **passed**. No correction round needed, broad TypeScript/build, external calls, workers or DB/provider requests.
+- This patch retains the source engine's existing classification; it adds no independent clock qualification or source-completeness claim. Chef owns integration and the v6-only observed reader. Four implementation/test paths frozen on handoff.

@@ -1,0 +1,43 @@
+{
+  "verifiedAt": "2026-11-12 14:48:20 UTC",
+  "project": "fyhftlxokyjtpndbkfse",
+  "authorization": "Explicit user approval: Apply the two schedule changes",
+  "before": [
+    {
+      "jobid": 16,
+      "schedule": "45 7 * * *"
+    },
+    {
+      "jobid": 305,
+      "schedule": "50 09 * * *"
+    }
+  ],
+  "after": [
+    {
+      "jobid": 16,
+      "jobname": "update-shift-charts",
+      "schedule": "55 9 * * *",
+      "active": true
+    },
+    {
+      "jobid": 305,
+      "jobname": "build-forge-derived-v2",
+      "schedule": "05 10 * * *",
+      "active": true
+    },
+    {
+      "jobid": 363,
+      "jobname": "ingest-projection-inputs",
+      "schedule": "45 9 * * *",
+      "active": true
+    }
+  ],
+  "changedFields": [
+    "job 16 schedule",
+    "job 305 schedule"
+  ],
+  "executedJobs": 0,
+  "backfills": 0,
+  "deployments": 0,
+  "sql": "PROPOSED-SCHEDULE.sql"
+}

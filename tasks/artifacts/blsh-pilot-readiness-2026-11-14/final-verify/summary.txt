@@ -1,0 +1,3 @@
+launcher exit=0
+egress exit=0
+reader exit=0

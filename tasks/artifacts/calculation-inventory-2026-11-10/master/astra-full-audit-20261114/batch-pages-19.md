@@ -1,0 +1,40 @@
+# Homepage, splits and goalie page audit
+
+Frozen `89da739cb45d7d572ed59bfa0b209c79c5d99299`; three complete files / 2,457 lines. Exact-source finite probes passed under America/New_York; source hashes, boundaries and controls are in `pages19-probe-output.json`. No actual requests or rendering ran.
+
+## AFULL-HOMEP1-01 — P1: failed player count becomes a measured zero
+
+- Location: `web/pages/index.tsx:157–160,516–518`.
+- Evidence: the exact secondary-data count expression receives a finite database error and resolves to 0. The hero displays that result as “0 indexed,” indistinguishable from a successful empty population. Missing injury data similarly becomes an empty collection and a zero hero count even when the lower section receives an error. No production outage is asserted.
+- Fix direction: preserve nullable count/error state through the hero and distinguish unknown from observed zero. Pin count failure, successful zero and successful positive count. Do not turn a lower-section error message into permission to print a known-zero headline elsewhere.
+
+## AFULL-GOALPAGE1-01 — P1: final partial regular-season week is omitted
+
+- Location: `web/pages/goalies.js:513–527,530–551`.
+- Evidence: the exact week-enumeration declarations use default Sunday week boundaries, then map each Sunday back to the preceding Monday. With season October 6, 2026 through Wednesday April 14, 2027, the final enumerated range ends April 11. April 12–14 cannot be selected and are absent from the default full-range rankings and advanced window. A Sunday-ending April 18 control includes April 18. The first partial week is explicitly constructed; the last one is not.
+- Fix direction: enumerate the intended Monday-based intervals through the inclusive season end and clamp both edge weeks. Pin Monday/Wednesday/Sunday season endings plus first-week and DST boundaries. The fixture uses the installed pure date-fns functions; no provider calendar was fetched.
+- Reach: `/goalies` redirects, but the frozen one-line `/variance/goalies` route re-exports this default component. It is an active source path, not dormant legacy code. That routing dependency is outside the 1,078-file inventory and adds no scope credit.
+
+## AFULL-GOALPAGE1-02 — P2: unapplied dates relabel the currently displayed metrics
+
+- Location: `web/pages/goalies.js:706–708,893–903,1256–1264`.
+- Evidence: range controls immediately change `selectedRange`; data is loaded only by Apply Range. The displayed table dates are nevertheless derived from `selectedRange`, not the successfully applied window. Exact derived callback and JSX expressions, with October 5–11 rows retained and a draft October 12–18 selection, pass the old rows with October 12–18 table labels. The single-week table similarly receives the current draft `selectedWeek`.
+- Fix direction: keep draft selection separate from the applied data identity and label the table from the latter. Pin edit-before-apply, pending request, failed request and successful apply. The probe evaluates reachable state expressions without a browser lifecycle; numeric values are unchanged but attributed to the wrong period.
+
+## Existing findings traced through full callers
+
+- **HOME-01 P1:** homepage SSR has its own first-entry schedule adapter at 343–365. Exact nested helper given only a November 15 entry returns that game for a November 14 request with `failed=false`; requested-date enrichment can therefore receive another day's games. This extends the existing API/hook finding. An absent/malformed schedule also collapses to an empty successful result.
+- **HOME-02 P1:** the homepage standings mapper at 462–480 independently zero-fills unknown games/wins/losses/OT/points/point percentage. Existing exact hook evidence remains; this full-source read adds the SSR producer. The separate hero count error is HOMEP1-01 above.
+- **GOALIE-W01/W02 P1:** the goalie page's null-preserving weekly mapper feeds the known standard-reader missingness issue, while its per-game mapper already loses unknowns through zero fill. The rich ranking helper is supplied all twelve visible columns even though its known percentile assignment omits several. Full caller coverage confirms the earlier bounded trace. No new helper probe or production ranking was run here.
+
+## Full-source review
+
+- Homepage: schedule hook wiring, five-card news display, explicit count captions, feature/offseason tool gates, news identity and section errors. SSR caches for 60 seconds plus 120 stale. Independent injuries/standings/news/count/pulse reads run together; games and season context have separate failure paths. Injury source prefers persisted statuses then a normalized Bell fallback; provenance/freshness remain the upstream reader's responsibility. No identity or medical status was read in this audit.
+- Homepage schedule search is bounded to seven subsequent dates and stops at upstream error; selected game enrichment and optional playoff bracket reuse the resolved context. First-entry admission is the existing defect above. Today's initial schedule key uses the server-local moment date, while standings and injury snapshot dates use UTC; this is a timezone consistency limitation pending hosted zone evidence. An aggregate response-generation timestamp does not prove each source is fresh. Standings fallback to `/now` is current-view behavior, not a dated historical API promise.
+- Homepage live-load caution: an uncached SSR can fan out to database, NHL schedule/standings, Bell fallback and news/pulse readers. A page load is not one cheap inert request. This source observation must inform the separate approved live budget; no such load occurred.
+- Splits: query normalization, separate keyed landing/roster reads, opponent exclusion and effective-opponent response labeling, fixed one-opponent roster, count/rate/PP/TOI/goalie columns. Unknown ratios and key goalie denominators show em dashes. Pure controls preserve null versus zero, .9→90.00%, 1,474 seconds→24:34 and negative TOI→unknown. Finite-number validation remains upstream; no NaN/Infinity provider incident is asserted. Some nullable count cells render blank rather than an em dash, but do not become measured zero in this page. No backend sorting or shared aggregation rerun was needed.
+- Goalies: paged NHL summary/game sources, stable sort keys, weekly/per-game adapters, rich rankings, four-term default fantasy weights, all twelve visible comparison columns, filters and ascending/descending accessors. `totalTimeOnIce` from the rich calculator is minutes; the page's ×60 rate conversion is therefore dimensionally correct. Weekly raw provider TOI remains seconds in its distinct adapter. Shared missingness findings remain open; no false unit defect was added.
+- Goalie ranges and controls: initial latest-started provider season selection, explicit partial first week, selected week/range application, advanced database window after successful ranking load, visible minimum-GP and value-tier-start floors, strength selector, standard/advanced views and error/empty states. Requests lack generation/abort guards; older responses can remain a race risk, but no separate race finding was promoted without execution. Initial full-season load and every selected-stat change refetch weekly summaries in parallel plus game summaries; a canonical goalie page can fan out substantially. Live budget must account for that behavior.
+- Goalie table aggregate footer pools saves/shots and goals/minutes over the filtered population while averaging additive counts per goalie. It intentionally changes with the visible minimum-GP population. Sorting sentinels and nullable conversions were read; upstream W01 already covers unknown-to-zero limitations. Default top-level season-load failures log without a visible error update; hosted failure handling remains unverified.
+
+No source changes, real provider/database reads, page loads, secrets, suite execution, capture edits or Scout changes. These findings do not approve remediation or release.

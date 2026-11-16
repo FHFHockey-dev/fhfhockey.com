@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-11-10T13:57:26.113840+00:00",
+  "source": "Vercel CLI exact project variable read",
+  "projectId": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+  "key": "PUPPETEER_ENDPOINT",
+  "id": "ki1Eh9pq63l8nhrD",
+  "target": [
+    "production",
+    "preview",
+    "development"
+  ],
+  "scheme": "ws",
+  "hostname": "43.156.28.69",
+  "port": 3000,
+  "path": "",
+  "hasUserInfo": false,
+  "queryKeys": [
+    "token"
+  ],
+  "credentialRetained": false
+}

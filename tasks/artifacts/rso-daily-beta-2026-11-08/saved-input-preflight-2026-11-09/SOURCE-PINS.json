@@ -1,0 +1,37 @@
+{
+  "purpose": "Offline decoder/schema/registry input pins; no claim about live serving state.",
+  "files": [
+    {
+      "path": "web/lib/in-season/workspaceSchema.ts",
+      "sha256": "a786b796d803fe80e4cb626891f60870e11e6eb1fb9911e54427cfae3305f9ab"
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planningDataTransport.ts",
+      "sha256": "8d92ae6d13e4b10947c189a10fe095a06e25e63974d64b41e2c38303992f3947"
+    },
+    {
+      "path": "web/lib/rosterScheduleData/bridgeForecastWire.ts",
+      "sha256": "61105e1a7347880c28ed4417f157a71ed1e53e06b2d1d58a0434c4983bf7ffaf"
+    },
+    {
+      "path": "web/lib/projections/evidenceTime.ts",
+      "sha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00"
+    },
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.ts",
+      "sha256": "a2532633144fce76cc675795de9ee9b2320a7592def04724729eb87a7a89c969"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+      "sha256": "c405a32610063a672311b7df7423a06afb91620e00c87ccf9208546eab61e62d"
+    },
+    {
+      "path": "web/lib/player-forecasts/contributions.ts",
+      "sha256": "b3c20c166d97440341ff35d0c236c0772067a178df1df3cf699e6a00941f43a1"
+    },
+    {
+      "path": "web/package-lock.json",
+      "sha256": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378"
+    }
+  ]
+}

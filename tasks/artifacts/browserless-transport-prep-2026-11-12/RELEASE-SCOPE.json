@@ -1,0 +1,91 @@
+{
+  "at": "2026-11-12T19:34:59.474178+00:00",
+  "status": "PREPARED; release commit and live project inventory pending; no publication authorized",
+  "canonicalBranch": "octoberBranch",
+  "observedHead": "8b759f44aa13d5bbca29a82be132b70d149dc0f7",
+  "observedLocalMaster": "3c03df7dc815cc74aefbf19d5c5a16333985b1e5",
+  "releaseCandidateSha": null,
+  "releaseCommitOwner": "Scout/current release composer; this lane performs no index/ref/commit/push operations",
+  "sourceFiles": {
+    "web/pages/api/v1/webhooks/on-new-line-combo.ts": "dd3a7255fc37c81124f4cc1416d8db89d8d12b92d3101ccb706d7f5653243de8",
+    "web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts": "c822f18313318d2f9ff5a75d2d7ea94ec774851310fc70ed872b7fdd4fb0122e"
+  },
+  "patch": {
+    "path": "guard-candidate.patch",
+    "sha256": "22a55c7fe8b41b20f4b0091039faf276b229d5e987f726f8fe9ce10720ab667c"
+  },
+  "checks": "GUARD-CHECKS.json",
+  "review": "QUARANTINE-REVIEW.md",
+  "target": {
+    "projectId": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+    "projectName": "fhfhockey",
+    "rootDirectory": "web",
+    "environment": "production",
+    "branch": "master",
+    "source": "local web/.vercel/project.json plus historical November10 inventory; requires fresh remote confirmation"
+  },
+  "expectedFanout": {
+    "entries": 4,
+    "completedBuilds": 1,
+    "ignoredCanceledCompanions": 3,
+    "conditionalOn": "Fresh linked-project inventory/ignore rules/previous-SHA baselines agree. Abort before publish if companions would build; no setting changes implied."
+  },
+  "projectsHistorical": [
+    {
+      "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "name": "fhfhockey",
+      "rootDirectory": "web"
+    },
+    {
+      "id": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+      "name": "functions-fhfhockey",
+      "rootDirectory": "functions"
+    },
+    {
+      "id": "prj_gG8SHX7C5GbCDJoind7trh9bj6dK",
+      "name": "cms-fhfhockey",
+      "rootDirectory": "cms"
+    },
+    {
+      "id": "prj_3X6goi9DxqUnD0sHChwEwaRakquG",
+      "name": "fhfhockey.com",
+      "rootDirectory": null
+    }
+  ],
+  "localIgnoreConfigHashes": {
+    "vercel.json": "c18d6c5262ce3443c70667b03b99b2f7d91d3977b0e522c5eb01077d89f7f961",
+    "web/vercel.json": "0f0ef7161716721a744883a171c7bc4b9c6f0dad84c8f77e2a0a6b4fd6371c92",
+    "cms/vercel.json": "c5e9d87df6482fd2b5473ab9e39f6d74cd40cfc6433452cde9a5ab8bac5db87f",
+    "functions/vercel.json": "e019c54a60fb314a8242e6be9f321bfbfda88c7e5771e5586672c5a731e6bedb"
+  },
+  "excluded": [
+    "Parked replacement runtime/tests/archive/patch",
+    "Browserless dependency declarations",
+    "Diagnostic replacement extensions",
+    "All tasks artifacts/diaries and SQL plans",
+    "All unrelated canonical dirty work, DRM/styling, sprint receipts, migration authority, servedForecastLedger"
+  ],
+  "verificationBudget": {
+    "projectMetadataReads": 4,
+    "exactShaDeploymentListReads": 1,
+    "deploymentListLimit": 20,
+    "deploymentStatusReadsMax": 8,
+    "pendingStatusSpacingSecondsMin": 30,
+    "applicationHttpRequests": 0,
+    "providerBrowserlessStorageDiscordCalls": 0,
+    "databasePreflightReads": 1,
+    "databasePostcheckReads": 1,
+    "databaseWriteTransactions": 1,
+    "ddlLockTimeoutSeconds": 2,
+    "ddlStatementTimeoutSeconds": 10,
+    "ddlIdleTransactionTimeoutSeconds": 30,
+    "retryCount": 0
+  },
+  "rollback": "Separate approval. DB exact original O/D/R/A mode with saved post-disable fingerprint; app previous deployment only if no intervening release and reactivation explicitly approved, otherwise new guard-specific correction release; never restore transport archive.",
+  "packetReview": {
+    "status": "passed; no blocking inconsistencies",
+    "path": "QUARANTINE-REVIEW.md",
+    "sha256": "6b7bbe0d816943fbd3ebdb65a19756f00451d5bb7bb690b0c7f3931c04a4ade4"
+  },
+  "approvalPacketSha256": "92c4f5f3fa89e88ad43f3a013f88f23782737fa64a1866f30677e090d8dec661"
+}

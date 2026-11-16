@@ -1,0 +1,75 @@
+{
+  "checkpointAt": "2026-11-09T21:36:34.842624+00:00",
+  "head": "661e4e3805c24cbca2d744bd02380a80c7fc9770",
+  "branch": "octoberBranch",
+  "candidate": "44582b13a213dfd4c75238d8413cf4031ca98b6f",
+  "tree": "d9a2bd4fe3c0190e07c5cdcc49f8259725048800",
+  "candidateSourceFilesStillPinned": true,
+  "releaseArchiveSha256": "da853681d55cafaec191bb9cde338288f2e3ac2af220592c8c45254b7506795a",
+  "sharedIndexEmpty": true,
+  "tests": {
+    "candidate-tests": {
+      "startedAt": "2026-11-09T21:29:41.008163+00:00",
+      "completedAt": "2026-11-09T21:29:47.058398+00:00",
+      "candidate": "44582b13a213dfd4c75238d8413cf4031ca98b6f",
+      "tree": "d9a2bd4fe3c0190e07c5cdcc49f8259725048800",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "lib/projections/verifiedForgeReleases.test.ts",
+        "lib/projections/externalInputProof.test.ts",
+        "lib/projections/forgeProducerIdentity.test.ts",
+        "lib/rosterScheduleData/forgeDailyBridge.test.ts",
+        "lib/rosterScheduleData/forgeReservePayload.test.ts"
+      ],
+      "exitCode": 0,
+      "summary": [
+        " Test Files  5 passed (5)",
+        "      Tests  202 passed (202)"
+      ]
+    },
+    "candidate-typecheck": {
+      "startedAt": "2026-11-09T21:29:41.008333+00:00",
+      "completedAt": "2026-11-09T21:30:54.253875+00:00",
+      "candidate": "44582b13a213dfd4c75238d8413cf4031ca98b6f",
+      "tree": "d9a2bd4fe3c0190e07c5cdcc49f8259725048800",
+      "command": [
+        "npx",
+        "tsc",
+        "--noEmit"
+      ],
+      "exitCode": 0,
+      "summary": []
+    },
+    "candidate-lint": {
+      "startedAt": "2026-11-09T21:29:41.009882+00:00",
+      "completedAt": "2026-11-09T21:29:42.534386+00:00",
+      "candidate": "44582b13a213dfd4c75238d8413cf4031ca98b6f",
+      "tree": "d9a2bd4fe3c0190e07c5cdcc49f8259725048800",
+      "command": [
+        "npx",
+        "eslint",
+        "lib/projections/verifiedForgeReleases.ts",
+        "lib/projections/verifiedForgeReleases.test.ts"
+      ],
+      "exitCode": 0,
+      "summary": []
+    }
+  },
+  "productionWrites": 0,
+  "pushes": 0,
+  "remoteBuildsTriggered": 0,
+  "applicationRequests": 0,
+  "readOnlyDatabaseQueries": 1,
+  "freshYahooRequests": 0,
+  "smokeExecution": "not run; script syntax check passed",
+  "automation": {
+    "scheduledAt": "2026-11-09T22:15:00Z",
+    "id": "Automation_e17623c547e08191ba39ff05a864e239",
+    "enabled": true,
+    "scope": "one-time continuation, requires stopped rebuild and Claude release READY"
+  },
+  "blocker": "Active goalie rebuild, then Claude news-card release. Reconcile candidate onto that exact released master before RSO publication."
+}

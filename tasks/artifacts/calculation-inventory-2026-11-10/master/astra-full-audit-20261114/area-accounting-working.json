@@ -1,0 +1,92 @@
+{
+  "modeling/player_forecasts": {
+    "files": 9,
+    "no_math": 0,
+    "finding_files": 7,
+    "p1_files": 0
+  },
+  "supabase/migrations": {
+    "files": 25,
+    "no_math": 0,
+    "finding_files": 7,
+    "p1_files": 3
+  },
+  "supabase/tests": {
+    "files": 39,
+    "no_math": 0,
+    "finding_files": 0,
+    "p1_files": 0
+  },
+  "web/__tests__": {
+    "files": 99,
+    "no_math": 0,
+    "finding_files": 3,
+    "p1_files": 0
+  },
+  "web/components": {
+    "files": 235,
+    "no_math": 9,
+    "finding_files": 50,
+    "p1_files": 31
+  },
+  "web/e2e": {
+    "files": 13,
+    "no_math": 2,
+    "finding_files": 2,
+    "p1_files": 0
+  },
+  "web/hooks": {
+    "files": 10,
+    "no_math": 0,
+    "finding_files": 3,
+    "p1_files": 3
+  },
+  "web/lib": {
+    "files": 513,
+    "no_math": 5,
+    "finding_files": 144,
+    "p1_files": 97
+  },
+  "web/pages": {
+    "files": 92,
+    "no_math": 4,
+    "finding_files": 65,
+    "p1_files": 53
+  },
+  "web/scripts": {
+    "files": 22,
+    "no_math": 1,
+    "finding_files": 11,
+    "p1_files": 2
+  },
+  "web/styles": {
+    "files": 5,
+    "no_math": 4,
+    "finding_files": 0,
+    "p1_files": 0
+  },
+  "web/tests": {
+    "files": 1,
+    "no_math": 0,
+    "finding_files": 0,
+    "p1_files": 0
+  },
+  "web/types": {
+    "files": 1,
+    "no_math": 1,
+    "finding_files": 1,
+    "p1_files": 0
+  },
+  "web/utils": {
+    "files": 13,
+    "no_math": 0,
+    "finding_files": 3,
+    "p1_files": 3
+  },
+  "web/vercel.json": {
+    "files": 1,
+    "no_math": 0,
+    "finding_files": 0,
+    "p1_files": 0
+  }
+}

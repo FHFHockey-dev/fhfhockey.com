@@ -1,0 +1,65 @@
+{
+  "checkedAt": "2026-11-12T17:50:24.081437+00:00",
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "node": "22.23.4",
+  "vitest": {
+    "status": "passed",
+    "command": "npm test -- --run lib/lines/webhookErrorDiagnostic.test.ts __tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts",
+    "files": 2,
+    "tests": 38,
+    "newCases": 14,
+    "log": "tests.log",
+    "scope": "Mocked error events and existing route behavior; no real socket, TLS certificate, server-authentication, transport-enforcement or live integration proof."
+  },
+  "eslint": {
+    "status": "passed",
+    "command": "./node_modules/.bin/eslint lib/lines/webhookErrorDiagnostic.test.ts __tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts",
+    "log": "lint.log"
+  },
+  "typescript": {
+    "status": "passed",
+    "command": "./node_modules/.bin/tsc --noEmit -p ../tasks/artifacts/browserless-transport-prep-2026-11-12/tsconfig.browserless.json",
+    "log": "typecheck.log",
+    "scope": "The four Browserless source/test files and imports; not full application."
+  },
+  "diffCheck": {
+    "status": "passed",
+    "scope": "Two changed test files"
+  },
+  "attempts": "First test-log redirection was attempted from repository root and failed before npm executed; corrected to web/. Initial 36 cases and static checks passed; rerun after adding two message-only status cases passed 38.",
+  "sourceEvidence": {
+    "allStartingFilesMatchRecordedRelease": true,
+    "releaseIsAncestorOfLocalHead": true,
+    "runtimeFilesStillMatchRelease": true
+  },
+  "counters": {
+    "providerCalls": 0,
+    "productionApplicationRequests": 0,
+    "remoteLogReads": 0,
+    "remoteMetadataReads": 0,
+    "deploymentsOrBuilds": 0,
+    "credentialReadsOrChanges": 0,
+    "securityOrNetworkConfigurationChanges": 0,
+    "databaseReadsOrWrites": 0,
+    "forecastRuns": 0
+  },
+  "notRun": [
+    "real TLS handshake",
+    "current production deployment/config inspection",
+    "live sanitized-error sampling",
+    "credential rotation or revocation verification",
+    "production build",
+    "full application suite"
+  ],
+  "finalHashes": {
+    "web/pages/api/v1/webhooks/on-new-line-combo.ts": "4d21291d58056c10a4cac32265032b1822bff842fcd2688b4af11ae49cf7a457",
+    "web/lib/lines/webhookErrorDiagnostic.ts": "0ca6dcc5e1557dcdc2989756a5eca298ab59d33d31c597b596f4225872c88002",
+    "web/lib/lines/webhookErrorDiagnostic.test.ts": "95a12687888433d15575cfa3441a75236ff264976ce5e759a57577b3c886aec4",
+    "web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts": "3eca2af3bc301674f180ef91b7ba8d573056e0fbb5f575dc20a43def4d5ff839"
+  },
+  "logs": {
+    "tests.log": "292b4a6bfa7e9a79a9714a40753d1bcdf576e5757dd6ca43fa1931cbadca5c1e",
+    "lint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

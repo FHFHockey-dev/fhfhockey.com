@@ -1,0 +1,26 @@
+{
+  "sourceCommit": "4243bcd4e29889c035e832562e25850d14af0ee1",
+  "files": [
+    {
+      "path": "web/pages/api/v1/db/run-projection-v2.ts",
+      "sha256": "91a1124fb7e0578997940c2e0a4feb38e772a3926b165b78524922ad25aab59d"
+    },
+    {
+      "path": "web/lib/projections/run-forge-projections.ts",
+      "sha256": "0185b84d930bda6cb5d956adaf46b3d7f61c46648dc2cf16d7a7dfcaccd7fd53"
+    },
+    {
+      "path": "web/lib/projections/stages/persistence-stage.ts",
+      "sha256": "64bdab989990433cbb16a010f0f5b5ed416df29e12f8c90e083ad2c0527852d6"
+    },
+    {
+      "path": "web/lib/projections/starterBoardFlags.ts",
+      "sha256": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d"
+    },
+    {
+      "path": "web/scripts/run-forge-local.ts",
+      "sha256": "27548d2069ae5739a41e0c83930d737e16108969c65ef98c49051a6d8fd23ef0"
+    }
+  ],
+  "kind": "Static inspection only; no live settings, data or operations"
+}

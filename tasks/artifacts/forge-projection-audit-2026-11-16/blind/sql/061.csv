@@ -1,0 +1,2 @@
+string_agg
+game_id team_id player_id start_probability projected_gsaa_per_60 confirmed_status created_at updated_at game_date l10_start_pct season_start_pct games_played

@@ -1,0 +1,7 @@
+(node:18763) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:18789) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Vercel CLI 65.14.0
+  Inspect         https://vercel.com/fhfhockeydevs-projects/fhfhockey/GK6quj7ogBxcQE3FZxV3VDzSTvjM
+▲ Production      https://fhfhockey-5508rzexs-fhfhockeydevs-projects.vercel.app

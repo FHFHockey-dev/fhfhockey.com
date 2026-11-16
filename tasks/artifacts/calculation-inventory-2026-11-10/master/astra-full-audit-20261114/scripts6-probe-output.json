@@ -1,0 +1,17 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "equalTimestampSelection": {
+    "priorForward": "a",
+    "priorReverse": "b",
+    "evaluationForward": "a",
+    "evaluationReverse": "b"
+  },
+  "localGuard": {
+    "normalLoopbackAccepted": true,
+    "normalRemoteRejected": true,
+    "confirmationRequired": true,
+    "userInfoPrefixAcceptedButNativeRequestRejected": true
+  },
+  "boundary": "Exact isolated local guard and both revision-selection loops. Synthetic env object only; Request constructor performs no request. No actual env/config, client, Python, filesystem bundle, database reads/writes or main execution. No confirmed remote-write bypass."
+}

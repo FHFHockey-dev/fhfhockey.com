@@ -1,0 +1,1 @@
+select as_of_date, to_char(created_at,'MM-DD HH24:MI') c, status, left(git_sha,12) sha, metrics->>'games' g, metrics->>'player_rows' pr, metrics->'execution_scope'->>'mode' m from forge_runs where as_of_date='2026-11-12' order by created_at

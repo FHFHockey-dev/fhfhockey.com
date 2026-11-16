@@ -1,0 +1,67 @@
+[
+  {
+    "startedAt": "2026-11-10T18:39:48.719000+00:00",
+    "name": "ensure-page",
+    "durationMs": 3.59,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:39:48.732000+00:00",
+    "name": "ensure-page",
+    "durationMs": 0.4,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:39:48.736000+00:00",
+    "name": "ensure-page",
+    "durationMs": 0.31,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:39:48.723000+00:00",
+    "name": "handle-request",
+    "durationMs": 1626.0,
+    "tags": {
+      "url": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:39:50.408000+00:00",
+    "name": "ensure-page",
+    "durationMs": 1.11,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:39:50.769000+00:00",
+    "name": "navigation-to-hydration",
+    "durationMs": 2053.0,
+    "tags": {
+      "pathname": "/",
+      "query": ""
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:39:50.908000+00:00",
+    "name": "ensure-page",
+    "durationMs": 0.31,
+    "tags": {
+      "inputPage": "/api/v1/transactions/ownership-trends"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:39:50.947000+00:00",
+    "name": "ensure-page",
+    "durationMs": 6548.64,
+    "tags": {
+      "inputPage": "/api/v1/transactions/ownership-trends"
+    }
+  }
+]

@@ -1,0 +1,41 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "findings": [
+    {
+      "id": "AFULL-TRENDPLAYER1-01",
+      "deltas": [
+        20,
+        null,
+        20,
+        null
+      ],
+      "output": {
+        "games": 2,
+        "direction": "hot",
+        "latestDelta": 19.999999999999996
+      },
+      "allMissing": {
+        "metricKey": "shots",
+        "label": "Shots",
+        "direction": "steady",
+        "games": 0,
+        "latestDelta": 0,
+        "averageDelta": 0
+      }
+    }
+  ],
+  "controls": {
+    "additiveUsesAverageNotTotal": true,
+    "knownZeroRetained": true,
+    "rateCanonicalPreferred": true,
+    "zeroBaselineDelta": null,
+    "selectionDeduplicated": true,
+    "actualSharedThreshold": 8
+  },
+  "source": {
+    "path": "web/pages/trends/player/[playerId].tsx",
+    "sha256": "06e8ca8d4e0f31a2dd5f25c2a38df67f251221fdaa6806755e7fb1a28620fc60"
+  },
+  "boundary": "Exact page helpers/memos and actual shared streak/compatibility functions. Local finite fixtures only. No actual Supabase, browser, UTC/local timezone rendering, source occurrence, providers or supplied tests."
+}

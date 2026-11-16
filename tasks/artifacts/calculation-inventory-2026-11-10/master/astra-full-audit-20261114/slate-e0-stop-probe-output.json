@@ -1,0 +1,51 @@
+{
+  "pin": "e0cbb19a8",
+  "hashes": {
+    "slateQueue": "179b20e6636e2aa38d68aea68e1af165b5941fe778e027e1ae9bb5cbbae7d4c6",
+    "custody": "ec2b230afea66fbe559065eac39cabeb94832297a6181d6323d73c754bbd8d92",
+    "deadline": "cb8f8beaa429136a82cf4047509ba2aa3489d13083620e046f5ce156614e1536",
+    "time": "e9945d78109157559dd0a19e28ea2280b60fc9fefe33c601c54462e2721d063c"
+  },
+  "passed": true,
+  "launched": [
+    1,
+    2
+  ],
+  "stopBeforeSecondDispatch": true,
+  "events": [
+    {
+      "event": "dispatch",
+      "gameId": 1,
+      "at": 1795216408000,
+      "attempt": 1
+    },
+    {
+      "event": "terminal",
+      "gameId": 1,
+      "outcome": "save_unknown",
+      "source": "capture",
+      "reason": null
+    },
+    {
+      "event": "queue_stopped",
+      "trigger": "save_unknown",
+      "gameId": 1,
+      "detail": null,
+      "at": 1795216438000
+    },
+    {
+      "event": "dispatch",
+      "gameId": 2,
+      "at": 1795216438000,
+      "attempt": 1
+    },
+    {
+      "event": "terminal",
+      "gameId": 2,
+      "outcome": "qualified",
+      "source": "capture",
+      "reason": null
+    }
+  ],
+  "boundary": "Exact queue/deadline/time and extracted minimumRequiredMs; injected virtual clock and custody/capture/gate doubles. No network, DB, real launcher, env, or production writes."
+}

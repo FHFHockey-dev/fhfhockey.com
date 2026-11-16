@@ -1,0 +1,135 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "files": [
+    {
+      "path": "web/lib/rankings/fixtures/rankingsTrust.json",
+      "local": "/tmp/astra-ranklib2/rankingsTrust.json",
+      "lines": 30,
+      "sha256": "dd41e6f1916819c2d4e1f8b375f095cc2e7d0b4e559dbb10d02166a99b987469",
+      "fullRead": true,
+      "bytes": 2444,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          30
+        ]
+      ],
+      "rows": 17
+    },
+    {
+      "path": "web/lib/rankings/goalieMatrix.test.ts",
+      "local": "/tmp/astra-ranklib2/goalieMatrix.test.ts",
+      "lines": 1313,
+      "sha256": "31bf7cd05d36865e5b3a0791022302c22a1f92e9298c1f90f1500090052d413d",
+      "fullRead": true,
+      "bytes": 59865,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          1313
+        ]
+      ],
+      "rows": 250
+    },
+    {
+      "path": "web/lib/rankings/goalieMatrix.ts",
+      "local": "/tmp/astra-ranklib2/goalieMatrix.ts",
+      "lines": 1909,
+      "sha256": "e61f1a9bf2bc338da8647c447129be4494ce97b3a893a151dd9270cb1cb74606",
+      "fullRead": true,
+      "bytes": 67518,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          1909
+        ]
+      ],
+      "rows": 516
+    },
+    {
+      "path": "web/lib/rankings/goalieMethodology.test.ts",
+      "local": "/tmp/astra-ranklib2/goalieMethodology.test.ts",
+      "lines": 224,
+      "sha256": "1748683b20c8fb68633897ef1fac2999802bcfb08641e5c6807110e8bec52f45",
+      "fullRead": true,
+      "bytes": 7969,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          224
+        ]
+      ],
+      "rows": 25
+    },
+    {
+      "path": "web/lib/rankings/goalieMethodology.ts",
+      "local": "/tmp/astra-ranklib2/goalieMethodology.ts",
+      "lines": 364,
+      "sha256": "5870fd95fc0c269a6834dff0076d122f4fbfc3f3f4f1224ddc7e808a71d5629c",
+      "fullRead": true,
+      "bytes": 11489,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          364
+        ]
+      ],
+      "rows": 126
+    },
+    {
+      "path": "web/lib/rankings/goaliePopulation.ts",
+      "local": "/tmp/astra-ranklib2/goaliePopulation.ts",
+      "lines": 258,
+      "sha256": "e86ec435bded38716751a3a459716a5b576f45fa3298c55939b605cf20509046",
+      "fullRead": true,
+      "bytes": 11443,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          258
+        ]
+      ],
+      "rows": 123
+    },
+    {
+      "path": "web/lib/rankings/matrixMetricRegistry.ts",
+      "local": "/tmp/astra-ranklib2/matrixMetricRegistry.ts",
+      "lines": 375,
+      "sha256": "5777775b928e73e1ed543a79257b7eb0c4a390c6820d53fbde1b874fdd410dc1",
+      "fullRead": true,
+      "bytes": 11097,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          375
+        ]
+      ],
+      "rows": 33
+    }
+  ],
+  "scopeLines": 4473,
+  "rows": 1090,
+  "probe": "ranklib2-probe-output.json",
+  "checks": [
+    "Seven full frozen source reads",
+    "Unique AST source-offset and JSON identities",
+    "Exact matrix/methodology/population/rank-normalizer probe with synthetic fake transport"
+  ],
+  "contextOnly": [
+    "rankingCalculator.ts lines1-280 read; rank normalizer executed; full file remains pending"
+  ],
+  "notRun": [
+    "Vitest",
+    "real database/provider",
+    "application imports or actual environment",
+    "browser/server/build",
+    "later Rankings exact-commit review"
+  ]
+}

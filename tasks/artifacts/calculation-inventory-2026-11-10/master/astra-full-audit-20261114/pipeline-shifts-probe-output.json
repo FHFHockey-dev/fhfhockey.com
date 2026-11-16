@@ -1,0 +1,97 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "explicitWindow": {
+    "requested": "2026-10-01",
+    "calls": [
+      {
+        "name": "nst",
+        "method": "GET",
+        "query": {
+          "runMode": "incremental",
+          "startDate": "2026-10-01",
+          "endDate": "2026-10-01"
+        }
+      },
+      {
+        "name": "wgo",
+        "method": "GET",
+        "query": {
+          "action": "all",
+          "startDate": "2026-10-01"
+        }
+      },
+      {
+        "name": "totals",
+        "method": "GET",
+        "query": {
+          "season": "current"
+        }
+      },
+      {
+        "name": "relationships",
+        "method": "POST",
+        "query": {
+          "gameId": "all"
+        }
+      }
+    ]
+  },
+  "skipStarvation": {
+    "runs": [
+      {
+        "processed": 0,
+        "skipped": 64,
+        "skipBudgetReached": true,
+        "selectedFirst": 2026020001,
+        "selectedLast": 2026020064
+      },
+      {
+        "processed": 0,
+        "skipped": 64,
+        "skipBudgetReached": true,
+        "selectedFirst": 2026020001,
+        "selectedLast": 2026020064
+      }
+    ],
+    "laterGame65Reached": false
+  },
+  "singleMissingShift": {
+    "success": true,
+    "processed": 0,
+    "skipped": [
+      {
+        "gameId": 2026020001,
+        "reason": "shift_feed_unavailable",
+        "detail": "Synthetic persistent absence"
+      }
+    ]
+  },
+  "unknownCount": {
+    "input": null,
+    "output": 0
+  },
+  "completionHeuristic": {
+    "inputStates": "not selected by route; null/invalid/3h-old starts",
+    "selected": [
+      1,
+      2,
+      3
+    ]
+  },
+  "sources": [
+    {
+      "path": "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+      "sha256": "5ba985f819ed0c8507d328ca00f59220d7858bbaa31719bffd4d6c5a96b4aa9f"
+    },
+    {
+      "path": "web/lib/projections/relationshipMaterialization.ts",
+      "sha256": "680cdb0c64e1a322fd3bbaaa88d64936727cc918cdf5dccc089afcb0179da9a9"
+    },
+    {
+      "path": "web/pages/api/v1/db/shift-charts.ts",
+      "sha256": "f94db7641cf6cfbc8fbfe5d561e0a6c36dd57a15d18d503786e1bd27711c0728"
+    }
+  ],
+  "limits": "Exact AST orchestrators/helpers including the real relationship queue selector, valid regular-season game IDs, synthetic finite child/read doubles. No actual routes, sources, DB, auth, environment values, writes, providers or wait. Child finality validation is mocked true for final synthetic games; this probe does not disprove the real finality guard. The old 3h selector is reported separately from downstream guards. No supplied Vitest."
+}

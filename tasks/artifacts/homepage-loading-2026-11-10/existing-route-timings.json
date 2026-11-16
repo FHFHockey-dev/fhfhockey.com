@@ -1,0 +1,315 @@
+[
+  {
+    "startedAt": "2026-11-10T18:15:41.012000+00:00",
+    "name": "ensure-page",
+    "ms": 1.42,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:15:41.020000+00:00",
+    "name": "ensure-page",
+    "ms": 16703.23,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:15:57.732000+00:00",
+    "name": "ensure-page",
+    "ms": 0.59,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:15:58.100000+00:00",
+    "name": "ensure-page",
+    "ms": 0.22,
+    "tags": {
+      "inputPage": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:15:58.102000+00:00",
+    "name": "ensure-page",
+    "ms": 4797.55,
+    "tags": {
+      "inputPage": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:15:58.100000+00:00",
+    "name": "handle-request",
+    "ms": 5115.48,
+    "tags": {
+      "url": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:03.216000+00:00",
+    "name": "memory-usage",
+    "ms": 0.0,
+    "tags": {
+      "url": "/api/v1/season",
+      "memory.rss": "12752781312",
+      "memory.heapUsed": "12623571248",
+      "memory.heapTotal": "13008879616"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:09.295000+00:00",
+    "name": "ensure-page",
+    "ms": 0.33,
+    "tags": {
+      "inputPage": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:09.300000+00:00",
+    "name": "ensure-page",
+    "ms": 0.17,
+    "tags": {
+      "inputPage": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:09.295000+00:00",
+    "name": "handle-request",
+    "ms": 61.73,
+    "tags": {
+      "url": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:09.358000+00:00",
+    "name": "memory-usage",
+    "ms": 0.0,
+    "tags": {
+      "url": "/api/v1/season",
+      "memory.rss": "12793102336",
+      "memory.heapUsed": "12631779520",
+      "memory.heapTotal": "13003702272"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:15:41.015000+00:00",
+    "name": "handle-request",
+    "ms": 29912.25,
+    "tags": {
+      "url": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:10.928000+00:00",
+    "name": "memory-usage",
+    "ms": 0.0,
+    "tags": {
+      "url": "/",
+      "memory.rss": "12797607936",
+      "memory.heapUsed": "12641601128",
+      "memory.heapTotal": "13006815232"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:10.993000+00:00",
+    "name": "ensure-page",
+    "ms": 1.63,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:20.048000+00:00",
+    "name": "navigation-to-hydration",
+    "ms": 39053.0,
+    "tags": {
+      "pathname": "/",
+      "query": ""
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:22.875000+00:00",
+    "name": "ensure-page",
+    "ms": 79.21,
+    "tags": {
+      "inputPage": "/api/v1/transactions/ownership-trends"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:23.377000+00:00",
+    "name": "ensure-page",
+    "ms": 3731.02,
+    "tags": {
+      "inputPage": "/api/v1/transactions/ownership-trends"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:22.954000+00:00",
+    "name": "handle-request",
+    "ms": 15729.84,
+    "tags": {
+      "url": "/api/v1/transactions/ownership-trends?window=3&metric=ownership&limit=10&offset=0"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:38.684000+00:00",
+    "name": "memory-usage",
+    "ms": 0.0,
+    "tags": {
+      "url": "/api/v1/transactions/ownership-trends?window=3&metric=ownership&limit=10&offset=0",
+      "memory.rss": "12884951040",
+      "memory.heapUsed": "12701691320",
+      "memory.heapTotal": "13056196608"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:38.693000+00:00",
+    "name": "ensure-page",
+    "ms": 0.26,
+    "tags": {
+      "inputPage": "/api/v1/transactions/ownership-trends"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:38.697000+00:00",
+    "name": "ensure-page",
+    "ms": 0.19,
+    "tags": {
+      "inputPage": "/api/v1/transactions/ownership-trends"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:38.694000+00:00",
+    "name": "handle-request",
+    "ms": 10855.63,
+    "tags": {
+      "url": "/api/v1/transactions/ownership-trends?window=3&metric=ownership&limit=10&offset=0"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:16:49.550000+00:00",
+    "name": "memory-usage",
+    "ms": 0.0,
+    "tags": {
+      "url": "/api/v1/transactions/ownership-trends?window=3&metric=ownership&limit=10&offset=0",
+      "memory.rss": "12940705792",
+      "memory.heapUsed": "12756239680",
+      "memory.heapTotal": "13109936128"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:18:46.987000+00:00",
+    "name": "ensure-page",
+    "ms": 0.65,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:18:46.997000+00:00",
+    "name": "ensure-page",
+    "ms": 0.45,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:18:47.002000+00:00",
+    "name": "ensure-page",
+    "ms": 0.35,
+    "tags": {
+      "inputPage": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:18:47.371000+00:00",
+    "name": "ensure-page",
+    "ms": 0.27,
+    "tags": {
+      "inputPage": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:18:47.373000+00:00",
+    "name": "ensure-page",
+    "ms": 9644.24,
+    "tags": {
+      "inputPage": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:18:47.371000+00:00",
+    "name": "handle-request",
+    "ms": 9934.29,
+    "tags": {
+      "url": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:18:57.306000+00:00",
+    "name": "memory-usage",
+    "ms": 0.0,
+    "tags": {
+      "url": "/api/v1/season",
+      "memory.rss": "12952485888",
+      "memory.heapUsed": "12685828072",
+      "memory.heapTotal": "13053804544"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:18:58.339000+00:00",
+    "name": "ensure-page",
+    "ms": 0.41,
+    "tags": {
+      "inputPage": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:18:58.362000+00:00",
+    "name": "ensure-page",
+    "ms": 0.21,
+    "tags": {
+      "inputPage": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:18:58.340000+00:00",
+    "name": "handle-request",
+    "ms": 78.83,
+    "tags": {
+      "url": "/api/v1/season"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:18:58.420000+00:00",
+    "name": "memory-usage",
+    "ms": 0.0,
+    "tags": {
+      "url": "/api/v1/season",
+      "memory.rss": "12952485888",
+      "memory.heapUsed": "12688044136",
+      "memory.heapTotal": "13053804544"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:18:46.987000+00:00",
+    "name": "handle-request",
+    "ms": 12664.49,
+    "tags": {
+      "url": "/"
+    }
+  },
+  {
+    "startedAt": "2026-11-10T18:18:59.652000+00:00",
+    "name": "memory-usage",
+    "ms": 0.0,
+    "tags": {
+      "url": "/",
+      "memory.rss": "12955189248",
+      "memory.heapUsed": "12703110376",
+      "memory.heapTotal": "13057441792"
+    }
+  }
+]

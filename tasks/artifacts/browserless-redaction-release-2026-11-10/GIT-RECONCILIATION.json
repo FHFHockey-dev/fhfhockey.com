@@ -1,0 +1,22 @@
+{
+  "at": "2026-11-10T15:50:13.499094+00:00",
+  "previousHead": "d31dcb33f72d4c9d69b507874c388f0cd549fe2f",
+  "newOctoberHead": "11e4192d36ecc4ac4b338f9ab48e529c7049c618",
+  "releasedMaster": "86f2e3cf742a86b5981abb3de41160b2ea7950e3",
+  "parents": [
+    "d31dcb33f72d4c9d69b507874c388f0cd549fe2f",
+    "86f2e3cf742a86b5981abb3de41160b2ea7950e3"
+  ],
+  "tree": "cddc5797c8cabc1ab730e9eddd1b91d683cbb779",
+  "exactAcceptedPaths": [
+    "web/pages/api/v1/webhooks/on-new-line-combo.ts",
+    "web/lib/lines/webhookErrorDiagnostic.ts",
+    "web/lib/lines/webhookErrorDiagnostic.test.ts",
+    "web/__tests__/pages/api/v1/webhooks/on-new-line-combo.test.ts"
+  ],
+  "unrelatedDirtyHashesPreserved": 254,
+  "noWorkingFilesWritten": true,
+  "indexMatchesNewHead": true,
+  "newBranchesOrWorktrees": 0,
+  "pushedOctoberBranch": false
+}

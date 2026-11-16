@@ -1,0 +1,1 @@
+select job_name, to_char(run_time,'MM-DD HH24:MI:SS') t, status, rows_affected, left(details->>'response',500) r from cron_job_audit where run_time >= '2026-11-16 10:10' and run_time < '2026-11-16 10:11' and job_name ~* 'power|line-comb'

@@ -1,0 +1,276 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "files": [
+    {
+      "path": "web/lib/teamRatingVersion.test.ts",
+      "sha256": "c64ea0fcf8bc0be317a727ad6dd464def9e39fc54201121867ec03464b679053",
+      "lines": 110,
+      "fullRead": true,
+      "bytes": 4211,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          110
+        ]
+      ],
+      "rows": 18
+    },
+    {
+      "path": "web/lib/teamRatingVersion.ts",
+      "sha256": "1e8b24fa41a5d9a689723270ae9c26cc4127efdd270c5c55bae8714fe1d5f518",
+      "lines": 217,
+      "fullRead": true,
+      "bytes": 6930,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          217
+        ]
+      ],
+      "rows": 54
+    },
+    {
+      "path": "web/lib/teamRatingsService.test.ts",
+      "sha256": "7eb61bdd466aa7617722c6ea24ceaf8354ae2ddc193606616a0d4cc2f6d6f92f",
+      "lines": 295,
+      "fullRead": true,
+      "bytes": 7568,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          295
+        ]
+      ],
+      "rows": 42
+    },
+    {
+      "path": "web/lib/teamRatingsService.ts",
+      "sha256": "a175cadce0ae207d9151f3b3f64911c6a0b872f9945516925eb4e838fae48a6b",
+      "lines": 281,
+      "fullRead": true,
+      "bytes": 7936,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          281
+        ]
+      ],
+      "rows": 82
+    },
+    {
+      "path": "web/lib/teamRatingsTrend.ts",
+      "sha256": "43fa12d500f633c960fe61c70ce4bb6aa40f65a4336cb8f12e112e4f48d3ad0a",
+      "lines": 309,
+      "fullRead": true,
+      "bytes": 8718,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          309
+        ]
+      ],
+      "rows": 99
+    },
+    {
+      "path": "web/lib/trends/ctpi.test.ts",
+      "sha256": "caa81e7ec6e4a9227113a8837bf83a4fb68052454eaf68bce1426088935d621c",
+      "lines": 685,
+      "fullRead": true,
+      "bytes": 23189,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          685
+        ]
+      ],
+      "rows": 97
+    },
+    {
+      "path": "web/lib/trends/ctpiVersions.ts",
+      "sha256": "cba988cba348c517aeec34de8f5a8a89b8527d73de577b227faa7ddd02fc6368",
+      "lines": 114,
+      "fullRead": true,
+      "bytes": 4407,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          114
+        ]
+      ],
+      "rows": 20
+    },
+    {
+      "path": "web/lib/trends/playerTrendCalculator.test.ts",
+      "sha256": "76553e5e754119bb458d14378778a151242fb982c6a0b3de0e3dd1e9544464f6",
+      "lines": 229,
+      "fullRead": true,
+      "bytes": 6075,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          229
+        ]
+      ],
+      "rows": 32
+    },
+    {
+      "path": "web/lib/trends/playerTrendCalculator.ts",
+      "sha256": "39371fcce362538c396a6497214a1734203a4d87a49b5e63399ea92940815618",
+      "lines": 740,
+      "fullRead": true,
+      "bytes": 18375,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          740
+        ]
+      ],
+      "rows": 157
+    },
+    {
+      "path": "web/lib/trends/recentTeamFormV2.ts",
+      "sha256": "427f269c1330f7cf79af735817bf3840cd548f288f2afed9a50316e88174ba96",
+      "lines": 542,
+      "fullRead": true,
+      "bytes": 16809,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          542
+        ]
+      ],
+      "rows": 166
+    },
+    {
+      "path": "web/lib/trends/strengthOfSchedule.test.ts",
+      "sha256": "a5b429cdfb557c45b725303c8f6fa829bbcbc2bc0ac00e268004b46590639fe5",
+      "lines": 374,
+      "fullRead": true,
+      "bytes": 17772,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          374
+        ]
+      ],
+      "rows": 114
+    },
+    {
+      "path": "web/lib/trends/strengthOfSchedule.ts",
+      "sha256": "38637b5c8d4d8166335c73cb99f4162ff2fc292901b06e747695f2e4e08696a6",
+      "lines": 413,
+      "fullRead": true,
+      "bytes": 13562,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          413
+        ]
+      ],
+      "rows": 142
+    },
+    {
+      "path": "web/lib/trends/strengthOfScheduleContract.ts",
+      "sha256": "77f79f80fbe25fbc20ade4d0761fe2e04983e998b9a4797bdf0d5c603ecc3739",
+      "lines": 188,
+      "fullRead": true,
+      "bytes": 8125,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          188
+        ]
+      ],
+      "rows": 93
+    },
+    {
+      "path": "web/lib/trends/teamSosSnapshot.ts",
+      "sha256": "f84a698297509a4837e4bc191c5d89d784bb96a6f6f5c62e3090add0b654d8b9",
+      "lines": 312,
+      "fullRead": true,
+      "bytes": 11957,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          312
+        ]
+      ],
+      "rows": 144
+    },
+    {
+      "path": "web/lib/trends/trendsSurface.test.ts",
+      "sha256": "ad6b3f802977a9c87178150578da4cd5fe4492049e5ac9c1e204bdf0677d0670",
+      "lines": 340,
+      "fullRead": true,
+      "bytes": 11942,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          340
+        ]
+      ],
+      "rows": 56
+    },
+    {
+      "path": "web/lib/trends/trendsSurface.ts",
+      "sha256": "d0d844d103a8eda7584476aacb79c533854a1862bbc67346d04d1eca5373bc0e",
+      "lines": 368,
+      "fullRead": true,
+      "bytes": 11322,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          368
+        ]
+      ],
+      "rows": 115
+    },
+    {
+      "path": "web/lib/trends/utils.ts",
+      "sha256": "1a5523ead73db1b87424e0b4e645fdf8c25ee407fe62bfedf8e375706e832995",
+      "lines": 417,
+      "fullRead": true,
+      "bytes": 12072,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          417
+        ]
+      ],
+      "rows": 136
+    }
+  ],
+  "scopeLines": 5934,
+  "rows": 1567,
+  "probe": "teamtrend1-probe-output.json",
+  "checks": [
+    "Seventeen full frozen source reads",
+    "Unique AST source-offset identities",
+    "Exact frozen modules and AST-isolated history function; finite ratings query double; controls for SOS finality, CTPI PP/PK and approval gate, shared scale labels and mid-rank; supplied tests not executed"
+  ],
+  "notRun": [
+    "Vitest",
+    "real database/provider",
+    "real loaders, live finality or card rendering",
+    "application imports or actual environment",
+    "browser/server/build",
+    "later Rankings exact-commit review"
+  ]
+}

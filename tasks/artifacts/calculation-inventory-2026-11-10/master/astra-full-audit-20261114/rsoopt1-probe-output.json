@@ -1,0 +1,38 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "sources": [
+    "web/lib/projections/evidenceTime.ts",
+    "web/lib/player-forecasts/contributions.ts",
+    "web/lib/player-forecasts/sourceSnapshot.ts",
+    "web/lib/rosterScheduleOptimizer/planningDates.ts",
+    "web/lib/rosterScheduleOptimizer/futureImpact.ts",
+    "web/lib/rosterScheduleData/bridgeForecastWire.ts",
+    "web/lib/rosterScheduleData/laterImpactInputs.ts"
+  ],
+  "baseline": {
+    "timing": "ok",
+    "conditioning": "conditional",
+    "checksum": "30e1040daefde5db782e6b8e5c0ad956ce080935dc9ce716dbb1456d7b5051f0"
+  },
+  "changed": {
+    "timing": "ok",
+    "reasons": [],
+    "conditioning": "unconditional",
+    "reserveZero": {
+      "conditionalLine": {
+        "GOALS": 2
+      }
+    },
+    "inputCutoff": "2026-11-01T08:30:00Z",
+    "checksum": "30e1040daefde5db782e6b8e5c0ad956ce080935dc9ce716dbb1456d7b5051f0"
+  },
+  "componentMutationControl": {
+    "timing": "temporal_provenance_unavailable",
+    "reasons": [
+      "row_checksum_changed:p"
+    ]
+  },
+  "appGate": "scenario_contract_not_accepted",
+  "limits": "Exact frozen converter, source selection/timing, hashes, dates/calendar and wire; synthetic payload only. No evaluator invocation, loader, application imports, actual environment, database/provider requests or Vitest. The numeric engine app gate remains disabled. Changed metadata admission is demonstrated, not a served numeric total or a security authentication bypass."
+}

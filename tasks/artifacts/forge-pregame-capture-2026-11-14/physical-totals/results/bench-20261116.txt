@@ -1,0 +1,143 @@
+table|2226111|318568|317667|2489 MB
+stats|season_id|0|0.26275894
+stats|date|0|0.24532676
+stats|toi_per_game|0.45553333|0.011923651
+current|e37e23e04fe0cdd45fd402f228a2cfb2
+candidate|e37e23e04fe0cdd45fd402f228a2cfb2
+### body current, no new index (cold)
+ GroupAggregate  (cost=25137.63..25137.74 rows=4 width=96) (actual time=170.937..174.718 rows=4 loops=1)
+   Buffers: shared hit=6 read=54303, temp read=287 written=288
+         Buffers: shared hit=6 read=54303, temp read=287 written=288
+         ->  Hash Right Join  (cost=252.30..25137.59 rows=4 width=80) (actual time=8.519..160.171 rows=55698 loops=1)
+               Buffers: shared hit=3 read=54303
+               ->  Nested Loop  (cost=252.19..25136.31 rows=116 width=22) (actual time=8.511..151.525 rows=55698 loops=1)
+                     Buffers: shared hit=3 read=54303
+                     ->  Result  (cost=0.02..0.03 rows=1 width=0) (actual time=0.002..0.002 rows=1 loops=1)
+                     ->  Bitmap Heap Scan on wgo_skater_stats s  (cost=252.17..25135.11 rows=116 width=22) (actual time=8.507..149.448 rows=55698 loops=1)
+                           Buffers: shared hit=3 read=54303
+                           ->  BitmapOr  (cost=252.17..252.17 rows=22261 width=0) (actual time=3.958..3.958 rows=0 loops=1)
+                                 Buffers: shared hit=3 read=118
+### body current, no new index (warm)
+ GroupAggregate  (cost=25137.63..25137.74 rows=4 width=96) (actual time=171.945..175.872 rows=4 loops=1)
+   Buffers: shared hit=6 read=54303, temp read=287 written=288
+         Buffers: shared hit=6 read=54303, temp read=287 written=288
+         ->  Hash Right Join  (cost=252.30..25137.59 rows=4 width=80) (actual time=8.361..160.560 rows=55698 loops=1)
+               Buffers: shared hit=3 read=54303
+               ->  Nested Loop  (cost=252.19..25136.31 rows=116 width=22) (actual time=8.353..152.052 rows=55698 loops=1)
+                     Buffers: shared hit=3 read=54303
+                     ->  Result  (cost=0.02..0.03 rows=1 width=0) (actual time=0.001..0.001 rows=1 loops=1)
+                     ->  Bitmap Heap Scan on wgo_skater_stats s  (cost=252.17..25135.11 rows=116 width=22) (actual time=8.349..149.936 rows=55698 loops=1)
+                           Buffers: shared hit=3 read=54303
+                           ->  BitmapOr  (cost=252.17..252.17 rows=22261 width=0) (actual time=3.838..3.838 rows=0 loops=1)
+                                 Buffers: shared hit=3 read=118
+### body candidate, no new index (cold)
+ GroupAggregate  (cost=12395.57..12395.75 rows=4 width=96) (actual time=179.272..185.213 rows=4 loops=1)
+   Buffers: shared hit=3032 read=57186 dirtied=8, temp read=643 written=644
+   ->  Merge Left Join  (cost=12395.57..12395.65 rows=4 width=80) (actual time=176.679..182.529 rows=55698 loops=1)
+         Buffers: shared hit=3032 read=57186 dirtied=8, temp read=643 written=644
+               Buffers: shared hit=3032 read=57186 dirtied=8, temp read=643 written=644
+               ->  Nested Loop  (cost=0.48..12395.47 rows=1 width=22) (actual time=0.032..160.854 rows=55698 loops=1)
+                     Buffers: shared hit=3032 read=57186 dirtied=8
+                     ->  Index Scan using wgo_skater_stats_gp1_date on wgo_skater_stats s  (cost=0.46..12395.43 rows=1 width=22) (actual time=0.030..151.520 rows=55698 loops=1)
+                           Index Cond: ((date >= make_date((GREATEST(3, LEAST(9997, ($1 / 10000))) - 2), 9, 1)) AND (date < LEAST($2, make_date((GREATEST(3, LEAST(9997, ($1 / 10000))) + 1), 9, 1))))
+                           Buffers: shared hit=3032 read=57186 dirtied=8
+                     ->  Result  (cost=0.02..0.03 rows=1 width=0) (actual time=0.000..0.000 rows=1 loops=55698)
+   Buffers: shared hit=277 read=49
+### body candidate, no new index (warm)
+ GroupAggregate  (cost=12395.57..12395.75 rows=4 width=96) (actual time=177.132..183.017 rows=4 loops=1)
+   Buffers: shared hit=3445 read=56330 written=8, temp read=643 written=644
+   ->  Merge Left Join  (cost=12395.57..12395.65 rows=4 width=80) (actual time=174.485..180.296 rows=55698 loops=1)
+         Buffers: shared hit=3445 read=56330 written=8, temp read=643 written=644
+               Buffers: shared hit=3445 read=56330 written=8, temp read=643 written=644
+               ->  Nested Loop  (cost=0.48..12395.47 rows=1 width=22) (actual time=0.027..158.493 rows=55698 loops=1)
+                     Buffers: shared hit=3445 read=56330 written=8
+                     ->  Index Scan using wgo_skater_stats_gp1_date on wgo_skater_stats s  (cost=0.46..12395.43 rows=1 width=22) (actual time=0.026..149.424 rows=55698 loops=1)
+                           Index Cond: ((date >= make_date((GREATEST(3, LEAST(9997, ($1 / 10000))) - 2), 9, 1)) AND (date < LEAST($2, make_date((GREATEST(3, LEAST(9997, ($1 / 10000))) + 1), 9, 1))))
+                           Buffers: shared hit=3445 read=56330 written=8
+                     ->  Result  (cost=0.02..0.03 rows=1 width=0) (actual time=0.000..0.000 rows=1 loops=55698)
+   Buffers: shared hit=280 read=56
+### function current, no new index (cold)
+ Function Scan on bench_current  (cost=0.25..10.25 rows=1000 width=96) (actual time=174.152..174.153 rows=4 loops=1)
+   Buffers: shared hit=308 read=54352, temp read=287 written=288
+ Planning Time: 0.028 ms
+ Execution Time: 174.169 ms
+### function current, no new index (warm)
+ Function Scan on bench_current  (cost=0.25..10.25 rows=1000 width=96) (actual time=176.022..176.022 rows=4 loops=1)
+   Buffers: shared hit=310 read=54360, temp read=287 written=288
+ Planning Time: 0.028 ms
+ Execution Time: 176.038 ms
+index|58 MB|318117
+### body current, covering index (cold)
+ GroupAggregate  (cost=13880.11..13880.22 rows=4 width=96) (actual time=126.720..130.426 rows=4 loops=1)
+   Buffers: shared hit=5 read=36113 dirtied=896 written=2, temp read=287 written=288
+         Buffers: shared hit=5 read=36113 dirtied=896 written=2, temp read=287 written=288
+         ->  Hash Right Join  (cost=204.51..13880.07 rows=4 width=80) (actual time=6.966..115.922 rows=55698 loops=1)
+               Buffers: shared hit=2 read=36113 dirtied=896 written=2
+               ->  Nested Loop  (cost=204.40..13878.79 rows=116 width=22) (actual time=6.956..107.336 rows=55698 loops=1)
+                     Buffers: shared hit=2 read=36113 dirtied=896 written=2
+                     ->  Result  (cost=0.02..0.03 rows=1 width=0) (actual time=0.002..0.002 rows=1 loops=1)
+                     ->  Bitmap Heap Scan on wgo_skater_stats s  (cost=204.38..13877.60 rows=116 width=22) (actual time=6.952..105.222 rows=55698 loops=1)
+                           Buffers: shared hit=2 read=36113 dirtied=896 written=2
+                           ->  BitmapOr  (cost=204.38..204.38 rows=11984 width=0) (actual time=3.739..3.739 rows=0 loops=1)
+                                 Buffers: shared hit=2 read=370
+### body current, covering index (warm)
+ GroupAggregate  (cost=13880.11..13880.22 rows=4 width=96) (actual time=123.004..126.770 rows=4 loops=1)
+   Buffers: shared hit=5 read=36113 written=896, temp read=287 written=288
+         Buffers: shared hit=5 read=36113 written=896, temp read=287 written=288
+         ->  Hash Right Join  (cost=204.51..13880.07 rows=4 width=80) (actual time=5.804..112.294 rows=55698 loops=1)
+               Buffers: shared hit=2 read=36113 written=896
+               ->  Nested Loop  (cost=204.40..13878.79 rows=116 width=22) (actual time=5.795..103.900 rows=55698 loops=1)
+                     Buffers: shared hit=2 read=36113 written=896
+                     ->  Result  (cost=0.02..0.03 rows=1 width=0) (actual time=0.001..0.002 rows=1 loops=1)
+                     ->  Bitmap Heap Scan on wgo_skater_stats s  (cost=204.38..13877.60 rows=116 width=22) (actual time=5.792..101.879 rows=55698 loops=1)
+                           Buffers: shared hit=2 read=36113 written=896
+                           ->  BitmapOr  (cost=204.38..204.38 rows=11984 width=0) (actual time=3.208..3.208 rows=0 loops=1)
+                                 Buffers: shared hit=2 read=370
+### body candidate, covering index (cold)
+ GroupAggregate  (cost=569.48..569.66 rows=4 width=96) (actual time=47.800..53.789 rows=4 loops=1)
+   Buffers: shared hit=3859 read=1276 dirtied=25, temp read=643 written=644
+   ->  Merge Left Join  (cost=569.48..569.56 rows=4 width=80) (actual time=45.153..51.004 rows=55698 loops=1)
+         Buffers: shared hit=3859 read=1276 dirtied=25, temp read=643 written=644
+               Buffers: shared hit=3859 read=1276 dirtied=25, temp read=643 written=644
+               ->  Nested Loop  (cost=0.48..569.38 rows=1 width=22) (actual time=0.067..28.353 rows=55698 loops=1)
+                     Buffers: shared hit=3859 read=1276 dirtied=25
+                     ->  Index Only Scan using idx_wgo_skater_stats_gp1_physical on wgo_skater_stats s  (cost=0.46..569.34 rows=1 width=22) (actual time=0.065..18.990 rows=55698 loops=1)
+                           Index Cond: ((date >= make_date((GREATEST(3, LEAST(9997, ($1 / 10000))) - 2), 9, 1)) AND (date < LEAST($2, make_date((GREATEST(3, LEAST(9997, ($1 / 10000))) + 1), 9, 1))))
+                           Buffers: shared hit=3859 read=1276 dirtied=25
+                     ->  Result  (cost=0.02..0.03 rows=1 width=0) (actual time=0.000..0.000 rows=1 loops=55698)
+   Buffers: shared hit=303 read=50
+### body candidate, covering index (warm)
+ GroupAggregate  (cost=569.48..569.66 rows=4 width=96) (actual time=42.432..48.529 rows=4 loops=1)
+   Buffers: shared hit=4680, temp read=643 written=644
+   ->  Merge Left Join  (cost=569.48..569.56 rows=4 width=80) (actual time=39.711..45.728 rows=55698 loops=1)
+         Buffers: shared hit=4680, temp read=643 written=644
+               Buffers: shared hit=4680, temp read=643 written=644
+               ->  Nested Loop  (cost=0.48..569.38 rows=1 width=22) (actual time=0.039..23.633 rows=55698 loops=1)
+                     Buffers: shared hit=4680
+                     ->  Index Only Scan using idx_wgo_skater_stats_gp1_physical on wgo_skater_stats s  (cost=0.46..569.34 rows=1 width=22) (actual time=0.037..15.473 rows=55698 loops=1)
+                           Index Cond: ((date >= make_date((GREATEST(3, LEAST(9997, ($1 / 10000))) - 2), 9, 1)) AND (date < LEAST($2, make_date((GREATEST(3, LEAST(9997, ($1 / 10000))) + 1), 9, 1))))
+                           Buffers: shared hit=4680
+                     ->  Result  (cost=0.02..0.03 rows=1 width=0) (actual time=0.000..0.000 rows=1 loops=55698)
+   Buffers: shared hit=363
+### function current, covering index (cold)
+ Function Scan on bench_current  (cost=0.25..10.25 rows=1000 width=96) (actual time=126.240..126.240 rows=4 loops=1)
+   Buffers: shared hit=333 read=35718, temp read=287 written=288
+ Planning Time: 0.032 ms
+ Execution Time: 126.257 ms
+### function current, covering index (warm)
+ Function Scan on bench_current  (cost=0.25..10.25 rows=1000 width=96) (actual time=121.340..121.340 rows=4 loops=1)
+   Buffers: shared hit=351 read=35710, temp read=287 written=288
+ Planning Time: 0.024 ms
+ Execution Time: 121.352 ms
+### function candidate, covering index (cold)
+ Function Scan on bench_candidate  (cost=0.25..10.25 rows=1000 width=96) (actual time=44.884..44.885 rows=4 loops=1)
+   Buffers: shared hit=4183 read=881, temp read=643 written=644
+ Planning Time: 0.025 ms
+ Execution Time: 44.898 ms
+### function candidate, covering index (warm)
+ Function Scan on bench_candidate  (cost=0.25..10.25 rows=1000 width=96) (actual time=42.752..42.753 rows=4 loops=1)
+   Buffers: shared hit=5074, temp read=643 written=644
+ Planning Time: 0.024 ms
+ Execution Time: 42.766 ms
+current with index|e37e23e04fe0cdd45fd402f228a2cfb2
+candidate with index|e37e23e04fe0cdd45fd402f228a2cfb2

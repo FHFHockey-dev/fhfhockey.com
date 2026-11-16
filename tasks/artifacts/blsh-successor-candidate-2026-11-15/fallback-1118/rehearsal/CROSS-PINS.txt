@@ -1,0 +1,4 @@
+--- fallback happy packet vs v5 pins (../../rehearsal/expected-pins.json a2a1e694):
+{"verdict":"vetoed","evidenceClass":"not_evidence","reasons":["runtime_bootstrap_not_candidate"],"counts":{"files":29,"started":5,"settled":5,"uncertain":0,"totalBytes":143097},"independentlyAccepted":false}
+--- fallback happy packet vs fallback pins (expected-pins.json):
+{"verdict":"complete_pending_review","evidenceClass":"diagnostic_only_synthetic_adapter","reasons":[],"counts":{"files":29,"started":5,"settled":5,"uncertain":0,"totalBytes":143097},"independentlyAccepted":false}

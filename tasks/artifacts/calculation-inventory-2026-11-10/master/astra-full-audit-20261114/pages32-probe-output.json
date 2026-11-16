@@ -1,0 +1,49 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "findings": [
+    {
+      "id": "AFULL-ULSTABLE1-01",
+      "failedNewScopeWithOldRows": {
+        "detailTableState": null,
+        "landingTableState": null
+      },
+      "note": "Existing warning says last successful result, but no old-scope identity and new filter/split props remain active."
+    },
+    {
+      "id": "AFULL-ULSTABLE1-02",
+      "newSelectionOverwrittenByOldLoadMore": true,
+      "resultRows": 200
+    },
+    {
+      "id": "AFULL-ULSTABLE1-03",
+      "expiredCacheAccepted": true,
+      "freshFetches": 0
+    }
+  ],
+  "controls": {
+    "differentPlayerAndStrengthNotViewOnly": true,
+    "sortPageViewOnly": true,
+    "loadingHidesCrossScope": true,
+    "emptyFailureShowsError": true,
+    "mergeDeduplicates": true,
+    "boundedNextChunk23": true,
+    "seasonAndIdParsing": true,
+    "canonicalQueryOrder": true
+  },
+  "sources": [
+    {
+      "path": "web/pages/underlying-stats/playerStats/[playerId].tsx",
+      "sha256": "45be9ce8dffaa3a5060cb3a463dbc21fa708dd277e1ff72745f2b291379e8828"
+    },
+    {
+      "path": "web/pages/underlying-stats/playerStats/index.tsx",
+      "sha256": "e337ced262f3d6276234cd52280d5e8f782b0c38b710cb39175fcb4f5b35817b"
+    },
+    {
+      "path": "web/pages/underlying-stats/teamStats/index.tsx",
+      "sha256": "ce84be8a2e4f502a8476b7c373033556859816e5d4082c1ab0eb219ef1bba812"
+    }
+  ],
+  "boundary": "Exact state expressions and async load-more function with finite promises/setter doubles; actual pure cache-view helper. No browser/React/server, storage, live API/DB/provider/actual cache/network or supplied tests."
+}

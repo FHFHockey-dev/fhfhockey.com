@@ -1,0 +1,4 @@
+job_name,t,status,ms,r
+update-nst-gamelog,11-12 10:05:55,success,24175,
+update-all-wgo-skaters,11-12 10:07:20,success,,"{""skips"": [{""date"": ""2026-11-12"", ""reason"": ""NHL Stats API returned no skater game rows for this date."", ""category"": ""expected_no_game""}], ""message"": ""All skater stats updated successfully. Processed 1 distinct dates with 216 total updates."", ""success"": true, ""failures"": [], ""startDate"": ""2026-11-11"
+run-rolling-forge-pipeline,11-12 10:10:27,failure,114,"{""success"":false,""failureSummary"":{""failedStepCount"":0,""firstFailure"":{""stageId"":""upstream_skater_sources"",""stepId"":null,""route"":""/api/v1/db/run-rolling-forge-pipeline"",""statusCode"":207,""error"":""Stage invocation ended without an acknowledged handoff; reconcile child outputs and audit before an opera"

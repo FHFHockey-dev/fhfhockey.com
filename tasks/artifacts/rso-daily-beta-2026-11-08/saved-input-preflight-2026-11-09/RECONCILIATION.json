@@ -1,0 +1,206 @@
+{
+  "checkedAt": "2026-11-09T15:23:39.559019+00:00",
+  "branch": "octoberBranch",
+  "head": "be71f5802a5699b0e94b549cec2979fc5e15d2d1",
+  "recordedOriginMaster": "d66408de3a0d1ccea1daaadfce8a3a9ae20cb680",
+  "recordedMasterSubject": "Merge octoberBranch into master (#425): NST team-stats proxy + player summary batches",
+  "remoteQueried": false,
+  "priorVerifiedCandidateTree": "101448c6c6b6da210b2b71786fb5e6024e747cb5",
+  "priorOverlayFiles": 16,
+  "sourcePinsCompared": 32,
+  "files": [
+    {
+      "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx",
+      "sha256": "d81e31c1fe5a8886a5ff56718f8382caac2a3e0acbc4cbd6d58a51a7008a8b95",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx",
+      "sha256": "1ff7c1fcf016d6131b5bd3124aa2332810d51ab364c0189c9b5c0581fccb2eca",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+      "sha256": "a16bddc3c2bba0c9e5ec7d8c165c531bb3e78501b1e851e0ca2f8f703490b135",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+      "sha256": "3f1ee33d5ebf1a69026241314ac3cf3fe3c1d65f2114d969dfbed3dd66245508",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+      "sha256": "bf1ea851c024f6e5f5e399f0505347dc9e16d8407b5921f1c3406cc005661cc9",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+      "sha256": "156b1923c3fd85e96d2a3e1659afd04d8c95567f41c720738a84529609fb547e",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/contributionLedger.test.ts",
+      "sha256": "776bf76c7eafeb6eb434d992577705e30ed2ab5f0a5c7ae711fe7c48311c5970",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts",
+      "sha256": "121f2b714b23f209bc845538327e47729ac86fb37f641dacbf338d20920d483c",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/healthyReserves.test.ts",
+      "sha256": "dab0c7f0abdb9bc2dd30baa94b0aab19d3965136c2f831da1e6fe2b800160998",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/healthyReserves.ts",
+      "sha256": "a4127298df7900f319e4a6eff6e49112b9164fb1c8a9f08db7caee6b1c450f6c",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/lineupGaps.test.ts",
+      "sha256": "8437cd29102f0c685db090cad6c4a68224f2215ca5d564a39a98e31bd83c9775",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/lineupGaps.ts",
+      "sha256": "a664b961df98d4b244c85a9845447a4b62ac998943803d4360894cf4c0feeec4",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+      "sha256": "13c94223ecaf2c70fb6d6ee6a5eec0e2957b040b65c85f174c3cf8647e5184f0",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "sha256": "c082f0e0b51f355e946e7836d3740f30665e54d0ffdf8809c9d9b7eb67381f57",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningTimeline.ts",
+      "sha256": "8c8649e8f0f03e1159230dbe58a48cbedbef8286f5c15d6a8f2e244e604bc474",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts",
+      "sha256": "d85373455b595a198c7855f4a1ebe8a0a20e4dd9aff74e6f883b5694bbacd681",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planning.ts",
+      "sha256": "be7919f534eab6278a7874be4bc8a6fce5db560d9b6ad8aa57e1fe633c0ebf81",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleData/forgeDailyBridge.ts",
+      "sha256": "de79f08c77e21b0b548894e63885cc1b481510a281f27eaa97f526101cbd3f55",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleData/bridgeForecastWire.ts",
+      "sha256": "61105e1a7347880c28ed4417f157a71ed1e53e06b2d1d58a0434c4983bf7ffaf",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/player-forecasts/forecastServingSource.ts",
+      "sha256": "6a1b2b3c05a088c51305b5113a256d986d201a45f941746a16244a05b114833a",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+      "sha256": "8299f6ff97d1ae8bf3836f1202b0eb82586cea4abf70b642a612e03c861d7aad",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.ts",
+      "sha256": "a2532633144fce76cc675795de9ee9b2320a7592def04724729eb87a7a89c969",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts",
+      "sha256": "e54bbb13d53a67400716fa329d90ab8f20e3c98c564a932f4f3224b71bf76adf",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/integrations/yahoo/providerClient.ts",
+      "sha256": "8b9285f9f0803c85256d5e31db09f503582befff646e30c8798b06efe6636f67",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/integrations/yahoo/planningConfirmations.ts",
+      "sha256": "f10594218eb0a11be6098405055dc89cb1436993c97870fa1abb0ac09bec140f",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/integrations/yahoo/tokenManager.ts",
+      "sha256": "4c905ede3ee15f1bce3a2fb6fe4aced506a0527c3d01a85270c5372893aab009",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/in-season/workspaceSchema.ts",
+      "sha256": "a786b796d803fe80e4cb626891f60870e11e6eb1fb9911e54427cfae3305f9ab",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planningDataTransport.ts",
+      "sha256": "8d92ae6d13e4b10947c189a10fe095a06e25e63974d64b41e2c38303992f3947",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/projections/evidenceTime.ts",
+      "sha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+      "sha256": "c405a32610063a672311b7df7423a06afb91620e00c87ccf9208546eab61e62d",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/lib/player-forecasts/contributions.ts",
+      "sha256": "b3c20c166d97440341ff35d0c236c0772067a178df1df3cf699e6a00941f43a1",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    },
+    {
+      "path": "web/package-lock.json",
+      "sha256": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+      "matchesPreviousPin": true,
+      "matchesRecordedMaster": true
+    }
+  ],
+  "releaseStatus": "No deployment verification or release action by this lane; this is source parity only."
+}

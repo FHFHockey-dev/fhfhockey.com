@@ -1,0 +1,58 @@
+{
+  "state": "LOCAL_VERIFIED_NOT_COMMITTED_OR_DEPLOYED",
+  "branch": "octoberBranch",
+  "baseCommit": "11e4192d36ecc4ac4b338f9ab48e529c7049c618",
+  "files": [
+    {
+      "path": "web/pages/_app.tsx",
+      "sha256": "bce3613f62b89e5d4025cb54674926988dad8c0d6e34b25247dc256118949322"
+    },
+    {
+      "path": "web/pages/roster-schedule-optimizer.tsx",
+      "sha256": "9ebaf930cd4e1225d67d05a75e92752a164d4be599190785663cf428039a41d6"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RsoLoading.tsx",
+      "sha256": "8c9a1d3ea2a025b938e55bda802c190afb482d6faa7261c834dbf16e1f993b8f"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RsoLoading.module.scss",
+      "sha256": "1ce3937e09eebb8175ae1b80300fd54adb754b93442b5d8ff8fc619115f9849b"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "sha256": "5cefe516b2553c1ba303e5040e82a548121cfb6c298d733fd4a22f6c4f88c075"
+    },
+    {
+      "path": "web/__tests__/pages/_app.test.tsx",
+      "sha256": "d9b05de1cb22069e671afe0ae6d472a9e8e82f3d02386b20be2b6176a313bd21"
+    },
+    {
+      "path": "web/__tests__/pages/roster-schedule-optimizer.test.tsx",
+      "sha256": "741c8d4fb48ba3e95ef8d7fe72311d3e5bfcc564c91d1788e4061810657dbdd3"
+    },
+    {
+      "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "sha256": "2297b306ce49d3c2d1b3ed6be2c33caad3608ad5d66f2ed06d77c806c04dd816"
+    },
+    {
+      "path": "web/e2e/rso-acceptance.spec.ts",
+      "sha256": "b0036118dbf441f793ecefc993637e4774f92b9fdb6fe0b78279d5a85bf3f2e7"
+    }
+  ],
+  "unitChecks": {
+    "focusedSuite": 274,
+    "additionalTransientStatusCases": 3,
+    "browserCases": 4,
+    "typescript": "passed",
+    "eslint": "passed, 6 existing component hook warnings; changed tests clean"
+  },
+  "observedFeedbackMs": 27.664375,
+  "cost": {
+    "remoteBuilds": 0,
+    "deployments": 0,
+    "productionRequestsInitiated": 0,
+    "realYahooOrAuthenticationRequestsInitiated": 0
+  },
+  "acceptanceLimit": "Browser verification uses fictional accounts, mocked services and loopback-only network. Current signed-in user tab was closed by TJ; no live authenticated acceptance after edits."
+}

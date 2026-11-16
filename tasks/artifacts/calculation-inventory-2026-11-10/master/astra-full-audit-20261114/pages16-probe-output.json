@@ -1,0 +1,40 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "xgScopeSwitch": {
+    "selectedScope": "teams",
+    "retainedPayloadScope": "players",
+    "status": "loading",
+    "renderedTable": "TeamTable",
+    "renderedName": "Fixture Player",
+    "xgFor": "em dash",
+    "boundary": "Exact component and table renderer; synchronous finite hooks/element tree, no browser lifecycle or actual fetch."
+  },
+  "controls": {
+    "missing": "em dash",
+    "measuredZero": "0.00",
+    "fractionHalf": "50.0%",
+    "lineShares": [
+      0,
+      50,
+      null,
+      null
+    ],
+    "promotions": "new=true, out=false,3-to-1=true,1-to-3=false"
+  },
+  "sources": [
+    {
+      "path": "web/pages/underlying-stats/xg/index.tsx",
+      "sha256": "c64949381d9ba849b810c32af977d568993da5b63525db2f31e23cd7244c47f4"
+    },
+    {
+      "path": "web/pages/lines/[abbreviation].tsx",
+      "sha256": "30522c358c2fb4908f1aae810f260c4cb205c98d3e15c063d4aecf174fc4833d"
+    },
+    {
+      "path": "web/pages/lines/index.tsx",
+      "sha256": "3ac668163cbd237d67c90aed71c1c3a0db3a0d8fdb5c90ced29709eb08c2a27f"
+    }
+  ],
+  "boundary": "No page, network, live data, source edit, real React render, image export or suite."
+}

@@ -1,0 +1,50 @@
+{
+  "completedAt": "2026-11-10T15:32:57.768Z",
+  "requests": 1,
+  "response": {
+    "startedAt": "2026-11-10T15:32:44.883Z",
+    "completedAt": "2026-11-10T15:32:56.773Z",
+    "route": "/api/v1/roster-schedule-optimizer/data?seasonId=20262027&startDate=2026-11-09&endDate=2026-11-15&timeZone=America%2FChicago",
+    "method": "GET",
+    "status": 200,
+    "bytes": 1934759,
+    "sha256": "62f4a8d4eef69fd92a69d889b0060948e84c9b7fcd61e82cc9f307d8cf84090a",
+    "cacheControl": "private, no-store",
+    "vercelId": "iad1::iad1::bl8sp-1794324770645-75383631d5d7",
+    "forecastSource": {
+      "kind": "legacy",
+      "headRevision": null,
+      "expiresAt": null,
+      "reason": "native_not_activated"
+    },
+    "runProofCount": 8
+  },
+  "readError": null,
+  "currentPublicDataReceived": true,
+  "beforeCoverage": {
+    "activePlayersMissing": 2,
+    "activePlayerGamesMissing": 7
+  },
+  "afterCoverage": {
+    "activePlayersMissing": 4,
+    "activePlayerGamesMissing": 4
+  },
+  "baseline": {
+    "legal": true,
+    "comparisonEligible": true,
+    "projectedPointsKnown": true
+  },
+  "candidates": {
+    "count": 3,
+    "finiteNetPoints": 3,
+    "evaluated": 12,
+    "eligibleCandidates": 766,
+    "searchComplete": false
+  },
+  "currentWeekProofs": 6,
+  "originalInputUnchanged": true,
+  "yahooRequests": 0,
+  "credentialAccess": false,
+  "authenticatedYahooAcceptance": false,
+  "scope": "Current public serving plus bounded arithmetic using previously saved league inputs; no lineup change."
+}

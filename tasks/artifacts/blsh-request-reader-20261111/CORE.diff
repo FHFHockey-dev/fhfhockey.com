@@ -1,0 +1,13 @@
+--- upstream/capture_reader.py	2026-11-15 15:31:45
++++ capture_reader.py	2026-11-15 15:31:45
+@@ -13,8 +13,8 @@
+ 
+ ROOT = Path(__file__).resolve().parent
+ SEASON = 20262027
+-DATE_MIN = '2026-07-01'
+-DATE_MAX = '2026-10-31'
++DATE_MIN = '2026-10-14'
++DATE_MAX = '2026-11-11'
+ MAX_ROWS = 10000
+ PAGE_KEYS = 400
+ MAX_LINKED = 8

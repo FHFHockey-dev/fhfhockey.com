@@ -1,0 +1,45 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "selectedExactDeclarations": [
+    "TEAM_STREAM_CATEGORIES",
+    "categoryPerGame",
+    "median",
+    "percentile",
+    "finishCandidates",
+    "highFirst",
+    "flaggedLast",
+    "overallOrder",
+    "teamStreamPicks",
+    "TEAM_STREAM_PLAYERS",
+    "deltaText"
+  ],
+  "peripheral": [
+    {
+      "id": 1,
+      "pim": null,
+      "score": 0.75
+    },
+    {
+      "id": 2,
+      "pim": 50,
+      "score": 0.3125
+    }
+  ],
+  "chosen": 1,
+  "negativeZero": "−0%",
+  "pairedControl": {
+    "a": 10,
+    "b": 10,
+    "higher": "tie"
+  },
+  "incompleteTotal": {
+    "value": null,
+    "shown": "—",
+    "observed": 1,
+    "expected": 2,
+    "missing": 1,
+    "admitted": false
+  },
+  "limits": "Exact extracted Team Stream declarations; synthetic Built objects bypass loader/candidate admission. Missing PIM is explicitly admitted by candidateOf and covered by supplied source tests. Full frozen pure PvP module with inert descriptor, no runtime source/calendar calls. No live services, application imports, Vitest or UI."
+}

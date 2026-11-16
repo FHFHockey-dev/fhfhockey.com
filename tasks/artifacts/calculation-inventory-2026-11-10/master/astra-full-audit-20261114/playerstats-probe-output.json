@@ -1,0 +1,85 @@
+{
+  "mode": "offline exact-source VM; no application imports or network",
+  "target": "89da739cb",
+  "hashes": {
+    "web/components/PlayerStats/types.ts": "0ab5d2f482de8ef7b32cda0b016aa9bb48448333e0df44da6cad9ac6bb49b824",
+    "web/components/PlayerStats/playerStatsContract.ts": "e31b486bb6ebe31ba7c40fbdf303338212e90787941dc4a89f8a7ddce2de365e",
+    "web/components/PlayerStats/PlayerPerformanceHeatmap.tsx": "7d08e5c64ebfc6343e6eda9732a2514186bd5c7ecf29c289a9284c791ca57930",
+    "web/pages/stats/player/[playerId].tsx": "aee5eaf67def1d7b5ab38593e704a89b2cbbc95293595de9703cfc53d514a6e7",
+    "web/lib/nst/radarSeasonStats.ts": "74fc49d69a0b807475d720ccb3c176c67c9e17953449fb61b35028f8eaebb24e"
+  },
+  "missing": {
+    "totalGames": 1,
+    "regularSeasonGames": 1,
+    "playoffGames": 0,
+    "eliteGames": 0,
+    "goodOrBetterGames": 0,
+    "elitePercentage": 0,
+    "goodOrBetterPercentage": 0,
+    "levelCounts": {
+      "no-data": 1
+    }
+  },
+  "mixed": {
+    "totalGames": 2,
+    "regularSeasonGames": 2,
+    "playoffGames": 0,
+    "eliteGames": 1,
+    "goodOrBetterGames": 1,
+    "elitePercentage": 50,
+    "goodOrBetterPercentage": 50,
+    "levelCounts": {
+      "no-data": 1,
+      "elite": 1
+    }
+  },
+  "unsupportedGoalieLevels": [
+    "average",
+    "average"
+  ],
+  "unsupportedSkaterDilution": [
+    "elite",
+    "excellent"
+  ],
+  "missingPrimitives": {
+    "selectedFields": [
+      "date",
+      "team_abbreviation",
+      "games_played",
+      "games_started",
+      "wins",
+      "losses",
+      "ot_losses",
+      "save_pct",
+      "goals_against_avg",
+      "shutouts",
+      "saves",
+      "shots_against",
+      "goals_against"
+    ],
+    "complete": {
+      "gaa": 3,
+      "qs": {
+        "starts": 1,
+        "classifiedStarts": 1,
+        "unknownStarts": 0,
+        "rate": 1
+      }
+    },
+    "pageProjection": {
+      "gaa": null,
+      "qs": {
+        "starts": 1,
+        "classifiedStarts": 0,
+        "unknownStarts": 0,
+        "rate": null
+      }
+    }
+  },
+  "dormantRadarLabel": {
+    "label": "iHDCF/60",
+    "value": 14.4,
+    "source": "nst_seasonlong_5v5_counts_oi",
+    "selectableInCurrentConfigs": false
+  }
+}

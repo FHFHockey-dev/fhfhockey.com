@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "seed": 4177,
+  "cases": 250,
+  "generatedPlayerIntervals": 15500,
+  "checkedPlayerTotals": 750,
+  "checkedDirectedPairs": 500,
+  "oracle": "Independent sets of occupied integer seconds; actual canonicalizer and route/payload arithmetic",
+  "excludes": "Strength category correctness, source completeness, live persistence and qualification"
+}

@@ -1,0 +1,19 @@
+{
+  "at": "2026-11-10T19:00:03.773031+00:00",
+  "candidate": "64105d05615df03dd5f5ca650647846b2ab0ca64",
+  "maximumRequests": 5,
+  "concurrency": 1,
+  "method": "GET",
+  "cookies": false,
+  "authentication": false,
+  "redirects": "manual; do not follow",
+  "stopOn": "first HTTP, transport or response-contract failure; no retry",
+  "routes": [
+    "https://fhfhockey.com/",
+    "https://fhfhockey.com/roster-schedule-optimizer",
+    "https://fhfhockey.com/api/v1/transactions/ownership-trends?window=3&metric=ownership&limit=10&offset=0",
+    "https://fhfhockey.com/api/v1/contextual-rankings/teams?season=20262027",
+    "https://fhfhockey.com/api/v1/contextual-rankings/goalies?season=20262027"
+  ],
+  "limits": "Public render/data routes only. No mutation, cron, refresh, forecast publish, BLSH capture or auth/provider route. No full browser crawl."
+}

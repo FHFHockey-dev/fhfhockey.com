@@ -1,0 +1,133 @@
+{
+  "version": "fhfh.blsh.evidence-bridge.upstream-pins.v1",
+  "note": "Checked at test load (tests/fixtures.mjs); any drift fails the suite before it runs. Vendored copies replace live upstream folders, which may change under the bridge (successor v5 overwrote its live rehearsal/). Files pinned in place either resolve siblings by their own path (prior-art prep scripts) or are read-only external fixtures.",
+  "vendored": [
+    {
+      "file": "v4/verify-packet.mjs",
+      "sha256": "04a632baefda512b4fe463991cc55dbb05c7b0f0c85e50f9589923ebf1f92101",
+      "copiedFrom": "tasks/artifacts/blsh-successor-candidate-2026-11-15/superseded/rehearsal-v4/verify-packet.mjs",
+      "role": "superseded v4: refusal tests only"
+    },
+    {
+      "file": "v4/expected-pins.json",
+      "sha256": "f2f639ea8b368ffdf930a2a66c766fff366d369e2ebda3d51e0115fa0a45f21c",
+      "copiedFrom": "tasks/artifacts/blsh-successor-candidate-2026-11-15/superseded/rehearsal-v4/expected-pins.json",
+      "role": "superseded v4: refusal tests only"
+    },
+    {
+      "file": "v4/SUCCESSOR.patch",
+      "sha256": "66b4eb3004e49d6698e2d53e8e41245653d41ce7a96cc0c82d26241c8b9af85d",
+      "copiedFrom": "tasks/artifacts/blsh-successor-candidate-2026-11-15/superseded/SUCCESSOR-v4-66b4eb30.patch",
+      "role": "superseded v4: refusal tests only"
+    },
+    {
+      "file": "chef/verify-packet.mjs",
+      "sha256": "7816ec6adeddda2cb25c664ded5e0696ab30dc390d9c4932fb7bafab38a9f565",
+      "copiedFrom": "tasks/artifacts/blsh-pilot-readiness-2026-11-14/rehearsal/verify-packet.mjs"
+    },
+    {
+      "file": "chef/expected-pins.json",
+      "sha256": "010c56477235a9a22d748165538e8f8476e16fcc9a56e7db38a02b5557b3a517",
+      "copiedFrom": "tasks/artifacts/blsh-pilot-readiness-2026-11-14/rehearsal/expected-pins.json"
+    },
+    {
+      "file": "chef/rehearse.ts",
+      "sha256": "e01f8772d5049533778f0eaa5fa12e7c6bb2cb169bfe9bd999d1c16f59f69ba9",
+      "copiedFrom": "tasks/artifacts/blsh-pilot-readiness-2026-11-14/rehearsal/rehearse.ts"
+    },
+    {
+      "file": "v5/SUCCESSOR.patch",
+      "sha256": "e8be50de132887be4e4c33b086003a1f639ba554f23c85f08d27d5a780d7752f",
+      "copiedFrom": "tasks/artifacts/blsh-successor-candidate-2026-11-15/SUCCESSOR.patch",
+      "role": "APPROVED v5 candidate"
+    },
+    {
+      "file": "v5/verify-packet.mjs",
+      "sha256": "b86af692e5c4b3b9b1650f949171cbbaeed6663c6d1668efdc443e91fa0ad5c5",
+      "copiedFrom": "tasks/artifacts/blsh-successor-candidate-2026-11-15/rehearsal/verify-packet.mjs",
+      "role": "APPROVED v5 candidate"
+    },
+    {
+      "file": "v5/expected-pins.json",
+      "sha256": "a2a1e694dfa79ba9ebc110a3e45a249540b739c0061e0558fc6887e0f30367d1",
+      "copiedFrom": "tasks/artifacts/blsh-successor-candidate-2026-11-15/rehearsal/expected-pins.json",
+      "role": "APPROVED v5 candidate"
+    },
+    {
+      "file": "v5-1118/FALLBACK.patch",
+      "sha256": "209b34ebe121a3de08c91ec74aaabd61844ad09e1ae0538cd045872bfc2fe8cf",
+      "copiedFrom": "tasks/artifacts/blsh-successor-candidate-2026-11-15/fallback-1118/FALLBACK.patch",
+      "role": "PARKED fallback v5-1118 (2026-11-18 slot); selected only by an explicit candidate choice"
+    },
+    {
+      "file": "v5-1118/verify-packet.mjs",
+      "sha256": "b86af692e5c4b3b9b1650f949171cbbaeed6663c6d1668efdc443e91fa0ad5c5",
+      "copiedFrom": "tasks/artifacts/blsh-successor-candidate-2026-11-15/fallback-1118/rehearsal/verify-packet.mjs",
+      "role": "PARKED fallback v5-1118 (2026-11-18 slot); selected only by an explicit candidate choice"
+    },
+    {
+      "file": "v5-1118/expected-pins.json",
+      "sha256": "3f61f9d4725fb66efc3d0f2f201e74c46998d67856b84f9c9c7230357b866376",
+      "copiedFrom": "tasks/artifacts/blsh-successor-candidate-2026-11-15/fallback-1118/rehearsal/expected-pins.json",
+      "role": "PARKED fallback v5-1118 (2026-11-18 slot); selected only by an explicit candidate choice"
+    }
+  ],
+  "pinnedInPlace": [
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/prepare_packet.py",
+      "sha256": "b8a5fc7f270f040c46e0602ea4d377662676042e39a818dd889369c0ed7e05f3"
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/closed_gate.cjs",
+      "sha256": "b5578fd7d794d233ac7672ecbddf40f30f855121c658e86987c9031216be353c"
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/SOURCE-PINS.json",
+      "sha256": "bf7d4410a25cbf3a93a0bb95bd0d87a157c2aab03ad0d806fb2460da48190ceb"
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/nst-lineage-and-gs-alternatives-20261101-01/nst_lineage.py",
+      "sha256": "14e0816c65fd8988b1401e21952b0873fcb142da6866523f6c87d8f1b72ff4da"
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/nst-selected-receipt-intake-20261101-01/intake.py",
+      "sha256": "7cb3e091200ae35f245e7a4e105696382101879a3f0abb3f6b99cb82f5879b92"
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-11/task-2/ingestion-reliability/nst-source-capture-v3/2026-10-01-allStrengthsCounts.html",
+      "sha256": "8182551d63eb0672742bc8e87886561d1c4dc33151e92521c6617ad0cb5ddb8a"
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-11/task-2/ingestion-reliability/nst-source-capture-v3/2026-10-01-allStrengthsCounts.json",
+      "sha256": "e1931ffe6a05d769ed5709fe0b8603936a56a752ea882d23cfbd9049861e6ed7"
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-11/task-2/ingestion-reliability/nst-source-capture-v3/2026-10-01-allStrengthsRates.html",
+      "sha256": "f79995aa9cfa898be627f60aa884b4167895e9f8ec0fecd0d44182a7df81ae08"
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-11/task-2/ingestion-reliability/nst-source-capture-v3/2026-10-01-allStrengthsRates.json",
+      "sha256": "22049910208d4e2bbe88484296d1c00009ea2d32a9ee0ab88af6a58ebb3f525d"
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-11/task-2/ingestion-reliability/nst-source-capture-v3/2026-09-30-penaltyKillRatesOi.html",
+      "sha256": "80f79183457fed0ec45a8070f209e7d8de6df6b25c275a48db58c8dcf75b0c15"
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-11/task-2/ingestion-reliability/nst-source-capture-v3/2026-09-30-penaltyKillRatesOi.json",
+      "sha256": "69cba21a27bc455d52c4c2704d62039784684ffd0ad1e82940e24febf88f5cbf"
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-reader-20261101-01/live-read-01/capture/CURRENT-REQUEST.json",
+      "sha256": "c6d1d13dc7327baa54742c3eb7efe0a1e5d96c6ef6ffefc66de23f4092c12ba2"
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/057-2026020187-boxscore.body.json",
+      "sha256": "18709a269ef84782a66cb7ede07b85a7fd9852935efdd2a1309db9fd940ffafb"
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/057-2026020187-boxscore.receipt.json",
+      "sha256": "5c94d24f7f8e175cd86c4820f10ad44e47140d21aaff0b3402afca9f3b1735d4"
+    }
+  ]
+}

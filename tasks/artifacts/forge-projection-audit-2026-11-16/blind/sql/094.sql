@@ -1,0 +1,1 @@
+select date, count(*) games from games where date between '2026-11-16' and '2026-11-23' and ("homeTeamId" in (select unnest(array["homeTeamId","awayTeamId"]) from games where id=2026020308) or "awayTeamId" in (select unnest(array["homeTeamId","awayTeamId"]) from games where id=2026020308)) group by 1 order by 1

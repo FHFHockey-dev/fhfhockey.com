@@ -1,0 +1,148 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "files": [
+    {
+      "path": "web/lib/projectionsConfig/statsMasterList.ts",
+      "local": "/tmp/astra-ranklib1/statsMasterList.ts",
+      "lines": 506,
+      "sha256": "ebe6d83bb6731b6c349e455101ad9f9f8c9a956976f00d619d96839047237e57",
+      "fullRead": true,
+      "bytes": 13506,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          506
+        ]
+      ],
+      "rows": 52
+    },
+    {
+      "path": "web/lib/rankings/adjustedImpactPromotionContract.test.ts",
+      "local": "/tmp/astra-ranklib1/adjustedImpactPromotionContract.test.ts",
+      "lines": 70,
+      "sha256": "fcbcda8e3e0b19013fe78e43900e21ff45f8f2ee0b7f38f247b95f3c765b6d1f",
+      "fullRead": true,
+      "bytes": 2419,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          70
+        ]
+      ],
+      "rows": 5
+    },
+    {
+      "path": "web/lib/rankings/adjustedImpactPromotionContract.ts",
+      "local": "/tmp/astra-ranklib1/adjustedImpactPromotionContract.ts",
+      "lines": 128,
+      "sha256": "04ddb3eb4de367a64e34ce406fb5e8b6e4026eb721b19df93728fbe4b56f8b35",
+      "fullRead": true,
+      "bytes": 4640,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          128
+        ]
+      ],
+      "rows": 23
+    },
+    {
+      "path": "web/lib/rankings/deploymentTiers.ts",
+      "local": "/tmp/astra-ranklib1/deploymentTiers.ts",
+      "lines": 985,
+      "sha256": "3a81286e678d3cc193100b35a1d93afe982a4e539f9c7523fb15cde008644f5f",
+      "fullRead": true,
+      "bytes": 30431,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          985
+        ]
+      ],
+      "rows": 265
+    },
+    {
+      "path": "web/lib/rankings/entityMetricRankingReader.test.ts",
+      "local": "/tmp/astra-ranklib1/entityMetricRankingReader.test.ts",
+      "lines": 635,
+      "sha256": "6bcae70fdc343f2d492efef90f92addce517ab4922a06cfd16ce7ba98f31ffb8",
+      "fullRead": true,
+      "bytes": 31007,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          635
+        ]
+      ],
+      "rows": 167
+    },
+    {
+      "path": "web/lib/rankings/entityMetricRankingReader.ts",
+      "local": "/tmp/astra-ranklib1/entityMetricRankingReader.ts",
+      "lines": 594,
+      "sha256": "ba52c8de166b227b45372b652b7bbd9834963e0185b2342d6f944c53e4f2def8",
+      "fullRead": true,
+      "bytes": 20947,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          594
+        ]
+      ],
+      "rows": 142
+    },
+    {
+      "path": "web/lib/rankings/entityMetricRankingWriter.test.ts",
+      "local": "/tmp/astra-ranklib1/entityMetricRankingWriter.test.ts",
+      "lines": 298,
+      "sha256": "968d320956184a19c9f02ae48eedc035dee3adc22a0a3f4b03f26c0a0bd89845",
+      "fullRead": true,
+      "bytes": 8936,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          298
+        ]
+      ],
+      "rows": 27
+    },
+    {
+      "path": "web/lib/rankings/entityMetricRankingWriter.ts",
+      "local": "/tmp/astra-ranklib1/entityMetricRankingWriter.ts",
+      "lines": 356,
+      "sha256": "5e5c3b1ae0b7d57eb5927db1cb69009c937e011f211ef39c5132a9097920bfc3",
+      "fullRead": true,
+      "bytes": 11810,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          356
+        ]
+      ],
+      "rows": 91
+    }
+  ],
+  "scopeLines": 3572,
+  "rows": 772,
+  "probe": "ranklib1-probe-output.json",
+  "checks": [
+    "Eight full frozen source reads",
+    "Unique AST source-offset identities",
+    "Exact pure helper/writer probe with fake transport; reader/route reach source-traced"
+  ],
+  "notRun": [
+    "Vitest",
+    "full live publication",
+    "real database/provider",
+    "application imports or actual environment",
+    "browser/server/build"
+  ]
+}

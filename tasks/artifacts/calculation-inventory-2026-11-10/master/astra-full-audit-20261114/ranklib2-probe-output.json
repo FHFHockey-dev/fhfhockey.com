@@ -1,0 +1,44 @@
+{
+  "pin": "89da739cb",
+  "status": "passed",
+  "baseline": {
+    "startShare": 0.2,
+    "relativeSave": 0.1
+  },
+  "staleProjection": {
+    "projectionDate": "2026-10-01",
+    "asOf": "2026-11-14",
+    "window": "last5",
+    "metric": 0.8,
+    "windowShare": 0.2,
+    "startProbability": 0.9,
+    "confirmed": true,
+    "roleConfidence": "high"
+  },
+  "scheduledNotFinal": {
+    "addedGameState": "FUT",
+    "latestObservationDate": "2026-11-06",
+    "startShare": null,
+    "relativeSave": null,
+    "warnings": [
+      "low_role_confidence",
+      "partial_goalie_team_game_coverage"
+    ]
+  },
+  "unknownSamples": {
+    "sample": {
+      "gamesPlayed": 0,
+      "gamesStarted": 1,
+      "shotsAgainst": 60,
+      "toiSeconds": 0,
+      "minimumSampleMet": true,
+      "confidence": "high"
+    },
+    "savePercentage": 0.9,
+    "warnings": [
+      "partial_goalie_appearance_classification"
+    ]
+  },
+  "controls": "Vollman boundaries and paired pooled league save percentage passed",
+  "limits": "Exact matrix/methodology/population/rank-normalizer functions with synthetic fake transport; no live reads, app imports, Vitest, real incidence or later-commit review."
+}

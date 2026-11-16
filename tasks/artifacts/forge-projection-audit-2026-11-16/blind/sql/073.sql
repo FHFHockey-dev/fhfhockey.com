@@ -1,0 +1,1 @@
+select job_name, to_char(run_time,'MM-DD HH24:MI') t, status, left(details->>'response',1200) r from cron_job_audit where run_time >= '2026-11-16 13:00' and run_time < '2026-11-16 13:02' and job_name ~ 'cron-report'

@@ -1,0 +1,574 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "scope_files": [
+    {
+      "path": "web/components/RosterMatrix/RosterMatrixWrapper.tsx",
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__RosterMatrix__RosterMatrixWrapper.tsx",
+      "lines": 411,
+      "bytes": 12303,
+      "sha256": "21a8d9e68ceff77bcdf014c786aae3c859886697fcd257eb0de52924ddf37c70",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          411
+        ]
+      ],
+      "review_status": "fully_read_source",
+      "tsv_rows": 42
+    },
+    {
+      "path": "web/components/RosterMatrix/rosterMatrixData.test.ts",
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__RosterMatrix__rosterMatrixData.test.ts",
+      "lines": 127,
+      "bytes": 3795,
+      "sha256": "be2e7c114afd7e44b0653392caa3abaf4e3cf30e1b826e8e73960644358d6cb0",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          127
+        ]
+      ],
+      "review_status": "fully_read_source",
+      "tsv_rows": 18
+    },
+    {
+      "path": "web/components/RosterMatrix/rosterMatrixData.ts",
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__RosterMatrix__rosterMatrixData.ts",
+      "lines": 214,
+      "bytes": 7362,
+      "sha256": "997f7d2936c1e8b8cf126030fca21028935ec872be771219869b4d8734709d6e",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          214
+        ]
+      ],
+      "review_status": "fully_read_source",
+      "tsv_rows": 37
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx",
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__RosterScheduleOptimizer__CandidateBrowser.integration.test.tsx",
+      "lines": 136,
+      "bytes": 9741,
+      "sha256": "b96ac9afc301949afa0fcc9d6e4cfad85fdb35bb535536efbf874583e8480fa4",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          136
+        ]
+      ],
+      "review_status": "fully_read_source",
+      "tsv_rows": 48
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx",
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__RosterScheduleOptimizer__HealthyReserveAlert.test.tsx",
+      "lines": 84,
+      "bytes": 6730,
+      "sha256": "755f016bf242398854b66aa4c731b7cf2a77213414bb9902748a9bc8d86ca8a6",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          84
+        ]
+      ],
+      "review_status": "fully_read_source",
+      "tsv_rows": 20
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx",
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__RosterScheduleOptimizer__HealthyReserveAlert.tsx",
+      "lines": 63,
+      "bytes": 5278,
+      "sha256": "30f29c5a8c5326e2e3785df928b1428b1521ae8cf3bbee39f3e4f6664d2b705f",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          63
+        ]
+      ],
+      "review_status": "fully_read_source",
+      "tsv_rows": 23
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__RosterScheduleOptimizer__RosterScheduleOptimizer.tsx",
+      "lines": 1507,
+      "bytes": 192025,
+      "sha256": "d9686db26902c2142fd1cbcc03af5fed6125a80514631326a5212c9892d52b5b",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          1507
+        ]
+      ],
+      "review_status": "fully_read_source",
+      "tsv_rows": 1204
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/StreamingItinerary.tsx",
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__RosterScheduleOptimizer__StreamingItinerary.tsx",
+      "lines": 144,
+      "bytes": 13175,
+      "sha256": "469605eba5883d71475d0ea71abbed1209c2286846f015173a5e6621878a1cf2",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          144
+        ]
+      ],
+      "review_status": "fully_read_source",
+      "tsv_rows": 102
+    },
+    {
+      "path": "web/components/ShiftChart/Replay.test.tsx",
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__ShiftChart__Replay.test.tsx",
+      "lines": 242,
+      "bytes": 13749,
+      "sha256": "6916e4af104a11771c163b4f30b412b24b428797d773dac4576473b2bc8284e6",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          242
+        ]
+      ],
+      "review_status": "fully_read_source",
+      "tsv_rows": 97
+    },
+    {
+      "path": "web/components/ShiftChart/Replay.tsx",
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__ShiftChart__Replay.tsx",
+      "lines": 623,
+      "bytes": 24691,
+      "sha256": "61f64f40a68f015596802ff668b1de5b06b9217526e00465bc5001caa59bf4e4",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          623
+        ]
+      ],
+      "review_status": "fully_read_source",
+      "tsv_rows": 132
+    },
+    {
+      "path": "web/components/ShiftChart/model.test.ts",
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__ShiftChart__model.test.ts",
+      "lines": 224,
+      "bytes": 8063,
+      "sha256": "02eef9ab2feac5b64c2d360475c3f8bd18dd48dd1082ab15aee44b32214191a5",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          224
+        ]
+      ],
+      "review_status": "fully_read_source",
+      "tsv_rows": 61
+    },
+    {
+      "path": "web/components/ShiftChart/model.ts",
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__ShiftChart__model.ts",
+      "lines": 511,
+      "bytes": 18119,
+      "sha256": "1ce2be68478dde1fd313a5ba1e7ed24d53967abe1028883fa8a779fc2f3d343e",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          511
+        ]
+      ],
+      "review_status": "fully_read_source",
+      "tsv_rows": 146
+    },
+    {
+      "path": "web/components/ShiftChart/testStoredGame.ts",
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__ShiftChart__testStoredGame.ts",
+      "lines": 50,
+      "bytes": 3023,
+      "sha256": "e89cb6f257fbccbf87df684507b2cee2470523960634bad4c4720621e3261e37",
+      "working_tree_matches": true,
+      "read_ranges": [
+        [
+          1,
+          50
+        ]
+      ],
+      "review_status": "fully_read_source",
+      "tsv_rows": 28
+    }
+  ],
+  "total_lines": 4336,
+  "total_bytes": 318054,
+  "source_nodes": {
+    "declaration": 967,
+    "function": 954,
+    "test": 37
+  },
+  "tsv_rows": 1962,
+  "context_only": [
+    {
+      "path": "web/components/RosterMatrix/RosterMatrix.tsx",
+      "read_ranges": [
+        [
+          1,
+          390
+        ]
+      ],
+      "lines": 532,
+      "bytes": 17689,
+      "sha256": "d0a58c606eb2b8f114612225a43184e056f57e083cb4f8eb122d6c8d17ed4d49",
+      "working_tree_matches": true,
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__RosterMatrix__RosterMatrix.tsx",
+      "status": "context_only"
+    },
+    {
+      "path": "web/components/TeamTabNavigation/TeamTabNavigation.tsx",
+      "read_ranges": [
+        [
+          490,
+          530
+        ]
+      ],
+      "lines": 590,
+      "bytes": 18589,
+      "sha256": "7102583f3e3c2bd9d123dd126de024e7105328fb4a1da9e414cd2bd39ddbee0f",
+      "working_tree_matches": true,
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__TeamTabNavigation__TeamTabNavigation.tsx",
+      "status": "context_only"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/streamingChain.ts",
+      "read_ranges": [
+        [
+          178,
+          340
+        ]
+      ],
+      "lines": 468,
+      "bytes": 36751,
+      "sha256": "9455b2dec65fc491c7f31524f7b81d0dd9f080330b5a0626318e962fa26a3a4f",
+      "working_tree_matches": true,
+      "temporary_blob": "/private/tmp/astra-components-13/web__lib__rosterScheduleOptimizer__streamingChain.ts",
+      "status": "context_only"
+    },
+    {
+      "path": "web/components/WiGO/playerBiography.ts",
+      "read_ranges": [
+        [
+          1,
+          26
+        ]
+      ],
+      "lines": 26,
+      "bytes": 1446,
+      "sha256": "3401976f091c05e62beb96585a449dbff96d868fcb5e7bcbb95c290e761710df",
+      "working_tree_matches": true,
+      "temporary_blob": "/private/tmp/astra-components-13/web__components__WiGO__playerBiography.ts",
+      "status": "context_only"
+    }
+  ],
+  "probe": {
+    "mode": "Exact AST-extracted pure declarations/one display expression in isolated VM; no app modules, React, fetch, DB, timers or provider calls",
+    "passed": true,
+    "receipts": [
+      {
+        "path": "web/components/WiGO/playerBiography.ts",
+        "name": "formatHeight",
+        "line": 1,
+        "end": 5,
+        "offset": 13,
+        "sha256": "0cc3df69d6cf95f6a5cdf3aac486b7f9147fee4a4cd8144ca54fbbf6dd088c39"
+      },
+      {
+        "path": "web/components/WiGO/playerBiography.ts",
+        "name": "getAge",
+        "line": 14,
+        "end": 23,
+        "offset": 656,
+        "sha256": "4dfff65145798307793635ef07daa4a297d6c55246996c782d404706c21a3f6d"
+      },
+      {
+        "path": "web/components/RosterMatrix/rosterMatrixData.ts",
+        "name": "known",
+        "line": 59,
+        "end": 60,
+        "offset": 1161,
+        "sha256": "36d36e7b62ead8a4adbb8a8975d4611197bffb28d6ab504d2797d3de152c0d81"
+      },
+      {
+        "path": "web/components/RosterMatrix/rosterMatrixData.ts",
+        "name": "buildRosterPlayer",
+        "line": 145,
+        "end": 214,
+        "offset": 4280,
+        "sha256": "c7a00b29fff29fdb390041fa8dbc82ada45ffb7e5f85cea44762bf8beb541b0b"
+      },
+      {
+        "path": "web/components/RosterMatrix/rosterMatrixData.ts",
+        "name": "aggregateNstGoalieGamelog",
+        "line": 71,
+        "end": 130,
+        "offset": 1819,
+        "sha256": "2d6c9bd4457cb768ac40f48c163330741ff135860ae681e2076886fbd0ee89b4"
+      },
+      {
+        "path": "web/components/RosterScheduleOptimizer/StreamingItinerary.tsx",
+        "name": "selected leg display expression",
+        "line": 130,
+        "offset": 11554,
+        "sha256": "6966a8fc7cf6b9b14619db947290a831478b73ebf4a3f48f976cb67cdc66c2e5"
+      },
+      {
+        "path": "web/components/RosterScheduleOptimizer/StreamingItinerary.tsx",
+        "name": "number",
+        "line": 7,
+        "end": 7,
+        "offset": 570,
+        "sha256": "17f05175a8817078d55040a478c97cb8b8687dfb8b675fc04c2f7b88a9c87a59"
+      },
+      {
+        "path": "web/components/RosterScheduleOptimizer/StreamingItinerary.tsx",
+        "name": "totals",
+        "line": 11,
+        "end": 20,
+        "offset": 921,
+        "sha256": "f1cc26580df8d6b4504c1c7d01b2420e344f48d2b6703b41b1da365b62904652"
+      },
+      {
+        "path": "web/components/ShiftChart/model.ts",
+        "name": "mergeIntervals",
+        "line": 146,
+        "end": 155,
+        "offset": 4802,
+        "sha256": "361cded68c24a85c9f6aad3f654d876277a61795d091e26bd7db46c48babc662"
+      },
+      {
+        "path": "web/components/ShiftChart/model.ts",
+        "name": "isActive",
+        "line": 372,
+        "end": 374,
+        "offset": 12588,
+        "sha256": "1744f9bd1612162d324fa1d4ee959b646b75ea4df7b9f28e43cf063693bcb694"
+      },
+      {
+        "path": "web/components/ShiftChart/model.ts",
+        "name": "toiAt",
+        "line": 375,
+        "end": 381,
+        "offset": 12725,
+        "sha256": "2fcbc5f3f0949e1954a53b77e89444b072bf85ae4ffbd526f7d72321f923ea18"
+      },
+      {
+        "path": "web/components/ShiftChart/model.ts",
+        "name": "overlap",
+        "line": 413,
+        "end": 425,
+        "offset": 13929,
+        "sha256": "3259029a5241208ceb9f86adc383478d0c471353755b149400c8af8e0f6dc56a"
+      },
+      {
+        "path": "web/components/ShiftChart/model.ts",
+        "name": "mergedSecondsByTeam",
+        "line": 426,
+        "end": 435,
+        "offset": 14309,
+        "sha256": "112fae82e46e3b6a1f1c4549ca628451a65b73a0f2485a9f5d465a05afddd5a6"
+      },
+      {
+        "path": "web/components/ShiftChart/model.ts",
+        "name": "ppSecondsByTeam",
+        "line": 441,
+        "end": 443,
+        "offset": 14840,
+        "sha256": "bc3ad3227818560264185b0ccbd315fff94cf8427241a4d8060658a42fd1a8cf"
+      },
+      {
+        "path": "web/components/ShiftChart/model.ts",
+        "name": "PP_TIMELINE_MISMATCH_LABEL",
+        "line": 450,
+        "end": 450,
+        "offset": 15236,
+        "sha256": "7be3929733b330ff102dc6849013e0c91a6facdfae563e6167c04119e6d1790d"
+      },
+      {
+        "path": "web/components/ShiftChart/model.ts",
+        "name": "ppTimelineVerdicts",
+        "line": 461,
+        "end": 480,
+        "offset": 16071,
+        "sha256": "919b74abf4912816708bb1a8cba3785af09aea27c2797d97c7fe9945f7435aaa"
+      },
+      {
+        "path": "web/components/ShiftChart/model.ts",
+        "name": "matrixData",
+        "line": 484,
+        "end": 511,
+        "offset": 17142,
+        "sha256": "4456bd66432232b66b9127832605494eca83338bd490723ce671424a6d97bc53"
+      }
+    ],
+    "results": {
+      "roster": {
+        "missing": {
+          "id": 1,
+          "nhl_player_name": "Fixture",
+          "mapped_position": "C",
+          "games_played": 0,
+          "goals": 0,
+          "assists": 0,
+          "points": 0,
+          "plus_minus": 0,
+          "pim": 0,
+          "shots": 0,
+          "wins": 0,
+          "losses": 0,
+          "shutouts": 0
+        },
+        "zeroPrecedence": {
+          "id": 1,
+          "nhl_player_name": "Fixture",
+          "mapped_position": "C",
+          "games_played": 4,
+          "goals": 2,
+          "assists": 3,
+          "points": 5,
+          "plus_minus": 0,
+          "pim": 0,
+          "shots": 20,
+          "wins": 0,
+          "losses": 0,
+          "shutouts": 0
+        },
+        "goalieMissing": {
+          "id": 1,
+          "nhl_player_name": "Fixture",
+          "mapped_position": "G",
+          "games_played": 0,
+          "goals": 0,
+          "assists": 0,
+          "points": 0,
+          "plus_minus": 0,
+          "pim": 0,
+          "shots": 0,
+          "wins": 0,
+          "losses": 0,
+          "shutouts": 0
+        },
+        "pooled": [
+          {
+            "games_played": 2,
+            "saves": 31,
+            "goals_against": 4,
+            "shots_against": 35,
+            "save_pct": 0.8857142857142857,
+            "goals_against_avg": 3.4285714285714284,
+            "time_on_ice": 70,
+            "hd_shots_against": 9,
+            "hd_saves": 6,
+            "hd_save_pct": 66.66666666666666,
+            "md_save_pct": 91.66666666666666
+          }
+        ]
+      },
+      "streaming": {
+        "row": "7",
+        "option": "\u2014",
+        "totals": {
+          "games": 2,
+          "points": null
+        }
+      },
+      "shift": {
+        "toiAt70": 70,
+        "activeEnd": false,
+        "pair": 50,
+        "exact": {
+          "1": {
+            "show": true
+          },
+          "2": {
+            "show": true
+          }
+        },
+        "mismatch": {
+          "1": {
+            "show": false,
+            "label": "PP timeline unavailable: timing mismatch."
+          },
+          "2": {
+            "show": false,
+            "label": "PP timeline unavailable: timing mismatch."
+          }
+        },
+        "absent": {
+          "1": {
+            "show": false,
+            "label": "PP timeline unavailable: no qualified local intervals."
+          },
+          "2": {
+            "show": false,
+            "label": "PP timeline unavailable: no qualified local intervals."
+          }
+        }
+      }
+    }
+  },
+  "verification": {
+    "all_target_and_current_hashes_match": true,
+    "typescript_parse_diagnostics": 0,
+    "tsv_unique_ids": true,
+    "runtime_tests": "not run",
+    "application_imports": "none",
+    "network_database_provider_browser": "none"
+  },
+  "scratch_artifacts": [
+    {
+      "name": "inventory.cjs",
+      "sha256": "db2112d80d23e601307f05653e2e1e7eff7266d9bf6499687f68c90c637c5540"
+    },
+    {
+      "name": "inventory.json",
+      "sha256": "a484fb20c90fcdaffc22907578049475e8be6f0b8ab09531a864a973293adf38"
+    },
+    {
+      "name": "probe.cjs",
+      "sha256": "1e9dda20fbc8cc2c49ea2e002ec09804f8381761b16190ac724a8f3f8106c3f6"
+    },
+    {
+      "name": "probe.json",
+      "sha256": "bab2b8261bf423d062df4059f83209ce9b2e0351752c91083443ecced86cc23b"
+    },
+    {
+      "name": "write-artifacts.py",
+      "sha256": "a659e60a14dc5703e274258c813259373b3a430265a67995883cba37d1fb1ba7"
+    }
+  ],
+  "retained_report_context": [
+    {
+      "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/astra-full-audit-20261114/batch-web-tests-2.md",
+      "read_ranges": [
+        [
+          1,
+          33
+        ]
+      ],
+      "bytes": 18534,
+      "lines": 85,
+      "sha256": "d4799a0e7dd2d6a035e4d1727aa7864e4ce59c9b8ef039b50fe62f7ed0f98730",
+      "status": "prior_worker_evidence_only"
+    }
+  ]
+}

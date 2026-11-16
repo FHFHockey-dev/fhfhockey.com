@@ -1,0 +1,40 @@
+{
+  "pin": "89da739cb",
+  "passed": true,
+  "forgePartial": {
+    "hit": null,
+    "blk": 2,
+    "displayed": "2.0",
+    "allUnknownDisplayed": "0.0",
+    "completeControl": "3.0",
+    "nullableFormatterControl": "--",
+    "boundary": "Exact JSX argument and formatter, no API or real component lifecycle."
+  },
+  "drmControls": {
+    "validSeason": 20262027,
+    "invalidSeason": null,
+    "invalidLeapDate": "rejected",
+    "validLeapDate": "2024-02-29",
+    "dstL7": [
+      "2026-10-27",
+      "2026-11-02"
+    ],
+    "seasonStartClamp": "2026-10-01",
+    "preseasonRange": "unavailable"
+  },
+  "sources": [
+    {
+      "path": "web/pages/drm.tsx",
+      "sha256": "b69339754547043807cb8abec937152334201a02f72595befe3e7f73ee294a36"
+    },
+    {
+      "path": "web/pages/forge/player/[playerId].tsx",
+      "sha256": "db2b48d0bd858dd5caa5fd2873162fbcef0183dc1d786eab840fdd85f1bbb347"
+    },
+    {
+      "path": "web/pages/forge/player/[playerId].tsx",
+      "sha256": "db2b48d0bd858dd5caa5fd2873162fbcef0183dc1d786eab840fdd85f1bbb347"
+    }
+  ],
+  "boundary": "Controlled America/New_York process; exact pure source, no network, page, database, application client, actual env values or suites."
+}

@@ -1,0 +1,1394 @@
+{
+ "version": "fhfh.blsh.loaded-file-coverage.v1",
+ "launcherExecArgv": [
+  "--require",
+  "./node_modules/ts-node/register/transpile-only"
+ ],
+ "files": 256,
+ "counts": {
+  "role": 9,
+  "bootstrap": 1,
+  "package": 245,
+  "harness": 1,
+  "uncovered": 0
+ },
+ "packagesTouched": 34,
+ "packagesTouchedList": [
+  "node_modules/@cspotcode/source-map-support",
+  "node_modules/@cspotcode/source-map-support/node_modules/@jridgewell/trace-mapping",
+  "node_modules/@jridgewell/resolve-uri",
+  "node_modules/@jridgewell/sourcemap-codec",
+  "node_modules/arg",
+  "node_modules/boolbase",
+  "node_modules/cheerio",
+  "node_modules/cheerio-select",
+  "node_modules/css-select",
+  "node_modules/css-what",
+  "node_modules/dom-serializer",
+  "node_modules/domelementtype",
+  "node_modules/domhandler",
+  "node_modules/domutils",
+  "node_modules/encoding-sniffer",
+  "node_modules/entities",
+  "node_modules/htmlparser2",
+  "node_modules/htmlparser2/node_modules/entities",
+  "node_modules/iconv-lite",
+  "node_modules/make-error",
+  "node_modules/memory-cache",
+  "node_modules/nth-check",
+  "node_modules/parse5",
+  "node_modules/parse5-htmlparser2-tree-adapter",
+  "node_modules/parse5-parser-stream",
+  "node_modules/parse5/node_modules/entities",
+  "node_modules/safer-buffer",
+  "node_modules/ts-node",
+  "node_modules/typescript",
+  "node_modules/undici",
+  "node_modules/v8-compile-cache-lib",
+  "node_modules/whatwg-encoding",
+  "node_modules/whatwg-mimetype",
+  "node_modules/yn"
+ ],
+ "builtins": [
+  "_http_agent",
+  "_http_client",
+  "_http_common",
+  "_http_incoming",
+  "_http_outgoing",
+  "_http_server",
+  "_tls_common",
+  "_tls_wrap",
+  "assert",
+  "async_hooks",
+  "buffer",
+  "console",
+  "crypto",
+  "diagnostics_channel",
+  "dns",
+  "domain",
+  "events",
+  "fs",
+  "fs/promises",
+  "http",
+  "http2",
+  "module",
+  "net",
+  "os",
+  "path",
+  "perf_hooks",
+  "querystring",
+  "readline",
+  "readline/promises",
+  "repl",
+  "stream",
+  "stream/promises",
+  "string_decoder",
+  "timers",
+  "tls",
+  "url",
+  "util",
+  "util/types",
+  "vm",
+  "worker_threads",
+  "zlib"
+ ],
+ "builtinsLoadedByCaptureModules": [
+  "_http_agent",
+  "_http_client",
+  "_http_common",
+  "_http_incoming",
+  "_http_outgoing",
+  "_http_server",
+  "_tls_common",
+  "_tls_wrap",
+  "dns",
+  "fs/promises",
+  "http",
+  "http2",
+  "tls",
+  "util/types",
+  "zlib"
+ ],
+ "uncovered": [],
+ "notRequireCached": "fs-read inputs are not in require.cache: web/tsconfig.json (pinned by the bootstrap, bf729d54…) and package.json files read during resolution (inside G3 package directories)",
+ "classified": [
+  {
+   "class": "harness",
+   "note": "listing entry script; the real run's entry is the bootstrap"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/@cspotcode/source-map-support/node_modules/@jridgewell/trace-mapping",
+   "path": "node_modules/@cspotcode/source-map-support/node_modules/@jridgewell/trace-mapping/dist/trace-mapping.umd.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/@cspotcode/source-map-support",
+   "path": "node_modules/@cspotcode/source-map-support/source-map-support.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/@jridgewell/resolve-uri",
+   "path": "node_modules/@jridgewell/resolve-uri/dist/resolve-uri.umd.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/@jridgewell/sourcemap-codec",
+   "path": "node_modules/@jridgewell/sourcemap-codec/dist/sourcemap-codec.umd.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/arg",
+   "path": "node_modules/arg/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/boolbase",
+   "path": "node_modules/boolbase/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio-select",
+   "path": "node_modules/cheerio-select/lib/helpers.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio-select",
+   "path": "node_modules/cheerio-select/lib/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio-select",
+   "path": "node_modules/cheerio-select/lib/positionals.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/api/attributes.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/api/css.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/api/extract.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/api/forms.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/api/manipulation.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/api/traversing.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/cheerio.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/load-parse.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/load.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/options.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/parse.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/parsers/parse5-adapter.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/static.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/cheerio",
+   "path": "node_modules/cheerio/dist/commonjs/utils.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-select",
+   "path": "node_modules/css-select/lib/attributes.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-select",
+   "path": "node_modules/css-select/lib/compile.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-select",
+   "path": "node_modules/css-select/lib/general.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-select",
+   "path": "node_modules/css-select/lib/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-select",
+   "path": "node_modules/css-select/lib/pseudo-selectors/aliases.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-select",
+   "path": "node_modules/css-select/lib/pseudo-selectors/filters.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-select",
+   "path": "node_modules/css-select/lib/pseudo-selectors/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-select",
+   "path": "node_modules/css-select/lib/pseudo-selectors/pseudos.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-select",
+   "path": "node_modules/css-select/lib/pseudo-selectors/subselects.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-select",
+   "path": "node_modules/css-select/lib/sort.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-what",
+   "path": "node_modules/css-what/lib/commonjs/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-what",
+   "path": "node_modules/css-what/lib/commonjs/parse.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-what",
+   "path": "node_modules/css-what/lib/commonjs/stringify.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/css-what",
+   "path": "node_modules/css-what/lib/commonjs/types.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/dom-serializer",
+   "path": "node_modules/dom-serializer/lib/foreignNames.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/dom-serializer",
+   "path": "node_modules/dom-serializer/lib/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/domelementtype",
+   "path": "node_modules/domelementtype/lib/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/domhandler",
+   "path": "node_modules/domhandler/lib/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/domhandler",
+   "path": "node_modules/domhandler/lib/node.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/domutils",
+   "path": "node_modules/domutils/lib/feeds.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/domutils",
+   "path": "node_modules/domutils/lib/helpers.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/domutils",
+   "path": "node_modules/domutils/lib/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/domutils",
+   "path": "node_modules/domutils/lib/legacy.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/domutils",
+   "path": "node_modules/domutils/lib/manipulation.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/domutils",
+   "path": "node_modules/domutils/lib/querying.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/domutils",
+   "path": "node_modules/domutils/lib/stringify.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/domutils",
+   "path": "node_modules/domutils/lib/traversal.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/encoding-sniffer",
+   "path": "node_modules/encoding-sniffer/dist/commonjs/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/encoding-sniffer",
+   "path": "node_modules/encoding-sniffer/dist/commonjs/sniffer.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/entities",
+   "path": "node_modules/entities/lib/decode.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/entities",
+   "path": "node_modules/entities/lib/decode_codepoint.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/entities",
+   "path": "node_modules/entities/lib/encode.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/entities",
+   "path": "node_modules/entities/lib/escape.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/entities",
+   "path": "node_modules/entities/lib/generated/decode-data-html.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/entities",
+   "path": "node_modules/entities/lib/generated/decode-data-xml.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/entities",
+   "path": "node_modules/entities/lib/generated/encode-html.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/entities",
+   "path": "node_modules/entities/lib/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/htmlparser2",
+   "path": "node_modules/htmlparser2/dist/commonjs/Parser.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/htmlparser2",
+   "path": "node_modules/htmlparser2/dist/commonjs/Tokenizer.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/htmlparser2",
+   "path": "node_modules/htmlparser2/dist/commonjs/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/htmlparser2/node_modules/entities",
+   "path": "node_modules/htmlparser2/node_modules/entities/dist/commonjs/decode-codepoint.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/htmlparser2/node_modules/entities",
+   "path": "node_modules/htmlparser2/node_modules/entities/dist/commonjs/decode.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/htmlparser2/node_modules/entities",
+   "path": "node_modules/htmlparser2/node_modules/entities/dist/commonjs/generated/decode-data-html.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/htmlparser2/node_modules/entities",
+   "path": "node_modules/htmlparser2/node_modules/entities/dist/commonjs/generated/decode-data-xml.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/htmlparser2/node_modules/entities",
+   "path": "node_modules/htmlparser2/node_modules/entities/dist/commonjs/internal/bin-trie-flags.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/htmlparser2/node_modules/entities",
+   "path": "node_modules/htmlparser2/node_modules/entities/dist/commonjs/internal/decode-shared.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/iconv-lite",
+   "path": "node_modules/iconv-lite/lib/bom-handling.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/iconv-lite",
+   "path": "node_modules/iconv-lite/lib/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/iconv-lite",
+   "path": "node_modules/iconv-lite/lib/streams.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/make-error",
+   "path": "node_modules/make-error/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/memory-cache",
+   "path": "node_modules/memory-cache/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/nth-check",
+   "path": "node_modules/nth-check/lib/compile.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/nth-check",
+   "path": "node_modules/nth-check/lib/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/nth-check",
+   "path": "node_modules/nth-check/lib/parse.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5-htmlparser2-tree-adapter",
+   "path": "node_modules/parse5-htmlparser2-tree-adapter/dist/cjs/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5-parser-stream",
+   "path": "node_modules/parse5-parser-stream/dist/cjs/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/common/doctype.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/common/error-codes.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/common/foreign-content.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/common/html.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/common/token.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/common/unicode.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/parser/formatting-element-list.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/parser/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/parser/open-element-stack.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/serializer/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/tokenizer/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/tokenizer/preprocessor.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5",
+   "path": "node_modules/parse5/dist/cjs/tree-adapters/default.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5/node_modules/entities",
+   "path": "node_modules/parse5/node_modules/entities/dist/commonjs/decode-codepoint.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5/node_modules/entities",
+   "path": "node_modules/parse5/node_modules/entities/dist/commonjs/decode.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5/node_modules/entities",
+   "path": "node_modules/parse5/node_modules/entities/dist/commonjs/escape.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5/node_modules/entities",
+   "path": "node_modules/parse5/node_modules/entities/dist/commonjs/generated/decode-data-html.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/parse5/node_modules/entities",
+   "path": "node_modules/parse5/node_modules/entities/dist/commonjs/generated/decode-data-xml.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/safer-buffer",
+   "path": "node_modules/safer-buffer/safer.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist-raw/node-internal-constants.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist-raw/node-internal-errors.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist-raw/node-internal-modules-cjs-helpers.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist-raw/node-internal-modules-cjs-loader.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist-raw/node-internal-modules-package_json_reader.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist-raw/node-internalBinding-fs.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist-raw/node-nativemodule.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist-raw/node-options.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist-raw/node-primordials.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist/cjs-resolve-hooks.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist/configuration.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist/file-extensions.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist/module-type-classifier.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist/node-module-type-classifier.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist/repl.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist/resolver-functions.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist/ts-internals.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist/ts-transpile-module.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist/tsconfigs.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/dist/util.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/package.json"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/ts-node",
+   "path": "node_modules/ts-node/register/transpile-only.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/typescript",
+   "path": "node_modules/typescript/lib/typescript.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/api/abort-signal.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/api/api-connect.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/api/api-pipeline.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/api/api-request.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/api/api-stream.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/api/api-upgrade.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/api/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/api/readable.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/cache/memory-cache-store.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/cache/sqlite-cache-store.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/core/connect.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/core/constants.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/core/diagnostics.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/core/errors.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/core/request.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/core/socks5-client.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/core/socks5-utils.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/core/symbols.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/core/tree.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/core/util.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/agent.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/balanced-pool.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/client-h1.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/client-h2.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/client.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/dispatcher-base.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/dispatcher.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/env-http-proxy-agent.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/fixed-queue.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/h2c-client.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/pool-base.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/pool.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/proxy-agent.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/retry-agent.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/round-robin-pool.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/dispatcher/socks5-proxy-agent.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/encoding/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/global.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/handler/cache-handler.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/handler/cache-revalidation-handler.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/handler/decorator-handler.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/handler/deduplication-handler.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/handler/redirect-handler.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/handler/retry-handler.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/handler/unwrap-handler.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/handler/wrap-handler.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/interceptor/cache.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/interceptor/decompress.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/interceptor/deduplicate.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/interceptor/dns.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/interceptor/dump.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/interceptor/redirect.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/interceptor/response-error.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/interceptor/retry.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/llhttp/constants.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/llhttp/utils.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/mock/mock-agent.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/mock/mock-call-history.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/mock/mock-client.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/mock/mock-errors.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/mock/mock-interceptor.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/mock/mock-pool.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/mock/mock-symbols.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/mock/mock-utils.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/mock/pending-interceptors-formatter.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/mock/snapshot-agent.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/mock/snapshot-recorder.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/mock/snapshot-utils.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/util/cache.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/util/date.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/util/promise.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/util/runtime-features.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/util/stats.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/util/timers.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/cache/cache.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/cache/cachestorage.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/cache/util.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/cookies/constants.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/cookies/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/cookies/parse.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/cookies/util.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/eventsource/eventsource-stream.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/eventsource/eventsource.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/eventsource/util.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/fetch/body.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/fetch/constants.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/fetch/data-url.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/fetch/formdata-parser.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/fetch/formdata.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/fetch/global.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/fetch/headers.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/fetch/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/fetch/request.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/fetch/response.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/fetch/util.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/infra/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/subresource-integrity/subresource-integrity.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/webidl/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/websocket/connection.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/websocket/constants.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/websocket/events.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/websocket/frame.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/websocket/permessage-deflate.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/websocket/receiver.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/websocket/sender.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/websocket/stream/websocketerror.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/websocket/stream/websocketstream.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/websocket/util.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/undici",
+   "path": "node_modules/undici/lib/web/websocket/websocket.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/v8-compile-cache-lib",
+   "path": "node_modules/v8-compile-cache-lib/v8-compile-cache.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/whatwg-encoding",
+   "path": "node_modules/whatwg-encoding/lib/labels-to-names.json"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/whatwg-encoding",
+   "path": "node_modules/whatwg-encoding/lib/supported-names.json"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/whatwg-encoding",
+   "path": "node_modules/whatwg-encoding/lib/whatwg-encoding.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/whatwg-mimetype",
+   "path": "node_modules/whatwg-mimetype/lib/mime-type-parameters.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/whatwg-mimetype",
+   "path": "node_modules/whatwg-mimetype/lib/mime-type.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/whatwg-mimetype",
+   "path": "node_modules/whatwg-mimetype/lib/parser.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/whatwg-mimetype",
+   "path": "node_modules/whatwg-mimetype/lib/serializer.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/whatwg-mimetype",
+   "path": "node_modules/whatwg-mimetype/lib/utils.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/yn",
+   "path": "node_modules/yn/index.js"
+  },
+  {
+   "class": "package",
+   "package": "node_modules/yn",
+   "path": "node_modules/yn/lenient.js"
+  },
+  {
+   "class": "role",
+   "role": "ratePolicy",
+   "path": "lib/cron/nstRateLimitPolicy.ts"
+  },
+  {
+   "class": "role",
+   "role": "admissionOrigin",
+   "path": "lib/nst/admissionOrigin.ts"
+  },
+  {
+   "class": "role",
+   "role": "client",
+   "path": "lib/nst/client.ts"
+  },
+  {
+   "class": "role",
+   "role": "lifecycle",
+   "path": "lib/nst/jobLifecycle.server.ts"
+  },
+  {
+   "class": "role",
+   "role": "budget",
+   "path": "lib/nst/requestBudget.ts"
+  },
+  {
+   "class": "role",
+   "role": "admission",
+   "path": "lib/nst/sharedAdmission.ts"
+  },
+  {
+   "class": "role",
+   "role": "adapter",
+   "path": "scripts/blsh/nativeProcessCaptureAdapter.ts"
+  },
+  {
+   "class": "bootstrap",
+   "path": "scripts/blsh/nativeProcessCaptureBootstrap.ts"
+  },
+  {
+   "class": "role",
+   "role": "preparation",
+   "path": "scripts/blsh/nativeProcessCapturePreparation.ts"
+  },
+  {
+   "class": "role",
+   "role": "runner",
+   "path": "scripts/blsh/nativeProcessCaptureRunner.ts"
+  }
+ ]
+}

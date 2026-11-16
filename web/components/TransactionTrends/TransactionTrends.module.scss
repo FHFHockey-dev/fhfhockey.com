@@ -44,9 +44,15 @@
   margin: 0;
   color: v.$color-white;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
-  font-size: clamp(1.18rem, 1.65vw, 1.48rem);
+  // Same panel-title size as every other homepage panel (TJ, 2026-11-15;
+  // was the one oversized title on the page).
+  font-size: clamp(0.9rem, 1.15vw, 1.08rem);
+
+  @media (max-width: #{v.$breakpoint-tablet}) {
+    font-size: clamp(0.88rem, 3.6vw, 1rem);
+  }
   font-weight: v.$font-weight-bold;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.1em;
   line-height: 1.1;
   text-transform: uppercase;
 
@@ -97,7 +103,7 @@
 
   span {
     color: v.$warning-color;
-    font-size: 0.45rem;
+    font-size: v.$font-size-xxs;
   }
 }
 
@@ -566,12 +572,13 @@
     width: 90px;
   }
 
+  // "▲ +16.0%" needs 70px; 65px cut it off at 1024.
   .sparkCell {
-    width: 80px;
+    width: 73px;
   }
 
   .deltaCell {
-    width: 65px;
+    width: 72px;
   }
 }
 
@@ -614,7 +621,7 @@
   }
 
   .title {
-    font-size: 1rem;
+    font-size: clamp(0.88rem, 3.6vw, 1rem);
   }
 
   .subtitle {
@@ -646,7 +653,7 @@
   }
 
   .filterLabel {
-    font-size: 0.62rem;
+    font-size: v.$font-size-xxs;
   }
 
   .metricButtons,
@@ -733,7 +740,7 @@
     }
 
     thead th {
-      font-size: 0.56rem;
+      font-size: v.$font-size-xxs;
     }
 
     tbody tr {
@@ -750,7 +757,7 @@
 
   .rankCell {
     width: 18px;
-    font-size: 0.62rem;
+    font-size: v.$font-size-xxs;
   }
 
   .headshot {
@@ -771,7 +778,7 @@
     min-width: 0;
     overflow: hidden;
     color: v.$text-secondary;
-    font-size: 0.56rem;
+    font-size: v.$font-size-xxs;
     line-height: 1.1;
     text-overflow: ellipsis;
     text-transform: uppercase;
@@ -779,20 +786,20 @@
   }
 
   .ownCell {
-    width: 45px;
+    width: 47px;
   }
 
   .sparkCell {
-    width: 72px;
+    width: 68px;
   }
 
   .deltaCell {
-    width: 58px;
+    width: 60px;
   }
 
   .ownCell,
   .deltaCell {
-    font-size: 0.62rem;
+    font-size: v.$font-size-xxs;
   }
 
   .footer {
@@ -809,7 +816,7 @@
   }
 
   .footNote {
-    font-size: 0.6rem;
+    font-size: v.$font-size-xxs;
   }
 
   .pagerButtons {
@@ -832,10 +839,6 @@
     padding-left: 5px;
   }
 
-  .rankCell {
-    width: 16px;
-  }
-
   .playerIdentity {
     gap: 3px;
   }
@@ -849,16 +852,18 @@
     height: 17px;
   }
 
+  // Measured at the 10px type floor: "Own %" 43px, "+16.0%" 59px, plus
+  // ~2px so headers don't touch. The sparkline keeps 52px ("Trend" header).
   .ownCell {
-    width: 42px;
+    width: 45px;
   }
 
   .sparkCell {
-    width: 61px;
+    width: 52px;
   }
 
   .deltaCell {
-    width: 54px;
+    width: 59px;
   }
 
   .playerName {
@@ -868,7 +873,7 @@
   .ownCell,
   .deltaCell,
   .rankCell {
-    font-size: 0.58rem;
+    font-size: v.$font-size-xxs;
   }
 }
 
@@ -879,4 +884,14 @@
   .dataTable tbody tr {
     transition: none;
   }
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

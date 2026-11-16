@@ -1,0 +1,81 @@
+{
+  "target": "89da739cb45d7d572ed59bfa0b209c79c5d99299",
+  "files": [
+    {
+      "path": "web/lib/sources/lineHistory.test.ts",
+      "sha256": "f3a12da53c833a2b1c56e509361d5f9a780c4cbe9fa5c19c390e1364b28a8167",
+      "lines": 342,
+      "fullRead": true,
+      "bytes": 21623,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          342
+        ]
+      ],
+      "rows": 120
+    },
+    {
+      "path": "web/lib/sources/lineHistory.ts",
+      "sha256": "d1da69a674ae3c78cfbdf1d68a9ecb99dec70162a8393ba31d3792f00ca82817",
+      "lines": 403,
+      "fullRead": true,
+      "bytes": 23731,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          403
+        ]
+      ],
+      "rows": 148
+    },
+    {
+      "path": "web/lib/sources/oddsSourceIngestion.test.ts",
+      "sha256": "5ab6aef7d206cb2a2931a1527ea044a2082d98c1c8b4b00c61487abf418ac0a1",
+      "lines": 244,
+      "fullRead": true,
+      "bytes": 7237,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          244
+        ]
+      ],
+      "rows": 19
+    },
+    {
+      "path": "web/lib/sources/oddsSourceIngestion.ts",
+      "sha256": "57a9478395f420b97536eb95bccf3c9be8458e6bfababb3833c3136d0075d811",
+      "lines": 783,
+      "fullRead": true,
+      "bytes": 23863,
+      "targetMatch": true,
+      "readRanges": [
+        [
+          1,
+          783
+        ]
+      ],
+      "rows": 268
+    }
+  ],
+  "scopeLines": 1772,
+  "rows": 555,
+  "probe": "sources1-probe-output.json",
+  "checks": [
+    "Four full frozen source reads",
+    "Unique AST source-offset identities",
+    "Exact odds date-join and reader freshness defects reproduced; decimal format control passed"
+  ],
+  "notRun": [
+    "Vitest",
+    "real database/provider",
+    "real loaders, live finality or card rendering",
+    "application imports or actual environment",
+    "browser/server/build",
+    "later Rankings exact-commit review"
+  ]
+}

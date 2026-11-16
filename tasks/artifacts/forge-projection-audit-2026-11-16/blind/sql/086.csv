@@ -1,0 +1,13 @@
+as_of_date,n,runs
+2026-11-08,4,succeeded@11-02 10:35 succeeded@11-03 10:35 succeeded@11-06 10:30 succeeded@11-07 10:20
+2026-11-09,4,succeeded@11-03 10:36 succeeded@11-06 10:31 succeeded@11-07 10:21 succeeded@11-09 10:16
+2026-11-10,1,succeeded@11-09 10:16
+2026-11-11,1,succeeded@11-09 10:18
+2026-11-12,2,succeeded@11-09 10:21 succeeded@11-13 01:40
+2026-11-13,2,succeeded@11-09 10:30 succeeded@11-13 10:20
+2026-11-14,2,succeeded@11-09 10:31 succeeded@11-13 10:21
+2026-11-15,2,succeeded@11-09 10:35 succeeded@11-13 10:31
+2026-11-16,1,succeeded@11-13 10:33
+2026-11-17,1,succeeded@11-13 10:35
+2026-11-18,1,succeeded@11-13 10:40
+2026-11-19,1,succeeded@11-13 10:41
