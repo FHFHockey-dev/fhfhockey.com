@@ -17,6 +17,7 @@ const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co", CRON = "fixture-cron-
 const okResult: CaptureResultV6 = { state: "packet_complete_pending_review", retained: ["individual", "onIce"], operationCount: 5, lifecycleMode: "disabled",
   independentlyAccepted: false, advancedAdmission: false, score: null };
 let now: number, fake: ReturnType<typeof createFakeCaptureStore>, run: ReturnType<typeof vi.fn>, precheck: string | null, storesCreated: number;
+let selfTest: () => Promise<string | null>, selfTestCalls: number;
 const response = () => {
   const res = { statusCode: 0, body: undefined as unknown, headers: {} as Record<string, unknown>,
     status(code: number) { res.statusCode = code; return res; }, json(value: unknown) { res.body = value; return res; }, setHeader(name: string, value: unknown) { res.headers[name] = value; } };
@@ -26,7 +27,7 @@ const call = async (authorization = `Bearer ${CRON}`, method = "POST") => {
   const deps: BlshNativeCaptureDeps = { now: () => now, precheck: () => precheck, createStore: () => { storesCreated++; return fake.store; },
     createAdapter: sourceDate => ({ supabaseOrigin: ORIGIN, sourceDate, schedule: vi.fn(), nst: vi.fn() }),
     createSink: (_store, runId, sourceDate) => ({ runId, sourceDate, write: vi.fn(), checkpoint: vi.fn(), intent: vi.fn(), publishManifest: vi.fn(), close: vi.fn(), dispose: vi.fn() }),
-    run: run as unknown as BlshNativeCaptureDeps["run"], routeBundlePath: null };
+    run: run as unknown as BlshNativeCaptureDeps["run"], selfTest: () => { selfTestCalls++; return selfTest(); }, routeBundlePath: null };
   const res = response();
   await createBlshNativeCaptureHandler(deps)({ method, headers: { authorization }, query: {} } as never, res as never);
   return res;
@@ -35,6 +36,7 @@ const call = async (authorization = `Bearer ${CRON}`, method = "POST") => {
 beforeEach(() => {
   now = Date.parse("2026-11-20T12:05:00.000Z"); vi.useFakeTimers(); vi.setSystemTime(now);
   fake = createFakeCaptureStore(); run = vi.fn(async () => okResult); precheck = null; storesCreated = 0;
+  selfTest = async () => null; selfTestCalls = 0;
   vi.stubEnv("CRON_SECRET", CRON); vi.stubEnv("NST_KEY", "k"); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "s"); vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", ORIGIN);
   vi.stubEnv("VERCEL_DEPLOYMENT_ID", "dpl_Fixture"); vi.stubEnv("VERCEL_ENV", "production");
   delete process.env.NST_JOB_LIFECYCLE_ENABLED;
@@ -67,9 +69,23 @@ describe("v6 route handler gates", () => {
     expect(storesCreated).toBe(0); expect(fake.runs.size).toBe(0);
   });
 
+  it("refuses a failed or throwing observer self-test (gate 5.5) with a 503 before the claim: the date is not burned", async () => {
+    selfTest = async () => "observer_selftest_failed";
+    let res = await call();
+    expect(res.statusCode).toBe(503); expect(res.body).toMatchObject({ success: false, error: "observer_selftest_failed", sourceDate: "2026-11-19" });
+    selfTest = async () => { throw new Error("listen EACCES"); };
+    res = await call();
+    expect(res.statusCode).toBe(503); expect(res.body).toMatchObject({ success: false, error: "observer_selftest_failed" });
+    expect(fake.runs.size).toBe(0); expect(run).not.toHaveBeenCalled(); expect(selfTestCalls).toBe(2);
+    selfTest = async () => null;
+    res = await call();
+    expect(res.statusCode).toBe(200); expect(run).toHaveBeenCalledTimes(1); expect(fake.runs.size).toBe(1);
+  });
+
   it("skips while the kill switch is off, without claiming", async () => {
     fake.setEnabled(false);
     expect(await call()).toMatchObject({ statusCode: 200, body: { success: true, skipped: "disabled", sourceDate: "2026-11-19" } });
+    expect(selfTestCalls).toBe(0); // the self-test runs only once the kill switch is on
     expect(fake.runs.size).toBe(0); expect(run).not.toHaveBeenCalled();
   });
 

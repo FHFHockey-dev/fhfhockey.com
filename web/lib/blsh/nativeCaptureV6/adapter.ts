@@ -2,10 +2,12 @@
  * (web/scripts/blsh/nativeProcessCaptureAdapter.ts @ 348a122d6). Deviations
  * (CORE-DEVIATIONS.md): the schedule URL takes the source date; there is no withJob,
  * because v6 runs in disabled lifecycle mode only and requires NST_JOB_LIFECYCLE_ENABLED
- * to be ABSENT; the TLS observer is imported from v5 unchanged, byte for byte. */
+ * to be ABSENT; the TLS observer is v6's ./tlsObservation (M1 fix): v5's socket-fact block
+ * verbatim, with requests attributed by async context so other invocations sharing a Fluid
+ * instance cannot break or join an observation. */
 import { fetchNstTextByUrl, type NstOperationHook } from "../../nst/client";
 import { NST_ADMISSION_PROJECT_HOST, nstAdmissionOrigin } from "../../nst/admissionOrigin";
-import { withTlsObservation, type TlsObservation } from "../../../scripts/blsh/nativeProcessCaptureAdapter";
+import { withTlsObservation, type TlsObservation } from "./tlsObservation";
 import type { Captured, CaptureDispatchSpec, CaptureResponse, NativeCaptureAdapterV6 } from "./core";
 
 const ORIGIN = `https://${NST_ADMISSION_PROJECT_HOST}`;
