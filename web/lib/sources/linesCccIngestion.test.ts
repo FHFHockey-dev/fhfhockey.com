@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { buildTeamDirectory } from "./lineupSourceIngestion";
 import { edmontonSectionRoster, edmontonSectionText, explicit11F7DText, seattleSectionRoster, seattleSectionText } from "../../__tests__/fixtures/lineupSectionFixtures";
 import { completeEvenStrengthUnits, interpretTweetUnits, type TweetInterpretation } from "./tweetInterpretation";
-import { reviewTweetApplicability } from "./lineSourceProcessing";
+import { collectUnresolvedNamesFromLineRows, reviewTweetApplicability } from "./lineSourceProcessing";
 import {
   applyLinesCccWrapperOEmbed,
   applyQuotedTweetPreference,
@@ -1801,5 +1801,81 @@ describe("validated goalie/injury rows keep the reporter (riskyStarts handle, 20
     expect(validatedEventReporter({}, { originalUrl: null })).toBeNull();
     // Quote posts: the forecast capture credits the quoted author.
     expect(validatedEventReporter({ quotedAuthorHandle: "pham1717" }, { originalUrl: "https://x.com/pham1717/status/4" })).toBeNull();
+  });
+});
+
+// Codex audit 2026-11-16 (FxTwitter/auto line assignment). The retained posts were not available offline, so these
+// fixtures are synthetic reconstructions of the two reported shapes; player names are invented.
+describe("team matching: league and opponent mentions (Codex audit 2026-11-16)", () => {
+  const teams = buildTeamDirectory([
+    { id: 21, name: "Colorado Avalanche", abbreviation: "COL", logo: "" },
+    { id: 26, name: "Los Angeles Kings", abbreviation: "LAK", logo: "" },
+    { id: 4, name: "Philadelphia Flyers", abbreviation: "PHI", logo: "" },
+    { id: 22, name: "Edmonton Oilers", abbreviation: "EDM", logo: "" },
+  ]);
+  const player = (playerId: number, fullName: string, teamId: number, position = "F") =>
+    ({ playerId, fullName, lastName: fullName.split(" ").slice(-1)[0]!, teamId, position });
+  const rosterByTeam = new Map([
+    [21, [player(2101, "Fixture Mackinnon", 21), player(2102, "Fixture Makar", 21, "D")]],
+    [26, [player(2601, "Fixture Kopitar", 26), player(2602, "Fixture Doughty", 26, "D")]],
+    [4, [player(401, "Fixture Couturier", 4), player(402, "Fixture Sanheim", 4, "D")]],
+    [22, [player(2201, "Fixture McDavid", 22), player(2202, "Fixture Draisaitl", 22)]],
+  ]);
+  const ingest = (text: string, roster = rosterByTeam) => buildLinesCccSourceFromIftttEvent({ snapshotDate: "2026-11-15", teams, rosterByTeam: roster,
+    event: { id: `audit-${text.length}`, source: "fxtwitter", source_account: "fixturebeat", username: "fixturebeat", text, tweet_id: "2119900000000000001",
+      link_to_tweet: "https://x.com/fixturebeat/status/2119900000000000001", tweet_created_at: "2026-11-15T23:00:00Z", created_at_label: null,
+      received_at: "2026-11-15T23:01:00Z", raw_payload: {} } });
+  const aliasPrompts = (source: ReturnType<typeof ingest>) =>
+    collectUnresolvedNamesFromLineRows([toLinesCccRow({ source, rosterEntries: source.team ? rosterByTeam.get(source.team.id) ?? [] : [] })] as any);
+  afterEach(() => vi.unstubAllEnvs());
+
+  it.each([false, true])("rejects an AHL club's lineup as non-NHL, even when its name or tag matches an NHL label: interpretation %s", (enabled) => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", String(enabled));
+    const lines = "Ostrander - Vaillancourt - Mercado\nBelisle - Okafor - Ruutu\nTrembley - Haskins - Lindqvist\n\nPrice - Moravec\nAbara - Kettering\n\nWestland";
+    for (const text of [
+      `Ontario Reign lines vs. Colorado Eagles\n\n${lines}`, // the label "Colorado" belongs to the AHL opponent
+      `Colorado Eagles lines tonight\n\n${lines}`, // an AHL club whose name carries an NHL location
+      `Reign lines tonight\n\n${lines}\n\n#OntarioReign #GoKingsGo`, // the NHL affiliate's tag is not the team
+    ]) {
+      const source = ingest(text);
+      expect(source, text).toMatchObject({ team: null, detectedLeague: "AHL", nhlFilterStatus: "rejected_non_nhl", nhlFilterReason: "explicit_non_nhl_league_marker" });
+      const refreshed = refreshLinesCccSourceFromPrimaryText({ teams, rosterByTeam, source });
+      expect(refreshed, text).toMatchObject({ team: null, nhlFilterStatus: "rejected_non_nhl" });
+      expect(aliasPrompts(source)).toEqual([]);
+    }
+    // An NHL club named in words keeps a transaction post in the NHL feed (the corpus has "The Mammoth have signed …
+    // with the Rochester Americans").
+    expect(ingest("Kings recall Fixture Kopitar from the Ontario Reign.").nhlFilterStatus).not.toBe("rejected_non_nhl");
+  });
+
+  it.each([false, true])("does not treat an opponent or location mention as the player's team, nor queue an alias under it: interpretation %s", (enabled) => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", String(enabled));
+    // Hallander is on no roster here (the audit lists him as a roster gap), so "in Philadelphia" is the only team label.
+    for (const text of [
+      "Hallander was in Philadelphia with the team but did not dress tonight.",
+      "Hallander skated on the fourth line in Philadelphia.",
+    ]) {
+      const source = ingest(text);
+      expect(source.team?.abbreviation, text).not.toBe("PHI");
+      expect(aliasPrompts(source).filter((prompt) => prompt.team_abbreviation === "PHI"), text).toEqual([]);
+    }
+    // With Hallander on the Oilers roster, a lead-player item is filed under his own team, not the city he played in.
+    const withHallander = new Map([...rosterByTeam, [22, [...rosterByTeam.get(22)!, player(2203, "Filip Hallander", 22)]]]);
+    expect(resolveLinesCccTeam({ teams, rosterByTeam: withHallander, classification: "lineup",
+      text: "Filip Hallander: Scratched again - Hallander was a healthy scratch Saturday in Philadelphia." })?.abbreviation).toBe("EDM");
+    // A team labelled outside an opponent/location cue still resolves, and "at <team> practice" names the subject.
+    expect(resolveLinesCccTeam({ teams, rosterByTeam, classification: "lineup", text: "Flyers lineup in Philadelphia tonight" })?.abbreviation).toBe("PHI");
+    expect(resolveLinesCccTeam({ teams, rosterByTeam, text: "Lines at Flyers practice" })?.abbreviation).toBe("PHI");
+    expect(resolveLinesCccTeam({ teams, rosterByTeam, text: "Lines at Flyers training camp" })?.abbreviation).toBe("PHI");
+    expect(resolveLinesCccTeam({ teams, rosterByTeam, text: "Hallander is back in the Flyers lineup tonight." })?.abbreviation).toBe("PHI");
+    expect(resolveLinesCccTeam({ teams, rosterByTeam, text: "Westland in the Oilers net tonight" })?.abbreviation).toBe("EDM");
+    expect(resolveLinesCccTeam({ teams, rosterByTeam, text: "Hallander back in Colorado's lineup" })?.abbreviation).toBe("COL");
+    expect(resolveLinesCccTeam({ teams, rosterByTeam: withHallander, classification: "lineup",
+      text: "Filip Hallander: Hallander is back in the Flyers lineup." })?.abbreviation).not.toBe("EDM");
+    // In a contract post "in <team>" is where he signed.
+    expect(resolveLinesCccTeam({ teams, rosterByTeam, classification: "other", text: "Fixture Benning signs in Philadelphia. 1 year, two way contract." })?.abbreviation).toBe("PHI");
+    // A two-team post stays ambiguous: the team after "vs" is not dropped to promote the other one.
+    expect(resolveLinesCccTeam({ teams, rosterByTeam, classification: "goalie_start",
+      text: "NHL Starting Goalies COL Fixture Blackwood vs PHI Fixture Vladar" })).toBeNull();
   });
 });

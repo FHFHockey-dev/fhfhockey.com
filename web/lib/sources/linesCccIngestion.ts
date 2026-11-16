@@ -261,7 +261,23 @@ const NON_NHL_HANDLE_HINTS: Array<{
   { pattern: /\bsdgullsahl\b/i, league: "AHL" },
   { pattern: /\bsjbarracuda\b/i, league: "AHL" },
   { pattern: /\binsideahlhockey\b/i, league: "AHL" },
+  { pattern: /\bontarioreign\b/i, league: "AHL" },
 ];
+
+// AHL clubs by full name (also as one-word hashtags). Many carry an NHL location or nickname ("Colorado Eagles",
+// "Providence Bruins", "Iowa Wild"), so without this they label-match an NHL team. Bare nicknames are left out:
+// a quoted "Wolf Pack lines" relayed as "Rangers lines" is still the NHL club's post. A post that also names an NHL
+// club in words ("The Mammoth have signed … from the Rochester Americans") stays an NHL post.
+const AHL_CLUB_NAMES = [
+  "abbotsford canucks", "bakersfield condors", "belleville senators", "bridgeport islanders", "calgary wranglers",
+  "charlotte checkers", "chicago wolves", "cleveland monsters", "coachella valley firebirds", "colorado eagles",
+  "grand rapids griffins", "hartford wolf pack", "henderson silver knights", "hershey bears", "iowa wild", "laval rocket",
+  "lehigh valley phantoms", "manitoba moose", "milwaukee admirals", "ontario reign", "providence bruins",
+  "rochester americans", "rockford icehogs", "san diego gulls", "san jose barracuda", "springfield thunderbirds",
+  "syracuse crunch", "texas stars", "toronto marlies", "tucson roadrunners", "utica comets",
+  "wilkes barre scranton penguins", "wbs penguins",
+];
+const AHL_CLUB_PATTERN = new RegExp(`(?:^|\\s)#?(?:${AHL_CLUB_NAMES.map((name) => name.replace(/ /g, "\\s?")).join("|")})(?=\\s|$)`, "g");
 
 function countStructuredPlayerMentions(text: string): number {
   const structuredGroups = extractStructuredPlayerGroupsFromText(text);
@@ -329,9 +345,18 @@ function includesNormalizedLabel(text: string, label: string): boolean {
   return new RegExp(`(?:^|\\s)${escapeRegExp(label)}(?:$|\\s)`, "i").test(text);
 }
 
-function detectNonNhlLeague(text: string): string | null {
+/** The club's name, nickname, city or a nickname hint in words; an affiliate tag (#GoKingsGo) does not count. */
+function namesTeamInWords(normalizedText: string, team: TeamDirectoryEntry): boolean {
+  return [team.name, team.shortName, team.location, ...Object.entries(NHL_TEXT_HINTS).filter(([, abbreviation]) => abbreviation === team.abbreviation).map(([hint]) => hint)]
+    .filter((value): value is string => Boolean(value))
+    .some((label) => includesNormalizedLabel(normalizedText, normalizeTextKey(label)));
+}
+
+function detectNonNhlLeague(text: string, teams: TeamDirectoryEntry[]): string | null {
   const normalized = normalizeTextKey(text);
   if (/\b#?mbmoose\b/.test(normalized)) return "AHL";
+  const withoutAhlClubs = normalized.replace(AHL_CLUB_PATTERN, " ");
+  if (withoutAhlClubs !== normalized && !teams.some((team) => namesTeamInWords(withoutAhlClubs, team))) return "AHL";
   const match = normalized.match(/\b(ahl|echl|ohl|whl|qmjhl|ncaa)\b/);
   return match?.[1]?.toUpperCase() ?? null;
 }
@@ -830,8 +855,27 @@ function resolveTeamFromRosterDensity(args: {
 }
 
 /**
+ * Drops team labels that only name an opponent or a place: "vs. Washington", "at the Canadiens", "in Philadelphia".
+ * A label followed by a noun of its own ("in the Flyers lineup", "in Colorado's net", "at Flyers practice",
+ * "at Flyers training camp") still names the subject, so it is kept. In a contract post "in <team>" is the destination
+ * ("Benning signs in Calgary"), so "in" is not a place cue there. Takes and returns space-padded normalized text.
+ */
+function removeOpponentTeamMentions(paddedNormalizedText: string, teams: TeamDirectoryEntry[]): string {
+  let rest = paddedNormalizedText;
+  const cues = /\s(?:sign|signs|signed|signing|contract|deal|extension|aav|years?|stays)\s/.test(rest) ? "vs|versus|against|at|@" : "vs|versus|against|at|@|in";
+  for (const team of teams) {
+    const labels = [
+      ...buildTeamTextLabels(team),
+      ...Object.entries(NHL_TEXT_HINTS).filter(([, abbreviation]) => abbreviation === team.abbreviation).map(([hint]) => normalizeTextKey(hint)),
+    ].filter(Boolean).sort((left, right) => right.length - left.length).map(escapeRegExp);
+    if (labels.length) rest = rest.replace(new RegExp(`\\s(?:${cues})\\s*(?:the\\s+)?(?:${labels.join("|")})(?=\\s)(?!\\s(?:s\\s)?(?:lineup|lines|net|crease|goal|practice|optional|(?:[a-z]+\\s)?(?:skate|camp))\\b)`, "g"), " ");
+  }
+  return rest;
+}
+
+/**
  * "Cole Reinhardt: Line Change: Reinhardt will draw back into the lineup vs. Washington" is news about the lead player:
- * the subject is the one team whose roster has that exact full name. A team named only after "vs.", "against", "at" or
+ * the subject is the one team whose roster has that exact full name. A team named only after "vs.", "against", "at", "in" or
  * "@" is the opponent. Any other team mention (a trade destination, a second team) leaves the existing rules to decide.
  */
 function resolveTeamFromLeadPlayerItem(args: {
@@ -847,15 +891,7 @@ function resolveTeamFromLeadPlayerItem(args: {
     (args.rosterByTeam.get(team.id) ?? []).some((entry) => normalizeTextKey(entry.fullName) === leadKey));
   if (owners.length !== 1) return null;
   const subject = owners[0]!;
-  let rest = ` ${normalizeTextKey(body.slice(lead.length + 1))} `;
-  for (const team of args.teams) {
-    if (team.id === subject.id) continue;
-    const labels = [
-      ...buildTeamTextLabels(team),
-      ...Object.entries(NHL_TEXT_HINTS).filter(([, abbreviation]) => abbreviation === team.abbreviation).map(([hint]) => normalizeTextKey(hint)),
-    ].filter(Boolean).sort((left, right) => right.length - left.length).map(escapeRegExp);
-    if (labels.length) rest = rest.replace(new RegExp(`\\s(?:vs|versus|against|at|@)\\s*(?:the\\s+)?(?:${labels.join("|")})(?=\\s)`, "g"), " ");
-  }
+  const rest = removeOpponentTeamMentions(` ${normalizeTextKey(body.slice(lead.length + 1))} `, args.teams.filter((team) => team.id !== subject.id));
   const otherMention = findLabelMatchedTeams(rest, args.teams).some((team) => team.id !== subject.id)
     || (findTeamMentionInText(rest, args.teams)?.id ?? subject.id) !== subject.id;
   return otherMention ? null : subject;
@@ -870,11 +906,16 @@ export function resolveLinesCccTeam(args: {
 }): TeamDirectoryEntry | null {
   const leadVsTeam = resolveTeamFromLeadVsText(args.text, args.teams);
   const labelMatches = findLabelMatchedTeams(args.text, args.teams);
+  // A team named only as an opponent or a place ("vs. Colorado", "in Philadelphia") is never the label fallback's
+  // answer. It still counts toward ambiguity, so "COL Blackwood vs MIN Wallstedt" does not become COL.
+  const subjectText = removeOpponentTeamMentions(` ${normalizeTextKey(args.text)} `, args.teams);
+  const subjectTeam = (team: TeamDirectoryEntry | null | undefined) =>
+    team && (findLabelMatchedTeams(subjectText, [team]).length > 0 || namesTeamInWords(subjectText, team)) ? team : null;
   const handleHintTeam = resolveTeamFromHandleHints(
     args.sourceHandles ?? [],
     args.teams,
   );
-  const textHintTeam = findTeamMentionInText(args.text, args.teams);
+  const textHintTeam = subjectTeam(findTeamMentionInText(args.text, args.teams));
 
   if (args.rosterByTeam) {
     const rosterDensityTeam = resolveTeamFromRosterDensity({
@@ -943,7 +984,7 @@ export function resolveLinesCccTeam(args: {
     if (leadVsTeam) {
       return leadVsTeam;
     }
-    if (labelMatches.length === 1) {
+    if (labelMatches.length === 1 && subjectTeam(labelMatches[0])) {
       return labelMatches[0]!;
     }
     if (textHintTeam && labelMatches.length === 0) {
@@ -1618,7 +1659,7 @@ export function buildLinesCccSourceFromIftttEvent(args: {
     sourceHandles,
   });
   const detectedNonNhlLeague =
-    detectNonNhlLeague(text) ?? nonNhlHandleMatch?.league ?? null;
+    detectNonNhlLeague(text, args.teams) ?? nonNhlHandleMatch?.league ?? null;
   const team = detectedNonNhlLeague
     ? null
     : resolveLinesCccTeam({
@@ -1652,7 +1693,7 @@ export function buildLinesCccSourceFromIftttEvent(args: {
       ? null
       : nhlFilterStatus === "rejected_non_nhl"
         ? detectedNonNhlLeague === nonNhlHandleMatch?.league &&
-          !detectNonNhlLeague(text)
+          !detectNonNhlLeague(text, args.teams)
           ? "minor_league_source_handle"
           : "explicit_non_nhl_league_marker"
         : nhlFilterStatus === "rejected_insufficient_text"
@@ -1748,7 +1789,7 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
   // An explicit league label on the relaying wrapper ("AHL Wolf Pack lines") still governs when the primary text is
   // the quoted original, which may carry only an NHL affiliate's tag (#NYR).
   const textLeague = [text, args.source.enrichedText, args.source.rawText]
-    .map((value) => (value ? detectNonNhlLeague(value) : null))
+    .map((value) => (value ? detectNonNhlLeague(value, args.teams) : null))
     .find((league) => league != null) ?? null;
   const detectedNonNhlLeague = textLeague ?? nonNhlHandleMatch?.league ?? null;
   const team = detectedNonNhlLeague
