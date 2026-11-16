@@ -28,25 +28,37 @@ export const supabase = { from(table: string) {
   return query;
 } };
 
+/** A validated public lineup: interpreter units bound to the card's team (practice posts need no game). */
+const lineup = (teamId: number, units: Array<[string, number, Array<string>, boolean?]>, context = "practice", gameId: number | null = null) => {
+  const roster: string[] = [];
+  let playerId = 0;
+  const built = units.map(([situation, number, names, complete = true]) => ({ situation, number, group: null, complete,
+    players: names.map((name) => { playerId++; roster.push(`${playerId}:${name}:${name}:${teamId}:C`); return { playerId, name }; }) }));
+  return { newsLineup: { version: 1, binding: { teamId, gameId, sourceTweetId: "123" },
+    interpretation: { context, certainty: "reported", rosterRevision: roster.join("|"), unresolved: [], units: built } } };
+};
+
 const base: NewsFeedItem = {
   id: "fixture", source_review_item_id: null, source_tweet_id: null, source_url: "https://x.com/ExampleReporter/status/123",
-  tweet_url: null, source_label: "Example Reporter", source_account: "@ExampleReporter", team_id: null,
+  tweet_url: null, source_label: "Example Reporter", source_account: "@ExampleReporter", team_id: 3,
   team_abbreviation: "NYR", headline: "NYR line combination update", blurb: "Captured practice lines for this synthetic article snapshot.",
   category: "LINE COMBINATION", subcategory: "PRACTICE LINES", card_status: "published", observed_at: "2026-10-19T14:55:00Z",
   published_at: "2026-10-19T15:00:00Z", created_at: "2026-10-19T15:00:00Z", updated_at: "2026-10-19T15:00:00Z", players: [],
-  metadata: { lineupCard: { forwards: [
-    ["Captured Left A", "Captured Centre A", "Captured Right A"], ["Captured Left B", "Very Long Compound-Surname", "Captured Right B"],
-    ["Captured Left C", "Captured Centre C", "Captured Right C"], ["Captured Left D", "Captured Centre D", "Captured Right D"],
-  ], defensePairs: [["Captured Defense A", "Captured Defense B"], ["Captured Defense C", "Captured Defense D"], ["Captured Defense E", "Captured Defense F"]], goalies: [] } },
+  metadata: lineup(3, [
+    ["es_forward", 1, ["Captured Left A", "Captured Centre A", "Captured Right A"]], ["es_forward", 2, ["Captured Left B", "Very Long Compound-Surname", "Captured Right B"]],
+    ["es_forward", 3, ["Captured Left C", "Captured Centre C", "Captured Right C"]], ["es_forward", 4, ["Captured Left D", "Captured Centre D", "Captured Right D"]],
+    ["es_defense", 1, ["Captured Defense A", "Captured Defense B"]], ["es_defense", 2, ["Captured Defense C", "Captured Defense D"]],
+    ["es_defense", 3, ["Captured Defense E", "Captured Defense F"]],
+  ]),
 };
 export const items: NewsFeedItem[] = [base, {
-  ...base, id: "pp", team_abbreviation: "TOR", headline: "TOR power-play update", subcategory: "POWER PLAY",
-  metadata: { interpretation: { context: "game", unresolved: [], units: [{ situation: "pp", number: 1, group: null, complete: true,
-    players: ["Captured PP A", "Captured PP B", "Captured PP C", "Captured PP D", "Captured PP E"].map((name) => ({ name })) }] } },
+  ...base, id: "pp", team_id: 10, team_abbreviation: "TOR", headline: "TOR power-play update", subcategory: "POWER PLAY",
+  metadata: lineup(10, [["pp", 1, ["Captured PP A", "Captured PP B", "Captured PP C", "Captured PP D", "Captured PP E"]]], "game", 2026020001),
 }, {
-  ...base, id: "unknown", team_abbreviation: "ZZZ", headline: "Unknown-team partial snapshot", subcategory: "GAME ENTRY",
-  metadata: { lineupCard: { forwards: [[], ["Supplied Player", null, "Other Supplied Player"]], defensePairs: [["Only Supplied Defender"]], goalies: ["Supplied Goalie"] } },
-}, { ...base, id: "missing", team_abbreviation: "TOR", headline: "TOR PP source report", subcategory: "POWER PLAY" }, {
+  ...base, id: "unknown", team_id: 99, team_abbreviation: "ZZZ", headline: "Unknown-team partial snapshot", subcategory: "GAME ENTRY",
+  metadata: lineup(99, [["es_forward", 2, ["Supplied Player", "Unresolved", "Other Supplied Player"], false], ["es_defense", 1, ["Only Supplied Defender", "Partner"]],
+    ["goalie", 1, ["Supplied Goalie"]]], "game", 2026020002),
+}, { ...base, id: "missing", team_id: 10, team_abbreviation: "TOR", metadata: null, headline: "TOR PP source report", subcategory: "POWER PLAY" }, {
   ...base, id: "ordinary", team_abbreviation: "MTL", category: "NEWS UPDATE", subcategory: null, headline: "Ordinary source report",
   blurb: "An ordinary article remains a source report without a lineup grid.", metadata: null,
 }];

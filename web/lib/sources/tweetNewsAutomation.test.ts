@@ -9,7 +9,11 @@ import {
 import {
   normalizeNewsTeamId,
   resolveAutomatedNewsCardStatus,
+  sanitizePublicNewsFeedItem,
 } from "../newsFeed";
+import { buildNewsLineupSnapshot, readNewsLineupPresentation, validatedNewsLineupRows } from "../newsLineupPresentation";
+import { interpretTweetUnits } from "./tweetInterpretation";
+import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
 
 const players: TweetNewsAutomationPlayer[] = [
   { id: 1, fullName: "Andrei Vasilevskiy", position: "G", team_id: 14 },
@@ -557,5 +561,101 @@ describe("tweet news automation", () => {
         players,
       }),
     ).toBeNull();
+  });
+});
+
+describe("News lineup cards render validated interpreter units only", () => {
+  // Retained FxTwitter post (Zach Cavanagh, tweet 2122126809533923555): ANA warm-up 11/15 vs CGY.
+  const text = `RT @ZachCav: Anaheim Ducks warm-up line rushes 11/15 vs. #Flames:
+
+Caulfield-Carlsson-Gauthier
+Malott-Granlund-Sennecke
+Moore-Washe-Killorn
+Nesterenko-McQueen-Terry
+
+LaCombe-Helleson
+Hinds-Luneau
+Mintyukov-Warren
+
+Husso | Dostál
+
+Scratches: Colangelo, Vatrano, Mitchell`;
+  // Fixture roster: Ian Moore is rostered as D, as he was for this game.
+  const rows: Array<[string, string]> = [["Judd Caulfield", "R"], ["Leo Carlsson", "C"], ["Cutter Gauthier", "L"], ["Jeffrey Malott", "L"],
+    ["Mikael Granlund", "C"], ["Beckett Sennecke", "R"], ["Ian Moore", "D"], ["Tim Washe", "C"], ["Alex Killorn", "L"], ["Nikita Nesterenko", "C"],
+    ["Jack McQueen", "C"], ["Troy Terry", "R"], ["Jackson LaCombe", "D"], ["Drew Helleson", "D"], ["Tyson Hinds", "D"], ["Tristan Luneau", "D"],
+    ["Pavel Mintyukov", "D"], ["Noah Warren", "D"], ["Ville Husso", "G"], ["Lukas Dostál", "G"], ["Sam Colangelo", "R"], ["Frank Vatrano", "R"], ["Ian Mitchell", "D"]];
+  const ANA = 24, GAME = 2026020328;
+  const roster = rows.map(([fullName, position], index) => ({ playerId: 9000 + index, fullName, lastName: fullName.split(" ").pop()!, position, teamId: ANA }));
+  const automationPlayers = roster.map((player) => ({ id: player.playerId, fullName: player.fullName, position: player.position, team_id: ANA }));
+  const retainedInterpretation = () => ({ ...interpretTweetUnits(text, roster), events: extractTweetPlayerEvents({ text, players: roster, publishedAt: "2026-11-16T03:40:00Z" }) });
+  const ducksRow = (metadata: Record<string, unknown>) => buildRow({ team_id: ANA, team_abbreviation: "ANA", parser_classification: "lineup",
+    tweet_id: "2122126809533923555", review_text: text, metadata });
+  const publicLineup = (metadata: Record<string, unknown>, teamId: number | null = ANA) => {
+    const item = sanitizePublicNewsFeedItem({ id: "card", headline: "ANA line combination update", blurb: text, team_id: teamId,
+      source_url: "https://x.com/ZachCav/status/2122126809533923555", metadata } as any);
+    return readNewsLineupPresentation({ metadata: item.metadata, subcategory: "FORWARD LINES", teamId });
+  };
+  const tiles = (lineup: ReturnType<typeof readNewsLineupPresentation>) => lineup.rows.map((row) => [row.label, row.players.join("-")]);
+
+  it("new card: shows the verified Ducks units, leaves F3, the headline and the goalie pair out, and keeps scratches in their own row", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const candidate = buildTweetNewsAutomationCandidate({ row: ducksRow({ retainedInterpretation: retainedInterpretation(), retainedGameId: GAME }),
+      players: automationPlayers, nowIso: "2026-11-16T03:45:00.000Z" });
+    expect(candidate?.category).toBe("LINE COMBINATION");
+    const lineup = publicLineup(candidate!.metadata);
+    expect(tiles(lineup)).toEqual([
+      ["F1", "Judd Caulfield-Leo Carlsson-Cutter Gauthier"], ["F2", "Jeffrey Malott-Mikael Granlund-Beckett Sennecke"],
+      ["F4", "Nikita Nesterenko-Jack McQueen-Troy Terry"],
+      ["D1", "Jackson LaCombe-Drew Helleson"], ["D2", "Tyson Hinds-Tristan Luneau"], ["D3", "Pavel Mintyukov-Noah Warren"],
+      ["Scratch", "Sam Colangelo-Frank Vatrano-Ian Mitchell"],
+    ]);
+    expect(lineup.rows.find((row) => row.label === "Scratch")!.kind).toBe("scratch");
+    expect(lineup.notice).toMatch(/^Partial snapshot/);
+    expect(lineup.context).toBe("Warm-up snapshot · reported");
+    expect(lineup.startingGoalie).toBeNull();
+    expect(JSON.stringify(lineup.rows)).not.toMatch(/ZachCav|warm|Husso \||Scratches:/);
+  });
+
+  it("existing card: never renders the stored text-split lineupCard, even beside retained units without a game binding", () => {
+    // The saved shape of the published card: text-split lineupCard plus the row's retained interpretation, no newsLineup.
+    const saved = { lineupCard: { forwards: [["Caulfield", "Carlsson", "Gauthier"]], defensePairs: [["RT @ZachCav: Anaheim Ducks warm", "up line rushes 11/15 vs. #Flames:"]],
+      goalies: ["Husso | Dostál", "Scratches: Colangelo, Vatrano, Mitchell"], startingGoalie: "Husso | Dostál" }, retainedInterpretation: retainedInterpretation() };
+    const lineup = publicLineup(saved);
+    expect(lineup.rows).toEqual([]);
+    expect(lineup.notice).toBe("Structured lineup unavailable for this report. See the source report.");
+    // A game post whose snapshot carries no NHL game id stays source-only too.
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const unbound = buildTweetNewsAutomationCandidate({ row: ducksRow({ retainedInterpretation: retainedInterpretation() }), players: automationPlayers });
+    expect(publicLineup(unbound!.metadata).rows).toEqual([]);
+  });
+
+  it("wrong team: an AHL lineup or another team's card shows no tiles (Ontario→COL, Hallander/PHI shapes)", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const candidate = buildTweetNewsAutomationCandidate({ row: ducksRow({ retainedInterpretation: retainedInterpretation(), retainedGameId: GAME }),
+      players: automationPlayers });
+    // The same snapshot shown on a card for a different team (COL = 21, PHI = 4) never validates.
+    expect(publicLineup(candidate!.metadata, 21).rows).toEqual([]);
+    expect(publicLineup(candidate!.metadata, 4).rows).toEqual([]);
+    // Synthetic Ontario Reign lines interpreted against Colorado's roster: no AHL name resolves, so no unit passes.
+    const colorado = [{ playerId: 1, fullName: "Nathan MacKinnon", lastName: "MacKinnon", position: "C", teamId: 21 }];
+    const ontario = buildNewsLineupSnapshot({ interpretation: interpretTweetUnits("Reign lines\nTurcotte-Lambos-Fagemo\nSpence-Clarke", colorado),
+      teamId: 21, gameId: GAME, sourceTweetId: "ontario" });
+    expect(publicLineup({ newsLineup: ontario }, 21).rows).toEqual([]);
+  });
+
+  it("labels a starter only from an explicit claim, never from goalie order", () => {
+    const goalies = [{ playerId: 1, fullName: "Ville Husso", lastName: "Husso", position: "G", teamId: ANA },
+      { playerId: 2, fullName: "Lukas Dostál", lastName: "Dostál", position: "G", teamId: ANA }];
+    const snapshot = (body: string) => {
+      const interpretation = { ...interpretTweetUnits(body, goalies), events: extractTweetPlayerEvents({ text: body, players: goalies, publishedAt: null }) };
+      return buildNewsLineupSnapshot({ interpretation, teamId: ANA, gameId: GAME, sourceTweetId: "g" });
+    };
+    const ordered = validatedNewsLineupRows(snapshot("Ducks lines tonight\nG: Husso\nG: Dostál"), ANA)!;
+    expect(ordered.rows.map((row) => [row.label, row.players[0]])).toEqual([["G1", "Ville Husso"], ["G2", "Lukas Dostál"]]);
+    expect(ordered.startingGoalie).toBeNull();
+    const explicit = validatedNewsLineupRows(snapshot("Ducks lines tonight\nG: Husso\nG: Dostál\nHusso gets the start tonight."), ANA)!;
+    expect(explicit.rows.filter((row) => row.kind === "goalie")).toHaveLength(2);
+    expect(explicit.startingGoalie).toBe("Ville Husso");
   });
 });
