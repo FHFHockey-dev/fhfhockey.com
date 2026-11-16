@@ -13,6 +13,7 @@ import type { PlayerIdentity } from "./playerIdentity";
 import { edmontonSectionRoster, edmontonSectionText, explicit11F7DText, seattleSectionRoster, seattleSectionText } from "../../__tests__/fixtures/lineupSectionFixtures";
 import claimContextCases from "./fixtures/claimContextCases.json";
 import iftttComparison from "./fixtures/iftttComparisonObservations.json";
+import { buildNewsLineupSnapshot, validatedNewsLineupRows } from "../newsLineupPresentation";
 
 describe("reviewed critical corpus extraction gaps", () => {
   const fixture = (id: string) => claimContextCases.cases.find(item => item.id === id)!;
@@ -1066,5 +1067,75 @@ describe("camp namesakes (lineup alert 2026-11-07)", () => {
   it("keeps the tie when the official roster cannot tell them apart", () => {
     const result = interpretTweetUnits(text, dallas.map(({ onOfficialRoster: _listed, ...player }) => player));
     expect(result.unresolved).toEqual(expect.arrayContaining([expect.objectContaining({ text: "Hryckowian", reason: "ambiguous", candidates: [8484829, 8486130] })]));
+  });
+});
+
+describe("pipe-separated goalie lines", () => {
+  // Skaters are all forwards or defensemen here; the F3 dual-role question (Moore) is decided elsewhere.
+  const ducks: PlayerIdentity[] = ([
+    [1, "Fixture Caulfield", "R"], [2, "Fixture Carlsson", "C"], [3, "Fixture Gauthier", "L"], [4, "Fixture Malott", "R"],
+    [5, "Fixture Granlund", "C"], [6, "Fixture Sennecke", "R"], [7, "Fixture Moore", "C"], [8, "Fixture Washe", "C"],
+    [9, "Fixture Killorn", "L"], [10, "Fixture Nesterenko", "R"], [11, "Fixture McQueen", "C"], [12, "Fixture Terry", "R"],
+    [13, "Fixture LaCombe", "D"], [14, "Fixture Helleson", "D"], [15, "Fixture Hinds", "D"], [16, "Fixture Luneau", "D"],
+    [17, "Fixture Mintyukov", "D"], [18, "Fixture Warren", "D"], [19, "Ville Husso", "G"], [20, "Lukas Dostál", "G"],
+    [21, "Fixture Colangelo", "R"], [22, "Fixture Vatrano", "R"], [23, "Fixture Mitchell", "C"],
+  ] as const).map(([playerId, fullName, position]) => ({ playerId, fullName, lastName: fullName.slice(fullName.indexOf(" ") + 1), position, teamId: 24 }));
+  const rushes = (goalies: string) => `Anaheim Ducks warm-up line rushes 11/15 vs. #Flames:\nCaulfield-Carlsson-Gauthier\nMalott-Granlund-Sennecke\nMoore-Washe-Killorn\nNesterenko-McQueen-Terry\n\nLaCombe-Helleson\nHinds-Luneau\nMintyukov-Warren\n\n${goalies}\n\nScratches: Colangelo, Vatrano, Mitchell`;
+  const cavanagh = rushes("Husso | Dostál");
+  const goalies = (result: ReturnType<typeof interpretTweetUnits>) => result.units.filter((unit) => unit.situation === "goalie").map((unit) => [unit.number, unit.players.map((player) => player.name), unit.complete]);
+  const spans = (text: string, result: ReturnType<typeof interpretTweetUnits>) => {
+    for (const unit of result.units) for (const span of unit.evidence) expect(text.slice(span.start, span.end)).toBe(span.text);
+    for (const issue of result.unresolved) expect(text.slice(issue.start, issue.end)).toBe(issue.text);
+  };
+
+  it("reads Zach Cavanagh's 'Husso | Dostál' warm-up line as G1 and G2 slots without a starter claim", () => {
+    const result = interpretTweetUnits(cavanagh, ducks);
+    expect(goalies(result)).toEqual([[1, ["Ville Husso"], true], [2, ["Lukas Dostál"], true]]);
+    expect(result.units.filter((unit) => unit.situation === "goalie").every((unit) => unit.sourceMarker == null && !unit.explicitNumber)).toBe(true);
+    expect(result.unresolved.filter((issue) => issue.situation === "goalie")).toEqual([]);
+    spans(cavanagh, result);
+    const events = extractTweetPlayerEvents({ text: cavanagh, players: ducks, publishedAt: null, claimAware: true });
+    expect(events.some((event) => event.kind === "goalie" && (event.state === "confirmed" || event.goalieRole === "starter"))).toBe(false);
+    const snapshot = buildNewsLineupSnapshot({ interpretation: { ...result, events }, teamId: 24, gameId: 2025020300, sourceTweetId: null });
+    const validated = validatedNewsLineupRows(snapshot, 24);
+    expect(validated?.rows.filter((row) => row.kind === "goalie").map((row) => [row.label, row.players])).toEqual([["G1", ["Ville Husso"]], ["G2", ["Lukas Dostál"]]]);
+    expect(validated?.startingGoalie).toBeNull();
+  });
+
+  it("keeps the written order for 'Dostál | Husso' and under a G: heading", () => {
+    expect(goalies(interpretTweetUnits(rushes("Dostál | Husso"), ducks))).toEqual([[1, ["Lukas Dostál"], true], [2, ["Ville Husso"], true]]);
+    const headed = rushes("G: Husso | Dostál");
+    expect(goalies(interpretTweetUnits(headed, ducks))).toEqual([[1, ["Ville Husso"], true], [2, ["Lukas Dostál"], true]]);
+    spans(headed, interpretTweetUnits(headed, ducks));
+  });
+
+  it("leaves an unrostered goalie unresolved in its own slot and never guesses", () => {
+    const text = rushes("Brossoit | Husso");
+    const result = interpretTweetUnits(text, ducks);
+    expect(goalies(result)).toEqual([[2, ["Ville Husso"], true]]);
+    expect(result.unresolved.filter((issue) => issue.situation === "goalie")).toMatchObject([{ text: "Brossoit", number: 1, reason: "missing_player", candidates: [] }]);
+    expect(result.units.flatMap((unit) => unit.players).some((player) => player.name === "Lukas Dostál")).toBe(false);
+    spans(text, result);
+  });
+
+  it("never makes a skater on a pipe line a goalie", () => {
+    const text = rushes("Husso | Gauthier");
+    const result = interpretTweetUnits(text, ducks);
+    expect(goalies(result)).toEqual([[1, ["Ville Husso"], true]]);
+    expect(result.unresolved.filter((issue) => issue.situation === "goalie")).toMatchObject([{ text: "Gauthier", reason: "invalid_extraction", candidates: [3] }]);
+    spans(text, result);
+  });
+
+  it("does not read pipes in headlines, prose or labelled rows as a goalie list", () => {
+    const none = (text: string) => {
+      const result = interpretTweetUnits(text, ducks);
+      expect(result.units.filter((unit) => unit.situation === "goalie")).toEqual([]);
+      expect(result.unresolved.filter((issue) => issue.situation === "goalie")).toEqual([]);
+    };
+    none("Husso | Dostál");
+    none("Ducks goalies | Husso and Dostál\nCaulfield-Carlsson-Gauthier\nLaCombe-Helleson");
+    none(rushes("Not On The Ice: Colangelo | Extra: Vatrano"));
+    none(rushes("Husso | Dostál split the week in net, coach says"));
+    none(rushes("Caulfield | Gauthier"));
   });
 });
