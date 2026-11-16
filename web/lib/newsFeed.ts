@@ -246,6 +246,11 @@ export function sanitizePublicNewsText(
   if (isNewsRelayAccount(value)) return "";
   return normalizeWhitespace(
     String(value ?? "")
+      // Quote-tweet captures arrive as "Wrapper text\n…\n\nQuoted text\n…"
+      // (lib/sources/tweetPatternReview.ts); fans see the post followed by
+      // the quoted post as plain sentences, no label (TJ, 2026-11-15).
+      .replace(/^\s*Wrapper text\s+/i, "")
+      .replace(/([.!?])?\s+Quoted text\s+/i, (_match, end?: string) => `${end ?? "."} `)
       .replace(NEWS_RELAY_BYLINE_PATTERN, "")
       .replace(NEWS_RELAY_MENTION_PATTERN, "")
       .replace(/\s+([,.;:!?])/g, "$1")
@@ -363,7 +368,7 @@ function safeOriginalSourceUrl(
 }
 
 function unresolvedPublicNewsSource(state: "unavailable" | "conflict" = "unavailable"): PublicNewsSourceDecision {
-  return { version: "public-news-source-v1", state, basis: null, displayName: "Original source pending", account: null, url: null };
+  return { version: "public-news-source-v1", state, basis: null, displayName: "Source link pending", account: null, url: null };
 }
 
 function readPublicNewsSourceDecision(value: unknown): PublicNewsSourceDecision {
@@ -546,6 +551,43 @@ export function normalizeNewsCategory(value: string | null | undefined): string 
   return normalizeNewsText(value).replace(/[_-]+/g, " ").toUpperCase();
 }
 
+const NEWS_CLAIM_STATE_LABELS: Record<string, Record<string, string>> = {
+  injury: {
+    new_injury: "New injury",
+    ongoing: "Injured",
+    setback: "Setback",
+    possible_return: "Possible return",
+    confirmed_return: "Returning",
+    unknown: "Status unknown",
+  },
+  goalie: {
+    projected: "Projected starter",
+    likely: "Likely starter",
+    confirmed: "Confirmed starter",
+    ruled_out: "Not starting",
+  },
+};
+const NEWS_CLAIM_OBSERVATION_LABELS: Record<string, string> = {
+  warmup: "In warmups",
+  first_off: "First off the ice",
+  practice: "At practice",
+};
+
+/** Fan-facing label for a checked claim: "Status unknown", not "Unknown report". */
+export function formatNewsClaimLabel(claim: {
+  kind: string;
+  state: string;
+  observation?: string | null;
+}): string {
+  if (claim.kind === "participation") {
+    return (claim.observation && NEWS_CLAIM_OBSERVATION_LABELS[claim.observation]) || "Seen at the rink";
+  }
+  const label = NEWS_CLAIM_STATE_LABELS[claim.kind]?.[claim.state] ?? formatNewsFeedLabel(claim.state);
+  return claim.observation && NEWS_CLAIM_OBSERVATION_LABELS[claim.observation]
+    ? `${label} · ${NEWS_CLAIM_OBSERVATION_LABELS[claim.observation].toLowerCase()}`
+    : label;
+}
+
 export function formatNewsFeedLabel(value: string | null | undefined): string {
   return normalizeNewsCategory(value)
     .toLowerCase()
@@ -658,6 +700,7 @@ export function getNewsItemTeamColors(teamAbbreviation: string | null | undefine
     surface: team?.primaryColor ?? "#0b1821",
     logoUrl: team ? getTeamLogoSvg(team.abbrev) : fallbackNHLLogo,
     shortName: team?.shortName ?? teamAbbreviation ?? "NHL",
+    name: team?.name ?? teamAbbreviation ?? "NHL",
   };
 }
 

@@ -14,6 +14,8 @@ import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
 import OptimizedImage from "components/common/OptimizedImage";
 import { fallbackNHLLogo, getTeamLogoSvg } from "lib/images";
 import {
+  formatNewsClaimLabel,
+  getNewsItemTeamColors,
   formatNewsFeedLabel,
   getPublicNewsItemDetails,
   getPublicNewsClaimPresentation,
@@ -34,6 +36,7 @@ type HomepageStandingsInjuriesSectionProps = {
 };
 
 const HOMEPAGE_UPDATES_PER_PAGE = 10;
+const SHOW_PIPELINE_TIMES = process.env.NODE_ENV !== "production";
 const HOMEPAGE_TIME_ZONE = "America/New_York";
 
 export function formatHomepageDate(value: string | null | undefined): string {
@@ -42,6 +45,15 @@ export function formatHomepageDate(value: string | null | undefined): string {
   if (!parsed) return "N/A";
   const parts = zonedParts(parsed, HOMEPAGE_TIME_ZONE);
   return `${parts.month}/${parts.day}/${String(parts.year).slice(-2)}`;
+}
+
+// Phones show "Nov 15" instead of "11/15/26": every row is recent, and the
+// short form leaves room for the update text.
+export function formatHomepageShortDate(value: string | null | undefined): string {
+  if (!value) return "N/A";
+  const parsed = parseMomentLike(value);
+  if (!parsed) return "N/A";
+  return formatMonthDay(zonedParts(parsed, HOMEPAGE_TIME_ZONE));
 }
 
 export function formatHomepageTimestamp(value: string | null | undefined): string {
@@ -55,9 +67,20 @@ export function formatHomepageTimestamp(value: string | null | undefined): strin
     : formatMonthDayYear(parts);
 }
 
-export function buildHomepageTransactionTitle(_transaction: any): string {
-  // The upstream event contract does not yet bind transaction completion.
-  return "Transaction source report";
+export function buildHomepageTransactionTitle(transaction: any): string {
+  // The upstream event contract does not yet bind transaction completion or
+  // its subject, so the row names the team, never a player (TJ, 2026-11-15).
+  return getNewsItemTeamColors(transaction?.team_abbreviation).name;
+}
+
+// One label per distinct claim: a passage naming two players with the same
+// status read "Injury Ongoing report; Injury Ongoing report".
+export function formatHomepageClaimStatus(
+  claims: Array<{ kind: string; state: string; observation?: string | null }>,
+): string {
+  // Same fan-facing labels as the news cards ("Status unknown", not
+  // "Injury Unknown report") (TJ, 2026-11-15).
+  return [...new Set(claims.map(claim => formatNewsClaimLabel(claim)))].join("; ");
 }
 
 function newsItemToHomepageInjury(item: NewsFeedItem) {
@@ -74,10 +97,9 @@ function newsItemToHomepageInjury(item: NewsFeedItem) {
     team: item.team_abbreviation ?? "NHL",
     player: {
       id: onlyClaim?.playerId ?? null,
-      displayName: playerNames.join(", ") || "—",
+      displayName: playerNames.join(", ") || getNewsItemTeamColors(item.team_abbreviation).name,
     },
-    status: presentation.claims.length ? presentation.claims.map(claim =>
-      `${formatNewsFeedLabel(claim.kind)} ${formatNewsFeedLabel(claim.state)} report${claim.observation ? ` · ${claim.observation}` : ""}`).join("; ") : getPublicNewsReportTopic(item),
+    status: presentation.claims.length ? formatHomepageClaimStatus(presentation.claims) : getPublicNewsReportTopic(item),
     claimNote: presentation.claims.length ? null : "Source text only; player and status are not verified.",
     description: getPublicNewsItemDetails({ ...item, metadata: null, headline: "Source passage unavailable" }),
     sourceUrl: item.source_url,
@@ -120,6 +142,8 @@ export default function HomepageStandingsInjuriesSection({
   standingsError,
   injuriesError,
 }: HomepageStandingsInjuriesSectionProps) {
+  // Phones show the top 16 until asked (TJ, 2026-11-15); desktop shows all.
+  const [showAllStandings, setShowAllStandings] = useState(false);
   const [updatesPage, setUpdatesPage] = useState(0);
   const [pageSize, setPageSize] = useState(HOMEPAGE_UPDATES_PER_PAGE);
   const [panelHeight, setPanelHeight] = useState<number | null>(null);
@@ -202,10 +226,19 @@ export default function HomepageStandingsInjuriesSection({
       const chromeHeight = Array.from(updatesPanel.children).reduce((sum, child) =>
         child.classList.contains(styles.tableWrapper) ? sum : sum + child.getBoundingClientRect().height,
       0);
-      const usableHeight = Math.max(height, chromeHeight + 26 + 48);
+      // Rows grew past 48px when the source moved under the details
+      // (2026-11-15); size pages from the tallest rendered row so the last
+      // row is never cut off.
+      const rowHeight = Math.max(
+        48,
+        ...Array.from(
+          updatesPanel.querySelectorAll<HTMLTableRowElement>("tbody tr:not([hidden])"),
+        ).map((row) => Math.ceil(row.getBoundingClientRect().height)),
+      );
+      const usableHeight = Math.max(height, chromeHeight + 26 + rowHeight);
       setPanelHeight(sideBySide && height > 0 ? usableHeight : null);
       setPageSize(sideBySide && height > 0
-        ? Math.max(1, Math.floor((usableHeight - chromeHeight - 26) / 48))
+        ? Math.max(1, Math.floor((usableHeight - chromeHeight - 26) / rowHeight))
         : HOMEPAGE_UPDATES_PER_PAGE);
     };
     const observer = new ResizeObserver(measure);
@@ -263,7 +296,11 @@ export default function HomepageStandingsInjuriesSection({
         )}
         <div className={styles.tableWrapper}>
           {sortedStandings.length > 0 ? (
-            <table className={styles.standingsTable}>
+            <table
+              id="homepage-standings-table"
+              className={styles.standingsTable}
+              data-collapsed={!showAllStandings || undefined}
+            >
               <caption className={styles.visuallyHidden}>
                 NHL League Standings
               </caption>
@@ -331,13 +368,24 @@ export default function HomepageStandingsInjuriesSection({
             </table>
           ) : null}
         </div>
+        {sortedStandings.length > 16 ? (
+          <button
+            type="button"
+            className={styles.standingsToggle}
+            aria-expanded={showAllStandings}
+            aria-controls="homepage-standings-table"
+            onClick={() => setShowAllStandings((value) => !value)}
+          >
+            {showAllStandings ? "Show top 16" : `Show all ${sortedStandings.length} teams`}
+          </button>
+        ) : null}
       </div>
 
       <div ref={updatesRef} className={styles.injuriesContainer}
         style={{ "--updates-height": panelHeight ? `${panelHeight}px` : "auto" } as CSSProperties}>
         <div className={styles.injuriesHeader}>
           <h2>
-            Recent <span>Transactions &amp; Injuries</span>
+            Transactions <span>&amp; Injuries</span>
           </h2>
           <Link href="/news" className={styles.panelViewAll}>
             View all
@@ -438,7 +486,12 @@ export default function HomepageStandingsInjuriesSection({
                     <Fragment key={injury.key}>
                       <tr className={summaryRowClassName}>
                         <td className={styles.dateColumn}>
-                          {formatHomepageDate(injury.date)}
+                          <span className={styles.dateLong}>
+                            {formatHomepageDate(injury.date)}
+                          </span>
+                          <span className={styles.dateShort}>
+                            {formatHomepageShortDate(injury.date)}
+                          </span>
                         </td>
                         <td className={styles.teamColumn}>
                           <OptimizedImage
@@ -462,20 +515,26 @@ export default function HomepageStandingsInjuriesSection({
                         </td>
                         <td className={styles.statusColumn} title={injury.claimNote ?? undefined}
                           aria-label={injury.claimNote ? `${injury.status}. ${injury.claimNote}` : undefined}>
-                          {injury.status ?? "N/A"}
+                          <span className={styles.statusText}>
+                            {injury.status ?? "N/A"}
+                          </span>
                         </td>
                         <td className={styles.descriptionColumn}>
                           <span className={styles.desktopUpdateDetails}>
                             <span className={styles.descriptionContent} title={injury.description ?? undefined}>
                               {injury.description ?? "N/A"}
                             </span>
-                            {injury.sourceAttribution ? <span className={styles.descriptionContent}>{injury.sourceAttribution}</span> : null}
-                            {injury.sourceUrl ? (
-                              <ExternalNewsLink
-                                href={injury.sourceUrl}
-                                className={styles.externalNewsLink}
-                                label={`View original post for ${playerName}`}
-                              />
+                            {injury.sourceAttribution || injury.sourceUrl ? (
+                              <span className={styles.updateSourceLine}>
+                                {injury.sourceAttribution ? <span>{injury.sourceAttribution}</span> : null}
+                                {injury.sourceUrl ? (
+                                  <ExternalNewsLink
+                                    href={injury.sourceUrl}
+                                    className={styles.externalNewsLink}
+                                    label={`View original post for ${playerName}`}
+                                  />
+                                ) : null}
+                              </span>
                             ) : null}
                           </span>
                           <button
@@ -504,7 +563,13 @@ export default function HomepageStandingsInjuriesSection({
                           <span>{injury.description ?? "N/A"}</span>
                           {injury.claimNote ? <span>{injury.claimNote}</span> : null}
                           <span className={styles.expandedUpdateMeta}>
-                            {injury.newsTimestamp ? `Published ${formatHomepageTimestamp(injury.date) || "unavailable"} · Observed ${formatHomepageTimestamp(injury.observedAt) || "unavailable"}` : formatHomepageTimestamp(injury.date)}
+                            {/* One time for fans (when the post was seen); the
+                                pipeline's published/observed pair is dev-only. */}
+                            {injury.newsTimestamp
+                              ? SHOW_PIPELINE_TIMES
+                                ? `Published ${formatHomepageTimestamp(injury.date) || "unavailable"} · Observed ${formatHomepageTimestamp(injury.observedAt) || "unavailable"}`
+                                : formatHomepageTimestamp(injury.observedAt ?? injury.date) || "Time unavailable"
+                              : formatHomepageTimestamp(injury.date)}
                             {injury.sourceAttribution
                               ? ` · ${injury.sourceAttribution}`
                               : " · Source unavailable"}
@@ -527,7 +592,7 @@ export default function HomepageStandingsInjuriesSection({
               onClick={() => setUpdatesPage(Math.max(currentPage - 1, 0))}
               disabled={currentPage === 0}
             >
-              Previous
+              <span aria-hidden="true">‹</span> Previous
             </button>
             <span>
               Page {currentPage + 1} of {pageCount}
@@ -538,7 +603,7 @@ export default function HomepageStandingsInjuriesSection({
                 currentPage >= pageCount - 1
               }
             >
-              Next
+              Next <span aria-hidden="true">›</span>
             </button>
           </div>
         ) : null}

@@ -1,7 +1,7 @@
 import moment from "moment-timezone";
 import { describe, expect, it } from "vitest";
 import { formatLocalPlayoffStart, formatLocalStartTime } from "./homepageGameFormatting";
-import { formatHomepageDate, formatHomepageTimestamp } from "./HomepageStandingsInjuriesSection";
+import { formatHomepageDate, formatHomepageShortDate, formatHomepageTimestamp } from "./HomepageStandingsInjuriesSection";
 import { zonedMidnight } from "./homepageTime";
 
 // Fixed puck drops on both sides of the 2026-03-08 and 2026-11-01 DST changes, so the
@@ -69,6 +69,10 @@ describe("homepage New York dates without moment-timezone", () => {
         parsed.clone().tz("America/New_York").format(hasTime ? "MMM D, h:mm A" : "MMM D, YYYY"),
       );
     }
+    for (const value of values) {
+      expect(formatHomepageShortDate(value)).toBe(moment(value).tz("America/New_York").format("MMM D"));
+    }
+    expect(formatHomepageShortDate(null)).toBe("N/A");
     expect(formatHomepageDate(null)).toBe("N/A");
     expect(formatHomepageDate("garbage")).toBe("N/A");
     expect(formatHomepageTimestamp(undefined)).toBe("");

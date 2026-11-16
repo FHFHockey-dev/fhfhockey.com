@@ -67,8 +67,10 @@ export const formatHomepageEdge = (percentagePoints: number) =>
 /** The edge is the FHFH model's probability minus the de-vigged market's. */
 export const HOMEPAGE_EDGE_LABEL = "Model vs market";
 
+// The hero already says "Model odds unavailable"; this is the short follow-up
+// under the slate (TJ, 2026-11-15).
 export const HOMEPAGE_PREDICTIONS_UNAVAILABLE_NOTICE =
-  "FHFH predictions unavailable while the model is developed and validated.";
+  "Win odds return once the model is validated.";
 
 /**
  * Decision 42 notice for a slate: the full notice when no scheduled game has

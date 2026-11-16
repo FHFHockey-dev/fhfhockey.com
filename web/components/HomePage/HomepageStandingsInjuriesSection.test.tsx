@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import HomepageStandingsInjuriesSection, {
   buildHomepageTransactionTitle,
   buildHomepageInjuryUpdates,
+  formatHomepageClaimStatus,
 } from "./HomepageStandingsInjuriesSection";
 import styles from "styles/Home.module.scss";
 
@@ -25,9 +26,28 @@ describe("HomepageStandingsInjuriesSection", () => {
       published_at: null, observed_at: "2026-07-14T18:19:20.000Z", created_at: "2026-07-24T20:30:49.000Z",
       source_account: "SOURCE_ACCOUNT", source_url: "not a URL", tweet_url: null,
     }]} />);
-    fireEvent.click(screen.getByRole("button", { name: "Expand update for Transaction source report" }));
-    expect(screen.getByText("Published unavailable · Observed Jul 14, 2:19 PM · Original source pending")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Expand update for NHL" }));
+    expect(screen.getByText("Published unavailable · Observed Jul 14, 2:19 PM · Source link pending")).toBeTruthy();
     expect(screen.queryByRole("link", { name: /View original post/ })).toBeNull();
+  });
+
+  it("shows one time in production expanded updates", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.resetModules();
+    try {
+      const { default: ProductionSection } = await import("./HomepageStandingsInjuriesSection");
+      render(<ProductionSection standings={[]} injuries={[]} snapshotGeneratedAt={null} standingsError={null} injuriesError={null} recentTransactions={[{
+        id: "synthetic-provenance", headline: "League update", blurb: "A source update.", category: "Source report", players: [], metadata: null,
+        published_at: null, observed_at: "2026-07-14T18:19:20.000Z", created_at: "2026-07-24T20:30:49.000Z",
+        source_account: "SOURCE_ACCOUNT", source_url: "not a URL", tweet_url: null,
+      }]} />);
+      fireEvent.click(screen.getByRole("button", { name: "Expand update for NHL" }));
+      expect(screen.getByText("Jul 14, 2:19 PM · Source link pending")).toBeTruthy();
+      expect(screen.queryByText(/Published|Observed/)).toBeNull();
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
   });
   afterEach(() => {
     cleanup();
@@ -163,9 +183,9 @@ describe("HomepageStandingsInjuriesSection", () => {
     expect(
       screen.getByRole("table", { name: /recent nhl transactions and injury updates/i }),
     ).toBeTruthy();
-    expect(screen.getByText("Transaction source report")).toBeTruthy();
+    expect(screen.getByText("Boston Bruins")).toBeTruthy();
     const combinedRows = screen.getByRole("table", { name: /recent nhl transactions and injury updates/i }).querySelectorAll("tbody tr:not([hidden])");
-    expect(combinedRows[0].textContent).toContain("Transaction source report");
+    expect(combinedRows[0].textContent).toContain("Boston Bruins");
     expect(combinedRows[0].className).toContain(styles.transactionRow);
 
     fireEvent.click(screen.getByRole("tab", { name: "Transactions" }));
@@ -250,7 +270,7 @@ describe("HomepageStandingsInjuriesSection", () => {
       />,
     );
 
-    expect(screen.getByText("—")).toBeTruthy();
+    expect(screen.getByText("Chicago Blackhawks")).toBeTruthy();
     expect(screen.getByText("Injury report")).toBeTruthy();
     expect(
       screen.getAllByText("A lower-body injury has been reported."),
@@ -258,7 +278,7 @@ describe("HomepageStandingsInjuriesSection", () => {
     expect(
       screen
         .getByRole("link", {
-          name: "View original post for —",
+          name: "View original post for Chicago Blackhawks",
         })
         .getAttribute("href"),
     ).toBe("https://x.com/Reporter/status/1");
@@ -290,7 +310,7 @@ describe("HomepageStandingsInjuriesSection", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Transactions" }));
 
-    expect(screen.getByText("Transaction source report")).toBeTruthy();
+    expect(screen.getByText("Anaheim Ducks")).toBeTruthy();
     const transactionTable = screen.getByRole("table", {
       name: /recent nhl transactions/i,
     });
@@ -304,10 +324,21 @@ describe("HomepageStandingsInjuriesSection", () => {
     expect(
       screen
         .getByRole("link", {
-          name: "View original post for Transaction source report",
+          name: "View original post for Anaheim Ducks",
         })
         .getAttribute("href"),
     ).toBe("https://x.com/Reporter/status/2");
+  });
+
+  it("lists each distinct claim status once", () => {
+    expect(formatHomepageClaimStatus([
+      { kind: "injury", state: "ongoing" },
+      { kind: "injury", state: "ongoing" },
+    ])).toBe(formatHomepageClaimStatus([{ kind: "injury", state: "ongoing" }]));
+    expect(formatHomepageClaimStatus([
+      { kind: "injury", state: "unknown" },
+      { kind: "injury", state: "ongoing" },
+    ]).split("; ")).toHaveLength(2);
   });
 
   it("does not bind the captured Barzal passage to its Kevin He injury join", () => {
@@ -316,7 +347,7 @@ describe("HomepageStandingsInjuriesSection", () => {
       blurb: 'RT @AGrossNewsday: Mathew Barzal is with #Isles on trip, Pete DeBoer said he is attending all the meetings. Not on the ice yet but said to be "around the corner." So he won\'t play in the season opener tomorrow in Toronto.',
       metadata: null, players: [{ player_id: 8484864, player_name: "Kevin He" }], published_at: "2026-09-29T17:00:11.412Z",
     } as any] });
-    expect(rows[0]).toMatchObject({ player: { id: null, displayName: "—" }, status: "Availability report", statusState: "unknown" });
+    expect(rows[0]).toMatchObject({ player: { id: null, displayName: "NHL" }, status: "Availability report", statusState: "unknown" });
     expect(rows[0].description).toContain("Mathew Barzal");
   });
 
@@ -324,7 +355,7 @@ describe("HomepageStandingsInjuriesSection", () => {
     expect(buildHomepageTransactionTitle({ id: "4795b0c8-d119-4977-9b77-45e040224e25", headline: "Carson Soucy signing",
       category: "SIGNING", subcategory: "OFFICIAL SIGNING", players: [{ player_id: 8477369, player_name: "Carson Soucy" }],
       blurb: 'RT @mark_scheig: Don Waddell on Carson Soucy: "Our goal is to get him signed." DW said they need to determine where the cap space will come from. #CBJ',
-    })).toBe("Transaction source report");
+    })).toBe("NHL");
   });
 
   it("does not infer transaction completion or canonical subject from titles or joins", () => {
@@ -339,7 +370,7 @@ describe("HomepageStandingsInjuriesSection", () => {
         metadata: null,
         players: [{ player_name: "Macklin Celebrini" }],
       }),
-    ).toBe("Transaction source report");
+    ).toBe("San Jose Sharks");
 
     expect(
       buildHomepageTransactionTitle({
@@ -350,7 +381,7 @@ describe("HomepageStandingsInjuriesSection", () => {
         team_abbreviation: "SJS",
         players: [],
       }),
-    ).toBe("Transaction source report");
+    ).toBe("San Jose Sharks");
 
     expect(
       buildHomepageTransactionTitle({
@@ -362,7 +393,7 @@ describe("HomepageStandingsInjuriesSection", () => {
         metadata: null,
         players: [],
       }),
-    ).toBe("Transaction source report");
+    ).toBe("NHL");
   });
 
   it("limits the homepage feed and keeps source actions independent", () => {
@@ -404,12 +435,12 @@ describe("HomepageStandingsInjuriesSection", () => {
     expect(screen.getByAltText("NHL logo")).toBeTruthy();
 
     const sourceLink = screen.getByRole("link", {
-      name: "View original post for Transaction source report",
+      name: "View original post for NHL",
     });
     fireEvent.click(sourceLink);
     expect(
       screen
-        .getAllByRole("button", { name: "Expand update for Transaction source report" })[0]
+        .getAllByRole("button", { name: "Expand update for NHL" })[0]
         .getAttribute("aria-expanded"),
     ).toBe("false");
     expect(
@@ -459,8 +490,8 @@ describe("HomepageStandingsInjuriesSection", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Transactions" }));
 
-    const firstExpand = within(screen.getAllByText("First transaction detail")[0].closest("tr")!).getByRole("button", { name: "Expand update for Transaction source report" });
-    const secondExpand = within(screen.getAllByText("Second transaction detail")[0].closest("tr")!).getByRole("button", { name: "Expand update for Transaction source report" });
+    const firstExpand = within(screen.getAllByText("First transaction detail")[0].closest("tr")!).getByRole("button", { name: "Expand update for Boston Bruins" });
+    const secondExpand = within(screen.getAllByText("Second transaction detail")[0].closest("tr")!).getByRole("button", { name: "Expand update for New York Rangers" });
     expect(firstExpand.getAttribute("aria-expanded")).toBe("false");
     const firstDetailsId = firstExpand.getAttribute("aria-controls") ?? "";
     expect(document.getElementById(firstDetailsId)).toBeTruthy();
@@ -488,7 +519,7 @@ describe("HomepageStandingsInjuriesSection", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Injuries" }));
     fireEvent.click(screen.getByRole("tab", { name: "Transactions" }));
     expect(
-      screen.getAllByRole("button", { name: "Expand update for Transaction source report" })[0].getAttribute("aria-expanded"),
+      screen.getAllByRole("button", { name: /^Expand update for / })[0].getAttribute("aria-expanded"),
     ).toBe("false");
   });
 
@@ -526,5 +557,13 @@ describe("HomepageStandingsInjuriesSection", () => {
         .getAllByRole("columnheader")
         .map((header) => header.textContent),
     ).toEqual(["#", "Team", "GP", "W", "L", "OTL", "PTS", "P%", "STRK"]);
+
+    // Phones fold rows 17-32 via CSS; the toggle flips the table's state.
+    const toggle = screen.getByRole("button", { name: "Show all 32 teams" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(table.hasAttribute("data-collapsed")).toBe(true);
+    fireEvent.click(toggle);
+    expect(screen.getByRole("button", { name: "Show top 16" }).getAttribute("aria-expanded")).toBe("true");
+    expect(table.hasAttribute("data-collapsed")).toBe(false);
   });
 });

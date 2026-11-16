@@ -548,7 +548,7 @@ The site header, nav, bottom nav, footer and user menu use the `$chrome-*` token
 ### 7.10 Shape, Spacing, Sizing, Depth And Motion Tokens
 
 - Radius (use for new work): `$radius-xs` 4px, `$radius-sm` 6px (= `$radius-control`), `$radius-md` 10px (= `$radius-card` = `$radius-panel`), `$radius-lg` 16px (= `$radius-feature`), `$radius-pill` 999px. The legacy `$border-radius-sm|md|lg|xl` scale (4 / 8 / 12 / 16) is still common; don't extend it.
-- Spacing: `$space-xxs` 2px, `xs` 4, `sm` 8, `md` 16 (standard unit), `lg` 24 (`$panel-gap`), `xl` 32, `xxl` 48, `xxxl` 64. Mobile scale: `$mobile-space-*` 4 / 8 / 12 / 16 / 20 / 24 / 32 / 40.
+- Spacing: `$space-xxs` 2px, `xs` 4, `xs-plus` 6 (dense dashboard gaps and cell padding, added 2026-11-15 for the homepage), `sm` 8, `md` 16 (standard unit), `lg` 24 (`$panel-gap`), `xl` 32, `xxl` 48, `xxxl` 64. Mobile scale: `$mobile-space-*` 4 / 8 / 12 / 16 / 20 / 24 / 32 / 40.
 - Control heights: `$control-height-xs` 24, `sm` 32, `md` 34, `lg` 44. Checkbox 18px. Touch targets: `$touch-target-min` 44px, `-small` 36, `-comfortable` 48, `-large` 56, `-inline` 24 (WCAG 2.5.8 inline text buttons).
 - Tables: `$table-header-height` 35px; `$table-cell-padding` `8px 16px`; `$table-cell-padding-compact` `0.7rem 0.72rem` (mobile `0.58rem 0.6rem`). `$site-header-offset` 72px for in-page jump targets.
 - Shadows: `$shadow-panel`, `$shadow-panel-hover`, `$shadow-hover`, `$shadow-focus`. All are dark and ambient; none is a coloured glow.

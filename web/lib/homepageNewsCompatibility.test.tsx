@@ -105,7 +105,7 @@ describe('review-only homepage compatibility proposal', () => {
     expect(reporter.closest('tr')?.hidden).toBe(false);
     expect(screen.queryByText('Claim unavailable')).toBeNull();
     expect(screen.queryByRole('link', {name:/View original post/})).toBeNull();
-    fireEvent.click(screen.getByRole('button',{name:'Expand update for —'}));
+    fireEvent.click(screen.getByRole('button',{name:'Expand update for Vegas Golden Knights'}));
     expect(screen.getByText('Source text only; player and status are not verified.').closest('tr')?.hidden).toBe(false);
   });
   it.each([
@@ -132,7 +132,7 @@ describe('retained quote author evidence', () => {
     ...toItem(matches[1]), blurb: 'A quoted source passage.',
     metadata: { primaryTextSource: 'quoted_oembed', ...metadata },
   });
-  const pending = {displayName:'Original source pending',account:null,url:null};
+  const pending = {displayName:'Source link pending',account:null,url:null};
   const idOnlyUrl = 'https://x.com/i/web/status/123';
   it.each([idOnlyUrl, null])('rejects conflicting authors for one retained post, URL %s', quotedTweetUrl => {
     expect(getPublicNewsSourceAttribution({
@@ -163,7 +163,7 @@ describe('retained quote author evidence', () => {
 });
 
 describe('loader to serialized homepage attribution', () => {
-  const pending = {displayName:'Original source pending',account:null,url:null};
+  const pending = {displayName:'Source link pending',account:null,url:null};
   const idOnlyUrl = 'https://x.com/i/web/status/123';
   const quoted = (handle: string, id = '123') => ({primaryTextSource:'quoted_oembed',quotedAuthorHandle:handle,quotedTweetId:id,quotedTweetUrl:idOnlyUrl});
   const raw = (metadata: any = null, blurb = 'A quoted source passage.') => ({...toItem(matches[1]),metadata,blurb});
@@ -194,7 +194,7 @@ describe('loader to serialized homepage attribution', () => {
       expect(current).toEqual(json(first));
     }
     expect(current.source_attribution).toMatchObject({version:'public-news-source-v1',state:'conflict'});
-    expect(homepage(current)).toMatchObject({sourceAttribution:'Original source pending',sourceUrl:null,player:{id:null},statusState:'unknown'});
+    expect(homepage(current)).toMatchObject({sourceAttribution:'Source link pending',sourceUrl:null,player:{id:null},statusState:'unknown'});
     expect(getPublicNewsClaimPresentation(current).claims).toEqual([]);
   });
   it('retains valid linkless attribution supplied only by provenance through the actual homepage path', async () => {
@@ -210,7 +210,7 @@ describe('loader to serialized homepage attribution', () => {
   });
   it('does not revive a quote rejected for mismatched post IDs', async () => {
     const first = await load(raw(quoted('ReporterB'),'RT @ReporterB: Player is out tonight.'),{metadata:quoted('ReporterB','999')});
-    expect(homepage(first).sourceAttribution).toBe('Original source pending');
+    expect(homepage(first).sourceAttribution).toBe('Source link pending');
     expect(json(sanitizePublicNewsFeedItem(json(first)))).toEqual(json(first));
   });
   it.each([

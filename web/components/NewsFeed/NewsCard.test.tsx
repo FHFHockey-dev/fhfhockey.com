@@ -8,12 +8,12 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import NewsCard from "./NewsCard";
+import NewsCard, { formatNewsFanTime } from "./NewsCard";
 import { teamsInfo } from "lib/teamsInfo";
-import { getPublicNewsSourceAttribution, sanitizePublicNewsFeedItem } from "lib/newsFeed";
+import { getNewsItemTeamColors, getPublicNewsSourceAttribution, sanitizePublicNewsFeedItem } from "lib/newsFeed";
 import receipt from "lib/sources/fixtures/homepageNewsReceipt.json";
 
-const UNVERIFIED = "We couldn't verify the player details in this report.";
+const UNVERIFIED = "Player details not verified";
 
 vi.mock("next/legacy/image", () => ({
   default: ({ alt, src }: { alt: string; src: string }) => (
@@ -51,23 +51,24 @@ describe("NewsCard", () => {
   it.each(["GameDayLines", "GameDayGoalies", "GameDayNewsNHL", "CcCMiddleton", "DFOFantasy", "NHL_Rosters"])("does not leak ingest source %s through labels, links, titles or accessibility text", handle => {
     const { container } = render(<NewsCard item={makeItem({ source_label: handle, source_account: handle, source_url: `https://x.com/${handle}/status/123`,
       metadata: null })} sourceDisplayNameOverride={handle} />);
-    expect(screen.getByText("Original source pending")).toBeTruthy();
+    expect(screen.getByText("Source link pending")).toBeTruthy();
     expect(container.innerHTML.toLowerCase()).not.toContain(handle.toLowerCase());
     expect(screen.queryByRole("link", { name: /original post/i })).toBeNull();
   });
 
   it("keeps observation and publication independent of creation time", () => {
     render(<NewsCard item={makeItem({ published_at: null, observed_at: "2026-07-14T18:19:20.000Z", source_label: null, source_account: "SOURCE_ACCOUNT", source_url: "not a URL", metadata: null })} />);
-    expect(screen.getAllByText("Published Unavailable")).toHaveLength(2);
-    expect(screen.getByText("Observed Jul 14, 2:19 PM")).toBeTruthy();
-    expect(screen.getByText("Original source pending")).toBeTruthy();
+    // Fans see one time (when the post was seen); the pipeline pair is dev-only.
+    expect(screen.getByText("Jul 14, 2:19 PM")).toBeTruthy();
+    expect(screen.getByText("Published Unavailable · Observed Jul 14, 2:19 PM")).toBeTruthy();
+    expect(screen.getByText("Source link pending")).toBeTruthy();
     expect(screen.queryByRole("link", { name: /View original post/ })).toBeNull();
   });
 
   it("does not display malformed timestamps as dates", () => {
     render(<NewsCard item={makeItem({ published_at: "broken", observed_at: "broken" })} />);
-    expect(screen.getAllByText("Published Unavailable")).toHaveLength(2);
-    expect(screen.getByText("Observed Unavailable")).toBeTruthy();
+    expect(screen.getByText("Unavailable")).toBeTruthy();
+    expect(screen.getByText("Published Unavailable · Observed Unavailable")).toBeTruthy();
   });
 
   it("shows useful details and an accessible original-post icon in rail mode", () => {
@@ -96,14 +97,17 @@ describe("NewsCard", () => {
       ).length,
     ).toBeGreaterThan(0);
     const sourceLink = screen.getByRole("link", {
-      name: "View original post for Source report",
+      name: "View original post for Anaheim Ducks",
     });
     expect(sourceLink.getAttribute("href")).toBe(
       "https://x.com/FriedgeHNIC/status/2073877758803935434",
     );
     expect(sourceLink.getAttribute("target")).toBe("_blank");
     expect(screen.queryByText("Source")).toBeNull();
-    expect(screen.getByText("Published 7/14/2026, 2:19:20 PM")).toBeTruthy();
+    expect(screen.getByText("Jul 14, 2:19 PM")).toBeTruthy();
+    expect(screen.getByText(/^Published 7\/14\/2026, 2:19:20 PM · Observed/)).toBeTruthy();
+    // No "Source report" chip; the post is the headline.
+    expect(screen.queryByText(/source report/i)).toBeNull();
   });
 
   it("renders team and category once while promoting authoritative detail", () => {
@@ -173,12 +177,12 @@ describe("NewsCard", () => {
     expect(
       controlledRegion?.querySelector('[class*="railDetails"]'),
     ).toBeNull();
-    expect(screen.getByAltText("CHI logo")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Chicago Blackhawks" })).toBeTruthy();
 
     fireEvent.click(button);
     expect(button.getAttribute("aria-expanded")).toBe("true");
     expect(button.textContent).toContain("−");
-    expect(screen.getByAltText("CHI logo")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Chicago Blackhawks" })).toBeTruthy();
     expect(compactTimestamp?.textContent).toBe(initialTimestamp);
     expect(
       controlledRegion?.querySelector('[class*="expandedTimestamp"]'),
@@ -263,7 +267,7 @@ describe("NewsCard", () => {
 
     fireEvent.click(
       screen.getByRole("link", {
-        name: "View original post for Source report",
+        name: "View original post for Florida Panthers",
       }),
     );
 
@@ -291,7 +295,7 @@ describe("NewsCard", () => {
       />,
     );
 
-    expect(screen.getByAltText("NHL logo")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "NHL" })).toBeTruthy();
     expect(screen.getAllByText("NHL")).toHaveLength(1);
   });
 
@@ -306,7 +310,7 @@ describe("NewsCard", () => {
       />,
     );
 
-    expect(screen.getByAltText("ZZZ logo").getAttribute("src")).toBe(
+    expect(screen.getByRole("img", { name: "ZZZ" }).querySelector("img")?.getAttribute("src")).toBe(
       "https://assets.nhle.com/logos/nhl/svg/NHL_light.svg",
     );
     const article = container.querySelector("article");
@@ -339,7 +343,8 @@ describe("NewsCard", () => {
     const passage = 'RT @AGrossNewsday: Mathew Barzal is with #Isles on trip, Pete DeBoer said he is attending all the meetings. Not on the ice yet but said to be "around the corner." So he won\'t play in the season opener tomorrow in Toronto.';
     render(<NewsCard item={makeItem({ id: "cac51da7-3f50-4109-b7b4-3ad80538f07f", headline: "Kevin He injury update",
       blurb: passage, category: "INJURY", metadata: null, players: [{ player_id: 8484864, player_name: "Kevin He" }] })} />);
-    expect(screen.getByRole("heading", { name: "Source report" })).toBeTruthy();
+    // Unverified: the headline is the team, never the joined player.
+    expect(screen.getByRole("heading", { name: "Florida Panthers" })).toBeTruthy();
     expect(screen.queryByText("Kevin He")).toBeNull();
     expect(screen.queryByText("Kevin He injury update")).toBeNull();
     expect(screen.getByText(/Mathew Barzal is with/)).toBeTruthy();
@@ -358,7 +363,7 @@ describe("NewsCard", () => {
 
     expect(screen.queryByRole("button", { name: /expand/i })).toBeNull();
     expect(
-      screen.getByRole("heading", { name: "Source report" }),
+      screen.getByRole("heading", { name: "Florida Panthers" }),
     ).toBeTruthy();
   });
   // Retained sanitized receipt rows. Without an interpretation nothing was checked, so no unverified line shows; with
@@ -370,7 +375,7 @@ describe("NewsCard", () => {
         ...(copies ? { interpretation: failingInterpretation } : {}) },
       players: row.players.map(p => ({ ...p, player_name: p.name })), card_status: "published" } as any);
     const { container } = render(<NewsCard item={item} />);
-    expect(screen.getByRole("heading", { name: "Source report" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: getNewsItemTeamColors(item.team_abbreviation).name })).toBeTruthy();
     expect(screen.queryAllByText(UNVERIFIED)).toHaveLength(copies);
     expect(container.textContent).not.toMatch(/subject-to-claim|claim evidence/i);
     expect(container.textContent).toContain(item.blurb.replace(/^RT @\w+:\s*/, "").slice(0, 20));
@@ -391,7 +396,8 @@ describe("NewsCard", () => {
     render(<NewsCard item={makeItem({ category: "INJURY", subcategory: "OUT", headline: "ignored", blurb: text, metadata: { interpretation: {
       version: "2026-10-13.1", units: [], unresolved: [], events: [{ playerId: 8475167, playerName: "Victor Hedman", kind: "injury", state: "unknown",
         availability: "out", modality: "affirmative", evidence: { text, start: 0, end: text.length } }] } } })} />);
-    expect(screen.getByText(/Victor Hedman · Unknown report/)).toBeTruthy();
+    expect(screen.getByText("Victor Hedman · Status unknown")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Victor Hedman" })).toBeTruthy();
     expect(screen.queryByText(UNVERIFIED)).toBeNull();
   });
 
@@ -409,11 +415,15 @@ describe("NewsCard", () => {
     for (const article of articles) {
       expect(article.style.getPropertyValue("--lineup-team-primary")).toBe(teamsInfo[abbreviation]?.primaryColor ?? "#56606c");
       expect(article.style.getPropertyValue("--lineup-team-secondary")).toBe(teamsInfo[abbreviation]?.jersey ?? "#88939e");
-      expect(within(article).getByRole("region", { name: "Practice snapshot players" })).toBeTruthy();
+      expect(within(article).getByRole("group", { name: "Forwards" })).toBeTruthy();
       expect(within(article).getByText("Captured Player")).toBeTruthy();
       expect(within(article).queryByText("TBD")).toBeNull();
       expect(within(article).queryByText("Goalies")).toBeNull();
     }
+    // Only the scrollable full grid is a named region (the rail's would
+    // repeat one name per card).
+    expect(within(articles[0] as HTMLElement).getByRole("region", { name: "Practice snapshot players" })).toBeTruthy();
+    expect(within(articles[1] as HTMLElement).queryByRole("region")).toBeNull();
     expect(within(articles[0]).getAllByText("F1")).toHaveLength(3);
     expect(within(articles[1]).queryByText("F1")).toBeNull();
     expect(within(articles[1]).queryByText("Forwards")).toBeNull();
@@ -438,7 +448,7 @@ describe("NewsCard", () => {
     expect(screen.queryByText("PP1")).toBeNull();
     expect(screen.getByRole("group", { name: "PP1: E" }).textContent).toBe("E");
     expect(screen.queryByText("Forwards")).toBeNull();
-    expect(screen.getByText("Observed Jul 14, 2:19 PM")).toBeTruthy();
+    expect(screen.getByText("Jul 14, 2:19 PM")).toBeTruthy();
     expect(screen.getByRole("link", { name: /original post/ })).toBeTruthy();
   });
 
@@ -460,5 +470,37 @@ describe("NewsCard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Set G2 goalie" }));
     expect(onLineupGoalieSlotClick).toHaveBeenCalledWith(1);
     expect(screen.queryByText("TBD")).toBeNull();
+  });
+
+  it("hides the pipeline published/observed pair in production", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.resetModules();
+    try {
+      const { default: ProductionNewsCard } = await import("./NewsCard");
+      render(<ProductionNewsCard item={makeItem({ observed_at: "2026-07-14T18:19:20.000Z" })} />);
+      expect(screen.getByText("Jul 14, 2:19 PM")).toBeTruthy();
+      expect(screen.queryByText(/Published|Observed/)).toBeNull();
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
+  });
+
+  it("titles lineup cards once, e.g. \"FLA practice lines\"", () => {
+    render(<NewsCard compact rail item={makeItem({ category: "LINE COMBINATION", subcategory: "PRACTICE LINES",
+      headline: "FLA line combination update", metadata: { lineupCard: { forwards: [["A", "B", "C"]] } } })} />);
+    expect(screen.getByRole("heading", { name: "FLA practice lines" })).toBeTruthy();
+    expect(screen.getAllByText(/FLA/)).toHaveLength(1);
+    expect(screen.queryByText(/line combination/i)).toBeNull();
+    expect(screen.queryByText("Practice snapshot")).toBeNull();
+  });
+
+  it("says how long ago today's posts were seen, and the date for older ones", () => {
+    const now = Date.parse("2026-11-15T23:00:00.000Z"); // 6:00 PM New York
+    expect(formatNewsFanTime("2026-11-15T22:42:00.000Z", now)).toBe("18m ago");
+    expect(formatNewsFanTime("2026-11-15T19:30:00.000Z", now)).toBe("3h ago");
+    expect(formatNewsFanTime("2026-11-15T22:59:40.000Z", now)).toBe("Just now");
+    expect(formatNewsFanTime("2026-11-14T23:44:00.000Z", now)).toBe("Nov 14, 6:44 PM");
+    expect(formatNewsFanTime("2026-11-15T22:42:00.000Z", null)).toBe("Nov 15, 5:42 PM");
   });
 });
