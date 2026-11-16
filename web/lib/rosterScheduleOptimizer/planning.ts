@@ -163,6 +163,45 @@ export function forecastPointsReader(snapshot: PlanningSnapshot): (playerId: str
     return weights.reduce((sum, [key, weight]) => sum + forecast.stats[key]! * weight, 0);
   };
 }
+/** One game of a player the provider lists Out (IR, IR-LT, IR-NR, O), for display only (TJ, 2026-11-16): greyed and
+ * tagged "not counted", never read by an assignment, total, comparison or pick. `line`: his own admitted forecast's
+ * expected points, the value that counts again once the provider clears him. `if_dresses`: a FORGE reserve line's
+ * conditional line ("if he dresses"; a goalie's "if he starts"), kept apart because his participation is unknown or
+ * confirmed out. `none`: no projection for the game. */
+export type InjuredOutValue = { points: number | null; basis: "line" | "if_dresses" | "none" };
+/** Reads a resolved (display) snapshot; returns null for a player the provider does not list Out. */
+export function injuredOutPointsReader(snapshot: PlanningSnapshot): (playerId: string, gameId: string) => InjuredOutValue | null {
+  const players = new Map(snapshot.players.map(player => [player.id, player]));
+  const forecasts = new Map(snapshot.forecasts.filter(row => !row.expiresAt || time(row.expiresAt) > time(snapshot.context.asOf))
+    .map(row => [`${row.playerId}:${row.gameId}`, row]));
+  const applicability = statApplicability(snapshot);
+  return (playerId, gameId) => {
+    const player = players.get(playerId);
+    if (!player || !providerListsOut(player)) return null;
+    const forecast = forecasts.get(`${playerId}:${gameId}`);
+    if (!forecast || snapshot.rules.scoring.mode !== "points") return { points: null, basis: "none" };
+    const expected = gameForecastPoints(snapshot, forecast).expected;
+    // A confirmed-out reserve row counts a real 0 (appearance 0); its "if he dresses" line is the one to show.
+    if (expected !== null && forecast.appearanceProbability !== 0) return { points: expected, basis: "line" };
+    const weights = Object.entries(snapshot.rules.scoring.weights).filter(([key, weight]) => weight !== 0 && applies(key, player.playerClass, applicability));
+    const line = forecast.conditionalStats;
+    if (!line || !weights.length || weights.some(([key, weight]) => !finite(weight) || !finite(line[key]))) return { points: null, basis: "none" };
+    return { points: weights.reduce((sum, [key, weight]) => sum + line[key]! * weight, 0), basis: "if_dresses" };
+  };
+}
+/** An Out player's remaining games in the range (as the planner counts them) and their display-only total. */
+export type InjuredOutWeek = { games: number; points: number | null; basis: InjuredOutValue["basis"] | "mixed" };
+/** Null when the provider does not list him Out. `points` is null unless every game has a value. */
+export function injuredOutWeek(snapshot: PlanningSnapshot, playerId: string, read = injuredOutPointsReader(snapshot)): InjuredOutWeek | null {
+  const player = snapshot.players.find(row => row.id === playerId);
+  if (!player || !providerListsOut(player)) return null;
+  const values = snapshot.games.filter(game => game.teamAbbreviation === player.teamAbbreviation && ["scheduled", "live"].includes(game.status)
+    && game.date >= snapshot.context.startDate && game.date <= snapshot.context.endDate && eligibleGame(game, snapshot))
+    .map(game => read(playerId, game.id)!);
+  const bases = new Set(values.map(value => value.basis));
+  return { games: values.length, points: values.length && values.every(value => finite(value.points)) ? values.reduce((sum, value) => sum + value.points!, 0) : null,
+    basis: bases.size > 1 ? "mixed" : values[0]?.basis ?? "none" };
+}
 /** Per-player evidence gate (decisions 3, 47, 49; W1 P0 #27), shared by the planner, Best Fit, streaming and the DROP
  * chip: read from an evaluation of the roster (`valueUnknownPlayerIds`). A player is known only when every remaining
  * game of his in the range has a resolved, unconditional forecast whose scored stats are finite and approved for totals
@@ -270,6 +309,8 @@ export function candidateHorizonPoints(input: PlanningSnapshot): Map<string, num
   const points = new Map<string, number | null>();
   for (const player of snapshot.players) {
     const weights = Object.entries(snapshot.rules.scoring.weights).filter(([key, weight]) => weight !== 0 && applies(key, player.playerClass, applicability));
+    // Out per the provider: his games are no lineup option, so they never rank him for Best Fit (TJ, 2026-11-16).
+    if (providerListsOut(player)) { points.set(player.id, null); continue; }
     const games = snapshot.games.filter(game => game.teamAbbreviation === player.teamAbbreviation && game.status === "scheduled"
       && game.date >= snapshot.context.startDate && game.date <= snapshot.context.endDate && eligibleGame(game, snapshot));
     let value = 0;

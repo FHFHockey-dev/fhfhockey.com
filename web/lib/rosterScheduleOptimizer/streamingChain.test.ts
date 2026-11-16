@@ -610,3 +610,34 @@ describe("streaming alternatives cover both goals (VORP S4)", () => {
     expect(plan.alternativesTruncated).toBe(2);
   });
 });
+
+describe("Out free agents (TJ, 2026-11-16)", () => {
+  // Twelve Out free agents play every day and out-project the one healthy streamer, so unfiltered they fill every
+  // window's ranked list (RANKED_COUNT) and the healthy streamer is never proposed.
+  const crowded = (status: string): PlanningSnapshot => {
+    const outs: Spec[] = Array.from({ length: 12 }, (_, index) => ({ id: `out${index + 1}`, team: "OUT", days: [0, 1, 2, 3, 4, 5, 6], perGame: 2 }));
+    const snapshot = week([
+      { id: "core", team: "CORE", days: [0, 1, 2, 3, 4, 5, 6], perGame: 3, rostered: true },
+      { id: "drop", team: "IDLE", days: [], perGame: 0, rostered: true },
+      ...outs,
+      { id: "fit", team: "FIT", days: [0, 1, 2, 3], perGame: 1 },
+    ], { remaining: 1 });
+    snapshot.players = snapshot.players.map(player => player.id.startsWith("out") ? { ...player, injury: { status, label: status, note: null } } : player);
+    return snapshot;
+  };
+  const streamed = (plan: StreamingPlanWithAlternatives) => plan.chains.flatMap(chain => chain.legs.flatMap(leg => [leg.playerId, ...leg.options.map(option => option.playerId)]));
+
+  it.each(["O", "IR", "IR-LT", "IR-NR"])("leaves %s free agents out of the proposal pool, so the next healthy streamer is proposed", status => {
+    const plan = legSummary(crowded(status)) as StreamingPlanWithAlternatives;
+    expect(plan.recommended).toBe(1);
+    expect(plan.chains[0]).toMatchObject({ netGames: 4, addsUsed: 1 });
+    expect(plan.chains[0].legs.map(leg => [leg.playerId, leg.dropPlayerId])).toEqual([["fit", "drop"]]);
+    expect(streamed(plan).some(id => id.startsWith("out"))).toBe(false);
+  });
+
+  it("still streams a day-to-day free agent: only Out leaves the pool", () => {
+    const plan = legSummary(crowded("DTD")) as StreamingPlanWithAlternatives;
+    expect(plan.chains[0].legs[0].playerId).toMatch(/^out/);
+    expect(plan.chains[0].netGames).toBe(7);
+  });
+});

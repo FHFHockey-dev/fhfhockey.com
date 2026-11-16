@@ -8,6 +8,8 @@ import { buildTimeline } from "lib/rosterScheduleOptimizer/planningTimeline";
 import type { LeagueRules, PastLineup, PlanIntent, PlanningAssignment, PlanningPlayer, PlanningSnapshot, RosterEntry } from "lib/rosterScheduleOptimizer/planningTypes";
 import styles from "./RosterScheduleOptimizer.module.scss";
 import type { PlayerContribution } from "lib/rosterScheduleOptimizer/contributionLedger";
+import { injuredOutPointsReader, injuredOutWeek } from "lib/rosterScheduleOptimizer/planning";
+import { injuryDisplay, notCountedText } from "lib/rosterScheduleOptimizer/retention";
 import InfoTooltip from "./InfoTooltip";
 import PlanFromSlider, { type PlanFrom } from "./PlanFromSlider";
 
@@ -254,6 +256,8 @@ export default function CompactSchedule({ admittedSnapshot, snapshot, roster, ru
   const assignedByDay = new Map(week.map(day => [day, new Set((day === date ? groups : compactGroups({ snapshot, roster, rules, players, assignments, intent, date: day, ready }))
     .flatMap(group => group.rows.filter(row => row.assigned).map(row => row.playerId)))]));
   const goalieEvidence = admittedSnapshot?.id === snapshot?.id ? admittedSnapshot : null;
+  // TJ 2026-11-16: an Out player's week shows greyed and "not counted", read from the admitted (display) snapshot.
+  const injuredRead = useMemo(() => goalieEvidence ? injuredOutPointsReader(goalieEvidence) : null, [goalieEvidence]);
   const completeSchedule = snapshot?.evidence.schedule?.completeness === "complete";
   const gameLabel = (player: PlanningPlayer, day: string): { text: string; detail: string; assigned: boolean; goalie?: string } => {
     if (!dates.includes(day)) return { text: "—", detail: "Outside selected range", assigned: false };
@@ -346,17 +350,23 @@ export default function CompactSchedule({ admittedSnapshot, snapshot, roster, ru
             const count = (value: number | null | undefined, known: number | undefined) => value == null ? known ? `${known}+` : "?" : String(value);
             const metrics = [count(contribution?.scheduledGames, contribution?.knownScheduledGames), count(contribution?.activeGames, contribution?.knownActiveGames),
               count(contribution?.benchGames, contribution?.knownBenchGames), contribution?.projectedPoints == null ? "—" : contribution.projectedPoints.toLocaleString("en-US", { maximumFractionDigits: 1 })];
-            return <tr key={row.playerId ?? row.id} data-compact-row="" data-player-id={row.playerId} hidden={group.position === "BN" && !benchOpen} id={group.position === "BN" ? `rso-bench-${index}` : undefined}>
+            const injury = row.player ? injuryDisplay(row.player) : null;
+            const injured = injury === "out" && row.playerId && goalieEvidence && injuredRead ? injuredOutWeek(goalieEvidence, row.playerId, injuredRead) : null;
+            const injuredText = injured && row.player ? notCountedText(row.player, injured, "week") : null;
+            return <tr key={row.playerId ?? row.id} data-compact-row="" data-player-id={row.playerId} hidden={group.position === "BN" && !benchOpen} id={group.position === "BN" ? `rso-bench-${index}` : undefined}
+              {...(injury ? { "data-injury": injury } : {})}>
             {index === 0 && group.position !== "BN" && <td className={styles.positionLabel} data-position-label="" rowSpan={group.rows.length} aria-hidden="true"><span>{group.position}</span></td>}
             <th scope="row" title={`${row.slot} · ${row.player?.name ?? row.status} · ${row.status}${row.change ? ` · ${row.change}` : ""}${row.player ? ` · ${row.player.eligibilityVerified === true ? "League positions" : "Positions on file (unconfirmed)"}: ${row.player.eligiblePositions.join("/") || "unknown"}` : ""}`}>
               {row.player ? <button className={styles.schedulePlayer} onClick={() => selectPlayer(row.playerId!)} aria-label={`Schedule details for ${row.player.name}, ${row.slot}, ${row.player.eligibilityVerified === true ? "league positions" : "unconfirmed positions"} ${row.player.eligiblePositions.join("/") || "unknown"}, ${row.status}`}>
                 <ScheduleIdentity player={row.player} /><span className={styles.scheduleSrOnly}>{row.player.name} · {row.player.teamAbbreviation ?? "Team unknown"}</span>
               </button> : <span>{row.playerId ?? row.status}</span>}{row.change && <small className={styles.plannedChange} title={row.change} aria-label={row.change}>Planned</small>}
+              {injury && row.player?.injury && <small className={styles.injuredChip} data-injury={injury} title={injury === "out" ? injuredText ?? `Injured · not counted while he's listed ${row.player.injury.label}.` : `${row.player.injury.label}: still counted. Check his status before games.`}>{injury === "out" ? "not counted" : row.player.injury.status}</small>}
               <span className={styles.rowStatus} aria-label={row.status}>{row.assigned ? "●" : row.status.startsWith("Open") ? "Open" : /conflict|unsupported|unmatched|No compatible/i.test(row.status) ? "!" : /unverified|pending|unknown|unavailable/i.test(row.status) ? "?" : /Held|locked/.test(row.status) ? "L" : "·"}</span>
             </th>
             {week.map(day => { const cell = row.player ? gameLabel(row.player, day) : null; return <td key={day} title={`${dateLabel(day)} · ${cell?.detail ?? row.status}`} aria-label={`${dateLabel(day)} · ${cell?.detail ?? row.status}`}
               className={`${dayClass(day)} ${cell?.assigned ? styles.fantasyAssigned : ""}`}>{cell?.text ?? "—"}{cell?.goalie && <sup aria-hidden="true">{cell.goalie}</sup>}</td>; })}
-            {metrics.map((value, index) => <td key={index} className={styles.rangeMetric} aria-label={`${["Range GP", "Range AGP", "Range DUST/bench", "Range active points"][index]}: ${row.playerId ? value === "—" ? "unavailable" : value === "?" ? "unknown" : value.endsWith("+") ? `${value.slice(0, -1)} known; total unknown` : value : "no player"}`}>{row.playerId ? value : "—"}</td>)}
+            {metrics.map((value, index) => index === 3 && injured ? <td key={index} className={styles.rangeMetric} data-excluded="" title={injuredText!} aria-label={`Range active points: ${injuredText}`}>{injured.points === null ? "—" : injured.points.toFixed(1)}</td>
+              : <td key={index} className={styles.rangeMetric} aria-label={`${["Range GP", "Range AGP", "Range DUST/bench", "Range active points"][index]}: ${row.playerId ? value === "—" ? "unavailable" : value === "?" ? "unknown" : value.endsWith("+") ? `${value.slice(0, -1)} known; total unknown` : value : "no player"}`}>{row.playerId ? value : "—"}</td>)}
           </tr>; })}
         </tbody>)}
       </table>

@@ -171,6 +171,8 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlanWith
   const priorityWaivers = rules.waivers?.mode === "priority";
   const pool = snapshot.players.filter(player => !owned.has(player.id)
     && (STREAMABLE.has(player.availability) || priorityWaivers && isWaiver(player) && Number.isFinite(time(player.waiverClearsAt ?? "")))
+    // Out per the provider: the evaluator never lines him up, so he must not take a proposal slot (TJ, 2026-11-16).
+    && !providerListsOut(player)
     && !intent.excludedPlayerIds.includes(player.id) && !!player.teamAbbreviation && elig(player).valid
     && elig(player).playerClass === player.playerClass && dates.some(date => gameOn.has(`${player.teamAbbreviation}:${date}`)));
   if (!pool.length) { plan.limitations.push("No available player has a remaining game to stream."); return plan; }

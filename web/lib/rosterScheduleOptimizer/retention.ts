@@ -11,6 +11,19 @@ const RESERVE_POSITIONS = new Set(["IR", "IR+", "NA"]);
 
 /** Out per the provider: never valued in a lineup and never an automatic drop. */
 export const providerListsOut = (player: Pick<PlanningPlayer, "injury">) => !!player.injury && OUT_INJURY_STATUSES.has(player.injury.status.toUpperCase());
+/** How an injury reads on screen (TJ, 2026-11-16): Out players keep their projection, greyed and never counted; any other
+ * designation (day-to-day) stays counted with a caution. */
+export const injuryDisplay = (player: Pick<PlanningPlayer, "injury">): "out" | "caution" | null =>
+  !player.injury ? null : providerListsOut(player) ? "out" : "caution";
+/** The tooltip for an Out player's greyed value: what is shown, and why it is not counted. */
+export function notCountedText(player: Pick<PlanningPlayer, "injury" | "playerClass">,
+  value: { points: number | null; basis: "line" | "if_dresses" | "none" | "mixed" }, scope: "game" | "week" = "game"): string {
+  const listed = `while he's listed ${player.injury?.label || player.injury?.status || "out"}`;
+  if (value.points === null) return `Injured · not counted ${listed}. ${value.basis === "none" ? `No projection for this ${scope}` : "Part of his projection is missing"}.`;
+  const condition = value.basis === "if_dresses" ? player.playerClass === "goalie" ? " if he starts" : " if he dresses"
+    : value.basis === "mixed" ? " (some games if he dresses)" : "";
+  return `Injured · not counted ${listed}: ${value.points.toFixed(1)} projected points${condition} this ${scope}.${value.basis === "line" ? " It counts again once he's cleared." : ""}`;
+}
 
 /** The loader sets `ownership` only for a fresh (≤3-day) 0–100 observation, so a number is known and fresh; 0 is a real 0%.
  * Anything else (null, absent, invalid) is unknown: neither low nor high demand. */
