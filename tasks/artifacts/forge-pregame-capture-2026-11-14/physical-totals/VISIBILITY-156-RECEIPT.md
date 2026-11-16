@@ -1,7 +1,7 @@
 # wgo_skater_stats visibility receipt: one-off VACUUM + migration 156
 
 - **Approval:** TJ's pop-up, 2026-11-16: "Both, vacuum first (Recommended)".
-- **Script:** `operator/apply-visibility-156.sh`, attended (self-test 14/14). It ran psql 15 to the IPv4 session pooler as `postgres` (table owner, not superuser). Private outputs are in `~/forge-pilot/visibility-156-20261116T015026Z/`; copies are in `results/vacuum-20261116T015028Z.txt` and `results/body-plan-after-vacuum-20261116T015030Z.txt`.
+- **Script:** `operator/apply-visibility-156.sh`, attended (self-test 14/14, then 17/17 with `--index-cleanup`). It ran psql 15 to the IPv4 session pooler as `postgres` (table owner, not superuser). Private outputs are in `~/forge-pilot/visibility-156-20261116T015026Z/`; copies are in `results/vacuum-20261116T015028Z.txt` and `results/body-plan-after-vacuum-20261116T015030Z.txt`.
 
 ## 1. One-off `VACUUM (VERBOSE) public.wgo_skater_stats`
 - **Gate (01:50:27Z):** active 1, longest 1 s, lock waits 0, cron 0, no vacuum running; 97.57% of pages all-visible.
@@ -19,9 +19,14 @@
 - **Effect:** autovacuum now visits the table after every 1,000 inserted rows, counted from now; the stats counters had read 0.
 - **Rollback:** rehearsed, not run: `apply-visibility-156.sh --rollback-reloptions --confirm 20261116020000`.
 
+## 3. `VACUUM (VERBOSE, INDEX_CLEANUP ON) public.wgo_skater_stats`
+- **Approval:** TJ's pop-up "Run it now". Script switch `--index-cleanup`; self-test 17/17.
+- **Gate (01:52:35Z):** quiet; no vacuum running; 98.63% of pages all-visible.
+- **Ran:** finished 01:52:43.921Z (elapsed 7.46 s); exit 0. It cleaned the table's indexes (copy in `results/vacuum-index-cleanup-20261116T015236Z.txt`).
+- **After (01:52:45Z):** **100.00%** of pages all-visible.
+- **The capture read:** Index Only Scan, **Heap Fetches 0**, **337 ms** (`results/body-plan-after-index-cleanup-20261116T015244Z.txt`).
+
 ## What is left
-- **3,814 pages with dead item identifiers** stay not-all-visible until an index-cleaning vacuum.
-  - Autovacuum's dead-tuple trigger is 50 + 0.01 × reltuples, about 22,600 dead rows, counted from zero.
-  - Autovacuum also bypasses index cleanup under 2%, as tonight's VACUUM did.
-  - Option: one `VACUUM (VERBOSE, INDEX_CLEANUP ON)` that scans the table's 14 indexes (about 0.7 GB) once. That is a separate decision.
-- **Cold time of the capture read:** unmeasured. The next capture's go/no-go is `apply-migration-155.sh --timed-read` at ≤ 4,000 ms.
+- **New rows:** the daily WGO inserts make new pages not-all-visible again. Migration 156 has autovacuum visit after every 1,000 inserted rows.
+- **Upserts:** their dead items can again sit under the 2% index-cleanup bypass, so heap fetches may creep back between index-cleaning vacuums. The pre-capture timed read is what catches it.
+- **Cold time of the capture read:** not measured in a fully cold state; it was 1,537 ms near cold after the first VACUUM. The next capture's go/no-go is `apply-migration-155.sh --timed-read` at ≤ 4,000 ms.

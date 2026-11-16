@@ -365,3 +365,4 @@
 - **Open for TJ:**
   - an optional `VACUUM (INDEX_CLEANUP ON)` for the 3,814 pages;
   - the next capture: candidate `bc13b523e` or later with docs only, a Monday game, a timed read of 4 s or less before launch.
+- **01:52Z:** `VACUUM (INDEX_CLEANUP ON)` (TJ: "Run it now") in 7.46 s: 100% of pages all-visible; the capture read has 0 heap fetches and takes 337 ms. The script gained `--index-cleanup` (self-test 17/17). Next: the Monday packet.

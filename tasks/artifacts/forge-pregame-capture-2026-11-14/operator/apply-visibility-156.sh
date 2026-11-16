@@ -2,7 +2,10 @@
 # wgo_skater_stats visibility: a one-off VACUUM and migration 156 (insert-triggered autovacuum). FAILS CLOSED (exit 7).
 # Each changing mode needs TJ's own approval.
 #   --preflight                                      read-only checks (default)
-#   --vacuum --confirm wgo_skater_stats              VACUUM (VERBOSE) public.wgo_skater_stats, outside a transaction, then
+#   --vacuum --confirm wgo_skater_stats [--index-cleanup]
+#                                                    VACUUM (VERBOSE) public.wgo_skater_stats, outside a transaction (with
+#                                                    --index-cleanup: VERBOSE, INDEX_CLEANUP ON, so pages holding dead item
+#                                                    identifiers are cleaned even under the 2% bypass), then
 #                                                    a read-only readback: all-visible pages and the capture read's heap
 #                                                    fetches (the 155 body, generic plan, EXPLAIN ANALYZE)
 #   --reloptions --confirm 20261116020000            one transaction: the migration file, the ledger row; exact readback
@@ -25,13 +28,14 @@ PSQL=(${=PSQL_CMD:-$HERE/pgpool.sh})
 OUTDIR=${OUTDIR:-$HOME/forge-pilot/visibility-156-$(date -u +%Y%m%dT%H%M%SZ)}
 
 fail() { echo "FAIL: $*" >&2; exit 7; }
-mode=preflight; confirm=""
+mode=preflight; confirm=""; vacopts="verbose"
 while (( $# )); do
   case $1 in
     --preflight) mode=preflight ;;
     --vacuum) mode=vacuum ;;
     --reloptions) mode=reloptions ;;
     --rollback-reloptions) mode=rollback ;;
+    --index-cleanup) vacopts="verbose, index_cleanup on" ;;
     --confirm) shift; confirm=${1:-} ;;
     *) fail "unknown argument $1" ;;
   esac
@@ -87,7 +91,7 @@ case $mode in
 set statement_timeout = '$VACUUM_STATEMENT_TIMEOUT';
 set lock_timeout = '10s';
 select 'vacuum_start', clock_timestamp();
-vacuum (verbose) public.wgo_skater_stats;
+vacuum ($vacopts) public.wgo_skater_stats;
 select 'vacuum_done', clock_timestamp();
 SQL
     perl -e 'alarm shift; exec @ARGV' 1000 ${PSQL[@]} -X -f $OUTDIR/vacuum.sql > $OUTDIR/vacuum.out 2>&1
@@ -96,7 +100,7 @@ SQL
     (( rc == 0 )) && grep -q 'vacuum_done' $OUTDIR/vacuum.out || fail "vacuum did not finish (psql exit $rc); see $OUTDIR/vacuum.out"
     state
     echo "heap fetches after: $(heap_fetches || echo unavailable)"
-    echo "vacuum done ($OUTDIR)"
+    echo "vacuum ($vacopts) done ($OUTDIR)"
     ;;
   reloptions)
     [[ $confirm == $VERSION ]] || fail "--reloptions needs --confirm $VERSION"

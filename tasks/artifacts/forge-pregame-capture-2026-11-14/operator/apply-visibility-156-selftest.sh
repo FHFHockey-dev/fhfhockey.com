@@ -59,6 +59,10 @@ $SU[@] -c "delete from cron.job_run_details"
 expect ok   "vacuum runs and reads back"                                       zsh $S --vacuum --confirm wgo_skater_stats
 saw "heap fetches after: Heap Fetches: 0 " "after the vacuum the capture read has no heap fetches"
 saw "all_visible=100.00%" "after the vacuum every page is all-visible"
+$U[@] -c "update public.wgo_skater_stats set hits = hits + 0 where id % 50 = 0 and date >= date '2026-09-01'"
+expect ok   "vacuum --index-cleanup runs with INDEX_CLEANUP ON"               zsh $S --vacuum --confirm wgo_skater_stats --index-cleanup
+saw "vacuum \\(verbose, index_cleanup on\\) done" "the index-cleanup option reached the VACUUM statement"
+saw "heap fetches after: Heap Fetches: 0 " "after the index-cleaning vacuum the capture read has no heap fetches"
 expect fail "reloptions refuses a wrong --confirm"                             zsh $S --reloptions --confirm 20261116010000
 expect ok   "reloptions applies the insert trigger and records the ledger row" zsh $S --reloptions --confirm 20261116020000
 saw "autovacuum_vacuum_insert_threshold=1000,autovacuum_vacuum_insert_scale_factor=0" "readback shows both insert options next to order 93's"
