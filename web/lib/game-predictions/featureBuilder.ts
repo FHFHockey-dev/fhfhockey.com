@@ -163,7 +163,10 @@ export type LinesCccRow = Pick<
   | "goalie_1_name"
   | "goalie_2_player_id"
   | "goalie_2_name"
->;
+> & {
+  /** Only `metadata.goalieStates` is loaded: the producer's per-goalie state (see `RowGoalieState` in linesCccIngestion). */
+  metadata?: { goalieStates?: unknown } | null;
+};
 
 export type GoaliePerformanceRow = Pick<
   Database["public"]["Views"]["vw_goalie_stats_unified"]["Row"],
@@ -1344,20 +1347,11 @@ export function buildGoalieBlendFeatures(
   } = {},
 ): GoalieBlendFeatures {
   const goaliePerformanceRows = options.goaliePerformanceRows ?? [];
-  const linesCccGoalie = (options.linesCccRows ?? [])
-    .filter(
-      (row) =>
-        row.team_id === teamId &&
-        row.game_id === options.gameId &&
-        row.status === "observed" &&
-        row.nhl_filter_status === "accepted" &&
-        (row.goalie_1_player_id != null || row.goalie_1_name != null),
-    )
-    .sort((a, b) =>
-      (b.observed_at ?? b.tweet_posted_at ?? "").localeCompare(
-        a.observed_at ?? a.tweet_posted_at ?? "",
-      ),
-    )[0];
+  const linesCccGoalie = latestLinesCccConfirmedStarterRow(
+    options.linesCccRows ?? [],
+    teamId,
+    options.gameId,
+  );
   if (linesCccGoalie) {
     const candidateCount =
       linesCccGoalie.goalie_2_player_id != null ||
@@ -1489,6 +1483,88 @@ export function buildGoalieBlendFeatures(
     probabilityMass: rawTotal,
     context: null,
   };
+}
+
+type LinesCccGoalieState = {
+  name: string | null;
+  playerId: number | null;
+  state: string | null;
+  role: string | null;
+  stored: boolean;
+};
+
+function linesCccGoalieStates(row: LinesCccRow): LinesCccGoalieState[] {
+  const raw = row.metadata?.goalieStates;
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const value = entry as Record<string, unknown>;
+    return [
+      {
+        name: typeof value.name === "string" ? value.name : null,
+        playerId: typeof value.playerId === "number" ? value.playerId : null,
+        state: typeof value.state === "string" ? value.state : null,
+        role: typeof value.role === "string" ? value.role : null,
+        stored: value.stored !== false,
+      },
+    ];
+  });
+}
+
+function sameLinesCccGoalie(
+  state: LinesCccGoalieState,
+  playerId: number | null,
+  name: string | null,
+): boolean {
+  if (state.playerId != null && playerId != null) return state.playerId === playerId;
+  return state.name != null && name != null && state.name === name;
+}
+
+/**
+ * A goalie the source explicitly confirmed as the starter: state "confirmed", not a backup, stored as goalie_1, and
+ * no other goalie on the row also confirmed as a starter. Listed, projected, likely, observed (warmup or first-off)
+ * and unresolved goalies, backups, ruled-out goalies and rows without state metadata are not confirmations, so
+ * slot order alone never makes a starter certain (AFULL-GAME3-02).
+ */
+function linesCccRowHasConfirmedStarter(row: LinesCccRow): boolean {
+  if (row.goalie_1_player_id == null && row.goalie_1_name == null) return false;
+  const confirmedStarters = linesCccGoalieStates(row).filter(
+    (state) => state.stored && state.state === "confirmed" && state.role !== "backup",
+  );
+  return (
+    confirmedStarters.length === 1 &&
+    sameLinesCccGoalie(confirmedStarters[0]!, row.goalie_1_player_id, row.goalie_1_name)
+  );
+}
+
+function latestLinesCccConfirmedStarterRow(
+  rows: LinesCccRow[],
+  teamId: number,
+  gameId: number | undefined,
+): LinesCccRow | undefined {
+  const rowTime = (row: LinesCccRow) => row.observed_at ?? row.tweet_posted_at ?? "";
+  const teamRows = rows.filter(
+    (row) =>
+      row.team_id === teamId &&
+      row.game_id === gameId &&
+      row.status === "observed" &&
+      row.nhl_filter_status === "accepted",
+  );
+  const confirmed = teamRows
+    .filter(linesCccRowHasConfirmedStarter)
+    .sort((a, b) => rowTime(b).localeCompare(rowTime(a)))[0];
+  if (!confirmed) return undefined;
+  // A later post that rules the confirmed goalie out cancels the confirmation.
+  const ruledOutLater = teamRows.some(
+    (row) =>
+      rowTime(row) > rowTime(confirmed) &&
+      linesCccGoalieStates(row).some(
+        (state) =>
+          state.state === "ruled_out" &&
+          sameLinesCccGoalie(state, confirmed.goalie_1_player_id, confirmed.goalie_1_name),
+      ),
+  );
+  return ruledOutLater ? undefined : confirmed;
 }
 
 function goalieStartUncertainty(args: {
@@ -2959,7 +3035,7 @@ export async function fetchGamePredictionFeatureInputs(
     client
       .from("lines_ccc")
       .select(
-        "game_id,team_id,observed_at,tweet_posted_at,classification,status,nhl_filter_status,goalie_1_player_id,goalie_1_name,goalie_2_player_id,goalie_2_name",
+        "game_id,team_id,observed_at,tweet_posted_at,classification,status,nhl_filter_status,goalie_1_player_id,goalie_1_name,goalie_2_player_id,goalie_2_name,goalie_states:metadata->goalieStates",
       )
       .eq("game_id", gameId)
       .in("team_id", teamIds)
@@ -3093,7 +3169,14 @@ export async function fetchGamePredictionFeatureInputs(
     ),
     lineCombinationRows: (lineCombinationResult.data ??
       []) as LineCombinationRow[],
-    linesCccRows: (linesCccResult.data ?? []) as LinesCccRow[],
+    linesCccRows: (
+      (linesCccResult.data ?? []) as Array<
+        Omit<LinesCccRow, "metadata"> & { goalie_states?: unknown }
+      >
+    ).map(({ goalie_states, ...row }) => ({
+      ...row,
+      metadata: { goalieStates: goalie_states ?? null },
+    })),
     goaliePerformanceRows: (goaliePerformanceResult.data ??
       []) as GoaliePerformanceRow[],
     forgeGoalieGameRows: (forgeGoalieGameResult.data ??

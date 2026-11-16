@@ -13,13 +13,15 @@ Recorded at 2026-11-16T01:33:25Z. Each approval is limited to exactly the scope 
 
 **Still not approved:**
 - the 11-18 fallback;
-- v6 probe part B (route calls);
-- the v6 kill switch, schedule, or any call to `blsh_request_context_v1`;
+- (v6 probe part B was approved as "Approve part B after deploy". It runs as the scheduled 11-19 12:05Z firing, switch off, and is checked from logs only.)
+- the v6 kill switch, or any call to `blsh_request_context_v1`. The schedule itself, with the switch off, was approved on 11-16 as "Schedule, switch off". It ran at 19:12Z; see `v6-schedule/SCHEDULE-APPLY-RECEIPT.md`. Jobs 404–407 are active;
 - pushing the bookkeeping commit `9ed2e8b24`, which ships with the next release;
 - the policy install;
 - the public trade page.
 
 On 11-17, TJ messages Chef at about 13:45Z to start. Any stop rule ends the day.
+
+**Wake-up pre-approved (2026-11-16 ~13:35Z, TJ in chat):** "Set an alert to start automatically - you have my pre-approval". Chef set a one-shot session trigger for 08:45 EST (13:45Z) on 11-17 that relays the wake-up to the operator in place of TJ's message. This does not widen A2–A4. Every condition and stop rule above still applies. If the trigger fires after 14:00Z, or the date isn't 2026-11-17, Chef does not relay and reports to TJ instead (the 11-18 fallback stays a separate decision).
 
 ## Results
 
