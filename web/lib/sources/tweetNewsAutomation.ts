@@ -12,6 +12,7 @@ import {
   readLineupCardFromMetadata,
 } from "lib/newsLineupCard";
 import type { NewsLineupCardData } from "lib/newsLineupCard";
+import { buildNewsLineupSnapshot, type NewsLineupSnapshot } from "lib/newsLineupPresentation";
 import type { TweetPatternReviewAssignment } from "lib/sources/tweetPatternReview";
 import {
   tweetNewsExclusionRules,
@@ -418,6 +419,13 @@ export function publicClaimInterpretation(
   return picked;
 }
 
+/** The source report's units bound to its team and the snapshot's NHL game; validated again at render. */
+function newsLineupFromReviewRow(row: TweetNewsAutomationReviewRow): NewsLineupSnapshot | null {
+  const gameId = row.metadata?.retainedGameId;
+  return buildNewsLineupSnapshot({ interpretation: row.metadata?.retainedInterpretation, teamId: row.team_id,
+    gameId: typeof gameId === "number" ? gameId : null, sourceTweetId: row.tweet_id ?? null });
+}
+
 function buildBlurb(text: string): string {
   const normalized = normalizeNewsText(text)
     .replace(/https?:\/\/\S+/gi, "")
@@ -639,6 +647,8 @@ export function buildTweetNewsAutomationCandidate(args: {
   };
   const claimInterpretation = publicClaimInterpretation(args.row.metadata);
   if (claimInterpretation) metadata.interpretation = claimInterpretation;
+  const newsLineup = newsLineupFromReviewRow(args.row);
+  if (newsLineup) metadata.newsLineup = newsLineup;
 
   if (lineupCard) {
     metadata.lineupCard = lineupCard;
@@ -717,6 +727,8 @@ export function buildTweetNewsAmbiguousCandidate(args: {
   };
   const claimInterpretation = publicClaimInterpretation(args.row.metadata);
   if (claimInterpretation) metadata.interpretation = claimInterpretation;
+  const newsLineup = newsLineupFromReviewRow(args.row);
+  if (newsLineup) metadata.newsLineup = newsLineup;
 
   if (context.preliminaryLineupCard) {
     metadata.lineupCard = context.preliminaryLineupCard;

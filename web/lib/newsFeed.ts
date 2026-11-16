@@ -533,7 +533,8 @@ export function sanitizePublicNewsFeedItem(
     // Raw ingest lineage remains in storage, never in the public display DTO.
     metadata: sanitizePublicMetadataValue(item.metadata ? {
       interpretation: item.metadata.interpretation,
-      lineupCard: item.metadata.lineupCard,
+      // Validated at render; raw text-split lineupCard strings never reach the public DTO.
+      newsLineup: item.metadata.newsLineup,
       automation: item.metadata.automation && typeof item.metadata.automation === "object"
         ? { summary: (item.metadata.automation as Record<string, unknown>).summary } : undefined,
     } : null) as Record<

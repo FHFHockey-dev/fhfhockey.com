@@ -38,7 +38,7 @@ type NewsCardProps = {
     | "card_status"
     | "metadata"
     | "players"
-  > & { tweet_url?: string | null; observed_at?: string | null };
+  > & { tweet_url?: string | null; observed_at?: string | null; team_id?: number | null };
   compact?: boolean;
   rail?: boolean;
   expanded?: boolean;
@@ -225,7 +225,9 @@ export default function NewsCard({
     sanitizePublicNewsText(sourceDisplayNameOverride),
   );
   const lineup = isLineupNewsCategory(item.category, item.subcategory)
-    ? readNewsLineupPresentation({ metadata: item.metadata, subcategory: item.subcategory })
+    // Only the internal review editor (which owns the goalie-slot handler) previews its own draft lineup.
+    ? readNewsLineupPresentation({ metadata: item.metadata, subcategory: item.subcategory, teamId: item.team_id ?? null,
+        reviewDraft: Boolean(onLineupGoalieSlotClick) })
     : null;
   const presentation = getPublicNewsClaimPresentation(item);
   // Only lineup cards carry a category chip; source reports used to repeat
@@ -333,7 +335,8 @@ export default function NewsCard({
           <div className={styles.lineupBody}>
             <NewsLineupGrid
               lineup={lineup}
-              hideContext
+              // The title already names the card; a warm-up card still says its lines are only reported.
+              hideContext={!lineup.context.endsWith("· reported")}
               mini={rail}
               onGoalieSlotClick={onLineupGoalieSlotClick}
             />

@@ -38,7 +38,7 @@ describe("source interpretation reaches the public card only as checked claim fi
     expect(sanitizePublicNewsFeedItem(f.loaded)).toEqual(f.loaded);
   });
   it("allowlists known public metadata while excluding lineage and review fields", () => {
-    const item: any = { id: "fixture", headline: "Fixture", blurb: "Source passage", source_label: "Reporter", source_account: "FixtureReporter", source_url: "https://x.com/FixtureReporter/status/100", tweet_url: null, metadata: { interpretation: { events: [] }, lineupCard: { lines: [] }, retainedInterpretation: interpretation, temporalReview: { marker: "PRIVATE" }, rawLineageMarker: "PRIVATE", automation: { summary: "Public summary", autoPublish: false, internalReview: "PRIVATE" } } };
-    expect(sanitizePublicNewsFeedItem(item).metadata).toEqual({ interpretation: { events: [] }, lineupCard: { lines: [] }, automation: { summary: "Public summary" } });
+    const item: any = { id: "fixture", headline: "Fixture", blurb: "Source passage", source_label: "Reporter", source_account: "FixtureReporter", source_url: "https://x.com/FixtureReporter/status/100", tweet_url: null, metadata: { interpretation: { events: [] }, lineupCard: { lines: [] }, newsLineup: { version: 1 }, retainedInterpretation: interpretation, temporalReview: { marker: "PRIVATE" }, rawLineageMarker: "PRIVATE", automation: { summary: "Public summary", autoPublish: false, internalReview: "PRIVATE" } } };
+    expect(sanitizePublicNewsFeedItem(item).metadata).toEqual({ interpretation: { events: [] }, newsLineup: { version: 1 }, automation: { summary: "Public summary" } });
   });
 });
