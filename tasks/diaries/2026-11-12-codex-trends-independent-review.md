@@ -1,0 +1,11 @@
+# Independent metadata repair review
+- Scope: read-only review of frozen six-row season metadata repair; only review artifact and this diary writable.
+- Where: canonical octoberBranch; SQL expected SHA256 99a528b95429e64123e276351240db8ca730da7abcb2440883911c1e15a8f10f; extensive unrelated work preserved.
+- State: started by reading AGENTS.md and mise-en-place.md; examining SQL, evidence, verifier and API. Assigned model gpt-6.1-sol medium by ticket; runtime settings are not independently exposed here.
+- Next: establish evidence and concurrency/side-effect bounds, then record severity-ranked findings.
+- Blockers/approvals: no remote calls or production writes authorized to this reviewer; no blockers to local review.
+- Checkpoint: all four frozen input hashes match reviewed pins. Static scope/identity/season checks support repair. Review report created with metadata gate, activity-race limitation, and test assertion limits.
+- Check run: exact local fixture harness attempted once; initdb blocked by sandbox shmget Operation not permitted before server startup. No independent test pass claimed; no escalation/retry.
+- Next: parent supplies refreshed production metadata/Phase C evidence; bounded follow-up only if material new evidence/correction. Review handoff remains conditional, no production clearance or execution.
+- Follow-up: reviewed READINESS-EVIDENCE.json SHA256 e334b775d979f8b504eb92e429055bafd35c09fae3a5c0a04510d69ac81641be. Captured triggers/rules close side-effect gap: timestamp trigger and immediate FK checks only. Current map view matches expected serving join. Phase C remains ongoing despite quiet activity instant; no completion/recovery receipt. Report updated and handed off; no writes/remote calls authorized or attempted. Diary retained for handoff continuity.
+- Bounded follow-up requested: inspected updated harness 476ecbe3… and new postcheck 9544dfa2…; repair remains 99a528b9…. No repeated initdb attempt. Error-substring assertions close generic negative-test gap; idle target-lock test covers one contention case only. Exact three-key postcheck adequate when all five booleans true and exactly three expected rows. Remaining serialization/new-writer/uncertain-commit cases untested; Phase C ongoing, no production clearance. Appended assessment preserves original hashes/history.

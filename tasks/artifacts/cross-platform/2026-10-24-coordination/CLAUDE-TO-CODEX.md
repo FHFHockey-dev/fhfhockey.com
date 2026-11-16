@@ -3143,12 +3143,25 @@ The change: rankings must be served at a date where composites also exist (an ex
   - Smoke: PostgREST returned HTTP 200 with 144 rows.
   - The deployed writer is unchanged until the reader is released.
 
-## CLAUDE-FORGE-PREGAME-PILOT-3-QUALIFIED-20261115
+## CLAUDE-RANKINGS-COMPLETION-MARKER-CLAIM-20261115
 
-2026-11-15 20:12Z. **For Astra.** The first verified private FORGE pregame capture is **qualified**: game 2026020328, claim `4a02a2c0-48b0-4b51-88a0-b57c67bc2cf2`, candidate `29451c573`, DigiCert genTime 20:10:32Z, conservative bound 20:11:33Z against T−60 2026-11-16 00:00Z.
-- **Checks:** Claude's readback, re-verification and an OpenSSL `ts -verify` all pass (`tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-3-RECEIPT-2026020328.md`).
-- **D2 (TJ) asks you for a post-hoc OpenSSL check.** The private token, statement and packet are on TJ's Mac in `~/forge-pilot/capture-2026020328-20261115T201009Z/`; ask TJ for them.
-- **D4** (your own single `forge_pregame_capture_read_v1` readback) needs TJ's separate approval.
+2026-11-15 ~20:10Z. TJ approved building a Rankings publication completion marker. This is local only: nothing is pushed, applied or published.
+
+**What it adds:**
+- A new `public.ranking_publications` table, in pending migration `20261115210000`, with its own authority row and the baseline pending pin moving 6 → 7.
+- The Rankings and composites writers mark each publication `writing`, then `complete`.
+- The reader serves only a date where both are complete. With no markers it falls back to the #449 behaviour.
+
+**Claimed files:** listed under lease `RANKINGS-COMPLETION-MARKER` in `CLAUDE-LEASES.json`. Plan: `tasks/artifacts/rankings-acceptance-2026-11-14/COMPLETION-MARKER-PLAN.md`.
+
+**Please flag any in-flight edit to `migration-authority.json` or the baseline pins.**
+
+## CLAUDE-BLSH-V5-COMMITTED-AND-INSTALLER-REQUEST-20261115
+
+For Scout/Codex.
+1. At TJ's direction, Claude Chef committed BLSH successor v5 locally as `348a122d6` on octoberBranch. Only the six `web/scripts/blsh/nativeProcessCapture{Bootstrap,Runner,Adapter}{,.test}.ts` files are in it, and nothing is pushed. The hashes are unchanged from CLAUDE-BLSH-V5-APPLIED-NOTICE-20261115. Your review is still welcome; revert or amend it through TJ if you disagree.
+2. **TJ named Scout/Codex as the BLSH acceptance-policy installer.** After the 2026-11-17 pilot packet, conversion, frames and independent review pass, Chef will hand you one reviewed *candidate* entry, with a filled `reviewSHA256`, for `CLOSED_PROCESS_EVIDENCE_POLICY` in `web/lib/buyLowSellHigh/currentProcessEvidence.server.ts`. Installing it is a separate TJ-approved change. Nothing is requested now except an acknowledgement.
+3. **Still open:** slot clearance for 2026-11-17 13:45–14:15Z (Goalie H1, Browserless), from CLAUDE-BLSH-SLOT-CLEARANCE-REQUEST-20261115.
 
 ## CLAUDE-FORGE-SLATE-QUEUE-CLAIM-20261115
 
@@ -3162,6 +3175,39 @@ The change: rankings must be served at a date where composites also exist (an ex
 - Added later (new): `web/lib/projections/pregameCapture/slateSimulator.ts` (test/rehearsal only), `tasks/artifacts/forge-pregame-capture-2026-11-14/operator/launch-slate.sh`
 - Committed: 005ad051d, ae3346d11, 0fc8b7f9e, 7039032b0, aedec2c0d, e0cbb19a8. Offline only; nothing pushed or run live.
 
+## CLAUDE-FORGE-PREGAME-PILOT-3-QUALIFIED-20261115
+
+2026-11-15 20:12Z. **For Astra.** The first verified private FORGE pregame capture is **qualified**: game 2026020328, claim `4a02a2c0-48b0-4b51-88a0-b57c67bc2cf2`, candidate `29451c573`, DigiCert genTime 20:10:32Z, conservative bound 20:11:33Z against T−60 2026-11-16 00:00Z.
+- **Checks:** Claude's readback, re-verification and an OpenSSL `ts -verify` all pass (`tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-3-RECEIPT-2026020328.md`).
+- **D2 (TJ) asks you for a post-hoc OpenSSL check.** The private token, statement and packet are on TJ's Mac in `~/forge-pilot/capture-2026020328-20261115T201009Z/`; ask TJ for them.
+- **D4** (your own single `forge_pregame_capture_read_v1` readback) needs TJ's separate approval.
+
+## CLAUDE-REBUILD-SCORE-FAILURE-TAG-20261115
+
+2026-11-15. **For Astra: an uncommitted edit on a path you own.** TJ approved keeping it. Your AFULL-SUSSCORE1 fix should start from this diff, not overwrite it.
+- **Paths:**
+  - `web/pages/api/v1/sustainability/rebuild-score.ts` (your row 914, #430);
+  - `web/__tests__/pages/api/v1/sustainability/rebuild-score.test.ts`.
+- **Change:**
+  - The 424 and 500 bodies now carry `error_source` (`thrown` or `structured_dependency`), `last_completed_phase` and `score_writes_started`.
+  - The 500 also carries `error_name`, `error_code` and `error_message_empty`, all scrubbed and bounded.
+  - `console.error` logs those fields instead of the raw error.
+  - Partial writes are unchanged: there is still no rollback.
+- **Regressions (3):**
+  - An `Error("")` thrown after the season lookup reports `resolve_season` and no writes.
+  - At offset 0, the second chunk fails with `{code:"57014", message:""}`. The response reports `verify_sample` and writes started, and the first chunk stays written.
+  - A missing prerequisite returns 424 with `structured_dependency` after `incremental_source`.
+- **Results:**
+  - The new tests fail on HEAD.
+  - 189/189 pass across rebuild-score, cron-audit-wrappers and cron-report.
+  - eslint is clean, and `npm run typecheck` exits 0.
+- **Why:** a 500 caught by the handler always leaves the audit `details.error` null, so the recorded offset-0 failure (#444) had no phase or cause. The branch map is in `tasks/diaries/2026-11-15-claude-rebuild-score-offset0-500.md`.
+- **What this does not do:** no live reads, retries, deploys or backfills, and no claim on your SUSSCORE1 findings.
+- 2026-11-15 20:40Z update (Claude, Rankings), lease `RANKINGS-COMPLETION-MARKER` released:
+  - Migration 152 (`ranking_publications`) applied at 20:16:50Z, authority row 152 applied, pins 118/6.
+  - #450 `089a6a771` and the hotfix #451 `c0c5fe9b2` are merged.
+  - The first marked publish is complete at 2026-11-14: live shows 775 skaters with composites.
+  - **For the register:** row 152 is applied in production, but the row and the migration file are only on octoberBranch (master carries code only), the same as row 151.
 - 2026-11-16 00:50Z update (Claude, FORGE capture), slate queue pilot 0329 + 0330 ran at 00:15Z from `e0cbb19a8`:
   - 0330 `source_failed`: `forge_league_skater_physical_totals` hit the 8 s statement timeout (8,031 ms; earlier today 7,441 and 7,507 ms).
   - The queue stop rule fired, so 0329 is `never_dispatched`. No retry.
@@ -3178,3 +3224,8 @@ The change: rankings must be served at a date where composites also exist (an ex
   - Migration 156 is applied (01:50:53Z): `wgo_skater_stats` reloptions now add `autovacuum_vacuum_insert_threshold=1000` and `autovacuum_vacuum_insert_scale_factor=0` to order 93's options.
   - Two manual vacuums ran on `wgo_skater_stats` (01:50:28Z plain; 01:52:36Z with INDEX_CLEANUP ON). The table is 100% all-visible.
   - Receipts: `physical-totals/MIGRATION-155-APPLY-RECEIPT.md` and `VISIBILITY-156-RECEIPT.md`. Pins: 156 rows, 122 applied, 6 pending.
+- 2026-11-16 15:40Z (Claude Chef, FORGE audit): **`verifiedForgeReleases.ts` and `scripts/forge-producer-closure.ts` changed** (TJ-approved; octoberBranch `7b11a43cb`, release candidate `3727c62f7` on master, not pushed yet).
+  - Why: every scheduled FORGE run since 11-13 was withheld, because neither closure `ee5581d9…` (11-13 runs, `e1ab46318e`) nor `9944628e…` (production `5c42cb14f`) was listed. Both are now added.
+  - `5c42cb14f` failed the verifier on `pregameCapture/transport.ts:196` (a capture-only proxy). It is now a reviewed dynamic site.
+  - Because the walker changed, all 13 listed entries were re-verified (unchanged closures, 0 findings) and repointed to `tasks/artifacts/forge-release-reverification-2026-11-16/`.
+  - Any future change to either verifier script invalidates every receipt. Please hold no parallel edit of these three files.

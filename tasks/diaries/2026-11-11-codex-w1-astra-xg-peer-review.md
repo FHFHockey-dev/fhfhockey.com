@@ -1,0 +1,13 @@
+# W1 xG peer review
+- Scope: independently vet Fable W1-1 findings and add corrections/context only.
+- Checkout: /Users/tim/Code/fhfhockey.com, octoberBranch, start HEAD f6cdee012b8c16d330362cb88f81435d17f975ff. Existing unrelated modifications preserved.
+- Owned deliverable: tasks/artifacts/calculation-inventory-2026-11-10/master/W1-Astra-PR/xg.md. No shared audit or owner-decision edits.
+- State: read repository instructions, W1 prompt, owner decisions and audit introduction. Beginning source and committed-artifact verification.
+- Restrictions: no application code changes, DB writes, provider calls, migrations, commits, pushes or deployments. Use local evidence first. No production reads planned.
+- Next: test decisive claims against code and persisted holdout artifacts; separate verified evidence from historical DB assertions and unpublished sample refits.
+- Checkpoint: independently recomputed four committed model holdouts. Corrected candidate test AUC 0.71239226 (EV 0.73559619), older artifact 0.93360474. Test is 139 regular-season games and 69 playoff games, not mostly playoffs.
+- Direct local fixtures reproduced flurry future dependence and isotonic tied-input row-ID sensitivity (1e-9 versus 0.3). Current feature contract rejects the old artifact but accepts the flurry-bearing candidate. Four focused Vitest files passed, 13 tests total.
+- Source corrections found: GSAA reference formula; drift standard-error magnitude; row-count-independent L2 objective; rush test contradicts 4-second owner decision; Metrics Timeline deduplicates same-game rows but remains model-unpinned. Historical DB observations and sample refit are not independently reproduced.
+- Next: finish report with owner-decision overrides, bounded verification ledger, and precise fix-plan gates. No production requests have been made.
+- Handoff: completed additive review at master/W1-Astra-PR/xg.md. It preserves owner decisions, independently recomputed holdouts, twelve substantive corrections/qualifications, source-confirmed secondary findings, and verification limits. Rich rebound batch-collision and Timeline deduplication fixtures also passed as expected bug/behavior reproductions.
+- Final check: report whitespace and local source-document links passed; no code edits, original audit edits, DB/provider requests, commit, push or deployment. Parent owns integration and delivery. Diary remains as handed-off task context.
