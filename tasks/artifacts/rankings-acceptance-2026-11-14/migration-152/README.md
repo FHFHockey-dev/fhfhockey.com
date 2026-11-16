@@ -1,0 +1,26 @@
+# Migration 152 apply packet (ranking_publications), not run in production
+
+- **Script:** `apply-migration-152.sh`, which follows the migration-151 pattern: pooler psql via `pgpool.sh`, with credentials read from `web/.env.local` and never printed.
+  - `--preflight` is read-only and checks:
+    - the database isn't busy: ≤5 active queries, the longest ≤10 s, no lock waits, no cron runs in progress;
+    - there's no ledger row for `20261115210000` and no table yet;
+    - the session isn't a superuser, and the 3 Supabase roles exist.
+  - `--apply --confirm 20261115210000` runs the preflight again, then one transaction with `lock_timeout` 5 s and `statement_timeout` 30 s:
+    - the migration;
+    - the ledger insert;
+    - `notify pgrst, 'reload schema'`.
+  - **Readback must equal `1|t|20|t|t|t|t|f|f|f|f|f|t`:**
+    - the ledger row;
+    - RLS on;
+    - 20 columns;
+    - the reader index;
+    - service_role SELECT, INSERT and UPDATE only;
+    - nothing for anon, authenticated or PUBLIC;
+    - the comment.
+  - `--smoke` makes 2 read-only requests:
+    - a SQL count as service_role, which must be 0;
+    - a PostgREST GET with the service key, which must return HTTP 200 and 0 rows.
+- **Self-test:** `apply-migration-152-selftest.sh` runs against a disposable local PostgreSQL 15 that mimics Supabase's default privileges. 11/11 passed on 2026-11-15.
+- **Migration proof:** `supabase/tests/ranking_publications.py`, 40/40.
+- **Rollback:** `supabase/tests/ranking_publications_rollback.sql`.
+- **Effect on live Rankings:** none until the code ships and a marked publish runs. Until then the deployed reader doesn't read this table, and new code falls back to #449 whenever there are no markers.

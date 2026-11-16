@@ -1,0 +1,39 @@
+import { captureForgeIssuedContexts, forgeIssuedContextsFingerprint, type ForgeIssuedContextV1 } from "../issuedContext";
+import { loadForgeNativeInputs, type ForgeNativeCandidates } from "../run-forge-projections";
+import { parseInstantMicros } from "./time";
+
+/**
+ * Model-free collection of one game's native FORGE inputs: exactly the writer's reads for a captured single-game run
+ * (issued context before and after, preflight, completeness, skater and goalie loaders), with no scoring, no writes and
+ * no RPC beyond the three read-only rolling, physical-totals and latest trend-band reads the loaders already make. A
+ * failed or incomplete trend-band read refuses the collection (the writer would run on without trend modifiers).
+ * Run it inside `captureProjectionInputs` with the strict transport; replaying the writer against those reads consumes
+ * every one.
+ *
+ * `seasonBootstrap` must match the writer run it stands for; decide it with `forgeSeasonBootstrapApplies`.
+ *
+ * Goalie inputs load in a deterministic, model-free order per team: the override goalie, then the candidate list as
+ * the skater loader selected it from reads (before any start-probability ranking), then roster goalies in roster order
+ * when the reserve pass is on. The writer itself now loads in this order; the pre-split writer loaded the
+ * model's top-ranked goalie first, so only the order inside that block can differ from older captures.
+ */
+export async function collectNativePregameInputs(args: {
+  slateDate: string; gameId: number; inputCutoff: string; deadlineMs: number; seasonBootstrap?: boolean;
+}): Promise<{ candidates: ForgeNativeCandidates; issuedContextAfter: ForgeIssuedContextV1 }> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(args.slateDate) || !Number.isSafeInteger(args.gameId) || args.gameId <= 0
+    || !Number.isFinite(args.deadlineMs)) {
+    throw new Error("Invalid native input collection request");
+  }
+  parseInstantMicros(args.inputCutoff);
+  if (Date.now() > args.deadlineMs) throw new Error("FORGE native input collection passed its deadline.");
+  const before = await captureForgeIssuedContexts(args.slateDate, [args.gameId]);
+  const { candidates } = await loadForgeNativeInputs(args.slateDate, {
+    gameIds: [args.gameId], decisionAsOf: args.inputCutoff, deadlineMs: args.deadlineMs,
+    seasonBootstrap: args.seasonBootstrap === true,
+  });
+  const after = await captureForgeIssuedContexts(args.slateDate, [args.gameId]);
+  if (forgeIssuedContextsFingerprint(before) !== forgeIssuedContextsFingerprint(after)) {
+    throw new Error("Issued FORGE schedule or roster context changed during calculation.");
+  }
+  return { candidates, issuedContextAfter: after[0] };
+}

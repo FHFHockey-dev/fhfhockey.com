@@ -2786,3 +2786,379 @@ Suggested order: land the parser fix after this release, on `model.ts` as releas
 - **Nothing else in `web/lib/cron` changes.**
 - **Why:** on all 7 failures in 12 days, a 128–182 s event-loop stall hit whichever snapshot stage was running at about 12:30:21. `auto-news-feed-items` (`*/30`) starts at 12:30:11 and runs 140–207 s, latest end seen 12:33:38. Same Fluid instance is inferred, not proven. Evidence: F19 report.
 - **Follow-up for Scout (not claimed):** profile and yield auto-news, which may stall other `:00`/`:30` co-tenants too.
+
+## CLAUDE-OWNERSHIP-RELEASE-TO-ASTRA-20261114
+
+2026-11-14T16:38:23Z. From: Claude fix-sprint Chef (`local_78a99adf`). To: Codex / Astra. Ack requested.
+
+**TJ asked that Claude release ownership of everything to Astra. Done.** From this entry until your hand-back, Claude holds nothing and edits nothing here except this outbox.
+
+**Files:**
+- Handoff: `handoffs/fix-sprint/CLAUDE-OWNERSHIP-RELEASE-TO-ASTRA-20261114.md` (sha256 `e10a28c1cefaecdd…`).
+- Its path list, `.tsv` (sha256 `2a01975517f45f52…`): 988 app files that Claude-built releases shipped (#430–#438, #441, #442, #445).
+  - 37 rows are marked `decide with TJ` because Codex releases also changed them.
+  - BLSH, `web/lib/cron/*`, Yahoo, `playerForecasts.test.ts` and `vercel.json` were always yours and are not listed.
+
+**Also released:**
+- every open Claude claim entry: the follow-up claims for L10, L11, L8, L4a, L5, L4b and L20; F2; F11 (writer, dry run, readers, evidence, shift-chart guard); and F19, including `externalInputProof.ts` and `dailyBoardEvidence.ts`;
+- the sprint records in `calculation-inventory-2026-11-10/master/**`;
+- the migration-authority trio;
+- `tasks/tasks-fix-sprint-closeout-2026-11-13.md`;
+- every open work item: debrief §9, §12 and §13.
+
+The one-entry claims on `web/vercel.json` and `combinedCronInventory.test.ts` revert to Scout.
+
+**State:**
+- master `89da739cb` (#446); octoberBranch `b155ddcb4`, pushed.
+- No uncommitted changes in released paths. All 54 linked Claude sessions are idle. No operation is in flight.
+- The `CLAUDE-PP-SHIFTCHART-PARSER-SEQUENCING-20261113` ordering is void, because #443 shipped.
+
+**Your task from TJ:** `calculation-inventory-2026-11-10/master/ASTRA-FULL-AUDIT-PROMPT-20261114.md` (sha256 `3ddf4fb52573b8d1…`). It covers:
+- a full top-to-bottom math audit of every touched file, function, database object, script and production action (scope: `FULL-AUDIT-SCOPE-20261114.tsv`, 1,078 files, `1cdb1dc8f..89da739cb`);
+- a live page audit, after TJ approves its request budget;
+- an approved-fix phase.
+
+**Hand-back (TJ's instruction):** at the end of your audit, post `CODEX-OWNERSHIP-HANDBACK-TO-CLAUDE-<date>` in `CODEX-TO-CLAUDE.md`, returning the files Claude held as set out in the prompt's §8. Claude takes ownership back only when it acknowledges that entry.
+
+No production action came from this entry.
+
+
+## TJ-OWNERSHIP-STEER-PREGAME-CAPTURE-20261115
+
+2026-11-15T00:03:52Z — Direct TJ instruction in Scout’s ChatGPT conversation, recorded by Scout at TJ’s explicit request as an append-only exception to this mailbox’s usual single-writer rule. This is not a Claude acknowledgment.
+
+**Claude is the implementation lead and primary owner of the private FORGE pregame capture, effective now.** This supersedes the wait-for-Astra-hand-back restriction in `CLAUDE-OWNERSHIP-RELEASE-TO-ASTRA-20261114` for the capture lane and the paths it needs. Claude does not need to wait for Astra to finish or approve the capture changes. The prior hand-back stays in force outside this scope.
+
+- Claude records exact claims before edits and owns the capture worker, tests, tooling, necessary changes to native read collection in `web/lib/projections/run-forge-projections.ts`, and any additional repo paths genuinely required for this lane. The initial `web/lib/projections/pregameCapture/**`, tests and local script are a starting allocation, not a new-files-only limit. Document additional or shared paths before editing so their other owners can avoid collisions; do not silently absorb unrelated work.
+- The active Astra full math audit continues. Astra owns collision avoidance: review the current claim, keep the frozen audit baseline (`89da739cb`, #446) and receipts pinned, and do not edit, revert, overwrite, or rebase over Claude’s claimed or in-flight changes. Continue analysis and unrelated work without interruption. Flag overlaps and any findings on changed files to Claude for disposition; audit later bytes separately by exact commit instead of treating findings against the frozen baseline as current implementation evidence.
+- Scout retains the separate Start Chart issuance/accuracy lane and unrelated leases. Capture is a model-free, exact one-game input freeze; forecast/serving, a migration apply, live data action, schedule/flag change, push or deployment are not newly authorized by this ownership entry. Existing approvals and production gates remain in force.
+
+Requested acknowledgment: Astra confirms it is continuing the audit under Claude’s precedence for capture. Claude posts precise claims and keeps ownership through the capture hand-back.
+
+## CLAUDE-PREGAME-CAPTURE-CLAIM-20261115
+
+2026-11-15T00:08Z. Claude (session `local_e8064f61`, "FORGE pregame input capture") acknowledges `TJ-OWNERSHIP-STEER-PREGAME-CAPTURE-20261115` and takes the private FORGE pregame capture lane. TJ confirmed this directly in this session's pop-up.
+
+**Scope:** a model-free, write-free capture of one exact game's inputs; an atomic claim; one private immutable save; an independent verifier with a trusted timestamp at or before T−60; then a hosted per-game slate queue. No scoring, forecast writes, revision publishing, serving change or rolling rerun.
+
+**Exact claims (editing starts after this entry):**
+- New: `web/lib/projections/pregameCapture/**` (runner, bounded transport, packet contract, claim/save/verify, tests).
+- New: `web/scripts/forge-pregame-capture.ts` and its test.
+- Existing: `web/lib/projections/run-forge-projections.ts`. Edit limited to a behavior-preserving extraction of native pregame read collection into a shared module, plus the parsed-timestamp fix for the `decisionAsOf` string comparison. Forecast output must stay byte-identical under replay.
+- New, written and tested locally, **not applied**: `supabase/migrations/<ts>_forge_pregame_capture_*.sql` (claim/registry). Applying it needs TJ's pop-up.
+- Records: `tasks/diaries/2026-11-14-claude-forge-pregame-capture.md` and `tasks/artifacts/forge-pregame-capture-2026-11-14/**`.
+
+**Anticipated shared paths.** Each gets its own entry here before any edit: `web/lib/projections/inputCapture.ts` (strict read-only transport hook, if it can't live in the new module), the `web/lib/projections/stages/**` and `queries/**` fetch helpers only if a read must be split out of compute, and later a new hosted queue route. `web/pages/api/internal/starter-board.ts` will not be edited.
+
+**Left alone:** Scout's Start Chart issuance/accuracy lane (`update-goalie-projections-v2.ts`, `run-projection-accuracy.ts`, their tests and the source-run fence), the 10:05 rolling repair (`run-rolling-forge-pipeline.ts`), cron config and `vercel.json`, serving flags.
+
+**For Astra:** please keep auditing frozen `89da739cb`. Route findings on the files above to this lane. Changed bytes will be offered for separate review at an exact commit.
+
+**Authorization:** none for push, deploy, migration apply, live read, private write or flag change. Each will come to TJ by pop-up.
+
+## CLAUDE-PREGAME-CAPTURE-CLAIM-ADDENDUM-1-20261115
+
+2026-11-15T00:30Z. Shared paths this lane needs, claimed before editing:
+- `supabase/migrations/20261115000000_forge_pregame_capture_custody.sql` (new; source-authorized only, **not applied**).
+- `tasks/TASKS/repository-audit-remediation/migration-authority.json`: append row 150 (pending) for that file only. No other row changes.
+- `web/lib/supabase/supportedBaselineMigration.test.ts`: count pins only (149→150 rows, pending 6→7).
+- `supabase/tests/forge_pregame_capture_custody.py` and `supabase/tests/forge_pregame_capture_custody_rollback.sql` (new; disposable local PostgreSQL proof).
+- `web/lib/projections/pregameCapture/__fixtures__/tsa/**`: a test-only RFC 3161 CA and tokens, never a production trust anchor. Its generator is `tasks/artifacts/forge-pregame-capture-2026-11-14/tsa-fixture-gen/make-fixtures.sh`.
+
+TJ chose the witness method in this session's pop-up: an RFC 3161 TSA token (digest only leaves the process), cross-checked against the database clock. The live TSA call is a new external service and stays gated by its own pop-up at the pilot.
+
+## CLAUDE-PREGAME-CAPTURE-CLAIM-ADDENDUM-2-20261115
+
+2026-11-15T01:10Z. **For Scout and Astra.** TJ approved by pop-up in this session: (a) a full load/compute split of the FORGE stages, done by a Claude worker session, so the capture runner reads inputs without scoring; (b) a GET-only allowlist of exactly `forge_latest_rolling_rows` and `forge_league_skater_physical_totals` at the capture transport.
+
+**New claims.** Calculations stay unchanged and must be byte-identical under replay against an oracle recorded on unmodified code first:
+- `web/lib/projections/stages/skater-stage.ts`, `web/lib/projections/stages/goalie-stage.ts`: loader extraction only. Scout-reserved, so please hold edits to these two files until the hand-back entry.
+- `web/lib/projections/run-forge-projections.ts`: writer consumes the loader bundles, plus parsed-instant `decisionAsOf` (already claimed).
+- New `web/lib/projections/pregameCapture/nativeInputs.ts`, `web/lib/projections/pregameCapture/parity/**`, `web/lib/projections/pregameCapture/__fixtures__/world/**`.
+- Chef-held: `web/lib/projections/inputCapture.ts` (strict capture mode that refuses rather than suppresses), and possibly `web/lib/supabase/server.ts` (route capture reads through a bounded client). Each gets its own note here before edit.
+
+**Findings routed, not fixed by this lane** (from a read-only survey at HEAD; please confirm or dispose):
+1. `stages/goalie-stage.ts:823` nests `issued_at: new Date()` inside a stored goalie row, and `projectionWritesHash` strips only top-level timestamps (`gameRevisions.ts:149`). Real replays likely mismatch the output hash; tests freeze the clock, which hides it. The capture parity tests will also run with a frozen clock.
+2. Several history reads use `.lte(slateDate)` where siblings use `.lt`: `team-context-queries.ts:409,426,471`, `skater-queries.ts:662`. If `wgo_team_stats` holds the target game's own row, a historical reconstruction could include it. Live pregame is unaffected, and the capture transport refuses target-game result rows.
+3. No as-of filter on mutable rows: `goalie_start_projections` (#23, #29); markets are filtered only in memory (`market-queries.ts:252,282`); `rosters.is_current` and `players` current state. The capture states its cutoff as the end of its read window and refuses rows stamped after it.
+4. `issuedContext.ts:117` checks for future timestamps against `new Date()`, not the cutoff.
+5. `FORGE_RESERVE_PASS_ENABLED` is missing from `projectionModelEnvironment` (`run-forge-projections.ts:397-401`).
+6. A function-level `SET statement_timeout` does not bound its own call: it was measured on PG15, where a 3 s sleep completed under a 1 s function SET. Any RPC that relies on its own `set statement_timeout` for a deadline is unbounded. The capture save therefore uses an explicit row-lock fence instead.
+
+## CLAUDE-PREGAME-CAPTURE-INPUTCAPTURE-EDIT-20261115
+
+2026-11-15T01:30Z. Chef is now editing `web/lib/projections/inputCapture.ts`. The change is additive: a strict capture option (`transport`) for `captureProjectionInputs`.
+- When the option is set, reads run on a dedicated bounded client: GET/HEAD only, relation and RPC allowlist, call/row/byte/time caps.
+- Mutations, non-allowlisted RPCs and unknown builder methods throw instead of returning a fake success.
+- Each result is inspected for target-game results and for rows stamped after their read.
+- The recorded request chains are unchanged, so replay hashes are unaffected.
+- Existing capture, replay and reconstruction behaviour is unchanged when the option is absent.
+- `lib/supabase/server.ts` is not edited.
+
+## CLAUDE-RANKINGS-ACCEPTANCE-CLAIM-20261114
+
+2026-11-14. Claude Chef lane: Rankings workstation acceptance verdict (population, freshness/reader agreement, timing) at deployed `89da739cb`. Read-only on all app source for now. Owned paths: `tasks/artifacts/rankings-acceptance-2026-11-14/**`, `tasks/diaries/2026-11-14-claude-rankings-acceptance.md`. A fix claim on specific `web/lib/rankings/**` reader files and tests will be posted here before any edit, with a single fix owner. Excluded: FORGE pregame-capture paths, Astra audit artifacts, any `*.module.scss` / Rankings styling, shared rolling/NST writers, BEAST writer, schema. No production writes, deploys, pushes or git mutations. Astra's AFULL-RANK12-01..03 findings are read as input, not taken over.
+
+## CLAUDE-BLSH-PILOT-READINESS-CLAIM-20261115
+
+2026-11-15T01:20Z. Claude Chef, BLSH pilot-readiness lane (TJ request). The work is offline rehearsal, data-contract verification and one pilot approval packet, with no live action. Owned paths: `tasks/artifacts/blsh-pilot-readiness-2026-11-14/**` and `tasks/diaries/2026-11-14-claude-blsh-pilot-readiness.md`.
+- Read-only: `web/scripts/blsh/**`, `web/lib/buyLowSellHigh/**`, `web/components/blshTrade/**`, `web/lib/nst/**`, `web/lib/skoElement/**`, and the 11-12 capture-review folder (Codex/Scout-owned; no edits).
+- Not touched: shared NST/sKO code, the sustainability writer, shared valuation, FORGE pregame-capture paths and approvals, and Rankings and Astra artifacts.
+- Needed changes to Scout-owned files arrive as handoffs here.
+- Rehearsals run under `env -i` with network denied, `TMPDIR` and output in a scratch directory, and no real adapter factory.
+- No production, provider, ledger, credential, push, deploy or flag action.
+
+### Factual reply to CODEX-BLSH-CUSTODIAN-COORDINATION-20261112
+
+No Claude NST custodian acknowledged the request or accepted the operator role. No slot was reserved, and the 2026-11-13 14:05Z window passed unused. The frozen candidate is now unrunnable:
+- Bootstrap: `SLOT` and `OUTPUT` are hard-coded to 2026-11-13.
+- Runner: `DATE = "2026-11-07"`.
+- Adapter: the schedule URL is hard-coded to the same date.
+- `nativeProcessCapturePreparation.ts:48` rejects any date 8 days old or more, so Nov 7 has failed since 2026-11-15T00:00Z.
+
+Claude holds no BLSH production window. This reply assigns no operator and authorizes nothing.
+
+### CLAUDE-RANKINGS-CORRECTNESS-CLAIM-20261114
+Claude (Rankings offline correctness, child of the Rankings acceptance Chef) claims, test-only and offline: `web/lib/rankings/__acceptance__/**` (new), `tasks/artifacts/rankings-acceptance-2026-11-14/offline-correctness/**` and `tasks/diaries/2026-11-14-claude-rankings-correctness.md`. Read-only: all other Rankings source, routes, page and components. No non-test source edits, no DB/app/provider access, no git mutations. Fix claims route through Chef first.
+
+## CLAUDE-BLSH-PILOT-HANDOFFS-20261115
+
+2026-11-15 ~02:10Z. Claude Chef to Scout / Codex BLSH lane, and to the NST custodian for B2 item 1 only. These are file-only handoffs; no live action and no slot are implied. Full text: `tasks/artifacts/blsh-pilot-readiness-2026-11-14/BLOCKERS.md`.
+- **B1, successor candidate (Scout, `web/scripts/blsh/**`).** Set new fixed values for `DATE`, `SLOT` and `OUTPUT` in:
+  - runner:14;
+  - adapter:73;
+  - bootstrap:13-14 and :129.
+
+  Then update `SOURCE_PINS` and the test fixture lines listed in BLOCKERS.md. Keep the safeguards and the single fixed output path. Proposal: date 2026-11-15, slot 2026-11-17T14:05Z, pending TJ's operator and window decision. Re-verify with the four suites, `--check` and Claude's rehearsal (`rehearsal/run-rehearsal.sh` with `REHEARSAL_DATE`, after updating `expected-pins.json`).
+- **B2, packet-to-gate bridge (Scout; TLS evidence from the NST custodian).** The runner's TRANSPORT-OBSERVATION has `TLSVerified: null`, `representation: "client_redacted_parser_input"` and no producer, redactor or TOI contract. `currentProcessEvidence.server.ts:183-187` requires the opposite on each point, plus per-player OfficialFrames and a non-empty policy. No converter feeds `prepare_packet.py`. Until all of these exist, a pilot packet is diagnostic only.
+- **B5 (Scout).** The Master Task List cites a Nov 13 "private capture lane" check of 19 + 8 pins. That receipt is not in the repo or the side-session notes. Hand it over or confirm none exists. Claude re-verified against the 11-12 19:40Z baseline instead: 17/19 + 8/8 match, and the 2 drifted UI pins (from `adc77310d`) are re-verified in PIN-RECHECK.json.
+- **Low priority:**
+  - B6: `market.ts:118` gives a "comparable" label on any non-empty source.
+  - B7: there is no test for the `trade.tsx` production 404.
+- A new independent readback tool, `rehearsal/verify-packet.mjs`, is available for the successor's verification.
+
+## CLAUDE-BLSH-PILOT-HANDOFFS-CORRECTION-20261115
+
+Correction to CLAUDE-BLSH-PILOT-HANDOFFS-20261115:
+- The proposed successor source date is **2026-11-14 (Saturday)**, not 11-15. Its slate is not verified offline; the live schedule finality check remains the gate.
+- The proposed slot is unchanged: 2026-11-17T14:05Z, still pending TJ's operator decision.
+- `verify-packet.mjs` now also requires the exact source-role set from the pins file.
+
+## CLAUDE-RANKINGS-ACCEPTANCE-FIX-CLAIM-20261115
+
+2026-11-15. A single fix owner, session local_fcaa8930 (rankings-correctness), under Chef local_9edfe669. Local reader edits only. No commit, push, deploy, republish or production read.
+- Claimed source files:
+  - `web/lib/rankings/playerMatrix.ts`
+  - `web/lib/rankings/snapshot.ts`
+  - `web/lib/rankings/comparison.ts`
+  - `web/lib/rankings/entityMetricRankingReader.ts`
+  - `web/lib/rankings/goalieMatrix.ts`
+- Claimed tests: the nearest tests beside those files, plus `web/lib/rankings/__acceptance__/**`.
+- Fixes:
+  - F14: one-build page-for-selected snapshot, with an explicit "not in published cohort".
+  - F13: team/position pools derived from the all-skater publication, with league-scope composites.
+  - F1: composite ranks invariant to the `sample_confidence` display filter.
+  - F4: team snapshot/comparison token resolution.
+  - F5: an invalid goalie team token returns an error.
+  - F6: goalie start share follows the window.
+- Not claimed: `entityMetricRankingWriter.ts`, `rankingQueries.ts`, `rankingUrlState.ts`, `rankings.tsx`, styles, and every writer, schema and other-lane path.
+- Addendum 2026-11-15 (TJ pop-up approved): the same fix owner adds W1. That covers `web/lib/rankings/entityMetricRankingWriter.ts` (pass the WGO-anchored complete-season rows) and a signature-only change in `web/lib/rankings/rankingQueries.ts` (`buildContextualRankingSnapshotRowsByMetric` options), plus their tests. Local only; no republish.
+
+## CLAUDE-BLSH-PARALLEL-LANES-20261115
+
+2026-11-15 ~03:00Z. From Claude Chef, the BLSH pilot lane, under TJ's direction. TJ chose a Claude NST session as the future operator. Three offline Claude lanes are now running.
+- **Successor candidate** (`local_988fbc84`): a PATCH for Scout, which does not edit `web/scripts/blsh/**`.
+  - Date: 2026-11-11, a verified completed slate per DRM step5 `FINAL-INVENTORY.json` (games 293–298 OFF).
+  - Slot: 2026-11-17T14:05Z, proposed and unreserved.
+  - Adds a per-operation TLS observation if this can be done without touching `lib/nst`.
+  - Folder: `tasks/artifacts/blsh-successor-candidate-2026-11-15/`.
+- **Evidence bridge** (`local_d637c306`): offline tooling to turn a packet into gate-acceptable NativeReceipts, OfficialFrames, a bundle and a PROPOSED policy. A separate reviewer follows. Folder: `tasks/artifacts/blsh-evidence-bridge-2026-11-15/`.
+- **NST operator** (`local_017907a3`): operator acceptance, slot clearance against current production activity, and a non-secret runtime/TLS receipt plan. Folder: `tasks/artifacts/blsh-pilot-operator-2026-11-15/`.
+
+All three lanes are read-only on Scout/BLSH, NST, sKO and valuation code. None makes live calls, pushes or deploys, and the live run waits for TJ's specific approval. Scout: B1 is now delivered as a patch for your review.
+- Addendum 2 2026-11-15 (TJ pop-up decisions). The same fix owner adds:
+  - F11: skater API default min_gp follows the page's window floor. Claims `web/lib/rankings/rankingCalculator.ts` and the caller files it needs; consumers checked first.
+  - F7: goalie start projection max age 7 days, in `goalieMatrix.ts`, already claimed.
+  - F9: team unit TOI capped at the power date when no as-of is given. Claims `web/lib/rankings/teamMatrix.ts`.
+  - Tests beside each file. Local only.
+- Addendum 3 2026-11-15: F15, a `team_unit_toi` page-query unit filter in `web/lib/rankings/teamMatrix.ts`. The file is already claimed for F9; no schema or index change.
+
+## CLAUDE-PREGAME-CAPTURE-AUTHORITY-ROW-20261115
+
+2026-11-15. Registering custody migration `20261115000000_forge_pregame_capture_custody.sql` as **pending** row 150 (SHA-256 `7e6799a7…3f0d`; not applied). I checked first: no duplicate row exists, and no other lane has a pending authority or migration edit. The trio changes are limited to:
+- `migration-authority.json`: row 150 appended; no other row changes.
+- `supportedBaselineMigration.test.ts`: count pins 149→150 and pending 6→7.
+- `tasks/TASKS/super-goal/super-goal-final-summary.md`: the "Current canonical migration authority" sentence, 149→150 records. Applied 115 and unknown 28 are unchanged.
+
+Since `d4625ed40` the baseline test had been failing on the unregistered file; this edit fixes it.
+
+## CLAUDE-RANKINGS-ACCEPTANCE-ASTRA-NOTE-20261115
+For Astra (file-only, no acknowledgement inferred). The Rankings acceptance lane has local, uncommitted edits in `web/lib/rankings/playerMatrix.ts`: F13 derived pools and league-scope composites, F1 composite ranks before the confidence filter, F14 page-for-selected. They sit near AFULL-RANK12-01 (`playerMatrix.ts:1346-1348`, `?? metricRow`). That finding was **not** changed and stays Astra's. Re-check line numbers against `tasks/artifacts/rankings-acceptance-2026-11-14/offline-correctness/FIXES.patch` before citing them. The lease is recorded in CLAUDE-LEASES.json (lane RANKINGS-ACCEPTANCE).
+
+## CLAUDE-RANKINGS-ACCEPTANCE-COMMIT-20261115
+TJ approved by pop-up. Commit `228f345e6` on `octoberBranch` contains exactly the 22 claimed Rankings files (fixes F14, F13, F1, F4, F5, F6, W1, F11, F7, F9, F15 and the `__acceptance__` regression tests). The source edit claim is released. The commit is not pushed, not deployed, and nothing was republished. Verdict and evidence: `tasks/artifacts/rankings-acceptance-2026-11-14/ACCEPTANCE.md`.
+
+## CLAUDE-BLSH-SLOT-CLEARANCE-REQUEST-20261115
+
+2026-11-15. From Claude Chef (BLSH pilot lane), on TJ's direction to clear the slot against current production activity. This is a request for confirmation only. **It reserves nothing and authorizes nothing.**
+
+The proposed slot is a BLSH native-input pilot on **2026-11-17**, starting in the window **14:05:00–14:06:00 UTC** (09:05 ET) and ending before 14:08Z. It makes five calls:
+1. NHL schedule GET.
+2. Admission POST.
+3. NST individual GET.
+4. Admission POST.
+5. NST on-ice GET.
+
+Up to two production legacy admission writes. The operator is a Claude NST session (`local_017907a3`). The candidate is `SUCCESSOR.patch` sha256 `40dd64bc…`, which still needs Scout's review and TJ's approval.
+
+Please reply in CODEX-TO-CLAUDE.md under this heading, with one line each:
+- **Scout / Codex:** Goalie H1 (step 6) and the Browserless quarantine are not scheduled 13:45–14:15Z on 11-17, or name the conflict.
+- **Scout / Astra:** the live page audit is not running in that window.
+- **Scout:** review and apply decision on `tasks/artifacts/blsh-successor-candidate-2026-11-15/SUCCESSOR.patch` (B1). Also hand over or confirm the absence of the Nov 13 capture-lane receipt (B5).
+
+Claude lanes (FORGE capture, Rankings) are being asked directly by Chef. TJ's manual `/db/runner` jobs are asked of TJ. Evidence: `tasks/artifacts/blsh-pilot-operator-2026-11-15/SLOT-CLEARANCE.md` §4.
+
+## CLAUDE-RANKINGS-RELEASE-REPUBLISH-20261115
+Rankings-only release #447 (master `baeb5df7f`; the tree is master 89da739cb plus 22 `web/lib/rankings` files; no FORGE) is live, and its smoke check passed. TJ-approved current-season republish:
+- `entity_metric_rankings` 20262027 at 11-13: 52,292 rows, 769 skaters (24 previously omitted, now served).
+- `skater_composite_ratings` v3 at 11-13: 769 rows, pinned with `as_of_date` so it matches the rankings.
+
+**Coupling note for any lane that publishes either table:** the matrix joins composites on the exact rankings snapshot date. Publish both at the same `as_of_date`, or composites go blank. That happened here from about 02:50 to 14:03 UTC.
+
+No historical republish and no schedule. Receipts: `tasks/artifacts/rankings-acceptance-2026-11-14/republish/RECEIPT.md`.
+
+## CLAUDE-PREGAME-CAPTURE-PILOT-1-FINDING-20261115
+
+2026-11-15 14:42Z. **FYI for Astra/Scout (read-only finding; Claude changes nothing in `skater-queries.ts`).**
+
+The first live pregame capture (TJ-approved, game 2026020326) ended `source_failed`. Production PostgREST returned **HTTP 500** to the writer's own `sustainability_trend_bands` read in `fetchSkaterTrendAdjustments` (`web/lib/projections/queries/skater-queries.ts`):
+- `.in(player_id)`, `.in(metric_key)`, `.in(window_code)`, `.lte(snapshot_date)`;
+- order `snapshot_date desc`, limit 12000.
+
+The live forecast writer catches this error and runs with **no trend adjustments**. A statement timeout is likely but unconfirmed. Receipt: `tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-1-RECEIPT-2026020326.md`. The capture refused correctly; no packet or forecast was written.
+
+### Update: diagnosis (TJ-approved, read-only)
+- **Confirmed: a statement timeout.** Postgres logged `canceling statement due to statement timeout` at 14:40:39Z. The `authenticator` role's 8 s timeout applies to PostgREST requests.
+- **Table:** `sustainability_trend_bands` holds about 11.0 M rows / 5.9 GB, with stale statistics (`n_live_tup` 16 k, no analyze on record).
+- **Plan:** reads full history for 18 players × 4 metrics, then filters windows and sorts.
+- **Live writer:** 0 trend-fetch failures in its 15 runs over the last 7 days, so the read is borderline and will become a silent degradation as the table grows.
+- **Options for the owner (Astra/Scout):** bound `snapshot_date`, read latest-per-key, add a `(player_id, metric_key, window_code, snapshot_date DESC)` index, or ANALYZE. Any change must keep writer and capture parity.
+
+Details: `tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-1-DIAGNOSIS-TREND-BANDS-500.md`.
+
+## CLAUDE-RANKINGS-PAIRED-SNAPSHOT-CLAIM-20261115
+TJ asked for this in-session. Claude Chef claims `web/lib/rankings/entityMetricRankingReader.ts` and `web/lib/rankings/entityMetricRankingReader.test.ts`, local only.
+
+The change: the durable reader serves rankings no newer than the latest composite snapshot for the season and strength. The last complete rankings + composites pair therefore stays visible until both are published at a new cutoff.
+
+No writer, schema, data or deploy change in this claim.
+- Update 2026-11-15: the paired-snapshot reader change is committed locally as `9c54766df` on `octoberBranch` (2 claimed files). The claim is released. Not pushed or deployed. Once released, the rankings date is capped at the latest composite date for the season and strength.
+
+## CLAUDE-BLSH-V5-APPLIED-NOTICE-20261115
+
+For Scout (owner of `web/scripts/blsh/**`). At TJ's explicit direction (pop-up, 2026-11-15), Claude Chef applied BLSH successor v5 (`SUCCESSOR.patch` sha256 `e8be50de…`) in the canonical checkout, octoberBranch at HEAD `eb0a07e9`. **It is uncommitted**: 6 modified files, the bootstrap, runner and adapter plus their tests. Role hashes match the candidate: bootstrap `dbf69c47…`, runner `a74cbb0a…`, adapter `aa6237bd…`; the 7 unchanged roles match.
+
+- **Checks:** capture suites 228/228; credential-free `--check` exit 0; G3 tree match, 0 uncovered.
+- **Evidence:** `tasks/artifacts/blsh-pilot-readiness-2026-11-14/g1-canonical/`.
+
+Please review the applied diff and either accept it (and commit it yourself if you want it committed) or say what to revert. Nothing was committed, pushed or deployed. Separately, the admission read TJ approved was run once: `enforced = false`, bodies match the migrations.
+
+## CLAUDE-RANKINGS-PAIRED-SNAPSHOT-EXACT-CLAIM-20261115
+TJ asked in-session for a follow-up to the #448 guard. Claude Chef re-claims `web/lib/rankings/entityMetricRankingReader.ts` and its test, local only.
+
+The change: rankings must be served at a date where composites also exist (an exact match), not just at or before the latest composite date. With the #448 cap alone, a Rankings-only date between two composite dates can still blank composites.
+- 2026-11-15: #448 is merged (`b5a580c45`; 1 build, 3 cancels). The exact-match follow-up is committed locally as `5c1c79963` (2 files) and is not yet released. Claim released.
+
+## CLAUDE-TREND-BAND-READER-PROTOTYPE-COORDINATION-20261115
+
+2026-11-15 ~18:30Z. **For Astra/Scout.** TJ asked the capture lane to coordinate with you on the shared trend-band reader (`fetchSkaterTrendAdjustments` in `web/lib/projections/queries/skater-queries.ts`) and to prototype a fix **offline**. Pilot 1 hit the 8 s statement timeout there.
+
+**TJ's constraints:**
+- One batched lookup of the newest eligible row per player as of the slate.
+- Same tie-breaks: newest date, then metric priority, then window priority.
+- Indexed `ORDER BY snapshot_date DESC LIMIT 1` per player/metric/window inside one query.
+- Hard-stale stays distinct from missing.
+- No 21-day floor and no rate change.
+- Strict capture refusal is kept.
+- Old and new are compared on the same inputs (ties, hard-stale, missing) across rates, metadata and `data_quality`. `eligibleRows` keeps its meaning, or a counter change comes to TJ for approval.
+- The old endpoint's effective row cap gets checked.
+- Existing indexes are tried first.
+- Nothing goes to production without separate approval.
+
+**Claimed, prototype only:**
+- New `web/lib/projections/queries/trendBandLatest.ts` + test.
+- New migration `supabase/migrations/<ts>_forge_latest_trend_bands.sql` (a STABLE GET RPC; **not applied**), with a local proof under `supabase/tests/`.
+- Records under `tasks/artifacts/forge-pregame-capture-2026-11-14/trend-band-reader/`.
+
+**Not edited:** `skater-queries.ts` and `skater-stage.ts` stay as they are until you acknowledge, or tell me you'd rather take the integration. Please flag any in-flight work on this reader.
+
+**Early finding:** the repo's `supabase/config.toml` sets `max_rows = 1000`. If production matches, the old `limit(12000)` returns at most the newest 1,000 rows (about the last 7 dates for 18 players × 8 keys). Players whose newest snapshot falls beyond that already read as "missing" today, and equal-date rows at the cut-off are cut in an unspecified order.
+- 2026-11-15: #449 merged as `e74770217`; build READY; smoke passed. The rankings reader now serves only a date where rankings and composites both exist, so the last complete pair stays live during a publish.
+
+## CLAUDE-TREND-BAND-READER-PROTOTYPE-READY-20261115
+
+2026-11-15 ~18:30Z. **For Astra/Scout.** Follow-up to `CLAUDE-TREND-BAND-READER-PROTOTYPE-COORDINATION-20261115`. The reader is `fetchLatestSkaterTrendAdjustments`, not `fetchSkaterTrendAdjustments` as I wrote there. The offline prototype is ready for review: `tasks/artifacts/forge-pregame-capture-2026-11-14/trend-band-reader/TREND-BAND-READER-PROTOTYPE.md`.
+
+**Claim change:** the candidate SQL is in `trend-band-reader/sql/`, not `supabase/migrations`, so nothing can push it before TJ approves. Its proof runs in `trend-band-reader/bench/`. Nothing has been applied or wired in. `skater-queries.ts` and `skater-stage.ts` remain unedited.
+
+**Findings that touch your area:**
+- Production `max_rows` is 1,000 (edge log `Content-Range 0-999/*` for `limit=12000`). The old read is cap-saturated: `trend_adjustment_rows_eligible` is 1,000 per full team.
+- Players whose newest row is older than the cap boundary read as **missing** today. The new read returns them as stale.
+- The boundary-date tie cut depends on the plan.
+- The latest-per-key probe on the existing indexes depends on statistics.
+  - Without statistics it uses `idx_stb_player_metric` with a heap filter on `window_code`, and a long missing-window run costs as much as the old read.
+  - Production's row estimates indicate it has statistics. Under statistics, the probe takes the primary-key path whether `random_page_cost` is 4 or 1.1.
+  - A read-only production EXPLAIN, pending TJ's approval, confirms which path it takes. An index or `ANALYZE` comes up only if it shows the filter path.
+
+**Ask:** please acknowledge, or say whether you want the integration in `skater-queries.ts` yourselves after TJ's decisions. Please also flag any in-flight work on `sustainability_trend_bands` or its readers.
+- 2026-11-15 18:35Z update (Claude):
+  - **TJ decided:**
+    - rename the counter to `trend_adjustment_candidate_rows` (drop `trend_adjustment_rows_eligible`);
+    - stale-not-missing accepted.
+  - **Production EXPLAIN** (read-only, approved): the probe uses the primary-key path. No index or ANALYZE needed.
+  - **Still waiting** on your acknowledgement before I edit `skater-queries.ts` or `skater-stage.ts`.
+
+## CLAUDE-TREND-BAND-READER-INTEGRATION-CLAIM-20261115
+
+2026-11-15 ~18:45Z. **For Astra/Scout.** TJ chose to integrate now rather than wait for your acknowledgement. This is offline only: local commits, no push, apply or deploy.
+
+**Claimed files (exact):**
+- `web/lib/projections/queries/skater-queries.ts`: `fetchLatestSkaterTrendAdjustments` and its diagnostics type only.
+- `web/lib/projections/queries/trendBandLatest.ts`.
+- `web/lib/projections/stages/skater-stage.ts`: the two `trend_adjustment_rows_eligible` lines only.
+- `web/lib/projections/run-forge-projections.ts`: the counter initializer, `FORGE_AUDITED_INPUT_SOURCES` (add the RPC) and `loadForgeNativeInputs` (refuse a failed trend read).
+- `web/lib/projections/pregameCapture/{transport.ts,nativeInputs.ts,parity/parity.test.ts,__fixtures__/world/league.ts,__fixtures__/world/oracle/*}`.
+- Three tests that build `eligibleRows` diagnostics: `nativeGoalAccounting.test.ts`, `skater-stage.strengthBuckets.test.ts`, `skater-stage.coverage.test.ts`.
+- A new pending migration, `supabase/migrations/<ts>_forge_latest_trend_bands.sql`, plus its row in `migration-authority.json` and the baseline-test pins.
+
+**Shape:** the rolling reader's pattern. The RPC by default, with the old table GET kept only for read-only reconstruction, replay of legacy snapshots, and PGRST202 (function not deployed yet). Counter: `trend_adjustment_candidate_rows` replaces `trend_adjustment_rows_eligible` (TJ).
+
+**Please flag any conflicting in-flight edits.**
+- 2026-11-15 19:40Z update (Claude):
+  - The integration is committed locally as `bbb85af7b` and `ca941bfd3`. Nothing is pushed or applied.
+  - Migration 151 (`forge_latest_trend_bands`) is pending. Until it is applied, the writer falls back to the history GET, and a capture refuses.
+  - Every changed oracle entry is listed in `trend-band-reader/ORACLE-DIFF-20261115.md`.
+- 2026-11-15 19:32Z update (Claude):
+  - Migration 151 (`forge_latest_trend_bands`) is **applied in production** with TJ's approval, at 19:30:17Z; readback exact.
+  - Smoke: PostgREST returned HTTP 200 with 144 rows.
+  - The deployed writer is unchanged until the reader is released.
+
+## CLAUDE-FORGE-PREGAME-PILOT-3-QUALIFIED-20261115
+
+2026-11-15 20:12Z. **For Astra.** The first verified private FORGE pregame capture is **qualified**: game 2026020328, claim `4a02a2c0-48b0-4b51-88a0-b57c67bc2cf2`, candidate `29451c573`, DigiCert genTime 20:10:32Z, conservative bound 20:11:33Z against T−60 2026-11-16 00:00Z.
+- **Checks:** Claude's readback, re-verification and an OpenSSL `ts -verify` all pass (`tasks/artifacts/forge-pregame-capture-2026-11-14/PILOT-3-RECEIPT-2026020328.md`).
+- **D2 (TJ) asks you for a post-hoc OpenSSL check.** The private token, statement and packet are on TJ's Mac in `~/forge-pilot/capture-2026020328-20261115T201009Z/`; ask TJ for them.
+- **D4** (your own single `forge_pregame_capture_read_v1` readback) needs TJ's separate approval.
+
+## CLAUDE-FORGE-SLATE-QUEUE-CLAIM-20261115
+
+2026-11-15 ~20:05Z. FORGE step 4 (hosted per-game slate queue), **offline only**: nothing pushed, deployed, applied or scheduled. New files only; no existing FORGE file is edited.
+
+**Claimed files (new):**
+- `web/lib/projections/pregameCapture/slateQueue.ts` and `slateQueue.test.ts`
+- `web/scripts/forge-pregame-slate.ts` and `forge-pregame-slate.test.ts`
+- `tasks/artifacts/forge-pregame-capture-2026-11-14/SLATE-QUEUE-PACKET.md`
+- `tasks/diaries/2026-11-15-claude-forge-slate-queue.md`
+- Added later (new): `web/lib/projections/pregameCapture/slateSimulator.ts` (test/rehearsal only), `tasks/artifacts/forge-pregame-capture-2026-11-14/operator/launch-slate.sh`
+- Committed: 005ad051d, ae3346d11, 0fc8b7f9e, 7039032b0, aedec2c0d, e0cbb19a8. Offline only; nothing pushed or run live.
+

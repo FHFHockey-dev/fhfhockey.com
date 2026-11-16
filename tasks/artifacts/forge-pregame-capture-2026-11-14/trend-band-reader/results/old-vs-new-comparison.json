@@ -1,0 +1,268 @@
+{
+ "all_cron": {
+  "oldRows": 1000,
+  "boundary": "2026-11-07",
+  "classes": {
+   "in_cap": 18,
+   "boundary": 0,
+   "beyond_cap": 0,
+   "no_rows": 0
+  },
+  "boundaryUnstable": 0,
+  "diagnostics": {
+   "old": {
+    "requestedPlayers": 18,
+    "eligibleRows": 1000,
+    "playersWithRows": 18,
+    "playersAdjusted": 0,
+    "playersMissingRows": 0,
+    "playersNeutralizedByRecency": 0,
+    "selectedSoftStaleRows": 0,
+    "selectedHardStaleRows": 0,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   },
+   "new": {
+    "requestedPlayers": 18,
+    "eligibleRows": 144,
+    "playersWithRows": 18,
+    "playersAdjusted": 0,
+    "playersMissingRows": 0,
+    "playersNeutralizedByRecency": 0,
+    "selectedSoftStaleRows": 0,
+    "selectedHardStaleRows": 0,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   }
+  },
+  "selectionChanged": 0
+ },
+ "edge": {
+  "oldRows": 1000,
+  "boundary": "2026-11-06",
+  "classes": {
+   "in_cap": 14,
+   "boundary": 1,
+   "beyond_cap": 2,
+   "no_rows": 1
+  },
+  "boundaryUnstable": 1,
+  "diagnostics": {
+   "old": {
+    "requestedPlayers": 18,
+    "eligibleRows": 1000,
+    "playersWithRows": 14,
+    "playersAdjusted": 0,
+    "playersMissingRows": 4,
+    "playersNeutralizedByRecency": 0,
+    "selectedSoftStaleRows": 0,
+    "selectedHardStaleRows": 0,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   },
+   "new": {
+    "requestedPlayers": 18,
+    "eligibleRows": 136,
+    "playersWithRows": 17,
+    "playersAdjusted": 0,
+    "playersMissingRows": 1,
+    "playersNeutralizedByRecency": 1,
+    "selectedSoftStaleRows": 2,
+    "selectedHardStaleRows": 1,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   }
+  },
+  "selectionChanged": 3
+ },
+ "typical_a": {
+  "oldRows": 1000,
+  "boundary": "2026-10-31",
+  "classes": {
+   "in_cap": 9,
+   "boundary": 0,
+   "beyond_cap": 6,
+   "no_rows": 3
+  },
+  "boundaryUnstable": 0,
+  "diagnostics": {
+   "old": {
+    "requestedPlayers": 18,
+    "eligibleRows": 1000,
+    "playersWithRows": 9,
+    "playersAdjusted": 0,
+    "playersMissingRows": 9,
+    "playersNeutralizedByRecency": 0,
+    "selectedSoftStaleRows": 0,
+    "selectedHardStaleRows": 0,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   },
+   "new": {
+    "requestedPlayers": 18,
+    "eligibleRows": 120,
+    "playersWithRows": 15,
+    "playersAdjusted": 0,
+    "playersMissingRows": 3,
+    "playersNeutralizedByRecency": 0,
+    "selectedSoftStaleRows": 0,
+    "selectedHardStaleRows": 6,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   }
+  },
+  "selectionChanged": 6
+ },
+ "typical_b": {
+  "oldRows": 1000,
+  "boundary": "2026-10-30",
+  "classes": {
+   "in_cap": 9,
+   "boundary": 0,
+   "beyond_cap": 6,
+   "no_rows": 3
+  },
+  "boundaryUnstable": 0,
+  "diagnostics": {
+   "old": {
+    "requestedPlayers": 18,
+    "eligibleRows": 1000,
+    "playersWithRows": 9,
+    "playersAdjusted": 0,
+    "playersMissingRows": 9,
+    "playersNeutralizedByRecency": 0,
+    "selectedSoftStaleRows": 0,
+    "selectedHardStaleRows": 0,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   },
+   "new": {
+    "requestedPlayers": 18,
+    "eligibleRows": 116,
+    "playersWithRows": 15,
+    "playersAdjusted": 0,
+    "playersMissingRows": 3,
+    "playersNeutralizedByRecency": 0,
+    "selectedSoftStaleRows": 0,
+    "selectedHardStaleRows": 6,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   }
+  },
+  "selectionChanged": 6
+ },
+ "typical_c": {
+  "oldRows": 1000,
+  "boundary": "2026-10-31",
+  "classes": {
+   "in_cap": 9,
+   "boundary": 0,
+   "beyond_cap": 6,
+   "no_rows": 3
+  },
+  "boundaryUnstable": 0,
+  "diagnostics": {
+   "old": {
+    "requestedPlayers": 18,
+    "eligibleRows": 1000,
+    "playersWithRows": 9,
+    "playersAdjusted": 0,
+    "playersMissingRows": 9,
+    "playersNeutralizedByRecency": 0,
+    "selectedSoftStaleRows": 0,
+    "selectedHardStaleRows": 0,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   },
+   "new": {
+    "requestedPlayers": 18,
+    "eligibleRows": 118,
+    "playersWithRows": 15,
+    "playersAdjusted": 0,
+    "playersMissingRows": 3,
+    "playersNeutralizedByRecency": 0,
+    "selectedSoftStaleRows": 0,
+    "selectedHardStaleRows": 6,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   }
+  },
+  "selectionChanged": 6
+ },
+ "worst_l5_gap_60d": {
+  "oldRows": 1000,
+  "boundary": "2026-10-31",
+  "classes": {
+   "in_cap": 18,
+   "boundary": 0,
+   "beyond_cap": 0,
+   "no_rows": 0
+  },
+  "boundaryUnstable": 0,
+  "diagnostics": {
+   "old": {
+    "requestedPlayers": 18,
+    "eligibleRows": 1000,
+    "playersWithRows": 18,
+    "playersAdjusted": 0,
+    "playersMissingRows": 0,
+    "playersNeutralizedByRecency": 0,
+    "selectedSoftStaleRows": 0,
+    "selectedHardStaleRows": 0,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   },
+   "new": {
+    "requestedPlayers": 18,
+    "eligibleRows": 142,
+    "playersWithRows": 18,
+    "playersAdjusted": 0,
+    "playersMissingRows": 0,
+    "playersNeutralizedByRecency": 0,
+    "selectedSoftStaleRows": 0,
+    "selectedHardStaleRows": 0,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   }
+  },
+  "selectionChanged": 0
+ },
+ "worst_l5_never": {
+  "oldRows": 1000,
+  "boundary": "2026-10-31",
+  "classes": {
+   "in_cap": 18,
+   "boundary": 0,
+   "beyond_cap": 0,
+   "no_rows": 0
+  },
+  "boundaryUnstable": 0,
+  "diagnostics": {
+   "old": {
+    "requestedPlayers": 18,
+    "eligibleRows": 1000,
+    "playersWithRows": 18,
+    "playersAdjusted": 0,
+    "playersMissingRows": 0,
+    "playersNeutralizedByRecency": 0,
+    "selectedSoftStaleRows": 0,
+    "selectedHardStaleRows": 0,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   },
+   "new": {
+    "requestedPlayers": 18,
+    "eligibleRows": 70,
+    "playersWithRows": 18,
+    "playersAdjusted": 0,
+    "playersMissingRows": 0,
+    "playersNeutralizedByRecency": 0,
+    "selectedSoftStaleRows": 0,
+    "selectedHardStaleRows": 0,
+    "fetchFailed": false,
+    "fetchErrorMessage": null
+   }
+  },
+  "selectionChanged": 0
+ }
+}

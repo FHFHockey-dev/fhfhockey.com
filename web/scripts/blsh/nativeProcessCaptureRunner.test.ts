@@ -15,9 +15,12 @@ vi.mock("../../lib/nst/jobLifecycle.server", () => { throw new Error("real lifec
 vi.mock("node:http", () => { throw new Error("HTTP forbidden"); });
 vi.mock("node:https", () => { throw new Error("HTTPS forbidden"); });
 vi.mock("node:net", () => { throw new Error("sockets forbidden"); });
-vi.mock("node:tls", () => { throw new Error("TLS forbidden"); });
+// The runtime receipt reads only the CA lists; any connection attempt stays forbidden.
+const caStore = vi.hoisted(() => ({ current: ["fixture-default-root"] as string[] | undefined }));
+vi.mock("node:tls", () => ({ rootCertificates: ["fixture-bundled-root"], getCACertificates: () => caStore.current,
+  connect: () => { throw new Error("TLS forbidden"); }, createSecureContext: () => { throw new Error("TLS forbidden"); } }));
 
-const NOW = "2026-11-09T01:00:00.000Z";
+const NOW = "2026-11-13T01:00:00.000Z";
 const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
 const MIB = 1024 * 1024;
 const jobReference = { jobToken: "11111111-1111-4111-8111-111111111111" };
@@ -30,7 +33,7 @@ const sourceFiles = {
   admissionOrigin: resolve(__dirname, "../../lib/nst/admissionOrigin.ts"),
   ratePolicy: resolve(__dirname, "../../lib/cron/nstRateLimitPolicy.ts"), adapter: __filename,
 };
-const schedule = () => ({ gameWeek: [{ date: "2026-11-07", games: [{ id: 2026020201, season: 20262027, gameType: 2, gameState: "OFF", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "NJD" }, awayTeam: { id: 2, abbrev: "NYI" } }] }] });
+const schedule = () => ({ gameWeek: [{ date: "2026-11-11", games: [{ id: 2026020201, season: 20262027, gameType: 2, gameState: "OFF", gameScheduleState: "OK", homeTeam: { id: 1, abbrev: "NJD" }, awayTeam: { id: 2, abbrev: "NYI" } }] }] });
 const html = Buffer.from('<!doctype html>\r\n<table><thead><tr><th>Player</th></tr></thead><tbody><tr><td>Synthetic é 🏒 &amp;key=[REDACTED]</td></tr></tbody></table>\n');
 let directory: string;
 let sent: { operation: CaptureOperation; at: number; atMonotonic?: number; spec: CaptureDispatchSpec }[];
@@ -38,6 +41,17 @@ let adapter: NativeCaptureAdapter, input: NativeCaptureRunInput;
 let failOperation: CaptureOperation | undefined;
 let mutateResponse: ((operation: CaptureOperation, response: CaptureResponse) => void) | undefined;
 let onDispatch: ((operation: CaptureOperation) => void) | undefined;
+let mutateTls: ((operation: CaptureOperation, tls: Record<string, unknown>) => unknown) | undefined;
+// Synthetic socket-level TLS observation shaped like the adapter's. Not evidence.
+const tlsFor = (operation: CaptureOperation, url: string) => {
+  const host = new URL(url).hostname;
+  const tls = { channel: "undici:client:sendHeaders", authorized: true, authorizationError: null, servername: host, alpnProtocol: "http/1.1", protocol: "TLSv1.3",
+    cipher: { name: "TLS_AES_128_GCM_SHA256", standardName: "TLS_AES_128_GCM_SHA256", version: "TLSv1.3" },
+    sessionReused: false, connectionReused: false, connectionSequence: ["schedule", "admission:individual", "nst:individual", "admission:onIce", "nst:onIce"].indexOf(operation) + 1,
+    peerCertificate: { fingerprint256: Array(32).fill("AB").join(":"), valid_from: "Nov  1 00:00:00 2026 GMT", valid_to: "Jan 30 00:00:00 2027 GMT",
+      subjectCN: host, issuerCNChain: ["Fixture Intermediate", "Fixture Root", "Fixture Root"] } };
+  return mutateTls ? mutateTls(operation, tls) : tls;
+};
 const out = () => join(directory, "packet");
 const read = (file: string) => JSON.parse(fs.readFileSync(join(out(), file), "utf8"));
 const exists = (file: string) => fs.existsSync(join(out(), file));
@@ -46,11 +60,11 @@ const invoke = async (operation: CaptureOperation, spec: CaptureDispatchSpec) =>
   sent.push({ operation, at: Date.now(), atMonotonic: performance.now(), spec });
   if (failOperation === operation) throw new Error("synthetic NST_KEY=must-not-be-retained");
   await Promise.resolve();
-  return operation.startsWith("admission:") ? { kind: "admission", httpStatus: 200, valid: true, allowed: true, waitMs: 0 } : { ok: true };
+  return operation.startsWith("admission:") ? { kind: "admission", httpStatus: 200, valid: true, allowed: true, waitMs: 0, tls: tlsFor(operation, spec.url) } : { ok: true };
 };
 const response = async (operation: CaptureOperation, spec: CaptureDispatchSpec): Promise<CaptureResponse> => {
   await invoke(operation, spec);
-  const result = { status: 200, finalUrl: spec.url, redirected: false, bytes: operation === "schedule" ? Buffer.from(JSON.stringify(schedule())) : html };
+  const result = { status: 200, finalUrl: spec.url, redirected: false, bytes: operation === "schedule" ? Buffer.from(JSON.stringify(schedule())) : html, tls: tlsFor(operation, spec.url) };
   mutateResponse?.(operation, result);
   return result;
 };
@@ -84,13 +98,19 @@ async function run(ok = true) {
   const check = ok ? expect(promise).resolves.toMatchObject({ state: "packet_complete_pending_review", advancedAdmission: false }) : expect(promise).rejects.toThrow();
   await vi.runAllTimersAsync(); await check;
 }
+// The runner anchors on the undici dispatcher registered when it loaded (here, the vitest
+// worker's). Tests that replace it restore it by assignment; the entry is non-configurable.
+const DISPATCHER_KEY = Symbol.for("undici.globalDispatcher.1");
+const dispatcherRegistry = globalThis as unknown as Record<symbol, unknown>;
+let loadDispatcher: unknown;
 beforeEach(() => {
+  loadDispatcher = dispatcherRegistry[DISPATCHER_KEY];
   vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout", "performance"] }); vi.setSystemTime(NOW);
   vi.stubGlobal("fetch", vi.fn(() => { throw new Error("network forbidden"); }));
-  directory = fs.mkdtempSync(join(tmpdir(), "blsh-durable-runner-test-")); sent = []; failOperation = undefined; mutateResponse = undefined; onDispatch = undefined;
+  directory = fs.mkdtempSync(join(tmpdir(), "blsh-durable-runner-test-")); sent = []; failOperation = undefined; mutateResponse = undefined; onDispatch = undefined; mutateTls = undefined; caStore.current = ["fixture-default-root"];
   adapter = makeAdapter("disabled");
   input = {
-    plan: prepareNativeProcessCapture({ seasonId: 20262027, date: "2026-11-07", plannedAtUTC: NOW, groups: ["individual", "onIce"] }),
+    plan: prepareNativeProcessCapture({ seasonId: 20262027, date: "2026-11-11", plannedAtUTC: NOW, groups: ["individual", "onIce"] }),
     supabaseOrigin: ORIGIN, lifecycleMode: "disabled",
     sourceSHA256: Object.fromEntries(Object.entries(sourceFiles).map(([role, path]) => [role, sha(fs.readFileSync(path))])) as NativeCaptureRunInput["sourceSHA256"],
   };
@@ -240,7 +260,8 @@ describe("independent review durability and elapsed-time regressions", () => {
     expect(read("FAILED.json").state).toBe("partial_packet");
   });
 });
-afterEach(() => { expect(fetch).not.toHaveBeenCalled(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); fs.rmSync(directory, { recursive: true, force: true }); });
+afterEach(() => { expect(fetch).not.toHaveBeenCalled(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); fs.rmSync(directory, { recursive: true, force: true });
+  dispatcherRegistry[DISPATCHER_KEY] = loadDispatcher; });
 
 describe("durable native capture runner with blocked real transports", () => {
   it.each(["disabled", "enabled"] as const)("retains exact bytes/clocks, pins, private modes and %s lifecycle accounting", async mode => {
@@ -248,7 +269,7 @@ describe("durable native capture runner with blocked real transports", () => {
     await run();
     const sequence = sent.map(call => call.operation);
     expect(sequence).toEqual(mode === "enabled" ? ["schedule", "begin", "admission:individual", "nst:individual", "admission:onIce", "nst:onIce", "finish"] : ["schedule", "admission:individual", "nst:individual", "admission:onIce", "nst:onIce"]);
-    expect(sent[0].spec.url).toBe("https://api-web.nhle.com/v1/schedule/2026-11-07");
+    expect(sent[0].spec.url).toBe("https://api-web.nhle.com/v1/schedule/2026-11-11");
     for (const call of sent.filter(call => call.operation.startsWith("admission:"))) expect(call.spec.url).toBe(`${ORIGIN}/rest/v1/rpc/${mode === "enabled" ? "nst_admit_job_attempt_v1" : "nst_admit_attempt_v1"}`);
     const gets = sent.filter(call => call.operation.startsWith("nst:"));
     expect(gets.map(call => call.spec.url)).toEqual(input.plan.pages.map(page => page.url)); expect(gets[1].at - gets[0].at).toBe(22000);
@@ -268,7 +289,7 @@ describe("durable native capture runner with blocked real transports", () => {
     if (kind === "mode") adapter.lifecycleMode = "enabled";
     if (kind === "pin") input.sourceSHA256.client = "0".repeat(64);
     if (kind === "stale") vi.setSystemTime(Date.now() + 15 * 60000 + 1);
-    if (kind === "date") input.plan = prepareNativeProcessCapture({ ...input.plan.input, date: "2026-11-08" });
+    if (kind === "date") input.plan = prepareNativeProcessCapture({ ...input.plan.input, date: "2026-11-12" });
     if (kind === "url") input.plan.pages[0].url = "https://example.org";
     if (kind === "existing") fs.mkdirSync(out());
     if (kind === "symlink") fs.symlinkSync(directory, out());
@@ -279,7 +300,7 @@ describe("durable native capture runner with blocked real transports", () => {
     mutateResponse = (operation, result) => {
       if (operation !== "schedule") return;
       const body = schedule(), day = body.gameWeek[0], game = day.games[0];
-      if (kind === "missing_day") day.date = "2026-11-08";
+      if (kind === "missing_day") day.date = "2026-11-12";
       if (kind === "duplicate_day") body.gameWeek.push(day);
       if (kind === "empty") day.games = [];
       if (kind === "season") game.season = 20252026;
@@ -399,7 +420,7 @@ describe("durable native capture runner with blocked real transports", () => {
 
   it("rejects a fabricated clock/response that did not come from the dispatch observation", async () => {
     const original = adapter.schedule;
-    adapter.schedule = async dispatch => ({ ...await original(dispatch), completedAtUTC: "2026-11-09T00:59:59.000Z" });
+    adapter.schedule = async dispatch => ({ ...await original(dispatch), completedAtUTC: "2026-11-13T00:59:59.000Z" });
     await run(false); expect(sent).toHaveLength(1); expect(exists("schedule.raw.json")).toBe(false);
   });
 
@@ -503,5 +524,155 @@ describe("durable native capture runner with blocked real transports", () => {
     const link = fs.linkSync;
     vi.spyOn(fs, "linkSync").mockImplementation((source, target) => { fs.writeFileSync(target, "existing", { flag: "wx" }); link(source, target); });
     await run(false); expect(fs.readFileSync(join(out(), "MANIFEST.json"), "utf8")).toBe("existing"); expect(exists(".MANIFEST.json.tmp")).toBe(true);
+  });
+});
+
+describe("per-operation TLS observation", () => {
+  it("persists each operation's whitelisted TLS facts and keeps TLSVerified null", async () => {
+    mutateTls = (_operation, tls) => ({ ...tls, requestPath: "/playerteams.php?key=must-not-be-retained", headers: ["nst-key", "must-not-be-retained"] });
+    await run();
+    const settled = [1, 2, 3, 4, 5].map(index => read(`operation-${index}-SETTLED.json`));
+    expect(settled.map(record => record.tls.servername)).toEqual(["api-web.nhle.com", "fyhftlxokyjtpndbkfse.supabase.co", "data.naturalstattrick.com", "fyhftlxokyjtpndbkfse.supabase.co", "data.naturalstattrick.com"]);
+    for (const record of settled) expect(Object.keys(record.tls).sort()).toEqual(["alpnProtocol", "authorizationError", "authorized", "channel", "cipher", "connectionFromOperation",
+      "connectionReused", "connectionSequence", "defaultCACertificatesSHA256", "globalDispatcher", "peerCertificate", "protocol", "resumedFromOperation", "servername", "sessionReused"]);
+    for (const record of settled) expect(record.tls.globalDispatcher).toEqual({ present: true, constructorName: "Agent", identityUnchanged: true });
+    expect(settled.every(record => record.tls.defaultCACertificatesSHA256 === sha(Buffer.from("fixture-default-root")))).toBe(true);
+    expect(settled.map(record => [record.tls.resumedFromOperation, record.tls.connectionFromOperation])).toEqual(Array(5).fill([null, null]));
+    for (const [name, index] of [["schedule", 1], ["individual", 3], ["onIce", 5]] as const)
+      expect(read(`${name}.TRANSPORT-OBSERVATION.json`)).toMatchObject({ TLSVerified: null, tls: settled[index - 1].tls });
+    const records = fs.readdirSync(out()).filter(file => file.endsWith(".json")).map(file => fs.readFileSync(join(out(), file), "utf8")).join();
+    expect(records).not.toContain("must-not-be-retained");
+  });
+
+  it.each((["schedule", "admission:individual", "nst:individual"] as const).flatMap(operation => (["missing", "wrong_host", "bad_fingerprint", "control_character"] as const).map(fault => [operation, fault] as const)))(
+    "fails closed after %s settles with a %s TLS observation", async (operation, fault) => {
+      mutateTls = (current, tls) => current !== operation ? tls : fault === "missing" ? undefined : fault === "wrong_host" ? { ...tls, servername: "other.invalid" }
+        : fault === "bad_fingerprint" ? { ...tls, peerCertificate: { ...(tls.peerCertificate as object), fingerprint256: "ab" } } : { ...tls, protocol: "TLSv1.3\n" };
+      await run(false);
+      const order = ["schedule", "admission:individual", "nst:individual"], index = order.indexOf(operation) + 1;
+      expect(sent.map(call => call.operation)).toEqual(order.slice(0, index));
+      expect(read(`operation-${index}-SETTLED.json`).tls).toBeNull();
+      expect(exists("MANIFEST.json")).toBe(false); expect(exists("FAILED.json")).toBe(true);
+    });
+});
+
+describe("resumed sessions and keep-alive reuse bind to this run's earlier operations", () => {
+  const resumed = (tls: Record<string, unknown>, change: Record<string, unknown> = {}) => ({ ...tls, sessionReused: true, peerCertificate: null, ...change });
+  it("accepts resumed sessions that descend from an earlier full handshake for the same servername", async () => {
+    mutateTls = (operation, tls) => operation.endsWith(":onIce") ? resumed(tls) : tls;
+    await run();
+    for (const [index, from] of [[4, 2], [5, 3]]) expect(read(`operation-${index}-SETTLED.json`).tls).toMatchObject({ sessionReused: true, peerCertificate: null, resumedFromOperation: from, connectionFromOperation: null });
+    expect(read("onIce.TRANSPORT-OBSERVATION.json").tls).toEqual(read("operation-5-SETTLED.json").tls);
+  });
+
+  it("binds a keep-alive reuse to the operation that opened the connection", async () => {
+    mutateTls = (operation, tls) => operation === "admission:onIce" ? { ...tls, connectionReused: true, connectionSequence: 2 } : operation === "nst:onIce" ? { ...tls, connectionReused: true, connectionSequence: 3 } : tls;
+    await run();
+    expect(read("operation-4-SETTLED.json").tls).toMatchObject({ connectionReused: true, connectionFromOperation: 2, resumedFromOperation: null });
+    expect(read("operation-5-SETTLED.json").tls).toMatchObject({ connectionReused: true, connectionFromOperation: 3 });
+  });
+
+  it.each([
+    ["resumed with no prior full handshake", "schedule", (tls: Record<string, unknown>) => resumed(tls)],
+    ["resumed with authorized false", "admission:onIce", (tls: Record<string, unknown>) => resumed(tls, { authorized: false })],
+    ["resumed where earlier full handshakes are for other servernames", "nst:individual", (tls: Record<string, unknown>) => resumed(tls)],
+    ["resumed under a servername other than the request host", "admission:onIce", (tls: Record<string, unknown>) => resumed(tls, { servername: "other.invalid" })],
+    ["a missing peer certificate without resumption", "admission:onIce", (tls: Record<string, unknown>) => ({ ...tls, peerCertificate: null })],
+    ["keep-alive reuse of a connection opened for another servername", "admission:onIce", (tls: Record<string, unknown>) => ({ ...tls, connectionReused: true, connectionSequence: 3 })],
+    ["keep-alive reuse of a connection no earlier operation opened", "admission:onIce", (tls: Record<string, unknown>) => ({ ...tls, connectionReused: true, connectionSequence: 99 })],
+    ["a new connection that repeats an earlier connection number", "admission:onIce", (tls: Record<string, unknown>) => ({ ...tls, connectionSequence: 2 })],
+  ] as const)("fails closed on %s", async (_name, operation, change) => {
+    mutateTls = (current, tls) => current === operation ? change(tls) : tls;
+    await run(false);
+    const order = ["schedule", "admission:individual", "nst:individual", "admission:onIce", "nst:onIce"], index = order.indexOf(operation) + 1;
+    expect(sent.map(call => call.operation)).toEqual(order.slice(0, index));
+    expect(read(`operation-${index}-SETTLED.json`).tls).toBeNull(); expect(exists("MANIFEST.json")).toBe(false);
+  });
+});
+
+describe("packet-bound runtime receipt", () => {
+  it("writes RUNTIME.json before the first dispatch with presence booleans and no values", async () => {
+    vi.stubEnv("NODE_EXTRA_CA_CERTS", "/fixture/must-not-be-retained.pem"); vi.stubEnv("NST_KEY", "runtime-secret-must-not-be-retained"); vi.stubEnv("HTTPS_PROXY", undefined);
+    let atFirstDispatch: boolean | undefined;
+    onDispatch = () => { atFirstDispatch ??= exists("RUNTIME.json"); };
+    await run();
+    expect(atFirstDispatch).toBe(true);
+    const runtime = read("RUNTIME.json");
+    expect(runtime).toMatchObject({ version: "fhfh.blsh.native-capture-runtime.v1", startedAtUTC: read("STARTED.json").startedAtUTC, supabaseOrigin: ORIGIN, lifecycleMode: "disabled",
+      valuesRecorded: false, node: { version: process.version, execPath: process.execPath, execArgv: process.execArgv },
+      tls: { rootCertificatesSHA256: sha(Buffer.from("fixture-bundled-root")), rootCertificateCount: 1, defaultCACertificatesSHA256: sha(Buffer.from("fixture-default-root")), defaultCACertificateCount: 1 } });
+    expect(runtime.node.execPathSHA256).toBe(sha(fs.readFileSync(process.execPath)));
+    expect(runtime.globalDispatcher).toEqual({ present: true, constructorName: "Agent", sameAsRunnerLoad: true });
+    expect(runtime.environmentPresence).toMatchObject({ NODE_EXTRA_CA_CERTS: true, HTTPS_PROXY: false });
+    expect(runtime.adapterEnvironmentPresence).toMatchObject({ NST_KEY: true });
+    for (const group of [runtime.environmentPresence, runtime.adapterEnvironmentPresence]) expect(Object.values(group).every(value => typeof value === "boolean")).toBe(true);
+    expect(fs.readFileSync(join(out(), "RUNTIME.json"), "utf8")).not.toContain("must-not-be-retained");
+    const bootstrapPath = resolve(__dirname, "nativeProcessCaptureBootstrap.ts"), entry = resolve(process.argv[1]);
+    expect(runtime.launch).toEqual({ entryScript: entry, entryScriptSHA256: sha(fs.readFileSync(entry)), cwd: process.cwd(), bootstrapPath,
+      bootstrapSHA256: sha(fs.readFileSync(bootstrapPath)), entryIsBootstrap: false, environmentPresence: expect.any(Object), otherTsNodeKeysPresent: expect.any(Array) });
+    expect(Object.keys(runtime.launch.environmentPresence)).toEqual(["NODE_PATH", "DISABLE_V8_COMPILE_CACHE", "TS_NODE_COMPILER_OPTIONS", "OPENSSL_CONF", "TS_NODE_PROJECT",
+      "TS_NODE_SKIP_PROJECT", "TS_NODE_COMPILER", "TS_NODE_TRANSPILE_ONLY", "TS_NODE_REQUIRE", "TS_NODE_CWD", "TS_NODE_DIR", "TS_NODE_COMPILER_HOST", "TS_NODE_EMIT",
+      "TS_NODE_SCOPE", "TS_NODE_SCOPE_DIR", "TS_NODE_SWC", "TS_NODE_TRANSPILER"]);
+    expect(Object.values(runtime.launch.environmentPresence).every(value => typeof value === "boolean")).toBe(true);
+    expect(read("MANIFEST.json").files.map((file: { file: string }) => file.file)).toContain("RUNTIME.json");
+  });
+
+  it("records launch presence for TS_NODE_* and OPENSSL_CONF without values", async () => {
+    vi.stubEnv("OPENSSL_CONF", "/fixture/openssl-must-not-be-retained.cnf"); vi.stubEnv("TS_NODE_UNLISTED_FIXTURE", "must-not-be-retained");
+    await run();
+    const runtime = read("RUNTIME.json");
+    expect(runtime.launch.environmentPresence.OPENSSL_CONF).toBe(true); expect(runtime.launch.otherTsNodeKeysPresent).toContain("TS_NODE_UNLISTED_FIXTURE");
+    expect(fs.readFileSync(join(out(), "RUNTIME.json"), "utf8")).not.toContain("must-not-be-retained");
+  });
+
+  it("refuses before any output when the default CA store cannot be read", async () => {
+    caStore.current = undefined;
+    await run(false); expect(fs.existsSync(out())).toBe(false); expect(sent).toHaveLength(0);
+  });
+
+  it("refuses the next dispatch when the default CA store changes between operations", async () => {
+    const original = adapter.nst;
+    adapter.nst = async (group, url, options) => { if (group === "individual") caStore.current = ["swapped-root"]; return original(group, url, options); };
+    await run(false);
+    expect(sent.map(call => call.operation)).toEqual(["schedule"]); expect(exists("operation-2-STARTED.json")).toBe(false); expect(exists("MANIFEST.json")).toBe(false);
+  });
+
+  it.each([["admission:individual", 2], ["nst:onIce", 5]] as const)("fails closed and records the changed hash when the CA store changes during %s", async (operation, index) => {
+    onDispatch = current => { if (current === operation) caStore.current = ["swapped-root"]; };
+    await run(false);
+    const order = ["schedule", "admission:individual", "nst:individual", "admission:onIce", "nst:onIce"];
+    expect(sent.map(call => call.operation)).toEqual(order.slice(0, index));
+    expect(read("operation-1-SETTLED.json").tls.defaultCACertificatesSHA256).toBe(sha(Buffer.from("fixture-default-root")));
+    expect(read(`operation-${index}-SETTLED.json`).tls.defaultCACertificatesSHA256).toBe(sha(Buffer.from("swapped-root")));
+    expect(exists("MANIFEST.json")).toBe(false); expect(exists("FAILED.json")).toBe(true);
+  });
+});
+
+describe("global undici dispatcher identity (anchored at runner load)", () => {
+  class Agent {}
+  const order = ["schedule", "admission:individual", "nst:individual", "admission:onIce", "nst:onIce"];
+  it.each([
+    ["replaced by another Agent after the runner loaded", () => new Agent()],
+    ["unset", () => undefined],
+  ])("refuses before any output when the dispatcher is %s at start", async (_name, make) => {
+    dispatcherRegistry[DISPATCHER_KEY] = make();
+    await run(false); expect(fs.existsSync(out())).toBe(false); expect(sent).toHaveLength(0);
+  });
+
+  it("refuses operation 4 when the dispatcher is replaced between operations 3 and 4", async () => {
+    const original = adapter.nst;
+    adapter.nst = async (group, url, options) => { if (group === "onIce") dispatcherRegistry[DISPATCHER_KEY] = new Agent(); return original(group, url, options); };
+    await run(false);
+    expect(sent.map(call => call.operation)).toEqual(order.slice(0, 3));
+    expect(exists("operation-4-STARTED.json")).toBe(false); expect(exists("MANIFEST.json")).toBe(false);
+  });
+
+  it("fails closed and records the change when the dispatcher is replaced during operation 5", async () => {
+    onDispatch = operation => { if (operation === "nst:onIce") dispatcherRegistry[DISPATCHER_KEY] = new Agent(); };
+    await run(false);
+    expect(sent.map(call => call.operation)).toEqual(order);
+    expect(read("operation-4-SETTLED.json").tls.globalDispatcher).toEqual({ present: true, constructorName: "Agent", identityUnchanged: true });
+    expect(read("operation-5-SETTLED.json").tls.globalDispatcher).toEqual({ present: true, constructorName: "Agent", identityUnchanged: false });
+    expect(exists("MANIFEST.json")).toBe(false); expect(exists("FAILED.json")).toBe(true);
   });
 });

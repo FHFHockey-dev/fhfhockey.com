@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { claimsFromReport } from "./sourceClaims";
+import { activeLineClaims } from "./reconcile";
+import { LINE_SELECTOR_VERSION } from "./types";
+import { TWEET_INTERPRETATION_VERSION } from "lib/sources/tweetInterpretation";
 import { fixtureDecisionEvidence, fixtureGame, fixtureUnit } from "./testFixtures";
 import type { LineEvidenceContext } from "./sourceClaims";
 import type { ProjectionReport } from "lib/sources/projectedLineups";
@@ -52,5 +55,16 @@ describe("capture interpretation boundary", () => {
     expect(wrongOriginal.time.originalPublishedAt).toBeNull(); expect(wrongOriginal.reviewReasons).toContain("original_provenance_unverified");
     const unsupported = claimsFromReport(report, [fixtureGame], { ...context, certainty: "confirmed", confirmationEvidence: [] })[0]!;
     expect(unsupported.reviewReasons).toContain("claim_confirmation_unresolved");
+  });
+  it("keeps pre- and post-bump interpretation claims side by side and activates only the newer one", () => {
+    const legacy = { ...report, key: "fixture-fingerprint:14:2026-11-06.1", interpretation: { ...report.interpretation, version: "2026-11-06.1" } };
+    const current = { ...report, key: `fixture-fingerprint:14:${TWEET_INTERPRETATION_VERSION}`, interpretedAt: "2026-11-15T21:00:00Z",
+      interpretation: { ...report.interpretation, version: TWEET_INTERPRETATION_VERSION } };
+    const [old] = claimsFromReport(legacy, [fixtureGame], context), [fresh] = claimsFromReport(current, [fixtureGame], context);
+    expect(old!.version).toBe(`2026-11-06.1:${LINE_SELECTOR_VERSION}`);
+    expect(fresh!.version).toBe(`${TWEET_INTERPRETATION_VERSION}:${LINE_SELECTOR_VERSION}`);
+    expect(old!.id).not.toBe(fresh!.id);
+    expect(activeLineClaims([old!, fresh!]).map((claim) => claim.id)).toEqual([fresh!.id]);
+    expect(activeLineClaims([fresh!, old!]).map((claim) => claim.id)).toEqual([fresh!.id]);
   });
 });

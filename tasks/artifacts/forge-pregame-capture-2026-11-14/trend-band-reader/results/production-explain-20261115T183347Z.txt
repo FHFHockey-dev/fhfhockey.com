@@ -1,0 +1,81 @@
+BEGIN
+SET
+SET
+           name            |             setting              
+---------------------------+----------------------------------
+ default_statistics_target | 100
+ effective_cache_size      | 98304
+ jit                       | off
+ random_page_cost          | 1.1
+ seq_page_cost             | 1
+ server_version            | 15.1 (Ubuntu 15.1-1.pgdg20.04+1)
+(6 rows)
+
+ reltuples | relpages 
+-----------+----------
+  11010810 |   396607
+(1 row)
+
+    attname    | n_distinct | null_frac 
+---------------+------------+-----------
+ metric_key    |         15 |         0
+ player_id     |       1293 |         0
+ snapshot_date |        273 |         0
+ window_code   |          4 |         0
+(4 rows)
+
+PREPARE
+SET
+                                                                    QUERY PLAN                                                                     
+---------------------------------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort  (cost=332.53..3329.48 rows=1000 width=163)
+   Sort Key: ids.id, mk.k COLLATE "C", wc.w COLLATE "C"
+   Presorted Key: ids.id
+   ->  Nested Loop Left Join  (cost=1.08..3261.31 rows=1000 width=163)
+         ->  Nested Loop  (cost=0.52..14.87 rows=1000 width=68)
+               ->  Nested Loop  (cost=0.40..2.02 rows=100 width=36)
+                     ->  Unique  (cost=0.27..0.32 rows=10 width=4)
+                           ->  Sort  (cost=0.27..0.29 rows=10 width=4)
+                                 Sort Key: ids.id
+                                 ->  Function Scan on unnest ids  (cost=0.00..0.10 rows=10 width=4)
+                     ->  Materialize  (cost=0.13..0.38 rows=10 width=32)
+                           ->  HashAggregate  (cost=0.13..0.23 rows=10 width=32)
+                                 Group Key: mk.k
+                                 ->  Function Scan on unnest mk  (cost=0.00..0.10 rows=10 width=32)
+               ->  Materialize  (cost=0.13..0.38 rows=10 width=32)
+                     ->  HashAggregate  (cost=0.13..0.23 rows=10 width=32)
+                           Group Key: wc.w
+                           ->  Function Scan on unnest wc  (cost=0.00..0.10 rows=10 width=32)
+         ->  Limit  (cost=0.56..3.23 rows=1 width=31)
+               ->  Index Scan Backward using sustainability_trend_bands_pkey on sustainability_trend_bands b  (cost=0.56..173.88 rows=65 width=31)
+                     Index Cond: ((player_id = ids.id) AND (snapshot_date <= $4) AND (metric_key = mk.k) AND (window_code = wc.w))
+(21 rows)
+
+SET
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort  (cost=27.44..475.82 rows=144 width=163)
+   Sort Key: ids.id, mk.k COLLATE "C", wc.w COLLATE "C"
+   Presorted Key: ids.id
+   ->  Nested Loop Left Join  (cost=1.20..469.61 rows=144 width=163)
+         ->  Nested Loop  (cost=0.64..2.95 rows=144 width=68)
+               ->  Unique  (cost=0.56..0.65 rows=18 width=4)
+                     ->  Sort  (cost=0.56..0.60 rows=18 width=4)
+                           Sort Key: ids.id
+                           ->  Function Scan on unnest ids  (cost=0.00..0.18 rows=18 width=4)
+               ->  Materialize  (cost=0.09..0.34 rows=8 width=64)
+                     ->  Nested Loop  (cost=0.09..0.30 rows=8 width=64)
+                           ->  HashAggregate  (cost=0.05..0.09 rows=4 width=32)
+                                 Group Key: mk.k
+                                 ->  Function Scan on unnest mk  (cost=0.00..0.04 rows=4 width=32)
+                           ->  Materialize  (cost=0.03..0.07 rows=2 width=32)
+                                 ->  Unique  (cost=0.03..0.04 rows=2 width=32)
+                                       ->  Sort  (cost=0.03..0.04 rows=2 width=32)
+                                             Sort Key: wc.w
+                                             ->  Function Scan on unnest wc  (cost=0.00..0.02 rows=2 width=32)
+         ->  Limit  (cost=0.56..3.22 rows=1 width=31)
+               ->  Index Scan Backward using sustainability_trend_bands_pkey on sustainability_trend_bands b  (cost=0.56..519.40 rows=195 width=31)
+                     Index Cond: ((player_id = ids.id) AND (snapshot_date <= '2026-11-15'::date) AND (metric_key = mk.k) AND (window_code = wc.w))
+(22 rows)
+
+ROLLBACK

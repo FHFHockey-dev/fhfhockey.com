@@ -1578,6 +1578,35 @@ describe("subject-specific goalie claim admission", () => {
       expect(expandLinesCccGoalieClaims({ source: conflict, teams, gameIdByTeamId })).toEqual([conflict]);
     } finally { vi.unstubAllEnvs(); }
   });
+
+  it("splits an opposing 'A vs B in goal' post into one starter per side only when the game binds both teams", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    try {
+      // Retained receipt: tweet 2119520323309617358, BUF @ VGK game 2026020278 on 2026-11-08.
+      const teams = buildTeamDirectory([
+        { id: 7, name: "Buffalo Sabres", abbreviation: "BUF", logo: "/teamLogos/BUF.png" },
+        { id: 54, name: "Vegas Golden Knights", abbreviation: "VGK", logo: "/teamLogos/VGK.png" },
+      ]);
+      const rosterByTeam = new Map([
+        [7, [{ playerId: 1, fullName: "Colten Ellis", lastName: "Ellis", position: "G", teamId: 7 }]],
+        [54, [{ playerId: 2, fullName: "Adin Hill", lastName: "Hill", position: "G", teamId: 54 }]],
+      ]);
+      const text = "It’s Colten Ellis vs Adin Hill in goal. The Bills are en route to Minny for MNF, so it’s the #Sabres and #Vgk.";
+      const build = (gameIdByTeamId: Map<number, number>) => buildLinesCccSourceFromIftttEvent({ snapshotDate: "2026-11-08", teams, rosterByTeam, gameIdByTeamId,
+        event: { id: "retained", source: "fxtwitter", source_account: "ByMHarrington", username: "ByMHarrington", text,
+          tweet_id: "2119520323309617358", link_to_tweet: "https://x.com/ByMHarrington/status/2119520323309617358",
+          tweet_created_at: "2026-11-08T19:59:58Z", received_at: "2026-11-08T20:08:18Z", created_at_label: null, raw_payload: { text } } });
+      const bound = new Map([[7, 2026020278], [54, 2026020278]]);
+      const claims = expandLinesCccGoalieClaims({ source: build(bound), teams, gameIdByTeamId: bound });
+      expect(claims.map((claim) => [claim.team!.id, claim.gameId, claim.goalies])).toEqual(expect.arrayContaining([
+        [7, 2026020278, ["Colten Ellis"]], [54, 2026020278, ["Adin Hill"]]]));
+      expect(claims).toHaveLength(2);
+      // Teams on different games: the post binds no single game with both sides, so "vs" shares nothing.
+      const unbound = new Map([[7, 2026020270], [54, 2026020278]]);
+      const events = (build(unbound).metadata!.interpretation as TweetInterpretation).events!.filter((event) => event.kind === "goalie");
+      expect(events.map((event) => event.playerId)).toEqual([2]);
+    } finally { vi.unstubAllEnvs(); }
+  });
 });
 
 describe("Lines IGA source metadata", () => {

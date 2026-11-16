@@ -142,7 +142,10 @@ describe("FORGE reserve selection and rows", () => {
     // Start Chart, accuracy, team rows, game revisions and every other reader never see reserve rows.
     const root = path.resolve(__dirname, "../..");
     const files = execFileSync("git", ["grep", "--untracked", "-l", "forge_reserve_projections", "--", "lib", "pages", "components", "scripts"],
-      { cwd: root, encoding: "utf8" }).trim().split("\n").filter(file => !/\.test\.tsx?$/.test(file)).sort();
+      { cwd: root, encoding: "utf8" }).trim().split("\n").filter(file => !/\.test\.tsx?$/.test(file)
+        // Offline parity fixtures name every table the writer touches; they are test support, not readers.
+        && !file.startsWith("lib/projections/pregameCapture/__fixtures__/world/")
+        && !file.startsWith("lib/projections/pregameCapture/parity/")).sort();
     expect(files).toEqual([
       "lib/projections/reserveProjections.ts",
       "lib/projections/run-forge-projections.ts",

@@ -1,0 +1,19 @@
+narrow index: built 5.4s locally; size 441 MB (idx_stb_player_metric 188 MB, pkey 473 MB)
+
+== with narrow index, statistics: no_stats ==
+typical_a/new_generic                        cold read=   284 hit=   948      4.1 ms | warm     1.0 ms rows=1  via idx_stb_player_metric_window_date
+typical_b/new_generic                        cold read=   279 hit=   949      4.2 ms | warm     1.1 ms rows=1  via idx_stb_player_metric_window_date
+typical_c/new_generic                        cold read=   275 hit=   955      4.9 ms | warm     1.2 ms rows=1  via idx_stb_player_metric_window_date
+all_cron/new_generic                         cold read=   321 hit=   935      4.8 ms | warm     1.4 ms rows=1  via idx_stb_player_metric_window_date
+worst_l5_gap_60d/new_generic                 cold read=   370 hit=   884      5.3 ms | warm     1.4 ms rows=1  via idx_stb_player_metric_window_date
+worst_l5_never/new_generic                   cold read=   302 hit=   880      3.4 ms | warm     0.8 ms rows=1  via idx_stb_player_metric_window_date
+edge/new_generic                             cold read=   147 hit=  1101      4.0 ms | warm     0.9 ms rows=1  via idx_stb_player_metric_window_date
+
+== with narrow index, statistics: analyzed ==
+typical_a/new_generic                        cold read=   288 hit=   952      3.5 ms | warm     1.0 ms rows=1  via idx_stb_player_metric_window_date
+typical_b/new_generic                        cold read=   283 hit=   953      5.1 ms | warm     1.4 ms rows=1  via idx_stb_player_metric_window_date
+typical_c/new_generic                        cold read=   279 hit=   959      5.1 ms | warm     1.3 ms rows=1  via idx_stb_player_metric_window_date
+all_cron/new_generic                         cold read=   325 hit=   939      5.0 ms | warm     1.5 ms rows=1  via idx_stb_player_metric_window_date
+worst_l5_gap_60d/new_generic                 cold read=   374 hit=   888      4.2 ms | warm     1.2 ms rows=1  via idx_stb_player_metric_window_date
+worst_l5_never/new_generic                   cold read=   306 hit=   884      3.5 ms | warm     0.9 ms rows=1  via idx_stb_player_metric_window_date
+edge/new_generic                             cold read=   151 hit=  1105      3.0 ms | warm     0.6 ms rows=1  via idx_stb_player_metric_window_date

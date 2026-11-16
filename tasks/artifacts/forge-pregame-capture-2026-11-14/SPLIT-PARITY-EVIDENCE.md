@@ -1,0 +1,106 @@
+# FORGE stage load/compute split: byte-level output parity (Chef verification)
+
+- **Status:** kept local. Nothing pushed, deployed or applied (TJ, 2026-11-15).
+- **Unmodified writer:** `52c3b6919` (oracle commit).
+- **Split:** `9a312597e` by the worker session `local_e8e29114`. Later test-only follow-up: `5a7ca3cd1`.
+- **Writer files unchanged since the split:** `run-forge-projections.ts`, `stages/**`, `queries/**`, `inputCapture.ts`. `git diff 9a312597e HEAD` is empty for these.
+
+## Method (independent of the worker's own parity test)
+1. `git archive` both commits' `web/` into scratch copies outside the repo. Both share the repo's `node_modules`. No worktree, no repo edits.
+2. Add the same scratch-only test to both copies. It runs every oracle scenario through the production writer, `runProjectionV2ForDate`, on the fixture world with the clock frozen at `2026-11-14T20:00:00Z`.
+3. Serialize every write op chain, plus the run result, with `JSON.stringify`. Order is issue order and key insertion order. `-0`, `NaN`, `±Infinity` and `undefined` are encoded distinctly.
+4. Compare the files with `cmp`.
+5. **Sensitivity check:**
+   - A forced change in the split copy (`as_of_date` metric) changed all 9 writes dumps, so each copy ran its own code.
+   - A nudge to the role-stability clamp floor (0.7 → 0.70001) changed nothing, because no scenario reaches that floor.
+
+## Result: 18 of 18 files byte-identical
+
+| file | bytes | sha256 (first 16) |
+| --- | ---: | --- |
+| goalie-model-reorders-candidates.result.json | 233 | 75536a3a8d8a12fd |
+| goalie-model-reorders-candidates.writes.json | 611373 | a8754313d2ea6351 |
+| goalie-override-multi-candidate.result.json | 233 | fa9cb1e6ee89abfe |
+| goalie-override-multi-candidate.writes.json | 596848 | db8f7e74bd64e371 |
+| lineup-evidence-gate.result.json | 233 | fa9cb1e6ee89abfe |
+| lineup-evidence-gate.writes.json | 618557 | d1f431f516ed3503 |
+| normal-one-game.result.json | 233 | 75536a3a8d8a12fd |
+| normal-one-game.writes.json | 603863 | 9d4d898754dd8cdc |
+| opponent-shots-gate.result.json | 233 | 3110131a3f4a60ab |
+| opponent-shots-gate.writes.json | 292873 | 2095e2fe6de60fff |
+| reserve-pass-on.result.json | 233 | 75536a3a8d8a12fd |
+| reserve-pass-on.writes.json | 611358 | a5fc8dd30c8fd1f1 |
+| season-bootstrap.result.json | 233 | 9894809cc6ffa9b3 |
+| season-bootstrap.writes.json | 636435 | ebd9766fec4fca10 |
+| skater-pool-recovery.result.json | 233 | 75536a3a8d8a12fd |
+| skater-pool-recovery.writes.json | 603583 | 0c55bdf660485943 |
+| target-pbp-pregame.result.json | 233 | 75536a3a8d8a12fd |
+| target-pbp-pregame.writes.json | 603863 | 9d4d898754dd8cdc |
+
+**Tables written across the scenarios:** `forge_runs`, `forge_player_projections`, `forge_team_projections`, `forge_goalie_projections`, `forge_reserve_projections`, `player_prediction_outputs`, `game_prediction_outputs`, `model_market_flags_daily`.
+
+## Repository suites at HEAD
+`vitest`: 11 files, 294 tests passed:
+- `pregameCapture/**`, including the worker's parity suite (oracle reads, writes and candidates; the collector equals the writer; replay consumes every read; mutation checks);
+- `reserveProjections.test.ts`;
+- `run-forge-projections.{resume,local-attempt,external-inputs}.test.ts`;
+- `startChartPipeline.test.ts`.
+
+The resume, local-attempt, external-inputs and Start Chart suites are byte-unmodified by the split (`git diff --stat 52c3b6919 9a312597e` on them is empty).
+
+Full typecheck at HEAD (`5a7ca3cd1` tree, split included, `npm run typecheck` under the heavy lock): exit 0.
+
+## Why `reserveProjections.test.ts` changed
+- **What the test is:** a source audit. It runs `git grep` for every non-test file under `lib/pages/components/scripts` that names `forge_reserve_projections`, and pins that list. The point is that no reader (Start Chart, accuracy, team rows, game revisions) ever sees reserve rows.
+- **What the split added to the list:** test support that names the table only as a recorded write:
+  - the four oracle JSON files under `pregameCapture/__fixtures__/world/oracle/` (reserve-pass-on, lineup-evidence-gate, goalie-override-multi-candidate, goalie-model-reorders-candidates);
+  - `pregameCapture/parity/scenarios.ts`.
+- **The change:** those two directories are excluded from the audit. The production list is unchanged: `reserveProjections.ts`, `run-forge-projections.ts`, `stages/persistence-stage.ts`, `lib/rosterScheduleData/forgeDailyBridge.ts`.
+- **Checked:**
+  - Nothing outside those directories imports from them (`rg`).
+  - The oracle JSONs are byte-unchanged since they were recorded (`git diff 52c3b6919 9a312597e` on `oracle/` is empty).
+
+## Limits
+- Parity is proven for the 9 fixture scenarios: normal; pool recovery; season bootstrap; reserve pass on; lineup evidence gate; opponent-shots gate; incomplete target-game PBP; goalie override / multiple candidates; model-reordered goalie candidates.
+- Compute branches no scenario reaches are not covered. The role-stability clamp floor is one known example. No coverage provider is installed, and adding one would change dependencies.
+- Reads match the oracle exactly in 8 scenarios. In goalie-model-reorders-candidates only the per-goalie input block reorders (compared as a multiset, per Chef's decision). Writes are byte-identical there too.
+
+## Compute-off (production path today): byte-identical
+- **Path:** production runs FORGE with `STARTER_BOARD_COMPUTE_ENABLED` off, uncaptured and resumable (`claimResumableRun` / `writeClaimedRun`, full slate, no cutoff).
+- **Oracle:** the worker added 5 scenarios (`d2cb5b5f2`). Their oracle was recorded from a `git archive 52c3b6919` export.
+- **Chef's independent dump, same method as above:**
+  - **Unmodified writer:** the `52c3b6919` export, plus the current test-only harness, scenario, read-order and fixture files.
+  - **Split:** a `git archive HEAD` export.
+  - The two copies' `run-forge-projections.ts`, `skater-stage.ts` and `goalie-stage.ts` differ, as expected.
+- **Result:** every invocation's raw writes and results are byte-identical (5 of 5 files).
+- **Sensitivity check:** a forced change in the split copy changed 5 of 5.
+- **Resumed run:** invocation 1 times out after the home team's rows; invocation 2 resumes and redoes the game. Both are identical.
+
+| file | bytes | sha256 (first 16) |
+| --- | ---: | --- |
+| compute-off-goalie-model-reorders-candidates.json | 660845 | e89bc2808b76dd87 |
+| compute-off-goalie-override-multi-candidate.json | 644678 | 2f2a9c77379b6b4e |
+| compute-off-normal-one-game.json | 652664 | 8392e1ab9cd1aff4 |
+| compute-off-reserve-pass-on.json | 660827 | 8516bf25bbee00f3 |
+| compute-off-resumed-run.json | 969953 | 9330fff63776530b |
+
+**Tables:** `forge_runs`, `forge_player_projections`, `forge_team_projections`, `forge_goalie_projections`, `player_prediction_outputs`, `game_prediction_outputs`, `model_market_flags_daily`.
+
+**Full typecheck at HEAD (after compute-off):** exit 2. Both errors are in another session's untracked `web/lib/rankings/__acceptance__/` (r04-r06-team, r05-goalie-samples). There are none in projections or capture code. The earlier run at `5a7ca3cd1` exited 0.
+
+**Repository suites at HEAD:** `vitest`, 12 files, 302 tests passed. That is the set above plus `parity/computeOff.test.ts`.
+
+**Strict transport:** season bootstrap is admitted after Chef's `dc6c4cb7c`. The collector runs with zero refusals in all 9 compute-on scenarios.
+
+## Clean-export typecheck of the exact candidate
+- **Candidate:** `711ca63b52cf86d7c247f0a355445aa41466b730` (octoberBranch).
+- **Export:** `git archive 711ca63b5` of the full tree into a scratch directory: 13,389 tracked files, exactly the commit, with no untracked files (so no `web/lib/rankings/__acceptance__/`). `web/node_modules` is symlinked from the checkout.
+- **Result:** `npm run typecheck` (`tsc --noEmit`, 8 GB heap, under `/tmp/fhfh-heavy.lock`) exited 0 with 0 errors.
+- **First attempt, discarded:** an export of `web/` alone gave 46 errors, all in four X-timeline files (`__tests__/lib/xIntakeSafetyNet.test.ts`, `__tests__/lib/xTimelineFxtwitter.test.ts`, `lib/cron/xPollerHealth.server.ts`, `scripts/x-timeline-parity-replay.ts`). Those files import `supabase/functions/**`, which sits outside `web/`; the errors came from the partial export, not from the code.
+- **Scope:** this settles the build/type question for the candidate. It does not prove a real capture, and the live pilot needs separate approval.
+
+## Status
+- Byte-for-byte output parity holds in all 14 scenarios: 9 compute-on and 5 compute-off, including a resumed run.
+- The reserve-test change is explained above: an audit exclusion of test support only.
+- The split stays local until TJ decides on release. Nothing is pushed.
+- **Remaining limit:** branches no scenario reaches (e.g. the role-stability clamp floor) are not covered.

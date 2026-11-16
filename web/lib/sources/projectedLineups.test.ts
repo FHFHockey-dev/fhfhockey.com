@@ -416,6 +416,47 @@ describe("projected unit publishing", () => {
     expect(await fetchTweetProjectionReports(database, { date: "2020-01-01" })).toHaveLength(1);
     expect(selectProjectedUnitSets(selected)).toEqual([]);
   });
+  it("keeps the pre-bump goalie report beside the current version and publicly selects the current one", async () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");
+    const stored = new Map<string, any>();
+    const database = { from: (table: string) => ({
+      upsert: async (rows: any[], options: any) => {
+        if (table === "tweet_projection_reports") for (const row of rows) if (!stored.has(row[options.onConflict])) stored.set(row[options.onConflict], structuredClone(row));
+        return { error: null };
+      },
+      select: () => {
+        const query: any = { eq: () => query, order: () => query, range: async () => ({ data: table === "tweet_projection_reports" ? [...stored.values()] : [], error: null }) };
+        return query;
+      },
+    }) };
+    const text = "It’s Colten Ellis vs Adin Hill in goal.";
+    const players = [{ playerId: 1, fullName: "Colten Ellis", lastName: "Ellis", position: "G", teamId: 7 },
+      { playerId: 2, fullName: "Adin Hill", lastName: "Hill", position: "G", teamId: 54 }];
+    const current = interpretTweetUnits(text, players);
+    current.events = extractTweetPlayerEvents({ text, players, publishedAt: "2026-11-08T19:59:58Z", gameTeamIds: [7, 54] });
+    expect(current.version).not.toBe("2026-11-06.1");
+    // The retained pre-bump report confirmed Hill only.
+    const legacy = { ...current, version: "2026-11-06.1", events: current.events.filter((event) => event.playerId === 2) };
+    const source = (interpretation: TweetInterpretation) => ({ snapshotDate: "2026-11-08", tweetPostedAt: "2026-11-08T19:59:58Z", gameId: 2026020278,
+      team: { id: 54, abbreviation: "VGK" }, nhlFilterStatus: "accepted", rawText: text,
+      sourceUrl: "https://x.com/ByMHarrington/status/2119520323309617358", metadata: { interpretation } }) as any;
+    vi.useFakeTimers({ now: new Date("2026-11-09T12:00:00Z") });
+    try {
+      await persistTweetProjectionReports(database, [source(legacy)]);
+      const retained = structuredClone([...stored.values()][0]);
+      vi.setSystemTime(new Date("2026-11-15T21:00:00Z"));
+      await persistTweetProjectionReports(database, [source(current)]);
+      expect([...stored.values()].map((row) => row.interpretation_version)).toEqual(["2026-11-06.1", current.version]);
+      expect(new Set(stored.keys()).size).toBe(2);
+      expect([...stored.values()][0]).toEqual(retained);
+      expect((await fetchTweetProjectionReports(database, { date: "2026-11-08", internal: true })).map((report) => report.interpretation.version))
+        .toEqual([current.version, "2026-11-06.1"]);
+      const [selected, ...rest] = await fetchTweetProjectionReports(database, { date: "2026-11-08" });
+      expect(rest).toEqual([]);
+      expect(selected!.interpretation.version).toBe(current.version);
+    } finally { vi.useRealTimers(); }
+  });
   it("abstains on tied conflicting history instead of choosing health by query order", async () => {
     vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
     const queriedTables: string[] = [];

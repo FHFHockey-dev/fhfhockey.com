@@ -1,0 +1,21 @@
+# Candidate `e0cbb19a8b800d95313b19722816c456baeaf52c` (slate queue pilot): clean-export verification
+
+- **Export:** `git archive e0cbb19a8` of the whole tree, 13,463 files and no untracked files, with `web/node_modules` linked. It ran 2026-11-15 ~20:35Z under `/tmp/fhfh-heavy.lock`.
+- **Typecheck:** `npm run typecheck` gave **exit 0, 0 errors**.
+- **Tests:** `vitest run lib/projections/pregameCapture lib/projections/queries scripts/forge-pregame-slate.test.ts scripts/forge-pregame-capture.test.ts lib/supabase/supportedBaselineMigration.test.ts lib/projections/run-forge-projections.external-inputs.test.ts` gave **18 files, 350 tests, exit 0**. The run covers:
+  - the queue planner, executor and stop rules;
+  - the gated `--execute` wiring;
+  - the capture modules, oracles and transport;
+  - the trend reader;
+  - the migration pins;
+  - the input audit.
+- **Rehearsal:** `forge-pregame-slate.ts --rehearse` gave exit 0 and `networkAttempts: 0`.
+- **Plan** for tonight (`--games 2026020329@…02:00Z,2026020330@…02:00Z --now 2026-11-16T00:10:00Z`):
+  - 0329 dispatches at 00:43:28Z and 0330 at 00:43:58Z; the latest safe dispatch is 00:53:58Z and T−60 is 01:00:00Z;
+  - cap 2, lead 10 min, stagger 30 s;
+  - a slot is held 360 s.
+- **Review (Chef):**
+  - the slate-queue commits `005ad051d`, `ae3346d11`, `0fc8b7f9e`, `7039032b0`, `aedec2c0d`, `e0cbb19a8` and `a99cbb270` touch only their claimed new files, the packet and docs, with no attribution;
+  - the refresh query uses the same columns as `issuedContext.ts`;
+  - the execute gates match the one-game script.
+- **Later commits:** `f42acc8aa` (tweet goalie events, another lane) is not in this candidate. The run uses a fresh export of `e0cbb19a8`.

@@ -4,6 +4,9 @@
   "functions": {
     "pages/api/**/*.ts": {
       "maxDuration": 240
+    },
+    "pages/api/v1/db/blsh-native-capture.ts": {
+      "maxDuration": 250
     }
   },
   "crons": [
