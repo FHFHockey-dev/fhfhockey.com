@@ -9,10 +9,27 @@ import Fetch from "lib/cors-fetch";
 import { buildNhlStatsScoringGameTypeCayenne } from "lib/NHL/playoffs";
 import adminOnly from "utils/adminOnlyMiddleware";
 
+// Every NHL request is bounded: on 2026-11-16 this step hung inside the pipeline
+// until the 240 s kill. Team logs are fetched 5 at a time with a 1 s pause, so
+// 32 teams take at most about 7 x 10 s + 6 s even when every request times out.
+export const NHL_FETCH_TIMEOUT_MS = 10_000;
+
+function nhlRequestSignal(): AbortSignal {
+  if (typeof AbortSignal.timeout === "function") return AbortSignal.timeout(NHL_FETCH_TIMEOUT_MS);
+  // Runtimes without AbortSignal.timeout (jsdom) stay bounded too.
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), NHL_FETCH_TIMEOUT_MS);
+  return controller.signal;
+}
+
+function fetchNhl(url: string) {
+  return Fetch(url, { signal: nhlRequestSignal() });
+}
+
 // Helper to fetch current season info
 async function fetchCurrentSeasonInfo() {
   const url = `https://api.nhle.com/stats/rest/en/season?sort=[{"property":"id","direction":"DESC"}]`;
-  const response = await Fetch(url).then((res) => res.json());
+  const response = await fetchNhl(url).then((res) => res.json());
   return response.data[0];
 }
 
@@ -308,7 +325,7 @@ const handler = async (
       const url = `https://api.nhle.com/stats/rest/en/goalie/summary?${queryString}`;
 
       try {
-        const res = await Fetch(url);
+        const res = await fetchNhl(url);
         if (res.ok) {
           const json = await res.json();
           teamLogsMap[teamId] = json.data || [];

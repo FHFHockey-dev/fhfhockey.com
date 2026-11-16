@@ -26,11 +26,15 @@ import {
   advanceRollingForgeStage,
   buildRollingForgeRunScopeKey,
   finishRollingForgeStage,
+  isRollingForgeStageLeaseDead,
+  isRollingForgeStageRetakeable,
   readRollingForgeRunState,
   readRollingForgeStageFailedAttempts,
   readRollingForgeStageKills,
+  recordRollingForgeStageKill,
   NST_PERSISTENCE_UNCONFIRMED,
   AUDIT_PERSISTENCE_UNCONFIRMED,
+  ROLLING_FORGE_REVIEW_HOLD_CODES,
   STAGE_HANDOFF_UNCONFIRMED,
   RollingForgeStageReviewRequiredError
 } from "lib/rollingForgePipelineRunState";
@@ -67,6 +71,9 @@ type StepResult = {
   // Set when a source shortfall was downgraded so the stage still completes.
   degraded?: "nst_source_unavailable";
   requiresReview?: "nst_persistence_unconfirmed" | "audit_persistence_unconfirmed" | "stage_handoff_unconfirmed";
+  // The child did not answer before the invocation's child-step deadline and
+  // was abandoned; it may still be running.
+  timedOut?: true;
 };
 
 type StageResult = {
@@ -258,10 +265,19 @@ const WGO_TOTALS_START_CUTOFF_MS = 70_000;
 const RESUMABLE_STAGE_LEASE_MS = 270_000;
 // A failing blocking stage is retried once, on the next invocation.
 const MAX_BLOCKING_STAGE_ATTEMPTS = 2;
-// An invocation that dies holding a stage (its lease expires while
+// An invocation that dies holding a replay-safe stage (its lease expires while
 // `running`) is recorded; progress is durable, so the stage is taken again,
 // but after this many dead invocations the run stops instead of looping.
 const MAX_KILLED_STAGE_ATTEMPTS = 3;
+// Every child step answers by this point of the invocation or is abandoned, so
+// the coordinator still stores its stage handoff and its audit row before the
+// 240 s kill. Later than the rolling route's 220 s in-flight deadline plus its
+// own audit write; projection dates start only with time to answer before it.
+const CHILD_STEP_HARD_DEADLINE_MS = 228_000;
+// run-projection-v2 answers up to this long after its maxDurationMs.
+const PROJECTION_ANSWER_RESERVE_MS = 15_000;
+// Ingest checks its budget before each game; one game plus its audit write fits in this.
+const INGEST_ANSWER_RESERVE_MS = 25_000;
 // Companion state row (like `<stage id>:kills`) that is `complete` once the
 // goalie step has succeeded in the run, so later invocations skip it.
 const GOALIE_STEP_DONE_KEY = "projection_execution:goalie" as RollingForgePipelineStageId;
@@ -506,6 +522,23 @@ function isNstSourceShortfall(step: StepResult): boolean {
     && Number.isSafeInteger(unresolved) && unresolved > 0;
 }
 
+function readIngestErrors(step: StepResult): Array<Record<string, unknown>> | null {
+  const body = step.summary && typeof step.summary === "object" && !Array.isArray(step.summary)
+    ? step.summary as Record<string, unknown> : null;
+  if (!body || !Array.isArray(body.errors)) return null;
+  return body.errors.filter((error): error is Record<string, unknown> => !!error && typeof error === "object");
+}
+
+// ingest-projection-inputs answered 200 with `timedOut` and no error other
+// than isolated source rejections: it stopped between games at its budget and
+// its durable cursor holds the next game.
+function isIngestBudgetStop(step: StepResult): boolean {
+  if (step.status !== "failed" || step.statusCode !== 200 || step.requiresReview) return false;
+  const body = step.summary as Record<string, unknown>;
+  const errors = readIngestErrors(step);
+  return body?.timedOut === true && errors != null && errors.every((error) => error.isolated === true);
+}
+
 function requiresAuditReview(body: unknown): boolean {
   if (!body || typeof body !== "object" || Array.isArray(body)) return false;
   const receipt = (body as Record<string, any>).finalAudit;
@@ -553,9 +586,25 @@ async function invokeRouteStep(args: {
   handler: RouteHandler;
   method?: "GET" | "POST";
   query?: Record<string, string>;
+  // Epoch ms: the step is abandoned if it has not answered by then, and not
+  // started at all once it has passed.
+  deadlineAtMs?: number;
 }): Promise<StepResult> {
   const startedAt = Date.now();
   const query = args.query ?? {};
+  if (args.deadlineAtMs != null && args.deadlineAtMs <= startedAt) {
+    // Nothing ran: unfinished work for the next invocation, not a failure.
+    return {
+      id: args.id,
+      route: args.route,
+      status: "partial",
+      statusCode: 0,
+      durationMs: 0,
+      summary: null,
+      query,
+      reason: "Not started: this invocation's child-step deadline has passed; the next invocation runs it."
+    };
+  }
   const req: any = {
     method: args.method ?? "GET",
     query,
@@ -566,7 +615,34 @@ async function invokeRouteStep(args: {
   };
   const res = createMockRes();
 
-  await args.handler(req, res);
+  if (args.deadlineAtMs == null) {
+    await args.handler(req, res);
+  } else {
+    const work = Promise.resolve(args.handler(req, res));
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<"deadline">((resolve) => {
+      timer = setTimeout(() => resolve("deadline"), args.deadlineAtMs! - startedAt);
+    });
+    const outcome = await Promise.race([work.then(() => "answered" as const), deadline]).finally(() =>
+      clearTimeout(timer)
+    );
+    if (outcome === "deadline") {
+      // The abandoned call keeps running until it stops on its own; its late
+      // answer or error goes nowhere.
+      work.catch(() => undefined);
+      return {
+        id: args.id,
+        route: args.route,
+        status: "failed",
+        statusCode: 504,
+        durationMs: Date.now() - startedAt,
+        summary: null,
+        query,
+        timedOut: true,
+        reason: `Abandoned: no answer by the child-step deadline ${new Date(args.deadlineAtMs).toISOString()}; the call may still be running.`
+      };
+    }
+  }
 
   return {
     id: args.id,
@@ -677,12 +753,24 @@ async function runStage(args: {
   // run; a one-shot run always runs it).
   goalieStepDone?: boolean;
   persistGoalieStepDone?: () => Promise<void>;
+  // Epoch ms: every child step answers by then or is abandoned (CHILD_STEP_HARD_DEADLINE_MS).
+  childDeadlineMs?: number;
   includeDownstream: boolean;
   includeAccuracy: boolean;
   useDurableProjectionBacklog: boolean;
 }): Promise<StageResult> {
   const startedAt = Date.now();
   const steps: StepResult[] = [];
+  // An abandoned child of a review-only stage may still write, so the stage is
+  // held for review; a replay-safe stage just fails this attempt.
+  const invoke = async (step: Parameters<typeof invokeRouteStep>[0]) => {
+    const result = await invokeRouteStep({ ...step, deadlineAtMs: args.childDeadlineMs });
+    if (result.timedOut && !isRollingForgeStageRetakeable(args.id)) {
+      result.requiresReview = STAGE_HANDOFF_UNCONFIRMED;
+    }
+    return result;
+  };
+  const stopStage = () => steps.some((step) => step.requiresReview || step.timedOut);
   // Set when a stage's loop stops with work left and no failure (rolling
   // chunks at the claim budget, the next projection date at the deadline).
   let stageUnfinished = false;
@@ -706,8 +794,8 @@ async function runStage(args: {
     method?: "GET" | "POST";
     query?: Record<string, string>;
   }) => {
-    if (steps.some((result) => result.requiresReview)) return;
-    steps.push(await invokeRouteStep(step));
+    if (stopStage()) return;
+    steps.push(await invoke(step));
   };
 
   switch (args.id) {
@@ -730,7 +818,7 @@ async function runStage(args: {
       break;
     case "upstream_skater_sources": {
       const nstCursor = args.nstResumeCursor ?? null;
-      const nst = await invokeRouteStep({
+      const nst = await invoke({
         id: "update-nst-gamelog",
         route: "/api/v1/db/update-nst-gamelog",
         handler: updateNstGamelogHandler,
@@ -897,7 +985,7 @@ async function runStage(args: {
         bypassFreshnessBlockers: "true"
       };
       const invokeRolling = (query: Record<string, string>) =>
-        invokeRouteStep({
+        invoke({
           id: "update-rolling-player-averages",
           route: "/api/v1/db/update-rolling-player-averages",
           handler: updateRollingPlayerAveragesHandler,
@@ -979,21 +1067,36 @@ async function runStage(args: {
       }
       break;
     }
-    case "projection_input_ingest":
+    case "projection_input_ingest": {
+      // The route's own default budget (270 s) outlives the function; give it
+      // the time left before the child-step deadline so it stops between games
+      // and stores its cursor. maxDurationMs keeps the durable cursor mode.
+      const ingestBudget: Record<string, string> =
+        args.childDeadlineMs != null
+          ? { maxDurationMs: String(Math.max(5_000, args.childDeadlineMs - Date.now() - INGEST_ANSWER_RESERVE_MS)) }
+          : {};
       await addStep({
         id: "ingest-projection-inputs",
         route: "/api/v1/db/ingest-projection-inputs",
         handler: ingestProjectionInputsHandler,
         method: "POST",
         query: args.useDurableProjectionBacklog
-          ? undefined
+          ? ingestBudget
           : {
               startDate: projectionInputStartDate,
               endDate: projectionInputEndDate,
-              maxGames: args.mode === "overnight" ? "80" : "50"
+              maxGames: args.mode === "overnight" ? "80" : "50",
+              ...ingestBudget
             }
       });
+      const ingest = steps.find((step) => step.id === "ingest-projection-inputs");
+      if (ingest && isIngestBudgetStop(ingest)) {
+        // Stopped between games at its budget: unfinished, not failed.
+        ingest.status = "partial";
+        ingest.reason = "Ingest stopped at its time budget; the next invocation resumes the slate.";
+      }
       break;
+    }
     case "projection_relationship_build":
       await addStep({
         id: "build-projection-relationships",
@@ -1025,7 +1128,7 @@ async function runStage(args: {
       // success, so a resumed invocation skips its external NHL fetches. A
       // failed step stays unmarked and runs again on the next invocation.
       if (!args.goalieStepDone) {
-        const goalieStep = await invokeRouteStep({
+        const goalieStep = await invoke({
           id: "update-goalie-projections-v2",
           route: "/api/v1/db/update-goalie-projections-v2",
           handler: updateGoalieProjectionsV2Handler,
@@ -1046,7 +1149,7 @@ async function runStage(args: {
           }
         }
       }
-      if (steps.some((step) => step.requiresReview)) break;
+      if (stopStage()) break;
       if (args.startDate !== args.endDate) {
         await addStep({
           id: "run-projection-v2",
@@ -1074,7 +1177,17 @@ async function runStage(args: {
             stageUnfinished = true;
             break;
           }
-          const step = await invokeRouteStep({
+          // Every date, the first included, starts only if it can answer
+          // (its runtime plus the route's finalization reserve) before the
+          // child-step deadline; otherwise it waits for the next invocation.
+          if (
+            args.childDeadlineMs != null &&
+            args.childDeadlineMs - Date.now() < MIN_PROJECTION_RUNTIME_MS + PROJECTION_ANSWER_RESERVE_MS
+          ) {
+            stageUnfinished = true;
+            break;
+          }
+          const step = await invoke({
             id: "run-projection-v2",
             route: "/api/v1/db/run-projection-v2",
             handler: runProjectionV2Handler,
@@ -1086,7 +1199,7 @@ async function runStage(args: {
             }
           });
           steps.push(step);
-          if (step.requiresReview) break;
+          if (step.requiresReview || step.timedOut) break;
           if (step.status === "failed" && index > 0) {
             // A date ahead is best effort: its failure is recorded on the step,
             // never blocks the run date's downstream stages, and does not stop
@@ -1285,8 +1398,10 @@ async function runResumablePipeline(args: {
       );
       continue;
     }
-    if (state?.status === "failed" && [NST_PERSISTENCE_UNCONFIRMED, AUDIT_PERSISTENCE_UNCONFIRMED].includes(state.lastError ?? "")) {
-      stageResults.push(notRunStage(stage, "failed", "Persistence is unconfirmed; manual review is required before retrying.", true));
+    if (state?.status === "failed" && ROLLING_FORGE_REVIEW_HOLD_CODES.includes(state.lastError ?? "")) {
+      stageResults.push(notRunStage(stage, "failed", state.lastError === STAGE_HANDOFF_UNCONFIRMED
+        ? "A child step was abandoned at the deadline and may still have written; manual review is required before retrying."
+        : "Persistence is unconfirmed; manual review is required before retrying.", true));
       termination = {
         state: "stopped_on_blocking_failure", resumeRequired: false, nextStartDate: null,
         runKey, nextStageId: stage.id, reason: "manual_review_required"
@@ -1344,9 +1459,43 @@ async function runResumablePipeline(args: {
       continue;
     }
 
+    // An invocation died holding a replay-safe stage (2026-11-16: killed inside
+    // projection_execution, every later slot stopped). Count the dead owner once,
+    // then retake the stage from its stored cursor, up to the kill limit.
+    let retakeNote: string | null = null;
+    if (isRollingForgeStageRetakeable(stage.id) && isRollingForgeStageLeaseDead(state)) {
+      let kills: number;
+      try {
+        kills = await recordRollingForgeStageKill({
+          supabase,
+          scopeKey: runKey,
+          stageId: stage.id,
+          runDate: date,
+          expiredLeaseOwner: state?.leaseOwner ?? null
+        });
+      } catch (error) {
+        termination = continuation("state_error", stage.id, state?.cursorGameId ?? null,
+          `Could not record the invocation that died holding this stage: ${errorMessage(error)}`);
+        stageResults.push(notRunStage(stage, "pending", "Could not take this stage; see termination.detail."));
+        continue;
+      }
+      if (kills >= MAX_KILLED_STAGE_ATTEMPTS) {
+        stageResults.push(notRunStage(stage, "failed",
+          `${kills} invocations died holding this stage in this run; not retaken again.`, true));
+        if (stage.blocking) {
+          termination = { state: "stopped_on_blocking_failure", resumeRequired: false, nextStartDate: null,
+            runKey, nextStageId: stage.id, reason: "attempts_exhausted" };
+          terminalStopCode = "stage_killed";
+        }
+        continue;
+      }
+      retakeNote = `Retaken after ${kills} invocation(s) died holding it; the run stops at ${MAX_KILLED_STAGE_ATTEMPTS}.`;
+    }
+
     // Acquire re-reads the exact CAS revision and refuses every unacknowledged
-    // running takeover. Expiry/checkpoints do not prove the last child did not
-    // write; a failed review-hold store must not turn into permission to replay.
+    // running takeover of a review-only stage. Expiry/checkpoints do not prove
+    // the last child did not write; a failed review-hold store must not turn
+    // into permission to replay one.
     let lease;
     try {
       lease = await acquireRollingForgeStage({
@@ -1395,6 +1544,7 @@ async function runResumablePipeline(args: {
     const result = await runStage({
       ...args.stageArgs,
       id: stage.id,
+      childDeadlineMs: args.startedAt + CHILD_STEP_HARD_DEADLINE_MS,
       ...(stage.id === "upstream_skater_sources"
         ? {
             nstResumeCursor: lease.cursorGameId,
@@ -1451,6 +1601,7 @@ async function runResumablePipeline(args: {
           }
         : {})
     });
+    if (retakeNote) result.reason = retakeNote;
     stageResults.push(result);
 
     try {
@@ -1469,8 +1620,10 @@ async function runResumablePipeline(args: {
       } else if (result.status === "failed") {
         const attempt = failedAttempts + 1;
         const reviewCode = result.steps.find(step => step.requiresReview)?.requiresReview;
-        // The known uncertainty remains terminal even if saving its hold fails.
-        // The already-acquired running row blocks a later takeover in every stage.
+        // The known uncertainty remains terminal even if saving its hold fails:
+        // the already-acquired running row blocks a later takeover of a
+        // review-only stage. A replay-safe stage is retaken once that row's
+        // lease expires (see the catch below).
         if (reviewCode) {
           termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
             nextStartDate: null, runKey, nextStageId: stage.id, reason: "manual_review_required" };
@@ -1500,13 +1653,22 @@ async function runResumablePipeline(args: {
       }
     } catch (error) {
       // The child may have committed even though its stage receipt did not.
-      // Preserve the running row as the durable fence; never promise a retry.
+      // Preserve the running row as the durable fence. A review-only stage is
+      // never retried from it; a replay-safe stage is retaken by a later
+      // invocation once the lease expires, counted as a dead invocation.
       const message = errorMessage(error);
       const reviewCode = result.steps.find(step => step.requiresReview)?.requiresReview;
-      termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
-        nextStartDate: null, runKey, nextStageId: stage.id, reason: "manual_review_required",
-        detail: `Stage handoff was not acknowledged: ${message}. Reconcile child outputs and audit before operator-authorized resumption.` };
-      terminalStopCode = reviewCode ?? STAGE_HANDOFF_UNCONFIRMED;
+      if (isRollingForgeStageRetakeable(stage.id)) {
+        termination = { state: "stopped_on_blocking_failure", resumeRequired: true,
+          nextStartDate: null, runKey, nextStageId: stage.id, reason: "retry_on_next_invocation",
+          detail: `Stage handoff was not acknowledged: ${message}.${reviewCode ? ` A child also reported ${reviewCode}.` : ""} The stage is replay-safe; a later invocation retakes it once its lease expires.` };
+        terminalStopCode = null;
+      } else {
+        termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
+          nextStartDate: null, runKey, nextStageId: stage.id, reason: "manual_review_required",
+          detail: `Stage handoff was not acknowledged: ${message}. Reconcile child outputs and audit before operator-authorized resumption.` };
+        terminalStopCode = reviewCode ?? STAGE_HANDOFF_UNCONFIRMED;
+      }
     }
   }
 
@@ -1660,6 +1822,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
       const result = await runStage({
         ...stageArgs,
         id: stage.id,
+        childDeadlineMs: startedAt + CHILD_STEP_HARD_DEADLINE_MS,
         sourceDeadlineAtMs: oneShotDeadlineMs,
         invocationStartedAtMs: startedAt,
         // One-shot runs chunk the rolling step too, so a killed call still

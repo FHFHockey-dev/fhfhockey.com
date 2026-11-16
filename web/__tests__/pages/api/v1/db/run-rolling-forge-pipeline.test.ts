@@ -1415,6 +1415,226 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       expect(readRollingForgeStageKills(await readRollingForgeRunState(args), args.stageId)).toBe(1);
     });
 
+    describe("a stage left running by a dead invocation (audit C2, 2026-11-16)", () => {
+      const scopeKey = "daily_incremental:2026-10-19";
+      const beforeExecution = ["core_entity_freshness", "upstream_skater_sources", "contextual_builders",
+        "rolling_player_recompute", "projection_input_ingest", "projection_relationship_build", "projection_derived_build"];
+      const seedDone = (ids: string[]) => ids.forEach((id) => seedStageRow(id, {}));
+      // The 10:20:29 invocation took the stage at 10:20:34 and never answered; its lease ran to 10:24:59.
+      const seedDeadExecution = (owner: string) => seedStageRow("projection_execution", {
+        revision: 4, status: "running", lease_owner: owner,
+        lease_expires_at: "2026-10-19T10:24:59.000Z", updated_at: "2026-10-19T10:20:34.000Z"
+      });
+      const killReceipts = () =>
+        [...pipelineStateRows.values()].filter((row) => row.operation_key.startsWith("projection_execution:kill:"));
+      const recordKill = (owner: string) => recordRollingForgeStageKill({
+        supabase: { from: pipelineStateFrom, rpc: pipelineStateRpc } as any, scopeKey,
+        stageId: "projection_execution", runDate: "2026-10-19", expiredLeaseOwner: owner
+      });
+
+      it("retakes a replay-safe stage after its lease expired, counts the dead invocation once and finishes the run", async () => {
+        seedDone(beforeExecution);
+        seedDeadExecution("dead-10-20");
+
+        const res = await invokeScheduled("2026-10-19T10:30:00.000Z");
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.termination).toMatchObject({ state: "completed" });
+        expect(stageStatus(res, "projection_execution")).toMatchObject({
+          status: "success", reason: expect.stringContaining("Retaken after 1 invocation(s) died holding it")
+        });
+        expect(updateGoalieProjectionsV2Mock).toHaveBeenCalledTimes(1);
+        expect(runProjectionV2Mock.mock.calls.map((call: any[]) => call[0].query.date)).toEqual(["2026-10-19", "2026-10-20"]);
+        expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "complete", cursor_game_id: 2 });
+        expect(killReceipts()).toHaveLength(1);
+        expect(readRollingForgeStageKills(
+          await readRollingForgeRunState({ supabase: { from: pipelineStateFrom } as any, scopeKey }), "projection_execution"
+        )).toBe(1);
+      });
+
+      it("stops the run as stage_killed once three invocations died holding the stage, and stays stopped", async () => {
+        seedDone(beforeExecution);
+        await recordKill("dead-1");
+        await recordKill("dead-2");
+        seedDeadExecution("dead-3");
+
+        const res = await invokeScheduled("2026-10-19T10:30:00.000Z");
+
+        expect(res.statusCode).toBe(207);
+        expect(res.body.termination).toMatchObject({
+          state: "stopped_on_blocking_failure", resumeRequired: false, reason: "attempts_exhausted", nextStageId: "projection_execution"
+        });
+        expect(res.body.failureSummary.terminalStop).toEqual({ code: "stage_killed", stageId: "projection_execution" });
+        expect(stageStatus(res, "projection_execution")).toMatchObject({ status: "failed", reason: expect.stringContaining("3 invocations died") });
+        expect(killReceipts()).toHaveLength(3);
+
+        const again = await invokeScheduled("2026-10-19T10:35:00.000Z");
+        expect(again.body.failureSummary.terminalStop).toEqual({ code: "stage_killed", stageId: "projection_execution" });
+        // The same dead owner is not counted twice.
+        expect(killReceipts()).toHaveLength(3);
+        expect(updateGoalieProjectionsV2Mock).not.toHaveBeenCalled();
+        expect(runProjectionV2Mock).not.toHaveBeenCalled();
+      });
+
+      it("reports a lost handoff of a replay-safe stage as a retry and retakes it once the lease expires", async () => {
+        seedDone(beforeExecution);
+        const original = pipelineStateRpc.getMockImplementation()!;
+        let lost = false;
+        pipelineStateRpc.mockImplementation(async (name: string, a: any) => {
+          if (!lost && a.p_operation_key === "projection_execution" && a.p_transition === "complete") {
+            lost = true;
+            return { data: null, error: { message: "fetch failed" } };
+          }
+          return original(name, a);
+        });
+        try {
+          const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+          expect(first.body.termination).toMatchObject({
+            reason: "retry_on_next_invocation", resumeRequired: true, nextStageId: "projection_execution",
+            detail: expect.stringContaining("replay-safe")
+          });
+          expect(first.body.failureSummary.terminalStop).toBeNull();
+          expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "running" });
+
+          const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+          expect(second.statusCode).toBe(200);
+          expect(stageStatus(second, "projection_execution").reason).toContain("Retaken after 1 invocation(s)");
+          expect(killReceipts()).toHaveLength(1);
+          // The finished dates and the goalie marker carried over: nothing ran twice.
+          expect(updateGoalieProjectionsV2Mock).toHaveBeenCalledTimes(1);
+          expect(runProjectionV2Mock).toHaveBeenCalledTimes(2);
+        } finally {
+          pipelineStateRpc.mockImplementation(original);
+        }
+      });
+
+      it("keeps a stored review hold on a replay-safe stage", async () => {
+        seedDone(beforeExecution);
+        seedStageRow("projection_execution", { status: "failed", last_error: "audit_persistence_unconfirmed" });
+
+        const res = await invokeScheduled("2026-10-19T10:30:00.000Z");
+
+        expect(res.body.termination).toMatchObject({ reason: "manual_review_required", resumeRequired: false });
+        expect(res.body.failureSummary.terminalStop).toEqual({ code: "audit_persistence_unconfirmed", stageId: "projection_execution" });
+        expect(updateGoalieProjectionsV2Mock).not.toHaveBeenCalled();
+        expect(killReceipts()).toHaveLength(0);
+      });
+
+      it("does not take a replay-safe stage whose lease is still live", async () => {
+        seedDone(beforeExecution);
+        seedDeadExecution("live-owner");
+
+        const res = await invokeScheduled("2026-10-19T10:22:00.000Z");
+
+        expect(res.body.termination).toMatchObject({ state: "continuation_required", reason: "stage_in_progress_elsewhere" });
+        expect(killReceipts()).toHaveLength(0);
+        expect(updateGoalieProjectionsV2Mock).not.toHaveBeenCalled();
+      });
+
+      it("starts no projection date that cannot answer before the child-step deadline", async () => {
+        seedDone(beforeExecution);
+        // A slow goalie step leaves 38 s before the 228 s deadline: too little for a 30 s date plus its 15 s answer.
+        updateGoalieProjectionsV2Mock.mockImplementationOnce(slowSuccess(190_000));
+
+        const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        expect(stageStatus(first, "projection_execution").status).toBe("partial");
+        expect(first.body.termination).toMatchObject({ reason: "stage_partial", nextStageId: "projection_execution" });
+        expect(runProjectionV2Mock).not.toHaveBeenCalled();
+
+        const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+        expect(second.statusCode).toBe(200);
+        expect(updateGoalieProjectionsV2Mock).toHaveBeenCalledTimes(1);
+        expect(runProjectionV2Mock).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    describe("child-step deadline (audit C2)", () => {
+      const signal = () => {
+        let resolve!: () => void;
+        const promise = new Promise<void>((done) => { resolve = done; });
+        return { promise, resolve };
+      };
+      const hangAfter = (entered: { resolve: () => void }) => () => {
+        entered.resolve();
+        return new Promise<void>(() => undefined);
+      };
+
+      beforeEach(() => {
+        // A second useFakeTimers call keeps the first call's faked set, so reinstall.
+        vi.useRealTimers();
+        vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+      });
+
+      it("abandons a hung goalie step at 228 s, answers, fails the attempt and retries it next invocation", async () => {
+        for (const id of ["core_entity_freshness", "upstream_skater_sources", "contextual_builders", "rolling_player_recompute",
+          "projection_input_ingest", "projection_relationship_build", "projection_derived_build"]) seedStageRow(id, {});
+        const entered = signal();
+        updateGoalieProjectionsV2Mock.mockImplementationOnce(hangAfter(entered));
+
+        const pending = invokeScheduled("2026-10-19T10:20:29.000Z");
+        await entered.promise;
+        await vi.advanceTimersByTimeAsync(228_000);
+        const first = await pending;
+
+        expect(Date.now() - Date.parse("2026-10-19T10:20:29.000Z")).toBeLessThan(240_000);
+        const goalie = stageStatus(first, "projection_execution").steps[0];
+        expect(goalie).toMatchObject({ id: "update-goalie-projections-v2", status: "failed", statusCode: 504, timedOut: true });
+        expect(goalie).not.toHaveProperty("requiresReview");
+        expect(first.body.termination).toMatchObject({ reason: "retry_on_next_invocation", resumeRequired: true });
+        expect(first.body.failureSummary.firstFailure).toMatchObject({ stepId: "update-goalie-projections-v2", error: expect.stringContaining("Abandoned") });
+        expect(runProjectionV2Mock).not.toHaveBeenCalled();
+        expect(pipelineStateRows.get(stageKey("projection_execution"))).toMatchObject({ status: "failed", last_error: "stage_failed:attempt-1" });
+
+        const second = await invokeScheduled("2026-10-19T10:30:00.000Z");
+        expect(second.statusCode).toBe(200);
+        expect(updateGoalieProjectionsV2Mock).toHaveBeenCalledTimes(2);
+        expect(runProjectionV2Mock).toHaveBeenCalledTimes(2);
+      });
+
+      it("holds a review-only stage whose child hung instead of replaying it", async () => {
+        for (const id of ["core_entity_freshness", "upstream_skater_sources", "contextual_builders",
+          "rolling_player_recompute", "projection_input_ingest"]) seedStageRow(id, {});
+        const entered = signal();
+        shiftChartsMock.mockImplementationOnce(hangAfter(entered));
+
+        const pending = invokeScheduled("2026-10-19T10:05:00.000Z");
+        await entered.promise;
+        await vi.advanceTimersByTimeAsync(228_000);
+        const first = await pending;
+
+        expect(first.body.termination).toMatchObject({ reason: "manual_review_required", resumeRequired: false });
+        expect(first.body.failureSummary.terminalStop).toEqual({ code: "stage_handoff_unconfirmed", stageId: "projection_relationship_build" });
+        expect(pipelineStateRows.get(stageKey("projection_relationship_build"))).toMatchObject({
+          status: "failed", last_error: "stage_handoff_unconfirmed"
+        });
+
+        const next = await invokeScheduled("2026-10-19T10:10:00.000Z");
+        expect(next.body.failureSummary.terminalStop).toEqual({ code: "stage_handoff_unconfirmed", stageId: "projection_relationship_build" });
+        expect(shiftChartsMock).toHaveBeenCalledTimes(1);
+        expect(buildProjectionDerivedMock).not.toHaveBeenCalled();
+      });
+    });
+
+    it("gives the ingest step the time left before the child-step deadline and resumes it after a budget stop", async () => {
+      ingestProjectionInputsMock.mockImplementationOnce(async (_req: any, res: any) => {
+        res.status(200).json({ success: false, timedOut: true, nextGameId: 2025021024, errors: [] });
+      });
+
+      const first = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+      const query = ingestProjectionInputsMock.mock.calls[0][0].query;
+      expect(Object.keys(query)).toEqual(["maxDurationMs"]);
+      expect(Number(query.maxDurationMs)).toBeLessThanOrEqual(228_000 - 25_000);
+      expect(stageStatus(first, "projection_input_ingest").status).toBe("partial");
+      expect(first.body.termination).toMatchObject({ reason: "stage_partial", nextStageId: "projection_input_ingest" });
+      expect(first.body.failureSummary.failedStepCount).toBe(0);
+
+      const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
+      expect(second.statusCode).toBe(200);
+      expect(ingestProjectionInputsMock).toHaveBeenCalledTimes(2);
+    });
+
     it("projects the next day after the run date, remembering finished dates across invocations", async () => {
       runProjectionV2Mock
         .mockImplementationOnce(slowSuccess(20_000))
@@ -1636,6 +1856,35 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         stageStatus(second, "contextual_builders").steps.find((step: any) => step.id === "verify-line-context").reason
       ).toContain("degraded");
       expect(updateRollingPlayerAveragesMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("invokeRouteStep child deadline", () => {
+    const step = (handler: any, deadlineAtMs: number) => __testables.invokeRouteStep({ id: "child", route: "/api/v1/db/child", handler, deadlineAtMs });
+
+    it("abandons a child that has not answered by the deadline", async () => {
+      const result = await step(() => new Promise<void>(() => undefined), Date.now() + 20);
+      expect(result).toMatchObject({ status: "failed", statusCode: 504, timedOut: true, summary: null });
+      expect(result.reason).toContain("Abandoned");
+    });
+
+    it("returns the child's answer and leaves no timer behind", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      try {
+        const result = await step(async (_req: any, res: any) => { res.status(200).json({ success: true }); }, Date.now() + 60_000);
+        expect(result).toMatchObject({ status: "success", statusCode: 200 });
+        expect(result).not.toHaveProperty("timedOut");
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("does not start a child once the deadline has passed", async () => {
+      const handler = vi.fn();
+      const result = await step(handler, Date.now() - 1);
+      expect(handler).not.toHaveBeenCalled();
+      expect(result).toMatchObject({ status: "partial", statusCode: 0 });
     });
   });
 
