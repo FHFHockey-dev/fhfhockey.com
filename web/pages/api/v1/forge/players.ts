@@ -329,6 +329,8 @@ export default async function handler(
     const emptyReason = projectionsRaw.length === 0 && !missingRequestedHorizon
       ? emptyDateReason(scheduledGames, Boolean(runId))
       : null;
+    // A slate with verified games and no served rows is a blocking issue for operators; pages still render it empty.
+    const slateWithoutRows = emptyReason !== null && emptyReason !== "no_games" && (scheduledGames ?? 0) > 0;
     const emptyMessage = emptyReason === "no_games"
       ? `No NHL games are scheduled on ${targetDate}.`
       : emptyReason
@@ -441,7 +443,7 @@ export default async function handler(
           degradedProjectionSummary.skaterPoolRecoveryPlayerCount,
       },
       notes: [missingHorizonMessage, emptyMessage, degradedProjectionSummary.note],
-      blockingIssueCount: missingRequestedHorizon ? 1 : 0,
+      blockingIssueCount: (missingRequestedHorizon ? 1 : 0) + (slateWithoutRows ? 1 : 0),
     });
 
     return res.status(200).json({

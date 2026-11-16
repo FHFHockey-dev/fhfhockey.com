@@ -112,10 +112,11 @@ function createQueryBuilder(
           resolve({ count: out.count ?? 0, error: out.error }),
         );
       }
-      const rows = out.data ?? [];
-      if (state.countExact && Array.isArray(rows)) {
-        return Promise.resolve(resolve({ error: out.error, count: rows.length,
-          data: state.range ? rows.slice(state.range[0], state.range[1] + 1) : rows }));
+      // PostgREST returns at most 1,000 rows to a read without a range (the hosted row cap).
+      const rows = Array.isArray(out.data) && !state.range ? out.data.slice(0, 1000) : out.data ?? [];
+      if (state.countExact && Array.isArray(out.data)) {
+        return Promise.resolve(resolve({ error: out.error, count: out.data.length,
+          data: state.range ? out.data.slice(state.range[0], state.range[1] + 1) : rows }));
       }
       return Promise.resolve(
         resolve({ data: rows, error: out.error }),
@@ -1161,10 +1162,10 @@ describe("/api/v1/forge/players", () => {
     });
 
     it.each([
-      ["a scheduled date with no proven run", 6, 40, "no_proven_run_for_date", "FORGE skater projections are not available for the 2026-11-16 slate."],
-      ["a verified off-day", 0, 40, "no_games", "No NHL games are scheduled on 2026-11-16."],
-      ["a date whose schedule is not stored", 0, 0, "no_proven_run_for_date", "FORGE skater projections are not available for the 2026-11-16 slate."],
-    ])("serves %s empty, with its reason, and never a neighboring date's rows (H6)", async (_label, gamesOnDate, gamesAfterDate, reason, message) => {
+      ["a scheduled date with no proven run", 6, 40, "no_proven_run_for_date", "FORGE skater projections are not available for the 2026-11-16 slate.", 1],
+      ["a verified off-day", 0, 40, "no_games", "No NHL games are scheduled on 2026-11-16.", 0],
+      ["a date whose schedule is not stored", 0, 0, "no_proven_run_for_date", "FORGE skater projections are not available for the 2026-11-16 slate.", 0],
+    ])("serves %s empty, with its reason, and never a neighboring date's rows (H6)", async (_label, gamesOnDate, gamesAfterDate, reason, message, blocking) => {
       const projectionRunIds = install({
         runs: [{ run_id: "yesterday", as_of_date: "2026-11-15" }, { run_id: "tomorrow", as_of_date: "2026-11-17" }],
         projections: [skater("yesterday", 2026020200, 1), skater("tomorrow", 2026020400, 2)],
@@ -1176,6 +1177,7 @@ describe("/api/v1/forge/players", () => {
       expect(res.statusCode).toBe(200);
       expect(res.body).toMatchObject({ runId: null, asOfDate: "2026-11-16", requestedDate: "2026-11-16", fallbackApplied: false,
         reason, message, data: [], serving: { resolvedDate: "2026-11-16", strategy: "requested_date" },
+        scanSummary: { status: "empty", blockingIssueCount: blocking },
         diagnostics: { state: "empty", reason, message } });
       expect(projectionRunIds).toEqual([]);
     });

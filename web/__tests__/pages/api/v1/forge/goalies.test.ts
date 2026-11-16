@@ -374,7 +374,7 @@ describe("/api/v1/forge/goalies", () => {
       expect(res.statusCode).toBe(200);
       expect(res.body).toMatchObject({ runId: null, asOfDate: "2026-02-07", requestedDate: "2026-02-07", fallbackApplied: false,
         reason: "no_proven_run_for_date", message: "FORGE goalie projections are not available for the 2026-02-07 slate.", data: [],
-        serving: { resolvedDate: "2026-02-07", strategy: "requested_date" }, scanSummary: { status: "empty" },
+        serving: { resolvedDate: "2026-02-07", strategy: "requested_date" }, scanSummary: { status: "empty", blockingIssueCount: 1 },
         diagnostics: { runProof: null, fallback: { enabled: false, applied: false },
           emptyResultAnalysis: { isEmpty: true, reason: "no_proven_run_for_date", verifiedScheduledGames: 6 } } });
       expect(reads).toEqual([]);
@@ -389,7 +389,7 @@ describe("/api/v1/forge/goalies", () => {
       const res = createMockRes();
       await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
       expect(res.statusCode).toBe(200);
-      expect(res.body).toMatchObject({ runId: null, reason, message, data: [] });
+      expect(res.body).toMatchObject({ runId: null, reason, message, data: [], scanSummary: { status: "empty", blockingIssueCount: 0 } });
       expect(reads).toEqual([]);
     });
 

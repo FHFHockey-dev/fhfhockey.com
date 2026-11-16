@@ -457,6 +457,21 @@ describe("FORGE daily bridge", () => {
       expect(result.runProofs.map(proof => proof.runId).sort()).toEqual(["rerun", "slate"]);
     });
 
+    it("withholds and counts an unproven run between a proven rerun and the slate run beneath it, reading none of its rows", async () => {
+      const slateGames = [...games, game("4", "MTL", "2026-10-19T23:30:00Z")];
+      const runRows = [
+        { run_id: "rerun", as_of_date: "2026-10-19", created_at: "2026-10-19T15:00:00Z", git_sha: "abc", scope_key: "h1:1" },
+        { run_id: "unproven-slate", as_of_date: "2026-10-19", created_at: "2026-10-19T13:00:00Z", git_sha: "abc", scope_key: "h1:full" },
+        { run_id: "slate", as_of_date: "2026-10-19", created_at: "2026-10-19T12:00:00Z", git_sha: "abc", scope_key: "h1:full" },
+      ];
+      const { db, runIdReads } = proofDb(runRows, [provenSnapshotRow("rerun"), unprovenSnapshotRow("unproven-slate"), provenSnapshotRow("slate")], [
+        skater("rerun", "2026-10-19", 1, 101, 10), skater("unproven-slate", "2026-10-19", 4, 103, 8), skater("slate", "2026-10-19", 4, 103, 8)]);
+      const result = await loadForgeDailyBridgeForecasts(db as never, players, slateGames, now, 20262027, Date.now() + 5000, policy);
+      expect(runIdReads).toEqual([["rerun", "slate"], ["rerun", "slate"]]);
+      expect(result.forecasts.find(row => row.playerId === "s3" && row.gameId === "4")?.revisionId).toBe(`${FORGE_DAILY_BRIDGE_VERSION}:slate`);
+      expect(result.limitations).toContain("1 FORGE runs in the last week cannot prove they excluded third-party fantasy projections, so they are withheld; players covered only by them get no forecast.");
+    });
+
     it("lets a newer full-slate run supersede an older single-game rerun of its date", () => {
       const data = inputs();
       data.runs.push({ run_id: "old-rerun", as_of_date: "2026-10-19", created_at: "2026-10-19T09:00:00Z", git_sha: "abc", external_input_proven: true,

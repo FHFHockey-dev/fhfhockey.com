@@ -467,6 +467,8 @@ export default async function handler(
     // Why the date is empty, when it is: a verified off-day, or no proven output for a scheduled (or unknown) slate.
     const emptyReason = rows.length > 0 ? null : verifiedScheduledGames === 0 ? "no_games"
       : resolvedRunId ? "proven_run_has_no_rows" : "no_proven_run_for_date";
+    // A slate with verified games and no served rows is a blocking issue for operators; pages still render it empty.
+    const slateWithoutRows = emptyReason !== null && emptyReason !== "no_games" && (verifiedScheduledGames ?? 0) > 0;
     const emptyMessage = emptyReason === "no_games"
       ? `No NHL games are scheduled on ${requestedDate}.`
       : emptyReason
@@ -531,7 +533,7 @@ export default async function handler(
         requested: requestedRowCount,
         scheduledGamesOnDate: scheduledGamesCount,
       },
-      blockingIssueCount: serving.severity === "error" ? 1 : 0,
+      blockingIssueCount: (serving.severity === "error" ? 1 : 0) + (slateWithoutRows ? 1 : 0),
       notes: [serving.message, ...notes],
     });
 
