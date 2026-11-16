@@ -12,7 +12,8 @@ import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { getLatestStartedSeasonForDate } from "lib/NHL/server";
 import { teamsInfo } from "lib/teamsInfo";
 import { evaluateForgeCalibrationEligibility } from "lib/projections/calibrationEligibility";
-import { loadExternalInputProof, runProofDiagnostics, type ExternalInputProof } from "lib/projections/externalInputProof";
+import { forgeRunScopedGameIds, keepRowsOfServingRun, loadExternalInputProof, runProofDiagnostics, selectProvenRunsByGame,
+  type ExternalInputProof, type ProvenRunOverlay } from "lib/projections/externalInputProof";
 import { buildStartChartCompatibility } from "lib/projections/compatibilityInventory";
 import {
   extractDegradedProjectionContext,
@@ -198,6 +199,8 @@ type SlateResult = {
   forgeRun: ForgeRunRow | null;
   /** The legacy run's external-input exclusion proof, and how many newer runs of the date lacked it (never served). */
   legacyRunProof?: ExternalInputProof | null;
+  /** Newer single-game reruns serving their own games over `forgeRun`, the date's full-slate run (H3). */
+  legacyGameRuns?: ProvenRunOverlay[];
   withheldUnprovenRuns?: number;
   projectionError: boolean;
   goalieError: boolean;
@@ -205,6 +208,11 @@ type SlateResult = {
 
 type ForgeRunWithProjectionsRow = ForgeRunRow & {
   forge_player_projections?: ProjectionRow[] | null;
+};
+/** A run's scope, as forgeRunScopedGameIds reads it, from its embedded metrics. */
+const runScope = (run: { metrics?: unknown }) => {
+  const metrics = (run.metrics ?? null) as { execution_scope?: unknown; resume?: { scope_key?: unknown } | null } | null;
+  return { execution_scope: metrics?.execution_scope, scope_key: metrics?.resume?.scope_key };
 };
 
 const RESPONSE_TTL_MS = 15_000;
@@ -838,14 +846,15 @@ async function fetchSlate(
     .select("id,date,seasonId,startTime,homeTeamId,awayTeamId")
     .eq("date", targetDate)
     .order("id", { ascending: true });
-  const endOfTargetDate = `${targetDate}T23:59:59.999Z`;
+  // No updated_at bound (audit L2): rows are upserted in place, one per game, team and goalie, so a bound could only
+  // hide a goalie (an evening ET refresh lands after the date's UTC end), never select an earlier version. Past dates
+  // are clamped to today before this read.
   const goaliePromise = supabase
     .from("goalie_start_projections")
     .select(
       "game_id,team_id,player_id,game_date,start_probability,projected_gsaa_per_60,confirmed_status,l10_start_pct,season_start_pct,games_played,updated_at",
     )
-    .eq("game_date", targetDate)
-    .lte("updated_at", endOfTargetDate);
+    .eq("game_date", targetDate);
 
   const provenRunQuery = (runId: string) => restrictRunsToHorizon(excludeOffReleaseRuns(supabase
     .from("forge_runs")
@@ -918,11 +927,31 @@ async function fetchSlate(
     } catch (error) {
       return { data: null, error, proof: null, withheld: 0 };
     }
-    const provenRunId = runIds.find((id) => proof.has(id));
+    const provenRunIds = runIds.filter((id) => proof.has(id));
+    const provenRunId = provenRunIds[0];
     const withheld = provenRunId ? runIds.indexOf(provenRunId) : runIds.length;
-    if (!provenRunId) return { data: null, error: null, proof: null, withheld };
+    if (!provenRunId) return { data: null, error: null, proof: null, withheld, overlays: [] as ProvenRunOverlay[] };
     const response = await provenRunQuery(provenRunId).limit(1).maybeSingle();
-    return { data: response.data, error: response.error, proof: proof.get(provenRunId) ?? null, withheld };
+    const newest = response.data as unknown as ForgeRunWithProjectionsRow | null;
+    if (response.error || !newest || exactRunId || forgeRunScopedGameIds(runScope(newest)) === null) {
+      return { data: response.data, error: response.error, proof: proof.get(provenRunId) ?? null, withheld, overlays: [] as ProvenRunOverlay[] };
+    }
+    // H3: the newest proven run is a single-game rerun, so it serves only its own games; older proven runs are read
+    // until the date's full-slate run, which serves the rest.
+    const runs = [newest];
+    for (const runId of provenRunIds.slice(1)) {
+      const older = await provenRunQuery(runId).limit(1).maybeSingle();
+      if (older.error) return { data: null, error: older.error, proof: null, withheld, overlays: [] as ProvenRunOverlay[] };
+      const run = older.data as unknown as ForgeRunWithProjectionsRow | null;
+      if (!run) continue;
+      runs.push(run);
+      if (forgeRunScopedGameIds(runScope(run)) === null) break;
+    }
+    const byGame = selectProvenRunsByGame(runs.map((run) => ({ run_id: run.run_id, ...runScope(run) })), proof);
+    const served = runs.find((run) => run.run_id === (byGame.baseRunId ?? byGame.overlays[0]?.runId)) ?? newest;
+    return { data: { ...served, forge_player_projections: keepRowsOfServingRun(runs.flatMap((run) =>
+      run.forge_player_projections ?? []), byGame) }, error: null, proof: proof.get(served.run_id) ?? null, withheld,
+    overlays: byGame.overlays };
   })();
 
   const [gamesResponse, runResponse, goalieResponse] = await Promise.all([
@@ -1063,6 +1092,7 @@ async function fetchSlate(
       : starterBoardFlags().serving ? null : forgeRun?.run_id ?? null,
     forgeRun: starterBoardFlags().serving ? null : forgeRun,
     legacyRunProof: starterBoardFlags().serving || !forgeRun ? null : runResponse.proof,
+    legacyGameRuns: starterBoardFlags().serving || !forgeRun ? [] : runResponse.overlays,
     withheldUnprovenRuns: starterBoardFlags().serving ? 0 : runResponse.withheld,
     projectionError: Boolean(runResponse.error),
     goalieError: Boolean(goalieResponse.error),
@@ -2192,6 +2222,9 @@ export default async function handler(
               provenanceEligible: provenanceEligibility.eligible,
               // What admitted this run: captured snapshot, verified producer closure or verified legacy release.
               proof: runProofDiagnostics(forgeRun.run_id, slate.legacyRunProof),
+              // Newer single-game reruns that serve their own games over this run (H3).
+              gameRuns: (slate.legacyGameRuns ?? []).map((overlay) => ({
+                ...runProofDiagnostics(overlay.runId, overlay.proof), gameIds: overlay.gameIds })),
             }
           : null,
         skaterSource: "forge_player_projections",

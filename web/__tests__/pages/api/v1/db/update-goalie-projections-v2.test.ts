@@ -78,6 +78,7 @@ vi.mock("lib/supabase/server", () => ({
 
 import handler, {
   historicalGoalieTeams,
+  NHL_FETCH_TIMEOUT_MS,
   pruneIneligibleGoalieProjectionRows,
   upsertGoalieProjectionRows
 } from "pages/api/v1/db/update-goalie-projections-v2";
@@ -160,6 +161,14 @@ describe("update-goalie-projections-v2 endDate", () => {
       expect.objectContaining({ game_id: 2, team_id: 1, player_id: 8470000, start_probability: 1 }),
       expect.objectContaining({ game_id: 2, team_id: 2, player_id: 8470001, start_probability: 1 })
     ]);
+  });
+
+  it("stamps updated_at on the rows it writes (audit L2)", async () => {
+    const res = await run({});
+    expect(res.statusCode).toBe(200);
+    const rows = (upsertMock.mock.calls[0] as any[])[0];
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((row: any) => row.updated_at === "2026-10-21T10:00:00.000Z")).toBe(true);
   });
 
   it("uses only prior-date logs for pregame shares and GSAA", async () => {
@@ -303,6 +312,39 @@ describe("update-goalie-projections-v2 endDate", () => {
     expect(upsertMock).not.toHaveBeenCalled();
   });
 
+  it("bounds every NHL request and answers when one hangs instead of waiting for the function kill", async () => {
+    // 2026-11-16: a hung NHL request held the pipeline's goalie step until the 240 s kill.
+    const signals: AbortController[] = [];
+    const original = Object.getOwnPropertyDescriptor(AbortSignal, "timeout");
+    const timeoutMock = vi.fn((_ms: number) => {
+      const controller = new AbortController();
+      signals.push(controller);
+      return controller.signal;
+    });
+    Object.defineProperty(AbortSignal, "timeout", { value: timeoutMock, configurable: true, writable: true });
+    const normalFetch = fetchMock.getMockImplementation()!;
+    // Team-log requests never answer on their own; only their signal ends them.
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => url.includes("/season?")
+      ? normalFetch(url)
+      : new Promise((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(new Error("timed out")))));
+    try {
+      const pending = run({});
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+      signals.forEach((controller) => controller.abort());
+      const res = await pending;
+
+      expect(timeoutMock).toHaveBeenCalledTimes(3);
+      expect(timeoutMock).toHaveBeenCalledWith(NHL_FETCH_TIMEOUT_MS);
+      expect(fetchMock.mock.calls.every(([, init]) => (init as RequestInit | undefined)?.signal != null)).toBe(true);
+      expect(res.statusCode).toBe(500);
+      expect(res.body.error).toContain("2 team log fetches failed");
+      expect(upsertMock).not.toHaveBeenCalled();
+    } finally {
+      if (original) Object.defineProperty(AbortSignal, "timeout", original);
+      else delete (AbortSignal as any).timeout;
+    }
+  });
+
   it.each(["2026-10-2", "2026-13-01", "tomorrow"])(
     "rejects malformed endDate %s with 400",
     async (endDate) => {
@@ -324,7 +366,13 @@ describe("update-goalie-projections-v2 endDate", () => {
 });
 
 describe("update-goalie-projections-v2 persistence", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("counts only successfully persisted chunks", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-16T09:30:00.000Z"));
     const upsert = vi
       .fn()
       .mockResolvedValueOnce({ error: null })
@@ -351,9 +399,13 @@ describe("update-goalie-projections-v2 persistence", () => {
         }
       ]
     });
+    // Every refresh stamps updated_at (audit L2: it never advanced before).
     expect(upsert).toHaveBeenNthCalledWith(
       1,
-      [{ game_id: 1, player_id: 1 }, { game_id: 1, player_id: 2 }],
+      [
+        { game_id: 1, player_id: 1, updated_at: "2026-11-16T09:30:00.000Z" },
+        { game_id: 1, player_id: 2, updated_at: "2026-11-16T09:30:00.000Z" }
+      ],
       { onConflict: "game_id, player_id" }
     );
   });

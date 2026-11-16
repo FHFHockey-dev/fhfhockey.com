@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("utils/adminOnlyMiddleware", () => ({
   default: (handler: any) => handler,
@@ -45,6 +45,7 @@ const {
     shiftComplete: new Set<number>(),
     storedShiftRows: new Map<number, any[]>(),
     normalizationStatus: new Map<number, string>(),
+    parkedRows: [] as Array<Record<string, unknown>>,
   },
 }));
 
@@ -96,6 +97,7 @@ vi.mock("lib/projections/projectionPipelineState", () => ({
   advanceProjectionPipelineLease: advanceProjectionPipelineLeaseMock,
   buildProjectionPipelineOperationKey: buildProjectionPipelineOperationKeyMock,
   finishProjectionPipelineLease: finishProjectionPipelineLeaseMock,
+  PROJECTION_INPUT_PIPELINE_KEY: "projection_input_ingest",
   readOldestProjectionPipelineBacklog: readOldestProjectionPipelineBacklogMock,
 }));
 
@@ -318,6 +320,39 @@ vi.mock("lib/supabase/server", () => ({
         return query;
       }
 
+      if (table === "projection_pipeline_state") {
+        // Applies the parked-row filter, oldest-first order and page size the
+        // route asks for, so a missing filter shows up as starved retries.
+        let waitingOnly = false;
+        const query: any = {
+          select: vi.fn(() => query),
+          eq: vi.fn(() => query),
+          or: vi.fn((filter: string) => {
+            waitingOnly =
+              filter ===
+              "and(status.eq.failed,last_error.eq.source_rejected_pending),status.eq.running";
+            return query;
+          }),
+          order: vi.fn(() => query),
+          limit: vi.fn(async (count: number) => ({
+            data: state.parkedRows
+              .filter(
+                (row) =>
+                  !waitingOnly ||
+                  row.status === "running" ||
+                  (row.status === "failed" &&
+                    row.last_error === "source_rejected_pending"),
+              )
+              .sort((a, b) =>
+                String(a.range_start_date).localeCompare(String(b.range_start_date)),
+              )
+              .slice(0, count),
+            error: null,
+          })),
+        };
+        return query;
+      }
+
       return { insert: auditInsertMock };
     }),
   },
@@ -363,6 +398,7 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
     state.shiftComplete.clear();
     state.storedShiftRows.clear();
     state.normalizationStatus.clear();
+    state.parkedRows = [];
     persistCapturedGameNormalizationMock.mockResolvedValue({ idempotent: false });
     readOldestProjectionPipelineBacklogMock.mockResolvedValue(null);
     buildProjectionPipelineOperationKeyMock.mockImplementation(
@@ -860,25 +896,94 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
     );
   });
 
-  it("holds the durable cursor on a source rejection inside the grace window", async () => {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-03-21T10:00:00Z"));
-    try {
-      expect(durableSourceRejectionCutoffDate()).toBe("2026-03-19");
+  describe("a source rejection inside the retry window (audit H1/M5)", () => {
+    const rejectGame = (rejectedId: number) =>
       buildShiftStrengthUpsertsMock.mockImplementation(
         (gameId: number, _pbp: any, rows: any[]) => {
-          if (gameId === 103) {
-            throw new Error(`No NHL shift rows returned for game ${gameId}`);
+          if (gameId === rejectedId) {
+            throw new Error(
+              `Shift clock/duration mismatch for game ${gameId}, player 8480947`,
+            );
           }
           return Array.from(new Set(rows.map((row) => row.playerId))).map(
             (playerId) => ({ game_id: gameId, player_id: playerId }),
           );
         },
       );
-      const req: any = { method: "POST", query: {}, body: {} };
+    const parkCalls = () =>
+      acquireProjectionPipelineLeaseMock.mock.calls
+        .map(([call]) => call)
+        .filter((call: any) => call.scopeKey === "source_rejected_games");
+    const finishOf = (operationKey: string) =>
+      finishProjectionPipelineLeaseMock.mock.calls
+        .map(([call]) => call)
+        .filter((call: any) => call.lease.operationKey === operationKey);
+    const parkedRow = (gameId: number, date: string, extra: Record<string, unknown> = {}) => ({
+      operation_key: `game:${gameId}`, status: "failed", range_start_date: date,
+      lease_expires_at: null, last_error: "source_rejected_pending", ...extra,
+    });
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-03-21T10:00:00Z"));
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("parks the game for retry and ingests the rest of the slate", async () => {
+      expect(durableSourceRejectionCutoffDate()).toBe("2026-03-19");
+      rejectGame(103);
       const res = createMockRes();
 
-      await handler(req, res);
+      await handler({ method: "POST", query: {}, body: {} } as any, res);
+
+      expect(res.body).toMatchObject({
+        success: false,
+        gamesProcessed: 6,
+        skipped: 1,
+        skipReasons: { sourceDataRejected: 1 },
+        nextGameId: null,
+        sourceRejectionRetries: { retried: 0, recovered: 0, pending: 1, final: 0 },
+        errors: [
+          {
+            gameId: 103,
+            date: "2026-03-20",
+            stage: "precheck_shifts",
+            message: "Shift clock/duration mismatch for game 103, player 8480947",
+            isolated: true,
+            retryPending: true,
+          },
+        ],
+      });
+      expect(parkCalls()).toEqual([
+        expect.objectContaining({
+          operationKey: "game:103",
+          rangeStartDate: "2026-03-20",
+          rangeEndDate: "2026-03-20",
+        }),
+      ]);
+      expect(finishOf("game:103")).toEqual([
+        expect.objectContaining({ outcome: "failed", failureCode: "source_rejected_pending" }),
+      ]);
+      expect(
+        advanceProjectionPipelineLeaseMock.mock.calls.map(([call]) => call.nextCursorGameId),
+      ).toEqual([102, 103, 104, 105, 106, 107]);
+      expect(finishOf("canonical:2026-03-20:2026-03-20")).toEqual([
+        expect.objectContaining({ outcome: "complete" }),
+      ]);
+    });
+
+    it("holds the durable cursor when the game cannot be parked", async () => {
+      rejectGame(103);
+      const normalAcquire = acquireProjectionPipelineLeaseMock.getMockImplementation()!;
+      acquireProjectionPipelineLeaseMock.mockImplementation(async (args: any) => {
+        if (args.scopeKey === "source_rejected_games") throw new Error("state store unavailable");
+        return normalAcquire(args);
+      });
+      const res = createMockRes();
+
+      await handler({ method: "POST", query: {}, body: {} } as any, res);
 
       expect(res.body).toMatchObject({
         success: false,
@@ -889,7 +994,7 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
           expect.objectContaining({
             gameId: 103,
             stage: "precheck_shifts",
-            message: "No NHL shift rows returned for game 103",
+            message: expect.stringContaining("not parked for retry: state store unavailable; the cursor holds here"),
           }),
         ],
       });
@@ -902,9 +1007,90 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
           lease: expect.objectContaining({ cursorGameId: 103 }),
         }),
       );
-    } finally {
-      vi.useRealTimers();
-    }
+    });
+
+    it("retries parked games after the slate and closes the ones that now pass", async () => {
+      state.parkedRows = [parkedRow(90, "2026-03-20")];
+      const res = createMockRes();
+
+      await handler({ method: "POST", query: {}, body: {} } as any, res);
+
+      expect(fetchPbpGameMock.mock.calls.map(([gameId]) => gameId)).toEqual([
+        101, 102, 103, 104, 105, 106, 107, 90,
+      ]);
+      expect(res.body).toMatchObject({
+        success: true,
+        gamesProcessed: 7,
+        lastCompletedGameId: 107,
+        sourceRejectionRetries: { retried: 1, recovered: 1, pending: 0, final: 0 },
+        errors: [],
+      });
+      expect(finishOf("game:90")).toEqual([expect.objectContaining({ outcome: "complete" })]);
+      // The parked game never moves the slate cursor.
+      expect(
+        advanceProjectionPipelineLeaseMock.mock.calls.map(([call]) => call.nextCursorGameId),
+      ).toEqual([102, 103, 104, 105, 106, 107]);
+    });
+
+    it("keeps a still-rejected parked game parked inside its window and closes it as final after", async () => {
+      state.parkedRows = [parkedRow(90, "2026-03-20"), parkedRow(91, "2026-03-19")];
+      buildShiftStrengthUpsertsMock.mockImplementation((gameId: number) => {
+        if (gameId === 90 || gameId === 91) throw new Error(`No NHL shift rows returned for game ${gameId}`);
+        return [{ game_id: gameId, player_id: gameId * 10 + 1 }];
+      });
+      const res = createMockRes();
+
+      await handler({ method: "POST", query: {}, body: {} } as any, res);
+
+      expect(res.body.sourceRejectionRetries).toEqual({ retried: 2, recovered: 0, pending: 1, final: 1 });
+      // Oldest first: 91 (outside its window) then 90.
+      expect(res.body.errors).toEqual([
+        expect.objectContaining({ gameId: 91, isolated: true }),
+        expect.objectContaining({ gameId: 90, isolated: true, retryPending: true }),
+      ]);
+      expect(res.body.errors[0].retryPending).toBeUndefined();
+      expect(finishOf("game:90")).toEqual([expect.objectContaining({ failureCode: "source_rejected_pending" })]);
+      expect(finishOf("game:91")).toEqual([expect.objectContaining({ failureCode: "source_rejected_final" })]);
+      // Parked failures never hold the slate.
+      expect(finishOf("canonical:2026-03-20:2026-03-20")).toEqual([
+        expect.objectContaining({ outcome: "complete" }),
+      ]);
+    });
+
+    it("never lets accumulated final rows crowd pending games out of the retry page", async () => {
+      state.parkedRows = [
+        ...Array.from({ length: 40 }, (_, index) =>
+          parkedRow(1000 + index, "2026-02-01", { last_error: "source_rejected_final" })),
+        parkedRow(90, "2026-03-20"),
+      ];
+      const res = createMockRes();
+
+      await handler({ method: "POST", query: {}, body: {} } as any, res);
+
+      expect(fetchPbpGameMock.mock.calls.map(([gameId]) => gameId)).toContain(90);
+      expect(res.body.sourceRejectionRetries).toMatchObject({ retried: 1, recovered: 1 });
+    });
+
+    it("still retries parked games when the slate itself is already complete", async () => {
+      state.parkedRows = [parkedRow(90, "2026-03-20")];
+      acquireProjectionPipelineLeaseMock.mockImplementationOnce(async (args: any) => ({
+        pipelineKey: "projection_input_ingest", scopeKey: "completed_game_slates",
+        operationKey: args.operationKey, revision: 9, status: "complete", cursorGameId: 107,
+        cursorDate: "2026-03-20", rangeStartDate: args.rangeStartDate, rangeEndDate: args.rangeEndDate,
+        leaseOwner: null, leaseExpiresAt: null, lastError: null, updatedAt: "2026-03-21T09:45:00.000Z",
+      }));
+      const res = createMockRes();
+
+      await handler({ method: "POST", query: {}, body: {} } as any, res);
+
+      expect(fetchPbpGameMock.mock.calls.map(([gameId]) => gameId)).toEqual([90]);
+      expect(res.body).toMatchObject({
+        success: true,
+        durableOperationAlreadyComplete: true,
+        sourceRejectionRetries: { retried: 1, recovered: 1 },
+      });
+      expect(finishOf("canonical:2026-03-20:2026-03-20")).toEqual([]);
+    });
   });
 
   it("fails the durable slate when a later game blocks after an isolated one", async () => {

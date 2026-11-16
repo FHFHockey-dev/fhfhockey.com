@@ -7,6 +7,8 @@ import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
 import { readGoalieFreshness } from "lib/nst/goalieFreshness.server";
 import { readPollerHealth } from "lib/cron/xPollerHealth.server";
 import { readTweetBacklog } from "lib/cron/tweetReviewBacklog.server";
+import { readForgeServingHealth } from "lib/cron/forgeServingHealth.server";
+import { withForgeServingSubject } from "lib/cron/forgeServingHealth";
 import {
   getBenchmarkAnnotations,
   hasBenchmarkAnnotationKind,
@@ -1724,6 +1726,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const pollerHealthPromise = readPollerHealth({ client: supabase, now, windowMs: REPORT_WINDOW_MS,
     deadlineAt: Math.min(sourceDeadlineAt, now.getTime() + REPORT_REQUEST_TIMEOUT_MS) });
   const tweetBacklogPromise = readTweetBacklog({ client: supabase, now, writeSnapshot: !dryRun });
+  // Read-only and never throws: whether today's ET slate has a fresh FORGE run that readers serve (C1/H2 backstop).
+  const forgeServingPromise = seasonWindowPromise.then((window) => window.state, () => "unknown" as const)
+    .then((seasonState) => readForgeServingHealth({ client: supabase, now, seasonState,
+      deadlineAt: Math.min(sourceDeadlineAt, Date.now() + REPORT_REQUEST_TIMEOUT_MS) }));
 
   let jobRunDetailsEmailResult: any = null;
   let auditEmailResult: any = null;
@@ -1868,6 +1874,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   ], successHistory.complete);
   const goalieFreshness = await goalieFreshnessPromise;
   const [pollerHealth, tweetBacklog] = await Promise.all([pollerHealthPromise, tweetBacklogPromise]);
+  const forgeServing = await forgeServingPromise;
   const sourceElapsedMs = Date.now() - now.getTime();
   const auditGapGraceStartedAt =
     auditRows
@@ -2499,7 +2506,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const { data, error } = await resend.emails.send({
         from: "audit-report@fhfhockey.com",
         to: emailRecipient,
-        subject:
+        subject: withForgeServingSubject(
           (auditErr || runErr)
             ? "⚠️ Daily Cron Report — incomplete telemetry; totals unknown"
             : counts.jobsFailingLast > 0 || counts.jobsMissingLast > 0
@@ -2515,7 +2522,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                     : pollerHealth.status === "critical"
                       ? "⚠️ Daily Cron Report — X poller problem"
                     : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
+          forgeServing),
         react: CronAuditEmail({
+          forgeServing,
           goalieFreshness,
           pollerHealth,
           tweetBacklog,
@@ -2635,6 +2644,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     goalieFreshness,
     pollerHealth,
     tweetBacklog,
+    forgeServing,
     countScope: "observed",
     scheduleInventory: { denominatorScope: "pg_cron entries enabled in repository inventory and due in this window; hosted activation separately reconciled",
       notDueJobs: notDueJobs.map((job) => ({ name: job.name, schedule: job.cronExpression })),

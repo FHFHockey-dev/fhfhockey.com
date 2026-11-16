@@ -4,14 +4,15 @@ import { buildEndpointScanSummary } from "lib/api/scanSummary";
 import { resolveLatestStartedSeasonIdForDate } from "lib/NHL/server";
 import { resolveProjectionTeamIdentity } from "lib/NHL/seasonAwareScheduleTeam";
 import supabase from "lib/supabase/server";
-import { excludeOffReleaseRuns } from "lib/projections/releasedRunFence";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import { buildCanonicalReaderCompatibility } from "lib/projections/compatibilityInventory";
 import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
 import * as forgeSkaterContext from "lib/projections/forgeSkaterContext";
-import { loadExternalInputProof, requireLatestExternalInputProvenRun, runProofDiagnostics,
-  type ExternalInputProof } from "lib/projections/externalInputProof";
+import { keepRowsOfServingRun, provenRunIdsByGame, requireLatestExternalInputProvenRun, runProofDiagnostics,
+  type ExternalInputProof, type ProvenRunsByGame } from "lib/projections/externalInputProof";
+import { pages } from "lib/rosterScheduleData/planningInputs";
+import { goalieNewYorkDate } from "components/GameGrid/utils/goalieWorkloadView";
 import {
   buildProjectionApiErrorResponse,
 } from "lib/projections/apiHelpers";
@@ -115,110 +116,75 @@ function extractDegradedProjectionContext(
   return forgeSkaterContext.extractDegradedProjectionContext(uncertainty);
 }
 
+/** Time allowed for each paged read (`pages` reads 1,000 rows per request: PostgREST's row cap). */
+const READ_DEADLINE_MS = 8000;
+/** More current roster rows than this for one season means the read is wrong, not that the league grew (H5). */
+const ROSTER_ROWS_MAXIMUM = 5000;
+const PROJECTION_ROWS_MAXIMUM = 15000;
+
+/** Every current roster player of the season, read in pages: one request is capped at 1,000 rows and the table holds
+ * more, so an unpaged read silently dropped about a third of projected skaters (H5, audit 2026-11-16). */
 async function fetchActiveRosterPlayerIdSet(
   seasonId: number,
 ): Promise<Set<number>> {
   if (!supabase) throw new Error("Supabase server client not available");
-  const { data, error } = await supabase
+  const db = supabase;
+  const rows = await pages(() => db
     .from("rosters")
-    .select("playerId")
+    .select("playerId,teamId", { count: "exact" })
     .eq("seasonId", seasonId)
-    .eq("is_current", true);
-  if (error) throw error;
+    .eq("is_current", true)
+    .order("playerId")
+    .order("teamId"), Date.now() + READ_DEADLINE_MS, ROSTER_ROWS_MAXIMUM, (row) => [row.playerId, row.teamId]);
   return new Set(
-    ((data ?? []) as Array<any>)
+    rows
       .map((row) => Number(row?.playerId))
       .filter((id) => Number.isFinite(id)),
   );
 }
 
-// Matches the "fallback_recent" window of buildResolvedDataServingContract:
-// an older run is not served as current skater projections.
-const FALLBACK_MAX_AGE_DAYS = 3;
-
-function shiftDateOnly(date: string, days: number): string | null {
-  const ms = Date.parse(`${date}T00:00:00.000Z`);
-  if (!Number.isFinite(ms)) return null;
-  return new Date(ms + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-}
-
-function isScopedRun(metrics: unknown): boolean {
-  const ids = (metrics as any)?.execution_scope?.requested_game_ids;
-  return Array.isArray(ids) && ids.length > 0;
-}
-
-async function fetchFallbackRunWithPlayerData(
-  targetDate: string,
+/** The served runs' rows for the horizon, in pages, each kept only from the run that serves its game (H3). */
+async function fetchServedProjectionRows(
+  selectQuery: string,
+  runsByGame: ProvenRunsByGame,
   horizonGames: number,
-): Promise<{ runId: string; asOfDate: string; proof: ExternalInputProof } | null> {
+): Promise<any[]> {
   if (!supabase) throw new Error("Supabase server client not available");
-  const oldestAllowedDate = shiftDateOnly(targetDate, -FALLBACK_MAX_AGE_DAYS);
-  if (!oldestAllowedDate) return null;
-
-  const scanCandidates = async (includeFutureDates: boolean) => {
-    // Off-release (null or local:) runs stay private, as in start-chart.
-    let query = excludeOffReleaseRuns(supabase
-      .from("forge_runs")
-      .select("run_id,as_of_date,metrics")
-      .eq("status", "succeeded"))
-      .gte("as_of_date", oldestAllowedDate)
-      .order("as_of_date", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(30);
-
-    if (!includeFutureDates) {
-      query = query.lte("as_of_date", targetDate);
-    }
-
-    const { data: candidates, error: candidatesError } = await query;
-    if (candidatesError) throw candidatesError;
-
-    const rows = (
-      (candidates ?? []) as Array<{
-        run_id: string;
-        as_of_date: string;
-        metrics?: unknown;
-      }>
-    )
-      // Within a date, a full-slate run outranks a later single-game run.
-      .map((row, index) => ({ row, index }))
-      .sort(
-        (a, b) =>
-          (a.row.as_of_date === b.row.as_of_date
-            ? Number(isScopedRun(a.row.metrics)) -
-              Number(isScopedRun(b.row.metrics))
-            : 0) || a.index - b.index,
-      )
-      .map(({ row }) => row);
-    // A run without external-input exclusion proof is never a fallback.
-    const proof = rows.length
-      ? await loadExternalInputProof(supabase, rows.map((row) => row.run_id))
-      : new Map();
-    for (const row of rows.filter((candidate) => proof.has(candidate.run_id))) {
-      const { count, error } = await supabase
-        .from("forge_player_projections")
-        .select("player_id", { count: "exact", head: true })
-        .eq("run_id", row.run_id)
-        .eq("horizon_games", horizonGames);
-      if (error) throw error;
-      if ((count ?? 0) > 0) {
-        return { runId: row.run_id, asOfDate: row.as_of_date, proof: proof.get(row.run_id) };
-      }
-    }
-    return null;
-  };
-
-  return (await scanCandidates(false)) ?? scanCandidates(true);
+  const db = supabase;
+  const rows = await pages(() => db
+    .from("forge_player_projections")
+    .select(selectQuery, { count: "exact" })
+    .in("run_id", provenRunIdsByGame(runsByGame))
+    .eq("horizon_games", horizonGames)
+    .order("run_id")
+    .order("game_id")
+    .order("player_id"), Date.now() + READ_DEADLINE_MS, PROJECTION_ROWS_MAXIMUM,
+  (row) => [row.run_id, row.game_id, row.player_id]);
+  return runsByGame.overlays.length ? keepRowsOfServingRun(rows, runsByGame) : rows;
 }
 
-async function fetchGamesScheduledCount(date: string): Promise<number> {
+/** Games stored for the date when the stored schedule reaches past it, so zero is a verified off-day; null when the
+ * schedule cannot say (a failed read, or nothing stored after the date). */
+async function fetchVerifiedScheduledGames(date: string): Promise<number | null> {
   if (!supabase) throw new Error("Supabase server client not available");
-  const { count, error } = await supabase
-    .from("games")
-    .select("id", { count: "exact", head: true })
-    .eq("date", date);
-  if (error) throw error;
-  return count ?? 0;
+  try {
+    const [onDate, later] = await Promise.all([
+      supabase.from("games").select("id", { count: "exact", head: true }).eq("date", date),
+      supabase.from("games").select("id", { count: "exact", head: true }).gt("date", date),
+    ]);
+    if (onDate.error || later.error || !Number.isSafeInteger(onDate.count)) return null;
+    if (onDate.count! > 0) return onDate.count!;
+    return Number(later.count) > 0 ? 0 : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Why a requested date serves no skater rows. No other date's run stands in for it (H6, TJ 2026-11-16). */
+type EmptyDateReason = "no_games" | "no_proven_run_for_date" | "proven_run_has_no_rows";
+function emptyDateReason(scheduledGames: number | null, provenRun: boolean): EmptyDateReason {
+  if (scheduledGames === 0) return "no_games";
+  return provenRun ? "proven_run_has_no_rows" : "no_proven_run_for_date";
 }
 
 function parseHorizonGames(value: string | string[] | undefined): number {
@@ -283,23 +249,26 @@ export default async function handler(
     if (!supabase) throw new Error("Supabase server client not available");
 
     const dateParam = req.query.date as string | undefined;
-    const targetDate = dateParam || new Date().toISOString().split("T")[0];
+    // The slate is an Eastern-time date (L3): a UTC default is tomorrow between 00:00 and 05:00 UTC.
+    const targetDate = dateParam || goalieNewYorkDate(new Date().toISOString());
     const horizonGames = parseHorizonGames(req.query.horizon);
-    let resolvedDate = targetDate;
     let runId: string | null = null;
     let runProof: ExternalInputProof | null = null;
-    let fallbackApplied = false;
+    let runsByGame: ProvenRunsByGame | null = null;
     let projectionsRaw: any[] = [];
     let missingRequestedHorizon = false;
 
-    // 1. Try to find a run for the requested date (only one proven free of external fantasy inputs)
+    // 1. The requested date's proven runs of the requested horizon (L3), per game (H3). No other date's run stands
+    //    in for them (H6, TJ 2026-11-16): a date without one is served empty, with the reason.
     try {
-      ({ runId, proof: runProof } = await requireLatestExternalInputProvenRun(targetDate));
+      ({ runId, proof: runProof, runsByGame } = await requireLatestExternalInputProvenRun(targetDate, horizonGames));
     } catch (e) {
       if ((e as any)?.statusCode !== 404) throw e;
     }
 
     const selectQuery = `
+        run_id,
+        game_id,
         player_id,
         team_id,
         players!player_id (
@@ -325,75 +294,56 @@ export default async function handler(
         uncertainty
       `;
 
-    // 2. If run found, fetch data
+    // 2. If runs were found, fetch their rows
     if (runId) {
-      const { data, error } = await supabase
-        .from("forge_player_projections")
-        .select(selectQuery)
-        .eq("run_id", runId)
-        .eq("horizon_games", horizonGames);
-
-      if (error) throw error;
-      projectionsRaw = data ?? [];
+      projectionsRaw = await fetchServedProjectionRows(selectQuery,
+        runsByGame ?? { baseRunId: runId, overlays: [] }, horizonGames);
     }
 
-    // 3. Fallback logic: If no run found OR run produced 0 players (e.g., no games), try finding the latest date with players
-    if (!runId || projectionsRaw.length === 0) {
-      const fallback = await fetchFallbackRunWithPlayerData(
-        targetDate,
-        horizonGames,
-      );
-
-      // Only switch if we found a fallback request
-      if (fallback) {
-        // Optimization check: if fallback points to same run (unlikely if today has 0 rows), don't fetch again
-        if (fallback.runId !== runId) {
-          runId = fallback.runId;
-          runProof = fallback.proof;
-          resolvedDate = fallback.asOfDate;
-          fallbackApplied = resolvedDate !== targetDate;
-
-          const { data, error } = await supabase
-            .from("forge_player_projections")
-            .select(selectQuery)
-            .eq("run_id", runId)
-            .eq("horizon_games", horizonGames);
-
-          if (error) throw error;
-          projectionsRaw = data ?? [];
+    // 3. A multi-game request whose date has one-game output only says so, never relabels or scales it.
+    if (projectionsRaw.length === 0 && horizonGames !== 1) {
+      let oneGameRun: { runId: string; proof: ExternalInputProof } | null = runId ? { runId, proof: runProof! } : null;
+      if (!oneGameRun) {
+        try {
+          oneGameRun = await requireLatestExternalInputProvenRun(targetDate, 1);
+        } catch (e) {
+          if ((e as any)?.statusCode !== 404) throw e;
         }
-      } else {
-        // No fallback found. If we never had a runId, throw 404.
-        if (!runId) {
-          const err = new Error(
-            `No succeeded projection run found for date=${targetDate}`,
-          );
-          (err as any).statusCode = 404;
-          throw err;
-        }
+      }
+      if (oneGameRun) {
+        const { count, error } = await supabase
+          .from("forge_player_projections")
+          .select("player_id", { count: "exact", head: true })
+          .eq("run_id", oneGameRun.runId)
+          .eq("horizon_games", 1);
+        if (error) throw error;
+        missingRequestedHorizon = (count ?? 0) > 0;
+        if (missingRequestedHorizon && !runId) ({ runId, proof: runProof } = oneGameRun);
       }
     }
 
-    if (projectionsRaw.length === 0 && runId && horizonGames !== 1) {
-      const { count, error } = await supabase
-        .from("forge_player_projections")
-        .select("player_id", { count: "exact", head: true })
-        .eq("run_id", runId)
-        .eq("horizon_games", 1);
-      if (error) throw error;
-      missingRequestedHorizon = (count ?? 0) > 0;
-    }
+    // 4. Why the date is empty, when it is: a verified off-day, or no proven output for a scheduled (or unknown) slate.
+    const scheduledGames = projectionsRaw.length === 0 && !missingRequestedHorizon
+      ? await fetchVerifiedScheduledGames(targetDate)
+      : null;
+    const emptyReason = projectionsRaw.length === 0 && !missingRequestedHorizon
+      ? emptyDateReason(scheduledGames, Boolean(runId))
+      : null;
+    // A slate with verified games and no served rows is a blocking issue for operators; pages still render it empty.
+    const slateWithoutRows = emptyReason !== null && emptyReason !== "no_games" && (scheduledGames ?? 0) > 0;
+    const emptyMessage = emptyReason === "no_games"
+      ? `No NHL games are scheduled on ${targetDate}.`
+      : emptyReason
+        ? `FORGE skater projections are not available for the ${targetDate} slate.`
+        : null;
 
     const resolvedSeasonId = await resolveLatestStartedSeasonIdForDate(
-      resolvedDate,
+      targetDate,
       supabase,
     );
-    const requestedSeasonId =
-      resolvedDate === targetDate
-        ? resolvedSeasonId
-        : await resolveLatestStartedSeasonIdForDate(targetDate, supabase);
-    const activeRosterPlayerIds =
-      await fetchActiveRosterPlayerIdSet(resolvedSeasonId);
+    const activeRosterPlayerIds = projectionsRaw.length
+      ? await fetchActiveRosterPlayerIdSet(resolvedSeasonId)
+      : new Set<number>();
     if (activeRosterPlayerIds.size > 0) {
       projectionsRaw = projectionsRaw.filter((row: any) =>
         activeRosterPlayerIds.has(Number(row?.player_id)),
@@ -445,7 +395,7 @@ export default async function handler(
         projectionRange: extractProjectionRange(row.uncertainty),
       };
     });
-    const calibrationHints = await fetchSkaterCalibrationHints(resolvedDate);
+    const calibrationHints = await fetchSkaterCalibrationHints(targetDate);
     const modelVersions = projections
       .map((row) => row.modelMetadata.modelVersion)
       .filter((value): value is string => value != null);
@@ -463,34 +413,26 @@ export default async function handler(
     );
     const serving = buildResolvedDataServingContract({
       requestedDate: targetDate,
-      resolvedDate,
-      fallbackApplied,
-      strategy: fallbackApplied
-        ? "latest_available_with_data"
-        : "requested_date",
-      requestedScheduledGames: fallbackApplied
-        ? await fetchGamesScheduledCount(targetDate)
-        : null,
+      resolvedDate: targetDate,
+      fallbackApplied: false,
+      strategy: "requested_date",
+      requestedScheduledGames: scheduledGames,
       sourceLabel: "Skater projections",
     });
-    // As in forge/goalies: rows served despite a blocking date gap are partial.
-    const servingBlocked =
-      projections.length > 0 && serving.severity === "error";
     const responseState = missingRequestedHorizon
       ? "blocked"
       : projections.length > 0
         ? "ready"
         : "empty";
     const missingHorizonMessage = missingRequestedHorizon
-      ? `No genuine ${horizonGames}-game projection output is available for ${resolvedDate}; one-game output exists but is not relabeled or scaled.`
+      ? `No genuine ${horizonGames}-game projection output is available for ${targetDate}; one-game output exists but is not relabeled or scaled.`
       : null;
     const scanSummary = buildEndpointScanSummary({
       surface: "forge_players_reader",
       requestedDate: targetDate,
-      activeDataDate: resolvedDate,
-      fallbackApplied,
-      status:
-        servingBlocked && responseState === "ready" ? "partial" : responseState,
+      activeDataDate: targetDate,
+      fallbackApplied: false,
+      status: responseState,
       rowCounts: {
         returned: projections.length,
         degraded_projection_rows: degradedProjectionSummary.degradedPlayerCount,
@@ -500,26 +442,22 @@ export default async function handler(
         skater_pool_recovery_rows:
           degradedProjectionSummary.skaterPoolRecoveryPlayerCount,
       },
-      notes: fallbackApplied
-        ? [
-            serving.message,
-            `Serving fallback skater projections from ${resolvedDate}.`,
-            missingHorizonMessage,
-            degradedProjectionSummary.note,
-          ]
-        : [missingHorizonMessage, degradedProjectionSummary.note],
-      blockingIssueCount: (missingRequestedHorizon ? 1 : 0) + (servingBlocked ? 1 : 0),
+      notes: [missingHorizonMessage, emptyMessage, degradedProjectionSummary.note],
+      blockingIssueCount: (missingRequestedHorizon ? 1 : 0) + (slateWithoutRows ? 1 : 0),
     });
 
     return res.status(200).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       runId,
-      asOfDate: resolvedDate,
+      asOfDate: targetDate,
       requestedDate: targetDate,
-      requestedSeasonId,
+      requestedSeasonId: resolvedSeasonId,
       resolvedSeasonId,
       horizonGames,
-      fallbackApplied,
+      // Never another date's run (H6): kept false for readers of the field.
+      fallbackApplied: false,
+      reason: emptyReason,
+      message: emptyMessage,
       degradedProjectionSummary,
       serving,
       scanSummary,
@@ -527,18 +465,21 @@ export default async function handler(
         state: responseState,
         returnedRows: projections.length,
         requestedDate: targetDate,
-        resolvedDate,
-        fallbackApplied,
+        resolvedDate: targetDate,
+        fallbackApplied: false,
         fallbackReason: missingRequestedHorizon
           ? "requested horizon has no genuine output while one-game output exists"
-          : fallbackApplied
-            ? "requested date had no usable skater rows"
-            : null,
+          : null,
+        reason: emptyReason,
+        scheduledGames,
         missingRequestedHorizon,
-        message: missingHorizonMessage ?? (servingBlocked ? serving.message : null),
+        message: missingHorizonMessage ?? emptyMessage,
         degradedProjectionSummary,
         // What admitted the served run: captured snapshot, verified producer closure or verified legacy release.
         runProof: runId ? runProofDiagnostics(runId, runProof) : null,
+        // Newer single-game reruns that serve their own games over the slate run (H3).
+        gameRuns: runsByGame?.overlays.map((overlay) => ({ ...runProofDiagnostics(overlay.runId, overlay.proof),
+          gameIds: overlay.gameIds })) ?? [],
       },
       modelMetadata,
       intervalDefinitions: SKATER_INTERVAL_DEFINITIONS,
@@ -564,7 +505,7 @@ export default async function handler(
         surface: "forge_players_reader",
         requestedDate:
           (req.query.date as string | undefined) ??
-          new Date().toISOString().split("T")[0],
+          goalieNewYorkDate(new Date().toISOString()),
         activeDataDate: null,
         fallbackApplied: false,
         status: "blocked",
