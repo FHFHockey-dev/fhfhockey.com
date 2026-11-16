@@ -846,14 +846,15 @@ async function fetchSlate(
     .select("id,date,seasonId,startTime,homeTeamId,awayTeamId")
     .eq("date", targetDate)
     .order("id", { ascending: true });
-  const endOfTargetDate = `${targetDate}T23:59:59.999Z`;
+  // No updated_at bound (audit L2): rows are upserted in place, one per game, team and goalie, so a bound could only
+  // hide a goalie (an evening ET refresh lands after the date's UTC end), never select an earlier version. Past dates
+  // are clamped to today before this read.
   const goaliePromise = supabase
     .from("goalie_start_projections")
     .select(
       "game_id,team_id,player_id,game_date,start_probability,projected_gsaa_per_60,confirmed_status,l10_start_pct,season_start_pct,games_played,updated_at",
     )
-    .eq("game_date", targetDate)
-    .lte("updated_at", endOfTargetDate);
+    .eq("game_date", targetDate);
 
   const provenRunQuery = (runId: string) => restrictRunsToHorizon(excludeOffReleaseRuns(supabase
     .from("forge_runs")

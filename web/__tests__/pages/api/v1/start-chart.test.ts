@@ -2107,6 +2107,32 @@ describe("/api/v1/start-chart", () => {
     expect(eqMock).toHaveBeenCalledWith("season", "20252026");
   });
 
+  it("serves a goalie row refreshed after the target date's UTC end for a game that has not started (audit L2)", async () => {
+    vi.stubEnv("STARTER_BOARD_SERVING_ENABLED", "false");
+    const prior = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "games") {
+        return createQueryBuilder(() => ({ data: [{ id: 1001, date: "2026-02-07", startTime: "2026-02-08T00:30:00Z",
+          homeTeamId: 10, awayTeamId: 8 }], error: null }));
+      }
+      if (table !== "goalie_start_projections") return prior(table);
+      // Honours an lte bound, as PostgREST would: 19:45 ET on the 7th is 00:45Z on the 8th.
+      const bounds: Array<[string, string]> = [];
+      const builder = createQueryBuilder(() => ({ error: null, data: [{ game_id: 1001, team_id: 10, player_id: 9001,
+        game_date: "2026-02-07", start_probability: 0.72, projected_gsaa_per_60: 0.18, confirmed_status: true,
+        updated_at: "2026-02-08T00:45:00Z" }].filter((row: any) => bounds.every(([column, value]) => row[column] <= value)) }));
+      builder.lte = (column: string, value: string) => { bounds.push([column, value]); return builder; };
+      return builder;
+    });
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.players.find((player: any) => player.player_id === 9001)).toMatchObject({
+      positions: ["G"], confirmed_status: true, start_probability: 1 });
+  });
+
   it("reads skaters through the exact FORGE run and exposes canonical-source metadata", async () => {
     vi.resetModules();
     const handler = (await import("../../../../pages/api/v1/start-chart"))
