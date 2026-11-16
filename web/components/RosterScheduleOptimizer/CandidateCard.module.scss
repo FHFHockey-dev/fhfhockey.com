@@ -74,6 +74,13 @@
 // Injured free agents (provider IR/O/DTD): red border, red tint and the injured icon.
 .card[data-injured="true"] { border-color: v.$color-coral-500; background: color-mix(in srgb, #{v.$color-coral-500} 10%, #{v.$draft-surface}); }
 .injury { flex: none; align-self: center; }
+// TJ 2026-11-16: Out reads "not counted" with its week's projection greyed and struck through; day-to-day still counts,
+// so it gets an amber caution instead of red.
+.card[data-injury="caution"] { border-color: v.$warning-color; background: color-mix(in srgb, #{v.$warning-color} 8%, #{v.$draft-surface}); }
+.injuredChip { flex: none; align-self: center; padding: 0 4px; border-radius: s.$radius-small; font: s.$weight-bold s.$text-micro v.$font-family-primary; line-height: 14px; white-space: nowrap; }
+.injuredChip[data-injury="out"] { background: color-mix(in srgb, #{v.$color-coral-500} 22%, transparent); color: s.$bad; }
+.injuredChip[data-injury="caution"] { background: color-mix(in srgb, #{v.$warning-color} 18%, transparent); color: s.$warn; }
+.excludedPoints { margin-right: 6px; color: s.$ink-muted; font-family: v.$font-family-numbers; font-weight: s.$weight-bold; }
 // Best Fit (VORP S4): a less relevant different-drop alternative, collapsed under its card.
 .otherDrop { margin: 0 0 2px; color: s.$ink-muted; font-size: s.$text-sm; }
 .otherDrop > summary { display: inline-flex; align-items: center; min-height: 24px; cursor: pointer; }

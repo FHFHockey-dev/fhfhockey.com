@@ -108,6 +108,10 @@ td[data-pulse] .cellButton, td[data-pulse] .cellBody, td[data-pulse] .empty { an
 .injuryIcon { flex: none; }
 .grid [data-injured] { border-color: v.$color-coral-500; background: color-mix(in srgb, #{v.$color-coral-500} 16%, #{v.$draft-surface}); }
 .grid [data-injured][data-bench="idle"] { filter: none; opacity: .8; }
+// TJ 2026-11-16: Out keeps the red highlight and shows its projection greyed and struck through (not counted; the
+// tooltip says why); any other designation (day-to-day) still counts, so it gets an amber caution instead of red.
+.grid [data-injured][data-injury="caution"] { border-color: v.$warning-color; background: color-mix(in srgb, #{v.$warning-color} 10%, #{v.$draft-surface}); }
+.points[data-excluded] { border: 1px dashed color-mix(in srgb, #{v.$color-coral-500} 55%, transparent); background: transparent; color: s.$ink-muted; text-decoration: line-through; text-decoration-thickness: 1px; }
 
 .srOnly { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .headRow .corner { overflow: visible; }

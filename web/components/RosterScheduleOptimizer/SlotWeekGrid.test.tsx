@@ -185,4 +185,28 @@ describe("SlotWeekGrid", () => {
     expect(screen.getByRole("button", { name: /Sidney Crosby, C, 2026-10-19/ }).hasAttribute("data-injured")).toBe(true);
     expect(screen.getByRole("button", { name: /Nick Suzuki, C, 2026-10-19/ }).hasAttribute("data-injured")).toBe(false);
   });
+
+  it("shows an Out bench player's projection greyed and not counted, keeps day-to-day as a caution, and leaves the IR row as names", () => {
+    // TJ 2026-11-16. Hughes (O) sits on the bench with a game; Hurt Guy (IR) is in the IR slot; Crosby is day-to-day.
+    const out = (status: string, label: string) => ({ injury: { status, label, note: null } });
+    const cast = [{ ...players[0], ...out("DTD", "Day-to-Day") }, players[1], { ...players[2], ...out("O", "Out") }, players[3], { ...players[4], ...out("IR", "Injured Reserve") }];
+    const counted: Record<string, number> = { "a:1": 3, "b:2": 1, "b:4": 2 };
+    const pointsFor = (playerId: string, gameId: string) => ({ expected: counted[`${playerId}:${gameId}`] ?? null, ifStarts: null });
+    const injuredFor = vi.fn((playerId: string) => playerId === "c" || playerId === "i" ? { points: 2.9, basis: "line" as const } : null);
+    const { container } = render(<SlotWeekGrid dates={dates} slots={slots} assignments={assignments} games={games} players={cast} roster={roster}
+      pointsFor={pointsFor} injuredFor={injuredFor} onSelectPlayer={vi.fn()} />);
+    const hughes = screen.getByRole("button", { name: /Jack Hughes, bench, has a game, 2026-10-19, Injured · not counted while he's listed Out: 2\.9 projected points this game\. It counts again once he's cleared\./ });
+    expect(hughes.getAttribute("data-injury")).toBe("out");
+    const value = within(hughes).getByText("2.9");
+    expect(value.hasAttribute("data-excluded")).toBe(true);
+    expect(value.hasAttribute("data-tier")).toBe(false);
+    expect(within(hughes).queryByLabelText("Bench game")).toBeNull();
+    // The counted lineup keeps its own tiers (3 / 1 / 2), untouched by the excluded value; day-to-day stays counted.
+    const crosby = screen.getByRole("button", { name: /Sidney Crosby, C, 2026-10-19/ });
+    expect(crosby.getAttribute("data-injury")).toBe("caution");
+    expect(within(crosby).getByText("3.0").getAttribute("data-tier")).toBe("high");
+    // Only Hughes's game: the IR-slot player shows no value (the legend sample stays in its closed tooltip).
+    expect(container.querySelectorAll("[data-excluded]")).toHaveLength(1);
+    expect(screen.getByText("Guy (IR)").textContent).toBe("Guy (IR)");
+  });
 });

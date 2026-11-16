@@ -4,6 +4,7 @@ import { useCandidateMetrics } from "hooks/useCandidateMetrics";
 import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import { candidateAlternativeForSort, candidatePlanForSort, type CandidateComparison, type CandidateDiagnostic, type CandidatePlan } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 import type { PlanIntent, PlanningPlayer, PlanningResult, PlanningSnapshot, PlanStep } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { InjuredOutWeek } from "lib/rosterScheduleOptimizer/planning";
 import { nextLocalMidnight, zonedMidnight } from "lib/rosterScheduleOptimizer/planningDates";
 import styles from "./RosterScheduleOptimizer.module.scss";
 import cardStyles from "./CandidateCard.module.scss";
@@ -37,6 +38,8 @@ type Props = {
   /** Element explaining why Preview swap is disabled. */
   selectPlanReasonId?: string;
   markAvailable: (player: PlanningPlayer) => void;
+  /** An Out player's week from the display snapshot (TJ, 2026-11-16): shown greyed on his card, never counted. */
+  injuredWeekOf?: (playerId: string) => InjuredOutWeek | null;
 };
 const byName = (a: Candidate, b: Candidate) => a.player.name.localeCompare(b.player.name) || a.player.id.localeCompare(b.player.id);
 const byFit = (a: Candidate, b: Candidate) => (b.activeGames ?? -Infinity) - (a.activeGames ?? -Infinity) || byName(a, b);
@@ -67,7 +70,7 @@ export function noAddsRemain(snapshot: PlanningSnapshot | null) {
   return periods.length > 0 && periods.every(period => period.source !== "unknown" && period.remaining !== null && Math.floor(period.remaining / cost) < 1);
 }
 
-export default function CandidateBrowser({ emptyRoster = false, executionOptions, preferredSort, searchQuery, changeSearch, calendar, players, rosterIds, snapshot, intent, manual, select, add, selectPlan, canSelectPlan, selectPlanReasonId, markAvailable }: Props) {
+export default function CandidateBrowser({ emptyRoster = false, executionOptions, preferredSort, searchQuery, changeSearch, calendar, players, rosterIds, snapshot, intent, manual, select, add, selectPlan, canSelectPlan, selectPlanReasonId, markAvailable, injuredWeekOf }: Props) {
   const [view, setView] = useState<"team" | "all">("all");
   const [localQuery, setLocalQuery] = useState("");
   const query = searchQuery ?? localQuery;
@@ -148,7 +151,8 @@ export default function CandidateBrowser({ emptyRoster = false, executionOptions
     player={player} rank={ranked ? index + 1 : null} calendar={calendar} upcomingGames={upcomingGames} plan={plan} comparison={comparison} snapshot={snapshot} categories={categories}
     diagnostic={diagnostic} evaluationState={loading ? "loading" : error ? "error" : !snapshot ? "no_snapshot" : "completed"}
     excluded={intent.excludedPlayerIds.includes(player.id)} nameOf={nameOf} players={players} goalieBoost={goalieBoost}
-    select={select} add={add} selectPlan={selectPlan} canSelectPlan={canSelectPlan} selectPlanReasonId={selectPlanReasonId} manual={manual} markAvailable={markAvailable} compare={compare} />
+    select={select} add={add} selectPlan={selectPlan} canSelectPlan={canSelectPlan} selectPlanReasonId={selectPlanReasonId} manual={manual} markAvailable={markAvailable} compare={compare}
+    injuredWeek={injuredWeekOf?.(player.id)} />
     {alternative && plan && (alternativeShown(plan, alternative, categories) ? alternativeLine(player.name, alternative)
       : <details className={cardStyles.otherDrop}><summary>Other drop</summary>{alternativeLine(player.name, alternative)}</details>)}</Fragment>;
   // A goalie minimum at risk lists goalie options that add expected starts first.

@@ -582,6 +582,17 @@ details.alternative .candidateRow button { width: auto; }
 // Injured roster players (provider IR/O/DTD): red border, red tint and the injured icon.
 .rosterRow[data-injured] { border: 1px solid v.$color-coral-500; border-radius: s.$radius-small; background: color-mix(in srgb, #{v.$color-coral-500} 12%, transparent); }
 .injuryIcon { margin-left: 5px; vertical-align: -1px; }
+// TJ 2026-11-16: Out reads "not counted" with its projection greyed and struck through; day-to-day still counts, so it
+// gets an amber caution instead of red.
+.rosterRow[data-injured][data-injury="caution"] { border-color: v.$warning-color; background: color-mix(in srgb, #{v.$warning-color} 10%, transparent); }
+.injuredChip { margin-left: 4px; padding: 0 4px; border-radius: s.$radius-small; font: normal s.$weight-bold s.$text-micro v.$font-family-primary; line-height: 13px; white-space: nowrap; vertical-align: middle; }
+.injuredChip[data-injury="out"] { background: color-mix(in srgb, #{v.$color-coral-500} 22%, transparent); color: s.$bad; }
+.injuredChip[data-injury="caution"] { background: color-mix(in srgb, #{v.$warning-color} 18%, transparent); color: s.$warn; }
+.injuredChip s { margin-right: 3px; color: s.$ink-muted; font-family: v.$font-family-numbers; }
+.compactTable tr[data-injury="out"] > th, .compactTable tr[data-injury="out"] > td { background: color-mix(in srgb, #{v.$color-coral-500} 10%, transparent); }
+.compactTable tr[data-injury="caution"] > th, .compactTable tr[data-injury="caution"] > td { background: color-mix(in srgb, #{v.$warning-color} 7%, transparent); }
+.rangeMetric[data-excluded] { color: s.$ink-muted; text-decoration: line-through; }
+.contributionMetrics strong[data-excluded] { color: s.$ink-muted; text-decoration: line-through; }
 // Plan details as its own view.
 .planView { display: flex; flex-direction: column; gap: v.$space-sm; padding: 2px; font-size: s.$text-sm; }
 .planView[hidden] { display: none; }
