@@ -1,7 +1,7 @@
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
 import { breakIdentityTie, normalizeIdentityName, positionSlotRole, resolvePlayerIdentity, type PlayerIdentity, type PlayerSlotRole } from "./playerIdentity";
 
-export const TWEET_INTERPRETATION_VERSION = "2026-11-16.1";
+export const TWEET_INTERPRETATION_VERSION = "2026-11-16.2";
 export type EvidenceSpan = { start: number; end: number; text: string };
 export type TweetUnit = {
   situation: "es_forward" | "es_defense" | "pp" | "pk" | "goalie" | "scratch" | "injury";
@@ -13,6 +13,11 @@ export type TweetUnit = {
   complete: boolean;
   /** An aggregator's status marker on the line itself: DFO/GameDay ✅ = confirmed, 🅿️ = projected. */
   sourceMarker?: { certainty: "confirmed" | "projected"; evidence: EvidenceSpan };
+  /**
+   * "pipe_pair": a goalie slot read from an "A | B" line. It records who was listed, for display only. It is not a
+   * starter/backup order, so shared goalie fields (Lines goalie_1/goalie_2) never take it.
+   */
+  listing?: "pipe_pair";
 };
 /** Where the tweet's claims apply (Lines plan decision 4). In-game is a phase of a game claim, never practice. */
 export type TweetLineContext = "warmup" | "game" | "practice" | "projected";
@@ -58,7 +63,7 @@ export type TweetInterpretation = {
     evidence: EvidenceSpan;
     reviewReason: "incomplete_replacement" | "unresolved_reference" | "ambiguous_identity";
   }>;
-  unresolved: Array<EvidenceSpan & { reason: "missing_player" | "ambiguous" | "invalid_extraction"; number?: number | null; situation?: TweetUnit["situation"] | null; candidates?: number[] }>;
+  unresolved: Array<EvidenceSpan & { reason: "missing_player" | "ambiguous" | "invalid_extraction"; number?: number | null; situation?: TweetUnit["situation"] | null; candidates?: number[]; listing?: TweetUnit["listing"] }>;
   changes?: TweetUnitChange[];
   /** Legacy binding context: only "game" lets a capture bind to a scheduled game. */
   context: "camp" | "practice" | "game" | "unknown";
@@ -369,12 +374,12 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
           at += side.length + 1;
           if (resolution.status === "matched" && playerPositionRole(resolution.player) === "goalie") {
             result.units.push({ situation: "goalie", number: nextGoalieSlot(), explicitNumber: false, players: [{ playerId: resolution.player.playerId, name: resolution.player.fullName }],
-              evidence: [{ start, end: start + name.length, text: name }], group, complete: true });
+              evidence: [{ start, end: start + name.length, text: name }], group, complete: true, listing: "pipe_pair" });
           } else if (resolution.status === "matched") {
             result.unresolved.push({ start, end: start + name.length, text: name, situation: "goalie", number: null, reason: "invalid_extraction", candidates: [resolution.player.playerId] });
           } else {
             result.unresolved.push({ start, end: start + name.length, text: name, situation: "goalie", number: nextGoalieSlot(), reason: resolution.status === "missing_player" ? "missing_player" : "ambiguous",
-              candidates: resolution.candidates.map((candidate) => candidate.playerId) });
+              candidates: resolution.candidates.map((candidate) => candidate.playerId), listing: "pipe_pair" });
           }
         }
         continue;

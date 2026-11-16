@@ -1379,9 +1379,10 @@ export function buildRowGoalies(args: { interpretation: TweetInterpretation; eve
     add({ playerId: event.playerId, state: eventState(event), role, slot: null, observation: event.observation ?? null, source: "event" });
   for (const event of starters) if (rank(event) < 2) fromEvent(event, event.goalieRole ?? "starter");
   const slots = [
-    ...args.interpretation.units.filter((unit) => unit.situation === "goalie" && unit.complete)
+    // A pipe pair ("Husso | Dostál") is a listing for display, not a starter/backup order: shared goalie fields skip it.
+    ...args.interpretation.units.filter((unit) => unit.situation === "goalie" && unit.complete && unit.listing !== "pipe_pair")
       .flatMap((unit) => unit.players.map((player) => ({ slot: unit.number, playerId: player.playerId as number | null, name: undefined as string | undefined, state: (unit.sourceMarker?.certainty ?? "listed") as RowGoalieState["state"] }))),
-    ...args.interpretation.unresolved.filter((entry) => entry.situation === "goalie" && entry.number != null)
+    ...args.interpretation.unresolved.filter((entry) => entry.situation === "goalie" && entry.number != null && entry.listing !== "pipe_pair")
       .map((entry) => ({ slot: entry.number!, playerId: null, name: entry.text, state: "unresolved" as const })),
   ].sort((left, right) => (left.slot ?? Infinity) - (right.slot ?? Infinity));
   const listed = slots.filter((slot) => slot.slot != null).length > 1;

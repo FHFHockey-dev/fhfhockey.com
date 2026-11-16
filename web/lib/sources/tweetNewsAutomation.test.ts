@@ -598,18 +598,17 @@ Scratches: Colangelo, Vatrano, Mitchell`;
   };
   const tiles = (lineup: ReturnType<typeof readNewsLineupPresentation>) => lineup.rows.map((row) => [row.label, row.players.join("-")]);
 
-  it("new card: shows the verified Ducks units with F3 as a reported 'D listed at F' line, no headline or goalie pair, scratches in their own row", () => {
+  it("new card: shows the verified Ducks units with F3 as a reported 'D listed at F' line, both listed goalies, no headline, scratches in their own row", () => {
     vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
     const candidate = buildTweetNewsAutomationCandidate({ row: ducksRow({ retainedInterpretation: retainedInterpretation(), retainedGameId: GAME }),
       players: automationPlayers, nowIso: "2026-11-16T03:45:00.000Z" });
     expect(candidate?.category).toBe("LINE COMBINATION");
     const lineup = publicLineup(candidate!.metadata);
-    // Goalie rows depend on the interpreter's "A | B" support; whatever it yields, order alone never makes a starter.
-    expect(tiles({ ...lineup, rows: lineup.rows.filter((row) => row.kind !== "goalie") })).toEqual([
+    expect(tiles(lineup)).toEqual([
       ["F1", "Judd Caulfield-Leo Carlsson-Cutter Gauthier"], ["F2", "Jeffrey Malott-Mikael Granlund-Beckett Sennecke"],
       ["F3", "Ian Moore-Tim Washe-Alex Killorn"], ["F4", "Nikita Nesterenko-Jack McQueen-Troy Terry"],
       ["D1", "Jackson LaCombe-Drew Helleson"], ["D2", "Tyson Hinds-Tristan Luneau"], ["D3", "Pavel Mintyukov-Noah Warren"],
-      ["Scratch", "Sam Colangelo-Frank Vatrano-Ian Mitchell"],
+      ["G1", "Ville Husso"], ["G2", "Lukas Dostál"], ["Scratch", "Sam Colangelo-Frank Vatrano-Ian Mitchell"],
     ]);
     expect(lineup.rows.find((row) => row.label === "Scratch")!.kind).toBe("scratch");
     // Moore is rostered D: the post lists him at F. That is reported, not a roster change or proof he played there.
@@ -619,6 +618,16 @@ Scratches: Colangelo, Vatrano, Mitchell`;
     expect(lineup.context).toBe("Warm-up snapshot · reported");
     expect(lineup.startingGoalie).toBeNull();
     expect(JSON.stringify(lineup.rows)).not.toMatch(/ZachCav|warm|Husso \||Scratches:/);
+  });
+
+  it("shows a pipe goalie pair in either order as two listed goalies with no starter badge", () => {
+    for (const [line, expected] of [["Husso | Dostál", ["Ville Husso", "Lukas Dostál"]], ["Dostál | Husso", ["Lukas Dostál", "Ville Husso"]]] as const) {
+      const body = text.replace("Husso | Dostál", line);
+      const lineup = validatedNewsLineupRows(buildNewsLineupSnapshot({ interpretation: { ...interpretTweetUnits(body, roster),
+        events: extractTweetPlayerEvents({ text: body, players: roster, publishedAt: null }) }, teamId: ANA, gameId: GAME, sourceTweetId: "p" }), ANA)!;
+      expect(lineup.rows.filter((row) => row.kind === "goalie").map((row) => [row.label, row.players[0]])).toEqual([["G1", expected[0]], ["G2", expected[1]]]);
+      expect(lineup.startingGoalie).toBeNull();
+    }
   });
 
   it("leaves a malformed 'D listed at F' lookalike out and marks the card partial", () => {
