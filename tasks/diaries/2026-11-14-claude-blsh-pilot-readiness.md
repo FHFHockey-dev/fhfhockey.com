@@ -166,3 +166,12 @@ The NST local ledger lives at `tmpdir()/fhfhockey-nst-budget-<uid>`, so always s
 - RELEASE 2: PR #454 squash-merged as master 5c42cb14fb4e4ef1ff1cdaf64db1c668319b019c (fix dc5e8d4fb + bookkeeping 9ed2e8b24 only; FORGE lane work not included). Building.
 - Part B timing: route pilot fence skips capture dates before 2026-11-19, window 12:00–12:30Z, so part B is useful only from 11-19 12:05Z. The self-test isn't run with the switch off (corrected). Recorded in V6-PROBE-A.md.
 - Build READY dpl_HoV6iN1h (5c42cb14f). octoberBranch synced (bookkeeping kept ours: 153–156 applied); baseline 21/21; v5 pins unchanged.
+
+## 2026-11-16 ~13:35Z: automatic wake-up
+- 13:28Z read-only check: operator local_017907a3 is idle and waiting for the wake-up; launcher 31c370c3 and RUNBOOK 236aace4 match; v5 commit 348a122d6 is present.
+- TJ pre-approved an automatic start. One-shot CronCreate job 5aef260c is set for 08:45 EST on 11-17. It exists only in this session, so it is lost if Claude exits.
+- Guards: relays only on 2026-11-17 before 14:00Z, and only if the hashes still match. A2–A4 conditions are unchanged. Recorded in TJ-APPROVALS.md.
+- 19:12Z: TJ chose "Both" (keep the 11-17 local pilot; the laptop must be awake) and "Schedule, switch off". SCHEDULE.sql bb7b3df2 was applied; jobs 404–407 are active, the switch is off, runs 0. Receipt: v6-schedule/SCHEDULE-APPLY-RECEIPT.md.
+  - 11-17 and 11-18 firings hit the pilot fence: 200 skip.
+  - 11-19 12:05Z is part B: read the logs only.
+  - Before enabling, the inventory entry and NST registration must land together (L7).
