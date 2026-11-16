@@ -9,7 +9,7 @@ import { candidatePlanForSort, candidatePlanMetrics, ownershipBrokeTie } from ".
 import { lineupGapReport } from "./lineupGaps";
 import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
 import { notCountedText } from "./retention";
-import type { GameForecast, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
+import type { GameForecast, PlanIntent, PlanStep, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
 
 // Algorithm fixtures have explicit fictional reviews. Production catalog stays empty;
 // the policy-denial cases below remove these bindings and use the real resolver.
@@ -1877,6 +1877,26 @@ describe("injured players", () => {
       const week = injuredOutWeek(display(idle), "b")!;
       expect(week).toEqual({ games: 0, points: null, basis: "none" });
       expect(notCountedText(idle.players.find(row => row.id === "b")!, week, "week")).toBe("Injured · not counted while he's listed O. No games left this week.");
+    });
+
+    it.each(["points", "categories"] as const)("never lets an Out free agent take the planner's last candidate slot or its recommendation (%s)", mode => {
+      // One open C slot; "bo" (Out) shares c's team and positions and sorts ahead of c by id, so unfiltered he is both
+      // c's schedule-fit stand-in and the single shortlisted candidate.
+      const data = snapshot();
+      data.rules.rosterSlots = { C: 2, BN: 0 };
+      data.roster = [{ playerId: "a", position: "active" }];
+      data.players = [...data.players.filter(row => row.id !== "b"), { ...player("bo", "C", "free_agent"), injury: { status: "O", label: "Out", note: null } }];
+      data.forecasts = [...data.forecasts.filter(row => row.playerId !== "b"),
+        ...data.games.filter(game => game.teamAbbreviation === "C").map(game => issuedForecast(data, "bo", game.id, { stats: { pts: 5 } }))];
+      if (mode === "categories") data.rules.scoring = { mode: "categories", weights: {}, categories: [{ key: "pts", direction: "higher" }] };
+      const result = planRoster(data, intent, { maxCandidates: 1 });
+      const adds = (steps: PlanStep[]) => steps.filter(step => step.type === "add").map(step => step.playerId);
+      const proposed = [result.selected, ...result.alternatives].flatMap(plan => adds(plan.steps));
+      expect(proposed).not.toContain("bo");
+      // The schedule fit is c's own (2 open games), not a 0 from the Out stand-in.
+      expect(result.scheduleFits).toEqual([expect.objectContaining({ playerIds: ["c"], addedGames: 2 })]);
+      // Points: the one shortlisted candidate is c, so the planner's alternatives propose adding him.
+      if (mode === "points") expect(proposed).toContain("c");
     });
 
     it("never ranks an Out free agent for Best Fit by his projection; the same value ranks him once cleared", () => {
