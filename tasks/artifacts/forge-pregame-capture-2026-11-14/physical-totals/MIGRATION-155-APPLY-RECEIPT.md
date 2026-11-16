@@ -24,7 +24,7 @@ Smoke 3/3 (the PostgREST GET) was not run, because the function was already roll
 - **Cold cost:**
   - about 3,550 pages read from disk, mostly **heap fetches**: 9,592 rows on pages not marked all-visible. These are inferred to be mostly recent rows (to_date has 11,699 player-games), but pages mix seasons at date correlation 0.39;
   - a small sort spill (`work_mem` 3.5 MB; 106k rows sorted for the 4-key join).
-- **The 4 rows match** between the new function's call and the body plan's row count (106,153 player-games: 31,745 + 62,709 + 3,952 + 7,747). An exact comparison with the 137 body's live answer was not made, to avoid a second 7.5 s read. The local 121-call proof covers equivalence.
+- **The 4 rows match** between the new function's call and the body plan's row count (106,153 player-games: 31,745 + 62,709 + 3,952 + 7,747). **Production equivalence, checked offline:** the qualified 0328 packet recorded the 137 body's live answer to the same call (`forge_league_skater_physical_totals(20262027, '2026-11-15')`, 2026-11-15 20:10Z). It is **identical on all four rows** (`prior2` and `to_date`; player_games, hits, blocks, toi_seconds) to the 155 body's PostgREST answer at 01:28Z (`smoke-http.json`).
 
 ## Re-apply (TJ: "Reapply step 2")
 - **Smoke change first:** the smoke now gates on the plan, the 4 rows and recorded heap fetches, and refuses only at the 8 s statement timeout. A separate `--timed-read` is the cold go/no-go before a capture, at ≤ 4,000 ms. Self-test 30/30, commit `c3ccdfc0d`.

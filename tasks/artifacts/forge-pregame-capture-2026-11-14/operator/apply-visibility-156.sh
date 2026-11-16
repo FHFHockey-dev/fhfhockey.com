@@ -80,6 +80,12 @@ heap_fetches() {  # the capture read (155 body, generic plan) as service_role, r
 case $mode in
   preflight)
     state
+    stats=$(${PSQL[@]} -At -F ' ' -c "begin read only; set local statement_timeout='5s';
+      select 'stats', n_ins_since_vacuum, n_dead_tup, coalesce(to_char(last_vacuum, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'), 'none'),
+        coalesce(to_char(last_autovacuum, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'), 'none'), autovacuum_count
+      from pg_stat_user_tables where relid = 'public.wgo_skater_stats'::regclass; rollback;" 2>&1 | grep '^stats ')
+    read _ ins dead lastvac lastauto autocount <<< "$stats"
+    print -r -- "stats: inserted_since_vacuum=$ins dead=$dead last_vacuum=$lastvac last_autovacuum=$lastauto autovacuum_count=$autocount" | tee -a $OUTDIR/state.txt
     echo "heap fetches now: $(heap_fetches || echo unavailable)"
     echo "preflight ok; nothing changed ($OUTDIR)"
     ;;

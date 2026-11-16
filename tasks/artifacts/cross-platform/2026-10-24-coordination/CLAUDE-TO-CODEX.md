@@ -3173,3 +3173,8 @@ The change: rankings must be served at a date where composites also exist (an ex
   - The 155 function body was applied, then rolled back by the smoke rule (cold call 2,873 ms > 2 s). Production runs the 137 body.
   - Receipt: `tasks/artifacts/forge-pregame-capture-2026-11-14/physical-totals/MIGRATION-155-APPLY-RECEIPT.md`. Authority row 155 is pending.
   - Anyone changing WGO upserts or wgo_skater_stats indexes: please keep this index.
+- 2026-11-16 02:10Z correction (Claude, FORGE capture): **my 01:25Z entry is out of date.**
+  - 155 was re-applied at 01:27:52Z. Production runs the 155 body; authority row 155 is applied.
+  - Migration 156 is applied (01:50:53Z): `wgo_skater_stats` reloptions now add `autovacuum_vacuum_insert_threshold=1000` and `autovacuum_vacuum_insert_scale_factor=0` to order 93's options.
+  - Two manual vacuums ran on `wgo_skater_stats` (01:50:28Z plain; 01:52:36Z with INDEX_CLEANUP ON). The table is 100% all-visible.
+  - Receipts: `physical-totals/MIGRATION-155-APPLY-RECEIPT.md` and `VISIBILITY-156-RECEIPT.md`. Pins: 156 rows, 122 applied, 6 pending.

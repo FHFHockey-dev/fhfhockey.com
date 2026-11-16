@@ -14,8 +14,9 @@
 #                                            (must be the Index Only Scan; heap fetches recorded), then the function as
 #                                            service_role (4 rows; time recorded, refused at SMOKE_MS_MAX, default 8,000 ms,
 #                                            the statement timeout), then one PostgREST GET (SMOKE_HTTP=0 skips it)
-#   --timed-read                             read-only go/no-go before a capture: one function call as service_role with
-#                                            EXPLAIN ANALYZE; refused above TIMED_READ_MS_MAX (default 4,000 ms)
+#   --timed-read --cutoff YYYY-MM-DD         read-only go/no-go before a capture: the capture's own call (season
+#                                            20262027, cutoff = the slate date) as service_role with EXPLAIN ANALYZE;
+#                                            refused above TIMED_READ_MS_MAX (default 4,000 ms)
 #   --rollback-function --confirm 20261116010000
 #                                            restores the 137 body from the pinned rollback file and removes the ledger row
 #   --drop-index --confirm idx_wgo_skater_stats_gp1_physical
@@ -47,7 +48,7 @@ PSQL=(${=PSQL_CMD:-$HERE/pgpool.sh})
 OUTDIR=${OUTDIR:-$HOME/forge-pilot/migration-155-$(date -u +%Y%m%dT%H%M%SZ)}
 
 fail() { echo "FAIL: $*" >&2; exit 7; }
-mode=preflight; confirm=""
+mode=preflight; confirm=""; cutoff=""
 while (( $# )); do
   case $1 in
     --preflight) mode=preflight ;;
@@ -58,6 +59,7 @@ while (( $# )); do
     --rollback-function) mode=rollback_function ;;
     --drop-index) mode=drop_index ;;
     --confirm) shift; confirm=${1:-} ;;
+    --cutoff) shift; cutoff=${1:-} ;;
     *) fail "unknown argument $1" ;;
   esac
   shift
@@ -235,17 +237,18 @@ SQL
     echo "smoke ok ($OUTDIR)"
     ;;
   timed_read)
+    [[ $cutoff =~ '^20[0-9]{2}-[01][0-9]-[0-3][0-9]$' ]] || fail "--timed-read needs --cutoff YYYY-MM-DD (the slate date the capture will send)"
     state
     (( idx == 1 && body == 2 && ledger == 1 )) || fail "timed read runs only after both steps (index=$idx body=$body ledger=$ledger)"
     out=$(${PSQL[@]} -At -F ' ' -c "begin read only; set local statement_timeout='8s'; set local role service_role;
-      explain (analyze, buffers) select * from public.forge_league_skater_physical_totals(20262027, '2026-11-15'); rollback;" 2>&1)
+      explain (analyze, buffers) select * from public.forge_league_skater_physical_totals(20262027, '$cutoff'); rollback;" 2>&1)
     print -r -- "$out" > $OUTDIR/timed-read.txt
     print -r -- "$out" | grep -E 'Execution Time|Buffers'
     ms=$(print -r -- "$out" | sed -nE 's/^Execution Time: ([0-9.]+) ms$/\1/p' | head -1)
     [[ -n $ms ]] || fail "timed read returned no timing; see $OUTDIR/timed-read.txt"
     python3 -I -c "import sys; sys.exit(0 if float(sys.argv[1]) <= float(sys.argv[2]) else 1)" $ms $TIMED_READ_MS_MAX \
       || fail "timed read took $ms ms (go/no-go limit $TIMED_READ_MS_MAX ms): no-go"
-    echo "timed read $ms ms <= $TIMED_READ_MS_MAX ms: go ($OUTDIR)"
+    echo "timed read (20262027, $cutoff) $ms ms <= $TIMED_READ_MS_MAX ms: go ($OUTDIR)"
     ;;
   rollback_function)
     [[ $confirm == $VERSION ]] || fail "--rollback-function needs --confirm $VERSION"

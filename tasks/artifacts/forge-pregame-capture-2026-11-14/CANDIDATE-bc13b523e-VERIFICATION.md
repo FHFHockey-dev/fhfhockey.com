@@ -18,6 +18,16 @@
 - Migrations 155 and 156 and their records. Their files and authority rows were committed later.
 - The deployed function itself is what the capture calls, and it is the same RPC name and signature.
 
+**Other lanes' changes in `web`/`supabase` between `e0cbb19a8` and `bc13b523e`** (46 files):
+- **BLSH:** `web/lib/blsh` (18 files), migrations 153–154 and tests.
+- **Rankings:** #447–#451.
+- **Cron diagnostics:** #446 (`web/lib/cron`, three `pages/api/v1/db` routes).
+- **Line sources:** `web/lib/sources`, `web/lib/lines`.
+- **RSO:** objective-switch test and fixture.
+- **Other:** `vercel.json`, the baseline pin test.
+
+None of these is imported by `pregameCapture`, `run-forge-projections`, the projection stages or queries, or the two capture scripts (checked with `rg`). The parity, capture and slate suites above pass.
+
 **The other projection-code change in the range:** `web/lib/projections/ingest/shifts.ts` (#446, cron diagnostics). Only the ingest modules import it; `run-forge-projections` and the capture path do not. The capture suites above pass.
 
 **Migration hashes the launcher relies on:** 150 `4213b110…98b9` and 151 `a3e1835f…9281`. They are unchanged since `e0cbb19a8` (`git diff --stat e0cbb19a8 bc13b523e` touches neither file).

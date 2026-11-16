@@ -84,9 +84,11 @@ expect ok   "step 2 replaces the body, records the ledger row and reads back"  z
 expect ok   "smoke: plan first (Index Only Scan, heap fetches), then 4 rows"   zsh $S --smoke
 grep -q "Heap Fetches" $TMP/run.log && echo "PASS the smoke reports heap fetches" || { echo "FAIL the smoke reports heap fetches"; cat $TMP/run.log; fails=$((fails+1)); }
 expect fail "step 2 refuses a second time"                                     zsh $S --function --confirm 20261116010000
-expect ok   "timed read passes under its limit"                               zsh $S --timed-read
+expect fail "timed read refuses without --cutoff"                             zsh $S --timed-read
+expect ok   "timed read passes under its limit"                               zsh $S --timed-read --cutoff 2026-11-16
+grep -q "timed read (20262027, 2026-11-16)" $TMP/run.log && echo "PASS the timed read used the given cutoff" || { echo "FAIL timed read cutoff"; cat $TMP/run.log; fails=$((fails+1)); }
 export TIMED_READ_MS_MAX=0
-expect fail "timed read reports no-go above its limit"                        zsh $S --timed-read
+expect fail "timed read reports no-go above its limit"                        zsh $S --timed-read --cutoff 2026-11-16
 unset TIMED_READ_MS_MAX
 export SMOKE_MS_MAX=0
 expect fail "smoke refuses a call slower than its time cap"                   zsh $S --smoke

@@ -371,3 +371,9 @@
   - `SLATE-QUEUE-PACKET.md` §7: 0331 + 0332, dispatch 23:13:58Z and 01:13:58Z, launch 22:30–22:55Z, token `tj-slate-2026020331-2026020332-20261116`, with the `--timed-read` ≤ 4 s go/no-go before launch.
   - Pilot packet revision 5 note added.
   - The next step needs TJ's run approval.
+- **02:10Z, advisor fixes:**
+  - The 155 body's live answer is identical to 0328's recorded 137 answer (offline).
+  - `--timed-read` takes `--cutoff` (Monday uses 2026-11-16); self-test 32/32.
+  - The visibility preflight prints vacuum statistics (19/19).
+  - §7 now offers one queue or two launches, with the warm/cold labels and the statistics re-read.
+  - Candidate scope listed by lane; mailbox correction for the 01:25Z entry.

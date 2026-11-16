@@ -171,8 +171,8 @@ A claimed game is never abandoned.
 | Item | State |
 | --- | --- |
 | Candidate | **`bc13b523e28878e75fb48a5c631f049e4f8c0c45`** (`CANDIDATE-bc13b523e-VERIFICATION.md`: 351/351, typecheck 0, rehearse with 0 network attempts) |
-| The read that stopped 0330 | `forge_league_skater_physical_totals`: 7.4–8.0 s before. Now an Index Only Scan with 0 heap fetches, **337 ms** (migration 155, applied 01:27:52Z; `physical-totals/MIGRATION-155-APPLY-RECEIPT.md`). |
-| Visibility upkeep | Migration 156 (insert-triggered autovacuum) applied 01:50:53Z; table 100% all-visible after the index-cleaning vacuum (`physical-totals/VISIBILITY-156-RECEIPT.md`). |
+| The read that stopped 0330 | `forge_league_skater_physical_totals`: 7.4–8.0 s before. Now an Index Only Scan with 0 heap fetches: **337 ms warm** after the index-cleaning vacuum, and **1,537 ms** near-cold after the first vacuum. A fully cold time is unmeasured; the timed read below measures it. Migration 155 applied 01:27:52Z (`physical-totals/MIGRATION-155-APPLY-RECEIPT.md`). The live answer is identical to the old body's, as recorded in the qualified 0328 packet. |
+| Visibility upkeep | Migration 156 (insert-triggered autovacuum) applied 01:50:53Z; table 100% all-visible after the index-cleaning vacuum (`physical-totals/VISIBILITY-156-RECEIPT.md`). The setting is in place but not yet seen to fire; the table's stats counters read 0 before tonight. |
 | Re-plan slip | Fixed in the candidate; regression test included. |
 
 **Games** (from the 2026-11-15 G1 lookup; the pin re-reads `games` and `roster_optimizer_team_games` at launch and refuses any change). Times in EST (UTC−5):
@@ -182,13 +182,19 @@ A claimed game is never abandoned.
 | 2026020331 MTL @ NYR | 19:30 ET (00:30Z Tue) | 18:30 ET (23:30Z) | **18:13:58 ET** (23:13:58Z) | 18:23:58 ET |
 | 2026020332 VAN @ UTA | 21:30 ET (02:30Z Tue) | 20:30 ET (01:30Z) | **20:13:58 ET** (01:13:58Z) | 20:23:58 ET |
 
-This is one queue for both games, and the second capture starts after the first has settled, so the run lasts from the launch to about 20:20 ET. Simultaneous starts are not exercised (§6).
+**One queue or two launches (TJ's choice):**
+- **One queue** for both games, the queue's purpose: the run lasts from the launch to about 20:20 ET. A whole-queue stop on 0331 (for example another statement timeout) **permanently closes 0332 as `never_dispatched`** two hours early, as happened to 0329.
+- **Two single-game launches** (two tokens, two launch windows, about 17:30 and 19:30 ET): each game stands alone, at the cost of a second attended launch.
+- Simultaneous starts are exercised in neither (§6).
 
 **Steps** (all from the repository root):
 1. **Export:** a fresh `git archive bc13b523e…` into `~/forge-pilot/export-bc13b523e-<UTC>`, with `web/node_modules` linked. Check migration hashes 150 and 151 against the authority rows and check DNS.
-2. **Go/no-go:** one cold timed read, read-only (about 0.3–1.5 s of database time). **No-go** if over 4,000 ms or on any failure; then no launch, and Chef reports.
+2. **Go/no-go:** one cold timed read of the capture's own call (season 20262027, cutoff = the slate date 2026-11-16), read-only, about 0.3–1.5 s of database time. **No-go** if over 4,000 ms or on any failure; then no launch, and Chef reports. Then one read-only statistics re-read, which must show the vacuum time and records whether autovacuum has fired since.
    ```bash
-   zsh tasks/artifacts/forge-pregame-capture-2026-11-14/operator/apply-migration-155.sh --timed-read
+   zsh tasks/artifacts/forge-pregame-capture-2026-11-14/operator/apply-migration-155.sh --timed-read --cutoff 2026-11-16
+   ```
+   ```bash
+   zsh tasks/artifacts/forge-pregame-capture-2026-11-14/operator/apply-visibility-156.sh --preflight
    ```
 3. **Launch** between 17:30 and 17:55 ET (22:30–22:55Z), attended, from the export's launcher. Token `tj-slate-2026020331-2026020332-20261116`.
    ```bash
@@ -209,7 +215,7 @@ This is one queue for both games, and the second capture starts after the first 
 - **During the run:** the stop rules in §3; one attempt per game; no retry.
 
 **Approval needed (one pop-up):**
-- this exact candidate, both games, the launch window and the timed-read gate;
+- this exact candidate, both games, one queue or two launches, the launch window or windows, the timed-read gate and the statistics re-read;
 - credentials from `web/.env.local` for that run only;
 - one TSA call per game.
 

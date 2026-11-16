@@ -63,6 +63,8 @@ $U[@] -c "update public.wgo_skater_stats set hits = hits + 0 where id % 50 = 0 a
 expect ok   "vacuum --index-cleanup runs with INDEX_CLEANUP ON"               zsh $S --vacuum --confirm wgo_skater_stats --index-cleanup
 saw "vacuum \\(verbose, index_cleanup on\\) done" "the index-cleanup option reached the VACUUM statement"
 saw "heap fetches after: Heap Fetches: 0 " "after the index-cleaning vacuum the capture read has no heap fetches"
+expect ok   "preflight reports vacuum statistics"                              zsh $S --preflight
+saw "stats: inserted_since_vacuum=[0-9]+ dead=[0-9]+ last_vacuum=20[0-9-]+T" "the stats line shows the manual vacuum's time"
 expect fail "reloptions refuses a wrong --confirm"                             zsh $S --reloptions --confirm 20261116010000
 expect ok   "reloptions applies the insert trigger and records the ledger row" zsh $S --reloptions --confirm 20261116020000
 saw "autovacuum_vacuum_insert_threshold=1000,autovacuum_vacuum_insert_scale_factor=0" "readback shows both insert options next to order 93's"
