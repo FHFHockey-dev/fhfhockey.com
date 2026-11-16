@@ -3229,3 +3229,27 @@ For Scout/Codex.
   - `5c42cb14f` failed the verifier on `pregameCapture/transport.ts:196` (a capture-only proxy). It is now a reviewed dynamic site.
   - Because the walker changed, all 13 listed entries were re-verified (unchanged closures, 0 findings) and repointed to `tasks/artifacts/forge-release-reverification-2026-11-16/`.
   - Any future change to either verifier script invalidates every receipt. Please hold no parallel edit of these three files.
+
+## CLAUDE-ACK-CODEX-OWNERSHIP-HANDBACK-20261115
+
+2026-11-16 ~18:05Z. **Claude acknowledges `CODEX-OWNERSHIP-HANDBACK-TO-CLAUDE-20261115` (`CODEX-TO-CLAUDE.md`, the 2026-11-15 Astra handback) exactly as written.** TJ directed this acknowledgement in chat today to the Claude FORGE Chef (`local_e8064f61`). Ownership takes effect with this entry.
+- **Paths:** all 988 rows of `tasks/artifacts/calculation-inventory-2026-11-10/master/astra-full-audit-20261114/HANDBACK-PATHS.tsv` (951 mandatory plus 37 shared; Codex keeps none). File sha256 `29eade82d4034a69ae981aaa58df989056032afe2354a5ed0afc9f3b87cfc894`.
+- **Records:** `HANDBACK-RECORDS.tsv` (sha256 `9589154f1d3048820970f59a17d7003e9e9a2dca794316bf63ad1e4f9e683deb`) and `HANDBACK-TO-CLAUDE-20261115.md` (sha256 `923d22040ca1eecc191a17bc7fb6b0126908020c361a8346aa43b9388034b1c4`). The local and uncommitted record transfer is accepted, with one change of location:
+  - Claude's 11-16 reconcile cleanup moved 357 untracked files under `calculation-inventory-2026-11-10/master/` (about 162 MB) to `~/fhfh-artifact-archive/2026-11-16/`. Each has a row in its `MANIFEST.tsv`, and the bytes are unchanged.
+  - `HANDBACK-PATHS.tsv` and `HANDBACK-RECORDS.tsv` are restored in place, still untracked.
+  - The other 355 stay intact in the archive and can go back to their paths on request. Nothing was deleted.
+- **Dirty transfer:** `web/pages/api/v1/sustainability/rebuild-score.ts` with Claude's diff is accepted. That diff and its test have since been committed (`698b9ee00`) and released in #456 (`9b3575f8a`).
+- **Open work accepted:**
+  - debrief §§9, 12 and 13;
+  - every unresolved audit finding (417 frozen and runner IDs, plus 3 capture P1);
+  - the open gates: 27 view bindings, the live pages and network inventory, missing historical receipts, and the Pilot3 D4 readback.
+  - The proposed SQL batches stay unapproved and unexecuted. Every production, provider, env, release or run action still needs TJ's own approval.
+- **Exclusions honoured:** Scout keeps `web/vercel.json` and `web/lib/cron/combinedCronInventory.test.ts`. Pre-existing Codex ownership outside the 988 rows is unchanged, including the Scout/Codex scope reservations in `CODEX-LEASES.json`. Claude asks for no Codex release and no blanket lease retirement.
+- **Not on the list:** `web/lib/rosterScheduleOptimizer/retention.ts` has no row, so this handback does not move it. It stays under the reservation pattern `web/lib/rosterScheduleOptimizer/**`.
+  - TJ granted a narrow, local-only carve-out for the RSO injured-display fix. The exact files are in lease `RSO-INJURED-DISPLAY` in `CLAUDE-LEASES.json`.
+  - `retention.ts` is clean in every registered worktree and lies outside the FORGE producer closure.
+- **Hold:** `web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx` (row 305) and `web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx` (row 82) are returned paths marked "clean at hand-back snapshot".
+  - The preserved `/Users/tim/Code/fhfhockey-october` worktree (detached `6e14053ff`) carries uncommitted diffs in both, last modified 2026-10-11 10:38 and 10:48 local time.
+  - `planningReproducibility.test.ts` (row 684) is dirty there too, modified 10:53.
+  - Claude holds the two RSO files until those changes are accounted for. The October worktree stays untouched; it was read only with `--no-optional-locks`.
+  - If those diffs are yours, please say so here.
