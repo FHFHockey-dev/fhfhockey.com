@@ -1616,6 +1616,49 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       });
     });
 
+    describe("one rejected shift chart (audit H1, 2026-11-14/15)", () => {
+      const rejected = {
+        gameId: 2026020310, date: "2026-10-18", stage: "precheck_shifts", isolated: true, retryPending: true,
+        message: "Shift clock/duration mismatch for game 2026020310, player 8480947; period=1 start_s=0 end_s=481 duration_s=470"
+      };
+
+      it("degrades the ingest stage, names the game and runs the day's projections", async () => {
+        ingestProjectionInputsMock.mockImplementationOnce(async (_req: any, res: any) => {
+          res.status(200).json({ success: false, timedOut: false, gamesProcessed: 13, skipped: 1,
+            skipReasons: { sourceDataRejected: 1 }, errors: [rejected] });
+        });
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.termination).toMatchObject({ state: "completed" });
+        const ingest = stageStatus(res, "projection_input_ingest");
+        expect(ingest.status).toBe("success");
+        expect(ingest.steps[0]).toMatchObject({ status: "success", degraded: "projection_input_games_rejected" });
+        expect(ingest.steps[0].reason).toContain("1 game(s) skipped by the NHL source checks");
+        expect(ingest.steps[0].reason).toContain("Parked for retry on later runs: 2026020310.");
+        expect(res.body.failureSummary).toMatchObject({
+          failedStepCount: 0,
+          degradedSteps: [{ stageId: "projection_input_ingest", stepId: "ingest-projection-inputs", code: "projection_input_games_rejected" }]
+        });
+        expect(runProjectionV2Mock).toHaveBeenCalledTimes(2);
+      });
+
+      it("still fails the stage when any error is not an isolated game", async () => {
+        ingestProjectionInputsMock.mockImplementationOnce(async (_req: any, res: any) => {
+          res.status(200).json({ success: false, timedOut: false, errors: [rejected,
+            { gameId: 2026020311, date: "2026-10-18", stage: "persist_inputs", message: "transaction rejected" }] });
+        });
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        expect(stageStatus(res, "projection_input_ingest").status).toBe("failed");
+        expect(res.body.termination).toMatchObject({ reason: "retry_on_next_invocation", nextStageId: "projection_input_ingest" });
+        expect(res.body.failureSummary.degradedSteps).toEqual([]);
+        expect(runProjectionV2Mock).not.toHaveBeenCalled();
+      });
+    });
+
     it("gives the ingest step the time left before the child-step deadline and resumes it after a budget stop", async () => {
       ingestProjectionInputsMock.mockImplementationOnce(async (_req: any, res: any) => {
         res.status(200).json({ success: false, timedOut: true, nextGameId: 2025021024, errors: [] });

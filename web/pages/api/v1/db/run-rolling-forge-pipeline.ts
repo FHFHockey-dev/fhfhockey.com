@@ -69,7 +69,7 @@ type StepResult = {
   query: Record<string, string>;
   reason?: string;
   // Set when a source shortfall was downgraded so the stage still completes.
-  degraded?: "nst_source_unavailable";
+  degraded?: "nst_source_unavailable" | "projection_input_games_rejected";
   requiresReview?: "nst_persistence_unconfirmed" | "audit_persistence_unconfirmed" | "stage_handoff_unconfirmed";
   // The child did not answer before the invocation's child-step deadline and
   // was abandoned; it may still be running.
@@ -537,6 +537,16 @@ function isIngestBudgetStop(step: StepResult): boolean {
   const body = step.summary as Record<string, unknown>;
   const errors = readIngestErrors(step);
   return body?.timedOut === true && errors != null && errors.every((error) => error.isolated === true);
+}
+
+// ingest-projection-inputs finished (no budget stop) and its only errors are
+// isolated games: source-rejected games skipped so the rest of the slate ran.
+function isIngestSourceRejectionOnly(step: StepResult): boolean {
+  if (step.status !== "failed" || step.statusCode !== 200 || step.requiresReview) return false;
+  const body = step.summary as Record<string, unknown>;
+  const errors = readIngestErrors(step);
+  return body?.timedOut !== true && errors != null && errors.length > 0 &&
+    errors.every((error) => error.isolated === true);
 }
 
 function requiresAuditReview(body: unknown): boolean {
@@ -1094,6 +1104,21 @@ async function runStage(args: {
         // Stopped between games at its budget: unfinished, not failed.
         ingest.status = "partial";
         ingest.reason = "Ingest stopped at its time budget; the next invocation resumes the slate.";
+      } else if (ingest && isIngestSourceRejectionOnly(ingest)) {
+        // 2026-11-14/15: one game's shift chart failed its precheck and the whole
+        // day stopped. Every other game is ingested; the run continues degraded.
+        const rejected = readIngestErrors(ingest)!;
+        const games = rejected.filter((error) => Number(error.gameId) > 0);
+        const parked = games.filter((error) => error.retryPending === true).map((error) => error.gameId);
+        const final = games.filter((error) => error.retryPending !== true).map((error) => error.gameId);
+        ingest.status = "success";
+        ingest.degraded = "projection_input_games_rejected";
+        ingest.reason = [
+          `${games.length} game(s) skipped by the NHL source checks; the rest of the slate was ingested.`,
+          parked.length ? `Parked for retry on later runs: ${parked.join(", ")}.` : null,
+          final.length ? `Not retried again (past the retry window): ${final.join(", ")}.` : null,
+          rejected.length > games.length ? "The parked-game list could not be read; see the step summary." : null
+        ].filter(Boolean).join(" ");
       }
       break;
     }
