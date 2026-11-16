@@ -401,3 +401,33 @@ it("keeps the loading message when adds remain and names the spent budget when t
   view.rerender(<CandidateBrowser {...props} snapshot={{ ...props.snapshot, rules: { ...props.snapshot.rules, periods: [{ ...props.snapshot.rules.periods[0], remaining: 0 }] } }} />);
   expect(screen.getByRole("status").textContent).toBe("No adds remain this period; adds return when the period resets.");
 });
+
+it.each([false, true])("keeps an Out player searchable but unranked, so he can't take a healthy player's ranked slot (categories: %s)", categories => {
+  // TJ 2026-11-16: the Out player has the best net value, yet all five visible ranked slots go to healthy players.
+  const workspace = defaultWorkspace();
+  const base = { nhlId: null, teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "free_agent" as const,
+    ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] };
+  const players: PlanningPlayer[] = [{ ...base, id: "out", name: "Hurt Star", injury: { status: "O", label: "Out", note: null } },
+    ...Array.from({ length: 5 }, (_, index) => ({ ...base, id: `fit${index}`, name: `Healthy Fit ${index}` }))];
+  fixture.candidates = players.map((player, index) => ({ playerId: player.id, complete: true, plans: [{ objective: "outcome", steps: [], netAGP: player.id === "out" ? 3 : 1,
+    netPoints: player.id === "out" ? 9 : 5 - index, dropped: [], displacedPlayerIds: [], categoryComparisonVerified: true }] }));
+  const rules = categories ? { ...workspace.rules, scoring: { mode: "categories" as const, weights: {}, categories: [{ key: "GOALS", direction: "higher" as const }] } } : workspace.rules;
+  const snapshot: PlanningSnapshot = { id: "out-ranking", context: workspace.context, rules, games: [], players, roster: [], lockedAssignments: [],
+    forecasts: [], realized: {}, opponent: null, evidence: {} };
+  const props = { players, rosterIds: new Set<string>(), snapshot, intent: { ...workspace.intent, alternativeCount: 5 as const }, fits: [], manual: true,
+    select: vi.fn(), add: vi.fn(), markAvailable: vi.fn(), selectPlan: vi.fn(), canSelectPlan: true };
+  render(<CandidateBrowser {...props} />);
+  const ids = () => screen.getAllByRole("article").map(card => card.getAttribute("data-rso-candidate-id"));
+  expect(ids()).toEqual(["fit0", "fit1", "fit2", "fit3", "fit4"]);
+  expect(screen.getAllByLabelText(/^Result \d$/).map(rank => rank.textContent)).toEqual(["1", "2", "3", "4", "5"]);
+  expect(screen.getByText("Why some players aren't ranked")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: /^Show more recommendations/ }));
+  const out = screen.getAllByRole("article").find(card => card.getAttribute("data-rso-candidate-id") === "out")!;
+  expect(ids().at(-1)).toBe("out");
+  expect(within(out).queryByLabelText(/^Result /)).toBeNull();
+  expect((within(out).getByRole("button", { name: /^Use this swap/ }) as HTMLButtonElement).disabled).toBe(true);
+  // Still findable and inspectable by name.
+  fireEvent.click(screen.getByText("Find & filter"));
+  fireEvent.change(screen.getByRole("searchbox", { name: "Find candidate" }), { target: { value: "Hurt" } });
+  expect(ids()).toEqual(["out"]);
+});

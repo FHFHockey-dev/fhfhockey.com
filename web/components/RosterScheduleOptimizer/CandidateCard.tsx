@@ -69,7 +69,8 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
   const conditional = plan?.steps.some(step => step.conditional);
   const reserves = plan?.steps.filter(step => step.type === "reserve") ?? [];
   const gain = plan && plan.netAGP !== null && (plan.netAGP > 0 || plan.netPoints !== null && plan.netPoints > 0);
-  const selectionAvailable = plan && plan.netAGP !== null && (categories ? plan.categoryComparisonVerified === true
+  // An Out player's swap is never the recommendation, in points or categories (TJ, 2026-11-16).
+  const selectionAvailable = plan && injuryDisplay(player) !== "out" && plan.netAGP !== null && (categories ? plan.categoryComparisonVerified === true
     : (plan.dropped.length === 0 || plan.netPoints !== null) && gain);
   const dates: string[] = [];
   if (snapshot?.context?.startDate && Number.isFinite(Date.parse(`${snapshot.context.startDate}T12:00:00Z`))) for (let i = 0; i < 7; i++) {
