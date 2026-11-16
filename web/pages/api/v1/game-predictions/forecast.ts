@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import {
+  captureLiveH0FeaturesWithoutPublishing,
   generatePregamePredictionsForWindow,
   summarizePredictionWindowOutcome,
 } from "lib/game-predictions/workflow";
@@ -23,6 +24,7 @@ type RequestWithSupabase = {
     maxRuntimeMs?: string | string[];
     dryRun?: string | string[];
     allowBaselineBootstrap?: string | string[];
+    captureGameId?: string | string[];
   };
   supabase: SupabaseClient<Database>;
 };
@@ -53,6 +55,31 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     return res
       .status(405)
       .json({ success: false, error: "Method not allowed" });
+  }
+
+  if (req.query.captureGameId !== undefined) {
+    const gameIdText = req.query.captureGameId;
+    const gameId = Number(gameIdText);
+    const captureInputs = new Set(["captureGameId", "fromOffsetDays", "toOffsetDays"]);
+    if (req.method !== "POST" || typeof gameIdText !== "string" || !/^\d+$/.test(gameIdText)
+      || !Number.isSafeInteger(gameId) || gameId <= 0 || req.query.fromOffsetDays !== "0" || req.query.toOffsetDays !== "0"
+      || Object.keys(req.query).some(key => !captureInputs.has(key))) {
+      return res.status(400).json({ success: false, error: "Capture requires an explicit single live H0 game and no other overrides." });
+    }
+
+    const result = await captureLiveH0FeaturesWithoutPublishing({ client: req.supabase, gameId });
+    if (result.status === "refused") {
+      return res.status(409).json({ success: false, status: result.status, reason: result.reason, result });
+    }
+    return res.status(200).json({
+      success: true,
+      status: "captured_not_published",
+      skipped: true,
+      outcome: "skipped",
+      reason: "captured_not_published",
+      persistedPredictions: 0,
+      result,
+    });
   }
 
   const now = new Date();
