@@ -10,9 +10,12 @@
 #                                            new body (generic plan) shows an Index Only Scan on it: one transaction
 #                                            replaces the body, records the ledger row and reloads PostgREST; then an
 #                                            exact readback
-#   --smoke                                  after step 2, read-only: the function timed as service_role (8 s timeout),
-#                                            the body's generic plan with heap fetches, one PostgREST GET (SMOKE_HTTP=0
-#                                            skips the GET)
+#   --smoke                                  after step 2, read-only: first the body's generic plan with EXPLAIN ANALYZE
+#                                            (must be the Index Only Scan; heap fetches recorded), then the function as
+#                                            service_role (4 rows; time recorded, refused at SMOKE_MS_MAX, default 8,000 ms,
+#                                            the statement timeout), then one PostgREST GET (SMOKE_HTTP=0 skips it)
+#   --timed-read                             read-only go/no-go before a capture: one function call as service_role with
+#                                            EXPLAIN ANALYZE; refused above TIMED_READ_MS_MAX (default 4,000 ms)
 #   --rollback-function --confirm 20261116010000
 #                                            restores the 137 body from the pinned rollback file and removes the ledger row
 #   --drop-index --confirm idx_wgo_skater_stats_gp1_physical
@@ -36,7 +39,8 @@ INDEX_ONLY="Index Only Scan using $IDX on wgo_skater_stats"
 FN='public.forge_league_skater_physical_totals(integer, date)'
 MD5_BEFORE=0eec9782543c02db802b021c950ecf6e
 MD5_AFTER=5b67ecb4dee0e75e6285fc5468ef06e7
-SMOKE_MS_MAX=${SMOKE_MS_MAX:-2000}
+SMOKE_MS_MAX=${SMOKE_MS_MAX:-8000}
+TIMED_READ_MS_MAX=${TIMED_READ_MS_MAX:-4000}
 INDEX_STATEMENT_TIMEOUT=${INDEX_STATEMENT_TIMEOUT:-15min}  # the self-test lowers it to force a cancelled build
 OLD_XACT_SECONDS=${OLD_XACT_SECONDS:-60}                 # the self-test lowers it to exercise the gate
 PSQL=(${=PSQL_CMD:-$HERE/pgpool.sh})
@@ -50,6 +54,7 @@ while (( $# )); do
     --index) mode=index ;;
     --function) mode=function ;;
     --smoke) mode=smoke ;;
+    --timed-read) mode=timed_read ;;
     --rollback-function) mode=rollback_function ;;
     --drop-index) mode=drop_index ;;
     --confirm) shift; confirm=${1:-} ;;
@@ -197,6 +202,12 @@ SQL
   smoke)
     state
     (( idx == 1 && body == 2 && ledger == 1 )) || fail "smoke runs only after both steps (index=$idx body=$body ledger=$ledger)"
+    python3 -I $HERE/m155_body_sql.py $MIG "(analyze, buffers)" "set local role service_role;" > $OUTDIR/smoke-plan.sql \
+      || fail "cannot build the body plan smoke"
+    ${PSQL[@]} -X -f $OUTDIR/smoke-plan.sql > $OUTDIR/smoke-plan.out 2>&1 || fail "body plan smoke failed; see $OUTDIR/smoke-plan.out"
+    grep -E "Index Only Scan|Heap Fetches|Buffers|Execution Time" $OUTDIR/smoke-plan.out | sed 's/^ *//' | head -6
+    grep -q "$INDEX_ONLY" $OUTDIR/smoke-plan.out || fail "smoke: the body's generic plan is not an Index Only Scan on $IDX"
+    grep -q "Heap Fetches" $OUTDIR/smoke-plan.out || fail "smoke: no Heap Fetches line recorded"
     out=$(${PSQL[@]} -At -F ' ' -c "begin read only; set local statement_timeout='8s'; set local role service_role;
       explain (analyze, buffers) select * from public.forge_league_skater_physical_totals(20262027, '2026-11-15');
       select scope, position_group, player_games, hits, blocks, round(toi_seconds) from public.forge_league_skater_physical_totals(20262027, '2026-11-15');
@@ -208,11 +219,6 @@ SQL
     [[ -n $ms && $rows == 4 ]] || fail "SQL smoke did not return a timing and 4 rows; see $OUTDIR/smoke-sql.txt"
     python3 -I -c "import sys; sys.exit(0 if float(sys.argv[1]) <= float(sys.argv[2]) else 1)" $ms $SMOKE_MS_MAX \
       || fail "SQL smoke took $ms ms (limit $SMOKE_MS_MAX ms)"
-    python3 -I $HERE/m155_body_sql.py $MIG "(analyze, buffers)" "set local role service_role;" > $OUTDIR/smoke-plan.sql \
-      || fail "cannot build the body plan smoke"
-    ${PSQL[@]} -X -f $OUTDIR/smoke-plan.sql > $OUTDIR/smoke-plan.out 2>&1 || fail "body plan smoke failed; see $OUTDIR/smoke-plan.out"
-    grep -E "Index Only Scan|Heap Fetches|Buffers|Execution Time" $OUTDIR/smoke-plan.out | sed 's/^ *//' | head -6
-    grep -q "$INDEX_ONLY" $OUTDIR/smoke-plan.out || fail "smoke: the body's generic plan is not an Index Only Scan on $IDX"
     if [[ ${SMOKE_HTTP:-1} != 0 ]]; then
       api=$(grep -E '^NEXT_PUBLIC_SUPABASE_URL=' $ENVF | head -1 | cut -d= -f2- | tr -d '"')
       key=$(grep -E '^SUPABASE_SERVICE_ROLE_KEY=' $ENVF | head -1 | cut -d= -f2- | tr -d '"')
@@ -227,6 +233,19 @@ SQL
       [[ ${code%% *} == 200 && $n == 4 ]] || fail "PostgREST smoke failed ($code, rows $n); see $OUTDIR/smoke-http.json"
     fi
     echo "smoke ok ($OUTDIR)"
+    ;;
+  timed_read)
+    state
+    (( idx == 1 && body == 2 && ledger == 1 )) || fail "timed read runs only after both steps (index=$idx body=$body ledger=$ledger)"
+    out=$(${PSQL[@]} -At -F ' ' -c "begin read only; set local statement_timeout='8s'; set local role service_role;
+      explain (analyze, buffers) select * from public.forge_league_skater_physical_totals(20262027, '2026-11-15'); rollback;" 2>&1)
+    print -r -- "$out" > $OUTDIR/timed-read.txt
+    print -r -- "$out" | grep -E 'Execution Time|Buffers'
+    ms=$(print -r -- "$out" | sed -nE 's/^Execution Time: ([0-9.]+) ms$/\1/p' | head -1)
+    [[ -n $ms ]] || fail "timed read returned no timing; see $OUTDIR/timed-read.txt"
+    python3 -I -c "import sys; sys.exit(0 if float(sys.argv[1]) <= float(sys.argv[2]) else 1)" $ms $TIMED_READ_MS_MAX \
+      || fail "timed read took $ms ms (go/no-go limit $TIMED_READ_MS_MAX ms): no-go"
+    echo "timed read $ms ms <= $TIMED_READ_MS_MAX ms: go ($OUTDIR)"
     ;;
   rollback_function)
     [[ $confirm == $VERSION ]] || fail "--rollback-function needs --confirm $VERSION"

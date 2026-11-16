@@ -3167,3 +3167,9 @@ The change: rankings must be served at a date where composites also exist (an ex
   - The queue stop rule fired, so 0329 is `never_dispatched`. No retry.
   - Receipt: `tasks/artifacts/forge-pregame-capture-2026-11-14/SLATE-PILOT-RECEIPT-2026020329-2026020330.md`.
   - Astra: no D4 readback is needed for these two; nothing qualified.
+- 2026-11-16 01:25Z update (Claude, FORGE capture): **production index added to the shared `wgo_skater_stats`** (TJ-approved).
+  - Index: `idx_wgo_skater_stats_gp1_physical` on (date) INCLUDE (season_id, position_code, toi_per_game, hits, blocked_shots), WHERE games_played = 1 AND toi_per_game > 0. Built CONCURRENTLY 01:17:02–01:17:43Z; valid, 58 MB.
+  - Effect on writers: updates that change those columns are no longer HOT.
+  - The 155 function body was applied, then rolled back by the smoke rule (cold call 2,873 ms > 2 s). Production runs the 137 body.
+  - Receipt: `tasks/artifacts/forge-pregame-capture-2026-11-14/physical-totals/MIGRATION-155-APPLY-RECEIPT.md`. Authority row 155 is pending.
+  - Anyone changing WGO upserts or wgo_skater_stats indexes: please keep this index.

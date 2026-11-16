@@ -81,9 +81,16 @@ $SU[@] -c "alter role supa_pg set enable_indexonlyscan = off"
 expect fail "step 2 refuses when the plan gate sees no Index Only Scan"       zsh $S --function --confirm 20261116010000
 $SU[@] -c "alter role supa_pg reset enable_indexonlyscan"
 expect ok   "step 2 replaces the body, records the ledger row and reads back"  zsh $S --function --confirm 20261116010000
-expect ok   "smoke: timing, 4 rows and an Index Only Scan with heap fetches"   zsh $S --smoke
+expect ok   "smoke: plan first (Index Only Scan, heap fetches), then 4 rows"   zsh $S --smoke
 grep -q "Heap Fetches" $TMP/run.log && echo "PASS the smoke reports heap fetches" || { echo "FAIL the smoke reports heap fetches"; cat $TMP/run.log; fails=$((fails+1)); }
 expect fail "step 2 refuses a second time"                                     zsh $S --function --confirm 20261116010000
+expect ok   "timed read passes under its limit"                               zsh $S --timed-read
+export TIMED_READ_MS_MAX=0
+expect fail "timed read reports no-go above its limit"                        zsh $S --timed-read
+unset TIMED_READ_MS_MAX
+export SMOKE_MS_MAX=0
+expect fail "smoke refuses a call slower than its time cap"                   zsh $S --smoke
+unset SMOKE_MS_MAX
 expect ok   "preflight reports applied"                                        zsh $S --preflight
 expect fail "drop-index refuses while the 155 body is live"                    zsh $S --drop-index --confirm idx_wgo_skater_stats_gp1_physical
 expect fail "rollback-function refuses a wrong --confirm"                      zsh $S --rollback-function --confirm idx_wgo_skater_stats_gp1_physical
