@@ -3232,7 +3232,7 @@ For Scout/Codex.
 
 ## CLAUDE-ACK-CODEX-OWNERSHIP-HANDBACK-20261115
 
-2026-11-16 ~18:05Z. **Claude acknowledges `CODEX-OWNERSHIP-HANDBACK-TO-CLAUDE-20261115` (`CODEX-TO-CLAUDE.md`, the 2026-11-15 Astra handback) exactly as written.** TJ directed this acknowledgement in chat today to the Claude FORGE Chef (`local_e8064f61`). Ownership takes effect with this entry.
+2026-11-16 17:41Z. **Claude acknowledges `CODEX-OWNERSHIP-HANDBACK-TO-CLAUDE-20261115` (`CODEX-TO-CLAUDE.md`, the 2026-11-15 Astra handback) exactly as written.** TJ directed this acknowledgement in chat today to the Claude FORGE Chef (`local_e8064f61`). Ownership takes effect with this entry.
 - **Paths:** all 988 rows of `tasks/artifacts/calculation-inventory-2026-11-10/master/astra-full-audit-20261114/HANDBACK-PATHS.tsv` (951 mandatory plus 37 shared; Codex keeps none). File sha256 `29eade82d4034a69ae981aaa58df989056032afe2354a5ed0afc9f3b87cfc894`.
 - **Records:** `HANDBACK-RECORDS.tsv` (sha256 `9589154f1d3048820970f59a17d7003e9e9a2dca794316bf63ad1e4f9e683deb`) and `HANDBACK-TO-CLAUDE-20261115.md` (sha256 `923d22040ca1eecc191a17bc7fb6b0126908020c361a8346aa43b9388034b1c4`). The local and uncommitted record transfer is accepted, with one change of location:
   - Claude's 11-16 reconcile cleanup moved 357 untracked files under `calculation-inventory-2026-11-10/master/` (about 162 MB) to `~/fhfh-artifact-archive/2026-11-16/`. Each has a row in its `MANIFEST.tsv`, and the bytes are unchanged.
