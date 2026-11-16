@@ -321,12 +321,34 @@ vi.mock("lib/supabase/server", () => ({
       }
 
       if (table === "projection_pipeline_state") {
+        // Applies the parked-row filter, oldest-first order and page size the
+        // route asks for, so a missing filter shows up as starved retries.
+        let waitingOnly = false;
         const query: any = {
           select: vi.fn(() => query),
           eq: vi.fn(() => query),
-          in: vi.fn(() => query),
+          or: vi.fn((filter: string) => {
+            waitingOnly =
+              filter ===
+              "and(status.eq.failed,last_error.eq.source_rejected_pending),status.eq.running";
+            return query;
+          }),
           order: vi.fn(() => query),
-          limit: vi.fn(async () => ({ data: state.parkedRows, error: null })),
+          limit: vi.fn(async (count: number) => ({
+            data: state.parkedRows
+              .filter(
+                (row) =>
+                  !waitingOnly ||
+                  row.status === "running" ||
+                  (row.status === "failed" &&
+                    row.last_error === "source_rejected_pending"),
+              )
+              .sort((a, b) =>
+                String(a.range_start_date).localeCompare(String(b.range_start_date)),
+              )
+              .slice(0, count),
+            error: null,
+          })),
         };
         return query;
       }
@@ -1021,17 +1043,32 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
       await handler({ method: "POST", query: {}, body: {} } as any, res);
 
       expect(res.body.sourceRejectionRetries).toEqual({ retried: 2, recovered: 0, pending: 1, final: 1 });
+      // Oldest first: 91 (outside its window) then 90.
       expect(res.body.errors).toEqual([
-        expect.objectContaining({ gameId: 90, isolated: true, retryPending: true }),
         expect.objectContaining({ gameId: 91, isolated: true }),
+        expect.objectContaining({ gameId: 90, isolated: true, retryPending: true }),
       ]);
-      expect(res.body.errors[1].retryPending).toBeUndefined();
+      expect(res.body.errors[0].retryPending).toBeUndefined();
       expect(finishOf("game:90")).toEqual([expect.objectContaining({ failureCode: "source_rejected_pending" })]);
       expect(finishOf("game:91")).toEqual([expect.objectContaining({ failureCode: "source_rejected_final" })]);
       // Parked failures never hold the slate.
       expect(finishOf("canonical:2026-03-20:2026-03-20")).toEqual([
         expect.objectContaining({ outcome: "complete" }),
       ]);
+    });
+
+    it("never lets accumulated final rows crowd pending games out of the retry page", async () => {
+      state.parkedRows = [
+        ...Array.from({ length: 40 }, (_, index) =>
+          parkedRow(1000 + index, "2026-02-01", { last_error: "source_rejected_final" })),
+        parkedRow(90, "2026-03-20"),
+      ];
+      const res = createMockRes();
+
+      await handler({ method: "POST", query: {}, body: {} } as any, res);
+
+      expect(fetchPbpGameMock.mock.calls.map(([gameId]) => gameId)).toContain(90);
+      expect(res.body.sourceRejectionRetries).toMatchObject({ retried: 1, recovered: 1 });
     });
 
     it("still retries parked games when the slate itself is already complete", async () => {

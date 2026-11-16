@@ -233,7 +233,9 @@ async function listParkedSourceRejections(
     .select("operation_key,status,range_start_date,lease_expires_at,last_error")
     .eq("pipeline_key", PROJECTION_INPUT_PIPELINE_KEY)
     .eq("scope_key", SOURCE_REJECTION_RETRY_SCOPE_KEY)
-    .in("status", ["failed", "running"])
+    // Final rows accumulate forever; filtering them here keeps them from
+    // crowding pending games out of the oldest-first page.
+    .or(`and(status.eq.failed,last_error.eq.${SOURCE_REJECTION_PENDING}),status.eq.running`)
     .order("range_start_date", { ascending: true })
     .limit(MAX_SOURCE_REJECTION_RETRIES * 4);
   if (error) throw error;

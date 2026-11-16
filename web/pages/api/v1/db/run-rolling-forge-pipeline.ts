@@ -725,15 +725,21 @@ async function listGamesMissingLineContext(gameIds: number[]) {
   return gameIds.filter((gameId) => (teamsByGame.get(gameId)?.size ?? 0) < 2);
 }
 
-// Completed games with no powerPlayCombinations row at all.
+// Completed games with no powerPlayCombinations row at all. A game has about
+// 10-30 player rows, so games are read in groups that stay well under the
+// 1000-row response cap (a multi-day explicit window would otherwise truncate).
+const PP_VERIFY_GAMES_PER_READ = 20;
 async function listGamesMissingPowerPlayRows(gameIds: number[]) {
   if (!supabase || gameIds.length === 0) return [];
-  const { data, error } = await supabase
-    .from("powerPlayCombinations")
-    .select("gameId")
-    .in("gameId", gameIds);
-  if (error) throw error;
-  const withRows = new Set((data ?? []).map((row) => Number((row as { gameId: number }).gameId)));
+  const withRows = new Set<number>();
+  for (let offset = 0; offset < gameIds.length; offset += PP_VERIFY_GAMES_PER_READ) {
+    const { data, error } = await supabase
+      .from("powerPlayCombinations")
+      .select("gameId")
+      .in("gameId", gameIds.slice(offset, offset + PP_VERIFY_GAMES_PER_READ));
+    if (error) throw error;
+    for (const row of data ?? []) withRows.add(Number((row as { gameId: number }).gameId));
+  }
   return gameIds.filter((gameId) => !withRows.has(gameId));
 }
 
