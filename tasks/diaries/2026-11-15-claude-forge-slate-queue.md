@@ -19,3 +19,12 @@
   - A stop records never_dispatched (permanent) for undispatched games.
   - The gate for the second game runs while the first capture is in flight, which risks load_gate_closed_twice.
 - Nothing live has run. Chef verifies the clean export and brings TJ the approval.
+
+## Round 3 (pilot follow-up, TJ "Go"): re-plan slip fix
+- Pilot (e0cbb19a8): the wave's schedule read ended 325 ms after 0329's slot, so the re-plan saw its preferred time as
+  past and the stagger pushed it 60 s, behind 0330. The sim missed it: its schedule read took no time.
+- Fix in slateQueue.ts: re-plan only when a read changed the slate, or after a gate delay. In a re-plan, due games keep
+  their turn (one stagger apart, up to free slots) as reserved times. planSlate takes `reservedAt`.
+- Test: a 325 ms read on two same-start games, with and without a late add at the dispatch instant. It fails on the old
+  code, and the late-add case fails without the held turn.
+- Checks: 162/162 (capture folder + both scripts), --rehearse 0 failures / 0 network, typecheck exit 0.

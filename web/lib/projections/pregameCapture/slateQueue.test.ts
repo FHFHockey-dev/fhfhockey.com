@@ -91,6 +91,27 @@ describe("slate executor (simulated custody, virtual clock, fixture TSA)", () =>
     expect(sim.invariants()).toEqual([]);
   });
 
+  it("a schedule read that ends after a dispatch instant never pushes the due game behind a later one (pilot 0329/0330)", async () => {
+    // Live pilot: the wave's schedule read finished 325 ms after 0329's slot, the re-plan saw its preferred time as past and
+    // the stagger pushed it 60 s, behind 0330. Unchanged reads must keep the plan; a changed read must keep the due game's turn.
+    for (const lateAdd of [false, true]) {
+      const sim = new SlateSim(START_MS - minutes(180));
+      for (const id of [329, 330]) sim.addGame({ gameId: id, start: START }, { readMs: 110_000 });
+      const deps = sim.executorDeps({ refreshSlate: async () => { await sim.clock.sleep(325); return sim.slate(); } });
+      const planned = Object.fromEntries(planSlate(sim.slate(), deps.config, sim.clock.ms).dispatches.map((d) => [d.game.gameId, d.dispatchAt]));
+      expect(planned[330] - planned[329]).toBe(DEFAULT_SLATE_SETTINGS.staggerMs);
+      if (lateAdd) void sim.clock.until(planned[329]).then(() => { sim.addGame({ gameId: 331, start: iso(START_MS + minutes(60)) }); });
+      const result = byId(await drive(sim, runSlate(deps, sim.slate())));
+      expect(result[329].dispatchedAt[0]).toBeLessThanOrEqual(planned[329] + 1_000);
+      expect(result[330].dispatchedAt[0]).toBeGreaterThan(result[329].dispatchedAt[0]);
+      expect(result[330].dispatchedAt[0]).toBeLessThanOrEqual(planned[330] + 1_000);
+      expect(sim.maxInFlight).toBe(2);
+      if (lateAdd) expect(result[331].outcome).toBe("qualified");
+      for (const id of [329, 330]) expect(result[id].outcome).toBe("qualified");
+      expect(sim.invariants()).toEqual([]);
+    }
+  });
+
   it("re-plans a start-time change after planning: an earlier start that still fits is captured early; one that no longer fits is never claimed", async () => {
     const sim = new SlateSim(START_MS - minutes(180));
     sim.addGame({ gameId: 1, start: START });

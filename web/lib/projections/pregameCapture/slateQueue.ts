@@ -76,9 +76,10 @@ export function assertSlateConfig(config: SlateQueueConfig): void {
  * Backward list scheduling: latest deadlines are placed first at their preferred time (latest safe dispatch − lead);
  * each earlier game takes the slot that lets it start latest without overlapping a later capture. A game that would
  * have to start before `now` (or before a running capture frees its slot) is skipped with a reason.
- * `busyUntil` holds, per slot, when a capture already running frees it.
+ * `busyUntil` holds, per slot, when a capture already running frees it. `reservedAt` holds dispatch times already
+ * committed outside this plan (games held in their turn); planned dispatches keep the stagger from them.
  */
-export function planSlate(games: SlateGame[], config: SlateQueueConfig, now: number, busyUntil: number[] = []): SlatePlan {
+export function planSlate(games: SlateGame[], config: SlateQueueConfig, now: number, busyUntil: number[] = [], reservedAt: number[] = []): SlatePlan {
   assertSlateConfig(config);
   const ids = new Set<number>();
   for (const game of games) {
@@ -95,12 +96,12 @@ export function planSlate(games: SlateGame[], config: SlateQueueConfig, now: num
     if (latestDispatchAt < now) { skipped.push({ game, reason: "no_time_before_t_minus_60" }); continue; }
     feasible.push({ game, deadlineMs, latestDispatchAt });
   }
-  const backward = scheduleBackward(feasible, config, now, busyUntil);
+  const backward = scheduleBackward(feasible, config, now, busyUntil, reservedAt);
   // Backward placement keeps the lead but can strand a game that still fits if everything starts as soon as possible
   // (late planning, a gate delay). Then an earliest-deadline-first pass from now is used if it strands fewer.
   let chosen = backward;
   if (backward.stranded.length) {
-    const forward = scheduleForward(feasible, config, now, busyUntil);
+    const forward = scheduleForward(feasible, config, now, busyUntil, reservedAt);
     if (forward.stranded.length < backward.stranded.length) chosen = forward;
   }
   const dispatches = chosen.dispatches;
@@ -112,12 +113,12 @@ export function planSlate(games: SlateGame[], config: SlateQueueConfig, now: num
 type Feasible = { game: SlateGame; deadlineMs: number; latestDispatchAt: number };
 interface Placement { dispatches: PlannedGame[]; stranded: SlateGame[] }
 
-function scheduleBackward(feasible: Feasible[], config: SlateQueueConfig, now: number, busyUntil: number[]): Placement {
+function scheduleBackward(feasible: Feasible[], config: SlateQueueConfig, now: number, busyUntil: number[], reservedAt: number[]): Placement {
   const occupancy = slotOccupancyMs(config.budget);
   const ordered = [...feasible].sort((a, b) => b.latestDispatchAt - a.latestDispatchAt || b.game.gameId - a.game.gameId);
   const nextBusy = Array.from({ length: config.concurrency }, () => Number.POSITIVE_INFINITY);
   const frontFree = Array.from({ length: config.concurrency }, (_, s) => Math.max(now, busyUntil[s] ?? now));
-  const assigned: number[] = [];
+  const assigned: number[] = [...reservedAt];
   const conflict = (t: number) => assigned.find((other) => Math.abs(other - t) < config.staggerMs);
   const dispatches: PlannedGame[] = [];
   const stranded: SlateGame[] = [];
@@ -149,11 +150,11 @@ function scheduleBackward(feasible: Feasible[], config: SlateQueueConfig, now: n
 }
 
 /** Earliest-deadline-first from now: each game takes the slot that frees first. */
-function scheduleForward(feasible: Feasible[], config: SlateQueueConfig, now: number, busyUntil: number[]): Placement {
+function scheduleForward(feasible: Feasible[], config: SlateQueueConfig, now: number, busyUntil: number[], reservedAt: number[]): Placement {
   const occupancy = slotOccupancyMs(config.budget);
   const ordered = [...feasible].sort((a, b) => a.latestDispatchAt - b.latestDispatchAt || a.game.gameId - b.game.gameId);
   const free = Array.from({ length: config.concurrency }, (_, s) => Math.max(now, busyUntil[s] ?? now));
-  const assigned: number[] = [];
+  const assigned: number[] = [...reservedAt];
   const dispatches: PlannedGame[] = [];
   const stranded: SlateGame[] = [];
   for (const entry of ordered) {
@@ -238,6 +239,8 @@ interface GameState {
   pendingReason: string | null;
   /** A never_dispatched decision waiting to be recorded once no claim can exist. */
   closeReason: string | null;
+  /** The last refresh moved this game's start or status: the next re-plan places it afresh. */
+  rescheduled: boolean;
 }
 
 const NO_CLAIM_RETRYABLE = [/^pin_failed:/, /^claim_refused:binding_mismatch$/];
@@ -256,7 +259,7 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
 
   const states = new Map<number, GameState>();
   const running = new Map<number, { startedAt: number; done: Promise<void> }>();
-  let maxInFlight = 0, sweeps = 0, refreshes = 0, lastRefresh = Number.NEGATIVE_INFINITY, finalRefreshDone = false;
+  let maxInFlight = 0, sweeps = 0, refreshes = 0, lastRefresh = Number.NEGATIVE_INFINITY, finalRefreshDone = false, planStale = false;
   // A holder, not a let: closures set it, and narrowing would otherwise pin it to null.
   const halt: { value: SlateRunResult["stopped"] } = { value: null };
   let sourceFailedRun = 0, gateClosedRun = 0;
@@ -292,7 +295,7 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
 
   const newState = (game: SlateGame): GameState => ({
     game, phase: "pending", dispatchAt: Number.POSITIVE_INFINITY, latestDispatchAt: Number.NEGATIVE_INFINITY, deadlineMs: Number.NaN,
-    pendingReason: null, closeReason: null,
+    pendingReason: null, closeReason: null, rescheduled: false,
     result: { gameId: game.gameId, outcome: null, source: null, reason: null, claimId: null, dispatches: 0, dispatchedAt: [], plannedDispatchAt: null, reports: [] },
   });
   const updateTimes = (state: GameState) => {
@@ -311,9 +314,27 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
   };
 
   const replan = () => {
+    const now = deps.now();
     const pending = [...states.values()].filter((s) => s.phase === "pending");
-    const busyUntil = [...running.values()].map((r) => r.startedAt + occupancy).sort((a, b) => a - b);
-    const plan = planSlate(pending.map((s) => s.game), deps.config, deps.now(), busyUntil);
+    // A game already due keeps its turn (due games in their order, one stagger apart, up to the free slots): a re-plan
+    // that runs a moment after a dispatch instant must not push that game behind one not yet due. A rescheduled game
+    // is placed afresh.
+    const free = Math.max(0, deps.config.concurrency - running.size);
+    const held: GameState[] = [];
+    for (const state of pending.filter((s) => s.dispatchAt <= now && !s.rescheduled)
+      .sort((a, b) => a.dispatchAt - b.dispatchAt || a.game.gameId - b.game.gameId)) {
+      const at = now + held.length * deps.config.staggerMs;
+      if (held.length >= free || at > state.latestDispatchAt) continue;
+      if (held.length) state.dispatchAt = at;
+      held.push(state);
+    }
+    const heldIds = new Set(held.map((s) => s.game.gameId));
+    const busyUntil = [...running.values()].map((r) => r.startedAt + occupancy)
+      .concat(held.map((s) => Math.max(now, s.dispatchAt) + occupancy)).sort((a, b) => a - b);
+    const plan = planSlate(pending.filter((s) => !heldIds.has(s.game.gameId)).map((s) => s.game), deps.config, now, busyUntil,
+      held.map((s) => Math.max(now, s.dispatchAt)));
+    for (const state of pending) state.rescheduled = false;
+    planStale = false;
     for (const skip of plan.skipped) {
       const state = states.get(skip.game.gameId)!;
       state.phase = "resolve"; state.closeReason = skip.reason;
@@ -323,9 +344,11 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
       state.dispatchAt = planned.dispatchAt; state.latestDispatchAt = planned.latestDispatchAt; state.deadlineMs = planned.deadlineMs;
       state.result.plannedDispatchAt ??= planned.dispatchAt;
     }
-    log({ event: "plan", at: plan.plannedAt, dispatches: plan.dispatches.map((p) => [p.game.gameId, p.dispatchAt]), skipped: plan.skipped.map((s) => [s.game.gameId, s.reason]) });
+    log({ event: "plan", at: plan.plannedAt, held: held.map((s) => [s.game.gameId, s.dispatchAt]),
+      dispatches: plan.dispatches.map((p) => [p.game.gameId, p.dispatchAt]), skipped: plan.skipped.map((s) => [s.game.gameId, s.reason]) });
   };
 
+  /** Reads the schedule; true when the slate changed (a game added or removed, or a pending game's start or status moved). */
   const refresh = async (force = false) => {
     if (!deps.refreshSlate || (!force && deps.now() - lastRefresh < refreshIntervalMs)) return false;
     lastRefresh = deps.now();
@@ -335,15 +358,21 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
     if (!games.length) { log({ event: "refresh_empty_ignored" }); return false; }
     refreshes += 1;
     const seen = new Set(games.map((g) => g.gameId));
-    await admit(games.filter((g) => !states.has(g.gameId)));
+    const added = games.filter((g) => !states.has(g.gameId));
+    let changed = added.length > 0;
+    await admit(added);
     for (const game of games) {
       const state = states.get(game.gameId)!;
-      if (state.phase === "pending") { state.game = game; updateTimes(state); }
+      if (state.phase !== "pending") continue;
+      const before = state.game;
+      if (before.scheduledStart !== game.scheduledStart || (before.currentScheduledStart ?? null) !== (game.currentScheduledStart ?? null)
+        || before.status !== game.status) { state.rescheduled = true; changed = true; }
+      state.game = game; updateTimes(state);
     }
     for (const state of states.values()) {
-      if (state.phase === "pending" && !seen.has(state.game.gameId)) { state.phase = "resolve"; state.closeReason = "removed_from_slate"; }
+      if (state.phase === "pending" && !seen.has(state.game.gameId)) { state.phase = "resolve"; state.closeReason = "removed_from_slate"; changed = true; }
     }
-    return true;
+    return changed;
   };
 
   const handleReport = (state: GameState, report: CaptureReport) => {
@@ -413,7 +442,8 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
       }
     }
     let due = [...states.values()].filter((s) => s.phase === "pending" && s.dispatchAt <= deps.now());
-    if (due.length && running.size < deps.config.concurrency && await refresh()) {
+    // Re-plan only when the schedule read changed the slate or a gate delay moved a wave; an unchanged read keeps the plan.
+    if (due.length && running.size < deps.config.concurrency && ((await refresh()) || planStale)) {
       replan();
       due = [...states.values()].filter((s) => s.phase === "pending" && s.dispatchAt <= deps.now());
     }
@@ -430,6 +460,7 @@ export async function runSlate(deps: SlateExecutorDeps, initialGames: SlateGame[
         if (DNS_FAILURE.test(gate.reason ?? "")) trip("gate_dns_failure", state.game.gameId, gate.reason ?? null);
         if (gateClosedRun >= gateClosedLimit) trip("load_gate_closed_twice", state.game.gameId, gate.reason ?? null);
         const retryAt = deps.now() + gateRetryMs;
+        planStale = true;
         for (const waiting of due.filter((s) => s.phase === "pending")) {
           if (retryAt <= waiting.latestDispatchAt) waiting.dispatchAt = retryAt;
           else { waiting.phase = "resolve"; waiting.closeReason = `load_gate_closed:${gate.reason ?? "closed"}`; }
