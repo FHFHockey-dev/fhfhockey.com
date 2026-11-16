@@ -67,14 +67,39 @@ Display must cover normal lineup lines and FORGE reserve ("if he dresses") lines
   chunk 2623.4d0fc341838feea8.js 200 contains every new string. Stopped.
 - Scratch e2e spec deleted; export dir removed; lease RSO-INJURED-DISPLAY released.
 
+- 18:15Z TJ chat: Best Fit exclusion incomplete (Out FA ranked #2 at zero gain in my after screenshot). Also advisor:
+  'No projection' wording wrong in category leagues and for zero remaining games. Follow-up fcffe5777 (10 files):
+  candidatePlanMetrics filters Out FAs (reason stated); CandidateBrowser lists Out unranked after healthy;
+  CandidateCard never offers Out swap (points + categories); reader null outside points; 'No games left'.
+  Focused 729/729, eslint 0, checkout typecheck exit 0. TJ pop-up: "Ship it now". Candidate2 93b670ef6 = master
+  a093e4da3 + 10 files; export2 closure 9944628e4582 unchanged, eslint 0; vitest + typecheck running.
+
+- 18:22Z export2 gate: vitest 57 files 1826 pass; typecheck exit 0 (0 errors). Pushed 93b670ef6 -> chef/rso-best-fit-out
+  18:23:08Z; PR #458; +100s no deployment/status. 18:25:08Z squash-merged: master 179befb34. Deployments: fhfhockey
+  BUILDING dpl_3Ea6hJhC7cFK9gqwrkfBXm4A3gXS, fhfhockey.com CANCELED, cms/functions pre-cancel.
+
+- 18:29:53Z #458 fhfhockey dpl_3Ea6hJhC7cFK9gqwrkfBXm4A3gXS READY; cms, functions-fhfhockey, fhfhockey.com CANCELED.
+  Merge tree 098ccfdeb == candidate2 tree. Smoke 2 (4 GETs): page 200; chunk 2623.3d2dcfbd469d8b56.js has the new strings.
+- Lease released; scratch exports and smoke files removed.
+
 ## Next
-Done. Open for Chef: relay the bridge finding (unconfirmed reserve line stays uncounted after Yahoo clears the player)
-to the read-paths lane; sync octoberBranch from master a093e4da3 at the next release; live check with TJ's real
-league (no Yahoo calls from this lane); cosmetic polish deferred (grid tag, duplicate value text on the Out card).
+Done. Open for Chef / TJ:
+- octoberBranch local commits 9abf48330 and fcffe5777 duplicate master #457/#458 content (sync from master 179befb34);
+  coordination commits 4756fb99d, 5310ab15c, b9170fc62 and the close-out commit. octoberBranch not pushed.
+- Remote branches chef/rso-injured-display and chef/rso-best-fit-out still exist (merged).
+- Bridge finding for read-paths lane: an unconfirmed FORGE reserve line stays uncounted after Yahoo clears the player.
+- Live UI not exercised with real Out players (no Yahoo calls from this lane). Today FORGE projects only the dressed 18
+  and the reserve pass is off, so most Out players will show a struck '—' (no projection); only players hurt after
+  dressing show a value.
+- DTD highlight is amber now (was red); counting unchanged. Any non-Out designation (DTD, SUSP, NA, GTD) is amber+counted.
+- No test of the RosterScheduleOptimizer.tsx wiring itself; evidence is component tests, the local fixture screenshot
+  and the production bundle strings.
+- Cosmetic (deferred by TJ): grid row tags dropped for space; Out card repeats its value in the sentence.
 
 ## Blockers / approvals
-- None. Release done well before the 22:15Z capture window.
-- Capture window 22:15Z–03:00Z: focused Vitest only.
+- None.
 
 ## Gotchas
-- contributionLedger marks Out game days "unknown" (no receipt); not my file, so roster row gets its own injured line.
+- contributionLedger marks Out game days "unknown" (no receipt), so the roster row's AGP/DUST stay "—".
+- PNG screenshots are gitignored; local copies in tasks/artifacts/rso-injured-display-2026-11-16/.
+- planningTypes.ts is in the FORGE producer closure: keep RSO-only types in planning.ts.
