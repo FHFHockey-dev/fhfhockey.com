@@ -3162,3 +3162,8 @@ The change: rankings must be served at a date where composites also exist (an ex
 - Added later (new): `web/lib/projections/pregameCapture/slateSimulator.ts` (test/rehearsal only), `tasks/artifacts/forge-pregame-capture-2026-11-14/operator/launch-slate.sh`
 - Committed: 005ad051d, ae3346d11, 0fc8b7f9e, 7039032b0, aedec2c0d, e0cbb19a8. Offline only; nothing pushed or run live.
 
+- 2026-11-16 00:50Z update (Claude, FORGE capture), slate queue pilot 0329 + 0330 ran at 00:15Z from `e0cbb19a8`:
+  - 0330 `source_failed`: `forge_league_skater_physical_totals` hit the 8 s statement timeout (8,031 ms; earlier today 7,441 and 7,507 ms).
+  - The queue stop rule fired, so 0329 is `never_dispatched`. No retry.
+  - Receipt: `tasks/artifacts/forge-pregame-capture-2026-11-14/SLATE-PILOT-RECEIPT-2026020329-2026020330.md`.
+  - Astra: no D4 readback is needed for these two; nothing qualified.

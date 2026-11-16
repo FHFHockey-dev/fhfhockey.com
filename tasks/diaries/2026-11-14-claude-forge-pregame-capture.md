@@ -315,3 +315,8 @@
   - Plan: fresh export about 00:05Z, launch about 00:15Z.
   - Token: `tj-slate-2026020329-2026020330-20261115`.
   - Command: `operator/launch-slate.sh <export>/web e0cbb19a8… 2026-11-15 <token> <new out> 2026020329@2026-11-16T02:00:00Z,2026020330@2026-11-16T02:00:00Z`.
+- **00:06Z:** fresh export `~/forge-pilot/export-e0cbb19a8-20261116T000543Z` (git archive of `e0cbb19a8`, `web/node_modules` linked). Migration 150 and 151 hashes match their authority rows. Its `launch-slate.sh` and `gate.sh` are byte-identical to the checkout's. The offline plan at 00:15Z matches the packet (dispatch 00:43:28Z and 00:43:58Z, latest 00:53:58Z). Launch at 00:15Z, from the export's launcher.
+- **00:15:12Z:** launched. The gate passed (active 1, longest 0 s, lock waits 0). Out: `~/forge-pilot/slate-2026020329-2026020330-20261116T001511Z/`, launcher log beside it (`.launch.log`). The plan event shows dispatch at 00:43:28Z and 00:43:58Z, with none skipped. Monitoring the events.
+- **00:44Z, pilot result:** 0330 `source_failed` (claim `791099cd…`, timeout 57014 on `forge_league_skater_physical_totals`: 8,031 ms). The queue stopped on `statement_timeout`, so 0329 is `never_dispatched`. Launcher exit 0 at 00:44:28Z. No retry. Receipt: `SLATE-PILOT-RECEIPT-2026020329-2026020330.md`.
+  - The same RPC took 7,441 ms (0326) and 7,507 ms (0328) earlier today, so it has been just under 8 s all day.
+  - **Next:** make physical totals reliably fast (offline prototype and benchmark first, as for the trend bands); needs TJ's go-ahead.
