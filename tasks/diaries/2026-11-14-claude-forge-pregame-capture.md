@@ -329,3 +329,12 @@
   - **Diagnosis:** the cost is heap pages for about 2.2 seasons of wide rows scattered by poor correlation. The candidate hull-range rewrite alone gives the same single date range, so it does not cut heap reads.
 - **Local bench:** a production-scale table (2.23M rows, 7 rows per page, correlation 0.25) on PG15 port 55560 (socket `/tmp/ptb-sock-55560`). It tests a covering partial index `(date) include (season_id, position_code, toi_per_game, hits, blocked_shots) where games_played = 1 and toi_per_game > 0`, with and without the rewrite.
 - **Migration number** if needed: 155 (153 and 154 are BLSH), timestamp after 20261116000100.
+- **01:40Z, bench result:**
+  - Today's function reads 54,660 pages; with the rewrite only, about 60k; with the index only, 36k.
+  - Index + rewrite: **5,064 pages, Index Only Scan**.
+  - The answer md5 is identical in all four.
+- **Migration 155** `20261116010000_forge_physical_totals_covering_index.sql` (SHA-256 `7835a06d…87f`, authority row 155 pending): proof 13/13, apply script `operator/apply-migration-155.sh` with self-test 15/15, pins 21/21.
+- **Packet:** `physical-totals/MIGRATION-155-APPLY-PACKET.md`. Next: TJ's approval of step 1 (index) and step 2 (function).
+- **Slate re-plan bug** (from the slate session): re-planning at a dispatch instant slipped 0329 by 60 s.
+  - Chef gave an offline go: fix in `slateQueue.ts` plus a regression test.
+  - I verify it on a clean export before any future queue run.
