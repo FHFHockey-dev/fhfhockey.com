@@ -3678,6 +3678,12 @@
         "web/components/RosterScheduleOptimizer/CandidateCard.tsx",
         "web/components/RosterScheduleOptimizer/CandidateCard.module.scss",
         "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx",
+        "web/components/RosterScheduleOptimizer/CompactSchedule.tsx (added 17:40Z: clean in every worktree; reads the display snapshot it already receives)",
+        "web/components/RosterScheduleOptimizer/CompactSchedule.test.ts",
+        "web/components/RosterScheduleOptimizer/RosterContribution.tsx (added 17:55Z: Pts cell shows the greyed Out value)",
+        "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx (TJ pop-up ~17:50Z: the one optional prop for this fix)",
+        "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx (TJ pop-up ~17:50Z: cleared for this fix's prop wiring only)",
+        "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (TJ pop-up ~17:50Z: focused tests for this fix only)",
         "tasks/diaries/2026-11-16-claude-rso-injured-display.md"
       ],
       "not_touched": [
@@ -3689,7 +3695,7 @@
       "forbidden": [
         "merge, push, deploy, production reads/writes, FORGE scoring changes"
       ],
-      "overlap_check": "2026-11-16T17:45Z: no uncommitted changes in these paths; no 11-15/11-16 diary or handoff names them",
+      "overlap_check": "2026-11-16T17:30Z: no uncommitted changes in these paths; no 11-15/11-16 diary or handoff names them",
       "held_paths": {
         "paths": [
           "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
@@ -3697,12 +3703,13 @@
         ],
         "reason": "Uncommitted diffs in the preserved /Users/tim/Code/fhfhockey-october worktree (detached 6e14053ff): RosterScheduleOptimizer.tsx +106/-36 lines touched, its test +122. Held, not edited here, until those changes are accounted for. Any prop wiring this fix needs goes into the owned components (SlotWeekGrid, RosterPlayerRow, CandidateCard) or waits.",
         "also_dirty_there_not_in_this_lane": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts (+39/-22); untouched by this lane",
-        "recorded_by": "Claude FORGE Chef local_e8064f61, TJ chat 2026-11-16 ~18:00Z; checked read-only with git --no-optional-locks; worktree preserved"
+        "recorded_by": "Claude FORGE Chef local_e8064f61, TJ chat 2026-11-16 ~18:00Z; checked read-only with git --no-optional-locks; worktree preserved",
+        "cleared_2026-11-16T17:50Z": "TJ pop-up to the lane session: 'Land the wiring now and carry the fix through to production. Clear RosterScheduleOptimizer.tsx, the necessary CandidateBrowser prop, and focused tests for this fix on the current branch. Record that scope under the existing handback and leave the detached October worktree untouched.' Scope: this fix's prop wiring and focused tests only; the October worktree diffs stay unaccounted and untouched."
       },
       "retention_check": "web/lib/rosterScheduleOptimizer/retention.ts is NOT on the Astra 2026-11-15 transfer list (HANDBACK-PATHS.tsv sha256 29eade82…, 988 rows; 0 rows name it), so the handback does not move it. It falls under the Scout/Codex scope reservation pattern web/lib/rosterScheduleOptimizer/** (CODEX-LEASES.json, a reservation, not active editing). Clean in every registered worktree at 2026-11-16 ~18:00Z; last commit afa8cac9b (2026-10-21); outside the FORGE producer closure (8461033…, 239 modules). TJ's narrow carve-out covers it for this fix only; no Codex release or blanket lease retirement.",
       "closure_note": "planning.ts, retention.ts, streamingChain.ts and the listed components are outside the FORGE producer closure; planningTypes.ts is inside, hence not_touched.",
       "status": "active",
-      "start_utc": "2026-11-16T17:45:00Z"
+      "start_utc": "2026-11-16T17:30:00Z"
     }
   ],
   "held_or_blocked": [],
