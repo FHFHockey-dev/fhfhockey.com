@@ -16,7 +16,8 @@ run was rerun after TJ's F3 decision (read-only selects only, no writes).
 - **Other affected cards:** read-only discovery (`--find --team=24`) listed 12 more Ducks cards with bad stored goalie tiles
   ("FlyTogether", "Power Play units", a PP line). The render-only change already makes them source-only. No repair is
   planned for them.
-- **Apply:** `--apply` writes `metadata.newsLineup` to exactly the named ids. It has not been run and needs TJ's approval.
+- **Apply:** run 2026-11-16 with TJ's approval. It wrote `metadata.newsLineup` to exactly these two ids, and the read-back
+  through the public render path matches the preview. The live site uses it only after the new renderer is released.
 
 ## F3 (CGY): why it was held back, and TJ's decision
 - **What happened:** Moore, Washe and Killorn all resolved (8482178, 8485512, 8473986, all ANA). The interpreter rejected
