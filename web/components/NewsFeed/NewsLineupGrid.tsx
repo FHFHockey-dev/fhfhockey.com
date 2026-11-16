@@ -46,8 +46,10 @@ export default function NewsLineupGrid({ lineup, mini = false, hideContext = fal
                         {row.players.map((name, index) => {
                           const starter = kind === "goalie" && Boolean(name && lineup.startingGoalie &&
                             name.toLowerCase() === lineup.startingGoalie.toLowerCase());
+                          const note = row.notes?.[index] ?? null;
                           const content = <>{!mini ? <span className={styles.role}>{row.label}{starter ? " · Starter" : ""}</span> : null}
                             <span className={styles.name} title={mini ? name || "Not supplied" : undefined}>{name || "Not supplied"}</span>
+                            {note ? <span className={styles.note}>{note}</span> : null}
                             {mini && starter ? <span className={styles.starterTag}>Starter</span> : null}</>;
                           return kind === "goalie" && onGoalieSlotClick ? (
                             <button key={index} type="button" className={styles.slot}
@@ -55,7 +57,7 @@ export default function NewsLineupGrid({ lineup, mini = false, hideContext = fal
                           ) : <div key={index} className={styles.slot} data-missing={!name || undefined}
                             data-starter={starter || undefined}
                             role={mini ? "group" : undefined}
-                            aria-label={mini ? `${row.label}${starter ? " · Starter" : ""}: ${name || "Not supplied"}` : undefined}>{content}</div>;
+                            aria-label={mini ? `${row.label}${starter ? " · Starter" : ""}: ${name || "Not supplied"}${note ? ` (${note})` : ""}` : undefined}>{content}</div>;
                         })}
                       </div>
                     </div>

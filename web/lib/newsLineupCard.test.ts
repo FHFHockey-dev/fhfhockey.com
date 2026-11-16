@@ -37,46 +37,46 @@ Fowler`
     });
   });
 
-  it("keeps partial legacy rows at their supplied line numbers without filling goalies or inferring a starter", () => {
-    const lineup = readNewsLineupPresentation({ subcategory: "PRACTICE LINES", metadata: {
-      lineupCard: { forwards: [[], ["First", null, "Third"]], defensePairs: [["Defense"]], goalies: ["Goalie"] },
+  const snapshot = (units: Array<Record<string, unknown>>, interpretation: Record<string, unknown> = {}, binding: Record<string, unknown> = {}) => {
+    const roster = units.flatMap((unit) => (unit.players as Array<{ playerId: number; name: string }>).map((player) => `${player.playerId}:${player.name}:${player.name}:7:C`));
+    return { newsLineup: { version: 1, binding: { teamId: 7, gameId: null, sourceTweetId: "1", ...binding },
+      interpretation: { context: "practice", certainty: "reported", rosterRevision: roster.join("|"), unresolved: [], units, ...interpretation } } };
+  };
+  const unit = (situation: string, number: number | null, names: string[], extra: Record<string, unknown> = {}) =>
+    ({ situation, number, complete: true, players: names.map((name, index) => ({ playerId: number! * 10 + index + 1 || index + 50, name })), ...extra });
+
+  it("never renders public tiles from a stored lineupCard or unbound interpretation units", () => {
+    const legacy = readNewsLineupPresentation({ subcategory: "PRACTICE LINES", teamId: 7, metadata: {
+      lineupCard: { forwards: [["First", "Second", "Third"]], goalies: ["Goalie"] },
+      interpretation: { context: "practice", units: [unit("es_forward", 1, ["Unbound", "Units", "Here"])], unresolved: [] },
     } });
-    expect(lineup.context).toBe("Practice snapshot");
-    expect(lineup.rows.map((row) => row.label)).toEqual(["F2", "D1", "G1"]);
-    expect(lineup.rows[0].players).toEqual(["First", null, "Third"]);
-    expect(lineup.startingGoalie).toBeNull();
-    expect(lineup.notice).toContain("Partial snapshot");
+    expect(legacy).toMatchObject({ rows: [], context: "Practice snapshot", notice: "Structured lineup unavailable for this report. See the source report." });
+    // The internal review editor still previews the reviewer's own draft card.
+    const draft = readNewsLineupPresentation({ reviewDraft: true, metadata: { lineupCard: { forwards: [[], ["First", null, "Third"]], goalies: ["Goalie"] } } });
+    expect(draft.rows.map((row) => row.label)).toEqual(["F2", "G1"]);
+    expect(readNewsLineupPresentation({ metadata: null })).toMatchObject({ rows: [], notice: "Structured lineup unavailable for this report. See the source report." });
   });
 
-  it("uses retained PP/PK units, group and game context instead of a conflicting legacy ES card", () => {
-    const lineup = readNewsLineupPresentation({ metadata: {
-      interpretation: { context: "game", units: [
-        { situation: "pp", number: 2, group: "A", complete: true, players: ["One", "Two", "Three", "Four", "Five"].map((name) => ({ name })) },
-        { situation: "pk", number: null, complete: false, players: [{ name: "Six" }] },
-      ], unresolved: [{ reason: "missing_player" }] },
-      lineupCard: { forwards: [["Unrelated legacy name"]] },
-    } });
-    expect(lineup.context).toBe("Game snapshot");
-    expect(lineup.rows.map((row) => row.label)).toEqual(["PP2", "PK"]);
-    expect(lineup.rows[0].players).toHaveLength(5);
-    expect(lineup.rows[0].group).toBe("A");
-    expect(lineup.notice).toContain("unresolved");
-    expect(JSON.stringify(lineup)).not.toContain("Unrelated");
+  it("keeps validated PP/PK units with their group, and drops incomplete or flagged units behind a partial notice", () => {
+    const lineup = readNewsLineupPresentation({ teamId: 7, metadata: snapshot([
+      unit("pp", 2, ["One", "Two", "Three", "Four", "Five"], { group: "A" }),
+      unit("pk", 1, ["Six"], { complete: false }),
+      unit("es_defense", 3, ["Seven", "Eight"]),
+    ], { unresolved: [{ situation: "es_defense", number: 3, reason: "invalid_extraction" }] }) });
+    expect(lineup.rows.map((row) => row.label)).toEqual(["PP2"]);
+    expect(lineup.rows[0]).toMatchObject({ group: "A", partial: false });
+    expect(lineup.notice).toMatch(/^Partial snapshot/);
   });
 
-  it("does not promote excluded units or fall back to legacy data when interpretation is unresolved", () => {
-    const lineup = readNewsLineupPresentation({ metadata: {
-      interpretation: { units: [], excludedUnits: [{ players: [{ name: "Excluded" }] }], unresolved: [{ reason: "ambiguous" }] },
-      lineupCard: { forwards: [["Legacy"]] },
-    } });
-    expect(lineup.rows).toEqual([]);
-    expect(lineup.notice).toContain("unresolved");
-  });
-
-  it("reports the exact legacy special-teams data gap and missing snapshot", () => {
-    expect(readNewsLineupPresentation({ subcategory: "POWER PLAY", metadata: {
-      lineupCard: { forwards: [["Not an ES line"]] },
-    } })).toMatchObject({ rows: [], notice: "Structured special-teams units unavailable for this report." });
-    expect(readNewsLineupPresentation({ metadata: null })).toMatchObject({ rows: [], notice: "Structured lineup unavailable for this report." });
+  it("requires the card's team, roster membership and, for game posts, the snapshot's NHL game", () => {
+    const forwards = [unit("es_forward", 1, ["A", "B", "C"])];
+    expect(readNewsLineupPresentation({ teamId: 7, metadata: snapshot(forwards) }).rows).toHaveLength(1);
+    expect(readNewsLineupPresentation({ teamId: 8, metadata: snapshot(forwards) }).rows).toEqual([]);
+    expect(readNewsLineupPresentation({ teamId: 7, metadata: snapshot(forwards, { context: "game" }) }).rows).toEqual([]);
+    expect(readNewsLineupPresentation({ teamId: 7, metadata: snapshot(forwards, { context: "game" }, { gameId: 2026020001 }) }).rows).toHaveLength(1);
+    expect(readNewsLineupPresentation({ teamId: 7, metadata: snapshot(forwards, { context: "unknown" }, { gameId: 2026020001 }) }).rows).toEqual([]);
+    const offRoster = snapshot(forwards);
+    (offRoster.newsLineup.interpretation as Record<string, unknown>).rosterRevision = "11:A:A:7:C|12:B:B:7:C|13:C:C:9:C";
+    expect(readNewsLineupPresentation({ teamId: 7, metadata: offRoster }).rows).toEqual([]);
   });
 });

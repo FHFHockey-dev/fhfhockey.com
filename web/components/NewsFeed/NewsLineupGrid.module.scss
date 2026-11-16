@@ -115,6 +115,13 @@ button.slot {
   font-weight: 600;
 }
 
+// A source note on one slot, e.g. "D listed at F": what the post reported, not a roster change.
+.note {
+  color: v.$color-neutral-200;
+  font-size: 0.6rem;
+  font-weight: 600;
+}
+
 .mini {
   .viewport { overflow: visible; }
   // Blocks separate (8px); rows inside sit close (2px) (TJ, 2026-11-15).

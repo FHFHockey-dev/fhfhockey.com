@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 
 import { buildTeamDirectory } from "./lineupSourceIngestion";
+import { buildGoalieBlendFeatures, type LinesCccRow } from "../game-predictions/featureBuilder";
 import { edmontonSectionRoster, edmontonSectionText, explicit11F7DText, seattleSectionRoster, seattleSectionText } from "../../__tests__/fixtures/lineupSectionFixtures";
 import { completeEvenStrengthUnits, interpretTweetUnits, type TweetInterpretation } from "./tweetInterpretation";
 import { reviewTweetApplicability } from "./lineSourceProcessing";
@@ -1801,5 +1802,57 @@ describe("validated goalie/injury rows keep the reporter (riskyStarts handle, 20
     expect(validatedEventReporter({}, { originalUrl: null })).toBeNull();
     // Quote posts: the forecast capture credits the quoted author.
     expect(validatedEventReporter({ quotedAuthorHandle: "pham1717" }, { originalUrl: "https://x.com/pham1717/status/4" })).toBeNull();
+  });
+});
+
+describe("pipe goalie pairs stay out of shared Lines goalie fields", () => {
+  // Zach Cavanagh's Ducks warm-up post (11/15 vs CGY) ends "Husso | Dostál": who was listed, not who starts.
+  const ANA = 24, GAME = 2026020328;
+  const roster = ([["Judd Caulfield", "R"], ["Leo Carlsson", "C"], ["Cutter Gauthier", "L"], ["Jeffrey Malott", "L"], ["Mikael Granlund", "C"],
+    ["Beckett Sennecke", "R"], ["Ian Moore", "D"], ["Tim Washe", "C"], ["Alex Killorn", "L"], ["Nikita Nesterenko", "C"], ["Jack McQueen", "C"],
+    ["Troy Terry", "R"], ["Jackson LaCombe", "D"], ["Drew Helleson", "D"], ["Tyson Hinds", "D"], ["Tristan Luneau", "D"], ["Pavel Mintyukov", "D"],
+    ["Noah Warren", "D"], ["Ville Husso", "G"], ["Lukas Dostál", "G"], ["Sam Colangelo", "R"], ["Frank Vatrano", "R"], ["Ian Mitchell", "D"]] as const)
+    .map(([fullName, position], index) => ({ playerId: 9000 + index, fullName, lastName: fullName.split(" ").pop()!, position, teamId: ANA }));
+  const teams = buildTeamDirectory([{ id: ANA, name: "Anaheim Ducks", abbreviation: "ANA", logo: "/teamLogos/ANA.png" },
+    { id: 20, name: "Calgary Flames", abbreviation: "CGY", logo: "/teamLogos/CGY.png" }]);
+  const post = (goalies: string) => `Anaheim Ducks warm-up line rushes 11/15 vs. #Flames:\n\nCaulfield-Carlsson-Gauthier\nMalott-Granlund-Sennecke\n`
+    + `Moore-Washe-Killorn\nNesterenko-McQueen-Terry\n\nLaCombe-Helleson\nHinds-Luneau\nMintyukov-Warren\n\n${goalies}\n\nScratches: Colangelo, Vatrano, Mitchell`;
+  // The real serializer, then the real game-prediction reader on the row it would store.
+  const read = (goalies: string) => {
+    const text = post(goalies);
+    const source = buildLinesCccSourceFromIftttEvent({ snapshotDate: "2026-11-15", teams, rosterByTeam: new Map([[ANA, roster]]),
+      gameIdByTeamId: new Map([[ANA, GAME], [20, GAME]]),
+      event: { id: "pipe", source: "fxtwitter", source_account: "ZachCav", username: "ZachCav", text, tweet_id: "2122126809533923555",
+        link_to_tweet: "https://x.com/ZachCav/status/2122126809533923555", tweet_created_at: "2026-11-16T03:40:00Z",
+        received_at: "2026-11-16T03:41:00Z", created_at_label: null, raw_payload: { text } } });
+    const row = toLinesCccRow({ source, rosterEntries: roster });
+    const feature = buildGoalieBlendFeatures([], ANA, { gameId: GAME, linesCccRows: [row as unknown as LinesCccRow] });
+    return { source, row, feature };
+  };
+  afterEach(() => { vi.unstubAllEnvs(); });
+
+  it.each(["Husso | Dostál", "Dostál | Husso"])("'%s' fills neither goalie field and creates no starter", (goalies) => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const { source, row, feature } = read(goalies);
+    expect(row).toMatchObject({ status: "observed", nhl_filter_status: "accepted", game_id: GAME,
+      goalie_1_player_id: null, goalie_1_name: null, goalie_2_player_id: null, goalie_2_name: null });
+    expect(feature).toMatchObject({ confirmed: false, topGoalieId: null });
+    expect(feature.source).not.toBe("lines_ccc");
+    // The pair is still interpreted, for News display only.
+    const units = (source.metadata!.interpretation as TweetInterpretation).units.filter((unit) => unit.situation === "goalie");
+    expect(units.map((unit) => [unit.players[0]!.name, unit.listing])).toEqual(goalies.startsWith("Husso")
+      ? [["Ville Husso", "pipe_pair"], ["Lukas Dostál", "pipe_pair"]] : [["Lukas Dostál", "pipe_pair"], ["Ville Husso", "pipe_pair"]]);
+  });
+
+  it("keeps an unresolved pipe side out of the goalie fields", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    expect(read("Husso | Nobodyson").row).toMatchObject({ goalie_1_name: null, goalie_2_name: null });
+  });
+
+  it("control: an independently confirmed starter still reaches goalie_1 and the prediction reader", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const { row, feature } = read("Husso | Dostál\nHusso gets the start tonight.");
+    expect(row).toMatchObject({ goalie_1_player_id: 9018, goalie_1_name: "Ville Husso", goalie_2_name: null });
+    expect(feature).toMatchObject({ source: "lines_ccc", confirmed: true, topGoalieId: 9018, topGoalieName: "Ville Husso" });
   });
 });

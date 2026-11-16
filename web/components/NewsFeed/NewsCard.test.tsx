@@ -45,6 +45,16 @@ const makeItem = (overrides: Record<string, unknown> = {}) =>
     ...overrides,
   }) as any;
 
+/** A validated public lineup: interpreter units bound to team 13 (and a game for game posts). */
+const lineupMeta = (units: Array<[string, number | null, string[], boolean?]>, options: { context?: string; gameId?: number | null } = {}) => {
+  const roster: string[] = [];
+  let playerId = 0;
+  const built = units.map(([situation, number, names, complete = true]) => ({ situation, number, complete,
+    players: names.map((name) => { playerId++; roster.push(`${playerId}:${name}:${name}:13:C`); return { playerId, name }; }) }));
+  return { newsLineup: { version: 1, binding: { teamId: 13, gameId: options.gameId ?? null, sourceTweetId: "1" },
+    interpretation: { context: options.context ?? "practice", certainty: "reported", rosterRevision: roster.join("|"), units: built, unresolved: [] } } };
+};
+
 describe("NewsCard", () => {
   afterEach(cleanup);
 
@@ -402,14 +412,15 @@ describe("NewsCard", () => {
   });
 
   it("keeps lineup cards free of the unverified-details copy", () => {
-    render(<NewsCard item={makeItem({ category: "LINE COMBINATION", subcategory: "PRACTICE LINES", metadata: { lineupCard: { forwards: [["A", "B", "C"]] } } })} />);
+    render(<NewsCard item={makeItem({ category: "LINE COMBINATION", subcategory: "PRACTICE LINES", team_id: 13,
+      metadata: lineupMeta([["es_forward", 1, ["A", "B", "C"]]]) })} />);
     expect(screen.queryByText(UNVERIFIED)).toBeNull();
   });
 
 
   it.each(["NYR", "TOR", "ZZZ"])("uses %s's palette for the shared full and mini snapshot grids", (abbreviation) => {
-    const item = makeItem({ team_abbreviation: abbreviation, category: "LINE COMBINATION", subcategory: "PRACTICE LINES",
-      metadata: { lineupCard: { forwards: [["Captured Player", "Second Player", "Third Player"]], defensePairs: [], goalies: [] } } });
+    const item = makeItem({ team_abbreviation: abbreviation, category: "LINE COMBINATION", subcategory: "PRACTICE LINES", team_id: 13,
+      metadata: lineupMeta([["es_forward", 1, ["Captured Player", "Second Player", "Third Player"]]]) });
     const { container } = render(<><NewsCard item={item} /><NewsCard item={item} compact rail /></>);
     const articles = container.querySelectorAll("article");
     for (const article of articles) {
@@ -431,19 +442,29 @@ describe("NewsCard", () => {
     expect(within(articles[1]).getByText("Captured Player").getAttribute("title")).toBe("Captured Player");
   });
 
+  it("says a warm-up card's lines are only reported, and hides the context line otherwise", () => {
+    const warmup = lineupMeta([["es_forward", 1, ["A", "B", "C"]]], { context: "game", gameId: 2026020328 });
+    (warmup.newsLineup.interpretation as Record<string, unknown>).lineContext = { context: "warmup", phase: "pregame", evidence: [] };
+    const { rerender } = render(<NewsCard item={makeItem({ category: "LINE COMBINATION", subcategory: "FORWARD LINES", team_id: 13, metadata: warmup })} />);
+    expect(screen.getByText("Warm-up snapshot · reported")).toBeTruthy();
+    rerender(<NewsCard item={makeItem({ category: "LINE COMBINATION", subcategory: "PRACTICE LINES", team_id: 13,
+      metadata: lineupMeta([["es_forward", 1, ["A", "B", "C"]]]) })} />);
+    expect(screen.queryByText(/snapshot/)).toBeNull();
+  });
+
   it("normalizes the supplied canonical team abbreviation without changing player identities", () => {
-    const { container } = render(<NewsCard item={makeItem({ team_abbreviation: " nyr ", category: "LINE COMBINATION",
-      metadata: { lineupCard: { forwards: [["Historical Player"]] } } })} compact rail />);
+    const { container } = render(<NewsCard item={makeItem({ team_abbreviation: " nyr ", category: "LINE COMBINATION", team_id: 13,
+      metadata: lineupMeta([["es_defense", 1, ["Historical Player", "Partner"]], ["es_forward", 1, ["Unverified"], false]]) })} compact rail />);
     expect(container.querySelector("article")?.style.getPropertyValue("--lineup-team-primary")).toBe(teamsInfo.NYR.primaryColor);
     expect(screen.getByText("Historical Player")).toBeTruthy();
     expect(screen.getByText(/Partial snapshot/)).toBeTruthy();
+    expect(screen.queryByText("Unverified")).toBeNull();
   });
 
   it("shows all five supplied PP players and preserves source/time metadata", () => {
     render(<NewsCard compact rail item={makeItem({ category: "LINE COMBINATION", subcategory: "POWER PLAY",
-      observed_at: "2026-07-14T18:19:20.000Z", metadata: { interpretation: { context: "game", unresolved: [], units: [
-        { situation: "pp", number: 1, complete: true, players: ["A", "B", "C", "D", "E"].map((name) => ({ name })) },
-      ] } } })} />);
+      observed_at: "2026-07-14T18:19:20.000Z", team_id: 13,
+      metadata: lineupMeta([["pp", 1, ["A", "B", "C", "D", "E"]]], { context: "game", gameId: 2026020001 }) })} />);
     expect(screen.getByRole("group", { name: "PP1" })).toBeTruthy();
     expect(screen.queryByText("PP1")).toBeNull();
     expect(screen.getByRole("group", { name: "PP1: E" }).textContent).toBe("E");
@@ -455,7 +476,7 @@ describe("NewsCard", () => {
   it("shows a missing PP snapshot honestly and leaves ordinary reports without a grid", () => {
     const { rerender } = render(<NewsCard compact rail item={makeItem({ category: "LINE COMBINATION", subcategory: "POWER PLAY",
       metadata: { lineupCard: { forwards: [["Do not relabel me"]] } } })} />);
-    expect(screen.getByText("Structured special-teams units unavailable for this report.")).toBeTruthy();
+    expect(screen.getByText("Structured lineup unavailable for this report. See the source report.")).toBeTruthy();
     expect(screen.queryByText("Do not relabel me")).toBeNull();
     rerender(<NewsCard compact rail item={makeItem()} />);
     expect(screen.queryByRole("region", { name: /snapshot players/ })).toBeNull();
