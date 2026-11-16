@@ -1567,10 +1567,10 @@
       "path": "supabase/migrations/20261116020000_wgo_skater_stats_insert_autovacuum.sql",
       "sha256": "3d48946edf0637ca4341edb4cac9b9f5447fa55eec8acec087ab67e850c03b77",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "performance",
       "rolloutGate": "FORGE pregame capture lane (Claude Chef; TJ 2026-11-16 'Check, then propose'). Per-table insert-triggered autovacuum on wgo_skater_stats (autovacuum_vacuum_insert_threshold 1000, autovacuum_vacuum_insert_scale_factor 0), merged with order 93's options, so the visibility map stays current for order 155's index-only scan. Apply only with TJ's own pop-up approval through tasks/artifacts/forge-pregame-capture-2026-11-14/operator/apply-visibility-156.sh --reloptions (one transaction, lock_timeout 5 s, exact readback); its one-off VACUUM companion (--vacuum) is a separate approval.",
-      "stateEvidence": "Not applied (2026-11-16). Read-only audit 2026-11-16T01:28:20Z: reloptions {autovacuum_analyze_scale_factor=0.002,autovacuum_vacuum_scale_factor=0.01}, no insert trigger (global 1000 + 0.2 x reltuples), all pg_stat_user_tables counters 0, 97.57% pages all-visible; the 155 read had 9,592 heap fetches. Apply-script self-test 14/14."
+      "stateEvidence": "Production schema_migrations version 20261116020000 (wgo_skater_stats_insert_autovacuum); applied 2026-11-16 01:50:53.061Z by the FORGE capture Chef with TJ's pop-up approval ('Both, vacuum first'), via apply-visibility-156.sh --reloptions; readback reloptions {autovacuum_analyze_scale_factor=0.002,autovacuum_vacuum_scale_factor=0.01,autovacuum_vacuum_insert_threshold=1000,autovacuum_vacuum_insert_scale_factor=0}. Companion one-off VACUUM (VERBOSE) 01:50:28-01:50:30Z: all-visible 97.57% -> 98.63%, capture-read heap fetches 9,592 -> 3,270 (index cleanup bypassed: 3,814 pages with dead items). Receipt: tasks/artifacts/forge-pregame-capture-2026-11-14/physical-totals/VISIBILITY-156-RECEIPT.md."
     }
   ],
   "sourceExtensionApproval": {

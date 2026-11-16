@@ -1,0 +1,37 @@
+SET
+SET
+   ?column?   |        clock_timestamp        
+--------------+-------------------------------
+ vacuum_start | 2026-11-16 01:50:28.307035+00
+(1 row)
+
+psql:/Users/tim/forge-pilot/visibility-156-20261116T015026Z/vacuum/vacuum.sql:5: INFO:  vacuuming "postgres.public.wgo_skater_stats"
+psql:/Users/tim/forge-pilot/visibility-156-20261116T015026Z/vacuum/vacuum.sql:5: INFO:  launched 1 parallel vacuum worker for index cleanup (planned: 1)
+psql:/Users/tim/forge-pilot/visibility-156-20261116T015026Z/vacuum/vacuum.sql:5: INFO:  finished vacuuming "postgres.public.wgo_skater_stats": index scans: 0
+pages: 0 removed, 278574 remain, 19786 scanned (7.10% of total)
+tuples: 138 removed, 2307246 remain, 0 are dead but not yet removable
+removable cutoff: 14837563, which was 0 XIDs old when operation ended
+index scan bypassed: 3814 pages from table (1.37% of total) have 7426 dead item identifiers
+index "wgo_skater_stats_date_brin": pages: 16 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+avg read rate: 83.100 MB/s, avg write rate: 13.604 MB/s
+buffer usage: 16310 hits, 19847 misses, 3249 dirtied
+WAL usage: 3086 records, 140 full page images, 404694 bytes
+system usage: CPU: user: 0.06 s, system: 0.23 s, elapsed: 1.86 s
+psql:/Users/tim/forge-pilot/visibility-156-20261116T015026Z/vacuum/vacuum.sql:5: INFO:  vacuuming "postgres.pg_toast.pg_toast_61067"
+psql:/Users/tim/forge-pilot/visibility-156-20261116T015026Z/vacuum/vacuum.sql:5: INFO:  finished vacuuming "postgres.pg_toast.pg_toast_61067": index scans: 0
+pages: 0 removed, 0 remain, 0 scanned (100.00% of total)
+tuples: 0 removed, 0 remain, 0 are dead but not yet removable
+removable cutoff: 14837563, which was 0 XIDs old when operation ended
+new relfrozenxid: 14837563, which is 7554684 XIDs ahead of previous value
+new relminmxid: 84662, which is 2492 MXIDs ahead of previous value
+index scan not needed: 0 pages from table (100.00% of total) had 0 dead item identifiers removed
+avg read rate: 1.640 MB/s, avg write rate: 1.640 MB/s
+buffer usage: 21 hits, 1 misses, 1 dirtied
+WAL usage: 1 records, 1 full page images, 2624 bytes
+system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+VACUUM
+  ?column?   |       clock_timestamp       
+-------------+-----------------------------
+ vacuum_done | 2026-11-16 01:50:30.2476+00
+(1 row)
+

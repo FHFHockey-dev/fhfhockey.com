@@ -357,3 +357,11 @@
 - **01:45Z:**
   - Slate fix `bc13b523e` verified on a clean export: 351/351, typecheck 0, rehearse with 0 network attempts.
   - Migration 156 (insert-triggered autovacuum on `wgo_skater_stats`, SHA-256 `3d48946e…3b77`) drafted, with `operator/apply-visibility-156.sh` (one-off `--vacuum`, `--reloptions`, rollback). Self-test 14/14; authority row 156 pending; pins 156/121/7. Awaiting TJ.
+- **01:50Z, visibility** (TJ: "Both, vacuum first"):
+  - One-off VACUUM in 1.86 s: all-visible 97.57% → 98.63%. Index cleanup was bypassed, leaving 3,814 pages with dead items.
+  - Capture read after it: 3,270 heap fetches (was 9,592), 2,055 pages with 1,572 from disk, 1,537 ms, which is near cold.
+  - Migration 156 applied at 01:50:53.061Z with an exact readback; authority row 156 applied; pins 122/28/6.
+  - Receipt: `physical-totals/VISIBILITY-156-RECEIPT.md`.
+- **Open for TJ:**
+  - an optional `VACUUM (INDEX_CLEANUP ON)` for the 3,814 pages;
+  - the next capture: candidate `bc13b523e` or later with docs only, a Monday game, a timed read of 4 s or less before launch.
