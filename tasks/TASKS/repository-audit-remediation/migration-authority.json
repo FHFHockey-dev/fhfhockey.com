@@ -1561,6 +1561,16 @@
       "migrationClass": "performance",
       "rolloutGate": "FORGE pregame capture lane (Claude Chef; TJ 2026-11-16, 'Prototype + prod EXPLAIN'). Makes forge_league_skater_physical_totals reliably fast: it ran 7.4-7.5 s on 2026-11-15 and hit the 8 s statement timeout at 2026-11-16 00:44Z (capture 2026020330 source_failed). Two parts, applied by hand in order, each only with TJ's own pop-up approval: (1) create index concurrently idx_wgo_skater_stats_gp1_physical on wgo_skater_stats (date) include (season_id, position_code, toi_per_game, hits, blocked_shots) where games_played = 1 and toi_per_game > 0, outside a transaction, then check indisvalid; (2) only once that index is valid, the function body with one date range (same answers; same signature, STABLE, SECURITY INVOKER, search_path '', service_role only), then the ledger row. Never step 2 without step 1. Packet: tasks/artifacts/forge-pregame-capture-2026-11-14/physical-totals/MIGRATION-155-APPLY-PACKET.md.",
       "stateEvidence": "Production schema_migrations version 20261116010000 (forge_physical_totals_covering_index); applied by hand by the FORGE capture Chef with TJ's pop-up approvals ('Now, tonight'; then 'Reapply step 2'). Step 1: idx_wgo_skater_stats_gp1_physical built CONCURRENTLY 2026-11-16 01:17:02-01:17:43Z, valid, 58 MB. Step 2: first applied 01:18:03Z and rolled back 01:18:36Z by the 2 s smoke rule (cold 2,873 ms); re-applied 01:27:52.658Z after the production plan gate (Index Only Scan); readback md5 5b67ecb4dee0e75e6285fc5468ef06e7, STABLE, invoker, search_path '', service_role only. Smoke 01:28:00Z: Index Only Scan, 9,592 heap fetches, 279 ms warm, 4 rows, PostgREST HTTP 200. Receipt: tasks/artifacts/forge-pregame-capture-2026-11-14/physical-totals/MIGRATION-155-APPLY-RECEIPT.md."
+    },
+    {
+      "order": 156,
+      "path": "supabase/migrations/20261116020000_wgo_skater_stats_insert_autovacuum.sql",
+      "sha256": "3d48946edf0637ca4341edb4cac9b9f5447fa55eec8acec087ab67e850c03b77",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "performance",
+      "rolloutGate": "FORGE pregame capture lane (Claude Chef; TJ 2026-11-16 'Check, then propose'). Per-table insert-triggered autovacuum on wgo_skater_stats (autovacuum_vacuum_insert_threshold 1000, autovacuum_vacuum_insert_scale_factor 0), merged with order 93's options, so the visibility map stays current for order 155's index-only scan. Apply only with TJ's own pop-up approval through tasks/artifacts/forge-pregame-capture-2026-11-14/operator/apply-visibility-156.sh --reloptions (one transaction, lock_timeout 5 s, exact readback); its one-off VACUUM companion (--vacuum) is a separate approval.",
+      "stateEvidence": "Not applied (2026-11-16). Read-only audit 2026-11-16T01:28:20Z: reloptions {autovacuum_analyze_scale_factor=0.002,autovacuum_vacuum_scale_factor=0.01}, no insert trigger (global 1000 + 0.2 x reltuples), all pg_stat_user_tables counters 0, 97.57% pages all-visible; the 155 read had 9,592 heap fetches. Apply-script self-test 14/14."
     }
   ],
   "sourceExtensionApproval": {

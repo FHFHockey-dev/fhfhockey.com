@@ -354,3 +354,6 @@
   - `wgo_skater_stats` has scale-factor reloptions (migration 93) but no insert trigger, and all its stats counters read 0. So no autovacuum is likely all season; heap fetches will grow.
   - Next: propose a one-off VACUUM plus an insert-autovacuum reloption (migration 156) to TJ.
 - **Slate fix `bc13b523e`:** a clean-export check is running (`~/forge-pilot/export-bc13b523e-20261116T012855Z`).
+- **01:45Z:**
+  - Slate fix `bc13b523e` verified on a clean export: 351/351, typecheck 0, rehearse with 0 network attempts.
+  - Migration 156 (insert-triggered autovacuum on `wgo_skater_stats`, SHA-256 `3d48946e…3b77`) drafted, with `operator/apply-visibility-156.sh` (one-off `--vacuum`, `--reloptions`, rollback). Self-test 14/14; authority row 156 pending; pins 156/121/7. Awaiting TJ.
