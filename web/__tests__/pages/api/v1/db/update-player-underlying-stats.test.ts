@@ -257,6 +257,53 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
     expect(refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock).toHaveBeenCalledTimes(1);
   });
 
+  it("reports a statement timeout after raw ingest without claiming that no writes landed", async () => {
+    refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock.mockRejectedValue({
+      code: "57014", message: "canceling statement due to statement timeout",
+      details: "UNSAFE_UPSTREAM_DETAILS",
+    });
+    const { req, res } = createMockApiContext();
+    await handler(req as never, res as never);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({
+      success: false,
+      error: "Underlying stats player_summary_refresh failed (statement_timeout; SQLSTATE 57014). Writes may have committed; verify before retry.",
+      stageFailure: { stage: "player_summary_refresh", classification: "statement_timeout", sqlState: "57014", writes: "may_have_committed" },
+    });
+    expect(res.body).not.toHaveProperty("rowsUpserted");
+    expect(JSON.stringify(res.body)).not.toContain("UNSAFE_UPSTREAM_DETAILS");
+    expect(ingestNhlApiRawGamesBestEffortMock).toHaveBeenCalledTimes(1);
+    expect(refreshTeamUnderlyingSummaryRowsForGameIdsMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["selection", "not_started", resolveRequestedGameIdsMock],
+    ["raw_ingest", "may_have_committed", ingestNhlApiRawGamesBestEffortMock],
+    ["team_summary_refresh", "may_have_committed", refreshTeamUnderlyingSummaryRowsForGameIdsMock],
+  ])("identifies %s failures without echoing upstream detail", async (stage, writes, failedCall) => {
+    failedCall.mockRejectedValue(new Error("UNSAFE_UPSTREAM_DETAILS"));
+    const { req, res } = createMockApiContext();
+    await handler(req as never, res as never);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({ success: false, stageFailure: { stage, classification: "unexpected_failure", sqlState: null, writes } });
+    expect(JSON.stringify(res.body)).not.toContain("UNSAFE_UPSTREAM_DETAILS");
+    expect(res.body).not.toHaveProperty("rowsUpserted");
+  });
+
+  it("does not claim a query cancellation was a statement timeout", async () => {
+    refreshTeamUnderlyingSummaryRowsForGameIdsMock.mockRejectedValue({
+      code: "57014", message: "canceling statement due to user request",
+    });
+    const { req, res } = createMockApiContext();
+    await handler(req as never, res as never);
+
+    expect(res.body).toMatchObject({ success: false, stageFailure: {
+      stage: "team_summary_refresh", classification: "query_canceled", sqlState: "57014", writes: "may_have_committed",
+    } });
+  });
+
   it("retains a successful summary retry count", async () => {
     refreshPlayerUnderlyingSummarySnapshotsForGameIdsMock.mockResolvedValue({
       rowsUpserted: 27, summaryWriteBusyRetries: 1,

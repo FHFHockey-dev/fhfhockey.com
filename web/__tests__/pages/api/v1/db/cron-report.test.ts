@@ -2108,6 +2108,33 @@ ${JSON.stringify(jobs)}
   });
 
 
+  it("reports retained rolling FORGE terminal failure without inferring writes", async () => {
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "run-rolling-forge-pipeline", run_time: "2026-03-20T12:00:01.000Z", status: "failure",
+      details: { method: "GET", url: "/api/v1/db/run-rolling-forge-pipeline", statusCode: 207,
+        response: '{"success":false,"pipeline":[…', responseTruncated: true,
+        responseOutcome: { success: false, termination: { state: "stopped_on_blocking_failure" },
+          rowsUpserted: 99,
+          failureSummary: {
+            firstFailure: { stageId: "upstream_skater_sources", stepId: "nst", statusCode: 207, error: "NST handoff missing" },
+            terminalStop: { stageId: "upstream_skater_sources", code: "nst_persistence_unconfirmed" },
+          },
+        },
+      },
+    }], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    const row = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits.find(
+      (candidate: any) => candidate.jobName === "run-rolling-forge-pipeline");
+    expect(row).toMatchObject({
+      status: "failure", rowsUpserted: null, failedRows: null,
+      reason: "upstream_skater_sources/nst (nst_persistence_unconfirmed) [HTTP 207]",
+    });
+    expect(row.missingObservationWarnings).toContain(
+      "Audit response is truncated or malformed; operation outcome and durable output are unverified.");
+  });
+
   it("uses retained responseOutcome failures when the response preview is truncated", async () => {
     cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
     cronJobAuditSelectMock.mockResolvedValue({ data: [{

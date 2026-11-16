@@ -544,6 +544,40 @@ export async function upsertShiftTotalsForGame(gameId: number): Promise<{
   return upsertShiftTotalsForGameFromPbp(gameId, pbp, shiftRows);
 }
 
+type ShiftClockMismatchWitness = Readonly<{
+  gameId: number | null;
+  playerId: number | null;
+  period: number | null;
+  startSeconds: number | null;
+  endSeconds: number | null;
+  durationSeconds: number | null;
+}>;
+class ShiftClockDurationMismatchError extends Error {
+  readonly code = "SHIFT_CLOCK_DURATION_MISMATCH";
+  readonly witness: ShiftClockMismatchWitness;
+
+  constructor(input: { [K in keyof ShiftClockMismatchWitness]: number }) {
+    // This error can precede raw capture. Preserve only one bounded, typed
+    // interval in the audit message, never the provider payload or text fields.
+    const safe = (value: number) =>
+      Number.isSafeInteger(value) && value >= 0 ? value : null;
+    const witness: ShiftClockMismatchWitness = {
+      gameId: safe(input.gameId),
+      playerId: safe(input.playerId),
+      period: safe(input.period),
+      startSeconds: safe(input.startSeconds),
+      endSeconds: safe(input.endSeconds),
+      durationSeconds: safe(input.durationSeconds),
+    };
+    const { gameId, playerId, period, startSeconds, endSeconds, durationSeconds } = witness;
+    super(
+      `Shift clock/duration mismatch for game ${gameId}, player ${playerId}; period=${period} start_s=${startSeconds} end_s=${endSeconds} duration_s=${durationSeconds}`,
+    );
+    this.name = "ShiftClockDurationMismatchError";
+    this.witness = witness;
+  }
+}
+
 function requireShiftClock(value: unknown, field: string): number {
   const seconds = parseStrictShiftClock(value);
   if (seconds == null) throw new Error(`Invalid ${field} shift clock`);
@@ -651,9 +685,14 @@ export function buildCanonicalShiftIntervals(
       }
     } else {
       if (shiftEnd <= shiftStart || shiftEnd - shiftStart !== duration) {
-        throw new Error(
-          `Shift clock/duration mismatch for game ${gameId}, player ${playerId}`,
-        );
+        throw new ShiftClockDurationMismatchError({
+          gameId,
+          playerId,
+          period: shift.period,
+          startSeconds: shiftStart,
+          endSeconds: shiftEnd,
+          durationSeconds: duration,
+        });
       }
       normalizedEnd = shiftEnd;
     }

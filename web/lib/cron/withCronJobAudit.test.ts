@@ -654,6 +654,63 @@ describe("withCronJobAudit", () => {
     expect(res.body).toEqual(response);
   });
 
+  it("retains bounded rolling FORGE failure evidence outside the cut preview", async () => {
+    const firstFailure = {
+      stageId: "upstream_skater_sources", stepId: "nst", code: "nst_persistence_unconfirmed",
+      error: "NST handoff missing: https://user:secret@example.test/trace?token=secret", endpoint: "secret",
+      statusCode: 207,
+    };
+    const terminalStop = { stageId: firstFailure.stageId, code: firstFailure.code, arbitrary: "secret" };
+    const body = {
+      success: false,
+      failureSummary: { failedStepCount: 1, firstFailure, terminalStop, degradedSteps: [] },
+      mode: "daily_incremental",
+      runtimeBudget: { budgetMs: 210000 },
+      termination: { state: "stopped_on_blocking_failure" },
+      pipeline: { steps: "x".repeat(5000) },
+    };
+    const wrapped = withCronJobAudit(async (_req, res) => res.status(207).json(body),
+      { jobName: "run-rolling-forge-pipeline" });
+    const res = createMockRes();
+    await wrapped(createMockReq(), res);
+    const { status, details } = insertMock.mock.calls[0][0];
+    expect(status).toBe("failure");
+    expect(details.responseTruncated).toBe(true);
+    expect(details.response).toHaveLength(4000);
+    expect(details.responseOutcome).toEqual({
+      success: false, termination: body.termination,
+      failureSummary: {
+        firstFailure: { stageId: firstFailure.stageId, stepId: "nst", code: firstFailure.code,
+          statusCode: 207 },
+        terminalStop: { stageId: firstFailure.stageId, code: firstFailure.code },
+      },
+    });
+    expect(details.rowsUpserted).toBeNull();
+    expect(res.body).toEqual(body);
+
+    const skipped = withCronJobAudit(async (_req, response) => response.json({
+      ...body, success: true, skipped: true, reason: "no_production_model",
+    }), { jobName: "run-rolling-forge-pipeline" });
+    await skipped(createMockReq(), createMockRes());
+    expect(insertMock.mock.calls[1][0]).toMatchObject({ status: "skipped" });
+    expect(insertMock.mock.calls[1][0].details.responseOutcome).not.toHaveProperty("failureSummary");
+  });
+
+  it("keeps uppercase machine codes, withholds child text and ignores the same shape on other jobs", async () => {
+    const body = { success: false, failureSummary: {
+      firstFailure: { stageId: "upstream_skater_sources", stepId: "bad/path", code: "INVALID_PROJECTION_RAW_SHIFT_ROWS",
+        error: "upstream supplied Authorization: Bearer synthetic_token", statusCode: 999 },
+      terminalStop: { stageId: "upstream_skater_sources", code: "unsafe code" },
+    } };
+    const handler = async (_req: any, res: any) => res.status(207).json(body);
+    await withCronJobAudit(handler, { jobName: "run-rolling-forge-pipeline" })(createMockReq(), createMockRes());
+    await withCronJobAudit(handler, { jobName: "other-job" })(createMockReq(), createMockRes());
+    expect(insertMock.mock.calls[0][0].details.responseOutcome.failureSummary).toEqual({
+      firstFailure: { stageId: "upstream_skater_sources", code: "INVALID_PROJECTION_RAW_SHIFT_ROWS" }, terminalStop: null,
+    });
+    expect(insertMock.mock.calls[1][0].details.responseOutcome).not.toHaveProperty("failureSummary");
+  });
+
   it("bounds game failure witnesses and failed gates without losing their total counts", async () => {
     const errors = Array.from({ length: 5 }, (_, index) => ({
       gameId: 2026010056 + index, date: "2026-09-26", stage: "capture_raw_sources",

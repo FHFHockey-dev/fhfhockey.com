@@ -937,6 +937,30 @@ describe("projection shift strength ownership", () => {
     ).toThrow(error);
   });
 
+  it("leaves one bounded diagnostic on a clock mismatch before producing totals", () => {
+    const rows = bothTeams({
+      endTime: "0:29",
+      duration: "0:30",
+      firstName: "provider metadata not allowed in receipts",
+    });
+    expect(() => buildShiftStrengthUpserts(GAME_ID, finalPbp(), rows)).toThrow(
+      expect.objectContaining({
+        name: "ShiftClockDurationMismatchError",
+        code: "SHIFT_CLOCK_DURATION_MISMATCH",
+        witness: {
+          gameId: GAME_ID,
+          playerId: rows[0].playerId,
+          period: 1,
+          startSeconds: 0,
+          endSeconds: 29,
+          durationSeconds: 30,
+        },
+        message:
+          `Shift clock/duration mismatch for game ${GAME_ID}, player ${rows[0].playerId}; period=1 start_s=0 end_s=29 duration_s=30`,
+      }),
+    );
+  });
+
   it("accepts a zero-end sentinel only when duration lands on the played end", () => {
     const rows = buildShiftStrengthUpserts(GAME_ID, finalPbp(), [
       shift({
