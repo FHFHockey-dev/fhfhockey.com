@@ -3,9 +3,10 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { fallbackTeamLogo, getLocalTeamLogoPath } from "lib/images";
 import { canEligibilityOccupySlot, normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
 import type { ActiveSlotInstance } from "lib/rosterScheduleOptimizer/types";
-import type { GameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
+import type { GameForecastPoints, InjuredOutValue } from "lib/rosterScheduleOptimizer/planning";
 import type { GameForecast, PastLineup, PlanningAssignment, PlanningGame, PlanningPlayer, RosterEntry } from "lib/rosterScheduleOptimizer/planningTypes";
 import { providerStartNote } from "lib/rosterScheduleOptimizer/providerGoalieStarts";
+import { injuryDisplay, notCountedText } from "lib/rosterScheduleOptimizer/retention";
 import InfoTooltip from "./InfoTooltip";
 import ForecastPoints from "./ForecastPoints";
 import PlanFromSlider, { type PlanFrom } from "./PlanFromSlider";
@@ -20,6 +21,8 @@ export type Props = {
   roster: RosterEntry[];
   forecasts?: GameForecast[];
   pointsFor?: (playerId: string, gameId: string) => GameForecastPoints;
+  /** Display-only value of an Out player's game (null when he isn't Out); never part of `pointsFor` or the tiers. */
+  injuredFor?: (playerId: string, gameId: string) => InjuredOutValue | null;
   focusedDate?: string | null;
   onSelectPlayer?: (playerId: string) => void;
   /** Each new value replays the optimize animation: every day from `today` moves from the current lineup to the optimized one. */
@@ -53,6 +56,14 @@ function InjuryFlag({ player }: { player: PlanningPlayer }) {
   const text = `${player.injury.label}${player.injury.note ? ` · ${player.injury.note}` : ""}`;
   return <Image className={styles.injuryIcon} src="/pictures/injured.png" alt={text} title={text} width={12} height={12} />;
 }
+/** An Out player's game: his projection greyed and struck through, never counted (TJ, 2026-11-16). */
+function NotCountedPoints({ player, value }: { player: PlanningPlayer; value: InjuredOutValue }) {
+  const text = notCountedText(player, value);
+  return <span className={styles.forecastPoints}>
+    <span className={styles.points} data-excluded="" title={text} aria-label={text}>{value.points === null ? "—" : value.points.toFixed(1)}</span>
+  </span>;
+}
+
 
 /** Yahoo's goalie mark for this date, and whether it set that game's start chance. */
 function yahooStartMark(player: PlanningPlayer, date: string, forecast: GameForecast | undefined) {
@@ -69,7 +80,7 @@ function Logo({ abbr }: { abbr: string | null }) {
   return <Image className={styles.logo} src={getLocalTeamLogoPath(abbr)} alt="" width={18} height={18} onError={event => { event.currentTarget.src = fallbackTeamLogo; }} />;
 }
 
-export default function SlotWeekGrid({ dates, slots, assignments, games, players, roster, forecasts, pointsFor, focusedDate, onSelectPlayer, animationToken, today, benchCapacity = 0, pastLineups, planFrom }: Props) {
+export default function SlotWeekGrid({ dates, slots, assignments, games, players, roster, forecasts, pointsFor, injuredFor, focusedDate, onSelectPlayer, animationToken, today, benchCapacity = 0, pastLineups, planFrom }: Props) {
   const playerById = new Map(players.map(player => [player.id, player]));
   // An elapsed day shows the lineup the provider recorded, not the planner's assignments (which start today).
   const pastByDate = new Map((pastLineups ?? []).filter(day => today && day.date < today).map(day => [day.date, day]));
@@ -163,8 +174,9 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
   for (const slot of slots) { const last = groups.at(-1); if (last?.type === slot.type) last.slots.push(slot); else groups.push({ type: slot.type, slots: [slot] }); }
 
   function wrap(playerId: string, label: string, content: ReactNode, idle = false, bench?: "playing" | "idle") {
+    const injury = playerById.get(playerId);
     const chip = { "data-chip": playerId, ...(idle ? { "data-idle": "" } : {}), ...(bench ? { "data-bench": bench } : {}),
-      ...(playerById.get(playerId)?.injury ? { "data-injured": "" } : {}) };
+      ...(injury?.injury ? { "data-injured": "", "data-injury": injuryDisplay(injury)! } : {}) };
     return onSelectPlayer
       ? <button type="button" className={styles.cellButton} aria-label={label} onClick={() => onSelectPlayer(playerId)} {...chip}>{content}</button>
       : <div className={styles.cellBody} {...chip}>{content}</div>;
@@ -205,11 +217,13 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
       if (forecast.confirmedStart) mark = { glyph: "✓", text: "Confirmed starter" };
       else if ((forecast.startProbability ?? 0) >= 0.5) mark = { glyph: "~", text: `Likely starter (${Math.round((forecast.startProbability ?? 0) * 100)}%)` };
     }
-    const points = game && pointsFor ? pointsFor(player.id, game.id) : null;
+    // A provider-locked Out player holds his slot without value; his projection shows greyed, not counted.
+    const held = game && injuredFor ? injuredFor(player.id, game.id) : null;
+    const points = game && pointsFor && !held ? pointsFor(player.id, game.id) : null;
     const name = lastName(player.name);
     return (
       <td key={date} role="cell" {...columnAttrs(date)}>
-        {wrap(player.id, `${player.name}, ${slot.type}, ${date}`, <>
+        {wrap(player.id, `${player.name}, ${slot.type}, ${date}${held ? `, ${notCountedText(player, held)}` : ""}`, <>
           <span className={styles.nameLine}>
             <Logo abbr={player.teamAbbreviation} />
             <span className={styles.name}>{name}</span>
@@ -218,6 +232,7 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
             {mark && <span className={styles.start} data-out={mark.out ? "" : undefined} title={mark.text} aria-label={mark.text}>{mark.glyph}</span>}
           </span>
           {game ? <span className={styles.opp}>{game.home ? `vs${game.opponent}` : `@${game.opponent}`}</span> : <span className={styles.noGameTag}>No game</span>}
+          {held && <NotCountedPoints player={player} value={held} />}
           {points && <ForecastPoints points={points} goalie={player.playerClass === "goalie"}
             tier={typeof points.expected === "number" ? tier(player.playerClass, points.expected) : undefined} />}
         </>, !game)}
@@ -253,7 +268,7 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
             <td role="cell" className={styles.sliderCell}><PlanFromSlider days={dates} {...planFrom} /></td>
           </tr>}
           <tr role="row" className={`${styles.row} ${styles.headRow}`}>
-            <th scope="col" role="columnheader" className={styles.corner}><InfoTooltip label="About the lineup grid"><span className={styles.legend}>Numbers are each player&apos;s projected fantasy points for that game, using your league&apos;s scoring: <span className={styles.points} data-tier="high">high</span> <span className={styles.points} data-tier="mid">mid</span> <span className={styles.points} data-tier="low">low</span> for your lineup this week. Goalie expected FP includes participation probability; if-starts FP assumes a start. These are alternative views of the same game, not values to add. — means complete approved scoring inputs are unavailable. <b>✓</b> confirmed starter · <b>✗</b> not starting (Yahoo) · <b>~</b> likely starter · <span className={styles.dust} aria-hidden="true" /> game on the bench · grey: no game that night. Past days show the lineup Yahoo recorded and each player&apos;s <span className={styles.points} data-actual="">actual</span> points.</span></InfoTooltip></th>
+            <th scope="col" role="columnheader" className={styles.corner}><InfoTooltip label="About the lineup grid"><span className={styles.legend}>Numbers are each player&apos;s projected fantasy points for that game, using your league&apos;s scoring: <span className={styles.points} data-tier="high">high</span> <span className={styles.points} data-tier="mid">mid</span> <span className={styles.points} data-tier="low">low</span> for your lineup this week. Goalie expected FP includes participation probability; if-starts FP assumes a start. These are alternative views of the same game, not values to add. — means complete approved scoring inputs are unavailable. <b>✓</b> confirmed starter · <b>✗</b> not starting (Yahoo) · <b>~</b> likely starter · <span className={styles.dust} aria-hidden="true" /> game on the bench · grey: no game that night. Injured and listed out (IR, O): <span className={styles.points} data-excluded="">2.4</span> his projection, shown but not counted until he&apos;s cleared. Day-to-day players still count. Past days show the lineup Yahoo recorded and each player&apos;s <span className={styles.points} data-actual="">actual</span> points.</span></InfoTooltip></th>
             {dates.map(date => {
               const { weekday, label } = dateParts(date);
               return <th key={date} scope="col" role="columnheader" {...columnAttrs(date)}>
@@ -281,20 +296,25 @@ export default function SlotWeekGrid({ dates, slots, assignments, games, players
                 if (folded && index === benchRows - 1) return <td key={date} role="cell" {...columnAttrs(date)}>
                   <span className={styles.offChip} title={list.slice(index).map(item => item.player.name).join(", ")}>+{folded} off</span></td>;
                 const item = list[index];
+                const game = item?.playing ? gameFor(item.player, date) : undefined;
+                // An Out player's bench game is no lineup decision: no bench-game mark, his projection greyed and not counted.
+                const out = item && injuryDisplay(item.player) === "out";
+                const value = game && out && injuredFor ? injuredFor(item.player.id, game.id) : null;
                 return <td key={date} role="cell" {...columnAttrs(date)}>
-                  {item && wrap(item.player.id, `${item.player.name}, bench, ${item.playing ? "has a game" : "no game"}, ${date}`, <>
+                  {item && wrap(item.player.id, `${item.player.name}, bench, ${item.playing ? "has a game" : "no game"}, ${date}${out && item.playing ? `, ${notCountedText(item.player, value ?? { points: null, basis: "none" })}` : ""}`, <>
                     <span className={styles.nameLine}>
                       <Logo abbr={item.player.teamAbbreviation} />
                       <span className={styles.name}>{lastName(item.player.name)}</span>
                       <InjuryFlag player={item.player} />
-                      {item.playing && <span className={styles.dust} title="Game on the bench" aria-label="Bench game" />}
+                      {item.playing && !out && <span className={styles.dust} title="Game on the bench" aria-label="Bench game" />}
                       {item.playing && (() => {
-                        const game = gameFor(item.player, date), mark = yahooStartMark(item.player, date, game ? forecastAt.get(`${item.player.id}|${game.id}`) : undefined);
+                        const mark = yahooStartMark(item.player, date, game ? forecastAt.get(`${item.player.id}|${game.id}`) : undefined);
                         return mark && <span className={styles.start} data-out={mark.out ? "" : undefined} title={mark.text} aria-label={mark.text}>{mark.glyph}</span>;
                       })()}
                     </span>
-                    {item.playing ? (() => { const game = gameFor(item.player, date); return game ? <span className={styles.opp}>{game.home ? `vs${game.opponent}` : `@${game.opponent}`}</span> : null; })()
+                    {item.playing ? game ? <span className={styles.opp}>{game.home ? `vs${game.opponent}` : `@${game.opponent}`}</span> : null
                       : <span className={styles.noGameTag} data-quiet="">No game</span>}
+                    {value && <NotCountedPoints player={item.player} value={value} />}
                   </>, !item.playing, item.playing ? "playing" : "idle")}
                 </td>;
               })}

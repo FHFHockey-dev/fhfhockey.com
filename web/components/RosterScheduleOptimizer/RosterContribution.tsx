@@ -16,8 +16,10 @@ const labels: Record<ContributionDay["state"], string> = {
   no_game: "No scheduled game", unknown: "Opportunity or assignment unknown",
 };
 
-export default function RosterContribution({ name, contribution, nameOf }: {
+export default function RosterContribution({ name, contribution, nameOf, excluded }: {
   name: string; contribution?: PlayerContribution; nameOf: (id: string) => string;
+  /** An Out player's week (TJ, 2026-11-16): the Pts cell shows it greyed and struck through; it is never counted. */
+  excluded?: { points: number | null; text: string };
 }) {
   const row = contribution;
   const metrics = [
@@ -28,7 +30,8 @@ export default function RosterContribution({ name, contribution, nameOf }: {
   ];
   return <details className={styles.rosterContribution} aria-label={`${name} range contribution`}>
     <summary aria-label={`Review ${name} daily contribution evidence`}><span className={styles.contributionMetrics}>{metrics.map(([label, value]) =>
-      <span key={label} aria-label={`${label}: ${value}`}><span className={styles.contributionMetricLabel} title={label === "DUST/bench" ? "Evaluated bench games" : undefined}>{label === "DUST/bench" ? "DUST" : label}</span><strong>{compactValue(value)}</strong></span>
+      label === "Active points" && excluded ? <span key={label} aria-label={`${label}: ${excluded.text}`} title={excluded.text}><span className={styles.contributionMetricLabel}>{label}</span><strong data-excluded="">{excluded.points === null ? "—" : excluded.points.toFixed(1)}</strong></span>
+        : <span key={label} aria-label={`${label}: ${value}`}><span className={styles.contributionMetricLabel} title={label === "DUST/bench" ? "Evaluated bench games" : undefined}>{label === "DUST/bench" ? "DUST" : label}</span><strong>{compactValue(value)}</strong></span>
     )}</span></summary>
     <p>Remaining scheduled games while rostered, legal active assignments and evaluated bench games in the selected range. These do not confirm participation.</p>
     <p>Projected active points: {row?.projectedPoints == null ? "unavailable" : row.projectedPoints.toLocaleString("en-US", { maximumFractionDigits: 3 })}. Excludes banked results.</p>

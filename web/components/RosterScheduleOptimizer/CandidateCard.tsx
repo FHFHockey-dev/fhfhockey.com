@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { ownershipBrokeTie, type CandidateComparison, type CandidateDiagnostic, type CandidatePlan } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 import { categoryFormatter } from "lib/rosterScheduleOptimizer/categoryFormat";
-import { OWNERSHIP_TIE_NOTE, retentionCaution, retentionCautionText } from "lib/rosterScheduleOptimizer/retention";
+import { OWNERSHIP_TIE_NOTE, injuryDisplay, notCountedText, retentionCaution, retentionCautionText } from "lib/rosterScheduleOptimizer/retention";
+import type { InjuredOutWeek } from "lib/rosterScheduleOptimizer/planning";
 import type { PlanningPlayer, PlanningSnapshot, PlanStep } from "lib/rosterScheduleOptimizer/planningTypes";
 import type { CanonicalSchedule } from "./canonicalSchedule";
 import Image from "next/image";
@@ -44,7 +45,7 @@ function reasonFor(plan: CandidatePlan, categories: boolean, drops: number): str
 }
 
 export default function CandidateCard({ player, rank, plan, comparison, diagnostic, evaluationState = "completed", snapshot, categories, excluded,
-  select, add, selectPlan, canSelectPlan, selectPlanReasonId, manual, markAvailable, compare, calendar, upcomingGames, goalieBoost, players,
+  select, add, selectPlan, canSelectPlan, selectPlanReasonId, manual, markAvailable, compare, calendar, upcomingGames, goalieBoost, players, injuredWeek,
   nameOf = id => (players ?? snapshot?.players)?.find(row => row.id === id)?.name ?? id }: {
   player: PlanningPlayer; rank: number | null; calendar?: CanonicalSchedule; upcomingGames?: number | null; plan?: CandidatePlan; comparison?: CandidateComparison;
   snapshot: PlanningSnapshot | null; categories: boolean; excluded: boolean;
@@ -56,8 +57,14 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
   compare?: (id: string) => void; nameOf?: (id: string) => string; goalieBoost?: boolean;
   /** Player pool used to describe dropped players; falls back to the snapshot. */
   players?: PlanningPlayer[];
+  /** His week when the provider lists him Out: shown greyed, never counted. */
+  injuredWeek?: InjuredOutWeek | null;
 }) {
   const tieNote = plan && comparison ? ownershipBrokeTie(comparison.plans, plan) : false;
+  // TJ 2026-11-16: an Out free agent's week shows greyed and "not counted" (read from the display snapshot).
+  const injury = injuryDisplay(player);
+  const injuredText = injury === "out" ? injuredWeek ? notCountedText(player, injuredWeek, "week")
+    : `Injured · not counted while he's listed ${player.injury!.label || player.injury!.status}.` : null;
   const drops = plan?.steps.flatMap(step => step.dropPlayerId ? [step.dropPlayerId] : []) ?? [];
   const conditional = plan?.steps.some(step => step.conditional);
   const reserves = plan?.steps.filter(step => step.type === "reserve") ?? [];
@@ -81,7 +88,7 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
       title={value == null ? "Not enough projection data yet" : undefined}>{value == null ? "—" : signed(value)}</strong>
     <small>{label}</small>
   </span>;
-  return <article className={styles.card} data-ranked={rank !== null} data-gain={Boolean(gain)} data-injured={Boolean(player.injury)} data-rso-candidate-id={player.id} aria-label={`${player.name} compared acquisition`}>
+  return <article className={styles.card} data-ranked={rank !== null} data-gain={Boolean(gain)} data-injured={Boolean(player.injury)} data-injury={injury ?? undefined} data-rso-candidate-id={player.id} aria-label={`${player.name} compared acquisition`}>
     {rank !== null && <span className={styles.rank} aria-label={`Result ${rank}`}>{rank}</span>}
     <div className={styles.body}>
       <div className={styles.top}>
@@ -91,6 +98,7 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
             <small>{player.teamAbbreviation ?? "—"} · {positions(player)}</small>
             {player.injury && <Image className={styles.injury} src="/pictures/injured.png" width={12} height={12}
               alt={`${player.injury.label}${player.injury.note ? ` · ${player.injury.note}` : ""}`} title={`${player.injury.label}${player.injury.note ? ` · ${player.injury.note}` : ""}`} />}
+            {injury && <span className={styles.injuredChip} data-injury={injury} title={injuredText ?? `${player.injury!.label}: still counted. Check his status before adding.`}>{injury === "out" ? "not counted" : player.injury!.status}</span>}
             {badge && <span className={styles.badge}>{badge}</span>}
             {formChip && <span className={styles.form} data-form={formChip.toLowerCase()}>{formChip}</span>}
             {deployment?.line && <span className={styles.chip} data-stale={deployment.stale} title={linesAsOf} aria-label={`${deployment.line}. ${linesAsOf}`}>{deployment.line}</span>}
@@ -128,7 +136,9 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
       </p>}
       <div className={styles.footer}>
         <div className={styles.notes}>
-          {plan && <p className={styles.reason}>{reasonFor(plan, categories, drops.length)}</p>}
+          {injury === "out" ? <p className={styles.reason} data-injury="out">{injuredWeek?.points != null && <s className={styles.excludedPoints}>{injuredWeek.points.toFixed(1)}</s>}
+            {injuredText}</p>
+            : plan && <p className={styles.reason}>{reasonFor(plan, categories, drops.length)}</p>}
           {tieNote && <p className={styles.reason}>{OWNERSHIP_TIE_NOTE}</p>}
           {categories && plan?.categoryBreakdown && <p className={styles.reason} aria-label="Category changes for the whole swap">
             {plan.categoryBreakdown.map((row, index) => <span key={row.key}>{index ? " · " : ""}<span>{categoryChange(row)}</span></span>)}

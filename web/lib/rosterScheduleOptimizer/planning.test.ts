@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
-import { candidateAcquisitionSteps, candidateMetrics, candidateActivePoints, candidateHorizonPoints, evaluatePlan, planRoster, scheduleFits, swapCategoryBreakdown } from "./planning";
+import { candidateAcquisitionSteps, candidateMetrics, candidateActivePoints, candidateHorizonPoints, evaluatePlan, injuredOutPointsReader, injuredOutWeek, planRoster, scheduleFits, swapCategoryBreakdown } from "./planning";
 import { comparePlanSensitivity } from "../player-forecasts/planComparison";
 import { snapshotSchema } from "../in-season/workspaceSchema";
 import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
@@ -1798,6 +1798,82 @@ describe("injured players", () => {
     expect(result.activeGames).toBe(1);
     expect(result.projectedValue).toBe(1);
     expect(result.forecastInputs?.some(row => row.playerId === "b")).toBe(false);
+  });
+
+  // TJ 2026-11-16: an Out player's projection stays on screen (greyed, "not counted"), never reaches a total, lineup,
+  // pick or comparison, and the same value counts again once the provider clears him (no projection reload).
+  describe("Out values are shown but not counted", () => {
+    /** Two open C slots, so b's games add to the lineup without displacing a. */
+    function open(status: string | null) {
+      const data = snapshot();
+      data.rules.rosterSlots = { C: 2, BN: 1 };
+      data.players = data.players.map(row => row.id === "b" ? { ...row, injury: status ? { status, label: status, note: null } : null } : row);
+      return data;
+    }
+    const display = (data: PlanningSnapshot) => resolvePlanningContributions(data, { consumer: "rso" });
+    const bGames = (data: PlanningSnapshot) => data.games.filter(game => game.teamAbbreviation === "B").map(game => game.id);
+
+    it.each(["O", "IR", "IR-LT", "IR-NR", "ir"])("%s: shown from the same forecasts, excluded from totals and lineups, counted once cleared", status => {
+      const out = open(status);
+      const read = injuredOutPointsReader(display(out));
+      const shown = bGames(out).map(id => read("b", id));
+      expect(shown).toEqual([{ points: 2, basis: "line" }, { points: 2, basis: "line" }]);
+      expect(read("a", "A0")).toBeNull();
+      expect(injuredOutWeek(display(out), "b")).toEqual({ games: 2, points: 4, basis: "line" });
+      const excluded = evaluatePlan(out, intent, "outcome", [], false);
+      expect(excluded.assignments.some(row => row.playerId === "b")).toBe(false);
+      expect(excluded.forecastInputs?.some(row => row.playerId === "b")).toBe(false);
+      expect([excluded.activeGames, excluded.projectedValue]).toEqual([2, 2]);
+      expect(planRoster(out, intent, { maxSteps: 0 }).selected.projectedValue).toBe(2);
+      // Same forecasts, status cleared: the shown value is exactly what now counts.
+      const cleared = { ...out, players: out.players.map(row => row.id === "b" ? { ...row, injury: null } : row) };
+      expect(cleared.forecasts).toBe(out.forecasts);
+      const counted = evaluatePlan(cleared, intent, "outcome", [], false);
+      expect(counted.assignments.filter(row => row.playerId === "b")).toHaveLength(2);
+      expect([counted.activeGames, counted.projectedValue]).toEqual([4, 2 + shown.reduce((sum, value) => sum + value!.points!, 0)]);
+      expect(injuredOutPointsReader(display(cleared))("b", "B0")).toBeNull();
+      expect(injuredOutWeek(display(cleared), "b")).toBeNull();
+    });
+
+    it("keeps a day-to-day player counted and off the not-counted reader", () => {
+      const dtd = open("DTD");
+      expect(injuredOutPointsReader(display(dtd))("b", "B0")).toBeNull();
+      expect(evaluatePlan(dtd, intent, "outcome", [], false).projectedValue).toBe(6);
+    });
+
+    it("shows a reserve 'if he dresses' line, which stays uncounted after the status clears (participation unknown)", () => {
+      const out = open("IR");
+      out.forecasts = out.forecasts.map(row => row.playerId === "b" ? { ...row, stats: { pts: null }, conditionalStats: { pts: 1.5 }, appearanceProbability: null,
+        allowedUses: { assignment: false, totals: false, comparison: false, conditionalTieBreak: false } } : row);
+      expect(bGames(out).map(id => injuredOutPointsReader(display(out))("b", id))).toEqual([{ points: 1.5, basis: "if_dresses" }, { points: 1.5, basis: "if_dresses" }]);
+      expect(evaluatePlan(out, intent, "outcome", [], false).projectedValue).toBe(2);
+      // Cleared, he is a lineup option again, but the bridge withholds an unconfirmed reserve line from every planning
+      // use (decisions 3, 47): his games are unknown, never his "if he dresses" value.
+      const cleared = { ...out, players: out.players.map(row => row.id === "b" ? { ...row, injury: null } : row) };
+      const evaluation = evaluatePlan(cleared, intent, "outcome", [], false);
+      expect(evaluation.assignments.filter(row => row.playerId === "b")).toHaveLength(2);
+      expect(evaluation.projectedValue).toBeNull();
+      expect(evaluation.knownComparison).toMatchObject({ knownValue: 2, unknownPlayerIds: ["b"] });
+    });
+
+    it("tells a confirmed-out reserve line (its 'if he dresses' value) apart from no projection at all", () => {
+      const out = open("O");
+      out.forecasts = out.forecasts.flatMap(row => row.playerId !== "b" ? [row] : row.gameId === "B0"
+        ? [{ ...row, stats: { pts: 0 }, conditionalStats: { pts: 1.5 }, appearanceProbability: 0 }] : []);
+      const read = injuredOutPointsReader(display(out));
+      expect(read("b", "B0")).toEqual({ points: 1.5, basis: "if_dresses" });
+      expect(read("b", "B1")).toEqual({ points: null, basis: "none" });
+      expect(injuredOutWeek(display(out), "b")).toEqual({ games: 2, points: null, basis: "mixed" });
+    });
+
+    it("never ranks an Out free agent for Best Fit by his projection; the same value ranks him once cleared", () => {
+      const data = snapshot();
+      data.players = data.players.map(row => row.id === "c" ? { ...row, injury: { status: "O", label: "Out", note: null } } : row);
+      expect(candidateHorizonPoints(data).get("c")).toBeNull();
+      expect(candidateActivePoints(data, intent).get("c")).toBeNull();
+      const cleared = { ...data, players: data.players.map(row => row.id === "c" ? { ...row, injury: null } : row) };
+      expect(candidateHorizonPoints(cleared).get("c")).toBe(4);
+    });
   });
 });
 

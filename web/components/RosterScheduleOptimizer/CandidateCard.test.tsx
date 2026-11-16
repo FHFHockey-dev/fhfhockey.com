@@ -180,3 +180,22 @@ describe("complete acquisition card presentation", () => {
     expect(screen.getByText("SHOTS incomplete")).toBeTruthy();
   });
 });
+
+describe("injured free agents (TJ, 2026-11-16)", () => {
+  const zero: CandidatePlan = { ...plan, netAGP: 0, netPoints: 0 };
+  it("shows an Out free agent's week greyed and not counted, in place of the gain line", () => {
+    const out = { ...player, injury: { status: "O", label: "Out", note: null } };
+    const { container } = render(<CandidateCard {...props} plan={zero} player={out} injuredWeek={{ games: 4, points: 13.2, basis: "line" }} />);
+    expect(container.querySelector("article")!.getAttribute("data-injury")).toBe("out");
+    expect(screen.getByText("not counted")).toBeTruthy();
+    expect(screen.getByText("13.2").tagName).toBe("S");
+    expect(screen.getByText(/Injured · not counted while he's listed Out: 13\.2 projected points this week\. It counts again once he's cleared\./)).toBeTruthy();
+    expect(screen.queryByText("No gain this week")).toBeNull();
+  });
+  it("keeps a day-to-day free agent's counted gain, with a caution tag", () => {
+    render(<CandidateCard {...props} player={{ ...player, injury: { status: "DTD", label: "Day-to-Day", note: null } }} />);
+    expect(screen.getByText("DTD").getAttribute("title")).toBe("Day-to-Day: still counted. Check his status before adding.");
+    expect(screen.getByText("+1 active game, +4 projected points")).toBeTruthy();
+    expect(screen.queryByText("not counted")).toBeNull();
+  });
+});
