@@ -1054,3 +1054,148 @@ describe("game prediction workflow", () => {
   });
 });
 
+
+describe("explicit H0 feature-only capture", () => {
+  const gameId = 2026020334;
+  // Canonical hockey day is still Nov 17 although UTC has rolled over.
+  const now = "2026-11-18T00:05:00.000Z";
+  const game = { id: gameId, date: "2026-11-17", startTime: "2026-11-18T00:30:00.000Z",
+    seasonId: 20262027, homeTeamId: 10, awayTeamId: 20, type: 2 };
+  type Insert = Record<string, unknown>;
+  const fetchInputs = vi.fn();
+
+  async function loadCapture() {
+    vi.resetModules();
+    vi.doMock("./featureBuilder", async importOriginal => ({
+      ...(await importOriginal<typeof import("./featureBuilder")>()),
+      fetchGamePredictionFeatureInputs: fetchInputs,
+      buildGamePredictionFeatureSnapshotPayload: () => ({ gameId, featureSetVersion: GAME_PREDICTION_FEATURE_SET_VERSION }),
+      buildFeatureSnapshotInsert: ({ modelName, modelVersion, predictionCutoffAt }: { modelName: string; modelVersion: string; predictionCutoffAt: string }) => ({
+        game_id: gameId, snapshot_date: game.date, prediction_scope: "pregame", prediction_cutoff_at: predictionCutoffAt,
+        model_name: modelName, model_version: modelVersion, feature_set_version: GAME_PREDICTION_FEATURE_SET_VERSION,
+        home_team_id: game.homeTeamId, away_team_id: game.awayTeamId, metadata: {},
+      }),
+    }));
+    try {
+      return (await import("./workflow")).captureLiveH0FeaturesWithoutPublishing;
+    } finally {
+      vi.doUnmock("./featureBuilder");
+    }
+  }
+
+  function fixture({
+    production = false, concurrent = false, createdAt = now, selectedGame = game,
+  } = {}) {
+    let row: Insert | null = null;
+    const insert = vi.fn((inserted: Insert) => {
+      row = { ...inserted, created_at: createdAt };
+      return { abortSignal: async () => ({
+        error: concurrent ? { code: "23505", message: "concurrent exact-ID insert" } : null,
+      }) };
+    });
+    const from = vi.fn((table: string) => {
+      const builder = {
+        select: () => builder,
+        eq: () => builder,
+        limit: async () => ({ data: production ? [{ status: "production" }] : [], error: null }),
+        maybeSingle: async () => ({ data: table === "games" ? selectedGame : row, error: null }),
+        insert,
+      };
+      if (!["game_prediction_model_versions", "games", "game_prediction_feature_snapshots"].includes(table)) {
+        throw new Error(`Unexpected capture table: ${table}`);
+      }
+      return builder;
+    });
+    return { client: { from } as never, insert, from };
+  }
+
+  afterEach(() => {
+    vi.useRealTimers();
+    fetchInputs.mockReset();
+  });
+
+  it("keeps one immutable v7 feature snapshot, with no serving writes, and reuses it across calls", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(now));
+    fetchInputs.mockResolvedValue({ game });
+    const capture = await loadCapture();
+    const { client, from, insert } = fixture();
+    const first = await capture({ client, gameId });
+    const second = await capture({ client, gameId });
+    expect(first).toMatchObject({ status: "captured_not_published", duplicate: false });
+    expect(second).toEqual({ ...first, duplicate: true });
+    expect(fetchInputs).toHaveBeenCalledExactlyOnceWith(client, gameId, {
+      sourceAsOfDate: "2026-11-17", predictionCutoffAt: now, admitTargetGameLineup: true,
+    });
+    expect(insert).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      feature_set_version: "game_features_v7_confirmed_lines_goalies",
+      model_version: expect.stringMatching(/_h0_shadow_v1$/),
+      metadata: expect.objectContaining({ publishable: false, source_read_finished_at: now }),
+    }));
+    expect(new Set(from.mock.calls.map(([table]) => table))).toEqual(new Set([
+      "game_prediction_model_versions", "games", "game_prediction_feature_snapshots",
+    ]));
+  });
+
+  it("reads back and verifies the row if a concurrent request won the same primary key", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(now));
+    fetchInputs.mockResolvedValue({ game });
+    const capture = await loadCapture();
+    const { client } = fixture({ concurrent: true });
+    expect(await capture({ client, gameId })).toMatchObject({ status: "captured_not_published", duplicate: true });
+  });
+
+  it("refuses a late persisted row instead of claiming successful pregame capture", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(now));
+    fetchInputs.mockResolvedValue({ game });
+    const capture = await loadCapture();
+    const { client } = fixture({ createdAt: game.startTime });
+    expect(await capture({ client, gameId })).toMatchObject({ status: "refused", reason: "snapshot_identity_or_timing_unverified" });
+  });
+
+  it("writes nothing if source reads cross puck drop", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(now));
+    fetchInputs.mockImplementation(async () => {
+      vi.setSystemTime(new Date(game.startTime));
+      return { game };
+    });
+    const capture = await loadCapture();
+    const { client, insert } = fixture();
+    expect(await capture({ client, gameId })).toMatchObject({ status: "refused", reason: "not_live_h0" });
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("requires a fifteen-minute buffer both before source acquisition and before insert", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-18T00:15:00.000Z"));
+    const capture = await loadCapture();
+    const lateAtDispatch = fixture();
+    expect(await capture({ client: lateAtDispatch.client, gameId })).toMatchObject({ status: "refused", reason: "not_live_h0" });
+    expect(fetchInputs).not.toHaveBeenCalled();
+
+    vi.setSystemTime(new Date(now));
+    fetchInputs.mockImplementation(async () => {
+      vi.setSystemTime(new Date("2026-11-18T00:16:00.000Z"));
+      return { game };
+    });
+    const overrun = fixture();
+    expect(await capture({ client: overrun.client, gameId })).toMatchObject({ status: "refused", reason: "not_live_h0" });
+    expect(overrun.insert).not.toHaveBeenCalled();
+  });
+
+  it("refuses another hockey day and existing production without fetching inputs", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(now));
+    const capture = await loadCapture();
+    const wrongDay = fixture({ selectedGame: { ...game, date: "2026-11-18" } });
+    expect(await capture({ client: wrongDay.client, gameId })).toMatchObject({ status: "refused", reason: "not_live_h0" });
+    const production = fixture({ production: true });
+    expect(await capture({ client: production.client, gameId })).toMatchObject({ status: "refused", reason: "production_model_present" });
+    expect(fetchInputs).not.toHaveBeenCalled();
+    expect(wrongDay.insert).not.toHaveBeenCalled();
+    expect(production.insert).not.toHaveBeenCalled();
+  });
+});

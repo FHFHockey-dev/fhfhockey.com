@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { generatePregamePredictionsForWindowMock, auditInsertMock } = vi.hoisted(() => ({
+const { generatePregamePredictionsForWindowMock, captureLiveH0FeaturesMock, auditInsertMock } = vi.hoisted(() => ({
   generatePregamePredictionsForWindowMock: vi.fn(),
+  captureLiveH0FeaturesMock: vi.fn(),
   auditInsertMock: vi.fn(),
 }));
 
@@ -16,6 +17,7 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
 vi.mock("lib/game-predictions/workflow", async (importOriginal) => ({
   ...(await importOriginal<typeof import("lib/game-predictions/workflow")>()),
   generatePregamePredictionsForWindow: generatePregamePredictionsForWindowMock,
+  captureLiveH0FeaturesWithoutPublishing: captureLiveH0FeaturesMock,
 }));
 
 vi.mock("lib/supabase/server", () => ({
@@ -258,5 +260,59 @@ describe("/api/v1/game-predictions/forecast", () => {
       failedGames: 0,
     });
     expect(audit).toMatchObject({ status: "success" });
+  });
+});
+
+describe("explicit single-game H0 feature-only canary", () => {
+  const gameId = 2026020334;
+  const query = { captureGameId: String(gameId), fromOffsetDays: "0", toOffsetDays: "0" };
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it("reports captured, not published, and never calls normal generation", async () => {
+    captureLiveH0FeaturesMock.mockResolvedValue({
+      status: "captured_not_published", gameId, featureSnapshotId: "feature-id", duplicate: false,
+    });
+    const { req, res, supabase } = createMockApiContext({ query });
+    await handler(req as never, res as never);
+    expect(captureLiveH0FeaturesMock).toHaveBeenCalledWith({ client: supabase, gameId });
+    expect(generatePregamePredictionsForWindowMock).not.toHaveBeenCalled();
+    expect(res.body).toMatchObject({
+      status: "captured_not_published", outcome: "skipped", skipped: true, persistedPredictions: 0,
+      result: { featureSnapshotId: "feature-id" },
+    });
+  });
+
+  it("returns a refusal without falling back to generation", async () => {
+    captureLiveH0FeaturesMock.mockResolvedValue({ status: "refused", gameId, reason: "production_model_present" });
+    const { req, res } = createMockApiContext({ query });
+    await handler(req as never, res as never);
+    expect(res.statusCode).toBe(409);
+    expect(generatePregamePredictionsForWindowMock).not.toHaveBeenCalled();
+  });
+
+  const rejectedOverrides: Record<string, string>[] = [
+    { fromOffsetDays: "1" },
+    { sourceAsOfDate: "2026-11-16" },
+    { predictionCutoffAt: "" },
+    { fromDate: "2026-11-16" },
+    { toDate: "2026-11-16" },
+    { dryRun: "true" },
+    { allowBaselineBootstrap: "true" },
+    { captureGameId: "0" },
+  ];
+  it.each(rejectedOverrides)("rejects unexpected capture configuration %j", async overrides => {
+    const { req, res } = createMockApiContext({ query: { ...query, ...overrides } });
+    await handler(req as never, res as never);
+    expect(res.statusCode).toBe(400);
+    expect(captureLiveH0FeaturesMock).not.toHaveBeenCalled();
+    expect(generatePregamePredictionsForWindowMock).not.toHaveBeenCalled();
+  });
+
+  it("does not let scheduled GETs enable the canary", async () => {
+    const { req, res } = createMockApiContext({ method: "GET", query });
+    await handler(req as never, res as never);
+    expect(res.statusCode).toBe(400);
+    expect(captureLiveH0FeaturesMock).not.toHaveBeenCalled();
   });
 });

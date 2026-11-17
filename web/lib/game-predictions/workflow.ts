@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { BinaryLogisticModel } from "lib/xg/binaryLogistic";
@@ -919,6 +920,140 @@ export function sourceAsOfDateForPredictionCutoff(
   predictionCutoffAt: string,
 ): string {
   return predictionCutoffAt.slice(0, 10);
+}
+
+const H0_CAPTURE_FEATURE_SET = "game_features_v7_confirmed_lines_goalies";
+const H0_CAPTURE_PROTOCOL = "game-prediction-h0-feature-only-v1";
+const H0_CAPTURE_MODEL_VERSION = `${BASELINE_MODEL_VERSION}_h0_shadow_v1`;
+// Much larger than an attended request's maximum lifetime. This margin and the
+// pre-puck readback qualify evidence; they are not a transactional cutoff.
+const H0_CAPTURE_MIN_PREGAME_MARGIN_MS = 15 * 60_000;
+const H0_CAPTURE_WRITE_TIMEOUT_MS = 5_000;
+const h0HockeyDayFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit",
+});
+function h0HockeyDay(ms: number): string {
+  const parts = h0HockeyDayFormatter.formatToParts(ms);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find(item => item.type === type)?.value;
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+type H0CaptureRefusal =
+  | "not_live_h0"
+  | "production_model_present"
+  | "snapshot_identity_or_timing_unverified";
+
+export type H0FeatureCaptureResult =
+  | { status: "captured_not_published"; gameId: number; featureSnapshotId: string; duplicate: boolean }
+  | { status: "refused"; gameId: number; reason: H0CaptureRefusal };
+
+function h0CaptureSnapshotId(gameId: number): string {
+  // One immutable insert per game/protocol/version, including concurrent requests.
+  // The ID is independent of request time; the actual observed cutoff is retained separately.
+  const hex = createHash("sha256")
+    .update(JSON.stringify([H0_CAPTURE_PROTOCOL, H0_CAPTURE_FEATURE_SET, H0_CAPTURE_MODEL_VERSION, gameId]))
+    .digest("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-8${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+
+/** Explicit operator canary: feature-only, without registry/forecast/history/output writes. */
+export async function captureLiveH0FeaturesWithoutPublishing(args: {
+  client: SupabaseClient<Database>;
+  gameId: number;
+}): Promise<H0FeatureCaptureResult> {
+  const { client, gameId } = args;
+  const refuse = (reason: H0CaptureRefusal): H0FeatureCaptureResult =>
+    ({ status: "refused", gameId, reason });
+  const requestDay = h0HockeyDay(Date.now());
+  if (!Number.isSafeInteger(gameId) || gameId <= 0 || GAME_PREDICTION_FEATURE_SET_VERSION !== H0_CAPTURE_FEATURE_SET) {
+    return refuse("not_live_h0");
+  }
+
+  const production = await client.from("game_prediction_model_versions")
+    .select("status").eq("status", "production").limit(1);
+  if (production.error) throw production.error;
+  if (!Array.isArray(production.data)) throw new Error("Production game model registry read is unverified.");
+  if (production.data.length) return refuse("production_model_present");
+
+  const selectedGame = await client.from("games")
+    .select("id,date,startTime,seasonId,homeTeamId,awayTeamId,type").eq("id", gameId).maybeSingle();
+  if (selectedGame.error) throw selectedGame.error;
+  const game = selectedGame.data;
+  if (!game || game.id !== gameId || game.date !== requestDay || (game.type !== 2 && game.type !== 3)) {
+    return refuse("not_live_h0");
+  }
+  const startMs = parseDateTimeWithGameDate(game.startTime, game.date);
+  if (startMs == null || Date.now() + H0_CAPTURE_MIN_PREGAME_MARGIN_MS >= startMs) return refuse("not_live_h0");
+
+  const snapshotId = h0CaptureSnapshotId(gameId);
+  const readSnapshot = () => client.from("game_prediction_feature_snapshots")
+    .select("feature_snapshot_id,game_id,snapshot_date,prediction_scope,prediction_cutoff_at,model_name,model_version,feature_set_version,home_team_id,away_team_id,created_at,metadata")
+    .eq("feature_snapshot_id", snapshotId).maybeSingle();
+  type SnapshotReceipt = NonNullable<Awaited<ReturnType<typeof readSnapshot>>["data"]>;
+  const verify = (row: SnapshotReceipt, duplicate: boolean): H0FeatureCaptureResult => {
+    const metadata = asRecord(row.metadata);
+    const cutoff = Date.parse(row.prediction_cutoff_at);
+    const created = Date.parse(row.created_at);
+    const sourceFinished = typeof metadata.source_read_finished_at === "string" ? Date.parse(metadata.source_read_finished_at) : NaN;
+    return row.feature_snapshot_id === snapshotId && row.game_id === gameId && row.snapshot_date === requestDay
+      && row.prediction_scope === "pregame" && row.home_team_id === game.homeTeamId && row.away_team_id === game.awayTeamId
+      && row.model_name === BASELINE_MODEL_NAME && row.model_version === H0_CAPTURE_MODEL_VERSION
+      && row.feature_set_version === H0_CAPTURE_FEATURE_SET && metadata.capture_protocol === H0_CAPTURE_PROTOCOL
+      && metadata.publishable === false
+      && Number.isFinite(cutoff) && Number.isFinite(created) && Number.isFinite(sourceFinished)
+      && cutoff <= sourceFinished && sourceFinished <= created && created < startMs && Date.now() < startMs
+      && h0HockeyDay(cutoff) === requestDay && h0HockeyDay(created) === requestDay
+      ? { status: "captured_not_published", gameId, featureSnapshotId: snapshotId, duplicate }
+      : refuse("snapshot_identity_or_timing_unverified");
+  };
+  const existing = await readSnapshot();
+  if (existing.error) throw existing.error;
+  if (existing.data) return verify(existing.data, true);
+
+  const cutoffMs = Date.now();
+  const cutoffAt = new Date(cutoffMs).toISOString();
+  if (h0HockeyDay(cutoffMs) !== requestDay) return refuse("not_live_h0");
+  const inputs = await fetchGamePredictionFeatureInputs(client, gameId, {
+    sourceAsOfDate: requestDay,
+    predictionCutoffAt: cutoffAt,
+    admitTargetGameLineup: true,
+  });
+  if (inputs.game.id !== gameId || inputs.game.date !== requestDay || inputs.game.startTime !== game.startTime
+    || inputs.game.type !== game.type || inputs.game.seasonId !== game.seasonId
+    || inputs.game.homeTeamId !== game.homeTeamId || inputs.game.awayTeamId !== game.awayTeamId) {
+    return refuse("not_live_h0");
+  }
+  const payload = buildGamePredictionFeatureSnapshotPayload(inputs);
+  if (payload.featureSetVersion !== H0_CAPTURE_FEATURE_SET) return refuse("snapshot_identity_or_timing_unverified");
+  const row = buildFeatureSnapshotInsert({
+    payload, modelName: BASELINE_MODEL_NAME, modelVersion: H0_CAPTURE_MODEL_VERSION, predictionCutoffAt: cutoffAt,
+  });
+  const captureReadFinishedMs = Date.now();
+  if (captureReadFinishedMs + H0_CAPTURE_MIN_PREGAME_MARGIN_MS >= startMs
+    || h0HockeyDay(captureReadFinishedMs) !== requestDay) return refuse("not_live_h0");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), H0_CAPTURE_WRITE_TIMEOUT_MS);
+  const inserted = await (async () => {
+    try {
+      return await client.from("game_prediction_feature_snapshots")
+        .insert({
+          ...row,
+          feature_snapshot_id: snapshotId,
+          metadata: { ...asRecord(row.metadata), capture_protocol: H0_CAPTURE_PROTOCOL, publishable: false,
+            source_read_finished_at: new Date(captureReadFinishedMs).toISOString() } as Json,
+        })
+        .abortSignal(controller.signal);
+    } finally {
+      clearTimeout(timeout);
+    }
+  })();
+  if (inserted.error && inserted.error.code !== "23505") throw inserted.error;
+
+  // Whether inserted here or won by a concurrent request, require the exact persisted pregame row.
+  const persisted = await readSnapshot();
+  if (persisted.error) throw persisted.error;
+  return persisted.data ? verify(persisted.data, Boolean(inserted.error)) : refuse("snapshot_identity_or_timing_unverified");
 }
 
 export async function generatePregamePredictionForGame(args: {
