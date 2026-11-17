@@ -58,10 +58,15 @@ async function rows(query: PromiseLike<{ data: any; error: any }>): Promise<any[
 }
 const one = async (query: PromiseLike<{ data: any; error: any }>) => (await rows(query))[0];
 
-export function supabaseCaptureRpc(client: Client): CaptureRpc {
+export function supabaseCaptureRpc(client: Client, timeoutMs?: number): CaptureRpc {
+  const query = (name: string, params: Record<string, unknown>, signal?: AbortSignal) => {
+    const request = client.rpc(name, params);
+    const deadline = signal ?? (timeoutMs === undefined ? undefined : AbortSignal.timeout(timeoutMs));
+    return deadline ? request.abortSignal(deadline) : request;
+  };
   return {
     async claim(a) {
-      const row = await one(client.rpc("forge_pregame_capture_claim_v1", {
+      const row = await one(query("forge_pregame_capture_claim_v1", {
         p_game_id: a.gameId, p_policy_id: a.policyId, p_slate_date: a.slateDate, p_home_team_id: a.homeTeamId,
         p_away_team_id: a.awayTeamId, p_calendar_revision: a.calendarRevision, p_scheduled_start: a.scheduledStart,
         p_required_ms: a.requiredMs, p_code_version: a.codeVersion,
@@ -69,17 +74,17 @@ export function supabaseCaptureRpc(client: Client): CaptureRpc {
       return { outcome: row.outcome, claimId: row.claim_id, ackDeadline: row.ack_deadline, dbNow: row.db_now, inputCutoff: row.input_cutoff };
     },
     async save(claimId, packetBase64, rawSha256, canonicalSha256, signal) {
-      const row = await one(client.rpc("forge_pregame_capture_save_v1", {
+      const row = await one(query("forge_pregame_capture_save_v1", {
         p_claim_id: claimId, p_packet_base64: packetBase64, p_raw_sha256: rawSha256, p_canonical_sha256: canonicalSha256,
-      }).abortSignal(signal));
+      }, signal));
       return { rawSha256: row.raw_sha256, byteLength: row.byte_length, dbNow: row.db_now };
     },
     async settle(claimId) {
-      const row = await one(client.rpc("forge_pregame_capture_settle_v1", { p_claim_id: claimId }));
+      const row = await one(query("forge_pregame_capture_settle_v1", { p_claim_id: claimId }));
       return { state: row.state, dbNow: row.db_now };
     },
     async read(claimId) {
-      const row = await one(client.rpc("forge_pregame_capture_read_v1", { p_claim_id: claimId }));
+      const row = await one(query("forge_pregame_capture_read_v1", { p_claim_id: claimId }));
       if (!row) return null;
       return {
         claimId: row.claim_id, gameId: Number(row.game_id), policyId: row.policy_id, slateDate: row.slate_date,
@@ -94,24 +99,24 @@ export function supabaseCaptureRpc(client: Client): CaptureRpc {
       };
     },
     async lookup(gameId, policyId) {
-      const row = await one(client.rpc("forge_pregame_capture_lookup_v1", { p_game_id: gameId, p_policy_id: policyId }));
+      const row = await one(query("forge_pregame_capture_lookup_v1", { p_game_id: gameId, p_policy_id: policyId }));
       return { claimId: row?.claim_id ?? null, artifactPresent: Boolean(row?.artifact_present), saveFenced: Boolean(row?.save_fenced),
         witnessVerdict: row?.witness_verdict ?? null, outcome: row?.outcome ?? null, dbNow: row?.db_now };
     },
     async recordWitness(w) {
-      return one(client.rpc("forge_pregame_capture_record_witness_v1", {
+      return one(query("forge_pregame_capture_record_witness_v1", {
         p_claim_id: w.claimId, p_statement_text: w.statementText, p_tsa_token_base64: w.tsaTokenBase64, p_tsa_gen_time: w.tsaGenTime,
         p_tsa_accuracy_us: w.tsaAccuracyMicros.toString(), p_tsa_resolution_us: w.tsaResolutionMicros.toString(), p_tsa_accuracy_source: w.tsaAccuracySource, p_tsa_signer_sha256: w.tsaSignerSha256,
         p_ack_upper: w.ackUpper, p_db_read_at: w.dbReadAt, p_final_read_at: w.finalReadAt, p_verdict: w.verdict, p_verdict_reason: w.verdictReason,
       }));
     },
     async recordOutcome(gameId, policyId, claimId, outcome, metadata) {
-      return one(client.rpc("forge_pregame_capture_record_outcome_v1", {
+      return one(query("forge_pregame_capture_record_outcome_v1", {
         p_game_id: gameId, p_policy_id: policyId, p_claim_id: claimId, p_outcome: outcome, p_metadata: metadata,
       }));
     },
     async sweep(graceSeconds, limit) {
-      const result = await rows(client.rpc("forge_pregame_capture_sweep_v1", { p_grace_seconds: graceSeconds, p_limit: limit }));
+      const result = await rows(query("forge_pregame_capture_sweep_v1", { p_grace_seconds: graceSeconds, p_limit: limit }));
       return result.map((row) => ({ claimId: row.claim_id, gameId: Number(row.game_id), policyId: row.policy_id, outcome: row.outcome }));
     },
   };

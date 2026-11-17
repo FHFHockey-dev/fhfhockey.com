@@ -119,7 +119,11 @@ describe("v6 route handler gates", () => {
 describe("route module", () => {
   it("runs as its own function: maxDuration 250 in the route and in vercel.json, unlike the shared 240 (M1)", () => {
     const vercel = JSON.parse(readFileSync(resolve(__dirname, "../../../vercel.json"), "utf8"));
-    expect(vercel.functions).toEqual({ "pages/api/**/*.ts": { maxDuration: 240 }, "pages/api/v1/db/blsh-native-capture.ts": { maxDuration: 250 } });
+    expect(vercel.functions).toEqual({
+      "pages/api/**/*.ts": { maxDuration: 240 },
+      "pages/api/v1/db/blsh-native-capture.ts": { maxDuration: 250 },
+      "pages/api/v1/db/forge-pregame-capture.ts": { maxDuration: 420 },
+    });
   });
 
   it("is POST-only behind adminOnly", async () => {
