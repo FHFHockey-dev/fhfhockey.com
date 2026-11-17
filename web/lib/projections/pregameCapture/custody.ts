@@ -1,7 +1,7 @@
 import type { ProjectionInputRead } from "../inputCapture";
 import { encodePacket, PACKET_VERSION, type CaptureBinding, type PregamePacket } from "./packet";
 import { DEFINITIVE_SAVE_REFUSALS, type CaptureRpc, type ClaimOutcome, type SettleRow, type TerminalOutcome } from "./rpc";
-import { verifyAndWitness, type TsaClient, type VerifyResult } from "./verifier";
+import { pregameScheduleProblem, verifyAndWitness, type TsaClient, type VerifyResult } from "./verifier";
 import type { TsaTrust } from "./rfc3161";
 import { formatMicros, latestInstant, MICROS_PER_MS, parseInstantMicros } from "./time";
 
@@ -14,6 +14,7 @@ import { formatMicros, latestInstant, MICROS_PER_MS, parseInstantMicros } from "
 export interface PinnedGame {
   gameId: number; slateDate: string; homeTeamId: number; awayTeamId: number; homeAbbrev: string; awayAbbrev: string;
   scheduledStart: string; calendarRevision: string;
+  teamGameStatuses?: string[];
 }
 export interface Collected {
   reads: ProjectionInputRead[];
@@ -45,7 +46,11 @@ export interface CaptureDeps {
   nonce?(): bigint;
   budget: CaptureBudget;
 }
-export interface CaptureRequest { gameId: number; slateDate: string; policyId: string; codeVersion: string; scheduledLaunchAt?: string }
+export interface CaptureRequest {
+  gameId: number; slateDate: string; policyId: string; codeVersion: string; scheduledLaunchAt?: string;
+  /** Already-admitted dispatches must pin the same start and still be pregame. */
+  expectedScheduledStart?: string;
+}
 export interface CaptureReport {
   /** null: nothing recorded by this attempt (duplicate, retryable pre-claim failure, or an ambiguous claim the sweeper closes). */
   outcome: TerminalOutcome | null;
@@ -97,6 +102,10 @@ export async function runPregameCapture(deps: CaptureDeps, request: CaptureReque
   try {
     pinned = await deps.pin(request.gameId, request.slateDate, deps.now() + deps.budget.readMs);
     if (pinned.gameId !== request.gameId || pinned.slateDate !== request.slateDate) throw new Error("pin_wrong_game");
+    if (request.expectedScheduledStart && (parseInstantMicros(pinned.scheduledStart) !== parseInstantMicros(request.expectedScheduledStart)
+      || pregameScheduleProblem(pinned.teamGameStatuses ?? []))) {
+      return report(null, "pin_schedule_changed", false);
+    }
   } catch (error) {
     timings.pinMs = deps.now() - t0;
     return report(null, `pin_failed:${message(error)}`, false);
@@ -117,6 +126,7 @@ export async function runPregameCapture(deps: CaptureDeps, request: CaptureReque
     // The claim may have committed with its response lost: look it up, never re-claim.
     try {
       const found = await deps.writer.lookup(request.gameId, request.policyId);
+      claimId = found.claimId;
       return report(null, found.claimId ? "claim_ambiguous_left_for_sweeper" : `claim_failed:${message(error)}`, false);
     } catch { return report(null, `claim_unknown:${message(error)}`, false); }
   }

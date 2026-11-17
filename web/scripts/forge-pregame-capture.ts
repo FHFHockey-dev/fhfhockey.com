@@ -22,15 +22,11 @@
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { DEFAULT_CAPTURE_BUDGET as PILOT_BUDGET, PILOT_TRANSPORT_LIMITS, POLICY_ID } from "../lib/projections/pregameCapture/policy";
 import { tsaProfile, trustFromProfile, type TsaProfile } from "../lib/projections/pregameCapture/tsaProfiles";
 import type { TsaClient } from "../lib/projections/pregameCapture/verifier";
 
-export const POLICY_ID = "pregame-native-v1";
-/** Pilot read limits (refusal caps; exceeding one fails the capture as source_failed, never a partial packet). */
-export const PILOT_TRANSPORT_LIMITS = {
-  maxCalls: 600, maxRows: 400_000, maxBytes: 96 * 1024 * 1024, maxResponseBytes: 24 * 1024 * 1024, stampToleranceMs: 5_000,
-} as const;
-export const PILOT_BUDGET = { readMs: 120_000, saveWaitMs: 20_000, tsaTimeoutMs: 10_000, skewToleranceMs: 2_000, rpcMs: 10_000, requiredMs: 240_000 } as const;
+export { PILOT_BUDGET, PILOT_TRANSPORT_LIMITS, POLICY_ID };
 
 type Mode = "plan" | "rehearse" | "tsa-probe" | "execute";
 export interface PilotOptions {

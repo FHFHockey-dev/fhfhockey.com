@@ -210,7 +210,7 @@ export interface SlateExecutorDeps {
  */
 export type StopTrigger =
   | "ambiguous_game" | "save_unknown" | "source_failed_twice" | "load_gate_closed_twice" | "gate_dns_failure" | "statement_timeout";
-const STATEMENT_TIMEOUT = /57014|statement timeout/i;
+export const STATEMENT_TIMEOUT = /57014|statement timeout/i;
 const DNS_FAILURE = /cannot resolve|ENOTFOUND|EAI_AGAIN|getaddrinfo/i;
 
 export type ResultSource = "capture" | "queue" | "sweep" | "prior_run" | "lookup";

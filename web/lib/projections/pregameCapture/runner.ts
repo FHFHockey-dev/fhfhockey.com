@@ -1,8 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 import { captureForgeIssuedContexts, type ForgeIssuedContextV1 } from "../issuedContext";
 import { captureProjectionInputs, projectionInputHash } from "../inputCapture";
-import { runPregameCapture, type CaptureBudget, type CaptureDeps, type CaptureReport, type Collected, type PinnedGame } from "./custody";
+import { runPregameCapture, type CaptureBudget, type CaptureDeps, type CaptureReport, type CaptureRequest, type Collected, type PinnedGame } from "./custody";
 import type { CaptureBinding } from "./packet";
+import { DEFAULT_CAPTURE_BUDGET } from "./policy";
 import type { TsaTrust } from "./rfc3161";
 import { supabaseCaptureRpc, type CaptureRpc } from "./rpc";
 import { createCaptureTransport, DEFAULT_TRANSPORT_BUDGET, type CaptureClientFactory, type CaptureTarget, type TransportBudget } from "./transport";
@@ -14,11 +15,7 @@ import type { TsaClient } from "./verifier";
  */
 
 export const CAPTURE_ENABLED_ENV = "FORGE_PREGAME_CAPTURE_ENABLED";
-export const DEFAULT_CAPTURE_BUDGET: CaptureBudget = {
-  readMs: 120_000, saveWaitMs: 20_000, tsaTimeoutMs: 10_000, skewToleranceMs: 2_000, rpcMs: 10_000,
-  // >= minimumRequiredMs (read + save wait + 3 settles + 2 reads + TSA + witness + outcome + skew); T−60 never moves.
-  requiredMs: 240_000,
-};
+export { DEFAULT_CAPTURE_BUDGET };
 
 /**
  * The worker-owned collector (nativeInputs.ts) satisfies this signature. It performs exactly the writer's reads
@@ -60,6 +57,8 @@ export interface RunnerConfig {
   budget?: Partial<CaptureBudget>;
   transportLimits?: Partial<Omit<TransportBudget, "deadlineMs">>;
   env?: Record<string, string | undefined>;
+  /** The hosted invocation reserves time for its dispatch receipt after all capture I/O ends. */
+  signal?: AbortSignal;
 }
 
 /** Everything the capture needs; the live runner builds it from Supabase/TSA, the rehearsal from fixtures. */
@@ -74,6 +73,7 @@ export interface CaptureWiring {
   budget: CaptureBudget;
   transportLimits: Omit<TransportBudget, "deadlineMs">;
   now: () => number;
+  fetchImpl?: typeof fetch;
   nonce?: () => bigint;
 }
 
@@ -92,6 +92,7 @@ async function withRefusals<T>(transport: { usage: { refusals: string[] } }, wor
 export function captureDeps(w: CaptureWiring): CaptureDeps {
   const transportFor = (target: CaptureTarget, deadlineMs: number) => createCaptureTransport({
     target, restBaseUrl: w.restBaseUrl, budget: { ...w.transportLimits, deadlineMs }, createClient: w.createReadClient, now: w.now,
+    fetchImpl: w.fetchImpl,
   });
   return {
     writer: w.writer, verifier: w.verifier, tsa: w.tsa, trust: w.trust, budget: w.budget,
@@ -109,6 +110,7 @@ export function captureDeps(w: CaptureWiring): CaptureDeps {
       return {
         gameId, slateDate: context.game.date, homeTeamId: context.game.homeTeamId, awayTeamId: context.game.awayTeamId,
         homeAbbrev, awayAbbrev, scheduledStart: context.game.startTime, calendarRevision: calendarRevisionOf(context.schedule),
+        teamGameStatuses: context.schedule.map((row) => `${row.teamAbbreviation}:${row.gameStatus}:${row.scheduleStatus}`),
       };
     },
     async collect(binding: CaptureBinding, deadlineMs): Promise<Collected> {
@@ -136,21 +138,26 @@ export function captureDeps(w: CaptureWiring): CaptureDeps {
   };
 }
 
-export async function runPrivatePregameCapture(config: RunnerConfig, request: {
-  gameId: number; slateDate: string; policyId: string; codeVersion: string; scheduledLaunchAt?: string;
-}): Promise<CaptureReport> {
+export async function runPrivatePregameCapture(config: RunnerConfig, request: CaptureRequest): Promise<CaptureReport> {
   const env = config.env ?? process.env;
   if (env[CAPTURE_ENABLED_ENV] !== "true") throw new Error(`${CAPTURE_ENABLED_ENV} is not "true"; pregame capture is disabled.`);
   const auth = { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false };
+  const budget = { ...DEFAULT_CAPTURE_BUDGET, ...config.budget };
+  const invocationSignal = config.signal;
+  const fetchImpl: typeof fetch = invocationSignal ? (input, init) => fetch(input, {
+    ...init, signal: init?.signal ? AbortSignal.any([init.signal, invocationSignal]) : invocationSignal,
+  }) : fetch;
+  const client = () => createClient(config.supabaseUrl, config.serviceRoleKey, { auth, global: { fetch: fetchImpl } });
   // Two independent clients: the verifier never shares the writer's connection state.
-  const writer = supabaseCaptureRpc(createClient(config.supabaseUrl, config.serviceRoleKey, { auth }) as any);
-  const verifier = supabaseCaptureRpc(createClient(config.supabaseUrl, config.serviceRoleKey, { auth }) as any);
+  const rpcTimeout = invocationSignal ? budget.rpcMs : undefined;
+  const writer = supabaseCaptureRpc(client(), rpcTimeout);
+  const verifier = supabaseCaptureRpc(client(), rpcTimeout);
   return runPregameCapture(captureDeps({
-    writer, verifier, tsa: httpTsaClient(config.tsaUrl), trust: config.tsaTrust,
+    writer, verifier, tsa: httpTsaClient(config.tsaUrl, fetchImpl), trust: config.tsaTrust, fetchImpl,
     restBaseUrl: `${config.supabaseUrl.replace(/\/+$/, "")}/rest/v1`,
     createReadClient: (guarded) => createClient(config.supabaseUrl, config.serviceRoleKey, { auth, global: { fetch: guarded } }) as any,
     collectNative: config.collectNative, seasonBootstrap: config.seasonBootstrap, modelEnvironment: config.modelEnvironment,
-    budget: { ...DEFAULT_CAPTURE_BUDGET, ...config.budget },
+    budget,
     transportLimits: { ...DEFAULT_TRANSPORT_BUDGET, ...config.transportLimits },
     now: Date.now,
   }), request);
