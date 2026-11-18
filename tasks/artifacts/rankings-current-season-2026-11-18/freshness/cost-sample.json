@@ -1,0 +1,208 @@
+{
+  "checkoutBase": "aed6b4b0837010bc47164dc1b5b3dec7e4de5e40",
+  "runtimeGraphSha256": "c3cbea296910991d335f30c787e64b73960e00d44c3c28c5aa9032c76c450087",
+  "runtimeSourceFiles": 42,
+  "node": "v22.23.4",
+  "season": 20262027,
+  "cutoff": "2026-11-17",
+  "skaters": 800,
+  "wgoAppearances": 16000,
+  "metrics": 17,
+  "totalDbRequests": 624,
+  "hardBudget": 1000,
+  "remaining": 376,
+  "elapsedMs": 1041,
+  "phases": [
+    {
+      "phase": "admission",
+      "elapsedMs": 16
+    },
+    {
+      "phase": "building",
+      "elapsedMs": 574
+    },
+    {
+      "phase": "publishing",
+      "elapsedMs": 451
+    }
+  ],
+  "maxRSSKiB": 434064,
+  "requestBodyBytes": 81123910,
+  "responseBodyBytes": 6866250,
+  "operations": {
+    "POST rpc/claim_ranking_publication_dispatch": {
+      "calls": 1,
+      "inputRows": 0,
+      "outputRows": 0,
+      "requestBytes": 112,
+      "responseBytes": 69
+    },
+    "POST rpc/read_rankings_publication_readiness": {
+      "calls": 2,
+      "inputRows": 0,
+      "outputRows": 0,
+      "requestBytes": 148,
+      "responseBytes": 240264
+    },
+    "POST rpc/record_ranking_publication_dispatch": {
+      "calls": 3,
+      "inputRows": 0,
+      "outputRows": 0,
+      "requestBytes": 1875,
+      "responseBytes": 0
+    },
+    "GET wgo_skater_stats": {
+      "calls": 17,
+      "inputRows": 0,
+      "outputRows": 16000,
+      "requestBytes": 0,
+      "responseBytes": 1008018
+    },
+    "GET rolling_player_game_metrics": {
+      "calls": 16,
+      "inputRows": 0,
+      "outputRows": 800,
+      "requestBytes": 0,
+      "responseBytes": 3267975
+    },
+    "GET rolling_player_metric_support_payloads": {
+      "calls": 16,
+      "inputRows": 0,
+      "outputRows": 800,
+      "requestBytes": 0,
+      "responseBytes": 2203325
+    },
+    "GET teams": {
+      "calls": 1,
+      "inputRows": 0,
+      "outputRows": 32,
+      "requestBytes": 0,
+      "responseBytes": 1766
+    },
+    "GET players": {
+      "calls": 2,
+      "inputRows": 0,
+      "outputRows": 800,
+      "requestBytes": 0,
+      "responseBytes": 70977
+    },
+    "POST ranking_publications": {
+      "calls": 7,
+      "inputRows": 10,
+      "outputRows": 0,
+      "requestBytes": 7836,
+      "responseBytes": 0
+    },
+    "POST entity_metric_rankings": {
+      "calls": 544,
+      "inputRows": 54400,
+      "outputRows": 0,
+      "requestBytes": 70001748,
+      "responseBytes": 0
+    },
+    "HEAD entity_metric_rankings": {
+      "calls": 4,
+      "inputRows": 0,
+      "outputRows": 0,
+      "requestBytes": 0,
+      "responseBytes": 0
+    },
+    "GET ranking_publications": {
+      "calls": 4,
+      "inputRows": 0,
+      "outputRows": 4,
+      "requestBytes": 0,
+      "responseBytes": 3440
+    },
+    "GET entity_metric_rankings": {
+      "calls": 4,
+      "inputRows": 0,
+      "outputRows": 3200,
+      "requestBytes": 0,
+      "responseBytes": 70404
+    },
+    "POST skater_composite_ratings": {
+      "calls": 1,
+      "inputRows": 800,
+      "outputRows": 0,
+      "requestBytes": 11112153,
+      "responseBytes": 0
+    },
+    "HEAD skater_composite_ratings": {
+      "calls": 1,
+      "inputRows": 0,
+      "outputRows": 0,
+      "requestBytes": 0,
+      "responseBytes": 0
+    },
+    "POST rpc/latest_ranking_publication_cutoff": {
+      "calls": 1,
+      "inputRows": 0,
+      "outputRows": 0,
+      "requestBytes": 38,
+      "responseBytes": 12
+    }
+  },
+  "verified": {
+    "rankings": 54400,
+    "composites": 800,
+    "completeMarkers": 5,
+    "allMetricsMatchEveryExpectedPlayer": true,
+    "terminalEvidence": {
+      "priorCutoff": "2026-11-14",
+      "releaseSha": "aed6b4b0837010bc47164dc1b5b3dec7e4de5e40",
+      "mode": "2026-11-17",
+      "readyAt": "2026-11-17T12:00:00.000000Z",
+      "sourceDigest": "a1ad4fd0936243fd4f4a7ffc05251fae489ac95e32be5818b938e519570cb7ec",
+      "cohortCount": 800,
+      "expectedRankingRows": 54400,
+      "durableCutoff": "2026-11-17",
+      "rankingRows": 54400,
+      "compositeRows": 800,
+      "windows": [
+        {
+          "windowType": "season",
+          "windowSize": 0,
+          "snapshotDate": "2026-11-17",
+          "status": "complete",
+          "expectedRows": 13600,
+          "dbWrittenRows": 13600,
+          "writtenEntities": 800,
+          "blockers": []
+        },
+        {
+          "windowType": "last_5",
+          "windowSize": 5,
+          "snapshotDate": "2026-11-17",
+          "status": "complete",
+          "expectedRows": 13600,
+          "dbWrittenRows": 13600,
+          "writtenEntities": 800,
+          "blockers": []
+        },
+        {
+          "windowType": "last_10",
+          "windowSize": 10,
+          "snapshotDate": "2026-11-17",
+          "status": "complete",
+          "expectedRows": 13600,
+          "dbWrittenRows": 13600,
+          "writtenEntities": 800,
+          "blockers": []
+        },
+        {
+          "windowType": "last_20",
+          "windowSize": 20,
+          "snapshotDate": "2026-11-17",
+          "status": "complete",
+          "expectedRows": 13600,
+          "dbWrittenRows": 13600,
+          "writtenEntities": 800,
+          "blockers": []
+        }
+      ],
+      "elapsedMs": 1041,
+      "dbRequestsBeforeReceipt": 623
+    }
+  }
+}
