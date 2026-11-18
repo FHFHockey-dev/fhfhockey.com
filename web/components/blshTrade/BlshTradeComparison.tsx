@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import type { DisplayProfile } from "lib/buyLowSellHigh/displayProfile";
-import { BLSH_FIXTURE_STORAGE_KEY, BLSH_STORAGE_KEY, type BlshLocalState } from "lib/buyLowSellHigh/storage";
+import { BLSH_FIXTURE_STORAGE_KEY, BLSH_SAVED_SAMPLE_STORAGE_KEY, BLSH_STORAGE_KEY, type BlshLocalState, type BlshStorageKey } from "lib/buyLowSellHigh/storage";
 import { sameDraft, useBlshLocalState } from "lib/buyLowSellHigh/useBlshLocalState";
 import { compareTrade, FHFH_STANDARD_SCORING, forecastAdmissionReason, forecastQualification, playerScoredValues, type ForecastQualification, type TradeScoring } from "lib/buyLowSellHigh/trade";
 import { formatForecastGap } from "lib/buyLowSellHigh/market";
@@ -37,18 +37,23 @@ export type BlshTradeComparisonProps = {
   evidence: Readonly<Record<string, DisplayProfile | undefined>>;
   /** Shown above everything when the data is synthetic. */
   fixtureBanner?: string | null;
+  savedSample?: boolean;
   initialGive?: string[];
   initialReceive?: string[];
 };
 
 export default function BlshTradeComparison(props: BlshTradeComparisonProps) {
   const synthetic = !!props.fixtureBanner || Object.values(props.recordsByHorizon).some(records => records.some(record => record.fixture));
+  // A fixture caller supplies its alias map. Real snapshot evidence belongs to its saved NHL identity.
+  const evidence = useMemo(() => Object.fromEntries(Object.entries(props.evidence).filter(([id, profile]) =>
+    profile && (id === String(profile.playerId) || (synthetic && !/^\d+$/.test(id))))), [synthetic, props.evidence]);
   // A source-scope change must not carry editor state or pending fixture save completions into a real draft.
-  return <BlshTradeEditor key={synthetic ? "fixture" : "real"} {...props} synthetic={synthetic} />;
+  const storageKey = synthetic ? BLSH_FIXTURE_STORAGE_KEY : props.savedSample ? BLSH_SAVED_SAMPLE_STORAGE_KEY : BLSH_STORAGE_KEY;
+  return <BlshTradeEditor key={storageKey} {...props} evidence={evidence} synthetic={synthetic} storageKey={storageKey} />;
 }
 
-function BlshTradeEditor({ recordsByHorizon, evidence, fixtureBanner = null, initialGive = [], initialReceive = [], synthetic }: BlshTradeComparisonProps & { synthetic: boolean }) {
-  const storageKey = synthetic ? BLSH_FIXTURE_STORAGE_KEY : BLSH_STORAGE_KEY;
+function BlshTradeEditor({ recordsByHorizon, evidence, fixtureBanner = null, initialGive = [], initialReceive = [], synthetic, storageKey }:
+  BlshTradeComparisonProps & { synthetic: boolean; storageKey: BlshStorageKey }) {
   const local = useBlshLocalState(storageKey);
   const loadedKey = useRef<string | null>(null);
   const baseline = useRef<BlshLocalState["draft"]>({ give: [], receive: [] });
@@ -376,9 +381,11 @@ function ForecastContext({ record, scoring, qualification }: {
   );
 }
 
-function EvidenceBlock({ name, playerId, profile, goalie }: { name: string; playerId: string; profile: DisplayProfile | undefined; goalie: boolean }) {
+export function EvidenceBlock({ name, playerId, profile, goalie }: { name: string; playerId: string; profile: DisplayProfile | undefined; goalie: boolean }) {
   const recorded = retrospectivePlayer(playerId, profile);
   const directionWithheld = !!profile?.score.directionWithheldReason;
+  const positionRank = profile?.score.positionRank;
+  const rankedByPosition = typeof positionRank === "number" && Number.isSafeInteger(positionRank) && positionRank > 0 && profile?.position;
   return (
     <section className={styles.evidence} aria-label={`Buy Low / Sell High evidence for ${name}`}>
       <p className={styles.kickerRetro}>Buy Low / Sell High · recorded games, not a forecast</p>
@@ -388,15 +395,15 @@ function EvidenceBlock({ name, playerId, profile, goalie }: { name: string; play
             <strong>{directionWithheld ? "Direction withheld: insufficient personal history"
               : profile.score.headline ? <>FHFH Standard recorded-window gap <span className={styles.num}>{fixed(profile.score.headline.gap, 2, true)}</span></>
                 : profile.score.statusLabel}</strong>
-            {" · "}{profile.score.list ? `${profile.score.listLabel} #${profile.score.positionRank ?? profile.score.rank}${profile.score.positionRank !== null && profile.position ? ` among ${profile.position === "F" ? "forwards" : "defence"}` : ""}` : profile.score.listLabel}
+            {" · "}{profile.score.list ? `${profile.score.listLabel} #${rankedByPosition ? positionRank : profile.score.rank}${rankedByPosition ? ` among ${profile.position === "F" ? "forwards" : "defence"}` : " overall"}` : profile.score.listLabel}
           </p>
           {!directionWithheld && profile.score.value !== null && <p className={styles.muted}>Supporting research index: <span className={styles.num}>{fixed(profile.score.value, 0, true)}</span>. Not a forecast or probability.</p>}
           {profile.score.directionWithheldText && <p className={styles.muted}>{profile.score.directionWithheldText}</p>}
           {profile.score.reasonText && profile.score.reasonText !== profile.score.directionWithheldText && <p className={styles.muted}>{profile.score.reasonText}</p>}
-          {recorded.recordedPerGame !== null && recorded.referencePerGame !== null && (
+          {recorded.recordedPerGame !== null && (
             <dl className={styles.facts}>
               <div><dt>Recorded FHFH points per game</dt><dd className={styles.num}>{recorded.recordedPerGame.toFixed(2)}</dd></div>
-              <div><dt>Reference at current ice time</dt><dd className={styles.num}>{recorded.referencePerGame.toFixed(2)}</dd></div>
+              <div><dt>Reference at current ice time</dt><dd className={styles.num}>{recorded.referencePerGame?.toFixed(2) ?? "Unavailable"}</dd></div>
             </dl>
           )}
           <p className={styles.muted}>{profile.evidence.window.games} recorded games through {profile.evidence.window.recordedThroughDate}. Freshness is relative to that saved date, not today. {profile.evidence.window.freshnessText}. {profile.evidence.tierLabel} ({profile.evidence.tierNote.toLowerCase()}).</p>

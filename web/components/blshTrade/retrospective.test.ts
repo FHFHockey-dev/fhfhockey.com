@@ -75,4 +75,20 @@ describe("retrospective trade fallback", () => {
     expect(custom).toMatchObject({ available: false, net: null });
     expect(custom.reason).toMatch(/FHFH Standard points only/);
   });
+
+  it("reads the v1 saved FP track under its own identity, preserving zero and an unavailable reference", () => {
+    const p = structuredClone(FIXTURE_BLSH_EVIDENCE["fx-f5"]), id = String(p.playerId);
+    expect(retrospectivePlayer(String(p.playerId + 1), p).recordedPerGame).toBeNull();
+    Reflect.deleteProperty(p.score, "headline");
+    const fp = p.tracks.find(t => t.track === "fantasy_points")!;
+    fp.observed = 0;
+    expect(retrospectivePlayer(id, p)).toMatchObject({ recordedPerGame: 0, referencePerGame: fp.referenceAtCurrentTOI / p.evidence.window.games });
+    expect(retrospectivePlayer("foreign-alias", p).recordedPerGame).toBeNull();
+    Reflect.set(fp, "referenceAtCurrentTOI", null);
+    expect(retrospectivePlayer(id, p)).toMatchObject({ recordedPerGame: 0, referencePerGame: null });
+    p.tracks.push(fp);
+    expect(retrospectivePlayer(id, p).recordedPerGame).toBeNull();
+    p.tracks = [];
+    expect(retrospectivePlayer(id, p).recordedPerGame).toBeNull();
+  });
 });
