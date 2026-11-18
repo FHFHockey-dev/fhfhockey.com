@@ -1,0 +1,217 @@
+{
+  "chromium": "148.0.7778.96",
+  "node": "v22.23.4",
+  "cutoff": "2026-11-17",
+  "fixtureSha256": "a1a281127d491cad6d6281707fb79bfa7e56ce70273e753b564b5e13a676300b",
+  "runs": [
+    {
+      "sha": "83750b4abd672399113659b96c279a1ddaeb425b",
+      "browserJsSha256": "c7262521512f8684356a30a70066917d570e450709bdccf5718b3daa96a0d1c1",
+      "cssSha256": "74083c6ed492481b07156230a4d434ef13d5b41275d5046d6b7fef25525e55db",
+      "states": {
+        "subjects": [
+          {
+            "id": 8470000,
+            "player": "Skater 0",
+            "evidence": "TOI Up: TOI/G up +93s from last 20 to last 5.",
+            "sampleRank": 1,
+            "signalTypes": [
+              "toi_up",
+              "shot_volume_spike"
+            ]
+          },
+          {
+            "id": 8470001,
+            "player": "Skater 1",
+            "evidence": "Trending sample found, but no material opportunity-change signal.",
+            "sampleRank": 9,
+            "signalTypes": []
+          },
+          {
+            "id": 8470002,
+            "player": "Skater 2",
+            "evidence": "No live opportunity-change signal in the current trending sample.",
+            "sampleRank": null,
+            "signalTypes": null
+          },
+          {
+            "id": 8470003,
+            "player": "Skater 3",
+            "evidence": "TOI Up: TOI/G up +174s from last 20 to last 5.",
+            "sampleRank": 2,
+            "signalTypes": [
+              "toi_up",
+              "shot_volume_spike"
+            ]
+          },
+          {
+            "id": 8470004,
+            "player": "Skater 4",
+            "evidence": "TOI Up: TOI/G up +201s from last 20 to last 5.",
+            "sampleRank": 3,
+            "signalTypes": [
+              "toi_up",
+              "shot_volume_spike"
+            ]
+          },
+          {
+            "id": 8470005,
+            "player": "Skater 5",
+            "evidence": "TOI Up: TOI/G up +228s from last 20 to last 5.",
+            "sampleRank": 4,
+            "signalTypes": [
+              "toi_up",
+              "shot_volume_spike"
+            ]
+          }
+        ],
+        "trendingIds": [
+          8470000,
+          8470003,
+          8470004,
+          8470005,
+          8470006,
+          8470007,
+          8470008,
+          8470009,
+          8470001,
+          8470212,
+          8470319,
+          8470672,
+          8470565,
+          8470031,
+          8470072,
+          8470179,
+          8470286,
+          8470631,
+          8470706,
+          8470106,
+          8470320,
+          8470425,
+          8470138,
+          8470213,
+          8470738
+        ],
+        "trendingRowsSha256": "c17505390fd8a3a80ce4cffeb7c799a0b7697011cfb73cc78d32f329110e2394",
+        "freshness": {
+          "comparisonDateLabel": "Nov 17, 2026",
+          "trendingDateLabel": "Nov 17, 2026",
+          "matrix": "2026-11-17",
+          "comparison": "2026-11-17",
+          "latestTrending": "2026-11-17",
+          "windows": {
+            "season": "2026-11-17",
+            "last20": "2026-11-17",
+            "last10": "2026-11-17",
+            "last5": "2026-11-17"
+          }
+        }
+      }
+    },
+    {
+      "sha": "50dea27b84a34b05a1aa6e67dc24d2774e5d3f24",
+      "browserJsSha256": "c7262521512f8684356a30a70066917d570e450709bdccf5718b3daa96a0d1c1",
+      "cssSha256": "74083c6ed492481b07156230a4d434ef13d5b41275d5046d6b7fef25525e55db",
+      "states": {
+        "subjects": [
+          {
+            "id": 8470000,
+            "player": "Skater 0",
+            "evidence": "TOI Up: TOI/G up +93s from last 20 to last 5.",
+            "sampleRank": 1,
+            "signalTypes": [
+              "toi_up",
+              "shot_volume_spike"
+            ]
+          },
+          {
+            "id": 8470001,
+            "player": "Skater 1",
+            "evidence": "Trending sample found, but no material opportunity-change signal.",
+            "sampleRank": 9,
+            "signalTypes": []
+          },
+          {
+            "id": 8470002,
+            "player": "Skater 2",
+            "evidence": "No live opportunity-change signal in the current trending sample.",
+            "sampleRank": null,
+            "signalTypes": null
+          },
+          {
+            "id": 8470003,
+            "player": "Skater 3",
+            "evidence": "TOI Up: TOI/G up +174s from last 20 to last 5.",
+            "sampleRank": 2,
+            "signalTypes": [
+              "toi_up",
+              "shot_volume_spike"
+            ]
+          },
+          {
+            "id": 8470004,
+            "player": "Skater 4",
+            "evidence": "TOI Up: TOI/G up +201s from last 20 to last 5.",
+            "sampleRank": 3,
+            "signalTypes": [
+              "toi_up",
+              "shot_volume_spike"
+            ]
+          },
+          {
+            "id": 8470005,
+            "player": "Skater 5",
+            "evidence": "TOI Up: TOI/G up +228s from last 20 to last 5.",
+            "sampleRank": 4,
+            "signalTypes": [
+              "toi_up",
+              "shot_volume_spike"
+            ]
+          }
+        ],
+        "trendingIds": [
+          8470000,
+          8470003,
+          8470004,
+          8470005,
+          8470006,
+          8470007,
+          8470008,
+          8470009,
+          8470001,
+          8470212,
+          8470319,
+          8470672,
+          8470565,
+          8470031,
+          8470072,
+          8470179,
+          8470286,
+          8470631,
+          8470706,
+          8470106,
+          8470320,
+          8470425,
+          8470138,
+          8470213,
+          8470738
+        ],
+        "trendingRowsSha256": "c17505390fd8a3a80ce4cffeb7c799a0b7697011cfb73cc78d32f329110e2394",
+        "freshness": {
+          "comparisonDateLabel": "Nov 17, 2026",
+          "trendingDateLabel": "Nov 17, 2026",
+          "matrix": "2026-11-17",
+          "comparison": "2026-11-17",
+          "latestTrending": "2026-11-17",
+          "windows": {
+            "season": "2026-11-17",
+            "last20": "2026-11-17",
+            "last10": "2026-11-17",
+            "last5": "2026-11-17"
+          }
+        }
+      }
+    }
+  ],
+  "inputPatchSha256": "529ca6e92098880bf7fb9fde243e5379e2990997eac98d634864593d5e8d8c7c"
+}

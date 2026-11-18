@@ -1,0 +1,905 @@
+{
+  "chromium": "148.0.7778.96",
+  "node": "v22.23.4",
+  "reps": 5,
+  "cutoff": "2026-11-17",
+  "fixtureSha256": "a1a281127d491cad6d6281707fb79bfa7e56ce70273e753b564b5e13a676300b",
+  "runs": [
+    {
+      "sha": "83750b4abd672399113659b96c279a1ddaeb425b",
+      "browserJsSha256": "c7262521512f8684356a30a70066917d570e450709bdccf5718b3daa96a0d1c1",
+      "cssSha256": "74083c6ed492481b07156230a4d434ef13d5b41275d5046d6b7fef25525e55db",
+      "orderedParitySha256": "245acd199f8edc9d5f5027ddf5d4e3c4040e64d811a6c213d6997391e1224d98",
+      "samples": [
+        {
+          "name": "comparison.cold",
+          "rep": 1,
+          "ms": 1334.4,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 883
+            },
+            {
+              "route": "trending",
+              "ms": 882
+            },
+            {
+              "route": "comparison",
+              "ms": 379
+            }
+          ]
+        },
+        {
+          "name": "comparison.warm-server",
+          "rep": 1,
+          "ms": 160,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 0
+            },
+            {
+              "route": "trending",
+              "ms": 62
+            },
+            {
+              "route": "comparison",
+              "ms": 0
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-client",
+          "rep": 1,
+          "ms": 23.7,
+          "requests": []
+        },
+        {
+          "name": "comparison.warm-client",
+          "rep": 1,
+          "ms": 32.1,
+          "requests": []
+        },
+        {
+          "name": "trending.cold",
+          "rep": 1,
+          "ms": 889.1,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 859
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-server",
+          "rep": 1,
+          "ms": 89.2,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 64
+            }
+          ]
+        },
+        {
+          "name": "comparison.cold",
+          "rep": 2,
+          "ms": 1343.4,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 886
+            },
+            {
+              "route": "trending",
+              "ms": 885
+            },
+            {
+              "route": "comparison",
+              "ms": 376
+            }
+          ]
+        },
+        {
+          "name": "comparison.warm-server",
+          "rep": 2,
+          "ms": 159.4,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 0
+            },
+            {
+              "route": "trending",
+              "ms": 61
+            },
+            {
+              "route": "comparison",
+              "ms": 0
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-client",
+          "rep": 2,
+          "ms": 23.2,
+          "requests": []
+        },
+        {
+          "name": "comparison.warm-client",
+          "rep": 2,
+          "ms": 31.5,
+          "requests": []
+        },
+        {
+          "name": "trending.cold",
+          "rep": 2,
+          "ms": 857.4,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 831
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-server",
+          "rep": 2,
+          "ms": 98.2,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 72
+            }
+          ]
+        },
+        {
+          "name": "comparison.cold",
+          "rep": 3,
+          "ms": 1336,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 848
+            },
+            {
+              "route": "trending",
+              "ms": 890
+            },
+            {
+              "route": "comparison",
+              "ms": 379
+            }
+          ]
+        },
+        {
+          "name": "comparison.warm-server",
+          "rep": 3,
+          "ms": 160.5,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 0
+            },
+            {
+              "route": "trending",
+              "ms": 60
+            },
+            {
+              "route": "comparison",
+              "ms": 0
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-client",
+          "rep": 3,
+          "ms": 22,
+          "requests": []
+        },
+        {
+          "name": "comparison.warm-client",
+          "rep": 3,
+          "ms": 31,
+          "requests": []
+        },
+        {
+          "name": "trending.cold",
+          "rep": 3,
+          "ms": 846.7,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 823
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-server",
+          "rep": 3,
+          "ms": 90,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 62
+            }
+          ]
+        },
+        {
+          "name": "comparison.cold",
+          "rep": 4,
+          "ms": 1357.6,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 868
+            },
+            {
+              "route": "trending",
+              "ms": 911
+            },
+            {
+              "route": "comparison",
+              "ms": 381
+            }
+          ]
+        },
+        {
+          "name": "comparison.warm-server",
+          "rep": 4,
+          "ms": 168.4,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 0
+            },
+            {
+              "route": "trending",
+              "ms": 61
+            },
+            {
+              "route": "comparison",
+              "ms": 0
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-client",
+          "rep": 4,
+          "ms": 23.7,
+          "requests": []
+        },
+        {
+          "name": "comparison.warm-client",
+          "rep": 4,
+          "ms": 32,
+          "requests": []
+        },
+        {
+          "name": "trending.cold",
+          "rep": 4,
+          "ms": 855.8,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 832
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-server",
+          "rep": 4,
+          "ms": 89.8,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 61
+            }
+          ]
+        },
+        {
+          "name": "comparison.cold",
+          "rep": 5,
+          "ms": 1350,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 862
+            },
+            {
+              "route": "trending",
+              "ms": 903
+            },
+            {
+              "route": "comparison",
+              "ms": 376
+            }
+          ]
+        },
+        {
+          "name": "comparison.warm-server",
+          "rep": 5,
+          "ms": 168.1,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 0
+            },
+            {
+              "route": "trending",
+              "ms": 64
+            },
+            {
+              "route": "comparison",
+              "ms": 0
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-client",
+          "rep": 5,
+          "ms": 23.6,
+          "requests": []
+        },
+        {
+          "name": "comparison.warm-client",
+          "rep": 5,
+          "ms": 31.8,
+          "requests": []
+        },
+        {
+          "name": "trending.cold",
+          "rep": 5,
+          "ms": 848.4,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 823
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-server",
+          "rep": 5,
+          "ms": 89.5,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 66
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sha": "50dea27b84a34b05a1aa6e67dc24d2774e5d3f24",
+      "browserJsSha256": "c7262521512f8684356a30a70066917d570e450709bdccf5718b3daa96a0d1c1",
+      "cssSha256": "74083c6ed492481b07156230a4d434ef13d5b41275d5046d6b7fef25525e55db",
+      "orderedParitySha256": "245acd199f8edc9d5f5027ddf5d4e3c4040e64d811a6c213d6997391e1224d98",
+      "samples": [
+        {
+          "name": "comparison.cold",
+          "rep": 1,
+          "ms": 1067.9,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 608
+            },
+            {
+              "route": "trending",
+              "ms": 600
+            },
+            {
+              "route": "comparison",
+              "ms": 381
+            }
+          ]
+        },
+        {
+          "name": "comparison.warm-server",
+          "rep": 1,
+          "ms": 166.6,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 0
+            },
+            {
+              "route": "trending",
+              "ms": 64
+            },
+            {
+              "route": "comparison",
+              "ms": 0
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-client",
+          "rep": 1,
+          "ms": 23,
+          "requests": []
+        },
+        {
+          "name": "comparison.warm-client",
+          "rep": 1,
+          "ms": 31.8,
+          "requests": []
+        },
+        {
+          "name": "trending.cold",
+          "rep": 1,
+          "ms": 590.6,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 561
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-server",
+          "rep": 1,
+          "ms": 89.1,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 64
+            }
+          ]
+        },
+        {
+          "name": "comparison.cold",
+          "rep": 2,
+          "ms": 1043.2,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 551
+            },
+            {
+              "route": "trending",
+              "ms": 601
+            },
+            {
+              "route": "comparison",
+              "ms": 379
+            }
+          ]
+        },
+        {
+          "name": "comparison.warm-server",
+          "rep": 2,
+          "ms": 159.8,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 0
+            },
+            {
+              "route": "trending",
+              "ms": 61
+            },
+            {
+              "route": "comparison",
+              "ms": 0
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-client",
+          "rep": 2,
+          "ms": 23,
+          "requests": []
+        },
+        {
+          "name": "comparison.warm-client",
+          "rep": 2,
+          "ms": 32.1,
+          "requests": []
+        },
+        {
+          "name": "trending.cold",
+          "rep": 2,
+          "ms": 572.6,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 551
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-server",
+          "rep": 2,
+          "ms": 90.8,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 64
+            }
+          ]
+        },
+        {
+          "name": "comparison.cold",
+          "rep": 3,
+          "ms": 1072.8,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 613
+            },
+            {
+              "route": "trending",
+              "ms": 605
+            },
+            {
+              "route": "comparison",
+              "ms": 381
+            }
+          ]
+        },
+        {
+          "name": "comparison.warm-server",
+          "rep": 3,
+          "ms": 185.7,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 0
+            },
+            {
+              "route": "trending",
+              "ms": 79
+            },
+            {
+              "route": "comparison",
+              "ms": 0
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-client",
+          "rep": 3,
+          "ms": 23.9,
+          "requests": []
+        },
+        {
+          "name": "comparison.warm-client",
+          "rep": 3,
+          "ms": 32,
+          "requests": []
+        },
+        {
+          "name": "trending.cold",
+          "rep": 3,
+          "ms": 564.7,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 542
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-server",
+          "rep": 3,
+          "ms": 89.8,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 62
+            }
+          ]
+        },
+        {
+          "name": "comparison.cold",
+          "rep": 4,
+          "ms": 1053.3,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 595
+            },
+            {
+              "route": "trending",
+              "ms": 588
+            },
+            {
+              "route": "comparison",
+              "ms": 381
+            }
+          ]
+        },
+        {
+          "name": "comparison.warm-server",
+          "rep": 4,
+          "ms": 152.7,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 0
+            },
+            {
+              "route": "trending",
+              "ms": 60
+            },
+            {
+              "route": "comparison",
+              "ms": 0
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-client",
+          "rep": 4,
+          "ms": 23.1,
+          "requests": []
+        },
+        {
+          "name": "comparison.warm-client",
+          "rep": 4,
+          "ms": 31.1,
+          "requests": []
+        },
+        {
+          "name": "trending.cold",
+          "rep": 4,
+          "ms": 580.5,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 546
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-server",
+          "rep": 4,
+          "ms": 89.8,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 63
+            }
+          ]
+        },
+        {
+          "name": "comparison.cold",
+          "rep": 5,
+          "ms": 1084,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 598
+            },
+            {
+              "route": "trending",
+              "ms": 590
+            },
+            {
+              "route": "comparison",
+              "ms": 406
+            }
+          ]
+        },
+        {
+          "name": "comparison.warm-server",
+          "rep": 5,
+          "ms": 157.3,
+          "requests": [
+            {
+              "route": "metadata",
+              "ms": 0
+            },
+            {
+              "route": "season",
+              "ms": 0
+            },
+            {
+              "route": "matrix",
+              "ms": 0
+            },
+            {
+              "route": "trending",
+              "ms": 63
+            },
+            {
+              "route": "comparison",
+              "ms": 0
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-client",
+          "rep": 5,
+          "ms": 23.5,
+          "requests": []
+        },
+        {
+          "name": "comparison.warm-client",
+          "rep": 5,
+          "ms": 31.3,
+          "requests": []
+        },
+        {
+          "name": "trending.cold",
+          "rep": 5,
+          "ms": 566.2,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 539
+            }
+          ]
+        },
+        {
+          "name": "trending.warm-server",
+          "rep": 5,
+          "ms": 82,
+          "requests": [
+            {
+              "route": "trending",
+              "ms": 60
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

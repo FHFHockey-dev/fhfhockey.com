@@ -1,0 +1,6099 @@
+{
+  "comparison": [
+    {
+      "id": 8470000,
+      "subject": "Skater 0",
+      "evidence": "TOI Up: TOI/G up +93s from last 20 to last 5."
+    },
+    {
+      "id": 8470001,
+      "subject": "Skater 1",
+      "evidence": "TOI Up: TOI/G up +120s from last 20 to last 5."
+    },
+    {
+      "id": 8470002,
+      "subject": "Skater 2",
+      "evidence": "TOI Up: TOI/G up +147s from last 20 to last 5."
+    },
+    {
+      "id": 8470003,
+      "subject": "Skater 3",
+      "evidence": "TOI Up: TOI/G up +174s from last 20 to last 5."
+    },
+    {
+      "id": 8470004,
+      "subject": "Skater 4",
+      "evidence": "TOI Up: TOI/G up +201s from last 20 to last 5."
+    },
+    {
+      "id": 8470005,
+      "subject": "Skater 5",
+      "evidence": "TOI Up: TOI/G up +228s from last 20 to last 5."
+    }
+  ],
+  "trending": [
+    {
+      "id": 8470000,
+      "player": "Skater 0",
+      "cells": [
+        "Skater 0C · Team 1",
+        "T01",
+        "L1 / PP1",
+        "+99.9",
+        "Points/60",
+        "7.97",
+        "0.25",
+        "+99.5 pct",
+        "13:33",
+        "+93.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: +100.0 pctIndividual xG/60: +100.0 pctSOG/60: +100.0 pct"
+      ],
+      "signals": [
+        "TOI/G up +93s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +100.0 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470001,
+      "player": "Skater 1",
+      "cells": [
+        "Skater 1LW · Team 2",
+        "T02",
+        "L2",
+        "+99.6",
+        "Points/60",
+        "7.71",
+        "0.25",
+        "+99.3 pct",
+        "14:01",
+        "+120.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: +99.7 pctIndividual xG/60: +99.7 pctSOG/60: +99.7 pct"
+      ],
+      "signals": [
+        "TOI/G up +120s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +99.7 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470002,
+      "player": "Skater 2",
+      "cells": [
+        "Skater 2D · Team 3",
+        "T03",
+        "P3",
+        "+99.4",
+        "Points/60",
+        "7.46",
+        "0.25",
+        "+99.2 pct",
+        "14:29",
+        "+147.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: +99.5 pctIndividual xG/60: +99.5 pctSOG/60: +99.5 pct"
+      ],
+      "signals": [
+        "TOI/G up +147s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +99.5 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470003,
+      "player": "Skater 3",
+      "cells": [
+        "Skater 3RW · Team 4",
+        "T04",
+        "L4 / PP1",
+        "+99.4",
+        "Points/60",
+        "8.03",
+        "0.25",
+        "+100.0 pct",
+        "14:57",
+        "+174.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: +99.2 pctIndividual xG/60: +99.2 pctSOG/60: +99.2 pct"
+      ],
+      "signals": [
+        "TOI/G up +174s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +99.2 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470004,
+      "player": "Skater 4",
+      "cells": [
+        "Skater 4C · Team 5",
+        "T05",
+        "L1",
+        "+98.8",
+        "Points/60",
+        "7.78",
+        "0.50",
+        "+98.5 pct",
+        "15:25",
+        "+201.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: +98.9 pctIndividual xG/60: +98.9 pctSOG/60: +98.9 pct"
+      ],
+      "signals": [
+        "TOI/G up +201s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +98.9 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470005,
+      "player": "Skater 5",
+      "cells": [
+        "Skater 5LW · Team 6",
+        "T06",
+        "L2",
+        "+98.6",
+        "Points/60",
+        "7.56",
+        "0.50",
+        "+98.4 pct",
+        "15:53",
+        "+228.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: +98.7 pctIndividual xG/60: +98.7 pctSOG/60: +98.7 pct"
+      ],
+      "signals": [
+        "TOI/G up +228s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +98.7 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470006,
+      "player": "Skater 6",
+      "cells": [
+        "Skater 6D · Team 7",
+        "T07",
+        "P3 / PP1",
+        "+98.4",
+        "Points/60",
+        "7.34",
+        "0.50",
+        "+98.3 pct",
+        "16:21",
+        "+255.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: +98.4 pctIndividual xG/60: +98.4 pctSOG/60: +98.4 pct"
+      ],
+      "signals": [
+        "TOI/G up +255s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +98.4 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470007,
+      "player": "Skater 7",
+      "cells": [
+        "Skater 7RW · Team 8",
+        "T08",
+        "L4",
+        "+98.1",
+        "Points/60",
+        "7.14",
+        "0.50",
+        "+98.3 pct",
+        "16:49",
+        "+282.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: +98.1 pctIndividual xG/60: +98.1 pctSOG/60: +98.1 pct"
+      ],
+      "signals": [
+        "TOI/G up +282s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +98.1 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470008,
+      "player": "Skater 8",
+      "cells": [
+        "Skater 8C · Team 9",
+        "T09",
+        "L1",
+        "+98.0",
+        "Points/60",
+        "6.94",
+        "0.49",
+        "+98.3 pct",
+        "17:17",
+        "+309.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: +97.9 pctIndividual xG/60: +97.9 pctSOG/60: +97.9 pct"
+      ],
+      "signals": [
+        "TOI/G up +309s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +97.9 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470009,
+      "player": "Skater 9",
+      "cells": [
+        "Skater 9LW · Team 10",
+        "T10",
+        "L2 / PP1",
+        "+97.6",
+        "Points/60",
+        "6.76",
+        "0.49",
+        "+97.6 pct",
+        "17:45",
+        "+336.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: +97.6 pctIndividual xG/60: +97.6 pctSOG/60: +97.6 pct"
+      ],
+      "signals": [
+        "TOI/G up +336s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +97.6 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470212,
+      "player": "Skater 212",
+      "cells": [
+        "Skater 212C · Team 21",
+        "T21",
+        "L1",
+        "+70.6",
+        "Points/60",
+        "5.07",
+        "0.58",
+        "+72.4 pct",
+        "16:34",
+        "+62.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: +70.2 pctIndividual xG/60: +70.2 pctSOG/60: +70.2 pct"
+      ],
+      "signals": [
+        "TOI/G up +62s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +70.2 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470319,
+      "player": "Skater 319",
+      "cells": [
+        "Skater 319RW · Team 32",
+        "T32",
+        "L4",
+        "+69.6",
+        "Points/60",
+        "5.39",
+        "0.90",
+        "+72.2 pct",
+        "11:08",
+        "-131.0s",
+        "Usage DropShot Volume Spike",
+        "Goals/60: +68.9 pctIndividual xG/60: +68.9 pctSOG/60: +68.9 pct"
+      ],
+      "signals": [
+        "TOI/G down -131s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +68.9 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470672,
+      "player": "Skater 672",
+      "cells": [
+        "Skater 672C · Team 1",
+        "T01",
+        "L1 / PP1",
+        "+65.2",
+        "Points/60",
+        "5.18",
+        "0.79",
+        "+71.7 pct",
+        "13:54",
+        "-78.0s",
+        "Usage DropShot Volume Spike",
+        "Goals/60: +63.6 pctIndividual xG/60: +63.6 pctSOG/60: +63.6 pct"
+      ],
+      "signals": [
+        "TOI/G down -78s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +63.6 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470565,
+      "player": "Skater 565",
+      "cells": [
+        "Skater 565LW · Team 22",
+        "T22",
+        "L2",
+        "+65.0",
+        "Points/60",
+        "4.70",
+        "0.67",
+        "+65.2 pct",
+        "15:20",
+        "+115.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: +64.9 pctIndividual xG/60: +64.9 pctSOG/60: +64.9 pct"
+      ],
+      "signals": [
+        "TOI/G up +115s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +64.9 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470031,
+      "player": "Skater 31",
+      "cells": [
+        "Skater 31RW · Team 32",
+        "T32",
+        "L4",
+        "+64.2",
+        "Points/60",
+        "5.70",
+        "5.75",
+        "-2.1 pct",
+        "10:32",
+        "-119.0s",
+        "Usage DropShot Volume Spike",
+        "Goals/60: +80.8 pctIndividual xG/60: +80.8 pctSOG/60: +80.8 pct"
+      ],
+      "signals": [
+        "TOI/G down -119s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +80.8 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470072,
+      "player": "Skater 72",
+      "cells": [
+        "Skater 72C · Team 9",
+        "T09",
+        "L1 / PP1",
+        "+64.2",
+        "Points/60",
+        "5.04",
+        "0.91",
+        "+66.8 pct",
+        "11:54",
+        "-78.0s",
+        "Usage DropShot Volume Spike",
+        "Goals/60: +63.6 pctIndividual xG/60: +63.6 pctSOG/60: +63.6 pct"
+      ],
+      "signals": [
+        "TOI/G down -78s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +63.6 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470179,
+      "player": "Skater 179",
+      "cells": [
+        "Skater 179RW · Team 20",
+        "T20",
+        "L4",
+        "+64.0",
+        "Points/60",
+        "5.43",
+        "1.00",
+        "+70.5 pct",
+        "15:28",
+        "+29.0s",
+        "Shot Volume Spike",
+        "Goals/60: +62.4 pctIndividual xG/60: +62.4 pctSOG/60: +62.4 pct"
+      ],
+      "signals": [
+        "Shot Attempts/60 percentile +62.4 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470286,
+      "player": "Skater 286",
+      "cells": [
+        "Skater 286D · Team 31",
+        "T31",
+        "P3",
+        "+63.0",
+        "Points/60",
+        "5.59",
+        "1.17",
+        "+71.2 pct",
+        "15:02",
+        "+136.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: +61.0 pctIndividual xG/60: +61.0 pctSOG/60: +61.0 pct"
+      ],
+      "signals": [
+        "TOI/G up +136s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +61.0 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470631,
+      "player": "Skater 631",
+      "cells": [
+        "Skater 631RW · Team 24",
+        "T24",
+        "L4",
+        "+61.1",
+        "Points/60",
+        "4.79",
+        "5.79",
+        "-17.6 pct",
+        "12:32",
+        "-119.0s",
+        "Usage DropShot Volume Spike",
+        "Goals/60: +80.8 pctIndividual xG/60: +80.8 pctSOG/60: +80.8 pct"
+      ],
+      "signals": [
+        "TOI/G down -119s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +80.8 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470706,
+      "player": "Skater 706",
+      "cells": [
+        "Skater 706D · Team 3",
+        "T03",
+        "P3",
+        "+61.1",
+        "Points/60",
+        "5.59",
+        "0.57",
+        "+81.0 pct",
+        "15:02",
+        "-44.0s",
+        "Usage DropShot Volume Spike",
+        "Goals/60: -18.0 pctIndividual xG/60: +80.8 pctSOG/60: +80.8 pct"
+      ],
+      "signals": [
+        "TOI/G down -44s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +80.8 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470106,
+      "player": "Skater 106",
+      "cells": [
+        "Skater 106D · Team 11",
+        "T11",
+        "P3",
+        "+60.6",
+        "Points/60",
+        "5.52",
+        "0.65",
+        "+78.7 pct",
+        "13:02",
+        "-44.0s",
+        "Usage DropShot Volume Spike",
+        "Goals/60: -18.0 pctIndividual xG/60: +80.8 pctSOG/60: +80.8 pct"
+      ],
+      "signals": [
+        "TOI/G down -44s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +80.8 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470320,
+      "player": "Skater 320",
+      "cells": [
+        "Skater 320C · Team 1",
+        "T01",
+        "L1",
+        "+60.5",
+        "Points/60",
+        "6.45",
+        "0.90",
+        "+88.8 pct",
+        "11:10",
+        "-130.0s",
+        "Usage DropShot Volume Spike",
+        "Goals/60: -20.7 pctIndividual xG/60: +78.1 pctSOG/60: +78.1 pct"
+      ],
+      "signals": [
+        "TOI/G down -130s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +78.1 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470425,
+      "player": "Skater 425",
+      "cells": [
+        "Skater 425LW · Team 10",
+        "T10",
+        "L2",
+        "+60.3",
+        "Points/60",
+        "4.91",
+        "0.80",
+        "+67.3 pct",
+        "14:40",
+        "-25.0s",
+        "Shot Volume Spike",
+        "Goals/60: +58.5 pctIndividual xG/60: +58.5 pctSOG/60: +58.5 pct"
+      ],
+      "signals": [
+        "Shot Attempts/60 percentile +58.5 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470138,
+      "player": "Skater 138",
+      "cells": [
+        "Skater 138D · Team 11",
+        "T11",
+        "P3 / PP1",
+        "+60.1",
+        "Points/60",
+        "5.11",
+        "6.08",
+        "-17.0 pct",
+        "14:06",
+        "-12.0s",
+        "Shot Volume Spike",
+        "Goals/60: +79.4 pctIndividual xG/60: +79.4 pctSOG/60: +79.4 pct"
+      ],
+      "signals": [
+        "Shot Attempts/60 percentile +79.4 from last 20 to last 5."
+      ]
+    },
+    {
+      "id": 8470213,
+      "player": "Skater 213",
+      "cells": [
+        "Skater 213LW · Team 22",
+        "T22",
+        "L2 / PP1",
+        "+60.1",
+        "Points/60",
+        "5.78",
+        "0.77",
+        "+81.6 pct",
+        "16:36",
+        "+63.0s",
+        "TOI UpShot Volume Spike",
+        "Goals/60: -19.4 pctIndividual xG/60: +79.4 pctSOG/60: +79.4 pct"
+      ],
+      "signals": [
+        "TOI/G up +63s from last 20 to last 5.",
+        "Shot Attempts/60 percentile +79.4 from last 20 to last 5."
+      ]
+    }
+  ],
+  "apiRows": [
+    {
+      "entity": {
+        "id": 8470000,
+        "name": "Skater 0",
+        "position": "C",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 1,
+        "abbreviation": "T01",
+        "name": "Team 1"
+      },
+      "deployment": {
+        "ev": "L1",
+        "pp": "PP1",
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4065,
+        "toiPerGameSeconds": 813,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 99.9,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 99.5,
+      "toiTrend": {
+        "seasonSeconds": 720,
+        "last20Seconds": 720,
+        "last10Seconds": 720,
+        "last5Seconds": 813,
+        "deltaLast5VsLast20Seconds": 93
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 6,
+            "formattedValue": "6.00",
+            "percentile": 100,
+            "rank": 1
+          },
+          "last20": {
+            "value": 0.25,
+            "formattedValue": "0.25",
+            "percentile": 0.401,
+            "rank": 738
+          },
+          "last10": {
+            "value": 4,
+            "formattedValue": "4.00",
+            "percentile": 57.41,
+            "rank": 311
+          },
+          "last5": {
+            "value": 7.97048,
+            "formattedValue": "7.97",
+            "percentile": 99.866,
+            "rank": 2
+          },
+          "deltaLast5VsLast20": 99.5,
+          "deltaLast5VsSeason": -0.1
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 4,
+            "formattedValue": "4.00",
+            "percentile": 57.21,
+            "rank": 260
+          },
+          "last20": {
+            "value": 0.3,
+            "formattedValue": "0.30",
+            "percentile": 0,
+            "rank": 610
+          },
+          "last10": {
+            "value": 4,
+            "formattedValue": "4.00",
+            "percentile": 57.21,
+            "rank": 260
+          },
+          "last5": {
+            "value": 8,
+            "formattedValue": "8.00",
+            "percentile": 100,
+            "rank": 1
+          },
+          "deltaLast5VsLast20": 100,
+          "deltaLast5VsSeason": 42.8
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 4,
+            "formattedValue": "4.00",
+            "percentile": 57.21,
+            "rank": 260
+          },
+          "last20": {
+            "value": 0.3,
+            "formattedValue": "0.30",
+            "percentile": 0,
+            "rank": 610
+          },
+          "last10": {
+            "value": 4,
+            "formattedValue": "4.00",
+            "percentile": 57.21,
+            "rank": 260
+          },
+          "last5": {
+            "value": 8,
+            "formattedValue": "8.00",
+            "percentile": 100,
+            "rank": 1
+          },
+          "deltaLast5VsLast20": 100,
+          "deltaLast5VsSeason": 42.8
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 4,
+            "formattedValue": "4.00",
+            "percentile": 57.21,
+            "rank": 260
+          },
+          "last20": {
+            "value": 0.3,
+            "formattedValue": "0.30",
+            "percentile": 0,
+            "rank": 610
+          },
+          "last10": {
+            "value": 4,
+            "formattedValue": "4.00",
+            "percentile": 57.21,
+            "rank": 260
+          },
+          "last5": {
+            "value": 8,
+            "formattedValue": "8.00",
+            "percentile": 100,
+            "rank": 1
+          },
+          "deltaLast5VsLast20": 100,
+          "deltaLast5VsSeason": 42.8
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 4,
+            "formattedValue": "4.00",
+            "percentile": 57.21,
+            "rank": 260
+          },
+          "last20": {
+            "value": 0.3,
+            "formattedValue": "0.30",
+            "percentile": 0,
+            "rank": 610
+          },
+          "last10": {
+            "value": 4,
+            "formattedValue": "4.00",
+            "percentile": 57.21,
+            "rank": 260
+          },
+          "last5": {
+            "value": 8,
+            "formattedValue": "8.00",
+            "percentile": 100,
+            "rank": 1
+          },
+          "deltaLast5VsLast20": 100,
+          "deltaLast5VsSeason": 42.8
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "medium",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 720,
+          "currentValue": 813,
+          "delta": 93,
+          "evidence": "TOI/G up +93s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 0,
+          "currentValue": 100,
+          "delta": 100,
+          "evidence": "Shot Attempts/60 percentile +100.0 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470001,
+        "name": "Skater 1",
+        "position": "LW",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 2,
+        "abbreviation": "T02",
+        "name": "Team 2"
+      },
+      "deployment": {
+        "ev": "L2",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4205,
+        "toiPerGameSeconds": 841,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 99.6,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 99.3,
+      "toiTrend": {
+        "seasonSeconds": 721,
+        "last20Seconds": 721,
+        "last10Seconds": 721,
+        "last5Seconds": 841,
+        "deltaLast5VsLast20Seconds": 120
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 5.985021,
+            "formattedValue": "5.99",
+            "percentile": 99.866,
+            "rank": 2
+          },
+          "last20": {
+            "value": 0.249653,
+            "formattedValue": "0.25",
+            "percentile": 0.267,
+            "rank": 739
+          },
+          "last10": {
+            "value": 3.994452,
+            "formattedValue": "3.99",
+            "percentile": 57.009,
+            "rank": 313
+          },
+          "last5": {
+            "value": 7.705113,
+            "formattedValue": "7.71",
+            "percentile": 99.599,
+            "rank": 4
+          },
+          "deltaLast5VsLast20": 99.3,
+          "deltaLast5VsSeason": -0.3
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 3.9,
+            "formattedValue": "3.90",
+            "percentile": 55.407,
+            "rank": 270
+          },
+          "last20": {
+            "value": 0.32,
+            "formattedValue": "0.32",
+            "percentile": 0.134,
+            "rank": 609
+          },
+          "last10": {
+            "value": 3.9,
+            "formattedValue": "3.90",
+            "percentile": 55.407,
+            "rank": 270
+          },
+          "last5": {
+            "value": 7.88,
+            "formattedValue": "7.88",
+            "percentile": 99.866,
+            "rank": 2
+          },
+          "deltaLast5VsLast20": 99.7,
+          "deltaLast5VsSeason": 44.5
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 3.9,
+            "formattedValue": "3.90",
+            "percentile": 55.474,
+            "rank": 270
+          },
+          "last20": {
+            "value": 0.32,
+            "formattedValue": "0.32",
+            "percentile": 0.134,
+            "rank": 609
+          },
+          "last10": {
+            "value": 3.9,
+            "formattedValue": "3.90",
+            "percentile": 55.474,
+            "rank": 270
+          },
+          "last5": {
+            "value": 7.88,
+            "formattedValue": "7.88",
+            "percentile": 99.866,
+            "rank": 2
+          },
+          "deltaLast5VsLast20": 99.7,
+          "deltaLast5VsSeason": 44.4
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 3.9,
+            "formattedValue": "3.90",
+            "percentile": 55.474,
+            "rank": 270
+          },
+          "last20": {
+            "value": 0.32,
+            "formattedValue": "0.32",
+            "percentile": 0.134,
+            "rank": 609
+          },
+          "last10": {
+            "value": 3.9,
+            "formattedValue": "3.90",
+            "percentile": 55.474,
+            "rank": 270
+          },
+          "last5": {
+            "value": 7.88,
+            "formattedValue": "7.88",
+            "percentile": 99.866,
+            "rank": 2
+          },
+          "deltaLast5VsLast20": 99.7,
+          "deltaLast5VsSeason": 44.4
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 3.9,
+            "formattedValue": "3.90",
+            "percentile": 55.474,
+            "rank": 270
+          },
+          "last20": {
+            "value": 0.32,
+            "formattedValue": "0.32",
+            "percentile": 0.134,
+            "rank": 609
+          },
+          "last10": {
+            "value": 3.9,
+            "formattedValue": "3.90",
+            "percentile": 55.474,
+            "rank": 270
+          },
+          "last5": {
+            "value": 7.88,
+            "formattedValue": "7.88",
+            "percentile": 99.866,
+            "rank": 2
+          },
+          "deltaLast5VsLast20": 99.7,
+          "deltaLast5VsSeason": 44.4
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 721,
+          "currentValue": 841,
+          "delta": 120,
+          "evidence": "TOI/G up +120s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 0.134,
+          "currentValue": 99.866,
+          "delta": 99.7,
+          "evidence": "Shot Attempts/60 percentile +99.7 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470002,
+        "name": "Skater 2",
+        "position": "D",
+        "positionGroup": "defense",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 3,
+        "abbreviation": "T03",
+        "name": "Team 3"
+      },
+      "deployment": {
+        "ev": "P3",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4345,
+        "toiPerGameSeconds": 869,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 99.4,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 99.2,
+      "toiTrend": {
+        "seasonSeconds": 722,
+        "last20Seconds": 722,
+        "last10Seconds": 722,
+        "last5Seconds": 869,
+        "deltaLast5VsLast20Seconds": 147
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 5.970083,
+            "formattedValue": "5.97",
+            "percentile": 99.733,
+            "rank": 3
+          },
+          "last20": {
+            "value": 0.249307,
+            "formattedValue": "0.25",
+            "percentile": 0.134,
+            "rank": 740
+          },
+          "last10": {
+            "value": 3.98892,
+            "formattedValue": "3.99",
+            "percentile": 56.876,
+            "rank": 314
+          },
+          "last5": {
+            "value": 7.456847,
+            "formattedValue": "7.46",
+            "percentile": 99.332,
+            "rank": 6
+          },
+          "deltaLast5VsLast20": 99.2,
+          "deltaLast5VsSeason": -0.4
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 3.8,
+            "formattedValue": "3.80",
+            "percentile": 53.538,
+            "rank": 281
+          },
+          "last20": {
+            "value": 0.33999999999999997,
+            "formattedValue": "0.34",
+            "percentile": 0.267,
+            "rank": 608
+          },
+          "last10": {
+            "value": 3.8,
+            "formattedValue": "3.80",
+            "percentile": 53.538,
+            "rank": 281
+          },
+          "last5": {
+            "value": 7.76,
+            "formattedValue": "7.76",
+            "percentile": 99.733,
+            "rank": 3
+          },
+          "deltaLast5VsLast20": 99.5,
+          "deltaLast5VsSeason": 46.2
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 3.8,
+            "formattedValue": "3.80",
+            "percentile": 53.672,
+            "rank": 281
+          },
+          "last20": {
+            "value": 0.33999999999999997,
+            "formattedValue": "0.34",
+            "percentile": 0.267,
+            "rank": 608
+          },
+          "last10": {
+            "value": 3.8,
+            "formattedValue": "3.80",
+            "percentile": 53.672,
+            "rank": 281
+          },
+          "last5": {
+            "value": 7.76,
+            "formattedValue": "7.76",
+            "percentile": 99.733,
+            "rank": 3
+          },
+          "deltaLast5VsLast20": 99.5,
+          "deltaLast5VsSeason": 46.1
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 3.8,
+            "formattedValue": "3.80",
+            "percentile": 53.672,
+            "rank": 281
+          },
+          "last20": {
+            "value": 0.33999999999999997,
+            "formattedValue": "0.34",
+            "percentile": 0.267,
+            "rank": 608
+          },
+          "last10": {
+            "value": 3.8,
+            "formattedValue": "3.80",
+            "percentile": 53.672,
+            "rank": 281
+          },
+          "last5": {
+            "value": 7.76,
+            "formattedValue": "7.76",
+            "percentile": 99.733,
+            "rank": 3
+          },
+          "deltaLast5VsLast20": 99.5,
+          "deltaLast5VsSeason": 46.1
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 3.8,
+            "formattedValue": "3.80",
+            "percentile": 53.672,
+            "rank": 281
+          },
+          "last20": {
+            "value": 0.33999999999999997,
+            "formattedValue": "0.34",
+            "percentile": 0.267,
+            "rank": 608
+          },
+          "last10": {
+            "value": 3.8,
+            "formattedValue": "3.80",
+            "percentile": 53.672,
+            "rank": 281
+          },
+          "last5": {
+            "value": 7.76,
+            "formattedValue": "7.76",
+            "percentile": 99.733,
+            "rank": 3
+          },
+          "deltaLast5VsLast20": 99.5,
+          "deltaLast5VsSeason": 46.1
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 722,
+          "currentValue": 869,
+          "delta": 147,
+          "evidence": "TOI/G up +147s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 0.267,
+          "currentValue": 99.733,
+          "delta": 99.5,
+          "evidence": "Shot Attempts/60 percentile +99.5 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470003,
+        "name": "Skater 3",
+        "position": "RW",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 4,
+        "abbreviation": "T04",
+        "name": "Team 4"
+      },
+      "deployment": {
+        "ev": "L4",
+        "pp": "PP1",
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4485,
+        "toiPerGameSeconds": 897,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 99.4,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 100,
+      "toiTrend": {
+        "seasonSeconds": 723,
+        "last20Seconds": 723,
+        "last10Seconds": 723,
+        "last5Seconds": 897,
+        "deltaLast5VsLast20Seconds": 174
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 5.955187,
+            "formattedValue": "5.96",
+            "percentile": 99.599,
+            "rank": 4
+          },
+          "last20": {
+            "value": 0.248963,
+            "formattedValue": "0.25",
+            "percentile": 0,
+            "rank": 741
+          },
+          "last10": {
+            "value": 3.485477,
+            "formattedValue": "3.49",
+            "percentile": 48.131,
+            "rank": 378
+          },
+          "last5": {
+            "value": 8.026756,
+            "formattedValue": "8.03",
+            "percentile": 100,
+            "rank": 1
+          },
+          "deltaLast5VsLast20": 100,
+          "deltaLast5VsSeason": 0.4
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 3.7,
+            "formattedValue": "3.70",
+            "percentile": 51.869,
+            "rank": 291
+          },
+          "last20": {
+            "value": 0.36,
+            "formattedValue": "0.36",
+            "percentile": 0.401,
+            "rank": 607
+          },
+          "last10": {
+            "value": 3.7,
+            "formattedValue": "3.70",
+            "percentile": 51.869,
+            "rank": 291
+          },
+          "last5": {
+            "value": 7.64,
+            "formattedValue": "7.64",
+            "percentile": 99.599,
+            "rank": 4
+          },
+          "deltaLast5VsLast20": 99.2,
+          "deltaLast5VsSeason": 47.7
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 3.7,
+            "formattedValue": "3.70",
+            "percentile": 51.869,
+            "rank": 291
+          },
+          "last20": {
+            "value": 0.36,
+            "formattedValue": "0.36",
+            "percentile": 0.401,
+            "rank": 607
+          },
+          "last10": {
+            "value": 3.7,
+            "formattedValue": "3.70",
+            "percentile": 51.869,
+            "rank": 291
+          },
+          "last5": {
+            "value": 7.64,
+            "formattedValue": "7.64",
+            "percentile": 99.599,
+            "rank": 4
+          },
+          "deltaLast5VsLast20": 99.2,
+          "deltaLast5VsSeason": 47.7
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 3.7,
+            "formattedValue": "3.70",
+            "percentile": 51.869,
+            "rank": 291
+          },
+          "last20": {
+            "value": 0.36,
+            "formattedValue": "0.36",
+            "percentile": 0.401,
+            "rank": 607
+          },
+          "last10": {
+            "value": 3.7,
+            "formattedValue": "3.70",
+            "percentile": 51.869,
+            "rank": 291
+          },
+          "last5": {
+            "value": 7.64,
+            "formattedValue": "7.64",
+            "percentile": 99.599,
+            "rank": 4
+          },
+          "deltaLast5VsLast20": 99.2,
+          "deltaLast5VsSeason": 47.7
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 3.7,
+            "formattedValue": "3.70",
+            "percentile": 51.869,
+            "rank": 291
+          },
+          "last20": {
+            "value": 0.36,
+            "formattedValue": "0.36",
+            "percentile": 0.401,
+            "rank": 607
+          },
+          "last10": {
+            "value": 3.7,
+            "formattedValue": "3.70",
+            "percentile": 51.869,
+            "rank": 291
+          },
+          "last5": {
+            "value": 7.64,
+            "formattedValue": "7.64",
+            "percentile": 99.599,
+            "rank": 4
+          },
+          "deltaLast5VsLast20": 99.2,
+          "deltaLast5VsSeason": 47.7
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 723,
+          "currentValue": 897,
+          "delta": 174,
+          "evidence": "TOI/G up +174s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 0.401,
+          "currentValue": 99.599,
+          "delta": 99.2,
+          "evidence": "Shot Attempts/60 percentile +99.2 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470004,
+        "name": "Skater 4",
+        "position": "C",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 5,
+        "abbreviation": "T05",
+        "name": "Team 5"
+      },
+      "deployment": {
+        "ev": "L1",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4625,
+        "toiPerGameSeconds": 925,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 98.8,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 98.5,
+      "toiTrend": {
+        "seasonSeconds": 724,
+        "last20Seconds": 724,
+        "last10Seconds": 724,
+        "last5Seconds": 925,
+        "deltaLast5VsLast20Seconds": 201
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 5.940331,
+            "formattedValue": "5.94",
+            "percentile": 99.466,
+            "rank": 5
+          },
+          "last20": {
+            "value": 0.497238,
+            "formattedValue": "0.50",
+            "percentile": 1.202,
+            "rank": 732
+          },
+          "last10": {
+            "value": 3.480663,
+            "formattedValue": "3.48",
+            "percentile": 47.864,
+            "rank": 379
+          },
+          "last5": {
+            "value": 7.783784,
+            "formattedValue": "7.78",
+            "percentile": 99.733,
+            "rank": 3
+          },
+          "deltaLast5VsLast20": 98.5,
+          "deltaLast5VsSeason": 0.3
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 3.6,
+            "formattedValue": "3.60",
+            "percentile": 50.134,
+            "rank": 301
+          },
+          "last20": {
+            "value": 0.38,
+            "formattedValue": "0.38",
+            "percentile": 0.534,
+            "rank": 606
+          },
+          "last10": {
+            "value": 3.6,
+            "formattedValue": "3.60",
+            "percentile": 50.134,
+            "rank": 301
+          },
+          "last5": {
+            "value": 7.52,
+            "formattedValue": "7.52",
+            "percentile": 99.466,
+            "rank": 5
+          },
+          "deltaLast5VsLast20": 98.9,
+          "deltaLast5VsSeason": 49.3
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 3.6,
+            "formattedValue": "3.60",
+            "percentile": 50.134,
+            "rank": 301
+          },
+          "last20": {
+            "value": 0.38,
+            "formattedValue": "0.38",
+            "percentile": 0.534,
+            "rank": 606
+          },
+          "last10": {
+            "value": 3.6,
+            "formattedValue": "3.60",
+            "percentile": 50.134,
+            "rank": 301
+          },
+          "last5": {
+            "value": 7.52,
+            "formattedValue": "7.52",
+            "percentile": 99.466,
+            "rank": 5
+          },
+          "deltaLast5VsLast20": 98.9,
+          "deltaLast5VsSeason": 49.3
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 3.6,
+            "formattedValue": "3.60",
+            "percentile": 50.134,
+            "rank": 301
+          },
+          "last20": {
+            "value": 0.38,
+            "formattedValue": "0.38",
+            "percentile": 0.534,
+            "rank": 606
+          },
+          "last10": {
+            "value": 3.6,
+            "formattedValue": "3.60",
+            "percentile": 50.134,
+            "rank": 301
+          },
+          "last5": {
+            "value": 7.52,
+            "formattedValue": "7.52",
+            "percentile": 99.466,
+            "rank": 5
+          },
+          "deltaLast5VsLast20": 98.9,
+          "deltaLast5VsSeason": 49.3
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 3.6,
+            "formattedValue": "3.60",
+            "percentile": 50.134,
+            "rank": 301
+          },
+          "last20": {
+            "value": 0.38,
+            "formattedValue": "0.38",
+            "percentile": 0.534,
+            "rank": 606
+          },
+          "last10": {
+            "value": 3.6,
+            "formattedValue": "3.60",
+            "percentile": 50.134,
+            "rank": 301
+          },
+          "last5": {
+            "value": 7.52,
+            "formattedValue": "7.52",
+            "percentile": 99.466,
+            "rank": 5
+          },
+          "deltaLast5VsLast20": 98.9,
+          "deltaLast5VsSeason": 49.3
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 724,
+          "currentValue": 925,
+          "delta": 201,
+          "evidence": "TOI/G up +201s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 0.534,
+          "currentValue": 99.466,
+          "delta": 98.9,
+          "evidence": "Shot Attempts/60 percentile +98.9 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470005,
+        "name": "Skater 5",
+        "position": "LW",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 6,
+        "abbreviation": "T06",
+        "name": "Team 6"
+      },
+      "deployment": {
+        "ev": "L2",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4765,
+        "toiPerGameSeconds": 953,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 98.6,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 98.4,
+      "toiTrend": {
+        "seasonSeconds": 725,
+        "last20Seconds": 725,
+        "last10Seconds": 725,
+        "last5Seconds": 953,
+        "deltaLast5VsLast20Seconds": 228
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 5.925517,
+            "formattedValue": "5.93",
+            "percentile": 99.332,
+            "rank": 6
+          },
+          "last20": {
+            "value": 0.496552,
+            "formattedValue": "0.50",
+            "percentile": 1.068,
+            "rank": 733
+          },
+          "last10": {
+            "value": 3.475862,
+            "formattedValue": "3.48",
+            "percentile": 47.664,
+            "rank": 380
+          },
+          "last5": {
+            "value": 7.555089,
+            "formattedValue": "7.56",
+            "percentile": 99.466,
+            "rank": 5
+          },
+          "deltaLast5VsLast20": 98.4,
+          "deltaLast5VsSeason": 0.1
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 3.5,
+            "formattedValue": "3.50",
+            "percentile": 48.398,
+            "rank": 311
+          },
+          "last20": {
+            "value": 0.4,
+            "formattedValue": "0.40",
+            "percentile": 0.668,
+            "rank": 605
+          },
+          "last10": {
+            "value": 3.5,
+            "formattedValue": "3.50",
+            "percentile": 48.398,
+            "rank": 311
+          },
+          "last5": {
+            "value": 7.4,
+            "formattedValue": "7.40",
+            "percentile": 99.332,
+            "rank": 6
+          },
+          "deltaLast5VsLast20": 98.7,
+          "deltaLast5VsSeason": 50.9
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 3.5,
+            "formattedValue": "3.50",
+            "percentile": 48.331,
+            "rank": 311
+          },
+          "last20": {
+            "value": 0.4,
+            "formattedValue": "0.40",
+            "percentile": 0.668,
+            "rank": 605
+          },
+          "last10": {
+            "value": 3.5,
+            "formattedValue": "3.50",
+            "percentile": 48.331,
+            "rank": 311
+          },
+          "last5": {
+            "value": 7.4,
+            "formattedValue": "7.40",
+            "percentile": 99.332,
+            "rank": 6
+          },
+          "deltaLast5VsLast20": 98.7,
+          "deltaLast5VsSeason": 51
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 3.5,
+            "formattedValue": "3.50",
+            "percentile": 48.331,
+            "rank": 311
+          },
+          "last20": {
+            "value": 0.4,
+            "formattedValue": "0.40",
+            "percentile": 0.668,
+            "rank": 605
+          },
+          "last10": {
+            "value": 3.5,
+            "formattedValue": "3.50",
+            "percentile": 48.331,
+            "rank": 311
+          },
+          "last5": {
+            "value": 7.4,
+            "formattedValue": "7.40",
+            "percentile": 99.332,
+            "rank": 6
+          },
+          "deltaLast5VsLast20": 98.7,
+          "deltaLast5VsSeason": 51
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 3.5,
+            "formattedValue": "3.50",
+            "percentile": 48.331,
+            "rank": 311
+          },
+          "last20": {
+            "value": 0.4,
+            "formattedValue": "0.40",
+            "percentile": 0.668,
+            "rank": 605
+          },
+          "last10": {
+            "value": 3.5,
+            "formattedValue": "3.50",
+            "percentile": 48.331,
+            "rank": 311
+          },
+          "last5": {
+            "value": 7.4,
+            "formattedValue": "7.40",
+            "percentile": 99.332,
+            "rank": 6
+          },
+          "deltaLast5VsLast20": 98.7,
+          "deltaLast5VsSeason": 51
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 725,
+          "currentValue": 953,
+          "delta": 228,
+          "evidence": "TOI/G up +228s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 0.668,
+          "currentValue": 99.332,
+          "delta": 98.7,
+          "evidence": "Shot Attempts/60 percentile +98.7 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470006,
+        "name": "Skater 6",
+        "position": "D",
+        "positionGroup": "defense",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 7,
+        "abbreviation": "T07",
+        "name": "Team 7"
+      },
+      "deployment": {
+        "ev": "P3",
+        "pp": "PP1",
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4905,
+        "toiPerGameSeconds": 981,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 98.4,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 98.3,
+      "toiTrend": {
+        "seasonSeconds": 726,
+        "last20Seconds": 726,
+        "last10Seconds": 726,
+        "last5Seconds": 981,
+        "deltaLast5VsLast20Seconds": 255
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 5.910744,
+            "formattedValue": "5.91",
+            "percentile": 99.199,
+            "rank": 7
+          },
+          "last20": {
+            "value": 0.495868,
+            "formattedValue": "0.50",
+            "percentile": 0.935,
+            "rank": 734
+          },
+          "last10": {
+            "value": 3.471074,
+            "formattedValue": "3.47",
+            "percentile": 47.53,
+            "rank": 381
+          },
+          "last5": {
+            "value": 7.33945,
+            "formattedValue": "7.34",
+            "percentile": 99.199,
+            "rank": 7
+          },
+          "deltaLast5VsLast20": 98.3,
+          "deltaLast5VsSeason": 0
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 3.4,
+            "formattedValue": "3.40",
+            "percentile": 46.662,
+            "rank": 321
+          },
+          "last20": {
+            "value": 0.42,
+            "formattedValue": "0.42",
+            "percentile": 0.801,
+            "rank": 604
+          },
+          "last10": {
+            "value": 3.4,
+            "formattedValue": "3.40",
+            "percentile": 46.662,
+            "rank": 321
+          },
+          "last5": {
+            "value": 7.28,
+            "formattedValue": "7.28",
+            "percentile": 99.199,
+            "rank": 7
+          },
+          "deltaLast5VsLast20": 98.4,
+          "deltaLast5VsSeason": 52.5
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 3.4,
+            "formattedValue": "3.40",
+            "percentile": 46.595,
+            "rank": 321
+          },
+          "last20": {
+            "value": 0.42,
+            "formattedValue": "0.42",
+            "percentile": 0.801,
+            "rank": 604
+          },
+          "last10": {
+            "value": 3.4,
+            "formattedValue": "3.40",
+            "percentile": 46.595,
+            "rank": 321
+          },
+          "last5": {
+            "value": 7.28,
+            "formattedValue": "7.28",
+            "percentile": 99.199,
+            "rank": 7
+          },
+          "deltaLast5VsLast20": 98.4,
+          "deltaLast5VsSeason": 52.6
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 3.4,
+            "formattedValue": "3.40",
+            "percentile": 46.595,
+            "rank": 321
+          },
+          "last20": {
+            "value": 0.42,
+            "formattedValue": "0.42",
+            "percentile": 0.801,
+            "rank": 604
+          },
+          "last10": {
+            "value": 3.4,
+            "formattedValue": "3.40",
+            "percentile": 46.595,
+            "rank": 321
+          },
+          "last5": {
+            "value": 7.28,
+            "formattedValue": "7.28",
+            "percentile": 99.199,
+            "rank": 7
+          },
+          "deltaLast5VsLast20": 98.4,
+          "deltaLast5VsSeason": 52.6
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 3.4,
+            "formattedValue": "3.40",
+            "percentile": 46.595,
+            "rank": 321
+          },
+          "last20": {
+            "value": 0.42,
+            "formattedValue": "0.42",
+            "percentile": 0.801,
+            "rank": 604
+          },
+          "last10": {
+            "value": 3.4,
+            "formattedValue": "3.40",
+            "percentile": 46.595,
+            "rank": 321
+          },
+          "last5": {
+            "value": 7.28,
+            "formattedValue": "7.28",
+            "percentile": 99.199,
+            "rank": 7
+          },
+          "deltaLast5VsLast20": 98.4,
+          "deltaLast5VsSeason": 52.6
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 726,
+          "currentValue": 981,
+          "delta": 255,
+          "evidence": "TOI/G up +255s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 0.801,
+          "currentValue": 99.199,
+          "delta": 98.4,
+          "evidence": "Shot Attempts/60 percentile +98.4 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470007,
+        "name": "Skater 7",
+        "position": "RW",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 8,
+        "abbreviation": "T08",
+        "name": "Team 8"
+      },
+      "deployment": {
+        "ev": "L4",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 5045,
+        "toiPerGameSeconds": 1009,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 98.1,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 98.3,
+      "toiTrend": {
+        "seasonSeconds": 727,
+        "last20Seconds": 727,
+        "last10Seconds": 727,
+        "last5Seconds": 1009,
+        "deltaLast5VsLast20Seconds": 282
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 5.896011,
+            "formattedValue": "5.90",
+            "percentile": 99.065,
+            "rank": 8
+          },
+          "last20": {
+            "value": 0.495186,
+            "formattedValue": "0.50",
+            "percentile": 0.801,
+            "rank": 735
+          },
+          "last10": {
+            "value": 3.4663,
+            "formattedValue": "3.47",
+            "percentile": 47.397,
+            "rank": 382
+          },
+          "last5": {
+            "value": 7.135778,
+            "formattedValue": "7.14",
+            "percentile": 99.065,
+            "rank": 8
+          },
+          "deltaLast5VsLast20": 98.3,
+          "deltaLast5VsSeason": 0
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 3.3,
+            "formattedValue": "3.30",
+            "percentile": 44.86,
+            "rank": 332
+          },
+          "last20": {
+            "value": 0.44,
+            "formattedValue": "0.44",
+            "percentile": 0.935,
+            "rank": 603
+          },
+          "last10": {
+            "value": 3.3,
+            "formattedValue": "3.30",
+            "percentile": 44.86,
+            "rank": 332
+          },
+          "last5": {
+            "value": 7.16,
+            "formattedValue": "7.16",
+            "percentile": 99.065,
+            "rank": 8
+          },
+          "deltaLast5VsLast20": 98.1,
+          "deltaLast5VsSeason": 54.2
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 3.3,
+            "formattedValue": "3.30",
+            "percentile": 44.726,
+            "rank": 332
+          },
+          "last20": {
+            "value": 0.44,
+            "formattedValue": "0.44",
+            "percentile": 0.935,
+            "rank": 603
+          },
+          "last10": {
+            "value": 3.3,
+            "formattedValue": "3.30",
+            "percentile": 44.726,
+            "rank": 332
+          },
+          "last5": {
+            "value": 7.16,
+            "formattedValue": "7.16",
+            "percentile": 99.065,
+            "rank": 8
+          },
+          "deltaLast5VsLast20": 98.1,
+          "deltaLast5VsSeason": 54.3
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 3.3,
+            "formattedValue": "3.30",
+            "percentile": 44.726,
+            "rank": 332
+          },
+          "last20": {
+            "value": 0.44,
+            "formattedValue": "0.44",
+            "percentile": 0.935,
+            "rank": 603
+          },
+          "last10": {
+            "value": 3.3,
+            "formattedValue": "3.30",
+            "percentile": 44.726,
+            "rank": 332
+          },
+          "last5": {
+            "value": 7.16,
+            "formattedValue": "7.16",
+            "percentile": 99.065,
+            "rank": 8
+          },
+          "deltaLast5VsLast20": 98.1,
+          "deltaLast5VsSeason": 54.3
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 3.3,
+            "formattedValue": "3.30",
+            "percentile": 44.726,
+            "rank": 332
+          },
+          "last20": {
+            "value": 0.44,
+            "formattedValue": "0.44",
+            "percentile": 0.935,
+            "rank": 603
+          },
+          "last10": {
+            "value": 3.3,
+            "formattedValue": "3.30",
+            "percentile": 44.726,
+            "rank": 332
+          },
+          "last5": {
+            "value": 7.16,
+            "formattedValue": "7.16",
+            "percentile": 99.065,
+            "rank": 8
+          },
+          "deltaLast5VsLast20": 98.1,
+          "deltaLast5VsSeason": 54.3
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 727,
+          "currentValue": 1009,
+          "delta": 282,
+          "evidence": "TOI/G up +282s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 0.935,
+          "currentValue": 99.065,
+          "delta": 98.1,
+          "evidence": "Shot Attempts/60 percentile +98.1 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470008,
+        "name": "Skater 8",
+        "position": "C",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 9,
+        "abbreviation": "T09",
+        "name": "Team 9"
+      },
+      "deployment": {
+        "ev": "L1",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 5185,
+        "toiPerGameSeconds": 1037,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 98,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 98.3,
+      "toiTrend": {
+        "seasonSeconds": 728,
+        "last20Seconds": 728,
+        "last10Seconds": 728,
+        "last5Seconds": 1037,
+        "deltaLast5VsLast20Seconds": 309
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 5.881319,
+            "formattedValue": "5.88",
+            "percentile": 98.932,
+            "rank": 9
+          },
+          "last20": {
+            "value": 0.494505,
+            "formattedValue": "0.49",
+            "percentile": 0.668,
+            "rank": 736
+          },
+          "last10": {
+            "value": 2.967033,
+            "formattedValue": "2.97",
+            "percentile": 39.252,
+            "rank": 441
+          },
+          "last5": {
+            "value": 6.943105,
+            "formattedValue": "6.94",
+            "percentile": 98.932,
+            "rank": 9
+          },
+          "deltaLast5VsLast20": 98.3,
+          "deltaLast5VsSeason": 0
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 3.2,
+            "formattedValue": "3.20",
+            "percentile": 43.057,
+            "rank": 342
+          },
+          "last20": {
+            "value": 0.45999999999999996,
+            "formattedValue": "0.46",
+            "percentile": 1.068,
+            "rank": 602
+          },
+          "last10": {
+            "value": 3.2,
+            "formattedValue": "3.20",
+            "percentile": 43.057,
+            "rank": 342
+          },
+          "last5": {
+            "value": 7.04,
+            "formattedValue": "7.04",
+            "percentile": 98.932,
+            "rank": 9
+          },
+          "deltaLast5VsLast20": 97.9,
+          "deltaLast5VsSeason": 55.9
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 3.2,
+            "formattedValue": "3.20",
+            "percentile": 42.924,
+            "rank": 342
+          },
+          "last20": {
+            "value": 0.45999999999999996,
+            "formattedValue": "0.46",
+            "percentile": 1.068,
+            "rank": 602
+          },
+          "last10": {
+            "value": 3.2,
+            "formattedValue": "3.20",
+            "percentile": 42.924,
+            "rank": 342
+          },
+          "last5": {
+            "value": 7.04,
+            "formattedValue": "7.04",
+            "percentile": 98.932,
+            "rank": 9
+          },
+          "deltaLast5VsLast20": 97.9,
+          "deltaLast5VsSeason": 56
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 3.2,
+            "formattedValue": "3.20",
+            "percentile": 42.924,
+            "rank": 342
+          },
+          "last20": {
+            "value": 0.45999999999999996,
+            "formattedValue": "0.46",
+            "percentile": 1.068,
+            "rank": 602
+          },
+          "last10": {
+            "value": 3.2,
+            "formattedValue": "3.20",
+            "percentile": 42.924,
+            "rank": 342
+          },
+          "last5": {
+            "value": 7.04,
+            "formattedValue": "7.04",
+            "percentile": 98.932,
+            "rank": 9
+          },
+          "deltaLast5VsLast20": 97.9,
+          "deltaLast5VsSeason": 56
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 3.2,
+            "formattedValue": "3.20",
+            "percentile": 42.924,
+            "rank": 342
+          },
+          "last20": {
+            "value": 0.45999999999999996,
+            "formattedValue": "0.46",
+            "percentile": 1.068,
+            "rank": 602
+          },
+          "last10": {
+            "value": 3.2,
+            "formattedValue": "3.20",
+            "percentile": 42.924,
+            "rank": 342
+          },
+          "last5": {
+            "value": 7.04,
+            "formattedValue": "7.04",
+            "percentile": 98.932,
+            "rank": 9
+          },
+          "deltaLast5VsLast20": 97.9,
+          "deltaLast5VsSeason": 56
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 728,
+          "currentValue": 1037,
+          "delta": 309,
+          "evidence": "TOI/G up +309s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 1.068,
+          "currentValue": 98.932,
+          "delta": 97.9,
+          "evidence": "Shot Attempts/60 percentile +97.9 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470009,
+        "name": "Skater 9",
+        "position": "LW",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 10,
+        "abbreviation": "T10",
+        "name": "Team 10"
+      },
+      "deployment": {
+        "ev": "L2",
+        "pp": "PP1",
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 5325,
+        "toiPerGameSeconds": 1065,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 97.6,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 97.6,
+      "toiTrend": {
+        "seasonSeconds": 729,
+        "last20Seconds": 729,
+        "last10Seconds": 729,
+        "last5Seconds": 1065,
+        "deltaLast5VsLast20Seconds": 336
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 5.866667,
+            "formattedValue": "5.87",
+            "percentile": 98.798,
+            "rank": 10
+          },
+          "last20": {
+            "value": 0.493827,
+            "formattedValue": "0.49",
+            "percentile": 0.534,
+            "rank": 737
+          },
+          "last10": {
+            "value": 2.962963,
+            "formattedValue": "2.96",
+            "percentile": 39.119,
+            "rank": 442
+          },
+          "last5": {
+            "value": 6.760563,
+            "formattedValue": "6.76",
+            "percentile": 98.131,
+            "rank": 15
+          },
+          "deltaLast5VsLast20": 97.6,
+          "deltaLast5VsSeason": -0.7
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 3.1,
+            "formattedValue": "3.10",
+            "percentile": 41.322,
+            "rank": 352
+          },
+          "last20": {
+            "value": 0.48,
+            "formattedValue": "0.48",
+            "percentile": 1.202,
+            "rank": 601
+          },
+          "last10": {
+            "value": 3.1,
+            "formattedValue": "3.10",
+            "percentile": 41.322,
+            "rank": 352
+          },
+          "last5": {
+            "value": 6.92,
+            "formattedValue": "6.92",
+            "percentile": 98.798,
+            "rank": 10
+          },
+          "deltaLast5VsLast20": 97.6,
+          "deltaLast5VsSeason": 57.5
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 3.1,
+            "formattedValue": "3.10",
+            "percentile": 41.188,
+            "rank": 352
+          },
+          "last20": {
+            "value": 0.48,
+            "formattedValue": "0.48",
+            "percentile": 1.202,
+            "rank": 601
+          },
+          "last10": {
+            "value": 3.1,
+            "formattedValue": "3.10",
+            "percentile": 41.188,
+            "rank": 352
+          },
+          "last5": {
+            "value": 6.92,
+            "formattedValue": "6.92",
+            "percentile": 98.798,
+            "rank": 10
+          },
+          "deltaLast5VsLast20": 97.6,
+          "deltaLast5VsSeason": 57.6
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 3.1,
+            "formattedValue": "3.10",
+            "percentile": 41.188,
+            "rank": 352
+          },
+          "last20": {
+            "value": 0.48,
+            "formattedValue": "0.48",
+            "percentile": 1.202,
+            "rank": 601
+          },
+          "last10": {
+            "value": 3.1,
+            "formattedValue": "3.10",
+            "percentile": 41.188,
+            "rank": 352
+          },
+          "last5": {
+            "value": 6.92,
+            "formattedValue": "6.92",
+            "percentile": 98.798,
+            "rank": 10
+          },
+          "deltaLast5VsLast20": 97.6,
+          "deltaLast5VsSeason": 57.6
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 3.1,
+            "formattedValue": "3.10",
+            "percentile": 41.188,
+            "rank": 352
+          },
+          "last20": {
+            "value": 0.48,
+            "formattedValue": "0.48",
+            "percentile": 1.202,
+            "rank": 601
+          },
+          "last10": {
+            "value": 3.1,
+            "formattedValue": "3.10",
+            "percentile": 41.188,
+            "rank": 352
+          },
+          "last5": {
+            "value": 6.92,
+            "formattedValue": "6.92",
+            "percentile": 98.798,
+            "rank": 10
+          },
+          "deltaLast5VsLast20": 97.6,
+          "deltaLast5VsSeason": 57.6
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 729,
+          "currentValue": 1065,
+          "delta": 336,
+          "evidence": "TOI/G up +336s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 1.202,
+          "currentValue": 98.798,
+          "delta": 97.6,
+          "evidence": "Shot Attempts/60 percentile +97.6 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470212,
+        "name": "Skater 212",
+        "position": "C",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 21,
+        "abbreviation": "T21",
+        "name": "Team 21"
+      },
+      "deployment": {
+        "ev": "L1",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4970,
+        "toiPerGameSeconds": 994,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 70.6,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 72.4,
+      "toiTrend": {
+        "seasonSeconds": 932,
+        "last20Seconds": 932,
+        "last10Seconds": 932,
+        "last5Seconds": 994,
+        "deltaLast5VsLast20Seconds": 62
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 3.543348,
+            "formattedValue": "3.54",
+            "percentile": 61.816,
+            "rank": 284
+          },
+          "last20": {
+            "value": 0.579399,
+            "formattedValue": "0.58",
+            "percentile": 1.602,
+            "rank": 729
+          },
+          "last10": {
+            "value": 0.772532,
+            "formattedValue": "0.77",
+            "percentile": 1.602,
+            "rank": 722
+          },
+          "last5": {
+            "value": 5.070423,
+            "formattedValue": "5.07",
+            "percentile": 73.965,
+            "rank": 181
+          },
+          "deltaLast5VsLast20": 72.4,
+          "deltaLast5VsSeason": 12.1
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 2.12,
+            "formattedValue": "2.12",
+            "percentile": 25.1,
+            "rank": 450
+          },
+          "last20": {
+            "value": 2.12,
+            "formattedValue": "2.12",
+            "percentile": 26.435,
+            "rank": 448
+          },
+          "last10": {
+            "value": 2.12,
+            "formattedValue": "2.12",
+            "percentile": 25.1,
+            "rank": 450
+          },
+          "last5": {
+            "value": 6.47,
+            "formattedValue": "6.47",
+            "percentile": 96.662,
+            "rank": 23
+          },
+          "deltaLast5VsLast20": 70.2,
+          "deltaLast5VsSeason": 71.6
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 1.38,
+            "formattedValue": "1.38",
+            "percentile": 12.951,
+            "rank": 524
+          },
+          "last20": {
+            "value": 1.38,
+            "formattedValue": "1.38",
+            "percentile": 14.286,
+            "rank": 522
+          },
+          "last10": {
+            "value": 1.38,
+            "formattedValue": "1.38",
+            "percentile": 12.951,
+            "rank": 524
+          },
+          "last5": {
+            "value": 5.7299999999999995,
+            "formattedValue": "5.73",
+            "percentile": 84.513,
+            "rank": 97
+          },
+          "deltaLast5VsLast20": 70.2,
+          "deltaLast5VsSeason": 71.6
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 1.38,
+            "formattedValue": "1.38",
+            "percentile": 12.951,
+            "rank": 524
+          },
+          "last20": {
+            "value": 1.38,
+            "formattedValue": "1.38",
+            "percentile": 14.286,
+            "rank": 522
+          },
+          "last10": {
+            "value": 1.38,
+            "formattedValue": "1.38",
+            "percentile": 12.951,
+            "rank": 524
+          },
+          "last5": {
+            "value": 5.7299999999999995,
+            "formattedValue": "5.73",
+            "percentile": 84.513,
+            "rank": 97
+          },
+          "deltaLast5VsLast20": 70.2,
+          "deltaLast5VsSeason": 71.6
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 1.38,
+            "formattedValue": "1.38",
+            "percentile": 12.951,
+            "rank": 524
+          },
+          "last20": {
+            "value": 1.38,
+            "formattedValue": "1.38",
+            "percentile": 14.286,
+            "rank": 522
+          },
+          "last10": {
+            "value": 1.38,
+            "formattedValue": "1.38",
+            "percentile": 12.951,
+            "rank": 524
+          },
+          "last5": {
+            "value": 5.7299999999999995,
+            "formattedValue": "5.73",
+            "percentile": 84.513,
+            "rank": 97
+          },
+          "deltaLast5VsLast20": 70.2,
+          "deltaLast5VsSeason": 71.6
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "medium",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 932,
+          "currentValue": 994,
+          "delta": 62,
+          "evidence": "TOI/G up +62s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 14.286,
+          "currentValue": 84.513,
+          "delta": 70.2,
+          "evidence": "Shot Attempts/60 percentile +70.2 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470319,
+        "name": "Skater 319",
+        "position": "RW",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 32,
+        "abbreviation": "T32",
+        "name": "Team 32"
+      },
+      "deployment": {
+        "ev": "L4",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 3340,
+        "toiPerGameSeconds": 668,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 69.6,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 72.2,
+      "toiTrend": {
+        "seasonSeconds": 799,
+        "last20Seconds": 799,
+        "last10Seconds": 799,
+        "last5Seconds": 668,
+        "deltaLast5VsLast20Seconds": -131
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 3.490363,
+            "formattedValue": "3.49",
+            "percentile": 60.347,
+            "rank": 295
+          },
+          "last20": {
+            "value": 0.901126,
+            "formattedValue": "0.90",
+            "percentile": 6.542,
+            "rank": 692
+          },
+          "last10": {
+            "value": 0.901126,
+            "formattedValue": "0.90",
+            "percentile": 4.539,
+            "rank": 700
+          },
+          "last5": {
+            "value": 5.389222,
+            "formattedValue": "5.39",
+            "percentile": 78.772,
+            "rank": 147
+          },
+          "deltaLast5VsLast20": 72.2,
+          "deltaLast5VsSeason": 18.4
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 2.31,
+            "formattedValue": "2.31",
+            "percentile": 28.171,
+            "rank": 431
+          },
+          "last20": {
+            "value": 2.31,
+            "formattedValue": "2.31",
+            "percentile": 29.506,
+            "rank": 429
+          },
+          "last10": {
+            "value": 2.31,
+            "formattedValue": "2.31",
+            "percentile": 28.171,
+            "rank": 431
+          },
+          "last5": {
+            "value": 6.58,
+            "formattedValue": "6.58",
+            "percentile": 98.398,
+            "rank": 12
+          },
+          "deltaLast5VsLast20": 68.9,
+          "deltaLast5VsSeason": 70.2
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 1.5699999999999998,
+            "formattedValue": "1.57",
+            "percentile": 16.021,
+            "rank": 505
+          },
+          "last20": {
+            "value": 1.5699999999999998,
+            "formattedValue": "1.57",
+            "percentile": 17.356,
+            "rank": 503
+          },
+          "last10": {
+            "value": 1.5699999999999998,
+            "formattedValue": "1.57",
+            "percentile": 16.021,
+            "rank": 505
+          },
+          "last5": {
+            "value": 5.84,
+            "formattedValue": "5.84",
+            "percentile": 86.248,
+            "rank": 86
+          },
+          "deltaLast5VsLast20": 68.9,
+          "deltaLast5VsSeason": 70.2
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 1.5699999999999998,
+            "formattedValue": "1.57",
+            "percentile": 16.021,
+            "rank": 505
+          },
+          "last20": {
+            "value": 1.5699999999999998,
+            "formattedValue": "1.57",
+            "percentile": 17.356,
+            "rank": 503
+          },
+          "last10": {
+            "value": 1.5699999999999998,
+            "formattedValue": "1.57",
+            "percentile": 16.021,
+            "rank": 505
+          },
+          "last5": {
+            "value": 5.84,
+            "formattedValue": "5.84",
+            "percentile": 86.248,
+            "rank": 86
+          },
+          "deltaLast5VsLast20": 68.9,
+          "deltaLast5VsSeason": 70.2
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 1.5699999999999998,
+            "formattedValue": "1.57",
+            "percentile": 16.021,
+            "rank": 505
+          },
+          "last20": {
+            "value": 1.5699999999999998,
+            "formattedValue": "1.57",
+            "percentile": 17.356,
+            "rank": 503
+          },
+          "last10": {
+            "value": 1.5699999999999998,
+            "formattedValue": "1.57",
+            "percentile": 16.021,
+            "rank": 505
+          },
+          "last5": {
+            "value": 5.84,
+            "formattedValue": "5.84",
+            "percentile": 86.248,
+            "rank": 86
+          },
+          "deltaLast5VsLast20": 68.9,
+          "deltaLast5VsSeason": 70.2
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "usage_drop",
+          "label": "Usage Drop",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 799,
+          "currentValue": 668,
+          "delta": -131,
+          "evidence": "TOI/G down -131s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 17.356,
+          "currentValue": 86.248,
+          "delta": 68.9,
+          "evidence": "Shot Attempts/60 percentile +68.9 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470672,
+        "name": "Skater 672",
+        "position": "C",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 1,
+        "abbreviation": "T01",
+        "name": "Team 1"
+      },
+      "deployment": {
+        "ev": "L1",
+        "pp": "PP1",
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4170,
+        "toiPerGameSeconds": 834,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 65.2,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 71.7,
+      "toiTrend": {
+        "seasonSeconds": 912,
+        "last20Seconds": 912,
+        "last10Seconds": 912,
+        "last5Seconds": 834,
+        "deltaLast5VsLast20Seconds": -78
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 1.2,
+            "formattedValue": "1.20",
+            "percentile": 10.214,
+            "rank": 665
+          },
+          "last20": {
+            "value": 0.789474,
+            "formattedValue": "0.79",
+            "percentile": 4.139,
+            "rank": 710
+          },
+          "last10": {
+            "value": 0.789474,
+            "formattedValue": "0.79",
+            "percentile": 1.736,
+            "rank": 721
+          },
+          "last5": {
+            "value": 5.179856,
+            "formattedValue": "5.18",
+            "percentile": 75.834,
+            "rank": 169
+          },
+          "deltaLast5VsLast20": 71.7,
+          "deltaLast5VsSeason": 65.6
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 2.32,
+            "formattedValue": "2.32",
+            "percentile": 28.371,
+            "rank": 430
+          },
+          "last20": {
+            "value": 2.32,
+            "formattedValue": "2.32",
+            "percentile": 29.706,
+            "rank": 428
+          },
+          "last10": {
+            "value": 2.32,
+            "formattedValue": "2.32",
+            "percentile": 28.371,
+            "rank": 430
+          },
+          "last5": {
+            "value": 6.27,
+            "formattedValue": "6.27",
+            "percentile": 93.258,
+            "rank": 43
+          },
+          "deltaLast5VsLast20": 63.6,
+          "deltaLast5VsSeason": 64.9
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 16.222,
+            "rank": 504
+          },
+          "last20": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 17.557,
+            "rank": 502
+          },
+          "last10": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 16.222,
+            "rank": 504
+          },
+          "last5": {
+            "value": 5.529999999999999,
+            "formattedValue": "5.53",
+            "percentile": 81.108,
+            "rank": 117
+          },
+          "deltaLast5VsLast20": 63.6,
+          "deltaLast5VsSeason": 64.9
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 16.222,
+            "rank": 504
+          },
+          "last20": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 17.557,
+            "rank": 502
+          },
+          "last10": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 16.222,
+            "rank": 504
+          },
+          "last5": {
+            "value": 5.529999999999999,
+            "formattedValue": "5.53",
+            "percentile": 81.108,
+            "rank": 117
+          },
+          "deltaLast5VsLast20": 63.6,
+          "deltaLast5VsSeason": 64.9
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 16.222,
+            "rank": 504
+          },
+          "last20": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 17.557,
+            "rank": 502
+          },
+          "last10": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 16.222,
+            "rank": 504
+          },
+          "last5": {
+            "value": 5.529999999999999,
+            "formattedValue": "5.53",
+            "percentile": 81.108,
+            "rank": 117
+          },
+          "deltaLast5VsLast20": 63.6,
+          "deltaLast5VsSeason": 64.9
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "usage_drop",
+          "label": "Usage Drop",
+          "severity": "medium",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 912,
+          "currentValue": 834,
+          "delta": -78,
+          "evidence": "TOI/G down -78s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 17.557,
+          "currentValue": 81.108,
+          "delta": 63.6,
+          "evidence": "Shot Attempts/60 percentile +63.6 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470565,
+        "name": "Skater 565",
+        "position": "LW",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 22,
+        "abbreviation": "T22",
+        "name": "Team 22"
+      },
+      "deployment": {
+        "ev": "L2",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4600,
+        "toiPerGameSeconds": 920,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 65,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 65.2,
+      "toiTrend": {
+        "seasonSeconds": 805,
+        "last20Seconds": 805,
+        "last10Seconds": 805,
+        "last5Seconds": 920,
+        "deltaLast5VsLast20Seconds": 115
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 1.997516,
+            "formattedValue": "2.00",
+            "percentile": 24.566,
+            "rank": 558
+          },
+          "last20": {
+            "value": 0.670807,
+            "formattedValue": "0.67",
+            "percentile": 2.537,
+            "rank": 722
+          },
+          "last10": {
+            "value": 0.447205,
+            "formattedValue": "0.45",
+            "percentile": 0.401,
+            "rank": 731
+          },
+          "last5": {
+            "value": 4.695652,
+            "formattedValue": "4.70",
+            "percentile": 67.69,
+            "rank": 225
+          },
+          "deltaLast5VsLast20": 65.2,
+          "deltaLast5VsSeason": 43.1
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 2.13,
+            "formattedValue": "2.13",
+            "percentile": 25.234,
+            "rank": 449
+          },
+          "last20": {
+            "value": 2.13,
+            "formattedValue": "2.13",
+            "percentile": 26.569,
+            "rank": 447
+          },
+          "last10": {
+            "value": 2.13,
+            "formattedValue": "2.13",
+            "percentile": 25.234,
+            "rank": 449
+          },
+          "last5": {
+            "value": 6.159999999999999,
+            "formattedValue": "6.16",
+            "percentile": 91.455,
+            "rank": 54
+          },
+          "deltaLast5VsLast20": 64.9,
+          "deltaLast5VsSeason": 66.2
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 1.3900000000000001,
+            "formattedValue": "1.39",
+            "percentile": 13.084,
+            "rank": 523
+          },
+          "last20": {
+            "value": 1.3900000000000001,
+            "formattedValue": "1.39",
+            "percentile": 14.419,
+            "rank": 521
+          },
+          "last10": {
+            "value": 1.3900000000000001,
+            "formattedValue": "1.39",
+            "percentile": 13.084,
+            "rank": 523
+          },
+          "last5": {
+            "value": 5.42,
+            "formattedValue": "5.42",
+            "percentile": 79.306,
+            "rank": 128
+          },
+          "deltaLast5VsLast20": 64.9,
+          "deltaLast5VsSeason": 66.2
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 1.3900000000000001,
+            "formattedValue": "1.39",
+            "percentile": 13.084,
+            "rank": 523
+          },
+          "last20": {
+            "value": 1.3900000000000001,
+            "formattedValue": "1.39",
+            "percentile": 14.419,
+            "rank": 521
+          },
+          "last10": {
+            "value": 1.3900000000000001,
+            "formattedValue": "1.39",
+            "percentile": 13.084,
+            "rank": 523
+          },
+          "last5": {
+            "value": 5.42,
+            "formattedValue": "5.42",
+            "percentile": 79.306,
+            "rank": 128
+          },
+          "deltaLast5VsLast20": 64.9,
+          "deltaLast5VsSeason": 66.2
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 1.3900000000000001,
+            "formattedValue": "1.39",
+            "percentile": 13.084,
+            "rank": 523
+          },
+          "last20": {
+            "value": 1.3900000000000001,
+            "formattedValue": "1.39",
+            "percentile": 14.419,
+            "rank": 521
+          },
+          "last10": {
+            "value": 1.3900000000000001,
+            "formattedValue": "1.39",
+            "percentile": 13.084,
+            "rank": 523
+          },
+          "last5": {
+            "value": 5.42,
+            "formattedValue": "5.42",
+            "percentile": 79.306,
+            "rank": 128
+          },
+          "deltaLast5VsLast20": 64.9,
+          "deltaLast5VsSeason": 66.2
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "medium",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 805,
+          "currentValue": 920,
+          "delta": 115,
+          "evidence": "TOI/G up +115s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 14.419,
+          "currentValue": 79.306,
+          "delta": 64.9,
+          "evidence": "Shot Attempts/60 percentile +64.9 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470031,
+        "name": "Skater 31",
+        "position": "RW",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 32,
+        "abbreviation": "T32",
+        "name": "Team 32"
+      },
+      "deployment": {
+        "ev": "L4",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 3160,
+        "toiPerGameSeconds": 632,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 64.2,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": -2.1,
+      "toiTrend": {
+        "seasonSeconds": 751,
+        "last20Seconds": 751,
+        "last10Seconds": 751,
+        "last5Seconds": 632,
+        "deltaLast5VsLast20Seconds": -119
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 5.554194,
+            "formattedValue": "5.55",
+            "percentile": 95.861,
+            "rank": 32
+          },
+          "last20": {
+            "value": 5.75233,
+            "formattedValue": "5.75",
+            "percentile": 86.382,
+            "rank": 103
+          },
+          "last10": {
+            "value": 5.75233,
+            "formattedValue": "5.75",
+            "percentile": 85.848,
+            "rank": 106
+          },
+          "last5": {
+            "value": 5.696203,
+            "formattedValue": "5.70",
+            "percentile": 84.246,
+            "rank": 111
+          },
+          "deltaLast5VsLast20": -2.1,
+          "deltaLast5VsSeason": -11.6
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 1.35,
+            "formattedValue": "1.35",
+            "percentile": 12.35,
+            "rank": 527
+          },
+          "last20": {
+            "value": 1.35,
+            "formattedValue": "1.35",
+            "percentile": 13.685,
+            "rank": 525
+          },
+          "last10": {
+            "value": 1.35,
+            "formattedValue": "1.35",
+            "percentile": 12.35,
+            "rank": 527
+          },
+          "last5": {
+            "value": 6.34,
+            "formattedValue": "6.34",
+            "percentile": 94.459,
+            "rank": 36
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 0.2,
+            "rank": 601
+          },
+          "last20": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 1.535,
+            "rank": 599
+          },
+          "last10": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 0.2,
+            "rank": 601
+          },
+          "last5": {
+            "value": 5.6,
+            "formattedValue": "5.60",
+            "percentile": 82.31,
+            "rank": 110
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 0.2,
+            "rank": 601
+          },
+          "last20": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 1.535,
+            "rank": 599
+          },
+          "last10": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 0.2,
+            "rank": 601
+          },
+          "last5": {
+            "value": 5.6,
+            "formattedValue": "5.60",
+            "percentile": 82.31,
+            "rank": 110
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 0.2,
+            "rank": 601
+          },
+          "last20": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 1.535,
+            "rank": 599
+          },
+          "last10": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 0.2,
+            "rank": 601
+          },
+          "last5": {
+            "value": 5.6,
+            "formattedValue": "5.60",
+            "percentile": 82.31,
+            "rank": 110
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "usage_drop",
+          "label": "Usage Drop",
+          "severity": "medium",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 751,
+          "currentValue": 632,
+          "delta": -119,
+          "evidence": "TOI/G down -119s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 1.535,
+          "currentValue": 82.31,
+          "delta": 80.8,
+          "evidence": "Shot Attempts/60 percentile +80.8 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470072,
+        "name": "Skater 72",
+        "position": "C",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 9,
+        "abbreviation": "T09",
+        "name": "Team 9"
+      },
+      "deployment": {
+        "ev": "L1",
+        "pp": "PP1",
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 3570,
+        "toiPerGameSeconds": 714,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 64.2,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 66.8,
+      "toiTrend": {
+        "seasonSeconds": 792,
+        "last20Seconds": 792,
+        "last10Seconds": 792,
+        "last5Seconds": 714,
+        "deltaLast5VsLast20Seconds": -78
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 5.018182,
+            "formattedValue": "5.02",
+            "percentile": 90.387,
+            "rank": 73
+          },
+          "last20": {
+            "value": 0.909091,
+            "formattedValue": "0.91",
+            "percentile": 6.809,
+            "rank": 690
+          },
+          "last10": {
+            "value": 0.909091,
+            "formattedValue": "0.91",
+            "percentile": 4.806,
+            "rank": 698
+          },
+          "last5": {
+            "value": 5.042017,
+            "formattedValue": "5.04",
+            "percentile": 73.565,
+            "rank": 183
+          },
+          "deltaLast5VsLast20": 66.8,
+          "deltaLast5VsSeason": -16.8
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 2.32,
+            "formattedValue": "2.32",
+            "percentile": 28.371,
+            "rank": 430
+          },
+          "last20": {
+            "value": 2.32,
+            "formattedValue": "2.32",
+            "percentile": 29.706,
+            "rank": 428
+          },
+          "last10": {
+            "value": 2.32,
+            "formattedValue": "2.32",
+            "percentile": 28.371,
+            "rank": 430
+          },
+          "last5": {
+            "value": 6.27,
+            "formattedValue": "6.27",
+            "percentile": 93.258,
+            "rank": 43
+          },
+          "deltaLast5VsLast20": 63.6,
+          "deltaLast5VsSeason": 64.9
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 16.222,
+            "rank": 504
+          },
+          "last20": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 17.557,
+            "rank": 502
+          },
+          "last10": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 16.222,
+            "rank": 504
+          },
+          "last5": {
+            "value": 5.529999999999999,
+            "formattedValue": "5.53",
+            "percentile": 81.108,
+            "rank": 117
+          },
+          "deltaLast5VsLast20": 63.6,
+          "deltaLast5VsSeason": 64.9
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 16.222,
+            "rank": 504
+          },
+          "last20": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 17.557,
+            "rank": 502
+          },
+          "last10": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 16.222,
+            "rank": 504
+          },
+          "last5": {
+            "value": 5.529999999999999,
+            "formattedValue": "5.53",
+            "percentile": 81.108,
+            "rank": 117
+          },
+          "deltaLast5VsLast20": 63.6,
+          "deltaLast5VsSeason": 64.9
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 16.222,
+            "rank": 504
+          },
+          "last20": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 17.557,
+            "rank": 502
+          },
+          "last10": {
+            "value": 1.58,
+            "formattedValue": "1.58",
+            "percentile": 16.222,
+            "rank": 504
+          },
+          "last5": {
+            "value": 5.529999999999999,
+            "formattedValue": "5.53",
+            "percentile": 81.108,
+            "rank": 117
+          },
+          "deltaLast5VsLast20": 63.6,
+          "deltaLast5VsSeason": 64.9
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "usage_drop",
+          "label": "Usage Drop",
+          "severity": "medium",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 792,
+          "currentValue": 714,
+          "delta": -78,
+          "evidence": "TOI/G down -78s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 17.557,
+          "currentValue": 81.108,
+          "delta": 63.6,
+          "evidence": "Shot Attempts/60 percentile +63.6 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470179,
+        "name": "Skater 179",
+        "position": "RW",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 20,
+        "abbreviation": "T20",
+        "name": "Team 20"
+      },
+      "deployment": {
+        "ev": "L4",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4640,
+        "toiPerGameSeconds": 928,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 64,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 70.5,
+      "toiTrend": {
+        "seasonSeconds": 899,
+        "last20Seconds": 899,
+        "last10Seconds": 899,
+        "last5Seconds": 928,
+        "deltaLast5VsLast20Seconds": 29
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 3.849611,
+            "formattedValue": "3.85",
+            "percentile": 69.96,
+            "rank": 224
+          },
+          "last20": {
+            "value": 1.001112,
+            "formattedValue": "1.00",
+            "percentile": 9.212,
+            "rank": 672
+          },
+          "last10": {
+            "value": 1.201335,
+            "formattedValue": "1.20",
+            "percentile": 9.479,
+            "rank": 663
+          },
+          "last5": {
+            "value": 5.431034,
+            "formattedValue": "5.43",
+            "percentile": 79.706,
+            "rank": 140
+          },
+          "deltaLast5VsLast20": 70.5,
+          "deltaLast5VsSeason": 9.7
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 2.51,
+            "formattedValue": "2.51",
+            "percentile": 31.509,
+            "rank": 411
+          },
+          "last20": {
+            "value": 2.51,
+            "formattedValue": "2.51",
+            "percentile": 32.844,
+            "rank": 409
+          },
+          "last10": {
+            "value": 2.51,
+            "formattedValue": "2.51",
+            "percentile": 31.509,
+            "rank": 411
+          },
+          "last5": {
+            "value": 6.38,
+            "formattedValue": "6.38",
+            "percentile": 95.194,
+            "rank": 32
+          },
+          "deltaLast5VsLast20": 62.4,
+          "deltaLast5VsSeason": 63.7
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 1.77,
+            "formattedValue": "1.77",
+            "percentile": 19.359,
+            "rank": 485
+          },
+          "last20": {
+            "value": 1.77,
+            "formattedValue": "1.77",
+            "percentile": 20.694,
+            "rank": 483
+          },
+          "last10": {
+            "value": 1.77,
+            "formattedValue": "1.77",
+            "percentile": 19.359,
+            "rank": 485
+          },
+          "last5": {
+            "value": 5.64,
+            "formattedValue": "5.64",
+            "percentile": 83.044,
+            "rank": 106
+          },
+          "deltaLast5VsLast20": 62.4,
+          "deltaLast5VsSeason": 63.7
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 1.77,
+            "formattedValue": "1.77",
+            "percentile": 19.359,
+            "rank": 485
+          },
+          "last20": {
+            "value": 1.77,
+            "formattedValue": "1.77",
+            "percentile": 20.694,
+            "rank": 483
+          },
+          "last10": {
+            "value": 1.77,
+            "formattedValue": "1.77",
+            "percentile": 19.359,
+            "rank": 485
+          },
+          "last5": {
+            "value": 5.64,
+            "formattedValue": "5.64",
+            "percentile": 83.044,
+            "rank": 106
+          },
+          "deltaLast5VsLast20": 62.4,
+          "deltaLast5VsSeason": 63.7
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 1.77,
+            "formattedValue": "1.77",
+            "percentile": 19.359,
+            "rank": 485
+          },
+          "last20": {
+            "value": 1.77,
+            "formattedValue": "1.77",
+            "percentile": 20.694,
+            "rank": 483
+          },
+          "last10": {
+            "value": 1.77,
+            "formattedValue": "1.77",
+            "percentile": 19.359,
+            "rank": 485
+          },
+          "last5": {
+            "value": 5.64,
+            "formattedValue": "5.64",
+            "percentile": 83.044,
+            "rank": 106
+          },
+          "deltaLast5VsLast20": 62.4,
+          "deltaLast5VsSeason": 63.7
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 20.694,
+          "currentValue": 83.044,
+          "delta": 62.4,
+          "evidence": "Shot Attempts/60 percentile +62.4 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470286,
+        "name": "Skater 286",
+        "position": "D",
+        "positionGroup": "defense",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 31,
+        "abbreviation": "T31",
+        "name": "Team 31"
+      },
+      "deployment": {
+        "ev": "P3",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4510,
+        "toiPerGameSeconds": 902,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 63,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 71.2,
+      "toiTrend": {
+        "seasonSeconds": 766,
+        "last20Seconds": 766,
+        "last10Seconds": 766,
+        "last5Seconds": 902,
+        "deltaLast5VsLast20Seconds": 136
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 3.84752,
+            "formattedValue": "3.85",
+            "percentile": 69.826,
+            "rank": 225
+          },
+          "last20": {
+            "value": 1.174935,
+            "formattedValue": "1.17",
+            "percentile": 11.081,
+            "rank": 658
+          },
+          "last10": {
+            "value": 1.409922,
+            "formattedValue": "1.41",
+            "percentile": 13.885,
+            "rank": 630
+          },
+          "last5": {
+            "value": 5.587583,
+            "formattedValue": "5.59",
+            "percentile": 82.31,
+            "rank": 124
+          },
+          "deltaLast5VsLast20": 71.2,
+          "deltaLast5VsSeason": 12.5
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 2.7,
+            "formattedValue": "2.70",
+            "percentile": 34.579,
+            "rank": 392
+          },
+          "last20": {
+            "value": 2.7,
+            "formattedValue": "2.70",
+            "percentile": 35.915,
+            "rank": 390
+          },
+          "last10": {
+            "value": 2.7,
+            "formattedValue": "2.70",
+            "percentile": 34.579,
+            "rank": 392
+          },
+          "last5": {
+            "value": 6.489999999999999,
+            "formattedValue": "6.49",
+            "percentile": 96.929,
+            "rank": 21
+          },
+          "deltaLast5VsLast20": 61,
+          "deltaLast5VsSeason": 62.4
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 1.96,
+            "formattedValue": "1.96",
+            "percentile": 22.43,
+            "rank": 466
+          },
+          "last20": {
+            "value": 1.96,
+            "formattedValue": "1.96",
+            "percentile": 23.765,
+            "rank": 464
+          },
+          "last10": {
+            "value": 1.96,
+            "formattedValue": "1.96",
+            "percentile": 22.43,
+            "rank": 466
+          },
+          "last5": {
+            "value": 5.75,
+            "formattedValue": "5.75",
+            "percentile": 84.78,
+            "rank": 95
+          },
+          "deltaLast5VsLast20": 61,
+          "deltaLast5VsSeason": 62.4
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 1.96,
+            "formattedValue": "1.96",
+            "percentile": 22.43,
+            "rank": 466
+          },
+          "last20": {
+            "value": 1.96,
+            "formattedValue": "1.96",
+            "percentile": 23.765,
+            "rank": 464
+          },
+          "last10": {
+            "value": 1.96,
+            "formattedValue": "1.96",
+            "percentile": 22.43,
+            "rank": 466
+          },
+          "last5": {
+            "value": 5.75,
+            "formattedValue": "5.75",
+            "percentile": 84.78,
+            "rank": 95
+          },
+          "deltaLast5VsLast20": 61,
+          "deltaLast5VsSeason": 62.4
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 1.96,
+            "formattedValue": "1.96",
+            "percentile": 22.43,
+            "rank": 466
+          },
+          "last20": {
+            "value": 1.96,
+            "formattedValue": "1.96",
+            "percentile": 23.765,
+            "rank": 464
+          },
+          "last10": {
+            "value": 1.96,
+            "formattedValue": "1.96",
+            "percentile": 22.43,
+            "rank": 466
+          },
+          "last5": {
+            "value": 5.75,
+            "formattedValue": "5.75",
+            "percentile": 84.78,
+            "rank": 95
+          },
+          "deltaLast5VsLast20": 61,
+          "deltaLast5VsSeason": 62.4
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 766,
+          "currentValue": 902,
+          "delta": 136,
+          "evidence": "TOI/G up +136s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 23.765,
+          "currentValue": 84.78,
+          "delta": 61,
+          "evidence": "Shot Attempts/60 percentile +61.0 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470631,
+        "name": "Skater 631",
+        "position": "RW",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 24,
+        "abbreviation": "T24",
+        "name": "Team 24"
+      },
+      "deployment": {
+        "ev": "L4",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 3760,
+        "toiPerGameSeconds": 752,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 61.1,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": -17.6,
+      "toiTrend": {
+        "seasonSeconds": 871,
+        "last20Seconds": 871,
+        "last10Seconds": 871,
+        "last5Seconds": 752,
+        "deltaLast5VsLast20Seconds": -119
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 1.482434,
+            "formattedValue": "1.48",
+            "percentile": 15.754,
+            "rank": 624
+          },
+          "last20": {
+            "value": 5.786452,
+            "formattedValue": "5.79",
+            "percentile": 86.916,
+            "rank": 99
+          },
+          "last10": {
+            "value": 5.786452,
+            "formattedValue": "5.79",
+            "percentile": 86.515,
+            "rank": 101
+          },
+          "last5": {
+            "value": 4.787234,
+            "formattedValue": "4.79",
+            "percentile": 69.292,
+            "rank": 214
+          },
+          "deltaLast5VsLast20": -17.6,
+          "deltaLast5VsSeason": 53.5
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 1.35,
+            "formattedValue": "1.35",
+            "percentile": 12.35,
+            "rank": 527
+          },
+          "last20": {
+            "value": 1.35,
+            "formattedValue": "1.35",
+            "percentile": 13.685,
+            "rank": 525
+          },
+          "last10": {
+            "value": 1.35,
+            "formattedValue": "1.35",
+            "percentile": 12.35,
+            "rank": 527
+          },
+          "last5": {
+            "value": 6.34,
+            "formattedValue": "6.34",
+            "percentile": 94.459,
+            "rank": 36
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 0.2,
+            "rank": 601
+          },
+          "last20": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 1.535,
+            "rank": 599
+          },
+          "last10": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 0.2,
+            "rank": 601
+          },
+          "last5": {
+            "value": 5.6,
+            "formattedValue": "5.60",
+            "percentile": 82.31,
+            "rank": 110
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 0.2,
+            "rank": 601
+          },
+          "last20": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 1.535,
+            "rank": 599
+          },
+          "last10": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 0.2,
+            "rank": 601
+          },
+          "last5": {
+            "value": 5.6,
+            "formattedValue": "5.60",
+            "percentile": 82.31,
+            "rank": 110
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 0.2,
+            "rank": 601
+          },
+          "last20": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 1.535,
+            "rank": 599
+          },
+          "last10": {
+            "value": 0.61,
+            "formattedValue": "0.61",
+            "percentile": 0.2,
+            "rank": 601
+          },
+          "last5": {
+            "value": 5.6,
+            "formattedValue": "5.60",
+            "percentile": 82.31,
+            "rank": 110
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "usage_drop",
+          "label": "Usage Drop",
+          "severity": "medium",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 871,
+          "currentValue": 752,
+          "delta": -119,
+          "evidence": "TOI/G down -119s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 1.535,
+          "currentValue": 82.31,
+          "delta": 80.8,
+          "evidence": "Shot Attempts/60 percentile +80.8 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470706,
+        "name": "Skater 706",
+        "position": "D",
+        "positionGroup": "defense",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 3,
+        "abbreviation": "T03",
+        "name": "Team 3"
+      },
+      "deployment": {
+        "ev": "P3",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4510,
+        "toiPerGameSeconds": 902,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 61.1,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 81,
+      "toiTrend": {
+        "seasonSeconds": 946,
+        "last20Seconds": 946,
+        "last10Seconds": 946,
+        "last5Seconds": 902,
+        "deltaLast5VsLast20Seconds": -44
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 0.984355,
+            "formattedValue": "0.98",
+            "percentile": 2.136,
+            "rank": 724
+          },
+          "last20": {
+            "value": 0.570825,
+            "formattedValue": "0.57",
+            "percentile": 1.335,
+            "rank": 731
+          },
+          "last10": {
+            "value": 0.761099,
+            "formattedValue": "0.76",
+            "percentile": 1.068,
+            "rank": 726
+          },
+          "last5": {
+            "value": 5.587583,
+            "formattedValue": "5.59",
+            "percentile": 82.31,
+            "rank": 124
+          },
+          "deltaLast5VsLast20": 81,
+          "deltaLast5VsSeason": 80.2
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 2.1,
+            "formattedValue": "2.10",
+            "percentile": 24.766,
+            "rank": 452
+          },
+          "last20": {
+            "value": 2.1,
+            "formattedValue": "2.10",
+            "percentile": 26.101,
+            "rank": 450
+          },
+          "last10": {
+            "value": 2.1,
+            "formattedValue": "2.10",
+            "percentile": 24.766,
+            "rank": 452
+          },
+          "last5": {
+            "value": 1.0899999999999999,
+            "formattedValue": "1.09",
+            "percentile": 8.077,
+            "rank": 561
+          },
+          "deltaLast5VsLast20": -18,
+          "deltaLast5VsSeason": -16.7
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 12.617,
+            "rank": 526
+          },
+          "last20": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 13.952,
+            "rank": 524
+          },
+          "last10": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 12.617,
+            "rank": 526
+          },
+          "last5": {
+            "value": 6.35,
+            "formattedValue": "6.35",
+            "percentile": 94.726,
+            "rank": 35
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 12.617,
+            "rank": 526
+          },
+          "last20": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 13.952,
+            "rank": 524
+          },
+          "last10": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 12.617,
+            "rank": 526
+          },
+          "last5": {
+            "value": 6.35,
+            "formattedValue": "6.35",
+            "percentile": 94.726,
+            "rank": 35
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 12.617,
+            "rank": 526
+          },
+          "last20": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 13.952,
+            "rank": 524
+          },
+          "last10": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 12.617,
+            "rank": 526
+          },
+          "last5": {
+            "value": 6.35,
+            "formattedValue": "6.35",
+            "percentile": 94.726,
+            "rank": 35
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "usage_drop",
+          "label": "Usage Drop",
+          "severity": "low",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 946,
+          "currentValue": 902,
+          "delta": -44,
+          "evidence": "TOI/G down -44s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 13.952,
+          "currentValue": 94.726,
+          "delta": 80.8,
+          "evidence": "Shot Attempts/60 percentile +80.8 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470106,
+        "name": "Skater 106",
+        "position": "D",
+        "positionGroup": "defense",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 11,
+        "abbreviation": "T11",
+        "name": "Team 11"
+      },
+      "deployment": {
+        "ev": "P3",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 3910,
+        "toiPerGameSeconds": 782,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 60.6,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 78.7,
+      "toiTrend": {
+        "seasonSeconds": 826,
+        "last20Seconds": 826,
+        "last10Seconds": 826,
+        "last5Seconds": 782,
+        "deltaLast5VsLast20Seconds": -44
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 4.614044,
+            "formattedValue": "4.61",
+            "percentile": 85.848,
+            "rank": 107
+          },
+          "last20": {
+            "value": 0.653753,
+            "formattedValue": "0.65",
+            "percentile": 2.403,
+            "rank": 723
+          },
+          "last10": {
+            "value": 0.435835,
+            "formattedValue": "0.44",
+            "percentile": 0.267,
+            "rank": 732
+          },
+          "last5": {
+            "value": 5.524297,
+            "formattedValue": "5.52",
+            "percentile": 81.108,
+            "rank": 131
+          },
+          "deltaLast5VsLast20": 78.7,
+          "deltaLast5VsSeason": -4.7
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 2.1,
+            "formattedValue": "2.10",
+            "percentile": 24.766,
+            "rank": 452
+          },
+          "last20": {
+            "value": 2.1,
+            "formattedValue": "2.10",
+            "percentile": 26.101,
+            "rank": 450
+          },
+          "last10": {
+            "value": 2.1,
+            "formattedValue": "2.10",
+            "percentile": 24.766,
+            "rank": 452
+          },
+          "last5": {
+            "value": 1.0899999999999999,
+            "formattedValue": "1.09",
+            "percentile": 8.077,
+            "rank": 561
+          },
+          "deltaLast5VsLast20": -18,
+          "deltaLast5VsSeason": -16.7
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 12.617,
+            "rank": 526
+          },
+          "last20": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 13.952,
+            "rank": 524
+          },
+          "last10": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 12.617,
+            "rank": 526
+          },
+          "last5": {
+            "value": 6.35,
+            "formattedValue": "6.35",
+            "percentile": 94.726,
+            "rank": 35
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 12.617,
+            "rank": 526
+          },
+          "last20": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 13.952,
+            "rank": 524
+          },
+          "last10": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 12.617,
+            "rank": 526
+          },
+          "last5": {
+            "value": 6.35,
+            "formattedValue": "6.35",
+            "percentile": 94.726,
+            "rank": 35
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 12.617,
+            "rank": 526
+          },
+          "last20": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 13.952,
+            "rank": 524
+          },
+          "last10": {
+            "value": 1.3599999999999999,
+            "formattedValue": "1.36",
+            "percentile": 12.617,
+            "rank": 526
+          },
+          "last5": {
+            "value": 6.35,
+            "formattedValue": "6.35",
+            "percentile": 94.726,
+            "rank": 35
+          },
+          "deltaLast5VsLast20": 80.8,
+          "deltaLast5VsSeason": 82.1
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "usage_drop",
+          "label": "Usage Drop",
+          "severity": "low",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 826,
+          "currentValue": 782,
+          "delta": -44,
+          "evidence": "TOI/G down -44s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 13.952,
+          "currentValue": 94.726,
+          "delta": 80.8,
+          "evidence": "Shot Attempts/60 percentile +80.8 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470320,
+        "name": "Skater 320",
+        "position": "C",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 1,
+        "abbreviation": "T01",
+        "name": "Team 1"
+      },
+      "deployment": {
+        "ev": "L1",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 3350,
+        "toiPerGameSeconds": 670,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 60.5,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 88.8,
+      "toiTrend": {
+        "seasonSeconds": 800,
+        "last20Seconds": 800,
+        "last10Seconds": 800,
+        "last5Seconds": 670,
+        "deltaLast5VsLast20Seconds": -130
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 3.48,
+            "formattedValue": "3.48",
+            "percentile": 59.947,
+            "rank": 298
+          },
+          "last20": {
+            "value": 0.9,
+            "formattedValue": "0.90",
+            "percentile": 6.409,
+            "rank": 693
+          },
+          "last10": {
+            "value": 0.9,
+            "formattedValue": "0.90",
+            "percentile": 4.406,
+            "rank": 701
+          },
+          "last5": {
+            "value": 6.447761,
+            "formattedValue": "6.45",
+            "percentile": 95.194,
+            "rank": 36
+          },
+          "deltaLast5VsLast20": 88.8,
+          "deltaLast5VsSeason": 35.2
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 2.48,
+            "formattedValue": "2.48",
+            "percentile": 30.975,
+            "rank": 414
+          },
+          "last20": {
+            "value": 2.48,
+            "formattedValue": "2.48",
+            "percentile": 32.31,
+            "rank": 412
+          },
+          "last10": {
+            "value": 2.48,
+            "formattedValue": "2.48",
+            "percentile": 30.975,
+            "rank": 414
+          },
+          "last5": {
+            "value": 1.31,
+            "formattedValue": "1.31",
+            "percentile": 11.615,
+            "rank": 539
+          },
+          "deltaLast5VsLast20": -20.7,
+          "deltaLast5VsSeason": -19.4
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 1.7399999999999998,
+            "formattedValue": "1.74",
+            "percentile": 18.825,
+            "rank": 488
+          },
+          "last20": {
+            "value": 1.7399999999999998,
+            "formattedValue": "1.74",
+            "percentile": 20.16,
+            "rank": 486
+          },
+          "last10": {
+            "value": 1.7399999999999998,
+            "formattedValue": "1.74",
+            "percentile": 18.825,
+            "rank": 488
+          },
+          "last5": {
+            "value": 6.569999999999999,
+            "formattedValue": "6.57",
+            "percentile": 98.264,
+            "rank": 13
+          },
+          "deltaLast5VsLast20": 78.1,
+          "deltaLast5VsSeason": 79.4
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 1.7399999999999998,
+            "formattedValue": "1.74",
+            "percentile": 18.825,
+            "rank": 488
+          },
+          "last20": {
+            "value": 1.7399999999999998,
+            "formattedValue": "1.74",
+            "percentile": 20.16,
+            "rank": 486
+          },
+          "last10": {
+            "value": 1.7399999999999998,
+            "formattedValue": "1.74",
+            "percentile": 18.825,
+            "rank": 488
+          },
+          "last5": {
+            "value": 6.569999999999999,
+            "formattedValue": "6.57",
+            "percentile": 98.264,
+            "rank": 13
+          },
+          "deltaLast5VsLast20": 78.1,
+          "deltaLast5VsSeason": 79.4
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 1.7399999999999998,
+            "formattedValue": "1.74",
+            "percentile": 18.825,
+            "rank": 488
+          },
+          "last20": {
+            "value": 1.7399999999999998,
+            "formattedValue": "1.74",
+            "percentile": 20.16,
+            "rank": 486
+          },
+          "last10": {
+            "value": 1.7399999999999998,
+            "formattedValue": "1.74",
+            "percentile": 18.825,
+            "rank": 488
+          },
+          "last5": {
+            "value": 6.569999999999999,
+            "formattedValue": "6.57",
+            "percentile": 98.264,
+            "rank": 13
+          },
+          "deltaLast5VsLast20": 78.1,
+          "deltaLast5VsSeason": 79.4
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "usage_drop",
+          "label": "Usage Drop",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 800,
+          "currentValue": 670,
+          "delta": -130,
+          "evidence": "TOI/G down -130s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 20.16,
+          "currentValue": 98.264,
+          "delta": 78.1,
+          "evidence": "Shot Attempts/60 percentile +78.1 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470425,
+        "name": "Skater 425",
+        "position": "LW",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 10,
+        "abbreviation": "T10",
+        "name": "Team 10"
+      },
+      "deployment": {
+        "ev": "L2",
+        "pp": null,
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4400,
+        "toiPerGameSeconds": 880,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 60.3,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 67.3,
+      "toiTrend": {
+        "seasonSeconds": 905,
+        "last20Seconds": 905,
+        "last10Seconds": 905,
+        "last5Seconds": 880,
+        "deltaLast5VsLast20Seconds": -25
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 2.519337,
+            "formattedValue": "2.52",
+            "percentile": 39.519,
+            "rank": 448
+          },
+          "last20": {
+            "value": 0.79558,
+            "formattedValue": "0.80",
+            "percentile": 4.272,
+            "rank": 709
+          },
+          "last10": {
+            "value": 0.79558,
+            "formattedValue": "0.80",
+            "percentile": 2.003,
+            "rank": 719
+          },
+          "last5": {
+            "value": 4.909091,
+            "formattedValue": "4.91",
+            "percentile": 71.562,
+            "rank": 198
+          },
+          "deltaLast5VsLast20": 67.3,
+          "deltaLast5VsSeason": 32
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 2.33,
+            "formattedValue": "2.33",
+            "percentile": 28.571,
+            "rank": 429
+          },
+          "last20": {
+            "value": 2.33,
+            "formattedValue": "2.33",
+            "percentile": 29.907,
+            "rank": 427
+          },
+          "last10": {
+            "value": 2.33,
+            "formattedValue": "2.33",
+            "percentile": 28.571,
+            "rank": 429
+          },
+          "last5": {
+            "value": 5.96,
+            "formattedValue": "5.96",
+            "percentile": 88.385,
+            "rank": 74
+          },
+          "deltaLast5VsLast20": 58.5,
+          "deltaLast5VsSeason": 59.8
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 1.5899999999999999,
+            "formattedValue": "1.59",
+            "percentile": 16.422,
+            "rank": 503
+          },
+          "last20": {
+            "value": 1.5899999999999999,
+            "formattedValue": "1.59",
+            "percentile": 17.757,
+            "rank": 501
+          },
+          "last10": {
+            "value": 1.5899999999999999,
+            "formattedValue": "1.59",
+            "percentile": 16.422,
+            "rank": 503
+          },
+          "last5": {
+            "value": 5.22,
+            "formattedValue": "5.22",
+            "percentile": 76.235,
+            "rank": 148
+          },
+          "deltaLast5VsLast20": 58.5,
+          "deltaLast5VsSeason": 59.8
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 1.5899999999999999,
+            "formattedValue": "1.59",
+            "percentile": 16.422,
+            "rank": 503
+          },
+          "last20": {
+            "value": 1.5899999999999999,
+            "formattedValue": "1.59",
+            "percentile": 17.757,
+            "rank": 501
+          },
+          "last10": {
+            "value": 1.5899999999999999,
+            "formattedValue": "1.59",
+            "percentile": 16.422,
+            "rank": 503
+          },
+          "last5": {
+            "value": 5.22,
+            "formattedValue": "5.22",
+            "percentile": 76.235,
+            "rank": 148
+          },
+          "deltaLast5VsLast20": 58.5,
+          "deltaLast5VsSeason": 59.8
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 1.5899999999999999,
+            "formattedValue": "1.59",
+            "percentile": 16.422,
+            "rank": 503
+          },
+          "last20": {
+            "value": 1.5899999999999999,
+            "formattedValue": "1.59",
+            "percentile": 17.757,
+            "rank": 501
+          },
+          "last10": {
+            "value": 1.5899999999999999,
+            "formattedValue": "1.59",
+            "percentile": 16.422,
+            "rank": 503
+          },
+          "last5": {
+            "value": 5.22,
+            "formattedValue": "5.22",
+            "percentile": 76.235,
+            "rank": 148
+          },
+          "deltaLast5VsLast20": 58.5,
+          "deltaLast5VsSeason": 59.8
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 17.757,
+          "currentValue": 76.235,
+          "delta": 58.5,
+          "evidence": "Shot Attempts/60 percentile +58.5 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470138,
+        "name": "Skater 138",
+        "position": "D",
+        "positionGroup": "defense",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 11,
+        "abbreviation": "T11",
+        "name": "Team 11"
+      },
+      "deployment": {
+        "ev": "P3",
+        "pp": "PP1",
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4230,
+        "toiPerGameSeconds": 846,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 60.1,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": -17,
+      "toiTrend": {
+        "seasonSeconds": 858,
+        "last20Seconds": 858,
+        "last10Seconds": 858,
+        "last5Seconds": 846,
+        "deltaLast5VsLast20Seconds": -12
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 4.262937,
+            "formattedValue": "4.26",
+            "percentile": 80.107,
+            "rank": 150
+          },
+          "last20": {
+            "value": 6.083916,
+            "formattedValue": "6.08",
+            "percentile": 91.589,
+            "rank": 64
+          },
+          "last10": {
+            "value": 5.874126,
+            "formattedValue": "5.87",
+            "percentile": 88.117,
+            "rank": 89
+          },
+          "last5": {
+            "value": 5.106383,
+            "formattedValue": "5.11",
+            "percentile": 74.633,
+            "rank": 177
+          },
+          "deltaLast5VsLast20": -17,
+          "deltaLast5VsSeason": -5.5
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 1.54,
+            "formattedValue": "1.54",
+            "percentile": 15.554,
+            "rank": 508
+          },
+          "last20": {
+            "value": 1.54,
+            "formattedValue": "1.54",
+            "percentile": 16.889,
+            "rank": 506
+          },
+          "last10": {
+            "value": 1.54,
+            "formattedValue": "1.54",
+            "percentile": 15.554,
+            "rank": 508
+          },
+          "last5": {
+            "value": 6.449999999999999,
+            "formattedValue": "6.45",
+            "percentile": 96.328,
+            "rank": 25
+          },
+          "deltaLast5VsLast20": 79.4,
+          "deltaLast5VsSeason": 80.8
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 0.8,
+            "formattedValue": "0.80",
+            "percentile": 3.405,
+            "rank": 582
+          },
+          "last20": {
+            "value": 0.8,
+            "formattedValue": "0.80",
+            "percentile": 4.74,
+            "rank": 580
+          },
+          "last10": {
+            "value": 0.8,
+            "formattedValue": "0.80",
+            "percentile": 3.405,
+            "rank": 582
+          },
+          "last5": {
+            "value": 5.71,
+            "formattedValue": "5.71",
+            "percentile": 84.179,
+            "rank": 99
+          },
+          "deltaLast5VsLast20": 79.4,
+          "deltaLast5VsSeason": 80.8
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 0.8,
+            "formattedValue": "0.80",
+            "percentile": 3.405,
+            "rank": 582
+          },
+          "last20": {
+            "value": 0.8,
+            "formattedValue": "0.80",
+            "percentile": 4.74,
+            "rank": 580
+          },
+          "last10": {
+            "value": 0.8,
+            "formattedValue": "0.80",
+            "percentile": 3.405,
+            "rank": 582
+          },
+          "last5": {
+            "value": 5.71,
+            "formattedValue": "5.71",
+            "percentile": 84.179,
+            "rank": 99
+          },
+          "deltaLast5VsLast20": 79.4,
+          "deltaLast5VsSeason": 80.8
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 0.8,
+            "formattedValue": "0.80",
+            "percentile": 3.405,
+            "rank": 582
+          },
+          "last20": {
+            "value": 0.8,
+            "formattedValue": "0.80",
+            "percentile": 4.74,
+            "rank": 580
+          },
+          "last10": {
+            "value": 0.8,
+            "formattedValue": "0.80",
+            "percentile": 3.405,
+            "rank": 582
+          },
+          "last5": {
+            "value": 5.71,
+            "formattedValue": "5.71",
+            "percentile": 84.179,
+            "rank": 99
+          },
+          "deltaLast5VsLast20": 79.4,
+          "deltaLast5VsSeason": 80.8
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 4.74,
+          "currentValue": 84.179,
+          "delta": 79.4,
+          "evidence": "Shot Attempts/60 percentile +79.4 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    },
+    {
+      "entity": {
+        "id": 8470213,
+        "name": "Skater 213",
+        "position": "LW",
+        "positionGroup": "forward",
+        "imageUrl": null
+      },
+      "team": {
+        "id": 22,
+        "abbreviation": "T22",
+        "name": "Team 22"
+      },
+      "deployment": {
+        "ev": "L2",
+        "pp": "PP1",
+        "pk": null,
+        "confidence": "medium"
+      },
+      "sample": {
+        "gamesPlayed": 5,
+        "toiSeconds": 4980,
+        "toiPerGameSeconds": 996,
+        "confidence": "high",
+        "minimumSampleMet": true
+      },
+      "trendScore": 60.1,
+      "primaryMetricKey": "points_per_60",
+      "primaryDeltaLast5VsLast20": 81.6,
+      "toiTrend": {
+        "seasonSeconds": 933,
+        "last20Seconds": 933,
+        "last10Seconds": 933,
+        "last5Seconds": 996,
+        "deltaLast5VsLast20Seconds": 63
+      },
+      "metrics": [
+        {
+          "metricKey": "points_per_60",
+          "label": "Points/60",
+          "shortLabel": "Points/60",
+          "season": {
+            "value": 3.534405,
+            "formattedValue": "3.53",
+            "percentile": 61.549,
+            "rank": 286
+          },
+          "last20": {
+            "value": 0.771704,
+            "formattedValue": "0.77",
+            "percentile": 4.005,
+            "rank": 711
+          },
+          "last10": {
+            "value": 0.771704,
+            "formattedValue": "0.77",
+            "percentile": 1.469,
+            "rank": 723
+          },
+          "last5": {
+            "value": 5.783133,
+            "formattedValue": "5.78",
+            "percentile": 85.581,
+            "rank": 101
+          },
+          "deltaLast5VsLast20": 81.6,
+          "deltaLast5VsSeason": 24
+        },
+        {
+          "metricKey": "goals_per_60",
+          "label": "Goals/60",
+          "shortLabel": "Goals/60",
+          "season": {
+            "value": 2.29,
+            "formattedValue": "2.29",
+            "percentile": 27.904,
+            "rank": 433
+          },
+          "last20": {
+            "value": 2.29,
+            "formattedValue": "2.29",
+            "percentile": 29.239,
+            "rank": 431
+          },
+          "last10": {
+            "value": 2.29,
+            "formattedValue": "2.29",
+            "percentile": 27.904,
+            "rank": 433
+          },
+          "last5": {
+            "value": 1.2,
+            "formattedValue": "1.20",
+            "percentile": 9.88,
+            "rank": 550
+          },
+          "deltaLast5VsLast20": -19.4,
+          "deltaLast5VsSeason": -18
+        },
+        {
+          "metricKey": "ixg_per_60",
+          "label": "Individual xG/60",
+          "shortLabel": "Individual xG/60",
+          "season": {
+            "value": 1.5499999999999998,
+            "formattedValue": "1.55",
+            "percentile": 15.754,
+            "rank": 507
+          },
+          "last20": {
+            "value": 1.5499999999999998,
+            "formattedValue": "1.55",
+            "percentile": 17.089,
+            "rank": 505
+          },
+          "last10": {
+            "value": 1.5499999999999998,
+            "formattedValue": "1.55",
+            "percentile": 15.754,
+            "rank": 507
+          },
+          "last5": {
+            "value": 6.46,
+            "formattedValue": "6.46",
+            "percentile": 96.529,
+            "rank": 24
+          },
+          "deltaLast5VsLast20": 79.4,
+          "deltaLast5VsSeason": 80.8
+        },
+        {
+          "metricKey": "sog_per_60",
+          "label": "SOG/60",
+          "shortLabel": "SOG/60",
+          "season": {
+            "value": 1.5499999999999998,
+            "formattedValue": "1.55",
+            "percentile": 15.754,
+            "rank": 507
+          },
+          "last20": {
+            "value": 1.5499999999999998,
+            "formattedValue": "1.55",
+            "percentile": 17.089,
+            "rank": 505
+          },
+          "last10": {
+            "value": 1.5499999999999998,
+            "formattedValue": "1.55",
+            "percentile": 15.754,
+            "rank": 507
+          },
+          "last5": {
+            "value": 6.46,
+            "formattedValue": "6.46",
+            "percentile": 96.529,
+            "rank": 24
+          },
+          "deltaLast5VsLast20": 79.4,
+          "deltaLast5VsSeason": 80.8
+        },
+        {
+          "metricKey": "shot_attempts_per_60",
+          "label": "Shot Attempts/60",
+          "shortLabel": "Shot Attempts/60",
+          "season": {
+            "value": 1.5499999999999998,
+            "formattedValue": "1.55",
+            "percentile": 15.754,
+            "rank": 507
+          },
+          "last20": {
+            "value": 1.5499999999999998,
+            "formattedValue": "1.55",
+            "percentile": 17.089,
+            "rank": 505
+          },
+          "last10": {
+            "value": 1.5499999999999998,
+            "formattedValue": "1.55",
+            "percentile": 15.754,
+            "rank": 507
+          },
+          "last5": {
+            "value": 6.46,
+            "formattedValue": "6.46",
+            "percentile": 96.529,
+            "rank": 24
+          },
+          "deltaLast5VsLast20": 79.4,
+          "deltaLast5VsSeason": 80.8
+        }
+      ],
+      "opportunitySignals": [
+        {
+          "type": "toi_up",
+          "label": "TOI Up",
+          "severity": "medium",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 933,
+          "currentValue": 996,
+          "delta": 63,
+          "evidence": "TOI/G up +63s from last 20 to last 5."
+        },
+        {
+          "type": "shot_volume_spike",
+          "label": "Shot Volume Spike",
+          "severity": "high",
+          "sourceState": "available",
+          "baselineWindow": "last20",
+          "currentWindow": "last5",
+          "baselineValue": 17.089,
+          "currentValue": 96.529,
+          "delta": 79.4,
+          "evidence": "Shot Attempts/60 percentile +79.4 from last 20 to last 5."
+        }
+      ],
+      "sourceState": "available",
+      "message": null
+    }
+  ]
+}

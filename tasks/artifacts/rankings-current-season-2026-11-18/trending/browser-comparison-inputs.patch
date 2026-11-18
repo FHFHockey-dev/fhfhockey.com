@@ -1,0 +1,30 @@
+--- fixture.mjs
++++ fixture.mjs
+@@ -139,8 +139,9 @@
+   "shot_attempts_per_60",
+ ];
+ const perGameToi = (i, n) =>
+-  720 + (i % 240) + (n === 5 ? (i < 10 ? 93 + i * 27 : (i % 300) - 150) : 0);
++  720 + (i % 240) + (n === 5 && i !== 1 ? (i < 10 ? 93 + i * 27 : (i % 300) - 150) : 0);
+ function rate(i, n, index = 0) {
++  if (i === 2) return n === 5 ? 0 : n === 20 ? 8 : 4;
+   if (i < 10)
+     return n === 5 ? 8 - i * 0.12 : n === 20 ? 0.3 + i * 0.02 : 4 - i * 0.1;
+   return 0.6 + ((i * (n === 5 ? 73 : 17) + index * 37) % 600) / 100;
+@@ -187,7 +188,7 @@
+             ratio: Object.fromEntries(
+               metrics.map((m, k) => [
+                 m,
+-                [Math.round((rate(i, n, k) * seconds) / 3600), seconds, n],
++                [Math.round(((i === 1 && m === "shot_attempts_per_60" ? 0 : rate(i, n, k)) * seconds) / 3600), seconds, n],
+               ]),
+             ),
+             secondary: {},
+@@ -218,6 +219,7 @@
+     const perGame = perGameToi(i, n),
+       seconds = n * perGame;
+     if (field in values) row[field] = values[field];
++    else if (i === 1 && field.startsWith("shot_attempts_per_60") && !field.includes("toi_seconds")) row[field] = 0;
+     else if (field.includes("participation_games")) row[field] = 21;
+     else if (field.includes("toi_seconds"))
+       row[field] = field.includes("_avg_") ? perGame : seconds;

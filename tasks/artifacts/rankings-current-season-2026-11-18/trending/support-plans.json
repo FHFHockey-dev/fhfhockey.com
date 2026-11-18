@@ -1,0 +1,676 @@
+{
+  "postgres": "17.11",
+  "cutoff": "2026-11-17",
+  "fixture": "fixture.mjs",
+  "rowsLoaded": 10690,
+  "command": "EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)",
+  "localBuffers": true,
+  "queries": [
+    {
+      "variant": "before",
+      "date": "2026-11-17",
+      "returned": 330,
+      "hits": 289,
+      "read": 45,
+      "ms": 0.742,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-17",
+      "returned": 330,
+      "hits": 334,
+      "read": 0,
+      "ms": 0.507,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-16",
+      "returned": 330,
+      "hits": 291,
+      "read": 44,
+      "ms": 0.68,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-16",
+      "returned": 330,
+      "hits": 335,
+      "read": 0,
+      "ms": 0.515,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-15",
+      "returned": 330,
+      "hits": 291,
+      "read": 44,
+      "ms": 0.673,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-14",
+      "returned": 330,
+      "hits": 291,
+      "read": 44,
+      "ms": 0.611,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-13",
+      "returned": 335,
+      "hits": 294,
+      "read": 45,
+      "ms": 0.619,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-13",
+      "returned": 5,
+      "hits": 6,
+      "read": 0,
+      "ms": 0.037,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-12",
+      "returned": 335,
+      "hits": 295,
+      "read": 45,
+      "ms": 0.644,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-12",
+      "returned": 5,
+      "hits": 6,
+      "read": 0,
+      "ms": 0.032,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-11",
+      "returned": 340,
+      "hits": 299,
+      "read": 46,
+      "ms": 0.65,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-11",
+      "returned": 5,
+      "hits": 7,
+      "read": 0,
+      "ms": 0.033,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-10",
+      "returned": 340,
+      "hits": 300,
+      "read": 45,
+      "ms": 0.623,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-10",
+      "returned": 5,
+      "hits": 10,
+      "read": 0,
+      "ms": 0.032,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-09",
+      "returned": 345,
+      "hits": 304,
+      "read": 46,
+      "ms": 0.667,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-09",
+      "returned": 5,
+      "hits": 9,
+      "read": 0,
+      "ms": 0.033,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-08",
+      "returned": 345,
+      "hits": 304,
+      "read": 46,
+      "ms": 0.64,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-08",
+      "returned": 5,
+      "hits": 9,
+      "read": 0,
+      "ms": 0.037,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-07",
+      "returned": 350,
+      "hits": 308,
+      "read": 47,
+      "ms": 0.658,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-07",
+      "returned": 5,
+      "hits": 10,
+      "read": 0,
+      "ms": 0.035,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-06",
+      "returned": 350,
+      "hits": 308,
+      "read": 47,
+      "ms": 0.675,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-06",
+      "returned": 5,
+      "hits": 10,
+      "read": 0,
+      "ms": 0.032,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-05",
+      "returned": 355,
+      "hits": 313,
+      "read": 47,
+      "ms": 0.676,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-05",
+      "returned": 5,
+      "hits": 10,
+      "read": 0,
+      "ms": 0.033,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-04",
+      "returned": 355,
+      "hits": 312,
+      "read": 48,
+      "ms": 0.673,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-04",
+      "returned": 5,
+      "hits": 10,
+      "read": 0,
+      "ms": 0.032,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-03",
+      "returned": 359,
+      "hits": 316,
+      "read": 48,
+      "ms": 0.681,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-03",
+      "returned": 4,
+      "hits": 5,
+      "read": 4,
+      "ms": 0.03,
+      "nodes": [
+        "Limit",
+        "Index Scan support_pkey"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-02",
+      "returned": 359,
+      "hits": 317,
+      "read": 47,
+      "ms": 0.696,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-02",
+      "returned": 4,
+      "hits": 10,
+      "read": 0,
+      "ms": 0.012,
+      "nodes": [
+        "Limit",
+        "Index Scan support_pkey"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-11-01",
+      "returned": 363,
+      "hits": 319,
+      "read": 49,
+      "ms": 0.76,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-11-01",
+      "returned": 4,
+      "hits": 10,
+      "read": 0,
+      "ms": 0.016,
+      "nodes": [
+        "Limit",
+        "Index Scan support_pkey"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-10-31",
+      "returned": 363,
+      "hits": 320,
+      "read": 48,
+      "ms": 0.677,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-10-31",
+      "returned": 4,
+      "hits": 9,
+      "read": 0,
+      "ms": 0.011,
+      "nodes": [
+        "Limit",
+        "Index Scan support_pkey"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-10-30",
+      "returned": 367,
+      "hits": 323,
+      "read": 49,
+      "ms": 0.753,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-10-30",
+      "returned": 4,
+      "hits": 11,
+      "read": 0,
+      "ms": 0.012,
+      "nodes": [
+        "Limit",
+        "Index Scan support_pkey"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-10-29",
+      "returned": 367,
+      "hits": 324,
+      "read": 48,
+      "ms": 0.686,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-10-29",
+      "returned": 4,
+      "hits": 12,
+      "read": 0,
+      "ms": 0.011,
+      "nodes": [
+        "Limit",
+        "Index Scan support_pkey"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-10-28",
+      "returned": 371,
+      "hits": 326,
+      "read": 50,
+      "ms": 0.713,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-10-28",
+      "returned": 4,
+      "hits": 12,
+      "read": 0,
+      "ms": 0.028,
+      "nodes": [
+        "Limit",
+        "Index Scan support_pkey"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-10-27",
+      "returned": 371,
+      "hits": 327,
+      "read": 49,
+      "ms": 0.628,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-10-27",
+      "returned": 4,
+      "hits": 12,
+      "read": 0,
+      "ms": 0.01,
+      "nodes": [
+        "Limit",
+        "Index Scan support_pkey"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-10-26",
+      "returned": 375,
+      "hits": 330,
+      "read": 50,
+      "ms": 0.603,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-10-26",
+      "returned": 4,
+      "hits": 12,
+      "read": 0,
+      "ms": 0.01,
+      "nodes": [
+        "Limit",
+        "Index Scan support_pkey"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-10-25",
+      "returned": 375,
+      "hits": 330,
+      "read": 50,
+      "ms": 0.585,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "after",
+      "date": "2026-10-25",
+      "returned": 4,
+      "hits": 12,
+      "read": 0,
+      "ms": 0.011,
+      "nodes": [
+        "Limit",
+        "Index Scan support_pkey"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-10-24",
+      "returned": 375,
+      "hits": 330,
+      "read": 50,
+      "ms": 0.601,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-10-23",
+      "returned": 375,
+      "hits": 330,
+      "read": 50,
+      "ms": 0.63,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-10-22",
+      "returned": 375,
+      "hits": 330,
+      "read": 50,
+      "ms": 0.618,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-10-21",
+      "returned": 375,
+      "hits": 331,
+      "read": 49,
+      "ms": 0.596,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-10-20",
+      "returned": 375,
+      "hits": 330,
+      "read": 50,
+      "ms": 0.654,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    },
+    {
+      "variant": "before",
+      "date": "2026-10-19",
+      "returned": 375,
+      "hits": 330,
+      "read": 50,
+      "ms": 0.607,
+      "nodes": [
+        "Limit",
+        "Sort",
+        "Index Scan idx_support_snapshot"
+      ]
+    }
+  ]
+}
