@@ -5,6 +5,7 @@ import supabase from "lib/supabase/server";
 
 import {
   loadSkaterCompositeSeasonSources,
+  type PreparedRankingSources,
   type CompositeSourceCoverage,
 } from "./skaterCompositeSourceCoverage";
 
@@ -12,6 +13,8 @@ import type { ContextualRankingMetricKey } from "./metricDefinitions";
 import {
   PUBLICATION_MIN_GP,
   PUBLICATION_MIN_TOI_SECONDS,
+  PAIRED_RANKING_WINDOWS,
+  completePublicationCount,
   fetchPublicationMarker,
   publicationCompletionBlockers,
   upsertPublicationMarkers,
@@ -36,6 +39,7 @@ import {
 } from "./resultsLuckIndex";
 import {
   fetchResultsLuckRollingSources,
+  resultsLuckSourcesFromRows,
   type ResultsLuckRollingSource,
 } from "./resultsLuckSources";
 import {
@@ -675,8 +679,9 @@ export function buildSkaterCompositeRatingRow(args: {
 
 export async function buildSkaterCompositeRatingRows(
   request: SkaterCompositeBuildRequest,
+  sources?: PreparedRankingSources,
 ): Promise<SkaterCompositeBuildResult> {
-  const { report: sourceCoverage, rows: sourceRows } = await loadSkaterCompositeSeasonSources(supabase, {
+  const { report: sourceCoverage, rows: sourceRows } = sources ?? await loadSkaterCompositeSeasonSources(supabase, {
     season: request.season,
     strength: request.strength,
     cutoffDate: request.asOfDate ?? new Date().toISOString().slice(0, 10),
@@ -684,7 +689,7 @@ export async function buildSkaterCompositeRatingRows(
   const surfaces = await buildContextualRankingsSurfaces(
     contextualRequestForMetric(request, "goals_per_60"),
     [...SKATER_COMPOSITE_SOURCE_METRICS],
-    { completeSeasonRows: sourceRows },
+    { completeSeasonRows: sourceRows, metadata: sources?.metadata },
   );
   const metricEntries = SKATER_COMPOSITE_SOURCE_METRICS.map((metricKey) => {
     const surface = surfaces.get(metricKey);
@@ -714,16 +719,16 @@ export async function buildSkaterCompositeRatingRows(
   const snapshotUpdatedAt = sourceSnapshotUpdatedAt(metricEntries);
   const freshness = sourceFreshness(metricEntries);
   const baseRows = sourceRowsByPlayerId(metricEntries);
-  const resultsLuckSources =
-    snapshotDate == null || !sourceCoverage.verified
-      ? new Map<number, ResultsLuckRollingSource>()
+  let resultsLuckSources = new Map<number, ResultsLuckRollingSource>();
+  if (snapshotDate != null && sourceCoverage.verified) {
+    // The manual lookup uses only players who have a row at this exact snapshot.
+    resultsLuckSources = sources
+      ? resultsLuckSourcesFromRows(sourceRows.filter(row => row.game_date === snapshotDate), request.window)
       : await fetchResultsLuckRollingSources(supabase, {
-          playerIds: [...baseRows.keys()],
-          season: request.season,
-          strength: request.strength,
-          snapshotDate,
-          window: request.window,
+          playerIds: [...baseRows.keys()], season: request.season, strength: request.strength,
+          snapshotDate, window: request.window,
         });
+  }
 
   const allRows =
     snapshotDate == null
@@ -852,8 +857,10 @@ export type SkaterCompositePublishResult = {
 export async function publishSkaterCompositeRatingRows(
   client: SupabaseClient<Database>,
   built: SkaterCompositeBuildResult,
+  options: { stopOnFailure?: boolean } = {},
 ): Promise<SkaterCompositePublishResult> {
-  const writtenEntities = new Set(built.rows.map((row) => row.player_id)).size;
+  const playerIds = new Set(built.rows.map((row) => row.player_id));
+  const writtenEntities = playerIds.size;
   if (built.request.peerGroupType !== "all_skaters") {
     const counted = await upsertSkaterCompositeRatingRowsCounted(client, built.rows);
     return {
@@ -865,6 +872,7 @@ export async function publishSkaterCompositeRatingRows(
       blockers: [],
     };
   }
+  if (built.rows.length > 1000) throw new RankingsNotCompleteError("Composite publication exceeds the 1000-row cohort bound.");
   const first = built.rows[0];
   if (!built.snapshotDate || !first) {
     throw new RankingsNotCompleteError("No composite rows or snapshot date to publish.");
@@ -888,18 +896,36 @@ export async function publishSkaterCompositeRatingRows(
       `Composite publication refused before writing: ${writtenEntities} players were built; the source-coverage population is ${built.sourceCoverage.expectedPlayerCount}.`,
     );
   }
-  const rankings = await fetchPublicationMarker(client, {
-    surface: "entity_metric_rankings",
-    ...key,
-  });
-  if (
-    rankings?.status !== "complete" ||
-    rankings.min_gp !== PUBLICATION_MIN_GP ||
-    rankings.min_toi_seconds !== PUBLICATION_MIN_TOI_SECONDS
-  ) {
-    throw new RankingsNotCompleteError(
-      `Rankings at ${built.snapshotDate} (${key.strength_state}, ${key.window_type}) are not a complete publication; publish and verify Rankings at this cutoff first.`,
-    );
+  const pairedSeason = key.strength_state === "5v5" && key.window_type === "season";
+  const requiredWindows = pairedSeason ? PAIRED_RANKING_WINDOWS : [key];
+  // Capture the start before validating Rankings, so a concurrent Rankings
+  // rewrite completing after this point cannot certify these composites.
+  const startedAt = new Date().toISOString();
+  for (const window of requiredWindows) {
+    const rankingKey = { ...key, window_type: window.window_type, window_size: window.window_size };
+    const rankings = await fetchPublicationMarker(client, { surface: "entity_metric_rankings", ...rankingKey });
+    if (rankings?.status !== "complete" || rankings.min_gp !== PUBLICATION_MIN_GP ||
+        rankings.min_toi_seconds !== PUBLICATION_MIN_TOI_SECONDS ||
+        (pairedSeason && completePublicationCount(rankings) !== writtenEntities)) {
+      throw new RankingsNotCompleteError(
+        `Rankings at ${built.snapshotDate} (${key.strength_state}, ${window.window_type}) are not a complete publication for the expected ${writtenEntities} players.`,
+      );
+    }
+    if (pairedSeason) {
+      // Every metric in a marked window is checked against the same source
+      // population by the Rankings writer. Read one full metric's persisted IDs.
+      const { data, count, error } = await client.from("entity_metric_rankings")
+        .select("entity_id", { count: "exact" })
+        .match(rankingKey).eq("entity_type", "skater").eq("metric_key", "points_per_60")
+        .limit(writtenEntities);
+      if (error) throw new Error(`Unable to verify Rankings player IDs: ${error.message}`);
+      if (count !== writtenEntities || data?.length !== writtenEntities ||
+          data.some((row) => !playerIds.has(row.entity_id))) {
+        throw new RankingsNotCompleteError(
+          `Rankings ${window.window_type} player IDs at ${built.snapshotDate} differ from the composite cohort.`,
+        );
+      }
+    }
   }
 
   const marker = (fields: Partial<RankingPublicationInsert>) =>
@@ -914,7 +940,6 @@ export async function publishSkaterCompositeRatingRows(
       expected_entities: built.sourceCoverage.expectedPlayerCount,
       ...fields,
     }) as RankingPublicationInsert;
-  const startedAt = new Date().toISOString();
   await upsertPublicationMarkers(client, [
     marker({
       status: "writing",
@@ -931,6 +956,15 @@ export async function publishSkaterCompositeRatingRows(
     expectedEntities: built.sourceCoverage.expectedPlayerCount,
     writtenEntities,
   });
+  if (!blockers.length && pairedSeason) {
+    const { count, error } = await client.from("skater_composite_ratings")
+      .select("player_id", { head: true, count: "exact" })
+      .match({ ...key, peer_group_key: first.peer_group_key });
+    if (error || count !== writtenEntities) {
+      blockers.push(`Expected ${writtenEntities} persisted season composite rows; found ${error?.message ?? count ?? "unknown"}.`);
+    }
+  }
+  if (options.stopOnFailure && blockers.length) throw new Error(blockers.join(" "));
   const complete = blockers.length === 0;
   await upsertPublicationMarkers(client, [
     marker({

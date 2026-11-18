@@ -109,6 +109,8 @@ type ResponseBody = {
   success?: boolean;
   operationStatus?: "success" | "warning" | "blocked" | "partial";
   warning?: string | null;
+  rankingSourceDate?: string;
+  rankingSourceSeason?: number;
   executionProfile?: RollingExecutionProfile;
   executionScope?: {
     startDate: string | null;
@@ -1029,6 +1031,18 @@ export async function handler(
     const freshnessWarningOnly =
       (runSummary?.freshnessBlockers ?? 0) > 0 &&
       (Boolean(bypassFreshnessBlockers) || allowImplicitDailyFreshnessWarning);
+    // A one-day, whole-cohort repair can replace the original daily rolling
+    // run in the Rankings readiness check. Partial/operator samples cannot.
+    const rankingSourceReady =
+      executionProfile === "targeted_repair" &&
+      requestedStartDate != null && requestedStartDate === requestedEndDate &&
+      season != null && Number.isInteger(season) && playerId == null &&
+      strengths?.length === 1 && strengths[0] === "5v5" &&
+      !fullRefresh && !dryRunUpsert && !autoResume && !bypassFreshnessBlockers &&
+      resumeFrom == null && maxPlayers == null && !stoppedAtRuntimeBudget &&
+      runSummary?.stoppedReason === "complete" && runSummary.remainingPlayerCount === 0 &&
+      runSummary.abandonedPlayerCount === 0 && runSummary.freshnessBlockers === 0 &&
+      runSummary.rowsUpserted > 0;
     if (freshnessWarningOnly) {
       console.warn(
         "[update-rolling-player-averages] freshness blockers treated as warning",
@@ -1061,6 +1075,7 @@ export async function handler(
         : freshnessWarningOnly
           ? "warning"
           : "success",
+      ...(rankingSourceReady ? { rankingSourceDate: requestedStartDate, rankingSourceSeason: season } : {}),
       warning: freshnessWarningOnly
         ? allowImplicitDailyFreshnessWarning
           ? "Implicit daily maintenance tolerated upstream freshness blockers. Treat this recompute as degraded until stale sources are refreshed."

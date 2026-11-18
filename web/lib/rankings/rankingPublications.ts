@@ -19,6 +19,23 @@ export const RANKING_PUBLICATIONS_TABLE = "ranking_publications";
 // marked: the durable row key does not encode custom floors.
 export const PUBLICATION_MIN_GP = 1;
 export const PUBLICATION_MIN_TOI_SECONDS = 300;
+export const PAIRED_RANKING_WINDOWS = [
+  { window_type: "season", window_size: 0 },
+  { window_type: "last_5", window_size: 5 },
+  { window_type: "last_10", window_size: 10 },
+  { window_type: "last_20", window_size: 20 },
+] as const;
+
+export function completePublicationCount(marker: Pick<RankingPublicationRow,
+  "status" | "min_gp" | "min_toi_seconds" | "expected_entities" | "written_entities" |
+  "expected_rows" | "db_written_rows">) {
+  const count = marker.expected_entities;
+  return marker.status === "complete" && marker.min_gp === PUBLICATION_MIN_GP &&
+    marker.min_toi_seconds === PUBLICATION_MIN_TOI_SECONDS && count != null && count > 0 &&
+    marker.written_entities === count && marker.expected_rows >= count &&
+    marker.db_written_rows === marker.expected_rows ? count : null;
+}
+
 const PRIMARY_KEY =
   "surface,season_id,snapshot_date,strength_state,window_type,window_size,peer_group_type,peer_group_key";
 

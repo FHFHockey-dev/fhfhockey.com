@@ -2047,6 +2047,11 @@ async function handler(
   let details: any = {};
   let totalUpdates = 0;
   let responseBody: any = null;
+  const requestedDate = typeof req.query.date === "string" ? req.query.date : null;
+  const requestedStart = typeof req.query.startDate === "string" ? req.query.startDate : null;
+  const rankingsSourceDate = actionParam === "all" ||
+    (actionParam === "season" && requestedStart === req.query.endDate)
+    ? requestedStart : requestedDate;
 
   try {
     const {
@@ -2226,6 +2231,7 @@ async function handler(
               : null,
           response: responseBody,
           context: details,
+          ...(rankingsSourceDate && /^\d{4}-\d{2}-\d{2}$/.test(rankingsSourceDate) ? { rankingsSourceDate } : {}),
         },
       });
     }

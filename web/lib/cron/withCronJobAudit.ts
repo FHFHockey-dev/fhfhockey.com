@@ -85,6 +85,13 @@ function responseOutcome(body: unknown, jobName: string) {
     "lastCompletedGameId", "rowsUpserted", "rowsVerified", "rowsPruned",
   ], 2000);
   Object.assign(outcome, outcomeFields(record, ["skipped", "outcome", "reason"]));
+  if (jobName === "/api/v1/db/update-rolling-player-averages") {
+    Object.assign(outcome, outcomeFields(record, ["rankingSourceDate", "rankingSourceSeason"]));
+  }
+  if (jobName === "/api/v1/db/update-games" && record.rankingsCalendar &&
+      typeof record.rankingsCalendar === "object" && JSON.stringify(record.rankingsCalendar).length <= 4000) {
+    outcome.rankingsCalendar = record.rankingsCalendar;
+  }
   if (Array.isArray(record.errors)) {
     outcome.errors = {
       count: record.errors.length,

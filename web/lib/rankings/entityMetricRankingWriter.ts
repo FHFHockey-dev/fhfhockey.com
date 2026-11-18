@@ -20,7 +20,7 @@ import {
   upsertPublicationMarkers,
   type RankingPublicationInsert,
 } from "./rankingPublications";
-import { loadSkaterCompositeSeasonSources } from "./skaterCompositeSourceCoverage";
+import { loadSkaterCompositeSeasonSources, type PreparedRankingSources } from "./skaterCompositeSourceCoverage";
 import type {
   ContextualRankingsDeploymentFilter,
   ContextualRankingsPositionFilter,
@@ -73,6 +73,7 @@ export type EntityMetricRankingBuildResult = {
   }>;
   // Distinct players in the WGO-anchored source-coverage population.
   expectedEntities: number;
+  expectedPlayerIds: number[];
 };
 
 const METHODOLOGY_VERSION = "contextual_rankings_v1";
@@ -231,6 +232,7 @@ export function defaultEntityMetricRankingMetricKeys(args?: {
 
 export async function buildEntityMetricRankingRows(
   request: EntityMetricRankingBuildRequest,
+  sources?: PreparedRankingSources,
 ): Promise<EntityMetricRankingBuildResult> {
   const rows: EntityMetricRankingInsert[] = [];
   const contexts: EntityMetricRankingBuildResult["contexts"] = [];
@@ -241,7 +243,7 @@ export async function buildEntityMetricRankingRows(
   // Publish the complete WGO-anchored season population (as the composite
   // writer does), not the interactive 30-date / 200-game recent-row search.
   const { report: sourceCoverage, rows: completeSeasonRows } =
-    await loadSkaterCompositeSeasonSources(supabase, {
+    sources ?? await loadSkaterCompositeSeasonSources(supabase, {
       season: request.season,
       strength: request.strength,
       cutoffDate: request.asOfDate ?? new Date().toISOString().slice(0, 10),
@@ -263,7 +265,7 @@ export async function buildEntityMetricRankingRows(
         metric: metricKeys[0] ?? "points_per_60",
       }),
       metricKeys,
-      { completeSeasonRows },
+      { completeSeasonRows, metadata: sources?.metadata },
     );
     const contextStartRowCount = rows.length;
     let contextSnapshotDate: string | null = null;
@@ -325,6 +327,7 @@ export async function buildEntityMetricRankingRows(
     sourceFreshness,
     unavailableMetrics,
     expectedEntities: sourceCoverage.expectedPlayerCount,
+    expectedPlayerIds: completeSeasonRows.flatMap((row) => row.player_id == null ? [] : [row.player_id]),
   };
 }
 
@@ -342,7 +345,7 @@ export async function upsertEntityMetricRankingRows(
 async function upsertEntityMetricRankingRowsCounted(
   client: SupabaseClient<Database>,
   rows: EntityMetricRankingInsert[],
-  options: { chunkSize?: number } = {},
+  options: { chunkSize?: number; stopOnFailure?: boolean } = {},
 ) {
   const chunkSize = Math.min(
     Math.max(options.chunkSize ?? DEFAULT_UPSERT_CHUNK_SIZE, 1),
@@ -354,7 +357,10 @@ async function upsertEntityMetricRankingRowsCounted(
   for (let index = 0; index < rows.length; index += chunkSize) {
     const chunk = rows.slice(index, index + chunkSize);
     try {
-      const counted = await upsertEntityMetricRankingChunk(client, chunk);
+      const counted = await upsertEntityMetricRankingChunk(client, chunk, options.stopOnFailure);
+      if (options.stopOnFailure && counted.dbRows !== chunk.length) {
+        throw new Error("Database did not confirm the complete Rankings chunk.");
+      }
       rowsUpserted += counted.rows;
       dbWrittenRows =
         dbWrittenRows == null || counted.dbRows == null
@@ -373,6 +379,7 @@ async function upsertEntityMetricRankingRowsCounted(
 async function upsertEntityMetricRankingChunk(
   client: SupabaseClient<Database>,
   rows: EntityMetricRankingInsert[],
+  stopOnFailure = false,
 ): Promise<{ rows: number; dbRows: number | null }> {
   try {
     const { error, count } = await client
@@ -381,7 +388,7 @@ async function upsertEntityMetricRankingChunk(
     if (error) throw error;
     return { rows: rows.length, dbRows: typeof count === "number" ? count : null };
   } catch (error) {
-    if (rows.length === 1) throw error;
+    if (stopOnFailure || rows.length === 1) throw error;
 
     const midpoint = Math.ceil(rows.length / 2);
     const firstHalf = rows.slice(0, midpoint);
@@ -467,6 +474,7 @@ function buildPublicationWindows(built: EntityMetricRankingBuildResult) {
   }
 
   const windows: PublicationWindowPlan[] = [];
+  const expectedIds = new Set(built.expectedPlayerIds);
   for (const window of [...new Set(request.windows)]) {
     const type = windowType(window);
     const size = windowSize(window);
@@ -484,6 +492,22 @@ function buildPublicationWindows(built: EntityMetricRankingBuildResult) {
     if (missingMetrics.length > 0) {
       blockers.push(`${window}: no rows for ${missingMetrics.join(", ")}.`);
     }
+    if (!notMarkedReasons.length && request.strength === "5v5") {
+      const idsByMetric = new Map<string, Set<number>>();
+      for (const row of rows) {
+        const ids = idsByMetric.get(row.metric_key) ?? new Set<number>();
+        ids.add(row.entity_id);
+        idsByMetric.set(row.metric_key, ids);
+      }
+      if (rows.length !== built.expectedEntities * metricKeys.length) {
+        blockers.push(`${window}: expected one row per source skater and default metric.`);
+      }
+      for (const [metric, ids] of idsByMetric) {
+        if (ids.size !== expectedIds.size || [...ids].some((id) => !expectedIds.has(id))) {
+          blockers.push(`${window}: ${metric} player IDs differ from the source-coverage population.`);
+        }
+      }
+    }
     const writtenEntities = new Set(rows.map((row) => row.entity_id)).size;
     if (writtenEntities !== built.expectedEntities) {
       blockers.push(
@@ -500,6 +524,9 @@ function buildPublicationWindows(built: EntityMetricRankingBuildResult) {
       writtenEntities,
       blockers,
     });
+  }
+  if (request.strength === "5v5" && new Set(windows.map((window) => window.snapshotDate)).size > 1) {
+    for (const window of windows) window.blockers.push("Rankings windows have different snapshot dates.");
   }
   return { marked: notMarkedReasons.length === 0, notMarkedReasons, windows };
 }
@@ -571,7 +598,7 @@ export type EntityMetricRankingPublishResult = {
 export async function publishEntityMetricRankingRows(
   client: SupabaseClient<Database>,
   built: EntityMetricRankingBuildResult,
-  options: { chunkSize?: number } = {},
+  options: { chunkSize?: number; stopOnFailure?: boolean } = {},
 ): Promise<EntityMetricRankingPublishResult> {
   const plan = buildPublicationWindows(built);
   if (!plan.marked) {
@@ -639,6 +666,21 @@ export async function publishEntityMetricRankingRows(
       expectedEntities: built.expectedEntities,
       writtenEntities: window.writtenEntities,
     });
+    if (!blockers.length && built.request.strength === "5v5") {
+      // An upsert count omits stale keys left behind by a failed same-date attempt.
+      const { count, error } = await client.from("entity_metric_rankings")
+        .select("entity_id", { head: true, count: "exact" })
+        .match({
+          entity_type: "skater", season_id: built.request.season, snapshot_date: window.snapshotDate!,
+          strength_state: built.request.strength, window_type: window.windowType, window_size: window.windowSize,
+          peer_group_type: window.peerGroupType, peer_group_key: window.peerGroupKey,
+        })
+        .in("metric_key", built.request.metricKeys);
+      if (error || count !== window.rows.length) {
+        blockers.push(`Expected ${window.rows.length} persisted Rankings rows for ${window.windowType}; found ${error?.message ?? count ?? "unknown"}.`);
+      }
+    }
+    if (options.stopOnFailure && blockers.length) throw new Error(blockers.join(" "));
     const complete = blockers.length === 0;
     await upsertPublicationMarkers(client, [
       publicationMarker(built, window, {

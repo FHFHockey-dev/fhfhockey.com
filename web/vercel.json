@@ -5,6 +5,9 @@
     "pages/api/**/*.ts": {
       "maxDuration": 240
     },
+    "pages/api/internal/rankings-daily-publication.ts": {
+      "maxDuration": 180
+    },
     "pages/api/v1/db/blsh-native-capture.ts": {
       "maxDuration": 250
     },

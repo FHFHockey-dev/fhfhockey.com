@@ -11,9 +11,13 @@ import {
   CONTEXTUAL_RANKINGS_METHODOLOGY_UPDATED_AT,
 } from "./rankingMetadata";
 import {
+  PAIRED_RANKING_WINDOWS,
   RANKING_PUBLICATIONS_TABLE,
+  completePublicationCount,
+  type RankingPublicationRow,
   isMissingPublicationTableError,
 } from "./rankingPublications";
+import { latestRankingPublicationCutoff } from "./publicationDispatchLedger";
 import type {
   ContextualRankingApiRow,
   ContextualRankingsRequest,
@@ -281,20 +285,16 @@ async function fetchPairedPublicationCutoff(
 const MAX_PAIRING_STEPS = 8;
 const PUBLICATION_MARKER_LIMIT = 200;
 
-type PublicationMarker = {
-  surface: string;
-  snapshot_date: string;
-  window_type: string;
-  window_size: number;
-  peer_group_type: string;
-  peer_group_key: string;
-  status: string;
-};
+type PublicationMarker = Pick<RankingPublicationRow,
+  "surface" | "snapshot_date" | "window_type" | "window_size" | "status" |
+  "min_gp" | "min_toi_seconds" | "expected_entities" | "written_entities" |
+  "expected_rows" | "db_written_rows" | "started_at" | "completed_at">;
 type PublicationMarkers = {
   // Oldest marker date of any status for the season and strength: the start
   // of the marker era.
   eraStart: string;
   recent: PublicationMarker[];
+  olderPair?: Promise<string | null>;
 };
 
 // Completion markers for a season and strength, newest first, with the era
@@ -313,9 +313,11 @@ async function fetchPublicationMarkers(
     const base = () =>
       supabase
         .from(RANKING_PUBLICATIONS_TABLE)
-        .select("surface,snapshot_date,window_type,window_size,peer_group_type,peer_group_key,status")
+        .select("surface,snapshot_date,window_type,window_size,status,min_gp,min_toi_seconds,expected_entities,written_entities,expected_rows,db_written_rows,started_at,completed_at")
         .eq("season_id", request.season)
         .eq("strength_state", request.strength)
+        .eq("peer_group_type", "all_skaters")
+        .eq("peer_group_key", "all")
         .lte("snapshot_date", cutoff);
     const [recent, oldest] = await Promise.all([
       base().order("snapshot_date", { ascending: false }).limit(PUBLICATION_MARKER_LIMIT),
@@ -354,35 +356,49 @@ async function fetchLatestSnapshotDate(
       (definition.defaultStrengthState === "5v5" && request.strength !== "5v5")) return null;
   const requestedCutoff = request.asOfDate ?? new Date().toISOString().slice(0, 10);
 
-  // Markers are written only for the all-skater publication. Inside the
-  // marker era a date is served only when its Rankings (requested window) and
-  // composites (season window) are both complete and this metric has rows
-  // there. Until the era has a complete pair (the first marked publish, or
-  // between its Rankings and composites writes), the #449 date match runs
-  // below the era start, so the last unmarked pair stays live.
+  // The default 5v5 page and its derived pools share one four-window release.
+  // Before the first marker, preserve the legacy date pairing behavior.
   const allSkaters = scope.peerGroupType === "all_skaters" && scope.peerGroupKey === "all";
-  const markers = allSkaters ? await fetchPublicationMarkers(request, requestedCutoff) : null;
+  const paired = request.strength === "5v5";
+  const markers = allSkaters || (paired && canDeriveFromAllSkaters(request))
+    ? await fetchPublicationMarkers(request, requestedCutoff) : null;
   if (!markers) return fetchPairedSnapshotDate(request, scope, requestedCutoff);
+  if (!allSkaters) return null; // Re-rank this pool from its marked league publication.
 
-  const completeDates = (surface: string, type: string, size: number) =>
-    new Set(markers.recent
-      .filter((marker) =>
-        marker.surface === surface && marker.status === "complete" &&
-        marker.window_type === type && marker.window_size === size &&
-        marker.peer_group_type === "all_skaters" && marker.peer_group_key === "all")
-      .map((marker) => marker.snapshot_date));
-  const rankingDates = completeDates("entity_metric_rankings", windowType(request.window), windowSize(request.window));
-  const compositeDates = completeDates("skater_composite_ratings", "season", 0);
-  // A season and strength with no composites at all (e.g. all-strength) is
-  // not paired, as under #449: its complete Rankings markers decide alone.
-  const hasComposites = (await fetchPairedPublicationCutoff(request, requestedCutoff)) != null;
-  const pairDates = [...rankingDates]
-    .filter((date) => !hasComposites || compositeDates.has(date))
-    .sort()
-    .reverse()
-    .slice(0, MAX_PAIRING_STEPS);
+  const isComplete = (marker: PublicationMarker) => paired
+    ? completePublicationCount(marker) != null : marker.status === "complete";
+  const completeRankings = markers.recent.filter((marker) =>
+    marker.surface === "entity_metric_rankings" && isComplete(marker));
+  const requiredWindows = paired ? PAIRED_RANKING_WINDOWS :
+    [{ window_type: windowType(request.window), window_size: windowSize(request.window) }];
+  const needsComposites = paired || (await fetchPairedPublicationCutoff(request, requestedCutoff)) != null;
+  const composites = new Map(markers.recent
+    .filter((marker) => marker.surface === "skater_composite_ratings" && marker.window_type === "season" &&
+      marker.window_size === 0 && isComplete(marker))
+    .map((marker) => [marker.snapshot_date, marker]));
+  const dates = new Set(completeRankings.map((marker) => marker.snapshot_date));
+  const pairDates = [...dates].filter((date) => {
+    const composite = composites.get(date);
+    if (needsComposites && !composite) return false;
+    return requiredWindows.every((window) => completeRankings.some((marker) =>
+      marker.snapshot_date === date && marker.window_type === window.window_type &&
+      marker.window_size === window.window_size && (!paired || !composite ||
+        (marker.expected_entities === composite.expected_entities && marker.completed_at != null &&
+          Date.parse(marker.completed_at) <= Date.parse(composite.started_at)))));
+  }).sort().reverse().slice(0, MAX_PAIRING_STEPS);
   for (const date of pairDates) {
     if ((await fetchLatestRankingDate(request, scope, date)) === date) return date;
+  }
+  if (paired && markers.recent.length === PUBLICATION_MARKER_LIMIT) {
+    // A long run of partial publications can push the last complete pair off
+    // the marker page. Include its final date in case that day's markers split.
+    const through = markers.recent[markers.recent.length - 1].snapshot_date;
+    markers.olderPair ??= latestRankingPublicationCutoff(supabase, request.season, through).catch(error => {
+      delete markers.olderPair;
+      throw error;
+    });
+    const older = await markers.olderPair;
+    if (older && await fetchLatestRankingDate(request, scope, older) === older) return older;
   }
   return fetchPairedSnapshotDate(request, scope, dayBefore(markers.eraStart));
 }

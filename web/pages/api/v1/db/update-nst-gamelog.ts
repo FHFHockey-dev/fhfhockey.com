@@ -2308,14 +2308,19 @@ async function main(
   let explicitContinuation: ExplicitContinuation | undefined;
   let auditWriteStarted = false;
   let auditPersistence = "not_attempted";
+  const rankingsSourceDate = options?.startDate && options.startDate === options.endDate
+    ? options.startDate : targetDates?.length === 1 ? targetDates[0] : undefined;
   // A failed or lost acknowledgement can still follow a committed insert.
   // Never retry that insert or claim the bookmark was durably saved.
   const writeAudit = async (row: Record<string, unknown>) => {
     auditWriteStarted = true;
     try {
+      const auditedRow = rankingsSourceDate && /^\d{4}-\d{2}-\d{2}$/.test(rankingsSourceDate)
+        ? { ...row, details: { ...(row.details as Record<string, unknown>), rankingsSourceDate } }
+        : row;
       const insert = () => runControlStorage.run(requestControl && options?.auditDeadlineAt
         ? { ...requestControl, deadlineAt: options.auditDeadlineAt } : requestControl!,
-      async () => await supabase.from("cron_job_audit").insert([row]));
+      async () => await supabase.from("cron_job_audit").insert([auditedRow]));
       const result = options?.auditDeadlineAt ? await beforeDeadline(insert, options.auditDeadlineAt) : await insert();
       if (!result || result.error !== null) throw new Error("Audit insert was not acknowledged.");
       auditPersistence = "confirmed";

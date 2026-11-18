@@ -615,10 +615,14 @@ describe("composite publication completion markers", () => {
   const rankingsMarker = (overrides: Record<string, unknown> = {}) => ({
     surface: "entity_metric_rankings", season_id: 20262027, snapshot_date: "2026-11-14",
     strength_state: "5v5", window_type: "season", window_size: 0, peer_group_type: "all_skaters",
-    peer_group_key: "all", status: "complete", min_gp: 1, min_toi_seconds: 300, ...overrides,
+    peer_group_key: "all", status: "complete", min_gp: 1, min_toi_seconds: 300,
+    expected_entities: 2, written_entities: 2, expected_rows: 34, db_written_rows: 34, ...overrides,
   });
 
-  function fakeClient(options: { markers?: any[]; shortCount?: boolean; markerReadError?: unknown } = {}) {
+  const allRankings = () => [rankingsMarker(),
+    ...[5, 10, 20].map(size => rankingsMarker({ window_type: `last_${size}`, window_size: size }))];
+
+  function fakeClient(options: { markers?: any[]; rankIds?: number[]; rankCount?: number; shortCount?: boolean; markerReadError?: unknown } = {}) {
     const log: Array<{ table: string; op: string; rows?: any[]; filters?: Record<string, unknown> }> = [];
     const client = {
       from: vi.fn((table: string) => {
@@ -626,8 +630,16 @@ describe("composite publication completion markers", () => {
         const query: any = {
           select: () => query,
           eq: (key: string, value: unknown) => { filters[key] = value; return query; },
+          match: (values: Record<string, unknown>) => {
+            Object.assign(filters, values);
+            return table === "skater_composite_ratings" ? Promise.resolve({ count: 2, error: null }) : query;
+          },
           limit: async () => {
             log.push({ table, op: "select", filters });
+            if (table === "entity_metric_rankings") {
+              const data = (options.rankIds ?? [1, 2]).map(entity_id => ({ entity_id }));
+              return { data, count: options.rankCount ?? data.length, error: null };
+            }
             if (options.markerReadError) return { data: null, error: options.markerReadError };
             const data = (options.markers ?? []).filter((marker) =>
               Object.entries(filters).every(([key, value]) => marker[key] === value));
@@ -661,8 +673,33 @@ describe("composite publication completion markers", () => {
     expect(log.filter((entry) => entry.op === "upsert")).toHaveLength(0);
   });
 
+  it("refuses a same-sized replacement ID and a missing last-20 marker before any write", async () => {
+    for (const options of [{ markers: allRankings(), rankIds: [1, 99] }, { markers: allRankings().slice(0, -1) }]) {
+      const { client, log } = fakeClient(options);
+      await expect(publishSkaterCompositeRatingRows(client as any, builtResult())).rejects.toThrow(/player IDs|not a complete publication/);
+      expect(log.filter(entry => entry.op === "upsert")).toEqual([]);
+    }
+  });
+
+  it("rejects a truncated ID page or extra persisted rows even if the returned IDs fit", async () => {
+    for (const options of [{ rankIds: [1], rankCount: 2 }, { rankIds: [1, 2], rankCount: 3 }]) {
+      const { client, log } = fakeClient({ markers: allRankings(), ...options });
+      await expect(publishSkaterCompositeRatingRows(client as any, builtResult())).rejects.toThrow(/player IDs/);
+      expect(log.filter(entry => entry.op === "upsert")).toEqual([]);
+    }
+  });
+
+  it("rejects cohorts over the existing 1000-row limit before reading Rankings", async () => {
+    const { client, log } = fakeClient();
+    const ids = Array.from({ length: 1001 }, (_, i) => i + 1);
+    await expect(publishSkaterCompositeRatingRows(client as any, builtResult({
+      rows: compositeRows(ids), sourceCoverage: { expectedPlayerCount: ids.length },
+    }))).rejects.toThrow(/1000-row/);
+    expect(log).toEqual([]);
+  });
+
   it("marks composites writing, writes the cohort once, then marks them complete", async () => {
-    const { client, log } = fakeClient({ markers: [rankingsMarker()] });
+    const { client, log } = fakeClient({ markers: allRankings() });
     const result = await publishSkaterCompositeRatingRows(client as any, builtResult());
     const writes = log.filter((entry) => entry.op === "upsert");
     expect(writes.map((entry) => [entry.table, entry.rows?.[0]?.status ?? null])).toEqual([
@@ -678,14 +715,14 @@ describe("composite publication completion markers", () => {
   });
 
   it("stays writing when the database reports fewer rows", async () => {
-    const { client, log } = fakeClient({ markers: [rankingsMarker()], shortCount: true });
+    const { client, log } = fakeClient({ markers: allRankings(), shortCount: true });
     const result = await publishSkaterCompositeRatingRows(client as any, builtResult());
     expect(result.status).toBe("writing");
     expect(log.filter((entry) => entry.table === "ranking_publications" && entry.op === "upsert").map((entry) => entry.rows?.[0]?.status)).toEqual(["writing", "writing"]);
   });
 
   it("refuses before writing when fewer players were built than the source-coverage population", async () => {
-    const { client, log } = fakeClient({ markers: [rankingsMarker()] });
+    const { client, log } = fakeClient({ markers: allRankings() });
     await expect(publishSkaterCompositeRatingRows(client as any, builtResult({ sourceCoverage: { expectedPlayerCount: 3 } })))
       .rejects.toThrow("population is 3");
     expect(log.filter((entry) => entry.op === "upsert")).toHaveLength(0);

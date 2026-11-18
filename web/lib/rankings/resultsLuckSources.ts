@@ -334,11 +334,15 @@ export async function fetchResultsLuckRollingSources(
     (data ?? []) as never,
     supportRows,
   ) as unknown as RollingRow[];
+  return resultsLuckSourcesFromRows(rows, args.window);
+}
+
+export function resultsLuckSourcesFromRows(rows: RollingRow[], window: SkaterProductionWindow) {
   const sources = new Map<number, ResultsLuckRollingSource>();
   for (const row of rows) {
     const source = buildResultsLuckRollingSourceFromRow({
       row,
-      window: args.window,
+      window,
     });
     if (source) sources.set(source.playerId, source);
   }

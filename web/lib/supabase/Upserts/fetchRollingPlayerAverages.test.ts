@@ -2766,7 +2766,7 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
     }
   });
 
-  it("posts wide rolling metric rows through the direct PostgREST endpoint", async () => {
+  it("posts support and rolling rows through PostgREST with one write revision", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(new Response("", { status: 200, statusText: "OK" }));
@@ -2790,6 +2790,8 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
     await expect(upsertRollingPlayerMetricsBatch(batch)).resolves.toBeUndefined();
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    const updatedAt = JSON.parse(fetchMock.mock.calls[0][1].body)[0].updated_at;
+    expect(updatedAt).toBe(new Date(updatedAt).toISOString());
     expect(fetchMock).toHaveBeenCalledWith(
       "https://example.supabase.co/rest/v1/rolling_player_metric_support_payloads?on_conflict=player_id,game_date,strength_state",
       expect.objectContaining({
@@ -2818,7 +2820,8 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
                 prunedFieldCount: 1,
                 source: "fetchRollingPlayerAverages"
               }
-            }
+            },
+            updated_at: updatedAt
           }
         ])
       })
@@ -2843,7 +2846,8 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
             pp_share_pct_last20: 0.226,
             toi_seconds_avg_last5: 0,
             toi_seconds_avg_all: 605,
-            goals_avg_all: null
+            goals_avg_all: null,
+            updated_at: updatedAt
           }
         ])
       })
@@ -2937,19 +2941,22 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
     ).resolves.toBeUndefined();
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
+    const updatedAt = JSON.parse(fetchMock.mock.calls[0][1].body)[0].updated_at;
+    const firstWrite = { ...firstRow, updated_at: updatedAt };
+    const secondWrite = { ...secondRow, updated_at: updatedAt };
     expect(fetchMock.mock.calls[0][1]).toEqual(
       expect.objectContaining({
-        body: JSON.stringify([firstRow, secondRow])
+        body: JSON.stringify([firstWrite, secondWrite])
       })
     );
     expect(fetchMock.mock.calls[1][1]).toEqual(
       expect.objectContaining({
-        body: JSON.stringify([firstRow])
+        body: JSON.stringify([firstWrite])
       })
     );
     expect(fetchMock.mock.calls[2][1]).toEqual(
       expect.objectContaining({
-        body: JSON.stringify([secondRow])
+        body: JSON.stringify([secondWrite])
       })
     );
   });

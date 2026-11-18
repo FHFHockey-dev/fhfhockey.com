@@ -186,6 +186,7 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
     scenario,
     supabaseMock: {
       from: vi.fn((table: string) => createQuery(table)),
+      rpc: vi.fn(),
     },
   };
 });
@@ -244,6 +245,7 @@ describe("entityMetricRankingReader", () => {
     clearEntityMetricRankingReaderCachesForTests();
     clearContextualRankingsQueryCachesForTests();
     supabaseMock.from.mockClear();
+    supabaseMock.rpc.mockReset();
   });
 
   describe("paired rankings + composites publication", () => {
@@ -315,10 +317,13 @@ describe("entityMetricRankingReader", () => {
     describe("with completion markers", () => {
       const marker = (surface: string, date: string, status: string, window: [string, number] = ["season", 0]) => ({
         surface, season_id: 20262027, snapshot_date: date, strength_state: "5v5",
+        min_gp: 1, min_toi_seconds: 300, expected_entities: 3, written_entities: 3, expected_rows: 3, db_written_rows: 3,
+        started_at: date + "T01:00:00Z", completed_at: date + "T01:00:00Z",
         window_type: window[0], window_size: window[1], peer_group_type: "all_skaters", peer_group_key: "all", status,
       });
       const pair = (date: string, rankings = "complete", composites = "complete") => [
-        marker("entity_metric_rankings", date, rankings),
+        ...([["season", 0], ["last_5", 5], ["last_10", 10], ["last_20", 20]] as [string, number][])
+          .map((window) => marker("entity_metric_rankings", date, rankings, window)),
         marker("skater_composite_ratings", date, composites),
       ];
       const served = async (window: ContextualRankingsRequest["window"] = "season", metric: ContextualRankingMetricKey = "points_per_60") =>
@@ -329,6 +334,23 @@ describe("entityMetricRankingReader", () => {
         scenario.composites = [compositeRow("2026-11-11"), compositeRow("2026-11-14")];
         scenario.markers = [...pair("2026-11-11"), ...pair("2026-11-14")];
         expect(await served()).toBe("2026-11-14");
+      });
+
+      it("shares one lookup across metrics for the last complete pair beyond the recent marker page", async () => {
+        const accepted = "2026-10-01";
+        const metrics: ContextualRankingMetricKey[] = ["points_per_60", "goals_per_60"];
+        scenario.rows = metrics.flatMap(metric => seasonRows(accepted).map(row => ({ ...row, metric_key: metric })));
+        scenario.composites = [compositeRow(accepted)];
+        const partials = Array.from({ length: 41 }, (_, day) =>
+          pair(new Date(Date.parse(accepted) + (day + 1) * 86_400_000).toISOString().slice(0, 10),
+            "complete", "writing"));
+        scenario.markers = [...pair(accepted), ...partials.flat()];
+        supabaseMock.rpc.mockResolvedValue({ data: accepted, error: null });
+        const surfaces = await buildEntityMetricRankingSurfaces(seasonRequest(), metrics);
+        expect(metrics.map(metric => surfaces.get(metric)?.meta.snapshotDate)).toEqual([accepted, accepted]);
+        expect(supabaseMock.rpc).toHaveBeenCalledTimes(1);
+        expect(supabaseMock.rpc).toHaveBeenCalledWith("latest_ranking_publication_cutoff",
+          { p_season: 20262027, p_through: "2026-10-03" });
       });
 
       it("skips a date whose Rankings rows exist but whose composites are still writing", async () => {
@@ -366,10 +388,10 @@ describe("entityMetricRankingReader", () => {
         const lastTen = (date: string) => seasonRows(date).map(row => ({ ...row, window_type: "last_10", window_size: 10 }));
         scenario.rows = [...lastTen("2026-11-13"), ...lastTen("2026-11-14")];
         scenario.composites = [compositeRow("2026-11-13"), compositeRow("2026-11-14")];
-        scenario.markers = [...pair("2026-11-14"), marker("entity_metric_rankings", "2026-11-14", "writing", ["last_10", 10])];
+        scenario.markers = [...pair("2026-11-14").filter(row => row.window_size !== 10), marker("entity_metric_rankings", "2026-11-14", "writing", ["last_10", 10])];
         expect(await served("last10")).toBe("2026-11-13");
         clearEntityMetricRankingReaderCachesForTests();
-        scenario.markers = [...pair("2026-11-14"), marker("entity_metric_rankings", "2026-11-14", "complete", ["last_10", 10])];
+        scenario.markers = pair("2026-11-14");
         expect(await served("last10")).toBe("2026-11-14");
       });
 
@@ -385,13 +407,15 @@ describe("entityMetricRankingReader", () => {
 
       it("serves the newest complete Rankings when the strength has no composites at all", async () => {
         scenario.rows = [...seasonRows("2026-11-11"), ...seasonRows("2026-11-14"), ...seasonRows("2026-11-15")];
+        scenario.rows = scenario.rows.map((row) => ({ ...row, strength_state: "all" }));
         scenario.composites = [];
         scenario.markers = [
           marker("entity_metric_rankings", "2026-11-11", "complete"),
           marker("entity_metric_rankings", "2026-11-14", "complete"),
           marker("entity_metric_rankings", "2026-11-15", "writing"),
-        ];
-        expect(await served()).toBe("2026-11-14");
+        ].map((row) => ({ ...row, strength_state: "all" }));
+        const surfaces = await buildEntityMetricRankingSurfaces({ ...seasonRequest(), strength: "all" }, ["points_per_60"]);
+        expect(surfaces.get("points_per_60")?.meta.snapshotDate).toBe("2026-11-14");
       });
 
       it("falls back to the date match when the marker table is not deployed", async () => {

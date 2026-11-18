@@ -9,6 +9,7 @@ import {
   publishEntityMetricRankingRows,
   type EntityMetricRankingBuildRequest,
 } from "lib/rankings/entityMetricRankingWriter";
+import { RankingDispatchConflict, withManualRankingDispatch } from "lib/rankings/publicationDispatchLedger";
 import { RankingPublicationTableMissingError } from "lib/rankings/rankingPublications";
 import {
   getContextualRankingMetricDefinition,
@@ -218,9 +219,13 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     const built = await buildEntityMetricRankingRows(request);
     const published = dryRun
       ? null
-      : await publishEntityMetricRankingRows(req.supabase, built, {
+      : await withManualRankingDispatch(req.supabase, {
+          mode: "manual_rankings", season: request.season, strength: request.strength,
+          touchesPublishedScope: request.peerGroupType === "all_skaters",
+          dates: built.rows.map(row => row.snapshot_date),
+        }, () => publishEntityMetricRankingRows(req.supabase, built, {
           chunkSize: upsertChunkSize ?? undefined,
-        });
+        }));
     // A full publication that did not complete keeps its markers at
     // `writing`; the reader keeps serving the last complete pair.
     const incomplete = published?.marked === true && !published.complete;
@@ -240,7 +245,7 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
       sampleRows: built.rows.slice(0, 3),
     });
   } catch (error) {
-    if (error instanceof RankingPublicationTableMissingError) {
+    if (error instanceof RankingDispatchConflict || error instanceof RankingPublicationTableMissingError) {
       return res.status(409).json({ success: false, error: error.message });
     }
     return res.status(400).json({
