@@ -121,6 +121,10 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
     }
 
     if (state.table === "games") {
+      if (scenario.paginatedRows.length) {
+        const dates = [...new Set(scenario.paginatedRows.map(row => row.game_date))].sort().reverse();
+        return { data: dates.map(date => ({ date })), error: null };
+      }
       return {
         data: [
           { date: "2026-04-16" },
@@ -147,14 +151,15 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
         return { data: null, error: { code: "57014", message: "rolling read timed out" } };
       }
       const dates = requestedDates(state);
-      if (
-        scenario.paginatedRows.length > 0 &&
-        dates.includes("2026-04-16")
-      ) {
+      if (scenario.paginatedRows.length) {
+        const ids = state.filters.player_id;
+        const rows = scenario.paginatedRows.filter(row =>
+          dates.includes(row.game_date) && (!Array.isArray(ids) || ids.includes(row.player_id)),
+        );
         const from = state.rangeFrom ?? 0;
-        const to = state.rangeTo ?? scenario.paginatedRows.length - 1;
+        const to = state.rangeTo ?? rows.length - 1;
         return {
-          data: scenario.paginatedRows.slice(from, to + 1).map(row =>
+          data: rows.slice(from, to + 1).map(row =>
             Object.fromEntries((state.selectFields ?? "").split(",").map(field => [field, row[field]])),
           ),
           error: null,
@@ -905,6 +910,11 @@ describe("rankingQueries", () => {
     expect(response.meta.rowCount).toBe(2);
     expect(response.rankings.map((row) => row.entity.id)).toEqual([1, 2]);
     expect(response.rankings.map((row) => row.metric.value)).toEqual([9, 8]);
+    expect(queryCalls.filter(call => call.table === "rolling_player_metric_support_payloads")
+      .map(call => [call.filters.game_date, call.filters.player_id])).toEqual([
+      ["2026-04-16", [1]],
+      ["2026-04-15", [2]],
+    ]);
   });
 
   it("ranks an explicitly complete publication cohort without the recent-game/date cap or cache", async () => {

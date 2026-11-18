@@ -55,6 +55,7 @@ export function attachWindowCountSupport(
 
 type SupportQuery = {
   eq(column: string, value: unknown): SupportQuery;
+  in(column: string, values: number[]): SupportQuery;
   order(column: string, options: { ascending: boolean }): SupportQuery;
   range(
     from: number,
@@ -66,10 +67,10 @@ type SupportClient = {
   from(table: string): { select(fields: string): SupportQuery };
 };
 
-/** All support rows for one season, strength and game date, paged by player. */
+/** Support for one season, strength and game date, optionally limited to selected skaters. */
 export async function fetchWindowCountSupportForDate(
   client: SupportClient,
-  args: { season: number; strength: string; gameDate: string; teamId?: number | null },
+  args: { season: number; strength: string; gameDate: string; teamId?: number | null; playerIds?: number[] },
 ): Promise<WindowCountSupportRow[]> {
   const rows: WindowCountSupportRow[] = [];
   for (let from = 0; ; from += SUPPORT_PAGE_SIZE) {
@@ -80,6 +81,7 @@ export async function fetchWindowCountSupportForDate(
       .eq("strength_state", args.strength)
       .eq("game_date", args.gameDate);
     if (args.teamId != null) query = query.eq("team_id", args.teamId);
+    if (args.playerIds) query = query.in("player_id", args.playerIds);
     const { data, error } = await query
       .order("player_id", { ascending: true })
       .range(from, from + SUPPORT_PAGE_SIZE - 1);

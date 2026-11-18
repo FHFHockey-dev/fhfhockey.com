@@ -35,6 +35,7 @@ import { ROLLING_RANKING_SELECT_FIELDS } from "./rollingRankingSelectFields";
 import {
   attachWindowCountSupport,
   fetchWindowCountSupportForDate,
+  type WindowCountSupportRow,
 } from "./rollingWindowCountSupportReader";
 
 type PlayerMeta = {
@@ -62,7 +63,7 @@ type CandidateContext = {
 
 const MAX_SNAPSHOT_DATES_TO_EVALUATE = 30;
 const ROLLING_QUERY_PAGE_SIZE = 1000;
-const METADATA_IN_FILTER_CHUNK_SIZE = 500;
+const IN_FILTER_CHUNK_SIZE = 500;
 const METADATA_QUERY_PAGE_SIZE = 1000;
 const ROLLING_SNAPSHOT_CACHE_TTL_MS = 30_000;
 const ROLLING_DATE_QUERY_CONCURRENCY = 6;
@@ -303,7 +304,7 @@ async function fetchRollingRowsForSnapshot(
   let pending = rollingSnapshotRowsInFlight.get(cacheKey);
   if (!pending) {
     pending = (async () => {
-      const rows: RollingPlayerGameMetricRow[] = [];
+      const latestByPlayerId = new Map<number, RollingPlayerGameMetricRow>();
       for (
         let index = 0;
         index < datesToFetch.length;
@@ -316,17 +317,15 @@ async function fetchRollingRowsForSnapshot(
         const chunkRows = await Promise.all(
           dateChunk.map((gameDate) => fetchRollingRowsForGameDate(request, gameDate)),
         );
-        rows.push(...chunkRows.flat());
-      }
-      const latestByPlayerId = new Map<number, RollingPlayerGameMetricRow>();
-      for (const row of rows) {
-        if (typeof row.player_id !== "number") continue;
-        const current = latestByPlayerId.get(row.player_id);
-        if (!current || isNewerRollingRow(row, current)) {
-          latestByPlayerId.set(row.player_id, row);
+        for (const row of chunkRows.flat()) {
+          if (typeof row.player_id !== "number") continue;
+          const current = latestByPlayerId.get(row.player_id);
+          if (!current || isNewerRollingRow(row, current)) {
+            latestByPlayerId.set(row.player_id, row);
+          }
         }
       }
-      const latestRows = Array.from(latestByPlayerId.values());
+      const latestRows = await attachLatestWindowSupport(request, [...latestByPlayerId.values()]);
       rollingSnapshotRowsCache.set(cacheKey, {
         expiresAt: Date.now() + ROLLING_SNAPSHOT_CACHE_TTL_MS,
         rows: latestRows,
@@ -370,12 +369,37 @@ async function fetchRollingRowsForGameDate(
     if (page.length < ROLLING_QUERY_PAGE_SIZE) break;
   }
 
-  if (rows.length === 0) return rows;
-  const supportRows = await fetchWindowCountSupportForDate(supabase as never, {
-    season: request.season,
-    strength: request.strength,
-    gameDate,
-  });
+  return rows;
+}
+
+// The snapshot uses one rolling row per skater. Fetch window payloads only for
+// those identities, including skaters whose most recent appearance was earlier.
+async function attachLatestWindowSupport(
+  request: ContextualRankingsRequest,
+  rows: RollingPlayerGameMetricRow[],
+) {
+  const playersByDate = new Map<string, number[]>();
+  for (const row of rows) {
+    const players = playersByDate.get(row.game_date);
+    if (players) players.push(row.player_id);
+    else playersByDate.set(row.game_date, [row.player_id]);
+  }
+  const queries: Array<{ gameDate: string; playerIds: number[] }> = [];
+  for (const [gameDate, playerIds] of playersByDate) {
+    for (let i = 0; i < playerIds.length; i += IN_FILTER_CHUNK_SIZE) {
+      queries.push({ gameDate, playerIds: playerIds.slice(i, i + IN_FILTER_CHUNK_SIZE) });
+    }
+  }
+  const supportRows: WindowCountSupportRow[] = [];
+  for (let i = 0; i < queries.length; i += ROLLING_DATE_QUERY_CONCURRENCY) {
+    const batch = queries.slice(i, i + ROLLING_DATE_QUERY_CONCURRENCY);
+    const results = await Promise.all(batch.map((query) =>
+      fetchWindowCountSupportForDate(supabase as never, {
+        season: request.season, strength: request.strength, ...query,
+      }),
+    ));
+    supportRows.push(...results.flat());
+  }
   return attachWindowCountSupport(rows, supportRows);
 }
 
@@ -462,8 +486,8 @@ async function fetchPlayerMeta(playerIds: number[]) {
   const rows: PlayerMeta[] = [];
   const uniqueIds = Array.from(new Set(playerIds));
 
-  for (let index = 0; index < uniqueIds.length; index += METADATA_IN_FILTER_CHUNK_SIZE) {
-    const chunk = uniqueIds.slice(index, index + METADATA_IN_FILTER_CHUNK_SIZE);
+  for (let index = 0; index < uniqueIds.length; index += IN_FILTER_CHUNK_SIZE) {
+    const chunk = uniqueIds.slice(index, index + IN_FILTER_CHUNK_SIZE);
     for (let from = 0; ; from += METADATA_QUERY_PAGE_SIZE) {
       const { data, error } = await supabase
         .from("players")
@@ -486,8 +510,8 @@ async function fetchTeamMeta(teamIds: number[]) {
   const rows: TeamMeta[] = [];
   const uniqueIds = Array.from(new Set(teamIds));
 
-  for (let index = 0; index < uniqueIds.length; index += METADATA_IN_FILTER_CHUNK_SIZE) {
-    const chunk = uniqueIds.slice(index, index + METADATA_IN_FILTER_CHUNK_SIZE);
+  for (let index = 0; index < uniqueIds.length; index += IN_FILTER_CHUNK_SIZE) {
+    const chunk = uniqueIds.slice(index, index + IN_FILTER_CHUNK_SIZE);
     for (let from = 0; ; from += METADATA_QUERY_PAGE_SIZE) {
       const { data, error } = await supabase
         .from("teams")
