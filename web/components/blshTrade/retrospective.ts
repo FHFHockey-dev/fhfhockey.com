@@ -20,12 +20,17 @@ export type RetrospectiveComparison = {
 export function retrospectivePlayer(playerId: string, profile: DisplayProfile | undefined): RetrospectivePlayer {
   const none = (reason: string): RetrospectivePlayer => ({ playerId, recordedPerGame: null, referencePerGame: null, games: null, freshnessText: null, reason });
   if (!profile) return none("No BLSH evidence for this player");
-  // The headline track is FHFH Standard points; it is null (never zero) when the track is missing.
-  const headline = profile.score.headline;
-  if (!headline) return none(profile.score.reasonText ?? "The FHFH Standard points track is unavailable");
+  const legacy = !Object.hasOwn(profile.score, "headline");
+  // Saved snapshots use numeric NHL identities. The fixture editor also supports caller-mapped aliases.
+  if ((legacy || /^\d+$/.test(playerId)) && playerId !== String(profile.playerId)) return none("BLSH evidence belongs to a different player");
+  // V1 saved the same window totals directly on its validated production track.
+  // An explicit null headline in v3 is a withholding decision.
+  const legacyTracks = legacy ? profile.tracks.filter(item => item.track === "fantasy_points") : [];
+  const track = legacy ? (legacyTracks.length === 1 ? legacyTracks[0] : null) : profile.score.headline;
+  if (!track || !Number.isFinite(track.observed)) return none(profile.score.reasonText ?? "The FHFH Standard points track is unavailable");
   const games = profile.evidence.window.games;
-  if (!(games > 0)) return none("The BLSH window has no recorded games");
-  return { playerId, recordedPerGame: headline.observed / games, referencePerGame: headline.referenceAtCurrentTOI / games, games,
+  if (!Number.isSafeInteger(games) || games < 1) return none("The BLSH window has no recorded games");
+  return { playerId, recordedPerGame: track.observed / games, referencePerGame: Number.isFinite(track.referenceAtCurrentTOI) ? track.referenceAtCurrentTOI / games : null, games,
     freshnessText: profile.evidence.window.freshnessText, reason: null };
 }
 

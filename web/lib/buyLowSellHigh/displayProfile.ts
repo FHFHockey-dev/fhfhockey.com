@@ -56,6 +56,7 @@ const METRIC_LABELS: Record<string, string> = {
 const MISMATCH = "Context withheld: it could not be matched to the scored games";
 /** Handoff §4. Codes not listed here fall back to "Unavailable: <code>", never a blank. */
 const REASON_TEXT: Record<string, string> = {
+  single_player_without_cohort_rank: "This individual player comparison has no cohort ranking.",
   no_measured_current_production_or_exposure: "Score unavailable: a current-window game is missing a production track or ice time (often the six on-ice goal fields Game Score needs)",
   no_observed_current_process: "Score unavailable: none of the three process rates is observed for the current window",
   unestimable_prior_sensitivity: "Score unavailable: the process sensitivity could not be estimated before this window",
@@ -299,7 +300,8 @@ function toDisplayOpportunity(o: OpportunityResult | null | undefined, tracks: D
 export type ListRanks = { rank: number; positionRank: number };
 /** Project one saved profile. `ranks` holds its 1-based place in its gated list (headline-gap order) and within
  * its position group on that side, or null when it is not listed. */
-export function toDisplayProfile(p: MappedProfile, ranks: ListRanks | null, recordedThroughDate: string): DisplayProfile {
+export function toDisplayProfile(p: MappedProfile, ranks: ListRanks | null, recordedThroughDate: string,
+  scope: "cohort" | "single_player" = "cohort"): DisplayProfile {
   const e = p.explanation, r = p.result, id = p.playerId;
   check(e.version === SUPPORT_GAP_EXPLANATION_VERSION && e.scoreVersion === SUPPORT_GAP_VERSION && r.version === SUPPORT_GAP_VERSION, id, "version");
   check(e.claims.luckIdentified === false && e.claims.marketValue === false && e.claims.forecast === false && e.claims.trusted === false, id, "claims");
@@ -313,7 +315,8 @@ export function toDisplayProfile(p: MappedProfile, ranks: ListRanks | null, reco
     check(e.confidence.evidenceTier !== null && e.tracks.length === 3, id, "numeric score has a tier and three tracks");
   }
   if (r.researchList !== null) check(r.status === "concordant_research_candidate" && p.window.fresh && (r.researchList === "BL" ? r.value! > 0 : r.value! < 0), id, "signed fresh list member");
-  const listReason = listWithheldReason(p), list = listReason === null ? r.researchList : null;
+  const listReason = listWithheldReason(p) ?? (scope === "single_player" && r.researchList !== null ? "single_player_without_cohort_rank" : null);
+  const list = listReason === null ? r.researchList : null;
   if (list !== null) check(ranks !== null && Number.isSafeInteger(ranks.rank) && ranks.rank > 0 && Number.isSafeInteger(ranks.positionRank) && ranks.positionRank > 0
     && ranks.positionRank <= ranks.rank && p.position !== null, id, "list member has a rank and a position group");
   else check(ranks === null, id, "withheld profile has no rank");

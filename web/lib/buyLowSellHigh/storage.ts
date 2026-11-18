@@ -4,7 +4,8 @@ import type { MarketReference } from "./market";
 export const LEGACY_BLSH_STORAGE_KEY = "fhfh.buyLowSellHigh.local.v1";
 export const BLSH_STORAGE_KEY = "fhfh.buyLowSellHigh.local.v2";
 export const BLSH_FIXTURE_STORAGE_KEY = "fhfh.buyLowSellHigh.fixture.local.v2";
-export type BlshStorageKey = typeof BLSH_STORAGE_KEY | typeof BLSH_FIXTURE_STORAGE_KEY;
+export const BLSH_SAVED_SAMPLE_STORAGE_KEY = "fhfh.buyLowSellHigh.savedSample.local.v2";
+export type BlshStorageKey = typeof BLSH_STORAGE_KEY | typeof BLSH_FIXTURE_STORAGE_KEY | typeof BLSH_SAVED_SAMPLE_STORAGE_KEY;
 
 /** Preserved verbatim on v1 migration. Never interpret the old target/horizon as research context. */
 export type LegacyWatchEntry = { playerId: string; target: string; horizon: number; addedAt: string; gapAtAdd: number | null };
