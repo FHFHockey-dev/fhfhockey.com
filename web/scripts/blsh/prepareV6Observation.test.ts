@@ -12,6 +12,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { capture, fixtureGames, sourceDate } from "./prepareV6ObservationCapture.testHelper";
 import { buildRequestFromContextV1, REQUEST_CONTEXT_CAPTURE, REQUEST_CONTEXT_COLUMNS } from "../../lib/blsh/nativeCaptureV6/requestContext";
 import { acquireOfficialLoopbackFixture, readAcquisitionPlan } from "./acquireV6Official.mjs";
+import { exportHostedOfficialFixture } from "../../lib/blsh/nativeCaptureV6/officialPilotHandler.testHelper";
 import { deriveV6OfficialFrame } from "./acquireV6OfficialFrame";
 import { prepareV6Observation } from "./prepareV6Observation";
 
@@ -394,4 +395,122 @@ describe("one-skater v6 held observation export", () => {
     rmSync(join(test.evidenceDir, "official", `boxscore-${game.id}.receipt.json`));
     await expect(test.run()).rejects.toThrow("acquisition_directory_file_set"); expect(existsSync(test.out)).toBe(false);
   });
+});
+
+describe("signed hosted official export through the actual frame and held reader", () => {
+  let fixture: Awaited<ReturnType<typeof exportHostedOfficialFixture>>;
+  let framePins: Record<string, unknown>;
+  const dir = join(root, "hosted-archive"), originalFrame = join(root, "hosted-frame.json");
+  beforeAll(async () => {
+    const boxes = fixtureGames.map(game => JSON.parse(readFileSync(join(archive, `boxscore-${game.id}.body.json`), "utf8")));
+    fixture = await exportHostedOfficialFixture({ outDir: dir, nativeRunId: packet.run.run_id, nativeManifestSHA256: packet.run.manifest_sha256!,
+      scheduleSHA256: packet.objects.find(row => row.path.endsWith("/schedule.raw.json"))!.sha256, boxes,
+      deploymentId: packet.pins.deploymentId, gitCommitSha: packet.pins.gitCommitSha });
+    framePins = { runId: packet.run.run_id, sourceDate, playerId, evidenceAsOfUTC: fixture.evidenceAsOfUTC, hostedOfficial: fixture.hostedOfficial,
+      acquisitionPinsSHA256: fixture.acquisitionPinsSHA256, acquisitionManifestSHA256: fixture.acquisitionManifestSHA256 };
+    const pins = join(root, "hosted-frame-pins.json");
+    write(pins, json(framePins));
+    await deriveV6OfficialFrame(exportDir, ledgerPins, dir, pins, originalFrame, true);
+  });
+  function held() {
+    const c = evidence(), ledger = join(c.evidenceDir, "official-ledger");
+    cpSync(dir, ledger, { recursive: true });
+    const frameSHA256 = write(join(c.evidenceDir, "OFFICIAL-FRAME.json"), readFileSync(originalFrame));
+    const pins = { ...JSON.parse(readFileSync(c.pinsPath, "utf8")), ...framePins, frameSHA256 };
+    write(c.pinsPath, json(pins));
+    return { ...c, ledger, pins };
+  }
+  it("reaches a held observation from the real signed route and copies both original metadata buffers and every hosted object", async () => {
+    const c = held(), result = await c.run();
+    expect(result).toMatchObject({ status: "fixture_only_held_observation", acceptedWitnesses: 0, score: null, currentUseQualified: false });
+    const report = JSON.parse(readFileSync(join(c.out, "HELD-OBSERVATION.json"), "utf8"));
+    expect(report.comparison.official).toMatchObject({ acquisitionClass: "loopback_fixture_only", officialRunId: fixture.hostedOfficial.runId,
+      acquisitionManifestSHA256: fixture.acquisitionManifestSHA256, acquisitionPinsSHA256: fixture.acquisitionPinsSHA256,
+      boxscoreSHA256: sha(fixture.bodies[String(gameId)]) });
+    for (const file of ["run.json", "objects.json"]) expect(readFileSync(join(c.out, "official-ledger-" + file))).toEqual(readFileSync(join(dir, file)));
+    for (const row of fixture.rows) {
+      const path = row.path as string, file = path.split("/").pop()!;
+      expect(readFileSync(join(c.out, "evidence-official-" + file))).toEqual(readFileSync(join(dir, "objects", path)));
+    }
+  });
+  it("refuses a hosted loopback packet under real-host policy", async () => {
+    const c = held();
+    await expect(prepareV6Observation(exportDir, ledgerPins, c.evidenceDir, c.pinsPath, c.out)).rejects.toThrow("official_hosted_runtime_profile");
+    expect(existsSync(c.out)).toBe(false);
+  });
+  it.each([
+    ["uncertain", "official_hosted_run_mismatch"], ["expired", "official_hosted_ledger_clock"],
+    ["wrong key", "official_grant_signature"], ["changed runtime pin", "official_hosted_runtime_profile"],
+    ["missing receipt", "official_hosted_index_count"], ["wrong game", "official_hosted_run_mismatch"],
+    ["reordered intent", "official_hosted_index_mismatch"], ["journal before prior commit", "official_hosted_intent_chronology"], ["corrected original", "official_hosted_object_digest"],
+    ["resealed wrong receipt", "official_receipt_or_chronology_mismatch"], ["resealed wrong game", "official_game_scope"],
+    ["late claim", "official_hosted_ledger_clock"], ["late closure", "official_hosted_runtime_clock"],
+    ["resealed frame", "supplied_frame_original_bytes_mismatch"],
+  ])("withholds %s before writing a proposal", async (kind, reason) => {
+      const c = held(), run = { ...fixture.run }, rows = fixture.rows.map(row => ({ ...row }));
+      if (kind === "uncertain") { run.state = "claimed"; run.closed_at = null; write(join(c.ledger, "run.json"), json(run)); }
+      if (kind === "expired") { c.pins.evidenceAsOfUTC = "2026-11-21T12:45:00Z"; write(c.pinsPath, json(c.pins)); }
+      if (kind === "wrong key") {
+        const { generateKeyPairSync } = await import("node:crypto");
+        c.pins.hostedOfficial = { ...c.pins.hostedOfficial, approvalPublicKey: generateKeyPairSync("ed25519").publicKey.export({type: "spki",format: "pem"}).toString() };
+        write(c.pinsPath, json(c.pins));
+      }
+      if (kind === "changed runtime pin") {
+        c.pins.hostedOfficial = { ...c.pins.hostedOfficial, runtime: { ...c.pins.hostedOfficial.runtime, routeBundleSHA256: "d".repeat(64) } };
+        write(c.pinsPath,json(c.pins));
+      }
+      if (kind === "missing receipt") { rows.splice(3, 1); write(join(c.ledger, "objects.json"), json(rows)); }
+      if (kind === "wrong game") { run.game_ids = [gameId+1]; write(join(c.ledger, "run.json"), json(run)); }
+      if (kind === "reordered intent") { rows[1].game_id = fixtureGames[1].id; write(join(c.ledger, "objects.json"), json(rows)); }
+      if (kind === "corrected original") {
+        const path = join(c.ledger, "objects", rows[2].path as string), bytes = readFileSync(path);
+        bytes[bytes.length-1] = 32; write(path,bytes);
+      }
+      if (kind === "resealed wrong receipt" || kind === "resealed wrong game" || kind === "journal before prior commit") {
+        const manifestPath = join(c.ledger, "objects", rows[rows.length - 1].path as string);
+        const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+        const replace = (i: number, patch: Record<string, unknown>) => {
+          const file = join(c.ledger, "objects", rows[i].path as string);
+          const bytes = json({ ...JSON.parse(readFileSync(file, "utf8")), ...patch });
+          const hash = write(file, bytes);
+          Object.assign(rows[i], { bytes: bytes.length, sha256: hash });
+          if (i < rows.length - 1) Object.assign(manifest.files[i], { bytes: bytes.length, sha256: hash });
+          return { bytes: bytes.length, sha256: hash };
+        };
+        if (kind === "resealed wrong game") {
+          const updated = replace(2, { id: fixtureGames[1].id });
+          replace(3, updated);
+        } else if (kind === "journal before prior commit") {
+          // A valid ledger and wire order apart from one edge: the runtime commits 1µs after journal creation.
+          const journal = JSON.parse(readFileSync(join(c.ledger, "objects", rows[1].path as string), "utf8"));
+          const late = journal.startedAtUTC.replace("Z", "001Z");
+          rows[0].written_at = rows[1].written_at = late;
+          replace(3, { dispatchedAtUTC: new Date(Date.parse(journal.startedAtUTC) + 1).toISOString() });
+        } else replace(3, { operation: 2 });
+        c.pins.acquisitionManifestSHA256 = run.manifest_sha256 = replace(rows.length - 1, manifest).sha256;
+        if (kind === "journal before prior commit") {
+          const path = join(c.evidenceDir, "OFFICIAL-FRAME.json"), frame = JSON.parse(readFileSync(path, "utf8"));
+          frame.provenance.acquisitionManifestSHA256 = run.manifest_sha256;
+          frame.provenance.boxscoreReceiptSHA256 = rows[3].sha256;
+          c.pins.frameSHA256 = write(path, json(frame));
+        }
+        write(join(c.ledger, "run.json"), json(run));
+        write(join(c.ledger, "objects.json"), json(rows));
+        write(c.pinsPath, json(c.pins));
+      }
+      if (kind === "late claim" || kind === "late closure") {
+        if (kind === "late claim") run.claimed_at = "2026-11-21T12:46:00Z";
+        else run.closed_at = "2026-11-21T12:48:00Z";
+        c.pins.evidenceAsOfUTC = "2026-11-21T13:00:00Z";
+        write(join(c.ledger, "run.json"), json(run));
+        write(c.pinsPath, json(c.pins));
+      }
+      if (kind === "resealed frame") {
+        const file = join(c.evidenceDir,"OFFICIAL-FRAME.json"), frame = JSON.parse(readFileSync(file,"utf8"));
+        c.pins.frameSHA256 = write(file,json({ ...frame, totalToiSeconds: frame.totalToiSeconds + 1 }));
+        write(c.pinsPath,json(c.pins));
+      }
+      await expect(c.run()).rejects.toThrow(reason);
+      expect(existsSync(c.out)).toBe(false);
+    });
 });

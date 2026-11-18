@@ -5,7 +5,9 @@
  * EXPORT and LEDGER_PINS follow readNativeV6Ledger.ts. EVIDENCE contains context-ledger/ (the request run row, eight index rows and their original
  * Storage bytes), OFFICIAL-FRAME.json and official/
  * (the entire untouched acquisition directory: manifest, tool, runtime, ordered journals,
- * boxscore bodies and v6 acquisition pins and matching v6 receipts). REVIEW_PINS is an independently held JSON object
+ * boxscore bodies and v6 acquisition pins and matching v6 receipts). For a signed Vercel run, use
+ * official-ledger/ with run.json, objects.json and objects/<indexed path> with each original PostgreSQL bytea body. REVIEW_PINS.hostedOfficial
+ * supplies the official run, deployment and commit, approval public key, and independent runtime pins. REVIEW_PINS is an independently held JSON object
  * with sourceDate, runId, playerId, evidenceAsOfUTC, contextSHA256, requestSHA256, frameSHA256, acquisitionPinsSHA256 and acquisitionManifestSHA256,
  * plus contextRunId, contextManifestSHA256, contextDeploymentId and contextGitCommitSha.
  * Neither pins file may be inside an input directory. Output is a new private directory outside
@@ -63,6 +65,10 @@ export async function prepareV6Observation(exportDir: string, ledgerPinsPath: st
   const parserSource = readBound(join(__dirname, "prepareV6ObservationEvidence.mjs"), MIB);
   const contextBuilderSource = readBound(join(root, "web/lib/blsh/nativeCaptureV6/requestContext.ts"), MIB);
   keep("comparison-source.mjs", parserSource);
+  if (Object.prototype.hasOwnProperty.call(reviewPins, "hostedOfficial")) {
+    keep("hosted-official-reader.mjs", readBound(join(__dirname, "readHostedOfficialV6.mjs"), MIB));
+    keep("official-transport.mjs", readBound(join(root, "web/lib/blsh/nativeCaptureV6/officialPilotAcquisition.transport.mjs"), MIB));
+  }
   keep("request-context-builder.ts", contextBuilderSource);
   const sourceFiles = Object.entries(profile.sourceFiles).map(([path, pin]) => {
     const value = execFileSync("git", ["--no-replace-objects", "--no-lazy-fetch", "cat-file", "blob", profile.gitCommitSha + ":" + path],

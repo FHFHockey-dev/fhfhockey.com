@@ -11,7 +11,7 @@ const outside = (directory: string, file: string) => { const rel = relative(dire
 export async function deriveV6OfficialFrame(exportDir: string, ledgerPins: string, officialDir: string, framePins: string, output: string, fixtureOnly = false) {
   const { MIB, encode, isHash, need, parseJson, readBound, sha } = await import("../../../tasks/artifacts/blsh-evidence-bridge-2026-11-15/lib.mjs");
   const { reviewNativeV6Packet } = await import("./reviewNativeV6Packet.mjs");
-  const { deriveOfficialFrame } = await import("./prepareV6ObservationEvidence.mjs");
+  const { deriveOfficialFrame, deriveHostedOfficialFrame } = await import("./prepareV6ObservationEvidence.mjs");
   const directory = realpathSync(officialDir), ledger = realpathSync(exportDir), pinsFile = realpathSync(framePins), ledgerPinFile = realpathSync(ledgerPins);
   const destination = join(realpathSync(dirname(resolve(output))), basename(output));
   need([ledger, directory].every(dir => outside(dir, pinsFile) && outside(dir, ledgerPinFile) && outside(dir, destination))
@@ -29,8 +29,11 @@ export async function deriveV6OfficialFrame(exportDir: string, ledgerPins: strin
     return bytes;
   };
   const schedule = parseJson(verified.files.get("schedule.raw.json"));
-  const day = schedule.gameWeek.find((row: { date: string }) => row.date === pins.sourceDate);
-  const { frame } = deriveOfficialFrame(read, readdirSync(directory), day, pins.playerId, pins, profile, runBytes, fixtureOnly);
+  const dates = schedule.gameWeek.filter((row: { date: string }) => row.date === pins.sourceDate);
+  need(dates.length === 1, "schedule_day_ambiguous");
+  const { frame } = Object.prototype.hasOwnProperty.call(pins, "hostedOfficial")
+    ? deriveHostedOfficialFrame(directory, dates[0], pins.playerId, pins, profile, runBytes, fixtureOnly, undefined)
+    : deriveOfficialFrame(read, readdirSync(directory), dates[0], pins.playerId, pins, profile, runBytes, fixtureOnly);
   const bytes = encode(frame), fd = openSync(destination, "wx", 0o600);
   try { writeFileSync(fd, new Uint8Array(bytes)); fsyncSync(fd); } finally { closeSync(fd); }
   return { status: fixtureOnly ? "fixture_only_frame" : "official_frame_pending_independent_review", frameSHA256: sha(bytes), acceptedWitnesses: 0 };

@@ -41,7 +41,7 @@ function targetArguments(target: NativeContextTarget) {
   return { p_source_date: target.sourceDate, p_native_run_id: target.nativeRunId, p_native_manifest_sha256: target.nativeManifestSHA256 };
 }
 
-const boundedHTTPS: ContextTransport = ({ method, url, headers, body, limit, timeoutMs }) => new Promise((resolve, reject) => {
+export const boundedHTTPS: ContextTransport = ({ method, url, headers, body, limit, timeoutMs }) => new Promise((resolve, reject) => {
   let settled = false;
   const fail = () => {
     if (settled) return;

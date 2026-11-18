@@ -7,19 +7,13 @@ import { GROUPS, MIB, SEASON, isHash, need, parseJson, readBound, sha, stamp } f
 
 import { BUDGET, captureBinding, officialUrl, verifyOfficialTLS, liveRoots } from "./acquireV6Official.mjs";
 
+import { evidenceMicros as micros, readHostedOfficialV6Export } from "./readHostedOfficialV6.mjs";
+const reviewedCleanHostTool = "f11ca1bd86a057874513bd47d3507a7a9b2043c9656f71122a334e3a2b206e2c";
 const TABLES = { wgo: "public.wgo_skater_stats", calendar: "public.games", individual: "public.nst_gamelog_as_counts", onIce: "public.nst_gamelog_as_counts_oi" };
 const one = (rows, code) => { need(rows.length === 1, code); return rows[0]; };
 const positive = n => Number.isSafeInteger(n) && n > 0;
 const fields = { individual: ["gp", "toi", "goals", "shots", "ixg"], onIce: ["gp", "toi", "xgf", "xga"] };
 const keys = (obj, names) => isDeepStrictEqual(Object.keys(obj).sort(), [...names].sort());
-
-// Validate the full calendar/offset grammar, then retain SQL's fractional microseconds.
-function micros(value) {
-  stamp(value);
-  const result = Date.parse(value) * 1000 + Number((value.match(/\.(\d{1,6})/)?.[1] ?? "").padEnd(6, "0").slice(3));
-  need(Number.isSafeInteger(result), "invalid_microsecond_timestamp");
-  return result;
-}
 
 function literal(text, field) {
   if (field === "toi" && /^\d{1,3}:[0-5]\d$/.test(text)) {
@@ -75,7 +69,6 @@ function compareCells(body, group, playerId, team, stored) {
 
 // The capture, projection and review stages use the same replay of the complete slate.
 export function deriveOfficialFrame(read, officialNames, day, target, pins, profile, runBytes, fixtureOnly = false) {
-  const scheduleFact = profile.bodies.schedule;
   const files = read("official/MANIFEST.json", 4 * MIB, pins.acquisitionManifestSHA256);
   const manifest = parseJson(files);
   need(manifest.status === "acquisition_complete_pending_review" && Array.isArray(manifest.files), "acquisition_incomplete");
@@ -95,7 +88,13 @@ export function deriveOfficialFrame(read, officialNames, day, target, pins, prof
   const runtime = parseJson(get("ACQUISITION-RUNTIME.json")), pinBytes = get("ACQUISITION-PINS.json"), pinned = parseJson(pinBytes);
   // The separately pinned acquisition binary need not match the offline review machine's binary.
   need(isHash(pinned.nodeSHA256), "official_node_hash_invalid");
-  const expected = captureBinding(profile, runBytes, pinned.nodeSHA256), inputHash = sha(pinBytes);
+  const current = captureBinding(profile, runBytes, pinned.nodeSHA256), inputHash = sha(pinBytes);
+  let expected = current;
+  // The reviewed pre-extraction v2 launcher contained its own immutable transport.
+  if (pinned.toolSHA256 === reviewedCleanHostTool) {
+    const { transportSHA256, ...prior } = current;
+    expected = { ...prior, toolSHA256: reviewedCleanHostTool };
+  }
   need(isHash(pins.acquisitionPinsSHA256) && pins.acquisitionPinsSHA256 === inputHash
     && isDeepStrictEqual(pinned, expected) && expected.toolSHA256 === sha(get("source-tool.mjs")), "official_independent_capture_pins_mismatch");
   need(runtime.version === "fhfh.blsh.v6-official-acquisition-runtime.v1" && runtime.toolSHA256 === expected.toolSHA256
@@ -112,6 +111,24 @@ export function deriveOfficialFrame(read, officialNames, day, target, pins, prof
   const started = micros(runtime.startedAtUTC), completed = micros(manifest.completedAtUTC);
   need(micros(expected.ledgerClosedAtUTC) <= started && started <= completed && completed <= micros(pins.evidenceAsOfUTC)
     && completed - started <= BUDGET.totalMs * 1000, "official_acquisition_chronology");
+  return replayOfficialSlate({ games, get, target, pins, profile, runtime, inputHash, roots, klass, started, completed,
+    provenance: { profileSHA256: pinned.profileSHA256, toolSHA256: pinned.toolSHA256 } });
+}
+
+export function deriveHostedOfficialFrame(directory, day, target, pins, profile, runBytes, fixtureOnly, keep) {
+  const ledger = readHostedOfficialV6Export(directory, pins, profile, runBytes, fixtureOnly);
+  const games = [...day.games].sort((a, b) => a.id - b.id);
+  need(isDeepStrictEqual(games.map(game => game.id), ledger.gameIds), "official_hosted_native_slate_mismatch");
+  if (keep) {
+    keep("official-ledger-run.json", ledger.runBytes);
+    keep("official-ledger-objects.json", ledger.objectsBytes);
+    for (const [name, bytes] of ledger.files) keep("evidence-official-" + name, bytes);
+  }
+  return replayOfficialSlate({ ...ledger, games, get: name => ledger.files.get(name), target, pins, profile, inputHash: pins.acquisitionPinsSHA256 });
+}
+
+function replayOfficialSlate({games, get, target, pins, profile, runtime, inputHash, roots, klass, started, completed, provenance}) {
+  const scheduleFact = profile.bodies.schedule;
   let previous = started;
   const matches = [], seenPlayers = new Set();
   for (const [i, game] of games.entries()) {
@@ -162,14 +179,13 @@ export function deriveOfficialFrame(read, officialNames, day, target, pins, prof
     final: true, gamesPlayed: 1, totalToiSeconds: fact.totalToiSeconds, completedByUTC: fact.completedByUTC, observedAtUTC: fact.observedAtUTC,
     gamesOnNativeDate: 1, dateMembershipComplete: true,
     provenance: { acquisitionClass: klass, runId: profile.runId, captureManifestSHA256: profile.manifestSHA256,
-      acquisitionManifestSHA256: pins.acquisitionManifestSHA256, acquisitionPinsSHA256: inputHash, profileSHA256: pinned.profileSHA256,
-      toolSHA256: pinned.toolSHA256, scheduleSHA256: scheduleFact.sha256, boxscoreSHA256: fact.boxscoreSHA256, boxscoreReceiptSHA256: fact.boxscoreReceiptSHA256 } };
+      acquisitionManifestSHA256: pins.acquisitionManifestSHA256, acquisitionPinsSHA256: inputHash, ...provenance, scheduleSHA256: scheduleFact.sha256, boxscoreSHA256: fact.boxscoreSHA256, boxscoreReceiptSHA256: fact.boxscoreReceiptSHA256 } };
   return { fact, frame };
 }
 
 export function compareV6ObservationInputs(profile, packetFiles, evidenceDir, pins, keep, runBytes, fixtureOnly, verifiedContext) {
   need(keys(pins, ["sourceDate", "runId", "playerId", "evidenceAsOfUTC", "contextSHA256", "requestSHA256", "frameSHA256", "acquisitionManifestSHA256", "acquisitionPinsSHA256",
-    "contextRunId", "contextManifestSHA256", "contextDeploymentId", "contextGitCommitSha"])
+    "contextRunId", "contextManifestSHA256", "contextDeploymentId", "contextGitCommitSha", ...(Object.hasOwn(pins,"hostedOfficial") ? ["hostedOfficial"] : [])])
     && pins.sourceDate === profile.sourceDate && pins.runId === profile.runId && positive(pins.playerId)
     && [pins.contextSHA256, pins.requestSHA256, pins.frameSHA256, pins.acquisitionManifestSHA256, pins.acquisitionPinsSHA256].every(isHash), "independent_observation_pins_invalid");
   const root = realpathSync(evidenceDir);
@@ -202,9 +218,16 @@ export function compareV6ObservationInputs(profile, packetFiles, evidenceDir, pi
     && captured <= Math.min(...nativeTimes) + 12 * 3600000000 && captured <= micros(pins.evidenceAsOfUTC), "request_capture_outside_native_window");
   const schedule = parseJson(packetFiles.get("schedule.raw.json"));
   const day = one(schedule.gameWeek.filter(d => d.date === sourceDate), "schedule_day_ambiguous");
-  const officialNames = readdirSync(join(root, "official"));
-  need(!officialNames.includes("FAILED.json") && !officialNames.includes(".MANIFEST.json.tmp"), "acquisition_incomplete");
-  const derived = deriveOfficialFrame(read, officialNames, day, target, pins, profile, runBytes, fixtureOnly);
+  let derived;
+  if (Object.hasOwn(pins, "hostedOfficial")) {
+    const directory = join(root, "official-ledger");
+    need(realpathSync(directory) === directory, "official_export_path_mismatch");
+    derived = deriveHostedOfficialFrame(directory, day, target, pins, profile, runBytes, fixtureOnly, keep);
+  } else {
+    const officialNames = readdirSync(join(root, "official"));
+    need(!officialNames.includes("FAILED.json") && !officialNames.includes(".MANIFEST.json.tmp"), "acquisition_incomplete");
+    derived = deriveOfficialFrame(read, officialNames, day, target, pins, profile, runBytes, fixtureOnly);
+  }
   need(isDeepStrictEqual(frame, derived.frame), "supplied_frame_original_bytes_mismatch");
   const frameFacts = { ...derived.fact, frameSHA256: pins.frameSHA256, ...frame.provenance };
   need(stamp(sourceDate + "T00:00:00Z") <= stamp(frameFacts.completedByUTC), "completion_precedes_event");
