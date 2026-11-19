@@ -1,4 +1,4 @@
-0 installed: verifier 303e889a848a (real), forge_witness_api schema=t
+0 installed: verifier c0899971b04b (real), forge_witness_api schema=t
 1 rollback refuses while a run is open:
   psql:tasks/artifacts/forge-live-release-2026-11-19/rollback.sql:10: ERROR:  live_run_open
 2 stop open run:
@@ -12,17 +12,17 @@
   verifier job 1, target 1
 6 fences (each rolled back):
   publish fire before capture: publish_window_closed 
-  close before puck drop keeps run open: {"claim": null, "gameId": 2026020358, "reason": null, "armedAt": "2026-11-19T18:22:37.799333-05:00", "custody": null, "outcome": null, "readers": null, "release": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "verdict": null, "witness": null, "requests": null, "stoppedAt": null, "approvedBy": "prodcopy-rehearsal", "revisionId": null, "stopReason": null, "terminalAt": null, "playerNhlId": 8478402, "tokenSha256": null, "packetSha256": null, "captureBeganAt": null, "publishBeganAt": null, "scheduledStart": "2026-11-19T22:00:00-05:00", "canonicalSha256": null, "captureFinishedAt": null, "committedRevision": null, "publishFinishedAt": null} open 
-  capture fire, then second fire: fired 2 already_fired 
+  close before puck drop keeps run open: {"claim": null, "gameId": 2026020358, "reason": null, "armedAt": "2026-11-19T18:26:55.395399-05:00", "custody": null, "outcome": null, "readers": null, "release": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "verdict": null, "witness": null, "requests": null, "stoppedAt": null, "approvedBy": "prodcopy-rehearsal", "revisionId": null, "stopReason": null, "terminalAt": null, "playerNhlId": 8478402, "tokenSha256": null, "packetSha256": null, "captureBeganAt": null, "publishBeganAt": null, "scheduledStart": "2026-11-19T22:00:00-05:00", "canonicalSha256": null, "captureFinishedAt": null, "committedRevision": null, "publishFinishedAt": null} open 
+  capture fire, then second fire: fired 4 already_fired 
   capture begin wrong release (service_role): release_mismatch 
   capture begin right release (service_role): started 
   publish begin with no claim (service_role): none_ready 
-  verifier cron fire, then again (max 1): fired 3 fires_spent 0 
+  verifier cron fire, then again (max 1): fired 5 fires_spent 0 
   gate for an unknown claim (service_role): verdict_missing 
   require_accepted_v1 for an unknown claim: ERROR:  witness_verdict_required DETAIL:  verdict_missing CONTEXT:  PL/pgSQL function forge_witness.require_accepted_v1(uuid,text,text,text) line 5 at RAISE 
   service_role on verifier receipts: ERROR:  permission denied for table verdicts 
   service_role on verifier API: ERROR:  permission denied for schema forge_witness_api LINE 1: begin; set local role service_role; select forge_witness_api...                                                    ^ 
-  stop, then capture fire and begin: {"claim": null, "gameId": 2026020358, "reason": "fence", "armedAt": "2026-11-19T18:22:37.799333-05:00", "custody": null, "outcome": "stopped", "readers": null, "release": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "verdict": null, "witness": null, "requests": null, "stoppedAt": "2026-11-19T18:22:38.031859-05:00", "approvedBy": "prodcopy-rehearsal", "revisionId": null, "stopReason": "fence", "terminalAt": "2026-11-19T18:22:38.032067-05:00", "playerNhlId": 8478402, "tokenSha256": null, "packetSha256": null, "captureBeganAt": null, "publishBeganAt": null, "scheduledStart": "2026-11-19T22:00:00-05:00", "canonicalSha256": null, "captureFinishedAt": null, "committedRevision": null, "publishFinishedAt": null} stopped none_armed 0 
+  stop, then capture fire and begin: {"claim": null, "gameId": 2026020358, "reason": "fence", "armedAt": "2026-11-19T18:26:55.395399-05:00", "custody": null, "outcome": "stopped", "readers": null, "release": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "verdict": null, "witness": null, "requests": null, "stoppedAt": "2026-11-19T18:26:55.658774-05:00", "approvedBy": "prodcopy-rehearsal", "revisionId": null, "stopReason": "fence", "terminalAt": "2026-11-19T18:26:55.658994-05:00", "playerNhlId": 8478402, "tokenSha256": null, "packetSha256": null, "captureBeganAt": null, "publishBeganAt": null, "scheduledStart": "2026-11-19T22:00:00-05:00", "canonicalSha256": null, "captureFinishedAt": null, "committedRevision": null, "publishFinishedAt": null} stopped none_armed 0 
   schedule moved, capture begin: schedule_changed 
 7 job 408 active: f
 8 disarm both:
