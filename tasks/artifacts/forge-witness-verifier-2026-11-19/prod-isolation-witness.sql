@@ -2,13 +2,13 @@
 -- Before installation it reports what a new role would inherit from PUBLIC (exactly what forge_witness_api would have
 -- outside its own grants). After installation it also proves the receipt tables are writable only through the owner's
 -- definers. Prints one JSON line with a verdict. Exposed schemas default to the proposed Data API value; override with
---   psql -v exposed='public,graphql_public,forge_witness_api' -f prod-isolation-witness.sql
+--   psql -v exposed='public,graphql_public,storage,analytics,forge_witness_api' -f prod-isolation-witness.sql
 \set ON_ERROR_STOP on
 \pset format unaligned
 \pset tuples_only on
 \if :{?exposed}
 \else
-\set exposed 'public,graphql_public,forge_witness_api'
+\set exposed 'public,graphql_public,storage,analytics,forge_witness_api'
 \endif
 select set_config('forge_audit.exposed', :'exposed', false);
 with who(rolname) as (
@@ -84,6 +84,34 @@ writer_reach as (
     and pg_catalog.has_schema_privilege('service_role', n.oid, 'USAGE')
     -- Owners able to write the receipts: a superuser, the owner itself, or a CREATEROLE role (it can grant itself the owner).
     and (o.rolsuper or o.rolcreaterole or o.rolname = 'forge_witness_owner')),
+-- The writer (service_role, the live publisher's credential): every privilege it holds on any object in the two
+-- witness schemas. Expected exactly: USAGE on forge_witness, EXECUTE on publication_gate_v1 and require_accepted_v1.
+writer_grants as (
+  select 'schema ' || n.nspname as object, array_remove(array[
+      case when pg_catalog.has_schema_privilege('service_role', n.oid, 'USAGE') then 'USAGE' end,
+      case when pg_catalog.has_schema_privilege('service_role', n.oid, 'CREATE') then 'CREATE' end], null) as privileges
+  from installed i cross join pg_catalog.pg_namespace n where i.yes and n.nspname in ('forge_witness', 'forge_witness_api')
+  union all
+  select 'relation ' || n.nspname || '.' || c.relname, array_remove(array[
+      case when pg_catalog.has_table_privilege('service_role', c.oid, 'SELECT') then 'SELECT' end,
+      case when pg_catalog.has_table_privilege('service_role', c.oid, 'INSERT') then 'INSERT' end,
+      case when pg_catalog.has_table_privilege('service_role', c.oid, 'UPDATE') then 'UPDATE' end,
+      case when pg_catalog.has_table_privilege('service_role', c.oid, 'DELETE') then 'DELETE' end,
+      case when pg_catalog.has_table_privilege('service_role', c.oid, 'TRUNCATE') then 'TRUNCATE' end,
+      case when pg_catalog.has_table_privilege('service_role', c.oid, 'REFERENCES') then 'REFERENCES' end,
+      case when pg_catalog.has_table_privilege('service_role', c.oid, 'TRIGGER') then 'TRIGGER' end], null)
+  from installed i cross join pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+  where i.yes and n.nspname in ('forge_witness', 'forge_witness_api') and c.relkind in ('r', 'p', 'v', 'm')
+  union all
+  select 'sequence ' || n.nspname || '.' || c.relname, array_remove(array[
+      case when pg_catalog.has_sequence_privilege('service_role', c.oid, 'USAGE') then 'USAGE' end,
+      case when pg_catalog.has_sequence_privilege('service_role', c.oid, 'UPDATE') then 'UPDATE' end], null)
+  from installed i cross join pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+  where i.yes and n.nspname in ('forge_witness', 'forge_witness_api') and c.relkind = 'S'
+  union all
+  select 'function ' || n.nspname || '.' || p.proname, array['EXECUTE']
+  from installed i cross join pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+  where i.yes and n.nspname in ('forge_witness', 'forge_witness_api') and pg_catalog.has_function_privilege('service_role', p.oid, 'EXECUTE')),
 triggers as (
   select c.relname, t.tgname, t.tgenabled
   from installed i cross join pg_catalog.pg_trigger t join pg_catalog.pg_class c on c.oid = t.tgrelid
@@ -118,6 +146,7 @@ select json_build_object(
   'exposedFunctionsReachingPgsodium', (select coalesce(json_agg(f.fn) filter (where f.mentions_pgsodium), '[]') from functions f),
   'pgsodiumSchemaExposed', exists (select from exposed where nspname = 'pgsodium'),
   'pgsodiumEscalationFunctions', (select coalesce(json_agg(s), '[]') from sodium s),
+  'serviceRoleOnWitnessObjects', (select coalesce(json_agg(g order by g.object), '[]') from writer_grants g where cardinality(g.privileges) > 0),
   'receiptWriters', (select coalesce(json_agg(rw) filter (where cardinality(rw.privileges) > 0), '[]') from receipt_writers rw),
   'witnessFunctions', (select coalesce(json_agg(f order by f.fn), '[]') from witness_functions f),
   'writerReachableDynamicDefiners', (select coalesce(json_agg(x), '[]') from writer_reach x),
@@ -126,6 +155,9 @@ select json_build_object(
     when exists (select from exposed where nspname = 'pgsodium') then 'unsafe: pgsodium exposed'
     when exists (select from relations r where r.privileges && array['INSERT', 'UPDATE', 'DELETE', 'TRUNCATE']) then 'unsafe: writable exposed relations'
     when (select yes from installed) and exists (select from receipt_writers rw where cardinality(rw.privileges) > 0) then 'unsafe: receipt writable outside the owner'
+    when (select yes from installed) and exists (select from writer_grants g where cardinality(g.privileges) > 0
+      and (g.object, g.privileges) not in (('schema forge_witness', array['USAGE']), ('function forge_witness.publication_gate_v1', array['EXECUTE']),
+        ('function forge_witness.require_accepted_v1', array['EXECUTE']))) then 'unsafe: service_role holds more than USAGE and the two gate EXECUTEs'
     when (select yes from installed) and exists (select from owner_members o where o.inherits or not o.admin_option) then 'unsafe: owner has members'
     when (select yes from installed) and exists (select from witness_functions f where f.fn in ('forge_witness.record_v1', 'forge_witness.arm_v1',
       'forge_witness.evidence_v1') and f.executable_by && array['public', 'anon', 'authenticated', 'service_role', 'forge_witness_api', 'authenticator']::name[]) then 'unsafe: private definers callable'

@@ -64,7 +64,7 @@ Run on PostgreSQL 15.19 and PostgREST 16.6, with `db-schemas=public,graphql_publ
 | Check | Result |
 | --- | --- |
 | Install | A second apply refuses. Outside the witness schemas the full dump differs only by `GRANT USAGE ON SCHEMA forge_pregame_capture` plus five `GRANT SELECT` to `forge_witness_owner`. The only new roles are `forge_witness_api` and `forge_witness_owner`, both NOLOGIN, no BYPASSRLS, no CREATEROLE. The only membership change is `authenticator` gaining `forge_witness_api`. The owner has no members. |
-| Isolation audit | `prod-isolation-witness.sql` returns **ok** before install, after install and after the runs. It finds no receipt writers outside the owner, no writable exposed relations, no exposed definers outside the API schema, no owner-owned dynamic-SQL definer reachable by the writer (superuser- or CREATEROLE-owned ones would be listed for review), 4 ALWAYS triggers, and a schedule helper owner that bypasses RLS (otherwise the verdict is unsafe). |
+| Isolation audit | `prod-isolation-witness.sql` returns **ok** before install, after install and after the runs. It finds no receipt writers outside the owner, no writable exposed relations, no exposed definers outside the API schema, no owner-owned dynamic-SQL definer reachable by the writer (superuser- or CREATEROLE-owned ones would be listed for review), 4 ALWAYS triggers, and a schedule helper owner that bypasses RLS (otherwise the verdict is unsafe). `serviceRoleOnWitnessObjects` lists exactly USAGE on `forge_witness` plus EXECUTE on `publication_gate_v1` and `require_accepted_v1`. Anything more, such as an insert, update or delete on any table, view or sequence, CREATE, or another function, makes the verdict unsafe. |
 | Writer | The real `runHostedPregameGame` ran as `service_role` (the live writer's credential): **qualified**, 1 TSA call, 147 REST calls, all `service_role@public`. |
 | Verifier GET | **200**, ~40 ms. 42 REST calls in total, all `forge_witness_api` token on profile `forge_witness_api`. No other network traffic. |
 | Real claim | **accepted**. `verifier_role = forge_witness_api`, release = HEAD, hashes equal custody, `deadline_at = scheduled_start − 60 min`, verified about 60 min before it. |
@@ -104,14 +104,14 @@ Run 9 passed. Runs 10 and 11 reran after type fixes. A review then found two pro
 - The gate's `least()` fell back to the claimed start when the games row was invisible. It now refuses.
 - Fewer than two team-status rows became an immutable `schedule_changed` rejection. They are now `schedule_unavailable`: no row, retryable.
 
-At the same time, arm now requires a readable schedule, and the audit now also flags CREATEROLE-owned dynamic definers and an installer that cannot bypass RLS. Run 12 passed on that code.
+At the same time, arm now requires a readable schedule, and the audit now also flags CREATEROLE-owned dynamic definers and an installer that cannot bypass RLS. Run 12 passed on that code. Run 13 added the explicit service_role proof to the audit and passed.
 
 ## Production change list (for TJ's approval; Chef applies)
 
 1. **Audit:** run `prod-isolation-witness.sql` (read-only) before and after. Expect `verdict` ok (or review items only) and `installer.bypassrls = true`.
 2. **Database:** apply `forge-witness-verifier.sql` as `postgres` (sha above).
-3. **Data API:** add `forge_witness_api` to the exposed schemas.
-4. **Publisher:** the live `forge_pregame_publish_v1` (forge-get-adapter lane) calls `perform forge_witness.require_accepted_v1(claim, raw, canonical, token_sha)` inside its transaction. If the publisher runs as a role other than service_role or postgres, grant EXECUTE to it.
+3. **Data API:** set the exposed schemas to `public, graphql_public, storage, analytics, forge_witness_api`. Production's current list is `public, graphql_public, storage, analytics`. This is the audit's default.
+4. **Publisher:** the live publisher runs as `service_role` (Chef, Nov 19). `forge-live-publish` and the publish function's transaction call `forge_witness.require_accepted_v1(claim, raw, canonical, token_sha)`, or `publication_gate_v1` for a non-raising check. EXECUTE goes only to service_role and postgres.
 5. **Vercel `fhfhockey`, production:** `FORGE_WITNESS_API_TOKEN` via `witness_token_setup.py --hours 11` (stdin only; at most 12 h).
 6. **Deploy** a master that contains this route.
 7. **Arm per game:** `arm-witness-verify.sql -v game=… -v schedule='m-m h d M *' [-v max_fires≤3]`. Choose minutes after the capture's qualified outcome and at least 3 min before T−60.

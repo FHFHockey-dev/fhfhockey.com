@@ -185,6 +185,9 @@ def main():
         assert not audit["verdict"].startswith("unsafe"), json.dumps(audit, indent=1)[:4000]
         assert audit["receiptWriters"] == [] and audit["ownerMembers"] == [] and audit["writableRelations"] == [] \
             and audit["writerReachableDynamicDefiners"] == [] and len([t for t in audit["receiptTriggers"] if t["tgenabled"] == "A"]) == 4, audit
+        assert sorted((g["object"], tuple(g["privileges"])) for g in audit["serviceRoleOnWitnessObjects"]) == [
+            ("function forge_witness.publication_gate_v1", ("EXECUTE",)), ("function forge_witness.require_accepted_v1", ("EXECUTE",)),
+            ("schema forge_witness", ("USAGE",))], audit["serviceRoleOnWitnessObjects"]
         assert sorted(o["relation"] for o in audit["ownerOutside"]) == [f"forge_pregame_capture.{t}" for t in
                                                                         ("artifacts", "claims", "outcomes", "save_fences", "witnesses")], audit["ownerOutside"]
 
