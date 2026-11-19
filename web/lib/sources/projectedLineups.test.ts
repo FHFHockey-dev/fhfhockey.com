@@ -8,6 +8,7 @@ import { interpretTweetUnits } from "./tweetInterpretation";
 import { verifiedRetweetFromPayload } from "./tweetAttribution";
 import { assignmentsFor } from "../player-forecasts/sourceObservations";
 import { fetchLineCombinationSourceRowsForDate } from "./lineSourceLineCombinations";
+import { toLinesCccRow } from "./linesCccIngestion";
 
 function liveProjectionFixture(kind: "goalie" | "injury" | "pp", number = 1) {
   const publishedAt = `2026-10-04T15:0${number}:00Z`;
@@ -147,6 +148,7 @@ describe("projected unit publishing", () => {
     const fixture = liveProjectionFixture("injury");
     // Synthetic role fields; these names do not assert a current roster or starter.
     Object.assign(fixture.source, { goalies: ["Fixture Goalie One", "Fixture Goalie Two"], injuries: ["Fixture Skater"] });
+    Object.assign(fixture.snapshot, { goalie_1_name: "Fixture Goalie One", goalie_2_name: "Fixture Goalie Two", injured_player_names: ["Fixture Skater"] });
     const injury = { ...fixture.source.metadata.interpretation.events[0], playerId: 9001, playerName: "Fixture Skater" };
     fixture.source.metadata.interpretation.events = [injury];
     const database = projectionDatabase([fixture]);
@@ -256,6 +258,128 @@ describe("projected unit publishing", () => {
     if (fault === "timing") originals.get(fixture.snapshot.capture_key).observed_at = "2026-10-04T16:00:00Z";
     await expect(persistTweetProjectionReports(database.db, [fixture.source])).rejects.toThrow("lineage");
     expect(database.calls).not.toContain("write:line_source_snapshots"); expect(database.children.size).toBe(0);
+  });
+  it.each([
+    ["DFOFantasy", "present"], ["CcCMiddleton", "present"], ["DFOFantasy", "absent"], ["CcCMiddleton", "absent"],
+  ] as const)("reuses the first retained Blackwood relay (%s) with the derived parent %s", async (first, state) => {
+    enableLivePublishing(); vi.setSystemTime(new Date("2026-11-18T21:01:00Z"));
+    const text = "Mackenzie Blackwood looks like the starter for tonight in Utah for the Avs.";
+    const originalId = "2123128707800093023", originalUrl = `https://x.com/cmasisak22/status/${originalId}`;
+    const publishedAt = "2026-11-18T18:58:24.420Z";
+    const relay = (handle: "DFOFantasy" | "CcCMiddleton") => {
+      const dfo = handle === "DFOFantasy";
+      const tweetId = dfo ? "2123128977002840404" : "2123155518365831188";
+      const observedAt = dfo ? "2026-11-18T19:00:04.027199+00:00" : "2026-11-18T20:46:09.312151+00:00";
+      const rawText = dfo ? "🥅: Mackenzie Blackwood (COL) 🅿️ is expected to start Wednesday @ UTA." : "Avalanche Starting Goalie: Mackenzie Blackwood";
+      const events = extractTweetPlayerEvents({text, players:[{playerId:8478406,fullName:"Mackenzie Blackwood",lastName:"Blackwood",position:"G",teamId:21}], publishedAt});
+      const source = { ...quotedProjectionFixture().source, snapshotDate: "2026-11-18", gameId: 2026020346,
+        team:{id:21,abbreviation:"COL",name:"Colorado Avalanche"}, tweetId, sourceUrl:`https://x.com/${handle}/status/${tweetId}`,
+        sourceHandle:handle, observedAt, tweetPostedAt:publishedAt, rawText, enrichedText:rawText,
+        quotedRawText:text, quotedEnrichedText:text, quotedTweetId:originalId, quotedTweetUrl:originalUrl, quotedAuthorHandle:"cmasisak22",
+        metadata:{interpretation:{...report("fixture",1).interpretation,version:"2026-11-16.2",context:"game",units:[],events}} };
+      const snapshot = {...toLinesCccRow({source}), capture_key:`${dfo?"dfofantasy:":""}2026-11-18:21:2026020346:${tweetId}:${originalId}:goalie_start:accepted`};
+      return {source, snapshot};
+    };
+    const dfo = relay("DFOFantasy"), ccc = relay("CcCMiddleton");
+    const winner = first === "DFOFantasy" ? dfo : ccc, later = winner === dfo ? ccc : dfo;
+    const db = projectionDatabase([dfo]);
+    db.tables.set("lines_ccc", new Map([[ccc.snapshot.capture_key,ccc.snapshot]]));
+    const key = projectionReportFromSource(winner.source)!.key;
+    expect(projectionReportFromSource(later.source)?.key).toBe(key);
+    db.failures.parent = state === "absent";
+    if (db.failures.parent) await expect(persistTweetProjectionReports(db.db,[winner.source])).rejects.toThrow("parent write failed");
+    else await persistTweetProjectionReports(db.db,[winner.source]);
+    db.failures.parent = false;
+    await persistTweetProjectionReports(db.db,[later.source,later.source]);
+    const parent = db.tables.get("line_source_snapshots")!.get(`${key}:goalie`);
+    expect(parent).toMatchObject({raw_text:winner.source.rawText,enriched_text:winner.source.enrichedText,
+      raw_payload:{sources:[{table:winner === dfo ? "line_source_snapshots" : "lines_ccc",snapshot:{capture_key:winner.snapshot.capture_key}}],
+        reports:[{provenance:{relayTweetId:winner.source.tweetId,originalTweetId:originalId}}]}});
+    expect(db.children.size).toBe(1);
+    expect([...db.children.values()][0]).toMatchObject({player_id:8478406,game_id:2026020346,source_account:"cmasisak22",source_capture_key:`${key}:goalie`});
+    const before = structuredClone(parent);
+    const revised = {...later.source, metadata:{interpretation:{...later.source.metadata.interpretation,version:"2026-11-19.1"}}};
+    const table = db.tables.get(later === dfo ? "line_source_snapshots" : "lines_ccc")!;
+    table.set(later.snapshot.capture_key, {...later.snapshot,metadata:revised.metadata});
+    await persistTweetProjectionReports(db.db,[revised]);
+    expect(db.tables.get("line_source_snapshots")!.get(`${key}:goalie`)).toEqual(before);
+    const newKey = projectionReportFromSource(revised)!.key;
+    expect(newKey).not.toBe(key);
+    expect(db.tables.get("line_source_snapshots")!.get(`${newKey}:goalie`).raw_payload.sources[0].snapshot.capture_key).toBe(later.snapshot.capture_key);
+  });
+  it("holds separate pending relays with identical words when the original is unknown", async () => {
+    enableLivePublishing(); const first = quotedProjectionFixture();
+    first.source.quotedTweetUrl = first.snapshot.quoted_tweet_url = null;
+    first.source.quotedTweetId = first.snapshot.quoted_tweet_id = null;
+    const db = projectionDatabase([first]);
+    await persistTweetProjectionReports(db.db, [first.source]);
+    const later = {...first.source,tweetId:"222",sourceUrl:"https://x.com/GameDayLines/status/222",rawText:"A separate relay"};
+    await expect(persistTweetProjectionReports(db.db,[later])).rejects.toThrow("version conflict");
+    expect(db.children.size).toBe(1);
+  });
+  it.each(["other starter", "ruled out", "same relay", "opposite availability"])("retains %s disagreement for public review without retrying or publishing a second claim", async (caseName) => {
+    enableLivePublishing();
+    const first = quotedProjectionFixture();
+    const prior = {...first.source.metadata.interpretation.events[0],state:"confirmed",goalieRole:"starter"};
+    if (caseName === "opposite availability") Object.assign(prior,{kind:"injury",state:"unknown",availability:"available"});
+    first.source.metadata.interpretation.version = "2026-11-16.2";
+    first.source.metadata.interpretation.events = [prior];
+    const db = projectionDatabase([first]);
+    await persistTweetProjectionReports(db.db,[first.source]);
+    const publishedChildren = structuredClone([...db.children.values()]);
+    const second = structuredClone(first);
+    if (caseName !== "same relay") {
+      second.source.tweetId = second.snapshot.tweet_id = "222";
+      second.source.sourceUrl = second.snapshot.source_url = second.snapshot.tweet_url = "https://x.com/relay/status/222";
+      second.snapshot.capture_key = "second-relay";
+    }
+    const alternative = caseName === "other starter" || caseName === "same relay" ? {playerId:44,playerName:"Other Goalie"}
+      : caseName === "opposite availability" ? {availability:"out"} : {state:"ruled_out",availability:"out"};
+    second.source.metadata.interpretation.events = [{...prior,...alternative}];
+    second.snapshot.metadata = second.source.metadata;
+    db.tables.get("line_source_snapshots")!.set(second.snapshot.capture_key,second.snapshot);
+    const secondKey = projectionReportFromSource(second.source)!.key;
+    expect(secondKey).not.toBe(projectionReportFromSource(first.source)!.key);
+    const before = db.calls.filter(c => c.startsWith("rpc:capture")).length;
+    await persistTweetProjectionReports(db.db,[second.source]);
+    expect(db.calls.filter(c => c.startsWith("rpc:capture"))).toHaveLength(before);
+    expect([...db.children.values()]).toEqual(publishedChildren);
+    expect(db.tables.get("tweet_projection_reports")!.size).toBe(2);
+    expect([...db.tables.get("tweet_player_events")?.values() ?? []].some(row => row.event_key.startsWith(secondKey))).toBe(false);
+    const publicRows = await fetchTweetProjectionReports(db.db,{date:first.source.snapshotDate,gameId:first.source.gameId});
+    expect(publicRows).toHaveLength(2);
+    for (const row of publicRows) expect(row).toMatchObject({originalUrl:first.source.quotedTweetUrl,gameId:first.source.gameId,
+      reviewReason:"conflicting_claims",interpretation:{certainty:"reported",events:[],units:[]}});
+    second.source.metadata.interpretation.version = "2026-11-19.1";
+    await persistTweetProjectionReports(db.db,[second.source]);
+    const corrected = await fetchTweetProjectionReports(db.db,{date:first.source.snapshotDate,gameId:first.source.gameId});
+    expect(corrected).toHaveLength(1);
+    expect(corrected[0]!.reviewReason).toBeUndefined();
+    expect(corrected[0]!.interpretation.events).toMatchObject([alternative]);
+  });
+  it("preserves compatible evidence spans, distinct skaters and a starter with a separately named backup", async () => {
+    enableLivePublishing();
+    const first = quotedProjectionFixture();
+    const starter = {...first.source.metadata.interpretation.events[0],goalieRole:"starter",state:"confirmed"};
+    first.source.metadata.interpretation.events = [starter];
+    const db = projectionDatabase([first]);
+    await persistTweetProjectionReports(db.db,[first.source]);
+    const second = structuredClone(first);
+    second.source.tweetId = second.snapshot.tweet_id = "222";
+    second.source.sourceUrl = second.snapshot.source_url = second.snapshot.tweet_url = "https://x.com/relay/status/222";
+    second.snapshot.capture_key = "second-relay";
+    second.source.quotedRawText = second.snapshot.quoted_raw_text = "Tonight: Norris starts. Jones backs him up.";
+    second.source.metadata.interpretation.events = [
+      {...starter,evidence:{text:"Norris starts.",start:9,end:23}},
+      {...starter,playerId:44,playerName:"Jones",goalieRole:"backup"},
+      {...starter,kind:"injury",playerId:45,playerName:"Extra Skater",availability:"out"},
+    ];
+    second.snapshot.metadata = second.source.metadata;
+    db.tables.get("line_source_snapshots")!.set(second.snapshot.capture_key,second.snapshot);
+    await persistTweetProjectionReports(db.db,[second.source]);
+    expect([...db.tables.get("line_source_snapshots")!.values()].some(row => row.capture_key === `${projectionReportFromSource(second.source)!.key}:goalie`)).toBe(true);
+    const read = await fetchTweetProjectionReports(db.db,{date:first.source.snapshotDate});
+    expect(read.every(row => !row.reviewReason)).toBe(true);
   });
   it.each(["payload", "hash", "scope", "interpretation"])("rejects same-key different %s and preserves parent", async (fault) => {
     enableLivePublishing(); const fixture = liveProjectionFixture("goalie"); const database = projectionDatabase([fixture]);

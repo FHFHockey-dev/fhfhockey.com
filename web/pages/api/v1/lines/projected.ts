@@ -7,6 +7,7 @@ import { tweetPublicationFromUrl } from "lib/sources/tweetPublicationTime";
 import { lineSnapshotFlags, type LineGame } from "lib/lines/types";
 import { NO_CONFIRMATION_AUTHORS } from "lib/lines/authority";
 import { getTeamInfoById } from "lib/teamsInfo";
+import { injuryExitConflict } from "lib/sources/lineReportTime";
 import { readGameLines, readReportGames } from "lib/lines/service";
 
 type Matchup = Pick<LineGame, "id" | "date" | "homeTeamId" | "awayTeamId" | "homeAbbreviation" | "awayAbbreviation">;
@@ -105,9 +106,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const gameReports = await fetchTweetProjectionReports(supabase, { teamId, gameId: selected.id, date: selected.date });
       reports = [...gameReports, ...reports];
     }
-    const applicable = navigation ? reports.filter(report => selected && report.gameId === selected.id && report.date === selected.date) : reports;
+    const applicable: ProjectionReport[] = [];
+    const shown = reports.map(report => {
+      const game = navigation?.games.find(item => item.id === report.gameId);
+      const exit = injuryExitConflict(report.text, game?.date ?? report.date, report.teamId, game && [game.homeTeamId, game.awayTeamId]);
+      if (exit) {
+        const unknownSubject = exit === "assigned_team_named_as_opponent";
+        return { ...report, gameId: null, teamId: unknownSubject ? null : report.teamId,
+          teamAbbreviation: unknownSubject ? null : report.teamAbbreviation,
+          interpretation: { ...report.interpretation, context: "unknown", certainty: "reported", units: [], events: [],
+            changes: [], excludedUnits: [], lineContext: undefined } };
+      }
+      if (!navigation || (selected && report.gameId === selected.id && report.date === selected.date)) applicable.push(report);
+      return selected ? { ...report, reportedStarter: reportedStarter(report, selected) } : report;
+    });
     res.setHeader("Cache-Control", "public, s-maxage=30, stale-while-revalidate=30");
-    const shown = selected ? reports.map(report => ({ ...report, reportedStarter: reportedStarter(report, selected) })) : reports;
     return res.json({ enabled: true, reports: shown, sets: selectProjectedUnitSets(applicable), ...(navigation ? { navigation } : {}),
       reportScope: { requestedDate, reportDate: date, fallback: date !== requestedDate } });
   } catch {

@@ -85,9 +85,38 @@ function retainedOriginalIdentityMatches(snapshot: any, report: ProjectionReport
   return !usesQuote || snapshot.quoted_tweet_id == null || !quotedId || snapshot.quoted_tweet_id === quotedId;
 }
 
+type ProjectedEvent = { report: ProjectionReport; kind: "goalie" | "injury" };
+
+function retainedEventRow({ report, kind }: ProjectedEvent, original: any): ForecastLineSourceRow {
+  const events = report.interpretation.events!.filter((event) => event.kind === kind && (event.teamId == null || event.teamId === report.teamId));
+  // Recreate the compatibility columns from the relay that won the immutable report.
+  // A later relay of that original may have different wrapper text, labels, or matched names.
+  const base = toLinesCccRow({ source: {
+    snapshotDate: report.date, team: { id: report.teamId, abbreviation: report.teamAbbreviation, name: original.team_name } as any,
+    gameId: report.gameId, tweetPostedAt: report.publishedAt, tweetPostedLabel: original.tweet_posted_label,
+    observedAt: report.receivedAt, sourceLabel: original.source_label, classification: original.classification,
+    detectedLeague: original.detected_league, nhlFilterStatus: original.nhl_filter_status, nhlFilterReason: original.nhl_filter_reason,
+    rawText: original.raw_text, enrichedText: original.enriched_text,
+    quotedRawText: original.quoted_raw_text, quotedEnrichedText: original.quoted_enriched_text,
+    keywordHits: original.keyword_hits, matchedNames: original.matched_player_names,
+    matchedPlayerIds: original.matched_player_ids, unmatchedNames: original.unmatched_names,
+    goalies: [original.goalie_1_name, original.goalie_2_name], injuries: original.injured_player_names,
+    scratches: original.scratches_player_names, metadata: { interpretation: report.interpretation },
+  } });
+  return { ...base, capture_key: `${report.key}:${kind}`, source_group: "tweet_projection", source_key: "validated_events",
+    source_account: validatedEventReporter({ quotedAuthorHandle: original.quoted_author_handle }, report), source_url: report.originalUrl,
+    observed_at: report.receivedAt, tweet_posted_at: report.publishedAt, classification: kind === "goalie" ? "goalie_start" : "injury",
+    ...(kind === "goalie" ? {
+      goalie_1_player_id: events[0]?.playerId ?? null, goalie_1_name: events[0]?.playerName ?? null,
+      goalie_2_player_id: events[1]?.playerId ?? null, goalie_2_name: events[1]?.playerName ?? null,
+    } : {}),
+    metadata: { projectionReports: [report], interpretation: { ...report.interpretation, units: [], events } },
+  };
+}
+
 /** Retain a versioned derivation, not a fabricated original tweet, before publishing children. */
-async function persistProjectionSourceSnapshots(supabase: any, rows: ForecastLineSourceRow[]): Promise<ForecastLineSourceRow[]> {
-  const reports = [...new Map(rows.flatMap((row) => row.metadata?.projectionReports as ProjectionReport[])
+async function persistProjectionSourceSnapshots(supabase: any, unitRows: ForecastLineSourceRow[], events: ProjectedEvent[]): Promise<ForecastLineSourceRow[]> {
+  const reports = [...new Map([...unitRows.flatMap((row) => row.metadata?.projectionReports as ProjectionReport[]), ...events.map((event) => event.report)]
     .map((report) => [report.key, report])).values()];
   const tweetIds = [...new Set(reports.map((report) => report.provenance?.relayTweetId).filter((id): id is string => Boolean(id)))];
   if (reports.some((report) => !report.provenance?.relayTweetId)) throw new Error("Projection source lineage is missing its retained relay tweet.");
@@ -110,6 +139,7 @@ async function persistProjectionSourceSnapshots(supabase: any, rows: ForecastLin
     if (matches.length !== 1) throw new Error(`Projection source lineage is missing or ambiguous for report ${report.key}.`);
     return [report.key, matches[0]!] as const;
   }));
+  const rows = [...unitRows, ...events.map((event) => retainedEventRow(event, lineage.get(event.report.key)!.snapshot))];
   const snapshots = rows.map((row) => {
     const contributing = row.metadata!.projectionReports as ProjectionReport[];
     const original = lineage.get(contributing[0]!.key)!.snapshot;
@@ -233,7 +263,22 @@ export async function persistTweetProjectionReports(supabase: any, sources: Pars
     interpretation_version: report.interpretation.version, payload: report,
   })), { onConflict: "report_key", ignoreDuplicates: true });
   if (error) throw error;
-  const events = reports.flatMap((report) => report.publishedAt ? (report.interpretation.events ?? [])
+  // A historical reparse is never a live forecast update.
+  const today = easternReportDate(new Date().toISOString());
+  const gameIds = [...new Set(reports.filter((report) => report.date === today && report.gameId && report.interpretation.context === "game").map((report) => report.gameId!))];
+  const stored = gameIds.length ? await fetchTweetProjectionReports(supabase, { date: today, internal: true }) : [];
+  const factConflicts = new Set<string>();
+  const current = currentProjectionReadings(stored, [], false, factConflicts);
+  const historical = new Map(reports.filter(report => report.date !== today && report.gameId
+    && report.interpretation.context === "game" && report.interpretation.events?.some(e => e.kind === "injury" || e.availabilityScope === "game"))
+    .map(report => [`${report.date}:${report.teamId}:${report.gameId}`, report]));
+  for (const report of historical.values()) {
+    const peers = await fetchTweetProjectionReports(supabase, { date: report.date, teamId: report.teamId, gameId: report.gameId!, internal: true });
+    currentProjectionReadings(peers, [], false, factConflicts);
+  }
+  // Both immutable reports are retained. Their disagreement is visible to the reviewer
+  // and requires no retry; it must not produce another forecast or availability event.
+  const events = reports.filter((report) => !factConflicts.has(report.key)).flatMap((report) => report.publishedAt ? (report.interpretation.events ?? [])
     // Lineup in/out participation is game-scoped, so the injury prior-status read above never sees it.
     .filter((event) => event.kind === "injury" || event.kind === "participation" && event.availabilityScope === "game").map((event) => ({
       event_key: `${report.key}:${event.playerId}:${event.evidence.start}${event.kind === "injury" ? "" : `:${event.kind}`}`, player_id: event.playerId,
@@ -243,39 +288,29 @@ export async function persistTweetProjectionReports(supabase: any, sources: Pars
     const result = await supabase.from("tweet_player_events").upsert(events, { onConflict: "event_key", ignoreDuplicates: true });
     if (result.error) throw result.error;
   }
-  // A historical reparse is never a live forecast update.
-  const today = easternReportDate(new Date().toISOString());
-  const gameIds = [...new Set(reports.filter((report) => report.date === today && report.gameId && report.interpretation.context === "game").map((report) => report.gameId!))];
-  if (!gameIds.length) return;
-  const stored = await fetchTweetProjectionReports(supabase, { date: today, internal: true });
-  const current = currentProjectionReadings(stored);
   for (const gameId of gameIds) {
     const rows = projectedSetsToForecastRows(selectProjectedUnitSets(current.filter(report => report.gameId === gameId)));
-    const eventRows = sources.filter((source) => source.gameId === gameId && source.nhlFilterStatus === "accepted").flatMap((source) => {
-      const interpretation = source.metadata?.interpretation as TweetInterpretation | undefined;
-      if (!interpretation?.events?.length || interpretation.context !== "game") return [];
-      return (["goalie", "injury"] as const).flatMap((kind) => {
-        const typedEvents = interpretation.events!.filter((event) => event.kind === kind && (event.teamId == null || event.teamId === source.team?.id));
-        if (!typedEvents.length) return [];
-        const requested = projectionReportFromSource(source)!;
-        const report = stored.find((report) => report.key === requested.key);
-        if (!report) throw new Error(`Retained projection report missing for ${requested.key}.`);
-        if (!current.includes(report)) return [];
-        const base = toLinesCccRow({ source, rosterEntries: [] });
-        return [{ ...base, capture_key: `${report.key}:${kind}`, source_group: "tweet_projection", source_key: "validated_events", source_account: validatedEventReporter(source, report),
-          observed_at: report.receivedAt, tweet_posted_at: report.publishedAt,
-          source_url: report.originalUrl, classification: kind === "goalie" ? "goalie_start" : "injury",
-          // Injury events keep the source's goalie fields; only goalie claims may replace them.
-          ...(kind === "goalie" ? {
-            goalie_1_player_id: typedEvents[0]?.playerId ?? null, goalie_1_name: typedEvents[0]?.playerName ?? null,
-            goalie_2_player_id: typedEvents[1]?.playerId ?? null, goalie_2_name: typedEvents[1]?.playerName ?? null,
-          } : {}),
-          metadata: { projectionReports: [report], interpretation: { ...report.interpretation, units: [], events: typedEvents } },
-        } as ForecastLineSourceRow];
-      });
-    });
-    if (rows.length || eventRows.length) {
-      const retainedRows = await persistProjectionSourceSnapshots(supabase, [...rows, ...eventRows]);
+    const events = new Map<string, ProjectedEvent>();
+    for (const source of sources.filter((source) => source.gameId === gameId && source.nhlFilterStatus === "accepted")) {
+      const requested = projectionReportFromSource(source);
+      if (!requested?.interpretation.events?.length || requested.interpretation.context !== "game") continue;
+      const report = stored.find((report) => report.key === requested.key);
+      if (!report) throw new Error(`Retained projection report missing for ${requested.key}.`);
+      if (!current.includes(report)) continue;
+      if (report.gameId !== requested.gameId || report.text !== requested.text || canonicalJson(report.interpretation) !== canonicalJson(requested.interpretation)
+        || (report.provenance?.relayTweetId !== requested.provenance?.relayTweetId
+        && (!report.provenance?.originalTweetId || report.originalUrl?.toLowerCase() !== requested.originalUrl?.toLowerCase()
+          || Date.parse(report.publishedAt!) !== Date.parse(requested.publishedAt!)))) {
+        throw new Error(`Projection source version conflict for ${report.key}.`);
+      }
+      for (const event of report.interpretation.events ?? []) {
+        if ((event.kind === "injury" || event.kind === "goalie") && (event.teamId == null || event.teamId === report.teamId)) {
+          events.set(`${report.key}:${event.kind}`, { report, kind: event.kind });
+        }
+      }
+    }
+    if (rows.length || events.size) {
+      const retainedRows = await persistProjectionSourceSnapshots(supabase, rows, [...events.values()]);
       await capturePlayerForecastSourceRows({ supabase, rows: retainedRows });
     }
   }
@@ -289,11 +324,28 @@ function publicDisplayIdentity(report: ProjectionReport): string {
   return originalPostIdentity(report.originalUrl) ?? `team:${report.teamId}:text:${report.text}`;
 }
 
+type GameEvent = NonNullable<TweetInterpretation["events"]>[number];
+
+function incompatibleGameClaims(a: GameEvent[], b: GameEvent[]): boolean {
+  const starting = (event: GameEvent) => event.kind === "goalie" && event.goalieRole !== "backup"
+    && ["projected", "likely", "confirmed"].includes(event.state);
+  const nonstarter = (event: GameEvent) => event.kind === "goalie" && (event.goalieRole === "backup" || event.state === "ruled_out");
+  const starters = (events: GameEvent[]) => new Set(events.filter(starting).map(event => event.playerId));
+  const left = starters(a), right = starters(b);
+  if (left.size === 1 && right.size === 1 && !right.has([...left][0]!)) return true;
+  return a.some(one => b.some(two => {
+    if (one.playerId !== two.playerId || (one.effectiveDate && two.effectiveDate && one.effectiveDate !== two.effectiveDate)) return false;
+    if (starting(one) && nonstarter(two) || nonstarter(one) && starting(two)) return true;
+    return (one.kind === two.kind || one.availabilityScope === "game" && two.availabilityScope === "game")
+      && ((one.availability === "out" && two.availability === "available") || (one.availability === "available" && two.availability === "out"));
+  }));
+}
+
 type ProjectionVersion = { url: string | null; relay: string | null; version: string };
 
 // Input is already ordered by receipt of the interpretation, newest first.
 // Keep exact copies of the winning revision and binding for downstream lineage.
-function currentProjectionReadings(reports: ProjectionReport[], otherVersions: ProjectionVersion[] = [], showDisputedSources = false) {
+function currentProjectionReadings(reports: ProjectionReport[], otherVersions: ProjectionVersion[] = [], showDisputedSources = false, factConflicts = new Set<string>()) {
   const headers = reports.map(report => ({ url: report.originalUrl, relay: report.provenance?.relayTweetId ?? null, version: report.interpretation.version }));
   const originals = new Map<string, string>();
   for (const row of [...headers, ...otherVersions]) {
@@ -326,12 +378,30 @@ function currentProjectionReadings(reports: ProjectionReport[], otherVersions: P
     bindings.set(side, report.gameId);
     return true;
   });
-  if (!disputed.size) return winners;
+  const claims = new Map<string, Array<{ report: ProjectionReport; events: GameEvent[] }>>();
+  for (const report of winners) {
+    const identity = originalPostIdentity(report.originalUrl) ?? report.provenance?.relayTweetId;
+    if (!identity || !report.gameId || report.interpretation.context !== "game") continue;
+    const events = report.interpretation.events?.filter(e => (e.teamId == null || e.teamId === report.teamId)
+      && (!e.effectiveDate || e.effectiveDate === report.date)) ?? [];
+    if (!events.length) continue;
+    const scope = `${identity}:${report.teamId}:${report.gameId}:${report.interpretation.version}`;
+    const peers = claims.get(scope) ?? [];
+    for (const prior of peers) if (incompatibleGameClaims(prior.events, events)) {
+      factConflicts.add(prior.report.key);
+      factConflicts.add(report.key);
+    }
+    peers.push({report, events});
+    claims.set(scope, peers);
+  }
+  if (!disputed.size && !factConflicts.size) return winners;
   return winners.flatMap(report => {
     const identity = sourceId({ url: report.originalUrl, relay: report.provenance?.relayTweetId ?? null, version: report.interpretation.version }) ?? publicDisplayIdentity(report);
-    if (!disputed.has(`${report.teamId}:${identity}`)) return [report];
+    const disputedBinding = disputed.has(`${report.teamId}:${identity}`);
+    if (!disputedBinding && !factConflicts.has(report.key)) return [report];
     if (!showDisputedSources) return [];
-    return [{ ...report, gameId: null, interpretation: { ...report.interpretation, context: "unknown" as const,
+    return [{ ...report, gameId: disputedBinding ? null : report.gameId, ...(factConflicts.has(report.key) ? {reviewReason:"conflicting_claims" as const} : {}),
+      interpretation: { ...report.interpretation, context: "unknown" as const,
       certainty: "reported" as const, units: [], excludedUnits: [], events: [], changes: [], relationships: [], unresolved: [] } }];
   });
 }
@@ -360,7 +430,7 @@ export async function fetchTweetProjectionReports(supabase: any, args: { teamId?
   for (const report of currentProjectionReadings(reports, otherVersions, true)) {
     if (args.gameId && args.gameId !== report.gameId) continue;
     if (isDisputedRetainedProjectionSubject(report)) continue;
-    const side = `${report.teamId}:${publicDisplayIdentity(report)}`;
+    const side = report.reviewReason === "conflicting_claims" ? report.key : `${report.teamId}:${publicDisplayIdentity(report)}`;
     if (!unique.has(side)) unique.set(side, report);
   }
   return [...unique.values()].slice(0, 1000).map(publicProjectionReport);

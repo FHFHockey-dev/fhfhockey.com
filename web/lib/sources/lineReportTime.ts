@@ -1,7 +1,28 @@
+import { teamsInfo } from "lib/teamsInfo";
 import { requiresRelativeGameDateReview, type EvidenceSpan, type TweetInterpretation } from "./tweetInterpretation";
 
 // This applies to the date selection only. Keep the classifier version in the immutable report key.
 const temporalRevision = "-line-date.2026-11-18.1";
+
+/** Check the game explicitly named in a standalone injury exit, without treating a matchup mention as the subject. */
+export function injuryExitConflict(text: string, date: string, teamId: number, gameTeams?: number[]) {
+  if (!text || !/\b(?:left|exited)\b/i.test(text)) return null;
+  const body = text.replace(/(?:\s+(?:https?:\/\/\S+|pic\.twitter\.com\/\S+))+\s*$/i, "").trim();
+  const description = body.replace(/^(?:RT\s+@\w+:\s*)?(?:[\p{L}.’'-]+(?: [\p{L}.’'-]+){0,4}:\s*)?(?:Injury:\s*)?/iu, "");
+  const exit = /^[\p{L}’'-]+(?: [\p{L}’'-]+){0,3}(?:\s+\([^()\n]{1,50}\))?\s+(?:left|exited)\s+(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)['’]s\s+game\s+(?:vs\.?|versus|against)\s+(?:the\s+)?(#?[\p{L}. ’'-]+?)\s+and\s+(?:did not|didn['’]t) return[.!]?$/iu.exec(description);
+  if (!exit) return null;
+  const named = exit[2]!.replace(/^#/, "").toLowerCase();
+  const matches = Object.values(teamsInfo).filter(team => [team.abbrev, team.name, team.shortName, team.location]
+    .some(label => label?.toLowerCase() === named));
+  const opponent = matches.length === 1 ? matches[0]!.id : null;
+  if (opponent === teamId) return "assigned_team_named_as_opponent";
+  const day = new Date(date + "T12:00:00Z");
+  if (Number.isFinite(day.getTime()) && day.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" }).toLowerCase() !== exit[1]!.toLowerCase()) {
+    return "reported_game_weekday_mismatch";
+  }
+  if (gameTeams?.length === 2 && opponent != null && !gameTeams.includes(opponent)) return "reported_opponent_mismatch";
+  return null;
+}
 
 export function lineReportTimeScope(text: string) {
   function priorHeading(line: string): boolean {

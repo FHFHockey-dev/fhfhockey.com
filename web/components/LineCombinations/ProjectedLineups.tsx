@@ -6,7 +6,7 @@ import GameLineSnapshots, { mergeFrozenEntries } from "./GameLineSnapshots";
 import { formatTime, gameLabel } from "./reviewReasonCopy";
 import type { GameLinesResponse, LineGame } from "lib/lines/types";
 
-type RailReport = ProjectionReport & { reportedStarter?: { status: "confirmed" | "projected"; author: string; playerId: number; playerName: string; teamAbbreviation: string } };
+type RailReport = Omit<ProjectionReport, "teamId" | "teamAbbreviation"> & { teamId: number | null; teamAbbreviation: string | null; reportedStarter?: { status: "confirmed" | "projected"; author: string; playerId: number; playerName: string; teamAbbreviation: string } };
 type ProjectionResponse = { enabled: boolean; sets: ProjectedUnitSet[]; reports: RailReport[];
   navigation?: { selectedGameId: number | null; games: Pick<LineGame, "id" | "date" | "awayAbbreviation" | "homeAbbreviation">[] };
   reportScope?: { requestedDate: string; reportDate: string; fallback: boolean } };
@@ -52,10 +52,12 @@ export function ProjectedLineupsContent({ data, onGameChange }: { data: Projecti
       {reports.length === 0 && <p>No reports yet.</p>}
       {reports.map((report) => {
         const game = nav?.games.find(candidate => candidate.id === report.gameId);
-        const starter = selected && selected.id === report.gameId && selected.date === report.date ? report.reportedStarter : undefined;
+        const conflicting = report.reviewReason === "conflicting_claims";
+        const starter = !conflicting && selected && selected.id === report.gameId && selected.date === report.date ? report.reportedStarter : undefined;
         return <article className={styles.card} key={report.key}>
-          <p className={styles.itemTitle}>{report.teamAbbreviation} · {report.interpretation.context}</p>
+          <p className={styles.itemTitle}>{report.teamAbbreviation ? `${report.teamAbbreviation} · ${report.interpretation.context}` : "Subject team unverified"}</p>
           {nav && <p className={styles.muted}>{game ? `Report for ${gameLabel(game)}` : report.gameId ? `Report for game ${report.gameId}` : "No verified game for this report"}</p>}
+          {conflicting && <p className={styles.stateWarn}>Conflicting readings of this report. Player status is unverified.</p>}
           {starter && <p><strong>{starter.teamAbbreviation} {starter.status} starter · {starter.playerName}</strong> · Reported by @{starter.author}</p>}
           {nav ? <p className={styles.muted}>{report.originalPublishedAt ? <>Posted <time dateTime={report.originalPublishedAt}>{formatTime(report.originalPublishedAt)}</time></> : "Original post time unavailable"}
             {report.receivedAt && <> · Received <time dateTime={report.receivedAt}>{formatTime(report.receivedAt)}</time></>}</p>

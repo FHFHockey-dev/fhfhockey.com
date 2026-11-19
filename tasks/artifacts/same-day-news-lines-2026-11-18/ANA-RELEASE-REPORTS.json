@@ -1,0 +1,384 @@
+{
+  "game": {
+    "id": 2026020328,
+    "date": "2026-11-15",
+    "awayTeamId": 20,
+    "homeTeamId": 24,
+    "awayAbbreviation": "CGY",
+    "homeAbbreviation": "ANA"
+  },
+  "reports": [
+    {
+      "key": "051d74f381be7811344fca2e05559a568c174f096873766263bb2e1c390498bd:24:2026-11-15.1",
+      "date": "2026-11-15",
+      "text": "Welcome back Mooresy! He'll be playing both forward and defense tonight.\n\n#FlyTogether | https://t.co/LPx9UkOCKm https://t.co/DR4GQqzIPM",
+      "gameId": 2026020328,
+      "teamId": 24,
+      "session": null,
+      "receivedAt": "2026-11-16T01:32:09.032044+00:00",
+      "originalUrl": "https://x.com/AnaheimDucks/status/2122131285699330555",
+      "publishedAt": "2026-11-16T00:55:00.460Z",
+      "interpretedAt": "2026-11-16T01:32:13.128Z",
+      "interpretation": {
+        "units": [],
+        "events": [],
+        "context": "game",
+        "version": "2026-11-15.1",
+        "certainty": "reported",
+        "unresolved": [],
+        "lineContext": {
+          "phase": "pregame",
+          "context": "game",
+          "evidence": [
+            {
+              "end": 71,
+              "text": "tonight",
+              "start": 64,
+              "signal": "game"
+            }
+          ]
+        }
+      },
+      "teamAbbreviation": "ANA",
+      "originalPublishedAt": "2026-11-16T00:55:00.460Z",
+      "verifiedOriginalAuthor": "AnaheimDucks"
+    },
+    {
+      "key": "18dac0d07888f97688841b135f49c57cdd8d3a01fa8f165ea1a04c9a8714859c:24:2026-11-15.1",
+      "date": "2026-11-15",
+      "text": "Anaheim Ducks warm-up line rushes 11/15 vs. #Flames:\nCaulfield-Carlsson-Gauthier\nMalott-Granlund-Sennecke\nMoore-Washe-Killorn\nNesterenko-McQueen-Terry\nLaCombe-Helleson\nHinds-Luneau\nMintyukov-Warren\nHusso | Dostál\nScratches: Colangelo, Vatrano, Mitchell@SportingTrib |…",
+      "gameId": 2026020328,
+      "teamId": 24,
+      "session": null,
+      "receivedAt": "2026-11-16T00:38:03.586641+00:00",
+      "originalUrl": "https://x.com/ZachCav/status/2122126809533923555",
+      "publishedAt": "2026-11-16T00:37:13.000Z",
+      "interpretedAt": "2026-11-16T00:38:15.986Z",
+      "interpretation": {
+        "units": [
+          {
+            "group": null,
+            "number": 1,
+            "players": [
+              {
+                "name": "Judd Caulfield",
+                "playerId": 8481538
+              },
+              {
+                "name": "Leo Carlsson",
+                "playerId": 8484153
+              },
+              {
+                "name": "Cutter Gauthier",
+                "playerId": 8483445
+              }
+            ],
+            "complete": true,
+            "evidence": [],
+            "situation": "es_forward",
+            "explicitNumber": false
+          },
+          {
+            "group": null,
+            "number": 2,
+            "players": [
+              {
+                "name": "Jeff Malott",
+                "playerId": 8482408
+              },
+              {
+                "name": "Mikael Granlund",
+                "playerId": 8475798
+              },
+              {
+                "name": "Beckett Sennecke",
+                "playerId": 8484762
+              }
+            ],
+            "complete": true,
+            "evidence": [],
+            "situation": "es_forward",
+            "explicitNumber": false
+          },
+          {
+            "group": null,
+            "number": 3,
+            "players": [
+              {
+                "name": "Ian Moore",
+                "playerId": 8482178
+              },
+              {
+                "name": "Tim Washe",
+                "playerId": 8485512
+              },
+              {
+                "name": "Alex Killorn",
+                "playerId": 8473986
+              }
+            ],
+            "complete": false,
+            "evidence": [],
+            "situation": "es_forward",
+            "explicitNumber": false
+          },
+          {
+            "group": null,
+            "number": 4,
+            "players": [
+              {
+                "name": "Nikita Nesterenko",
+                "playerId": 8481754
+              },
+              {
+                "name": "Roger McQueen",
+                "playerId": 8485400
+              },
+              {
+                "name": "Troy Terry",
+                "playerId": 8478873
+              }
+            ],
+            "complete": true,
+            "evidence": [],
+            "situation": "es_forward",
+            "explicitNumber": false
+          },
+          {
+            "group": null,
+            "number": 1,
+            "players": [
+              {
+                "name": "Jackson LaCombe",
+                "playerId": 8481605
+              },
+              {
+                "name": "Drew Helleson",
+                "playerId": 8481563
+              }
+            ],
+            "complete": true,
+            "evidence": [],
+            "situation": "es_defense",
+            "explicitNumber": false
+          },
+          {
+            "group": null,
+            "number": 2,
+            "players": [
+              {
+                "name": "Tyson Hinds",
+                "playerId": 8482731
+              },
+              {
+                "name": "Tristan Luneau",
+                "playerId": 8483482
+              }
+            ],
+            "complete": true,
+            "evidence": [],
+            "situation": "es_defense",
+            "explicitNumber": false
+          },
+          {
+            "group": null,
+            "number": 3,
+            "players": [
+              {
+                "name": "Pavel Mintyukov",
+                "playerId": 8483490
+              },
+              {
+                "name": "Noah Warren",
+                "playerId": 8483521
+              }
+            ],
+            "complete": true,
+            "evidence": [],
+            "situation": "es_defense",
+            "explicitNumber": false
+          }
+        ],
+        "events": [],
+        "context": "game",
+        "version": "2026-11-15.1",
+        "certainty": "reported",
+        "unresolved": [],
+        "lineContext": {
+          "phase": "pregame",
+          "context": "warmup",
+          "evidence": [
+            {
+              "end": 21,
+              "text": "warm-up",
+              "start": 14,
+              "signal": "warmup"
+            },
+            {
+              "end": 43,
+              "text": "vs.",
+              "start": 40,
+              "signal": "game"
+            }
+          ]
+        }
+      },
+      "teamAbbreviation": "ANA",
+      "originalPublishedAt": "2026-11-16T00:37:13.000Z",
+      "verifiedOriginalAuthor": "ZachCav"
+    },
+    {
+      "key": "beebfe3e177c325617ef265853422c5435085efd9c17eb5f4a46b3ede54c79fd:24:2026-11-15.1",
+      "date": "2026-11-15",
+      "text": "Ian Moore: Injury: Moore (lower-body) was activated off IR and is expected to return vs. Calgary on Sunday. pic.twitter.com/7nQQRk12SF",
+      "gameId": 2026020328,
+      "teamId": 24,
+      "session": null,
+      "receivedAt": "2026-11-16T00:36:05.524228+00:00",
+      "originalUrl": null,
+      "publishedAt": "2026-11-16T00:35:39.000Z",
+      "interpretedAt": "2026-11-16T00:36:12.635Z",
+      "interpretation": {
+        "units": [],
+        "events": [
+          {
+            "kind": "injury",
+            "state": "unknown",
+            "times": {
+              "reference": null,
+              "observation": "2026-11-16T00:35:39.000Z",
+              "applicability": "unresolved"
+            },
+            "teamId": 24,
+            "evidence": {
+              "end": 18,
+              "text": "Ian Moore: Injury:",
+              "start": 0,
+              "offsetBasis": "unsanitized_source"
+            },
+            "modality": "affirmative",
+            "playerId": 8482178,
+            "timeline": null,
+            "timelines": [],
+            "playerName": "Ian Moore",
+            "availability": "unknown",
+            "effectiveDate": null,
+            "resolutionBasis": "full_name",
+            "availabilityScope": "unspecified"
+          },
+          {
+            "kind": "injury",
+            "state": "possible_return",
+            "times": {
+              "reference": null,
+              "observation": "2026-11-16T00:35:39.000Z",
+              "applicability": "unresolved"
+            },
+            "teamId": 24,
+            "evidence": {
+              "end": 88,
+              "text": "Moore (lower-body) was activated off IR and is expected to return vs.",
+              "start": 19,
+              "offsetBasis": "unsanitized_source"
+            },
+            "modality": "tentative",
+            "playerId": 8482178,
+            "timeline": null,
+            "timelines": [],
+            "playerName": "Ian Moore",
+            "availability": "uncertain",
+            "effectiveDate": null,
+            "resolutionBasis": "surname",
+            "availabilityScope": "unspecified"
+          }
+        ],
+        "context": "game",
+        "version": "2026-11-15.1",
+        "certainty": "projected",
+        "unresolved": [],
+        "lineContext": {
+          "phase": "pregame",
+          "context": "game",
+          "evidence": [
+            {
+              "end": 88,
+              "text": "vs.",
+              "start": 85,
+              "signal": "game"
+            }
+          ]
+        }
+      },
+      "teamAbbreviation": "ANA",
+      "originalPublishedAt": null
+    },
+    {
+      "key": "72878a3ccb14a96acd96f1ab157383267a6249646a32debd24e8bf21c786b989:24:2026-11-06.1",
+      "date": "2026-11-15",
+      "text": "Bo Horvat: Injury: Horvat (undisclosed) left Saturday's game vs. Anaheim and did not return. pic.twitter.com/DDHxocfuBK",
+      "gameId": 2026020328,
+      "teamId": 24,
+      "session": null,
+      "receivedAt": "2026-11-15T06:14:04.443114+00:00",
+      "originalUrl": null,
+      "publishedAt": "2026-11-15T06:12:52.000Z",
+      "interpretedAt": "2026-11-15T06:14:12.779Z",
+      "interpretation": {
+        "units": [],
+        "events": [],
+        "context": "game",
+        "version": "2026-11-06.1",
+        "certainty": "reported",
+        "unresolved": [],
+        "lineContext": {
+          "phase": "pregame",
+          "context": "game",
+          "evidence": [
+            {
+              "end": 64,
+              "text": "vs.",
+              "start": 61,
+              "signal": "game"
+            }
+          ]
+        }
+      },
+      "teamAbbreviation": "ANA",
+      "originalPublishedAt": null
+    },
+    {
+      "key": "ab60867ee60e5cfc13b70908cafac414926751df05b0d8ffc99e1726c435d36a:24:2026-11-06.1",
+      "date": "2026-11-15",
+      "text": "Logan Stanley: Injury: Stanley (lower-body) left Saturday's game vs. Anaheim and did not return. pic.twitter.com/9DSWgGrnXL",
+      "gameId": 2026020328,
+      "teamId": 24,
+      "session": null,
+      "receivedAt": "2026-11-15T06:08:02.188282+00:00",
+      "originalUrl": null,
+      "publishedAt": "2026-11-15T06:07:54.000Z",
+      "interpretedAt": "2026-11-15T06:08:15.488Z",
+      "interpretation": {
+        "units": [],
+        "events": [],
+        "context": "game",
+        "version": "2026-11-06.1",
+        "certainty": "reported",
+        "unresolved": [],
+        "lineContext": {
+          "phase": "pregame",
+          "context": "game",
+          "evidence": [
+            {
+              "end": 68,
+              "text": "vs.",
+              "start": 65,
+              "signal": "game"
+            }
+          ]
+        }
+      },
+      "teamAbbreviation": "ANA",
+      "originalPublishedAt": null
+    }
+  ]
+}
