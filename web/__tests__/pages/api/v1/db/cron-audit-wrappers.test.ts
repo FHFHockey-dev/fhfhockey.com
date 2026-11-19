@@ -7,6 +7,8 @@ import ts from "typescript";
 import {
   CRON_AUDIT_EXEMPTIONS,
   CRON_AUTH_DIRECT_SECRET_ROUTES,
+  classifyCronAuditSource,
+  classifyCronAuthSource,
   inspectScheduledCronAuditCoverage,
   inspectScheduledCronAuthCoverage,
   inspectVercelCronCoverage,
@@ -79,20 +81,22 @@ describe("scheduled cron audit coverage", () => {
     // 2026-10-22: job 399 (route-runner-tick, cron-only) was scheduled after R21,
     // and job 79 (update-nst-gamelog, its route's only pg_cron owner) was unscheduled.
     // 2026-11-08: job 403 (update-team-unit-toi-nightly, cron-only) was scheduled by TJ after #379.
-    expect(authFindings).toHaveLength(46);
+    // 2026-11-19: BLSH jobs 404/405 (blsh-native-capture primary and backup, cron-only, one route)
+    // and SQL jobs 406/407 entered the inventory with the L7 NST registration.
+    expect(authFindings).toHaveLength(47);
     expect(
       authFindings.reduce(
         (jobCount, finding) => jobCount + finding.jobNames.length,
         0,
       ),
-    ).toBe(50);
+    ).toBe(52);
     expect(modeCounts).toEqual({
-      "admin-or-cron": 46,
+      "admin-or-cron": 47,
     });
     expect(callerCounts).toEqual({
       "browser-admin": 5,
       "browser-admin-and-internal": 4,
-      "cron-only": 28,
+      "cron-only": 29,
       "internal-server": 9,
     });
     expect(authFindings.some((finding) => finding.routePath === "/api/v1/db/cron-report")).toBe(false);
@@ -112,6 +116,21 @@ describe("scheduled cron audit coverage", () => {
         );
       }
     }
+  });
+
+  it("recognizes withOperationalRouteAuth as adminOnly plus its optional shared audit", () => {
+    const audited = `export default withOperationalRouteAuth(handler, { methods: ["POST"], audit: { jobName: "x" } });`;
+    const unaudited = `export default withOperationalRouteAuth(handler, { methods: ["POST"], audit: false });`;
+    expect(classifyCronAuthSource(audited)).toBe("admin-or-cron");
+    expect(classifyCronAuditSource(audited)).toBe("shared-wrapper");
+    expect(classifyCronAuthSource(unaudited)).toBe("admin-or-cron");
+    expect(classifyCronAuditSource(unaudited)).toBeNull();
+    expect(
+      findings.find((finding) => finding.routePath === "/api/v1/db/blsh-native-capture"),
+    ).toMatchObject({
+      jobNames: ["blsh-native-capture", "blsh-native-capture-backup"],
+      mode: "shared-wrapper",
+    });
   });
 
   it("keeps every scheduled route behind its reviewed authorization boundary", () => {
