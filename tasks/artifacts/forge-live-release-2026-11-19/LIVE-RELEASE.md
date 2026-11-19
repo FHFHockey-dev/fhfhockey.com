@@ -39,7 +39,7 @@ Production's flags (compute off, serving off) and the daily run are unchanged.
 | --- | --- | --- |
 | Supabase Cron (`postgres`) | Vault `cron_secret`, sent as Bearer to the routes | `live_fire_v1`, `live_close_v1` |
 | `/forge-live-capture`, `/forge-live-publish` | `CRON_SECRET` (`invokedByCron`); **service role**, the existing production capture pattern (`hostedGame`/`runner` already capture with it) | `forge_live_*_v1` RPCs, the custody RPCs, `forge_pregame_publish_v1`, readers |
-| Verifier | its own NOLOGIN owner and role (verifier package) | `forge_witness` only |
+| Verifier route | cron secret plus `x-forge-witness-token` (a `forge_witness_api` JWT held only in the owner-only `forge_witness.credentials`, sent by the postgres cron) | `forge_witness_api` wrappers only |
 
 `withForgeEnv` is entered only by these two routes and the sandbox route; a repository-scan test enforces that.
 
@@ -83,7 +83,7 @@ Planning revisions and `forge/forecasts` stay off because the serving flag is of
 | File | SHA-256 |
 | --- | --- |
 | `supabase/migrations/20261118135813_forge_pregame_publication.sql` (verbatim, matches APPROVAL.md) | `4a70657ae3e0841f6fac1e66ee608ed866c5152b83a23dd10a83f5b435373f97` |
-| `tasks/artifacts/forge-witness-verifier-2026-11-19/forge-witness-verifier.sql` (verifier package; applied by the operator, not a `supabase/migrations` file) | `c0899971b04b09a4be20fabfc60b88265359941ae02065d8b60e05930d3ff4b7` |
+| `tasks/artifacts/forge-witness-verifier-2026-11-19/forge-witness-verifier.sql` (verifier package; applied by the operator, not a `supabase/migrations` file) | `9673316c4e108f9ea8953603e7afd40009d62af828ae6eb21be2d2022651052a` |
 | `supabase/migrations/20261119230000_forge_live_pregame_run.sql` | `b546ea3e6fb8622fe9c60c043bb67e4b85e01f2e5b23602fd90e776b8c2f3619` |
 
 There are no Vercel environment changes and no flag changes.
@@ -99,10 +99,10 @@ There are no Vercel environment changes and no flag changes.
   - After the accepted verdict, publication 200 succeeded: Daily 2.965 at C#1, Detailed `missing_participation` on the same revision.
   - Duplicate GETs return `none_armed` and `none_ready`. One publication. Jobs self-removed; job 408 off.
   - The displacement table above held.
-  - Final run with the final verifier (SQL c0899971, verifier 19f8ee683; label `3005c9d7e`): capture 200 in 257 ms; verifier route 200 in 15 ms, `accepted` by `forge_witness_api`; publish 200 in 5,249 ms; claim `db5bc47b…`, revision `9b81f918…`.
+  - Final run with the redesigned verifier (SQL 9673316c, verifier 52126beb5; label `e0e103c51`): the witness token is set from stdin into the owner-only `forge_witness.credentials` (`set-witness-credential.sql`); the verifier cron fire sends the cron secret and `x-forge-witness-token`, and the route receives exactly those recorded headers (a cron-secret-only call is refused `witness_credential_required`). Capture 200 in 211 ms; verifier route 200 in 12 ms, `accepted`; publish 200 in 5,250 ms; claim `22475440…`, revision `463f29fb…`.
   - The routes were called directly; the local `net.http_get` stub records the request but sends nothing, so `httpResponses` is empty there. A hosted run reads them from `net._http_response`.
   - One optional read failed on fixture data only: the fixture's `nhl_team_data` has no `season_id` (production's view has it), so the bridge skipped team priors, as designed for optional inputs.
-- **Production schema copy with the real verifier (`PRODCOPY-LIFECYCLE-VERIFIER.txt`, script `prodcopy-lifecycle.sh`).** Stub replaced by `forge-witness-verifier.sql` (c0899971); live migration rolled back and re-applied on top. Arm (live and verifier); fences: publish before capture `publish_window_closed`; close before T keeps the run open; capture fires once then `already_fired`; begin `release_mismatch`/`started`; publish begin without claim `none_ready`; verifier fires once then `fires_spent` and unschedules; gate `verdict_missing`; `require_accepted_v1` raises `witness_verdict_required`; service_role denied on verifier receipts and `forge_witness_api`; stop then `stopped`/`none_armed`, jobs 0; schedule moved `schedule_changed`; disarm both → 0 jobs; rollback refuses while open, succeeds after stop, re-applies with verifier receipts kept; job 408 off throughout.
+- **Production schema copy with the real verifier (`PRODCOPY-LIFECYCLE-VERIFIER.txt`, script `prodcopy-lifecycle.sh`).** Stub replaced by `forge-witness-verifier.sql` (9673316c); live migration rolled back and re-applied on top. Arm (live and verifier); fences: publish before capture `publish_window_closed`; close before T keeps the run open; capture fires once then `already_fired`; begin `release_mismatch`/`started`; publish begin without claim `none_ready`; verifier fires once then `fires_spent` and unschedules; gate `verdict_missing`; `require_accepted_v1` raises `witness_verdict_required`; service_role denied on verifier receipts and `forge_witness_api`; stop then `stopped`/`none_armed`, jobs 0; schedule moved `schedule_changed`; disarm both → 0 jobs; rollback refuses while open, succeeds after stop, re-applies with verifier receipts kept; job 408 off throughout.
 - **Production schema copy, first pass with the stub (`PRODCOPY-LIFECYCLE.txt`).** Chef's `pg_dump --schema-only` of production was loaded on stubs. 527 of 538 relations loaded; the remainder depend on `internal_stats`, which is outside the dump.
   - Publication migration → verifier stub → live migration all apply cleanly.
   - Approve/arm for 2026020358 succeeds with job 408 left off.

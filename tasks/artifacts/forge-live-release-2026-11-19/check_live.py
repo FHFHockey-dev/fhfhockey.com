@@ -149,17 +149,19 @@ def main():
         psql("-v", f"game={GAME}", "-v", f"player={PLAYER}", "-v", f"release={label}", "-v", "approver=local-rehearsal",
              "-v", f"capture_at={cron_at(start - timedelta(minutes=80))}", "-v", f"publish_at={cron_at(start - timedelta(minutes=58))}",
              "-v", f"close_at={cron_at(start + timedelta(minutes=1))}", "-f", HERE / "approve-and-arm.sql")
-        if verifier.exists():   # the verifier package's own arm script: target + one-fire Supabase Cron job (fired by live-check.ts)
+        if verifier.exists():   # the verifier package's own scripts: credential (stdin) then target + one-fire cron job
+            witness = jwt(secret, {"role": "forge_witness_api", "iat": now, "exp": now + 3 * 3600})
+            run(PG / "psql", "-X", "-q", "-At", "-h", directory, "-p", port, "-U", "postgres", "-v", "ON_ERROR_STOP=1",
+                "-f", verifier.parent / "set-witness-credential.sql", "postgres", input=witness + "\n")
             psql("-v", f"game={GAME}", "-v", f"schedule={cron_at(start - timedelta(minutes=75))}",
                  "-f", verifier.parent / "arm-witness-verify.sql")
         assert rows("select active from cron.job where jobid = 408")[0][0] is False
-        witness = jwt(secret, {"role": "forge_witness_api", "iat": now, "exp": now + 3 * 3600})
         child = {k: ENV[k] for k in ("PATH", "HOME", "TMPDIR", "LC_ALL", "LANG") if k in ENV}
         child.update(NODE_PATH=os.pathsep.join([".", str(WEB / "node_modules")]),
                      TS_NODE_COMPILER_OPTIONS='{"module":"commonjs","moduleResolution":"node"}',
                      NEXT_PUBLIC_SUPABASE_URL=f"http://127.0.0.1:{rest_port}", NEXT_PUBLIC_SUPABASE_PUBLIC_KEY="unused-local",
                      SUPABASE_SERVICE_ROLE_KEY=service, VERCEL_ENV="production", VERCEL_GIT_COMMIT_SHA=label, CRON_SECRET="c" * 48,
-                     FORGE_LIVE_GAME=str(GAME), FORGE_WITNESS_API_TOKEN=witness,
+                     FORGE_LIVE_GAME=str(GAME),
                      FORGE_OWNER_DSN=json.dumps({"host": str(directory), "port": port, "user": "postgres", "database": "postgres"}), **PROD_FLAGS)
         result = subprocess.run(["node", "-r", "ts-node/register/transpile-only", str(HERE / "live-check.ts")],
                                 cwd=WEB, env=child, capture_output=True, text=True, timeout=600)

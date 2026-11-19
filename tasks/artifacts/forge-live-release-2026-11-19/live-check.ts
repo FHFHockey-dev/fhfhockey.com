@@ -91,11 +91,17 @@ async function main() {
       assert.match(job, /forge_witness_ops\.fire_v1\(2099020991, 1\)/);
       const firedVerify = (await sql(job))[0].fire_v1 as string;
       assert.match(firedVerify, /^fired \d+$/);
-      const verified = await call(verify as typeof capture, auth);
+      // Deliver exactly what pg_net would send: the headers the fire function recorded (cron secret + witness token).
+      const [request] = await sql("select url, headers from net.requests where id = $1", [Number(firedVerify.split(" ")[1])]);
+      assert.equal(request.url, "https://fhfhockey.com/api/v1/db/forge-witness-verify");
+      const verifyHeaders = Object.fromEntries(Object.entries(request.headers as Record<string, string>).map(([k, v]) => [k.toLowerCase(), v]));
+      assert.deepEqual(Object.keys(verifyHeaders).sort(), ["authorization", "x-forge-witness-token"]);
+      assert.equal((await call(verify as typeof capture, auth)).body.status, "witness_credential_required");
+      const verified = await call(verify as typeof capture, verifyHeaders);
       assert.equal(verified.status, 200, JSON.stringify({ body: verified.body, errors }).slice(0, 2500));
       const verdicts = await sql(`select verdict, reason, verifier_role, verifier_release from forge_witness.verdicts where claim_id = $1`, [claimId]);
       assert.deepEqual(verdicts, [{ verdict: "accepted", reason: null, verifier_role: "forge_witness_api", verifier_release: process.env.VERCEL_GIT_COMMIT_SHA }]);
-      const verifiedAgain = await call(verify as typeof capture, auth);
+      const verifiedAgain = await call(verify as typeof capture, verifyHeaders);
       assert.equal(await count("forge_witness.verdicts"), 1);
       assert.equal(await count("cron.job where jobname like 'forge-witness-verify-%'"), 0);
       verifier = { package: "forge-witness-verifier route", fired: firedVerify, status: verified.status, body: verified.body,
