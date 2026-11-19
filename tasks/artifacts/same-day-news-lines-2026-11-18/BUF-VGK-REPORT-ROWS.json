@@ -1,0 +1,106 @@
+[
+  {
+    "report_key": "6ef794795799c2cdfd0911fcda7e1fdb7b0fa400c31ee9a8e69aa21a3fd7f2e0:54:2026-11-06.1",
+    "team_id": 54,
+    "game_id": 2026020278,
+    "report_date": "2026-11-08",
+    "payload": {
+      "key": "6ef794795799c2cdfd0911fcda7e1fdb7b0fa400c31ee9a8e69aa21a3fd7f2e0:54:2026-11-06.1",
+      "date": "2026-11-08",
+      "text": "It’s Colten Ellis vs Adin Hill in goal. The Bills are en route to Minny for MNF, so it’s the #Sabres and #Vgk. The Goatheads and the Flying Eichels get warm! https://t.co/5Nd97nqNyt",
+      "gameId": 2026020278,
+      "teamId": 54,
+      "session": null,
+      "receivedAt": "2026-11-08T20:02:08.663592+00:00",
+      "originalUrl": "https://x.com/ByMHarrington/status/2119520323309617358",
+      "publishedAt": "2026-11-08T19:59:58.517Z",
+      "interpretedAt": "2026-11-08T20:02:18.946Z",
+      "interpretation": {
+        "units": [],
+        "events": [
+          {
+            "kind": "goalie",
+            "state": "confirmed",
+            "times": {
+              "reference": null,
+              "observation": "2026-11-08T19:59:58.517Z",
+              "applicability": "unresolved"
+            },
+            "teamId": 54,
+            "evidence": {
+              "end": 39,
+              "text": "Adin Hill in goal.",
+              "start": 21
+            },
+            "modality": "affirmative",
+            "playerId": 8478499,
+            "timeline": null,
+            "timelines": [],
+            "goalieRole": "starter",
+            "playerName": "Adin Hill",
+            "availability": "unknown",
+            "resolutionBasis": "full_name"
+          }
+        ],
+        "context": "game",
+        "version": "2026-11-06.1",
+        "certainty": "reported",
+        "unresolved": []
+      },
+      "teamAbbreviation": "VGK",
+      "originalPublishedAt": "2026-11-08T19:59:58.517Z"
+    }
+  },
+  {
+    "report_key": "d2ce9ab2f54233ded4ccfaf2d803dfdceef77099caf986ca8a8b2e53eeb8870e:54:2026-11-06.1",
+    "team_id": 54,
+    "game_id": 2026020278,
+    "report_date": "2026-11-08",
+    "payload": {
+      "key": "d2ce9ab2f54233ded4ccfaf2d803dfdceef77099caf986ca8a8b2e53eeb8870e:54:2026-11-06.1",
+      "date": "2026-11-08",
+      "text": "It’s Colten Ellis vs Adin Hill in goal. The Bills are en route to Minny for MNF, so it’s the #Sabres and #Vgk. The Goatheads and the Flying Eichels get warm! pic.twitter.com/5Nd97nqNyt",
+      "gameId": 2026020278,
+      "teamId": 54,
+      "session": null,
+      "receivedAt": "2026-11-08T20:08:18.771514+00:00",
+      "originalUrl": "https://x.com/ByMHarrington/status/2119520323309617358",
+      "publishedAt": "2026-11-08T19:59:58.000Z",
+      "interpretedAt": "2026-11-08T20:09:19.895Z",
+      "interpretation": {
+        "units": [],
+        "events": [
+          {
+            "kind": "goalie",
+            "state": "confirmed",
+            "times": {
+              "reference": null,
+              "observation": "2026-11-08T19:59:58.000Z",
+              "applicability": "unresolved"
+            },
+            "teamId": 54,
+            "evidence": {
+              "end": 39,
+              "text": "Adin Hill in goal.",
+              "start": 21
+            },
+            "modality": "affirmative",
+            "playerId": 8478499,
+            "timeline": null,
+            "timelines": [],
+            "goalieRole": "starter",
+            "playerName": "Adin Hill",
+            "availability": "unknown",
+            "resolutionBasis": "full_name"
+          }
+        ],
+        "context": "game",
+        "version": "2026-11-06.1",
+        "certainty": "reported",
+        "unresolved": []
+      },
+      "teamAbbreviation": "VGK",
+      "originalPublishedAt": "2026-11-08T19:59:58.000Z"
+    }
+  }
+]

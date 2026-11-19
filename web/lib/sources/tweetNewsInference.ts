@@ -1,4 +1,5 @@
 import { identityMentionPresent, tweetPipelineFlags, TWEET_INTERPRETATION_VERSION } from "./tweetInterpretation";
+import { readTweetNewsRosterEvidence } from "./tweetNewsRosterEvidence";
 import { resolvePlayerIdentity } from "./playerIdentity";
 import { classifyInjuryEvent, extractInjuryTimeline, extractTweetPlayerEvents } from "./tweetPlayerEvents";
 import { createHash } from "node:crypto";
@@ -14,7 +15,7 @@ import type {
   TweetNewsAutomationPlayer,
   TweetNewsAutomationReviewRow,
 } from "lib/sources/tweetNewsAutomation";
-import { getTweetNewsCandidateSource } from "lib/sources/tweetNewsAutomation";
+import { getTweetNewsCandidateSource, matchTweetNewsPhrases, tweetNewsAdmittedPassages, tweetNewsItemMetadata } from "lib/sources/tweetNewsAutomation";
 
 export const TWEET_NEWS_INFERENCE_PROMPT_VERSION = "2026-10-01.1";
 export const DEFAULT_TWEET_NEWS_INFERENCE_MODEL = "openai/gpt-5.4-mini";
@@ -198,6 +199,16 @@ export function buildTweetNewsInferenceSources(
     row.metadata,
     "quotedAuthorHandle",
   );
+  const roster = readTweetNewsRosterEvidence(row);
+  if (roster) {
+    if (!roster.text) return [];
+    return [{
+      id: roster.source,
+      text: roster.text,
+      url: roster.source === "quoted" ? quotedUrl ?? row.quoted_tweet_url ?? row.source_url : row.tweet_url ?? row.source_url,
+      authorHandle: roster.source === "quoted" ? quotedAuthorHandle : row.source_handle,
+    }];
+  }
   const sources: TweetNewsInferenceSource[] = [];
 
   if (wrapperText) {
@@ -224,10 +235,14 @@ export function buildTweetNewsInferenceSources(
 }
 
 export function buildTweetNewsInferencePlayerCandidates(args: {
-  row: Pick<TweetNewsAutomationReviewRow, "team_id">;
+  row: Pick<TweetNewsAutomationReviewRow, "team_id"> | TweetNewsAutomationReviewRow;
   players: TweetNewsAutomationPlayer[];
   sources: TweetNewsInferenceSource[];
 }): TweetNewsAutomationPlayer[] {
+  if ("metadata" in args.row) {
+    const roster = readTweetNewsRosterEvidence(args.row);
+    if (roster) return roster.players;
+  }
   const normalizedText = normalizeEvidence(
     args.sources.map((source) => source.text).join(" "),
   );
@@ -253,15 +268,21 @@ export function buildTweetNewsInferenceDedupeKey(args: {
   model: string;
   players?: TweetNewsAutomationPlayer[];
 }): string {
+  const roster = readTweetNewsRosterEvidence(args.row);
+  const identities = (roster?.players ?? args.players)?.slice().sort((a, b) => a.id - b.id).map(player => {
+    const { id, fullName, lastName, team_id, aliases } = player;
+    return roster ? [id, fullName, lastName, team_id, aliases?.slice().sort(), player.position] : [id, fullName, lastName, team_id, aliases];
+  });
   const fingerprint = createHash("sha256")
     .update(
       JSON.stringify({
         reviewItemId: args.row.id,
-        sources: args.sources,
+        sources: roster ? buildTweetNewsInferenceSources(args.row) : args.sources,
+        roster: roster ? { publishedAt: roster.publishedAt, reviewSpans: roster.reviewSpans } : undefined,
         model: args.model,
         promptVersion: TWEET_NEWS_INFERENCE_PROMPT_VERSION,
         interpretationVersion: TWEET_INTERPRETATION_VERSION,
-        identities: args.players?.map(({ id, fullName, lastName, team_id, aliases }) => [id, fullName, lastName, team_id, aliases]).sort((a, b) => Number(a[0]) - Number(b[0])),
+        identities,
       }),
     )
     .digest("hex");
@@ -302,24 +323,37 @@ export function validateTweetNewsInference(args: {
   playerCandidates: TweetNewsAutomationPlayer[];
   teams: TweetNewsInferenceTeam[];
 }): { publish: boolean; errors: string[] } {
+  const roster = readTweetNewsRosterEvidence(args.row);
+  const sources = roster ? buildTweetNewsInferenceSources(args.row) : args.sources;
+  const players = roster?.players ?? args.playerCandidates;
   const errors: string[] = [];
+  if (roster && !roster.publishedAt) errors.push("invalid_intake_roster_evidence");
   const allowedSubcategories = ALLOWED_SUBCATEGORIES.get(args.result.category);
   if (!allowedSubcategories?.has(args.result.subcategory)) {
     errors.push("invalid_category_subcategory_pair");
   }
 
-  const sourceById = new Map(args.sources.map((source) => [source.id, source]));
+  const sourceById = new Map(sources.map((source) => [source.id, source]));
+  const identities = players.map(player => ({ playerId: player.id, teamId: roster ? player.team_id : null, position: player.position,
+    fullName: player.fullName, lastName: player.lastName ?? player.fullName.split(" ").slice(1).join(" "), aliases: player.aliases }));
+  const confirmedClaim = args.result.subcategory === "CONFIRMED STARTER" || (args.result.category === "INJURY" && args.result.subcategory === "OUT");
+  const needEvents = confirmedClaim || args.result.playerEvents?.length || roster?.reviewSpans.length;
+  const events = !needEvents ? [] : sources.flatMap(source => extractTweetPlayerEvents({ text: source.text, players: identities,
+    publishedAt: roster ? roster.publishedAt : args.row.source_created_at, reviewSpans: roster?.reviewSpans }).map(event => ({ ...event, sourceId: source.id })));
+  const admittedPassages = roster?.reviewSpans.length ? tweetNewsAdmittedPassages(roster) : null;
+  const evidenceAdmitted = (excerpt: string) => !admittedPassages ||
+    admittedPassages.some(passage => containsEvidence(passage, excerpt)) ||
+    events.some(event => containsEvidence(event.evidence.text, excerpt));
   for (const evidence of args.result.evidence) {
     const source = sourceById.get(evidence.sourceId);
-    if (!source || !containsEvidence(source.text, evidence.excerpt)) {
+    if (!source || !containsEvidence(source.text, evidence.excerpt) || !evidenceAdmitted(evidence.excerpt)) {
       errors.push("unsupported_evidence_excerpt");
     }
   }
 
   const playerById = new Map(
-    args.playerCandidates.map((player) => [player.id, player]),
+    players.map((player) => [player.id, player]),
   );
-  const identities = args.playerCandidates.map((player) => ({ playerId: player.id, fullName: player.fullName, lastName: player.lastName ?? player.fullName.split(" ").slice(1).join(" "), aliases: player.aliases }));
   const supportedSubject = (text: string, player: TweetNewsAutomationPlayer) => {
     if (identityMentionPresent(text, player.fullName)) return true;
     return [player.lastName ?? player.fullName.split(" ").slice(1).join(" "), ...(player.aliases ?? [])].some((name) => {
@@ -336,7 +370,7 @@ export function validateTweetNewsInference(args: {
         errors.push("subject_missing_from_evidence");
       }
     } else if (
-      !args.sources.some((source) =>
+      roster || !sources.some((source) =>
         containsEvidence(source.text, subject.playerName),
       )
     ) {
@@ -344,21 +378,37 @@ export function validateTweetNewsInference(args: {
     }
   }
 
+  if (admittedPassages) {
+    // A copied name in a different sentence cannot substantiate the reviewed subject's claim.
+    const grounded = (player: TweetNewsAutomationPlayer | null) => args.result.evidence.some(evidence => {
+      if (!evidenceAdmitted(evidence.excerpt) || (player && !supportedSubject(evidence.excerpt, player))) return false;
+      const scopedEvents = events.filter(event => event.sourceId === evidence.sourceId && event.playerId === player?.id
+        && containsEvidence(event.evidence.text, evidence.excerpt));
+      if (args.result.category === "RETURN") return scopedEvents.some(event =>
+        event.state === (args.result.subcategory === "PROJECTED RETURN" ? "possible_return" : "confirmed_return"));
+      if (args.result.category === "GOALIE START") return scopedEvents.some(event => event.kind === "goalie" && event.state === "confirmed");
+      if (args.result.category === "INJURY" || args.result.category === "REPORTED INJURY") {
+        return scopedEvents.some(event => event.kind === "injury" && (args.result.subcategory !== "OUT" || event.availability === "out"));
+      }
+      return matchTweetNewsPhrases(evidence.excerpt).some(match => match.category === args.result.category && match.subcategory === args.result.subcategory);
+    });
+    if (args.result.subjects.length ? args.result.subjects.some(subject => !grounded(playerById.get(subject.playerId ?? -1) ?? null)) : !grounded(null)) {
+      errors.push("claim_missing_admitted_evidence");
+    }
+  }
+
   for (const event of args.result.playerEvents ?? []) {
     const player = playerById.get(event.playerId);
     const source = sourceById.get(event.sourceId);
-    if (!player || !source || !supportedSubject(event.excerpt, player) || !containsEvidence(source.text, event.excerpt)) errors.push("unsupported_player_event");
+    if (!player || !source || !supportedSubject(event.excerpt, player) || !containsEvidence(source.text, event.excerpt) || !evidenceAdmitted(event.excerpt)) errors.push("unsupported_player_event");
     if (event.timeframe && !containsEvidence(event.excerpt, event.timeframe)) errors.push("unsupported_timeframe");
-    const supportedEvents = source ? extractTweetPlayerEvents({ text: source.text,
-      players: args.playerCandidates.map((candidate) => ({ playerId: candidate.id, fullName: candidate.fullName,
-        lastName: candidate.lastName ?? candidate.fullName.split(" ").slice(1).join(" "), position: candidate.position, aliases: candidate.aliases })), publishedAt: args.row.source_created_at }) : [];
-    if (event.state !== "unknown" && (classifyInjuryEvent(event.excerpt) !== event.state || !supportedEvents.some((supported) => supported.playerId === event.playerId && supported.kind === "injury" && supported.state === event.state))) errors.push("event_requires_review");
+    const supportedEvents = events.filter(supported => supported.sourceId === event.sourceId && supported.playerId === event.playerId && supported.kind === "injury");
+    if (event.state !== "unknown" && (classifyInjuryEvent(event.excerpt) !== event.state || !supportedEvents.some(supported => supported.state === event.state
+      && (!roster || containsEvidence(supported.evidence.text, event.excerpt))))) errors.push("event_requires_review");
   }
 
-  if (args.result.subcategory === "CONFIRMED STARTER" || args.result.category === "INJURY" && args.result.subcategory === "OUT") {
-    const supported = args.sources.flatMap((source) => extractTweetPlayerEvents({ text: source.text,
-      players: args.playerCandidates.map((player) => ({ playerId: player.id, fullName: player.fullName, lastName: player.lastName ?? player.fullName.split(" ").slice(1).join(" "), position: player.position, aliases: player.aliases })), publishedAt: args.row.source_created_at }));
-    if (!args.result.subjects.length || args.result.subjects.some((subject) => !supported.some((event) => event.playerId === subject.playerId &&
+  if (confirmedClaim) {
+    if (!args.result.subjects.length || args.result.subjects.some((subject) => !events.some((event) => event.playerId === subject.playerId &&
       (args.result.subcategory === "CONFIRMED STARTER" ? event.kind === "goalie" && event.state === "confirmed" : event.kind === "injury" && event.availability === "out")))) errors.push("unsupported_confirmed_claim");
   }
 
@@ -386,7 +436,9 @@ export function validateTweetNewsInference(args: {
     if (args.result.verificationState !== "official") {
       errors.push("signing_not_official");
     }
-    if (!hasCompletedSigningEvidence(args.sources)) {
+    const signingSources = admittedPassages && sources[0]
+      ? admittedPassages.map(text => ({ ...sources[0]!, text })) : sources;
+    if (!hasCompletedSigningEvidence(signingSources)) {
       errors.push("signing_missing_completed_language");
     }
   }
@@ -416,6 +468,8 @@ export function buildTweetNewsInferenceCandidate(args: {
 }): TweetNewsAutomationCandidate {
   const result = normalizeTweetNewsInferenceResult(args.result);
   const validation = validateTweetNewsInference(args);
+  const roster = readTweetNewsRosterEvidence(args.row);
+  const sources = roster ? buildTweetNewsInferenceSources(args.row) : args.sources;
   const nowIso = args.nowIso ?? new Date().toISOString();
   const team = args.result.teamAbbreviation
     ? args.teams.find(
@@ -424,7 +478,7 @@ export function buildTweetNewsInferenceCandidate(args: {
       ) ?? null
     : null;
   const playerById = new Map(
-    args.playerCandidates.map((player) => [player.id, player]),
+    (roster?.players ?? args.playerCandidates).map((player) => [player.id, player]),
   );
   const playerAssignments = args.result.subjects.map((subject) => {
     const player = subject.playerId ? playerById.get(subject.playerId) : null;
@@ -461,7 +515,7 @@ export function buildTweetNewsInferenceCandidate(args: {
       subcategory: selectedSubcategory,
       teamAbbreviation: team?.abbreviation ?? args.row.team_abbreviation,
     }),
-    blurb: buildBlurb(args.sources),
+    blurb: buildBlurb(sources),
     category: selectedCategory,
     subcategory: selectedSubcategory,
     cardStatus: validation.publish ? "published" : "draft",
@@ -488,7 +542,7 @@ export function buildTweetNewsInferenceCandidate(args: {
       },
     ],
     metadata: {
-      ...(args.row.metadata ?? {}),
+      ...tweetNewsItemMetadata(args.row),
       automation: {
         source: "tweet_news_model_inference",
         generatedAt: nowIso,
@@ -499,7 +553,7 @@ export function buildTweetNewsInferenceCandidate(args: {
         verificationState: args.result.verificationState,
         summary: summary ?? null,
         evidence: args.result.evidence,
-        playerEvents: args.result.playerEvents?.map((event) => ({ ...event, timeline: extractInjuryTimeline(event.excerpt, args.row.source_created_at) })) ?? [],
+        playerEvents: args.result.playerEvents?.map((event) => ({ ...event, timeline: extractInjuryTimeline(event.excerpt, roster ? roster.publishedAt : args.row.source_created_at) })) ?? [],
         validationErrors: validation.errors,
       },
     },
@@ -525,6 +579,7 @@ export async function inferTweetNewsCandidate(args: {
   model: string;
 }> {
   const sources = buildTweetNewsInferenceSources(args.row);
+  const roster = readTweetNewsRosterEvidence(args.row);
   if (sources.length === 0) throw new Error("tweet_inference_missing_sources");
   const playerCandidates = buildTweetNewsInferencePlayerCandidates({
     row: args.row,
@@ -555,6 +610,7 @@ export async function inferTweetNewsCandidate(args: {
       "Use NEWS UPDATE/CONTRACT NEGOTIATION for extension talks that are getting done or closing in.",
       "Use REPORTED INJURY/AWAITING OFFICIAL CONFIRMATION for a specific injury report not yet confirmed by the club.",
       "Choose review whenever identity or event status is uncertain.",
+      ...(roster?.reviewSpans.length ? ["Do not use the marked source spans or the claims about those subjects as evidence."] : []),
       "For injury/return news, extract playerEvents separately for each subject. Copy a subject-specific excerpt and timeframe verbatim. Preserve negation, possible versus confirmed return, and reassessment versus return dates. Without prior history do not infer that an injury is new or ongoing. Never apply one player's event to another named player.",
     ].join(" "),
     prompt: JSON.stringify({
@@ -565,6 +621,7 @@ export async function inferTweetNewsCandidate(args: {
         ]),
       ),
       sourceRowTeam: args.row.team_abbreviation,
+      ...(roster?.reviewSpans.length ? { reviewSpans: roster.reviewSpans } : {}),
       sources,
       playerCandidates,
       teams: args.teams,

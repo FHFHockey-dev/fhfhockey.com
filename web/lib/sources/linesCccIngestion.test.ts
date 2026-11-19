@@ -1,5 +1,8 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
+import datedIdentity from "./fixtures/novemberSourceIdentity.json";
+import { extractDurableTweetClaims } from "./tweetClaimExtraction";
+import { reduceTweetSemanticEvents } from "./tweetSemanticEvents";
 import { createHash } from "node:crypto";
 
 import { buildTeamDirectory } from "./lineupSourceIngestion";
@@ -13,6 +16,7 @@ import {
   buildLinesCccWrapperOEmbedDeferredState,
   buildLinesCccSourceFromIftttEvent,
   expandLinesCccGoalieClaims,
+  isDisputedRetainedProjectionSubject,
   buildLinesCccWrapperOEmbedSuccessState,
   fetchLinesCccTweetApiData,
   fetchLinesCccTweetOEmbedData,
@@ -1589,8 +1593,8 @@ describe("subject-specific goalie claim admission", () => {
         { id: 54, name: "Vegas Golden Knights", abbreviation: "VGK", logo: "/teamLogos/VGK.png" },
       ]);
       const rosterByTeam = new Map([
-        [7, [{ playerId: 1, fullName: "Colten Ellis", lastName: "Ellis", position: "G", teamId: 7 }]],
-        [54, [{ playerId: 2, fullName: "Adin Hill", lastName: "Hill", position: "G", teamId: 54 }]],
+        [7, [{ playerId: 8481551, fullName: "Colten Ellis", lastName: "Ellis", position: "G", teamId: 7 }]],
+        [54, [{ playerId: 8478499, fullName: "Adin Hill", lastName: "Hill", position: "G", teamId: 54 }]],
       ]);
       const text = "It’s Colten Ellis vs Adin Hill in goal. The Bills are en route to Minny for MNF, so it’s the #Sabres and #Vgk.";
       const build = (gameIdByTeamId: Map<number, number>) => buildLinesCccSourceFromIftttEvent({ snapshotDate: "2026-11-08", teams, rosterByTeam, gameIdByTeamId,
@@ -1602,10 +1606,17 @@ describe("subject-specific goalie claim admission", () => {
       expect(claims.map((claim) => [claim.team!.id, claim.gameId, claim.goalies])).toEqual(expect.arrayContaining([
         [7, 2026020278, ["Colten Ellis"]], [54, 2026020278, ["Adin Hill"]]]));
       expect(claims).toHaveLength(2);
+      for (const claim of claims) {
+        const teamId = claim.team!.id;
+        const roster = rosterByTeam.get(teamId)!;
+        const row = toLinesCccRow({ source: claim, rosterEntries: roster });
+        expect(buildGoalieBlendFeatures([], teamId, { gameId: 2026020278, linesCccRows: [row as unknown as LinesCccRow] }))
+          .toMatchObject({ source: "lines_ccc", confirmed: true, topGoalieId: roster[0]!.playerId });
+      }
       // Teams on different games: the post binds no single game with both sides, so "vs" shares nothing.
       const unbound = new Map([[7, 2026020270], [54, 2026020278]]);
       const events = (build(unbound).metadata!.interpretation as TweetInterpretation).events!.filter((event) => event.kind === "goalie");
-      expect(events.map((event) => event.playerId)).toEqual([2]);
+      expect(events.map((event) => event.playerId)).toEqual([8478499]);
     } finally { vi.unstubAllEnvs(); }
   });
 });
@@ -1830,6 +1841,75 @@ describe("team matching: league and opponent mentions (Codex audit 2026-11-16)",
     collectUnresolvedNamesFromLineRows([toLinesCccRow({ source, rosterEntries: source.team ? rosterByTeam.get(source.team.id) ?? [] : [] })] as any);
   afterEach(() => vi.unstubAllEnvs());
 
+  it.each([false, true])("replays the Ontario and Hallander receipts against dated memberships, interpretation %s", enabled => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", String(enabled));
+    const games = new Map([[4, 2026020326], [22, 2026020326]]);
+    for (const receipt of [datedIdentity.ontario, datedIdentity.hallander]) {
+      const roster = new Map(teams.map(team => [team.id, datedIdentity.memberships.filter(member =>
+        member.teamId === team.id && Date.parse(member.created_at) <= Date.parse(receipt.postedAt)
+        && (member.ended_at === null || Date.parse(member.ended_at) > Date.parse(receipt.postedAt)))]));
+      const event = { id: receipt.id, source: "fxtwitter", source_account: receipt.handle, username: receipt.handle,
+        text: receipt.text, tweet_id: receipt.id, link_to_tweet: `https://x.com/${receipt.handle}/status/${receipt.id}`,
+        tweet_created_at: receipt.postedAt, received_at: receipt.postedAt, created_at_label: null, raw_payload: {} };
+      const args = { snapshotDate: "2026-11-15", teams, rosterByTeam: roster, gameIdByTeamId: games };
+      const first = buildLinesCccSourceFromIftttEvent({ ...args, event });
+      for (const source of [first, refreshLinesCccSourceFromPrimaryText({ ...args, source: first })]) {
+        if (receipt === datedIdentity.ontario) {
+          expect(source).toMatchObject({ team: null, gameId: null, detectedLeague: "AHL", nhlFilterStatus: "rejected_non_nhl" });
+        } else {
+          expect(source).toMatchObject({ team: { id: 22 }, gameId: 2026020326, detectedLeague: "NHL", nhlFilterStatus: "accepted" });
+          expect(source.matchedPlayerIds).toContain(8480842);
+        }
+        const row = toLinesCccRow({ source, rosterEntries: roster.get(source.team?.id ?? 0) ?? [] });
+        expect(collectUnresolvedNamesFromLineRows([row] as any).filter(prompt => prompt.team_id === 4 || prompt.team_id === 21)).toEqual([]);
+      }
+      if (receipt === datedIdentity.hallander) {
+        for (const text of [receipt.text.replace("Sunday", "Saturday"), receipt.text.replace("Philadelphia", "Colorado"),
+          receipt.text.replace("Hallander will draw", "If traded Hallander will draw")]) {
+          expect(buildLinesCccSourceFromIftttEvent({ ...args, event: { ...event, text } }).gameId).toBeNull();
+        }
+        expect(buildLinesCccSourceFromIftttEvent({ ...args, gameIdByTeamId: new Map([[22, 2026020326], [4, 2026020338]]), event }).gameId).toBeNull();
+        expect(buildLinesCccSourceFromIftttEvent({ ...args, snapshotDate: "2026-11-16", event }).gameId).toBeNull();
+      }
+      const recall = buildLinesCccSourceFromIftttEvent({ ...args, event: { ...event,
+        text: "The Oilers have recalled Filip Hallander from the AHL Bakersfield Condors." } });
+      expect(recall).toMatchObject({ team: { id: 22 }, detectedLeague: "NHL", nhlFilterStatus: "accepted" });
+    }
+  });
+
+  it("withholds the retained unbound COL/PHI projections from those teams while preserving independently supported NHL subjects", () => {
+    const interpretation = { ...interpretTweetUnits("", []), units: [], events: [] };
+    const hallander = { gameId: null, teamId: 4, teamAbbreviation: "PHI", originalUrl: null, interpretation, text: datedIdentity.hallander.text };
+    const ontario = { ...hallander, teamId: 21, teamAbbreviation: "COL", text: datedIdentity.ontario.text,
+      originalUrl: `https://x.com/ReignInsider/status/${datedIdentity.ontario.id}` };
+    expect(isDisputedRetainedProjectionSubject(hallander)).toBe(true);
+    expect(isDisputedRetainedProjectionSubject(ontario)).toBe(true);
+    expect(isDisputedRetainedProjectionSubject({ ...ontario, text: ontario.text.replace(/^RT @ReignInsider: /, "") })).toBe(true);
+    expect(isDisputedRetainedProjectionSubject({ ...hallander, teamId: 22, teamAbbreviation: "EDM" })).toBe(false);
+    expect(isDisputedRetainedProjectionSubject({ ...hallander, text: "The Flyers recall Filip Hallander from the AHL. He skated today in Philadelphia." })).toBe(false);
+    expect(isDisputedRetainedProjectionSubject({ ...hallander, text: "Filip Hallander: The Flyers signed Hallander in Philadelphia." })).toBe(false);
+    expect(isDisputedRetainedProjectionSubject({ ...hallander, text: hallander.text + " #Flyers" })).toBe(false);
+  });
+
+  it.each([false, true])("retains NHL news that names an AHL club or a city, interpretation %s", enabled => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", String(enabled));
+    const cases = [
+      { id: "2072448279170748428", handle: "ChaseBeardsley_", team: { id: 68, name: "Utah Mammoth", abbreviation: "UTA", logo: "" },
+        roster: [], text: "The Mammoth have signed Zac Jones to a two year, two way contract with a AAV of $875,000.\nJones had 62 points in 60 games last season with the Rochester Americans as a defenseman.#TusksUp #LetsGoTucson" },
+      { id: "2054601760841638184", handle: "RussoHockey", team: { id: 30, name: "Minnesota Wild", abbreviation: "MIN", logo: "" },
+        roster: [{ playerId: 8478493, fullName: "Joel Eriksson Ek", lastName: "Eriksson Ek", teamId: 30, position: "C" }],
+        text: "Eriksson Ek skated today in Minnesota so they’re still hoping if they extend the series" },
+    ];
+    for (const item of cases) {
+      const url = `https://x.com/${item.handle}/status/${item.id}`;
+      const postedAt = tweetPublicationFromUrl(url)!;
+      const source = buildLinesCccSourceFromIftttEvent({ snapshotDate: postedAt.substring(0, 10), teams: buildTeamDirectory([...teams, item.team]),
+        rosterByTeam: new Map([[item.team.id, item.roster]]), event: { id: item.id, source: "fxtwitter", source_account: item.handle, username: item.handle,
+          text: item.text, tweet_id: item.id, link_to_tweet: url, tweet_created_at: postedAt, received_at: postedAt, created_at_label: null, raw_payload: {} } });
+      expect(source).toMatchObject({ team: { id: item.team.id }, nhlFilterStatus: "accepted", detectedLeague: "NHL" });
+    }
+  });
+
   it.each([false, true])("rejects an AHL club's lineup as non-NHL, even when its name or tag matches an NHL label: interpretation %s", (enabled) => {
     vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", String(enabled));
     const lines = "Ostrander - Vaillancourt - Mercado\nBelisle - Okafor - Ruutu\nTrembley - Haskins - Lindqvist\n\nPrice - Moravec\nAbara - Kettering\n\nWestland";
@@ -1881,6 +1961,106 @@ describe("team matching: league and opponent mentions (Codex audit 2026-11-16)",
   });
 });
 
+describe("Nov 5 Nashville at Colorado goalie statements", () => {
+  const game = { id: 2026020261, date: "2026-11-05", startTime: "2026-11-06T02:30:00Z", homeTeamId: 21, awayTeamId: 18 };
+  const teams = buildTeamDirectory([{ id: 18, name: "Nashville Predators", abbreviation: "NSH", logo: "" },
+    { id: 21, name: "Colorado Avalanche", abbreviation: "COL", logo: "" }]);
+  const goalies = [{ playerId: 8481020, fullName: "Justus Annunen", lastName: "Annunen", position: "G", teamId: 18 },
+    { playerId: 8477424, fullName: "Juuse Saros", lastName: "Saros", position: "G", teamId: 18 }];
+  // The parity archive retains the bodies and linked IDs. Receipt/interpretation clocks below are replay inputs.
+  const dfo = "🥅: Justus Annunen (NSH) ✅ will start Thursday @ COL.\n\n2-1-0 | 3.89 GAA | .846 SV% | 0 SO https://x.com/PredsNHL/status/2118523662190223538";
+  const ccc = "Predators lines\nConfirmed Predators Starting Goalie: Justus Annunen https://x.com/brooksbratten/status/2118525120075755876";
+  const asOf = "2026-11-06T02:15:00Z";
+  function replay(handle: string, id: string, text: string, requestedDate = game.date, rawPayload: Record<string, unknown> = {}) {
+    const url = `https://x.com/${handle}/status/${id}`;
+    const posted = tweetPublicationFromUrl(url)!;
+    const source = buildLinesCccSourceFromIftttEvent({ snapshotDate: requestedDate, teams, rosterByTeam: new Map([[18, goalies]]),
+      gameIdByTeamId: new Map([[18, game.id], [21, game.id]]),
+      event: { id, source: "fxtwitter", source_account: handle, username: handle, text, tweet_id: id,
+        link_to_tweet: url, tweet_created_at: posted, received_at: posted, created_at_label: null, raw_payload: rawPayload } });
+    reviewTweetApplicability([source], requestedDate);
+    const row = toLinesCccRow({ source, rosterEntries: goalies });
+    const prediction = buildGoalieBlendFeatures([], 18, { gameId: game.id, linesCccRows: [row as unknown as LinesCccRow] });
+    const claims = extractDurableTweetClaims({ source, game, interpretedAt: asOf }).map(item => item.semantic);
+    return { row, prediction, claims };
+  }
+  afterEach(() => vi.unstubAllEnvs());
+  it("reads both relay assertions but finds no independent, explicit original in the retained source bodies", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const rows = [replay("DFOFantasy", "2118523774014530047", dfo), replay("CcCMiddleton", "2118526109264539958", ccc)];
+    for (const { row, prediction, claims } of rows) {
+      expect(row).toMatchObject({ game_id: game.id, team_id: 18, goalie_1_player_id: 8481020,
+        metadata: { goalieStates: [{ source: "event", state: "confirmed" }], goalieClaimOrigin: { url: null } } });
+      expect(claims[0]).toMatchObject({ fact: { kind: "starter", playerId: 8481020 }, support: { status: "pending", reason: "original_identity_unresolved" } });
+      expect(prediction.confirmed).toBe(false);
+    }
+    const reduced = reduceTweetSemanticEvents(rows.flatMap(row => row.claims), asOf);
+    expect(reduced.actions).toEqual([]);
+    expect(reduced.associations.map(a => a.reason)).toEqual(["original_identity_unresolved", "original_identity_unresolved"]);
+    const bratten = replay("brooksbratten", "2118525120075755876", "#Preds lineup in warmups:   \n\nStamkos-O'Reilly-Bourque \nForsberg-Wright-Hoglander \nSchaefer-Kerfoot-Pinchuk \nColton-Drury-Edstrom  \n\nJosi-Wilsby \nSkjei-Perbix \nHunt-Struble  \n\nAnnunen\nSaros");
+    expect(bratten.claims.some(claim => claim.fact?.kind === "starter")).toBe(false);
+    expect(bratten.prediction.confirmed).toBe(false);
+    expect(replay("DFOFantasy", "2118523774014530047", dfo, "2026-11-06").row.game_id).toBeNull();
+  });
+  it("accepts a dated original assertion with or without the marker, and withholds marker-only and mismatched claims", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    // Controlled non-relay input, not the unretained PredsNHL original.
+    const text = "🥅: Justus Annunen (NSH) ✅ will start Thursday @ COL.";
+    for (const body of [text, text.replace("✅ ", "")]) {
+      const direct = replay("FixtureReporter", "2118523774014530047", body);
+      expect(direct.prediction).toMatchObject({ confirmed: true, topGoalieId: 8481020 });
+      expect(reduceTweetSemanticEvents(direct.claims, asOf).actions).toHaveLength(1);
+    }
+    const id = "2118523774014530047";
+    const original = replay("FixtureReporter", id, text);
+    const copy = replay("GameDayGoalies", id, `RT @FixtureReporter: ${text}`, game.date, {
+      data: { id, referenced_tweets: [{ id, type: "retweeted" }] },
+      includes: { tweets: [{ id, text, author_id: "10", created_at: original.claims[0]!.original.publishedAt }],
+        users: [{ id: "10", username: "FixtureReporter" }] },
+    });
+    const combined = reduceTweetSemanticEvents([...original.claims, ...copy.claims], asOf);
+    expect(copy.prediction).toMatchObject({ confirmed: true, topGoalieId: 8481020 });
+    expect(combined.actions).toHaveLength(1);
+    expect(combined.scenarios[0]!.revisions[0]!.supportedOrigins).toMatchObject([{ originalTweetId: id, observationIndexes: [0, 1] }]);
+    for (const body of ["NSH vs. COL\n🥅: Annunen ✅", text.replace("Thursday", "Friday"),
+      text.replace("(NSH)", "(COL)"), text.replace("@ COL", "@ DAL"), text.replace("will start", "could start")]) {
+      const held = replay("FixtureReporter", "2118523774014530047", body);
+      expect(held.prediction.confirmed, body).toBe(false);
+      expect(reduceTweetSemanticEvents(held.claims, asOf).actions, body).toEqual([]);
+    }
+  });
+});
+
+it("withholds a Buffalo starter and a skater absence on both Nov 6 morning-skate reports", () => {
+  vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+  try {
+    const game = { id: 2026020262, date: "2026-11-06", startTime: "2026-11-07T00:00:00Z", homeTeamId: 7, awayTeamId: 29 };
+    const roster = ([["Ukko-Pekka Luukkonen", "Luukkonen", 8480045, "G"], ["Ryan McLeod", "McLeod", 8480802, "C"],
+      ["Jiri Kulich", "Kulich", 8483468, "C"]] as const).map(([fullName, lastName, playerId, position]) => ({ fullName, lastName, playerId, position, teamId: 7 }));
+    const teams = buildTeamDirectory([{ id: 7, name: "Buffalo Sabres", abbreviation: "BUF", logo: "" },
+      { id: 29, name: "Columbus Blue Jackets", abbreviation: "CBJ", logo: "" }]);
+    const posts = [
+      ["GameDayGoalies", "2118727470493155634", "RT @rachelmlenzi: UPL is in the starter’s net for the morning skate #sabres https://t.co/S2VNvX7WJs"],
+      ["GameDayNewsNHL", "2118731705632555008", "RT @MatthewFairburn: Looks like Jiri Kulich could be going in for Ryan McLeod tonight. McLeod wasn’t working on either of the top two PK units at morning skate. Ukko-Pekka Luukkonen in the starter’s net."],
+    ] as const;
+    for (const [handle, id, text] of posts) {
+      const url = `https://x.com/${handle}/status/${id}`, posted = tweetPublicationFromUrl(url)!;
+      const source = buildLinesCccSourceFromIftttEvent({ snapshotDate: game.date, teams, rosterByTeam: new Map([[7, roster]]),
+        gameIdByTeamId: new Map([[7, game.id], [29, game.id]]), event: { id, source: "fxtwitter", source_account: handle, username: handle,
+          text, tweet_id: id, link_to_tweet: url, tweet_created_at: posted, received_at: posted, created_at_label: null, raw_payload: {} } });
+      reviewTweetApplicability([source], game.date);
+      const row = toLinesCccRow({ source, rosterEntries: roster });
+      const claims = extractDurableTweetClaims({ source, game, interpretedAt: posted });
+      expect(row.game_id).toBeNull();
+      if (handle === "GameDayGoalies") expect(row.goalie_1_player_id).toBeNull();
+      else expect(row.metadata.goalieStates).toMatchObject([{ playerId: 8480045, state: "projected" }]);
+      expect(claims.some(c => c.semantic.fact?.kind === "availability" || c.semantic.fact?.kind === "starter")).toBe(false);
+      expect(reduceTweetSemanticEvents(claims.map(c => c.semantic), posted).actions).toEqual([]);
+      expect(buildGoalieBlendFeatures([], 7, { gameId: game.id, linesCccRows: [row as unknown as LinesCccRow] }).confirmed).toBe(false);
+    }
+  } finally { vi.unstubAllEnvs(); }
+});
+
 describe("pipe goalie pairs stay out of shared Lines goalie fields", () => {
   // Zach Cavanagh's Ducks warm-up post (11/15 vs CGY) ends "Husso | Dostál": who was listed, not who starts.
   const ANA = 24, GAME = 2026020328;
@@ -1930,5 +2110,104 @@ describe("pipe goalie pairs stay out of shared Lines goalie fields", () => {
     const { row, feature } = read("Husso | Dostál\nHusso gets the start tonight.");
     expect(row).toMatchObject({ goalie_1_player_id: 9018, goalie_1_name: "Ville Husso", goalie_2_name: null });
     expect(feature).toMatchObject({ source: "lines_ccc", confirmed: true, topGoalieId: 9018, topGoalieName: "Ville Husso" });
+  });
+});
+
+describe("shared publication-roster intake", () => {
+  const teams = buildTeamDirectory([{ id: 17, abbreviation: "DET", name: "Detroit Red Wings", logo: "" }]);
+  const detroit = [
+    { playerId: 1, fullName: "Michael Brandsegg-Nygård", lastName: "Brandsegg-Nygård", position: "RW", teamId: 17 },
+    { playerId: 2, fullName: "Dylan Larkin", lastName: "Larkin", position: "C", teamId: 17 },
+    { playerId: 3, fullName: "Lucas Raymond", lastName: "Raymond", position: "RW", teamId: 17 },
+  ];
+  const rosterByTeam = new Map([[17, detroit]]);
+  const at = "2026-11-18T16:30:00.000Z";
+  const context = { teams, rosterByTeam, inferenceRosterByTeam: rosterByTeam, inferencePublishedAt: at };
+  const build = (text: string, roster = context) => buildLinesCccSourceFromIftttEvent({
+    ...roster, snapshotDate: "2026-11-18", event: { id: "example", source: "ifttt", username: "AnsarKhanMLive",
+      source_account: "AnsarKhanMLive", text, tweet_created_at: at, received_at: at, created_at_label: null,
+      raw_payload: {}, tweet_id: null, link_to_tweet: null },
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("carries an independently established teammate match into the stored line while preserving its literal evidence", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const text = "Warmup lines tonight\nLarkin - MBN - Raymond";
+    const source = build(text);
+    const refreshed = refreshLinesCccSourceFromPrimaryText({ ...context, source });
+    const row = toLinesCccRow({ source: refreshed, rosterEntries: detroit });
+    expect(row).toMatchObject({ raw_text: text, team_id: 17, line_1_player_ids: [3, 1, 2] });
+    const reading = refreshed.metadata?.interpretation as TweetInterpretation;
+    const start = text.indexOf("MBN");
+    expect(reading.identityContext).toMatchObject({ basis: "publication_roster", sourcePublishedAt: at,
+      uniqueInitials: [{ text: "MBN", start, end: start + 3, playerId: 1, teamId: 17 }] });
+    expect(reading.units[0]?.evidence.map((span) => text.slice(span.start, span.end))).toContain("MBN");
+    expect(source.metadata?.interpretation).toEqual(reading);
+    expect(detroit[0]).not.toHaveProperty("aliases");
+  });
+
+  it("uses an independently identified teammate to resolve an exact cross-team surname for News and Lines", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const home = { playerId: 4, fullName: "David Smith", lastName: "Smith", position: "LW", teamId: 17 };
+    const away = { playerId: 5, fullName: "Adam Smith", lastName: "Smith", position: "LW", teamId: 21 };
+    const combined = new Map([[17, [...detroit, home]], [21, [away]]]);
+    const both = { ...context, teams: [...teams, ...buildTeamDirectory([{ id: 21, abbreviation: "COL", name: "Colorado Avalanche", logo: "" }])],
+      rosterByTeam: combined, inferenceRosterByTeam: combined };
+    expect(build("Larkin skates with Raymond.", both).team?.id).toBe(17);
+    const parsed = build("Larkin skates with Raymond. Smith will not play tonight due to injury.", both);
+    const reading = parsed.metadata?.interpretation as TweetInterpretation;
+    expect(parsed.team?.id).toBe(17);
+    expect(reading.events?.filter(event => event.availability === "out").map(event => event.playerId)).toEqual([4]);
+    expect(toLinesCccRow({ source: parsed, rosterEntries: combined.get(17) })).toMatchObject({ injured_player_ids: [4] });
+    const sides = build("Detroit Red Wings: Smith will not play tonight due to injury.\nvs Smith", both);
+    expect((sides.metadata?.interpretation as TweetInterpretation).events?.filter(event => event.availability === "out").map(event => event.playerId)).toEqual([4]);
+    expect(sides.metadata?.name_inference_review).toEqual(expect.arrayContaining([expect.objectContaining({ rawName: "Smith" })]));
+    const neutral = build("Smith will not play tonight due to injury.", both);
+    expect((neutral.metadata?.interpretation as TweetInterpretation).events).toEqual([]);
+    expect(neutral.metadata?.name_inference_review).toEqual(expect.arrayContaining([expect.objectContaining({ candidatePlayerIds: [4, 5] })]));
+  });
+
+  it("preserves the same identity boundary on the legacy snapshot path", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "false");
+    const parse = (text: string) => toLinesCccRow({ source: build(text), rosterEntries: detroit });
+    const row = parse("Detroit Red Wings lines tonight\nLarkin - MBN - Raymond");
+    expect(row.matched_player_ids).toEqual([1, 2, 3]);
+    expect(row.line_1_player_ids).toEqual([3, 1, 2]);
+    for (const text of ["MBN will not play tonight due to injury.", "Detroit Red Wings: Larkim will not play tonight due to injury."]) {
+      const review = parse(text);
+      expect(review.metadata.name_inference_review).toHaveLength(1);
+      expect(review.matched_player_ids).toBeNull();
+      expect(review.injured_player_ids).toBeNull();
+      expect(review.goalie_1_player_id).toBeNull();
+    }
+  });
+
+  it("binds an explicitly reported injury by initials, and sends the beat-only, fuzzy and ambiguous readings to review", () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    const explicit = build("Detroit Red Wings: MBN will not play tonight due to injury.");
+    expect((explicit.metadata?.interpretation as TweetInterpretation).events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ playerId: 1, availability: "out" }),
+    ]));
+    const collision = new Map([[17, [...detroit, { ...detroit[0]!, playerId: 4, fullName: "Mark Barry-Nolan", lastName: "Barry-Nolan" }]]]);
+    const reviews = [
+      { text: "MBN will not play tonight due to injury.", reason: "beat_only", names: [1], roster: context },
+      { text: "Detroit Red Wings: Larkim will not play tonight due to injury.", reason: "fuzzy_name", names: [2], roster: context },
+      { text: "Detroit Red Wings: MBN will not play tonight due to injury.", reason: "ambiguous_initials", names: [1, 4],
+        roster: { ...context, rosterByTeam: collision, inferenceRosterByTeam: collision } },
+    ];
+    for (const { text, reason, names, roster } of reviews) {
+      const parsed = build(text, roster);
+      const row = toLinesCccRow({ source: parsed, rosterEntries: roster.rosterByTeam.get(17) });
+      expect(row.raw_text).toBe(text);
+      expect(row.metadata.name_inference_review).toEqual(expect.arrayContaining([expect.objectContaining({ candidatePlayerIds: names, reason })]));
+      expect((parsed.metadata?.interpretation as TweetInterpretation).events).toEqual([]);
+      expect(row.injured_player_ids).toBeNull();
+      expect(row.matched_player_ids).toBeNull();
+    }
+    const wrapper = build(reviews[0]!.text);
+    const corrected = refreshLinesCccSourceFromPrimaryText({ ...context,
+      source: { ...wrapper, primaryTextSource: "quoted_oembed", quotedRawText: "Detroit Red Wings: MBN will not play tonight due to injury." } });
+    expect(corrected.metadata).not.toHaveProperty("name_inference_review");
+    expect((corrected.metadata?.interpretation as TweetInterpretation).events?.map((event) => event.playerId)).toContain(1);
   });
 });

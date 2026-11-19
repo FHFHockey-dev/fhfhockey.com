@@ -1,4 +1,8 @@
-import { describe, expect, it } from "vitest";
+// @vitest-environment node
+import { describe, expect, it, vi } from "vitest";
+
+const { generateText } = vi.hoisted(() => ({ generateText: vi.fn() }));
+vi.mock("ai", () => ({ generateText, Output: { object: vi.fn() } }));
 
 import type {
   TweetNewsAutomationPlayer,
@@ -9,6 +13,7 @@ import {
   buildTweetNewsInferenceDedupeKey,
   buildTweetNewsInferencePlayerCandidates,
   buildTweetNewsInferenceSources,
+  inferTweetNewsCandidate,
   normalizeTweetNewsInferenceResult,
   validateTweetNewsInference,
   type TweetNewsInferenceResult,
@@ -92,6 +97,49 @@ describe("tweet news inference", () => {
     expect(validation.publish).toBe(false);
     expect(validation.errors).toContain("event_requires_review");
   });
+  it("uses the quote's dated alias and team for model validation, assignments and deduplication", async () => {
+    const text = "NH and the Devils are closing in on a contract extension.";
+    const admitted = { ...players[0]!, lastName: "Hischier", aliases: ["NH"] };
+    const row = buildRow({ enriched_text: "An unrelated wrapper.", quoted_text: text,
+      metadata: { quotedAuthorHandle: "Devils", intakeRosterEvidence: { source: "quoted", text,
+        publishedAt: "2026-06-30T23:12:00Z", players: [admitted], reviewSpans: [] } } });
+    const current = [{ ...admitted, team_id: 16, aliases: [] }, { ...players[1]!, aliases: ["NH"] }];
+    const sources = buildTweetNewsInferenceSources(row);
+    expect(sources).toEqual([expect.objectContaining({ id: "quoted", text, authorHandle: "Devils" })]);
+    expect(buildTweetNewsInferencePlayerCandidates({ row, players: current, sources })).toEqual([admitted]);
+    const args = { row, sources, teams, model: "fixture", playerCandidates: current,
+      result: buildNewsUpdateResult({ evidence: [{ sourceId: "quoted", excerpt: text }] }) };
+    const candidate = buildTweetNewsInferenceCandidate(args);
+    expect(candidate).toMatchObject({ cardStatus: "published", blurb: text, playerAssignments: [
+      { playerId: admitted.id, playerName: admitted.fullName, teamId: 1 }] });
+    expect(candidate.metadata).not.toHaveProperty("intakeRosterEvidence");
+    expect(buildTweetNewsInferenceDedupeKey({ ...args, players: current }))
+      .toBe(buildTweetNewsInferenceDedupeKey({ ...args, players: [] }));
+    generateText.mockResolvedValueOnce({ output: args.result });
+    const inferred = await inferTweetNewsCandidate({ row, players: current, teams, model: "fixture" });
+    expect(JSON.parse(generateText.mock.calls[0]![0].prompt)).toMatchObject({ sources, playerCandidates: [admitted] });
+    expect(inferred.candidate.playerAssignments).toEqual(candidate.playerAssignments);
+    const staleRow = { ...row, quoted_text: "NH signed today." };
+    expect(buildTweetNewsInferencePlayerCandidates({ row: staleRow, sources, players: current })).toEqual([]);
+    expect(validateTweetNewsInference({ ...args, row: staleRow }).publish).toBe(false);
+  });
+
+  it("blocks a reviewed occurrence as evidence even when that player appears elsewhere", () => {
+    const text = "Nico Hischier spoke. NH will not play tonight.";
+    const start = text.indexOf("NH");
+    const row = buildRow({ enriched_text: text, metadata: { intakeRosterEvidence: { source: "wrapper", text,
+      publishedAt: "2026-06-30T23:12:00Z", players: [{ ...players[0]!, lastName: "Hischier", aliases: ["NH"] }],
+      reviewSpans: [{ start, end: start + 2 }] } } });
+    const args = { row, sources: buildTweetNewsInferenceSources(row), teams, playerCandidates: players };
+    const result = buildNewsUpdateResult({ category: "INJURY", subcategory: "OUT",
+      evidence: [{ sourceId: "wrapper", excerpt: "NH will not play tonight." }] });
+    expect(validateTweetNewsInference({ ...args, result })).toEqual({ publish: false, errors: expect.arrayContaining([
+      "unsupported_evidence_excerpt", "unsupported_confirmed_claim"]) });
+    const unrelated = buildNewsUpdateResult({ evidence: [{ sourceId: "wrapper", excerpt: "Nico Hischier spoke." }] });
+    expect(validateTweetNewsInference({ ...args, result: unrelated }).errors).toContain("claim_missing_admitted_evidence");
+    expect(validateTweetNewsInference({ ...args, result: { ...result, subjects: [{ playerId: null, playerName: "NH" }] } }).publish).toBe(false);
+  });
+
   it("publishes schema-valid contract progress with grounded evidence", () => {
     const row = buildRow();
     const sources = buildTweetNewsInferenceSources(row);

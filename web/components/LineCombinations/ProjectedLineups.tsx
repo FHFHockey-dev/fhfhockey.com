@@ -1,15 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Script from "next/script";
 import type { ProjectedUnitSet, ProjectionReport } from "lib/sources/projectedLineups";
 import styles from "./ProjectedLineups.module.scss";
 import GameLineSnapshots, { mergeFrozenEntries } from "./GameLineSnapshots";
-import { formatTime } from "./reviewReasonCopy";
-import type { GameLinesResponse } from "lib/lines/types";
+import { formatTime, gameLabel } from "./reviewReasonCopy";
+import type { GameLinesResponse, LineGame } from "lib/lines/types";
 
-type ProjectionResponse = { enabled: boolean; sets: ProjectedUnitSet[]; reports: ProjectionReport[];
+type RailReport = ProjectionReport & { reportedStarter?: { status: "confirmed" | "projected"; author: string; playerId: number; playerName: string; teamAbbreviation: string } };
+type ProjectionResponse = { enabled: boolean; sets: ProjectedUnitSet[]; reports: RailReport[];
+  navigation?: { selectedGameId: number | null; games: Pick<LineGame, "id" | "date" | "awayAbbreviation" | "homeAbbreviation">[] };
   reportScope?: { requestedDate: string; reportDate: string; fallback: boolean } };
 
-export function ProjectedLineupsContent({ data }: { data: ProjectionResponse }) {
+export function ProjectedLineupsContent({ data, onGameChange }: { data: ProjectionResponse; onGameChange?: (id: number) => void }) {
+  const selectId = useId();
   const rail = useRef<HTMLElement>(null);
   const loadEmbeds = () => {
     const twitter = (window as unknown as { twttr?: { widgets?: { load: (element: HTMLElement) => void } } }).twttr;
@@ -18,13 +21,22 @@ export function ProjectedLineupsContent({ data }: { data: ProjectionResponse }) 
   useEffect(loadEmbeds, [data]);
   if (!data.enabled) return null;
   const reports = [...data.reports].sort((a, b) => Date.parse(b.publishedAt ?? b.receivedAt) - Date.parse(a.publishedAt ?? a.receivedAt));
+  const nav = data.navigation;
+  const selected = nav?.games.find(game => game.id === nav.selectedGameId);
   return <section className={styles.layout} aria-label="Projected line combinations">
     <div>
-      <h2>{data.reportScope?.fallback ? "Latest reported line combinations" : "Projected line combinations"}</h2>
+      {nav && nav.games.length > 0 && <header className={styles.gameHeader}>
+        <label htmlFor={selectId}>Game</label>
+        <select id={selectId} value={nav.selectedGameId ?? ""} onChange={event => onGameChange?.(Number(event.target.value))}>
+          {!selected && <option value="" disabled>Select a game</option>}
+          {nav.games.map(game => <option key={game.id} value={game.id}>{gameLabel(game)}</option>)}
+        </select>
+      </header>}
+      <h2>{selected ? `Projected line combinations · ${gameLabel(selected)}` : data.reportScope?.fallback ? "Latest reported line combinations" : "Projected line combinations"}</h2>
       {data.reportScope?.fallback
-        ? <p className={styles.stateWarn} role="status">No reports for <time dateTime={data.reportScope.requestedDate}>{data.reportScope.requestedDate}</time> yet. Showing the latest retained reports from <time dateTime={data.reportScope.reportDate}>{data.reportScope.reportDate}</time> (Eastern dates). These are older reports, not a confirmed lineup for today.</p>
+        ? <p className={styles.stateWarn} role="status">No reports for <time dateTime={data.reportScope.requestedDate}>{data.reportScope.requestedDate}</time> yet. Showing the latest retained reports from <time dateTime={data.reportScope.reportDate}>{data.reportScope.reportDate}</time> (Eastern dates).{!nav && " These are older reports, not a confirmed lineup for today."}</p>
         : <p className={styles.muted}>Latest validated reports. Times and practice context are shown for each update.</p>}
-      {!data.sets.length && <p>No complete projected units have been reported for this occasion. Partial reports appear in the rail.</p>}
+      {!data.sets.length && <p>{selected ? "No complete projected units have been reported for this game." : "No complete projected units have been reported for this occasion. Partial reports appear in the rail."}</p>}
       {data.sets.map((set) => <article className={styles.card} key={set.key}>
         <p className={styles.itemTitle}>{set.reports[0]!.teamAbbreviation} · {set.situation === "es" ? "Even strength" : set.situation.toUpperCase()}{set.group ? ` · Group ${set.group.toUpperCase()}` : ""}</p>
         <p className={styles.muted}>{set.reports[0]!.interpretation.context} · {set.reports[0]!.interpretation.certainty} · <time dateTime={set.publishedAt}>{formatTime(set.publishedAt)}</time></p>
@@ -38,11 +50,19 @@ export function ProjectedLineupsContent({ data }: { data: ProjectionResponse }) 
     <aside ref={rail} className={styles.rail} aria-label="Latest team reports">
       <h2>Latest reports</h2>
       {reports.length === 0 && <p>No reports yet.</p>}
-      {reports.map((report) => <article className={styles.card} key={report.key}>
-        <p className={styles.itemTitle}>{report.teamAbbreviation} · {report.interpretation.context}</p>
-        {report.publishedAt && <time className={styles.muted} dateTime={report.publishedAt}>{formatTime(report.publishedAt)}</time>}
-        {report.originalUrl ? <blockquote className="twitter-tweet" data-theme="dark" data-conversation="none"><p className={styles.rawText}>{report.text}</p><a href={report.originalUrl}>View original post</a></blockquote> : <><p className={styles.rawText}>{report.text}</p><p className={styles.muted}>Original source link pending</p></>}
-      </article>)}
+      {reports.map((report) => {
+        const game = nav?.games.find(candidate => candidate.id === report.gameId);
+        const starter = selected && selected.id === report.gameId && selected.date === report.date ? report.reportedStarter : undefined;
+        return <article className={styles.card} key={report.key}>
+          <p className={styles.itemTitle}>{report.teamAbbreviation} · {report.interpretation.context}</p>
+          {nav && <p className={styles.muted}>{game ? `Report for ${gameLabel(game)}` : report.gameId ? `Report for game ${report.gameId}` : "No verified game for this report"}</p>}
+          {starter && <p><strong>{starter.teamAbbreviation} {starter.status} starter · {starter.playerName}</strong> · Reported by @{starter.author}</p>}
+          {nav ? <p className={styles.muted}>{report.originalPublishedAt ? <>Posted <time dateTime={report.originalPublishedAt}>{formatTime(report.originalPublishedAt)}</time></> : "Original post time unavailable"}
+            {report.receivedAt && <> · Received <time dateTime={report.receivedAt}>{formatTime(report.receivedAt)}</time></>}</p>
+            : report.publishedAt && <time className={styles.muted} dateTime={report.publishedAt}>{formatTime(report.publishedAt)}</time>}
+          {report.originalUrl ? <blockquote className="twitter-tweet" data-theme="dark" data-conversation="none"><p className={styles.rawText}>{report.text}</p><a href={report.originalUrl}>View original post</a></blockquote> : <><p className={styles.rawText}>{report.text}</p><p className={styles.muted}>Original source link pending</p></>}
+        </article>;
+      })}
       {reports.some((report) => report.originalUrl) && <Script id="projected-tweet-embeds" src="https://platform.twitter.com/widgets.js" strategy="lazyOnload" onReady={loadEmbeds} />}
     </aside>
   </section>;
@@ -57,6 +77,7 @@ export default function ProjectedLineups({ teamId, gameId, onGameChange }: { tea
   useEffect(() => {
     const controller = new AbortController();
     const params = new URLSearchParams();
+    params.set("view", "game");
     if (teamId) params.set("teamId", String(teamId));
     if (selectedGameId) params.set("gameId", String(selectedGameId));
     setData(null); setFailed(false); setLoadedAt(null);
@@ -81,6 +102,7 @@ export default function ProjectedLineups({ teamId, gameId, onGameChange }: { tea
     : <p role="status" aria-busy="true" className={styles.stateLoading}>Loading game lineups…</p>;
   // Publishing switched off is an internal state: render nothing rather than flag wording (style audit High 2).
   if (!data.enabled || ("mode" in data && data.status === "disabled")) return null;
+  const selectGame = (id: number) => { setSelectedGameId(id); onGameChange?.(id); };
   return <>{failed && <p role="status" className={styles.stateWarn}>Couldn&apos;t refresh. Showing lineups as of {loadedAt ? <time dateTime={loadedAt}>{formatTime(loadedAt)}</time> : "the last update"}.</p>}
-    {"mode" in data ? <GameLineSnapshots data={data} onGameChange={(id) => { setSelectedGameId(id); onGameChange?.(id); }} /> : <ProjectedLineupsContent data={data} />}</>;
+    {"mode" in data ? <GameLineSnapshots data={data} onGameChange={selectGame} /> : <ProjectedLineupsContent data={data} onGameChange={selectGame} />}</>;
 }

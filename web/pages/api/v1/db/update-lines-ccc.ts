@@ -3,6 +3,7 @@ import { persistTweetProjectionReports, enrichTweetInjuryHistory } from "lib/sou
 import { processLineSnapshotEvidence } from "lib/lines/processor";
 import { admitTweetClaimEvaluationIntake, tweetClaimEvaluationIntakeWindow } from "lib/sources/tweetClaimEvaluationIntake";
 import { processTweetClaimShadowBatch } from "lib/sources/tweetClaimRegistry";
+import { createLineSourceRosterContext } from "lib/sources/lineSourceRosterContext";
 import { rosterSeasonForDate } from "lib/sources/playerIdentity";
 import { isEmptyQueueProcessorRun } from "lib/cron/emptyQueueRun";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
@@ -10,10 +11,7 @@ import { getCurrentSeason, getTeams } from "lib/NHL/server";
 import { buildTeamDirectory } from "lib/sources/lineupSourceIngestion";
 import {
   reviewTweetApplicability,
-  applyPlayerNameAliasesToRosterMap,
   extractTweetId,
-  fetchPlayerNameAliases,
-  fetchRosterEntriesByTeam,
   fetchScheduledGamesForDate,
   normalizeTweetUrl,
   parseBatchSize,
@@ -33,7 +31,6 @@ import {
   expandLinesCccGoalieClaims,
   fetchLinesCccTweetOEmbedAttempt,
   readLinesCccWrapperOEmbedBackfillState,
-  refreshLinesCccSourceFromPrimaryText,
   rejectInsufficientQuoteWrapper,
   resolveLinesCccQuotedTweet,
   shouldAttemptLinesCccWrapperOEmbedBackfill,
@@ -157,6 +154,7 @@ async function persistLinesCccRow(args: {
       .eq("source", args.row.source)
       .eq("tweet_id", args.row.tweet_id)
       .eq("status", "pending")
+      .is("metadata->>occurrenceOnly", null)
       .neq("team_id", args.row.team_id);
 
     if (staleUnresolvedError) throw staleUnresolvedError;
@@ -240,19 +238,8 @@ export default withCronJobAudit(
         scheduledGames.flatMap((game) => [game.homeTeamId, game.awayTeamId]),
       ),
     );
-    const rawRosterByTeam = await fetchRosterEntriesByTeam({
-      supabase: req.supabase,
-      teamIds: scheduledTeamIds,
-      seasonId: rosterSeasonForDate(requestedDate),
-    });
-    const playerNameAliases = await fetchPlayerNameAliases({
-      supabase: req.supabase,
-      teamIds: scheduledTeamIds,
-    });
-    let rosterByTeam = applyPlayerNameAliasesToRosterMap({
-      rosterByTeam: rawRosterByTeam,
-      aliases: playerNameAliases,
-    });
+    const rosters = createLineSourceRosterContext(req.supabase, teamDirectory, requestedDate);
+    const eventRosters = new Map<string, Awaited<ReturnType<typeof rosters.forReport>>>();
     const gameIdByTeamId = new Map<number, number>();
     const ambiguousGameTeams = new Set<number>();
     for (const game of scheduledGames) {
@@ -297,7 +284,7 @@ export default withCronJobAudit(
         event,
         snapshotDate: requestedDate,
         teams: teamDirectory,
-        rosterByTeam,
+        ...await rosters.forReport(event),
         gameIdByTeamId,
       });
       const existingWrapperState = readLinesCccWrapperOEmbedBackfillState(
@@ -399,12 +386,9 @@ export default withCronJobAudit(
         };
       }
 
-      candidate = refreshLinesCccSourceFromPrimaryText({
-        source: candidate,
-        teams: teamDirectory,
-        rosterByTeam,
-        gameIdByTeamId,
-      });
+      const refreshed = await rosters.refresh(event, candidate, gameIdByTeamId);
+      candidate = refreshed.candidate;
+      eventRosters.set(event.id, refreshed.context);
 
       const nextRawPayload = {
         ...(event.raw_payload ?? {}),
@@ -438,81 +422,6 @@ export default withCronJobAudit(
       });
     }
 
-    const unscheduledAcceptedTeamIds = Array.from(
-      new Set(
-        parsedCandidates
-          .map((candidate) =>
-            candidate.nhlFilterStatus === "accepted"
-              ? candidate.team?.id
-              : null,
-          )
-          .filter(
-            (teamId): teamId is number =>
-              typeof teamId === "number" && !rosterByTeam.has(teamId),
-          ),
-      ),
-    );
-    if (unscheduledAcceptedTeamIds.length > 0) {
-      const additionalRosterByTeam = applyPlayerNameAliasesToRosterMap({
-        rosterByTeam: await fetchRosterEntriesByTeam({
-          supabase: req.supabase,
-          teamIds: unscheduledAcceptedTeamIds,
-          seasonId: rosterSeasonForDate(requestedDate),
-        }),
-        aliases: await fetchPlayerNameAliases({
-          supabase: req.supabase,
-          teamIds: unscheduledAcceptedTeamIds,
-        }),
-      });
-      rosterByTeam = new Map([...rosterByTeam, ...additionalRosterByTeam]);
-
-      for (let index = 0; index < parsedCandidates.length; index += 1) {
-        const candidate = parsedCandidates[index];
-        if (!candidate?.team) continue;
-        if (!unscheduledAcceptedTeamIds.includes(candidate.team.id)) continue;
-
-        parsedCandidates[index] = refreshLinesCccSourceFromPrimaryText({
-          source: candidate,
-          teams: teamDirectory,
-          rosterByTeam,
-          gameIdByTeamId,
-        });
-      }
-    }
-
-    const hasAmbiguousNhlCandidates = parsedCandidates.some(
-      (candidate) => candidate.nhlFilterStatus === "rejected_ambiguous",
-    );
-    const unloadedTeamIds = teamDirectory
-      .map((team) => team.id)
-      .filter((teamId) => !rosterByTeam.has(teamId));
-    if (hasAmbiguousNhlCandidates && unloadedTeamIds.length > 0) {
-      const additionalRosterByTeam = applyPlayerNameAliasesToRosterMap({
-        rosterByTeam: await fetchRosterEntriesByTeam({
-          supabase: req.supabase,
-          teamIds: unloadedTeamIds,
-          seasonId: rosterSeasonForDate(requestedDate),
-        }),
-        aliases: await fetchPlayerNameAliases({
-          supabase: req.supabase,
-          teamIds: unloadedTeamIds,
-        }),
-      });
-      rosterByTeam = new Map([...rosterByTeam, ...additionalRosterByTeam]);
-
-      for (let index = 0; index < parsedCandidates.length; index += 1) {
-        const candidate = parsedCandidates[index];
-        if (candidate?.nhlFilterStatus !== "rejected_ambiguous") continue;
-
-        parsedCandidates[index] = refreshLinesCccSourceFromPrimaryText({
-          source: candidate,
-          teams: teamDirectory,
-          rosterByTeam,
-          gameIdByTeamId,
-        });
-      }
-    }
-
     const claimSources = parsedCandidates.flatMap((source, index) => expandLinesCccGoalieClaims({ source, teams: teamDirectory, gameIdByTeamId })
       .map((candidate) => ({ candidate, event: parsedEvents[index]! })));
     parsedCandidates.splice(0, parsedCandidates.length, ...claimSources.map(({ candidate }) => candidate));
@@ -530,11 +439,11 @@ export default withCronJobAudit(
     processingStage = "injury_history";
     await enrichTweetInjuryHistory(req.supabase, parsedCandidates);
     processingStage = "snapshot_storage";
-    const rowsToUpsert = parsedCandidates.map((candidate) =>
+    const rowsToUpsert = parsedCandidates.map((candidate, index) =>
       toLinesCccRow({
         source: candidate,
         rosterEntries: candidate.team
-          ? (rosterByTeam.get(candidate.team.id) ?? [])
+          ? (eventRosters.get(parsedEvents[index]!.id)?.rosterByTeam.get(candidate.team.id) ?? [])
           : [],
       }),
     );
@@ -656,7 +565,7 @@ export default withCronJobAudit(
       teamsLoaded: teamDirectory.length,
       scheduledGamesLoaded: scheduledGames.length,
       scheduledTeamsLoaded: scheduledTeamIds.length,
-      rosterTeamsLoaded: rosterByTeam.size,
+      rosterTeamsLoaded: rosters.loadedTeams.size,
       gameTeamLinksLoaded: gameIdByTeamId.size,
       summary: {
         sourcesProcessed: new Set(

@@ -1,4 +1,5 @@
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
+import { timestampMicros } from "lib/projections/evidenceTime";
 import type { ParsedLinesCccSource } from "lib/sources/linesCccIngestion";
 import { projectionReportFromSource } from "lib/sources/tweetProjectionStorage";
 import type { PlayerIdentity } from "lib/sources/playerIdentity";
@@ -32,13 +33,15 @@ const day = (now: string, offsetDays: number) => new Date(Date.parse(now) + offs
  * bounded to a date window and to the latest state/decision rows; a game is observed at most every 5 minutes; a team is
  * reconciled only when this call stored a new claim for it or a freshly observed game changed phase.
  */
-export async function processLineSnapshotEvidence(supabase: any, sources: ParsedLinesCccSource[], _scheduledTeamIds: number[], now = new Date().toISOString()) {
+export async function processLineSnapshotEvidence(supabase: any, sources: ParsedLinesCccSource[], _scheduledTeamIds: number[], asOf?: string) {
   const flags = lineSnapshotFlags();
   if (!flags.observations) return { enabled: false, claims: 0, reconciled: 0 };
   // Pure: a source without an accepted interpretation and team is no evidence and costs nothing.
   const candidates = sources.map((source) => ({ source, report: projectionReportFromSource(source) })).filter((value) => value.report != null && value.source.team != null);
   const teamIds = [...new Set(candidates.map(({ source }) => source.team!.id))];
   if (!teamIds.length) return { enabled: true, claims: 0, reconciled: 0 };
+  // Each projection stamps its interpretedAt while building the candidates above.
+  const now = asOf ?? new Date().toISOString();
   let count = 0, reconciled = 0;
   // Reviewed trainer answer keys, read-only, keyed by any tweet id the source carries.
   const reviewed = await fetchReviewedDecisions(supabase, candidates.flatMap(({ source }) => [source.tweetId, source.quotedTweetId, ...fxIds(source)].filter((value): value is string => !!value)));
@@ -71,15 +74,23 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
       const [rosters, directory, approved] = await Promise.all([
         fetchAllSupabasePages<any>(({ from, to }) => supabase.from("rosters").select("playerId,teamId,created_at,ended_at").in("playerId", ids).order("playerId").order("teamId").order("created_at").range(from, to)),
         fetchAllSupabasePages<any>(({ from, to }) => supabase.from("players").select("id,fullName,lastName,position").in("id", ids).order("id").range(from, to)),
-        fetchAllSupabasePages<any>(({ from, to }) => supabase.from("lineup_player_name_aliases").select("alias,player_id,created_at").in("player_id", ids).order("player_id").order("alias").range(from, to)),
+        fetchAllSupabasePages<any>(({ from, to }) => supabase.from("lineup_player_name_aliases").select("alias,player_id,created_at,updated_at").in("player_id", ids).order("player_id").order("alias").range(from, to)),
       ]);
       playerDirectory = directory.map((row) => ({ playerId: row.id, fullName: row.fullName, lastName: row.lastName, position: row.position }));
       memberships = rosters.map((row) => ({ playerId: row.playerId, teamId: row.teamId, from: row.created_at, until: row.ended_at, evidenceId: `roster:${row.playerId}:${row.teamId}:${row.created_at}:${row.ended_at ?? "open"}` }));
-      aliases = approved.map((row) => ({ raw: row.alias, playerId: row.player_id, approvedAt: row.created_at, evidenceId: `approved_alias:${row.player_id}:${row.alias}:${row.created_at}` }));
+      aliases = approved.map((row) => ({ raw: row.alias, playerId: row.player_id, approvedAt: row.created_at, revisedAt: row.updated_at, evidenceId: `approved_alias:${row.player_id}:${row.alias}:${row.created_at}` }));
     }
     const claims: LineClaim[] = [];
     for (const { source, report: candidate } of relevant) {
       const report = candidate!;
+      const identity = report.interpretation.identityContext;
+      const publication = report.publishedAt ? timestampMicros(report.publishedAt) : null;
+      const dated = identity?.basis === "publication_roster" && identity.sourcePublishedAt && publication !== null
+        && timestampMicros(identity.sourcePublishedAt) === publication;
+      const playerContext = { teamId, players: playerDirectory, memberships, aliases,
+        sourcePublishedAt: dated ? identity.sourcePublishedAt : null,
+        uniqueInitials: dated ? identity.uniqueInitials?.filter(hit =>
+          hit.start >= 0 && hit.end > hit.start && report.text.slice(hit.start, hit.end) === hit.text) : undefined };
       // Existing projection compatibility fallbacks must not manufacture ingestion evidence.
       if (!source.observedAt) report.receivedAt = "";
       // First sighting by the poller is the ingestion clock when intake recorded it.
@@ -183,7 +194,7 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
           const players = [...lineupChange.playersIn, ...lineupChange.playersOut];
           const resolution = resolveEventUnit({ situation: "scratch", number: null, explicitNumber: false, complete: false, group: null,
             players: players.map((player) => ({ playerId: player.playerId ?? 0, name: player.name })), evidence: players.map((player) => player.span ?? { start: 0, end: 0, text: player.name }) },
-          { teamId, effectiveAt: claim.time.effectiveAt, players: playerDirectory, memberships, aliases });
+          { ...playerContext, effectiveAt: claim.time.effectiveAt });
           const resolved = resolution.unit.players;
           const ids = (from: number, to: number) => resolved.slice(from, to).map((player) => player.playerId).filter((id) => id > 0);
           const playersIn = ids(0, lineupChange.playersIn.length), playersOut = ids(lineupChange.playersIn.length, players.length);
@@ -200,7 +211,7 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
           const missing = players.filter((player) => !player.span).map((player) => `identity:${player.name}:not_in_text`);
           const resolution = resolveEventUnit({ situation: "pp", number: swap.unitNumber, explicitNumber: true, complete: false, group: null,
             players: players.map((player) => ({ playerId: player.playerId ?? 0, name: player.name })), evidence: players.map((player) => player.span ?? { start: 0, end: 0, text: player.name }) },
-          { teamId, effectiveAt: claim.time.effectiveAt, players: playerDirectory, memberships, aliases });
+          { ...playerContext, effectiveAt: claim.time.effectiveAt });
           const reasons = [...missing, ...resolution.reasons];
           const resolvedIds = resolution.unit.players.map((player) => player.playerId);
           claims.push({ ...claim, id: evidenceKey([claim.id, resolution, swap]), identityStatus: reasons.length ? "unresolved" : "resolved_at_event", identityEvidence: resolution.evidence,
@@ -216,7 +227,7 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
           }
           claims.push(claim); continue;
         }
-        const resolution = resolveEventUnit(claim.unit, { teamId, effectiveAt: claim.time.effectiveAt, players: playerDirectory, memberships, aliases });
+        const resolution = resolveEventUnit(claim.unit, { ...playerContext, effectiveAt: claim.time.effectiveAt });
         claims.push({ ...claim, id: evidenceKey([claim.id, resolution]), unit: resolution.unit, identityStatus: resolution.reasons.length ? "unresolved" : "resolved_at_event", identityEvidence: resolution.evidence,
           reviewReasons: [...claim.reviewReasons.filter((reason) => reason !== "event_membership_unverified"), ...resolution.reasons] });
       }

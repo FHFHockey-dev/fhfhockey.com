@@ -1,5 +1,7 @@
 import { fetchNhlPlayerIdentity, importNhlIdentity } from "lib/sources/nhlProspectIdentity";
 import type { NextApiResponse } from "next";
+import { timestampMicros } from "lib/projections/evidenceTime";
+import { easternReportDate } from "lib/sources/projectedLineups";
 
 import { fetchPlayerIdentityDirectory, fetchRegisteredPlayerIdentities, normalizeIdentityName, positionGroupSlotRole, positionSlotRole, rosterSeasonForDate, type PlayerPositionGroup } from "lib/sources/playerIdentity";
 import { fetchRosterEntriesByTeam } from "lib/sources/lineSourceProcessing";
@@ -60,41 +62,73 @@ async function hasAmbiguousSurnameAlias(supabase: any, aliases: SurnameAliasScop
 }
 
 async function buildAliasReviews(supabase: any, rows: any[], players: PlayerOption[]) {
-  const keys = [...new Set(rows.map((row) => row.metadata?.captureKey).filter((key) => typeof key === "string"))].slice(0, 50);
+  const keys = [...new Set(rows.filter(row => row.metadata?.occurrenceOnly !== true).map((row) => row.metadata?.captureKey).filter((key) => typeof key === "string"))].slice(0, 50);
   const snapshots = keys.length ? await supabase.from("line_source_snapshots")
     .select("capture_key, snapshot_date, tweet_posted_at, team_id, roster_revision:metadata->interpretation->>rosterRevision")
     .in("capture_key", keys).limit(keys.length) : { data: [], error: null };
   if (snapshots.error) throw snapshots.error;
   const contexts = rows.map((row) => {
     const snapshot = snapshots.data?.find((value: any) => value.capture_key === row.metadata?.captureKey && value.team_id === row.team_id);
-    const sourceTime = snapshot?.tweet_posted_at ?? row.metadata?.sourcePublishedAt ?? row.metadata?.captureKey?.match(/(?:^|:)(\d{4}-\d{2}-\d{2})(?=:|$)/)?.[1] ?? null;
-    const validTime = typeof sourceTime === "string" && Number.isFinite(Date.parse(sourceTime)) ? sourceTime : null;
+    const occurrenceOnly = row.metadata?.occurrenceOnly === true;
+    const sourceTime = occurrenceOnly ? row.metadata?.sourcePublishedAt : snapshot?.tweet_posted_at ?? row.metadata?.sourcePublishedAt ?? row.metadata?.captureKey?.match(/(?:^|:)(\d{4}-\d{2}-\d{2})(?=:|$)/)?.[1] ?? null;
+    const validTime = typeof sourceTime === "string" && (occurrenceOnly ? timestampMicros(sourceTime) !== null : Number.isFinite(Date.parse(sourceTime))) ? sourceTime : null;
+    const sourceDate = validTime ? (occurrenceOnly ? easternReportDate(validTime) : validTime.slice(0, 10)) : null;
     const captured = capturedAliasReviewPlayers(snapshot?.roster_revision);
     const occurrence = getAliasReviewOccurrence(row);
-    const names = aliasReviewNameCandidates(occurrence?.text ?? row.raw_name, captured.length ? captured : players);
-    return { row, sourceTime: validTime, sourceDate: validTime?.slice(0, 10) ?? null, seasonId: validTime ? rosterSeasonForDate(validTime) : null, names, captured: captured.length > 0, occurrence };
+    const inferredIds = Array.isArray(row.metadata?.candidates) ? row.metadata.candidates : [];
+    const names = occurrenceOnly ? players.filter(player => inferredIds.includes(player.id))
+      : aliasReviewNameCandidates(occurrence?.text ?? row.raw_name, captured.length ? captured : players);
+    return { row, sourceTime: validTime, sourceDate, seasonId: sourceDate ? rosterSeasonForDate(sourceDate) : null, names, captured: !occurrenceOnly && captured.length > 0, occurrence, occurrenceOnly };
   });
   const ids = [...new Set(contexts.flatMap((context) => context.names.map((player) => player.id)))];
   const seasons = [...new Set(contexts.map((context) => context.seasonId).filter(Boolean))];
+  const queriedIds = ids.slice(0, 500);
+  const inferredIds = new Set(contexts.filter(context => context.occurrenceOnly).flatMap(context => context.names.map(player => player.id)));
+  const verifiedIds = queriedIds.filter(id => inferredIds.has(id));
   const membershipRows = ids.length && seasons.length ? await supabase.from("rosters")
-    .select("playerId,teamId,seasonId,created_at,ended_at,is_current").in("playerId", ids.slice(0, 500)).in("seasonId", seasons).limit(1000) : { data: [], error: null };
+    .select("playerId,teamId,seasonId,created_at,ended_at,is_current").in("playerId", queriedIds).in("seasonId", seasons).limit(1000) : { data: [], error: null };
   if (membershipRows.error) throw membershipRows.error;
+  const verifiedRows = verifiedIds.length && seasons.length ? await supabase.from("tweet_player_memberships")
+    .select("player_id,team_id,season_id,verified_at,expires_at,membership_kind").in("player_id", verifiedIds).in("season_id", seasons).limit(1000) : { data: [], error: null };
+  if (verifiedRows.error) throw verifiedRows.error;
+  const memberships = [
+    ...(membershipRows.data ?? []).filter((row: any) => row.ended_at != null || row.is_current === true).map((row: any) => ({
+      playerId: Number(row.playerId), teamId: Number(row.teamId), season: Number(row.seasonId),
+      start: row.created_at, end: row.ended_at, roster: true, verified: false,
+    })),
+    ...(verifiedRows.data ?? []).map((row: any) => ({
+      playerId: Number(row.player_id), teamId: Number(row.team_id), season: Number(row.season_id),
+      start: row.verified_at, end: row.expires_at, roster: row.membership_kind === "roster", verified: true,
+    })),
+  ];
   return contexts.map((context) => {
-    const time = context.sourceTime ? Date.parse(context.sourceTime) : null;
-    const candidates = context.names.filter((player) => {
-      if (time == null || membershipRows.data?.length === 1000) return false;
-      const active = (membershipRows.data ?? []).filter((membership: any) => Number(membership.playerId) === player.id && Number(membership.seasonId) === context.seasonId
-        && Date.parse(membership.created_at) <= time && (membership.ended_at ? Date.parse(membership.ended_at) > time : membership.is_current === true));
-      const teams = new Set(active.map((membership: any) => Number(membership.teamId)));
-      return teams.size === 1 && teams.has(context.row.team_id) && (!context.captured || player.team_id === context.row.team_id);
-    }).map((player) => ({ ...player, team_id: context.row.team_id, position: context.captured ? player.position : null }));
-    const preference = preferredAliasReviewCandidate(context.row, candidates, context.occurrence);
+    const parseTime = context.occurrenceOnly ? timestampMicros : Date.parse;
+    const time = context.sourceTime ? parseTime(context.sourceTime) : null;
+    const candidates = context.names.flatMap((player) => {
+      if (time == null || membershipRows.data?.length === 1000 || (context.occurrenceOnly && (!context.occurrence || verifiedRows.data?.length === 1000))) return [];
+      const active = memberships.filter(m => {
+        if (m.playerId !== player.id || m.season !== context.seasonId || (m.verified && !context.occurrenceOnly)) return false;
+        const start = parseTime(m.start);
+        const end = m.end == null ? null : parseTime(m.end);
+        return start != null && start <= time && (m.end == null || (end != null && time < end));
+      });
+      // Camp alone cannot establish NHL roster membership, but an overlapping team still contradicts it.
+      if (!active.some(m => m.roster)) return [];
+      const teams = new Set<number>(active.map(m => m.teamId));
+      const [datedTeam] = teams;
+      if (teams.size !== 1 || !Number.isSafeInteger(datedTeam) || datedTeam <= 0
+        || (!(context.occurrenceOnly && context.row.team_id == null) && datedTeam !== context.row.team_id)
+        || (context.captured && player.team_id !== datedTeam)) return [];
+      return [{ ...player, team_id: datedTeam, position: context.captured ? player.position : null }];
+    });
+    const preference = context.occurrenceOnly ? { playerId: null, basis: "Choose a suggested player after checking the highlighted source text." }
+      : preferredAliasReviewCandidate(context.row, candidates, context.occurrence);
     const effectiveName = context.occurrence?.text ?? context.row.raw_name;
     const surnameCandidates = aliasReviewNameCandidates(effectiveName, players);
     const ambiguousSurname = surnameCandidates.length > 1 && surnameCandidates.every((player) => normalizeIdentityName(player.lastName) === normalizeIdentityName(effectiveName));
     return { sourceDate: context.sourceDate, sourcePublishedAt: context.sourceTime, seasonId: context.seasonId, teamId: context.row.team_id, candidates,
       preferredPlayerId: preference.playerId, preferenceReason: preference.basis, ambiguousSurname,
-      scopeMessage: candidates.length ? "Candidates have roster intervals supporting the recorded source time, team and season." : "No dated roster support for this source scope. Current team labels do not establish historical membership." };
+      scopeMessage: candidates.length ? "Candidate memberships are supported at the source time." : "No dated roster support for this source scope. Current team labels do not establish historical membership." };
   });
 }
 
@@ -158,14 +192,17 @@ async function handlePost(req: any, res: NextApiResponse) {
   }
 
   if (action === "ignore") {
-    const { error } = await req.supabase
+    const { data, error } = await req.supabase
       .from("lineup_unresolved_player_names" as any)
       .update({
         status: "ignored",
         updated_at: new Date().toISOString()
       })
-      .eq("id", unresolvedId);
+      .eq("id", unresolvedId)
+      .or("metadata->>occurrenceOnly.is.null,metadata->>occurrenceOnly.neq.true,status.eq.pending")
+      .select("id").maybeSingle();
     if (error) throw error;
+    if (!data) return res.status(409).json({ success: false, message: "This occurrence has already been reviewed." });
     return res.json({ success: true, message: "Name ignored." });
   }
 
@@ -183,6 +220,7 @@ async function handlePost(req: any, res: NextApiResponse) {
     const { data: unresolved, error: unresolvedError } = await req.supabase.from("lineup_unresolved_player_names" as any)
       .select("id, raw_name, team_id, metadata").eq("id", unresolvedId).single();
     if (unresolvedError) throw unresolvedError;
+    if (unresolved.metadata?.occurrenceOnly === true) return res.status(409).json({ success: false, message: "This suggestion can only be assigned to its recorded occurrence." });
     const playerIds = parts.map((part: any) => Number(part.playerId));
     const { data: players, error: playersError } = await req.supabase.from("players").select("id, fullName, lastName, position").in("id", playerIds);
     if (playersError) throw playersError;
@@ -221,11 +259,15 @@ async function handlePost(req: any, res: NextApiResponse) {
 
   const { data: unresolved, error: unresolvedError } = await req.supabase
     .from("lineup_unresolved_player_names" as any)
-    .select("id, raw_name, normalized_name, team_id, context_text, metadata")
+    .select("id, raw_name, normalized_name, team_id, context_text, status, metadata")
     .eq("id", unresolvedId)
     .single();
   if (unresolvedError) throw unresolvedError;
 
+  const occurrenceOnly = unresolved.metadata?.occurrenceOnly === true;
+  if (occurrenceOnly && (action !== "assign_occurrence" || unresolved.status !== "pending")) {
+    return res.status(409).json({ success: false, message: "Only a pending suggestion can be assigned to its recorded occurrence." });
+  }
   if (body.importNhlIdentity === true && action !== "assign_occurrence") {
     if (!tweetPipelineFlags().interpretation) return res.status(409).json({ success: false, message: "Prospect imports require the new identity pipeline." });
     // Re-fetch server-side; never trust a browser-supplied name or team association.
@@ -251,11 +293,20 @@ async function handlePost(req: any, res: NextApiResponse) {
     if (!getAliasReviewOccurrence(unresolved)) return res.status(409).json({ success: false, message: "The exact source occurrence is unavailable. Review the ambiguous context before assigning." });
     const directory = await fetchPlayerIdentityDirectory(req.supabase);
     const [review] = await buildAliasReviews(req.supabase, [unresolved], directory.map((identity) => ({ id: identity.playerId, fullName: identity.fullName, lastName: identity.lastName, position: identity.position ?? null, team_id: identity.teamId ?? null })));
-    const supported = review.candidates.some((candidate) => candidate.id === playerId);
-    const metadata = { ...unresolved.metadata, resolutionScope: "occurrence", identityResolved: true, savedAlias: null, reviewKind: supported ? null : "missing_membership" };
+    const candidate = review.candidates.find((candidate) => candidate.id === playerId);
+    const supported = Boolean(candidate);
+    if (occurrenceOnly && !supported) return res.status(409).json({ success: false, message: "This candidate lacks verified membership at the source time." });
+    const metadata = { ...unresolved.metadata, ...(occurrenceOnly ? { reviewedTeamId: candidate?.team_id, reviewedSourcePublishedAt: review.sourcePublishedAt } : {}), resolutionScope: "occurrence", identityResolved: true, savedAlias: null, reviewKind: supported ? null : "missing_membership" };
     delete metadata.splitPlayerIds; delete metadata.splitAliases;
-    const { error } = await req.supabase.from("lineup_unresolved_player_names").update({ status: supported ? "resolved" : "pending", resolved_player_id: playerId, resolved_alias_id: null, metadata, updated_at: new Date().toISOString() }).eq("id", unresolvedId);
-    if (error) throw error;
+    const update = req.supabase.from("lineup_unresolved_player_names").update({ status: supported ? "resolved" : "pending", resolved_player_id: playerId, resolved_alias_id: null, metadata, updated_at: new Date().toISOString() }).eq("id", unresolvedId);
+    if (occurrenceOnly) {
+      const { data, error } = await update.eq("status", "pending").select("id").maybeSingle();
+      if (error) throw error;
+      if (!data) return res.status(409).json({ success: false, message: "This occurrence has already been reviewed." });
+    } else {
+      const { error } = await update;
+      if (error) throw error;
+    }
     return res.json({ success: true, message: `Assigned this occurrence to ${player.fullName}.${supported ? "" : " Dated membership still needs review."} No surname alias was learned.` });
   }
 

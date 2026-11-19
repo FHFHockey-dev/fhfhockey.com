@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { lineTestDatabase } from "./testDatabase";
 import { fixtureDecisionEvidence, fixtureGame, fixtureNow, fixtureUnit } from "./testFixtures";
-vi.mock("lib/sources/tweetProjectionStorage", () => ({ projectionReportFromSource: (source: any) => structuredClone(source.metadata.testReport) }));
+vi.mock("lib/sources/tweetProjectionStorage", () => ({ projectionReportFromSource: vi.fn((source: any) => structuredClone(source.metadata.testReport)) }));
 vi.mock("./gameState", async (load) => ({ ...await load<object>(), observeLineGame: async (game: any) => ({ ...game, ...fixtureGame }) }));
+import { projectionReportFromSource } from "lib/sources/tweetProjectionStorage";
 import { processLineSnapshotEvidence } from "./processor";
 
 function processorDatabase() {
@@ -15,7 +16,7 @@ function source() {
     decisionEvidence: fixtureDecisionEvidence("Warmup lines: Mikheyev-Point-Kucherov"), publication: { originalPublishedAt: "2026-10-01T22:34:00Z", relayPublishedAt: null, originalIdentity: "https://x.com/fixture/status/123", originalAuthor: "fixture", evidence: ["fixture:primary-original-provider-clock"] } },
     testReport: { key: "report", teamId: 14, teamAbbreviation: "TBL", gameId: fixtureGame.id, date: fixtureGame.date, receivedAt: "2026-10-01T22:36:00Z", interpretedAt: "2026-10-01T22:37:00Z", publishedAt: "2026-10-01T22:34:00Z", originalPublishedAt: "2026-10-01T22:34:00Z", originalUrl: "https://x.com/fixture/status/123", text: "Warmup lines: Mikheyev-Point-Kucherov", interpretation: { version: "test", units: [fixtureUnit()], unresolved: [], certainty: "reported", context: "game" } } } } as any;
 }
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
 describe("gated source processor integration", () => {
   it("does nothing while disabled", async () => {
     vi.stubEnv("LINES_OBSERVATIONS_ENABLED", "false"); const db = processorDatabase();
@@ -30,6 +31,19 @@ describe("gated source processor integration", () => {
     expect(claim.identityStatus).toBe("resolved_at_event"); expect(claim.reviewReasons).toHaveLength(0);
     expect(db.tables.line_entry_revisions![0]!.payload.status).toBe("frozen");
     expect(db.writes.every((table) => table.startsWith("line_") || table === "append_line_decisions")).toBe(true);
+  });
+  it("takes the live reconciliation clock after the parser stamps each interpretation", async () => {
+    vi.stubEnv("LINES_OBSERVATIONS_ENABLED", "true");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-01T22:37:00Z"));
+    const db = processorDatabase(), input = source();
+    vi.mocked(projectionReportFromSource).mockImplementationOnce(() => {
+      vi.setSystemTime(Date.now() + 1);
+      return { ...input.metadata.testReport, interpretedAt: new Date().toISOString() };
+    });
+    await processLineSnapshotEvidence(db, [input], [14]);
+    expect(db.tables.line_claim_revisions![0]!.payload.time.interpretedAt).toBe("2026-10-01T22:37:00.001Z");
+    expect(db.tables.line_claim_revisions![0]!.payload.reviewReasons).toEqual([]);
   });
   it("preserves unknown publication and ingestion clocks as review evidence", async () => {
     vi.stubEnv("LINES_OBSERVATIONS_ENABLED", "true"); const db = processorDatabase(); const input = source();

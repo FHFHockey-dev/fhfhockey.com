@@ -130,6 +130,7 @@ type LinesCccReviewSourceRow = {
   status: string | null;
   game_id?: number | null;
   interpretation: unknown;
+  intake_roster_evidence?: unknown;
 };
 
 type LineSourceSnapshotReviewSourceRow = {
@@ -166,6 +167,7 @@ type LineSourceSnapshotReviewSourceRow = {
   status: string | null;
   game_id?: number | null;
   interpretation: unknown;
+  intake_roster_evidence?: unknown;
 };
 
 type LinesCccEventReviewSourceRow = {
@@ -491,6 +493,7 @@ function buildLinesCccCandidate(row: LinesCccReviewSourceRow): SyncCandidate {
       quotedTweetUrl: row.quoted_tweet_url,
       // Preserved for review only; the public DTO never carries this key (no claim authority).
       retainedInterpretation: row.interpretation ?? null,
+      ...(row.intake_roster_evidence ? { intakeRosterEvidence: row.intake_roster_evidence } : {}),
       // The snapshot's own NHL game binding; News lineup tiles need it for game posts.
       retainedGameId: Number.isSafeInteger(row.game_id) ? row.game_id : null
     },
@@ -588,6 +591,7 @@ function buildLineSourceSnapshotCandidate(row: LineSourceSnapshotReviewSourceRow
       quotedTweetUrl: row.quoted_tweet_url,
       // Preserved for review only; the public DTO never carries this key (no claim authority).
       retainedInterpretation: row.interpretation ?? null,
+      ...(row.intake_roster_evidence ? { intakeRosterEvidence: row.intake_roster_evidence } : {}),
       // The snapshot's own NHL game binding; News lineup tiles need it for game posts.
       retainedGameId: Number.isSafeInteger(row.game_id) ? row.game_id : null
     },
@@ -738,14 +742,14 @@ export async function syncTweetPatternReviewItems(args: {
       args.supabase
         .from("lines_ccc" as any)
         .select(
-          "capture_key, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status, game_id, interpretation:metadata->interpretation"
+          "capture_key, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status, game_id, interpretation:metadata->interpretation,intake_roster_evidence:metadata->intakeRosterEvidence"
         )
         .order("observed_at", { ascending: false })
         .limit(args.perSourceLimit),
       args.supabase
         .from("line_source_snapshots" as any)
         .select(
-          "capture_key, source_group, source_key, source_account, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status, game_id, interpretation:metadata->interpretation"
+          "capture_key, source_group, source_key, source_account, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status, game_id, interpretation:metadata->interpretation,intake_roster_evidence:metadata->intakeRosterEvidence"
         )
         .order("observed_at", { ascending: false })
         .limit(args.perSourceLimit),
@@ -819,6 +823,9 @@ export async function syncTweetPatternReviewItems(args: {
   const nowIso = new Date().toISOString();
   const upsertRows = Array.from(candidates.values()).map((candidate) => {
     const existing = existingByKey.get(candidate.dedupe_key);
+    const retainedMetadata = { ...existing?.metadata };
+    // Roster evidence belongs to the selected source revision, including when its clock is unknown.
+    delete retainedMetadata.intakeRosterEvidence;
     return {
       dedupe_key: candidate.dedupe_key,
       source_table: candidate.source_table,
@@ -853,7 +860,7 @@ export async function syncTweetPatternReviewItems(args: {
       review_assignments: existing?.review_assignments ?? [],
       notes: existing?.notes ?? null,
       metadata: {
-        ...((existing?.metadata as Record<string, unknown> | null) ?? {}),
+        ...retainedMetadata,
         ...(candidate.metadata ?? {})
       },
       reviewed_at: existing?.reviewed_at ?? null,

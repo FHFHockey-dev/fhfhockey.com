@@ -5,6 +5,7 @@ export type AliasReviewName = {
   context_text: string | null;
   team_id: number | null;
   metadata?: {
+    occurrenceOnly?: boolean;
     contextAlias?: string | null;
     reason?: string | null;
     reviewKind?: string | null;
@@ -47,8 +48,17 @@ export function aliasReviewRole(row: AliasReviewName): "es_forward" | "es_defens
 export function getAliasReviewOccurrence(row: AliasReviewName): AliasReviewOccurrence | null {
   const text = row.context_text ?? "";
   const target = row.metadata?.contextAlias || row.raw_name;
-  const matches = findAliasReviewOccurrences(target, text);
   const evidence = row.metadata?.evidence;
+  if (row.metadata?.occurrenceOnly === true) {
+    if (!evidence || !Number.isSafeInteger(evidence.start) || !Number.isSafeInteger(evidence.end)
+      || evidence.start < 0 || evidence.end <= evidence.start || evidence.end > text.length
+      || evidence.text !== target || text.slice(evidence.start, evidence.end) !== target) return null;
+    const rowStart = text.lastIndexOf("\n", evidence.start - 1) + 1;
+    const rowEnd = text.indexOf("\n", evidence.end);
+    return { start: evidence.start, end: evidence.end, text: target, row: text.slice(rowStart, rowEnd < 0 ? undefined : rowEnd),
+      line: text.slice(0, evidence.start).split("\n").length, basis: "offset" };
+  }
+  const matches = findAliasReviewOccurrences(target, text);
   if (evidence && Number.isSafeInteger(evidence.start) && Number.isSafeInteger(evidence.end) && evidence.start >= 0 && evidence.end > evidence.start && evidence.end <= text.length) {
     const exact = matches.find((match) => (match.start === evidence.start || match.start < evidence.start && match.end === evidence.end) && match.end === evidence.end);
     if (exact && (!evidence.text || normalizeIdentityName(text.slice(evidence.start, evidence.end)) === normalizeIdentityName(evidence.text))) return { ...exact, basis: evidence.origin === "unique_token" || evidence.origin === "contextual_row" ? evidence.origin : "offset" };

@@ -1493,6 +1493,7 @@ describe("game prediction feature builder", () => {
             goalie_2_player_id: null,
             goalie_2_name: null,
             metadata: {
+              goalieClaimOrigin: { url: "https://x.com/FixtureReporter/status/100" },
               goalieStates: [
                 { name: "Confirmed Starter", playerId: 999, state: "confirmed", role: "starter", slot: null, observation: null, source: "event", stored: true },
               ],
@@ -1952,7 +1953,7 @@ describe("Lines CCC goalies count as confirmed only on an explicit confirmed sta
     classification: "lines", status: "observed", nhl_filter_status: "accepted",
     goalie_1_player_id: args.goalie1?.playerId ?? null, goalie_1_name: args.goalie1?.name ?? null,
     goalie_2_player_id: args.goalie2?.playerId ?? null, goalie_2_name: args.goalie2?.name ?? null,
-    metadata: args.metadata !== undefined ? args.metadata : args.states === null ? null : { goalieStates: (args.states ?? []).map(state) },
+    metadata: args.metadata !== undefined ? args.metadata : args.states === null ? null : { goalieStates: (args.states ?? []).map(state), goalieClaimOrigin: { url: "https://x.com/FixtureReporter/status/100" } },
   });
   const blend = (linesCccRows: LinesCccRow[]) =>
     buildGoalieBlendFeatures(createInputs().goalieStartRows, 1, { gameId: GAME, linesCccRows });
@@ -1962,9 +1963,9 @@ describe("Lines CCC goalies count as confirmed only on an explicit confirmed sta
     expect(blend([row({ goalie1: A, goalie2: B, states: [{ ...A, state: "confirmed", role: "starter" }, { ...B, state: "listed", role: "backup", slot: 2 }] })]))
       .toEqual(expect.objectContaining({ source: "lines_ccc", confirmed: true, candidateCount: 2, topGoalieId: 901, topGoalieName: "Goalie A",
         topGoalieStartProbability: 1, startUncertainty: 0, probabilityMass: 1 }));
-    // A ✅ marker on a lone goalie row (role null) is the source's own confirmation.
+    // A source marker alone supplies no explicit starter claim.
     expect(blend([row({ goalie1: A, states: [{ ...A, state: "confirmed", role: null, slot: 1 }] })]))
-      .toMatchObject({ source: "lines_ccc", confirmed: true, topGoalieId: 901 });
+      .toMatchObject(fellThrough);
   });
 
   it.each(["projected", "likely", "listed", "observed", "unresolved"])("does not promote a %s goalie_1", (goalieState) => {
@@ -1976,6 +1977,18 @@ describe("Lines CCC goalies count as confirmed only on an explicit confirmed sta
       { ...first, state: "listed", role: "starter", slot: 1 }, { ...second, state: "listed", role: "backup", slot: 2 }] })]);
     expect(feature).toMatchObject(fellThrough);
     expect(feature.startUncertainty).toBeGreaterThan(0);
+  });
+
+  it("keeps the selected document, marker source and reporter identity distinct on historical rows", () => {
+    const legacy = { ...row({ goalie1: A }), tweet_url: "https://twitter.com/i/web/status/100", tweet_id: "100",
+      metadata: { goalieStates: [state({ ...A, state: "confirmed", role: "starter" })],
+        sourceProvenance: { originalAuthor: "CcCMiddleton", originalTweetId: "100" } } };
+    const quote = { ...legacy, quoted_author_handle: "BeatWriter", quoted_tweet_id: "99", quoted_tweet_url: "https://x.com/BeatWriter/status/99" };
+    expect(blend([quote])).toMatchObject(fellThrough);
+    expect(blend([{ ...quote, primary_text_source: "quoted_oembed" }])).toMatchObject({ confirmed: true, topGoalieId: A.playerId });
+    expect(blend([{ ...quote, primary_text_source: "quoted_oembed", quoted_tweet_id: "98" }])).toMatchObject(fellThrough);
+    expect(blend([{ ...legacy, metadata: { sourceProvenance: { originalAuthor: "BeatWriter", originalTweetId: "100" },
+      goalieStates: [{ ...state({ ...A, state: "confirmed", role: "starter" }), source: "unit" }] } }])).toMatchObject(fellThrough);
   });
 
   it("does not promote a confirmed backup stored as goalie_1", () => {
@@ -2021,10 +2034,10 @@ describe("Lines CCC goalies count as confirmed only on an explicit confirmed sta
     expect(blend([row({ goalie1: A, metadata: metadata as LinesCccRow["metadata"] })])).toMatchObject(fellThrough);
   });
 
-  it("loads only metadata->goalieStates and maps it back onto metadata", async () => {
+  it("loads bounded goalie state and original-document evidence for historical rows", async () => {
     const inputs = createInputs();
     const selects: string[] = [];
-    const linesRow = { ...row({ goalie1: A }), metadata: undefined, goalie_states: [state({ ...A, state: "confirmed", role: "starter" })] };
+    const linesRow = { ...row({ goalie1: A }), metadata: undefined, tweet_url: "https://twitter.com/i/web/status/100", tweet_id: "100", original_author: "BeatWriter", original_tweet_id: "100", goalie_states: [state({ ...A, state: "confirmed", role: "starter" })] };
     const tables: Record<string, unknown[]> = { teams: [inputs.homeTeam, inputs.awayTeam], games: [], lines_ccc: [linesRow] };
     const power = powerHistoryClient([]);
     const client = { from(table: string) {
@@ -2049,7 +2062,9 @@ describe("Lines CCC goalies count as confirmed only on an explicit confirmed sta
     expect(selects[0]).not.toMatch(/(^|,)metadata(,|$)/);
     expect(loaded.linesCccRows).toHaveLength(1);
     expect(loaded.linesCccRows[0]).not.toHaveProperty("goalie_states");
-    expect(loaded.linesCccRows[0]!.metadata).toEqual({ goalieStates: linesRow.goalie_states });
+    expect(selects[0]).toContain("original_author:metadata->sourceProvenance->>originalAuthor");
+    expect(loaded.linesCccRows[0]!.metadata).toMatchObject({ goalieStates: linesRow.goalie_states,
+      sourceProvenance: { originalAuthor: "BeatWriter", originalTweetId: "100" } });
     expect(buildGoalieBlendFeatures([], 1, { gameId: GAME, linesCccRows: loaded.linesCccRows })).toMatchObject({ source: "lines_ccc", confirmed: true });
   });
 });

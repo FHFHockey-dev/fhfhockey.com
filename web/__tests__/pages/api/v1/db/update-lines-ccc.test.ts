@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 function paginatedRoster(result: { data: any[]; error: null }) {
   const query: any = {
     eq: vi.fn(() => query), order: vi.fn(() => query),
-    range: vi.fn((from: number, to: number) => Promise.resolve({ ...result, data: result.data.slice(from, to + 1) })),
+    range: vi.fn((from: number, to: number) => Promise.resolve({ ...result, data: result.data.slice(from, to + 1).map((row) => row.players ? { created_at: "2025-07-01T00:00:00Z", ended_at: null, is_current: true, ...row } : row) })),
   };
   return query;
 }
@@ -113,6 +113,7 @@ function createSupabaseMocks(args?: {
   );
   const unresolvedUpdateQuery: any = {
     eq: vi.fn(() => unresolvedUpdateQuery),
+    is: vi.fn(() => unresolvedUpdateQuery),
     neq: vi.fn(() => unresolvedUpdateQuery),
     then: (resolve: any) => Promise.resolve({ error: null }).then(resolve),
   };
@@ -542,6 +543,7 @@ describe("/api/v1/db/update-lines-ccc", () => {
       status: "superseded",
     });
     expect(unresolvedUpdateMock).toHaveBeenCalledTimes(1);
+    expect(unresolvedUpdateMock.mock.results[0]?.value.is).toHaveBeenCalledWith("metadata->>occurrenceOnly", null);
     expect(unresolvedUpdateMock.mock.calls[0]?.[0]).toMatchObject({
       status: "ignored",
     });

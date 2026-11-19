@@ -569,13 +569,47 @@ describe("source semantics", () => {
     })] });
     expect(from).not.toHaveBeenCalled();
   });
-  it("propagates atomic goalie failures so processing can retry the original receipt", async () => {
+  it.each([
+    { message: "member write failed" },
+    { code: "23503", message: 'insert or update on table "player_forecast_conflict_members" violates foreign key constraint "conflict_id_fkey"' },
+  ])("preserves other atomic failures so processing can retry the original receipt", async error => {
     vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
-    const error = { message: "member write failed" };
     const rpc = vi.fn().mockResolvedValue({ data: null, error });
     await expect(capturePlayerForecastSourceRows({ supabase: { rpc } as any, rows: [goalieRow] })).rejects.toEqual(error);
     expect(rpc).toHaveBeenCalledTimes(1);
   });
+  it.each([
+    { atomic: false, lineup: false, stage: "insert_goalie_observation" },
+    { atomic: true, lineup: false, stage: "capture_starter_board_goalies" },
+    { atomic: false, lineup: true, stage: "insert_lineup_snapshot" },
+    { atomic: true, lineup: true, stage: "capture_starter_board_lineup" },
+  ])("retains exact source FK lineage for $stage without attributing an uncertain batch row", async ({ atomic, lineup, stage }) => {
+    vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", String(atomic));
+    const table = lineup ? "player_forecast_lineup_snapshots" : "player_forecast_goalie_start_observations";
+    const constraint = lineup ? "player_forecast_lineup_snapshots_source_capture_key_fkey" : "player_forecast_goalie_start_observatio_source_capture_key_fkey";
+    const error = { code: "23503", message: `insert or update on table "${table}" violates foreign key constraint "${constraint}"`, details: "Private DB detail" };
+    const row = { ...goalieRow, classification: lineup ? "lineup" : "goalie_start", goalie_2_player_id: null, goalie_2_name: "Other goalie",
+      raw_text: "Private source body", metadata: { internal: "Private metadata" } };
+    const single = vi.fn().mockResolvedValue({ error });
+    if (!atomic && !lineup) single.mockResolvedValueOnce({ data: null, error: { code: "23505", message: "duplicate" } });
+    const from = vi.fn(() => ({ insert: () => ({ select: () => ({ single }) }) }));
+    const rpc = vi.fn().mockResolvedValue({ error });
+    const failure = await capturePlayerForecastSourceRows({ supabase: { from, rpc } as any, rows: [row] }).catch((value: Error) => value);
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure).toMatchObject({ code: "23503", constraint });
+    const message = (failure as Error).message;
+    expect(message).not.toMatch(/Private|https?:/);
+    const parent = { table: "line_source_snapshots", capture_key: "goalie-retry" };
+    const baseKey = { source_capture_key: "goalie-retry", team_id: 10 };
+    const second = { ...baseKey, player_id: 0, raw_player_name: "Other goalie" };
+    const keys = atomic && !lineup
+      ? { attemptedChildKeys: [{ ...baseKey, player_id: 1, raw_player_name: "Woll" }, second] }
+      : { childKey: lineup ? baseKey : second };
+    expect(JSON.parse(message.slice(message.indexOf("{")))).toEqual({ stage, constraint, parent, childTable: table, gameId: 100, teamId: 10, ...keys });
+    expect(rpc).toHaveBeenCalledTimes(atomic ? 1 : 0);
+    expect(from).toHaveBeenCalledTimes(atomic ? 0 : lineup ? 1 : 2);
+  });
+
   it.each([true, false])("uses the primary report for goalie status and deduplication (quote=%s)", async (usesQuote) => {
     vi.stubEnv("STARTER_BOARD_CAPTURE_ENABLED", "true");
     const rpc = vi.fn().mockResolvedValue({ data: { insertedObservations: 1, insertedConflicts: 0, observationIds: ["obs"] }, error: null });

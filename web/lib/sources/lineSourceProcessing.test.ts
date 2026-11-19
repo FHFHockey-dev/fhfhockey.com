@@ -1,12 +1,93 @@
 import { describe, expect, it } from "vitest";
+import { buildGoalieBlendFeatures, type LinesCccRow as PredictionLinesRow } from "../game-predictions/featureBuilder";
 
 import { applyPlayerNameAliasesToRosterMap, collectUnresolvedNamesFromLineRows, fetchPlayerNameAliases, persistUnresolvedPlayerNames, reviewTweetApplicability } from "./lineSourceProcessing";
 import { resolvePlayerIdentity } from "./playerIdentity";
 import { aliasReviewNameCandidates, getAliasReviewOccurrence, preferredAliasReviewCandidate } from "./playerAliasReview";
 import { interpretTweetUnits } from "./tweetInterpretation";
 import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
-import { toLinesCccRow, type ParsedLinesCccSource } from "./linesCccIngestion";
+import { buildLinesCccSourceFromIftttEvent, buildRowGoalies, toLinesCccRow, type ParsedLinesCccSource } from "./linesCccIngestion";
 import { projectionReportFromSource } from "./tweetProjectionStorage";
+
+// Source heading and reported personnel from Tampa's Nov 16 Washington preview.
+// The same-day relay clock and roster IDs isolate the applicability check.
+const previewPlayers = ([
+  ["Brandon Hagel", "F"], ["Jake Guentzel", "F"], ["Nikita Kucherov", "F"],
+  ["Victor Hedman", "D"], ["JJ Moser", "D"], ["Andrei Vasilevskiy", "G"], ["Dennis Hildeby", "G"],
+] as const).map(([fullName, position], index) => ({
+  fullName, lastName: fullName.split(" ").pop()!, position, playerId: index + 1, teamId: 14,
+}));
+const previousLineup = "Lines from Saturday's game (subject to change)\nForwards\nHagel-Guentzel-Kucherov\nDefensemen\nHedman-Moser\nGoaltenders\nVasilevskiy\nHildeby";
+function previewSource(text: string): ParsedLinesCccSource {
+  const publishedAt = "2026-11-17T15:00:00Z";
+  const events = extractTweetPlayerEvents({ text, players: previewPlayers, publishedAt });
+  const interpretation = { ...interpretTweetUnits(text, previewPlayers), events };
+  const { goalies, states } = buildRowGoalies({ interpretation, events, rosterEntries: previewPlayers });
+  return { snapshotDate: "2026-11-17", tweetPostedAt: publishedAt, gameId: 2026020334,
+    tweetId: "101", tweetUrl: "https://x.com/FixtureReporter/status/101", sourceHandle: "FixtureReporter",
+    rawText: text, team: { id: 14, abbreviation: "TBL", name: "Tampa Bay Lightning", location: "Tampa Bay",
+      logo: "", shortName: "Lightning", slug: "tbl", hashtags: [] },
+    nhlFilterStatus: "accepted", goalies, metadata: { interpretation, goalieStates: states } };
+}
+
+it("keeps Tampa's prior Saturday lineup out of Tuesday's game even under a current preview header", () => {
+  const source = previewSource("Tonight's matchup: Washington at Tampa Bay\n" + previousLineup);
+  expect((source.metadata!.interpretation as ReturnType<typeof interpretTweetUnits>).units.length).toBeGreaterThan(0);
+  reviewTweetApplicability([source], source.snapshotDate);
+  const row = toLinesCccRow({ source, rosterEntries: previewPlayers });
+  expect([row.game_id, row.line_1_player_names, row.pair_1_player_names, row.goalie_1_name, row.goalie_2_name]).toEqual([null, null, null, null, null]);
+  expect(projectionReportFromSource(source)).toBeNull();
+  expect(row.raw_text).toContain(previousLineup);
+});
+
+it("does not attach last Saturday's archived section to a new Saturday on the relay weekday alone", () => {
+  const source = previewSource("Tonight's matchup\n" + previousLineup);
+  source.snapshotDate = "2026-11-21";
+  source.tweetPostedAt = "2026-11-21T15:00:00Z";
+  reviewTweetApplicability([source], source.snapshotDate);
+  expect(source.gameId).toBeNull();
+  expect(toLinesCccRow({ source, rosterEntries: previewPlayers }).raw_text).toContain(previousLineup);
+});
+
+it.each(["Vasilevskiy | Hildeby", "Hildeby | Vasilevskiy"])("keeps a current neutral listing out of shared goalie slots during temporal review: %s", pair => {
+  const source = previewSource(`Tonight's lines\nGuentzel-Hagel-Kucherov\n${pair}\n${previousLineup}`);
+  reviewTweetApplicability([source], source.snapshotDate);
+  const row = toLinesCccRow({ source, rosterEntries: previewPlayers });
+  expect(row.status).toBe("observed");
+  expect(row.line_1_player_names).toHaveLength(3);
+  expect(row.line_2_player_names).toBeNull();
+  expect([row.goalie_1_name, row.goalie_2_name]).toEqual([null, null]);
+  expect(buildGoalieBlendFeatures([], 14, { gameId: 2026020334, linesCccRows: [row as unknown as PredictionLinesRow] }).confirmed).toBe(false);
+  const report = projectionReportFromSource(source)!;
+  expect(report.interpretation.units.filter(unit => unit.situation === "goalie").map(unit => unit.players[0]!.name))
+    .toEqual(pair.split(" | ").map(surname => previewPlayers.find(player => player.lastName === surname)!.fullName));
+});
+
+it("keeps an independent current confirmation and its evidence when the same source includes older goalies", () => {
+  const source = previewSource("Vasilevskiy starts tonight.\n" + previousLineup);
+  const original = source.metadata!.interpretation;
+  reviewTweetApplicability([source], source.snapshotDate);
+  const row = toLinesCccRow({ source, rosterEntries: previewPlayers });
+  expect(row.goalie_1_name).toBe("Andrei Vasilevskiy");
+  expect(row.goalie_2_name).toBeNull();
+  expect(source.metadata!.temporalReview).toMatchObject({ interpretation: original });
+  expect(buildGoalieBlendFeatures([], 14, { gameId: 2026020334, linesCccRows: [row as unknown as PredictionLinesRow] }).confirmed).toBe(true);
+});
+
+it("withholds legacy text-only slots when historical player spans are unavailable", () => {
+  const source = previewSource(previousLineup);
+  delete source.metadata!.interpretation;
+  reviewTweetApplicability([source], source.snapshotDate);
+  const row = toLinesCccRow({ source, rosterEntries: previewPlayers });
+  expect(row).toMatchObject({ status: "rejected", game_id: null, goalie_1_name: null, raw_text: previousLineup });
+});
+
+it("treats a relative starter statement inside a previous game's section as historical", () => {
+  const source = previewSource(previousLineup + "\nVasilevskiy starts tonight.");
+  reviewTweetApplicability([source], source.snapshotDate);
+  expect(projectionReportFromSource(source)).toBeNull();
+  expect(toLinesCccRow({ source, rosterEntries: previewPlayers }).goalie_1_name).toBeNull();
+});
 
 it("retains explicitly current claims while keeping future claims under temporal review", () => {
   const players = [{ playerId: 1, fullName: "Josh Norris", lastName: "Norris", position: "F", teamId: 2 }, { playerId: 2, fullName: "Ryan McLeod", lastName: "McLeod", position: "F", teamId: 2 }, { playerId: 3, fullName: "Konsta Helenius", lastName: "Helenius", position: "F", teamId: 2 }];
@@ -102,6 +183,42 @@ describe("lineSourceProcessing", () => {
   const hughesText = "Lineup\nMantha - Hughes - Bratt\nHughes - Pesce";
   const hughesIssues = [hughesText.indexOf("Hughes"), hughesText.lastIndexOf("Hughes")].map((start, index) => ({ text: "Hughes", start, end: start + 6, reason: "ambiguous", situation: index === 0 ? "es_forward" : "es_defense", number: 1, candidates: [jack.id, luke.id] }));
 
+  it("queues exact inferred occurrences from a rejected unbound quote without promoting its candidates", () => {
+    const suggestion = { rawName: "UPL", teamId: null, reason: "beat_only", candidatePlayerIds: [100, 100] };
+    const source = buildRow({ status: "rejected", nhl_filter_status: "rejected_ambiguous", team_id: null, primary_text_source: "quoted_oembed",
+      raw_text: "Wrapper text includes UPL", quoted_raw_text: "  UPL and UPL  ", quoted_tweet_id: "original", quoted_tweet_url: "https://x.com/reporter/status/123",
+      metadata: { name_inference_published_at: "2026-11-08T14:00:00Z", name_inference_review: [
+        { ...suggestion, start: 0, end: 3 }, { ...suggestion, start: 8, end: 11 }, { ...suggestion, start: 1, end: 4 },
+      ] } });
+    const rows = collectUnresolvedNamesFromLineRows([source, source] as any);
+    expect(rows).toHaveLength(2);
+    expect(rows.map(row => (row.metadata as any).evidence.start)).toEqual([0, 8]);
+    for (const row of rows) expect(row).toMatchObject({ raw_name: "UPL", context_text: "UPL and UPL", team_id: null,
+      status: "pending", source_url: "https://x.com/reporter/status/123", metadata: { occurrenceOnly: true, candidates: [100],
+        sourcePublishedAt: "2026-11-08T14:00:00Z", reviewKind: "beat_only" } });
+  });
+  it("retains an actual beat-only UPL suggestion through the shared interpreter and row serializer", () => {
+    const publishedAt = "2026-11-08T14:00:00Z";
+    const roster = new Map([[7, [{ playerId: 8480045, fullName: "Ukko-Pekka Luukkonen", lastName: "Luukkonen", teamId: 7, position: "G" }]]]);
+    const source = buildLinesCccSourceFromIftttEvent({
+      event: { id: "event", source: "ifttt", source_account: "Reporter", username: "Reporter", tweet_id: "101", text: "UPL in the starter's net.",
+        link_to_tweet: "https://x.com/Reporter/status/101", tweet_created_at: publishedAt, received_at: publishedAt, created_at_label: null, raw_payload: {} },
+      snapshotDate: "2026-11-08", teams: [{ id: 7, abbreviation: "BUF", name: "Buffalo Sabres", shortName: "Sabres", location: "Buffalo", hashtags: [], slug: "buf", logo: "" }],
+      rosterByTeam: roster, inferenceRosterByTeam: roster, inferencePublishedAt: publishedAt, inferredBeatTeamIds: [7],
+    });
+    const row = toLinesCccRow({ source, rosterEntries: [] });
+    expect(row.game_id).toBeNull();
+    expect(row.goalie_1_player_id).toBeNull();
+    expect(collectUnresolvedNamesFromLineRows([row])).toMatchObject([{ team_id: null, raw_name: "UPL", status: "pending",
+      metadata: { occurrenceOnly: true, reason: "beat_only", suggestedTeamId: 7, candidates: [8480045], sourcePublishedAt: publishedAt.replace("Z", ".000Z") } }]);
+  });
+  it("does not create a second learnable alias prompt for the same inferred and interpreted occurrence", () => {
+    const text = "Hughes - Pesce";
+    const issue = { text: "Hughes", start: 0, end: 6, reason: "ambiguous", candidates: [1, 2] };
+    const source = buildRow({ enriched_text: text, metadata: { interpretation: { unresolved: [issue] },
+      name_inference_review: [{ rawName: "Hughes", teamId: 1, start: 0, end: 6, reason: "ambiguous", candidatePlayerIds: [1, 2] }] } });
+    expect(collectUnresolvedNamesFromLineRows([source] as any)).toMatchObject([{ metadata: { occurrenceOnly: true } }]);
+  });
   it("retains each repeated surname occurrence and its parsed role under a distinct stable key", () => {
     const source = buildRow({ enriched_text: hughesText, metadata: { interpretation: { units: [], unresolved: hughesIssues } } });
     const rows = collectUnresolvedNamesFromLineRows([source] as any);

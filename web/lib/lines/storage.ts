@@ -58,7 +58,18 @@ export async function fetchLineClaims(supabase: any, teamIds: number[], now: str
     const query = supabase.from("line_claim_revisions").select("payload").in("team_id", teamIds).lte("interpreted_at", now);
     return (since ? query.gte("interpreted_at", since) : query).order("claim_id").range(from, to);
   });
-  return rows.map((row) => row.payload);
+  // Legacy workers could mark a claim unavailable relative to the start of their own call.
+  // Re-evaluate only these two clock holds at the read horizon. Stored evidence stays immutable,
+  // and entry selection independently requires all three clocks to precede the freeze cutoff.
+  const horizon = instant(now) ?? -Infinity;
+  return rows.map(({ payload }) => {
+    const reasons = payload.reviewReasons.filter(reason => {
+      if (reason === "interpretation_not_yet_available") return (instant(payload.time.interpretedAt) ?? Infinity) > horizon;
+      if (reason === "ingestion_not_yet_available") return (instant(payload.time.ingestedAt) ?? Infinity) > horizon;
+      return true;
+    });
+    return reasons.length === payload.reviewReasons.length ? payload : { ...payload, reviewReasons: reasons };
+  });
 }
 
 /** `gameIds` bounds the read to those games (the reader's window); omitted, every game. */

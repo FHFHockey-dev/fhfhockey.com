@@ -1,5 +1,6 @@
 import { isNewsRelayAccount, sanitizePublicNewsText } from "lib/newsFeed";
 import { completeEvenStrengthUnits, type TweetInterpretation, type TweetUnit } from "./tweetInterpretation";
+import { lineReportTimeScope } from "./lineReportTime";
 
 export type ProjectionReport = {
   key: string;
@@ -13,6 +14,7 @@ export type ProjectionReport = {
   receivedAt: string;
   interpretedAt?: string;
   originalUrl: string | null;
+  verifiedOriginalAuthor?: string;
   text: string;
   interpretation: TweetInterpretation;
   provenance?: { relayTweetId: string | null; originalTweetId: string | null; attributionStatus: "resolved" | "pending" };
@@ -108,10 +110,20 @@ export function selectProjectedUnitSets(reports: ProjectionReport[]): ProjectedU
 }
 
 export function publicProjectionReport(report: ProjectionReport): ProjectionReport {
-  return { ...report, provenance: undefined, text: report.text.split("\n").map((line) => sanitizePublicNewsText(line)).join("\n"), originalUrl: verifiedOriginalTweetUrl(report.originalUrl),
-    interpretation: { ...report.interpretation, rosterRevision: undefined, identityContext: undefined, unresolved: [], relationships: undefined,
-      units: report.interpretation.units.map((unit) => ({ ...unit, evidence: [] })),
-      events: report.interpretation.events?.map((event) => ({ ...event, evidence: { ...event.evidence, offsetBasis: "unsanitized_source" as const, text: sanitizePublicNewsText(event.evidence.text) } })),
+  // Old immutable reports can still contain another game's lineup. Retain the source and its actual parser version.
+  const scope = lineReportTimeScope(report.text);
+  const reading = scope?.historical ? scope.select(report.interpretation) : report.interpretation;
+  const sourceOnly = scope?.historical && !reading.units.length && !reading.events?.length;
+  const originalUrl = verifiedOriginalTweetUrl(report.originalUrl);
+  const original = originalUrl?.match(/^https:\/\/x\.com\/([^/]+)\/status\/(\d+)$/);
+  const verifiedOriginalAuthor = original && report.provenance?.attributionStatus === "resolved" && report.provenance.originalTweetId === original[2]
+    ? original[1] : undefined;
+  return { ...report, gameId: sourceOnly ? null : report.gameId, provenance: undefined, originalUrl, verifiedOriginalAuthor,
+    text: report.text.split("\n").map((line) => sanitizePublicNewsText(line)).join("\n"),
+    interpretation: { ...reading, version: report.interpretation.version, context: sourceOnly ? "unknown" : reading.context,
+      rosterRevision: undefined, identityContext: undefined, unresolved: [], relationships: undefined,
+      units: reading.units.map((unit) => ({ ...unit, evidence: [] })),
+      events: reading.events?.map((event) => ({ ...event, evidence: { ...event.evidence, offsetBasis: "unsanitized_source" as const, text: sanitizePublicNewsText(event.evidence.text) } })),
     },
   };
 }

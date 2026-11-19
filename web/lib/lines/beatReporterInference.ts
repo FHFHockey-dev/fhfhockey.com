@@ -96,10 +96,10 @@ export function candidateConfidence(teamCounts: number[]): number {
   return Math.round(topShare * volume * 100) / 100;
 }
 
-function buildCandidate(handle: string, rows: BeatEvidenceRow[], displayName: string | null): BeatReporterCandidate {
+export function beatTeamCoverage(abbreviations: Iterable<string | null>) {
   const counts = new Map<string, number>();
-  for (const row of rows) {
-    const team = row.team_abbreviation?.toUpperCase();
+  for (const abbreviation of abbreviations) {
+    const team = abbreviation?.toUpperCase();
     if (team) counts.set(team, (counts.get(team) ?? 0) + 1);
   }
   const tagged = [...counts.values()].reduce((sum, count) => sum + count, 0);
@@ -107,6 +107,11 @@ function buildCandidate(handle: string, rows: BeatEvidenceRow[], displayName: st
     .map(([teamAbbrev, count]) => ({ teamAbbrev, count, share: Math.round((count / tagged) * 100) / 100 }))
     .sort((a, b) => b.count - a.count || a.teamAbbrev.localeCompare(b.teamAbbrev));
   const suggestedTeams = teams.filter((team, index) => index === 0 || (team.share >= SECOND_TEAM_SHARE && team.count >= SECOND_TEAM_MIN)).map((team) => team.teamAbbrev);
+  return { teams, suggestedTeams };
+}
+
+function buildCandidate(handle: string, rows: BeatEvidenceRow[], displayName: string | null): BeatReporterCandidate {
+  const { teams, suggestedTeams } = beatTeamCoverage(rows.map((row) => row.team_abbreviation));
   const top = suggestedTeams[0];
   // Samples: newest first, preferring the suggested team's posts.
   const samples = [...rows]

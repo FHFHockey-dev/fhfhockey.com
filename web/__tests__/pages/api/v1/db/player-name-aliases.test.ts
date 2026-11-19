@@ -21,10 +21,11 @@ function fixture() {
   const contextTables: Record<string, any[]> = {};
   const supabase = { from: (table: string) => {
     const query: any = {
-      select: (columns: string) => { reads.push({ table, columns }); return query; }, eq: () => query, in: () => query, order: () => query,
+      select: (columns: string) => { reads.push({ table, columns }); return query; }, eq: () => query, or: () => query, in: () => query, order: () => query,
       limit: async () => ({ data: contextTables[table] ?? [unresolved], error: null }),
       upsert: (value: unknown, options: unknown) => { writes.push({ table, value, options }); return query; },
       update: (value: unknown) => { writes.push({ table, value }); return query; },
+      maybeSingle: async () => ({ data: { id: unresolved.id }, error: null }),
       single: async () => ({ error: null, data: table === "players" ? selectedPlayer
         : table === "lineup_unresolved_player_names" ? unresolved : { id: "alias" } }),
       then: (resolve: (result: unknown) => void) => Promise.resolve({ error: null, data: table === "players" ? contextTables.players ?? [{ id: 8476389, fullName: "Vincent Trocheck", lastName: "Trocheck" }, { id: 8478047, fullName: "Michael Bunting", lastName: "Bunting" }] : null }).then(resolve),
@@ -58,6 +59,100 @@ describe("player alias and membership review", () => {
     mocks.verifyReviewToken.mockReturnValue(false); mocks.admin.mockClear(); mocks.directory.mockResolvedValue([]);
   });
   afterEach(() => vi.unstubAllEnvs());
+  function inferredFixture() {
+    const f = datedHughesFixture();
+    Object.assign(f.unresolved, { raw_name: "Hugzy", context_text: "Hugzy and Hugzy", team_id: null, status: "pending" });
+    Object.assign(f.unresolved.metadata, { occurrenceOnly: true, sourcePublishedAt: "2026-10-06T22:46:00Z",
+      reviewKind: "fuzzy", evidence: { start: 10, end: 15, text: "Hugzy" } });
+    f.contextTables.rosters[1].created_at = "2026-10-07T00:00:00Z";
+    return f;
+  }
+  it("shows a fuzzy candidate across teams only with dated membership and records a manual occurrence assignment", async () => {
+    const { req, res, writes, selectedPlayer } = inferredFixture();
+    req.method = "GET";
+    await handler(req, res);
+    const review = res.body.unresolvedNames[0].review;
+    expect(review.candidates.map((p: any) => [p.id, p.team_id])).toEqual([[8481559, 1]]);
+    expect(review.preferredPlayerId).toBeNull();
+    expect(writes).toEqual([]);
+    req.method = "POST";
+    Object.assign(selectedPlayer, { id: 8481559, fullName: "Jack Hughes" });
+    req.body = { unresolvedId: "pending", action: "assign_occurrence", playerId: selectedPlayer.id };
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(writes).toHaveLength(1);
+    expect(writes[0]).toMatchObject({ table: "lineup_unresolved_player_names", value: { status: "resolved", resolved_player_id: selectedPlayer.id,
+      resolved_alias_id: null, metadata: { resolutionScope: "occurrence", occurrenceOnly: true, evidence: { start: 10, end: 15 } } } });
+  });
+  it("keeps a date-only legacy prompt reviewable while requiring an instant for an inferred occurrence", async () => {
+    const f = datedHughesFixture();
+    f.contextTables.line_source_snapshots = [];
+    f.req.method = "GET";
+    await handler(f.req, f.res);
+    expect(f.res.body.unresolvedNames[0].review).toMatchObject({ sourcePublishedAt: "2026-10-06", sourceDate: "2026-10-06" });
+    expect(f.res.body.unresolvedNames[0].review.candidates).toHaveLength(2);
+    Object.assign(f.unresolved.metadata, { occurrenceOnly: true, sourcePublishedAt: "2026-10-06" });
+    await handler(f.req, f.res);
+    expect(f.res.body.unresolvedNames[0].review).toMatchObject({ sourcePublishedAt: null, candidates: [] });
+  });
+  it.each(["rosters", "tweet_player_memberships"])("checks both interval edges to a microsecond before assigning from %s", async table => {
+    const f = inferredFixture();
+    const start = "2026-10-06T22:46:00.123002Z", end = "2026-10-06T22:46:00.123004Z";
+    f.contextTables.rosters = [];
+    f.contextTables.tweet_player_memberships = [];
+    f.contextTables[table] = table === "rosters"
+      ? [{ playerId: 8481559, teamId: 1, seasonId: 20262027, created_at: start, ended_at: end, is_current: false }]
+      : [{ player_id: 8481559, team_id: 1, season_id: 20262027, verified_at: start, expires_at: end, membership_kind: "roster" }];
+    f.req.body = { unresolvedId: "pending", action: "assign_occurrence", playerId: 8481559 };
+    for (const [time, supported] of [["2026-10-06T22:46:00.123001Z", false], [end, false], ["2026-10-06T22:46:00.123003Z", true]] as const) {
+      f.unresolved.metadata.sourcePublishedAt = time;
+      f.res.statusCode = 200;
+      await handler(f.req, f.res);
+      expect(f.res.statusCode).toBe(supported ? 200 : 409);
+      expect(f.writes).toHaveLength(supported ? 1 : 0);
+    }
+    expect(f.writes[0].value.metadata).toMatchObject({ reviewedTeamId: 1, reviewedSourcePublishedAt: "2026-10-06T22:46:00.123003Z" });
+  });
+  it.each([false, true])("holds camp-only membership and cross-team camp overlap (has roster=%s)", async hasRoster => {
+    const f = inferredFixture();
+    if (!hasRoster) f.contextTables.rosters = [];
+    f.contextTables.tweet_player_memberships = [{ player_id: 8481559, team_id: 29, season_id: 20262027,
+      verified_at: "2026-10-06T22:45:00Z", expires_at: null, membership_kind: "camp" }];
+    f.req.body = { unresolvedId: "pending", action: "assign_occurrence", playerId: 8481559 };
+    await handler(f.req, f.res);
+    expect(f.res.statusCode).toBe(409);
+    expect(f.writes).toEqual([]);
+  });
+  it.each([
+    ["2026-07-01T03:59:59.999999Z", "2026-06-30", 20252026],
+    ["2026-07-01T04:00:00.000000Z", "2026-07-01", 20262027],
+  ])("validates the occurrence against the Eastern season at %s", async (published, date, season) => {
+    const f = inferredFixture();
+    f.unresolved.metadata.sourcePublishedAt = published;
+    f.contextTables.rosters = [20252026, 20262027].map((seasonId, i) => ({
+      playerId: 8481559, teamId: i + 1, seasonId, created_at: "2026-06-28T00:00:00Z", is_current: true, ended_at: null,
+    }));
+    f.req.method = "GET";
+    await handler(f.req, f.res);
+    expect(f.res.body.unresolvedNames[0].review).toMatchObject({ sourceDate: date, seasonId: season,
+      candidates: [{ id: 8481559, team_id: season === 20252026 ? 1 : 2 }] });
+    expect(f.writes).toEqual([]);
+  });
+  it.each(["resolve", "split", "future", "missing_clock", "conflict", "invalid_offsets", "unlisted", "wrong_team", "resolved"])("keeps %s inferred review pending without collateral writes", async kind => {
+    const { req, res, writes, unresolved, contextTables } = inferredFixture();
+    if (kind === "missing_clock") unresolved.metadata.sourcePublishedAt = null;
+    if (kind === "conflict") contextTables.rosters.push({ ...contextTables.rosters[0], teamId: 54 });
+    if (kind === "invalid_offsets") unresolved.metadata.evidence.end--;
+    if (kind === "wrong_team") unresolved.team_id = 29;
+    if (kind === "resolved") unresolved.status = "resolved";
+    req.body = { unresolvedId: "pending", action: ["resolve", "split"].includes(kind) ? kind : "assign_occurrence",
+      importNhlIdentity: kind === "resolve", playerId: kind === "future" ? 8482684 : kind === "unlisted" ? 1234 : 8481559,
+      parts: identities.map(player => ({ playerId: player.playerId, alias: player.fullName })) };
+    await handler(req, res);
+    expect(res.statusCode).toBe(409);
+    expect(writes).toEqual([]);
+    expect(mocks.importIdentity).not.toHaveBeenCalled();
+  });
   it("saves identity without inventing a transfer and keeps missing membership pending", async () => {
     const { req, res, writes } = fixture();
     await handler(req, res);

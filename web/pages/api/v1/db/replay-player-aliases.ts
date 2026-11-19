@@ -33,6 +33,7 @@ export default adminOnly(withCronJobAudit(async (req, res) => {
       const aliases = await fetchPlayerNameAliases({ supabase: req.supabase, teamIds: [job.payload.teamId] });
       let consumed = 0, currentCalls = 0;
       for (const row of rows ?? []) {
+        if (row.metadata?.occurrenceOnly === true) { consumed++; continue; }
         const published = tweetPublicationFromUrl(row.tweet_id ? `https://x.com/i/status/${row.tweet_id}` : null);
         if (!published) { consumed++; continue; }
         const date = easternReportDate(published);

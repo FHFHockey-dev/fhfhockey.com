@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { ParsedLinesCccSource } from "./linesCccIngestion";
-import { getPrimaryTextForSource, toLinesCccRow } from "./linesCccIngestion";
+import { getPrimaryTextForSource, isDisputedRetainedProjectionSubject, toLinesCccRow } from "./linesCccIngestion";
 import { tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
 import { easternReportDate, explicitPracticeSession, publicProjectionReport, selectProjectedUnitSets, verifiedOriginalTweetUrl, type ProjectionReport, type ProjectedUnitSet } from "./projectedLineups";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
@@ -8,6 +8,7 @@ import { classifyInjuryEvent } from "./tweetPlayerEvents";
 import { capturePlayerForecastSourceRows, type ForecastLineSourceRow } from "lib/player-forecasts/sourceObservations";
 import { persistTweetClaimSources } from "./tweetClaimRegistry";
 import { isRelayAccount } from "lib/lines/authority";
+import { compareInterpretationVersions, isDatedInterpretationVersion } from "./interpretationVersion";
 
 export function projectedSetsToForecastRows(sets: ProjectedUnitSet[]): ForecastLineSourceRow[] {
   const groups = new Map<string, ProjectedUnitSet[]>();
@@ -191,11 +192,15 @@ export function projectionReportFromSource(source: ParsedLinesCccSource): Projec
   const publishedAt = source.tweetPostedAt && Number.isFinite(Date.parse(source.tweetPostedAt)) ? source.tweetPostedAt : null;
   const date = publishedAt ? easternReportDate(publishedAt) : source.snapshotDate;
   const originalId = originalUrl?.match(/\/status\/(\d+)/)?.[1];
-  const fingerprint = createHash("sha256").update(JSON.stringify([originalId ?? null, source.team.id, date, text, interpretation])).digest("hex");
+  const gameId = interpretation.context === "game" && source.snapshotDate === date ? source.gameId ?? null : null;
+  const identity: unknown[] = [originalId ?? null, source.team.id, date, text, interpretation];
+  // Older workers must still generate their existing immutable keys on retry.
+  if (isDatedInterpretationVersion(interpretation.version) && compareInterpretationVersions(interpretation.version, "2026-11-18.1") >= 0) identity.push(gameId);
+  const fingerprint = createHash("sha256").update(JSON.stringify(identity)).digest("hex");
   return {
     key: `${fingerprint}:${source.team.id}:${interpretation.version}`,
     teamId: source.team.id, teamAbbreviation: source.team.abbreviation,
-    gameId: interpretation.context === "game" && source.snapshotDate === date ? source.gameId ?? null : null,
+    gameId,
     session: explicitPracticeSession(text), date, publishedAt, originalPublishedAt: usesOriginal || originalUrl ? publishedAt : null,
     receivedAt: source.observedAt ?? publishedAt ?? `${source.snapshotDate}T12:00:00Z`,
     originalUrl, text, interpretation, interpretedAt: new Date().toISOString(),
@@ -241,9 +246,11 @@ export async function persistTweetProjectionReports(supabase: any, sources: Pars
   // A historical reparse is never a live forecast update.
   const today = easternReportDate(new Date().toISOString());
   const gameIds = [...new Set(reports.filter((report) => report.date === today && report.gameId && report.interpretation.context === "game").map((report) => report.gameId!))];
+  if (!gameIds.length) return;
+  const stored = await fetchTweetProjectionReports(supabase, { date: today, internal: true });
+  const current = currentProjectionReadings(stored);
   for (const gameId of gameIds) {
-    const stored = await fetchTweetProjectionReports(supabase, { gameId, date: today, internal: true });
-    const rows = projectedSetsToForecastRows(selectProjectedUnitSets(stored));
+    const rows = projectedSetsToForecastRows(selectProjectedUnitSets(current.filter(report => report.gameId === gameId)));
     const eventRows = sources.filter((source) => source.gameId === gameId && source.nhlFilterStatus === "accepted").flatMap((source) => {
       const interpretation = source.metadata?.interpretation as TweetInterpretation | undefined;
       if (!interpretation?.events?.length || interpretation.context !== "game") return [];
@@ -253,6 +260,7 @@ export async function persistTweetProjectionReports(supabase: any, sources: Pars
         const requested = projectionReportFromSource(source)!;
         const report = stored.find((report) => report.key === requested.key);
         if (!report) throw new Error(`Retained projection report missing for ${requested.key}.`);
+        if (!current.includes(report)) return [];
         const base = toLinesCccRow({ source, rosterEntries: [] });
         return [{ ...base, capture_key: `${report.key}:${kind}`, source_group: "tweet_projection", source_key: "validated_events", source_account: validatedEventReporter(source, report),
           observed_at: report.receivedAt, tweet_posted_at: report.publishedAt,
@@ -273,22 +281,87 @@ export async function persistTweetProjectionReports(supabase: any, sources: Pars
   }
 }
 
+function originalPostIdentity(url: string | null): string | null {
+  return verifiedOriginalTweetUrl(url)?.match(/\/status\/(\d+)$/)?.[1] ?? null;
+}
+
+function publicDisplayIdentity(report: ProjectionReport): string {
+  return originalPostIdentity(report.originalUrl) ?? `team:${report.teamId}:text:${report.text}`;
+}
+
+type ProjectionVersion = { url: string | null; relay: string | null; version: string };
+
+// Input is already ordered by receipt of the interpretation, newest first.
+// Keep exact copies of the winning revision and binding for downstream lineage.
+function currentProjectionReadings(reports: ProjectionReport[], otherVersions: ProjectionVersion[] = [], showDisputedSources = false) {
+  const headers = reports.map(report => ({ url: report.originalUrl, relay: report.provenance?.relayTweetId ?? null, version: report.interpretation.version }));
+  const originals = new Map<string, string>();
+  for (const row of [...headers, ...otherVersions]) {
+    const id = originalPostIdentity(row.url);
+    if (id && row.relay) originals.set(row.relay, id);
+  }
+  const sourceId = (row: ProjectionVersion) => originalPostIdentity(row.url) ?? (row.relay ? originals.get(row.relay) ?? row.relay : null);
+  const newest = new Map<string, string>();
+  function remember(identity: string | null, version: string) {
+    if (!identity || !isDatedInterpretationVersion(version)) return;
+    const prior = newest.get(identity);
+    if (!prior || compareInterpretationVersions(version, prior) > 0) newest.set(identity, version);
+  }
+  const identities = reports.map((report, i) => sourceId(headers[i]!) ?? publicDisplayIdentity(report));
+  for (const [i, report] of reports.entries()) remember(identities[i]!, report.interpretation.version);
+  for (const row of [...headers, ...otherVersions]) {
+    remember(sourceId(row), row.version);
+    // A corrected attribution can change the original post as well as the game.
+    if (row.relay) remember(`carrier:${row.relay}`, row.version);
+  }
+  const bindings = new Map<string, number | null>();
+  const disputed = new Set<string>();
+  const winners = reports.filter((report, i) => {
+    const original = identities[i]!;
+    const version = newest.get(original);
+    const carrierVersion = headers[i]!.relay ? newest.get(`carrier:${headers[i]!.relay}`) : undefined;
+    if (version && version !== report.interpretation.version || carrierVersion && carrierVersion !== report.interpretation.version) return false;
+    const side = `${report.teamId}:${original}`;
+    if (bindings.has(side) && bindings.get(side) !== report.gameId) disputed.add(side);
+    bindings.set(side, report.gameId);
+    return true;
+  });
+  if (!disputed.size) return winners;
+  return winners.flatMap(report => {
+    const identity = sourceId({ url: report.originalUrl, relay: report.provenance?.relayTweetId ?? null, version: report.interpretation.version }) ?? publicDisplayIdentity(report);
+    if (!disputed.has(`${report.teamId}:${identity}`)) return [report];
+    if (!showDisputedSources) return [];
+    return [{ ...report, gameId: null, interpretation: { ...report.interpretation, context: "unknown" as const,
+      certainty: "reported" as const, units: [], excludedUnits: [], events: [], changes: [], relationships: [], unresolved: [] } }];
+  });
+}
+
 export async function fetchTweetProjectionReports(supabase: any, args: { teamId?: number; gameId?: number; date: string; internal?: boolean }): Promise<ProjectionReport[]> {
   if (!tweetPipelineFlags().publishing) return [];
   const rows = await fetchAllSupabasePages<{ payload: ProjectionReport }>(({ from, to }) => {
     let query = supabase.from("tweet_projection_reports").select("payload").eq("report_date", args.date);
+    // A newer interpretation can withdraw a game or move the subject to another team.
+    // The exact-key archive used by the publisher keeps its original SQL scope.
     if (args.teamId) query = query.eq("team_id", args.teamId);
-    if (args.gameId) query = query.eq("game_id", args.gameId);
+    if (args.internal && args.gameId) query = query.eq("game_id", args.gameId);
     return query.order("report_key", { ascending: true }).range(from, to);
-  }, { limit: args.internal ? null : 1000 });
+  });
   const reports = rows.map(({ payload }) => payload).sort((a, b) => Date.parse(b.interpretedAt ?? b.receivedAt) - Date.parse(a.interpretedAt ?? a.receivedAt)
     || a.key.localeCompare(b.key));
   // Publication must read the requested exact key and its own retained lineage.
   if (args.internal) return reports;
+  // Look up version/lineage only for other teams. Their full interpretations stay in storage.
+  const otherVersions = args.teamId && reports.some(report => report.originalUrl || report.provenance?.relayTweetId)
+    ? await fetchAllSupabasePages<ProjectionVersion>(({ from, to }) =>
+        supabase.from("tweet_projection_reports").select("url:payload->>originalUrl,relay:payload->provenance->>relayTweetId,version:interpretation_version")
+          .eq("report_date", args.date).neq("team_id", args.teamId).order("report_key").range(from, to))
+    : [];
   const unique = new Map<string, ProjectionReport>();
-  for (const report of reports) {
-    const identity = `${report.teamId}:${report.originalUrl ?? report.text}`;
-    if (!unique.has(identity)) unique.set(identity, report);
+  for (const report of currentProjectionReadings(reports, otherVersions, true)) {
+    if (args.gameId && args.gameId !== report.gameId) continue;
+    if (isDisputedRetainedProjectionSubject(report)) continue;
+    const side = `${report.teamId}:${publicDisplayIdentity(report)}`;
+    if (!unique.has(side)) unique.set(side, report);
   }
-  return [...unique.values()].map(publicProjectionReport);
+  return [...unique.values()].slice(0, 1000).map(publicProjectionReport);
 }

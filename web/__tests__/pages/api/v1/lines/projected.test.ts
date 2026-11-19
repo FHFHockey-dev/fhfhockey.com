@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ flags: { observations: false, entryServing: false, carryForward: false }, read: vi.fn(), reports: vi.fn(), from: vi.fn() }));
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+const mocks = vi.hoisted(() => ({ flags: { observations: false, entryServing: false, carryForward: false }, read: vi.fn(), navigation: vi.fn(), reports: vi.fn(), from: vi.fn() }));
 vi.mock("lib/lines/types", async (load) => ({ ...await load<object>(), lineSnapshotFlags: () => mocks.flags }));
-vi.mock("lib/lines/service", () => ({ readGameLines: mocks.read }));
+vi.mock("lib/lines/service", () => ({ readGameLines: mocks.read, readReportGames: mocks.navigation }));
 vi.mock("lib/supabase/server", () => ({ default: { from: mocks.from } }));
 vi.mock("lib/sources/tweetProjectionStorage", () => ({ fetchTweetProjectionReports: mocks.reports }));
 import handler from "pages/api/v1/lines/projected";
-import { fixtureResponse } from "lib/lines/testFixtures";
+import { fixtureResponse, fixtureUnit } from "lib/lines/testFixtures";
 
 const request = async (query: Record<string, unknown> = {}, method = "GET") => {
   const res = { code: 200, body: undefined as any, headers: {} as Record<string, string>, status(code: number) { this.code = code; return this; }, json(body: unknown) { this.body = body; return this; }, setHeader(name: string, value: string) { this.headers[name] = value; }, end() {} };
@@ -79,6 +81,60 @@ describe("legacy team report recency", () => {
     expect(result.body.reports).toEqual([current]);
     expect(result.body.reportScope).toEqual({ requestedDate: "2026-11-12", reportDate: "2026-11-12", fallback: false });
     expect(mocks.from).not.toHaveBeenCalled();
+  });
+  it("preserves a complete unbound report in the source rail without selecting its units for the matchup", async () => {
+    const date = "2026-11-12";
+    const game = { id: 2026020296, date, awayAbbreviation: "VGK", homeAbbreviation: "BUF" };
+    mocks.navigation.mockResolvedValue({ selectedGameId: game.id, games: [game] });
+    const report = { teamId: 54, key: "unbound", date, gameId: null, publishedAt: date + "T20:00:00Z",
+      interpretation: { units: [fixtureUnit(["A","B","C","D","E"], "pp", 1), fixtureUnit(["F","G","H","I","J"], "pp", 2)] } };
+    mocks.reports.mockResolvedValue([report]);
+    const result = await request({ teamId: "54", view: "game" });
+    expect(result.body).toMatchObject({ reports: [report], sets: [], navigation: { selectedGameId: game.id } });
+    // Existing publication-date clients may still inspect the report's unbound practice units.
+    expect((await request({ teamId: "54" })).body.sets).toHaveLength(1);
+    expect(mocks.navigation).toHaveBeenCalledTimes(1);
+  });
+  const captured = { ...JSON.parse(readFileSync(resolve(process.cwd(), "../tasks/artifacts/same-day-news-lines-2026-11-18/BUF-VGK-REPORT-ROWS.json"), "utf8"))[1].payload,
+    verifiedOriginalAuthor: "ByMHarrington" };
+  const matchup = { id: captured.gameId, date: captured.date, awayTeamId: 54, homeTeamId: 7, awayAbbreviation: "VGK", homeAbbreviation: "BUF" };
+  it.each([
+    ["opposite side", (r: any) => { r.interpretation.events[0].teamId = 7; }],
+    ["unbound", (r: any) => { r.gameId = null; }],
+    ["different game date", (r: any) => { r.date = "2026-11-09"; }],
+    ["prior game", (r: any) => { r.gameId--; }],
+    ["backup", (r: any) => { r.interpretation.events[0].goalieRole = "backup"; }],
+    ["listed pair", (r: any) => { r.interpretation.units = [{ ...fixtureUnit(["Ellis", "Hill"], "goalie", 1), listing: "pipe_pair" }]; }],
+    ["observational", (r: any) => { r.interpretation.events[0].observation = "first_off"; }],
+    ["practice context", (r: any) => { r.interpretation.context = "practice"; }],
+    ["historical wording", (r: any) => { r.text = "Yesterday: " + r.text; }],
+    ["another named weekday", (r: any) => { r.text = "Adin Hill starts Thursday vs Buffalo Sabres"; r.interpretation.events[0].evidence.text = r.text; }],
+    ["conflicting review", (r: any) => { r.interpretation.events[0].reviewReason = "conflicting_claims"; }],
+    ["two starters on one side", (r: any) => { r.interpretation.events.push({ ...r.interpretation.events[0], playerId: 1, playerName: "Other Goalie" }); }],
+    ["mismatched original clock", (r: any) => { r.originalPublishedAt = r.receivedAt; }],
+    ["relay byline", (r: any) => { r.originalUrl = r.originalUrl.replace("ByMHarrington", "GameDayGoalies"); }],
+    ["pending original", (r: any) => { delete r.verifiedOriginalAuthor; }],
+    ["event for another day", (r: any) => { r.interpretation.events[0].effectiveDate = "2026-11-09"; }],
+    ["unverified evidence", (r: any) => { r.interpretation.events[0].evidence.text = "Hill was named the starter."; }],
+  ] as const)("preserves source wording without a starter label for %s", async (_reason, edit) => {
+    const report = structuredClone(captured);
+    edit(report);
+    mocks.navigation.mockResolvedValue({ selectedGameId: matchup.id, games: [matchup] });
+    mocks.reports.mockResolvedValue([report]);
+    const result = await request({ teamId: "54", gameId: String(matchup.id), view: "game" });
+    expect(result.body.reports[0].text).toBe(report.text);
+    expect(result.body.reports[0].reportedStarter).toBeUndefined();
+  });
+  it("attributes a written projection to its reporter and derives the side from the event independently of name order", async () => {
+    const report = structuredClone(captured);
+    report.text = "Adin Hill expected to start vs Colten Ellis tonight. #VGK #Sabres";
+    Object.assign(report.interpretation.events[0], { state: "projected", modality: "tentative",
+      evidence: { start: 0, end: 27, text: "Adin Hill expected to start" } });
+    mocks.navigation.mockResolvedValue({ selectedGameId: matchup.id, games: [matchup] });
+    mocks.reports.mockResolvedValue([report]);
+    const result = await request({ teamId: "54", gameId: String(matchup.id), view: "game" });
+    expect(result.body.reports[0].reportedStarter).toEqual({ status: "projected", author: "ByMHarrington",
+      playerId: 8478499, playerName: "Adin Hill", teamAbbreviation: "VGK" });
   });
   it("does not broaden an exact game's empty report result", async () => {
     query({ date: "2026-11-11" }); mocks.reports.mockResolvedValue([]);

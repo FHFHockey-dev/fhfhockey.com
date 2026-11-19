@@ -67,6 +67,15 @@ describe("alias replay cron", () => {
     expect(jobWrite(writes)).toMatchObject({ status: "complete", attempts: 0, payload: { afterId: 102 } });
   });
 
+  it("skips an occurrence-only suggestion during an unrelated reusable-alias replay", async () => {
+    const { req, res, writes, fetchMock, rows } = fixture();
+    Object.assign(rows[1].metadata, { occurrenceOnly: true });
+    await handler(req, res);
+    expect(resolvedIds(writes)).toEqual([101]);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(jobWrite(writes)).toMatchObject({ status: "complete", payload: { afterId: 102 } });
+  });
+
   it.each([
     ["an active pilot", { IFTTT_RECEIPT_VARIANTS_ENABLED: "true", IFTTT_INTAKE_POLICY: "{}", TWEET_CLAIMS_MODE: "shadow" }],
     ["a stopped pilot", { IFTTT_INTAKE_STOP: "true" }],

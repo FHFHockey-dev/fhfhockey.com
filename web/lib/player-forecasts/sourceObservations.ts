@@ -65,6 +65,26 @@ function isDuplicate(error: { code?: string } | null): boolean {
   return error?.code === "23505";
 }
 
+// PostgREST returns plain errors. The processor persists Error.message, so keep the join keys there.
+function throwCaptureWriteError(error: { code?: string; message?: string }, row: ForecastLineSourceRow,
+  stage: "capture_starter_board_goalies" | "insert_goalie_observation" | "capture_starter_board_lineup" | "insert_lineup_snapshot",
+  goalies?: Array<{ player_id: number | null; raw_player_name: string | null }>): never {
+  const constraint = goalies ? "player_forecast_goalie_start_observatio_source_capture_key_fkey"
+    : "player_forecast_lineup_snapshots_source_capture_key_fkey";
+  if (error.code !== "23503" || !error.message?.includes(`foreign key constraint "${constraint}"`)) throw error;
+
+  const baseKey = { source_capture_key: row.capture_key, team_id: row.team_id };
+  const keys = goalies ? goalies.map(goalie => ({
+    ...baseKey, player_id: goalie.player_id ?? 0, raw_player_name: goalie.raw_player_name ?? "",
+  })) : [baseKey];
+  const receipt = { stage, constraint, parent: { table: "line_source_snapshots", capture_key: row.capture_key },
+    childTable: goalies ? "player_forecast_goalie_start_observations" : "player_forecast_lineup_snapshots",
+    gameId: row.game_id, teamId: row.team_id,
+    ...(keys.length === 1 ? { childKey: keys[0] } : { attemptedChildKeys: keys }),
+  };
+  throw Object.assign(new Error(`Forecast source capture FK 23503 ${JSON.stringify(receipt)}`), { code: error.code, constraint });
+}
+
 function validDate(value: string | null | undefined): string {
   const parsed = value ? Date.parse(value) : Number.NaN;
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : new Date().toISOString();
@@ -406,7 +426,7 @@ export async function capturePlayerForecastSourceRows(args: {
       }));
       if ((starterBoardFlags().capture || interpretation) && observations.length) {
         const { data: captured, error } = await args.supabase.rpc("capture_starter_board_goalies", { p_observations: observations });
-        if (error) throw error;
+        if (error) throwCaptureWriteError(error, row, "capture_starter_board_goalies", observations);
         summary.goalieObservations += captured.insertedObservations;
         summary.conflicts += captured.insertedConflicts;
       } else for (const observation of observations) {
@@ -417,7 +437,7 @@ export async function capturePlayerForecastSourceRows(args: {
           .single();
         if (error) {
           if (isDuplicate(error)) continue;
-          throw error;
+          throwCaptureWriteError(error, row, "insert_goalie_observation", [observation]);
         }
         summary.goalieObservations += 1;
         if (
@@ -458,7 +478,7 @@ export async function capturePlayerForecastSourceRows(args: {
         const { data: captured, error: captureError } = await args.supabase.rpc("capture_starter_board_lineup", {
           p_snapshot: snapshot, p_assignments: assignments,
         });
-        if (captureError) throw captureError;
+        if (captureError) throwCaptureWriteError(captureError, row, "capture_starter_board_lineup");
         summary.lineupSnapshots += captured.insertedSnapshot ? 1 : 0;
         summary.lineupAssignments += captured.insertedAssignments;
       } else {
@@ -468,7 +488,7 @@ export async function capturePlayerForecastSourceRows(args: {
           .insert(snapshot)
           .select("id")
           .single();
-        if (error && !isDuplicate(error)) throw error;
+        if (error && !isDuplicate(error)) throwCaptureWriteError(error, row, "insert_lineup_snapshot");
         if (data?.id) {
           snapshotId = data.id;
           summary.lineupSnapshots += 1;

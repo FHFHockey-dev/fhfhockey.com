@@ -68,8 +68,8 @@ describe("NewsCard", () => {
 
   it("keeps observation and publication independent of creation time", () => {
     render(<NewsCard item={makeItem({ published_at: null, observed_at: "2026-07-14T18:19:20.000Z", source_label: null, source_account: "SOURCE_ACCOUNT", source_url: "not a URL", metadata: null })} />);
-    // Fans see one time (when the post was seen); the pipeline pair is dev-only.
-    expect(screen.getByText("Jul 14, 2:19 PM")).toBeTruthy();
+    // With no verified source clock, label the available observation.
+    expect(screen.getByText("Observed Jul 14, 2:19 PM")).toBeTruthy();
     expect(screen.getByText("Published Unavailable · Observed Jul 14, 2:19 PM")).toBeTruthy();
     expect(screen.getByText("Source link pending")).toBeTruthy();
     expect(screen.queryByRole("link", { name: /View original post/ })).toBeNull();
@@ -77,7 +77,7 @@ describe("NewsCard", () => {
 
   it("does not display malformed timestamps as dates", () => {
     render(<NewsCard item={makeItem({ published_at: "broken", observed_at: "broken" })} />);
-    expect(screen.getByText("Unavailable")).toBeTruthy();
+    expect(screen.getByText("Observed Unavailable")).toBeTruthy();
     expect(screen.getByText("Published Unavailable · Observed Unavailable")).toBeTruthy();
   });
 
@@ -114,7 +114,7 @@ describe("NewsCard", () => {
     );
     expect(sourceLink.getAttribute("target")).toBe("_blank");
     expect(screen.queryByText("Source")).toBeNull();
-    expect(screen.getByText("Jul 14, 2:19 PM")).toBeTruthy();
+    expect(screen.getByText("Published Jul 14, 2:19 PM")).toBeTruthy();
     expect(screen.getByText(/^Published 7\/14\/2026, 2:19:20 PM · Observed/)).toBeTruthy();
     // No "Source report" chip; the post is the headline.
     expect(screen.queryByText(/source report/i)).toBeNull();
@@ -469,7 +469,7 @@ describe("NewsCard", () => {
     expect(screen.queryByText("PP1")).toBeNull();
     expect(screen.getByRole("group", { name: "PP1: E" }).textContent).toBe("E");
     expect(screen.queryByText("Forwards")).toBeNull();
-    expect(screen.getByText("Jul 14, 2:19 PM")).toBeTruthy();
+    expect(screen.getByText("Observed Jul 14, 2:19 PM")).toBeTruthy();
     expect(screen.getByRole("link", { name: /original post/ })).toBeTruthy();
   });
 
@@ -499,8 +499,8 @@ describe("NewsCard", () => {
     try {
       const { default: ProductionNewsCard } = await import("./NewsCard");
       render(<ProductionNewsCard item={makeItem({ observed_at: "2026-07-14T18:19:20.000Z" })} />);
-      expect(screen.getByText("Jul 14, 2:19 PM")).toBeTruthy();
-      expect(screen.queryByText(/Published|Observed/)).toBeNull();
+      expect(screen.getByText("Observed Jul 14, 2:19 PM")).toBeTruthy();
+      expect(screen.queryByText(/Published.*· Observed/)).toBeNull();
     } finally {
       vi.unstubAllEnvs();
       vi.resetModules();
@@ -524,4 +524,49 @@ describe("NewsCard", () => {
     expect(formatNewsFanTime("2026-11-14T23:44:00.000Z", now)).toBe("Nov 14, 6:44 PM");
     expect(formatNewsFanTime("2026-11-15T22:42:00.000Z", null)).toBe("Nov 15, 5:42 PM");
   });
+});
+
+it("renders a roster-confirmed initials match from shared intake after the player has changed teams", async () => {
+  vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+  try {
+    const { buildLinesCccSourceFromIftttEvent, toLinesCccRow } = await import("lib/sources/linesCccIngestion");
+    const { buildTeamDirectory } = await import("lib/sources/lineupSourceIngestion");
+    const { buildTweetNewsAutomationCandidate } = await import("lib/sources/tweetNewsAutomation");
+    const at = "2026-11-17T20:00:00.123001Z";
+    const text = "Detroit Red Wings: MBN will not play tonight due to injury.";
+    const player = { playerId: 101, fullName: "Michael Brandsegg-Nygård", lastName: "Brandsegg-Nygård", position: "RW", teamId: 17 };
+    const rosterByTeam = new Map([[17, [player]]]);
+    const source = buildLinesCccSourceFromIftttEvent({ teams: buildTeamDirectory([{ id: 17, abbreviation: "DET", name: "Detroit Red Wings", logo: "" }]),
+      snapshotDate: "2026-11-17", rosterByTeam, inferenceRosterByTeam: rosterByTeam, inferencePublishedAt: at,
+      event: { id: "example", source: "ifttt", source_account: "Reporter", username: "Reporter", text, tweet_id: "123",
+        tweet_created_at: at, received_at: at, raw_payload: {}, created_at_label: null, link_to_tweet: "https://x.com/Reporter/status/123" } });
+    const row = toLinesCccRow({ source, rosterEntries: [player] });
+    expect(row.tweet_posted_at).toBe(at);
+    const { syncTweetPatternReviewItems } = await import("pages/api/v1/db/tweet-pattern-review");
+    const { lineTestDatabase } = await import("lib/lines/testDatabase");
+    // The local PostgREST fixture accepts the two selected metadata projections as input columns.
+    const db = lineTestDatabase({ lines_ccc: [{ ...row, interpretation: row.metadata.interpretation,
+      intake_roster_evidence: row.metadata.intakeRosterEvidence }] });
+    await syncTweetPatternReviewItems({ supabase: db, perSourceLimit: 1 });
+    const review = db.tables.tweet_pattern_review_items?.[0];
+    expect(review?.metadata.intakeRosterEvidence.publishedAt).toBe(at);
+    const candidate = buildTweetNewsAutomationCandidate({ row: review, players: [
+      { id: 101, fullName: player.fullName, lastName: player.lastName, position: "RW", team_id: 3 },
+      { id: 102, fullName: "Other Player", position: "RW", team_id: 17, aliases: ["MBN"] },
+    ] });
+    expect(candidate?.playerAssignments).toEqual([{ playerId: 101, playerName: player.fullName, teamId: 17 }]);
+    const players = candidate!.playerAssignments.map(p => ({ player_id: p.playerId, player_name: p.playerName, team_id: p.teamId }));
+    const item = sanitizePublicNewsFeedItem(makeItem({ headline: candidate!.headline, blurb: candidate!.blurb,
+      category: candidate!.category, subcategory: candidate!.subcategory, team_abbreviation: "DET", metadata: candidate!.metadata, players,
+      published_at: at, source_url: row.source_url, source_account: "Reporter" }));
+    const view = render(<NewsCard item={item} />);
+    expect(view.container.textContent).toContain(text);
+    expect(view.container.textContent).toMatch(/Michael Brandsegg-Nygård ·/);
+    expect(view.container.textContent).not.toContain("Other Player");
+    const noTeam = { ...item, players: players.map(p => ({ ...p, team_id: 3 })) } as typeof item;
+    view.rerender(<NewsCard item={noTeam} />);
+    expect(view.container.textContent).not.toMatch(/Michael Brandsegg-Nygård ·/);
+  } finally {
+    vi.unstubAllEnvs();
+  }
 });

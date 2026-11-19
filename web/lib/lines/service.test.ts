@@ -1,10 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createElement } from "react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import type { NextApiRequest, NextApiResponse } from "next";
+import ProjectedLineups from "components/LineCombinations/ProjectedLineups";
+import projected from "pages/api/v1/lines/projected";
+import type { GameLinesResponse, LineClaim } from "./types";
+const routeDb = vi.hoisted(() => ({ from: vi.fn() }));
+vi.mock("lib/supabase/server", () => ({ default: routeDb }));
 vi.mock("./gameState", async (load) => ({ ...await load<object>(), observeLineGame: async (game: unknown) => game }));
-import { readGameLines } from "./service";
+import { readGameLines, readReportGames } from "./service";
 import { reconcileEntry } from "./reconcile";
 import { RELAY_ACCOUNTS } from "./authority";
 import { lineTestDatabase } from "./testDatabase";
-import { fixtureClaim, fixtureGame, fixtureNext, fixtureNow, fixturePP, fixtureResponse } from "./testFixtures";
+import { fixtureClaim, fixtureGame, fixtureNext, fixtureNow, fixturePP, fixtureResponse, fixtureUnit } from "./testFixtures";
 
 export function serviceDatabase() {
   const response = fixtureResponse();
@@ -18,8 +26,91 @@ export function serviceDatabase() {
   });
 }
 beforeEach(() => { vi.stubEnv("LINES_ENTRY_SERVING_ENABLED", "true"); vi.stubEnv("LINES_OBSERVATIONS_ENABLED", "true"); vi.stubEnv("LINES_PP_CARRY_FORWARD_ENABLED", "true"); });
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => { cleanup(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 describe("shared game/team response", () => {
+  it("uses stored live or final state for the reports picker after Eastern midnight", async () => {
+    const db = serviceDatabase(), now = "2026-10-02T04:10:00Z";
+    const state = db.tables.line_game_state_observations![0]!.payload;
+    state.observedAt = now;
+    expect((await readReportGames(db, { teamId: 14, now }))?.selectedGameId).toBe(fixtureGame.id);
+    state.phase = "final";
+    expect((await readReportGames(db, { teamId: 14, now }))?.selectedGameId).toBe(fixtureNext.id);
+    expect(await readReportGames(db, { teamId: 99, gameId: fixtureGame.id, now })).toBeNull();
+    expect(db.writes).toEqual([]);
+  });
+  it("serves corrected entry, timestamped live changes and next-game carry through the team page, then recovers its frozen entry", async () => {
+    const db = serviceDatabase();
+    const row = (claim: LineClaim) => ({ team_id: claim.teamId, claim_id: claim.id, interpreted_at: claim.time.interpretedAt, payload: claim });
+    const original = "https://x.com/fixtureauthor/status/123";
+    const oldF1 = fixtureClaim("old-F1", { originalIdentity: original, version: "2026-11-06.1:selector" });
+    const oldF2 = { ...oldF1, id: "old-F2", unit: fixtureUnit(["A", "B", "C"], "es_forward", 2) };
+    const freshF1 = { ...oldF1, id: "new-F1", version: "2026-11-16.2:selector",
+      time: { ...oldF1.time, interpretedAt: "2026-10-01T22:36:30Z" } };
+    db.tables.line_claim_revisions = [oldF1, oldF2, freshF1].map(row);
+    db.tables.line_entry_revisions = [];
+    routeDb.from.mockImplementation(db.from);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(fixtureNow));
+    const responses: GameLinesResponse[] = [];
+    vi.stubGlobal("fetch", async (url: string) => {
+      const request = new URL(url, "http://localhost");
+      expect(request.pathname).toBe("/api/v1/lines/projected");
+      await projected({ method: "GET", query: Object.fromEntries(request.searchParams) } as NextApiRequest,
+        { setHeader() {}, json(value: GameLinesResponse) { responses.push(value); } } as unknown as NextApiResponse);
+      return { ok: true, json: () => responses.at(-1) };
+    });
+    const openTeam = () => render(createElement(ProjectedLineups, { teamId: 14 }));
+    const page = openTeam();
+    const entry = await screen.findByRole("region", { name: "TBL · Lineup entering the game" });
+    expect(within(entry).getByRole("link", { name: "@fixtureauthor" }).getAttribute("href")).toBe(original);
+    expect(within(entry).queryByText("A — B — C")).toBeNull();
+    const team = responses.at(-1)!.teams[0]!;
+    expect(team.history.map(claim => claim.id).sort()).toEqual(["new-F1", "old-F1", "old-F2"]);
+    expect(team.entry?.units.map(unit => unit.claims[0]!.id)).toEqual(["new-F1"]);
+    expect(team.entry?.cutoff).toBe(fixtureGame.actualStart);
+    // A processor can persist this same freeze. Subsequent GETs can only read it.
+    db.tables.line_entry_revisions.push({ game_id: fixtureGame.id, team_id: 14, revision: 1,
+      payload: reconcileEntry({ game: fixtureGame, teamId: 14, claims: [oldF1, oldF2, freshF1], previous: null, now: fixtureNow }) });
+    const ppSource = "https://x.com/fixtureauthor/status/124";
+    const pp = fixturePP(1, { sourceUrl: ppSource, originalIdentity: ppSource });
+    db.tables.line_claim_revisions.push(row(pp));
+    page.unmount();
+    const live = openTeam();
+    const updates = await screen.findByRole("tabpanel", { name: /In-game updates/ });
+    expect(within(updates).getByRole("link", { name: "@fixtureauthor" }).getAttribute("href")).toBe(ppSource);
+    expect(updates.querySelector("time")?.dateTime).toBe(pp.time.originalPublishedAt);
+    expect(responses.at(-1)!.teams[0]!.entry?.id).toBe(team.entry?.id);
+    live.unmount();
+    db.tables.line_game_state_observations![0]!.payload.phase = "final";
+    openTeam();
+    expect(await screen.findByText("Carried forward from Oct 1 · TBL at NYR")).toBeTruthy();
+    expect(responses.at(-1)!.game?.id).toBe(fixtureNext.id);
+    const carried = responses.at(-1)!.teams[0]!.ppDefaults[0]!.selection!;
+    expect(carried.originGameId).toBe(fixtureGame.id);
+    expect(carried.claims[0]).toMatchObject({ id: pp.id, sourceUrl: ppSource, time: { originalPublishedAt: pp.time.originalPublishedAt } });
+    fireEvent.change(screen.getByLabelText("Game"), { target: { value: String(fixtureGame.id) } });
+    await screen.findByRole("region", { name: "TBL · Lineup entering the game" });
+    expect(responses.at(-1)!.teams[0]!.entry?.id).toBe(team.entry?.id);
+    expect(db.writes).toEqual([]);
+  });
+  it("keeps a relay clock out of the raw feed's original publication field", async () => {
+    const db = serviceDatabase();
+    const claim: LineClaim = db.tables.line_claim_revisions![0]!.payload;
+    claim.time.originalPublishedAt = null;
+    const feed = (await readGameLines(db, { teamId: 14, now: fixtureNow })).teams[0]!.feed;
+    expect(feed.find(item => item.claimIds.includes(claim.id))).toMatchObject({ publishedAt: null, ingestedAt: claim.time.ingestedAt });
+  });
+  it("resolves current readings before game filtering and keeps a withdrawn game binding in history", async () => {
+    const db = serviceDatabase();
+    const old = fixtureClaim("old-game", { kind: "iga", phase: "in_game", version: "2026-11-06.1:selector" });
+    const newer = { ...old, id: "no-game", version: "2026-11-16.2:selector", gameId: null,
+      binding: { ...old.binding, status: "unresolved" as const, evidence: ["game_not_established"] } };
+    for (const claim of [old, newer]) db.tables.line_claim_revisions!.push({ team_id: 14, claim_id: claim.id, interpreted_at: claim.time.interpretedAt, payload: claim });
+    const team = (await readGameLines(db, { teamId: 14, gameId: fixtureGame.id, now: fixtureNow })).teams[0]!;
+    expect(team.observations.map(claim => claim.id)).not.toContain(old.id);
+    expect(team.history.map(claim => claim.id)).toEqual(expect.arrayContaining([old.id, newer.id]));
+    expect(team.feed.find(item => item.claimIds.includes(old.id))?.binding).toMatchObject({ gameId: null, status: "unresolved" });
+  });
   it.each(["GameDayLines", "GameDayGoalies", "GameDayNewsNHL", "CcCMiddleton", "DFOFantasy", "NHL_Rosters"])("removes relay %s from public author and fallback links, retaining internal lineage", async handle => {
     const db = serviceDatabase();
     const raw = db.tables.line_claim_revisions![0]!.payload;
@@ -49,6 +140,12 @@ describe("shared game/team response", () => {
     expect(response.game?.id).toBe(fixtureNext.id); expect(response.teams[0]!.fallback?.gameId).toBe(fixtureGame.id);
     expect(response.teams[0]!.ppDefaults.every((decision) => decision.selection?.designation === "carried")).toBe(true);
     expect(db.writes).toHaveLength(0);
+  });
+  it("keeps the team game selector usable after picking a historical game with PP carry disabled", async () => {
+    vi.stubEnv("LINES_PP_CARRY_FORWARD_ENABLED", "false");
+    const response = await readGameLines(serviceDatabase(), { teamId: 14, gameId: fixtureGame.id, now: fixtureNow });
+    expect(response.game?.id).toBe(fixtureGame.id);
+    expect(response.games.map(game => game.id)).toEqual(expect.arrayContaining([fixtureGame.id, fixtureNext.id]));
   });
   it("freezes on LIVE at read time when no tweet arrived after puck drop, without writing", async () => {
     const db = serviceDatabase();

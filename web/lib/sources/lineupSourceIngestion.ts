@@ -1,5 +1,6 @@
+import { resolveTweetRosterIdentity } from "./tweetNameLexicon";
 import * as cheerio from "cheerio";
-import { resolvePlayerIdentity, type PlayerSlotRole } from "./playerIdentity";
+import type { PlayerSlotRole } from "./playerIdentity";
 import { identityMentionPresent, playerPositionRole, surnameMentionPresent } from "./tweetInterpretation";
 
 import type { Team } from "lib/NHL/types";
@@ -734,7 +735,7 @@ export function resolveTweetNameToRosterEntry(
   rosterEntries: RosterNameEntry[],
   role?: PlayerSlotRole | null
 ): RosterNameEntry | null {
-  const result = resolvePlayerIdentity(rawName, rosterEntries.map((entry) => ({
+  const result = resolveTweetRosterIdentity(rawName, rosterEntries.map((entry) => ({
     ...entry,
     aliases: [...(entry.aliases ?? []), ...(GDT_ALIAS_OVERRIDES[normalizeTeamLabel(entry.fullName)] ?? [])],
   })), undefined, role);

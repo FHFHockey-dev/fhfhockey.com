@@ -18,6 +18,25 @@ describe("event-date player identities", () => {
     expect(resolveEventUnit(unit, { ...options, players: [{ ...players[0]!, teamId: 99 }] }).reasons).toHaveLength(0);
     expect(resolveEventUnit(unit, { ...options, effectiveAt: "2026-10-02T01:00:00Z" }).reasons).toContain("identity:Kucherov:conflicting_membership");
   });
+  it("accepts generated initials only at their recorded source span with valid membership at the event", () => {
+    const unit = fixtureUnit(["TVR"]);
+    const dated = { ...options, players: [{ playerId: 1, fullName: "Trevor van Riemsdyk", lastName: "van Riemsdyk" }],
+      uniqueInitials: [{ ...unit.evidence[0]!, playerId: 1, teamId: 14 }] };
+    const resolved = resolveEventUnit(unit, dated);
+    expect(resolved.reasons).toEqual([]);
+    expect(resolved.evidence).toEqual(["tweet_initials:14:1:0-3", "historical_roster"]);
+    expect(resolved.unit.players[0]?.name).toBe("Trevor van Riemsdyk");
+    expect(resolveEventUnit(unit, { ...dated, uniqueInitials: [] }).reasons).toHaveLength(1);
+    expect(resolveEventUnit(unit, { ...dated, uniqueInitials: [{ ...dated.uniqueInitials[0]!, start: 5 }] }).reasons).toHaveLength(1);
+    expect(resolveEventUnit(unit, { ...dated, effectiveAt: membership.until }).reasons).toHaveLength(1);
+    const corrected = { ...dated, sourcePublishedAt: options.effectiveAt,
+      players: [...dated.players, { playerId: 2, fullName: "Other Player", lastName: "Player" }],
+      memberships: [membership, { ...membership, playerId: 2 }],
+      aliases: [{ raw: "TVR", playerId: 2, approvedAt: membership.from, revisedAt: "2026-10-01T22:34:00.000001Z", evidenceId: "later_alias" }] };
+    expect(resolveEventUnit(unit, corrected).unit.players[0]?.name).toBe("Trevor van Riemsdyk");
+    expect(resolveEventUnit(unit, { ...corrected, sourcePublishedAt: corrected.aliases[0]!.revisedAt }).reasons)
+      .toContain("identity:TVR:interpretation_mismatch");
+  });
   it("conflicting memberships and ambiguous surnames cannot be promoted", () => {
     const unit = fixtureUnit(["Kucherov"]);
     expect(resolveEventUnit(unit, { ...options, memberships: [membership, { ...membership, teamId: 99 }] }).reasons).toHaveLength(1);

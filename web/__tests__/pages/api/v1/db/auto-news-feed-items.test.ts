@@ -4,7 +4,7 @@ vi.mock("utils/adminOnlyMiddleware", () => ({ default: (handler: unknown) => han
 vi.mock("lib/cron/withCronJobAudit", () => ({ withCronJobAudit: (handler: unknown) => handler }));
 vi.mock("pages/api/v1/db/tweet-pattern-review", () => ({ syncTweetPatternReviewItems: vi.fn() }));
 
-import { persistAutomatedNewsItem } from "pages/api/v1/db/auto-news-feed-items";
+import handler, { persistAutomatedNewsItem } from "pages/api/v1/db/auto-news-feed-items";
 
 type Row = Record<string, any>;
 
@@ -43,6 +43,9 @@ function fakeDb(items: Row[], players: Row[] = []) {
     };
     const builder: any = {
       select: () => builder,
+      order: () => builder,
+      limit: () => builder,
+      neq: (column: string, value: unknown) => { filters.push(row => row[column] !== value); return builder; },
       eq: (column: string, value: unknown) => { filters.push((row) => row[column] === value); return builder; },
       in: (column: string, values: unknown[]) => { filters.push((row) => values.includes(row[column])); return builder; },
       update: (payload: Row) => { op = { kind: "update", payload }; return builder; },
@@ -114,6 +117,27 @@ describe("persistAutomatedNewsItem", () => {
     vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");
   });
   afterEach(() => vi.unstubAllEnvs());
+
+  it("builds a dated review batch without loading the current player directory", async () => {
+    const text = "UPL will start tonight.";
+    const { db, tables, writes } = fakeDb([]);
+    tables.tweet_pattern_review_items = [{
+      id: "review", review_status: "pending", review_text: "Later wrapper", quoted_text: text,
+      parser_filter_status: "accepted", team_id: 7, team_abbreviation: "BUF", metadata: { intakeRosterEvidence: {
+        source: "quoted", text, publishedAt: "2026-10-09T19:00:00Z", players: [{ id: 8480045,
+          fullName: "Ukko-Pekka Luukkonen", lastName: "Luukkonen", team_id: 7, position: "G", aliases: ["UPL"] }], reviewSpans: [],
+      } },
+    }];
+    tables.teams = [{ id: 7, abbreviation: "BUF", name: "Buffalo Sabres" }];
+    const from = vi.spyOn(db, "from");
+    const json = vi.fn();
+    await handler({ method: "GET", query: { dryRun: "true" }, supabase: db } as any, { json } as any);
+    expect(json).toHaveBeenCalledWith(expect.objectContaining({ sample: [expect.objectContaining({
+      status: "published", players: ["Ukko-Pekka Luukkonen"], subcategory: "CONFIRMED STARTER",
+    })] }));
+    expect(from.mock.calls.map(([table]) => table).sort()).toEqual(["news_feed_items", "teams", "tweet_pattern_review_items"]);
+    expect(writes).toEqual([]);
+  });
 
   it("leaves a relay's own older card alone when another card holds its original (11-09 duplicate key)", async () => {
     const own = storedCard();

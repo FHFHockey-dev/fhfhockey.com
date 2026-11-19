@@ -1,6 +1,6 @@
 import type { EvidenceSpan, TweetUnit } from "lib/sources/tweetInterpretation";
 
-export const LINE_SELECTOR_VERSION = "2026-10-02.2";
+export const LINE_SELECTOR_VERSION = "2026-11-18.1";
 export type GamePhase = "scheduled" | "pregame" | "live" | "final" | "postponed" | "unknown";
 export type LineGame = {
   id: number; date: string; homeTeamId: number; awayTeamId: number;
