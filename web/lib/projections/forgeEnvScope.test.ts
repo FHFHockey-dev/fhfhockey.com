@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import { forgeEnv, withForgeEnv } from "./forgeEnvScope";
 import { starterBoardCanaryGameIds, starterBoardFlags, starterBoardScopeAllowed } from "./starterBoardFlags";
@@ -49,4 +51,20 @@ it("keeps an explicitly passed env authoritative inside a scope", async () => {
     expect(starterBoardFlags({ STARTER_BOARD_COMPUTE_ENABLED: "false" }).compute).toBe(false);
     expect(starterBoardCanaryGameIds({})).toBeNull();
   });
+});
+
+it("is entered only by the sandbox route: no other production module calls withForgeEnv", () => {
+  const root = path.join(process.cwd());
+  const callers: string[] = [];
+  const visit = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (["node_modules", ".next", "__tests__"].includes(entry.name) || entry.name.startsWith(".next")) continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) visit(full);
+      else if (/\.(ts|tsx|js|mjs|cjs)$/.test(entry.name) && !/\.test\.[jt]sx?$/.test(entry.name)
+        && /\bwithForgeEnv\(/.test(readFileSync(full, "utf8"))) callers.push(path.relative(root, full));
+    }
+  };
+  for (const dir of ["lib", "pages", "utils", "scripts", "components", "hooks", "contexts"]) visit(path.join(root, dir));
+  expect(callers.sort()).toEqual(["pages/api/v1/db/forge-sandbox-run.ts"]);
 });
