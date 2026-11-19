@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { buildTeamDirectory } from "./lineupSourceIngestion";
 import { buildGoalieBlendFeatures, type LinesCccRow as PredictionLinesRow } from "../game-predictions/featureBuilder";
 
 import { applyPlayerNameAliasesToRosterMap, collectUnresolvedNamesFromLineRows, fetchPlayerNameAliases, persistUnresolvedPlayerNames, reviewTweetApplicability } from "./lineSourceProcessing";
@@ -8,6 +9,46 @@ import { interpretTweetUnits } from "./tweetInterpretation";
 import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
 import { buildLinesCccSourceFromIftttEvent, buildRowGoalies, toLinesCccRow, type ParsedLinesCccSource } from "./linesCccIngestion";
 import { projectionReportFromSource } from "./tweetProjectionStorage";
+
+it("compares the injury exit's named opponent and weekday to the proposed game before publication", () => {
+  const schedule = new Map([[24, 2026020328], [20, 2026020328]]);
+  function review(text: string, teamId: number) {
+    const source: ParsedLinesCccSource = { nhlFilterStatus: "accepted", team: { id: teamId } as NonNullable<ParsedLinesCccSource["team"]>,
+      rawText: text, tweetPostedAt: "2026-11-15T06:12:52Z", gameId: 2026020328, snapshotDate: "2026-11-15" };
+    reviewTweetApplicability([source], source.snapshotDate, schedule);
+    expect(toLinesCccRow({ source }).raw_text).toBe(text);
+    return source;
+  }
+  const horvat = "Bo Horvat: Injury: Horvat (undisclosed) left Saturday's game vs. Anaheim and did not return. pic.twitter.com/DDHxocfuBK";
+  const stanley = "Logan Stanley: Injury: Stanley (lower-body) left Saturday's game vs. Anaheim and did not return. pic.twitter.com/9DSWgGrnXL";
+  for (const text of [horvat, stanley]) {
+    const disputed = review(text, 24);
+    expect(disputed).toMatchObject({ team: null, gameId: null, nhlFilterStatus: "rejected_ambiguous", nhlFilterReason: "assigned_team_named_as_opponent" });
+    expect(projectionReportFromSource(disputed)).toBeNull();
+    expect(review(text, 20)).toMatchObject({ team: { id: 20 }, gameId: null, nhlFilterReason: "reported_game_weekday_mismatch" });
+  }
+  expect(review(horvat.replace("Saturday", "Sunday"), 20)).toMatchObject({ team: { id: 20 }, gameId: 2026020328, nhlFilterStatus: "accepted" });
+  expect(review(horvat.replace("Saturday", "Sunday").replace("Anaheim", "Boston"), 20)).toMatchObject({
+    team: { id: 20 }, gameId: null, nhlFilterReason: "reported_opponent_mismatch",
+  });
+  expect(review("Horvat will play tonight. Horvat left Saturday's game vs. Anaheim and did not return.", 20).nhlFilterStatus).toBe("accepted");
+  const teams = buildTeamDirectory([{ id: 20, name: "Calgary Flames", abbreviation: "CGY", logo: "" },
+    { id: 24, name: "Anaheim Ducks", abbreviation: "ANA", logo: "" }]);
+  const published = "2026-11-15T06:12:52Z";
+  // The dated roster is a controlled fixture to distinguish a known subject from an opponent-only mention.
+  const roster = new Map([[20, [{ teamId: 20, playerId: 90001, fullName: "Bo Horvat", lastName: "Horvat", position: "C" }]]]);
+  const parsed = buildLinesCccSourceFromIftttEvent({ event: { id: "fixture", source: "ifttt", source_account: "GameDayLines",
+    username: "GameDayLines", text: horvat, link_to_tweet: null, tweet_id: null, tweet_created_at: published, created_at_label: null,
+    raw_payload: {}, received_at: published }, teams, snapshotDate: "2026-11-15", rosterByTeam: roster,
+    inferencePublishedAt: published, inferenceRosterByTeam: roster, gameIdByTeamId: schedule });
+  expect(parsed.team?.id).toBe(20);
+  reviewTweetApplicability([parsed], parsed.snapshotDate, schedule);
+  expect(toLinesCccRow({ source: parsed })).toMatchObject({ raw_text: horvat, game_id: null,
+    team_id: 20, status: "rejected", nhl_filter_reason: "reported_game_weekday_mismatch" });
+  expect(review("Ian Moore: Injury: Moore was activated off IR and is expected to return vs. Calgary on Sunday.", 24)).toMatchObject({
+    team: { id: 24 }, gameId: 2026020328, nhlFilterStatus: "accepted",
+  });
+});
 
 // Source heading and reported personnel from Tampa's Nov 16 Washington preview.
 // The same-day relay clock and roster IDs isolate the applicability check.

@@ -2,7 +2,7 @@ import moment from "moment-timezone";
 import { getPrimaryTextForSource, type ParsedLinesCccSource, type RowGoalieState } from "./linesCccIngestion";
 import { fetchRegisteredPlayerIdentities } from "./playerIdentity";
 import { tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
-import { lineReportTimeScope } from "./lineReportTime";
+import { injuryExitConflict, lineReportTimeScope } from "./lineReportTime";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import type { RosterNameEntry } from "lib/sources/lineupSourceIngestion";
 import { findAliasReviewOccurrences, getAliasReviewOccurrence } from "./playerAliasReview";
@@ -597,11 +597,20 @@ export async function sendPlayerAliasReviewEmailForQueuedNames(args: {
 }
 
 /** Both processors must use publication time, never their requested date, as evidence. */
-export function reviewTweetApplicability(candidates: ParsedLinesCccSource[], requestedDate: string) {
+export function reviewTweetApplicability(candidates: ParsedLinesCccSource[], requestedDate: string, gameIdByTeamId?: Map<number, number>) {
   for (const candidate of candidates) {
     if (candidate.nhlFilterStatus !== "accepted") continue;
     const posted = moment(candidate.tweetPostedAt ?? "", moment.ISO_8601, true);
     const text = getPrimaryTextForSource(candidate);
+    const gameTeams = candidate.gameId && gameIdByTeamId ? [...gameIdByTeamId].filter(([, id]) => id === candidate.gameId).map(([id]) => id) : undefined;
+    const exit = candidate.team && injuryExitConflict(text, requestedDate, candidate.team.id, gameTeams);
+    if (exit) {
+      if (exit === "assigned_team_named_as_opponent") candidate.team = null;
+      candidate.gameId = null;
+      candidate.nhlFilterStatus = "rejected_ambiguous";
+      candidate.nhlFilterReason = exit;
+      continue;
+    }
     const sourceDate = posted.tz("America/New_York").format("YYYY-MM-DD");
     const scope = lineReportTimeScope(text);
     const reason = !posted.isValid() ? "unknown_report_date"

@@ -95,6 +95,27 @@ describe("legacy team report recency", () => {
     expect((await request({ teamId: "54" })).body.sets).toHaveLength(1);
     expect(mocks.navigation).toHaveBeenCalledTimes(1);
   });
+  it("retains both captured Saturday injury texts without assigning either to Anaheim or its Sunday game", async () => {
+    const captured = JSON.parse(readFileSync(resolve(process.cwd(), "../tasks/artifacts/same-day-news-lines-2026-11-18/ANA-RELEASE-REPORTS.json"), "utf8"));
+    mocks.navigation.mockResolvedValue({ selectedGameId: captured.game.id, games: [captured.game] });
+    mocks.reports.mockResolvedValue(captured.reports);
+    const { body } = await request({ teamId: "24", gameId: String(captured.game.id), view: "game" });
+    expect(body.reports).toHaveLength(5);
+    for (const prefix of ["72878a3ccb14", "ab60867ee60e"]) {
+      const original = captured.reports.find((report: { key: string }) => report.key.startsWith(prefix));
+      const shown = body.reports.find((report: { key: string }) => report.key === original.key);
+      expect(shown).toMatchObject({ text: original.text, publishedAt: original.publishedAt, receivedAt: original.receivedAt,
+        teamId: null, teamAbbreviation: null, gameId: null, interpretation: { context: "unknown", units: [], events: [] } });
+      expect(shown.reportedStarter).toBeUndefined();
+    }
+    for (const key of ["18dac0d07888", "051d74f381be", "beebfe3e177c"]) {
+      expect(body.reports.find((r: { key: string }) => r.key.startsWith(key))).toMatchObject({ teamId: 24, gameId: captured.game.id });
+    }
+    expect(body.reports.find((r: { key: string }) => r.key.startsWith("18dac0d07888")).interpretation.units).toHaveLength(7);
+    expect(body.sets).toEqual([]); // The captured lineup has an incomplete forward unit.
+    expect(captured.reports[3].gameId).toBe(captured.game.id);
+  });
+
   const captured = { ...JSON.parse(readFileSync(resolve(process.cwd(), "../tasks/artifacts/same-day-news-lines-2026-11-18/BUF-VGK-REPORT-ROWS.json"), "utf8"))[1].payload,
     verifiedOriginalAuthor: "ByMHarrington" };
   const matchup = { id: captured.gameId, date: captured.date, awayTeamId: 54, homeTeamId: 7, awayAbbreviation: "VGK", homeAbbreviation: "BUF" };

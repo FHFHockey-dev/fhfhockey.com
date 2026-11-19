@@ -15,6 +15,7 @@ export type ProjectionReport = {
   interpretedAt?: string;
   originalUrl: string | null;
   verifiedOriginalAuthor?: string;
+  reviewReason?: "conflicting_claims";
   text: string;
   interpretation: TweetInterpretation;
   provenance?: { relayTweetId: string | null; originalTweetId: string | null; attributionStatus: "resolved" | "pending" };

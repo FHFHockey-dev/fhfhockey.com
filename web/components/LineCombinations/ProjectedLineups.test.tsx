@@ -31,6 +31,29 @@ describe("retained report date disclosure", () => {
       reportScope: { requestedDate: "2026-11-12", reportDate: "2026-11-11", fallback: true } }} />);
     expect(view.container.textContent).toBe("");
   });
+  it("keeps the original visible when conflicting readings withhold the starter", () => {
+    const reports = JSON.parse(readFileSync(resolve(process.cwd(), "../tasks/artifacts/same-day-news-lines-2026-11-18/BUF-VGK-REPORT-ROWS.json"), "utf8"));
+    const report = reports[0].payload;
+    render(<ProjectedLineupsContent data={{ enabled: true, sets: [], navigation: { selectedGameId: report.gameId,
+      games: [{ id: report.gameId, date: report.date, awayAbbreviation: "VGK", homeAbbreviation: "BUF" }] },
+      reports: [{ ...report, reviewReason: "conflicting_claims", reportedStarter: { status: "confirmed",
+        teamAbbreviation: "VGK", playerId: 8478499, playerName: "Adin Hill", author: "ByMHarrington" } }] }} />);
+    expect(screen.getByText("Conflicting readings of this report. Player status is unverified.")).toBeTruthy();
+    expect(screen.queryByText(/VGK confirmed starter/)).toBeNull();
+    expect(screen.getByRole("link", { name: "View original post" }).getAttribute("href")).toBe(report.originalUrl);
+  });
+  it("shows a retained injury note with unverified team and game while keeping its source wording", () => {
+    const text = "Bo Horvat: Injury: Horvat (undisclosed) left Saturday's game vs. Anaheim and did not return.";
+    render(<ProjectedLineupsContent data={{ enabled: true, sets: [],
+      navigation: { selectedGameId: 2026020328, games: [{ id: 2026020328, date: "2026-11-15", awayAbbreviation: "CGY", homeAbbreviation: "ANA" }] },
+      reports: [{ key: "retained", date: "2026-11-15", teamId: null, teamAbbreviation: null, gameId: null, session: null, text, originalUrl: null,
+        publishedAt: "2026-11-15T06:12:52Z", originalPublishedAt: null, receivedAt: "2026-11-15T06:14:04.443Z",
+        interpretation: { version: "2026-11-06.1", context: "unknown", certainty: "reported", units: [], events: [], unresolved: [], rosterRevision: "" } }] }} />);
+    const note = within(screen.getByText(text).closest("article")!);
+    expect(note.getByText("Subject team unverified")).toBeTruthy();
+    expect(note.getByText("No verified game for this report")).toBeTruthy();
+    expect(note.queryByText(/CGY at ANA|ANA · game/)).toBeNull();
+  });
   it("opens the next scheduled matchup on a quiet date and recovers game-bound sources and tiles on historical selection", async () => {
     vi.stubEnv("LINES_ENTRY_SERVING_ENABLED", "false");
     vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");

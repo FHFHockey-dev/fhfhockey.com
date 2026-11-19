@@ -427,7 +427,7 @@ export default withCronJobAudit(
     parsedCandidates.splice(0, parsedCandidates.length, ...claimSources.map(({ candidate }) => candidate));
     parsedEvents.splice(0, parsedEvents.length, ...claimSources.map(({ event }) => event));
 
-    reviewTweetApplicability(parsedCandidates, requestedDate);
+    reviewTweetApplicability(parsedCandidates, requestedDate, gameIdByTeamId);
 
     if (process.env.TWEET_CLAIMS_MODE === "shadow") {
       processingStage = "claim_shadow";
