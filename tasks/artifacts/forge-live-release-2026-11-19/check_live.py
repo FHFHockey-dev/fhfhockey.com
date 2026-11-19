@@ -120,7 +120,9 @@ def main():
         q(defaults + "\n" + BOOT["atomic"](core + "\n" + seed))
         assert not rows("select 1 from pg_proc where proname = 'forge_pregame_publish_v1'")
         psql("-f", ROOT / "supabase/migrations" / PUBLICATION)
-        psql("-f", HERE / "witness-stub.sql")                 # local stand-in for the verifier migration (its interface only)
+        # The verifier package's own migration when it is in the tree; otherwise the local interface stub.
+        verifier = ROOT / "tasks/artifacts/forge-witness-verifier-2026-11-19/forge-witness-verifier.sql"
+        psql("-f", verifier if verifier.exists() else HERE / "witness-stub.sql")
         psql("-f", ROOT / "supabase/migrations" / LIVE)
 
         # PostgREST as production serves the service role.
@@ -164,6 +166,7 @@ def main():
         print(json.dumps({"postgres": rows("select version()")[0][0].split(",")[0], "postgrest": run(POSTGREST, "--version").stdout.strip(),
                           "flags": PROD_FLAGS, "publicationMigrationSha256": PUBLICATION_SHA,
                           "liveMigrationSha256": hashlib.sha256((ROOT / "supabase/migrations" / LIVE).read_bytes()).hexdigest(),
+                          "verifierMigrationSha256": hashlib.sha256(verifier.read_bytes()).hexdigest() if verifier.exists() else "stub",
                           "route": route, "readback": receipt}, indent=1))
         owner.close()
     finally:

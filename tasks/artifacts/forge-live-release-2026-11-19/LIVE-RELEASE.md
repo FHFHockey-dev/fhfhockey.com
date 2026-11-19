@@ -19,7 +19,7 @@ Production's flags (compute off, serving off) and the daily run are unchanged.
    - The route binds through `forge_live_capture_begin_v1(VERCEL_GIT_COMMIT_SHA)`. It refuses when nothing is armed, on a release mismatch or a stop, after the T−64 claim window, or after a schedule change.
    - It then runs master's v1 capture inside `withForgeEnv({compute, serving, canary: this game})`.
    - The custody tables decide the outcome (`forge_live_capture_finish_v1`).
-3. **Verdict** (by T−60) comes from the separate verifier package (`refs/rc/forge-witness-verifier-20261119`): `arm-witness-verify.sql`, route `/api/v1/db/forge-witness-verify`, schema `forge_witness`. This package only calls its interface:
+3. **Verdict** (by T−60) comes from the independent verifier package (`refs/rc/forge-witness-verifier-20261119`, merged into this release): `arm-witness-verify.sql`, route `/api/v1/db/forge-witness-verify`, schema `forge_witness`. This package only calls its interface:
    - `forge_witness.publication_gate_v1(claim, raw, canonical, token)`, which returns `{accepted, reason, verifiedAt, deadline}`;
    - `forge_witness.require_accepted_v1(...)`, which raises `witness_verdict_required`.
 4. **Publish** (fire after T−60, at least 3 min before T).
@@ -78,7 +78,7 @@ Planning revisions and `forge/forecasts` stay off because the serving flag is of
 | File | SHA-256 |
 | --- | --- |
 | `supabase/migrations/20261118135813_forge_pregame_publication.sql` (verbatim, matches APPROVAL.md) | `4a70657ae3e0841f6fac1e66ee608ed866c5152b83a23dd10a83f5b435373f97` |
-| verifier package migration | owned by forge-verifier |
+| `tasks/artifacts/forge-witness-verifier-2026-11-19/forge-witness-verifier.sql` (verifier package; applied by the operator, not a `supabase/migrations` file) | `303e889a848adc477fe3e7ca31c59958e98f1d9118db2b72d9412ea5baac3210` |
 | `supabase/migrations/20261119230000_forge_live_pregame_run.sql` | `b546ea3e6fb8622fe9c60c043bb67e4b85e01f2e5b23602fd90e776b8c2f3619` |
 
 There are no Vercel environment changes and no flag changes.
@@ -87,13 +87,14 @@ There are no Vercel environment changes and no flag changes.
 
 ## Rehearsals
 
-- **Local (`check_live.py`, PostgreSQL 15 + PostgREST 16.6, production flags; platform without the publication objects, then the repository migration files applied; verifier stub per the agreed interface).** See `LOCAL-REHEARSAL.json`.
+- **Local (`check_live.py`, PostgreSQL 15 + PostgREST 16.6, production flags; platform without the publication objects, then publication → verifier package migration → live migration).** See `LOCAL-REHEARSAL.json`.
+  - The verdict is recorded as the verifier's NOLOGIN `forge_witness_api` role through its own `record_v1`, which re-derives every hash from custody. The verifier route's RFC 3161 check against the DigiCert pin is rehearsed in the verifier package, because this rehearsal's token comes from a local test TSA. `witness-stub.sql` remains only as a fallback when the verifier migration is absent.
   - Capture 200 qualified.
   - Publication without a verdict is refused (`awaiting_verdict`) and consumes nothing.
   - After the accepted verdict, publication 200 succeeded: Daily 2.965 at C#1, Detailed `missing_participation` on the same revision.
   - Duplicate GETs return `none_armed` and `none_ready`. One publication. Jobs self-removed; job 408 off.
   - The displacement table above held.
-  - Final run on `5133f5968`: capture 200 in 222 ms; publish 200 in 5,250 ms (publish 5,202, readers 42); claim `a8439134…`, revision `807b03c0…`.
+  - Final run with the verifier merged (`65db61f74` code): capture 200 in 497 ms; verdict accepted by `forge_witness_api`; publish 200 in 5,323 ms; claim `7c700386…`, revision `4a99c4a9…`.
   - The routes were called directly; the local `net.http_get` stub records the request but sends nothing, so `httpResponses` is empty there. A hosted run reads them from `net._http_response`.
   - One optional read failed on fixture data only: the fixture's `nhl_team_data` has no `season_id` (production's view has it), so the bridge skipped team priors, as designed for optional inputs.
 - **Production schema copy (`PRODCOPY-LIFECYCLE.txt`).** Chef's `pg_dump --schema-only` of production was loaded on stubs. 527 of 538 relations loaded; the remainder depend on `internal_stats`, which is outside the dump.

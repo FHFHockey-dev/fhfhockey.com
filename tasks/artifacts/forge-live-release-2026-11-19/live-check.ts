@@ -35,6 +35,7 @@ async function main() {
   const sql = async (text: string, args: unknown[] = []) => (await owner.query(text, args)).rows;
   const trust = testTsaTrust();
   let tsaCalls = 0;
+  let verifier: Record<string, unknown> = {};
   const tsa = createServer(async (req, res) => {
     const blocks = [];
     for await (const part of req) blocks.push(part);
@@ -80,9 +81,27 @@ async function main() {
     const [artifact] = await sql(`select a.raw_sha256, a.canonical_sha256, w.tsa_token_sha256 from forge_pregame_capture.artifacts a
       join forge_pregame_capture.witnesses w on w.claim_id = a.claim_id where a.claim_id = $1`, [claimId]);
     assert.equal((await sql("select publish_began_at from forge_pregame_capture.live_runs where game_id = $1", [game]))[0].publish_began_at, null);
-    // The verifier's accepted verdict (forge_witness stub here; its own migration and role in production).
-    await sql(`insert into forge_witness.stub_verdicts(claim_id, verdict, raw_sha256, canonical_sha256, token_sha256)
-      values ($1, 'accepted', $2, $3, $4)`, [claimId, artifact.raw_sha256, artifact.canonical_sha256, artifact.tsa_token_sha256]);
+    // The verifier's accepted verdict. With the verifier migration installed, record it as that package's NOLOGIN API role
+    // through its exposed record_v1 (the database re-derives every hash; its route's RFC 3161 check is rehearsed by the
+    // verifier package, since this rehearsal's token comes from a local test TSA). Otherwise use the interface stub.
+    if ((await sql("select to_regnamespace('forge_witness_api') is not null as real"))[0].real) {
+      assert.equal((await sql("select forge_witness.arm_v1($1) r", [game]))[0].r.game_id, game);
+      const [e] = await sql(`select encode(sha256(a.packet), 'hex') raw, a.canonical_sha256 canonical, encode(sha256(w.tsa_token), 'hex') token,
+        w.statement_sha256 statement, c.input_cutoff::text cutoff, c.input_cutoff = c.claimed_at cutoff_is_claim from forge_pregame_capture.claims c
+        join forge_pregame_capture.artifacts a on a.claim_id = c.id join forge_pregame_capture.witnesses w on w.claim_id = c.id
+        where c.id = $1`, [claimId]);
+      await sql("begin");
+      await sql("set local role forge_witness_api");
+      const [recorded] = await sql(`select forge_witness_api.record_v1($1, $2, 'accepted', null, $3, $4, $5, $6, $7, $8) r`,
+        [game, claimId, e.raw, e.canonical, e.token, e.statement, e.cutoff, process.env.VERCEL_GIT_COMMIT_SHA]);
+      await sql("commit");
+      assert.ok(recorded.r.created && recorded.r.verdict.verdict === "accepted", JSON.stringify({ recorded: recorded.r, cutoffIsClaim: e.cutoff_is_claim }));
+      verifier = { package: "forge-witness-verifier", verdict: recorded.r.verdict.verdict, role: recorded.r.verdict.verifier_role };
+    } else {
+      await sql(`insert into forge_witness.stub_verdicts(claim_id, verdict, raw_sha256, canonical_sha256, token_sha256)
+        values ($1, 'accepted', $2, $3, $4)`, [claimId, artifact.raw_sha256, artifact.canonical_sha256, artifact.tsa_token_sha256]);
+      verifier = { package: "stub", verdict: "accepted", role: "postgres" };
+    }
     const firedPublish = await fire("publish");
     assert.match(firedPublish, /^fired \d+$/);
     const published = await call(publish, auth);
@@ -106,7 +125,7 @@ async function main() {
     console.log(JSON.stringify({ capture: { status: first.status, body: first.body, wallMs: first.wallMs },
       publish: { status: published.status, wallMs: published.wallMs, body: published.body },
       duplicates: { capture: second.body.status, publish: again.body.status }, fired: { capture: firedCapture, publish: firedPublish },
-      restCalls, errors, tsaCalls, displacement: "outside scope: runs-latest 404, proof false, revisions 0; inside: claim, true, 1" }));
+      restCalls, errors, tsaCalls, verifier, displacement: "outside scope: runs-latest 404, proof false, revisions 0; inside: claim, true, 1" }));
   } finally {
     globalThis.fetch = http;
     tsa.close();
