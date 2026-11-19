@@ -116,6 +116,13 @@ const db = vi.hoisted(() => {
         filters.push((row) => values.includes(row[column]));
         return query;
       },
+      // Proofless pickers' pregame fence (releasedRunFence.excludePregamePublications).
+      is: (column: string, value: unknown) => {
+        if (value !== null) throw new Error(`unsupported is(${column}, ${String(value)})`);
+        const json = /^(\w+)->(\w+)$/.exec(column);
+        filters.push((row) => (json ? row[json[1]]?.[json[2]] : read(row, column)) == null);
+        return query;
+      },
       not: (column: string, operator: string, value: unknown) => {
         if (operator === "is" && value === null) filters.push((row) => read(row, column) != null);
         else if (operator === "like" && value === "local:*") {

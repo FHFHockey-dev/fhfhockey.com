@@ -79,11 +79,11 @@ Planning revisions and `forge/forecasts` stay off because the serving flag is of
 | --- | --- |
 | `supabase/migrations/20261118135813_forge_pregame_publication.sql` (verbatim, matches APPROVAL.md) | `4a70657ae3e0841f6fac1e66ee608ed866c5152b83a23dd10a83f5b435373f97` |
 | verifier package migration | owned by forge-verifier |
-| `supabase/migrations/20261119230000_forge_live_pregame_run.sql` | see `LOCAL-REHEARSAL.json` / gate log |
+| `supabase/migrations/20261119230000_forge_live_pregame_run.sql` | `b546ea3e6fb8622fe9c60c043bb67e4b85e01f2e5b23602fd90e776b8c2f3619` |
 
 There are no Vercel environment changes and no flag changes.
 
-**Release admission:** the producer closure changes. The new value and its verifier receipt are in the gate log, and listing it needs the separate allowlist commit, approved by TJ.
+**Release admission:** the producer closure changes from master's `78655939…` to `ca6534eb2c1c8352ad75a0be0d304abd0ffc524bebc380cd3b4644ed4fed1704` (verified: 243 modules, 0 findings). Listing it needs the separate allowlist commit, approved by TJ.
 
 ## Rehearsals
 
@@ -93,6 +93,9 @@ There are no Vercel environment changes and no flag changes.
   - After the accepted verdict, publication 200 succeeded: Daily 2.965 at C#1, Detailed `missing_participation` on the same revision.
   - Duplicate GETs return `none_armed` and `none_ready`. One publication. Jobs self-removed; job 408 off.
   - The displacement table above held.
+  - Final run on `5133f5968`: capture 200 in 222 ms; publish 200 in 5,250 ms (publish 5,202, readers 42); claim `a8439134…`, revision `807b03c0…`.
+  - The routes were called directly; the local `net.http_get` stub records the request but sends nothing, so `httpResponses` is empty there. A hosted run reads them from `net._http_response`.
+  - One optional read failed on fixture data only: the fixture's `nhl_team_data` has no `season_id` (production's view has it), so the bridge skipped team priors, as designed for optional inputs.
 - **Production schema copy (`PRODCOPY-LIFECYCLE.txt`).** Chef's `pg_dump --schema-only` of production was loaded on stubs. 527 of 538 relations loaded; the remainder depend on `internal_stats`, which is outside the dump.
   - Publication migration → verifier stub → live migration all apply cleanly.
   - Approve/arm for 2026020358 succeeds with job 408 left off.
