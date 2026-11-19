@@ -1,3 +1,4 @@
+import { readTweetNewsRosterEvidence } from "lib/sources/tweetNewsRosterEvidence";
 import { fetchPlayerIdentityDirectory } from "lib/sources/playerIdentity";
 import { verifiedOriginalTweetUrl } from "lib/sources/projectedLineups";
 import { tweetPipelineFlags } from "lib/sources/tweetInterpretation";
@@ -581,16 +582,16 @@ export default withCronJobAudit(
           perSourceLimit: parseLimit(req.query.perSourceLimit, 500),
         })
       : null;
-    const [rows, players] = await Promise.all([
-      fetchReviewRows({
-        supabase: req.supabase,
-        limit,
-        reviewItemId,
-        daysBack: Number.isFinite(daysBack) ? daysBack : null,
-      }),
-      fetchPlayers({ supabase: req.supabase }),
+    const rows = await fetchReviewRows({
+      supabase: req.supabase,
+      limit,
+      reviewItemId,
+      daysBack: Number.isFinite(daysBack) ? daysBack : null,
+    });
+    const [players, teams] = await Promise.all([
+      rows.some(row => readTweetNewsRosterEvidence(row) === null) ? fetchPlayers({ supabase: req.supabase }) : [],
+      fetchTeams({ supabase: req.supabase }),
     ]);
-    const teams = await fetchTeams({ supabase: req.supabase });
     const validTeamIds = new Set(teams.map((team) => team.id));
     const existingByReviewItemId = await fetchExistingNewsItems({
       supabase: req.supabase,

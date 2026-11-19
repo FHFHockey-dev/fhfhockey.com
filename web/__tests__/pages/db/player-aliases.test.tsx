@@ -251,6 +251,27 @@ describe("player alias selection across searches", () => {
     await expectPost({ unresolvedId: "pending-0", action: "assign_occurrence", playerId: luke.id, importNhlIdentity: false, alias: "Hughes" });
   });
 
+  it("shows a fuzzy suggestion with a dated team and only offers assignment of the selected occurrence", async () => {
+    const text = "Heins warmed up. Heins took rushes.";
+    const start = text.lastIndexOf("Heins");
+    const row = { ...unresolvedNames[0], team_id: null, team_abbreviation: null, raw_name: "Heins", context_text: text,
+      metadata: { occurrenceOnly: true, reviewKind: "fuzzy", evidence: { start, end: start + 5, text: "Heins" }, candidates: [heinen.id, lomberg.id] },
+      review: { sourceDate: "2026-10-06", seasonId: 20262027, candidates: [heinen], preferredPlayerId: null, ambiguousSurname: false, preferenceReason: "", scopeMessage: "" } };
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: true, unresolvedNames: [row], players: [lomberg, heinen] }) });
+    await openPage();
+    const match = screen.getByLabelText("Match player") as HTMLSelectElement;
+    expect(match.options).toHaveLength(2);
+    expect(match.options[1].textContent).toContain("team 29 at source time");
+    expect(screen.getByText(/Suggested players without verified membership.*Ryan Lomberg/)).toBeTruthy();
+    expect(match.value).toBe("");
+    expect(screen.getByLabelText("Selected unresolved occurrence").previousSibling?.textContent).toBe(text.slice(0, start));
+    expect(screen.queryByText("Alias to save")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Assign two players" })).toBeNull();
+    selectPlayer("Match player", heinen.id);
+    fireEvent.click(screen.getByRole("button", { name: "Assign this occurrence" }));
+    await expectPost({ unresolvedId: row.id, action: "assign_occurrence", playerId: heinen.id, importNhlIdentity: false, alias: "Heins" });
+  });
+
   it("preserves the exact B. Tkachuk token and initial in the alias submission", async () => {
     const text = "B. Tkachuk - Eller - Reinhart\nVerhaeghe - Bennett - M. Tkachuk";
     const start = text.indexOf("Tkachuk");

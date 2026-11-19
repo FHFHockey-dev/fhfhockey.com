@@ -77,7 +77,7 @@ export function shortDate(date: string): string {
   const day = new Date(`${date}T12:00:00Z`);
   return Number.isNaN(day.getTime()) ? date : day.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
-export function gameLabel(game: LineGame): string { return `${shortDate(game.date)} · ${game.awayAbbreviation} at ${game.homeAbbreviation}`; }
+export function gameLabel(game: Pick<LineGame, "date" | "awayAbbreviation" | "homeAbbreviation">): string { return `${shortDate(game.date)} · ${game.awayAbbreviation} at ${game.homeAbbreviation}`; }
 
 export function formatTime(value: string): string {
   const date = new Date(value);

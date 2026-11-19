@@ -22,6 +22,7 @@ type UnresolvedName = {
   resolved_player_id?: number | null;
   resolved_alias_id?: string | null;
   metadata: {
+    occurrenceOnly?: boolean;
     contextAlias?: string | null;
     reason?: string | null;
     reviewKind?: string | null;
@@ -196,7 +197,11 @@ const PlayerAliasesReview = () => {
   const selectedReviewSlot = selectedUnresolved ? getReviewTargetLabel(selectedUnresolved) : "";
   const selectedOccurrence = selectedUnresolved ? getAliasReviewOccurrence(selectedUnresolved) : null;
   const possibleOccurrences = selectedUnresolved ? findAliasReviewOccurrences(selectedUnresolved.metadata?.contextAlias || selectedUnresolved.raw_name, selectedUnresolved.context_text ?? "") : [];
-  const occurrenceMode = selectedUnresolved?.review?.ambiguousSurname || ((selectedUnresolved?.metadata?.candidates?.length ?? 0) > 1 && !/[.\s]/.test(selectedUnresolved?.raw_name ?? ""));
+  const inferredOccurrence = selectedUnresolved?.metadata?.occurrenceOnly === true;
+  const unverifiedSuggestions = inferredOccurrence ? (selectedUnresolved?.metadata?.candidates ?? [])
+    .filter(id => !selectedUnresolved?.review?.candidates.some(player => player.id === id))
+    .map(id => players.find(player => player.id === id)?.fullName ?? `NHL ${id}`) : [];
+  const occurrenceMode = inferredOccurrence || selectedUnresolved?.review?.ambiguousSurname || ((selectedUnresolved?.metadata?.candidates?.length ?? 0) > 1 && !/[.\s]/.test(selectedUnresolved?.raw_name ?? ""));
   const savedPlayerIds = selectedUnresolved?.metadata?.splitPlayerIds
     ?? (selectedUnresolved?.resolved_player_id ? [selectedUnresolved.resolved_player_id] : []);
   const savedPlayerNames = savedPlayerIds.map((id) => players.find((player) => player.id === id)?.fullName ?? `NHL ${id}`).join(" and ");
@@ -207,11 +212,13 @@ const PlayerAliasesReview = () => {
     const rank = (player: PlayerOption) => selectedUnresolved?.review
       ? player.id === selectedUnresolved.review.preferredPlayerId ? 2 : Number(selectedUnresolved.review.candidates.some((candidate) => candidate.id === player.id))
       : Number(player.team_id === selectedUnresolved?.team_id);
-    return players.filter((player) => !search || player.fullName.toLowerCase().includes(search) || String(player.id) === search).sort((a, b) => rank(b) - rank(a));
+    const pool = selectedUnresolved?.metadata?.occurrenceOnly ? selectedUnresolved.review?.candidates ?? [] : players;
+    return pool.filter((player) => !search || player.fullName.toLowerCase().includes(search) || String(player.id) === search).sort((a, b) => rank(b) - rank(a));
   }, [players, playerSearch, selectedUnresolved]);
 
   function playerOptionsFor(selectedId: string): PlayerOption[] {
-    const selected = players.find((player) => String(player.id) === selectedId);
+    const pool = inferredOccurrence ? selectedUnresolved?.review?.candidates ?? [] : players;
+    const selected = pool.find((player) => String(player.id) === selectedId);
     return selected && !filteredPlayers.some((player) => player.id === selected.id)
       ? [selected, ...filteredPlayers]
       : filteredPlayers;
@@ -343,7 +350,7 @@ const PlayerAliasesReview = () => {
             </label>}
 
             <label className={styles.field}>
-              Search all players by name or NHL ID
+              {inferredOccurrence ? "Search suggested players" : "Search all players by name or NHL ID"}
               <input value={playerSearch} onChange={(event) => setPlayerSearch(event.target.value)} />
             </label>
             {!splitMode && !occurrenceMode && membershipReviewEnabled && <button disabled={lookupBusy || !/^\d{7}$/.test(playerSearch.trim())} onClick={() => void lookupNhlPlayer()}>
@@ -352,11 +359,13 @@ const PlayerAliasesReview = () => {
             {lookup && <p>{lookup.fullName} · NHL {lookup.nhlId} · <a href={lookup.sourceUrl} target="_blank" rel="noreferrer">Verified NHL profile</a>.
               {lookup.currentTeamId ? " Current organization is verified separately from active roster status." : " Current organization is unknown; membership will still need review."}
             </p>}
-            {playerSearch.trim() && unlinkedProspects.filter((player) => player.canonical_name.toLowerCase().includes(playerSearch.trim().toLowerCase())).slice(0, 20).map((player) => (
+            {!inferredOccurrence && playerSearch.trim() && unlinkedProspects.filter((player) => player.canonical_name.toLowerCase().includes(playerSearch.trim().toLowerCase())).slice(0, 20).map((player) => (
               <p key={player.id}>{player.canonical_name} — verified prospect; NHL ID is not linked yet. Enter an NHL ID above to verify the link.</p>
             ))}
             {selectedUnresolved.review ? <p>Source date: {selectedUnresolved.review.sourceDate ?? "unknown"} · season: {selectedUnresolved.review.seasonId ?? "unknown"} · recorded team: {selectedUnresolved.team_abbreviation ?? selectedUnresolved.team_id ?? "unknown"}. {selectedUnresolved.review.scopeMessage} {selectedUnresolved.review.preferenceReason}</p> : <p>Current team labels are shown for reference; they do not establish membership at the source date.</p>}
-            {occurrenceMode && !splitMode && <p>This surname has multiple identities. Assign this occurrence only; no blanket surname alias will be learned.</p>}
+            {inferredOccurrence && <p>Assignment applies only to the highlighted mention.</p>}
+            {unverifiedSuggestions.length > 0 && <p>Suggested players without verified membership at the source time · {unverifiedSuggestions.join(", ")}</p>}
+            {occurrenceMode && !inferredOccurrence && !splitMode && <p>This surname has multiple identities. Assign this occurrence only; no blanket surname alias will be learned.</p>}
             {selectedUnresolved.metadata?.reviewKind && <p>Review reason: {selectedUnresolved.metadata.reviewKind.replace(/_/g, " ")}.</p>}
             {selectedUnresolved.metadata?.reviewKind === "invalid_extraction" && <p>This may contain several players or non-player text. <a href="/db/tweet-pattern-review">Review tweet parsing</a> before creating an alias.</p>}
             {!splitMode && <label className={styles.field}>
@@ -371,7 +380,7 @@ const PlayerAliasesReview = () => {
                   const dated = selectedUnresolved.review?.candidates.find((candidate) => candidate.id === player.id);
                   return (
                   <option key={player.id} value={player.id}>
-                    {dated?.fullName ?? player.fullName} · {player.id} {dated ? dated.position ? `- captured position ${dated.position}` : "· captured position unknown" : player.position ? `· current position ${player.position}` : ""} {player.id === selectedUnresolved.review?.preferredPlayerId ? "· source evidence preference" : dated ? "· dated team candidate" : "· verify membership"}
+                    {dated?.fullName ?? player.fullName} · {player.id} {inferredOccurrence && dated?.team_id ? `· team ${dated.team_id} at source time` : ""} {dated ? dated.position ? `- captured position ${dated.position}` : "· captured position unknown" : player.position ? `· current position ${player.position}` : ""} {player.id === selectedUnresolved.review?.preferredPlayerId ? "· source evidence preference" : dated ? "· dated team candidate" : "· verify membership"}
                   </option>
                   );
                 })}
@@ -399,7 +408,7 @@ const PlayerAliasesReview = () => {
                 Ignore
               </button>
             </div>
-            {selectedUnresolved.status === "pending" && <button type="button" aria-pressed={splitMode} onClick={() => setSplitMode((previous) => !previous)}>
+            {selectedUnresolved.status === "pending" && !inferredOccurrence && <button type="button" aria-pressed={splitMode} onClick={() => setSplitMode((previous) => !previous)}>
               {splitMode ? "Assign one player" : "Assign two players"}
             </button>}
             {splitMode ? (

@@ -1,5 +1,6 @@
 import { resolvePlayerIdentity } from "./playerIdentity";
 import { identityMentionPresent, tweetPipelineFlags } from "./tweetInterpretation";
+import { readTweetNewsRosterEvidence, type TweetNewsRosterEvidence } from "./tweetNewsRosterEvidence";
 import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
 import {
   buildNewsFeedHeadline,
@@ -144,6 +145,7 @@ type Evidence = {
 };
 
 type AutomationContext = {
+  roster: TweetNewsRosterEvidence | null;
   text: string;
   exclusionRuleId: string | null;
   manualAssignments: TweetNewsAutomationAssignment[];
@@ -160,6 +162,27 @@ function escapeRegExp(value: string): string {
 
 function normalizeForMatch(value: string): string {
   return normalizeNewsText(value).replace(/[’]/g, "'").replace(/[–—−]/g, "-");
+}
+
+export function tweetNewsItemMetadata(row: TweetNewsAutomationReviewRow): Record<string, unknown> {
+  const metadata = { ...row.metadata };
+  delete metadata.intakeRosterEvidence;
+  return metadata;
+}
+
+/** Without event anchors, only complete passages free of review-only subjects can support a claim. */
+export function tweetNewsAdmittedPassages(roster: TweetNewsRosterEvidence): string[] {
+  if (!roster.reviewSpans.length) return [roster.text];
+  const passages: string[] = [];
+  let start = 0;
+  for (const boundary of roster.text.matchAll(/[!?;\n]|(?<!\b\p{L})\.(?=\s|$)|$/gu)) {
+    const end = boundary.index + boundary[0].length;
+    if (end > start && !roster.reviewSpans.some(span => start < span.end && span.start < end)) {
+      passages.push(roster.text.slice(start, end));
+    }
+    start = end;
+  }
+  return passages;
 }
 
 function getReviewText(row: TweetNewsAutomationReviewRow): string {
@@ -277,8 +300,12 @@ function resolveMentionedPlayers(args: {
 
 function resolveManualAssignments(
   row: TweetNewsAutomationReviewRow,
+  roster: TweetNewsRosterEvidence | null,
 ): TweetNewsAutomationAssignment[] {
   return (row.review_assignments ?? [])
+    // The worker also stores its own suggestions on pending review rows.
+    .filter(assignment => !(roster && row.review_status === "pending" && "ruleId" in assignment &&
+      (assignment.id === `auto-${assignment.ruleId}` || assignment.id === assignment.ruleId && assignment.id.startsWith("model-"))))
     .filter((assignment) => normalizeNewsCategory(assignment.category))
     .map((assignment, index) => ({
       ...assignment,
@@ -331,15 +358,20 @@ function getMissingRequiredEvidence(
   );
 }
 
+const PLAYER_EVENT_CATEGORIES = new Set(["INJURY", "REPORTED INJURY", "RETURN", "GOALIE START"]);
+
 function buildRuleAssignment(args: {
-  row: TweetNewsAutomationReviewRow;
+  text: string;
+  roster: TweetNewsRosterEvidence | null;
+  publishedAt: string | null;
   match: TweetNewsPhraseMatch;
   matchedPlayers: TweetNewsAutomationPlayer[];
 }): TweetNewsAutomationAssignment {
   let assignedPlayers = args.matchedPlayers;
-  if (tweetPipelineFlags().interpretation && ["INJURY", "REPORTED INJURY", "RETURN", "GOALIE START"].includes(args.match.category)) {
-    const events = extractTweetPlayerEvents({ text: getReviewText(args.row), publishedAt: args.row.source_created_at,
-      players: args.matchedPlayers.map((player) => ({ playerId: player.id, fullName: player.fullName, lastName: player.lastName ?? getLastName(player.fullName), position: player.position, aliases: player.aliases })) });
+  const eventCategory = PLAYER_EVENT_CATEGORIES.has(args.match.category);
+  if ((args.roster || tweetPipelineFlags().interpretation) && eventCategory) {
+    const events = extractTweetPlayerEvents({ text: args.text, publishedAt: args.publishedAt, reviewSpans: args.roster?.reviewSpans,
+      players: args.matchedPlayers.map((player) => ({ playerId: player.id, fullName: player.fullName, lastName: player.lastName ?? getLastName(player.fullName), teamId: args.roster ? player.team_id : null, position: player.position, aliases: player.aliases })) });
     const matchingEvents = events.filter((event) => new RegExp(args.match.regex, "i").test(event.evidence.text) &&
       (args.match.category === "RETURN" ? event.state === "confirmed_return" || event.state === "possible_return" :
         args.match.category === "GOALIE START" ? event.kind === "goalie" && event.state !== "ruled_out" :
@@ -362,7 +394,8 @@ function buildRuleAssignment(args: {
     notes: `Matched phrase rule ${args.match.ruleId}.`,
     ruleId: args.match.ruleId,
     confidence: args.match.confidence,
-    autoPublish: args.match.autoPublish && (!tweetPipelineFlags().interpretation || args.match.subcategory !== "FULLY HEALTHY" || assignedPlayers.length > 0),
+    autoPublish: args.match.autoPublish && (!args.roster || Boolean(args.roster.publishedAt))
+      && (!tweetPipelineFlags().interpretation || args.match.subcategory !== "FULLY HEALTHY" || assignedPlayers.length > 0),
     requiredEvidence: args.match.requiredEvidence,
   };
 }
@@ -541,13 +574,14 @@ function buildAutomationContext(args: {
 }): AutomationContext | null {
   if (args.row.review_status === "ignored") return null;
 
-  const text = getReviewText(args.row);
+  const roster = readTweetNewsRosterEvidence(args.row);
+  const text = roster?.text ?? getReviewText(args.row);
   if (!text.trim()) return null;
 
   const exclusionRuleId = matchesExclusion(text);
-  const manualAssignments = resolveManualAssignments(args.row);
+  const manualAssignments = resolveManualAssignments(args.row, roster);
   const phraseMatches = matchTweetNewsPhrases(text);
-  const matchedPlayers = resolveMentionedPlayers({
+  const matchedPlayers = roster?.players ?? resolveMentionedPlayers({
     row: args.row,
     players: args.players,
     text,
@@ -564,17 +598,24 @@ function buildAutomationContext(args: {
     matchedPlayers,
     lineupCard: preliminaryLineupCard,
   });
+  const admittedPassages = roster?.reviewSpans.length ? tweetNewsAdmittedPassages(roster) : null;
   const ruleAssignments = phraseMatches
     .filter((match) => hasRequiredEvidence(match.requiredEvidence, evidence))
-    .map((match) =>
-      buildRuleAssignment({
-        row: args.row,
-        match,
-        matchedPlayers,
-      }),
-    );
+    .flatMap((match) => {
+      let players = matchedPlayers;
+      if (admittedPassages && !PLAYER_EVENT_CATEGORIES.has(match.category)) {
+        const regex = new RegExp(match.regex, "i");
+        const passages = admittedPassages.filter(passage => regex.test(normalizeForMatch(passage)));
+        if (!passages.length) return [];
+        players = resolveMentionedPlayers({ row: args.row, players, text: passages.join("\n") });
+      }
+      const assignment = buildRuleAssignment({ text, roster, publishedAt: roster ? roster.publishedAt : args.row.source_created_at, match, matchedPlayers: players });
+      if (roster && PLAYER_EVENT_CATEGORIES.has(match.category) && !assignment.playerIds.length) return [];
+      return [assignment];
+    });
 
   return {
+    roster,
     text,
     exclusionRuleId,
     manualAssignments,
@@ -631,11 +672,13 @@ export function buildTweetNewsAutomationCandidate(args: {
       ? primaryAssignment.playerNames.map((playerName, index) => ({
           playerId: primaryAssignment.playerIds[index] ?? null,
           playerName,
-          teamId: args.row.team_id,
+          teamId: context.roster && !context.manualAssignments.length
+            ? context.matchedPlayers.find(player => player.id === primaryAssignment.playerIds[index])?.team_id ?? null
+            : args.row.team_id,
         }))
       : [];
   const metadata: Record<string, unknown> = {
-    ...(args.row.metadata ?? {}),
+    ...tweetNewsItemMetadata(args.row),
     automation: {
       source: "tweet_news_phrase_dictionary",
       generatedAt: nowIso,
@@ -709,7 +752,7 @@ export function buildTweetNewsAmbiguousCandidate(args: {
   const category = "OTHER";
   const subcategory = "AMBIGUOUS";
   const metadata: Record<string, unknown> = {
-    ...(args.row.metadata ?? {}),
+    ...tweetNewsItemMetadata(args.row),
     automation: {
       source: "tweet_news_phrase_dictionary",
       generatedAt: nowIso,

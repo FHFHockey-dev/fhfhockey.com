@@ -34,6 +34,8 @@ type NewsCardProps = {
     | "source_account"
     | "source_url"
     | "published_at"
+    | "source_posted_at"
+    | "lineup_matchup"
     | "created_at"
     | "card_status"
     | "metadata"
@@ -242,7 +244,7 @@ export default function NewsCard({
   const lineupTitle = lineup
     ? `${team.abbreviation ?? item.team_abbreviation ?? "NHL"} ${
         item.subcategory ? normalizeNewsCategory(item.subcategory).toLowerCase() : "lines"
-      }`
+      }${item.lineup_matchup ? ` vs. ${item.lineup_matchup.opponent} · Game ${item.lineup_matchup.gameId}` : ""}`
     : null;
   const originalHeadline = lineupTitle ?? (claimedPlayers.join(", ") || team.name);
   const teamLabel = team.abbreviation ?? item.team_abbreviation ?? "NHL";
@@ -379,9 +381,14 @@ export default function NewsCard({
         ) : null}
 
         <div className={styles.footer}>
-          {/* One time for fans: when the post was seen. The pipeline's
-              published/observed pair is debug detail (dev only). */}
-          <span>{formatNewsFanTime(item.observed_at ?? publishedAt, now)}</span>
+          {item.source_posted_at ? (
+            <time dateTime={item.source_posted_at} title={`${formatDate(item.source_posted_at)} ET`}>Source posted {formatNewsFanTime(item.source_posted_at, now)}</time>
+          ) : null}
+          {item.observed_at && Date.parse(item.observed_at) !== Date.parse(item.source_posted_at ?? "") ? (
+            <time dateTime={item.observed_at} title={`${formatDate(item.observed_at)} ET`}>Observed {formatNewsFanTime(item.observed_at, now)}</time>
+          ) : !item.observed_at && !item.source_posted_at ? (
+            <span>Published {formatNewsFanTime(publishedAt, now)}</span>
+          ) : null}
           {SHOW_PIPELINE_TIMES ? (
             <span className={styles.devTimestamps}>
               Published {formatDate(publishedAt)} · Observed {formatRailDate(item.observed_at)}

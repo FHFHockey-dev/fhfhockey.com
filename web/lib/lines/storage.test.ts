@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { appendLineEvidence, persistLineReconciliation } from "./storage";
+import { appendLineEvidence, fetchLineClaims, persistLineReconciliation } from "./storage";
 import { fixtureClaim, fixtureGame, fixtureNow } from "./testFixtures";
 import { lineTestDatabase } from "./testDatabase";
 
@@ -17,6 +17,27 @@ describe("append-only persistence", () => {
     const from = vi.fn(() => ({ upsert: async () => ({ error: new Error("capture rejected") }) }));
     await expect(appendLineEvidence({ from }, [fixtureClaim()], [fixtureGame])).rejects.toThrow("capture rejected");
     expect(from).toHaveBeenCalledTimes(1);
+  });
+  it("expires transient legacy clock holds as of the read without rewriting evidence or a stored freeze", async () => {
+    const db = lineTestDatabase({});
+    const hold = "interpretation_not_yet_available";
+    const ready = fixtureClaim("ready", { reviewReasons: [hold] });
+    const unresolved = fixtureClaim("unresolved", { reviewReasons: [hold, "identity:Killorn:conflicting_membership"] });
+    const later = fixtureClaim("future-arrival", { reviewReasons: ["ingestion_not_yet_available"] });
+    later.time.ingestedAt = "2026-10-02T02:00:00Z";
+    await appendLineEvidence(db, [ready, unresolved, later], []);
+    const asOf = await fetchLineClaims(db, [14], fixtureNow);
+    expect(asOf.find(c => c.id === ready.id)?.reviewReasons).toEqual([]);
+    expect(asOf.find(c => c.id === unresolved.id)?.reviewReasons).toEqual(["identity:Killorn:conflicting_membership"]);
+    expect(asOf.find(c => c.id === later.id)?.reviewReasons).toEqual(["ingestion_not_yet_available"]);
+    const args = { game: fixtureGame, teamId: 14, games: [fixtureGame], now: fixtureNow, carryForward: true };
+    const rebuilt = await persistLineReconciliation(db, args);
+    expect(rebuilt.entry.units.map(unit => unit.claims.map(claim => claim.id))).toEqual([[ready.id]]);
+    expect(db.tables.line_claim_revisions!.find(row => row.claim_id === ready.id)!.payload.reviewReasons).toEqual([hold]);
+    // A prior empty freeze can only change through an authorized correction.
+    const previous = { ...rebuilt.entry, id: "prior-empty", units: [], evidenceClaims: [] };
+    db.tables.line_entry_revisions = [{ game_id: fixtureGame.id, team_id: 14, revision: 1, entry_id: previous.id, payload: previous }];
+    expect((await persistLineReconciliation(db, args)).entry).toEqual(previous);
   });
   it("keeps unresolved targets in immutable history without aborting state capture or reconciliation", async () => {
     const db = lineTestDatabase({});

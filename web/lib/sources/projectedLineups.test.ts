@@ -62,10 +62,17 @@ function projectionDatabase(fixtures: ReturnType<typeof liveProjectionFixture>[]
         if (table === "line_source_snapshots" && failures.acknowledgement) { failures.acknowledgement = false; throw new Error("uncertain parent acknowledgement"); }
         return { error: null };
       },
-      select: () => {
+      select: (columns?: string) => {
         const predicates: Array<(row: any) => boolean> = [];
-        const result = () => { const data = [...(tables.get(table)?.values() ?? [])].filter((row) => predicates.every((filter) => filter(row))); return { data, count: data.length, error: null }; };
+        const result = () => {
+          const rows = [...(tables.get(table)?.values() ?? [])].filter((row) => predicates.every((filter) => filter(row)));
+          const data = columns?.startsWith("url:payload->>originalUrl") ? rows.map(row => ({
+            url: row.payload.originalUrl, relay: row.payload.provenance?.relayTweetId ?? null, version: row.interpretation_version,
+          })) : rows;
+          return { data, count: data.length, error: null };
+        };
         const query: any = { eq: (key: string, value: any) => { predicates.push((row) => row[key] === value); return query; },
+          neq: (key: string, value: any) => { predicates.push((row) => row[key] !== value); return query; },
           in: (key: string, values: any[]) => { predicates.push((row) => values.includes(row[key])); return query; },
           gte: () => query, or: () => query, abortSignal: () => query,
           order: () => query, range: () => query, then: (resolve: any, reject: any) => {
@@ -380,6 +387,98 @@ describe("projected unit publishing", () => {
     expect(internal).toHaveLength(1001);
     expect(internal.find((candidate) => candidate.key === "1000")).toEqual(rows[1000]!.payload);
     expect(await fetchTweetProjectionReports(database, { date: "2026-09-18" })).toHaveLength(1000);
+  });
+  it("selects corrected source versions before team/game scope while keeping both supported sides", async () => {
+    enableLivePublishing();
+    const database = projectionDatabase([]);
+    const originalUrl = "https://x.com/ByMHarrington/status/2119520323309617358";
+    const makeReading = (key: string, teamId: number, gameId: number | null, version: string, minute: number) => {
+      const value = report(key, 1, { teamId, gameId, originalUrl, interpretedAt: `2026-11-08T20:${minute}:00Z` });
+      value.interpretation.version = version;
+      return { report_key: key, team_id: teamId, game_id: gameId, report_date: value.date, interpretation_version: version, payload: value };
+    };
+    const gameId = 2026020278, date = "2026-09-18";
+    const versions = [
+      makeReading("stale-team", 4, gameId, "2026-11-06.1", 30),
+      makeReading("stale-game", 54, gameId, "2026-11-16.2", 29),
+      makeReading("unbound", 54, null, "2026-11-16.10", 20),
+      makeReading("confirmed-other-side", 7, gameId, "2026-11-16.10", 21),
+    ];
+    database.tables.set("tweet_projection_reports", new Map(versions.map(row => [row.report_key, row])));
+    const keys = async (scope: { teamId?: number; gameId?: number; internal?: boolean }) =>
+      (await fetchTweetProjectionReports(database.db, { date, ...scope })).map(value => value.key);
+    expect(await keys({ gameId })).toEqual(["confirmed-other-side"]);
+    expect(await keys({ teamId: 54 })).toEqual(["unbound"]);
+    expect(await keys({ gameId, teamId: 54 })).toEqual([]);
+    expect(await keys({ teamId: 4 })).toEqual([]);
+    expect(await keys({ gameId, teamId: 54, internal: true })).toEqual(["stale-game"]);
+    const later = makeReading("vgk-current", 54, gameId, "2026-11-16.10", 22);
+    database.tables.get("tweet_projection_reports")!.set(later.report_key, later);
+    expect(await keys({ gameId })).toEqual(["confirmed-other-side"]);
+    const disputed = await fetchTweetProjectionReports(database.db, { date, teamId: 54 });
+    expect(disputed[0]).toMatchObject({ gameId: null, originalUrl, interpretation: { context: "unknown", units: [], events: [] } });
+    const correctedSides = [makeReading("ellis", 7, gameId, "2026-11-18.1", 10), makeReading("hill", 54, gameId, "2026-11-18.1", 10)];
+    for (const row of correctedSides) database.tables.get("tweet_projection_reports")!.set(row.report_key, row);
+    expect(await keys({ gameId })).toEqual(["ellis", "hill"]);
+  });
+  it("keeps new game bindings independently addressable and older parser keys stable", () => {
+    const { source } = liveProjectionFixture("goalie");
+    const key = (version: string, gameId: number | null) => projectionReportFromSource({ ...source, gameId,
+      metadata: { interpretation: { ...source.metadata.interpretation, version } } })!.key;
+    expect(key("2026-11-18.1", null)).not.toBe(key("2026-11-18.1", source.gameId));
+    expect(key("2026-11-18.1", null)).toBe(key("2026-11-18.1", null));
+    expect(key("2026-11-16.2", null)).toBe(key("2026-11-16.2", source.gameId));
+  });
+  it("withholds stored Ontario/COL and Hallander/PHI misbindings and follows a corrected relay without an original URL", async () => {
+    enableLivePublishing();
+    const database = projectionDatabase([]);
+    const date = "2026-11-15";
+    const hallander = report("phi", 1, { date, teamId: 4, teamAbbreviation: "PHI", gameId: null, originalUrl: null,
+      text: "Filip Hallander: Line Change: Hallander will draw back into the lineup in Philadelphia on Sunday. https://t.co/u65QWG63CX",
+      provenance: { relayTweetId: "2122107530822468012", originalTweetId: null, attributionStatus: "pending" } });
+    hallander.interpretation = { ...hallander.interpretation, version: "2026-11-06.1", units: [] };
+    const ontario = report("col", 1, { date, teamId: 21, teamAbbreviation: "COL", gameId: null,
+      originalUrl: "https://x.com/ReignInsider/status/2122130720714088703",
+      text: "RT @ReignInsider: Projected Lineup Game #16 vs. COL\nKirsanov-Booth\nHicketts-Brzustewicz\nPerunovich-Millar" });
+    ontario.interpretation = { ...ontario.interpretation, version: "2026-11-15.1", units: [] };
+    const rows = new Map<string, any>();
+    database.tables.set("tweet_projection_reports", rows);
+    const add = (p: ProjectionReport) => rows.set(p.key, { report_key: p.key, team_id: p.teamId, game_id: p.gameId, report_date: date, interpretation_version: p.interpretation.version, payload: p });
+    add(hallander); add(ontario);
+    expect(await fetchTweetProjectionReports(database.db, { date })).toEqual([]);
+    const corrected = { ...hallander, key: "edm", teamAbbreviation: "EDM", teamId: 22, gameId: 2026020326,
+      interpretation: { ...hallander.interpretation, version: "2026-11-18.1", context: "game" as const } };
+    add(corrected);
+    expect((await fetchTweetProjectionReports(database.db, { date, teamId: 22 })).map(p => p.key)).toEqual(["edm"]);
+    expect(await fetchTweetProjectionReports(database.db, { date, teamId: 4 })).toEqual([]);
+    expect(await fetchTweetProjectionReports(database.db, { date, internal: true })).toHaveLength(3);
+  });
+  it("uses the immutable carrier ID when a new interpretation corrects the original attribution", async () => {
+    enableLivePublishing();
+    const database = projectionDatabase([]);
+    const build = (key: string, teamId: number, id: string, version: string) => {
+      const value = report(key, 1, { teamId, originalUrl: `https://x.com/Reporter/status/${id}`,
+        provenance: { relayTweetId: "12", originalTweetId: id, attributionStatus: "resolved" } });
+      value.interpretation.version = version;
+      return { report_key: key, report_date: value.date, team_id: teamId, interpretation_version: version, payload: value };
+    };
+    const old = build("old", 7, "80", "2026-11-16.2"), corrected = build("new", 54, "81", "2026-11-18.1");
+    database.tables.set("tweet_projection_reports", new Map([[old.report_key, old], [corrected.report_key, corrected]]));
+    expect(await fetchTweetProjectionReports(database.db, { teamId: 7, date: old.report_date })).toEqual([]);
+    expect((await fetchTweetProjectionReports(database.db, { teamId: 54, date: old.report_date })).map(row => row.key)).toEqual(["new"]);
+  });
+  it("keeps a late worker's old report in the archive while withholding its superseded forecast event", async () => {
+    enableLivePublishing();
+    const fixture = liveProjectionFixture("goalie");
+    fixture.source.metadata.interpretation.version = "2026-11-06.1";
+    fixture.snapshot.metadata = fixture.source.metadata;
+    const corrected = projectionReportFromSource({ ...fixture.source, gameId: null,
+      metadata: { interpretation: { ...fixture.source.metadata.interpretation, version: "2026-11-18.1" } } })!;
+    const database = projectionDatabase([fixture]);
+    database.tables.set("tweet_projection_reports", new Map([[corrected.key, { report_key: corrected.key, report_date: corrected.date, team_id: corrected.teamId, game_id: null, payload: corrected }]]));
+    await persistTweetProjectionReports(database.db, [fixture.source]);
+    expect(database.tables.get("tweet_projection_reports")!.size).toBe(2);
+    expect(database.children.size).toBe(0);
   });
   it("retains immutable versions, dedupes retries and withholds tentative availability under mocked storage", async () => {
     vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");

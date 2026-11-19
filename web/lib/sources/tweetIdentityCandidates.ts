@@ -1,3 +1,4 @@
+import { boundedDistance, canonicalAcronymMatches } from "./tweetNameLexicon";
 import { normalizeIdentityName, resolvePlayerIdentity } from "./playerIdentity";
 import { snapshotRowAtSource, type IdentitySnapshotRow, type PlayerIdentityIndex } from "./playerIdentitySnapshot";
 
@@ -17,29 +18,6 @@ export type IdentityCandidateSet = {
   quality: "exact" | "weak" | "missing"; exactStatus: "matched" | "ambiguous" | "conflicting_membership" | "missing_player";
   directoryHash: string; completeness: PlayerIdentityIndex["snapshot"]["content"]["completeness"];
 };
-
-/** Unicode code point edit distance with a small bound; transpositions cost two edits. */
-function boundedDistance(left: string, right: string, bound: number): number | null {
-  const a = [...left], b = [...right];
-  if (Math.abs(a.length - b.length) > bound) return null;
-  let prior = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    const next = [i];
-    for (let j = 1; j <= b.length; j++) next[j] = Math.min(next[j - 1]! + 1, prior[j]! + 1,
-      prior[j - 1]! + Number(a[i - 1] !== b[j - 1]));
-    if (Math.min(...next) > bound) return null;
-    prior = next;
-  }
-  return prior[b.length]! <= bound ? prior[b.length]! : null;
-}
-
-/** Canonical-name hypothesis only, never a verified alias. Keep apostrophes within a token. */
-function canonicalAcronymMatches(mention: string, fullName: string): boolean {
-  if (!/^(?:\p{Lu}\p{M}*\.?){3,5}$/u.test(mention.trim().normalize("NFC"))) return false;
-  const tokens = fullName.normalize("NFC").match(/\p{L}[\p{L}\p{M}]*(?:[’'][\p{L}\p{M}]+)*/gu) ?? [];
-  if (tokens.length < 3 || tokens.length > 5) return false;
-  return normalizeIdentityName(tokens.map(token => [...token][0]).join("")) === normalizeIdentityName(mention);
-}
 
 /** Retrieval proposes possibilities. Context ranks but never removes a lexical candidate. */
 export function retrieveTweetIdentityCandidates(args: {

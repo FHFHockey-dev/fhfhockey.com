@@ -81,13 +81,18 @@ describe("entry snapshot reconciliation", () => {
     expect(result.units).toHaveLength(0); expect(result.conflicts).toHaveLength(1);
   });
   it("appends explicit authorized correction and retains previous entry", () => {
-    const previous = entry();
-    const corrected = fixtureClaim("correction", { kind: "entry_correction", supersedes: ["warmup"], relationAuthority: "original_author", unit: fixtureUnit(["Holmberg", "Point", "Kucherov"]) });
-    const result = entry([fixtureClaim(), corrected], previous);
+    const original = fixtureClaim("warmup", { version: "2026-11-06.1:selector" });
+    const f2 = { ...original, id: "warmup-F2", unit: fixtureUnit(["A", "B", "C"], "es_forward", 2) };
+    const previous = entry([original, f2]);
+    const corrected = { ...original, id: "correction", version: "2026-11-16.2:selector", kind: "entry_correction" as const,
+      time: { ...original.time, interpretedAt: fixtureNow }, supersedes: [original.id], relationAuthority: "original_author" as const, unit: fixtureUnit(["Holmberg", "Point", "Kucherov"]) };
+    const claims = [original, f2, corrected];
+    const result = entry(claims, previous);
     expect(result).toMatchObject({ status: "corrected", previousId: previous.id, revision: 2 });
     expect(result.units[0]!.unit.players[0]!.name).toBe("Holmberg");
     expect(previous.units[0]!.unit.players[0]!.name).toBe("Mikheyev");
-    expect(entry([fixtureClaim(), corrected], result)).toBe(result);
+    expect(result.units[1]!.claims[0]!.id).toBe(f2.id);
+    expect(entry(claims, result)).toBe(result);
   });
   it("a relay cannot correct the original author's claim", () => {
     const previous = entry();

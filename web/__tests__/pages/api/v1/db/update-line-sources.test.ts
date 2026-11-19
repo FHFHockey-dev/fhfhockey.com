@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 function paginatedRoster(result: { data: any[]; error: null }) {
   const query: any = {
     in: vi.fn(() => query), eq: vi.fn(() => query), order: vi.fn(() => query),
-    range: vi.fn((from: number, to: number) => Promise.resolve({ ...result, data: result.data.slice(from, to + 1) })),
+    range: vi.fn((from: number, to: number) => Promise.resolve({ ...result, data: result.data.slice(from, to + 1).map((row) => row.players ? { created_at: "2025-07-01T00:00:00Z", ended_at: null, is_current: true, ...row } : row) })),
   };
   return query;
 }
@@ -204,6 +204,7 @@ function createSupabaseMocks(eventRows: LineSourceEventFixture[]) {
     .mockResolvedValue({ error: null });
   const staleRowUpdateQuery: any = {
     eq: vi.fn(() => staleRowUpdateQuery),
+    is: vi.fn(() => staleRowUpdateQuery),
     neq: vi.fn(() => staleRowUpdateQuery),
     then: (resolve: any) => Promise.resolve({ error: null }).then(resolve),
   };
@@ -935,6 +936,60 @@ describe("/api/v1/db/update-line-sources", () => {
     }
   });
 
+  it.each(["gdl", "ccc"])("serializes post-trade and earlier quoted lineups with each original's roster through %s", async (path) => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "false");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 404 })));
+    mocks.getTeams.mockResolvedValue([
+      { id: 8, name: "Montréal Canadiens", abbreviation: "MTL" },
+      { id: 4, name: "Philadelphia Flyers", abbreviation: "PHI" },
+    ]);
+    const direct = buildEvent({ id: "direct-after", sourceKey: "gamedaylines", sourceAccount: "GameDayLines",
+      tweetId: "2049626619221008661", text: "#Habs lines\nCaufield - PLD - Suzuki" });
+    const wrapper = buildEvent({ id: "quote-before", sourceKey: "gamedaylines", sourceAccount: "GameDayLines",
+      tweetId: "2049626619221008662", text: "Lines" });
+    const quoteId = "2049560345441206272";
+    wrapper.raw_payload = { ...wrapper.raw_payload, provider: "fxtwitter",
+      fx: { id: wrapper.tweet_id, author: { screen_name: "GameDayLines" } },
+      quote: { id: quoteId, url: `https://x.com/b_sommermann/status/${quoteId}`,
+        author_handle: "b_sommermann", text: "#Flyers lines\nKonecny - PLD - Cates" } };
+    const db = createSupabaseMocks([direct, wrapper]);
+    const base = mocks.from.getMockImplementation()!;
+    const trade = "2026-04-29T20:00:00Z";
+    const player = (teamId: number, playerId: number, fullName: string) =>
+      ({ teamId, playerId, players: { fullName, lastName: fullName.split(" ").at(-1), position: "C" } });
+    mocks.rpc.mockResolvedValue({ data: true, error: null });
+    mocks.from.mockImplementation((table: string) => {
+      if (table === "rosters") return { select: () => paginatedRoster({ data: [
+        { ...player(4, 90001, "Pierre-Luc Dubois"), ended_at: trade, is_current: false },
+        { ...player(8, 90001, "Pierre-Luc Dubois"), created_at: trade },
+        player(4, 90002, "Travis Konecny"), player(4, 90003, "Noah Cates"),
+        player(8, 90004, "Cole Caufield"), player(8, 90005, "Nick Suzuki"),
+      ], error: null }) };
+      if (["tweet_player_memberships", "fhfh_player_identities", "fhfh_player_identity_aliases"].includes(table)) {
+        return { select: () => paginatedRoster({ data: [], error: null }) };
+      }
+      if (table === "tweet_pipeline_jobs") return { update: matchedJobUpdate };
+      if (table === "lines_ccc_ifttt_events") return base("line_source_ifttt_events");
+      if (table === "lines_ccc") return base("line_source_snapshots");
+      return base(table);
+    });
+    const res = createMockRes();
+    await (path === "gdl" ? handler : cccHandler)(createMockReq(), res);
+    expect(res.statusCode, JSON.stringify(res.body)).toBe(200);
+    const rows = getUpsertedRows(db.lineSourceSnapshotsUpsertMock);
+    expect(rows).toHaveLength(2);
+    expect(db.staleRowUpdateMock.mock.results[0]?.value.is).toHaveBeenCalledWith("metadata->>occurrenceOnly", null);
+    expect(rows.find((row) => row.tweet_id === direct.tweet_id)).toMatchObject({
+      team_id: 8, line_1_player_ids: expect.arrayContaining([90004, 90001, 90005]), tweet_posted_at: direct.tweet_created_at,
+    });
+    expect(rows.find((row) => row.tweet_id === wrapper.tweet_id)).toMatchObject({
+      team_id: 4, line_1_player_ids: expect.arrayContaining([90002, 90001, 90003]), primary_text_source: "quoted_oembed",
+      quoted_tweet_id: quoteId, tweet_posted_at: "2026-04-29T18:44:00.000Z",
+    });
+    expect(mocks.from.mock.calls.filter(([table]) => table === "rosters")).toHaveLength(1);
+  });
+
   it.each(["gdl", "ccc"])("retains both validated goalie teams and finalizes one raw receipt through %s", async (path) => {
     vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
     vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "false");
@@ -1340,7 +1395,7 @@ describe("/api/v1/db/update-line-sources", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
       success: true,
-      rosterTeamsLoaded: 3,
+      rosterTeamsLoaded: 8,
       summary: {
         acceptedNhl: 1,
         rowsUpserted: 1,

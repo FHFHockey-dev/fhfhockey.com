@@ -85,7 +85,7 @@ export function extractDurableTweetClaims(args: {
   const identity = interpretation?.identityContext;
   if (!gate && (!publishedAt || !source.observedAt || date !== easternReportDate(source.observedAt)
     || Date.parse(source.observedAt) - Date.parse(publishedAt) > 6 * 3600_000
-    || identity?.basis !== "current_membership" || identity.sourcePublishedAt !== source.tweetPostedAt)) gate = "source_time_identity_unverified";
+    || !identity || !["current_membership", "publication_roster"].includes(identity.basis) || identity.sourcePublishedAt !== source.tweetPostedAt)) gate = "source_time_identity_unverified";
   const scope: TweetSemanticScope | null = gameBound && interpretation?.context === "game" ? {
     kind: "game", teamId: source.team!.id, gameId: game!.id, phase: "entry", group: null,
   } : source.team && explicitPracticeSession(text) ? { kind: "session", teamId: source.team.id, date,

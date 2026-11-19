@@ -1,8 +1,8 @@
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { sanitizePublicNewsText } from "lib/newsFeed";
-import { verifiedOriginalTweetUrl } from "lib/sources/projectedLineups";
+import { easternReportDate, verifiedOriginalTweetUrl } from "lib/sources/projectedLineups";
 import { isRelayAccount, scrubRelayHandles } from "./authority";
-import { activeLineClaims, captureIdentity, eligibleClaim, reconcileEntry, reconcilePP } from "./reconcile";
+import { activeLineClaims, captureIdentity, currentSourceReadings, eligibleClaim, reconcileEntry, reconcilePP } from "./reconcile";
 import { chooseDefaultGame, observeLineGame, stateAtRead, trustworthyState } from "./gameState";
 import { fetchCarryMemberships, fetchEntryHistory, fetchLineClaims, latestLineDecisions } from "./storage";
 import { instant, lineSnapshotFlags, type EntryRevision, type EntryView, type GameLinesResponse, type LineClaim, type LineGame, type SelectedLineUnit, type SourceFeedItem } from "./types";
@@ -43,6 +43,37 @@ export async function latestLineGameStates(supabase: any, games: LineGame[]): Pr
   }));
 }
 
+/** Matchup choices for the older reports view. Read the stored schedule and phase only. */
+export async function readReportGames(supabase: any, args: { teamId?: number; gameId?: number; now: string }) {
+  const exact = args.gameId ? (await fetchLineGames(supabase, { gameId: args.gameId }))[0] : null;
+  if (args.gameId && (!exact || args.teamId && ![exact.homeTeamId, exact.awayTeamId].includes(args.teamId))) return null;
+  const teamIds = args.teamId ? [args.teamId] : exact ? [exact.homeTeamId, exact.awayTeamId] : [];
+  const schedules = await Promise.all(teamIds.map(teamId => fetchLineGames(supabase, {
+    teamId, dateFrom: day(args.now, -READ_WINDOW.backDays), dateTo: day(args.now, READ_WINDOW.forwardDays),
+  })));
+  const byId = new Map(schedules.flat().map(game => [game.id, game]));
+  if (exact) byId.set(exact.id, exact);
+  const games = [...byId.values()].sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
+  let selected = exact ?? null;
+  if (!selected) {
+    const today = easternReportDate(args.now);
+    const recent = games.filter(game => game.date <= today && game.date >= day(today, -1));
+    // The reports view can operate on the schedule alone when the optional snapshot tables are absent.
+    let states: LineGame[] = [];
+    try { states = await latestLineGameStates(supabase, recent); }
+    catch (error) {
+      if (!["42P01", "PGRST205"].includes((error as { code?: string }).code ?? "")) throw error;
+    }
+    for (const state of states) byId.set(state.id, stateAtRead(state, args.now));
+    const candidates = [...byId.values()];
+    const primary = chooseDefaultGame(candidates, args.now);
+    // A scheduled matchup today stays identifiable after its start when live status is unknown.
+    selected = primary?.phase === "live" ? primary : candidates.find(game => game.date === today && game.phase !== "final" && game.phase !== "postponed") ?? primary;
+  }
+  return { selectedGameId: selected?.id ?? null, games: games.map(({ id, date, awayTeamId, homeTeamId, awayAbbreviation, homeAbbreviation }) =>
+    ({ id, date, awayTeamId, homeTeamId, awayAbbreviation, homeAbbreviation })) };
+}
+
 /** Relay accounts never reach the site surface: every public string field is scrubbed of them. */
 export function publicClaim(claim: LineClaim): LineClaim {
   const sanitize = (value: string) => sanitizePublicNewsText(scrubRelayHandles(value));
@@ -72,16 +103,18 @@ const excludedAuthor = (claim: LineClaim) => claim.authorityTier === "excluded" 
 /** Raw captures for one team and game, one item per original post with its relays collapsed under it. */
 export function buildSourceFeed(claims: LineClaim[], game: LineGame, now: string): SourceFeedItem[] {
   const start = (instant(game.scheduledStart) ?? instant(`${game.date}T12:00:00Z`)!) - FEED_WINDOW_MS, end = instant(now) ?? -Infinity;
-  const scoped = claims.filter((claim) => !excludedAuthor(claim) && (instant(claim.time.ingestedAt) ?? Infinity) <= end
-    && (claim.gameId === game.id || claim.gameId == null && (instant(claim.time.ingestedAt) ?? -Infinity) >= start));
   const identity = captureIdentity(claims);
+  const visible = claims.filter(claim => !excludedAuthor(claim) && (instant(claim.time.ingestedAt) ?? Infinity) <= end);
+  const inScope = (claim: LineClaim) => claim.gameId === game.id || claim.gameId == null && (instant(claim.time.ingestedAt) ?? -Infinity) >= start;
+  const currentIds = new Set(currentSourceReadings(visible, identity).filter(inScope).map(claim => claim.id));
   const groups = new Map<string, LineClaim[]>();
-  for (const claim of scoped) groups.set(identity(claim), [...groups.get(identity(claim)) ?? [], claim]);
-  return [...groups.entries()].map(([id, group]) => {
+  for (const claim of visible.filter(inScope)) groups.set(identity(claim), [...groups.get(identity(claim)) ?? [], claim]);
+  return [...groups.entries()].filter(([, group]) => group.some(claim => currentIds.has(claim.id))).map(([id, group]) => {
     const ordered = [...group].sort((a, b) => Number(b.provenance?.attributionStatus === "resolved") - Number(a.provenance?.attributionStatus === "resolved")
       || (instant(b.time.interpretedAt) ?? 0) - (instant(a.time.interpretedAt) ?? 0) || a.id.localeCompare(b.id));
-    const representative = ordered[0]!, shown = publicClaim(representative);
-    const bound = ordered.find((claim) => claim.binding.status === "bound") ?? representative;
+    const current = ordered.filter(claim => currentIds.has(claim.id));
+    const representative = current[0]!, shown = publicClaim(representative);
+    const bound = current.find((claim) => claim.binding.status === "bound") ?? representative;
     const relays = new Map<string, SourceFeedItem["relays"][number]>();
     for (const claim of ordered) if (claim.relayAccount) {
       const key = `${claim.relayAccount}:${claim.provenance?.relayTweetId ?? ""}`;
@@ -90,7 +123,7 @@ export function buildSourceFeed(claims: LineClaim[], game: LineGame, now: string
     return { id, originalIdentity: shown.originalIdentity, originalAuthor: ordered.find((claim) => claim.originalAuthor && !isRelayAccount(claim.originalAuthor))?.originalAuthor
         ?? (shown.sourceUrl && !isRelayAccount(shown.author) ? shown.author : null),
       authorityTier: representative.authorityTier ?? "unknown", relays: [...relays.values()], text: shown.text,
-      publishedAt: representative.time.originalPublishedAt ?? representative.time.relayPublishedAt,
+      publishedAt: ordered.find(claim => instant(claim.time.originalPublishedAt) != null)?.time.originalPublishedAt ?? null,
       ingestedAt: ordered.map((claim) => claim.time.ingestedAt).sort()[0]!,
       binding: { status: bound.binding.status, gameId: bound.gameId, evidence: bound.binding.evidence },
       context: representative.context ?? null, claimIds: group.map((claim) => claim.id).sort(), sourceUrl: shown.sourceUrl };
@@ -123,8 +156,8 @@ export async function readGameLines(supabase: any, args: { teamId?: number; game
   if (!game) return { ...empty, games };
   const teamIds = args.teamId ? [args.teamId] : [game.awayTeamId, game.homeTeamId];
   if (!teamIds.every((teamId) => [game.homeTeamId, game.awayTeamId].includes(teamId))) return empty;
-  // PP staleness counts the team's games; the game route loaded only this game.
-  if (args.gameId && controls.carryForward) for (const teamId of teamIds) {
+  // Exact-game selection still needs nearby games for the picker and PP staleness counts.
+  if (args.gameId) for (const teamId of teamIds) {
     for (const candidate of await fetchLineGames(supabase, { teamId, dateFrom: window.from, dateTo: window.to })) if (!games.some((known) => known.id === candidate.id)) games.push(candidate);
   }
   const [claims, entries] = await Promise.all([fetchLineClaims(supabase, teamIds, args.now, `${window.from}T00:00:00Z`),
@@ -144,7 +177,7 @@ export async function readGameLines(supabase: any, args: { teamId?: number; game
     const history = entries.filter((entry) => entry.teamId === teamId && entry.gameId !== game.id && entry.status !== "expected" && games.find((candidate) => candidate.id === entry.gameId)?.date! < game.date)
       .sort((a, b) => games.find((candidate) => candidate.id === b.gameId)!.date.localeCompare(games.find((candidate) => candidate.id === a.gameId)!.date) || b.revision - a.revision);
     const fallback = history[0];
-    const active = activeLineClaims(scoped);
+    const active = activeLineClaims(claims.filter(claim => claim.teamId === teamId)).filter(claim => claim.gameId === game.id);
     const pp = reconcilePP({ game, teamId, games, claims, previous: previous.pp, now: args.now, carryForward: controls.carryForward, memberships });
     return { entryBasis, teamId, abbreviation: teamId === game.homeTeamId ? game.homeAbbreviation : game.awayAbbreviation,
       entry: entry ? publicEntry(entry) : null,

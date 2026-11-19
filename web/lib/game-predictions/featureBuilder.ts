@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { verifiedOriginalTweetUrl } from "lib/sources/projectedLineups";
 import { sumModeledHeads } from "lib/projections/modeledHeadTotals";
 import { classifyExternalInputProof, type ClassifiedRunProof,
   type ExternalInputProofStatus } from "lib/projections/externalInputProof";
@@ -164,8 +165,14 @@ export type LinesCccRow = Pick<
   | "goalie_2_player_id"
   | "goalie_2_name"
 > & {
-  /** Only `metadata.goalieStates` is loaded: the producer's per-goalie state (see `RowGoalieState` in linesCccIngestion). */
-  metadata?: { goalieStates?: unknown } | null;
+  tweet_url?: string | null;
+  tweet_id?: string | null;
+  primary_text_source?: string | null;
+  quoted_tweet_url?: string | null;
+  quoted_tweet_id?: string | null;
+  quoted_author_handle?: string | null;
+  metadata?: { goalieStates?: unknown; goalieClaimOrigin?: { url?: string | null } | null;
+    sourceProvenance?: { originalAuthor?: string | null; originalTweetId?: string | null } } | null;
 };
 
 export type GoaliePerformanceRow = Pick<
@@ -1489,6 +1496,7 @@ type LinesCccGoalieState = {
   name: string | null;
   playerId: number | null;
   state: string | null;
+  explicitEvent: boolean;
   role: string | null;
   stored: boolean;
 };
@@ -1504,6 +1512,7 @@ function linesCccGoalieStates(row: LinesCccRow): LinesCccGoalieState[] {
         name: typeof value.name === "string" ? value.name : null,
         playerId: typeof value.playerId === "number" ? value.playerId : null,
         state: typeof value.state === "string" ? value.state : null,
+        explicitEvent: value.source === "event" && value.observation == null,
         role: typeof value.role === "string" ? value.role : null,
         stored: value.stored !== false,
       },
@@ -1520,6 +1529,17 @@ function sameLinesCccGoalie(
   return state.name != null && name != null && state.name === name;
 }
 
+function hasGoalieClaimOrigin(row: LinesCccRow): boolean {
+  if (row.metadata?.goalieClaimOrigin) return !!verifiedOriginalTweetUrl(row.metadata.goalieClaimOrigin.url ?? null);
+  // Older captures stored provenance and the document selected for interpretation separately.
+  const quoted = row.primary_text_source === "quoted_oembed";
+  const author = quoted ? row.quoted_author_handle : row.metadata?.sourceProvenance?.originalAuthor;
+  const id = quoted ? row.quoted_tweet_id : row.metadata?.sourceProvenance?.originalTweetId;
+  const url = verifiedOriginalTweetUrl((quoted ? row.quoted_tweet_url : row.tweet_url) ?? null, author);
+  if (!quoted && row.tweet_id !== id) return false;
+  return !!url && !!author && !!id && url.toLowerCase() === `https://x.com/${author.replace(/^@/, "").toLowerCase()}/status/${id}`;
+}
+
 /**
  * A goalie the source explicitly confirmed as the starter: state "confirmed", not a backup, stored as goalie_1, and
  * no other goalie on the row also confirmed as a starter. Listed, projected, likely, observed (warmup or first-off)
@@ -1527,9 +1547,9 @@ function sameLinesCccGoalie(
  * slot order alone never makes a starter certain (AFULL-GAME3-02).
  */
 function linesCccRowHasConfirmedStarter(row: LinesCccRow): boolean {
-  if (row.goalie_1_player_id == null && row.goalie_1_name == null) return false;
+  if (!hasGoalieClaimOrigin(row) || (row.goalie_1_player_id == null && row.goalie_1_name == null)) return false;
   const confirmedStarters = linesCccGoalieStates(row).filter(
-    (state) => state.stored && state.state === "confirmed" && state.role !== "backup",
+    (state) => state.stored && state.explicitEvent && state.state === "confirmed" && state.role === "starter",
   );
   return (
     confirmedStarters.length === 1 &&
@@ -1557,7 +1577,7 @@ function latestLinesCccConfirmedStarterRow(
   // A later post that rules the confirmed goalie out cancels the confirmation.
   const ruledOutLater = teamRows.some(
     (row) =>
-      rowTime(row) > rowTime(confirmed) &&
+      rowTime(row) > rowTime(confirmed) && hasGoalieClaimOrigin(row) &&
       linesCccGoalieStates(row).some(
         (state) =>
           state.state === "ruled_out" &&
@@ -3035,7 +3055,7 @@ export async function fetchGamePredictionFeatureInputs(
     client
       .from("lines_ccc")
       .select(
-        "game_id,team_id,observed_at,tweet_posted_at,classification,status,nhl_filter_status,goalie_1_player_id,goalie_1_name,goalie_2_player_id,goalie_2_name,goalie_states:metadata->goalieStates",
+        "game_id,team_id,observed_at,tweet_posted_at,classification,status,nhl_filter_status,goalie_1_player_id,goalie_1_name,goalie_2_player_id,goalie_2_name,goalie_states:metadata->goalieStates,goalie_claim_origin:metadata->goalieClaimOrigin,original_author:metadata->sourceProvenance->>originalAuthor,original_tweet_id:metadata->sourceProvenance->>originalTweetId,tweet_id,tweet_url,primary_text_source,quoted_author_handle,quoted_tweet_id,quoted_tweet_url",
       )
       .eq("game_id", gameId)
       .in("team_id", teamIds)
@@ -3171,11 +3191,13 @@ export async function fetchGamePredictionFeatureInputs(
       []) as LineCombinationRow[],
     linesCccRows: (
       (linesCccResult.data ?? []) as Array<
-        Omit<LinesCccRow, "metadata"> & { goalie_states?: unknown }
+        Omit<LinesCccRow, "metadata"> & { goalie_states?: unknown; goalie_claim_origin?: { url?: string | null } | null;
+          original_author?: string | null; original_tweet_id?: string | null }
       >
-    ).map(({ goalie_states, ...row }) => ({
+    ).map(({ goalie_states, goalie_claim_origin, original_author, original_tweet_id, ...row }) => ({
       ...row,
-      metadata: { goalieStates: goalie_states ?? null },
+      metadata: { goalieStates: goalie_states ?? null, goalieClaimOrigin: goalie_claim_origin,
+        sourceProvenance: { originalAuthor: original_author, originalTweetId: original_tweet_id } },
     })),
     goaliePerformanceRows: (goaliePerformanceResult.data ??
       []) as GoaliePerformanceRow[],

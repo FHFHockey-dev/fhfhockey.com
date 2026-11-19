@@ -56,15 +56,26 @@ describe("capture interpretation boundary", () => {
     const unsupported = claimsFromReport(report, [fixtureGame], { ...context, certainty: "confirmed", confirmationEvidence: [] })[0]!;
     expect(unsupported.reviewReasons).toContain("claim_confirmation_unresolved");
   });
-  it("keeps pre- and post-bump interpretation claims side by side and activates only the newer one", () => {
-    const legacy = { ...report, key: "fixture-fingerprint:14:2026-11-06.1", interpretation: { ...report.interpretation, version: "2026-11-06.1" } };
+  it("replaces a full reading of the same primary text even when the old parser finishes last", () => {
+    const f2 = fixtureUnit(["A", "B", "C"], "es_forward", 2);
+    const legacy = { ...report, key: "fixture-fingerprint:14:2026-11-06.1", interpretedAt: "2026-11-15T21:01:00Z",
+      interpretation: { ...report.interpretation, version: "2026-11-06.1", units: [fixtureUnit(), f2] } };
     const current = { ...report, key: `fixture-fingerprint:14:${TWEET_INTERPRETATION_VERSION}`, interpretedAt: "2026-11-15T21:00:00Z",
       interpretation: { ...report.interpretation, version: TWEET_INTERPRETATION_VERSION } };
-    const [old] = claimsFromReport(legacy, [fixtureGame], context), [fresh] = claimsFromReport(current, [fixtureGame], context);
+    const [old, oldF2] = claimsFromReport(legacy, [fixtureGame], { ...context, claimEvidence: { "es_forward:1:main": context, "es_forward:2:main": context } });
+    const [fresh] = claimsFromReport(current, [fixtureGame], context);
     expect(old!.version).toBe(`2026-11-06.1:${LINE_SELECTOR_VERSION}`);
     expect(fresh!.version).toBe(`${TWEET_INTERPRETATION_VERSION}:${LINE_SELECTOR_VERSION}`);
     expect(old!.id).not.toBe(fresh!.id);
-    expect(activeLineClaims([old!, fresh!]).map((claim) => claim.id)).toEqual([fresh!.id]);
-    expect(activeLineClaims([fresh!, old!]).map((claim) => claim.id)).toEqual([fresh!.id]);
+    const history = [old!, oldF2!, fresh!];
+    expect(activeLineClaims(history).map(claim => claim.id)).toEqual([fresh!.id]);
+    expect(activeLineClaims([...history].reverse()).map(claim => claim.id)).toEqual([fresh!.id]);
+    expect(history.map(claim => claim.unit!.number)).toEqual([1, 2, 1]);
+    // A partial relay with different text and a separate original retain their F2 evidence.
+    const partial = { ...oldF2!, text: "F2: A-B-C", id: "partial" };
+    const separate = { ...oldF2!, originalIdentity: "https://x.com/another/status/234", id: "separate" };
+    expect(activeLineClaims([...history, partial, separate]).map(claim => claim.id).sort()).toEqual([fresh!.id, "partial", "separate"].sort());
+    // Reprocessing under the same parser alone cannot withdraw an omitted slot.
+    expect(activeLineClaims([old!, oldF2!, { ...fresh!, version: old!.version }]).some(claim => claim.id === oldF2!.id)).toBe(true);
   });
 });

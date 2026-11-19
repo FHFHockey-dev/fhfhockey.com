@@ -48,7 +48,13 @@ function post(url: string | null | undefined): { account: SourceAccountReference
 
 /** Uses verified post relationships, never the first @mention or a relay byline. */
 export function tweetClaimAttribution(source: ParsedLinesCccSource): TweetClaimAttribution {
-  const wrapper = post(source.tweetUrl ?? source.sourceUrl);
+  const storedUrl = source.tweetUrl ?? source.sourceUrl;
+  const provided = typeof source.metadata?.providerPostUrl === "string" ? post(source.metadata.providerPostUrl) : null;
+  // Intake normalizes a named provider link to /i/web/status/<id>. Recover the supplied
+  // author only for that same status, never from an embedded link to another reporter.
+  const wrapper = post(storedUrl) ?? (provided && source.tweetId === provided.id
+    && storedUrl === `https://twitter.com/i/web/status/${provided.id}`
+    && provided.account.handle === source.sourceHandle?.replace(/^@/, "").toLowerCase() ? provided : null);
   const quote = post(source.quotedTweetUrl);
   const validWrapper = wrapper && (!source.tweetId || wrapper.id === source.tweetId) ? wrapper : null;
   const validQuote = quote && (!source.quotedTweetId || quote.id === source.quotedTweetId)

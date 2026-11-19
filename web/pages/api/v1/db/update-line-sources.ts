@@ -4,6 +4,7 @@ import { admitTweetClaimEvaluationIntake, tweetClaimEvaluationIntakeWindow } fro
 import { processTweetClaimShadowBatch } from "lib/sources/tweetClaimRegistry";
 import { processLineSnapshotEvidence } from "lib/lines/processor";
 import { lineSnapshotFlags } from "lib/lines/types";
+import { createLineSourceRosterContext } from "lib/sources/lineSourceRosterContext";
 import { rosterSeasonForDate } from "lib/sources/playerIdentity";
 import { isEmptyQueueProcessorRun } from "lib/cron/emptyQueueRun";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
@@ -15,10 +16,7 @@ import { getCurrentSeason, getTeams } from "lib/NHL/server";
 import { buildTeamDirectory } from "lib/sources/lineupSourceIngestion";
 import {
   reviewTweetApplicability,
-  applyPlayerNameAliasesToRosterMap,
   extractTweetId,
-  fetchPlayerNameAliases,
-  fetchRosterEntriesByTeam,
   fetchScheduledGamesForDate,
   normalizeTweetUrl,
   parseBatchSize,
@@ -44,7 +42,6 @@ import {
   fetchLinesCccTweetOEmbedAttempt,
   getPrimaryTextForSource,
   readLinesCccWrapperOEmbedBackfillState,
-  refreshLinesCccSourceFromPrimaryText,
   rejectInsufficientQuoteWrapper,
   resolveLinesCccQuotedTweet,
   shouldAttemptLinesCccWrapperOEmbedBackfill,
@@ -276,6 +273,7 @@ async function persistLineSourceSnapshotRow(args: {
       .eq("source", args.row.source)
       .eq("tweet_id", args.row.tweet_id)
       .eq("status", "pending")
+      .is("metadata->>occurrenceOnly", null)
       .neq("team_id", args.row.team_id);
 
     if (unresolvedIgnoreError) throw unresolvedIgnoreError;
@@ -365,18 +363,8 @@ export default withCronJobAudit(
         scheduledGames.flatMap((game) => [game.homeTeamId, game.awayTeamId]),
       ),
     );
-    // Empty source queues still run scheduled-game reconciliation below.
-    let rosterByTeam = eventRows.length ? applyPlayerNameAliasesToRosterMap({
-      rosterByTeam: await fetchRosterEntriesByTeam({
-        supabase: req.supabase,
-        teamIds: scheduledTeamIds,
-        seasonId: rosterSeasonForDate(requestedDate),
-      }),
-      aliases: await fetchPlayerNameAliases({
-        supabase: req.supabase,
-        teamIds: scheduledTeamIds,
-      }),
-    }) : new Map();
+    const rosters = createLineSourceRosterContext(req.supabase, teamDirectory, requestedDate);
+    const eventRosters = new Map<string, Awaited<ReturnType<typeof rosters.forReport>>>();
     const gameIdByTeamId = new Map<number, number>();
     const ambiguousGameTeams = new Set<number>();
     for (const game of scheduledGames) {
@@ -422,7 +410,7 @@ export default withCronJobAudit(
         event,
         snapshotDate: requestedDate,
         teams: teamDirectory,
-        rosterByTeam,
+        ...await rosters.forReport(event),
         gameIdByTeamId,
       });
       const existingWrapperState = readLinesCccWrapperOEmbedBackfillState(
@@ -524,12 +512,9 @@ export default withCronJobAudit(
         };
       }
 
-      candidate = refreshLinesCccSourceFromPrimaryText({
-        source: candidate,
-        teams: teamDirectory,
-        rosterByTeam,
-        gameIdByTeamId,
-      });
+      const refreshed = await rosters.refresh(event, candidate, gameIdByTeamId);
+      candidate = refreshed.candidate;
+      eventRosters.set(event.id, refreshed.context);
       candidate = applyGdlSourceClassificationHint({
         sourceKey: event.source_key,
         candidate,
@@ -567,92 +552,6 @@ export default withCronJobAudit(
       });
     }
 
-    const unscheduledAcceptedTeamIds = Array.from(
-      new Set(
-        parsedCandidates
-          .map((candidate) =>
-            candidate.nhlFilterStatus === "accepted"
-              ? candidate.team?.id
-              : null,
-          )
-          .filter(
-            (teamId): teamId is number =>
-              typeof teamId === "number" && !rosterByTeam.has(teamId),
-          ),
-      ),
-    );
-    if (unscheduledAcceptedTeamIds.length > 0) {
-      const additionalRosterByTeam = applyPlayerNameAliasesToRosterMap({
-        rosterByTeam: await fetchRosterEntriesByTeam({
-          supabase: req.supabase,
-          teamIds: unscheduledAcceptedTeamIds,
-          seasonId: rosterSeasonForDate(requestedDate),
-        }),
-        aliases: await fetchPlayerNameAliases({
-          supabase: req.supabase,
-          teamIds: unscheduledAcceptedTeamIds,
-        }),
-      });
-      rosterByTeam = new Map([...rosterByTeam, ...additionalRosterByTeam]);
-
-      for (let index = 0; index < parsedCandidates.length; index += 1) {
-        const event = parsedEvents[index];
-        const candidate = parsedCandidates[index];
-        if (!event || !candidate?.team) continue;
-        if (!unscheduledAcceptedTeamIds.includes(candidate.team.id)) continue;
-
-        parsedCandidates[index] = applyGdlSourceClassificationHint({
-          sourceKey: event.source_key,
-          candidate: refreshLinesCccSourceFromPrimaryText({
-            source: candidate,
-            teams: teamDirectory,
-            rosterByTeam,
-            gameIdByTeamId,
-          }),
-        });
-      }
-    }
-    const hasAmbiguousNhlCandidates = parsedCandidates.some(
-      (candidate) => candidate.nhlFilterStatus === "rejected_ambiguous",
-    );
-    const unloadedTeamIds = teamDirectory
-      .map((team) => team.id)
-      .filter((teamId) => !rosterByTeam.has(teamId));
-    if (hasAmbiguousNhlCandidates && unloadedTeamIds.length > 0) {
-      const additionalRosterByTeam = applyPlayerNameAliasesToRosterMap({
-        rosterByTeam: await fetchRosterEntriesByTeam({
-          supabase: req.supabase,
-          teamIds: unloadedTeamIds,
-          seasonId: rosterSeasonForDate(requestedDate),
-        }),
-        aliases: await fetchPlayerNameAliases({
-          supabase: req.supabase,
-          teamIds: unloadedTeamIds,
-        }),
-      });
-      rosterByTeam = new Map([...rosterByTeam, ...additionalRosterByTeam]);
-
-      for (let index = 0; index < parsedCandidates.length; index += 1) {
-        const event = parsedEvents[index];
-        const candidate = parsedCandidates[index];
-        if (!event || candidate?.nhlFilterStatus !== "rejected_ambiguous") {
-          continue;
-        }
-
-        parsedCandidates[index] = applyGdlSourceClassificationHint({
-          sourceKey: event.source_key,
-          candidate: refreshLinesCccSourceFromPrimaryText({
-            source: candidate,
-            teams: teamDirectory,
-            rosterByTeam,
-            gameIdByTeamId,
-          }),
-        });
-      }
-    }
-
-    // A requested processing date is not evidence that an older report applies
-    // to that game's lineup. Keep the raw report and an explicit review reason.
     const claimSources = parsedCandidates.flatMap((source, index) => expandLinesCccGoalieClaims({ source, teams: teamDirectory, gameIdByTeamId })
       .map((candidate) => ({ candidate, event: parsedEvents[index]! })));
     parsedCandidates.splice(0, parsedCandidates.length, ...claimSources.map(({ candidate }) => candidate));
@@ -676,7 +575,7 @@ export default withCronJobAudit(
         row: toLinesCccRow({
           source: candidate,
           rosterEntries: candidate.team
-            ? (rosterByTeam.get(candidate.team.id) ?? [])
+            ? (eventRosters.get(parsedEvents[index]!.id)?.rosterByTeam.get(candidate.team.id) ?? [])
             : [],
         }),
       }),
@@ -936,7 +835,7 @@ export default withCronJobAudit(
       teamsLoaded: teamDirectory.length,
       scheduledGamesLoaded: scheduledGames.length,
       scheduledTeamsLoaded: scheduledTeamIds.length,
-      rosterTeamsLoaded: rosterByTeam.size,
+      rosterTeamsLoaded: rosters.loadedTeams.size,
       gameTeamLinksLoaded: gameIdByTeamId.size,
       summary: {
         sourcesProcessed: new Set(

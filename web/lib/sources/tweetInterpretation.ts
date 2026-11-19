@@ -1,7 +1,9 @@
+import { resolveTweetRosterIdentity } from "./tweetNameLexicon";
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
-import { breakIdentityTie, normalizeIdentityName, positionSlotRole, resolvePlayerIdentity, type PlayerIdentity, type PlayerSlotRole } from "./playerIdentity";
+import { breakIdentityTie, normalizeIdentityName, positionSlotRole, type PlayerIdentity, type PlayerSlotRole } from "./playerIdentity";
 
-export const TWEET_INTERPRETATION_VERSION = "2026-11-16.2";
+export const TWEET_INTERPRETATION_VERSION = "2026-11-19.1";
+export type TweetInitialsEvidence = EvidenceSpan & { playerId: number; teamId: number };
 export type EvidenceSpan = { start: number; end: number; text: string };
 export type TweetUnit = {
   situation: "es_forward" | "es_defense" | "pp" | "pk" | "goalie" | "scratch" | "injury";
@@ -48,7 +50,7 @@ export type TweetUnitChange = {
 export type TweetInterpretation = {
   version: string;
   rosterRevision?: string;
-  identityContext?: { basis: "current_membership"; sourcePublishedAt: string | null; eventRosterRevision: string };
+  identityContext?: { basis: "current_membership" | "publication_roster"; sourcePublishedAt: string | null; eventRosterRevision: string; uniqueInitials?: TweetInitialsEvidence[] };
   formation?: { forwards: 11; defense: 7 };
   units: TweetUnit[];
   excludedUnits?: TweetUnit[];
@@ -86,7 +88,7 @@ export function playerPositionRole(player: Pick<PlayerIdentity, "position">): Ev
   return positionSlotRole(player.position);
 }
 
-function resolveRowIdentity(rawName: string, roster: PlayerIdentity[], row?: PlayerSlotRole | null): ReturnType<typeof resolvePlayerIdentity> {
+function resolveRowIdentity(rawName: string, roster: PlayerIdentity[], row?: PlayerSlotRole | null): ReturnType<typeof resolveTweetRosterIdentity> {
   const key = normalizeIdentityName(rawName);
   const surnames = [...new Map(roster.filter((player) => normalizeIdentityName(player.lastName) === key)
     .map((player) => [player.playerId, player])).values()];
@@ -94,10 +96,10 @@ function resolveRowIdentity(rawName: string, roster: PlayerIdentity[], row?: Pla
     // A bare surname alias must not outrank another player's surname. Row position, then the
     // latest official roster, disambiguates only when every candidate has the same known team.
     const fit = breakIdentityTie(surnames, row);
-    return fit ? resolvePlayerIdentity(rawName, [fit]) : { status: "ambiguous", candidates: surnames };
+    return fit ? resolveTweetRosterIdentity(rawName, [fit]) : { status: "ambiguous", candidates: surnames };
   }
   // Full names and initials shared by two players are settled by the slot too.
-  return resolvePlayerIdentity(rawName, roster, undefined, row);
+  return resolveTweetRosterIdentity(rawName, roster, undefined, row);
 }
 
 /** Find a unique complete segmentation, retaining original offsets and compound names. */
@@ -198,14 +200,14 @@ function resolveNameList(list: string, offset: number, roster: PlayerIdentity[],
     const words = [...name.matchAll(/\S+/g)];
     const candidates = side === "in" && index === 0 ? words.map((word) => name.slice(word.index!)) : [name];
     for (const candidate of candidates) {
-      const resolution = resolvePlayerIdentity(candidate, roster);
+      const resolution = resolveTweetRosterIdentity(candidate, roster);
       if (resolution.status !== "matched") continue;
       const at = offset + start + name.length - candidate.length;
       (side === "in" ? change.playersIn : change.playersOut).push({ playerId: resolution.player.playerId, name: resolution.player.fullName, evidence: { start: at, end: at + candidate.length, text: candidate } });
       return;
     }
     const literal = candidates.length > 1 ? candidates.at(-1)! : name;
-    const resolution = resolvePlayerIdentity(literal, roster);
+    const resolution = resolveTweetRosterIdentity(literal, roster);
     const at = offset + start + name.length - literal.length;
     change.unresolved.push({ start: at, end: at + literal.length, text: literal, side, reason: resolution.status === "ambiguous" ? "ambiguous" : "missing_player",
       candidates: resolution.status === "matched" ? [] : resolution.candidates.map((candidate) => candidate.playerId) });
@@ -414,7 +416,7 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
       ? line.split(/[-–—/]/).length >= 3 ? "es_forward" : "es_defense" : null;
     // A two-name row with a forward in it is an extras row ("Deslauriers - Staal"), never a D pair: it claims no D slot.
     if (reviewShape === "es_defense" && line.split(/[-–—/]/).some((token) => {
-      const resolution = resolvePlayerIdentity(token.trim(), roster);
+      const resolution = resolveTweetRosterIdentity(token.trim(), roster);
       return resolution.status === "matched" && playerPositionRole(resolution.player) === "es_forward";
     })) reviewShape = null;
     let rowKind: EvenStrengthRow | null = null;
@@ -475,7 +477,7 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
         if (line.includes("/") && result.relationships?.at(-1)?.evidence.text === line) {
           const relation = result.relationships.at(-1)!;
           relation.subjects = tokens.map((token) => {
-            const resolution = resolvePlayerIdentity(token, roster);
+            const resolution = resolveTweetRosterIdentity(token, roster);
             return { text: token, start: lineStart + rawLine.indexOf(token), end: lineStart + rawLine.indexOf(token) + token.length,
               playerId: resolution.status === "matched" ? resolution.player.playerId : null,
               candidates: resolution.status === "matched" ? [resolution.player.playerId] : resolution.candidates.map((candidate) => candidate.playerId) };
@@ -484,7 +486,7 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
         }
         let tokenOffset = 0;
         for (const token of tokens) {
-          const resolution = resolvePlayerIdentity(token, roster);
+          const resolution = resolveTweetRosterIdentity(token, roster);
           const tokenStart = line.indexOf(token, tokenOffset); tokenOffset = tokenStart + token.length;
           if (resolution.status !== "matched") result.unresolved.push({ start: lineStart + rawLine.indexOf(line) + tokenStart, end: lineStart + rawLine.indexOf(line) + tokenStart + token.length, text: token, number: rowKind ? ordinals.get(`${group}:${rowKind}`) : number, situation: rowKind ?? lineSituation, candidates: resolution.candidates.map((candidate) => candidate.playerId), reason: resolution.status === "ambiguous" ? "ambiguous" : "missing_player" });
         }
@@ -546,7 +548,7 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
   for (const { kind, match } of relations) {
     if (!match) continue;
     const names = kind === "continuity" ? [] : [match[1]!.replace(/^.*RT\s+@[^:]+:\s*/i, "").trim().replace(/^Looks like\s+/i, ""), match[2]!.trim()];
-    const resolutions = names.map((name) => resolvePlayerIdentity(name, roster));
+    const resolutions = names.map((name) => resolveTweetRosterIdentity(name, roster));
     result.relationships ??= [];
     result.relationships.push({ kind, playerIds: resolutions.flatMap((resolution) => resolution.status === "matched" ? [resolution.player.playerId] : []),
       situation: kind === "swap" ? null : "pp", number: kind === "substitution" ? (match[3]!.toLowerCase() === "first" ? 1 : 2) : null,

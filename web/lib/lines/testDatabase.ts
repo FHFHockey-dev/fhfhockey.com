@@ -20,6 +20,8 @@ export function lineTestDatabase(seed: Record<string, any[]>) {
     const q: any = {
       select: () => q,
       eq: (key: string, value: unknown) => { filters.push((row) => row[key] === value); return q; },
+      lt: (key: string, value: any) => { filters.push((row) => row[key] < value); return q; },
+      neq: (key: string, value: unknown) => { filters.push((row) => row[key] !== value); return q; },
       lte: (key: string, value: any) => { filters.push((row) => row[key] <= value); return q; },
       gte: (key: string, value: any) => { filters.push((row) => row[key] >= value); return q; },
       in: (key: string, values: unknown[]) => { filters.push((row) => values.includes(row[key])); return q; },
@@ -27,6 +29,7 @@ export function lineTestDatabase(seed: Record<string, any[]>) {
       order: (key: string, options?: { ascending?: boolean }) => { orders.push({ key, ascending: options?.ascending !== false }); return q; },
       range: (from: number, to: number) => { start = from; end = to; return q; },
       limit: (value: number) => { end = value - 1; return q; },
+      maybeSingle: async () => ({ data: result().data[0] ?? null, error: null }),
       then: (resolve: (value: unknown) => void) => Promise.resolve(result()).then(resolve),
       // Like PostgREST: awaitable directly, or with .select() for the rows actually inserted (duplicates ignored).
       upsert: (rows: any[], options: { onConflict: string }) => {

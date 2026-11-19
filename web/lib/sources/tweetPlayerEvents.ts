@@ -1,5 +1,9 @@
+import { resolveTweetRosterIdentity } from "./tweetNameLexicon";
+import type { TweetInitialsEvidence } from "./tweetInterpretation";
+import type { TweetRosterScopedName } from "./tweetNameInference";
+import { teamsInfo } from "lib/teamsInfo";
 import { identityMentionPresent, surnameReadsAsPhrase } from "./tweetInterpretation";
-import { normalizeIdentityName, resolvePlayerIdentity, type PlayerIdentity, type PlayerIdentityResolution } from "./playerIdentity";
+import { normalizeIdentityName, type PlayerIdentity, type PlayerIdentityResolution } from "./playerIdentity";
 
 export type InjuryEventState = "new_injury" | "ongoing" | "setback" | "possible_return" | "confirmed_return" | "unknown";
 export type InjuryTimeline = {
@@ -27,6 +31,7 @@ export type TweetPlayerEvent = {
   reviewReason?: "conflicting_claims" | "conflicting_history";
   modality?: "tentative" | "negated" | "affirmative" | "observation";
   resolutionBasis?: Extract<PlayerIdentityResolution, { status: "matched" }>["basis"];
+  uniqueInitials?: TweetInitialsEvidence;
   times?: { observation: string | null; reference: string | null; applicability: "unresolved" };
   timeline: InjuryTimeline | null;
   timelines: InjuryTimeline[];
@@ -115,6 +120,9 @@ const GOALIE_SLOT_BEFORE = /\b(?:in (?:net|goal)|starting goal(?:ie|tender)|star
 export function extractTweetPlayerEvents(args: {
   text: string; players: PlayerIdentity[]; publishedAt: string | null;
   priorStatus?: Map<number, "injured" | "healthy">;
+  reviewSpans?: readonly { start: number; end: number }[];
+  uniqueInitials?: readonly TweetInitialsEvidence[];
+  scopedNames?: readonly TweetRosterScopedName[];
   includeClaimAnchors?: boolean;
   claimAware?: boolean;
   /** Both team ids of the game the post is bound to; without them "vs" never shares a goalie predicate. */
@@ -134,27 +142,33 @@ export function extractTweetPlayerEvents(args: {
     sourceOffset += character.length;
   }
   const mentions: Array<{ player: PlayerIdentity; start: number; end: number; basis: Extract<PlayerIdentityResolution, { status: "matched" }>["basis"] }> = [];
-  const unresolvedMentions: Array<{ start: number; end: number }> = [];
+  const unresolvedMentions = [...(args.reviewSpans ?? [])];
   for (const player of args.players) {
     for (const name of [player.fullName, ...(player.aliases ?? []), player.lastName]) {
       if (!identityMentionPresent(args.text, name)) continue;
-      const resolution = resolvePlayerIdentity(name, args.players);
+      const resolution = resolveTweetRosterIdentity(name, args.players);
       const escaped = normalizeIdentityName(name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const pattern = new RegExp(`(?<![\\p{L}])${escaped}(?![\\p{L}])`, "giu");
       for (const match of normalizedText.matchAll(pattern)) {
         const start = sourcePositions[match.index!]!;
         const end = (sourcePositions[match.index! + match[0].length - 1] ?? start) + 1;
+        if (args.reviewSpans?.some((span) => start >= span.start && end <= span.end)) continue;
         // A lower-case noun inside prose is not evidence of a surname subject.
         const rawMention = args.text.slice(start, end);
         if (!/\s/.test(name) && rawMention === rawMention.toLocaleLowerCase() && /\p{L}/u.test(rawMention)) continue;
         if (name === player.lastName && surnameReadsAsPhrase(name, args.text.slice(end))) continue;
         // A shared name directly tied to the net is the namesake who plays goal.
-        const slotted = resolution.status === "ambiguous" && (GOALIE_SLOT_AFTER.test(args.text.slice(end, end + 40)) || GOALIE_SLOT_BEFORE.test(args.text.slice(Math.max(0, start - 40), start)))
-          ? resolvePlayerIdentity(name, args.players, undefined, "goalie") : resolution;
-        if (slotted.status !== "matched" || (slotted !== resolution && slotted.player.playerId !== player.playerId)) {
+        const exact = args.scopedNames?.find(hit => hit.start === start && hit.end === end && hit.rawName === rawMention);
+        if (exact && (exact.playerId !== player.playerId || exact.teamId !== player.teamId)) continue;
+        // A different occurrence of this spelling can still be in review, including an opponent's.
+        const slotted = exact ? resolveTweetRosterIdentity(name, [{ ...player, reviewOnlyNames: undefined }], exact.teamId)
+          : resolution.status === "ambiguous" && (GOALIE_SLOT_AFTER.test(args.text.slice(end, end + 40)) || GOALIE_SLOT_BEFORE.test(args.text.slice(Math.max(0, start - 40), start)))
+            ? resolveTweetRosterIdentity(name, args.players, undefined, "goalie") : resolution;
+        if (slotted.status !== "matched") {
           unresolvedMentions.push({ start, end });
           continue;
         }
+        if (slotted.player.playerId !== player.playerId) continue;
         if (!mentions.some((entry) => entry.player.playerId === player.playerId && start >= entry.start && start < entry.end)) mentions.push({ player, start, end, basis: slotted.basis });
       }
     }
@@ -216,16 +230,28 @@ export function extractTweetPlayerEvents(args: {
     const observation = /\bfirst (?:goalie|goaltender) off|\bfirst off\b/i.test(text) ? "first_off" as const
       : /\bleads?\b[^.;\n]*\bout(?: for warmups)?\b|\bout for warmups\b/i.test(text) ? "warmup" as const : undefined;
     if (player.position === "G" && (observation || (/\b(starts?|starting|starter|in net|in goal|backs? (?:him|her|them) up|backup|gets the nod|first off)\b/i.test(text) || (/\bconfirmed\b/i.test(text) && !/\b(injur\w*|out|surgery|return\w*)\b/i.test(text))))) {
-      const predicate = args.text.slice(mentions[last]!.end, evidence.end).replace(/^\s*\(\s*/, "");
+      const suffix = args.text.slice(mentions[last]!.end, evidence.end);
+      // Team annotations and status glyphs can separate a name from an explicit predicate.
+      const teamTag = /^\s*\(([A-Z]{2,3})\)\s*(?:✅\s*)?/.exec(suffix);
+      const predicate = teamTag && player.teamId != null && teamsInfo[teamTag[1]!]?.id === player.teamId
+        ? suffix.slice(teamTag[0].length) : suffix.replace(/^\s*\(\s*/, "");
+      const scheduledStart = /\b(?:will start|starts?)\s+(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)\b(?:\s+@\s*([A-Za-z]{2,3})\b)?/i.exec(predicate);
+      const publication = scheduledStart && args.publishedAt ? new Date(args.publishedAt) : null;
+      const wrongDay = scheduledStart && (!publication || !Number.isFinite(publication.getTime())
+        || publication.toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long" }).toLowerCase() !== scheduledStart[1]!.toLowerCase());
+      const opponent = scheduledStart?.[2] ? teamsInfo[scheduledStart[2].toUpperCase()]?.id : null;
+      const wrongMatchup = scheduledStart?.[2] && (!opponent || opponent === player.teamId
+        || !player.teamId || !args.gameTeamIds?.includes(opponent) || !args.gameTeamIds.includes(player.teamId));
       const historical = /\b(yesterday|last (?:night|game|season|week)|this season)\b/i.test(text)
         && !/\b(tonight|today|tomorrow|this (?:afternoon|evening))\b/i.test(text);
       const affirmative = Boolean(startContinuation) || /\b(confirmed|starting goal(?:ie|tender))\b/i.test(clausePrefix)
         || /^\s*(?:(?:will|to)\s+start\b|(?:(?:is|will be)\s+)?(?:starting|(?:the\s+)?starter|in (?:net|goal))\b|gets? the (?:start|nod)\b|backs? (?:him|her|them) up\b|(?:is\s+)?(?:the\s+)?backup\b|confirmed\b|starts?(?:\s+in (?:net|goal)\b|\s+(?:tonight|today|tomorrow|this (?:afternoon|evening))\b|(?=\s*(?:[.!?]|$))))/i.test(predicate);
-      const state = observation || historical || /\b(practice|morning skate|camp)\b/i.test(text) || isQuestionedClaim(text) || TENTATIVE_AVAILABILITY.test(text) ? "projected"
+      const state = observation || historical || wrongDay || wrongMatchup || /\b(practice|morning skate|camp)\b/i.test(text) || isQuestionedClaim(text) || TENTATIVE_AVAILABILITY.test(text) ? "projected"
         : /\b(did(?:n.t| not) confirm|projected)\b/i.test(text) ? "projected"
         : /\b(will not|won't|not (?:the )?(?:starting|starter|in (?:net|goal))|ruled out)\b/i.test(text) ? "ruled_out"
         : /\b(likely|probable|first off)\b/i.test(text) ? "likely" : affirmative ? "confirmed" : "projected";
-      events.push({ playerId: player.playerId, playerName: player.fullName, kind: "goalie", state, goalieRole: /\b(backs? (?:him|her|them) up|backup)\b/i.test(text) ? "backup" : "starter", observation, evidence, timeline: null, timelines: [], availability: state === "ruled_out" ? "out" : "unknown" });
+      events.push({ playerId: player.playerId, playerName: player.fullName, kind: "goalie", state, ...(scheduledStart && !wrongDay && !wrongMatchup && publication
+        ? { effectiveDate: publication.toLocaleDateString("en-CA", { timeZone: "America/New_York" }) } : {}), goalieRole: /\b(backs? (?:him|her|them) up|backup)\b/i.test(text) ? "backup" : "starter", observation, evidence, timeline: null, timelines: [], availability: state === "ruled_out" ? "out" : "unknown" });
     }
     const hasInjuryContext = events.length === 0 || /\b(injur\w*|surgery|recover\w*|re[ -]?evaluat\w*|setback)\b/i.test(text) || args.priorStatus?.get(player.playerId) === "injured";
     if (hasInjuryContext && (tentativeOpener || injuryAvailability(text) === "out" || /\b(injur\w*|return\w*|(?:remains|still) out|out (?:tonight|tomorrow|(?:for )?(?:the (?:rest of (?:the )?)?season|\d+))|will play|suit up|will not play|won't play|surgery|re[ -]?evaluat\w*|setback|available|fully healthy|recover\w*|day[ -]to[ -]day|placed on (?:ir|ltir))\b/i.test(text))) events.push({ playerId: player.playerId, playerName: player.fullName, kind: "injury", state: tentativeOpener ? "unknown" : classifyInjuryEvent(text, args.priorStatus?.get(player.playerId)), evidence,
@@ -261,6 +287,9 @@ export function extractTweetPlayerEvents(args: {
       event.modality ??= event.observation ? "observation" : /\b(not|isn.t|won.t|cannot|can.t|never)\b/i.test(text) ? "negated"
         : event.state === "possible_return" || event.state === "projected" || event.availability === "uncertain" ? "tentative" : "affirmative";
       event.resolutionBasis = basis;
+      const initials = args.uniqueInitials?.find(hit => hit.playerId === player.playerId && hit.teamId === player.teamId
+        && hit.start === start && hit.end === mentionEnd && args.text.slice(start, mentionEnd) === hit.text);
+      if (initials) event.uniqueInitials = initials;
       event.times = { observation: args.publishedAt, reference: event.timeline?.targetDate ?? null, applicability: "unresolved" };
     }
     return events;

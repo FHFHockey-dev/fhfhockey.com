@@ -33,9 +33,13 @@ describe.runIf(Boolean(process.env.IFTTT_POSTGRES_BIN))("durable qualified IFTTT
     if (name === "commit_qualified_tweet_claim_scope" && ackLoss) { ackLoss = false; throw new Error("lost qualified commit acknowledgement"); }
     return { data: rows[0]!.result, error: null };
   };
+  // This cluster represents a fenced empty scope already audited at the fixture clock.
+  const seedEmptyHistory = (gameId: number, auditId: string, history: ReturnType<typeof qualifiedFixture>["evidence"]["history"]) =>
+    sql("insert into public.tweet_claim_legacy_history(audit_id,game_id,team_id,known_at,payload) values($1,$2,6,$3,$4)",
+      [auditId, gameId, "2026-10-16T15:00:00Z", JSON.stringify(history)], false);
   const seedGame = async (id: number, auditId: string) => {
     const f = qualifiedFixture(),row = f.evidence.identities[0]!;
-    await sql("insert into public.tweet_claim_legacy_history(audit_id,game_id,team_id,payload) values($1,$2,6,$3)",[auditId,id,JSON.stringify(f.evidence.history)],false);
+    await seedEmptyHistory(id, auditId, f.evidence.history);
     await sql("insert into public.nhl_api_game_roster_spots values($1,$2,6,8478499,'Jeremy','Swayman','G',$3,$4)",[id,f.game.date,row.knownAt,row.rawPayloadHash],false);
     await sql("insert into public.nhl_api_game_normalization_status values($1,'complete',$2,$1,$3,$4)",[id,row.knownAt,row.rawPayloadHash,row.normalizationFingerprint],false);
     await sql("insert into public.nhl_api_game_payloads_raw values($1,$1,'play-by-play',$2,$3,$4)",[id,row.rawPayloadHash,`https://api-web.nhle.com/v1/gamecenter/${id}/play-by-play`,row.knownAt],false);
@@ -62,7 +66,7 @@ describe.runIf(Boolean(process.env.IFTTT_POSTGRES_BIN))("durable qualified IFTTT
       create table public.nhl_api_game_payloads_raw(id bigint,game_id bigint,endpoint text,payload_hash text,source_url text,fetched_at timestamptz);
       grant select on public.nhl_api_game_roster_spots,public.nhl_api_game_normalization_status,public.nhl_api_game_payloads_raw to service_role`, [], false);
     const f = qualifiedFixture(), row = f.evidence.identities[0]!;
-    await sql("insert into public.tweet_claim_legacy_history(audit_id,game_id,team_id,payload) values('fixture-only-empty-scope',$1,6,$2)", [f.game.id, JSON.stringify(f.evidence.history)], false);
+    await seedEmptyHistory(f.game.id, "fixture-only-empty-scope", f.evidence.history);
     await sql("insert into public.nhl_api_game_roster_spots values($1,$2,6,8478499,'Jeremy','Swayman','G',$3,$4)", [f.game.id, f.game.date, row.knownAt, row.rawPayloadHash], false);
     await sql("insert into public.nhl_api_game_normalization_status values($1,'complete',$2,25,$3,$4)", [f.game.id, row.knownAt, row.rawPayloadHash, row.normalizationFingerprint], false);
     await sql("insert into public.nhl_api_game_payloads_raw values(25,$1,'play-by-play',$2,$3,$4)", [f.game.id, row.rawPayloadHash, row.sourceUrl, row.knownAt], false);
@@ -245,6 +249,7 @@ describe.runIf(Boolean(process.env.IFTTT_POSTGRES_BIN))("durable qualified IFTTT
   it("uses the newest incomplete audit as unknown through the real SQL evidence reader", async () => {
     const f = qualifiedFixture(), game = await seedGame(f.game.id+30,"history-complete");
     await sql("insert into public.tweet_claim_legacy_history(audit_id,game_id,team_id,known_at,payload) values('history-incomplete',$1,6,'2026-10-16T15:01:00Z',$2)",[game.id,JSON.stringify({ ...f.evidence.history,status: "incomplete" })],false);
+    await sql("insert into public.tweet_claim_legacy_history(audit_id,game_id,team_id,known_at,payload) values('future-complete',$1,6,'2026-10-16T15:03:00Z',$2)", [game.id, JSON.stringify(f.evidence.history)], false);
     const claims = extractDurableTweetClaims({ source: { ...f.source,tweetId: "9100",sourceUrl: "https://x.com/Reporter/status/9100",gameId: game.id },game,interpretedAt: f.asOf });
     await retainQualifiedTweetClaimScope({ rpc },claims,f.asOf);
     const q = (await sql("select qualification_state from public.tweet_claim_scopes where scope_key=$1",[claims[0]!.scopeKey]))[0]!.qualification_state;

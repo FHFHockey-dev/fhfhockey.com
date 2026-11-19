@@ -1,5 +1,8 @@
 import { getTeamLogoSvg, fallbackNHLLogo } from "lib/images";
 import { teamsInfo } from "lib/teamsInfo";
+import { canonicalAcronymMatches } from "./sources/tweetNameLexicon";
+import { tweetPublicationFromUrl } from "./sources/tweetPublicationTime";
+import { publishedLineupGameId, selectPublishedNewsLineup, type NewsMatchup, type NewsLineupGame } from "./newsLineupRead";
 import { getTeamMetaByAbbr } from "lib/dashboard/teamMetadata";
 import type { TweetPlayerEvent } from "lib/sources/tweetPlayerEvents";
 
@@ -37,6 +40,8 @@ export type NewsFeedItemRow = {
 export type NewsFeedItem = NewsFeedItemRow & {
   players: NewsFeedItemPlayer[];
   source_attribution?: PublicNewsSourceDecision;
+  source_posted_at?: string | null;
+  lineup_matchup?: NewsMatchup | null;
 };
 
 /** Card text for the claim check: URLs stripped (the card blurb never shows them), whitespace collapsed. */
@@ -84,6 +89,14 @@ export function getPublicNewsClaimPresentation(
   const namesPlayer = (evidence: string, event: TweetPlayerEvent) => {
     const fullName = sanitizePublicNewsText(event.playerName);
     if (evidence.includes(fullName)) return true;
+    const hit = event.uniqueInitials;
+    if (hit && event.resolutionBasis === "alias" && event.times?.observation && Number.isFinite(Date.parse(event.times.observation))
+      && hit.playerId === event.playerId && hit.teamId === event.teamId && Number.isSafeInteger(hit.teamId)
+      && typeof hit.text === "string" && canonicalAcronymMatches(hit.text, fullName)
+      && Number.isInteger(hit.start) && Number.isInteger(hit.end) && hit.start >= event.evidence.start && hit.end <= event.evidence.end
+      && event.evidence.text.slice(hit.start - event.evidence.start, hit.end - event.evidence.start) === hit.text
+      && containsWord(evidence, hit.text) && item.players?.some(player => player.player_id === hit.playerId
+        && player.team_id === hit.teamId && player.player_name === event.playerName)) return true;
     const surname = claimSurname(fullName);
     if (!surname || !containsWord(evidence, surname)) return false;
     return !contextPlayers.some((other) => other.id !== event.playerId &&
@@ -133,6 +146,10 @@ export function getPublicNewsReportTopic(item: Pick<NewsFeedItem, "blurb">): str
 }
 
 export type NewsFeedSourceProvenance = {
+  raw_text?: string | null;
+  enriched_text?: string | null;
+  quoted_text?: string | null;
+  review_text?: string | null;
   source_handle?: string | null;
   author_name?: string | null;
   source_url?: string | null;
@@ -737,6 +754,7 @@ export async function fetchNewsFeedItems(args: {
   const items = (itemRows ?? []) as NewsFeedItemRow[];
   if (items.length === 0) return [];
 
+  const gameIds = [...new Set(items.map(publishedLineupGameId).filter((id): id is number => id != null))];
   const reviewItemIds = items
     .map((item) => item.source_review_item_id)
     .filter((id): id is string => Boolean(id));
@@ -745,7 +763,8 @@ export async function fetchNewsFeedItems(args: {
     const { data: provenanceRows, error: provenanceError } = await args.supabase
       .from("tweet_pattern_review_items" as any)
       .select(
-        "id, source_handle, author_name, source_url, tweet_url, quoted_tweet_url, metadata",
+        "id, source_handle, author_name, source_url, tweet_url, quoted_tweet_url, metadata"
+          + (gameIds.length ? ", raw_text, enriched_text, quoted_text, review_text" : ""),
       )
       .in("id", reviewItemIds);
     if (provenanceError) throw provenanceError;
@@ -773,19 +792,26 @@ export async function fetchNewsFeedItems(args: {
     playersByItemId.set(row.news_item_id, bucket);
   }
 
-  return items.map((item) =>
-    sanitizePublicNewsFeedItem(
-      {
-        ...item,
-        // Stored/client display markers cannot override fresh retained source evidence.
-        source_attribution: undefined,
-        players: playersByItemId.get(item.id) ?? [],
-      },
-      item.source_review_item_id
-        ? provenanceByReviewItemId.get(item.source_review_item_id)
-        : null,
-    ),
-  );
+  const games = new Map<number, NewsLineupGame>();
+  if (gameIds.length) {
+    const { data, error } = await args.supabase.from("games").select("id, date, homeTeamId, awayTeamId").in("id", gameIds);
+    // A missing matchup leaves the source readable even when its lineup cannot be substantiated.
+    if (!error) for (const game of data ?? []) games.set(game.id, game);
+  }
+  return items.map(item => {
+    const review = item.source_review_item_id ? provenanceByReviewItemId.get(item.source_review_item_id) ?? null : null;
+    const publicItem = sanitizePublicNewsFeedItem({
+      ...item, source_attribution: undefined, players: playersByItemId.get(item.id) ?? [],
+    }, review);
+    publicItem.source_posted_at = tweetPublicationFromUrl(publicItem.source_url);
+    const gameId = publishedLineupGameId(item);
+    if (gameId != null) {
+      const selected = selectPublishedNewsLineup(item, games.get(gameId), review, parseTweetUrl(publicItem.source_url).tweetId, publicItem.source_posted_at);
+      if (publicItem.metadata) publicItem.metadata.newsLineup = sanitizePublicMetadataValue(selected.newsLineup);
+      publicItem.lineup_matchup = selected.matchup;
+    }
+    return publicItem;
+  });
 }
 
 export async function fetchNewsFeedKeywordPhrases(args: {

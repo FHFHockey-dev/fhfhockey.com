@@ -1,7 +1,8 @@
 import moment from "moment-timezone";
-import { getPrimaryTextForSource, type ParsedLinesCccSource } from "./linesCccIngestion";
+import { getPrimaryTextForSource, type ParsedLinesCccSource, type RowGoalieState } from "./linesCccIngestion";
 import { fetchRegisteredPlayerIdentities } from "./playerIdentity";
-import { requiresRelativeGameDateReview, tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
+import { tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
+import { lineReportTimeScope } from "./lineReportTime";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import type { RosterNameEntry } from "lib/sources/lineupSourceIngestion";
 import { findAliasReviewOccurrences, getAliasReviewOccurrence } from "./playerAliasReview";
@@ -21,6 +22,8 @@ export type ScheduledGameRow = {
 
 export type LineSourceRowForUnresolvedNameReview = {
   metadata?: Record<string, unknown>;
+  primary_text_source?: string | null;
+  quoted_tweet_url?: string | null;
   capture_key: string;
   source: string;
   source_group?: string | null;
@@ -334,14 +337,41 @@ export function collectUnresolvedNamesFromLineRows(
   const pending = new Map<string, Record<string, unknown>>();
 
   for (const row of rows) {
-    if (
-      row.status !== "observed" ||
-      row.nhl_filter_status !== "accepted" ||
-      !row.team_id
-    ) {
-      continue;
-    }
     const contextText = getReviewContextText(row);
+    const usesQuote = row.primary_text_source === "quoted_oembed";
+    const primaryText = (usesQuote
+      ? row.quoted_enriched_text ?? row.quoted_raw_text : row.enriched_text ?? row.raw_text)?.trim();
+    const inferredSpans = new Set<string>();
+    const suggestions = row.metadata?.name_inference_review;
+    if (primaryText && Array.isArray(suggestions) && row.nhl_filter_status !== "rejected_non_nhl") {
+      for (const suggestion of suggestions) {
+        if (!suggestion || typeof suggestion !== "object") continue;
+        const { rawName, start, end, teamId, reason, candidatePlayerIds } = suggestion;
+        if (typeof rawName !== "string" || !rawName.trim() || typeof reason !== "string" || !reason.trim()
+          || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start || end > primaryText.length
+          || primaryText.slice(start, end) !== rawName || (teamId !== null && !(Number.isSafeInteger(teamId) && teamId > 0))
+          || !Array.isArray(candidatePlayerIds) || !candidatePlayerIds.every(id => Number.isSafeInteger(id) && id > 0)) continue;
+        const normalizedName = normalizePlayerNameAlias(rawName);
+        if (!normalizedName) continue;
+        const primaryTweetId = usesQuote ? row.quoted_tweet_id : row.tweet_id;
+        const recordedTeam = row.status === "observed" && row.nhl_filter_status === "accepted" && row.team_id === teamId
+          && reason !== "beat_only" && reason !== "conflicting_context" ? row.team_id : null;
+        // The same original mention keeps its review receipt when a later pass changes the proposed team.
+        const nameKey = buildUnresolvedPlayerNameDedupeKey({ source: row.source, tweetId: primaryTweetId ?? row.capture_key, teamId: null, normalizedName });
+        const dedupeKey = `${nameKey}:name-inference:${start}:${end}`;
+        inferredSpans.add(`${start}:${end}`);
+        pending.set(dedupeKey, {
+          dedupe_key: dedupeKey, source: row.source, source_url: usesQuote ? row.quoted_tweet_url ?? row.source_url : row.source_url, tweet_id: row.tweet_id,
+          raw_name: rawName, normalized_name: normalizedName, team_id: recordedTeam, team_abbreviation: recordedTeam == null ? null : row.team_abbreviation,
+          context_text: primaryText, status: "pending", updated_at: new Date().toISOString(),
+          metadata: { occurrenceOnly: true, reason, reviewKind: reason, suggestedTeamId: teamId, evidence: { start, end, text: rawName, origin: "parser" },
+            candidates: [...new Set(candidatePlayerIds)], sourcePublishedAt: row.metadata?.name_inference_published_at ?? null,
+            captureKey: row.capture_key, quotedTweetId: row.quoted_tweet_id, primaryTweetId, sourceGroup: row.source_group ?? null,
+            sourceKey: row.source_key ?? row.source, sourceAccount: row.source_account ?? null, classification: row.classification },
+        });
+      }
+    }
+    if (row.status !== "observed" || row.nhl_filter_status !== "accepted" || !row.team_id) continue;
 
     const addName = (
       rawName: string | null | undefined,
@@ -354,6 +384,10 @@ export function collectUnresolvedNamesFromLineRows(
       const occurrence = getAliasReviewOccurrence({ raw_name: trimmedName, context_text: contextText, team_id: row.team_id, metadata: { reason, ...metadata } });
       const reviewName = occurrence?.text ?? trimmedName;
       const evidence = occurrence ? { start: occurrence.start, end: occurrence.end, text: occurrence.text, origin: occurrence.basis === "offset" ? "parser" : occurrence.basis } : metadata.evidence as { start: number; end: number; text?: string } | undefined;
+      if (evidence && contextText?.trim() === primaryText) {
+        const padding = contextText!.length - contextText!.trimStart().length;
+        if (inferredSpans.has(`${evidence.start - padding}:${evidence.end - padding}`)) return;
+      }
       const normalizedName = normalizePlayerNameAlias(reviewName);
       if (!normalizedName) return;
       const nameKey = buildUnresolvedPlayerNameDedupeKey({
@@ -567,29 +601,32 @@ export function reviewTweetApplicability(candidates: ParsedLinesCccSource[], req
   for (const candidate of candidates) {
     if (candidate.nhlFilterStatus !== "accepted") continue;
     const posted = moment(candidate.tweetPostedAt ?? "", moment.ISO_8601, true);
+    const text = getPrimaryTextForSource(candidate);
+    const sourceDate = posted.tz("America/New_York").format("YYYY-MM-DD");
+    const scope = lineReportTimeScope(text);
     const reason = !posted.isValid() ? "unknown_report_date"
-      : posted.tz("America/New_York").format("YYYY-MM-DD") !== requestedDate ? "report_date_mismatch"
-      : requiresRelativeGameDateReview(getPrimaryTextForSource(candidate)) ? "relative_game_date_requires_review" : null;
-    if (reason === "relative_game_date_requires_review") {
+      : sourceDate !== requestedDate ? "report_date_mismatch"
+      : scope ? "relative_game_date_requires_review" : null;
+    if (scope) {
       const interpretation = (candidate.metadata?.temporalReview as { interpretation?: TweetInterpretation } | undefined)?.interpretation
         ?? candidate.metadata?.interpretation as TweetInterpretation | undefined;
-      const text = getPrimaryTextForSource(candidate);
       if (interpretation) {
-        const current = (evidence: { start: number; text: string }, structured: boolean) => {
-          if (requiresRelativeGameDateReview(evidence.text)) return false;
-          if (/\b(today|tonight)\b/i.test(evidence.text)) return true;
-          if (!structured) return false;
-          const headings = text.slice(0, evidence.start).split("\n").filter((line) => /\b(today|tonight|tomorrow|yesterday)\b/i.test(line));
-          const heading = headings.at(-1) ?? "";
-          return !requiresRelativeGameDateReview(heading) && /\b(today|tonight)\b/i.test(heading) && /\b(lines?|lineup|units?|pp[12]?|power[ -]?play|pairings?)\b/i.test(heading);
-        };
-        const units = interpretation.units.filter((unit) => unit.evidence.length > 0 && unit.evidence.every((evidence) => current(evidence, true)));
-        const events = (interpretation.events ?? []).filter((event) => current(event.evidence, false));
-        if (units.length || events.length) {
+        const selected = scope.select(interpretation);
+        const { units, events = [], unresolved } = selected;
+        if (scope.historical || units.length || events.length) {
+          // Keep a previously admitted starter only when that very claim survives date selection.
+          const goalieStates: RowGoalieState[] = Array.isArray(candidate.metadata?.goalieStates) ? candidate.metadata.goalieStates : [];
+          const starters = goalieStates.filter(state => state?.stored && state.source === "event" && state.role === "starter"
+            && state.state === "confirmed" && !state.observation && candidate.team && candidate.gameId
+            && events.some(event => event.kind === "goalie" && event.teamId === candidate.team?.id && event.playerId === state.playerId
+              && event.state === "confirmed" && event.goalieRole === "starter" && !event.observation && !event.reviewReason)
+            && !events.some(event => event.kind === "goalie" && event.playerId === state.playerId
+              && (event.state === "ruled_out" || event.goalieRole === "backup")));
+          const admitted = starters.length === 1 ? starters : [];
           candidate.metadata = { ...candidate.metadata,
             temporalReview: { reason, applicationDate: posted.format("YYYY-MM-DD"), interpretation },
-            interpretation: { ...interpretation, units, events, relationships: [],
-              unresolved: interpretation.unresolved },
+            interpretation: selected,
+            goalieStates: admitted,
             powerPlayUnits: units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.players.map((player) => player.name)),
             powerPlayUnitLabels: units.filter((unit) => unit.situation === "pp" && unit.complete).map((unit) => unit.number === 1 ? "pp1" : unit.number === 2 ? "pp2" : null),
           };
@@ -601,13 +638,32 @@ export function reviewTweetApplicability(candidates: ParsedLinesCccSource[], req
           };
           candidate.forwards = orderedNames("es_forward");
           candidate.defensePairs = orderedNames("es_defense");
-          candidate.goalies = names("goalie").flat();
+          // Ordered listings, including pipe pairs, are display evidence only on this mixed-date path.
+          candidate.goalies = admitted.map(state => state.name);
+          const assigned = [...units.flatMap(unit => unit.players), ...events.map(event => ({ playerId: event.playerId, name: event.playerName }))];
+          candidate.matchedPlayerIds = [...new Set(assigned.map(player => player.playerId))];
+          candidate.matchedNames = [...new Set(assigned.map(player => player.name))];
+          candidate.unmatchedNames = unresolved.map(span => span.text);
           candidate.scratches = names("scratch").flat();
           candidate.injuries = names("injury").flat();
-          candidate.nhlFilterReason = "independent_current_claims_with_temporal_review";
-          continue;
+          if (reason === "relative_game_date_requires_review" && (units.length || events.length)) {
+            candidate.nhlFilterReason = "independent_current_claims_with_temporal_review";
+            continue;
+          }
         }
       }
+    }
+    if (scope?.historical && !candidate.metadata?.interpretation) {
+      // The legacy parser has no offsets to distinguish the two games.
+      candidate.forwards = [];
+      candidate.defensePairs = [];
+      candidate.goalies = [];
+      candidate.scratches = [];
+      candidate.injuries = [];
+      candidate.matchedPlayerIds = [];
+      candidate.matchedNames = [];
+      candidate.unmatchedNames = [];
+      candidate.metadata = { ...candidate.metadata, powerPlayUnits: [], powerPlayUnitLabels: [], goalieStates: [] };
     }
     if (reason) {
       candidate.gameId = null;

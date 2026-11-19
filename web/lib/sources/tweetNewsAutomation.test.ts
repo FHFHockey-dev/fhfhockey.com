@@ -68,6 +68,48 @@ describe("tweet news automation", () => {
     const candidate = buildTweetNewsAutomationCandidate({ row: buildRow({ review_text: text }), players });
     if (candidate?.subcategory === "CONFIRMED STARTER" || candidate?.subcategory === "OUT" || candidate?.subcategory === "FULLY HEALTHY") expect(candidate.cardStatus).not.toBe("published");
   });
+  it("assigns a retained quote's initials to its publication roster despite a later trade", () => {
+    const text = "VH will not play tonight.";
+    const admitted = { ...players[1]!, lastName: "Hedman", aliases: ["VH"] };
+    const row = buildRow({ team_id: null, team_abbreviation: null, review_text: "Another player will start.",
+      quoted_text: text, metadata: { intakeRosterEvidence: { source: "quoted", text, publishedAt: "2026-05-26T15:00:00Z",
+        players: [admitted], reviewSpans: [] } } });
+    const current = [{ ...admitted, team_id: 8, aliases: [] }, { ...players[0]!, aliases: ["VH"] }];
+    const candidate = buildTweetNewsAutomationCandidate({ row, players: current });
+    expect(candidate).toMatchObject({ blurb: text, cardStatus: "published", category: "INJURY",
+      playerAssignments: [{ playerId: 2, playerName: "Victor Hedman", teamId: 14 }] });
+    expect(candidate?.metadata).not.toHaveProperty("intakeRosterEvidence");
+    const stored = { ...candidate!.reviewAssignments[0]!, playerNames: ["Later player"], playerIds: [300] };
+    const pending = { ...row, review_assignments: [stored] };
+    expect(buildTweetNewsAutomationCandidate({ row: pending, players: current })?.playerAssignments).toEqual(candidate!.playerAssignments);
+    expect(buildTweetNewsAutomationCandidate({ row: { ...pending, review_status: "reviewed" }, players: current })?.playerAssignments[0]?.playerId).toBe(300);
+    const changed = { ...row, quoted_text: "Victor Hedman will not play tonight." };
+    expect(buildTweetNewsAutomationCandidate({ row: changed, players: current })).toBeNull();
+    expect(buildTweetNewsAmbiguousCandidate({ row: changed, players: current })).toMatchObject({ cardStatus: "draft", playerAssignments: [] });
+  });
+
+  it("keeps a review-only subject's predicate off a separate exact mention", () => {
+    const text = "Victor Hedman spoke. VH will not play tonight. Andrei Vasilevskiy will start.";
+    const start = text.indexOf("VH");
+    const row = buildRow({ enriched_text: text, metadata: { intakeRosterEvidence: { source: "wrapper", text,
+      publishedAt: "2026-05-26T15:00:00Z", reviewSpans: [{ start, end: start + 2 }],
+      players: [{ ...players[1]!, lastName: "Hedman", aliases: ["VH"] }, { ...players[0]!, lastName: "Vasilevskiy" }] } } });
+    const candidate = buildTweetNewsAutomationCandidate({ row, players });
+    expect(candidate?.reviewAssignments.some(assignment => assignment.subcategory === "OUT")).toBe(false);
+    expect(candidate).toMatchObject({ cardStatus: "published", subcategory: "CONFIRMED STARTER", playerAssignments: [{ playerId: 1, teamId: 14 }] });
+    expect(candidate?.reviewAssignments.find(assignment => assignment.subcategory === "CONFIRMED STARTER")?.playerIds).toEqual([1]);
+  });
+
+  it("keeps an independent signing and leaves a reviewed signing unresolved", () => {
+    const text = "Victor Hedman spoke. VH signed yesterday. Brayden Point signed today.";
+    const start = text.indexOf("VH");
+    const row = buildRow({ enriched_text: text, metadata: { intakeRosterEvidence: { source: "wrapper", text,
+      publishedAt: "2026-05-26T15:00:00Z", reviewSpans: [{ start, end: start + 2 }],
+      players: [{ ...players[1]!, lastName: "Hedman" }, { ...players[2]!, lastName: "Point" }] } } });
+    expect(buildTweetNewsAutomationCandidate({ row, players })).toMatchObject({ category: "SIGNING", cardStatus: "published",
+      playerAssignments: [{ playerId: 3, teamId: 14 }] });
+  });
+
   it("publishes high-confidence injury cards with player evidence", () => {
     const candidate = buildTweetNewsAutomationCandidate({
       row: buildRow(),

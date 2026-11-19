@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { compareInterpretationVersions } from "lib/sources/interpretationVersion";
 import { trustworthyState } from "./gameState";
 import type { EventMembership } from "./identity";
 import { instant, LINE_SELECTOR_VERSION, unitKey, type EntryRevision, type LineClaim, type LineConflict, type LineGame, type PPDecision, type PPDerivation, type PPEndReason, type SelectedLineUnit } from "./types";
@@ -41,12 +42,41 @@ export function captureIdentity(claims: LineClaim[]): (claim: LineClaim) => stri
   };
 }
 
-/** Keep relay/version history in storage; only one interpretation contributes per original unit. */
+// The processor parses the full primary text for one team before splitting it into claims.
+// A newer parser of those exact bytes replaces the old extraction, even when a slot disappeared.
+// A different text (including a partial relay) or a targeted correction has its own scope.
+export function currentSourceReadings(claims: LineClaim[], identity: (claim: LineClaim) => string): LineClaim[] {
+  const readings = new Map<string, LineClaim[]>();
+  const retained: LineClaim[] = [];
+  for (const claim of claims) {
+    if (!claim.text || claim.kind === "entry_correction" || claim.kind === "retraction" || claim.supersedes.length || claim.retracts.length) {
+      retained.push(claim);
+      continue;
+    }
+    const key = JSON.stringify([claim.teamId, identity(claim), claim.text]);
+    const group = readings.get(key);
+    if (group) group.push(claim);
+    else readings.set(key, [claim]);
+  }
+  for (const group of readings.values()) {
+    // The suffix after ':' is the snapshot selector version, independent of the tweet parser.
+    const versions = [...new Set(group.filter(claim => claim.accepted).map(claim => claim.version.split(":")[0]!))];
+    for (const claim of group) {
+      const version = claim.version.split(":")[0]!;
+      if (!versions.some(other => other !== version && compareInterpretationVersions(other, version) > 0)) retained.push(claim);
+    }
+  }
+  return retained;
+}
+
+/** Keep all versions in history. Count one active contribution per original and slot. */
 export function activeLineClaims(claims: LineClaim[]): LineClaim[] {
   const versions = new Map<string, LineClaim>();
   const identity = captureIdentity(claims);
-  for (const claim of [...claims].sort((a, b) => (instant(b.time.interpretedAt) ?? 0) - (instant(a.time.interpretedAt) ?? 0) || a.id.localeCompare(b.id))) {
-    const key = `${claim.teamId}:${identity(claim)}:${claim.unit ? unitKey(claim.unit) : claim.relationship ? evidenceKey(claim.relationship) : claim.kind}`;
+  for (const claim of currentSourceReadings(claims, identity).sort((a, b) => (instant(b.time.interpretedAt) ?? 0) - (instant(a.time.interpretedAt) ?? 0) || a.id.localeCompare(b.id))) {
+    const slot = claim.unit ? unitKey(claim.unit) : claim.relationship ? evidenceKey(claim.relationship) : claim.kind;
+    // A targeted change must pass mayReplace before it can displace even its own original.
+    const key = JSON.stringify([claim.teamId, claim.gameId, identity(claim), slot, claim.supersedes, claim.retracts]);
     if (!versions.has(key)) versions.set(key, claim);
   }
   const current = [...versions.values()];
@@ -55,7 +85,11 @@ export function activeLineClaims(claims: LineClaim[]): LineClaim[] {
   for (const claim of current) for (const targetId of [...claim.supersedes, ...claim.retracts]) {
     const target = claims.find((candidate) => candidate.id === targetId);
     if (target && mayReplace(claim, target)) {
-      for (const candidate of current) if (candidate.id === targetId || candidate.teamId === target.teamId && candidate.gameId === target.gameId && identity(candidate) === identity(target) && candidate.unit && target.unit && unitKey(candidate.unit) === unitKey(target.unit)) inactive.add(candidate.id);
+      for (const candidate of current) {
+        const sameUnit = !candidate.supersedes.length && !candidate.retracts.length && candidate.teamId === target.teamId
+          && candidate.gameId === target.gameId && identity(candidate) === identity(target) && candidate.unit && target.unit && unitKey(candidate.unit) === unitKey(target.unit);
+        if (candidate.id === targetId || sameUnit) inactive.add(candidate.id);
+      }
     }
   }
   return current.filter((claim) => !inactive.has(claim.id) && claim.kind !== "retraction");
@@ -96,7 +130,8 @@ export function reconcileEntry(args: { game: LineGame; teamId: number; claims: L
   const canFreeze = trustworthyState(game, now) && (game.phase === "live" || game.phase === "final" && instant(game.actualStart) != null);
   const cutoff = frozen ? previous!.cutoff : canFreeze ? game.actualStart ?? game.observedAt : null;
   const scoped = args.claims.filter((claim) => claim.gameId === game.id && claim.teamId === teamId && claim.binding.scheduleIdentity === game.scheduleIdentity);
-  const active = activeLineClaims(scoped.filter((claim) => availableAt(claim, cutoff ?? now)));
+  const active = activeLineClaims(args.claims.filter((claim) => claim.teamId === teamId && availableAt(claim, cutoff ?? now)))
+    .filter((claim) => claim.gameId === game.id && claim.binding.scheduleIdentity === game.scheduleIdentity);
   const candidates = active.filter((claim) => (claim.kind === "entry" || claim.kind === "pp" || claim.kind === "entry_correction" && claim.supersedes.some((id) => scoped.some((target) => target.id === id && mayReplace(claim, target)))) && claim.phase === "pregame"
     && (claim.time.effectiveUntil == null || (instant(claim.time.effectiveUntil) ?? -Infinity) > (instant(cutoff ?? now) ?? Infinity))
     && (cutoff == null || (claimTime(claim) ?? Infinity) <= instant(cutoff)! && (instant(claim.time.ingestedAt) ?? Infinity) <= instant(cutoff)! && (instant(claim.time.interpretedAt) ?? Infinity) <= instant(cutoff)!));
@@ -178,14 +213,14 @@ export function reconcilePP(args: { game: LineGame; teamId: number; games: LineG
   const { game, teamId, now } = args;
   const games = new Map(args.games.map((candidate) => [candidate.id, candidate]));
   const dateOf = (claim: LineClaim) => games.get(claim.gameId!)!.date;
-  const active = activeLineClaims(args.claims.filter((claim) => claim.teamId === teamId && availableAt(claim, now)
-    && (claim.gameId === game.id && claim.phase === "pregame" && claim.kind !== "retraction" || (claimTime(claim) ?? Infinity) <= (instant(now) ?? -Infinity))))
-    .filter((claim) => eligibleClaim(claim) && claim.kind === "pp" && !!games.get(claim.gameId!) && games.get(claim.gameId!)!.scheduleIdentity === claim.binding.scheduleIdentity
+  const currentReadings = activeLineClaims(args.claims.filter((claim) => claim.teamId === teamId && availableAt(claim, now)
+    && (claim.gameId === game.id && claim.phase === "pregame" && claim.kind !== "retraction" || (claimTime(claim) ?? Infinity) <= (instant(now) ?? -Infinity))));
+  const active = currentReadings.filter((claim) => eligibleClaim(claim) && claim.kind === "pp" && !!games.get(claim.gameId!) && games.get(claim.gameId!)!.scheduleIdentity === claim.binding.scheduleIdentity
     && (claim.time.effectiveUntil == null || (instant(claim.time.effectiveUntil) ?? -Infinity) > instant(now)!)
     && (claim.gameId === game.id && claim.phase === "pregame" || (claimTime(claim) ?? Infinity) <= instant(now)!));
   // Scratches / ruled-out reports, from any eligible claim kind.
-  const absences = activeLineClaims(args.claims.filter((claim) => claim.teamId === teamId && availableAt(claim, now) && eligibleClaim(claim)
-    && !!claim.unit && ["scratch", "injury"].includes(claim.unit.situation) && (claimTime(claim) ?? Infinity) <= (instant(now) ?? -Infinity)));
+  const absences = currentReadings.filter((claim) => eligibleClaim(claim)
+    && !!claim.unit && ["scratch", "injury"].includes(claim.unit.situation) && (claimTime(claim) ?? Infinity) <= (instant(now) ?? -Infinity));
   const at = instant(game.scheduledStart) ?? instant(`${game.date}T12:00:00Z`)!;
   const teamGames = args.games.filter((candidate) => [candidate.homeTeamId, candidate.awayTeamId].includes(teamId) && candidate.phase !== "postponed");
   return [1, 2].map((number) => {
