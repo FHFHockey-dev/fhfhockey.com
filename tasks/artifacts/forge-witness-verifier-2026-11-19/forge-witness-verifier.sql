@@ -126,13 +126,18 @@ do $tables$ declare name text; begin
   end loop;
 end $tables$;
 
--- Installer only: arm one game. A game with a verdict can never be re-armed (and targets are immutable).
+-- Installer only: arm one game. A game with a verdict can never be re-armed (and targets are immutable). The game's
+-- schedule must be readable through schedule_v1 (start and both team rows), or the verifier could never decide it.
 create function forge_witness.arm_v1(p_game_id bigint)
 returns jsonb language plpgsql security definer set search_path = '' as $$
-declare t forge_witness.targets;
+declare t forge_witness.targets; s record;
 begin
   if exists (select from forge_witness.verdicts v where v.game_id = p_game_id) then
     raise exception 'witness_target_has_verdict' using errcode = '55000';
+  end if;
+  select * into s from forge_witness.schedule_v1(p_game_id);
+  if s.start_time is null or coalesce(cardinality(s.team_statuses), 0) < 2 then
+    raise exception 'witness_schedule_unavailable' using errcode = '55000';
   end if;
   insert into forge_witness.targets (game_id) values (p_game_id) returning * into t;
   return pg_catalog.to_jsonb(t);
@@ -273,7 +278,8 @@ begin
   select * into c from forge_pregame_capture.claims where id = p_claim_id;
   if c.id is not null then
     select * into s from forge_witness.schedule_v1(c.game_id);
-    deadline := least(c.scheduled_start, s.start_time) - interval '60 minutes';
+    -- least() ignores NULL: an invisible current start must not fall back to the claimed start.
+    deadline := case when s.start_time is null then null else least(c.scheduled_start, s.start_time) - interval '60 minutes' end;
   end if;
   why := case
     when v.id is null then 'verdict_missing'

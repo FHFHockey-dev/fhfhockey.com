@@ -17,11 +17,11 @@ Gate logs and failed-run receipts: shared notes folder `forge-witness-verifier-g
 - Route pins `digicert-g4-v1` in code. Rehearsal patches the profile object in-process only (sibling pattern).
 - SQL lives under tasks/artifacts (not supabase/migrations) so no tooling can push it by accident.
 
-**State:** done locally. Rehearsal exit 0 (runs 9–11); typecheck 0; vitest 96 files/1745 passed; eslint 0 errors;
-producer closure unchanged (78655939…), admission pass. Migration sha256 303e889a848adc477fe3e7ca31c59958e98f1d9118db2b72d9412ea5baac3210.
+**State:** done locally. Rehearsal exit 0 (runs 9–13; run 12 after the review fixes: gate no-fallback, short team rows retryable, arm schedule check, stricter audit); typecheck 0; vitest 96 files/1745 passed; eslint 0 errors;
+producer closure unchanged (78655939…), admission pass. Migration sha256 c0899971b04b09a4be20fabfc60b88265359941ae02065d8b60e05930d3ff4b7.
 **Next:** Chef integrates `require_accepted_v1` into the live publish function (forge-get-adapter lane); TJ approves the
 production change list in WITNESS-VERIFIER-LOCAL.md.
-**Blockers / approvals:** which DB role runs the live publisher (asked Chef; default grant service_role + postgres).
+**Blockers / approvals:** none open in-lane. Chef (Nov 19) adopted this interface as canonical: the live publisher runs as service_role; Data API list public, graphql_public, storage, analytics, forge_witness_api.
 Every production step needs TJ's approval.
 
 **Gotchas**
