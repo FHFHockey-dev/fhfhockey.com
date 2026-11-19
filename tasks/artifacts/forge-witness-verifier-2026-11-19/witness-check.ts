@@ -89,7 +89,8 @@ async function main() {
     const response = await http(rest + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
     return { status: response.status, body: await response.text() };
   };
-  const auth = { authorization: `Bearer ${process.env.CRON_SECRET}` };
+  // The cron sends both: the cron secret and the verifier's own token (forge_witness.credentials) as a header.
+  const auth = { authorization: `Bearer ${process.env.CRON_SECRET}`, "x-forge-witness-token": tokens.witness };
   const verdictRows = async () => (await one("select count(*)::int n, coalesce(string_agg(id::text || ':' || xmin::text, ',' order by id), '') v from forge_witness.verdicts")) as { n: number; v: string };
 
   try {
@@ -186,10 +187,28 @@ async function main() {
     for (const name of Object.keys(cases)) await q("select forge_witness.arm_v1($1)", [cases[name].game]);
     // After arming (arm requires a readable schedule): the team rows vanish, so the verifier must decide nothing.
     await q("delete from public.roster_optimizer_team_games where source_game_id = $1", [cases.team_rows_missing.game]);
-    assert.equal((await call({ authorization: "Bearer wrong" })).status, 401);
+    // (b) Only both credentials pass. The deployment env even holds a witness token here (FORGE_WITNESS_API_TOKEN, as the
+    //     writer could), and a cron-secret-only caller is still refused; so are the writer's and other roles' tokens.
+    assert.equal(process.env.FORGE_WITNESS_API_TOKEN, tokens.witness);
+    const credentialRefusals: Record<string, unknown> = {};
+    for (const [name, headers] of Object.entries({
+      wrongCronSecret: { ...auth, authorization: "Bearer wrong" },
+      cronSecretOnly: { authorization: auth.authorization },
+      witnessTokenOnly: { "x-forge-witness-token": tokens.witness },
+      serviceRoleTokenAsWitness: { ...auth, "x-forge-witness-token": tokens.service_role },
+      authenticatedTokenAsWitness: { ...auth, "x-forge-witness-token": tokens.authenticated },
+      anonTokenAsWitness: { ...auth, "x-forge-witness-token": tokens.anon },
+    })) {
+      const r = await call(headers as Record<string, string>);
+      credentialRefusals[name] = { httpStatus: r.status, status: r.body?.status };
+      assert.equal(r.status, 401, name);
+      assert.ok(!JSON.stringify(r.body).includes(tokens.witness.split(".")[2]), `${name} echoed the token`);
+    }
+    assert.equal(Object.values(traffic.verifier).reduce((a, b) => a + b, 0), 0, "a refused call reached the Data API");
     assert.equal((await call(auth, { gameId: String(GAME) })).status, 400);
     const first = await call(auth);
     assert.equal(first.cache, "no-store, max-age=0");
+    assert.ok(!JSON.stringify(first.body).includes(tokens.witness.split(".")[2]), "route echoed the token");
     assert.equal(first.status, 200, JSON.stringify({ body: first.body, routeErrors }));
     const byGame = new Map<number, any>((first.body.results as any[]).map(r => [r.gameId, r]));
     const matrix: Record<string, unknown> = {};
@@ -372,7 +391,7 @@ async function main() {
       verifier: { firstGet: { httpStatus: first.status, wallMs: first.wallMs, elapsedMs: first.body.elapsedMs }, matrix, realVerdict,
         secondGet: { httpStatus: second.status, results: second.body.results }, duplicateRecord: { httpStatus: replay.status, created: false },
         race: raceResults, verdictRowsUnchangedByDuplicates: true, traffic: traffic.verifier, routeErrors },
-      databaseRechecks: dbChecks, gates, requireAccepted: { accepted: required.g.accepted, refused }, sqlDenials, httpDenials,
+      credentialRefusals, databaseRechecks: dbChecks, gates, requireAccepted: { accepted: required.g.accepted, refused }, sqlDenials, httpDenials,
       positiveControl: positive.status }));
   } finally {
     globalThis.fetch = http;

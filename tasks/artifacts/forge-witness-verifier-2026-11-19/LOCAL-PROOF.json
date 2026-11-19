@@ -3,7 +3,7 @@
  "postgrest": "PostgREST 16.6",
  "migration": {
   "file": "forge-witness-verifier.sql",
-  "sha256": "c0899971b04b09a4be20fabfc60b88265359941ae02065d8b60e05930d3ff4b7",
+  "sha256": "9673316c4e108f9ea8953603e7afd40009d62af828ae6eb21be2d2022651052a",
   "secondApplyRefused": true,
   "outsideDumpAdded": [
    "GRANT USAGE ON SCHEMA forge_pregame_capture TO forge_witness_owner;",
@@ -70,6 +70,40 @@
   "pgsodiumSchemaExposed": false,
   "pgsodiumEscalationFunctions": [],
   "serviceRoleOnWitnessObjects": [],
+  "writerSecretReach": [
+   {
+    "object": "schema cron usage",
+    "service_role_select": false
+   },
+   {
+    "object": "table cron.job",
+    "service_role_select": false
+   },
+   {
+    "object": "table cron.job_run_details",
+    "service_role_select": null
+   },
+   {
+    "object": "table forge_witness.credentials",
+    "service_role_select": null
+   },
+   {
+    "object": "table forge_witness_ops.fires",
+    "service_role_select": null
+   },
+   {
+    "object": "table net._http_response",
+    "service_role_select": false
+   },
+   {
+    "object": "table net.http_request_queue",
+    "service_role_select": false
+   },
+   {
+    "object": "table vault.decrypted_secrets",
+    "service_role_select": true
+   }
+  ],
   "receiptWriters": [],
   "witnessFunctions": [],
   "writerReachableDynamicDefiners": [],
@@ -179,10 +213,52 @@
     ]
    }
   ],
+  "writerSecretReach": [
+   {
+    "object": "schema cron usage",
+    "service_role_select": false
+   },
+   {
+    "object": "table cron.job",
+    "service_role_select": false
+   },
+   {
+    "object": "table cron.job_run_details",
+    "service_role_select": null
+   },
+   {
+    "object": "table forge_witness.credentials",
+    "service_role_select": false
+   },
+   {
+    "object": "table forge_witness_ops.fires",
+    "service_role_select": null
+   },
+   {
+    "object": "table net._http_response",
+    "service_role_select": false
+   },
+   {
+    "object": "table net.http_request_queue",
+    "service_role_select": false
+   },
+   {
+    "object": "table vault.decrypted_secrets",
+    "service_role_select": true
+   }
+  ],
   "receiptWriters": [],
   "witnessFunctions": [
    {
     "fn": "forge_witness.arm_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "postgres"
+    ]
+   },
+   {
+    "fn": "forge_witness.credential_v1",
     "owner": "forge_witness_owner",
     "definer": true,
     "executable_by": [
@@ -232,10 +308,26 @@
     ]
    },
    {
+    "fn": "forge_witness.revoke_credential_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "postgres"
+    ]
+   },
+   {
     "fn": "forge_witness.schedule_v1",
     "owner": "postgres",
     "definer": true,
     "executable_by": []
+   },
+   {
+    "fn": "forge_witness.set_credential_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "postgres"
+    ]
    },
    {
     "fn": "forge_witness.status_v1",
@@ -303,9 +395,9 @@
  },
  "route": {
   "writer": {
-   "claimId": "2dc0c79c-1620-42dd-a72d-60127629063e",
+   "claimId": "be97e1ae-3a09-4549-9280-69ea6daf5b5d",
    "outcome": "qualified",
-   "captureMs": 240,
+   "captureMs": 241,
    "tsaCalls": 1,
    "traffic": {
     "service_role@public": 147
@@ -314,8 +406,8 @@
   "verifier": {
    "firstGet": {
     "httpStatus": 200,
-    "wallMs": 39,
-    "elapsedMs": 39
+    "wallMs": 47,
+    "elapsedMs": 47
    },
    "matrix": {
     "claim_missing": {
@@ -342,8 +434,8 @@
       "verdict": "rejected",
       "reason": "artifact_missing"
      },
-     "verifiedAt": "2026-11-19T23:22:45.754011+00:00",
-     "deadlineAt": "2026-11-20T00:22:45.698595+00:00"
+     "verifiedAt": "2026-11-19T23:35:28.289345+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
     },
     "game_mismatch": {
      "gameId": 2099030004,
@@ -353,8 +445,8 @@
       "verdict": "rejected",
       "reason": "game_binding"
      },
-     "verifiedAt": "2026-11-19T23:22:45.75771+00:00",
-     "deadlineAt": "2026-11-20T00:22:45.698595+00:00"
+     "verifiedAt": "2026-11-19T23:35:28.293394+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
     },
     "claim_mismatch": {
      "gameId": 2099030005,
@@ -364,8 +456,8 @@
       "verdict": "rejected",
       "reason": "claim_binding"
      },
-     "verifiedAt": "2026-11-19T23:22:45.760212+00:00",
-     "deadlineAt": "2026-11-20T00:22:45.698595+00:00"
+     "verifiedAt": "2026-11-19T23:35:28.296267+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
     },
     "hash_mismatch": {
      "gameId": 2099030006,
@@ -375,8 +467,8 @@
       "verdict": "rejected",
       "reason": "hash_mismatch"
      },
-     "verifiedAt": "2026-11-19T23:22:45.762251+00:00",
-     "deadlineAt": "2026-11-20T00:22:45.698595+00:00"
+     "verifiedAt": "2026-11-19T23:35:28.298736+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
     },
     "cutoff_mismatch": {
      "gameId": 2099030007,
@@ -386,8 +478,8 @@
       "verdict": "rejected",
       "reason": "cutoff_mismatch"
      },
-     "verifiedAt": "2026-11-19T23:22:45.764251+00:00",
-     "deadlineAt": "2026-11-20T00:22:45.698595+00:00"
+     "verifiedAt": "2026-11-19T23:35:28.301121+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
     },
     "token_tampered": {
      "gameId": 2099030008,
@@ -397,8 +489,8 @@
       "verdict": "rejected",
       "reason": "token_invalid"
      },
-     "verifiedAt": "2026-11-19T23:22:45.766438+00:00",
-     "deadlineAt": "2026-11-20T00:22:45.698595+00:00"
+     "verifiedAt": "2026-11-19T23:35:28.303804+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
     },
     "token_wrong_profile": {
      "gameId": 2099030009,
@@ -408,8 +500,8 @@
       "verdict": "rejected",
       "reason": "token_invalid"
      },
-     "verifiedAt": "2026-11-19T23:22:45.768385+00:00",
-     "deadlineAt": "2026-11-20T00:22:45.698595+00:00"
+     "verifiedAt": "2026-11-19T23:35:28.306358+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
     },
     "witness_late": {
      "gameId": 2099030010,
@@ -419,8 +511,8 @@
       "verdict": "rejected",
       "reason": "witness_late"
      },
-     "verifiedAt": "2026-11-19T23:22:45.770771+00:00",
-     "deadlineAt": "2026-11-19T23:22:15.698595+00:00"
+     "verifiedAt": "2026-11-19T23:35:28.308803+00:00",
+     "deadlineAt": "2026-11-19T23:34:58.224037+00:00"
     },
     "verification_late": {
      "gameId": 2099030011,
@@ -430,8 +522,8 @@
       "verdict": "rejected",
       "reason": "verification_late"
      },
-     "verifiedAt": "2026-11-19T23:22:45.7729+00:00",
-     "deadlineAt": "2026-11-19T23:22:15.698595+00:00"
+     "verifiedAt": "2026-11-19T23:35:28.311531+00:00",
+     "deadlineAt": "2026-11-19T23:34:58.224037+00:00"
     },
     "schedule_changed": {
      "gameId": 2099030012,
@@ -441,8 +533,8 @@
       "verdict": "rejected",
       "reason": "schedule_changed"
      },
-     "verifiedAt": "2026-11-19T23:22:45.775209+00:00",
-     "deadlineAt": "2026-11-20T00:22:45.698595+00:00"
+     "verifiedAt": "2026-11-19T23:35:28.314587+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
     },
     "team_rows_missing": {
      "gameId": 2099030013,
@@ -460,27 +552,27 @@
       "verdict": "accepted",
       "reason": null
      },
-     "verifiedAt": "2026-11-19T23:22:45.784441+00:00",
-     "deadlineAt": "2026-11-20T00:22:38.518+00:00"
+     "verifiedAt": "2026-11-19T23:35:28.325088+00:00",
+     "deadlineAt": "2026-11-20T00:35:20.974+00:00"
     }
    },
    "realVerdict": {
     "id": "11",
-    "claim_id": "2dc0c79c-1620-42dd-a72d-60127629063e",
+    "claim_id": "be97e1ae-3a09-4549-9280-69ea6daf5b5d",
     "game_id": "2099020991",
     "policy_id": "pregame-native-v1",
     "verdict": "accepted",
     "reason": null,
-    "raw_sha256": "ecde341e3d85f46cd43f39167a87dc56590854bb4ee86f342f6f90bc8cef23c3",
-    "canonical_sha256": "a550997d0ec8c626113ff62e38344c70364d6629a6b4f807041b66c6440610e5",
-    "tsa_token_sha256": "c10b4f0914dc3cd3bd2a1bcb223fa689099b1e6b088793bb05caf6f74ed72a1d",
-    "statement_sha256": "c0bd8fe459e8cf52780365bfffded1d29bc524b2eb0d0e4f0ecdcfa7079a6585",
-    "input_cutoff": "2026-11-19T23:22:45.490Z",
-    "scheduled_start": "2026-11-20T01:22:38.518Z",
-    "deadline_at": "2026-11-20T00:22:38.518Z",
-    "verified_at": "2026-11-19T23:22:45.784Z",
+    "raw_sha256": "cf4304b2d586fc30d3ef9b513cc2c600b804650080bf4a25be72b50382047dd2",
+    "canonical_sha256": "92ecee574eb9f3cb561147410f10b957cc63751159a71f7ebd7bcd88a7b34b88",
+    "tsa_token_sha256": "77c8c140b03cf3bb4f302b2615c745ed77e563da7125a3b6ba1f16e8024f12ec",
+    "statement_sha256": "45b10f15c3058544c3aaa3be783731e0bd77a64ca67ec1bf09599f67238d15d3",
+    "input_cutoff": "2026-11-19T23:35:28.016Z",
+    "scheduled_start": "2026-11-20T01:35:20.974Z",
+    "deadline_at": "2026-11-20T00:35:20.974Z",
+    "verified_at": "2026-11-19T23:35:28.325Z",
     "verifier_role": "forge_witness_api",
-    "verifier_release": "2b0311e8835e9d736a16f383d59ccc0ffbe3a4d5"
+    "verifier_release": "19f8ee6831eabd2208a8409ae52d17db526c24dc"
    },
    "secondGet": {
     "httpStatus": 200,
@@ -492,12 +584,12 @@
      {
       "gameId": 2099030002,
       "status": "not_terminal",
-      "claimId": "a701b245-25b5-4814-b665-8d1eac32217d"
+      "claimId": "60cef0c5-038e-456e-a820-a764c7985c89"
      },
      {
       "gameId": 2099030013,
       "status": "schedule_unavailable",
-      "claimId": "35f924f9-fee1-4b55-8a24-55242061ae1f"
+      "claimId": "ee9c1d24-a418-4b7b-9c50-080c9ae6f8bb"
      }
     ]
    },
@@ -508,29 +600,29 @@
    "race": [
     {
      "gameId": 2099030014,
-     "status": "recorded",
-     "claimId": "e6e6a392-dc84-47e8-8e27-133aa3fdc8b6",
+     "status": "duplicate",
+     "claimId": "4102be8c-d5fb-476f-9241-4326d839d91c",
      "verdict": "accepted",
      "reason": null,
      "independent": {
       "verdict": "accepted",
       "reason": null
      },
-     "verifiedAt": "2026-11-19T23:22:45.799325+00:00",
-     "deadlineAt": "2026-11-20T00:22:45.698595+00:00"
+     "verifiedAt": "2026-11-19T23:35:28.342845+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
     },
     {
      "gameId": 2099030014,
-     "status": "duplicate",
-     "claimId": "e6e6a392-dc84-47e8-8e27-133aa3fdc8b6",
+     "status": "recorded",
+     "claimId": "4102be8c-d5fb-476f-9241-4326d839d91c",
      "verdict": "accepted",
      "reason": null,
      "independent": {
       "verdict": "accepted",
       "reason": null
      },
-     "verifiedAt": "2026-11-19T23:22:45.799325+00:00",
-     "deadlineAt": "2026-11-20T00:22:45.698595+00:00"
+     "verifiedAt": "2026-11-19T23:35:28.342845+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
     }
    ],
    "verdictRowsUnchangedByDuplicates": true,
@@ -538,6 +630,32 @@
     "witness@forge_witness_api": 42
    },
    "routeErrors": []
+  },
+  "credentialRefusals": {
+   "wrongCronSecret": {
+    "httpStatus": 401,
+    "status": "unauthorized"
+   },
+   "cronSecretOnly": {
+    "httpStatus": 401,
+    "status": "witness_credential_required"
+   },
+   "witnessTokenOnly": {
+    "httpStatus": 401,
+    "status": "unauthorized"
+   },
+   "serviceRoleTokenAsWitness": {
+    "httpStatus": 401,
+    "status": "witness_credential_required"
+   },
+   "authenticatedTokenAsWitness": {
+    "httpStatus": 401,
+    "status": "witness_credential_required"
+   },
+   "anonTokenAsWitness": {
+    "httpStatus": 401,
+    "status": "witness_credential_required"
+   }
   },
   "databaseRechecks": {
    "db_late": {
@@ -556,47 +674,47 @@
   "gates": {
    "real": {
     "reason": null,
-    "claimId": "2dc0c79c-1620-42dd-a72d-60127629063e",
+    "claimId": "be97e1ae-3a09-4549-9280-69ea6daf5b5d",
     "accepted": true,
-    "deadline": "2026-11-19T19:22:38.518-05:00",
+    "deadline": "2026-11-19T19:35:20.974-05:00",
     "verdictId": 11,
-    "verifiedAt": "2026-11-19T18:22:45.784441-05:00"
+    "verifiedAt": "2026-11-19T18:35:28.325088-05:00"
    },
    "realWrongCanonical": {
     "reason": "hash_mismatch",
-    "claimId": "2dc0c79c-1620-42dd-a72d-60127629063e",
+    "claimId": "be97e1ae-3a09-4549-9280-69ea6daf5b5d",
     "accepted": false,
-    "deadline": "2026-11-19T19:22:38.518-05:00",
+    "deadline": "2026-11-19T19:35:20.974-05:00",
     "verdictId": 11,
-    "verifiedAt": "2026-11-19T18:22:45.784441-05:00"
+    "verifiedAt": "2026-11-19T18:35:28.325088-05:00"
    },
    "realWrongToken": {
     "reason": "hash_mismatch",
-    "claimId": "2dc0c79c-1620-42dd-a72d-60127629063e",
+    "claimId": "be97e1ae-3a09-4549-9280-69ea6daf5b5d",
     "accepted": false,
-    "deadline": "2026-11-19T19:22:38.518-05:00",
+    "deadline": "2026-11-19T19:35:20.974-05:00",
     "verdictId": 11,
-    "verifiedAt": "2026-11-19T18:22:45.784441-05:00"
+    "verifiedAt": "2026-11-19T18:35:28.325088-05:00"
    },
    "rejectedClaim": {
     "reason": "verdict_rejected",
-    "claimId": "a70dd717-896b-45b2-a623-ccd25030b619",
+    "claimId": "b2c4fb8c-c56f-4306-b364-0f400ce0ddfb",
     "accepted": false,
-    "deadline": "2026-11-19T19:22:45.698595-05:00",
+    "deadline": "2026-11-19T19:35:28.224037-05:00",
     "verdictId": 2,
-    "verifiedAt": "2026-11-19T18:22:45.75771-05:00"
+    "verifiedAt": "2026-11-19T18:35:28.293394-05:00"
    },
    "unverifiedClaim": {
     "reason": "verdict_missing",
-    "claimId": "a701b245-25b5-4814-b665-8d1eac32217d",
+    "claimId": "60cef0c5-038e-456e-a820-a764c7985c89",
     "accepted": false,
-    "deadline": "2026-11-19T19:22:45.698595-05:00",
+    "deadline": "2026-11-19T19:35:28.224037-05:00",
     "verdictId": null,
     "verifiedAt": null
    },
    "unknownClaim": {
     "reason": "verdict_missing",
-    "claimId": "d60c8aad-8bd5-4f6e-bac4-d20569d133a3",
+    "claimId": "ee8fa4ac-ff63-498a-bd51-dd92874ee511",
     "accepted": false,
     "deadline": null,
     "verdictId": null,
@@ -604,27 +722,27 @@
    },
    "forgedLate": {
     "reason": "verified_late",
-    "claimId": "6f91636a-fdb6-45dc-bd6d-82836bd383f7",
+    "claimId": "76005f0c-48e9-41f7-8d70-0297f2c21902",
     "accepted": false,
-    "deadline": "2026-11-19T18:22:15.698595-05:00",
+    "deadline": "2026-11-19T18:34:58.224037-05:00",
     "verdictId": 15,
-    "verifiedAt": "2026-11-19T18:22:45.819855-05:00"
+    "verifiedAt": "2026-11-19T18:35:28.366202-05:00"
    },
    "raceBeforeGamesRowRemoved": {
     "reason": null,
-    "claimId": "e6e6a392-dc84-47e8-8e27-133aa3fdc8b6",
+    "claimId": "4102be8c-d5fb-476f-9241-4326d839d91c",
     "accepted": true,
-    "deadline": "2026-11-19T19:22:45.698595-05:00",
+    "deadline": "2026-11-19T19:35:28.224037-05:00",
     "verdictId": 12,
-    "verifiedAt": "2026-11-19T18:22:45.799325-05:00"
+    "verifiedAt": "2026-11-19T18:35:28.342845-05:00"
    },
    "raceGamesRowInvisible": {
     "reason": "schedule_unavailable",
-    "claimId": "e6e6a392-dc84-47e8-8e27-133aa3fdc8b6",
+    "claimId": "4102be8c-d5fb-476f-9241-4326d839d91c",
     "accepted": false,
     "deadline": null,
     "verdictId": 12,
-    "verifiedAt": "2026-11-19T18:22:45.799325-05:00"
+    "verifiedAt": "2026-11-19T18:35:28.342845-05:00"
    }
   },
   "requireAccepted": {
@@ -748,7 +866,7 @@
    "fires": [
     {
      "fire": 1,
-     "firedAt": "2026-11-19T18:22:45.909817-05:00",
+     "firedAt": "2026-11-19T18:35:28.486314-05:00",
      "requestId": 1,
      "statusCode": 200,
      "timedOut": false,
@@ -757,7 +875,7 @@
     },
     {
      "fire": 2,
-     "firedAt": "2026-11-19T18:22:45.910211-05:00",
+     "firedAt": "2026-11-19T18:35:28.486715-05:00",
      "requestId": 2,
      "statusCode": 200,
      "timedOut": false,
@@ -767,7 +885,7 @@
    ],
    "target": {
     "gameId": 2099039999,
-    "armedAt": "2026-11-19T18:22:45.907772-05:00",
+    "armedAt": "2026-11-19T18:35:28.481304-05:00",
     "verdict": null
    },
    "gate": null,
@@ -775,14 +893,72 @@
   },
   "realGameGate": {
    "reason": null,
-   "claimId": "2dc0c79c-1620-42dd-a72d-60127629063e",
+   "claimId": "be97e1ae-3a09-4549-9280-69ea6daf5b5d",
    "accepted": true,
-   "deadline": "2026-11-19T19:22:38.518-05:00",
+   "deadline": "2026-11-19T19:35:20.974-05:00",
    "verdictId": 11,
-   "verifiedAt": "2026-11-19T18:22:45.784441-05:00"
+   "verifiedAt": "2026-11-19T18:35:28.325088-05:00"
   },
   "rearmRefused": true,
-  "unreadableScheduleArmRefused": true
+  "unreadableScheduleArmRefused": true,
+  "credentialSetFromStdin": true,
+  "secretDenials": {
+   "service_role: read credentials": "42501 permission denied for table credentials",
+   "service_role: read credential via definer": "42501 permission denied for function credential_v1",
+   "service_role: set credential": "42501 permission denied for function set_credential_v1",
+   "service_role: revoke credential": "42501 permission denied for function revoke_credential_v1",
+   "service_role: read cron.job": "42501 permission denied for schema cron",
+   "service_role: read pg_net queue": "42501 permission denied for schema net",
+   "service_role: read pg_net responses": "42501 permission denied for schema net",
+   "service_role: read fires": "42501 permission denied for schema forge_witness_ops",
+   "service_role: call fire": "42501 permission denied for schema forge_witness_ops",
+   "anon: read credentials": "42501 permission denied for schema forge_witness",
+   "anon: read credential via definer": "42501 permission denied for schema forge_witness",
+   "anon: set credential": "42501 permission denied for schema forge_witness",
+   "anon: revoke credential": "42501 permission denied for schema forge_witness",
+   "anon: read cron.job": "42501 permission denied for schema cron",
+   "anon: read pg_net queue": "42501 permission denied for schema net",
+   "anon: read pg_net responses": "42501 permission denied for schema net",
+   "anon: read fires": "42501 permission denied for schema forge_witness_ops",
+   "anon: call fire": "42501 permission denied for schema forge_witness_ops",
+   "authenticated: read credentials": "42501 permission denied for schema forge_witness",
+   "authenticated: read credential via definer": "42501 permission denied for schema forge_witness",
+   "authenticated: set credential": "42501 permission denied for schema forge_witness",
+   "authenticated: revoke credential": "42501 permission denied for schema forge_witness",
+   "authenticated: read cron.job": "42501 permission denied for schema cron",
+   "authenticated: read pg_net queue": "42501 permission denied for schema net",
+   "authenticated: read pg_net responses": "42501 permission denied for schema net",
+   "authenticated: read fires": "42501 permission denied for schema forge_witness_ops",
+   "authenticated: call fire": "42501 permission denied for schema forge_witness_ops",
+   "forge_witness_api: read credentials": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: read credential via definer": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: set credential": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: revoke credential": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: read cron.job": "42501 permission denied for schema cron",
+   "forge_witness_api: read pg_net queue": "42501 permission denied for schema net",
+   "forge_witness_api: read pg_net responses": "42501 permission denied for schema net",
+   "forge_witness_api: read fires": "42501 permission denied for schema forge_witness_ops",
+   "forge_witness_api: call fire": "42501 permission denied for schema forge_witness_ops",
+   "authenticator: read credentials": "42501 permission denied for schema forge_witness",
+   "authenticator: read credential via definer": "42501 permission denied for schema forge_witness",
+   "authenticator: set credential": "42501 permission denied for schema forge_witness",
+   "authenticator: revoke credential": "42501 permission denied for schema forge_witness",
+   "authenticator: read cron.job": "42501 permission denied for schema cron",
+   "authenticator: read pg_net queue": "42501 permission denied for schema net",
+   "authenticator: read pg_net responses": "42501 permission denied for schema net",
+   "authenticator: read fires": "42501 permission denied for schema forge_witness_ops",
+   "authenticator: call fire": "42501 permission denied for schema forge_witness_ops"
+  },
+  "revoke": {
+   "pendingWithTokenBeforeRevoke": 200,
+   "pendingWithSameTokenAfterRevoke": 403,
+   "revoked": {
+    "credentialPresent": false,
+    "authenticatorMayUseRole": false
+   },
+   "fireWithoutCredential": "credential_missing",
+   "armWithoutCredentialRefused": true
+  }
  },
  "reset": "witness schemas and roles removed; schema-only dump outside identical to before install; WGO stand-in job intact"
 }

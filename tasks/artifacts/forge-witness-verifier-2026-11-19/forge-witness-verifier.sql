@@ -10,7 +10,9 @@
 --   forge_witness_api    NOLOGIN, granted to authenticator so PostgREST can switch to it for a short-lived JWT with
 --                        role=forge_witness_api. USAGE on forge_witness_api and EXECUTE on its three wrappers; nothing else.
 -- Schemas
---   forge_witness        private: targets (armed games), verdicts (immutable receipts), the publisher gate.
+--   forge_witness        private: targets (armed games), verdicts (immutable receipts), the publisher gate, and
+--                        credentials (the verifier's own Data API token; no grant to anyone, read only by the
+--                        installer-run cron fire function through credential_v1, never stored in Vercel env or Vault).
 --   forge_witness_api    exposed: pending_v1, evidence_v1, record_v1 (SECURITY DEFINER, owner-owned).
 -- The writer (service_role, anon, authenticated, any FORGE API role) can neither create, alter nor write a verdict; it
 -- may only EXECUTE the read-only gate. Rows are immutable (ALWAYS triggers); one verdict per claim and per game.
@@ -125,6 +127,62 @@ do $tables$ declare name text; begin
     execute format('alter table forge_witness.%I enable always trigger %I', name, name || '_no_truncate');
   end loop;
 end $tables$;
+
+-- The verifier's own Data API credential (a JWT for role forge_witness_api, at most 12 h). It never enters Vercel or
+-- Vault, which the FORGE writer can read. Only the owner touches the table; the installer sets, revokes and (from the
+-- verifier's cron fire function, which runs as the installer like the WGO jobs) reads it through the definers below.
+create table forge_witness.credentials (
+  id smallint primary key default 1 check (id = 1),
+  token text not null check (token ~ '^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$' and length(token) <= 4096),
+  expires_at timestamptz not null,
+  set_at timestamptz not null default clock_timestamp()
+);
+alter table forge_witness.credentials enable row level security;
+
+-- Installer only. Checks the token's claims (role forge_witness_api; expiry 5 min to 12 h away) without verifying its
+-- signature, which only the Data API can do. Returns the claims, never the token.
+create function forge_witness.set_credential_v1(p_token text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare part text; claims jsonb; expires timestamptz;
+begin
+  if p_token is null or p_token !~ '^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$' or length(p_token) > 4096 then
+    raise exception 'witness_credential_shape' using errcode = '22023';
+  end if;
+  part := pg_catalog.translate(pg_catalog.split_part(p_token, '.', 2), '-_', '+/');
+  part := part || pg_catalog.repeat('=', (4 - length(part) % 4) % 4);
+  begin
+    claims := pg_catalog.convert_from(pg_catalog.decode(part, 'base64'), 'UTF8')::jsonb;
+  exception when others then
+    raise exception 'witness_credential_claims' using errcode = '22023';
+  end;
+  if claims->>'role' is distinct from 'forge_witness_api' or jsonb_typeof(claims->'exp') <> 'number' then
+    raise exception 'witness_credential_claims' using errcode = '22023';
+  end if;
+  expires := pg_catalog.to_timestamp((claims->>'exp')::double precision);
+  if expires < clock_timestamp() + interval '5 minutes' or expires > clock_timestamp() + interval '12 hours' then
+    raise exception 'witness_credential_lifetime' using errcode = '22023';
+  end if;
+  insert into forge_witness.credentials (id, token, expires_at) values (1, p_token, expires)
+    on conflict (id) do update set token = excluded.token, expires_at = excluded.expires_at, set_at = clock_timestamp();
+  return pg_catalog.jsonb_build_object('role', claims->>'role', 'expiresAt', expires);
+end $$;
+
+-- Installer only: forget the credential. (The operator script also revokes forge_witness_api from authenticator, which
+-- makes every outstanding token for the role useless at once.)
+create function forge_witness.revoke_credential_v1()
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare removed integer;
+begin
+  delete from forge_witness.credentials;
+  get diagnostics removed = row_count;
+  return pg_catalog.jsonb_build_object('removed', removed);
+end $$;
+
+-- Installer only (the cron fire function): the current credential, or null when absent or within 2 min of expiry.
+create function forge_witness.credential_v1()
+returns text language sql stable security definer set search_path = '' as $$
+  select c.token from forge_witness.credentials c where c.expires_at > clock_timestamp() + interval '2 minutes'
+$$;
 
 -- Installer only: arm one game. A game with a verdict can never be re-armed (and targets are immutable). The game's
 -- schedule must be readable through schedule_v1 (start and both team rows), or the verifier could never decide it.
@@ -346,7 +404,8 @@ grant execute on function forge_witness.publication_gate_v1(uuid, text, text, te
 do $installer$ begin
   execute format('grant usage on schema forge_witness to %I', session_user);
   execute format('grant execute on function forge_witness.publication_gate_v1(uuid, text, text, text), '
-    'forge_witness.require_accepted_v1(uuid, text, text, text), forge_witness.arm_v1(bigint), forge_witness.status_v1() to %I', session_user);
+    'forge_witness.require_accepted_v1(uuid, text, text, text), forge_witness.arm_v1(bigint), forge_witness.status_v1(), '
+    'forge_witness.set_credential_v1(text), forge_witness.revoke_credential_v1(), forge_witness.credential_v1() to %I', session_user);
 end $installer$;
 revoke forge_witness_owner from current_user;
 commit;

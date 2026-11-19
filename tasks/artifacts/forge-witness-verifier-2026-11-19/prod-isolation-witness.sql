@@ -112,6 +112,16 @@ writer_grants as (
   select 'function ' || n.nspname || '.' || p.proname, array['EXECUTE']
   from installed i cross join pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace
   where i.yes and n.nspname in ('forge_witness', 'forge_witness_api') and pg_catalog.has_function_privilege('service_role', p.oid, 'EXECUTE')),
+-- Where the verifier credential and the cron bearer travel, and whether the writer can see them. The credential is in
+-- forge_witness.credentials (covered by writer_grants) and in pg_net's queue while a request is pending.
+secret_reach as (
+  select 'table ' || r as object, case when to_regclass(r) is null then null
+    else pg_catalog.has_table_privilege('service_role', to_regclass(r), 'SELECT') end as service_role_select
+  from unnest(array['forge_witness.credentials', 'net.http_request_queue', 'net._http_response', 'cron.job', 'cron.job_run_details',
+    'forge_witness_ops.fires', 'vault.decrypted_secrets']) r
+  union all
+  select 'schema cron usage', case when to_regnamespace('cron') is null then null
+    else pg_catalog.has_schema_privilege('service_role', 'cron', 'USAGE') end),
 triggers as (
   select c.relname, t.tgname, t.tgenabled
   from installed i cross join pg_catalog.pg_trigger t join pg_catalog.pg_class c on c.oid = t.tgrelid
@@ -147,6 +157,8 @@ select json_build_object(
   'pgsodiumSchemaExposed', exists (select from exposed where nspname = 'pgsodium'),
   'pgsodiumEscalationFunctions', (select coalesce(json_agg(s), '[]') from sodium s),
   'serviceRoleOnWitnessObjects', (select coalesce(json_agg(g order by g.object), '[]') from writer_grants g where cardinality(g.privileges) > 0),
+  -- vault.decrypted_secrets is expected readable by service_role (production); that is why the credential is not there.
+  'writerSecretReach', (select coalesce(json_agg(x order by x.object), '[]') from secret_reach x),
   'receiptWriters', (select coalesce(json_agg(rw) filter (where cardinality(rw.privileges) > 0), '[]') from receipt_writers rw),
   'witnessFunctions', (select coalesce(json_agg(f order by f.fn), '[]') from witness_functions f),
   'writerReachableDynamicDefiners', (select coalesce(json_agg(x), '[]') from writer_reach x),
@@ -158,6 +170,8 @@ select json_build_object(
     when (select yes from installed) and exists (select from writer_grants g where cardinality(g.privileges) > 0
       and (g.object, g.privileges) not in (('schema forge_witness', array['USAGE']), ('function forge_witness.publication_gate_v1', array['EXECUTE']),
         ('function forge_witness.require_accepted_v1', array['EXECUTE']))) then 'unsafe: service_role holds more than USAGE and the two gate EXECUTEs'
+    when (select yes from installed) and exists (select from secret_reach x where x.service_role_select
+      and x.object <> 'table vault.decrypted_secrets') then 'unsafe: service_role can read where the verifier credential travels'
     when (select yes from installed) and exists (select from owner_members o where o.inherits or not o.admin_option) then 'unsafe: owner has members'
     when (select yes from installed) and exists (select from witness_functions f where f.fn in ('forge_witness.record_v1', 'forge_witness.arm_v1',
       'forge_witness.evidence_v1') and f.executable_by && array['public', 'anon', 'authenticated', 'service_role', 'forge_witness_api', 'authenticator']::name[]) then 'unsafe: private definers callable'

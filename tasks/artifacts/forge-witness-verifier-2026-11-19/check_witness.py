@@ -134,12 +134,18 @@ def main():
           create function cron.schedule(n text, s text, c text) returns bigint language sql as
             $$insert into cron.job(jobname,schedule,command) values(n,s,c) returning jobid$$;
           create function cron.unschedule(j bigint) returns boolean language sql as $$delete from cron.job where jobid=j returning true$$;
-          create table net.requests(id bigserial primary key, url text, headers jsonb, timeout_ms int);
+          create table net.http_request_queue(id bigserial primary key, url text, headers jsonb, timeout_ms int);
           create table net._http_response(id bigint, status_code int, content text, timed_out boolean, error_msg text, created timestamptz default now());
           create function net.http_get(url text, params jsonb default '{}', headers jsonb default '{}', timeout_milliseconds int default 5000)
-            returns bigint language sql as $$insert into net.requests(url,headers,timeout_ms) values(url,headers,timeout_milliseconds) returning id$$;
+            returns bigint language sql as $$insert into net.http_request_queue(url,headers,timeout_ms) values(url,headers,timeout_milliseconds) returning id$$;
           insert into vault.decrypted_secrets values ('cron_secret', repeat('c', 48));
-          select cron.schedule('update-all-wgo-skaters', '30 7 * * *', 'select 1');""")
+          select cron.schedule('update-all-wgo-skaters', '30 7 * * *', 'select 1');
+          -- Production facts (read Nov 19): service_role has no SELECT on pg_net's queue/response and no USAGE on cron,
+          -- but CAN read vault.decrypted_secrets.
+          revoke all on schema cron from public, anon, authenticated, service_role;
+          revoke all on all tables in schema cron from public, anon, authenticated, service_role;
+          revoke all on net.http_request_queue, net._http_response from public, anon, authenticated, service_role;
+          grant usage on schema vault to service_role; grant select on vault.decrypted_secrets to service_role;""")
         q(BOOT["application_sql"](BOOT["add_seed"](item)))
         q(HOSTILE_RLS)
         request = item["request"]
@@ -188,6 +194,9 @@ def main():
         assert sorted((g["object"], tuple(g["privileges"])) for g in audit["serviceRoleOnWitnessObjects"]) == [
             ("function forge_witness.publication_gate_v1", ("EXECUTE",)), ("function forge_witness.require_accepted_v1", ("EXECUTE",)),
             ("schema forge_witness", ("USAGE",))], audit["serviceRoleOnWitnessObjects"]
+        reach = {x["object"]: x["service_role_select"] for x in audit["writerSecretReach"]}
+        assert reach["table vault.decrypted_secrets"] is True and reach["schema cron usage"] is False and all(
+            v is not True for k, v in reach.items() if k.startswith("table ") and k not in ("table vault.decrypted_secrets", "table forge_witness_ops.fires")), reach
         assert sorted(o["relation"] for o in audit["ownerOutside"]) == [f"forge_pregame_capture.{t}" for t in
                                                                         ("artifacts", "claims", "outcomes", "save_fences", "witnesses")], audit["ownerOutside"]
 
@@ -237,6 +246,25 @@ def main():
 
         # 5. Ops scripts: arm (one more game), two fires then self-unschedule, readback, disarm, re-arm refusals.
         step = "ops"
+        # Credential: set from stdin only; output carries claims, never the token.
+        witness_token = tokens["witness"]
+        setc = run(PG / "psql", "-X", "-q", "-At", "-h", directory, "-p", port, "-U", "postgres", "-f", HERE / "set-witness-credential.sql",
+                   "postgres", input=witness_token + "\n")
+        assert witness_token not in setc.stdout + setc.stderr and '"forge_witness_api"' in setc.stdout, setc.stdout[-300:]
+        assert rows("select pg_has_role('authenticator', 'forge_witness_api', 'MEMBER')")[0][0] is True
+        secret_denials = {}
+
+        def denied_as(role, label, sql):
+            cur = owner.cursor()
+            try:
+                cur.execute("begin")
+                cur.execute(f"set local role {role}")
+                cur.execute(sql)
+                secret_denials[f"{role}: {label}"] = "ALLOWED"
+            except psycopg2.Error as error:
+                secret_denials[f"{role}: {label}"] = f"{error.pgcode} {str(error).splitlines()[0][:70]}"
+            finally:
+                owner.rollback() if not owner.autocommit else cur.execute("rollback")
         ops_game = 2099039999
         verdicts_before_ops = rows("select count(*) from forge_witness.verdicts")[0][0]
         unreadable = psql("-v", "game=2099039998", "-v", "schedule=59 23 31 12 *", "-f", HERE / "arm-witness-verify.sql", check=False)
@@ -253,11 +281,26 @@ def main():
         psql("-v", f"game={ops_game}", "-v", "schedule=59 23 31 12 *", "-v", "max_fires=2", "-f", HERE / "arm-witness-verify.sql")
         command = rows("select command from cron.job where jobname = %s", (f"forge-witness-verify-{ops_game}",))[0][0]
         assert "cron_secret" not in command and "Bearer" not in command and "?" not in command, command
+        for role in ("service_role", "anon", "authenticated", "forge_witness_api", "authenticator"):
+            for label, sql in [("read credentials", "select token from forge_witness.credentials"),
+                               ("read credential via definer", "select forge_witness.credential_v1()"),
+                               ("set credential", "select forge_witness.set_credential_v1('a.b.c')"),
+                               ("revoke credential", "select forge_witness.revoke_credential_v1()"),
+                               ("read cron.job", "select command from cron.job"),
+                               ("read pg_net queue", "select headers from net.http_request_queue"),
+                               ("read pg_net responses", "select content from net._http_response"),
+                               ("read fires", "select * from forge_witness_ops.fires"),
+                               ("call fire", f"select forge_witness_ops.fire_v1({ops_game}, 1)")]:
+                denied_as(role, label, sql)
+        allowed = {k: v for k, v in secret_denials.items() if not v.startswith("42501")}
+        assert not allowed, allowed
         fired = [rows(command)[0][0] for _ in range(3)]
         assert fired[0].startswith("fired") and fired[1].startswith("fired") and fired[2] == "fires_spent", fired
         assert not rows("select 1 from cron.job where jobname like 'forge-witness-verify-%'")
-        req = rows("select url, headers->>'Authorization', timeout_ms from net.requests order by id desc limit 1")[0]
-        assert req == ("https://fhfhockey.com/api/v1/db/forge-witness-verify", "Bearer " + "c" * 48, 60000), req[0]
+        req = rows("select url, headers->>'Authorization', timeout_ms, headers->>'x-forge-witness-token' = %s from net.http_request_queue order by id desc limit 1",
+                   (witness_token,))[0]
+        assert req == ("https://fhfhockey.com/api/v1/db/forge-witness-verify", "Bearer " + "c" * 48, 60000, True), req[0]
+        assert not rows("select 1 from cron.job where command like %s", (f"%{witness_token[-20:]}%",))
         q("insert into net._http_response(id,status_code,content,timed_out) select request_id, 200, %s, false from forge_witness_ops.fires",
           (json.dumps({"status": "ok", "results": [{"gameId": ops_game, "status": "claim_missing"}]}),))
         readback = json.loads(psql("-v", f"game={ops_game}", "-f", HERE / "readback-witness-verify.sql").stdout)
@@ -266,6 +309,30 @@ def main():
         assert real_readback["gate"]["accepted"] is True, real_readback
         rearm = psql("-v", "game=2099020991", "-v", "schedule=59 23 31 12 *", "-f", HERE / "arm-witness-verify.sql", check=False)
         assert rearm.returncode != 0 and "witness_target_has_verdict" in rearm.stderr, rearm.stderr[-400:]
+        assert witness_token not in json.dumps(readback) + json.dumps(real_readback)
+        # Revoke: the credential is gone and the old token can no longer act as forge_witness_api through the Data API.
+        import urllib.request
+        import urllib.error
+
+        def pending_with(token):
+            request_ = urllib.request.Request(f"http://127.0.0.1:{rest_port}/rpc/pending_v1", data=b"{}", method="POST",
+                                              headers={"Content-Type": "application/json", "Content-Profile": "forge_witness_api",
+                                                       "apikey": tokens["anon"], "Authorization": f"Bearer {token}"})
+            try:
+                return urllib.request.urlopen(request_, timeout=10).status
+            except urllib.error.HTTPError as error:
+                return error.code
+        before_revoke = pending_with(witness_token)
+        revoked = json.loads(psql("-f", HERE / "revoke-witness-credential.sql").stdout.strip().splitlines()[-1])
+        after_revoke = pending_with(witness_token)
+        assert before_revoke == 200 and 400 <= after_revoke < 500, (before_revoke, after_revoke)
+        assert revoked == {"credentialPresent": False, "authenticatorMayUseRole": False}, revoked
+        no_credential = rows("select forge_witness_ops.fire_v1(2099039997, 1)")[0][0]
+        assert no_credential == "credential_missing", no_credential
+        unarmed = psql("-v", "game=2099039999", "-v", "schedule=59 23 31 12 *", "-f", HERE / "arm-witness-verify.sql", check=False)
+        assert unarmed.returncode != 0 and "witness_arm_preflight_failed" in unarmed.stderr, unarmed.stderr[-300:]
+        revoke_proof = {"pendingWithTokenBeforeRevoke": before_revoke, "pendingWithSameTokenAfterRevoke": after_revoke, "revoked": revoked,
+                        "fireWithoutCredential": no_credential, "armWithoutCredentialRefused": True}
         psql("-f", HERE / "disarm-witness-verify.sql")
         assert rows("select count(*) from cron.job")[0][0] == 1
         assert rows("select count(*) from forge_witness.verdicts")[0][0] == verdicts_before_ops
@@ -287,7 +354,8 @@ def main():
                   "auditBeforeInstall": audit_before, "auditInstalled": audit, "auditAfterRuns": {"verdict": audit_after["verdict"]},
                   "route": route,
                   "ops": {"fired": fired, "request": {"url": req[0], "timeoutMs": req[2]}, "readback": readback,
-                          "realGameGate": real_readback["gate"], "rearmRefused": True, "unreadableScheduleArmRefused": True},
+                          "realGameGate": real_readback["gate"], "rearmRefused": True, "unreadableScheduleArmRefused": True,
+                          "credentialSetFromStdin": True, "secretDenials": secret_denials, "revoke": revoke_proof},
                   "reset": "witness schemas and roles removed; schema-only dump outside identical to before install; WGO stand-in job intact"}
         text = json.dumps(report, indent=1, default=str)
         if out:
