@@ -165,6 +165,13 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     receiptSha256: "15676f4fdfecd85019ecab2afe3fa86998bf0683e9542b407f46199884b737fd",
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "2026-11-16 audit release producer (pipeline C2, H1/M5, M4, L2; production build gate; read paths): 239-module exact commit closure, 0 findings. Exclusion proof only, not forecast-quality or native-use approval.",
+  },  {
+    closureSha256: "78655939ef3fcdb47a12c2388644b96a7015f49c2327cac00ddbd8a050dfd6e9",
+    commit: "bb8693f19d5ac35e48a2a04595cf084b1abc27e6",
+    receipt: "tasks/artifacts/forge-sandbox-publish-2026-11-19/bb8693f19d5ac35e48a2a04595cf084b1abc27e6.json",
+    receiptSha256: "44cdf77b865ffe17e349ea5e039d1436128ab2921bd6bb4e3553b2a43723654e",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "2026-11-19 sandbox publication candidate (forgeEnvScope, pregame publication compute, replay guard): 242-module exact commit closure, 0 findings. Exclusion proof only, not forecast-quality or native-use approval.",
   },
 ];
 
