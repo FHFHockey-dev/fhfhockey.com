@@ -9,6 +9,7 @@ import { mintTimeStampResponse, testTsaTrust } from "lib/projections/pregameCapt
 import { TSA_PROFILES } from "lib/projections/pregameCapture/tsaProfiles";
 import capture from "pages/api/v1/db/forge-live-capture";
 import publish from "pages/api/v1/db/forge-live-publish";
+import verify from "pages/api/v1/db/forge-witness-verify";
 import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
 import { loadExternalInputProof } from "lib/projections/externalInputProof";
 import { loadForgeGameRevisions } from "lib/projections/gameRevisions";
@@ -81,22 +82,24 @@ async function main() {
     const [artifact] = await sql(`select a.raw_sha256, a.canonical_sha256, w.tsa_token_sha256 from forge_pregame_capture.artifacts a
       join forge_pregame_capture.witnesses w on w.claim_id = a.claim_id where a.claim_id = $1`, [claimId]);
     assert.equal((await sql("select publish_began_at from forge_pregame_capture.live_runs where game_id = $1", [game]))[0].publish_began_at, null);
-    // The verifier's accepted verdict. With the verifier migration installed, record it as that package's NOLOGIN API role
-    // through its exposed record_v1 (the database re-derives every hash; its route's RFC 3161 check is rehearsed by the
-    // verifier package, since this rehearsal's token comes from a local test TSA). Otherwise use the interface stub.
+    // The independent verdict. With the verifier package installed, its own one-shot cron job fires and its real route
+    // (pages/api/v1/db/forge-witness-verify) reads the claim back as forge_witness_api through PostgREST, re-verifies the
+    // RFC 3161 token (the released profile re-pointed at this process's test TSA, as the verifier's rehearsal does) and
+    // records the verdict. Otherwise the interface stub stands in.
     if ((await sql("select to_regnamespace('forge_witness_api') is not null as real"))[0].real) {
-      assert.equal((await sql("select forge_witness.arm_v1($1) r", [game]))[0].r.game_id, game);
-      const [e] = await sql(`select encode(sha256(a.packet), 'hex') raw, a.canonical_sha256 canonical, encode(sha256(w.tsa_token), 'hex') token,
-        w.statement_sha256 statement, c.input_cutoff::text cutoff, c.input_cutoff = c.claimed_at cutoff_is_claim from forge_pregame_capture.claims c
-        join forge_pregame_capture.artifacts a on a.claim_id = c.id join forge_pregame_capture.witnesses w on w.claim_id = c.id
-        where c.id = $1`, [claimId]);
-      await sql("begin");
-      await sql("set local role forge_witness_api");
-      const [recorded] = await sql(`select forge_witness_api.record_v1($1, $2, 'accepted', null, $3, $4, $5, $6, $7, $8) r`,
-        [game, claimId, e.raw, e.canonical, e.token, e.statement, e.cutoff, process.env.VERCEL_GIT_COMMIT_SHA]);
-      await sql("commit");
-      assert.ok(recorded.r.created && recorded.r.verdict.verdict === "accepted", JSON.stringify({ recorded: recorded.r, cutoffIsClaim: e.cutoff_is_claim }));
-      verifier = { package: "forge-witness-verifier", verdict: recorded.r.verdict.verdict, role: recorded.r.verdict.verifier_role };
+      const job = (await sql("select command from cron.job where jobname = $1", [`forge-witness-verify-${game}`]))[0]?.command as string;
+      assert.match(job, /forge_witness_ops\.fire_v1\(2099020991, 1\)/);
+      const firedVerify = (await sql(job))[0].fire_v1 as string;
+      assert.match(firedVerify, /^fired \d+$/);
+      const verified = await call(verify as typeof capture, auth);
+      assert.equal(verified.status, 200, JSON.stringify({ body: verified.body, errors }).slice(0, 2500));
+      const verdicts = await sql(`select verdict, reason, verifier_role, verifier_release from forge_witness.verdicts where claim_id = $1`, [claimId]);
+      assert.deepEqual(verdicts, [{ verdict: "accepted", reason: null, verifier_role: "forge_witness_api", verifier_release: process.env.VERCEL_GIT_COMMIT_SHA }]);
+      const verifiedAgain = await call(verify as typeof capture, auth);
+      assert.equal(await count("forge_witness.verdicts"), 1);
+      assert.equal(await count("cron.job where jobname like 'forge-witness-verify-%'"), 0);
+      verifier = { package: "forge-witness-verifier route", fired: firedVerify, status: verified.status, body: verified.body,
+        wallMs: verified.wallMs, duplicate: verifiedAgain.body, verdict: verdicts[0] };
     } else {
       await sql(`insert into forge_witness.stub_verdicts(claim_id, verdict, raw_sha256, canonical_sha256, token_sha256)
         values ($1, 'accepted', $2, $3, $4)`, [claimId, artifact.raw_sha256, artifact.canonical_sha256, artifact.tsa_token_sha256]);
