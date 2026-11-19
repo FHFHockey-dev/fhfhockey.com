@@ -6,15 +6,19 @@ import { forgeEnvScoped, PREGAME_PUBLICATION_METRIC } from "./forgeScopeProbe";
 
 export const LOCAL_UNKNOWN_GIT_SHA = "local:unknown";
 
-type NotFilterable = { not(column: string, operator: string, value: unknown): unknown; is?(column: string, value: null): unknown };
+type NotFilterable = { not(column: string, operator: string, value: unknown): unknown };
 
-/** Adds the off-release exclusion to a forge_runs query (or an embedded forge_runs column). Outside a game-scoped FORGE
- * request it also drops pregame publications (forgeScopeProbe.ts), so a one-game run never displaces the daily run. */
+/** Adds the off-release exclusion to a forge_runs query (or an embedded forge_runs column). */
 export function excludeOffReleaseRuns<Q extends NotFilterable>(query: Q, column = "git_sha"): Q {
-  const released = (query.not(column, "is", null) as Q).not(column, "like", "local:*") as Q;
-  if (forgeEnvScoped() || column !== "git_sha") return released;
-  if (typeof released.is !== "function") throw new Error("forge_runs query cannot exclude pregame publications");
-  return released.is(PREGAME_PUBLICATION_METRIC, null) as Q;
+  return (query.not(column, "is", null) as Q).not(column, "like", "local:*") as Q;
+}
+
+type IsFilterable = { is(column: string, value: null): unknown };
+
+/** For readers that pick a run without an exclusion proof: outside a game-scoped FORGE request, never select a pregame
+ * publication (one game, private custody). Proof-gated readers are fenced by externalInputProof instead. */
+export function excludePregamePublications<Q extends IsFilterable>(query: Q): Q {
+  return forgeEnvScoped() ? query : query.is(PREGAME_PUBLICATION_METRIC, null) as Q;
 }
 
 export function isOffReleaseGitSha(gitSha: string | null | undefined): boolean {

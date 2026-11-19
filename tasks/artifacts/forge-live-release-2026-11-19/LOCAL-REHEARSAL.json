@@ -1,0 +1,285 @@
+{
+ "postgres": "PostgreSQL 15.19 (Homebrew) on aarch64-apple-darwin27.0.0",
+ "postgrest": "PostgREST 16.6",
+ "flags": {
+  "FORGE_PREGAME_CAPTURE_ENABLED": "true",
+  "STARTER_BOARD_CAPTURE_ENABLED": "true",
+  "STARTER_BOARD_COMPUTE_ENABLED": "false",
+  "STARTER_BOARD_SERVING_ENABLED": "false",
+  "STARTER_BOARD_SCHEDULER_ENABLED": "true",
+  "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED": "true",
+  "STARTER_BOARD_CHALLENGER_ENABLED": "false",
+  "STARTER_BOARD_CANARY_GAME_IDS": "2026010049",
+  "FORGE_RESERVE_PASS_ENABLED": "true",
+  "FORGE_PROJECTION_DAYS_AHEAD": "6"
+ },
+ "publicationMigrationSha256": "4a70657ae3e0841f6fac1e66ee608ed866c5152b83a23dd10a83f5b435373f97",
+ "liveMigrationSha256": "d8f7155947f65fc16608fb21921f3b2f72f51a0bf1b386e81497bff82b320f38",
+ "route": {
+  "capture": {
+   "status": 200,
+   "body": {
+    "status": "captured",
+    "sha": "5d439ddef778af75b3e074f98484500f8c07c6e4",
+    "gameId": 2099020991,
+    "claimId": "6bc3ec52-b1c7-4128-9998-d3f923f4ab1b",
+    "elapsedMs": 193,
+    "receipt": {
+     "claim": "6bc3ec52-b1c7-4128-9998-d3f923f4ab1b",
+     "gameId": 2099020991,
+     "reason": null,
+     "armedAt": "2026-11-19T18:01:36.204006-05:00",
+     "custody": "qualified",
+     "outcome": null,
+     "readers": null,
+     "release": "5d439ddef778af75b3e074f98484500f8c07c6e4",
+     "verdict": {
+      "reason": "no_verdict",
+      "accepted": false,
+      "deadline": "2026-11-19T19:01:35.187-05:00",
+      "verifiedAt": null
+     },
+     "witness": "qualified",
+     "requests": [
+      {
+       "jobid": 1000,
+       "stage": "capture",
+       "game_id": 2099020991,
+       "fired_at": "2026-11-19T18:01:37.499782-05:00",
+       "request_id": 1
+      }
+     ],
+     "stoppedAt": null,
+     "approvedBy": "local-rehearsal",
+     "revisionId": null,
+     "stopReason": null,
+     "terminalAt": null,
+     "playerNhlId": 8471001,
+     "tokenSha256": "b5885ec6a39076a1ffe2d4e7e401856d4161f0462c6730c7bb2794659bc19ee2",
+     "packetSha256": "0fcc7de1ca1abc7be1192fb7d2a9d7f78f5787134fad2a8c86cd7480e4144c78",
+     "captureBeganAt": "2026-11-19T18:01:37.504277-05:00",
+     "publishBeganAt": null,
+     "scheduledStart": "2026-11-19T20:01:35.187-05:00",
+     "canonicalSha256": "fec9261f5c9345c24b5578dfb60ef81fafe146918ab3d2e5911400eea1d5394c",
+     "captureFinishedAt": "2026-11-19T18:01:37.694406-05:00",
+     "committedRevision": null,
+     "publishFinishedAt": null
+    }
+   },
+   "wallMs": 195
+  },
+  "publish": {
+   "status": 200,
+   "wallMs": 5260,
+   "body": {
+    "status": "succeeded",
+    "reason": "readers_recorded",
+    "sha": "5d439ddef778af75b3e074f98484500f8c07c6e4",
+    "gameId": 2099020991,
+    "claimId": "6bc3ec52-b1c7-4128-9998-d3f923f4ab1b",
+    "revisionId": "b32a42b0-b33e-47f5-bbd0-99bd0d98822f",
+    "readers": {
+     "contextId": "synthetic-single-center-points-v1",
+     "playerNhlId": 8471001,
+     "evaluatedAt": "2026-11-19T23:01:42.916Z",
+     "daily": {
+      "playerId": "471001",
+      "selectedRun": "6bc3ec52-b1c7-4128-9998-d3f923f4ab1b",
+      "revisionId": "forge-daily-bridge-v1:6bc3ec52-b1c7-4128-9998-d3f923f4ab1b",
+      "legalSlot": "C#1",
+      "points": 2.965,
+      "reason": null
+     },
+     "detailed": {
+      "reason": "missing_participation",
+      "playerId": "471001",
+      "selectedRun": "6bc3ec52-b1c7-4128-9998-d3f923f4ab1b",
+      "revisionId": "b32a42b0-b33e-47f5-bbd0-99bd0d98822f",
+      "points": null,
+      "legalSlot": null
+     }
+    },
+    "stages": {
+     "publishMs": 5213,
+     "readersMs": 38
+    },
+    "elapsedMs": 5254,
+    "receipt": {
+     "claim": "6bc3ec52-b1c7-4128-9998-d3f923f4ab1b",
+     "gameId": 2099020991,
+     "reason": "readers_recorded",
+     "armedAt": "2026-11-19T18:01:36.204006-05:00",
+     "custody": "qualified",
+     "outcome": "succeeded",
+     "readers": {
+      "daily": {
+       "points": 2.965,
+       "reason": null,
+       "playerId": "471001",
+       "legalSlot": "C#1",
+       "revisionId": "forge-daily-bridge-v1:6bc3ec52-b1c7-4128-9998-d3f923f4ab1b",
+       "selectedRun": "6bc3ec52-b1c7-4128-9998-d3f923f4ab1b"
+      },
+      "detailed": {
+       "points": null,
+       "reason": "missing_participation",
+       "playerId": "471001",
+       "legalSlot": null,
+       "revisionId": "b32a42b0-b33e-47f5-bbd0-99bd0d98822f",
+       "selectedRun": "6bc3ec52-b1c7-4128-9998-d3f923f4ab1b"
+      },
+      "contextId": "synthetic-single-center-points-v1",
+      "evaluatedAt": "2026-11-19T23:01:42.916Z",
+      "playerNhlId": 8471001
+     },
+     "release": "5d439ddef778af75b3e074f98484500f8c07c6e4",
+     "verdict": {
+      "reason": null,
+      "accepted": true,
+      "deadline": "2026-11-19T19:01:35.187-05:00",
+      "verifiedAt": "2026-11-19T18:01:37.69874-05:00"
+     },
+     "witness": "qualified",
+     "requests": [
+      {
+       "jobid": 1000,
+       "stage": "capture",
+       "game_id": 2099020991,
+       "fired_at": "2026-11-19T18:01:37.499782-05:00",
+       "request_id": 1
+      },
+      {
+       "jobid": 1001,
+       "stage": "publish",
+       "game_id": 2099020991,
+       "fired_at": "2026-11-19T18:01:37.699098-05:00",
+       "request_id": 2
+      }
+     ],
+     "stoppedAt": null,
+     "approvedBy": "local-rehearsal",
+     "revisionId": "b32a42b0-b33e-47f5-bbd0-99bd0d98822f",
+     "stopReason": null,
+     "terminalAt": "2026-11-19T18:01:42.954647-05:00",
+     "playerNhlId": 8471001,
+     "tokenSha256": "b5885ec6a39076a1ffe2d4e7e401856d4161f0462c6730c7bb2794659bc19ee2",
+     "packetSha256": "0fcc7de1ca1abc7be1192fb7d2a9d7f78f5787134fad2a8c86cd7480e4144c78",
+     "captureBeganAt": "2026-11-19T18:01:37.504277-05:00",
+     "publishBeganAt": "2026-11-19T18:01:37.700289-05:00",
+     "scheduledStart": "2026-11-19T20:01:35.187-05:00",
+     "canonicalSha256": "fec9261f5c9345c24b5578dfb60ef81fafe146918ab3d2e5911400eea1d5394c",
+     "captureFinishedAt": "2026-11-19T18:01:37.694406-05:00",
+     "committedRevision": "b32a42b0-b33e-47f5-bbd0-99bd0d98822f",
+     "publishFinishedAt": "2026-11-19T18:01:42.954534-05:00"
+    }
+   }
+  },
+  "duplicates": {
+   "capture": "none_armed",
+   "publish": "none_ready"
+  },
+  "fired": {
+   "capture": "fired 1",
+   "publish": "fired 2"
+  },
+  "restCalls": 188,
+  "errors": [
+   "/nhl_team_data 400 {\"code\":\"42703\",\"details\":null,\"hint\":null,\"message\":\"column nhl_team_data.season_id does not exist\"}"
+  ],
+  "tsaCalls": 1,
+  "displacement": "outside scope: runs-latest 404, proof false, revisions 0; inside: claim, true, 1"
+ },
+ "readback": {
+  "receipt": {
+   "claim": "6bc3ec52-b1c7-4128-9998-d3f923f4ab1b",
+   "gameId": 2099020991,
+   "reason": "readers_recorded",
+   "armedAt": "2026-11-19T18:01:36.204006-05:00",
+   "custody": "qualified",
+   "outcome": "succeeded",
+   "readers": {
+    "daily": {
+     "points": 2.965,
+     "reason": null,
+     "playerId": "471001",
+     "legalSlot": "C#1",
+     "revisionId": "forge-daily-bridge-v1:6bc3ec52-b1c7-4128-9998-d3f923f4ab1b",
+     "selectedRun": "6bc3ec52-b1c7-4128-9998-d3f923f4ab1b"
+    },
+    "detailed": {
+     "points": null,
+     "reason": "missing_participation",
+     "playerId": "471001",
+     "legalSlot": null,
+     "revisionId": "b32a42b0-b33e-47f5-bbd0-99bd0d98822f",
+     "selectedRun": "6bc3ec52-b1c7-4128-9998-d3f923f4ab1b"
+    },
+    "contextId": "synthetic-single-center-points-v1",
+    "evaluatedAt": "2026-11-19T23:01:42.916Z",
+    "playerNhlId": 8471001
+   },
+   "release": "5d439ddef778af75b3e074f98484500f8c07c6e4",
+   "verdict": {
+    "reason": null,
+    "accepted": true,
+    "deadline": "2026-11-19T19:01:35.187-05:00",
+    "verifiedAt": "2026-11-19T18:01:37.69874-05:00"
+   },
+   "witness": "qualified",
+   "requests": [
+    {
+     "jobid": 1000,
+     "stage": "capture",
+     "game_id": 2099020991,
+     "fired_at": "2026-11-19T18:01:37.499782-05:00",
+     "request_id": 1
+    },
+    {
+     "jobid": 1001,
+     "stage": "publish",
+     "game_id": 2099020991,
+     "fired_at": "2026-11-19T18:01:37.699098-05:00",
+     "request_id": 2
+    }
+   ],
+   "stoppedAt": null,
+   "approvedBy": "local-rehearsal",
+   "revisionId": "b32a42b0-b33e-47f5-bbd0-99bd0d98822f",
+   "stopReason": null,
+   "terminalAt": "2026-11-19T18:01:42.954647-05:00",
+   "playerNhlId": 8471001,
+   "tokenSha256": "b5885ec6a39076a1ffe2d4e7e401856d4161f0462c6730c7bb2794659bc19ee2",
+   "packetSha256": "0fcc7de1ca1abc7be1192fb7d2a9d7f78f5787134fad2a8c86cd7480e4144c78",
+   "captureBeganAt": "2026-11-19T18:01:37.504277-05:00",
+   "publishBeganAt": "2026-11-19T18:01:37.700289-05:00",
+   "scheduledStart": "2026-11-19T20:01:35.187-05:00",
+   "canonicalSha256": "fec9261f5c9345c24b5578dfb60ef81fafe146918ab3d2e5911400eea1d5394c",
+   "captureFinishedAt": "2026-11-19T18:01:37.694406-05:00",
+   "committedRevision": "b32a42b0-b33e-47f5-bbd0-99bd0d98822f",
+   "publishFinishedAt": "2026-11-19T18:01:42.954534-05:00"
+  },
+  "cronRuns": [],
+  "job408Active": false,
+  "httpResponses": [
+   {
+    "body": null,
+    "error": null,
+    "stage": "capture",
+    "created": null,
+    "timedOut": null,
+    "requestId": null,
+    "statusCode": null
+   },
+   {
+    "body": null,
+    "error": null,
+    "stage": "publish",
+    "created": null,
+    "timedOut": null,
+    "requestId": null,
+    "statusCode": null
+   }
+  ],
+  "remainingLiveJobs": 0
+ }
+}

@@ -15,5 +15,5 @@ drop function if exists public.forge_live_capture_begin_v1(text), public.forge_l
   forge_pregame_capture.require_live_verdict_v1(), forge_pregame_capture.live_fire_v1(bigint, text),
   forge_pregame_capture.live_close_v1(bigint), forge_pregame_capture.live_stop_v1(bigint, text), forge_pregame_capture.live_arm_v1(bigint),
   forge_pregame_capture.live_end_v1(bigint, text, text), forge_pregame_capture.live_receipt_v1(bigint);
-drop table if exists forge_pregame_capture.live_requests, forge_pregame_capture.live_verdicts, forge_pregame_capture.live_runs;
+drop table if exists forge_pregame_capture.live_requests, forge_pregame_capture.live_runs;
 commit;

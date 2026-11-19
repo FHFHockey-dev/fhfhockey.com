@@ -120,6 +120,7 @@ def main():
         q(defaults + "\n" + BOOT["atomic"](core + "\n" + seed))
         assert not rows("select 1 from pg_proc where proname = 'forge_pregame_publish_v1'")
         psql("-f", ROOT / "supabase/migrations" / PUBLICATION)
+        psql("-f", HERE / "witness-stub.sql")                 # local stand-in for the verifier migration (its interface only)
         psql("-f", ROOT / "supabase/migrations" / LIVE)
 
         # PostgREST as production serves the service role.

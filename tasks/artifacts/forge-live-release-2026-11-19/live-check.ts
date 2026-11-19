@@ -77,11 +77,12 @@ async function main() {
 
     // Verdict fence: with no verdict the publication stage is refused and nothing is consumed.
     assert.equal((await call(publish, auth)).body.status, "awaiting_verdict");
-    const [artifact] = await sql("select raw_sha256, canonical_sha256 from forge_pregame_capture.artifacts where claim_id = $1", [claimId]);
+    const [artifact] = await sql(`select a.raw_sha256, a.canonical_sha256, w.tsa_token_sha256 from forge_pregame_capture.artifacts a
+      join forge_pregame_capture.witnesses w on w.claim_id = a.claim_id where a.claim_id = $1`, [claimId]);
     assert.equal((await sql("select publish_began_at from forge_pregame_capture.live_runs where game_id = $1", [game]))[0].publish_began_at, null);
-    // The verifier's accepted verdict (its own role writes this row in production).
-    await sql(`insert into forge_pregame_capture.live_verdicts(claim_id, game_id, verdict, raw_sha256, canonical_sha256)
-      values ($1, $2, 'accepted', $3, $4)`, [claimId, game, artifact.raw_sha256, artifact.canonical_sha256]);
+    // The verifier's accepted verdict (forge_witness stub here; its own migration and role in production).
+    await sql(`insert into forge_witness.stub_verdicts(claim_id, verdict, raw_sha256, canonical_sha256, token_sha256)
+      values ($1, 'accepted', $2, $3, $4)`, [claimId, artifact.raw_sha256, artifact.canonical_sha256, artifact.tsa_token_sha256]);
     const firedPublish = await fire("publish");
     assert.match(firedPublish, /^fired \d+$/);
     const published = await call(publish, auth);

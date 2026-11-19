@@ -1,5 +1,7 @@
 -- One approved, game-scoped live FORGE pregame run: capture → independent verdict → one publication → both RSO readers.
--- Requires 20261115000000 (custody), 20261117215012 (hosted dispatch; hosted_schedule) and 20261118135813 (publication).
+-- Requires 20261115000000 (custody), 20261117215012 (hosted dispatch; hosted_schedule), 20261118135813 (publication) and
+-- the independent verifier's migration (schema forge_witness: require_accepted_v1 and publication_gate_v1). Apply order:
+-- publication → witness → this file.
 -- Nothing is approved or armed here. The operator inserts one approval row, arms it, and registers the two one-shot
 -- cron jobs (operator SQL in tasks/artifacts/forge-live-release-2026-11-19/). Every gate below is enforced in the
 -- database, so a stopped or dead operator machine leaves the run refused, never half-published.
@@ -36,26 +38,6 @@ create table forge_pregame_capture.live_runs (
 alter table forge_pregame_capture.live_runs enable row level security;
 revoke all on forge_pregame_capture.live_runs from public, anon, authenticated, service_role;
 
--- The interface to the independent verifier (a separate role and route, provisioned elsewhere). Only that role may insert;
--- rows are immutable. Publication of a live run requires an accepted row here, verified by T−60, with matching hashes.
-create table forge_pregame_capture.live_verdicts (
-  claim_id uuid primary key references forge_pregame_capture.claims(id),
-  game_id bigint not null references forge_pregame_capture.live_runs(game_id),
-  verdict text not null check (verdict in ('accepted', 'rejected')),
-  reason text,
-  raw_sha256 text not null check (raw_sha256 ~ '^[0-9a-f]{64}$'),
-  canonical_sha256 text not null check (canonical_sha256 ~ '^[0-9a-f]{64}$'),
-  verifier_role name not null default session_user,
-  verified_at timestamptz not null default clock_timestamp(),
-  check ((verdict = 'accepted') = (reason is null))
-);
-alter table forge_pregame_capture.live_verdicts enable row level security;
-revoke all on forge_pregame_capture.live_verdicts from public, anon, authenticated, service_role;
-create trigger live_verdicts_immutable before update or delete on forge_pregame_capture.live_verdicts
-  for each row execute function forge_pregame_capture.reject_mutation();
-create trigger live_verdicts_no_truncate before truncate on forge_pregame_capture.live_verdicts
-  for each statement execute function forge_pregame_capture.reject_mutation();
-
 -- Each cron stage fires at most once; the request id is the cron → pg_net → HTTP link for the receipt.
 create table forge_pregame_capture.live_requests (
   game_id bigint not null references forge_pregame_capture.live_runs(game_id),
@@ -74,7 +56,9 @@ language sql stable set search_path = '' as $$
     'playerNhlId', r.player_nhl_id, 'approvedBy', r.approved_by, 'armedAt', r.armed_at, 'stoppedAt', r.stopped_at,
     'stopReason', r.stop_reason, 'captureBeganAt', r.capture_began_at, 'captureFinishedAt', r.capture_finished_at,
     'claim', r.claim_id, 'custody', o.outcome, 'witness', w.verdict, 'packetSha256', a.raw_sha256,
-    'canonicalSha256', a.canonical_sha256, 'tokenSha256', w.tsa_token_sha256, 'verdict', to_jsonb(v),
+    'canonicalSha256', a.canonical_sha256, 'tokenSha256', w.tsa_token_sha256,
+    'verdict', case when a.claim_id is not null and w.claim_id is not null
+      then forge_witness.publication_gate_v1(r.claim_id, a.raw_sha256, a.canonical_sha256, w.tsa_token_sha256) end,
     'publishBeganAt', r.publish_began_at, 'publishFinishedAt', r.publish_finished_at, 'revisionId', r.revision_id,
     'committedRevision', p.revision_id, 'readers', r.readers, 'outcome', r.outcome, 'reason', r.reason, 'terminalAt', r.terminal_at,
     'requests', (select jsonb_agg(to_jsonb(q) order by q.fired_at) from forge_pregame_capture.live_requests q where q.game_id = r.game_id))
@@ -82,7 +66,6 @@ language sql stable set search_path = '' as $$
   left join forge_pregame_capture.outcomes o on o.claim_id = r.claim_id
   left join forge_pregame_capture.artifacts a on a.claim_id = r.claim_id
   left join forge_pregame_capture.witnesses w on w.claim_id = r.claim_id
-  left join forge_pregame_capture.live_verdicts v on v.claim_id = r.claim_id
   left join forge_pregame_capture.publications p on p.claim_id = r.claim_id
   where r.game_id = p_game
 $$;
@@ -134,7 +117,9 @@ declare r forge_pregame_capture.live_runs;
 begin
   select * into r from forge_pregame_capture.live_runs where game_id = p_game for update;
   if not found then return null; end if;
-  if r.terminal_at is null and clock_timestamp() >= r.scheduled_start then
+  -- Before puck drop this is a no-op (a mis-scheduled close never ends a run early).
+  if clock_timestamp() < r.scheduled_start then return forge_pregame_capture.live_receipt_v1(p_game); end if;
+  if r.terminal_at is null then
     return forge_pregame_capture.live_end_v1(p_game, 'unresolved', case when r.claim_id is null then 'capture_missing'
       when r.publish_began_at is null then 'publication_not_started' else 'publication_unconfirmed' end);
   end if;
@@ -216,7 +201,7 @@ end $$;
 
 create function public.forge_live_publish_begin_v1(p_code_version text) returns jsonb
 language plpgsql security definer set search_path = '' set lock_timeout = '2s' as $$
-declare r forge_pregame_capture.live_runs; season bigint;
+declare r forge_pregame_capture.live_runs; season bigint; gate jsonb;
 begin
   select * into r from forge_pregame_capture.live_runs where armed_at is not null and terminal_at is null
     and capture_outcome = 'qualified' and publish_began_at is null order by scheduled_start limit 1 for update;
@@ -227,19 +212,16 @@ begin
     perform forge_pregame_capture.live_end_v1(r.game_id, 'failed', 'publish_window_closed');
     return jsonb_build_object('status', 'publish_window_closed');
   end if;
-  if not exists (select from forge_pregame_capture.live_verdicts v join forge_pregame_capture.artifacts a on a.claim_id = v.claim_id
-      where v.claim_id = r.claim_id and v.game_id = r.game_id and v.verdict = 'accepted'
-        and v.verified_at <= r.scheduled_start - interval '60 minutes'
-        and v.raw_sha256 = a.raw_sha256 and v.canonical_sha256 = a.canonical_sha256) then
-    if exists (select from forge_pregame_capture.live_verdicts where claim_id = r.claim_id and verdict = 'rejected') then
-      perform forge_pregame_capture.live_end_v1(r.game_id, 'failed', 'witness_rejected');
-      return jsonb_build_object('status', 'witness_rejected');
+  -- The independent verifier owns the verdict; this asks its gate for the exact claim and all three stored hashes.
+  select forge_witness.publication_gate_v1(r.claim_id, a.raw_sha256, a.canonical_sha256, w.tsa_token_sha256) into gate
+    from forge_pregame_capture.artifacts a join forge_pregame_capture.witnesses w on w.claim_id = a.claim_id
+    where a.claim_id = r.claim_id;
+  if gate is null or (gate->>'accepted')::boolean is not true then
+    if gate is null or clock_timestamp() >= coalesce((gate->>'deadline')::timestamptz, r.scheduled_start - interval '60 minutes') then
+      perform forge_pregame_capture.live_end_v1(r.game_id, 'failed', 'independent_' || coalesce(gate->>'reason', 'deadline_missed'));
+      return jsonb_build_object('status', 'independent_deadline_missed', 'gate', gate);
     end if;
-    if clock_timestamp() >= r.scheduled_start - interval '60 minutes' then
-      perform forge_pregame_capture.live_end_v1(r.game_id, 'failed', 'independent_deadline_missed');
-      return jsonb_build_object('status', 'independent_deadline_missed');
-    end if;
-    return jsonb_build_object('status', 'awaiting_verdict');
+    return jsonb_build_object('status', 'awaiting_verdict', 'gate', gate);
   end if;
   select g."seasonId" into season from public.games g where g.id = r.game_id;
   update forge_pregame_capture.live_runs set publish_began_at = clock_timestamp() where game_id = r.game_id;
@@ -271,8 +253,10 @@ begin
     when why in ('publication_unconfirmed', 'run_deadline') then 'unresolved' else 'failed' end, coalesce(why, 'readers_recorded'));
 end $$;
 
--- Database fence on the owner's publisher: a live-run game publishes only inside its publish stage, from its own claim,
--- after an accepted verdict by T−60 with matching hashes, before puck drop. Other publications are unaffected.
+-- Database fence on the owner's publisher, inside forge_pregame_publish_v1's own transaction: a live-run game publishes
+-- only inside its publish stage, from its own claim and release, before puck drop, and only if the independent verifier's
+-- require_accepted_v1 accepts the exact claim and all three hashes (it raises 'witness_verdict_required' otherwise).
+-- Publications of games without a live run are unaffected.
 create function forge_pregame_capture.require_live_verdict_v1() returns trigger
 language plpgsql security definer set search_path = '' as $$
 declare r forge_pregame_capture.live_runs;
@@ -282,10 +266,9 @@ begin
   if not found then return new; end if;
   if r.claim_id is distinct from new.claim_id or r.publish_began_at is null or r.terminal_at is not null or r.stopped_at is not null
     or r.expected_code_version is distinct from new.code_version or clock_timestamp() >= r.scheduled_start
-    or not exists (select from forge_pregame_capture.live_verdicts v where v.claim_id = new.claim_id and v.verdict = 'accepted'
-      and v.verified_at <= r.scheduled_start - interval '60 minutes' and v.raw_sha256 = new.raw_sha256
-      and v.canonical_sha256 = new.canonical_sha256)
   then raise exception 'live_publication_gate' using errcode = '22023'; end if;
+  perform forge_witness.require_accepted_v1(new.claim_id, new.raw_sha256, new.canonical_sha256,
+    (select w.tsa_token_sha256 from forge_pregame_capture.witnesses w where w.claim_id = new.claim_id));
   return new;
 end $$;
 create trigger require_live_verdict before insert on forge_pregame_capture.publications
