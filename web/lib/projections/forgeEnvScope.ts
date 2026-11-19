@@ -1,7 +1,9 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import { installForgeScopeProbe } from "./forgeScopeProbe";
 
 type Env = Readonly<Record<string, string | undefined>>;
 const scope = new AsyncLocalStorage<Env>();
+installForgeScopeProbe(() => scope.getStore() !== undefined);
 
 /** The environment FORGE flag readers see: process.env, unless the current async call chain runs inside
  * withForgeEnv. Outside such a scope this is exactly process.env, so ordinary runs are unchanged. */

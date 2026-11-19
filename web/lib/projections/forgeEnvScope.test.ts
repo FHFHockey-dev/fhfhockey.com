@@ -53,7 +53,7 @@ it("keeps an explicitly passed env authoritative inside a scope", async () => {
   });
 });
 
-it("is entered only by the sandbox route: no other production module calls withForgeEnv", () => {
+it("is entered only by the sandbox and live game-scoped routes: no other production module calls withForgeEnv", () => {
   const root = path.join(process.cwd());
   const callers: string[] = [];
   const visit = (dir: string) => {
@@ -66,5 +66,6 @@ it("is entered only by the sandbox route: no other production module calls withF
     }
   };
   for (const dir of ["lib", "pages", "utils", "scripts", "components", "hooks", "contexts"]) visit(path.join(root, dir));
-  expect(callers.sort()).toEqual(["pages/api/v1/db/forge-sandbox-run.ts"]);
+  expect(callers.sort()).toEqual(["pages/api/v1/db/forge-live-capture.ts", "pages/api/v1/db/forge-live-publish.ts",
+    "pages/api/v1/db/forge-sandbox-run.ts"]);
 });

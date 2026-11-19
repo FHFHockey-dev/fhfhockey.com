@@ -5,6 +5,7 @@ import { classifyExternalInputProofRows, externalInputProofByRun, loadExternalIn
   verifiedRunAttribution } from "./externalInputProof";
 import { provenSnapshotRow, proofDb, stampedRunRow, unprovenSnapshotRow, verifiedReleaseRunRow } from "./externalInputProof.fixtures";
 import { VERIFIED_FORGE_PRODUCER_CLOSURES } from "./verifiedForgeReleases";
+import { withForgeEnv } from "./forgeEnvScope";
 
 const RELEASE = "538100d41ee87e721d2764b694f7bac8c2f2bb34";
 
@@ -240,5 +241,20 @@ describe("FORGE external-input exclusion proof", () => {
     const db = { from: vi.fn(() => { const chain: any = { select: () => chain, eq: () => chain,
       in: () => Promise.resolve({ data: null, error }) }; return chain; }) };
     await expect(loadExternalInputProof(db as never, ["run"])).rejects.toBe(error);
+  });
+});
+
+describe("pregame publication proof fence", () => {
+  it("proves a pregame publication only to its own game-scoped readback", async () => {
+    const provenance = { ...buildForgeInputProvenance({ externalFantasyInputsExcluded: true }),
+      capturedReads: capturedReadReceipt([{ request: [{ method: "from", args: ["skatersGameStats"] }], result: { data: [] },
+        receivedAt: "2026-10-26T14:00:00.000Z" } as never]) };
+    const row = { entity_key: "run-1", available_at: "2026-10-26T14:00:01.000+00:00", snapshot_version: "forge-inputs-v1",
+      snapshot_run_id: "run-1", rolling_player_history_contract: provenance.rolling_player_history_contract,
+      external_fantasy_input_contract: provenance.external_fantasy_input_contract, captured_reads: provenance.capturedReads,
+      snapshot_kind: "qualified_pregame_receipt" };
+    expect(snapshotProvesExternalInputExclusion(row)).toBe(false);
+    expect(snapshotProvesExternalInputExclusion({ ...row, snapshot_kind: null })).toBe(true);
+    await expect(withForgeEnv({}, async () => snapshotProvesExternalInputExclusion(row))).resolves.toBe(true);
   });
 });

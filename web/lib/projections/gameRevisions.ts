@@ -1,4 +1,5 @@
 import supabase from "lib/supabase/server";
+import { forgeEnvScoped } from "./forgeScopeProbe";
 import { projectionInputHash, type ForgeCapturedReadReceipt, type ProjectionInputRead } from "./inputCapture";
 import type { ForgeIssuedContextV1 } from "./issuedContext";
 import { BOARD_CATEGORIES, boardSkaterForecast, completeBoardSkaterStatsFromProjection } from "./starterBoardScoring";
@@ -196,5 +197,7 @@ export type ForgeGameRevision = {
 export async function loadForgeGameRevisions(date: string): Promise<ForgeGameRevision[]> {
   const { data, error } = await (supabase as any).rpc("read_forge_game_revisions", { p_slate_date: date });
   if (error) throw error;
-  return data ?? [];
+  // A pregame publication's revision belongs to its own game-scoped readback only (forgeScopeProbe.ts).
+  return ((data ?? []) as ForgeGameRevision[]).filter(revision => forgeEnvScoped()
+    || (revision as { payload?: { inputProvenance?: { pregameObservationRequired?: unknown } } }).payload?.inputProvenance?.pregameObservationRequired !== true);
 }

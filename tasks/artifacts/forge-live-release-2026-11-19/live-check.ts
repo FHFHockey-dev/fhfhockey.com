@@ -9,6 +9,11 @@ import { mintTimeStampResponse, testTsaTrust } from "lib/projections/pregameCapt
 import { TSA_PROFILES } from "lib/projections/pregameCapture/tsaProfiles";
 import capture from "pages/api/v1/db/forge-live-capture";
 import publish from "pages/api/v1/db/forge-live-publish";
+import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
+import { loadExternalInputProof } from "lib/projections/externalInputProof";
+import { loadForgeGameRevisions } from "lib/projections/gameRevisions";
+import { withForgeEnv } from "lib/projections/forgeEnvScope";
+import { getServiceRoleClient } from "lib/supabase/server";
 
 async function listen(server: Server) {
   await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
@@ -87,10 +92,20 @@ async function main() {
     assert.equal(await count("cron.job where jobname like 'forge-live-%'"), 0);
     assert.equal((await sql("select active from cron.job where jobid = 408"))[0].active, false);
     assert.equal(tsaCalls, 1);
+    // Displacement fence: outside a game-scoped request no live reader selects the pregame publication.
+    const date = (await sql("select slate_date::text d from forge_pregame_capture.live_runs where game_id = $1", [game]))[0].d;
+    const outsideLatest = await requireLatestSucceededRunId(date).then(id => id, (error: { statusCode?: number }) => `error ${error.statusCode}`);
+    const insideLatest = await withForgeEnv({}, () => requireLatestSucceededRunId(date));
+    const outsideProof = (await loadExternalInputProof(getServiceRoleClient(), [claimId])).has(claimId);
+    const insideProof = await withForgeEnv({}, async () => (await loadExternalInputProof(getServiceRoleClient(), [claimId])).has(claimId));
+    const outsideRevisions = (await loadForgeGameRevisions(date)).filter(r => r.run_id === claimId).length;
+    const insideRevisions = await withForgeEnv({}, async () => (await loadForgeGameRevisions(date)).filter(r => r.run_id === claimId).length);
+    assert.deepEqual({ outsideLatest, insideLatest, outsideProof, insideProof, outsideRevisions, insideRevisions },
+      { outsideLatest: "error 404", insideLatest: claimId, outsideProof: false, insideProof: true, outsideRevisions: 0, insideRevisions: 1 });
     console.log(JSON.stringify({ capture: { status: first.status, body: first.body, wallMs: first.wallMs },
       publish: { status: published.status, wallMs: published.wallMs, body: published.body },
       duplicates: { capture: second.body.status, publish: again.body.status }, fired: { capture: firedCapture, publish: firedPublish },
-      restCalls, errors, tsaCalls }));
+      restCalls, errors, tsaCalls, displacement: "outside scope: runs-latest 404, proof false, revisions 0; inside: claim, true, 1" }));
   } finally {
     globalThis.fetch = http;
     tsa.close();
