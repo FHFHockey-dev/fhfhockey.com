@@ -81,7 +81,9 @@ writer_reach as (
   from installed i cross join pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace
   join pg_catalog.pg_roles o on o.oid = p.proowner
   where i.yes and p.prosecdef and p.prosrc ~* '\mexecute\M' and pg_catalog.has_function_privilege('service_role', p.oid, 'EXECUTE')
-    and pg_catalog.has_schema_privilege('service_role', n.oid, 'USAGE') and (o.rolsuper or o.rolname = 'forge_witness_owner')),
+    and pg_catalog.has_schema_privilege('service_role', n.oid, 'USAGE')
+    -- Owners able to write the receipts: a superuser, the owner itself, or a CREATEROLE role (it can grant itself the owner).
+    and (o.rolsuper or o.rolcreaterole or o.rolname = 'forge_witness_owner')),
 triggers as (
   select c.relname, t.tgname, t.tgenabled
   from installed i cross join pg_catalog.pg_trigger t join pg_catalog.pg_class c on c.oid = t.tgrelid
@@ -129,7 +131,9 @@ select json_build_object(
       'forge_witness.evidence_v1') and f.executable_by && array['public', 'anon', 'authenticated', 'service_role', 'forge_witness_api', 'authenticator']::name[]) then 'unsafe: private definers callable'
     when (select yes from installed) and exists (select from writer_reach x where x.owner = 'forge_witness_owner') then 'unsafe: owner definer with dynamic SQL reachable by the writer'
     when (select yes from installed) and (select count(*) from triggers t where t.tgenabled = 'A') <> 4 then 'unsafe: receipt triggers not ALWAYS'
+    when (select yes from installed) and not exists (select from pg_catalog.pg_proc p join pg_catalog.pg_roles o on o.oid = p.proowner
+      where p.oid = to_regprocedure('forge_witness.schedule_v1(bigint)') and (o.rolbypassrls or o.rolsuper)) then 'unsafe: schedule helper owner cannot bypass RLS (verifier would fail closed)'
     when exists (select from functions f where f.fn not like 'forge\_witness\_api.%' and f.definer
       and (f.mentions_pgsodium or f.runs_privilege_ddl or f.dynamic_sql)) then 'review: exposed definers listed above are callable'
-    when exists (select from writer_reach) then 'review: superuser-owned dynamic-SQL definers executable by service_role are listed'
+    when exists (select from writer_reach) then 'review: superuser- or CREATEROLE-owned dynamic-SQL definers executable by service_role are listed'
     else 'ok' end);

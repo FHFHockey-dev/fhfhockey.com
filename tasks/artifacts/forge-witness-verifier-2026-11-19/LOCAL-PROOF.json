@@ -3,7 +3,7 @@
  "postgrest": "PostgREST 16.6",
  "migration": {
   "file": "forge-witness-verifier.sql",
-  "sha256": "303e889a848adc477fe3e7ca31c59958e98f1d9118db2b72d9412ea5baac3210",
+  "sha256": "c0899971b04b09a4be20fabfc60b88265359941ae02065d8b60e05930d3ff4b7",
   "secondApplyRefused": true,
   "outsideDumpAdded": [
    "GRANT USAGE ON SCHEMA forge_pregame_capture TO forge_witness_owner;",
@@ -282,9 +282,9 @@
  },
  "route": {
   "writer": {
-   "claimId": "f425f06a-a646-46c5-a85a-db1315948afe",
+   "claimId": "fe8e8663-d91d-4564-bacc-945af2eda3d1",
    "outcome": "qualified",
-   "captureMs": 207,
+   "captureMs": 512,
    "tsaCalls": 1,
    "traffic": {
     "service_role@public": 147
@@ -293,8 +293,8 @@
   "verifier": {
    "firstGet": {
     "httpStatus": 200,
-    "wallMs": 40,
-    "elapsedMs": 40
+    "wallMs": 84,
+    "elapsedMs": 84
    },
    "matrix": {
     "claim_missing": {
@@ -321,8 +321,8 @@
       "verdict": "rejected",
       "reason": "artifact_missing"
      },
-     "verifiedAt": "2026-11-19T23:13:32.535787+00:00",
-     "deadlineAt": "2026-11-20T00:13:32.484471+00:00"
+     "verifiedAt": "2026-11-19T23:18:19.183219+00:00",
+     "deadlineAt": "2026-11-20T00:18:19.073406+00:00"
     },
     "game_mismatch": {
      "gameId": 2099030004,
@@ -332,8 +332,8 @@
       "verdict": "rejected",
       "reason": "game_binding"
      },
-     "verifiedAt": "2026-11-19T23:13:32.539515+00:00",
-     "deadlineAt": "2026-11-20T00:13:32.484471+00:00"
+     "verifiedAt": "2026-11-19T23:18:19.189275+00:00",
+     "deadlineAt": "2026-11-20T00:18:19.073406+00:00"
     },
     "claim_mismatch": {
      "gameId": 2099030005,
@@ -343,8 +343,8 @@
       "verdict": "rejected",
       "reason": "claim_binding"
      },
-     "verifiedAt": "2026-11-19T23:13:32.541906+00:00",
-     "deadlineAt": "2026-11-20T00:13:32.484471+00:00"
+     "verifiedAt": "2026-11-19T23:18:19.194062+00:00",
+     "deadlineAt": "2026-11-20T00:18:19.073406+00:00"
     },
     "hash_mismatch": {
      "gameId": 2099030006,
@@ -354,8 +354,8 @@
       "verdict": "rejected",
       "reason": "hash_mismatch"
      },
-     "verifiedAt": "2026-11-19T23:13:32.543944+00:00",
-     "deadlineAt": "2026-11-20T00:13:32.484471+00:00"
+     "verifiedAt": "2026-11-19T23:18:19.199458+00:00",
+     "deadlineAt": "2026-11-20T00:18:19.073406+00:00"
     },
     "cutoff_mismatch": {
      "gameId": 2099030007,
@@ -365,8 +365,8 @@
       "verdict": "rejected",
       "reason": "cutoff_mismatch"
      },
-     "verifiedAt": "2026-11-19T23:13:32.546084+00:00",
-     "deadlineAt": "2026-11-20T00:13:32.484471+00:00"
+     "verifiedAt": "2026-11-19T23:18:19.204272+00:00",
+     "deadlineAt": "2026-11-20T00:18:19.073406+00:00"
     },
     "token_tampered": {
      "gameId": 2099030008,
@@ -376,8 +376,8 @@
       "verdict": "rejected",
       "reason": "token_invalid"
      },
-     "verifiedAt": "2026-11-19T23:13:32.548622+00:00",
-     "deadlineAt": "2026-11-20T00:13:32.484471+00:00"
+     "verifiedAt": "2026-11-19T23:18:19.207503+00:00",
+     "deadlineAt": "2026-11-20T00:18:19.073406+00:00"
     },
     "token_wrong_profile": {
      "gameId": 2099030009,
@@ -387,8 +387,8 @@
       "verdict": "rejected",
       "reason": "token_invalid"
      },
-     "verifiedAt": "2026-11-19T23:13:32.550994+00:00",
-     "deadlineAt": "2026-11-20T00:13:32.484471+00:00"
+     "verifiedAt": "2026-11-19T23:18:19.214228+00:00",
+     "deadlineAt": "2026-11-20T00:18:19.073406+00:00"
     },
     "witness_late": {
      "gameId": 2099030010,
@@ -398,8 +398,8 @@
       "verdict": "rejected",
       "reason": "witness_late"
      },
-     "verifiedAt": "2026-11-19T23:13:32.553591+00:00",
-     "deadlineAt": "2026-11-19T23:13:02.484471+00:00"
+     "verifiedAt": "2026-11-19T23:18:19.218819+00:00",
+     "deadlineAt": "2026-11-19T23:17:49.073406+00:00"
     },
     "verification_late": {
      "gameId": 2099030011,
@@ -409,8 +409,8 @@
       "verdict": "rejected",
       "reason": "verification_late"
      },
-     "verifiedAt": "2026-11-19T23:13:32.556341+00:00",
-     "deadlineAt": "2026-11-19T23:13:02.484471+00:00"
+     "verifiedAt": "2026-11-19T23:18:19.22534+00:00",
+     "deadlineAt": "2026-11-19T23:17:49.073406+00:00"
     },
     "schedule_changed": {
      "gameId": 2099030012,
@@ -420,8 +420,16 @@
       "verdict": "rejected",
       "reason": "schedule_changed"
      },
-     "verifiedAt": "2026-11-19T23:13:32.558869+00:00",
-     "deadlineAt": "2026-11-20T00:13:32.484471+00:00"
+     "verifiedAt": "2026-11-19T23:18:19.231088+00:00",
+     "deadlineAt": "2026-11-20T00:18:19.073406+00:00"
+    },
+    "team_rows_missing": {
+     "gameId": 2099030013,
+     "expected": "schedule_unavailable",
+     "got": "schedule_unavailable",
+     "independent": null,
+     "verifiedAt": null,
+     "deadlineAt": null
     },
     "real": {
      "gameId": 2099020991,
@@ -431,27 +439,27 @@
       "verdict": "accepted",
       "reason": null
      },
-     "verifiedAt": "2026-11-19T23:13:32.566593+00:00",
-     "deadlineAt": "2026-11-20T00:13:25.406+00:00"
+     "verifiedAt": "2026-11-19T23:18:19.249224+00:00",
+     "deadlineAt": "2026-11-20T00:18:08.134+00:00"
     }
    },
    "realVerdict": {
     "id": "11",
-    "claim_id": "f425f06a-a646-46c5-a85a-db1315948afe",
+    "claim_id": "fe8e8663-d91d-4564-bacc-945af2eda3d1",
     "game_id": "2099020991",
     "policy_id": "pregame-native-v1",
     "verdict": "accepted",
     "reason": null,
-    "raw_sha256": "178809e5bb8f9a0fe51c59b83f0a3a01a25ffcfa354aeee290489eb94efad18d",
-    "canonical_sha256": "107fe994b20c19d0342914f5aa40b189c972282dd8c32fed5abd3492b52a9faa",
-    "tsa_token_sha256": "6ce6aef825eefd3b4f953585c287dfa701264fa5a186575169827a3b7a2090de",
-    "statement_sha256": "3dbfee86586ebe229982953241b611a97de397a1ddd89a45f519e969afe0b349",
-    "input_cutoff": "2026-11-19T23:13:32.307Z",
-    "scheduled_start": "2026-11-20T01:13:25.406Z",
-    "deadline_at": "2026-11-20T00:13:25.406Z",
-    "verified_at": "2026-11-19T23:13:32.566Z",
+    "raw_sha256": "bb76b9cdd4cf907de5ea2c50900c5b0b4ef73e32fcd2ed2874dbe5d5943cc464",
+    "canonical_sha256": "dd04e16258715e6f4a0f93a758f2f17da445b7bf8e54a72e0229d0a35b83f341",
+    "tsa_token_sha256": "0d6fb470b724716129aefd43dd8f65c696de97a807d9bc82cbc8c40f9ee03f52",
+    "statement_sha256": "5bbec463d49fa9cb25dd3f9928558a6f26c350a110a4b8559a4676ce3f931e3a",
+    "input_cutoff": "2026-11-19T23:18:18.604Z",
+    "scheduled_start": "2026-11-20T01:18:08.134Z",
+    "deadline_at": "2026-11-20T00:18:08.134Z",
+    "verified_at": "2026-11-19T23:18:19.249Z",
     "verifier_role": "forge_witness_api",
-    "verifier_release": "66ce25aa37c08038b47296f495afebe72aadfcdb"
+    "verifier_release": "888c8687050b89f07d496033a632e709b48b7925"
    },
    "secondGet": {
     "httpStatus": 200,
@@ -463,7 +471,12 @@
      {
       "gameId": 2099030002,
       "status": "not_terminal",
-      "claimId": "333ffafe-6854-4909-8b5a-f0da1f733257"
+      "claimId": "c23a8d75-f6ee-4744-9d1e-7fabd67a2f8d"
+     },
+     {
+      "gameId": 2099030013,
+      "status": "schedule_unavailable",
+      "claimId": "c36bcbed-df8f-4061-848f-ee2715efed99"
      }
     ]
    },
@@ -473,35 +486,35 @@
    },
    "race": [
     {
-     "gameId": 2099030013,
-     "status": "duplicate",
-     "claimId": "b28a685c-65ad-4587-81b8-bf2d6ed3f8ee",
+     "gameId": 2099030014,
+     "status": "recorded",
+     "claimId": "1875aa09-58f8-4146-9f10-969db065de83",
      "verdict": "accepted",
      "reason": null,
      "independent": {
       "verdict": "accepted",
       "reason": null
      },
-     "verifiedAt": "2026-11-19T23:13:32.581832+00:00",
-     "deadlineAt": "2026-11-20T00:13:32.484471+00:00"
+     "verifiedAt": "2026-11-19T23:18:19.302758+00:00",
+     "deadlineAt": "2026-11-20T00:18:19.073406+00:00"
     },
     {
-     "gameId": 2099030013,
-     "status": "recorded",
-     "claimId": "b28a685c-65ad-4587-81b8-bf2d6ed3f8ee",
+     "gameId": 2099030014,
+     "status": "duplicate",
+     "claimId": "1875aa09-58f8-4146-9f10-969db065de83",
      "verdict": "accepted",
      "reason": null,
      "independent": {
       "verdict": "accepted",
       "reason": null
      },
-     "verifiedAt": "2026-11-19T23:13:32.581832+00:00",
-     "deadlineAt": "2026-11-20T00:13:32.484471+00:00"
+     "verifiedAt": "2026-11-19T23:18:19.302758+00:00",
+     "deadlineAt": "2026-11-20T00:18:19.073406+00:00"
     }
    ],
    "verdictRowsUnchangedByDuplicates": true,
    "traffic": {
-    "witness@forge_witness_api": 38
+    "witness@forge_witness_api": 42
    },
    "routeErrors": []
   },
@@ -522,47 +535,47 @@
   "gates": {
    "real": {
     "reason": null,
-    "claimId": "f425f06a-a646-46c5-a85a-db1315948afe",
+    "claimId": "fe8e8663-d91d-4564-bacc-945af2eda3d1",
     "accepted": true,
-    "deadline": "2026-11-19T19:13:25.406-05:00",
+    "deadline": "2026-11-19T19:18:08.134-05:00",
     "verdictId": 11,
-    "verifiedAt": "2026-11-19T18:13:32.566593-05:00"
+    "verifiedAt": "2026-11-19T18:18:19.249224-05:00"
    },
    "realWrongCanonical": {
     "reason": "hash_mismatch",
-    "claimId": "f425f06a-a646-46c5-a85a-db1315948afe",
+    "claimId": "fe8e8663-d91d-4564-bacc-945af2eda3d1",
     "accepted": false,
-    "deadline": "2026-11-19T19:13:25.406-05:00",
+    "deadline": "2026-11-19T19:18:08.134-05:00",
     "verdictId": 11,
-    "verifiedAt": "2026-11-19T18:13:32.566593-05:00"
+    "verifiedAt": "2026-11-19T18:18:19.249224-05:00"
    },
    "realWrongToken": {
     "reason": "hash_mismatch",
-    "claimId": "f425f06a-a646-46c5-a85a-db1315948afe",
+    "claimId": "fe8e8663-d91d-4564-bacc-945af2eda3d1",
     "accepted": false,
-    "deadline": "2026-11-19T19:13:25.406-05:00",
+    "deadline": "2026-11-19T19:18:08.134-05:00",
     "verdictId": 11,
-    "verifiedAt": "2026-11-19T18:13:32.566593-05:00"
+    "verifiedAt": "2026-11-19T18:18:19.249224-05:00"
    },
    "rejectedClaim": {
     "reason": "verdict_rejected",
-    "claimId": "c00a7803-7776-474e-af9f-dedb8fc60f34",
+    "claimId": "e02372b0-098a-4c2c-8852-b6a8b0f4db0b",
     "accepted": false,
-    "deadline": "2026-11-19T19:13:32.484471-05:00",
+    "deadline": "2026-11-19T19:18:19.073406-05:00",
     "verdictId": 2,
-    "verifiedAt": "2026-11-19T18:13:32.539515-05:00"
+    "verifiedAt": "2026-11-19T18:18:19.189275-05:00"
    },
    "unverifiedClaim": {
     "reason": "verdict_missing",
-    "claimId": "333ffafe-6854-4909-8b5a-f0da1f733257",
+    "claimId": "c23a8d75-f6ee-4744-9d1e-7fabd67a2f8d",
     "accepted": false,
-    "deadline": "2026-11-19T19:13:32.484471-05:00",
+    "deadline": "2026-11-19T19:18:19.073406-05:00",
     "verdictId": null,
     "verifiedAt": null
    },
    "unknownClaim": {
     "reason": "verdict_missing",
-    "claimId": "2bdea24c-a94f-49bf-85cd-ec35f0fa360b",
+    "claimId": "e0a02158-a606-4cd8-908e-db1847cd0223",
     "accepted": false,
     "deadline": null,
     "verdictId": null,
@@ -570,11 +583,27 @@
    },
    "forgedLate": {
     "reason": "verified_late",
-    "claimId": "135d34c6-121d-48c8-9090-d664bad3e1e6",
+    "claimId": "5bf06e47-019e-48f1-9608-351f0367bc41",
     "accepted": false,
-    "deadline": "2026-11-19T18:13:02.484471-05:00",
+    "deadline": "2026-11-19T18:17:49.073406-05:00",
     "verdictId": 15,
-    "verifiedAt": "2026-11-19T18:13:32.602864-05:00"
+    "verifiedAt": "2026-11-19T18:18:19.373793-05:00"
+   },
+   "raceBeforeGamesRowRemoved": {
+    "reason": null,
+    "claimId": "1875aa09-58f8-4146-9f10-969db065de83",
+    "accepted": true,
+    "deadline": "2026-11-19T19:18:19.073406-05:00",
+    "verdictId": 12,
+    "verifiedAt": "2026-11-19T18:18:19.302758-05:00"
+   },
+   "raceGamesRowInvisible": {
+    "reason": "schedule_unavailable",
+    "claimId": "1875aa09-58f8-4146-9f10-969db065de83",
+    "accepted": false,
+    "deadline": null,
+    "verdictId": 12,
+    "verifiedAt": "2026-11-19T18:18:19.302758-05:00"
    }
   },
   "requireAccepted": {
@@ -698,7 +727,7 @@
    "fires": [
     {
      "fire": 1,
-     "firedAt": "2026-11-19T18:13:32.66779-05:00",
+     "firedAt": "2026-11-19T18:18:19.619355-05:00",
      "requestId": 1,
      "statusCode": 200,
      "timedOut": false,
@@ -707,7 +736,7 @@
     },
     {
      "fire": 2,
-     "firedAt": "2026-11-19T18:13:32.668169-05:00",
+     "firedAt": "2026-11-19T18:18:19.619972-05:00",
      "requestId": 2,
      "statusCode": 200,
      "timedOut": false,
@@ -717,7 +746,7 @@
    ],
    "target": {
     "gameId": 2099039999,
-    "armedAt": "2026-11-19T18:13:32.665568-05:00",
+    "armedAt": "2026-11-19T18:18:19.616311-05:00",
     "verdict": null
    },
    "gate": null,
@@ -725,13 +754,14 @@
   },
   "realGameGate": {
    "reason": null,
-   "claimId": "f425f06a-a646-46c5-a85a-db1315948afe",
+   "claimId": "fe8e8663-d91d-4564-bacc-945af2eda3d1",
    "accepted": true,
-   "deadline": "2026-11-19T19:13:25.406-05:00",
+   "deadline": "2026-11-19T19:18:08.134-05:00",
    "verdictId": 11,
-   "verifiedAt": "2026-11-19T18:13:32.566593-05:00"
+   "verifiedAt": "2026-11-19T18:18:19.249224-05:00"
   },
-  "rearmRefused": true
+  "rearmRefused": true,
+  "unreadableScheduleArmRefused": true
  },
  "reset": "witness schemas and roles removed; schema-only dump outside identical to before install; WGO stand-in job intact"
 }

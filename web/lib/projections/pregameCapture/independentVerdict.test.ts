@@ -97,8 +97,11 @@ describe("independent witness verdict", () => {
     expect(review(evidence({ patch: e => { e.dbNow = at(T, -minutes(60)); } }))).toMatchObject({ verdict: "accepted" });
   });
 
-  it("refuses to decide when the schedule row is invisible (no verdict, retryable)", () => {
+  it("refuses to decide when the games row or a team row is invisible (no verdict, retryable)", () => {
     expect(() => review(evidence({ patch: e => { e.schedule = null; } }))).toThrow("schedule_unavailable");
+    expect(() => review(evidence({ patch: e => { e.schedule!.startTime = null; } }))).toThrow("schedule_unavailable");
+    expect(() => review(evidence({ patch: e => { e.schedule!.teamStatuses = []; } }))).toThrow("schedule_unavailable");
+    expect(() => review(evidence({ patch: e => { e.schedule!.teamStatuses = ["NJD:FUT:OK"]; } }))).toThrow("schedule_unavailable");
   });
 
   it("rejects a fixture-TSA token under the released DigiCert pin the route uses", () => {

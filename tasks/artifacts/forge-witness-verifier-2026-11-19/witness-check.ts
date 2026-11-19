@@ -179,10 +179,13 @@ async function main() {
       await seed(name, NORMAL, "rejected:schedule_changed");
       await q(`update public.games set "startTime" = "startTime" + interval '15 minutes' where id = $1`, [cases[name].game]);
     }
+    await seed("team_rows_missing", NORMAL, "schedule_unavailable");
     cases.real = { game: GAME, start: 0, expect: "accepted", claim: capture.claimId };
 
     // Arm every case (installer only), then one cron-equivalent GET.
     for (const name of Object.keys(cases)) await q("select forge_witness.arm_v1($1)", [cases[name].game]);
+    // After arming (arm requires a readable schedule): the team rows vanish, so the verifier must decide nothing.
+    await q("delete from public.roster_optimizer_team_games where source_game_id = $1", [cases.team_rows_missing.game]);
     assert.equal((await call({ authorization: "Bearer wrong" })).status, 401);
     assert.equal((await call(auth, { gameId: String(GAME) })).status, 400);
     const first = await call(auth);
@@ -208,7 +211,8 @@ async function main() {
     const rowsBefore = await verdictRows();
     const second = await call(auth);
     assert.equal(second.status, 200);
-    assert.ok((second.body.results as any[]).every(r => ["claim_missing", "not_terminal"].includes(r.status)), JSON.stringify(second.body));
+    assert.ok((second.body.results as any[]).every(r => ["claim_missing", "not_terminal", "schedule_unavailable"].includes(r.status)), JSON.stringify(second.body));
+    assert.equal((await one("select count(*)::int n from forge_witness.verdicts where game_id = $1", [cases.team_rows_missing.game])).n, 0);
     const replay = await raw(tokens.witness, "POST", "/rpc/record_v1", "forge_witness_api", { p_game_id: GAME, p_claim_id: capture.claimId,
       p_verdict: "accepted", p_reason: null, p_raw_sha256: real.raw_sha256, p_canonical_sha256: real.canonical_sha256,
       p_tsa_token_sha256: real.tsa_token_sha256, p_statement_sha256: realVerdict.statement_sha256, p_input_cutoff: real.input_cutoff, p_release: label });
@@ -262,7 +266,7 @@ async function main() {
       values ($1, $2, 'pregame-native-v1', 'accepted', null, $3, $4, $5, $6, $7, clock_timestamp() + interval '3 hours', clock_timestamp() + interval '1 hour', 'forged', $8)`,
       [cases.gate_forged_late.claim, forged, forgedRow.raw_sha256, forgedRow.canonical_sha256, forgedRow.tsa_token_sha256, forgedRow.statement_sha256,
         forgedRow.input_cutoff, label]);
-    const gates = {
+    const gates: Record<string, any> = {
       real: await gateAs(capture.claimId, realHashes),
       realWrongCanonical: await gateAs(capture.claimId, [real.raw_sha256, "0".repeat(64), real.tsa_token_sha256]),
       realWrongToken: await gateAs(capture.claimId, [real.raw_sha256, real.canonical_sha256, "0".repeat(64)]),
@@ -271,9 +275,17 @@ async function main() {
       unknownClaim: await gateAs(randomUUID(), realHashes),
       forgedLate: await gateAs(cases.gate_forged_late.claim!, [forgedRow.raw_sha256, forgedRow.canonical_sha256, forgedRow.tsa_token_sha256]),
     };
+    // The race game's verdict is accepted; once its games row is invisible the gate must refuse (no fallback start).
+    const raceRow = await one("select claim_id, raw_sha256, canonical_sha256, tsa_token_sha256 from forge_witness.verdicts where game_id = $1", [race]);
+    const raceBefore = await gateAs(raceRow.claim_id, [raceRow.raw_sha256, raceRow.canonical_sha256, raceRow.tsa_token_sha256]);
+    await q("delete from public.games where id = $1", [race]);
+    Object.assign(gates, { raceBeforeGamesRowRemoved: raceBefore,
+      raceGamesRowInvisible: await gateAs(raceRow.claim_id, [raceRow.raw_sha256, raceRow.canonical_sha256, raceRow.tsa_token_sha256]) });
+    assert.equal(raceBefore.accepted, true, JSON.stringify(raceBefore));
     assert.equal(gates.real.accepted, true, JSON.stringify(gates.real));
     for (const [name, reason] of Object.entries({ realWrongCanonical: "hash_mismatch", realWrongToken: "hash_mismatch", rejectedClaim: "verdict_rejected",
-      unverifiedClaim: "verdict_missing", unknownClaim: "verdict_missing", forgedLate: "verified_late" })) {
+      unverifiedClaim: "verdict_missing", unknownClaim: "verdict_missing", forgedLate: "verified_late",
+      raceGamesRowInvisible: "schedule_unavailable" })) {
       assert.ok(!(gates as any)[name].accepted && (gates as any)[name].reason === reason, `${name}: ${JSON.stringify((gates as any)[name])}`);
     }
     await q("set role service_role");

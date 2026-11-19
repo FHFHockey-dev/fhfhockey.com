@@ -85,7 +85,10 @@ export function reviewWitnessEvidence(e: ReadyEvidence, gameId: number, trust: T
   if (b.slateDate !== c.slateDate || b.homeTeamId !== c.homeTeamId || b.awayTeamId !== c.awayTeamId
     || b.calendarRevision !== c.calendarRevision || b.codeVersion !== c.codeVersion
     || !same(b.scheduledStart, c.scheduledStart)) return reject("claim_binding");
-  if (!e.schedule || !e.schedule.startTime) throw new Error("schedule_unavailable");
+  // An unreadable schedule (no games row, or fewer than both team rows) decides nothing: no verdict, retry later.
+  if (!e.schedule || !e.schedule.startTime || !Array.isArray(e.schedule.teamStatuses) || e.schedule.teamStatuses.length < 2) {
+    throw new Error("schedule_unavailable");
+  }
   const s = e.schedule, startTime: string = e.schedule.startTime;
   if (s.homeTeamId !== c.homeTeamId || s.awayTeamId !== c.awayTeamId || b.homeAbbrev !== s.homeAbbrev || b.awayAbbrev !== s.awayAbbrev) {
     return reject("game_binding");

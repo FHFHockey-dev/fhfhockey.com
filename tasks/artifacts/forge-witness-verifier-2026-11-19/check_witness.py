@@ -236,6 +236,17 @@ def main():
         step = "ops"
         ops_game = 2099039999
         verdicts_before_ops = rows("select count(*) from forge_witness.verdicts")[0][0]
+        unreadable = psql("-v", "game=2099039998", "-v", "schedule=59 23 31 12 *", "-f", HERE / "arm-witness-verify.sql", check=False)
+        assert unreadable.returncode != 0 and "witness_schedule_unavailable" in unreadable.stderr, unreadable.stderr[-400:]
+        q(f"""do $$ declare cols text; begin
+          insert into public.games select (jsonb_populate_record(g, jsonb_build_object('id', {ops_game}))).* from public.games g where g.id = 2099020991;
+          select string_agg(quote_ident(column_name), ', ') into cols from information_schema.columns
+            where table_schema = 'public' and table_name = 'roster_optimizer_team_games' and column_name not in ('id', 'source_game_id', 'game_key')
+              and is_generated = 'NEVER' and is_identity = 'NO';
+          execute format('insert into public.roster_optimizer_team_games (id, source_game_id, game_key, %s)
+            select (select max(id) from public.roster_optimizer_team_games) + row_number() over (), {ops_game}, game_key || ''-ops'', %s
+            from public.roster_optimizer_team_games where source_game_id = 2099020991', cols, cols);
+        end $$""")
         psql("-v", f"game={ops_game}", "-v", "schedule=59 23 31 12 *", "-v", "max_fires=2", "-f", HERE / "arm-witness-verify.sql")
         command = rows("select command from cron.job where jobname = %s", (f"forge-witness-verify-{ops_game}",))[0][0]
         assert "cron_secret" not in command and "Bearer" not in command and "?" not in command, command
@@ -273,7 +284,7 @@ def main():
                   "auditBeforeInstall": audit_before, "auditInstalled": audit, "auditAfterRuns": {"verdict": audit_after["verdict"]},
                   "route": route,
                   "ops": {"fired": fired, "request": {"url": req[0], "timeoutMs": req[2]}, "readback": readback,
-                          "realGameGate": real_readback["gate"], "rearmRefused": True},
+                          "realGameGate": real_readback["gate"], "rearmRefused": True, "unreadableScheduleArmRefused": True},
                   "reset": "witness schemas and roles removed; schema-only dump outside identical to before install; WGO stand-in job intact"}
         text = json.dumps(report, indent=1, default=str)
         if out:
