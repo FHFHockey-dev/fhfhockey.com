@@ -7,9 +7,14 @@ import { invokedByCron } from "utils/adminOnlyMiddleware";
 
 // Independent FORGE verifier, called by its own one-shot Supabase Cron job. It is not part of the FORGE writer: it reads
 // each armed game's committed claim back through the exposed schema forge_witness_api as the NOLOGIN role
-// forge_witness_api (short-lived token; no service role, no signing secret), re-verifies the bytes, bindings, cutoff
-// and the retained RFC 3161 token against the released DigiCert pin, and records its own verdict, which the database
-// re-checks and timestamps. Only an accepted verdict at or before T−60 lets publication proceed.
+// forge_witness_api, re-verifies the bytes, bindings, cutoff and the retained RFC 3161 token against the released
+// DigiCert pin, and records its own verdict, which the database re-checks and timestamps. Only an accepted verdict at or
+// before T−60 lets publication proceed.
+//
+// Credentials: the cron secret (Authorization) AND the verifier's own short-lived token in x-forge-witness-token. The
+// token lives only in forge_witness.credentials, which nothing but the verifier's cron fire function (running as the
+// installer) can read; it is never in Vercel env or Vault, both of which the writer can reach. The token is used only
+// as this request's Data API bearer and is never echoed, logged or returned.
 export const config = { maxDuration: 60 };
 
 const API_SCHEMA = "forge_witness_api";
@@ -21,18 +26,20 @@ type Api = { url: string; key: string; token: string };
 type GameResult = { gameId: number; status: string; claimId?: string; verdict?: string; reason?: string | null;
   independent?: { verdict: string; reason: string | null }; verifiedAt?: string; deadlineAt?: string };
 
-/** The pre-minted witness token must claim exactly role forge_witness_api and be unexpired, with at most 12 h left.
- * The Data API verifies its signature; this check only stops a wrong or stale credential from being used at all. */
-function witnessApi(): Api | null {
+const TOKEN_HEADER = "x-forge-witness-token";
+
+/** The x-forge-witness-token header must hold exactly one JWT claiming role forge_witness_api, unexpired, with at most
+ * 12 h left. The Data API verifies its signature; this check only stops a wrong or stale credential from being used. */
+function witnessApi(header: string | string[] | undefined): Api | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim(), key = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY?.trim();
-  const token = process.env.FORGE_WITNESS_API_TOKEN?.trim();
-  if (!url || !key || !token) return null;
+  if (!url || !key || typeof header !== "string" || header.length > 4096) return null;
+  const token = header.trim();
   const parts = token.split(".");
   if (parts.length !== 3 || parts.some(part => !/^[A-Za-z0-9_-]+$/.test(part))) return null;
   try {
     const claims = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8")) as { role?: unknown; exp?: unknown };
     const now = Date.now() / 1000;
-    if (claims.role !== API_SCHEMA || typeof claims.exp !== "number" || claims.exp <= now + 300 || claims.exp > now + 43_200) return null;
+    if (claims.role !== API_SCHEMA || typeof claims.exp !== "number" || claims.exp <= now + 60 || claims.exp > now + 43_200) return null;
   } catch {
     return null;
   }
@@ -65,8 +72,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!invokedByCron(req.headers.authorization ?? "")) return res.status(401).json({ status: "unauthorized" });
   const sha = process.env.VERCEL_GIT_COMMIT_SHA;
   if (process.env.VERCEL_ENV !== "production" || !sha || !/^[a-f0-9]{40}$/.test(sha)) return res.status(503).json({ status: "release_unpinned" });
-  const api = witnessApi();
-  if (!api) return res.status(503).json({ status: "witness_api_unavailable" });
+  // Both credentials, always: a cron-secret-only caller (e.g. anything holding the project's env) is refused here.
+  const api = witnessApi(req.headers[TOKEN_HEADER]);
+  if (!api) return res.status(401).json({ status: "witness_credential_required" });
   let trust: TsaTrust;
   try {
     trust = trustFromProfile(tsaProfile(TSA_PROFILE_ID), "capture");

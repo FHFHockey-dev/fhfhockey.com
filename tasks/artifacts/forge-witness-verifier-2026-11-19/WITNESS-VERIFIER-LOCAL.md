@@ -11,7 +11,13 @@ isolation rehearsal. A DigiCert token alone does not count. This candidate is th
 It runs apart from the FORGE writer:
 - its own GET route, `/api/v1/db/forge-witness-verify`;
 - its own one-shot cron job;
-- its own NOLOGIN role, `forge_witness_api`, with a JWT of at most 12 h in `FORGE_WITNESS_API_TOKEN`.
+- its own NOLOGIN role, `forge_witness_api`, with a JWT of at most 12 h.
+
+**Credential (TJ gate, Nov 19):** the writer must not be able to reach the verifier credential. Vercel env reaches every function in the project, and service_role can read `vault.decrypted_secrets`, so the token is in neither place.
+- It lives only in `forge_witness.credentials`. That table is owner-only, with no grant to anyone, service_role included.
+- The verifier's cron fire function runs as `postgres`, like the WGO jobs. It reads the token through `forge_witness.credential_v1()` and sends it as the header `x-forge-witness-token`, next to `Authorization: Bearer <cron_secret>`.
+- The route requires both. The cron secret alone, the token alone, or another role's JWT gets 401. It never reads `FORGE_WITNESS_API_TOKEN`, and it never echoes the token.
+- Production facts (read Nov 19): service_role has no SELECT on pg_net's queue or responses and no USAGE on `cron`, so the token in flight is out of the writer's reach too.
 
 It does not use a LOGIN role, the service role, or a signing secret in the app.
 
@@ -26,7 +32,7 @@ For each armed game the route:
 The database then re-checks everything it can on its own and stores an immutable verdict. Stored verdict fields
 (witness verdict, outcome) are only preconditions; they never replace a check.
 
-## Objects (`forge-witness-verifier.sql`, sha256 `c0899971b04b09a4be20fabfc60b88265359941ae02065d8b60e05930d3ff4b7`)
+## Objects (`forge-witness-verifier.sql`, sha256 `9673316c4e108f9ea8953603e7afd40009d62af828ae6eb21be2d2022651052a`)
 
 **Roles**
 - `forge_witness_owner` (NOLOGIN) owns everything listed below.
@@ -74,7 +80,10 @@ Run on PostgreSQL 15.19 and PostgREST 16.6, with `db-schemas=public,graphql_publ
 | Publisher gate (as `service_role`) | The real claim with the exact hashes is **accepted**. Wrong canonical or token hash: `hash_mismatch`. Rejected claim: `verdict_rejected`. Unverified or unknown claim: `verdict_missing`. Superuser-forged accepted row with a lying deadline: `verified_late`. An accepted verdict whose games row then becomes invisible: `schedule_unavailable`. `require_accepted_v1` raises `42501 witness_verdict_required`. |
 | SQL denials | 70 attempts as `service_role`, `anon`, `authenticated`, `authenticator` and `forge_witness_api` all failed with **42501**: insert, update, delete or truncate verdicts; disable triggers; drop; create objects in either schema; insert targets; call the private record or arm; call the API wrappers (non-witness roles); read custody (non-writer roles). The owner itself gets the immutable trigger on update, delete and truncate. |
 | HTTP denials | `service_role`, `authenticated` and anon calling the witness RPCs: 403/401. `Accept-Profile` or `Content-Profile` `forge_witness`: 406. The witness token on `public.games` (read or write) and on public custody RPCs: 403. The witness token on `forge_witness`, `forge_pregame_capture`, `pgsodium` or `vault`: 406. Recording for an unarmed game: 403. Malformed verdict: 400. Positive control `pending_v1`: 200. |
-| Cron ops | Arm, then two fires, then `fires_spent`, after which the job has unscheduled itself. No secret appears in `cron.job.command`; the bearer comes from Vault `cron_secret`. Readback shows the fires, the responses, the target and the gate. Re-arming a decided game is refused, and so is arming a game with no readable schedule. Disarm leaves the WGO job intact. |
+| Cron ops | Arm (refused without a live credential), then two fires, then `fires_spent`, after which the job has unscheduled itself. Neither secret appears in `cron.job.command`. The queued request carries `Authorization: Bearer <cron_secret>` and `x-forge-witness-token` equal to the stored credential. Readback shows the fires, the responses, the target and the gate. Re-arming a decided game is refused, and so is arming a game with no readable schedule. Disarm leaves the WGO job intact. |
+| Credential | `set-witness-credential.sql` reads the token from stdin and prints only `{role, expiresAt}`. 45 attempts as `service_role`, `anon`, `authenticated`, `forge_witness_api` and `authenticator` all fail with 42501: read `forge_witness.credentials`, call `credential_v1`, `set_credential_v1` or `revoke_credential_v1`, read `cron.job`, `net.http_request_queue`, `net._http_response` or the fires table, or call the fire function. The audit's `writerSecretReach` shows service_role can read only `vault.decrypted_secrets`, which is why the token is not there. |
+| Route credentials | With a witness token deliberately present in the process env (as the writer could have), these all get **401** before any Data API request, with nothing echoed: the cron secret only (`witness_credential_required`), the token only, a wrong cron secret, and the service_role, authenticated or anon JWT as the header. |
+| Revoke | `revoke-witness-credential.sql` deletes the row and revokes `forge_witness_api` from `authenticator`. The same token that got 200 on `pending_v1` just before now gets **403**. The fire function returns `credential_missing` and arming is refused. |
 | Reset (local only) | The schema-only dump outside returns to exactly its pre-install state; roles are restored. |
 
 Unit tests:
@@ -104,7 +113,7 @@ Run 9 passed. Runs 10 and 11 reran after type fixes. A review then found two pro
 - The gate's `least()` fell back to the claimed start when the games row was invisible. It now refuses.
 - Fewer than two team-status rows became an immutable `schedule_changed` rejection. They are now `schedule_unavailable`: no row, retryable.
 
-At the same time, arm now requires a readable schedule, and the audit now also flags CREATEROLE-owned dynamic definers and an installer that cannot bypass RLS. Run 12 passed on that code. Run 13 added the explicit service_role proof to the audit and passed.
+At the same time, arm now requires a readable schedule, and the audit now also flags CREATEROLE-owned dynamic definers and an installer that cannot bypass RLS. Run 12 passed on that code. Run 13 added the explicit service_role proof to the audit and passed. Runs 14–16 covered the credential redesign: run 14 failed on my own assertion (a stand-in table that does not exist counts as unreadable), and runs 15 and 16 passed.
 
 ## Production change list (for TJ's approval; Chef applies)
 
@@ -112,10 +121,10 @@ At the same time, arm now requires a readable schedule, and the audit now also f
 2. **Database:** apply `forge-witness-verifier.sql` as `postgres` (sha above).
 3. **Data API:** set the exposed schemas to `public, graphql_public, storage, analytics, forge_witness_api`. Production's current list is `public, graphql_public, storage, analytics`. This is the audit's default.
 4. **Publisher:** the live publisher runs as `service_role` (Chef, Nov 19). `forge-live-publish` and the publish function's transaction call `forge_witness.require_accepted_v1(claim, raw, canonical, token_sha)`, or `publication_gate_v1` for a non-raising check. EXECUTE goes only to service_role and postgres.
-5. **Vercel `fhfhockey`, production:** `FORGE_WITNESS_API_TOKEN` via `witness_token_setup.py --hours 11` (stdin only; at most 12 h).
+5. **Credential (not Vercel):** `pbpaste | python3 -I witness_token_setup.py --hours 11 --stdout | psql "<postgres connection>" -X -q -f set-witness-credential.sql`. The JWT secret goes in on stdin, and the token goes only over the pipe. Do not add any witness token to Vercel env. Re-run before the 12 h expiry.
 6. **Deploy** a master that contains this route.
 7. **Arm per game:** `arm-witness-verify.sql -v game=… -v schedule='m-m h d M *' [-v max_fires≤3]`. Choose minutes after the capture's qualified outcome and at least 3 min before T−60.
-8. **Afterwards:** `readback-witness-verify.sql`, then `disarm-witness-verify.sql`.
+8. **Afterwards:** `readback-witness-verify.sql`, then `disarm-witness-verify.sql`, then `revoke-witness-credential.sql`. Revoking deletes the credential and revokes the role from `authenticator`, so any copy of the token is useless.
 
 Receipts stay; `reset-witness-local.sql` is for disposable databases only.
 

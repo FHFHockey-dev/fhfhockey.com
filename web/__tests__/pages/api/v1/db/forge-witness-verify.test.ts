@@ -13,15 +13,17 @@ afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 function stub(overrides: Record<string, string | undefined> = {}) {
   for (const [name, value] of Object.entries({ VERCEL_ENV: "production", VERCEL_GIT_COMMIT_SHA: sha, CRON_SECRET: cron,
     NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.invalid", NEXT_PUBLIC_SUPABASE_PUBLIC_KEY: "anon-key",
-    FORGE_WITNESS_API_TOKEN: token({ role: "forge_witness_api", exp: hours(11) }), ...overrides })) vi.stubEnv(name, value);
+    ...overrides })) vi.stubEnv(name, value);
 }
+const witness = token({ role: "forge_witness_api", exp: hours(11) });
+const both = (credential: string | null = witness) => ({ authorization: `Bearer ${cron}`, ...(credential === null ? {} : { "x-forge-witness-token": credential }) });
 
 async function call(req: Partial<NextApiRequest>) {
   let code = 0, body: any;
   const headers: Record<string, string> = {};
   const res = { setHeader: (k: string, v: string) => { headers[k] = v; }, status(value: number) { code = value; return this; },
     json(value: unknown) { body = value; return this; }, end() { return this; } };
-  await route({ method: "GET", query: {}, headers: { authorization: `Bearer ${cron}` }, ...req } as unknown as NextApiRequest,
+  await route({ method: "GET", query: {}, headers: both(), ...req } as unknown as NextApiRequest,
     res as unknown as NextApiResponse);
   return { code, body, headers };
 }
@@ -29,19 +31,22 @@ async function call(req: Partial<NextApiRequest>) {
 it.each([
   [{ method: "POST" }, {}, 405, "method_not_allowed"],
   [{ query: { gameId: "2099020991" } }, {}, 400, "unexpected_parameters"],
-  [{ headers: {} }, {}, 401, "unauthorized"],
-  [{ headers: { authorization: `Bearer ${cron}x` } }, {}, 401, "unauthorized"],
+  [{ headers: { "x-forge-witness-token": witness } }, {}, 401, "unauthorized"],
+  [{ headers: { ...both(), authorization: `Bearer ${cron}x` } }, {}, 401, "unauthorized"],
   [{}, { CRON_SECRET: "" }, 401, "unauthorized"],
   [{}, { VERCEL_ENV: "preview" }, 503, "release_unpinned"],
   [{}, { VERCEL_GIT_COMMIT_SHA: undefined }, 503, "release_unpinned"],
-  [{}, { FORGE_WITNESS_API_TOKEN: undefined }, 503, "witness_api_unavailable"],
-  [{}, { FORGE_WITNESS_API_TOKEN: token({ role: "service_role", exp: hours(11) }) }, 503, "witness_api_unavailable"],
-  [{}, { FORGE_WITNESS_API_TOKEN: token({ role: "forge_sandbox_api", exp: hours(11) }) }, 503, "witness_api_unavailable"],
-  [{}, { FORGE_WITNESS_API_TOKEN: token({ role: "forge_witness_api", exp: hours(-1) }) }, 503, "witness_api_unavailable"],
-  [{}, { FORGE_WITNESS_API_TOKEN: token({ role: "forge_witness_api", exp: hours(13) }) }, 503, "witness_api_unavailable"],
-  [{}, { FORGE_WITNESS_API_TOKEN: token({ role: "forge_witness_api" }) }, 503, "witness_api_unavailable"],
-  [{}, { FORGE_WITNESS_API_TOKEN: "not-a-jwt" }, 503, "witness_api_unavailable"],
-  [{}, { NEXT_PUBLIC_SUPABASE_PUBLIC_KEY: undefined }, 503, "witness_api_unavailable"],
+  // The cron secret alone is never enough, even if a witness token sits in the deployment's env (the writer's reach).
+  [{ headers: both(null) }, {}, 401, "witness_credential_required"],
+  [{ headers: both(null) }, { FORGE_WITNESS_API_TOKEN: witness }, 401, "witness_credential_required"],
+  [{ headers: both(token({ role: "service_role", exp: hours(11) })) }, {}, 401, "witness_credential_required"],
+  [{ headers: both(token({ role: "forge_sandbox_api", exp: hours(11) })) }, {}, 401, "witness_credential_required"],
+  [{ headers: both(token({ role: "forge_witness_api", exp: hours(-1) })) }, {}, 401, "witness_credential_required"],
+  [{ headers: both(token({ role: "forge_witness_api", exp: hours(13) })) }, {}, 401, "witness_credential_required"],
+  [{ headers: both(token({ role: "forge_witness_api" })) }, {}, 401, "witness_credential_required"],
+  [{ headers: both("not-a-jwt") }, {}, 401, "witness_credential_required"],
+  [{ headers: { ...both(), "x-forge-witness-token": [witness, witness] } }, {}, 401, "witness_credential_required"],
+  [{}, { NEXT_PUBLIC_SUPABASE_PUBLIC_KEY: undefined }, 401, "witness_credential_required"],
 ])("refuses %j %j before any request, without caching", async (req, env, code, status) => {
   stub(env);
   const fetch = vi.fn();
@@ -52,17 +57,19 @@ it.each([
   expect(fetch).not.toHaveBeenCalled();
 });
 
-it("talks only to the witness API schema with the witness token, and fails closed when pending is unreadable", async () => {
+it("talks only to the witness API schema with the header token, never echoes it, and fails closed when pending is unreadable", async () => {
   stub();
   const fetch = vi.fn(async () => new Response(JSON.stringify({ message: "unavailable" }), { status: 503 }));
   vi.stubGlobal("fetch", fetch);
-  expect(await call({})).toMatchObject({ code: 503, body: { status: "pending_unconfirmed", sha } });
+  const result = await call({});
+  expect(result).toMatchObject({ code: 503, body: { status: "pending_unconfirmed", sha } });
+  expect(JSON.stringify(result.body)).not.toContain(witness.split(".")[1]);
   expect(fetch).toHaveBeenCalledTimes(1);
   const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
   expect(String(url)).toBe("https://project.supabase.invalid/rest/v1/rpc/pending_v1");
   const headers = new Headers(init.headers);
   expect(headers.get("content-profile")).toBe("forge_witness_api");
-  expect(headers.get("authorization")).toBe(`Bearer ${process.env.FORGE_WITNESS_API_TOKEN}`);
+  expect(headers.get("authorization")).toBe(`Bearer ${witness}`);
   expect(headers.get("apikey")).toBe("anon-key");
 });
 
