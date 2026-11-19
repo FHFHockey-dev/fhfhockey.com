@@ -16,8 +16,10 @@ Make the first live BLSH v6 capture ready except TJ's separate approvals: (1) L7
 - PG15: pg15-validate.py 41/41. Findings: DISARM leaves the one-time official job active (added CANCEL-OFFICIAL-ONCE.sql); DISARM without a permit rolls back its own switch-off (added SWITCH-OFF.sql).
 - Receipt written with 12 ordered blockers.
 
+- Committed 1a6e54239 on chef/blsh-live-readiness and fetched as refs/rc/blsh-live-readiness-20261119; follow-up commit corrects the production-identity line (master advanced to dbe6a9e33 after 80af7e76c) and names job 408.
+
 ## Next
-Commit with explicit pathspecs → fetch into canonical as refs/rc/blsh-live-readiness-20261119 → report SHA. After that this diary stays until blocker 1 (L7 sign-off) lands the RC.
+Lane work is done. Keep this diary until blocker 1 (L7 sign-off and integration of the RC) lands; the receipt holds the ordered blockers.
 
 ## Blockers / approvals
 All 12 receipt blockers need TJ or owner action; none are this lane's to clear.

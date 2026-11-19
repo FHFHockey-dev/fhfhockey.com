@@ -4,7 +4,9 @@
 
 - Branch: `chef/blsh-live-readiness`, cut from origin/master `dbe6a9e3312f24c9fb2565da754b92803663ad29`.
 - Fetched into the canonical checkout as `refs/rc/blsh-live-readiness-20261119`. The commit SHA is reported with the handoff.
-- Production remains at `80af7e76c21b505eb2db12b93cbb936e78114143` (`dpl_D9YPjERZXhgbNrD2t1aUXt5mwc17`), with the native switch off and both public keys absent. That is the November 18 readback; this lane did not re-read it.
+- **Production identity is unknown here.** The last BLSH readback (Nov 18) had `80af7e76c21b505eb2db12b93cbb936e78114143` / `dpl_D9YPjERZXhgbNrD2t1aUXt5mwc17`, with the native switch off and both public keys absent.
+  - origin/master has since advanced to `dbe6a9e33` with two released News/Lines commits that touch `web/` (`c6eae4db5`, `dbe6a9e33`). The live deployment ID has probably changed.
+  - This lane did not re-read production. Take every pin from blocker 4's readback, never from this receipt.
 
 ## Remaining blockers, in order
 
@@ -20,7 +22,7 @@ All times are UTC. "Hard latest" is when a script or handler refuses. "Plan by" 
 | 6 | **Managed ingress check.** The DB owner confirms read-only that managed PostgREST accepts a 5,592,690-byte RPC body and the network budget for it (packet requirement). | One read-only config check under owner approval. | Plan by Nov 20 20:00. |
 | 7 | **Approve the disarm set.** TJ or the DB owner reviews and pins `CANCEL-OFFICIAL-ONCE.sql` (`c5fa1b15b181defac06f0425e930162d484f0b6b1bd1ae9ae8f459193b87a9a4`) and `SWITCH-OFF.sql` (`19abbc7f23ec69df490dd5ca4bd226353c421fe72bdf51460ad155c6f5c0ed33`) as part of the disarm set. On its own, DISARM-ROLLBACK leaves the one-time official job active. It also cannot clear a raw switch when no permit is installed. | None. | Before blocker 11. |
 | 8 | **INSTALL.** TJ approves the production DB transaction. The DB owner runs the pinned `pilot-control/INSTALL.sql` with `release_sha` and `deployment_id` taken from blocker 4. Read back: one permit row, the trigger, raw off, effective off. | 1 short DDL transaction on `fyhftlxokyjtpndbkfse`. | Plan by Nov 20 22:00. Hard latest: 2026-11-21 12:04:59.999 (`pilot_install_after_primary_start`). |
-| 9 | **NST day-of clearance.** The shared NST owner confirms that no manual `/db` runner, other lane or ad-hoc NST work runs from 11:05 to 12:07. BLSH's 2 URLs then sit alone in every rolling window. If any is planned, it must pass through the shared admission ledger and the headroom must be confirmed. | Possibly pausing manual NST work for about 1 h. | Nov 21 by 11:00. |
+| 9 | **NST day-of clearance.** The shared NST owner confirms that no manual `/db` runner, other lane (including the FORGE pregame lane and pg_cron job 408, which this lane could not identify) or ad-hoc NST work runs from 11:05 to 12:07. BLSH's 2 URLs then sit alone in every rolling window. If any is planned, it must pass through the shared admission ledger and the headroom must be confirmed. | Possibly pausing manual NST work for about 1 h. | Nov 21 by 11:00. |
 | 10 | **Dated go/no-go.** TJ signs the dated go/no-go per `PILOT-APPROVAL.md`, after blockers 1–9. | None. | Nov 21 by 11:30. |
 | 11 | **ARM.** Separate one-date approval. The DB owner runs the pinned `pilot-control/ARM.sql` with the same pins. Read back: raw true, effective false until 12:05:00. | 1 transaction. | Plan 11:45–12:00. Hard latest: 12:04:59.999 (`pilot_arm_pins_or_time_mismatch`). |
 | 12 | **Window staffing and the remaining gated steps.** The operator, signer and DB owner are present 12:00–12:50 on Nov 21. Steps: job 404 at 12:05; disarm after the primary disposition and before 12:20; request-context POST 12:35:00–12:35:59.999; then official Vault grant + `SCHEDULE-ONCE.sql` 12:35:00–12:44:59, which needs its own specific approval. Disarm = DISARM-ROLLBACK, then SWITCH-OFF if DISARM refuses. If the 12:45 job did not fire, run CANCEL-OFFICIAL-ONCE right after 12:46; once the official run closes, run it in every case. | 2 NST GETs + 2 admissions; 3 function invocations (≤250 s, 240 s, 240 s); one pg_net GET; up to 64 MiB context and 71.125 MiB official custody. | Nov 21 12:00–12:50. |
@@ -39,9 +41,10 @@ All times are UTC. "Hard latest" is when a script or handler refuses. "Plan by" 
 - **Required collateral.**
   - The cron audit scanner (`web/lib/cron/cronAuditCoverage.ts`) matched only literal `adminOnly(` and `withCronJobAudit(` calls. It therefore reported the BLSH route, the first scheduled route on `withOperationalRouteAuth`, as unprotected and unaudited. That wrapper always applies `adminOnly` outermost, and applies `withCronJobAudit` unless `audit: false`. The scanner now recognizes it; a test covers both the audited and the `audit: false` forms.
   - Frozen inventory counts moved: auth findings 46→47, job names 50→52, cron-only 28→29, pg_cron 58→62 and total 90→94. Each move carries a dated comment.
+- **Daily cron report.** `cron-report.ts` matches audit rows by job name, route or route path within a time window. Job 405's audit row (job name `blsh-native-capture`, same route path, 12:20) therefore reports against 405. Jobs 406/407 are SQL rows.
 - **Checks.**
   - Vitest passed: `lib/cron` (all files), `__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts`, `scripts/vercel-ignore.test.ts`, `lib/predictions/pipelineCronAlignment.test.ts`, and the `cron-report` tests.
-  - `npm run typecheck` exit 0.
+  - `npm run typecheck` exit 0, rerun after the final test edit.
   - ESLint on the changed files exit 0.
 
 **Budget evidence.**
