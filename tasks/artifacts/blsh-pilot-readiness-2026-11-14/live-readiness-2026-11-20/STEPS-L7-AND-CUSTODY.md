@@ -59,7 +59,7 @@ ln -s /Users/tim/Code/fhfhockey.com/web/node_modules web/node_modules && cd web
 env -u GIT_DIR npx vitest run lib/cron __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts __tests__/pages/api/v1/db/cron-report.test.ts __tests__/pages/api/v1/db/cron-auth-boundaries.test.ts scripts/vercel-ignore.test.ts lib/predictions/pipelineCronAlignment.test.ts
 ```
 
-Expected: `Test Files 43 passed (43)`, `Tests 579 passed (579)`. These counts were measured against release base `aa49b6c5e`; a later base may add tests.
+Expected: `Test Files 43 passed (43)`, `Tests 575 passed (575)`. These counts were measured against release base `aa49b6c5e`; a later base may add tests.
 
 ```bash
 env -u GIT_DIR npm run typecheck; echo "typecheck exit=$?"

@@ -26,8 +26,11 @@ Make the first live BLSH v6 capture ready except TJ's separate approvals: (1) L7
 - Custody commands rehearsed with throwaway keys (deleted): script hash, generation, fingerprints, --expect, --stdin, private refusal exit 3, pair match, -rawin sign/verify.
 - Part B: still no reply in the mailbox.
 
+- Wrote live-readiness-2026-11-20/STEPS-L7-AND-CUSTODY.md and APPROVAL-PACKET-CAPTURE-20261122.md; committed bc3bbc911, fetched as refs/rc/blsh-live-readiness-20261120.
+- Ran STEPS A1–A3 verbatim in a throwaway clone against that ref merged onto aa49b6c5e: 8 files/129+/10−; Vitest 43 files, 575 tests passed (file corrected from 579). Custody B-steps were rehearsed with throwaway keys; `pbpaste` (TJ's clipboard) and `~/blsh-verify` (TJ's home) were not exercised, `--stdin` was via redirect.
+
 ## Next
-Write STEPS + packet in live-readiness-2026-11-20/, commit, fetch as refs/rc/blsh-live-readiness-20261120, run the L7 steps verbatim against that ref. Keep this diary until the re-date decision and blocker 1 land.
+Report the ref, steps and packet paths to the parent. Keep this diary until TJ decides the re-date (packet 6.1) and blocker 1 lands.
 
 ## Blockers / approvals
 All 12 receipt blockers need TJ or owner action; none are this lane's to clear.
