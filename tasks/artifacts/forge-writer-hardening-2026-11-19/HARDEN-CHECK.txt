@@ -1,0 +1,21 @@
+1 before: service_role execute_sql=t
+2 apply harden-execute-sql.sql as postgres:
+  {"serviceRoleExecuteSql" : false, "serviceRoleCsvCreate" : true, "anonCsvCreate" : false}
+3 second apply refuses:
+  already_hardened
+4 CSV admin path as service_role (each rolled back):
+  create new table, then insert, then read: {"table": "csv_probe_new", "created": true} 1 
+  existing table: no DDL: {"table": "players", "created": false} 
+  service_role gets only SELECT+INSERT on the new table: {"table": "csv_probe_acl", "created": true} f|f|f|postgres 
+  injection in table name: ERROR:  csv_table_name_invalid CONTEXT:  PL/pgSQL function public.csv_create_table_v1(text,jsonb) line 6 at RAISE 
+  injection in column name: ERROR:  csv_column_name_invalid DETAIL:  a" text); drop table players; -- CONTEXT:  PL/pgSQL function public.csv_create_table_v1(text,jsonb) line 26 at RAISE 
+  injection in type: ERROR:  csv_column_type_invalid DETAIL:  a CONTEXT:  PL/pgSQL function public.csv_create_table_v1(text,jsonb) line 32 at RAISE 
+  reserved column player_id: ERROR:  csv_column_name_invalid DETAIL:  player_id CONTEXT:  PL/pgSQL function public.csv_create_table_v1(text,jsonb) line 26 at RAISE 
+  shadowing a relation in another schema: ERROR:  csv_table_name_shadows CONTEXT:  PL/pgSQL function public.csv_create_table_v1(text,jsonb) line 15 at RAISE 
+  pg_ prefix: ERROR:  csv_table_name_invalid CONTEXT:  PL/pgSQL function public.csv_create_table_v1(text,jsonb) line 6 at RAISE 
+5 who may call:
+  execute_sql as service_role: ERROR:  permission denied for function execute_sql 
+  anon csv_create: f, authenticated: f, postgres execute_sql: t
+6 rollback, then re-harden:
+  rollback: {"serviceRoleExecuteSql" : true, "csvCreatePresent" : false}
+  re-harden: {"serviceRoleExecuteSql" : false, "serviceRoleCsvCreate" : true, "anonCsvCreate" : false}

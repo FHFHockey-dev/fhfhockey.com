@@ -1,0 +1,89 @@
+== A. service_role memberships (transitive)
+        role        |        via         
+--------------------+--------------------
+ pgsodium_keyholder | pgsodium_keyholder
+ pgsodium_keyiduser | pgsodium_keyholder
+
+== B. SECURITY DEFINER functions service_role may EXECUTE, owned by a privileged role, with dynamic SQL
+            function             |  owner   | dynamic_sql 
+---------------------------------+----------+-------------
+ csv_create_table_v1(text,jsonb) | postgres | f
+
+== C. service_role write/trigger/truncate privileges in the evidence schemas (expect none)
+ relation | privilege_type 
+----------+----------------
+
+        schema         | service_role_create | service_role_usage 
+-----------------------+---------------------+--------------------
+ forge_pregame_capture | f                   | f
+ forge_witness         | f                   | t
+ forge_witness_api     | f                   | f
+ public                | t                   | t
+
+== D. definer owners that can grant roles (CREATEROLE) and authenticator memberships
+       rolname       | rolsuper | rolcreaterole | rolbypassrls 
+---------------------+----------+---------------+--------------
+ forge_witness_owner | f        | f             | f
+ postgres            | f        | t             | t
+ service_role        | f        | f             | t
+
+ authenticator_may_use_witness_role | authenticator_may_use_owner 
+------------------------------------+-----------------------------
+ f                                  | f
+
+== E. owners of the live-fence objects
+                oid                 |   pg_get_userbyid   
+------------------------------------+---------------------
+ forge_pregame_capture.publications | postgres
+ forge_witness.credentials          | forge_witness_owner
+ forge_witness.verdicts             | forge_witness_owner
+ forge_pregame_capture.live_runs    | postgres
+
+== G. privileged SECURITY DEFINER functions without a pinned search_path that service_role can EXECUTE (search-path hijack candidates)
+ function | owner 
+----------+-------
+
+== F. exploit probes as service_role (each rolled back)
+-- F1 make the witness role reachable through PostgREST (then any holder of the JWT secret can act as the verifier)
+BEGIN
+SET
+ERROR:  permission denied for function execute_sql
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ROLLBACK
+-- F2 become the verifier owner (CREATEROLE definer grants itself the role), then read the witness credential
+BEGIN
+SET
+ERROR:  permission denied for function execute_sql
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ROLLBACK
+-- F3 switch off the publication verdict trigger
+BEGIN
+SET
+ERROR:  permission denied for function execute_sql
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ROLLBACK
+-- F4 rewrite the publisher gate itself
+BEGIN
+SET
+ERROR:  permission denied for function execute_sql
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ROLLBACK
+-- F5 control: direct writes without execute_sql (expect permission denied)
+BEGIN
+SET
+ERROR:  permission denied for table credentials
+ROLLBACK
+BEGIN
+SET
+ERROR:  permission denied for table verdicts
+ROLLBACK
+BEGIN
+SET
+ERROR:  permission denied for schema forge_pregame_capture
+ROLLBACK

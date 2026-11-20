@@ -14,8 +14,9 @@ import upsertCsv from "../../../../../pages/api/v1/db/upsert-csv";
 
 type Player = { id: number; fullName: string; position: string };
 
-function fakeSupabase(players: Player[]) {
+function fakeSupabase(players: Player[], rpcError: { message: string } | null = null) {
   const inserted: Record<string, unknown>[] = [];
+  const rpcCalls: [string, unknown][] = [];
   const query = (rows: Player[]) => ({
     eq: async (column: keyof Player, value: string) => ({
       data: rows.filter((p) => p[column] === value),
@@ -31,8 +32,12 @@ function fakeSupabase(players: Player[]) {
   });
   return {
     inserted,
+    rpcCalls,
     client: {
-      rpc: async () => ({ error: null }),
+      rpc: async (name: string, args: unknown) => {
+        rpcCalls.push([name, args]);
+        return rpcError ? { data: null, error: rpcError } : { data: { created: true }, error: null };
+      },
       from: (table: string) =>
         table === "players"
           ? { select: () => query(players) }
@@ -46,8 +51,8 @@ function fakeSupabase(players: Player[]) {
   };
 }
 
-async function post(players: Player[], csvData: Record<string, string>[]) {
-  const supabase = fakeSupabase(players);
+async function post(players: Player[], csvData: Record<string, string>[], rpcError: { message: string } | null = null) {
+  const supabase = fakeSupabase(players, rpcError);
   let body: any;
   const res: any = {
     statusCode: 200,
@@ -83,7 +88,7 @@ async function post(players: Player[], csvData: Record<string, string>[]) {
     },
     res
   );
-  return { body, status: res.statusCode, inserted: supabase.inserted };
+  return { body, status: res.statusCode, inserted: supabase.inserted, rpcCalls: supabase.rpcCalls };
 }
 
 const PLAYERS: Player[] = [
@@ -116,5 +121,25 @@ describe("upsert-csv player identity (W3-3 D11)", () => {
     expect(body.unmatchedRows).toEqual([
       { row: 1, name: "Sebastian Aho", reason: "ambiguous_name" }
     ]);
+  });
+});
+
+describe("upsert-csv table creation (writer hardening)", () => {
+  it("creates the table only through the narrow csv_create_table_v1 RPC, never execute_sql", async () => {
+    const { body, rpcCalls } = await post(PLAYERS, [{ player: "Josh Anderson", Position: "R", goals: "20" }]);
+    expect(body.success).toBe(true);
+    expect(rpcCalls).toEqual([["csv_create_table_v1", {
+      p_table: "fixture_projections",
+      p_columns: [{ name: "player", type: "TEXT" }, { name: "Position", type: "TEXT" }, { name: "goals", type: "NUMERIC" }]
+    }]]);
+  });
+
+  it("stops before any insert when the database refuses the table", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { status, body, inserted } = await post(PLAYERS, [{ player: "Josh Anderson", Position: "R", goals: "20" }],
+      { message: "csv_table_name_shadows" });
+    expect(status).toBe(500);
+    expect(body.message).toContain("csv_table_name_shadows");
+    expect(inserted).toEqual([]);
   });
 });

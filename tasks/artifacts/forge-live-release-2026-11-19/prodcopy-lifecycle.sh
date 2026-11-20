@@ -3,7 +3,7 @@
 set -u
 cd "$1"   # repo root (scratch clone)
 L=tasks/artifacts/forge-live-release-2026-11-19; W=tasks/artifacts/forge-witness-verifier-2026-11-19
-P=(env LC_ALL=en_US.UTF-8 /opt/homebrew/opt/postgresql@15/bin/psql -h /tmp/fpd.v5ww -p 55871 -U postgres -d prodcopy -X -At -q)
+P=(env LC_ALL=en_US.UTF-8 /opt/homebrew/opt/postgresql@15/bin/psql -h ${PCHOST:-/tmp/fpd.v5ww} -p ${PCPORT:-55871} -U ${PCUSER:-postgres} -d ${PCDB:-prodcopy} -X -At -q)
 G=2026020358; R=$(printf 'a%.0s' {1..40}); WRONG=$(printf 'b%.0s' {1..40})
 q() { $P -v ON_ERROR_STOP=1 -c "$1" 2>&1 | sed 's/^/  /'; }
 TOKEN() { python3 -I -c 'import base64,hashlib,hmac,json,os,time

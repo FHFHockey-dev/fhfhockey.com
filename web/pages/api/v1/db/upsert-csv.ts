@@ -192,41 +192,23 @@ export default adminOnly(withCronJobAudit(
     }
 
     try {
-      // Table creation SQL (remains the same)
-      let createTableSQL = `CREATE TABLE IF NOT EXISTS public."${tableName}" (`;
-      createTableSQL += `"upload_batch_id" UUID PRIMARY KEY DEFAULT gen_random_uuid(), `;
-      createTableSQL += `"player_id" BIGINT, `;
-      const columnDefinitions = sanitizedColumns.map(
-        (col) => `"${col.name}" ${col.type}`
+      // Table creation goes through the narrow csv_create_table_v1 definer (validated name, columns and a fixed
+      // type list; CREATE TABLE only, plus SELECT/INSERT for service_role on a new table). The service role no
+      // longer holds execute_sql (tasks/artifacts/forge-writer-hardening-2026-11-19).
+      const { data: created, error: createError } = await supabase.rpc(
+        "csv_create_table_v1",
+        {
+          p_table: tableName,
+          p_columns: sanitizedColumns.map(({ name, type }) => ({ name, type }))
+        }
       );
-      createTableSQL += columnDefinitions.join(", ");
-      createTableSQL += `, CONSTRAINT fk_player FOREIGN KEY (player_id) REFERENCES public.players(id)`;
-      createTableSQL += `);`;
-
-      console.log(
-        "Attempting to execute SQL for table creation/check:",
-        createTableSQL
-      );
-      const { error: createError } = await supabase.rpc("execute_sql", {
-        sql_statement: createTableSQL
-      });
-
       if (createError) {
         console.error("Table creation RPC error:", createError);
-        if (
-          !createError.message.includes("already exists") &&
-          !createError.message.includes("relation") &&
-          !createError.message.includes("exists")
-        ) {
-          throw new Error(`Table creation RPC failed: ${createError.message}`);
-        } else {
-          console.warn(
-            `Table "${tableName}" likely already exists. Message: ${createError.message}`
-          );
-        }
-      } else {
-        console.log(`Table "${tableName}" checked/created successfully.`);
+        throw new Error(`Table creation RPC failed: ${createError.message}`);
       }
+      console.log(
+        `Table "${tableName}" ${created?.created ? "created" : "already exists"}.`
+      );
 
       const dataForSupabase: Record<string, any>[] = [];
       const unmatchedRows: {
