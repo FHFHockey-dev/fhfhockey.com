@@ -14,6 +14,7 @@ import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
 import { loadExternalInputProof } from "lib/projections/externalInputProof";
 import { loadForgeGameRevisions } from "lib/projections/gameRevisions";
 import { withForgeEnv } from "lib/projections/forgeEnvScope";
+import { verifySignedVerdict } from "lib/projections/pregameCapture/signedVerdictGate";
 import { getServiceRoleClient } from "lib/supabase/server";
 
 async function listen(server: Server) {
@@ -114,6 +115,21 @@ async function main() {
     const firedPublish = await fire("publish");
     assert.match(firedPublish, /^fired \d+$/);
     const published = await call(publish, auth);
+    // Until the verifier package's signed-verdict verification is bound, the release must refuse publication end to end.
+    const seamBound = verifySignedVerdict(null, { claimId, gameId: game, raw: "", canonical: "", tsaTokenSha256: "", release: "" }).reason
+      !== "signed_verdict_verifier_not_integrated";
+    if (!seamBound) {
+      assert.match(String(published.body.reason), /^signed_verdict:/);
+      assert.deepEqual({ status: published.body.status, revisionId: published.body.revisionId, readers: published.body.readers },
+        { status: "failed", revisionId: null, readers: null });
+      assert.equal(await count("forge_pregame_capture.publications"), 0);
+      assert.equal(await count("cron.job where jobname like 'forge-live-%'"), 0);
+      assert.equal((await sql("select active from cron.job where jobid = 408"))[0].active, false);
+      console.log(JSON.stringify({ capture: { status: first.status, body: first.body, wallMs: first.wallMs },
+        publish: { status: published.status, wallMs: published.wallMs, body: published.body },
+        failClosed: "signed verdict not verifiable in this release: no publication, no readers", restCalls, errors, tsaCalls, verifier }));
+      return;
+    }
     assert.ok(published.status === 200 && published.body.status === "succeeded", JSON.stringify({ body: published.body, errors }).slice(0, 3000));
     const again = await call(publish, auth);
     assert.equal(again.body.status, "none_ready");

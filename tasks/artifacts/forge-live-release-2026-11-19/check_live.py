@@ -124,6 +124,7 @@ def main():
         verifier = ROOT / "tasks/artifacts/forge-witness-verifier-2026-11-19/forge-witness-verifier.sql"
         psql("-f", verifier if verifier.exists() else HERE / "witness-stub.sql")
         psql("-f", ROOT / "supabase/migrations" / LIVE)
+        psql("-f", ROOT / "supabase/migrations" / "20261120000100_forge_live_signed_verdict.sql")
 
         # PostgREST as production serves the service role.
         secret = secrets.token_hex(32)

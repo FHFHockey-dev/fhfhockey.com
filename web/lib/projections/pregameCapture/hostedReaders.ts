@@ -13,6 +13,7 @@ import { admitConsumerGameRevisions } from "../consumerRevisionAdmission";
 import type { ForgeGameRevision } from "../gameRevisions";
 import { forgeEnv } from "../forgeEnvScope";
 import { starterBoardFlags, starterBoardScopeAllowed } from "../starterBoardFlags";
+import type { SignedVerdictDecision } from "./signedVerdictGate";
 import { MICROS_PER_MS, parseInstantMicros } from "./time";
 
 export const HOSTED_RSO_CONTEXT = "synthetic-single-center-points-v1";
@@ -31,7 +32,11 @@ const withheld = (reason: string, playerId: string | null = null, selectedRun: s
 
 /** Read the two FORGE paths independently for a manual, explicitly synthetic one-player roster.
  * Points are the RSO readback of an admitted row. The slot is its legal position in this roster. */
-export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedRsoTarget, now = new Date()) {
+export type HostedRsoOptions = {
+  /** Live runs: each reader independently refuses unless the claim's signed verdict verifies (signedVerdictGate.ts). */
+  verdictGate?: () => Promise<SignedVerdictDecision>;
+};
+export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedRsoTarget, now = new Date(), options: HostedRsoOptions = {}) {
   const { seasonId, slateDate, gameId, playerNhlId, claimId, revisionId, codeVersion } = target;
   const evaluatedAt = now.toISOString();
   const report = (daily: HostedRsoReader, detailed: HostedRsoReader) =>
@@ -77,7 +82,14 @@ export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedR
       const points = gameForecastPoints({ ...snapshot, forecasts: [row] }, row).expected;
       return points === null ? deny("missing_target") : { playerId: player.id, selectedRun, revisionId: row.revisionId, legalSlot: legalSlot.id, points, reason: null };
     };
+    const verdictRefusal = async () => {
+      if (!options.verdictGate) return null;
+      const verdict = await options.verdictGate().catch(() => null);
+      return verdict?.ok ? null : withheld(`signed_verdict:${verdict?.reason ?? "unverifiable"}`, player.id);
+    };
     const daily = async () => {
+      const refused = await verdictRefusal();
+      if (refused) return refused;
       if (source.kind !== "legacy" || forgeEnv().RSO_FORGE_DAILY_BRIDGE === "off") return withheld("serving_disabled", player.id);
       const bridge = await loadForgeDailyBridgeForecasts(db, [player], [game], now, seasonId, deadline, calendar);
       const rows = bridge.forecasts.filter(row => row.playerId === player.id && row.gameId === game.id);
@@ -98,6 +110,8 @@ export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedR
       return score(row, proof.runId);
     };
     const detailed = async () => {
+      const refused = await verdictRefusal();
+      if (refused) return refused;
       if (!starterBoardFlags().serving) return withheld("serving_disabled", player.id);
       if (!starterBoardScopeAllowed([gameId])) return withheld("canary_excluded", player.id);
       // A planner exclusion has no revision ID. Bind it to the selected SQL revision and repeat its native

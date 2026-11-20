@@ -1,0 +1,263 @@
+{
+ "postgres": "PostgreSQL 15.19 (Homebrew) on aarch64-apple-darwin27.0.0",
+ "postgrest": "PostgREST 16.6",
+ "flags": {
+  "FORGE_PREGAME_CAPTURE_ENABLED": "true",
+  "STARTER_BOARD_CAPTURE_ENABLED": "true",
+  "STARTER_BOARD_COMPUTE_ENABLED": "false",
+  "STARTER_BOARD_SERVING_ENABLED": "false",
+  "STARTER_BOARD_SCHEDULER_ENABLED": "true",
+  "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED": "true",
+  "STARTER_BOARD_CHALLENGER_ENABLED": "false",
+  "STARTER_BOARD_CANARY_GAME_IDS": "2026010049",
+  "FORGE_RESERVE_PASS_ENABLED": "true",
+  "FORGE_PROJECTION_DAYS_AHEAD": "6"
+ },
+ "publicationMigrationSha256": "4a70657ae3e0841f6fac1e66ee608ed866c5152b83a23dd10a83f5b435373f97",
+ "liveMigrationSha256": "b546ea3e6fb8622fe9c60c043bb67e4b85e01f2e5b23602fd90e776b8c2f3619",
+ "verifierMigrationSha256": "9673316c4e108f9ea8953603e7afd40009d62af828ae6eb21be2d2022651052a",
+ "route": {
+  "capture": {
+   "status": 200,
+   "body": {
+    "status": "captured",
+    "sha": "a6d8ebb404fe524a300d20a4ce207a11bf817e84",
+    "gameId": 2099020991,
+    "claimId": "a73ae898-7ad9-4e7b-97cb-f861f373564f",
+    "elapsedMs": 207,
+    "receipt": {
+     "claim": "a73ae898-7ad9-4e7b-97cb-f861f373564f",
+     "gameId": 2099020991,
+     "reason": null,
+     "armedAt": "2026-11-19T19:09:30.364282-05:00",
+     "custody": "qualified",
+     "outcome": null,
+     "readers": null,
+     "release": "a6d8ebb404fe524a300d20a4ce207a11bf817e84",
+     "verdict": {
+      "reason": "verdict_missing",
+      "claimId": "a73ae898-7ad9-4e7b-97cb-f861f373564f",
+      "accepted": false,
+      "deadline": "2026-11-19T20:09:29.321-05:00",
+      "verdictId": null,
+      "verifiedAt": null
+     },
+     "witness": "qualified",
+     "requests": [
+      {
+       "jobid": 1000,
+       "stage": "capture",
+       "game_id": 2099020991,
+       "fired_at": "2026-11-19T19:09:31.794932-05:00",
+       "request_id": 1
+      }
+     ],
+     "stoppedAt": null,
+     "approvedBy": "local-rehearsal",
+     "revisionId": null,
+     "stopReason": null,
+     "terminalAt": null,
+     "playerNhlId": 8471001,
+     "tokenSha256": "c24e3760f71dac1d3270848fd9b9e00b4eb4eab9b112728554000f527173f49e",
+     "packetSha256": "0d9b3be44b51dd3265aad3909f35ab0cbb00b64074f49952f82aaefba8b5f328",
+     "captureBeganAt": "2026-11-19T19:09:31.798317-05:00",
+     "publishBeganAt": null,
+     "scheduledStart": "2026-11-19T21:09:29.321-05:00",
+     "canonicalSha256": "60a052d95acba218898305af7f767042e348aea6e400f6c6109df75bfb88518b",
+     "captureFinishedAt": "2026-11-19T19:09:32.003064-05:00",
+     "committedRevision": null,
+     "publishFinishedAt": null
+    }
+   },
+   "wallMs": 209
+  },
+  "publish": {
+   "status": 503,
+   "wallMs": 5,
+   "body": {
+    "status": "failed",
+    "reason": "signed_verdict:signed_verdict_missing",
+    "sha": "a6d8ebb404fe524a300d20a4ce207a11bf817e84",
+    "gameId": 2099020991,
+    "claimId": "a73ae898-7ad9-4e7b-97cb-f861f373564f",
+    "signedVerdict": {
+     "ok": false,
+     "reason": "signed_verdict_missing",
+     "officialStart": null,
+     "deadline": null,
+     "verifiedAt": null
+    },
+    "revisionId": null,
+    "readers": null,
+    "stages": {},
+    "elapsedMs": 3,
+    "receipt": {
+     "claim": "a73ae898-7ad9-4e7b-97cb-f861f373564f",
+     "gameId": 2099020991,
+     "reason": "signed_verdict:signed_verdict_missing",
+     "armedAt": "2026-11-19T19:09:30.364282-05:00",
+     "custody": "qualified",
+     "outcome": "failed",
+     "readers": null,
+     "release": "a6d8ebb404fe524a300d20a4ce207a11bf817e84",
+     "verdict": {
+      "reason": null,
+      "claimId": "a73ae898-7ad9-4e7b-97cb-f861f373564f",
+      "accepted": true,
+      "deadline": "2026-11-19T20:09:29.321-05:00",
+      "verdictId": 1,
+      "verifiedAt": "2026-11-19T19:09:32.02285-05:00"
+     },
+     "witness": "qualified",
+     "requests": [
+      {
+       "jobid": 1000,
+       "stage": "capture",
+       "game_id": 2099020991,
+       "fired_at": "2026-11-19T19:09:31.794932-05:00",
+       "request_id": 1
+      },
+      {
+       "jobid": 1001,
+       "stage": "publish",
+       "game_id": 2099020991,
+       "fired_at": "2026-11-19T19:09:32.02573-05:00",
+       "request_id": 3
+      }
+     ],
+     "stoppedAt": null,
+     "approvedBy": "local-rehearsal",
+     "revisionId": null,
+     "stopReason": null,
+     "terminalAt": "2026-11-19T19:09:32.029057-05:00",
+     "playerNhlId": 8471001,
+     "tokenSha256": "c24e3760f71dac1d3270848fd9b9e00b4eb4eab9b112728554000f527173f49e",
+     "packetSha256": "0d9b3be44b51dd3265aad3909f35ab0cbb00b64074f49952f82aaefba8b5f328",
+     "captureBeganAt": "2026-11-19T19:09:31.798317-05:00",
+     "publishBeganAt": "2026-11-19T19:09:32.02679-05:00",
+     "scheduledStart": "2026-11-19T21:09:29.321-05:00",
+     "canonicalSha256": "60a052d95acba218898305af7f767042e348aea6e400f6c6109df75bfb88518b",
+     "captureFinishedAt": "2026-11-19T19:09:32.003064-05:00",
+     "committedRevision": null,
+     "publishFinishedAt": "2026-11-19T19:09:32.028928-05:00"
+    }
+   }
+  },
+  "failClosed": "signed verdict not verifiable in this release: no publication, no readers",
+  "restCalls": 159,
+  "errors": [],
+  "tsaCalls": 1,
+  "verifier": {
+   "package": "forge-witness-verifier route",
+   "fired": "fired 2",
+   "status": 200,
+   "body": {
+    "status": "ok",
+    "sha": "a6d8ebb404fe524a300d20a4ce207a11bf817e84",
+    "results": [
+     {
+      "gameId": 2099020991,
+      "status": "recorded",
+      "claimId": "a73ae898-7ad9-4e7b-97cb-f861f373564f",
+      "verdict": "accepted",
+      "reason": null,
+      "independent": {
+       "verdict": "accepted",
+       "reason": null
+      },
+      "verifiedAt": "2026-11-20T00:09:32.02285+00:00",
+      "deadlineAt": "2026-11-20T01:09:29.321+00:00"
+     }
+    ],
+    "elapsedMs": 12
+   },
+   "wallMs": 12,
+   "duplicate": {
+    "status": "idle",
+    "sha": "a6d8ebb404fe524a300d20a4ce207a11bf817e84",
+    "results": []
+   },
+   "verdict": {
+    "verdict": "accepted",
+    "reason": null,
+    "verifier_role": "forge_witness_api",
+    "verifier_release": "a6d8ebb404fe524a300d20a4ce207a11bf817e84"
+   }
+  }
+ },
+ "readback": {
+  "receipt": {
+   "claim": "a73ae898-7ad9-4e7b-97cb-f861f373564f",
+   "gameId": 2099020991,
+   "reason": "signed_verdict:signed_verdict_missing",
+   "armedAt": "2026-11-19T19:09:30.364282-05:00",
+   "custody": "qualified",
+   "outcome": "failed",
+   "readers": null,
+   "release": "a6d8ebb404fe524a300d20a4ce207a11bf817e84",
+   "verdict": {
+    "reason": null,
+    "claimId": "a73ae898-7ad9-4e7b-97cb-f861f373564f",
+    "accepted": true,
+    "deadline": "2026-11-19T20:09:29.321-05:00",
+    "verdictId": 1,
+    "verifiedAt": "2026-11-19T19:09:32.02285-05:00"
+   },
+   "witness": "qualified",
+   "requests": [
+    {
+     "jobid": 1000,
+     "stage": "capture",
+     "game_id": 2099020991,
+     "fired_at": "2026-11-19T19:09:31.794932-05:00",
+     "request_id": 1
+    },
+    {
+     "jobid": 1001,
+     "stage": "publish",
+     "game_id": 2099020991,
+     "fired_at": "2026-11-19T19:09:32.02573-05:00",
+     "request_id": 3
+    }
+   ],
+   "stoppedAt": null,
+   "approvedBy": "local-rehearsal",
+   "revisionId": null,
+   "stopReason": null,
+   "terminalAt": "2026-11-19T19:09:32.029057-05:00",
+   "playerNhlId": 8471001,
+   "tokenSha256": "c24e3760f71dac1d3270848fd9b9e00b4eb4eab9b112728554000f527173f49e",
+   "packetSha256": "0d9b3be44b51dd3265aad3909f35ab0cbb00b64074f49952f82aaefba8b5f328",
+   "captureBeganAt": "2026-11-19T19:09:31.798317-05:00",
+   "publishBeganAt": "2026-11-19T19:09:32.02679-05:00",
+   "scheduledStart": "2026-11-19T21:09:29.321-05:00",
+   "canonicalSha256": "60a052d95acba218898305af7f767042e348aea6e400f6c6109df75bfb88518b",
+   "captureFinishedAt": "2026-11-19T19:09:32.003064-05:00",
+   "committedRevision": null,
+   "publishFinishedAt": "2026-11-19T19:09:32.028928-05:00"
+  },
+  "cronRuns": [],
+  "job408Active": false,
+  "httpResponses": [
+   {
+    "body": null,
+    "error": null,
+    "stage": "capture",
+    "created": null,
+    "timedOut": null,
+    "requestId": null,
+    "statusCode": null
+   },
+   {
+    "body": null,
+    "error": null,
+    "stage": "publish",
+    "created": null,
+    "timedOut": null,
+    "requestId": null,
+    "statusCode": null
+   }
+  ],
+  "remainingLiveJobs": 0
+ }
+}

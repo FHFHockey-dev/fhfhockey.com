@@ -3,13 +3,15 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { withForgeEnv } from "lib/projections/forgeEnvScope";
 import { HOSTED_RSO_CONTEXT, readHostedRsoConsumers } from "lib/projections/pregameCapture/hostedReaders";
 import { PublicationError, publishQualifiedPregameCapture } from "lib/projections/pregameCapture/publication";
+import { gateSignedVerdict, type SignedVerdictDecision } from "lib/projections/pregameCapture/signedVerdictGate";
 import { getServiceRoleClient } from "lib/supabase/server";
 import { invokedByCron } from "utils/adminOnlyMiddleware";
 
 // Live, game-scoped FORGE publication, fired once by its own Supabase Cron job after the independent verdict deadline.
 // It publishes exactly once from the armed run's qualified claim (same release as the capture), then reads that committed
-// revision through both RSO readers for the approved player. The database refuses publication without an accepted
-// verdict by T−60 (require_live_verdict_v1), after puck drop, after a stop, or for any other claim.
+// revision through both RSO readers for the approved player. The authoritative witness gate is the independent
+// verifier's signed verdict, verified here against the pinned keys before publication and again by both readers; the
+// database also refuses publication without a verdict by T−60, after puck drop, after a stop, or for any other claim.
 export const config = { maxDuration: 240 };
 const PUBLISH_END_MS = 200_000, READERS_END_MS = 222_000, RPC_MS = 6_000;
 
@@ -40,9 +42,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (begin.status !== "started" || !Number.isSafeInteger(begin.gameId) || !begin.claimId || !begin.slateDate || !begin.scheduledStart
       || !Number.isSafeInteger(begin.playerNhlId)) return res.status(409).json({ status: begin.status, sha });
   const gameId = begin.gameId!, claimId = begin.claimId!;
+  const verdictGate = () => gateSignedVerdict(db, claimId, gameId, sha, undefined, AbortSignal.timeout(RPC_MS));
+  const signed: SignedVerdictDecision = await verdictGate();
   const scope = { STARTER_BOARD_COMPUTE_ENABLED: "true", STARTER_BOARD_SERVING_ENABLED: "true", STARTER_BOARD_CANARY_GAME_IDS: String(gameId) };
   const stages: Record<string, number> = {};
-  const { reason, revisionId, readers } = await withForgeEnv(scope, async () => {
+  const { reason, revisionId, readers } = !signed.ok
+    ? { reason: `signed_verdict:${signed.reason}`, revisionId: null, readers: null }
+    : await withForgeEnv(scope, async () => {
     let revision: string | null = null, observedAt = "", read: Readers | null = null, why: string | null = null;
     const started = Date.now();
     try {
@@ -60,14 +66,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       read = await readHostedRsoConsumers(db, {
         contextId: HOSTED_RSO_CONTEXT, playerNhlId: begin.playerNhlId!, seasonId: Number(begin.seasonId), gameId,
         slateDate: begin.slateDate!, scheduledStart: begin.scheduledStart!, claimId, revisionId: revision!, codeVersion: sha, observedAt,
-      });
+      }, new Date(), { verdictGate });
       stages.readersMs = Date.now() - readersStarted;
     } else if (!why) why = "run_deadline";
     return { reason: why, revisionId: revision, readers: read };
   });
   const elapsedMs = Date.now() - enteredAt;
   const finishMs = Math.min(RPC_MS, enteredAt + READERS_END_MS + 8_000 - Date.now());
-  const body = { sha, gameId, claimId, revisionId, readers, stages, elapsedMs };
+  const body = { sha, gameId, claimId, signedVerdict: signed, revisionId, readers, stages, elapsedMs };
   if (finishMs <= 0) return res.status(503).json({ status: "finish_unconfirmed", reason, ...body });
   try {
     const finish = await db.rpc("forge_live_publish_finish_v1", {

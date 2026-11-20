@@ -9,8 +9,7 @@
  * Prints the checks as JSON; exits 0 only when every check passes.
  */
 import { Client } from "pg";
-import { assessLiveAcceptance, type AcceptanceEvidence, type SignatureCheck } from "lib/projections/pregameCapture/liveAcceptance";
-import { loadSignedVerdict, verifySignedVerdict } from "lib/projections/pregameCapture/signedVerdictAudit";
+import { assessLiveAcceptance, type AcceptanceEvidence } from "lib/projections/pregameCapture/liveAcceptance";
 
 async function main() {
   const gameId = Number(process.argv[2]);
@@ -22,7 +21,7 @@ async function main() {
   try {
     await db.query("begin transaction read only");
     const one = async <T>(text: string, args: unknown[]) => ((await db.query(text, args)).rows[0] ?? null) as T | null;
-    const run = await one<Record<string, any>>(`select outcome, claim_id, revision_id, scheduled_start, publish_finished_at, readers
+    const run = await one<Record<string, any>>(`select outcome, claim_id, revision_id, scheduled_start, publish_finished_at, readers, expected_code_version
       from forge_pregame_capture.live_runs where game_id = $1`, [gameId]);
     const game = await one<{ start_time: Date }>(`select "startTime" as start_time from public.games where id = $1`, [gameId]);
     const claimId = run?.claim_id ?? null;
@@ -32,12 +31,14 @@ async function main() {
     const witness = claimId ? await one<Record<string, any>>(`select tsa_token_sha256 from forge_pregame_capture.witnesses where claim_id = $1`, [claimId]) : null;
     const publications = (await db.query(`select p.claim_id, p.revision_id, p.raw_sha256, p.canonical_sha256
       from forge_pregame_capture.publications p join forge_pregame_capture.claims c on c.id = p.claim_id where c.game_id = $1`, [gameId])).rows;
-    const signedVerdict = claimId ? await loadSignedVerdict(db, claimId) : null;
+    const signed = claimId ? await one<{ v: Record<string, unknown> | null }>("select public.forge_live_signed_verdict_v1($1) as v", [claimId]) : null;
+    const signedVerdict = signed?.v?.signedVerdict ?? null;
     await db.query("rollback");
 
     const iso = (v: Date | string | null | undefined) => (v == null ? null : new Date(v).toISOString());
     const evidence: AcceptanceEvidence = {
       gameId,
+      release: run?.expected_code_version ?? null,
       game: game ? { startTime: iso(game.start_time)! } : null,
       run: run ? { outcome: run.outcome, claimId: run.claim_id, revisionId: run.revision_id, scheduledStart: iso(run.scheduled_start)!,
         publishFinishedAt: iso(run.publish_finished_at), readers: run.readers } : null,
@@ -48,7 +49,7 @@ async function main() {
       signedVerdict,
       publications: publications.map(p => ({ claimId: p.claim_id, revisionId: p.revision_id, rawSha256: p.raw_sha256, canonicalSha256: p.canonical_sha256 })),
     };
-    const result = await assessLiveAcceptance(evidence, verifySignedVerdict as SignatureCheck);
+    const result = await assessLiveAcceptance(evidence);
     console.log(JSON.stringify(result, null, 1));
     process.exitCode = result.accepted ? 0 : 1;
   } finally {
