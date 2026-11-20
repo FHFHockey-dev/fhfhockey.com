@@ -423,6 +423,7 @@ function mergeRollingRunSummaries(
       aggregate.suspiciousOutputWarnings + current.suspiciousOutputWarnings,
     unknownGameIds: aggregate.unknownGameIds + current.unknownGameIds,
     freshnessBlockers: aggregate.freshnessBlockers + current.freshnessBlockers,
+    identityRefusals: [...(aggregate.identityRefusals ?? []), ...(current.identityRefusals ?? [])],
     lastProcessedPlayerId: current.lastProcessedPlayerId ?? null,
     nextResumeFrom: current.nextResumeFrom ?? null,
     totalPlayersAfterResumeFilter: current.totalPlayersAfterResumeFilter ?? 0,
@@ -967,6 +968,9 @@ export async function handler(
       runSummary,
       stoppedAtRuntimeBudget || nextResumeFrom != null
     );
+    // Players refused because an appearance has no known game id wrote nothing: the run is partial, never a success.
+    const identityRefused = runSummary?.identityRefusals?.length ?? 0;
+    const partial = stoppedAtRuntimeBudget || identityRefused > 0;
     const freshnessBlocked =
       (runSummary?.freshnessBlockers ?? 0) > 0 &&
       !bypassFreshnessBlockers &&
@@ -976,8 +980,9 @@ export async function handler(
       phase: "response",
       status: "complete",
       details: {
-        statusCode: freshnessBlocked ? 422 : stoppedAtRuntimeBudget ? 207 : 200,
+        statusCode: freshnessBlocked ? 422 : partial ? 207 : 200,
         stoppedAtRuntimeBudget,
+        identityRefused,
         nextResumeFrom,
         freshnessBlockers: runSummary?.freshnessBlockers ?? 0,
         bypassFreshnessBlockers: bypassFreshnessBlockers ?? false
@@ -1046,17 +1051,20 @@ export async function handler(
       );
     }
     // The resume cursor goes first so the cron audit's response preview keeps it.
-    res.status(stoppedAtRuntimeBudget ? 207 : 200).json({
+    res.status(partial ? 207 : 200).json({
       ...(resumeCursor ? { resumeCursor } : {}),
+      ...(identityRefused ? { identityRefusals: runSummary!.identityRefusals!.slice(0, 20) } : {}),
       message: stoppedAtRuntimeBudget
         ? "Rolling player averages stopped at the runtime budget before every player was processed; resume required."
+        : identityRefused
+          ? `Rolling player averages refused ${identityRefused} player(s) with an appearance whose game id is unknown; nothing of theirs was written.`
         : freshnessWarningOnly
           ? allowImplicitDailyFreshnessWarning
             ? "Rolling player averages processed with freshness warnings on the implicit daily window."
             : "Rolling player averages processed with freshness blockers bypassed."
           : "Rolling player averages processed successfully.",
-      success: !stoppedAtRuntimeBudget,
-      operationStatus: stoppedAtRuntimeBudget
+      success: !partial,
+      operationStatus: partial
         ? "partial"
         : freshnessWarningOnly
           ? "warning"
