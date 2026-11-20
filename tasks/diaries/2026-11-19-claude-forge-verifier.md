@@ -42,3 +42,4 @@ Every production step needs TJ's approval.
   needs `@vitest-environment node`); never `cat >` without a heredoc in this shell (it blocks on stdin).
 - Next: TJ keygen (pins public key) → rebuild bundle → deploy function → live lane wires assertSignedVerdict → arm.
 - Review fixes (00:20Z): runtime self-test before judging; Data API gate read; cron ops proven on prod restore; packet-size bench.
+- 00:23Z: with TJ's pop-up approval, generated the production witness key (keyId 469bc6093b6ffc11); private key only in the scratchpad 0600 file witness-key/forge-witness-signing-key.env (outside repo); public key pinned; bundle release ac4e3c94….

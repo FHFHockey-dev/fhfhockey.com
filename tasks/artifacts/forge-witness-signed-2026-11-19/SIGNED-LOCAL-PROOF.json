@@ -23,8 +23,8 @@
   "ownerMembersAfterInstall": 0
  },
  "edgeBundle": {
-  "release": "ea9b910040466f450a7985abc1d6d6e58283dbc3053cf356b6a3006bce64e756",
-  "bundleSha256": "d658614be9bcf3ffeadbf47eec2d7d32760d11045d1463b95b0a461ad7051cdf",
+  "release": "ac4e3c94520083dbef87f5acd7b9e0c2f0ad0de1985f3e3339d51821148f021a",
+  "bundleSha256": "8a280e3149f7a6510ce7674775cd252778548e6522c124f46bd933185e7982b5",
   "inputs": [
    "tasks/artifacts/forge-witness-signed-2026-11-19/buffer-shim.mjs",
    "web/lib/projections/pregameCapture/deadline.ts",
@@ -59,8 +59,8 @@
   "packet": true,
   "signature": true
  },
- "keyId": "ed70cd980f3b9cff",
- "release": "ea9b910040466f450a7985abc1d6d6e58283dbc3053cf356b6a3006bce64e756",
+ "keyId": "e32e39e5cb3f11bf",
+ "release": "ac4e3c94520083dbef87f5acd7b9e0c2f0ad0de1985f3e3339d51821148f021a",
  "witnessResults": {
   "good": "accepted",
   "tamperedToken": "rejected:token_invalid",
@@ -74,7 +74,7 @@
   {
    "gameId": 2099040004,
    "status": "official_unavailable",
-   "claimId": "73f9aa30-640e-4005-9163-ef288f8b08f0"
+   "claimId": "e25e6d80-7d93-4e5e-85fd-38cc9c8087d6"
   }
  ],
  "traffic": {
@@ -148,9 +148,11 @@
   "forgeTarget": "signature_invalid",
   "forgeTargetViaExecuteSql": "key_unpinned"
  },
- "auditCliWithReleaseDefault": {
+ "auditCliWithReleasePinnedKey": {
   "exit": 2,
-  "pinnedKeys": [],
+  "pinnedKeys": [
+   "469bc6093b6ffc11"
+  ],
   "reasons": [
    "verdict_missing",
    "key_unpinned"

@@ -31,11 +31,18 @@ So database grants, triggers and tables cannot stop the writer. The verdict has 
   - Every response carries `selfTest`, so the deploy smoke test proves the Deno runtime.
 
 **Code.** `web/lib/projections/pregameCapture/witnessEdgeCore.ts` is bundled reproducibly into `supabase/functions/forge-witness-verify/core.bundle.js` by `build-edge-bundle.mjs --check`.
-- `release` (now `ea9b910040466f450a7985abc1d6d6e58283dbc3053cf356b6a3006bce64e756`) is the sha256 over the bundle's 14 input files. `bundle-manifest.json` lists them.
+- `release` (now `ac4e3c94520083dbef87f5acd7b9e0c2f0ad0de1985f3e3339d51821148f021a`) is the sha256 over the bundle's 14 input files. `bundle-manifest.json` lists them.
 - The bundle imports only `node:buffer`, `node:crypto` and `node:zlib`. Signing uses WebCrypto.
 
 **Trust root.** `web/lib/projections/pregameCapture/witnessSigningKeys.ts` holds the pinned public keys.
-- It is EMPTY in this commit, so everything fails closed.
+- It pins exactly one key; any other key fails closed:
+  - keyId **`469bc6093b6ffc11`**
+  - public key (base64url raw) `VYVqYwX4rW-wgYtCc5PAvWrXZy8RAc06E6U96R3eGc4`
+  - public-key sha256 `469bc6093b6ffc1193818639185de8fb4781fe43965f9ee292b0e62d16b11a47`
+- The key was generated on 2026-11-20 at about 00:23Z on TJ's Mac, with TJ's approval, at Chef's request.
+- The private key was written once as `FORGE_WITNESS_SIGNING_KEY=<pkcs8 base64>` to a 0600 file in this session's scratchpad (`witness-key/forge-witness-signing-key.env`, in a 0700 folder). It was never printed and is outside the repository.
+- Reading the file back derives the pinned public key.
+- At deploy Chef pipes the file to `supabase secrets set --project-ref fyhftlxokyjtpndbkfse --env-file /dev/stdin` and then deletes it.
 - Nothing stored in the database is trusted.
 
 **Gate (release code).** `signedVerdict.ts`, through `checkSignedVerdict` / `assertSignedVerdict`, accepts only when all of these hold:
@@ -93,13 +100,24 @@ Gates:
 
 NHL field check: one public read-only GET of game 2026020356's landing returned `startTimeUTC 2026-11-20T02:00:00Z`, `gameDate 2026-11-19`, `FUT` / `OK`, COL (21) vs ANA (24). These are the fields and shapes the core expects.
 
+## Deploy and smoke commands
+
+- **Deploy**, from the repository root: `supabase functions deploy forge-witness-verify --project-ref fyhftlxokyjtpndbkfse`.
+  - It uploads `supabase/functions/forge-witness-verify/index.ts` and `core.bundle.js`.
+  - Release `ac4e3c94…`; bundle sha256 in `bundle-manifest.json` (`8a280e31…`).
+  - Run `node tasks/artifacts/forge-witness-signed-2026-11-19/build-edge-bundle.mjs --check` first.
+- **verify_jwt = true.** The cron (`arm-signed-verify.sql`) invokes it with `net.http_post` to `https://fyhftlxokyjtpndbkfse.supabase.co/functions/v1/forge-witness-verify`, carrying `Authorization: Bearer <project anon key>` and body `{}`.
+- **Deno smoke test**, local: `bash tasks/artifacts/forge-witness-signed-2026-11-19/deno-smoke.sh`.
+  - It needs `brew install deno` and uses a throwaway key with no database.
+  - Pass is `selfTest` all true. The status is `pending_unconfirmed`, because there is no database.
+
 ## Deploy steps (each needs TJ's approval; Chef applies)
 
 1. **SQL:** apply `forge-witness-signed.sql` as postgres; sha256 above. `forge_witness_api` must be in the Data API exposed schemas.
-2. **Key** (TJ, logged in to the Supabase CLI): `node tasks/artifacts/forge-witness-signed-2026-11-19/witness_signing_keygen.mjs --project-ref fyhftlxokyjtpndbkfse`.
+2. **Key:** already generated and pinned (keyId `469bc6093b6ffc11`). Pipe the 0600 file to `supabase secrets set --env-file /dev/stdin`, then delete it. For a later rotation, run `witness_signing_keygen.mjs`:
    - It generates the pair and pipes `FORGE_WITNESS_SIGNING_KEY=…` to `supabase secrets set --env-file /dev/stdin`, so it never appears in argv, disk or chat.
    - It prints only `keyId` and the public key, and pins the public key in `witnessSigningKeys.ts`.
-3. **Rebuild** the bundle with `node tasks/artifacts/forge-witness-signed-2026-11-19/build-edge-bundle.mjs`; the keys file is an input, so the release id changes. Commit the keys file, bundle and manifest.
+3. **Rebuild** (already done for this key) the bundle with `node tasks/artifacts/forge-witness-signed-2026-11-19/build-edge-bundle.mjs`; the keys file is an input, so the release id changes. Commit the keys file, bundle and manifest.
 4. **Deploy:** `supabase functions deploy forge-witness-verify --project-ref fyhftlxokyjtpndbkfse` from the repo root (`verify_jwt = true` in `supabase/config.toml`).
    - **Smoke test (also the Deno runtime check):** POST with the anon key and expect `{"status":"idle"}`, with `release` equal to the manifest and `keyId` equal to the pinned id.
 5. **Live lane:** the publish route and readers call `assertSignedVerdict(await signed_verdict_v1(claim), {claimId, gameId, raw, canonical, tokenSha})`. Deploy the release that pins the key.
