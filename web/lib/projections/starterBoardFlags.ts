@@ -1,5 +1,7 @@
+import { forgeEnv } from "./forgeEnvScope";
+
 /** Server rollout switches. Explicit new values override the legacy combined flag. */
-export function starterBoardFlags(env: Readonly<Record<string, string | undefined>> = process.env) {
+export function starterBoardFlags(env: Readonly<Record<string, string | undefined>> = forgeEnv()) {
   const legacy = env.START_CHART_GAME_REVISIONS === "true";
   const enabled = (name: string, fallback = legacy) => env[name] == null ? fallback : env[name] === "true";
   return {
@@ -12,7 +14,7 @@ export function starterBoardFlags(env: Readonly<Record<string, string | undefine
 }
 
 /** Omitted means full slate; an invalid configured canary must fail closed. */
-export function starterBoardCanaryGameIds(env: Readonly<Record<string, string | undefined>> = process.env): number[] | null {
+export function starterBoardCanaryGameIds(env: Readonly<Record<string, string | undefined>> = forgeEnv()): number[] | null {
   const raw = env.STARTER_BOARD_CANARY_GAME_IDS;
   if (raw == null) return null;
   const entries = raw.split(",").map((value) => value.trim());
@@ -25,7 +27,7 @@ export function starterBoardCanaryGameIds(env: Readonly<Record<string, string | 
 }
 
 export function starterBoardScopeAllowed(gameIds: readonly number[] | undefined,
-  env: Readonly<Record<string, string | undefined>> = process.env): boolean {
+  env: Readonly<Record<string, string | undefined>> = forgeEnv()): boolean {
   const canary = starterBoardCanaryGameIds(env);
   return canary === null || Boolean(gameIds?.length && gameIds.every((id) => canary.includes(id)));
 }

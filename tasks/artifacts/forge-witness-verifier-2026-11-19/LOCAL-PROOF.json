@@ -1,0 +1,964 @@
+{
+ "postgres": "PostgreSQL 15.19 (Homebrew) on aarch64-apple-darwin27.0.0",
+ "postgrest": "PostgREST 16.6",
+ "migration": {
+  "file": "forge-witness-verifier.sql",
+  "sha256": "9673316c4e108f9ea8953603e7afd40009d62af828ae6eb21be2d2022651052a",
+  "secondApplyRefused": true,
+  "outsideDumpAdded": [
+   "GRANT USAGE ON SCHEMA forge_pregame_capture TO forge_witness_owner;",
+   "GRANT SELECT ON TABLE forge_pregame_capture.artifacts TO forge_witness_owner;",
+   "GRANT SELECT ON TABLE forge_pregame_capture.claims TO forge_witness_owner;",
+   "GRANT SELECT ON TABLE forge_pregame_capture.outcomes TO forge_witness_owner;",
+   "GRANT SELECT ON TABLE forge_pregame_capture.save_fences TO forge_witness_owner;",
+   "GRANT SELECT ON TABLE forge_pregame_capture.witnesses TO forge_witness_owner;"
+  ],
+  "outsideDumpRemoved": [],
+  "newRoles": [
+   "forge_witness_api",
+   "forge_witness_owner"
+  ],
+  "changedMemberships": [
+   [
+    "authenticator",
+    "anon,authenticated,forge_witness_api,service_role"
+   ]
+  ],
+  "roleAttributes": [
+   [
+    "forge_witness_api",
+    false,
+    false,
+    false,
+    false
+   ],
+   [
+    "forge_witness_owner",
+    false,
+    false,
+    false,
+    false
+   ]
+  ]
+ },
+ "auditBeforeInstall": {
+  "evaluatedAs": "public",
+  "installed": false,
+  "installer": {
+   "role": "postgres",
+   "bypassrls": true,
+   "super": true
+  },
+  "exposedSchemas": [
+   "graphql_public",
+   "public"
+  ],
+  "roles": null,
+  "apiRoleMemberOf": [],
+  "membersOfApiRole": [],
+  "ownerMembers": [],
+  "ownerOutside": [],
+  "schemaUsage": {
+   "graphql_public": false,
+   "public": true
+  },
+  "writableRelations": [],
+  "readableRelationsOutsideApi": [],
+  "executableFunctionsOutsideApi": 1,
+  "executableDefinersOutsideApi": [],
+  "exposedFunctionsReachingPgsodium": [],
+  "pgsodiumSchemaExposed": false,
+  "pgsodiumEscalationFunctions": [],
+  "serviceRoleOnWitnessObjects": [],
+  "writerSecretReach": [
+   {
+    "object": "schema cron usage",
+    "service_role_select": false
+   },
+   {
+    "object": "table cron.job",
+    "service_role_select": false
+   },
+   {
+    "object": "table cron.job_run_details",
+    "service_role_select": null
+   },
+   {
+    "object": "table forge_witness.credentials",
+    "service_role_select": null
+   },
+   {
+    "object": "table forge_witness_ops.fires",
+    "service_role_select": null
+   },
+   {
+    "object": "table net._http_response",
+    "service_role_select": false
+   },
+   {
+    "object": "table net.http_request_queue",
+    "service_role_select": false
+   },
+   {
+    "object": "table vault.decrypted_secrets",
+    "service_role_select": true
+   }
+  ],
+  "receiptWriters": [],
+  "witnessFunctions": [],
+  "writerReachableDynamicDefiners": [],
+  "receiptTriggers": [],
+  "verdict": "ok"
+ },
+ "auditInstalled": {
+  "evaluatedAs": "forge_witness_api",
+  "installed": true,
+  "installer": {
+   "role": "postgres",
+   "bypassrls": true,
+   "super": true
+  },
+  "exposedSchemas": [
+   "graphql_public",
+   "public",
+   "forge_witness_api"
+  ],
+  "roles": {
+   "forge_witness_owner": {
+    "login": false,
+    "super": false,
+    "createrole": false,
+    "bypassrls": false,
+    "inherit": false,
+    "config": null
+   },
+   "forge_witness_api": {
+    "login": false,
+    "super": false,
+    "createrole": false,
+    "bypassrls": false,
+    "inherit": false,
+    "config": [
+     "statement_timeout=20s",
+     "TimeZone=UTC"
+    ]
+   }
+  },
+  "apiRoleMemberOf": [],
+  "membersOfApiRole": [
+   "authenticator"
+  ],
+  "ownerMembers": [],
+  "ownerOutside": [
+   {
+    "relation": "forge_pregame_capture.artifacts",
+    "privileges": [
+     "SELECT"
+    ]
+   },
+   {
+    "relation": "forge_pregame_capture.claims",
+    "privileges": [
+     "SELECT"
+    ]
+   },
+   {
+    "relation": "forge_pregame_capture.outcomes",
+    "privileges": [
+     "SELECT"
+    ]
+   },
+   {
+    "relation": "forge_pregame_capture.save_fences",
+    "privileges": [
+     "SELECT"
+    ]
+   },
+   {
+    "relation": "forge_pregame_capture.witnesses",
+    "privileges": [
+     "SELECT"
+    ]
+   }
+  ],
+  "schemaUsage": {
+   "graphql_public": false,
+   "public": true,
+   "forge_witness_api": true
+  },
+  "writableRelations": [],
+  "readableRelationsOutsideApi": [],
+  "executableFunctionsOutsideApi": 1,
+  "executableDefinersOutsideApi": [],
+  "exposedFunctionsReachingPgsodium": [],
+  "pgsodiumSchemaExposed": false,
+  "pgsodiumEscalationFunctions": [],
+  "serviceRoleOnWitnessObjects": [
+   {
+    "object": "function forge_witness.publication_gate_v1",
+    "privileges": [
+     "EXECUTE"
+    ]
+   },
+   {
+    "object": "function forge_witness.require_accepted_v1",
+    "privileges": [
+     "EXECUTE"
+    ]
+   },
+   {
+    "object": "schema forge_witness",
+    "privileges": [
+     "USAGE"
+    ]
+   }
+  ],
+  "writerSecretReach": [
+   {
+    "object": "schema cron usage",
+    "service_role_select": false
+   },
+   {
+    "object": "table cron.job",
+    "service_role_select": false
+   },
+   {
+    "object": "table cron.job_run_details",
+    "service_role_select": null
+   },
+   {
+    "object": "table forge_witness.credentials",
+    "service_role_select": false
+   },
+   {
+    "object": "table forge_witness_ops.fires",
+    "service_role_select": null
+   },
+   {
+    "object": "table net._http_response",
+    "service_role_select": false
+   },
+   {
+    "object": "table net.http_request_queue",
+    "service_role_select": false
+   },
+   {
+    "object": "table vault.decrypted_secrets",
+    "service_role_select": true
+   }
+  ],
+  "receiptWriters": [],
+  "witnessFunctions": [
+   {
+    "fn": "forge_witness.arm_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "postgres"
+    ]
+   },
+   {
+    "fn": "forge_witness.credential_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "postgres"
+    ]
+   },
+   {
+    "fn": "forge_witness.evidence_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "postgres"
+    ]
+   },
+   {
+    "fn": "forge_witness.publication_gate_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "postgres",
+     "service_role"
+    ]
+   },
+   {
+    "fn": "forge_witness.record_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "postgres"
+    ]
+   },
+   {
+    "fn": "forge_witness.reject_mutation",
+    "owner": "forge_witness_owner",
+    "definer": false,
+    "executable_by": [
+     "postgres"
+    ]
+   },
+   {
+    "fn": "forge_witness.require_accepted_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "postgres",
+     "service_role"
+    ]
+   },
+   {
+    "fn": "forge_witness.revoke_credential_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "postgres"
+    ]
+   },
+   {
+    "fn": "forge_witness.schedule_v1",
+    "owner": "postgres",
+    "definer": true,
+    "executable_by": []
+   },
+   {
+    "fn": "forge_witness.set_credential_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "postgres"
+    ]
+   },
+   {
+    "fn": "forge_witness.status_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "postgres"
+    ]
+   },
+   {
+    "fn": "forge_witness_api.evidence_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "forge_witness_api",
+     "postgres"
+    ]
+   },
+   {
+    "fn": "forge_witness_api.pending_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "forge_witness_api",
+     "postgres"
+    ]
+   },
+   {
+    "fn": "forge_witness_api.record_v1",
+    "owner": "forge_witness_owner",
+    "definer": true,
+    "executable_by": [
+     "forge_witness_api",
+     "postgres"
+    ]
+   }
+  ],
+  "writerReachableDynamicDefiners": [],
+  "receiptTriggers": [
+   {
+    "relname": "targets",
+    "tgname": "targets_immutable",
+    "tgenabled": "A"
+   },
+   {
+    "relname": "targets",
+    "tgname": "targets_no_truncate",
+    "tgenabled": "A"
+   },
+   {
+    "relname": "verdicts",
+    "tgname": "verdicts_immutable",
+    "tgenabled": "A"
+   },
+   {
+    "relname": "verdicts",
+    "tgname": "verdicts_no_truncate",
+    "tgenabled": "A"
+   }
+  ],
+  "verdict": "ok"
+ },
+ "auditAfterRuns": {
+  "verdict": "ok"
+ },
+ "route": {
+  "writer": {
+   "claimId": "be97e1ae-3a09-4549-9280-69ea6daf5b5d",
+   "outcome": "qualified",
+   "captureMs": 241,
+   "tsaCalls": 1,
+   "traffic": {
+    "service_role@public": 147
+   }
+  },
+  "verifier": {
+   "firstGet": {
+    "httpStatus": 200,
+    "wallMs": 47,
+    "elapsedMs": 47
+   },
+   "matrix": {
+    "claim_missing": {
+     "gameId": 2099030001,
+     "expected": "claim_missing",
+     "got": "claim_missing",
+     "independent": null,
+     "verifiedAt": null,
+     "deadlineAt": null
+    },
+    "not_terminal": {
+     "gameId": 2099030002,
+     "expected": "not_terminal",
+     "got": "not_terminal",
+     "independent": null,
+     "verifiedAt": null,
+     "deadlineAt": null
+    },
+    "artifact_missing": {
+     "gameId": 2099030003,
+     "expected": "rejected:artifact_missing",
+     "got": "rejected:artifact_missing",
+     "independent": {
+      "verdict": "rejected",
+      "reason": "artifact_missing"
+     },
+     "verifiedAt": "2026-11-19T23:35:28.289345+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
+    },
+    "game_mismatch": {
+     "gameId": 2099030004,
+     "expected": "rejected:game_binding",
+     "got": "rejected:game_binding",
+     "independent": {
+      "verdict": "rejected",
+      "reason": "game_binding"
+     },
+     "verifiedAt": "2026-11-19T23:35:28.293394+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
+    },
+    "claim_mismatch": {
+     "gameId": 2099030005,
+     "expected": "rejected:claim_binding",
+     "got": "rejected:claim_binding",
+     "independent": {
+      "verdict": "rejected",
+      "reason": "claim_binding"
+     },
+     "verifiedAt": "2026-11-19T23:35:28.296267+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
+    },
+    "hash_mismatch": {
+     "gameId": 2099030006,
+     "expected": "rejected:hash_mismatch",
+     "got": "rejected:hash_mismatch",
+     "independent": {
+      "verdict": "rejected",
+      "reason": "hash_mismatch"
+     },
+     "verifiedAt": "2026-11-19T23:35:28.298736+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
+    },
+    "cutoff_mismatch": {
+     "gameId": 2099030007,
+     "expected": "rejected:cutoff_mismatch",
+     "got": "rejected:cutoff_mismatch",
+     "independent": {
+      "verdict": "rejected",
+      "reason": "cutoff_mismatch"
+     },
+     "verifiedAt": "2026-11-19T23:35:28.301121+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
+    },
+    "token_tampered": {
+     "gameId": 2099030008,
+     "expected": "rejected:token_invalid",
+     "got": "rejected:token_invalid",
+     "independent": {
+      "verdict": "rejected",
+      "reason": "token_invalid"
+     },
+     "verifiedAt": "2026-11-19T23:35:28.303804+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
+    },
+    "token_wrong_profile": {
+     "gameId": 2099030009,
+     "expected": "rejected:token_invalid",
+     "got": "rejected:token_invalid",
+     "independent": {
+      "verdict": "rejected",
+      "reason": "token_invalid"
+     },
+     "verifiedAt": "2026-11-19T23:35:28.306358+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
+    },
+    "witness_late": {
+     "gameId": 2099030010,
+     "expected": "rejected:witness_late",
+     "got": "rejected:witness_late",
+     "independent": {
+      "verdict": "rejected",
+      "reason": "witness_late"
+     },
+     "verifiedAt": "2026-11-19T23:35:28.308803+00:00",
+     "deadlineAt": "2026-11-19T23:34:58.224037+00:00"
+    },
+    "verification_late": {
+     "gameId": 2099030011,
+     "expected": "rejected:verification_late",
+     "got": "rejected:verification_late",
+     "independent": {
+      "verdict": "rejected",
+      "reason": "verification_late"
+     },
+     "verifiedAt": "2026-11-19T23:35:28.311531+00:00",
+     "deadlineAt": "2026-11-19T23:34:58.224037+00:00"
+    },
+    "schedule_changed": {
+     "gameId": 2099030012,
+     "expected": "rejected:schedule_changed",
+     "got": "rejected:schedule_changed",
+     "independent": {
+      "verdict": "rejected",
+      "reason": "schedule_changed"
+     },
+     "verifiedAt": "2026-11-19T23:35:28.314587+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
+    },
+    "team_rows_missing": {
+     "gameId": 2099030013,
+     "expected": "schedule_unavailable",
+     "got": "schedule_unavailable",
+     "independent": null,
+     "verifiedAt": null,
+     "deadlineAt": null
+    },
+    "real": {
+     "gameId": 2099020991,
+     "expected": "accepted",
+     "got": "accepted",
+     "independent": {
+      "verdict": "accepted",
+      "reason": null
+     },
+     "verifiedAt": "2026-11-19T23:35:28.325088+00:00",
+     "deadlineAt": "2026-11-20T00:35:20.974+00:00"
+    }
+   },
+   "realVerdict": {
+    "id": "11",
+    "claim_id": "be97e1ae-3a09-4549-9280-69ea6daf5b5d",
+    "game_id": "2099020991",
+    "policy_id": "pregame-native-v1",
+    "verdict": "accepted",
+    "reason": null,
+    "raw_sha256": "cf4304b2d586fc30d3ef9b513cc2c600b804650080bf4a25be72b50382047dd2",
+    "canonical_sha256": "92ecee574eb9f3cb561147410f10b957cc63751159a71f7ebd7bcd88a7b34b88",
+    "tsa_token_sha256": "77c8c140b03cf3bb4f302b2615c745ed77e563da7125a3b6ba1f16e8024f12ec",
+    "statement_sha256": "45b10f15c3058544c3aaa3be783731e0bd77a64ca67ec1bf09599f67238d15d3",
+    "input_cutoff": "2026-11-19T23:35:28.016Z",
+    "scheduled_start": "2026-11-20T01:35:20.974Z",
+    "deadline_at": "2026-11-20T00:35:20.974Z",
+    "verified_at": "2026-11-19T23:35:28.325Z",
+    "verifier_role": "forge_witness_api",
+    "verifier_release": "19f8ee6831eabd2208a8409ae52d17db526c24dc"
+   },
+   "secondGet": {
+    "httpStatus": 200,
+    "results": [
+     {
+      "gameId": 2099030001,
+      "status": "claim_missing"
+     },
+     {
+      "gameId": 2099030002,
+      "status": "not_terminal",
+      "claimId": "60cef0c5-038e-456e-a820-a764c7985c89"
+     },
+     {
+      "gameId": 2099030013,
+      "status": "schedule_unavailable",
+      "claimId": "ee9c1d24-a418-4b7b-9c50-080c9ae6f8bb"
+     }
+    ]
+   },
+   "duplicateRecord": {
+    "httpStatus": 200,
+    "created": false
+   },
+   "race": [
+    {
+     "gameId": 2099030014,
+     "status": "duplicate",
+     "claimId": "4102be8c-d5fb-476f-9241-4326d839d91c",
+     "verdict": "accepted",
+     "reason": null,
+     "independent": {
+      "verdict": "accepted",
+      "reason": null
+     },
+     "verifiedAt": "2026-11-19T23:35:28.342845+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
+    },
+    {
+     "gameId": 2099030014,
+     "status": "recorded",
+     "claimId": "4102be8c-d5fb-476f-9241-4326d839d91c",
+     "verdict": "accepted",
+     "reason": null,
+     "independent": {
+      "verdict": "accepted",
+      "reason": null
+     },
+     "verifiedAt": "2026-11-19T23:35:28.342845+00:00",
+     "deadlineAt": "2026-11-20T00:35:28.224037+00:00"
+    }
+   ],
+   "verdictRowsUnchangedByDuplicates": true,
+   "traffic": {
+    "witness@forge_witness_api": 42
+   },
+   "routeErrors": []
+  },
+  "credentialRefusals": {
+   "wrongCronSecret": {
+    "httpStatus": 401,
+    "status": "unauthorized"
+   },
+   "cronSecretOnly": {
+    "httpStatus": 401,
+    "status": "witness_credential_required"
+   },
+   "witnessTokenOnly": {
+    "httpStatus": 401,
+    "status": "unauthorized"
+   },
+   "serviceRoleTokenAsWitness": {
+    "httpStatus": 401,
+    "status": "witness_credential_required"
+   },
+   "authenticatedTokenAsWitness": {
+    "httpStatus": 401,
+    "status": "witness_credential_required"
+   },
+   "anonTokenAsWitness": {
+    "httpStatus": 401,
+    "status": "witness_credential_required"
+   }
+  },
+  "databaseRechecks": {
+   "db_late": {
+    "clientSaid": "accepted",
+    "stored": "rejected:verification_late"
+   },
+   "db_hash": {
+    "clientSaid": "accepted",
+    "stored": "rejected:hash_mismatch"
+   },
+   "db_unarmed_claim": {
+    "httpStatus": 400,
+    "stored": 0
+   }
+  },
+  "gates": {
+   "real": {
+    "reason": null,
+    "claimId": "be97e1ae-3a09-4549-9280-69ea6daf5b5d",
+    "accepted": true,
+    "deadline": "2026-11-19T19:35:20.974-05:00",
+    "verdictId": 11,
+    "verifiedAt": "2026-11-19T18:35:28.325088-05:00"
+   },
+   "realWrongCanonical": {
+    "reason": "hash_mismatch",
+    "claimId": "be97e1ae-3a09-4549-9280-69ea6daf5b5d",
+    "accepted": false,
+    "deadline": "2026-11-19T19:35:20.974-05:00",
+    "verdictId": 11,
+    "verifiedAt": "2026-11-19T18:35:28.325088-05:00"
+   },
+   "realWrongToken": {
+    "reason": "hash_mismatch",
+    "claimId": "be97e1ae-3a09-4549-9280-69ea6daf5b5d",
+    "accepted": false,
+    "deadline": "2026-11-19T19:35:20.974-05:00",
+    "verdictId": 11,
+    "verifiedAt": "2026-11-19T18:35:28.325088-05:00"
+   },
+   "rejectedClaim": {
+    "reason": "verdict_rejected",
+    "claimId": "b2c4fb8c-c56f-4306-b364-0f400ce0ddfb",
+    "accepted": false,
+    "deadline": "2026-11-19T19:35:28.224037-05:00",
+    "verdictId": 2,
+    "verifiedAt": "2026-11-19T18:35:28.293394-05:00"
+   },
+   "unverifiedClaim": {
+    "reason": "verdict_missing",
+    "claimId": "60cef0c5-038e-456e-a820-a764c7985c89",
+    "accepted": false,
+    "deadline": "2026-11-19T19:35:28.224037-05:00",
+    "verdictId": null,
+    "verifiedAt": null
+   },
+   "unknownClaim": {
+    "reason": "verdict_missing",
+    "claimId": "ee8fa4ac-ff63-498a-bd51-dd92874ee511",
+    "accepted": false,
+    "deadline": null,
+    "verdictId": null,
+    "verifiedAt": null
+   },
+   "forgedLate": {
+    "reason": "verified_late",
+    "claimId": "76005f0c-48e9-41f7-8d70-0297f2c21902",
+    "accepted": false,
+    "deadline": "2026-11-19T18:34:58.224037-05:00",
+    "verdictId": 15,
+    "verifiedAt": "2026-11-19T18:35:28.366202-05:00"
+   },
+   "raceBeforeGamesRowRemoved": {
+    "reason": null,
+    "claimId": "4102be8c-d5fb-476f-9241-4326d839d91c",
+    "accepted": true,
+    "deadline": "2026-11-19T19:35:28.224037-05:00",
+    "verdictId": 12,
+    "verifiedAt": "2026-11-19T18:35:28.342845-05:00"
+   },
+   "raceGamesRowInvisible": {
+    "reason": "schedule_unavailable",
+    "claimId": "4102be8c-d5fb-476f-9241-4326d839d91c",
+    "accepted": false,
+    "deadline": null,
+    "verdictId": 12,
+    "verifiedAt": "2026-11-19T18:35:28.342845-05:00"
+   }
+  },
+  "requireAccepted": {
+   "accepted": true,
+   "refused": "42501 witness_verdict_required (verdict_rejected)"
+  },
+  "sqlDenials": {
+   "service_role: insert verdict": "42501 permission denied for table verdicts",
+   "service_role: update verdict": "42501 permission denied for table verdicts",
+   "service_role: delete verdict": "42501 permission denied for table verdicts",
+   "service_role: truncate verdicts": "42501 permission denied for table verdicts",
+   "service_role: disable triggers": "42501 must be owner of table verdicts",
+   "service_role: drop verdicts": "42501 must be owner of table verdicts",
+   "service_role: create table in forge_witness": "42501 permission denied for schema forge_witness",
+   "service_role: create function in forge_witness_api": "42501 permission denied for schema forge_witness_api",
+   "service_role: insert target": "42501 permission denied for table targets",
+   "service_role: call private record": "42501 permission denied for function record_v1",
+   "service_role: call arm": "42501 permission denied for function arm_v1",
+   "service_role: call API record": "42501 permission denied for schema forge_witness_api",
+   "service_role: call API evidence": "42501 permission denied for schema forge_witness_api",
+   "anon: insert verdict": "42501 permission denied for schema forge_witness",
+   "anon: update verdict": "42501 permission denied for schema forge_witness",
+   "anon: delete verdict": "42501 permission denied for schema forge_witness",
+   "anon: truncate verdicts": "42501 permission denied for schema forge_witness",
+   "anon: disable triggers": "42501 permission denied for schema forge_witness",
+   "anon: drop verdicts": "42501 permission denied for schema forge_witness",
+   "anon: create table in forge_witness": "42501 permission denied for schema forge_witness",
+   "anon: create function in forge_witness_api": "42501 permission denied for schema forge_witness_api",
+   "anon: insert target": "42501 permission denied for schema forge_witness",
+   "anon: call private record": "42501 permission denied for schema forge_witness",
+   "anon: call arm": "42501 permission denied for schema forge_witness",
+   "anon: read custody claims": "42501 permission denied for schema forge_pregame_capture",
+   "anon: call API record": "42501 permission denied for schema forge_witness_api",
+   "anon: call API evidence": "42501 permission denied for schema forge_witness_api",
+   "authenticated: insert verdict": "42501 permission denied for schema forge_witness",
+   "authenticated: update verdict": "42501 permission denied for schema forge_witness",
+   "authenticated: delete verdict": "42501 permission denied for schema forge_witness",
+   "authenticated: truncate verdicts": "42501 permission denied for schema forge_witness",
+   "authenticated: disable triggers": "42501 permission denied for schema forge_witness",
+   "authenticated: drop verdicts": "42501 permission denied for schema forge_witness",
+   "authenticated: create table in forge_witness": "42501 permission denied for schema forge_witness",
+   "authenticated: create function in forge_witness_api": "42501 permission denied for schema forge_witness_api",
+   "authenticated: insert target": "42501 permission denied for schema forge_witness",
+   "authenticated: call private record": "42501 permission denied for schema forge_witness",
+   "authenticated: call arm": "42501 permission denied for schema forge_witness",
+   "authenticated: read custody claims": "42501 permission denied for schema forge_pregame_capture",
+   "authenticated: call API record": "42501 permission denied for schema forge_witness_api",
+   "authenticated: call API evidence": "42501 permission denied for schema forge_witness_api",
+   "authenticator: insert verdict": "42501 permission denied for schema forge_witness",
+   "authenticator: update verdict": "42501 permission denied for schema forge_witness",
+   "authenticator: delete verdict": "42501 permission denied for schema forge_witness",
+   "authenticator: truncate verdicts": "42501 permission denied for schema forge_witness",
+   "authenticator: disable triggers": "42501 permission denied for schema forge_witness",
+   "authenticator: drop verdicts": "42501 permission denied for schema forge_witness",
+   "authenticator: create table in forge_witness": "42501 permission denied for schema forge_witness",
+   "authenticator: create function in forge_witness_api": "42501 permission denied for schema forge_witness_api",
+   "authenticator: insert target": "42501 permission denied for schema forge_witness",
+   "authenticator: call private record": "42501 permission denied for schema forge_witness",
+   "authenticator: call arm": "42501 permission denied for schema forge_witness",
+   "authenticator: read custody claims": "42501 permission denied for schema forge_pregame_capture",
+   "authenticator: call API record": "42501 permission denied for schema forge_witness_api",
+   "authenticator: call API evidence": "42501 permission denied for schema forge_witness_api",
+   "forge_witness_api: insert verdict": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: update verdict": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: delete verdict": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: truncate verdicts": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: disable triggers": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: drop verdicts": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: create table in forge_witness": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: create function in forge_witness_api": "42501 permission denied for schema forge_witness_api",
+   "forge_witness_api: insert target": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: call private record": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: call arm": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: read custody claims": "42501 permission denied for schema forge_pregame_capture",
+   "forge_witness_owner: update verdict": "42501 forge_witness rows are immutable",
+   "forge_witness_owner: delete verdict": "42501 forge_witness rows are immutable",
+   "forge_witness_owner: truncate verdicts": "42501 forge_witness rows are immutable"
+  },
+  "httpDenials": {
+   "service_role: RPC forge_witness_api.record_v1": 403,
+   "service_role: RPC forge_witness_api.evidence_v1": 403,
+   "service_role: RPC forge_witness_api.pending_v1": 403,
+   "service_role: Accept-Profile forge_witness": 406,
+   "service_role: Content-Profile forge_witness (insert)": 406,
+   "anon: RPC forge_witness_api.record_v1": 401,
+   "anon: RPC forge_witness_api.evidence_v1": 401,
+   "anon: RPC forge_witness_api.pending_v1": 401,
+   "anon: Accept-Profile forge_witness": 406,
+   "anon: Content-Profile forge_witness (insert)": 406,
+   "authenticated: RPC forge_witness_api.record_v1": 403,
+   "authenticated: RPC forge_witness_api.evidence_v1": 403,
+   "authenticated: RPC forge_witness_api.pending_v1": 403,
+   "authenticated: Accept-Profile forge_witness": 406,
+   "authenticated: Content-Profile forge_witness (insert)": 406,
+   "no token: RPC pending_v1": 401,
+   "witness: GET public.games": 403,
+   "witness: POST public.games": 403,
+   "witness: RPC public.forge_pregame_capture_read_v1": 403,
+   "witness: RPC public.forge_pregame_capture_record_outcome_v1": 403,
+   "witness: Accept-Profile forge_witness": 406,
+   "witness: Accept-Profile forge_pregame_capture": 406,
+   "witness: Accept-Profile pgsodium": 406,
+   "witness: Accept-Profile vault": 406,
+   "witness: record for an unarmed game": 403,
+   "witness: malformed verdict": 400
+  },
+  "positiveControl": 200
+ },
+ "ops": {
+  "fired": [
+   "fired 1",
+   "fired 2",
+   "fires_spent"
+  ],
+  "request": {
+   "url": "https://fhfhockey.com/api/v1/db/forge-witness-verify",
+   "timeoutMs": 60000
+  },
+  "readback": {
+   "gameId": 2099039999,
+   "fires": [
+    {
+     "fire": 1,
+     "firedAt": "2026-11-19T18:35:28.486314-05:00",
+     "requestId": 1,
+     "statusCode": 200,
+     "timedOut": false,
+     "error": null,
+     "body": "{\"status\": \"ok\", \"results\": [{\"gameId\": 2099039999, \"status\": \"claim_missing\"}]}"
+    },
+    {
+     "fire": 2,
+     "firedAt": "2026-11-19T18:35:28.486715-05:00",
+     "requestId": 2,
+     "statusCode": 200,
+     "timedOut": false,
+     "error": null,
+     "body": "{\"status\": \"ok\", \"results\": [{\"gameId\": 2099039999, \"status\": \"claim_missing\"}]}"
+    }
+   ],
+   "target": {
+    "gameId": 2099039999,
+    "armedAt": "2026-11-19T18:35:28.481304-05:00",
+    "verdict": null
+   },
+   "gate": null,
+   "registeredJobs": 0
+  },
+  "realGameGate": {
+   "reason": null,
+   "claimId": "be97e1ae-3a09-4549-9280-69ea6daf5b5d",
+   "accepted": true,
+   "deadline": "2026-11-19T19:35:20.974-05:00",
+   "verdictId": 11,
+   "verifiedAt": "2026-11-19T18:35:28.325088-05:00"
+  },
+  "rearmRefused": true,
+  "unreadableScheduleArmRefused": true,
+  "credentialSetFromStdin": true,
+  "secretDenials": {
+   "service_role: read credentials": "42501 permission denied for table credentials",
+   "service_role: read credential via definer": "42501 permission denied for function credential_v1",
+   "service_role: set credential": "42501 permission denied for function set_credential_v1",
+   "service_role: revoke credential": "42501 permission denied for function revoke_credential_v1",
+   "service_role: read cron.job": "42501 permission denied for schema cron",
+   "service_role: read pg_net queue": "42501 permission denied for schema net",
+   "service_role: read pg_net responses": "42501 permission denied for schema net",
+   "service_role: read fires": "42501 permission denied for schema forge_witness_ops",
+   "service_role: call fire": "42501 permission denied for schema forge_witness_ops",
+   "anon: read credentials": "42501 permission denied for schema forge_witness",
+   "anon: read credential via definer": "42501 permission denied for schema forge_witness",
+   "anon: set credential": "42501 permission denied for schema forge_witness",
+   "anon: revoke credential": "42501 permission denied for schema forge_witness",
+   "anon: read cron.job": "42501 permission denied for schema cron",
+   "anon: read pg_net queue": "42501 permission denied for schema net",
+   "anon: read pg_net responses": "42501 permission denied for schema net",
+   "anon: read fires": "42501 permission denied for schema forge_witness_ops",
+   "anon: call fire": "42501 permission denied for schema forge_witness_ops",
+   "authenticated: read credentials": "42501 permission denied for schema forge_witness",
+   "authenticated: read credential via definer": "42501 permission denied for schema forge_witness",
+   "authenticated: set credential": "42501 permission denied for schema forge_witness",
+   "authenticated: revoke credential": "42501 permission denied for schema forge_witness",
+   "authenticated: read cron.job": "42501 permission denied for schema cron",
+   "authenticated: read pg_net queue": "42501 permission denied for schema net",
+   "authenticated: read pg_net responses": "42501 permission denied for schema net",
+   "authenticated: read fires": "42501 permission denied for schema forge_witness_ops",
+   "authenticated: call fire": "42501 permission denied for schema forge_witness_ops",
+   "forge_witness_api: read credentials": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: read credential via definer": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: set credential": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: revoke credential": "42501 permission denied for schema forge_witness",
+   "forge_witness_api: read cron.job": "42501 permission denied for schema cron",
+   "forge_witness_api: read pg_net queue": "42501 permission denied for schema net",
+   "forge_witness_api: read pg_net responses": "42501 permission denied for schema net",
+   "forge_witness_api: read fires": "42501 permission denied for schema forge_witness_ops",
+   "forge_witness_api: call fire": "42501 permission denied for schema forge_witness_ops",
+   "authenticator: read credentials": "42501 permission denied for schema forge_witness",
+   "authenticator: read credential via definer": "42501 permission denied for schema forge_witness",
+   "authenticator: set credential": "42501 permission denied for schema forge_witness",
+   "authenticator: revoke credential": "42501 permission denied for schema forge_witness",
+   "authenticator: read cron.job": "42501 permission denied for schema cron",
+   "authenticator: read pg_net queue": "42501 permission denied for schema net",
+   "authenticator: read pg_net responses": "42501 permission denied for schema net",
+   "authenticator: read fires": "42501 permission denied for schema forge_witness_ops",
+   "authenticator: call fire": "42501 permission denied for schema forge_witness_ops"
+  },
+  "revoke": {
+   "pendingWithTokenBeforeRevoke": 200,
+   "pendingWithSameTokenAfterRevoke": 403,
+   "revoked": {
+    "credentialPresent": false,
+    "authenticatorMayUseRole": false
+   },
+   "fireWithoutCredential": "credential_missing",
+   "armWithoutCredentialRefused": true
+  }
+ },
+ "reset": "witness schemas and roles removed; schema-only dump outside identical to before install; WGO stand-in job intact"
+}

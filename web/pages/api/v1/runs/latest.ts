@@ -4,7 +4,7 @@ import { z } from "zod";
 import { buildEndpointScanSummary } from "lib/api/scanSummary";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
-import { excludeOffReleaseRuns } from "lib/projections/releasedRunFence";
+import { excludeOffReleaseRuns, excludePregamePublications } from "lib/projections/releasedRunFence";
 import {
   getRunActivityAgeMs,
   isRunningRunStale,
@@ -137,9 +137,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Off-release (null or local:) runs stay private here too (L3): filtered before the limit, so a local run can
     // neither appear as the latest run nor push a released one out of the ten read.
-    let query = excludeOffReleaseRuns(supabase
+    let query = excludePregamePublications(excludeOffReleaseRuns(supabase
       .from("forge_runs")
-      .select("*"))
+      .select("*")))
       .order("created_at", { ascending: false })
       .limit(10);
 

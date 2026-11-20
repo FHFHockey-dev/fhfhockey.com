@@ -18,6 +18,7 @@ vi.mock("lib/supabase/server", () => {
         return builder;
       },
       or: (expression: string) => { out = out.filter((row) => matchesOr(row, expression)); return builder; },
+      is: (column: string, value: null) => { out = out.filter((row) => matchesTerm(row, `${column}.is.${value}`)); return builder; },
       order: (column: string, options?: { ascending?: boolean }) => {
         const sign = options?.ascending === false ? -1 : 1;
         out = [...out].sort((a, b) => (a[column] < b[column] ? -sign : a[column] > b[column] ? sign : 0));
@@ -73,6 +74,7 @@ const matchesOr = (row: Record<string, any>, expression: string) => splitTopLeve
 import { requireLatestSucceededRunId } from "./apiHelpers";
 import { createRun } from "./queries/run-lifecycle-queries";
 import { isOffReleaseGitSha, LOCAL_UNKNOWN_GIT_SHA, runHorizonFilter } from "./releasedRunFence";
+import { withForgeEnv } from "./forgeEnvScope";
 
 // Satisfies the octoberBranch label gate; master ignores metrics.
 const metrics = { input_provenance: { external_fantasy_input_contract: "excluded_from_native_inputs_v1" } };
@@ -180,5 +182,30 @@ describe("run writer provenance", () => {
     process.env.VERCEL_GIT_COMMIT_SHA = "c".repeat(40);
     await createRun("2026-10-18");
     expect(db.inserted).toEqual([expect.objectContaining({ git_sha: "c".repeat(40) })]);
+  });
+});
+
+describe("pregame publication fence", () => {
+  beforeEach(() => { db.rows = []; db.inserted = []; });
+  const released = "a".repeat(40);
+  const daily = { ...run("daily", "2026-10-18T14:00:00Z", released), metrics: { ...metrics, horizon_games: 1 } };
+  const pregame = { ...run("pregame", "2026-10-18T22:00:00Z", released), metrics: { ...metrics, horizon_games: 1,
+    execution_scope: { mode: "selected_games", requested_game_ids: [2026020358] },
+    pregame_publication: { version: "forge-pregame-publication-v1", claim_id: "pregame" } } };
+
+  it("never lets a newer one-game pregame publication displace the daily run outside its own scope", async () => {
+    db.rows = [daily, pregame];
+    await expect(requireLatestSucceededRunId("2026-10-18")).resolves.toBe("daily");
+  });
+
+  it("returns 404 rather than serve a pregame publication alone", async () => {
+    db.rows = [pregame];
+    await expect(requireLatestSucceededRunId("2026-10-18")).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("lets the game-scoped readback select its own publication", async () => {
+    db.rows = [daily, pregame];
+    await expect(withForgeEnv({ STARTER_BOARD_CANARY_GAME_IDS: "2026020358" }, () => requireLatestSucceededRunId("2026-10-18")))
+      .resolves.toBe("pregame");
   });
 });

@@ -2,12 +2,13 @@ import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { sanitizePublicNewsText } from "lib/newsFeed";
 import { easternReportDate, verifiedOriginalTweetUrl } from "lib/sources/projectedLineups";
 import { isRelayAccount, scrubRelayHandles } from "./authority";
-import { activeLineClaims, captureIdentity, currentSourceReadings, eligibleClaim, reconcileEntry, reconcilePP } from "./reconcile";
+import { activeLineClaims, captureIdentity, currentSourceReadings, eligibleClaim, reconcilePP } from "./reconcile";
+import { readOfficialPowerPlay } from "./officialPowerPlay";
 import { chooseDefaultGame, observeLineGame, stateAtRead, trustworthyState } from "./gameState";
 import { fetchCarryMemberships, fetchEntryHistory, fetchLineClaims, latestLineDecisions } from "./storage";
 import { instant, lineSnapshotFlags, type EntryRevision, type EntryView, type GameLinesResponse, type LineClaim, type LineGame, type SelectedLineUnit, type SourceFeedItem } from "./types";
 
-/** Public GET bounds: games in this window, and an NHL read only when the stored state is older than the interval. */
+/** Public GET bounds: games in this window, and a game-state refresh only when stored state is older than the interval. */
 const READ_WINDOW = { backDays: 21, forwardDays: 14 };
 const READ_OBSERVE_INTERVAL_MS = 5 * 60_000;
 const day = (now: string, offsetDays: number) => new Date(Date.parse(now) + offsetDays * 86_400_000).toISOString().slice(0, 10);
@@ -139,7 +140,7 @@ export async function readGameLines(supabase: any, args: { teamId?: number; game
     entryView: { mode: "expected", frozenAt: null, basis: null } };
   if (!controls.entryServing || !args.teamId && !args.gameId) return empty;
   // Bounded for game-night traffic: a date window of games, the latest stored state of the default-game candidates only,
-  // and an NHL read only when that stored state is older than the processor's observe interval. Never writes on GET.
+  // and a game-state refresh only when that stored state is older than the processor's observe interval. Never writes on GET.
   const window = { from: day(args.now, -READ_WINDOW.backDays), to: day(args.now, READ_WINDOW.forwardDays) };
   let games = await fetchLineGames(supabase, args.gameId ? { gameId: args.gameId } : { teamId: args.teamId, dateFrom: window.from, dateTo: window.to });
   if (args.gameId && !games.some((game) => game.id === args.gameId)) return empty;
@@ -160,29 +161,28 @@ export async function readGameLines(supabase: any, args: { teamId?: number; game
   if (args.gameId) for (const teamId of teamIds) {
     for (const candidate of await fetchLineGames(supabase, { teamId, dateFrom: window.from, dateTo: window.to })) if (!games.some((known) => known.id === candidate.id)) games.push(candidate);
   }
-  const [claims, entries] = await Promise.all([fetchLineClaims(supabase, teamIds, args.now, `${window.from}T00:00:00Z`),
-    fetchEntryHistory(supabase, teamIds, games.map((candidate) => candidate.id))]);
+  const started = game.phase === "live" || game.phase === "final";
+  const [claims, entries, official] = await Promise.all([fetchLineClaims(supabase, teamIds, args.now, `${window.from}T00:00:00Z`),
+    fetchEntryHistory(supabase, teamIds, games.map((candidate) => candidate.id)),
+    controls.observations && started ? readOfficialPowerPlay(game) : undefined]);
   // Carry-forward origin games a windowed claim names but the window missed: one batched read.
   const neededGames = [...new Set(claims.flatMap((claim) => claim.gameId != null && !games.some((candidate) => candidate.id === claim.gameId) ? [claim.gameId] : []))];
   games.push(...await fetchLineGames(supabase, { gameIds: neededGames }));
   const memberships = controls.carryForward ? await fetchCarryMemberships(supabase, claims) : [];
-  // Read-time freeze: once the NHL state reads live, compute the entering lineup in memory. No writes on GET.
-  const canFreeze = trustworthyState(game, args.now) && (game.phase === "live" || game.phase === "final" && instant(game.actualStart) != null);
   const teams = await Promise.all(teamIds.map(async (teamId) => {
     const scoped = claims.filter((claim) => claim.gameId === game.id && claim.teamId === teamId);
     const previous = await latestLineDecisions(supabase, game.id, teamId);
-    const storedFrozen = !!previous.entry && previous.entry.status !== "expected";
-    const entry = !storedFrozen && canFreeze ? reconcileEntry({ game, teamId, claims, previous: previous.entry, now: args.now }) : previous.entry;
-    const entryBasis: EntryView["basis"] = storedFrozen ? "stored" : entry && entry !== previous.entry ? "read_time" : null;
+    const entry = previous.entry;
     const history = entries.filter((entry) => entry.teamId === teamId && entry.gameId !== game.id && entry.status !== "expected" && games.find((candidate) => candidate.id === entry.gameId)?.date! < game.date)
       .sort((a, b) => games.find((candidate) => candidate.id === b.gameId)!.date.localeCompare(games.find((candidate) => candidate.id === a.gameId)!.date) || b.revision - a.revision);
     const fallback = history[0];
     const active = activeLineClaims(claims.filter(claim => claim.teamId === teamId)).filter(claim => claim.gameId === game.id);
     const pp = reconcilePP({ game, teamId, games, claims, previous: previous.pp, now: args.now, carryForward: controls.carryForward, memberships });
-    return { entryBasis, teamId, abbreviation: teamId === game.homeTeamId ? game.homeAbbreviation : game.awayAbbreviation,
+    return { teamId, abbreviation: teamId === game.homeTeamId ? game.homeAbbreviation : game.awayAbbreviation,
       entry: entry ? publicEntry(entry) : null,
       entryRevisions: entries.filter((entry) => entry.gameId === game.id && entry.teamId === teamId).map(publicEntry),
       fallback: !entry?.units.length && fallback ? { gameId: fallback.gameId, date: games.find((candidate) => candidate.id === fallback.gameId)!.date, entry: publicEntry(fallback) } : null,
+      officialPowerPlay: official ? official.filter(event => event.teamId === teamId) : official,
       // Practice and projected reports are never in-game adjustments.
       observations: controls.observations ? active.filter((claim) => claim.context !== "practice" && claim.context !== "projected" && !excludedAuthor(claim)
         && (["iga", "entry_correction"].includes(claim.kind) || claim.kind === "pp" && claim.phase === "in_game")).map(publicClaim) : [],
@@ -196,6 +196,6 @@ export async function readGameLines(supabase: any, args: { teamId?: number; game
   }));
   const frozen = teams.filter((team) => team.entry && team.entry.status !== "expected");
   const entryView: EntryView = frozen.length ? { mode: "entering", frozenAt: frozen.map((team) => team.entry!.cutoff).filter(Boolean).sort()[0] ?? null,
-    basis: frozen.every((team) => team.entryBasis === "stored") ? "stored" : "read_time" } : { mode: "expected", frozenAt: null, basis: null };
-  return { enabled: true, mode: "snapshots", status: "ready", controls, game, games, teams: teams.map(({ entryBasis: _basis, ...team }) => team), entryView };
+    basis: "stored" } : { mode: started ? "unrecorded" : "expected", frozenAt: null, basis: null };
+  return { enabled: true, mode: "snapshots", status: "ready", controls, game, games, teams, entryView };
 }

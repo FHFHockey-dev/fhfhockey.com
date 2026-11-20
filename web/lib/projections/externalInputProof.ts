@@ -19,6 +19,7 @@
 // A run that has a snapshot is judged by its snapshot alone: no verified release or closure overrides captured evidence.
 // Absent, malformed or contradictory proof means not proven; historical rows stay stored, only unserved.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { forgeEnvScoped } from "./forgeScopeProbe";
 import supabase from "lib/supabase/server";
 import { acceptedNewsSupersedes } from "./acceptedNews";
 import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "./calibrationEligibility";
@@ -35,7 +36,7 @@ export const UNPROVEN_EXTERNAL_INPUT_MESSAGE =
 /** Ids per proof read, keeping each request URL short. */
 const PROOF_READ_CHUNK = 100;
 /** Small projections of the snapshot payload: never the captured reads themselves. */
-const PROOF_COLUMNS = "entity_key,available_at,snapshot_version:payload->>version,snapshot_run_id:payload->>runId,"
+const PROOF_COLUMNS = "entity_key,available_at,snapshot_version:payload->>version,snapshot_run_id:payload->>runId,snapshot_kind:payload->>snapshotKind,"
   + "rolling_player_history_contract:payload->inputProvenance->>rolling_player_history_contract,"
   + "external_fantasy_input_contract:payload->inputProvenance->>external_fantasy_input_contract,"
   + "captured_reads:payload->inputProvenance->capturedReads,snapshot_code_version:payload->>codeVersion";
@@ -62,6 +63,8 @@ export function validCapturedReadReceipt(receipt: unknown, notAfter: string): bo
 
 /** One snapshot row (selected with PROOF_COLUMNS) proves its own run's exclusion. */
 export function snapshotProvesExternalInputExclusion(row: Row): boolean {
+  // A pregame publication proves its exclusion only to its own game-scoped readback (forgeScopeProbe.ts).
+  if (row?.snapshot_kind === "qualified_pregame_receipt" && !forgeEnvScoped()) return false;
   return typeof row?.entity_key === "string" && row.snapshot_run_id === row.entity_key
     && row.snapshot_version === "forge-inputs-v1"
     && row.external_fantasy_input_contract === FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT

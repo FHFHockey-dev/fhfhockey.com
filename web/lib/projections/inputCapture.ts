@@ -21,6 +21,8 @@ type Capture = {
   deadlineMs?: number;
   suppressWrites?: boolean;
   controlledNewsReads?: ControlledNewsReads;
+  rejectUnrecordedReads?: boolean;
+  unrecordedRead?: string;
   /** Strict pregame capture: bounded client, refusals instead of fake success. */
   transport?: CaptureTransport;
 };
@@ -68,9 +70,10 @@ export async function captureProjectionInputs<T>(work: () => Promise<T>, options
   return { result, reads: context.reads, writes: context.writes };
 }
 
-export async function replayProjectionInputs<T>(reads: ProjectionInputRead[], work: () => Promise<T>) {
-  const context: Capture = { mode: "replay", reads: clone(reads), writes: [], consumed: new Set() };
+export async function replayProjectionInputs<T>(reads: ProjectionInputRead[], work: () => Promise<T>, options?: { rejectUnrecordedReads: boolean }) {
+  const context: Capture = { mode: "replay", reads: clone(reads), writes: [], consumed: new Set(), ...options };
   const result = await storage.run(context, work);
+  if (context.unrecordedRead) throw new Error(context.unrecordedRead);
   if (context.consumed.size !== reads.length) {
     throw new Error("Projection replay did not consume every captured input; model/query version mismatch.");
   }
@@ -126,7 +129,12 @@ export function interceptProjectionQuery(
       const hash = projectionInputHash(request);
       const index = context.reads.findIndex((read, i) =>
         !context.consumed.has(i) && projectionInputHash(read.request) === hash);
-      if (index < 0) throw new Error(`Unrecorded projection input: ${method} ${String(args[0])}`);
+      if (index < 0) {
+        const message = `Unrecorded projection input: ${method} ${String(args[0])}`;
+        // An optional query can catch this error and fall back even if all supplied reads were consumed.
+        if (context.rejectUnrecordedReads) context.unrecordedRead ??= message;
+        throw new Error(message);
+      }
       context.consumed.add(index);
       if (context.reads[index].failure) throw new Error(context.reads[index].failure);
       return clone(context.reads[index].result);

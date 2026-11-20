@@ -46,7 +46,8 @@ function runQuerySites() {
         if (target) visit(target);
       }
       if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && ["from", "rpc"].includes(node.expression.name.text)
-        && node.arguments.length && !["Array", "Object"].includes(node.expression.expression.getText(source))) {
+        && node.arguments.length && !["Array", "Object"].includes(node.expression.expression.getText(source))
+        && !(node.expression.name.text === "from" && node.expression.expression.getText(source) === "Buffer")) {
         let argument: ts.Expression = node.arguments[0];
         while (ts.isAsExpression(argument) || ts.isParenthesizedExpression(argument)) argument = argument.expression;
         if (ts.isStringLiteralLike(argument)) literals.set(argument.text, [...(literals.get(argument.text) ?? []), relative]);
@@ -107,10 +108,11 @@ describe("FORGE external fantasy input claim", () => {
       ts.forEachChild(node, walk);
     };
     walk(source);
-    // The live snapshot claims from its reads. The never-published reconstruction and the run-start metrics, written
-    // before any read, never claim.
+    // The live snapshot and prospective publication both claim from their own reads. The reconstruction and run-start
+    // metrics never claim.
     expect(calls.filter(args => args === "externalFantasyClaim(capture.reads)")).toHaveLength(1);
+    expect(calls.filter(args => args === "externalFantasyClaim(reads)")).toHaveLength(1);
     expect(calls.filter(args => args === "")).toHaveLength(2);
-    expect(calls).toHaveLength(3);
+    expect(calls).toHaveLength(4);
   });
 });

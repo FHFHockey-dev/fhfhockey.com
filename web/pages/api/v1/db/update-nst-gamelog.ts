@@ -2790,10 +2790,8 @@ async function main(
         datasetType: targetDataset, datasetGroup: targetDatasetGroup, seasonId: targetSeasonId,
         overwrite: fullRefreshFlag(runMode), allowHistoricalDatedRequests,
         queue: createHash("sha256").update(JSON.stringify(initialUrlsQueue.map((item) => [nstGamelogItemKey(item), item.url]))).digest("hex") });
-      const query = supabase.from("cron_job_audit").select("run_time, details")
-        .eq("job_name", "update-nst-gamelog")
-        .eq("details->nstProgress->>scope", progressScope);
-      const result = await query.order("run_time", { ascending: false }).limit(2);
+      const result = await supabase.rpc("read_nst_gamelog_explicit_audit", { p_scope: progressScope })
+        .order("run_time", { ascending: false });
       if (result.error || !Array.isArray(result.data)) throw new Error("NST explicit progress read is unconfirmed; admission stopped.");
       if (result.data.length > 1 && result.data[0].run_time === result.data[1].run_time) {
         throw new Error("NST explicit progress is ambiguous; admission stopped.");

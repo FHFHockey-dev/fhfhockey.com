@@ -1,0 +1,19 @@
+== faithful copy: Track A (da786646) + gate migration (964b8ad9a876) applied as postgres; second apply refuses
+armed live as postgres
+armed Track A verifier as postgres: job 1
+fences (rolled back):
+  capture fire: fired 5 
+  publish begin before any claim (service_role): none_ready 
+  signed gate for unknown claim: claim_missing 
+  service_role reads signed row through the API read: t 
+  service_role reads the signed table directly: ERROR:  permission denied for table signed_verdicts 
+  service_role calls the DB gate directly: ERROR:  permission denied for schema forge_pregame_capture LINE 1: begin; set local role service_role; select forge_pregame_cap...                                                    ^ 
+  anon claim hashes: ERROR:  permission denied for function forge_live_claim_hashes_v1 
+  Track A fire, then fires_spent: fired 6 fires_spent 
+stop + disarm:
+  live jobs left 0
+  signed jobs 0
+rollback of the gate migration, then re-apply:
+begin uses unsigned gate again: true
+re-applied; begin uses signed gate: true|trigger uses signed gate: true
+job 408 active: f

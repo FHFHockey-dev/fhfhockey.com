@@ -1,0 +1,25 @@
+# FORGE sandbox: capture → publish → both RSO readers, Claude implementation lane, Nov 19
+
+- **Scope:**
+  - Local-only candidate on origin/master `02f0426d5`: no push, no production work, no cron.
+  - One GET captures, publishes once with the real FORGE publisher and reads the committed revision back through both real RSO readers.
+  - Uses the narrow `forge_sandbox_api` pattern with a 12 h JWT.
+- **Where:** scratch clone, branch `chef/forge-sandbox-publish`, fetched as `refs/rc/forge-sandbox-publish-20261119`.
+- **Decisions:**
+  - Minimal live-module edits:
+    - new `forgeEnvScope` (AsyncLocalStorage);
+    - `starterBoardFlags` default parameters read it;
+    - `projectionModelEnvironment` reads it;
+    - an additive `computeForgePregamePublication` and an `omitPregameSidecars` lifecycle flag;
+    - an additive replay option `rejectUnrecordedReads`.
+  - The candidate's `forgeDailyBridge` is left out. It times runs by `succeeded_observed_at`, which master's live writer never records, so live RSO would turn schedule-only.
+  - `hostedReaders` therefore binds the daily row's timing to the run's `created_at`, which is the released bridge's semantics.
+- **Checks:** rehearsal exit 0, rerun after the token cap moved to 12 h.
+  - GET 200 in 5.53 s; daily 2.965 at C#1; detailed on the same revision with `missing_participation`.
+  - Duplicate GET returned 409 with 1 publication.
+  - Outside-sandbox dump identical; isolation `ok`.
+- **Gotchas:**
+  - `publish_v1` needs `hosted_schedule`, which lives in the hosted-dispatch migration.
+  - The fixture `nhl_team_data` lacks production's `season_id`.
+  - Running vitest with `./`-prefixed paths matches nothing.
+- **Next:** Chef and TJ decide on the new producer closure `78655939…`. It needs a verifier receipt and an allowlist entry.

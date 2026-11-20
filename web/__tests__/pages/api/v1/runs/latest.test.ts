@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fromMock, notCalls } = vi.hoisted(() => ({
+const { fromMock, notCalls, isCalls } = vi.hoisted(() => ({
   fromMock: vi.fn(),
-  notCalls: [] as unknown[][]
+  notCalls: [] as unknown[][],
+  isCalls: [] as unknown[][]
 }));
 
 function createQueryBuilder(resolver: () => { data?: any; error: any }) {
@@ -12,6 +13,10 @@ function createQueryBuilder(resolver: () => { data?: any; error: any }) {
     },
     not(...args: unknown[]) {
       notCalls.push(args);
+      return builder;
+    },
+    is(...args: unknown[]) {
+      isCalls.push(args);
       return builder;
     },
     order() {
@@ -252,10 +257,13 @@ describe("/api/v1/runs/latest", () => {
 
   it("lists only released runs: off-release (null or local:) runs are filtered before the limit (L3)", async () => {
     notCalls.length = 0;
+    isCalls.length = 0;
     const res = createMockRes();
     await handler({ method: "GET", query: { date: "2026-03-20" } } as any, res);
     expect(res.statusCode).toBe(200);
     expect(notCalls).toEqual([["git_sha", "is", null], ["git_sha", "like", "local:*"]]);
+    // Outside a game-scoped FORGE request a one-game pregame publication is never the latest run.
+    expect(isCalls).toEqual([["metrics->pregame_publication", null]]);
   });
 
   it("redacts dependency details from internal-error responses", async () => {

@@ -7,6 +7,7 @@ import projected from "pages/api/v1/lines/projected";
 import type { GameLinesResponse, LineClaim } from "./types";
 const routeDb = vi.hoisted(() => ({ from: vi.fn() }));
 vi.mock("lib/supabase/server", () => ({ default: routeDb }));
+vi.mock("./officialPowerPlay", () => ({ readOfficialPowerPlay: async () => [] }));
 vi.mock("./gameState", async (load) => ({ ...await load<object>(), observeLineGame: async (game: unknown) => game }));
 import { readGameLines, readReportGames } from "./service";
 import { reconcileEntry } from "./reconcile";
@@ -48,6 +49,8 @@ describe("shared game/team response", () => {
       time: { ...oldF1.time, interpretedAt: "2026-10-01T22:36:30Z" } };
     db.tables.line_claim_revisions = [oldF1, oldF2, freshF1].map(row);
     db.tables.line_entry_revisions = [];
+    db.tables.line_entry_revisions.push({ game_id: fixtureGame.id, team_id: 14, revision: 1,
+      payload: reconcileEntry({ game: fixtureGame, teamId: 14, claims: [oldF1, oldF2, freshF1], previous: null, now: fixtureNow }) });
     routeDb.from.mockImplementation(db.from);
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(fixtureNow));
@@ -68,9 +71,6 @@ describe("shared game/team response", () => {
     expect(team.history.map(claim => claim.id).sort()).toEqual(["new-F1", "old-F1", "old-F2"]);
     expect(team.entry?.units.map(unit => unit.claims[0]!.id)).toEqual(["new-F1"]);
     expect(team.entry?.cutoff).toBe(fixtureGame.actualStart);
-    // A processor can persist this same freeze. Subsequent GETs can only read it.
-    db.tables.line_entry_revisions.push({ game_id: fixtureGame.id, team_id: 14, revision: 1,
-      payload: reconcileEntry({ game: fixtureGame, teamId: 14, claims: [oldF1, oldF2, freshF1], previous: null, now: fixtureNow }) });
     const ppSource = "https://x.com/fixtureauthor/status/124";
     const pp = fixturePP(1, { sourceUrl: ppSource, originalIdentity: ppSource });
     db.tables.line_claim_revisions.push(row(pp));
@@ -82,12 +82,36 @@ describe("shared game/team response", () => {
     expect(responses.at(-1)!.teams[0]!.entry?.id).toBe(team.entry?.id);
     live.unmount();
     db.tables.line_game_state_observations![0]!.payload.phase = "final";
-    openTeam();
+    const following = openTeam();
     expect(await screen.findByText("Carried forward from Oct 1 · TBL at NYR")).toBeTruthy();
+    const carriedPanel = screen.getByRole("heading", { name: "Power play 1" }).parentElement!;
+    expect(within(carriedPanel).getByRole("link", { name: "@fixtureauthor" }).getAttribute("href")).toBe(ppSource);
+    expect(carriedPanel.querySelector("time")?.dateTime).toBe(pp.time.originalPublishedAt);
     expect(responses.at(-1)!.game?.id).toBe(fixtureNext.id);
     const carried = responses.at(-1)!.teams[0]!.ppDefaults[0]!.selection!;
     expect(carried.originGameId).toBe(fixtureGame.id);
     expect(carried.claims[0]).toMatchObject({ id: pp.id, sourceUrl: ppSource, time: { originalPublishedAt: pp.time.originalPublishedAt } });
+    const freshAt = "2026-10-02T01:00:30.000Z";
+    vi.setSystemTime(new Date("2026-10-02T01:01:00Z"));
+    const freshSource = "https://x.com/fixtureauthor/status/125";
+    const fresh = fixturePP(1, { id: "next-game-pp1", sourceUrl: freshSource, originalIdentity: freshSource,
+      gameId: fixtureNext.id, phase: "pregame", binding: { ...pp.binding, scheduleIdentity: fixtureNext.scheduleIdentity },
+      unit: { ...pp.unit!, players: pp.unit!.players.map((p, i) => i ? p : { playerId: 76, name: "Replacement" }) },
+      time: { ...pp.time, originalPublishedAt: freshAt, effectiveAt: fixtureNext.scheduledStart, interpretedAt: freshAt, ingestedAt: freshAt } });
+    db.tables.line_claim_revisions.push(row(fresh));
+    following.unmount();
+    openTeam();
+    await screen.findByText(fresh.unit!.players.map(player => player.name).join(" — "));
+    const freshPanel = screen.getByRole("heading", { name: "Power play 1" }).parentElement!;
+    expect(within(freshPanel).getByRole("link", { name: "@fixtureauthor" }).getAttribute("href")).toBe(freshSource);
+    expect(freshPanel.querySelector("time")?.dateTime).toBe(freshAt);
+    expect(within(freshPanel).queryByText(/Carried forward/)).toBeNull();
+    const superseded = responses.at(-1)!;
+    expect(superseded.teams[0]!.ppDefaults[0]!.selection).toMatchObject({
+      designation: "reported", originGameId: fixtureNext.id, claims: [{ id: fresh.id, sourceUrl: freshSource, time: { originalPublishedAt: freshAt } }],
+      unit: { players: fresh.unit!.players },
+    });
+    expect(carried.unit.players).toEqual(pp.unit!.players);
     fireEvent.change(screen.getByLabelText("Game"), { target: { value: String(fixtureGame.id) } });
     await screen.findByRole("region", { name: "TBL · Lineup entering the game" });
     expect(responses.at(-1)!.teams[0]!.entry?.id).toBe(team.entry?.id);
@@ -130,8 +154,8 @@ describe("shared game/team response", () => {
     expect(db.writes).toHaveLength(0);
     const both = await readGameLines(db, { gameId: fixtureGame.id, now: fixtureNow });
     expect(both.teams.map((team) => team.teamId)).toEqual([14, 3]);
-    // No stored entry for team 3, but the game is live: frozen in memory with what was known (nothing).
-    expect(both.teams[1]!.entry).toMatchObject({ status: "frozen", units: [] }); expect(both.entryView).toMatchObject({ mode: "entering", basis: "read_time" });
+    // The other team has no recorded entry, even though this game has started.
+    expect(both.teams[1]!.entry).toBeNull(); expect(both.entryView).toMatchObject({ mode: "entering", basis: "stored" });
     expect(both.teams[1]!.observations).toHaveLength(0);
   });
   it("selects next scheduled after final and labels previous-entry fallback and carried PP", async () => {
@@ -147,15 +171,15 @@ describe("shared game/team response", () => {
     expect(response.game?.id).toBe(fixtureGame.id);
     expect(response.games.map(game => game.id)).toEqual(expect.arrayContaining([fixtureGame.id, fixtureNext.id]));
   });
-  it("freezes on LIVE at read time when no tweet arrived after puck drop, without writing", async () => {
+  it("keeps the stored pregame report available when the freeze is missing, even with a known puck drop", async () => {
     const db = serviceDatabase();
     const expected = reconcileEntry({ game: { ...fixtureGame, phase: "pregame" }, teamId: 14, claims: [fixtureClaim()], previous: null, now: "2026-10-01T22:50:00Z" });
     expect(expected.status).toBe("expected");
     db.tables.line_entry_revisions = [{ entry_id: expected.id, team_id: 14, game_id: fixtureGame.id, revision: 1, payload: expected }];
     const response = await readGameLines(db, { teamId: 14, now: fixtureNow });
-    expect(response.teams[0]!.entry).toMatchObject({ status: "frozen", cutoff: fixtureGame.actualStart, previousId: expected.id });
+    expect(response.teams[0]!.entry).toMatchObject({ status: "expected", cutoff: null, id: expected.id });
     expect(response.teams[0]!.entry!.units).toHaveLength(1);
-    expect(response.entryView).toEqual({ mode: "entering", frozenAt: fixtureGame.actualStart, basis: "read_time" });
+    expect(response.entryView).toEqual({ mode: "unrecorded", frozenAt: null, basis: null });
     expect(db.writes).toHaveLength(0);
     expect(db.tables.line_entry_revisions).toHaveLength(1);
   });
