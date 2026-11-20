@@ -36,7 +36,7 @@
 
 .title {
   margin: 8px 0 12px;
-  color: #f4fbff;
+  color: vars.$color-white;
   font-size: 1.7rem;
   line-height: 1.1;
 }
@@ -45,10 +45,10 @@
 .notice {
   margin-bottom: 18px;
   padding: 14px 16px;
-  border: 1px solid rgba(114, 200, 229, 0.24);
-  border-radius: 14px;
-  background: rgba(7, 170, 226, 0.08);
-  color: #d9f5ff;
+  border: 1px solid rgba(vars.$primary-color, 0.3);
+  border-radius: vars.$radius-control;
+  background: vars.$button-tint;
+  color: vars.$text-primary;
 }
 
 .sessionPanel {
@@ -59,9 +59,9 @@
 
 .sessionCopy {
   padding: 14px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
+  border: vars.$border-subtle;
+  border-radius: vars.$radius-control;
+  background: vars.$background-dark;
   line-height: 1.5;
 }
 
@@ -93,7 +93,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid vars.$focus-color;
+    outline: 2px solid vars.$primary-color;
     outline-offset: 2px;
   }
 }
@@ -112,54 +112,61 @@
 
 .formTitle {
   margin: 0 0 16px;
-  color: #f4fbff;
-  font-family: "Roboto Condensed", sans-serif;
+  color: vars.$color-white;
+  font-family: vars.$font-family-primary;
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
+// One row: the main action takes the extra width, the other two share the rest.
 .actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
+// Account actions follow fhfh-styles §9.4: 2px ring, 12% tint, blue Train One labels;
+// the main action (Account settings) is the primary variant. No pills or gradients.
 .primaryAction,
 .secondaryAction,
 .signOutAction {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  padding: 0 18px;
-  border-radius: 999px;
-  font-family: "Roboto Condensed", sans-serif;
-  font-size: 0.95rem;
-  font-weight: 700;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: vars.$radius-control;
   text-decoration: none;
+  cursor: pointer;
+  @include vars.button-tint;
+  font-size: vars.$font-size-xs;
+
+  &:focus-visible {
+    outline: 2px solid vars.$primary-color;
+    outline-offset: 2px;
+  }
 }
 
 .primaryAction {
-  border: 1px solid rgba(114, 200, 229, 0.65);
-  background: linear-gradient(
-    180deg,
-    rgba(7, 170, 226, 0.28) 0%,
-    rgba(7, 170, 226, 0.12) 100%
-  );
-  color: #f4fbff;
+  background: vars.$primary-color-opaque;
+  color: vars.$color-white;
+
+  &:hover {
+    background: rgba(vars.$primary-color, 0.5);
+  }
 }
 
-.secondaryAction,
+// Sign out: the red danger variant, so it reads as the exit.
 .signOutAction {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(244, 251, 255, 0.88);
-}
+  border-color: rgba(vars.$danger-color, 0.7);
+  background: rgba(vars.$danger-color, 0.06);
+  color: vars.$danger-color;
 
-.signOutAction {
-  cursor: pointer;
+  &:hover {
+    background: rgba(vars.$danger-color, 0.12);
+  }
 }
 
 @media (max-width: 560px) {
@@ -172,7 +179,7 @@
   }
 
   .actions {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 
   .primaryAction,

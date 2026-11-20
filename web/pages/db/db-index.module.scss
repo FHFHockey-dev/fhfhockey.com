@@ -130,7 +130,13 @@
   @include v.button-tint;
 
   &:focus-visible {
-    outline: 2px solid v.$focus-color;
+    outline: 2px solid v.$primary-color;
     outline-offset: 2px;
   }
+}
+
+// Pending NST backfill note on the NST card (was an inline #07aae2).
+.page .pendingNote {
+  margin-top: v.$space-xs;
+  color: v.$primary-color;
 }

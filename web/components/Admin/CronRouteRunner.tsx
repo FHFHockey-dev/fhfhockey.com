@@ -158,14 +158,7 @@ export default function CronRouteRunner() {
   }
 
   return (
-    <Card
-      sx={{
-        border: "5px solid #ffb300",
-        borderRadius: "8px",
-        background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-        color: "#fff"
-      }}
-    >
+    <Card>
       <CardContent>
         <Typography gutterBottom variant="h5" component="div">
           RUN ANY ROUTE

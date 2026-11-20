@@ -14,7 +14,7 @@
 }
 
 .workspace :is(button, input, select, summary):focus-visible {
-  outline: 2px solid v.$focus-color;
+  outline: 2px solid v.$primary-color;
   outline-offset: 2px;
 }
 
@@ -789,10 +789,50 @@
   gap: v.$space-sm;
 }
 
-.terminalTools {
-  display: flex;
-  align-items: center;
-  gap: v.$space-sm;
+// The copy button sits inside the terminal's top-right corner and stays put while
+// the log scrolls under it.
+.terminalFrame {
+  position: relative;
+}
+
+.terminalCopy {
+  position: absolute;
+  top: v.$space-xs;
+  right: calc(#{v.$space-xs} + 10px); // clear of the log's scrollbar
+  display: inline-grid;
+  place-items: center;
+  width: v.$control-height-sm;
+  height: v.$control-height-sm;
+  padding: 0;
+  border: 2px solid v.$primary-color;
+  border-radius: v.$radius-control;
+  background: v.$background-darker; // opaque, so log text never shows through
+  color: v.$primary-color;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, #{v.$primary-color} 20%, #{v.$background-darker});
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &[data-state="copied"] {
+    border-color: v.$success-color;
+    color: v.$success-color;
+  }
+
+  &[data-state="failed"] {
+    border-color: v.$danger-color;
+    color: v.$danger-color;
+  }
 }
 
 .terminal {
@@ -807,6 +847,11 @@
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.terminal:focus-visible {
+  outline: 2px solid v.$primary-color; // fhfh-styles §9.4 focus: 2px primary
+  outline-offset: 2px;
 }
 
 .line {

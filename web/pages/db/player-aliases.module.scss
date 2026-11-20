@@ -33,11 +33,11 @@
 }
 .field { display: grid; gap: 6px; color: v.$text-secondary; font-size: .9rem; }
 .field input, .field select { width: 100%; min-width: 0; min-height: v.$control-height-sm; padding: 0 12px; border: 1px solid v.$border-secondary; border-radius: v.$radius-control; background: v.$background-dark; color: v.$text-primary; font: inherit; }
-.field input:focus-visible, .field select:focus-visible, .queueList button:focus-visible { outline: 2px solid v.$focus-color; outline-offset: 2px; }
+.field input:focus-visible, .field select:focus-visible, .queueList button:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
 // Buttons follow fhfh-styles §9.4: 2px ring, 12% tint, blue Train One labels.
 .reviewPanel button { display: inline-flex; align-items: center; justify-content: center; justify-self: start; min-height: v.$control-height-sm; padding: 0 14px; border-radius: v.$radius-control; white-space: nowrap; cursor: pointer; @include v.button-tint; }
 .reviewPanel button:disabled { cursor: not-allowed; }
-.reviewPanel button:focus-visible { outline: 2px solid v.$focus-color; outline-offset: 2px; }
+.reviewPanel button:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
 // Main action / pressed toggle: the Controls "primary" variant (opaque fill, white text, 9.2:1).
 .reviewPanel button.primaryAction, .reviewPanel button[aria-pressed="true"] { background: v.$primary-color-opaque; color: v.$color-white; }
 .reviewPanel button.primaryAction:hover:not(:disabled), .reviewPanel button[aria-pressed="true"]:hover { background: rgba(v.$primary-color, .5); }

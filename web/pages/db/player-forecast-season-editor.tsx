@@ -561,7 +561,7 @@ function PlayerForecastSeasonEditor() {
               </select>
             </label>
           </div>
-          <div className={styles.tableScroll}>
+          <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Effective player draft">
             {!teamFilter ? <p>Select a team to load its effective player draft.</p> : null}
             <table>
               <thead><tr><th>Player</th><th>Team</th><th>Pos</th><th>Pool</th><th>GP</th><th>Rating</th><th>Role</th><th>Editorial delta</th></tr></thead>

@@ -28,7 +28,7 @@
   font-size: v.$font-size-xs;
 
   &:focus-visible {
-    outline: 2px solid v.$focus-color;
+    outline: 2px solid v.$primary-color;
     outline-offset: 2px;
   }
 }
@@ -139,7 +139,7 @@
 .noticeMessage,
 .successMessage {
   padding: 13px 14px;
-  border-radius: 14px;
+  border-radius: v.$radius-control;
   line-height: 1.55;
   font-family: v.$font-family-primary;
   font-size: 0.95rem;
@@ -155,19 +155,19 @@
 .errorMessage {
   border: 1px solid rgba(v.$danger-color, 0.45);
   background: rgba(v.$danger-color-dark, 0.45);
-  color: #ffd9e1;
+  color: v.$text-primary;
 }
 
 .noticeMessage {
   border: 1px solid rgba(v.$secondary-color, 0.34);
   background: rgba(v.$secondary-color, 0.11);
-  color: #d7f6ff;
+  color: v.$text-primary;
 }
 
 .successMessage {
   border: 1px solid rgba(v.$success-color, 0.3);
   background: rgba(v.$success-color, 0.1);
-  color: #d9ffef;
+  color: v.$text-primary;
 }
 
 .fallbackRow {
@@ -176,9 +176,9 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 12px;
-  border: 1px solid rgba(v.$border-secondary, 0.82);
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(v.$color-white, 0.035), rgba(v.$color-white, 0.012));
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
 }
 
 // On /auth the self-link is hidden: Reset Local Auth sits on its own, no box.
@@ -207,7 +207,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid v.$focus-color;
+    outline: 2px solid v.$primary-color;
     outline-offset: 2px;
   }
 }
@@ -223,7 +223,7 @@
   @include v.button-tint;
 
   &:focus-visible {
-    outline: 2px solid v.$focus-color;
+    outline: 2px solid v.$primary-color;
     outline-offset: 2px;
   }
 

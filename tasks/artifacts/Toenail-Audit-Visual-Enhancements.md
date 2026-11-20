@@ -118,3 +118,6 @@ Medium- and low-priority changes found during the toenail fixes and the skill pa
 | /db/player-aliases | queue meta, context link | Leading '·' when no team ('· text line 2'); 'Open source tweet' renders as plain white text, not a link. | Low | 1 → 3/4 |
 | /db/player-forecast-review | conflict list | Only the dev-blocked state renders locally (needs local Supabase); conflict cards unreviewed. | Blocked | 1 |
 | /db/player-forecast-season-editor, PlayerForecasts | panel radii, chart colours | Panels keep 16–20px private radii (→ $radius-panel); forecast chart colours untouched (pass 7). | Low | 1 → 2/7 |
+| all scope | tokens | ~~Auth/forecast literals and radii → tokens; tweet-review pills → $radius-control; /db dead sx removed.~~ Fixed 2026-11-19 | Done | 2 |
+| all scope | accessibility | ~~axe 0 on 11 routes × 2 widths; focus rings blue; MUI focus visible; terminal copy icon.~~ Fixed 2026-11-19 | Done | 3 |
+| /db | focus.cjs inputs | False positive: ring is drawn on the MUI field box, not the inner <input>; verified visually. | Done (FP) | 3 |

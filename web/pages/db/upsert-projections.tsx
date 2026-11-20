@@ -638,7 +638,7 @@ function UpsertProjections() {
         {" "}
         {/* Ensures this only renders on client after auth check */}
         <Paper elevation={3} sx={{ padding: 3, marginY: 2 }}>
-          <Typography variant="h5" gutterBottom sx={{ marginBottom: 2 }}>
+          <Typography variant="h5" component="h2" gutterBottom sx={{ marginBottom: 2 }}>
             1. Upload CSV File
           </Typography>
           <Box
@@ -646,7 +646,7 @@ function UpsertProjections() {
             className={styles.dropzone}
             data-active={isDragActive ? "true" : undefined}
           >
-            <input {...getInputProps()} />
+            <input {...getInputProps()} aria-label="CSV file" />
             {isDragActive ? (
               <p>Drop the CSV file here ...</p>
             ) : (
@@ -664,7 +664,7 @@ function UpsertProjections() {
         </Paper>
         {csvHeaders.length > 0 && (
           <Paper elevation={3} sx={{ padding: 3, marginY: 2 }}>
-            <Typography variant="h5" gutterBottom sx={{ marginBottom: 2 }}>
+            <Typography variant="h5" component="h2" gutterBottom sx={{ marginBottom: 2 }}>
               2. Configure Source & Process
             </Typography>
             <FormControl fullWidth margin="normal" variant="outlined">
@@ -701,7 +701,7 @@ function UpsertProjections() {
         )}
         {processedHeaders.length > 0 && (
           <Paper elevation={3} sx={{ padding: 3, marginY: 2 }}>
-            <Typography variant="h5" gutterBottom>
+            <Typography variant="h5" component="h2" gutterBottom>
               3. Define Supabase Table Schema
             </Typography>
             <Typography
@@ -788,7 +788,7 @@ function UpsertProjections() {
               + Add Custom Column (as TEXT)
             </Button>
 
-            <Typography variant="h6" sx={{ marginTop: 3, marginBottom: 1 }}>
+            <Typography variant="h6" component="h3" sx={{ marginTop: 3, marginBottom: 1 }}>
               Supabase Table Name
             </Typography>
             <TextField
@@ -805,7 +805,7 @@ function UpsertProjections() {
         )}
         {standardizedPreviewData.length > 0 && processedHeaders.length > 0 && (
           <Paper elevation={3} sx={{ padding: 3, marginY: 2 }}>
-            <Typography variant="h5" gutterBottom>
+            <Typography variant="h5" component="h2" gutterBottom>
               4. Preview Standardized Data (First{" "}
               {standardizedPreviewData.length} Rows)
             </Typography>

@@ -66,13 +66,13 @@
 .errorNote {
   border: 1px solid rgba(v.$danger-color, 0.45);
   background: rgba(v.$danger-color-dark, 0.45);
-  color: #ffd9e1;
+  color: v.$text-primary;
 }
 
 .successNote {
   border: 1px solid rgba(v.$success-color, 0.34);
   background: rgba(v.$success-color, 0.11);
-  color: #d9ffef;
+  color: v.$text-primary;
 }
 
 .actions {
@@ -99,7 +99,7 @@
   font-size: v.$font-size-xs;
 
   &:focus-visible {
-    outline: 2px solid v.$focus-color;
+    outline: 2px solid v.$primary-color;
     outline-offset: 2px;
   }
 }

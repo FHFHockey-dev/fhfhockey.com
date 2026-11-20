@@ -84,13 +84,6 @@ export default function AuthPage() {
                 >
                   Sign Out
                 </button>
-                <button
-                  type="button"
-                  className={styles.signOutAction}
-                  onClick={() => void signOut()}
-                >
-                  Reset Local Auth
-                </button>
               </div>
             </div>
           ) : (

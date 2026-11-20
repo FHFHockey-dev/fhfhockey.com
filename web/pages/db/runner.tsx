@@ -483,15 +483,29 @@ function CopyTerminalButton({ events }: { events: RouteRunnerEventRow[] }) {
     const ok = await copyPlainText(events.map(terminalLine).join("\n"));
     setState(ok ? "copied" : "failed");
   }
+  const label = state === "copied" ? "Copied" : state === "failed" ? "Copy unavailable" : "Copy all";
+  // Icon button inside the terminal: the two-squares copy glyph, a check once copied.
   return (
     <button
       type="button"
-      className={styles.buttonSecondary}
+      className={styles.terminalCopy}
       onClick={() => void copyAll()}
       disabled={events.length === 0}
+      aria-label={label}
+      title={label}
       aria-live="polite"
+      data-state={state}
     >
-      {state === "copied" ? "Copied" : state === "failed" ? "Copy unavailable" : "Copy all"}
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+        {state === "copied" ? (
+          <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        ) : (
+          <>
+            <rect x="8.5" y="8.5" width="11" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+            <path d="M15.5 5.5V5a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 5v8A1.5 1.5 0 0 0 6 14.5h.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </>
+        )}
+      </svg>
     </button>
   );
 }
@@ -508,6 +522,7 @@ function Terminal({ events }: { events: RouteRunnerEventRow[] }) {
       ref={ref}
       role="log"
       aria-label="Route runner terminal"
+      tabIndex={0} // keyboard users can focus the log and scroll it
       className={styles.terminal}
       onScroll={(event) => {
         const element = event.currentTarget;
@@ -684,12 +699,12 @@ function JobDetail(props: {
 
         <div className={styles.terminalHead}>
           <h3>Live terminal</h3>
-          <div className={styles.terminalTools}>
-            <span className={styles.nextStep}>{events.length.toLocaleString()} lines</span>
-            <CopyTerminalButton events={events} />
-          </div>
+          <span className={styles.nextStep}>{events.length.toLocaleString()} lines</span>
         </div>
-        <Terminal events={events} />
+        <div className={styles.terminalFrame}>
+          <Terminal events={events} />
+          <CopyTerminalButton events={events} />
+        </div>
 
         <div className={styles.actions}>
           <button

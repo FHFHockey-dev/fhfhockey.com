@@ -6,7 +6,6 @@ import {
   Card,
   CardActions,
   CardContent,
-  CardMedia,
   Typography,
   TextField
 } from "@mui/material";
@@ -773,20 +772,11 @@ function DatabasePage() {
         <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%", // Ensures the card fills the Grid item's height
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/playersTable.png" // Local image path
-              title="players table"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 PLAYERS / ROSTERS
@@ -808,20 +798,11 @@ function DatabasePage() {
         <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/seasonsTable.png" // Local image path
-              title="seasons table"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 SEASONS
@@ -843,20 +824,11 @@ function DatabasePage() {
         <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/teamsTable.png" // Local image path
-              title="teams table"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 TEAMS
@@ -888,20 +860,11 @@ function DatabasePage() {
         <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/gamesTable.png" // Local image path
-              title="games table"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 GAMES
@@ -933,20 +896,11 @@ function DatabasePage() {
         <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/statsTable.png" // Local image path
-              title="stats table"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 STATS
@@ -968,20 +922,11 @@ function DatabasePage() {
         <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/ppTimeframes.png" // Local image path
-              title="power play timeframes"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 PP TIMEFRAMES
@@ -1014,20 +959,11 @@ function DatabasePage() {
         <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/linesTable.png" // Local image path
-              title="line combinations"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 LINE COMBOS
@@ -1048,20 +984,11 @@ function DatabasePage() {
         <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/shiftsTable.png" // Local image path
-              title="shift charts"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 SHIFT CHARTS
@@ -1093,20 +1020,11 @@ function DatabasePage() {
         <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/nstTables.png" // Replace with an appropriate image URL
-              title="NST Team Stats"
-            />
             <CardContent>
               <Typography gutterBottom variant="h5" component="div">
                 NST Team Stats
@@ -1118,7 +1036,7 @@ function DatabasePage() {
                 offseason gaps.
               </Typography>
               {pendingNstBackfill ? (
-                <Typography variant="body2" sx={{ mt: 1, color: "#07aae2" }}>
+                <Typography variant="body2" className={styles.pendingNote}>
                   Pending NST {pendingNstBackfill.mode} backfill:
                   {" "}
                   start={pendingNstBackfill.startDate}, cursor=
@@ -1178,20 +1096,11 @@ function DatabasePage() {
         <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/expectedGoals.png" // Replace with an appropriate image URL or local path
-              title="Game Goal Projections"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 GAME GOAL PROJECTIONS
@@ -1213,21 +1122,11 @@ function DatabasePage() {
         <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
-              border: "5px solid #07aae2",
-              borderRadius: "8px",
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff"
             }}
           >
-            {/* (Optional) If you have a relevant image, replace the path below; or omit CardMedia. */}
-            <CardMedia
-              sx={{ height: 140 }}
-              image="/pictures/fhfPlaceholder.png"
-              title="standings details"
-            />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 STANDINGS DETAILS
@@ -1260,20 +1159,11 @@ function DatabasePage() {
           <Grid xs={12} sm={6} md={4}>
             <Card
               sx={{
-                border: "5px solid #ff6b6b",
-                borderRadius: "8px",
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-                background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-                color: "#fff"
               }}
             >
-              <CardMedia
-                sx={{ height: 140 }}
-                image="/pictures/fhfPlaceholder.png"
-                title="sKO predictions"
-              />
               <CardContent sx={{ flexGrow: 1 }}>
                 <Typography gutterBottom variant="h5" component="div">
                   sKO PREDICTIONS
@@ -1315,20 +1205,11 @@ function DatabasePage() {
             {/* Adjust grid size as needed */}
             <Card
               sx={{
-                border: "5px solid #4caf50", // Different color for distinction
-                borderRadius: "8px",
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-                background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-                color: "#fff"
               }}
             >
-              <CardMedia
-                sx={{ height: 140 }}
-                image="/pictures/csvImportIcon.png" // Add a relevant icon/image
-                title="CSV Projection Importer"
-              />
               <CardContent sx={{ flexGrow: 1 }}>
                 <Typography gutterBottom variant="h5" component="div">
                   CSV PROJECTION IMPORTER
