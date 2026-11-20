@@ -29,6 +29,8 @@ Make the first live BLSH v6 capture ready except TJ's separate approvals: (1) L7
 - Wrote live-readiness-2026-11-20/STEPS-L7-AND-CUSTODY.md and APPROVAL-PACKET-CAPTURE-20261122.md; committed bc3bbc911, fetched as refs/rc/blsh-live-readiness-20261120.
 - Ran STEPS A1–A3 verbatim in a throwaway clone against that ref merged onto aa49b6c5e: 8 files/129+/10−; Vitest 43 files, 575 tests passed (file corrected from 579). Custody B-steps were rehearsed with throwaway keys; `pbpaste` (TJ's clipboard) and `~/blsh-verify` (TJ's home) were not exercised, `--stdin` was via redirect.
 
+- FORGE live runs bind `expected_code_version` (release_mismatch at every stage), so the keyed push must avoid armed FORGE games. Packet now recommends push slot B (Nov 22 03:15Z, freeze about 9.5 h, re-date by Nov 21 14:00Z) over slot A (Nov 21 15:00Z). STEPS run claims narrowed; A6 now `rm -rf -- "${L7:?}"` (tested; a `$(dirname)` form was refused by the safety check).
+
 ## Next
 Report the ref, steps and packet paths to the parent. Keep this diary until TJ decides the re-date (packet 6.1) and blocker 1 lands.
 

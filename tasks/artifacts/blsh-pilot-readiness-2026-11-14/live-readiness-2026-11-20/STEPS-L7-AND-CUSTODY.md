@@ -2,9 +2,18 @@
 
 Written 2026-11-20. These steps work for any capture date; nothing in them names the window. Part A runs on the Mac, in a throwaway clone. Part B runs in the approved off-Mac signer environment, except B6, which TJ does in the Vercel dashboard and on the Mac.
 
-Nothing here pushes, deploys, arms, re-dates or writes to production. B6 stages two production environment variables and needs TJ's explicit approval at blocker 4. Every command below was run on 2026-11-20, Part B with throwaway keys that were then deleted.
+Nothing here pushes, deploys, arms, re-dates or writes to production. B6 stages two production environment variables and needs TJ's explicit approval at blocker 4. **What was run on 2026-11-20:**
+- **Part A, A1–A3:** run verbatim in a throwaway clone. A3 typecheck exit 0. A6 was tested on a dummy clone path; the real review clone was removed by its literal path.
+- **Part B:** commands run with throwaway keys, then deleted, on macOS, so `shasum -a 256` was used.
+
+**Not run as written:**
+- B0's write into TJ's home (`~/blsh-verify`). The same `git show` output was hashed instead and printed `6118ac84…`.
+- The two B6 `pbpaste` lines, which would read TJ's clipboard. `--stdin` was exercised by redirecting a file.
+- The Linux `sha256sum` variants.
 
 ## Part A. L7 sign-off (shared NST owner and L7 reviewer, about 20 minutes, 0 builds)
+
+**Who:** A1–A4 are for the L7 reviewer and the shared NST owner. If nobody holds those roles, TJ names them. A5 is TJ's.
 
 What is being signed off: `blsh-native-capture` becomes a direct NST start at 12:05Z. It makes 2 NST URLs, 22 s apart, with zero retries. The 12:20Z backup shares the route and the `blsh-native-capture` audit name and is not a separate start. The code is in commits `1a6e54239` and `26f7aec97` on `refs/rc/blsh-live-readiness-20261120`, against base `dbe6a9e33`.
 
@@ -84,8 +93,10 @@ Signed off for integration in the single keyed BLSH release only. Day-of NST cle
 **A6. Clean up.**
 
 ```bash
-cd / && rm -rf "$(dirname "$L7")"
+cd ~ && rm -rf -- "${L7:?L7 is not set}"
 ```
+
+This removes only the clone. The empty temporary parent folder is left for the OS to clear.
 
 ## Part B. Signer custody (TJ off-Mac, then the independent verifier, then TJ in Vercel)
 
