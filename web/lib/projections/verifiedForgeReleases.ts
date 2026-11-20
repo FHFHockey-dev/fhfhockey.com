@@ -197,6 +197,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "November 20 upstream skater repair. The verifier found no excluded projection inputs in the 243-module producer closure.",
   },
+  {
+    closureSha256: "cdf87b73d436f83841e0af9d70fa1bd58df13236e2a1abdb74495eb912a43540",
+    commit: "7a13f65c071889f9bff650f10cb61f672ecd6ec7",
+    receipt: "tasks/artifacts/forge-rolling-writer-guard-2026-11-20/7a13f65c071889f9bff650f10cb61f672ecd6ec7.json",
+    receiptSha256: "135f3e3ba92a720f3f8b71bdc79c5e15e4c325090dae0ac4a9ec1142b97716c4",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "November 20 rolling writer game-identity guard. The verifier found no excluded projection inputs in the 243-module producer closure.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;

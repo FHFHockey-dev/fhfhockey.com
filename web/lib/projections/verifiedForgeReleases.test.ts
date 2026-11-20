@@ -71,6 +71,7 @@ describe("verified FORGE releases", () => {
       ["ca6534eb2c1c8352ad75a0be0d304abd0ffc524bebc380cd3b4644ed4fed1704", "6c4e00f05d21884e7eb0d2e734abe8c817d92d44"],
       ["5efee60291d0938ca631b6e92c4d0c1fb8f94a27ab0aafd5dc94ad52c5df0b68", "00dc848156931863869c3a0828ef06f45b28bf9d"],
       ["d633c57257cfd34e78e2ed4680bbdb86ccc363374dddf0f6eb48db833c921be4", "cf0cb680ec1e381c3edc4a2d4059534b93c0b2cc"],
+      ["cdf87b73d436f83841e0af9d70fa1bd58df13236e2a1abdb74495eb912a43540", "7a13f65c071889f9bff650f10cb61f672ecd6ec7"],
     ]);
   });
 
