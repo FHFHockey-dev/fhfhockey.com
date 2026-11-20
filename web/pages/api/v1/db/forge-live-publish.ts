@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (begin.status !== "started" || !Number.isSafeInteger(begin.gameId) || !begin.claimId || !begin.slateDate || !begin.scheduledStart
       || !Number.isSafeInteger(begin.playerNhlId)) return res.status(409).json({ status: begin.status, sha });
   const gameId = begin.gameId!, claimId = begin.claimId!;
-  const verdictGate = () => gateSignedVerdict(db, claimId, gameId, sha, undefined, AbortSignal.timeout(RPC_MS));
+  const verdictGate = () => gateSignedVerdict(db, claimId, gameId, undefined, AbortSignal.timeout(RPC_MS));
   const signed: SignedVerdictDecision = await verdictGate();
   const scope = { STARTER_BOARD_COMPUTE_ENABLED: "true", STARTER_BOARD_SERVING_ENABLED: "true", STARTER_BOARD_CANARY_GAME_IDS: String(gameId) };
   const stages: Record<string, number> = {};

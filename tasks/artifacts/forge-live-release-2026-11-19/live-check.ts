@@ -1,7 +1,8 @@
 // Local process only (check_live.py). Fires the armed jobs' commands, delivers each GET to the real routes as pg_net would,
 // and records the independent verdict as the verifier would. Production flags; service role through PostgREST.
 import assert from "node:assert/strict";
-import { createHash, X509Certificate } from "node:crypto";
+import { createHash, generateKeyPairSync, X509Certificate } from "node:crypto";
+import { pathToFileURL } from "node:url";
 import { createServer, type Server } from "node:http";
 import { Client } from "pg";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -14,7 +15,8 @@ import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
 import { loadExternalInputProof } from "lib/projections/externalInputProof";
 import { loadForgeGameRevisions } from "lib/projections/gameRevisions";
 import { withForgeEnv } from "lib/projections/forgeEnvScope";
-import { verifySignedVerdict } from "lib/projections/pregameCapture/signedVerdictGate";
+import { witnessKeyId } from "lib/projections/pregameCapture/signedVerdict";
+import { WITNESS_SIGNING_KEYS } from "lib/projections/pregameCapture/witnessSigningKeys";
 import { getServiceRoleClient } from "lib/supabase/server";
 
 async function listen(server: Server) {
@@ -87,7 +89,40 @@ async function main() {
     // (pages/api/v1/db/forge-witness-verify) reads the claim back as forge_witness_api through PostgREST, re-verifies the
     // RFC 3161 token (the released profile re-pointed at this process's test TSA, as the verifier's rehearsal does) and
     // records the verdict. Otherwise the interface stub stands in.
-    if ((await sql("select to_regnamespace('forge_witness_api') is not null as real"))[0].real) {
+    if ((await sql("select to_regclass('forge_witness.signed_verdicts') is not null as signed"))[0].signed) {
+      // Track A: the verifier's own one-shot cron fire, then its committed Edge bundle (as deployed) judges the claim and
+      // records an Ed25519-signed verdict with a TEST signing key. The release trusts it only if that key is pinned, which
+      // this process does in memory for the success rehearsal (FORGE_SIGNED_MODE=pinned-test-key) and never ships.
+      const job = (await sql("select command from cron.job where jobname = $1", [`forge-witness-signed-${game}`]))[0]?.command as string;
+      assert.match(job, /forge_witness_ops\.fire_signed_v1\(2099020991, 1,/);
+      const firedSigned = Object.values((await sql(job))[0])[0] as string;
+      assert.match(firedSigned, /^fired \d+$/);
+      const test = generateKeyPairSync("ed25519");
+      const x = test.publicKey.export({ format: "jwk" }).x!, keyId = witnessKeyId(x);
+      if (process.env.FORGE_SIGNED_MODE === "pinned-test-key") Object.assign(WITNESS_SIGNING_KEYS, { [keyId]: x });
+      const [c] = await sql(`select c.slate_date::text slate, to_char(c.scheduled_start at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') start,
+        c.home_team_id home, c.away_team_id away, (select abbreviation from public.teams where id = c.home_team_id) home_abbrev,
+        (select abbreviation from public.teams where id = c.away_team_id) away_abbrev from forge_pregame_capture.claims c where c.id = $1`, [claimId]);
+      const landing = { id: game, startTimeUTC: c.start, gameDate: c.slate, gameState: "FUT", gameScheduleState: "OK",
+        homeTeam: { id: Number(c.home), abbrev: String(c.home_abbrev).trim() }, awayTeam: { id: Number(c.away), abbrev: String(c.away_abbrev).trim() } };
+      const edgeFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = new URL(String(input));
+        if (url.origin === "https://api-web.nhle.com") return Response.json(landing);
+        return globalThis.fetch(input, init);
+      }) as typeof fetch;
+      const importEsm = new Function("url", "return import(url)") as (url: string) => Promise<any>;
+      const edge = await importEsm(pathToFileURL(process.env.FORGE_EDGE_BUNDLE!).href);
+      const edgeEnv: Record<string, string> = { SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        FORGE_WITNESS_SIGNING_KEY: test.privateKey.export({ format: "der", type: "pkcs8" }).toString("base64") };
+      const response: Response = await edge.handleWitnessEdgeRequest(new Request("https://edge.local/forge-witness-verify", { method: "POST" }),
+        (name: string) => edgeEnv[name], { fetch: edgeFetch, trust: testTsaTrust() });
+      const edgeBody = await response.json();
+      assert.equal(response.status, 200, JSON.stringify(edgeBody).slice(0, 2000));
+      assert.equal(await count("forge_witness.signed_verdicts"), 1);
+      assert.equal(await count("forge_witness.verdicts"), 0);   // never mixed with the unsigned verifier
+      verifier = { package: "forge-witness-signed (committed Edge bundle)", fired: firedSigned, edge: edgeBody, keyId,
+        pinned: process.env.FORGE_SIGNED_MODE === "pinned-test-key" };
+    } else if ((await sql("select to_regnamespace('forge_witness_api') is not null as real"))[0].real) {
       const job = (await sql("select command from cron.job where jobname = $1", [`forge-witness-verify-${game}`]))[0]?.command as string;
       assert.match(job, /forge_witness_ops\.fire_v1\(2099020991, 1\)/);
       const firedVerify = (await sql(job))[0].fire_v1 as string;
@@ -115,10 +150,8 @@ async function main() {
     const firedPublish = await fire("publish");
     assert.match(firedPublish, /^fired \d+$/);
     const published = await call(publish, auth);
-    // Until the verifier package's signed-verdict verification is bound, the release must refuse publication end to end.
-    const seamBound = verifySignedVerdict(null, { claimId, gameId: game, raw: "", canonical: "", tsaTokenSha256: "", release: "" }).reason
-      !== "signed_verdict_verifier_not_integrated";
-    if (!seamBound) {
+    // With no key pinned (the shipped state), the release must refuse publication end to end.
+    if (process.env.FORGE_SIGNED_MODE !== "pinned-test-key") {
       assert.match(String(published.body.reason), /^signed_verdict:/);
       assert.deepEqual({ status: published.body.status, revisionId: published.body.revisionId, readers: published.body.readers },
         { status: "failed", revisionId: null, readers: null });
@@ -130,7 +163,9 @@ async function main() {
         failClosed: "signed verdict not verifiable in this release: no publication, no readers", restCalls, errors, tsaCalls, verifier }));
       return;
     }
-    assert.ok(published.status === 200 && published.body.status === "succeeded", JSON.stringify({ body: published.body, errors }).slice(0, 3000));
+    assert.ok(published.status === 200 && published.body.status === "succeeded", JSON.stringify({ body: published.body, errors,
+      gate: (await sql("select forge_pregame_capture.live_signed_gate_v1($1) g", [claimId]))[0].g,
+      signedRow: (await sql("select payload from forge_witness.signed_verdicts"))[0]?.payload, edge: (verifier as { edge?: unknown }).edge }).slice(0, 5000));
     const again = await call(publish, auth);
     assert.equal(again.body.status, "none_ready");
     assert.equal(await count("forge_pregame_capture.publications"), 1);

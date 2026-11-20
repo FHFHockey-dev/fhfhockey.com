@@ -31,8 +31,8 @@ async function main() {
     const witness = claimId ? await one<Record<string, any>>(`select tsa_token_sha256 from forge_pregame_capture.witnesses where claim_id = $1`, [claimId]) : null;
     const publications = (await db.query(`select p.claim_id, p.revision_id, p.raw_sha256, p.canonical_sha256
       from forge_pregame_capture.publications p join forge_pregame_capture.claims c on c.id = p.claim_id where c.game_id = $1`, [gameId])).rows;
-    const signed = claimId ? await one<{ v: Record<string, unknown> | null }>("select public.forge_live_signed_verdict_v1($1) as v", [claimId]) : null;
-    const signedVerdict = signed?.v?.signedVerdict ?? null;
+    const signed = claimId ? await one<{ v: unknown }>("select forge_witness.signed_verdict_v1($1) as v", [claimId]) : null;
+    const signedVerdict = signed?.v ?? null;
     await db.query("rollback");
 
     const iso = (v: Date | string | null | undefined) => (v == null ? null : new Date(v).toISOString());

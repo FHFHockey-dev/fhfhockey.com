@@ -108,6 +108,9 @@ def main():
           create table net._http_response(id bigint, status_code int, content text, timed_out boolean, error_msg text, created timestamptz default now());
           create function net.http_get(url text, params jsonb default '{}', headers jsonb default '{}', timeout_milliseconds int default 5000)
             returns bigint language sql as $$insert into net.requests(url,headers,timeout_ms) values(url,headers,timeout_milliseconds) returning id$$;
+          create or replace function net.http_post(url text, body jsonb default '{}', params jsonb default '{}', headers jsonb default '{}',
+            timeout_milliseconds int default 5000)
+            returns bigint language sql as $$insert into net.requests(url,headers,timeout_ms) values(url,headers,timeout_milliseconds) returning id$$;
           insert into vault.decrypted_secrets values ('cron_secret', repeat('c', 48));""")
         # Production lacks the publication objects: install the platform without them, then apply the repository files.
         BOOT["add_seed"].__globals__["HOSTED"] = []      # no hosted witness roles or v2 objects: production has none
@@ -124,7 +127,11 @@ def main():
         verifier = ROOT / "tasks/artifacts/forge-witness-verifier-2026-11-19/forge-witness-verifier.sql"
         psql("-f", verifier if verifier.exists() else HERE / "witness-stub.sql")
         psql("-f", ROOT / "supabase/migrations" / LIVE)
-        psql("-f", ROOT / "supabase/migrations" / "20261120000100_forge_live_signed_verdict.sql")
+        # Track A (signed verdicts) on top of the verifier, then the live run's signed-verdict gate.
+        signed_sql = ROOT / "tasks/artifacts/forge-witness-signed-2026-11-19/forge-witness-signed.sql"
+        if signed_sql.exists():
+            psql("-f", signed_sql)
+            psql("-f", ROOT / "supabase/migrations" / "20261120000100_forge_live_signed_verdict.sql")
 
         # PostgREST as production serves the service role.
         secret = secrets.token_hex(32)
@@ -150,7 +157,11 @@ def main():
         psql("-v", f"game={GAME}", "-v", f"player={PLAYER}", "-v", f"release={label}", "-v", "approver=local-rehearsal",
              "-v", f"capture_at={cron_at(start - timedelta(minutes=80))}", "-v", f"publish_at={cron_at(start - timedelta(minutes=58))}",
              "-v", f"close_at={cron_at(start + timedelta(minutes=1))}", "-f", HERE / "approve-and-arm.sql")
-        if verifier.exists():   # the verifier package's own scripts: credential (stdin) then target + one-fire cron job
+        if signed_sql.exists():   # Track A only (never mixed with the unsigned verifier): target + one-fire Edge cron job
+            anon = jwt(secret, {"role": "anon", "iat": now, "exp": now + 3600})
+            psql("-v", f"game={GAME}", "-v", f"schedule={cron_at(start - timedelta(minutes=75))}", "-v", f"anon_key={anon}",
+                 "-f", signed_sql.parent / "arm-signed-verify.sql")
+        elif verifier.exists():   # the verifier package's own scripts: credential (stdin) then target + one-fire cron job
             witness = jwt(secret, {"role": "forge_witness_api", "iat": now, "exp": now + 3 * 3600})
             run(PG / "psql", "-X", "-q", "-At", "-h", directory, "-p", port, "-U", "postgres", "-v", "ON_ERROR_STOP=1",
                 "-f", verifier.parent / "set-witness-credential.sql", "postgres", input=witness + "\n")
@@ -162,7 +173,8 @@ def main():
                      TS_NODE_COMPILER_OPTIONS='{"module":"commonjs","moduleResolution":"node"}',
                      NEXT_PUBLIC_SUPABASE_URL=f"http://127.0.0.1:{rest_port}", NEXT_PUBLIC_SUPABASE_PUBLIC_KEY="unused-local",
                      SUPABASE_SERVICE_ROLE_KEY=service, VERCEL_ENV="production", VERCEL_GIT_COMMIT_SHA=label, CRON_SECRET="c" * 48,
-                     FORGE_LIVE_GAME=str(GAME),
+                     FORGE_LIVE_GAME=str(GAME), FORGE_SIGNED_MODE=ENV.get("FORGE_SIGNED_MODE", "pinned-test-key"),
+                     FORGE_EDGE_BUNDLE=str(ROOT / "supabase/functions/forge-witness-verify/core.bundle.js"),
                      FORGE_OWNER_DSN=json.dumps({"host": str(directory), "port": port, "user": "postgres", "database": "postgres"}), **PROD_FLAGS)
         result = subprocess.run(["node", "-r", "ts-node/register/transpile-only", str(HERE / "live-check.ts")],
                                 cwd=WEB, env=child, capture_output=True, text=True, timeout=600)
@@ -174,6 +186,9 @@ def main():
                           "flags": PROD_FLAGS, "publicationMigrationSha256": PUBLICATION_SHA,
                           "liveMigrationSha256": hashlib.sha256((ROOT / "supabase/migrations" / LIVE).read_bytes()).hexdigest(),
                           "verifierMigrationSha256": hashlib.sha256(verifier.read_bytes()).hexdigest() if verifier.exists() else "stub",
+                          "signedMigrationSha256": hashlib.sha256(signed_sql.read_bytes()).hexdigest() if signed_sql.exists() else None,
+                          "signedGateMigrationSha256": hashlib.sha256((ROOT / "supabase/migrations/20261120000100_forge_live_signed_verdict.sql").read_bytes()).hexdigest(),
+                          "signedMode": ENV.get("FORGE_SIGNED_MODE", "pinned-test-key"),
                           "route": route, "readback": receipt}, indent=1))
         owner.close()
     finally:

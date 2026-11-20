@@ -7,7 +7,7 @@ import { checkSignedVerdict, verifySignedVerdict, type SignedVerdictVerify } fro
 type Reader = { selectedRun?: string | null; revisionId?: string | null; points?: number | null; reason?: string | null } | null;
 export type AcceptanceEvidence = {
   gameId: number;
-  /** The release the live run was armed for (it publishes and signs as that release). */
+  /** The release the live run was armed for (reported; the signed verdict carries the verifier bundle's own release). */
   release: string | null;
   game: { startTime: string } | null;
   run: { outcome: string | null; claimId: string | null; revisionId: string | null; scheduledStart: string;
@@ -31,13 +31,13 @@ export async function assessLiveAcceptance(e: AcceptanceEvidence, verify: Signed
   const custody = add("custody_qualified", !!claim && claim.id === run?.claimId && claim.gameId === e.gameId && e.outcome === "qualified"
     && !!e.artifact && !!e.witness, `claim=${claim?.id ?? "none"} outcome=${e.outcome ?? "none"}`);
 
-  if (custody && claim && e.artifact && e.witness && e.release) {
+  if (custody && claim && e.artifact && e.witness) {
     const decision = checkSignedVerdict(e.signedVerdict, { claimId: claim.id, gameId: e.gameId, raw: e.artifact.rawSha256,
-      canonical: e.artifact.canonicalSha256, tsaTokenSha256: e.witness.tsaTokenSha256, release: e.release }, claim.scheduledStart, verify);
+      canonical: e.artifact.canonicalSha256, tsaTokenSha256: e.witness.tsaTokenSha256 }, claim.scheduledStart, verify);
     add("signed_verdict", decision.ok, decision.ok
       ? `valid; officialStart=${decision.officialStart} deadline=${decision.deadline} verifiedAt=${decision.verifiedAt}`
       : `rejected:${decision.reason}`);
-  } else add("signed_verdict", false, "no qualified custody or release to bind a verdict to");
+  } else add("signed_verdict", false, "no qualified custody to bind a verdict to");
 
   const pubs = e.publications;
   const pub = pubs.length === 1 ? pubs[0] : null;

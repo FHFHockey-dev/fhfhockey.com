@@ -73,21 +73,24 @@ it("publish: without a signed verdict that verifies against the pinned keys, it 
   const pub = vi.spyOn(publication, "publishQualifiedPregameCapture");
   const claimId = "c1aa0000-0000-4000-8000-000000000001";
   const calls: [string, Record<string, unknown>][] = [];
+  const answer = (data: unknown) => ({ abortSignal() { return this; }, then: (resolve: (v: unknown) => void) => resolve({ error: null, data }) });
   const rpc = vi.fn((name: string, args: Record<string, unknown>) => {
     calls.push([name, args]);
-    const data = name === "forge_live_publish_begin_v1"
+    return answer(name === "forge_live_publish_begin_v1"
       ? { status: "started", gameId: 2026020358, claimId, slateDate: "2026-11-19", scheduledStart: "2026-11-20T03:00:00Z", seasonId: 20262027, playerNhlId: 8478402 }
-      : name === "forge_live_signed_verdict_v1"
-        ? { claimId, gameId: 2026020358, scheduledStart: "2026-11-20T03:00:00Z", raw: "a".repeat(64), canonical: "b".repeat(64),
-            tsaTokenSha256: "c".repeat(64), signedVerdict: { payload: { verdict: "accepted", officialStart: "2026-11-20T03:00:00Z" }, signature: "forged" } }
-        : { outcome: "failed", reason: args.p_reason };
-    return { abortSignal: async () => ({ error: null, data }) };
+      : name === "forge_live_claim_hashes_v1"
+        ? { claimId, gameId: 2026020358, scheduledStart: "2026-11-20T03:00:00Z", raw: "a".repeat(64), canonical: "b".repeat(64), tsaTokenSha256: "c".repeat(64) }
+        : { outcome: "failed", reason: args.p_reason });
   });
-  vi.spyOn(server, "getServiceRoleClient").mockReturnValue({ rpc } as unknown as ReturnType<typeof server.getServiceRoleClient>);
+  // A row that looks right but is signed by nobody pinned in this release (the shipped keys file is empty).
+  const witnessRpc = vi.fn((name: string, args: Record<string, unknown>) => { calls.push([`forge_witness_api.${name}`, args]);
+    return answer({ payload: "{}", signature: "A".repeat(86) + "==" }); });
+  vi.spyOn(server, "getServiceRoleClient").mockReturnValue({ rpc, schema: () => ({ rpc: witnessRpc }) } as unknown as ReturnType<typeof server.getServiceRoleClient>);
   const result = await call(publish, {});
-  expect(result).toMatchObject({ code: 503, body: { status: "failed", reason: "signed_verdict:signed_verdict_verifier_not_integrated", revisionId: null, readers: null } });
-  expect(calls.map(([name]) => name)).toEqual(["forge_live_publish_begin_v1", "forge_live_signed_verdict_v1", "forge_live_publish_finish_v1"]);
-  expect(calls[2][1]).toMatchObject({ p_revision_id: null, p_readers: null, p_reason: "signed_verdict:signed_verdict_verifier_not_integrated" });
+  expect(result).toMatchObject({ code: 503, body: { status: "failed", reason: "signed_verdict:payload_invalid", revisionId: null, readers: null } });
+  expect(calls.map(([name]) => name).sort()).toEqual(["forge_live_claim_hashes_v1", "forge_live_publish_begin_v1", "forge_live_publish_finish_v1",
+    "forge_witness_api.signed_verdict_v1"]);
+  expect(calls.find(([name]) => name === "forge_live_publish_finish_v1")![1]).toMatchObject({ p_revision_id: null, p_readers: null, p_reason: "signed_verdict:payload_invalid" });
   expect(enter).not.toHaveBeenCalled();
   expect(pub).not.toHaveBeenCalled();
 });

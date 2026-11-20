@@ -15,12 +15,13 @@ const good = (): AcceptanceEvidence => ({
   outcome: "qualified",
   artifact: { rawSha256: "a".repeat(64), canonicalSha256: "b".repeat(64) },
   witness: { tsaTokenSha256: "c".repeat(64) },
-  signedVerdict: { sig: "valid", payload: { verdict: "accepted", officialStart: start } },
+  signedVerdict: { sig: "valid" },
   publications: [{ claimId, revisionId, rawSha256: "a".repeat(64), canonicalSha256: "b".repeat(64) }],
 });
 const valid: SignedVerdictVerify = (signed, expected) =>
-  (signed as { sig?: string })?.sig === "valid" && expected.claimId === claimId && expected.raw === "a".repeat(64) && expected.release === "f".repeat(40)
-    ? { ok: true, deadline: "2026-11-20T02:00:00.000Z", verifiedAt: "2026-11-20T01:55:00.000Z" } : { ok: false, reason: "bad_signature" };
+  (signed as { sig?: string })?.sig === "valid" && expected.claimId === claimId && expected.raw === "a".repeat(64)
+    ? { ok: true, officialStart: (signed as { start?: string }).start ?? start, deadline: "2026-11-20T02:00:00.000Z", verifiedAt: "2026-11-20T01:55:00.000Z" }
+    : { ok: false, reason: "bad_signature" };
 const failed = (r: Awaited<ReturnType<typeof assessLiveAcceptance>>) => r.checks.filter(c => !c.ok).map(c => c.name);
 
 describe("live acceptance audit", () => {
@@ -37,10 +38,10 @@ describe("live acceptance audit", () => {
     expect(failed(await assessLiveAcceptance(good(), () => { throw new Error("no key"); }))).toEqual(["signed_verdict"]);
   });
 
-  it("fails closed with the unbound seam, and uses the signed official start, not the database's", async () => {
+  it("fails closed against the pinned keys (no key pinned), and uses the signed official start, not the database's", async () => {
     expect((await assessLiveAcceptance(good())).checks.find(c => c.name === "signed_verdict")?.detail)
-      .toBe("rejected:signed_verdict_verifier_not_integrated");
-    const moved = good(); (moved.signedVerdict as { payload: { officialStart: string } }).payload.officialStart = "2026-11-20T02:50:00.000Z";
+      .toBe("rejected:verdict_missing");
+    const moved = good(); moved.signedVerdict = { sig: "valid", start: "2026-11-20T02:50:00.000Z" };
     expect((await assessLiveAcceptance(moved, valid)).checks.find(c => c.name === "signed_verdict")?.detail).toBe("rejected:official_start_mismatch");
   });
 
