@@ -7,9 +7,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; // top-anchored: the title holds one height on all auth pages
   min-height: calc(100vh - 160px);
-  padding: 48px 20px;
+  padding: 64px 20px 56px;
 }
 
 // Doubled class: beats PageTitle's own .title margins regardless of stylesheet order.
@@ -110,16 +110,6 @@
   padding: 0;
 }
 
-.formTitle {
-  margin: 0 0 16px;
-  color: vars.$color-white;
-  font-family: vars.$font-family-primary;
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
 // An even 2×2 grid. Reset Local Auth stays reachable here: it is the recovery path
 // for a stale local session (covered by __tests__/pages/auth/index.test.tsx).
 .actions {
@@ -176,8 +166,15 @@
     padding: 22px 18px;
   }
 
+  // Tabs stay one row on phones (stacked they read as three separate actions);
+  // a long label such as "Forgot password" wraps inside its tab.
   .modeSwitch {
-    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .modeButton {
+    padding: 4px 6px;
+    line-height: 1.2;
   }
 
   .actions {

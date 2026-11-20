@@ -1,5 +1,6 @@
 @use "styles/panel" as panel;
 @use "styles/vars" as v;
+@use "sass:color";
 
 @mixin focus-visible {
   &:focus-visible {
@@ -269,8 +270,15 @@
   span {
     display: block;
     height: 100%;
+    border-radius: inherit; // rounded data end, not a square cut at the share
     background: v.$primary-color;
   }
+}
+
+// One accent per chart: the inferred team(s) keep brand blue; other teams sit in a
+// muted step (60% primary on the surface; validator ΔE 17 vs primary, ≥3:1).
+.barMuted span {
+  background: color.mix(v.$primary-color, v.$background-dark, 60%);
 }
 
 .picker {

@@ -1,10 +1,22 @@
 @use "styles/vars" as v;
+@use "sass:color";
 
 // Brand blues (fhfh-styles §7): tokens instead of the private teal palette.
 .page { min-height: 100vh; padding: 32px clamp(18px, 4vw, 64px) 72px; color: v.$text-primary; background: v.$surface-0; } // flat surface (fhfh-styles §2.2)
 .hero, .panelHeader { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
 .hero { max-width: 1320px; margin: 0 auto 24px; padding: 28px; border: 1px solid v.$border-secondary; border-radius: v.$radius-panel; background: v.$background-medium; }
 .hero h1, .panel h2 { margin: 4px 0 8px; }
+// Page title follows the admin header rule (fhfh-styles §8.4, as on Route Runner):
+// accent display face, uppercase, 0.06em tracking.
+.hero h1 {
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: clamp(v.$font-size-xl, 2vw, v.$font-size-xxl);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
 .hero p, .panel p { color: v.$text-secondary; }
 .eyebrow { margin: 0 !important; color: v.$primary-color !important; font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .gate { padding: 6px 10px; border: 1px solid rgba(v.$warning-color, 0.6); border-radius: v.$radius-control; color: v.$warning-color; white-space: nowrap; background: rgba(v.$warning-color, 0.08); }
@@ -22,13 +34,17 @@
 .filters select { min-width: 180px; padding: 9px 30px 9px 10px; border: 1px solid v.$border-secondary; border-radius: v.$radius-control; color: v.$text-primary; background: v.$background-dark; }
 .chartScroll, .tableScroll { overflow-x: auto; }
 .chart { width: 100%; min-width: 760px; height: auto; }
-.grid { stroke: rgba(158, 193, 204, .15); stroke-width: 1; }
-.axis { fill: #86a0aa; font-size: 12px; }
-.wick { stroke: #d6e3e7; stroke-width: 2; }
-.up { fill: #26bfa8; stroke: #8ce6d7; }
-.down { fill: #db6675; stroke: #ff9daa; }
-.actual { fill: #ffd166; stroke: #17130a; stroke-width: 1.5; }
-.interval { stroke: #8bb7ff; stroke-width: 4; stroke-linecap: round; opacity: .75; }
+// Chart chrome and marks on tokens (fhfh-styles §7.5). Up/down is a polarity pair:
+// brand blue vs danger red, each mixed toward the surface into the dark-mode
+// lightness band (validate_palette.js: L 0.65/0.66, CVD ΔE 13.0, contrast ≥3:1).
+// Actual is a neutral dot with a surface ring; the interval bar is a neutral side mark.
+.grid { stroke: v.$chart-grid-color; stroke-width: 1; }
+.axis { fill: v.$chart-tick-color; font-size: 12px; }
+.wick { stroke: v.$text-secondary; stroke-width: 2; }
+.up { fill: color.mix(v.$primary-color, v.$background-dark, 95%); }
+.down { fill: color.mix(v.$danger-color, v.$background-dark, 90%); }
+.actual { fill: v.$text-primary; stroke: v.$background-dark; stroke-width: 2; }
+.interval { stroke: rgba(v.$text-primary, 0.35); stroke-width: 4; stroke-linecap: round; }
 .revisionPath { fill: none; stroke: #f3f7f8; stroke-width: 1.5; opacity: .65; }
 .empty { padding: 38px; border: 1px dashed v.$border-secondary; border-radius: v.$radius-card; text-align: center; }
 .error { max-width: 1320px; margin: 14px auto; padding: 12px 16px; border: 1px solid rgba(v.$danger-color, 0.7); border-radius: v.$radius-control; background: rgba(v.$danger-color-dark, 0.55); }

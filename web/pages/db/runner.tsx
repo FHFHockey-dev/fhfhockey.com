@@ -17,6 +17,8 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -66,7 +68,9 @@ const MAX_EVENTS_KEPT = 5_000;
 // $border-secondary and $background-dark (SVG attributes cannot read SCSS).
 const SERIES = "#14a2d2";
 const AXIS_TEXT = "#aaaaaa";
-const GRID = "rgba(80, 80, 80, 0.45)";
+const GRID = "rgba(204, 204, 204, 0.1)"; // $chart-grid-color
+const SERIES_MUTED = "#166d8b"; // 60% $primary-color on the chart surface (ΔE 17 vs SERIES, ≥3:1)
+const REFERENCE = "#aaaaaa"; // $text-secondary: neutral average marker
 const TOOLTIP_BG = "#1a1d21";
 
 const CONTRACT_LABELS: Record<RouteRunnerContract, string> = {
@@ -386,11 +390,9 @@ function RunBuilder(props: {
               </details>
             )}
           </>
-        ) : (
-          <p className={styles.routeNotes}>
-            {parts ? `${parts.path} is not on the runner allowlist.` : "Pick a route above, or paste a URL below."}
-          </p>
-        )}
+        ) : parts ? (
+          <p className={styles.routeNotes}>{parts.path} is not on the runner allowlist.</p>
+        ) : null}
 
         <div className={styles.urlBar}>
           <div className={styles.option}>
@@ -581,6 +583,7 @@ function JobDetail(props: {
     step: point.step,
     seconds: Math.round((point.durationMs ?? 0) / 100) / 10
   }));
+  const averageStepSeconds = averageStepMs != null ? Math.round(averageStepMs / 100) / 10 : null;
   const axis = { tick: { fill: AXIS_TEXT, fontSize: 11 }, stroke: GRID };
   const tooltipStyle = {
     contentStyle: { background: TOOLTIP_BG, border: `1px solid ${GRID}`, color: "#cccccc" },
@@ -680,7 +683,7 @@ function JobDetail(props: {
             <h3>Step duration (s)</h3>
             <div className={styles.chartBody}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={durationSeries} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                <BarChart data={durationSeries} margin={{ top: 8, right: 32, bottom: 0, left: 0 }}>
                   <CartesianGrid stroke={GRID} vertical={false} />
                   <XAxis dataKey="step" {...axis} />
                   <YAxis {...axis} width={40} />
@@ -690,7 +693,24 @@ function JobDetail(props: {
                     formatter={(value: number) => [`${value} s`, "duration"]}
                     labelFormatter={(step) => `step ${step}`}
                   />
-                  <Bar dataKey="seconds" fill={SERIES} radius={[4, 4, 0, 0]} maxBarSize={18} isAnimationActive={false} />
+                  {/* Steps slower than average carry the accent; the rest sit in a muted step. */}
+                  <Bar dataKey="seconds" fill={SERIES_MUTED} radius={[4, 4, 0, 0]} maxBarSize={18} isAnimationActive={false}>
+                    {durationSeries.map((point) => (
+                      <Cell
+                        key={point.step}
+                        fill={averageStepSeconds != null && point.seconds > averageStepSeconds ? SERIES : SERIES_MUTED}
+                      />
+                    ))}
+                  </Bar>
+                  {averageStepSeconds != null ? (
+                    <ReferenceLine
+                      y={averageStepSeconds}
+                      stroke={REFERENCE}
+                      strokeDasharray="4 4"
+                      ifOverflow="extendDomain"
+                      label={{ value: "avg", position: "right", fill: REFERENCE, fontSize: 11 }}
+                    />
+                  ) : null}
                 </BarChart>
               </ResponsiveContainer>
             </div>

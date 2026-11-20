@@ -121,3 +121,14 @@ Medium- and low-priority changes found during the toenail fixes and the skill pa
 | all scope | tokens | ~~Auth/forecast literals and radii → tokens; tweet-review pills → $radius-control; /db dead sx removed.~~ Fixed 2026-11-19 | Done | 2 |
 | all scope | accessibility | ~~axe 0 on 11 routes × 2 widths; focus rings blue; MUI focus visible; terminal copy icon.~~ Fixed 2026-11-19 | Done | 3 |
 | /db | focus.cjs inputs | False positive: ring is drawn on the MUI field box, not the inner <input>; verified visually. | Done (FP) | 3 |
+| /db | table cards (pages/db/index.tsx) | ~~live counts buried mid-sentence → count figure + unit caption; season "2026-27"~~ | Done | 6 |
+| /db/runner | Build a run (pages/db/runner.tsx) | ~~empty-state line repeated the panel header → removed~~ | Done | 6 |
+| /auth | mode tabs + heading (pages/auth/index.tsx, Auth.module.scss) | ~~phone tabs stacked; heading repeated selected tab; title "Authentication" → one row, no heading, "Account"~~ | Done | 6 |
+| /auth/* | container (Auth/Callback/ResetPassword.module.scss) | ~~vertically centred, title jumped between pages; 620 vs 640 → top-anchored, 640px~~ | Done | 6 |
+| /auth/reset-password | heading + secondary (reset-password.tsx) | ~~"Choose a new password" over errors; "Return Home" → state headings, "Return to site"~~ | Done | 6 |
+| /db/player-aliases | decision actions (player-aliases.tsx/.module.scss) | ~~non-wrapping row, Ignore overlapped review notes (High) → .actionRow wraps~~ | Done | 6 |
+| /db forecast pages | hero h1 (PlayerForecasts / SeasonEditor modules) | ~~bold sans page title → display title rule (public /player-forecasts too)~~ | Done | 6 |
+| /db/upsert-projections | page header (upsert-projections.tsx/.module.scss) | ~~bare "Admin: …" title, no way back → /db header + Back to /db~~ | Done | 6 |
+| /player-forecasts + review | candlestick colours (styles/PlayerForecasts.module.scss) | ~~private literals; teal/red CVD ΔE 7.9, off-band → token mixes, ΔE 13.0, in band~~ | Done | 7 |
+| /db/runner | step-duration chart (pages/db/runner.tsx) | ~~no reference for Avg step; all bars one weight → dashed avg line, above-average accent~~ | Done | 7 |
+| /db/beat-reporter-review | team share bars (BeatReporterReview) | ~~every bar accent, square data end → inferred team accent, others muted, rounded~~ | Done | 7 |

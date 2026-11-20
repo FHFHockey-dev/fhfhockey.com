@@ -789,10 +789,8 @@
   flex-wrap: wrap;
   gap: 4px 10px;
   color: v.$text-secondary;
-  font-size: 11px;
-  line-height: 1.25;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 12px;
+  line-height: 1.25; // plain case: this is content (date, team, category), not a label
 }
 
 .queueItemTitle {

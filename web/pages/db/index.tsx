@@ -21,6 +21,7 @@ import { useSnackbar } from "notistack";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import AdminPageGate from "components/Admin/AdminPageGate";
 import styles from "./db-index.module.scss";
+import { formatSeason } from "utils/stats/formatters";
 import CronRouteRunner from "components/Admin/CronRouteRunner";
 
 const NST_MANUAL_BACKFILL_DELAY_MS = 21_000;
@@ -781,9 +782,11 @@ function DatabasePage() {
               <Typography gutterBottom variant="h5" component="div">
                 PLAYERS / ROSTERS
               </Typography>
+              <p className={styles.cardFigure}>
+                <strong>{numPlayers.toLocaleString()}</strong> players
+              </p>
               <Typography variant="body2">
-                The table contains the data for {numPlayers} players. The
-                <code>players</code> and <code>rosters</code> tables will be updated simultaneously.
+                Updates the <code>players</code> and <code>rosters</code> tables together.
               </Typography>
             </CardContent>
             <CardActions>
@@ -807,9 +810,11 @@ function DatabasePage() {
               <Typography gutterBottom variant="h5" component="div">
                 SEASONS
               </Typography>
+              <p className={styles.cardFigure}>
+                <strong>{numSeasons.toLocaleString()}</strong> seasons
+              </p>
               <Typography variant="body2">
-                The table contains the data for {numSeasons} seasons. This card
-                updates the <code>seasons</code> table.
+                Updates the <code>seasons</code> table.
               </Typography>
             </CardContent>
             <CardActions>
@@ -833,9 +838,11 @@ function DatabasePage() {
               <Typography gutterBottom variant="h5" component="div">
                 TEAMS
               </Typography>
+              <p className={styles.cardFigure}>
+                <strong>{numTeams.toLocaleString()}</strong> teams
+              </p>
               <Typography variant="body2">
-                The table contains the data for {numTeams} teams. This card
-                updates the <code>teams</code> & <code>team_season</code> tables.
+                Updates the <code>teams</code> and <code>team_season</code> tables.
               </Typography>
               <TextField
                 label="Season ID (optional)"
@@ -869,9 +876,11 @@ function DatabasePage() {
               <Typography gutterBottom variant="h5" component="div">
                 GAMES
               </Typography>
+              <p className={styles.cardFigure}>
+                <strong>{numGames.toLocaleString()}</strong> games in {season ? `the ${formatSeason(season.seasonId)}` : "this"} season
+              </p>
               <Typography variant="body2">
-                The table contains the data for {numGames} games in{" "}
-                {season?.seasonId} season. This card updates the <code>games</code> tables.
+                Updates the <code>games</code> table.
               </Typography>
               <TextField
                 label="Season ID (optional)"

@@ -633,7 +633,15 @@ function UpsertProjections() {
 
   return (
     <Container className={styles.page}>
-      <PageTitle className={styles.pageTitle}>Admin: Upsert CSV Projections</PageTitle>
+      <div className={styles.topbar}>
+        <div>
+          <span className={styles.eyebrow}>Admin · Database</span>
+          <h1>Upsert CSV projections</h1>
+        </div>
+        <Link href="/db" className={styles.topLink}>
+          Back to /db
+        </Link>
+      </div>
       <ClientOnly>
         {" "}
         {/* Ensures this only renders on client after auth check */}

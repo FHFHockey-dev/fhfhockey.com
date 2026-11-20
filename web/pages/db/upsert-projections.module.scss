@@ -12,16 +12,53 @@
   @include admin.admin-mui-controls;
 }
 
-// Page title (§8.4); doubled class beats PageTitle's own sizing.
-.page .pageTitle {
-  margin: v.$space-lg 0 v.$space-md;
-  color: v.$color-white;
-  font-family: v.$font-family-accent;
-  font-size: clamp(1.5rem, 3vw, 2.25rem);
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  line-height: 1.2;
+// Page header (matches /db and /db/runner): eyebrow, display title, one action.
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  margin: v.$space-md 0;
+  padding: v.$space-sm v.$space-md;
+  border: v.$border-subtle;
+  border-radius: v.$radius-panel;
+  background: v.$background-medium;
+
+  h1 {
+    margin: 0;
+    color: v.$color-white;
+    font-family: v.$font-family-accent;
+    font-size: clamp(v.$font-size-xl, 2vw, v.$font-size-xxl);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: v.$space-xs;
+  color: v.$primary-color;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.topLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: v.$control-height-sm;
+  padding: 0 12px;
+  border-radius: v.$radius-control;
+  text-decoration: none;
+  @include v.button-tint;
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
 }
 
 .page :global(.MuiPaper-root) {

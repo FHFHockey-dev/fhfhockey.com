@@ -150,3 +150,21 @@
   font-family: v.$font-family-numbers;
   font-size: 0.9em;
 }
+
+// Each table card's memorable element: its live row count as a figure.
+.cardFigure {
+  margin: 0 0 v.$space-sm;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+
+  // Number on its own line, unit as a caption under it, so the four figures align.
+  strong {
+    display: block;
+    color: v.$color-white;
+    font-family: v.$font-family-numbers;
+    font-size: v.$font-size-lg; // 20px: a figure, not louder than the card title
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+}

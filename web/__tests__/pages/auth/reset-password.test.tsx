@@ -158,6 +158,8 @@ describe("Reset password page", () => {
         "This reset link has expired or was already used. Request a new reset email and try again."
       )
     ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Let's try that again" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Return to site" }).getAttribute("href")).toBe("/");
     expect(screen.queryByLabelText("New Password")).toBeNull();
     expect(screen.queryByLabelText("Confirm Password")).toBeNull();
     expect(screen.queryByRole("button", { name: "Update Password" })).toBeNull();
@@ -285,6 +287,7 @@ describe("Reset password page", () => {
         "Password updated. You're signed in."
       )
     ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Password saved" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Continue to site" }).getAttribute("href")).toBe(
       "/account"
     );

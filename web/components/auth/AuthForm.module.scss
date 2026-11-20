@@ -58,15 +58,15 @@
 .dividerLine {
   flex: 1 1 auto;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(v.$secondary-color, 0.42), transparent);
+  background: v.$border-secondary; // flat hairline, no cyan gradient fade
 }
 
 .dividerLabel {
   color: v.$text-secondary;
   font-family: v.$font-family-primary;
   font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -83,12 +83,13 @@
   gap: 8px;
 }
 
+// Field captions match the admin forms: small caps at 600, light tracking, secondary ink.
 .fieldLabel {
-  color: v.$color-white;
+  color: v.$text-secondary;
   font-family: v.$font-family-primary;
   font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 

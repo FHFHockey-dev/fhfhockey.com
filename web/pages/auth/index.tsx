@@ -53,7 +53,7 @@ export default function AuthPage() {
 
   return (
     <Container className={styles.container}>
-      <PageTitle className={styles.pageTitle}>Authentication</PageTitle>
+      <PageTitle className={styles.pageTitle}>Account</PageTitle>
       <ClientOnly>
         <section className={styles.card}>
           {user ? <h2 className={styles.title}>You are already signed in</h2> : null}
@@ -115,7 +115,6 @@ export default function AuthPage() {
               </div>
 
               <div className={styles.formShell}>
-                <div className={styles.formTitle}>{MODE_LABELS[mode]}</div>
                 <AuthForm mode={mode} showFallbackLink={false} />
               </div>
             </>

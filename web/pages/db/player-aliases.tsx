@@ -398,7 +398,7 @@ const PlayerAliasesReview = () => {
               <span>Supply an NHL.com source only after verifying this player belongs to the reported team’s camp. Saving records camp membership for 30 days and preserves historical rosters.</span>
             </label>}
 
-            <div style={{ display: "flex", gap: 12 }}>
+            <div className={styles.actionRow}>
               {!splitMode && <button
                 className={styles.primaryAction}
                 disabled={selectedUnresolved.status !== "pending" || !selectedPlayerId || Boolean(occurrenceMode && !selectedOccurrence)}

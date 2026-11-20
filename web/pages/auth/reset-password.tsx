@@ -345,7 +345,13 @@ export default function ResetPasswordPage() {
         <PageTitle className={styles.pageTitle}>Reset Password</PageTitle>
         <ClientOnly>
           <div className={styles.card}>
-            <h2 className={styles.title}>Choose a new password</h2>
+            <h2 className={styles.title}>
+              {pageState === "error"
+                ? "Let's try that again"
+                : pageState === "success"
+                ? "Password saved"
+                : "Choose a new password"}
+            </h2>
             <div
               id="reset-password-message"
               role={pageState === "error" || formError ? "alert" : "status"}
@@ -414,7 +420,7 @@ export default function ResetPasswordPage() {
                 {pageState === "success" ? "Continue to site" : "Request a new reset email"}
               </Link>
               <Link href="/" className={styles.secondaryAction}>
-                Return Home
+                Return to site
               </Link>
             </div>
           </div>

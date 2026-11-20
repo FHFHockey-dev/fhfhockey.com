@@ -48,6 +48,18 @@
   margin: 5px 0 8px;
 }
 
+// Page title follows the admin header rule (fhfh-styles §8.4, as on Route Runner):
+// accent display face, uppercase, 0.06em tracking.
+.hero h1 {
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: clamp(v.$font-size-xl, 2vw, v.$font-size-xxl);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
 .hero span {
   color: v.$text-secondary;
 }

@@ -22,7 +22,7 @@ type CallbackState = {
 };
 
 const VALID_OTP_TYPES = new Set(["email", "recovery", "invite", "email_change"]);
-const SAFE_DOCUMENT_TITLE = "Completing Authentication | FHFHockey";
+const SAFE_DOCUMENT_TITLE = "Sign in | FHFHockey";
 
 async function replaceAfterAuth(
   replaceRoute: (url: string) => unknown,

@@ -725,6 +725,15 @@
   }
 }
 
+// Reduced motion: a still, half-strength full bar says "running" without the loop.
+@media (prefers-reduced-motion: reduce) {
+  .trackIndeterminate {
+    width: 100%;
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));

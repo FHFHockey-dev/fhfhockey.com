@@ -31,6 +31,8 @@
   .decisionRow > .reviewNotes { grid-column: 2; grid-row: 1; }
   .decisionRow > .decisionColumn { grid-column: 1; grid-row: 1; }
 }
+// Decision actions wrap inside their column instead of running into the review notes.
+.actionRow { display: flex; flex-wrap: wrap; gap: v.$space-sm v.$space-md; }
 .field { display: grid; gap: 6px; color: v.$text-secondary; font-size: .9rem; }
 .field input, .field select { width: 100%; min-width: 0; min-height: v.$control-height-sm; padding: 0 12px; border: 1px solid v.$border-secondary; border-radius: v.$radius-control; background: v.$background-dark; color: v.$text-primary; font: inherit; }
 .field input:focus-visible, .field select:focus-visible, .queueList button:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }

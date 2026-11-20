@@ -56,7 +56,7 @@ describe("Auth callback page", () => {
   it("exchanges OAuth codes and redirects to the requested next path", async () => {
     pageState.exchangeCodeForSession.mockImplementation(async () => {
       expect(window.location.href).toBe("http://localhost:3000/auth/callback");
-      expect(document.title).toBe("Completing Authentication | FHFHockey");
+      expect(document.title).toBe("Sign in | FHFHockey");
       return { error: null };
     });
     const callbackUrl = "/auth/callback?code=oauth-code&next=%2Faccount";
@@ -168,7 +168,7 @@ describe("Auth callback page", () => {
   it("routes hash-based recovery sessions to the reset-password page", async () => {
     pageState.setSession.mockImplementation(async () => {
       expect(window.location.href).toBe("http://localhost:3000/auth/callback");
-      expect(document.title).toBe("Completing Authentication | FHFHockey");
+      expect(document.title).toBe("Sign in | FHFHockey");
       expect(JSON.stringify(window.history.state)).not.toContain("access123");
       return { error: null };
     });
