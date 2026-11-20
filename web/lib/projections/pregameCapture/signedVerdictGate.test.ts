@@ -24,8 +24,8 @@ function signed(over: Partial<SignedVerdictPayload> = {}) {
 }
 
 describe("signed verdict gate (bound to the verifier package)", () => {
-  it("fails closed while no key is pinned (the shipped state)", () => {
-    expect(Object.keys(WITNESS_SIGNING_KEYS)).toEqual([]);
+  it("refuses a verdict signed by any key the release does not pin (the shipped state pins only production's key)", () => {
+    expect(Object.keys(WITNESS_SIGNING_KEYS)).not.toContain(keyId);
     expect(checkSignedVerdict(signed(), expected, start)).toMatchObject({ ok: false, reason: "key_unpinned" });
     expect(checkSignedVerdict(null, expected, start).reason).toBe("verdict_missing");
   });
