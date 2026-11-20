@@ -189,6 +189,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "2026-11-19 live pregame release with the rolling-lookback fix (2026020357 capture defect): 243-module exact commit closure, 0 findings. Exclusion proof only, not forecast-quality or native-use approval.",
   },
+  {
+    closureSha256: "d633c57257cfd34e78e2ed4680bbdb86ccc363374dddf0f6eb48db833c921be4",
+    commit: "cf0cb680ec1e381c3edc4a2d4059534b93c0b2cc",
+    receipt: "tasks/artifacts/forge-independent-prod-2026-11-20/cf0cb680ec1e381c3edc4a2d4059534b93c0b2cc.json",
+    receiptSha256: "d556cc33e13163fff3b68adeb6eba116ee408bce95b6d725a1a446010b01b5b2",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "November 20 upstream skater repair. The verifier found no excluded projection inputs in the 243-module producer closure.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;
