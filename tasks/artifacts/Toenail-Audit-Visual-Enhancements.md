@@ -113,9 +113,9 @@ Medium- and low-priority changes found during the toenail fixes and the skill pa
 | /db/player-forecast-season-editor, /db/player-forecast-review, /player-forecasts | form, checkbox, palette | ~~Field select under New value, 242×40 checkbox, teal palette and radial wash. 4-col form, 18px checkbox, brand tokens (shared module also restyles public /player-forecasts).~~ Fixed 2026-11-19 | Done | 1 |
 | /db/beat-reporter-review | action buttons | ~~Grey ghost buttons; primary at 18% tint. Rule tint, opaque primary, 32px.~~ Fixed 2026-11-19 | Done | 1 |
 | /db/tweet-pattern-review | phone section toggles, 'Swipe trainer' link | ~~Toggles and header link off-rule (link had no focus outline). Toggle rule (expanded = opaque fill), rule button with focus ring.~~ Fixed 2026-11-19 | Done | 1 |
-| /db/runner | job meta copy | '1 steps' → '1 step' (pluralise). | Low | 1 → 4 |
-| /auth/reset-password, /auth/callback | intro and error copy | Developer copy ('second half of the Supabase recovery flow', 'auth code, token hash, or session payload') → plain language. | Medium | 1 → 4 |
-| /db/player-aliases | queue meta, context link | Leading '·' when no team ('· text line 2'); 'Open source tweet' renders as plain white text, not a link. | Low | 1 → 3/4 |
+| /db/runner | job meta copy | ~~'1 steps' → '1 step'.~~ Fixed 2026-11-19 | Done | 4 |
+| /auth/reset-password, /auth/callback | intro and error copy | ~~Developer copy → plain language; fixing action is primary on failure.~~ Fixed 2026-11-19 | Done | 4 |
+| /db/player-aliases | queue meta, context link | ~~Leading separator; plain-text source link.~~ Fixed 2026-11-19 | Done | 4 |
 | /db/player-forecast-review | conflict list | Only the dev-blocked state renders locally (needs local Supabase); conflict cards unreviewed. | Blocked | 1 |
 | /db/player-forecast-season-editor, PlayerForecasts | panel radii, chart colours | Panels keep 16–20px private radii (→ $radius-panel); forecast chart colours untouched (pass 7). | Low | 1 → 2/7 |
 | all scope | tokens | ~~Auth/forecast literals and radii → tokens; tweet-review pills → $radius-control; /db dead sx removed.~~ Fixed 2026-11-19 | Done | 2 |

@@ -120,10 +120,11 @@
   text-transform: uppercase;
 }
 
-// One row: the main action takes the extra width, the other two share the rest.
+// An even 2×2 grid. Reset Local Auth stays reachable here: it is the recovery path
+// for a stale local session (covered by __tests__/pages/auth/index.test.tsx).
 .actions {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -131,7 +132,8 @@
 // the main action (Account settings) is the primary variant. No pills or gradients.
 .primaryAction,
 .secondaryAction,
-.signOutAction {
+.signOutAction,
+.resetAction {
   display: inline-flex;
   align-items: center;
   justify-content: center;

@@ -783,7 +783,7 @@ function DatabasePage() {
               </Typography>
               <Typography variant="body2">
                 The table contains the data for {numPlayers} players. The
-                `players` and `rosters` tables will be updated simultaneously.
+                <code>players</code> and <code>rosters</code> tables will be updated simultaneously.
               </Typography>
             </CardContent>
             <CardActions>
@@ -809,7 +809,7 @@ function DatabasePage() {
               </Typography>
               <Typography variant="body2">
                 The table contains the data for {numSeasons} seasons. This card
-                updates the `seasons` table.
+                updates the <code>seasons</code> table.
               </Typography>
             </CardContent>
             <CardActions>
@@ -835,7 +835,7 @@ function DatabasePage() {
               </Typography>
               <Typography variant="body2">
                 The table contains the data for {numTeams} teams. This card
-                updates the `teams` & `team_season` tables.
+                updates the <code>teams</code> & <code>team_season</code> tables.
               </Typography>
               <TextField
                 label="Season ID (optional)"
@@ -871,7 +871,7 @@ function DatabasePage() {
               </Typography>
               <Typography variant="body2">
                 The table contains the data for {numGames} games in{" "}
-                {season?.seasonId} season. This card updates the `games` tables.
+                {season?.seasonId} season. This card updates the <code>games</code> tables.
               </Typography>
               <TextField
                 label="Season ID (optional)"
@@ -1107,7 +1107,7 @@ function DatabasePage() {
               </Typography>
               <Typography variant="body2">
                 Update the legacy game-level projected goals and win odds for
-                all current games. This updates the `expected_goals` table.
+                all current games. This updates the <code>expected_goals</code> table.
               </Typography>
             </CardContent>
             <CardActions>

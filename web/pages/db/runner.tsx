@@ -959,7 +959,7 @@ function RouteRunner() {
                       <span className={styles.jobRowMeta}>
                         <span>{new Date(row.created_at).toLocaleString()}</span>
                         <span>
-                          {row.steps} steps · {Number(row.rows_total).toLocaleString()}{" "}
+                          {row.steps} {row.steps === 1 ? "step" : "steps"} · {Number(row.rows_total).toLocaleString()}{" "}
                           {readJobProgress(row.progress)?.rowsUnit ?? "rows"}
                         </span>
                       </span>

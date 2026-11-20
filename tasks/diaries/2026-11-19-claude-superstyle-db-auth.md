@@ -21,20 +21,22 @@
 
 | page \ pass | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
 |---|---|---|---|---|---|---|---|---|
-| /db/player-aliases | ✓ | ✓ | ✓ | ✓ | | | | n/a |
-| /db/runner | ✓ | ✓ | ✓ | ✓ | | | | |
-| /auth | ✓ | ✓ | ✓ | ✓ | | | | n/a |
-| /auth/callback | ✓ | ✓ | ✓ | ✓ | | | | n/a |
-| /auth/reset-password | ✓ | ✓ | ✓ | ✓ | | | | n/a |
-| /db | ✓ | ✓ | ✓ | ✓ | | | | n/a |
-| /db/tweet-pattern-review | ✓ | ✓ | ✓ | ✓ | | | | n/a |
-| /db/upsert-projections | ✓ | ✓ | ✓ | ✓ | | | | n/a |
-| /db/player-forecast-review | ✓ | ✓ | ✓ | ✓ | | | | n/a |
-| /db/player-forecast-season-editor | ✓ | ✓ | ✓ | ✓ | | | | n/a |
-| /db/beat-reporter-review | ✓ | ✓ | ✓ | ✓ | | | | n/a |
+| /db/player-aliases | ✓ | ✓ | ✓ | ✓ | ✓ | | | n/a |
+| /db/runner | ✓ | ✓ | ✓ | ✓ | ✓ | | | |
+| /auth | ✓ | ✓ | ✓ | ✓ | ✓ | | | n/a |
+| /auth/callback | ✓ | ✓ | ✓ | ✓ | ✓ | | | n/a |
+| /auth/reset-password | ✓ | ✓ | ✓ | ✓ | ✓ | | | n/a |
+| /db | ✓ | ✓ | ✓ | ✓ | ✓ | | | n/a |
+| /db/tweet-pattern-review | ✓ | ✓ | ✓ | ✓ | ✓ | | | n/a |
+| /db/upsert-projections | ✓ | ✓ | ✓ | ✓ | ✓ | | | n/a |
+| /db/player-forecast-review | ✓ | ✓ | ✓ | ✓ | ✓ | | | n/a |
+| /db/player-forecast-season-editor | ✓ | ✓ | ✓ | ✓ | ✓ | | | n/a |
+| /db/beat-reporter-review | ✓ | ✓ | ✓ | ✓ | ✓ | | | n/a |
 
 - Pass 1 closed · TJ approved commit (local, pathspec, no push). Next · pass 2 (design system): private literals → tokens (season editor/forecast radii, auth/aliases literals, RouteRunner, tweet-review).
 - Pass 2 · auth literals → tokens (signed-in actions: rule buttons, 3 in a row, Sign Out danger, duplicate Reset removed), forecast radii/state literals → tokens, tweet-review pills → $radius-control, /db dead card sx + CardMedia removed (render unchanged). Typecheck exit 0. Not committed (TJ: straight to pass 3).
 - Next · pass 3: axe (scripts/axe.cjs; Axe MCP down) at 390/1440 on all 11 routes, focus sweep.
 - Pass 3 · axe 0 violations on all 11 routes at 390/1440 (was 6 critical select-name, 1 critical label, 3 serious scrollable-region, 5 moderate landmark/heading). Field wrappers → <label>; tweet review <main>; upsert h2/h3 + dropzone label; focusable terminal + season table; all focus rings blue (§9.4); MUI focus ring + ripple off in _admin-mui; copy icon button inside runner terminal (TJ). focus.cjs: /db MUI inputs flagged = false positive (ring on outer box). Tests 94/94, typecheck 0.
 - Next · pass 4 copy: auth reset/callback dev copy, '1 steps', aliases '·' + Open source tweet link, /db card copy (backticks, 'Supabase').
+- Pass 4 · auth callback/reset copy rewritten (no Supabase/OAuth/token jargon; 'Let's try that again'; Sign in again primary on failure; reset link → forgot-password form); Reset Local Auth restored in signed-in panel (pass-2 removal broke __tests__/pages/auth/index.test.tsx — it is the stale-session recovery path); runner '1 step'; aliases meta separator + source link; /db table names as <code>. Auth tests 21/21.
+- Gotcha · run __tests__/pages/auth after touching auth pages; the db test set doesn't cover them.

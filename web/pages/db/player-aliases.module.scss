@@ -53,6 +53,9 @@
 .splitGrid { display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-md; margin-bottom: v.$space-md; }
 .context { background: v.$background-dark; }
 .context h2 { margin-top: 0; color: v.$color-white; }
+.sourceLink { color: v.$primary-color; text-decoration: none; } // a visible link, not plain text
+.sourceLink:hover { text-decoration: underline; }
+.sourceLink:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; }
 .context pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: v.$text-secondary; line-height: 1.55; }
 .emptyState { color: v.$text-secondary; }
 @media (max-width: v.$breakpoint-mobile-max) { .page { padding: 16px 12px 32px; } .header { align-items: flex-start; padding: 16px; } .header h1 { font-size: 1.35rem; } .layout { grid-template-columns: minmax(0, 1fr); } .queueList { max-height: 220px; } }

@@ -140,3 +140,13 @@
   margin-top: v.$space-xs;
   color: v.$primary-color;
 }
+
+// Table names in card descriptions render as code, not raw markdown backticks.
+.page :global(.MuiCard-root code) {
+  padding: 0 4px;
+  border-radius: v.$radius-xs;
+  background: v.$background-dark;
+  color: v.$text-primary;
+  font-family: v.$font-family-numbers;
+  font-size: 0.9em;
+}

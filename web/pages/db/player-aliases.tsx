@@ -312,7 +312,7 @@ const PlayerAliasesReview = () => {
                 <div><p className={styles.eyebrow}>Work queue</p><h2>{pendingNames.length} names to review</h2></div>
               </div>
               <ol className={styles.queueList}>
-                {pendingNames.map((name) => <li key={name.id} className={name.id === selectedUnresolvedId ? styles.current : undefined}><button type="button" onClick={() => selectName(name)}>{name.raw_name}<span>{name.team_abbreviation}{getReviewTargetLabel(name) ? ` · ${getReviewTargetLabel(name)}` : ""}{name.metadata?.identityResolved ? " · identity saved" : ""}</span></button></li>)}
+                {pendingNames.map((name) => <li key={name.id} className={name.id === selectedUnresolvedId ? styles.current : undefined}><button type="button" onClick={() => selectName(name)}>{name.raw_name}<span>{[name.team_abbreviation, getReviewTargetLabel(name), name.metadata?.identityResolved ? "identity saved" : null].filter(Boolean).join(" · ")}</span></button></li>)}
               </ol>
               {resolvedNames.length ? <p className={styles.resolvedSummary}>✓ {resolvedNames.length} resolved in this queue</p> : null}
             </aside>
@@ -446,7 +446,7 @@ const PlayerAliasesReview = () => {
               {!selectedOccurrence && possibleOccurrences.length > 1 && <ul aria-label="Possible unresolved occurrences">{possibleOccurrences.map((occurrence) => <li key={occurrence.start}>Text line {occurrence.line}: {occurrence.row}</li>)}</ul>}
               {selectedUnresolved.source_url ? (
                 <p>
-                  <a href={selectedUnresolved.source_url}>Open source tweet</a>
+                  <a className={styles.sourceLink} href={selectedUnresolved.source_url} target="_blank" rel="noreferrer">Open source tweet ↗</a>
                 </p>
               ) : null}
               <pre>

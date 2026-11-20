@@ -52,9 +52,9 @@ export default function AuthCallbackPage() {
   const router = useRouter();
   const hasProcessedRef = useRef(false);
   const [state, setState] = useState<CallbackState>({
-    heading: "Finishing authentication",
+    heading: "Signing you in",
     message:
-      "Your sign-in or verification response is being processed now. This page will forward you once the session is ready.",
+      "One moment while we finish signing you in.",
     tone: "processing"
   });
 
@@ -77,9 +77,9 @@ export default function AuthCallbackPage() {
       callback = consumeAuthCallbackLocation();
     } catch {
       setState({
-        heading: "Authentication failed",
+        heading: "Let's try that again",
         message:
-          "FHFH could not safely clear this authentication response. Return to sign in and try again.",
+          "We couldn't finish signing you in. Sign in again.",
         tone: "error"
       });
       navigateToAuthFallback((url) => router.replace(url));
@@ -90,9 +90,9 @@ export default function AuthCallbackPage() {
 
     if (callback.hasProviderError) {
       setState({
-        heading: "Authentication failed",
+        heading: "Let's try that again",
         message:
-          "The authentication provider could not complete this request. Return to sign in and try again.",
+          "Your sign-in provider couldn't complete the request. Sign in again.",
         tone: "error"
       });
       return;
@@ -116,9 +116,9 @@ export default function AuthCallbackPage() {
 
           if (verificationType === "recovery") {
             setState({
-              heading: "Recovery verified",
+              heading: "Reset link accepted",
               message:
-                "Your recovery link was accepted. Redirecting you to the password reset screen now.",
+                "Reset link accepted. Taking you to choose a new password.",
               tone: "success"
             });
             await replaceAfterAuth(
@@ -129,8 +129,8 @@ export default function AuthCallbackPage() {
           }
 
           setState({
-            heading: "Authentication complete",
-            message: "Your Google sign-in is complete. Redirecting you back now.",
+            heading: "You're signed in",
+            message: "You're signed in with Google. Taking you back now.",
             tone: "success"
           });
           await replaceAfterAuth(router.replace, nextPath);
@@ -149,9 +149,9 @@ export default function AuthCallbackPage() {
 
           if (verificationType === "recovery") {
             setState({
-              heading: "Recovery verified",
+              heading: "Reset link accepted",
               message:
-                "Your recovery link was accepted. Redirecting you to the password reset screen now.",
+                "Reset link accepted. Taking you to choose a new password.",
               tone: "success"
             });
             await replaceAfterAuth(
@@ -164,7 +164,7 @@ export default function AuthCallbackPage() {
           setState({
             heading: "Email verified",
             message:
-              "Your email verification completed successfully. Redirecting you back into the site now.",
+              "Your email is verified. Taking you back now.",
             tone: "success"
           });
           await replaceAfterAuth(router.replace, nextPath);
@@ -183,9 +183,9 @@ export default function AuthCallbackPage() {
 
           if (verificationType === "recovery") {
             setState({
-              heading: "Recovery verified",
+              heading: "Reset link accepted",
               message:
-                "Your recovery link was accepted. Redirecting you to the password reset screen now.",
+                "Reset link accepted. Taking you to choose a new password.",
               tone: "success"
             });
             await replaceAfterAuth(
@@ -196,8 +196,8 @@ export default function AuthCallbackPage() {
           }
 
           setState({
-            heading: "Authentication complete",
-            message: "Your session is ready. Redirecting you back now.",
+            heading: "You're signed in",
+            message: "You're signed in. Taking you back now.",
             tone: "success"
           });
           await replaceAfterAuth(router.replace, nextPath);
@@ -205,16 +205,16 @@ export default function AuthCallbackPage() {
         }
 
         setState({
-          heading: "Missing callback data",
+          heading: "Let's try that again",
           message:
-            "This callback did not include a usable auth code, token hash, or session payload. Retry the sign-in flow from the header auth modal.",
+            "This sign-in link is incomplete or has already been used. Sign in again.",
           tone: "error"
         });
       } catch {
         setState({
-          heading: "Authentication failed",
+          heading: "Let's try that again",
           message:
-            "FHFH could not finish this authentication response. Return to sign in and try again.",
+            "We couldn't finish signing you in. Sign in again.",
           tone: "error"
         });
       }
@@ -231,15 +231,10 @@ export default function AuthCallbackPage() {
         <meta name="referrer" content="no-referrer" />
       </Head>
       <Container className={styles.container}>
-        <PageTitle className={styles.pageTitle}>Auth Callback</PageTitle>
+        <PageTitle className={styles.pageTitle}>Sign in</PageTitle>
         <ClientOnly>
           <div className={styles.card}>
             <h2 className={styles.title}>{state.heading}</h2>
-            <p className={styles.body}>
-              This route handles Google OAuth completion and email-link verification
-              handoff for Supabase Auth.
-            </p>
-
             <div
               className={
                 state.tone === "error"
@@ -253,12 +248,25 @@ export default function AuthCallbackPage() {
             </div>
 
             <div className={styles.actions}>
-              <Link href={fallbackNext} className={styles.primaryAction}>
-                Return to Site
-              </Link>
-              <Link href="/auth" className={styles.secondaryAction}>
-                Open Auth Fallback
-              </Link>
+              {state.tone === "error" ? (
+                <>
+                  <Link href="/auth" className={styles.primaryAction}>
+                    Sign in again
+                  </Link>
+                  <Link href={fallbackNext} className={styles.secondaryAction}>
+                    Return to site
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href={fallbackNext} className={styles.primaryAction}>
+                    Return to site
+                  </Link>
+                  <Link href="/auth" className={styles.secondaryAction}>
+                    Sign in again
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </ClientOnly>

@@ -108,7 +108,7 @@ describe("Reset password page", () => {
     {
       password: "supersecret1",
       confirmation: "different-password",
-      message: "Your password confirmation does not match.",
+      message: "The two passwords don't match.",
       invalidField: "Confirm Password"
     }
   ])("keeps the form editable after $message", async ({ password, confirmation, message, invalidField }) => {
@@ -139,7 +139,7 @@ describe("Reset password page", () => {
     fireEvent.change(confirmationInput, { target: { value: "corrected-password" } });
     fireEvent.click(screen.getByRole("button", { name: "Update Password" }));
 
-    expect(await screen.findByRole("link", { name: "Continue to Site" })).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "Continue to site" })).toBeTruthy();
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(vi.mocked(fetch).mock.calls[0][1]?.body).toBe(
       JSON.stringify({ password: "corrected-password" })
@@ -155,7 +155,7 @@ describe("Reset password page", () => {
 
     expect(
       await screen.findByText(
-        "Your recovery session is missing or expired. Request a new password reset email from the auth modal."
+        "This reset link has expired or was already used. Request a new reset email and try again."
       )
     ).toBeTruthy();
     expect(screen.queryByLabelText("New Password")).toBeNull();
@@ -225,7 +225,7 @@ describe("Reset password page", () => {
 
     expect(
       await screen.findByText(
-        "This recovery response could not be verified. Request a new password reset email and try again."
+        "We couldn't verify this reset link. Request a new reset email and try again."
       )
     ).toBeTruthy();
     expect(document.body.textContent).not.toContain("fake-access");
@@ -282,10 +282,10 @@ describe("Reset password page", () => {
     });
     expect(
       await screen.findByText(
-        "Your password has been updated successfully. You can continue into your account now."
+        "Password updated. You're signed in."
       )
     ).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Continue to Site" }).getAttribute("href")).toBe(
+    expect(screen.getByRole("link", { name: "Continue to site" }).getAttribute("href")).toBe(
       "/account"
     );
   });
@@ -315,7 +315,7 @@ describe("Reset password page", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
 
     resolveUpdate({ ok: true, text: async () => "{}" } as Response);
-    expect(await screen.findByRole("link", { name: "Continue to Site" })).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "Continue to site" })).toBeTruthy();
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
@@ -363,7 +363,7 @@ describe("Reset password page", () => {
     fireEvent.change(confirmationInput, { target: { value: "different-password" } });
     fireEvent.click(screen.getByRole("button", { name: "Update Password" }));
 
-    expect(await screen.findByRole("link", { name: "Continue to Site" })).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "Continue to site" })).toBeTruthy();
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(vi.mocked(fetch).mock.calls[1][1]?.body).toBe(
       JSON.stringify({ password: "different-password" })

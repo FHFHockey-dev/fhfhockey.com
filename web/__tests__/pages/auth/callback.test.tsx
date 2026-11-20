@@ -81,10 +81,10 @@ describe("Auth callback page", () => {
 
     render(<AuthCallbackPage />);
 
-    expect(await screen.findByText("Authentication complete")).toBeTruthy();
+    expect(await screen.findByText("You're signed in")).toBeTruthy();
     expect(
       screen.queryByText(
-        "FHFH could not finish this authentication response. Return to sign in and try again."
+        "We couldn't finish signing you in. Sign in again."
       )
     ).toBeNull();
   });
@@ -157,7 +157,7 @@ describe("Auth callback page", () => {
 
     expect(
       await screen.findByText(
-        "The authentication provider could not complete this request. Return to sign in and try again."
+        "Your sign-in provider couldn't complete the request. Sign in again."
       )
     ).toBeTruthy();
     expect(document.body.textContent).not.toContain(providerErrorSentinel);
@@ -207,7 +207,7 @@ describe("Auth callback page", () => {
 
     expect(
       await screen.findByText(
-        "FHFH could not finish this authentication response. Return to sign in and try again."
+        "We couldn't finish signing you in. Sign in again."
       )
     ).toBeTruthy();
     expect(document.body.textContent).not.toContain("fake-access-token");
