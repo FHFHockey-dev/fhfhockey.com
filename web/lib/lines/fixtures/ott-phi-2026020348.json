@@ -1,0 +1,465 @@
+{
+  "note": "Extracted from the two NHL responses retained with the OTT-PHI receipt. Presentation wrappers and unrelated rows/fields are omitted. NHL game clocks are elapsed.",
+  "pbp": {
+    "id": 2026020348,
+    "gameDate": "2026-11-19",
+    "season": 20262027,
+    "awayTeam": {
+      "id": 4,
+      "abbrev": "PHI"
+    },
+    "homeTeam": {
+      "id": 9,
+      "abbrev": "OTT"
+    },
+    "rosterSpots": [
+      {
+        "teamId": 9,
+        "sweaterNumber": 28,
+        "playerId": 8473512,
+        "positionCode": "R",
+        "firstName": {
+          "default": "Claude"
+        },
+        "lastName": {
+          "default": "Giroux"
+        }
+      },
+      {
+        "teamId": 4,
+        "sweaterNumber": 24,
+        "playerId": 8476372,
+        "positionCode": "D",
+        "firstName": {
+          "default": "Nick"
+        },
+        "lastName": {
+          "default": "Seeler"
+        }
+      },
+      {
+        "teamId": 4,
+        "sweaterNumber": 14,
+        "playerId": 8476461,
+        "positionCode": "C",
+        "firstName": {
+          "default": "Sean"
+        },
+        "lastName": {
+          "default": "Couturier"
+        }
+      },
+      {
+        "teamId": 4,
+        "sweaterNumber": 55,
+        "playerId": 8477499,
+        "positionCode": "D",
+        "firstName": {
+          "default": "Rasmus"
+        },
+        "lastName": {
+          "default": "Ristolainen"
+        }
+      },
+      {
+        "teamId": 4,
+        "sweaterNumber": 6,
+        "playerId": 8477948,
+        "positionCode": "D",
+        "firstName": {
+          "default": "Travis"
+        },
+        "lastName": {
+          "default": "Sanheim"
+        }
+      },
+      {
+        "teamId": 4,
+        "sweaterNumber": 22,
+        "playerId": 8477989,
+        "positionCode": "C",
+        "firstName": {
+          "default": "Christian"
+        },
+        "lastName": {
+          "default": "Dvorak"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 22,
+        "playerId": 8478020,
+        "positionCode": "R",
+        "firstName": {
+          "default": "Michael"
+        },
+        "lastName": {
+          "default": "Amadio"
+        }
+      },
+      {
+        "teamId": 4,
+        "sweaterNumber": 11,
+        "playerId": 8478439,
+        "positionCode": "R",
+        "firstName": {
+          "default": "Travis"
+        },
+        "lastName": {
+          "default": "Konecny"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 72,
+        "playerId": 8478469,
+        "positionCode": "D",
+        "firstName": {
+          "default": "Thomas"
+        },
+        "lastName": {
+          "default": "Chabot"
+        }
+      },
+      {
+        "teamId": 4,
+        "sweaterNumber": 52,
+        "playerId": 8478569,
+        "positionCode": "C",
+        "firstName": {
+          "default": "Noel"
+        },
+        "lastName": {
+          "default": "Acciari"
+        }
+      },
+      {
+        "teamId": 4,
+        "sweaterNumber": 53,
+        "playerId": 8479361,
+        "positionCode": "G",
+        "firstName": {
+          "default": "Joseph"
+        },
+        "lastName": {
+          "default": "Woll"
+        }
+      },
+      {
+        "teamId": 4,
+        "sweaterNumber": 74,
+        "playerId": 8480015,
+        "positionCode": "R",
+        "firstName": {
+          "default": "Owen"
+        },
+        "lastName": {
+          "default": "Tippett"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 19,
+        "playerId": 8480208,
+        "positionCode": "R",
+        "firstName": {
+          "default": "Drake"
+        },
+        "lastName": {
+          "default": "Batherson"
+        }
+      },
+      {
+        "teamId": 4,
+        "sweaterNumber": 27,
+        "playerId": 8480220,
+        "positionCode": "L",
+        "firstName": {
+          "default": "Noah"
+        },
+        "lastName": {
+          "default": "Cates"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 30,
+        "playerId": 8481035,
+        "positionCode": "G",
+        "firstName": {
+          "default": "Samuel"
+        },
+        "lastName": {
+          "default": "Ersson"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 24,
+        "playerId": 8481528,
+        "positionCode": "C",
+        "firstName": {
+          "default": "Dylan"
+        },
+        "lastName": {
+          "default": "Cozens"
+        }
+      },
+      {
+        "teamId": 4,
+        "sweaterNumber": 8,
+        "playerId": 8481546,
+        "positionCode": "D",
+        "firstName": {
+          "default": "Cam"
+        },
+        "lastName": {
+          "default": "York"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 12,
+        "playerId": 8481596,
+        "positionCode": "C",
+        "firstName": {
+          "default": "Shane"
+        },
+        "lastName": {
+          "default": "Pinto"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 10,
+        "playerId": 8481606,
+        "positionCode": "D",
+        "firstName": {
+          "default": "Jordan"
+        },
+        "lastName": {
+          "default": "Spence"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 71,
+        "playerId": 8482092,
+        "positionCode": "C",
+        "firstName": {
+          "default": "Ridly"
+        },
+        "lastName": {
+          "default": "Greig"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 43,
+        "playerId": 8482095,
+        "positionCode": "D",
+        "firstName": {
+          "default": "Tyler"
+        },
+        "lastName": {
+          "default": "Kleven"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 85,
+        "playerId": 8482105,
+        "positionCode": "D",
+        "firstName": {
+          "default": "Jake"
+        },
+        "lastName": {
+          "default": "Sanderson"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 18,
+        "playerId": 8482116,
+        "positionCode": "C",
+        "firstName": {
+          "default": "Tim"
+        },
+        "lastName": {
+          "default": "Stützle"
+        }
+      },
+      {
+        "teamId": 4,
+        "sweaterNumber": 71,
+        "playerId": 8482159,
+        "positionCode": "R",
+        "firstName": {
+          "default": "Tyson"
+        },
+        "lastName": {
+          "default": "Foerster"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 2,
+        "playerId": 8482245,
+        "positionCode": "D",
+        "firstName": {
+          "default": "Artem",
+          "cs": "Arťom",
+          "fi": "Artjom",
+          "sk": "Arťom"
+        },
+        "lastName": {
+          "default": "Zub"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 34,
+        "playerId": 8483676,
+        "positionCode": "C",
+        "firstName": {
+          "default": "Stephen"
+        },
+        "lastName": {
+          "default": "Halliday"
+        }
+      },
+      {
+        "teamId": 4,
+        "sweaterNumber": 59,
+        "playerId": 8484148,
+        "positionCode": "D",
+        "firstName": {
+          "default": "Oliver"
+        },
+        "lastName": {
+          "default": "Bonk"
+        }
+      },
+      {
+        "teamId": 9,
+        "sweaterNumber": 33,
+        "playerId": 8484321,
+        "positionCode": "D",
+        "firstName": {
+          "default": "Nikolas"
+        },
+        "lastName": {
+          "default": "Matinpalo"
+        }
+      }
+    ],
+    "plays": [
+      {
+        "eventId": 164,
+        "periodDescriptor": {
+          "number": 1,
+          "periodType": "REG",
+          "maxRegulationPeriods": 3
+        },
+        "timeInPeriod": "03:52",
+        "typeDescKey": "goal",
+        "situationCode": "1541",
+        "sortOrder": 68
+      },
+      {
+        "eventId": 395,
+        "periodDescriptor": {
+          "number": 1,
+          "periodType": "REG",
+          "maxRegulationPeriods": 3
+        },
+        "timeInPeriod": "16:34",
+        "typeDescKey": "missed-shot",
+        "situationCode": "1451",
+        "sortOrder": 242
+      },
+      {
+        "eventId": 21,
+        "periodDescriptor": {
+          "number": 1,
+          "periodType": "REG",
+          "maxRegulationPeriods": 3
+        },
+        "timeInPeriod": "16:43",
+        "typeDescKey": "stoppage",
+        "situationCode": "1451",
+        "sortOrder": 245
+      },
+      {
+        "eventId": 398,
+        "periodDescriptor": {
+          "number": 1,
+          "periodType": "REG",
+          "maxRegulationPeriods": 3
+        },
+        "timeInPeriod": "16:43",
+        "typeDescKey": "faceoff",
+        "situationCode": "1451",
+        "sortOrder": 248
+      },
+      {
+        "eventId": 408,
+        "periodDescriptor": {
+          "number": 1,
+          "periodType": "REG",
+          "maxRegulationPeriods": 3
+        },
+        "timeInPeriod": "17:39",
+        "typeDescKey": "missed-shot",
+        "situationCode": "1451",
+        "sortOrder": 253
+      },
+      {
+        "eventId": 421,
+        "periodDescriptor": {
+          "number": 1,
+          "periodType": "REG",
+          "maxRegulationPeriods": 3
+        },
+        "timeInPeriod": "18:13",
+        "typeDescKey": "blocked-shot",
+        "situationCode": "1541",
+        "sortOrder": 262
+      },
+      {
+        "eventId": 422,
+        "periodDescriptor": {
+          "number": 1,
+          "periodType": "REG",
+          "maxRegulationPeriods": 3
+        },
+        "timeInPeriod": "18:25",
+        "typeDescKey": "shot-on-goal",
+        "situationCode": "1541",
+        "sortOrder": 263
+      }
+    ]
+  },
+  "header": "<table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" id=\"Visitor\"><tr><td align=\"center\" style=\"font-size: 12px;font-weight:bold\">VISITOR</td></tr><tr><td><table align=\"center\" border=\"0\" cellpadding=\"4\" cellspacing=\"20\"><tr><td align=\"center\"><img alt=\"PHILADELPHIA FLYERS\" border=\"0\" height=\"50\" src=\"http://www.nhl.com/scores/htmlreports/images/logocphi.gif\" width=\"50\"/></td><td align=\"center\" style=\"font-size: 40px;font-weight:bold\">1</td><td align=\"center\"><img border=\"0\" height=\"50\" src=\"http://www.nhl.com/scores/htmlreports/images/logocnhl.gif\" width=\"50\"/></td></tr></table></td></tr><tr><td align=\"center\" style=\"font-size: 10px;font-weight:bold\">PHILADELPHIA FLYERS<br/>Game 25 Away Game 13</td></tr></table><table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" id=\"GameInfo\"><tr><td align=\"center\" style=\"font-size: 14px;font-weight:bold\">Play By Play</td></tr><tr><td align=\"center\" style=\"font-size: 14px;font-weight:bold\"> </td></tr><tr><td align=\"center\" style=\"font-size: 10px;font-weight:bold\"></td></tr><tr><td align=\"center\" style=\"font-size: 10px;font-weight:bold\">Thursday, November 19, 2026</td></tr><tr><td align=\"center\" style=\"font-size: 10px;font-weight:bold\"> Canadian Tire Centre</td></tr><tr><td align=\"center\" style=\"font-size: 10px;font-weight:bold\">Start 7:08 EST</td></tr><tr><td align=\"center\" style=\"font-size: 10px;font-weight:bold\">Game 0348</td></tr><tr><td align=\"center\" style=\"font-size: 10px;font-weight:bold\">Period 1 (01:34 Remaining)</td></tr></table><table align=\"center\" border=\"0\" cellpadding=\"\" cellspacing=\"0\" id=\"Home\"><tr><td align=\"center\" style=\"font-size: 12px;font-weight:bold\">HOME</td></tr><tr><td><table align=\"center\" border=\"0\" cellpadding=\"4\" cellspacing=\"20\"><tr><td align=\"center\"><img border=\"0\" height=\"50\" src=\"http://www.nhl.com/scores/htmlreports/images/logocnhl.gif\" width=\"50\"/></td><td align=\"center\" style=\"font-size: 40px;font-weight:bold\">1</td><td align=\"center\"><img alt=\"OTTAWA SENATORS\" border=\"0\" height=\"50\" src=\"http://www.nhl.com/scores/htmlreports/images/logocott.gif\" width=\"50\"/></td></tr></table></td></tr><tr><td align=\"center\" style=\"font-size: 10px;font-weight:bold\">OTTAWA SENATORS<br/>Game 23 Home Game 11</td></tr></table>",
+  "rows": [
+    "<tr id=\"PL-30\"><td>30</td><td>1</td><td>PP</td><td>3:52<br/>16:08</td><td>GOAL</td><td>PHI #74 TIPPETT(4), Wrist , Off. Zone, 24 ft.<br/>Assists: #11 KONECNY(5); #71 FOERSTER(4) </td><td><font title=\"Center - CHRISTIAN DVORAK\">22</font><font title=\"Right Wing - TRAVIS KONECNY\">11</font><font title=\"Right Wing - TYSON FOERSTER\">71</font><font title=\"Right Wing - OWEN TIPPETT\">74</font><font title=\"Defense - OLIVER BONK\">59</font><font title=\"Goalie - JOSEPH WOLL\">53</font></td><td><font title=\"Center - SHANE PINTO\">12</font><font title=\"Right Wing - CLAUDE GIROUX\">28</font><font title=\"Defense - NIKOLAS MATINPALO\">33</font><font title=\"Defense - TYLER KLEVEN\">43</font><font title=\"Goalie - SAMUEL ERSSON\">30</font></td></tr>",
+    "<tr id=\"PL-93\"><td>93</td><td>1</td><td>PP</td><td>16:34<br/>3:26</td><td>MISS</td><td>OTT #19 BATHERSON, Snap, Wide Left, Off. Zone, 18 ft. </td><td><font title=\"Center - SEAN COUTURIER\">14</font><font title=\"Center - NOEL ACCIARI\">52</font><font title=\"Defense - TRAVIS SANHEIM\">6</font><font title=\"Defense - CAM YORK\">8</font><font title=\"Goalie - JOSEPH WOLL\">53</font></td><td><font title=\"Center - SHANE PINTO\">12</font><font title=\"Center - TIM STÜTZLE\">18</font><font title=\"Center - STEPHEN HALLIDAY\">34</font><font title=\"Right Wing - DRAKE BATHERSON\">19</font><font title=\"Defense - JAKE SANDERSON\">85</font><font title=\"Goalie - SAMUEL ERSSON\">30</font></td></tr>",
+    "<tr id=\"PL-94\"><td>94</td><td>1</td><td> </td><td>16:43<br/>3:17</td><td>STOP</td><td>OFF-SIDE</td><td><font title=\"Center - SEAN COUTURIER\">14</font><font title=\"Center - CHRISTIAN DVORAK\">22</font><font title=\"Defense - TRAVIS SANHEIM\">6</font><font title=\"Defense - NICK SEELER\">24</font><font title=\"Goalie - JOSEPH WOLL\">53</font></td><td><font title=\"Center - SHANE PINTO\">12</font><font title=\"Center - TIM STÜTZLE\">18</font><font title=\"Center - STEPHEN HALLIDAY\">34</font><font title=\"Right Wing - DRAKE BATHERSON\">19</font><font title=\"Defense - JAKE SANDERSON\">85</font><font title=\"Goalie - SAMUEL ERSSON\">30</font></td></tr>",
+    "<tr id=\"PL-95\"><td>95</td><td>1</td><td>PP</td><td>16:43<br/>3:17</td><td>FAC</td><td>OTT won Neu. Zone - PHI #22 DVORAK vs OTT #28 GIROUX</td><td><font title=\"Center - CHRISTIAN DVORAK\">22</font><font title=\"Left Wing - NOAH CATES\">27</font><font title=\"Defense - NICK SEELER\">24</font><font title=\"Defense - RASMUS RISTOLAINEN\">55</font><font title=\"Goalie - JOSEPH WOLL\">53</font></td><td><font title=\"Center - DYLAN COZENS\">24</font><font title=\"Center - RIDLY GREIG\">71</font><font title=\"Right Wing - CLAUDE GIROUX\">28</font><font title=\"Defense - JORDAN SPENCE\">10</font><font title=\"Defense - THOMAS CHABOT\">72</font><font title=\"Goalie - SAMUEL ERSSON\">30</font></td></tr>",
+    "<tr id=\"PL-96\"><td>96</td><td>1</td><td>SH</td><td>17:39<br/>2:21</td><td>MISS</td><td>PHI #14 COUTURIER, Tip-In, Wide Left, Off. Zone, 5 ft. </td><td><font title=\"Center - SEAN COUTURIER\">14</font><font title=\"Center - NOEL ACCIARI\">52</font><font title=\"Defense - TRAVIS SANHEIM\">6</font><font title=\"Defense - RASMUS RISTOLAINEN\">55</font><font title=\"Goalie - JOSEPH WOLL\">53</font></td><td><font title=\"Center - DYLAN COZENS\">24</font><font title=\"Center - RIDLY GREIG\">71</font><font title=\"Right Wing - CLAUDE GIROUX\">28</font><font title=\"Defense - JORDAN SPENCE\">10</font><font title=\"Defense - THOMAS CHABOT\">72</font><font title=\"Goalie - SAMUEL ERSSON\">30</font></td></tr>",
+    "<tr id=\"PL-100\"><td>100</td><td>1</td><td>SH</td><td>18:13<br/>1:47</td><td>BLOCK</td><td>PHI #59 BONK OPPONENT-BLOCKED BY OTT #2 ZUB, Slap, Def. Zone </td><td><font title=\"Center - CHRISTIAN DVORAK\">22</font><font title=\"Right Wing - TRAVIS KONECNY\">11</font><font title=\"Right Wing - TYSON FOERSTER\">71</font><font title=\"Right Wing - OWEN TIPPETT\">74</font><font title=\"Defense - OLIVER BONK\">59</font><font title=\"Goalie - JOSEPH WOLL\">53</font></td><td><font title=\"Center - SHANE PINTO\">12</font><font title=\"Right Wing - MICHAEL AMADIO\">22</font><font title=\"Defense - ARTEM ZUB\">2</font><font title=\"Defense - JAKE SANDERSON\">85</font><font title=\"Goalie - SAMUEL ERSSON\">30</font></td></tr>",
+    "<tr id=\"PL-101\"><td>101</td><td>1</td><td>PP</td><td>18:25<br/>1:35</td><td>SHOT</td><td>PHI ONGOAL - #11 KONECNY, Snap , Off. Zone, 23 ft. </td><td><font title=\"Center - CHRISTIAN DVORAK\">22</font><font title=\"Right Wing - TRAVIS KONECNY\">11</font><font title=\"Right Wing - TYSON FOERSTER\">71</font><font title=\"Right Wing - OWEN TIPPETT\">74</font><font title=\"Defense - OLIVER BONK\">59</font><font title=\"Goalie - JOSEPH WOLL\">53</font></td><td><font title=\"Center - SHANE PINTO\">12</font><font title=\"Right Wing - MICHAEL AMADIO\">22</font><font title=\"Defense - ARTEM ZUB\">2</font><font title=\"Defense - JAKE SANDERSON\">85</font><font title=\"Goalie - SAMUEL ERSSON\">30</font></td></tr>"
+  ],
+  "pregame": {
+    "claimIds": [
+      "3d161a19ebe7f164d87bccd37be90fb94c64ddcbbfc264727289a586239b807e",
+      "cf36be8f8b6579061e5e5f073509e4db3d73e7b9be25a9f0fef385e1fbcb9a01",
+      "eb2a4a548e203bc1981d1ae58143c6b424f43479e40a83248ce4986f7fdb3eef",
+      "4839acc04cd58793a90965762942819e082952922957d028a57f2dbd89c53244"
+    ],
+    "captureId": "47e447eb00d6a80b8c1e059fa972b6f99d4c4b9fa509b11e9400f4c6841dcec9",
+    "ingestedAt": "2026-11-19T23:44:16.302851+00:00",
+    "interpretedAt": "2026-11-19T23:45:15.187Z",
+    "version": "2026-11-19.1:2026-11-18.1"
+  }
+}

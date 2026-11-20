@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { lineTestDatabase } from "./testDatabase";
 const observed = vi.fn();
+vi.mock("./officialPowerPlay", () => ({ readOfficialPowerPlay: async () => [] }));
 vi.mock("./gameState", async (load) => ({ ...await load<object>(), observeLineGame: async (game: any, now: string) => { observed(game.id); return { ...game, phase: "live", actualStart: "2026-11-08T00:07:00Z", observedAt: now, stateSource: "fixture:nhl" }; } }));
 import { readGameLines } from "./service";
 import { fixtureClaim } from "./testFixtures";
@@ -49,7 +50,7 @@ describe("public GET load shape (game-night traffic, s-maxage=15)", () => {
     expect(response.teams.map((team) => team.teamId)).toEqual([3, 14]);
     expect(count(db).queries).toBeLessThanOrEqual(12); expect(count(db).rows).toBeLessThanOrEqual(90);
   });
-  it("a stored state younger than 5 minutes is served without an NHL read", async () => {
+  it("a stored state younger than 5 minutes is served without refreshing the NHL game state", async () => {
     const team = freshDatabase();
     expect((await readGameLines(team, { teamId: 14, now: NOW })).game).toMatchObject({ id: TONIGHT, phase: "live" });
     const game = freshDatabase();
