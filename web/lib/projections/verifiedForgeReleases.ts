@@ -173,6 +173,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "2026-11-19 sandbox publication candidate (forgeEnvScope, pregame publication compute, replay guard): 242-module exact commit closure, 0 findings. Exclusion proof only, not forecast-quality or native-use approval.",
   },
+  {
+    closureSha256: "ca6534eb2c1c8352ad75a0be0d304abd0ffc524bebc380cd3b4644ed4fed1704",
+    commit: "6c4e00f05d21884e7eb0d2e734abe8c817d92d44",
+    receipt: "tasks/artifacts/forge-live-release-2026-11-19/6c4e00f05d21884e7eb0d2e734abe8c817d92d44.json",
+    receiptSha256: "6622a728d61174bdbb790a099293ad42a38ce5c12c56b5cda769014b6fd81f9c",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "2026-11-19 live pregame release (game-scoped live capture/publish routes, verifier-gated publication, pregame displacement fence): 243-module exact commit closure, 0 findings. Exclusion proof only, not forecast-quality or native-use approval.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;
