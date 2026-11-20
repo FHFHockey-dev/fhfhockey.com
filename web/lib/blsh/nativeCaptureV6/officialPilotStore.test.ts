@@ -5,7 +5,7 @@ import { createOfficialPilotStore, type OfficialPilotTarget } from "./officialPi
 import { type ContextTransport } from "./requestContextStore";
 
 const run = "11111111-2222-4333-8444-555555555555", sha = "1".repeat(64);
-const target: OfficialPilotTarget = { sourceDate: "2026-11-20", nativeRunId: run, nativeManifestSHA256: sha,
+const target: OfficialPilotTarget = { sourceDate: "2026-11-21", nativeRunId: run, nativeManifestSHA256: sha,
   scheduleSHA256: "2".repeat(64), deploymentId: "dpl_pilot", gitCommitSha: "3".repeat(40), gameIds: [2026020301,2026020302] };
 const encoded = (data: unknown) => Buffer.from(JSON.stringify(data));
 const hash = (data: Buffer) => createHash("sha256").update(new Uint8Array(data)).digest("hex");
@@ -33,7 +33,7 @@ describe("official pilot custody transport", () => {
   });
   it("rejects a widened slate, an invalid date, and ambiguous acknowledgements", async () => {
     const {store,transport}=fixture(async () => encoded({claimed:false,runId:run}));
-    for (const patch of [{gameIds:[]},{gameIds:[...target.gameIds].reverse()},{gameIds:Array(17).fill(2026020301)},{sourceDate:"2026-11-21"}]) {
+    for (const patch of [{gameIds:[]},{gameIds:[...target.gameIds].reverse()},{gameIds:Array(17).fill(2026020301)},{sourceDate:"2026-11-22"},{sourceDate:"2026-11-20"}]) {
       await expect(store.claim({...target,...patch})).rejects.toThrow("official_target_invalid");
     }
     expect(transport).not.toHaveBeenCalled();
