@@ -806,6 +806,12 @@ function RouteRunner() {
     };
   }, [loadJobs]);
 
+  // Open the most relevant job instead of an empty detail panel: an active one, else the newest.
+  useEffect(() => {
+    if (selectedId || jobs.length === 0) return;
+    setSelectedId((jobs.find((row) => isActiveStatus(row.status)) ?? jobs[0]).id);
+  }, [jobs, selectedId]);
+
   useEffect(() => {
     selectedRef.current = selectedId;
     lastEventIdRef.current = 0;
@@ -936,8 +942,11 @@ function RouteRunner() {
                         )}
                       </span>
                       <span className={styles.jobRowMeta}>
-                        {new Date(row.created_at).toLocaleString()} · {row.steps} steps ·{" "}
-                        {Number(row.rows_total).toLocaleString()} {readJobProgress(row.progress)?.rowsUnit ?? "rows"}
+                        <span>{new Date(row.created_at).toLocaleString()}</span>
+                        <span>
+                          {row.steps} steps · {Number(row.rows_total).toLocaleString()}{" "}
+                          {readJobProgress(row.progress)?.rowsUnit ?? "rows"}
+                        </span>
                       </span>
                     </button>
                   </li>

@@ -1,0 +1,136 @@
+@use "styles/vars" as v;
+@use "styles/admin-mui" as admin;
+
+// /db workspace: 90% wide and centred (fhfh-styles §2.1).
+// Cards: standard panels (fhfh-styles §9.2) instead of 5px multicolour borders,
+// gradients and a repeated 140px banner image (or a blank 140px gap) on each card.
+.page {
+  width: 100%;
+  max-width: v.$page-max-width;
+  margin-inline: auto;
+  padding-bottom: v.$space-xl; // the last card no longer sits on the footer
+  @include admin.admin-mui-controls;
+}
+
+// Card action rows wrap whole buttons instead of wrapping their labels.
+.page :global(.MuiCardActions-root) {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.page :global(.MuiCardActions-root > :not(:first-of-type)) {
+  margin-left: 0;
+}
+
+// Each card's main action (its first button) is the primary variant: opaque fill,
+// white text (9.2:1); Resume / Cancel and the rest stay tint.
+.page :global(.MuiCardActions-root > .MuiButton-root:first-child) {
+  background: v.$primary-color-opaque;
+  color: v.$color-white;
+
+  &:hover:not(:disabled) {
+    background: rgba(v.$primary-color, 0.5);
+  }
+}
+
+.page :global(.MuiCardActions-root > .MuiButton-root.Mui-disabled:first-child) {
+  background: v.$primary-color-opaque;
+  color: v.$color-white;
+}
+
+// Three-action rows: main action full width on top, the two secondary actions split
+// 50/50 below, instead of a staggered wrap.
+.page :global(.MuiCardActions-root:has(> .MuiButton-root:nth-child(3))) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.page :global(.MuiCardActions-root:has(> .MuiButton-root:nth-child(3)) > .MuiButton-root:first-child) {
+  grid-column: 1 / -1;
+}
+
+.page :global(.MuiCard-root) {
+  position: relative;
+  border: v.$border-subtle;
+  border-radius: v.$radius-panel;
+  background: v.$background-medium;
+  box-shadow: v.$shadow-panel;
+
+  // Canonical top rail (§2.7): one brand-blue accent for every card.
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    border-radius: v.$radius-panel v.$radius-panel 0 0;
+    background: v.$primary-color;
+    pointer-events: none;
+  }
+}
+
+.page :global(.MuiCardMedia-root) {
+  display: none;
+}
+
+// Panel title (§8.4): accent caps, compact.
+.page :global(.MuiCard-root .MuiTypography-h5) {
+  margin: 4px 0 8px;
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.page :global(.MuiCard-root .MuiTypography-body2) {
+  color: v.$text-secondary;
+}
+
+// Page header (matches /db/runner): eyebrow, outlined page title, one action.
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  margin: v.$space-md 0;
+  padding: v.$space-sm v.$space-md;
+  border: v.$border-subtle;
+  border-radius: v.$radius-panel;
+  background: v.$background-medium;
+
+  h1 {
+    margin: 0;
+    color: v.$color-white;
+    font-family: v.$font-family-accent;
+    font-size: clamp(v.$font-size-xl, 2vw, v.$font-size-xxl);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: v.$space-xs;
+  color: v.$primary-color;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.topLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: v.$control-height-sm;
+  padding: 0 12px;
+  border-radius: v.$radius-control;
+  text-decoration: none;
+  @include v.button-tint;
+
+  &:focus-visible {
+    outline: 2px solid v.$focus-color;
+    outline-offset: 2px;
+  }
+}

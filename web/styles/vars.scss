@@ -772,6 +772,28 @@ $z-desktop-toast: 650;
   }
 }
 
+// Canonical button (fhfh-styles §9.4, TJ 2026-11-08): 2px primary ring, 12% blue
+// tint, blue text (5.3:1); hover 20% tint (4.7:1); disabled 50% opacity. Labels
+// are Train One, $font-size-xxs, uppercase, 0.05em (the Controls scope default).
+// Active toggles use $primary-color-opaque + white text instead.
+@mixin button-tint {
+  border: 2px solid $primary-color;
+  background: $button-tint;
+  color: $primary-color;
+  font-family: $font-family-accent;
+  font-size: $font-size-xxs;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+
+  &:hover:not(:disabled) {
+    background: $button-tint-hover;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
 // Unified secondary (ghost) button variant – used by toggle groups & stepper
 @mixin button-ghost($active: false) {
   background: transparent;

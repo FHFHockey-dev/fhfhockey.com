@@ -1310,9 +1310,6 @@ const TweetPatternReview = () => {
               {isSyncing ? "Syncing…" : "Sync queue"}
             </button>
 
-            <div className={styles.pendingBadge}>
-              <span className={styles.pendingCount}>{pendingCount}</span> pending
-            </div>
           </div>
 
           {/* ── Left column ─────────────────────────────────────────────── */}
@@ -1464,7 +1461,7 @@ const TweetPatternReview = () => {
 
                 {/* Queue browser */}
                 <div className={sectionClass(styles.queueBrowser, "queue")}>
-                  {renderMobileSectionToggle("queue", "Needs resolution")}
+                  {renderMobileSectionToggle("queue", `Needs resolution · ${pendingCount}`)}
                   <div className={styles.queueBrowserHeader}>
                     <div>
                       <span>Needs resolution</span>
@@ -1616,11 +1613,12 @@ const TweetPatternReview = () => {
                             <div className={styles.headerActions}>
                               <button
                                 className={styles.btn}
+                                aria-label={`New card from assignment ${index + 1}`}
                                 onClick={() =>
                                   applyAssignmentToNewsDraft(assignment)
                                 }
                               >
-                                New card from assignment
+                                New card
                               </button>
                               <button
                                 className={styles.btn}
@@ -1921,8 +1919,14 @@ const TweetPatternReview = () => {
                         >
                           Start new card
                         </button>
-                        <a href="/news" target="_blank" rel="noreferrer">
-                          Open /news
+                        <a
+                          className={styles.btn}
+                          href="/news"
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label="Open /news (opens in a new tab)"
+                        >
+                          Open /news ↗
                         </a>
                       </div>
                     </div>
@@ -2222,22 +2226,6 @@ const TweetPatternReview = () => {
                           </div>
                         ) : null}
 
-                        <div className={styles.btnRow}>
-                          <button
-                            className={styles.btn}
-                            disabled={isSavingNews}
-                            onClick={() => void saveNewsCard("draft")}
-                          >
-                            {isSavingNews ? "Saving…" : "Save draft"}
-                          </button>
-                          <button
-                            className={styles.btnPrimary}
-                            disabled={isSavingNews}
-                            onClick={() => void saveNewsCard("published")}
-                          >
-                            {isSavingNews ? "Saving…" : "Publish card"}
-                          </button>
-                        </div>
                       </div>
 
                       <div className={styles.composerPreviewColumn}>
@@ -2378,6 +2366,22 @@ const TweetPatternReview = () => {
                           </div>
                         ) : null}
                       </div>
+                    </div>
+                    <div className={`${styles.btnRow} ${styles.composerFooter}`}>
+                      <button
+                        className={styles.btn}
+                        disabled={isSavingNews}
+                        onClick={() => void saveNewsCard("draft")}
+                      >
+                        {isSavingNews ? "Saving…" : "Save draft"}
+                      </button>
+                      <button
+                        className={styles.btnPrimary}
+                        disabled={isSavingNews}
+                        onClick={() => void saveNewsCard("published")}
+                      >
+                        {isSavingNews ? "Saving…" : "Publish card"}
+                      </button>
                     </div>
                   </div>
 

@@ -275,37 +275,40 @@
 }
 
 // Segmented rail (GameGrid anatomy, compact)
+// Segmented toggles (fhfh-styles §9.4/§9.5): a dark rail with 4px padding; every
+// segment carries the 2px ring and Train One label; pressed = opaque fill + white text.
+// Nested corners: segment radius 4px + 4px padding = rail radius 8px.
 .segmentRail {
   display: flex;
   flex-wrap: wrap;
   width: fit-content;
   max-width: 100%;
-  gap: 2px;
-  padding: 3px;
+  gap: 4px;
+  padding: 4px;
   background: rgba(v.$background-dark, 0.9);
   border: 1px solid rgba(v.$color-white, 0.08);
-  border-radius: v.$radius-control;
+  border-radius: calc(#{v.$radius-xs} + 4px);
 }
 
 .segment {
   flex: 0 0 auto;
-  min-height: 26px;
+  min-height: 24px;
   padding: 0 v.$space-sm;
   background: transparent;
-  border: 2px solid transparent;
-  border-radius: v.$border-radius-sm;
-  color: v.$secondary-color;
-  font-family: v.$font-family-primary;
-  font-size: v.$font-size-xs;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  border: 2px solid rgba(v.$primary-color, 0.35);
+  border-radius: v.$radius-xs;
+  color: v.$primary-color;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xxs;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   white-space: nowrap;
   cursor: pointer;
 }
 
-.segment:hover {
-  color: v.$primary-color;
-  background: rgba(v.$primary-color, 0.1);
+.segment:hover:not(:disabled) {
+  border-color: v.$primary-color;
+  background: v.$button-tint;
 }
 
 .segment[aria-pressed="true"] {
@@ -314,10 +317,13 @@
   color: v.$color-white;
 }
 
+.segment:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .segmentDefault {
   color: v.$text-secondary;
-  font-style: italic;
-  font-weight: 400;
 }
 
 // Flag checkbox
@@ -398,7 +404,7 @@
 }
 
 .urlField {
-  min-height: v.$control-height-md;
+  min-height: v.$control-height-sm; // matches the 32px buttons beside it
   font-family: v.$font-family-numbers;
   font-size: v.$font-size-xs;
 }
@@ -424,6 +430,8 @@
 }
 
 // Buttons
+// Buttons follow fhfh-styles §9.4 (TJ 2026-11-08): 2px ring, 12% tint, blue Train One
+// labels, 32px. Primary = the Controls "primary" variant (opaque fill, white text).
 .buttonPrimary,
 .buttonSecondary,
 .buttonDanger {
@@ -431,44 +439,30 @@
   align-items: center;
   justify-content: center;
   gap: v.$space-xs;
-  min-height: v.$control-height-md;
+  min-height: v.$control-height-sm;
   padding: 0 v.$space-md;
-  border-radius: v.$border-radius-sm;
-  font-family: v.$font-family-primary;
-  font-size: v.$font-size-xs;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  border-radius: v.$radius-control;
+  white-space: nowrap;
   cursor: pointer;
-  transition: all v.$transition-duration v.$transition-easing;
+  transition:
+    background-color v.$transition-duration v.$transition-easing,
+    border-color v.$transition-duration v.$transition-easing,
+    color v.$transition-duration v.$transition-easing;
+  @include v.button-tint;
 }
 
 .buttonPrimary {
-  border: 2px solid v.$primary-color;
-  background: rgba(v.$primary-color, 0.18);
-  color: v.$secondary-color;
+  background: v.$primary-color-opaque;
+  color: v.$color-white;
 }
 
 .buttonPrimary:hover:not(:disabled) {
-  background: rgba(v.$primary-color, 0.3);
-  color: v.$color-white;
-  box-shadow: 0 8px 16px rgba(v.$primary-color, 0.22);
-}
-
-.buttonSecondary {
-  border: 1px solid v.$border-secondary;
-  background: transparent;
-  color: v.$text-secondary;
-}
-
-.buttonSecondary:hover:not(:disabled) {
-  border-color: v.$primary-color;
-  color: v.$primary-color;
+  background: rgba(v.$primary-color, 0.5);
 }
 
 .buttonDanger {
-  border: 1px solid rgba(v.$danger-color, 0.6);
-  background: transparent;
+  border-color: rgba(v.$danger-color, 0.7);
+  background: rgba(v.$danger-color, 0.06);
   color: v.$danger-color;
 }
 
@@ -479,7 +473,6 @@
 .buttonPrimary:disabled,
 .buttonSecondary:disabled,
 .buttonDanger:disabled {
-  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -551,10 +544,16 @@
   font-size: v.$font-size-sm;
 }
 
+// Date on one line, counts on the next: a unit is never orphaned, and the two never run together.
 .jobRowMeta {
+  display: grid;
   color: v.$text-secondary;
   font-family: v.$font-family-numbers;
   font-size: v.$font-size-xxs;
+
+  > span {
+    white-space: nowrap;
+  }
 }
 
 .empty {

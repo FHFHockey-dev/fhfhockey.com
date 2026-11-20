@@ -31,6 +31,7 @@ import { standardizeColumnName } from "lib/standardization/columnStandardization
 import { useSnackbar } from "notistack";
 import { doPOST } from "lib/supabase"; // Your existing helper
 import AdminPageGate from "components/Admin/AdminPageGate";
+import styles from "./upsert-projections.module.scss";
 import Container from "components/Layout/Container";
 import PageTitle from "components/PageTitle";
 import ClientOnly from "components/ClientOnly";
@@ -631,8 +632,8 @@ function UpsertProjections() {
   }
 
   return (
-    <Container>
-      <PageTitle>Admin: Upsert CSV Projections</PageTitle>
+    <Container className={styles.page}>
+      <PageTitle className={styles.pageTitle}>Admin: Upsert CSV Projections</PageTitle>
       <ClientOnly>
         {" "}
         {/* Ensures this only renders on client after auth check */}
@@ -642,21 +643,15 @@ function UpsertProjections() {
           </Typography>
           <Box
             {...getRootProps()}
-            sx={{
-              border: "2px dashed grey",
-              padding: 4,
-              textAlign: "center",
-              cursor: "pointer",
-              marginBottom: 2,
-              backgroundColor: isDragActive ? "#e3f2fd" : "transparent"
-            }}
+            className={styles.dropzone}
+            data-active={isDragActive ? "true" : undefined}
           >
             <input {...getInputProps()} />
             {isDragActive ? (
               <p>Drop the CSV file here ...</p>
             ) : (
               <p>
-                Drag &aposn&apos drop a CSV file here, or click to select file
+                Drag and drop a CSV file here, or click to select one
               </p>
             )}
             {file && (
@@ -677,6 +672,7 @@ function UpsertProjections() {
                 Player Name Column (from CSV)
               </InputLabel>
               <Select
+                MenuProps={{ PaperProps: { className: styles.menuPaper } }}
                 labelId="player-column-select-label"
                 label="Player Name Column (from CSV)"
                 value={playerColumn}
@@ -759,6 +755,7 @@ function UpsertProjections() {
                       Data Type
                     </InputLabel>
                     <Select
+                      MenuProps={{ PaperProps: { className: styles.menuPaper } }}
                       labelId={`data-type-label-${index}`}
                       label="Data Type"
                       value={header.dataType}

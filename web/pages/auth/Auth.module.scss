@@ -1,35 +1,38 @@
 @use "styles/vars";
+@use "styles/panel";
 
+// Column: the page title sits above the card, aligned with its left edge (it used to
+// float in the left gutter beside the card).
 .container {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 160px);
   padding: 48px 20px;
 }
 
-.card {
+// Doubled class: beats PageTitle's own .title margins regardless of stylesheet order.
+// Page title (fhfh-styles §8.4): outlined accent caps, wide tracking, 2–2.5rem.
+.container .pageTitle {
   width: min(100%, 640px);
-  padding: 28px;
-  border: 1px solid rgba(114, 200, 229, 0.16);
-  border-radius: 22px;
-  background:
-    radial-gradient(circle at top, rgba(7, 170, 226, 0.14), transparent 42%),
-    linear-gradient(180deg, rgba(20, 28, 36, 0.98), rgba(10, 14, 20, 0.98));
-  box-shadow:
-    0 22px 50px rgba(0, 0, 0, 0.32),
-    0 0 0 1px rgba(255, 255, 255, 0.04);
-  color: rgba(244, 251, 255, 0.84);
-}
-
-.eyebrow {
-  color: #72c8e5;
-  font-family: "Roboto Condensed", sans-serif;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  margin: 0 0 16px;
+  color: vars.$color-white;
+  font-family: vars.$font-family-accent;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
   text-transform: uppercase;
 }
+
+.card {
+  @include panel.panel-shell($padding: 28px, $variant: standard); // flat surface, 10px corners (no radial glow)
+  width: min(100%, 640px);
+  margin-inline: auto; // its ClientOnly wrapper spans the column
+  color: vars.$text-primary;
+}
+
 
 .title {
   margin: 8px 0 12px;
@@ -38,10 +41,6 @@
   line-height: 1.1;
 }
 
-.body {
-  margin: 0 0 18px;
-  line-height: 1.6;
-}
 
 .notice {
   margin-bottom: 18px;
@@ -73,36 +72,42 @@
   margin: 0 0 18px;
 }
 
+// Mode tabs follow the toggle rule (fhfh-styles §9.4/§9.5): 2px ring, Train One
+// labels, selected = opaque primary fill + white text. No pills.
 .modeButton {
-  min-height: 40px;
+  min-height: vars.$control-height-sm;
   padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(244, 251, 255, 0.76);
-  font-family: "Roboto Condensed", sans-serif;
-  font-size: 0.88rem;
-  font-weight: 700;
+  border: 2px solid rgba(vars.$primary-color, 0.35);
+  border-radius: vars.$radius-control;
+  background: transparent;
+  color: vars.$primary-color;
+  font-family: vars.$font-family-accent;
+  font-size: vars.$font-size-xxs;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   cursor: pointer;
+
+  &:hover {
+    border-color: vars.$primary-color;
+    background: vars.$button-tint;
+  }
+
+  &:focus-visible {
+    outline: 2px solid vars.$focus-color;
+    outline-offset: 2px;
+  }
 }
 
-.modeButtonActive {
-  border-color: rgba(114, 200, 229, 0.55);
-  background: linear-gradient(
-    180deg,
-    rgba(7, 170, 226, 0.28) 0%,
-    rgba(7, 170, 226, 0.1) 100%
-  );
-  color: #f4fbff;
+.modeButtonActive,
+.modeButtonActive:hover {
+  border-color: vars.$primary-color;
+  background: vars.$primary-color-opaque;
+  color: vars.$color-white;
 }
 
+// The form sits directly on the card: one box, not two.
 .formShell {
-  padding: 18px;
-  border: 1px solid rgba(114, 200, 229, 0.14);
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
-    rgba(4, 8, 12, 0.45);
+  padding: 0;
 }
 
 .formTitle {

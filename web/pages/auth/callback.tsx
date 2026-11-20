@@ -231,11 +231,10 @@ export default function AuthCallbackPage() {
         <meta name="referrer" content="no-referrer" />
       </Head>
       <Container className={styles.container}>
-        <PageTitle>Auth Callback</PageTitle>
+        <PageTitle className={styles.pageTitle}>Auth Callback</PageTitle>
         <ClientOnly>
           <div className={styles.card}>
-            <div className={styles.eyebrow}>Auth Callback</div>
-            <h1 className={styles.title}>{state.heading}</h1>
+            <h2 className={styles.title}>{state.heading}</h2>
             <p className={styles.body}>
               This route handles Google OAuth completion and email-link verification
               handoff for Supabase Auth.

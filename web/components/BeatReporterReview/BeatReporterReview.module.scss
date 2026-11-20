@@ -101,7 +101,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  min-height: 2.25rem;
+  min-height: v.$control-height-sm; // 32px, like the other admin pages
   padding: 0 0.85rem;
   border: 2px solid;
   border-radius: v.$radius-control;
@@ -118,24 +118,25 @@
   }
 }
 
+// Primary = the Controls "primary" variant: opaque fill, white text (9.2:1).
 .primaryButton {
   border-color: v.$primary-color;
-  background: rgba(v.$primary-color, 0.18);
+  background: v.$primary-color-opaque;
   color: v.$color-white;
 
   &:hover:not(:disabled) {
-    background: rgba(v.$primary-color, 0.3);
+    background: rgba(v.$primary-color, 0.5);
   }
 }
 
+// Secondary = the button rule (TJ 2026-11-08): 2px blue ring, 12% tint, blue text (5.3:1).
 .ghostButton {
-  border-color: v.$border-primary;
-  background: transparent;
-  color: v.$text-primary;
+  border-color: v.$primary-color;
+  background: v.$button-tint;
+  color: v.$primary-color;
 
   &:hover:not(:disabled) {
-    border-color: v.$primary-color;
-    background: rgba(v.$primary-color, 0.1);
+    background: v.$button-tint-hover;
   }
 }
 

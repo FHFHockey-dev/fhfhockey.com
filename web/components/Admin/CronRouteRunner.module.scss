@@ -1,0 +1,6 @@
+@use "styles/admin-mui" as admin;
+
+// The Method select's menu opens in a portal outside /db's page root.
+.menuPaper.menuPaper { // doubled: outranks MUI's own Paper and MenuItem styles
+  @include admin.admin-mui-menu;
+}

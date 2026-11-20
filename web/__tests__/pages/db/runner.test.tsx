@@ -61,6 +61,23 @@ afterEach(() => {
 });
 
 describe("/db/runner", () => {
+  it("opens the newest job instead of an empty detail panel", async () => {
+    const older = makeJob({ id: "00000000-0000-4000-8000-000000000009", status: "completed", created_at: "2026-10-20T10:00:00Z" });
+    fetchMock.mockImplementation((url: string) => {
+      if (url === "/api/v1/db/route-runner/jobs") {
+        return reply({ success: true, jobs: [job, older], serverTime: new Date().toISOString() });
+      }
+      if (url.startsWith(`/api/v1/db/route-runner/jobs/${job.id}`)) {
+        return reply({ success: true, job, events, hasMore: false });
+      }
+      return reply({ success: false, error: "unexpected" }, 404);
+    });
+    render(<RouteRunnerPage />);
+    expect(await screen.findByRole("log", { name: "Route runner terminal" })).toBeTruthy();
+    expect(screen.queryByText(/Select a job to see/)).toBeNull();
+    expect(fetchMock.mock.calls.some(([url]) => String(url).startsWith(`/api/v1/db/route-runner/jobs/${older.id}`))).toBe(false);
+  });
+
   it("offers every allowlisted route and checks a pasted route before queueing", async () => {
     render(<RouteRunnerPage />);
     expect(screen.getByRole("group", { name: "Route" }).textContent).toContain("Rolling player averages");

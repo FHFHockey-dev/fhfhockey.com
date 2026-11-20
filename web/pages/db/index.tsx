@@ -15,13 +15,13 @@ import { useAuth } from "contexts/AuthProviderContext";
 
 import Grid from "@mui/material/Unstable_Grid2"; // Grid version 2
 
-import { TextBanner } from "components/Banner/Banner";
 import Container from "components/Layout/Container";
 import { type GameFinalityInput, resolveGameFinality } from "lib/games/gameFinality";
 import supabase, { doPOST } from "lib/supabase";
 import { useSnackbar } from "notistack";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import AdminPageGate from "components/Admin/AdminPageGate";
+import styles from "./db-index.module.scss";
 import CronRouteRunner from "components/Admin/CronRouteRunner";
 
 const NST_MANUAL_BACKFILL_DELAY_MS = 21_000;
@@ -757,12 +757,20 @@ function DatabasePage() {
   }, [isAdmin, season?.seasonId]);
 
   return (
-    <Container>
-      <TextBanner text="Supabase Database" />
+    <Container className={styles.page}>
+      <div className={styles.topbar}>
+        <div>
+          <span className={styles.eyebrow}>Admin · Database</span>
+          <h1>Supabase Database</h1>
+        </div>
+        <Link href="/db/runner" className={styles.topLink}>
+          Open the route runner
+        </Link>
+      </div>
 
       <Grid container spacing={2} alignItems="stretch">
         {/* Players / Rosters Table Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
               border: "5px solid #07aae2",
@@ -797,7 +805,7 @@ function DatabasePage() {
         </Grid>
 
         {/* Seasons Table Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
               border: "5px solid #07aae2",
@@ -832,7 +840,7 @@ function DatabasePage() {
         </Grid>
 
         {/* Teams Table Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
               border: "5px solid #07aae2",
@@ -866,19 +874,6 @@ function DatabasePage() {
                 value={teamsSeasonIdInput}
                 onChange={(e) => setTeamsSeasonIdInput(e.target.value)}
                 placeholder="e.g. 20252026"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                    }
-                }}
               />
             </CardContent>
             <CardActions>
@@ -890,7 +885,7 @@ function DatabasePage() {
         </Grid>
 
         {/* Games Table Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
               border: "5px solid #07aae2",
@@ -924,19 +919,6 @@ function DatabasePage() {
                 value={gamesSeasonIdInput}
                 onChange={(e) => setGamesSeasonIdInput(e.target.value)}
                 placeholder="e.g. 20252026"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                    }
-                }}
               />
             </CardContent>
             <CardActions>
@@ -948,7 +930,7 @@ function DatabasePage() {
         </Grid>
 
         {/* Stats Table Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
               border: "5px solid #07aae2",
@@ -983,7 +965,7 @@ function DatabasePage() {
         </Grid>
 
         {/* Power Play Timeframes Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
               border: "5px solid #07aae2",
@@ -1018,19 +1000,6 @@ function DatabasePage() {
                 value={powerPlayInput}
                 onChange={(e) => setPowerPlayInput(e.target.value)}
                 placeholder="Enter game ID or 'all'"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                    }
-                }}
               />
             </CardContent>
             <CardActions>
@@ -1042,7 +1011,7 @@ function DatabasePage() {
         </Grid>
 
         {/* Line Combinations Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
               border: "5px solid #07aae2",
@@ -1076,7 +1045,7 @@ function DatabasePage() {
         </Grid>
 
         {/* Shift Charts Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
               border: "5px solid #07aae2",
@@ -1110,19 +1079,6 @@ function DatabasePage() {
                 value={shiftChartsInput}
                 onChange={(e) => setShiftChartsInput(e.target.value)}
                 placeholder="Enter game ID or 'all'"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                    }
-                }}
               />
             </CardContent>
             <CardActions>
@@ -1134,7 +1090,7 @@ function DatabasePage() {
         </Grid>
 
         {/* NST Team Stats Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
               border: "5px solid #07aae2",
@@ -1179,19 +1135,6 @@ function DatabasePage() {
                 value={nstTeamStatsInput}
                 onChange={(e) => setNstTeamStatsInput(e.target.value)}
                 placeholder="YYYY-MM-DD or all"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                  }
-                }}
               />
               <TextField
                 label="Backward End Date (optional)"
@@ -1202,19 +1145,6 @@ function DatabasePage() {
                 value={nstTeamStatsEndDateInput}
                 onChange={(e) => setNstTeamStatsEndDateInput(e.target.value)}
                 placeholder="YYYY-MM-DD"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                    }
-                }}
               />
             </CardContent>
             <CardActions>
@@ -1233,6 +1163,7 @@ function DatabasePage() {
                 Resume Pending
               </Button>
               <Button
+                data-control-variant="danger"
                 size="small"
                 onClick={cancelPendingNstBackfill}
                 disabled={!nstTeamStatsLoading && !pendingNstBackfill}
@@ -1244,7 +1175,7 @@ function DatabasePage() {
         </Grid>
 
         {/* Game Goal Projections Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
               border: "5px solid #07aae2",
@@ -1279,7 +1210,7 @@ function DatabasePage() {
         </Grid>
 
         {/* Standings Details Card */}
-        <Grid xs={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Card
             sx={{
               border: "5px solid #07aae2",
@@ -1315,19 +1246,6 @@ function DatabasePage() {
                 value={standingsDetailsInput}
                 onChange={(e) => setStandingsDetailsInput(e.target.value)}
                 placeholder="e.g. 2025-02-10 or 'all'"
-                sx={{
-                  backgroundColor: "#202020",
-                  border: "1px solid #07aae2",
-                  borderRadius: "4px",
-                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                    {
-                      color: "#07aae2",
-                      fontWeight: "900",
-                      textTransform: "uppercase",
-                      backgroundColor: "#202020",
-                      margin: "1px"
-                    }
-                }}
               />
             </CardContent>
             <CardActions>
@@ -1339,7 +1257,7 @@ function DatabasePage() {
         </Grid>
 
         {isAdmin && (
-          <Grid xs={12} md={4}>
+          <Grid xs={12} sm={6} md={4}>
             <Card
               sx={{
                 border: "5px solid #ff6b6b",
@@ -1375,19 +1293,6 @@ function DatabasePage() {
                   value={skoAsOfInput}
                   onChange={(e) => setSkoAsOfInput(e.target.value)}
                   placeholder="2025-01-05"
-                  sx={{
-                    backgroundColor: "#202020",
-                    border: "1px solid #ff6b6b",
-                    borderRadius: "4px",
-                    "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
-                      {
-                        color: "#ff6b6b",
-                        fontWeight: "900",
-                        textTransform: "uppercase",
-                        backgroundColor: "#202020",
-                        margin: "1px"
-                      }
-                  }}
                 />
               </CardContent>
               <CardActions>
@@ -1405,7 +1310,7 @@ function DatabasePage() {
 
         {/* New Card/Button to link to the CSV Upsert Page */}
         {isAdmin && ( // Only show this card/link if user is admin
-          <Grid xs={12} md={4}>
+          <Grid xs={12} sm={6} md={4}>
             {" "}
             {/* Adjust grid size as needed */}
             <Card
@@ -1452,24 +1357,10 @@ function DatabasePage() {
         {isAdmin && (
           <Grid xs={12}>
             <CronRouteRunner />
-            <Link href="/db/runner" passHref legacyBehavior>
-              <Button component="a" variant="contained" color="warning" sx={{ mt: 1 }}>
-                Long runs: open the route runner
-              </Button>
-            </Link>
           </Grid>
         )}
       </Grid>
 
-      <Button
-        onClick={async () => {
-          console.log("click clll");
-          const { data } = await supabase.from("goaliesGameStats").select("*");
-          console.log(data);
-        }}
-      >
-        Snackbar
-      </Button>
     </Container>
   );
 }

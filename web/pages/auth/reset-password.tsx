@@ -342,11 +342,10 @@ export default function ResetPasswordPage() {
         <meta name="referrer" content="no-referrer" />
       </Head>
       <Container className={styles.container}>
-        <PageTitle>Reset Password</PageTitle>
+        <PageTitle className={styles.pageTitle}>Reset Password</PageTitle>
         <ClientOnly>
           <div className={styles.card}>
-            <div className={styles.eyebrow}>Password Reset</div>
-            <h1 className={styles.title}>Choose a new password</h1>
+            <h2 className={styles.title}>Choose a new password</h2>
             <p className={styles.body}>
               This page completes the second half of the Supabase recovery flow
               after the email link returns to the site.

@@ -1,0 +1,74 @@
+@use "styles/vars" as v;
+@use "styles/admin-mui" as admin;
+
+// /db/upsert-projections: the site is dark-only, so MUI's white Papers become
+// standard panels, inside a 90% centred workspace (fhfh-styles §2.1, §9.2).
+.page {
+  width: 100%;
+  max-width: v.$page-max-width;
+  margin-inline: auto;
+  padding-bottom: v.$space-xl;
+  color: v.$text-primary;
+  @include admin.admin-mui-controls;
+}
+
+// Page title (§8.4); doubled class beats PageTitle's own sizing.
+.page .pageTitle {
+  margin: v.$space-lg 0 v.$space-md;
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.page :global(.MuiPaper-root) {
+  border: v.$border-subtle;
+  border-radius: v.$radius-panel;
+  background: v.$background-medium;
+  box-shadow: v.$shadow-panel;
+  color: v.$text-primary;
+}
+
+// Step titles: panel titles (§8.4), compact accent caps.
+.page :global(.MuiPaper-root .MuiTypography-h5) {
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.page :global(.MuiPaper-root .MuiTypography-h6) {
+  color: v.$color-white;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.dropzone {
+  margin-bottom: v.$space-md;
+  padding: v.$space-xl v.$space-md;
+  border: 2px dashed v.$border-secondary;
+  border-radius: v.$radius-control;
+  color: v.$text-secondary;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+
+  &:hover,
+  &[data-active="true"] {
+    border-color: v.$primary-color;
+    background: v.$button-tint;
+    color: v.$text-primary;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.menuPaper.menuPaper { // doubled: outranks MUI's own Paper and MenuItem styles
+  @include admin.admin-mui-menu;
+}
