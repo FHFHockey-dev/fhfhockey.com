@@ -36,6 +36,20 @@ vi.mock("lib/nst/client", async (importOriginal) => ({
 }));
 vi.mock("@supabase/supabase-js", () => ({
   createClient: (_url: unknown, _key: unknown, options: any) => ({
+    rpc(name: string, args: { p_scope: string }) {
+      if (name !== "read_nst_gamelog_explicit_audit") throw new Error(`Unexpected RPC ${name}`);
+      return {
+        async order(column: string, { ascending }: { ascending: boolean }) {
+          db.queries.push({ table: name, filters: [["eq", "p_scope", args.p_scope], ["order", column, ascending]] });
+          if (db.auditReadError) return { data: null, error: { message: "read unavailable" } };
+          const data = db.audits.filter((row) => row.job_name === "update-nst-gamelog" && row.details?.nstProgress?.scope === args.p_scope)
+            .sort((a, b) => ascending ? a[column].localeCompare(b[column]) : b[column].localeCompare(a[column]))
+            .slice(0, 2)
+            .map(({ run_time, details }) => ({ run_time, details }));
+          return { data, error: null };
+        }
+      };
+    },
     from(table: string) {
       const query = { table, filters: [] as Array<[string, string, any]> };
       db.queries.push(query);
@@ -804,7 +818,10 @@ describe("update-nst-gamelog automatic season cursor", () => {
       const second = await run(first.body.resume.request.query);
       expect(second.statusCode).toBe(207);
       expect(second.body.nstProgress.continuation.nextIndex).toBe(14);
-      // Replay the first cursor; latest acknowledged progress wins.
+      // Replay the first cursor with both explicit audits older than the automatic bookmark TTL.
+      for (const audit of db.audits) {
+        audit.run_time = new Date(Date.parse(audit.run_time) - NST_GAMELOG_BOOKMARK_TTL_MS - 1).toISOString();
+      }
       const third = await run(first.body.resume.request.query);
       expect(third.statusCode).toBe(200);
       expect(third.body.success).toBe(true);
@@ -1200,8 +1217,28 @@ describe("update-nst-gamelog automatic season cursor", () => {
       const queryIndex = db.queries.length;
       const res = await run(query);
       expect(res.body.nstProgress.continuation.totalUrls).toBeGreaterThan(0);
-      expect(db.queries.slice(queryIndex).some((q) => q.table === "cron_job_audit" && q.filters.length > 0)).toBe(true);
+      expect(db.queries.slice(queryIndex).filter((q) => q.table === "read_nst_gamelog_explicit_audit")).toEqual([
+        { table: "read_nst_gamelog_explicit_audit", filters: [["eq", "p_scope", res.body.nstProgress.scope], ["order", "run_time", false]] }
+      ]);
     }
+  });
+
+  it.each([
+    ["unavailable", "NST explicit progress read is unconfirmed; admission stopped."],
+    ["tied", "NST explicit progress is ambiguous; admission stopped."]
+  ])("stops source admission when the explicit audit lookup is %s", async (condition, error) => {
+    const query = { dates: "2026-10-03", datasetType: "fiveOnFiveCounts" };
+    if (condition === "tied") {
+      await run(query);
+      db.audits.push(db.audits[0]);
+    } else {
+      db.auditReadError = true;
+    }
+    fetchNstTextByUrlMock.mockClear();
+    const res = await run(query);
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe(error);
+    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
   });
 
   it("keeps the current Eastern day and season start inclusive in default reverse mode", async () => {

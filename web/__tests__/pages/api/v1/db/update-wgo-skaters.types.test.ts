@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { fetchMock, fromMock, upsertMock } = vi.hoisted(() => ({
   fetchMock: vi.fn(),
@@ -190,51 +190,284 @@ function createSkaterData(gameId = 2025020001): AllSkaterStats {
   };
 }
 
+function nhlPage(data: unknown[], total = data.length) {
+  return {
+    ok: true,
+    status: 200,
+    statusText: "OK",
+    headers: { get: () => "application/json" },
+    json: async () => ({ data, total }),
+  };
+}
+
 describe("WGO skater generated insert contracts", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
-    fetchMock.mockResolvedValue({
-      ok: true,
-      status: 200,
-      statusText: "OK",
-      headers: { get: () => "application/json" },
-      json: async () => ({ data: [], total: 0 }),
-    });
+    fetchMock.mockResolvedValue(nhlPage([]));
     upsertMock.mockResolvedValue({ error: null });
     fromMock.mockReturnValue({ upsert: upsertMock });
   });
 
-  it("fetches a complete date window without 100-row pagination", async () => {
-    await expect(
-      fetchDataForGameType(2, "2026-01-18", -1, "2026-01-12"),
-    ).resolves.toEqual(
-      expect.objectContaining({
-        skaterStats: [],
-        timeOnIceStats: [],
-      }),
-    );
+  afterEach(() => vi.useRealTimers());
+
+  it("fetches one bounded page per report for an empty date window", async () => {
+    await Promise.all([
+      expect(
+        fetchDataForGameType(2, "2026-01-18", -1, "2026-01-12"),
+      ).resolves.toEqual(
+        expect.objectContaining({ skaterStats: [], timeOnIceStats: [] }),
+      ),
+      vi.runAllTimersAsync(),
+    ]);
 
     expect(fetchMock).toHaveBeenCalledTimes(16);
-    for (const [url] of fetchMock.mock.calls) {
-      const decodedUrl = decodeURIComponent(String(url));
-      expect(decodedUrl).toContain("limit=-1");
-      expect(decodedUrl).toContain('gameDate>="2026-01-12"');
-      expect(decodedUrl).toContain('gameDate<="2026-01-18 23:59:59"');
+    for (const [input] of fetchMock.mock.calls) {
+      const params = new URL(input).searchParams;
+      expect(params.get("start")).toBe("0");
+      expect(params.get("limit")).toBe("100");
+      expect(params.get("cayenneExp")).toBe(
+        'gameDate<="2026-01-18 23:59:59" and gameDate>="2026-01-12" and gameTypeId=2',
+      );
     }
   });
 
-  it("rejects an incomplete unbounded NHL response", async () => {
-    fetchMock.mockResolvedValue({
-      ok: true,
-      status: 200,
-      statusText: "OK",
-      headers: { get: () => "application/json" },
-      json: async () => ({ data: [{}], total: 2 }),
+  it("rejects an incomplete first NHL page", async () => {
+    fetchMock.mockResolvedValue(nhlPage([{}], 2));
+
+    await Promise.all([
+      expect(
+        fetchDataForGameType(2, "2026-01-18", -1, "2026-01-12"),
+      ).rejects.toThrow("returned 1/2"),
+      vi.runAllTimersAsync(),
+    ]);
+  });
+
+  it("persists all 432 same-date rows from NHL-capped report pages and retries a later 429", async () => {
+    const date = "2026-11-19";
+    const gameRows = Array.from({ length: 432 }, (_, index) => ({
+      playerId: index + 1,
+      gameId: 2026020300 + Math.floor(index / 36),
+      gameDate: date,
+      skaterFullName: `Fixture Skater ${index + 1}`,
+      hits: index % 7,
+    }));
+    const bios = gameRows.map(({ playerId }) => ({
+      playerId,
+      birthCity: `Fixture City ${playerId}`,
+    }));
+    const offsets = new Map<string, number[]>();
+    let pending = 0;
+    let maxPending = 0;
+    let rateLimited = false;
+    fetchMock.mockImplementation(async (uri: string) => {
+      const url = new URL(uri);
+      const report = url.pathname.split("/").at(-1)!;
+      const start = Number(url.searchParams.get("start"));
+      const limit = Number(url.searchParams.get("limit"));
+      const providerPageSize = limit <= 0 ? 100 : Math.min(100, limit);
+      const reportOffsets = offsets.get(report) ?? [];
+      reportOffsets.push(start);
+      offsets.set(report, reportOffsets);
+      pending += 1;
+      maxPending = Math.max(maxPending, pending);
+      await Promise.resolve();
+      pending -= 1;
+
+      if (!rateLimited && report === "timeonice" && start === 100) {
+        rateLimited = true;
+        return {
+          ok: false,
+          status: 429,
+          statusText: "Too Many Requests",
+          headers: { get: () => "application/json" },
+          text: async () => "",
+        };
+      }
+
+      const rows = report === "bios" ? bios : gameRows;
+      return nhlPage(rows.slice(start, start + providerPageSize), rows.length);
     });
 
+    const [allData] = await Promise.all([
+      fetchDataForGameType(2, date),
+      vi.runAllTimersAsync(),
+    ]);
     await expect(
-      fetchDataForGameType(2, "2026-01-18", -1, "2026-01-12"),
-    ).rejects.toThrow("returned 1/2");
+      processAndUpsertGameTypeData(allData, "wgo_skater_stats", date, 20262027),
+    ).resolves.toBe(432);
+
+    expect(maxPending).toBe(4);
+    expect(offsets.size).toBe(16);
+    for (const [report, starts] of offsets) {
+      expect(starts).toEqual(
+        report === "timeonice"
+          ? [0, 100, 100, 200, 300, 400]
+          : [0, 100, 200, 300, 400],
+      );
+    }
+    expect(upsertMock).toHaveBeenCalledTimes(1);
+    const [records, options] = upsertMock.mock.calls[0];
+    expect(options).toEqual({ onConflict: "player_id, date" });
+    expect(
+      records.map(({ player_id }: { player_id: number }) => player_id),
+    ).toEqual(gameRows.map(({ playerId }) => playerId));
+    expect(records[431]).toEqual(
+      expect.objectContaining({
+        birth_city: "Fixture City 432",
+        date,
+        game_id: gameRows[431].gameId,
+        hits: gameRows[431].hits,
+      }),
+    );
+  });
+
+  it("joins one player's distinct games and one bio across an independently paged date window", async () => {
+    const dates = ["2026-11-18", "2026-11-19"];
+    const first = {
+      ...createSkaterData().skaterStats[0],
+      gameId: 2026020300,
+      gameDate: dates[0],
+      playerId: 1,
+    };
+    const second = { ...first, gameId: 2026020301, gameDate: dates[1] };
+    const rowsByReport: Record<string, unknown[]> = {
+      summary: [first, second],
+      realtime: [{ ...second, hits: 7 }, { ...first, hits: 2 }],
+      bios: [{ playerId: 1, birthCity: "Fixture City" }],
+    };
+    const offsets = new Map<string, number[]>();
+    fetchMock.mockImplementation(async (uri: string) => {
+      const url = new URL(uri);
+      const report = url.pathname.split("/").at(-1)!;
+      const start = Number(url.searchParams.get("start"));
+      expect(url.searchParams.get("limit")).toBe("1");
+      const sort = JSON.parse(url.searchParams.get("sort")!);
+      expect(sort.at(-1)).toEqual({
+        property: report === "bios" ? "playerId" : "gameId",
+        direction: "ASC",
+      });
+      const reportOffsets = offsets.get(report) ?? [];
+      reportOffsets.push(start);
+      offsets.set(report, reportOffsets);
+
+      const rows = rowsByReport[report] ?? [];
+      return nhlPage(rows.slice(start, start + 1), rows.length);
+    });
+
+    const [allData] = await Promise.all([
+      fetchDataForGameType(2, dates[1], 1, dates[0]),
+      vi.runAllTimersAsync(),
+    ]);
+    expect(offsets.size).toBe(16);
+    for (const [report, starts] of offsets) {
+      expect(starts).toEqual(
+        report === "summary" || report === "realtime" ? [0, 1] : [0],
+      );
+    }
+    for (const [index, stat] of [first, second].entries()) {
+      await expect(
+        processAndUpsertGameTypeData(
+          { ...allData, skaterStats: [allData.skaterStats[index]] },
+          "wgo_skater_stats",
+          dates[index],
+          20262027,
+        ),
+      ).resolves.toBe(1);
+      expect(upsertMock).toHaveBeenNthCalledWith(
+        index + 1,
+        [
+          expect.objectContaining({
+            birth_city: "Fixture City",
+            date: dates[index],
+            game_id: stat.gameId,
+            hits: index === 0 ? 2 : 7,
+          }),
+        ],
+        expect.anything(),
+      );
+    }
+  });
+
+  it.each([
+    ["changed total", "realtime", nhlPage([{}], 3), /changed the miscSkaterStats total/],
+    ["short page", "realtime", nhlPage([], 2), /returned 0\/1 miscSkaterStats rows at offset 1/],
+    [
+      "repeated game",
+      "realtime",
+      nhlPage([{ playerId: 1, gameId: 2026020300 }], 2),
+      /duplicate player\/game row/,
+    ],
+    ["repeated bio", "bios", nhlPage([{ playerId: 1 }], 2), /duplicate player row/],
+  ] as const)(
+    "rejects a %s in a later report page before writing",
+    async (_, badReport, badPage, message) => {
+      const date = "2026-11-19";
+      const summary = {
+        ...createSkaterData(2026020300).skaterStats[0],
+        gameDate: date,
+        playerId: 1,
+      };
+      fetchMock.mockImplementation(async (uri: string) => {
+        const url = new URL(uri);
+        const report = url.pathname.split("/").at(-1);
+        const start = Number(url.searchParams.get("start"));
+        if (report === badReport) {
+          return start === 0 ? nhlPage([summary], 2) : badPage;
+        }
+        return nhlPage(report === "summary" ? [summary] : []);
+      });
+
+      const write = fetchDataForGameType(2, date, 1).then((allData) =>
+        processAndUpsertGameTypeData(allData, "wgo_skater_stats", date, 20262027),
+      );
+      await Promise.all([expect(write).rejects.toThrow(message), vi.runAllTimersAsync()]);
+      expect(upsertMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it("rejects repeated summary keys before a multi-day window can split them", async () => {
+    const firstDate = "2026-11-18";
+    const lastDate = "2026-11-19";
+    const summary = createSkaterData(2026020300).skaterStats[0];
+    fetchMock.mockImplementation(async (uri: string) => {
+      const url = new URL(uri);
+      if (!url.pathname.endsWith("/summary")) return nhlPage([]);
+      const gameDate = url.searchParams.get("start") === "0" ? firstDate : lastDate;
+      return nhlPage([{ ...summary, gameDate }], 2);
+    });
+
+    await Promise.all([
+      expect(
+        fetchDataForGameType(2, lastDate, 1, firstDate),
+      ).rejects.toThrow("duplicate player/game row"),
+      vi.runAllTimersAsync(),
+    ]);
+    expect(upsertMock).not.toHaveBeenCalled();
+  });
+
+  it("retains the unbounded total safeguard without applying it to explicitly paged calls", async () => {
+    const date = "2026-11-19";
+    const rows = Array.from({ length: 9_000 }, (_, index) => ({
+      playerId: index + 1,
+      gameId: 2026020300,
+    }));
+    fetchMock.mockImplementation(async (uri: string) => {
+      const url = new URL(uri);
+      if (!url.pathname.endsWith("/summary")) return nhlPage([]);
+      const start = Number(url.searchParams.get("start"));
+      return nhlPage(rows.slice(start, start + 100), rows.length);
+    });
+
+    await Promise.all([
+      expect(fetchDataForGameType(2, date)).rejects.toThrow("potentially capped response"),
+      vi.runAllTimersAsync(),
+    ]);
+    await Promise.all([
+      expect(fetchDataForGameType(2, date, 100).then((data) => data.skaterStats))
+        .resolves.toHaveLength(rows.length),
+      vi.runAllTimersAsync(),
+    ]);
   });
 
   it("writes numeric time fields through the regular-season table contract", async () => {
