@@ -29,3 +29,15 @@ Every production step needs TJ's approval.
 - Fixture `roster_optimizer_team_games` ids were seeded explicitly; the id sequence is not advanced (clone with explicit ids).
 - Audit SQL must not cast `'forge_witness'::regnamespace` before install (use to_regnamespace).
 - pg returns bigint as a string; PostgREST returns it as a number.
+
+## Track A — signed verdicts (Nov 19–20, TJ ticket via Chef)
+- Why: prod Vercel env holds POSTGRES_URL (postgres) + SUPABASE_JWT_SECRET; service_role EXECUTEs public.execute_sql. DB grants
+  cannot stop the writer, so verdicts are Ed25519-signed by an Edge Function whose key is only an Edge secret.
+- Where: tasks/artifacts/forge-witness-signed-2026-11-19/, supabase/functions/forge-witness-verify/, lib signedVerdict.ts,
+  witnessEdgeCore.ts, witnessSigningKeys.ts (EMPTY = fail closed). Delta SQL sha256 dad95b43….
+- Decision: start/T−60 from the NHL API, not the DB (writer can move games.startTime). DB checks are defense only.
+- State: check_signed.py exit 0 against prod schema+grants restore; all six writer attacks succeed in DB and are refused by
+  gate and audit; untouched verdict passes. Gates green. Deno not run locally (deploy smoke test is the first Deno run).
+- Gotchas: prod authenticator preloads supautils (reset locally for PostgREST); jsdom lacks AbortSignal.timeout (vitest
+  needs `@vitest-environment node`); never `cat >` without a heredoc in this shell (it blocks on stdin).
+- Next: TJ keygen (pins public key) → rebuild bundle → deploy function → live lane wires assertSignedVerdict → arm.

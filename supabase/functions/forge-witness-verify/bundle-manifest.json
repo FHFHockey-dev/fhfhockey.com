@@ -1,0 +1,19 @@
+{
+ "release": "cdc021d323a76519fe793757600979d9f5fa2073c0403de0cd95dac0f09407a6",
+ "bundleSha256": "cf9e82e02306498db19bb8e7636eec1c826067e83a73f9f0d30be3ba4e8f3f56",
+ "inputs": [
+  "tasks/artifacts/forge-witness-signed-2026-11-19/buffer-shim.mjs",
+  "web/lib/projections/pregameCapture/deadline.ts",
+  "web/lib/projections/pregameCapture/der.ts",
+  "web/lib/projections/pregameCapture/independentVerdict.ts",
+  "web/lib/projections/pregameCapture/packet.ts",
+  "web/lib/projections/pregameCapture/policy.ts",
+  "web/lib/projections/pregameCapture/rfc3161.ts",
+  "web/lib/projections/pregameCapture/signedVerdict.ts",
+  "web/lib/projections/pregameCapture/time.ts",
+  "web/lib/projections/pregameCapture/tsaProfiles.ts",
+  "web/lib/projections/pregameCapture/verifier.ts",
+  "web/lib/projections/pregameCapture/witnessEdgeCore.ts",
+  "web/lib/projections/pregameCapture/witnessSigningKeys.ts"
+ ]
+}

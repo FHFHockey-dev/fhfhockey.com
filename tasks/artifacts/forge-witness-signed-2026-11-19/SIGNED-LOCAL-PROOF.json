@@ -1,0 +1,142 @@
+{
+ "postgres": "psql (PostgreSQL) 15.19 (Homebrew)",
+ "postgrest": "PostgREST 16.6",
+ "prodDump": {
+  "roles": "prod-roles-20261119.sql",
+  "schema": "prod-schema-grants-20261119.sql",
+  "restoreErrorsFromAbsentSupabaseSchemasAndExtensions": 161,
+  "facts": {
+   "postgresSuperuser": false,
+   "postgresCreaterole": true,
+   "postgresBypassrls": true,
+   "serviceRoleExecutesExecuteSql": true,
+   "witnessVerifierInstalled": true,
+   "custodyInstalled": true,
+   "publicTables": 436
+  }
+ },
+ "delta": {
+  "file": "forge-witness-signed.sql",
+  "sha256": "dad95b43e0912ce9f8c401f383c27c97f986e4fdcd2a7c64765c20e8a4d2e6e1",
+  "appliedAs": "postgres",
+  "secondApplyRefused": true,
+  "ownerMembersAfterInstall": 0
+ },
+ "edgeBundle": {
+  "release": "cdc021d323a76519fe793757600979d9f5fa2073c0403de0cd95dac0f09407a6",
+  "bundleSha256": "cf9e82e02306498db19bb8e7636eec1c826067e83a73f9f0d30be3ba4e8f3f56",
+  "inputs": [
+   "tasks/artifacts/forge-witness-signed-2026-11-19/buffer-shim.mjs",
+   "web/lib/projections/pregameCapture/deadline.ts",
+   "web/lib/projections/pregameCapture/der.ts",
+   "web/lib/projections/pregameCapture/independentVerdict.ts",
+   "web/lib/projections/pregameCapture/packet.ts",
+   "web/lib/projections/pregameCapture/policy.ts",
+   "web/lib/projections/pregameCapture/rfc3161.ts",
+   "web/lib/projections/pregameCapture/signedVerdict.ts",
+   "web/lib/projections/pregameCapture/time.ts",
+   "web/lib/projections/pregameCapture/tsaProfiles.ts",
+   "web/lib/projections/pregameCapture/verifier.ts",
+   "web/lib/projections/pregameCapture/witnessEdgeCore.ts",
+   "web/lib/projections/pregameCapture/witnessSigningKeys.ts"
+  ]
+ },
+ "keyId": "be626ab5b0e82c5e",
+ "release": "cdc021d323a76519fe793757600979d9f5fa2073c0403de0cd95dac0f09407a6",
+ "witnessResults": {
+  "good": "accepted",
+  "tamperedToken": "rejected:token_invalid",
+  "officialStartDiffers": "rejected:schedule_changed",
+  "officialUnavailable": "official_unavailable",
+  "verifiedLate": "rejected:verification_late",
+  "goodToBeAltered": "accepted",
+  "untouched": "accepted"
+ },
+ "secondRun": [
+  {
+   "gameId": 2099040004,
+   "status": "official_unavailable",
+   "claimId": "64684a3e-7c68-4074-aa61-e8fdff93d841"
+  }
+ ],
+ "traffic": {
+  "service_role@forge_witness_api": 16,
+  "nhl": 8
+ },
+ "gatesBefore": {
+  "good": "accepted",
+  "tamperedToken": "verdict_rejected",
+  "officialStartDiffers": "verdict_rejected",
+  "officialUnavailable": "verdict_missing",
+  "verifiedLate": "verdict_rejected",
+  "goodToBeAltered": "accepted",
+  "untouched": "accepted"
+ },
+ "attacks": {
+  "plainServiceRoleInsert": {
+   "ok": false,
+   "error": "42501 permission denied for table signed_verdicts"
+  },
+  "postgresForgesVerdict": {
+   "ok": true,
+   "rows": []
+  },
+  "postgresAltersRejectedToAccepted": {
+   "ok": true,
+   "rows": []
+  },
+  "postgresReplaysGenuineVerdict": {
+   "ok": true,
+   "rows": []
+  },
+  "postgresDeletesGenuineVerdict": {
+   "ok": true,
+   "rows": []
+  },
+  "executeSqlSwapsCustodyBytes": {
+   "ok": true,
+   "rows": [
+    {
+     "execute_sql": ""
+    }
+   ]
+  },
+  "executeSqlForgesVerdict": {
+   "ok": true,
+   "rows": [
+    {
+     "execute_sql": ""
+    }
+   ]
+  }
+ },
+ "gatesAfter": {
+  "forgeTarget": "signature_invalid",
+  "verifiedLate": "signature_invalid",
+  "tamperedToken": "binding_mismatch",
+  "good": "verdict_missing",
+  "goodToBeAltered": "binding_mismatch",
+  "forgeTargetViaExecuteSql": "key_unpinned",
+  "untouched": "accepted"
+ },
+ "audit": {
+  "good": "verdict_missing",
+  "tamperedToken": "binding_mismatch",
+  "officialStartDiffers": "verdict_rejected",
+  "officialUnavailable": "verdict_missing",
+  "verifiedLate": "signature_invalid",
+  "goodToBeAltered": "binding_mismatch",
+  "untouched": "pass",
+  "forgeTarget": "signature_invalid",
+  "forgeTargetViaExecuteSql": "key_unpinned"
+ },
+ "auditCliWithReleaseDefault": {
+  "exit": 2,
+  "pinnedKeys": [],
+  "reasons": [
+   "verdict_missing",
+   "key_unpinned"
+  ]
+ },
+ "privateKeyInDatabase": false
+}
