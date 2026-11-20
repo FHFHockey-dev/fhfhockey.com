@@ -122,6 +122,8 @@ describe("route module", () => {
     expect(vercel.functions).toEqual({
       "pages/api/**/*.ts": { maxDuration: 240 },
       "pages/api/v1/db/blsh-native-capture.ts": { maxDuration: 250 },
+      // The BLSH hosted fixture-replay route (test mode) runs as its own 300 s function too.
+      "pages/api/v1/db/blsh-replay-run.ts": { maxDuration: 300 },
       "pages/api/v1/db/forge-pregame-capture.ts": { maxDuration: 420 },
     });
   });

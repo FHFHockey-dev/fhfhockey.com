@@ -299,7 +299,9 @@ export async function runHostedReplay(ctx: ReplayContext) {
     gitCommitSha: ctx.gitCommitSha, gateClockStartUTC: new Date(REPLAY_GATE_CLOCK_START).toISOString(), ...result, timings,
     outboundHosts: [...new Set(outbound)].sort(), outboundRequests: outbound.length,
     nonSandboxOutbound: outbound.filter(host => host !== SUPABASE_HOST && !/^127\.0\.0\.1(:\d+)?$/.test(host)) };
-  const stored = await callReplayApi(ctx.api, "blsh_replay_receipt_put_v1", { p_key: REPLAY_RECEIPT_KEY, p_receipt: receipt }, 10_000);
+  // The receipt slot is single-use: it is filled only once a native run row exists, so a free pre-claim refusal (which writes
+  // nothing) never blocks a re-fire.
+  const stored = result.summary.native ? await callReplayApi(ctx.api, "blsh_replay_receipt_put_v1", { p_key: REPLAY_RECEIPT_KEY, p_receipt: receipt }, 10_000) : null;
   timings.total = Date.now() - ctx.enteredAt;
-  return { ...receipt, receiptWritten: stored.status === 200 ? JSON.parse(stored.body.toString("utf8")) === true : `http_${stored.status}` };
+  return { ...receipt, receiptWritten: stored === null ? "skipped_no_native_run" : stored.status === 200 ? JSON.parse(stored.body.toString("utf8")) === true : `http_${stored.status}` };
 }

@@ -8,10 +8,11 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { invokedByCron } from "utils/adminOnlyMiddleware";
 import { REPLAY_API_SCHEMA, runHostedReplay, type ReplayApi } from "lib/blsh/replay/hostedReplay";
 
-// 300, distinct from every other route, so Vercel bundles this route as its own function.
+// web/vercel.json carries the same 300 for this exact path (its pages/api/**/*.ts default is 240).
 export const config = { maxDuration: 300 };
-/** The request-context stage starts only if the native stage finished by then: 60 s + its own 225 s budget < 300 s. */
-const CONTEXT_CUTOFF_MS = 60_000;
+/** The request-context stage starts only if the native stage finished by then: 50 s + its own 225 s budget + readers < 300 s.
+ * The native stage takes about 23 s (the core's mandatory 22 s NST spacing). */
+const CONTEXT_CUTOFF_MS = 50_000;
 
 /** The pre-minted sandbox token must claim exactly role blsh_replay_api, be unexpired, and expire within 24 h. */
 function replayApi(): ReplayApi | null {
