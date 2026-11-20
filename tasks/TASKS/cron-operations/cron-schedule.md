@@ -737,6 +737,44 @@
     "route": "/api/v1/db/route-runner-tick",
     "auth": "Supabase Vault cron_secret",
     "verification": "Scheduled 2026-10-22 by explicit TJ approval after release R21 (master 99c9e56b7, deployment dpl_7ZG28acCKCeHXn7tgL6x5eDEeQEi) was READY and smoke-tested. Calls the route only when a route_runner_jobs row is runnable and no lease is live; idle minutes make no HTTP call."
+  },
+  {
+    "jobid": 404,
+    "jobname": "blsh-native-capture",
+    "schedule": "5 12 * * *",
+    "run_time_utc": "12:05 UTC",
+    "active": true,
+    "method": "POST",
+    "route": "/api/v1/db/blsh-native-capture",
+    "auth": "Supabase Vault cron_secret",
+    "verification": "BLSH v6 native capture (direct NST, 2 URLs 22 s apart, one claim per source date). Scheduled 2026-11-16 by TJ approval; jobs 404-407 read back active on 2026-11-18. The raw switch blsh_capture_control.enabled is off, so each firing returns a 200 disabled skip. Registered in NST_ACTIVE_DIRECT_CRON_STARTS and DIRECT_REMOTE_NST_JOBS on 2026-11-19 (review L7)."
+  },
+  {
+    "jobid": 405,
+    "jobname": "blsh-native-capture-backup",
+    "schedule": "20 12 * * *",
+    "run_time_utc": "12:20 UTC",
+    "active": true,
+    "method": "POST",
+    "route": "/api/v1/db/blsh-native-capture",
+    "auth": "Supabase Vault cron_secret",
+    "verification": "Same route and audit job name as job 404. Reaches NST only when the 12:05 run never claimed the source date; it is not a separate NST start."
+  },
+  {
+    "jobid": 406,
+    "jobname": "blsh-native-capture-watchdog",
+    "schedule": "50 12 * * *",
+    "run_time_utc": "12:50 UTC",
+    "active": true,
+    "method": "SQL"
+  },
+  {
+    "jobid": 407,
+    "jobname": "blsh-native-capture-watchdog-assert",
+    "schedule": "52 12 * * *",
+    "run_time_utc": "12:52 UTC",
+    "active": true,
+    "method": "SQL"
   }
 ]
 ```
@@ -853,6 +891,10 @@ protected routes.
 -- - 11:38 UTC / 06:38 EST: game-predictions-forecast-h0
 -- - 11:40 UTC / 06:40 EST: game-predictions-score-recent
 -- - 12:00 UTC / 07:00 EST: update-player-trend-metrics (proposed; deploy/runtime probe required)
+-- - 12:05 UTC / 07:05 EST: blsh-native-capture (job 404; direct NST, 2 URLs; one-shot per source date; switch off)
+-- - 12:20 UTC / 07:20 EST: blsh-native-capture-backup (job 405; same route; 200 skip once 12:05 claimed)
+-- - 12:50 UTC / 07:50 EST: blsh-native-capture-watchdog (job 406; SQL; claimed > 10 min -> abandoned_uncertain)
+-- - 12:52 UTC / 07:52 EST: blsh-native-capture-watchdog-assert (job 407; SQL; fails the run on a missing or failed date)
 -- - 17:34 UTC / 12:34 EST: game-predictions-ingest-espn-odds-h0-h1
 -- - 20:51 UTC / 15:51 EST: update-pbp
 -- - 21:10 UTC / 16:10 EST: game-predictions-ingest-espn-odds-utc-spillover
@@ -864,6 +906,11 @@ protected routes.
 -- - Current intended report job: 13:00 UTC Vercel cron /api/v1/db/cron-report (web/vercel.json); pg_cron job 234 is inactive.
 -- - Direct NST cron starts require at least 10 minutes of separation. The active
 --   schedule currently provides a minimum of 15 minutes (08:30 -> 08:45 UTC).
+-- - The last NST band start is 09:55 UTC. The next direct NST start is 12:05 UTC
+--   (BLSH job 404, 2 URLs); the gap back to 09:55 is 130 minutes and the gap on to
+--   08:30 is 1,225 minutes. Its 12:20 backup reaches NST only if 12:05 never claimed
+--   the date. No scheduled NST caller (pg_cron or web/vercel.json) starts between
+--   11:05 and 12:07 UTC, so the 2 URLs sit alone in every rolling window.
 --
 -- Gap notes
 -- - update-stats-job and update-line-combinations-job are interval jobs and are not part of the daily floor cluster.

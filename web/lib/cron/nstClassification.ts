@@ -14,7 +14,8 @@ const DIRECT_REMOTE_NST_JOBS = new Set([
   "check-missing-goalie-data",
   "update-nst-team-daily",
   "update-nst-team-daily-incremental",
-  "update-nst-team-stats-all"
+  "update-nst-team-stats-all",
+  "blsh-native-capture"
 ]);
 
 const INDIRECT_NST_DERIVED_JOBS = new Set([

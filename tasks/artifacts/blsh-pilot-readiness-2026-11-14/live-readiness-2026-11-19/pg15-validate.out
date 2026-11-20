@@ -1,0 +1,43 @@
+PASS migration 20261116000000_blsh_native_capture_v6.sql sha256 matches release pin
+PASS migration 20261116000100_blsh_request_context_v1.sql sha256 matches release pin
+PASS migration 20261118131414_blsh_request_context_custody.sql sha256 matches release pin
+PASS migration 20261118155445_blsh_official_pilot.sql sha256 matches release pin
+PASS INSTALL.sql sha256 matches release pin
+PASS ARM.sql sha256 matches release pin
+PASS DISARM-ROLLBACK.sql sha256 matches release pin
+PASS SCHEDULE-ONCE.sql sha256 matches release pin
+PASS INSTALL.sql names no job ID 404-408 in code
+PASS ARM.sql names no job ID 404-408 in code
+PASS DISARM-ROLLBACK.sql names no job ID 404-408 in code
+PASS SCHEDULE-ONCE.sql names no job ID 404-408 in code
+PASS CANCEL-OFFICIAL-ONCE.sql names no job ID 404-408 in code
+PASS SWITCH-OFF.sql names no job ID 404-408 in code
+PASS four real BLSH migrations applied on PostgreSQL 15
+PASS migration 153 switch function matches INSTALL's guard hash
+PASS baseline: raw switch off, no permit, jobs 404-408 seeded, zero pilot jobs
+PASS INSTALL (exact bytes): permit row, trigger, function; switch still off
+PASS INSTALL rerun fails closed (installed window function no longer matches 153) and leaves state identical
+PASS ARM (exact bytes): raw on, effective off outside the window
+PASS ARM rerun fails closed and leaves state identical
+PASS DISARM (exact bytes) returns to baseline: switch off, original function, permit removed
+PASS DISARM rerun fails closed (nothing to drop) and leaves baseline intact
+PASS cycle is repeatable: INSTALL accepts the restored function, DISARM returns to baseline
+PASS [seq] shifted claim at 12:05:30 inside the permit
+PASS SCHEDULE-ONCE (shifted) registers one job above 408 with the exact name and schedule
+PASS dispatch row records the returned job ID
+PASS SCHEDULE-ONCE rerun fails closed and leaves state identical
+PASS FINDING: DISARM alone leaves the one-time official job active (it never touches cron.job)
+PASS DISARM + CANCEL leaves zero active BLSH pilot jobs; native claim and dispatch row retained
+PASS CANCEL rerun is a no-op and leaves state identical
+PASS jobs 404-408 byte-identical after the whole sequence
+PASS only job 409 was ever added and it is gone
+PASS [fired] shifted claim at 12:05:30 inside the permit
+PASS firing queues exactly one GET and unschedules itself
+PASS after a fired dispatch, DISARM + CANCEL leave zero pilot jobs and 404-408 intact
+PASS CANCEL with no dispatch table succeeds as a no-op
+PASS CANCEL refuses an unrecorded same-name job (human decision) and leaves it
+PASS FINDING: DISARM without an installed permit fails and leaves the raw switch ON
+PASS SWITCH-OFF clears raw and effective switch without DDL or cron access
+PASS SWITCH-OFF rerun is a no-op
+ALL 41 CHECKS PASSED
+exit=0
