@@ -407,10 +407,10 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
   type Row = Record<string, any>;
   const cutoff = "2026-10-07";
   const columns = ROLLING_ROW_SELECT_CLAUSE.split(",");
-  const wide = (player_id: number, game_date: string, game_id: number, values: Row = {}): Row => ({
+  const wide = (player_id: number, game_date: string, game_id: number | null, values: Row = {}): Row => ({
     ...Object.fromEntries(columns.map(column => [column, null])), player_id, game_id, strength_state: "ev", game_date,
     season: game_date >= "2026-09-01" ? 20262027 : game_date >= "2025-09-01" ? 20252026 : 20242025,
-    sog_per_60_last5: (game_id % 97) / 10, goals_total_all: 3, ...values,
+    sog_per_60_last5: game_id === null ? null : (game_id % 97) / 10, goals_total_all: 3, ...values,
   });
   const sidecar = (row: Row, support_payload: Row) => ({ player_id: row.player_id, game_id: row.game_id, game_date: row.game_date,
     season: row.season, strength_state: row.strength_state, payload_schema_version: 1, support_payload });
@@ -452,13 +452,28 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
             && !Array.isArray(payload[key]) ? pick(payload[key], args.p_columns) : payload[key]])),
       } : null };
     }) });
-  /** Legacy tables answer the 365-day scope in scan order; without `rpc` the function is not deployed. */
-  function backend(rpc?: (...args: any[]) => unknown) {
-    const inScope = (row: Row) => row.game_date < cutoff && row.game_date > "2025-10-07";
+  /** Legacy tables apply the requested window in scan order; without `rpc` the function is not deployed. */
+  function backend(rpc?: (...args: any[]) => unknown, rollingRows = history, supportRows = sidecars) {
     const from = vi.fn((table: string) => {
-      const source = (table === "rolling_player_game_metrics" ? history : sidecars).filter(inScope);
+      let source = table === "rolling_player_game_metrics" ? rollingRows : supportRows;
       const query: Row = {};
-      for (const name of ["select", "in", "eq", "lt", "gt", "order"]) query[name] = vi.fn(() => query);
+      for (const name of ["select", "order"]) query[name] = vi.fn(() => query);
+      query.in = vi.fn((key: string, values: unknown[]) => {
+        source = source.filter(row => values.includes(row[key]));
+        return query;
+      });
+      query.eq = vi.fn((key: string, value: unknown) => {
+        source = source.filter(row => row[key] === value);
+        return query;
+      });
+      query.lt = vi.fn((key: string, value: string) => {
+        source = source.filter(row => row[key] < value);
+        return query;
+      });
+      query.gt = vi.fn((key: string, value: string) => {
+        source = source.filter(row => row[key] > value);
+        return query;
+      });
       query.range = vi.fn(async (start: number, end: number) => ({ data: source.slice(start, end + 1), count: source.length, error: null }));
       return query;
     });
@@ -488,6 +503,25 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
     expect(db.rpc).toHaveBeenCalledWith("forge_latest_rolling_rows", { p_player_ids: [7, 8, 9, 10, 11], p_strength: "ev",
       p_before: cutoff, p_columns: columns }, { get: true });
     expect(db.from).not.toHaveBeenCalled();
+  });
+
+  describe.each(["RPC", "legacy"] as const)("daily rolling lookback via %s", mode => {
+    it.each(["ev", "pp", "all"] as const)("excludes the January 2024 %s row only outside its lookback", async strength => {
+      const dailyCutoff = "2026-11-19";
+      const playerId = 8480252;
+      const current = wide(7, "2026-11-17", 2026020317, { strength_state: strength });
+      const historical = wide(playerId, "2024-01-19", null, { season: 20232024, strength_state: strength });
+      const useHistory = (rows: Row[]) => backend(mode === "RPC" ? latestRowsRpc(rows, []) : undefined, rows, []);
+      const fetch = (lookbackDays?: number) => fetchRollingRows([current.player_id, playerId], strength, dailyCutoff, undefined,
+        lookbackDays === undefined ? undefined : { lookbackDays });
+
+      useHistory([current, historical]);
+      await expect(fetch()).resolves.toEqual([current]);
+      await expect(fetch(1095)).rejects.toMatchObject({ status: "incomplete", reason: "invalid_row" });
+
+      useHistory([current, { ...historical, game_date: "2026-11-16", season: 20262027 }]);
+      await expect(fetch()).rejects.toMatchObject({ status: "incomplete", reason: "invalid_row" });
+    });
   });
 
   it("hydrates all-strength physical totals from the exact sidecar and computes F/D priors without league rescaling", async () => {
