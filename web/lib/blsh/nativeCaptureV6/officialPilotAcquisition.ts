@@ -8,7 +8,7 @@ import type { OfficialPilotStore, OfficialPilotTarget } from "./officialPilotSto
 import { BUDGET, getBox, liveRoots, officialUrl } from "./officialPilotAcquisition.transport.mjs";
 
 export const OFFICIAL_ORIGIN = "https://" + NST_ADMISSION_PROJECT_HOST;
-export const OFFICIAL_SLOT = Date.parse("2026-11-21T12:45:00Z");
+export const OFFICIAL_SLOT = Date.parse("2026-11-22T12:45:00Z");
 export const officialSlot = (wall: number) => wall >= OFFICIAL_SLOT && wall < OFFICIAL_SLOT + 60000;
 const digest = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex");
 export const pilotDigest = (bytes: Buffer) => digest(new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength));

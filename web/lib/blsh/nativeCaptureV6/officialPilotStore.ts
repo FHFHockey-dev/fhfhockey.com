@@ -4,7 +4,7 @@ import { PINNED_SUPABASE_ORIGIN } from "./core";
 import { matches, need, object, parseJSON } from "./packetFormat";
 import { boundedHTTPS, type ContextTransport } from "./requestContextStore";
 
-const SOURCE_DATE = "2026-11-20";
+const SOURCE_DATE = "2026-11-21";
 const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/, SHA = /^[0-9a-f]{64}$/;
 const SMALL = 65536;
 export type OfficialPilotTarget = {

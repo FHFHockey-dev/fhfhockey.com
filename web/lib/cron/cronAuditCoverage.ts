@@ -249,12 +249,18 @@ export function resolveCronRouteFile(webRoot: string, routePath: string) {
   );
 }
 
+const OPERATIONAL_ROUTE_AUTH_AUDITED =
+  /\bwithOperationalRouteAuth\s*\([\s\S]*\baudit\s*:\s*\{\s*jobName\s*:/;
+
 export function classifyCronAuditSource(
   source: string,
 ): CronAuditCoverageMode | null {
   if (/\bwithCronJobAudit\s*\(/.test(source)) {
     return "shared-wrapper";
   }
+
+  // withOperationalRouteAuth applies withCronJobAudit unless `audit: false`.
+  if (OPERATIONAL_ROUTE_AUTH_AUDITED.test(source)) return "shared-wrapper";
 
   if (/\bpersistManualCronAudit\s*\(/.test(source)) return "manual-insert";
 
@@ -324,7 +330,8 @@ export function inspectScheduledCronAuditCoverage(args: {
 }
 
 export function classifyCronAuthSource(source: string): CronAuthCoverageMode {
-  if (/\badminOnly\s*\(/.test(source)) {
+  // withOperationalRouteAuth always wraps its handler in adminOnly outermost.
+  if (/\badminOnly\s*\(/.test(source) || /\bwithOperationalRouteAuth\s*\(/.test(source)) {
     return "admin-or-cron";
   }
 

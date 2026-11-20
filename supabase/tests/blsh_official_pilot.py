@@ -20,8 +20,8 @@ spec = spec_from_file_location("context_test",Path(__file__).with_name("blsh_req
 context = module_from_spec(spec)
 spec.loader.exec_module(context)
 sql, rpc, refused = context.sql,context.rpc,context.refused
-DAY="2026-11-20"
-CLOCK="2026-11-21T12:45:05.000Z"
+DAY="2026-11-21"
+CLOCK="2026-11-22T12:45:05.000Z"
 DEP="dpl_fixture"
 GIT="f"*40
 IDS=[2026020301,2026020302]
@@ -46,14 +46,15 @@ def exercise(socket):
             grant all on storage.objects, storage.buckets to service_role;
             grant select,insert on storage.objects to anon,authenticated;
             create policy other_storage on storage.objects for all using(true) with check(true);""")
-        for name in ["20261116000000_blsh_native_capture_v6.sql","20261118131414_blsh_request_context_custody.sql","20261118155445_blsh_official_pilot.sql"]:
+        for name in ["20261116000000_blsh_native_capture_v6.sql","20261118131414_blsh_request_context_custody.sql","20261118155445_blsh_official_pilot.sql",
+                     "20261120143000_blsh_official_pilot_redate_20261121.sql"]:
             sql(own,(context.MIGRATIONS/name).read_text())
         def storage(path,size,bucket):
             sql(own,"insert into storage.objects values(%s,%s,jsonb_build_object('size',%s))",(bucket,path,size))
         def native(day,count=20,commit=GIT):
             rid=str(uuid4())
             sql(own,"""insert into public.blsh_capture_runs(run_id,pipeline,source_date,state,deployment,manifest_sha256,closed_at)
-                values(%s,'native-v6',%s,'packet_complete_pending_review',%s,%s,'2026-11-21 12:10:00Z')""",
+                values(%s,'native-v6',%s,'packet_complete_pending_review',%s,%s,'2026-11-22 12:10:00Z')""",
                 (rid,day,json.dumps(dict(deploymentId=DEP,gitCommitSha=commit)),context.H))
             for i,name in enumerate(context.NATIVE[:count],1):
                 path=f"native-v6/{day}/{rid}/{name}"
@@ -104,19 +105,19 @@ def exercise(socket):
         assert claim(own,nullable)["claimed"]
         sql(own,"rollback")
         pins=native(DAY)
-        for at in ["2026-11-21T12:44:59.999999Z","2026-11-21T12:46:00.000000Z"]:
+        for at in ["2026-11-22T12:44:59.999999Z","2026-11-22T12:46:00.000000Z","2026-11-21T12:45:05.000Z"]:  # last: retired slot
             clock(at)
             refused(lambda:claim(svc,pins),"official_claim_outside_slot")
         clock(CLOCK)
-        for k,wrong,reason in [(0,"2026-11-21","official_binding_invalid"),(3,"other","official_native_binding"),(4,"1"*40,"official_native_binding"),(5,"0"*64,"official_native_binding"),(6,IDS[::-1],"official_binding_invalid"),(6,[IDS[0],IDS[0]],"official_binding_invalid")]:
+        for k,wrong,reason in [(0,"2026-11-22","official_binding_invalid"),(0,"2026-11-20","official_binding_invalid"),(3,"other","official_native_binding"),(4,"1"*40,"official_native_binding"),(5,"0"*64,"official_native_binding"),(6,IDS[::-1],"official_binding_invalid"),(6,[IDS[0],IDS[0]],"official_binding_invalid")]:
             bad=pins.copy();bad[k]=wrong
             refused(lambda:claim(svc,bad),reason)
         for after_write in (False,True):
-            blocked_write(lambda:claim(svc,pins),"blsh_official_runs","2026-11-21T12:46:00.000001Z","official_claim_outside_slot",after_write=after_write)
+            blocked_write(lambda:claim(svc,pins),"blsh_official_runs","2026-11-22T12:46:00.000001Z","official_claim_outside_slot",after_write=after_write)
             assert sql(own,"select count(*) from blsh_official_runs")==0
-        blocked_write(lambda:claim(svc,pins),"blsh_official_runs","2026-11-21T12:46:00.000001Z","official_claim_outside_slot",uncommitted_claim=pins)
+        blocked_write(lambda:claim(svc,pins),"blsh_official_runs","2026-11-22T12:46:00.000001Z","official_claim_outside_slot",uncommitted_claim=pins)
         assert sql(own,"select count(*) from blsh_official_runs")==0
-        later="2026-11-21T12:45:06.000Z"
+        later="2026-11-22T12:45:06.000Z"
         sql(svc,"begin")
         acknowledged=blocked_write(lambda:claim(svc,pins),"blsh_official_runs",later)
         assert sql(svc,"select claimed_at=%s::timestamptz from blsh_official_runs where run_id=%s",(later,acknowledged["runId"]))
@@ -172,10 +173,10 @@ def exercise(socket):
                 def intent():
                     return rpc(svc,"blsh_official_object_v1",run,2,jpath,len(good),sha256(good.encode()).hexdigest(),b64encode(good.encode()).decode())
                 for table,after_write in [("blsh_official_originals",False),("blsh_official_objects",False),("blsh_official_objects",True)]:
-                    blocked_write(intent,table,"2026-11-21T12:47:05.000001Z","official_acquisition_deadline",after_write=after_write)
+                    blocked_write(intent,table,"2026-11-22T12:47:05.000001Z","official_acquisition_deadline",after_write=after_write)
                     for name in ["blsh_official_objects","blsh_official_originals"]:
                         assert sql(own,"select count(*) from "+name+" where run_id=%s and ordinal=2",(run,))==0
-                blocked_write(intent,"blsh_official_objects","2026-11-21T12:45:20.000Z","official_intent_deadline")
+                blocked_write(intent,"blsh_official_objects","2026-11-22T12:45:20.000Z","official_intent_deadline")
                 sql(svc,"begin")
                 assert blocked_write(intent,"blsh_official_originals",later)
                 assert sql(svc,"select written_at=%s::timestamptz from blsh_official_objects where run_id=%s and ordinal=2",(later,run))
@@ -202,12 +203,12 @@ def exercise(socket):
             sql(svc,"rollback");files.pop()
         digest=put(8,"MANIFEST.json",manifest)
         refused(lambda:close("packet_complete_pending_review",None,"0"*64,manifest),"official_manifest_digest")
-        clock("2026-11-21T12:47:05.000001Z")
+        clock("2026-11-22T12:47:05.000001Z")
         refused(lambda:close("packet_complete_pending_review",None,digest,manifest),"official_terminal_binding")
         clock(CLOCK)
         for after_write in (False,True):
             blocked_write(lambda:close("packet_complete_pending_review",None,digest,manifest),"blsh_official_runs",
-                "2026-11-21T12:47:05.000001Z","official_terminal_binding",after_write=after_write)
+                "2026-11-22T12:47:05.000001Z","official_terminal_binding",after_write=after_write)
             assert sql(own,"select state from blsh_official_runs where run_id=%s",(run,))=="claimed"
         sql(svc,"begin")
         assert blocked_write(lambda:close("packet_complete_pending_review",None,digest,manifest),"blsh_official_runs",later)
