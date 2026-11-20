@@ -18,8 +18,16 @@ Make the first live BLSH v6 capture ready except TJ's separate approvals: (1) L7
 
 - Committed 1a6e54239 on chef/blsh-live-readiness and fetched as refs/rc/blsh-live-readiness-20261119; follow-up commit corrects the production-identity line (master advanced to dbe6a9e33 after 80af7e76c) and names job 408.
 
+## 2026-11-20 resume (Chef ticket from local_23eb6989; TJ instruction 13:35Z, last paragraph)
+- Scope: L7 + signer-custody copy-paste steps; one approval packet for the earliest eligible non-empty window; freeze start/end. No keys, deploy, re-date, arming. blsh-sandbox-run owns the handlers and the Nov 19 replay.
+- Public NHL schedule (one GET, 13:3xZ): 2026-11-20 has 0 games. Native source date = capture day − 1, so capture Nov 21 is a no_slate window. Request-context needs a complete native packet; official needs ≥1 game. Earliest non-empty: capture Nov 22 12:05Z (source Nov 21, 14 games).
+- The official step is date-literal: production migration 20261118155445 (lines 12/100/118/124), officialPilotAcquisition.ts:11, officialPilotHandler.ts:7, officialPilotStore.ts:7, plus the pinned operator SQL. The next window is therefore a re-date for TJ. Not drafted here.
+- RC merged onto origin/master aa49b6c5e in scratch (merge-check-20261120, clean): cron suites, cron-report, auth boundaries pass; typecheck exit 0.
+- Custody commands rehearsed with throwaway keys (deleted): script hash, generation, fingerprints, --expect, --stdin, private refusal exit 3, pair match, -rawin sign/verify.
+- Part B: still no reply in the mailbox.
+
 ## Next
-Lane work is done. Keep this diary until blocker 1 (L7 sign-off and integration of the RC) lands; the receipt holds the ordered blockers.
+Write STEPS + packet in live-readiness-2026-11-20/, commit, fetch as refs/rc/blsh-live-readiness-20261120, run the L7 steps verbatim against that ref. Keep this diary until the re-date decision and blocker 1 land.
 
 ## Blockers / approvals
 All 12 receipt blockers need TJ or owner action; none are this lane's to clear.
