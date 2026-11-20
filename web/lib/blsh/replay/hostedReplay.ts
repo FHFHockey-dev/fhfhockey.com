@@ -30,7 +30,7 @@ export const REPLAY_MARK = "replay-fixture";
 export const REPLAY_SOURCE_DATE = "2026-11-19";
 export const REPLAY_GATE_CLOCK_START = Date.parse("2026-11-20T12:05:03Z");
 export const REPLAY_API_SCHEMA = "blsh_replay_api";
-export const REPLAY_RECEIPT_KEY = "hosted-replay-2026-11-19";
+export const REPLAY_RECEIPT_KEYS = Object.freeze({ native: "hosted-replay-2026-11-19-native", context: "hosted-replay-2026-11-19-context" });
 /** fixtures/FIXTURES.json of refs/rc/blsh-v6-replay-20261120 (Drive envelope f2525c71...): the only bytes the adapter serves. */
 export const REPLAY_FIXTURE_PINS: Readonly<Record<string, string>> = Object.freeze({
   "FIXTURES.json": "1d660d3ef5ff3f5a0cbebae3ff438e6af499d2d994265faae7ddc7f617576404",
@@ -218,21 +218,46 @@ function gateClock() {
   return () => { if (gate) { gate = false; return REPLAY_GATE_CLOCK_START; } return Date.now(); };
 }
 
-export type ReplayContext = { api: ReplayApi; cronAuthorization: string; deploymentId: string; gitCommitSha: string; enteredAt: number; contextCutoffMs: number };
+export type ReplayContext = { api: ReplayApi; cronAuthorization: string; deploymentId: string; gitCommitSha: string; enteredAt: number };
+type Exported = { native: { run: Record<string, unknown> & { run_id: string; state: string; manifest_sha256: string | null }; objects: never[] } | null;
+  context: { run: Record<string, unknown> & { run_id: string; state: string; manifest_sha256: string }; objects: never[] } | null };
 
-export async function runHostedReplay(ctx: ReplayContext) {
+async function exportSandbox(api: ReplayApi): Promise<Exported> {
+  const call = await callReplayApi(api, "blsh_replay_export_v1", { p_source_date: REPLAY_SOURCE_DATE }, 15_000);
+  need(call.status === 200, "replay_export_unreadable");
+  return JSON.parse(call.body.toString("utf8")) as Exported;
+}
+async function verifiedFixture(api: ReplayApi) {
+  const call = await callReplayApi(api, "blsh_replay_fixture_v1", {}, 10_000);
+  need(call.status === 200, "replay_fixture_unreadable");
+  const files = new Map<string, Buffer>((JSON.parse(call.body.toString("utf8")).files as { path: string; b64: string }[]).map(f => [f.path, Buffer.from(f.b64, "base64")]));
+  const checks = Object.entries(REPLAY_FIXTURE_PINS).map(([path, pin]) => ({ path, pin, ok: files.has(path) && sha(files.get(path)!) === pin }));
+  need(checks.every(f => f.ok), "replay_fixture_hash_mismatch");
+  return { files, checks };
+}
+const summarize = (exported: Exported) => ({
+  native: exported.native ? { runId: exported.native.run.run_id, state: exported.native.run.state, reason: exported.native.run.reason ?? null,
+    manifestSHA256: exported.native.run.manifest_sha256, objects: exported.native.objects.length } : null,
+  context: exported.context ? { runId: exported.context.run.run_id, state: exported.context.run.state, manifestSHA256: exported.context.run.manifest_sha256,
+    objects: exported.context.objects.length } : null,
+});
+/** Each stage's durable receipt slot is single-use and filled only once that stage has a run row, so a free refusal (which
+ * writes nothing) never blocks a re-fire, and a repeated trigger finds the slot taken and writes nothing. */
+async function storeReceipt(ctx: ReplayContext, key: string, receipt: Record<string, unknown>, stageHasRun: boolean) {
+  if (!stageHasRun) return "skipped_no_run";
+  const stored = await callReplayApi(ctx.api, "blsh_replay_receipt_put_v1", { p_key: key, p_receipt: receipt }, 10_000);
+  return stored.status === 200 ? JSON.parse(stored.body.toString("utf8")) === true : `http_${stored.status}`;
+}
+const outboundSummary = (outbound: string[]) => ({ outboundHosts: [...new Set(outbound)].sort(), outboundRequests: outbound.length,
+  nonSandboxOutbound: outbound.filter(host => host !== SUPABASE_HOST && !/^127\.0\.0\.1(:\d+)?$/.test(host)) });
+
+/** Stage 1 (its own cron GET, the native route's production limits): the real v6 native handler over the frozen bytes. */
+export async function runReplayNative(ctx: ReplayContext) {
   const timings: Record<string, number> = {};
   const mark = (name: string) => { timings[name] = Date.now() - ctx.enteredAt; };
   const { result, outbound } = await withOutboundLog(async () => {
-    // 1. The frozen fixture, re-verified here against the pins compiled into this route.
-    const fixtureCall = await callReplayApi(ctx.api, "blsh_replay_fixture_v1", {}, 10_000);
-    need(fixtureCall.status === 200, "replay_fixture_unreadable");
-    const files = new Map<string, Buffer>((JSON.parse(fixtureCall.body.toString("utf8")).files as { path: string; b64: string }[]).map(f => [f.path, Buffer.from(f.b64, "base64")]));
-    const fixture = Object.entries(REPLAY_FIXTURE_PINS).map(([path, pin]) => ({ path, pin, ok: files.has(path) && sha(files.get(path)!) === pin }));
-    need(fixture.every(f => f.ok), "replay_fixture_hash_mismatch");
+    const { files, checks } = await verifiedFixture(ctx.api);
     mark("fixtureVerified");
-
-    // 2. Native v6: the real handler, core, sink and store; fixture transport, gate clock, sandbox store.
     const adapter = createReplayFixtureAdapterV6(REPLAY_SOURCE_DATE, { schedule: files.get("reconstructed/schedule-2026-11-19.json")!,
       individual: files.get("synthetic/nst-individual-2026-11-19.html")!, onIce: files.get("synthetic/nst-onIce-2026-11-19.html")! });
     const nativeHandler = createBlshNativeCaptureHandler({
@@ -250,58 +275,49 @@ export async function runHostedReplay(ctx: ReplayContext) {
     });
     const native = await invokeHandler(nativeHandler, { method: "POST", query: {}, headers: { authorization: ctx.cronAuthorization } } as unknown as NextApiRequest);
     mark("native");
-
-    // 3. Request context: the real handler and store, an in-memory test key, the sandbox store.
-    const exportCall = async () => {
-      const call = await callReplayApi(ctx.api, "blsh_replay_export_v1", { p_source_date: REPLAY_SOURCE_DATE }, 15_000);
-      need(call.status === 200, "replay_export_unreadable");
-      return JSON.parse(call.body.toString("utf8")) as { native: { run: Record<string, unknown> & { run_id: string; manifest_sha256: string | null }; objects: never[] } | null; context: { run: Record<string, unknown> & { run_id: string; manifest_sha256: string }; objects: never[] } | null };
-    };
-    const afterNative = await exportCall();
-    const nativeRun = afterNative.native?.run;
-    let context: Record<string, unknown> = { skipped: "native_not_complete" };
-    if (nativeRun?.state === "packet_complete_pending_review" && nativeRun.manifest_sha256) {
-      if (Date.now() - ctx.enteredAt > ctx.contextCutoffMs) context = { skipped: "route_budget" };
-      else {
-        const { privateKey, publicKey } = generateKeyPairSync("ed25519");
-        const approval = { sourceDate: REPLAY_SOURCE_DATE, nativeRunId: nativeRun.run_id, nativeManifestSHA256: nativeRun.manifest_sha256,
-          deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha };
-        const grant = (a: typeof approval) => Buffer.from(JSON.stringify({ approval: a, signature: sign(null, requestContextApprovalBytes(a), privateKey).toString("base64") }));
-        const tampered = Buffer.from(JSON.stringify({ approval: { ...approval, nativeManifestSHA256: approval.nativeManifestSHA256.replace(/.$/, c => c === "0" ? "1" : "0") },
-          signature: sign(null, requestContextApprovalBytes(approval), privateKey).toString("base64") }));
-        const contextHandler = createRequestContextHandler({
-          approvalPublicKeyPem: () => publicKey.export({ type: "spki", format: "pem" }).toString().trim(),
-          createStore: async () => createRequestContextStore({ serviceKey: NO_SERVICE_KEY, transport: sandboxContextTransport(ctx.api) }),
-        });
-        const tamperedResult = await invokeHandler(contextHandler, rawJsonRequest(ctx.cronAuthorization, tampered));
-        // The live route with this test-key grant: no live key (skipped) or a different live key (approval_invalid); never I/O.
-        const liveRoute = await invokeHandler(liveRequestContextHandler, rawJsonRequest(ctx.cronAuthorization, grant(approval)));
-        const valid = await invokeHandler(contextHandler, rawJsonRequest(ctx.cronAuthorization, grant(approval)));
-        context = { tamperedGrant: tamperedResult, liveRouteWithTestGrant: liveRoute, grant: valid };
-      }
-    }
-    mark("context");
-
-    // 4. Held readers over the stored sandbox packets.
-    const exported = await exportCall();
-    const readers = await heldReaders({ native: exported.native ?? undefined, context: exported.context ?? undefined },
-      { sourceDate: REPLAY_SOURCE_DATE, deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha, nativeManifestSHA256: exported.native?.run.manifest_sha256 ?? undefined });
-    mark("readers");
-    const summary = {
-      native: exported.native ? { runId: exported.native.run.run_id, state: exported.native.run.state, reason: exported.native.run.reason, manifestSHA256: exported.native.run.manifest_sha256,
-        objects: exported.native.objects.length } : null,
-      context: exported.context ? { runId: exported.context.run.run_id, state: exported.context.run.state, manifestSHA256: exported.context.run.manifest_sha256,
-        objects: exported.context.objects.length } : null,
-    };
-    return { fixture, native, context, readers, summary };
+    return { fixture: checks, native, summary: summarize(await exportSandbox(ctx.api)) };
   });
-  const receipt = { version: "fhfh.blsh.hosted-replay-receipt.v1", label: REPLAY_MARK, sourceDate: REPLAY_SOURCE_DATE, deploymentId: ctx.deploymentId,
-    gitCommitSha: ctx.gitCommitSha, gateClockStartUTC: new Date(REPLAY_GATE_CLOCK_START).toISOString(), ...result, timings,
-    outboundHosts: [...new Set(outbound)].sort(), outboundRequests: outbound.length,
-    nonSandboxOutbound: outbound.filter(host => host !== SUPABASE_HOST && !/^127\.0\.0\.1(:\d+)?$/.test(host)) };
-  // The receipt slot is single-use: it is filled only once a native run row exists, so a free pre-claim refusal (which writes
-  // nothing) never blocks a re-fire.
-  const stored = result.summary.native ? await callReplayApi(ctx.api, "blsh_replay_receipt_put_v1", { p_key: REPLAY_RECEIPT_KEY, p_receipt: receipt }, 10_000) : null;
+  const receipt = { version: "fhfh.blsh.hosted-replay-receipt.v1", stage: "native", label: REPLAY_MARK, sourceDate: REPLAY_SOURCE_DATE,
+    deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha, gateClockStartUTC: new Date(REPLAY_GATE_CLOCK_START).toISOString(),
+    ...result, timings, ...outboundSummary(outbound) };
+  const receiptWritten = await storeReceipt(ctx, REPLAY_RECEIPT_KEYS.native, receipt, result.summary.native !== null);
   timings.total = Date.now() - ctx.enteredAt;
-  return { ...receipt, receiptWritten: stored === null ? "skipped_no_native_run" : stored.status === 200 ? JSON.parse(stored.body.toString("utf8")) === true : `http_${stored.status}` };
+  return { ...receipt, receiptWritten };
+}
+
+/** Stage 2 (its own cron GET, the request-context route's production limits): the real request-context handler and store,
+ * an in-memory test key, the live route given the same test grant, and the request-context reader over the stored packet. */
+export async function runReplayContext(ctx: ReplayContext) {
+  const timings: Record<string, number> = {};
+  const mark = (name: string) => { timings[name] = Date.now() - ctx.enteredAt; };
+  const { result, outbound } = await withOutboundLog(async () => {
+    const before = await exportSandbox(ctx.api);
+    const nativeRun = before.native?.run;
+    if (nativeRun?.state !== "packet_complete_pending_review" || !nativeRun.manifest_sha256) return { context: { skipped: "native_not_complete" }, readers: {}, summary: summarize(before) };
+    const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+    const approval = { sourceDate: REPLAY_SOURCE_DATE, nativeRunId: nativeRun.run_id, nativeManifestSHA256: nativeRun.manifest_sha256,
+      deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha };
+    const grant = (a: typeof approval) => Buffer.from(JSON.stringify({ approval: a, signature: sign(null, requestContextApprovalBytes(a), privateKey).toString("base64") }));
+    const tampered = Buffer.from(JSON.stringify({ approval: { ...approval, nativeManifestSHA256: approval.nativeManifestSHA256.replace(/.$/, c => c === "0" ? "1" : "0") },
+      signature: sign(null, requestContextApprovalBytes(approval), privateKey).toString("base64") }));
+    const contextHandler = createRequestContextHandler({
+      approvalPublicKeyPem: () => publicKey.export({ type: "spki", format: "pem" }).toString().trim(),
+      createStore: async () => createRequestContextStore({ serviceKey: NO_SERVICE_KEY, transport: sandboxContextTransport(ctx.api) }),
+    });
+    const tamperedGrant = await invokeHandler(contextHandler, rawJsonRequest(ctx.cronAuthorization, tampered));
+    // The live route with this test-key grant: no live key (skipped) or a different live key (approval_invalid); never I/O.
+    const liveRouteWithTestGrant = await invokeHandler(liveRequestContextHandler, rawJsonRequest(ctx.cronAuthorization, grant(approval)));
+    const valid = await invokeHandler(contextHandler, rawJsonRequest(ctx.cronAuthorization, grant(approval)));
+    mark("context");
+    const after = await exportSandbox(ctx.api);
+    const readers = await heldReaders({ native: after.native ?? undefined, context: after.context ?? undefined },
+      { sourceDate: REPLAY_SOURCE_DATE, deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha, nativeManifestSHA256: after.native?.run.manifest_sha256 ?? undefined });
+    mark("readers");
+    return { context: { tamperedGrant, liveRouteWithTestGrant, grant: valid }, readers, summary: summarize(after) };
+  });
+  const receipt = { version: "fhfh.blsh.hosted-replay-receipt.v1", stage: "context", label: REPLAY_MARK, sourceDate: REPLAY_SOURCE_DATE,
+    deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha, ...result, timings, ...outboundSummary(outbound) };
+  const receiptWritten = await storeReceipt(ctx, REPLAY_RECEIPT_KEYS.context, receipt, result.summary.context !== null);
+  timings.total = Date.now() - ctx.enteredAt;
+  return { ...receipt, receiptWritten };
 }
