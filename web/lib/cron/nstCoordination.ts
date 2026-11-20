@@ -20,10 +20,7 @@ export const NST_ACTIVE_DIRECT_CRON_STARTS = [
   { jobName: "update-nst-goalies", minuteOfDayUtc: 8 * 60 + 30 },
   { jobName: "update-nst-current-season", minuteOfDayUtc: 8 * 60 + 45 },
   { jobName: "update-nst-team-stats-all", minuteOfDayUtc: 9 * 60 + 15 },
-  { jobName: "update-nst-team-daily-incremental", minuteOfDayUtc: 9 * 60 + 55 },
-  // BLSH v6 native capture: 2 NST GETs, 22 s apart, one claim per source date.
-  // Its 12:20 backup (same route and audit job name) is not a separate start.
-  { jobName: "blsh-native-capture", minuteOfDayUtc: 12 * 60 + 5 }
+  { jobName: "update-nst-team-daily-incremental", minuteOfDayUtc: 9 * 60 + 55 }
 ] as const;
 
 export function getNstCronBurstClearance(jobName: string) {
