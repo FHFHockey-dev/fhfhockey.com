@@ -1,6 +1,6 @@
 # BLSH v6 signer custody and public-key verification
 
-This applies to the first live window: native at 12:05Z, request-context at 12:35Z and official at 12:45Z on 2026-11-21. TJ holds the real keys. Nobody else requests, receives or prints a private key. Every check in this lane used throwaway keys that were generated in memory or in a deleted temporary folder.
+This applies to the first live window: native at 12:05Z, request-context at 12:35Z and official at 12:45Z on **2026-11-22**, for the 2026-11-21 slate. (Re-dated 2026-11-20 under TJ's packet 6.1 approval; the original window was 2026-11-21 for the empty 2026-11-20 slate.) TJ holds the real keys. Nobody else requests, receives or prints a private key. Every check in this lane used throwaway keys that were generated in memory or in a deleted temporary folder.
 
 ## What the handlers accept
 
@@ -50,7 +50,7 @@ A bad official key gives no earlier signal than that minute, so the local check 
 
    **Envelope.** `{"approval":{…},"signature":"<padded base64 of sig.bin>"}`:
    - The request-context envelope is the POST body, at most 1 KiB.
-   - The official envelope is base64-encoded and stored in Vault as `blsh_official_grant_20261120` by the DB operator.
+   - The official envelope is base64-encoded and stored in Vault as `blsh_official_grant_20261121` by the DB operator. The re-dated `SCHEDULE-ONCE.sql` refuses any other name.
 
    Neither full grant goes into general logs.
 7. **Suspected exposure or loss.** Stop issuing grants. Run the disarm set: `DISARM-ROLLBACK.sql`, `CANCEL-OFFICIAL-ONCE.sql`, and `SWITCH-OFF.sql` if DISARM cannot commit. A key change needs a new approved deployment and new fingerprints. A grant signed by a replaced key fails closed at the handler.

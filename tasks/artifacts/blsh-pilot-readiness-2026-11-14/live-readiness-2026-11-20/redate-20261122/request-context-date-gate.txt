@@ -1,0 +1,8 @@
+# Request-context date gate on the real handler (scratch test, not committed), 2026-11-20T14:16Z
+# Copy of requestContextHandler.test.ts with D/FROM/DATE shifted +2 days plus the SCRATCH block; run in this clone on 3a0073cfe, then deleted.
+# Rule: requestContextHandler.ts:186-188 accepts only sourceDate == ingress UTC day - 1 (and ingress day >= 2026-11-19); otherwise 200 skipped outside_approved_date.
+   ✓ SCRATCH re-date: request-context date gate on the real handler (capture 2026-11-22, slate 2026-11-21) > passes the date gate for slate 2026-11-21 at 2026-11-22 12:40:00Z and reads the native source
+   ✓ SCRATCH re-date: request-context date gate on the real handler (capture 2026-11-22, slate 2026-11-21) > skips retired slate 2026-11-20 in the new window before any store I/O
+   ✓ SCRATCH re-date: request-context date gate on the real handler (capture 2026-11-22, slate 2026-11-21) > skips wrong slate 2026-11-22 in the new window before any store I/O
+   ✓ SCRATCH re-date: request-context date gate on the real handler (capture 2026-11-22, slate 2026-11-21) > skips new slate 2026-11-21 in the retired window (2026-11-21 12:35Z) before any store I/O
+# Other lines: 4 shifted copies of existing tests failed because the committed sample fixture (request-context-v1.sample.json) is dated for slate 2026-11-19; they are not part of this proof and the committed test file is unchanged.

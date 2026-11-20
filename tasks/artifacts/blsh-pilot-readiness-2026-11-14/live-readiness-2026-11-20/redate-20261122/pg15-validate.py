@@ -31,6 +31,7 @@ PINNED = {
     "DISARM": (HERE / "DISARM-ROLLBACK.sql", "513b28b5a82d58389a5b3df1de42265cc63e7928b76d3eedc6d27d95478fa30e"),
     "SCHEDULE": (HERE / "SCHEDULE-ONCE.sql", "600699bae9fb9a064fceea6563c662676388cdb7fbd4c9d24a41db5e93f49bf1"),
     "CANCEL": (HERE / "CANCEL-OFFICIAL-ONCE.sql", "a9b39d83cd2ae033cd6827bffcfbe2dc9b88bc69842dcfd4c3147b98d55cc81c"),
+    "PRECHECK": (HERE / "PRECHECK-READONLY.sql", "8a8e0732fd6f02a811065dfa69dc5fb1147c901e6cb98581c322b4aa58596932"),
     "SWITCHOFF": (PREV / "SWITCH-OFF.sql", "19abbc7f23ec69df490dd5ca4bd226353c421fe72bdf51460ad155c6f5c0ed33"),
 }
 PINS = {"release_sha": "a" * 40, "deployment_id": "dpl_ReviewedFixture"}
@@ -290,11 +291,18 @@ def run(root, env):
     for name in ORIGINAL_MIGRATIONS:
         prefix = "set check_function_bodies = off;\n" if name.startswith("20261116000100") else ""
         sql("old", prefix + (ROOT / "supabase/migrations" / name).read_text())
+    precheck = (HERE / "PRECHECK-READONLY.sql").read_text()
+    check("read-only PRECHECK on the reviewed (pre-apply) schema says ready_to_apply",
+          sql("old", precheck).startswith("ready_to_apply|CHECK ((source_date = '2026-11-20'::date))|5893416f"))
+    check("read-only PRECHECK after the forward migration says already_redated with the new definition hash",
+          sql("tmpl", precheck) == "already_redated|CHECK ((source_date = '2026-11-21'::date))|" + redated_sha + "|0")
     sql("old", """set session_replication_role = replica;
       insert into public.blsh_capture_runs(run_id,pipeline,source_date,state) values ('00000000-0000-4000-8000-0000000000aa','native-v6','2026-11-20','claimed');
       insert into public.blsh_official_runs(source_date,native_run_id,native_manifest_sha256,deployment_id,git_commit_sha,schedule_sha256,game_ids)
         values ('2026-11-20','00000000-0000-4000-8000-0000000000aa',repeat('a',64),'dpl_x',repeat('b',40),repeat('c',64),'{2026020301}');""")
     sql("old", forward, error="official_redate_runs_exist")
+    check("read-only PRECHECK refuses (stop_official_runs_exist) once any official run exists",
+          sql("old", precheck).startswith("stop_official_runs_exist|"))
     check("forward migration refuses when any official run exists (and changes nothing)",
           sql("old", "select pg_get_constraintdef(oid) from pg_constraint where conname='blsh_official_runs_source_date_check'")
           == "CHECK ((source_date = '2026-11-20'::date))")

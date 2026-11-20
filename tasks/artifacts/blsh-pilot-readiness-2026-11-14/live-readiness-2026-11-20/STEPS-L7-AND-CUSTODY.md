@@ -15,7 +15,7 @@ Nothing here pushes, deploys, arms, re-dates or writes to production. B6 stages 
 
 **Who:** A1–A4 are for the L7 reviewer and the shared NST owner. If nobody holds those roles, TJ names them. A5 is TJ's.
 
-What is being signed off: `blsh-native-capture` becomes a direct NST start at 12:05Z. It makes 2 NST URLs, 22 s apart, with zero retries. The 12:20Z backup shares the route and the `blsh-native-capture` audit name and is not a separate start. The code is in commits `1a6e54239` and `26f7aec97` on `refs/rc/blsh-live-readiness-20261120`, against base `dbe6a9e33`.
+What is being signed off: `blsh-native-capture` becomes a direct NST start at 12:05Z. It makes 2 NST URLs, 22 s apart, with zero retries. The 12:20Z backup shares the route and the `blsh-native-capture` audit name and is not a separate start. The code is in commits `1a6e54239` and `26f7aec97` on `refs/rc/blsh-release-20261120` (originally cut from `dbe6a9e33`).
 
 **A1. Make a throwaway review clone.** Never use the canonical checkout, which has other owners' work, and never set `GIT_DIR`.
 
@@ -24,13 +24,13 @@ export L7="$(mktemp -d)/l7" && git clone -q --no-hardlinks /Users/tim/Code/fhfho
 ```
 
 ```bash
-cd "$L7" && git fetch -q /Users/tim/Code/fhfhockey.com refs/rc/blsh-live-readiness-20261120:refs/heads/l7-review refs/remotes/origin/master:refs/heads/release-base && git checkout -q l7-review
+cd "$L7" && git fetch -q /Users/tim/Code/fhfhockey.com refs/rc/blsh-release-20261120:refs/heads/l7-review refs/remotes/origin/master:refs/heads/release-base && git checkout -q l7-review
 ```
 
-**A2. Read the registration diff (code and schedule only).**
+**A2. Read the registration diff (code and schedule only).** `release-base` is current origin/master; `l7-review` is the release candidate, which already contains it.
 
 ```bash
-git diff --stat dbe6a9e3312f24c9fb2565da754b92803663ad29 l7-review -- web tasks/TASKS
+git diff --stat release-base l7-review -- web/lib/cron web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts tasks/TASKS/cron-operations
 ```
 
 Expect exactly 8 files: 129 insertions and 10 deletions.
@@ -41,8 +41,10 @@ Expect exactly 8 files: 129 insertions and 10 deletions.
 - `nstClassification.ts` and its test
 - `nstCoordination.ts` and its test
 
+The rest of the candidate is the official-step re-date and documents. They are outside L7's scope, and `git diff --stat release-base l7-review` lists them.
+
 ```bash
-git diff dbe6a9e3312f24c9fb2565da754b92803663ad29 l7-review -- web/lib/cron/nstCoordination.ts web/lib/cron/nstClassification.ts web/lib/cron/cronAuditCoverage.ts tasks/TASKS/cron-operations/cron-schedule.md
+git diff release-base l7-review -- web/lib/cron/nstCoordination.ts web/lib/cron/nstClassification.ts web/lib/cron/cronAuditCoverage.ts tasks/TASKS/cron-operations/cron-schedule.md
 ```
 
 Confirm each of these:
@@ -54,7 +56,7 @@ Confirm each of these:
    - The note says nothing else scheduled is direct NST from 11:07 to 12:07.
 4. The scanner change only teaches `cronAuditCoverage.ts` to recognize `withOperationalRouteAuth(...)`. That wrapper is `adminOnly` outermost, plus `withCronJobAudit` unless `audit: false`.
 
-**A3. Merge onto the current release base**, the way it would be integrated, and run the checks.
+**A3. Merge onto the current release base** (a no-op unless master has moved since the candidate was cut), then run the checks.
 
 ```bash
 git -c user.name=L7 -c user.email=l7@localhost merge -q --no-edit release-base && git log --oneline -1
@@ -80,7 +82,7 @@ Expected: `typecheck exit=0`. This takes a few minutes. Read the exit code: plai
 
 ```text
 ## BLSH-L7-SIGNOFF-<YYYYMMDD> · <HH:MM> UTC
-L7 reviewer <name> and shared NST owner <name> reviewed refs/rc/blsh-live-readiness-20261120 (<full SHA>), the registration diff from dbe6a9e33, and its merge onto release base <full SHA>.
+L7 reviewer <name> and shared NST owner <name> reviewed refs/rc/blsh-release-20261120 (<full SHA>): the registration diff against release base <full SHA>, and the merged tree.
 Vitest <files>/<files> files, <tests>/<tests> tests passed; npm run typecheck exit 0.
 Registration: blsh-native-capture is a direct NST start at 12:05Z, 2 URLs 22 s apart, zero retries; the 12:20Z backup is not a separate start.
 Signed off for integration in the single keyed BLSH release only. Day-of NST clearance (blocker 9) is separate and still owed.
@@ -88,7 +90,7 @@ Signed off for integration in the single keyed BLSH release only. Day-of NST cle
 
 **A5. TJ's approval line** (copy, answer yes or no):
 
-> I approve integrating the BLSH L7 registration from `refs/rc/blsh-live-readiness-20261120` into master on its own, as part of the single keyed BLSH release push. No FORGE bundling, and no push under this approval.
+> I approve integrating the BLSH L7 registration from `refs/rc/blsh-release-20261120` into master on its own, as part of the single keyed BLSH release push. No FORGE bundling, and no push under this approval.
 
 **A6. Clean up.**
 
@@ -105,7 +107,7 @@ Two Ed25519 keypairs, one per variable; never reuse one key for both. The `.key`
 **B0. Put the checker on the signer machine.** It is a public script with no secrets. On the Mac:
 
 ```bash
-mkdir -p ~/blsh-verify && git -C /Users/tim/Code/fhfhockey.com show refs/rc/blsh-live-readiness-20261120:tasks/artifacts/blsh-pilot-readiness-2026-11-14/live-readiness-2026-11-19/verify-approval-public-key.mjs > ~/blsh-verify/verify-approval-public-key.mjs
+mkdir -p ~/blsh-verify && git -C /Users/tim/Code/fhfhockey.com show refs/rc/blsh-release-20261120:tasks/artifacts/blsh-pilot-readiness-2026-11-14/live-readiness-2026-11-19/verify-approval-public-key.mjs > ~/blsh-verify/verify-approval-public-key.mjs
 ```
 
 On the signer machine, create the private folder first:

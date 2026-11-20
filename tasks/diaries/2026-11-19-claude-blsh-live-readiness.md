@@ -31,6 +31,10 @@ Make the first live BLSH v6 capture ready except TJ's separate approvals: (1) L7
 
 - FORGE live runs bind `expected_code_version` (release_mismatch at every stage), so the keyed push must avoid armed FORGE games. Packet now recommends push slot B (Nov 22 03:15Z, freeze about 9.5 h, re-date by Nov 21 14:00Z) over slot A (Nov 21 15:00Z). STEPS run claims narrowed; A6 now `rm -rf -- "${L7:?}"` (tested; a `$(dirname)` form was refused by the safety check).
 
+- 2026-11-20 ~14:00Z: TJ approved packet 6.1 (edits/tests only). Re-date done on chef/blsh-redate-20261122: official web files+tests, readHostedOfficialV6.mjs, observation test/helper (optional `at`), supabase/tests/blsh_official_pilot.py, forward migration 20261120143000 (ce14c532…, not applied), re-dated operator SQL + PRECHECK-READONLY in live-readiness-2026-11-20/redate-20261122/. PG15 64/64; official DB test PASS; request-context gate scratch 4/4; vitest only the pre-existing bootstrap path failures; typecheck 0; eslint 0.
+- Insight: nothing binds a deployment before INSTALL, so the freeze runs INSTALL → 12:50Z Nov 22 (inside FORGE's gap); a release can go out today. RELEASE-PLAN.md replaces packet sections 3–4.
+- Ownership split proposed twice to local_f11fca0c; unacknowledged. origin/master moved to 0b1a9c958 (FORGE, 14:05Z); release branch is re-merged on it. Diary is kept out of the release branch (AGENTS.md).
+
 ## Next
 Report the ref, steps and packet paths to the parent. Keep this diary until TJ decides the re-date (packet 6.1) and blocker 1 lands.
 

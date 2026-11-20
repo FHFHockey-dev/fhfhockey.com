@@ -8,12 +8,14 @@ PASS ARM.sql sha256 matches its pin
 PASS DISARM-ROLLBACK.sql sha256 matches its pin
 PASS SCHEDULE-ONCE.sql sha256 matches its pin
 PASS CANCEL-OFFICIAL-ONCE.sql sha256 matches its pin
+PASS PRECHECK-READONLY.sql sha256 matches its pin
 PASS SWITCH-OFF.sql sha256 matches its pin
 PASS INSTALL.sql names no job ID 404-408 in code
 PASS ARM.sql names no job ID 404-408 in code
 PASS DISARM-ROLLBACK.sql names no job ID 404-408 in code
 PASS SCHEDULE-ONCE.sql names no job ID 404-408 in code
 PASS CANCEL-OFFICIAL-ONCE.sql names no job ID 404-408 in code
+PASS PRECHECK-READONLY.sql names no job ID 404-408 in code
 PASS SWITCH-OFF.sql names no job ID 404-408 in code
 PASS four real BLSH migrations plus the forward re-date migration applied on PostgreSQL 15
 PASS migration 153 switch function matches INSTALL's guard hash
@@ -46,6 +48,9 @@ PASS forward migration: source-date check now 2026-11-21
 PASS forward migration: claim function replaced (PostgreSQL 15 definition sha256 recorded) 4efee291f95cab0c761c3b88e423131a2d13d87956daf593fbcc9be05bf61f4d
 PASS forward migration: execute grant on the claim function kept: service_role plus the owner only
 PASS forward migration rerun fails closed (definition already re-dated)
+PASS read-only PRECHECK on the reviewed (pre-apply) schema says ready_to_apply
+PASS read-only PRECHECK after the forward migration says already_redated with the new definition hash
+PASS read-only PRECHECK refuses (stop_official_runs_exist) once any official run exists
 PASS forward migration refuses when any official run exists (and changes nothing)
 PASS official claim refuses the retired slate 2026-11-20 and the wrong slate 2026-11-22
 PASS native: retired window (capture 2026-11-21 12:05:30, slate 2026-11-20) refused (ERROR:  BLSH capture is disabled)
@@ -57,5 +62,5 @@ PASS native: new window accepts slate 2026-11-21 at 12:05:00.000 exactly
 PASS re-dated INSTALL refuses at or after 2026-11-22 12:05:00
 PASS [early] shifted claim at 12:05:30 inside the permit
 PASS re-dated SCHEDULE-ONCE refuses in the retired 2026-11-21 window
-ALL 59 CHECKS PASSED
+ALL 64 CHECKS PASSED
 exit=0

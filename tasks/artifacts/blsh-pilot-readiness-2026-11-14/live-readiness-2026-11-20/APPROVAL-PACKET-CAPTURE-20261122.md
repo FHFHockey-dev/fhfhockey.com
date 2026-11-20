@@ -1,5 +1,7 @@
 # BLSH v6 first live capture: approval packet for the earliest eligible non-empty window
 
+> **Update 2026-11-20 about 14:20Z.** TJ approved 6.1 (edits and tests only). The re-date is done: see [REDATE-RECEIPT.md](REDATE-RECEIPT.md). Sections 3 and 4 below (push slots A/B, the FORGE 15:30Z cutoff, freeze from the push) are **superseded** by [RELEASE-PLAN.md](RELEASE-PLAN.md). The freeze now runs from INSTALL to 12:50Z on Nov 22, and FORGE has no cutoff.
+
 **Proposal for TJ, not approved.** Written 2026-11-20 around 13:45Z. Nothing in it has been re-dated, applied, armed, deployed, pushed or enabled, and the public gate stays closed. Each line in section 6 is a separate approval. All times are UTC; ET is UTC−5.
 
 ## 1. The current window is empty; the earliest eligible non-empty window is capture 2026-11-22 12:05Z
