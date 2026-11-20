@@ -26,9 +26,23 @@ export type HostedRsoTarget = {
 export type HostedRsoReader = {
   selectedRun: string | null; revisionId: string | null; playerId: string | null;
   points: number | null; legalSlot: string | null; reason: string | null;
+  /** Context only: confirmed exclusions of the game's revision that name no player. Never the asked player's reason. */
+  gameExclusions?: string[];
 };
 const withheld = (reason: string, playerId: string | null = null, selectedRun: string | null = null,
   revisionId: string | null = null): HostedRsoReader => ({ reason, playerId, selectedRun, revisionId, points: null, legalSlot: null });
+
+/** The detailed reader's reason for a player without a published row: only an exclusion that names this player and that
+ * the planner itself reported. A game-level exclusion (no playerId) belongs to the revision, not to this player; it is
+ * returned as context and never replaces "no_usable_target". */
+export function attributeDetailedExclusion(exclusions: ForecastDiscoveryExclusion[], reported: ForecastDiscoveryExclusion[],
+  gameId: string, playerId: string): { reason: string; gameExclusions: string[] } {
+  const confirmedBy = (ex: ForecastDiscoveryExclusion) => reported.some(other => other.gameId === gameId
+    && other.playerId === ex.playerId && other.targetKey === ex.targetKey && other.reasons.includes(ex.reasons[0]));
+  const own = exclusions.find(ex => ex.playerId === playerId && confirmedBy(ex));
+  const gameExclusions = [...new Set(exclusions.filter(ex => !ex.playerId && confirmedBy(ex)).map(ex => ex.reasons[0]))];
+  return { reason: own?.reasons[0] ?? "no_usable_target", gameExclusions };
+}
 
 /** Read the two FORGE paths independently for a manual, explicitly synthetic one-player roster.
  * Points are the RSO readback of an admitted row. The slot is its legal position in this roster. */
@@ -130,10 +144,8 @@ export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedR
       if (rows.length) return deny("publication_mismatch");
       const exclusions: ForecastDiscoveryExclusion[] = [];
       await admitConsumerGameRevisions(db, selected, data.players, sides, now, seasonId, {}, exclusions, deadline, calendar);
-      const reported = data.forecastManifest?.exclusions ?? [];
-      const confirmed = exclusions.find(ex => (!ex.playerId || ex.playerId === player.id) && reported.some(other => other.gameId === game.id &&
-        other.playerId === ex.playerId && other.targetKey === ex.targetKey && other.reasons.includes(ex.reasons[0])));
-      return deny(confirmed?.reasons[0] ?? "no_usable_target");
+      const { reason, gameExclusions } = attributeDetailedExclusion(exclusions, data.forecastManifest?.exclusions ?? [], game.id, player.id);
+      return gameExclusions.length ? { ...deny(reason), gameExclusions } : deny(reason);
     };
     const [bridge, primary] = await Promise.all([daily(), detailed()].map(read => read.catch(() => withheld("reader_unavailable", player.id))));
     return report(bridge, primary);
