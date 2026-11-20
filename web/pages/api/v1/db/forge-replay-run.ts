@@ -1,18 +1,20 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createHash, generateKeyPairSync } from "node:crypto";
+import { replayProjectionInputs, type ProjectionInputRead } from "lib/projections/inputCapture";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withForgeEnv, forgeEnv } from "lib/projections/forgeEnvScope";
-import { runPregameCapture } from "lib/projections/pregameCapture/custody";
+import { runPregameCapture, type CaptureDeps, type Collected, type PinnedGame } from "lib/projections/pregameCapture/custody";
 import { runHostedPregameGame } from "lib/projections/pregameCapture/hostedGame";
 import { DEFAULT_CAPTURE_BUDGET, PILOT_TRANSPORT_LIMITS } from "lib/projections/pregameCapture/policy";
 import { HOSTED_RSO_CONTEXT, readHostedRsoConsumers } from "lib/projections/pregameCapture/hostedReaders";
 import { PublicationError, publishQualifiedPregameCapture } from "lib/projections/pregameCapture/publication";
 import { replayTestTsa, replayTestTsaTrust } from "lib/projections/pregameCapture/replayTestTsa";
-import { captureDeps } from "lib/projections/pregameCapture/runner";
+import { calendarRevisionOf, captureDeps, type RunnerConfig } from "lib/projections/pregameCapture/runner";
 import { supabaseCaptureRpc } from "lib/projections/pregameCapture/rpc";
 import { scheduleReader } from "lib/projections/pregameCapture/scheduleReader";
 import { assertSignedVerdict, witnessKeyId, type SignedVerdictRow } from "lib/projections/pregameCapture/signedVerdict";
 import { checkSignedVerdict, type SignedVerdictVerify } from "lib/projections/pregameCapture/signedVerdictGate";
+import { parseInstantMicros } from "lib/projections/pregameCapture/time";
 import { handleWitnessEdgeRequest } from "lib/projections/pregameCapture/witnessEdgeCore";
 import { invokedByCron } from "utils/adminOnlyMiddleware";
 
@@ -31,6 +33,11 @@ import { invokedByCron } from "utils/adminOnlyMiddleware";
 // The fixture's four flags apply only inside this request's async scope (withForgeEnv); the deployment's env is unchanged.
 // The game and the reader's player come from the sandbox ledger (replay_meta), so any frozen fixture the bootstrap
 // installs (the synthetic control, or a reconstructed historical game) runs on the same deployment.
+// SEALED REPLAY (default off; only when the ledger's begin answer says mode "sealed", TJ 2026-11-20): pass_capture
+// replays the envelope's recorded reads instead of reading the sandbox (sealedCollector): both recorded hashes are
+// verified first, the first unrecorded request stops the capture, and every recorded read must be consumed. Any failure
+// to obtain or verify the envelope stops before a claim: there is no live fallback. Every step's report on a sealed
+// ledger is labelled replay only; like every step here it writes only through the sandbox API.
 export const config = { maxDuration: 240 };
 
 const API_SCHEMA = "forge_sandbox_api";
@@ -41,6 +48,8 @@ const fixtureFlags = (gameId: number) => ({ FORGE_PREGAME_CAPTURE_ENABLED: "true
 
 type Step = "fail_capture" | "reset_repair" | "pass_capture" | "verify" | "publish";
 type Begin = { status: "due"; step: Step; gameId: number; playerNhlId: number; slateDate: string; scheduledStart: string; seasonId: number;
+  /** The ledger's fixture kind (sealed ledgers only; absent on the synthetic control's ledger). */
+  mode?: string;
   claimId: string | null; witnessKey: { keyId: string; x: string } | null; landing: Record<string, unknown> | null;
   hashes: { claimId: string; gameId: number; scheduledStart: string; raw: string; canonical: string; tsaTokenSha256: string } | null }
   | { status: string; due?: unknown; receipt?: unknown };
@@ -151,6 +160,7 @@ async function runStep(res: NextApiResponse, api: Api, sha: string, enteredAt: n
     report = { ...report, reason: "run_deadline", error: error instanceof Error ? error.message.slice(0, 200) : "unknown" };
   }
   report.elapsedMs = Date.now() - enteredAt;
+  if (due.mode === "sealed") report = { ...report, mode: "sealed_replay", replayOnly: true, fixtureLabel: SEALED_LABEL };
   const finishMs = Math.min(RPC_MS, enteredAt + FINISH_END_MS - Date.now());
   if (finishMs <= 0) return res.status(503).json({ status: "finish_unconfirmed", step: due.step, sha, report });
   try {
@@ -166,28 +176,98 @@ async function runStep(res: NextApiResponse, api: Api, sha: string, enteredAt: n
   }
 }
 
+export type SealedEnvelope = {
+  gameId: number; inputCutoff: string; pinned: PinnedGame; reads: ProjectionInputRead[]; transport: Collected["transport"];
+};
+type Sealed = { mode: "sealed"; fixtureLabel: string; gameId: number; playerNhlId: number; inputCutoff: string;
+  envelopeSha256: string; readerInputsSha256: string; envelope: string; readerInputs: string };
+export const SEALED_LABEL = "sealed real envelope (replay only)";
+const sha256Hex = (text: string) => createHash("sha256").update(text, "utf8").digest("hex");
+
+/** The sandbox's sealed envelope for this step, both recorded hashes verified; null for a synthetic fixture. */
+export function verifySealedEnvelope(sealed: unknown, due: { gameId: number; playerNhlId: number }):
+  { ok: true; envelope: SealedEnvelope | null; hashes: Record<string, string> | null } | { ok: false; reason: string } {
+  const value = sealed as Partial<Sealed> | null;
+  if ((sealed as { mode?: unknown } | null)?.mode === "synthetic_control") return { ok: true, envelope: null, hashes: null };
+  if (value?.mode !== "sealed" || value.fixtureLabel !== SEALED_LABEL || typeof value.envelope !== "string"
+    || typeof value.readerInputs !== "string") return { ok: false, reason: "sealed_envelope_unavailable" };
+  if (sha256Hex(value.envelope) !== value.envelopeSha256 || sha256Hex(value.readerInputs) !== value.readerInputsSha256) {
+    return { ok: false, reason: "sealed_hash_mismatch" };
+  }
+  let envelope: SealedEnvelope;
+  try { envelope = JSON.parse(value.envelope) as SealedEnvelope; } catch { return { ok: false, reason: "sealed_envelope_invalid" }; }
+  if (envelope.gameId !== due.gameId || value.gameId !== due.gameId || value.playerNhlId !== due.playerNhlId
+    || !Array.isArray(envelope.reads) || !envelope.reads.length || !envelope.pinned || envelope.pinned.gameId !== due.gameId
+    || typeof value.inputCutoff !== "string" || parseInstantMicros(envelope.inputCutoff) !== parseInstantMicros(value.inputCutoff)) {
+    return { ok: false, reason: "sealed_envelope_mismatch" };
+  }
+  return { ok: true, envelope, hashes: { envelopeSha256: value.envelopeSha256!, readerInputsSha256: value.readerInputsSha256! } };
+}
+
+/** The sandbox claim of a sealed fixture returns the envelope's recorded cutoff (its stand-in clock); the binding carries
+ * the envelope's own text of that instant, as the local harness's frozen claim does, so the recorded reads' filters match. */
+export function sealedClaim<W extends Pick<CaptureDeps["writer"], "claim">>(writer: W, envelope: SealedEnvelope): W {
+  return { ...writer, async claim(args: Parameters<W["claim"]>[0]) {
+    const row = await writer.claim(args);
+    if (row.outcome !== "claimed") return row;
+    if (parseInstantMicros(row.inputCutoff ?? "") !== parseInstantMicros(envelope.inputCutoff)) throw new Error("sealed_cutoff_mismatch");
+    return { ...row, inputCutoff: envelope.inputCutoff };
+  } } as W;
+}
+
+/** The local harness's sealed collect: the released collector against the recorded reads only (an unrecorded request
+ * throws, an unconsumed recorded read throws), bound to the envelope's own recorded input cutoff. */
+export function sealedCollector(envelope: SealedEnvelope, config: Pick<RunnerConfig, "collectNative" | "seasonBootstrap">):
+  Pick<CaptureDeps, "pin" | "collect"> {
+  return {
+    pin: async () => envelope.pinned,
+    collect: async (binding, deadlineMs) => {
+      if (parseInstantMicros(binding.inputCutoff) !== parseInstantMicros(envelope.inputCutoff)) throw new Error("sealed_cutoff_mismatch");
+      const seasonBootstrap = config.seasonBootstrap({ slateDate: binding.slateDate, gameId: binding.gameId, inputCutoff: binding.inputCutoff });
+      const run = await replayProjectionInputs(envelope.reads, () => config.collectNative({ slateDate: binding.slateDate,
+        gameId: binding.gameId, inputCutoff: binding.inputCutoff, deadlineMs, seasonBootstrap }), { rejectUnrecordedReads: true });
+      if (run.writes.length) throw new Error("sealed_collect_wrote");
+      return { reads: envelope.reads, candidates: run.result.candidates, seasonBootstrapApplied: seasonBootstrap,
+        transport: envelope.transport, calendarRevision: calendarRevisionOf(run.result.issuedContextAfter.schedule) };
+    },
+  };
+}
+
 /** The existing FORGE v1 capture for the fixture, on the sandbox API, with the in-process test TSA. */
 async function capture(api: Api, due: Extract<Begin, { status: "due" }>, sha: string, runEnd: number, trust: ReturnType<typeof replayTestTsaTrust>) {
   const tsa = replayTestTsa();
   const started = Date.now();
+  // A sealed ledger's envelope; the synthetic control's ledger never says "sealed" and never calls this.
+  let sealed: ReturnType<typeof verifySealedEnvelope> = { ok: true, envelope: null, hashes: null };
+  if (due.mode === "sealed") {
+    if (due.step !== "pass_capture") sealed = { ok: false, reason: "sealed_step_unexpected" };
+    else {
+      const result = await apiClient(api, runEnd).rpc("forge_replay_sealed_v1").abortSignal(AbortSignal.timeout(20_000));
+      sealed = result.error ? { ok: false, reason: "sealed_envelope_unavailable" } : verifySealedEnvelope(result.data, due);
+      if (sealed.ok && !sealed.envelope) sealed = { ok: false, reason: "sealed_envelope_unavailable" };
+    }
+  }
+  if (!sealed.ok) return { outcome: "not_started", reason: sealed.reason, replayOnly: true, fixtureLabel: SEALED_LABEL, captureMs: Date.now() - started };
+  const envelope = sealed.envelope;
   const result = await runHostedPregameGame({
     gameId: due.gameId, slateDate: due.slateDate, scheduledStart: due.scheduledStart, safeStart: due.scheduledStart, codeVersion: sha,
   }, {
     env: { ...forgeEnv(), NEXT_PUBLIC_SUPABASE_URL: "sandbox-api", SUPABASE_SERVICE_ROLE_KEY: "unused-forge-sandbox" },
     signal: AbortSignal.timeout(Math.max(1, runEnd - Date.now())),
     readSchedule: async (_url, _key, target, signal) => scheduleReader(apiClient(api, runEnd), [target.gameId], target.slateDate, signal)(),
-    runCapture: (config, target) => runPregameCapture(captureDeps({
-      writer: supabaseCaptureRpc(apiClient(api, runEnd), DEFAULT_CAPTURE_BUDGET.rpcMs),
+    runCapture: (config, target) => runPregameCapture(((deps: CaptureDeps) => envelope ? { ...deps, ...sealedCollector(envelope, config) } : deps)(captureDeps({
+      writer: ((writer) => envelope ? sealedClaim(writer, envelope) : writer)(supabaseCaptureRpc(apiClient(api, runEnd), DEFAULT_CAPTURE_BUDGET.rpcMs)),
       verifier: supabaseCaptureRpc(apiClient(api, runEnd), DEFAULT_CAPTURE_BUDGET.rpcMs),
       tsa, trust,
       createReadClient: guarded => apiClient(api, runEnd, guarded) as never,
       restBaseUrl: `${api.url.replace(/\/+$/, "")}/rest/v1`, collectNative: config.collectNative, seasonBootstrap: config.seasonBootstrap,
       modelEnvironment: config.modelEnvironment, budget: { ...DEFAULT_CAPTURE_BUDGET, ...config.budget },
       transportLimits: { ...PILOT_TRANSPORT_LIMITS, ...config.transportLimits }, now: Date.now, fetchImpl: pinSandboxProfile,
-    }), target),
+    })), target),
   });
   return { claimId: result.claimId, outcome: result.outcome, reason: result.reason, stopTrigger: result.stopTrigger,
-    tsaCalls: tsa.calls(), captureMs: Date.now() - started };
+    tsaCalls: tsa.calls(), captureMs: Date.now() - started,
+    ...(envelope ? { mode: "sealed_replay", replayOnly: true, fixtureLabel: SEALED_LABEL, ...sealed.hashes, sealedReads: envelope.reads.length } : {}) };
 }
 
 /** The committed witness code judges the claim here and signs with a key that exists only in this request. */
