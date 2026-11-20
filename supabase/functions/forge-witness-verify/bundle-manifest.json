@@ -1,6 +1,6 @@
 {
- "release": "ea9b910040466f450a7985abc1d6d6e58283dbc3053cf356b6a3006bce64e756",
- "bundleSha256": "d658614be9bcf3ffeadbf47eec2d7d32760d11045d1463b95b0a461ad7051cdf",
+ "release": "ac4e3c94520083dbef87f5acd7b9e0c2f0ad0de1985f3e3339d51821148f021a",
+ "bundleSha256": "8a280e3149f7a6510ce7674775cd252778548e6522c124f46bd933185e7982b5",
  "inputs": [
   "tasks/artifacts/forge-witness-signed-2026-11-19/buffer-shim.mjs",
   "web/lib/projections/pregameCapture/deadline.ts",

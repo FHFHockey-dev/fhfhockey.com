@@ -16,6 +16,7 @@ import { canonicalJson } from "lib/projections/pregameCapture/packet";
 import { formatMicros, parseInstantMicros } from "lib/projections/pregameCapture/time";
 import { checkSignedVerdict, witnessKeyId, type SignedVerdictPayload } from "lib/projections/pregameCapture/signedVerdict";
 import { auditSignedVerdicts, type ExportedVerdict } from "./audit-signed-verdicts";
+import { WITNESS_SIGNING_KEYS as RELEASE_KEYS } from "lib/projections/pregameCapture/witnessSigningKeys";
 
 const importEsm = new Function("url", "return import(url)") as (url: string) => Promise<any>;
 const LABEL = "f".repeat(40);
@@ -236,7 +237,9 @@ async function main() {
     const cli = spawnSync(process.execPath, ["-r", "ts-node/register/transpile-only", join(__dirname, "audit-signed-verdicts.ts"), exportFile],
       { encoding: "utf8", env: process.env });
     const cliOut = JSON.parse(cli.stdout);
-    assert.ok(cli.status === 2 && cliOut.pinnedKeys.length === 0 && cliOut.results.every((r: any) => !r.pass), cli.stdout.slice(0, 500));
+    // The CLI uses the release's pinned key, which never signed these local verdicts: every game must fail.
+    assert.ok(cli.status === 2 && JSON.stringify(cliOut.pinnedKeys) === JSON.stringify(Object.keys(RELEASE_KEYS))
+      && cliOut.results.every((r: any) => !r.pass), cli.stdout.slice(0, 500));
 
     // 6. The private key is nowhere in the database.
     const leak = await one(`select (select count(*) from forge_witness.signed_verdicts where payload like $1 or signature like $1)
@@ -245,7 +248,7 @@ async function main() {
 
     console.log(JSON.stringify({ games: Object.fromEntries(Object.entries(games).map(([n, s]) => [n, s.game])), gateReadPath: "PostgREST /rpc/signed_verdict_v1 as service_role (anon refused)",
       selfTest: first.body.selfTest, keyId: witnessKeyId(x), release: first.body.release, witnessResults, secondRun: second.body.results,
-      traffic, gatesBefore, attacks, gatesAfter, audit: auditByName, auditCliWithReleaseDefault: { exit: cli.status, pinnedKeys: cliOut.pinnedKeys,
+      traffic, gatesBefore, attacks, gatesAfter, audit: auditByName, auditCliWithReleasePinnedKey: { exit: cli.status, pinnedKeys: cliOut.pinnedKeys,
         reasons: [...new Set(cliOut.results.map((r: any) => r.reason))] }, privateKeyInDatabase: false }));
   } finally {
     await owner.end();
