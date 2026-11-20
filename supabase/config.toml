@@ -383,6 +383,11 @@ verify_jwt = false
 [functions.x-timeline-ingest]
 verify_jwt = false
 
+# The independent FORGE witness: pg_cron invokes it with the project's public anon key. Invoking confers no authority;
+# a verdict counts only with this function's Ed25519 signature, checked against the key pinned in the release.
+[functions.forge-witness-verify]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327

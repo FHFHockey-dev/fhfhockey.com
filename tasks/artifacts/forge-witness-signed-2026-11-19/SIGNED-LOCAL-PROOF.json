@@ -1,0 +1,177 @@
+{
+ "postgres": "psql (PostgreSQL) 15.19 (Homebrew)",
+ "postgrest": "PostgREST 16.6",
+ "prodDump": {
+  "roles": "prod-roles-20261119.sql",
+  "schema": "prod-schema-grants-20261119.sql",
+  "restoreErrorsFromAbsentSupabaseSchemasAndExtensions": 161,
+  "facts": {
+   "postgresSuperuser": false,
+   "postgresCreaterole": true,
+   "postgresBypassrls": true,
+   "serviceRoleExecutesExecuteSql": true,
+   "witnessVerifierInstalled": true,
+   "custodyInstalled": true,
+   "publicTables": 436
+  }
+ },
+ "delta": {
+  "file": "forge-witness-signed.sql",
+  "sha256": "da786646bf2b826db5fa1533c0e0cf765322a2ff343eb103d79a552da3919811",
+  "appliedAs": "postgres",
+  "secondApplyRefused": true,
+  "ownerMembersAfterInstall": 0
+ },
+ "edgeBundle": {
+  "release": "ea9b910040466f450a7985abc1d6d6e58283dbc3053cf356b6a3006bce64e756",
+  "bundleSha256": "d658614be9bcf3ffeadbf47eec2d7d32760d11045d1463b95b0a461ad7051cdf",
+  "inputs": [
+   "tasks/artifacts/forge-witness-signed-2026-11-19/buffer-shim.mjs",
+   "web/lib/projections/pregameCapture/deadline.ts",
+   "web/lib/projections/pregameCapture/der.ts",
+   "web/lib/projections/pregameCapture/independentVerdict.ts",
+   "web/lib/projections/pregameCapture/packet.ts",
+   "web/lib/projections/pregameCapture/policy.ts",
+   "web/lib/projections/pregameCapture/rfc3161.ts",
+   "web/lib/projections/pregameCapture/signedVerdict.ts",
+   "web/lib/projections/pregameCapture/time.ts",
+   "web/lib/projections/pregameCapture/tsaProfiles.ts",
+   "web/lib/projections/pregameCapture/verifier.ts",
+   "web/lib/projections/pregameCapture/witnessEdgeCore.ts",
+   "web/lib/projections/pregameCapture/witnessSelfTest.ts",
+   "web/lib/projections/pregameCapture/witnessSigningKeys.ts"
+  ]
+ },
+ "games": {
+  "good": 2099040001,
+  "tamperedToken": 2099040002,
+  "officialStartDiffers": 2099040003,
+  "officialUnavailable": 2099040004,
+  "verifiedLate": 2099040005,
+  "goodToBeAltered": 2099040006,
+  "untouched": 2099040007,
+  "forgeTarget": 2099040008,
+  "forgeTargetViaExecuteSql": 2099040009
+ },
+ "gateReadPath": "PostgREST /rpc/signed_verdict_v1 as service_role (anon refused)",
+ "selfTest": {
+  "tsa": true,
+  "packet": true,
+  "signature": true
+ },
+ "keyId": "ed70cd980f3b9cff",
+ "release": "ea9b910040466f450a7985abc1d6d6e58283dbc3053cf356b6a3006bce64e756",
+ "witnessResults": {
+  "good": "accepted",
+  "tamperedToken": "rejected:token_invalid",
+  "officialStartDiffers": "rejected:schedule_changed",
+  "officialUnavailable": "official_unavailable",
+  "verifiedLate": "rejected:verification_late",
+  "goodToBeAltered": "accepted",
+  "untouched": "accepted"
+ },
+ "secondRun": [
+  {
+   "gameId": 2099040004,
+   "status": "official_unavailable",
+   "claimId": "73f9aa30-640e-4005-9163-ef288f8b08f0"
+  }
+ ],
+ "traffic": {
+  "service_role@forge_witness_api": 16,
+  "nhl": 8
+ },
+ "gatesBefore": {
+  "good": "accepted",
+  "tamperedToken": "verdict_rejected",
+  "officialStartDiffers": "verdict_rejected",
+  "officialUnavailable": "verdict_missing",
+  "verifiedLate": "verdict_rejected",
+  "goodToBeAltered": "accepted",
+  "untouched": "accepted"
+ },
+ "attacks": {
+  "plainServiceRoleInsert": {
+   "ok": false,
+   "error": "42501 permission denied for table signed_verdicts"
+  },
+  "postgresForgesVerdict": {
+   "ok": true,
+   "rows": []
+  },
+  "postgresAltersRejectedToAccepted": {
+   "ok": true,
+   "rows": []
+  },
+  "postgresReplaysGenuineVerdict": {
+   "ok": true,
+   "rows": []
+  },
+  "postgresDeletesGenuineVerdict": {
+   "ok": true,
+   "rows": []
+  },
+  "executeSqlSwapsCustodyBytes": {
+   "ok": true,
+   "rows": [
+    {
+     "execute_sql": ""
+    }
+   ]
+  },
+  "executeSqlForgesVerdict": {
+   "ok": true,
+   "rows": [
+    {
+     "execute_sql": ""
+    }
+   ]
+  }
+ },
+ "gatesAfter": {
+  "forgeTarget": "signature_invalid",
+  "verifiedLate": "signature_invalid",
+  "tamperedToken": "binding_mismatch",
+  "good": "verdict_missing",
+  "goodToBeAltered": "binding_mismatch",
+  "forgeTargetViaExecuteSql": "key_unpinned",
+  "untouched": "accepted"
+ },
+ "audit": {
+  "good": "verdict_missing",
+  "tamperedToken": "binding_mismatch",
+  "officialStartDiffers": "verdict_rejected",
+  "officialUnavailable": "verdict_missing",
+  "verifiedLate": "signature_invalid",
+  "goodToBeAltered": "binding_mismatch",
+  "untouched": "pass",
+  "forgeTarget": "signature_invalid",
+  "forgeTargetViaExecuteSql": "key_unpinned"
+ },
+ "auditCliWithReleaseDefault": {
+  "exit": 2,
+  "pinnedKeys": [],
+  "reasons": [
+   "verdict_missing",
+   "key_unpinned"
+  ]
+ },
+ "privateKeyInDatabase": false,
+ "cronOps": {
+  "armedAs": "postgres",
+  "fired": [
+   "fired 1",
+   "fired 2",
+   "fires_spent"
+  ],
+  "queued": {
+   "url": "https://fyhftlxokyjtpndbkfse.supabase.co/functions/v1/forge-witness-verify",
+   "auth": "Bearer <anon key>",
+   "body": {},
+   "timeoutMs": 120000
+  },
+  "signedGameArmRefused": true,
+  "disarmed": true,
+  "otherJobsIntact": true
+ }
+}
