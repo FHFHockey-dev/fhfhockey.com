@@ -17,14 +17,14 @@
  },
  "delta": {
   "file": "forge-witness-signed.sql",
-  "sha256": "dad95b43e0912ce9f8c401f383c27c97f986e4fdcd2a7c64765c20e8a4d2e6e1",
+  "sha256": "da786646bf2b826db5fa1533c0e0cf765322a2ff343eb103d79a552da3919811",
   "appliedAs": "postgres",
   "secondApplyRefused": true,
   "ownerMembersAfterInstall": 0
  },
  "edgeBundle": {
-  "release": "cdc021d323a76519fe793757600979d9f5fa2073c0403de0cd95dac0f09407a6",
-  "bundleSha256": "cf9e82e02306498db19bb8e7636eec1c826067e83a73f9f0d30be3ba4e8f3f56",
+  "release": "ea9b910040466f450a7985abc1d6d6e58283dbc3053cf356b6a3006bce64e756",
+  "bundleSha256": "d658614be9bcf3ffeadbf47eec2d7d32760d11045d1463b95b0a461ad7051cdf",
   "inputs": [
    "tasks/artifacts/forge-witness-signed-2026-11-19/buffer-shim.mjs",
    "web/lib/projections/pregameCapture/deadline.ts",
@@ -38,11 +38,29 @@
    "web/lib/projections/pregameCapture/tsaProfiles.ts",
    "web/lib/projections/pregameCapture/verifier.ts",
    "web/lib/projections/pregameCapture/witnessEdgeCore.ts",
+   "web/lib/projections/pregameCapture/witnessSelfTest.ts",
    "web/lib/projections/pregameCapture/witnessSigningKeys.ts"
   ]
  },
- "keyId": "be626ab5b0e82c5e",
- "release": "cdc021d323a76519fe793757600979d9f5fa2073c0403de0cd95dac0f09407a6",
+ "games": {
+  "good": 2099040001,
+  "tamperedToken": 2099040002,
+  "officialStartDiffers": 2099040003,
+  "officialUnavailable": 2099040004,
+  "verifiedLate": 2099040005,
+  "goodToBeAltered": 2099040006,
+  "untouched": 2099040007,
+  "forgeTarget": 2099040008,
+  "forgeTargetViaExecuteSql": 2099040009
+ },
+ "gateReadPath": "PostgREST /rpc/signed_verdict_v1 as service_role (anon refused)",
+ "selfTest": {
+  "tsa": true,
+  "packet": true,
+  "signature": true
+ },
+ "keyId": "ed70cd980f3b9cff",
+ "release": "ea9b910040466f450a7985abc1d6d6e58283dbc3053cf356b6a3006bce64e756",
  "witnessResults": {
   "good": "accepted",
   "tamperedToken": "rejected:token_invalid",
@@ -56,7 +74,7 @@
   {
    "gameId": 2099040004,
    "status": "official_unavailable",
-   "claimId": "64684a3e-7c68-4074-aa61-e8fdff93d841"
+   "claimId": "73f9aa30-640e-4005-9163-ef288f8b08f0"
   }
  ],
  "traffic": {
@@ -138,5 +156,22 @@
    "key_unpinned"
   ]
  },
- "privateKeyInDatabase": false
+ "privateKeyInDatabase": false,
+ "cronOps": {
+  "armedAs": "postgres",
+  "fired": [
+   "fired 1",
+   "fired 2",
+   "fires_spent"
+  ],
+  "queued": {
+   "url": "https://fyhftlxokyjtpndbkfse.supabase.co/functions/v1/forge-witness-verify",
+   "auth": "Bearer <anon key>",
+   "body": {},
+   "timeoutMs": 120000
+  },
+  "signedGameArmRefused": true,
+  "disarmed": true,
+  "otherJobsIntact": true
+ }
 }

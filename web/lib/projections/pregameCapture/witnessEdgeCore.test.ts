@@ -8,6 +8,8 @@ import { canonicalJson } from "./packet";
 import { parseInstantMicros } from "./time";
 import { checkSignedVerdict, witnessKeyId, type SignedVerdictPayload } from "./signedVerdict";
 import { ed25519Signer, handleWitnessEdgeRequest } from "./witnessEdgeCore";
+import { witnessSelfTest } from "./witnessSelfTest";
+import { tsaProfile, trustFromProfile } from "./tsaProfiles";
 
 const GAME = 2099020991, CLAIM = "11111111-2222-4333-8444-555555555555", SHA = "a".repeat(40), RELEASE = "e".repeat(64);
 const T = "2099-01-01T20:00:00.000000Z";
@@ -79,7 +81,7 @@ describe("independent witness edge function core", () => {
   it("signs an accepted verdict that the release-side gate verifies with the pinned key only", async () => {
     const r = await run();
     expect(r.status).toBe(200);
-    expect(r.body).toMatchObject({ status: "ok", release: RELEASE, keyId: witnessKeyId(real.x),
+    expect(r.body).toMatchObject({ status: "ok", release: RELEASE, keyId: witnessKeyId(real.x), selfTest: { tsa: true, packet: true, signature: true },
       results: [{ gameId: GAME, status: "recorded", verdict: "accepted", reason: null }] });
     expect(JSON.stringify(r.body)).not.toContain(real.pkcs8.slice(20, 60));
     const row = { payload: r.records[0].p_payload, signature: r.records[0].p_signature };
@@ -159,5 +161,13 @@ describe("independent witness edge function core", () => {
     expect(signer.keyId).toBe(witnessKeyId(real.x));
     expect(signer.publicKey).toBe(real.x);
     expect(Object.keys(signer).sort()).toEqual(["keyId", "publicKey", "sign"]);
+  });
+
+  it("self-test passes with the released DigiCert pin and catches a broken signer or trust", async () => {
+    const signer = await ed25519Signer(real.pkcs8);
+    const pinned = trustFromProfile(tsaProfile("digicert-g4-v1"), "capture");
+    expect(await witnessSelfTest(pinned, signer)).toEqual({ tsa: true, packet: true, signature: true });
+    expect(await witnessSelfTest(pinned, { ...signer, sign: async () => "A".repeat(86) + "==" })).toMatchObject({ signature: false });
+    expect(await witnessSelfTest(testTsaTrust(), signer)).toMatchObject({ tsa: false, packet: true });
   });
 });

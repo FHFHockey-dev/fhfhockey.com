@@ -124,6 +124,7 @@ async function main() {
     // 1. The witness: the committed bundle, as the Edge Function runs it.
     const first = await invoke();
     assert.equal(first.status, 200, JSON.stringify(first.body));
+    assert.deepEqual(first.body.selfTest, { tsa: true, packet: true, signature: true });
     assert.ok(!JSON.stringify(first.body).includes(pkcs8.slice(20, 60)));
     const by = new Map<number, any>((first.body.results as any[]).map(r => [r.gameId, r]));
     const got = (n: string) => { const r = by.get(games[n].game); return r?.status === "recorded" ? `${r.verdict}${r.reason ? ":" + r.reason : ""}` : r?.status; };
@@ -138,11 +139,17 @@ async function main() {
     assert.ok((second.body.results as any[]).every((r: any) => r.status === "official_unavailable"), JSON.stringify(second.body));
 
     // 2. The release-side gate reads through service_role and verifies with the pinned key only.
+    // The gate's read is the Data API path the publish route and readers use (supabase-js, schema forge_witness_api).
     const signedRow = async (claimId: string) => {
-      const r = await asRole("service_role", "select forge_witness.signed_verdict_v1($1) v", [claimId]);
-      assert.ok(r.ok, JSON.stringify(r));
-      return r.rows![0].v as { payload: string; signature: string } | null;
+      const response = await fetch(`${rest}/rpc/signed_verdict_v1`, { method: "POST", body: JSON.stringify({ p_claim_id: claimId }),
+        headers: { apikey: tokens.anon, authorization: `Bearer ${tokens.service_role}`, "content-type": "application/json",
+          "content-profile": "forge_witness_api" } });
+      assert.equal(response.status, 200, await response.clone().text());
+      return (await response.json()) as { payload: string; signature: string } | null;
     };
+    const anonRead = await fetch(`${rest}/rpc/signed_verdict_v1`, { method: "POST", body: JSON.stringify({ p_claim_id: games.good.claimId }),
+      headers: { apikey: tokens.anon, authorization: `Bearer ${tokens.anon}`, "content-type": "application/json", "content-profile": "forge_witness_api" } });
+    assert.ok(anonRead.status >= 400 && anonRead.status < 500, `anon read ${anonRead.status}`);
     const custodyNow = async (s: Seeded) => {
       const c = await one(`select a.raw_sha256, a.canonical_sha256, w.tsa_token_sha256 from forge_pregame_capture.artifacts a
         join forge_pregame_capture.witnesses w using (claim_id) where a.claim_id = $1`, [s.claimId]);
@@ -236,7 +243,8 @@ async function main() {
       + (select count(*) from pg_proc where prosrc like $1) n`, [`%${pkcs8.slice(20, 60)}%`]);
     assert.equal(Number(leak.n), 0);
 
-    console.log(JSON.stringify({ keyId: witnessKeyId(x), release: first.body.release, witnessResults, secondRun: second.body.results,
+    console.log(JSON.stringify({ games: Object.fromEntries(Object.entries(games).map(([n, s]) => [n, s.game])), gateReadPath: "PostgREST /rpc/signed_verdict_v1 as service_role (anon refused)",
+      selfTest: first.body.selfTest, keyId: witnessKeyId(x), release: first.body.release, witnessResults, secondRun: second.body.results,
       traffic, gatesBefore, attacks, gatesAfter, audit: auditByName, auditCliWithReleaseDefault: { exit: cli.status, pinnedKeys: cliOut.pinnedKeys,
         reasons: [...new Set(cliOut.results.map((r: any) => r.reason))] }, privateKeyInDatabase: false }));
   } finally {

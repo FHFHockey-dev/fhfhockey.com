@@ -23,9 +23,15 @@ So database grants, triggers and tables cannot stop the writer. The verdict has 
   5. signs canonical JSON `{version, keyId, claimId, gameId, policyId, rawSha256, canonicalSha256, tsaTokenSha256, statementSha256, inputCutoff, verdict, reason, verifiedAt, officialStart, deadline = officialStart − 60 min, release}`;
   6. stores `(payload, signature)` with `forge_witness_api.record_signed_v1`, one per game.
 - An unreachable or malformed NHL response decides nothing; the next fire retries.
+- **Self-test before judging (`witnessSelfTest.ts`).** On every invocation, before any database call, it:
+  - verifies DigiCert's real probe token (public, embedded) under the pinned `digicert-g4-v1` trust;
+  - round-trips a packet through gzip and canonical JSON;
+  - signs then verifies with its Ed25519 key, and checks that a forged message fails.
+  - If any check fails it answers 503 `self_test_failed` and judges nothing. A runtime whose X.509, gzip or Ed25519 differed from Node's would otherwise sign genuine claims as `token_invalid` forever.
+  - Every response carries `selfTest`, so the deploy smoke test proves the Deno runtime.
 
 **Code.** `web/lib/projections/pregameCapture/witnessEdgeCore.ts` is bundled reproducibly into `supabase/functions/forge-witness-verify/core.bundle.js` by `build-edge-bundle.mjs --check`.
-- `release` is the sha256 over the bundle's 13 input files. `bundle-manifest.json` lists them.
+- `release` (now `ea9b910040466f450a7985abc1d6d6e58283dbc3053cf356b6a3006bce64e756`) is the sha256 over the bundle's 14 input files. `bundle-manifest.json` lists them.
 - The bundle imports only `node:buffer`, `node:crypto` and `node:zlib`. Signing uses WebCrypto.
 
 **Trust root.** `web/lib/projections/pregameCapture/witnessSigningKeys.ts` holds the pinned public keys.
@@ -39,18 +45,18 @@ So database grants, triggers and tables cannot stop the writer. The verdict has 
 - `verifiedAt ≤ deadline`, with `deadline = officialStart − 60`;
 - the claim, game and all three hashes equal what the caller expects (the custody being published).
 
-The publish route and readers (live lane) call it after reading `forge_witness.signed_verdict_v1(claim)` as service_role.
+The publish route and readers (live lane) call it after reading `forge_witness_api.signed_verdict_v1(claim)` through the Data API as service_role (supabase-js; anon is refused). The SQL form `forge_witness.signed_verdict_v1` is also available.
 
 **Offline audit.** `export-signed-verdicts.sql` is read-only. It exports the stored verdict plus the custody hashes as they are now, with raw recomputed from the stored packet. `audit-signed-verdicts.ts` checks them with the pinned key and exits 0 only if every game passes.
 
 **Database checks are defense in depth only.** `postgres` can drop triggers and replace functions, so no database-side check, including a pgsodium one, can be the gate.
 
-## SQL delta: `forge-witness-signed.sql` (sha256 `dad95b43e0912ce9f8c401f383c27c97f986e4fdcd2a7c64765c20e8a4d2e6e1`)
+## SQL delta: `forge-witness-signed.sql` (sha256 `da786646bf2b826db5fa1533c0e0cf765322a2ff343eb103d79a552da3919811`)
 
 It applies on top of 9673316c, as `postgres`, and refuses a second apply.
 - `forge_witness.signed_verdicts`: `(claim_id pk, game_id unique, payload, signature, key_id, recorded_at)`, immutable triggers, RLS, owned by `forge_witness_owner`.
 - `forge_witness_api.signed_pending_v1()`, `signed_evidence_v1(game)` and `record_signed_v1(payload, signature)`: service_role only. `record_signed_v1` checks shape and that the payload names an armed game's claim; it never checks the signature.
-- `forge_witness.signed_verdict_v1(claim)`: service_role and postgres.
+- `forge_witness_api.signed_verdict_v1(claim)` (Data API) and `forge_witness.signed_verdict_v1(claim)` (SQL): service_role, plus postgres for the SQL form.
 - `forge_witness.signed_status_v1(game)`: postgres only.
 
 ## Local proof (`check_signed.py`, exit 0; [SIGNED-LOCAL-PROOF.json](SIGNED-LOCAL-PROOF.json))
@@ -63,7 +69,7 @@ The database is PostgreSQL 15.19 restored from `prod-roles-20261119.sql` and `pr
 | Check | Result |
 | --- | --- |
 | Install | The delta applied **as postgres**; a second apply refuses; the owner role has no members afterwards. |
-| Witness (committed bundle under Node 22, PostgREST as service_role, fixture NHL schedule and TSA) | good **accepted**; tampered token **rejected:token_invalid**; official start ≠ claim start **rejected:schedule_changed**; NHL unavailable: **no verdict**; run after T−60 **rejected:verification_late**. A second run creates no rows. Traffic: 16 calls as `service_role@forge_witness_api`, 8 to NHL, nothing else. |
+| Witness (committed bundle under Node 22, PostgREST as service_role, fixture NHL schedule and TSA; self-test `{tsa, packet, signature}` all true) | good **accepted**; tampered token **rejected:token_invalid**; official start ≠ claim start **rejected:schedule_changed**; NHL unavailable: **no verdict**; run after T−60 **rejected:verification_late**. A second run creates no rows. Traffic: 16 calls as `service_role@forge_witness_api`, 8 to NHL, nothing else. |
 | Gate before attacks | Accepted only for the accepted verdicts. Rejected verdicts get `verdict_rejected`; a missing one gets `verdict_missing`. |
 | Plain service_role insert | 42501 |
 | Writer attacks, each of which **succeeds in the database** | As postgres, after `grant forge_witness_owner to postgres`: forge an "accepted" with the pinned key id and the attacker's signature; flip a rejected verdict to accepted; replay a genuine verdict onto another claim; delete a genuine verdict. As service_role through `execute_sql`: swap the committed packet under an accepted verdict; forge with the attacker's own key id. |
@@ -71,13 +77,16 @@ The database is PostgreSQL 15.19 restored from `prod-roles-20261119.sql` and `pr
 | Offline audit (pinned key) | Only the untouched game passes; every other game fails with the reason above. |
 | Offline audit (release default, nothing pinned) | All fail, exit 2. |
 | Private key in the database | none |
+| Gate read path | `POST /rpc/signed_verdict_v1` (Content-Profile `forge_witness_api`) with the service_role token returns the row, and the anon token is refused. This is the path the release code uses. |
+| Cron ops (pg_cron/pg_net stand-ins on the prod restore, run as postgres) | Arm an armed-but-unsigned game with max_fires 2, which fires twice and then returns `fires_spent`, with the job unscheduled. The queued POST goes to `https://fyhftlxokyjtpndbkfse.supabase.co/functions/v1/forge-witness-verify`, carries `Bearer <anon key>` and body `{}`, and times out after 120 s. Arming a game that already has a signed verdict is refused. Disarm leaves the other job intact. |
 
-Unit tests in `witnessEdgeCore.test.ts` (12): accepted path; forged, altered, replayed, unpinned, missing, non-canonical, truncated and late verdicts; official schedule mismatch and unavailability; a fixture token under the DigiCert pin; config refusals; key id derivation.
+Unit tests in `witnessEdgeCore.test.ts` (13, including the self-test passing under the pin and catching a broken signer or trust): accepted path; forged, altered, replayed, unpinned, missing, non-canonical, truncated and late verdicts; official schedule mismatch and unavailability; a fixture token under the DigiCert pin; config refusals; key id derivation.
 
 Gates:
 - typecheck: exit 0.
 - eslint: 0 errors.
-- vitest (`__tests__/pages/api/v1/db`, `lib/projections/pregameCapture`, admission, releases): 97 files, 1759 passed.
+- vitest (`__tests__/pages/api/v1/db`, `lib/projections/pregameCapture`, admission, releases): 97 files, 1760 passed.
+- The Track B harness (`check_witness.py`) was rerun and exits 0.
 - FORGE producer closure: unchanged (`78655939…`).
 - Bundle `--check`: reproducible.
 - Keygen `--dry-run`: OK.
@@ -98,6 +107,19 @@ NHL field check: one public read-only GET of game 2026020356's landing returned 
 7. **Afterwards:** run `export-signed-verdicts.sql`, then `audit-signed-verdicts.ts` (exit 0 required), then `disarm-signed-verify.sql`.
 
 ## Limits
+
+- **No database signature trigger.** The pgsodium check TJ named is not included. `postgres` can drop any trigger or replace any function, so it could not be the gate. Its key literal would also live in the database, and pgsodium is not available locally to prove it. The gate is in release code and the audit.
+- **Packet size against Edge limits is not yet checked for a live game.** Decode plus canonicalisation measured in Node:
+
+  | Uncompressed packet | CPU | Heap |
+  | --- | --- | --- |
+  | ~4 MB | 0.07 s | 28 MB |
+  | ~22 MB | 0.3 s | 77 MB |
+  | ~67 MB | 1.3 s | 234 MB |
+
+  Check a real artifact's `byte_length` against Supabase's Edge CPU and memory limits before arming.
+- **One path per game.** If a Track B (unsigned) verdict exists for a game, `signed_evidence_v1` returns `decided` for it. Never run both verifiers for the same game.
+- **Shared file touched.** `supabase/config.toml` gains a `[functions.forge-witness-verify] verify_jwt = true` block.
 
 - **Deno not run locally.** The bundle ran under Node 22 using only WebCrypto Ed25519, fetch and `node:buffer`/`crypto`/`zlib`. Step 4's smoke test is the first Deno run; `ed25519Signer` and the TSA verify are the parts to watch.
 - **Team ids.** The NHL landing gives NHL team ids. If FHFH's `home_team_id`/`away_team_id` ever differed from them, the verifier would reject with `game_binding` (fail closed, never a false accept).

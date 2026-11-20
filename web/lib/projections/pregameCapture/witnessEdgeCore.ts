@@ -5,6 +5,7 @@ import type { TsaTrust } from "./rfc3161";
 import { payloadProblem, SIGNED_VERDICT_VERSION, type SignedVerdictPayload } from "./signedVerdict";
 import { formatMicros, MICROS_PER_MINUTE, MICROS_PER_MS, parseInstantMicros } from "./time";
 import { tsaProfile, trustFromProfile } from "./tsaProfiles";
+import { witnessSelfTest, type SelfTest } from "./witnessSelfTest";
 
 /**
  * The independent FORGE witness, as run by the Supabase Edge Function forge-witness-verify (bundled from this file;
@@ -48,13 +49,20 @@ export async function handleWitnessEdgeRequest(req: Request, env: (name: string)
   const url = env("SUPABASE_URL")?.trim(), serviceKey = env("SUPABASE_SERVICE_ROLE_KEY")?.trim();
   const signingKey = env("FORGE_WITNESS_SIGNING_KEY")?.trim();
   if (!/^[0-9a-f]{64}$/.test(release) || !url || !serviceKey || !signingKey) return json({ status: "configuration_invalid" }, 503);
-  let signer: { keyId: string; sign(text: string): Promise<string> };
-  let trust: TsaTrust;
+  let signer: { keyId: string; publicKey: string; sign(text: string): Promise<string> };
+  let trust: TsaTrust, pinned: TsaTrust;
   try {
     signer = await ed25519Signer(signingKey);
-    trust = options.trust ?? trustFromProfile(tsaProfile("digicert-g4-v1"), "capture");
+    pinned = trustFromProfile(tsaProfile("digicert-g4-v1"), "capture");
+    trust = options.trust ?? pinned;
   } catch {
     return json({ status: "configuration_invalid" }, 503);
+  }
+  // Known-answer test of this runtime before judging anything (always against the released DigiCert pin): a runtime
+  // whose X.509, gzip, canonical JSON or Ed25519 misbehaved would otherwise sign genuine claims as rejected forever.
+  const selfTest: SelfTest = await witnessSelfTest(pinned, signer);
+  if (!selfTest.tsa || !selfTest.packet || !selfTest.signature) {
+    return json({ status: "self_test_failed", release, keyId: signer.keyId, selfTest }, 503);
   }
   const doFetch = options.fetch ?? fetch;
   const now = options.now ?? Date.now;
@@ -75,12 +83,12 @@ export async function handleWitnessEdgeRequest(req: Request, env: (name: string)
     if (!Array.isArray(data)) throw new Error("pending_shape");
     pending = data.filter((id): id is number => Number.isSafeInteger(id) && id > 0);
   } catch {
-    return json({ status: "pending_unconfirmed", release, keyId: signer.keyId }, 503);
+    return json({ status: "pending_unconfirmed", release, keyId: signer.keyId, selfTest }, 503);
   }
   const results: GameResult[] = [];
   for (const gameId of pending) results.push(await witnessGame(gameId, { rpc, fetch: doFetch, now, trust, release, signer }));
   const unconfirmed = results.some(r => r.status.endsWith("_unconfirmed"));
-  return json({ status: pending.length ? (unconfirmed ? "partially_unconfirmed" : "ok") : "idle", release, keyId: signer.keyId, results },
+  return json({ status: pending.length ? (unconfirmed ? "partially_unconfirmed" : "ok") : "idle", release, keyId: signer.keyId, selfTest, results },
     unconfirmed ? 503 : 200);
 }
 

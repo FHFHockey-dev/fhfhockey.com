@@ -34,10 +34,11 @@ Every production step needs TJ's approval.
 - Why: prod Vercel env holds POSTGRES_URL (postgres) + SUPABASE_JWT_SECRET; service_role EXECUTEs public.execute_sql. DB grants
   cannot stop the writer, so verdicts are Ed25519-signed by an Edge Function whose key is only an Edge secret.
 - Where: tasks/artifacts/forge-witness-signed-2026-11-19/, supabase/functions/forge-witness-verify/, lib signedVerdict.ts,
-  witnessEdgeCore.ts, witnessSigningKeys.ts (EMPTY = fail closed). Delta SQL sha256 dad95b43….
+  witnessEdgeCore.ts, witnessSigningKeys.ts (EMPTY = fail closed). Delta SQL sha256 da786646…; bundle release ea9b9100….
 - Decision: start/T−60 from the NHL API, not the DB (writer can move games.startTime). DB checks are defense only.
 - State: check_signed.py exit 0 against prod schema+grants restore; all six writer attacks succeed in DB and are refused by
   gate and audit; untouched verdict passes. Gates green. Deno not run locally (deploy smoke test is the first Deno run).
 - Gotchas: prod authenticator preloads supautils (reset locally for PostgREST); jsdom lacks AbortSignal.timeout (vitest
   needs `@vitest-environment node`); never `cat >` without a heredoc in this shell (it blocks on stdin).
 - Next: TJ keygen (pins public key) → rebuild bundle → deploy function → live lane wires assertSignedVerdict → arm.
+- Review fixes (00:20Z): runtime self-test before judging; Data API gate read; cron ops proven on prod restore; packet-size bench.

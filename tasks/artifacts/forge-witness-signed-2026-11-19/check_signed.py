@@ -67,8 +67,25 @@ def main():
         roles = psql("supabase_admin", "-f", DUMPS / "prod-roles-20261119.sql", check=False)
         schema = psql("supabase_admin", "-f", DUMPS / "prod-schema-grants-20261119.sql", check=False)
         restore_errors = (roles.stderr + schema.stderr).count("ERROR:")
-        # Local adaptation only: authenticator preloads Supabase's supautils/safeupdate, which this build lacks.
+        # Local adaptations only: authenticator preloads Supabase's supautils/safeupdate, which this build lacks; and pg_cron /
+        # pg_net are absent, so minimal stand-ins (as in the sandbox rehearsals) let the arm/fire/disarm SQL run as postgres.
         psql("supabase_admin", "-c", "alter role authenticator reset session_preload_libraries")
+        psql("supabase_admin", "-v", "ON_ERROR_STOP=1", "-c", """
+          create schema if not exists cron;
+          create table cron.job(jobid bigserial primary key, jobname text unique, schedule text, command text, active boolean default true,
+            username text default current_user);
+          create function cron.schedule(n text, s text, c text) returns bigint language sql as
+            $$insert into cron.job(jobname,schedule,command) values(n,s,c) returning jobid$$;
+          create function cron.unschedule(j bigint) returns boolean language sql as $$delete from cron.job where jobid=j returning true$$;
+          create schema if not exists net;
+          create table net.http_request_queue(id bigserial primary key, method text, url text, headers jsonb, body jsonb, timeout_ms int);
+          create function net.http_post(url text, body jsonb default '{}', params jsonb default '{}', headers jsonb default '{}',
+            timeout_milliseconds int default 5000) returns bigint language sql as
+            $$insert into net.http_request_queue(method,url,headers,body,timeout_ms) values('POST',url,headers,body,timeout_milliseconds) returning id$$;
+          grant usage on schema cron, net to postgres; grant all on all tables in schema cron, net to postgres;
+          grant all on all sequences in schema cron, net to postgres; grant execute on all functions in schema cron, net to postgres;
+          grant create on database postgres to postgres;
+          select cron.schedule('update-all-wgo-skaters', '30 7 * * *', 'select 1');""")
         facts = json.loads(psql("supabase_admin", "-c", """select json_build_object(
           'postgresSuperuser', (select rolsuper from pg_roles where rolname = 'postgres'),
           'postgresCreaterole', (select rolcreaterole from pg_roles where rolname = 'postgres'),
@@ -120,6 +137,27 @@ def main():
         if result.returncode:
             raise SystemExit(result.stdout[-5000:] + result.stderr[-5000:] + "\nPostgREST log:\n" + (directory / "postgrest.log").read_text()[-1500:])
         proof = json.loads(result.stdout.strip().splitlines()[-1])
+
+        # Cron ops as postgres: arm an armed-but-unsigned game, fire twice then self-unschedule, refuse a signed game, disarm.
+        unsigned, signed = proof["games"]["officialUnavailable"], proof["games"]["untouched"]
+        q = lambda sql: psql("postgres", "-v", "ON_ERROR_STOP=1", "-c", sql).stdout.strip()
+        psql("postgres", "-v", "ON_ERROR_STOP=1", "-v", f"game={unsigned}", "-v", "schedule=59 23 31 12 *", "-v", f"anon_key={tokens['anon']}",
+             "-v", "max_fires=2", "-f", HERE / "arm-signed-verify.sql")
+        command = q(f"select command from cron.job where jobname = 'forge-witness-signed-{unsigned}'")
+        assert tokens["anon"] in command and tokens["service_role"] not in command, command[:200]
+        fired = [q(command).splitlines()[-1] for _ in range(3)]
+        assert fired[0].startswith("fired") and fired[1].startswith("fired") and fired[2] == "fires_spent", fired
+        assert q("select count(*) from cron.job where jobname like 'forge-witness-signed-%'") == "0"
+        queued = json.loads(q("select json_build_object('url', url, 'auth', headers->>'Authorization', 'body', body, 'timeoutMs', timeout_ms) from net.http_request_queue order by id desc limit 1"))
+        assert queued == {"url": "https://fyhftlxokyjtpndbkfse.supabase.co/functions/v1/forge-witness-verify", "auth": "Bearer " + tokens["anon"],
+                          "body": {}, "timeoutMs": 120000}, queued
+        refused = psql("postgres", "-v", "ON_ERROR_STOP=1", "-v", f"game={signed}", "-v", "schedule=59 23 31 12 *", "-v", f"anon_key={tokens['anon']}",
+                       "-f", HERE / "arm-signed-verify.sql", check=False)
+        assert refused.returncode != 0 and "signed_arm_preflight_failed" in refused.stderr, refused.stderr[-300:]
+        psql("postgres", "-v", "ON_ERROR_STOP=1", "-f", HERE / "disarm-signed-verify.sql")
+        assert q("select count(*) from cron.job") == "1"
+        proof["cronOps"] = {"armedAs": "postgres", "fired": fired, "queued": {**queued, "auth": "Bearer <anon key>"}, "signedGameArmRefused": True,
+                            "disarmed": True, "otherJobsIntact": True}
         manifest = json.loads((ROOT / "supabase/functions/forge-witness-verify/bundle-manifest.json").read_text())
         assert proof["release"] == manifest["release"], (proof["release"], manifest["release"])
         report = {"postgres": run(PG / "psql", "--version").stdout.strip(), "postgrest": run(POSTGREST, "--version").stdout.strip(),

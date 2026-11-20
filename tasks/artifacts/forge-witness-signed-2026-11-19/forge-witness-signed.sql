@@ -9,7 +9,7 @@
 --
 -- Access: the Edge Function calls forge_witness_api.signed_pending_v1 / signed_evidence_v1 / record_signed_v1 with this
 -- project's service role (Data API, schema forge_witness_api). The publish route and readers read a verdict with
--- forge_witness.signed_verdict_v1(claim) as service_role.
+-- forge_witness_api.signed_verdict_v1(claim) (Data API) or forge_witness.signed_verdict_v1(claim) (SQL) as service_role.
 begin;
 set local lock_timeout = '5s';
 do $guard$ begin
@@ -104,6 +104,12 @@ returns jsonb language sql stable security definer set search_path = '' as $$
   from forge_witness.signed_verdicts s where s.claim_id = p_claim_id
 $$;
 
+-- The same read through the Data API (schema forge_witness_api), for the publish route and readers using supabase-js.
+create function forge_witness_api.signed_verdict_v1(p_claim_id uuid)
+returns jsonb language sql stable security definer set search_path = '' as $$
+  select forge_witness.signed_verdict_v1(p_claim_id)
+$$;
+
 -- Installer only (cron fire function and readback): has this game a signed verdict?
 create function forge_witness.signed_status_v1(p_game_id bigint)
 returns jsonb language sql stable security definer set search_path = '' as $$
@@ -115,11 +121,11 @@ $$;
 reset role;
 revoke all on forge_witness.signed_verdicts from public, anon, authenticated, service_role, forge_witness_api;
 revoke all on function forge_witness_api.signed_pending_v1(), forge_witness_api.signed_evidence_v1(bigint),
-  forge_witness_api.record_signed_v1(text, text), forge_witness.signed_verdict_v1(uuid), forge_witness.signed_status_v1(bigint)
-  from public, anon, authenticated, service_role, forge_witness_api;
+  forge_witness_api.record_signed_v1(text, text), forge_witness_api.signed_verdict_v1(uuid), forge_witness.signed_verdict_v1(uuid),
+  forge_witness.signed_status_v1(bigint) from public, anon, authenticated, service_role, forge_witness_api;
 grant usage on schema forge_witness_api to service_role;
 grant execute on function forge_witness_api.signed_pending_v1(), forge_witness_api.signed_evidence_v1(bigint),
-  forge_witness_api.record_signed_v1(text, text), forge_witness.signed_verdict_v1(uuid) to service_role;
+  forge_witness_api.record_signed_v1(text, text), forge_witness_api.signed_verdict_v1(uuid), forge_witness.signed_verdict_v1(uuid) to service_role;
 do $installer$ begin
   execute format('grant execute on function forge_witness.signed_verdict_v1(uuid), forge_witness.signed_status_v1(bigint) to %I', session_user);
 end $installer$;
