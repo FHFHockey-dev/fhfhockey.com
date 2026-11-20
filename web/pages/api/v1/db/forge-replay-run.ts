@@ -29,18 +29,18 @@ import { invokedByCron } from "utils/adminOnlyMiddleware";
 //   * the publish gate's real check (checkSignedVerdict) against that one test key, read back from the sandbox ledger;
 //   * the synthetic game's NHL landing built from its own sandbox schedule.
 // The fixture's four flags apply only inside this request's async scope (withForgeEnv); the deployment's env is unchanged.
+// The game and the reader's player come from the sandbox ledger (replay_meta), so any frozen fixture the bootstrap
+// installs (the synthetic control, or a reconstructed historical game) runs on the same deployment.
 export const config = { maxDuration: 240 };
 
-const GAME_ID = 2099020991;
-const PLAYER_NHL_ID = 8471001;
 const API_SCHEMA = "forge_sandbox_api";
 const RUN_END_MS = 225_000, FINISH_END_MS = 232_000, RPC_MS = 6_000;
 // Capture is enabled here too, so the sandbox replay does not depend on (or change) production's capture flag.
-const FIXTURE_FLAGS = { FORGE_PREGAME_CAPTURE_ENABLED: "true", STARTER_BOARD_COMPUTE_ENABLED: "true", STARTER_BOARD_SERVING_ENABLED: "true",
-  STARTER_BOARD_CANARY_GAME_IDS: String(GAME_ID) } as const;
+const fixtureFlags = (gameId: number) => ({ FORGE_PREGAME_CAPTURE_ENABLED: "true", STARTER_BOARD_COMPUTE_ENABLED: "true",
+  STARTER_BOARD_SERVING_ENABLED: "true", STARTER_BOARD_CANARY_GAME_IDS: String(gameId) });
 
 type Step = "fail_capture" | "reset_repair" | "pass_capture" | "verify" | "publish";
-type Begin = { status: "due"; step: Step; gameId: number; slateDate: string; scheduledStart: string; seasonId: number;
+type Begin = { status: "due"; step: Step; gameId: number; playerNhlId: number; slateDate: string; scheduledStart: string; seasonId: number;
   claimId: string | null; witnessKey: { keyId: string; x: string } | null; landing: Record<string, unknown> | null;
   hashes: { claimId: string; gameId: number; scheduledStart: string; raw: string; canonical: string; tsaTokenSha256: string } | null }
   | { status: string; due?: unknown; receipt?: unknown };
@@ -106,7 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (process.env.VERCEL_ENV !== "production" || !sha || !/^[a-f0-9]{40}$/.test(sha)) return res.status(503).json({ status: "release_unpinned" });
   const api = sandboxApi();
   if (!api) return res.status(503).json({ status: "replay_disabled" });
-  return withForgeEnv(FIXTURE_FLAGS, () => run(res, api, sha, enteredAt));
+  return run(res, api, sha, enteredAt);
 }
 
 async function run(res: NextApiResponse, api: Api, sha: string, enteredAt: number) {
@@ -122,8 +122,14 @@ async function run(res: NextApiResponse, api: Api, sha: string, enteredAt: numbe
   // Nothing due: no write. After publish every request lands here as a duplicate.
   if (begin.status !== "due") return res.status(begin.status === "complete" ? 409 : 202).json({ ...begin, sha });
   const due = begin as Extract<Begin, { status: "due" }>;
-  if (due.gameId !== GAME_ID) return res.status(503).json({ status: "begin_unconfirmed", sha });
+  if (!Number.isSafeInteger(due.gameId) || due.gameId <= 0 || !Number.isSafeInteger(due.playerNhlId) || due.playerNhlId <= 0) {
+    return res.status(503).json({ status: "begin_unconfirmed", sha });
+  }
+  return withForgeEnv(fixtureFlags(due.gameId), () => runStep(res, api, sha, enteredAt, db, due));
+}
 
+async function runStep(res: NextApiResponse, api: Api, sha: string, enteredAt: number, db: SupabaseClient,
+  due: Extract<Begin, { status: "due" }>) {
   if (due.step === "reset_repair") {
     try {
       const reset = await db.rpc("forge_replay_reset_repair_v1", { p_code_version: sha }).abortSignal(AbortSignal.timeout(20_000));
@@ -165,7 +171,7 @@ async function capture(api: Api, due: Extract<Begin, { status: "due" }>, sha: st
   const tsa = replayTestTsa();
   const started = Date.now();
   const result = await runHostedPregameGame({
-    gameId: GAME_ID, slateDate: due.slateDate, scheduledStart: due.scheduledStart, safeStart: due.scheduledStart, codeVersion: sha,
+    gameId: due.gameId, slateDate: due.slateDate, scheduledStart: due.scheduledStart, safeStart: due.scheduledStart, codeVersion: sha,
   }, {
     env: { ...forgeEnv(), NEXT_PUBLIC_SUPABASE_URL: "sandbox-api", SUPABASE_SERVICE_ROLE_KEY: "unused-forge-sandbox" },
     signal: AbortSignal.timeout(Math.max(1, runEnd - Date.now())),
@@ -195,7 +201,7 @@ async function verify(api: Api, due: Extract<Begin, { status: "due" }>, sha: str
   const witnessFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     if (Date.now() >= runEnd) throw new Error("run_deadline");
     const url = new URL(String(input));
-    if (url.origin === "https://api-web.nhle.com" && url.pathname === `/v1/gamecenter/${GAME_ID}/landing`) return Response.json(due.landing);
+    if (url.origin === "https://api-web.nhle.com" && url.pathname === `/v1/gamecenter/${due.gameId}/landing`) return Response.json(due.landing);
     const rpc = url.pathname.match(/^\/rest\/v1\/rpc\/(signed_pending_v1|signed_evidence_v1|record_signed_v1)$/);
     if (url.origin !== new URL(base).origin || !rpc) throw new Error(`replay_witness_request_refused:${url.origin}${url.pathname}`);
     const headers = new Headers(init?.headers);
@@ -233,7 +239,7 @@ async function publish(api: Api, due: Extract<Begin, { status: "due" }>, sha: st
   };
   const signed = await apiClient(api, runEnd).rpc("witness_signed_verdict_v1", { p_claim_id: due.claimId }).abortSignal(AbortSignal.timeout(RPC_MS));
   const decision = signed.error ? { ok: false, reason: "signed_verdict_unreadable" }
-    : checkSignedVerdict(signed.data ?? null, { claimId: due.claimId, gameId: GAME_ID, raw: due.hashes.raw, canonical: due.hashes.canonical,
+    : checkSignedVerdict(signed.data ?? null, { claimId: due.claimId, gameId: due.gameId, raw: due.hashes.raw, canonical: due.hashes.canonical,
       tsaTokenSha256: due.hashes.tsaTokenSha256 }, due.hashes.scheduledStart, testKeyVerify);
   report.gate = { status: decision.ok ? "accepted" : "refused", ...decision, keyId: due.witnessKey.keyId };
   if (!decision.ok) return { ...report, reason: `signed_gate:${decision.reason}` };
@@ -241,7 +247,7 @@ async function publish(api: Api, due: Extract<Begin, { status: "due" }>, sha: st
   const publishStarted = Date.now();
   let observedAt = "";
   try {
-    const published = await publishQualifiedPregameCapture({ claimId: due.claimId, gameId: GAME_ID, codeVersion: sha },
+    const published = await publishQualifiedPregameCapture({ claimId: due.claimId, gameId: due.gameId, codeVersion: sha },
       { db: apiClient(api, runEnd), trust });
     report.revisionId = published.revisionId;
     observedAt = published.observedAt;
@@ -254,7 +260,7 @@ async function publish(api: Api, due: Extract<Begin, { status: "due" }>, sha: st
   if (lead > 0 && lead <= 5_002) await new Promise(resolve => setTimeout(resolve, lead));
   const readersStarted = Date.now();
   report.readers = await readHostedRsoConsumers(apiClient(api, runEnd), {
-    contextId: HOSTED_RSO_CONTEXT, playerNhlId: PLAYER_NHL_ID, seasonId: Number(due.seasonId), gameId: GAME_ID,
+    contextId: HOSTED_RSO_CONTEXT, playerNhlId: due.playerNhlId, seasonId: Number(due.seasonId), gameId: due.gameId,
     slateDate: due.slateDate, scheduledStart: due.scheduledStart, claimId: due.claimId, revisionId: String(report.revisionId), codeVersion: sha, observedAt,
   });
   report.readersMs = Date.now() - readersStarted;
