@@ -75,12 +75,17 @@ export type SourceFeedItem = {
   binding: { status: "bound" | "ambiguous" | "unresolved"; gameId: number | null; evidence: string[] };
   context: ClaimContext | null; claimIds: string[]; sourceUrl: string | null;
 };
-/** Game-level entry label. "entering" once NHL state reads LIVE (stored freeze or computed at read time). */
-export type EntryView = { mode: "expected" | "entering"; frozenAt: string | null; basis: "stored" | "read_time" | null };
+/** NHL event evidence on the updates rail has no coaching unit number. */
+export type OfficialPowerPlayObservation = {
+  gameId: number; teamId: number; eventId: number; reportEvent: number; order: number;
+  period: number; elapsed: string; players: { playerId: number; name: string }[]; sourceUrl: string;
+};
+export type EntryView = { mode: "expected" | "entering" | "unrecorded"; frozenAt: string | null; basis: "stored" | "read_time" | null };
 export type GameTeamLines = {
   teamId: number; abbreviation: string; entry: EntryRevision | null;
   entryRevisions: EntryRevision[];
   fallback: { gameId: number; date: string; entry: EntryRevision } | null;
+  officialPowerPlay?: OfficialPowerPlayObservation[] | null;
   observations: LineClaim[]; history: LineClaim[]; ppDefaults: PPDecision[];
   unresolved: Array<{ claimId: string; reasons: string[] }>; conflicts: LineConflict[];
   feed: SourceFeedItem[];

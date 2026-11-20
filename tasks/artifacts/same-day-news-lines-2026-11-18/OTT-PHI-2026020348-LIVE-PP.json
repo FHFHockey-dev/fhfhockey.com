@@ -1,0 +1,664 @@
+{
+  "gameId": 2026020348,
+  "away": "PHI",
+  "home": "OTT",
+  "deployment": "dpl_AFqPb6hmXWDFqcNmYvnyhpSn1Xb8",
+  "commit": "dbe6a9e3312f24c9fb2565da754b92803663ad29",
+  "sourceCheckUtc": "2026-11-20T00:42Z",
+  "sourceClockRefreshUtc": "2026-11-20T00:44:13Z",
+  "lastOfficialClockAtRefresh": {
+    "timeRemaining": "00:00",
+    "secondsRemaining": 0,
+    "running": true,
+    "inIntermission": false
+  },
+  "officialSources": {
+    "eventClockAndRosters": "https://api-web.nhle.com/v1/gamecenter/2026020348/play-by-play",
+    "eventOnIce": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM"
+  },
+  "verifiedOnIceEvents": [
+    {
+      "htmlEvent": 30,
+      "gamecenterEvent": 164,
+      "type": "goal",
+      "teamId": 4,
+      "period": 1,
+      "timeElapsed": "03:52",
+      "timeRemaining": "16:08",
+      "situationCode": "1541",
+      "skaters": [
+        {
+          "id": 8477989,
+          "name": "Christian Dvorak"
+        },
+        {
+          "id": 8478439,
+          "name": "Travis Konecny"
+        },
+        {
+          "id": 8482159,
+          "name": "Tyson Foerster"
+        },
+        {
+          "id": 8480015,
+          "name": "Owen Tippett"
+        },
+        {
+          "id": 8484148,
+          "name": "Oliver Bonk"
+        }
+      ]
+    },
+    {
+      "htmlEvent": 93,
+      "gamecenterEvent": 395,
+      "type": "missed-shot",
+      "teamId": 9,
+      "period": 1,
+      "timeElapsed": "16:34",
+      "timeRemaining": "03:26",
+      "situationCode": "1451",
+      "skaters": [
+        {
+          "id": 8481596,
+          "name": "Shane Pinto"
+        },
+        {
+          "id": 8482116,
+          "name": "Tim Stützle"
+        },
+        {
+          "id": 8483676,
+          "name": "Stephen Halliday"
+        },
+        {
+          "id": 8480208,
+          "name": "Drake Batherson"
+        },
+        {
+          "id": 8482105,
+          "name": "Jake Sanderson"
+        }
+      ]
+    },
+    {
+      "htmlEvent": 94,
+      "gamecenterEvent": 21,
+      "type": "stoppage",
+      "teamId": 9,
+      "period": 1,
+      "timeElapsed": "16:43",
+      "timeRemaining": "03:17",
+      "situationCode": "1451",
+      "skaters": [
+        {
+          "id": 8481596,
+          "name": "Shane Pinto"
+        },
+        {
+          "id": 8482116,
+          "name": "Tim Stützle"
+        },
+        {
+          "id": 8483676,
+          "name": "Stephen Halliday"
+        },
+        {
+          "id": 8480208,
+          "name": "Drake Batherson"
+        },
+        {
+          "id": 8482105,
+          "name": "Jake Sanderson"
+        }
+      ]
+    },
+    {
+      "htmlEvent": 95,
+      "gamecenterEvent": 398,
+      "type": "faceoff",
+      "teamId": 9,
+      "period": 1,
+      "timeElapsed": "16:43",
+      "timeRemaining": "03:17",
+      "situationCode": "1451",
+      "skaters": [
+        {
+          "id": 8481528,
+          "name": "Dylan Cozens"
+        },
+        {
+          "id": 8482092,
+          "name": "Ridly Greig"
+        },
+        {
+          "id": 8473512,
+          "name": "Claude Giroux"
+        },
+        {
+          "id": 8481606,
+          "name": "Jordan Spence"
+        },
+        {
+          "id": 8478469,
+          "name": "Thomas Chabot"
+        }
+      ]
+    },
+    {
+      "htmlEvent": 96,
+      "gamecenterEvent": 408,
+      "type": "missed-shot",
+      "teamId": 9,
+      "period": 1,
+      "timeElapsed": "17:39",
+      "timeRemaining": "02:21",
+      "situationCode": "1451",
+      "skaters": [
+        {
+          "id": 8481528,
+          "name": "Dylan Cozens"
+        },
+        {
+          "id": 8482092,
+          "name": "Ridly Greig"
+        },
+        {
+          "id": 8473512,
+          "name": "Claude Giroux"
+        },
+        {
+          "id": 8481606,
+          "name": "Jordan Spence"
+        },
+        {
+          "id": 8478469,
+          "name": "Thomas Chabot"
+        }
+      ]
+    },
+    {
+      "htmlEvent": 100,
+      "gamecenterEvent": 421,
+      "type": "blocked-shot",
+      "teamId": 4,
+      "period": 1,
+      "timeElapsed": "18:13",
+      "timeRemaining": "01:47",
+      "situationCode": "1541",
+      "skaters": [
+        {
+          "id": 8477989,
+          "name": "Christian Dvorak"
+        },
+        {
+          "id": 8478439,
+          "name": "Travis Konecny"
+        },
+        {
+          "id": 8482159,
+          "name": "Tyson Foerster"
+        },
+        {
+          "id": 8480015,
+          "name": "Owen Tippett"
+        },
+        {
+          "id": 8484148,
+          "name": "Oliver Bonk"
+        }
+      ]
+    },
+    {
+      "htmlEvent": 101,
+      "gamecenterEvent": 422,
+      "type": "shot-on-goal",
+      "teamId": 4,
+      "period": 1,
+      "timeElapsed": "18:25",
+      "timeRemaining": "01:35",
+      "situationCode": "1541",
+      "skaters": [
+        {
+          "id": 8477989,
+          "name": "Christian Dvorak"
+        },
+        {
+          "id": 8478439,
+          "name": "Travis Konecny"
+        },
+        {
+          "id": 8482159,
+          "name": "Tyson Foerster"
+        },
+        {
+          "id": 8480015,
+          "name": "Owen Tippett"
+        },
+        {
+          "id": 8484148,
+          "name": "Oliver Bonk"
+        }
+      ]
+    }
+  ],
+  "unitNumberSuppliedByNhl": null,
+  "productionReads": {
+    "ottgame": {
+      "at": "2026-11-20T00:42:23.182656+00:00",
+      "host": "fhfhockey.com",
+      "path": "/api/v1/lines/projected?view=game&teamId=9&gameId=2026020348",
+      "http": 200,
+      "mode": "snapshots",
+      "status": "ready",
+      "controls": {
+        "observations": true,
+        "entryServing": true,
+        "carryForward": true
+      },
+      "game": 2026020348,
+      "entryView": {
+        "mode": "entering",
+        "frozenAt": "2026-11-20T00:42:23.392Z",
+        "basis": "read_time"
+      },
+      "teams": [
+        {
+          "id": 9,
+          "entry": "d6c28ea30f2f8020de5fb33e94db923228b5ac461b909ddcc62ededbc3ca4a12",
+          "state": "frozen",
+          "units": 4,
+          "sources": [
+            "https://x.com/SunGarrioch/status/2123562467645149441"
+          ],
+          "observations": 0,
+          "pp": [
+            null,
+            null
+          ]
+        }
+      ],
+      "gameState": "live",
+      "actualStart": null,
+      "scheduledStart": "2026-11-20T00:00:00Z",
+      "entryUnits": [
+        {
+          "situation": "es_defense",
+          "number": 1,
+          "skaters": [
+            {
+              "name": "Jake Sanderson",
+              "playerId": 8482105
+            },
+            {
+              "name": "Artem Zub",
+              "playerId": 8482245
+            }
+          ],
+          "source": "https://x.com/SunGarrioch/status/2123562467645149441",
+          "originalPublishedAt": "2026-11-19T23:42:00.000Z"
+        },
+        {
+          "situation": "es_defense",
+          "number": 2,
+          "skaters": [
+            {
+              "name": "Thomas Chabot",
+              "playerId": 8478469
+            },
+            {
+              "name": "Jordan Spence",
+              "playerId": 8481606
+            }
+          ],
+          "source": "https://x.com/SunGarrioch/status/2123562467645149441",
+          "originalPublishedAt": "2026-11-19T23:42:00.000Z"
+        },
+        {
+          "situation": "es_defense",
+          "number": 3,
+          "skaters": [
+            {
+              "name": "Tyler Kleven",
+              "playerId": 8482095
+            },
+            {
+              "name": "Nikolas Matinpalo",
+              "playerId": 8484321
+            }
+          ],
+          "source": "https://x.com/SunGarrioch/status/2123562467645149441",
+          "originalPublishedAt": "2026-11-19T23:42:00.000Z"
+        },
+        {
+          "situation": "es_forward",
+          "number": 1,
+          "skaters": [
+            {
+              "name": "Fabian Zetterlund",
+              "playerId": 8480188
+            },
+            {
+              "name": "Tim Stützle",
+              "playerId": 8482116
+            },
+            {
+              "name": "Dylan Cozens",
+              "playerId": 8481528
+            }
+          ],
+          "source": "https://x.com/SunGarrioch/status/2123562467645149441",
+          "originalPublishedAt": "2026-11-19T23:42:00.000Z"
+        }
+      ],
+      "receivedSha256": "6f44e88288c119060bd1f541c4d7c71c9cf5268d807f03f676c4bb6ad7c665cd"
+    },
+    "ottnext": {
+      "at": "2026-11-20T00:43:16.612411+00:00",
+      "host": "fhfhockey.com",
+      "path": "/api/v1/lines/projected?view=game&teamId=9&gameId=2026020366",
+      "http": 200,
+      "mode": "snapshots",
+      "status": "ready",
+      "controls": {
+        "observations": true,
+        "entryServing": true,
+        "carryForward": true
+      },
+      "game": 2026020366,
+      "entryView": {
+        "mode": "expected",
+        "frozenAt": null,
+        "basis": null
+      },
+      "teams": [
+        {
+          "id": 9,
+          "entry": "1f69d5691e2905699ef2f5ff5d879f736e83191763f11155a2f61cd487657798",
+          "state": "expected",
+          "units": 0,
+          "sources": [],
+          "observations": 0,
+          "pp": [
+            null,
+            null
+          ]
+        }
+      ],
+      "gameState": "scheduled",
+      "actualStart": null,
+      "scheduledStart": "2026-11-22T00:00:00Z",
+      "entryUnits": [],
+      "receivedSha256": "2509266d72af820c11062074d9b43fe936021d997de6ca69dad6986fdd5b9018"
+    },
+    "ottrefresh": {
+      "at": "2026-11-20T00:44:11.678701+00:00",
+      "host": "fhfhockey.com",
+      "path": "/api/v1/lines/projected?view=game&teamId=9&gameId=2026020348",
+      "http": 200,
+      "mode": "snapshots",
+      "status": "ready",
+      "controls": {
+        "observations": true,
+        "entryServing": true,
+        "carryForward": true
+      },
+      "game": 2026020348,
+      "entryView": {
+        "mode": "entering",
+        "frozenAt": "2026-11-20T00:44:11.844Z",
+        "basis": "read_time"
+      },
+      "teams": [
+        {
+          "id": 9,
+          "entry": "a1e6b019a689cc02ce710c9f3cac3c95e4a42e14b73e761a4ffac1d22449e6f2",
+          "state": "frozen",
+          "units": 4,
+          "sources": [
+            "https://x.com/SunGarrioch/status/2123562467645149441"
+          ],
+          "observations": 0,
+          "pp": [
+            null,
+            null
+          ]
+        }
+      ],
+      "gameState": "live",
+      "actualStart": null,
+      "scheduledStart": "2026-11-20T00:00:00Z",
+      "entryUnits": [
+        {
+          "situation": "es_defense",
+          "number": 1,
+          "skaters": [
+            {
+              "name": "Jake Sanderson",
+              "playerId": 8482105
+            },
+            {
+              "name": "Artem Zub",
+              "playerId": 8482245
+            }
+          ],
+          "source": "https://x.com/SunGarrioch/status/2123562467645149441",
+          "originalPublishedAt": "2026-11-19T23:42:00.000Z"
+        },
+        {
+          "situation": "es_defense",
+          "number": 2,
+          "skaters": [
+            {
+              "name": "Thomas Chabot",
+              "playerId": 8478469
+            },
+            {
+              "name": "Jordan Spence",
+              "playerId": 8481606
+            }
+          ],
+          "source": "https://x.com/SunGarrioch/status/2123562467645149441",
+          "originalPublishedAt": "2026-11-19T23:42:00.000Z"
+        },
+        {
+          "situation": "es_defense",
+          "number": 3,
+          "skaters": [
+            {
+              "name": "Tyler Kleven",
+              "playerId": 8482095
+            },
+            {
+              "name": "Nikolas Matinpalo",
+              "playerId": 8484321
+            }
+          ],
+          "source": "https://x.com/SunGarrioch/status/2123562467645149441",
+          "originalPublishedAt": "2026-11-19T23:42:00.000Z"
+        },
+        {
+          "situation": "es_forward",
+          "number": 1,
+          "skaters": [
+            {
+              "name": "Fabian Zetterlund",
+              "playerId": 8480188
+            },
+            {
+              "name": "Tim Stützle",
+              "playerId": 8482116
+            },
+            {
+              "name": "Dylan Cozens",
+              "playerId": 8481528
+            }
+          ],
+          "source": "https://x.com/SunGarrioch/status/2123562467645149441",
+          "originalPublishedAt": "2026-11-19T23:42:00.000Z"
+        }
+      ],
+      "receivedSha256": "dfb347a146b4efd250f42fc747e0e74a011458f8e9422986d47361e83b83251f"
+    }
+  },
+  "boundedStorage": {
+    "initial": [
+      {
+        "checked_utc": "2026-11-20 00:41:52.000379",
+        "id": 2026020348,
+        "team": 4,
+        "startTime": "2026-11-20 00:00:00+00",
+        "entry": {
+          "id": "8ecf8c9b79ab08ecbe041859f2d97f12b45cdb7965261a546bc1630018d60667",
+          "units": 0,
+          "cutoff": null,
+          "status": "expected",
+          "origins": null,
+          "revision": 2
+        },
+        "updates": null,
+        "pp": [
+          {
+            "origin": null,
+            "reason": "No applicable PP evidence",
+            "players": null,
+            "revision": 2,
+            "decision_id": "7e927992252a68024c416b4a7965c0f2fe4d2ff3f8be53b827fc3307a4932701",
+            "designation": null,
+            "unit_number": 1
+          },
+          {
+            "origin": null,
+            "reason": "No applicable PP evidence",
+            "players": null,
+            "revision": 2,
+            "decision_id": "00470f287f7ea5daeb9698f5ed3fd66ea6dc248ebb564c283c728612fb87fd0a",
+            "designation": null,
+            "unit_number": 2
+          }
+        ],
+        "next_game": 2026020365
+      },
+      {
+        "checked_utc": "2026-11-20 00:41:52.000379",
+        "id": 2026020348,
+        "team": 9,
+        "startTime": "2026-11-20 00:00:00+00",
+        "entry": {
+          "id": "2c07dc8263654167d026a3b9d3d7b96133bd428a66e8d1e97fe5d5630a337ef8",
+          "units": 4,
+          "cutoff": null,
+          "status": "expected",
+          "origins": [
+            "https://x.com/SunGarrioch/status/2123562467645149441"
+          ],
+          "revision": 2
+        },
+        "updates": null,
+        "pp": [
+          {
+            "origin": null,
+            "reason": "No applicable PP evidence",
+            "players": null,
+            "revision": 2,
+            "decision_id": "7fb44ad6a9875f17ef8291309e5a2f5ad158e80f6ca3b689f37067d286486ff5",
+            "designation": null,
+            "unit_number": 1
+          },
+          {
+            "origin": null,
+            "reason": "No applicable PP evidence",
+            "players": null,
+            "revision": 2,
+            "decision_id": "28bb5b5698e07f3b4d044f4c16b399bde3280c2c9f093a1ba46a87fb4f331625",
+            "designation": null,
+            "unit_number": 2
+          }
+        ],
+        "next_game": 2026020366
+      }
+    ],
+    "refresh": [
+      {
+        "checked_utc": "2026-11-20 00:44:12.811486",
+        "id": 2026020348,
+        "team": 4,
+        "startTime": "2026-11-20 00:00:00+00",
+        "entry": {
+          "id": "8ecf8c9b79ab08ecbe041859f2d97f12b45cdb7965261a546bc1630018d60667",
+          "units": 0,
+          "cutoff": null,
+          "status": "expected",
+          "origins": null,
+          "revision": 2
+        },
+        "updates": null,
+        "pp": [
+          {
+            "origin": null,
+            "reason": "No applicable PP evidence",
+            "players": null,
+            "revision": 2,
+            "decision_id": "7e927992252a68024c416b4a7965c0f2fe4d2ff3f8be53b827fc3307a4932701",
+            "designation": null,
+            "unit_number": 1
+          },
+          {
+            "origin": null,
+            "reason": "No applicable PP evidence",
+            "players": null,
+            "revision": 2,
+            "decision_id": "00470f287f7ea5daeb9698f5ed3fd66ea6dc248ebb564c283c728612fb87fd0a",
+            "designation": null,
+            "unit_number": 2
+          }
+        ],
+        "next_game": 2026020365
+      },
+      {
+        "checked_utc": "2026-11-20 00:44:12.811486",
+        "id": 2026020348,
+        "team": 9,
+        "startTime": "2026-11-20 00:00:00+00",
+        "entry": {
+          "id": "2c07dc8263654167d026a3b9d3d7b96133bd428a66e8d1e97fe5d5630a337ef8",
+          "units": 4,
+          "cutoff": null,
+          "status": "expected",
+          "origins": [
+            "https://x.com/SunGarrioch/status/2123562467645149441"
+          ],
+          "revision": 2
+        },
+        "updates": null,
+        "pp": [
+          {
+            "origin": null,
+            "reason": "No applicable PP evidence",
+            "players": null,
+            "revision": 2,
+            "decision_id": "7fb44ad6a9875f17ef8291309e5a2f5ad158e80f6ca3b689f37067d286486ff5",
+            "designation": null,
+            "unit_number": 1
+          },
+          {
+            "origin": null,
+            "reason": "No applicable PP evidence",
+            "players": null,
+            "revision": 2,
+            "decision_id": "28bb5b5698e07f3b4d044f4c16b399bde3280c2c9f093a1ba46a87fb4f331625",
+            "designation": null,
+            "unit_number": 2
+          }
+        ],
+        "next_game": 2026020366
+      }
+    ]
+  },
+  "localDomCheck": {
+    "result": "passed",
+    "origin": "Four entering units, original author and time, no PP1 or PP2 report",
+    "following": "2026020366 selected, both PP slots empty, no carried designation"
+  },
+  "verdict": "Complete timestamped on-ice fives verified. No accepted in-game PP claim or following-game carry in FHFH. The read-time freeze ID and cutoff changed on refresh while the original four units and provenance remained identical."
+}

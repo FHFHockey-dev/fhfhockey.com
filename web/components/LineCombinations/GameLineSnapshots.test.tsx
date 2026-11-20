@@ -10,7 +10,11 @@ import type { GameLinesResponse, PPDecision } from "lib/lines/types";
 vi.mock("next/script", () => ({ default: () => null }));
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
-const expected = (data: GameLinesResponse) => { data.entryView = { mode: "expected", frozenAt: null, basis: null }; return data; };
+const expected = (data: GameLinesResponse) => {
+  data.entryView = { mode: "expected", frozenAt: null, basis: null };
+  for (const team of data.teams) if (team.entry) team.entry = { ...team.entry, status: "expected", cutoff: null, frozenState: null };
+  return data;
+};
 const entryPanel = (name = "TBL · Lineup entering the game") => screen.getByRole("region", { name });
 const updatesPanel = () => screen.getByRole("tabpanel", { name: /^In-game updates/ });
 function stubNarrow(matches: boolean) {
@@ -234,7 +238,7 @@ describe("game Lines presentation", () => {
     const other = { ...data.teams[0]!, teamId: 3, abbreviation: "NYR", entry: null, entryRevisions: [], observations: [], history: [], feed: [] };
     data.teams.push(other);
     render(<GameLineSnapshots data={data} />);
-    expect(within(entryPanel("NYR · Lineup entering the game")).queryByText("Mikheyev — Point — Kucherov")).toBeNull();
+    expect(within(entryPanel("NYR · Pregame reports")).queryByText("Mikheyev — Point — Kucherov")).toBeNull();
     expect(screen.getByRole("region", { name: "TBL updates and sources" })).not.toBe(screen.getByRole("region", { name: "NYR updates and sources" }));
   });
   it("labels carried PP origin for each unit", () => {

@@ -8,7 +8,7 @@ import styles from "./ProjectedLineups.module.scss";
 export { gameLabel } from "./reviewReasonCopy";
 
 export function mergeFrozenEntries(previous: GameLinesResponse | null, incoming: GameLinesResponse): GameLinesResponse {
-  if (!previous || previous.game?.id !== incoming.game?.id) return incoming;
+  if (!previous || previous.entryView?.basis === "read_time" || previous.game?.id !== incoming.game?.id) return incoming;
   return { ...incoming, teams: incoming.teams.map((team) => {
     const entry = previous.teams.find((candidate) => candidate.teamId === team.teamId)?.entry;
     if (!entry || entry.status === "expected" || entry.id === team.entry?.id) return team;
@@ -174,13 +174,15 @@ function PowerPlay({ team, games }: { team: GameTeamLines; games: LineGame[] }) 
 function Entry({ team, games, entryView }: { team: GameTeamLines; games: LineGame[]; entryView?: EntryView }) {
   const headingId = useId();
   const entry = team.entry;
-  const entering = entryView ? entryView.mode === "entering" : entry?.status === "frozen" || entry?.status === "corrected";
+  const entering = entry?.status === "frozen" || entry?.status === "corrected";
+  const missingFreeze = !entering && entryView != null && entryView.mode !== "expected";
   const esUnits = (entry?.units ?? []).filter((selection) => selection.unit.situation !== "pp");
   const fallback = !entry?.units.length ? team.fallback : null;
   const fallbackGame = fallback ? games.find((game) => game.id === fallback.gameId) : null;
   return <section className={styles.entry} aria-labelledby={headingId}>
-    <h2 id={headingId} className={styles.entryTitle}>{team.abbreviation} · {entering ? "Lineup entering the game" : "Expected game-entry lineup"}</h2>
-    {entering && entryView?.frozenAt && <p className={styles.muted}>Set at puck drop · <time dateTime={entryView.frozenAt}>{formatTime(entryView.frozenAt)}</time></p>}
+    <h2 id={headingId} className={styles.entryTitle}>{team.abbreviation} · {entering ? "Lineup entering the game" : missingFreeze ? "Pregame reports" : "Expected game-entry lineup"}</h2>
+    {missingFreeze && <p className={styles.muted}>The original game-entry lineup was not recorded.</p>}
+    {entering && entry.cutoff && <p className={styles.muted}>{entry.frozenState?.actualStart ? "Set at puck drop" : "Recorded live"} · <time dateTime={entry.cutoff}>{formatTime(entry.cutoff)}</time></p>}
     {entry?.status === "corrected" && <p className={styles.notice}>Lineup corrected · revision {entry.revision} · {revisionReasonCopy(entry.reason)}</p>}
     {!esUnits.length && !fallback && <p className={styles.muted}>No game-entry lineup has been reported yet.</p>}
     <EsGroups units={esUnits} games={games} />
@@ -193,7 +195,7 @@ function Entry({ team, games, entryView }: { team: GameTeamLines; games: LineGam
     {team.entryRevisions.length > 1 && <details className={styles.history}>
       <summary>Revision history ({team.entryRevisions.length})</summary>
       <ol className={styles.revisions}>{team.entryRevisions.map((revision: EntryRevision) => <li key={revision.id}>
-        <p className={styles.itemTitle}>Revision {revision.revision} · {revision.status === "frozen" ? "Set at puck drop" : revision.status === "corrected" ? "Corrected" : "Expected"}</p>
+        <p className={styles.itemTitle}>Revision {revision.revision} · {revision.status === "frozen" ? (revision.frozenState?.actualStart ? "Set at puck drop" : "Recorded live") : revision.status === "corrected" ? "Corrected" : "Expected"}</p>
         <p className={styles.muted}>{revisionReasonCopy(revision.reason)} · <time dateTime={revision.createdAt}>{formatTime(revision.createdAt)}</time></p>
         <ul className={styles.units}>{revision.units.map((selection, index) => <UnitRow key={`${selection.unit.situation}:${selection.unit.number}:${index}`} selection={selection} games={games} />)}</ul>
       </li>)}</ol>
@@ -237,12 +239,22 @@ function UpdateList({ team, games, selectedGameId }: { team: GameTeamLines; game
   for (const claim of claims) groups.set(claim.captureId, [...groups.get(claim.captureId) ?? [], claim]);
   const reports = [...groups.values()].sort((a, b) => captureTime(b) - captureTime(a) || a[0]!.id.localeCompare(b[0]!.id));
   const unresolved = reviewReasonsCopy(team.unresolved.flatMap((issue) => issue.reasons));
+  const official = team.officialPowerPlay;
   return <>
-    <p className={styles.muted}>In-game changes, newest first. They never change the game-entry lineup.</p>
+    <p className={styles.muted}>In-game observations and reports. The game-entry lineup is shown separately.</p>
     <button type="button" className={styles.historyButton} aria-pressed={history} onClick={() => setHistory(!history)}>
       {history ? "Show in-game updates only" : `Show all reports (${new Set(team.history.map((claim) => claim.captureId)).size})`}
     </button>
-    {!reports.length && <p className={styles.muted}>No {history ? "reports" : "in-game updates"} yet.</p>}
+    {official === null && <p className={styles.muted}>NHL on-ice observations are unavailable.</p>}
+    {!!official?.length && <ol className={styles.reportList} aria-label="NHL on-ice observations">
+      {official.map(event => <li key={event.eventId} className={styles.report}>
+        <p className={styles.itemTitle}>Observed power play · unit not specified.</p>
+        <p className={styles.players}>{event.players.map(player => player.name).join(" — ")}</p>
+        <p className={styles.muted}>Period {event.period} · {event.elapsed} elapsed</p>
+        <a className={styles.source} href={event.sourceUrl} target="_blank" rel="noreferrer">NHL play-by-play · event {event.reportEvent}</a>
+      </li>)}
+    </ol>}
+    {!reports.length && !official?.length && <p className={styles.muted}>No {history ? "reports" : "in-game updates"} yet.</p>}
     {!!reports.length && <ol className={styles.reportList} aria-label={`${team.abbreviation} ${history ? "all reports" : "in-game updates"}`}>
       {reports.map((group) => {
         const claim = group[0]!;
@@ -269,7 +281,7 @@ function Sidebar({ team, games, selectedGameId }: { team: GameTeamLines; games: 
   const [tab, setTab] = useState<TabKey>("updates");
   const [open, setOpen] = useState<Record<TabKey, boolean>>({ updates: false, feed: false });
   const tabRefs = useRef<Record<TabKey, HTMLButtonElement | null>>({ updates: null, feed: null });
-  const updateCount = new Set(team.observations.map((claim) => claim.captureId)).size;
+  const updateCount = new Set(team.observations.map((claim) => claim.captureId)).size + (team.officialPowerPlay?.length ?? 0);
   const feed = team.feed ?? [];
   const sections: Array<{ key: TabKey; label: string; body: ReactNode }> = [
     { key: "updates", label: `In-game updates (${updateCount})`, body: <UpdateList team={team} games={games} selectedGameId={selectedGameId} /> },
