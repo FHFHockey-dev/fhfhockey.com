@@ -1,0 +1,46 @@
+-- The duplicate-trigger proof for recut R' (2026-11-21): a copy of the pinned arm-replay-get-repeat.sql that takes the run date
+-- as a parameter. The SAME two GETs once more, armed only after both stages produced runs and receipts.
+-- Expected: native and context already_claimed, every sandbox count unchanged, receiptWritten false for both.
+-- psql variables: run_date, schedule_native, schedule_context, with the same rules as arm-replay-get-dated.sql (run_date is today
+-- UTC within 2026-11-20..2026-11-26; both schedules on run_date, native more than 1 minute away, context at least 2 minutes after
+-- native and no later than 23:50Z). Same dispatch as arm-replay-get-dated.sql.
+\set ON_ERROR_STOP on
+begin;
+set local lock_timeout = '2s';
+set local blsh_replay_arm.run_date = :'run_date';
+set local blsh_replay_arm.schedule_native = :'schedule_native';
+set local blsh_replay_arm.schedule_context = :'schedule_context';
+do $$
+declare
+  v_text text := current_setting('blsh_replay_arm.run_date');
+  v_day date; v_native timestamptz; v_context timestamptz; v_fire timestamptz; v_m text[]; v_which text;
+begin
+  -- Checked on its own first: PL/pgSQL plans the whole condition below, so a missing table would otherwise surface as
+  -- 'relation does not exist' instead of this refusal (the pinned original refuses the same way, with that message).
+  if to_regclass('blsh_replay.replay_get_requests') is null then raise exception 'replay_repeat_preflight_failed'; end if;
+  if (select count(*) from blsh_replay.replay_get_requests where job_name in ('blsh-replay-native-20261119', 'blsh-replay-context-20261119')) <> 2
+    or exists (select from blsh_replay.replay_get_requests where job_name like '%-repeat')
+    or exists (select from cron.job where jobname like 'blsh-replay-%-20261119%')
+    or not exists (select from blsh_replay.blsh_capture_runs) or not exists (select from blsh_replay.blsh_context_runs)
+    or (select count(*) from blsh_replay.receipts) <> 2
+    then raise exception 'replay_repeat_preflight_failed'; end if;
+  if v_text !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' then raise exception 'replay_get_run_date_invalid'; end if;
+  begin v_day := v_text::date; exception when others then raise exception 'replay_get_run_date_invalid'; end;
+  if v_day::text <> v_text or v_day <> (pg_catalog.now() at time zone 'UTC')::date
+    or v_day < date '2026-11-20' or v_day > date '2026-11-26' then raise exception 'replay_get_run_date_invalid'; end if;
+  foreach v_which in array array['native', 'context'] loop
+    v_m := pg_catalog.regexp_match(current_setting('blsh_replay_arm.schedule_' || v_which), '^([0-9]{1,2}) ([0-9]{1,2}) ([0-9]{1,2}) ([0-9]{1,2}) [*]$');
+    if v_m is null or v_m[1]::int > 59 or v_m[2]::int > 23 or v_m[3]::int <> extract(day from v_day)::int or v_m[4]::int <> extract(month from v_day)::int
+      then raise exception 'replay_get_schedule_invalid'; end if;
+    v_fire := (v_day + pg_catalog.make_time(v_m[2]::int, v_m[1]::int, 0)) at time zone 'UTC';
+    if v_which = 'native' then v_native := v_fire; else v_context := v_fire; end if;
+  end loop;
+  if v_native <= pg_catalog.now() + interval '1 minute' or v_context < v_native + interval '2 minutes'
+    or v_context > (v_day + time '23:50') at time zone 'UTC' then raise exception 'replay_get_schedule_invalid'; end if;
+end $$;
+select cron.schedule('blsh-replay-native-20261119-repeat', :'schedule_native',
+  $job$select blsh_replay.replay_get_fire('blsh-replay-native-20261119-repeat', '/api/v1/db/blsh-replay-native')$job$);
+select cron.schedule('blsh-replay-context-20261119-repeat', :'schedule_context',
+  $job$select blsh_replay.replay_get_fire('blsh-replay-context-20261119-repeat', '/api/v1/db/blsh-replay-context')$job$);
+commit;
+select jobid, jobname, schedule, active, command from cron.job where jobname like 'blsh-replay-%-20261119%' order by jobname;

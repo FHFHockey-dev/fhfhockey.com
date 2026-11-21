@@ -4,7 +4,7 @@ import { decodeReviewedEvidenceJSON } from "../../buyLowSellHigh/reviewedFiveGam
 import type { OfficialPilotStore, OfficialPilotTarget } from "./officialPilotStore";
 import { OFFICIAL_ORIGIN, OFFICIAL_SLOT, officialRuntime, officialSlot, outerRemaining, outerTime, pilotClock, pilotDigest, runOfficialPilot, type FixtureSocket, type PilotIntake } from "./officialPilotAcquisition";
 
-const SOURCE = "2026-11-20";
+const SOURCE = "2026-11-21";
 const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/, sha = /^[a-f0-9]{64}$/;
 function need(ok: unknown): asserts ok { if (!ok) throw new Error("official_approval_invalid"); }
 export const officialPilotApprovalBytes = (a: OfficialPilotTarget) => new TextEncoder().encode(JSON.stringify(["fhfh.blsh.official-pilot-approval.v1",

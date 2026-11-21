@@ -43,7 +43,7 @@ export function readHostedOfficialV6Export(directory, pins, profile, nativeRunBy
     && typeof h.gitCommitSha === "string" && /^[a-f0-9]{40}$/.test(h.gitCommitSha)
     && isHash(pins.acquisitionPinsSHA256) && isHash(pins.acquisitionManifestSHA256), "official_hosted_pins");
   const gameIds = profile.completedGameIds;
-  need(profile.status === "v6_packet_profile_checked_pending_independent_review" && pins.sourceDate === "2026-11-20"
+  need(profile.status === "v6_packet_profile_checked_pending_independent_review" && pins.sourceDate === "2026-11-21"
     && pins.sourceDate === profile.sourceDate && pins.runId === profile.runId && native.run_id === profile.runId && native.source_date === profile.sourceDate
     && h.deploymentId === profile.deploymentId && h.gitCommitSha === profile.gitCommitSha
     && native.manifest_sha256 === profile.manifestSHA256 && native.state === "packet_complete_pending_review"
@@ -64,7 +64,7 @@ export function readHostedOfficialV6Export(directory, pins, profile, nativeRunBy
     && run.deployment_id === h.deploymentId && run.git_commit_sha === h.gitCommitSha && run.schedule_sha256 === target.scheduleSHA256 && equal(run.game_ids, gameIds),
   "official_hosted_run_mismatch");
   const claimed = evidenceMicros(run.claimed_at), closed = evidenceMicros(run.closed_at);
-  const opens = evidenceMicros("2026-11-21T12:45:00Z"), expires = evidenceMicros("2026-11-21T12:46:00Z");
+  const opens = evidenceMicros("2026-11-22T12:45:00Z"), expires = evidenceMicros("2026-11-22T12:46:00Z");
   need(evidenceMicros(native.closed_at) <= claimed && opens <= claimed && claimed < expires && claimed <= closed
     && closed <= evidenceMicros(pins.evidenceAsOfUTC), "official_hosted_ledger_clock");
   const names = ["RUNTIME.json", ...gameIds.flatMap((g, i) => [`operation-${i + 1}-STARTED.json`, `boxscore-${g}.body.json`, `boxscore-${g}.receipt.json`]), "MANIFEST.json"];

@@ -163,14 +163,31 @@ function cronAuthorized(header: string | undefined) {
   return received.length === expected.length && timingSafeEqual(received, expected);
 }
 
-export default async function requestContextHandler(req: NextApiRequest, res: NextApiResponse) {
+/** The two values the route takes from its deployment. The default reads the live environment; the BLSH replay route
+ * (lib/blsh/replay) injects an in-memory test key and a store bound to its private sandbox schema. Every check below is
+ * the same for both, except that the replay also pins one logical date pair for the date gate (replayDateGate). */
+export interface RequestContextHandlerDeps {
+  approvalPublicKeyPem(): string | undefined;
+  createStore(serviceKey: string): Promise<RequestContextStore>;
+  /** Replay only; the live route has none. Constants, not a clock: when the signed source date equals sourceDate and
+   * logicalIngressDay is the day after it, the outside_approved_date gate compares against logicalIngressDay instead of the
+   * real ingress day. Nothing else reads it: authentication, the approval, the same-day and closure checks on the native
+   * run, the 12-hour deadline, the started-on-ingress-day check and every recorded timestamp stay on real time. */
+  replayDateGate?: Readonly<{ sourceDate: string; logicalIngressDay: string }>;
+}
+const LIVE_DEPS: RequestContextHandlerDeps = {
+  approvalPublicKeyPem: () => process.env.BLSH_REQUEST_CONTEXT_APPROVAL_PUBLIC_KEY,
+  createStore: async serviceKey => (await import("./requestContextStore")).createRequestContextStore({ serviceKey }),
+};
+export function createRequestContextHandler(deps: RequestContextHandlerDeps) {
+  return async function requestContextHandler(req: NextApiRequest, res: NextApiResponse) {
   const stopAt = performance.now() + WORK_MS;
   const timeFor = (milliseconds: number) => performance.now() + milliseconds <= stopAt;
   res.setHeader("Cache-Control", "no-store");
   if (!cronAuthorized(req.headers.authorization)) return res.status(403).json({ state: "refused", reason: "cron_bearer_required" });
   if (req.method !== "POST") { res.setHeader("Allow", "POST"); return res.status(405).json({ state: "refused", reason: "method_not_allowed" }); }
   if (Object.keys(req.query ?? {}).length) return res.status(400).json({ state: "refused", reason: "unexpected_parameters" });
-  const publicKey = process.env.BLSH_REQUEST_CONTEXT_APPROVAL_PUBLIC_KEY;
+  const publicKey = deps.approvalPublicKeyPem();
   if (!publicKey) return res.status(200).json({ state: "skipped", reason: "disabled" });
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (process.env.VERCEL_ENV !== "production" || process.env.NEXT_PUBLIC_SUPABASE_URL !== "https://" + NST_ADMISSION_PROJECT_HOST || !serviceKey) {
@@ -184,14 +201,18 @@ export default async function requestContextHandler(req: NextApiRequest, res: Ne
     return res.status(403).json({ state: "refused", reason: "approval_invalid" });
   }
   const ingress = Date.now(), day = iso(ingress).slice(0, 10), D = target.sourceDate;
-  if (day < PILOT_FENCE_FIRST_CAPTURE_DATE || day > SEASON_LAST_DATE || D < SEASON_FIRST_DATE || D !== iso(ingress - DAY_MS).slice(0, 10)) {
+  // The date gate alone may use the replay's pinned logical ingress day, and only for its own pinned source date.
+  const pinned = deps.replayDateGate;
+  const gateAt = pinned && D === pinned.sourceDate && pinned.logicalIngressDay === iso(Date.parse(D) + DAY_MS).slice(0, 10)
+    ? Date.parse(pinned.logicalIngressDay) : ingress;
+  const gateDay = iso(gateAt).slice(0, 10);
+  if (gateDay < PILOT_FENCE_FIRST_CAPTURE_DATE || gateDay > SEASON_LAST_DATE || D < SEASON_FIRST_DATE || D !== iso(gateAt - DAY_MS).slice(0, 10)) {
     return res.status(200).json({ state: "skipped", reason: "outside_approved_date" });
   }
   const dateFrom = iso(Date.parse(D) - 28 * DAY_MS).slice(0, 10);
   let store: RequestContextStore, observed: ReturnType<typeof nativeObservations>;
   try {
-    const { createRequestContextStore } = await import("./requestContextStore");
-    store = createRequestContextStore({ serviceKey });
+    store = await deps.createStore(serviceKey);
     if (!timeFor(SOURCE_MS)) return res.status(503).json({ state: "refused", reason: "context_budget_exhausted" });
     const source = await store.source(target);
     observed = nativeObservations(source, target, Date.now());
@@ -230,4 +251,6 @@ export default async function requestContextHandler(req: NextApiRequest, res: Ne
   try { await store.close(runId, COMPLETE, null, manifest.record.sha256, manifest.bytes); }
   catch { return res.status(503).json({ state: "uncertain", reason: "completion_close_unacknowledged", sourceDate: D, runId }); }
   return res.status(200).json({ state: COMPLETE, sourceDate: D, runId, manifestSHA256: manifest.record.sha256 });
+  };
 }
+export default createRequestContextHandler(LIVE_DEPS);

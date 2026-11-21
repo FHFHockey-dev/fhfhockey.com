@@ -6,7 +6,7 @@ import { join } from "node:path";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import route from "../../../pages/api/v1/db/blsh-request-context";
-import { requestContextApprovalBytes } from "./requestContextHandler";
+import { createRequestContextHandler, requestContextApprovalBytes } from "./requestContextHandler";
 import { prepareNativeProcessCapture } from "../../../scripts/blsh/nativeProcessCapturePreparation";
 import { buildRequestFromContextV1, type RequestContextResult } from "./requestContext";
 
@@ -24,15 +24,15 @@ const testKeys = generateKeyPairSync("ed25519");
 const publicPEM = testKeys.publicKey.export({ type: "spki", format: "pem" }).toString();
 let signed: { approval: Parameters<typeof requestContextApprovalBytes>[0]; signature: string } | undefined;
 type Edits = (group: string, obs: Record<string, unknown>) => void;
-function fixture(edit?: Edits) {
+function fixture(edit?: Edits, day = DATE) {
   const groups = ["individual", "onIce"] as const;
   const plan = prepareNativeProcessCapture({ seasonId: 20262027, date: D, plannedAtUTC: START, groups });
   const entries = Array.from({ length: 19 }, () => ({ file: "fixture", bytes: 10, sha256: "b".repeat(64) }));
-  const source = { claimedAtUTC: DATE + "T12:04:58.000003+00:00", closedAtUTC: DATE + "T12:06:01.000004+00:00",
+  const source = { claimedAtUTC: day + "T12:04:58.000003+00:00", closedAtUTC: day + "T12:06:01.000004+00:00",
     individual: Buffer.alloc(0), onIce: Buffer.alloc(0), manifest: Buffer.alloc(0) };
   for (const [index, group] of groups.entries()) {
     const file = group + ".parser-input.html", bytes = 10, sha256 = "b".repeat(64);
-    const retrievedAtUTC = DATE + (index ? "T12:05:45.003Z" : "T12:05:20.001Z");
+    const retrievedAtUTC = day + (index ? "T12:05:45.003Z" : "T12:05:20.001Z");
     const obs = { status: "candidate_requires_adapter_and_source_review", operation: "nst:" + group, file, sha256, bytes, retrievedAtUTC,
       retainedAtUTC: retrievedAtUTC, httpStatus: 200, finalUrl: plan.pages[index].url, redirected: false, TLSVerified: null, tlsEvidence: "pending_runtime_review",
       representation: "client_redacted_parser_input", deploymentBinding: { deploymentId: "dpl_native", gitCommitSha, routeBundleSHA256: "7".repeat(64) },
@@ -43,7 +43,7 @@ function fixture(edit?: Edits) {
     entries[index ? 17 : 11] = { file, sha256, bytes };
     entries[index ? 18 : 12] = { file: group + ".TRANSPORT-OBSERVATION.json", sha256: hash(observation), bytes: observation.length };
   }
-  source.manifest = json({ state: "packet_complete_pending_review", sourceDate: D, runId: nativeRunId, files: entries, completedAtUTC: DATE + "T12:06:00.981Z" });
+  source.manifest = json({ state: "packet_complete_pending_review", sourceDate: D, runId: nativeRunId, files: entries, completedAtUTC: day + "T12:06:00.981Z" });
   const target = { sourceDate: D, nativeRunId, nativeManifestSHA256: hash(source.manifest) };
   const approve = (override: Record<string, unknown> = {}) => {
     const approval = { ...target, deploymentId, gitCommitSha, ...override };
@@ -52,7 +52,7 @@ function fixture(edit?: Edits) {
   };
   approve();
   const store = { source: vi.fn(async () => source), claim: vi.fn(async () => ({ claimed: true, runId })),
-    readContext: vi.fn(async () => { vi.setSystemTime(END); return sample; }),
+    readContext: vi.fn(async () => { vi.setSystemTime(day + "T12:40:05.000Z"); return day === DATE ? sample : Buffer.from(sample.toString().replaceAll(DATE + "T", day + "T")); }),
     putObject: vi.fn(async (_id: string, _d: string, _i: number, _name: string, _b: Buffer, _sha: string) => {}),
     close: vi.fn(async () => {}) };
   factory.mockReturnValue(store);
@@ -251,5 +251,59 @@ describe("the one-date request/context POST", () => {
     expect(f.store.putObject).toHaveBeenCalledTimes(8); expect(f.store.close).toHaveBeenCalledTimes(1);
     f.store.readContext.mockRejectedValueOnce(new Error("private")); f.store.close.mockRejectedValueOnce(new Error("unknown"));
     expect((await call()).body).toMatchObject({ state: "uncertain", reason: "failure_close_unacknowledged" });
+  });
+});
+
+describe("the date gate on another real day (BLSH hosted replay seam)", () => {
+  const LATER = "2026-11-21", gate = { sourceDate: D, logicalIngressDay: DATE };
+  async function callWith(handler: ReturnType<typeof createRequestContextHandler>, params: Partial<NextApiRequest> = {}, grant: unknown = signed) {
+    const result = { statusCode: 0, body: {} as Record<string, unknown>, setHeader: vi.fn(), status(n: number) { this.statusCode = n; return this; },
+      json(value: Record<string, unknown>) { this.body = value; return this; } };
+    const request = Object.assign(Readable.from([json(grant ?? {})]), { method: "POST", query: {},
+      headers: { authorization: "Bearer fixture-secret", "content-type": "application/json" }, ...params });
+    await handler(request as unknown as NextApiRequest, result as unknown as NextApiResponse);
+    return result;
+  }
+  const replayHandler = (store: unknown, replayDateGate: typeof gate | null = gate) => createRequestContextHandler({
+    approvalPublicKeyPem: () => publicPEM, createStore: async () => store as never, ...(replayDateGate ? { replayDateGate } : {}) });
+
+  it("keeps the live route on the real ingress day: a valid Nov 19 grant on Nov 21 is outside_approved_date, with no I/O", async () => {
+    fixture(undefined, LATER); vi.setSystemTime(LATER + "T18:00:00.000Z");
+    expect((await call()).body).toEqual({ state: "skipped", reason: "outside_approved_date" });
+    expect(factory).not.toHaveBeenCalled();
+  });
+
+  it("lets only the pinned replay date pair pass the gate on a later real day; every other check stays on real time", async () => {
+    const f = fixture(undefined, LATER); vi.setSystemTime(LATER + "T12:40:00.000Z");
+    const result = await callWith(replayHandler(f.store));
+    expect(result.body).toMatchObject({ state: "packet_complete_pending_review", sourceDate: D, runId });
+    const resultFile = JSON.parse(f.store.putObject.mock.calls[6][4].toString());
+    expect(resultFile).toMatchObject({ asOfUTC: LATER + "T12:40:05.000Z", nativeRetrievedAtUTC: { individual: LATER + "T12:05:20.001Z", onIce: LATER + "T12:05:45.003Z" } });
+  });
+
+  it("refuses unauthorized, unapproved, mismatched and unpinned replay grants on a later real day", async () => {
+    const f = fixture(undefined, LATER); vi.setSystemTime(LATER + "T12:40:00.000Z");
+    const handler = replayHandler(f.store);
+    expect((await callWith(handler, { headers: { authorization: "Bearer other", "content-type": "application/json" } })).statusCode).toBe(403);
+    const other = generateKeyPairSync("ed25519");
+    expect((await callWith(handler, {}, { approval: signed!.approval, signature: sign(null, requestContextApprovalBytes(signed!.approval), other.privateKey).toString("base64") })).body.reason).toBe("approval_invalid");
+    expect((await callWith(handler, {}, { ...signed!, approval: { ...signed!.approval, nativeManifestSHA256: "0".repeat(64) } })).body.reason).toBe("approval_invalid");
+    f.approve({ deploymentId: "dpl_other" }); expect((await callWith(handler)).body.reason).toBe("approval_invalid");
+    f.approve({ sourceDate: "2026-11-18" }); expect((await callWith(handler)).body.reason).toBe("outside_approved_date");
+    f.approve({ sourceDate: LATER }); expect((await callWith(handler)).body.reason).toBe("outside_approved_date");
+    f.approve();
+    for (const pair of [{ sourceDate: D, logicalIngressDay: LATER }, { sourceDate: "2026-11-18", logicalIngressDay: "2026-11-19" }]) {
+      expect((await callWith(replayHandler(f.store, pair))).body.reason).toBe("outside_approved_date");
+    }
+    expect((await callWith(replayHandler(f.store, null))).body.reason).toBe("outside_approved_date");
+    expect(f.store.source).not.toHaveBeenCalled();
+  });
+
+  it("still requires the native run to be closed and claimed on the real ingress day", async () => {
+    const f = fixture(); vi.setSystemTime(LATER + "T12:40:00.000Z");
+    expect((await callWith(replayHandler(f.store))).body.reason).toBe("native_source_unverified");
+    vi.setSystemTime(START); const g = fixture(undefined, LATER); vi.setSystemTime(LATER + "T12:05:30.000Z");
+    expect((await callWith(replayHandler(g.store))).body.reason).toBe("native_source_unverified");
+    expect(f.store.claim).not.toHaveBeenCalled(); expect(g.store.claim).not.toHaveBeenCalled();
   });
 });

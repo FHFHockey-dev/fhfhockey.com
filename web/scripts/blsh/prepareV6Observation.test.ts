@@ -9,7 +9,9 @@ import { once } from "node:events";
 import { AddressInfo } from "node:net";
 import { dirname, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { capture, fixtureGames, sourceDate } from "./prepareV6ObservationCapture.testHelper";
+import { capture, fixtureGames, officialPilotDates } from "./prepareV6ObservationCapture.testHelper";
+
+const { sourceDate } = officialPilotDates;
 import { buildRequestFromContextV1, REQUEST_CONTEXT_CAPTURE, REQUEST_CONTEXT_COLUMNS } from "../../lib/blsh/nativeCaptureV6/requestContext";
 import { acquireOfficialLoopbackFixture, readAcquisitionPlan } from "./acquireV6Official.mjs";
 import { exportHostedOfficialFixture } from "../../lib/blsh/nativeCaptureV6/officialPilotHandler.testHelper";
@@ -18,7 +20,7 @@ import { prepareV6Observation } from "./prepareV6Observation";
 
 
 const root = mkdtempSync(join(tmpdir(), "blsh-v6-observation-test-")), exportDir = join(root, "export"), ledgerPins = join(root, "ledger-pins.json");
-const playerId = 900123, gameId = 2026020301, stamp = "2026-11-21T12:08:00.000Z", asOf = "2026-11-21T12:10:00.000Z";
+const playerId = 900123, gameId = 2026020301, stamp = "2026-11-22T12:08:00.000Z", asOf = "2026-11-22T12:10:00.000Z";
 const sha = (b: Buffer) => createHash("sha256").update(new Uint8Array(b)).digest("hex");
 const json = (obj: unknown) => Buffer.from(JSON.stringify(obj) + "\n");
 function write(path: string, bytes: Buffer) { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, new Uint8Array(bytes)); return sha(bytes); }
@@ -42,7 +44,7 @@ function lineup(base: number, selectedSkater?: number) {
     goalies: [row(30, "60:00"), row(31, "00:00")] };
 }
 beforeAll(async () => {
-  packet = await capture(html, fixtureGames);
+  packet = await capture(html, fixtureGames, officialPilotDates);
   for (const [key, value] of packet.bytes) write(join(exportDir, "objects", key), value);
   write(join(exportDir, "run.json"), json(packet.run));
   write(join(exportDir, "objects.json"), json(packet.objects));
@@ -144,11 +146,11 @@ function evidence(options: { badCell?: boolean; rawDate?: boolean; wrongFrame?: 
     position_code: "D", games_played: 1, toi_per_game: 1202, goals: 0, shots: 3 };
   const stored = { player_id: playerId, date_scraped: sourceDate, season: 20262027, gp: 1, toi: 1202 };
   const array = (feed: keyof typeof REQUEST_CONTEXT_COLUMNS, row: Record<string, unknown>) => REQUEST_CONTEXT_COLUMNS[feed].map(k => row[k] ?? null);
-  const latestNative = "2026-11-21T12:05:22.000000Z", dbSnapshot = "2026-11-21T07:09:59.000001-05:00";
-  const captured = options.afterTwelveHours ? "2026-11-22T00:05:00.000001Z" : options.edges ? "2026-11-21T12:05:23.000Z" : asOf;
-  const decision = options.afterTwelveHours || options.edges ? "2026-11-22T01:00:00Z" : asOf;
-  const context = { version: "fhfh.blsh.request-context.v1", seasonId: 20262027, dateFrom: options.wrongStart ? "2026-10-24" : "2026-10-23",
-    eventThroughDate: options.wrongCutoff ? "2026-11-21" : sourceDate, snapshotUTC: options.earlySnapshot ? "2026-11-21T12:05:21.999999Z" : options.edges ? latestNative : dbSnapshot,
+  const latestNative = "2026-11-22T12:05:22.000000Z", dbSnapshot = "2026-11-22T07:09:59.000001-05:00";
+  const captured = options.afterTwelveHours ? "2026-11-23T00:05:00.000001Z" : options.edges ? "2026-11-22T12:05:23.000Z" : asOf;
+  const decision = options.afterTwelveHours || options.edges ? "2026-11-23T01:00:00Z" : asOf;
+  const context = { version: "fhfh.blsh.request-context.v1", seasonId: 20262027, dateFrom: options.wrongStart ? "2026-10-25" : "2026-10-24",
+    eventThroughDate: options.wrongCutoff ? "2026-11-22" : sourceDate, snapshotUTC: options.earlySnapshot ? "2026-11-22T12:05:21.999999Z" : options.edges ? latestNative : dbSnapshot,
     statementUTC: options.edges ? latestNative : dbSnapshot, columnsSHA256: "c14231f0e62595eed0cb37175360cab33e4731e48a520f22f4bf494e0c127750", keySeal: { ids: [wgo.id], rows: 1 },
     rows: [[array("wgo", wgo), [array("individual", { ...stored, id: 81, goals: 0, shots: 3, ixg: options.badCell ? 1 : 0 })],
       [array("onIce", { ...stored, id: 82, xgf: 0.5, xga: 0 })], [array("calendar", { id: gameId, date: sourceDate, type: 2, seasonId: 20262027 })]]] };
@@ -165,7 +167,7 @@ function evidence(options: { badCell?: boolean; rawDate?: boolean; wrongFrame?: 
   const built = buildRequestFromContextV1(context, { capturedAtUTC: captured });
   if (options.rawDate) {
     const raw = JSON.parse(built.rawFiles["RAW-calendar.json"].toString());
-    raw.records[0].date = "2026-11-18";
+    raw.records[0].date = "2026-11-19";
     built.rawFiles["RAW-calendar.json"] = json(raw);
     (built.request.calendar as { capture: { sha256: string } }).capture.sha256 = sha(built.rawFiles["RAW-calendar.json"]);
   }
@@ -187,7 +189,7 @@ function evidence(options: { badCell?: boolean; rawDate?: boolean; wrongFrame?: 
   write(join(contextRoot, "objects.json"), json(rows));
   write(join(contextRoot, "run.json"), json({ run_id: contextRunId, native_run_id: identity.nativeRunId, source_date: sourceDate,
     native_manifest_sha256: identity.nativeManifestSHA256, state: "packet_complete_pending_review", reason: null,
-    manifest_sha256: contextManifestSHA256, claimed_at: options.edges ? latestNative : "2026-11-21T12:09:58.000Z", closed_at: captured }));
+    manifest_sha256: contextManifestSHA256, claimed_at: options.edges ? latestNative : "2026-11-22T12:09:58.000Z", closed_at: captured }));
   cpSync(archive, join(evidenceDir,"official"), { recursive: true });
   let manifestHash = acquisitionManifestSHA256;
   const frame = JSON.parse(readFileSync(frameFile,"utf8"));
@@ -312,7 +314,7 @@ describe("original, run-bound v6 official acquisition", () => {
       fixtureOnly = false; runtime.acquisitionClass = "direct_https"; delete runtime.fixtureCA;
       runtime.rootStoreSHA256 = pins.bundledCASHA256; runtime.outputDirectory = join(root,".fhfh-blsh-official-v6-" + sourceDate);
     }
-    if (change === "acquisition before close") runtime.startedAtUTC = "2026-11-21T12:05:21.999999Z";
+    if (change === "acquisition before close") runtime.startedAtUTC = "2026-11-22T12:05:21.999999Z";
     persist("ACQUISITION-RUNTIME.json",json(runtime)); persist(receiptName,json(receipt));
     const archiveHash = write(join(archiveCopy,"MANIFEST.json"),json(manifest));
     write(reviewFile,json({...JSON.parse(readFileSync(framePinPath,"utf8")),acquisitionPinsSHA256:inputHash,acquisitionManifestSHA256:archiveHash}));
@@ -335,7 +337,7 @@ describe("one-skater v6 held observation export", () => {
     const test = evidence();
     await expect(test.run()).resolves.toMatchObject({ acceptedWitnesses: 0, currentUseQualified: false, score: null });
     const result = JSON.parse(readFileSync(join(test.out, "HELD-OBSERVATION.json"), "utf8"));
-    expect(result.comparison.dbContext).toMatchObject({ snapshotUTC: "2026-11-21T07:09:59.000001-05:00", statementUTC: "2026-11-21T07:09:59.000001-05:00" });
+    expect(result.comparison.dbContext).toMatchObject({ snapshotUTC: "2026-11-22T07:09:59.000001-05:00", statementUTC: "2026-11-22T07:09:59.000001-05:00" });
     expect(result.comparison.cells.individual.fields).toMatchObject({ goals: { nativeValue: 0, rawText: "0" }, toi: { nativeValue: 1202 } });
     expect(result.comparison.cells.onIce.fields.xga.nativeValue).toBe(0);
     expect(result.contextRun).toMatchObject({ status: "request_context_readback_pending_review", independentlyAccepted: false });
@@ -365,9 +367,9 @@ describe("one-skater v6 held observation export", () => {
     const test = evidence({ edges: true });
     await test.run();
     const report = JSON.parse(readFileSync(join(test.out, "HELD-OBSERVATION.json"), "utf8"));
-    expect(report.comparison.dbContext).toMatchObject({ dateFrom: "2026-10-23", eventThroughDate: sourceDate,
-      snapshotUTC: "2026-11-21T12:05:22.000000Z", capturedAtUTC: "2026-11-21T12:05:23.000Z" });
-    expect(report.evidenceAsOfUTC).toBe("2026-11-22T01:00:00Z");
+    expect(report.comparison.dbContext).toMatchObject({ dateFrom: "2026-10-24", eventThroughDate: sourceDate,
+      snapshotUTC: "2026-11-22T12:05:22.000000Z", capturedAtUTC: "2026-11-22T12:05:23.000Z" });
+    expect(report.evidenceAsOfUTC).toBe("2026-11-23T01:00:00Z");
   });
   it("withholds a proposal when the context manifest exists on a failed run", async () => {
     const test = evidence(), file = join(test.evidenceDir, "context-ledger", "run.json");
@@ -449,7 +451,7 @@ describe("signed hosted official export through the actual frame and held reader
   ])("withholds %s before writing a proposal", async (kind, reason) => {
       const c = held(), run = { ...fixture.run }, rows = fixture.rows.map(row => ({ ...row }));
       if (kind === "uncertain") { run.state = "claimed"; run.closed_at = null; write(join(c.ledger, "run.json"), json(run)); }
-      if (kind === "expired") { c.pins.evidenceAsOfUTC = "2026-11-21T12:45:00Z"; write(c.pinsPath, json(c.pins)); }
+      if (kind === "expired") { c.pins.evidenceAsOfUTC = "2026-11-22T12:45:00Z"; write(c.pinsPath, json(c.pins)); }
       if (kind === "wrong key") {
         const { generateKeyPairSync } = await import("node:crypto");
         c.pins.hostedOfficial = { ...c.pins.hostedOfficial, approvalPublicKey: generateKeyPairSync("ed25519").publicKey.export({type: "spki",format: "pem"}).toString() };
@@ -499,9 +501,9 @@ describe("signed hosted official export through the actual frame and held reader
         write(c.pinsPath, json(c.pins));
       }
       if (kind === "late claim" || kind === "late closure") {
-        if (kind === "late claim") run.claimed_at = "2026-11-21T12:46:00Z";
-        else run.closed_at = "2026-11-21T12:48:00Z";
-        c.pins.evidenceAsOfUTC = "2026-11-21T13:00:00Z";
+        if (kind === "late claim") run.claimed_at = "2026-11-22T12:46:00Z";
+        else run.closed_at = "2026-11-22T12:48:00Z";
+        c.pins.evidenceAsOfUTC = "2026-11-22T13:00:00Z";
         write(join(c.ledger, "run.json"), json(run));
         write(c.pinsPath, json(c.pins));
       }
