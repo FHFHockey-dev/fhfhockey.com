@@ -1,11 +1,14 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from "vitest";
+/// <reference types="vite/client" />
+import { createHash } from "node:crypto";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fetchFxChain,
   fxSourcePlan,
   mirrorOrigin,
   profileStatusesPath,
   PUBLIC_FX_BASE,
+  type FxStatusEvidence,
 } from "../../../supabase/functions/_shared/fxSources";
 import { nextPageCursor, pageReachesNoStoredPost, recoverGap } from "../../../supabase/functions/_shared/fxGapRecovery";
 import {
@@ -33,6 +36,9 @@ import {
 import { buildLinesCccSourceFromIftttEvent } from "lib/sources/linesCccIngestion";
 import { tweetClaimAttribution } from "lib/sources/tweetSourceDirectory";
 
+const { createPollClient } = vi.hoisted(() => ({ createPollClient: vi.fn() }));
+vi.mock("npm:@supabase/supabase-js@2.89.0", () => ({ createClient: createPollClient }));
+
 const gdl = POLLED_ACCOUNTS.find((account) => account.sourceKey === "gamedaylines")!;
 const rosters = POLLED_ACCOUNTS.find((account) => account.sourceKey === "nhl_rosters")!;
 const fhfh = POLLED_ACCOUNTS.find((account) => account.sourceKey === "fhfhockey")!;
@@ -50,6 +56,7 @@ const page = (ids: string[], bottom: string | null = `cursor-after-${ids.at(-1)}
 const response = (status: number, body: unknown = {}) =>
   ({ ok: status >= 200 && status < 300, status, json: async () => body, body: { cancel: async () => {} } }) as unknown as Response;
 const noSleep = async () => {};
+const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 
 describe("fxSources: public FxTwitter, then the self-hosted mirror", () => {
   it("accepts only a plain https origin as the mirror", () => {
@@ -69,13 +76,19 @@ describe("fxSources: public FxTwitter, then the self-hosted mirror", () => {
 
   it("takes over on the first public miss and reports which source answered", async () => {
     const urls: string[] = [];
+    const body = `\ufeff {"status":${JSON.stringify(fxPost("1"))}}\n`;
+    const capture = new WeakMap<object, FxStatusEvidence>();
     const fetchImpl = vi.fn(async (url: string) => {
       urls.push(url);
-      return url.startsWith(PUBLIC_FX_BASE) ? response(404) : response(200, { results: [] });
+      return url.startsWith(PUBLIC_FX_BASE) ? response(404) : new Response(body);
     }) as unknown as typeof fetch;
-    const result = await fetchFxChain("/2/status/1", fxSourcePlan("https://fx.example.dev"), { fetchImpl, sleep: noSleep });
+    const result = await fetchFxChain("/2/status/1", fxSourcePlan("https://fx.example.dev"), { fetchImpl, sleep: noSleep, capture });
     expect(result).toMatchObject({ status: 200, attempts: 2, via: "mirror" });
     expect(urls).toEqual([`${PUBLIC_FX_BASE}/2/status/1`, "https://fx.example.dev/2/status/1"]);
+    const payloadJson = JSON.stringify(fxPost("1"));
+    expect(capture.get((result.body as { status: object }).status)).toEqual({
+      tweetId: "1", via: "mirror", responseSha256: sha256(body), payloadJson, payloadSha256: sha256(payloadJson),
+    });
   });
 
   it("hands back: every request starts with the public API, which wins when it answers", async () => {
@@ -424,8 +437,221 @@ function fakeDb(answers: Record<string, Array<{ data?: unknown; error?: unknown 
   return { db: { from }, calls };
 }
 
+describe("x-timeline-poll receipt capture", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  const pollerPath = "../../../supabase/functions/x-timeline-poll/index.ts";
+  const pollerModules = import.meta.glob("../../../supabase/functions/x-timeline-poll/index.ts");
+
+  async function bindPoller(db: unknown, captureSources: string | undefined, fetchImpl: typeof fetch) {
+    vi.resetModules();
+    createPollClient.mockReturnValue(db);
+    const serve = vi.fn<(handler: (req: Request) => Promise<Response>) => void>();
+    vi.stubGlobal("Deno", { env: { get: (key: string) => key === "LUNA_FXTWITTER_CAPTURE_SOURCE_KEYS" ? captureSources : undefined }, serve });
+    vi.stubGlobal("fetch", fetchImpl);
+    await pollerModules[pollerPath]();
+    return (secret?: string) => serve.mock.calls[0][0](new Request("https://poller.test", {
+      method: "POST", headers: secret ? { "x-fhfh-poll-secret": secret } : {},
+    }));
+  }
+
+  const captureRpc = "luna_store_fxtwitter_rows_v1";
+  const firstSeen = "2026-11-06T20:00:00Z";
+  const switched = "2026-11-06T19:00:00Z";
+  const scope = " nhl_rosters, ";
+  const wrapper = { ...fxPost("91"), text: "RT @BeatWriter: Truncated…" };
+  const original = { ...fxPost("89", "BeatWriter"), text: "Full status", reposted_by: { screen_name: "NHL_Rosters" } };
+  const firstPage = `\ufeff ${JSON.stringify({ ...page(["91", "90"]), results: [wrapper, fxPost("90")] }, null, 2)}\n`;
+  const olderPage = JSON.stringify({ ...page(["90", "89", "87", "88"]), results: [
+    { ...fxPost("90"), text: "Older page copy of 90" }, { ...original, text: "Older page copy of 89" }, fxPost("87"), fxPost("88"),
+  ] });
+  const hydratedStatus = ` {"status":${JSON.stringify(original)}}\n`;
+
+  function pollerFetch(redelivered = false) {
+    return vi.fn<typeof fetch>(async (input) => {
+      const url = new URL(String(input));
+      expect(url.origin).toBe(PUBLIC_FX_BASE);
+      if (url.pathname === "/2/status/91") return new Response(hydratedStatus);
+      if (url.pathname === "/2/profile/NHL_Rosters/statuses") {
+        if (url.searchParams.get("cursor") === "cursor-after-90") return new Response(olderPage);
+        if (!redelivered) return new Response(firstPage);
+        return Response.json({ ...page(["91", "90"]), results: [wrapper, { ...fxPost("90"), text: "Later copy of 90" }] });
+      }
+      if (url.pathname === "/2/profile/CcCMiddleton/statuses") return Response.json({ results: [fxPost("86", "CcCMiddleton")] });
+      return Response.json({ results: [] });
+    });
+  }
+
+  function pollerDb(loseCaptureAcknowledgement = false) {
+    const shadow = new Map<string, fx.ShadowPostRow>();
+    const receipts = new Map<string, FxStatusEvidence>();
+    const queue = new Map<string, Record<string, unknown>>();
+    const store = (rows: fx.ShadowPostRow[]) => rows.flatMap((row) => {
+      const key = `${row.source_key}:${row.tweet_id}`;
+      if (shadow.has(key)) return [];
+      shadow.set(key, row);
+      return [{ tweet_id: row.tweet_id }];
+    });
+    store(mapFxProfileFeed(rosters, page(["88"])));
+    const shadowUpsert = vi.fn(store);
+    const rpc = vi.fn(async (fn: string, args: { p_rows?: fx.ShadowPostRow[]; p_evidence?: FxStatusEvidence[] }) => {
+      if (fn === "x_timeline_poll_secret_matches") return { data: true, error: null };
+      expect(fn).toBe(captureRpc);
+      const data = store(args.p_rows!);
+      for (const { tweet_id } of data) {
+        const evidence = args.p_evidence!.find((item) => item.tweetId === tweet_id);
+        if (evidence) receipts.set(tweet_id, evidence);
+      }
+      if (loseCaptureAcknowledgement) throw new Error("Connection closed");
+      return { data, error: null };
+    });
+    const from = (table: string) => {
+      let sourceKey: string;
+      let ids: string[] | undefined;
+      let pending: any[] | undefined;
+      const chain = {
+        select: () => chain, limit: () => chain,
+        eq: (_name: string, key: string) => { sourceKey = key; return chain; },
+        in: (_name: string, keys: string[]) => { ids = keys; return chain; },
+        or: (clause: string) => { ids = clause.match(/^tweet_id\.in\.\(([^)]+)\)/)?.[1].split(","); return chain; },
+        upsert: (rows: any[]) => { pending = rows; return chain; },
+        then: (resolve: (value: unknown) => void) => {
+          if (table === "tweet_intake_providers") {
+            return resolve({ data: [{ source_key: rosters.sourceKey, provider: "fxtwitter", switched_at: switched }] });
+          }
+          if (table === "x_timeline_shadow_posts") {
+            if (pending) return resolve({ data: shadowUpsert(pending) });
+            const data = [...shadow.values()].filter((row) => row.source_key === sourceKey).flatMap((row) => {
+              const wrapper = row.raw_payload.repost_wrapper_id as string | undefined;
+              if (ids && !ids.includes(row.tweet_id) && !(wrapper && ids.includes(wrapper))) return [];
+              return [{ tweet_id: row.tweet_id, first_seen_at: firstSeen, wrapper }];
+            });
+            return resolve({ data });
+          }
+          expect(table).toBe("line_source_ifttt_events");
+          return resolve({ data: pending!.flatMap((row) => {
+            if (queue.has(row.tweet_id)) return [];
+            queue.set(row.tweet_id, row);
+            return [{ id: row.tweet_id }];
+          }) });
+        },
+      };
+      return chain;
+    };
+    return { rpc, from, receipts, shadow, queue, shadowUpsert };
+  }
+
+  async function pollRosters(poll: Awaited<ReturnType<typeof bindPoller>>) {
+    const result = await poll("authenticated");
+    expect(result.status).toBe(200);
+    const body = await result.json();
+    return body.results.find((row: { sourceKey: string }) => row.sourceKey === rosters.sourceKey);
+  }
+
+  it("requires poll-secret authentication before any source reads", async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    const rpc = vi.fn(async () => ({ data: false, error: null }));
+    const poll = await bindPoller({ rpc }, "nhl_rosters", fetchImpl);
+    expect((await poll()).status).toBe(401);
+    expect((await poll("bad")).status).toBe(401);
+    expect(rpc).toHaveBeenCalledExactlyOnceWith("x_timeline_poll_secret_matches", { p_secret: "bad" });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("binds receipt evidence to the selected response across profile, gap and hydration while preserving old intake", async () => {
+    const active = pollerDb();
+    const activeFetch = pollerFetch();
+    const activeResult = await pollRosters(await bindPoller(active, scope, activeFetch));
+    expect(activeResult).toMatchObject({ gap: "recovered", gapPages: 1, hydrated: 1, seen: 4, inserted: 3, enqueued: 3 });
+    const captures = active.rpc.mock.calls.filter(([name]) => name === captureRpc);
+    expect(captures).toHaveLength(1);
+    const evidenceFor = (tweetId: string, response: string, raw: object) => {
+      const payloadJson = JSON.stringify(raw);
+      return { tweetId, via: "public", responseSha256: sha256(response), payloadJson, payloadSha256: sha256(payloadJson) };
+    };
+    expect(captures[0][1].p_evidence).toEqual([
+      evidenceFor("89", hydratedStatus, original), evidenceFor("90", firstPage, fxPost("90")), evidenceFor("87", olderPage, fxPost("87")),
+    ]);
+    expect(captures[0][1].p_rows?.map((row) => row.tweet_id)).toEqual(["89", "90", "87"]);
+    expect(captures[0][1].p_rows?.[0].raw_payload).toEqual({ ...original, repost_wrapper_id: "91" });
+    expect(active.shadow.get("ccc:86")).toBeDefined();
+
+    const inactive = pollerDb();
+    const inactiveFetch = pollerFetch();
+    const inactiveResult = await pollRosters(await bindPoller(inactive, undefined, inactiveFetch));
+    expect(inactiveResult).toEqual(activeResult);
+    expect(inactiveFetch.mock.calls.map(([url]) => url)).toEqual(activeFetch.mock.calls.map(([url]) => url));
+    expect(inactive.shadow).toEqual(active.shadow);
+    expect(inactive.queue).toEqual(active.queue);
+    expect(inactive.rpc.mock.calls.map(([name]) => name)).toEqual(["x_timeline_poll_secret_matches"]);
+
+    const before = active.receipts.get("90");
+    const repeatFetch = pollerFetch(true);
+    const repeatResult = await pollRosters(await bindPoller(active, scope, repeatFetch));
+    expect(repeatResult).toMatchObject({ hydrated: 0, inserted: 0, enqueued: 0 });
+    expect(repeatFetch.mock.calls.some(([url]) => String(url).includes("/2/status/91"))).toBe(false);
+    expect(active.receipts.get("90")).toEqual(before);
+    const redelivery = active.rpc.mock.calls.filter(([name]) => name === captureRpc).at(-1);
+    expect(redelivery?.[1].p_evidence?.[0].tweetId).toBe("90");
+    expect(redelivery?.[1].p_evidence?.[0].payloadSha256).not.toBe(before!.payloadSha256);
+  });
+
+  it("continues intake and reports missing evidence without substituting another status", async () => {
+    const digest = crypto.subtle.digest.bind(crypto.subtle);
+    vi.spyOn(crypto.subtle, "digest").mockImplementation((algorithm, data) =>
+      new TextDecoder().decode(data) === JSON.stringify(original)
+        ? Promise.reject(new Error("Digest unavailable")) : digest(algorithm, data));
+    const db = pollerDb();
+    const result = await pollRosters(await bindPoller(db, scope, pollerFetch()));
+    expect(result).toMatchObject({ inserted: 3, enqueued: 3, captureError: "capture_evidence_missing" });
+    // The older gap page's different status with id 89 cannot substitute for the hydrated payload's missing hash.
+    expect([...db.receipts.keys()]).toEqual(["90", "87"]);
+    expect(db.shadow.get("nhl_rosters:89")?.raw_payload).toEqual({ ...original, repost_wrapper_id: "91" });
+  });
+
+  it("reports capture uncertainty and attempts normal intake after the RPC acknowledgement is lost", async () => {
+    const db = pollerDb(true);
+    const result = await pollRosters(await bindPoller(db, scope, pollerFetch()));
+    expect(result).toMatchObject({ inserted: 0, enqueued: 3, captureError: "capture_rpc_unacknowledged", captureFallback: true });
+    expect(db.rpc.mock.calls.filter(([name]) => name === captureRpc)).toHaveLength(1);
+    expect(db.shadowUpsert.mock.calls.find(([rows]) => rows[0].source_key === rosters.sourceKey)?.[0])
+      .toHaveLength(4);
+  });
+});
+
 describe("xTimelineStore: the poller's store-and-enqueue, shared with the ingest function", () => {
   const rows = mapFxProfileFeed(rosters, page(["9", "8"]));
+  const evidenceFor = (row: fx.ShadowPostRow) => ({ tweetId: row.tweet_id });
+
+  it.each([
+    { shape: "row objects", data: [{ tweet_id: "9" }] },
+    { shape: "scalar IDs", data: ["9"] },
+  ])("accepts RPC acknowledgements as $shape", async ({ data }) => {
+    const { db, calls } = fakeDb({});
+    const rpc = vi.fn(async () => ({ data, error: null }));
+    expect(await storeAndEnqueue({ ...db, rpc }, fx, rosters, rows, null, evidenceFor))
+      .toEqual({ ok: true, seen: 2, inserted: 1 });
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(calls).toEqual([]);
+  });
+
+  it.each([
+    { shape: "duplicate scalar IDs", data: ["9", "9"] },
+    { shape: "duplicate row IDs", data: [{ tweet_id: "8" }, { tweet_id: "8" }] },
+    { shape: "an unknown ID", data: ["7"] },
+    { shape: "a malformed row", data: [{ tweet_id: 9 }] },
+    { shape: "mixed return formats", data: ["8", { tweet_id: "9" }] },
+  ])("falls back when the RPC acknowledges $shape", async ({ data }) => {
+    const { db, calls } = fakeDb({ x_timeline_shadow_posts: [{ data: [{ tweet_id: "8" }] }] });
+    const rpc = vi.fn(async () => ({ data, error: null }));
+    expect(await storeAndEnqueue({ ...db, rpc }, fx, rosters, rows, null, evidenceFor)).toEqual({
+      ok: true, seen: 2, inserted: 1, captureError: "capture_rpc_unacknowledged", captureFallback: true,
+    });
+    expect(calls.filter((call) => call.op === "upsert")).toHaveLength(1);
+  });
 
   it("stores only, for an account that is not switched", async () => {
     const { db, calls } = fakeDb({ x_timeline_shadow_posts: [{ data: [{ tweet_id: "9" }] }] });

@@ -15,10 +15,105 @@ import { createLunaEvaluationBatch } from "../fixtures/tweetLunaEvaluation";
 import { mapTweetDecisionReview } from "../tweetDecisionReviewMapping";
 import { prepareTweetReviewPacket } from "../tweetReviewSidecar";
 import { prepareCaptureEnvelope, createIsolatedLunaCaptureHandler } from "./capture";
-import { makeArchiveReviewReceipt, reviewReceiptLineage, type ArchiveRecord, type ArchiveSourceReview } from "./archiveReceipt";
+import { makeArchiveReviewReceipt, makeFxReviewReceipt, reviewReceiptLineage, type ArchiveRecord, type ArchiveSourceReview } from "./archiveReceipt";
+import type { FxTwitterSeal } from "./fxTwitterReceipt";
+import { bindWorkerRuntimeStore, readCaptureRuntimeConfig, readWorkerRuntimeConfig } from "./runtimeConfig";
+import type { HostedLunaStore } from "./store";
 import { prepareArchivedLunaDraft } from "./archiveBridge";
 import { validateHostedLunaJob } from "./contract";
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
+
+function fxFixture() {
+  const f = fixture();
+  const review = { ...f.sourceReview, reviewedAt: "2026-10-16T15:03:00Z" };
+  const context = { ...f.context, preparedAt: review.reviewedAt };
+  const status = { id: review.postId, url: review.url, text: f.archive.envelope.submitted.text,
+    author: { screen_name: review.author }, created_timestamp: Date.parse(review.publishedAt) / 1000,
+    reposted_by: { screen_name: "GameDayGoalies" }, media: { all: [{ alt_text: "fixture only" }] } };
+  const payloadJson = JSON.stringify(status);
+  const original: FxTwitterSeal = { id: review.receiptId, policyId: f.archive.receipt.policyId,
+    sourceKey: "gamedaygoalies", sourceAccount: "GameDayGoalies", shadowId: "00000000-0000-4000-8000-000000000040",
+    postId: status.id, firstSeenAt: "2026-10-16T15:01:02Z", publishedAt: review.publishedAt,
+    expiresAt: "2026-10-22T15:00:00Z", responseSha256: sha("synthetic original profile response"),
+    payloadSha256: sha(payloadJson), payloadJson, via: "public", classification: "baseline" };
+  const quoteJson = JSON.stringify({ id: "910004", url: "https://x.com/DFOFantasy/status/910004",
+    author: { screen_name: "DFOFantasy" }, text: "Reporter update", created_timestamp: status.created_timestamp + 30,
+    quote: { ...status, reposted_by: null } });
+  const outer: FxTwitterSeal = { ...original, id: "00000000-0000-4000-8000-000000000041",
+    shadowId: "00000000-0000-4000-8000-000000000042", sourceKey: "dfofantasy", sourceAccount: "DFOFantasy",
+    postId: "910004", publishedAt: "2026-10-16T15:00:30Z", firstSeenAt: "2026-10-16T15:01:00Z",
+    responseSha256: sha("synthetic quote profile response"), payloadJson: quoteJson, payloadSha256: sha(quoteJson) };
+  review.payloadSha256 = original.payloadSha256;
+  return { original, outer, review, context };
+}
+
+describe("FxTwitter receipts from owner-loaded captures", () => {
+  it("binds an independently retained original to the quote and the configured worker job", async () => {
+    const { original, outer, review, context } = fxFixture();
+    const prepared = prepareArchivedLunaDraft({ provider: "fxtwitter", enabled: true,
+      archive: outer, originalArchive: original, sourceReview: review, context });
+    expect(prepared.status).toBe("prepared_for_owner_review");
+    const job = prepared.draft!.envelope;
+    const input = validateHostedLunaJob(job, context.jobId);
+    expect(input.packet.source).toMatchObject({ originalPostId: original.postId, text: JSON.parse(original.payloadJson).text,
+      author: review.author, publishedAt: original.publishedAt, ingestedAt: original.firstSeenAt,
+      retainedSourceId: `luna_fxtwitter.receipts:${outer.id}` });
+    const { id, inputHash, receiptHash, referenceHash, provenanceRef } = job;
+    const scope = { provider: "fxtwitter", policyId: outer.policyId, sourceKey: outer.sourceKey,
+      sourceAccount: outer.sourceAccount, originalSourceKey: original.sourceKey, originalAuthor: review.author };
+    const config = { version: "luna-pilot-runtime-v1", startsAt: review.reviewedAt, expiresAt: "2026-10-16T16:00:00Z",
+      scope, job: { id, inputHash, receiptHash, referenceHash, provenanceRef } };
+    const now = () => Date.parse("2026-10-16T15:04:00Z");
+    const env = { IFTTT_LUNA_REVIEW_ENABLED: "true", IFTTT_LUNA_REVIEW_CONFIG: JSON.stringify(config) };
+    const policy = readWorkerRuntimeConfig(env, now())!;
+    expect(policy).toBeTruthy();
+    for (const startsAt of ["2026-10-16T15:04:00.000001Z", "2026-10-16T15:03:00.0000001Z"]) {
+      expect(readWorkerRuntimeConfig({ ...env, IFTTT_LUNA_REVIEW_CONFIG: JSON.stringify({ ...config, startsAt }) }, now())).toBeNull();
+    }
+    expect(readCaptureRuntimeConfig(env, now())).toBeNull();
+    const store: HostedLunaStore = { claim: vi.fn(async () => ({ status: "claimed" as const, job })),
+      admission: vi.fn(), finish: vi.fn(), hold: vi.fn(async () => undefined) };
+    await expect(bindWorkerRuntimeStore(store, policy, now).claim(id)).resolves.toMatchObject({ status: "claimed" });
+    await expect(bindWorkerRuntimeStore(store, { ...policy, scope: { ...scope, provider: "fxtwitter", originalAuthor: "Different" } }, now)
+      .claim(id)).rejects.toThrow("runtime_job_held");
+    await expect(bindWorkerRuntimeStore(store, policy, () => Date.parse(config.expiresAt)).claim(id)).rejects.toThrow("runtime_job_held");
+    expect(store.hold).toHaveBeenCalledTimes(2);
+    expect(store.admission).not.toHaveBeenCalled();
+  });
+
+  it("accepts the verified primary text under its own post ID and rejects a relay as the original", () => {
+    const { original, outer, review } = fxFixture();
+    const direct = makeFxReviewReceipt(original, null, review);
+    expect(direct.inputRow.raw_payload).toEqual(JSON.parse(original.payloadJson));
+    expect(reviewReceiptLineage(direct).holds).toEqual([]);
+    expect(() => makeFxReviewReceipt(outer, null, review)).toThrow("independent_fx_quote_required");
+  });
+
+  it.each(["hash", "author", "id", "text", "clock", "unresolved_repost", "cross_policy", "variant", "expired",
+    "before_independent_capture", "replaced_projection"] as const)("holds a %s mismatch", change => {
+    const { original, outer, review } = fxFixture();
+    if (change === "hash") original.payloadSha256 = sha("different bytes");
+    if (change === "cross_policy") original.policyId = "00000000-0000-4000-8000-000000000099";
+    if (change === "variant") original.classification = "variant";
+    if (change === "expired") review.reviewedAt = original.expiresAt;
+    if (change === "before_independent_capture") review.reviewedAt = outer.firstSeenAt;
+    if (["author", "id", "text", "clock", "unresolved_repost"].includes(change)) {
+      const payload = JSON.parse(outer.payloadJson);
+      if (change === "author") payload.quote.author.screen_name = "OtherReporter";
+      if (change === "id") payload.quote.id = "910009";
+      if (change === "text") payload.quote.text += " corrected";
+      if (change === "clock") payload.quote.created_timestamp -= 1;
+      if (change === "unresolved_repost") payload.text = "RT @Someone: truncated";
+      outer.payloadJson = JSON.stringify(payload);
+      outer.payloadSha256 = sha(outer.payloadJson);
+    }
+    expect(() => {
+      const receipt = makeFxReviewReceipt(outer, original, review);
+      if (change === "replaced_projection") receipt.inputRow.text = "another report";
+      reviewReceiptLineage(receipt);
+    }).toThrow();
+  });
+});
 function fixture() {
   const input = structuredClone(createLunaEvaluationBatch().content.entries[3]!.input), s = input.packet.source;
   const envelope = prepareCaptureEnvelope(Buffer.from(JSON.stringify({ Text: s.text, UserName: s.author,

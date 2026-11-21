@@ -14,7 +14,7 @@ import {
   mapFxWrappedRepost,
   POLLED_ACCOUNTS,
 } from "./fxtwitter.ts";
-import { fetchFxChain, fxSourcePlan, profileStatusesPath, statusPath } from "../_shared/fxSources.ts";
+import { fetchFxChain, fxSourcePlan, profileStatusesPath, statusPath, type FxStatusEvidence } from "../_shared/fxSources.ts";
 import { recoverGap } from "../_shared/fxGapRecovery.ts";
 import { storeAndEnqueue } from "../_shared/xTimelineStore.ts";
 import { matchPostedCard } from "../_shared/socialShareCard.ts";
@@ -35,6 +35,8 @@ Deno.serve(async (req) => {
   if (auth.data !== true) return unauthorized();
   const deadline = Date.now() + RUN_BUDGET_MS;
   const plan = fxSourcePlan(Deno.env.get("FXTWITTER_MIRROR_BASE"));
+  const captureSources = new Set((Deno.env.get("LUNA_FXTWITTER_CAPTURE_SOURCE_KEYS") ?? "")
+    .split(",").map((key) => key.trim()).filter(Boolean));
   // Cutover switch (migration tweet_intake_providers): accounts set to 'fxtwitter' also get pending rows in their live
   // queue. Unreadable or missing (before the migration is applied) means every account stays on IFTTT: shadow only.
   const providers = await db.from("tweet_intake_providers").select("source_key, provider, switched_at");
@@ -45,7 +47,9 @@ Deno.serve(async (req) => {
   const results = [];
   let gapPagesLeft = GAP_PAGES_PER_RUN;
   for (const account of POLLED_ACCOUNTS) {
-    const feed = await fetchFxChain(profileStatusesPath(account.handle), plan, { deadline });
+    const capture = captureSources.has(account.sourceKey) ? new WeakMap<object, FxStatusEvidence>() : undefined;
+    const fetchOptions = { deadline, capture };
+    const feed = await fetchFxChain(profileStatusesPath(account.handle), plan, fetchOptions);
     if (!feed.body) {
       results.push({ sourceKey: account.sourceKey, ok: false, status: feed.status, attempts: feed.attempts });
       continue;
@@ -56,13 +60,14 @@ Deno.serve(async (req) => {
       mapPage: (body) => mapFxProfileFeed(account, body),
       lookupStored: (ids) => lookupStored(db, account.sourceKey, ids),
       fetchPage: async (cursor) =>
-        (await fetchFxChain(profileStatusesPath(account.handle, cursor), plan, { deadline })).body,
+        (await fetchFxChain(profileStatusesPath(account.handle, cursor), plan, fetchOptions)).body,
       // Past half the run budget, stop paging (the gap is abandoned, page 1 still stored): later accounts get their reads.
       pageBudget: Date.now() > deadline - RUN_BUDGET_MS / 2 ? 0 : gapPagesLeft,
     });
     gapPagesLeft = Math.max(0, gapPagesLeft - gap.extraPages);
     let rows = gap.rows;
     let hydrated = 0;
+    const hydratedEvidence = capture ? new WeakMap<fx.ShadowPostRow, FxStatusEvidence>() : undefined;
     const wrapperIds = rows.filter((row) => isRepostWrapper(account, row)).map((row) => row.tweet_id);
     if (wrapperIds.length) {
       // A wrapper repost stays on the page for hours: look up its original once, when it is new. Ids are digits only.
@@ -75,15 +80,24 @@ Deno.serve(async (req) => {
         if (!isRepostWrapper(account, row)) next.push(row);
         else if (known.error || !stored.has(row.tweet_id)) {
           // On a failed lookup, store the wrapper as it is: truncated, but with the nested handle.
-          const status = known.error ? null : await fetchFxChain(statusPath(row.tweet_id), plan, { deadline });
+          const status = known.error ? null : await fetchFxChain(statusPath(row.tweet_id), plan, fetchOptions);
           const original = status?.body ? mapFxWrappedRepost(account, row, status.body) : null;
-          if (original) hydrated++;
+          if (original) {
+            hydrated++;
+            // Hydration copies the raw status to add the wrapper id. Use the unchanged provider object as evidence.
+            if (capture) {
+              const evidence = capture.get((status?.body as { status: object }).status);
+              if (evidence) hydratedEvidence?.set(original, evidence);
+            }
+          }
           next.push(original ?? row);
         }
       }
       rows = next;
     }
-    const stored = await storeAndEnqueue(db, fx, account, rows, switchedAt.get(account.sourceKey));
+    const stored = await storeAndEnqueue(db, fx, account, rows, switchedAt.get(account.sourceKey), capture
+      ? (row) => hydratedEvidence?.get(row) ?? capture.get(row.raw_payload)
+      : undefined);
     // FHFHockey switched to the scraper: its own media posts go to social_share_x_posts, as IFTTT's "New photo or video
     // by you" did. tweet_id is the key and the first write wins, so posts IFTTT already stored keep their rows.
     const social = stored.ok && switchedAt.has(account.sourceKey)

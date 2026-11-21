@@ -4,6 +4,7 @@ import { z } from "zod";
 import { isNewsRelayAccount } from "lib/newsFeed";
 import { timestampMicros } from "lib/projections/evidenceTime";
 import { prepareCaptureEnvelope, validateCaptureResult, type CaptureEnvelope, type CaptureReceipt } from "./capture";
+import { bindFxTwitterOriginal, type FxTwitterSeal } from "./fxTwitterReceipt";
 
 export type ArchiveRecord = { receipt: CaptureReceipt; envelope: CaptureEnvelope };
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -58,9 +59,38 @@ export function makeArchiveReviewReceipt(record: ArchiveRecord, review: ArchiveS
       raw_payload: JSON.parse(e.rawBody), tweet_created_at: checked?.publishedAt ?? null } };
 }
 
+export function makeFxReviewReceipt(archive: FxTwitterSeal, originalArchive: FxTwitterSeal | null, sourceReview: ArchiveSourceReview) {
+  const selected = bindFxTwitterOriginal(archive, originalArchive);
+  const review = reviewSchema.parse(sourceReview);
+  const reviewedAt = timestampMicros(review.reviewedAt);
+  const report = selected.status;
+  if (!review.reviewerRef.trim() || !review.evidenceRef.trim() || !review.permissionRef.trim() ||
+      review.receiptId !== selected.seal.id || review.payloadSha256 !== selected.seal.payloadSha256 ||
+      review.textSha256 !== hash(report.text) || review.postId !== report.id || review.author.toLowerCase() !== report.author ||
+      review.url !== report.url || timestampMicros(review.publishedAt) !== timestampMicros(selected.seal.publishedAt) ||
+      reviewedAt === null || reviewedAt < timestampMicros(selected.receivedAt)! ||
+      reviewedAt >= timestampMicros(selected.expiresAt)!) throw new Error("unbound_fx_source_review");
+  return {
+    kind: "luna-fxtwitter-review-receipt-v1" as const, eventTable: "luna_fxtwitter.receipts" as const,
+    id: archive.id, eventId: archive.id, archive: structuredClone(archive), originalArchive: structuredClone(originalArchive),
+    sourceReview: review, receivedAt: selected.receivedAt, inputRow: {
+      tweet_id: report.id, text: report.text, link_to_tweet: report.url, raw_payload: selected.payload,
+      tweet_created_at: selected.seal.publishedAt,
+    },
+  };
+}
+export type FxReviewReceipt = ReturnType<typeof makeFxReviewReceipt>;
+
 export function reviewReceiptLineage(value: unknown): { retainedSourceId: string; holds: string[] } {
   if (!value || typeof value !== "object") throw new Error("invalid_retained_receipt");
   const r = value as Record<string, unknown>;
+  if (r.eventTable === "luna_fxtwitter.receipts") {
+    if (r.kind !== "luna-fxtwitter-review-receipt-v1") throw new Error("invalid_archive_kind");
+    const rebuilt = makeFxReviewReceipt(r.archive as FxTwitterSeal, r.originalArchive as FxTwitterSeal | null,
+      r.sourceReview as ArchiveSourceReview);
+    if (!isDeepStrictEqual(rebuilt, r)) throw new Error("invalid_archive_projection");
+    return { retainedSourceId: `luna_fxtwitter.receipts:${rebuilt.id}`, holds: [] };
+  }
   if (r.eventTable === "luna_capture.receipts") {
     if (r.kind !== "luna-isolated-review-receipt-v1") throw new Error("invalid_archive_kind");
     const rebuilt = makeArchiveReviewReceipt(r.archive as ArchiveRecord, r.sourceReview as ArchiveSourceReview | null);

@@ -9,12 +9,20 @@ const USER_AGENT = "fhfhockey-timeline-poller (+https://fhfhockey.com)";
 export type FxVia = "public" | "mirror";
 export type FxStep = { via: FxVia; base: string; attempts: number };
 export type FxChainResult = { status: number; attempts: number; body: unknown; via: FxVia | null };
+export type FxStatusEvidence = {
+  tweetId: string;
+  responseSha256: string;
+  payloadJson: string;
+  payloadSha256: string;
+  via: FxVia;
+};
 export type FxChainOptions = {
   delayMs?: number;
   timeoutMs?: number;
   deadline?: number;
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
+  capture?: WeakMap<object, FxStatusEvidence>;
 };
 
 /** The mirror's origin, or null unless it is a plain https origin (no credentials, path, query or fragment). */
@@ -54,7 +62,7 @@ export const statusPath = (tweetId: string) => `/2/status/${encodeURIComponent(t
  */
 export async function fetchFxChain(path: string, plan: FxStep[], options: FxChainOptions = {}): Promise<FxChainResult> {
   const {
-    delayMs = 1500, timeoutMs = 8000, deadline = Infinity, fetchImpl = fetch,
+    delayMs = 1500, timeoutMs = 8000, deadline = Infinity, fetchImpl = fetch, capture,
     sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
   } = options;
   let status = 0;
@@ -71,7 +79,14 @@ export async function fetchFxChain(path: string, plan: FxStep[], options: FxChai
           headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(timeoutMs),
         });
         status = response.status;
-        if (response.ok) return { status, attempts, body: await response.json(), via: step.via };
+        if (response.ok) {
+          if (!capture) return { status, attempts, body: await response.json(), via: step.via };
+          const bytes = await response.arrayBuffer();
+          const body: unknown = JSON.parse(new TextDecoder().decode(bytes));
+          // Evidence is optional for intake. A digest failure leaves the selected status unsealed.
+          await captureStatuses(capture, bytes, body, step.via).catch(() => {});
+          return { status, attempts, body, via: step.via };
+        }
         await response.body?.cancel();
       } catch {
         status = 0;
@@ -81,4 +96,24 @@ export async function fetchFxChain(path: string, plan: FxStep[], options: FxChai
     }
   }
   return { status, attempts, body: null, via: null };
+}
+
+/** Bind snapshots to objects from this exact parsed response, including when the same id appears on another page. */
+async function captureStatuses(capture: WeakMap<object, FxStatusEvidence>, bytes: ArrayBuffer, body: unknown, via: FxVia) {
+  const envelope = body as { results?: unknown; status?: unknown } | null;
+  const statuses: unknown[] = Array.isArray(envelope?.results) ? [envelope.status, ...envelope.results] : [envelope?.status];
+  const responseSha256 = await sha256(bytes);
+  await Promise.allSettled(statuses.map(async (raw) => {
+    if (typeof raw !== "object" || raw === null) return;
+    const { id } = raw as { id?: unknown };
+    if (typeof id !== "string" || !/^\d+$/.test(id)) return;
+    const payloadJson = JSON.stringify(raw);
+    const payloadSha256 = await sha256(new TextEncoder().encode(payloadJson));
+    capture.set(raw, { tweetId: id, responseSha256, payloadJson, payloadSha256, via });
+  }));
+}
+
+async function sha256(bytes: BufferSource): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
