@@ -165,10 +165,15 @@ function cronAuthorized(header: string | undefined) {
 
 /** The two values the route takes from its deployment. The default reads the live environment; the BLSH replay route
  * (lib/blsh/replay) injects an in-memory test key and a store bound to its private sandbox schema. Every check below is
- * the same for both. */
+ * the same for both, except that the replay also pins one logical date pair for the date gate (replayDateGate). */
 export interface RequestContextHandlerDeps {
   approvalPublicKeyPem(): string | undefined;
   createStore(serviceKey: string): Promise<RequestContextStore>;
+  /** Replay only; the live route has none. Constants, not a clock: when the signed source date equals sourceDate and
+   * logicalIngressDay is the day after it, the outside_approved_date gate compares against logicalIngressDay instead of the
+   * real ingress day. Nothing else reads it: authentication, the approval, the same-day and closure checks on the native
+   * run, the 12-hour deadline, the started-on-ingress-day check and every recorded timestamp stay on real time. */
+  replayDateGate?: Readonly<{ sourceDate: string; logicalIngressDay: string }>;
 }
 const LIVE_DEPS: RequestContextHandlerDeps = {
   approvalPublicKeyPem: () => process.env.BLSH_REQUEST_CONTEXT_APPROVAL_PUBLIC_KEY,
@@ -196,7 +201,12 @@ export function createRequestContextHandler(deps: RequestContextHandlerDeps) {
     return res.status(403).json({ state: "refused", reason: "approval_invalid" });
   }
   const ingress = Date.now(), day = iso(ingress).slice(0, 10), D = target.sourceDate;
-  if (day < PILOT_FENCE_FIRST_CAPTURE_DATE || day > SEASON_LAST_DATE || D < SEASON_FIRST_DATE || D !== iso(ingress - DAY_MS).slice(0, 10)) {
+  // The date gate alone may use the replay's pinned logical ingress day, and only for its own pinned source date.
+  const pinned = deps.replayDateGate;
+  const gateAt = pinned && D === pinned.sourceDate && pinned.logicalIngressDay === iso(Date.parse(D) + DAY_MS).slice(0, 10)
+    ? Date.parse(pinned.logicalIngressDay) : ingress;
+  const gateDay = iso(gateAt).slice(0, 10);
+  if (gateDay < PILOT_FENCE_FIRST_CAPTURE_DATE || gateDay > SEASON_LAST_DATE || D < SEASON_FIRST_DATE || D !== iso(gateAt - DAY_MS).slice(0, 10)) {
     return res.status(200).json({ state: "skipped", reason: "outside_approved_date" });
   }
   const dateFrom = iso(Date.parse(D) - 28 * DAY_MS).slice(0, 10);

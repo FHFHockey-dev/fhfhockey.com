@@ -11,6 +11,9 @@ import { PILOT_FENCE_FIRST_CAPTURE_DATE, SEASON_FIRST_DATE, SEASON_LAST_DATE } f
 
 export type RequestContextV6Pins = NativeContextTarget & {
   runId: string; manifestSHA256: string; deploymentId: string; gitCommitSha: string;
+  /** Hosted fixture replay only (lib/blsh/replay, or an operator reading a replay export): the real UTC day the replay ran,
+   * pinned from outside the export. Without it, as for every live packet, the capture day must be sourceDate + 1. */
+  replayCaptureDay?: string;
 };
 const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/, SHA = /^[0-9a-f]{64}$/;
 const COMPLETE = "packet_complete_pending_review", DAY_MS = 86400000;
@@ -44,12 +47,15 @@ function localFile(root: string, name: string, limit: number, expected?: number)
 }
 
 export function readRequestContextV6Export(contextExportDir: string, pins: RequestContextV6Pins) {
-  const { sourceDate, nativeRunId, nativeManifestSHA256, runId, manifestSHA256, deploymentId, gitCommitSha } = pins;
+  const { sourceDate, nativeRunId, nativeManifestSHA256, runId, manifestSHA256, deploymentId, gitCommitSha, replayCaptureDay } = pins;
   need(matches(sourceDate, /^\d{4}-\d\d-\d\d$/), "context_date_invalid");
   const sourceMs = Date.parse(sourceDate + "T00:00:00Z");
   need(Number.isFinite(sourceMs) && day(sourceMs) === sourceDate && sourceDate >= SEASON_FIRST_DATE, "context_date_invalid");
   const nextDay = day(sourceMs + DAY_MS), dateFrom = day(sourceMs - 28 * DAY_MS);
   need(nextDay >= PILOT_FENCE_FIRST_CAPTURE_DATE && nextDay <= SEASON_LAST_DATE, "context_date_invalid");
+  need(replayCaptureDay === undefined || (matches(replayCaptureDay, /^\d{4}-\d\d-\d\d$/) && day(Date.parse(replayCaptureDay + "T00:00:00Z")) === replayCaptureDay
+    && replayCaptureDay >= nextDay && replayCaptureDay <= SEASON_LAST_DATE), "context_date_invalid");
+  const captureDay = replayCaptureDay ?? nextDay;
   need(matches(runId, UUID) && matches(nativeRunId, UUID) && matches(nativeManifestSHA256, SHA) && matches(manifestSHA256, SHA)
     && matches(deploymentId, /^[A-Za-z0-9_-]{1,128}$/) && matches(gitCommitSha, /^[0-9a-f]{40}$/), "context_target_invalid");
   const root = realpathSync(contextExportDir);
@@ -97,7 +103,7 @@ export function readRequestContextV6Export(contextExportDir: string, pins: Reque
   // PostgreSQL serializes these two original clocks in the statement's session time zone.
   const snapshot = reviewedEvidenceTime(context.snapshotUTC), statement = reviewedEvidenceTime(context.statementUTC);
   const captured = timestamp(asOfUTC);
-  need(day(individual / 1000) === nextDay && day(claimed / 1000) === nextDay && individual <= onIce && onIce <= claimed
+  need(day(individual / 1000) === captureDay && day(claimed / 1000) === captureDay && individual <= onIce && onIce <= claimed
     && claimed <= snapshot && snapshot <= statement && statement <= captured && captured <= timestamp(sorted[0].written_at)
     && captured <= individual + 12 * 3600000000 && asOfUTC === new Date(captured / 1000).toISOString(), "context_clock_mismatch");
   const projected = buildRequestFromContextV1(context, { capturedAtUTC: asOfUTC });
@@ -116,5 +122,6 @@ export function readRequestContextV6Export(contextExportDir: string, pins: Reque
     dateFrom, eventThroughDate: sourceDate, snapshotUTC: context.snapshotUTC, statementUTC: context.statementUTC,
     status: "request_context_readback_pending_review" as const, state: COMPLETE, asOfUTC, claimedAtUTC, closedAtUTC, nativeRetrievedAtUTC,
     independentlyAccepted: false as const, advancedAdmission: false as const, score: null,
+    ...(replayCaptureDay === undefined ? {} : { replayCaptureDay }),
   } };
 }

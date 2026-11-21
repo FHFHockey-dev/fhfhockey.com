@@ -4,7 +4,9 @@
  * held ledger readers, inside one cron-authenticated request. Exactly four things are substituted:
  *   1. input transport: a fixture adapter serves the hash-pinned frozen bytes; it opens no connection. Every transport and
  *      admission record it produces says "replay-fixture", and its TLS facts are unauthorized placeholders;
- *   2. the gate clock: only the native handler's window gate sees 2026-11-20T12:05:03Z (the slate's v6 window); all else is real time;
+ *   2. the two date gates: only the native handler's window gate sees 2026-11-20T12:05:03Z (the slate's v6 window), and only the
+ *      request-context handler's outside_approved_date gate compares against the logical ingress day 2026-11-20 (constants, no
+ *      clock). Auth, deadlines, same-day checks, eligibility and every timestamp are real time, so the replay can run on any day;
  *   3. keys: the request-context approval is signed by an Ed25519 key generated in memory for this request only;
  *   4. storage: both stores reach the private sandbox (Data API schema blsh_replay_api) with the sandbox token. The service-role
  *      key is never read; the stores receive a placeholder string and the sandbox transports discard their auth headers.
@@ -29,6 +31,8 @@ import { createRequestContextStore, type ContextTransport } from "../nativeCaptu
 export const REPLAY_MARK = "replay-fixture";
 export const REPLAY_SOURCE_DATE = "2026-11-19";
 export const REPLAY_GATE_CLOCK_START = Date.parse("2026-11-20T12:05:03Z");
+/** The slate's logical ingress day (source date + 1): the request-context date gate's pinned comparison day on this path only. */
+export const REPLAY_LOGICAL_INGRESS_DAY = new Date(REPLAY_GATE_CLOCK_START).toISOString().slice(0, 10);
 export const REPLAY_API_SCHEMA = "blsh_replay_api";
 export const REPLAY_RECEIPT_KEYS = Object.freeze({ native: "hosted-replay-2026-11-19-native", context: "hosted-replay-2026-11-19-context" });
 /** fixtures/FIXTURES.json of refs/rc/blsh-v6-replay-20261120 (Drive envelope f2525c71...): the only bytes the adapter serves. */
@@ -192,7 +196,7 @@ function writeExport(dir: string, part: { run: Record<string, unknown>; objects:
 }
 
 async function heldReaders(exported: { native?: Parameters<typeof writeExport>[1]; context?: Parameters<typeof writeExport>[1] },
-  pins: { sourceDate: string; deploymentId: string; gitCommitSha: string; nativeManifestSHA256?: string }) {
+  pins: { sourceDate: string; deploymentId: string; gitCommitSha: string; nativeManifestSHA256?: string; replayCaptureDay: string }) {
   const root = mkdtempSync(join(tmpdir(), "blsh-replay-"));
   const out: Record<string, unknown> = {};
   try {
@@ -204,7 +208,8 @@ async function heldReaders(exported: { native?: Parameters<typeof writeExport>[1
     if (exported.context) {
       writeExport(join(root, "context"), exported.context);
       const contextPins = { sourceDate: pins.sourceDate, nativeRunId: String(exported.native.run.run_id), nativeManifestSHA256: String(pins.nativeManifestSHA256),
-        runId: String(exported.context.run.run_id), manifestSHA256: String(exported.context.run.manifest_sha256), deploymentId: pins.deploymentId, gitCommitSha: pins.gitCommitSha };
+        runId: String(exported.context.run.run_id), manifestSHA256: String(exported.context.run.manifest_sha256), deploymentId: pins.deploymentId, gitCommitSha: pins.gitCommitSha,
+        replayCaptureDay: pins.replayCaptureDay };
       try { out.context = { ok: true, receipt: readRequestContextV6Export(join(root, "context"), contextPins).receipt }; }
       catch (error) { out.context = { ok: false, error: (error as Error).message?.slice(0, 200) }; }
     }
@@ -303,20 +308,27 @@ export async function runReplayContext(ctx: ReplayContext) {
     const contextHandler = createRequestContextHandler({
       approvalPublicKeyPem: () => publicKey.export({ type: "spki", format: "pem" }).toString().trim(),
       createStore: async () => createRequestContextStore({ serviceKey: NO_SERVICE_KEY, transport: sandboxContextTransport(ctx.api) }),
+      replayDateGate: { sourceDate: REPLAY_SOURCE_DATE, logicalIngressDay: REPLAY_LOGICAL_INGRESS_DAY },
     });
     const tamperedGrant = await invokeHandler(contextHandler, rawJsonRequest(ctx.cronAuthorization, tampered));
+    // Refused before any I/O: a grant from a key this route does not hold, and a correctly signed grant for another date.
+    const otherKey = generateKeyPairSync("ed25519").privateKey;
+    const unapprovedGrant = await invokeHandler(contextHandler, rawJsonRequest(ctx.cronAuthorization,
+      Buffer.from(JSON.stringify({ approval, signature: sign(null, requestContextApprovalBytes(approval), otherKey).toString("base64") }))));
+    const mismatchedDateGrant = await invokeHandler(contextHandler, rawJsonRequest(ctx.cronAuthorization, grant({ ...approval, sourceDate: "2026-11-18" })));
     // The live route with this test-key grant: no live key (skipped) or a different live key (approval_invalid); never I/O.
     const liveRouteWithTestGrant = await invokeHandler(liveRequestContextHandler, rawJsonRequest(ctx.cronAuthorization, grant(approval)));
     const valid = await invokeHandler(contextHandler, rawJsonRequest(ctx.cronAuthorization, grant(approval)));
     mark("context");
     const after = await exportSandbox(ctx.api);
     const readers = await heldReaders({ native: after.native ?? undefined, context: after.context ?? undefined },
-      { sourceDate: REPLAY_SOURCE_DATE, deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha, nativeManifestSHA256: after.native?.run.manifest_sha256 ?? undefined });
+      { sourceDate: REPLAY_SOURCE_DATE, deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha, nativeManifestSHA256: after.native?.run.manifest_sha256 ?? undefined,
+        replayCaptureDay: new Date(ctx.enteredAt).toISOString().slice(0, 10) });
     mark("readers");
-    return { context: { tamperedGrant, liveRouteWithTestGrant, grant: valid }, readers, summary: summarize(after) };
+    return { context: { tamperedGrant, unapprovedGrant, mismatchedDateGrant, liveRouteWithTestGrant, grant: valid }, readers, summary: summarize(after) };
   });
   const receipt = { version: "fhfh.blsh.hosted-replay-receipt.v1", stage: "context", label: REPLAY_MARK, sourceDate: REPLAY_SOURCE_DATE,
-    deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha, ...result, timings, ...outboundSummary(outbound) };
+    deploymentId: ctx.deploymentId, gitCommitSha: ctx.gitCommitSha, logicalIngressDay: REPLAY_LOGICAL_INGRESS_DAY, ...result, timings, ...outboundSummary(outbound) };
   const receiptWritten = await storeReceipt(ctx, REPLAY_RECEIPT_KEYS.context, receipt, result.summary.context !== null);
   timings.total = Date.now() - ctx.enteredAt;
   return { ...receipt, receiptWritten };

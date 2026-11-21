@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createReplayFixtureAdapterV6, NO_SERVICE_KEY, REPLAY_MARK, sandboxContextTransport, sandboxWriterTransport } from "./hostedReplay";
+import { createReplayFixtureAdapterV6, NO_SERVICE_KEY, REPLAY_LOGICAL_INGRESS_DAY, REPLAY_MARK, REPLAY_SOURCE_DATE, sandboxContextTransport, sandboxWriterTransport } from "./hostedReplay";
 
 const api = { url: "https://fyhftlxokyjtpndbkfse.supabase.co", anonKey: "anon-key", token: "sandbox-token" };
 const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
@@ -81,5 +81,13 @@ describe("BLSH replay fixture adapter", () => {
       expect(String(tls.authorizationError)).toContain(REPLAY_MARK);
     }
     expect(values[1]).toMatchObject({ kind: "admission", source: REPLAY_MARK });
+  });
+});
+
+describe("BLSH replay date pins", () => {
+  it("pins the context date gate to the slate's logical ingress day, the day after the source date", () => {
+    expect(REPLAY_SOURCE_DATE).toBe("2026-11-19");
+    expect(REPLAY_LOGICAL_INGRESS_DAY).toBe("2026-11-20");
+    expect(Date.parse(REPLAY_LOGICAL_INGRESS_DAY) - Date.parse(REPLAY_SOURCE_DATE)).toBe(86_400_000);
   });
 });
