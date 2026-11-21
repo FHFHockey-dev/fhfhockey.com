@@ -1,5 +1,5 @@
 import { concurrentPages, loadPlanningInputs, pages, withinDeadline, PlanningPageReadError, PlanningReadDeadlineError, type PlanningDataQuery } from "./planningInputs";
-import { admitConsumerGameRevisions } from "lib/projections/consumerRevisionAdmission";
+import { admitConsumerGameRevisions, RSO_ASSUMED_PARTICIPATION_POLICY } from "lib/projections/consumerRevisionAdmission";
 import { currentRsoUsePolicy, issuedParticipationLineage, restrictRsoForecast, type RsoUsePolicyManifest } from "lib/player-forecasts/rsoUsePolicy";
 import { loadForgeDailyBridgeForecasts, type ForgeBridgeCapture } from "./forgeDailyBridge";
 import type { BridgeRunProof } from "./bridgeForecastWire";
@@ -205,7 +205,9 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
     for (const id of scheduledGameIds) recordGameExclusion(id, "serving_disabled");
   }
   const { forecasts: admitted, admittedSources, acceptedNewsRevision, limitations: admissionProblems } = await admitConsumerGameRevisions(
-    db, revisions, players, games, now, query.seasonId, exclusionCounts, exclusionRows, deadline, calendarPolicy);
+    db, revisions, players, games, now, query.seasonId, exclusionCounts, exclusionRows, deadline, calendarPolicy,
+    // TJ's participation policy (2026-11-21) applies to Detailed RSO only; other consumers keep decisions 3/47.
+    options.consumer === "rso" ? RSO_ASSUMED_PARTICIPATION_POLICY : undefined);
   forecastProblems.push(...admissionProblems);
   let forecasts = admitted, bridged = false;
   let observation: ForgeBridgeCapture | null = null, servedProofs: BridgeRunProof[] = [];

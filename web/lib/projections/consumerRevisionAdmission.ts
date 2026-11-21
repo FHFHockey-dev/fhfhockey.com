@@ -15,6 +15,61 @@ export type AdmittedConsumerSource = {
   source: { kind: "skater" | "goalie"; row: Row };
 };
 const numberOrNull = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : null;
+
+/**
+ * TJ's Detailed RSO participation policy (2026-11-21, amends decisions 3 and 47 for Detailed RSO only). A skater on his
+ * team's issued active roster with no active injury or confirmed exclusion is assumed to play; an active injury is assumed
+ * out until accepted news confirms him in the lineup; confirmed scratches, suspensions and other exclusions override the
+ * healthy default. A projected line, PP role or practice report never confirms anything. Assumptions count toward lineup
+ * planning and totals, but each row says whether its participation is assumed or confirmed. Opt-in per consumer.
+ */
+export const RSO_ASSUMED_PARTICIPATION_POLICY = "rso-assumed-participation-v1" as const;
+export type DetailedParticipationPolicy = typeof RSO_ASSUMED_PARTICIPATION_POLICY;
+export type DetailedParticipationBasis = "confirmed_playing" | "confirmed_out" | "assumed_playing" | "assumed_out";
+export const DETAILED_PARTICIPATION_NOTES: Record<DetailedParticipationBasis, string> = {
+  confirmed_playing: "Participation confirmed: accepted news confirms him in this game's lineup, so his line counts in full.",
+  confirmed_out: "Participation confirmed out: accepted news or a roster exclusion (scratch, suspension, non-roster, send-down) rules him out of this game, so it counts 0; his 'if he plays' line is kept separately.",
+  assumed_playing: "Participation assumed, not confirmed: he is on his team's active roster with no active injury or confirmed exclusion, so he is assumed to play and his line counts.",
+  assumed_out: "Participation assumed out, not confirmed: he has an active injury status and no accepted news confirms him in this game's lineup, so he is assumed out and counts 0; a projected line, practice or PP role does not clear it.",
+};
+export const DETAILED_PARTICIPATION_CONFLICT_NOTE = "Lineup or availability reports for this game conflict; the roster-status assumption stands until accepted news confirms.";
+export const DETAILED_PARTICIPATION_RETURN_NOTE = "A return was reported for him but not confirmed for this game.";
+const INJURY_EVENTS = new Set(["DTD", "INJURY_OUT", "INJURY_IR", "IR", "LTIR"]);
+const EXCLUSION_EVENTS = new Set(["SCRATCH", "SUSPENSION", "NON_ROSTER", "SENDDOWN"]);
+const COVERAGE_STATES = new Set(["projected_lineup", "confirmed_out", "uncertain", "unknown"]);
+const BASIS_BY_NOTE = new Map(Object.entries(DETAILED_PARTICIPATION_NOTES).map(([basis, note]) => [note, basis as DetailedParticipationBasis]));
+/** The participation basis a Detailed RSO row carries, found by membership in its limitations; null when none. */
+export function detailedParticipationBasisOf(forecast: Pick<GameForecast, "limitations">): DetailedParticipationBasis | null {
+  for (const note of forecast.limitations) { const basis = BASIS_BY_NOTE.get(note); if (basis) return basis; }
+  return null;
+}
+
+/** Applies the policy to one admitted skater prediction. Null leaves the row to the default (decision 3/47) path: a row
+ * without the issued coverage state or without a line has no roster status to assume from. */
+export function detailedSkaterParticipation(prediction: ReturnType<typeof boardSkaterForecast>, coverage: any, gameId: number) {
+  const confirmed = prediction.participationProbability;
+  const valid = coverage?.version === "forge-skater-coverage-v1" && coverage.game_id === gameId && coverage.line_conditioning === "if_plays"
+    && COVERAGE_STATES.has(coverage.state);
+  const event = valid && typeof coverage.event_type === "string" ? coverage.event_type as string : null;
+  let basis: DetailedParticipationBasis;
+  if (confirmed === 1) basis = "confirmed_playing";
+  else if (confirmed === 0) basis = "confirmed_out";
+  else if (!valid) return null;
+  else if (event && EXCLUSION_EVENTS.has(event) && coverage.state === "confirmed_out") basis = "confirmed_out";
+  else if (event && INJURY_EVENTS.has(event)) basis = "assumed_out";
+  else basis = "assumed_playing";
+  const playing = basis.endsWith("_playing");
+  const line = prediction.conditional;
+  const stats = line ? Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value == null ? null : playing ? value : 0]))
+    : prediction.expected;
+  if (!stats) return null;
+  const notes = [
+    ...(basis.startsWith("assumed_") && prediction.conflicts.some(item => item === "ev" || item === "availability") ? [DETAILED_PARTICIPATION_CONFLICT_NOTE] : []),
+    ...(basis === "assumed_playing" && event === "RETURN" ? [DETAILED_PARTICIPATION_RETURN_NOTE] : []),
+    DETAILED_PARTICIPATION_NOTES[basis],
+  ];
+  return { basis, stats, appearanceProbability: playing ? 1 : 0, notes };
+}
 const validCapturedTime = (value: unknown, observedAt: string) => value === null
   || typeof value === "string" && !acceptedNewsSupersedes(value, observedAt);
 
@@ -22,7 +77,8 @@ const validCapturedTime = (value: unknown, observedAt: string) => value === null
 export function publicPlanningForecasts(revisions: ForgeGameRevision[], players: PlanningPlayer[], games: PlanningGame[], now: Date,
   exclusions: Record<string, number> = {}, exclusionRows: ForecastDiscoveryExclusion[] = [], expectedSeasonId?: number,
   calendarPolicy: AnyForecastCalendarPolicy = forecastCalendarPolicy(),
-  admittedSources: Map<string, AdmittedConsumerSource> = new Map()): GameForecast[] {
+  admittedSources: Map<string, AdmittedConsumerSource> = new Map(),
+  participationPolicy?: DetailedParticipationPolicy): GameForecast[] {
   const excluded = (reason: ForecastExclusionReason, gameId: string, playerId?: string, targetKey?: string) => {
     exclusions[reason] = (exclusions[reason] ?? 0) + 1;
     if (exclusionRows.length < 15000) exclusionRows.push({ gameId, ...(playerId ? { playerId } : {}),
@@ -168,7 +224,15 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
       const stats = completeBoardSkaterStatsFromProjection(row);
       const prediction = boardSkaterForecast(stats, row.uncertainty, { gameId: row.game_id, teamId: row.team_id,
         playerId: row.player_id, horizonGames: row.horizon_games, cutoffAt, evidence: revision.payload.evidence });
-      // The shared skater model can be conditional-only. Do not assume participation = 1.
+      // The shared skater model can be conditional-only. Do not assume participation = 1, except under the opted-in
+      // Detailed RSO policy, which labels every assumption.
+      const assumed = participationPolicy === RSO_ASSUMED_PARTICIPATION_POLICY
+        ? detailedSkaterParticipation(prediction, row.uncertainty?.availability, row.game_id) : null;
+      if (assumed) {
+        emit({ kind: "skater", row }, row.player_id, row.team_id, row.game_id, assumed.stats, null, false,
+          [...prediction.conflicts, ...assumed.notes], prediction.conditional, assumed.appearanceProbability);
+        continue;
+      }
       emit({ kind: "skater", row }, row.player_id, row.team_id, row.game_id, prediction.expected, null, false, prediction.conflicts,
         prediction.conditional, prediction.participationProbability,
         prediction.conditioning === "conditional_playing" ? "missing_participation" : "unsupported_conditioning");
@@ -211,7 +275,8 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
 export async function admitConsumerGameRevisions(db: SupabaseClient<any>, revisions: ForgeGameRevision[],
   players: PlanningPlayer[], games: PlanningGame[], now: Date, seasonId: number,
   exclusionCounts: Record<string, number> = {}, exclusionRows: ForecastDiscoveryExclusion[] = [],
-  deadline = Date.now() + 2000, calendarPolicy: ForecastCalendarPolicy = forecastCalendarPolicy()) {
+  deadline = Date.now() + 2000, calendarPolicy: ForecastCalendarPolicy = forecastCalendarPolicy(),
+  participationPolicy?: DetailedParticipationPolicy) {
   const limitations: string[] = [];
   const recordExclusion = (gameId: string, reason: ForecastExclusionReason) => {
     exclusionCounts[reason] = (exclusionCounts[reason] ?? 0) + 1;
@@ -239,6 +304,6 @@ export async function admitConsumerGameRevisions(db: SupabaseClient<any>, revisi
   }
   const admittedSources = new Map<string, AdmittedConsumerSource>();
   const forecasts = publicPlanningForecasts(currentRevisions, players, games, now, exclusionCounts, exclusionRows,
-    seasonId, calendarPolicy, admittedSources);
+    seasonId, calendarPolicy, admittedSources, participationPolicy);
   return { forecasts, currentRevisions, acceptedNewsRevision, limitations, admittedSources: [...admittedSources.values()] };
 }

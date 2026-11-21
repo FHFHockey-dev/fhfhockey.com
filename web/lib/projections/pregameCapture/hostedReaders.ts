@@ -9,7 +9,7 @@ import { canEligibilityOccupySlot, normalizeEligibility } from "lib/rosterSchedu
 import { forecastAllows, gameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
 import type { ForecastDiscoveryExclusion, GameForecast, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
-import { admitConsumerGameRevisions } from "../consumerRevisionAdmission";
+import { admitConsumerGameRevisions, RSO_ASSUMED_PARTICIPATION_POLICY } from "../consumerRevisionAdmission";
 import type { ForgeGameRevision } from "../gameRevisions";
 import { forgeEnv } from "../forgeEnvScope";
 import { starterBoardFlags, starterBoardScopeAllowed } from "../starterBoardFlags";
@@ -143,7 +143,8 @@ export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedR
       if (rows.length === 1 && rows[0].revisionId === revisionId && rows[0].modelVersion === codeVersion) return score(rows[0], claimId);
       if (rows.length) return deny("publication_mismatch");
       const exclusions: ForecastDiscoveryExclusion[] = [];
-      await admitConsumerGameRevisions(db, selected, data.players, sides, now, seasonId, {}, exclusions, deadline, calendar);
+      await admitConsumerGameRevisions(db, selected, data.players, sides, now, seasonId, {}, exclusions, deadline, calendar,
+        RSO_ASSUMED_PARTICIPATION_POLICY);
       const { reason, gameExclusions } = attributeDetailedExclusion(exclusions, data.forecastManifest?.exclusions ?? [], game.id, player.id);
       return gameExclusions.length ? { ...deny(reason), gameExclusions } : deny(reason);
     };
