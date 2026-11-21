@@ -79,6 +79,9 @@ function sourceReasons(packet: TweetReviewPacket) {
   const retainedAttribution = tweetClaimAttribution({ tweetId: r.inputRow.tweet_id, sourceUrl: r.inputRow.link_to_tweet,
     rawText: r.inputRow.text, rawPayload: r.inputRow.raw_payload, tweetPostedAt: r.inputRow.tweet_created_at } as Parameters<typeof tweetClaimAttribution>[0]);
   const a = s.provenance.attribution;
+  if ("kind" in r && r.kind === "luna-fxtwitter-review-receipt-v1" &&
+      (s.originalPostId !== r.sourceReview.postId || s.author !== r.sourceReview.author.toLowerCase() ||
+       s.url !== r.sourceReview.url || published !== clock(r.sourceReview.publishedAt))) reasons.push("original_source_unresolved");
   if (a.status !== "resolved" || retainedAttribution.status !== "resolved" || !a.original
     || !isDeepStrictEqual(a.original, retainedAttribution.original) || a.relationship !== retainedAttribution.relationship
     || a.originalTweetId !== retainedAttribution.originalTweetId || s.originalPostId !== a.originalTweetId

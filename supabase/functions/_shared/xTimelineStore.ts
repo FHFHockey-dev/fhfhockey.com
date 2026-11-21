@@ -4,8 +4,11 @@
 // poller's queue mapping from fxtwitter.ts (`import * as fx from "../x-timeline-poll/fxtwitter.ts"`), and `db` is a
 // supabase-js client typed structurally, so web/ Vitest can load it.
 
-// deno-lint-ignore no-explicit-any
-type Db = { from: (table: string) => any };
+type Db = {
+  // deno-lint-ignore no-explicit-any
+  from: (table: string) => any;
+  rpc?: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { code?: string } | null }>;
+};
 type Account = { sourceKey: string };
 type Row = { tweet_id: string };
 type QueueTable = "line_source_ifttt_events" | "lines_ccc_ifttt_events";
@@ -24,6 +27,8 @@ export type StoreResult = {
   enqueued?: number;
   error?: string;
   enqueueError?: string;
+  captureError?: string;
+  captureFallback?: boolean;
 };
 
 /** The account's provider switch time when it is set to 'fxtwitter', from tweet_intake_providers; null otherwise. */
@@ -38,33 +43,66 @@ export async function switchedAtFor(db: Db, sourceKey: string): Promise<{ switch
  * Upsert rows into x_timeline_shadow_posts (first sighting wins), then, for an account switched at `switchedAt`, put
  * the rows first seen at or after the switch into its live queue (the queue upsert ignores rows already queued).
  */
-export async function storeAndEnqueue<A extends Account, R extends Row>(
+export async function storeAndEnqueue<A extends Account, R extends Row, E extends { tweetId: string }>(
   db: Db, fx: QueueMapping<A, R>, account: A, rows: R[], switchedAt: string | null | undefined,
+  evidenceFor?: (row: R) => E | undefined,
 ): Promise<StoreResult> {
   const table = fx.queueTableFor(account);
   if (!rows.length) return { ok: true, seen: 0, inserted: 0, ...(table && switchedAt ? { enqueued: 0 } : {}) };
-  const stored = await db.from("x_timeline_shadow_posts")
-    .upsert(rows, { onConflict: "source_key,tweet_id", ignoreDuplicates: true })
-    .select("tweet_id");
-  if (stored.error) return { ok: false, seen: rows.length, inserted: 0, error: stored.error.code ?? "store_failed" };
-  const inserted = stored.data?.length ?? 0;
+  const capture: Pick<StoreResult, "captureError" | "captureFallback"> = {};
+  let inserted: number | undefined;
+  if (evidenceFor) {
+    // Hydration can make two rows share an id. Only the first possible insert can contribute evidence.
+    const firstRows = new Map<string, R>();
+    for (const row of rows) if (!firstRows.has(row.tweet_id)) firstRows.set(row.tweet_id, row);
+    const selectedRows = [...firstRows.values()];
+    const evidence = selectedRows.flatMap((row) => {
+      const item = evidenceFor(row);
+      return item?.tweetId === row.tweet_id ? [item] : [];
+    });
+    try {
+      const result = await db.rpc?.("luna_store_fxtwitter_rows_v1", { p_rows: selectedRows, p_evidence: evidence });
+      const data = result?.data;
+      if (!result?.error && Array.isArray(data)) {
+        const ids = data.every((entry) => typeof entry === "string") ? data : data.map((entry) => entry?.tweet_id);
+        if (ids.every((id) => typeof id === "string" && firstRows.has(id)) && new Set(ids).size === ids.length) {
+          inserted = ids.length;
+          if (evidence.length < firstRows.size) capture.captureError = "capture_evidence_missing";
+        }
+      }
+      if (inserted === undefined) capture.captureError = result?.error?.code ?? "capture_rpc_unacknowledged";
+    } catch {
+      capture.captureError = "capture_rpc_unacknowledged";
+    }
+    // A lost RPC acknowledgement may also mean it committed. First-write-wins safely preserves that decision.
+    if (inserted === undefined) capture.captureFallback = true;
+  }
+  if (inserted === undefined) {
+    const stored = await db.from("x_timeline_shadow_posts")
+      .upsert(rows, { onConflict: "source_key,tweet_id", ignoreDuplicates: true })
+      .select("tweet_id");
+    if (stored.error) return { ok: false, seen: rows.length, inserted: 0, error: stored.error.code ?? "store_failed", ...capture };
+    const normalInserted: number = stored.data?.length ?? 0;
+    inserted = normalInserted;
+  }
+  const result = { seen: rows.length, inserted, ...capture };
 
-  if (!table || !switchedAt) return { ok: true, seen: rows.length, inserted };
+  if (!table || !switchedAt) return { ok: true, ...result };
   const seen = await db.from("x_timeline_shadow_posts").select("tweet_id, first_seen_at")
     .eq("source_key", account.sourceKey).in("tweet_id", rows.map((row) => row.tweet_id));
   if (seen.error) {
-    return { ok: false, seen: rows.length, inserted, enqueued: 0, enqueueError: seen.error.code ?? "first_seen_failed" };
+    return { ok: false, ...result, enqueued: 0, enqueueError: seen.error.code ?? "first_seen_failed" };
   }
   // Carry each post's first sighting into the queue row (raw_payload.first_seen_at) for the Lines engine.
   const firstSeen = new Map<string, string>((seen.data ?? []).map((entry: { tweet_id: string; first_seen_at: string }) =>
     [entry.tweet_id, entry.first_seen_at]));
   const due = fx.rowsToEnqueue(rows, seen.data ?? [], switchedAt)
     .map((row) => fx.toQueueRow(row, table, firstSeen.get(row.tweet_id) ?? null));
-  if (!due.length) return { ok: true, seen: rows.length, inserted, enqueued: 0 };
+  if (!due.length) return { ok: true, ...result, enqueued: 0 };
   const queued = await db.from(table)
     .upsert(due, { onConflict: table === "lines_ccc_ifttt_events" ? "tweet_id" : "source_key,tweet_id", ignoreDuplicates: true })
     .select("id");
   return queued.error
-    ? { ok: false, seen: rows.length, inserted, enqueued: 0, enqueueError: queued.error.code ?? "enqueue_failed" }
-    : { ok: true, seen: rows.length, inserted, enqueued: queued.data?.length ?? 0 };
+    ? { ok: false, ...result, enqueued: 0, enqueueError: queued.error.code ?? "enqueue_failed" }
+    : { ok: true, ...result, enqueued: queued.data?.length ?? 0 };
 }
