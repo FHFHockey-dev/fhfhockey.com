@@ -300,14 +300,17 @@ function classifyNst(
     body.resume?.required !== true &&
     (operationStatus == null ||
       operationStatus === "completed" ||
-      operationStatus === "skipped_no_completed_games")
+      operationStatus === "skipped_no_completed_games" ||
+      operationStatus === "skipped_no_scheduled_games")
   ) {
     return {
       kind: "complete",
       reason:
         operationStatus === "skipped_no_completed_games"
           ? "NST: no completed games in the scope."
-          : "NST: every source in the scope is done."
+          : operationStatus === "skipped_no_scheduled_games"
+            ? "NST: verified NHL off-day; no games in the scope."
+            : "NST: every source in the scope is done."
     };
   }
   if (result.statusCode !== 207 || operationStatus !== "continuation_required") {

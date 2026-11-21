@@ -50,6 +50,7 @@ vi.mock("@supabase/supabase-js", () => ({
           rows = rows.filter((row) => {
             const field = column.replace(/->>?/g, ".").split(".").reduce((current, key) => current?.[key], row);
             return op === "gte" ? field >= value : op === "lte" ? field <= value
+              : op === "gt" ? field > value : op === "lt" ? field < value
               : op === "in" ? value.includes(field) : field === value;
           });
         }
@@ -66,6 +67,8 @@ vi.mock("@supabase/supabase-js", () => ({
         },
         gte(column: string, value: any) { query.filters.push(["gte", column, value]); return builder; },
         lte(column: string, value: any) { query.filters.push(["lte", column, value]); return builder; },
+        gt(column: string, value: any) { query.filters.push(["gt", column, value]); return builder; },
+        lt(column: string, value: any) { query.filters.push(["lt", column, value]); return builder; },
         eq(column: string, value: any) { query.filters.push(["eq", column, value]); return builder; },
         in(column: string, value: any) { query.filters.push(["in", column, value]); return builder; },
         limit(value: number) { limit = value; return builder; },
@@ -865,6 +868,38 @@ describe("update-nst-gamelog automatic season cursor", () => {
     const result = await run({ startDate: "2026-10-04", endDate: "2026-10-04" });
     expect(result.statusCode).toBe(200);
     expect(result.body).toMatchObject({ success: true, operationStatus: "skipped_no_completed_games" });
+    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+  });
+
+  it("completes a confirmed off-day with zero NST requests (2026-11-21 regression)", async () => {
+    // Nov 20 2026: ids 2026020358 and 2026020359 bracket the date with nothing between.
+    db.games = [
+      { id: 2026020358, date: "2026-10-02", seasonId: 20262027, type: 2 },
+      { id: 2026020359, date: "2026-10-04", seasonId: 20262027, type: 2, startTime: "2026-10-04T23:00:00Z" }
+    ];
+    const result = await run({ startDate: "2026-10-03", endDate: "2026-10-03" });
+    expect(result.statusCode).toBe(200);
+    expect(result.body).toMatchObject({ success: true, operationStatus: "skipped_no_scheduled_games" });
+    expect(result.body.nstProgress).toMatchObject({ state: "no_scheduled_games_verified", plannedRequestCount: 0,
+      missingScheduleDates: [], verifiedNoGameDates: ["2026-10-03"], auditPersistence: "confirmed" });
+    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+    expect(db.audits.at(-1).status).toBe("success");
+  });
+
+  it.each([
+    ["no later game (schedule not loaded)", [{ id: 2026020358, date: "2026-10-02", seasonId: 20262027, type: 2 }]],
+    ["a gap in game ids (a game may be missing)", [
+      { id: 2026020358, date: "2026-10-02", seasonId: 20262027, type: 2 },
+      { id: 2026020360, date: "2026-10-04", seasonId: 20262027, type: 2 }]],
+    ["rows without game ids", [
+      { date: "2026-10-02", seasonId: 20262027, type: 2 },
+      { date: "2026-10-04", seasonId: 20262027, type: 2 }]]
+  ])("keeps an unknown schedule blocking: %s", async (_label, games) => {
+    db.games = games;
+    const result = await run({ startDate: "2026-10-03", endDate: "2026-10-03" });
+    expect(result.body.success).toBe(false);
+    expect(result.body.operationStatus).toBe("blocked");
+    expect(result.body.nstProgress).toMatchObject({ state: "no_scheduled_games_unverified", missingScheduleDates: ["2026-10-03"] });
     expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
   });
 

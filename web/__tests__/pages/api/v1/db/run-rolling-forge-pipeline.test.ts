@@ -966,6 +966,36 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         expect(nstStageRow()).toMatchObject({ status: "complete" });
       });
 
+      it("advances to WGO when the games table confirms an off-day (2026-11-21 regression)", async () => {
+        updateNstGamelogMock.mockImplementationOnce(reply(200, { success: true, operationStatus: "skipped_no_scheduled_games",
+          nstProgress: { state: "no_scheduled_games_verified", plannedRequestCount: 0, missingScheduleDates: [],
+            verifiedNoGameDates: ["2026-10-18"], auditPersistence: "confirmed" } }));
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        const upstream = stageStatus(res, "upstream_skater_sources");
+        expect(upstream.steps.map((step: any) => [step.id, step.status])).toEqual([
+          ["update-nst-gamelog", "skipped"], ["update-wgo-skaters", "success"], ["update-wgo-totals", "success"],
+        ]);
+        expect(upstream.steps[0].reason).toMatch(/no NHL games/);
+        expect(nstStageRow()).toMatchObject({ status: "complete" });
+      });
+
+      it("still stops on an unverified schedule (the 2026-11-21 production body)", async () => {
+        updateNstGamelogMock.mockImplementationOnce(reply(200, { success: false, operationStatus: "blocked",
+          message: "Incomplete NST work; inspect source outcomes and deferred URLs.",
+          nstProgress: { state: "no_scheduled_games_unverified", plannedRequestCount: 0, missingScheduleDates: ["2026-10-18"],
+            sourceOutcomes: { unresolvedCount: 0 }, auditPersistence: "confirmed" } }));
+
+        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+
+        expect(stageStatus(res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
+          ["update-nst-gamelog", "failed"],
+        ]);
+        expect(res.body.termination).toMatchObject({ state: "stopped_on_blocking_failure" });
+        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+      });
+
       it.each([
         ["a missing success acknowledgement", reply(200, {})],
         ["a null success body", reply(200, null)],
