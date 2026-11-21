@@ -8,7 +8,13 @@ const interpretation = { version: "2026-10-13.1", units: [], unresolved: [], eve
 function sourceDb(table: string, retained: unknown) {
   const writes: any[] = [], selects: Record<string, string> = {};
   const row = { capture_key: "fixture-source", source: "GameDayNewsNHL", source_group: "gamedaynewsnhl", source_key: "gamedaynewsnhl", source_account: "GameDayNewsNHL", source_label: "tweet", source_handle: "FixtureReporter", author_name: "Fixture Reporter", snapshot_date: "2026-10-22", observed_at: "2026-10-22T12:00:00Z", tweet_id: "100", tweet_url: "https://x.com/FixtureReporter/status/100", source_url: "https://x.com/FixtureReporter/status/100", team_id: 14, team_abbreviation: "TBL", classification: "injury", nhl_filter_status: "accepted", keyword_hits: [], raw_text: passage, raw_payload: {}, primary_text_source: "ifttt_text", status: "observed", metadata: { interpretation: retained, rawLineageMarker: "NOT_PUBLIC" } };
-  const db = { from(name: string) { let columns: string[] = []; const q: any = { select(text: string) { selects[name] = text; columns = text.split(",").map(x => x.trim()); return q; }, order() { return q; }, limit() { return q; }, in() { return q; }, upsert(rows: unknown[]) { writes.push(...rows); return q; }, then(resolve: any) { const data = name === table ? [Object.fromEntries(columns.map(c => { const [alias, path = alias] = c.split(":"); const [column, ...keys] = path.split("->"); return [alias, keys.reduce((v: any, k) => v?.[k], (row as any)[column]) ?? null]; }))] : []; return Promise.resolve(resolve({ data, error: null })); } }; return q; } };
+  const db = {
+    rpc(name: string, { p_rows }: { p_rows: unknown[] }) {
+      expect(name).toBe("sync_tweet_review_sources_v1");
+      writes.push(...p_rows);
+      return { error: null };
+    },
+    from(name: string) { let columns: string[] = []; const q: any = { select(text: string) { selects[name] = text; columns = text.split(",").map(x => x.trim()); return q; }, order() { return q; }, limit() { return q; }, then(resolve: any) { const data = name === table ? [Object.fromEntries(columns.map(c => { const [alias, path = alias] = c.split(":"); const [column, ...keys] = path.split("->"); return [alias, keys.reduce((v: any, k) => v?.[k], (row as any)[column]) ?? null]; }))] : []; return Promise.resolve(resolve({ data, error: null })); } }; return q; } };
   return { db, writes, selects };
 }
 async function publicProjection(table: string, retained: unknown) {

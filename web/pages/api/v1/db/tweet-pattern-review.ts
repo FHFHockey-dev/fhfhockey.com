@@ -83,20 +83,6 @@ type SyncCandidate = Omit<TweetPatternReviewRow, "id" | "created_at" | "updated_
   source_priority: number;
 };
 
-type ExistingReviewRow = Pick<
-  TweetPatternReviewRow,
-  | "id"
-  | "dedupe_key"
-  | "review_status"
-  | "reviewed_category"
-  | "reviewed_subcategory"
-  | "selected_highlights"
-  | "review_assignments"
-  | "notes"
-  | "metadata"
-  | "reviewed_at"
->;
-
 const SYNC_DB_BATCH_SIZE = 100;
 
 type LinesCccReviewSourceRow = {
@@ -797,90 +783,16 @@ export async function syncTweetPatternReviewItems(args: {
     }
   }
 
-  const dedupeKeys = Array.from(candidates.keys());
-  if (dedupeKeys.length === 0) {
-    return {
-      syncedCount: 0,
-      preferredSourceCount: 0
-    };
-  }
-
-  const existingRows: ExistingReviewRow[] = [];
-  for (let index = 0; index < dedupeKeys.length; index += SYNC_DB_BATCH_SIZE) {
-    const { data, error } = await args.supabase
-      .from("tweet_pattern_review_items" as any)
-      .select(
-        "id, dedupe_key, review_status, reviewed_category, reviewed_subcategory, selected_highlights, review_assignments, notes, metadata, reviewed_at"
-      )
-      .in("dedupe_key", dedupeKeys.slice(index, index + SYNC_DB_BATCH_SIZE));
+  const rows = Array.from(candidates.values());
+  for (let index = 0; index < rows.length; index += SYNC_DB_BATCH_SIZE) {
+    const { error } = await args.supabase.rpc("sync_tweet_review_sources_v1", {
+      p_rows: rows.slice(index, index + SYNC_DB_BATCH_SIZE)
+    });
     if (error) throw error;
-    existingRows.push(...((data ?? []) as ExistingReviewRow[]));
   }
 
-  const existingByKey = new Map<string, ExistingReviewRow>(
-    existingRows.map((row) => [row.dedupe_key, row])
-  );
-  const nowIso = new Date().toISOString();
-  const upsertRows = Array.from(candidates.values()).map((candidate) => {
-    const existing = existingByKey.get(candidate.dedupe_key);
-    const retainedMetadata = { ...existing?.metadata };
-    // Roster evidence belongs to the selected source revision, including when its clock is unknown.
-    delete retainedMetadata.intakeRosterEvidence;
-    return {
-      dedupe_key: candidate.dedupe_key,
-      source_table: candidate.source_table,
-      source_row_key: candidate.source_row_key,
-      source_group: candidate.source_group,
-      source_key: candidate.source_key,
-      source_account: candidate.source_account,
-      source_label: candidate.source_label,
-      source_handle: candidate.source_handle,
-      author_name: candidate.author_name,
-      snapshot_date: candidate.snapshot_date,
-      source_created_at: candidate.source_created_at,
-      tweet_id: candidate.tweet_id,
-      tweet_url: candidate.tweet_url,
-      source_url: candidate.source_url,
-      quoted_tweet_id: candidate.quoted_tweet_id,
-      quoted_tweet_url: candidate.quoted_tweet_url,
-      team_id: candidate.team_id,
-      team_abbreviation: candidate.team_abbreviation,
-      parser_classification: candidate.parser_classification,
-      parser_filter_status: candidate.parser_filter_status,
-      parser_filter_reason: candidate.parser_filter_reason,
-      keyword_hits: candidate.keyword_hits ?? [],
-      review_text: candidate.review_text,
-      raw_text: candidate.raw_text,
-      enriched_text: candidate.enriched_text,
-      quoted_text: candidate.quoted_text,
-      review_status: existing?.review_status ?? "pending",
-      reviewed_category: existing?.reviewed_category ?? null,
-      reviewed_subcategory: existing?.reviewed_subcategory ?? null,
-      selected_highlights: existing?.selected_highlights ?? [],
-      review_assignments: existing?.review_assignments ?? [],
-      notes: existing?.notes ?? null,
-      metadata: {
-        ...retainedMetadata,
-        ...(candidate.metadata ?? {})
-      },
-      reviewed_at: existing?.reviewed_at ?? null,
-      updated_at: nowIso
-    };
-  });
-
-  for (let index = 0; index < upsertRows.length; index += SYNC_DB_BATCH_SIZE) {
-    const { error: upsertError } = await args.supabase
-      .from("tweet_pattern_review_items" as any)
-      .upsert(upsertRows.slice(index, index + SYNC_DB_BATCH_SIZE), {
-        onConflict: "dedupe_key"
-      });
-    if (upsertError) throw upsertError;
-  }
-
-  return {
-    syncedCount: upsertRows.length,
-    preferredSourceCount: candidates.size
-  };
+  // The API counts accepted candidates, including unchanged redeliveries.
+  return { syncedCount: rows.length, preferredSourceCount: candidates.size };
 }
 
 async function handleGet(req: any, res: NextApiResponse) {

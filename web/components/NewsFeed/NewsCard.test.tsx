@@ -547,6 +547,12 @@ it("renders a roster-confirmed initials match from shared intake after the playe
     // The local PostgREST fixture accepts the two selected metadata projections as input columns.
     const db = lineTestDatabase({ lines_ccc: [{ ...row, interpretation: row.metadata.interpretation,
       intake_roster_evidence: row.metadata.intakeRosterEvidence }] });
+    db.rpc.mockImplementationOnce(async (name, { p_rows }) => {
+      expect(name).toBe("sync_tweet_review_sources_v1");
+      expect(p_rows).toHaveLength(1);
+      db.tables.tweet_pattern_review_items = p_rows;
+      return { data: true, error: null };
+    });
     await syncTweetPatternReviewItems({ supabase: db, perSourceLimit: 1 });
     const review = db.tables.tweet_pattern_review_items?.[0];
     expect(review?.metadata.intakeRosterEvidence.publishedAt).toBe(at);

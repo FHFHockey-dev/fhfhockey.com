@@ -17,9 +17,15 @@ const toItem = (r: typeof matches[number]) => ({...r, blurb:r.blurb_prefix, sour
   players:r.players.map(p=>({...p,player_name:p.name})),card_status:'published'} as any);
 function fakeDb(sourceRows:any[]) {
   const writes:any[]=[];const selects:Record<string,string[]>={};
-  return {writes, selects, db:{from(table:string) {
+  return {writes, selects, db:{
+    rpc(name: string, { p_rows }: { p_rows: unknown[] }) {
+      expect(name).toBe('sync_tweet_review_sources_v1');
+      writes.push(...p_rows);
+      return { error: null };
+    },
+    from(table:string) {
     let columns:string[]=[];
-    const q:any={select(text:string){ columns=text.split(',').map(s=>s.trim());selects[table]=columns;return q;},order(){return q;},limit(){return q;},in(){return q;},upsert(rows:any[]){writes.push(...rows);return q;},then(resolve:any){
+    const q:any={select(text:string){ columns=text.split(',').map(s=>s.trim());selects[table]=columns;return q;},order(){return q;},limit(){return q;},then(resolve:any){
       const data=table==='lines_ccc'?sourceRows.map(row=>Object.fromEntries(columns.map(c=>[c,row[c]??null]))):[];
       return Promise.resolve(resolve({data,error:null}));
     }};return q;
