@@ -205,6 +205,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "November 20 rolling writer game-identity guard. The verifier found no excluded projection inputs in the 243-module producer closure.",
   },
+  {
+    closureSha256: "0446100e09f468bc061dbc7049ddc1fddec54237a617d7e63ca4835a66b48223",
+    commit: "e2f8c6bc9fb79894ee61df70bf7377166559f467",
+    receipt: "tasks/artifacts/forge-daily-offday-2026-11-21/e2f8c6bc9fb79894ee61df70bf7377166559f467.json",
+    receiptSha256: "9f4a1c967f61cff9112bb1a21a39edcccda5dab507ad832ca21d0f4b2276db6b",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "November 21 daily NST off-day verification. The verifier found no excluded projection inputs in the 243-module producer closure.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;
