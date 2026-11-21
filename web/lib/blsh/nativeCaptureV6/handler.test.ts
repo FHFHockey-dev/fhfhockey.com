@@ -121,6 +121,8 @@ describe("route module", () => {
     const vercel = JSON.parse(readFileSync(resolve(__dirname, "../../../vercel.json"), "utf8"));
     expect(vercel.functions).toEqual({
       "pages/api/**/*.ts": { maxDuration: 240 },
+      // The scheduled Rankings publisher stops itself at 175 s inside a 180 s cap.
+      "pages/api/internal/rankings-daily-publication.ts": { maxDuration: 180 },
       "pages/api/v1/db/blsh-native-capture.ts": { maxDuration: 250 },
       // The BLSH hosted fixture-replay native stage (test mode) runs as its own function too, never with the live route.
       "pages/api/v1/db/blsh-replay-native.ts": { maxDuration: 249 },
