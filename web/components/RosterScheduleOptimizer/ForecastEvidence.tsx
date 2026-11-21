@@ -1,3 +1,4 @@
+import { participationDisplay } from "lib/projections/rsoParticipationNotes";
 import type { GameForecast, LeagueRules } from "lib/rosterScheduleOptimizer/planningTypes";
 import styles from "./RosterScheduleOptimizer.module.scss";
 
@@ -59,17 +60,30 @@ export default function ForecastEvidence({ forecasts, scoring, nameOf, timeZone,
   return <details className={styles.settings}>
     <summary>{label} · estimate sources</summary>
     <p>Baseline estimates use reusable contribution rates. The optimized no-move plan is a lineup comparison, not a statistical source. None of these estimates imply calibrated confidence.</p>
-    {rows.slice(0, 100).map(({ forecast, target, source, use, timestamps, retained }) => <article
+    {rows.slice(0, 100).map(({ forecast, target, source, use, timestamps, retained }, index, shown) => {
+      // Participation is per player-game: shown once, on that player-game's first target.
+      const participation = shown.findIndex(row => row.forecast === forecast) === index ? participationDisplay(forecast) : null;
+      return <article
       key={`${forecast.playerId}:${forecast.gameId}:${target}`} aria-label={`${nameOf(forecast.playerId)} game ${forecast.gameId} ${target} evidence`}>
       <p><strong>{nameOf(forecast.playerId)} · game {forecast.gameId} · {target}</strong><br />
         {source} · {use}</p>
+      {participation && <>
+        <p>Participation: <strong>{participation.label}</strong>
+          {participation.conflict ? " · reports for this game conflict" : ""}
+          {participation.lineRoleChanged ? " · line roles changed after this forecast; saved line kept" : ""}</p>
+        {participation.changes.length > 0 && <ul aria-label={`${nameOf(forecast.playerId)} availability changes`}>
+          {participation.changes.map(change => <li key={`${change.at}:${change.source}`}>
+            {timestamp(change.at)} · {change.source}: {change.detail}
+          </li>)}</ul>}
+      </>}
       {timestamps.length ? <ul aria-label="Source timestamps">{timestamps.map(input => <li key={input.label}>
         {input.label} · inputs as of {timestamp(input.cutoffAt)} · issued {timestamp(input.issuedAt)} · expires {timestamp(input.expiresAt)}
       </li>)}</ul> : <p>{retained ? "Target source timestamps unavailable." : <>
         Target source lineage unavailable. Game-estimate bundle bounds: latest input cutoff {timestamp(forecast.cutoffAt)}
         {` · latest issuance ${timestamp(forecast.issuedAt)} · earliest expiry ${timestamp(forecast.expiresAt)}`}
       </>}</p>}
-    </article>)}
+    </article>;
+    })}
     {rows.length > 100 && <p>{rows.length - 100} more target records are omitted from this view.</p>}
   </details>;
 }

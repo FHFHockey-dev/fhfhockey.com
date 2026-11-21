@@ -8,13 +8,13 @@ import { acceptedNewsSupersedes } from "./evidenceTime";
  * the overlay replays each later availability change from immutable, timestamped sources (roster events, official
  * appearances, accepted game-specific news), newest last, and reports each one separately. Nothing here runs FORGE.
  */
-export type RsoParticipationBasis = "confirmed_playing" | "confirmed_out" | "assumed_playing" | "assumed_out";
+import type { OverlayChange, RsoParticipationBasis } from "./rsoParticipationNotes";
+export type { OverlayChange, RsoParticipationBasis } from "./rsoParticipationNotes";
 export type OverlayRosterEvent = { event_id: number; team_id: number | null; player_id: number | null; event_type: string;
   effective_from: string; effective_to: string | null; payload: Record<string, unknown> | null };
 export type OverlayAppearance = { id: number; player_id: number; date: string; games_played: number | null; toi_per_game: number | null };
 export type RsoParticipationSources = { readAt: string; rosterEvents: OverlayRosterEvent[]; appearances: OverlayAppearance[];
   news: DailyBoardEvidence };
-export type OverlayChange = { at: string; source: string; effect: RsoParticipationBasis | "no_change"; detail: string };
 export type OverlayResult = { basis: RsoParticipationBasis; changes: OverlayChange[]; conflict: boolean; lineRoleChanged: boolean };
 
 export const INJURY_EVENTS = new Set(["DTD", "INJURY_OUT", "INJURY_IR", "IR", "LTIR"]);
@@ -22,6 +22,9 @@ const EXCLUSION_EVENTS = new Set(["SCRATCH", "SUSPENSION", "NON_ROSTER", "SENDDO
 const COVERAGE_STATES = new Set(["projected_lineup", "confirmed_out", "uncertain", "unknown"]);
 /** How far back official appearances are read: the latest appearance after an injury is all the overlay needs. */
 export const RSO_APPEARANCE_LOOKBACK_DAYS = 60;
+/** Roster events older than this, or already expired at read time, cannot apply to a game still to come. An older
+ * injury the issued row names is then not found, and only changes after the revision cutoff can clear it. */
+export const RSO_ROSTER_EVENT_LOOKBACK_DAYS = 365;
 const MAX_ROSTER_EVENTS = 5000, MAX_APPEARANCES = 20000;
 
 const after = (value: string, than: string | null) => than === null || acceptedNewsSupersedes(value, than);
@@ -152,22 +155,29 @@ async function pagedRead<T>(label: string, maximum: number, deadlineMs: number,
 
 /** Bounded read of every overlay source as of `readAt`. Throws when any source is incomplete: the caller then withholds
  * the affected rows rather than serve an assumption a late scratch may already have overturned. */
-export async function loadRsoParticipationSources(db: Db, args: { gameIds: number[]; playerNhlIds: number[]; readAt: string;
-  deadlineMs: number }): Promise<RsoParticipationSources> {
-  const players = [...new Set(args.playerNhlIds)].sort((a, b) => a - b);
-  const gameIds = [...new Set(args.gameIds)].sort((a, b) => a - b);
+/** `appearancePlayerNhlIds`: the injured subset; only an injury can be lifted by an appearance. */
+export async function loadRsoParticipationSources(db: Db, args: { gameIds: number[]; playerNhlIds: number[];
+  appearancePlayerNhlIds: number[]; readAt: string; deadlineMs: number }): Promise<RsoParticipationSources> {
+  const sorted = (ids: number[]) => [...new Set(ids)].sort((a, b) => a - b);
+  const players = sorted(args.playerNhlIds), injured = sorted(args.appearancePlayerNhlIds).filter(id => players.includes(id));
+  const gameIds = sorted(args.gameIds);
   if (players.length > 2000 || players.some(id => !Number.isSafeInteger(id) || id <= 0)) throw new Error("Invalid overlay scope");
   // Imported lazily: the evidence module binds the server client at import time.
   const { loadDailyBoardEvidence } = await import("./dailyBoardEvidence");
   const news = gameIds.length ? await loadDailyBoardEvidence(gameIds, args.readAt, db as never) : { assertions: [], conflicts: [] };
-  const since = new Date(Date.parse(args.readAt) - RSO_APPEARANCE_LOOKBACK_DAYS * 86_400_000).toISOString().slice(0, 10);
+  const days = (count: number) => new Date(Date.parse(args.readAt) - count * 86_400_000).toISOString();
+  const since = days(RSO_APPEARANCE_LOOKBACK_DAYS).slice(0, 10), eventsSince = days(RSO_ROSTER_EVENT_LOOKBACK_DAYS);
   const rosterEvents: OverlayRosterEvent[] = [], appearances: OverlayAppearance[] = [];
   for (let start = 0; start < players.length; start += 100) {
     const batch = players.slice(start, start + 100);
     rosterEvents.push(...await pagedRead<OverlayRosterEvent>("Roster events", MAX_ROSTER_EVENTS, args.deadlineMs, (from, to, signal) =>
       db.from("forge_roster_events").select("event_id,team_id,player_id,event_type,effective_from,effective_to,payload", { count: "exact" })
-        .in("player_id", batch).lte("created_at", args.readAt).lte("effective_from", args.readAt)
+        .in("player_id", batch).lte("created_at", args.readAt).lte("effective_from", args.readAt).gte("effective_from", eventsSince)
+        .or(`effective_to.is.null,effective_to.gte.${args.readAt}`)
         .order("event_id").range(from, to).abortSignal(signal)));
+  }
+  for (let start = 0; start < injured.length; start += 100) {
+    const batch = injured.slice(start, start + 100);
     appearances.push(...await pagedRead<OverlayAppearance>("Official appearances", MAX_APPEARANCES, args.deadlineMs, (from, to, signal) =>
       db.from("wgo_skater_stats").select("id,player_id,date,games_played,toi_per_game", { count: "exact" })
         .in("player_id", batch).gte("date", since).lte("date", args.readAt.slice(0, 10))

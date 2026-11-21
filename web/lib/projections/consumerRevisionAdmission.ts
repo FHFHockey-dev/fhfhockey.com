@@ -3,8 +3,9 @@ import { calendarLeadDay, forecastCalendarPolicy, validForecastCalendarPolicy, t
 import { boardGoalieForecast, boardSkaterForecast, completeBoardSkaterStatsFromProjection } from "./starterBoardScoring";
 import { forgeRosterRevision, forgeScheduleRevision, type ForgeIssuedContextV1 } from "./issuedContext";
 import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "./acceptedNews";
-import { applyRsoParticipationOverlay, loadRsoParticipationSources, type OverlayChange, type RsoParticipationBasis,
-  type RsoParticipationSources } from "./rsoParticipationOverlay";
+import { applyRsoParticipationOverlay, INJURY_EVENTS, loadRsoParticipationSources, type RsoParticipationSources } from "./rsoParticipationOverlay";
+import { DETAILED_PARTICIPATION_CONFLICT_NOTE, DETAILED_PARTICIPATION_LINE_ROLE_NOTE, DETAILED_PARTICIPATION_NOTES, overlayChangeNote,
+  type RsoParticipationBasis } from "./rsoParticipationNotes";
 import type { ForgeGameRevision } from "./gameRevisions";
 import { withinDeadline } from "lib/rosterScheduleData/planningInputs";
 import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "./calibrationEligibility";
@@ -32,22 +33,8 @@ export type DetailedParticipationBasis = RsoParticipationBasis;
 /** Review scope of policy rows: the participation method a reviewed RSO use must name (decision D5 review lane). */
 export const RSO_PARTICIPATION_OVERLAY_METHOD = "forge-rso-participation-overlay-v1";
 export const RSO_PARTICIPATION_OVERLAY_CONDITIONING = "rso_participation_overlay";
-export const DETAILED_PARTICIPATION_NOTES: Record<DetailedParticipationBasis, string> = {
-  confirmed_playing: "Participation confirmed: a credible report confirms him in this game's lineup, so his line counts in full.",
-  confirmed_out: "Participation confirmed out: a scratch, suspension, other roster exclusion or ruled-out report keeps him out of this game, so it counts 0; his 'if he plays' line is kept separately.",
-  assumed_playing: "Participation assumed, not confirmed: he is on his team's active roster with no active injury or confirmed exclusion, so he is assumed to play and his line counts.",
-  assumed_out: "Participation assumed out, not confirmed: he has an active injury status and no credible report confirms him back for this game, so he is assumed out and counts 0; his 'if he plays' line is kept separately.",
-};
-export const DETAILED_PARTICIPATION_CONFLICT_NOTE = "Lineup or availability reports for this game conflict; the latest applicable status stands until a report confirms.";
-export const DETAILED_PARTICIPATION_LINE_ROLE_NOTE = "Line or PP roles were reported after this forecast; the saved line is kept and FORGE is not re-run.";
-/** One availability change, recorded apart from the issued forecast. */
-export const overlayChangeNote = (change: OverlayChange) => `Availability update ${change.at} · ${change.source}: ${change.detail}.`;
-const BASIS_BY_NOTE = new Map(Object.entries(DETAILED_PARTICIPATION_NOTES).map(([basis, note]) => [note, basis as DetailedParticipationBasis]));
-/** The participation basis a Detailed RSO row carries, found by membership in its limitations; null when none. */
-export function detailedParticipationBasisOf(forecast: Pick<GameForecast, "limitations">): DetailedParticipationBasis | null {
-  for (const note of forecast.limitations) { const basis = BASIS_BY_NOTE.get(note); if (basis) return basis; }
-  return null;
-}
+export { DETAILED_PARTICIPATION_CONFLICT_NOTE, DETAILED_PARTICIPATION_LINE_ROLE_NOTE, DETAILED_PARTICIPATION_NOTES,
+  detailedParticipationBasisOf, overlayChangeNote } from "./rsoParticipationNotes";
 /** Read-time inputs for the policy. `sources` null means they could not be read: policy rows are then withheld.
  * `superseded` revisions have accepted news after their cutoff: their skater rows stay (the overlay applies the news),
  * every other row of theirs is withdrawn as stale. */
@@ -313,10 +300,16 @@ export async function admitConsumerGameRevisions(db: SupabaseClient<any>, revisi
     if (currentRevisions.length) {
       try {
         const overlayDeadline = Math.min(deadline, Date.now() + 4000);
-        const playerNhlIds = currentRevisions.flatMap(revision => (revision.payload?.players ?? []).map((row: Row) => row?.player_id))
-          .filter((id): id is number => Number.isSafeInteger(id));
+        // Only skaters this request can serve (its planning players), and appearances only for those the issued
+        // rows show injured: an appearance lifts nothing else.
+        const planned = new Set(players.map(player => player.nhlId));
+        const rows = currentRevisions.flatMap(revision => (revision.payload?.players ?? []) as Row[])
+          .filter(row => Number.isSafeInteger(row?.player_id) && planned.has(row.player_id));
+        const injured = rows.filter(row => INJURY_EVENTS.has(row.uncertainty?.availability?.event_type)
+          || row.uncertainty?.availability?.event_type === "RETURN");
         sources = await withinDeadline(overlayDeadline, () => loadRsoParticipationSources(db, { gameIds: currentRevisions.map(row => row.game_id),
-          playerNhlIds, readAt: now.toISOString(), deadlineMs: overlayDeadline }));
+          playerNhlIds: rows.map(row => row.player_id), appearancePlayerNhlIds: injured.map(row => row.player_id),
+          readAt: now.toISOString(), deadlineMs: overlayDeadline }));
       } catch {
         limitations.push("Current player availability could not be read; affected skater forecasts are temporarily unavailable.");
       }
