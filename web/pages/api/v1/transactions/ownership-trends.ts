@@ -95,7 +95,7 @@ export async function fetchYahooPlayerRows(args: {
       const byKey = new Map<string, any>();
       for (const keyChunk of chunk<string>(keys, MAP_CHUNK_SIZE)) {
         let historyQuery = args.supabase
-          .from("yahoo_players_with_normalized_history")
+          .from("yahoo_players_with_trend_history")
           .select(args.select)
           .in("player_key", keyChunk)
           .order("player_key", { ascending: true })

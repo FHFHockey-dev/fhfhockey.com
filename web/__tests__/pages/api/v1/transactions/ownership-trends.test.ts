@@ -291,7 +291,9 @@ describe("ownership snapshot provenance", () => {
     const reads: string[] = [];
     createClientMock.mockReturnValue({ from(table: string) {
       reads.push(table);
-      let rows = tables[table] ?? [];
+      // These small fixture histories fit in both the full and bounded views.
+      const fixtureTable = table === "yahoo_players_with_trend_history" ? "yahoo_players_with_normalized_history" : table;
+      let rows = tables[fixtureTable] ?? [];
       const query = {
         select: () => query, order: () => query, range: () => query,
         in: (key: string, ids: unknown[]) => { rows = rows.filter(row => ids.map(String).includes(String(row[key]))); return query; },
@@ -327,7 +329,7 @@ describe("ownership snapshot provenance", () => {
       expect(three.body.risers[0]).toMatchObject({ playerId: 12, delta: 5 });
       expect(three.body).toMatchObject({ mappedPlayerCount: 1, unmappedPlayerCount: 0 });
       expect(five.body.risers[0]).toMatchObject({ playerId: 12, delta: 20 });
-      expect(reads).toEqual(["yahoo_players_with_normalized_history", "yahoo_players_with_normalized_history", "yahoo_nhl_player_map_read"]);
+      expect(reads).toEqual(["yahoo_players_with_normalized_history", "yahoo_players_with_trend_history", "yahoo_nhl_player_map_read"]);
       const again = createMockRes();
       await ownershipTrendsHandler({ method: "GET", query: { window: "3", season: "2026" } } as any, again);
       expect(again.body.sourceDate).toBe("2026-11-10");
@@ -393,7 +395,7 @@ describe("ownership snapshot provenance", () => {
       await ownershipTrendsHandler({ method: "GET", query: { window: "3", season: "2026", playerIds: "12" } } as any, response);
       expect(response.body).toMatchObject({ mappedPlayerCount: 0, unmappedPlayerCount: 1, totalRisers: 1, selectedPlayers: [] });
       expect(response.body.risers[0]).toMatchObject({ playerKey: "477.p.112", playerId: null, delta: 10 });
-      expect(reads).toEqual(["yahoo_players_with_normalized_history", "yahoo_players_with_normalized_history", "yahoo_nhl_player_map_read"]);
+      expect(reads).toEqual(["yahoo_players_with_normalized_history", "yahoo_players_with_trend_history", "yahoo_nhl_player_map_read"]);
     } finally { vi.useRealTimers(); }
   });
 
