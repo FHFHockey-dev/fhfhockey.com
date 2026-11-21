@@ -454,8 +454,7 @@ function isPartialResume(statusCode: number, body: unknown) {
  * 2026-10-20-codex-to-claude-pipeline-nst-contract.md). The delivered producer
  * acknowledges progress before returning its continuation:
  * - 200 with success true finishes the step (operationStatus
- *   "skipped_no_completed_games" and "skipped_no_scheduled_games", a verified
- *   NHL off-day, are the expected no-work skips); WGO follows.
+ *   "skipped_no_completed_games" is the expected no-work skip); WGO follows.
  * - 207, operationStatus "continuation_required", resume.required true and
  *   resume.request.query: the stage pauses, and the next invocation re-calls
  *   NST with that query and a fresh deadlineAt. WGO waits.
@@ -472,23 +471,16 @@ const NST_DEADLINE_HEADROOM_MS = 20_000;
 const FUNCTION_MAX_DURATION_MS = 240_000;
 
 type NstOutcome =
-  | { kind: "finished"; skipped: boolean; skipReason?: string }
+  | { kind: "finished"; skipped: boolean }
   | { kind: "continuation"; cursor: number }
   | { kind: "blocked"; reason: string };
-
-// The NST no-work skips; anything else that is not "completed" blocks.
-const NST_SKIP_REASONS: Record<string, string> = {
-  skipped_no_completed_games: "NST reported no completed games for the date.",
-  skipped_no_scheduled_games: "The games table confirms no NHL games on the date; no NST requests were needed."
-};
 
 function readNstOutcome(step: StepResult, sentCursor: number | null): NstOutcome {
   const body = step.summary as Record<string, any> | null;
   const record = body && typeof body === "object" && !Array.isArray(body) ? body : null;
   if (step.statusCode === 200 && record?.success === true && !record.error && !record.resume?.required
-    && (record.operationStatus == null || ["completed", ...Object.keys(NST_SKIP_REASONS)].includes(record.operationStatus))) {
-    const skipReason = NST_SKIP_REASONS[record.operationStatus as string];
-    return { kind: "finished", skipped: skipReason != null, skipReason };
+    && (record.operationStatus == null || ["completed", "skipped_no_completed_games"].includes(record.operationStatus))) {
+    return { kind: "finished", skipped: record?.operationStatus === "skipped_no_completed_games" };
   }
   if (step.statusCode !== 207 || record?.operationStatus !== "continuation_required") {
     return { kind: "blocked", reason: "NST did not finish or return a continuation; the stage stops here." };
@@ -900,7 +892,7 @@ async function runStage(args: {
         }
         if (outcome.skipped) {
           nst.status = "skipped";
-          nst.reason = outcome.skipReason;
+          nst.reason = "NST reported no completed games for the date.";
         }
       }
       await addStep({

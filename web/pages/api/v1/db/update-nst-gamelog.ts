@@ -503,73 +503,6 @@ async function fetchScheduledGameDateMap(args: {
   return buildNstScheduledDateMap(rows);
 }
 
-export type NstScheduleBracketGame = {
-  id?: string | number | null;
-  date: string;
-  seasonId: string | number;
-  type: number | null;
-};
-
-/**
- * A date with no `games` rows is a verified NHL off-day only when the table
- * brackets it with regular-season games of one season whose ids are adjacent:
- * `before` is the highest id dated earlier, `after` the lowest id dated later.
- * Adjacent ids prove no game is missing from the table between them. Anything
- * else (no later game, an id gap, playoffs, a phase boundary, a rescheduled
- * game) leaves the schedule unknown, and the date keeps blocking.
- */
-export function isVerifiedNstOffDayBracket(
-  before: NstScheduleBracketGame | null | undefined,
-  after: NstScheduleBracketGame | null | undefined
-): boolean {
-  if (!before || !after) return false;
-  if (before.type !== 2 || after.type !== 2) return false;
-  if (String(before.seasonId) !== String(after.seasonId)) return false;
-  const beforeId = Number(before.id);
-  const afterId = Number(after.id);
-  return Number.isSafeInteger(beforeId) && Number.isSafeInteger(afterId) && afterId === beforeId + 1;
-}
-
-/** Splits sorted ISO dates into runs of consecutive calendar days. */
-function groupConsecutiveDates(dates: readonly string[]): string[][] {
-  const runs: string[][] = [];
-  for (const date of [...dates].sort()) {
-    const run = runs.at(-1);
-    const next = run && new Date(Date.parse(`${run.at(-1)}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
-    if (run && next === date) run.push(date);
-    else runs.push([date]);
-  }
-  return runs;
-}
-
-/**
- * Returns the missing dates the `games` table confirms had no NHL games. Two
- * bounded reads per run of consecutive dates; a read error verifies nothing.
- */
-async function resolveVerifiedNoGameDates(args: {
-  missingDates: readonly string[];
-  seasonIds: readonly string[];
-}): Promise<string[]> {
-  const seasonIds = Array.from(new Set(args.seasonIds.map((id) => Number(id)))).filter(Number.isFinite);
-  if (args.missingDates.length === 0 || seasonIds.length === 0) return [];
-  const verified: string[] = [];
-  for (const run of groupConsecutiveDates(args.missingDates)) {
-    const [beforeResult, afterResult] = await Promise.all([
-      supabase.from("games").select("id, date, seasonId, type")
-        .in("seasonId", seasonIds).eq("type", 2).lt("date", run[0])
-        .order("id", { ascending: false }).limit(1),
-      supabase.from("games").select("id, date, seasonId, type")
-        .in("seasonId", seasonIds).eq("type", 2).gt("date", run[run.length - 1])
-        .order("id", { ascending: true }).limit(1)
-    ]);
-    if (beforeResult.error || afterResult.error) continue;
-    const before = (beforeResult.data?.[0] ?? null) as NstScheduleBracketGame | null;
-    const after = (afterResult.data?.[0] ?? null) as NstScheduleBracketGame | null;
-    if (isVerifiedNstOffDayBracket(before, after)) verified.push(...run);
-  }
-  return verified;
-}
-
 function mapHeaderToColumn(headerRaw: string): string | null {
   const h = cleanHeader(headerRaw).toLowerCase();
   if (h === "" || h === "player" || h === "team" || h === "position")
@@ -2848,20 +2781,6 @@ async function main(
       }
     }
 
-    // "Schedule fetched, zero games" is a verified off-day; only a date the
-    // games table cannot vouch for stays missing and blocks.
-    const verifiedNoGameDates = await resolveVerifiedNoGameDates({
-      missingDates: missingScheduleDates,
-      seasonIds: allSeasons.map((season) => String(season.id))
-    });
-    if (verifiedNoGameDates.length > 0) {
-      const verifiedSet = new Set(verifiedNoGameDates);
-      const unverified = missingScheduleDates.filter((date) => !verifiedSet.has(date));
-      missingScheduleDates.length = 0;
-      missingScheduleDates.push(...unverified);
-      console.log(`Verified NHL off-days (no NST requests): ${verifiedNoGameDates.join(", ")}`);
-    }
-
     console.log(
       `Generated ${initialUrlsQueue.length} initial URLs to process.`
     );
@@ -3025,18 +2944,13 @@ async function main(
     }
     const skippedNoCompletedGames = fullPlanRequestCount === 0 &&
       allDatesToScrape.length === skippedUnstartedDates.length;
-    // Every date is a verified off-day (or unstarted, with at least one off-day).
-    const skippedNoScheduledGames = !skippedNoCompletedGames && fullPlanRequestCount === 0 &&
-      missingScheduleDates.length === 0 && verifiedNoGameDates.length > 0 &&
-      allDatesToScrape.length === skippedUnstartedDates.length + verifiedNoGameDates.length;
     const continuationRequired = Boolean(explicitContinuation && !sourceFailed && stoppedEarly &&
       explicitContinuation.nextIndex < fullPlanRequestCount && explicitContinuation.nextIndex > resumeOffset &&
       explicitContinuation.nextIndex > (options?.cursor ?? 0));
-    const success = skippedNoCompletedGames || skippedNoScheduledGames || (!sourceFailed && !stoppedEarly &&
+    const success = skippedNoCompletedGames || (!sourceFailed && !stoppedEarly &&
       (fullPlanRequestCount > 0) && (!explicitContinuation || explicitContinuation.nextIndex === fullPlanRequestCount));
     const operationStatus = sourceDown ? "source_down" : continuationRequired ? "continuation_required"
-      : skippedNoCompletedGames ? "skipped_no_completed_games"
-      : skippedNoScheduledGames ? "skipped_no_scheduled_games" : success ? "completed" : "blocked";
+      : skippedNoCompletedGames ? "skipped_no_completed_games" : success ? "completed" : "blocked";
     const progress = {
       version: NST_GAMELOG_PROGRESS_VERSION,
       scope: progressScope,
@@ -3054,12 +2968,10 @@ async function main(
       requestIntervalMs: requestPlan.requestIntervalMs,
       skippedUnstartedDates,
       missingScheduleDates,
-      verifiedNoGameDates,
       continuation: explicitContinuation,
       stoppedEarly,
       deferredUrls: initialUrlsQueue.length - finalOutcomes.size,
       state: skippedNoCompletedGames ? "skipped_no_completed_games"
-        : skippedNoScheduledGames ? "no_scheduled_games_verified"
         : fullPlanRequestCount === 0 ? "no_scheduled_games_unverified"
         : continuationRequired ? "continuation_required"
         : success ? "attempts_finished_coverage_unverified" : "incomplete",
