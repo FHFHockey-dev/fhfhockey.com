@@ -1,0 +1,452 @@
+{
+  "release": {
+    "at": "2026-11-20T01:26:17.717529+00:00",
+    "alias": "dpl_8pHbeKf9F341Y4NqRaHSU1zWy9i7",
+    "sha": "5babd77c191b0043e96411d6ebeacd10d722619e",
+    "branch": "master",
+    "project": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+    "builds": [
+      {
+        "name": "cms-fhfhockey",
+        "uid": "dpl_9JkVHutmNds8ZH5cv7xDZNsgn5xy",
+        "readyState": "CANCELED",
+        "target": "production",
+        "ready": 1795137698977,
+        "created": 1795137685764
+      },
+      {
+        "name": "functions-fhfhockey",
+        "uid": "dpl_3WQR4cfz2mFSpoN6LW1n5UNR5cEz",
+        "readyState": "CANCELED",
+        "target": "production",
+        "ready": 1795137696834,
+        "created": 1795137685731
+      },
+      {
+        "name": "fhfhockey",
+        "uid": "dpl_8pHbeKf9F341Y4NqRaHSU1zWy9i7",
+        "readyState": "READY",
+        "target": "production",
+        "ready": 1795137964116,
+        "created": 1795137685630
+      },
+      {
+        "name": "fhfhockey.com",
+        "uid": "dpl_BZxh21Q2VmCth2F97s7quR4TXBR2",
+        "readyState": "CANCELED",
+        "target": "production",
+        "ready": 1795137685608,
+        "created": 1795137685608
+      }
+    ]
+  },
+  "browser": {
+    "page": "https://fhfhockey.com/lines/line-combo/2026020348",
+    "applicationRequests": [
+      {
+        "at": "2026-11-20T01:26:18.025Z",
+        "route": "/lines/line-combo/2026020348",
+        "status": 200,
+        "cache": "MISS"
+      },
+      {
+        "at": "2026-11-20T01:26:20.285Z",
+        "route": "/api/v1/lines/projected?view=game&gameId=2026020348",
+        "status": 200,
+        "cache": "MISS"
+      },
+      {
+        "at": "2026-11-20T01:27:21.430Z",
+        "route": "/api/v1/lines/projected?view=game&gameId=2026020348",
+        "status": 200,
+        "cache": "MISS"
+      }
+    ],
+    "staticAssetRequests": 11,
+    "verification": "Live production page and deployed JavaScript in Chromium; scoped network to the page, its static assets and Lines reader. Compared API fields separately from the rendered sidebar, including the client automatic refresh.",
+    "refreshStable": true,
+    "reads": [
+      {
+        "at": "2026-11-20T01:26:21.465Z",
+        "gameState": "live",
+        "controls": {
+          "observations": true,
+          "entryServing": true,
+          "carryForward": true
+        },
+        "teams": [
+          {
+            "team": "PHI",
+            "officialEvents": 7,
+            "verified": [
+              {
+                "nhlId": 164,
+                "reportEvent": 30,
+                "period": 1,
+                "elapsed": "03:52",
+                "ids": [
+                  8477989,
+                  8478439,
+                  8482159,
+                  8480015,
+                  8484148
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-30"
+              },
+              {
+                "nhlId": 421,
+                "reportEvent": 100,
+                "period": 1,
+                "elapsed": "18:13",
+                "ids": [
+                  8477989,
+                  8478439,
+                  8482159,
+                  8480015,
+                  8484148
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-100"
+              },
+              {
+                "nhlId": 422,
+                "reportEvent": 101,
+                "period": 1,
+                "elapsed": "18:25",
+                "ids": [
+                  8477989,
+                  8478439,
+                  8482159,
+                  8480015,
+                  8484148
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-101"
+              }
+            ],
+            "entry": {
+              "id": "8ecf8c9b79ab08ecbe041859f2d97f12b45cdb7965261a546bc1630018d60667",
+              "cutoff": null,
+              "status": "expected",
+              "revision": 2,
+              "units": 0,
+              "unitsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "sources": [],
+              "numbers": [
+                {
+                  "unit": 1,
+                  "mode": null,
+                  "origin": null
+                },
+                {
+                  "unit": 2,
+                  "mode": null,
+                  "origin": null
+                }
+              ]
+            }
+          },
+          {
+            "team": "OTT",
+            "officialEvents": 8,
+            "verified": [
+              {
+                "nhlId": 395,
+                "reportEvent": 93,
+                "period": 1,
+                "elapsed": "16:34",
+                "ids": [
+                  8481596,
+                  8482116,
+                  8483676,
+                  8480208,
+                  8482105
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-93"
+              },
+              {
+                "nhlId": 21,
+                "reportEvent": 94,
+                "period": 1,
+                "elapsed": "16:43",
+                "ids": [
+                  8481596,
+                  8482116,
+                  8483676,
+                  8480208,
+                  8482105
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-94"
+              },
+              {
+                "nhlId": 398,
+                "reportEvent": 95,
+                "period": 1,
+                "elapsed": "16:43",
+                "ids": [
+                  8481528,
+                  8482092,
+                  8473512,
+                  8481606,
+                  8478469
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-95"
+              },
+              {
+                "nhlId": 408,
+                "reportEvent": 96,
+                "period": 1,
+                "elapsed": "17:39",
+                "ids": [
+                  8481528,
+                  8482092,
+                  8473512,
+                  8481606,
+                  8478469
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-96"
+              }
+            ],
+            "entry": {
+              "id": "2c07dc8263654167d026a3b9d3d7b96133bd428a66e8d1e97fe5d5630a337ef8",
+              "cutoff": null,
+              "status": "expected",
+              "revision": 2,
+              "units": 4,
+              "unitsHash": "af2a4653b6acc73dba4886b6db30c65003777f80af5d47d2faf455c54c51fa79",
+              "sources": [
+                "https://x.com/SunGarrioch/status/2123562467645149441"
+              ],
+              "numbers": [
+                {
+                  "unit": 1,
+                  "mode": null,
+                  "origin": null
+                },
+                {
+                  "unit": 2,
+                  "mode": null,
+                  "origin": null
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "at": "2026-11-20T01:27:22.960Z",
+        "gameState": "live",
+        "controls": {
+          "observations": true,
+          "entryServing": true,
+          "carryForward": true
+        },
+        "teams": [
+          {
+            "team": "PHI",
+            "officialEvents": 7,
+            "verified": [
+              {
+                "nhlId": 164,
+                "reportEvent": 30,
+                "period": 1,
+                "elapsed": "03:52",
+                "ids": [
+                  8477989,
+                  8478439,
+                  8482159,
+                  8480015,
+                  8484148
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-30"
+              },
+              {
+                "nhlId": 421,
+                "reportEvent": 100,
+                "period": 1,
+                "elapsed": "18:13",
+                "ids": [
+                  8477989,
+                  8478439,
+                  8482159,
+                  8480015,
+                  8484148
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-100"
+              },
+              {
+                "nhlId": 422,
+                "reportEvent": 101,
+                "period": 1,
+                "elapsed": "18:25",
+                "ids": [
+                  8477989,
+                  8478439,
+                  8482159,
+                  8480015,
+                  8484148
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-101"
+              }
+            ],
+            "entry": {
+              "id": "8ecf8c9b79ab08ecbe041859f2d97f12b45cdb7965261a546bc1630018d60667",
+              "cutoff": null,
+              "status": "expected",
+              "revision": 2,
+              "units": 0,
+              "unitsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "sources": [],
+              "numbers": [
+                {
+                  "unit": 1,
+                  "mode": null,
+                  "origin": null
+                },
+                {
+                  "unit": 2,
+                  "mode": null,
+                  "origin": null
+                }
+              ]
+            }
+          },
+          {
+            "team": "OTT",
+            "officialEvents": 9,
+            "verified": [
+              {
+                "nhlId": 395,
+                "reportEvent": 93,
+                "period": 1,
+                "elapsed": "16:34",
+                "ids": [
+                  8481596,
+                  8482116,
+                  8483676,
+                  8480208,
+                  8482105
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-93"
+              },
+              {
+                "nhlId": 21,
+                "reportEvent": 94,
+                "period": 1,
+                "elapsed": "16:43",
+                "ids": [
+                  8481596,
+                  8482116,
+                  8483676,
+                  8480208,
+                  8482105
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-94"
+              },
+              {
+                "nhlId": 398,
+                "reportEvent": 95,
+                "period": 1,
+                "elapsed": "16:43",
+                "ids": [
+                  8481528,
+                  8482092,
+                  8473512,
+                  8481606,
+                  8478469
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-95"
+              },
+              {
+                "nhlId": 408,
+                "reportEvent": 96,
+                "period": 1,
+                "elapsed": "17:39",
+                "ids": [
+                  8481528,
+                  8482092,
+                  8473512,
+                  8481606,
+                  8478469
+                ],
+                "url": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-96"
+              }
+            ],
+            "entry": {
+              "id": "2c07dc8263654167d026a3b9d3d7b96133bd428a66e8d1e97fe5d5630a337ef8",
+              "cutoff": null,
+              "status": "expected",
+              "revision": 2,
+              "units": 4,
+              "unitsHash": "af2a4653b6acc73dba4886b6db30c65003777f80af5d47d2faf455c54c51fa79",
+              "sources": [
+                "https://x.com/SunGarrioch/status/2123562467645149441"
+              ],
+              "numbers": [
+                {
+                  "unit": 1,
+                  "mode": null,
+                  "origin": null
+                },
+                {
+                  "unit": 2,
+                  "mode": null,
+                  "origin": null
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "numberedCohort": {
+    "observed_at": "2026-11-20 01:27:49.278645+00",
+    "scheduled": 12,
+    "scheduled_start_passed": 9,
+    "stored_entries": 24,
+    "populated_frozen": 0,
+    "pp_revisions": 0,
+    "first_reports": []
+  },
+  "parent": "Open; still needs a genuine explicitly numbered in-game report with five skaters, origin-game source and timestamp followed by a carried selection on the next scheduled game.",
+  "ottawaNewOnRefresh": [
+    {
+      "gameId": 2026020348,
+      "teamId": 9,
+      "eventId": 676,
+      "reportEvent": 184,
+      "order": 471,
+      "period": 2,
+      "elapsed": "12:11",
+      "players": [
+        {
+          "playerId": 8481596,
+          "name": "Shane Pinto"
+        },
+        {
+          "playerId": 8482116,
+          "name": "Tim Stützle"
+        },
+        {
+          "playerId": 8483676,
+          "name": "Stephen Halliday"
+        },
+        {
+          "playerId": 8480208,
+          "name": "Drake Batherson"
+        },
+        {
+          "playerId": 8482105,
+          "name": "Jake Sanderson"
+        }
+      ],
+      "sourceUrl": "https://www.nhl.com/scores/htmlreports/20262027/PL020348.HTM#PL-184"
+    }
+  ],
+  "subsequentMasterAtHandback": {
+    "sha": "aa49b6c5ee783248f6b9c16842925a607e1915bb",
+    "containsApprovedRelease": true,
+    "linesReaderAndComponentPathsChanged": false,
+    "productionAliasAtCheck": "dpl_8pHbeKf9F341Y4NqRaHSU1zWy9i7",
+    "subsequentBuildState": "BUILDING"
+  }
+}

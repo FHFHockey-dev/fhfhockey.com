@@ -58,7 +58,7 @@ async function rows(query: PromiseLike<{ data: any; error: any }>): Promise<any[
 }
 const one = async (query: PromiseLike<{ data: any; error: any }>) => (await rows(query))[0];
 
-export function supabaseCaptureRpc(client: Client, timeoutMs?: number): CaptureRpc {
+export function supabaseCaptureRpc(client: Client, timeoutMs?: number, hostedDispatchId?: string): CaptureRpc {
   const query = (name: string, params: Record<string, unknown>, signal?: AbortSignal) => {
     const request = client.rpc(name, params);
     const deadline = signal ?? (timeoutMs === undefined ? undefined : AbortSignal.timeout(timeoutMs));
@@ -66,7 +66,8 @@ export function supabaseCaptureRpc(client: Client, timeoutMs?: number): CaptureR
   };
   return {
     async claim(a) {
-      const row = await one(query("forge_pregame_capture_claim_v1", {
+      const row = await one(query(hostedDispatchId ? "forge_pregame_hosted_claim_v2" : "forge_pregame_capture_claim_v1", {
+        ...(hostedDispatchId ? { p_dispatch_id: hostedDispatchId } : {}),
         p_game_id: a.gameId, p_policy_id: a.policyId, p_slate_date: a.slateDate, p_home_team_id: a.homeTeamId,
         p_away_team_id: a.awayTeamId, p_calendar_revision: a.calendarRevision, p_scheduled_start: a.scheduledStart,
         p_required_ms: a.requiredMs, p_code_version: a.codeVersion,

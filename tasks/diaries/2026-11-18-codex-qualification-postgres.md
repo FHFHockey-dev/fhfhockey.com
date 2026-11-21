@@ -1,0 +1,5 @@
+# Qualification PG fixture
+- Start · Parent observed five failures in isolated PG15 qualification storage. Verify owning fixture, actual loaded migrations and strict sink history, then fix only an established in-scope defect. No live read/write or changes to frozen evidence.
+- Diagnosis · On unchanged HEAD 62ce797ad the PG17 first case independently produced the same hold as the parent's PG15 run. read_tweet_claim_evidence requires known_at <= p_asof, and both fixture setup paths omitted known_at (default PostgreSQL clock_timestamp() in November vs October scenario).
+- Fixed the two synthetic test inserts with a fixture audit clock; added a future complete audit to the existing newest-incomplete test to check cutoff integrity. No SQL or product policy change.
+- Handoff · Full suite passed 23/23 on PostgreSQL 15.19 and 23/23 on PostgreSQL 17.11 with only IFTTT_POSTGRES_BIN. ESLint and diff --check passed. Change limited to web/lib/sources/tweetClaimQualificationStorage.test.ts. Logs under /tmp/fhfh-n123-qualification-pg{15,17}-after.log. No external database or schema change.

@@ -20,7 +20,7 @@ const abbreviation = (team: number) => `T${String(team).padStart(2, "0")}`;
 export type Shape = "typical" | "maximal";
 export function league(days: number, shape: Shape = "typical") {
   const players: PlanningPlayer[] = [], games: PlanningGame[] = [];
-  const run = { run_id: uuid("run"), as_of_date: "2026-10-26", created_at: "2026-10-26T10:00:00Z", git_sha: "a".repeat(40), external_input_proven: true };
+  const run = { run_id: uuid("run"), as_of_date: "2026-10-26", created_at: "2026-10-26T10:00:00Z", decision_as_of: "2026-10-26T09:00:00Z", succeeded_observed_at: "2026-10-26T10:01:00Z", git_sha: "a".repeat(40), external_input_proven: true };
   const skaters: Record<string, unknown>[] = [], goalies: Record<string, unknown>[] = [], reserves: Record<string, unknown>[] = [];
   const seasonTotals: Record<string, unknown>[] = [];
   let nextId = 30000;

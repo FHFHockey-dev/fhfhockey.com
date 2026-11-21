@@ -1,0 +1,7 @@
+# Independent hosted witness
+
+- Scope: implement a separate hosted custody verifier, constrained SQL interface and connected local proof. Canonical octoberBranch, observed HEAD 789713fb5, task baseline f80814534.
+- Starting with existing capture custody, dispatch, publication and runner contracts. No external calls or deployment. New witness files and migration 20261118210002 only.
+- Parent confirmed the actual independent receipt must precede T−60, and approved named-handle and automated mandates are distinct. Isolated direct SQL worker has one bounded raw read per claim. Confirmation in a second transaction proves the independent check was already committed before the deadline. The state machine consumes only independent_verdicts.
+- Delivered migration 20261118210002 (sha256 9a9b2c3f817a4b5b5bc4aa6fb06fdf6bc3efdb70063bb5612f547a727ed06959), separate TypeScript executable, connected test and independent operator guide. Checked 3 disposable PG cases including named/automated authority, untrusted signer, cross-role denial, immutable receipts, changed bytes/bindings/times, lost acknowledgment and separate transaction confirmation. Focused TypeScript passed. CLI rejection returned only its enum. No live credential, deployment, schedule or host validation.
+- Read-only integration review sent to lead: require exact stage fence for publication, recheck schedule at reader completion, validate exact daily revision/points/slot shape and honor stop latches after capture. Parent owns integration, fixes and release/approval status.

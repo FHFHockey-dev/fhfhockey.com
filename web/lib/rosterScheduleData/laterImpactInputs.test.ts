@@ -24,8 +24,8 @@ const at = (offset: number, from = DECISION) => new Date(Date.parse(from) + offs
 const offline = { offlineFixture: true } as const;
 const POLICY = forecastCalendarPolicy(21);
 const proof = { runId: "run-1", basis: "verified_release" as const, releaseSha: "b".repeat(40), closureSha256: null };
-const runRow = (runId = "run-1", created = "2026-10-31T10:00:00Z", asOf = "2026-10-31") =>
-  ({ run_id: runId, as_of_date: asOf, created_at: created, git_sha: "b".repeat(40), external_input_proven: true, proof: { ...proof, runId } });
+const runRow = (runId = "run-1", created = "2026-10-31T10:00:00Z", observed = "2026-10-31T10:20:00Z", asOf = "2026-10-31") =>
+  ({ run_id: runId, as_of_date: asOf, created_at: created, succeeded_observed_at: observed, git_sha: "b".repeat(40), external_input_proven: true, proof: { ...proof, runId } });
 const TIMINGS = new Map<string, RunTiming>([["run-1", { inputCutoff: "2026-10-31T09:00:00.000Z", reconstruction: false }]]);
 const teamIds: Record<string, number> = { AAA: 1, BBB: 2, SSS: 3, RRR: 4 };
 const person = (id: string, nhlId: number, team: string, extra: Partial<PlanningPlayer> = {}): PlanningPlayer => ({ id, nhlId, nhlTeamId: teamIds[team],
@@ -229,7 +229,7 @@ describe("§3 timing, witness and selection", () => {
     const result = evaluate(scenario());
     const a = result.provenance.find(item => item.playerId === "a")!;
     expect(a).toMatchObject({ runId: "run-1", slateDate: "2026-10-31", basisGameId: "2026020101", teamAbbreviation: "AAA", seasonId: SEASON,
-      issuedAt: "2026-10-31T10:00:00.000Z", inputCutoff: "2026-10-31T09:00:00.000Z", reconstruction: false, conditioning: "unconditional",
+      issuedAt: "2026-10-31T10:20:00.000Z", inputCutoff: "2026-10-31T09:00:00.000Z", reconstruction: false, conditioning: "unconditional",
       witness: { kind: "observed_capture", label: "observed available by", availableAt: at(-60000), trustedSource: LATER_IMPACT_CAPTURE_SOURCE } });
     expect(a.modelVersion).toBe(`forge-daily-bridge-v1:${"b".repeat(40)}`);
   });
@@ -279,12 +279,21 @@ describe("§3 timing, witness and selection", () => {
     expect(runTimings([{ entity_key: "y", input_cutoff: "2026-10-31T09:00:00Z", replay_classification: "historical_reconstruction" }]).get("y"))
       .toEqual({ inputCutoff: "2026-10-31T09:00:00.000Z", reconstruction: true });
   });
-  it("selects each player's newest line by issue time, run and basis game, never by slate order", () => {
-    const runs = [runRow("run-1", "2026-10-31T10:00:00Z", "2026-11-02"), runRow("run-2", "2026-10-31T11:00:00Z", "2026-10-30")];
-    const built = buildBasis(observation({ runs, skaters: [skaterRow(8001, "AAA", 0.4), { ...skaterRow(8001, "AAA", 0.7), run_id: "run-2", game_id: 2026020099 }] }), PLAYERS, TIMINGS);
+  it("selects the newest line by observed success even when creation and slate order disagree", () => {
+    const runs = [runRow("run-1", "2026-10-31T11:00:00Z", "2026-10-31T11:15:00Z", "2026-10-31"),
+      runRow("run-2", "2026-10-31T10:00:00Z", "2026-10-31T12:00:00+00:00", "2026-10-30")];
+    const built = buildBasis(observation({ runs, skaters: [skaterRow(8001, "AAA", 0.4),
+      skaterRow(8001, "AAA", 0.7, { run_id: "run-2", as_of_date: "2026-10-30", game_id: 2026020099 })] }), PLAYERS, TIMINGS);
     const row = built.basis.rows.find(item => item[0] === "a")!;
-    expect(built.basis.runs[row[1]].runId).toBe("run-2");
+    expect(built.basis.runs[row[1]]).toMatchObject({ runId: "run-2", issuedAt: "2026-10-31T12:00:00.000Z" });
     expect(row[2]).toBe("2026020099");
+  });
+  it.each([undefined, "invalid"])("reports and excludes a run without valid observed success timing (%s)", succeeded_observed_at => {
+    const payload = scenario({ observation: observation({ runs: [{ ...runRow(), succeeded_observed_at }] }) });
+    expect(payload.basis).toMatchObject({ runs: [], rows: [] });
+    expect(payload.capture?.rows).toEqual([]);
+    expect(payload.limitations).toContain("The basis excluded 1 of the admitted FORGE runs because observed success timing was missing or invalid.");
+    expect(evaluate(payload).delta).toBeNull();
   });
   it("keeps the saved decision clock on reload", () => {
     const payload = JSON.parse(JSON.stringify(scenario()));

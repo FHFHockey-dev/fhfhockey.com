@@ -1,0 +1,6 @@
+# Sko streak identity and phase data
+2026-11-18 · octoberBranch b561f4201. Parent assigned development-only game identity, censored episode/phase memberships and process-column availability under parent-v1. Pilot stays intact. Started identifying official history and source contracts before setting the consumer interface. No remote or protected evaluation access.
+
+Found the BLSH-owned November 4 raw development capture with season/game keys. All 35,246 original rows match current retained WGO player/season/date/points; WGO has 47,224 played rows, 920 skaters, 1,312 regular-season games with two clubs. Eight 17-skater team sheets need conservative uncertainty handling. Full-source NST joins and chart/evaluation contracts sent to owners. No reserved inputs opened.
+
+Completed parent-v1 data.py and full games/process/episodes/phases/gap/ordinal/denominator/availability datasets plus DATA.md. All 549 pilot resets were consecutive official games; 19 conservative gaps broke independent histories. Two left-censored cold entries and 113 right-censored exits. Four focused integrity tests passed, including full independent threshold comparison, exhaustive as-of prefix replays on three real skaters, and phase-offset integrity. All 14 DATA.md local links resolve. Parent, chart and evaluation workers received the interfaces. No remote work.

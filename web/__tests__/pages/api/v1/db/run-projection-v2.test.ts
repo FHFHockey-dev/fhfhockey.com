@@ -347,7 +347,10 @@ describe("/api/v1/db/run-projection-v2", () => {
     }
   });
 
-  it("reports a succeeded run whose post-run snapshot save failed as succeeded, with a non-blocking warning", async () => {
+  it.each([
+    ["save_input_snapshot", "post-run step save_input_snapshot failed (non-blocking)"],
+    ["record_succeeded_observation", "RSO requires a recorded success time to serve these rows."],
+  ] as const)("reports the consumer consequence of %s while preserving the completed run", async (step, warning) => {
     vi.mocked(runProjectionV2ForDate).mockResolvedValueOnce({
       runId: "run-3",
       gamesProcessed: 6,
@@ -356,7 +359,7 @@ describe("/api/v1/db/run-projection-v2", () => {
       goalieRowsUpserted: 12,
       timedOut: false,
       postRunFailure: {
-        step: "save_input_snapshot",
+        step,
         message: "<!DOCTYPE html><html><title>fyhftlxokyjtpndbkfse.supabase.co | 520: Web server is returning an unknown error</title></html>",
       },
     });
@@ -372,7 +375,7 @@ describe("/api/v1/db/run-projection-v2", () => {
       gamesProcessed: 6,
       termination: { state: "completed", resumeRequired: false },
       postRun: {
-        step: "save_input_snapshot",
+        step,
         status: "failed",
         blocking: false,
         dependencyError: { classification: "html_upstream_response" },
@@ -380,7 +383,7 @@ describe("/api/v1/db/run-projection-v2", () => {
       observability: {
         dataQualityWarnings: [expect.objectContaining({
           code: "post_run_step_failed",
-          message: expect.stringContaining("Run for 2026-10-20 succeeded; post-run step save_input_snapshot failed (non-blocking)"),
+          message: expect.stringContaining(warning),
         })],
       },
       scanSummary: { status: "ready", blockingIssueCount: 0 },

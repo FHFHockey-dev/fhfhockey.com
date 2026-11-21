@@ -1,0 +1,1138 @@
+diff --git a/supabase/migrations/20261118162126_homepage_yahoo_ownership_page.sql b/supabase/migrations/20261118162126_homepage_yahoo_ownership_page.sql
+new file mode 100644
+index 0000000000000000000000000000000000000000..6b9c5cb51bfd1f08e07afba51493cc895cbb677c
+--- /dev/null
++++ b/supabase/migrations/20261118162126_homepage_yahoo_ownership_page.sql
+@@ -0,0 +1,38 @@
++-- Page source rows before reading history. Both arrays contain every non-null
++-- observation in the same primary-key date order, including old baselines.
++create function public.homepage_yahoo_ownership_page(p_offset integer, p_season integer default null)
++returns table (
++  player_key text, player_id text, season integer, full_name text,
++  headshot_url text, display_position text, editorial_team_full_name text,
++  editorial_team_abbreviation text, eligible_positions jsonb, uniform_number smallint,
++  observation_dates date[], observation_values double precision[], page_count integer
++)
++language sql stable security invoker
++set search_path = ''
++as $$
++  with page as materialized (
++    select p.player_key, p.player_id, p.season, p.full_name, p.headshot_url,
++           p.display_position, p.editorial_team_full_name, p.editorial_team_abbreviation,
++           p.eligible_positions, p.uniform_number
++    from public.yahoo_players p
++    where p_season is null or p.season = p_season
++    order by p.player_id, p.season nulls first, p.player_key
++    limit 1000 offset greatest(p_offset, 0)
++  )
++  select p.player_key::text, p.player_id::text, p.season, p.full_name::text,
++         p.headshot_url::text, p.display_position::text, p.editorial_team_full_name::text,
++         p.editorial_team_abbreviation::text, p.eligible_positions, p.uniform_number,
++         coalesce(h.dates, '{}'::date[]), coalesce(h.ownership, '{}'::double precision[]),
++         (count(*) over ())::integer
++  from page p
++  cross join lateral (
++    select array_agg(o.ownership_date order by o.ownership_date) as dates,
++           array_agg(o.ownership_pct order by o.ownership_date) as ownership
++    from public.yahoo_player_ownership_history o
++    where o.player_key = p.player_key and o.ownership_pct is not null
++  ) h
++  order by p.player_id, p.season nulls first, p.player_key;
++$$;
++
++revoke all on function public.homepage_yahoo_ownership_page(integer, integer) from public;
++grant execute on function public.homepage_yahoo_ownership_page(integer, integer) to anon, authenticated, service_role;
+diff --git a/web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts b/web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts
+index e8b31b8c3541b8fa590929b4d6335479d0146ae0..b993f3707105130cb76d5ed2790410b924719b6a 100644
+--- a/web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts
++++ b/web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts
+@@ -16,6 +16,7 @@ import ownershipTrendsHandler, {
+   buildAdpTimelines,
+   calculateTrendMovement,
+   fetchYahooPlayerRows,
++  fetchOwnershipPlayerRows,
+   fetchYahooToNhlMap,
+   latestOwnershipTimelineDate,
+   matchesPositionFilter
+@@ -106,51 +107,34 @@ describe("ownership-trends data contract", () => {
+     expect(seasons).toEqual([2025, 2025]);
+   });
+ 
+-  it("hydrates each history once without OFFSET aggregates and preserves page order", async () => {
+-    const rows = Array.from({ length: 4438 }, (_, index) => ({
+-      player_key: `477.p.${index}`, player_id: String(index), season: 2026,
+-      ownership_timeline: [{ date: "2025-01-01", value: 10 }, { date: "2026-11-10", value: 20 }],
+-    }));
+-    let historyRowsRead = 0;
+-    const historyOffsets: number[] = [];
+-    const historySizes: number[] = [];
+-    const client = { from() {
+-      let select = "", from = 0, to = 999, keys: string[] | null = null;
+-      const query = {
+-        select(value: string) { select = value; return query; },
+-        order: () => query,
+-        eq(column: string, value: number) { expect([column, value]).toEqual(["season", 2026]); return query; },
+-        range(start: number, end: number) { from = start; to = end; return query; },
+-        in(column: string, values: string[]) { expect(column).toBe("player_key"); keys = values; return query; },
+-        then(resolve: (value: unknown) => unknown) {
+-          if (select === "player_key") return Promise.resolve({ data: rows.slice(from, to + 1).map(({ player_key }) => ({ player_key })), error: null }).then(resolve);
+-          expect(keys).not.toBeNull();
+-          const selected = rows.filter(row => keys!.includes(row.player_key)).reverse();
+-          historyRowsRead += selected.length;
+-          historyOffsets.push(from); historySizes.push(keys!.length);
+-          return Promise.resolve({ data: selected.slice(from, to + 1), error: null }).then(resolve);
+-        },
+-      };
+-      return query;
+-    } };
+-    const result = await fetchYahooPlayerRows({ supabase: client, select: "player_key,player_id,ownership_timeline:normalized_ownership_timeline", season: 2026 });
+-    expect(result).toEqual(rows);
+-    expect(historyRowsRead).toBe(4438);
+-    expect(historyOffsets).toEqual(Array(9).fill(0));
+-    expect(Math.max(...historySizes)).toBe(500);
++  it("restores every ordered observation and pages at the source-row boundary", async () => {
++    const keys = Array.from({ length: 1001 }, (_, i) => `477.p.${i}`);
++    const offsets: number[] = [];
++    const rpc = vi.fn(async (name, args, options) => {
++      expect(name).toBe("homepage_yahoo_ownership_page");
++      expect(options).toEqual({ get: true });
++      expect(args.p_season).toBe(2026);
++      offsets.push(args.p_offset);
++      const page = keys.slice(args.p_offset, args.p_offset + 1000);
++      return { error: null, data: page.map(player_key => ({
++        player_key, page_count: page.length, observation_dates: ["2024-01-01", "2026-11-10"],
++        observation_values: [0, 20],
++      })) };
++    });
++    const rows = await fetchOwnershipPlayerRows({ rpc }, 2026);
++    expect(offsets).toEqual([0, 1000]);
++    expect(rows.map(row => row.player_key)).toEqual(keys);
++    expect(rows[1000].ownership_timeline).toEqual([
++      { date: "2024-01-01", value: 0 }, { date: "2026-11-10", value: 20 },
++    ]);
+   });
+ 
+-  it("rejects a truncated history chunk instead of silently dropping players", async () => {
+-    const client = { from() {
+-      let select = "";
+-      const query = {
+-        select(value: string) { select = value; return query; },
+-        order: () => query, range: () => query, in: () => query,
+-        then(resolve: (value: unknown) => unknown) { return Promise.resolve({ data: select === "player_key" ? [{ player_key: "477.p.1" }] : [], error: null }).then(resolve); },
+-      };
+-      return query;
+-    } };
+-    await expect(fetchYahooPlayerRows({ supabase: client, select: "player_key,ownership_timeline:normalized_ownership_timeline" })).rejects.toThrow("Incomplete ownership history page");
++  it.each([
++    { page_count: 2, observation_dates: [], observation_values: [] },
++    { page_count: 1, observation_dates: ["2026-11-10"], observation_values: [] },
++  ])("rejects a partial source or an unpaired history", async record => {
++    const rpc = vi.fn(async () => ({ error: null, data: [{ player_key: "477.p.1", ...record }] }));
++    await expect(fetchOwnershipPlayerRows({ rpc })).rejects.toThrow("Incomplete ownership");
+   });
+ 
+   it("uses exact seasonal mapping keys and rejects ambiguous or malformed identities", async () => {
+@@ -289,7 +273,18 @@ describe("ownership snapshot provenance", () => {
+   const request = (playerIds: string) => ({ method: "GET", query: { playerIds, season: "2026" } }) as any;
+   function database(tables: Record<string, Array<Record<string, unknown>>>) {
+     const reads: string[] = [];
+-    createClientMock.mockReturnValue({ from(table: string) {
++    createClientMock.mockReturnValue({ async rpc(name: string, args: { p_season?: number; p_offset: number }) {
++      expect(name).toBe("homepage_yahoo_ownership_page");
++      reads.push(name);
++      const data = (tables.yahoo_players_with_normalized_history ?? [])
++        .filter(row => args.p_season == null || row.season === args.p_season)
++        .slice(args.p_offset, args.p_offset + 1000);
++      return { data: data.map(row => {
++        const timeline = (row.ownership_timeline ?? []) as Array<{ date: string; value: number }>;
++        return { ...row, page_count: data.length, observation_dates: timeline.map(p => p.date),
++          observation_values: timeline.map(p => p.value) };
++      }), error: null };
++    }, from(table: string) {
+       reads.push(table);
+       let rows = tables[table] ?? [];
+       const query = {
+@@ -324,14 +319,14 @@ describe("ownership snapshot provenance", () => {
+         ownershipTrendsHandler({ method: "GET", query: { window: "3", season: "2026" } } as any, three),
+         ownershipTrendsHandler({ method: "GET", query: { window: "5", season: "2026" } } as any, five),
+       ]);
+-      expect(three.body.risers[0]).toMatchObject({ playerId: 12, delta: 5 });
++      expect(three.body.risers[0]).toMatchObject({ playerId: 12, delta: 5, movementStartDate: "2026-11-07", movementEndDate: "2026-11-10" });
+       expect(three.body).toMatchObject({ mappedPlayerCount: 1, unmappedPlayerCount: 0 });
+       expect(five.body.risers[0]).toMatchObject({ playerId: 12, delta: 20 });
+-      expect(reads).toEqual(["yahoo_players_with_normalized_history", "yahoo_players_with_normalized_history", "yahoo_nhl_player_map_read"]);
++      expect(reads).toEqual(["homepage_yahoo_ownership_page", "yahoo_nhl_player_map_read"]);
+       const again = createMockRes();
+       await ownershipTrendsHandler({ method: "GET", query: { window: "3", season: "2026" } } as any, again);
+       expect(again.body.sourceDate).toBe("2026-11-10");
+-      expect(reads).toHaveLength(3);
++      expect(reads).toHaveLength(2);
+     } finally { vi.useRealTimers(); }
+   });
+ 
+@@ -371,7 +366,7 @@ describe("ownership snapshot provenance", () => {
+       const filtered = createMockRes();
+       await ownershipTrendsHandler({ method: "GET", query: { window: "3", pos: "D", limit: "1", offset: "20" } } as any, filtered);
+       expect(filtered.body).toMatchObject({ mappedPlayerCount: 2, unmappedPlayerCount: 4, totalRisers: 0, totalFallers: 0, risers: [], fallers: [] });
+-      expect(reads).toHaveLength(3);
++      expect(reads).toHaveLength(2);
+     } finally { vi.useRealTimers(); }
+   });
+ 
+@@ -393,7 +388,7 @@ describe("ownership snapshot provenance", () => {
+       await ownershipTrendsHandler({ method: "GET", query: { window: "3", season: "2026", playerIds: "12" } } as any, response);
+       expect(response.body).toMatchObject({ mappedPlayerCount: 0, unmappedPlayerCount: 1, totalRisers: 1, selectedPlayers: [] });
+       expect(response.body.risers[0]).toMatchObject({ playerKey: "477.p.112", playerId: null, delta: 10 });
+-      expect(reads).toEqual(["yahoo_players_with_normalized_history", "yahoo_players_with_normalized_history", "yahoo_nhl_player_map_read"]);
++      expect(reads).toEqual(["homepage_yahoo_ownership_page", "yahoo_nhl_player_map_read"]);
+     } finally { vi.useRealTimers(); }
+   });
+ 
+diff --git a/web/components/TransactionTrends/TransactionTrends.test.tsx b/web/components/TransactionTrends/TransactionTrends.test.tsx
+index 3d94fcefb9c76a6df013dc8329ddd0dfcc091e8d..d9505c4b6ae26753eef3ccebf9bbcebbfdb4c522 100644
+--- a/web/components/TransactionTrends/TransactionTrends.test.tsx
++++ b/web/components/TransactionTrends/TransactionTrends.test.tsx
+@@ -1,4 +1,5 @@
+ import {
++  act,
+   cleanup,
+   fireEvent,
+   render,
+@@ -43,6 +44,7 @@ const makeResponse = (
+   options: {
+     generatedAt?: string;
+     sourceDate?: string | null;
++    seasonFallbackApplied?: boolean;
+     metric?: "ownership" | "adp";
+     totalRisers?: number;
+     totalFallers?: number;
+@@ -53,6 +55,7 @@ const makeResponse = (
+   windowDays: 3,
+   generatedAt: options.generatedAt ?? new Date().toISOString(),
+   sourceDate: options.sourceDate,
++  seasonFallbackApplied: options.seasonFallbackApplied,
+   page: 1,
+   pageSize: 10,
+   offset: 0,
+@@ -114,6 +117,7 @@ const mockResponse = (body: ReturnType<typeof makeResponse>) =>
+           windowDays,
+           offset,
+           page: Math.floor(offset / body.pageSize) + 1,
++          pos: url.searchParams.get("pos"),
+           risers,
+           fallers,
+         }),
+@@ -137,6 +141,7 @@ describe("TransactionTrends", () => {
+     cleanup();
+     transactionTrendRequests.clear();
+     vi.restoreAllMocks();
++    vi.unstubAllGlobals();
+   });
+ 
+   it("renders two aligned semantic tables with all ten rows", async () => {
+@@ -158,7 +163,7 @@ describe("TransactionTrends", () => {
+       screen.getAllByRole("columnheader", { name: "Team · Elig" }),
+     ).toHaveLength(2);
+     expect(
+-      screen.getAllByRole("columnheader", { name: "Trend (3D)" }),
++      screen.getAllByRole("columnheader", { name: "Trend" }),
+     ).toHaveLength(2);
+     expect(screen.queryByText("Ownership movement may be stale.")).toBeNull();
+     expect(
+@@ -203,12 +208,12 @@ describe("TransactionTrends", () => {
+     fireEvent.click(oneDayFilter);
+     expect(oneDayFilter.getAttribute("aria-pressed")).toBe("true");
+     expect(
+-      screen.getByText("Ownership movement over the last day."),
++      screen.getByText("Ownership movement for a 1-day target window."),
+     ).toBeTruthy();
+ 
+     await waitFor(() => {
+       expect(
+-        screen.getAllByRole("columnheader", { name: "Trend (1D)" }),
++        screen.getAllByRole("columnheader", { name: "Trend" }),
+       ).toHaveLength(2);
+       expect(
+         screen.getAllByRole("columnheader", { name: "Δ 1D" }),
+@@ -227,7 +232,7 @@ describe("TransactionTrends", () => {
+     expect(adpToggle.getAttribute("aria-pressed")).toBe("true");
+     expect(
+       await screen.findByText(
+-        "Average draft pick movement over the last 3 days.",
++        /Average draft pick movement for a 3-day target window\./,
+       ),
+     ).toBeTruthy();
+ 
+@@ -242,7 +247,7 @@ describe("TransactionTrends", () => {
+       ).toBe(true);
+     });
+     expect(
+-      screen.getAllByLabelText(/average draft pick trend over 3 days/i),
++      screen.getAllByLabelText(/recent daily average draft pick history/i),
+     ).toHaveLength(2);
+     expect(
+       screen.getByText("Average pick moved 20.0% earlier"),
+@@ -251,7 +256,7 @@ describe("TransactionTrends", () => {
+       screen.getByText("Average pick moved 20.0% later"),
+     ).toBeTruthy();
+     const risingSparkline = screen.getByLabelText(
+-      "Rising Player 1 average draft pick trend over 3 days",
++      "Rising Player 1 recent daily average draft pick history",
+     );
+     expect(risingSparkline.querySelector("path")?.getAttribute("d")).toBe(
+       "M 0.00 22.00 L 50.00 12.00 L 100.00 2.00",
+@@ -295,8 +300,48 @@ describe("TransactionTrends", () => {
+     const rise = (await screen.findByText("Up 1.0 percentage points")).parentElement!;
+     const fall = screen.getByText("Down 1.0 percentage points").parentElement!;
+     expect(rise.hasAttribute("aria-label")).toBe(false);
+-    expect(rise.textContent).toContain("▲ +1.0%");
+-    expect(fall.textContent).toContain("▼ -1.0%");
++    expect(rise.textContent).toContain("▲ +1.0 pp");
++    expect(fall.textContent).toContain("▼ -1.0 pp");
++  });
++
++  it("discloses source date, season fallback, and actual comparison dates", async () => {
++    const response = makeResponse(2, {
++      sourceDate: "2026-10-19",
++      seasonFallbackApplied: true,
++    });
++    Object.assign(response.risers[0], {
++      movementStartDate: "2026-10-15",
++      movementEndDate: "2026-10-18",
++    });
++    Object.assign(response.risers[1], {
++      playerId: null,
++      movementStartDate: "2026-10-12",
++      movementEndDate: "2026-10-17",
++    });
++    vi.stubGlobal("fetch", mockResponse(response));
++    renderOwnershipTrends();
++
++    const sourceDate = await screen.findByText("Oct 19, 2026");
++    expect(sourceDate.getAttribute("datetime")).toBe("2026-10-19");
++    expect(sourceDate.parentElement?.textContent).toContain("Searched across seasons.");
++    const risers = screen.getByRole("table", { name: "Top Risers" });
++    expect(within(risers).getByRole("link", { name: "Rising Player 1" }).getAttribute("href"))
++      .toBe("/trends/player/1");
++    const mapped = within(risers).getByRole("row", { name: /Rising Player 1/ });
++    expect(within(mapped).getByText("To Oct 18").getAttribute("datetime")).toBe("2026-10-18");
++    expect(within(mapped).queryByText(/D span/)).toBeNull();
++    expect(within(mapped).queryByText("Yahoo listing")).toBeNull();
++    const unmapped = within(risers).getByRole("row", { name: /Rising Player 2/ });
++    expect(within(unmapped).queryByRole("link")).toBeNull();
++    const listing = within(unmapped).getByText("Yahoo listing");
++    expect(listing.getAttribute("title")).toBe("NHL identity unconfirmed");
++    expect(listing.textContent).toBe("Yahoo listing. NHL identity unconfirmed.");
++    expect(within(unmapped).getByText("To Oct 17").getAttribute("datetime")).toBe("2026-10-17");
++    expect(within(unmapped).getByText("5D span")).toBeTruthy();
++    expect(within(unmapped).getByTitle("Oct 12, 2026 to Oct 17, 2026")).toBeTruthy();
++    expect(
++      within(unmapped).getByText("Up 2.0 percentage points from Oct 12, 2026 to Oct 17, 2026"),
++    ).toBeTruthy();
+   });
+ 
+   it("keeps real counts and Prev/Next paging data-driven", async () => {
+@@ -321,14 +366,83 @@ describe("TransactionTrends", () => {
+         fetchMock.mock.calls.some(([url]) => String(url).includes("offset=10")),
+       ).toBe(true);
+     });
+-    expect(previous.hasAttribute("disabled")).toBe(false);
++    expect(screen.getByRole("button", { name: /prev/i }).hasAttribute("disabled")).toBe(false);
++    const risers = screen.getByRole("table", { name: "Top Risers" });
++    expect(within(risers).getByRole("rowheader", { name: "11" })).toBeTruthy();
+ 
+-    fireEvent.click(previous);
++    fireEvent.click(screen.getByRole("button", { name: /prev/i }));
+     await waitFor(() => {
+       expect(screen.getByText("Page 1")).toBeTruthy();
+     });
+   });
+ 
++  it.each(["G", "5D", "ADP"])(
++    "requests only the first page when switching to %s from a later page",
++    async (filter) => {
++      const fetchMock = mockResponse(makeResponse(10, { totalRisers: 20 }));
++      vi.stubGlobal("fetch", fetchMock);
++      renderOwnershipTrends();
++
++      fireEvent.click(await screen.findByRole("button", { name: /next/i }));
++      const risers = await screen.findByRole("table", { name: "Top Risers" });
++      expect(within(risers).getByRole("rowheader", { name: "11" })).toBeTruthy();
++      fireEvent.click(screen.getByRole("button", { name: filter }));
++      expect(screen.queryByRole("table")).toBeNull();
++      await screen.findByText("Page 1");
++
++      const offsets = fetchMock.mock.calls.map(([request]) =>
++        new URL(String(request), "https://example.test").searchParams.get("offset"),
++      );
++      expect(offsets).toEqual(["0", "10", "0"]);
++    },
++  );
++
++  it("discards late filter results after a newer filter request fails", async () => {
++    const original = mockResponse(makeResponse(1, { sourceDate: "2026-10-19" }));
++    let finishSlowRequest: (() => void) | undefined;
++    vi.stubGlobal("fetch", async (input: string) => {
++      const params = new URL(input, "https://example.test").searchParams;
++      if (params.get("window") === "5") {
++        return new Response("Unavailable", { status: 503 });
++      }
++      if (params.get("pos") === "G") {
++        await new Promise<void>((resolve) => { finishSlowRequest = resolve; });
++      }
++      return original(input);
++    });
++    renderOwnershipTrends();
++
++    await screen.findByRole("table", { name: "Top Risers" });
++    fireEvent.click(screen.getByRole("button", { name: "G" }));
++    expect(screen.getByText("Loading ownership movement...")).toBeTruthy();
++    expect(screen.queryByRole("table")).toBeNull();
++    expect(screen.queryByText("Oct 19, 2026")).toBeNull();
++    await waitFor(() => expect(finishSlowRequest).toBeDefined());
++    fireEvent.click(screen.getByRole("button", { name: "5D" }));
++    await screen.findByText("Transaction trend data is temporarily unavailable.");
++
++    await act(async () => { finishSlowRequest?.(); });
++    expect(screen.getByText("Transaction trend data is temporarily unavailable.")).toBeTruthy();
++    expect(screen.queryByRole("table")).toBeNull();
++  });
++
++  it("rejects a response for the wrong page and allows going back", async () => {
++    const original = mockResponse(makeResponse(1, { totalRisers: 20 }));
++    vi.stubGlobal("fetch", async (input: string) => {
++      const params = new URL(input, "https://example.test").searchParams;
++      return params.get("offset") === "10"
++        ? Response.json(makeResponse(1))
++        : original(input);
++    });
++    renderOwnershipTrends();
++
++    fireEvent.click(await screen.findByRole("button", { name: /next/i }));
++    await screen.findByText("Transaction trend data did not match the selected filters or page.");
++    expect(screen.queryByRole("table")).toBeNull();
++    fireEvent.click(screen.getByRole("button", { name: /prev/i }));
++    await screen.findByRole("table", { name: "Top Risers" });
++  });
++
+   it("shows the stale state only as a compact status message", async () => {
+     vi.stubGlobal(
+       "fetch",
+@@ -402,6 +516,7 @@ describe("TransactionTrends", () => {
+ 
+       await screen.findByRole("table", { name: "Top Risers" });
+       expect(Boolean(screen.queryByText("Ownership movement may be stale."))).toBe(stale);
++      expect(screen.getByText(/Yahoo! data date unavailable/)).toBeTruthy();
+     },
+   );
+ 
+@@ -419,12 +534,14 @@ describe("TransactionTrends", () => {
+     expect(screen.queryByText(/sparkline shows/i)).toBeNull();
+   });
+ 
+-  it("switches the narrow presentation without creating another data request", async () => {
+-    const fetchMock = mockResponse(makeResponse(1));
++  it("switches the narrow presentation without resetting the page or requesting more data", async () => {
++    const fetchMock = mockResponse(makeResponse(1, { totalRisers: 20 }));
+     vi.stubGlobal("fetch", fetchMock);
+     renderOwnershipTrends();
+ 
+-    await screen.findByRole("heading", { name: "Top Risers (Δ 3D)" });
++    fireEvent.click(await screen.findByRole("button", { name: /next/i }));
++    const risers = await screen.findByRole("table", { name: "Top Risers" });
++    expect(within(risers).getByRole("rowheader", { name: "11" })).toBeTruthy();
+     const fallers = screen.getByRole("button", { name: "Fallers" });
+     fireEvent.click(fallers);
+     expect(fallers.getAttribute("aria-pressed")).toBe("true");
+@@ -432,6 +549,7 @@ describe("TransactionTrends", () => {
+     await waitFor(() => {
+       expect(document.activeElement?.id).toBe("fallers-heading");
+     });
+-    expect(fetchMock).toHaveBeenCalledTimes(1);
++    expect(screen.getByText("Page 2")).toBeTruthy();
++    expect(fetchMock).toHaveBeenCalledTimes(2);
+   });
+ });
+diff --git a/web/components/TransactionTrends/TransactionTrends.tsx b/web/components/TransactionTrends/TransactionTrends.tsx
+index f6620b8d0e9e36ea61a9130b87b23dd4c17eeefe..f0cffa9a8be0233ee40d344ace406307589a54cd 100644
+--- a/web/components/TransactionTrends/TransactionTrends.tsx
++++ b/web/components/TransactionTrends/TransactionTrends.tsx
+@@ -28,19 +28,22 @@ type TrendPlayer = {
+   previous: number;
+   delta: number;
+   deltaPct: number;
++  movementStartDate?: string;
++  movementEndDate?: string;
+   sparkline: OwnershipSparkPoint[];
+ };
+ 
+ interface ApiResponse {
+   success: boolean;
+-  metric?: TrendMetric;
++  metric: TrendMetric;
+   windowDays: number;
+-  generatedAt?: string;
++  generatedAt?: string | null;
+   sourceDate?: string | null;
+-  page?: number;
+-  pageSize?: number;
+-  offset?: number;
+-  pos?: string | null;
++  seasonFallbackApplied?: boolean;
++  page: number;
++  pageSize: number;
++  offset: number;
++  pos: string | null;
+   totalRisers?: number;
+   totalFallers?: number;
+   risers: TrendPlayer[];
+@@ -53,16 +56,30 @@ export const transactionTrendRequests = createTrendRequestCache<ApiResponse>(30_
+ const WINDOWS = [1, 3, 5, 10];
+ const POSITION_FILTERS = ["", "F", "C", "LW", "RW", "D", "G"] as const;
+ const PAGE_SIZE = 10;
++const trendDateFormat = new Intl.DateTimeFormat("en-US", {
++  month: "short",
++  day: "numeric",
++  year: "numeric",
++  timeZone: "UTC",
++});
++const trendDayFormat = new Intl.DateTimeFormat("en-US", {
++  month: "short",
++  day: "numeric",
++  timeZone: "UTC",
++});
+ 
+ type TrendDirection = "risers" | "fallers";
+ type TrendMetric = "ownership" | "adp";
++type TrendResult =
++  | { url: string; data: ApiResponse; error?: never }
++  | { url: string; data?: never; error: string };
+ type TransactionTrendsProps = {
+   defaultMetric?: TrendMetric;
+ };
+ 
+-function formatSignedDelta(value: number): string {
++function formatSignedDelta(value: number, isAdp: boolean): string {
+   if (!Number.isFinite(value)) return "—";
+-  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
++  return `${value > 0 ? "+" : ""}${value.toFixed(1)}${isAdp ? "%" : " pp"}`;
+ }
+ 
+ function TrendPanel({
+@@ -70,6 +87,7 @@ function TrendPanel({
+   players,
+   metric,
+   windowDays,
++  sourceDate,
+   offset,
+   isMobileActive,
+ }: {
+@@ -77,6 +95,7 @@ function TrendPanel({
+   players: TrendPlayer[];
+   metric: TrendMetric;
+   windowDays: number;
++  sourceDate?: string | null;
+   offset: number;
+   isMobileActive: boolean;
+ }) {
+@@ -84,6 +103,7 @@ function TrendPanel({
+   const isAdp = metric === "adp";
+   const variant = isRise ? "rise" : "fall";
+   const title = isRise ? "Top Risers" : "Top Fallers";
++  const latestSourceDate = Date.parse(sourceDate ?? "");
+ 
+   return (
+     <section
+@@ -112,9 +132,7 @@ function TrendPanel({
+               {isAdp ? "Avg Pick" : "Own %"}
+             </th>
+             <th scope="col" className={styles.sparkCell}>
+-              {/* The window is in the panel title ("Top risers (Δ 3D)"); keep it
+-                  for screen readers only so the column stays narrow on phones. */}
+-              Trend<span className={styles.visuallyHidden}> ({windowDays}D)</span>
++              Trend
+             </th>
+             <th scope="col" className={styles.deltaCell}>
+               Δ {windowDays}D
+@@ -123,13 +141,24 @@ function TrendPanel({
+         </thead>
+         <tbody>
+           {players.map((player, index) => {
++            const playerId = player.playerId;
++            const hasNhlProfile =
++              typeof playerId === "number" && Number.isSafeInteger(playerId) && playerId > 0;
+             const metadata = formatTrendPlayerMetadata(player);
+             const teamFullName = normalizeTrendTeamName(player.teamFullName);
+             const metadataTitle = teamFullName
+               ? `${metadata.label} — ${teamFullName}`
+               : metadata.label;
+             const displayedDelta = isAdp ? player.deltaPct : player.delta;
+-            const signedDelta = formatSignedDelta(displayedDelta);
++            const signedDelta = formatSignedDelta(displayedDelta, isAdp);
++            const start = Date.parse(player.movementStartDate ?? "");
++            const end = Date.parse(player.movementEndDate ?? "");
++            const comparisonDays = (end - start) / 86_400_000;
++            const comparisonDates =
++              comparisonDays > 0
++                ? `${trendDateFormat.format(start)} to ${trendDateFormat.format(end)}`
++                : null;
++            const endYear = player.movementEndDate?.slice(0, 4);
+             const movementLabel = Number.isFinite(displayedDelta)
+               ? isAdp
+                 ? `Average pick moved ${Math.abs(displayedDelta).toFixed(1)}% ${
+@@ -162,18 +191,24 @@ function TrendPanel({
+                       />
+                     )}
+                     <span className={styles.playerCopy}>
+-                      {player.playerId ? (
++                      {hasNhlProfile ? (
+                         <Link
+-                          href={`/trends/player/${player.playerId}`}
++                          href={`/trends/player/${playerId}`}
+                           className={styles.playerName}
+                           title={player.name}
+                         >
+                           {player.name}
+                         </Link>
+                       ) : (
+-                        <span className={styles.playerName} title={player.name}>
+-                          {player.name}
+-                        </span>
++                        <>
++                          <span className={styles.playerName} title={player.name}>
++                            {player.name}
++                          </span>
++                          <span className={styles.footNote} title="NHL identity unconfirmed">
++                            Yahoo listing
++                            <span className={styles.visuallyHidden}>. NHL identity unconfirmed.</span>
++                          </span>
++                        </>
+                       )}
+                       <span
+                         className={styles.mobilePlayerMeta}
+@@ -196,9 +231,9 @@ function TrendPanel({
+                   <span
+                     className={styles.sparkline}
+                     role="img"
+-                    aria-label={`${player.name} ${
++                    aria-label={`${player.name} recent daily ${
+                       isAdp ? "average draft pick" : "ownership"
+-                    } trend over ${windowDays} days`}
++                    } history`}
+                   >
+                     <OwnershipSparkline
+                       points={player.sparkline}
+@@ -215,7 +250,7 @@ function TrendPanel({
+                     />
+                   </span>
+                 </td>
+-                <td className={styles.deltaCell}>
++                <td className={styles.deltaCell} title={comparisonDates ?? undefined}>
+                   <span
+                     className={`${styles.deltaValue} ${
+                       isRise ? styles.deltaPositive : styles.deltaNegative
+@@ -225,8 +260,22 @@ function TrendPanel({
+                     <span aria-hidden="true">{signedDelta}</span>
+                     {/* aria-label isn't allowed on a plain span (axe
+                         aria-prohibited-attr); spoken text goes here instead. */}
+-                    <span className={styles.visuallyHidden}>{movementLabel}</span>
++                    <span className={styles.visuallyHidden}>
++                      {movementLabel}
++                      {comparisonDates ? ` from ${comparisonDates}` : ""}
++                    </span>
+                   </span>
++                  {comparisonDates && comparisonDays !== windowDays ? (
++                    <div className={styles.footNote}>{comparisonDays}D span</div>
++                  ) : null}
++                  {comparisonDates && end < latestSourceDate ? (
++                    <div className={styles.footNote} aria-hidden="true">
++                      <time dateTime={player.movementEndDate}>
++                        To {trendDayFormat.format(end)}
++                        {endYear !== sourceDate?.slice(0, 4) ? <><br />{endYear}</> : null}
++                      </time>
++                    </div>
++                  ) : null}
+                 </td>
+               </tr>
+             );
+@@ -272,26 +321,26 @@ export default function TransactionTrends({
+   const [metric, setMetric] = useState<TrendMetric>(defaultMetric);
+   const [pos, setPos] = useState<string>("");
+   const [offset, setOffset] = useState(0);
+-  const [data, setData] = useState<ApiResponse | null>(null);
+-  const [loading, setLoading] = useState(true);
+-  const [error, setError] = useState<string | null>(null);
++  const [result, setResult] = useState<TrendResult | null>(null);
+   const [activeTable, setActiveTable] = useState<TrendDirection>("risers");
++  const page = Math.floor(offset / PAGE_SIZE) + 1;
++  const params = new URLSearchParams({
++    window: String(windowDays),
++    metric,
++    limit: String(PAGE_SIZE),
++    offset: String(offset),
++  });
++  if (pos) params.set("pos", pos);
++  const url = `/api/v1/transactions/ownership-trends?${params.toString()}`;
++  const current = result?.url === url ? result : null;
++  const data = current?.data;
++  const loading = current === null;
+ 
+   useEffect(() => {
+     let active = true;
+ 
+     (async () => {
+-      setLoading(true);
+-      setError(null);
+       try {
+-        const params = new URLSearchParams();
+-        params.set("window", String(windowDays));
+-        params.set("metric", metric);
+-        params.set("limit", String(PAGE_SIZE));
+-        params.set("offset", String(offset));
+-        if (pos) params.set("pos", pos);
+-
+-        const url = `/api/v1/transactions/ownership-trends?${params.toString()}`;
+         const json = await transactionTrendRequests.get(url, async () => {
+           const response = await fetch(url);
+           const body = await response.text();
+@@ -300,32 +349,32 @@ export default function TransactionTrends({
+           }
+           const result: ApiResponse = JSON.parse(body);
+           if (!result.success) throw new Error(result.error || "Unknown error");
++          if (
++            result.metric !== metric ||
++            result.windowDays !== windowDays ||
++            (result.pos ?? "") !== pos ||
++            result.offset !== offset ||
++            result.page !== page ||
++            result.pageSize !== PAGE_SIZE ||
++            !Array.isArray(result.risers) ||
++            !Array.isArray(result.fallers)
++          ) {
++            throw new Error("Transaction trend data did not match the selected filters or page.");
++          }
+           return result;
+         });
+-        if (!active) return;
+-        setData(json);
++        if (active) setResult({ url, data: json });
+       } catch (caught) {
+-        if (!active) return;
+-        setError(caught instanceof Error ? caught.message : String(caught));
+-      } finally {
+-        if (active) setLoading(false);
++        if (active) {
++          setResult({ url, error: caught instanceof Error ? caught.message : String(caught) });
++        }
+       }
+     })();
+ 
+     return () => {
+       active = false;
+     };
+-  }, [windowDays, metric, pos, offset]);
+-
+-  useEffect(() => {
+-    setOffset(0);
+-  }, [windowDays, metric, pos, activeTable]);
+-
+-  const selectMetric = (nextMetric: TrendMetric) => {
+-    if (nextMetric === metric) return;
+-    setData(null);
+-    setMetric(nextMetric);
+-  };
++  }, [url, windowDays, metric, pos, offset, page]);
+ 
+   const selectMobilePanel = (direction: TrendDirection) => {
+     setActiveTable(direction);
+@@ -341,22 +390,16 @@ export default function TransactionTrends({
+   const modulePresentation = buildHomepageModulePresentation({
+     source: "transaction-trends",
+     loading,
+-    error,
+-    isEmpty:
+-      Boolean(data) &&
+-      Array.isArray(data?.risers) &&
+-      Array.isArray(data?.fallers) &&
+-      data.risers.length + data.fallers.length === 0,
++    error: current?.error,
++    isEmpty: data && data.risers.length + data.fallers.length === 0,
+     timestamp: data?.sourceDate ?? data?.generatedAt ?? null,
+     maxAgeHours: 18,
+     loadingMessage: `Loading ${movementName}...`,
+     emptyMessage: `No ${movementName} is available right now.`,
+     staleMessage: `${isAdp ? "ADP" : "Ownership"} movement may be stale.`,
+   });
+-  const supportingCopy =
+-    windowDays === 1
+-      ? `${isAdp ? "Average draft pick" : "Ownership"} movement over the last day.`
+-      : `${isAdp ? "Average draft pick" : "Ownership"} movement over the last ${windowDays} days.`;
++  const supportingCopy = `${isAdp ? "Average draft pick" : "Ownership"} movement for a ${windowDays}-day target window.`;
++  const sourceDate = Date.parse(data?.sourceDate ?? "");
+   const showData = Boolean(data) && modulePresentation.state !== "empty";
+   const totalRisers = data?.totalRisers ?? data?.risers.length ?? 0;
+   const totalFallers = data?.totalFallers ?? data?.fallers.length ?? 0;
+@@ -378,7 +421,19 @@ export default function TransactionTrends({
+               View all
+             </Link>
+           </div>
+-          <p className={styles.subtitle}>{supportingCopy}</p>
++          <p className={styles.subtitle}>
++            {supportingCopy}
++            {Number.isFinite(sourceDate) ? (
++              <>
++                {" Yahoo! data as of "}
++                <time dateTime={data?.sourceDate ?? undefined}>
++                  {trendDateFormat.format(sourceDate)}
++                </time>
++                .
++              </>
++            ) : showData ? " Yahoo! data date unavailable." : null}
++            {data?.seasonFallbackApplied ? " Searched across seasons." : null}
++          </p>
+           {modulePresentation.state === "stale" ? (
+             <div className={styles.staleNotice} role="status">
+               <span aria-hidden="true">●</span>{" "}
+@@ -401,7 +456,11 @@ export default function TransactionTrends({
+                   type="button"
+                   className={option === metric ? styles.isActive : ""}
+                   aria-pressed={option === metric}
+-                  onClick={() => selectMetric(option)}
++                  onClick={() => {
++                    if (option === metric) return;
++                    setMetric(option);
++                    setOffset(0);
++                  }}
+                 >
+                   {option === "adp" ? "ADP" : "Ownership"}
+                 </button>
+@@ -422,7 +481,11 @@ export default function TransactionTrends({
+                   type="button"
+                   className={position === pos ? styles.isActive : ""}
+                   aria-pressed={position === pos}
+-                  onClick={() => setPos(position)}
++                  onClick={() => {
++                    if (position === pos) return;
++                    setPos(position);
++                    setOffset(0);
++                  }}
+                   title={position ? `Filter: ${position}` : "All positions"}
+                 >
+                   {position || "All"}
+@@ -444,7 +507,11 @@ export default function TransactionTrends({
+                   type="button"
+                   className={window === windowDays ? styles.isActive : ""}
+                   aria-pressed={window === windowDays}
+-                  onClick={() => setWindowDays(window)}
++                  onClick={() => {
++                    if (window === windowDays) return;
++                    setWindowDays(window);
++                    setOffset(0);
++                  }}
+                 >
+                   {window}D
+                 </button>
+@@ -496,6 +563,7 @@ export default function TransactionTrends({
+               players={data.risers}
+               metric={metric}
+               windowDays={data.windowDays}
++              sourceDate={data.sourceDate}
+               offset={offset}
+               isMobileActive={activeTable === "risers"}
+             />
+@@ -504,46 +572,56 @@ export default function TransactionTrends({
+               players={data.fallers}
+               metric={metric}
+               windowDays={data.windowDays}
++              sourceDate={data.sourceDate}
+               offset={offset}
+               isMobileActive={activeTable === "fallers"}
+             />
+           </div>
++        </>
++      ) : null}
+ 
+-          <footer className={styles.footer}>
+-            <div className={styles.footerCopy}>
+-              <div className={styles.pagerInfo}>
+-                <span>Page {Math.floor(offset / PAGE_SIZE) + 1}</span>
+-                <span className={styles.separator}>·</span>
+-                <span>
+-                  Risers: {totalRisers} | Fallers: {totalFallers}
+-                </span>
+-              </div>
++      {showData || offset > 0 ? (
++        <footer className={styles.footer}>
++          <div className={styles.footerCopy}>
++            <div className={styles.pagerInfo}>
++              <span>Page {page}</span>
++              {showData ? (
++                <>
++                  <span className={styles.separator}>·</span>
++                  <span>
++                    Risers: {totalRisers} | Fallers: {totalFallers}
++                  </span>
++                </>
++              ) : null}
++            </div>
++            {showData ? (
+               <p className={styles.footNote}>
+                 {isAdp
+-                  ? "Δ = relative change in Yahoo! average draft pick over the selected window; lower average picks rank as risers. Sparkline shows recent daily average-pick trajectory."
+-                  : "Δ = change in Yahoo! percent ownership (percentage points) over the selected window. Sparkline shows recent daily trajectory."}
++                  ? "Δ is the relative change in average draft pick. Lower average picks rank as risers."
++                  : "Δ is the change in ownership in percentage points."}
++                {" The comparison uses the latest available snapshot and a baseline at or before the target date. The sparkline shows recent daily history."}
+               </p>
+-            </div>
+-            <nav className={styles.pagerButtons} aria-label="Pagination">
+-              <button
+-                type="button"
+-                onClick={() =>
+-                  setOffset((current) => Math.max(0, current - PAGE_SIZE))
+-                }
+-                disabled={offset === 0}
+-              >
+-                <span aria-hidden="true">‹</span> Previous
+-              </button>
+-              <button
+-                type="button"
+-                onClick={() => setOffset((current) => current + PAGE_SIZE)}
+-                disabled={!hasNextPage}
+-              >
+-                Next <span aria-hidden="true">›</span>
+-              </button>
+-            </nav>
+-          </footer>
+-        </>
++            ) : null}
++          </div>
++          <nav className={styles.pagerButtons} aria-label="Pagination">
++            <button
++              type="button"
++              onClick={() =>
++                setOffset((current) => Math.max(0, current - PAGE_SIZE))
++              }
++              disabled={offset === 0}
++            >
++              <span aria-hidden="true">‹</span> Previous
++            </button>
++            <button
++              type="button"
++              onClick={() => setOffset((current) => current + PAGE_SIZE)}
++              disabled={!showData || !hasNextPage}
++            >
++              Next <span aria-hidden="true">›</span>
++            </button>
++          </nav>
++        </footer>
+       ) : null}
+     </section>
+   );
+diff --git a/web/pages/api/v1/transactions/ownership-trends.ts b/web/pages/api/v1/transactions/ownership-trends.ts
+index 6434b56d101d2919b2ab71df5ea14e25603b2ece..1ca4f9cc523228317bd4cd6ef2062b8039149910 100644
+--- a/web/pages/api/v1/transactions/ownership-trends.ts
++++ b/web/pages/api/v1/transactions/ownership-trends.ts
+@@ -24,6 +24,8 @@ type TrendPlayer = {
+   previous: number;
+   delta: number;
+   deltaPct: number;
++  movementStartDate: string;
++  movementEndDate: string;
+   sparkline: TrendPoint[];
+ };
+ 
+@@ -33,6 +35,10 @@ type SupabaseQueryClient = {
+   from(table: string): any;
+ };
+ 
++type TrendQueryClient = SupabaseQueryClient & {
++  rpc(name: string, params: Record<string, number>, options: { get: true }): PromiseLike<{ data: any; error: unknown }>;
++};
++
+ type OwnershipTrendPayload = {
+   success: boolean;
+   metric: TrendMetric;
+@@ -67,55 +73,56 @@ function chunk<T>(values: T[], size: number): T[][] {
+   return chunks;
+ }
+ 
++export async function fetchOwnershipPlayerRows(
++  supabase: Pick<TrendQueryClient, "rpc">,
++  season?: number,
++): Promise<any[]> {
++  const rows: any[] = [];
++  const seenKeys = new Set<string>();
++  for (let from = 0; ; from += PAGE_SIZE) {
++    const { data, error } = await supabase.rpc("homepage_yahoo_ownership_page", {
++      p_offset: from,
++      ...(season == null ? {} : { p_season: season }),
++    }, { get: true });
++    if (error) throw error;
++    if (!Array.isArray(data)) throw new Error("Missing ownership page");
++    for (const record of data) {
++      const { observation_dates: dates, observation_values: values, page_count, ...row } = record;
++      if (page_count !== data.length || typeof row.player_key !== "string" ||
++          !row.player_key || seenKeys.has(row.player_key)) {
++        throw new Error("Incomplete ownership page");
++      }
++      if (!Array.isArray(dates) || !Array.isArray(values) || dates.length !== values.length) {
++        throw new Error("Incomplete ownership observations");
++      }
++      seenKeys.add(row.player_key);
++      rows.push({
++        ...row,
++        ownership_timeline: dates.map((date: string, index: number) => ({ date, value: values[index] })),
++      });
++    }
++    if (data.length < PAGE_SIZE) return rows;
++  }
++}
++
+ export async function fetchYahooPlayerRows(args: {
+   supabase: SupabaseQueryClient;
+   select: string;
+   season?: number;
+ }): Promise<any[]> {
+   const rows: any[] = [];
+-  const includesHistory = args.select.includes("normalized_ownership_timeline");
+   for (let from = 0; ; from += PAGE_SIZE) {
+-    let query = args.supabase
+-      .from("yahoo_players_with_normalized_history")
+-      // OFFSET applies after the view's history aggregate. Page cheap keys
+-      // first so skipped players never have their histories rebuilt.
+-      .select(includesHistory ? "player_key" : args.select)
++    let query = args.supabase.from("yahoo_players_with_normalized_history")
++      .select(args.select)
+       .order("player_id", { ascending: true })
+       .order("season", { ascending: true, nullsFirst: true })
+       .range(from, from + PAGE_SIZE - 1);
+     if (args.season != null) query = query.eq("season", args.season);
+     const { data, error } = await query;
+     if (error) throw error;
+-    if (!data || data.length === 0) break;
+-    if (includesHistory) {
+-      const keys = data.map((row: any) => row.player_key);
+-      if (keys.some((key: unknown) => typeof key !== "string" || !key) || new Set(keys).size !== keys.length) {
+-        throw new Error("Invalid ownership page identities");
+-      }
+-      const byKey = new Map<string, any>();
+-      for (const keyChunk of chunk<string>(keys, MAP_CHUNK_SIZE)) {
+-        let historyQuery = args.supabase
+-          .from("yahoo_players_with_normalized_history")
+-          .select(args.select)
+-          .in("player_key", keyChunk)
+-          .order("player_key", { ascending: true })
+-          .range(0, keyChunk.length - 1);
+-        if (args.season != null) historyQuery = historyQuery.eq("season", args.season);
+-        const { data: historyRows, error: historyError } = await historyQuery;
+-        if (historyError) throw historyError;
+-        for (const row of historyRows ?? []) byKey.set(row.player_key, row);
+-        if ((historyRows?.length ?? 0) !== keyChunk.length || keyChunk.some(key => !byKey.has(key))) {
+-          throw new Error("Incomplete ownership history page");
+-        }
+-      }
+-      // Preserve the original player_id/season ordering, including tied deltas.
+-      rows.push(...keys.map((key: string) => byKey.get(key)));
+-    } else {
+-      rows.push(...data);
+-    }
+-    if (data.length < PAGE_SIZE) break;
++    rows.push(...(data ?? []));
++    if (!data || data.length < PAGE_SIZE) return rows;
+   }
+-  return rows;
+ }
+ 
+ async function fetchYahooDraftHistoryRows(args: {
+@@ -290,67 +297,28 @@ const trendSnapshots = createTrendRequestCache<TrendSnapshot>(60_000, 4);
+ export function clearOwnershipTrendCache() { trendSnapshots.clear(); }
+ 
+ async function loadTrendSnapshot(
+-  supabase: SupabaseQueryClient,
++  supabase: TrendQueryClient,
+   metric: TrendMetric,
+   season?: number,
+ ): Promise<TrendSnapshot> {
+-    const metricSelect =
+-      metric === "adp"
+-        ? "average_draft_pick"
+-        : "ownership_timeline:normalized_ownership_timeline";
+-    const selectWithMeta = `player_key, player_id, full_name, headshot_url, display_position, editorial_team_full_name, editorial_team_abbreviation, eligible_positions, uniform_number, ${metricSelect}`;
+-    const selectMinimal = `player_key, player_id, full_name, headshot_url, ${metricSelect}`;
+-
+-    let data: any[] = [];
+-    let seasonFallbackApplied = false;
+-    try {
+-      data = await fetchYahooPlayerRows({
+-        supabase,
+-        select: selectWithMeta,
+-        season
+-      });
+-    } catch (error: any) {
+-      const msg = String(error.message || "").toLowerCase();
+-      const missingCols =
+-        msg.includes("display_position") ||
+-        msg.includes("editorial_team_full_name") ||
+-        msg.includes("editorial_team_abbreviation") ||
+-        msg.includes("eligible_positions") ||
+-        msg.includes("uniform_number") ||
+-        msg.includes("column") ||
+-        msg.includes("does not exist");
+-      if (!missingCols) throw error;
+-      data = await fetchYahooPlayerRows({
+-        supabase,
+-        select: selectMinimal,
+-        season
+-      });
+-    }
+-    if (data.length === 0 && season) {
+-      seasonFallbackApplied = true;
++    const readRows = async (sourceSeason?: number) => {
++      if (metric === "ownership") return fetchOwnershipPlayerRows(supabase, sourceSeason);
++      const columns = "player_key, player_id, full_name, headshot_url, average_draft_pick";
+       try {
+-        data = await fetchYahooPlayerRows({
++        return await fetchYahooPlayerRows({
+           supabase,
+-          select: selectWithMeta
++          select: columns + ", display_position, editorial_team_full_name, editorial_team_abbreviation, eligible_positions, uniform_number",
++          season: sourceSeason,
+         });
+       } catch (error: any) {
+-        const msg = String(error.message || "").toLowerCase();
+-        const missingCols =
+-          msg.includes("display_position") ||
+-          msg.includes("editorial_team_full_name") ||
+-          msg.includes("editorial_team_abbreviation") ||
+-          msg.includes("eligible_positions") ||
+-          msg.includes("uniform_number") ||
+-          msg.includes("column") ||
+-          msg.includes("does not exist");
+-        if (!missingCols) throw error;
+-        data = await fetchYahooPlayerRows({
+-          supabase,
+-          select: selectMinimal
+-        });
++        const missingColumns = /display_position|editorial_team_full_name|editorial_team_abbreviation|eligible_positions|uniform_number|column|does not exist/i;
++        if (!missingColumns.test(String(error?.message ?? ""))) throw error;
++        return fetchYahooPlayerRows({ supabase, select: columns, season: sourceSeason });
+       }
+-    }
+-    const rows: any[] = Array.isArray(data) ? data : [];
++    };
++    let rows = await readRows(season);
++    const seasonFallbackApplied = Boolean(season) && rows.length === 0;
++    if (seasonFallbackApplied) rows = await readRows();
+     let adpTimelines = new Map<string, TrendPoint[]>();
+     if (metric === "adp") {
+       const capturedAfter = new Date();
+@@ -508,6 +476,8 @@ export default async function handler(
+         previous,
+         delta,
+         deltaPct,
++        movementStartDate: previousPoint.date,
++        movementEndDate: latestPoint.date,
+         sparkline: sparkSlice
+       };
+ 

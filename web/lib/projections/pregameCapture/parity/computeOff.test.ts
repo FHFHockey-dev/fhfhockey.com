@@ -54,6 +54,29 @@ const RECORD = process.env.RECORD_FORGE_ORACLE === "1";
 const recordReads = (reads: ProjectionInputRead[]) => reads.map((read) => ({ request: read.request as Operation[],
   resultHash: projectionInputHash(read.result ?? null), ...(read.failure ? { failure: read.failure } : {}) }));
 
+/** Check the new success protocol, then compare every pre-existing write with its frozen hash. */
+function verifySuccessWrites(writes: Operation[][], runId: string, invocationCutoff: string): Operation[][] {
+  // In these one-game fixtures the clock stays fixed throughout the successful invocation.
+  const [checkpoint, success] = structuredClone(writes.slice(-3, -1));
+  const successRow = success[1].args[0] as { metrics: Record<string, unknown> };
+  expect(writes.at(-1)).toStrictEqual([
+    { method: "from", args: ["forge_runs"] },
+    { method: "update", args: [{ metrics: { ...successRow.metrics, succeeded_observed_at: invocationCutoff } }] },
+    { method: "eq", args: ["run_id", runId] },
+    { method: "eq", args: ["status", "succeeded"] },
+    { method: "eq", args: ["updated_at", invocationCutoff] },
+    { method: "is", args: ["metrics->>succeeded_observed_at", null] },
+    { method: "select", args: ["run_id"] },
+  ]);
+
+  for (const ops of [checkpoint, success]) {
+    const row = ops[1].args[0] as { metrics: Record<string, unknown> };
+    expect(row.metrics.decision_as_of_by_game).toStrictEqual({ [TARGET.gameId]: invocationCutoff });
+    delete row.metrics.decision_as_of_by_game;
+  }
+  return [...writes.slice(0, -3), checkpoint, success];
+}
+
 async function runComputeOff(scenario: Scenario): Promise<ComputeOffOracle> {
   uuid.next = 0;
   const world = buildLeague(scenario.world);
@@ -77,9 +100,12 @@ async function runComputeOff(scenario: Scenario): Promise<ComputeOffOracle> {
   await withScenarioEnv(scenario.env, async () => {
     const invoke = async (deadlineMs: number) => {
       // Full slate, no cutoff: the shape of the production compute-off route call.
+      const invocationCutoff = new Date().toISOString();
       const run = await captureProjectionInputs(() => runProjectionV2ForDate(TARGET.slateDate, { horizonGames: 1, deadlineMs }));
+      const comparedWrites = RECORD || run.result.timedOut ? run.writes
+        : verifySuccessWrites(run.writes, run.result.runId, invocationCutoff);
       invocations.push({ result: JSON.parse(JSON.stringify(run.result)), reads: recordReads(run.reads),
-        writes: run.writes.map((ops) => ({ table: String(ops[0]?.args[0]), hash: projectionInputHash(ops) })) });
+        writes: comparedWrites.map((ops) => ({ table: String(ops[0]?.args[0]), hash: projectionInputHash(ops) })) });
       allWrites.push(...run.writes);
     };
     await invoke(Date.now() + (scenario.resume ? 30_000 : 600_000));

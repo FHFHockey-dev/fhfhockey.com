@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { captureForgeIssuedContexts, type ForgeIssuedContextV1 } from "../issuedContext";
-import { captureProjectionInputs, projectionInputHash } from "../inputCapture";
+import { calendarRevisionOf, captureForgeIssuedContexts, type ForgeIssuedContextV1 } from "../issuedContext";
+import { captureProjectionInputs } from "../inputCapture";
 import { runPregameCapture, type CaptureBudget, type CaptureDeps, type CaptureReport, type CaptureRequest, type Collected, type PinnedGame } from "./custody";
 import type { CaptureBinding } from "./packet";
 import { DEFAULT_CAPTURE_BUDGET } from "./policy";
@@ -16,6 +16,7 @@ import type { TsaClient } from "./verifier";
 
 export const CAPTURE_ENABLED_ENV = "FORGE_PREGAME_CAPTURE_ENABLED";
 export { DEFAULT_CAPTURE_BUDGET };
+export { calendarRevisionOf } from "../issuedContext";
 
 /**
  * The worker-owned collector (nativeInputs.ts) satisfies this signature. It performs exactly the writer's reads
@@ -24,10 +25,6 @@ export { DEFAULT_CAPTURE_BUDGET };
  */
 export type NativeCollector = (args: { slateDate: string; gameId: number; inputCutoff: string; deadlineMs: number; seasonBootstrap: boolean }) =>
   Promise<{ candidates: Collected["candidates"]; issuedContextAfter: ForgeIssuedContextV1 }>;
-
-export function calendarRevisionOf(schedule: Array<{ revision: string }>): string {
-  return projectionInputHash(schedule.map((row) => row.revision));
-}
 
 export function httpTsaClient(url: string, fetchImpl: typeof fetch = fetch): TsaClient {
   const target = new URL(url);
@@ -59,6 +56,8 @@ export interface RunnerConfig {
   env?: Record<string, string | undefined>;
   /** The hosted invocation reserves time for its dispatch receipt after all capture I/O ends. */
   signal?: AbortSignal;
+  /** Selects the v2 SQL claim fenced to this exact hosted dispatch. */
+  hostedDispatchId?: string;
 }
 
 /** Everything the capture needs; the live runner builds it from Supabase/TSA, the rehearsal from fixtures. */
@@ -144,13 +143,16 @@ export async function runPrivatePregameCapture(config: RunnerConfig, request: Ca
   const auth = { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false };
   const budget = { ...DEFAULT_CAPTURE_BUDGET, ...config.budget };
   const invocationSignal = config.signal;
-  const fetchImpl: typeof fetch = invocationSignal ? (input, init) => fetch(input, {
-    ...init, signal: init?.signal ? AbortSignal.any([init.signal, invocationSignal]) : invocationSignal,
-  }) : fetch;
+  const fetchImpl: typeof fetch = invocationSignal ? async (input, init) => {
+    // Timer delivery may lag a synchronous packet operation. Check wall time before opening any new connection.
+    if (request.workDeadlineMs !== undefined && Date.now() >= request.workDeadlineMs) throw new Error("capture_deadline");
+    invocationSignal.throwIfAborted();
+    return fetch(input, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, invocationSignal]) : invocationSignal });
+  } : fetch;
   const client = () => createClient(config.supabaseUrl, config.serviceRoleKey, { auth, global: { fetch: fetchImpl } });
   // Two independent clients: the verifier never shares the writer's connection state.
   const rpcTimeout = invocationSignal ? budget.rpcMs : undefined;
-  const writer = supabaseCaptureRpc(client(), rpcTimeout);
+  const writer = supabaseCaptureRpc(client(), rpcTimeout, config.hostedDispatchId);
   const verifier = supabaseCaptureRpc(client(), rpcTimeout);
   return runPregameCapture(captureDeps({
     writer, verifier, tsa: httpTsaClient(config.tsaUrl, fetchImpl), trust: config.tsaTrust, fetchImpl,

@@ -70,7 +70,7 @@ const side = (id: string, team: string, opponent: string, home: boolean, startsA
   ({ id, date: "2026-10-21", startsAt, teamAbbreviation: team, opponent, home, status: "scheduled", scheduleRevision: "r" });
 const bridgeResult = () => ({ limitations: [], forecasts: [{ playerId: "p11", gameId: "100", revisionId: "forge-daily-bridge-v1:run-today",
   stats: { GOALS: 0.4, ASSISTS: 0.5, PP_POINTS: 0.2, SHOTS_ON_GOAL: 3, HITS: 1, BLOCKED_SHOTS: 0.5 }, startProbability: null,
-  issuedAt: "2026-10-21T10:30:00Z", cutoffAt: "2026-10-21T10:30:00Z", expiresAt: "2026-10-21T23:00:00Z", modelVersion: "v", conditioning: "unconditional" }] });
+  issuedAt: "2026-10-21T10:30:00Z", cutoffAt: "2026-10-21T10:30:00Z", expiresAt: "2026-10-21T23:00:00Z", modelVersion: "v", conditioning: "unconditional", limitations: [] }] });
 
 describe("forge-served-forecast-snapshot", () => {
   beforeEach(() => {
@@ -109,7 +109,8 @@ describe("forge-served-forecast-snapshot", () => {
     await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
     expect(out.statusCode).toBe(200);
     expect(out.body).toMatchObject({ success: true, games: 2, players: 1, rowsUpserted: 3, skippedGames: [101],
-      countsBySource: { bridge_exact: 1, bridge_reaimed: 0, native: 0, naive_last5: 1, naive_season: 1 } });
+      countsBySource: { bridge_exact: 1, bridge_reaimed: 0, native: 0, naive_last5: 1, naive_season: 1 },
+      bridgeAcceptance: { eligible: 1, usableExact: 1, usableReaimed: 0, confirmedOut: 0, conditionalOnly: 0, unavailableOrWithheld: 0, reasons: {} } });
     expect(bridgeMock.mock.calls[0][1].map((player: any) => player.id)).toEqual(["p11"]);
     const [table, rows, options] = upsertMock.mock.calls[0];
     expect(table).toBe("forge_served_forecast_ledger");
@@ -123,9 +124,20 @@ describe("forge-served-forecast-snapshot", () => {
     const out = res();
     await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
     expect(out.statusCode).toBe(200);
-    expect(out.body).toMatchObject({ rowsUpserted: 2, countsBySource: { bridge_exact: 0, bridge_reaimed: 0, naive_last5: 1, naive_season: 1 } });
+    expect(out.body).toMatchObject({ rowsUpserted: 2, countsBySource: { bridge_exact: 0, bridge_reaimed: 0, naive_last5: 1, naive_season: 1 },
+      bridgeAcceptance: { eligible: 1, unavailableOrWithheld: 1, reasons: { external_input_proof_unavailable: 1 } } });
     expect(upsertMock.mock.calls[0][1].some((row: any) => row.source.startsWith("bridge") || row.run_id === "run-today")).toBe(false);
     expect(out.body.bridgeLimitations).toEqual([expect.stringContaining("1 interim FORGE player-games")]);
+  });
+
+  it("reports zero eligible player-games on an empty slate", async () => {
+    tables.games = [];
+    const out = res();
+    await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
+    expect(out.statusCode).toBe(200);
+    expect(out.body).toMatchObject({ success: true, games: 0, rowsUpserted: 0,
+      bridgeAcceptance: { eligible: 0, usableExact: 0, usableReaimed: 0, confirmedOut: 0, conditionalOnly: 0, unavailableOrWithheld: 0, reasons: {} } });
+    expect(upsertMock).not.toHaveBeenCalled();
   });
 
   it("writes nothing when the proof read fails", async () => {

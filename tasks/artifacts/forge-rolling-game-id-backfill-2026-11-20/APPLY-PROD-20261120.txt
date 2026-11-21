@@ -1,0 +1,2 @@
+90ae6392aee0cae4028e307d4d95ce0e
+psql:/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/427bfac6-d632-4abb-ad5c-a1c0e9dae336/scratchpad/backfill/tasks/artifacts/forge-rolling-game-id-backfill-2026-11-20/apply.sql:115: NOTICE:  applied: 66797 rolling rows, 0 sidecar rows, plan 90ae6392aee0cae4028e307d4d95ce0e

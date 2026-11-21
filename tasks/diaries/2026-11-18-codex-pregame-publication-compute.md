@@ -1,0 +1,11 @@
+# Prospective FORGE publication computation
+
+- Scope: one H1 product from a verified packet's strict native-input replay, local-only. Chef owns verification, route, SQL coordination, and consumer acceptance.
+- Location: canonical `octoberBranch` at `57a90dfa7892ad8003fa6957c945457f4e0ce173`. `run-forge-projections.ts` has ongoing modifications to preserve.
+- In progress: reading projection calculation/writer and replay harness before settling output contract.
+- Constraints: no live writes, external calls, historical runs, or protected oracle changes.
+- Design settled: `computeForgePregamePublication(packet, { codeVersion, deadlineMs? })` derives claim-scoped rows, succeeded metrics and a compact snapshot. Strict replay latches even swallowed misses. Replay keeps original microsecond query cutoff; evidence uses conservative stated cutoff. No raw reads in snapshot, no writes leave replay. Reserve model switch is pinned for new packets.
+- Implementation in progress. Verifying with fixture writer/collector parity and incomplete optional read regression.
+- Added local strict replay latch, one-game prospective model calculation, and fixture proof of exact player/team/goalie/reserve rows, compact evidence, missing optional read, release environment mismatch, and prospective window. No protected oracles changed.
+- Main captured parity and proof audit previously passed 68/68; runner 4/4. The unchanged compute-off oracle shows five lifecycle-write failures both with the publisher and in a temporary pre-publication source copy (receipt `/tmp/forge-prepublication-baseline.okNfrqGc/computeOff.log`). The pre-existing resume patch added per-game cutoffs and a success observation write. Captured writer oracle is unaffected. Full type check collided with a vanished concurrent benchmark file and then hit the default Node heap cap. Narrow dependency-graph type check and final focused tests in progress.
+- Handoff to Chef: captured parity, external-input AST audit and runner passed 72/72 after final edits; targeted TypeScript project passed; scoped `git diff --check` passed. Fixture live read/write trap remained untouched during computation. No network, database, production, or historical game run performed. Keep this diary pending integrated review.

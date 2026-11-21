@@ -179,7 +179,8 @@ export function runProofDiagnostics(runId: string, proof: ExternalInputProof | n
 
 /** Read-only: the proven runs among `runIds`. Only runs with no snapshot have their attribution read. A failed read
  * throws; callers treat it as unproven, never as proven. */
-export async function loadExternalInputProof(db: SupabaseClient<any>, runIds: readonly string[]): Promise<Map<string, ExternalInputProof>> {
+export async function loadExternalInputProof(db: SupabaseClient<any>, runIds: readonly string[],
+  capturedSuccessTimes?: Map<string, string>): Promise<Map<string, ExternalInputProof>> {
   const ids = [...new Set(runIds.filter(id => typeof id === "string" && id.length > 0))];
   const snapshots = await inChunks(ids, async chunk => rowsOf(await (db as any).from("player_forecast_source_observations")
     .select(PROOF_COLUMNS).eq("provider", FORGE_RUN_INPUT_SNAPSHOT.provider).eq("dataset_key", FORGE_RUN_INPUT_SNAPSHOT.datasetKey)
@@ -188,7 +189,15 @@ export async function loadExternalInputProof(db: SupabaseClient<any>, runIds: re
   const uncaptured = ids.filter(id => !captured.has(id));
   const runRows = await inChunks(uncaptured, async chunk => rowsOf(await (db as any).from("forge_runs")
     .select(RUN_ATTRIBUTION_COLUMNS).in("run_id", chunk), "FORGE run attribution"));
-  return externalInputProofByRun(snapshots, ids, runRows);
+  const proven = externalInputProofByRun(snapshots, ids, runRows);
+  // Public input snapshots stamp capturedAt after the succeeded run update has returned.
+  // Use the last observation when several snapshots participate in the exclusion proof.
+  if (capturedSuccessTimes) for (const row of snapshots) {
+    if (proven.get(row.entity_key)?.basis !== "captured_snapshot") continue;
+    const previous = capturedSuccessTimes.get(row.entity_key);
+    if (!previous || Date.parse(row.available_at) > Date.parse(previous)) capturedSuccessTimes.set(row.entity_key, row.available_at);
+  }
+  return proven;
 }
 
 // Lives here, not in apiHelpers: run-projection-accuracy (inside the FORGE producer closure) imports apiHelpers, and

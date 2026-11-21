@@ -1,0 +1,213 @@
+{
+  "candidate": "f886ddac731ae825a12fab915848d2b5fd7d9b8c",
+  "tree": "09ef9bf0662e14cd80fa60cee25c70a988e5c748",
+  "start": "2026-11-19T19:48:22Z",
+  "host": "Debian 13.6 x86-64, Linux 6.18.57",
+  "runtime": {
+    "os": "Debian bookworm",
+    "image_id": "sha256:4203f88e88cc028b6bb78804c6d62ec6b117c31ce7be048b21621a4cc62067ff",
+    "node": "22.23.4",
+    "npm": "10.9.9",
+    "postgres": "15.20",
+    "pg_bin": "/usr/lib/postgresql/15/bin",
+    "pgcrypto": true,
+    "psycopg2": "2.9.5",
+    "postgrest": "16.6",
+    "postgrest_path": "/tmp/inputs/postgrest",
+    "checkout": "/tmp/inputs/checkout-v4",
+    "network": "Docker --network=none; lo only; empty IPv4 route table; local TCP verified",
+    "environment": "env -i; unprivileged postgres; no capabilities; no-new-privileges; read-only root; writable /tmp"
+  },
+  "hashes": {
+    "source.tar.gz": "e8185330252d8aa8d2e2b3b27d16e77f3dffe069476637dee4b6f2083ac2c83c",
+    "source-v2.tar.gz": "49bb6657367eb013223f9981218943fc07191ccabf9d4ec97acd4e78be2bbdf9",
+    "full.zip": "282deb5a85d3c656fab21d2c959ab80ace73759d891517f4578ada7634a23565",
+    "postgrest.archive": "335ea29f00145705fb569b1268b9c8e53d062f8f6f9188192e92ea3781d2dca1",
+    "postgrest": "b8ce4b8e51df68feb73d6b848a2798b76aaf0b15aee83a257a3c4acc9e228768",
+    "daily.tar.gz": "c41cddf3d1c0a597f68592b88bb79d36965f9a8b1de3d4ac798b355c61ee8eff",
+    "checkout-v4/web/package-lock.json": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378"
+  },
+  "zip_verification": {
+    "manifest_members": 4718,
+    "compared_candidate_files": 269,
+    "oracle_tree": "c7faa3425147424990606c8cd7eab2751c5fe782",
+    "fixture_files_replaced": [
+      "ca.crt",
+      "plain.crt",
+      "plain.key",
+      "tsa.crt",
+      "tsa.key"
+    ]
+  },
+  "attempt_exit_codes": {
+    "controls-01": 0,
+    "controls-02": 0,
+    "daily-01": 0,
+    "packet-01": 1,
+    "packet-02": 0,
+    "synthetic-01": 1,
+    "synthetic-02": 0
+  },
+  "synthetic": {
+    "gameId": 2099020991,
+    "releaseLabel": "f886ddac731ae825a12fab915848d2b5fd7d9b8c",
+    "phase": "succeeded",
+    "claim": "9da9d039-cf22-42db-97ec-d29accf3e678",
+    "revisionId": "cd5d574a-f989-44f5-b66b-d935af61f10b",
+    "independent": "accepted",
+    "applicationDeliveries": 4,
+    "tsaCalls": 1,
+    "appToDbHttpRequests": {
+      "preflight": 2,
+      "capture": 135,
+      "publish": 6,
+      "readers": 23
+    },
+    "receipt": {
+      "claim": "9da9d039-cf22-42db-97ec-d29accf3e678",
+      "phase": "succeeded",
+      "steps": [
+        {
+          "stage": "preflight",
+          "beganAt": "2026-11-19T17:53:35.907247+00:00",
+          "queuedAt": "2026-11-19T17:53:35.8651+00:00",
+          "requestId": 1
+        },
+        {
+          "stage": "capture",
+          "beganAt": "2026-11-19T17:53:35.93669+00:00",
+          "queuedAt": "2026-11-19T17:53:35.923393+00:00",
+          "requestId": 2
+        },
+        {
+          "stage": "publish",
+          "beganAt": "2026-11-19T17:53:36.424908+00:00",
+          "queuedAt": "2026-11-19T17:53:36.419798+00:00",
+          "requestId": 3
+        },
+        {
+          "stage": "readers",
+          "beganAt": "2026-11-19T17:53:41.877966+00:00",
+          "queuedAt": "2026-11-19T17:53:41.869389+00:00",
+          "requestId": 4
+        }
+      ],
+      "gameId": 2099020991,
+      "opened": "2026-11-19T17:53:35.844382+00:00",
+      "policy": "pregame-native-v1",
+      "reason": "readers_recorded",
+      "armedAt": "2026-11-19T17:53:35.351053+00:00",
+      "custody": "qualified",
+      "readers": {
+        "daily": {
+          "points": 2.965,
+          "reason": null,
+          "playerId": "471001",
+          "legalSlot": "C#1",
+          "revisionId": "forge-daily-bridge-v1:9da9d039-cf22-42db-97ec-d29accf3e678",
+          "selectedRun": "9da9d039-cf22-42db-97ec-d29accf3e678"
+        },
+        "detailed": {
+          "points": null,
+          "reason": "missing_participation",
+          "playerId": "471001",
+          "legalSlot": null,
+          "revisionId": "cd5d574a-f989-44f5-b66b-d935af61f10b",
+          "selectedRun": "9da9d039-cf22-42db-97ec-d29accf3e678"
+        },
+        "contextId": "synthetic-single-center-points-v1",
+        "evaluatedAt": "2026-11-19T17:53:41.879Z",
+        "playerNhlId": 8471001
+      },
+      "release": "f886ddac731ae825a12fab915848d2b5fd7d9b8c",
+      "dispatch": {
+        "id": "6ea1b11e-1535-4bee-999e-4b7995352d92",
+        "state": "finished",
+        "reason": "endpoint_finished",
+        "queuedAt": "2026-11-19T17:53:35.923393+00:00",
+        "startedAt": "2026-11-19T17:53:35.93669+00:00"
+      },
+      "playerId": 8471001,
+      "slateDate": "2026-11-19",
+      "terminalAt": "2026-11-19T17:53:41.983687+00:00",
+      "independent": {
+        "reason": null,
+        "game_id": 2099020991,
+        "verdict": "accepted",
+        "claim_id": "9da9d039-cf22-42db-97ec-d29accf3e678",
+        "raw_sha256": "564e8b64fa24bbb22d904c835e808169d16a4ffa776de78b8540e2e3440dbe49",
+        "verified_at": "2026-11-19T17:53:36.418201+00:00",
+        "token_sha256": "80c549c05db70c43f04e3fc94a0b9c64872b7871d213465dc8732e5fb3ce3132",
+        "verifier_role": "forge_independent_verifier",
+        "canonical_sha256": "2ac4cd20e233e1cb771bae05ec6712bb29b4fc2d601e962126d511a5a9d6716f"
+      },
+      "inputCutoff": "2026-11-19T17:53:35.989043+00:00",
+      "publication": {
+        "runId": "9da9d039-cf22-42db-97ec-d29accf3e678",
+        "observedAt": "2026-11-19T17:53:41.861849+00:00",
+        "revisionId": "cd5d574a-f989-44f5-b66b-d935af61f10b",
+        "publishedAt": "2026-11-19T17:53:41.814841+00:00",
+        "inputSnapshotId": "9e79728a-9532-4724-a082-03ab7253d9aa",
+        "alreadyPublished": true
+      },
+      "tokenSha256": "80c549c05db70c43f04e3fc94a0b9c64872b7871d213465dc8732e5fb3ce3132",
+      "packetSha256": "564e8b64fa24bbb22d904c835e808169d16a4ffa776de78b8540e2e3440dbe49",
+      "approvedStart": "2026-11-19T19:48:22+00:00",
+      "readerContext": "synthetic-single-center-points-v1",
+      "latestDispatch": "2026-11-19T18:41:22+00:00",
+      "canonicalSha256": "2ac4cd20e233e1cb771bae05ec6712bb29b4fc2d601e962126d511a5a9d6716f",
+      "fenceReleasedAt": null,
+      "tokenUpperBound": "2026-11-19T17:53:36.857+00:00",
+      "witnessDeadline": "2026-11-19T18:48:22+00:00",
+      "witnessAuthority": "automated",
+      "committedRevision": "cd5d574a-f989-44f5-b66b-d935af61f10b"
+    }
+  },
+  "controls": {
+    "pass_lines": 97,
+    "with_route": true
+  },
+  "daily": {
+    "candidate": {
+      "cases": 18,
+      "outcomes": {
+        "complete": 3,
+        "incomplete": 15
+      }
+    },
+    "fixed": {
+      "cases": 18,
+      "outcomes": {
+        "complete": 6,
+        "incomplete": 12
+      }
+    }
+  },
+  "historical_fragment": {
+    "classification": "historical_metadata_fragment_reconstruction",
+    "gameId": 2026020336,
+    "playerId": 8478460,
+    "source": {
+      "relation": "player_stats_unified",
+      "receivedAt": "2026-11-17T22:44:14.775Z",
+      "rowFragment": {
+        "date": "2026-11-14",
+        "player_id": 8478460,
+        "nst_shots_per_60": 9.78,
+        "nst_ixg_per_60": 0.49
+      }
+    },
+    "supportedCalculation": {
+      "qualityPerShot": 0.0501,
+      "sampleWeight": 0.6617
+    },
+    "fullReplay": {
+      "status": "blocked_missing_native_reads",
+      "firstError": "Unrecorded projection input: from games"
+    },
+    "forecastComputed": false,
+    "published": false,
+    "imported": false,
+    "writes": 0
+  }
+}

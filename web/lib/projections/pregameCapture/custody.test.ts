@@ -78,6 +78,22 @@ const request = { gameId: GAME, slateDate: SLATE, policyId: POLICY, codeVersion:
 const CAPTURE_RPCS = new Set(["claim", "save", "settle", "read", "lookup", "recordWitness", "recordOutcome"]);
 
 describe("pregame capture custody (offline acceptance)", () => {
+  it("keeps the full post-claim reservation if pinning exhausts the hosted work budget", async () => {
+    const { clock, deps, db } = setup();
+    const pinMs = 12_000;
+    const workDeadlineMs = clock.ms + pinMs + deps.budget.rpcMs + deps.budget.requiredMs;
+    deps.budget.pinMs = pinMs;
+    deps.pin = async (_gameId, _slateDate, deadlineMs) => {
+      expect(deadlineMs).toBe(clock.ms + pinMs);
+      clock.advance(pinMs + 1);
+      return pinned;
+    };
+    expect(await runPregameCapture(deps, { ...request, workDeadlineMs })).toMatchObject({
+      claimId: null, outcome: null, reason: "claim_window_closed", saveCalls: 0,
+    });
+    expect(db.calls).toEqual([]);
+  });
+
   it("qualifies one exact game: one save, committed readback, RFC 3161 witness at or before T−60", async () => {
     const { db, deps } = setup();
     const report = await runPregameCapture(deps, request);

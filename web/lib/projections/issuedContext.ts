@@ -1,5 +1,6 @@
 import supabase from "lib/supabase/server";
 import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
+import { projectionInputHash } from "./inputCapture";
 
 export type ForgeIssuedContextV1 = {
   version: "forge-issued-context-v1";
@@ -171,4 +172,8 @@ export async function captureForgeIssuedContexts(slateDate: string, gameIds: num
 
 export function forgeIssuedContextsFingerprint(contexts: ForgeIssuedContextV1[]): string {
   return playerForecastSourcePayloadHash(contexts.map(({ observedAt: _observedAt, ...context }) => context));
+}
+
+export function calendarRevisionOf(schedule: Array<{ revision: string }>): string {
+  return projectionInputHash(schedule.map((row) => row.revision));
 }

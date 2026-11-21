@@ -114,13 +114,24 @@ const goalieActual = (playerId: number, gameId = 1, teamId = 8) => ({ game_id: g
   date: "2026-03-20", goals_against: 2, saves: 28, wins: 1, shutouts: 0 });
 
 type UpsertCall = { table: string; rows: unknown };
+type MockRunMetricsRow = { run_id: string; created_at: string; updated_at: string; metrics: Record<string, unknown> };
 
-async function runAccuracyWithTables(tables: Record<string, unknown[]>) {
+async function runAccuracyWithTables(tables: Record<string, unknown[]>, beforeMetricsWrite?: (row: MockRunMetricsRow) => void) {
   const upserts: UpsertCall[] = [];
+  const forgeRun: MockRunMetricsRow = {
+    run_id: "run-a08", created_at: pregame, updated_at: pregame,
+    metrics: { finished_at: pregame, input_provenance: buildForgeInputProvenance(),
+      ...(tables.forge_runs?.[0] as { metrics: Record<string, unknown> } | undefined)?.metrics },
+  };
   const query = (table: string): any => {
     const filters: Array<(row: any) => boolean> = [];
+    let patch: Partial<MockRunMetricsRow> | undefined;
+    const columnValue = (row: any, column: string) => column === "metrics->>succeeded_observed_at"
+      ? row.metrics?.succeeded_observed_at ?? null : row[column];
     const result = () => {
-      const data = (tables[table] ?? []).filter(row => filters.every(filter => filter(row)));
+      if (table === "forge_runs" && patch) beforeMetricsWrite?.(forgeRun);
+      const data = (table === "forge_runs" ? [forgeRun] : tables[table] ?? []).filter(row => filters.every(filter => filter(row)));
+      if (table === "forge_runs" && patch && data.length) Object.assign(forgeRun, patch);
       return { data, count: data.length, error: null };
     };
     const builder: any = new Proxy(
@@ -131,9 +142,9 @@ async function runAccuracyWithTables(tables: Record<string, unknown[]>) {
             return (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
               Promise.resolve(result()).then(resolve, reject);
           }
-          if (["eq", "in", "gte", "lte", "lt"].includes(String(prop))) {
+          if (["eq", "is", "in", "gte", "lte", "lt"].includes(String(prop))) {
             return (column: string, value: any) => {
-              filters.push(row => prop === "eq" ? row[column] === value : prop === "in" ? value.includes(row[column])
+              filters.push(row => prop === "eq" || prop === "is" ? columnValue(row, column) === value : prop === "in" ? value.includes(row[column])
                 : prop === "gte" ? row[column] >= value : prop === "lte" ? row[column] <= value : row[column] < value);
               return builder;
             };
@@ -144,19 +155,16 @@ async function runAccuracyWithTables(tables: Record<string, unknown[]>) {
               return builder;
             };
           }
+          if (prop === "update") {
+            return (updated: Partial<MockRunMetricsRow>) => {
+              patch = updated;
+              return builder;
+            };
+          }
           if (prop === "maybeSingle") {
             return () =>
               Promise.resolve({
-                data:
-                  table === "forge_runs"
-                    ? {
-                        created_at: pregame,
-                        metrics: {
-                          finished_at: (tables.forge_runs?.[0] as any)?.metrics?.finished_at ?? pregame,
-                          input_provenance: buildForgeInputProvenance()
-                        }
-                      }
-                    : null,
+                data: table === "forge_runs" ? structuredClone(result().data[0] ?? null) : null,
                 error: null
               });
           }
@@ -185,7 +193,7 @@ async function runAccuracyWithTables(tables: Record<string, unknown[]>) {
       { method: "GET", query: { date: "2026-03-20", ignoreOffSeason: "true" } } as any,
       res
     );
-    return { res, rpc, upserts };
+    return { res, rpc, upserts, forgeRun };
   } finally {
     delete serverSupabaseMock.from;
     delete serverSupabaseMock.rpc;
@@ -301,6 +309,39 @@ describe("/api/v1/db/run-projection-accuracy", () => {
     const { res } = await runAccuracyWithTables({});
     expect(requireExternalInputProvenRunMock).toHaveBeenCalledWith("run-a08");
     expect(res.statusCode).toBe(200);
+  });
+
+  it("rereads accuracy metadata when publication added a witness after the first read", async () => {
+    const observedAt = "2026-03-19T12:00:00.001Z";
+    const beforeWrite = vi.fn((row: MockRunMetricsRow) => {
+      // The publisher records its acknowledgment without changing the row version.
+      row.metrics.succeeded_observed_at = observedAt;
+    });
+    const { res, forgeRun } = await runAccuracyWithTables({ forge_runs: [{ metrics: {
+      accuracy_calibration: { "2026-03-19": { existing: true } },
+      unrelated: { retained: true },
+    } }] }, beforeWrite);
+
+    expect(res.statusCode).toBe(200);
+    expect(beforeWrite).toHaveBeenCalledTimes(2);
+    expect(forgeRun.metrics).toMatchObject({
+      succeeded_observed_at: observedAt, unrelated: { retained: true },
+      accuracy_calibration: { "2026-03-19": { existing: true }, "2026-03-20": expect.anything() },
+    });
+  });
+
+  it("reports repeated accuracy metadata contention without overwriting later fields", async () => {
+    const beforeWrite = vi.fn((row: MockRunMetricsRow) => {
+      row.updated_at = new Date(Date.parse(row.updated_at) + 1).toISOString();
+      row.metrics.unrelated = row.updated_at;
+    });
+    const { res, forgeRun } = await runAccuracyWithTables({}, beforeWrite);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toContain("changed during both accuracy metadata writes");
+    expect(beforeWrite).toHaveBeenCalledTimes(2);
+    expect(forgeRun.metrics).not.toHaveProperty("accuracy_calibration");
+    expect(forgeRun.metrics.unrelated).toBe(forgeRun.updated_at);
   });
 
   it("rejects an unproven latest run before any calibration reads or writes", async () => {

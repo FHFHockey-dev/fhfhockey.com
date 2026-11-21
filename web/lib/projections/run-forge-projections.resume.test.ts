@@ -13,13 +13,13 @@ type Row = Record<string, any>;
 const db = vi.hoisted(() => {
   const tables: Record<string, Row[]> = {};
   // A held table's next write is sent but commits only once released.
-  const holds = new Map<string, { reached: () => void; commit: Promise<void> }>();
+  const holds = new Map<string, { when: (patch: Row) => boolean; reached: () => void; commit: Promise<Error | undefined> }>();
   let sequence = 0;
   const read = (row: Row, column: string) => {
     const path = /^(\w+)->(\w+)->>(\w+)$/.exec(column);
-    if (!path) return row[column];
-    const value = row[path[1]]?.[path[2]]?.[path[3]];
-    return value == null ? null : String(value);
+    if (path) return row[path[1]]?.[path[2]]?.[path[3]] ?? null;
+    const direct = /^(\w+)->>(\w+)$/.exec(column);
+    return direct ? row[direct[1]]?.[direct[2]] ?? null : row[column];
   };
   function from(table: string) {
     tables[table] ??= [];
@@ -74,7 +74,7 @@ const db = vi.hoisted(() => {
     };
     const settle = () => {
       const hold = operation === "select" ? undefined : holds.get(table);
-      if (!hold) return Promise.resolve();
+      if (!hold?.when(patch)) return Promise.resolve();
       holds.delete(table);
       hold.reached();
       return hold.commit;
@@ -112,6 +112,10 @@ const db = vi.hoisted(() => {
         filters.push((row) => String(read(row, column)) === String(value));
         return query;
       },
+      is: (column: string, value: null) => {
+        filters.push((row) => read(row, column) === value);
+        return query;
+      },
       in: (column: string, values: unknown[]) => {
         filters.push((row) => values.includes(row[column]));
         return query;
@@ -145,16 +149,20 @@ const db = vi.hoisted(() => {
         return rows[0] ? { data: rows[0], error: null } : { data: null, error: { message: "no rows" } };
       },
       maybeSingle: async () => ({ data: result().data?.[0] ?? null, error: null }),
-      then: (resolve: any, reject: any) => settle().then(result).then(resolve, reject),
+      then: (resolve: any, reject: any) => settle().then((ackError) => {
+        const response = result();
+        if (ackError) throw ackError;
+        return response;
+      }).then(resolve, reject),
     };
     return query;
   }
-  function hold(table: string) {
+  function hold(table: string, when: (patch: Row) => boolean = () => true) {
     let reached!: () => void;
-    let commit!: () => void;
+    let commit!: (ackError?: Error) => void;
     const sent = new Promise<void>((resolve) => { reached = resolve; });
-    holds.set(table, { reached, commit: new Promise<void>((resolve) => { commit = resolve; }) });
-    return { sent, commit: () => commit() };
+    holds.set(table, { when, reached, commit: new Promise<Error | undefined>((resolve) => { commit = resolve; }) });
+    return { sent, commit };
   }
   return { tables, from, hold, reset: () => {
     for (const key of Object.keys(tables)) delete tables[key];
@@ -211,8 +219,8 @@ vi.mock("./stages/preflight-stage", async (importOriginal) => ({
 vi.mock("./stages/skater-stage", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./stages/skater-stage")>()),
   runPerGameSkaterStage: async (args: {
-    runId: string; asOfDate: string; game: { id: number; homeTeamId: number }; deadlineMs: number;
-    playerPredictionOutputRows: Array<Record<string, unknown>>; leagueSavePctCache?: unknown;
+    runId: string; asOfDate: string; game: { id: number; homeTeamId: number; awayTeamId: number }; deadlineMs: number;
+    playerPredictionOutputRows: Array<Record<string, unknown>>; leagueSavePctCache?: unknown; metrics: Row;
   }) => {
     fakes.skaterCalls.push(args.game.id);
     fakes.leagueSavePctCaches.push(args.leagueSavePctCache);
@@ -234,6 +242,15 @@ vi.mock("./stages/skater-stage", async (importOriginal) => ({
       return { playerRowsUpserted: 2, teamRowsUpserted: 1, timedOut: Date.now() > args.deadlineMs };
     }
     const players = fakes.strayRowGameIds.delete(args.game.id) ? [1, 2, 99] : [1, 2];
+    const { id: gameId, homeTeamId, awayTeamId } = args.game;
+    recordTeamSkaterCoverage(args.metrics, buildTeamSkaterCoverage({
+      gameId, teamId: homeTeamId, eligibleIds: [1, 3, 4], lineupIds: [1], reserveIds: [3],
+      unknownReasonById: new Map([[4, "no_nhl_usage_in_window"]]), defaultUnknownReason: "missing_player_record",
+    }));
+    recordTeamSkaterCoverage(args.metrics, buildTeamSkaterCoverage({
+      gameId, teamId: awayTeamId, eligibleIds: [2, 5], lineupIds: [2], reserveIds: [],
+      unknownReasonById: new Map(), defaultUnknownReason: "reserve_pass_disabled",
+    }));
     const rows = db.tables.forge_player_projections ??= [];
     for (const player_id of players) {
       const key = { run_id: args.runId, game_id: args.game.id, player_id, horizon_games: 1 };
@@ -291,6 +308,7 @@ import {
   writeClaimedRun,
 } from "./queries/run-lifecycle-queries";
 import { runProjectionV2ForDate } from "./run-forge-projections";
+import { buildTeamSkaterCoverage, recordTeamSkaterCoverage } from "./skaterCoverage";
 
 const values = (table: string) => (db.tables[table] ?? []).map((row) => row.proj_goals_es ?? row.expected_value);
 
@@ -382,6 +400,7 @@ describe("resumable FORGE projection run", () => {
     expect(run.status).toBe("running");
     expect(run.metrics).toMatchObject({ games: 2, player_rows: 4, resume: { completed_game_ids: [1, 2] } });
     expect(run.metrics).not.toHaveProperty("finished_at");
+    expect(run.metrics).not.toHaveProperty("succeeded_observed_at");
     // The lease is released, so the next call can continue at once.
     expect(Date.parse(run.metrics.resume.lease_expires_at)).toBeLessThanOrEqual(Date.now());
     expect(await requireLatestSucceededRunId(date)).toBe("earlier-succeeded");
@@ -426,6 +445,137 @@ describe("resumable FORGE projection run", () => {
     expect(run.metrics.resume.released_by).toBe(run.metrics.resume.lease_owner);
   });
 
+  it("keeps complete team-game coverage, player reasons and decision cutoffs across a retried game", async () => {
+    const firstCutoff = new Date(start).toISOString();
+    fakes.strayRowGameIds.add(3);
+    fakes.slowGameMs.set(3, 40_000);
+    const first = await runProjectionV2ForDate(date, { deadlineMs: start + 65_000 });
+    const split = runs().find((row) => row.run_id === first.runId)!;
+
+    expect(fakes.skaterCalls).toEqual([1, 2, 3]);
+    expect(split.metrics.skater_coverage.map(({ game_id }: Row) => game_id)).toEqual([1, 1, 2, 2]);
+    expect(split.metrics.decision_as_of_by_game).toEqual({ 1: firstCutoff, 2: firstCutoff });
+
+    vi.setSystemTime(start + 300_000);
+    const secondCutoff = new Date().toISOString();
+    await runProjectionV2ForDate(date, { deadlineMs: Date.now() + 200_000 });
+    expect(fakes.skaterCalls).toEqual([1, 2, 3, 3, 4]);
+    expect(split.metrics.decision_as_of_by_game).toEqual({ 1: firstCutoff, 2: firstCutoff, 3: secondCutoff, 4: secondCutoff });
+
+    const uninterruptedCutoff = new Date().toISOString();
+    const uninterrupted = await runProjectionV2ForDate(date, { deadlineMs: Date.now() + 200_000 });
+    const complete = runs().find((row) => row.run_id === uninterrupted.runId)!;
+    expect(complete.metrics.decision_as_of_by_game).toEqual(Object.fromEntries(fakes.games.map(({ id }) => [id, uninterruptedCutoff])));
+
+    expect(split.metrics.data_quality).toEqual(complete.metrics.data_quality);
+    expect(split.metrics.data_quality).toMatchObject({
+      skater_coverage_eligible: 20, skater_coverage_lineup: 8,
+      skater_coverage_reserve: 4, skater_coverage_unknown: 8,
+    });
+    expect(split.metrics.skater_coverage).toEqual(complete.metrics.skater_coverage);
+    expect(split.metrics.skater_coverage.map(({ game_id, team_id, unknown_by_reason }: Row) => [game_id, team_id, unknown_by_reason])).toEqual(
+      fakes.games.flatMap(({ id, homeTeamId, awayTeamId }) => [
+        [id, homeTeamId, { no_nhl_usage_in_window: [4] }],
+        [id, awayTeamId, { reserve_pass_disabled: [5] }],
+      ]),
+    );
+  });
+
+  it.each([undefined, new Date(start).toISOString()])("records success only after acknowledgment (explicit cutoff %s)", async (decisionAsOf) => {
+    const held = db.hold("forge_runs", (patch) => patch.status === "succeeded");
+    const run = runProjectionV2ForDate(date, { decisionAsOf, deadlineMs: start + 200_000 });
+    await held.sent;
+    const finishedAt = new Date().toISOString();
+    expect(runs()[0].status).toBe("running");
+    expect(runs()[0].metrics).not.toHaveProperty("succeeded_observed_at");
+
+    vi.setSystemTime(Date.now() + 4_000);
+    const acknowledgedAt = new Date().toISOString();
+    held.commit();
+    await expect(run).resolves.not.toHaveProperty("postRunFailure");
+    expect(runs()[0]).toMatchObject({ status: "succeeded", updated_at: finishedAt, metrics: {
+      decision_as_of: new Date(start).toISOString(), finished_at: finishedAt, succeeded_observed_at: acknowledgedAt,
+      games: 4, player_rows: 8, producer_identity: expect.anything(),
+    } });
+  });
+
+  it("rebases a witness after concurrent accuracy metadata without moving acknowledgment time", async () => {
+    const held = db.hold("forge_runs", (patch) => Boolean(patch.metrics?.succeeded_observed_at));
+    const run = runProjectionV2ForDate(date, { deadlineMs: start + 200_000 });
+    await held.sent;
+    const row = runs()[0];
+    expect(row.status).toBe("succeeded");
+    const observedAt = new Date().toISOString();
+    vi.setSystemTime(Date.now() + 4_000);
+    row.updated_at = new Date().toISOString();
+    const accuracyCalibration = { "2026-10-21": { rows: 4 } };
+    row.metrics.accuracy_calibration = accuracyCalibration;
+    held.commit();
+
+    await expect(run).resolves.not.toHaveProperty("postRunFailure");
+    expect(row).toMatchObject({ status: "succeeded", metrics: {
+      succeeded_observed_at: observedAt, accuracy_calibration: accuracyCalibration,
+    } });
+    expect(fakes.skaterCalls).toEqual([1, 2, 3, 4]);
+    expect(runs()).toHaveLength(1);
+  });
+
+  it("reports repeated witness contention without overwriting newer fields", async () => {
+    const isWitness = (patch: Row) => Boolean(patch.metrics?.succeeded_observed_at);
+    const first = db.hold("forge_runs", isWitness);
+    const run = runProjectionV2ForDate(date, { deadlineMs: start + 200_000 });
+    await first.sent;
+    const row = runs()[0];
+    row.updated_at = new Date(Date.now() + 1).toISOString();
+    const second = db.hold("forge_runs", isWitness);
+    first.commit();
+    await second.sent;
+    row.updated_at = new Date(Date.now() + 2).toISOString();
+    row.metrics.concurrent = "retained";
+    second.commit();
+
+    await expect(run).resolves.toMatchObject({ postRunFailure: { step: "record_succeeded_observation" } });
+    expect(row).toMatchObject({ status: "succeeded", metrics: { concurrent: "retained" } });
+    expect(row.metrics).not.toHaveProperty("succeeded_observed_at");
+    expect(fakes.skaterCalls).toEqual([1, 2, 3, 4]);
+    expect(runs()).toHaveLength(1);
+  });
+
+  it("retains an observation that another writer already recorded", async () => {
+    const held = db.hold("forge_runs", (patch) => Boolean(patch.metrics?.succeeded_observed_at));
+    const run = runProjectionV2ForDate(date, { deadlineMs: start + 200_000 });
+    await held.sent;
+    const row = runs()[0];
+    const recordedAt = new Date(Date.now() + 1).toISOString();
+    row.metrics.succeeded_observed_at = recordedAt;
+    held.commit();
+
+    await expect(run).resolves.not.toHaveProperty("postRunFailure");
+    expect(row.metrics.succeeded_observed_at).toBe(recordedAt);
+  });
+
+  it("keeps a succeeded run when the witness committed but its acknowledgment was lost", async () => {
+    const held = db.hold("forge_runs", (patch) => Boolean(patch.metrics?.succeeded_observed_at));
+    const run = runProjectionV2ForDate(date, { deadlineMs: start + 200_000 });
+    await held.sent;
+    held.commit(new Error("lost witness acknowledgment"));
+
+    await expect(run).resolves.toMatchObject({ postRunFailure: { step: "record_succeeded_observation", message: "lost witness acknowledgment" } });
+    expect(runs()[0]).toMatchObject({ status: "succeeded", metrics: { succeeded_observed_at: expect.any(String) } });
+    expect(fakes.skaterCalls).toEqual([1, 2, 3, 4]);
+  });
+
+  it("does not demote an unclaimed success that committed before its acknowledgment was lost", async () => {
+    const held = db.hold("forge_runs", (patch) => patch.status === "succeeded");
+    const run = runProjectionV2ForDate(date, { decisionAsOf: new Date(start).toISOString(), deadlineMs: start + 200_000 });
+    await held.sent;
+    held.commit(new Error("lost primary acknowledgment"));
+
+    await expect(run).rejects.toThrow("lost primary acknowledgment");
+    expect(runs()[0]).toMatchObject({ status: "succeeded", metrics: { games: 4, player_rows: 8 } });
+    expect(runs()[0].metrics).not.toHaveProperty("succeeded_observed_at");
+  });
+
   it.each([undefined, ""])("stamps an uncaptured localhost run local:unknown and keeps serving the released run (SHA env %j)", async (sha) => {
     for (const key of ["FORGE_CODE_VERSION", "VERCEL_GIT_COMMIT_SHA", "GIT_SHA"]) vi.stubEnv(key, sha);
     seedRun({
@@ -467,6 +617,9 @@ describe("resumable FORGE projection run", () => {
     expect(fakes.skaterCalls).toEqual([2, 3, 4]);
     expect(runs()).toHaveLength(1);
     expect(runs()[0]).toMatchObject({ status: "succeeded", metrics: { games: 4, resume: { completed_game_ids: [1, 2, 3, 4] } } });
+    // Legacy checkpoints carry no per-game facts for game 1.
+    expect(Object.keys(runs()[0].metrics.decision_as_of_by_game)).toEqual(["2", "3", "4"]);
+    expect(runs()[0].metrics.skater_coverage.map(({ game_id }: Row) => game_id)).toEqual([2, 2, 3, 3, 4, 4]);
     expect(playerRows("killed-run")).toEqual(["1:1", "1:2", "2:1", "2:2", "3:1", "3:2", "4:1", "4:2"]);
   });
 
@@ -654,6 +807,8 @@ describe("resumable FORGE projection run", () => {
       expect(fakes.publishedRuns).toEqual(["reserved-run"]);
       expect(runs()).toHaveLength(1);
       expect(runs()[0]).toMatchObject({ status: "succeeded" });
+      expect(runs()[0].metrics).not.toHaveProperty("decision_as_of_by_game");
+      expect(runs()[0].metrics).not.toHaveProperty("succeeded_observed_at");
     });
   });
 

@@ -1,0 +1,13 @@
+example,player,issue_date,offset_gp,game_id,opponent,date,points,last5,chart_reference,state,breach,confirmation,exit
+hit,Anze Kopitar,2025-03-01,0,2024020957,STL,2025-03-01,1,0.4,0.4,neutral,,,
+hit,Anze Kopitar,2025-03-01,1,2024020972,CHI,2025-03-03,1,0.4,0.45,neutral,,,
+hit,Anze Kopitar,2025-03-01,2,2024020987,STL,2025-03-05,0,0.4,0.45,neutral,,,
+hit,Anze Kopitar,2025-03-01,3,2024021010,STL,2025-03-08,1,0.6,0.35,neutral,,,
+hit,Anze Kopitar,2025-03-01,4,2024021018,VGK,2025-03-09,2,1.0,0.35,neutral,hot,,
+hit,Anze Kopitar,2025-03-01,5,2024021034,NYI,2025-03-11,1,1.0,0.4,hot,,hot,
+false_alert,Alex DeBrincat,2025-03-12,0,2024021036,BUF,2025-03-12,4,0.8,1.0,neutral,,,
+false_alert,Alex DeBrincat,2025-03-12,1,2024021049,CAR,2025-03-14,1,1.0,0.9,neutral,,,
+false_alert,Alex DeBrincat,2025-03-12,2,2024021066,VGK,2025-03-16,0,1.0,0.85,neutral,,,
+false_alert,Alex DeBrincat,2025-03-12,3,2024021081,WSH,2025-03-18,0,1.0,0.85,neutral,,,
+false_alert,Alex DeBrincat,2025-03-12,4,2024021115,VGK,2025-03-22,1,1.2,0.8,neutral,hot,,
+false_alert,Alex DeBrincat,2025-03-12,5,2024021128,UTA,2025-03-24,2,0.8,1.0,neutral,,,

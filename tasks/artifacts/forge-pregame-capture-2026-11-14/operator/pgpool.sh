@@ -16,4 +16,5 @@ print(f"export PGUSER={q(user)} PGPASSWORD={q(u.unquote(p.password or ''))} PGDA
 print(f"export PGHOST={q(sys.argv[2])} PGPORT=5432 PGSSLMODE=require PGAPPNAME=claude-forge-pregame-capture PGCONNECT_TIMEOUT=10")
 PY
 )
-exec /opt/homebrew/opt/postgresql@15/bin/psql -X -v ON_ERROR_STOP=1 "$@"
+# Hosted runners can pin their installed psql executable. The Mac uses its existing PostgreSQL 15 binary.
+exec "${FHFH_PSQL_BIN:-/opt/homebrew/opt/postgresql@15/bin/psql}" -X -v ON_ERROR_STOP=1 "$@"

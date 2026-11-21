@@ -1,0 +1,51 @@
+{
+  "classification": "historical_receipt_metadata_and_printed_input_fragments",
+  "archiveAvailableLocally": false,
+  "nativeArchive": {
+    "format": "gzip(canonical UTF-8 JSON)",
+    "byteLength": 187301,
+    "rawSha256": "3a76caf5e5ad1485d3638ae13b8a2a432dd7578703ea09a188608029ff4d4a9b",
+    "canonicalSha256": "bf9041ca164e2cef73ee984237560caab82181892ad2b62e85fa0b34c0822d56",
+    "witnessTokenSha256": "c18690e2e4d7d043c49295081d9caeff8a9da64149db9d427836124d5f96aa51",
+    "independentReadAt": "2026-11-17T22:44:32.065021Z",
+    "acknowledgementUpperBound": "2026-11-17T22:45:19Z",
+    "deadline": "2026-11-17T23:00:00Z"
+  },
+  "binding": {
+    "awayAbbrev": "CBJ",
+    "awayTeamId": 29,
+    "calendarRevision": "09263747a787a6453b5fdf716f6642309ee108a711c5f7e4819192a2cbb53e83",
+    "claimId": "e79f06a3-8f33-4f50-a856-02f880787934",
+    "codeVersion": "83750b4abd672399113659b96c279a1ddaeb425b",
+    "gameId": 2026020336,
+    "homeAbbrev": "NYI",
+    "homeTeamId": 2,
+    "inputCutoff": "2026-11-17T22:44:01.746467+00:00",
+    "policyId": "pregame-native-v1",
+    "scheduledStart": "2026-11-18T00:00:00+00:00",
+    "slateDate": "2026-11-17"
+  },
+  "readWindow": {
+    "start": "2026-11-17T22:44:01.797Z",
+    "end": "2026-11-17T22:44:17.933Z"
+  },
+  "statedCutoff": "2026-11-17T22:44:22.933000Z",
+  "skaterCandidate": {
+    "name": "Zach Werenski",
+    "nhlPlayerId": 8478460,
+    "position": "D",
+    "roster": {
+      "receivedAt": "2026-11-17T22:44:01.840Z",
+      "row": { "playerId": 8478460, "teamId": 29, "seasonId": 20262027, "created_at": "2026-09-19T00:57:27.934334+00:00" }
+    },
+    "identity": {
+      "receivedAt": ["2026-11-17T22:44:01.943Z", "2026-11-17T22:44:17.933Z"],
+      "rowFragment": { "id": 9692, "nhl_player_id": 8478460, "current_nhl_team_id": 29 }
+    },
+    "latestSkaterContext": {
+      "relation": "player_stats_unified",
+      "receivedAt": "2026-11-17T22:44:14.775Z",
+      "rowFragment": { "date": "2026-11-14", "player_id": 8478460, "nst_shots_per_60": 9.78, "nst_ixg_per_60": 0.49 }
+    }
+  }
+}

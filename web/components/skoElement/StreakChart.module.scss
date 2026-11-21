@@ -1,0 +1,8 @@
+.scroll { max-width: 100%; min-width: 0; overflow-x: auto; background: #17222b; border: 1px solid #566874; border-radius: 6px; }
+.scroll:focus-visible { outline: 2px solid #90ebf1; }
+.scroll svg { display: block; max-width: none; }
+.scroll text { fill: #f0f4f6; font: 12px system-ui, sans-serif; text-anchor: middle; }
+.key { line-height: 1.7; margin: 0; }
+.detail { border-left: 3px solid #89b6c7; padding: 4px 16px; }
+.detail h3, .detail p { margin: 4px 0; }
+.windows { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }

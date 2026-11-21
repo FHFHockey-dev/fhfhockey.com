@@ -1,0 +1,194 @@
+{
+ "recordType": "forge_sandbox_hosted_receipt",
+ "capturedAt": "2026-11-19",
+ "deployment": {
+  "id": "dpl_E59ktA1fyi4A2XDhyPe1UT5eoj4p",
+  "project": "fhfhockey",
+  "sha": "02f0426d557e8e13c85e452759c1a1566285d950",
+  "alias": "fhfhockey.com"
+ },
+ "sandboxBootstrapSha256": "b057d1e9b7d7ee79af7353e93bd66744b9ccc8e80f6a6d5aea4bb8c35d60624e",
+ "readback": {
+  "request": {
+   "jobid": 409,
+   "fired_at": "2026-11-19T21:31:00.384873+00:00",
+   "job_name": "forge-sandbox-get-2099020991",
+   "request_id": 1811
+  },
+  "cronRuns": [
+   {
+    "runid": 258726,
+    "jobid": 409,
+    "status": "succeeded",
+    "returnMessage": "1 row",
+    "start": "2026-11-19T21:31:00.372049+00:00",
+    "end": "2026-11-19T21:31:00.39406+00:00"
+   }
+  ],
+  "httpResponse": {
+   "id": 1811,
+   "statusCode": 200,
+   "timedOut": false,
+   "error": null,
+   "created": "2026-11-19T21:31:00.647664+00:00",
+   "body": {
+    "sha": "02f0426d557e8e13c85e452759c1a1566285d950",
+    "gameId": 2099020991,
+    "reason": "capture_qualified",
+    "status": "succeeded",
+    "claimId": "678c8fd3-fa19-4416-8130-e37dfbcf5372",
+    "receipt": {
+     "claim": "678c8fd3-fa19-4416-8130-e37dfbcf5372",
+     "claims": 1,
+     "gameId": 2099020991,
+     "reason": "capture_qualified",
+     "beganAt": "2026-11-19T21:31:00.933371+00:00",
+     "custody": "qualified",
+     "outcome": "succeeded",
+     "release": "02f0426d557e8e13c85e452759c1a1566285d950",
+     "summary": {
+      "reads": 131,
+      "transport": {
+       "rows": 1472,
+       "bytes": 297067,
+       "calls": 131,
+       "httpCalls": 131,
+       "stampToleranceMs": 5000
+      },
+      "candidates": {
+       "goalies": 4,
+       "skaters": 36,
+       "reserves": 4
+      },
+      "readWindow": {
+       "end": "2026-11-19T21:31:05.940Z",
+       "start": "2026-11-19T21:31:01.403Z"
+      },
+      "statedCutoff": "2026-11-19T21:31:10.940000Z",
+      "includesPlayer": {
+       "8471001": true
+      },
+      "modelEnvironment": {
+       "NHL_XG_MODEL_VERSION": null,
+       "FORGE_SKATER_MODEL_MODE": null,
+       "START_CHART_GAME_REVISIONS": null,
+       "STARTER_BOARD_COMPUTE_ENABLED": "false",
+       "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES": null,
+       "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION": null,
+       "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION": null,
+       "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED": "true"
+      },
+      "seasonBootstrapApplied": false
+     },
+     "witness": "qualified",
+     "ackUpper": "2026-11-19T21:32:07+00:00",
+     "finishedAt": "2026-11-19T21:31:06.516554+00:00",
+     "tsaGenTime": "2026-11-19T21:31:06+00:00",
+     "dbElapsedMs": 5583,
+     "inputCutoff": "2026-11-19T21:31:01.343311+00:00",
+     "packetBytes": 27426,
+     "tokenSha256": "6359fce606ec706c1d052ab796d23e34800ab1a8e43e26c98f81ef327a233941",
+     "appElapsedMs": 5598,
+     "packetSha256": "f3472b616071b47c89e1d6ab733c87988e1816533a2172c6a3345e925e9ac2df",
+     "witnessReason": null,
+     "canonicalSha256": "75f4a87383b09fa3d39eaf195ceb8af9f6dc3c88c34579e31a8a894245311f12",
+     "claimCodeVersion": "02f0426d557e8e13c85e452759c1a1566285d950"
+    },
+    "summary": {
+     "reads": 131,
+     "transport": {
+      "rows": 1472,
+      "bytes": 297067,
+      "calls": 131,
+      "httpCalls": 131,
+      "stampToleranceMs": 5000
+     },
+     "candidates": {
+      "goalies": 4,
+      "skaters": 36,
+      "reserves": 4
+     },
+     "readWindow": {
+      "end": "2026-11-19T21:31:05.940Z",
+      "start": "2026-11-19T21:31:01.403Z"
+     },
+     "statedCutoff": "2026-11-19T21:31:10.940000Z",
+     "includesPlayer": {
+      "8471001": true
+     },
+     "modelEnvironment": {
+      "NHL_XG_MODEL_VERSION": null,
+      "FORGE_SKATER_MODEL_MODE": null,
+      "START_CHART_GAME_REVISIONS": null,
+      "STARTER_BOARD_COMPUTE_ENABLED": "false",
+      "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES": null,
+      "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION": null,
+      "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION": null,
+      "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED": "true"
+     },
+     "seasonBootstrapApplied": false
+    },
+    "elapsedMs": 5598
+   }
+  },
+  "receipt": {
+   "claim": "678c8fd3-fa19-4416-8130-e37dfbcf5372",
+   "claims": 1,
+   "gameId": 2099020991,
+   "reason": "capture_qualified",
+   "beganAt": "2026-11-19T21:31:00.933371+00:00",
+   "custody": "qualified",
+   "outcome": "succeeded",
+   "release": "02f0426d557e8e13c85e452759c1a1566285d950",
+   "summary": {
+    "reads": 131,
+    "transport": {
+     "rows": 1472,
+     "bytes": 297067,
+     "calls": 131,
+     "httpCalls": 131,
+     "stampToleranceMs": 5000
+    },
+    "candidates": {
+     "goalies": 4,
+     "skaters": 36,
+     "reserves": 4
+    },
+    "readWindow": {
+     "end": "2026-11-19T21:31:05.940Z",
+     "start": "2026-11-19T21:31:01.403Z"
+    },
+    "statedCutoff": "2026-11-19T21:31:10.940000Z",
+    "includesPlayer": {
+     "8471001": true
+    },
+    "modelEnvironment": {
+     "NHL_XG_MODEL_VERSION": null,
+     "FORGE_SKATER_MODEL_MODE": null,
+     "START_CHART_GAME_REVISIONS": null,
+     "STARTER_BOARD_COMPUTE_ENABLED": "false",
+     "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES": null,
+     "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION": null,
+     "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION": null,
+     "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED": "true"
+    },
+    "seasonBootstrapApplied": false
+   },
+   "witness": "qualified",
+   "ackUpper": "2026-11-19T21:32:07+00:00",
+   "finishedAt": "2026-11-19T21:31:06.516554+00:00",
+   "tsaGenTime": "2026-11-19T21:31:06+00:00",
+   "dbElapsedMs": 5583,
+   "inputCutoff": "2026-11-19T21:31:01.343311+00:00",
+   "packetBytes": 27426,
+   "tokenSha256": "6359fce606ec706c1d052ab796d23e34800ab1a8e43e26c98f81ef327a233941",
+   "appElapsedMs": 5598,
+   "packetSha256": "f3472b616071b47c89e1d6ab733c87988e1816533a2172c6a3345e925e9ac2df",
+   "witnessReason": null,
+   "canonicalSha256": "75f4a87383b09fa3d39eaf195ceb8af9f6dc3c88c34579e31a8a894245311f12",
+   "claimCodeVersion": "02f0426d557e8e13c85e452759c1a1566285d950"
+  },
+  "registeredSandboxJobs": 0,
+  "otherCronJobs": 81
+ }
+}

@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { makeHostedGameFixture } from "./__fixtures__/hostedGame";
 import { runHostedPregameGame, type HostedPregameDeps } from "./hostedGame";
-import { DEFAULT_CAPTURE_BUDGET, POLICY_ID } from "./policy";
+import { DEFAULT_CAPTURE_BUDGET, HOSTED_V2_BUDGET, HOSTED_V2_TIMING, POLICY_ID } from "./policy";
 import { supabaseCaptureRpc } from "./rpc";
 import { latestDispatchAtOf } from "./slateQueue";
 import { reverifyStoredWitness } from "./verifier";
@@ -131,6 +131,43 @@ describe("hosted FORGE game adapter", () => {
     const client = createClient("https://fixture.invalid", "synthetic-key", { global: { fetch } });
     await expect(supabaseCaptureRpc(client, 5).read("claim-1")).rejects.toThrow("TimeoutError");
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses a different singleton or insufficient time after cold delivery before schedule or custody", async () => {
+    const { request, deps, clock, db } = fixture();
+    const readSchedule = vi.fn(deps.readSchedule);
+    const env = { ...deps.env, START_CHART_GAME_REVISIONS: "true", STARTER_BOARD_CANARY_GAME_IDS: String(request.gameId + 1) };
+    const hostedV2 = { dispatchId: "fixture", workDeadlineMs: clock.ms + HOSTED_V2_TIMING.workMs };
+    expect(await runHostedPregameGame({ ...request, hostedV2 }, { ...deps, env, readSchedule })).toMatchObject({ reason: "capture_disabled" });
+    env.STARTER_BOARD_CANARY_GAME_IDS = String(request.gameId);
+    clock.advance(HOSTED_V2_TIMING.workMs - HOSTED_V2_BUDGET.pinMs - HOSTED_V2_BUDGET.rpcMs - HOSTED_V2_BUDGET.requiredMs + 1);
+    expect(await runHostedPregameGame({ ...request, hostedV2 }, { ...deps, env, readSchedule })).toMatchObject({ reason: "dispatch_window_closed" });
+    expect(readSchedule).not.toHaveBeenCalled();
+    expect(db.calls).toEqual([]);
+  });
+
+  it("cancels a pending native pin at its actual HTTP transport and never opens a claim", async () => {
+    const { request, deps, clock } = fixture();
+    const controller = new AbortController();
+    const paths: string[] = [];
+    let aborts = 0;
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      paths.push(new URL(String(input)).pathname);
+      const signal = init?.signal;
+      expect(signal).toBeInstanceOf(AbortSignal);
+      return new Promise((_resolve, reject) => {
+        signal!.addEventListener("abort", () => { aborts++; reject(signal!.reason); }, { once: true });
+        queueMicrotask(() => controller.abort());
+      });
+    });
+    const hostedV2 = { dispatchId: "fixture", workDeadlineMs: clock.ms + HOSTED_V2_TIMING.workMs };
+    const env = { ...deps.env, START_CHART_GAME_REVISIONS: "true", STARTER_BOARD_CANARY_GAME_IDS: String(request.gameId) };
+    expect(await runHostedPregameGame({ ...request, hostedV2 }, {
+      ...deps, env, signal: controller.signal, runCapture: undefined,
+    })).toMatchObject({ claimId: null, outcome: "never_dispatched", reason: "pin_failed" });
+    expect(aborts).toBeGreaterThan(0);
+    expect(paths).toHaveLength(aborts);
+    expect(paths.every(path => path.startsWith("/rest/v1/") && !path.includes("/rpc/"))).toBe(true);
   });
 
   it("returns an unresolved claim when its response is lost", async () => {

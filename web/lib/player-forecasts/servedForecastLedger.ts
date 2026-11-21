@@ -1,6 +1,7 @@
 import { computeGoalieFantasyPoints, computeSkaterFantasyPoints } from "lib/projections/accuracy/fantasyPoints";
 import { DEFAULT_GOALIE_FANTASY_POINTS, DEFAULT_SKATER_FANTASY_POINTS } from "lib/projectionsConfig/fantasyPointsConfig";
 import type { GameForecast } from "lib/rosterScheduleOptimizer/planningTypes";
+import { bridgeAllowedUses, reserveCodeOf } from "lib/rosterScheduleData/bridgeForecastWire";
 import { devigTwoWayAmerican, median, type DevigMethod } from "lib/projections/utils/devig";
 import { compareModelWithMarket, forgePropOverProbability, getModelLineProbabilities, type MarketPriceQuote, type OverProbabilityFn } from "lib/projections/utils/market-output-builders";
 import type { GameExpectation } from "./gameExpectations";
@@ -51,6 +52,7 @@ export type LedgerUniverseRow = Pick<LedgerRow, "served_date" | "season_id" | "p
 export type BuildLedgerInput = {
   date: string; seasonId: number; now: Date; games: LedgerGame[]; players: LedgerPlayer[];
   bridgeForecasts: GameForecast[]; /** forge_runs run_id → as_of_date */ runDates: Map<string, string>;
+  proofWithheldBridgeForecasts?: Array<Pick<GameForecast, "playerId" | "gameId">>;
   nativeExpectations?: Array<{ playerId: number; expectation: GameExpectation }>;
   /** This season's `games` rows (id, date, homeTeamId, awayTeamId) through `date`: rest days and team start shares. */
   scheduleGames: Row[];
@@ -106,8 +108,33 @@ const EMPTY = { run_id: null, source_watermark: null, method_version: null, cuto
   act_goals: null, act_assists: null, act_pp_points: null, act_shots: null, act_hits: null, act_blocks: null, act_saves: null, act_goals_against: null,
   act_shots_against: null, act_win: null, act_shutout: null, act_fantasy_points: null, dressed: null, started: null, settled_at: null, outcome_source: null };
 
+/** Response-only availability of the bridge decision line. Scored targets have their own approvals and coverage. */
+export function emptyBridgeAcceptance() {
+  return { scope: "bridge_decision_line" as const, sourceClassification: "ledger_run_slate_date_vs_game_date" as const,
+    eligible: 0, usableExact: 0, usableReaimed: 0, confirmedOut: 0, conditionalOnly: 0, unavailableOrWithheld: 0,
+    reasons: {} as Record<string, number> };
+}
+
+function bridgeAcceptanceOutcome(forecast: GameForecast, now: number,
+  source: "bridge_exact" | "bridge_reaimed", sourceDate: string | undefined):
+  ["usableExact" | "usableReaimed" | "confirmedOut" | "conditionalOnly" | "unavailableOrWithheld", string?] {
+  const issued = Date.parse(forecast.issuedAt);
+  if (!Number.isFinite(issued) || issued > now || !(Date.parse(forecast.cutoffAt ?? "") <= issued))
+    return ["unavailableOrWithheld", "invalid_or_future_forecast_timing"];
+  if (!(Date.parse(forecast.expiresAt ?? "") > now)) return ["unavailableOrWithheld", "expired_or_invalid_expiry"];
+  const code = reserveCodeOf(forecast);
+  if ((forecast.allowedUses ?? bridgeAllowedUses(code)).totals && Object.values(forecast.stats).some(finite)) {
+    if (code === "skater:confirmed_out" || code === "skater:roster_out") return ["confirmedOut", code];
+    if (!sourceDate) return ["unavailableOrWithheld", "run_slate_date_unavailable"];
+    return [source === "bridge_exact" ? "usableExact" : "usableReaimed"];
+  }
+  return Object.values(forecast.conditionalStats ?? {}).some(finite)
+    ? ["conditionalOnly", code ?? "conditional_stats_only"]
+    : ["unavailableOrWithheld", code ?? "no_usable_decision_line"];
+}
+
 /** One row per source per identified player-game; games already started (or not scheduled) are refused and listed. */
-export function buildLedgerRows(input: BuildLedgerInput): { rows: LedgerRow[]; universe: LedgerUniverseRow[]; skippedGameIds: number[] } {
+export function buildLedgerRows(input: BuildLedgerInput) {
   const { date, seasonId, now } = input, nowIso = now.toISOString();
   const datesByTeam = new Map<number, string[]>(), gamesByTeam = new Map<number, Row[]>();
   for (const row of [...input.scheduleGames].sort((a, b) => String(a.date).localeCompare(String(b.date)) || Number(a.id) - Number(b.id)))
@@ -120,6 +147,13 @@ export function buildLedgerRows(input: BuildLedgerInput): { rows: LedgerRow[]; u
     return previous ? Math.round((Date.parse(`${date}T12:00:00Z`) - Date.parse(`${previous}T12:00:00Z`)) / 86400000) : null;
   };
   const forecasts = new Map(input.bridgeForecasts.map(row => [`${row.playerId}:${row.gameId}`, row]));
+  const proofWithheld = new Set((input.proofWithheldBridgeForecasts ?? []).map(row => `${row.playerId}:${row.gameId}`));
+  const bridgeAcceptance = emptyBridgeAcceptance();
+  const tally = (outcome: ReturnType<typeof bridgeAcceptanceOutcome>) => {
+    const [category, reason] = outcome;
+    bridgeAcceptance[category]++;
+    if (reason) bridgeAcceptance.reasons[reason] = (bridgeAcceptance.reasons[reason] ?? 0) + 1;
+  };
   const native = new Map((input.nativeExpectations ?? []).map(row => [`${row.playerId}:${row.expectation.gameId}`, row.expectation]));
   const skaterRows = new Map<number, Row[]>(), goalieStarts = new Map<number, Row[]>();
   for (const row of input.wgoGameRows) if (finite(row.player_id) && String(row.date) < date) skaterRows.set(row.player_id, [...(skaterRows.get(row.player_id) ?? []), row]);
@@ -146,14 +180,17 @@ export function buildLedgerRows(input: BuildLedgerInput): { rows: LedgerRow[]; u
         rows.push(row);
       };
       const mapping = player.playerClass === "skater" ? SKATER_HEADS : GOALIE_HEADS;
-      const forecast = forecasts.get(`${player.planningId}:${game.gameId}`);
+      const key = `${player.planningId}:${game.gameId}`, forecast = forecasts.get(key);
       if (forecast) {
         const runId = forecast.revisionId.split(":").at(-1) ?? null;
-        push(runId && input.runDates.get(runId) === game.date ? "bridge_exact" : "bridge_reaimed", { run_id: runId, source_watermark: forecast.sourceWatermark ?? forecast.revisionId,
+        const sourceDate = runId ? input.runDates.get(runId) : undefined;
+        const source = sourceDate === game.date ? "bridge_exact" : "bridge_reaimed";
+        const heads = Object.fromEntries(Object.entries(mapping).map(([head, key]) => [head, num(forecast.stats[key])]));
+        tally(bridgeAcceptanceOutcome(forecast, now.getTime(), source, sourceDate));
+        push(source, { run_id: runId, source_watermark: forecast.sourceWatermark ?? forecast.revisionId,
           method_version: forecast.modelVersion, cutoff_at: forecast.cutoffAt ?? null, issued_at: forecast.issuedAt, expires_at: forecast.expiresAt ?? null,
-          participation_probability: num(forecast.appearanceProbability), start_probability: num(forecast.startProbability) },
-        Object.fromEntries(Object.entries(mapping).map(([head, key]) => [head, num(forecast.stats[key])])));
-      }
+          participation_probability: num(forecast.appearanceProbability), start_probability: num(forecast.startProbability) }, heads);
+      } else tally(["unavailableOrWithheld", proofWithheld.has(key) ? "external_input_proof_unavailable" : "forecast_not_supplied"]);
       const expectation = native.get(`${player.nhlId}:${game.gameId}`);
       if (expectation) {
         const lead = Object.values(expectation.targets).find(target => target.issuedAt) ?? null;
@@ -189,7 +226,7 @@ export function buildLedgerRows(input: BuildLedgerInput): { rows: LedgerRow[]; u
       }
     }
   }
-  return { rows, universe, skippedGameIds };
+  return { rows, universe, skippedGameIds, bridgeAcceptance: { ...bridgeAcceptance, eligible: universe.length } };
 }
 
 /** Task 6.3 market source. Requires migration 99 (source 'market', column `market_lines`; applied 2026-10-22, ledger

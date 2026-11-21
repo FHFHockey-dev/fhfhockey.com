@@ -90,23 +90,22 @@ function predicate(column: string, operator: string, value: unknown): (row: Row)
   };
 }
 
-/** PostgREST `or` grammar, flat: `a.eq.1,b.eq.2` and `and(a.eq.1,b.gt.2)`. */
+/** PostgREST `or` grammar, including nested and/or groups. */
 function orPredicate(expression: string): (row: Row) => boolean {
-  const branches = splitTopLevel(expression).map((branch) => {
-    const and = /^and\((.*)\)$/.exec(branch);
-    if (and) {
-      const parts = splitTopLevel(and[1]).map(orAtom);
-      return (row: Row) => parts.every((part) => part(row));
-    }
-    return orAtom(branch);
-  });
+  const branches = splitTopLevel(expression).map(orAtom);
   return (row) => branches.some((branch) => branch(row));
 }
 function orAtom(atom: string): (row: Row) => boolean {
+  const group = /^(and|or)\((.*)\)$/.exec(atom);
+  if (group) {
+    if (group[1] === "or") return orPredicate(group[2]);
+    const parts = splitTopLevel(group[2]).map(orAtom);
+    return (row: Row) => parts.every(part => part(row));
+  }
   const match = /^([\w>-]+)\.(not\.)?(\w+)\.(.*)$/.exec(atom);
   if (!match) throw new Error(`fixture world: unsupported or() atom ${atom}`);
   const [, column, negated, operator, raw] = match;
-  const value = operator === "in" ? raw : parseLiteral(raw);
+  const value = operator === "in" ? raw : parseLiteral(raw.replace(/^"(.*)"$/, "$1"));
   const test = predicate(column, operator, value);
   return negated ? (row) => !test(row) : test;
 }

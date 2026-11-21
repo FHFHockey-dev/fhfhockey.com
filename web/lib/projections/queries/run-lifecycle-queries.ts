@@ -429,12 +429,13 @@ export async function writeClaimedRun(
     invocations: claim.invocations,
     released_by: args.leaseExpiresAt ? null : claim.leaseOwner
   };
+  const metrics = { ...args.metrics, resume, producer_identity: claim.producerIdentity
+    ?? producerIdentityStamp(claim.priorMetrics.producer_identity, claim.resumed) } as Json;
   const { data, error } = await supabase
     .from("forge_runs")
     .update({
       status: args.status,
-      metrics: { ...args.metrics, resume, producer_identity: claim.producerIdentity
-        ?? producerIdentityStamp(claim.priorMetrics.producer_identity, claim.resumed) } as Json,
+      metrics,
       updated_at: nowIso
     })
     .eq("run_id", claim.runId)
@@ -445,6 +446,7 @@ export async function writeClaimedRun(
   if (!data?.length) throw runLeaseLostError(claim.runId, "lease taken over");
   // A renewal moves this invocation's own write deadline too.
   if (args.leaseExpiresAt) claim.leaseExpiresAt = args.leaseExpiresAt;
+  return { runId: claim.runId, updatedAt: nowIso, metrics };
 }
 
 /** In memory: no output write within the safety margin of the lease's expiry. */
@@ -523,14 +525,59 @@ export async function clearRunGameRows(runId: string, gameIds: number[]) {
 export async function finalizeRun(
   runId: string,
   status: "succeeded" | "failed",
-  metrics: Json
+  metrics: Json,
+  requireRunning = false
 ) {
   assertSupabase();
   // An unclaimed run is written by one invocation, which stamps its closure on the final metrics.
   const stamped = isJsonObject(metrics) ? { ...metrics, producer_identity: producerIdentityStamp() } : metrics;
-  const { error } = await supabase
+  const updatedAt = new Date().toISOString();
+  const update = supabase
     .from("forge_runs")
-    .update({ status, metrics: stamped as Json, updated_at: new Date().toISOString() })
+    .update({ status, metrics: stamped as Json, updated_at: updatedAt })
     .eq("run_id", runId);
+  if (requireRunning) update.eq("status", "running");
+  const requireAcknowledgedRow = requireRunning && status === "succeeded";
+  const { error, data } = await (requireAcknowledgedRow ? update.select("run_id") : update);
   if (error) throw error;
+  if (requireAcknowledgedRow && !data?.length) throw new Error(`FORGE run ${runId} did not acknowledge success.`);
+  return { runId, updatedAt, metrics: stamped as Json };
+}
+
+/** Called after the success write returns. This wall-clock time bounds publication from above. */
+export async function recordSucceededRunObservation(run: { runId: string; updatedAt: string; metrics: Json }) {
+  assertSupabase();
+  const observedAt = new Date().toISOString();
+  if (observedAt < run.updatedAt || !isJsonObject(run.metrics)) {
+    throw new Error(`FORGE run ${run.runId} could not establish a success observation.`);
+  }
+  let updatedAt = run.updatedAt;
+  let metrics = run.metrics;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { data, error } = await supabase
+      .from("forge_runs")
+      .update({ metrics: { ...metrics, succeeded_observed_at: observedAt } })
+      .eq("run_id", run.runId)
+      .eq("status", "succeeded")
+      .eq("updated_at", updatedAt)
+      .is("metrics->>succeeded_observed_at", null)
+      .select("run_id");
+    if (error) throw error;
+    if (data?.length) return;
+    if (attempt === 1) break;
+
+    // Rebase on a concurrent metadata update while keeping the original acknowledgment time.
+    const { data: current, error: readError } = await supabase
+      .from("forge_runs")
+      .select("updated_at,metrics")
+      .eq("run_id", run.runId)
+      .eq("status", "succeeded")
+      .maybeSingle();
+    if (readError) throw readError;
+    if (!current || !isJsonObject(current.metrics)) break;
+    if (typeof current.metrics.succeeded_observed_at === "string") return;
+    updatedAt = current.updated_at;
+    metrics = current.metrics;
+  }
+  throw new Error(`FORGE run ${run.runId} changed before success could be recorded.`);
 }

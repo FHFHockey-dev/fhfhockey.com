@@ -1,0 +1,75 @@
+{
+  "recordType": "managed_rehearsal_preflight",
+  "gameId": 2099020991,
+  "checkedAt": "2026-11-19T19:29:59Z",
+  "status": "blocked_before_provisioning",
+  "armed": false,
+  "approvedRelease": "f886ddac731ae825a12fab915848d2b5fd7d9b8c",
+  "verifiedTree": "09ef9bf0662e14cd80fa60cee25c70a988e5c748",
+  "verifiedBootstrapSha256": "c02c458fe6d2675d45995264036fbeab07f094cd2cc3a73d5d6376602f52171b",
+  "approvedStartUtc": "2026-11-23T22:00:00Z",
+  "dispatchOpensUtc": "2026-11-23T20:40:00Z",
+  "dispatchClosesUtc": "2026-11-23T20:53:00Z",
+  "independentWitnessDueUtc": "2026-11-23T21:00:00Z",
+  "jobsStopByUtc": "2026-11-23T21:12:00Z",
+  "reportDueUtc": "2026-11-23T21:13:00Z",
+  "authorizedLimits": {
+    "incrementalUsd": 10,
+    "newIsolatedComputeHours": 2,
+    "builds": 1,
+    "signedApplicationPosts": 4,
+    "externalTimestampRequests": 1
+  },
+  "supabaseTeardown": {
+    "permanentDeletionAuthorized": true,
+    "onlyNewProjectNamed": "fhfh-forge-offline-rehearsal",
+    "providerProjectIdAtCreation": null,
+    "requirements": [
+      "Persist the provider ID and creation time outside the project at creation.",
+      "Save and verify the sanitized game receipt or failure record outside the project before deletion.",
+      "Verify the exact recorded provider ID before deleting.",
+      "Delete within two hours of project creation and confirm deletion with Supabase."
+    ]
+  },
+  "existingHostedAccess": {
+    "independentWitness": {
+      "hostOrVaultReference": null,
+      "administrator": null,
+      "separateAccessVerified": false,
+      "offlineTimerAndLogsVerified": false
+    },
+    "terminalReporter": {
+      "hostOrVaultReference": null,
+      "administrator": null,
+      "separateAccessVerified": false,
+      "offlineTimerAndLogsVerified": false,
+      "externalReceiptStore": null,
+      "externalWriteAndReadbackVerified": false
+    }
+  },
+  "providerChecks": {
+    "supabase": "FHFHockey Development is the only visible organization. Its plan is Pro. The rehearsal project was absent from the project inventory.",
+    "vercel": "The authenticated team is on active Pro. Lookup of fhfh-forge-offline-rehearsal in that team returned HTTP 404.",
+    "witness": "The independent owner has no confirmed off-Mac host in the available handoff. The prior Linux receipt used an in-harness witness login.",
+    "reporter": "The operator handoff supplies no confirmed hosted session. The named libpq service and stdout report are specified in the script. The visible GitHub environments are app deployment environments. No reporter timer, log sink or external record write and readback was verified.",
+    "billing": "TJ authorized exact-ID fixture deletion. The combined failure-inclusive cost ceiling and the ability to execute and confirm teardown within two hours remain unverified."
+  },
+  "actionsThisAttempt": {
+    "remoteBuilds": 0,
+    "deploymentsCreated": 0,
+    "databasesCreated": 0,
+    "credentialsProvisioned": 0,
+    "isolatedJobsRegistered": 0,
+    "isolatedJobsArmed": 0,
+    "signedApplicationPosts": 0,
+    "externalTimestampRequests": 0,
+    "productionDatabaseOrApplicationReads": 0,
+    "productionJob408Changes": 0
+  },
+  "managedClaimId": null,
+  "managedWitnessVerdict": null,
+  "managedPublication": null,
+  "managedReaderOutcomes": null,
+  "hostedTerminalReceipt": null,
+  "macOfflineInterval": null
+}

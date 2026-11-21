@@ -27,6 +27,8 @@ export interface Collected {
 export interface CaptureBudget {
   /** Claim refuses unless read + save + verified acknowledgement fits before T−60. */
   requiredMs: number;
+  /** Legacy captures give pinning the same budget as collection. */
+  pinMs?: number;
   readMs: number; saveWaitMs: number; tsaTimeoutMs: number; skewToleranceMs: number;
   /** Bound for each custody RPC other than the save (claim, settle, read, witness, outcome). */
   rpcMs: number;
@@ -50,6 +52,8 @@ export interface CaptureRequest {
   gameId: number; slateDate: string; policyId: string; codeVersion: string; scheduledLaunchAt?: string;
   /** Already-admitted dispatches must pin the same start and still be pregame. */
   expectedScheduledStart?: string;
+  /** Hosted v2 must still have its full post-claim budget when it starts the claim. */
+  workDeadlineMs?: number;
 }
 export interface CaptureReport {
   /** null: nothing recorded by this attempt (duplicate, retryable pre-claim failure, or an ambiguous claim the sweeper closes). */
@@ -100,7 +104,7 @@ export async function runPregameCapture(deps: CaptureDeps, request: CaptureReque
   // 1. Pin the official schedule revision with a strict read. A failure here is retryable; nothing is recorded.
   let pinned: PinnedGame;
   try {
-    pinned = await deps.pin(request.gameId, request.slateDate, deps.now() + deps.budget.readMs);
+    pinned = await deps.pin(request.gameId, request.slateDate, deps.now() + (deps.budget.pinMs ?? deps.budget.readMs));
     if (pinned.gameId !== request.gameId || pinned.slateDate !== request.slateDate) throw new Error("pin_wrong_game");
     if (request.expectedScheduledStart && (parseInstantMicros(pinned.scheduledStart) !== parseInstantMicros(request.expectedScheduledStart)
       || pregameScheduleProblem(pinned.teamGameStatuses ?? []))) {
@@ -114,6 +118,9 @@ export async function runPregameCapture(deps: CaptureDeps, request: CaptureReque
 
   // 2. Atomic claim; the database clock decides late starts and insufficient time and is the input cutoff.
   const claimStarted = deps.now();
+  if (request.workDeadlineMs !== undefined && claimStarted + deps.budget.rpcMs + deps.budget.requiredMs > request.workDeadlineMs) {
+    return report(null, "claim_window_closed", false);
+  }
   let claim;
   try {
     claim = await deps.writer.claim({

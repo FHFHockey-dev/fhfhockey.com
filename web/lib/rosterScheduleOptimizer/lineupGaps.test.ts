@@ -2,6 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
 import { fixtureRsoBindings, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
 import { candidatePlanMetrics } from "./candidatePlanMetrics";
+import { forecastCalendarPolicy } from "../player-forecasts/contributions";
+import { verifiedRunAttribution } from "../projections/externalInputProof";
+import { buildForgeDailyBridgeForecasts, type ForgeDailyBridgeInputs } from "../rosterScheduleData/forgeDailyBridge";
+import { compactBridgeForecasts, reserveCodeOf } from "../rosterScheduleData/bridgeForecastWire";
+import { executeRosterPlanning } from "./executionAdapter";
 import { lineupGapReport } from "./lineupGaps";
 import { evaluatePlan } from "./planning";
 import type { GameForecast, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
@@ -11,7 +16,6 @@ const member = (id: string, team: string, positions: string[], availability: Pla
   id, nhlId: id.charCodeAt(0), nhlTeamId: team.charCodeAt(0), rosterRevision: `roster-${id}`, name: id.toUpperCase(), teamAbbreviation: team,
   eligiblePositions: positions, playerClass: "skater", availability, eligibilityVerified: true, ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] });
 const perGame: Record<string, number> = { a: 1, b: 2, c: 1.5 };
-beforeEach(() => vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixtureRsoPolicy(["fixture"], ["pts"])));
 function snapshot(): PlanningSnapshot {
   const players = [member("a", "A", ["C"], "rostered"), member("b", "B", ["C"], "rostered"), member("c", "C", ["D"], "free_agent")];
   const games = [["A", "2026-10-05"], ["A", "2026-10-06"], ["B", "2026-10-06"], ["C", "2026-10-05"], ["C", "2026-10-06"]].map(([team, date]) => ({
@@ -35,7 +39,85 @@ function snapshot(): PlanningSnapshot {
   return data;
 }
 
+describe("FORGE lineup gap readback", () => {
+  it("explains Schmaltz's missing Utah line after the current FORGE read and legal slot assignment", async () => {
+    // Public game, run and missing player from the Nov 16 audit (021, 023, 051). The one-C roster is a local scenario.
+    const date = "2026-11-16", asOf = "2026-11-16T20:00:00.000Z";
+    const game = { id: "2026020332", date, startsAt: "2026-11-17T02:30:00Z", teamAbbreviation: "UTA",
+      opponent: "VAN", home: true, status: "scheduled" as const, scheduleRevision: "schedule-0332" };
+    const player = { ...member("schmaltz", "UTA", ["C"], "rostered"), name: "Nick Schmaltz", nhlId: 8477951, nhlTeamId: 68 };
+    const runId = "26373189-3ebd-4380-b4f4-c6797d469ca9";
+    const closure = "ee5581d901975dd5701c76ecc58e715b396b449bdb50e05360c571f3f3de710b";
+    // The old run has no publication witness or per-game cutoff map. Replay the new contract below:
+    // the retained Nov 16 read witnessed success before this replay, and 0332 was the last invocation's game.
+    const run = { run_id: runId, git_sha: "e1ab46318ec9c6797deb94ac1aa23d68f5672f26", status: "succeeded",
+      as_of_date: date, created_at: "2026-11-13T10:33:00Z", scope_key: "h1:full", invocations: "2",
+      producer_identity: { version: "forge-producer-closure-v1", invocations: [closure, closure], code_versions: [null, null] } };
+    const proof = verifiedRunAttribution(run);
+    expect(proof?.basis).toBe("verified_producer_closure");
+    // Keller's row anchors Utah's serving run. Only its identity is needed here.
+    const teamGame = { run_id: runId, as_of_date: date, game_id: Number(game.id), team_id: 68, horizon_games: 1 };
+    const roster = snapshot();
+    roster.context = { ...roster.context, startDate: date, endDate: date, timeZone: "America/New_York", asOf };
+    roster.players = [player];
+    roster.games = [game];
+    roster.forecasts = [];
+    roster.roster = [{ playerId: player.id, position: "active" }];
+    roster.rules.rosterSlots = { C: 1 };
+    roster.rules.periods = [{ id: "week", start: "2026-11-16T05:00:00Z", end: "2026-11-23T05:00:00Z", remaining: 0, source: "manager" }];
+    roster.rules.scoring = { mode: "points", weights: { GOALS: 1 }, categories: [] };
+    roster.realized = {};
+    roster.evidence.schedule = { ...roster.evidence.schedule, asOf };
+    const revision = `forge-daily-bridge-v1:${runId}`;
+    const replay = async (extra: Pick<ForgeDailyBridgeInputs, "reserves" | "goalieNews">) => {
+      const bridge = buildForgeDailyBridgeForecasts({ runs: [{ ...run, external_input_proven: !!proof,
+        succeeded_observed_at: asOf, decision_as_of_by_game: { [game.id]: "2026-11-13T10:35:27.290Z" } }],
+        skaters: [{ ...teamGame, player_id: 8479343 }], goalies: [], ...extra }, [player], [game], new Date(asOf), 20262027, forecastCalendarPolicy());
+      const { forecasts, wire } = compactBridgeForecasts(bridge.forecasts, roster, roster.context.seasonId);
+      vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => ({ ok: true, json: async () => ({
+        success: true, read: { nonce: (init.headers as Record<string, string>)["X-RSO-Read-Nonce"], evaluatedAt: asOf },
+        data: { players: roster.players, games: roster.games, forecasts, evidence: roster.evidence,
+          forecastManifest: { version: "planning-forecasts-v1", seasonId: 20262027, id: "case-read", asOf, issuedRevisionIds: [revision],
+            rsoUsePolicy: { version: "rso-target-use-v1", revision: rsoPolicy.currentRsoUsePolicy().revision, bridgeRevisionIds: [revision] } } },
+        bridgeForecasts: wire,
+      }) })));
+      const { displaySnapshot, result, readError } = await executeRosterPlanning(roster, { ...intent, objective: "outcome" });
+      expect(readError).toBeNull();
+      return { row: displaySnapshot.forecasts[0], plan: result.selected, report: lineupGapReport(displaySnapshot, intent, result.baseline) };
+    };
+    try {
+      const missing = await replay({ goalieNews: { assertions: [], conflicts: [] } });
+      expect(reserveCodeOf(missing.row)).toBe("skater:no_forge_line");
+      expect(missing.row).toMatchObject({ revisionId: revision, stats: { GOALS: null }, appearanceProbability: null,
+        expiresAt: "2026-11-17T02:30:00.000Z" });
+      expect(missing.plan).toMatchObject({ legal: true, activeGames: 1, projectedValue: null,
+        assignments: [{ playerId: player.id, gameId: game.id, slotId: "C#1" }] });
+      expect(missing.report.bestDrop).toBeNull();
+      expect(missing.report.projectionBlockers).toEqual([{ playerId: player.id,
+        reason: "has unknown projected points: no current FORGE player projection for 2026-11-16" }]);
+
+      // Counterfactual controls for the same game: an if-dressed estimate and a confirmed absence.
+      const conditional = await replay({ reserves: [{ ...teamGame, player_id: player.nhlId, conditioning: "if_dressed",
+        player_class: "skater", proj_goals_es: 0.3, proj_assists_es: 0.4, proj_shots_es: 2, proj_toi_pp_seconds: 0 }],
+        goalieNews: { assertions: [], conflicts: [] } });
+      expect(conditional.row.conditionalStats?.GOALS).toBe(0.3);
+      expect(conditional.plan.projectedValue).toBeNull();
+      expect(conditional.report.projectionBlockers).toEqual([{ playerId: player.id,
+        reason: "has unknown projected points: participation unconfirmed (FORGE estimate assumes he plays) for 2026-11-16" }]);
+
+      const out = await replay({ goalieNews: { conflicts: [], assertions: [{ gameId: Number(game.id), teamId: 68,
+        playerId: player.nhlId, dimension: "availability", value: "out", confirmed: true, evidenceId: "fixture-out",
+        sourceKey: "fixture", sourceUrl: null, receivedAt: asOf, publishedAt: asOf }] } });
+      expect(reserveCodeOf(out.row)).toBe("skater:confirmed_out");
+      expect(out.row.stats.GOALS).toBe(0);
+      expect(out.plan.projectedValue).toBe(0);
+      expect(out.report.projectionBlockers).toEqual([]);
+    } finally { vi.unstubAllGlobals(); }
+  });
+});
+
 describe("lineup gap report", () => {
+  beforeEach(() => vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixtureRsoPolicy(["fixture"], ["pts"])));
   it("finds open slots, the weakest droppable player and the adds that fill the gaps", () => {
     const data = snapshot();
     const baseline = evaluatePlan(data, intent, "outcome", [], false);

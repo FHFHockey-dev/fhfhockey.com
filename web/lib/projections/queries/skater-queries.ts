@@ -201,9 +201,12 @@ const hasOwn = (value: object, key: string) => Object.prototype.hasOwnProperty.c
 
 function isRollingRowInScope(row: RollingRow, requestedIds: Set<number>, strengthState: RollingStrength, cutoffDate: string) {
   return !!row && typeof row === "object" && Number.isSafeInteger(row.player_id)
-    && requestedIds.has(row.player_id) && Number.isSafeInteger(row.game_id) && row.game_id > 0
-    && Number.isSafeInteger(row.season) && row.season > 0 && row.strength_state === strengthState
+    && requestedIds.has(row.player_id) && row.strength_state === strengthState
     && isIsoDate(row.game_date) && row.game_date < cutoffDate;
+}
+
+function hasRollingGameIdentity(row: RollingRow) {
+  return Number.isSafeInteger(row.game_id) && row.game_id > 0 && Number.isSafeInteger(row.season) && row.season > 0;
 }
 
 /**
@@ -265,13 +268,13 @@ export async function fetchRollingRows(
     || !Number.isSafeInteger(lookbackDays) || lookbackDays < 1 || lookbackDays > 1100) {
     throw new SkaterRollingReadIncompleteError("invalid_scope");
   }
-  const oneYearAgo = new Date(
+  const lookbackStart = new Date(
     new Date(cutoffDate).getTime() - lookbackDays * 24 * 60 * 60 * 1000
   ).toISOString().split("T")[0];
 
   // Read-only reconstruction refuses every RPC; read the same scope by table.
   if (isReadOnlyProjectionReconstruction()) {
-    return fetchRollingRowsByLegacyWindowScan(ids, strengthState, cutoffDate, oneYearAgo, db);
+    return fetchRollingRowsByLegacyWindowScan(ids, strengthState, cutoffDate, lookbackStart, db);
   }
   let result: { data: unknown; error: unknown } | undefined;
   try {
@@ -286,7 +289,7 @@ export async function fetchRollingRows(
     // no recorded RPC read. Both read the same scope through the legacy scan.
     if (cause instanceof Error && ["RPC is not allowed during read-only FORGE reconstruction",
       `Unrecorded projection input: rpc ${LATEST_ROLLING_ROWS_RPC}`].includes(cause.message)) {
-      return fetchRollingRowsByLegacyWindowScan(ids, strengthState, cutoffDate, oneYearAgo, db);
+      return fetchRollingRowsByLegacyWindowScan(ids, strengthState, cutoffDate, lookbackStart, db);
     }
     throw new SkaterRollingReadIncompleteError("read_failed", cause);
   }
@@ -297,7 +300,7 @@ export async function fetchRollingRows(
       legacyWindowScanWarned = true;
       console.warn(`${LATEST_ROLLING_ROWS_RPC} is not deployed (PGRST202); FORGE reads rolling rows by the legacy window scan.`);
     }
-    return fetchRollingRowsByLegacyWindowScan(ids, strengthState, cutoffDate, oneYearAgo, db);
+    return fetchRollingRowsByLegacyWindowScan(ids, strengthState, cutoffDate, lookbackStart, db);
   }
   if (!result || result.error) throw new SkaterRollingReadIncompleteError("read_failed", result?.error);
 
@@ -332,8 +335,10 @@ export async function fetchRollingRows(
     if (row.player_id !== entry.player_id || !isRollingRowInScope(row, requestedIds, strengthState, cutoffDate)) {
       throw new SkaterRollingReadIncompleteError("invalid_row");
     }
-    // The RPC has no lower bound; keep the requested scope (365 days by default).
-    if (row.game_date <= oneYearAgo) continue;
+    // The RPC has no lower date bound. An older row is outside the read
+    // even when it lacks a canonical game ID.
+    if (row.game_date <= lookbackStart) continue;
+    if (!hasRollingGameIdentity(row)) throw new SkaterRollingReadIncompleteError("invalid_row");
     const support = entry.support_row;
     if (support !== null) {
       const matched = support && typeof support === "object" && rollingRowKey(support) === rollingRowKey(row) ? row : undefined;
@@ -356,7 +361,7 @@ async function fetchRollingRowsByLegacyWindowScan(
   ids: number[],
   strengthState: RollingStrength,
   cutoffDate: string,
-  oneYearAgo: string,
+  lookbackStart: string,
   db: typeof supabase
 ): Promise<RollingRow[]> {
   const requestedIds = new Set(ids);
@@ -374,7 +379,7 @@ async function fetchRollingRowsByLegacyWindowScan(
         .in("player_id", ids)
         .eq("strength_state", strengthState)
         .lt("game_date", cutoffDate)
-        .gt("game_date", oneYearAgo)
+        .gt("game_date", lookbackStart)
         .order("game_date", { ascending: false })
         .order("player_id", { ascending: true })
         .order("game_id", { ascending: false })
@@ -395,7 +400,8 @@ async function fetchRollingRowsByLegacyWindowScan(
     }
     for (const value of result.data) {
       const row = value as RollingRow;
-      if (!isRollingRowInScope(row, requestedIds, strengthState, cutoffDate) || row.game_date <= oneYearAgo) {
+      if (!isRollingRowInScope(row, requestedIds, strengthState, cutoffDate)
+        || row.game_date <= lookbackStart || !hasRollingGameIdentity(row)) {
         throw new SkaterRollingReadIncompleteError("invalid_row");
       }
       const key = `${row.player_id}:${row.game_id}:${row.strength_state}`;
@@ -424,7 +430,7 @@ async function fetchRollingRowsByLegacyWindowScan(
       result = await db.from(ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE)
         .select("player_id,game_id,game_date,season,strength_state,payload_schema_version,support_payload,updated_at", { count: "exact" })
         .in("player_id", ids).eq("strength_state", strengthState)
-        .lt("game_date", cutoffDate).gt("game_date", oneYearAgo)
+        .lt("game_date", cutoffDate).gt("game_date", lookbackStart)
         .order("game_date", { ascending: false }).order("player_id", { ascending: true })
         .order("game_id", { ascending: false }).range(offset, offset + 499);
     } catch (cause) {

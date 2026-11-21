@@ -1021,7 +1021,9 @@ function postRunFailureWarnings(
 ): DataQualityWarning[] {
   return failures.map(({ asOfDate, failure }) => ({
     code: "post_run_step_failed",
-    message: `Run for ${asOfDate} succeeded; post-run step ${failure.step} failed (non-blocking): ${normalizeDependencyError(failure.message).message}`,
+    message: failure.step === "record_succeeded_observation"
+      ? `FORGE completed ${asOfDate}. Publication acknowledgement failed. RSO requires a recorded success time to serve these rows. ${normalizeDependencyError(failure.message).message}`
+      : `Run for ${asOfDate} succeeded; post-run step ${failure.step} failed (non-blocking): ${normalizeDependencyError(failure.message).message}`,
     detail: normalizeDependencyError(failure.message).detail ?? undefined,
   }));
 }

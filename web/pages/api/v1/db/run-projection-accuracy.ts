@@ -1536,29 +1536,41 @@ async function updateRunCalibrationMetrics(
   calibration: Record<string, any>,
 ) {
   if (!supabase) return;
-  const { data, error } = await supabase
-    .from("forge_runs")
-    .select("metrics")
-    .eq("run_id", runId)
-    .maybeSingle();
-  if (error) throw error;
-  const metrics = (data as any)?.metrics ?? {};
-  const existing = metrics.accuracy_calibration ?? {};
-  const updated = {
-    ...metrics,
-    accuracy_calibration: {
-      ...existing,
-      [actualDate]: {
-        ...calibration,
-        updated_at: new Date().toISOString(),
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { data, error } = await supabase
+      .from("forge_runs")
+      .select("metrics,updated_at")
+      .eq("run_id", runId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) throw new Error(`FORGE run ${runId} is unavailable for accuracy metadata.`);
+    const priorUpdatedAt = Date.parse(data.updated_at);
+    if (!Number.isFinite(priorUpdatedAt)) throw new Error(`FORGE run ${runId} has an invalid updated_at.`);
+
+    const metrics = (data.metrics ?? {}) as Record<string, any>;
+    const now = Date.now();
+    const updated = {
+      ...metrics,
+      accuracy_calibration: {
+        ...metrics.accuracy_calibration,
+        [actualDate]: { ...calibration, updated_at: new Date(now).toISOString() },
       },
-    },
-  };
-  const { error: updateErr } = await supabase
-    .from("forge_runs")
-    .update({ metrics: updated, updated_at: new Date().toISOString() })
-    .eq("run_id", runId);
-  if (updateErr) throw updateErr;
+    };
+    // Advance the row version even if two writers run in the same millisecond.
+    const update = supabase.from("forge_runs")
+      .update({ metrics: updated, updated_at: new Date(Math.max(now, priorUpdatedAt + 1)).toISOString() })
+      .eq("run_id", runId)
+      .eq("updated_at", data.updated_at);
+    // Publication can add the witness without advancing updated_at.
+    const witness = metrics.succeeded_observed_at;
+    const guardedUpdate = witness == null
+      ? update.is("metrics->>succeeded_observed_at", null)
+      : update.eq("metrics->>succeeded_observed_at", witness);
+    const { data: changed, error: updateErr } = await guardedUpdate.select("run_id");
+    if (updateErr) throw updateErr;
+    if (changed?.length) return;
+  }
+  throw new Error(`FORGE run ${runId} changed during both accuracy metadata writes.`);
 }
 
 async function persistGoalieCalibrationSnapshots(args: {

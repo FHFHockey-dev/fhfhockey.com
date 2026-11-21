@@ -1,5 +1,6 @@
 import type { GetStaticProps } from "next";
 import Head from "next/head";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useCallback, useMemo } from "react";
 
@@ -28,6 +29,7 @@ export default function SkoElementPreviewPage() {
         <title>The Sko Element (fixture preview) | FHFHockey</title>
         <meta name="robots" content="noindex,nofollow" />
       </Head>
+      <nav className={styles.container} aria-label="Sko research"><Link href="/sko-element/streaks">Explore retained player scoring streaks →</Link></nav>
       <SkoElementPreview state={state} onStateChange={onStateChange} invalid={invalid} />
     </main>
   );

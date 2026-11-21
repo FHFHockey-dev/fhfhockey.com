@@ -16,6 +16,7 @@ import ownershipTrendsHandler, {
   buildAdpTimelines,
   calculateTrendMovement,
   fetchYahooPlayerRows,
+  fetchOwnershipPlayerRows,
   fetchYahooToNhlMap,
   latestOwnershipTimelineDate,
   matchesPositionFilter
@@ -106,51 +107,34 @@ describe("ownership-trends data contract", () => {
     expect(seasons).toEqual([2025, 2025]);
   });
 
-  it("hydrates each history once without OFFSET aggregates and preserves page order", async () => {
-    const rows = Array.from({ length: 4438 }, (_, index) => ({
-      player_key: `477.p.${index}`, player_id: String(index), season: 2026,
-      ownership_timeline: [{ date: "2025-01-01", value: 10 }, { date: "2026-11-10", value: 20 }],
-    }));
-    let historyRowsRead = 0;
-    const historyOffsets: number[] = [];
-    const historySizes: number[] = [];
-    const client = { from() {
-      let select = "", from = 0, to = 999, keys: string[] | null = null;
-      const query = {
-        select(value: string) { select = value; return query; },
-        order: () => query,
-        eq(column: string, value: number) { expect([column, value]).toEqual(["season", 2026]); return query; },
-        range(start: number, end: number) { from = start; to = end; return query; },
-        in(column: string, values: string[]) { expect(column).toBe("player_key"); keys = values; return query; },
-        then(resolve: (value: unknown) => unknown) {
-          if (select === "player_key") return Promise.resolve({ data: rows.slice(from, to + 1).map(({ player_key }) => ({ player_key })), error: null }).then(resolve);
-          expect(keys).not.toBeNull();
-          const selected = rows.filter(row => keys!.includes(row.player_key)).reverse();
-          historyRowsRead += selected.length;
-          historyOffsets.push(from); historySizes.push(keys!.length);
-          return Promise.resolve({ data: selected.slice(from, to + 1), error: null }).then(resolve);
-        },
-      };
-      return query;
-    } };
-    const result = await fetchYahooPlayerRows({ supabase: client, select: "player_key,player_id,ownership_timeline:normalized_ownership_timeline", season: 2026 });
-    expect(result).toEqual(rows);
-    expect(historyRowsRead).toBe(4438);
-    expect(historyOffsets).toEqual(Array(9).fill(0));
-    expect(Math.max(...historySizes)).toBe(500);
+  it("restores every ordered observation and pages at the source-row boundary", async () => {
+    const keys = Array.from({ length: 1001 }, (_, i) => `477.p.${i}`);
+    const offsets: number[] = [];
+    const rpc = vi.fn(async (name, args, options) => {
+      expect(name).toBe("homepage_yahoo_ownership_page");
+      expect(options).toEqual({ get: true });
+      expect(args.p_season).toBe(2026);
+      offsets.push(args.p_offset);
+      const page = keys.slice(args.p_offset, args.p_offset + 1000);
+      return { error: null, data: page.map(player_key => ({
+        player_key, page_count: page.length, observation_dates: ["2024-01-01", "2026-11-10"],
+        observation_values: [0, 20],
+      })) };
+    });
+    const rows = await fetchOwnershipPlayerRows({ rpc }, 2026);
+    expect(offsets).toEqual([0, 1000]);
+    expect(rows.map(row => row.player_key)).toEqual(keys);
+    expect(rows[1000].ownership_timeline).toEqual([
+      { date: "2024-01-01", value: 0 }, { date: "2026-11-10", value: 20 },
+    ]);
   });
 
-  it("rejects a truncated history chunk instead of silently dropping players", async () => {
-    const client = { from() {
-      let select = "";
-      const query = {
-        select(value: string) { select = value; return query; },
-        order: () => query, range: () => query, in: () => query,
-        then(resolve: (value: unknown) => unknown) { return Promise.resolve({ data: select === "player_key" ? [{ player_key: "477.p.1" }] : [], error: null }).then(resolve); },
-      };
-      return query;
-    } };
-    await expect(fetchYahooPlayerRows({ supabase: client, select: "player_key,ownership_timeline:normalized_ownership_timeline" })).rejects.toThrow("Incomplete ownership history page");
+  it.each([
+    { page_count: 2, observation_dates: [], observation_values: [] },
+    { page_count: 1, observation_dates: ["2026-11-10"], observation_values: [] },
+  ])("rejects a partial source or an unpaired history", async record => {
+    const rpc = vi.fn(async () => ({ error: null, data: [{ player_key: "477.p.1", ...record }] }));
+    await expect(fetchOwnershipPlayerRows({ rpc })).rejects.toThrow("Incomplete ownership");
   });
 
   it("uses exact seasonal mapping keys and rejects ambiguous or malformed identities", async () => {
@@ -289,7 +273,18 @@ describe("ownership snapshot provenance", () => {
   const request = (playerIds: string) => ({ method: "GET", query: { playerIds, season: "2026" } }) as any;
   function database(tables: Record<string, Array<Record<string, unknown>>>) {
     const reads: string[] = [];
-    createClientMock.mockReturnValue({ from(table: string) {
+    createClientMock.mockReturnValue({ async rpc(name: string, args: { p_season?: number; p_offset: number }) {
+      expect(name).toBe("homepage_yahoo_ownership_page");
+      reads.push(name);
+      const data = (tables.yahoo_players_with_normalized_history ?? [])
+        .filter(row => args.p_season == null || row.season === args.p_season)
+        .slice(args.p_offset, args.p_offset + 1000);
+      return { data: data.map(row => {
+        const timeline = (row.ownership_timeline ?? []) as Array<{ date: string; value: number }>;
+        return { ...row, page_count: data.length, observation_dates: timeline.map(p => p.date),
+          observation_values: timeline.map(p => p.value) };
+      }), error: null };
+    }, from(table: string) {
       reads.push(table);
       let rows = tables[table] ?? [];
       const query = {
@@ -324,14 +319,14 @@ describe("ownership snapshot provenance", () => {
         ownershipTrendsHandler({ method: "GET", query: { window: "3", season: "2026" } } as any, three),
         ownershipTrendsHandler({ method: "GET", query: { window: "5", season: "2026" } } as any, five),
       ]);
-      expect(three.body.risers[0]).toMatchObject({ playerId: 12, delta: 5 });
+      expect(three.body.risers[0]).toMatchObject({ playerId: 12, delta: 5, movementStartDate: "2026-11-07", movementEndDate: "2026-11-10" });
       expect(three.body).toMatchObject({ mappedPlayerCount: 1, unmappedPlayerCount: 0 });
       expect(five.body.risers[0]).toMatchObject({ playerId: 12, delta: 20 });
-      expect(reads).toEqual(["yahoo_players_with_normalized_history", "yahoo_players_with_normalized_history", "yahoo_nhl_player_map_read"]);
+      expect(reads).toEqual(["homepage_yahoo_ownership_page", "yahoo_nhl_player_map_read"]);
       const again = createMockRes();
       await ownershipTrendsHandler({ method: "GET", query: { window: "3", season: "2026" } } as any, again);
       expect(again.body.sourceDate).toBe("2026-11-10");
-      expect(reads).toHaveLength(3);
+      expect(reads).toHaveLength(2);
     } finally { vi.useRealTimers(); }
   });
 
@@ -371,7 +366,7 @@ describe("ownership snapshot provenance", () => {
       const filtered = createMockRes();
       await ownershipTrendsHandler({ method: "GET", query: { window: "3", pos: "D", limit: "1", offset: "20" } } as any, filtered);
       expect(filtered.body).toMatchObject({ mappedPlayerCount: 2, unmappedPlayerCount: 4, totalRisers: 0, totalFallers: 0, risers: [], fallers: [] });
-      expect(reads).toHaveLength(3);
+      expect(reads).toHaveLength(2);
     } finally { vi.useRealTimers(); }
   });
 
@@ -393,7 +388,7 @@ describe("ownership snapshot provenance", () => {
       await ownershipTrendsHandler({ method: "GET", query: { window: "3", season: "2026", playerIds: "12" } } as any, response);
       expect(response.body).toMatchObject({ mappedPlayerCount: 0, unmappedPlayerCount: 1, totalRisers: 1, selectedPlayers: [] });
       expect(response.body.risers[0]).toMatchObject({ playerKey: "477.p.112", playerId: null, delta: 10 });
-      expect(reads).toEqual(["yahoo_players_with_normalized_history", "yahoo_players_with_normalized_history", "yahoo_nhl_player_map_read"]);
+      expect(reads).toEqual(["homepage_yahoo_ownership_page", "yahoo_nhl_player_map_read"]);
     } finally { vi.useRealTimers(); }
   });
 

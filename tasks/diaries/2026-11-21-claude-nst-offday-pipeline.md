@@ -1,0 +1,10 @@
+# NST off-day stops the rolling-to-FORGE pipeline
+
+- Scope: an NHL off-day (Nov 20) made update-nst-gamelog return `no_scheduled_games_unverified`, so run-rolling-forge-pipeline stopped at stage 2. Make a confirmed off-day verified-complete (no NST requests). An unknown schedule must still block.
+- Where: octoberBranch, `/Users/tim/Code/fhfhockey.com`. Files: `web/pages/api/v1/db/update-nst-gamelog.ts`, `web/pages/api/v1/db/run-rolling-forge-pipeline.ts`, `web/lib/routeRunner/core.ts` (same allow-list), and the two nearest tests.
+- Decision: verified off-day = the `games` table brackets the date with regular-season (type 2) games of one season, and their ids are contiguous (max id before = min id after − 1). Anything else stays in `missingScheduleDates` and blocks: no bracket, query error, playoffs, phase boundary, rescheduled game. Id contiguity catches a hole in the games table. A plain date bracket would not (the existing "mixed window" test models exactly that hole).
+- Wire: new operationStatus `skipped_no_scheduled_games`, progress state `no_scheduled_games_verified`, plus `verifiedNoGameDates`.
+- State: committed 37a43ad9a (5 files, local only, not pushed). New tests failed first (2 off-day cases), then passed. Narrow run: 6 files, 296/296 pass (NST, pipeline, routeRunner). `npm run typecheck` exit 0.
+- Production check (one read-only SELECT on `games`, 2026-11-21): season 20262027 type 2 has 1,344 rows = id span 1,344, and 0 ids out of date order. So every regular-season off-day this season brackets with adjacent ids. A future postponement that moves a game out of id order would make nearby off-days block again (fails closed).
+- Limits / follow-ups: playoff off-days (ids aren't sequential), the preseason-to-regular-season gap and rescheduled games next to an off-day still block, as before. Later stages (rolling writer, FORGE) have never run on an off-day in production; the PP stage already skips on zero games.
+- Next: the parent session reviews; release follows the normal gated push.

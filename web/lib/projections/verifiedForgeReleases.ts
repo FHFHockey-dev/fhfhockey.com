@@ -166,6 +166,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "2026-11-16 audit release producer (pipeline C2, H1/M5, M4, L2; production build gate; read paths): 239-module exact commit closure, 0 findings. Exclusion proof only, not forecast-quality or native-use approval.",
   },
+  {
+    closureSha256: "0bea3cd410fbbcb7db69b952046af13dc2338480cc46fdf9889ef6b65aacebcb",
+    commit: "74f31aded0fa7517f6de313c5f0e9998dd37f5bf",
+    receipt: "tasks/artifacts/forge-pipeline-reliability-2026-11-17/74f31aded0fa7517f6de313c5f0e9998dd37f5bf.json",
+    receiptSha256: "2024c111ae30a8a83634d2dfa39eaf12cfec54c727b8dd31803bcf7cffe3c036",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "Prospective pregame publication candidate: 241 producer modules, zero excluded-input findings.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;

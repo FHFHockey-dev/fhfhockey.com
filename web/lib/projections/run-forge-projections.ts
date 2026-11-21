@@ -248,6 +248,7 @@ import {
   createRun,
   finalizeRun,
   assertRunStillOwned,
+  recordSucceededRunObservation,
   resumableRunLeaseExpiresAt,
   runWithClaimedRunWrites,
   writeClaimedRun,
@@ -392,13 +393,14 @@ export {
 export { buildSequentialHorizonScalarsFromDates } from "./utils/date-utils";
 import { captureProjectionInputs, replayProjectionInputs, projectionInputHash, capturedReadReceipt, type ProjectionInputRead } from "./inputCapture";
 import { saveForgeInputSnapshot, publishForgeGameRevisions, projectionWritesHash, capturedGoalieStarts, capturedIssuedTargets, type ForgeInputSnapshot } from "./gameRevisions";
-import { captureForgeIssuedContexts, forgeIssuedContextsFingerprint, type ForgeIssuedContextV1 } from "./issuedContext";
+import { calendarRevisionOf, captureForgeIssuedContexts, forgeIssuedContextsFingerprint, type ForgeIssuedContextV1 } from "./issuedContext";
 import { applyDailyBoardEvidence } from "./dailyBoardEvidence";
 import { starterBoardFlags, starterBoardScopeAllowed } from "./starterBoardFlags";
-import { latestInstant } from "./pregameCapture/time";
+import { assertPacket, type PregamePacket } from "./pregameCapture/packet";
+import { latestInstant, microsFromEpochMs, parseInstantMicros } from "./pregameCapture/time";
 
 export const projectionModelEnvironment = () => Object.fromEntries([
-  "FORGE_SKATER_MODEL_MODE", "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION", "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION",
+  "FORGE_SKATER_MODEL_MODE", "FORGE_RESERVE_PASS_ENABLED", "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION", "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION",
   "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES", "NHL_XG_MODEL_VERSION",
   "START_CHART_GAME_REVISIONS", "STARTER_BOARD_COMPUTE_ENABLED", "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED",
 ].map((key) => [key, process.env[key] ?? null]));
@@ -472,7 +474,7 @@ export function forgeSeasonBootstrapApplies(args: {
  * later step that its outputs do not depend on failed.
  */
 export type RunProjectionV2Result = RunProjectionResult & {
-  postRunFailure?: { step: "save_input_snapshot"; message: string };
+  postRunFailure?: { step: "save_input_snapshot" | "record_succeeded_observation"; message: string };
 };
 
 export async function runProjectionV2ForDate(
@@ -546,7 +548,7 @@ export async function runProjectionV2ForDate(
     throw new Error("Local FORGE attempt already exists; reconcile its immutable evidence without recomputing.");
   }
   if (!captureEnabled) {
-    const calculate = () => runProjectionCalculations(asOfDate, { ...opts, decisionAsOf }, runId, resumeClaim ?? undefined);
+    const calculate = () => runProjectionCalculations(asOfDate, { ...opts, decisionAsOf }, runId, resumeClaim ?? undefined, { observeSuccess: true });
     // A claimed run re-checks its lease before every output write and cleanup.
     return resumeClaim ? runWithClaimedRunWrites(resumeClaim, calculate) : calculate();
   }
@@ -702,6 +704,103 @@ export async function replayForgeSnapshot(snapshot: ForgeInputSnapshot, expected
   const outputHash = projectionWritesHash(replay.writes);
   if (outputHash !== snapshot.outputHash) throw new Error("FORGE replay output mismatch; use the captured code/model version.");
   return { runId: snapshot.runId, outputHash, matched: true };
+}
+
+export type ForgePregamePublicationSnapshot = Omit<ForgeInputSnapshot, "reads"> & {
+  pregameCandidates: PregamePacket["candidates"];
+};
+
+/** Calculate one prospective publication from independently qualified private custody, without database I/O. */
+export async function computeForgePregamePublication(packet: PregamePacket, args: { codeVersion: string; deadlineMs?: number }) {
+  assertPacket(packet);
+  const { binding, statedCutoff, seasonBootstrapApplied, reads, candidates } = packet;
+  const { claimId: runId, gameId, slateDate, inputCutoff } = binding;
+  const modelEnvironment = projectionModelEnvironment();
+  const environmentHash = projectionInputHash(modelEnvironment);
+  if (binding.codeVersion !== args.codeVersion || !packet.modelEnvironment || projectionInputHash(packet.modelEnvironment) !== environmentHash) {
+    throw new Error("FORGE pregame packet code or model environment mismatch.");
+  }
+  if (!starterBoardFlags().compute || !starterBoardScopeAllowed([gameId])) {
+    throw new Error("FORGE pregame game is outside the enabled computation scope.");
+  }
+  if (!readsExcludeExternalFantasy(reads) || reads.some(read => (read.result as { error?: unknown } | null)?.error != null)) {
+    throw new Error("FORGE pregame packet contains failed or unaudited reads.");
+  }
+  const start = parseInstantMicros(binding.scheduledStart), cutoff = parseInstantMicros(statedCutoff);
+  const now = microsFromEpochMs(Date.now());
+  if (parseInstantMicros(inputCutoff) > cutoff || cutoff > now || now >= start
+    || (args.deadlineMs !== undefined && (!Number.isFinite(args.deadlineMs) || args.deadlineMs <= Date.now()))) {
+    throw new Error("FORGE pregame publication is outside the prospective calculation window.");
+  }
+  // Round the start down for the millisecond-grain projection deadline and recheck the exact instant before returning.
+  const deadlineMs = Math.min(args.deadlineMs ?? Infinity, Number(start / BigInt(1000)));
+  const gameIds = [gameId];
+  const replay = await replayProjectionInputs(reads, async () => {
+    const before = await captureForgeIssuedContexts(slateDate, gameIds);
+    const result = await runProjectionCalculations(slateDate, {
+      decisionAsOf: inputCutoff, horizonGames: 1, gameIds, seasonBootstrap: seasonBootstrapApplied, deadlineMs,
+    }, runId, undefined, { observeSuccess: false, omitPregameSidecars: true });
+    if (result.timedOut || result.gamesProcessed !== 1) throw new Error("FORGE pregame calculation did not complete one game.");
+    const after = await captureForgeIssuedContexts(slateDate, gameIds);
+    const [context] = after;
+    if (forgeIssuedContextsFingerprint(before) !== forgeIssuedContextsFingerprint(after)
+      || context.game.homeTeamId !== binding.homeTeamId || context.game.awayTeamId !== binding.awayTeamId
+      || parseInstantMicros(context.game.startTime) !== start || calendarRevisionOf(context.schedule) !== binding.calendarRevision) {
+      throw new Error("FORGE pregame packet does not match the captured calendar and roster context.");
+    }
+    // The closing context is observed from the retained reads, under their conservative availability bound.
+    return { ...context, observedAt: statedCutoff };
+  }, { rejectUnrecordedReads: true });
+
+  const rowsFor = (table: string): Array<Record<string, unknown>> => replay.writes
+    .filter(ops => ops[0]?.method === "from" && ops[0].args[0] === table)
+    .flatMap(ops => {
+      const write = ops.find(op => op.method === "upsert");
+      if (!write) throw new Error(`Unexpected replay write to ${table}.`);
+      const value = write.args[0];
+      const values: unknown[] = Array.isArray(value) ? value : [value];
+      return values.map(value => {
+        const row = value as Record<string, unknown> | null;
+        if (row?.run_id !== runId || row.game_id !== gameId || row.as_of_date !== slateDate || row.horizon_games !== 1
+          || (row.team_id !== binding.homeTeamId && row.team_id !== binding.awayTeamId)) {
+          throw new Error(`Replay write outside the bound pregame scope in ${table}.`);
+        }
+        return row;
+      });
+    });
+  const rows = {
+    players: rowsFor("forge_player_projections"), teams: rowsFor("forge_team_projections"),
+    goalies: rowsFor("forge_goalie_projections"), reserves: rowsFor("forge_reserve_projections"),
+  };
+  const finalization = replay.writes.find(ops => ops[0]?.args[0] === "forge_runs")?.find(op => op.method === "update")?.args[0] as
+    | { status: string; metrics: Record<string, unknown> & { daily_board_evidence?: ForgeInputSnapshot["dailyBoardEvidence"] } }
+    | undefined;
+  if (finalization?.status !== "succeeded" || finalization.metrics.player_rows !== rows.players.length
+    || finalization.metrics.team_rows !== rows.teams.length || finalization.metrics.goalie_rows !== rows.goalies.length
+    || rows.players.some(row => !candidates.skaters.includes(Number(row.player_id)))
+    || rows.goalies.some(row => !candidates.goalies.includes(Number(row.goalie_id)))
+    || rows.reserves.some(row => !(row.player_class === "goalie" ? candidates.goalies : candidates.reserves).includes(Number(row.player_id)))) {
+    throw new Error("FORGE pregame rows do not match the captured candidate sets and succeeded run.");
+  }
+  const outputHash = projectionWritesHash(replay.writes);
+  const issuedContexts = [replay.result];
+  const snapshot: ForgePregamePublicationSnapshot = {
+    version: "forge-inputs-v1", runId, slateDate, decisionAsOf: statedCutoff, inputCutoff, capturedAt: new Date().toISOString(),
+    codeVersion: args.codeVersion, modelMode: resolveSkaterRolloutConfig().mode, modelEnvironment, seasonBootstrapApplied,
+    inputProvenance: { ...buildForgeInputProvenance(externalFantasyClaim(reads)),
+      modelIdentity: forgeModelIdentity(args.codeVersion, modelEnvironment), capturedReads: capturedReadReceipt(reads),
+      issuedContexts, issuedTargets: capturedIssuedTargets(issuedContexts, replay.writes) },
+    dailyBoardEvidence: finalization.metrics.daily_board_evidence ?? { assertions: [], conflicts: [] },
+    deterministicSeed: 0, horizonGames: 1, gameIds, replayClassification: "captured_live", pregameCandidates: candidates,
+    goalieStarts: capturedGoalieStarts(reads, replay.writes), outputHash,
+  };
+  if (Date.now() > deadlineMs || microsFromEpochMs(Date.now()) >= start
+    || projectionInputHash(projectionModelEnvironment()) !== environmentHash) {
+    throw new Error("FORGE pregame calculation exceeded its deadline or the model environment changed.");
+  }
+  const metrics = { ...finalization.metrics, input_cutoff: inputCutoff, decision_as_of: statedCutoff,
+    decision_as_of_by_game: { [gameId]: statedCutoff } };
+  return { snapshot, rows, metrics, outputHash };
 }
 
 /** Run-scoped read caches: one set per writer run, or per pregame collection. */
@@ -903,7 +1002,8 @@ async function runProjectionCalculations(
   opts: RunProjectionOptions | undefined,
   runId: string,
   claim?: ForgeRunClaim,
-): Promise<RunProjectionResult> {
+  lifecycle?: { observeSuccess: boolean; omitPregameSidecars?: boolean },
+): Promise<RunProjectionV2Result> {
   const skaterRollout = resolveSkaterRolloutConfig();
   const completedGameIds = new Set(claim?.completedGameIds ?? []);
 
@@ -915,7 +1015,8 @@ async function runProjectionCalculations(
     board_lease: opts?.boardLease ?? null,
     analytics_sidecar: {
       version: "forge-analytics-sidecar-scope-v1",
-      status: opts?.localAttempt ? "omitted_fenced_local_attempt" : "enabled",
+      status: opts?.localAttempt ? "omitted_fenced_local_attempt"
+        : lifecycle?.omitPregameSidecars ? "omitted_fenced_pregame_publication" : "enabled",
     },
     execution_scope: {
       mode: opts?.gameIds?.length ? "selected_games" : "full_slate",
@@ -1045,13 +1146,20 @@ async function runProjectionCalculations(
     const deadlineMs = safeNumber(opts?.deadlineMs, Number.POSITIVE_INFINITY);
     let timedOut = false;
 
-    // A resumed run continues the totals its earlier invocations stored.
+    // A resumed run continues the totals and completed-game evidence its earlier invocations stored.
     const prior = claim?.resumed ? (claim.priorMetrics as Record<string, any>) : null;
     if (prior) {
       metrics.started_at = prior.started_at ?? metrics.started_at;
       metrics.games = safeNumber(prior.games, 0);
       metrics.warnings = Array.isArray(prior.warnings) ? [...prior.warnings] : [];
       Object.assign(metrics.data_quality, prior.data_quality ?? {});
+      if (Array.isArray(prior.skater_coverage)) {
+        metrics.skater_coverage = [...prior.skater_coverage];
+      }
+      const priorGameCutoffs = prior.decision_as_of_by_game;
+      if (priorGameCutoffs && typeof priorGameCutoffs === "object" && !Array.isArray(priorGameCutoffs)) {
+        metrics.decision_as_of_by_game = { ...priorGameCutoffs };
+      }
       learningCounters.players = safeNumber(prior.learning?.players_considered, 0);
       learningCounters.goalRecent = safeNumber(prior.learning?.goal_rate_recent_players, 0);
       learningCounters.assistRecent = safeNumber(prior.learning?.assist_rate_recent_players, 0);
@@ -1200,7 +1308,7 @@ async function runProjectionCalculations(
 
       // Issued revisions use the FORGE rows. The optional analytics replacement
       // deletes prior sidecar rows, outside the fenced local transport contract.
-      if (!opts?.localAttempt) {
+      if (!opts?.localAttempt && !lifecycle?.omitPregameSidecars) {
         await assertRunStillOwned();
         await persistPerGameAnalyticsOutputs({
           asOfDate,
@@ -1216,6 +1324,10 @@ async function runProjectionCalculations(
       metrics.games += 1;
       if (claim) {
         completedGameIds.add(game.id);
+        // Each invocation has a fresh cutoff. Keep it only for games that finished under it.
+        if (stageBase.evidenceCutoffAt !== null) {
+          (metrics.decision_as_of_by_game ??= {})[game.id] = stageBase.evidenceCutoffAt;
+        }
         checkpoint = takeCheckpoint();
         await writeClaimedRun(claim, {
           status: "running",
@@ -1254,14 +1366,20 @@ async function runProjectionCalculations(
       timedOut,
     });
 
-    if (claim) {
-      await writeClaimedRun(claim, {
+    const finalized = claim
+      ? await writeClaimedRun(claim, {
         status: "succeeded",
         metrics,
         completedGameIds: [...completedGameIds],
-      });
-    } else {
-      await finalizeRun(runId, timedOut ? "failed" : "succeeded", metrics);
+      })
+      : await finalizeRun(runId, timedOut ? "failed" : "succeeded", metrics, lifecycle?.observeSuccess);
+    let postRunFailure: RunProjectionV2Result["postRunFailure"];
+    if (lifecycle?.observeSuccess && !timedOut) {
+      try {
+        await recordSucceededRunObservation(finalized);
+      } catch (error) {
+        postRunFailure = { step: "record_succeeded_observation", message: getErrorMessage(error) };
+      }
     }
     return {
       runId,
@@ -1271,12 +1389,14 @@ async function runProjectionCalculations(
       goalieRowsUpserted,
       timedOut,
       ...(claim ? { resume: resumeSummary() } : {}),
+      ...(postRunFailure ? { postRunFailure } : {}),
     };
   } catch (e) {
     metrics.finished_at = new Date().toISOString();
     metrics.error = getErrorMessage(e);
     if (!claim) {
-      await finalizeRun(runId, "failed", metrics);
+      // An unacknowledged uncaptured success may have committed already.
+      await finalizeRun(runId, "failed", metrics, lifecycle?.observeSuccess);
     } else if ((e as { code?: unknown })?.code !== "RUN_LEASE_LOST") {
       // Another invocation that took the run over owns its outcome.
       await writeClaimedRun(claim, {

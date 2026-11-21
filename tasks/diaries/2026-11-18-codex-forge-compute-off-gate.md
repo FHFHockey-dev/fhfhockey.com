@@ -1,0 +1,8 @@
+# FORGE compute-off release check
+
+- Local scope on `octoberBranch`, `57a90dfa7`: reconcile five compute-off lifecycle oracle failures, run full web TypeScript, propose one future game. Preserve the uncommitted publication work and frozen oracle. Cron stays off. No historical replay or hosted verification.
+- Starting from Astra's captured-publication handoff. Next: compare the fixture oracle with the changed lifecycle contract, then test the smallest correction.
+- Confirmed 5 failures / 1 pass before the change. The isolated fixture adds a per-game cutoff to both successful lifecycle writes and a guarded post-commit witness. The test now checks the exact additions before comparing every earlier write with the retained hashes. Timed-out invocations still compare every write directly. No runtime or oracle fixture edits.
+- After the edit: 6/6 parity cases and 28/28 resume/lifecycle cases passed; scoped diff whitespace clean. Full web tsc passed before the edit with a 12 GiB heap; final post-edit run in progress.
+- Approval candidate: CBJ at CHI, NHL 2026020353, scheduled Nov 20 01:00 UTC (Nov 19 8 p.m. ET); NHL schedule showed FUT/OK. One prospective, manually scoped capture with cron off, witness by 00:00 UTC, then same-build publication and pregame RSO readback. Exact release, migration, game scope and operator clearance are prerequisites. No historical or hosted action taken.
+- Final post-edit full `web/tsconfig.json` typecheck passed (Node 22.23.4, `node --max-old-space-size=12288 ./node_modules/typescript/bin/tsc --noEmit --pretty false`, exit 0). Local verification complete. Await TJ's game choice and separate release authorization.
