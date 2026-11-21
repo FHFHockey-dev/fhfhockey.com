@@ -681,6 +681,21 @@ describe("composite publication completion markers", () => {
     }
   });
 
+  // The season composite gates all four windows in the reader, so a complete
+  // season Rankings marker alone must not let composites advance the pair.
+  it.each(["last_5", "last_10", "last_20"].flatMap((window) => [
+    [window, "missing", null],
+    [window, "still writing", { status: "writing", written_entities: null, db_written_rows: null }],
+    [window, "short a player", { expected_entities: 1, written_entities: 1 }],
+  ] as const))("refuses composites when season Rankings are complete but %s is %s", async (window, _label, overrides) => {
+    const markers = allRankings().flatMap((marker): any[] =>
+      marker.window_type !== window ? [marker] : overrides ? [{ ...marker, ...overrides }] : []);
+    const { client, log } = fakeClient({ markers });
+    await expect(publishSkaterCompositeRatingRows(client as any, builtResult()))
+      .rejects.toThrow(`(5v5, ${window}) are not a complete publication`);
+    expect(log.filter((entry) => entry.op === "upsert")).toEqual([]);
+  });
+
   it("rejects a truncated ID page or extra persisted rows even if the returned IDs fit", async () => {
     for (const options of [{ rankIds: [1], rankCount: 2 }, { rankIds: [1, 2], rankCount: 3 }]) {
       const { client, log } = fakeClient({ markers: allRankings(), ...options });
