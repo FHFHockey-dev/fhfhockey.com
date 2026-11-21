@@ -197,14 +197,16 @@ describe("public RSO data boundary", () => {
     for (const use of ["assignment", "totals", "comparison", "conditionalTieBreak"] as const)
       expect(forecastAllows(restricted.forecasts[0], target, use)).toBe(false);
     expect(restricted.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020001", playerId: "7", targetKey: target, reasons: ["use_not_approved"] });
-    expect(calls.some(call => call.table === "forge_runs")).toBe(false);
+    // TJ 2026-11-21 supersedes P07's "no bridge after a denial": a denied row is not usable, so the interim bridge is
+    // consulted (it has no rows here, so the denied Detailed row is what remains).
+    expect(calls.some(call => call.table === "forge_runs")).toBe(true);
     const roundTrip = decodePlanningDataTransport(JSON.parse(JSON.stringify(encodePlanningDataTransport(restricted))));
     expect(roundTrip.forecastManifest).toEqual(restricted.forecastManifest);
     expect(roundTrip.forecasts).toEqual(restricted.forecasts);
     expect((await loadPlanningData(db as never, publicQuery, { ...options, consumer: "start_chart" })).forecasts).toEqual(shared.forecasts);
   });
 
-  it("participation policy (TJ 2026-11-21): RSO admits an assumed-playing skater, which keeps the interim bridge off; other consumers are unchanged", async () => {
+  it("participation policy (TJ 2026-11-21): a page serving Daily points today still does under the empty catalog; a matching review serves Detailed instead", async () => {
     const { db, tables, calls } = newsDb([]);
     tables.fhfh_player_identities = [{ id: 7, nhl_player_id: 847001, canonical_name: "Skater", canonical_position: "L" }];
     Object.assign(tables, {
@@ -213,8 +215,11 @@ describe("public RSO data boundary", () => {
         proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
         proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
       forge_goalie_projections: [], goalie_start_projections: [], player_forecast_source_observations: [provenSnapshotRow("run-b")] });
+    const environment = { FORGE_SKATER_MODEL_MODE: "baseline", NHL_XG_MODEL_VERSION: null };
+    const identity = forgeModelIdentity("v1", environment);
     const issued = revision([]);
-    issued.payload.goalies = [];
+    issued.payload.goalies = []; issued.payload.modelMode = "baseline";
+    (issued.payload.inputProvenance as Record<string, unknown>).modelIdentity = identity;
     // A healthy skater in FORGE's projected lineup with no same-day news.
     issued.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-1",
       proj_hits: 3, uncertainty: { model: { skater_selection: { production_conditioning: "conditional_playing" } },
@@ -223,25 +228,41 @@ describe("public RSO data boundary", () => {
     db.rpc.mockReturnValue(rpcResponse({ data: [issued], error: null }));
     const options = { ...publicOptions, forecastsEnabled: true, forgeDailyBridge: true,
       source: { kind: "legacy" as const, reason: "native_not_activated" as const, environment: {} } };
-    // Without the policy (any non-RSO consumer) the skater is unknown, nothing is admitted, and the interim bridge serves.
-    const unchanged = await loadPlanningData(db as never, publicQuery, { ...options, consumer: "start_chart" });
-    expect(unchanged.forecasts.map(row => row.revisionId)).toEqual(["forge-daily-bridge-v1:run-b"]);
-    expect(unchanged.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020001", playerId: "7", reasons: ["missing_participation"] });
+    // Empty catalog: the assumed Detailed row is admitted (read-time overlay sources are read) but denied, so the
+    // interim Daily bridge still serves this page.
+    const daily = await loadPlanningData(db as never, publicQuery, { ...options, consumer: "rso" });
+    expect(calls.some(call => call.table === "forge_roster_events")).toBe(true);
+    expect(daily.forecasts.map(row => row.revisionId)).toEqual(["forge-daily-bridge-v1:run-b"]);
+    expect(daily.forecastManifest?.rsoUsePolicy?.bridgeRevisionIds).toEqual(["forge-daily-bridge-v1:run-b"]);
+    expect(daily.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020001", playerId: "7", targetKey: "HITS", reasons: ["use_not_approved"] });
+    // A review of exactly the overlay scope (the lineage the review lane must name) makes the row usable: Detailed serves
+    // it, labelled assumed, and the bridge is not consulted.
+    const scope = { component: "forge-detailed-skater", modelMode: "baseline", codeVersion: "v1", configurationHash: identity.configurationHash,
+      artifactHash: identity.artifactHash, targetKey: "HITS", horizonGames: 1, conditioning: "rso_participation_overlay",
+      participationLineage: "forge-rso-participation-overlay-v1:skater" };
+    vi.spyOn(rsoPolicyModule, "currentRsoUsePolicy").mockReturnValue({ version: "rso-target-use-v1", revision: "fictional-overlay-review",
+      revokedReviewIds: [], reviews: [{ id: "fictional-overlay-hits", binding: scope, reviewedAt: "2026-01-01T00:00:00Z", expiresAt: "2100-01-01T00:00:00Z",
+        inputCutoffFrom: "2026-01-01T00:00:00Z", inputCutoffUntil: "2100-01-01T00:00:00Z",
+        allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false },
+        prospectiveEvidenceRef: "fictional-evidence", ownerApprovalRef: "fictional-approval" }] });
     calls.length = 0;
-    // RSO: the assumed row is admitted (labelled, appearance 1), unreviewed use is denied, and admission keeps the bridge off.
-    const rso = await loadPlanningData(db as never, publicQuery, { ...options, consumer: "rso" });
-    expect(rso.forecasts).toHaveLength(1);
-    expect(rso.forecasts[0]).toMatchObject({ revisionId: "issued-1", appearanceProbability: 1, stats: { HITS: 3 }, conditionalStats: { HITS: 3 } });
-    expect(rso.forecasts[0].limitations.some(note => note.startsWith("Participation assumed, not confirmed"))).toBe(true);
-    expect(forecastAllows(rso.forecasts[0], "HITS", "totals")).toBe(false);
+    const detailed = await loadPlanningData(db as never, publicQuery, { ...options, consumer: "rso" });
+    vi.restoreAllMocks();
+    expect(detailed.forecasts).toHaveLength(1);
+    expect(detailed.forecasts[0]).toMatchObject({ revisionId: "issued-1", appearanceProbability: 1, stats: { HITS: 3 }, conditionalStats: { HITS: 3 } });
+    expect(detailed.forecasts[0].rsoTargetBindings?.HITS).toMatchObject({ conditioning: "rso_participation_overlay",
+      participationLineage: "forge-rso-participation-overlay-v1:skater@issued-1" });
+    expect(forecastAllows(detailed.forecasts[0], "HITS", "totals")).toBe(true);
+    expect(detailed.forecasts[0].limitations.some(note => note.startsWith("Participation assumed, not confirmed"))).toBe(true);
     expect(calls.some(call => call.table === "forge_runs")).toBe(false);
-    // The planner's contribution step keeps the assumed row (no missing_participation): same shape as a confirmed row.
-    const resolved = resolvePlanningContributions({ ...rso, context: { ...publicQuery, asOf: publicOptions.now.toISOString() } }, { consumer: "rso" });
-    expect(resolved.forecastInputExclusions ?? []).not.toContainEqual(expect.objectContaining({ playerId: "7", reasons: ["missing_participation"] }));
-    expect(resolved.forecasts[0]).toMatchObject({ revisionId: "issued-1", conditioning: "unconditional", appearanceProbability: 1 });
     // The label survives the planning transport.
-    const roundTrip = decodePlanningDataTransport(JSON.parse(JSON.stringify(encodePlanningDataTransport(rso))));
-    expect(roundTrip.forecasts).toEqual(rso.forecasts);
+    const roundTrip = decodePlanningDataTransport(JSON.parse(JSON.stringify(encodePlanningDataTransport(detailed))));
+    expect(roundTrip.forecasts).toEqual(detailed.forecasts);
+    // Other consumers keep decisions 3/47: unknown participation, nothing admitted.
+    db.rpc.mockReturnValue(rpcResponse({ data: [issued], error: null }));
+    const shared = await loadPlanningData(db as never, publicQuery, { ...options, forgeDailyBridge: false, consumer: "start_chart" });
+    expect(shared.forecasts).toEqual([]);
+    expect(shared.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020001", playerId: "7", reasons: ["missing_participation"] });
   });
 
   describe("FORGE model identity (D3)", () => {

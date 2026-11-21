@@ -1,5 +1,6 @@
 import { concurrentPages, loadPlanningInputs, pages, withinDeadline, PlanningPageReadError, PlanningReadDeadlineError, type PlanningDataQuery } from "./planningInputs";
-import { admitConsumerGameRevisions, RSO_ASSUMED_PARTICIPATION_POLICY } from "lib/projections/consumerRevisionAdmission";
+import { admitConsumerGameRevisions, detailedParticipationBasisOf, RSO_ASSUMED_PARTICIPATION_POLICY, RSO_PARTICIPATION_OVERLAY_CONDITIONING,
+  RSO_PARTICIPATION_OVERLAY_METHOD } from "lib/projections/consumerRevisionAdmission";
 import { currentRsoUsePolicy, issuedParticipationLineage, restrictRsoForecast, type RsoUsePolicyManifest } from "lib/player-forecasts/rsoUsePolicy";
 import { loadForgeDailyBridgeForecasts, type ForgeBridgeCapture } from "./forgeDailyBridge";
 import type { BridgeRunProof } from "./bridgeForecastWire";
@@ -18,7 +19,7 @@ import { loadModeledSkaterParticipation, loadFrozenWindowSkaterParticipation, lo
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import type { ForgeGameRevision } from "lib/projections/gameRevisions";
 import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/starterBoardFlags";
-import type { ForecastDiscoveryExclusion, ForecastExclusionReason, ForecastManifest, PlanningData, SourceEvidence } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { ForecastDiscoveryExclusion, ForecastExclusionReason, ForecastManifest, GameForecast, PlanningData, SourceEvidence } from "lib/rosterScheduleOptimizer/planningTypes";
 import { GOALIE_RECENT_COLUMNS, lastFiveTotals, recentTotals, SKATER_RECENT_COLUMNS } from "lib/rosterScheduleOptimizer/recentForm";
 
 export function parsePlanningDataQuery(query: Record<string, unknown>): PlanningDataQuery {
@@ -211,8 +212,42 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
   forecastProblems.push(...admissionProblems);
   let forecasts = admitted, bridged = false;
   let observation: ForgeBridgeCapture | null = null, servedProofs: BridgeRunProof[] = [];
+  let rsoUsePolicy: RsoUsePolicyManifest | undefined;
+  const policy = currentRsoUsePolicy();
+  if (options.consumer === "rso") {
+    rsoUsePolicy = { version: policy.version, revision: policy.revision, bridgeRevisionIds: [] };
+    forecasts = forecasts.map(forecast => {
+      const admitted = admittedSources.find(row => row.forecast === forecast);
+      // Policy rows (TJ 2026-11-21) carry their own participation method, so a review of the issued method never covers them.
+      const overlay = admitted?.source.kind === "skater" && detailedParticipationBasisOf(forecast) !== null;
+      const rsoTargetBindings = Object.fromEntries(Object.keys(forecast.stats).map(targetKey => [targetKey, {
+        component: `forge-detailed-${admitted?.source.kind ?? "unknown"}`,
+        modelMode: admitted?.revision.payload.modelMode ?? "unknown", codeVersion: forecast.modelVersion ?? "unknown",
+        // Only the revision's own declared model identity binds configuration and
+        // artifact; issuance or captured-read hashes never stand in for it.
+        ...revisionModelIdentity(admitted?.revision.payload), targetKey, horizonGames: 1,
+        conditioning: admitted?.source.kind === "goalie" ? "start_only_zero_relief" : overlay ? RSO_PARTICIPATION_OVERLAY_CONDITIONING : "conditional_playing",
+        // Stable participation method for review; the issued revision is checked per row (Astra F3).
+        participationLineage: overlay ? `${RSO_PARTICIPATION_OVERLAY_METHOD}:skater@${forecast.revisionId}`
+          : issuedParticipationLineage(admitted?.source.kind ?? "unknown", forecast.revisionId), cutoffAt: forecast.cutoffAt ?? "",
+      }]));
+      const restricted = restrictRsoForecast({ ...forecast, rsoTargetBindings }, { rsoUsePolicy }, now.toISOString(), policy);
+      for (const [targetKey, uses] of Object.entries(restricted.targetAllowedUses ?? {})) {
+        if (uses.assignment && uses.totals && uses.comparison) continue;
+        exclusionCounts.use_not_approved = (exclusionCounts.use_not_approved ?? 0) + 1;
+        if (exclusionRows.length < 15000) exclusionRows.push({ gameId: forecast.gameId, playerId: forecast.playerId,
+          targetKey, reasons: ["use_not_approved"] });
+      }
+      return restricted;
+    });
+  }
+  // A row is usable when it counts something: some target with a value whose totals use is approved (as forecastAllows
+  // reads a loader row), and not ruled out.
+  const usable = (row: GameForecast) => row.appearanceProbability !== 0 && row.conditioning === "unconditional"
+    && Object.entries(row.stats).some(([key, value]) => value != null && (row.targetAllowedUses?.[key] ?? row.allowedUses)?.totals === true);
   // Interim RSO source (TJ, 2026-10-19): before native activation only; native and its fallbacks never fall back to it.
-  if (options.forgeDailyBridge && source.kind === "legacy" && !admitted.length && !baseline.sources.length
+  // TJ 2026-11-21 (supersedes P07): admitted rows that are denied, unreviewed or out do not keep it off.
+  if (options.forgeDailyBridge && source.kind === "legacy" && !forecasts.some(usable) && !baseline.sources.length
     && process.env.RSO_FORGE_DAILY_BRIDGE !== "off") {
     try {
       const bridge = await (scenarioOn ? loadForgeDailyBridgeForecasts(db, players, games, now, query.seasonId, deadline, calendarPolicy, captured => { observation = captured; })
@@ -228,39 +263,11 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
         for (const id of scheduledGameIds) if (!covered.has(id)) recordGameExclusion(id, "no_issued_revision");
         const disabled = forecastProblems.indexOf("Shared game-forecast serving is not enabled; schedule planning remains available.");
         if (disabled >= 0) forecastProblems.splice(disabled, 1);
+        if (rsoUsePolicy) rsoUsePolicy.bridgeRevisionIds = [...new Set(forecasts.map(row => row.revisionId))].sort();
       }
     } catch { forecastProblems.push("Interim FORGE projections could not be read; schedule planning remains available."); }
   }
-  // Permission denial is downstream of selection: it must never empty admission
-  // and thereby invoke the separately approved interim bridge.
-  let rsoUsePolicy: RsoUsePolicyManifest | undefined;
-  if (options.consumer === "rso") {
-    const policy = currentRsoUsePolicy();
-    rsoUsePolicy = { version: policy.version, revision: policy.revision,
-      bridgeRevisionIds: bridged ? [...new Set(forecasts.map(row => row.revisionId))].sort() : [] };
-    if (!bridged) forecasts = forecasts.map(forecast => {
-      const admitted = admittedSources.find(row => row.forecast === forecast);
-      const rsoTargetBindings = Object.fromEntries(Object.keys(forecast.stats).map(targetKey => [targetKey, {
-        component: `forge-detailed-${admitted?.source.kind ?? "unknown"}`,
-        modelMode: admitted?.revision.payload.modelMode ?? "unknown", codeVersion: forecast.modelVersion ?? "unknown",
-        // Only the revision's own declared model identity binds configuration and
-        // artifact; issuance or captured-read hashes never stand in for it.
-        ...revisionModelIdentity(admitted?.revision.payload), targetKey, horizonGames: 1,
-        conditioning: admitted?.source.kind === "goalie" ? "start_only_zero_relief" : "conditional_playing",
-        // Stable participation method for review; the issued revision is checked per row (Astra F3).
-        participationLineage: issuedParticipationLineage(admitted?.source.kind ?? "unknown", forecast.revisionId), cutoffAt: forecast.cutoffAt ?? "",
-      }]));
-      const restricted = restrictRsoForecast({ ...forecast, rsoTargetBindings }, { rsoUsePolicy }, now.toISOString(), policy);
-      for (const [targetKey, uses] of Object.entries(restricted.targetAllowedUses ?? {})) {
-        if (uses.assignment && uses.totals && uses.comparison) continue;
-        exclusionCounts.use_not_approved = (exclusionCounts.use_not_approved ?? 0) + 1;
-        if (exclusionRows.length < 15000) exclusionRows.push({ gameId: forecast.gameId, playerId: forecast.playerId,
-          targetKey, reasons: ["use_not_approved"] });
-      }
-      return restricted;
-    });
-    if (!bridged && forecasts.length) forecastProblems.push("Detailed target uses require an applicable reviewed scope; unapproved quality remains unavailable.");
-  }
+  if (rsoUsePolicy && !bridged && forecasts.length) forecastProblems.push("Detailed target uses require an applicable reviewed scope; unapproved quality remains unavailable.");
   if (rolloutValid && (options.forecastsEnabled ?? starterBoardFlags().serving)) {
     const issued = new Set(revisions.map(revision => String(revision.game_id)));
     for (const id of selectedGameIds) if (!issued.has(id) && !discoveryUnavailable.has(id)) recordGameExclusion(id, "no_issued_revision");

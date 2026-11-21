@@ -9,8 +9,13 @@ import type { ForgeGameRevision } from "./gameRevisions";
 import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "./calibrationEligibility";
 import { forgeRosterRevision, forgeScheduleRevision, type ForgeIssuedContextV1 } from "./issuedContext";
 import { buildNativeSkaterParticipationFields } from "./nativeGoalAccounting";
-import { admitConsumerGameRevisions, DETAILED_PARTICIPATION_CONFLICT_NOTE, DETAILED_PARTICIPATION_RETURN_NOTE, detailedParticipationBasisOf,
-  publicPlanningForecasts, RSO_ASSUMED_PARTICIPATION_POLICY, type DetailedParticipationPolicy } from "./consumerRevisionAdmission";
+import * as rsoPolicyModule from "lib/player-forecasts/rsoUsePolicy";
+import { evaluatePlan } from "lib/rosterScheduleOptimizer/planning";
+import type { PlanIntent } from "lib/rosterScheduleOptimizer/planningTypes";
+import { admitConsumerGameRevisions, DETAILED_PARTICIPATION_CONFLICT_NOTE, DETAILED_PARTICIPATION_LINE_ROLE_NOTE, detailedParticipationBasisOf,
+  publicPlanningForecasts, RSO_ASSUMED_PARTICIPATION_POLICY, type RsoParticipationContext } from "./consumerRevisionAdmission";
+import type { OverlayAppearance, OverlayRosterEvent, RsoParticipationSources } from "./rsoParticipationOverlay";
+import type { BoardAssertion } from "./dailyBoardEvidence";
 
 describe("consumer revision calendar horizon (decision 127)", () => {
   // 9 pm ET on Nov 12 (already Nov 13 UTC); a 1 pm ET game on Nov 26 is lead 13 on UTC days, lead 14 on NHL dates.
@@ -37,177 +42,252 @@ describe("consumer revision calendar horizon (decision 127)", () => {
   });
 });
 
-// ---- TJ's Detailed RSO participation policy (2026-11-21). Fictional fixtures; never provider observations. ----
-const news = vi.hoisted(() => ({ latest: new Map<number, string>() }));
+// ---- TJ's Detailed RSO participation policy (2026-11-21, rev 2: read-time availability overlay). ----
+// Fictional fixtures only; never provider observations.
+const overlay = vi.hoisted(() => ({ newsLatest: new Map<number, string>(), sources: null as unknown, fail: false }));
 vi.mock("./acceptedNews", async importOriginal => ({ ...(await importOriginal<typeof import("./acceptedNews")>()),
-  loadAcceptedForecastNews: vi.fn(async () => ({ revisionHash: "news-hash", latestAcceptedAt: news.latest })) }));
+  loadAcceptedForecastNews: vi.fn(async () => ({ revisionHash: "news-hash", latestAcceptedAt: overlay.newsLatest })) }));
+vi.mock("./rsoParticipationOverlay", async importOriginal => ({ ...(await importOriginal<typeof import("./rsoParticipationOverlay")>()),
+  loadRsoParticipationSources: vi.fn(async () => { if (overlay.fail) throw new Error("fictional read failure"); return overlay.sources; }) }));
 
-describe("Detailed RSO participation policy (TJ 2026-11-21)", () => {
-  const GAME = 2026020001, TEAM = 1, NHL = 847001, CUTOFF = "2026-10-10T10:00:00Z";
-  const now = new Date("2026-10-10T12:00:00Z");
+describe("Detailed RSO participation policy (TJ 2026-11-21, rev 2)", () => {
+  const TEAM = 1, NHL = 847001, CUTOFF = "2026-10-10T10:00:00Z";
+  const G1 = { id: 2026020001, date: "2026-10-10", start: "2026-10-10T23:00:00Z" };
+  const G2 = { id: 2026020002, date: "2026-10-12", start: "2026-10-12T23:00:00Z" };
   const membershipCreatedAt = ["2026-09-01T00:00:00Z"];
   const rosterRevision = forgeRosterRevision({ canonicalId: 7, nhlId: NHL, seasonId: 20262027, teamId: TEAM, membershipCreatedAt });
   const skater = { id: "7", nhlId: NHL, nhlTeamId: TEAM, rosterRevision, name: "Skater", playerClass: "skater", teamAbbreviation: "TOR",
     eligiblePositions: ["C"], availability: "unknown", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] } as PlanningPlayer;
-  const games = normalizePlanningGames([{ id: 1, source_game_id: GAME, source_season_id: 20262027, game_date: "2026-10-10",
-    start_time: "2026-10-10T23:00:00Z", team_abbreviation: "TOR", opponent_abbreviation: "MTL", home_away: "home", game_status: "FUT",
-    schedule_status: "OK", is_countable: true, game_type: 2 }]);
-  const side = (teamId: number, opp: number, abbr: string, oppAbbr: string) => ({ gameKey: "nhl", season: "2026", sourceSeasonId: 20262027,
-    teamId, opponentTeamId: opp, teamAbbreviation: abbr, opponentAbbreviation: oppAbbr, startTime: "2026-10-10T23:00:00Z", gameStatus: "FUT",
-    scheduleStatus: "OK", sourceUpdatedAt: null, fetchedAt: "2026-10-10T09:00:00Z", revision: forgeScheduleRevision({ source_game_id: GAME,
-      start_time: "2026-10-10T23:00:00Z", team_abbreviation: abbr, opponent_abbreviation: oppAbbr, game_status: "FUT", schedule_status: "OK" }) });
-  const issuedContext = { version: "forge-issued-context-v1", game: { id: GAME, date: "2026-10-10", seasonId: 20262027,
-    startTime: "2026-10-10T23:00:00Z", homeTeamId: 1, awayTeamId: 2 }, schedule: [side(1, 2, "TOR", "MTL"), side(2, 1, "MTL", "TOR")],
+  const games = normalizePlanningGames([G1, G2].map((game, index) => ({ id: index + 1, source_game_id: game.id, source_season_id: 20262027,
+    game_date: game.date, start_time: game.start, team_abbreviation: "TOR", opponent_abbreviation: "MTL", home_away: "home", game_status: "FUT",
+    schedule_status: "OK", is_countable: true, game_type: 2 })));
+  const side = (game: typeof G1, teamId: number, opp: number, abbr: string, oppAbbr: string) => ({ gameKey: "nhl", season: "2026",
+    sourceSeasonId: 20262027, teamId, opponentTeamId: opp, teamAbbreviation: abbr, opponentAbbreviation: oppAbbr, startTime: game.start,
+    gameStatus: "FUT", scheduleStatus: "OK", sourceUpdatedAt: null, fetchedAt: "2026-10-10T09:00:00Z", revision: forgeScheduleRevision({
+      source_game_id: game.id, start_time: game.start, team_abbreviation: abbr, opponent_abbreviation: oppAbbr, game_status: "FUT", schedule_status: "OK" }) });
+  const issuedContextFor = (game: typeof G1) => ({ version: "forge-issued-context-v1", game: { id: game.id, date: game.date, seasonId: 20262027,
+    startTime: game.start, homeTeamId: 1, awayTeamId: 2 }, schedule: [side(game, 1, 2, "TOR", "MTL"), side(game, 2, 1, "MTL", "TOR")],
     roster: [{ canonicalId: 7, nhlId: NHL, seasonId: 20262027, teamId: TEAM, membershipCreatedAt, identityUpdatedAt: "2026-09-01T00:00:00Z",
-      revision: rosterRevision }], observedAt: "2026-10-10T09:00:00Z" } as ForgeIssuedContextV1;
+      revision: rosterRevision }], observedAt: "2026-10-10T09:00:00Z" } as ForgeIssuedContextV1);
   // His "if he plays" line: 0.4 G, 0.7 A, 3 SOG = 4.1 points at the hosted reader's weights.
   const LINE = { proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_goals_pk: 0, proj_assists_es: 0.5, proj_assists_pp: 0.2, proj_assists_pk: 0,
     proj_shots_es: 2.5, proj_shots_pp: 0.5, proj_shots_pk: 0 };
-  type Coverage = { state: "projected_lineup" | "confirmed_out" | "uncertain" | "unknown"; event_type?: string | null };
-  type Assertion = { dimension: "ev" | "pp" | "availability"; value: string; confirmed: boolean; receivedAt?: string };
-  const evidenceOf = (assertions: Assertion[], conflicts: string[] = []) => ({ informationCutoffAt: CUTOFF,
-    assertions: assertions.map((item, index) => ({ gameId: GAME, teamId: TEAM, playerId: NHL, dimension: item.dimension, value: item.value,
-      evidenceId: `fictional-${index}`, sourceKey: "fictional-source", sourceUrl: null, publishedAt: "2026-10-10T09:00:00Z",
-      receivedAt: item.receivedAt ?? "2026-10-10T09:01:00Z", confirmed: item.confirmed })),
-    conflicts: conflicts.map(dimension => ({ gameId: GAME, teamId: TEAM, playerId: NHL, dimension, evidenceIds: ["fictional-0", "fictional-x"] })) });
-  const revisionWith = (coverage: Coverage, options: { id?: string; published?: string; cutoff?: string; assertions?: Assertion[]; conflicts?: string[] } = {}) => {
-    const cutoff = options.cutoff ?? CUTOFF;
-    const evidence = { ...evidenceOf(options.assertions ?? [], options.conflicts), informationCutoffAt: cutoff };
-    const selection = buildNativeSkaterParticipationFields({ gameId: GAME, teamId: TEAM, playerId: NHL, compute: true, evidence });
-    return { id: options.id ?? "rev-a", run_id: "run-a", game_id: GAME, decision_as_of: cutoff, published_at: options.published ?? cutoff,
-      payload: { teams: [], goalies: [], codeVersion: "code-v1", evidence,
-        players: [{ game_id: GAME, team_id: TEAM, player_id: NHL, horizon_games: 1, as_of_date: "2026-10-10", run_id: "run-a", ...LINE,
-          uncertainty: { model: { skater_selection: selection }, availability: { version: "forge-skater-coverage-v1", game_id: GAME,
+  type Coverage = { state: "projected_lineup" | "confirmed_out" | "uncertain" | "unknown"; event_type?: string | null; event_id?: number | null };
+  const revisionWith = (coverage: Coverage, options: { id?: string; game?: typeof G1; goalie?: boolean } = {}) => {
+    const game = options.game ?? G1;
+    const evidence = { informationCutoffAt: CUTOFF, assertions: [], conflicts: [] };
+    const selection = buildNativeSkaterParticipationFields({ gameId: game.id, teamId: TEAM, playerId: NHL, compute: true, evidence });
+    return { id: options.id ?? "rev-a", run_id: "run-a", game_id: game.id, decision_as_of: CUTOFF, published_at: CUTOFF,
+      payload: { teams: [], codeVersion: "code-v1", evidence,
+        goalies: options.goalie ? [{ game_id: game.id, team_id: TEAM, horizon_games: 1, as_of_date: game.date, run_id: "run-a",
+          uncertainty: { daily_board_candidates: [{ playerId: 847099, startingProbability: 1, conditional: { SAVES_GOALIE: 30 } }] } }] : [],
+        players: [{ game_id: game.id, team_id: TEAM, player_id: NHL, horizon_games: 1, as_of_date: game.date, run_id: "run-a", ...LINE,
+          uncertainty: { model: { skater_selection: selection }, availability: { version: "forge-skater-coverage-v1", game_id: game.id,
             state: coverage.state, line_conditioning: "if_plays", expected_for_game: coverage.state === "confirmed_out" ? 0 : null,
             participation_probability: null, participation_qualified: false, label: "fictional", event_type: coverage.event_type ?? null,
-            event_id: coverage.event_type ? 11 : null } } }],
+            event_id: coverage.event_id ?? (coverage.event_type ? 11 : null) } } }],
         inputProvenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT, capturedReads: { version: "forge-captured-reads-v1",
           hash: "a".repeat(64), readCount: 2, firstReceivedAt: "2026-10-10T09:00:00Z", lastReceivedAt: "2026-10-10T09:01:00Z" },
-          issuedContexts: [issuedContext] } } } as unknown as ForgeGameRevision;
+          issuedContexts: [issuedContextFor(game)] } } } as unknown as ForgeGameRevision;
   };
-  const admit = (revisions: ForgeGameRevision[], policy: DetailedParticipationPolicy | null = RSO_ASSUMED_PARTICIPATION_POLICY, at = now) => {
+  const event = (event_id: number, event_type: string, effective_from: string, payload: Record<string, unknown> = {},
+    effective_to: string | null = null): OverlayRosterEvent => ({ event_id, team_id: TEAM, player_id: NHL, event_type, effective_from, effective_to, payload });
+  const INJURY = event(11, "INJURY_OUT", "2026-10-08T15:00:00Z", { category: "INJURY", subcategory: "OUT" });
+  const news = (id: string, dimension: BoardAssertion["dimension"], value: string, confirmed: boolean, publishedAt: string,
+    gameId = G1.id): BoardAssertion => ({ gameId, teamId: TEAM, playerId: NHL, dimension, value, confirmed, evidenceId: id,
+    sourceKey: "fictional-source", sourceUrl: null, publishedAt, receivedAt: publishedAt });
+  const sourcesOf = (readAt: string, parts: { events?: OverlayRosterEvent[]; appearances?: OverlayAppearance[]; news?: BoardAssertion[];
+    conflicts?: string[] } = {}): RsoParticipationSources => ({ readAt, rosterEvents: [INJURY, ...(parts.events ?? [])],
+    appearances: parts.appearances ?? [], news: { informationCutoffAt: readAt, assertions: parts.news ?? [],
+      conflicts: (parts.conflicts ?? []).map(dimension => ({ gameId: G1.id, teamId: TEAM, playerId: NHL, dimension, evidenceIds: ["x", "y"] })) } });
+  const admit = (revisions: ForgeGameRevision[], at: string, context: RsoParticipationContext | null) => {
     const exclusionRows: ForecastDiscoveryExclusion[] = [];
-    const forecasts = publicPlanningForecasts(revisions, [skater], games, at, {}, exclusionRows, undefined, undefined, new Map(), policy ?? undefined);
+    const forecasts = publicPlanningForecasts(revisions, [skater], games, new Date(at), {}, exclusionRows, undefined, undefined, new Map(),
+      context ?? undefined);
     return { forecasts, exclusionRows };
   };
   // What Detailed serves: admission → RSO use restriction → the hosted reader's own allows/points readback (score()).
   const weights = { GOALS: 3, ASSISTS: 2, SHOTS_ON_GOAL: 0.5 };
-  // With no admitted row, Detailed serves the row's own admission exclusion.
-  const served = (row: GameForecast | undefined, reviewed: boolean, excluded: ForecastDiscoveryExclusion[] = []) => {
+  const served = (row: GameForecast | undefined, at: string, reviewed: boolean, excluded: ForecastDiscoveryExclusion[]) => {
     if (!row) return { points: null, reason: excluded.find(item => !item.targetKey)?.reasons[0] ?? "no_usable_target" };
-    const policy = reviewed ? fixtureRsoPolicy(["code-v1"], Object.keys(row.stats)) : currentRsoUsePolicy();
-    const restricted = restrictRsoForecast(reviewed ? bindFixtureForecast(row) : row, undefined, now.toISOString(), policy);
+    const policy = reviewed ? fixtureRsoPolicy(["code-v1"], Object.keys(row.stats)) : rsoPolicyModule.RSO_USE_POLICY;
+    const restricted = restrictRsoForecast(reviewed ? bindFixtureForecast(row) : row, undefined, at, policy);
     if (!Object.keys(weights).every(key => (["assignment", "totals", "comparison"] as const).every(use => forecastAllows(restricted, key, use)))) {
       return { points: null, reason: "use_not_approved" };
     }
-    const snapshot = { players: [skater], forecasts: [restricted], games, context: { asOf: now.toISOString() },
+    const snapshot = { players: [skater], forecasts: [restricted], games, context: { asOf: at },
       rules: { scoring: { mode: "points", weights, categories: [] } } } as unknown as PlanningSnapshot;
     const points = gameForecastPoints(snapshot, restricted).expected;
     return { points: points === null ? null : Number(points.toFixed(4)), reason: points === null ? "missing_target" : null };
   };
   const table: Array<Record<string, unknown>> = [];
-  const record = (testCase: string, revisions: ForgeGameRevision[], at = now) => {
-    const { forecasts, exclusionRows } = admit(revisions, RSO_ASSUMED_PARTICIPATION_POLICY, at);
-    const row = forecasts[0];
-    const entry = { case: testCase, revision: row?.revisionId ?? null, issuedAt: row?.issuedAt ?? null,
+  const record = (step: string, revisions: ForgeGameRevision[], at: string, context: RsoParticipationContext | null, gameId = G1.id) => {
+    const { forecasts, exclusionRows } = admit(revisions, at, context);
+    const row = forecasts.find(item => item.gameId === String(gameId));
+    const excluded = exclusionRows.filter(item => item.gameId === String(gameId) && !item.targetKey);
+    const entry = { step, readAt: at, game: gameId, revision: row?.revisionId ?? null, issuedAt: row?.issuedAt ?? null,
       basis: row ? detailedParticipationBasisOf(row) : null, appearance: row?.appearanceProbability ?? null,
       goals: row?.stats.GOALS ?? null, ifPlaysGoals: row?.conditionalStats?.GOALS ?? null,
-      notes: row?.limitations.filter(note => note === DETAILED_PARTICIPATION_CONFLICT_NOTE || note === DETAILED_PARTICIPATION_RETURN_NOTE) ?? [],
-      excluded: exclusionRows.map(item => item.reasons[0]),
-      servedCurrentCatalog: served(row, false, exclusionRows), servedUnderFixtureReview: served(row, true, exclusionRows) };
+      changes: row?.limitations.filter(note => note.startsWith("Availability update")) ?? [],
+      notes: row?.limitations.filter(note => note === DETAILED_PARTICIPATION_CONFLICT_NOTE || note === DETAILED_PARTICIPATION_LINE_ROLE_NOTE) ?? [],
+      excluded: excluded.map(item => item.reasons[0]),
+      servedCurrentCatalog: served(row, at, false, excluded), servedUnderFixtureReview: served(row, at, true, excluded) };
     table.push(entry);
     return entry;
   };
-  afterEach(() => { news.latest.clear(); });
+  const ctx = (sources: RsoParticipationSources | null, superseded: string[] = []): RsoParticipationContext => ({ sources, superseded: new Set(superseded) });
+  afterEach(() => { overlay.newsLatest.clear(); overlay.sources = null; overlay.fail = false; vi.restoreAllMocks(); });
   afterAll(() => { console.log(`PARTICIPATION_TABLE ${JSON.stringify(table)}`); });
 
   it("keeps decisions 3/47 when the policy is off (start chart and other consumers)", () => {
-    const { forecasts, exclusionRows } = admit([revisionWith({ state: "projected_lineup" })], null);
+    const { forecasts, exclusionRows } = admit([revisionWith({ state: "projected_lineup" })], "2026-10-10T12:00:00Z", null);
     expect(forecasts).toEqual([]);
-    expect(exclusionRows).toContainEqual({ gameId: String(GAME), playerId: "7", reasons: ["missing_participation"] });
+    expect(exclusionRows).toContainEqual({ gameId: String(G1.id), playerId: "7", reasons: ["missing_participation"] });
   });
 
-  it("1 healthy, no news: assumed playing, counts his full line, labelled assumed", () => {
-    expect(record("healthy, in projected lineup", [revisionWith({ state: "projected_lineup" })])).toMatchObject({
-      basis: "assumed_playing", appearance: 1, goals: 0.4, ifPlaysGoals: 0.4,
+  it("healthy, no news: assumed playing on the saved line; healthy outside the lineup too", () => {
+    const at = "2026-10-10T12:00:00Z";
+    expect(record("healthy, projected lineup", [revisionWith({ state: "projected_lineup" })], at, ctx(sourcesOf(at)))).toMatchObject({
+      basis: "assumed_playing", appearance: 1, goals: 0.4, ifPlaysGoals: 0.4, changes: [],
       servedCurrentCatalog: { reason: "use_not_approved" }, servedUnderFixtureReview: { points: 4.1, reason: null } });
-    // Off the projected lineup but on the active roster with no injury: the same healthy default.
-    expect(record("healthy, outside projected lineup", [revisionWith({ state: "unknown" })])).toMatchObject({
+    expect(record("healthy, outside projected lineup", [revisionWith({ state: "unknown" })], at, ctx(sourcesOf(at)))).toMatchObject({
       basis: "assumed_playing", servedUnderFixtureReview: { points: 4.1 } });
-    // A reported return with nothing confirmed for this game stays an assumption, labelled as such.
-    expect(record("return reported, unconfirmed", [revisionWith({ state: "unknown", event_type: "RETURN" })])).toMatchObject({
-      basis: "assumed_playing", notes: [DETAILED_PARTICIPATION_RETURN_NOTE] });
   });
 
-  it("2 injured, no update: assumed out (0) and a projected line, PP role or unconfirmed return news does not clear it", () => {
-    expect(record("injured DTD, no news", [revisionWith({ state: "uncertain", event_type: "DTD" })])).toMatchObject({
-      basis: "assumed_out", appearance: 0, goals: 0, ifPlaysGoals: 0.4, servedUnderFixtureReview: { points: 0 } });
-    expect(record("injured IR, no news", [revisionWith({ state: "confirmed_out", event_type: "IR" })])).toMatchObject({
-      basis: "assumed_out", appearance: 0, goals: 0 });
-    expect(record("injured, projected line + PP + practice return (unconfirmed)", [revisionWith({ state: "uncertain", event_type: "DTD" },
-      { assertions: [{ dimension: "ev", value: "L2", confirmed: false }, { dimension: "pp", value: "PP1", confirmed: true },
-        { dimension: "availability", value: "available", confirmed: false }] })])).toMatchObject({ basis: "assumed_out", goals: 0 });
+  it("full sequence on one issued revision: injured → possible return → confirmed return → late scratch; never rewritten, never re-run", () => {
+    const issued = revisionWith({ state: "confirmed_out", event_type: "INJURY_OUT" });
+    const original = structuredClone(issued);
+    const possible = event(21, "RETURN", "2026-10-10T12:30:00Z", { category: "RETURN", subcategory: "PROJECTED RETURN" }, "2026-10-11T18:30:00Z");
+    const confirmed = news("fictional-return", "availability", "return", true, "2026-10-10T14:30:00Z");
+    const scratch = event(31, "SCRATCH", "2026-10-10T17:30:00Z", { category: "SCRATCHES", game_id: G1.id });
+    // Unconfirmed lineup, PP and practice reports along the way clear nothing.
+    const noise = [news("fictional-line", "ev", "L2", false, "2026-10-10T12:45:00Z"), news("fictional-pp", "pp", "PP1", true, "2026-10-10T12:50:00Z"),
+      news("fictional-practice", "availability", "uncertain", false, "2026-10-10T12:55:00Z")];
+    const steps = [
+      ["1 injured, no update", "2026-10-10T12:00:00Z", sourcesOf("2026-10-10T12:00:00Z")],
+      ["2 possible return + projected line/PP/practice", "2026-10-10T13:00:00Z", sourcesOf("2026-10-10T13:00:00Z", { events: [possible], news: noise })],
+      ["3 confirmed return (game-specific)", "2026-10-10T15:00:00Z", sourcesOf("2026-10-10T15:00:00Z", { events: [possible], news: [...noise, confirmed] })],
+      ["4 late scratch", "2026-10-10T18:00:00Z", sourcesOf("2026-10-10T18:00:00Z", { events: [possible, scratch], news: [...noise, confirmed] })],
+    ] as const;
+    const rows = steps.map(([step, at, sources]) => record(step, [issued], at, ctx(sources)));
+    expect(rows.map(row => [row.basis, row.goals, (row.servedUnderFixtureReview as { points: number | null }).points])).toEqual([
+      ["assumed_out", 0, 0], ["assumed_out", 0, 0], ["confirmed_playing", 0.4, 4.1], ["confirmed_out", 0, 0]]);
+    // Same revision and issue time throughout: no new FORGE run; the if-he-plays line is kept the whole time.
+    expect(new Set(rows.map(row => `${row.revision}@${row.issuedAt}`))).toEqual(new Set(["rev-a@2026-10-10T10:00:00Z"]));
+    expect(rows.every(row => row.ifPlaysGoals === 0.4)).toBe(true);
+    // Each change is its own timestamped record, in order.
+    expect(rows[1].changes).toEqual([expect.stringContaining("2026-10-10T12:30:00Z · roster event 21 (RETURN): possible return")]);
+    expect(rows[1].notes).toEqual([DETAILED_PARTICIPATION_LINE_ROLE_NOTE]);
+    expect(rows[3].changes).toEqual([expect.stringContaining("12:30:00Z"), expect.stringContaining("14:30:00Z · accepted news fictional-return"),
+      expect.stringContaining("17:30:00Z · roster event 31 (SCRATCH): scratched for this game")]);
+    expect(rows.map(row => row.servedCurrentCatalog)).toEqual(rows.map(() => ({ points: null, reason: "use_not_approved" })));
+    expect(issued).toEqual(original);
   });
 
-  it("3 confirmed return: accepted lineup news for this game makes him confirmed playing", () => {
-    expect(record("injured, confirmed in lineup", [revisionWith({ state: "confirmed_out", event_type: "INJURY_OUT" },
-      { assertions: [{ dimension: "ev", value: "L1", confirmed: true }] })])).toMatchObject({
-      basis: "confirmed_playing", appearance: 1, goals: 0.4, servedUnderFixtureReview: { points: 4.1 } });
+  it("the planner's lineup recalculates as availability changes, from the same saved line", () => {
+    vi.spyOn(rsoPolicyModule, "currentRsoUsePolicy").mockReturnValue(fixtureRsoPolicy(["code-v1"], ["GOALS", "ASSISTS", "SHOTS_ON_GOAL",
+      "PP_POINTS", "HITS", "BLOCKED_SHOTS", "PENALTY_MINUTES", "TIME_ON_ICE_PER_GAME"]));
+    const star: PlanningPlayer = { ...skater, eligibilityVerified: true };
+    const depth: PlanningPlayer = { ...star, id: "8", nhlId: 847002, name: "Depth" };
+    const intent: PlanIntent = { revision: 1, steps: [], protectedPlayerIds: [], excludedPlayerIds: [], goalieCoverage: "accept_risk",
+      goalieWindow: "any", goalieSplit: "mon_thu", alternativeCount: 5 };
+    const lineupAt = (at: string, sources: RsoParticipationSources) => {
+      const starRows = admit([revisionWith({ state: "confirmed_out", event_type: "INJURY_OUT" })], at, ctx(sources)).forecasts
+        .filter(row => row.gameId === String(G1.id)).map(bindFixtureForecast);
+      const depthRow = bindFixtureForecast({ ...starRows[0], playerId: "8", stats: { GOALS: 0.2, ASSISTS: 0.3, SHOTS_ON_GOAL: 2 },
+        conditionalStats: undefined, appearanceProbability: null, limitations: [], issuedContext: { ...starRows[0].issuedContext!, playerId: "8", nhlPlayerId: 847002 } });
+      const snapshot = { id: "fixture", context: { provider: "manual", seasonId: 20262027, leagueId: "l", teamId: "t", startDate: G1.date,
+        endDate: G1.date, timeZone: "UTC", asOf: at }, players: [star, depth], games: games.filter(game => game.id === String(G1.id)),
+        forecasts: [...starRows, depthRow], roster: [{ playerId: "7", position: "active" }, { playerId: "8", position: "bench" }],
+        rules: { lineupMode: "daily", rosterSlots: { C: 1, BN: 1 }, acquisitionTiming: "same_day", acquisitionCost: 1, periods: [],
+          scoring: { mode: "points", weights, categories: [] }, goalieMinimum: { required: null, credited: null, counts: "unknown", penalty: "none" }, unsupported: [] },
+        lockedAssignments: [], realized: {}, opponent: null,
+        evidence: { schedule: { source: "fixture", asOf: at, seasonId: 20262027, completeness: "complete", limitations: [] } } } as unknown as PlanningSnapshot;
+      const plan = evaluatePlan(snapshot, intent, "outcome", [], false);
+      return { active: plan.assignments.filter(item => item.gameId === String(G1.id)).map(item => item.playerId), projected: plan.projectedValue };
+    };
+    const confirmed = news("fictional-return", "availability", "return", true, "2026-10-10T14:30:00Z");
+    const scratch = event(31, "SCRATCH", "2026-10-10T17:30:00Z", { game_id: G1.id });
+    const lineups = {
+      injured: lineupAt("2026-10-10T12:00:00Z", sourcesOf("2026-10-10T12:00:00Z")),
+      confirmedReturn: lineupAt("2026-10-10T15:00:00Z", sourcesOf("2026-10-10T15:00:00Z", { news: [confirmed] })),
+      lateScratch: lineupAt("2026-10-10T18:00:00Z", sourcesOf("2026-10-10T18:00:00Z", { events: [scratch], news: [confirmed] })),
+    };
+    table.push({ step: "planner lineup (fixture review, 1 C slot: injured star vs depth 2.2)", lineups });
+    expect(lineups.injured.active).toEqual(["8"]);
+    expect(lineups.confirmedReturn.active).toEqual(["7"]);
+    expect(lineups.lateScratch.active).toEqual(["8"]);
   });
 
-  it("4 late scratch: withdraws the assumed row, then a new timestamped revision confirms him out; the original is never rewritten", async () => {
-    const early = revisionWith({ state: "projected_lineup" }, { id: "rev-early" });
-    const original = structuredClone(early);
-    expect(record("late scratch: early forecast", [early])).toMatchObject({ basis: "assumed_playing", revision: "rev-early" });
-    // Accepted scratch news after the early cutoff: the early revision is withdrawn until a new one is issued.
-    news.latest.set(GAME, "2026-10-10T11:00:00Z");
+  it("a newer injury or exclusion overrides a confirmed return; a roster RETURN counts only for the team's next game", () => {
+    const at = "2026-10-10T20:00:00Z";
+    const issued = revisionWith({ state: "confirmed_out", event_type: "INJURY_OUT" });
+    const confirmed = news("fictional-return", "ev", "L1", true, "2026-10-10T14:30:00Z");
+    expect(record("confirmed return, then a newer injury", [issued], at, ctx(sourcesOf(at, { news: [confirmed],
+      events: [event(41, "DTD", "2026-10-10T18:00:00Z", { category: "INJURY" }, "2026-10-12T00:00:00Z")] })))).toMatchObject({ basis: "assumed_out", goals: 0 });
+    expect(record("confirmed return, then a suspension", [issued], at, ctx(sourcesOf(at, { news: [confirmed],
+      events: [event(42, "SUSPENSION", "2026-10-10T18:00:00Z", { category: "TRANSACTION" }, "2026-10-12T00:00:00Z")] })))).toMatchObject({ basis: "confirmed_out" });
+    // A confirmed (non-projected) roster RETURN is "confirmed back" for the team's first game after the report only.
+    const rosterReturn = event(51, "RETURN", "2026-10-10T13:00:00Z", { category: "RETURN", subcategory: "RETURNING" }, "2026-10-11T19:00:00Z");
+    expect(record("confirmed roster RETURN, next game", [issued], at, ctx(sourcesOf(at, { events: [rosterReturn] })))).toMatchObject({
+      basis: "confirmed_playing", goals: 0.4 });
+    const later = revisionWith({ state: "confirmed_out", event_type: "INJURY_OUT" }, { id: "rev-g2", game: G2 });
+    const g2At = "2026-10-11T12:00:00Z";
+    expect(record("confirmed roster RETURN, a later game (expired, earlier game between)", [later], g2At,
+      ctx(sourcesOf(g2At, { events: [{ ...rosterReturn, effective_to: null }] })), G2.id)).toMatchObject({ basis: "assumed_out", goals: 0 });
+  });
+
+  it("an official appearance after the injury lifts it for later games only, never retroactively", () => {
+    const played: OverlayAppearance = { id: 9001, player_id: NHL, date: G1.date, games_played: 1, toi_per_game: 17.5 };
+    const g1At = "2026-10-10T22:00:00Z", g2At = "2026-10-11T12:00:00Z";
+    expect(record("appearance on G1 date, forecast for G1 itself", [revisionWith({ state: "confirmed_out", event_type: "INJURY_OUT" })], g1At,
+      ctx(sourcesOf(g1At, { appearances: [played] })))).toMatchObject({ basis: "assumed_out", goals: 0, changes: [] });
+    expect(record("appearance on G1, forecast for later game G2", [revisionWith({ state: "confirmed_out", event_type: "INJURY_OUT" }, { id: "rev-g2", game: G2 })],
+      g2At, ctx(sourcesOf(g2At, { appearances: [played] })), G2.id)).toMatchObject({ basis: "assumed_playing", goals: 0.4,
+      changes: [expect.stringContaining("official appearance 2026-10-10 (wgo_skater_stats 9001)")], servedUnderFixtureReview: { points: 4.1 } });
+    // A 0-minute row is not an appearance.
+    expect(record("0-minute row is not an appearance", [revisionWith({ state: "confirmed_out", event_type: "INJURY_OUT" }, { id: "rev-g2", game: G2 })],
+      g2At, ctx(sourcesOf(g2At, { appearances: [{ ...played, games_played: 0, toi_per_game: 0 }] })), G2.id)).toMatchObject({ basis: "assumed_out" });
+  });
+
+  it("conflicting reports keep the latest applicable status, labelled", () => {
+    const at = "2026-10-10T12:00:00Z";
+    expect(record("healthy, conflicting reports", [revisionWith({ state: "projected_lineup" })], at, ctx(sourcesOf(at, { conflicts: ["availability"] }))))
+      .toMatchObject({ basis: "assumed_playing", goals: 0.4, notes: [DETAILED_PARTICIPATION_CONFLICT_NOTE] });
+    expect(record("injured, conflicting reports", [revisionWith({ state: "uncertain", event_type: "DTD" })], at, ctx(sourcesOf(at, { conflicts: ["ev"] }))))
+      .toMatchObject({ basis: "assumed_out", goals: 0, notes: [DETAILED_PARTICIPATION_CONFLICT_NOTE] });
+  });
+
+  it("stale reports: another game's report, a report older than the injury, and an expired revision serve or clear nothing", () => {
+    const at = "2026-10-10T15:00:00Z";
+    const injured = revisionWith({ state: "confirmed_out", event_type: "INJURY_OUT" });
+    expect(record("stale: return news for another game", [injured], at, ctx(sourcesOf(at, {
+      news: [news("fictional-g2", "availability", "return", true, "2026-10-10T14:00:00Z", G2.id)] })))).toMatchObject({ basis: "assumed_out", changes: [] });
+    expect(record("stale: scratch for another game", [revisionWith({ state: "projected_lineup" })], at, ctx(sourcesOf(at, {
+      events: [event(61, "SCRATCH", "2026-10-10T13:00:00Z", { game_id: G2.id })] })))).toMatchObject({ basis: "assumed_playing" });
+    expect(record("stale: lineup report older than the injury", [injured], at, ctx(sourcesOf(at, {
+      news: [news("fictional-old", "ev", "L1", true, "2026-10-07T18:00:00Z")] })))).toMatchObject({ basis: "assumed_out",
+      changes: [expect.stringContaining("older than the injury it would clear; ignored")] });
+    expect(record("stale: expired revision (puck drop)", [revisionWith({ state: "projected_lineup" })], G1.start,
+      ctx(sourcesOf(G1.start)))).toMatchObject({ basis: null, excluded: ["stale_source"] });
+  });
+
+  it("news after the cutoff keeps the skater row (overlay) but withdraws goalie rows; unread sources withhold policy rows", async () => {
+    const at = "2026-10-10T15:00:00Z";
+    overlay.newsLatest.set(G1.id, "2026-10-10T14:30:00Z");
+    overlay.sources = sourcesOf(at, { news: [news("fictional-return", "ev", "L1", true, "2026-10-10T14:30:00Z")] });
     const exclusions: ForecastDiscoveryExclusion[] = [];
-    const withdrawn = await admitConsumerGameRevisions({} as never, [early], [skater], games, now, 20262027, {}, exclusions,
-      Date.now() + 2000, undefined, RSO_ASSUMED_PARTICIPATION_POLICY);
-    expect(withdrawn.forecasts).toEqual([]);
-    expect(exclusions).toContainEqual({ gameId: String(GAME), reasons: ["stale_source"] });
-    table.push({ case: "late scratch: news after early cutoff", revision: "rev-early (withdrawn)", basis: null, excluded: exclusions.map(item => item.reasons[0]),
-      servedCurrentCatalog: served(withdrawn.forecasts[0], false, exclusions), servedUnderFixtureReview: served(withdrawn.forecasts[0], true, exclusions) });
-    // The next issued revision carries the scratch (roster event and accepted news) with a later issuedAt and replaces it.
-    const late = revisionWith({ state: "confirmed_out", event_type: "SCRATCH" }, { id: "rev-late", published: "2026-10-10T11:30:00Z",
-      cutoff: "2026-10-10T11:30:00Z", assertions: [{ dimension: "availability", value: "out", confirmed: true, receivedAt: "2026-10-10T11:01:00Z" }] });
-    news.latest.set(GAME, "2026-10-10T11:00:00Z");
-    const next = await admitConsumerGameRevisions({} as never, [early, late], [skater], games, now, 20262027, {}, [],
-      Date.now() + 2000, undefined, RSO_ASSUMED_PARTICIPATION_POLICY);
-    expect(next.forecasts).toHaveLength(1);
-    expect(next.forecasts[0]).toMatchObject({ revisionId: "rev-late", issuedAt: "2026-10-10T11:30:00Z", appearanceProbability: 0, stats: { GOALS: 0 } });
-    expect(detailedParticipationBasisOf(next.forecasts[0])).toBe("confirmed_out");
-    expect(record("late scratch: new revision", [early, late])).toMatchObject({ basis: "confirmed_out", revision: "rev-late", goals: 0 });
-    expect(early).toEqual(original);
-    // A roster scratch with no news is a confirmed exclusion that overrides the healthy default, even beside a projected line.
-    expect(record("roster scratch + projected line", [revisionWith({ state: "confirmed_out", event_type: "SCRATCH" },
-      { assertions: [{ dimension: "ev", value: "L3", confirmed: false }] })])).toMatchObject({ basis: "confirmed_out", goals: 0 });
-  });
-
-  it("5 conflicting reports: the roster-status default stands, labelled as conflicting", () => {
-    expect(record("healthy, conflicting reports", [revisionWith({ state: "projected_lineup" }, { conflicts: ["availability"] })])).toMatchObject({
-      basis: "assumed_playing", goals: 0.4, notes: [DETAILED_PARTICIPATION_CONFLICT_NOTE] });
-    expect(record("injured, conflicting reports", [revisionWith({ state: "uncertain", event_type: "DTD" },
-      { assertions: [{ dimension: "ev", value: "L1", confirmed: true }], conflicts: ["ev"] })])).toMatchObject({
-      basis: "assumed_out", goals: 0, notes: [DETAILED_PARTICIPATION_CONFLICT_NOTE] });
-  });
-
-  it("6 stale reports: nothing past the forecast's freshness is served or confirms", () => {
-    // Expired: at puck drop the revision is stale; no assumed row survives it.
-    expect(record("stale: expired revision", [revisionWith({ state: "projected_lineup" })], new Date("2026-10-10T23:00:00Z"))).toMatchObject({
-      basis: null, excluded: ["stale_source"], servedUnderFixtureReview: { reason: "stale_source" } });
-    // Received after the forecast's cutoff: a lineup confirmation cannot confirm a forecast issued before it arrived.
-    expect(record("stale: return confirmation received after cutoff", [revisionWith({ state: "uncertain", event_type: "DTD" },
-      { assertions: [{ dimension: "ev", value: "L1", confirmed: true, receivedAt: "2026-10-10T10:00:00.000001Z" }] })])).toMatchObject({
-      basis: "assumed_out", goals: 0 });
-    // Coverage issued for a different game says nothing about this one: no roster status to assume from.
-    const other = revisionWith({ state: "confirmed_out", event_type: "SCRATCH" });
-    (other.payload.players[0] as any).uncertainty.availability.game_id = GAME + 1;
-    expect(record("stale: exclusion for another game", [other])).toMatchObject({ basis: null, excluded: ["missing_participation"],
-      servedUnderFixtureReview: { reason: "missing_participation" } });
-    // An unrecognised coverage state is no roster status either.
-    const odd = revisionWith({ state: "projected_lineup" });
-    (odd.payload.players[0] as any).uncertainty.availability.state = "rumoured";
-    expect(admit([odd]).forecasts).toEqual([]);
+    const result = await admitConsumerGameRevisions({} as never, [revisionWith({ state: "confirmed_out", event_type: "INJURY_OUT" }, { goalie: true })],
+      [skater], games, new Date(at), 20262027, {}, exclusions, Date.now() + 2000, undefined, RSO_ASSUMED_PARTICIPATION_POLICY);
+    expect(result.forecasts.map(row => [row.playerId, detailedParticipationBasisOf(row)])).toEqual([["7", "confirmed_playing"]]);
+    expect(exclusions).toContainEqual({ gameId: String(G1.id), reasons: ["stale_source"] });
+    overlay.fail = true;
+    const withheld: ForecastDiscoveryExclusion[] = [];
+    const failed = await admitConsumerGameRevisions({} as never, [revisionWith({ state: "projected_lineup" })], [skater], games, new Date(at),
+      20262027, {}, withheld, Date.now() + 2000, undefined, RSO_ASSUMED_PARTICIPATION_POLICY);
+    expect(failed.forecasts).toEqual([]);
+    expect(withheld).toContainEqual({ gameId: String(G1.id), playerId: "7", reasons: ["incomplete_refresh"] });
+    table.push({ step: "overlay sources unreadable", excluded: ["incomplete_refresh"], servedCurrentCatalog: { points: null, reason: "incomplete_refresh" },
+      servedUnderFixtureReview: { points: null, reason: "incomplete_refresh" } });
   });
 });
