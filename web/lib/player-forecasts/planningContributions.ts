@@ -1,5 +1,5 @@
 import { calendarLeadDay, catalogParticipation, startMassExceedsOne, forecastCalendarPolicy, validForecastCalendarPolicy, resolveContribution, type ContributionGame, type ContributionParticipation, type ContributionSource } from "./contributions";
-import { currentRsoUsePolicy, restrictRsoForecast, type RsoUsePolicy } from "./rsoUsePolicy";
+import { restrictRsoForecast, type RsoUsePolicy } from "./rsoUseResolver";
 import { currentPlanningTime } from "../rosterScheduleOptimizer/currentPlanningRead";
 import { applyModeledStartMetadata, forecastFromContributions, revalidateResolvedForecast } from "./resolvedPlanningForecast";
 import type { ContributionPlanningSnapshot, ForecastExclusionReason, GameForecast, PlanningSnapshot, StatLine } from "../rosterScheduleOptimizer/planningTypes";
@@ -33,16 +33,18 @@ function unusableDetailed(forecast: GameForecast,
     limitations: [...new Set([...forecast.limitations, limitation])] };
 }
 
+/** RSO passes its review catalog in: this module is in the FORGE producer closure and must never import the catalog. */
+type ContributionOptions = { playerIds?: ReadonlySet<string> }
+  & ({ consumer: "rso"; usePolicy: RsoUsePolicy } | { consumer?: "start_chart"; usePolicy?: never });
 /** Apply immutable shared rates only to actual requested schedule opportunities.
  * No model generation, database reads, league scoring, or cache writes occur here. */
-export function resolvePlanningContributions(snapshot: PlanningSnapshot,
-  options?: { playerIds?: ReadonlySet<string>; consumer?: "rso" | "start_chart"; usePolicy?: RsoUsePolicy }): PlanningSnapshot;
+export function resolvePlanningContributions(snapshot: PlanningSnapshot, options?: ContributionOptions): PlanningSnapshot;
+export function resolvePlanningContributions(snapshot: ContributionPlanningSnapshot, options?: ContributionOptions): ContributionPlanningSnapshot;
 export function resolvePlanningContributions(snapshot: ContributionPlanningSnapshot,
-  options?: { playerIds?: ReadonlySet<string>; consumer?: "rso" | "start_chart"; usePolicy?: RsoUsePolicy }): ContributionPlanningSnapshot;
-export function resolvePlanningContributions(snapshot: ContributionPlanningSnapshot,
-  options: { playerIds?: ReadonlySet<string>; consumer?: "rso" | "start_chart"; usePolicy?: RsoUsePolicy } = {}): ContributionPlanningSnapshot {
+  options: ContributionOptions = {}): ContributionPlanningSnapshot {
   if (options.consumer === "rso") {
-    const policy = options.usePolicy ?? currentRsoUsePolicy();
+    // A missing catalog (an untyped caller) denies every target.
+    const policy = options.usePolicy;
     // Review expiry is current permission, not the historical valuation clock.
     const policyNow = new Date(currentPlanningTime()).toISOString();
     snapshot = { ...snapshot, forecasts: snapshot.forecasts.map(row => restrictRsoForecast(

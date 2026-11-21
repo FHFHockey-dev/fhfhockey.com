@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resolvePlanningContributions } from "./planningContributions";
-import { deniedRsoUses, type RsoUsePolicy, type RsoTargetUseBinding } from "./rsoUsePolicy";
+import { currentRsoUsePolicy, deniedRsoUses, type RsoUsePolicy, type RsoTargetUseBinding } from "./rsoUsePolicy";
 import { forecastAllows } from "../rosterScheduleOptimizer/planning";
 import { inspectCalendarConsumerCoverage, parseCalendarCoverageProfile, summarizeCalendarConsumerCoverage } from "./calendarCoverage";
 import * as publicPlanning from "../rosterScheduleData/planning";
@@ -906,7 +906,7 @@ describe("P07 detailed target permissions through retained resolution", () => {
   afterEach(() => vi.useRealTimers());
   function reviewed() {
     const bindings: Record<string, RsoTargetUseBinding> = Object.fromEntries(["GOALS", "ASSISTS"].map(targetKey => [targetKey, {
-      component: "synthetic-detailed", modelMode: "synthetic", codeVersion: "forge-v1",
+      component: "synthetic-detailed", modelMode: "synthetic", codeVersion: "c1".repeat(32),
       configurationHash: "a".repeat(64), artifactHash: "b".repeat(64), targetKey, horizonGames: 1,
       conditioning: "conditional_playing", participationLineage: "detail-1:participation", cutoffAt: "2026-09-28T11:00:00Z",
     }]));
@@ -919,6 +919,7 @@ describe("P07 detailed target permissions through retained resolution", () => {
       })) };
     const data = fixture([{ ...rate, mean: 2 }, { ...rate, targetKey: "ASSISTS", mean: 0 }], [detailed({
       stats: { GOALS: 1, ASSISTS: 0 }, conditionalStats: { GOALS: 2, ASSISTS: 0 }, rsoTargetBindings: bindings,
+      producerCodeVersion: "c1".repeat(32),
     })]);
     return { data, policy };
   }
@@ -967,7 +968,7 @@ describe("P07 detailed target permissions through retained resolution", () => {
   it("does not choose a permissive baseline because a present detailed target lacks permission", () => {
     const { data } = reviewed();
     data.participationSources = [modeledParticipation()];
-    const row = resolvePlanningContributions(data, { consumer: "rso" }).forecasts[0];
+    const row = resolvePlanningContributions(data, { consumer: "rso", usePolicy: currentRsoUsePolicy() }).forecasts[0];
     expect(row.contributions?.GOALS.sourceIds).toContain("detail-1");
     expect(row.stats.GOALS).toBeNull();
     expect(row.assignmentStats?.GOALS).toBeNull();
@@ -975,8 +976,8 @@ describe("P07 detailed target permissions through retained resolution", () => {
   it("preserves the separately qualified native rate and modeled-participation path", () => {
     const data = fixture([{ ...rate, policyVersion: "skater-baseline-rates-v1" }]);
     data.participationSources = [modeledParticipation()];
-    const resolved = resolvePlanningContributions(data, { consumer: "rso" });
+    const resolved = resolvePlanningContributions(data, { consumer: "rso", usePolicy: currentRsoUsePolicy() });
     expect(resolved.forecasts[0].stats.GOALS).toBe(0.5);
-    expect(resolvePlanningContributions(JSON.parse(JSON.stringify(resolved)), { consumer: "rso" }).forecasts[0].stats.GOALS).toBe(0.5);
+    expect(resolvePlanningContributions(JSON.parse(JSON.stringify(resolved)), { consumer: "rso", usePolicy: currentRsoUsePolicy() }).forecasts[0].stats.GOALS).toBe(0.5);
   });
 });

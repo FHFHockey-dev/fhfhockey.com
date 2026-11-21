@@ -94,8 +94,10 @@ export type ForgeInputSnapshot = {
   seasonBootstrapApplied?: boolean;
   inputProvenance?: { rolling_player_history_contract: string; external_fantasy_input_contract?: string; issuedContexts?: ForgeIssuedContextV1[];
     capturedReads?: ForgeCapturedReadReceipt; issuedTargets?: ForgeIssuedTargetManifest;
-    /** FORGE D3 model identity (`forgeModelIdentity` in run-forge-projections); absent on earlier revisions. */
-    modelIdentity?: { version: string; artifact: string; configurationHash: string; artifactHash: string } };
+    /** FORGE D3 model identity (`forgeModelIdentity` in run-forge-projections); absent on earlier revisions. v2 adds
+     * `codeVersion`, the verified producer closure; v1 rows carry none and hash the deploy SHA. */
+    modelIdentity?: { version: string; artifact: string; codeVersion?: string | null; configurationHash: string;
+      artifactHash: string | null } };
   deterministicSeed?: number;
   dailyBoardEvidence?: import("./dailyBoardEvidence").DailyBoardEvidence;
   horizonGames: number;

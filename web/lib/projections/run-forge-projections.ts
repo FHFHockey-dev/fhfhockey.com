@@ -394,6 +394,7 @@ import { captureProjectionInputs, replayProjectionInputs, projectionInputHash, c
 import { saveForgeInputSnapshot, publishForgeGameRevisions, projectionWritesHash, capturedGoalieStarts, capturedIssuedTargets, type ForgeInputSnapshot } from "./gameRevisions";
 import { captureForgeIssuedContexts, forgeIssuedContextsFingerprint, type ForgeIssuedContextV1 } from "./issuedContext";
 import { applyDailyBoardEvidence } from "./dailyBoardEvidence";
+import { currentProducerClosureSha256 } from "./forgeProducerIdentity";
 import { starterBoardFlags, starterBoardScopeAllowed } from "./starterBoardFlags";
 import { assertPacket, type PregamePacket } from "./pregameCapture/packet";
 import { latestInstant, microsFromEpochMs, parseInstantMicros } from "./pregameCapture/time";
@@ -445,14 +446,19 @@ export function readsExcludeExternalFantasy(reads: readonly ProjectionInputRead[
 const externalFantasyClaim = (reads: readonly ProjectionInputRead[]) =>
   readsExcludeExternalFantasy(reads) ? { externalFantasyInputsExcluded: true as const } : {};
 
-/** FORGE model identity (TJ D3, 2026-10-26): `configurationHash` is the canonical sha256 of the run's model environment.
- * The heuristic has no fitted artifact, so `artifactHash` binds its code at `codeVersion` under that configuration.
- * It travels in the snapshot's `inputProvenance`, which revision publishing copies into every revision payload. */
-export const FORGE_MODEL_IDENTITY_VERSION = "forge-model-identity-v1";
-export function forgeModelIdentity(codeVersion: string, modelEnvironment: Record<string, string | null>) {
+/** FORGE model identity (TJ D3, 2026-10-26; codeVersion amended 2026-11-21): `configurationHash` is the canonical sha256
+ * of the run's model environment. The heuristic has no fitted artifact, so `artifactHash` binds its code at `codeVersion`
+ * under that configuration. `codeVersion` is the verified producer closure this build stamps (forgeProducerIdentity.ts),
+ * not the deploy SHA, so a deploy that leaves the producer unchanged keeps the identity and an RSO review outlives the
+ * release that ships it. The deploy SHA stays in `payload.codeVersion` as the release pin. Unbuilt code has no closure:
+ * `codeVersion` and `artifactHash` are then null, and readers deny. v1 identities (keyed to the deploy SHA) are never
+ * reviewable. It travels in the snapshot's `inputProvenance`, which revision publishing copies into every revision payload. */
+export const FORGE_MODEL_IDENTITY_VERSION = "forge-model-identity-v2";
+export function forgeModelIdentity(producerClosure: string | null, modelEnvironment: Record<string, string | null>) {
   const configurationHash = projectionInputHash(modelEnvironment);
-  return { version: FORGE_MODEL_IDENTITY_VERSION, artifact: "no_fitted_artifact" as const, configurationHash,
-    artifactHash: projectionInputHash({ codeVersion, configurationHash }) };
+  const codeVersion = typeof producerClosure === "string" && /^[a-f0-9]{64}$/.test(producerClosure) ? producerClosure : null;
+  return { version: FORGE_MODEL_IDENTITY_VERSION, artifact: "no_fitted_artifact" as const, codeVersion, configurationHash,
+    artifactHash: codeVersion === null ? null : projectionInputHash({ codeVersion, configurationHash }) };
 }
 
 /**
@@ -585,7 +591,7 @@ export async function runProjectionV2ForDate(
       modelEnvironment,
       seasonBootstrapApplied: seasonBootstrap,
       inputProvenance: { ...buildForgeInputProvenance(externalFantasyClaim(capture.reads)),
-        modelIdentity: forgeModelIdentity(codeVersion!, modelEnvironment), capturedReads: capturedReadReceipt(capture.reads),
+        modelIdentity: forgeModelIdentity(currentProducerClosureSha256(), modelEnvironment), capturedReads: capturedReadReceipt(capture.reads),
         ...(issuedContexts ? { issuedContexts, issuedTargets: capturedIssuedTargets(issuedContexts, capture.writes) } : {}) },
       dailyBoardEvidence: capture.writes.filter((ops) => ops[0]?.args[0] === "forge_runs")
         .map((ops) => (ops.find((op) => op.method === "update")?.args[0] as any)?.metrics?.daily_board_evidence)
@@ -789,7 +795,7 @@ export async function computeForgePregamePublication(packet: PregamePacket, args
     version: "forge-inputs-v1", runId, slateDate, decisionAsOf: statedCutoff, inputCutoff, capturedAt: new Date().toISOString(),
     codeVersion: args.codeVersion, modelMode: resolveSkaterRolloutConfig().mode, modelEnvironment, seasonBootstrapApplied,
     inputProvenance: { ...buildForgeInputProvenance(externalFantasyClaim(reads)),
-      modelIdentity: forgeModelIdentity(args.codeVersion, modelEnvironment), capturedReads: capturedReadReceipt(reads),
+      modelIdentity: forgeModelIdentity(currentProducerClosureSha256(), modelEnvironment), capturedReads: capturedReadReceipt(reads),
       issuedContexts, issuedTargets: capturedIssuedTargets(issuedContexts, replay.writes) },
     dailyBoardEvidence: finalization.metrics.daily_board_evidence ?? { assertions: [], conflicts: [] },
     deterministicSeed: 0, horizonGames: 1, gameIds, replayClassification: "captured_live", pregameCandidates: candidates,

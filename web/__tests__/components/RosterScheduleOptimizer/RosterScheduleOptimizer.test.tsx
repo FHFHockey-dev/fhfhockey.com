@@ -31,8 +31,9 @@ vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession: async () 
 // These presentation fixtures predate target reviews. The actual policy and
 // provenance boundary have their own unmocked regression suite; retain the UI's
 // original numerical/identity assertions using an explicitly admitted fixture.
-vi.mock("lib/player-forecasts/rsoUsePolicy", async importOriginal => ({
-  ...await importOriginal<typeof import("lib/player-forecasts/rsoUsePolicy")>(),
+// The mechanism lives in rsoUseResolver (inside the producer closure), which planningContributions imports.
+vi.mock("lib/player-forecasts/rsoUseResolver", async importOriginal => ({
+  ...await importOriginal<typeof import("lib/player-forecasts/rsoUseResolver")>(),
   restrictRsoForecast: (forecast: GameForecast) => forecast,
 }));
 vi.mock("lib/rosterScheduleOptimizer/executionAdapter", async () => {

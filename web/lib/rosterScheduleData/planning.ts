@@ -56,17 +56,21 @@ const ownershipPct = (value: unknown) => {
   const parsed = typeof value === "string" && /^\d+(\.\d+)?$/.test(value) ? Number(value) : numberOrNull(value);
   return parsed !== null && parsed >= 0 && parsed <= 100 ? parsed : null;
 };
-/** A revision's declared FORGE model identity (TJ D3; written by `forgeModelIdentity` in run-forge-projections), taken whole or
- * not at all: an older revision without one, or an artifact hash that does not bind its own code version, stays unknown. */
-function revisionModelIdentity(payload: ForgeGameRevision["payload"] | undefined): { configurationHash: string | null; artifactHash: string | null } {
+/** A revision's declared FORGE model identity (TJ D3, codeVersion amended 2026-11-21; written by `forgeModelIdentity` in
+ * run-forge-projections), taken whole or not at all. Only v2 binds: its `codeVersion` is the verified producer closure
+ * (64-hex), stable across deploys that leave the producer unchanged, and its artifact hash must bind that code version.
+ * A v1 identity (keyed to the deploy SHA in `payload.codeVersion`), an older revision without one, or a build with no
+ * closure stays unknown, so its RSO bindings carry no code version or hashes and every review denies them. */
+function revisionModelIdentity(payload: ForgeGameRevision["payload"] | undefined):
+  { codeVersion: string | null; configurationHash: string | null; artifactHash: string | null } {
   const identity = (payload?.inputProvenance as { modelIdentity?: Record<string, unknown> } | undefined)?.modelIdentity;
   const hex = (value: unknown): value is string => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
-  if (!identity || identity.version !== "forge-model-identity-v1" || identity.artifact !== "no_fitted_artifact"
-    || !hex(identity.configurationHash) || !hex(identity.artifactHash) || typeof payload?.codeVersion !== "string"
-    || identity.artifactHash !== playerForecastSourcePayloadHash({ codeVersion: payload.codeVersion, configurationHash: identity.configurationHash })) {
-    return { configurationHash: null, artifactHash: null };
+  if (!identity || identity.version !== "forge-model-identity-v2" || identity.artifact !== "no_fitted_artifact"
+    || !hex(identity.codeVersion) || !hex(identity.configurationHash) || !hex(identity.artifactHash)
+    || identity.artifactHash !== playerForecastSourcePayloadHash({ codeVersion: identity.codeVersion, configurationHash: identity.configurationHash })) {
+    return { codeVersion: null, configurationHash: null, artifactHash: null };
   }
-  return { configurationHash: identity.configurationHash, artifactHash: identity.artifactHash };
+  return { codeVersion: identity.codeVersion, configurationHash: identity.configurationHash, artifactHash: identity.artifactHash };
 }
 function evidence(source: string, asOf: string | null, seasonId: number | null, limitations: string[] = []): SourceEvidence {
   return { source, asOf, seasonId, completeness: limitations.length ? "partial" : "complete", limitations };
@@ -220,18 +224,20 @@ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningD
       const admitted = admittedSources.find(row => row.forecast === forecast);
       // Policy rows (TJ 2026-11-21) carry their own participation method, so a review of the issued method never covers them.
       const overlay = admitted?.source.kind === "skater" && detailedParticipationBasisOf(forecast) !== null;
+      // Only the revision's own declared model identity binds code, configuration and artifact; the deploy SHA
+      // (modelVersion), issuance or captured-read hashes never stand in for it.
+      const identity = revisionModelIdentity(admitted?.revision.payload);
       const rsoTargetBindings = Object.fromEntries(Object.keys(forecast.stats).map(targetKey => [targetKey, {
         component: `forge-detailed-${admitted?.source.kind ?? "unknown"}`,
-        modelMode: admitted?.revision.payload.modelMode ?? "unknown", codeVersion: forecast.modelVersion ?? "unknown",
-        // Only the revision's own declared model identity binds configuration and
-        // artifact; issuance or captured-read hashes never stand in for it.
-        ...revisionModelIdentity(admitted?.revision.payload), targetKey, horizonGames: 1,
+        modelMode: admitted?.revision.payload.modelMode ?? "unknown", ...identity, codeVersion: identity.codeVersion ?? "unknown",
+        targetKey, horizonGames: 1,
         conditioning: admitted?.source.kind === "goalie" ? "start_only_zero_relief" : overlay ? RSO_PARTICIPATION_OVERLAY_CONDITIONING : "conditional_playing",
         // Stable participation method for review; the issued revision is checked per row (Astra F3).
         participationLineage: overlay ? `${RSO_PARTICIPATION_OVERLAY_METHOD}:skater@${forecast.revisionId}`
           : issuedParticipationLineage(admitted?.source.kind ?? "unknown", forecast.revisionId), cutoffAt: forecast.cutoffAt ?? "",
       }]));
-      const restricted = restrictRsoForecast({ ...forecast, rsoTargetBindings }, { rsoUsePolicy }, now.toISOString(), policy);
+      const restricted = restrictRsoForecast({ ...forecast, rsoTargetBindings,
+        ...(identity.codeVersion ? { producerCodeVersion: identity.codeVersion } : {}) }, { rsoUsePolicy }, now.toISOString(), policy);
       for (const [targetKey, uses] of Object.entries(restricted.targetAllowedUses ?? {})) {
         if (uses.assignment && uses.totals && uses.comparison) continue;
         exclusionCounts.use_not_approved = (exclusionCounts.use_not_approved ?? 0) + 1;

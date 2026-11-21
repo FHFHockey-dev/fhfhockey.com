@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
-import { fixtureRsoBindings, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
+import { fixtureRsoBound, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
 import { dtdReserves, healthyReserves, withoutHealthyReserves } from "./healthyReserves";
 import { lineupGapReport } from "./lineupGaps";
 import { evaluatePlan } from "./planning";
@@ -32,7 +32,7 @@ function snapshot(): PlanningSnapshot {
   data.forecasts = games.flatMap(game => players.filter(player => player.teamAbbreviation === game.teamAbbreviation).map((player): GameForecast => ({
     playerId: player.id, gameId: game.id, stats: { pts: perGame[player.id] }, conditioning: "unconditional", sourceKind: "detailed",
     sourceWatermark: "fixture", cutoffAt: data.context.asOf, issuedAt: data.context.asOf, expiresAt: game.startsAt, modelVersion: "fixture", revisionId: "r",
-    rsoTargetBindings: fixtureRsoBindings("fixture", data.context.asOf, ["pts"]),
+    ...fixtureRsoBound("fixture", data.context.asOf, ["pts"]),
     issuedContext: { version: "forge-issued-context-v1", playerId: player.id, gameId: game.id, nhlPlayerId: player.nhlId!, teamId: player.nhlTeamId!,
       seasonId: 20262027, scheduledAt: game.startsAt, scheduleRevision: game.scheduleRevision, rosterRevision: player.rosterRevision!,
       observedAt: data.context.asOf, scheduleSourceUpdatedAt: null, scheduleFetchedAt: null, identityUpdatedAt: null, membershipCreatedAt: [] },

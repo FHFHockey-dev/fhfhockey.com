@@ -6,7 +6,7 @@
 // the goalie-minimum contract. Every input is a synthetic fixture labelled as an interim bridge value.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
-import { fixtureRsoBindings, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
+import { fixtureRsoBound, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
 import { candidatePlanMetrics } from "./candidatePlanMetrics";
 import { evaluatePlan, planRoster } from "./planning";
 import { nextLocalMidnight, zonedMidnight } from "./planningDates";
@@ -68,7 +68,7 @@ function forecast(data: PlanningSnapshot, playerId: string, gameId: string, stat
   const issuedAt = new Date(Date.parse(AS_OF) - 2 * 3600000).toISOString(), key = `${playerId}-${gameId}`;
   return { playerId, gameId, stats, conditioning: "unconditional", sourceKind: "detailed", sourceWatermark: "interim-forge-bridge-fixture",
     cutoffAt: issuedAt, issuedAt, expiresAt: match.startsAt!, modelVersion: INTERIM_MODEL, revisionId: `interim-bridge:${key}`,
-    rsoTargetBindings: fixtureRsoBindings(INTERIM_MODEL, issuedAt, Object.keys(stats)),
+    ...fixtureRsoBound(INTERIM_MODEL, issuedAt, Object.keys(stats)),
     issuedContext: { version: "forge-issued-context-v1", playerId, gameId, nhlPlayerId: member.nhlId!, teamId: member.nhlTeamId!, seasonId: SEASON,
       scheduledAt: match.startsAt!, scheduleRevision: match.scheduleRevision!, rosterRevision: member.rosterRevision!, observedAt: issuedAt,
       scheduleSourceUpdatedAt: issuedAt, scheduleFetchedAt: issuedAt, identityUpdatedAt: issuedAt, membershipCreatedAt: ["2026-09-01T00:00:00Z"] },

@@ -30,8 +30,9 @@ const numberOrNull = (value: unknown) => typeof value === "number" && Number.isF
 export const RSO_ASSUMED_PARTICIPATION_POLICY = "rso-assumed-participation-v1" as const;
 export type DetailedParticipationPolicy = typeof RSO_ASSUMED_PARTICIPATION_POLICY;
 export type DetailedParticipationBasis = RsoParticipationBasis;
-/** Review scope of policy rows: the participation method a reviewed RSO use must name (decision D5 review lane). */
-export const RSO_PARTICIPATION_OVERLAY_METHOD = "forge-rso-participation-overlay-v1";
+/** Review scope of policy rows: the participation method a reviewed RSO use must name (decision D5 review lane). Defined
+ * with the resolver, which requires an `@issuance` for it as for every issued method. */
+export { RSO_PARTICIPATION_OVERLAY_METHOD } from "lib/player-forecasts/rsoUseResolver";
 export const RSO_PARTICIPATION_OVERLAY_CONDITIONING = "rso_participation_overlay";
 export { DETAILED_PARTICIPATION_CONFLICT_NOTE, DETAILED_PARTICIPATION_LINE_ROLE_NOTE, DETAILED_PARTICIPATION_NOTES,
   detailedParticipationBasisOf, overlayChangeNote } from "./rsoParticipationNotes";
