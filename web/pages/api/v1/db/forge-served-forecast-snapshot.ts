@@ -5,7 +5,7 @@ import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import supabase from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
-import { buildLedgerRows, buildMarketLedgerRows, emptyBridgeAcceptance, LEDGER_BASIS_SCHEMA_ENABLED, LEDGER_MARKET_ENABLED, LEDGER_SCORING_VERSION, LEDGER_SOURCES, LEDGER_UNIVERSE_TABLE,
+import { buildLedgerRows, buildMarketLedgerRows, LEDGER_BASIS_SCHEMA_ENABLED, LEDGER_MARKET_ENABLED, LEDGER_SCORING_VERSION, LEDGER_SOURCES, LEDGER_UNIVERSE_TABLE,
   type LedgerGame, type LedgerMarketQuote, type LedgerPlayer, type LedgerRow } from "lib/player-forecasts/servedForecastLedger";
 import { forgeBridgeTimingSummary, loadForgeDailyBridgeForecasts, teamStrengthPriors, teamWinProbability, type ForgeBridgeTiming } from "lib/rosterScheduleData/forgeDailyBridge";
 import { abortableReads, loadPlanningInputs, pages, PlanningReadDeadlineError, withinDeadline } from "lib/rosterScheduleData/planningInputs";
@@ -44,8 +44,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     // result has settled, so a result that arrives late must still never reach the ledger.
     const inTime = () => { const late = Date.now() - deadline; if (late > 0) throw new PlanningReadDeadlineError(late); };
     const dayGames = await pages(() => db.from("games").select("id,date,seasonId,startTime,homeTeamId,awayTeamId", { count: "exact" }).eq("date", date).order("id"), deadline, 40);
-    if (!dayGames.length) return res.status(200).json({ success: true, date, games: 0, rowsUpserted: 0, countsBySource: {}, skippedGames: [],
-      bridgeAcceptance: emptyBridgeAcceptance() });
+    if (!dayGames.length) return res.status(200).json({ success: true, date, games: 0, rowsUpserted: 0, countsBySource: {}, skippedGames: [] });
     const seasonId = Number(dayGames[0].seasonId);
     enter("planning_inputs");
     const planning = await loadPlanningInputs(db, { seasonId, startDate: date, endDate: date, timeZone: "America/New_York" }, now);
@@ -71,8 +70,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const proofRunIds = [...new Set(bridge.forecasts.map(runOf).filter(Boolean))];
     const proof = await withinDeadline(deadline, signal => loadExternalInputProof(abortableReads(db, signal), proofRunIds));
     const bridgeForecasts = bridge.forecasts.filter(row => proof.has(runOf(row)));
-    const proofWithheldBridgeForecasts = bridge.forecasts.filter(row => !proof.has(runOf(row)));
-    const withheld = proofWithheldBridgeForecasts.length;
+    const withheld = bridge.forecasts.length - bridgeForecasts.length;
     const bridgeLimitations = withheld ? [...bridge.limitations,
       `${withheld} interim FORGE player-games were not recorded: their run cannot prove it excluded third-party fantasy projections.`] : bridge.limitations;
     const runIds = [...new Set(bridgeForecasts.map(runOf))];
@@ -105,7 +103,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       teamWin.set(`${game.gameId}:${game.awayTeamId}`, teamWinProbability(priors.get(away.toUpperCase()), priors.get(home.toUpperCase()), false));
     }
     enter("ledger_build");
-    const { rows, universe, skippedGameIds, bridgeAcceptance } = buildLedgerRows({ date, seasonId, now, games, players, bridgeForecasts, proofWithheldBridgeForecasts,
+    const { rows, universe, skippedGameIds } = buildLedgerRows({ date, seasonId, now, games, players, bridgeForecasts,
       runDates: new Map(runs.map(row => [row.run_id, row.as_of_date])), scheduleGames, wgoGameRows, goalieGameRows });
     enter("ledger_upsert");
     // The write boundary: nothing is written once the deadline has passed. A write phase begun in time finishes as one unit.
@@ -148,7 +146,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     const countsBySource = Object.fromEntries(LEDGER_SOURCES.map(source => [source, [...rows, ...marketRows].filter(row => row.source === source).length]));
     if (marketError) return res.status(207).json({ success: false, date, rowsUpserted, countsBySource, marketError, skippedGames: skippedGameIds });
-    return res.status(200).json({ success: true, date, seasonId, games: games.length, players: players.length, rowsUpserted, countsBySource, bridgeAcceptance,
+    return res.status(200).json({ success: true, date, seasonId, games: games.length, players: players.length, rowsUpserted, countsBySource,
       identifiedPlayerGames: universe.length, universeUpserted, scoringVersion: LEDGER_SCORING_VERSION,
       coverageStatus: LEDGER_BASIS_SCHEMA_ENABLED ? "universe_persisted" : "unavailable_independent_universe_not_persisted",
       skippedGames: skippedGameIds, bridgeLimitations,

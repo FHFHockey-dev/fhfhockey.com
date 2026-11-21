@@ -14,7 +14,7 @@ import { officialPilotApprovalBytes, officialPilotHandler } from "./officialPilo
 import type { OfficialPilotTarget } from "./officialPilotStore";
 import { RUNTIME_OVERRIDE_KEYS } from "./runtimeReceipt";
 
-export const pilotSlot = Date.parse("2026-11-21T12:45:02Z");
+export const pilotSlot = Date.parse("2026-11-22T12:45:02Z");
 export const fixtureDeployment = { deploymentId: "dpl_official_fixture", gitCommitSha: "a".repeat(40) };
 const runId = "77777777-7777-4777-8777-777777777777";
 export function signedOfficialGrant(approval: OfficialPilotTarget) {
@@ -39,7 +39,7 @@ export async function exportHostedOfficialFixture(args: { outDir: string; native
   const { outDir, nativeRunId, nativeManifestSHA256, scheduleSHA256 } = args;
   const gameIds = args.boxes.map(b => Number(b.id));
   const deployment = { deploymentId: args.deploymentId ?? fixtureDeployment.deploymentId, gitCommitSha: args.gitCommitSha ?? fixtureDeployment.gitCommitSha };
-  const approval = { ...deployment, nativeRunId, nativeManifestSHA256, scheduleSHA256, sourceDate: "2026-11-20", gameIds };
+  const approval = { ...deployment, nativeRunId, nativeManifestSHA256, scheduleSHA256, sourceDate: "2026-11-21", gameIds };
   const grant = signedOfficialGrant(approval);
   mkdirSync(outDir, { recursive: true });
   const keys = mkdtempSync(join(tmpdir(), "official-pilot-ephemeral-"));

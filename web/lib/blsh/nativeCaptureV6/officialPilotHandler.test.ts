@@ -11,7 +11,7 @@ import type { OfficialPilotStore } from "./officialPilotStore";
 
 const { factory } = vi.hoisted(() => ({ factory: vi.fn(() => { throw new Error("external_store_forbidden"); }) }));
 vi.mock("./officialPilotStore", () => ({ createOfficialPilotStore: factory }));
-const target = { ...fixtureDeployment, sourceDate: "2026-11-20", nativeRunId: "00000000-0000-4000-8000-000000000001",
+const target = { ...fixtureDeployment, sourceDate: "2026-11-21", nativeRunId: "00000000-0000-4000-8000-000000000001",
   nativeManifestSHA256: "b".repeat(64), scheduleSHA256: "c".repeat(64), gameIds: [2026020001, 2026020002] };
 const boxes = target.gameIds.map(id => ({ id, gameDate: target.sourceDate, season: 20262027, gameType: 2, gameState: "OFF", gameScheduleState: "OK" }));
 const dirs: string[] = [];
@@ -29,7 +29,8 @@ describe("one approved hosted official GET", () => {
     }
     vi.stubEnv("BLSH_OFFICIAL_PILOT_APPROVAL_PUBLIC_KEY", ""); expect((await fakeOfficialInvocation(route, grant.header)).value.reason).toBe("disabled");
     vi.stubEnv("BLSH_OFFICIAL_PILOT_APPROVAL_PUBLIC_KEY", grant.approvalPublicKey);
-    for (const time of [Date.parse("2026-11-21T12:44:59.999Z"),Date.parse("2026-11-21T12:46:00Z"),pilotSlot+86400000]) {
+    for (const time of [Date.parse("2026-11-22T12:44:59.999Z"),Date.parse("2026-11-22T12:46:00Z"),pilotSlot+86400000,
+      Date.parse("2026-11-21T12:45:02Z") /* retired 2026-11-21 slot */]) {
       clock.mockReturnValue(time); expect((await fakeOfficialInvocation(route, grant.header)).value.reason).toBe("outside_official_slot");
     }
     clock.mockReturnValue(pilotSlot);
@@ -43,7 +44,7 @@ describe("one approved hosted official GET", () => {
   });
   it("rejects a signed out-of-scope game/date/deployment and a TLS override before a claim", async () => {
     vi.spyOn(Date,"now").mockReturnValue(pilotSlot);
-    for (const change of [{ sourceDate:"2026-11-19" }, { gameIds:[] }, { gameIds:[target.gameIds[0],target.gameIds[0]] },
+    for (const change of [{ sourceDate:"2026-11-19" }, { sourceDate:"2026-11-20" /* retired slate */ }, { sourceDate:"2026-11-22" }, { gameIds:[] }, { gameIds:[target.gameIds[0],target.gameIds[0]] },
       { gameIds:[...target.gameIds].reverse() }, { gameIds:[2025020003] }, { gitCommitSha:"0".repeat(40) }]) {
       const grant = signedOfficialGrant({ ...target, ...change }); setOfficialFixtureEnv(grant.approvalPublicKey);
       expect((await fakeOfficialInvocation(route, grant.header)).value.reason).toBe("approval_invalid");

@@ -711,7 +711,13 @@ export async function fetchDataForGameType(
     }
 
     const payload = (await response.json()) as Partial<NHLApiResponse>;
-    if (!Array.isArray(payload.data) || !Number.isSafeInteger(payload.total)) {
+    if (
+      !payload ||
+      !Array.isArray(payload.data) ||
+      typeof payload.total !== "number" ||
+      !Number.isSafeInteger(payload.total) ||
+      payload.total < 0
+    ) {
       throw new WgoDateProcessingError(
         "source_failure",
         `NHL API returned an invalid response contract for ${label}.`,
@@ -751,8 +757,17 @@ export async function fetchDataForGameType(
       `NHL API retry exhausted for ${label}`,
     );
   };
-  let start = 0;
-  let moreDataAvailable = true;
+  // NHL currently caps report pages at 100 rows, including requests for limit=-1.
+  const NHL_MAX_PAGE_SIZE = 100;
+  const NHL_REQUEST_CONCURRENCY = 4;
+  const NHL_BATCH_DELAY_MS = 250;
+  const pageSize = limit > 0 ? Math.min(limit, NHL_MAX_PAGE_SIZE) : NHL_MAX_PAGE_SIZE;
+  if (!Number.isSafeInteger(pageSize)) {
+    throw new WgoDateProcessingError(
+      "source_failure",
+      "NHL skater page size must be an integer.",
+    );
+  }
   const allData: AllSkaterStats = {
     skaterStats: [],
     skatersBio: [],
@@ -773,150 +788,102 @@ export async function fetchDataForGameType(
   };
   const getUrl = (
     reportName: string,
-    sort: string,
-    factCayenneExp: string = "gamesPlayed>=1",
-  ) =>
-    `https://api.nhle.com/stats/rest/en/skater/${reportName}?isAggregate=false&isGame=true&sort=${encodeURIComponent(sort)}&start=${start}&limit=${limit}&factCayenneExp=${factCayenneExp}&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedStartDate}%22%20and%20gameTypeId=${gameTypeId}`;
-  while (moreDataAvailable) {
-    const urls = {
-      skaterStats: getUrl(
-        "summary",
-        '[{"property":"points","direction":"DESC"},{"property":"goals","direction":"DESC"},{"property":"assists","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      skatersBio: getUrl(
-        "bios",
-        '[{"property":"lastName","direction":"ASC_CI"},{"property":"skaterFullName","direction":"ASC_CI"},{"property":"playerId","direction":"ASC"}]',
-        "",
-      ),
-      miscSkaterStats: getUrl(
-        "realtime",
-        '[{"property":"hits","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      faceOffStats: getUrl(
-        "faceoffpercentages",
-        '[{"property":"totalFaceoffs","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      faceoffWinLossStats: getUrl(
-        "faceoffwins",
-        '[{"property":"totalFaceoffWins","direction":"DESC"},{"property":"faceoffWinPct","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      goalsForAgainstStats: getUrl(
-        "goalsForAgainst",
-        '[{"property":"evenStrengthGoalDifference","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      penaltiesStats: getUrl(
-        "penalties",
-        '[{"property":"penaltyMinutes","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      penaltyKillStats: getUrl(
-        "penaltykill",
-        '[{"property":"shTimeOnIce","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      powerPlayStats: getUrl(
-        "powerplay",
-        '[{"property":"ppTimeOnIce","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      puckPossessionStats: getUrl(
-        "puckPossessions",
-        '[{"property":"satPct","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      satCountsStats: getUrl(
-        "summaryshooting",
-        '[{"property":"satTotal","direction":"DESC"},{"property":"usatTotal","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      satPercentagesStats: getUrl(
-        "percentages",
-        '[{"property":"satPercentage","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      scoringRatesStats: getUrl(
-        "scoringRates",
-        '[{"property":"pointsPer605v5","direction":"DESC"},{"property":"goalsPer605v5","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      scoringPerGameStats: getUrl(
-        "scoringpergame",
-        '[{"property":"pointsPerGame","direction":"DESC"},{"property":"goalsPerGame","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      shotTypeStats: getUrl(
-        "shottype",
-        '[{"property":"shootingPct","direction":"DESC"},{"property":"shootingPctBat","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-      timeOnIceStats: getUrl(
-        "timeonice",
-        '[{"property":"timeOnIce","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
-      ),
-    };
-    const NHL_REQUEST_CONCURRENCY = 4;
-    const NHL_BATCH_DELAY_MS = 250;
-    const entries = Object.entries(urls);
-    const responses: NHLApiResponse[] = [];
-    for (let i = 0; i < entries.length; i += NHL_REQUEST_CONCURRENCY) {
-      const batch = entries.slice(i, i + NHL_REQUEST_CONCURRENCY);
-      const batchResponses = await Promise.all(
-        batch.map(([label, url]) => fetchJsonWithRetry(url, label)),
+    sort: { property: string; direction: string }[],
+  ) => {
+    const isBio = reportName === "bios";
+    const sortByPlayer = [...sort, { property: "playerId", direction: "ASC" }];
+    if (!isBio) sortByPlayer.push({ property: "gameId", direction: "ASC" });
+    const encodedSort = encodeURIComponent(JSON.stringify(sortByPlayer));
+    const factCayenneExp = isBio ? "" : "gamesPlayed>=1";
+    return (start: number) =>
+      `https://api.nhle.com/stats/rest/en/skater/${reportName}?isAggregate=false&isGame=true&sort=${encodedSort}&start=${start}&limit=${pageSize}&factCayenneExp=${factCayenneExp}&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedStartDate}%22%20and%20gameTypeId=${gameTypeId}`;
+  };
+  const getGameReportUrl = (reportName: string, descendingProperties: string[]) =>
+    getUrl(
+      reportName,
+      descendingProperties.map((property) => ({ property, direction: "DESC" })),
+    );
+  const urls = {
+    skaterStats: getGameReportUrl("summary", ["points", "goals", "assists"]),
+    skatersBio: getUrl("bios", [
+      { property: "lastName", direction: "ASC_CI" },
+      { property: "skaterFullName", direction: "ASC_CI" },
+    ]),
+    miscSkaterStats: getGameReportUrl("realtime", ["hits"]),
+    faceOffStats: getGameReportUrl("faceoffpercentages", ["totalFaceoffs"]),
+    faceoffWinLossStats: getGameReportUrl("faceoffwins", [
+      "totalFaceoffWins",
+      "faceoffWinPct",
+    ]),
+    goalsForAgainstStats: getGameReportUrl("goalsForAgainst", [
+      "evenStrengthGoalDifference",
+    ]),
+    penaltiesStats: getGameReportUrl("penalties", ["penaltyMinutes"]),
+    penaltyKillStats: getGameReportUrl("penaltykill", ["shTimeOnIce"]),
+    powerPlayStats: getGameReportUrl("powerplay", ["ppTimeOnIce"]),
+    puckPossessionStats: getGameReportUrl("puckPossessions", ["satPct"]),
+    satCountsStats: getGameReportUrl("summaryshooting", ["satTotal", "usatTotal"]),
+    satPercentagesStats: getGameReportUrl("percentages", ["satPercentage"]),
+    scoringRatesStats: getGameReportUrl("scoringRates", [
+      "pointsPer605v5",
+      "goalsPer605v5",
+    ]),
+    scoringPerGameStats: getGameReportUrl("scoringpergame", [
+      "pointsPerGame",
+      "goalsPerGame",
+    ]),
+    shotTypeStats: getGameReportUrl("shottype", ["shootingPct", "shootingPctBat"]),
+    timeOnIceStats: getGameReportUrl("timeonice", ["timeOnIce"]),
+  } satisfies Record<keyof AllSkaterStats, (start: number) => string>;
+  type Report = [keyof AllSkaterStats, (start: number) => string];
+  let reports = Object.entries(urls) as Report[];
+  const totals = new Map<keyof AllSkaterStats, number>();
+
+  for (let start = 0; reports.length > 0; start += pageSize) {
+    const nextReports: Report[] = [];
+    for (let i = 0; i < reports.length; i += NHL_REQUEST_CONCURRENCY) {
+      const batch = reports.slice(i, i + NHL_REQUEST_CONCURRENCY);
+      const responses = await Promise.all(
+        batch.map(([label, buildUrl]) =>
+          fetchJsonWithRetry(buildUrl(start), label),
+        ),
       );
-      responses.push(...batchResponses);
-      if (i + NHL_REQUEST_CONCURRENCY < entries.length) {
+
+      for (const [index, response] of responses.entries()) {
+        const report = batch[index];
+        const [label] = report;
+        const total = totals.get(label) ?? response.total;
+        if (limit <= 0 && total >= 9_000) {
+          throw new WgoDateProcessingError(
+            "source_failure",
+            `NHL API returned ${total} ${label} rows for ${formattedStartDate} through ${formattedEndDate}; refusing a potentially capped response.`,
+          );
+        }
+        if (response.total !== total) {
+          throw new WgoDateProcessingError(
+            "source_failure",
+            `NHL API changed the ${label} total from ${total} to ${response.total} at offset ${start} for ${formattedStartDate} through ${formattedEndDate}.`,
+          );
+        }
+        const expectedRows = Math.min(pageSize, total - start);
+        if (response.data.length !== expectedRows) {
+          throw new WgoDateProcessingError(
+            "source_failure",
+            `NHL API returned ${response.data.length}/${expectedRows} ${label} rows at offset ${start} for ${formattedStartDate} through ${formattedEndDate}.`,
+          );
+        }
+        totals.set(label, total);
+        allData[label].push(...response.data);
+        if (start + pageSize < total) nextReports.push(report);
+      }
+      if (i + NHL_REQUEST_CONCURRENCY < reports.length || nextReports.length > 0) {
         await sleep(NHL_BATCH_DELAY_MS);
       }
     }
-    const [
-      skaterStatsResponse,
-      bioStatsResponse,
-      miscSkaterStatsResponse,
-      faceOffStatsResponse,
-      faceoffWinLossResponse,
-      goalsForAgainstResponse,
-      penaltiesResponse,
-      penaltyKillResponse,
-      powerPlayResponse,
-      puckPossessionResponse,
-      satCountsResponse,
-      satPercentagesResponse,
-      scoringRatesResponse,
-      scoringPerGameResponse,
-      shotTypeResponse,
-      timeOnIceResponse,
-    ] = responses;
-    if (limit <= 0) {
-      for (let index = 0; index < responses.length; index++) {
-        const [label] = entries[index];
-        const response = responses[index];
-        if (response.total >= 9_000) {
-          throw new WgoDateProcessingError(
-            "source_failure",
-            `NHL API returned ${response.total} ${label} rows for ${formattedStartDate} through ${formattedEndDate}; refusing a potentially capped response.`,
-          );
-        }
-        if (response.data.length !== response.total) {
-          throw new WgoDateProcessingError(
-            "source_failure",
-            `NHL API returned ${response.data.length}/${response.total} ${label} rows for ${formattedStartDate} through ${formattedEndDate}.`,
-          );
-        }
-      }
-    }
-    allData.skaterStats.push(...skaterStatsResponse.data);
-    allData.skatersBio.push(...bioStatsResponse.data);
-    allData.miscSkaterStats.push(...miscSkaterStatsResponse.data);
-    allData.faceOffStats.push(...faceOffStatsResponse.data);
-    allData.faceoffWinLossStats.push(...faceoffWinLossResponse.data);
-    allData.goalsForAgainstStats.push(...goalsForAgainstResponse.data);
-    allData.penaltiesStats.push(...penaltiesResponse.data);
-    allData.penaltyKillStats.push(...penaltyKillResponse.data);
-    allData.powerPlayStats.push(...powerPlayResponse.data);
-    allData.puckPossessionStats.push(...puckPossessionResponse.data);
-    allData.satCountsStats.push(...satCountsResponse.data);
-    allData.satPercentagesStats.push(...satPercentagesResponse.data);
-    allData.scoringRatesStats.push(...scoringRatesResponse.data);
-    allData.scoringPerGameStats.push(...scoringPerGameResponse.data);
-    allData.shotTypeStats.push(...shotTypeResponse.data);
-    allData.timeOnIceStats.push(...timeOnIceResponse.data);
-    moreDataAvailable =
-      limit > 0 && responses.some((res) => res.data.length === limit);
-    if (limit > 0) {
-      start += limit;
-    }
+    reports = nextReports;
   }
+  // Check the full snapshot before a date window splits summary rows for writes.
+  mapWgoRowsByPlayerGame(allData.skaterStats, "skater summary");
   return allData;
 }
 

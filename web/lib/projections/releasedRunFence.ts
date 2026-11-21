@@ -1,3 +1,5 @@
+import { forgeEnvScoped, PREGAME_PUBLICATION_METRIC } from "./forgeScopeProbe";
+
 // Projection runs made off the release path (a localhost dev server) carry a
 // null or `local:` git_sha. They stay private: readers drop them before any
 // limit, so one can never displace or stand in for a released run.
@@ -9,6 +11,14 @@ type NotFilterable = { not(column: string, operator: string, value: unknown): un
 /** Adds the off-release exclusion to a forge_runs query (or an embedded forge_runs column). */
 export function excludeOffReleaseRuns<Q extends NotFilterable>(query: Q, column = "git_sha"): Q {
   return (query.not(column, "is", null) as Q).not(column, "like", "local:*") as Q;
+}
+
+type IsFilterable = { is(column: string, value: null): unknown };
+
+/** For readers that pick a run without an exclusion proof: outside a game-scoped FORGE request, never select a pregame
+ * publication (one game, private custody). Proof-gated readers are fenced by externalInputProof instead. */
+export function excludePregamePublications<Q extends IsFilterable>(query: Q): Q {
+  return forgeEnvScoped() ? query : query.is(PREGAME_PUBLICATION_METRIC, null) as Q;
 }
 
 export function isOffReleaseGitSha(gitSha: string | null | undefined): boolean {

@@ -9,7 +9,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { captureProjectionInputs, capturedReadReceipt, projectionInputHash, type ProjectionInputRead } from "lib/projections/inputCapture";
+import { captureProjectionInputs, projectionInputHash, type ProjectionInputRead } from "lib/projections/inputCapture";
 import { candidatesFromWrites, CUTOFF, oracleRecord, runWriterScenario, SCENARIOS, type OracleRecord, type Scenario } from "./scenarios";
 import { isGoalieInputRead, readTokens, type RecordedRead } from "./readOrder";
 import { createCaptureTransport, DEFAULT_TRANSPORT_BUDGET } from "../transport";
@@ -20,8 +20,6 @@ import { buildLeague, TARGET } from "../__fixtures__/world/league";
 import type { World } from "../__fixtures__/world/store";
 import { skaterStageLoaders, type SkaterTeamInputs } from "lib/projections/stages/skater-stage";
 import { goalieStageLoaders, type GoalieGameInputs } from "lib/projections/stages/goalie-stage";
-import { calendarRevisionOf } from "lib/projections/issuedContext";
-import { PACKET_VERSION, type PregamePacket } from "../packet";
 
 vi.mock("lib/supabase/server", async () => (await import("./harness")).worldServerModule());
 vi.mock("lib/projections/inputCapture", async (importOriginal) => {
@@ -34,8 +32,8 @@ vi.mock("lib/projections/inputCapture", async (importOriginal) => {
       writerCaptures.push({ reads: result.reads, writes: result.writes });
       return result;
     },
-    replayProjectionInputs: async (reads: any, work: any, options: any) => {
-      const result = await original.replayProjectionInputs(reads, work, options);
+    replayProjectionInputs: async (reads: any, work: any) => {
+      const result = await original.replayProjectionInputs(reads, work);
       replayWrites.push(result.writes);
       return result;
     },
@@ -455,77 +453,6 @@ describe.skipIf(RECORD)("trend-band reads through the writer", () => {
       })))).rejects.toThrow("Native input collection refuses: the sustainability trend-band read failed for 2 team(s).");
     });
   }
-});
-
-describe.skipIf(RECORD)("qualified pregame publication calculation", () => {
-  const scenario = { ...SCENARIOS.find((item) => item.name === "goalie-override-multi-candidate")!,
-    decisionAsOf: "2026-11-14T19:55:00.123456Z" };
-
-  async function collectPacket() {
-    const { reads, result, transport } = await collect(scenario, { strict: true });
-    const { projectionModelEnvironment } = await import("lib/projections/run-forge-projections");
-    const { issuedContextAfter, candidates } = result;
-    const packet: PregamePacket = {
-      version: PACKET_VERSION,
-      binding: { claimId: RESERVED_RUN_ID, codeVersion: CODE_VERSION, policyId: "fixture-policy", gameId: TARGET.gameId,
-        slateDate: TARGET.slateDate, homeTeamId: TARGET.homeTeamId, awayTeamId: TARGET.awayTeamId,
-        homeAbbrev: TARGET.homeAbbrev, awayAbbrev: TARGET.awayAbbrev, inputCutoff: scenario.decisionAsOf,
-        scheduledStart: TARGET.startTime, calendarRevision: calendarRevisionOf(issuedContextAfter.schedule) },
-      readWindow: { start: FROZEN_NOW, end: FROZEN_NOW }, statedCutoff: FROZEN_NOW,
-      modelEnvironment: await withScenarioEnv(scenario.env, async () => projectionModelEnvironment()),
-      candidates, seasonBootstrapApplied: false, reads,
-      transport: { ...transport!.usage, stampToleranceMs: 0 },
-    };
-    return packet;
-  }
-
-  it("matches the actual writer's rows and retains only compact publication evidence", async () => {
-    const writer = await runWriterScenario(scenario);
-    const packet = await collectPacket();
-    const unexpectedIO = vi.fn(() => { throw new Error("replay touched the live fixture client"); });
-    activateWorld({ get tables() { return unexpectedIO(); }, get rpc() { return unexpectedIO(); }, onWrite: unexpectedIO });
-    const { computeForgePregamePublication } = await import("lib/projections/run-forge-projections");
-    const computed = await withScenarioEnv(scenario.env, () => computeForgePregamePublication(packet, { codeVersion: CODE_VERSION }));
-    expect(unexpectedIO).not.toHaveBeenCalled();
-    for (const [kind, rows] of Object.entries(computed.rows)) {
-      const table = kind === "players" ? "forge_player_projections" : `forge_${kind.slice(0, -1)}_projections`;
-      const expected = writer.writes.filter(ops => ops[0]?.args[0] === table)
-        .flatMap(ops => [ops.find(op => op.method === "upsert")!.args[0]].flat());
-      expect(expected.length).toBeGreaterThan(0);
-      expect(rows).toEqual(expected);
-    }
-    expect(computed.outputHash).toBe(oracleRecord(scenario.name, writer.reads, writer.writes).outputHash);
-    expect(computed.snapshot).toMatchObject({ inputCutoff: scenario.decisionAsOf, decisionAsOf: packet.statedCutoff,
-      codeVersion: CODE_VERSION, horizonGames: 1, gameIds: [TARGET.gameId], outputHash: computed.outputHash,
-      pregameCandidates: packet.candidates, inputProvenance: { capturedReads: capturedReadReceipt(packet.reads) } });
-    expect(computed.snapshot).not.toHaveProperty("reads");
-    expect(computed.metrics).toMatchObject({ execution_scope: { mode: "selected_games", requested_game_ids: [TARGET.gameId] },
-      games: 1, input_cutoff: scenario.decisionAsOf, decision_as_of_by_game: { [TARGET.gameId]: packet.statedCutoff },
-      analytics_sidecar: { status: "omitted_fenced_pregame_publication" } });
-    expect(replayWrites.at(-1)?.map(ops => ops[0].args[0])).not.toContain("player_prediction_outputs");
-  });
-
-  it("rejects an unrecorded optional read even when the writer catches the query error", async () => {
-    const packet = await collectPacket();
-    const missing = packet.reads.findIndex(read => read.request[0]?.args[0] === "forge_league_skater_physical_totals");
-    expect(missing).toBeGreaterThan(-1);
-    packet.reads.splice(missing, 1);
-    const { computeForgePregamePublication } = await import("lib/projections/run-forge-projections");
-    await expect(withScenarioEnv(scenario.env, () => computeForgePregamePublication(packet, { codeVersion: CODE_VERSION })))
-      .rejects.toThrow("Unrecorded projection input: rpc forge_league_skater_physical_totals");
-  });
-
-  it("rejects mismatched environment and games at start before replaying", async () => {
-    const packet = await collectPacket();
-    const { computeForgePregamePublication } = await import("lib/projections/run-forge-projections");
-    const compute = () => computeForgePregamePublication(packet, { codeVersion: CODE_VERSION });
-    await expect(withScenarioEnv({ ...scenario.env, FORGE_RESERVE_PASS_ENABLED: "false" }, compute))
-      .rejects.toThrow("code or model environment mismatch");
-    await expect(withScenarioEnv(scenario.env, () => {
-      vi.setSystemTime(new Date(TARGET.startTime));
-      return compute();
-    })).rejects.toThrow("outside the prospective calculation window");
-  });
 });
 
 // The writer's capture list is shared across tests; keep it from growing across the suite.

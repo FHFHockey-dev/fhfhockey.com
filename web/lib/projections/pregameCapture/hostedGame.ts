@@ -1,9 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { forgeSeasonBootstrapApplies, projectionModelEnvironment } from "../run-forge-projections";
-import { starterBoardCanaryGameIds, starterBoardFlags } from "../starterBoardFlags";
 import type { CaptureReport } from "./custody";
 import { collectNativePregameInputs } from "./nativeInputs";
-import { DEFAULT_CAPTURE_BUDGET, HOSTED_V2_BUDGET, HOSTED_V2_TIMING, PILOT_TRANSPORT_LIMITS, POLICY_ID } from "./policy";
+import { DEFAULT_CAPTURE_BUDGET, PILOT_TRANSPORT_LIMITS, POLICY_ID } from "./policy";
 import type { TerminalOutcome } from "./rpc";
 import { CAPTURE_ENABLED_ENV, runPrivatePregameCapture } from "./runner";
 import { scheduleReader } from "./scheduleReader";
@@ -18,7 +17,6 @@ export interface HostedPregameRequest {
   /** Earliest start the dispatcher has observed for this game. */
   safeStart?: string;
   codeVersion: string;
-  hostedV2?: { dispatchId: string; workDeadlineMs: number };
 }
 
 export type HostedPregameReason =
@@ -40,18 +38,6 @@ export interface HostedPregameDeps {
   signal?: AbortSignal;
   readSchedule?: (supabaseUrl: string, serviceRoleKey: string, request: HostedPregameRequest, signal: AbortSignal) => Promise<SlateGame[]>;
   runCapture?: typeof runPrivatePregameCapture;
-}
-
-/** The DB compares this singleton to the enrolled game before it consumes a dispatch. */
-export function hostedComputeGameId(env: Record<string, string | undefined>): number | null {
-  const { capture, compute } = starterBoardFlags(env);
-  if (!capture || !compute) return null;
-  try {
-    const ids = starterBoardCanaryGameIds(env);
-    return ids?.length === 1 ? ids[0] : null;
-  } catch {
-    return null;
-  }
 }
 
 const SCHEDULE_READ_MS = 10_000;
@@ -76,7 +62,6 @@ function captureResult(report: CaptureReport): HostedPregameResult {
     };
   }
   if (!claimId && !outcome) {
-    if (reason === "claim_window_closed") return skipped("dispatch_window_closed");
     if (reason === "pin_schedule_changed" || reason === "claim_refused:binding_mismatch") return skipped("schedule_changed");
     if (reason?.startsWith("pin_failed:")) return skipped(timedOut ? "statement_timeout" : "pin_failed", timedOut ? "statement_timeout" : null);
   }
@@ -91,12 +76,7 @@ export async function runHostedPregameGame(request: HostedPregameRequest, deps: 
   const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!supabaseUrl || !serviceRoleKey) return skipped("capture_configuration_invalid");
 
-  const v2 = request.hostedV2;
-  if (v2 && hostedComputeGameId(env) !== request.gameId) return skipped("capture_disabled");
   const now = deps.now ?? Date.now;
-  const budget = v2 ? HOSTED_V2_BUDGET : DEFAULT_CAPTURE_BUDGET;
-  const hasPinBudget = () => !v2 || now() + HOSTED_V2_BUDGET.pinMs + budget.rpcMs + budget.requiredMs <= v2.workDeadlineMs;
-  if (!hasPinBudget()) return skipped("dispatch_window_closed");
   let scheduledStart: bigint;
   const requestedGame = { ...request, status: "FUT" };
   try {
@@ -104,15 +84,15 @@ export async function runHostedPregameGame(request: HostedPregameRequest, deps: 
       || !/^[a-f0-9]{40}$/i.test(request.codeVersion)) return skipped("invalid_dispatch_binding");
     scheduledStart = parseInstantMicros(request.scheduledStart);
     if (request.safeStart !== undefined && parseInstantMicros(request.safeStart) !== scheduledStart) return skipped("schedule_changed");
-    if (now() > latestDispatchAtOf(requestedGame, budget)) return skipped("dispatch_window_closed");
+    if (now() > latestDispatchAtOf(requestedGame, DEFAULT_CAPTURE_BUDGET)) return skipped("dispatch_window_closed");
   } catch {
     return skipped("invalid_dispatch_binding");
   }
 
-  const deadline = AbortSignal.timeout(v2 ? Math.max(0, v2.workDeadlineMs - now()) : MAX_CAPTURE_RUNTIME_MS);
+  const deadline = AbortSignal.timeout(MAX_CAPTURE_RUNTIME_MS);
   const signal = deps.signal ? AbortSignal.any([deps.signal, deadline]) : deadline;
   if (signal.aborted) return skipped("dispatch_window_closed");
-  const scheduleSignal = AbortSignal.any([signal, AbortSignal.timeout(v2 ? HOSTED_V2_TIMING.scheduleMs : SCHEDULE_READ_MS)]);
+  const scheduleSignal = AbortSignal.any([signal, AbortSignal.timeout(SCHEDULE_READ_MS)]);
   try {
     const games = deps.readSchedule
       ? await deps.readSchedule(supabaseUrl, serviceRoleKey, request, scheduleSignal)
@@ -125,7 +105,7 @@ export async function runHostedPregameGame(request: HostedPregameRequest, deps: 
       || !game.currentScheduledStart || parseInstantMicros(game.scheduledStart) !== scheduledStart
       || parseInstantMicros(game.currentScheduledStart) !== scheduledStart) return skipped("schedule_changed");
     if (!PREGAME_STATUSES.has(game.status)) return skipped("game_no_longer_pregame");
-    if (!hasPinBudget() || now() > latestDispatchAtOf(game, budget)) return skipped("dispatch_window_closed");
+    if (now() > latestDispatchAtOf(game, DEFAULT_CAPTURE_BUDGET)) return skipped("dispatch_window_closed");
   } catch (error) {
     return STATEMENT_TIMEOUT.test(String(error)) ? skipped("statement_timeout", "statement_timeout") : skipped("schedule_unavailable");
   }
@@ -140,10 +120,10 @@ export async function runHostedPregameGame(request: HostedPregameRequest, deps: 
       seasonBootstrap: ({ slateDate, inputCutoff }) => forgeSeasonBootstrapApplies({
         compute: true, explicitCutoff: true, horizonGames: 1, asOfDate: slateDate, decisionAsOf: inputCutoff,
       }),
-      modelEnvironment: projectionModelEnvironment, budget, hostedDispatchId: v2?.dispatchId, transportLimits: PILOT_TRANSPORT_LIMITS,
+      modelEnvironment: projectionModelEnvironment, budget: DEFAULT_CAPTURE_BUDGET, transportLimits: PILOT_TRANSPORT_LIMITS,
     }, {
       gameId: request.gameId, slateDate: request.slateDate, policyId: POLICY_ID, codeVersion: request.codeVersion,
-      expectedScheduledStart: request.scheduledStart, workDeadlineMs: v2?.workDeadlineMs,
+      expectedScheduledStart: request.scheduledStart,
     }));
   } catch (error) {
     return unknown(null, STATEMENT_TIMEOUT.test(String(error)));

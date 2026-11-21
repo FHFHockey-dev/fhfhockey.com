@@ -1,6 +1,0 @@
-{
-  "framework": "nextjs",
-  "installCommand": "cd .. && npm ci",
-  "buildCommand": "../node_modules/.bin/next build",
-  "functions": { "pages/api/**/*.ts": { "maxDuration": 240 } }
-}

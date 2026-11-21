@@ -19,6 +19,7 @@
 // A run that has a snapshot is judged by its snapshot alone: no verified release or closure overrides captured evidence.
 // Absent, malformed or contradictory proof means not proven; historical rows stay stored, only unserved.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { forgeEnvScoped } from "./forgeScopeProbe";
 import supabase from "lib/supabase/server";
 import { acceptedNewsSupersedes } from "./acceptedNews";
 import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "./calibrationEligibility";
@@ -35,7 +36,7 @@ export const UNPROVEN_EXTERNAL_INPUT_MESSAGE =
 /** Ids per proof read, keeping each request URL short. */
 const PROOF_READ_CHUNK = 100;
 /** Small projections of the snapshot payload: never the captured reads themselves. */
-const PROOF_COLUMNS = "entity_key,available_at,snapshot_version:payload->>version,snapshot_run_id:payload->>runId,"
+const PROOF_COLUMNS = "entity_key,available_at,snapshot_version:payload->>version,snapshot_run_id:payload->>runId,snapshot_kind:payload->>snapshotKind,"
   + "rolling_player_history_contract:payload->inputProvenance->>rolling_player_history_contract,"
   + "external_fantasy_input_contract:payload->inputProvenance->>external_fantasy_input_contract,"
   + "captured_reads:payload->inputProvenance->capturedReads,snapshot_code_version:payload->>codeVersion";
@@ -62,6 +63,8 @@ export function validCapturedReadReceipt(receipt: unknown, notAfter: string): bo
 
 /** One snapshot row (selected with PROOF_COLUMNS) proves its own run's exclusion. */
 export function snapshotProvesExternalInputExclusion(row: Row): boolean {
+  // A pregame publication proves its exclusion only to its own game-scoped readback (forgeScopeProbe.ts).
+  if (row?.snapshot_kind === "qualified_pregame_receipt" && !forgeEnvScoped()) return false;
   return typeof row?.entity_key === "string" && row.snapshot_run_id === row.entity_key
     && row.snapshot_version === "forge-inputs-v1"
     && row.external_fantasy_input_contract === FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT
@@ -179,8 +182,7 @@ export function runProofDiagnostics(runId: string, proof: ExternalInputProof | n
 
 /** Read-only: the proven runs among `runIds`. Only runs with no snapshot have their attribution read. A failed read
  * throws; callers treat it as unproven, never as proven. */
-export async function loadExternalInputProof(db: SupabaseClient<any>, runIds: readonly string[],
-  capturedSuccessTimes?: Map<string, string>): Promise<Map<string, ExternalInputProof>> {
+export async function loadExternalInputProof(db: SupabaseClient<any>, runIds: readonly string[]): Promise<Map<string, ExternalInputProof>> {
   const ids = [...new Set(runIds.filter(id => typeof id === "string" && id.length > 0))];
   const snapshots = await inChunks(ids, async chunk => rowsOf(await (db as any).from("player_forecast_source_observations")
     .select(PROOF_COLUMNS).eq("provider", FORGE_RUN_INPUT_SNAPSHOT.provider).eq("dataset_key", FORGE_RUN_INPUT_SNAPSHOT.datasetKey)
@@ -189,15 +191,7 @@ export async function loadExternalInputProof(db: SupabaseClient<any>, runIds: re
   const uncaptured = ids.filter(id => !captured.has(id));
   const runRows = await inChunks(uncaptured, async chunk => rowsOf(await (db as any).from("forge_runs")
     .select(RUN_ATTRIBUTION_COLUMNS).in("run_id", chunk), "FORGE run attribution"));
-  const proven = externalInputProofByRun(snapshots, ids, runRows);
-  // Public input snapshots stamp capturedAt after the succeeded run update has returned.
-  // Use the last observation when several snapshots participate in the exclusion proof.
-  if (capturedSuccessTimes) for (const row of snapshots) {
-    if (proven.get(row.entity_key)?.basis !== "captured_snapshot") continue;
-    const previous = capturedSuccessTimes.get(row.entity_key);
-    if (!previous || Date.parse(row.available_at) > Date.parse(previous)) capturedSuccessTimes.set(row.entity_key, row.available_at);
-  }
-  return proven;
+  return externalInputProofByRun(snapshots, ids, runRows);
 }
 
 // Lives here, not in apiHelpers: run-projection-accuracy (inside the FORGE producer closure) imports apiHelpers, and

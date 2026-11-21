@@ -1,0 +1,119 @@
+== A. service_role memberships (transitive)
+        role        |        via         
+--------------------+--------------------
+ pgsodium_keyholder | pgsodium_keyholder
+ pgsodium_keyiduser | pgsodium_keyholder
+
+== B. SECURITY DEFINER functions service_role may EXECUTE, owned by a privileged role, with dynamic SQL
+     function      |  owner   | dynamic_sql 
+-------------------+----------+-------------
+ execute_sql(text) | postgres | t
+
+== C. service_role write/trigger/truncate privileges in the evidence schemas (expect none)
+ relation | privilege_type 
+----------+----------------
+
+        schema         | service_role_create | service_role_usage 
+-----------------------+---------------------+--------------------
+ forge_pregame_capture | f                   | f
+ forge_witness         | f                   | t
+ forge_witness_api     | f                   | f
+ public                | t                   | t
+
+== D. definer owners that can grant roles (CREATEROLE) and authenticator memberships
+       rolname       | rolsuper | rolcreaterole | rolbypassrls 
+---------------------+----------+---------------+--------------
+ forge_witness_owner | f        | f             | f
+ postgres            | f        | t             | t
+ service_role        | f        | f             | t
+
+ authenticator_may_use_witness_role | authenticator_may_use_owner 
+------------------------------------+-----------------------------
+ f                                  | f
+
+== E. owners of the live-fence objects
+                oid                 |   pg_get_userbyid   
+------------------------------------+---------------------
+ forge_pregame_capture.live_runs    | postgres
+ forge_pregame_capture.publications | postgres
+ forge_witness.credentials          | forge_witness_owner
+ forge_witness.verdicts             | forge_witness_owner
+
+== G. privileged SECURITY DEFINER functions without a pinned search_path that service_role can EXECUTE (search-path hijack candidates)
+ function | owner 
+----------+-------
+
+== F. exploit probes as service_role (each rolled back)
+-- F1 make the witness role reachable through PostgREST (then any holder of the JWT secret can act as the verifier)
+BEGIN
+SET
+ execute_sql 
+-------------
+ 
+
+RESET
+                        ?column?                        
+--------------------------------------------------------
+ F1 authenticator now member of forge_witness_api: true
+
+ROLLBACK
+-- F2 become the verifier owner (CREATEROLE definer grants itself the role), then read the witness credential
+BEGIN
+SET
+ execute_sql 
+-------------
+ 
+
+ execute_sql 
+-------------
+ 
+
+RESET
+                      ?column?                      
+----------------------------------------------------
+ F2 credential rows readable through execute_sql: 0
+
+ROLLBACK
+-- F3 switch off the publication verdict trigger
+BEGIN
+SET
+ execute_sql 
+-------------
+ 
+
+RESET
+                ?column?                
+----------------------------------------
+ F3 require_live_verdict enabled: false
+
+ROLLBACK
+-- F4 rewrite the publisher gate itself
+BEGIN
+SET
+ execute_sql 
+-------------
+ 
+
+ execute_sql 
+-------------
+ 
+
+RESET
+        ?column?        
+------------------------
+ F4 gate replaced: true
+
+ROLLBACK
+-- F5 control: direct writes without execute_sql (expect permission denied)
+BEGIN
+SET
+ERROR:  permission denied for table credentials
+ROLLBACK
+BEGIN
+SET
+ERROR:  permission denied for table verdicts
+ROLLBACK
+BEGIN
+SET
+ERROR:  permission denied for schema forge_pregame_capture
+ROLLBACK

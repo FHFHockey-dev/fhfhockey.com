@@ -13,19 +13,22 @@ afterEach(() => { for (const dir of temps.splice(0)) rmSync(dir, { recursive: tr
 const sourceDate = "2026-11-19", runId = "abcdefab-1234-4567-8abc-123456789abc", nativeRunId = "12345678-1234-4567-8abc-123456789abc";
 const nativeManifestSHA256 = "9".repeat(64), deploymentId = "dpl_test", gitCommitSha = "a".repeat(40);
 const identity = { runId, sourceDate, nativeRunId, nativeManifestSHA256 };
-const claimedAtUTC = "2026-11-20T12:39:59.999999+00:00", asOfUTC = "2026-11-20T12:40:05.000Z";
-const nativeRetrievedAtUTC = { individual: "2026-11-20T12:05:20.001Z", onIce: "2026-11-20T12:05:45.003Z" };
+const claimedAtUTC = "2026-11-20T12:39:59.999999+00:00", asOfUTC = "2026-11-20T12:40:05.000Z", asOfUTCDefault = asOfUTC;
+const nativeRetrievedAtUTC = { individual: "2026-11-20T12:05:20.001Z", onIce: "2026-11-20T12:05:45.003Z" }, nativeRetrievedDefault = nativeRetrievedAtUTC;
 const hash = (b: Buffer) => createHash("sha256").update(new Uint8Array(b)).digest("hex");
 const json = (v: unknown) => Buffer.from(JSON.stringify(v) + "\n");
-type Change = { file?: (file: string, b: Buffer) => Buffer; result?: Record<string, unknown>; manifest?: Record<string, unknown> };
+type Change = { file?: (file: string, b: Buffer) => Buffer; result?: Record<string, unknown>; manifest?: Record<string, unknown>; day?: string };
 
 function fixture(change: Change = {}) {
+  // Every recorded clock moved to another real day (a hosted replay run later than sourceDate + 1).
+  const at = (value: string) => change.day ? value.replaceAll("2026-11-20T", change.day + "T") : value;
+  const asOfUTC = at(asOfUTCDefault), nativeRetrievedAtUTC = { individual: at(nativeRetrievedDefault.individual), onIce: at(nativeRetrievedDefault.onIce) };
   const dir = mkdtempSync(join(tmpdir(), "context-v6-readback-"));
   temps.push(dir);
   const prefix = ["request-context-v1", sourceDate, runId].join("/");
   const fileDir = join(dir, "objects", prefix);
   mkdirSync(fileDir, { recursive: true });
-  const db = readFileSync(join(__dirname, "../../lib/blsh/nativeCaptureV6/__fixtures__/request-context-v1.sample.json"));
+  const db = Buffer.from(at(readFileSync(join(__dirname, "../../lib/blsh/nativeCaptureV6/__fixtures__/request-context-v1.sample.json")).toString()));
   const context = JSON.parse(db.toString());
   const projected = buildRequestFromContextV1(context, { capturedAtUTC: asOfUTC });
   const files: Record<string, Buffer> = { "DB-CONTEXT.json": db, ...projected.rawFiles, "CURRENT-REQUEST.json": json(projected.request) };
@@ -44,10 +47,10 @@ function fixture(change: Change = {}) {
   emit("MANIFEST.json", json({ version: "fhfh.blsh.request-context-manifest.v1", ...identity, files: records, ...change.manifest }));
   const pins = { ...identity, manifestSHA256: records[7].sha256, deploymentId, gitCommitSha };
   const run = { run_id: runId, source_date: sourceDate, native_run_id: nativeRunId, native_manifest_sha256: nativeManifestSHA256,
-    state: "packet_complete_pending_review", reason: null, claimed_at: claimedAtUTC, closed_at: "2026-11-20T12:40:05.000009+00:00",
+    state: "packet_complete_pending_review", reason: null, claimed_at: at(claimedAtUTC), closed_at: at("2026-11-20T12:40:05.000009+00:00"),
     manifest_sha256: pins.manifestSHA256 };
   const rows = records.map((r, i) => ({ ordinal: i + 1, path: prefix + "/" + r.file, bytes: r.bytes, sha256: r.sha256, run_id: runId,
-    written_at: "2026-11-20T12:40:05.00000" + (i + 1) + "+00:00" }));
+    written_at: at("2026-11-20T12:40:05.00000" + (i + 1) + "+00:00") }));
   function metadata() {
     writeFileSync(join(dir, "run.json"), JSON.stringify(run));
     writeFileSync(join(dir, "objects.json"), JSON.stringify(rows));
@@ -133,5 +136,25 @@ describe("request context export readback", () => {
     const duplicate = (b: Buffer) => Buffer.from(b.toString().replace("{", '{"version":1,'));
     expect(fixture({ file: (file, b) => file === target ? duplicate(b) : b }).read).toThrow("duplicate_json_member");
     expect(fixture({ file: (file, b) => file === target ? Buffer.from([0xff]) : b }).read).toThrow();
+  });
+});
+
+describe("request context export readback of a hosted replay run on a later real day", () => {
+  it("accepts it only with the independently pinned replay capture day, and echoes that pin", () => {
+    const f = fixture({ day: "2026-11-21" });
+    expect(f.read).toThrow("context_clock_mismatch");
+    const result = readRequestContextV6Export(f.dir, { ...f.pins, replayCaptureDay: "2026-11-21" });
+    expect(result.receipt).toMatchObject({ ...f.pins, replayCaptureDay: "2026-11-21", claimedAtUTC: "2026-11-21T12:39:59.999999+00:00" });
+    for (const replayCaptureDay of ["2026-11-20", "2026-11-22"]) {
+      expect(() => readRequestContextV6Export(f.dir, { ...f.pins, replayCaptureDay })).toThrow("context_clock_mismatch");
+    }
+    for (const replayCaptureDay of ["2026-11-19", "2026-11-31", "2026-11-21T00:00:00Z", "", "2027-07-01"]) {
+      expect(() => readRequestContextV6Export(f.dir, { ...f.pins, replayCaptureDay })).toThrow("context_date_invalid");
+    }
+  });
+  it("leaves a live export's receipt unchanged without the pin and accepts sourceDate + 1 as an explicit pin", () => {
+    const f = fixture();
+    expect(Object.keys(f.read().receipt)).not.toContain("replayCaptureDay");
+    expect(readRequestContextV6Export(f.dir, { ...f.pins, replayCaptureDay: "2026-11-20" }).receipt.replayCaptureDay).toBe("2026-11-20");
   });
 });

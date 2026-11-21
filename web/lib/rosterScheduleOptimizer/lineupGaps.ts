@@ -4,8 +4,7 @@ import { playerValueKnown } from "./planning";
 import { dropContribution, dropEligible, reservedPlayerIds, retentionCaution, suggestedDrop, type RetentionCaution } from "./retention";
 import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
-import { reserveCodeOf, reserveParticipationUnknown } from "../rosterScheduleData/bridgeForecastWire";
-import type { GameForecast, PlanEvaluation, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
+import type { PlanEvaluation, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
 import type { ActiveSlotType } from "./types";
 
 export type LineupGap = { date: string; slot: ActiveSlotType; open: number };
@@ -28,19 +27,6 @@ export type LineupGapReport = {
 };
 
 const descending = (left: number | null, right: number | null) => left === right ? 0 : left === null ? 1 : right === null ? -1 : right - left;
-
-function bridgeBlocker(forecast: GameForecast, missingTargets: string[]): string | null {
-  const code = reserveCodeOf(forecast);
-  if (!code || !reserveParticipationUnknown(code)) return null;
-  const conditional = missingTargets.length > 0 && missingTargets.every(key => Number.isFinite(forecast.conditionalStats?.[key]));
-  const assumption = code.startsWith("goalie:") ? "he starts" : "he plays";
-  if (code === "skater:no_forge_line" || code === "goalie:no_forge_line") {
-    return conditional ? `no current FORGE player projection (earlier estimate assumes ${assumption})` : "no current FORGE player projection";
-  }
-  if (conditional && code !== "goalie:start_unknown_team_line") return `participation unconfirmed (FORGE estimate assumes ${assumption})`;
-  return null;
-}
-
 function group(entries: Array<{ date: string; slot: ActiveSlotType }>): LineupGap[] {
   const counts = new Map<string, LineupGap>();
   for (const { date, slot } of entries) {
@@ -84,15 +70,11 @@ export function lineupGapReport(snapshot: PlanningSnapshot, intent: PlanIntent, 
   const blocking = new Map<string, Map<string, Set<string>>>();
   if (points && baseline.projectedValue === null) for (const issue of baseline.recommendation?.unresolved ?? []) {
     const player = players.get(issue.playerId);
-    const forecast = snapshot.forecasts.find(row => row.playerId === issue.playerId && row.gameId === issue.gameId);
     const why = (issue.reasons ?? []).filter(reason => reason !== "no_issued_revision").map(reason => reason.replaceAll("_", " "));
-    // An expired, conflicted or otherwise rejected row cannot explain the current decision.
-    const bridgeReason = forecast && issue.reasons?.every(reason => reason === "missing_target" || reason === "use_not_approved")
-      ? bridgeBlocker(forecast, issue.missingTargets) : null;
     const kind = player?.eligibilityVerified !== true ? "league positions not verified"
-      : !forecast
+      : !snapshot.forecasts.some(forecast => forecast.playerId === issue.playerId && forecast.gameId === issue.gameId)
         ? issue.reasons?.includes("no_issued_revision") || !why.length ? "no FORGE projection issued" : `no projection (${why.join(", ")})`
-        : bridgeReason ?? `no usable ${issue.missingTargets.length ? issue.missingTargets.join(", ") : "projection"}${why.length ? ` (${why.join(", ")})` : ""}`;
+        : `no usable ${issue.missingTargets.length ? issue.missingTargets.join(", ") : "projection"}${why.length ? ` (${why.join(", ")})` : ""}`;
     const kinds = blocking.get(issue.playerId) ?? new Map<string, Set<string>>();
     blocking.set(issue.playerId, kinds.set(kind, (kinds.get(kind) ?? new Set()).add(issue.date)));
   }

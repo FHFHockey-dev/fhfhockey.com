@@ -11,6 +11,9 @@
     "pages/api/v1/db/blsh-native-capture.ts": {
       "maxDuration": 250
     },
+    "pages/api/v1/db/blsh-replay-native.ts": {
+      "maxDuration": 249
+    },
     "pages/api/v1/db/forge-pregame-capture.ts": {
       "maxDuration": 420
     }

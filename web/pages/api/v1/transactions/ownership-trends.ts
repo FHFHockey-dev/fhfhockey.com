@@ -24,8 +24,6 @@ type TrendPlayer = {
   previous: number;
   delta: number;
   deltaPct: number;
-  movementStartDate: string;
-  movementEndDate: string;
   sparkline: TrendPoint[];
 };
 
@@ -33,10 +31,6 @@ type YahooToNhlMap = Map<string, number>;
 
 type SupabaseQueryClient = {
   from(table: string): any;
-};
-
-type TrendQueryClient = SupabaseQueryClient & {
-  rpc(name: string, params: Record<string, number>, options: { get: true }): PromiseLike<{ data: any; error: unknown }>;
 };
 
 type OwnershipTrendPayload = {
@@ -73,56 +67,55 @@ function chunk<T>(values: T[], size: number): T[][] {
   return chunks;
 }
 
-export async function fetchOwnershipPlayerRows(
-  supabase: Pick<TrendQueryClient, "rpc">,
-  season?: number,
-): Promise<any[]> {
-  const rows: any[] = [];
-  const seenKeys = new Set<string>();
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await supabase.rpc("homepage_yahoo_ownership_page", {
-      p_offset: from,
-      ...(season == null ? {} : { p_season: season }),
-    }, { get: true });
-    if (error) throw error;
-    if (!Array.isArray(data)) throw new Error("Missing ownership page");
-    for (const record of data) {
-      const { observation_dates: dates, observation_values: values, page_count, ...row } = record;
-      if (page_count !== data.length || typeof row.player_key !== "string" ||
-          !row.player_key || seenKeys.has(row.player_key)) {
-        throw new Error("Incomplete ownership page");
-      }
-      if (!Array.isArray(dates) || !Array.isArray(values) || dates.length !== values.length) {
-        throw new Error("Incomplete ownership observations");
-      }
-      seenKeys.add(row.player_key);
-      rows.push({
-        ...row,
-        ownership_timeline: dates.map((date: string, index: number) => ({ date, value: values[index] })),
-      });
-    }
-    if (data.length < PAGE_SIZE) return rows;
-  }
-}
-
 export async function fetchYahooPlayerRows(args: {
   supabase: SupabaseQueryClient;
   select: string;
   season?: number;
 }): Promise<any[]> {
   const rows: any[] = [];
+  const includesHistory = args.select.includes("normalized_ownership_timeline");
   for (let from = 0; ; from += PAGE_SIZE) {
-    let query = args.supabase.from("yahoo_players_with_normalized_history")
-      .select(args.select)
+    let query = args.supabase
+      .from("yahoo_players_with_normalized_history")
+      // OFFSET applies after the view's history aggregate. Page cheap keys
+      // first so skipped players never have their histories rebuilt.
+      .select(includesHistory ? "player_key" : args.select)
       .order("player_id", { ascending: true })
       .order("season", { ascending: true, nullsFirst: true })
       .range(from, from + PAGE_SIZE - 1);
     if (args.season != null) query = query.eq("season", args.season);
     const { data, error } = await query;
     if (error) throw error;
-    rows.push(...(data ?? []));
-    if (!data || data.length < PAGE_SIZE) return rows;
+    if (!data || data.length === 0) break;
+    if (includesHistory) {
+      const keys = data.map((row: any) => row.player_key);
+      if (keys.some((key: unknown) => typeof key !== "string" || !key) || new Set(keys).size !== keys.length) {
+        throw new Error("Invalid ownership page identities");
+      }
+      const byKey = new Map<string, any>();
+      for (const keyChunk of chunk<string>(keys, MAP_CHUNK_SIZE)) {
+        let historyQuery = args.supabase
+          .from("yahoo_players_with_trend_history")
+          .select(args.select)
+          .in("player_key", keyChunk)
+          .order("player_key", { ascending: true })
+          .range(0, keyChunk.length - 1);
+        if (args.season != null) historyQuery = historyQuery.eq("season", args.season);
+        const { data: historyRows, error: historyError } = await historyQuery;
+        if (historyError) throw historyError;
+        for (const row of historyRows ?? []) byKey.set(row.player_key, row);
+        if ((historyRows?.length ?? 0) !== keyChunk.length || keyChunk.some(key => !byKey.has(key))) {
+          throw new Error("Incomplete ownership history page");
+        }
+      }
+      // Preserve the original player_id/season ordering, including tied deltas.
+      rows.push(...keys.map((key: string) => byKey.get(key)));
+    } else {
+      rows.push(...data);
+    }
+    if (data.length < PAGE_SIZE) break;
   }
+  return rows;
 }
 
 async function fetchYahooDraftHistoryRows(args: {
@@ -297,28 +290,67 @@ const trendSnapshots = createTrendRequestCache<TrendSnapshot>(60_000, 4);
 export function clearOwnershipTrendCache() { trendSnapshots.clear(); }
 
 async function loadTrendSnapshot(
-  supabase: TrendQueryClient,
+  supabase: SupabaseQueryClient,
   metric: TrendMetric,
   season?: number,
 ): Promise<TrendSnapshot> {
-    const readRows = async (sourceSeason?: number) => {
-      if (metric === "ownership") return fetchOwnershipPlayerRows(supabase, sourceSeason);
-      const columns = "player_key, player_id, full_name, headshot_url, average_draft_pick";
+    const metricSelect =
+      metric === "adp"
+        ? "average_draft_pick"
+        : "ownership_timeline:normalized_ownership_timeline";
+    const selectWithMeta = `player_key, player_id, full_name, headshot_url, display_position, editorial_team_full_name, editorial_team_abbreviation, eligible_positions, uniform_number, ${metricSelect}`;
+    const selectMinimal = `player_key, player_id, full_name, headshot_url, ${metricSelect}`;
+
+    let data: any[] = [];
+    let seasonFallbackApplied = false;
+    try {
+      data = await fetchYahooPlayerRows({
+        supabase,
+        select: selectWithMeta,
+        season
+      });
+    } catch (error: any) {
+      const msg = String(error.message || "").toLowerCase();
+      const missingCols =
+        msg.includes("display_position") ||
+        msg.includes("editorial_team_full_name") ||
+        msg.includes("editorial_team_abbreviation") ||
+        msg.includes("eligible_positions") ||
+        msg.includes("uniform_number") ||
+        msg.includes("column") ||
+        msg.includes("does not exist");
+      if (!missingCols) throw error;
+      data = await fetchYahooPlayerRows({
+        supabase,
+        select: selectMinimal,
+        season
+      });
+    }
+    if (data.length === 0 && season) {
+      seasonFallbackApplied = true;
       try {
-        return await fetchYahooPlayerRows({
+        data = await fetchYahooPlayerRows({
           supabase,
-          select: columns + ", display_position, editorial_team_full_name, editorial_team_abbreviation, eligible_positions, uniform_number",
-          season: sourceSeason,
+          select: selectWithMeta
         });
       } catch (error: any) {
-        const missingColumns = /display_position|editorial_team_full_name|editorial_team_abbreviation|eligible_positions|uniform_number|column|does not exist/i;
-        if (!missingColumns.test(String(error?.message ?? ""))) throw error;
-        return fetchYahooPlayerRows({ supabase, select: columns, season: sourceSeason });
+        const msg = String(error.message || "").toLowerCase();
+        const missingCols =
+          msg.includes("display_position") ||
+          msg.includes("editorial_team_full_name") ||
+          msg.includes("editorial_team_abbreviation") ||
+          msg.includes("eligible_positions") ||
+          msg.includes("uniform_number") ||
+          msg.includes("column") ||
+          msg.includes("does not exist");
+        if (!missingCols) throw error;
+        data = await fetchYahooPlayerRows({
+          supabase,
+          select: selectMinimal
+        });
       }
-    };
-    let rows = await readRows(season);
-    const seasonFallbackApplied = Boolean(season) && rows.length === 0;
-    if (seasonFallbackApplied) rows = await readRows();
+    }
+    const rows: any[] = Array.isArray(data) ? data : [];
     let adpTimelines = new Map<string, TrendPoint[]>();
     if (metric === "adp") {
       const capturedAfter = new Date();
@@ -476,8 +508,6 @@ export default async function handler(
         previous,
         delta,
         deltaPct,
-        movementStartDate: previousPoint.date,
-        movementEndDate: latestPoint.date,
         sparkline: sparkSlice
       };
 

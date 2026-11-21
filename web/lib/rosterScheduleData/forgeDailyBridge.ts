@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { calendarLeadDay, validForecastCalendarPolicy, type AnyForecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { loadDailyBoardEvidence, type DailyBoardEvidence } from "lib/projections/dailyBoardEvidence";
 import { buildSkaterModeledHeadTotals, resolveSkaterPkBasis } from "lib/projections/modeledHeadTotals";
-import { timestampMicros } from "lib/projections/evidenceTime";
 import { excludeOffReleaseRuns, restrictRunsToHorizon } from "lib/projections/releasedRunFence";
 import { forgeRunScopedGameIds, keepRowsOfServingRun, loadExternalInputProof, RUN_SCOPE_COLUMNS, runProofDiagnostics, selectRunsByGame,
   type RunsByGame } from "lib/projections/externalInputProof";
@@ -18,49 +17,7 @@ import { abortableReads, pages, withinDeadline } from "./planningInputs";
 import { bridgeAllowedUses, bridgeWireRowBytes, FORGE_DAILY_BRIDGE_VERSION, jsonUtf8Bytes, isReserveLine, RESERVE_FORECAST_NOTES, reserveAppearanceProbability, reserveCodeOf, type BridgeRunProof, type ReserveCode } from "./bridgeForecastWire";
 
 type Row = Record<string, any>;
-type Run = { runId: string; asOfDate: string; issuedAt: string; gitSha: string | null; proof: BridgeRunProof | null;
-  cutoffAt: string | null; gameCutoffs: Map<number, string>; scope: number[] | null };
-
-function publicationTime(value: unknown): string | null {
-  const micros = typeof value === "string" ? timestampMicros(value) : null;
-  // The planning clock resolves milliseconds. Never round a PostgreSQL observation into the past.
-  return micros === null ? null : new Date(Number((micros + BigInt(999)) / BigInt(1000))).toISOString();
-}
-
-/** The publication witness is sampled after success. Only a single invocation has one cutoff for every game. */
-function bridgeRun(row: Row, now: Date): Run | null {
-  const issuedAt = publicationTime(row.succeeded_observed_at);
-  const created = timestampMicros(row.created_at), observed = timestampMicros(row.succeeded_observed_at);
-  if (!issuedAt || created === null || observed === null || observed < created || Date.parse(issuedAt) > now.getTime()) return null;
-  const currentCutoff = (value: unknown): string | null => {
-    const cutoff = typeof value === "string" ? timestampMicros(value) : null;
-    if (cutoff === null || cutoff > observed || Number(cutoff / BigInt(1000)) + VALID_DAYS * DAY_MS <= now.getTime()) return null;
-    return cutoff % BigInt(1000) ? String(value) : new Date(Number(cutoff / BigInt(1000))).toISOString();
-  };
-  const byGame = row.decision_as_of_by_game;
-  const gameCutoffs = new Map<number, string>();
-  let scope = forgeRunScopedGameIds(row);
-  let cutoffAt: string | null = null;
-  if (byGame != null) {
-    if (typeof byGame !== "object" || Array.isArray(byGame)) return null;
-    for (const [key, value] of Object.entries(byGame)) {
-      const gameId = Number(key), cutoff = currentCutoff(value);
-      if (/^[1-9]\d*$/.test(key) && Number.isSafeInteger(gameId) && cutoff) gameCutoffs.set(gameId, cutoff);
-    }
-    if (!gameCutoffs.size) return null;
-    // A legacy checkpoint can lack the cutoffs of its earlier games. It can supersede only the games it can date.
-    if (scope) scope = scope.filter(id => gameCutoffs.has(id));
-    else if (!Array.isArray(row.completed_game_ids) || !row.completed_game_ids.every((id: number) => gameCutoffs.has(id))) {
-      scope = [...gameCutoffs.keys()];
-    }
-  } else {
-    if (row.invocations != null && String(row.invocations) !== "1") return null;
-    cutoffAt = currentCutoff(row.decision_as_of);
-    if (!cutoffAt) return null;
-  }
-  if (scope?.length === 0) return null;
-  return { runId: row.run_id, asOfDate: row.as_of_date, issuedAt, gitSha: row.git_sha ?? null, proof: row.proof ?? null, cutoffAt, gameCutoffs, scope };
-}
+type Run = { runId: string; asOfDate: string; issuedAt: string; gitSha: string | null; proof: BridgeRunProof | null };
 
 /** Interim RSO source until native forecasts are activated (TJ, 2026-10-19). Each player's
  * latest FORGE v2 daily projection stands in for his remaining games in the planning window. */
@@ -92,9 +49,6 @@ const TOTAL_COLUMNS: Record<string, string> = { PENALTY_MINUTES: "penalty_minute
 const DAY_MS = 86400000;
 const VALID_DAYS = 8;
 const FORECAST_LIMITATION = "Interim FORGE projection: the player's latest FORGE game line, reused for this game.";
-const RUN_TIMING_COLUMNS = "succeeded_observed_at:metrics->>succeeded_observed_at,decision_as_of:metrics->>decision_as_of,"
-  + "decision_as_of_by_game:metrics->decision_as_of_by_game,invocations:metrics->resume->>invocations,completed_game_ids:metrics->resume->completed_game_ids,"
-  + "pregame_publication:metrics->pregame_publication";
 const SKATER_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_toi_es_seconds,proj_toi_pp_seconds,proj_toi_pk_seconds,proj_hits,proj_blocks,proj_pim,proj_plus_minus,availability_state:uncertainty->availability->>state,availability_game_id:uncertainty->availability->>game_id,es_definition:uncertainty->model->skater_selection->strength_accounting->>es_definition";
 const RESERVE_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,player_class,conditioning,reserve_reason,proj_goals_es,proj_goals_pp,proj_assists_es,proj_assists_pp,proj_shots_es,proj_shots_pp,proj_toi_es_seconds,proj_toi_pp_seconds,proj_hits,proj_blocks,proj_saves,proj_goals_allowed,proj_shots_against,proj_shutout_prob,availability_state:uncertainty->availability->>state,availability_game_id:uncertainty->availability->>game_id";
 // The stored proj_* are the team's goalie slot (a start-weighted mixture), not any goalie's own line (W2-8 PR5); each
@@ -425,19 +379,16 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   now: Date, seasonId: number, calendarPolicy: AnyForecastCalendarPolicy, byteBudget = FORGE_DAILY_BRIDGE_BYTE_BUDGET,
   expandedByteBudget = inputs.reserves === undefined ? FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET : FORGE_RESERVE_EXPANDED_BYTE_BUDGET): ForgeDailyBridgeResult {
   const runs = new Map<string, Run>();
-  let withheldRuns = 0, untimedRuns = 0;
-  for (const row of inputs.runs) {
-    if (typeof row.run_id !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(row.as_of_date) || !(Date.parse(row.created_at) <= now.getTime())) continue;
-    if (Date.parse(publicationTime(row.succeeded_observed_at) ?? "") > now.getTime()) continue;
+  let withheldRuns = 0;
+  for (const row of inputs.runs) if (typeof row.run_id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(row.as_of_date)
+    && Date.parse(row.created_at) <= now.getTime()) {
     if (row.external_input_proven !== true) { withheldRuns++; continue; }
-    const run = bridgeRun(row, now);
-    if (run) runs.set(run.runId, run);
-    else untimedRuns++;
+    runs.set(row.run_id, { runId: row.run_id, asOfDate: row.as_of_date,
+      issuedAt: new Date(row.created_at).toISOString(), gitSha: row.git_sha ?? null, proof: row.proof ?? null });
   }
-  const timingLimitation = `${untimedRuns} FORGE runs lack a verified publication time or input cutoff within the freshness window.`;
   if (!runs.size) return { forecasts: [], teamWins: [], runProofs: [], limitations: [withheldRuns
     ? `Interim FORGE projections: no FORGE run in the last week can prove it excluded third-party fantasy projections (${withheldRuns} withheld), so planning is schedule-only.`
-    : untimedRuns ? timingLimitation + " Planning is schedule-only." : "Interim FORGE projections: no successful FORGE run in the last week, so planning is schedule-only."] };
+    : "Interim FORGE projections: no successful FORGE run in the last week, so planning is schedule-only."] };
   const order = (row: Row) => `${row.as_of_date}|${runs.get(row.run_id)!.issuedAt}`;
   const latest = <K>(rows: Row[], key: (row: Row) => K) => {
     const result = new Map<K, Row>();
@@ -447,15 +398,12 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   // H3: per slate date, a game's rows come only from the run that serves it: a newer selected_games rerun serves its
   // own games, the date's full-slate run the rest, and older runs of the date none.
   const servingByDate = new Map<string, RunsByGame>();
-  for (const date of new Set([...runs.values()].map(run => run.asOfDate))) servingByDate.set(date, selectRunsByGame([...runs.values()]
-    .filter(run => run.asOfDate === date)
-    .sort((a, b) => b.issuedAt.localeCompare(a.issuedAt) || a.runId.localeCompare(b.runId))
-    .map(run => ({ run_id: run.runId, execution_scope: run.scope ? { mode: "selected_games", requested_game_ids: run.scope } : undefined }))));
+  for (const date of new Set([...runs.values()].map(run => run.asOfDate))) servingByDate.set(date, selectRunsByGame(inputs.runs
+    .filter(row => runs.has(row.run_id) && row.as_of_date === date)
+    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || String(a.run_id).localeCompare(String(b.run_id)))
+    .map(row => ({ run_id: row.run_id as string, execution_scope: row.execution_scope, scope_key: row.scope_key }))));
   const servingRows = (rows: Row[]) => [...servingByDate].flatMap(([date, serving]) =>
-    keepRowsOfServingRun(rows.filter(row => {
-      const run = runs.get(row.run_id);
-      return run?.asOfDate === date && (run.cutoffAt !== null || run.gameCutoffs.has(row.game_id));
-    }), serving));
+    keepRowsOfServingRun(rows.filter(row => runs.get(row.run_id)?.asOfDate === date), serving));
   const skaterRows = servingRows(inputs.skaters).filter(row => row.horizon_games === 1 && finite(row.player_id) && finite(row.team_id));
   const goalieRows = servingRows(inputs.goalies).filter(row => row.horizon_games === 1 && finite(row.goalie_id) && finite(row.team_id));
   const skaterLatest = latest(skaterRows, row => row.player_id);
@@ -524,13 +472,11 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     // Decision 127: the policy decides the date basis (v2: the game's NHL schedule date), so pass both.
     && calendarLeadDay(game.startsAt, nowIso, calendarPolicy, game.date) < calendarPolicy.calendarDays);
   const forecasts: GameForecast[] = [];
-  const emit = (player: PlanningPlayer, game: PlanningGame, source: Row, stats: StatLine, startProbability: number | null, conditionalStats?: StatLine, confirmedStart = false, reserve?: ReserveCode) => {
-    const run = runs.get(source.run_id)!;
-    const cutoffAt = run.cutoffAt ?? run.gameCutoffs.get(source.game_id)!;
+  const emit = (player: PlanningPlayer, game: PlanningGame, run: Run, stats: StatLine, startProbability: number | null, conditionalStats?: StatLine, confirmedStart = false, reserve?: ReserveCode) => {
     const appearance = reserve ? reserveAppearanceProbability(reserve) : undefined;
-    const expiresAt = new Date(Math.min(Date.parse(game.startsAt!), Date.parse(cutoffAt) + VALID_DAYS * DAY_MS)).toISOString();
+    const expiresAt = new Date(Math.min(Date.parse(game.startsAt!), Date.parse(run.issuedAt) + VALID_DAYS * DAY_MS)).toISOString();
     if (Date.parse(expiresAt) <= now.getTime()) return;
-    forecasts.push({ sourceKind: "detailed", cutoffAt, expiresAt, sourceWatermark: `${FORGE_DAILY_BRIDGE_VERSION}:${run.runId}`,
+    forecasts.push({ sourceKind: "detailed", cutoffAt: run.issuedAt, expiresAt, sourceWatermark: `${FORGE_DAILY_BRIDGE_VERSION}:${run.runId}`,
       issuedContext: { version: "forge-issued-context-v1", playerId: player.id, gameId: game.id, nhlPlayerId: player.nhlId!, seasonId,
         teamId: player.nhlTeamId!, scheduledAt: game.startsAt!, scheduleRevision: game.scheduleRevision!, rosterRevision: player.rosterRevision!,
         observedAt: run.issuedAt, scheduleSourceUpdatedAt: null, scheduleFetchedAt: null, identityUpdatedAt: null, membershipCreatedAt: [] },
@@ -583,10 +529,10 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   };
   const zeroed = (line: StatLine): StatLine => Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value === null ? null : 0]));
   const unknownLine = (line: StatLine): StatLine => Object.fromEntries(Object.keys(line).map(key => [key, null]));
-  const emitReserve = (player: PlanningPlayer, game: PlanningGame, source: Row, line: StatLine, code: ReserveCode, startProbability: number | null = null) => {
+  const emitReserve = (player: PlanningPlayer, game: PlanningGame, run: Run, line: StatLine, code: ReserveCode, startProbability: number | null = null) => {
     // Confirmed in the lineup: the conditional line is his expectation. Confirmed out: a real 0. Otherwise his
     // participation is unknown, so the unconditional line is unknown (decisions 3, 47), never a fabricated 0.
-    emit(player, game, source, code === "skater:confirmed_lineup" ? line : code === "skater:confirmed_out" || code === "skater:roster_out" ? zeroed(line)
+    emit(player, game, run, code === "skater:confirmed_lineup" ? line : code === "skater:confirmed_out" || code === "skater:roster_out" ? zeroed(line)
       : unknownLine(line), startProbability, line, false, code);
   };
   // L9c (decision 132): FORGE rows carry his "if he plays" line plus `uncertainty.availability` for the row's game. Accepted
@@ -602,10 +548,10 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     if (state === "confirmed_out" && String(row.availability_game_id) === game.id) return "skater:roster_out";
     return state === "uncertain" ? "skater:availability_uncertain" : "skater:availability_unknown";
   };
-  const emitLineup = (player: PlanningPlayer, game: PlanningGame, line: StatLine, row: Row) => {
+  const emitLineup = (player: PlanningPlayer, game: PlanningGame, run: Run, line: StatLine, row: Row) => {
     const state = rowAvailability(player, row, game);
-    if (state === "line") emit(player, game, row, line, null);
-    else emitReserve(player, game, row, line, state);
+    if (state === "line") emit(player, game, run, line, null);
+    else emitReserve(player, game, run, line, state);
   };
   for (const player of identified.filter(row => row.playerClass === "skater")) {
     const latestRow = skaterLatest.get(player.nhlId);
@@ -622,12 +568,12 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
         const own = exactSkater.get(`${game.id}:${player.nhlId}`);
         if (own && own.team_id === player.nhlTeamId) {
           const special = withPowerPlayZeros(own), ownStats = skaterStats(special.row, playerRates);
-          if (ownStats) { emitLineup(player, game, ownStats, own); continue; }
+          if (ownStats) { emitLineup(player, game, runs.get(own.run_id)!, ownStats, own); continue; }
         }
         const exact = exactReserve.get(`skater:${game.id}:${player.nhlId}`);
         if (exact) {
           const line = reserveLine(exact);
-          if (line) emitReserve(player, game, exact, line, reserveState(game, player, exact));
+          if (line) emitReserve(player, game, runs.get(exact.run_id)!, line, reserveState(game, player, exact));
           continue;
         }
         if (!baseLine) continue;
@@ -635,7 +581,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
         const scale = projectedAgainst && facing ? (1 + facing.goalsFor) / (1 + projectedAgainst.goalsFor) : 1;
         const rest = restScale(gameContext(reserve.game_id, reserve.team_id), gameContext(game.id, reserve.team_id));
         const tilt = tiltBetween(player, abbreviationById.get(reserve.opponent_team_id), game.opponent);
-        emitReserve(player, game, reserve, scale === 1 && !rest && !tilt ? baseLine : retargetSkater(baseLine, scale, rest, tilt),
+        emitReserve(player, game, runs.get(reserve.run_id)!, scale === 1 && !rest && !tilt ? baseLine : retargetSkater(baseLine, scale, rest, tilt),
           reserveState(game, player, reserve));
       }
       if (forecasts.length > emitted) { reserveSkaters.add(player.nhlId!); reserveSkaterGames += forecasts.length - emitted; }
@@ -664,7 +610,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       if (own && (stale || own !== latestRow) && own.team_id === player.nhlTeamId) {
         // Projected for this game itself: use that line as issued, no re-aiming.
         const ownStats = lineFor(own);
-        if (ownStats) { emitLineup(player, game, ownStats, own); continue; }
+        if (ownStats) { emitLineup(player, game, runs.get(own.run_id)!, ownStats, own); continue; }
       }
       if (!stats) continue;
       const row = latestRow;
@@ -672,7 +618,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       const scale = projectedAgainst && facing ? (1 + facing.goalsFor) / (1 + projectedAgainst.goalsFor) : 1;
       const rest = String(row.game_id) === game.id ? null : restScale(gameContext(row.game_id, row.team_id), gameContext(game.id, row.team_id));
       const tilt = String(row.game_id) === game.id ? undefined : tiltBetween(player, abbreviationById.get(row.opponent_team_id), game.opponent);
-      emitLineup(player, game, scale === 1 && !rest && !tilt ? stats : retargetSkater(stats, scale, rest, tilt), row);
+      emitLineup(player, game, runs.get(row.run_id)!, scale === 1 && !rest && !tilt ? stats : retargetSkater(stats, scale, rest, tilt), row);
     }
     if (stale && forecasts.length === emitted) staleSkaters++;
   }
@@ -781,18 +727,19 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       if (!own) {
         // No line of his own. Not listed by this game's contract: labelled unknown here; with no contract the no-line pass
         // labels him.
-        if (exact && contract) { emit(goalie, game, exact, Object.fromEntries(GOALIE_KEYS.map(key => [key, null])), null, undefined, false, "goalie:start_unknown"); reserveGoalieGames++; }
+        if (exact && contract) { emit(goalie, game, runs.get(exact.run_id)!, Object.fromEntries(GOALIE_KEYS.map(key => [key, null])), null, undefined, false, "goalie:start_unknown"); reserveGoalieGames++; }
         continue;
       }
+      const run = runs.get(own.source.run_id)!;
       // Unknown start chance: his own "if he starts" line stays visible and plans read him as unknown, labelled as such.
-      if (p === undefined) { emitReserve(goalie, game, own.source, own.line, "goalie:start_unknown"); reserveGoalieGames++; continue; }
+      if (p === undefined) { emitReserve(goalie, game, run, own.line, "goalie:start_unknown"); reserveGoalieGames++; continue; }
       // As issued when news left the chances alone; otherwise P(start) times his line (zero relief for counts, as the
       // contract) and his credited Win under the new chances. Start probabilities stay unrounded (W2-8 D2).
       const stats = candidate && !changed ? contractUnconditional(candidate) : reconcileSaves({
         ...Object.fromEntries(Object.entries(own.line).map(([key, value]) => [key, value === null ? null : round(value * p)])),
         WINS_GOALIE: own.moved ? null : round(adjustedWins?.get(id) ?? null), LOSSES_GOALIE: null, OTL_GOALIE: null });
       if (stats.WINS_GOALIE === null) unknownWins++;
-      emit(goalie, game, own.source, stats, p, own.line, confirmedId === id);
+      emit(goalie, game, run, stats, p, own.line, confirmedId === id);
     }
   }
   // No FORGE line: an identified player still without a row for a game in the horizon gets a labelled unknown row
@@ -801,7 +748,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   // is kept as the "if he plays" line and never counts. Only "no line exists" qualifies: when a withheld (unproven) run
   // may hold his team's newer line, he still gets no forecast.
   const served = new Set(forecasts.map(row => `${row.playerId}:${row.gameId}`));
-  const withheldDates = inputs.runs.filter(row => row.external_input_proven !== true && !(Date.parse(publicationTime(row.succeeded_observed_at) ?? "") > now.getTime()) && typeof row.as_of_date === "string").map(row => row.as_of_date as string);
+  const withheldDates = inputs.runs.filter(row => row.external_input_proven !== true && typeof row.as_of_date === "string").map(row => row.as_of_date as string);
   const teamPlays = (teamId: number, date: string) => !scheduleById.size
     || [...scheduleById.values()].some(row => row.date === date && (row.homeTeamId === teamId || row.awayTeamId === teamId));
   const teamRun = new Map<number, Row>();
@@ -840,8 +787,8 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       // every key is unknown (null), so the plan reads him as unknown, never as a known 0.
       const template = { ...noLineTemplate[player.playerClass], ...conditional };
       if (player.playerClass === "skater" && skaterState(game, player, null) === "skater:confirmed_out") {
-        emit(player, game, anchor, zeroed(template), null, conditional, false, "skater:confirmed_out");
-      } else emit(player, game, anchor, unknownLine(template),
+        emit(player, game, runs.get(anchor.run_id)!, zeroed(template), null, conditional, false, "skater:confirmed_out");
+      } else emit(player, game, runs.get(anchor.run_id)!, unknownLine(template),
         null, conditional, false, player.playerClass === "skater" ? "skater:no_forge_line" : "goalie:no_forge_line");
       noLinePlayers.add(player.nhlId!); noLineGames++;
     }
@@ -864,7 +811,6 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const dates = [...runs.values()].map(run => run.asOfDate).sort();
   const limitations = [
     `Interim FORGE projections until native forecasts go live: each player's latest FORGE v2 daily line (runs ${dates[0]} to ${dates.at(-1)}) stands in for his remaining games; ${coveredTeams} of ${teamCount} teams covered.`,
-    ...(untimedRuns ? [timingLimitation] : []),
     ...(withheldRuns ? [`${withheldRuns} FORGE runs in the last week cannot prove they excluded third-party fantasy projections, so they are withheld; players covered only by them get no forecast.`] : []),
     rates ? "Penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are season per-game rates (this season plus half of last, pulled toward league rates), not FORGE projections."
       : "Season rates could not be read, so penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are unknown; totals that score them are withheld.",
@@ -937,34 +883,22 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
   const captureStartedAt = capture ? new Date().toISOString() : "";
   const from = new Date(now.getTime() - FORGE_DAILY_BRIDGE_LOOKBACK_DAYS * DAY_MS).toISOString().slice(0, 10);
   const to = new Date(now.getTime() + FORGE_DAILY_BRIDGE_AHEAD_DAYS * DAY_MS).toISOString().slice(0, 10);
-  const runRows = await timed("runs", () => pages(() => restrictRunsToHorizon(excludeOffReleaseRuns(db.from("forge_runs").select(`run_id,as_of_date,created_at,git_sha,${RUN_SCOPE_COLUMNS},${RUN_TIMING_COLUMNS}`, { count: "exact" })
+  const runRows = await timed("runs", () => pages(() => restrictRunsToHorizon(excludeOffReleaseRuns(db.from("forge_runs").select(`run_id,as_of_date,created_at,git_sha,${RUN_SCOPE_COLUMNS}`, { count: "exact" })
     .eq("status", "succeeded"))).gte("as_of_date", from).lte("as_of_date", to)
     .order("as_of_date", { ascending: false }).order("created_at", { ascending: false }).order("run_id"), readDeadline, 500, row => row.run_id));
-  const candidates = runRows.filter(row => Date.parse(row.created_at) <= now.getTime());
-  const capturedTimes = new Map<string, string>();
-  const proof = candidates.length ? await timed("proof", () => withinDeadline(readDeadline,
-    signal => loadExternalInputProof(abortableReads(db, signal), candidates.map(row => row.run_id), capturedTimes))) : new Map();
-  const observed = candidates.map(row => {
-    const snapshotAt = capturedTimes.get(row.run_id);
-    if (row.pregame_publication == null) return { ...row, succeeded_observed_at: snapshotAt ?? row.succeeded_observed_at } as Row;
-    // Pregame publications receive a separate SQL observation after the publication transaction commits.
-    // A snapshot in that transaction alone cannot stand in for the observation.
-    const succeededAt = typeof row.succeeded_observed_at === "string" ? timestampMicros(row.succeeded_observed_at) : null;
-    const snapshotMicros = snapshotAt === undefined ? null : timestampMicros(snapshotAt);
-    if (succeededAt === null || snapshotMicros === null) return { ...row, succeeded_observed_at: null } as Row;
-    return { ...row, succeeded_observed_at: snapshotMicros > succeededAt ? snapshotAt : row.succeeded_observed_at } as Row;
-  })
-    .filter(row => !(Date.parse(publicationTime(row.succeeded_observed_at) ?? "") > now.getTime()))
-    .sort((a, b) => b.as_of_date.localeCompare(a.as_of_date)
-      || Date.parse(b.succeeded_observed_at ?? b.created_at) - Date.parse(a.succeeded_observed_at ?? a.created_at)
-      || String(a.run_id).localeCompare(String(b.run_id)));
+  const issued = runRows.filter(row => Date.parse(row.created_at) <= now.getTime());
+  // The proof and board-evidence readers take a client, not a signal: their queries carry the deadline's signal instead.
+  const proof = issued.length ? await timed("proof", () => withinDeadline(readDeadline,
+    signal => loadExternalInputProof(abortableReads(db, signal), issued.map(row => row.run_id)))) : new Map();
+  // Per date, newest first: proven selected_games reruns (H3) until the newest proven full-slate run, which supersedes
+  // every older run of the date. Unproven runs newer than that slate run are withheld and counted, never read.
   const slateDates = new Set<string>(), runs: Row[] = [], withheld: Row[] = [];
-  for (const row of observed) {
+  for (const row of issued) {
     if (slateDates.has(row.as_of_date)) continue;
     if (!proof.has(row.run_id)) { withheld.push({ ...row, external_input_proven: false }); continue; }
-    const run = bridgeRun(row, now);
-    if (!run) { withheld.push({ ...row, external_input_proven: true }); continue; }
-    if (run.scope === null) slateDates.add(row.as_of_date);
+    const gameIds = forgeRunScopedGameIds(row);
+    if (gameIds?.length === 0) continue;
+    if (gameIds === null) slateDates.add(row.as_of_date);
     runs.push({ ...row, external_input_proven: true, proof: runProofDiagnostics(row.run_id, proof.get(row.run_id)) });
   }
   const runIds = runs.map(row => row.run_id);

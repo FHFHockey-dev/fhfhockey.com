@@ -1029,6 +1029,8 @@ export type RollingPlayerRunSummary = {
   stoppedReason?: "complete" | "max_players" | "runtime_budget";
   // Players abandoned at the in-flight deadline; they sit past nextResumeFrom.
   abandonedPlayerCount?: number;
+  // Players refused because a real appearance has no known game id (nothing of theirs was written).
+  identityRefusals?: Array<{ playerId: number; gameDate: string; wgoGameId: number | null; reason: RollingGameIdentityReason }>;
 };
 
 const cachedPowerPlayCombos = new Map<string, PowerPlayCombinationRow>();
@@ -1696,6 +1698,66 @@ export class RollingInFlightDeadlineError extends Error {
     super(`Rolling in-flight deadline reached during ${where}`);
     this.name = "RollingInFlightDeadlineError";
   }
+}
+
+export type RollingGameIdentityReason = "wgo_game_id_missing" | "game_not_in_games";
+
+/**
+ * A WGO appearance whose game cannot be identified: the WGO row has no game_id,
+ * or its game_id is not in public.games. Such a row is never written with a NULL
+ * game_id (FORGE's readers reject it, 2026-11-20 live failure): the player is
+ * refused for this run with this exact reason, nothing of theirs is written, and
+ * the run continues with the other players.
+ */
+export class RollingGameIdentityError extends Error {
+  constructor(
+    readonly playerId: number,
+    readonly gameDate: string,
+    readonly wgoGameId: number | null,
+    readonly reason: RollingGameIdentityReason
+  ) {
+    super(
+      `rolling_game_identity_missing:${reason}:player ${playerId} date ${gameDate}` +
+        (wgoGameId === null ? "" : ` wgo game ${wgoGameId}`)
+    );
+    this.name = "RollingGameIdentityError";
+  }
+}
+
+/**
+ * FORGE reads rolling rows back FORGE_LONG_ABSENCE_LOOKBACK_DAYS (1,095) days and rejects any row in that window without
+ * a game id (2026-11-20). Rows older than that before today can never enter a reader's window again, so the guard
+ * covers only rows this run WRITES whose date is inside it; history keeps feeding every rolling window as before.
+ */
+export const ROLLING_IDENTITY_GUARD_DAYS = 1095;
+
+export function rollingIdentityFloor(nowMs: number = Date.now()): string {
+  return new Date(nowMs - ROLLING_IDENTITY_GUARD_DAYS * 86_400_000).toISOString().slice(0, 10);
+}
+
+/** A real appearance: WGO time on ice, or any NST source row that date. */
+function wasRealAppearance(game: PlayerGameData): boolean {
+  const toi = Number(game.wgo?.toi_per_game ?? 0);
+  return (Number.isFinite(toi) && toi > 0) || Boolean(game.counts) || Boolean(game.rates) || Boolean(game.countsOi);
+}
+
+/**
+ * For a row about to be written: "write" when it names a known game or is older than the reader window (unchanged
+ * behaviour), "skip" for a record without a known game that is not an appearance (it still counted in the windows,
+ * as before; only its own row is not written), and a thrown RollingGameIdentityError for a real appearance without one,
+ * before anything of the player is written.
+ */
+function rollingIdentityDecision(game: PlayerGameData, floor: string): "write" | "skip" {
+  if (typeof game.gameId === "number" && game.gameId > 0) return "write";
+  if (game.gameDate <= floor) return "write";
+  if (!wasRealAppearance(game)) return "skip";
+  const wgoGameId = game.sourceContext.originalGameId;
+  throw new RollingGameIdentityError(
+    game.playerId,
+    game.gameDate,
+    typeof wgoGameId === "number" ? wgoGameId : null,
+    typeof wgoGameId === "number" ? "game_not_in_games" : "wgo_game_id_missing"
+  );
 }
 
 function runAbortAtMs(): number | undefined {
@@ -2592,6 +2654,7 @@ function buildRunSummary(args: RollingPlayerRunSummary): RollingPlayerRunSummary
     lastProcessedPlayerId: args.lastProcessedPlayerId ?? null,
     nextResumeFrom: args.nextResumeFrom ?? null,
     abandonedPlayerCount: args.abandonedPlayerCount ?? 0,
+    identityRefusals: args.identityRefusals ?? [],
     totalPlayersAfterResumeFilter: args.totalPlayersAfterResumeFilter ?? 0,
     remainingPlayerCount: args.remainingPlayerCount ?? 0,
     stoppedReason: args.stoppedReason
@@ -3635,6 +3698,8 @@ async function processPlayer(
 ): Promise<ProcessPlayerResult> {
   const historyReadOptions = buildPlayerHistoryReadOptions(options);
   const canonicalGameById = new Map(canonicalGames.map((game) => [game.id, game]));
+  // Rows written inside the readers' 1,095-day window must name their game (rollingIdentityDecision).
+  const identityFloor = rollingIdentityFloor();
   assertBeforeRunDeadline(`player ${playerId} history read`);
   const wgoRows = await fetchWgoRowsForPlayer(playerId, historyReadOptions);
   if (wgoRows.length === 0) {
@@ -3986,6 +4051,7 @@ async function processPlayer(
         // rows for it would be discarded, and that work grows with career
         // length for every strength.
         if (!isWithinRequestedWriteWindow(game.gameDate, game.season, options)) continue;
+        if (rollingIdentityDecision(game, identityFloor) === "skip") continue;
 
         const historicalGpPctSnapshot = getHistoricalGpPctSnapshot(
           historicalGpPctState,
@@ -4553,6 +4619,7 @@ async function runMain(
   let nextPlayerIndex = 0;
   let stoppedForRuntimeBudget = false;
   let abandonedPlayerCount = 0;
+  const identityRefusals: NonNullable<RollingPlayerRunSummary["identityRefusals"]> = [];
   const completedIndexes = new Set<number>();
   const runPlayerWorker = async () => {
     while (true) {
@@ -4575,6 +4642,15 @@ async function runMain(
         await processClaimedPlayer(playerId);
         completedIndexes.add(currentIndex);
       } catch (error) {
+        // A real appearance without a known game id: this player writes nothing in this run, the exact reason is
+        // reported, and the run continues (the player counts as handled, so resume does not loop on it).
+        if (error instanceof RollingGameIdentityError) {
+          identityRefusals.push({ playerId: error.playerId, gameDate: error.gameDate, wgoGameId: error.wgoGameId,
+            reason: error.reason });
+          completedIndexes.add(currentIndex);
+          console.error("[fetchRollingPlayerAverages] Refused player: game identity missing", error.message);
+          continue;
+        }
         // Past the deadline every error ends the player the same way: it is
         // left unfinished for the next invocation and this worker stops.
         if (!(error instanceof RollingInFlightDeadlineError) && !isPastRunDeadline()) {
@@ -4809,7 +4885,8 @@ async function runMain(
     totalPlayersAfterResumeFilter: filteredPlayerIds.length,
     remainingPlayerCount,
     stoppedReason,
-    abandonedPlayerCount
+    abandonedPlayerCount,
+    identityRefusals
   });
   console.info(
     "[fetchRollingPlayerAverages] Completed run",
@@ -4832,6 +4909,7 @@ async function runMain(
 }
 
 export const __testables = {
+  rollingIdentityDecision,
   fetchCounts,
   fetchGames,
   buildGameRecords,

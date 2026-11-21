@@ -13,7 +13,7 @@ afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 function stub(overrides: Record<string, string | undefined> = {}) {
   for (const [name, value] of Object.entries({ VERCEL_ENV: "production", VERCEL_GIT_COMMIT_SHA: sha, CRON_SECRET: cron,
     NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.invalid", NEXT_PUBLIC_SUPABASE_PUBLIC_KEY: "anon-key",
-    FORGE_SANDBOX_API_TOKEN: token({ role: "forge_sandbox_api", exp: hours(23) }), ...overrides })) vi.stubEnv(name, value);
+    FORGE_SANDBOX_API_TOKEN: token({ role: "forge_sandbox_api", exp: hours(11) }), ...overrides })) vi.stubEnv(name, value);
 }
 
 async function call(req: Partial<NextApiRequest>) {
@@ -38,7 +38,7 @@ it.each([
   [{}, { FORGE_SANDBOX_API_TOKEN: token({ role: "service_role", exp: hours(23) }) }, 503, "sandbox_api_unavailable"],
   [{}, { FORGE_SANDBOX_API_TOKEN: token({ role: "authenticated", exp: hours(23) }) }, 503, "sandbox_api_unavailable"],
   [{}, { FORGE_SANDBOX_API_TOKEN: token({ role: "forge_sandbox_api", exp: hours(-1) }) }, 503, "sandbox_api_unavailable"],
-  [{}, { FORGE_SANDBOX_API_TOKEN: token({ role: "forge_sandbox_api", exp: hours(48) }) }, 503, "sandbox_api_unavailable"],
+  [{}, { FORGE_SANDBOX_API_TOKEN: token({ role: "forge_sandbox_api", exp: hours(13) }) }, 503, "sandbox_api_unavailable"],
   [{}, { FORGE_SANDBOX_API_TOKEN: token({ role: "forge_sandbox_api" }) }, 503, "sandbox_api_unavailable"],
   [{}, { FORGE_SANDBOX_API_TOKEN: "not-a-jwt" }, 503, "sandbox_api_unavailable"],
   [{}, { NEXT_PUBLIC_SUPABASE_PUBLIC_KEY: undefined }, 503, "sandbox_api_unavailable"],

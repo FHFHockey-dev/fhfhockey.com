@@ -248,7 +248,6 @@ import {
   createRun,
   finalizeRun,
   assertRunStillOwned,
-  recordSucceededRunObservation,
   resumableRunLeaseExpiresAt,
   runWithClaimedRunWrites,
   writeClaimedRun,
@@ -393,17 +392,18 @@ export {
 export { buildSequentialHorizonScalarsFromDates } from "./utils/date-utils";
 import { captureProjectionInputs, replayProjectionInputs, projectionInputHash, capturedReadReceipt, type ProjectionInputRead } from "./inputCapture";
 import { saveForgeInputSnapshot, publishForgeGameRevisions, projectionWritesHash, capturedGoalieStarts, capturedIssuedTargets, type ForgeInputSnapshot } from "./gameRevisions";
-import { calendarRevisionOf, captureForgeIssuedContexts, forgeIssuedContextsFingerprint, type ForgeIssuedContextV1 } from "./issuedContext";
+import { captureForgeIssuedContexts, forgeIssuedContextsFingerprint, type ForgeIssuedContextV1 } from "./issuedContext";
 import { applyDailyBoardEvidence } from "./dailyBoardEvidence";
 import { starterBoardFlags, starterBoardScopeAllowed } from "./starterBoardFlags";
 import { assertPacket, type PregamePacket } from "./pregameCapture/packet";
 import { latestInstant, microsFromEpochMs, parseInstantMicros } from "./pregameCapture/time";
+import { forgeEnv } from "./forgeEnvScope";
 
 export const projectionModelEnvironment = () => Object.fromEntries([
-  "FORGE_SKATER_MODEL_MODE", "FORGE_RESERVE_PASS_ENABLED", "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION", "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION",
+  "FORGE_SKATER_MODEL_MODE", "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION", "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION",
   "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES", "NHL_XG_MODEL_VERSION",
   "START_CHART_GAME_REVISIONS", "STARTER_BOARD_COMPUTE_ENABLED", "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED",
-].map((key) => [key, process.env[key] ?? null]));
+].map((key) => [key, forgeEnv()[key] ?? null]));
 
 /** Every source the run may read, as audited on 2026-10-26 (tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/
  * EXTERNAL-INPUT-AUDIT.md): NHL first-party data, FHFH-derived tables and models, NST analytics, admin roster events,
@@ -474,7 +474,7 @@ export function forgeSeasonBootstrapApplies(args: {
  * later step that its outputs do not depend on failed.
  */
 export type RunProjectionV2Result = RunProjectionResult & {
-  postRunFailure?: { step: "save_input_snapshot" | "record_succeeded_observation"; message: string };
+  postRunFailure?: { step: "save_input_snapshot"; message: string };
 };
 
 export async function runProjectionV2ForDate(
@@ -548,7 +548,7 @@ export async function runProjectionV2ForDate(
     throw new Error("Local FORGE attempt already exists; reconcile its immutable evidence without recomputing.");
   }
   if (!captureEnabled) {
-    const calculate = () => runProjectionCalculations(asOfDate, { ...opts, decisionAsOf }, runId, resumeClaim ?? undefined, { observeSuccess: true });
+    const calculate = () => runProjectionCalculations(asOfDate, { ...opts, decisionAsOf }, runId, resumeClaim ?? undefined);
     // A claimed run re-checks its lease before every output write and cleanup.
     return resumeClaim ? runWithClaimedRunWrites(resumeClaim, calculate) : calculate();
   }
@@ -739,13 +739,14 @@ export async function computeForgePregamePublication(packet: PregamePacket, args
     const before = await captureForgeIssuedContexts(slateDate, gameIds);
     const result = await runProjectionCalculations(slateDate, {
       decisionAsOf: inputCutoff, horizonGames: 1, gameIds, seasonBootstrap: seasonBootstrapApplied, deadlineMs,
-    }, runId, undefined, { observeSuccess: false, omitPregameSidecars: true });
+    }, runId, undefined, { omitPregameSidecars: true });
     if (result.timedOut || result.gamesProcessed !== 1) throw new Error("FORGE pregame calculation did not complete one game.");
     const after = await captureForgeIssuedContexts(slateDate, gameIds);
     const [context] = after;
     if (forgeIssuedContextsFingerprint(before) !== forgeIssuedContextsFingerprint(after)
       || context.game.homeTeamId !== binding.homeTeamId || context.game.awayTeamId !== binding.awayTeamId
-      || parseInstantMicros(context.game.startTime) !== start || calendarRevisionOf(context.schedule) !== binding.calendarRevision) {
+      || parseInstantMicros(context.game.startTime) !== start
+      || projectionInputHash(context.schedule.map((row) => row.revision)) !== binding.calendarRevision) {
       throw new Error("FORGE pregame packet does not match the captured calendar and roster context.");
     }
     // The closing context is observed from the retained reads, under their conservative availability bound.
@@ -1002,8 +1003,8 @@ async function runProjectionCalculations(
   opts: RunProjectionOptions | undefined,
   runId: string,
   claim?: ForgeRunClaim,
-  lifecycle?: { observeSuccess: boolean; omitPregameSidecars?: boolean },
-): Promise<RunProjectionV2Result> {
+  lifecycle?: { omitPregameSidecars?: boolean },
+): Promise<RunProjectionResult> {
   const skaterRollout = resolveSkaterRolloutConfig();
   const completedGameIds = new Set(claim?.completedGameIds ?? []);
 
@@ -1146,20 +1147,13 @@ async function runProjectionCalculations(
     const deadlineMs = safeNumber(opts?.deadlineMs, Number.POSITIVE_INFINITY);
     let timedOut = false;
 
-    // A resumed run continues the totals and completed-game evidence its earlier invocations stored.
+    // A resumed run continues the totals its earlier invocations stored.
     const prior = claim?.resumed ? (claim.priorMetrics as Record<string, any>) : null;
     if (prior) {
       metrics.started_at = prior.started_at ?? metrics.started_at;
       metrics.games = safeNumber(prior.games, 0);
       metrics.warnings = Array.isArray(prior.warnings) ? [...prior.warnings] : [];
       Object.assign(metrics.data_quality, prior.data_quality ?? {});
-      if (Array.isArray(prior.skater_coverage)) {
-        metrics.skater_coverage = [...prior.skater_coverage];
-      }
-      const priorGameCutoffs = prior.decision_as_of_by_game;
-      if (priorGameCutoffs && typeof priorGameCutoffs === "object" && !Array.isArray(priorGameCutoffs)) {
-        metrics.decision_as_of_by_game = { ...priorGameCutoffs };
-      }
       learningCounters.players = safeNumber(prior.learning?.players_considered, 0);
       learningCounters.goalRecent = safeNumber(prior.learning?.goal_rate_recent_players, 0);
       learningCounters.assistRecent = safeNumber(prior.learning?.assist_rate_recent_players, 0);
@@ -1324,10 +1318,6 @@ async function runProjectionCalculations(
       metrics.games += 1;
       if (claim) {
         completedGameIds.add(game.id);
-        // Each invocation has a fresh cutoff. Keep it only for games that finished under it.
-        if (stageBase.evidenceCutoffAt !== null) {
-          (metrics.decision_as_of_by_game ??= {})[game.id] = stageBase.evidenceCutoffAt;
-        }
         checkpoint = takeCheckpoint();
         await writeClaimedRun(claim, {
           status: "running",
@@ -1366,20 +1356,14 @@ async function runProjectionCalculations(
       timedOut,
     });
 
-    const finalized = claim
-      ? await writeClaimedRun(claim, {
+    if (claim) {
+      await writeClaimedRun(claim, {
         status: "succeeded",
         metrics,
         completedGameIds: [...completedGameIds],
-      })
-      : await finalizeRun(runId, timedOut ? "failed" : "succeeded", metrics, lifecycle?.observeSuccess);
-    let postRunFailure: RunProjectionV2Result["postRunFailure"];
-    if (lifecycle?.observeSuccess && !timedOut) {
-      try {
-        await recordSucceededRunObservation(finalized);
-      } catch (error) {
-        postRunFailure = { step: "record_succeeded_observation", message: getErrorMessage(error) };
-      }
+      });
+    } else {
+      await finalizeRun(runId, timedOut ? "failed" : "succeeded", metrics);
     }
     return {
       runId,
@@ -1389,14 +1373,12 @@ async function runProjectionCalculations(
       goalieRowsUpserted,
       timedOut,
       ...(claim ? { resume: resumeSummary() } : {}),
-      ...(postRunFailure ? { postRunFailure } : {}),
     };
   } catch (e) {
     metrics.finished_at = new Date().toISOString();
     metrics.error = getErrorMessage(e);
     if (!claim) {
-      // An unacknowledged uncaptured success may have committed already.
-      await finalizeRun(runId, "failed", metrics, lifecycle?.observeSuccess);
+      await finalizeRun(runId, "failed", metrics);
     } else if ((e as { code?: unknown })?.code !== "RUN_LEASE_LOST") {
       // Another invocation that took the run over owns its outcome.
       await writeClaimedRun(claim, {

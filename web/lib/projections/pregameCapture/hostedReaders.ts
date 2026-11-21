@@ -11,7 +11,9 @@ import type { ForecastDiscoveryExclusion, GameForecast, PlanningSnapshot } from 
 import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
 import { admitConsumerGameRevisions } from "../consumerRevisionAdmission";
 import type { ForgeGameRevision } from "../gameRevisions";
+import { forgeEnv } from "../forgeEnvScope";
 import { starterBoardFlags, starterBoardScopeAllowed } from "../starterBoardFlags";
+import type { SignedVerdictDecision } from "./signedVerdictGate";
 import { MICROS_PER_MS, parseInstantMicros } from "./time";
 
 export const HOSTED_RSO_CONTEXT = "synthetic-single-center-points-v1";
@@ -24,19 +26,37 @@ export type HostedRsoTarget = {
 export type HostedRsoReader = {
   selectedRun: string | null; revisionId: string | null; playerId: string | null;
   points: number | null; legalSlot: string | null; reason: string | null;
+  /** Context only: confirmed exclusions of the game's revision that name no player. Never the asked player's reason. */
+  gameExclusions?: string[];
 };
 const withheld = (reason: string, playerId: string | null = null, selectedRun: string | null = null,
   revisionId: string | null = null): HostedRsoReader => ({ reason, playerId, selectedRun, revisionId, points: null, legalSlot: null });
 
+/** The detailed reader's reason for a player without a published row: only an exclusion that names this player and that
+ * the planner itself reported. A game-level exclusion (no playerId) belongs to the revision, not to this player; it is
+ * returned as context and never replaces "no_usable_target". */
+export function attributeDetailedExclusion(exclusions: ForecastDiscoveryExclusion[], reported: ForecastDiscoveryExclusion[],
+  gameId: string, playerId: string): { reason: string; gameExclusions: string[] } {
+  const confirmedBy = (ex: ForecastDiscoveryExclusion) => reported.some(other => other.gameId === gameId
+    && other.playerId === ex.playerId && other.targetKey === ex.targetKey && other.reasons.includes(ex.reasons[0]));
+  const own = exclusions.find(ex => ex.playerId === playerId && confirmedBy(ex));
+  const gameExclusions = [...new Set(exclusions.filter(ex => !ex.playerId && confirmedBy(ex)).map(ex => ex.reasons[0]))];
+  return { reason: own?.reasons[0] ?? "no_usable_target", gameExclusions };
+}
+
 /** Read the two FORGE paths independently for a manual, explicitly synthetic one-player roster.
  * Points are the RSO readback of an admitted row. The slot is its legal position in this roster. */
-export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedRsoTarget, now = new Date()) {
+export type HostedRsoOptions = {
+  /** Live runs: each reader independently refuses unless the claim's signed verdict verifies (signedVerdictGate.ts). */
+  verdictGate?: () => Promise<SignedVerdictDecision>;
+};
+export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedRsoTarget, now = new Date(), options: HostedRsoOptions = {}) {
   const { seasonId, slateDate, gameId, playerNhlId, claimId, revisionId, codeVersion } = target;
   const evaluatedAt = now.toISOString();
   const report = (daily: HostedRsoReader, detailed: HostedRsoReader) =>
     ({ contextId: HOSTED_RSO_CONTEXT, playerNhlId, evaluatedAt, daily, detailed });
   const both = (reason: string, playerId?: string) => report(withheld(reason, playerId), withheld(reason, playerId));
-  const calendar = forecastCalendarPolicy(Number(process.env.STARTER_BOARD_CALENDAR_HORIZON_DAYS ?? 14));
+  const calendar = forecastCalendarPolicy(Number(forgeEnv().STARTER_BOARD_CALENDAR_HORIZON_DAYS ?? 14));
   try {
     if (target.contextId !== HOSTED_RSO_CONTEXT || !Number.isSafeInteger(playerNhlId) || playerNhlId <= 0 ||
         !Number.isSafeInteger(gameId) || gameId <= 0 || !Number.isSafeInteger(seasonId) || !uuid.test(claimId) ||
@@ -48,7 +68,7 @@ export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedR
     if (clock >= parseInstantMicros(target.scheduledStart)) return both("stale_source");
     const query = { seasonId, startDate: slateDate, endDate: slateDate, timeZone: "America/New_York" };
     const deadline = Date.now() + 20_000;
-    const source = await withinDeadline(deadline, signal => selectForecastServingSource(db, seasonId, now, process.env, signal));
+    const source = await withinDeadline(deadline, signal => selectForecastServingSource(db, seasonId, now, forgeEnv(), signal));
     const data = await loadPlanningData(db, query, { now, deadlineMs: deadline, source, consumer: "rso", skipOwnership: true, skipRecentForm: true });
     const player = data.players.find(row => row.nhlId === playerNhlId);
     if (!player?.rosterRevision || !player.teamAbbreviation) return both("identity_conflict", player?.id);
@@ -76,8 +96,15 @@ export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedR
       const points = gameForecastPoints({ ...snapshot, forecasts: [row] }, row).expected;
       return points === null ? deny("missing_target") : { playerId: player.id, selectedRun, revisionId: row.revisionId, legalSlot: legalSlot.id, points, reason: null };
     };
+    const verdictRefusal = async () => {
+      if (!options.verdictGate) return null;
+      const verdict = await options.verdictGate().catch(() => null);
+      return verdict?.ok ? null : withheld(`signed_verdict:${verdict?.reason ?? "unverifiable"}`, player.id);
+    };
     const daily = async () => {
-      if (source.kind !== "legacy" || process.env.RSO_FORGE_DAILY_BRIDGE === "off") return withheld("serving_disabled", player.id);
+      const refused = await verdictRefusal();
+      if (refused) return refused;
+      if (source.kind !== "legacy" || forgeEnv().RSO_FORGE_DAILY_BRIDGE === "off") return withheld("serving_disabled", player.id);
       const bridge = await loadForgeDailyBridgeForecasts(db, [player], [game], now, seasonId, deadline, calendar);
       const rows = bridge.forecasts.filter(row => row.playerId === player.id && row.gameId === game.id);
       if (rows.length !== 1) return withheld("no_usable_target", player.id);
@@ -87,10 +114,18 @@ export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedR
       if (!proof || proof.runId !== claimId) return deny("run_mismatch");
       if (proof.basis !== "captured_snapshot") return deny("capture_proof_missing");
       if (row.modelVersion !== `${FORGE_DAILY_BRIDGE_VERSION}:${codeVersion}`) return deny("release_mismatch");
-      if (Date.parse(row.issuedAt) !== Number((observed + BigInt(999)) / MICROS_PER_MS)) return deny("publication_mismatch");
+      // The released bridge stamps a run's issuedAt with the run's created_at. Bind the row to the committed run of this
+      // publication: same created_at, and created no later than the publication was observed.
+      const run = await withinDeadline(deadline, signal => db.from("forge_runs").select("created_at").eq("run_id", claimId)
+        .abortSignal(signal).maybeSingle());
+      const createdAt = (run.data as { created_at?: string } | null)?.created_at;
+      if (run.error || !createdAt || parseInstantMicros(createdAt) > observed
+        || Date.parse(row.issuedAt) !== Date.parse(new Date(createdAt).toISOString())) return deny("publication_mismatch");
       return score(row, proof.runId);
     };
     const detailed = async () => {
+      const refused = await verdictRefusal();
+      if (refused) return refused;
       if (!starterBoardFlags().serving) return withheld("serving_disabled", player.id);
       if (!starterBoardScopeAllowed([gameId])) return withheld("canary_excluded", player.id);
       // A planner exclusion has no revision ID. Bind it to the selected SQL revision and repeat its native
@@ -109,10 +144,8 @@ export async function readHostedRsoConsumers(db: SupabaseClient, target: HostedR
       if (rows.length) return deny("publication_mismatch");
       const exclusions: ForecastDiscoveryExclusion[] = [];
       await admitConsumerGameRevisions(db, selected, data.players, sides, now, seasonId, {}, exclusions, deadline, calendar);
-      const reported = data.forecastManifest?.exclusions ?? [];
-      const confirmed = exclusions.find(ex => (!ex.playerId || ex.playerId === player.id) && reported.some(other => other.gameId === game.id &&
-        other.playerId === ex.playerId && other.targetKey === ex.targetKey && other.reasons.includes(ex.reasons[0])));
-      return deny(confirmed?.reasons[0] ?? "no_usable_target");
+      const { reason, gameExclusions } = attributeDetailedExclusion(exclusions, data.forecastManifest?.exclusions ?? [], game.id, player.id);
+      return gameExclusions.length ? { ...deny(reason), gameExclusions } : deny(reason);
     };
     const [bridge, primary] = await Promise.all([daily(), detailed()].map(read => read.catch(() => withheld("reader_unavailable", player.id))));
     return report(bridge, primary);

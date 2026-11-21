@@ -100,25 +100,19 @@ export function runTimings(rows: Row[]): Map<string, RunTiming> {
   }));
 }
 
-/** One basis row per player: his newest admitted lineup line (by observed success, then run id, then basis game),
+/** One basis row per player: his newest admitted lineup line (by issue time, then run id, then basis game; never slate order),
  * or else his newest reserve line, which plans a labelled conservative zero beside its kept conditional line. The receipt
  * lists every selected row's full identity and checksum, so the set is coherent under one capture. */
 export function buildBasis(observation: ForgeBridgeCapture | null, players: PlanningPlayer[], timings: Map<string, RunTiming>):
   Pick<CapturedScenario, "basis" | "capture"> & { limitations: string[] } {
   const empty = { ratePolicy: LATER_IMPACT_RATE_POLICY as typeof LATER_IMPACT_RATE_POLICY, bridgeVersion: FORGE_DAILY_BRIDGE_VERSION, componentSets: [], units: {}, runs: [], rows: [] };
   if (!observation) return { basis: empty, capture: null, limitations: ["No FORGE capture was observed for this request."] };
-  const admittedRuns = observation.runs.filter(row => row.external_input_proven === true && typeof row.run_id === "string" && isDate(row.as_of_date));
-  const runs = admittedRuns.flatMap(row => {
-    // The bridge supplies a post-success upper bound for output availability.
-    const issuedAt = iso(row.succeeded_observed_at);
-    return issuedAt ? [{ row, issuedAt }] : [];
-  });
-  const missingIssuance = admittedRuns.length - runs.length;
-  const runIndex = new Map(runs.map(({ row }, index) => [row.run_id as string, index]));
+  const runs = observation.runs.filter(row => row.external_input_proven === true && typeof row.run_id === "string" && isDate(row.as_of_date) && iso(row.created_at));
+  const runIndex = new Map(runs.map((row, index) => [row.run_id as string, index]));
   const byNhl = new Map(players.filter(player => player.nhlId !== null && player.teamAbbreviation && player.rosterRevision && Number.isFinite(player.nhlTeamId))
     .map(player => [player.nhlId!, player]));
   const teamById = new Map(players.filter(player => Number.isFinite(player.nhlTeamId) && player.teamAbbreviation).map(player => [player.nhlTeamId!, player.teamAbbreviation!]));
-  const order = (row: Row) => [runs[runIndex.get(row.run_id)!].issuedAt, row.run_id as string, String(row.game_id)] as const;
+  const order = (row: Row) => [iso(runs[runIndex.get(row.run_id)!].created_at)!, row.run_id as string, String(row.game_id)] as const;
   const newer = (a: Row, b: Row) => { const [x, y] = [order(a), order(b)]; return x[0] !== y[0] ? x[0] > y[0] : x[1] !== y[1] ? x[1] > y[1] : x[2] > y[2]; };
   // `line`: a goalie candidate's own "if he starts" line from the row's contract (conditional by construction).
   const pick = new Map<string, { row: Row; reserve: boolean; playerClass: "skater" | "goalie"; line?: StatLine }>();
@@ -147,8 +141,7 @@ export function buildBasis(observation: ForgeBridgeCapture | null, players: Plan
   const goalies = [...byNhl.values()].filter(player => player.playerClass === "goalie");
   const absent = goalies.filter(player => { const latest = latestContract.get(player.nhlTeamId!); return !!latest && !latest.ids.has(player.nhlId!); }).length;
   const partial = [...latestContract.values()].filter(latest => latest.mass < 1 - latest.ids.size * 5e-7).length;
-  const limitations = [
-    ...(missingIssuance ? [`The basis excluded ${missingIssuance} of the admitted FORGE runs because observed success timing was missing or invalid.`] : []),
+  const goalieLimitations = [
     ...(slotOnlyRows ? [`${slotOnlyRows} FORGE goalie rows predate the per-candidate contract: a stored row is the team's goalie slot, never one goalie's own line, so it gives no goalie a basis.`] : []),
     ...(absent ? [`${absent} goalies are not among the start candidates in their team's latest FORGE contract: only a line of their own, where one exists, is their basis, never a teammate's; otherwise it is unknown.`] : []),
     ...(partial ? [`${partial} teams' latest FORGE goalie contracts have start chances summing to less than 1: each goalie's basis is his own "if he starts" line (conditional), so no start chance is spread over the listed goalies or assumed.`] : []),
@@ -162,7 +155,7 @@ export function buildBasis(observation: ForgeBridgeCapture | null, players: Plan
     const keys = Object.keys(line).sort(), setKey = keys.join("|");
     if (!setIndex.has(setKey)) { setIndex.set(setKey, componentSets.length); componentSets.push(keys); }
     for (const key of keys) units[key] = UNITS[key] ?? "count";
-    const { row: run } = runs[runIndex.get(row.run_id)!];
+    const run = runs[runIndex.get(row.run_id)!];
     const identity: ScenarioRowIdentity = { runId: row.run_id, slateDate: run.as_of_date, basisGameId: String(row.game_id), playerId, horizonGames: 1, components: keys };
     const sourceRowHash = hash(row), checksum = scenarioRowChecksum(identity, line, sourceRowHash);
     // A candidate's line is "if he starts", established by the contract itself; other rows keep their stored tag.
@@ -172,17 +165,17 @@ export function buildBasis(observation: ForgeBridgeCapture | null, players: Plan
     receiptRows.push([playerId, runIndex.get(row.run_id)!, identity.basisGameId, 1, setIndex.get(setKey)!, checksum]);
     identities.push({ identity, checksum });
   }
-  const basis = { ...empty, componentSets, units, rows, runs: runs.map(({ row, issuedAt }) => ({ runId: row.run_id as string, slateDate: row.as_of_date as string,
-    issuedAt, inputCutoff: timings.get(row.run_id)?.inputCutoff ?? null, reconstruction: timings.get(row.run_id)?.reconstruction ?? null,
+  const basis = { ...empty, componentSets, units, rows, runs: runs.map(row => ({ runId: row.run_id as string, slateDate: row.as_of_date as string,
+    issuedAt: iso(row.created_at)!, inputCutoff: timings.get(row.run_id)?.inputCutoff ?? null, reconstruction: timings.get(row.run_id)?.reconstruction ?? null,
     modelVersion: `${FORGE_DAILY_BRIDGE_VERSION}:${row.git_sha ?? "unknown"}`, proof: (row.proof as BridgeRunProof | null) ?? null })) };
   const startedAt = iso(observation.startedAt), completedAt = iso(observation.completedAt);
-  if (!startedAt || !completedAt) return { basis, capture: null, limitations: ["The FORGE capture has no valid timing, so it is no witness.", ...limitations] };
+  if (!startedAt || !completedAt) return { basis, capture: null, limitations: ["The FORGE capture has no valid timing, so it is no witness.", ...goalieLimitations] };
   const setChecksum = scenarioSetChecksum(identities);
-  return { basis, limitations, capture: { id: `observed_capture:${hash({ startedAt, completedAt, setChecksum }).slice(0, 32)}`, kind: "observed_capture",
+  return { basis, limitations: goalieLimitations, capture: { id: `observed_capture:${hash({ startedAt, completedAt, setChecksum }).slice(0, 32)}`, kind: "observed_capture",
     trustedSource: LATER_IMPACT_CAPTURE_SOURCE, startedAt, completedAt, setChecksum, rows: receiptRows,
     // Runs were read as succeeded, released, public h1 and proof-admitted; rows are bound to a unique catalog player and
     // their own run; conditioning is read from the source field as stored (a missing tag stays unknown).
-    bindings: { runSucceeded: true, admission: true, identity: true, conditioning: true, proof: runs.every(({ row }) => !!row.proof) } } };
+    bindings: { runSucceeded: true, admission: true, identity: true, conditioning: true, proof: runs.every(row => !!row.proof) } } };
 }
 
 // ---------------------------------------------------------------- §2.5 F's schedule, as separate evidence

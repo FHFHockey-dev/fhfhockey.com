@@ -1,6 +1,0 @@
-{
-  "extends": "../tsconfig.json",
-  "compilerOptions": { "baseUrl": ".." },
-  "include": ["pages/**/*.ts", "../next-bootstrap.d.ts", "../yahoo-fantasy.d.ts"],
-  "exclude": ["node_modules", ".next"]
-}

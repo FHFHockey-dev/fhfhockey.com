@@ -208,6 +208,7 @@ const REQUEST_INTERVAL_MS = 21000;
 
 const BASE_URL = "https://data.naturalstattrick.com/playerteams.php";
 const NHL_API_BASE_URL = "https://api-web.nhle.com/v1";
+const NHL_OFF_DAY_CHECK_TIMEOUT_MS = 5_000;
 
 // Keep existing player name mapping
 const playerNameMapping: Record<string, { fullName: string }> = {
@@ -411,6 +412,29 @@ export function buildNstScheduledDateMap(
   }
 
   return byDate;
+}
+
+async function verifyNhlOffDay(date: string, deadlineAt: number): Promise<boolean> {
+  const controller = new AbortController();
+  try {
+    return await beforeDeadline(async () => {
+      const response = await fetch(`${NHL_API_BASE_URL}/schedule/${date}`, {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+        redirect: "error",
+        signal: controller.signal
+      });
+      if (response.status !== 200) return false;
+      const schedule: { gameWeek?: { date?: string; numberOfGames?: unknown; games?: unknown }[] } | null =
+        await response.json();
+      if (!Array.isArray(schedule?.gameWeek)) return false;
+      const days = schedule.gameWeek.filter((day) => day?.date === date);
+      return days.length === 1 && days[0].numberOfGames === 0 &&
+        Array.isArray(days[0].games) && days[0].games.length === 0;
+    }, Math.min(Date.now() + NHL_OFF_DAY_CHECK_TIMEOUT_MS, deadlineAt), () => controller.abort());
+  } catch {
+    return false;
+  }
 }
 
 export function shouldBlockHistoricalDatedNstRequest(args: {
@@ -2724,11 +2748,12 @@ async function main(
       return;
     }
 
+    const currentSeasonStartDate = currentDatedSeason
+      ? String(currentDatedSeason.startDate).slice(0, 10)
+      : null;
     assertHistoricalDatedNstRequestAllowed({
       requestedStartDate: allDatesToScrape[0],
-      currentSeasonStartDate: currentDatedSeason
-        ? String(currentDatedSeason.startDate).slice(0, 10)
-        : null,
+      currentSeasonStartDate,
       allowHistoricalDatedRequests
     });
 
@@ -2755,7 +2780,7 @@ async function main(
 
       if (!scheduledInfo) {
         missingScheduleDates.push(date);
-        console.log(`Date ${date} has no scheduled NHL games. Skipping.`);
+        console.log(`Date ${date} has no stored NHL schedule rows.`);
         continue;
       }
       if (scheduledInfo.allGamesUnstarted) {
@@ -2795,10 +2820,8 @@ async function main(
         datasetType: targetDataset, datasetGroup: targetDatasetGroup, seasonId: targetSeasonId,
         overwrite: fullRefreshFlag(runMode), allowHistoricalDatedRequests,
         queue: createHash("sha256").update(JSON.stringify(initialUrlsQueue.map((item) => [nstGamelogItemKey(item), item.url]))).digest("hex") });
-      const query = supabase.from("cron_job_audit").select("run_time, details")
-        .eq("job_name", "update-nst-gamelog")
-        .eq("details->nstProgress->>scope", progressScope);
-      const result = await query.order("run_time", { ascending: false }).limit(2);
+      const result = await supabase.rpc("read_nst_gamelog_explicit_audit", { p_scope: progressScope })
+        .order("run_time", { ascending: false });
       if (result.error || !Array.isArray(result.data)) throw new Error("NST explicit progress read is unconfirmed; admission stopped.");
       if (result.data.length > 1 && result.data[0].run_time === result.data[1].run_time) {
         throw new Error("NST explicit progress is ambiguous; admission stopped.");
@@ -2842,6 +2865,19 @@ async function main(
       const rotated = rotateNstGamelogQueue(initialUrlsQueue, resolved.bookmark);
       initialUrlsQueue = rotated.queue;
       if (resolved.bookmark && !rotated.matched) bookmarkState = "queue_changed";
+    }
+
+    const verifiedOffDates: string[] = [];
+    const [missingDate] = missingScheduleDates;
+    // The daily source aperture can check one date. Broad scopes keep their stored schedule plan.
+    const isExplicitSingleDate = allDatesToScrape.length === 1 &&
+      Boolean(targetDates || (options?.startDate && options?.endDate));
+    if (runMode === "incremental" && isExplicitSingleDate && requestControl &&
+      missingDate && currentSeasonStartDate && missingDate >= currentSeasonStartDate &&
+      missingDate < today && Number.isFinite(parseISO(missingDate).getTime()) &&
+      await verifyNhlOffDay(missingDate, requestControl.deadlineAt)) {
+      missingScheduleDates.pop();
+      verifiedOffDates.push(missingDate);
     }
 
     const processedPlayerIds = new Set<number>();
@@ -2943,7 +2979,7 @@ async function main(
       explicitContinuation.blocked = sourceFailed && !sourceDown;
     }
     const skippedNoCompletedGames = fullPlanRequestCount === 0 &&
-      allDatesToScrape.length === skippedUnstartedDates.length;
+      allDatesToScrape.length === skippedUnstartedDates.length + verifiedOffDates.length;
     const continuationRequired = Boolean(explicitContinuation && !sourceFailed && stoppedEarly &&
       explicitContinuation.nextIndex < fullPlanRequestCount && explicitContinuation.nextIndex > resumeOffset &&
       explicitContinuation.nextIndex > (options?.cursor ?? 0));
@@ -2967,6 +3003,7 @@ async function main(
       plannedRequestCount: fullPlanRequestCount,
       requestIntervalMs: requestPlan.requestIntervalMs,
       skippedUnstartedDates,
+      verifiedOffDates,
       missingScheduleDates,
       continuation: explicitContinuation,
       stoppedEarly,

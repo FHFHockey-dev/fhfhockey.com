@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { evaluateRetainedLedger } from "../../scripts/forge-ledger-evaluate";
 import type { GameForecast } from "lib/rosterScheduleOptimizer/planningTypes";
-import { bridgeAllowedUses, RESERVE_FORECAST_NOTES, type ReserveCode } from "lib/rosterScheduleData/bridgeForecastWire";
 import { devigTwoWayAmerican, devigYesOnly } from "lib/projections/utils/devig";
 import { getModelLineProbabilities } from "lib/projections/utils/market-output-builders";
 import { buildBoxscoreReceipts, buildLedgerRows, buildMarketLedgerRows, impliedMeanFromMarket, ledgerForecastBasis, scoreLedger, scoreMarketLedger, scorePairedLedger,
@@ -106,33 +105,6 @@ describe("read-only retained ledger adapter", () => {
 
 describe("buildLedgerRows", () => {
   const { rows, skippedGameIds } = buildLedgerRows(input());
-  it("classifies each eligible player-game once without changing persisted sources", () => {
-    const fixture = input();
-    const reserve = (id: number, code: ReserveCode, stats: GameForecast["stats"], conditionalStats?: GameForecast["stats"]): GameForecast => ({
-      ...forecast(`p${id}`, "100", "run-today", stats), allowedUses: bridgeAllowedUses(code), conditionalStats, limitations: [RESERVE_FORECAST_NOTES[code]],
-    });
-    for (const id of [51, 52, 53, 54, 55, 56, 57, 58, 59]) fixture.players.push({ nhlId: id, planningId: `p${id}`, playerClass: "skater", teamId: 1 });
-    fixture.bridgeForecasts.push(
-      { ...reserve(51, "skater:confirmed_out", { GOALS: 0 }, { GOALS: 0.4 }), appearanceProbability: 0 },
-      reserve(52, "skater:projected_scratch", { GOALS: null }, { GOALS: 0.4 }),
-      reserve(53, "skater:no_forge_line", { GOALS: null }),
-      { ...forecast("p54", "100", "run-old", skaterLine), expiresAt: NOW.toISOString() },
-      forecast("p55", "100", "run-unavailable", skaterLine),
-      { ...forecast("p58", "100", "run-today", skaterLine), expiresAt: undefined },
-      { ...forecast("p59", "100", "run-today", skaterLine), cutoffAt: undefined },
-      { ...forecast("p57", "100", "run-today", skaterLine), issuedAt: "2026-10-21T13:00:00Z" },
-    );
-    fixture.proofWithheldBridgeForecasts = [{ playerId: "p56", gameId: "100" }];
-    const built = buildLedgerRows(fixture);
-    expect(built.bridgeAcceptance).toEqual({ scope: "bridge_decision_line", sourceClassification: "ledger_run_slate_date_vs_game_date",
-      eligible: built.universe.length, usableExact: 1, usableReaimed: 1, confirmedOut: 1, conditionalOnly: 1, unavailableOrWithheld: 8,
-      reasons: { forecast_not_supplied: 1, "skater:confirmed_out": 1, "skater:projected_scratch": 1, "skater:no_forge_line": 1,
-        expired_or_invalid_expiry: 2, run_slate_date_unavailable: 1, external_input_proof_unavailable: 1, invalid_or_future_forecast_timing: 2 } });
-    expect(built.universe).toHaveLength(12);
-    expect(find(built.rows, 51, "bridge_exact")?.exp_goals).toBe(0);
-    expect(find(built.rows, 52, "bridge_exact")?.exp_goals).toBeNull();
-    expect(find(built.rows, 55, "bridge_reaimed")).toBeDefined();
-  });
 
   it("splits exact and re-aimed bridge rows by the issuing run's date and keeps unknown heads null", () => {
     const exact = find(rows, 11, "bridge_exact")!, reaimed = find(rows, 22, "bridge_reaimed")!;

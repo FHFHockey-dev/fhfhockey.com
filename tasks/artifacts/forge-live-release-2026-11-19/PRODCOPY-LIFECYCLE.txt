@@ -1,0 +1,26 @@
+1 rollback refuses while a run is open:
+psql:tasks/artifacts/forge-live-release-2026-11-19/rollback.sql:10: ERROR:  live_run_open
+CONTEXT:  PL/pgSQL function inline_code_block line 2 at RAISE
+  refused (expected)
+2 stop:
+0
+3 rollback after stop:
+0
+4 re-apply fixed live migration:
+  applied
+5 approve+arm again (408 guard):
+3
+6 fences (each rolled back):
+  publish before capture: publish_window_closed
+  close before puck drop keeps run open: open
+  capture fire: fired 1
+  second fire: already_fired
+  begin wrong release: release_mismatch
+  begin right release: started
+  publish begin with no claim: none_ready
+  stop then capture fire: stopped / stopped / jobs left 3
+  schedule moved -> capture begin: schedule_changed
+7 job 408:
+  active=false
+0
+8 disarm left jobs: 0

@@ -1,0 +1,42 @@
+0 installed: verifier 9673316c4e10 (real), forge_witness_api schema=t
+1 rollback refuses while a run is open:
+  psql:tasks/artifacts/forge-live-release-2026-11-19/rollback.sql:10: ERROR:  live_run_open
+2 stop open run:
+  jobs left 0
+3 rollback after stop:
+  ok; live objects: 0
+4 apply live migration on top of publication + REAL verifier:
+  applied (b546ea3e6fb8)
+5 approve+arm live (408 guard) and arm the verifier:
+  live jobs 3
+  arm verifier without a credential: witness_arm_preflight_failed
+  set credential (stdin): {"role": "forge_witness_api", "expiresAt": "2026-11-19T21:58:01-05:00"}
+  verifier job 1, target 1
+6 fences (each rolled back):
+  publish fire before capture: publish_window_closed 
+  close before puck drop keeps run open: {"claim": null, "gameId": 2026020358, "reason": null, "armedAt": "2026-11-19T18:58:01.470055-05:00", "custody": null, "outcome": null, "readers": null, "release": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "verdict": null, "witness": null, "requests": null, "stoppedAt": null, "approvedBy": "prodcopy-rehearsal", "revisionId": null, "stopReason": null, "terminalAt": null, "playerNhlId": 8478402, "tokenSha256": null, "packetSha256": null, "captureBeganAt": null, "publishBeganAt": null, "scheduledStart": "2026-11-19T22:00:00-05:00", "canonicalSha256": null, "captureFinishedAt": null, "committedRevision": null, "publishFinishedAt": null} open 
+  capture fire, then second fire: fired 2 already_fired 
+  capture begin wrong release (service_role): release_mismatch 
+  capture begin right release (service_role): started 
+  publish begin with no claim (service_role): none_ready 
+  verifier cron fire, then again (max 1): fired 3 fires_spent 0 
+  verifier fire sends both headers, credential not in command: fired 4 Authorization,x-forge-witness-token 0 
+  service_role reads the witness credential: ERROR:  permission denied for function credential_v1 
+  service_role reads the credentials table: ERROR:  permission denied for table credentials 
+  revoked credential: fire refuses: {"removed": 1} credential_missing 
+  gate for an unknown claim (service_role): verdict_missing 
+  require_accepted_v1 for an unknown claim: ERROR:  witness_verdict_required DETAIL:  verdict_missing CONTEXT:  PL/pgSQL function forge_witness.require_accepted_v1(uuid,text,text,text) line 5 at RAISE 
+  service_role on verifier receipts: ERROR:  permission denied for table verdicts 
+  service_role on verifier API: ERROR:  permission denied for schema forge_witness_api LINE 1: begin; set local role service_role; select forge_witness_api...                                                    ^ 
+  stop, then capture fire and begin: {"claim": null, "gameId": 2026020358, "reason": "fence", "armedAt": "2026-11-19T18:58:01.470055-05:00", "custody": null, "outcome": "stopped", "readers": null, "release": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "verdict": null, "witness": null, "requests": null, "stoppedAt": "2026-11-19T18:58:01.756726-05:00", "approvedBy": "prodcopy-rehearsal", "revisionId": null, "stopReason": "fence", "terminalAt": "2026-11-19T18:58:01.756912-05:00", "playerNhlId": 8478402, "tokenSha256": null, "packetSha256": null, "captureBeganAt": null, "publishBeganAt": null, "scheduledStart": "2026-11-19T22:00:00-05:00", "canonicalSha256": null, "captureFinishedAt": null, "committedRevision": null, "publishFinishedAt": null} stopped none_armed 0 
+  schedule moved, capture begin: schedule_changed 
+7 job 408 active: f
+7b revoke credential: {"credentialPresent" : false, "authenticatorMayUseRole" : false}
+8 disarm both:
+  live jobs 0
+  verifier jobs 0
+9 rollback refuses while open, succeeds after stop, re-apply:
+  refused: live_run_open
+  rolled back
+  re-applied; verifier receipts kept: targets 1
+10 job 408 active: f

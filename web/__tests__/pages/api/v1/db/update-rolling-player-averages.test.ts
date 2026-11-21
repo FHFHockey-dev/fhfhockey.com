@@ -629,6 +629,23 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
     });
   });
 
+  it("reports players refused for a missing game id as a partial 207, never a success", async () => {
+    const refusal = { playerId: 8480441, gameDate: "2024-04-13", wgoGameId: 2023021278, reason: "game_not_in_games" };
+    mainMock.mockResolvedValueOnce(createRollingRunSummary({ stoppedReason: "complete", identityRefusals: [refusal] }));
+    const req: any = { method: "POST", query: {}, body: {}, url: "/api/v1/db/update-rolling-player-averages" };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(207);
+    expect(res.body).toMatchObject({
+      success: false,
+      operationStatus: "partial",
+      identityRefusals: [refusal],
+      message: "Rolling player averages refused 1 player(s) with an appearance whose game id is unknown; nothing of theirs was written."
+    });
+  });
+
   it("passes an explicit deadlineAt to the writer and drops it with disableRuntimeBudget", async () => {
     mainMock.mockResolvedValue(createRollingRunSummary({ stoppedReason: "complete" }));
     const invoke = async (query: Record<string, string>) => {

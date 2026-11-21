@@ -36,6 +36,20 @@ vi.mock("lib/nst/client", async (importOriginal) => ({
 }));
 vi.mock("@supabase/supabase-js", () => ({
   createClient: (_url: unknown, _key: unknown, options: any) => ({
+    rpc(name: string, args: { p_scope: string }) {
+      if (name !== "read_nst_gamelog_explicit_audit") throw new Error(`Unexpected RPC ${name}`);
+      return {
+        async order(column: string, { ascending }: { ascending: boolean }) {
+          db.queries.push({ table: name, filters: [["eq", "p_scope", args.p_scope], ["order", column, ascending]] });
+          if (db.auditReadError) return { data: null, error: { message: "read unavailable" } };
+          const data = db.audits.filter((row) => row.job_name === "update-nst-gamelog" && row.details?.nstProgress?.scope === args.p_scope)
+            .sort((a, b) => ascending ? a[column].localeCompare(b[column]) : b[column].localeCompare(a[column]))
+            .slice(0, 2)
+            .map(({ run_time, details }) => ({ run_time, details }));
+          return { data, error: null };
+        }
+      };
+    },
     from(table: string) {
       const query = { table, filters: [] as Array<[string, string, any]> };
       db.queries.push(query);
@@ -396,6 +410,7 @@ describe("update-nst-gamelog automatic season cursor", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-10-04T07:25:38Z"));
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Unexpected outbound fetch in offline NST test")));
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "warn").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -804,7 +819,10 @@ describe("update-nst-gamelog automatic season cursor", () => {
       const second = await run(first.body.resume.request.query);
       expect(second.statusCode).toBe(207);
       expect(second.body.nstProgress.continuation.nextIndex).toBe(14);
-      // Replay the first cursor; latest acknowledged progress wins.
+      // Replay the first cursor with both explicit audits older than the automatic bookmark TTL.
+      for (const audit of db.audits) {
+        audit.run_time = new Date(Date.parse(audit.run_time) - NST_GAMELOG_BOOKMARK_TTL_MS - 1).toISOString();
+      }
       const third = await run(first.body.resume.request.query);
       expect(third.statusCode).toBe(200);
       expect(third.body.success).toBe(true);
@@ -868,11 +886,124 @@ describe("update-nst-gamelog automatic season cursor", () => {
     expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
   });
 
+  const offDate = "2026-11-20";
+  const offDayQuery = { runMode: "incremental", startDate: offDate, endDate: offDate };
+  // Exact Eastern date entry from the retained official Nov. 20 NHL schedule.
+  const offDay = { date: offDate, dayAbbrev: "FRI", numberOfGames: 0, datePromo: [], games: [] };
+  const offDaySchedule = { gameWeek: [offDay, { date: "2026-11-21", numberOfGames: 1, games: [{ id: 2026020001 }] }] };
+
+  it.each([offDayQuery, { runMode: "incremental", dates: offDate }])(
+    "skips a verified past NHL off-day and audits zero NST work for %j",
+    async (query) => {
+      vi.setSystemTime(new Date("2026-11-21T07:25:38Z"));
+      const scheduleFetch = vi.mocked(fetch).mockResolvedValue(Response.json(offDaySchedule));
+      const result = await run(query);
+      const progress = {
+        state: "skipped_no_completed_games", networkAttempts: 0, plannedRequestCount: 0,
+        skippedUnstartedDates: [], verifiedOffDates: [offDate], missingScheduleDates: [],
+        continuation: { nextIndex: 0, totalUrls: 0, blocked: false }, stoppedEarly: false
+      };
+      expect(result.statusCode).toBe(200);
+      expect(result.body).toMatchObject({
+        success: true, operationStatus: "skipped_no_completed_games",
+        nstProgress: { ...progress, auditPersistence: "confirmed" }
+      });
+      expect(result.body.resume).toBeUndefined();
+      expect(db.audits[0]).toMatchObject({ status: "success", rows_affected: 0, details: { nstProgress: progress } });
+      expect(scheduleFetch).toHaveBeenCalledTimes(1);
+      expect(scheduleFetch).toHaveBeenCalledWith(
+        "https://api-web.nhle.com/v1/schedule/2026-11-20",
+        expect.objectContaining({ cache: "no-store", redirect: "error", signal: expect.any(AbortSignal) })
+      );
+      expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+      expect(db.upsertCalls).toHaveLength(0);
+    }
+  );
+
+  it.each([
+    ["wrong date", JSON.stringify({ gameWeek: [{ ...offDay, date: "2026-11-21" }] }), 200],
+    ["missing count", JSON.stringify({ gameWeek: [{ date: offDate, games: [] }] }), 200],
+    ["missing games", JSON.stringify({ gameWeek: [{ date: offDate, numberOfGames: 0 }] }), 200],
+    ["nonempty slate", JSON.stringify({ gameWeek: [{ ...offDay, numberOfGames: 1, games: [{ id: 2026020001 }] }] }), 200],
+    ["nonzero count with empty games", JSON.stringify({ gameWeek: [{ ...offDay, numberOfGames: 1 }] }), 200],
+    ["zero count with nonempty games", JSON.stringify({ gameWeek: [{ ...offDay, games: [{ id: 2026020001 }] }] }), 200],
+    ["duplicate exact date", JSON.stringify({ gameWeek: [offDay, offDay] }), 200],
+    ["malformed body", "<html>upstream error</html>", 200],
+    ["partial response", JSON.stringify(offDaySchedule), 206],
+    ["upstream error", JSON.stringify(offDaySchedule), 503]
+  ])("keeps an off-day unverified with %s", async (_case, body, status) => {
+    vi.setSystemTime(new Date("2026-11-21T07:25:38Z"));
+    const scheduleFetch = vi.mocked(fetch).mockResolvedValue(new Response(body, { status }));
+    const result = await run(offDayQuery);
+    expect(result.body).toMatchObject({ success: false, operationStatus: "blocked",
+      nstProgress: { state: "no_scheduled_games_unverified", verifiedOffDates: [], missingScheduleDates: [offDate],
+        continuation: { nextIndex: 0, totalUrls: 0, blocked: true }, auditPersistence: "confirmed" } });
+    expect(result.body.resume).toBeUndefined();
+    expect(scheduleFetch).toHaveBeenCalledTimes(1);
+    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+    expect(db.audits[0].status).toBe("failure");
+  });
+
+  it("rechecks a previously blocked zero-URL scope without advancing its cursor", async () => {
+    vi.setSystemTime(new Date("2026-11-21T07:25:38Z"));
+    const scheduleFetch = vi.mocked(fetch);
+    const blocked = await run(offDayQuery);
+    expect(blocked.body).toMatchObject({ success: false, operationStatus: "blocked" });
+    const prior = db.audits[0].details.nstProgress;
+    delete prior.verifiedOffDates; // The pinned route did not record this field.
+
+    scheduleFetch.mockResolvedValue(Response.json(offDaySchedule));
+    const replay = await run(offDayQuery);
+    expect(replay.body).toMatchObject({ success: true, operationStatus: "skipped_no_completed_games",
+      nstProgress: { bookmarkRead: "resumed_explicit", verifiedOffDates: [offDate], auditPersistence: "confirmed",
+        continuation: { chainId: prior.continuation.chainId, nextIndex: 0, totalUrls: 0, blocked: false } } });
+    expect(replay.body.resume).toBeUndefined();
+    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+    expect(db.audits.map((audit) => audit.status)).toEqual(["failure", "success"]);
+  });
+
+  it("aborts a stalled official schedule body inside the caller deadline and retains the missing date", async () => {
+    vi.setSystemTime(new Date("2026-11-21T07:25:38Z"));
+    const deadlineAt = Date.now() + 6_000;
+    const scheduleFetch = vi.mocked(fetch).mockResolvedValue(
+      new Response(new ReadableStream({ start() {} }))
+    );
+    const result = await run({ ...offDayQuery, deadlineAt: String(deadlineAt) });
+    expect(result.body).toMatchObject({ success: false, operationStatus: "blocked",
+      nstProgress: { missingScheduleDates: [offDate], verifiedOffDates: [], auditPersistence: "confirmed" } });
+    expect(scheduleFetch).toHaveBeenCalledTimes(1);
+    expect(scheduleFetch.mock.calls[0][1]?.signal?.aborted).toBe(true);
+    expect(Date.now()).toBeLessThan(deadlineAt);
+    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+  });
+
+  it("does not claim an official off-day when its audit acknowledgement is lost", async () => {
+    vi.setSystemTime(new Date("2026-11-21T07:25:38Z"));
+    vi.mocked(fetch).mockResolvedValue(Response.json(offDaySchedule));
+    db.auditWriteFailure = "lost_ack";
+    const result = await run(offDayQuery);
+    expect(result.statusCode).toBe(500);
+    expect(result.body).toMatchObject({ success: false, auditPersistence: "not_confirmed" });
+    expect(result.body.resume).toBeUndefined();
+    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+  });
+
+  it("processes stored games for the same past date without consulting the off-day fallback", async () => {
+    vi.setSystemTime(new Date("2026-11-21T07:25:38Z"));
+    db.games = [{ date: offDate, seasonId: 20262027, type: 2 }];
+    supplyThreePlayerRows();
+    const result = await run({ ...offDayQuery, datasetType: "fiveOnFiveCounts" });
+    expect(result.body).toMatchObject({ success: true, operationStatus: "completed" });
+    expect(fetchedDates()).toEqual([offDate]);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("keeps a missing slate unverified and refuses mismatched or retained-out cursors", async () => {
     db.games = [];
     const missing = await run({ dates: "2026-10-04" });
     expect(missing.body.success).toBe(false);
     expect(missing.body.operationStatus).toBe("blocked");
+    expect(fetch).not.toHaveBeenCalled();
     expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
     db.games = [{ date: "2026-10-03", seasonId: 20262027, type: 2 }];
     supplyThreePlayerRows();
@@ -927,6 +1058,7 @@ describe("update-nst-gamelog automatic season cursor", () => {
     const result = await run({ dates: "2026-10-01,2026-10-03" });
     expect(result.body.success).toBe(false);
     expect(result.body.nstProgress.missingScheduleDates).toEqual(["2026-10-01"]);
+    expect(fetch).not.toHaveBeenCalled();
     expect(result.body.resume).toBeUndefined();
   });
 
@@ -1200,8 +1332,28 @@ describe("update-nst-gamelog automatic season cursor", () => {
       const queryIndex = db.queries.length;
       const res = await run(query);
       expect(res.body.nstProgress.continuation.totalUrls).toBeGreaterThan(0);
-      expect(db.queries.slice(queryIndex).some((q) => q.table === "cron_job_audit" && q.filters.length > 0)).toBe(true);
+      expect(db.queries.slice(queryIndex).filter((q) => q.table === "read_nst_gamelog_explicit_audit")).toEqual([
+        { table: "read_nst_gamelog_explicit_audit", filters: [["eq", "p_scope", res.body.nstProgress.scope], ["order", "run_time", false]] }
+      ]);
     }
+  });
+
+  it.each([
+    ["unavailable", "NST explicit progress read is unconfirmed; admission stopped."],
+    ["tied", "NST explicit progress is ambiguous; admission stopped."]
+  ])("stops source admission when the explicit audit lookup is %s", async (condition, error) => {
+    const query = { dates: "2026-10-03", datasetType: "fiveOnFiveCounts" };
+    if (condition === "tied") {
+      await run(query);
+      db.audits.push(db.audits[0]);
+    } else {
+      db.auditReadError = true;
+    }
+    fetchNstTextByUrlMock.mockClear();
+    const res = await run(query);
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe(error);
+    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
   });
 
   it("keeps the current Eastern day and season start inclusive in default reverse mode", async () => {

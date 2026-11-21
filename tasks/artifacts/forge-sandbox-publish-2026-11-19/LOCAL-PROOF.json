@@ -1,0 +1,487 @@
+{
+ "postgres": "PostgreSQL 15.19 (Homebrew) on aarch64-apple-darwin27.0.0",
+ "postgrest": "PostgREST 16.6",
+ "flags": {
+  "FORGE_PREGAME_CAPTURE_ENABLED": "true",
+  "STARTER_BOARD_CAPTURE_ENABLED": "true",
+  "STARTER_BOARD_COMPUTE_ENABLED": "false",
+  "STARTER_BOARD_SERVING_ENABLED": "false",
+  "STARTER_BOARD_SCHEDULER_ENABLED": "true",
+  "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED": "true",
+  "STARTER_BOARD_CHALLENGER_ENABLED": "false",
+  "STARTER_BOARD_CANARY_GAME_IDS": "2026010049",
+  "FORGE_RESERVE_PASS_ENABLED": "true",
+  "FORGE_PROJECTION_DAYS_AHEAD": "6"
+ },
+ "liveGames": 18,
+ "outsideDumpBytes": 397422,
+ "outsideDumpSha256Before": "fa506615309b897e21e7fc70fce2d69c0a8189d94c0f19d00bc6846cc79fb7af",
+ "outsideDumpSha256AfterRuns": "fa506615309b897e21e7fc70fce2d69c0a8189d94c0f19d00bc6846cc79fb7af",
+ "newRoles": [
+  "forge_sandbox_api",
+  "forge_sandbox_owner"
+ ],
+ "changedMemberships": [
+  [
+   "authenticator",
+   "anon,authenticated,forge_sandbox_api,service_role"
+  ],
+  [
+   "postgres",
+   "forge_sandbox_owner"
+  ]
+ ],
+ "isolation": {
+  "ok": true,
+  "writesOutsideSandbox": [],
+  "createOutsideSandbox": [],
+  "apiRoleOnPrivateSchemas": [],
+  "apiRoleWritesOwnViews": [],
+  "apiSurfaceOtherThanViewsAndDefiners": [],
+  "apiViews": 44,
+  "apiFunctions": 16,
+  "sandboxExposure": [],
+  "roleAttributes": [],
+  "roleMemberships": []
+ },
+ "prodAuditLocal": {
+  "evaluatedAs": "forge_sandbox_api",
+  "exposedSchemas": [
+   "graphql_public",
+   "public",
+   "forge_sandbox_api"
+  ],
+  "roleExists": true,
+  "apiRoleAttributes": {
+   "login": false,
+   "super": false,
+   "createrole": false,
+   "bypassrls": false,
+   "inherit": false,
+   "config": [
+    "statement_timeout=20s",
+    "TimeZone=UTC"
+   ]
+  },
+  "apiRoleMemberOf": [],
+  "membersOfApiRole": [
+   "authenticator"
+  ],
+  "schemaUsage": {
+   "graphql_public": false,
+   "public": true,
+   "forge_sandbox_api": true
+  },
+  "writableRelations": [],
+  "readableRelationsOutsideApi": [],
+  "executableFunctionsOutsideApi": 1,
+  "executableDefinersOutsideApi": [],
+  "exposedFunctionsReachingPgsodium": [],
+  "exposedDefinersWritingForge": [],
+  "exposedDefinersRunningPrivilegeDdl": [],
+  "pgsodiumSchemaExposed": false,
+  "pgsodiumEscalationFunctions": [],
+  "verdict": "ok"
+ },
+ "route": {
+  "gameId": 2099020991,
+  "sha": "02f0426d557e8e13c85e452759c1a1566285d950",
+  "first": {
+   "httpStatus": 200,
+   "wallMs": 5532,
+   "status": "succeeded",
+   "reason": "readers_recorded",
+   "elapsedMs": 5529,
+   "stages": {
+    "captureMs": 238,
+    "summaryMs": 6,
+    "publishMs": 5203,
+    "readersMs": 48
+   },
+   "claimId": "547f4665-1bd3-48d7-a8b6-0d2b3b963cb8",
+   "revisionId": "16777bb1-48e6-4548-a905-d7e769aa5ba5",
+   "readers": {
+    "contextId": "synthetic-single-center-points-v1",
+    "playerNhlId": 8471001,
+    "evaluatedAt": "2026-11-19T21:52:04.326Z",
+    "daily": {
+     "playerId": "471001",
+     "selectedRun": "547f4665-1bd3-48d7-a8b6-0d2b3b963cb8",
+     "revisionId": "forge-daily-bridge-v1:547f4665-1bd3-48d7-a8b6-0d2b3b963cb8",
+     "legalSlot": "C#1",
+     "points": 2.965,
+     "reason": null
+    },
+    "detailed": {
+     "reason": "missing_participation",
+     "playerId": "471001",
+     "selectedRun": "547f4665-1bd3-48d7-a8b6-0d2b3b963cb8",
+     "revisionId": "16777bb1-48e6-4548-a905-d7e769aa5ba5",
+     "points": null,
+     "legalSlot": null
+    }
+   },
+   "summary": {
+    "candidates": {
+     "skaters": 36,
+     "goalies": 4,
+     "reserves": 4
+    },
+    "includesPlayer": {
+     "8471001": true
+    },
+    "reads": 134,
+    "transport": {
+     "bytes": 298285,
+     "calls": 134,
+     "httpCalls": 134,
+     "rows": 1472,
+     "stampToleranceMs": 5000
+    },
+    "readWindow": {
+     "end": "2026-11-19T21:51:59.079Z",
+     "start": "2026-11-19T21:51:58.909Z"
+    },
+    "statedCutoff": "2026-11-19T21:52:04.079000Z",
+    "seasonBootstrapApplied": false,
+    "modelEnvironment": {
+     "FORGE_SKATER_MODEL_MODE": null,
+     "NHL_XG_MODEL_VERSION": null,
+     "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION": null,
+     "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION": null,
+     "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES": null,
+     "STARTER_BOARD_COMPUTE_ENABLED": "true",
+     "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED": "true",
+     "START_CHART_GAME_REVISIONS": null
+    },
+    "stages": {
+     "captureMs": 238,
+     "summaryMs": 6,
+     "publishMs": 5203,
+     "readersMs": 48
+    }
+   },
+   "receipt": {
+    "claim": "547f4665-1bd3-48d7-a8b6-0d2b3b963cb8",
+    "claims": 1,
+    "gameId": 2099020991,
+    "reason": "readers_recorded",
+    "beganAt": "2026-11-19T21:51:58.871146+00:00",
+    "custody": "qualified",
+    "outcome": "succeeded",
+    "readers": {
+     "daily": {
+      "points": 2.965,
+      "reason": null,
+      "playerId": "471001",
+      "legalSlot": "C#1",
+      "revisionId": "forge-daily-bridge-v1:547f4665-1bd3-48d7-a8b6-0d2b3b963cb8",
+      "selectedRun": "547f4665-1bd3-48d7-a8b6-0d2b3b963cb8"
+     },
+     "detailed": {
+      "points": null,
+      "reason": "missing_participation",
+      "playerId": "471001",
+      "legalSlot": null,
+      "revisionId": "16777bb1-48e6-4548-a905-d7e769aa5ba5",
+      "selectedRun": "547f4665-1bd3-48d7-a8b6-0d2b3b963cb8"
+     },
+     "contextId": "synthetic-single-center-points-v1",
+     "evaluatedAt": "2026-11-19T21:52:04.326Z",
+     "playerNhlId": 8471001
+    },
+    "release": "02f0426d557e8e13c85e452759c1a1566285d950",
+    "summary": {
+     "reads": 134,
+     "stages": {
+      "captureMs": 238,
+      "publishMs": 5203,
+      "readersMs": 48,
+      "summaryMs": 6
+     },
+     "transport": {
+      "rows": 1472,
+      "bytes": 298285,
+      "calls": 134,
+      "httpCalls": 134,
+      "stampToleranceMs": 5000
+     },
+     "candidates": {
+      "goalies": 4,
+      "skaters": 36,
+      "reserves": 4
+     },
+     "readWindow": {
+      "end": "2026-11-19T21:51:59.079Z",
+      "start": "2026-11-19T21:51:58.909Z"
+     },
+     "statedCutoff": "2026-11-19T21:52:04.079000Z",
+     "includesPlayer": {
+      "8471001": true
+     },
+     "modelEnvironment": {
+      "NHL_XG_MODEL_VERSION": null,
+      "FORGE_SKATER_MODEL_MODE": null,
+      "START_CHART_GAME_REVISIONS": null,
+      "STARTER_BOARD_COMPUTE_ENABLED": "true",
+      "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES": null,
+      "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION": null,
+      "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION": null,
+      "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED": "true"
+     },
+     "seasonBootstrapApplied": false
+    },
+    "witness": "qualified",
+    "finishedAt": "2026-11-19T21:52:04.375421+00:00",
+    "revisionId": "16777bb1-48e6-4548-a905-d7e769aa5ba5",
+    "tsaGenTime": "2026-11-19T21:51:59.105+00:00",
+    "dbElapsedMs": 5504,
+    "inputCutoff": "2026-11-19T21:51:58.90286+00:00",
+    "packetBytes": 27383,
+    "publishedAt": "2026-11-19T21:52:04.309194+00:00",
+    "tokenSha256": "4941c05e9d7d94edd3c5cf796d92a73581b3c177bc18d192c14da911488fe5db",
+    "appElapsedMs": 5529,
+    "packetSha256": "11d40b86a82345ebb666906bed9e8f6c76931f281f250c28b547a98e0d425c0f",
+    "witnessReason": null,
+    "canonicalSha256": "6b8e09b3a8b4f9070b8c22b7d90a6f645c1c075dc42a1dd988f481a41e7fd114",
+    "publicationCount": 1,
+    "committedRevision": "16777bb1-48e6-4548-a905-d7e769aa5ba5"
+   },
+   "body": {
+    "status": "succeeded",
+    "reason": "readers_recorded",
+    "sha": "02f0426d557e8e13c85e452759c1a1566285d950",
+    "gameId": 2099020991,
+    "claimId": "547f4665-1bd3-48d7-a8b6-0d2b3b963cb8",
+    "revisionId": "16777bb1-48e6-4548-a905-d7e769aa5ba5",
+    "readers": {
+     "contextId": "synthetic-single-center-points-v1",
+     "playerNhlId": 8471001,
+     "evaluatedAt": "2026-11-19T21:52:04.326Z",
+     "daily": {
+      "playerId": "471001",
+      "selectedRun": "547f4665-1bd3-48d7-a8b6-0d2b3b963cb8",
+      "revisionId": "forge-daily-bridge-v1:547f4665-1bd3-48d7-a8b6-0d2b3b963cb8",
+      "legalSlot": "C#1",
+      "points": 2.965,
+      "reason": null
+     },
+     "detailed": {
+      "reason": "missing_participation",
+      "playerId": "471001",
+      "selectedRun": "547f4665-1bd3-48d7-a8b6-0d2b3b963cb8",
+      "revisionId": "16777bb1-48e6-4548-a905-d7e769aa5ba5",
+      "points": null,
+      "legalSlot": null
+     }
+    },
+    "summary": {
+     "candidates": {
+      "skaters": 36,
+      "goalies": 4,
+      "reserves": 4
+     },
+     "includesPlayer": {
+      "8471001": true
+     },
+     "reads": 134,
+     "transport": {
+      "bytes": 298285,
+      "calls": 134,
+      "httpCalls": 134,
+      "rows": 1472,
+      "stampToleranceMs": 5000
+     },
+     "readWindow": {
+      "end": "2026-11-19T21:51:59.079Z",
+      "start": "2026-11-19T21:51:58.909Z"
+     },
+     "statedCutoff": "2026-11-19T21:52:04.079000Z",
+     "seasonBootstrapApplied": false,
+     "modelEnvironment": {
+      "FORGE_SKATER_MODEL_MODE": null,
+      "NHL_XG_MODEL_VERSION": null,
+      "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION": null,
+      "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION": null,
+      "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES": null,
+      "STARTER_BOARD_COMPUTE_ENABLED": "true",
+      "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED": "true",
+      "START_CHART_GAME_REVISIONS": null
+     },
+     "stages": {
+      "captureMs": 238,
+      "summaryMs": 6,
+      "publishMs": 5203,
+      "readersMs": 48
+     }
+    },
+    "stages": {
+     "captureMs": 238,
+     "summaryMs": 6,
+     "publishMs": 5203,
+     "readersMs": 48
+    },
+    "elapsedMs": 5529,
+    "receipt": {
+     "claim": "547f4665-1bd3-48d7-a8b6-0d2b3b963cb8",
+     "claims": 1,
+     "gameId": 2099020991,
+     "reason": "readers_recorded",
+     "beganAt": "2026-11-19T21:51:58.871146+00:00",
+     "custody": "qualified",
+     "outcome": "succeeded",
+     "readers": {
+      "daily": {
+       "points": 2.965,
+       "reason": null,
+       "playerId": "471001",
+       "legalSlot": "C#1",
+       "revisionId": "forge-daily-bridge-v1:547f4665-1bd3-48d7-a8b6-0d2b3b963cb8",
+       "selectedRun": "547f4665-1bd3-48d7-a8b6-0d2b3b963cb8"
+      },
+      "detailed": {
+       "points": null,
+       "reason": "missing_participation",
+       "playerId": "471001",
+       "legalSlot": null,
+       "revisionId": "16777bb1-48e6-4548-a905-d7e769aa5ba5",
+       "selectedRun": "547f4665-1bd3-48d7-a8b6-0d2b3b963cb8"
+      },
+      "contextId": "synthetic-single-center-points-v1",
+      "evaluatedAt": "2026-11-19T21:52:04.326Z",
+      "playerNhlId": 8471001
+     },
+     "release": "02f0426d557e8e13c85e452759c1a1566285d950",
+     "summary": {
+      "reads": 134,
+      "stages": {
+       "captureMs": 238,
+       "publishMs": 5203,
+       "readersMs": 48,
+       "summaryMs": 6
+      },
+      "transport": {
+       "rows": 1472,
+       "bytes": 298285,
+       "calls": 134,
+       "httpCalls": 134,
+       "stampToleranceMs": 5000
+      },
+      "candidates": {
+       "goalies": 4,
+       "skaters": 36,
+       "reserves": 4
+      },
+      "readWindow": {
+       "end": "2026-11-19T21:51:59.079Z",
+       "start": "2026-11-19T21:51:58.909Z"
+      },
+      "statedCutoff": "2026-11-19T21:52:04.079000Z",
+      "includesPlayer": {
+       "8471001": true
+      },
+      "modelEnvironment": {
+       "NHL_XG_MODEL_VERSION": null,
+       "FORGE_SKATER_MODEL_MODE": null,
+       "START_CHART_GAME_REVISIONS": null,
+       "STARTER_BOARD_COMPUTE_ENABLED": "true",
+       "NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES": null,
+       "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION": null,
+       "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION": null,
+       "STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED": "true"
+      },
+      "seasonBootstrapApplied": false
+     },
+     "witness": "qualified",
+     "finishedAt": "2026-11-19T21:52:04.375421+00:00",
+     "revisionId": "16777bb1-48e6-4548-a905-d7e769aa5ba5",
+     "tsaGenTime": "2026-11-19T21:51:59.105+00:00",
+     "dbElapsedMs": 5504,
+     "inputCutoff": "2026-11-19T21:51:58.90286+00:00",
+     "packetBytes": 27383,
+     "publishedAt": "2026-11-19T21:52:04.309194+00:00",
+     "tokenSha256": "4941c05e9d7d94edd3c5cf796d92a73581b3c177bc18d192c14da911488fe5db",
+     "appElapsedMs": 5529,
+     "packetSha256": "11d40b86a82345ebb666906bed9e8f6c76931f281f250c28b547a98e0d425c0f",
+     "witnessReason": null,
+     "canonicalSha256": "6b8e09b3a8b4f9070b8c22b7d90a6f645c1c075dc42a1dd988f481a41e7fd114",
+     "publicationCount": 1,
+     "committedRevision": "16777bb1-48e6-4548-a905-d7e769aa5ba5"
+    }
+   }
+  },
+  "duplicate": {
+   "httpStatus": 409,
+   "status": "duplicate",
+   "rowsBefore": {
+    "claims": 1,
+    "artifacts": 1,
+    "witnesses": 1,
+    "outcomes": 1,
+    "publications": 1,
+    "runs": 1,
+    "revisions": 1,
+    "player_rows": 36,
+    "sandbox": 1,
+    "row_version": "737"
+   },
+   "rowsAfter": {
+    "claims": 1,
+    "artifacts": 1,
+    "witnesses": 1,
+    "outcomes": 1,
+    "publications": 1,
+    "runs": 1,
+    "revisions": 1,
+    "player_rows": 36,
+    "sandbox": 1,
+    "row_version": "737"
+   }
+  },
+  "routeRestCalls": 178,
+  "routeErrors": [],
+  "routeProfiles": {
+   "forge_sandbox_api": 178
+  },
+  "tsaCalls": 1,
+  "positiveControl": 200,
+  "denials": {
+   "anon: GET forge_sandbox_api.games": 401,
+   "anon: GET forge_sandbox_api.forge_goalie_game": 401,
+   "anon: RPC forge_sandbox_receipt_v1": 401,
+   "anon: RPC forge_sandbox_run_begin_v1": 401,
+   "authenticated: GET forge_sandbox_api.games": 403,
+   "authenticated: GET forge_sandbox_api.forge_goalie_game": 403,
+   "authenticated: RPC forge_sandbox_receipt_v1": 403,
+   "authenticated: RPC forge_sandbox_run_begin_v1": 403,
+   "no token: GET forge_sandbox_api.games": 401,
+   "sandbox: POST public.games": 403,
+   "sandbox: PATCH public.games": 403,
+   "sandbox: DELETE public.games": 403,
+   "sandbox: POST public.forge_runs": 403,
+   "sandbox: DELETE public.forge_runs": 403,
+   "sandbox: GET public.games": 403,
+   "sandbox: RPC public.forge_pregame_capture_claim_v1": 403,
+   "sandbox: RPC public.forge_pregame_publish_v1": 403,
+   "sandbox: POST forge_sandbox_api.games (view)": 403,
+   "sandbox: DELETE forge_sandbox_api.games (view)": 403,
+   "sandbox: Accept-Profile forge_sandbox": 406,
+   "sandbox: Accept-Profile forge_sandbox_capture": 406,
+   "sandbox: Accept-Profile forge_sandbox_internal": 406,
+   "sandbox: Accept-Profile forge_sandbox_exec": 406,
+   "sandbox: Accept-Profile pgsodium": 406,
+   "sandbox: Accept-Profile vault": 406
+  }
+ },
+ "cron": {
+  "fired": [
+   "fired 1",
+   "already_fired"
+  ],
+  "request": {
+   "url": "https://fhfhockey.com/api/v1/db/forge-sandbox-run",
+   "timeoutMs": 240000
+  }
+ },
+ "reset": "schemas, roles and authenticator membership removed; WGO stand-in job intact"
+}

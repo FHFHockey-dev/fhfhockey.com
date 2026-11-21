@@ -219,6 +219,17 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
     // Rows served for any other table (NST reads), keyed by table name.
     tableRows: Record<string, Record<string, unknown>[]> = {}
   ) {
+    const servedGames = () => {
+      const byId = new Map<number, Record<string, unknown>>();
+      for (const playerId of PLAYER_IDS) {
+        for (const row of historyRows(playerId, { player_id: playerId })) {
+          if (typeof row.game_id === "number" && !byId.has(row.game_id)) {
+            byId.set(row.game_id, { id: row.game_id, date: row.date, seasonId: row.season_id, homeTeamId: 10, awayTeamId: 8 });
+          }
+        }
+      }
+      return [...byId.values()];
+    };
     return {
       rpc: vi.fn(async () => ({ data: null, error: null })),
       from(table: string) {
@@ -235,7 +246,9 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
         query.range = (from: number) => { rangeFrom = from; return query; };
         const rows = () => {
           if (rangeFrom > 0) return [];
-          if (table === "games") return games;
+          // Canonical games: the ones given, or else every game the served WGO rows name (the writer refuses a WGO
+          // appearance whose game is not in public.games instead of writing it with a NULL game_id).
+          if (table === "games") return games.length ? games : servedGames();
           if (table === "players") {
             return (filters.id as number[]).map((id) => ({ id }));
           }
@@ -276,6 +289,96 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
       vi.doUnmock("@supabase/supabase-js");
     }
   }
+
+  describe("game identity guard (2026-11-20 long-absence failure)", () => {
+    const window = { startDate: "2026-10-05", endDate: "2026-10-19", dryRunUpsert: true, skipDiagnostics: true, playerConcurrency: 1 };
+    const appearance = (playerId: unknown, overrides: Record<string, unknown> = {}) => ({
+      player_id: playerId, game_id: 2026020100, date: "2026-10-15", season_id: 20262027, team_abbrev: "TOR",
+      goals: 1, assists: 0, shots: 3, points: 1, toi_per_game: 1080, ...overrides
+    });
+    const canonical = [{ id: 2026020100, date: "2026-10-15", seasonId: 20262027, homeTeamId: 10, awayTeamId: 8 }];
+    async function runWith(history: (playerId: unknown) => Record<string, unknown>[], games: Record<string, unknown>[] = canonical) {
+      for (const method of ["info", "warn", "debug", "time", "timeEnd", "error"] as const) {
+        vi.spyOn(console, method).mockImplementation(() => undefined);
+      }
+      const written = new Map<number, Array<Record<string, unknown>>>();
+      const main = await importMainWithClient(createWindowClient(history, games));
+      const summary = await main({ ...window, dryRunBatchObserver: (batch: { playerId: number; rankingRows: ReadonlyArray<Record<string, unknown>> }) => {
+        written.set(batch.playerId, [...(written.get(batch.playerId) ?? []), ...batch.rankingRows]);
+      } });
+      return { summary, written };
+    }
+
+    it.each([
+      ["whose game is not in public.games", { game_id: 2026029999 }, 2026029999, "game_not_in_games"],
+      ["with no WGO game id", { game_id: null }, null, "wgo_game_id_missing"],
+    ] as const)("refuses a real appearance %s: nothing of that player is written, the exact reason is reported, the others finish",
+      async (_label, broken, wgoGameId, reason) => {
+        const { summary, written } = await runWith((playerId) => playerId === 8470003
+          ? [appearance(playerId), appearance(playerId, { ...broken, date: "2026-10-17" })] : [appearance(playerId)]);
+        expect(summary.identityRefusals).toEqual([{ playerId: 8470003, gameDate: "2026-10-17", wgoGameId, reason }]);
+        expect(written.has(8470003)).toBe(false);
+        expect([...written.keys()]).toEqual(PLAYER_IDS.filter(id => id !== 8470003));
+        expect([...written.values()].flat().every(row => typeof row.game_id === "number")).toBe(true);
+        expect(summary).toMatchObject({ stoppedReason: "complete", nextResumeFrom: null, remainingPlayerCount: 0 });
+      });
+
+    it("keeps a non-appearance in the windows as before but does not write its row without a game id", async () => {
+      // No game id, no time on ice and no NST row that date: not an appearance.
+      const record = (playerId: unknown, game_id: number | null) =>
+        appearance(playerId, { game_id, date: "2026-10-12", toi_per_game: 0, goals: 0, shots: 0, points: 0 });
+      // Both runs serve the same canonical games (the team-game ledger feeds availability fields).
+      const games = [...canonical, { id: 2026020050, date: "2026-10-12", seasonId: 20262027, homeTeamId: 10, awayTeamId: 8 }];
+      const { summary, written } = await runWith((playerId) => playerId === 8470002
+        ? [record(playerId, null), appearance(playerId)] : [appearance(playerId)], games);
+      expect(summary.identityRefusals).toEqual([]);
+      const rows = written.get(8470002) ?? [];
+      expect(rows.length).toBeGreaterThan(0);
+      expect(rows.every(row => row.game_id === 2026020100 && row.game_date === "2026-10-15")).toBe(true);
+      expect([...written.keys()]).toEqual(PLAYER_IDS);
+      // Behaviour as before: the record still counts in the rolling windows. The 2026-10-15 rows equal those of a run
+      // in which the same record names a game (and is therefore written).
+      const named = await runWith((playerId) => playerId === 8470002
+        ? [record(playerId, 2026020050), appearance(playerId)] : [appearance(playerId)], games);
+      const namedRows = named.written.get(8470002) ?? [];
+      expect(namedRows.some(row => row.game_date === "2026-10-12")).toBe(true);
+      expect(rows).toEqual(namedRows.filter(row => row.game_date === "2026-10-15"));
+    });
+
+    it("lets a veteran with legacy appearances that have no game id keep writing (outside the 1,095-day window)", async () => {
+      // Production has ~818k WGO appearances without a known game, all dated before 2023-04-15 (Q10).
+      const legacy = (playerId: unknown) => [
+        appearance(playerId, { game_id: null, date: "2015-01-15", season_id: 20142015 }),
+        appearance(playerId, { game_id: 2014029999, date: "2015-02-01", season_id: 20142015 }),   // not in games
+      ];
+      const { summary, written } = await runWith((playerId) => [...legacy(playerId), appearance(playerId)]);
+      expect(summary.identityRefusals).toEqual([]);
+      expect([...written.keys()]).toEqual(PLAYER_IDS);
+      // A full-history run still writes the legacy rows exactly as before (game_id null): FORGE can never read them.
+      for (const method of ["info", "warn", "debug", "time", "timeEnd", "error"] as const) {
+        vi.spyOn(console, method).mockImplementation(() => undefined);
+      }
+      const all = new Map<number, Array<Record<string, unknown>>>();
+      const main = await importMainWithClient(createWindowClient((playerId) => [...legacy(playerId), appearance(playerId)], canonical));
+      const full = await main({ ...window, startDate: "2014-10-01", dryRunBatchObserver: (batch: { playerId: number; rankingRows: ReadonlyArray<Record<string, unknown>> }) => {
+        all.set(batch.playerId, [...(all.get(batch.playerId) ?? []), ...batch.rankingRows]);
+      } });
+      expect(full.identityRefusals).toEqual([]);
+      expect((all.get(8470001) ?? []).filter(row => row.game_date === "2015-01-15").every(row => row.game_id === null)).toBe(true);
+    });
+
+    it("draws the line at the readers' window: today minus 1,095 days", async () => {
+      const { __testables, rollingIdentityFloor } = await import("./fetchRollingPlayerAverages");
+      const now = Date.parse("2026-11-20T15:00:00Z");
+      const floor = rollingIdentityFloor(now);
+      expect(floor).toBe("2023-11-21");
+      const game = (gameDate: string, toi: number) => ({ gameId: null, gameDate, playerId: 1, wgo: { toi_per_game: toi },
+        sourceContext: { originalGameId: 5 } }) as never;
+      expect(__testables.rollingIdentityDecision(game("2023-11-21", 900), floor)).toBe("write");
+      expect(() => __testables.rollingIdentityDecision(game("2023-11-22", 900), floor)).toThrow(/rolling_game_identity_missing:game_not_in_games:player 1 date 2023-11-22 wgo game 5/);
+      expect(__testables.rollingIdentityDecision(game("2023-11-22", 0), floor)).toBe("skip");
+    });
+  });
 
   it("stops claiming at the budget and resumes so every player is processed exactly once", async () => {
     for (const method of ["info", "warn", "debug", "time", "timeEnd"] as const) {
@@ -408,9 +511,9 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
       ["2026-10-15", 20262027, 1, 1000]
     ] as const;
     const history = (playerId: unknown) =>
-      historyGames.map(([date, season_id, hits, toi_per_game]) => ({
+      historyGames.map(([date, season_id, hits, toi_per_game], index) => ({
         player_id: playerId,
-        game_id: null,
+        game_id: 2014020001 + index,
         date,
         season_id,
         team_abbrev: "TOR",
@@ -1617,6 +1720,7 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(summary).toEqual({
       rowsUpserted: 5452,
       abandonedPlayerCount: 0,
+      identityRefusals: [],
       processedPlayers: 3,
       playersWithRows: 2,
       coverageWarnings: 8,
